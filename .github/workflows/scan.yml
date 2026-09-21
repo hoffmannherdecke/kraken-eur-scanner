@@ -52,6 +52,8 @@ jobs:
               i+"    x.ret24h >= 25.0",
               i+"    or (x.context7d >= 50.0 and x.dist7d_high_pct > -8.0)",
               i+"    or (x.context30d >= 80.0 and x.dist30d_high_pct > -10.0)",
+              i+"    or (x.context30d >= 35.0 and x.dist30d_high_pct > -3.0)",
+              i+"    or (x.ret24h >= 8.0 and x.context30d >= 15.0 and x.dist30d_high_pct > -3.0)",
               i+"    or (x.ret24h >= 12.0 and x.context7d >= 35.0 and x.dist7d_high_pct > -8.0)",
               i+")",
               i+"if too_late:",
@@ -95,7 +97,40 @@ jobs:
           late=mk(30)
           scanner.add_long_context(C(),meta,[late])
           assert late.late, "24h +30% must not remain a fresh early candidate"
-          print("late-context regression: OK")
+
+          kas_like=mk(6)
+          scanner.add_long_context(C(),meta,[kas_like])
+          assert kas_like.late, "30d strongly up and at monthly high must not be a fresh early candidate"
+
+          ondo_like=mk(10)
+          class C23:
+              def ohlc(self, pair, interval=60):
+                  rows=[]
+                  for i in range(720):
+                      px=1.0*(1+0.23*i/719)
+                      rows.append([i*3600,str(px),str(px*1.002),str(px*.998),str(px),str(px),"1000",10])
+                  return rows
+          scanner.add_long_context(C23(),meta,[ondo_like])
+          assert ondo_like.late, "24h near +10%, 30d positive and at monthly high must be continuation, not fresh early"
+
+          mon_like=mk(9)
+          class CMon:
+              def ohlc(self, pair, interval=60):
+                  rows=[]
+                  for i in range(720):
+                      if i < 300:
+                          px=1.10 - 0.20*i/299
+                      elif i < 552:
+                          px=0.90 - 0.10*(i-300)/251
+                      else:
+                          px=0.80 + 0.15*(i-552)/167
+                      hi=px*1.002
+                      if i==100: hi=1.20
+                      rows.append([i*3600,str(px),str(hi),str(px*.998),str(px),str(px),"1000",10])
+                  return rows
+          scanner.add_long_context(CMon(),meta,[mon_like])
+          assert not mon_like.late, "fresh recovery well below 30d high must remain eligible"
+          print("late-context regressions: OK")
           PY
 
       - name: Scan Kraken EUR market
