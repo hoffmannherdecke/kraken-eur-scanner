@@ -62,7 +62,21 @@ jobs:
               i+"elif x.context7d > 35.0 and x.dist7d_high_pct > -5.0:",
               i+"    x.score = round(x.score - 0.8, 2)",
           ]
-          p.write_text(s[:m.start()]+"\n".join(lines)+s[m.end():])
+          s=s[:m.start()]+"\n".join(lines)+s[m.end():]
+
+          # Every emitted Slack candidate must have verified 7d/30d context.
+          p_ctx=r'(def add_long_context\([^\n]+\) -> None:\n)(\s*)for x in candidates\[:10\]:'
+          s2,n=re.subn(p_ctx,lambda z:z.group(1)+z.group(2)+"for x in candidates:",s,count=1)
+          if n != 1:
+              raise SystemExit("long-context coverage patch target not found; fail closed")
+          s=s2
+
+          old_filter='candidates = [x for x in plausible if x.score >= CANDIDATE_THRESHOLD and not x.late]'
+          new_filter='candidates = [x for x in plausible if x.score >= CANDIDATE_THRESHOLD and not x.late and x.context7d is not None and x.context30d is not None]'
+          if old_filter not in s:
+              raise SystemExit("final context gate patch target not found; fail closed")
+          s=s.replace(old_filter,new_filter,1)
+          p.write_text(s)
           PY
 
       - name: Restore rolling scanner state
