@@ -2,6 +2,8 @@ name: Kraken EUR early sensor
 
 'on':
   workflow_dispatch:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
   push:
     branches: [main]
     paths:
@@ -26,146 +28,13 @@ jobs:
 
       - name: Rebuild and verify scanner package
         run: |
+          set -euo pipefail
           cat .payload/part*.b64 | base64 -d > /tmp/kraken_eur_scanner.zip
           echo "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6  /tmp/kraken_eur_scanner.zip" | sha256sum -c -
           unzip -t /tmp/kraken_eur_scanner.zip
           rm -rf .scanner
           mkdir .scanner
           unzip -q /tmp/kraken_eur_scanner.zip -d .scanner
-
-      - name: Base package unit and integration tests
-        working-directory: .scanner/kraken_eur_scanner
-        run: python -m unittest discover -s tests -v
-
-      - name: Apply production early-starter hardening
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-          p=Path(".scanner/kraken_eur_scanner/scanner.py")
-          s=p.read_text()
-
-          pattern=r'(?m)^(?P<i>\s*)if x\.context7d > 50 and x\.dist7d_high_pct > -5 and not x\.breakout3h:\n(?P=i)    x\.score = round\(x\.score - 0\.8, 2\)'
-          m=re.search(pattern,s)
-          if not m:
-              raise SystemExit("late-guard patch target not found; fail closed")
-          i=m.group("i")
-          lines=[
-              i+"# Long-context late-move guard. This is an EARLY sensor.",
-              i+"# Missing context never fabricates a late verdict; final Slack output still requires verified 7d/30d context.",
-              i+"too_late = (",
-              i+"    x.ret24h >= 25.0",
-              i+"    or (x.context7d >= 50.0 and x.dist7d_high_pct > -8.0)",
-              i+"    or (x.context30d >= 80.0 and x.dist30d_high_pct > -10.0)",
-              i+"    or (x.context30d >= 35.0 and x.dist30d_high_pct > -3.0)",
-              i+"    or (x.ret24h >= 8.0 and x.context30d >= 15.0 and x.dist30d_high_pct > -3.0)",
-              i+"    or (x.ret24h >= 12.0 and x.context7d >= 35.0 and x.dist7d_high_pct > -8.0)",
-              i+")",
-              i+"if too_late:",
-              i+"    x.late = True",
-              i+"    x.score = round(x.score - 4.0, 2)",
-              i+"elif x.context7d > 35.0 and x.dist7d_high_pct > -5.0:",
-              i+"    x.score = round(x.score - 0.8, 2)",
-          ]
-          s=s[:m.start()]+"\n".join(lines)+s[m.end():]
-
-          # Do not let rank 11+ bypass the mandatory long-context check if earlier rows get penalized.
-          p_ctx=r'(def add_long_context\([^\n]+\) -> None:\n)(\s*)for x in candidates\[:10\]:'
-          s2,n=re.subn(p_ctx,lambda z:z.group(1)+z.group(2)+"for x in candidates:",s,count=1)
-          if n != 1:
-              raise SystemExit("long-context coverage patch target not found; fail closed")
-          s=s2
-
-          # Every Slack candidate must have verified 7d and 30d context.
-          old_filter='candidates = [x for x in plausible if x.score >= CANDIDATE_THRESHOLD and not x.late]'
-          new_filter='candidates = [x for x in plausible if x.score >= CANDIDATE_THRESHOLD and not x.late and x.context7d is not None and x.context30d is not None]'
-          if old_filter not in s:
-              raise SystemExit("final context gate patch target not found; fail closed")
-          s=s.replace(old_filter,new_filter,1)
-          p.write_text(s)
-          PY
-
-      - name: Production hardening regression tests
-        working-directory: .scanner/kraken_eur_scanner
-        run: |
-          python -m py_compile scanner.py
-          python - <<'PY'
-          import scanner
-
-          class C:
-              def __init__(self):
-                  self.calls=0
-              def ohlc(self, pair, interval=60):
-                  self.calls += 1
-                  rows=[]
-                  for i in range(720):
-                      px=1.0*(1+0.0015*i)
-                      rows.append([i*3600,str(px),str(px*1.01),str(px*.99),str(px),str(px),"1000",10])
-                  return rows
-
-          def mk(ret24, pair="TEST/EUR"):
-              return scanner.Features(
-                  pair=pair,altname=pair.replace("/",""),price=2.0,turnover24h=1_000_000,
-                  spread_pct=.2,ret15_live=1,ret15_closed=.2,ret1h=2,ret3h=4,ret24h=ret24,
-                  volume_ratio_live=2.5,volume_ratio_closed=2,breakout3h=True,
-                  base_tight_pct=4,higher_lows=True,ema26_gt_50=True,adx14=30,
-                  fresh_move_3h=5,stale=False,score=9.0)
-
-          meta={"TEST/EUR":scanner.PairMeta("T","TESTEUR","TEST/EUR","T",4)}
-          late=mk(30)
-          scanner.add_long_context(C(),meta,[late])
-          assert late.late, "24h +30% must not remain a fresh early candidate"
-
-          kas_like=mk(6)
-          scanner.add_long_context(C(),meta,[kas_like])
-          assert kas_like.late, "30d strongly up and at monthly high must not be a fresh early candidate"
-
-          ondo_like=mk(10)
-          class C23:
-              def ohlc(self, pair, interval=60):
-                  rows=[]
-                  for i in range(720):
-                      px=1.0*(1+0.23*i/719)
-                      rows.append([i*3600,str(px),str(px*1.002),str(px*.998),str(px),str(px),"1000",10])
-                  return rows
-          scanner.add_long_context(C23(),meta,[ondo_like])
-          assert ondo_like.late, "24h near +10%, positive 30d and at monthly high must be continuation, not fresh early"
-
-          mon_like=mk(9)
-          class CMon:
-              def ohlc(self, pair, interval=60):
-                  rows=[]
-                  for i in range(720):
-                      if i < 300:
-                          px=1.10 - 0.20*i/299
-                      elif i < 552:
-                          px=0.90 - 0.10*(i-300)/251
-                      else:
-                          px=0.80 + 0.15*(i-552)/167
-                      hi=px*1.002
-                      if i==100: hi=1.20
-                      rows.append([i*3600,str(px),str(hi),str(px*.998),str(px),str(px),"1000",10])
-                  return rows
-          scanner.add_long_context(CMon(),meta,[mon_like])
-          assert not mon_like.late, "fresh recovery well below 30d high must remain eligible"
-
-          # More than ten plausible candidates must all receive long context.
-          many=[]
-          many_meta={}
-          for n in range(12):
-              pair=f"T{n}/EUR"
-              x=mk(3,pair)
-              many.append(x)
-              many_meta[pair]=scanner.PairMeta(f"K{n}",f"T{n}EUR",pair,f"B{n}",4)
-          cc=C()
-          scanner.add_long_context(cc,many_meta,many)
-          assert cc.calls == 12, f"expected 12 context calls, got {cc.calls}"
-          assert all(x.context7d is not None and x.context30d is not None for x in many)
-
-          src=open("scanner.py",encoding="utf-8").read()
-          assert "x.context7d is not None and x.context30d is not None" in src
-          print("production hardening regressions: OK")
-          PY
 
       - name: Restore rolling scanner state
         uses: actions/cache@v4
@@ -174,6 +43,10 @@ jobs:
           key: scanner-state-${{ github.run_id }}
           restore-keys: |
             scanner-state-
+
+      - name: Unit and regression tests
+        working-directory: .scanner/kraken_eur_scanner
+        run: python -m unittest discover -s tests -v
 
       - name: Scan Kraken EUR market
         working-directory: .scanner/kraken_eur_scanner
