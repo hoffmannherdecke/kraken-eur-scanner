@@ -39,11 +39,9 @@ jobs:
           from pathlib import Path
           p=Path(".scanner/kraken_eur_scanner/scanner.py")
           s=p.read_text()
-          old='''            # Context is a soft factor, never a blanket veto.
-            if x.context7d > 50 and x.dist7d_high_pct > -5 and not x.breakout3h:
-                x.score = round(x.score - 0.8, 2)
-          '''
-          new='''            # Long-context late-move guard. This is an EARLY sensor.
+          old='''if x.context7d > 50 and x.dist7d_high_pct > -5 and not x.breakout3h:
+                x.score = round(x.score - 0.8, 2)'''
+          new='''# Long-context late-move guard. This is an EARLY sensor.
             # Missing long-context data never blocks a candidate.
             too_late = (
                 x.ret24h >= 25.0
@@ -55,8 +53,7 @@ jobs:
                 x.late = True
                 x.score = round(x.score - 4.0, 2)
             elif x.context7d > 35.0 and x.dist7d_high_pct > -5.0:
-                x.score = round(x.score - 0.8, 2)
-          '''
+                x.score = round(x.score - 0.8, 2)'''
           if old not in s:
               raise SystemExit("late-guard patch target not found; fail closed")
           p.write_text(s.replace(old,new))
