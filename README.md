@@ -22,21 +22,36 @@ Read-only 15-minute early-momentum sensor for **Kraken Spot EUR** markets. It us
 - Same pair is suppressed for 45 minutes unless the signal improves materially.
 - Slack is a sensor feed only. Final buy/stop/size decisions remain in the ChatGPT strategy using fresh Kraken-EUR execution data.
 
-## GitHub setup
+## Production schedule
 
-Use a **public repository** if you want standard GitHub-hosted Actions to remain free. Public repo code/state is visible, so never put secrets in code.
+Validated production schedule: **:07, :22, :37 and :52 each hour (UTC minute-of-hour; therefore the same minute values in Europe/Berlin).**
 
-Create one repository secret:
+A manual `workflow_dispatch` remains available for troubleshooting.
 
-`Settings -> Secrets and variables -> Actions -> New repository secret`
+## Package integrity
 
-Name: `SLACK_WEBHOOK_URL`
+The scanner package is stored as Base64 text chunks under `.payload/`. Every run reconstructs the ZIP and verifies this SHA-256 before execution:
 
-Value: the Incoming Webhook URL for `#krypto-signale`.
+`601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6`
 
-Do not paste that URL into source files or chat.
+It also runs `unzip -t` and the full unit/regression suite before touching live Kraken data.
 
-The repository is deliberately configured **manual-only for the first live validation**. After a successful end-to-end test, the schedule is enabled at :07, :22, :37 and :52 minute-of-hour.
+## Live validation 2026-09-21
+
+- Initial live run correctly failed on a corrupt binary ZIP transfer. No market scan or Slack candidate was allowed to continue.
+- Transport was replaced by checksum-verified Base64 chunks.
+- Second live run: package checksum OK, ZIP integrity OK, **14/14 regression tests passed**, Kraken live scan succeeded.
+- Kraken live universe: **495 EUR pairs**, **61** survived the initial liquidity/spread stage, **100% OHLC coverage (61/61)**.
+- End-to-end Slack delivery to `#krypto-signale` was confirmed with real structured `SCANNER_CANDIDATE_V1` messages.
+- The GitHub secret remained masked in logs.
+
+## GitHub secret
+
+One repository secret is required:
+
+`SLACK_WEBHOOK_URL`
+
+It contains the Incoming Webhook URL for `#krypto-signale`. Never place it in source code or chat.
 
 ## Important GitHub limitation
 
