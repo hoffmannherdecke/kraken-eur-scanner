@@ -1,0 +1,50 @@
+name: Keep scheduled scanner alive
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 1,15 * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/keepalive.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scanner-keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: true
+      - name: Record repository activity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .github
+          {
+            echo "# Scanner keep-alive"
+            echo
+            echo "Last automatic activity: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+            echo
+            echo "Purpose: prevent GitHub from disabling scheduled workflows after prolonged public-repository inactivity."
+          } > .github/SCANNER_KEEPALIVE.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/SCANNER_KEEPALIVE.md
+
+          if git diff --cached --quiet; then
+            echo "No keep-alive change required."
+            exit 0
+          fi
+
+          git commit -m "chore: keep scheduled scanner active"
+          git push
