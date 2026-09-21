@@ -1,0 +1,49 @@
+name: Kraken EUR early sensor
+
+'on':
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kraken-eur-scanner
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Extract scanner package
+        run: |
+          test -f kraken_eur_scanner.zip
+          rm -rf .scanner
+          mkdir .scanner
+          unzip -q kraken_eur_scanner.zip -d .scanner
+      - name: Restore rolling scanner state
+        uses: actions/cache@v4
+        with:
+          path: .scanner/kraken_eur_scanner/.state
+          key: scanner-state-${{ github.run_id }}
+          restore-keys: |
+            scanner-state-
+      - name: Unit and regression tests
+        working-directory: .scanner/kraken_eur_scanner
+        run: python -m unittest discover -s tests -v
+      - name: Scan Kraken EUR market
+        working-directory: .scanner/kraken_eur_scanner
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          MIN_TURNOVER_EUR_24H: '150000'
+          MAX_STAGE2_PAIRS: '120'
+          MAX_SPREAD_PCT: '1.5'
+          CANDIDATE_THRESHOLD: '5.0'
+          COOLDOWN_SECONDS: '2700'
+          REQUEST_SPACING: '1.05'
+          ALIGN_SAFE_PHASE: '1'
+        run: python scanner.py
