@@ -2,8 +2,10 @@ name: Kraken EUR early sensor
 
 'on':
   workflow_dispatch:
-  schedule:
-    - cron: '7,22,37,52 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/scan.yml'
 
 permissions:
   contents: read
@@ -21,6 +23,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
+
       - name: Rebuild and verify scanner package
         run: |
           cat .payload/part*.b64 | base64 -d > /tmp/kraken_eur_scanner.zip
@@ -29,6 +32,36 @@ jobs:
           rm -rf .scanner
           mkdir .scanner
           unzip -q /tmp/kraken_eur_scanner.zip -d .scanner
+
+      - name: Apply late-move regression guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path(".scanner/kraken_eur_scanner/scanner.py")
+          s=p.read_text()
+          old='''            # Context is a soft factor, never a blanket veto.
+            if x.context7d > 50 and x.dist7d_high_pct > -5 and not x.breakout3h:
+                x.score = round(x.score - 0.8, 2)
+          '''
+          new='''            # Long-context late-move guard. This is an EARLY sensor.
+            # Missing long-context data never blocks a candidate.
+            too_late = (
+                x.ret24h >= 25.0
+                or (x.context7d >= 50.0 and x.dist7d_high_pct > -8.0)
+                or (x.context30d >= 80.0 and x.dist30d_high_pct > -10.0)
+                or (x.ret24h >= 12.0 and x.context7d >= 35.0 and x.dist7d_high_pct > -8.0)
+            )
+            if too_late:
+                x.late = True
+                x.score = round(x.score - 4.0, 2)
+            elif x.context7d > 35.0 and x.dist7d_high_pct > -5.0:
+                x.score = round(x.score - 0.8, 2)
+          '''
+          if old not in s:
+              raise SystemExit("late-guard patch target not found; fail closed")
+          p.write_text(s.replace(old,new))
+          PY
+
       - name: Restore rolling scanner state
         uses: actions/cache@v4
         with:
@@ -36,9 +69,34 @@ jobs:
           key: scanner-state-${{ github.run_id }}
           restore-keys: |
             scanner-state-
+
       - name: Unit and regression tests
         working-directory: .scanner/kraken_eur_scanner
-        run: python -m unittest discover -s tests -v
+        run: |
+          python -m unittest discover -s tests -v
+          python - <<'PY'
+          import scanner
+          class C:
+              def ohlc(self, pair, interval=60):
+                  rows=[]
+                  for i in range(720):
+                      px=1.0*(1+0.0015*i)
+                      rows.append([i*3600,str(px),str(px*1.01),str(px*.99),str(px),str(px),"1000",10])
+                  return rows
+          def mk(ret24):
+              return scanner.Features(
+                  pair="TEST/EUR",altname="TESTEUR",price=2.0,turnover24h=1_000_000,
+                  spread_pct=.2,ret15_live=1,ret15_closed=.2,ret1h=2,ret3h=4,ret24h=ret24,
+                  volume_ratio_live=2.5,volume_ratio_closed=2,breakout3h=True,
+                  base_tight_pct=4,higher_lows=True,ema26_gt_50=True,adx14=30,
+                  fresh_move_3h=5,stale=False,score=9.0)
+          meta={"TEST/EUR":scanner.PairMeta("T","TESTEUR","TEST/EUR","T",4)}
+          late=mk(30)
+          scanner.add_long_context(C(),meta,[late])
+          assert late.late, "24h +30% must not remain a fresh early candidate"
+          print("late-context regression: OK")
+          PY
+
       - name: Scan Kraken EUR market
         working-directory: .scanner/kraken_eur_scanner
         env:
