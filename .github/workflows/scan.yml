@@ -2,6 +2,11 @@ name: Kraken EUR early sensor
 
 'on':
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/scan.yml'
+      - 'kraken_eur_scanner.zip'
 
 permissions:
   contents: read
