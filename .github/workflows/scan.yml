@@ -64,6 +64,8 @@ jobs:
           import json
           import re
           import time
+          import urllib.parse
+          import urllib.request
           from dataclasses import asdict
           from pathlib import Path
           import scanner
@@ -103,6 +105,99 @@ jobs:
                   return float(payload.get(key, default))
               except (TypeError, ValueError):
                   return float(default)
+
+          def _kraken_public(path, params=None):
+              query = urllib.parse.urlencode(params or {})
+              url = "https://api.kraken.com" + path + (("?" + query) if query else "")
+              req = urllib.request.Request(
+                  url,
+                  headers={"User-Agent": "kraken-eur-scanner-decision-context/1.0"},
+              )
+              with urllib.request.urlopen(req, timeout=20) as resp:
+                  result = json.loads(resp.read().decode())
+              if result.get("error"):
+                  raise RuntimeError(f"Kraken public error for {path}: {result['error']}")
+              return result.get("result", {})
+
+          def emit_decision_context(payload, now):
+              # Reuse the same GitHub runner that already reaches Kraken reliably.
+              # This is decision support only: raw/derived OHLC levels, never an order.
+              pair = payload.get("pair")
+              altname = payload.get("altname")
+              if not pair or not altname:
+                  print(f"WARN DECISION_CONTEXT missing pair/altname for {pair}", flush=True)
+                  return
+              try:
+                  result = _kraken_public("/0/public/OHLC", {"pair": altname, "interval": 15})
+                  keys = [k for k in result.keys() if k != "last"]
+                  if not keys:
+                      raise RuntimeError("No OHLC pair payload")
+                  bars = result[keys[0]]
+                  if len(bars) < 6:
+                      raise RuntimeError(f"Insufficient OHLC bars: {len(bars)}")
+                  # Kraken includes the current not-yet-committed candle as the last row.
+                  closed = bars[:-1] if len(bars) > 1 else bars
+                  recent = closed[-16:]
+                  last = recent[-1]
+
+                  def nums(rows, idx):
+                      return [float(x[idx]) for x in rows]
+
+                  last4 = recent[-4:]
+                  last12 = recent[-12:] if len(recent) >= 12 else recent
+                  close = float(last[4])
+                  support_1h = min(nums(last4, 3))
+                  resistance_1h = max(nums(last4, 2))
+                  support_3h = min(nums(last12, 3))
+                  resistance_3h = max(nums(last12, 2))
+
+                  trs = []
+                  prev_close = None
+                  for bar in recent[-15:]:
+                      high = float(bar[2])
+                      low = float(bar[3])
+                      bar_close = float(bar[4])
+                      tr = high - low if prev_close is None else max(
+                          high - low,
+                          abs(high - prev_close),
+                          abs(low - prev_close),
+                      )
+                      trs.append(tr)
+                      prev_close = bar_close
+                  atr15 = sum(trs[-14:]) / max(1, len(trs[-14:]))
+
+                  context = {
+                      "schema_version": 1,
+                      "ts": int(now),
+                      "pair": pair,
+                      "altname": altname,
+                      "source": "kraken_public_ohlc_via_github_runner",
+                      "interval_min": 15,
+                      "sensor_price_eur": float(payload.get("price") or 0.0),
+                      "closed_through_epoch": int(float(last[0])),
+                      "last_closed": {
+                          "open": float(last[1]),
+                          "high": float(last[2]),
+                          "low": float(last[3]),
+                          "close": close,
+                          "volume": float(last[6]),
+                      },
+                      "support_1h": support_1h,
+                      "resistance_1h": resistance_1h,
+                      "support_3h": support_3h,
+                      "resistance_3h": resistance_3h,
+                      "atr15_eur": atr15,
+                      "atr15_pct": (100.0 * atr15 / close) if close else None,
+                      "range_1h_pct": (100.0 * (resistance_1h - support_1h) / close) if close else None,
+                      "recent_closed_closes": [float(x[4]) for x in recent[-6:]],
+                  }
+                  print(
+                      "DECISION_CONTEXT_V1 "
+                      + json.dumps(context, separators=(",", ":"), sort_keys=True),
+                      flush=True,
+                  )
+              except Exception as exc:
+                  print(f"WARN DECISION_CONTEXT pair={pair} failed: {exc}", flush=True)
 
           def rescue_candidate(payload):
               # Safety net for the handoff layer only: never an order signal.
@@ -204,6 +299,12 @@ jobs:
 
               if rescued:
                   print("AUDIT_RESCUE_SUMMARY " + ",".join(rescued), flush=True)
+
+              # Emit fresh Kraken 15m OHLC decision context only for candidates
+              # actually handed off for review. Failure is non-blocking.
+              for row in rows:
+                  if row.pair in posted_pairs:
+                      emit_decision_context(asdict(row), now)
 
               new_events = list(pending_events)
               for row in rows:
