@@ -1,4 +1,5 @@
 name: Kraken missed-move audit
+# Fresh-run cache validation: scanner-state fallback.
 
 on:
   workflow_dispatch:
