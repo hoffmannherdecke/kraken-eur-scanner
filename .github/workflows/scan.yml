@@ -59,4 +59,25 @@ jobs:
           COOLDOWN_SECONDS: '2700'
           REQUEST_SPACING: '1.05'
           ALIGN_SAFE_PHASE: '1'
-        run: python scanner.py
+        run: |
+          python - <<'PY'
+          import json
+          from dataclasses import asdict
+          import scanner
+
+          original_post = scanner.post_slack
+          original_save = scanner.save_state
+
+          def audit_post(text):
+              original_post(text)
+              print("AUDIT_POSTED " + text, flush=True)
+
+          def audit_save(items, posted):
+              for row in sorted(items, key=lambda x: x.score, reverse=True):
+                  print("AUDIT_ROW " + json.dumps(asdict(row), separators=(",", ":"), sort_keys=True), flush=True)
+              return original_save(items, posted)
+
+          scanner.post_slack = audit_post
+          scanner.save_state = audit_save
+          scanner.run()
+          PY
