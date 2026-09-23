@@ -1,6 +1,6 @@
 # Kraken EUR Early Sensor
 
-Read-only 15-minute early-momentum sensor for **Kraken Spot EUR** markets. It uses only Kraken public market-data endpoints. It does **not** hold a Kraken API key and cannot place trades.
+Read-only early-momentum sensor for **Kraken Spot EUR** markets using 15-minute candles. It uses only Kraken public market-data endpoints. It does **not** hold a Kraken API key and cannot place trades.
 
 ## What it does
 
