@@ -1,0 +1,51 @@
+name: Kraken missed-move audit
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '18 3 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'audit.py'
+      - '.github/workflows/audit.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kraken-missed-move-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Restore rolling scanner telemetry
+        uses: actions/cache@v4
+        with:
+          path: .scanner/kraken_eur_scanner/.state
+          key: audit-read-${{ github.run_id }}
+          restore-keys: |
+            scanner-state-
+
+      - name: Run missed-move audit
+        run: |
+          set -euo pipefail
+          python audit.py
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: kraken-missed-move-audit
+          path: |
+            missed_move_audit.json
+            missed_move_audit.md
+          if-no-files-found: error
+          retention-days: 30
