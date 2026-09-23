@@ -24,7 +24,7 @@ Read-only 15-minute early-momentum sensor for **Kraken Spot EUR** markets. It us
 
 ## Production schedule
 
-Validated production schedule: **:07, :22, :37 and :52 each hour (UTC minute-of-hour; therefore the same minute values in Europe/Berlin).**
+Current production schedule: **:07 and :37 each hour** (UTC minute-of-hour; therefore the same minute values in Europe/Berlin), i.e. approximately every 30 minutes. GitHub scheduled runs are best-effort and can start late.
 
 A manual `workflow_dispatch` remains available for troubleshooting.
 
@@ -64,3 +64,8 @@ python -m unittest discover -s tests -v
 ```
 
 No third-party Python packages are required.
+
+
+## Audit telemetry
+
+Each production run writes machine-readable `AUDIT_ROW` lines for the complete liquid stage-2 universe and an `AUDIT_POSTED` line after each successful Slack candidate delivery. This does not change scoring, selection, cooldowns, or Slack behavior. It exists only so the private missed-move audit can distinguish scanner detection, top-3 selection, score filtering, cooldowns, and downstream misses.
