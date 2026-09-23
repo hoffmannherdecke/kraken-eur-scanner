@@ -68,4 +68,8 @@ No third-party Python packages are required.
 
 ## Audit telemetry
 
-Each production run writes machine-readable `AUDIT_ROW` lines for the complete liquid stage-2 universe and an `AUDIT_POSTED` line after each successful Slack candidate delivery. This does not change scoring, selection, cooldowns, or Slack behavior. It exists only so the private missed-move audit can distinguish scanner detection, top-3 selection, score filtering, cooldowns, and downstream misses.
+Each production run writes machine-readable `AUDIT_ROW` lines for the complete liquid stage-2 universe and an `AUDIT_POSTED` line after each successful Slack candidate delivery. It also records cooldown suppressions in rolling scanner state. This does not change scoring, selection, cooldowns, or Slack behavior.
+
+A separate workflow, **Kraken missed-move audit**, runs daily at 03:18 UTC. It reads the rolling telemetry without ChatGPT Work usage, measures the following six-hour Kraken-EUR move using 15-minute OHLC, and classifies strong early moves as scanner-posted, score-filtered, top-3-capped, cooldown-suppressed, or unresolved. Reports are stored as a 30-day GitHub Actions artifact.
+
+The audit is diagnostic only. It never changes scanner thresholds automatically and never places orders.
