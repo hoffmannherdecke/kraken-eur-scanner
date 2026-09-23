@@ -98,9 +98,119 @@ jobs:
                   })
               return result
 
+          def _f(payload, key, default=0.0):
+              try:
+                  return float(payload.get(key, default))
+              except (TypeError, ValueError):
+                  return float(default)
+
+          def rescue_candidate(payload):
+              # Safety net for the handoff layer only: never an order signal.
+              # It protects exceptional liquid momentum candidates from being
+              # dropped solely by the scanner's normal top-N/score selection.
+              score = _f(payload, "score")
+              rank = int(_f(payload, "rank", 999))
+              ret15 = _f(payload, "ret15_live")
+              ret1h = _f(payload, "ret1h")
+              vol_live = _f(payload, "vol_live")
+              turnover = _f(payload, "turnover24h_eur")
+              spread = _f(payload, "spread")
+              fresh = _f(payload, "fresh_move3h")
+              breakout = int(_f(payload, "breakout3h")) == 1
+
+              liquid = turnover >= 150000 and spread <= 1.5
+              controlled_distance = fresh <= 18.0
+              extreme_accel = ret15 >= 5.0 or ret1h >= 8.0
+              volume_ignition = vol_live >= 25.0 and (ret15 >= 2.0 or ret1h >= 4.0)
+              top_breakout = rank <= 2 and breakout and vol_live >= 3.0 and (ret15 >= 2.0 or ret1h >= 4.0)
+
+              return (
+                  score >= 8.5
+                  and liquid
+                  and controlled_distance
+                  and (extreme_accel or volume_ignition or top_breakout)
+              )
+
+          def rescue_message(payload):
+              def g(key, default=""):
+                  return payload.get(key, default)
+
+              return (
+                  "SCANNER_CANDIDATE_V1"
+                  f" | pair={g('pair')}"
+                  f" | score={_f(payload, 'score'):.2f}"
+                  f" | price_eur={g('price_eur')}"
+                  f" | ret15_live={_f(payload, 'ret15_live'):.2f}%"
+                  f" | ret1h={_f(payload, 'ret1h'):.2f}%"
+                  f" | ret3h={_f(payload, 'ret3h'):.2f}%"
+                  f" | ret24h={_f(payload, 'ret24h'):.2f}%"
+                  f" | vol_live={_f(payload, 'vol_live'):.2f}x"
+                  f" | vol_closed={_f(payload, 'vol_closed'):.2f}x"
+                  f" | rank={int(_f(payload, 'rank', 999))}"
+                  f" | rank_jump={int(_f(payload, 'rank_jump'))}"
+                  f" | state_rank_jump={int(_f(payload, 'state_rank_jump'))}"
+                  f" | breakout3h={int(_f(payload, 'breakout3h'))}"
+                  f" | higher_lows={int(_f(payload, 'higher_lows'))}"
+                  f" | base_tight={_f(payload, 'base_tight'):.2f}%"
+                  f" | fresh_move3h={_f(payload, 'fresh_move3h'):.2f}%"
+                  f" | adx14={_f(payload, 'adx14'):.1f}"
+                  f" | spread={_f(payload, 'spread'):.3f}%"
+                  f" | turnover24h_eur={int(_f(payload, 'turnover24h_eur'))}"
+                  f" | coverage={_f(payload, 'coverage'):.0f}%"
+                  f" | ret7d={_f(payload, 'ret7d'):.2f}%"
+                  f" | ret30d={_f(payload, 'ret30d'):.2f}%"
+                  f" | dist7d_high={_f(payload, 'dist7d_high'):.2f}%"
+                  f" | dist30d_high={_f(payload, 'dist30d_high'):.2f}%"
+                  f" | depth_1pct_eur={int(_f(payload, 'depth_1pct_eur'))}"
+                  " | rescue_lane=1"
+                  " | action=REVIEW_ONLY_NOT_ORDER"
+              )
+
+          # Regression guard based on the BCH 22-Sep missed-move shape:
+          # exceptional liquid rank-1 acceleration must reach review even if
+          # it loses a normal candidate slot. A routine candidate must not.
+          assert rescue_candidate({
+              "score": 10.10, "rank": 1, "ret15_live": 10.48, "ret1h": 10.95,
+              "vol_live": 136.35, "turnover24h_eur": 1300000, "spread": 0.15,
+              "fresh_move3h": 11.0, "breakout3h": 1,
+          })
+          assert not rescue_candidate({
+              "score": 9.0, "rank": 8, "ret15_live": 0.4, "ret1h": 1.5,
+              "vol_live": 2.0, "turnover24h_eur": 500000, "spread": 0.10,
+              "fresh_move3h": 2.0, "breakout3h": 0,
+          })
+
           def audit_save(items, posted):
               now = int(time.time())
               rows = sorted(items, key=lambda x: x.score, reverse=True)
+
+              posted_pairs = {
+                  event.get("pair")
+                  for event in pending_events
+                  if event.get("type") == "posted" and event.get("pair")
+              }
+              cooldown_pairs = {
+                  event.get("pair")
+                  for event in pending_events
+                  if event.get("type") == "cooldown" and event.get("pair")
+              }
+
+              rescued = []
+              for row in rows:
+                  payload = asdict(row)
+                  pair = payload.get("pair")
+                  if pair in posted_pairs or pair in cooldown_pairs:
+                      continue
+                  if rescue_candidate(payload):
+                      text = rescue_message(payload)
+                      audit_post(text)
+                      posted_pairs.add(pair)
+                      rescued.append(pair)
+                      print(f"AUDIT_RESCUE pair={pair} reason=exceptional_handoff", flush=True)
+
+              if rescued:
+                  print("AUDIT_RESCUE_SUMMARY " + ",".join(rescued), flush=True)
+
               new_events = list(pending_events)
               for row in rows:
                   payload = asdict(row)
