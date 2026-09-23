@@ -62,22 +62,83 @@ jobs:
         run: |
           python - <<'PY'
           import json
+          import re
+          import time
           from dataclasses import asdict
+          from pathlib import Path
           import scanner
+
+          audit_path = Path(".state/audit_history.jsonl")
+          pending_events = []
 
           original_post = scanner.post_slack
           original_save = scanner.save_state
+          original_should_post = scanner.should_post
 
           def audit_post(text):
               original_post(text)
+              m = re.search(r"(?:^|\|\s*)pair=([^|]+)", text)
+              pair = m.group(1).strip() if m else None
+              pending_events.append({
+                  "type": "posted",
+                  "ts": int(time.time()),
+                  "pair": pair,
+                  "text": text,
+              })
               print("AUDIT_POSTED " + text, flush=True)
 
+          def audit_should_post(row, state, now):
+              result = original_should_post(row, state, now)
+              if not result:
+                  pending_events.append({
+                      "type": "cooldown",
+                      "ts": int(now),
+                      "pair": row.pair,
+                      "score": row.score,
+                  })
+              return result
+
           def audit_save(items, posted):
-              for row in sorted(items, key=lambda x: x.score, reverse=True):
-                  print("AUDIT_ROW " + json.dumps(asdict(row), separators=(",", ":"), sort_keys=True), flush=True)
+              now = int(time.time())
+              rows = sorted(items, key=lambda x: x.score, reverse=True)
+              new_events = list(pending_events)
+              for row in rows:
+                  payload = asdict(row)
+                  new_events.append({
+                      "type": "row",
+                      "ts": now,
+                      "pair": row.pair,
+                      "features": payload,
+                  })
+                  print("AUDIT_ROW " + json.dumps(payload, separators=(",", ":"), sort_keys=True), flush=True)
+
+              # Telemetry is diagnostic only and must never block the live scanner.
+              try:
+                  audit_path.parent.mkdir(parents=True, exist_ok=True)
+                  keep_after = now - 5 * 24 * 60 * 60
+                  retained = []
+                  if audit_path.exists():
+                      for line in audit_path.read_text("utf-8").splitlines():
+                          try:
+                              event = json.loads(line)
+                              if int(event.get("ts", 0)) >= keep_after:
+                                  retained.append(event)
+                          except Exception:
+                              continue
+                  retained.extend(new_events)
+                  tmp = audit_path.with_suffix(".tmp")
+                  tmp.write_text(
+                      "".join(json.dumps(event, separators=(",", ":"), sort_keys=True) + "\n" for event in retained),
+                      encoding="utf-8",
+                  )
+                  tmp.replace(audit_path)
+              except Exception as exc:
+                  print(f"WARN audit telemetry persistence failed: {exc}", flush=True)
+
               return original_save(items, posted)
 
           scanner.post_slack = audit_post
+          scanner.should_post = audit_should_post
           scanner.save_state = audit_save
           scanner.run()
           PY
