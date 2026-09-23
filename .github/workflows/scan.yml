@@ -109,14 +109,14 @@ jobs:
               # It protects exceptional liquid momentum candidates from being
               # dropped solely by the scanner's normal top-N/score selection.
               score = _f(payload, "score")
-              rank = int(_f(payload, "rank", 999))
+              rank = int(_f(payload, "rank15", 999))
               ret15 = _f(payload, "ret15_live")
               ret1h = _f(payload, "ret1h")
-              vol_live = _f(payload, "vol_live")
-              turnover = _f(payload, "turnover24h_eur")
-              spread = _f(payload, "spread")
-              fresh = _f(payload, "fresh_move3h")
-              breakout = int(_f(payload, "breakout3h")) == 1
+              vol_live = _f(payload, "volume_ratio_live")
+              turnover = _f(payload, "turnover24h")
+              spread = _f(payload, "spread_pct")
+              fresh = _f(payload, "fresh_move_3h")
+              breakout = bool(payload.get("breakout3h", False))
 
               liquid = turnover >= 150000 and spread <= 1.5
               controlled_distance = fresh <= 18.0
@@ -139,29 +139,23 @@ jobs:
                   "SCANNER_CANDIDATE_V1"
                   f" | pair={g('pair')}"
                   f" | score={_f(payload, 'score'):.2f}"
-                  f" | price_eur={g('price_eur')}"
+                  f" | price_eur={g('price')}"
                   f" | ret15_live={_f(payload, 'ret15_live'):.2f}%"
                   f" | ret1h={_f(payload, 'ret1h'):.2f}%"
                   f" | ret3h={_f(payload, 'ret3h'):.2f}%"
                   f" | ret24h={_f(payload, 'ret24h'):.2f}%"
-                  f" | vol_live={_f(payload, 'vol_live'):.2f}x"
-                  f" | vol_closed={_f(payload, 'vol_closed'):.2f}x"
-                  f" | rank={int(_f(payload, 'rank', 999))}"
+                  f" | vol_live={_f(payload, 'volume_ratio_live'):.2f}x"
+                  f" | vol_closed={_f(payload, 'volume_ratio_closed'):.2f}x"
+                  f" | rank={int(_f(payload, 'rank15', 999))}"
                   f" | rank_jump={int(_f(payload, 'rank_jump'))}"
                   f" | state_rank_jump={int(_f(payload, 'state_rank_jump'))}"
-                  f" | breakout3h={int(_f(payload, 'breakout3h'))}"
-                  f" | higher_lows={int(_f(payload, 'higher_lows'))}"
-                  f" | base_tight={_f(payload, 'base_tight'):.2f}%"
-                  f" | fresh_move3h={_f(payload, 'fresh_move3h'):.2f}%"
+                  f" | breakout3h={1 if payload.get('breakout3h') else 0}"
+                  f" | higher_lows={1 if payload.get('higher_lows') else 0}"
+                  f" | base_tight={_f(payload, 'base_tight_pct'):.2f}%"
+                  f" | fresh_move3h={_f(payload, 'fresh_move_3h'):.2f}%"
                   f" | adx14={_f(payload, 'adx14'):.1f}"
-                  f" | spread={_f(payload, 'spread'):.3f}%"
-                  f" | turnover24h_eur={int(_f(payload, 'turnover24h_eur'))}"
-                  f" | coverage={_f(payload, 'coverage'):.0f}%"
-                  f" | ret7d={_f(payload, 'ret7d'):.2f}%"
-                  f" | ret30d={_f(payload, 'ret30d'):.2f}%"
-                  f" | dist7d_high={_f(payload, 'dist7d_high'):.2f}%"
-                  f" | dist30d_high={_f(payload, 'dist30d_high'):.2f}%"
-                  f" | depth_1pct_eur={int(_f(payload, 'depth_1pct_eur'))}"
+                  f" | spread={_f(payload, 'spread_pct'):.3f}%"
+                  f" | turnover24h_eur={int(_f(payload, 'turnover24h'))}"
                   " | rescue_lane=1"
                   " | action=REVIEW_ONLY_NOT_ORDER"
               )
@@ -170,14 +164,14 @@ jobs:
           # exceptional liquid rank-1 acceleration must reach review even if
           # it loses a normal candidate slot. A routine candidate must not.
           assert rescue_candidate({
-              "score": 10.10, "rank": 1, "ret15_live": 10.48, "ret1h": 10.95,
-              "vol_live": 136.35, "turnover24h_eur": 1300000, "spread": 0.15,
-              "fresh_move3h": 11.0, "breakout3h": 1,
+              "score": 10.10, "rank15": 1, "ret15_live": 10.48, "ret1h": 10.95,
+              "volume_ratio_live": 136.35, "turnover24h": 1300000, "spread_pct": 0.15,
+              "fresh_move_3h": 11.0, "breakout3h": True,
           })
           assert not rescue_candidate({
-              "score": 9.0, "rank": 8, "ret15_live": 0.4, "ret1h": 1.5,
-              "vol_live": 2.0, "turnover24h_eur": 500000, "spread": 0.10,
-              "fresh_move3h": 2.0, "breakout3h": 0,
+              "score": 9.0, "rank15": 8, "ret15_live": 0.4, "ret1h": 1.5,
+              "volume_ratio_live": 2.0, "turnover24h": 500000, "spread_pct": 0.10,
+              "fresh_move_3h": 2.0, "breakout3h": False,
           })
 
           def audit_save(items, posted):
