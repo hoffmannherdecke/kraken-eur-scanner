@@ -1,0 +1,54 @@
+name: Slack action push relay
+
+'on':
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+jobs:
+  relay:
+    if: >-
+      github.event.issue.number == 1 &&
+      github.event.comment.author_association == 'OWNER' &&
+      startsWith(github.event.comment.body, 'SLACK_ACTION_V1 | ')
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Post owner-approved action to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          SLACK_USER_ID: U0C39EDQ1H8
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          webhook = os.environ["SLACK_WEBHOOK_URL"].strip()
+          body = os.environ["COMMENT_BODY"]
+          prefix = "SLACK_ACTION_V1 | "
+          if not body.startswith(prefix):
+              raise SystemExit("invalid prefix")
+          message = body[len(prefix):].strip()
+          if not message:
+              raise SystemExit("empty message")
+
+          payload = {
+              "text": f"<@{os.environ['SLACK_USER_ID']}> {message}"
+          }
+          req = urllib.request.Request(
+              webhook,
+              data=json.dumps(payload).encode("utf-8"),
+              headers={"Content-Type": "application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(req, timeout=15) as resp:
+              response = resp.read().decode("utf-8", "replace").strip()
+              print(f"Slack response: {resp.status} {response}")
+              if resp.status < 200 or resp.status >= 300:
+                  raise SystemExit(f"Slack HTTP {resp.status}")
+          PY
