@@ -159,17 +159,21 @@ def scan_candidates(seen_runs):
                 for name in z.namelist():
                     for line in z.read(name).decode(errors='replace').splitlines():
                         m = re.match(r'^(\S+)\s+AUDIT_POSTED (SCANNER_CANDIDATE_V1.*)$', line)
-                        if not m or m[1] < CUTOFF or m[0] in unique:
+                        # GitHub's combined and step logs can differ by a few
+                        # microseconds for the same stdout line. Identity must
+                        # not depend on that transport timestamp.
+                        if not m or m[1] < CUTOFF or m[2].strip() in unique:
                             continue
                         pair = re.search(r'\|\s*pair=([A-Z0-9]+/EUR)(?:\s*\||\s*$)', m[2])
                         if pair and 'action=REVIEW_ONLY_NOT_ORDER' in m[2]:
-                            unique.add(m[0])
+                            unique.add(m[2].strip())
                             symbol = pair[1].replace('XBT/', 'BTC/').replace('XDG/', 'DOGE/')
-                            output.append(dict(scanner_run_id=run['id'], signal_at=m[1],
+                            observer_id = hashlib.sha256((str(run['id']) + ':' + m[2].strip()).encode()).hexdigest()
+                            output.append(dict(scanner_run_id=run['id'], signal_at=m[1], observer_id=observer_id,
                                                symbol=symbol, raw_signal=m[2]))
             seen_runs.add(run['id'])
         if stop or len(runs) < 100:
-            return output
+            return sorted(output, key=lambda r: (r['signal_at'], r['observer_id']))
         page += 1
 
 

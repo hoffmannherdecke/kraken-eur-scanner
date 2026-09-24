@@ -4,9 +4,12 @@ import hashlib
 import json
 import tempfile
 import unittest
+import io
+import zipfile
+from unittest.mock import patch
 from decimal import Decimal as D
 from pathlib import Path
-from market import Book, Journal
+from market import Book, Journal, scan_candidates
 from replay import replay
 
 
@@ -19,6 +22,19 @@ def book(bid, ask):
 
 
 class CaptureTests(unittest.TestCase):
+    def test_duplicate_github_logs_with_different_timestamps(self):
+        data = io.BytesIO()
+        signal = 'AUDIT_POSTED SCANNER_CANDIDATE_V1 | pair=MINA/EUR | action=REVIEW_ONLY_NOT_ORDER'
+        with zipfile.ZipFile(data, 'w') as z:
+            z.writestr('combined.txt', '2026-09-24T11:22:36.9898743Z '+signal)
+            z.writestr('step.txt', '2026-09-24T11:22:36.9898697Z '+signal)
+        run = dict(id=1, created_at='2026-09-24T10:49:00Z', updated_at='2026-09-24T11:23:00Z', status='completed')
+        with patch('market.github_get', side_effect=[{'workflow_runs':[run]}, data.getvalue()]):
+            rows = scan_candidates(set())
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['symbol'], 'MINA/EUR')
+        self.assertEqual(len(rows[0]['observer_id']), 64)
+
     def test_checksum_corruption_and_resnapshot(self):
         b = book('99.9', '100.1')
         row = dict(asks=[dict(price=D('100.1'), qty=D(10))],
