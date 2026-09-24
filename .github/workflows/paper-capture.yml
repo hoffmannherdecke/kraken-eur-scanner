@@ -69,10 +69,130 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python paper_capture/market.py --seconds 4200 --out capture
-      - uses: actions/upload-artifact@v4
+      - name: Split evidence into bounded downloadable parts
         if: always()
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import shutil
+          from pathlib import Path
+
+          source = Path('capture/events.jsonl.gz')
+          manifest = Path('capture/manifest.json')
+          if not source.is_file() or not manifest.is_file():
+              raise SystemExit('capture evidence missing')
+
+          out = Path('capture-parts')
+          out.mkdir(exist_ok=True)
+          part_size = 180 * 1024 * 1024
+          whole_hash = hashlib.sha256()
+          parts = []
+          with source.open('rb') as src:
+              index = 0
+              while True:
+                  block = src.read(part_size)
+                  if not block:
+                      break
+                  whole_hash.update(block)
+                  name = f'events.jsonl.gz.part{index:03d}'
+                  path = out / name
+                  path.write_bytes(block)
+                  parts.append({
+                      'index': index,
+                      'name': name,
+                      'size_bytes': len(block),
+                      'sha256': hashlib.sha256(block).hexdigest(),
+                  })
+                  index += 1
+
+          shutil.copy2(manifest, out / 'manifest.json')
+          parts_manifest = {
+              'schema_version': 1,
+              'source_name': source.name,
+              'source_size_bytes': source.stat().st_size,
+              'source_sha256': whole_hash.hexdigest(),
+              'part_size_bytes': part_size,
+              'parts': parts,
+              'reassembly': 'concatenate parts in ascending index order, then verify source_size_bytes and source_sha256',
+          }
+          (out / 'parts-manifest.json').write_text(
+              json.dumps(parts_manifest, sort_keys=True, separators=(',', ':')) + '\n',
+              encoding='utf-8',
+          )
+          print('PAPER_CAPTURE_PARTS', json.dumps(parts_manifest, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('capture-parts/parts-manifest.json') != ''
         with:
-          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}
-          path: capture/
+          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}-manifest
+          path: |
+            capture-parts/manifest.json
+            capture-parts/parts-manifest.json
+          compression-level: 9
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('capture-parts/events.jsonl.gz.part000') != ''
+        with:
+          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}-part-000
+          path: capture-parts/events.jsonl.gz.part000
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('capture-parts/events.jsonl.gz.part001') != ''
+        with:
+          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}-part-001
+          path: capture-parts/events.jsonl.gz.part001
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('capture-parts/events.jsonl.gz.part002') != ''
+        with:
+          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}-part-002
+          path: capture-parts/events.jsonl.gz.part002
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('capture-parts/events.jsonl.gz.part003') != ''
+        with:
+          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}-part-003
+          path: capture-parts/events.jsonl.gz.part003
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('capture-parts/events.jsonl.gz.part004') != ''
+        with:
+          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}-part-004
+          path: capture-parts/events.jsonl.gz.part004
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('capture-parts/events.jsonl.gz.part005') != ''
+        with:
+          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}-part-005
+          path: capture-parts/events.jsonl.gz.part005
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('capture-parts/events.jsonl.gz.part006') != ''
+        with:
+          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}-part-006
+          path: capture-parts/events.jsonl.gz.part006
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('capture-parts/events.jsonl.gz.part007') != ''
+        with:
+          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}-part-007
+          path: capture-parts/events.jsonl.gz.part007
+          compression-level: 0
           retention-days: 90
           if-no-files-found: error
