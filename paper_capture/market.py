@@ -149,8 +149,7 @@ def scan_candidates(seen_runs):
         runs = github_get(f'/actions/workflows/363244800/runs?per_page=100&page={page}')['workflow_runs']
         stop = False
         for run in runs:
-            if run['created_at'] < CUTOFF:
-                stop = True
+            if run['updated_at'] < CUTOFF:
                 continue
             if run['status'] != 'completed' or run['id'] in seen_runs:
                 continue
@@ -192,8 +191,10 @@ async def capture(seconds, out, smoke=False):
                     journal.write('scanner_signal_observed', **r)
                     symbols.add(r['symbol'])
                 journal.write('discovery_ok', symbols=sorted(symbols))
+                print('PAPER_DISCOVERY_OK ' + json.dumps(dict(symbols=sorted(symbols), new_signals=len(records))), flush=True)
             except Exception as exc:
                 journal.write('discovery_error', error=type(exc).__name__)
+                print('PAPER_DISCOVERY_ERROR ' + type(exc).__name__, flush=True)
             await asyncio.sleep(60)
 
     discovery_task = asyncio.create_task(discover()) if not smoke else None

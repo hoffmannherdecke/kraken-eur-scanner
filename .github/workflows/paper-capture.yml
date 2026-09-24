@@ -30,11 +30,28 @@ jobs:
         run: python -m unittest discover -s paper_capture -p 'test_*.py' -v
       - name: Live Kraken EUR book and trade probe
         run: python paper_capture/market.py --seconds 60 --out probe --smoke
+      - name: Verify scanner candidate discovery and live subscriptions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python paper_capture/market.py --seconds 65 --out discovery-probe
+          python - <<'PY'
+          import gzip, json
+          rows = [json.loads(line) for line in gzip.open('discovery-probe/events.jsonl.gz', 'rt')]
+          assert any(r['kind']=='discovery_ok' for r in rows), 'candidate discovery unverified'
+          assert not any(r['kind'] in ('discovery_error','subscription_error','data_gap','trade_sequence_gap') for r in rows), 'capture gap/error'
+          signals = [r for r in rows if r['kind']=='scanner_signal_observed']
+          verified = {r['symbol'] for r in rows if r['kind']=='book_verified'}
+          assert all(r['symbol'] in verified for r in signals), 'candidate book missing'
+          print('PAPER_DISCOVERY_VERIFIED', json.dumps({'signals':len(signals),'verified_symbols':sorted(verified)}))
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: paper-market-probe-${{ github.run_id }}-${{ github.run_attempt }}
-          path: probe/
+          path: |
+            probe/
+            discovery-probe/
           retention-days: 90
           if-no-files-found: error
 
