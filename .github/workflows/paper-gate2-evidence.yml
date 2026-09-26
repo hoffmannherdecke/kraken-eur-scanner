@@ -44,7 +44,7 @@ jobs:
           candidate = json.loads(candidate_path.read_text('utf-8'))
           symbol = 'TON/EUR'
           scanner_run_id = 36263652082
-          candidate_id = candidate.get('candidate_id')
+          candidate_id = candidate_path.stem
           if candidate_id != '20260926-184829-TON-EUR-r36263652082':
               raise SystemExit('candidate identity mismatch')
 
@@ -185,8 +185,8 @@ jobs:
               'status': 'PASS',
               'candidate': {
                   'candidate_id': candidate_id,
-                  'event_id': candidate.get('event_id') or candidate.get('queue_id'),
-                  'signal_at': candidate.get('event_at') or candidate.get('signal_at'),
+                  'event_id': candidate.get('queue_id'),
+                  'signal_at': candidate.get('event_time_utc'),
                   'scanner_run_id': scanner_run_id,
                   'handoff_sha256': hashlib.sha256(candidate_path.read_bytes()).hexdigest(),
               },
