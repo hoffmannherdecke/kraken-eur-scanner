@@ -79,6 +79,7 @@ jobs:
           if-no-files-found: error
 
   capture:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 80
     # Deliberately no shared concurrency lock: hourly sessions must overlap.
