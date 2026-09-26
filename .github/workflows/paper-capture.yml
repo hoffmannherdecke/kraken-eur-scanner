@@ -56,17 +56,33 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python paper_capture/market.py --seconds 65 --out discovery-probe
+          python paper_capture/market.py --seconds 75 --out discovery-probe
           python - <<'PY'
           import gzip, json
           rows = [json.loads(line) for line in gzip.open('discovery-probe/events.jsonl.gz', 'rt')]
           assert any(r['kind']=='discovery_ok' for r in rows), 'candidate discovery unverified'
-          assert not any(r['kind'] in ('discovery_error','subscription_error','data_gap','trade_sequence_gap') for r in rows), 'capture gap/error'
+          assert not any(r['kind'] in ('discovery_error','subscription_error','trade_sequence_gap') for r in rows), 'hard capture error'
           observed = [r for r in rows if r['kind']=='scanner_market_observed']
           verified = {r['symbol'] for r in rows if r['kind']=='book_verified'}
           assert observed, 'scanner market discovery empty'
           assert all(r['symbol'] in verified for r in observed), 'observed market book missing'
-          print('PAPER_DISCOVERY_VERIFIED', json.dumps({'observed':len(observed),'verified_symbols':sorted(verified)}))
+
+          gaps = [r for r in rows if r['kind']=='data_gap']
+          recovered = False
+          if gaps:
+              last_gap_seq = max(r['seq'] for r in gaps)
+              assert any(r['kind']=='market_data_incomplete' and r.get('component')=='websocket'
+                         and r['seq'] > last_gap_seq for r in rows), 'gap not quality-labelled'
+              assert any(r['kind']=='connection_start' and r['seq'] > last_gap_seq for r in rows), 'gap not reconnected'
+              assert any(r['kind']=='book_verified' and r['seq'] > last_gap_seq for r in rows), 'book not restored after gap'
+              assert any(r['kind']=='micro_snapshot' and r.get('quality')=='complete'
+                         and r['seq'] > last_gap_seq for r in rows), 'no complete post-gap recovery window'
+              recovered = True
+
+          print('PAPER_DISCOVERY_VERIFIED', json.dumps({
+              'observed':len(observed),'verified_symbols':sorted(verified),
+              'gaps':len(gaps),'recovered_after_gap':recovered
+          }))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
