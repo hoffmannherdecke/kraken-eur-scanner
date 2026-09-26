@@ -53,7 +53,7 @@ async function stage() {
       throw new Error(`batch ${batch} has ${files.length} files; expected 1..${maxFilesPerBatch}`);
     }
     const name = `paper-market-stage-${runId}-${attempt}-batch-${batch}`;
-    const result = await client.uploadArtifact(name, files, artifactOptions());
+    const result = await client.uploadArtifact(name, files, batchDirs[batch], artifactOptions());
     console.log(`PAPER_STAGE_UPLOADED batch=${batch} files=${files.length} bytes=${result.size}`);
   }
 
@@ -93,7 +93,7 @@ async function publish() {
   for (const part of expectedParts) {
     const file = byBasename(stageRoot, part.name);
     const name = `paper-market-tape-${runId}-${attempt}-part-${String(part.index).padStart(3, '0')}`;
-    const result = await client.uploadArtifact(name, [file], artifactOptions());
+    const result = await client.uploadArtifact(name, [file], path.dirname(file), artifactOptions());
     uploaded += 1;
     console.log(`PAPER_PART_UPLOADED index=${part.index} artifact_id=${result.id} bytes=${result.size}`);
   }
@@ -105,6 +105,7 @@ async function publish() {
     const result = await client.uploadArtifact(
       `paper-market-tape-${runId}-${attempt}-manifest`,
       manifestFiles,
+      stageRoot,
       artifactOptions(),
     );
     uploaded += 1;
