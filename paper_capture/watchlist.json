@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "purpose": "Additional Kraken EUR observation pairs. Data-only; never an order list or strategy input by itself.",
+  "pairs": [
+    {
+      "symbol": "RAY/EUR",
+      "altname": "RAYEUR",
+      "reason": "reference_case_2026-09-26"
+    }
+  ]
+}
