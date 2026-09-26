@@ -471,7 +471,7 @@ async def capture(seconds, out, smoke=False):
             for symbol, altname in list(symbols.items()):
                 if time.monotonic() >= stop_at:
                     break
-                if time.monotonic() - last_context[symbol] < CONTEXT_INTERVAL_SECONDS:
+                if last_context[symbol] and time.monotonic() - last_context[symbol] < CONTEXT_INTERVAL_SECONDS:
                     continue
                 last_context[symbol] = time.monotonic()
                 try:
