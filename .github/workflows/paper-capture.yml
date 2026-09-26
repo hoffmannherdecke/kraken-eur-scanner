@@ -103,7 +103,7 @@ jobs:
           if-no-files-found: error
 
   capture:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[capture-smoke]'))
     runs-on: ubuntu-latest
     timeout-minutes: 80
     # Deliberately no shared concurrency lock: hourly sessions must overlap.
@@ -116,7 +116,12 @@ jobs:
       - name: Continuous public market capture
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python paper_capture/market.py --seconds 4200 --out capture
+        run: |
+          duration=4200
+          if [ "${{ github.event_name }}" = "push" ]; then
+            duration=120
+          fi
+          python paper_capture/market.py --seconds "$duration" --out capture
       - name: Split evidence into bounded downloadable parts
         if: always()
         run: |
