@@ -443,12 +443,13 @@ async def capture(seconds, out, smoke=False):
     stop_at = time.monotonic() + seconds
     books, last_ids = {}, {}
     trades = defaultdict(lambda: deque(maxlen=20000))
+    last_trade = {}
     price_history = defaultdict(lambda: deque(maxlen=500))
     contexts = {}
     last_micro = defaultdict(float)
     last_context = defaultdict(float)
     previous_metrics = {}
-    removed_memory = {}
+    removed_memory = defaultdict(dict)
     last_gap_ns = 0
 
     async def discover():
@@ -549,7 +550,7 @@ async def capture(seconds, out, smoke=False):
                                     flow60 = flow_metrics(trades[symbol], now_ns, 60)
                                     flow300 = flow_metrics(trades[symbol], now_ns, 300)
                                     changes = wall_transitions(previous_metrics.get(symbol), metrics, mid,
-                                                               removed_memory, now_ns)
+                                                               removed_memory[symbol], now_ns)
                                     previous_metrics[symbol] = metrics
                                     pressure = flow60['pressure']
                                     imbalance = metrics['imbalance_top10']
@@ -565,6 +566,7 @@ async def capture(seconds, out, smoke=False):
                                     snapshot = {
                                         'symbol': symbol, 'exchange_at': row.get('timestamp'),
                                         'quality': quality, 'book': metrics,
+                                        'last_trade': last_trade.get(symbol),
                                         'flow': {'15s': flow15, '60s': flow60, '300s': flow300},
                                         'mid_return_60s_pct': ret60,
                                         'wall_events': changes,
@@ -604,12 +606,18 @@ async def capture(seconds, out, smoke=False):
                                         'qty': str(row.get('qty')),
                                     }, separators=(',', ':'), sort_keys=True), flush=True)
                                 if message['type'] == 'update':
-                                    trades[symbol].append({
+                                    trade_tick = {
                                         'monotonic_ns': time.monotonic_ns(),
                                         'exchange_at': row.get('timestamp'), 'trade_id': tid,
                                         'side': row.get('side'), 'price': str(row.get('price')),
                                         'qty': str(row.get('qty')),
-                                    })
+                                    }
+                                    trades[symbol].append(trade_tick)
+                                    last_trade[symbol] = {k: v for k, v in trade_tick.items() if k != 'monotonic_ns'}
+                                    if symbol in focus:
+                                        print('TRADE_TICK_V1 ' + json.dumps(
+                                            {'symbol': symbol, **last_trade[symbol]},
+                                            separators=(',', ':'), sort_keys=True), flush=True)
                     journal.write('connection_end', connection=connection, reason='scheduled_end')
             except Exception as exc:
                 last_gap_ns = time.monotonic_ns()
