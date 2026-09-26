@@ -37,7 +37,7 @@ async function stage() {
   const manifestPath = path.join(partsRoot, 'parts-manifest.json');
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const batchDirs = fs.readdirSync(path.join(partsRoot, 'staging'), { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && /^batch-\\d{3}$/.test(entry.name))
+    .filter((entry) => entry.isDirectory() && /^batch-\d{3}$/.test(entry.name))
     .map((entry) => path.join(partsRoot, 'staging', entry.name))
     .sort();
 
@@ -55,7 +55,7 @@ async function stage() {
     console.log(`PAPER_STAGE_UPLOADED batch=${batch} files=${files.length} bytes=${result.size}`);
   }
 
-  fs.appendFileSync(process.env.GITHUB_OUTPUT, `upload_batches=${JSON.stringify(batchDirs.map((_, i) => i))}\\n`);
+  fs.appendFileSync(process.env.GITHUB_OUTPUT, `upload_batches=${JSON.stringify(batchDirs.map((_, i) => i))}\n`);
   console.log(`PAPER_STAGE_COMPLETE parts=${manifest.parts.length} batches=${batchDirs.length}`);
 }
 
@@ -75,7 +75,7 @@ async function publish() {
   const expectedParts = manifest
     ? manifest.parts.filter((part) => partBatch(part.index) === batch)
     : walkFiles(stageRoot)
-        .map((file) => path.basename(file).match(/^events\\.jsonl\\.gz\\.part(\\d{3})$/))
+        .map((file) => path.basename(file).match(/^events\.jsonl\.gz\.part(\d{3})$/))
         .filter(Boolean)
         .map((match) => ({ index: Number(match[1]), name: `events.jsonl.gz.part${match[1]}` }))
         .filter((part) => partBatch(part.index) === batch);
