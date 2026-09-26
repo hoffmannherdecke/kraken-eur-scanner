@@ -104,8 +104,6 @@ jobs:
 
   capture:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
-    outputs:
-      upload_batches: ${{ steps.split.outputs.upload_batches }}
     runs-on: ubuntu-latest
     timeout-minutes: 80
     # Deliberately no shared concurrency lock: hourly sessions must overlap.
@@ -138,7 +136,6 @@ jobs:
         if: always()
         env:
           PAPER_CAPTURE_PART_SIZE_BYTES: ${{ github.event_name == 'pull_request' && '100' || '25165824' }}
-          PAPER_MAX_FILES_PER_BATCH: '10'
         run: |
           python - <<'PY'
           import hashlib
@@ -207,94 +204,34 @@ jobs:
           )
           print('PAPER_CAPTURE_PARTS', json.dumps(parts_manifest, sort_keys=True))
 
-          # Artifacts v4 allows at most 10 artifacts per job. Stage chunks in
-          # batches so one matrix publisher job can publish at most 10 final
-          # artifacts while retaining the historical per-part artifact names.
-          staging = out / 'staging'
-          staging.mkdir(exist_ok=True)
-          max_files_per_batch = int(os.environ.get('PAPER_MAX_FILES_PER_BATCH', '10'))
-          if max_files_per_batch <= 0:
-              raise SystemExit('max files per batch must be positive')
-          manifest_files = ['manifest.json', 'parts-manifest.json']
-          batches = []
-          cursor = 0
-          batch_index = 0
-          while cursor < len(parts):
-              additional_files = manifest_files if batch_index == 0 else []
-              part_capacity = max_files_per_batch - len(additional_files)
-              if part_capacity <= 0:
-                  raise SystemExit(
-                      f'batch {batch_index} has {len(additional_files)} additional files, '
-                      f'leaving no capacity under limit {max_files_per_batch}'
-                  )
-              batch_dir = staging / f'batch-{batch_index:03d}'
-              batch_dir.mkdir(parents=True, exist_ok=True)
-              for name in additional_files:
-                  shutil.copy2(out / name, batch_dir / name)
-              selected_parts = parts[cursor:cursor + part_capacity]
-              for part in selected_parts:
-                  shutil.copy2(out / part['name'], batch_dir / part['name'])
-              cursor += len(selected_parts)
-              batches.append(batch_index)
-              batch_index += 1
-
-          if len(batches) > 10:
-              raise SystemExit(
-                  f'capture produced {len(parts)} parts requiring {len(batches)} staging artifacts; '
-                  'GitHub permits at most 10 artifacts per job'
-              )
-          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
-              output.write('upload_batches=' + json.dumps(batches, separators=(',', ':')) + '\n')
-          print('PAPER_CAPTURE_STAGING', json.dumps({'parts': len(parts), 'batches': batches}))
+          print('PAPER_UPLOAD_REQUEST', json.dumps({
+              'generated_parts': len(parts),
+              'artifact_batches': 1,
+              'files_per_batch': [len(parts) + 2],
+          }, sort_keys=True))
           PY
-      - name: Install pinned artifact client
+      - uses: actions/upload-artifact@v4
         if: always() && hashFiles('capture-parts/parts-manifest.json') != ''
-        run: npm install --prefix "$RUNNER_TEMP/paper-artifact-sdk" --no-save --no-audit --no-fund @actions/artifact@2.3.2
-      - name: Upload bounded staging batches
-        if: always() && hashFiles('capture-parts/parts-manifest.json') != ''
-        env:
-          NODE_PATH: ${{ runner.temp }}/paper-artifact-sdk/node_modules
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
-        run: node paper_capture/artifact_transfer.cjs stage
-
-  publish_parts:
-    needs: capture
-    if: needs.capture.outputs.upload_batches != ''
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        batch: ${{ fromJSON(needs.capture.outputs.upload_batches) }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v4
         with:
-          name: paper-market-stage-${{ github.run_id }}-${{ github.run_attempt }}-batch-${{ matrix.batch }}
-          path: stage-batch
-      - name: Install pinned artifact client
-        run: npm install --prefix "$RUNNER_TEMP/paper-artifact-sdk" --no-save --no-audit --no-fund @actions/artifact@2.3.2
-      - name: Publish dynamically named manifest and chunk artifacts
-        env:
-          NODE_PATH: ${{ runner.temp }}/paper-artifact-sdk/node_modules
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
-          BATCH_INDEX: ${{ matrix.batch }}
-          PAPER_MAX_FILES_PER_BATCH: '10'
-        run: node paper_capture/artifact_transfer.cjs publish
+          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            capture-parts/manifest.json
+            capture-parts/parts-manifest.json
+            capture-parts/events.jsonl.gz.part*
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
 
   verify_upload:
-    needs: [capture, publish_parts]
-    if: needs.capture.result == 'success' && needs.publish_parts.result == 'success'
+    needs: capture
+    if: needs.capture.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v4
         with:
-          pattern: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}-*
+          name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}
           path: uploaded-artifacts
-          merge-multiple: false
       - name: Verify every uploaded part, its mapping, and reassembled source
         run: python paper_capture/verify_parts.py uploaded-artifacts ${{ github.run_id }} ${{ github.run_attempt }}

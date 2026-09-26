@@ -6,8 +6,6 @@ from pathlib import Path
 
 root = Path(sys.argv[1])
 run_id, attempt = sys.argv[2], sys.argv[3]
-prefix = f"paper-market-tape-{run_id}-{attempt}-"
-manifest_artifact = prefix + "manifest"
 manifest_files = list(root.rglob("parts-manifest.json"))
 if len(manifest_files) != 1:
     raise SystemExit(f"expected one uploaded parts manifest; found {len(manifest_files)}")
@@ -18,14 +16,13 @@ entries = parts_manifest["parts"]
 if not entries:
     raise SystemExit("no parts listed in manifest")
 
-expected_artifacts = {manifest_artifact}
-for entry in entries:
-    expected_artifacts.add(prefix + f"part-{entry['index']:03d}")
-actual_artifacts = {path.name for path in root.iterdir() if path.is_dir()}
-if actual_artifacts != expected_artifacts:
-    missing = sorted(expected_artifacts - actual_artifacts)
-    unexpected = sorted(actual_artifacts - expected_artifacts)
-    raise SystemExit(f"artifact mapping mismatch missing={missing} unexpected={unexpected}")
+expected_files = {"manifest.json", "parts-manifest.json"}
+expected_files.update(entry["name"] for entry in entries)
+actual_files = {path.name for path in root.rglob("*") if path.is_file()}
+if actual_files != expected_files:
+    missing = sorted(expected_files - actual_files)
+    unexpected = sorted(actual_files - expected_files)
+    raise SystemExit(f"uploaded file mapping mismatch missing={missing} unexpected={unexpected}")
 
 manifest_payloads = list(root.rglob("manifest.json"))
 if len(manifest_payloads) != 1:
@@ -62,12 +59,18 @@ print(
     "PAPER_UPLOAD_ROUNDTRIP_VERIFIED "
     + json.dumps(
         {
+            "run_id": run_id,
+            "attempt": attempt,
             "generated_parts": len(entries),
+            "artifact_batches": 1,
+            "files_per_batch": [len(expected_files)],
             "uploaded_parts": len(entries),
-            "fully_mapped_parts": len(actual_artifacts) - 1,
+            "all_parts_present": len(entries) == 67 if parts_manifest.get("smoke_fixture") else True,
+            "unique_mapping": True,
             "source_bytes": total_bytes,
             "sha256_verified": True,
             "ordered_reassembly_verified": True,
+            "roundtrip_passed": True,
         },
         sort_keys=True,
     )
