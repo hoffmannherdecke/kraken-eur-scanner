@@ -23,6 +23,7 @@ CUTOFF = '2026-09-24T10:50:00Z'
 REPO = 'hoffmannherdecke/kraken-eur-scanner'
 MICRO_INTERVAL_SECONDS = 5
 CONTEXT_INTERVAL_SECONDS = 300
+BOOK_DEPTH = 25
 
 
 def utc():
@@ -74,7 +75,7 @@ class Book:
                     levels.pop(p, None)
                 else:
                     levels[p] = q
-            for p in sorted(levels, reverse=reverse)[10:]:
+            for p in sorted(levels, reverse=reverse)[BOOK_DEPTH:]:
                 del levels[p]
         self.valid = (bool(self.asks and self.bids)
                       and max(self.bids) < min(self.asks)
@@ -145,8 +146,9 @@ class Book:
                      'notional_eur': float(p * levels[p])} for p in prices]
 
         bid_rows, ask_rows = rows(self.bids, bids), rows(self.asks, asks)
-        bid_notional = sum(x['notional_eur'] for x in bid_rows)
-        ask_notional = sum(x['notional_eur'] for x in ask_rows)
+        bid_top10, ask_top10 = bid_rows[:10], ask_rows[:10]
+        bid_notional = sum(x['notional_eur'] for x in bid_top10)
+        ask_notional = sum(x['notional_eur'] for x in ask_top10)
         total = bid_notional + ask_notional
         imbalance = ((bid_notional - ask_notional) / total) if total else None
 
@@ -510,7 +512,7 @@ async def capture(seconds, out, smoke=False):
                             for channel in ('book', 'trade'):
                                 params = dict(channel=channel, symbol=fresh, snapshot=True)
                                 if channel == 'book':
-                                    params['depth'] = 10
+                                    params['depth'] = BOOK_DEPTH
                                 await ws.send(json.dumps(dict(method='subscribe', params=params)))
                             subscribed.update(fresh)
                             journal.write('subscription_requested', connection=connection, symbols=fresh)
