@@ -1,5 +1,11 @@
 # Kraken EUR Early Sensor
 
+The Paper market capture imports the mode-independent, public Kraken market
+data implementation from `market_data/`. Paper and any future assessment
+consumer must use the same book, order-flow, wall, candle and descriptive-label
+calculations. The live assessment and real-money action gates remain disabled;
+see `market_data/README.md`.
+
 Read-only early-momentum sensor for **Kraken Spot EUR** markets using 15-minute candles. It uses only Kraken public market-data endpoints. It does **not** hold a Kraken API key and cannot place trades.
 
 ## What it does

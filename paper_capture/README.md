@@ -1,5 +1,11 @@
 # Public market capture for the existing shadow test
 
+Kraken market metrics and REST context are implemented in the shared
+`market_data/` package. This directory is the Paper-only candidate-discovery,
+capture-journal and artifact adapter; do not add another copy of any market
+metric calculation here. The future live assessment is not wired and remains
+disabled by `market_data/runtime.py`.
+
 Technical data collection only. No account keys, order methods, Slack writes,
 strategy logic, candidate scoring, or change to the existing scanner workflow.
 The existing private test ledger remains the authority for decisions and counts.
