@@ -43,7 +43,7 @@ with open(root / "reassembled.events.jsonl.gz", "wb") as combined:
         part_path = matches[0]
         digest = hashlib.sha256()
         size = 0
-        with part_path.open("rb") as part, combined:
+        with part_path.open("rb") as part:
             while block := part.read(1024 * 1024):
                 digest.update(block)
                 whole_hash.update(block)
