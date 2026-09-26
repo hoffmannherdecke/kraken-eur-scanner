@@ -435,7 +435,7 @@ async def capture(seconds, out, smoke=False):
     from websockets.asyncio.client import connect
     journal = Journal(out)
     static_watch = load_watchlist()
-    focus = set(static_watch)
+    focus = set(static_watch) | {'BTC/EUR'}
     symbols = {**static_watch, 'BTC/EUR': 'XBTEUR'}
     journal.write('capture_start', purpose='PUBLIC_MARKET_TELEMETRY_ONLY',
                   historical_backfill=False, smoke=smoke, static_watchlist=sorted(focus))
