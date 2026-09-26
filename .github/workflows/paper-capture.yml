@@ -133,7 +133,16 @@ jobs:
 
           out = Path('capture-parts')
           out.mkdir(exist_ok=True)
-          part_size = 24 * 1024 * 1024
+          # Keep every capture within the 41 upload slots defined below.
+          # Scale the chunk size to the actual archive instead of silently
+          # producing un-uploaded tail parts when market volume is high.
+          max_parts = 41
+          min_part_size = 24 * 1024 * 1024
+          source_size = source.stat().st_size
+          needed_part_size = (source_size + max_parts - 1) // max_parts
+          mib = 1024 * 1024
+          needed_part_size = ((needed_part_size + mib - 1) // mib) * mib
+          part_size = max(min_part_size, needed_part_size)
           whole_hash = hashlib.sha256()
           parts = []
           with source.open('rb') as src:
@@ -153,6 +162,9 @@ jobs:
                       'sha256': hashlib.sha256(block).hexdigest(),
                   })
                   index += 1
+
+          if len(parts) > max_parts:
+              raise SystemExit(f'capture produced {len(parts)} parts but only {max_parts} upload slots exist')
 
           shutil.copy2(manifest, out / 'manifest.json')
           parts_manifest = {
