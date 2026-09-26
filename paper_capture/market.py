@@ -84,7 +84,7 @@ class Journal:
                         resolution='raw event-driven book/trades; derived micro snapshots every 5s; REST context every 5m',
                         coverage='per symbol/session; never infer completeness across a data gap')
         (self.path / 'manifest.json').write_text(json.dumps(manifest, indent=2))
-        print('MARKET_DATA_MANIFEST ' + json.dumps(manifest), flush=True)
+        print('PAPER_CAPTURE_MANIFEST ' + json.dumps(manifest), flush=True)
 
 
 def github_get(path, binary=False):
