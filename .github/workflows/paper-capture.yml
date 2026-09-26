@@ -30,7 +30,29 @@ jobs:
         run: python -m unittest discover -s paper_capture -p 'test_*.py' -v
       - name: Live Kraken EUR book and trade probe
         run: python paper_capture/market.py --seconds 60 --out probe --smoke
-      - name: Verify scanner candidate discovery and live subscriptions
+      - name: Verify Kraken EUR candle and ticker context
+        run: |
+          python - <<'PY'
+          import json, sys
+          sys.path.insert(0, 'paper_capture')
+          from market import rest_market_context
+          ctx = rest_market_context('RAY/EUR', 'RAYEUR')
+          assert ctx['ticker']['last'] > 0
+          assert ctx['candles']['1m'] and ctx['candles']['5m'] and ctx['candles']['15m'] and ctx['candles']['60m']
+          assert ctx['levels']['support_15m'] is not None and ctx['levels']['resistance_15m'] is not None
+          print('REST_CONTEXT_VERIFIED ' + json.dumps({
+              'symbol': ctx['symbol'],
+              'retrieved_at': ctx['retrieved_at'],
+              'ticker': ctx['ticker'],
+              'levels': ctx['levels'],
+              'volume_acceleration_5m_vs_prior20m': ctx['volume_acceleration_5m_vs_prior20m'],
+              'latest_1m': ctx['candles']['1m'][-1],
+              'latest_5m': ctx['candles']['5m'][-1],
+              'latest_15m': ctx['candles']['15m'][-1],
+              'latest_60m': ctx['candles']['60m'][-1],
+          }, sort_keys=True))
+          PY
+      - name: Verify scanner market discovery and live subscriptions
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -40,10 +62,11 @@ jobs:
           rows = [json.loads(line) for line in gzip.open('discovery-probe/events.jsonl.gz', 'rt')]
           assert any(r['kind']=='discovery_ok' for r in rows), 'candidate discovery unverified'
           assert not any(r['kind'] in ('discovery_error','subscription_error','data_gap','trade_sequence_gap') for r in rows), 'capture gap/error'
-          signals = [r for r in rows if r['kind']=='scanner_signal_observed']
+          observed = [r for r in rows if r['kind']=='scanner_market_observed']
           verified = {r['symbol'] for r in rows if r['kind']=='book_verified'}
-          assert all(r['symbol'] in verified for r in signals), 'candidate book missing'
-          print('PAPER_DISCOVERY_VERIFIED', json.dumps({'signals':len(signals),'verified_symbols':sorted(verified)}))
+          assert observed, 'scanner market discovery empty'
+          assert all(r['symbol'] in verified for r in observed), 'observed market book missing'
+          print('PAPER_DISCOVERY_VERIFIED', json.dumps({'observed':len(observed),'verified_symbols':sorted(verified)}))
           PY
       - uses: actions/upload-artifact@v4
         if: always()
