@@ -34,6 +34,25 @@ Current production schedule: **:07 and :37 each hour** (UTC minute-of-hour; ther
 
 A manual `workflow_dispatch` remains available for troubleshooting.
 
+## Chat-first operating model
+
+ChatGPT Work is not a runtime dependency of the scanner or Paper market capture.
+GitHub performs the continuous machine work: scanning, Kraken market-data capture,
+telemetry and evidence retention. Each scanner run writes a small machine-readable
+`chat-handoff-<run>-<attempt>` artifact containing only candidates actually handed
+off for review, their scanner feature snapshot and fresh public Kraken decision
+context. It contains no account credentials, private Paper ledger data or order
+instructions.
+
+The normal ChatGPT chat can read these compact artifacts for Paper/Shadow review.
+Paper decisions are persisted separately in the private append-only ledger.
+Work is reserved for occasional repository/code changes rather than continuous
+monitoring or strategy evaluation.
+
+To reduce routine runtime and log volume, the scanner's full unit/regression suite
+runs on repository changes or manual troubleshooting, not on every scheduled scan.
+This does not change scanner thresholds, candidate selection or safety gates.
+
 ## Package integrity
 
 The scanner package is stored as Base64 text chunks under `.payload/`. Every run reconstructs the ZIP and verifies this SHA-256 before execution:
