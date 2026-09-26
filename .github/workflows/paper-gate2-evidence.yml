@@ -146,16 +146,21 @@ jobs:
                               follow_target = parse_utc(basis['received_at']) + timedelta(minutes=10)
 
                   if selected is not None:
-                      if kind in ('data_gap', 'market_data_incomplete', 'trade_sequence_gap'):
+                      row_at = parse_utc(row['received_at'])
+                      in_follow_window = row_at <= follow_target
+                      if in_follow_window and kind in ('data_gap', 'market_data_incomplete', 'trade_sequence_gap'):
                           if kind == 'data_gap' or row.get('symbol') in (None, symbol):
                               relevant_errors.append({
                                   'seq': seq, 'kind': kind, 'symbol': row.get('symbol'),
                                   'received_at': row.get('received_at'),
                                   'component': row.get('component'),
                               })
-                      if row.get('symbol') == symbol and kind in follow:
+                      row_symbol = row.get('symbol')
+                      if kind == 'assessment_basis':
+                          row_symbol = (row.get('basis') or {}).get('symbol')
+                      if in_follow_window and row_symbol == symbol and kind in follow:
                           follow[kind] += 1
-                      if follow_reached_at is None and parse_utc(row['received_at']) >= follow_target:
+                      if follow_reached_at is None and row_at >= follow_target:
                           follow_reached_at = row['received_at']
 
           if event_count != capture_manifest.get('events'):
