@@ -138,6 +138,7 @@ jobs:
         if: always()
         env:
           PAPER_CAPTURE_PART_SIZE_BYTES: ${{ github.event_name == 'pull_request' && '100' || '25165824' }}
+          PAPER_MAX_FILES_PER_BATCH: '10'
         run: |
           python - <<'PY'
           import hashlib
@@ -211,19 +212,29 @@ jobs:
           # artifacts while retaining the historical per-part artifact names.
           staging = out / 'staging'
           staging.mkdir(exist_ok=True)
+          max_files_per_batch = int(os.environ.get('PAPER_MAX_FILES_PER_BATCH', '10'))
+          if max_files_per_batch <= 0:
+              raise SystemExit('max files per batch must be positive')
+          manifest_files = ['manifest.json', 'parts-manifest.json']
           batches = []
           cursor = 0
           batch_index = 0
           while cursor < len(parts):
-              capacity = 9 if batch_index == 0 else 10
+              additional_files = manifest_files if batch_index == 0 else []
+              part_capacity = max_files_per_batch - len(additional_files)
+              if part_capacity <= 0:
+                  raise SystemExit(
+                      f'batch {batch_index} has {len(additional_files)} additional files, '
+                      f'leaving no capacity under limit {max_files_per_batch}'
+                  )
               batch_dir = staging / f'batch-{batch_index:03d}'
               batch_dir.mkdir(parents=True, exist_ok=True)
-              if batch_index == 0:
-                  shutil.copy2(out / 'manifest.json', batch_dir / 'manifest.json')
-                  shutil.copy2(out / 'parts-manifest.json', batch_dir / 'parts-manifest.json')
-              for part in parts[cursor:cursor + capacity]:
+              for name in additional_files:
+                  shutil.copy2(out / name, batch_dir / name)
+              selected_parts = parts[cursor:cursor + part_capacity]
+              for part in selected_parts:
                   shutil.copy2(out / part['name'], batch_dir / part['name'])
-              cursor += capacity
+              cursor += len(selected_parts)
               batches.append(batch_index)
               batch_index += 1
 
@@ -270,6 +281,7 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
           BATCH_INDEX: ${{ matrix.batch }}
+          PAPER_MAX_FILES_PER_BATCH: '10'
         run: node paper_capture/artifact_transfer.cjs publish
 
   verify_upload:

@@ -10,6 +10,8 @@ const attempt = process.env.GITHUB_RUN_ATTEMPT;
 const partsRoot = path.resolve('capture-parts');
 const stageRoot = path.resolve('stage-batch');
 const retentionDays = 90;
+const maxFilesPerBatch = Number(process.env.PAPER_MAX_FILES_PER_BATCH || 10);
+const manifestFileNames = ['manifest.json', 'parts-manifest.json'];
 
 function walkFiles(root) {
   const found = [];
@@ -47,8 +49,8 @@ async function stage() {
 
   for (let batch = 0; batch < batchDirs.length; batch += 1) {
     const files = walkFiles(batchDirs[batch]);
-    if (!files.length || files.length > 10) {
-      throw new Error(`batch ${batch} has ${files.length} files; expected 1..10`);
+    if (!files.length || files.length > maxFilesPerBatch) {
+      throw new Error(`batch ${batch} has ${files.length} files; expected 1..${maxFilesPerBatch}`);
     }
     const name = `paper-market-stage-${runId}-${attempt}-batch-${batch}`;
     const result = await client.uploadArtifact(name, files, artifactOptions());
@@ -60,8 +62,14 @@ async function stage() {
 }
 
 function partBatch(index) {
-  if (index < 9) return 0;
-  return 1 + Math.floor((index - 9) / 10);
+  const firstBatchPartCapacity = maxFilesPerBatch - manifestFileNames.length;
+  if (firstBatchPartCapacity <= 0) {
+    throw new Error(
+      `batch limit ${maxFilesPerBatch} leaves no room after ${manifestFileNames.length} manifest files`,
+    );
+  }
+  if (index < firstBatchPartCapacity) return 0;
+  return 1 + Math.floor((index - firstBatchPartCapacity) / maxFilesPerBatch);
 }
 
 async function publish() {
