@@ -1,0 +1,264 @@
+name: Paper Gate2 evidence
+
+'on':
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/paper-gate2-evidence.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Download the completed post-fix capture
+        uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          repository: hoffmannherdecke/kraken-eur-scanner
+          run-id: '36263032960'
+          name: paper-market-tape-36263032960-1
+          path: gate2-tape
+      - name: Verify artifact and extract the single TON gate case
+        run: |
+          python paper_capture/verify_parts.py gate2-tape 36263032960 1
+          python - <<'PY'
+          import collections
+          import gzip
+          import hashlib
+          import json
+          from datetime import datetime, timedelta, timezone
+          from pathlib import Path
+
+          from market_data.parity import canonical_sha256, evaluation_basis
+
+          candidate_path = Path('handoff_queue/20260926-184829-TON-EUR-r36263652082.json')
+          candidate = json.loads(candidate_path.read_text('utf-8'))
+          symbol = 'TON/EUR'
+          scanner_run_id = 36263652082
+          candidate_id = candidate.get('candidate_id')
+          if candidate_id != '20260926-184829-TON-EUR-r36263652082':
+              raise SystemExit('candidate identity mismatch')
+
+          root = Path('gate2-tape')
+          capture_manifest = json.loads(next(root.rglob('manifest.json')).read_text('utf-8'))
+          source = root / 'reassembled.events.jsonl.gz'
+          if not source.is_file():
+              raise SystemExit('verified reassembled source missing')
+
+          def parse_utc(value):
+              if not isinstance(value, str) or not value.endswith('Z'):
+                  raise ValueError('non-UTC timestamp')
+              return datetime.fromisoformat(value[:-1] + '+00:00')
+
+          previous_hash = '0' * 64
+          event_count = 0
+          recent = {}
+          recent_order = collections.deque()
+          recent_limit = 4000
+          book_by_wire = {}
+          trade_ids = {}
+          observer = None
+          observer_count = 0
+          selected = None
+          selected_micro = None
+          selected_wire = None
+          selected_book = None
+          source_trade_rows = []
+          relevant_errors = []
+          follow = {'book_verified': 0, 'trade_observed': 0, 'micro_snapshot': 0,
+                    'assessment_basis': 0, 'wall_transition': 0}
+          follow_target = None
+          follow_reached_at = None
+
+          with gzip.open(source, 'rb') as fh:
+              for raw_with_nl in fh:
+                  raw = raw_with_nl.rstrip(b'\n')
+                  row = json.loads(raw)
+                  event_count += 1
+                  if row.get('seq') != event_count:
+                      raise SystemExit(f'non-contiguous sequence at {event_count}')
+                  if row.get('previous_sha256') != previous_hash:
+                      raise SystemExit(f'hash-chain break at {event_count}')
+                  previous_hash = hashlib.sha256(raw).hexdigest()
+
+                  seq = row['seq']
+                  recent[seq] = row
+                  recent_order.append(seq)
+                  while len(recent_order) > recent_limit:
+                      recent.pop(recent_order.popleft(), None)
+
+                  kind = row.get('kind')
+                  if kind == 'book_verified' and row.get('symbol') == symbol:
+                      book_by_wire[row.get('wire_seq')] = row
+                  elif kind == 'trade_observed' and row.get('symbol') == symbol:
+                      trade_ids[row.get('trade_id')] = {
+                          'seq': seq, 'exchange_at': row.get('timestamp'),
+                          'received_at': row.get('received_at'),
+                          'snapshot': row.get('snapshot'),
+                      }
+
+                  if kind == 'scanner_market_observed' and row.get('symbol') == symbol:
+                      if int(row.get('scanner_run_id')) == scanner_run_id:
+                          observer = row
+                          observer_count += 1
+
+                  if observer is not None and selected is None and kind == 'assessment_basis':
+                      basis = row.get('basis') or {}
+                      if basis.get('symbol') == symbol and basis.get('quality') == 'complete':
+                          if parse_utc(basis['received_at']) >= parse_utc(observer['received_at']):
+                              micro = recent.get(row.get('source_seq'))
+                              if not micro or micro.get('kind') != 'micro_snapshot':
+                                  raise SystemExit('assessment source micro snapshot missing')
+                              rebuilt = evaluation_basis(micro)
+                              if rebuilt != basis:
+                                  raise SystemExit('evaluation_basis mismatch')
+                              if canonical_sha256(basis) != row.get('basis_sha256'):
+                                  raise SystemExit('assessment basis digest mismatch')
+                              wire = recent.get(basis.get('source_wire_seq'))
+                              book = book_by_wire.get(basis.get('source_wire_seq'))
+                              if not wire or wire.get('kind') != 'wire' or not book:
+                                  raise SystemExit('source wire/book event missing')
+                              wire_payload = json.loads(wire['raw'])
+                              if wire_payload.get('channel') != 'book':
+                                  raise SystemExit('source wire is not Kraken book')
+                              if not any(x.get('symbol') == symbol for x in wire_payload.get('data', [])):
+                                  raise SystemExit('source wire symbol mismatch')
+                              missing_trade_ids = [tid for tid in basis.get('source_trade_ids', [])
+                                                   if tid not in trade_ids]
+                              if missing_trade_ids:
+                                  raise SystemExit(f'source trades missing count={len(missing_trade_ids)}')
+                              source_trade_rows = [trade_ids[tid] for tid in basis.get('source_trade_ids', [])]
+                              candles = basis.get('candles') or {}
+                              for interval in ('1m', '5m', '15m'):
+                                  if not candles.get(interval):
+                                      raise SystemExit(f'{interval} context missing')
+                              selected, selected_micro = row, micro
+                              selected_wire, selected_book = wire, book
+                              follow_target = parse_utc(basis['received_at']) + timedelta(minutes=10)
+
+                  if selected is not None:
+                      if kind in ('data_gap', 'market_data_incomplete', 'trade_sequence_gap'):
+                          if kind == 'data_gap' or row.get('symbol') in (None, symbol):
+                              relevant_errors.append({
+                                  'seq': seq, 'kind': kind, 'symbol': row.get('symbol'),
+                                  'received_at': row.get('received_at'),
+                                  'component': row.get('component'),
+                              })
+                      if row.get('symbol') == symbol and kind in follow:
+                          follow[kind] += 1
+                      if follow_reached_at is None and parse_utc(row['received_at']) >= follow_target:
+                          follow_reached_at = row['received_at']
+
+          if event_count != capture_manifest.get('events'):
+              raise SystemExit('event count mismatch')
+          if previous_hash != capture_manifest.get('final_event_sha256'):
+              raise SystemExit('final event hash mismatch')
+          if observer_count != 1 or observer is None:
+              raise SystemExit(f'expected one candidate observer, found {observer_count}')
+          if selected is None:
+              raise SystemExit('no complete post-observer assessment basis')
+          if follow_reached_at is None:
+              raise SystemExit('ten-minute follow window incomplete')
+          if relevant_errors:
+              raise SystemExit('relevant data gap/error inside follow window')
+
+          basis = selected['basis']
+          if not (observer['seq'] < selected_micro['seq'] < selected['seq']):
+              raise SystemExit('candidate/basis event order invalid')
+          if not (selected_wire['seq'] < selected_book['seq'] <= selected_micro['seq']):
+              raise SystemExit('wire/book/micro event order invalid')
+          if any(x['seq'] >= selected_micro['seq'] for x in source_trade_rows):
+              raise SystemExit('future trade referenced by assessment basis')
+
+          evidence = {
+              'schema_version': 1,
+              'gate': 'MARKET_DATA_CHAIN_SINGLE_CASE',
+              'status': 'PASS',
+              'candidate': {
+                  'candidate_id': candidate_id,
+                  'event_id': candidate.get('event_id') or candidate.get('queue_id'),
+                  'signal_at': candidate.get('event_at') or candidate.get('signal_at'),
+                  'scanner_run_id': scanner_run_id,
+                  'handoff_sha256': hashlib.sha256(candidate_path.read_bytes()).hexdigest(),
+              },
+              'capture': {
+                  'run_id': 36263032960,
+                  'session': capture_manifest['session'],
+                  'started': capture_manifest['started'],
+                  'ended': capture_manifest['ended'],
+                  'events': event_count,
+                  'final_event_sha256': previous_hash,
+                  'archive_sha256': capture_manifest['archive_sha256'],
+                  'source_size_bytes': source.stat().st_size,
+                  'full_hash_chain_verified': True,
+                  'ordered_reassembly_verified': True,
+              },
+              'event_order': {
+                  'candidate_observed': {'seq': observer['seq'], 'received_at': observer['received_at'],
+                                         'signal_at': observer.get('signal_at')},
+                  'source_wire': {'seq': selected_wire['seq'], 'received_at': selected_wire['received_at']},
+                  'book_verified': {'seq': selected_book['seq'], 'received_at': selected_book['received_at'],
+                                    'exchange_at': selected_book.get('exchange_at'),
+                                    'bid': selected_book['bid'], 'ask': selected_book['ask'],
+                                    'spread': selected_book['spread']},
+                  'micro_snapshot': {'seq': selected_micro['seq'],
+                                     'received_at': selected_micro['received_at'],
+                                     'exchange_at': selected_micro['exchange_at']},
+                  'assessment_basis': {'seq': selected['seq'], 'received_at': selected['received_at'],
+                                       'source_seq': selected['source_seq'],
+                                       'basis_sha256': selected['basis_sha256']},
+                  'strictly_ordered': True,
+              },
+              'market_data': {
+                  'evaluation_basis': basis,
+                  'evaluation_basis_sha256': canonical_sha256(basis),
+                  'source_trade_count': len(basis.get('source_trade_ids', [])),
+                  'all_source_trades_present_and_prior': True,
+                  'book': basis['book'],
+                  'flow': basis['flow'],
+                  'wall_events': basis['wall_events'],
+                  'candles_present': {
+                      interval: len(basis['candles'][interval])
+                      for interval in ('1m', '5m', '15m')
+                  },
+              },
+              'follow_window': {
+                  'required_until': follow_target.isoformat().replace('+00:00', 'Z'),
+                  'reached_at': follow_reached_at,
+                  'event_counts': follow,
+                  'relevant_errors': relevant_errors,
+                  'complete': True,
+              },
+              'scope': 'technical market-data gate only; no strategy decision; no order; no real money',
+          }
+          out = Path('gate2-evidence')
+          out.mkdir()
+          out_file = out / (candidate_id + '.json')
+          out_file.write_text(json.dumps(evidence, indent=2, sort_keys=True, default=str) + '\n', 'utf-8')
+          summary = {
+              'candidate_id': candidate_id,
+              'capture_run_id': 36263032960,
+              'observer_seq': observer['seq'],
+              'assessment_seq': selected['seq'],
+              'basis_sha256': selected['basis_sha256'],
+              'follow_until': evidence['follow_window']['required_until'],
+              'follow_counts': follow,
+              'evidence_sha256': hashlib.sha256(out_file.read_bytes()).hexdigest(),
+          }
+          print('GATE2_EVIDENCE_PASS ' + json.dumps(summary, sort_keys=True))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-gate2-ton-evidence-${{ github.run_id }}
+          path: gate2-evidence/
+          retention-days: 90
+          if-no-files-found: error
