@@ -1,6 +1,6 @@
 # Strategieauswerter: Integrationsblocker
 
-**Prüfzeit:** 2026-09-26 08:22:13 UTC  
+**Prüfzeit:** 2026-09-26 08:35:55 UTC  
 **Status:** `STOPPED_EVALUATOR_NOT_WIRED`  
 **Folge:** Gate 1 gestoppt. Gate 2 nicht begonnen. Kein Kandidat für einen End-to-End-Aufruf verwendet. Die reguläre Paper-Kandidatensammlung bleibt pausiert.
 
@@ -38,9 +38,9 @@ Dieser Baustein muss den vorhandenen Strategieauswerter aufrufen; er darf dessen
 
 ## Lösbarkeit in Work/ChatGPT
 
-**Mit der derzeit verfügbaren Umgebung: nein.** Der bestehende Strategieauswerter ist hier nicht als aufrufbares Tool oder API exponiert. Ein normaler Chat-Aufruf wäre manuell und lieferte keinen technischen Aufrufnachweis für die automatisierte Pipeline.
+**Mit der derzeit verfügbaren Umgebung: nein, nicht für einen kandidatengebundenen Pipeline-Aufruf.** Eine gespeicherte Work-Aufgabe existiert und kann mit ihrem eigenen Prompt gestartet werden; dieser Start akzeptiert aber keinen Bewertungsdatensatz und liefert dem Scanner keinen synchronen, nachweisbaren Ergebnisdatensatz. Ein normaler Chat-Aufruf wäre ebenfalls kein automatisierter Input-/Output-Pfad.
 
-**Grundsätzlich: nur nach expliziter Bereitstellung einer solchen Callable-Schnittstelle.** ChatGPT-GPT-Aktionen können ein GPT mit externen APIs verbinden; das allein stellt jedoch keinen von einem Scanner auslösbaren API-Aufruf eines bestehenden Work-Auswerters bereit. Ein beliebiger Model-API-Aufruf wäre zudem nicht automatisch derselbe Auswerter. Vor Testfreigabe muss nachgewiesen werden, dass der Adapter den unveränderten bestehenden Auswerter ausführt und in das bestehende Ledger schreibt.
+**Grundsätzlich: nur nach expliziter Bereitstellung einer solchen callable Schnittstelle.** ChatGPT-GPT-Aktionen können ein GPT mit externen APIs verbinden; das allein stellt jedoch keinen vom Scanner auslösbaren API-Aufruf mit frei übergebenem Bewertungsobjekt und rücklesbarem Work-Ergebnis bereit. Ein beliebiger Model-API-Aufruf wäre zudem nicht automatisch derselbe Auswerter. Vor Testfreigabe muss nachgewiesen werden, dass der Adapter die unveränderte bestehende Work-Aufgabe tatsächlich mit dem übergebenen Objekt ausführt und Input, Ausführungsnachweis und Output im bestehenden Ledger persistiert.
 
 ## Unverändert
 
