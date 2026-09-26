@@ -322,7 +322,7 @@ def rest_market_context(symbol, altname):
 
 def scan_candidates(seen_runs):
     """Read scanner telemetry. This observes; it never changes selection or paper counts."""
-    output = []
+    output_by_symbol = {}
     page = 1
     while True:
         runs = github_get(f'/actions/workflows/363244800/runs?per_page=100&page={page}')['workflow_runs']
@@ -362,10 +362,13 @@ def scan_candidates(seen_runs):
                                 'symbol': symbol, 'altname': symbol.replace('/', ''),
                                 'source': 'scanner_posted', 'raw_signal': m[2],
                             })
-            output.extend(by_symbol.values())
+            for symbol, record in by_symbol.items():
+                old = output_by_symbol.get(symbol)
+                if old is None or record['signal_at'] > old['signal_at']:
+                    output_by_symbol[symbol] = record
             seen_runs.add(run['id'])
         if len(runs) < 100:
-            return sorted(output, key=lambda r: (r['signal_at'], r['observer_id']))
+            return sorted(output_by_symbol.values(), key=lambda r: (r['signal_at'], r['observer_id']))
         page += 1
 
 
@@ -433,7 +436,7 @@ async def capture(seconds, out, smoke=False):
     journal = Journal(out)
     static_watch = load_watchlist()
     focus = set(static_watch)
-    symbols = {'BTC/EUR': 'XBTEUR', **static_watch}
+    symbols = {**static_watch, 'BTC/EUR': 'XBTEUR'}
     journal.write('capture_start', purpose='PUBLIC_MARKET_TELEMETRY_ONLY',
                   historical_backfill=False, smoke=smoke, static_watchlist=sorted(focus))
     seen_runs = set()
@@ -593,6 +596,13 @@ async def capture(seconds, out, smoke=False):
                                 last_ids[symbol] = tid
                                 journal.write('trade_observed', connection=connection,
                                               snapshot=message['type']=='snapshot', **row)
+                                if symbol in focus:
+                                    print('TRADE_EVENT_V1 ' + json.dumps({
+                                        'symbol': symbol, 'snapshot': message['type']=='snapshot',
+                                        'exchange_at': row.get('timestamp'), 'trade_id': tid,
+                                        'side': row.get('side'), 'price': str(row.get('price')),
+                                        'qty': str(row.get('qty')),
+                                    }, separators=(',', ':'), sort_keys=True), flush=True)
                                 if message['type'] == 'update':
                                     trades[symbol].append({
                                         'monotonic_ns': time.monotonic_ns(),
