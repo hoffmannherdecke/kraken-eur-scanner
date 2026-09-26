@@ -11,6 +11,7 @@ from decimal import Decimal as D
 from pathlib import Path
 from market import Book, Journal, scan_candidates
 from replay import replay
+from market_data.parity import evaluation_basis, canonical_sha256
 
 
 def book(bid, ask):
@@ -97,6 +98,29 @@ class CaptureTests(unittest.TestCase):
                     self.assertEqual(json.loads(line)['previous_sha256'], previous)
                     previous = hashlib.sha256(line.rstrip('\n').encode()).hexdigest()
             self.assertEqual(previous, json.loads((Path(tmp)/'manifest.json').read_text())['final_event_sha256'])
+
+    def test_paper_capture_persists_shared_assessment_basis(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            journal = Journal(tmp)
+            micro_event = journal.write(
+                'micro_snapshot', symbol='RAY/EUR',
+                exchange_at='2026-09-26T06:00:00.200Z', quality='complete',
+                book=book(99.9, 100.1).metrics(),
+                flow={'60s': {'buy_eur': 200.0, 'sell_eur': 0.0, 'count': 1,
+                              'pressure': 1.0}},
+                mid_return_60s_pct=0.0, wall_events=[],
+                source_wire_seq=8, source_trade_ids=[123])
+            basis = evaluation_basis(micro_event)
+            journal.write('assessment_basis', source_seq=micro_event['seq'],
+                          basis_sha256=canonical_sha256(basis), basis=basis)
+            journal.close()
+            with gzip.open(Path(tmp)/'events.jsonl.gz', 'rt') as f:
+                rows = [json.loads(line) for line in f]
+            saved = next(row for row in rows if row['kind'] == 'assessment_basis')
+            self.assertEqual(saved['source_seq'], micro_event['seq'])
+            self.assertEqual(saved['basis']['received_at'], micro_event['received_at'])
+            self.assertEqual(saved['basis']['source_wire_seq'], 8)
+            self.assertEqual(saved['basis_sha256'], canonical_sha256(saved['basis']))
 
 
 def fixture():
