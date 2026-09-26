@@ -122,10 +122,10 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          source = b''.join(f'{index:04d}\\n'.encode() for index in range(1340))
+          source = b''.join(f'{index:04d}\n'.encode() for index in range(1340))
           assert len(source) == 6700
           Path('capture/events.jsonl.gz').write_bytes(source)
-          Path('capture/manifest.json').write_text(json.dumps({'smoke_fixture': True, 'source_size_bytes': len(source)}) + '\\n')
+          Path('capture/manifest.json').write_text(json.dumps({'smoke_fixture': True, 'source_size_bytes': len(source)}) + '\n')
           print(f'PAPER_UPLOAD_SMOKE_FIXTURE bytes={len(source)} expected_parts=67')
           PY
       - name: Continuous public market capture
@@ -155,9 +155,21 @@ jobs:
           out.mkdir(exist_ok=True)
           # Each published part remains below the connector's 32 MiB download ceiling.
           # Smoke runs override this to 100 bytes to exercise many dynamic parts cheaply.
-          part_size = int(os.environ.get('PAPER_CAPTURE_PART_SIZE_BYTES', str(24 * 1024 * 1024)))
-          if part_size <= 0:
+          configured_part_size = int(os.environ.get('PAPER_CAPTURE_PART_SIZE_BYTES', str(24 * 1024 * 1024)))
+          if configured_part_size <= 0:
               raise SystemExit('part size must be positive')
+          # Keep the default 24 MiB chunks; grow only when needed to fit the
+          # Actions v4 ten-artifact-per-job limit, staying below 30 MiB.
+          max_parts = 99
+          max_part_size = 30 * 1024 * 1024
+          part_size = configured_part_size
+          if configured_part_size >= 24 * 1024 * 1024:
+              part_size = max(configured_part_size, (source.stat().st_size + max_parts - 1) // max_parts)
+              if part_size > max_part_size:
+                  raise SystemExit(
+                      f'capture size {source.stat().st_size} bytes exceeds the dynamic artifact capacity '
+                      f'of {max_parts} parts at {max_part_size} bytes each'
+                  )
           whole_hash = hashlib.sha256()
           parts = []
           with source.open('rb') as src:
@@ -221,7 +233,7 @@ jobs:
                   'GitHub permits at most 10 artifacts per job'
               )
           with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
-              output.write('upload_batches=' + json.dumps(batches, separators=(',', ':')) + '\\n')
+              output.write('upload_batches=' + json.dumps(batches, separators=(',', ':')) + '\n')
           print('PAPER_CAPTURE_STAGING', json.dumps({'parts': len(parts), 'batches': batches}))
           PY
       - name: Install pinned artifact client
