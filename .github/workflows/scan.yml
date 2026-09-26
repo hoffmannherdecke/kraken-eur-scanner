@@ -10,7 +10,7 @@ name: Kraken EUR early sensor
       - '.github/workflows/scan.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: kraken-eur-scanner
@@ -393,3 +393,86 @@ jobs:
           retention-days: 30
           compression-level: 9
           if-no-files-found: warn
+
+      - name: Persist canonical evaluator handoff queue
+        if: success() && hashFiles('.scanner/kraken_eur_scanner/handoff/candidates.jsonl') != ''
+        env:
+          SOURCE_RUN_ID: ${{ github.run_id }}
+          SOURCE_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          source = Path(".scanner/kraken_eur_scanner/handoff/candidates.jsonl")
+          rows = [json.loads(line) for line in source.read_text("utf-8").splitlines() if line.strip()]
+          messages = {r["pair"]: r for r in rows if r.get("kind") == "review_candidate_message" and r.get("pair")}
+          snapshots = {r["pair"]: r for r in rows if r.get("kind") == "candidate_snapshot" and r.get("pair")}
+          contexts = {r["pair"]: r for r in rows if r.get("kind") == "market_context" and r.get("pair")}
+
+          out = Path("handoff_queue")
+          out.mkdir(exist_ok=True)
+          created = []
+          run_id = int(os.environ["SOURCE_RUN_ID"])
+          run_attempt = int(os.environ["SOURCE_RUN_ATTEMPT"])
+
+          for pair in sorted(snapshots):
+              snap = snapshots[pair]
+              msg = messages.get(pair)
+              ctx = contexts.get(pair)
+              if not msg or not ctx:
+                  raise SystemExit(f"incomplete handoff for {pair}: message={bool(msg)} context={bool(ctx)}")
+              if msg.get("action") != "REVIEW_ONLY_NOT_ORDER" or snap.get("action") != "REVIEW_ONLY_NOT_ORDER":
+                  raise SystemExit(f"unsafe handoff action for {pair}")
+
+              ts = int(snap["ts"])
+              dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+              pair_tag = pair.replace("/", "-")
+              queue_id = f"{run_id}:{pair_tag}:{ts}"
+              name = f"{dt.strftime('%Y%m%d-%H%M%S')}-{pair_tag}-r{run_id}.json"
+              payload = {
+                  "schema_version": 1,
+                  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+                  "queue_id": queue_id,
+                  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+                  "source_scanner_run_id": run_id,
+                  "source_scanner_run_attempt": run_attempt,
+                  "event_time_utc": dt.isoformat().replace("+00:00", "Z"),
+                  "event_ts": ts,
+                  "pair": pair,
+                  "altname": snap["features"].get("altname"),
+                  "action": "REVIEW_ONLY_NOT_ORDER",
+                  "scanner_candidate": snap["features"],
+                  "scanner_market_context": ctx["context"],
+                  "review_message": msg.get("text", ""),
+              }
+              if not payload["altname"]:
+                  raise SystemExit(f"missing altname for {pair}")
+              target = out / name
+              encoded = json.dumps(payload, sort_keys=True, indent=2, ensure_ascii=False) + "\n"
+              if target.exists() and target.read_text("utf-8") != encoded:
+                  raise SystemExit(f"queue file collision with different content: {target}")
+              target.write_text(encoded, encoding="utf-8")
+              created.append(str(target))
+
+          print("CANONICAL_HANDOFF_QUEUE " + json.dumps({
+              "source_run_id": run_id,
+              "candidate_files": created,
+              "count": len(created),
+          }, sort_keys=True))
+          PY
+
+          if git status --porcelain -- handoff_queue | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add handoff_queue
+            git commit -m "[auto-handoff] persist scanner candidates from run ${GITHUB_RUN_ID}"
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          else
+            echo "No new canonical handoff queue files."
+          fi
