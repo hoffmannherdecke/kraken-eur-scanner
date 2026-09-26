@@ -4,6 +4,11 @@ name: Kraken paper market capture
   workflow_dispatch:
   schedule:
     - cron: '22 * * * *'
+  pull_request:
+    paths:
+      - 'paper_capture/**'
+      - 'market_data/**'
+      - '.github/workflows/paper-capture.yml'
   push:
     branches: [main]
     paths:
