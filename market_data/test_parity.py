@@ -7,6 +7,7 @@ from market_data.parity import compare_assessment_paths, evaluation_basis
 from market_data.runtime import (LIVE_EVALUATION_ENABLED, REAL_MONEY_ACTIONS_ENABLED,
                                  require_live_evaluation_disabled,
                                  require_real_money_actions_disabled)
+from market_data.stream import subscription_payloads
 
 
 def _book(bid=99.9, ask=100.1, bid_qty=10, ask_qty=10):
@@ -101,6 +102,14 @@ class SharedMarketDataParityTests(unittest.TestCase):
             {"monotonic_ns": 1_000_000_000, "side": "buy", "price": "100", "qty": "1"},
             {"monotonic_ns": 1_500_000_000, "side": "sell", "price": "100", "qty": "1"},
         ], 2_000_000_000, 15)["pressure"], 0.0)
+
+    def test_shared_transport_builds_read_only_public_subscriptions(self):
+        payloads = subscription_payloads(["RAY/EUR", "BTC/EUR", "RAY/EUR"])
+        self.assertEqual([payload["params"]["channel"] for payload in payloads],
+                         ["book", "trade"])
+        self.assertEqual(payloads[0]["params"]["symbol"], ["BTC/EUR", "RAY/EUR"])
+        self.assertEqual(payloads[0]["params"]["depth"], 25)
+        self.assertTrue(all(payload["params"]["snapshot"] for payload in payloads))
 
 
 if __name__ == "__main__":

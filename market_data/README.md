@@ -1,14 +1,15 @@
 # Shared Kraken market data layer
 
 `market_data` is the mode-independent, public, read-only Kraken EUR data and
-microstructure layer. It owns the shared book validation and metrics, flow and
-wall calculations, REST candle/context calculations, and the canonical
-assessment input envelope. Consumers must import these modules rather than
-copying the calculations.
+microstructure layer. It owns the shared WebSocket v2 connection/subscription
+transport, book validation and metrics, flow and wall calculations, REST
+candle/context calculations, and the canonical assessment input envelope.
+Consumers must import these modules rather than copying the transport or
+calculations.
 
 The current `paper_capture/market.py` is a Paper adapter: it discovers the
-existing Paper candidates, subscribes to the common public Kraken feed, and
-persists the raw tape and derived observations. It imports the shared
+existing Paper candidates, calls the common public Kraken WebSocket transport,
+and persists the raw tape and derived observations. It imports the shared
 `Book`, flow, wall, bias, and REST implementations. The strategy and Paper
 replay remain outside `market_data`.
 

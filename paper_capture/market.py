@@ -12,6 +12,7 @@ import urllib.request
 import uuid
 import zipfile
 from collections import Counter, defaultdict, deque
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 import sys
@@ -20,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from market_data.microstructure import (Book, flow_metrics, wall_transitions, derive_microstructure_bias)
 from market_data.parity import evaluation_basis, canonical_sha256
 from market_data.rest import utc, rest_market_context
+from market_data.stream import run_kraken_v2_stream
 
 CUTOFF = '2026-09-24T10:50:00Z'
 REPO = 'hoffmannherdecke/kraken-eur-scanner'
@@ -150,7 +152,6 @@ def scan_candidates(seen_runs):
 
 
 async def capture(seconds, out, smoke=False):
-    from websockets.asyncio.client import connect
     journal = Journal(out)
     static_watch = load_watchlist()
     focus = set(static_watch) | {'BTC/EUR'}
@@ -210,137 +211,135 @@ async def capture(seconds, out, smoke=False):
 
     discovery_task = asyncio.create_task(discover()) if not smoke else None
     context_task = asyncio.create_task(context_loop())
-    connection = 0
+    async def handle_wire(raw, connection):
+        journal.write('wire', connection=connection, raw=raw)
+        message = json.loads(raw, parse_float=Decimal)
+        if message.get('success') is False:
+            journal.write('subscription_error', connection=connection, response=message)
+        if message.get('channel') == 'book':
+            for row in message['data']:
+                symbol = row['symbol']
+                book = books.setdefault(symbol, Book())
+                book.apply(row, message['type'] == 'snapshot')
+                book_event = journal.write('book_verified', connection=connection,
+                                           symbol=symbol, exchange_at=row.get('timestamp'),
+                                           bid=str(max(book.bids)), ask=str(min(book.asks)),
+                                           spread=str(min(book.asks)-max(book.bids)),
+                                           checksum=row['checksum'], wire_seq=journal.seq)
+                now = time.monotonic()
+                if now - last_micro[symbol] >= MICRO_INTERVAL_SECONDS:
+                    last_micro[symbol] = now
+                    now_ns = time.monotonic_ns()
+                    metrics = book.metrics()
+                    mid = float(metrics['mid'])
+                    price_history[symbol].append((now_ns, mid))
+                    while price_history[symbol] and now_ns - price_history[symbol][0][0] > int(300e9):
+                        price_history[symbol].popleft()
+                    while trades[symbol] and now_ns - trades[symbol][0]['monotonic_ns'] > int(300e9):
+                        trades[symbol].popleft()
+                    old60 = next((p for ts, p in price_history[symbol]
+                                  if now_ns - ts <= int(60e9)), mid)
+                    ret60 = ((mid / old60 - 1) * 100) if old60 else None
+                    flow15 = flow_metrics(trades[symbol], now_ns, 15)
+                    flow60 = flow_metrics(trades[symbol], now_ns, 60)
+                    flow300 = flow_metrics(trades[symbol], now_ns, 300)
+                    changes = wall_transitions(previous_metrics.get(symbol), metrics, mid,
+                                               removed_memory[symbol], now_ns)
+                    previous_metrics[symbol] = metrics
+                    bias, absorption = derive_microstructure_bias(
+                        flow60, metrics['imbalance_top10'], ret60)
+                    quality = 'complete'
+                    if last_gap_ns and now_ns - last_gap_ns < int(60e9):
+                        quality = 'Marktdaten unvollständig'
+                    snapshot = {
+                        'symbol': symbol, 'exchange_at': row.get('timestamp'),
+                        'quality': quality, 'book': metrics,
+                        'source_wire_seq': book_event.get('wire_seq'),
+                        'source_trade_ids': [t['trade_id'] for t in trades[symbol]],
+                        'last_trade': last_trade.get(symbol),
+                        'flow': {'15s': flow15, '60s': flow60, '300s': flow300},
+                        'mid_return_60s_pct': ret60,
+                        'wall_events': changes,
+                        'absorption_candidate': absorption,
+                        'microstructure_bias': bias,
+                        'context_age_seconds': (
+                            max(0.0, time.time() - datetime.fromisoformat(contexts[symbol]['retrieved_at']).timestamp())
+                            if symbol in contexts else None),
+                        'context_levels': contexts.get(symbol, {}).get('levels'),
+                        'ticker24': contexts.get(symbol, {}).get('ticker'),
+                        'candles': contexts.get(symbol, {}).get('candles'),
+                    }
+                    micro_event = journal.write('micro_snapshot', **snapshot)
+                    basis = evaluation_basis(micro_event)
+                    journal.write('assessment_basis', source_seq=micro_event['seq'],
+                                  basis_sha256=canonical_sha256(basis), basis=basis)
+                    for event in changes:
+                        journal.write('wall_transition', symbol=symbol, exchange_at=row.get('timestamp'), **event)
+                    if symbol in focus:
+                        print('MICRO_SNAPSHOT_V1 ' + json.dumps(snapshot, separators=(',', ':'), sort_keys=True), flush=True)
+        elif message.get('channel') == 'trade':
+            for row in message['data']:
+                symbol, tid = row['symbol'], row['trade_id']
+                previous = last_ids.get(symbol)
+                if message['type'] == 'update' and previous is not None and tid != previous + 1:
+                    journal.write('trade_sequence_gap', symbol=symbol,
+                                  previous=previous, current=tid, connection=connection)
+                    journal.write('market_data_incomplete', symbol=symbol,
+                                  component='trade_sequence', previous=previous, current=tid)
+                last_ids[symbol] = tid
+                journal.write('trade_observed', connection=connection,
+                              snapshot=message['type']=='snapshot', **row)
+                if symbol in focus:
+                    print('TRADE_EVENT_V1 ' + json.dumps({
+                        'symbol': symbol, 'snapshot': message['type']=='snapshot',
+                        'exchange_at': row.get('timestamp'), 'trade_id': tid,
+                        'side': row.get('side'), 'price': str(row.get('price')),
+                        'qty': str(row.get('qty')),
+                    }, separators=(',', ':'), sort_keys=True), flush=True)
+                if message['type'] == 'update':
+                    trade_tick = {
+                        'monotonic_ns': time.monotonic_ns(),
+                        'exchange_at': row.get('timestamp'), 'trade_id': tid,
+                        'side': row.get('side'), 'price': str(row.get('price')),
+                        'qty': str(row.get('qty')),
+                    }
+                    trades[symbol].append(trade_tick)
+                    last_trade[symbol] = {k: v for k, v in trade_tick.items() if k != 'monotonic_ns'}
+                    if symbol in focus:
+                        print('TRADE_TICK_V1 ' + json.dumps(
+                            {'symbol': symbol, **last_trade[symbol]},
+                            separators=(',', ':'), sort_keys=True), flush=True)
+
+
+    async def on_connection_start(connection):
+        books.clear()
+        last_ids.clear()
+        journal.write('connection_start', connection=connection)
+
+    async def on_subscribe(connection, fresh):
+        journal.write('subscription_requested', connection=connection, symbols=fresh)
+
+    async def on_connection_end(connection, reason):
+        journal.write('connection_end', connection=connection, reason=reason)
+
+    async def on_gap(connection, exc):
+        nonlocal last_gap_ns
+        last_gap_ns = time.monotonic_ns()
+        journal.write('data_gap', connection=connection, error=type(exc).__name__,
+                      reason=str(exc)[:200])
+        journal.write('market_data_incomplete', component='websocket',
+                      error=type(exc).__name__, reason=str(exc)[:160])
+
     try:
-        while time.monotonic() < stop_at:
-            connection += 1
-            subscribed = set()
-            books.clear()
-            last_ids.clear()
-            try:
-                async with connect('wss://ws.kraken.com/v2', open_timeout=15,
-                                   ping_interval=10, ping_timeout=10,
-                                   max_size=8*1024*1024) as ws:
-                    journal.write('connection_start', connection=connection)
-                    while time.monotonic() < stop_at:
-                        fresh = sorted(set(symbols) - subscribed)
-                        if fresh:
-                            for channel in ('book', 'trade'):
-                                params = dict(channel=channel, symbol=fresh, snapshot=True)
-                                if channel == 'book':
-                                    params['depth'] = BOOK_DEPTH
-                                await ws.send(json.dumps(dict(method='subscribe', params=params)))
-                            subscribed.update(fresh)
-                            journal.write('subscription_requested', connection=connection, symbols=fresh)
-                        try:
-                            raw = await asyncio.wait_for(ws.recv(), timeout=min(2, max(.01, stop_at-time.monotonic())))
-                        except asyncio.TimeoutError:
-                            continue
-                        journal.write('wire', connection=connection, raw=raw)
-                        message = json.loads(raw, parse_float=Decimal)
-                        if message.get('success') is False:
-                            journal.write('subscription_error', connection=connection, response=message)
-                        if message.get('channel') == 'book':
-                            for row in message['data']:
-                                symbol = row['symbol']
-                                book = books.setdefault(symbol, Book())
-                                book.apply(row, message['type'] == 'snapshot')
-                                book_event = journal.write('book_verified', connection=connection,
-                                                           symbol=symbol, exchange_at=row.get('timestamp'),
-                                                           bid=str(max(book.bids)), ask=str(min(book.asks)),
-                                                           spread=str(min(book.asks)-max(book.bids)),
-                                                           checksum=row['checksum'], wire_seq=journal.seq)
-                                now = time.monotonic()
-                                if now - last_micro[symbol] >= MICRO_INTERVAL_SECONDS:
-                                    last_micro[symbol] = now
-                                    now_ns = time.monotonic_ns()
-                                    metrics = book.metrics()
-                                    mid = float(metrics['mid'])
-                                    price_history[symbol].append((now_ns, mid))
-                                    while price_history[symbol] and now_ns - price_history[symbol][0][0] > int(300e9):
-                                        price_history[symbol].popleft()
-                                    while trades[symbol] and now_ns - trades[symbol][0]['monotonic_ns'] > int(300e9):
-                                        trades[symbol].popleft()
-                                    old60 = next((p for ts, p in price_history[symbol]
-                                                  if now_ns - ts <= int(60e9)), mid)
-                                    ret60 = ((mid / old60 - 1) * 100) if old60 else None
-                                    flow15 = flow_metrics(trades[symbol], now_ns, 15)
-                                    flow60 = flow_metrics(trades[symbol], now_ns, 60)
-                                    flow300 = flow_metrics(trades[symbol], now_ns, 300)
-                                    changes = wall_transitions(previous_metrics.get(symbol), metrics, mid,
-                                                               removed_memory[symbol], now_ns)
-                                    previous_metrics[symbol] = metrics
-                                    bias, absorption = derive_microstructure_bias(
-                                        flow60, metrics['imbalance_top10'], ret60)
-                                    quality = 'complete'
-                                    if last_gap_ns and now_ns - last_gap_ns < int(60e9):
-                                        quality = 'Marktdaten unvollständig'
-                                    snapshot = {
-                                        'symbol': symbol, 'exchange_at': row.get('timestamp'),
-                                        'quality': quality, 'book': metrics,
-                                        'source_wire_seq': book_event.get('wire_seq'),
-                                        'source_trade_ids': [t['trade_id'] for t in trades[symbol]],
-                                        'last_trade': last_trade.get(symbol),
-                                        'flow': {'15s': flow15, '60s': flow60, '300s': flow300},
-                                        'mid_return_60s_pct': ret60,
-                                        'wall_events': changes,
-                                        'absorption_candidate': absorption,
-                                        'microstructure_bias': bias,
-                                        'context_age_seconds': (
-                                            max(0.0, time.time() - datetime.fromisoformat(contexts[symbol]['retrieved_at']).timestamp())
-                                            if symbol in contexts else None),
-                                        'context_levels': contexts.get(symbol, {}).get('levels'),
-                                        'ticker24': contexts.get(symbol, {}).get('ticker'),
-                                        'candles': contexts.get(symbol, {}).get('candles'),
-                                    }
-                                    micro_event = journal.write('micro_snapshot', **snapshot)
-                                    basis = evaluation_basis(micro_event)
-                                    journal.write('assessment_basis', source_seq=micro_event['seq'],
-                                                  basis_sha256=canonical_sha256(basis), basis=basis)
-                                    for event in changes:
-                                        journal.write('wall_transition', symbol=symbol, exchange_at=row.get('timestamp'), **event)
-                                    if symbol in focus:
-                                        print('MICRO_SNAPSHOT_V1 ' + json.dumps(snapshot, separators=(',', ':'), sort_keys=True), flush=True)
-                        elif message.get('channel') == 'trade':
-                            for row in message['data']:
-                                symbol, tid = row['symbol'], row['trade_id']
-                                previous = last_ids.get(symbol)
-                                if message['type'] == 'update' and previous is not None and tid != previous + 1:
-                                    journal.write('trade_sequence_gap', symbol=symbol,
-                                                  previous=previous, current=tid, connection=connection)
-                                    journal.write('market_data_incomplete', symbol=symbol,
-                                                  component='trade_sequence', previous=previous, current=tid)
-                                last_ids[symbol] = tid
-                                journal.write('trade_observed', connection=connection,
-                                              snapshot=message['type']=='snapshot', **row)
-                                if symbol in focus:
-                                    print('TRADE_EVENT_V1 ' + json.dumps({
-                                        'symbol': symbol, 'snapshot': message['type']=='snapshot',
-                                        'exchange_at': row.get('timestamp'), 'trade_id': tid,
-                                        'side': row.get('side'), 'price': str(row.get('price')),
-                                        'qty': str(row.get('qty')),
-                                    }, separators=(',', ':'), sort_keys=True), flush=True)
-                                if message['type'] == 'update':
-                                    trade_tick = {
-                                        'monotonic_ns': time.monotonic_ns(),
-                                        'exchange_at': row.get('timestamp'), 'trade_id': tid,
-                                        'side': row.get('side'), 'price': str(row.get('price')),
-                                        'qty': str(row.get('qty')),
-                                    }
-                                    trades[symbol].append(trade_tick)
-                                    last_trade[symbol] = {k: v for k, v in trade_tick.items() if k != 'monotonic_ns'}
-                                    if symbol in focus:
-                                        print('TRADE_TICK_V1 ' + json.dumps(
-                                            {'symbol': symbol, **last_trade[symbol]},
-                                            separators=(',', ':'), sort_keys=True), flush=True)
-                    journal.write('connection_end', connection=connection, reason='scheduled_end')
-            except Exception as exc:
-                last_gap_ns = time.monotonic_ns()
-                journal.write('data_gap', connection=connection, error=type(exc).__name__,
-                              reason=str(exc)[:200])
-                journal.write('market_data_incomplete', component='websocket',
-                              error=type(exc).__name__, reason=str(exc)[:160])
-                await asyncio.sleep(min(5, max(0, stop_at-time.monotonic())))
+        await run_kraken_v2_stream(
+            stop_at=stop_at,
+            symbols_provider=lambda: set(symbols),
+            on_connection_start=on_connection_start,
+            on_subscribe=on_subscribe,
+            on_wire=handle_wire,
+            on_connection_end=on_connection_end,
+            on_gap=on_gap,
+        )
     finally:
         for task in (discovery_task, context_task):
             if task:
