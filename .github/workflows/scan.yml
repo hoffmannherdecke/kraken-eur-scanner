@@ -45,6 +45,7 @@ jobs:
             scanner-state-
 
       - name: Unit and regression tests
+        if: github.event_name != 'schedule'
         working-directory: .scanner/kraken_eur_scanner
         run: python -m unittest discover -s tests -v
 
@@ -73,6 +74,17 @@ jobs:
           audit_path = Path(".state/audit_history.jsonl")
           pending_events = []
 
+          # Compact, machine-readable handoff for ChatGPT. This is public
+          # market/scanner context only; it contains no account keys, orders,
+          # private ledger data or real-money instructions.
+          handoff_dir = Path("handoff")
+          handoff_dir.mkdir(parents=True, exist_ok=True)
+          handoff_path = handoff_dir / "candidates.jsonl"
+
+          def append_handoff(event):
+              with handoff_path.open("a", encoding="utf-8") as fh:
+                  fh.write(json.dumps(event, separators=(",", ":"), sort_keys=True) + "\n")
+
           original_post = scanner.post_slack
           original_save = scanner.save_state
           original_should_post = scanner.should_post
@@ -81,10 +93,19 @@ jobs:
               original_post(text)
               m = re.search(r"(?:^|\|\s*)pair=([^|]+)", text)
               pair = m.group(1).strip() if m else None
+              posted_at = int(time.time())
               pending_events.append({
                   "type": "posted",
-                  "ts": int(time.time()),
+                  "ts": posted_at,
                   "pair": pair,
+                  "text": text,
+              })
+              append_handoff({
+                  "schema_version": 1,
+                  "kind": "review_candidate_message",
+                  "ts": posted_at,
+                  "pair": pair,
+                  "action": "REVIEW_ONLY_NOT_ORDER",
                   "text": text,
               })
               print("AUDIT_POSTED " + text, flush=True)
@@ -191,6 +212,13 @@ jobs:
                       "range_1h_pct": (100.0 * (resistance_1h - support_1h) / close) if close else None,
                       "recent_closed_closes": [float(x[4]) for x in recent[-6:]],
                   }
+                  append_handoff({
+                      "schema_version": 1,
+                      "kind": "market_context",
+                      "ts": int(now),
+                      "pair": pair,
+                      "context": context,
+                  })
                   print(
                       "DECISION_CONTEXT_V1 "
                       + json.dumps(context, separators=(",", ":"), sort_keys=True),
@@ -304,6 +332,14 @@ jobs:
               # actually handed off for review. Failure is non-blocking.
               for row in rows:
                   if row.pair in posted_pairs:
+                      append_handoff({
+                          "schema_version": 1,
+                          "kind": "candidate_snapshot",
+                          "ts": now,
+                          "pair": row.pair,
+                          "action": "REVIEW_ONLY_NOT_ORDER",
+                          "features": asdict(row),
+                      })
                       emit_decision_context(asdict(row), now)
 
               new_events = list(pending_events)
@@ -347,3 +383,13 @@ jobs:
           scanner.save_state = audit_save
           scanner.run()
           PY
+
+      - name: Upload compact ChatGPT handoff
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-handoff-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .scanner/kraken_eur_scanner/handoff/candidates.jsonl
+          retention-days: 30
+          compression-level: 9
+          if-no-files-found: warn
