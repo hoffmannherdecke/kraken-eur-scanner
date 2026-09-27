@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 27,
+  "candidate_event_time_utc": "2026-09-27T19:03:23Z",
+  "candidate_id": "20260927-190323-RAY-EUR-r36342698969",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close holding above 1.949 with follow-through",
+      "Evidence of enough remaining upside to clear fees, spread and slippage"
+    ],
+    "reason_codes": [
+      "EXTENDED_RUN",
+      "RESISTANCE_TEST",
+      "COSTS_UNDERCOMPENSATED",
+      "LIVE_PULLBACK"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Strong volume and a recent breakout attempt, but price is testing resistance after a substantial multi-week run; remaining upside is not established against Kraken costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T19:03:57.403512Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_008d09619dd5379e006ab96896c3f887d18c0103e101b3064d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.946,
+    "bid": 1.941,
+    "last": 1.95,
+    "spread_pct": 0.2572678157962384
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "RAY/EUR",
+  "paper_entry": null,
+  "queue_id": "36342698969:RAY-EUR:1790535803",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

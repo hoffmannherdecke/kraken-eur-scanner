@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 849,
+  "candidate_event_time_utc": "2026-09-27T18:49:48Z",
+  "candidate_id": "20260927-184948-USELESS-EUR-r36341995360",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close holds above 0.26254 resistance.",
+      "A retest holds above 0.26254 with spread and volume still supportive."
+    ],
+    "reason_codes": [
+      "breakout_volume_support",
+      "extended_run",
+      "spread_and_fee_drag",
+      "no_closed_confirmation"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Strong-volume breakout candidate, but the move is already extended and the fresh ask is above the prior resistance without a confirming close; execution costs and spread weaken entry efficiency.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T19:04:08.045250Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0cf9c81324a91a21006ab9689e9d9087d1b799d358f8e48210"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2637,
+    "bid": 0.26292,
+    "last": 0.26336,
+    "spread_pct": 0.29622877976529677
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "USELESS/EUR",
+  "paper_entry": null,
+  "queue_id": "36341995360:USELESS-EUR:1790534988",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

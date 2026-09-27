@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 860,
+  "candidate_event_time_utc": "2026-09-27T18:49:48Z",
+  "candidate_id": "20260927-184948-ENA-EUR-r36341995360",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Pullback and hold near the 0.2498 breakout level",
+      "Closed-candle volume confirmation"
+    ],
+    "reason_codes": [
+      "late_extension",
+      "weak_closed_volume",
+      "no_higher_lows",
+      "costs_vs_remaining_potential"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Strong recent momentum, but the fresh ask is already about 1.4% above the scanner price after a 5.6% three-hour move and is extended versus recent closes. Late entry lacks enough demonstrated net reward after Kraken costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T19:04:13.302345Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0d235cea17d9463f006ab968a887e887d183c50357d7958bb8"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2558,
+    "bid": 0.2556,
+    "last": 0.2563,
+    "spread_pct": 0.07821666014862473
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "ENA/EUR",
+  "paper_entry": null,
+  "queue_id": "36341995360:ENA-EUR:1790534988",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
