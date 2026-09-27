@@ -1,0 +1,40 @@
+name: Gate3 20-case follow-up audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'paper_gate3_followup.py'
+      - 'docs/gate3-20-followup-cases.json'
+      - '.github/workflows/paper-gate3-followup.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate3-20-followup
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Run fixed 20-case Kraken-EUR follow-up
+        run: |
+          set -euo pipefail
+          python paper_gate3_followup.py
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate3-20-followup
+          path: |
+            gate3_20_followup.json
+            gate3_20_followup.md
+          if-no-files-found: error
+          retention-days: 30
