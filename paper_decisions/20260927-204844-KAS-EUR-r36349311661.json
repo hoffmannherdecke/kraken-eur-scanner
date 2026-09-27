@@ -1,0 +1,42 @@
+{
+  "candidate_age_seconds": 72,
+  "candidate_event_time_utc": "2026-09-27T20:48:44Z",
+  "candidate_id": "20260927-204844-KAS-EUR-r36349311661",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": 0.99,
+    "missing_triggers": [],
+    "reason_codes": [
+      "UPSIDE_BELOW_COSTS",
+      "NO_BREAKOUT",
+      "WEAK_SHORT_TERM_MOMENTUM",
+      "SPREAD_AND_FEES"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "No attractive entry: price is below nearby resistance, short-term momentum is weak, and plausible upside to resistance does not cover Kraken EUR round-trip costs.",
+    "ttl_minutes": 0
+  },
+  "evaluated_at_utc": "2026-09-27T20:50:02.208164Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_062b77aab4b0c5f6006ab98175102487d0976ad134866ea8f7"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.04261,
+    "bid": 0.04252,
+    "last": 0.04257,
+    "spread_pct": 0.21144132503230303
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "KAS/EUR",
+  "paper_entry": null,
+  "queue_id": "36349311661:KAS-EUR:1790542124",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

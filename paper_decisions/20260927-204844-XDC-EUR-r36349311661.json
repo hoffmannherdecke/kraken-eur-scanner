@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 57,
+  "candidate_event_time_utc": "2026-09-27T20:48:44Z",
+  "candidate_id": "20260927-204844-XDC-EUR-r36349311661",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.02872 resistance with follow-through",
+      "Evidence after a breakout that remaining upside can exceed all-in costs"
+    ],
+    "reason_codes": [
+      "short_term_continuity_negative",
+      "no_breakout_or_higher_lows",
+      "nearby_resistance_limits_net_potential",
+      "costs_consume_nearby_upside"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "Strong activity and medium-term performance are offset by declining recent closes, negative 1h return, and no confirmed breakout. Nearby resistance leaves too little demonstrated room after Kraken costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T20:49:49.568686Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f8e087b7a6bec60006ab98165abd487d092481b4f4dc8b511"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.02832,
+    "bid": 0.02828,
+    "last": 0.0284,
+    "spread_pct": 0.14134275618375208
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "XDC/EUR",
+  "paper_entry": null,
+  "queue_id": "36349311661:XDC-EUR:1790542124",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 65,
+  "candidate_event_time_utc": "2026-09-27T20:48:44Z",
+  "candidate_id": "20260927-204844-PUMP-EUR-r36349311661",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": 1.2,
+    "missing_triggers": [
+      "15m close above 0.004467",
+      "Volume-supported hold above 0.004467"
+    ],
+    "reason_codes": [
+      "NEAR_RESISTANCE",
+      "BREAKOUT_UNCONFIRMED",
+      "CLOSED_VOLUME_WEAK",
+      "UPSIDE_INSUFFICIENT_AFTER_COSTS"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stop_eur": null,
+    "summary": "Trend and liquidity are constructive, but price is testing 1h resistance and the next marked resistance offers only about 1.2% from ask\u2014insufficient against Kraken EUR costs without confirmed continuation.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T20:49:56.599349Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0a8ed03c9384ca21006ab9816e0d1c87d0955d59b76b73fe9a"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.004414,
+    "bid": 0.004407,
+    "last": 0.004423,
+    "spread_pct": 0.15871216415372547
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "PUMP/EUR",
+  "paper_entry": null,
+  "queue_id": "36349311661:PUMP-EUR:1790542124",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
