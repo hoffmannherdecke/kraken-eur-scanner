@@ -1,0 +1,60 @@
+{
+  "candidate_age_seconds": 12,
+  "candidate_event_time_utc": "2026-09-27T22:03:25Z",
+  "candidate_id": "20260927-220325-RENDER-EUR-r36353615105",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.796 with follow-through",
+      "Closed-bar volume expansion on the breakout"
+    ],
+    "reason_codes": [
+      "near_resistance",
+      "weak_closed_volume",
+      "negative_15m_momentum",
+      "extended_context",
+      "cost_drag"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "No entry yet: price is just below 1h/3h resistance, while closed volume and short-term continuity are weak; costs leave little margin for an unconfirmed move.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T22:03:44.506498Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_08951e5a85d698cb006ab992ba665087d18b30ec00a2db6a27"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.785,
+    "bid": 1.781,
+    "last": 1.792,
+    "spread_pct": 0.22434099831744272
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "RENDER/EUR",
+  "paper_entry": null,
+  "queue_id": "36353615105:RENDER-EUR:1790546605",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-27T22:03:25Z",
+    "candidate_detected_ts": 1790546605,
+    "candidate_snapshot_at_utc": "2026-09-27T22:03:25Z",
+    "detected_to_evaluation_complete_seconds": 19.506,
+    "detected_to_evaluation_start_seconds": 12.425,
+    "evaluation_completed_at_utc": "2026-09-27T22:03:44.506498Z",
+    "evaluation_runtime_seconds": 7.081,
+    "evaluation_started_at_utc": "2026-09-27T22:03:37.425113Z",
+    "handoff_to_evaluation_start_seconds": 10.565,
+    "handoff_written_at_utc": "2026-09-27T22:03:26.860242Z",
+    "scan_step_started_at_utc": "2026-09-27T21:58:16Z"
+  }
+}

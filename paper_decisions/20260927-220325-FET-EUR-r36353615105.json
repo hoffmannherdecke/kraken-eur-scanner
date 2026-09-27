@@ -1,0 +1,56 @@
+{
+  "candidate_age_seconds": 19,
+  "candidate_event_time_utc": "2026-09-27T22:03:25Z",
+  "candidate_id": "20260927-220325-FET-EUR-r36353615105",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "NO_BREAKOUT",
+      "BELOW_RESISTANCE",
+      "COSTS_EXCEED_EVIDENCED_EDGE",
+      "QUOTE_BELOW_SENSOR"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stop_eur": null,
+    "summary": "Positive continuity signals are outweighed by the unbroken nearby resistance and insufficient evidenced upside after Kraken EUR costs.",
+    "ttl_minutes": 0
+  },
+  "evaluated_at_utc": "2026-09-27T22:03:54.246938Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0d717d5a9cd8f023006ab992c0e49c87d1af94fe60ef2cce37"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2169,
+    "bid": 0.2163,
+    "last": 0.2184,
+    "spread_pct": 0.2770083102493154
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "FET/EUR",
+  "paper_entry": null,
+  "queue_id": "36353615105:FET-EUR:1790546605",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-27T22:03:25Z",
+    "candidate_detected_ts": 1790546605,
+    "candidate_snapshot_at_utc": "2026-09-27T22:03:25Z",
+    "detected_to_evaluation_complete_seconds": 29.247,
+    "detected_to_evaluation_start_seconds": 19.568,
+    "evaluation_completed_at_utc": "2026-09-27T22:03:54.246938Z",
+    "evaluation_runtime_seconds": 9.679,
+    "evaluation_started_at_utc": "2026-09-27T22:03:44.568155Z",
+    "handoff_to_evaluation_start_seconds": 17.708,
+    "handoff_written_at_utc": "2026-09-27T22:03:26.860016Z",
+    "scan_step_started_at_utc": "2026-09-27T21:58:16Z"
+  }
+}
