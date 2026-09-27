@@ -1,0 +1,93 @@
+{
+  "candidate_id": "20260927-182430-KAS-EUR-r36340437393",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A decisive continuation close with confirming volume"
+    ],
+    "reason_codes": [
+      "recent_move_already_run",
+      "continuation_unconfirmed",
+      "fees_and_spread_material",
+      "remaining_reward_unproven"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "KAS remains above resistance, but the supplied candles show no clear continuation after an already-extended move; remaining reward is not established against Kraken costs.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_07ce34350f6cc47d006ab970dd95cc87d183c8dbb921148a28"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.04298,
+    "bid": 0.04289,
+    "last": 0.04294,
+    "spread_pct": 0.20961919180156002
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.04303,
+      "high": 0.04303,
+      "low": 0.04277,
+      "open": 0.04277,
+      "trades": 5,
+      "ts": 1790533800,
+      "volume": 29776.69761,
+      "vwap": 0.04279
+    },
+    {
+      "close": 0.04292,
+      "high": 0.04294,
+      "low": 0.04288,
+      "open": 0.04293,
+      "trades": 15,
+      "ts": 1790534700,
+      "volume": 69632.84652,
+      "vwap": 0.04291
+    },
+    {
+      "close": 0.04291,
+      "high": 0.04297,
+      "low": 0.04285,
+      "open": 0.04297,
+      "trades": 3,
+      "ts": 1790535600,
+      "volume": 21967.04959,
+      "vwap": 0.04291
+    },
+    {
+      "close": 0.04293,
+      "high": 0.04293,
+      "low": 0.04278,
+      "open": 0.04279,
+      "trades": 11,
+      "ts": 1790536500,
+      "volume": 19745.91544,
+      "vwap": 0.04287
+    },
+    {
+      "close": 0.04294,
+      "high": 0.04294,
+      "low": 0.04289,
+      "open": 0.04293,
+      "trades": 5,
+      "ts": 1790537400,
+      "volume": 15143.10845,
+      "vwap": 0.04292
+    }
+  ],
+  "pair": "KAS/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-182430-KAS-EUR-r36340437393.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T19:39:14.266204Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

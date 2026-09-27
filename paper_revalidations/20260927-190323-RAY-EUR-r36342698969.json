@@ -1,0 +1,91 @@
+{
+  "candidate_id": "20260927-190323-RAY-EUR-r36342698969",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "EXTENDED_RUN",
+      "RESISTANCE_REJECTION",
+      "LIVE_PULLBACK",
+      "COSTS_UNDERCOMPENSATED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "The resistance test failed to hold: price pulled back from 1.967 to 1.937, below the 1.949 resistance. Remaining upside is unestablished against Kraken fees, spread and slippage.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_03b997026b14a5e6006ab970d597ec87d19bd6445ea3ad38dd"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.937,
+    "bid": 1.93,
+    "last": 1.937,
+    "spread_pct": 0.3620377553659228
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 1.935,
+      "high": 1.938,
+      "low": 1.919,
+      "open": 1.919,
+      "trades": 8,
+      "ts": 1790533800,
+      "volume": 473.17196675,
+      "vwap": 1.935
+    },
+    {
+      "close": 1.949,
+      "high": 1.949,
+      "low": 1.939,
+      "open": 1.948,
+      "trades": 16,
+      "ts": 1790534700,
+      "volume": 3994.73899778,
+      "vwap": 1.944
+    },
+    {
+      "close": 1.967,
+      "high": 1.967,
+      "low": 1.946,
+      "open": 1.956,
+      "trades": 12,
+      "ts": 1790535600,
+      "volume": 1087.7889681,
+      "vwap": 1.952
+    },
+    {
+      "close": 1.962,
+      "high": 1.962,
+      "low": 1.962,
+      "open": 1.962,
+      "trades": 1,
+      "ts": 1790536500,
+      "volume": 27.9306,
+      "vwap": 1.962
+    },
+    {
+      "close": 1.937,
+      "high": 1.937,
+      "low": 1.936,
+      "open": 1.936,
+      "trades": 2,
+      "ts": 1790537400,
+      "volume": 942.53865057,
+      "vwap": 1.936
+    }
+  ],
+  "pair": "RAY/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-190323-RAY-EUR-r36342698969.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T19:39:04.957107Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

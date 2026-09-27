@@ -1,0 +1,92 @@
+{
+  "candidate_id": "20260927-184948-ENA-EUR-r36341995360",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "late_extension",
+      "retracement_after_surge",
+      "weak_closed_volume",
+      "costs_vs_remaining_potential",
+      "poor_risk_reward"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "The post-breakout surge has retraced, and fading closed-candle volume plus limited room to recent highs do not support an attractive entry after Kraken costs.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_06637f7c44fe721c006ab970d97ff087d1a304d2972b8e8663"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2527,
+    "bid": 0.2524,
+    "last": 0.2522,
+    "spread_pct": 0.11878835874083031
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.2488,
+      "high": 0.2488,
+      "low": 0.2474,
+      "open": 0.2485,
+      "trades": 21,
+      "ts": 1790533800,
+      "volume": 28314.19681,
+      "vwap": 0.2479
+    },
+    {
+      "close": 0.2581,
+      "high": 0.2588,
+      "low": 0.2488,
+      "open": 0.2488,
+      "trades": 162,
+      "ts": 1790534700,
+      "volume": 383625.48287,
+      "vwap": 0.2519
+    },
+    {
+      "close": 0.2556,
+      "high": 0.2573,
+      "low": 0.2536,
+      "open": 0.2573,
+      "trades": 49,
+      "ts": 1790535600,
+      "volume": 67693.14247,
+      "vwap": 0.2549
+    },
+    {
+      "close": 0.253,
+      "high": 0.2569,
+      "low": 0.253,
+      "open": 0.2559,
+      "trades": 60,
+      "ts": 1790536500,
+      "volume": 164906.86068,
+      "vwap": 0.2557
+    },
+    {
+      "close": 0.2522,
+      "high": 0.2529,
+      "low": 0.2522,
+      "open": 0.2529,
+      "trades": 34,
+      "ts": 1790537400,
+      "volume": 38803.7558,
+      "vwap": 0.2526
+    }
+  ],
+  "pair": "ENA/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-184948-ENA-EUR-r36341995360.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T19:39:09.122104Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
