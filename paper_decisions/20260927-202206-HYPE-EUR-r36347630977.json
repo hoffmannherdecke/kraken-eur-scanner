@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 57,
+  "candidate_event_time_utc": "2026-09-27T20:22:06Z",
+  "candidate_id": "20260927-202206-HYPE-EUR-r36347630977",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 80.93 with follow-through",
+      "continued elevated volume alongside positive short-term returns"
+    ],
+    "reason_codes": [
+      "no_breakout",
+      "flat_short_term_momentum",
+      "fees_exceed_plausible_move",
+      "nearby_resistance"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Elevated volume and improving rank suggest emerging interest, but price is still below nearby resistance and short-term returns are nearly flat; evidence does not yet justify an entry after Kraken EUR costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T20:23:07.310081Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_026690e61ab214ad006ab97b27781887d0be02165a02fdddc1"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 80.6,
+    "bid": 80.59,
+    "last": 80.58,
+    "spread_pct": 0.012407717600336132
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "HYPE/EUR",
+  "paper_entry": null,
+  "queue_id": "36347630977:HYPE-EUR:1790540526",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

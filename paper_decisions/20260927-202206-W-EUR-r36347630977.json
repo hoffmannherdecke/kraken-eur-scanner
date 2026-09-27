@@ -1,0 +1,48 @@
+{
+  "candidate_age_seconds": 50,
+  "candidate_event_time_utc": "2026-09-27T20:22:06Z",
+  "candidate_id": "20260927-202206-W-EUR-r36347630977",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Pullback toward 0.01382 holds as support",
+      "Renewed volume confirms continuation after the retest"
+    ],
+    "reason_codes": [
+      "breakout_momentum",
+      "elevated_volume",
+      "extended_from_resistance",
+      "near_recent_high",
+      "costs_material",
+      "market_regime_missing",
+      "orderflow_missing"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Strong breakout and volume evidence, but price has already run well above recent resistance and is near its 7-day high; remaining reward versus Kraken costs is not established.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T20:23:03.095440Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_031d09fe898ca774006ab97b20ae8887d0a25b976a692a520c"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.01409,
+    "bid": 0.01406,
+    "last": 0.01409,
+    "spread_pct": 0.21314387211368035
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "W/EUR",
+  "paper_entry": null,
+  "queue_id": "36347630977:W-EUR:1790540526",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
