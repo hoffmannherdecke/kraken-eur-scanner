@@ -46,13 +46,16 @@ def analyze(case, rows, now):
         if not w:
             out["horizons"][str(h)]={"complete":complete,"bars":0,"mfe_pct":None,"mae_pct":None,"end_close_pct":None}
             continue
-        peak=max(r["high"] for r in w); trough=min(r["low"] for r in w); close=w[-1]["close"]
+        peak_row=max(w,key=lambda r:r["high"]); trough_row=min(w,key=lambda r:r["low"]); close=w[-1]["close"]
+        peak=peak_row["high"]; trough=trough_row["low"]
         out["horizons"][str(h)]={
           "complete":complete,"bars":len(w),
           "mfe_pct":round(pct(peak,base),3),
           "mae_pct":round(pct(trough,base),3),
           "end_close_pct":round(pct(close,base),3),
-          "peak_eur":peak,"trough_eur":trough,"end_close_eur":close
+          "peak_eur":peak,"peak_bar_start_utc":iso(peak_row["start"]),
+          "trough_eur":trough,"trough_bar_start_utc":iso(trough_row["start"]),
+          "end_close_eur":close
         }
     h6=out["horizons"]["360"]
     out["six_hour_complete"]=h6["complete"]
@@ -62,6 +65,15 @@ def analyze(case, rows, now):
     out["missed_15pct_6h"]=bool(h6["complete"] and h6["mfe_pct"] is not None and h6["mfe_pct"]>=15)
     out["drawdown_ge_3pct_6h"]=bool(h6["complete"] and h6["mae_pct"] is not None and h6["mae_pct"]<=-3)
     out["drawdown_ge_5pct_6h"]=bool(h6["complete"] and h6["mae_pct"] is not None and h6["mae_pct"]<=-5)
+    if h6["complete"]:
+        six=[r for r in rows if first_start <= r["start"] < at+360*60]
+        first_hits={}
+        for threshold in (5,8,10,15):
+            hit=next((r for r in six if pct(r["high"],base)>=threshold),None)
+            first_hits[str(threshold)] = iso(hit["start"]) if hit else None
+        out["first_mfe_threshold_bar_utc"]=first_hits
+    else:
+        out["first_mfe_threshold_bar_utc"]={"5":None,"8":None,"10":None,"15":None}
     return out
 
 def main():
