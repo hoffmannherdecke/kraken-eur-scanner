@@ -33,6 +33,7 @@ def main():
         cp=root/"handoff_queue"/(old["candidate_id"]+".json")
         if not cp.exists(): raise RuntimeError("missing original candidate "+old["candidate_id"])
         c=json.loads(cp.read_text())
+        revalidation_started_at_utc=iso(nowz())
         ticker=kraken_ticker(c["altname"]); bars=ohlc15(c["altname"])
         enriched=dict(c)
         enriched["revalidation_context"]={
@@ -46,7 +47,8 @@ def main():
         d,api=call_evaluator(enriched,ticker); validate_decision(d,ticker)
         if d["decision"]=="WAIT":
             d={"decision":"REJECT","setup_lane":d.get("setup_lane","NONE"),"summary":"One-shot TTL expired without sufficient confirmation.","reason_codes":["TTL_EXPIRED_AFTER_REVALIDATION"]+list(d.get("reason_codes",[]))[:3],"missing_triggers":[],"stop_eur":None,"ttl_minutes":0,"expected_remaining_move_pct":d.get("expected_remaining_move_pct"),"risk_reward_after_costs":d.get("risk_reward_after_costs")}
-        rec={"schema_version":1,"kind":"PAPER_V2_REVALIDATION_V1","test_id":"SHADOW-V2-20260924-01","candidate_id":c["candidate_id"],"pair":c["pair"],"revalidated_at_utc":iso(nowz()),"real_money_actions_enabled":False,"fee_assumption_pct_per_side":FEE_PCT,"prior_decision_file":str(p.relative_to(root)),"fresh_kraken_ticker":ticker,"kraken_15m_recent":bars,"decision":d,"evaluator":api,"paper_entry":None}
+        revalidation_completed_at_utc=iso(nowz())
+        rec={"schema_version":1,"kind":"PAPER_V2_REVALIDATION_V1","test_id":"SHADOW-V2-20260924-01","candidate_id":c["candidate_id"],"pair":c["pair"],"revalidated_at_utc":revalidation_completed_at_utc,"timing":{"revalidation_started_at_utc":revalidation_started_at_utc,"revalidation_completed_at_utc":revalidation_completed_at_utc},"real_money_actions_enabled":False,"fee_assumption_pct_per_side":FEE_PCT,"prior_decision_file":str(p.relative_to(root)),"fresh_kraken_ticker":ticker,"kraken_15m_recent":bars,"decision":d,"evaluator":api,"paper_entry":None}
         if d["decision"]=="BUY_SCOUT":
             fill=ticker["ask"]; notional=50.0
             rec["paper_entry"]={"status":"FILLED_SIMULATED_AT_FRESH_ASK_AFTER_REVALIDATION","notional_eur":notional,"fill_price_eur":fill,"quantity":notional/fill,"entry_fee_eur":notional*FEE_PCT/100,"slippage_model":"fresh_best_ask_only; no extra invented slippage","stop_eur":d["stop_eur"],"opened_at_utc":rec["revalidated_at_utc"]}
