@@ -1,0 +1,95 @@
+{
+  "candidate_id": "20260927-202206-W-EUR-r36347630977",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "failed_support_retest",
+      "lower_closes",
+      "fading_volume",
+      "costs_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "The revalidation fails: price pulled below the 0.01382 support level, with successive lower closes and fading volume; continuation is unconfirmed and costs remain material.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0ca85c7d2c917922006ab986985fb487d196d52d610223ce80"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0136,
+    "bid": 0.01355,
+    "last": 0.01354,
+    "spread_pct": 0.36832412523020036
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.01382,
+      "high": 0.01382,
+      "low": 0.0136,
+      "open": 0.0136,
+      "trades": 31,
+      "ts": 1790539200,
+      "volume": 1206944.29371,
+      "vwap": 0.01366
+    },
+    {
+      "close": 0.014,
+      "high": 0.0142,
+      "low": 0.01392,
+      "open": 0.01392,
+      "trades": 49,
+      "ts": 1790540100,
+      "volume": 1384498.68458,
+      "vwap": 0.01409
+    },
+    {
+      "close": 0.0139,
+      "high": 0.01403,
+      "low": 0.0138,
+      "open": 0.01399,
+      "trades": 21,
+      "ts": 1790541000,
+      "volume": 705337.65587,
+      "vwap": 0.01383
+    },
+    {
+      "close": 0.01373,
+      "high": 0.01391,
+      "low": 0.01367,
+      "open": 0.01386,
+      "trades": 12,
+      "ts": 1790541900,
+      "volume": 172704.68907,
+      "vwap": 0.01382
+    },
+    {
+      "close": 0.01354,
+      "high": 0.01368,
+      "low": 0.01354,
+      "open": 0.01368,
+      "trades": 15,
+      "ts": 1790542800,
+      "volume": 158829.70626,
+      "vwap": 0.01358
+    }
+  ],
+  "pair": "W/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-202206-W-EUR-r36347630977.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T21:11:55.442681Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-27T21:11:55.442681Z",
+    "revalidation_started_at_utc": "2026-09-27T21:11:51.736547Z"
+  }
+}

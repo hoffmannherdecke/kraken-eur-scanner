@@ -1,0 +1,94 @@
+{
+  "candidate_id": "20260927-202206-HYPE-EUR-r36347630977",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "no_breakout",
+      "nearby_resistance",
+      "fees_exceed_plausible_move"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "TTL revalidation still shows price below 80.93 resistance; the high-volume rebound does not confirm a breakout, and plausible remaining movement is insufficient to justify Kraken EUR costs.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_078c7cc7803fc66c006ab9869bdd9c87d184b303a09b48f147"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 80.72,
+    "bid": 80.69,
+    "last": 80.75,
+    "spread_pct": 0.03717241806579659
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 80.82,
+      "high": 80.82,
+      "low": 80.62,
+      "open": 80.67,
+      "trades": 18,
+      "ts": 1790539200,
+      "volume": 115.42152873,
+      "vwap": 80.74
+    },
+    {
+      "close": 80.56,
+      "high": 80.84,
+      "low": 80.56,
+      "open": 80.84,
+      "trades": 26,
+      "ts": 1790540100,
+      "volume": 95.18619533,
+      "vwap": 80.76
+    },
+    {
+      "close": 80.67,
+      "high": 80.69,
+      "low": 80.63,
+      "open": 80.63,
+      "trades": 9,
+      "ts": 1790541000,
+      "volume": 40.97972921,
+      "vwap": 80.65
+    },
+    {
+      "close": 80.45,
+      "high": 80.67,
+      "low": 80.42,
+      "open": 80.67,
+      "trades": 39,
+      "ts": 1790541900,
+      "volume": 123.76730468,
+      "vwap": 80.48
+    },
+    {
+      "close": 80.75,
+      "high": 80.75,
+      "low": 80.45,
+      "open": 80.48,
+      "trades": 50,
+      "ts": 1790542800,
+      "volume": 250.74082888,
+      "vwap": 80.65
+    }
+  ],
+  "pair": "HYPE/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-202206-HYPE-EUR-r36347630977.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T21:11:59.462758Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-27T21:11:59.462758Z",
+    "revalidation_started_at_utc": "2026-09-27T21:11:55.443112Z"
+  }
+}
