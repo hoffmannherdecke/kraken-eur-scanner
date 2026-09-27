@@ -1,0 +1,95 @@
+{
+  "candidate_id": "20260927-210325-NEAR-EUR-r36349956296",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "EXTENDED_NEAR_HIGHS",
+      "LATE_CHASE",
+      "UPSIDE_INSUFFICIENT_AFTER_COSTS",
+      "TAKER_COSTS_MATERIAL"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Breakout and stronger closed volume are confirmed, but price has already advanced and is near the recent 4.90 high. Plausible upside to that high is below round-trip taker fees, with no supplied evidence supporting enough further movement.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_05f685fcf68d3a9d006ab98d3e166887d1850aedf8daeda830"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 4.8696,
+    "bid": 4.8674,
+    "last": 4.8702,
+    "spread_pct": 0.04518845640341382
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 4.7974,
+      "high": 4.7989,
+      "low": 4.7723,
+      "open": 4.781,
+      "trades": 67,
+      "ts": 1790541000,
+      "volume": 5648.92743201,
+      "vwap": 4.7878
+    },
+    {
+      "close": 4.7976,
+      "high": 4.8126,
+      "low": 4.7803,
+      "open": 4.7976,
+      "trades": 59,
+      "ts": 1790541900,
+      "volume": 3325.90456014,
+      "vwap": 4.796
+    },
+    {
+      "close": 4.8622,
+      "high": 4.87,
+      "low": 4.7915,
+      "open": 4.7988,
+      "trades": 214,
+      "ts": 1790542800,
+      "volume": 19504.18639247,
+      "vwap": 4.8196
+    },
+    {
+      "close": 4.8643,
+      "high": 4.892,
+      "low": 4.8319,
+      "open": 4.8607,
+      "trades": 138,
+      "ts": 1790543700,
+      "volume": 18328.09884365,
+      "vwap": 4.8637
+    },
+    {
+      "close": 4.8702,
+      "high": 4.9,
+      "low": 4.8562,
+      "open": 4.8649,
+      "trades": 115,
+      "ts": 1790544600,
+      "volume": 12894.92387345,
+      "vwap": 4.8762
+    }
+  ],
+  "pair": "NEAR/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-210325-NEAR-EUR-r36349956296.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T21:40:19.699528Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-27T21:40:19.699528Z",
+    "revalidation_started_at_utc": "2026-09-27T21:40:13.466714Z"
+  }
+}

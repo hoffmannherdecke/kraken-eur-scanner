@@ -1,0 +1,98 @@
+{
+  "candidate_id": "20260927-210325-LTC-EUR-r36349956296",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A closed reclaim above 62.72 with follow-through",
+      "Evidence of sufficient post-cost upside potential"
+    ],
+    "reason_codes": [
+      "WEAK_CONTINUITY",
+      "NO_BREAKOUT",
+      "SELLING_VOLUME_SPIKE",
+      "COSTS_UNCOVERED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "Fresh data shows a high-volume 15m selloff and price remains below resistance; no demonstrated follow-through or remaining move sufficient to clear costs.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_081e3903877c289f006ab98d3a0cec87d1b5e03a14bf9dccb2"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 62.35,
+    "bid": 62.31,
+    "last": 62.31,
+    "spread_pct": 0.06417455478902478
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 62.63,
+      "high": 62.63,
+      "low": 62.43,
+      "open": 62.45,
+      "trades": 31,
+      "ts": 1790541000,
+      "volume": 136.27745686,
+      "vwap": 62.58
+    },
+    {
+      "close": 62.54,
+      "high": 62.67,
+      "low": 62.47,
+      "open": 62.65,
+      "trades": 40,
+      "ts": 1790541900,
+      "volume": 68.65418098,
+      "vwap": 62.52
+    },
+    {
+      "close": 62.72,
+      "high": 62.72,
+      "low": 62.54,
+      "open": 62.59,
+      "trades": 35,
+      "ts": 1790542800,
+      "volume": 95.74280986,
+      "vwap": 62.58
+    },
+    {
+      "close": 62.65,
+      "high": 62.93,
+      "low": 62.65,
+      "open": 62.84,
+      "trades": 39,
+      "ts": 1790543700,
+      "volume": 36.32219036,
+      "vwap": 62.77
+    },
+    {
+      "close": 62.31,
+      "high": 62.61,
+      "low": 62.2,
+      "open": 62.61,
+      "trades": 41,
+      "ts": 1790544600,
+      "volume": 329.030711,
+      "vwap": 62.39
+    }
+  ],
+  "pair": "LTC/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-210325-LTC-EUR-r36349956296.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T21:40:13.466235Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-27T21:40:13.466235Z",
+    "revalidation_started_at_utc": "2026-09-27T21:40:09.285960Z"
+  }
+}
