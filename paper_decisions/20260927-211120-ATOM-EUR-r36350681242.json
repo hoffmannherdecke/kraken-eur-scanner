@@ -1,0 +1,60 @@
+{
+  "candidate_age_seconds": 12,
+  "candidate_event_time_utc": "2026-09-27T21:11:20Z",
+  "candidate_id": "20260927-211120-ATOM-EUR-r36350681242",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close holding above 1.6551 with follow-through",
+      "Stronger closed-bar volume confirmation"
+    ],
+    "reason_codes": [
+      "LOW_SPREAD",
+      "ADEQUATE_LIQUIDITY",
+      "BREAKOUT_UNCONFIRMED",
+      "CLOSED_VOLUME_MODEST",
+      "NET_REWARD_UNCLEAR"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Liquid and tightly spread, with a fresh but only marginal breakout; closed-bar follow-through and sufficient net upside after Kraken costs are not established.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T21:11:39.366130Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0ce11e4bb822d5ef006ab98684ca2c87d0ae70d4610408cb41"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.658,
+    "bid": 1.6574,
+    "last": 1.6575,
+    "spread_pct": 0.03619472763467056
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "ATOM/EUR",
+  "paper_entry": null,
+  "queue_id": "36350681242:ATOM-EUR:1790543480",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-27T21:11:20Z",
+    "candidate_detected_ts": 1790543480,
+    "candidate_snapshot_at_utc": "2026-09-27T21:11:20Z",
+    "detected_to_evaluation_complete_seconds": 19.366,
+    "detected_to_evaluation_start_seconds": 12.304,
+    "evaluation_completed_at_utc": "2026-09-27T21:11:39.366130Z",
+    "evaluation_runtime_seconds": 7.062,
+    "evaluation_started_at_utc": "2026-09-27T21:11:32.303827Z",
+    "handoff_to_evaluation_start_seconds": 10.079,
+    "handoff_written_at_utc": "2026-09-27T21:11:22.224612Z",
+    "scan_step_started_at_utc": "2026-09-27T21:09:54Z"
+  }
+}
