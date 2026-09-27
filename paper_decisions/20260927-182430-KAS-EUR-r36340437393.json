@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 1127,
+  "candidate_event_time_utc": "2026-09-27T18:24:30Z",
+  "candidate_id": "20260927-182430-KAS-EUR-r36340437393",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A completed 15-minute candle with confirming volume",
+      "Hold or successful retest above 0.04212 resistance"
+    ],
+    "reason_codes": [
+      "recent_move_already_run",
+      "near_7d_high",
+      "closed_volume_missing",
+      "fees_and_spread_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "KAS has broken above recent resistance with strong live volume, but the move is already extended and closed-bar volume is unavailable; remaining reward versus costs is not established.",
+    "ttl_minutes": 45
+  },
+  "evaluated_at_utc": "2026-09-27T18:43:23.121815Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_050270a61878e97a006ab963c53e5087d190c04bed450f2cd0"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.04292,
+    "bid": 0.04283,
+    "last": 0.04279,
+    "spread_pct": 0.20991253644314825
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "KAS/EUR",
+  "paper_entry": null,
+  "queue_id": "36340437393:KAS-EUR:1790533470",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

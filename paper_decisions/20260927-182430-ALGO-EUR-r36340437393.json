@@ -1,0 +1,41 @@
+{
+  "candidate_age_seconds": 1133,
+  "candidate_event_time_utc": "2026-09-27T18:24:30Z",
+  "candidate_id": "20260927-182430-ALGO-EUR-r36340437393",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": 2.5,
+    "missing_triggers": [],
+    "reason_codes": [
+      "near_resistance",
+      "cost_adjusted_rr_poor",
+      "limited_remaining_upside"
+    ],
+    "risk_reward_after_costs": 0.39,
+    "setup_lane": "CONTINUITY",
+    "stop_eur": null,
+    "summary": "Strong closed-bar momentum and volume, but the nearby 7d/30d high leaves limited upside after Kraken costs versus structural risk to support.",
+    "ttl_minutes": 0
+  },
+  "evaluated_at_utc": "2026-09-27T18:43:36.127639Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0e18aacaad3101be006ab963cbad4887d1a719f1d9417edc8e"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.10488,
+    "bid": 0.10483,
+    "last": 0.10473,
+    "spread_pct": 0.04768489819273711
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "ALGO/EUR",
+  "paper_entry": null,
+  "queue_id": "36340437393:ALGO-EUR:1790533470",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

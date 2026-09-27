@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 1102,
+  "candidate_event_time_utc": "2026-09-27T18:24:30Z",
+  "candidate_id": "20260927-182430-SUI-EUR-r36340437393",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Reclaim and hold above 1.1134",
+      "Fresh sustained volume/continuity after reclaim"
+    ],
+    "reason_codes": [
+      "QUOTE_DIVERGENCE_PULLBACK",
+      "BELOW_BREAKOUT_LEVEL",
+      "MULTIDAY_EXTENSION",
+      "NET_EDGE_UNPROVEN"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "The fresh quote is below the 1.1134 breakout level and materially below the scanner price; after a substantial multi-day run, entry and net upside are unproven.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T18:43:16.900601Z",
+  "evaluator": {
+    "attempt": 2,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0e47166602c84623006ab963bc158087d1bca10e4610c7f99d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.1113,
+    "bid": 1.1109,
+    "last": 1.1106,
+    "spread_pct": 0.03600036000359607
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "SUI/EUR",
+  "paper_entry": null,
+  "queue_id": "36340437393:SUI-EUR:1790533470",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
