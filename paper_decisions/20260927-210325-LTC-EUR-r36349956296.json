@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 67,
+  "candidate_event_time_utc": "2026-09-27T21:03:25Z",
+  "candidate_id": "20260927-210325-LTC-EUR-r36349956296",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 62.72 with stronger closed volume",
+      "Follow-through holding above resistance with enough room beyond all-in costs"
+    ],
+    "reason_codes": [
+      "WEAK_CONTINUITY",
+      "NO_BREAKOUT",
+      "CLOSED_VOLUME_UNCONFIRMED",
+      "COSTS_UNCOVERED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "Tradability is adequate, but current momentum and closed-volume evidence are weak; price remains just below 1h/3h resistance, leaving insufficient demonstrated movement to clear costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T21:04:36.464830Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_08b661519ab48ea6006ab984e0467087d196b1c6bd764a7412"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 62.61,
+    "bid": 62.59,
+    "last": 62.62,
+    "spread_pct": 0.03194888178913102
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "LTC/EUR",
+  "paper_entry": null,
+  "queue_id": "36349956296:LTC-EUR:1790543005",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

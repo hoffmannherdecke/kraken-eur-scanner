@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 61,
+  "candidate_event_time_utc": "2026-09-27T21:03:25Z",
+  "candidate_id": "20260927-210325-NEAR-EUR-r36349956296",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15-minute close above 4.82 with stronger closed volume",
+      "Hold or successful retest above 4.82 with sufficient remaining net reward"
+    ],
+    "reason_codes": [
+      "EXTENDED_NEAR_HIGHS",
+      "RESISTANCE_UNCONFIRMED",
+      "CLOSED_VOLUME_WEAK",
+      "TAKER_COSTS_MATERIAL"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Strong recent trend and good liquidity, but price is testing resistance near 4.82 after a large run; breakout and closed-volume confirmation are absent, so remaining net reward is not established.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T21:04:31.935613Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0e1dd30dd9697c94006ab984dabbdc87d1b34cf3de6ec3c735"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 4.803,
+    "bid": 4.8008,
+    "last": 4.8043,
+    "spread_pct": 0.0458151981507362
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "NEAR/EUR",
+  "paper_entry": null,
+  "queue_id": "36349956296:NEAR-EUR:1790543005",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
