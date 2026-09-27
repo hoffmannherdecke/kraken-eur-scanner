@@ -432,10 +432,12 @@ jobs:
               dt = datetime.fromtimestamp(ts, tz=timezone.utc)
               pair_tag = pair.replace("/", "-")
               queue_id = f"{run_id}:{pair_tag}:{ts}"
-              name = f"{dt.strftime('%Y%m%d-%H%M%S')}-{pair_tag}-r{run_id}.json"
+              candidate_id = f"{dt.strftime('%Y%m%d-%H%M%S')}-{pair_tag}-r{run_id}"
+              name = f"{candidate_id}.json"
               payload = {
                   "schema_version": 1,
                   "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+                  "candidate_id": candidate_id,
                   "queue_id": queue_id,
                   "source_repo": "hoffmannherdecke/kraken-eur-scanner",
                   "source_scanner_run_id": run_id,

@@ -44,8 +44,32 @@ jobs:
           candidate = json.loads(candidate_path.read_text('utf-8'))
           symbol = 'TON/EUR'
           scanner_run_id = 36263652082
-          candidate_id = candidate_path.stem
-          if candidate_id != '20260926-184829-TON-EUR-r36263652082':
+          candidate_id = candidate.get('candidate_id')
+          candidate_pair = candidate.get('pair')
+          candidate_event_time = candidate.get('event_time_utc')
+          try:
+              if not isinstance(candidate_event_time, str) or not candidate_event_time.endswith('Z'):
+                  raise ValueError('event_time_utc must be UTC Z time')
+              candidate_dt = datetime.fromisoformat(candidate_event_time[:-1] + '+00:00')
+              candidate_ts = int(candidate.get('event_ts'))
+              candidate_run_id = int(candidate.get('source_scanner_run_id'))
+          except (TypeError, ValueError) as exc:
+              raise SystemExit(f'candidate identity mismatch: malformed identity fields: {exc}')
+
+          pair_tag = candidate_pair.replace('/', '-') if isinstance(candidate_pair, str) else ''
+          expected_candidate_id = (
+              f"{candidate_dt.strftime('%Y%m%d-%H%M%S')}-{pair_tag}-r{candidate_run_id}"
+          )
+          expected_queue_id = f"{candidate_run_id}:{pair_tag}:{candidate_ts}"
+          if (
+              candidate_id != expected_candidate_id
+              or candidate_path.stem != expected_candidate_id
+              or int(candidate_dt.timestamp()) != candidate_ts
+              or candidate.get('queue_id') != expected_queue_id
+              or candidate_pair != symbol
+              or candidate_run_id != scanner_run_id
+              or expected_candidate_id != '20260926-184829-TON-EUR-r36263652082'
+          ):
               raise SystemExit('candidate identity mismatch')
 
           root = Path('gate2-tape')
