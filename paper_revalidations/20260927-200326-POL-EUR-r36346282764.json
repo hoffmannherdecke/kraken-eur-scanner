@@ -1,0 +1,92 @@
+{
+  "candidate_id": "20260927-200326-POL-EUR-r36346282764",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "BREAKOUT_FAILED",
+      "HIGH_VOLUME_SELLoff",
+      "LIVE_VOLUME_WEAK",
+      "COSTS_MATERIAL",
+      "AVOID_CHASE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "The breakout failed: price fell back below 0.1091 after a high-volume selloff, with subdued volume on the latest candle. Continuation is unconfirmed and remaining upside is not established against costs.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_006cf819dc1e531c006ab97f41a53087d1a091c5d4b2906f4e"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.10799,
+    "bid": 0.10786,
+    "last": 0.10815,
+    "spread_pct": 0.12045401899467698
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.10818,
+      "high": 0.10818,
+      "low": 0.10777,
+      "open": 0.10781,
+      "trades": 12,
+      "ts": 1790537400,
+      "volume": 32232.3946,
+      "vwap": 0.10812
+    },
+    {
+      "close": 0.10898,
+      "high": 0.1091,
+      "low": 0.10814,
+      "open": 0.10814,
+      "trades": 20,
+      "ts": 1790538300,
+      "volume": 60474.82114,
+      "vwap": 0.10863
+    },
+    {
+      "close": 0.10951,
+      "high": 0.10951,
+      "low": 0.10911,
+      "open": 0.10922,
+      "trades": 17,
+      "ts": 1790539200,
+      "volume": 46560.54871,
+      "vwap": 0.10934
+    },
+    {
+      "close": 0.10818,
+      "high": 0.10993,
+      "low": 0.10781,
+      "open": 0.10962,
+      "trades": 66,
+      "ts": 1790540100,
+      "volume": 504774.89906,
+      "vwap": 0.10898
+    },
+    {
+      "close": 0.10815,
+      "high": 0.10849,
+      "low": 0.10799,
+      "open": 0.10799,
+      "trades": 13,
+      "ts": 1790541000,
+      "volume": 24043.65017,
+      "vwap": 0.10836
+    }
+  ],
+  "pair": "POL/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-200326-POL-EUR-r36346282764.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T20:40:36.565946Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

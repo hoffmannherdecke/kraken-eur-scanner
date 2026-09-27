@@ -1,0 +1,91 @@
+{
+  "candidate_id": "20260927-200326-ZRO-EUR-r36346282764",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "breakout_failed",
+      "support_lost",
+      "continuity_invalidated",
+      "fees_and_slippage_reduce_headroom"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "Resistance was not reclaimed; price has retreated sharply and is now below the stated 1h support, so the continuation setup is invalidated.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_03426e0161004ce0006ab97f44e43487d1af992aca7056d843"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.465,
+    "bid": 1.464,
+    "last": 1.467,
+    "spread_pct": 0.06828269033800695
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 1.492,
+      "high": 1.492,
+      "low": 1.467,
+      "open": 1.471,
+      "trades": 33,
+      "ts": 1790537400,
+      "volume": 2105.32599,
+      "vwap": 1.481
+    },
+    {
+      "close": 1.509,
+      "high": 1.511,
+      "low": 1.485,
+      "open": 1.49,
+      "trades": 65,
+      "ts": 1790538300,
+      "volume": 8832.7243,
+      "vwap": 1.498
+    },
+    {
+      "close": 1.492,
+      "high": 1.516,
+      "low": 1.49,
+      "open": 1.51,
+      "trades": 142,
+      "ts": 1790539200,
+      "volume": 8996.99689,
+      "vwap": 1.504
+    },
+    {
+      "close": 1.485,
+      "high": 1.496,
+      "low": 1.478,
+      "open": 1.496,
+      "trades": 39,
+      "ts": 1790540100,
+      "volume": 3442.39876,
+      "vwap": 1.483
+    },
+    {
+      "close": 1.467,
+      "high": 1.487,
+      "low": 1.466,
+      "open": 1.486,
+      "trades": 37,
+      "ts": 1790541000,
+      "volume": 5196.06849,
+      "vwap": 1.47
+    }
+  ],
+  "pair": "ZRO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-200326-ZRO-EUR-r36346282764.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T20:40:40.634198Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
