@@ -68,11 +68,14 @@ jobs:
           import urllib.parse
           import urllib.request
           from dataclasses import asdict
+          from datetime import datetime, timezone
           from pathlib import Path
           import scanner
 
           audit_path = Path(".state/audit_history.jsonl")
           pending_events = []
+          scan_started_ts = int(time.time())
+          scan_started_at_utc = datetime.fromtimestamp(scan_started_ts, tz=timezone.utc).isoformat().replace("+00:00", "Z")
 
           # Compact, machine-readable handoff for ChatGPT. This is public
           # market/scanner context only; it contains no account keys, orders,
@@ -84,6 +87,13 @@ jobs:
           def append_handoff(event):
               with handoff_path.open("a", encoding="utf-8") as fh:
                   fh.write(json.dumps(event, separators=(",", ":"), sort_keys=True) + "\n")
+
+          append_handoff({
+              "schema_version": 1,
+              "kind": "scan_run_meta",
+              "scan_started_ts": scan_started_ts,
+              "scan_started_at_utc": scan_started_at_utc,
+          })
 
           original_post = scanner.post_slack
           original_save = scanner.save_state
@@ -409,6 +419,7 @@ jobs:
 
           source = Path(".scanner/kraken_eur_scanner/handoff/candidates.jsonl")
           rows = [json.loads(line) for line in source.read_text("utf-8").splitlines() if line.strip()]
+          run_meta = next((r for r in rows if r.get("kind") == "scan_run_meta"), None)
           messages = {r["pair"]: r for r in rows if r.get("kind") == "review_candidate_message" and r.get("pair")}
           snapshots = {r["pair"]: r for r in rows if r.get("kind") == "candidate_snapshot" and r.get("pair")}
           contexts = {r["pair"]: r for r in rows if r.get("kind") == "market_context" and r.get("pair")}
@@ -430,6 +441,9 @@ jobs:
 
               ts = int(snap["ts"])
               dt = datetime.fromtimestamp(ts, tz=timezone.utc)
+              detected_ts = int(msg.get("ts", ts))
+              detected_dt = datetime.fromtimestamp(detected_ts, tz=timezone.utc)
+              handoff_written_dt = datetime.now(timezone.utc)
               pair_tag = pair.replace("/", "-")
               queue_id = f"{run_id}:{pair_tag}:{ts}"
               candidate_id = f"{dt.strftime('%Y%m%d-%H%M%S')}-{pair_tag}-r{run_id}"
@@ -444,6 +458,14 @@ jobs:
                   "source_scanner_run_attempt": run_attempt,
                   "event_time_utc": dt.isoformat().replace("+00:00", "Z"),
                   "event_ts": ts,
+                  "timing": {
+                      "scan_step_started_at_utc": run_meta.get("scan_started_at_utc") if run_meta else None,
+                      "candidate_detected_at_utc": detected_dt.isoformat().replace("+00:00", "Z"),
+                      "candidate_detected_ts": detected_ts,
+                      "candidate_snapshot_at_utc": dt.isoformat().replace("+00:00", "Z"),
+                      "handoff_written_at_utc": handoff_written_dt.isoformat().replace("+00:00", "Z"),
+                      "altrady_detected_at_utc": None,
+                  },
                   "pair": pair,
                   "altname": snap["features"].get("altname"),
                   "action": "REVIEW_ONLY_NOT_ORDER",
