@@ -1,0 +1,56 @@
+{
+  "candidate_age_seconds": 10,
+  "candidate_event_time_utc": "2026-09-27T21:21:13Z",
+  "candidate_id": "20260927-212113-XDC-EUR-r36351312037",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "near_7d_30d_highs",
+      "closed_volume_weak",
+      "spread_widened",
+      "costs_exceed_plausible_runway"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Already near recent highs after a strong run; weak closed-volume confirmation and the fresh 0.419% spread leave no supported net reward after costs.",
+    "ttl_minutes": 0
+  },
+  "evaluated_at_utc": "2026-09-27T21:21:32.100501Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f3a27396112be60006ab988d3fe3887d19756fba768fa9428"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.02868,
+    "bid": 0.02856,
+    "last": 0.02864,
+    "spread_pct": 0.41928721174004907
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "XDC/EUR",
+  "paper_entry": null,
+  "queue_id": "36351312037:XDC-EUR:1790544073",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-27T21:21:13Z",
+    "candidate_detected_ts": 1790544073,
+    "candidate_snapshot_at_utc": "2026-09-27T21:21:13Z",
+    "detected_to_evaluation_complete_seconds": 19.101,
+    "detected_to_evaluation_start_seconds": 10.583,
+    "evaluation_completed_at_utc": "2026-09-27T21:21:32.100501Z",
+    "evaluation_runtime_seconds": 8.518,
+    "evaluation_started_at_utc": "2026-09-27T21:21:23.582659Z",
+    "handoff_to_evaluation_start_seconds": 8.626,
+    "handoff_written_at_utc": "2026-09-27T21:21:14.956407Z",
+    "scan_step_started_at_utc": "2026-09-27T21:19:47Z"
+  }
+}
