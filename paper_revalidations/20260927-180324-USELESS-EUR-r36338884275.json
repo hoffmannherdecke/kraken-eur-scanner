@@ -1,0 +1,94 @@
+{
+  "candidate_id": "20260927-180324-USELESS-EUR-r36338884275",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A defined upside objective supporting sufficient after-cost reward.",
+      "A defensible structural invalidation level with attractive reward/risk."
+    ],
+    "reason_codes": [
+      "LATE_MOVE",
+      "EXTENDED",
+      "NET_EDGE_UNPROVEN",
+      "STOP_STRUCTURE_UNDEFINED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Price has surged well beyond the scanner level; the remaining upside is unproven after Kraken costs, and no attractive structural stop/reward profile is established.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0292ebc8ff5ce13b006ab9648f71b887d0a43633d740207b6b"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.26407,
+    "bid": 0.26373,
+    "last": 0.26303,
+    "spread_pct": 0.12883668056082112
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.25274,
+      "high": 0.253,
+      "low": 0.24951,
+      "open": 0.25244,
+      "trades": 18,
+      "ts": 1790531100,
+      "volume": 49387.36352,
+      "vwap": 0.25166
+    },
+    {
+      "close": 0.25356,
+      "high": 0.25395,
+      "low": 0.25273,
+      "open": 0.25297,
+      "trades": 8,
+      "ts": 1790532000,
+      "volume": 5251.91286,
+      "vwap": 0.25309
+    },
+    {
+      "close": 0.25611,
+      "high": 0.25771,
+      "low": 0.25562,
+      "open": 0.25771,
+      "trades": 6,
+      "ts": 1790532900,
+      "volume": 2113.82897,
+      "vwap": 0.25619
+    },
+    {
+      "close": 0.26135,
+      "high": 0.26254,
+      "low": 0.2568,
+      "open": 0.2568,
+      "trades": 103,
+      "ts": 1790533800,
+      "volume": 165864.25444,
+      "vwap": 0.25992
+    },
+    {
+      "close": 0.26303,
+      "high": 0.26303,
+      "low": 0.26177,
+      "open": 0.26188,
+      "trades": 5,
+      "ts": 1790534700,
+      "volume": 6426.45009,
+      "vwap": 0.26183
+    }
+  ],
+  "pair": "USELESS/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-180324-USELESS-EUR-r36338884275.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T18:46:45.092035Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
