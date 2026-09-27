@@ -1,0 +1,91 @@
+name: Paper V2 candidate evaluator
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'handoff_queue/**'
+      - 'paper_evaluator/**'
+      - '.github/workflows/paper-evaluator.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper-v2-evaluator
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: gpt-6-luna
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Preflight and select prospective candidates
+        run: |
+          set -euo pipefail
+          test -n "$OPENAI_API_KEY" || { echo "BLOCKER missing OPENAI_API_KEY"; exit 2; }
+          python -m py_compile paper_evaluator/evaluate.py
+          mkdir -p .paper-work
+          python - <<'PY'
+          import json, subprocess
+          from pathlib import Path
+          changed=[]
+          try:
+              out=subprocess.check_output(["git","diff","--name-only","HEAD^","HEAD"],text=True)
+              changed=[x for x in out.splitlines() if x.startswith("handoff_queue/") and x.endswith(".json")]
+          except Exception:
+              pass
+          if not changed:
+              allq=sorted(Path("handoff_queue").glob("*.json"),key=lambda p:p.stat().st_mtime,reverse=True)
+              changed=[str(allq[0])] if allq else []
+          changed=changed[:3]
+          if not changed: raise SystemExit("no candidate available")
+          Path(".paper-work/candidates.json").write_text(json.dumps(changed)+"\n")
+          print("PAPER_SELECTED",json.dumps(changed))
+          PY
+      - name: Evaluate frozen V2 paper decisions
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, subprocess
+          for p in json.load(open(".paper-work/candidates.json")):
+              subprocess.run(["python","paper_evaluator/evaluate.py",p],check=True)
+          PY
+      - name: Validate safety and persist append-only decisions
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          files=list(Path("paper_decisions").glob("*.json"))
+          if not files: raise SystemExit("no paper decision persisted")
+          for p in files:
+              d=json.loads(p.read_text())
+              assert d["real_money_actions_enabled"] is False
+              assert d["kind"]=="PAPER_V2_DECISION_V1"
+              assert d["test_id"]=="SHADOW-V2-20260924-01"
+              assert d["decision"]["decision"] in {"BUY_SCOUT","WAIT","REJECT"}
+              if d["decision"]["decision"]=="BUY_SCOUT":
+                  assert d["paper_entry"] and d["paper_entry"]["status"].startswith("FILLED_SIMULATED")
+          print("PAPER_SAFETY_GATE_PASS")
+          PY
+          if git status --porcelain paper_decisions/ | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add paper_decisions/
+            git commit -m "[paper-eval] persist frozen V2 decision"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          else
+            echo "PAPER_NO_NEW_DECISIONS"
+          fi
