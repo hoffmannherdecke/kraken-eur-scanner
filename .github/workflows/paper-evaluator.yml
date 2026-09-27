@@ -1,11 +1,9 @@
 name: Paper V2 candidate evaluator
 
 'on':
+  # Legacy evaluator parked: canonical-evaluator-runtime-v1 owns automatic paper execution.
+  # Manual dispatch is retained only for explicit diagnostics.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'handoff_queue/**'
 
 permissions:
   contents: write
