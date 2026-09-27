@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -16,6 +17,10 @@ def fmt_num(value):
     if abs(v) >= 1:
         return f"{v:.4f}".rstrip("0").rstrip(".")
     return f"{v:.6f}".rstrip("0").rstrip(".")
+
+
+def utcnow():
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
 def post_slack(text):
@@ -33,6 +38,7 @@ def post_slack(text):
         print(f"Slack response: {resp.status} {body}")
         if not 200 <= resp.status < 300:
             raise RuntimeError(f"Slack HTTP {resp.status}")
+        return utcnow()
 
 
 def main():
@@ -64,10 +70,17 @@ def main():
     if not user_id:
         raise RuntimeError("missing SLACK_USER_ID")
 
+    receipts = Path("paper_alerts")
+    receipts.mkdir(exist_ok=True)
+
     for record in actionable:
         d = record["decision"]
         entry = record["paper_entry"]
         pair = record["pair"]
+        receipt_path = receipts / f"{record['candidate_id']}.json"
+        if receipt_path.exists():
+            print("SLACK_ACTION_PUSH_IDEMPOTENT", pair, record.get("candidate_id"))
+            continue
         text = (
             f"<@{user_id}> KRYPTOSIGNAL | {pair} | PAPER BUY_SCOUT\n"
             f"Entry ~{fmt_num(entry.get('fill_price_eur'))} EUR | "
@@ -76,8 +89,19 @@ def main():
             f"Setup: {d.get('setup_lane', 'n/a')} | {d.get('summary', '').strip()}\n"
             "Nur Paper-Test – keine Echtgeldorder."
         )
-        post_slack(text)
-        print("SLACK_ACTION_PUSH_SENT", pair, record.get("candidate_id"))
+        accepted_at_utc = post_slack(text)
+        receipt = {
+            "schema_version": 1,
+            "kind": "PAPER_SLACK_ALERT_RECEIPT_V1",
+            "candidate_id": record["candidate_id"],
+            "pair": pair,
+            "decision": d.get("decision"),
+            "slack_webhook_accepted_at_utc": accepted_at_utc,
+            "real_money_actions_enabled": False,
+            "delivery_scope": "Slack webhook accepted; device delivery is not observable here",
+        }
+        receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", "utf-8")
+        print("SLACK_ACTION_PUSH_SENT", pair, record.get("candidate_id"), accepted_at_utc)
 
 
 if __name__ == "__main__":
