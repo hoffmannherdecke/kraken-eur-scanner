@@ -1,0 +1,94 @@
+{
+  "candidate_id": "20260927-193325-XPL-EUR-r36344683050",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.0944 with continued volume",
+      "Follow-through holding above 0.0944"
+    ],
+    "reason_codes": [
+      "RESISTANCE_UNCLEARED",
+      "FOLLOW_THROUGH_ABSENT",
+      "COSTS_MATERIAL",
+      "NET_REWARD_UNESTABLISHED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Price remains below 0.0944 resistance without a confirmed close and follow-through; remaining upside is unestablished and likely insufficient to justify Kraken costs.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_02058a27f07ce455006ab97c01947487d09ff9abc957d512cc"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0938,
+    "bid": 0.0936,
+    "last": 0.094,
+    "spread_pct": 0.21344717182496462
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.0937,
+      "high": 0.0944,
+      "low": 0.0937,
+      "open": 0.0941,
+      "trades": 21,
+      "ts": 1790536500,
+      "volume": 56277.49964,
+      "vwap": 0.094
+    },
+    {
+      "close": 0.0937,
+      "high": 0.0939,
+      "low": 0.0932,
+      "open": 0.0935,
+      "trades": 27,
+      "ts": 1790537400,
+      "volume": 33587.43087,
+      "vwap": 0.0935
+    },
+    {
+      "close": 0.0935,
+      "high": 0.0935,
+      "low": 0.0935,
+      "open": 0.0935,
+      "trades": 1,
+      "ts": 1790538300,
+      "volume": 213.0515,
+      "vwap": 0.0935
+    },
+    {
+      "close": 0.0944,
+      "high": 0.0944,
+      "low": 0.0942,
+      "open": 0.0942,
+      "trades": 8,
+      "ts": 1790539200,
+      "volume": 8804.29654,
+      "vwap": 0.0943
+    },
+    {
+      "close": 0.094,
+      "high": 0.0945,
+      "low": 0.094,
+      "open": 0.0944,
+      "trades": 8,
+      "ts": 1790540100,
+      "volume": 12797.1744,
+      "vwap": 0.0942
+    }
+  ],
+  "pair": "XPL/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-193325-XPL-EUR-r36344683050.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T20:26:46.423787Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
