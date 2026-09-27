@@ -1,0 +1,90 @@
+{
+  "candidate_id": "20260927-182430-SUI-EUR-r36340437393",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "MULTIDAY_EXTENSION",
+      "NET_EDGE_UNPROVEN",
+      "OVERHEAD_RESISTANCE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Price reclaimed the breakout area, but the multi-day extension and limited demonstrated upside leave net reward after Kraken costs unproven.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0c858a0384fd0117006ab96d9a6f7087d0ab06e57ccc84c8eb"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.1185,
+    "bid": 1.1183,
+    "last": 1.1163,
+    "spread_pct": 0.01788268955650733
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 1.1152,
+      "high": 1.1239,
+      "low": 1.1129,
+      "open": 1.1135,
+      "trades": 408,
+      "ts": 1790532900,
+      "volume": 407166.3529,
+      "vwap": 1.1162
+    },
+    {
+      "close": 1.1132,
+      "high": 1.114,
+      "low": 1.1082,
+      "open": 1.1126,
+      "trades": 60,
+      "ts": 1790533800,
+      "volume": 24079.32379,
+      "vwap": 1.1118
+    },
+    {
+      "close": 1.1228,
+      "high": 1.123,
+      "low": 1.1129,
+      "open": 1.113,
+      "trades": 144,
+      "ts": 1790534700,
+      "volume": 139883.99798,
+      "vwap": 1.1151
+    },
+    {
+      "close": 1.1185,
+      "high": 1.1297,
+      "low": 1.1141,
+      "open": 1.1226,
+      "trades": 261,
+      "ts": 1790535600,
+      "volume": 108701.55561,
+      "vwap": 1.1188
+    },
+    {
+      "close": 1.1163,
+      "high": 1.1199,
+      "low": 1.1125,
+      "open": 1.1197,
+      "trades": 143,
+      "ts": 1790536500,
+      "volume": 192030.39445,
+      "vwap": 1.1148
+    }
+  ],
+  "pair": "SUI/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-182430-SUI-EUR-r36340437393.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T19:25:18.395022Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
