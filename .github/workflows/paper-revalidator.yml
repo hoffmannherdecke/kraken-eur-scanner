@@ -2,8 +2,6 @@ name: Paper V2 WAIT revalidator
 
 'on':
   workflow_dispatch:
-  schedule:
-    - cron: '4,19,34,49 * * * *'
 
 permissions:
   contents: write
