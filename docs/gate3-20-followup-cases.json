@@ -1,0 +1,228 @@
+{
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "measurement": "Gate-3 20-case rejection follow-up",
+  "baseline": "actual evaluator-time Kraken EUR executable ask",
+  "cases": [
+    {
+      "label": "ATOM",
+      "candidate_id": "20260927-082257-ATOM-EUR-r36305934633",
+      "pair": "ATOM/EUR",
+      "altname": "ATOMEUR",
+      "assessment_time_utc": "2026-09-27T08:25:26.909856Z",
+      "bid": 1.6574,
+      "ask": 1.6583,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "RENDER",
+      "candidate_id": "20260927-084838-RENDER-EUR-r36307285324",
+      "pair": "RENDER/EUR",
+      "altname": "RENDEREUR",
+      "assessment_time_utc": "2026-09-27T08:51:18.101370Z",
+      "bid": 1.837,
+      "ask": 1.839,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "SHIB",
+      "candidate_id": "20260927-092220-SHIB-EUR-r36309066743",
+      "pair": "SHIB/EUR",
+      "altname": "SHIBEUR",
+      "assessment_time_utc": "2026-09-27T09:24:27.417842Z",
+      "bid": 0.000005223,
+      "ask": 0.000005226,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "ARB1",
+      "candidate_id": "20260927-094829-ARB-EUR-r36310413742",
+      "pair": "ARB/EUR",
+      "altname": "ARBEUR",
+      "assessment_time_utc": "2026-09-27T09:50:34.411442Z",
+      "bid": 0.2029,
+      "ask": 0.2031,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "ENA",
+      "candidate_id": "20260927-102130-ENA-EUR-r36312182529",
+      "pair": "ENA/EUR",
+      "altname": "ENAEUR",
+      "assessment_time_utc": "2026-09-27T10:23:55.880916Z",
+      "bid": 0.2401,
+      "ask": 0.2403,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "CC",
+      "candidate_id": "20260927-112130-CC-EUR-r36315382141",
+      "pair": "CC/EUR",
+      "altname": "CCEUR",
+      "assessment_time_utc": "2026-09-27T11:27:43.336338Z",
+      "bid": 0.12102,
+      "ask": 0.12112,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "PUMP",
+      "candidate_id": "20260927-113600-PUMP-EUR-r36316165678",
+      "pair": "PUMP/EUR",
+      "altname": "PUMPEUR",
+      "assessment_time_utc": "2026-09-27T11:41:34.045622Z",
+      "bid": 0.003939,
+      "ask": 0.003948,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "XDC",
+      "candidate_id": "20260927-114839-XDC-EUR-r36316848016",
+      "pair": "XDC/EUR",
+      "altname": "XDCEUR",
+      "assessment_time_utc": "2026-09-27T11:53:58.212349Z",
+      "bid": 0.02771,
+      "ask": 0.02776,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "PENGU",
+      "candidate_id": "20260927-122644-PENGU-EUR-r36318918212",
+      "pair": "PENGU/EUR",
+      "altname": "PENGUEUR",
+      "assessment_time_utc": "2026-09-27T12:34:47.111576Z",
+      "bid": 0.009538,
+      "ask": 0.00957,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "ALGO1",
+      "candidate_id": "20260927-125127-ALGO-EUR-r36320294211",
+      "pair": "ALGO/EUR",
+      "altname": "ALGOEUR",
+      "assessment_time_utc": "2026-09-27T12:57:21.828215Z",
+      "bid": 0.10368,
+      "ask": 0.10373,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "JUP1",
+      "candidate_id": "20260927-172053-JUP-EUR-r36336502909",
+      "pair": "JUP/EUR",
+      "altname": "JUPEUR",
+      "assessment_time_utc": "2026-09-27T17:26:56.686975Z",
+      "bid": 0.29718,
+      "ask": 0.29752,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "AAVE",
+      "candidate_id": "20260927-173436-AAVE-EUR-r36337362681",
+      "pair": "AAVE/EUR",
+      "altname": "AAVEEUR",
+      "assessment_time_utc": "2026-09-27T17:41:04.895584Z",
+      "bid": 136.14,
+      "ask": 136.24,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "DASH",
+      "candidate_id": "20260927-174823-DASH-EUR-r36338162102",
+      "pair": "DASH/EUR",
+      "altname": "DASHEUR",
+      "assessment_time_utc": "2026-09-27T17:53:45.373028Z",
+      "bid": 60.124,
+      "ask": 60.174,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "ALGO2",
+      "candidate_id": "20260927-182430-ALGO-EUR-r36340437393",
+      "pair": "ALGO/EUR",
+      "altname": "ALGOEUR",
+      "assessment_time_utc": "2026-09-27T18:31:43.952864Z",
+      "bid": 0.1054,
+      "ask": 0.10549,
+      "v2": "UNKNOWN",
+      "alt": "UNKNOWN"
+    },
+    {
+      "label": "RAY",
+      "candidate_id": "20260927-190323-RAY-EUR-r36342698969",
+      "pair": "RAY/EUR",
+      "altname": "RAYEUR",
+      "assessment_time_utc": "2026-09-27T19:10:12.220864Z",
+      "bid": 1.949,
+      "ask": 1.954,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "MON",
+      "candidate_id": "20260927-192000-MON-EUR-r36343871949",
+      "pair": "MON/EUR",
+      "altname": "MONEUR",
+      "assessment_time_utc": "2026-09-27T19:26:07.555986Z",
+      "bid": 0.02457,
+      "ask": 0.02459,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "JUP2",
+      "candidate_id": "20260927-193325-JUP-EUR-r36344683050",
+      "pair": "JUP/EUR",
+      "altname": "JUPEUR",
+      "assessment_time_utc": "2026-09-27T19:39:52.314398Z",
+      "bid": 0.30772,
+      "ask": 0.30819,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "DOT",
+      "candidate_id": "20260927-194825-DOT-EUR-r36345464123",
+      "pair": "DOT/EUR",
+      "altname": "DOTEUR",
+      "assessment_time_utc": "2026-09-27T19:52:50.347220Z",
+      "bid": 1.1154,
+      "ask": 1.1164,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "ARB2",
+      "candidate_id": "20260927-200326-ARB-EUR-r36346282764",
+      "pair": "ARB/EUR",
+      "altname": "ARBEUR",
+      "assessment_time_utc": "2026-09-27T20:11:31.500333Z",
+      "bid": 0.2035,
+      "ask": 0.2036,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    },
+    {
+      "label": "HYPE",
+      "candidate_id": "20260927-202206-HYPE-EUR-r36347630977",
+      "pair": "HYPE/EUR",
+      "altname": "HYPEEUR",
+      "assessment_time_utc": "2026-09-27T20:28:21.887892Z",
+      "bid": 80.57,
+      "ask": 80.6,
+      "v2": "NO_TRADE",
+      "alt": "NO_TRADE"
+    }
+  ]
+}
