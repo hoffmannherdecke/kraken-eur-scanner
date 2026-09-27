@@ -1,0 +1,93 @@
+{
+  "candidate_id": "20260927-193325-JUP-EUR-r36344683050",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A sustained 15m close above 0.31066 with volume"
+    ],
+    "reason_codes": [
+      "BELOW_RESISTANCE",
+      "NO_BREAKOUT_CONFIRMATION",
+      "EXTENDED_MULTI_DAY_RUN",
+      "COSTS_EXCEED_NEARBY_UPSIDE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Price remains below 1h/3h resistance after a strong multi-day run; the supplied revalidation shows no confirming breakout, and nearby upside does not justify fees and execution costs.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0d388af2d896796e006ab9788b245c87d098f6a4252de22962"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.3081,
+    "bid": 0.30768,
+    "last": 0.30761,
+    "spread_pct": 0.13641235506186494
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.30952,
+      "high": 0.31066,
+      "low": 0.30479,
+      "open": 0.30566,
+      "trades": 70,
+      "ts": 1790535600,
+      "volume": 22971.12737,
+      "vwap": 0.30649
+    },
+    {
+      "close": 0.30713,
+      "high": 0.30937,
+      "low": 0.30713,
+      "open": 0.30937,
+      "trades": 33,
+      "ts": 1790536500,
+      "volume": 28771.07291,
+      "vwap": 0.30875
+    },
+    {
+      "close": 0.3084,
+      "high": 0.3084,
+      "low": 0.30688,
+      "open": 0.30691,
+      "trades": 30,
+      "ts": 1790537400,
+      "volume": 22583.00556,
+      "vwap": 0.3078
+    },
+    {
+      "close": 0.30604,
+      "high": 0.3093,
+      "low": 0.30603,
+      "open": 0.30867,
+      "trades": 70,
+      "ts": 1790538300,
+      "volume": 41508.03016,
+      "vwap": 0.30836
+    },
+    {
+      "close": 0.30761,
+      "high": 0.30787,
+      "low": 0.30531,
+      "open": 0.30687,
+      "trades": 50,
+      "ts": 1790539200,
+      "volume": 20689.83548,
+      "vwap": 0.30687
+    }
+  ],
+  "pair": "JUP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-193325-JUP-EUR-r36344683050.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T20:11:59.492979Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
