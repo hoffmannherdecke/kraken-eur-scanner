@@ -11,6 +11,7 @@ name: Kraken EUR early sensor
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: kraken-eur-scanner
@@ -541,6 +542,7 @@ jobs:
           PY
 
       - name: Commit validated canonical handoff queue
+        id: queue_commit
         if: success() && hashFiles('.candidate-identity-manifest.json') != ''
         run: |
           set -euo pipefail
@@ -552,6 +554,39 @@ jobs:
             git fetch origin main
             git rebase origin/main
             git push origin HEAD:main
+            echo "new_candidates=true" >> "$GITHUB_OUTPUT"
           else
             echo "No new canonical handoff queue files."
+            echo "new_candidates=false" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Dispatch paper evaluator immediately
+        if: success() && steps.queue_commit.outputs.new_candidates == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          url = f"https://api.github.com/repos/{os.environ['REPO']}/actions/workflows/paper-evaluator.yml/dispatches"
+          req = urllib.request.Request(
+              url,
+              data=json.dumps({"ref": "main"}).encode("utf-8"),
+              method="POST",
+              headers={
+                  "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "User-Agent": "kraken-eur-scanner-immediate-evaluator/1.0",
+                  "Content-Type": "application/json",
+              },
+          )
+          with urllib.request.urlopen(req, timeout=20) as resp:
+              if resp.status not in (204,):
+                  raise RuntimeError(f"workflow dispatch HTTP {resp.status}")
+          print("PAPER_EVALUATOR_DISPATCHED")
+          PY
