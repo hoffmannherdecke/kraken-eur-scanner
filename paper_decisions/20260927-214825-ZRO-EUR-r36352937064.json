@@ -1,0 +1,60 @@
+{
+  "candidate_age_seconds": 11,
+  "candidate_event_time_utc": "2026-09-27T21:48:25Z",
+  "candidate_id": "20260927-214825-ZRO-EUR-r36352937064",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.474 with follow-through",
+      "closed-volume expansion supporting the reclaim"
+    ],
+    "reason_codes": [
+      "unconfirmed_breakout",
+      "weak_closed_volume",
+      "negative_1h_3h_continuity",
+      "nearby_resistance",
+      "costs_vs_move"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Live volume and 15m return suggest a possible ignition, but it has not confirmed: price remains below nearby resistance, closed volume is weak, and 1h/3h returns are negative. Reassess only after a confirmed reclaim with follow-through; current evidence does not justify entry after costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T21:48:41.979113Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0e03cb8a04141a46006ab98f34e37487d18525805ea40d102d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.458,
+    "bid": 1.456,
+    "last": 1.458,
+    "spread_pct": 0.1372683596431024
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "ZRO/EUR",
+  "paper_entry": null,
+  "queue_id": "36352937064:ZRO-EUR:1790545705",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-27T21:48:25Z",
+    "candidate_detected_ts": 1790545705,
+    "candidate_snapshot_at_utc": "2026-09-27T21:48:25Z",
+    "detected_to_evaluation_complete_seconds": 16.979,
+    "detected_to_evaluation_start_seconds": 11.212,
+    "evaluation_completed_at_utc": "2026-09-27T21:48:41.979113Z",
+    "evaluation_runtime_seconds": 5.767,
+    "evaluation_started_at_utc": "2026-09-27T21:48:36.211681Z",
+    "handoff_to_evaluation_start_seconds": 9.543,
+    "handoff_written_at_utc": "2026-09-27T21:48:26.668599Z",
+    "scan_step_started_at_utc": "2026-09-27T21:46:24Z"
+  }
+}
