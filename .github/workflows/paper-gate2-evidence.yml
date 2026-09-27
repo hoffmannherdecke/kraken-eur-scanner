@@ -1,4 +1,4 @@
-name: Paper Gate2 evidence
+name: Paper Gate2 TON frozen regression evidence
 
 'on':
   push:
@@ -27,7 +27,7 @@ jobs:
           run-id: '36263032960'
           name: paper-market-tape-36263032960-1
           path: gate2-tape
-      - name: Verify artifact and extract the single TON gate case
+      - name: Verify artifact and extract the frozen TON regression case
         run: |
           python paper_capture/verify_parts.py gate2-tape 36263032960 1
           python - <<'PY'
