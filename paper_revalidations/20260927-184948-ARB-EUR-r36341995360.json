@@ -1,0 +1,95 @@
+{
+  "candidate_id": "20260927-184948-ARB-EUR-r36341995360",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Bullish follow-through with sustained volume above resistance",
+      "Defined structural invalidation with attractive after-cost reward/risk"
+    ],
+    "reason_codes": [
+      "follow_through_unconfirmed",
+      "high_volume_candle_closed_down",
+      "net_reward_risk_unattractive_or_unclear",
+      "late_entry_risk",
+      "round_trip_fees_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stop_eur": null,
+    "summary": "Price remains above resistance, but the revalidation does not establish bullish follow-through or attractive net reward/risk after Kraken fees; the latest completed high-volume candle closed down and no suitable structural stop is supported.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_049a8ea3540ad3e6006ab973d1de2487d1966ae9b7bc4ee894"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2,
+    "bid": 0.1998,
+    "last": 0.2001,
+    "spread_pct": 0.1000500250125091
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.2006,
+      "high": 0.2008,
+      "low": 0.1997,
+      "open": 0.1999,
+      "trades": 24,
+      "ts": 1790534700,
+      "volume": 58543.77025,
+      "vwap": 0.2005
+    },
+    {
+      "close": 0.2001,
+      "high": 0.2002,
+      "low": 0.2,
+      "open": 0.2001,
+      "trades": 12,
+      "ts": 1790535600,
+      "volume": 14486.66715,
+      "vwap": 0.2
+    },
+    {
+      "close": 0.2012,
+      "high": 0.2014,
+      "low": 0.2003,
+      "open": 0.2008,
+      "trades": 20,
+      "ts": 1790536500,
+      "volume": 37195.41442,
+      "vwap": 0.2008
+    },
+    {
+      "close": 0.2001,
+      "high": 0.2011,
+      "low": 0.1998,
+      "open": 0.2011,
+      "trades": 50,
+      "ts": 1790537400,
+      "volume": 190796.40108,
+      "vwap": 0.2002
+    },
+    {
+      "close": 0.2001,
+      "high": 0.2001,
+      "low": 0.2001,
+      "open": 0.2001,
+      "trades": 0,
+      "ts": 1790538300,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "ARB/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-184948-ARB-EUR-r36341995360.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T19:51:51.464528Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

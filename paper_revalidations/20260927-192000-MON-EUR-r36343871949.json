@@ -1,0 +1,94 @@
+{
+  "candidate_id": "20260927-192000-MON-EUR-r36343871949",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Renewed volume confirmation",
+      "Sustained trade above the recent high"
+    ],
+    "reason_codes": [
+      "volume_confirmation_absent",
+      "weak_follow_through",
+      "costs_material",
+      "limited_visible_upside"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stop_eur": null,
+    "summary": "Resistance was reclaimed, but the latest candle shows fading volume and trades below its VWAP; visible upside to the recent high is insufficient against execution costs.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_072663787a9043d6006ab973d7e88487d19b24092087fc2bb1"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.02458,
+    "bid": 0.0245,
+    "last": 0.02459,
+    "spread_pct": 0.32599837000815085
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.02437,
+      "high": 0.02438,
+      "low": 0.02373,
+      "open": 0.02373,
+      "trades": 183,
+      "ts": 1790534700,
+      "volume": 1058296.69107,
+      "vwap": 0.02414
+    },
+    {
+      "close": 0.02452,
+      "high": 0.02452,
+      "low": 0.02421,
+      "open": 0.02435,
+      "trades": 96,
+      "ts": 1790535600,
+      "volume": 503903.97462,
+      "vwap": 0.02433
+    },
+    {
+      "close": 0.02434,
+      "high": 0.02468,
+      "low": 0.02415,
+      "open": 0.02459,
+      "trades": 156,
+      "ts": 1790536500,
+      "volume": 599832.21353,
+      "vwap": 0.02438
+    },
+    {
+      "close": 0.02469,
+      "high": 0.02477,
+      "low": 0.02436,
+      "open": 0.02436,
+      "trades": 138,
+      "ts": 1790537400,
+      "volume": 714840.56738,
+      "vwap": 0.02456
+    },
+    {
+      "close": 0.02459,
+      "high": 0.02486,
+      "low": 0.02459,
+      "open": 0.02464,
+      "trades": 55,
+      "ts": 1790538300,
+      "volume": 287506.50672,
+      "vwap": 0.02477
+    }
+  ],
+  "pair": "MON/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-192000-MON-EUR-r36343871949.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T19:51:56.258420Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
