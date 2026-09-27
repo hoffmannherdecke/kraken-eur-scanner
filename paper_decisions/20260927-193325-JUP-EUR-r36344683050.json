@@ -1,0 +1,46 @@
+{
+  "candidate_age_seconds": 91,
+  "candidate_event_time_utc": "2026-09-27T19:33:25Z",
+  "candidate_id": "20260927-193325-JUP-EUR-r36344683050",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close above 0.31066 with sustained volume",
+      "Evidence that post-breakout upside can justify total execution costs and structural risk"
+    ],
+    "reason_codes": [
+      "SPREAD_AND_FEES_MATERIAL",
+      "BELOW_RESISTANCE",
+      "15M_MOMENTUM_WEAK",
+      "EXTENDED_MULTI_DAY_RUN",
+      "MARKET_CONTEXT_MISSING"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stop_eur": null,
+    "summary": "Trend and volume are constructive, but price remains below 1h/3h resistance after a strong multi-day run; current evidence does not establish enough net upside after execution costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T19:35:03.220983Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0074045b4d708606006ab96fe10dc887d18d0f21ab86b98682"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.3084,
+    "bid": 0.30796,
+    "last": 0.30817,
+    "spread_pct": 0.1427737036796664
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "JUP/EUR",
+  "paper_entry": null,
+  "queue_id": "36344683050:JUP-EUR:1790537605",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
