@@ -1,0 +1,60 @@
+{
+  "candidate_age_seconds": 16,
+  "candidate_event_time_utc": "2026-09-27T21:35:48Z",
+  "candidate_id": "20260927-213548-JUP-EUR-r36352213959",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close holding above 0.31108 with continued volume",
+      "A pullback or retest that defines an attractive structural stop and net reward/risk"
+    ],
+    "reason_codes": [
+      "extended_from_7d_30d_run",
+      "near_7d_30d_highs",
+      "spread_and_taker_costs_material",
+      "no_higher_lows",
+      "remaining_potential_unquantified"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Strong momentum and a fresh break above resistance, but price is already extended and remaining net reward is unproven after costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T21:36:11.140193Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_026c70ba934a71e6006ab98c45152887d1b4ca1d2bcbc623e1"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.31585,
+    "bid": 0.31536,
+    "last": 0.315,
+    "spread_pct": 0.15525736284280856
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "JUP/EUR",
+  "paper_entry": null,
+  "queue_id": "36352213959:JUP-EUR:1790544948",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-27T21:35:48Z",
+    "candidate_detected_ts": 1790544948,
+    "candidate_snapshot_at_utc": "2026-09-27T21:35:48Z",
+    "detected_to_evaluation_complete_seconds": 23.14,
+    "detected_to_evaluation_start_seconds": 16.636,
+    "evaluation_completed_at_utc": "2026-09-27T21:36:11.140193Z",
+    "evaluation_runtime_seconds": 6.504,
+    "evaluation_started_at_utc": "2026-09-27T21:36:04.636168Z",
+    "handoff_to_evaluation_start_seconds": 14.276,
+    "handoff_written_at_utc": "2026-09-27T21:35:50.360187Z",
+    "scan_step_started_at_utc": "2026-09-27T21:34:23Z"
+  }
+}

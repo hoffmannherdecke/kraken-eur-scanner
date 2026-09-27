@@ -1,0 +1,58 @@
+{
+  "candidate_age_seconds": 11,
+  "candidate_event_time_utc": "2026-09-27T21:35:48Z",
+  "candidate_id": "20260927-213548-PENGU-EUR-r36352213959",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15-minute close above 0.00896 EUR with follow-through",
+      "volume remains elevated on the breakout"
+    ],
+    "reason_codes": [
+      "below_resistance",
+      "weak_multiperiod_continuity",
+      "cost_edge_unproven"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stop_eur": null,
+    "summary": "Liquidity is adequate, but price remains below nearby resistance and the supplied evidence does not establish enough net upside after Kraken costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T21:36:04.593691Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0c5edaabaa5a183b006ab98c3fcac087d1807e16e72cb48a93"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.008928,
+    "bid": 0.00891,
+    "last": 0.008922,
+    "spread_pct": 0.20181634712412438
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "PENGU/EUR",
+  "paper_entry": null,
+  "queue_id": "36352213959:PENGU-EUR:1790544948",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-27T21:35:48Z",
+    "candidate_detected_ts": 1790544948,
+    "candidate_snapshot_at_utc": "2026-09-27T21:35:48Z",
+    "detected_to_evaluation_complete_seconds": 16.594,
+    "detected_to_evaluation_start_seconds": 11.301,
+    "evaluation_completed_at_utc": "2026-09-27T21:36:04.593691Z",
+    "evaluation_runtime_seconds": 5.293,
+    "evaluation_started_at_utc": "2026-09-27T21:35:59.300781Z",
+    "handoff_to_evaluation_start_seconds": 8.94,
+    "handoff_written_at_utc": "2026-09-27T21:35:50.360406Z",
+    "scan_step_started_at_utc": "2026-09-27T21:34:23Z"
+  }
+}
