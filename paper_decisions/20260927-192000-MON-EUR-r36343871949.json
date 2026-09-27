@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 94,
+  "candidate_event_time_utc": "2026-09-27T19:20:00Z",
+  "candidate_id": "20260927-192000-MON-EUR-r36343871949",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Reclaim and hold above 0.02452",
+      "Renewed volume confirmation"
+    ],
+    "reason_codes": [
+      "fresh_price_below_resistance",
+      "reclaim_unconfirmed",
+      "costs_material",
+      "market_context_missing"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stop_eur": null,
+    "summary": "Strong recent continuation evidence, but the fresh ticker is below the 0.02452 breakout/resistance level; wait for a reclaim and confirmation before considering entry.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T19:21:40.503450Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_02afcb5da8ab103c006ab96cbeb56887d08b7cd9233a8e0b15"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.02426,
+    "bid": 0.02421,
+    "last": 0.02423,
+    "spread_pct": 0.20631318341242597
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "MON/EUR",
+  "paper_entry": null,
+  "queue_id": "36343871949:MON-EUR:1790536800",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

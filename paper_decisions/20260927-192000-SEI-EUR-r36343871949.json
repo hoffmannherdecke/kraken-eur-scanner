@@ -1,0 +1,42 @@
+{
+  "candidate_age_seconds": 89,
+  "candidate_event_time_utc": "2026-09-27T19:20:00Z",
+  "candidate_id": "20260927-192000-SEI-EUR-r36343871949",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "late_chase",
+      "limited_visible_upside",
+      "fees_and_spread",
+      "closed_live_momentum_divergence"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Late near recent highs after a large multi-period run; the visible move to the 7d/30d high is only about 1.4%, insufficient to justify entry after Kraken EUR costs.",
+    "ttl_minutes": 0
+  },
+  "evaluated_at_utc": "2026-09-27T19:21:34.309708Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_06f4d480165c87d7006ab96cb941c487d08bc1f8c98b225805"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0667,
+    "bid": 0.06663,
+    "last": 0.06671,
+    "spread_pct": 0.10500262506562756
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "SEI/EUR",
+  "paper_entry": null,
+  "queue_id": "36343871949:SEI-EUR:1790536800",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

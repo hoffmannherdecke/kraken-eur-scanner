@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 81,
+  "candidate_event_time_utc": "2026-09-27T19:20:00Z",
+  "candidate_id": "20260927-192000-W-EUR-r36343871949",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m candle closes clearly above 0.01383",
+      "Price holds above 0.01383 with sustained volume on revalidation"
+    ],
+    "reason_codes": [
+      "near_7d_30d_highs",
+      "breakout_unconfirmed",
+      "extended_recent_run",
+      "round_trip_costs_high"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Strong momentum and volume, but price is already near recent highs and the 1h/3h resistance at 0.01383 is not confirmed broken on a closed candle. Fees plus spread make a late entry unattractive without confirmation.",
+    "ttl_minutes": 45
+  },
+  "evaluated_at_utc": "2026-09-27T19:21:28.848653Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0b7925c1006e5e19006ab96cb1700487d0ba1de1b4e962e7b1"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.01385,
+    "bid": 0.01382,
+    "last": 0.01382,
+    "spread_pct": 0.21684134441632655
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "W/EUR",
+  "paper_entry": null,
+  "queue_id": "36343871949:W-EUR:1790536800",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
