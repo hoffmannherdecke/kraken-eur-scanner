@@ -1,0 +1,94 @@
+{
+  "candidate_id": "20260927-211120-ATOM-EUR-r36350681242",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "BREAKOUT_FAILED",
+      "HIGH_VOLUME_DECLINE",
+      "NET_REWARD_UNCLEAR"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "The breakout did not hold: after a close above 1.6551, subsequent bars fell back below resistance, including a high-volume decline. Current price is below the breakout level, and remaining upside is unclear after Kraken costs.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0875b4414405c223006ab98fe39dcc87d0badebd19e5b45e8f"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.6509,
+    "bid": 1.6501,
+    "last": 1.6462,
+    "spread_pct": 0.04847016055741496
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 1.6513,
+      "high": 1.655,
+      "low": 1.6503,
+      "open": 1.6546,
+      "trades": 12,
+      "ts": 1790541900,
+      "volume": 933.34399386,
+      "vwap": 1.6532
+    },
+    {
+      "close": 1.656,
+      "high": 1.6575,
+      "low": 1.6502,
+      "open": 1.6502,
+      "trades": 21,
+      "ts": 1790542800,
+      "volume": 1643.53652144,
+      "vwap": 1.6535
+    },
+    {
+      "close": 1.6532,
+      "high": 1.6602,
+      "low": 1.6532,
+      "open": 1.6563,
+      "trades": 25,
+      "ts": 1790543700,
+      "volume": 1528.55163303,
+      "vwap": 1.6565
+    },
+    {
+      "close": 1.6461,
+      "high": 1.6508,
+      "low": 1.6402,
+      "open": 1.6508,
+      "trades": 27,
+      "ts": 1790544600,
+      "volume": 4884.99604088,
+      "vwap": 1.6454
+    },
+    {
+      "close": 1.649,
+      "high": 1.6501,
+      "low": 1.6462,
+      "open": 1.6462,
+      "trades": 5,
+      "ts": 1790545500,
+      "volume": 362.75678237,
+      "vwap": 1.6497
+    }
+  ],
+  "pair": "ATOM/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-211120-ATOM-EUR-r36350681242.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T21:51:36.374770Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-27T21:51:36.374770Z",
+    "revalidation_started_at_utc": "2026-09-27T21:51:30.540100Z"
+  }
+}
