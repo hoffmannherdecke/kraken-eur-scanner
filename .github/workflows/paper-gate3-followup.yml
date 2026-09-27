@@ -2,6 +2,9 @@ name: Gate3 20-case follow-up audit
 
 on:
   workflow_dispatch:
+  schedule:
+    # One-shot final 20/20 run after the last case has a complete 6h+5m window.
+    - cron: '45 2 28 9 *'
   push:
     branches: [main]
     paths:
@@ -21,15 +24,63 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
+      - name: One-shot schedule guard
+        id: guard
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ] || [ "$(date -u +%F)" = "2026-09-28" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v7
+        if: steps.guard.outputs.run == 'true'
+
       - uses: actions/setup-python@v7
+        if: steps.guard.outputs.run == 'true'
         with:
           python-version: '3.13'
+
       - name: Run fixed 20-case Kraken-EUR follow-up
+        if: steps.guard.outputs.run == 'true'
         run: |
           set -euo pipefail
           python paper_gate3_followup.py
+
+      - name: Send final 20/20 summary to Slack
+        if: steps.guard.outputs.run == 'true'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_USER_ID: U0C39EDQ1H8
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, urllib.request
+          p=json.load(open("gate3_20_followup.json", encoding="utf-8"))
+          s=p["summary"]
+          if not s.get("all_six_hour_complete") or s.get("errors"):
+              print("Final 20/20 window not complete or data errors present; no Slack summary.")
+              raise SystemExit(0)
+          text=(
+              f"<@{os.environ['SLACK_USER_ID']}> PAPER 20/20 ABGESCHLOSSEN | "
+              f">=5% {s['missed_5pct_6h']} | >=8% {s['missed_8pct_6h']} | "
+              f">=10% {s['missed_10pct_6h']} | >=15% {s['missed_15pct_6h']} | "
+              f"DD<=-3% {s['drawdown_ge_3pct_6h']} | DD<=-5% {s['drawdown_ge_5pct_6h']} | "
+              f"Median MFE {s['median_mfe_6h_pct']}% | Median MAE {s['median_mae_6h_pct']}%"
+          )
+          req=urllib.request.Request(
+              os.environ["SLACK_WEBHOOK_URL"].strip(),
+              data=json.dumps({"text":text}).encode("utf-8"),
+              headers={"Content-Type":"application/json"},
+              method="POST",
+          )
+          with urllib.request.urlopen(req, timeout=15) as r:
+              print("Slack final summary:", r.status, r.read().decode("utf-8","replace"))
+          PY
+
       - name: Upload report
+        if: steps.guard.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: gate3-20-followup
