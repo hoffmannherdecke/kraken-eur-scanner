@@ -34,7 +34,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$OPENAI_API_KEY" || { echo "BLOCKER missing OPENAI_API_KEY"; exit 2; }
-          python -m py_compile paper_evaluator/evaluate.py
+          python -m py_compile paper_evaluator/evaluate.py paper_evaluator/slack_action_push.py
           mkdir -p .paper-work
           python - <<'PY'
           import json, os, subprocess, time
@@ -76,6 +76,20 @@ jobs:
           for p in json.load(open(".paper-work/candidates.json")):
               subprocess.run(["python","paper_evaluator/evaluate.py",p],check=True)
           PY
+      - name: Build action notification manifest
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          files=[]
+          for src in json.load(open(".paper-work/candidates.json")):
+              target=Path("paper_decisions")/Path(src).name
+              if target.exists():
+                  files.append(str(target))
+          Path(".paper-work/action-files.json").write_text(json.dumps(files)+"\n")
+          print("PAPER_ACTION_MANIFEST",json.dumps(files))
+          PY
       - name: Validate safety and persist append-only decisions
         run: |
           set -euo pipefail
@@ -104,3 +118,10 @@ jobs:
           else
             echo "PAPER_NO_NEW_DECISIONS"
           fi
+      - name: Push actionable paper signal to Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_USER_ID: U0C39EDQ1H8
+        run: |
+          set -euo pipefail
+          python paper_evaluator/slack_action_push.py .paper-work/action-files.json
