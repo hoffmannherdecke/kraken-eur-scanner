@@ -10,6 +10,13 @@ FEE_PCT=0.60
 
 def utcnow(): return datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
 
+def elapsed_seconds(start, end):
+    if not start or not end:
+        return None
+    a=datetime.fromisoformat(str(start).replace("Z","+00:00"))
+    b=datetime.fromisoformat(str(end).replace("Z","+00:00"))
+    return round((b-a).total_seconds(),3)
+
 def http_json(url, method="GET", headers=None, body=None, timeout=30):
     req=urllib.request.Request(url, data=body, method=method, headers=headers or {})
     with urllib.request.urlopen(req, timeout=timeout) as r:
@@ -116,6 +123,7 @@ def main():
     target=outdir/(c["candidate_id"]+".json")
     if target.exists():
         print("PAPER_EVAL_IDEMPOTENT",c["candidate_id"]); return
+    evaluation_started_at_utc=utcnow()
     current=kraken_ticker(c["altname"])
     age=max(0,int(time.time())-int(c["event_ts"]))
     if c["pair"] in BLOCKED:
@@ -126,7 +134,18 @@ def main():
         api={"response_id":None,"model":None,"attempt":0}
     else:
         d,api=call_evaluator(c,current); validate_decision(d,current)
-    record={"schema_version":1,"kind":"PAPER_V2_DECISION_V1","test_id":"SHADOW-V2-20260924-01","candidate_id":c["candidate_id"],"queue_id":c["queue_id"],"pair":c["pair"],"candidate_event_time_utc":c["event_time_utc"],"evaluated_at_utc":utcnow(),"candidate_age_seconds":age,"frozen_strategy":"V2-2026-09-24","real_money_actions_enabled":False,"fee_assumption_pct_per_side":FEE_PCT,"fresh_kraken_ticker":current,"decision":d,"evaluator":api}
+    evaluation_completed_at_utc=utcnow()
+    timing=dict(c.get("timing") or {})
+    detected_at=timing.get("candidate_detected_at_utc") or c["event_time_utc"]
+    timing.update({
+        "evaluation_started_at_utc":evaluation_started_at_utc,
+        "evaluation_completed_at_utc":evaluation_completed_at_utc,
+        "detected_to_evaluation_start_seconds":elapsed_seconds(detected_at,evaluation_started_at_utc),
+        "detected_to_evaluation_complete_seconds":elapsed_seconds(detected_at,evaluation_completed_at_utc),
+        "handoff_to_evaluation_start_seconds":elapsed_seconds(timing.get("handoff_written_at_utc"),evaluation_started_at_utc),
+        "evaluation_runtime_seconds":elapsed_seconds(evaluation_started_at_utc,evaluation_completed_at_utc),
+    })
+    record={"schema_version":1,"kind":"PAPER_V2_DECISION_V1","test_id":"SHADOW-V2-20260924-01","candidate_id":c["candidate_id"],"queue_id":c["queue_id"],"pair":c["pair"],"candidate_event_time_utc":c["event_time_utc"],"evaluated_at_utc":evaluation_completed_at_utc,"candidate_age_seconds":age,"timing":timing,"frozen_strategy":"V2-2026-09-24","real_money_actions_enabled":False,"fee_assumption_pct_per_side":FEE_PCT,"fresh_kraken_ticker":current,"decision":d,"evaluator":api}
     if d["decision"]=="BUY_SCOUT":
         paper_eur=50.0
         fill=current["ask"]
