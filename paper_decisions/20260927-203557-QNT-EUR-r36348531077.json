@@ -1,0 +1,39 @@
+{
+  "candidate_age_seconds": 87,
+  "candidate_event_time_utc": "2026-09-27T20:35:57Z",
+  "candidate_id": "20260927-203557-QNT-EUR-r36348531077",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "PAIR_BLOCKED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "Pair is blocked by frozen strategy.",
+    "ttl_minutes": 0
+  },
+  "evaluated_at_utc": "2026-09-27T20:37:24.798927Z",
+  "evaluator": {
+    "attempt": 0,
+    "model": null,
+    "response_id": null
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 166.92,
+    "bid": 166.74,
+    "last": 166.81,
+    "spread_pct": 0.10789426362163784
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "QNT/EUR",
+  "paper_entry": null,
+  "queue_id": "36348531077:QNT-EUR:1790541357",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
