@@ -80,3 +80,16 @@ jobs:
         run: |
           set -euo pipefail
           python paper_evaluator/slack_action_push.py .paper-work/action-files.json
+      - name: Persist Slack alert receipts
+        run: |
+          set -euo pipefail
+          if git status --porcelain paper_alerts/ | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add paper_alerts/
+            git commit -m "[paper-alert] persist Slack alert receipt"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          else
+            echo "NO_NEW_SLACK_ALERT_RECEIPTS"
+          fi
