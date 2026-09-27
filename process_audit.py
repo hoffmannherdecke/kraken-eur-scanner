@@ -10,7 +10,13 @@ TOKEN=os.environ.get("GH_TOKEN","")
 SLACK=os.environ.get("SLACK_WEBHOOK_URL","")
 NOW=int(time.time())
 PROSPECTIVE_CUTOFF_TS=1790532491  # evaluator activation 2026-09-27T18:08:11Z
-issues=[]; repairs=[]; metrics={}
+CONTROL_PATH=ROOT/"paper_runtime_control.json"
+try:
+    PAPER_CONTROL=json.loads(CONTROL_PATH.read_text("utf-8")) if CONTROL_PATH.exists() else {"enabled": True}
+except Exception as e:
+    PAPER_CONTROL={"enabled": False, "control_error": repr(e)}
+PAPER_RUNTIME_ENABLED=PAPER_CONTROL.get("enabled") is True
+issues=[]; repairs=[]; metrics={"paper_runtime_enabled":PAPER_RUNTIME_ENABLED}
 
 def add(code,severity,detail,repairable=False):
     issues.append({"code":code,"severity":severity,"detail":detail,"repairable":repairable})
@@ -68,23 +74,25 @@ for name,d in revals.items():
     if d.get("real_money_actions_enabled") is not False: add("REAL_MONEY_FLAG_REVAL","CRITICAL",name)
     if d.get("decision",{}).get("decision") not in {"BUY_SCOUT","REJECT"}: add("BAD_REVALIDATION","CRITICAL",name)
 
-# Handoff liveness: every recent candidate should get a decision soon.
+# Handoff/WAIT liveness is relevant only while the legacy paper runtime is explicitly enabled.
 orphans=[]
-for name,c in queue.items():
-    age=NOW-int(c.get("event_ts",0))
-    if int(c.get("event_ts",0)) >= PROSPECTIVE_CUTOFF_TS and 1200 < age <= 7200 and name not in decisions:
-        orphans.append(name)
-if orphans: add("ORPHAN_CANDIDATES","CRITICAL",f"{len(orphans)} candidates >20m without decision: "+",".join(orphans[:5]),True)
-metrics["orphan_candidates"]=len(orphans)
-
-# WAIT liveness: due WAIT must get exactly one terminal revalidation.
 overdue=[]
-for name,d in decisions.items():
-    if d.get("decision",{}).get("decision")!="WAIT" or name in revals: continue
-    ev=datetime.fromisoformat(d["evaluated_at_utc"].replace("Z","+00:00")).timestamp()
-    due=ev+60*int(d["decision"].get("ttl_minutes",0))
-    if NOW>due+1200: overdue.append(name)
-if overdue: add("OVERDUE_WAIT","CRITICAL",f"{len(overdue)} WAITs >20m past TTL: "+",".join(overdue[:5]),True)
+if PAPER_RUNTIME_ENABLED:
+    for name,c in queue.items():
+        age=NOW-int(c.get("event_ts",0))
+        if int(c.get("event_ts",0)) >= PROSPECTIVE_CUTOFF_TS and 1200 < age <= 7200 and name not in decisions:
+            orphans.append(name)
+    if orphans:
+        add("ORPHAN_CANDIDATES","CRITICAL",f"{len(orphans)} candidates >20m without decision: "+",".join(orphans[:5]),True)
+
+    for name,d in decisions.items():
+        if d.get("decision",{}).get("decision")!="WAIT" or name in revals: continue
+        ev=datetime.fromisoformat(d["evaluated_at_utc"].replace("Z","+00:00")).timestamp()
+        due=ev+60*int(d["decision"].get("ttl_minutes",0))
+        if NOW>due+1200: overdue.append(name)
+    if overdue:
+        add("OVERDUE_WAIT","CRITICAL",f"{len(overdue)} WAITs >20m past TTL: "+",".join(overdue[:5]),True)
+metrics["orphan_candidates"]=len(orphans)
 metrics["overdue_waits"]=len(overdue)
 
 # Trade drought is an anomaly, not an automatic strategy change.
@@ -104,21 +112,27 @@ if len(terminal)>=20 and len(buys)/len(terminal)<0.05:
 if buys and not (ROOT/"paper_positions").exists():
     add("POSITION_LIFECYCLE_MISSING","CRITICAL","Paper BUY exists but no paper_positions lifecycle evidence")
 
-# Independent workflow liveness.
+# Independent workflow liveness. Scanner/capture stay live even while paper evaluation is paused.
 latest_health("scan.yml",2700)
 latest_health("paper-capture.yml",9000)
-latest_health("paper-evaluator.yml",2700)
-latest_health("paper-revalidator.yml",2700)
+if PAPER_RUNTIME_ENABLED:
+    latest_health("paper-evaluator.yml",2700)
+    latest_health("paper-revalidator.yml",2700)
+else:
+    metrics["paper_runtime_pause_reason"]=PAPER_CONTROL.get("reason")
 
 # Bounded technical self-healing only. Never modify strategy/risk/real-money settings.
 try:
-    if orphans: dispatch("paper-evaluator.yml","orphan candidate recovery")
-    if overdue: dispatch("paper-revalidator.yml","overdue WAIT recovery")
-    for code,wf in [("STALE_scan.yml","scan.yml"),("FAILED_scan.yml","scan.yml"),
-                    ("STALE_paper-capture.yml","paper-capture.yml"),("FAILED_paper-capture.yml","paper-capture.yml"),
-                    ("STALE_paper-evaluator.yml","paper-evaluator.yml"),("FAILED_paper-evaluator.yml","paper-evaluator.yml"),
-                    ("STALE_paper-revalidator.yml","paper-revalidator.yml"),("FAILED_paper-revalidator.yml","paper-revalidator.yml"),
-                    ("NO_RUN_paper-revalidator.yml","paper-revalidator.yml"),("NO_RUN_paper-evaluator.yml","paper-evaluator.yml")]:
+    if PAPER_RUNTIME_ENABLED:
+        if orphans: dispatch("paper-evaluator.yml","orphan candidate recovery")
+        if overdue: dispatch("paper-revalidator.yml","overdue WAIT recovery")
+    repair_map=[("STALE_scan.yml","scan.yml"),("FAILED_scan.yml","scan.yml"),
+                ("STALE_paper-capture.yml","paper-capture.yml"),("FAILED_paper-capture.yml","paper-capture.yml")]
+    if PAPER_RUNTIME_ENABLED:
+        repair_map += [("STALE_paper-evaluator.yml","paper-evaluator.yml"),("FAILED_paper-evaluator.yml","paper-evaluator.yml"),
+                       ("STALE_paper-revalidator.yml","paper-revalidator.yml"),("FAILED_paper-revalidator.yml","paper-revalidator.yml"),
+                       ("NO_RUN_paper-revalidator.yml","paper-revalidator.yml"),("NO_RUN_paper-evaluator.yml","paper-evaluator.yml")]
+    for code,wf in repair_map:
         if any(i["code"]==code for i in issues): dispatch(wf,code)
 except Exception as e:
     add("SELF_HEAL_FAILED","ERROR",repr(e))
