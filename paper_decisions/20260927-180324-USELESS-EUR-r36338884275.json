@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 716,
+  "candidate_event_time_utc": "2026-09-27T18:03:24Z",
+  "candidate_id": "20260927-180324-USELESS-EUR-r36338884275",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Confirm a 15-minute close holding above 0.25365 with renewed volume.",
+      "Revalidate nearby structure and remaining upside to establish an attractive after-cost reward/risk."
+    ],
+    "reason_codes": [
+      "LATE_MOVE",
+      "LIVE_VOLUME_UNCONFIRMED",
+      "NET_EDGE_UNPROVEN",
+      "STOP_STRUCTURE_UNDEFINED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Fresh ticker is materially above the scanner price and prior resistance, but live volume, continued acceptance, and net reward after Kraken costs are unconfirmed.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T18:15:30.161842Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_001bff0bd858b7e0006ab95d38f7c487d195bdaca31c8fe982"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.25802,
+    "bid": 0.25742,
+    "last": 0.25768,
+    "spread_pct": 0.23281080242124977
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "USELESS/EUR",
+  "paper_entry": null,
+  "queue_id": "36338884275:USELESS-EUR:1790532204",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
