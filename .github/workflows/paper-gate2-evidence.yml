@@ -44,8 +44,30 @@ jobs:
           candidate = json.loads(candidate_path.read_text('utf-8'))
           symbol = 'TON/EUR'
           scanner_run_id = 36263652082
-          candidate_id = candidate_path.stem
-          if candidate_id != '20260926-184829-TON-EUR-r36263652082':
+          event_time_utc = candidate.get('event_time_utc')
+          pair = candidate.get('pair')
+          source_run_id = candidate.get('source_scanner_run_id')
+          if not isinstance(event_time_utc, str) or not event_time_utc.endswith('Z'):
+              raise SystemExit('candidate identity mismatch')
+          if not isinstance(pair, str) or not isinstance(source_run_id, int) or isinstance(source_run_id, bool):
+              raise SystemExit('candidate identity mismatch')
+          try:
+              event_dt = datetime.fromisoformat(event_time_utc[:-1] + '+00:00').astimezone(timezone.utc)
+          except ValueError as exc:
+              raise SystemExit('candidate identity mismatch') from exc
+          if candidate.get('event_ts') != int(event_dt.timestamp()):
+              raise SystemExit('candidate identity mismatch')
+          expected_candidate_id = (
+              f"{event_dt.strftime('%Y%m%d-%H%M%S')}-"
+              f"{pair.replace('/', '-')}-r{source_run_id}"
+          )
+          candidate_id = candidate.get('candidate_id')
+          if (
+              pair != symbol
+              or source_run_id != scanner_run_id
+              or candidate_id != expected_candidate_id
+              or candidate_path.stem != expected_candidate_id
+          ):
               raise SystemExit('candidate identity mismatch')
 
           root = Path('gate2-tape')
