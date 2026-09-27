@@ -9,6 +9,7 @@ REPO=os.environ.get("GITHUB_REPOSITORY","hoffmannherdecke/kraken-eur-scanner")
 TOKEN=os.environ.get("GH_TOKEN","")
 SLACK=os.environ.get("SLACK_WEBHOOK_URL","")
 NOW=int(time.time())
+PROSPECTIVE_CUTOFF_TS=1790532491  # evaluator activation 2026-09-27T18:08:11Z
 issues=[]; repairs=[]; metrics={}
 
 def add(code,severity,detail,repairable=False):
@@ -71,7 +72,7 @@ for name,d in revals.items():
 orphans=[]
 for name,c in queue.items():
     age=NOW-int(c.get("event_ts",0))
-    if 1200 < age <= 7200 and name not in decisions:
+    if int(c.get("event_ts",0)) >= PROSPECTIVE_CUTOFF_TS and 1200 < age <= 7200 and name not in decisions:
         orphans.append(name)
 if orphans: add("ORPHAN_CANDIDATES","CRITICAL",f"{len(orphans)} candidates >20m without decision: "+",".join(orphans[:5]),True)
 metrics["orphan_candidates"]=len(orphans)
@@ -116,7 +117,8 @@ try:
     for code,wf in [("STALE_scan.yml","scan.yml"),("FAILED_scan.yml","scan.yml"),
                     ("STALE_paper-capture.yml","paper-capture.yml"),("FAILED_paper-capture.yml","paper-capture.yml"),
                     ("STALE_paper-evaluator.yml","paper-evaluator.yml"),("FAILED_paper-evaluator.yml","paper-evaluator.yml"),
-                    ("STALE_paper-revalidator.yml","paper-revalidator.yml"),("FAILED_paper-revalidator.yml","paper-revalidator.yml")]:
+                    ("STALE_paper-revalidator.yml","paper-revalidator.yml"),("FAILED_paper-revalidator.yml","paper-revalidator.yml"),
+                    ("NO_RUN_paper-revalidator.yml","paper-revalidator.yml"),("NO_RUN_paper-evaluator.yml","paper-evaluator.yml")]:
         if any(i["code"]==code for i in issues): dispatch(wf,code)
 except Exception as e:
     add("SELF_HEAL_FAILED","ERROR",repr(e))

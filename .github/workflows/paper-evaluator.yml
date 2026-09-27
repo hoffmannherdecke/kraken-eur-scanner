@@ -53,7 +53,7 @@ jobs:
                   try:
                       d=json.loads(p.read_text())
                       age=now-int(d["event_ts"])
-                      if 0 <= age <= 3600 and not (Path("paper_decisions")/p.name).exists():
+                      if int(d["event_ts"]) >= 1790532491 and 0 <= age <= 3600 and not (Path("paper_decisions")/p.name).exists():
                           rows.append((int(d["event_ts"]),str(p)))
                   except Exception:
                       continue
