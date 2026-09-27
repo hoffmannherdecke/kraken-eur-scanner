@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 82,
+  "candidate_event_time_utc": "2026-09-27T20:03:26Z",
+  "candidate_id": "20260927-200326-ARB-EUR-r36346282764",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A closed 15m candle holds above 0.2014 resistance.",
+      "Follow-through volume and price continuation confirm the break without an extended entry."
+    ],
+    "reason_codes": [
+      "breakout_unconfirmed",
+      "no_higher_lows",
+      "recent_move_already_run",
+      "fees_and_spread_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Liquidity is adequate, but price is only marginally above resistance and the fresh ticker does not confirm a sustained breakout; the recent 3h advance also leaves limited room for error after Kraken costs.",
+    "ttl_minutes": 45
+  },
+  "evaluated_at_utc": "2026-09-27T20:04:55.259577Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_00b2cd62c979771e006ab976e1152087d08f70f6b442bc732c"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2028,
+    "bid": 0.2025,
+    "last": 0.2027,
+    "spread_pct": 0.14803849000739933
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "ARB/EUR",
+  "paper_entry": null,
+  "queue_id": "36346282764:ARB-EUR:1790539406",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}

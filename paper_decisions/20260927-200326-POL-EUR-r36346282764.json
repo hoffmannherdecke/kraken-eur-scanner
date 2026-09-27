@@ -1,0 +1,45 @@
+{
+  "candidate_age_seconds": 74,
+  "candidate_event_time_utc": "2026-09-27T20:03:26Z",
+  "candidate_id": "20260927-200326-POL-EUR-r36346282764",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close holding above 0.1091 EUR",
+      "Renewed live volume supporting continuation"
+    ],
+    "reason_codes": [
+      "BREAKOUT_UNCONFIRMED",
+      "LIVE_VOLUME_WEAK",
+      "COSTS_MATERIAL",
+      "AVOID_CHASE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Potential breakout above 1h/3h resistance, but price is only marginally above the level and live volume is subdued; remaining upside is not established against Kraken costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-27T20:04:48.631760Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f047f6871300396006ab976d8e0ec87d0af55bc9627fd8a2e"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.10923,
+    "bid": 0.1091,
+    "last": 0.10911,
+    "spread_pct": 0.11908578756926784
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "POL/EUR",
+  "paper_entry": null,
+  "queue_id": "36346282764:POL-EUR:1790539406",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
