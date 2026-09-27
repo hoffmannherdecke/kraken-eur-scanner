@@ -1,0 +1,98 @@
+{
+  "candidate_id": "20260927-204844-PUMP-EUR-r36349311661",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": 0.65,
+    "missing_triggers": [
+      "15m close above 0.004467",
+      "Volume-supported hold above 0.004467"
+    ],
+    "reason_codes": [
+      "BREAKOUT_UNCONFIRMED",
+      "CLOSED_VOLUME_WEAK",
+      "UPSIDE_INSUFFICIENT_AFTER_COSTS",
+      "NEAR_RESISTANCE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stop_eur": null,
+    "summary": "Revalidation did not confirm a close and volume-supported hold above 0.004467; price remains below resistance and the remaining upside is insufficient against Kraken EUR costs.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_053d733ded406590006ab98a0db17887d1bf061c84925355c9"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.004438,
+    "bid": 0.00443,
+    "last": 0.004438,
+    "spread_pct": 0.18042399639152443
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.004352,
+      "high": 0.004371,
+      "low": 0.004327,
+      "open": 0.00436,
+      "trades": 48,
+      "ts": 1790540100,
+      "volume": 3202608.20935,
+      "vwap": 0.004347
+    },
+    {
+      "close": 0.004419,
+      "high": 0.004419,
+      "low": 0.004345,
+      "open": 0.004345,
+      "trades": 33,
+      "ts": 1790541000,
+      "volume": 2274455.13563,
+      "vwap": 0.004388
+    },
+    {
+      "close": 0.004394,
+      "high": 0.00443,
+      "low": 0.004385,
+      "open": 0.004417,
+      "trades": 64,
+      "ts": 1790541900,
+      "volume": 5377255.35991,
+      "vwap": 0.004409
+    },
+    {
+      "close": 0.004465,
+      "high": 0.004469,
+      "low": 0.004395,
+      "open": 0.004395,
+      "trades": 50,
+      "ts": 1790542800,
+      "volume": 3834084.11001,
+      "vwap": 0.004428
+    },
+    {
+      "close": 0.004438,
+      "high": 0.004468,
+      "low": 0.004415,
+      "open": 0.004461,
+      "trades": 30,
+      "ts": 1790543700,
+      "volume": 1647866.95358,
+      "vwap": 0.00445
+    }
+  ],
+  "pair": "PUMP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-204844-PUMP-EUR-r36349311661.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T21:26:41.166051Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-27T21:26:41.166051Z",
+    "revalidation_started_at_utc": "2026-09-27T21:26:37.080308Z"
+  }
+}

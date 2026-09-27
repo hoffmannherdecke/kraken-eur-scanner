@@ -1,0 +1,97 @@
+{
+  "candidate_id": "20260927-204844-XDC-EUR-r36349311661",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.02872 with follow-through",
+      "Evidence of remaining upside sufficient to exceed all-in costs"
+    ],
+    "reason_codes": [
+      "no_confirmed_resistance_breakout",
+      "nearby_resistance_limits_net_potential",
+      "costs_consume_nearby_upside"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "Revalidation shows a bounce, but price remains below 0.02872 resistance. The nearby upside is insufficient to cover Kraken\u2019s 1.20% round-trip taker fees plus spread and slippage.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_09ce56f4a47474b8006ab98a11c1f487d187a99815f4bea9ad"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.02851,
+    "bid": 0.02847,
+    "last": 0.02858,
+    "spread_pct": 0.14040014040014684
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.02831,
+      "high": 0.02846,
+      "low": 0.02828,
+      "open": 0.02846,
+      "trades": 35,
+      "ts": 1790540100,
+      "volume": 335194.81401,
+      "vwap": 0.02829
+    },
+    {
+      "close": 0.02817,
+      "high": 0.02833,
+      "low": 0.02811,
+      "open": 0.0282,
+      "trades": 49,
+      "ts": 1790541000,
+      "volume": 203715.69704,
+      "vwap": 0.02813
+    },
+    {
+      "close": 0.02817,
+      "high": 0.0284,
+      "low": 0.02813,
+      "open": 0.02821,
+      "trades": 32,
+      "ts": 1790541900,
+      "volume": 138954.77174,
+      "vwap": 0.02834
+    },
+    {
+      "close": 0.02823,
+      "high": 0.02831,
+      "low": 0.02816,
+      "open": 0.02816,
+      "trades": 13,
+      "ts": 1790542800,
+      "volume": 14104.0351,
+      "vwap": 0.02823
+    },
+    {
+      "close": 0.02858,
+      "high": 0.02864,
+      "low": 0.02831,
+      "open": 0.02832,
+      "trades": 26,
+      "ts": 1790543700,
+      "volume": 64171.3502,
+      "vwap": 0.02848
+    }
+  ],
+  "pair": "XDC/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-204844-XDC-EUR-r36349311661.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T21:26:46.814034Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-27T21:26:46.814034Z",
+    "revalidation_started_at_utc": "2026-09-27T21:26:41.166565Z"
+  }
+}
