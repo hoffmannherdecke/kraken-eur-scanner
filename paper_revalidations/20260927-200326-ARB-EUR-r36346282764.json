@@ -1,0 +1,93 @@
+{
+  "candidate_id": "20260927-200326-ARB-EUR-r36346282764",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Reclaim and hold above 0.2014 with follow-through volume"
+    ],
+    "reason_codes": [
+      "breakout_failed",
+      "price_below_resistance",
+      "volume_fading",
+      "fees_and_spread_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "The breakout did not hold: price has fallen back below 0.2014 resistance, with fading volume and no confirmed continuation. Entry costs further weaken the setup.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_079cab4b8596354a006ab98216598887d187b83cc050221908"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2005,
+    "bid": 0.2003,
+    "last": 0.2005,
+    "spread_pct": 0.09980039920159965
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.1994,
+      "high": 0.1997,
+      "low": 0.1988,
+      "open": 0.1997,
+      "trades": 20,
+      "ts": 1790538300,
+      "volume": 68057.80283,
+      "vwap": 0.1989
+    },
+    {
+      "close": 0.2045,
+      "high": 0.2048,
+      "low": 0.2006,
+      "open": 0.2006,
+      "trades": 117,
+      "ts": 1790539200,
+      "volume": 276811.57221,
+      "vwap": 0.203
+    },
+    {
+      "close": 0.2021,
+      "high": 0.2058,
+      "low": 0.2016,
+      "open": 0.2046,
+      "trades": 135,
+      "ts": 1790540100,
+      "volume": 209769.05791,
+      "vwap": 0.2028
+    },
+    {
+      "close": 0.2008,
+      "high": 0.2021,
+      "low": 0.2007,
+      "open": 0.202,
+      "trades": 10,
+      "ts": 1790541000,
+      "volume": 14727.13757,
+      "vwap": 0.2011
+    },
+    {
+      "close": 0.2005,
+      "high": 0.2013,
+      "low": 0.2002,
+      "open": 0.2013,
+      "trades": 13,
+      "ts": 1790541900,
+      "volume": 4803.46718,
+      "vwap": 0.2005
+    }
+  ],
+  "pair": "ARB/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260927-200326-ARB-EUR-r36346282764.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-27T20:52:42.847609Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01"
+}
