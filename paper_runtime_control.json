@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "enabled": false,
+  "paused_at_utc": "2026-09-27T22:10:00Z",
+  "reason": "Bounded canonical Gate-3 search reached 20 cases (19 NO_TRADE, 1 UNKNOWN, 0 TRADE). Pause all legacy paper-evaluator and WAIT-revalidator dispatches until the fixed 20-case missed-move/rejection audit is complete and a new series is explicitly authorized.",
+  "preserve_scanner_handoffs": true,
+  "preserve_market_capture": true,
+  "preserve_missed_move_audit": true,
+  "preserve_process_health": true,
+  "real_money_actions_enabled": false
+}
