@@ -1,0 +1,41 @@
+name: Crypto process health watchdog
+
+'on':
+  workflow_dispatch:
+  schedule:
+    - cron: '17,32,47,2 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'process_audit.py'
+      - '.github/workflows/process-health.yml'
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: crypto-process-health
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Audit full paper chain and bounded self-heal
+        run: python process_audit.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: crypto-process-health-${{ github.run_id }}
+          path: process_health.json
+          retention-days: 30
+          if-no-files-found: error
