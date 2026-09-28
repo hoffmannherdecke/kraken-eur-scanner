@@ -104,7 +104,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 80
-    # Deliberately no shared concurrency lock: hourly sessions must overlap.
+    # Manual diagnostic capture only; no scheduled continuous session.
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
