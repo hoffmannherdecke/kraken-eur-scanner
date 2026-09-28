@@ -9,7 +9,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from paper_context import build_context
 from evaluate import (
-    http_json, kraken_ticker, call_evaluator, fail_safe_normalize,
+    http_json, kraken_ticker, call_evaluator, fail_safe_normalize, apply_sample_cap,
     FEE_PCT, zdt, utcnow
 )
 
@@ -78,7 +78,7 @@ def main():
             "instruction":"This is the single allowed TTL revalidation. Return BUY_SCOUT only if supplied evidence now supports a scout plus explicit second-stage confirmation plan; otherwise return REJECT. Do not return WAIT."
         }
         raw,api=call_evaluator(enriched,ticker,external,spec,control)
-        d=fail_safe_normalize(raw,ticker)
+        d=apply_sample_cap(fail_safe_normalize(raw,ticker),control)
         if d["decision"]=="WAIT":
             d={
                 "decision":"REJECT","setup_lane":d.get("setup_lane","NONE"),
