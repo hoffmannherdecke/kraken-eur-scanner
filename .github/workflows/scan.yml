@@ -640,9 +640,20 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add handoff_queue
             git commit -m "[auto-handoff] persist scanner candidates from run ${GITHUB_RUN_ID}"
-            git fetch origin main
-            git rebase origin/main
-            git push origin HEAD:main
+            pushed=false
+            for attempt in 1 2 3 4; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                pushed=true
+                break
+              fi
+              sleep $((attempt * 2))
+            done
+            if [ "$pushed" != "true" ]; then
+              echo "Failed to persist canonical handoff after bounded retries."
+              exit 1
+            fi
             echo "new_candidates=true" >> "$GITHUB_OUTPUT"
           else
             echo "No new canonical handoff queue files."
