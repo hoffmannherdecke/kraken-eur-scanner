@@ -1,10 +1,10 @@
 name: Paper runtime evaluator and lifecycle
 
 'on':
+  # Normal execution is dispatched directly by the scanner. The independent watchdog
+  # performs bounded recovery for orphaned candidates. A separate cron fallback was
+  # removed because GitHub schedule jitter could create a stale-head persistence race.
   workflow_dispatch:
-  schedule:
-    # Low-frequency fallback only. Normal execution is dispatched directly by scanner.
-    - cron: '10 * * * *'
 
 permissions:
   contents: write
@@ -28,6 +28,13 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
+
+      - name: Sync stateful runtime to latest main
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git reset --hard origin/main
+          echo "PAPER_RUNTIME_BASE_SHA=$(git rev-parse HEAD)"
 
       - name: Preflight and select prospective candidates
         run: |
