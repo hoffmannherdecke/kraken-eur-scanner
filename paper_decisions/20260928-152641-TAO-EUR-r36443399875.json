@@ -1,0 +1,60 @@
+{
+  "candidate_age_seconds": 919,
+  "candidate_event_time_utc": "2026-09-28T15:26:41Z",
+  "candidate_id": "20260928-152641-TAO-EUR-r36443399875",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 269.22 resistance",
+      "Higher low holding above 258.99 support"
+    ],
+    "reason_codes": [
+      "liquidity_ok",
+      "countertrend_rebound",
+      "no_breakout_or_higher_lows",
+      "nearby_resistance",
+      "fees_reduce_edge"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but the rebound lacks structural confirmation against a weak 1h/3h trend; nearby resistance leaves limited room after costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-28T15:42:07.705147Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_023ace3315857e1c006aba8ac85d4c87d1adbb9c92b28982b5"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 263.8708,
+    "bid": 263.7655,
+    "last": 263.7018,
+    "spread_pct": 0.03991385732937622
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "TAO/EUR",
+  "paper_entry": null,
+  "queue_id": "36443399875:TAO-EUR:1790609201",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T15:26:41Z",
+    "candidate_detected_ts": 1790609201,
+    "candidate_snapshot_at_utc": "2026-09-28T15:26:41Z",
+    "detected_to_evaluation_complete_seconds": 926.705,
+    "detected_to_evaluation_start_seconds": 919.058,
+    "evaluation_completed_at_utc": "2026-09-28T15:42:07.705147Z",
+    "evaluation_runtime_seconds": 7.647,
+    "evaluation_started_at_utc": "2026-09-28T15:42:00.058468Z",
+    "handoff_to_evaluation_start_seconds": 916.399,
+    "handoff_written_at_utc": "2026-09-28T15:26:43.659548Z",
+    "scan_step_started_at_utc": "2026-09-28T15:25:04Z"
+  }
+}
