@@ -1,0 +1,51 @@
+name: Stop legacy paper capture runs
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/paper-capture-stop.yml'
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  stop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Cancel any legacy running paper capture
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+
+          repo=os.environ["REPO"]
+          token=os.environ["GH_TOKEN"]
+          headers={
+              "Authorization":"Bearer "+token,
+              "Accept":"application/vnd.github+json",
+              "X-GitHub-Api-Version":"2022-11-28",
+              "User-Agent":"paper-capture-stop/1.0",
+              "Content-Type":"application/json",
+          }
+          def req(method,path):
+              r=urllib.request.Request("https://api.github.com/repos/"+repo+path,method=method,headers=headers)
+              with urllib.request.urlopen(r,timeout=30) as resp:
+                  raw=resp.read()
+                  return json.loads(raw) if raw else None
+
+          data=req("GET","/actions/workflows/paper-capture.yml/runs?per_page=20")
+          stopped=[]
+          for run in data.get("workflow_runs",[]):
+              if run.get("status") not in ("queued","in_progress"):
+                  continue
+              rid=int(run["id"])
+              req("POST",f"/actions/runs/{rid}/cancel")
+              stopped.append(rid)
+          print("LEGACY_PAPER_CAPTURE_CANCELLED",json.dumps(stopped))
+          PY
