@@ -1,5 +1,7 @@
 # Kraken EUR Early Sensor
 
+> Kanonischer offener Projektplan: [`PROJECT_BACKLOG.md`](PROJECT_BACKLOG.md)
+
 The Paper market capture imports the mode-independent, public Kraken market
 data implementation from `market_data/`. Paper and any future assessment
 consumer must use the same book, order-flow, wall, candle and descriptive-label
