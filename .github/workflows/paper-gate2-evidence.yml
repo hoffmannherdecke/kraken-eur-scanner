@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: '3.13'
       - name: Download the completed post-fix capture
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           github-token: ${{ github.token }}
           repository: hoffmannherdecke/kraken-eur-scanner
@@ -285,7 +285,7 @@ jobs:
           }
           print('GATE2_EVIDENCE_PASS ' + json.dumps(summary, sort_keys=True))
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: paper-gate2-ton-evidence-${{ github.run_id }}
           path: gate2-evidence/
