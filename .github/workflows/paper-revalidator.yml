@@ -1,19 +1,13 @@
-name: Paper V2 WAIT revalidator
+name: Paper WAIT revalidator diagnostic
 
 'on':
   workflow_dispatch:
-  schedule:
-    - cron: '7,22,37,52 * * * *'
 
 permissions:
-  contents: write
-
-concurrency:
-  group: paper-v2-revalidator
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  revalidate:
+  diagnostic:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
@@ -24,72 +18,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - name: Preflight and one-shot TTL revalidation
+      - name: Diagnostic revalidation dry persistence check
         run: |
           set -euo pipefail
-          test -n "$OPENAI_API_KEY" || { echo "BLOCKER missing OPENAI_API_KEY"; exit 2; }
-          python -m py_compile paper_evaluator/evaluate.py paper_evaluator/revalidate.py paper_evaluator/slack_action_push.py
-          PYTHONPATH=paper_evaluator python paper_evaluator/revalidate.py
-      - name: Build action notification manifest
-        run: |
-          set -euo pipefail
-          mkdir -p .paper-work
-          python - <<'PY'
-          import json, subprocess
-          from pathlib import Path
-          out=subprocess.check_output(["git","status","--porcelain","paper_revalidations/"],text=True)
-          files=[]
-          for line in out.splitlines():
-              if len(line) < 4:
-                  continue
-              p=line[3:].strip()
-              if p.endswith(".json"):
-                  files.append(p)
-          Path(".paper-work/action-files.json").write_text(json.dumps(files)+"\n")
-          print("REVALIDATION_ACTION_MANIFEST",json.dumps(files))
-          PY
-      - name: Safety gate and persist
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          for p in Path("paper_revalidations").glob("*.json"):
-              d=json.loads(p.read_text())
-              assert d["real_money_actions_enabled"] is False
-              assert d["kind"]=="PAPER_V2_REVALIDATION_V1"
-              assert d["decision"]["decision"] in {"BUY_SCOUT","REJECT"}
-              if d["decision"]["decision"]=="BUY_SCOUT":
-                  assert d["paper_entry"] and d["paper_entry"]["status"].startswith("FILLED_SIMULATED")
-          print("REVALIDATION_SAFETY_GATE_PASS")
-          PY
-          if git status --porcelain paper_revalidations/ | grep -q .; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add paper_revalidations/
-            git commit -m "[paper-revalidate] persist one-shot TTL result"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          else
-            echo "NO_DUE_REVALIDATIONS"
-          fi
-      - name: Push actionable paper signal to Slack
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_USER_ID: U0C39EDQ1H8
-        run: |
-          set -euo pipefail
-          python paper_evaluator/slack_action_push.py .paper-work/action-files.json
-      - name: Persist Slack alert receipts
-        run: |
-          set -euo pipefail
-          if git status --porcelain paper_alerts/ | grep -q .; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add paper_alerts/
-            git commit -m "[paper-alert] persist Slack alert receipt"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          else
-            echo "NO_NEW_SLACK_ALERT_RECEIPTS"
-          fi
+          python -m py_compile paper_context.py paper_evaluator/evaluate.py paper_evaluator/revalidate.py
+          echo "Standalone revalidator is diagnostic-only. Productive revalidation runs inside paper-evaluator.yml."
