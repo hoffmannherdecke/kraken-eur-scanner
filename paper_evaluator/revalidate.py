@@ -104,6 +104,7 @@ def main():
             },
             "strategy_revision":spec["strategy_revision"],
             "strategy_fingerprint_sha256":fingerprint,
+            "runtime_code_sha":__import__("os").getenv("GITHUB_SHA"),
             "real_money_actions_enabled":False,
             "fee_assumption_pct_per_side":FEE_PCT,
             "prior_decision_file":str(p.relative_to(ROOT)),
