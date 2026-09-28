@@ -1,0 +1,59 @@
+{
+  "candidate_age_seconds": 2411,
+  "candidate_event_time_utc": "2026-09-28T15:04:16Z",
+  "candidate_id": "20260928-150416-CRV-EUR-r36440547274",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A higher low followed by a confirmed reclaim of 0.29091",
+      "Stronger closed-bar volume accompanying the reclaim"
+    ],
+    "reason_codes": [
+      "negative_1h_3h_24h_trend",
+      "no_breakout_or_higher_lows",
+      "closed_volume_below_average",
+      "net_reward_risk_unattractive"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "Weak, declining multi-period structure and no confirmed breakout; nearby resistance offers too little clear net upside after Kraken costs.",
+    "ttl_minutes": 0
+  },
+  "evaluated_at_utc": "2026-09-28T15:44:34.669584Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0810a36afb8c39bb006aba8b5b366087d1963d63aa6fcfe21d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.28823,
+    "bid": 0.28792,
+    "last": 0.28868,
+    "spread_pct": 0.10761086522606161
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "CRV/EUR",
+  "paper_entry": null,
+  "queue_id": "36440547274:CRV-EUR:1790607856",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T15:04:16Z",
+    "candidate_detected_ts": 1790607856,
+    "candidate_snapshot_at_utc": "2026-09-28T15:04:16Z",
+    "detected_to_evaluation_complete_seconds": 2418.67,
+    "detected_to_evaluation_start_seconds": 2410.76,
+    "evaluation_completed_at_utc": "2026-09-28T15:44:34.669584Z",
+    "evaluation_runtime_seconds": 7.91,
+    "evaluation_started_at_utc": "2026-09-28T15:44:26.759963Z",
+    "handoff_to_evaluation_start_seconds": 2407.499,
+    "handoff_written_at_utc": "2026-09-28T15:04:19.260948Z",
+    "scan_step_started_at_utc": "2026-09-28T15:02:39Z"
+  }
+}

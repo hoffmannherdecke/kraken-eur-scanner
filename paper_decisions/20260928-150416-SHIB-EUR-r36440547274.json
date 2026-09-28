@@ -1,0 +1,55 @@
+{
+  "candidate_age_seconds": 2418,
+  "candidate_event_time_utc": "2026-09-28T15:04:16Z",
+  "candidate_id": "20260928-150416-SHIB-EUR-r36440547274",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "NEGATIVE_MULTI_PERIOD_TREND",
+      "NO_BREAKOUT_OR_HIGHER_LOWS",
+      "INSUFFICIENT_NET_REWARD_RISK"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stop_eur": null,
+    "summary": "Volume and rank are improving, but price remains below nearby resistance amid negative 1h, 3h, and 24h returns; plausible room to 3h resistance does not justify the round-trip costs and structural risk.",
+    "ttl_minutes": 0
+  },
+  "evaluated_at_utc": "2026-09-28T15:44:44.858870Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0dd6eec538badb98006aba8b630f8887d1812f55cfaab52f12"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 4.954e-06,
+    "bid": 4.953e-06,
+    "last": 4.96e-06,
+    "spread_pct": 0.020187746038164905
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "SHIB/EUR",
+  "paper_entry": null,
+  "queue_id": "36440547274:SHIB-EUR:1790607856",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T15:04:16Z",
+    "candidate_detected_ts": 1790607856,
+    "candidate_snapshot_at_utc": "2026-09-28T15:04:16Z",
+    "detected_to_evaluation_complete_seconds": 2428.859,
+    "detected_to_evaluation_start_seconds": 2418.711,
+    "evaluation_completed_at_utc": "2026-09-28T15:44:44.858870Z",
+    "evaluation_runtime_seconds": 10.148,
+    "evaluation_started_at_utc": "2026-09-28T15:44:34.710801Z",
+    "handoff_to_evaluation_start_seconds": 2415.45,
+    "handoff_written_at_utc": "2026-09-28T15:04:19.261178Z",
+    "scan_step_started_at_utc": "2026-09-28T15:02:39Z"
+  }
+}

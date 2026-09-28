@@ -1,0 +1,60 @@
+{
+  "candidate_age_seconds": 2429,
+  "candidate_event_time_utc": "2026-09-28T15:04:16Z",
+  "candidate_id": "20260928-150416-WLFI-EUR-r36440547274",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained move above 0.0500 with follow-through",
+      "Renewed live volume accompanying the move"
+    ],
+    "reason_codes": [
+      "NO_PRICE_FOLLOW_THROUGH",
+      "AT_1H_RESISTANCE",
+      "BELOW_3H_RESISTANCE",
+      "COST_HURDLE",
+      "LIVE_VOLUME_MISSING"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Tight base and elevated closed volume are not confirmed by price follow-through; price is at 1h resistance and below 3h resistance, with taker fees and spread making an unconfirmed entry unattractive.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-28T15:44:53.203860Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_01d32c7898761036006aba8b6d4c7087d1a4904d9b518d26fc"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0497,
+    "bid": 0.0496,
+    "last": 0.0497,
+    "spread_pct": 0.20140986908359088
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "WLFI/EUR",
+  "paper_entry": null,
+  "queue_id": "36440547274:WLFI-EUR:1790607856",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T15:04:16Z",
+    "candidate_detected_ts": 1790607856,
+    "candidate_snapshot_at_utc": "2026-09-28T15:04:16Z",
+    "detected_to_evaluation_complete_seconds": 2437.204,
+    "detected_to_evaluation_start_seconds": 2428.902,
+    "evaluation_completed_at_utc": "2026-09-28T15:44:53.203860Z",
+    "evaluation_runtime_seconds": 8.302,
+    "evaluation_started_at_utc": "2026-09-28T15:44:44.901878Z",
+    "handoff_to_evaluation_start_seconds": 2425.641,
+    "handoff_written_at_utc": "2026-09-28T15:04:19.261319Z",
+    "scan_step_started_at_utc": "2026-09-28T15:02:39Z"
+  }
+}
