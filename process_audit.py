@@ -16,7 +16,13 @@ try:
 except Exception as e:
     PAPER_CONTROL={"enabled": False, "control_error": repr(e)}
 PAPER_RUNTIME_ENABLED=PAPER_CONTROL.get("enabled") is True
-issues=[]; repairs=[]; metrics={"paper_runtime_enabled":PAPER_RUNTIME_ENABLED}
+try:
+    ACTIVE_SERIES_CUTOFF_TS=int(datetime.fromisoformat(
+        PAPER_CONTROL.get("series_started_at_utc","2026-09-27T18:08:11Z").replace("Z","+00:00")
+    ).timestamp())
+except Exception:
+    ACTIVE_SERIES_CUTOFF_TS=PROSPECTIVE_CUTOFF_TS
+issues=[]; repairs=[]; metrics={"paper_runtime_enabled":PAPER_RUNTIME_ENABLED,"active_series_cutoff_ts":ACTIVE_SERIES_CUTOFF_TS}
 
 def add(code,severity,detail,repairable=False):
     issues.append({"code":code,"severity":severity,"detail":detail,"repairable":repairable})
@@ -80,7 +86,7 @@ overdue=[]
 if PAPER_RUNTIME_ENABLED:
     for name,c in queue.items():
         age=NOW-int(c.get("event_ts",0))
-        if int(c.get("event_ts",0)) >= PROSPECTIVE_CUTOFF_TS and 1200 < age <= 7200 and name not in decisions:
+        if int(c.get("event_ts",0)) >= ACTIVE_SERIES_CUTOFF_TS and 1200 < age <= 7200 and name not in decisions:
             orphans.append(name)
     if orphans:
         add("ORPHAN_CANDIDATES","CRITICAL",f"{len(orphans)} candidates >20m without decision: "+",".join(orphans[:5]),True)
@@ -88,6 +94,7 @@ if PAPER_RUNTIME_ENABLED:
     for name,d in decisions.items():
         if d.get("decision",{}).get("decision")!="WAIT" or name in revals: continue
         ev=datetime.fromisoformat(d["evaluated_at_utc"].replace("Z","+00:00")).timestamp()
+        if ev < ACTIVE_SERIES_CUTOFF_TS: continue
         due=ev+60*int(d["decision"].get("ttl_minutes",0))
         if NOW>due+1200: overdue.append(name)
     if overdue:
@@ -99,14 +106,21 @@ metrics["overdue_waits"]=len(overdue)
 terminal=[]
 buys=[]
 for d in list(decisions.values())+list(revals.values()):
+    stamp=d.get("evaluated_at_utc") or d.get("revalidated_at_utc")
+    try:
+        stamp_ts=datetime.fromisoformat(stamp.replace("Z","+00:00")).timestamp()
+    except Exception:
+        continue
+    if stamp_ts < ACTIVE_SERIES_CUTOFF_TS:
+        continue
     x=d.get("decision",{}).get("decision")
     if x in {"BUY_SCOUT","REJECT"}: terminal.append(x)
     if x=="BUY_SCOUT": buys.append(d)
 metrics["terminal_decisions"]=len(terminal); metrics["paper_buys"]=len(buys)
 if len(terminal)>=10 and not buys:
-    add("NO_PAPER_TRADES","WARNING",f"0 BUY_SCOUT across {len(terminal)} terminal decisions; investigate technical gates vs strategy strictness")
+    add("NO_PAPER_TRADES","WARNING",f"0 BUY_SCOUT across {len(terminal)} current-series terminal decisions; investigate technical gates vs strategy strictness")
 if len(terminal)>=20 and len(buys)/len(terminal)<0.05:
-    add("VERY_LOW_TRADE_RATE","WARNING",f"{len(buys)}/{len(terminal)} BUY_SCOUT; strategy review required, no automatic threshold change")
+    add("VERY_LOW_TRADE_RATE","WARNING",f"{len(buys)}/{len(terminal)} current-series BUY_SCOUT; strategy review required, no automatic threshold change")
 
 # Current prospective-series position lifecycle and completed-trade count.
 series_start=PAPER_CONTROL.get("series_started_at_utc")
