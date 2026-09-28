@@ -117,6 +117,7 @@ def new_state(rec):
         "source_kind":rec["kind"],
         "strategy_revision":rec.get("strategy_revision"),
         "strategy_fingerprint_sha256":rec.get("strategy_fingerprint_sha256"),
+        "runtime_code_sha":rec.get("runtime_code_sha"),
         "status":"OPEN",
         "real_money_actions_enabled":False,
         "fee_assumption_pct_per_side":FEE_PCT,
