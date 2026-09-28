@@ -1,0 +1,227 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "XPLEUR",
+  "candidate_id": "20260928-173335-XPL-EUR-r36458315628",
+  "event_time_utc": "2026-09-28T17:33:35Z",
+  "event_ts": 1790616815,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "XPL/EUR",
+  "queue_id": "36458315628:XPL-EUR:1790616815",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=XPL/EUR | score=8.70 | price_eur=0.0876 | ret15_live=0.92% | ret1h=-0.23% | ret3h=1.86% | ret24h=-5.71% | vol_live=5.85x | vol_closed=4.22x | rank=9 | rank_jump=25 | state_rank_jump=33 | breakout3h=0 | higher_lows=0 | base_tight=4.15% | fresh_move3h=3.79% | adx14=33.9 | spread=0.115% | turnover24h_eur=378502 | coverage=100% | ret7d=1.15% | ret30d=17.74% | dist7d_high=-20.36% | dist30d_high=-20.36% | depth_1pct_eur=59749 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 33.901890800232444,
+    "altname": "XPLEUR",
+    "base_tight_pct": 4.146919431279628,
+    "breakout3h": false,
+    "context30d": 17.74,
+    "context7d": 1.15,
+    "depth_eur_1pct": 59749.09,
+    "dist30d_high_pct": -20.36,
+    "dist7d_high_pct": -20.36,
+    "ema26_gt_50": false,
+    "fresh_move_3h": 3.791469194312791,
+    "higher_lows": false,
+    "late": false,
+    "pair": "XPL/EUR",
+    "price": 0.0876,
+    "rank15": 9,
+    "rank15_prev": 34,
+    "rank_jump": 25,
+    "ret15_closed": -0.7981755986317007,
+    "ret15_live": 0.9216589861751112,
+    "ret1h": -0.2277904328018332,
+    "ret24h": -5.705059203444563,
+    "ret3h": 1.8604651162790642,
+    "score": 8.7,
+    "spread_pct": 0.11474469305794935,
+    "stale": false,
+    "state_rank_jump": 33,
+    "turnover24h": 378502.33120435965,
+    "volume_ratio_closed": 4.215185769316615,
+    "volume_ratio_live": 5.853279143470027
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-09-28T17:33:35Z",
+    "positive_1h_count": 19,
+    "positive_3h_count": 50,
+    "schema_version": 1,
+    "score_ge_5_count": 10,
+    "top_1h": [
+      {
+        "pair": "QNT/EUR",
+        "ret15_live": 0.425,
+        "ret1h": 5.928,
+        "ret3h": 4.753,
+        "score": 1.2,
+        "vol_live": 0.063
+      },
+      {
+        "pair": "XDC/EUR",
+        "ret15_live": 0.032,
+        "ret1h": 3.116,
+        "ret3h": 3.081,
+        "score": 6.8,
+        "vol_live": 0.729
+      },
+      {
+        "pair": "CRV/EUR",
+        "ret15_live": 0.533,
+        "ret1h": 2.876,
+        "ret3h": 5.715,
+        "score": 9.7,
+        "vol_live": 1.999
+      },
+      {
+        "pair": "HBAR/EUR",
+        "ret15_live": 1.584,
+        "ret1h": 2.12,
+        "ret3h": 9.288,
+        "score": 5.9,
+        "vol_live": 1.723
+      },
+      {
+        "pair": "LINK/EUR",
+        "ret15_live": 0.056,
+        "ret1h": 1.494,
+        "ret3h": 6.25,
+        "score": 7.7,
+        "vol_live": 1.603
+      },
+      {
+        "pair": "SKY/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.463,
+        "ret3h": 0.632,
+        "score": 7.5,
+        "vol_live": 1.163
+      },
+      {
+        "pair": "VVV/EUR",
+        "ret15_live": 0.012,
+        "ret1h": 1.306,
+        "ret3h": 0.152,
+        "score": 7.2,
+        "vol_live": 4.66
+      },
+      {
+        "pair": "ICP/EUR",
+        "ret15_live": 0.112,
+        "ret1h": 0.831,
+        "ret3h": 3.368,
+        "score": 7.0,
+        "vol_live": 3.403
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "CRV/EUR",
+        "ret15_live": 0.533,
+        "ret1h": 2.876,
+        "ret3h": 5.715,
+        "score": 9.7,
+        "vol_live": 1.999
+      },
+      {
+        "pair": "XPL/EUR",
+        "ret15_live": 0.922,
+        "ret1h": -0.228,
+        "ret3h": 1.86,
+        "score": 8.7,
+        "vol_live": 5.853
+      },
+      {
+        "pair": "ALGO/EUR",
+        "ret15_live": 1.376,
+        "ret1h": 0.075,
+        "ret3h": 2.906,
+        "score": 7.8,
+        "vol_live": 3.131
+      },
+      {
+        "pair": "LINK/EUR",
+        "ret15_live": 0.056,
+        "ret1h": 1.494,
+        "ret3h": 6.25,
+        "score": 7.7,
+        "vol_live": 1.603
+      },
+      {
+        "pair": "SKY/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.463,
+        "ret3h": 0.632,
+        "score": 7.5,
+        "vol_live": 1.163
+      },
+      {
+        "pair": "VVV/EUR",
+        "ret15_live": 0.012,
+        "ret1h": 1.306,
+        "ret3h": 0.152,
+        "score": 7.2,
+        "vol_live": 4.66
+      },
+      {
+        "pair": "ICP/EUR",
+        "ret15_live": 0.112,
+        "ret1h": 0.831,
+        "ret3h": 3.368,
+        "score": 7.0,
+        "vol_live": 3.403
+      },
+      {
+        "pair": "NEAR/EUR",
+        "ret15_live": 0.16,
+        "ret1h": -0.164,
+        "ret3h": -1.621,
+        "score": 6.9,
+        "vol_live": 10.67
+      }
+    ],
+    "total_rows": 63
+  },
+  "scanner_market_context": {
+    "altname": "XPLEUR",
+    "atr15_eur": 0.0011357142857142846,
+    "atr15_pct": 1.3054187192118214,
+    "closed_through_epoch": 1790615700,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.087,
+      "high": 0.0879,
+      "low": 0.0868,
+      "open": 0.0877,
+      "volume": 121320.24425
+    },
+    "pair": "XPL/EUR",
+    "range_1h_pct": 2.068965517241391,
+    "recent_closed_closes": [
+      0.0863,
+      0.0877,
+      0.0872,
+      0.087,
+      0.0875,
+      0.087
+    ],
+    "resistance_1h": 0.0879,
+    "resistance_3h": 0.0879,
+    "schema_version": 1,
+    "sensor_price_eur": 0.0876,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.0861,
+    "support_3h": 0.0844,
+    "ts": 1790616815
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 36458315628,
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T17:33:35Z",
+    "candidate_detected_ts": 1790616815,
+    "candidate_snapshot_at_utc": "2026-09-28T17:33:35Z",
+    "handoff_written_at_utc": "2026-09-28T17:33:37.331961Z",
+    "scan_step_started_at_utc": "2026-09-28T17:28:10Z"
+  }
+}
