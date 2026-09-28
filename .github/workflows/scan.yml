@@ -3,7 +3,7 @@ name: Kraken EUR early sensor
 'on':
   workflow_dispatch:
   schedule:
-    - cron: '7,22,37,52 * * * *'
+    - cron: '2,12,22,32,42,52 * * * *'
   push:
     branches: [main]
     paths:
@@ -38,7 +38,7 @@ jobs:
           unzip -q /tmp/kraken_eur_scanner.zip -d .scanner
 
       - name: Restore rolling scanner state
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .scanner/kraken_eur_scanner/.state
           key: scanner-state-${{ github.run_id }}
@@ -53,7 +53,6 @@ jobs:
       - name: Scan Kraken EUR market
         working-directory: .scanner/kraken_eur_scanner
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           MIN_TURNOVER_EUR_24H: '150000'
           MAX_STAGE2_PAIRS: '120'
           MAX_SPREAD_PCT: '1.5'
@@ -74,6 +73,7 @@ jobs:
           import scanner
 
           audit_path = Path(".state/audit_history.jsonl")
+          override_state_path = Path(".state/review_override_state.json")
           pending_events = []
           scan_started_ts = int(time.time())
           scan_started_at_utc = datetime.fromtimestamp(scan_started_ts, tz=timezone.utc).isoformat().replace("+00:00", "Z")
@@ -96,30 +96,31 @@ jobs:
               "scan_started_at_utc": scan_started_at_utc,
           })
 
-          original_post = scanner.post_slack
           original_save = scanner.save_state
           original_should_post = scanner.should_post
 
           def audit_post(text):
-              original_post(text)
+              # Candidate selection must never depend on Slack availability.
+              # Raw scanner candidates are handed to the evaluator only; user-facing
+              # Slack is reserved for actionable PAPER BUY_SCOUT events downstream.
               m = re.search(r"(?:^|\|\s*)pair=([^|]+)", text)
               pair = m.group(1).strip() if m else None
-              posted_at = int(time.time())
+              selected_at = int(time.time())
               pending_events.append({
-                  "type": "posted",
-                  "ts": posted_at,
+                  "type": "selected",
+                  "ts": selected_at,
                   "pair": pair,
                   "text": text,
               })
               append_handoff({
                   "schema_version": 1,
                   "kind": "review_candidate_message",
-                  "ts": posted_at,
+                  "ts": selected_at,
                   "pair": pair,
                   "action": "REVIEW_ONLY_NOT_ORDER",
                   "text": text,
               })
-              print("AUDIT_POSTED " + text, flush=True)
+              print("AUDIT_SELECTED " + text, flush=True)
 
           def audit_should_post(row, state, now):
               result = original_should_post(row, state, now)
@@ -294,6 +295,29 @@ jobs:
                   " | action=REVIEW_ONLY_NOT_ORDER"
               )
 
+          def review_override_candidate(payload):
+              score = _f(payload, "score")
+              ret15 = _f(payload, "ret15_live")
+              ret1h = _f(payload, "ret1h")
+              vol_live = _f(payload, "volume_ratio_live")
+              turnover = _f(payload, "turnover24h")
+              spread = _f(payload, "spread_pct")
+              fresh = _f(payload, "fresh_move_3h")
+              breakout = bool(payload.get("breakout3h", False))
+              liquid = turnover >= 150000 and spread <= 1.5
+              momentum = (
+                  (ret1h >= 3.0 and vol_live >= 2.5)
+                  or (ret15 >= 1.5 and vol_live >= 2.5)
+                  or (breakout and vol_live >= 2.5)
+              )
+              return score >= 5.0 and liquid and fresh <= 15.0 and momentum
+
+          def review_override_message(payload):
+              return rescue_message(payload).replace(
+                  " | rescue_lane=1",
+                  " | momentum_review_override=1",
+              )
+
           # Regression guard based on the BCH 22-Sep missed-move shape:
           # exceptional liquid rank-1 acceleration must reach review even if
           # it loses a normal candidate slot. A routine candidate must not.
@@ -315,7 +339,7 @@ jobs:
               posted_pairs = {
                   event.get("pair")
                   for event in pending_events
-                  if event.get("type") == "posted" and event.get("pair")
+                  if event.get("type") in {"selected", "posted"} and event.get("pair")
               }
               cooldown_pairs = {
                   event.get("pair")
@@ -338,6 +362,60 @@ jobs:
 
               if rescued:
                   print("AUDIT_RESCUE_SUMMARY " + ",".join(rescued), flush=True)
+
+              # Expand review beyond the native top-N only for genuinely strong
+              # momentum shapes. This is evaluator-only and never a user alert.
+              try:
+                  override_state = json.loads(override_state_path.read_text("utf-8")) if override_state_path.exists() else {}
+              except Exception:
+                  override_state = {}
+              override_added = []
+              for row in rows:
+                  if len(override_added) >= 3:
+                      break
+                  payload = asdict(row)
+                  pair = payload.get("pair")
+                  if pair in posted_pairs or pair in cooldown_pairs:
+                      continue
+                  last = int(override_state.get(pair, 0) or 0)
+                  if now - last < 2700:
+                      continue
+                  if review_override_candidate(payload):
+                      audit_post(review_override_message(payload))
+                      posted_pairs.add(pair)
+                      override_state[pair] = now
+                      override_added.append(pair)
+                      print(f"AUDIT_REVIEW_OVERRIDE pair={pair}", flush=True)
+              try:
+                  override_state_path.parent.mkdir(parents=True, exist_ok=True)
+                  override_state_path.write_text(json.dumps(override_state, sort_keys=True) + "\n", encoding="utf-8")
+              except Exception as exc:
+                  print(f"WARN review override state persistence failed: {exc}", flush=True)
+              if override_added:
+                  print("AUDIT_REVIEW_OVERRIDE_SUMMARY " + ",".join(override_added), flush=True)
+
+              # Persist compact cross-sectional breadth/rotation context once per scan.
+              def compact(row):
+                  p = asdict(row)
+                  return {
+                      "pair": p.get("pair"),
+                      "score": round(_f(p, "score"), 3),
+                      "ret15_live": round(_f(p, "ret15_live"), 3),
+                      "ret1h": round(_f(p, "ret1h"), 3),
+                      "ret3h": round(_f(p, "ret3h"), 3),
+                      "vol_live": round(_f(p, "volume_ratio_live"), 3),
+                  }
+              breadth = {
+                  "schema_version": 1,
+                  "generated_at_utc": datetime.fromtimestamp(now, tz=timezone.utc).isoformat().replace("+00:00", "Z"),
+                  "total_rows": len(rows),
+                  "positive_1h_count": sum(1 for r in rows if _f(asdict(r), "ret1h") > 0),
+                  "positive_3h_count": sum(1 for r in rows if _f(asdict(r), "ret3h") > 0),
+                  "score_ge_5_count": sum(1 for r in rows if _f(asdict(r), "score") >= 5),
+                  "top_score": [compact(r) for r in rows[:8]],
+                  "top_1h": [compact(r) for r in sorted(rows, key=lambda x: _f(asdict(x), "ret1h"), reverse=True)[:8]],
+              }
+              append_handoff({"schema_version": 1, "kind": "market_breadth", "ts": now, "context": breadth})
 
               # Emit fresh Kraken 15m OHLC decision context only for candidates
               # actually handed off for review. Failure is non-blocking.
@@ -367,7 +445,7 @@ jobs:
               # Telemetry is diagnostic only and must never block the live scanner.
               try:
                   audit_path.parent.mkdir(parents=True, exist_ok=True)
-                  keep_after = now - 5 * 24 * 60 * 60
+                  keep_after = now - 48 * 60 * 60
                   retained = []
                   if audit_path.exists():
                       for line in audit_path.read_text("utf-8").splitlines():
@@ -397,7 +475,7 @@ jobs:
 
       - name: Upload compact ChatGPT handoff
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: chat-handoff-${{ github.run_id }}-${{ github.run_attempt }}
           path: .scanner/kraken_eur_scanner/handoff/candidates.jsonl
@@ -424,6 +502,7 @@ jobs:
           messages = {r["pair"]: r for r in rows if r.get("kind") == "review_candidate_message" and r.get("pair")}
           snapshots = {r["pair"]: r for r in rows if r.get("kind") == "candidate_snapshot" and r.get("pair")}
           contexts = {r["pair"]: r for r in rows if r.get("kind") == "market_context" and r.get("pair")}
+          breadth = next((r.get("context") for r in rows if r.get("kind") == "market_breadth"), None)
 
           out = Path("handoff_queue")
           out.mkdir(exist_ok=True)
@@ -472,6 +551,7 @@ jobs:
                   "action": "REVIEW_ONLY_NOT_ORDER",
                   "scanner_candidate": snap["features"],
                   "scanner_market_context": ctx["context"],
+                  "scanner_market_breadth": breadth,
                   "review_message": msg.get("text", ""),
               }
               if not payload["altname"]:
