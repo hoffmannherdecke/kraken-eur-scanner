@@ -539,6 +539,16 @@ jobs:
                   "source_repo": "hoffmannherdecke/kraken-eur-scanner",
                   "source_scanner_run_id": run_id,
                   "source_scanner_run_attempt": run_attempt,
+                  "source_scanner_sha": os.environ.get("GITHUB_SHA"),
+                  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+                  "scanner_runtime_settings": {
+                      "min_turnover_eur_24h": 150000,
+                      "max_stage2_pairs": 120,
+                      "max_spread_pct": 1.5,
+                      "candidate_threshold": 5.0,
+                      "native_cooldown_seconds": 2700,
+                      "review_override_cooldown_seconds": 2700,
+                  },
                   "event_time_utc": dt.isoformat().replace("+00:00", "Z"),
                   "event_ts": ts,
                   "timing": {
