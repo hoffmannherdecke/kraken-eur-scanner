@@ -346,6 +346,10 @@ jobs:
                   for event in pending_events
                   if event.get("type") == "cooldown" and event.get("pair")
               }
+              try:
+                  override_state = json.loads(override_state_path.read_text("utf-8")) if override_state_path.exists() else {}
+              except Exception:
+                  override_state = {}
 
               rescued = []
               for row in rows:
@@ -353,10 +357,13 @@ jobs:
                   pair = payload.get("pair")
                   if pair in posted_pairs or pair in cooldown_pairs:
                       continue
+                  if now - int(override_state.get(pair,0) or 0) < 2700:
+                      continue
                   if rescue_candidate(payload):
                       text = rescue_message(payload)
                       audit_post(text)
                       posted_pairs.add(pair)
+                      override_state[pair] = now
                       rescued.append(pair)
                       print(f"AUDIT_RESCUE pair={pair} reason=exceptional_handoff", flush=True)
 
@@ -365,10 +372,6 @@ jobs:
 
               # Expand review beyond the native top-N only for genuinely strong
               # momentum shapes. This is evaluator-only and never a user alert.
-              try:
-                  override_state = json.loads(override_state_path.read_text("utf-8")) if override_state_path.exists() else {}
-              except Exception:
-                  override_state = {}
               override_added = []
               for row in rows:
                   if len(override_added) >= 3:
