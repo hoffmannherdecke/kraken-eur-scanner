@@ -31,7 +31,7 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          from paper_context import build_context, binance_derivatives
+          from paper_context import build_context, derivatives_context, kraken_pair_metadata
           from paper_evaluator.evaluate import kraken_ticker
           files=sorted(Path("handoff_queue").glob("*.json"))
           if not files:
@@ -42,14 +42,19 @@ jobs:
           assert ctx["kraken_public_pair_verified"] is True
           assert ctx["major_market_regime"]["available_assets"] >= 1
           assert "derivatives" in ctx and "official_headlines" in ctx
-          btc_deriv=binance_derivatives("BTC/EUR")
+          btc_deriv=derivatives_context("BTC/EUR")
+          pair_meta=kraken_pair_metadata(c["altname"])
+          assert pair_meta.get("available") is True
           print("CONTEXT_SMOKE_PASS",json.dumps({
               "pair":c["pair"],
+              "pair_status":pair_meta.get("status"),
               "regime_assets":ctx["major_market_regime"]["available_assets"],
               "candidate_derivatives_available":ctx["derivatives"].get("available"),
-              "candidate_derivatives_error":ctx["derivatives"].get("detail"),
+              "candidate_preferred_derivatives_source":ctx["derivatives"].get("preferred_source"),
               "btc_derivatives_available":btc_deriv.get("available"),
-              "btc_derivatives_error":btc_deriv.get("detail"),
+              "btc_preferred_derivatives_source":btc_deriv.get("preferred_source"),
+              "kraken_futures_detail":btc_deriv.get("kraken_futures",{}).get("detail"),
+              "binance_error":btc_deriv.get("binance_futures",{}).get("detail"),
               "fed_available":ctx["official_headlines"]["federal_reserve"].get("available"),
               "sec_available":ctx["official_headlines"]["sec"].get("available"),
           },sort_keys=True))
