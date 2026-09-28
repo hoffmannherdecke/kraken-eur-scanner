@@ -1,0 +1,132 @@
+{
+  "altname": "PUMPEUR",
+  "candidate_age_seconds": 16,
+  "candidate_event_time_utc": "2026-09-28T16:52:01Z",
+  "candidate_id": "20260928-165201-PUMP-EUR-r36453895916",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.004884 resistance with sustained volume",
+      "Hold above 0.004884 on retest"
+    ],
+    "reason_codes": [
+      "LIQUIDITY_ADEQUATE",
+      "SPREAD_ACCEPTABLE",
+      "EXTENDED_NEAR_7D_HIGH",
+      "RESISTANCE_UNBROKEN",
+      "RECENT_15M_PULLBACK",
+      "TAKER_COSTS_HIGH",
+      "REGIME_MIXED",
+      "DERIVATIVES_UNAVAILABLE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid and tight-spread, but the move is extended and price has not confirmed a break above nearby resistance; net opportunity is not established after costs.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "detail": "HTTP Error 451: ",
+      "error": "HTTPError",
+      "source": "binance_public_futures",
+      "symbol": "PUMPUSDT"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.004728,
+      "bid": 0.004725,
+      "last": 0.004715,
+      "spread_pct": 0.06347191367820583
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.5474674505591359,
+          "ret3h_pct": -0.08731881007412179
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2920992882471385,
+          "ret3h_pct": -0.5543938346346478
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.6533435818601108,
+          "ret3h_pct": -0.8424041646947433
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-28T16:52:17.349979Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-28T16:52:27.272997Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0649c24b1d4b9d4e006aba9b42b34087d0ad44bdde06c46537"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.004728,
+    "bid": 0.004725,
+    "last": 0.004715,
+    "spread_pct": 0.06347191367820583
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "PUMP/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36453895916:PUMP-EUR:1790614321",
+  "real_money_actions_enabled": false,
+  "schema_version": 2,
+  "series_id": "PAPER-V2R2-20260928T1640Z",
+  "strategy_fingerprint_sha256": "94dbd23a8104d4a6f65e5e837c5fd2e05fff2b6944050975c41267d29422ba12",
+  "strategy_revision": "V2R2-2026-09-28",
+  "test_id": "SHADOW-V2R2-20260928-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T16:52:01Z",
+    "candidate_detected_ts": 1790614321,
+    "candidate_snapshot_at_utc": "2026-09-28T16:52:01Z",
+    "detected_to_evaluation_complete_seconds": 26.273,
+    "detected_to_evaluation_start_seconds": 15.944,
+    "evaluation_completed_at_utc": "2026-09-28T16:52:27.272997Z",
+    "evaluation_runtime_seconds": 10.329,
+    "evaluation_started_at_utc": "2026-09-28T16:52:16.944094Z",
+    "handoff_to_evaluation_start_seconds": 13.666,
+    "handoff_written_at_utc": "2026-09-28T16:52:03.277834Z",
+    "scan_step_started_at_utc": "2026-09-28T16:50:24Z"
+  }
+}
