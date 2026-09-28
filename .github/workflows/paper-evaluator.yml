@@ -178,8 +178,17 @@ jobs:
             git add paper_decisions/ paper_revalidations/ 2>/dev/null || true
             git add paper_positions/ paper_followups/ 2>/dev/null || true
             git commit -m "[paper-runtime] persist active-series state"
-            git pull --rebase origin main
-            git push origin HEAD:main
+            pushed=false
+            for attempt in 1 2 3 4; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                pushed=true
+                break
+              fi
+              sleep $((attempt * 2))
+            done
+            test "$pushed" = "true" || { echo "paper state push failed after retries"; exit 1; }
           else
             echo "PAPER_RUNTIME_NO_STATE_CHANGES"
           fi
@@ -202,8 +211,17 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add paper_alerts/
             git commit -m "[paper-alert] persist Slack alert receipt"
-            git pull --rebase origin main
-            git push origin HEAD:main
+            pushed=false
+            for attempt in 1 2 3 4; do
+              git fetch origin main
+              git rebase origin/main
+              if git push origin HEAD:main; then
+                pushed=true
+                break
+              fi
+              sleep $((attempt * 2))
+            done
+            test "$pushed" = "true" || { echo "paper alert receipt push failed after retries"; exit 1; }
           else
             echo "NO_NEW_SLACK_ALERT_RECEIPTS"
           fi
