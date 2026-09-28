@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "KASEUR",
+  "candidate_id": "20260928-205624-KAS-EUR-r36482505488",
+  "event_time_utc": "2026-09-28T20:56:24Z",
+  "event_ts": 1790628984,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "KAS/EUR",
+  "queue_id": "36482505488:KAS-EUR:1790628984",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=KAS/EUR | score=10.20 | price_eur=0.03976 | ret15_live=0.61% | ret1h=1.17% | ret3h=-2.43% | ret24h=-6.49% | vol_live=8.65x | vol_closed=0.25x | rank=5 | rank_jump=31 | state_rank_jump=43 | breakout3h=0 | higher_lows=1 | base_tight=5.31% | fresh_move3h=2.50% | adx14=36.2 | spread=0.152% | turnover24h_eur=240554 | coverage=100% | ret7d=4.69% | ret30d=66.22% | dist7d_high=-9.68% | dist30d_high=-9.68% | depth_1pct_eur=49777 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 36.19349333462722,
+    "altname": "KASEUR",
+    "base_tight_pct": 5.3106470739881395,
+    "breakout3h": false,
+    "context30d": 66.22,
+    "context7d": 4.69,
+    "depth_eur_1pct": 49777.3,
+    "dist30d_high_pct": -9.68,
+    "dist7d_high_pct": -9.68,
+    "ema26_gt_50": false,
+    "fresh_move_3h": 2.500644496004112,
+    "higher_lows": true,
+    "late": false,
+    "pair": "KAS/EUR",
+    "price": 0.03976,
+    "rank15": 5,
+    "rank15_prev": 36,
+    "rank_jump": 31,
+    "ret15_closed": -0.17676767676767513,
+    "ret15_live": 0.6072874493927127,
+    "ret1h": 1.1704834605597902,
+    "ret24h": -6.491063029162758,
+    "ret3h": -2.4294478527607466,
+    "score": 10.2,
+    "spread_pct": 0.15166835187057018,
+    "stale": false,
+    "state_rank_jump": 43,
+    "turnover24h": 240553.72847114134,
+    "volume_ratio_closed": 0.2526417209351233,
+    "volume_ratio_live": 8.654018746914742
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-09-28T20:56:24Z",
+    "positive_1h_count": 49,
+    "positive_3h_count": 10,
+    "schema_version": 1,
+    "score_ge_5_count": 16,
+    "top_1h": [
+      {
+        "pair": "QNT/EUR",
+        "ret15_live": -0.604,
+        "ret1h": 4.391,
+        "ret3h": -1.097,
+        "score": 3.5,
+        "vol_live": 0.29
+      },
+      {
+        "pair": "VIRTUAL/EUR",
+        "ret15_live": -0.124,
+        "ret1h": 3.019,
+        "ret3h": 1.893,
+        "score": 8.2,
+        "vol_live": 0.555
+      },
+      {
+        "pair": "ALGO/EUR",
+        "ret15_live": -0.109,
+        "ret1h": 2.613,
+        "ret3h": 0.05,
+        "score": 5.0,
+        "vol_live": 0.131
+      },
+      {
+        "pair": "CC/EUR",
+        "ret15_live": -0.07,
+        "ret1h": 2.273,
+        "ret3h": -1.906,
+        "score": 7.9,
+        "vol_live": 1.199
+      },
+      {
+        "pair": "LINK/EUR",
+        "ret15_live": -0.299,
+        "ret1h": 1.632,
+        "ret3h": 0.204,
+        "score": 7.4,
+        "vol_live": 0.191
+      },
+      {
+        "pair": "NIGHT/EUR",
+        "ret15_live": -0.324,
+        "ret1h": 1.568,
+        "ret3h": 2.158,
+        "score": 6.4,
+        "vol_live": 0.034
+      },
+      {
+        "pair": "W/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.446,
+        "ret3h": -0.583,
+        "score": 4.9,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "DASH/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.367,
+        "ret3h": -0.796,
+        "score": 4.9,
+        "vol_live": 0.627
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "KAS/EUR",
+        "ret15_live": 0.607,
+        "ret1h": 1.17,
+        "ret3h": -2.429,
+        "score": 10.2,
+        "vol_live": 8.654
+      },
+      {
+        "pair": "VIRTUAL/EUR",
+        "ret15_live": -0.124,
+        "ret1h": 3.019,
+        "ret3h": 1.893,
+        "score": 8.2,
+        "vol_live": 0.555
+      },
+      {
+        "pair": "PENGU/EUR",
+        "ret15_live": -0.012,
+        "ret1h": 0.794,
+        "ret3h": -3.475,
+        "score": 8.2,
+        "vol_live": 0.492
+      },
+      {
+        "pair": "CC/EUR",
+        "ret15_live": -0.07,
+        "ret1h": 2.273,
+        "ret3h": -1.906,
+        "score": 7.9,
+        "vol_live": 1.199
+      },
+      {
+        "pair": "SHIB/EUR",
+        "ret15_live": -0.02,
+        "ret1h": 0.708,
+        "ret3h": -0.995,
+        "score": 7.5,
+        "vol_live": 3.547
+      },
+      {
+        "pair": "LINK/EUR",
+        "ret15_live": -0.299,
+        "ret1h": 1.632,
+        "ret3h": 0.204,
+        "score": 7.4,
+        "vol_live": 0.191
+      },
+      {
+        "pair": "SUI/EUR",
+        "ret15_live": 0.039,
+        "ret1h": 0.882,
+        "ret3h": -0.78,
+        "score": 7.3,
+        "vol_live": 0.319
+      },
+      {
+        "pair": "ICP/EUR",
+        "ret15_live": -0.262,
+        "ret1h": 0.795,
+        "ret3h": -0.262,
+        "score": 7.3,
+        "vol_live": 4.494
+      }
+    ],
+    "total_rows": 65
+  },
+  "scanner_market_context": {
+    "altname": "KASEUR",
+    "atr15_eur": 0.000357142857142857,
+    "atr15_pct": 0.9034729500198759,
+    "closed_through_epoch": 1790627400,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.03953,
+      "high": 0.0396,
+      "low": 0.03951,
+      "open": 0.0396,
+      "volume": 18346.43814
+    },
+    "pair": "KAS/EUR",
+    "range_1h_pct": 1.897293195041742,
+    "recent_closed_closes": [
+      0.03943,
+      0.03926,
+      0.03923,
+      0.03959,
+      0.03963,
+      0.03953
+    ],
+    "resistance_1h": 0.03993,
+    "resistance_3h": 0.04085,
+    "schema_version": 1,
+    "sensor_price_eur": 0.03976,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.03918,
+    "support_3h": 0.03879,
+    "ts": 1790628984
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 36482505488,
+  "source_scanner_sha": "c36dbdc13e81051429a246a4dc8f2c34d546d7fc",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T20:56:24Z",
+    "candidate_detected_ts": 1790628984,
+    "candidate_snapshot_at_utc": "2026-09-28T20:56:24Z",
+    "handoff_written_at_utc": "2026-09-28T20:56:26.836584Z",
+    "scan_step_started_at_utc": "2026-09-28T20:54:47Z"
+  }
+}
