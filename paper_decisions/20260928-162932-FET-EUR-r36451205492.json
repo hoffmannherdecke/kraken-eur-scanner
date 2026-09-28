@@ -1,0 +1,59 @@
+{
+  "candidate_age_seconds": 26,
+  "candidate_event_time_utc": "2026-09-28T16:29:32Z",
+  "candidate_id": "20260928-162932-FET-EUR-r36451205492",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close holding above 0.2032 with sustained volume",
+      "Break and acceptance above 0.2111 with continuation volume"
+    ],
+    "reason_codes": [
+      "resistance_overhead",
+      "mixed_continuity",
+      "cost_drag",
+      "impulse_extension_risk"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Volume-backed rebound is active, but price is below 3h resistance and recent 3h/24h returns remain negative; current cost-adjusted upside is not compelling.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-28T16:30:09.851756Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_011167066d2da82b006aba9606608c87d29730ba60b42d21bd"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2058,
+    "bid": 0.2051,
+    "last": 0.2062,
+    "spread_pct": 0.34071550255536925
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "FET/EUR",
+  "paper_entry": null,
+  "queue_id": "36451205492:FET-EUR:1790612972",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T16:29:32Z",
+    "candidate_detected_ts": 1790612972,
+    "candidate_snapshot_at_utc": "2026-09-28T16:29:32Z",
+    "detected_to_evaluation_complete_seconds": 37.852,
+    "detected_to_evaluation_start_seconds": 26.13,
+    "evaluation_completed_at_utc": "2026-09-28T16:30:09.851756Z",
+    "evaluation_runtime_seconds": 11.722,
+    "evaluation_started_at_utc": "2026-09-28T16:29:58.129851Z",
+    "handoff_to_evaluation_start_seconds": 24.031,
+    "handoff_written_at_utc": "2026-09-28T16:29:34.098728Z",
+    "scan_step_started_at_utc": "2026-09-28T16:27:55Z"
+  }
+}

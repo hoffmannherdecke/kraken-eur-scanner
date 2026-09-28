@@ -1,0 +1,59 @@
+{
+  "candidate_age_seconds": 13,
+  "candidate_event_time_utc": "2026-09-28T16:29:32Z",
+  "candidate_id": "20260928-162932-ADA-EUR-r36451205492",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close and hold above 0.221272 with volume",
+      "Evidence of post-breakout upside sufficient to cover all costs and a structural stop"
+    ],
+    "reason_codes": [
+      "OVERHEAD_RESISTANCE",
+      "INSUFFICIENT_NET_UPSIDE",
+      "MIXED_MULTI_PERIOD_TREND",
+      "COSTS_HIGH_RELATIVE_TO_NEARBY_TARGET"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Volume-backed impulse and rank jump are notable, but price is only about 1.14% below 3h resistance\u2014less than round-trip taker fees before spread/slippage. Do not chase without a confirmed breakout and evidence of adequate remaining room.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-28T16:29:58.067352Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0e0acbd31b3e316f006aba95f94b5c87d28b2df017c8f97ae8"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.218768,
+    "bid": 0.218551,
+    "last": 0.2192,
+    "spread_pct": 0.09924105744319134
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "ADA/EUR",
+  "paper_entry": null,
+  "queue_id": "36451205492:ADA-EUR:1790612972",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T16:29:32Z",
+    "candidate_detected_ts": 1790612972,
+    "candidate_snapshot_at_utc": "2026-09-28T16:29:32Z",
+    "detected_to_evaluation_complete_seconds": 26.067,
+    "detected_to_evaluation_start_seconds": 12.874,
+    "evaluation_completed_at_utc": "2026-09-28T16:29:58.067352Z",
+    "evaluation_runtime_seconds": 13.193,
+    "evaluation_started_at_utc": "2026-09-28T16:29:44.874205Z",
+    "handoff_to_evaluation_start_seconds": 10.776,
+    "handoff_written_at_utc": "2026-09-28T16:29:34.098473Z",
+    "scan_step_started_at_utc": "2026-09-28T16:27:55Z"
+  }
+}

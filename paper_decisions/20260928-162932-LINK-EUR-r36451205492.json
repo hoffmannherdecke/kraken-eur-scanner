@@ -1,0 +1,60 @@
+{
+  "candidate_age_seconds": 38,
+  "candidate_event_time_utc": "2026-09-28T16:29:32Z",
+  "candidate_id": "20260928-162932-LINK-EUR-r36451205492",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A pullback that holds the 13.08\u201312.94 breakout area",
+      "Renewed buying strength after that hold"
+    ],
+    "reason_codes": [
+      "breakout_momentum",
+      "elevated_volume",
+      "late_entry_risk",
+      "cost_drag",
+      "stop_distance_uncertain"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stop_eur": null,
+    "summary": "Strong breakout and volume, but price has already moved sharply and is above recent resistance; chasing now leaves uncertain net upside after Kraken costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-28T16:30:19.816280Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0c73acdebaef9b3e006aba9613d27c87d2a385513cd0f1eec7"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 13.17722,
+    "bid": 13.16179,
+    "last": 13.15712,
+    "spread_pct": 0.11716461628588376
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "LINK/EUR",
+  "paper_entry": null,
+  "queue_id": "36451205492:LINK-EUR:1790612972",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T16:29:32Z",
+    "candidate_detected_ts": 1790612972,
+    "candidate_snapshot_at_utc": "2026-09-28T16:29:32Z",
+    "detected_to_evaluation_complete_seconds": 47.816,
+    "detected_to_evaluation_start_seconds": 37.914,
+    "evaluation_completed_at_utc": "2026-09-28T16:30:19.816280Z",
+    "evaluation_runtime_seconds": 9.902,
+    "evaluation_started_at_utc": "2026-09-28T16:30:09.914185Z",
+    "handoff_to_evaluation_start_seconds": 35.815,
+    "handoff_written_at_utc": "2026-09-28T16:29:34.098915Z",
+    "scan_step_started_at_utc": "2026-09-28T16:27:55Z"
+  }
+}
