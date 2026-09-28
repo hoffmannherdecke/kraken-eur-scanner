@@ -1,0 +1,163 @@
+{
+  "altname": "ZROEUR",
+  "candidate_age_seconds": 37,
+  "candidate_event_time_utc": "2026-09-28T17:24:26Z",
+  "candidate_id": "20260928-172426-ZRO-EUR-r36457686104",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.427 with expanding closed volume",
+      "Hold above 1.427 on a retest"
+    ],
+    "reason_codes": [
+      "spread_and_liquidity_acceptable",
+      "positive_major_market_proxy",
+      "recent_move_extended",
+      "near_3h_resistance",
+      "live_volume_not_expanding",
+      "fees_reduce_remaining_edge",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong recent relative momentum, but price has already moved above 1h resistance and is nearing 3h resistance; remaining upside is not compelling after Kraken spot costs without confirmation.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ZROUSDT"
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.000126960004466626,
+        "index_price": 1.57484,
+        "last": 1.5464,
+        "mark_price": 1.57481027107,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 369322.0,
+        "requested_symbols": [
+          "PF_ZROUSD",
+          "PI_ZROUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ZROUSD",
+        "volume24h": 1043137
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.386,
+      "bid": 1.384,
+      "last": 1.383,
+      "spread_pct": 0.14440433212996404
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.8381586408444663,
+          "ret3h_pct": 0.8289502916046132
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 1.5462580724704855,
+          "ret3h_pct": 1.258256246767453
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 1.408585665005746,
+          "ret3h_pct": 0.7904761904761859
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-28T17:25:03.784249Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-28T17:25:14.582073Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f020d21c587f81e006abaa2f0c05487d28ac52d5005d1384f"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.386,
+    "bid": 1.384,
+    "last": 1.383,
+    "spread_pct": 0.14440433212996404
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ZRO/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36457686104:ZRO-EUR:1790616266",
+  "real_money_actions_enabled": false,
+  "runtime_code_sha": "883dc2f71d7009c8bca131596ca3128df295d6f6",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R2-FINAL-20260928T1705Z",
+  "strategy_fingerprint_sha256": "94dbd23a8104d4a6f65e5e837c5fd2e05fff2b6944050975c41267d29422ba12",
+  "strategy_revision": "V2R2-2026-09-28",
+  "test_id": "SHADOW-V2R2-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T17:24:26Z",
+    "candidate_detected_ts": 1790616266,
+    "candidate_snapshot_at_utc": "2026-09-28T17:24:26Z",
+    "detected_to_evaluation_complete_seconds": 48.582,
+    "detected_to_evaluation_start_seconds": 37.61,
+    "evaluation_completed_at_utc": "2026-09-28T17:25:14.582073Z",
+    "evaluation_runtime_seconds": 10.972,
+    "evaluation_started_at_utc": "2026-09-28T17:25:03.609954Z",
+    "handoff_to_evaluation_start_seconds": 34.908,
+    "handoff_written_at_utc": "2026-09-28T17:24:28.701818Z",
+    "scan_step_started_at_utc": "2026-09-28T17:22:48Z"
+  }
+}
