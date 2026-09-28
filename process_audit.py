@@ -12,6 +12,15 @@ SLACK=os.environ.get("SLACK_WEBHOOK_URL","")
 NOW=int(time.time())
 CONTROL_PATH=ROOT/"paper_runtime_control.json"
 
+# Recovery policy: transient, self-healable lag should not look like a total
+# workflow failure. Escalate only when recovery has had enough time or failures
+# repeat. This keeps GitHub email/Slack reserved for unresolved blockers.
+ORPHAN_WARN_AFTER_SECONDS=600
+ORPHAN_CRITICAL_AFTER_SECONDS=1500
+WAIT_WARN_AFTER_SECONDS=300
+WAIT_CRITICAL_AFTER_SECONDS=1200
+RECENT_WORKFLOW_FAILURE_GRACE_SECONDS=900
+
 try:
     CONTROL=json.loads(CONTROL_PATH.read_text("utf-8"))
 except Exception as exc:
@@ -69,18 +78,34 @@ def latest_health(filename,max_age):
     try:
         runs=workflow_runs(filename)
     except Exception as exc:
-        add("WORKFLOW_API_"+filename,"ERROR",repr(exc))
+        add("WORKFLOW_API_"+filename,"CRITICAL",repr(exc),True)
         return
     if not runs:
         add("NO_RUN_"+filename,"CRITICAL","No workflow run visible",True)
         return
     r=runs[0]
     age=NOW-int(datetime.fromisoformat(r["created_at"].replace("Z","+00:00")).timestamp())
-    metrics[filename]={"run_id":r["id"],"status":r["status"],"conclusion":r.get("conclusion"),"age_seconds":age}
+    completed=[x for x in runs if x.get("status")=="completed"]
+    consecutive_failures=0
+    for x in completed:
+        if x.get("conclusion")=="success":
+            break
+        consecutive_failures+=1
+    metrics[filename]={
+        "run_id":r["id"],"status":r["status"],"conclusion":r.get("conclusion"),
+        "age_seconds":age,"consecutive_failures":consecutive_failures
+    }
     if age>max_age:
         add("STALE_"+filename,"CRITICAL",f"latest run age {age}s > {max_age}s",True)
     elif r["status"]=="completed" and r.get("conclusion")!="success":
-        add("FAILED_"+filename,"CRITICAL",f"latest conclusion={r.get('conclusion')}",True)
+        severity="CRITICAL" if (
+            age>RECENT_WORKFLOW_FAILURE_GRACE_SECONDS or consecutive_failures>=2
+        ) else "WARNING"
+        add(
+            "FAILED_"+filename,severity,
+            f"latest conclusion={r.get('conclusion')}; age={age}s; consecutive_failures={consecutive_failures}",
+            True
+        )
 
 def load_dir(name):
     out={}
@@ -134,16 +159,30 @@ metrics.update({
 })
 
 orphans=[]
+stuck_orphans=[]
 due_waits=[]
 overdue_waits=[]
+stuck_waits=[]
 if ENABLED:
     for name,c in queue.items():
         ts=int(c.get("event_ts",0))
         age=NOW-ts
-        if ts>=SERIES_START_TS and 600<age<=7200 and name not in decisions:
-            orphans.append(name)
-    if orphans:
-        add("ORPHAN_CANDIDATES","CRITICAL",f"{len(orphans)} candidates >10m without decision: "+",".join(orphans[:5]),True)
+        if ts>=SERIES_START_TS and ORPHAN_WARN_AFTER_SECONDS<age<=7200 and name not in decisions:
+            orphans.append((name,int(age)))
+            if age>ORPHAN_CRITICAL_AFTER_SECONDS:
+                stuck_orphans.append((name,int(age)))
+    if stuck_orphans:
+        add(
+            "ORPHAN_CANDIDATES","CRITICAL",
+            f"{len(stuck_orphans)} candidates >{ORPHAN_CRITICAL_AFTER_SECONDS}s without decision: "+
+            ",".join(f"{n}:{age}s" for n,age in stuck_orphans[:5]),True
+        )
+    elif orphans:
+        add(
+            "ORPHAN_CANDIDATES","WARNING",
+            f"{len(orphans)} candidates awaiting bounded recovery: "+
+            ",".join(f"{n}:{age}s" for n,age in orphans[:5]),True
+        )
 
     for name,d in active_decisions.items():
         if d.get("decision",{}).get("decision")!="WAIT" or name in active_revals:
@@ -153,16 +192,36 @@ if ENABLED:
         lag=NOW-due
         if lag>=0:
             due_waits.append((name,int(lag)))
-        if lag>300:
+        if lag>WAIT_WARN_AFTER_SECONDS:
             overdue_waits.append((name,int(lag)))
-    if overdue_waits:
-        add("OVERDUE_WAIT","CRITICAL",
-            f"{len(overdue_waits)} WAITs >5m past TTL: "+",".join(f"{n}:{lag}s" for n,lag in overdue_waits[:5]),True)
+        if lag>WAIT_CRITICAL_AFTER_SECONDS:
+            stuck_waits.append((name,int(lag)))
+    if stuck_waits:
+        add(
+            "OVERDUE_WAIT","CRITICAL",
+            f"{len(stuck_waits)} WAITs >{WAIT_CRITICAL_AFTER_SECONDS}s past TTL: "+
+            ",".join(f"{n}:{lag}s" for n,lag in stuck_waits[:5]),True
+        )
+    elif overdue_waits:
+        add(
+            "OVERDUE_WAIT","WARNING",
+            f"{len(overdue_waits)} WAITs in recovery window >{WAIT_WARN_AFTER_SECONDS}s past TTL: "+
+            ",".join(f"{n}:{lag}s" for n,lag in overdue_waits[:5]),True
+        )
 
 metrics["orphan_candidates"]=len(orphans)
+metrics["stuck_orphan_candidates"]=len(stuck_orphans)
 metrics["due_waits"]=len(due_waits)
 metrics["overdue_waits"]=len(overdue_waits)
+metrics["stuck_waits"]=len(stuck_waits)
 metrics["max_wait_ttl_lag_seconds"]=max((lag for _,lag in due_waits),default=0)
+metrics["recovery_thresholds_seconds"]={
+    "orphan_warning":ORPHAN_WARN_AFTER_SECONDS,
+    "orphan_critical":ORPHAN_CRITICAL_AFTER_SECONDS,
+    "wait_warning":WAIT_WARN_AFTER_SECONDS,
+    "wait_critical":WAIT_CRITICAL_AFTER_SECONDS,
+    "workflow_failure_grace":RECENT_WORKFLOW_FAILURE_GRACE_SECONDS,
+}
 
 # Current BUY -> position lifecycle completeness.
 current_buys=[]
@@ -297,7 +356,7 @@ try:
         if any(i["code"]==code for i in issues):
             dispatch(wf,code)
 except Exception as exc:
-    add("SELF_HEAL_FAILED","ERROR",repr(exc))
+    add("SELF_HEAL_FAILED","CRITICAL",repr(exc))
 
 report={
     "schema_version":2,
@@ -310,7 +369,7 @@ report={
 Path("process_health.json").write_text(json.dumps(report,indent=2,sort_keys=True)+"\n")
 print("PROCESS_HEALTH "+json.dumps(report,sort_keys=True))
 
-if issues and SLACK:
+if report["status"]=="CRITICAL" and SLACK:
     msg="CRYPTO_HEALTH "+report["status"]+" | "+"; ".join(i["code"] for i in issues[:8])
     req=urllib.request.Request(SLACK,data=json.dumps({"text":msg}).encode(),method="POST",headers={"Content-Type":"application/json"})
     try:
