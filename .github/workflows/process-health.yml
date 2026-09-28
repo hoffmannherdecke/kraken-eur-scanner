@@ -3,7 +3,7 @@ name: Crypto process health watchdog
 'on':
   workflow_dispatch:
   schedule:
-    - cron: '17,32,47,2 * * * *'
+    - cron: '7,17,27,37,47,57 * * * *'
   push:
     branches: [main]
     paths:
@@ -32,10 +32,10 @@ jobs:
           python-version: '3.13'
       - name: Audit full paper chain and bounded self-heal
         run: python process_audit.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: crypto-process-health-${{ github.run_id }}
           path: process_health.json
-          retention-days: 30
+          retention-days: 7
           if-no-files-found: error
