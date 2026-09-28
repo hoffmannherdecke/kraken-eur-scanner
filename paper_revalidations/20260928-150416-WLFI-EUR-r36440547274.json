@@ -1,0 +1,98 @@
+{
+  "candidate_id": "20260928-150416-WLFI-EUR-r36440547274",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained move above 0.0500 with follow-through",
+      "Renewed live volume accompanying the move"
+    ],
+    "reason_codes": [
+      "NO_SUSTAINED_BREAKOUT",
+      "LIVE_VOLUME_INSUFFICIENT",
+      "COST_HURDLE",
+      "RISK_REWARD_UNSUPPORTED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Price has reached 3h resistance but has not shown sustained follow-through; sparse recent trades and the 1.6% fee-plus-spread hurdle leave no supported attractive net opportunity.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0dfd1bc52dd4113f006aba94847ef487d0bc8133c9d9c584bd"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0501,
+    "bid": 0.0499,
+    "last": 0.05,
+    "spread_pct": 0.3999999999999976
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.0495,
+      "high": 0.0495,
+      "low": 0.0492,
+      "open": 0.0495,
+      "trades": 5,
+      "ts": 1790608500,
+      "volume": 36744.15971,
+      "vwap": 0.0493
+    },
+    {
+      "close": 0.0497,
+      "high": 0.0497,
+      "low": 0.0497,
+      "open": 0.0497,
+      "trades": 1,
+      "ts": 1790609400,
+      "volume": 5000.0,
+      "vwap": 0.0497
+    },
+    {
+      "close": 0.0498,
+      "high": 0.0498,
+      "low": 0.0497,
+      "open": 0.0497,
+      "trades": 2,
+      "ts": 1790610300,
+      "volume": 10000.0,
+      "vwap": 0.0497
+    },
+    {
+      "close": 0.0498,
+      "high": 0.0498,
+      "low": 0.0498,
+      "open": 0.0498,
+      "trades": 0,
+      "ts": 1790611200,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 0.05,
+      "high": 0.05,
+      "low": 0.0499,
+      "open": 0.0499,
+      "trades": 4,
+      "ts": 1790612100,
+      "volume": 55187.17567,
+      "vwap": 0.0499
+    }
+  ],
+  "pair": "WLFI/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260928-150416-WLFI-EUR-r36440547274.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-28T16:23:37.874759Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-28T16:23:37.874759Z",
+    "revalidation_started_at_utc": "2026-09-28T16:23:31.273375Z"
+  }
+}

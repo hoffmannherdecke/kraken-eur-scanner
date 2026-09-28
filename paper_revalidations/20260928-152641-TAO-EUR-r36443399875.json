@@ -1,0 +1,98 @@
+{
+  "candidate_id": "20260928-152641-TAO-EUR-r36443399875",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 269.22 resistance"
+    ],
+    "reason_codes": [
+      "countertrend_rebound",
+      "resistance_not_cleared",
+      "limited_net_upside",
+      "late_entry",
+      "fees_reduce_edge"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stop_eur": null,
+    "summary": "The rebound shows improving 15m lows and volume, but price remains below 269.22 resistance; the remaining room to resistance is too small relative to fees and execution costs.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0c02ea13771ea8a4006aba94a2beb087d09079edc5965a5be5"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 268.145,
+    "bid": 267.8484,
+    "last": 267.77,
+    "spread_pct": 0.11067300455563643
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 263.0,
+      "high": 263.2476,
+      "low": 258.9085,
+      "open": 259.5,
+      "trades": 117,
+      "ts": 1790608500,
+      "volume": 129.8167,
+      "vwap": 260.1654
+    },
+    {
+      "close": 262.8816,
+      "high": 264.6044,
+      "low": 262.1864,
+      "open": 263.0376,
+      "trades": 58,
+      "ts": 1790609400,
+      "volume": 76.39886,
+      "vwap": 263.4882
+    },
+    {
+      "close": 263.837,
+      "high": 264.5699,
+      "low": 263.3923,
+      "open": 263.3923,
+      "trades": 20,
+      "ts": 1790610300,
+      "volume": 35.39666,
+      "vwap": 264.0899
+    },
+    {
+      "close": 264.1406,
+      "high": 265.1,
+      "low": 262.8233,
+      "open": 264.3233,
+      "trades": 26,
+      "ts": 1790611200,
+      "volume": 20.44737,
+      "vwap": 263.8195
+    },
+    {
+      "close": 266.9301,
+      "high": 267.1604,
+      "low": 264.1385,
+      "open": 264.1811,
+      "trades": 98,
+      "ts": 1790612100,
+      "volume": 121.44969,
+      "vwap": 265.0
+    }
+  ],
+  "pair": "TAO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260928-152641-TAO-EUR-r36443399875.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-28T16:24:07.750427Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-28T16:24:07.750427Z",
+    "revalidation_started_at_utc": "2026-09-28T16:24:02.271064Z"
+  }
+}

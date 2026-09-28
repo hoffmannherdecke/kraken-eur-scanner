@@ -1,0 +1,94 @@
+{
+  "candidate_id": "20260928-155242-SEI-EUR-r36446690820",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": 2.96,
+    "missing_triggers": [],
+    "reason_codes": [
+      "nearby_3h_resistance",
+      "net_reward_insufficient_after_costs",
+      "structural_risk_exceeds_attractive_reward"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stop_eur": null,
+    "summary": "The resistance reclaim and volume recovery are confirmed, but the roughly 3% room to 3h resistance leaves too little net reward after Kraken fees and spread for the structural risk.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_03973eed7ba1eaa4006aba9491187887d0adb7e74546d3e998"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.06925,
+    "bid": 0.06918,
+    "last": 0.06916,
+    "spread_pct": 0.10113414722242378
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.06833,
+      "high": 0.0684,
+      "low": 0.06695,
+      "open": 0.06712,
+      "trades": 37,
+      "ts": 1790608500,
+      "volume": 68000.55592,
+      "vwap": 0.06743
+    },
+    {
+      "close": 0.06837,
+      "high": 0.06881,
+      "low": 0.06805,
+      "open": 0.06813,
+      "trades": 42,
+      "ts": 1790609400,
+      "volume": 177664.41933,
+      "vwap": 0.06856
+    },
+    {
+      "close": 0.06834,
+      "high": 0.0687,
+      "low": 0.06831,
+      "open": 0.06848,
+      "trades": 7,
+      "ts": 1790610300,
+      "volume": 5483.15881,
+      "vwap": 0.06851
+    },
+    {
+      "close": 0.06881,
+      "high": 0.06885,
+      "low": 0.06781,
+      "open": 0.06855,
+      "trades": 27,
+      "ts": 1790611200,
+      "volume": 135907.14407,
+      "vwap": 0.06797
+    },
+    {
+      "close": 0.06916,
+      "high": 0.0692,
+      "low": 0.06812,
+      "open": 0.06858,
+      "trades": 66,
+      "ts": 1790612100,
+      "volume": 454742.23769,
+      "vwap": 0.06848
+    }
+  ],
+  "pair": "SEI/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260928-155242-SEI-EUR-r36446690820.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-28T16:23:55.615871Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-28T16:23:55.615871Z",
+    "revalidation_started_at_utc": "2026-09-28T16:23:44.553491Z"
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "candidate_id": "20260928-155242-HBAR-EUR-r36446690820",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "extended_move",
+      "near_recent_high",
+      "fees_reduce_edge",
+      "insufficient_net_reward_risk"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Price has held above the prior breakout level, but it remains near recent highs after a sharp run. The nearby upside is not enough to establish attractive net reward versus Kraken costs and structural-stop risk.",
+    "ttl_minutes": 0
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_04ec297c1cee4925006aba948a60d887d0a480ea34f1b2b556"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.11093,
+    "bid": 0.11069,
+    "last": 0.11074,
+    "spread_pct": 0.21658695063622788
+  },
+  "kind": "PAPER_V2_REVALIDATION_V1",
+  "kraken_15m_recent": [
+    {
+      "close": 0.10328,
+      "high": 0.10371,
+      "low": 0.10165,
+      "open": 0.10273,
+      "trades": 786,
+      "ts": 1790608500,
+      "volume": 2149799.81897,
+      "vwap": 0.1023
+    },
+    {
+      "close": 0.1083,
+      "high": 0.10858,
+      "low": 0.10301,
+      "open": 0.10334,
+      "trades": 625,
+      "ts": 1790609400,
+      "volume": 957588.51198,
+      "vwap": 0.10605
+    },
+    {
+      "close": 0.11074,
+      "high": 0.11215,
+      "low": 0.10758,
+      "open": 0.1083,
+      "trades": 1293,
+      "ts": 1790610300,
+      "volume": 3871217.15036,
+      "vwap": 0.11072
+    },
+    {
+      "close": 0.10929,
+      "high": 0.11243,
+      "low": 0.10913,
+      "open": 0.11074,
+      "trades": 954,
+      "ts": 1790611200,
+      "volume": 2011348.91432,
+      "vwap": 0.11029
+    },
+    {
+      "close": 0.11074,
+      "high": 0.1135,
+      "low": 0.10878,
+      "open": 0.10918,
+      "trades": 501,
+      "ts": 1790612100,
+      "volume": 1377944.98348,
+      "vwap": 0.11187
+    }
+  ],
+  "pair": "HBAR/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260928-155242-HBAR-EUR-r36446690820.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-28T16:23:44.552921Z",
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-28T16:23:44.552921Z",
+    "revalidation_started_at_utc": "2026-09-28T16:23:37.875201Z"
+  }
+}
