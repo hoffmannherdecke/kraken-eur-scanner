@@ -479,7 +479,7 @@ jobs:
         with:
           name: chat-handoff-${{ github.run_id }}-${{ github.run_attempt }}
           path: .scanner/kraken_eur_scanner/handoff/candidates.jsonl
-          retention-days: 30
+          retention-days: 7
           compression-level: 9
           if-no-files-found: warn
 
