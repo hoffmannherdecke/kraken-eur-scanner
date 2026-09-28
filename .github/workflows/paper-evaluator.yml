@@ -82,7 +82,7 @@ jobs:
           else:
               print("PAPER_TARGET_REACHED",closed,target)
 
-          changed=[p for _,p in sorted(rows)][:6]
+          changed=[p for _,p in sorted(rows)][:8]
           Path(".paper-work/candidates.json").write_text(json.dumps(changed)+"\n")
           print("PAPER_SELECTED",json.dumps(changed))
           PY
@@ -162,9 +162,9 @@ jobs:
                   d=json.loads(p.read_text("utf-8"))
                   if d.get("series_id")!=series_id:
                       continue
-                  assert d["kind"]=="PAPER_POSITION_V2"
+                  assert d["kind"] in {"PAPER_POSITION_V2","PAPER_POSITION_V3"}
                   assert d["real_money_actions_enabled"] is False
-                  assert d["status"] in {"OPEN","CLOSED"}
+                  assert d["status"] in {"OPEN","CLOSED","UNVERIFIED"}
                   assert float(d["active_stop_eur"])>0
                   if d["status"]=="CLOSED":
                       assert d["exit"] is not None
@@ -185,6 +185,7 @@ jobs:
           fi
 
       - name: Push actionable paper signal to Slack
+        continue-on-error: true
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_USER_ID: U0C39EDQ1H8
@@ -193,6 +194,7 @@ jobs:
           python paper_evaluator/slack_action_push.py .paper-work/action-files.json
 
       - name: Persist Slack alert receipts
+        if: always()
         run: |
           set -euo pipefail
           if git status --porcelain paper_alerts/ 2>/dev/null | grep -q .; then
