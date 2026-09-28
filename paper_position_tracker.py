@@ -55,11 +55,12 @@ def nearest_spread(rows,ts,max_distance=90):
 
 def trailing_rule(entry,peak):
     gain=(peak/entry-1.0)*100.0
-    if gain>=15.0:
+    eps=1e-9
+    if gain>=15.0-eps:
         return 2.0
-    if gain>=12.0:
+    if gain>=12.0-eps:
         return 3.0
-    if gain>=7.0:
+    if gain>=7.0-eps:
         return 4.0
     return None
 
