@@ -79,6 +79,76 @@ def binance_derivatives(pair):
         out.update({"error":type(exc).__name__,"detail":str(exc)[:120]})
     return out
 
+def kraken_pair_metadata(altname):
+    out={"source":"kraken_public_assetpairs","available":False}
+    try:
+        q=urllib.parse.urlencode({"pair":altname})
+        d=_json("https://api.kraken.com/0/public/AssetPairs?"+q)
+        if d.get("error"):
+            raise RuntimeError(repr(d["error"]))
+        row=next(iter(d.get("result",{}).values()))
+        out.update({
+            "available":True,
+            "status":row.get("status"),
+            "ordermin":row.get("ordermin"),
+            "costmin":row.get("costmin"),
+            "pair_decimals":row.get("pair_decimals"),
+            "lot_decimals":row.get("lot_decimals"),
+            "fees":row.get("fees"),
+        })
+    except Exception as exc:
+        out.update({"error":type(exc).__name__,"detail":str(exc)[:120]})
+    return out
+
+def kraken_futures_derivatives(pair):
+    base=pair.split("/")[0].upper().replace("BTC","XBT").replace("DOGE","XDG")
+    desired={f"PF_{base}USD",f"PI_{base}USD"}
+    out={"source":"kraken_futures_public","available":False,"requested_symbols":sorted(desired)}
+    try:
+        d=_json("https://futures.kraken.com/derivatives/api/v3/tickers")
+        rows=d.get("tickers") or d.get("result") or []
+        if isinstance(rows,dict):
+            rows=list(rows.values())
+        row=next((x for x in rows if str(x.get("symbol","")).upper() in desired),None)
+        if row is None:
+            row=next((x for x in rows if base in str(x.get("symbol","")).upper()
+                      and str(x.get("symbol","")).upper().endswith("USD")),None)
+        if row is None:
+            out["detail"]="No matching Kraken Futures USD contract"
+            return out
+
+        def pick(*keys):
+            for k in keys:
+                if row.get(k) is not None:
+                    return row.get(k)
+            return None
+
+        out.update({
+            "available":True,
+            "symbol":row.get("symbol"),
+            "last":pick("last","lastPrice"),
+            "mark_price":pick("markPrice","mark_price"),
+            "index_price":pick("indexPrice","index_price"),
+            "funding_rate":pick("fundingRate","funding_rate","fundingRatePrediction"),
+            "open_interest":pick("openInterest","open_interest","openInterestUsd"),
+            "volume24h":pick("vol24h","volume24h","volume"),
+            "note":"Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price."
+        })
+    except Exception as exc:
+        out.update({"error":type(exc).__name__,"detail":str(exc)[:120]})
+    return out
+
+def derivatives_context(pair):
+    primary=kraken_futures_derivatives(pair)
+    secondary=binance_derivatives(pair)
+    return {
+        "available":bool(primary.get("available") or secondary.get("available")),
+        "kraken_futures":primary,
+        "binance_futures":secondary,
+        "preferred_source":"kraken_futures" if primary.get("available") else ("binance_futures" if secondary.get("available") else None),
+        "note":"Derivatives are supplementary context only; Kraken Spot EUR controls execution."
+    }
+
 def _recent_rss(url, source, user_agent=UA, hours=24, limit=5):
     out={"source":source,"available":False,"items":[]}
     try:
@@ -128,8 +198,9 @@ def build_context(candidate, current_ticker):
         "retrieved_at_utc":datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),
         "kraken_public_pair_verified":True,
         "kraken_execution_ticker":current_ticker,
+        "kraken_pair_metadata":kraken_pair_metadata(candidate["altname"]),
         "major_market_regime":kraken_regime(),
-        "derivatives":binance_derivatives(candidate["pair"]),
+        "derivatives":derivatives_context(candidate["pair"]),
         "official_headlines":official_headlines(),
         "onchain":{"available":False,"reason":"No reliable free account-independent on-chain source integrated in this revision."},
         "account_specific_tradability":{"available":False,"reason":"No private Kraken trading credential is used by paper infrastructure."}
