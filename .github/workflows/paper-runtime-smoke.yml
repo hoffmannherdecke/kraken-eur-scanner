@@ -1,4 +1,4 @@
-name: Paper V2R2 runtime smoke
+name: Paper V2R3 runtime smoke
 
 'on':
   workflow_dispatch:
