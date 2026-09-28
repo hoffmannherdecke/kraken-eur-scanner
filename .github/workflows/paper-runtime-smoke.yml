@@ -31,7 +31,7 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          from paper_context import build_context
+          from paper_context import build_context, binance_derivatives
           from paper_evaluator.evaluate import kraken_ticker
           files=sorted(Path("handoff_queue").glob("*.json"))
           if not files:
@@ -42,10 +42,14 @@ jobs:
           assert ctx["kraken_public_pair_verified"] is True
           assert ctx["major_market_regime"]["available_assets"] >= 1
           assert "derivatives" in ctx and "official_headlines" in ctx
+          btc_deriv=binance_derivatives("BTC/EUR")
           print("CONTEXT_SMOKE_PASS",json.dumps({
               "pair":c["pair"],
               "regime_assets":ctx["major_market_regime"]["available_assets"],
-              "derivatives_available":ctx["derivatives"].get("available"),
+              "candidate_derivatives_available":ctx["derivatives"].get("available"),
+              "candidate_derivatives_error":ctx["derivatives"].get("detail"),
+              "btc_derivatives_available":btc_deriv.get("available"),
+              "btc_derivatives_error":btc_deriv.get("detail"),
               "fed_available":ctx["official_headlines"]["federal_reserve"].get("available"),
               "sec_available":ctx["official_headlines"]["sec"].get("available"),
           },sort_keys=True))
