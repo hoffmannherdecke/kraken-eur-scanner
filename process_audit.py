@@ -324,3 +324,5 @@ if any(i["severity"]=="CRITICAL" for i in issues):
 # V2R2 final health policy marker.
 
 # V2R3 final verification marker.
+
+# V2R3 post-schedule verification marker.
