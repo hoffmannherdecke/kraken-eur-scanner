@@ -29,7 +29,7 @@ jobs:
           python-version: '3.13'
 
       - name: Restore rolling scanner telemetry
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .scanner/kraken_eur_scanner/.state
           key: audit-read-${{ github.run_id }}
@@ -42,7 +42,7 @@ jobs:
           python audit.py
 
       - name: Upload audit report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: kraken-missed-move-audit
           path: |
