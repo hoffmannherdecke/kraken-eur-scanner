@@ -1,9 +1,13 @@
 name: Paper V2 candidate evaluator
 
 'on':
-  # Legacy evaluator parked: canonical-evaluator-runtime-v1 owns automatic paper execution.
-  # Manual dispatch is retained only for explicit diagnostics.
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'handoff_queue/*.json'
+  schedule:
+    - cron: '5,20,35,50 * * * *'
 
 permissions:
   contents: write
@@ -34,7 +38,33 @@ jobs:
           mkdir -p .paper-work
           python - <<'PY'
           import json, os, subprocess, time
+          from datetime import datetime
           from pathlib import Path
+
+          control=json.loads(Path("paper_runtime_control.json").read_text("utf-8"))
+          if control.get("enabled") is not True:
+              Path(".paper-work/candidates.json").write_text("[]\n")
+              print("PAPER_RUNTIME_DISABLED")
+              raise SystemExit(0)
+
+          current_test_id=control.get("test_id","SHADOW-V2-20260924-01")
+          target=int(control.get("target_completed_paper_trades",20))
+          closed=0
+          for p in Path("paper_positions").glob("*.json") if Path("paper_positions").exists() else []:
+              try:
+                  d=json.loads(p.read_text("utf-8"))
+                  if d.get("test_id")==current_test_id and d.get("status")=="CLOSED":
+                      closed+=1
+              except Exception:
+                  pass
+          if closed >= target:
+              Path(".paper-work/candidates.json").write_text("[]\n")
+              print("PAPER_TARGET_REACHED",closed,target)
+              raise SystemExit(0)
+
+          start_iso=control.get("series_started_at_utc")
+          start_ts=(int(datetime.fromisoformat(start_iso.replace("Z","+00:00")).timestamp())
+                    if start_iso else 1790532491)
           changed=[]
           if os.environ.get("GITHUB_EVENT_NAME")=="push":
               try:
@@ -49,7 +79,7 @@ jobs:
                   try:
                       d=json.loads(p.read_text())
                       age=now-int(d["event_ts"])
-                      if int(d["event_ts"]) >= 1790532491 and 0 <= age <= 3600 and not (Path("paper_decisions")/p.name).exists():
+                      if int(d["event_ts"]) >= start_ts and 0 <= age <= 3600 and not (Path("paper_decisions")/p.name).exists():
                           rows.append((int(d["event_ts"]),str(p)))
                   except Exception:
                       continue
