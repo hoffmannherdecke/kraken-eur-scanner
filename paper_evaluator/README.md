@@ -1,18 +1,37 @@
-# Paper V2 evaluator
+# Paper V2R3 evaluator
 
 Paper-only consumer for canonical files in `handoff_queue/`.
 
-Safety invariants:
-- test ID remains `SHADOW-V2-20260924-01`;
-- frozen V2 principles from 24 Sep 2026 are not auto-optimized;
-- no private Kraken credential is used;
-- no Kraken order endpoint exists here;
-- `real_money_actions_enabled` is always false;
-- candidate identity is revalidated before evaluation;
-- decisions are append-only by candidate ID and therefore idempotent;
-- OpenAI gets one retry only;
-- DUSK/EUR, QNT/EUR and TION/EUR remain blocked;
-- a BUY_SCOUT is only a simulated paper fill at the fresh public Kraken best ask;
-- no extra slippage number is invented when no executable depth/slippage measurement is available.
+## Safety and methodology
 
-The evaluator intentionally separates scanner detection from strategy decisions. WAIT and REJECT are first-class outcomes and are persisted so missed moves can be audited later.
+- No private Kraken credential or order endpoint is used.
+- `real_money_actions_enabled` is always false.
+- Candidate identity is revalidated before evaluation.
+- Decisions are idempotent by candidate ID.
+- Scanner detection and strategy decisions remain separate.
+- Raw scanner candidates are **not** user Slack alerts.
+- BUY_SCOUT requires a valid structural stop and explicit second-stage confirmation trigger.
+- Public Kraken pair status, cost minimum and order minimum are hard technical gates.
+- Scout and stage 2 are simulated at 50 EUR each.
+- Taker fee assumption is 0.60% per side.
+- Open positions require contiguous Kraken 1-minute coverage. A gap produces `UNVERIFIED`, never a guessed result.
+- Trailing tiers are defined in `paper_strategy_spec.json`.
+- A finite 72-hour maximum hold closes otherwise unresolved paper positions.
+- WAIT is revalidated once at TTL; WAIT -> BUY is excluded from missed-move statistics.
+- REJECT/WAIT follow-up uses compact 1-minute Kraken OHLC at 30/60/120/360 minutes.
+- Strategy revision, strategy fingerprint, evaluator model, repository SHA and code fingerprint are persisted.
+
+## Data context
+
+The evaluator can use:
+- Kraken Spot EUR ticker and pair metadata,
+- scanner cross-sectional breadth/rotation context,
+- BTC/ETH/SOL Kraken market-regime proxies,
+- Kraken Futures funding/open interest plus same-pair change when a prior observation exists,
+- Binance derivatives only as an optional fallback,
+- official Federal Reserve and SEC headlines.
+
+Unavailable data remains explicitly unavailable. On-chain data and account-specific private
+Kraken tradability are not fabricated.
+
+The active series and measurement target are controlled by `paper_runtime_control.json`.
