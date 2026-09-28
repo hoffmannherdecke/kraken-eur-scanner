@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Paper-only position lifecycle tracker with explicit market-data quality gates."""
 from __future__ import annotations
-import json, math, time, urllib.parse, urllib.request
+import hashlib, json, math, time, urllib.parse, urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -58,6 +58,15 @@ def trailing_rule(entry,peak):
     if gain>=7.0-eps: return 4.0
     return None
 
+def lifecycle_code_fingerprint():
+    h=hashlib.sha256()
+    for rel in ("paper_position_tracker.py","paper_strategy_spec.json"):
+        p=ROOT/rel
+        h.update(rel.encode("utf-8")+b"\0")
+        h.update(p.read_bytes())
+        h.update(b"\0")
+    return h.hexdigest()
+
 def source_buys(control):
     series_id=control["series_id"]
     found={}
@@ -104,11 +113,13 @@ def new_state(rec,max_hold_hours):
         "source_kind":rec["kind"],"strategy_revision":rec.get("strategy_revision"),
         "strategy_fingerprint_sha256":rec.get("strategy_fingerprint_sha256"),
         "runtime_code_sha":rec.get("runtime_code_sha"),
+        "runtime_code_fingerprint_sha256":rec.get("runtime_code_fingerprint_sha256"),
+        "lifecycle_code_fingerprint_sha256":lifecycle_code_fingerprint(),
         "status":"OPEN","real_money_actions_enabled":False,
         "fee_assumption_pct_per_side":FEE_PCT,
         "opened_at_utc":e["opened_at_utc"],
         "max_hold_hours":max_hold_hours,
-        "max_hold_at_utc":(opened.timestamp()+max_hold_hours*3600),
+        "max_hold_at_utc":iso_ts(opened.timestamp()+max_hold_hours*3600),
         "legs":[{
             "kind":"SCOUT","status":"FILLED","filled_at_utc":e["opened_at_utc"],
             "fill_price_eur":entry,"quantity":float(e["quantity"]),
