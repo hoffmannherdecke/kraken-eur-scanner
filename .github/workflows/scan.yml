@@ -560,8 +560,8 @@ jobs:
             echo "new_candidates=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Dispatch paper evaluator immediately
-        if: success() && steps.queue_commit.outputs.new_candidates == 'true'
+      - name: Dispatch paper runtime after every successful scan
+        if: success()
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -595,5 +595,5 @@ jobs:
           with urllib.request.urlopen(req, timeout=20) as resp:
               if resp.status not in (204,):
                   raise RuntimeError(f"workflow dispatch HTTP {resp.status}")
-          print("PAPER_EVALUATOR_DISPATCHED")
+          print("PAPER_RUNTIME_DISPATCHED")
           PY
