@@ -107,7 +107,7 @@ def main():
         for h in due:
             end=at+h*60
             w=[r for r in rows if first<=r["start"]<end]
-            expected=max(1,int(math.floor((end-first)/60.0)))
+            expected=max(1,int(math.ceil((end-first)/60.0)))
             complete=len(w)>=expected and all((b["start"]-a["start"])==60 for a,b in zip(w,w[1:]))
             if not complete:
                 rec["horizons"][str(h)]={
