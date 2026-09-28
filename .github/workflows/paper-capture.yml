@@ -90,7 +90,7 @@ jobs:
               'gaps':len(gaps),'recovered_after_gap':recovered
           }))
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: paper-market-probe-${{ github.run_id }}-${{ github.run_attempt }}
@@ -208,7 +208,7 @@ jobs:
               'files_per_batch': [len(parts) + 2],
           }, sort_keys=True))
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always() && hashFiles('capture-parts/parts-manifest.json') != ''
         with:
           name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}
@@ -227,7 +227,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: paper-market-tape-${{ github.run_id }}-${{ github.run_attempt }}
           path: uploaded-artifacts
