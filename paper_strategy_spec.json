@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "strategy_revision": "V2R2-2026-09-28",
+  "description": "Implementation-complete revision of frozen V2 principles for prospective paper measurement.",
+  "paper_only": true,
+  "real_money_actions_enabled": false,
+  "fees": {
+    "taker_pct_per_side": 0.60
+  },
+  "entry": {
+    "scout_notional_eur": 50.0,
+    "stage2_notional_eur": 50.0,
+    "stage2_required_for_full_position": true,
+    "stage2_requires_explicit_trigger_above_scout_ask": true,
+    "stage2_max_ttl_minutes": 60
+  },
+  "exit": {
+    "initial_stop_from_evaluator": true,
+    "trailing_tiers": [
+      {"gain_pct": 7.0, "trail_pct": 4.0},
+      {"gain_pct": 12.0, "trail_pct": 3.0},
+      {"gain_pct": 15.0, "trail_pct": 2.0}
+    ],
+    "forced_time_exit": false,
+    "stale_position_review_hours": 24
+  },
+  "decision_inputs": {
+    "scanner_and_kraken_eur": true,
+    "kraken_major_market_regime": true,
+    "binance_public_derivatives_optional": true,
+    "official_fed_sec_headlines_optional": true,
+    "onchain_required": false,
+    "missing_inputs_must_remain_explicitly_missing": true
+  },
+  "measurement": {
+    "target_completed_trades": 20,
+    "followup_horizons_minutes": [30, 60, 120, 360],
+    "candidate_reviews_do_not_count_as_completed_trades": true
+  }
+}
