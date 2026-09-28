@@ -2,8 +2,6 @@ name: Kraken paper market capture
 
 'on':
   workflow_dispatch:
-  schedule:
-    - cron: '22 * * * *'
   pull_request:
     paths:
       - 'paper_capture/**'
@@ -99,11 +97,11 @@ jobs:
           path: |
             probe/
             discovery-probe/
-          retention-days: 90
+          retention-days: 1
           if-no-files-found: error
 
   capture:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 80
     # Deliberately no shared concurrency lock: hourly sessions must overlap.
@@ -126,11 +124,11 @@ jobs:
           Path('capture/manifest.json').write_text(json.dumps({'smoke_fixture': True, 'source_size_bytes': len(source)}) + '\n')
           print(f'PAPER_UPLOAD_SMOKE_FIXTURE bytes={len(source)} expected_parts=67')
           PY
-      - name: Continuous public market capture
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+      - name: Bounded diagnostic public market capture
+        if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python paper_capture/market.py --seconds 4200 --out capture
+        run: python paper_capture/market.py --seconds 300 --out capture
       - name: Split evidence into bounded downloadable parts
         id: split
         if: always()
@@ -219,7 +217,7 @@ jobs:
             capture-parts/parts-manifest.json
             capture-parts/events.jsonl.gz.part*
           compression-level: 0
-          retention-days: 90
+          retention-days: 1
           if-no-files-found: error
 
   verify_upload:
