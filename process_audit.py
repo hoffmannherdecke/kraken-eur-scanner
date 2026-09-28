@@ -114,7 +114,6 @@ if buys and not (ROOT/"paper_positions").exists():
 
 # Independent workflow liveness. Scanner/capture stay live even while paper evaluation is paused.
 latest_health("scan.yml",2700)
-latest_health("paper-capture.yml",9000)
 if PAPER_RUNTIME_ENABLED:
     latest_health("paper-evaluator.yml",2700)
     latest_health("paper-revalidator.yml",2700)
@@ -126,8 +125,7 @@ try:
     if PAPER_RUNTIME_ENABLED:
         if orphans: dispatch("paper-evaluator.yml","orphan candidate recovery")
         if overdue: dispatch("paper-revalidator.yml","overdue WAIT recovery")
-    repair_map=[("STALE_scan.yml","scan.yml"),("FAILED_scan.yml","scan.yml"),
-                ("STALE_paper-capture.yml","paper-capture.yml"),("FAILED_paper-capture.yml","paper-capture.yml")]
+    repair_map=[("STALE_scan.yml","scan.yml"),("FAILED_scan.yml","scan.yml")]
     if PAPER_RUNTIME_ENABLED:
         repair_map += [("STALE_paper-evaluator.yml","paper-evaluator.yml"),("FAILED_paper-evaluator.yml","paper-evaluator.yml"),
                        ("STALE_paper-revalidator.yml","paper-revalidator.yml"),("FAILED_paper-revalidator.yml","paper-revalidator.yml"),
