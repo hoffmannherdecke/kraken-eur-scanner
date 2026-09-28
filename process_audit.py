@@ -99,10 +99,11 @@ decisions=load_dir("paper_decisions")
 revals=load_dir("paper_revalidations")
 positions=load_dir("paper_positions")
 followups=load_dir("paper_followups")
+alerts=load_dir("paper_alerts")
 metrics.update({
     "queue_files":len(queue),"decision_files":len(decisions),
     "revalidation_files":len(revals),"position_files":len(positions),
-    "followup_files":len(followups)
+    "followup_files":len(followups),"alert_receipts":len(alerts)
 })
 
 if ENABLED and not SERIES_ID:
@@ -123,11 +124,13 @@ active_decisions={n:d for n,d in decisions.items() if d.get("series_id")==SERIES
 active_revals={n:d for n,d in revals.items() if d.get("series_id")==SERIES_ID}
 active_positions={n:d for n,d in positions.items() if d.get("series_id")==SERIES_ID}
 active_followups={n:d for n,d in followups.items() if d.get("series_id")==SERIES_ID}
+active_alerts={n:d for n,d in alerts.items() if d.get("series_id")==SERIES_ID}
 metrics.update({
     "active_decisions":len(active_decisions),
     "active_revalidations":len(active_revals),
     "active_positions":len(active_positions),
     "active_followups":len(active_followups),
+    "active_alert_receipts":len(active_alerts),
 })
 
 orphans=[]
@@ -173,18 +176,61 @@ if missing_positions:
 
 closed=[p for p in active_positions.values() if p.get("status")=="CLOSED"]
 open_pos=[p for p in active_positions.values() if p.get("status")=="OPEN"]
+unverified_pos=[p for p in active_positions.values() if p.get("status")=="UNVERIFIED"]
 stale_open=[p for p in open_pos if p.get("stale_position_review_due")]
+if unverified_pos:
+    add("UNVERIFIED_POSITION_DATA","CRITICAL",
+        f"{len(unverified_pos)} positions have irrecoverable/unknown 1m coverage: "+
+        ",".join(p.get("candidate_id","?") for p in unverified_pos[:5]))
 metrics.update({
     "paper_buys":len(current_buys),
     "missing_position_states":len(missing_positions),
     "completed_paper_trades":len(closed),
     "open_paper_positions":len(open_pos),
+    "unverified_paper_positions":len(unverified_pos),
     "stale_open_positions":len(stale_open),
     "target_completed_paper_trades":int(CONTROL.get("target_completed_paper_trades",20)),
     "net_pnl_eur":round(sum(float(p.get("exit",{}).get("net_pnl_eur") or 0) for p in closed),4)
 })
 if stale_open:
     add("STALE_OPEN_POSITION","WARNING",f"{len(stale_open)} open positions exceed review-age threshold")
+
+# BUY alert outbox completeness. A Slack receipt proves webhook acceptance only;
+# missing receipts are retried by the unified paper runtime.
+pending_alerts=[]
+for d in current_buys:
+    name=d["candidate_id"]+".json"
+    if name in active_alerts:
+        continue
+    opened=d.get("paper_entry",{}).get("opened_at_utc") or d.get("evaluated_at_utc") or d.get("revalidated_at_utc")
+    age=NOW-int(datetime.fromisoformat(opened.replace("Z","+00:00")).timestamp()) if opened else 999999
+    if age>300:
+        pending_alerts.append(d["candidate_id"])
+if pending_alerts:
+    add("PENDING_BUY_ALERT","CRITICAL",
+        f"{len(pending_alerts)} BUY alerts lack Slack webhook receipt >5m: "+",".join(pending_alerts[:5]),True)
+metrics["pending_buy_alerts"]=len(pending_alerts)
+
+# Methodology drift diagnostics.
+models=set()
+fingerprints=set()
+revisions=set()
+for d in list(active_decisions.values())+list(active_revals.values()):
+    model=(d.get("evaluator") or {}).get("model")
+    if model: models.add(str(model))
+    fp=d.get("runtime_code_fingerprint_sha256") or d.get("strategy_fingerprint_sha256")
+    if fp: fingerprints.add(str(fp))
+    rev=d.get("strategy_revision")
+    if rev: revisions.add(str(rev))
+metrics["evaluator_models"]=sorted(models)
+metrics["runtime_fingerprints"]=sorted(fingerprints)
+metrics["strategy_revisions"]=sorted(revisions)
+if len(models)>1:
+    add("MODEL_DRIFT","WARNING","Multiple evaluator model identifiers in active series: "+",".join(sorted(models)))
+if len(fingerprints)>1:
+    add("RUNTIME_FINGERPRINT_DRIFT","WARNING","Multiple runtime/strategy fingerprints in active series")
+if len(revisions)>1:
+    add("STRATEGY_REVISION_DRIFT","CRITICAL","Multiple strategy revisions in active series")
 
 # Decision-rate diagnostics, never automatic strategy changes.
 terminal=[]
@@ -209,16 +255,18 @@ for name,d in active_decisions.items():
 if followup_due:
     add("FOLLOWUP_LAG","WARNING",f"{len(followup_due)} candidates lack due compact follow-up",True)
 
-mature=[x for x in active_followups.values() if x.get("horizons",{}).get("360",{}).get("complete")]
+mature=[x for x in active_followups.values()
+        if x.get("horizons",{}).get("360",{}).get("complete")
+        and not x.get("excluded_from_missed_move_stats")]
 metrics["six_hour_followups"]=len(mature)
 metrics["missed_5pct_6h"]=sum(bool(x.get("six_hour_flags",{}).get("missed_5pct")) for x in mature)
 metrics["missed_8pct_6h"]=sum(bool(x.get("six_hour_flags",{}).get("missed_8pct")) for x in mature)
 metrics["missed_10pct_6h"]=sum(bool(x.get("six_hour_flags",{}).get("missed_10pct")) for x in mature)
 
 # Workflow liveness for the unified architecture.
-latest_health("scan.yml",2100)
+latest_health("scan.yml",1500)
 if ENABLED:
-    latest_health("paper-evaluator.yml",2100)
+    latest_health("paper-evaluator.yml",1800)
 else:
     metrics["paper_runtime_pause_reason"]=CONTROL.get("reason")
 
@@ -234,6 +282,8 @@ try:
             runtime_reasons.append("missing position lifecycle")
         if followup_due:
             runtime_reasons.append("follow-up recovery")
+        if pending_alerts:
+            runtime_reasons.append("pending BUY alert retry")
         if runtime_reasons:
             dispatch("paper-evaluator.yml","; ".join(runtime_reasons))
 
