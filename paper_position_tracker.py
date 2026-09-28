@@ -223,13 +223,24 @@ def process_state(state,stale_hours,max_hold_hours):
         s2=state.get("stage2_plan")
         if s2 and s2.get("status")=="PENDING":
             expiry=zdt(s2["expires_at_utc"]).timestamp()
+            trigger=float(s2["trigger_eur"])
             if bar["start"]>=expiry:
                 s2["status"]="EXPIRED"; s2["expired_at_utc"]=iso_ts(expiry)
                 state["events"].append({"type":"STAGE2_EXPIRED","at_utc":iso_ts(expiry)})
                 changed=True
-            elif bar["high"]>=float(s2["trigger_eur"]):
+            elif bar["start"]<expiry<bar["start"]+60 and bar["high"]>=trigger:
+                # Trigger-vs-expiry ordering is unknowable from a 1m candle.
+                # Never assume the favorable ordering.
+                s2["status"]="EXPIRED_AMBIGUOUS"
+                s2["expired_at_utc"]=iso_ts(expiry)
+                state["events"].append({
+                    "type":"STAGE2_EXPIRED_AMBIGUOUS","at_utc":iso_ts(expiry),
+                    "trigger_eur":trigger,"bar_start_utc":iso_ts(bar["start"])
+                })
+                changed=True
+            elif bar["start"]+60<=expiry and bar["high"]>=trigger:
                 spread=nearest_spread(spread_rows,bar["start"]+30)
-                fill=max(float(s2["trigger_eur"]),bar["open"],spread["ask"] if spread else 0.0)
+                fill=max(trigger,bar["open"],spread["ask"] if spread else 0.0)
                 notional=float(s2["notional_eur"]); qty2=notional/fill; fee=notional*FEE
                 state["legs"].append({
                     "kind":"STAGE2","status":"FILLED","filled_at_utc":iso_ts(bar["start"]+60),
