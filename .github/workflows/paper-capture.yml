@@ -35,8 +35,10 @@ jobs:
           python -m unittest discover -s paper_capture -p 'test_*.py' -v
           python -m unittest discover -s market_data -p 'test_*.py' -v
       - name: Live Kraken EUR book and trade probe
+        if: github.event_name == 'workflow_dispatch'
         run: python paper_capture/market.py --seconds 60 --out probe --smoke
       - name: Verify Kraken EUR candle and ticker context
+        if: github.event_name == 'workflow_dispatch'
         run: |
           python - <<'PY'
           import json, sys
@@ -59,6 +61,7 @@ jobs:
           }, sort_keys=True))
           PY
       - name: Verify scanner market discovery and live subscriptions
+        if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -91,7 +94,7 @@ jobs:
           }))
           PY
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: always() && github.event_name == 'workflow_dispatch'
         with:
           name: paper-market-probe-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
