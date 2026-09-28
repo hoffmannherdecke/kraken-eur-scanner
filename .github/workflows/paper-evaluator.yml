@@ -1,27 +1,32 @@
-name: Paper V2 candidate evaluator
+name: Paper runtime evaluator and lifecycle
 
 'on':
   workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - 'handoff_queue/*.json'
       - 'paper_runtime_control.json'
+      - 'paper_strategy_spec.json'
+      - 'paper_context.py'
+      - 'paper_followup.py'
+      - 'paper_evaluator/**'
+      - 'paper_position_tracker.py'
       - '.github/workflows/paper-evaluator.yml'
   schedule:
-    - cron: '5,20,35,50 * * * *'
+    # Low-frequency fallback only. Normal execution is dispatched directly by scanner.
+    - cron: '10 * * * *'
 
 permissions:
   contents: write
 
 concurrency:
-  group: paper-v2-evaluator
+  group: paper-runtime-v2r2
   cancel-in-progress: false
 
 jobs:
-  evaluate:
+  runtime:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_MODEL: gpt-6-luna
@@ -29,17 +34,19 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 2
+
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
+
       - name: Preflight and select prospective candidates
         run: |
           set -euo pipefail
           test -n "$OPENAI_API_KEY" || { echo "BLOCKER missing OPENAI_API_KEY"; exit 2; }
-          python -m py_compile paper_evaluator/evaluate.py paper_evaluator/slack_action_push.py
+          python -m py_compile             paper_context.py paper_followup.py paper_position_tracker.py             paper_evaluator/evaluate.py paper_evaluator/revalidate.py paper_evaluator/slack_action_push.py
           mkdir -p .paper-work
           python - <<'PY'
-          import json, os, subprocess, time
+          import json, time
           from datetime import datetime
           from pathlib import Path
 
@@ -49,54 +56,38 @@ jobs:
               print("PAPER_RUNTIME_DISABLED")
               raise SystemExit(0)
 
-          current_test_id=control.get("test_id","SHADOW-V2-20260924-01")
+          series_id=control["series_id"]
           target=int(control.get("target_completed_paper_trades",20))
           closed=0
           for p in Path("paper_positions").glob("*.json") if Path("paper_positions").exists() else []:
               try:
                   d=json.loads(p.read_text("utf-8"))
-                  if d.get("test_id")==current_test_id and d.get("status")=="CLOSED":
+                  if d.get("series_id")==series_id and d.get("status")=="CLOSED":
                       closed+=1
               except Exception:
                   pass
-          if closed >= target:
-              Path(".paper-work/candidates.json").write_text("[]\n")
-              print("PAPER_TARGET_REACHED",closed,target)
-              raise SystemExit(0)
 
-          start_iso=control.get("series_started_at_utc")
-          start_ts=(int(datetime.fromisoformat(start_iso.replace("Z","+00:00")).timestamp())
-                    if start_iso else 1790532491)
-          changed=[]
-          if os.environ.get("GITHUB_EVENT_NAME")=="push":
-              try:
-                  out=subprocess.check_output(["git","diff","--name-only","HEAD^","HEAD"],text=True)
-                  changed=[x for x in out.splitlines() if x.startswith("handoff_queue/") and x.endswith(".json")]
-              except Exception:
-                  pass
-          if not changed:
+          start_ts=int(datetime.fromisoformat(control["series_started_at_utc"].replace("Z","+00:00")).timestamp())
+          rows=[]
+          if closed < target:
               now=int(time.time())
-              rows=[]
               for p in Path("handoff_queue").glob("*.json"):
                   try:
-                      d=json.loads(p.read_text())
+                      d=json.loads(p.read_text("utf-8"))
                       age=now-int(d["event_ts"])
-                      if int(d["event_ts"]) >= start_ts and 0 <= age <= 3600 and not (Path("paper_decisions")/p.name).exists():
+                      if int(d["event_ts"])>=start_ts and 0<=age<=3600 and not (Path("paper_decisions")/p.name).exists():
                           rows.append((int(d["event_ts"]),str(p)))
                   except Exception:
                       continue
-              changed=[p for _,p in sorted(rows)]
-          changed=changed[:6]
-          if not changed:
-              print("PAPER_NO_UNPROCESSED_RECENT_CANDIDATES")
-              Path(".paper-work/candidates.json").write_text("[]\n")
           else:
-              Path(".paper-work/candidates.json").write_text(json.dumps(changed)+"\n")
-              print("PAPER_SELECTED",json.dumps(changed))
+              print("PAPER_TARGET_REACHED",closed,target)
+
+          changed=[p for _,p in sorted(rows)][:6]
           Path(".paper-work/candidates.json").write_text(json.dumps(changed)+"\n")
           print("PAPER_SELECTED",json.dumps(changed))
           PY
-      - name: Evaluate frozen V2 paper decisions
+
+      - name: Evaluate new prospective candidates
         run: |
           set -euo pipefail
           python - <<'PY'
@@ -104,48 +95,95 @@ jobs:
           for p in json.load(open(".paper-work/candidates.json")):
               subprocess.run(["python","paper_evaluator/evaluate.py",p],check=True)
           PY
-      - name: Build action notification manifest
+
+      - name: Revalidate all due WAIT decisions
+        run: |
+          set -euo pipefail
+          PYTHONPATH=paper_evaluator python paper_evaluator/revalidate.py
+
+      - name: Advance open paper positions
+        run: |
+          set -euo pipefail
+          python paper_position_tracker.py
+
+      - name: Update compact missed-move follow-up
+        run: |
+          set -euo pipefail
+          python paper_followup.py
+
+      - name: Build actionable notification manifest
         run: |
           set -euo pipefail
           python - <<'PY'
-          import json
+          import json, subprocess
           from pathlib import Path
           files=[]
-          for src in json.load(open(".paper-work/candidates.json")):
-              target=Path("paper_decisions")/Path(src).name
-              if target.exists():
-                  files.append(str(target))
-          Path(".paper-work/action-files.json").write_text(json.dumps(files)+"\n")
-          print("PAPER_ACTION_MANIFEST",json.dumps(files))
+          for directory in ("paper_decisions","paper_revalidations"):
+              if not Path(directory).exists():
+                  continue
+              out=subprocess.check_output(["git","status","--porcelain",directory],text=True)
+              for line in out.splitlines():
+                  if len(line)>=4:
+                      p=line[3:].strip()
+                      if p.endswith(".json"):
+                          files.append(p)
+          Path(".paper-work/action-files.json").write_text(json.dumps(sorted(set(files)))+"\n")
+          print("PAPER_ACTION_MANIFEST",json.dumps(sorted(set(files))))
           PY
-      - name: Validate safety and persist append-only decisions
+
+      - name: Validate active-series safety and persist runtime state
         run: |
           set -euo pipefail
           python - <<'PY'
           import json
           from pathlib import Path
-          files=list(Path("paper_decisions").glob("*.json"))
-          if not files: raise SystemExit("no paper decision persisted")
-          for p in files:
-              d=json.loads(p.read_text())
-              assert d["real_money_actions_enabled"] is False
-              assert d["kind"]=="PAPER_V2_DECISION_V1"
-              assert d["test_id"]=="SHADOW-V2-20260924-01"
-              assert d["decision"]["decision"] in {"BUY_SCOUT","WAIT","REJECT"}
-              if d["decision"]["decision"]=="BUY_SCOUT":
-                  assert d["paper_entry"] and d["paper_entry"]["status"].startswith("FILLED_SIMULATED")
-          print("PAPER_SAFETY_GATE_PASS")
+
+          control=json.loads(Path("paper_runtime_control.json").read_text("utf-8"))
+          series_id=control["series_id"]
+          test_id=control["test_id"]
+
+          for directory in ("paper_decisions","paper_revalidations"):
+              if not Path(directory).exists():
+                  continue
+              for p in Path(directory).glob("*.json"):
+                  d=json.loads(p.read_text("utf-8"))
+                  if d.get("series_id")!=series_id:
+                      continue
+                  assert d["test_id"]==test_id
+                  assert d["real_money_actions_enabled"] is False
+                  assert d["decision"]["decision"] in {"BUY_SCOUT","WAIT","REJECT"}
+                  if d["decision"]["decision"]=="BUY_SCOUT":
+                      assert d["paper_entry"]
+                      assert d["paper_entry"]["stage2_plan"]["status"]=="PENDING"
+                      assert float(d["paper_entry"]["stage2_plan"]["trigger_eur"])>float(d["paper_entry"]["fill_price_eur"])
+
+          if Path("paper_positions").exists():
+              for p in Path("paper_positions").glob("*.json"):
+                  d=json.loads(p.read_text("utf-8"))
+                  if d.get("series_id")!=series_id:
+                      continue
+                  assert d["kind"]=="PAPER_POSITION_V2"
+                  assert d["real_money_actions_enabled"] is False
+                  assert d["status"] in {"OPEN","CLOSED"}
+                  assert float(d["active_stop_eur"])>0
+                  if d["status"]=="CLOSED":
+                      assert d["exit"] is not None
+
+          print("PAPER_RUNTIME_SAFETY_GATE_PASS",series_id)
           PY
-          if git status --porcelain paper_decisions/ | grep -q .; then
+
+          if git status --porcelain -- paper_decisions paper_revalidations paper_positions paper_followups 2>/dev/null | grep -q .; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add paper_decisions/
-            git commit -m "[paper-eval] persist frozen V2 decision"
+            git add paper_decisions/ paper_revalidations/ 2>/dev/null || true
+            git add paper_positions/ paper_followups/ 2>/dev/null || true
+            git commit -m "[paper-runtime] persist active-series state"
             git pull --rebase origin main
             git push origin HEAD:main
           else
-            echo "PAPER_NO_NEW_DECISIONS"
+            echo "PAPER_RUNTIME_NO_STATE_CHANGES"
           fi
+
       - name: Push actionable paper signal to Slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -153,10 +191,11 @@ jobs:
         run: |
           set -euo pipefail
           python paper_evaluator/slack_action_push.py .paper-work/action-files.json
+
       - name: Persist Slack alert receipts
         run: |
           set -euo pipefail
-          if git status --porcelain paper_alerts/ | grep -q .; then
+          if git status --porcelain paper_alerts/ 2>/dev/null | grep -q .; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add paper_alerts/
