@@ -85,8 +85,8 @@ jobs:
                           rows.append((int(d["event_ts"]),str(p)))
                   except Exception:
                       continue
-              changed=[p for _,p in sorted(rows,reverse=True)]
-          changed=changed[:3]
+              changed=[p for _,p in sorted(rows)]
+          changed=changed[:6]
           if not changed:
               print("PAPER_NO_UNPROCESSED_RECENT_CANDIDATES")
               Path(".paper-work/candidates.json").write_text("[]\n")
