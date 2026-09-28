@@ -63,8 +63,8 @@ def load_dir(name):
         except Exception as e: add("BAD_JSON","CRITICAL",f"{f}: {e}")
     return out
 
-queue=load_dir("handoff_queue"); decisions=load_dir("paper_decisions"); revals=load_dir("paper_revalidations")
-metrics.update({"queue_files":len(queue),"decision_files":len(decisions),"revalidation_files":len(revals)})
+queue=load_dir("handoff_queue"); decisions=load_dir("paper_decisions"); revals=load_dir("paper_revalidations"); positions=load_dir("paper_positions")
+metrics.update({"queue_files":len(queue),"decision_files":len(decisions),"revalidation_files":len(revals),"position_files":len(positions)})
 
 # Core safety and identity invariants.
 for name,d in decisions.items():
@@ -108,15 +108,37 @@ if len(terminal)>=10 and not buys:
 if len(terminal)>=20 and len(buys)/len(terminal)<0.05:
     add("VERY_LOW_TRADE_RATE","WARNING",f"{len(buys)}/{len(terminal)} BUY_SCOUT; strategy review required, no automatic threshold change")
 
-# A BUY without a lifecycle tracker is unsafe even in paper because outcome statistics would be invalid.
-if buys and not (ROOT/"paper_positions").exists():
-    add("POSITION_LIFECYCLE_MISSING","CRITICAL","Paper BUY exists but no paper_positions lifecycle evidence")
+# Current prospective-series position lifecycle and completed-trade count.
+series_start=PAPER_CONTROL.get("series_started_at_utc")
+series_start_ts=(datetime.fromisoformat(series_start.replace("Z","+00:00")).timestamp() if series_start else 0)
+current_buys=[]
+for d in list(decisions.values())+list(revals.values()):
+    if d.get("decision",{}).get("decision")!="BUY_SCOUT" or not d.get("paper_entry"):
+        continue
+    try:
+        opened=datetime.fromisoformat(d["paper_entry"]["opened_at_utc"].replace("Z","+00:00")).timestamp()
+    except Exception:
+        continue
+    if opened>=series_start_ts:
+        current_buys.append(d)
+missing_positions=[d["candidate_id"] for d in current_buys if (d["candidate_id"]+".json") not in positions]
+closed_positions=[p for p in positions.values()
+                  if p.get("status")=="CLOSED"
+                  and datetime.fromisoformat(p.get("entry",{}).get("opened_at_utc","1970-01-01T00:00:00+00:00").replace("Z","+00:00")).timestamp()>=series_start_ts]
+metrics["current_series_buys"]=len(current_buys)
+metrics["missing_position_states"]=len(missing_positions)
+metrics["completed_paper_trades"]=len(closed_positions)
+metrics["target_completed_paper_trades"]=int(PAPER_CONTROL.get("target_completed_paper_trades",20))
+if missing_positions:
+    add("POSITION_LIFECYCLE_MISSING","CRITICAL",
+        f"{len(missing_positions)} current BUYs lack paper position state: "+",".join(missing_positions[:5]),True)
 
 # Independent workflow liveness. Scanner/capture stay live even while paper evaluation is paused.
 latest_health("scan.yml",2700)
 if PAPER_RUNTIME_ENABLED:
     latest_health("paper-evaluator.yml",2700)
     latest_health("paper-revalidator.yml",2700)
+    latest_health("paper-position-tracker.yml",2700)
 else:
     metrics["paper_runtime_pause_reason"]=PAPER_CONTROL.get("reason")
 
@@ -125,11 +147,14 @@ try:
     if PAPER_RUNTIME_ENABLED:
         if orphans: dispatch("paper-evaluator.yml","orphan candidate recovery")
         if overdue: dispatch("paper-revalidator.yml","overdue WAIT recovery")
+        if missing_positions: dispatch("paper-position-tracker.yml","missing paper position lifecycle recovery")
     repair_map=[("STALE_scan.yml","scan.yml"),("FAILED_scan.yml","scan.yml")]
     if PAPER_RUNTIME_ENABLED:
         repair_map += [("STALE_paper-evaluator.yml","paper-evaluator.yml"),("FAILED_paper-evaluator.yml","paper-evaluator.yml"),
                        ("STALE_paper-revalidator.yml","paper-revalidator.yml"),("FAILED_paper-revalidator.yml","paper-revalidator.yml"),
-                       ("NO_RUN_paper-revalidator.yml","paper-revalidator.yml"),("NO_RUN_paper-evaluator.yml","paper-evaluator.yml")]
+                       ("NO_RUN_paper-revalidator.yml","paper-revalidator.yml"),("NO_RUN_paper-evaluator.yml","paper-evaluator.yml"),
+                       ("STALE_paper-position-tracker.yml","paper-position-tracker.yml"),("FAILED_paper-position-tracker.yml","paper-position-tracker.yml"),
+                       ("NO_RUN_paper-position-tracker.yml","paper-position-tracker.yml")]
     for code,wf in repair_map:
         if any(i["code"]==code for i in issues): dispatch(wf,code)
 except Exception as e:
