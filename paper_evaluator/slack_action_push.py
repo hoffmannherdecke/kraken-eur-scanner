@@ -58,8 +58,8 @@ def main():
         if record.get("real_money_actions_enabled") is not False:
             raise RuntimeError(f"unsafe real-money flag in {p}")
         entry = record.get("paper_entry")
-        if not entry or not str(entry.get("status", "")).startswith("FILLED_SIMULATED"):
-            raise RuntimeError(f"BUY_SCOUT without simulated fill in {p}")
+        if not entry or "FILLED_SIMULATED" not in str(entry.get("status", "")):
+            raise RuntimeError(f"BUY_SCOUT without simulated scout fill in {p}")
         actionable.append(record)
 
     if not actionable:
@@ -85,7 +85,9 @@ def main():
             f"<@{user_id}> KRYPTOSIGNAL | {pair} | PAPER BUY_SCOUT\n"
             f"Entry ~{fmt_num(entry.get('fill_price_eur'))} EUR | "
             f"Stop {fmt_num(entry.get('stop_eur'))} EUR | "
-            f"Groesse {fmt_num(entry.get('notional_eur'))} EUR (Simulation)\n"
+            f"Scout {fmt_num(entry.get('scout_notional_eur'))} EUR (Simulation) | "
+            f"Stage 2 Trigger {fmt_num((entry.get('stage2_plan') or {}).get('trigger_eur'))} EUR | "
+            f"Stage 2 {fmt_num((entry.get('stage2_plan') or {}).get('notional_eur'))} EUR\n"
             f"Setup: {d.get('setup_lane', 'n/a')} | {d.get('summary', '').strip()}\n"
             "Nur Paper-Test – keine Echtgeldorder."
         )
@@ -94,6 +96,7 @@ def main():
             "schema_version": 1,
             "kind": "PAPER_SLACK_ALERT_RECEIPT_V1",
             "candidate_id": record["candidate_id"],
+            "series_id": record.get("series_id"),
             "pair": pair,
             "decision": d.get("decision"),
             "slack_webhook_accepted_at_utc": accepted_at_utc,
