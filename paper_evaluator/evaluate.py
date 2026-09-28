@@ -32,6 +32,43 @@ def load_runtime():
     fingerprint=hashlib.sha256(spec_bytes).hexdigest()
     return control,spec,fingerprint
 
+def reserved_buy_ids(series_id):
+    out=set()
+    for dirname in ("paper_decisions","paper_revalidations"):
+        d=ROOT/dirname
+        if not d.exists():
+            continue
+        for p in d.glob("*.json"):
+            try:
+                rec=json.loads(p.read_text("utf-8"))
+            except Exception:
+                continue
+            if rec.get("series_id")!=series_id:
+                continue
+            if rec.get("decision",{}).get("decision")=="BUY_SCOUT" and rec.get("paper_entry"):
+                out.add(rec.get("candidate_id"))
+    return {x for x in out if x}
+
+def apply_sample_cap(d,control):
+    if d.get("decision")!="BUY_SCOUT":
+        return d
+    reserved=len(reserved_buy_ids(control["series_id"]))
+    target=int(control.get("target_completed_paper_trades",20))
+    if reserved < target:
+        return d
+    out=dict(d)
+    out.update({
+        "decision":"REJECT",
+        "summary":"Paper sample capacity reached; no additional simulated entry opened.",
+        "reason_codes":["PAPER_SAMPLE_CAP_REACHED"],
+        "missing_triggers":[],
+        "stop_eur":None,
+        "ttl_minutes":0,
+        "stage2_trigger_eur":None,
+        "stage2_ttl_minutes":0,
+    })
+    return out
+
 def http_json(url, method="GET", headers=None, body=None, timeout=30):
     req=urllib.request.Request(url,data=body,method=method,headers=headers or {})
     with urllib.request.urlopen(req,timeout=timeout) as r:
@@ -230,7 +267,7 @@ def main():
     else:
         external=build_context(c,current)
         raw,api=call_evaluator(c,current,external,spec,control)
-        d=fail_safe_normalize(raw,current)
+        d=apply_sample_cap(fail_safe_normalize(raw,current),control)
 
     evaluation_completed_at_utc=utcnow()
     timing=dict(c.get("timing") or {})
