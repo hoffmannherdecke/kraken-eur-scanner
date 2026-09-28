@@ -1,0 +1,216 @@
+{
+  "altname": "TAOEUR",
+  "candidate_id": "20260928-211041-TAO-EUR-r36484132275",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "breakout_failed_resistance_hold",
+      "price_reversal_since_candidate",
+      "live_volume_weak",
+      "major_assets_negative_3h",
+      "remaining_move_after_costs_unproven"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The breakout failed to hold above resistance and price has since fallen sharply; weak live volume and a negative major-asset regime do not support a scout despite the lower ask.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "TAOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 30.77,
+        "available": true,
+        "current_funding_rate": 0.030599055816349897,
+        "current_open_interest": 17900.71,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -0.3746,
+        "previous_funding_rate": 0.030599055816349897,
+        "previous_observed_at_utc": "2026-09-28T21:11:07.229292Z",
+        "previous_open_interest": 17968.01
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.030599055816349897,
+        "index_price": 303.474,
+        "last": 303.51,
+        "mark_price": 303.61049858778,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 17900.71,
+        "requested_symbols": [
+          "PF_TAOUSD",
+          "PI_TAOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_TAOUSD",
+        "volume24h": 60108.46
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 266.8595,
+      "bid": 266.7482,
+      "last": 267.2563,
+      "spread_pct": 0.041716039704834985
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "0.02",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.038143501300968996,
+          "ret3h_pct": -0.5370368362268008
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0029690203929400028,
+          "ret3h_pct": -0.5009241988166879
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.3924571647362818,
+          "ret3h_pct": -1.1588145896656576
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-28T21:41:52.737669Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_02c0120989b547d9006abadf21dbac87d2822a3e59ccbe3640"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 266.8595,
+    "bid": 266.7482,
+    "last": 267.2563,
+    "spread_pct": 0.041716039704834985
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 270.4551,
+      "high": 271.2478,
+      "low": 269.9639,
+      "open": 270.2142,
+      "trades": 38,
+      "ts": 1790627400,
+      "volume": 45.39204,
+      "vwap": 270.6964
+    },
+    {
+      "close": 270.0,
+      "high": 270.0,
+      "low": 269.1836,
+      "open": 269.353,
+      "trades": 35,
+      "ts": 1790628300,
+      "volume": 37.91969,
+      "vwap": 269.6338
+    },
+    {
+      "close": 271.1778,
+      "high": 271.8802,
+      "low": 270.5572,
+      "open": 270.5572,
+      "trades": 13,
+      "ts": 1790629200,
+      "volume": 2.89108,
+      "vwap": 271.4264
+    },
+    {
+      "close": 268.3436,
+      "high": 270.5151,
+      "low": 268.0304,
+      "open": 270.5151,
+      "trades": 13,
+      "ts": 1790630100,
+      "volume": 24.42774,
+      "vwap": 268.9949
+    },
+    {
+      "close": 267.2563,
+      "high": 268.5355,
+      "low": 267.2563,
+      "open": 268.3002,
+      "trades": 12,
+      "ts": 1790631000,
+      "volume": 12.00268,
+      "vwap": 268.3846
+    }
+  ],
+  "pair": "TAO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260928-211041-TAO-EUR-r36484132275.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-28T21:41:58.019358Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "78801baa3d4c26262b12d25b92a63f37ca6814b8",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-28T21:41:58.019358Z",
+    "revalidation_started_at_utc": "2026-09-28T21:41:52.407333Z",
+    "ttl_due_at_utc": "2026-09-28T21:41:07.229292Z",
+    "ttl_lag_seconds": 45.178
+  }
+}
