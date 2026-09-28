@@ -1,0 +1,25 @@
+{
+  "baseline_ask_eur": 0.914,
+  "candidate_id": "20260928-214102-FIL-EUR-r36487538813",
+  "evaluated_at_utc": "2026-09-28T21:41:27.797505Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.547,
+      "expected_bars": 30,
+      "mae_pct": -0.656,
+      "mfe_pct": 0.109
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "REJECT",
+  "pair": "FIL/EUR",
+  "path_classification": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-28T22:14:46.183726Z"
+}

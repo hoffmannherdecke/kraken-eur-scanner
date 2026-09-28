@@ -1,0 +1,219 @@
+{
+  "altname": "PAXGEUR",
+  "candidate_id": "20260928-214102-PAXG-EUR-r36487538813",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 3634.62 followed by a hold above that level.",
+      "Confirmed break above 3648.43 with renewed spot volume."
+    ],
+    "reason_codes": [
+      "REVERSAL_UNCONFIRMED",
+      "LIVE_VOLUME_ABSENT",
+      "WEAK_RELATIVE_TREND",
+      "MARKET_REGIME_WEAK",
+      "COST_EDGE_UNCLEAR"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Revalidation does not confirm the rebound: price remains below 3634.62 resistance with negligible recent spot volume, while major markets are weak. Plausible movement is insufficient against Kraken EUR costs; no scout or confirmation plan is justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "PAXGUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 32.83,
+        "available": true,
+        "current_funding_rate": 0.008208983765331957,
+        "current_open_interest": 333.685,
+        "funding_rate_delta": 0.05818375602666667,
+        "open_interest_pct": 0.0,
+        "previous_funding_rate": -0.04997477226133471,
+        "previous_observed_at_utc": "2026-09-28T21:41:42.694701Z",
+        "previous_open_interest": 333.685
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.008208983765331957,
+        "index_price": 4130.78,
+        "last": 4129.5,
+        "mark_price": 4129.39048348326,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 333.685,
+        "requested_symbols": [
+          "PF_PAXGUSD",
+          "PI_PAXGUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_PAXGUSD",
+        "volume24h": 332.599
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 3633.32,
+      "bid": 3632.74,
+      "last": 3634.31,
+      "spread_pct": 0.015964635579678175
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.001",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.3621703534973264,
+          "ret3h_pct": -0.9872845008375042
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.29254022428084614,
+          "ret3h_pct": -0.936819447428161
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.9284962190102442,
+          "ret3h_pct": -1.923623614138159
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-28T22:14:31.519272Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f7f01530d20ab6b006abae6c86a2087d28edd1a25740b01e3"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 3633.32,
+    "bid": 3632.74,
+    "last": 3634.31,
+    "spread_pct": 0.015964635579678175
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 3630.0,
+      "high": 3630.0,
+      "low": 3628.0,
+      "open": 3628.0,
+      "trades": 175,
+      "ts": 1790629200,
+      "volume": 13.40745166,
+      "vwap": 3629.58
+    },
+    {
+      "close": 3634.62,
+      "high": 3634.62,
+      "low": 3634.29,
+      "open": 3634.29,
+      "trades": 4,
+      "ts": 1790630100,
+      "volume": 0.17906029,
+      "vwap": 3634.36
+    },
+    {
+      "close": 3634.62,
+      "high": 3634.62,
+      "low": 3634.62,
+      "open": 3634.62,
+      "trades": 0,
+      "ts": 1790631000,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 3632.22,
+      "high": 3632.22,
+      "low": 3631.5,
+      "open": 3631.5,
+      "trades": 2,
+      "ts": 1790631900,
+      "volume": 0.0290098,
+      "vwap": 3631.87
+    },
+    {
+      "close": 3634.31,
+      "high": 3634.31,
+      "low": 3634.31,
+      "open": 3634.31,
+      "trades": 1,
+      "ts": 1790632800,
+      "volume": 0.00121068,
+      "vwap": 3634.31
+    }
+  ],
+  "pair": "PAXG/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260928-214102-PAXG-EUR-r36487538813.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-28T22:14:37.797951Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "a7921e988e1359b061ce64fb5ca324afa0806130",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-28T22:14:37.797951Z",
+    "revalidation_started_at_utc": "2026-09-28T22:14:31.212515Z",
+    "ttl_due_at_utc": "2026-09-28T22:11:42.694701Z",
+    "ttl_lag_seconds": 168.518
+  }
+}
