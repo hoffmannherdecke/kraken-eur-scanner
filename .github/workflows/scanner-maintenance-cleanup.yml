@@ -1,0 +1,53 @@
+name: Cleanup scanner maintenance runs
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/scanner-maintenance-cleanup.yml'
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Cancel active scanner runs caused by maintenance pushes only
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error
+          repo=os.environ["REPO"]; token=os.environ["GH_TOKEN"]
+          headers={
+              "Authorization":"Bearer "+token,
+              "Accept":"application/vnd.github+json",
+              "X-GitHub-Api-Version":"2022-11-28",
+              "User-Agent":"scanner-maintenance-cleanup/1.0",
+              "Content-Type":"application/json",
+          }
+          def req(method,path):
+              r=urllib.request.Request("https://api.github.com/repos/"+repo+path,method=method,headers=headers)
+              with urllib.request.urlopen(r,timeout=30) as resp:
+                  raw=resp.read()
+                  return json.loads(raw) if raw else None
+          data=req("GET","/actions/workflows/scan.yml/runs?per_page=30")
+          stopped=[]
+          for run in data.get("workflow_runs",[]):
+              if run.get("event")!="push":
+                  continue
+              if run.get("status") not in ("queued","pending","in_progress"):
+                  continue
+              try:
+                  req("POST",f"/actions/runs/{int(run['id'])}/cancel")
+                  stopped.append(int(run["id"]))
+              except urllib.error.HTTPError as exc:
+                  if exc.code not in (409,422):
+                      raise
+          print("SCANNER_MAINTENANCE_RUNS_CANCELLED",stopped)
+          PY
