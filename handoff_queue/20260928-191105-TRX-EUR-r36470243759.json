@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "TRXEUR",
+  "candidate_id": "20260928-191105-TRX-EUR-r36470243759",
+  "event_time_utc": "2026-09-28T19:11:05Z",
+  "event_ts": 1790622665,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "TRX/EUR",
+  "queue_id": "36470243759:TRX-EUR:1790622665",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=TRX/EUR | score=8.50 | price_eur=0.295713 | ret15_live=-0.07% | ret1h=0.34% | ret3h=0.48% | ret24h=0.65% | vol_live=1.98x | vol_closed=1.94x | rank=5 | rank_jump=36 | state_rank_jump=26 | breakout3h=0 | higher_lows=1 | base_tight=0.70% | fresh_move3h=0.62% | adx14=30.6 | spread=0.006% | turnover24h_eur=423214 | coverage=100% | ret7d=-1.49% | ret30d=0.86% | dist7d_high=-2.98% | dist30d_high=-2.98% | depth_1pct_eur=115123 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 30.600030053102433,
+    "altname": "TRXEUR",
+    "base_tight_pct": 0.6961504174860966,
+    "breakout3h": false,
+    "context30d": 0.86,
+    "context7d": -1.49,
+    "depth_eur_1pct": 115122.65,
+    "dist30d_high_pct": -2.98,
+    "dist7d_high_pct": -2.98,
+    "ema26_gt_50": true,
+    "fresh_move_3h": 0.6161917918217741,
+    "higher_lows": true,
+    "late": false,
+    "pair": "TRX/EUR",
+    "price": 0.295713,
+    "rank15": 5,
+    "rank15_prev": 41,
+    "rank_jump": 36,
+    "ret15_closed": 0.15160744500846146,
+    "ret15_live": -0.0713020910774409,
+    "ret1h": 0.3437393959959234,
+    "ret24h": 0.6459847182751055,
+    "ret3h": 0.48387809262322445,
+    "score": 8.5,
+    "spread_pct": 0.006087291763900331,
+    "stale": false,
+    "state_rank_jump": 26,
+    "turnover24h": 423214.0860818811,
+    "volume_ratio_closed": 1.9430481206657817,
+    "volume_ratio_live": 1.9785475380422313
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-09-28T19:11:05Z",
+    "positive_1h_count": 12,
+    "positive_3h_count": 44,
+    "schema_version": 1,
+    "score_ge_5_count": 14,
+    "top_1h": [
+      {
+        "pair": "CRV/EUR",
+        "ret15_live": -1.219,
+        "ret1h": 3.842,
+        "ret3h": 10.41,
+        "score": 6.8,
+        "vol_live": 0.203
+      },
+      {
+        "pair": "XDC/EUR",
+        "ret15_live": -0.44,
+        "ret1h": 3.293,
+        "ret3h": 5.812,
+        "score": 6.6,
+        "vol_live": 0.761
+      },
+      {
+        "pair": "XLM/EUR",
+        "ret15_live": -0.498,
+        "ret1h": 1.781,
+        "ret3h": 4.281,
+        "score": 8.8,
+        "vol_live": 2.304
+      },
+      {
+        "pair": "XPL/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.375,
+        "ret3h": 3.267,
+        "score": 4.9,
+        "vol_live": 0.087
+      },
+      {
+        "pair": "ZRO/EUR",
+        "ret15_live": -0.79,
+        "ret1h": 1.172,
+        "ret3h": -1.074,
+        "score": 2.7,
+        "vol_live": 0.447
+      },
+      {
+        "pair": "INJ/EUR",
+        "ret15_live": -1.144,
+        "ret1h": 0.481,
+        "ret3h": 0.418,
+        "score": 6.0,
+        "vol_live": 8.281
+      },
+      {
+        "pair": "ATOM/EUR",
+        "ret15_live": -0.228,
+        "ret1h": 0.373,
+        "ret3h": 1.834,
+        "score": 3.7,
+        "vol_live": 0.374
+      },
+      {
+        "pair": "TRX/EUR",
+        "ret15_live": -0.071,
+        "ret1h": 0.344,
+        "ret3h": 0.484,
+        "score": 8.5,
+        "vol_live": 1.979
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "XLM/EUR",
+        "ret15_live": -0.498,
+        "ret1h": 1.781,
+        "ret3h": 4.281,
+        "score": 8.8,
+        "vol_live": 2.304
+      },
+      {
+        "pair": "TRX/EUR",
+        "ret15_live": -0.071,
+        "ret1h": 0.344,
+        "ret3h": 0.484,
+        "score": 8.5,
+        "vol_live": 1.979
+      },
+      {
+        "pair": "NIGHT/EUR",
+        "ret15_live": -2.129,
+        "ret1h": 0.288,
+        "ret3h": -0.205,
+        "score": 7.8,
+        "vol_live": 3.284
+      },
+      {
+        "pair": "SHIB/EUR",
+        "ret15_live": -0.02,
+        "ret1h": -0.417,
+        "ret3h": 0.805,
+        "score": 7.7,
+        "vol_live": 5.259
+      },
+      {
+        "pair": "FET/EUR",
+        "ret15_live": -0.486,
+        "ret1h": -0.776,
+        "ret3h": 1.437,
+        "score": 7.4,
+        "vol_live": 2.323
+      },
+      {
+        "pair": "BNB/EUR",
+        "ret15_live": -0.443,
+        "ret1h": -0.308,
+        "ret3h": 0.498,
+        "score": 7.4,
+        "vol_live": 0.582
+      },
+      {
+        "pair": "DASH/EUR",
+        "ret15_live": -0.372,
+        "ret1h": -1.125,
+        "ret3h": 1.018,
+        "score": 6.9,
+        "vol_live": 7.302
+      },
+      {
+        "pair": "W/EUR",
+        "ret15_live": -0.587,
+        "ret1h": -1.085,
+        "ret3h": -1.25,
+        "score": 6.9,
+        "vol_live": 5.678
+      }
+    ],
+    "total_rows": 64
+  },
+  "scanner_market_context": {
+    "altname": "TRXEUR",
+    "atr15_eur": 0.0003122142857142946,
+    "atr15_pct": 0.10549633236727217,
+    "closed_through_epoch": 1790621100,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.295948,
+      "high": 0.295948,
+      "low": 0.2955,
+      "open": 0.2955,
+      "volume": 18304.7841983
+    },
+    "pair": "TRX/EUR",
+    "range_1h_pct": 0.42169570329921857,
+    "recent_closed_closes": [
+      0.294653,
+      0.29466,
+      0.295225,
+      0.295397,
+      0.295465,
+      0.295948
+    ],
+    "resistance_1h": 0.295948,
+    "resistance_3h": 0.295948,
+    "schema_version": 1,
+    "sensor_price_eur": 0.295713,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.2947,
+    "support_3h": 0.293902,
+    "ts": 1790622665
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 36470243759,
+  "source_scanner_sha": "3712c0857e69b198b36831ceb63618b112591b33",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T19:11:05Z",
+    "candidate_detected_ts": 1790622665,
+    "candidate_snapshot_at_utc": "2026-09-28T19:11:05Z",
+    "handoff_written_at_utc": "2026-09-28T19:11:07.314388Z",
+    "scan_step_started_at_utc": "2026-09-28T19:09:28Z"
+  }
+}
