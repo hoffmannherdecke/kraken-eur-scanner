@@ -20,7 +20,7 @@ concurrency:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
@@ -28,7 +28,8 @@ jobs:
       - name: Delete legacy multi-GB raw paper tapes
         run: |
           python - <<'PY'
-          import json, os, urllib.request
+          import json, os, urllib.request, urllib.error
+          from concurrent.futures import ThreadPoolExecutor, as_completed
 
           repo=os.environ["REPO"]
           token=os.environ["GH_TOKEN"]
@@ -61,17 +62,40 @@ jobs:
                   break
               page+=1
 
+          def delete_one(item):
+              artifact_id,name,size=item
+              try:
+                  request("DELETE",f"/actions/artifacts/{artifact_id}")
+                  return ("deleted",artifact_id,name,size,None)
+              except urllib.error.HTTPError as exc:
+                  if exc.code==404:
+                      return ("already_gone",artifact_id,name,size,None)
+                  return ("error",artifact_id,name,size,f"HTTP {exc.code}")
+              except Exception as exc:
+                  return ("error",artifact_id,name,size,repr(exc))
+
           deleted=0
           deleted_bytes=0
-          for artifact_id,name,size in victims:
-              request("DELETE",f"/actions/artifacts/{artifact_id}")
-              deleted+=1
-              deleted_bytes+=size
-              print("DELETED",artifact_id,name,size)
+          errors=[]
+          with ThreadPoolExecutor(max_workers=8) as pool:
+              futures=[pool.submit(delete_one,item) for item in victims]
+              for fut in as_completed(futures):
+                  status,artifact_id,name,size,error=fut.result()
+                  if status in ("deleted","already_gone"):
+                      deleted+=1
+                      deleted_bytes+=size
+                  else:
+                      errors.append({"id":artifact_id,"name":name,"error":error})
+                  print(status.upper(),artifact_id,name,size,error or "")
 
           print("PAPER_TAPE_CLEANUP",json.dumps({
-              "deleted_artifacts":deleted,
+              "matched_artifacts":len(victims),
+              "deleted_or_already_gone":deleted,
               "deleted_bytes":deleted_bytes,
               "deleted_gib":round(deleted_bytes/(1024**3),3),
+              "errors":errors[:20],
+              "error_count":len(errors),
           },sort_keys=True))
+          if errors:
+              raise SystemExit(f"cleanup errors: {len(errors)}")
           PY
