@@ -1,0 +1,202 @@
+{
+  "altname": "VVVEUR",
+  "candidate_id": "20260928-185438-VVV-EUR-r36468309805",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close and hold above 24.459 EUR resistance",
+      "Breakout hold with stronger closed-bar volume"
+    ],
+    "reason_codes": [
+      "breakout_confirmation_failed",
+      "price_below_prior_support",
+      "closed_volume_weak",
+      "round_trip_fees_1_2pct",
+      "account_tradability_unavailable",
+      "derivatives_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Revalidation shows failed breakout follow-through: recent closes weakened below prior support, with no confirmed hold or stronger closed-bar volume. No supported scout entry or confirmation plan.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "VVVUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_VVVUSD",
+          "PI_VVVUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 24.067,
+      "bid": 24.048,
+      "last": 24.053,
+      "spread_pct": 0.07897744985971904
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "0.3",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.22128690599440004,
+          "ret3h_pct": 0.3668051557184082
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.3139121299191139,
+          "ret3h_pct": 0.4472541908822958
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.44621665242571273,
+          "ret3h_pct": 0.4791107704101183
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-28T19:25:48.805309Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0e56d2857be413e8006ababf3e0fb087d090a4ddf68a14bea6"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 24.067,
+    "bid": 24.048,
+    "last": 24.053,
+    "spread_pct": 0.07897744985971904
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 24.382,
+      "high": 24.382,
+      "low": 24.25,
+      "open": 24.288,
+      "trades": 33,
+      "ts": 1790619300,
+      "volume": 123.92394,
+      "vwap": 24.3
+    },
+    {
+      "close": 24.227,
+      "high": 24.358,
+      "low": 24.186,
+      "open": 24.358,
+      "trades": 39,
+      "ts": 1790620200,
+      "volume": 127.95099,
+      "vwap": 24.24
+    },
+    {
+      "close": 24.394,
+      "high": 24.5,
+      "low": 24.238,
+      "open": 24.27,
+      "trades": 47,
+      "ts": 1790621100,
+      "volume": 435.98747,
+      "vwap": 24.378
+    },
+    {
+      "close": 24.102,
+      "high": 24.382,
+      "low": 24.102,
+      "open": 24.349,
+      "trades": 30,
+      "ts": 1790622000,
+      "volume": 179.39233,
+      "vwap": 24.213
+    },
+    {
+      "close": 24.053,
+      "high": 24.139,
+      "low": 24.046,
+      "open": 24.139,
+      "trades": 8,
+      "ts": 1790622900,
+      "volume": 40.15478,
+      "vwap": 24.088
+    }
+  ],
+  "pair": "VVV/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260928-185438-VVV-EUR-r36468309805.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-28T19:25:54.961754Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "8ee7f3f0ef4c075f92a34571dbd6776dd3374aad",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-28T19:25:54.961754Z",
+    "revalidation_started_at_utc": "2026-09-28T19:25:48.339459Z",
+    "ttl_due_at_utc": "2026-09-28T19:25:33.090480Z",
+    "ttl_lag_seconds": 15.249
+  }
+}
