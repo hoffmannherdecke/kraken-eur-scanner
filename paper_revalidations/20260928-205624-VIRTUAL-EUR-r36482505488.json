@@ -1,0 +1,219 @@
+{
+  "altname": "VIRTUALEUR",
+  "candidate_id": "20260928-205624-VIRTUAL-EUR-r36482505488",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close reclaiming and holding above 0.7239 EUR with improving volume.",
+      "Follow-through above the reclaim level without immediate rejection."
+    ],
+    "reason_codes": [
+      "failed_resistance_confirmation",
+      "recent_price_weakness",
+      "below_average_volume",
+      "major_market_weakness",
+      "spread_and_costs_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Price has declined through the prior resistance area, with weak recent activity, a widened spread, and a bearish major-market backdrop; no confirmed scout setup remains.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "VIRTUALUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 55.87,
+        "available": true,
+        "current_funding_rate": -5.03481630925e-06,
+        "current_open_interest": 695131.0,
+        "funding_rate_delta": 3.673643503249999e-06,
+        "open_interest_pct": 3.4623,
+        "previous_funding_rate": -8.7084598125e-06,
+        "previous_observed_at_utc": "2026-09-28T20:57:14.758159Z",
+        "previous_open_interest": 671869.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -5.03481630925e-06,
+        "index_price": 0.80972,
+        "last": 0.8084,
+        "mark_price": 0.80970008704,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 695131.0,
+        "requested_symbols": [
+          "PF_VIRTUALUSD",
+          "PI_VIRTUALUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_VIRTUALUSD",
+        "volume24h": 1298846
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.7147,
+      "bid": 0.7121,
+      "last": 0.7115,
+      "spread_pct": 0.3644519203812793
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "7",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.060080270511087,
+          "ret3h_pct": -0.4872695406345051
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.013155158731859018,
+          "ret3h_pct": -0.36905048762856385
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.526618153963998,
+          "ret3h_pct": -1.1512844909609798
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-28T21:53:05.879354Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_05e9defff0f8f986006abae1c2f74887d2807e00b0f5c09a71"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.7147,
+    "bid": 0.7121,
+    "last": 0.7115,
+    "spread_pct": 0.3644519203812793
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.7318,
+      "high": 0.7318,
+      "low": 0.7268,
+      "open": 0.7277,
+      "trades": 16,
+      "ts": 1790628300,
+      "volume": 3414.99969,
+      "vwap": 0.7295
+    },
+    {
+      "close": 0.7303,
+      "high": 0.7387,
+      "low": 0.7303,
+      "open": 0.7373,
+      "trades": 6,
+      "ts": 1790629200,
+      "volume": 1346.09377,
+      "vwap": 0.7356
+    },
+    {
+      "close": 0.7222,
+      "high": 0.7296,
+      "low": 0.7221,
+      "open": 0.7296,
+      "trades": 5,
+      "ts": 1790630100,
+      "volume": 1488.04474,
+      "vwap": 0.7238
+    },
+    {
+      "close": 0.7152,
+      "high": 0.7157,
+      "low": 0.7152,
+      "open": 0.7157,
+      "trades": 2,
+      "ts": 1790631000,
+      "volume": 749.26225,
+      "vwap": 0.7152
+    },
+    {
+      "close": 0.7115,
+      "high": 0.7115,
+      "low": 0.7115,
+      "open": 0.7115,
+      "trades": 1,
+      "ts": 1790631900,
+      "volume": 741.14268,
+      "vwap": 0.7115
+    }
+  ],
+  "pair": "VIRTUAL/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260928-205624-VIRTUAL-EUR-r36482505488.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-28T21:53:12.283143Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "88ffb7c29333076d903619a82bfe3afdb6b22293",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-28T21:53:12.283143Z",
+    "revalidation_started_at_utc": "2026-09-28T21:53:05.598477Z",
+    "ttl_due_at_utc": "2026-09-28T21:42:14.758159Z",
+    "ttl_lag_seconds": 650.84
+  }
+}
