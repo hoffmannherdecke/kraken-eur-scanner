@@ -69,6 +69,97 @@ def apply_sample_cap(d,control):
     })
     return out
 
+def _num(v):
+    try:
+        return float(v)
+    except (TypeError,ValueError):
+        return None
+
+def enrich_derivatives_delta(external,pair,series_id):
+    cur=((external.get("derivatives") or {}).get("kraken_futures") or {})
+    if not cur.get("available"):
+        return external
+    previous=[]
+    for dirname in ("paper_decisions","paper_revalidations"):
+        d=ROOT/dirname
+        if not d.exists():
+            continue
+        for p in d.glob("*.json"):
+            try:
+                rec=json.loads(p.read_text("utf-8"))
+            except Exception:
+                continue
+            if rec.get("series_id")!=series_id or rec.get("pair")!=pair:
+                continue
+            when=rec.get("evaluated_at_utc") or rec.get("revalidated_at_utc")
+            prev=(((rec.get("decision_context") or {}).get("derivatives") or {}).get("kraken_futures") or {})
+            if when and prev.get("available"):
+                previous.append((zdt(when),prev))
+    if not previous:
+        external["derivatives"]["delta_vs_previous_series_observation"]={"available":False,"reason":"no prior same-pair observation in active series"}
+        return external
+    when,prev=max(previous,key=lambda x:x[0])
+    now=datetime.now(timezone.utc)
+    cur_oi=_num(cur.get("open_interest")); prev_oi=_num(prev.get("open_interest"))
+    cur_f=_num(cur.get("funding_rate")); prev_f=_num(prev.get("funding_rate"))
+    external["derivatives"]["delta_vs_previous_series_observation"]={
+        "available":True,
+        "previous_observed_at_utc":when.isoformat().replace("+00:00","Z"),
+        "age_minutes":round((now-when).total_seconds()/60.0,2),
+        "open_interest_pct":round(((cur_oi/prev_oi)-1.0)*100.0,4) if cur_oi is not None and prev_oi not in (None,0) else None,
+        "funding_rate_delta":(cur_f-prev_f) if cur_f is not None and prev_f is not None else None,
+        "previous_open_interest":prev_oi,
+        "current_open_interest":cur_oi,
+        "previous_funding_rate":prev_f,
+        "current_funding_rate":cur_f,
+    }
+    return external
+
+def apply_public_tradability_gate(d,current,external,spec):
+    if d.get("decision")!="BUY_SCOUT":
+        return d
+    meta=(external.get("kraken_pair_metadata") or {})
+    transient=[]
+    permanent=[]
+    if not meta.get("available"):
+        transient.append("KRAKEN_PAIR_METADATA_UNAVAILABLE")
+    elif str(meta.get("status") or "").lower()!="online":
+        transient.append("KRAKEN_PAIR_NOT_ONLINE")
+    else:
+        ordermin=_num(meta.get("ordermin"))
+        costmin=_num(meta.get("costmin"))
+        for label,notional in (
+            ("SCOUT",float(spec["entry"]["scout_notional_eur"])),
+            ("STAGE2",float(spec["entry"]["stage2_notional_eur"])),
+        ):
+            if costmin is not None and notional+1e-12<costmin:
+                permanent.append(f"{label}_BELOW_KRAKEN_COSTMIN")
+            if ordermin is not None and (notional/current["ask"])+1e-12<ordermin:
+                permanent.append(f"{label}_BELOW_KRAKEN_ORDERMIN")
+    if not transient and not permanent:
+        return d
+    out=dict(d)
+    reasons=list(out.get("reason_codes") or [])+permanent+transient
+    if permanent:
+        out.update({
+            "decision":"REJECT",
+            "summary":"Configured paper entry size fails Kraken public minimum-order constraints.",
+            "reason_codes":reasons[:10],
+            "missing_triggers":[],
+            "stop_eur":None,"ttl_minutes":0,
+            "stage2_trigger_eur":None,"stage2_ttl_minutes":0,
+        })
+    else:
+        out.update({
+            "decision":"WAIT",
+            "summary":"Public Kraken tradability status could not be safely confirmed.",
+            "reason_codes":reasons[:10],
+            "missing_triggers":["Kraken pair status/minimum-order metadata must be available and online"],
+            "stop_eur":None,"ttl_minutes":15,
+            "stage2_trigger_eur":None,"stage2_ttl_minutes":0,
+        })
+    return out
+
 def http_json(url, method="GET", headers=None, body=None, timeout=30):
     req=urllib.request.Request(url,data=body,method=method,headers=headers or {})
     with urllib.request.urlopen(req,timeout=timeout) as r:
@@ -126,7 +217,7 @@ Series: {control["series_id"]}
 
 Principles:
 - Scanner is only a sensor, never a direct entry generator.
-- Evaluate in this order: tradability/liquidity/spread; market/regime and event evidence actually supplied; IGNITION/CONTINUITY/EXTENDED/REVERSAL; multi-period continuity/relative strength; volume/orderflow/derivatives evidence actually supplied; entry efficiency and distance already run; remaining potential versus all costs; structural/ATR stop; two-stage entry; TTL/revalidation.
+- Evaluate in this order: tradability/liquidity/spread; market/regime and event evidence actually supplied; IGNITION/CONTINUITY/EXTENDED/REVERSAL; multi-period continuity/relative strength; scanner breadth/rotation context if supplied; volume/orderflow/derivatives evidence and derivatives deltas actually supplied; entry efficiency and distance already run; remaining potential versus all costs; structural/ATR stop; two-stage entry; TTL/revalidation.
 - Kraken EUR execution reality controls. Round-trip taker fees are 1.20% before spread/slippage (0.60% each side).
 - Plausible remaining movement around only 1-2% is normally insufficient; 2-3% is not automatically sufficient.
 - Missing data must remain missing. Do not fabricate news, macro, breadth, orderflow, on-chain facts, targets or account tradability.
@@ -265,9 +356,12 @@ def main():
            "stage2_trigger_eur":None,"stage2_ttl_minutes":0}
         api={"response_id":None,"model":None,"attempt":0}
     else:
-        external=build_context(c,current)
+        external=enrich_derivatives_delta(build_context(c,current),c["pair"],control["series_id"])
         raw,api=call_evaluator(c,current,external,spec,control)
-        d=apply_sample_cap(fail_safe_normalize(raw,current),control)
+        d=apply_public_tradability_gate(
+            apply_sample_cap(fail_safe_normalize(raw,current),control),
+            current,external,spec
+        )
 
     evaluation_completed_at_utc=utcnow()
     timing=dict(c.get("timing") or {})
