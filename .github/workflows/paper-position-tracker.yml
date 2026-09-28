@@ -1,0 +1,62 @@
+name: Paper position lifecycle tracker
+
+'on':
+  workflow_dispatch:
+  schedule:
+    - cron: '9,24,39,54 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'paper_decisions/*.json'
+      - 'paper_revalidations/*.json'
+      - 'paper_runtime_control.json'
+      - 'paper_position_tracker.py'
+      - '.github/workflows/paper-position-tracker.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: paper-position-lifecycle
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Advance open simulated positions from compact Kraken 1m OHLC
+        run: |
+          set -euo pipefail
+          python -m py_compile paper_position_tracker.py
+          python paper_position_tracker.py
+      - name: Validate and persist paper position states
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in Path("paper_positions").glob("*.json") if Path("paper_positions").exists() else []:
+              d=json.loads(p.read_text("utf-8"))
+              assert d["kind"]=="PAPER_POSITION_V1"
+              assert d["real_money_actions_enabled"] is False
+              assert d["status"] in {"OPEN","CLOSED"}
+              assert float(d["active_stop_eur"])>0
+              if d["status"]=="CLOSED":
+                  assert d["exit"] is not None
+          print("PAPER_POSITION_SAFETY_GATE_PASS")
+          PY
+          if git status --porcelain paper_positions/ 2>/dev/null | grep -q .; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add paper_positions/
+            git commit -m "[paper-position] advance simulated lifecycle"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          else
+            echo "NO_POSITION_STATE_CHANGES"
+          fi
