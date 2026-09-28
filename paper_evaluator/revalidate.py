@@ -10,6 +10,7 @@ sys.path.insert(0,str(ROOT))
 from paper_context import build_context
 from evaluate import (
     http_json, kraken_ticker, call_evaluator, fail_safe_normalize, apply_sample_cap,
+    apply_public_tradability_gate, enrich_derivatives_delta,
     FEE_PCT, zdt, utcnow
 )
 
@@ -65,7 +66,7 @@ def main():
         started=utcnow()
         ticker=kraken_ticker(c["altname"])
         bars=ohlc15(c["altname"])
-        external=build_context(c,ticker)
+        external=enrich_derivatives_delta(build_context(c,ticker),c["pair"],control["series_id"])
 
         enriched=dict(c)
         enriched["revalidation_context"]={
@@ -78,7 +79,10 @@ def main():
             "instruction":"This is the single allowed TTL revalidation. Return BUY_SCOUT only if supplied evidence now supports a scout plus explicit second-stage confirmation plan; otherwise return REJECT. Do not return WAIT."
         }
         raw,api=call_evaluator(enriched,ticker,external,spec,control)
-        d=apply_sample_cap(fail_safe_normalize(raw,ticker),control)
+        d=apply_public_tradability_gate(
+            apply_sample_cap(fail_safe_normalize(raw,ticker),control),
+            ticker,external,spec
+        )
         if d["decision"]=="WAIT":
             d={
                 "decision":"REJECT","setup_lane":d.get("setup_lane","NONE"),
