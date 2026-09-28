@@ -10,7 +10,7 @@ sys.path.insert(0,str(ROOT))
 from paper_context import build_context
 from evaluate import (
     http_json, kraken_ticker, call_evaluator, fail_safe_normalize, apply_sample_cap,
-    apply_public_tradability_gate, enrich_derivatives_delta,
+    apply_public_tradability_gate, enrich_derivatives_delta, runtime_code_fingerprint,
     FEE_PCT, zdt, utcnow
 )
 
@@ -109,6 +109,7 @@ def main():
             "strategy_revision":spec["strategy_revision"],
             "strategy_fingerprint_sha256":fingerprint,
             "runtime_code_sha":__import__("os").getenv("GITHUB_SHA"),
+            "runtime_code_fingerprint_sha256":runtime_code_fingerprint(),
             "real_money_actions_enabled":False,
             "fee_assumption_pct_per_side":FEE_PCT,
             "prior_decision_file":str(p.relative_to(ROOT)),
