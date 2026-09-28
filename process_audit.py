@@ -270,3 +270,5 @@ if issues and SLACK:
 
 if any(i["severity"]=="CRITICAL" for i in issues):
     raise SystemExit(2)
+
+# V2R2 final health policy marker.
