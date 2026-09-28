@@ -1,0 +1,181 @@
+{
+  "altname": "ASTEREUR",
+  "candidate_age_seconds": 14,
+  "candidate_event_time_utc": "2026-09-28T23:33:36Z",
+  "candidate_id": "20260928-233336-ASTER-EUR-r36498297568",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above 0.6220 with nonzero confirming volume.",
+      "Follow-through holding above 0.6196 while 1-hour momentum remains positive."
+    ],
+    "reason_codes": [
+      "spread_acceptable",
+      "turnover_adequate",
+      "broad_market_positive",
+      "closed_volume_unconfirmed",
+      "multi_period_continuity_weak",
+      "above_nearby_resistance",
+      "fee_hurdle_material",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Tradable spread and supportive broad-market context, but ASTER\u2019s breakout lacks closed-volume and multi-period confirmation; evidence does not establish enough net upside after Kraken taker fees.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ASTERUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 39.78,
+        "available": true,
+        "current_funding_rate": -1.4618110711667e-05,
+        "current_open_interest": 491391.0,
+        "funding_rate_delta": -2.8056551090292002e-05,
+        "open_interest_pct": 0.0,
+        "previous_funding_rate": 1.3438440378625e-05,
+        "previous_observed_at_utc": "2026-09-28T22:54:05.546369Z",
+        "previous_open_interest": 491391.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.4618110711667e-05,
+        "index_price": 0.70713,
+        "last": 0.707,
+        "mark_price": 0.70702316403,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 491391.0,
+        "requested_symbols": [
+          "PF_ASTERUSD",
+          "PI_ASTERUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ASTERUSD",
+        "volume24h": 586643
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.62184,
+      "bid": 0.62159,
+      "last": 0.62156,
+      "spread_pct": 0.04021135086011637
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "7",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4458897359244762,
+          "ret3h_pct": 0.10394104104514135
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.5889607076033254,
+          "ret3h_pct": 0.32956126361507465
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 1.0729821169647158,
+          "ret3h_pct": 0.08614913372260169
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-28T23:33:50.999013Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-28T23:34:02.197875Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0eea743fa1d5c8d7006abaf960d21c87d2bcd83eb19b089cb5"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.62184,
+    "bid": 0.62159,
+    "last": 0.62156,
+    "spread_pct": 0.04021135086011637
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ASTER/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36498297568:ASTER-EUR:1790638416",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "518d4d100f65afe8baa7537b8070d1769df237b0",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T23:33:36Z",
+    "candidate_detected_ts": 1790638416,
+    "candidate_snapshot_at_utc": "2026-09-28T23:33:36Z",
+    "detected_to_evaluation_complete_seconds": 26.198,
+    "detected_to_evaluation_start_seconds": 14.794,
+    "evaluation_completed_at_utc": "2026-09-28T23:34:02.197875Z",
+    "evaluation_runtime_seconds": 11.404,
+    "evaluation_started_at_utc": "2026-09-28T23:33:50.794251Z",
+    "handoff_to_evaluation_start_seconds": 11.489,
+    "handoff_written_at_utc": "2026-09-28T23:33:39.305454Z",
+    "scan_step_started_at_utc": "2026-09-28T23:29:54Z"
+  }
+}
