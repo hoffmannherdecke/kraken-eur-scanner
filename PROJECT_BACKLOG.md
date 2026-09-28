@@ -66,6 +66,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 - [ ] Lokalen Prozess-Supervisor/Watchdog einrichten: Prozess lebt, Daten sind frisch, Queue bewegt sich, Ergebnisse sind plausibel.
 - [ ] Watchdog muss auch „grün aber wirkungslos“ erkennen, nicht nur Prozessstatus.
+- [ ] Täglichen sehr kurzen **10:00-Systemstatus** später lokal/GitHub-basiert erzeugen: tatsächliche End-to-End-Gesundheit statt nur „Workflow aktiv“; Work dafür nicht als Dauerlösung verwenden.
 - [ ] Uptime Kuma als kostenlose, unabhängige Health-Schicht prüfen/einrichten, sofern es echten Zusatznutzen liefert.
 - [ ] Health-Zustände klar unterscheiden: OK, waiting/no-data, feed stale, API disconnected, backlog/queue stuck, degraded, stopped.
 - [ ] Automatischer begrenzter Self-Heal für eindeutig technische Fehler; keine automatische Strategie-/Threshold-Änderung.
