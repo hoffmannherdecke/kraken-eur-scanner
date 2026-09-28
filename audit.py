@@ -84,7 +84,7 @@ def load_events() -> list[dict[str, Any]]:
     for line in STATE_PATH.read_text("utf-8").splitlines():
         try:
             event = json.loads(line)
-            if isinstance(event, dict) and event.get("type") in {"row", "posted", "cooldown"}:
+            if isinstance(event, dict) and event.get("type") in {"row", "posted", "selected", "cooldown"}:
                 out.append(event)
         except Exception:
             continue
@@ -125,7 +125,7 @@ def main() -> None:
     now = int(time.time())
     events = load_events()
     rows = [e for e in events if e.get("type") == "row"]
-    posts = [e for e in events if e.get("type") == "posted"]
+    posts = [e for e in events if e.get("type") in {"posted","selected"}]
     cooldowns = [e for e in events if e.get("type") == "cooldown"]
 
     mature_start = now - int(LOOKBACK_HOURS * 3600)
@@ -275,7 +275,7 @@ def main() -> None:
         "mature_rows_analyzed": len(mature_rows),
         "mature_posts_analyzed": len(post_outcomes),
         "strong_early_cases": len(cases),
-        "scanner_posted_cases": sum(1 for c in cases if c["scanner_status"].startswith("DETECTED")),
+        "scanner_handoff_cases": sum(1 for c in cases if c["scanner_status"].startswith("DETECTED")),
         "not_posted_cases": sum(1 for c in cases if c["scanner_status"] == "NOT_POSTED"),
         "median_post_future_peak_pct": round(statistics.median(gains), 2) if gains else None,
         "errors": errors,
@@ -309,7 +309,7 @@ def main() -> None:
         "",
         f"Generated: {report['generated_at_utc']}",
         f"Strong early cases: **{summary['strong_early_cases']}**",
-        f"Scanner-posted cases: **{summary['scanner_posted_cases']}**",
+        f"Scanner-handoff cases: **{summary['scanner_handoff_cases']}**",
         f"Not-posted cases: **{summary['not_posted_cases']}**",
         "",
         "## Cases",
