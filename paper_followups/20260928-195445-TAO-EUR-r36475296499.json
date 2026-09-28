@@ -1,27 +1,27 @@
 {
-  "baseline_ask_eur": 3640.73,
-  "candidate_id": "20260928-194241-PAXG-EUR-r36473914836",
-  "evaluated_at_utc": "2026-09-28T19:43:12.316757Z",
+  "baseline_ask_eur": 268.0174,
+  "candidate_id": "20260928-195445-TAO-EUR-r36475296499",
+  "evaluated_at_utc": "2026-09-28T19:55:39.953860Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
     "30": {
       "bars": 30,
       "complete": true,
-      "end_close_pct": -0.191,
+      "end_close_pct": 0.54,
       "expected_bars": 30,
-      "mae_pct": -0.191,
-      "mfe_pct": 0.005
+      "mae_pct": -0.871,
+      "mfe_pct": 0.827
     }
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "original_decision": "WAIT",
-  "pair": "PAXG/EUR",
+  "pair": "TAO/EUR",
   "path_classification": "WAIT_TO_REJECT",
-  "revalidated_at_utc": "2026-09-28T20:29:53.964918Z",
+  "revalidated_at_utc": "2026-09-28T20:29:46.355065Z",
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-28T20:24:53.344027Z"
+  "updated_at_utc": "2026-09-28T20:29:55.233905Z"
 }
