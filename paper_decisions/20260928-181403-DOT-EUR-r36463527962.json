@@ -1,0 +1,169 @@
+{
+  "altname": "DOTEUR",
+  "candidate_age_seconds": 25,
+  "candidate_event_time_utc": "2026-09-28T18:14:03Z",
+  "candidate_id": "20260928-181403-DOT-EUR-r36463527962",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above 1.0554 with renewed volume confirmation",
+      "A higher low that holds above the 1.0313 one-hour support"
+    ],
+    "reason_codes": [
+      "liquidity_adequate",
+      "tight_spread",
+      "short_term_momentum",
+      "below_resistance",
+      "closed_volume_weak",
+      "higher_lows_absent",
+      "round_trip_fees_material",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid pair and supportive short-term market, but the attempted breakout has not held above resistance; wait for confirmation rather than chase.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "DOTUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "available": false,
+        "reason": "no prior same-pair observation in active series"
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 4.173619842475e-05,
+        "index_price": 1.20099,
+        "last": 1.2009,
+        "mark_price": 1.20103997239,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 3792001.3,
+        "requested_symbols": [
+          "PF_DOTUSD",
+          "PI_DOTUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_DOTUSD",
+        "volume24h": 2074395.5
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.0547,
+      "bid": 1.0541,
+      "last": 1.0555,
+      "spread_pct": 0.05690440060697401
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "3.9",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.15762540051798002,
+          "ret3h_pct": 0.9376433613836666
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.26839046155540114,
+          "ret3h_pct": 0.9663668528070213
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.3720309071830519,
+          "ret3h_pct": 1.3387267649041634
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-28T18:14:28.433213Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-28T18:14:41.030707Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_011b423cdd24f9a5006abaae8783d087d28bf37a56282aa14b"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.0547,
+    "bid": 1.0541,
+    "last": 1.0555,
+    "spread_pct": 0.05690440060697401
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "DOT/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36463527962:DOT-EUR:1790619243",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "fc1a12f0af6e6c3bf5d3af5dee78e7f5c32ff434",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T18:14:03Z",
+    "candidate_detected_ts": 1790619243,
+    "candidate_snapshot_at_utc": "2026-09-28T18:14:03Z",
+    "detected_to_evaluation_complete_seconds": 38.031,
+    "detected_to_evaluation_start_seconds": 25.171,
+    "evaluation_completed_at_utc": "2026-09-28T18:14:41.030707Z",
+    "evaluation_runtime_seconds": 12.86,
+    "evaluation_started_at_utc": "2026-09-28T18:14:28.170933Z",
+    "handoff_to_evaluation_start_seconds": 22.815,
+    "handoff_written_at_utc": "2026-09-28T18:14:05.355777Z",
+    "scan_step_started_at_utc": "2026-09-28T18:12:26Z"
+  }
+}
