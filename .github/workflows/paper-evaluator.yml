@@ -2,16 +2,6 @@ name: Paper runtime evaluator and lifecycle
 
 'on':
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'paper_runtime_control.json'
-      - 'paper_strategy_spec.json'
-      - 'paper_context.py'
-      - 'paper_followup.py'
-      - 'paper_evaluator/**'
-      - 'paper_position_tracker.py'
-      - '.github/workflows/paper-evaluator.yml'
   schedule:
     # Low-frequency fallback only. Normal execution is dispatched directly by scanner.
     - cron: '10 * * * *'
