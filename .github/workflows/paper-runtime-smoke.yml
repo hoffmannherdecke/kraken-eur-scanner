@@ -1,0 +1,77 @@
+name: Paper V2R2 runtime smoke
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/paper-runtime-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      OPENAI_MODEL: gpt-6-luna
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Compile runtime
+        run: |
+          set -euo pipefail
+          python -m py_compile paper_context.py paper_followup.py paper_position_tracker.py paper_evaluator/evaluate.py paper_evaluator/revalidate.py
+      - name: Live public-context smoke
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from paper_context import build_context
+          from paper_evaluator.evaluate import kraken_ticker
+          files=sorted(Path("handoff_queue").glob("*.json"))
+          if not files:
+              raise SystemExit("no handoff fixture available")
+          c=json.loads(files[-1].read_text("utf-8"))
+          ticker=kraken_ticker(c["altname"])
+          ctx=build_context(c,ticker)
+          assert ctx["kraken_public_pair_verified"] is True
+          assert ctx["major_market_regime"]["available_assets"] >= 1
+          assert "derivatives" in ctx and "official_headlines" in ctx
+          print("CONTEXT_SMOKE_PASS",json.dumps({
+              "pair":c["pair"],
+              "regime_assets":ctx["major_market_regime"]["available_assets"],
+              "derivatives_available":ctx["derivatives"].get("available"),
+              "fed_available":ctx["official_headlines"]["federal_reserve"].get("available"),
+              "sec_available":ctx["official_headlines"]["sec"].get("available"),
+          },sort_keys=True))
+          PY
+      - name: Two-stage state smoke
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from paper_position_tracker import new_state, aggregate, trailing_rule
+          rec={
+            "test_id":"SMOKE","series_id":"SMOKE","candidate_id":"smoke","pair":"BTC/EUR","altname":"XBTEUR",
+            "kind":"PAPER_V2_DECISION_V2","strategy_revision":"SMOKE","strategy_fingerprint_sha256":"x",
+            "paper_entry":{
+              "status":"SCOUT_FILLED_SIMULATED_AT_FRESH_ASK","scout_notional_eur":50.0,
+              "fill_price_eur":50000.0,"quantity":0.001,"entry_fee_eur":0.3,
+              "entry_spread_pct":0.02,"stop_eur":48000.0,"opened_at_utc":"2026-09-28T16:00:00Z",
+              "stage2_plan":{"status":"PENDING","trigger_eur":50500.0,"notional_eur":50.0,"ttl_minutes":30,
+                             "expires_at_utc":"2026-09-28T16:30:00Z","execution_type":"SIMULATED_STOP_BUY_CONFIRMATION"}
+            }
+          }
+          s=new_state(rec)
+          qty,notional,fees,weighted=aggregate(s)
+          assert s["stage2_plan"]["status"]=="PENDING"
+          assert qty==0.001 and notional==50.0 and fees==0.3 and weighted==50000.0
+          assert trailing_rule(100,107)==4.0
+          assert trailing_rule(100,112)==3.0
+          assert trailing_rule(100,115)==2.0
+          print("TWO_STAGE_STATE_SMOKE_PASS")
+          PY
