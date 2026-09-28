@@ -1,40 +1,71 @@
 {
-  "schema_version": 1,
-  "strategy_revision": "V2R2-2026-09-28",
-  "description": "Implementation-complete revision of frozen V2 principles for prospective paper measurement.",
+  "schema_version": 2,
+  "strategy_revision": "V2R3-2026-09-28",
+  "description": "Prospective paper strategy with hardened review coverage, two-stage entries, public Kraken tradability gates, finite lifecycle and explicit data-quality handling.",
   "paper_only": true,
   "real_money_actions_enabled": false,
   "fees": {
-    "taker_pct_per_side": 0.60
+    "taker_pct_per_side": 0.6
   },
   "entry": {
-    "scout_notional_eur": 50.0,
-    "stage2_notional_eur": 50.0,
+    "scout_notional_eur": 50,
+    "stage2_notional_eur": 50,
     "stage2_required_for_full_position": true,
     "stage2_requires_explicit_trigger_above_scout_ask": true,
-    "stage2_max_ttl_minutes": 60
+    "stage2_max_ttl_minutes": 60,
+    "public_kraken_minimum_order_gate_required": true
   },
   "exit": {
     "initial_stop_from_evaluator": true,
     "trailing_tiers": [
-      {"gain_pct": 7.0, "trail_pct": 4.0},
-      {"gain_pct": 12.0, "trail_pct": 3.0},
-      {"gain_pct": 15.0, "trail_pct": 2.0}
+      {
+        "gain_pct": 7,
+        "trail_pct": 4
+      },
+      {
+        "gain_pct": 12,
+        "trail_pct": 3
+      },
+      {
+        "gain_pct": 15,
+        "trail_pct": 2
+      }
     ],
-    "forced_time_exit": false,
-    "stale_position_review_hours": 24
+    "forced_time_exit": true,
+    "max_hold_hours": 72,
+    "stale_position_review_hours": 24,
+    "contiguous_1m_coverage_required": true,
+    "data_gap_behavior": "UNVERIFIED_NOT_COUNTED"
   },
   "decision_inputs": {
     "scanner_and_kraken_eur": true,
+    "scanner_cross_sectional_breadth": true,
     "kraken_major_market_regime": true,
-    "binance_public_derivatives_optional": true,
+    "kraken_futures_derivatives": true,
+    "derivatives_delta_when_prior_observation_exists": true,
+    "binance_public_derivatives_optional_fallback": true,
     "official_fed_sec_headlines_optional": true,
     "onchain_required": false,
+    "account_private_tradability_required": false,
     "missing_inputs_must_remain_explicitly_missing": true
+  },
+  "scanner_review": {
+    "native_candidate_path": true,
+    "exceptional_rescue_path": true,
+    "momentum_review_override_max_per_scan": 3,
+    "momentum_review_override_cooldown_minutes": 45,
+    "raw_scanner_slack_disabled": true
   },
   "measurement": {
     "target_completed_trades": 20,
-    "followup_horizons_minutes": [30, 60, 120, 360],
+    "followup_horizons_minutes": [
+      30,
+      60,
+      120,
+      360
+    ],
+    "followup_interval_minutes": 1,
+    "wait_to_buy_excluded_from_missed_move_stats": true,
     "candidate_reviews_do_not_count_as_completed_trades": true
   }
 }
