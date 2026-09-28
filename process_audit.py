@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Independent health audit + bounded technical self-healing for the paper crypto chain."""
+from __future__ import annotations
 import json, os, time, urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,29 +10,46 @@ REPO=os.environ.get("GITHUB_REPOSITORY","hoffmannherdecke/kraken-eur-scanner")
 TOKEN=os.environ.get("GH_TOKEN","")
 SLACK=os.environ.get("SLACK_WEBHOOK_URL","")
 NOW=int(time.time())
-PROSPECTIVE_CUTOFF_TS=1790532491  # evaluator activation 2026-09-27T18:08:11Z
 CONTROL_PATH=ROOT/"paper_runtime_control.json"
+
 try:
-    PAPER_CONTROL=json.loads(CONTROL_PATH.read_text("utf-8")) if CONTROL_PATH.exists() else {"enabled": True}
-except Exception as e:
-    PAPER_CONTROL={"enabled": False, "control_error": repr(e)}
-PAPER_RUNTIME_ENABLED=PAPER_CONTROL.get("enabled") is True
+    CONTROL=json.loads(CONTROL_PATH.read_text("utf-8"))
+except Exception as exc:
+    CONTROL={"enabled":False,"control_error":repr(exc)}
+
+ENABLED=CONTROL.get("enabled") is True
+SERIES_ID=CONTROL.get("series_id")
 try:
-    ACTIVE_SERIES_CUTOFF_TS=int(datetime.fromisoformat(
-        PAPER_CONTROL.get("series_started_at_utc","2026-09-27T18:08:11Z").replace("Z","+00:00")
-    ).timestamp())
+    SERIES_START_TS=int(datetime.fromisoformat(CONTROL["series_started_at_utc"].replace("Z","+00:00")).timestamp())
 except Exception:
-    ACTIVE_SERIES_CUTOFF_TS=PROSPECTIVE_CUTOFF_TS
-issues=[]; repairs=[]; metrics={"paper_runtime_enabled":PAPER_RUNTIME_ENABLED,"active_series_cutoff_ts":ACTIVE_SERIES_CUTOFF_TS}
+    SERIES_START_TS=0
+
+issues=[]
+repairs=[]
+metrics={
+    "paper_runtime_enabled":ENABLED,
+    "series_id":SERIES_ID,
+    "series_start_ts":SERIES_START_TS,
+}
 
 def add(code,severity,detail,repairable=False):
     issues.append({"code":code,"severity":severity,"detail":detail,"repairable":repairable})
 
 def gh(method,path,body=None):
-    if not TOKEN: raise RuntimeError("GH_TOKEN missing")
+    if not TOKEN:
+        raise RuntimeError("GH_TOKEN missing")
     data=None if body is None else json.dumps(body).encode()
-    req=urllib.request.Request("https://api.github.com/repos/"+REPO+path,data=data,method=method,headers={
-      "Authorization":"Bearer "+TOKEN,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28","User-Agent":"crypto-process-audit/1.0"})
+    req=urllib.request.Request(
+        "https://api.github.com/repos/"+REPO+path,
+        data=data,method=method,
+        headers={
+            "Authorization":"Bearer "+TOKEN,
+            "Accept":"application/vnd.github+json",
+            "X-GitHub-Api-Version":"2022-11-28",
+            "User-Agent":"crypto-process-audit/2.0",
+            "Content-Type":"application/json",
+        }
+    )
     with urllib.request.urlopen(req,timeout=25) as r:
         raw=r.read()
         return json.loads(raw) if raw else {}
@@ -41,19 +59,23 @@ def workflow_runs(filename):
 
 def dispatch(filename,reason):
     runs=workflow_runs(filename)
-    recent=[r for r in runs if r.get("status") in ("queued","in_progress") or NOW-int(datetime.fromisoformat(r["created_at"].replace("Z","+00:00")).timestamp())<600]
-    if recent:
-        repairs.append({"workflow":filename,"action":"SKIP_RECENT_RUN","reason":reason}); return
+    if any(r.get("status") in ("queued","in_progress") for r in runs):
+        repairs.append({"workflow":filename,"action":"SKIP_ACTIVE_RUN","reason":reason})
+        return
     gh("POST","/actions/workflows/"+filename+"/dispatches",{"ref":"main"})
     repairs.append({"workflow":filename,"action":"DISPATCH","reason":reason})
 
 def latest_health(filename,max_age):
-    try: runs=workflow_runs(filename)
-    except Exception as e:
-        add("WORKFLOW_API_"+filename,"ERROR",repr(e)); return
+    try:
+        runs=workflow_runs(filename)
+    except Exception as exc:
+        add("WORKFLOW_API_"+filename,"ERROR",repr(exc))
+        return
     if not runs:
-        add("NO_RUN_"+filename,"CRITICAL","No workflow run visible",True); return
-    r=runs[0]; age=NOW-int(datetime.fromisoformat(r["created_at"].replace("Z","+00:00")).timestamp())
+        add("NO_RUN_"+filename,"CRITICAL","No workflow run visible",True)
+        return
+    r=runs[0]
+    age=NOW-int(datetime.fromisoformat(r["created_at"].replace("Z","+00:00")).timestamp())
     metrics[filename]={"run_id":r["id"],"status":r["status"],"conclusion":r.get("conclusion"),"age_seconds":age}
     if age>max_age:
         add("STALE_"+filename,"CRITICAL",f"latest run age {age}s > {max_age}s",True)
@@ -63,130 +85,188 @@ def latest_health(filename,max_age):
 def load_dir(name):
     out={}
     p=ROOT/name
-    if not p.exists(): return out
+    if not p.exists():
+        return out
     for f in p.glob("*.json"):
-        try: out[f.name]=json.loads(f.read_text())
-        except Exception as e: add("BAD_JSON","CRITICAL",f"{f}: {e}")
+        try:
+            out[f.name]=json.loads(f.read_text("utf-8"))
+        except Exception as exc:
+            add("BAD_JSON","CRITICAL",f"{f}: {exc}")
     return out
 
-queue=load_dir("handoff_queue"); decisions=load_dir("paper_decisions"); revals=load_dir("paper_revalidations"); positions=load_dir("paper_positions")
-metrics.update({"queue_files":len(queue),"decision_files":len(decisions),"revalidation_files":len(revals),"position_files":len(positions)})
+queue=load_dir("handoff_queue")
+decisions=load_dir("paper_decisions")
+revals=load_dir("paper_revalidations")
+positions=load_dir("paper_positions")
+followups=load_dir("paper_followups")
+metrics.update({
+    "queue_files":len(queue),"decision_files":len(decisions),
+    "revalidation_files":len(revals),"position_files":len(positions),
+    "followup_files":len(followups)
+})
 
-# Core safety and identity invariants.
+if ENABLED and not SERIES_ID:
+    add("MISSING_SERIES_ID","CRITICAL","Enabled runtime has no series_id")
+
+# Safety invariants across all persisted trade-capable records.
 for name,d in decisions.items():
-    if d.get("real_money_actions_enabled") is not False: add("REAL_MONEY_FLAG","CRITICAL",name)
-    if d.get("decision",{}).get("decision") not in {"BUY_SCOUT","WAIT","REJECT"}: add("BAD_DECISION","CRITICAL",name)
+    if d.get("real_money_actions_enabled") is not False:
+        add("REAL_MONEY_FLAG","CRITICAL",name)
 for name,d in revals.items():
-    if d.get("real_money_actions_enabled") is not False: add("REAL_MONEY_FLAG_REVAL","CRITICAL",name)
-    if d.get("decision",{}).get("decision") not in {"BUY_SCOUT","REJECT"}: add("BAD_REVALIDATION","CRITICAL",name)
+    if d.get("real_money_actions_enabled") is not False:
+        add("REAL_MONEY_FLAG_REVAL","CRITICAL",name)
+for name,d in positions.items():
+    if d.get("real_money_actions_enabled") is not False:
+        add("REAL_MONEY_FLAG_POSITION","CRITICAL",name)
 
-# Handoff/WAIT liveness is relevant only while the legacy paper runtime is explicitly enabled.
+active_decisions={n:d for n,d in decisions.items() if d.get("series_id")==SERIES_ID}
+active_revals={n:d for n,d in revals.items() if d.get("series_id")==SERIES_ID}
+active_positions={n:d for n,d in positions.items() if d.get("series_id")==SERIES_ID}
+active_followups={n:d for n,d in followups.items() if d.get("series_id")==SERIES_ID}
+metrics.update({
+    "active_decisions":len(active_decisions),
+    "active_revalidations":len(active_revals),
+    "active_positions":len(active_positions),
+    "active_followups":len(active_followups),
+})
+
 orphans=[]
-overdue=[]
-if PAPER_RUNTIME_ENABLED:
+due_waits=[]
+overdue_waits=[]
+if ENABLED:
     for name,c in queue.items():
-        age=NOW-int(c.get("event_ts",0))
-        if int(c.get("event_ts",0)) >= ACTIVE_SERIES_CUTOFF_TS and 1200 < age <= 7200 and name not in decisions:
+        ts=int(c.get("event_ts",0))
+        age=NOW-ts
+        if ts>=SERIES_START_TS and 600<age<=7200 and name not in decisions:
             orphans.append(name)
     if orphans:
-        add("ORPHAN_CANDIDATES","CRITICAL",f"{len(orphans)} candidates >20m without decision: "+",".join(orphans[:5]),True)
+        add("ORPHAN_CANDIDATES","CRITICAL",f"{len(orphans)} candidates >10m without decision: "+",".join(orphans[:5]),True)
 
-    for name,d in decisions.items():
-        if d.get("decision",{}).get("decision")!="WAIT" or name in revals: continue
+    for name,d in active_decisions.items():
+        if d.get("decision",{}).get("decision")!="WAIT" or name in active_revals:
+            continue
         ev=datetime.fromisoformat(d["evaluated_at_utc"].replace("Z","+00:00")).timestamp()
-        if ev < ACTIVE_SERIES_CUTOFF_TS: continue
         due=ev+60*int(d["decision"].get("ttl_minutes",0))
-        if NOW>due+1200: overdue.append(name)
-    if overdue:
-        add("OVERDUE_WAIT","CRITICAL",f"{len(overdue)} WAITs >20m past TTL: "+",".join(overdue[:5]),True)
+        lag=NOW-due
+        if lag>=0:
+            due_waits.append((name,int(lag)))
+        if lag>300:
+            overdue_waits.append((name,int(lag)))
+    if overdue_waits:
+        add("OVERDUE_WAIT","CRITICAL",
+            f"{len(overdue_waits)} WAITs >5m past TTL: "+",".join(f"{n}:{lag}s" for n,lag in overdue_waits[:5]),True)
+
 metrics["orphan_candidates"]=len(orphans)
-metrics["overdue_waits"]=len(overdue)
+metrics["due_waits"]=len(due_waits)
+metrics["overdue_waits"]=len(overdue_waits)
+metrics["max_wait_ttl_lag_seconds"]=max((lag for _,lag in due_waits),default=0)
 
-# Trade drought is an anomaly, not an automatic strategy change.
-terminal=[]
-buys=[]
-for d in list(decisions.values())+list(revals.values()):
-    stamp=d.get("evaluated_at_utc") or d.get("revalidated_at_utc")
-    try:
-        stamp_ts=datetime.fromisoformat(stamp.replace("Z","+00:00")).timestamp()
-    except Exception:
-        continue
-    if stamp_ts < ACTIVE_SERIES_CUTOFF_TS:
-        continue
-    x=d.get("decision",{}).get("decision")
-    if x in {"BUY_SCOUT","REJECT"}: terminal.append(x)
-    if x=="BUY_SCOUT": buys.append(d)
-metrics["terminal_decisions"]=len(terminal); metrics["paper_buys"]=len(buys)
-if len(terminal)>=10 and not buys:
-    add("NO_PAPER_TRADES","WARNING",f"0 BUY_SCOUT across {len(terminal)} current-series terminal decisions; investigate technical gates vs strategy strictness")
-if len(terminal)>=20 and len(buys)/len(terminal)<0.05:
-    add("VERY_LOW_TRADE_RATE","WARNING",f"{len(buys)}/{len(terminal)} current-series BUY_SCOUT; strategy review required, no automatic threshold change")
-
-# Current prospective-series position lifecycle and completed-trade count.
-series_start=PAPER_CONTROL.get("series_started_at_utc")
-series_start_ts=(datetime.fromisoformat(series_start.replace("Z","+00:00")).timestamp() if series_start else 0)
+# Current BUY -> position lifecycle completeness.
 current_buys=[]
-for d in list(decisions.values())+list(revals.values()):
-    if d.get("decision",{}).get("decision")!="BUY_SCOUT" or not d.get("paper_entry"):
-        continue
-    try:
-        opened=datetime.fromisoformat(d["paper_entry"]["opened_at_utc"].replace("Z","+00:00")).timestamp()
-    except Exception:
-        continue
-    if opened>=series_start_ts:
+for d in list(active_decisions.values())+list(active_revals.values()):
+    if d.get("decision",{}).get("decision")=="BUY_SCOUT" and d.get("paper_entry"):
         current_buys.append(d)
-missing_positions=[d["candidate_id"] for d in current_buys if (d["candidate_id"]+".json") not in positions]
-closed_positions=[p for p in positions.values()
-                  if p.get("status")=="CLOSED"
-                  and datetime.fromisoformat(p.get("entry",{}).get("opened_at_utc","1970-01-01T00:00:00+00:00").replace("Z","+00:00")).timestamp()>=series_start_ts]
-metrics["current_series_buys"]=len(current_buys)
-metrics["missing_position_states"]=len(missing_positions)
-metrics["completed_paper_trades"]=len(closed_positions)
-metrics["target_completed_paper_trades"]=int(PAPER_CONTROL.get("target_completed_paper_trades",20))
+missing_positions=[d["candidate_id"] for d in current_buys if (d["candidate_id"]+".json") not in active_positions]
 if missing_positions:
     add("POSITION_LIFECYCLE_MISSING","CRITICAL",
-        f"{len(missing_positions)} current BUYs lack paper position state: "+",".join(missing_positions[:5]),True)
+        f"{len(missing_positions)} BUYs lack position state: "+",".join(missing_positions[:5]),True)
 
-# Independent workflow liveness. Scanner/capture stay live even while paper evaluation is paused.
-latest_health("scan.yml",2700)
-if PAPER_RUNTIME_ENABLED:
-    latest_health("paper-evaluator.yml",2700)
-    latest_health("paper-revalidator.yml",2700)
-    latest_health("paper-position-tracker.yml",2700)
+closed=[p for p in active_positions.values() if p.get("status")=="CLOSED"]
+open_pos=[p for p in active_positions.values() if p.get("status")=="OPEN"]
+stale_open=[p for p in open_pos if p.get("stale_position_review_due")]
+metrics.update({
+    "paper_buys":len(current_buys),
+    "missing_position_states":len(missing_positions),
+    "completed_paper_trades":len(closed),
+    "open_paper_positions":len(open_pos),
+    "stale_open_positions":len(stale_open),
+    "target_completed_paper_trades":int(CONTROL.get("target_completed_paper_trades",20)),
+    "net_pnl_eur":round(sum(float(p.get("exit",{}).get("net_pnl_eur") or 0) for p in closed),4)
+})
+if stale_open:
+    add("STALE_OPEN_POSITION","WARNING",f"{len(stale_open)} open positions exceed review-age threshold")
+
+# Decision-rate diagnostics, never automatic strategy changes.
+terminal=[]
+for d in list(active_decisions.values())+list(active_revals.values()):
+    x=d.get("decision",{}).get("decision")
+    if x in {"BUY_SCOUT","REJECT"}:
+        terminal.append(x)
+metrics["terminal_decisions"]=len(terminal)
+if len(terminal)>=10 and not current_buys:
+    add("NO_PAPER_TRADES","WARNING",f"0 BUY_SCOUT across {len(terminal)} active-series terminal decisions")
+if len(terminal)>=20 and current_buys and len(current_buys)/len(terminal)<0.05:
+    add("VERY_LOW_TRADE_RATE","WARNING",f"{len(current_buys)}/{len(terminal)} active-series BUY_SCOUT")
+
+# Compact follow-up coverage and missed-move counters.
+followup_due=[]
+for name,d in active_decisions.items():
+    if d.get("decision",{}).get("decision") not in {"WAIT","REJECT"}:
+        continue
+    ev=int(datetime.fromisoformat(d["evaluated_at_utc"].replace("Z","+00:00")).timestamp())
+    if NOW>=ev+35*60 and name not in active_followups:
+        followup_due.append(name)
+if followup_due:
+    add("FOLLOWUP_LAG","WARNING",f"{len(followup_due)} candidates lack due compact follow-up",True)
+
+mature=[x for x in active_followups.values() if x.get("horizons",{}).get("360",{}).get("complete")]
+metrics["six_hour_followups"]=len(mature)
+metrics["missed_5pct_6h"]=sum(bool(x.get("six_hour_flags",{}).get("missed_5pct")) for x in mature)
+metrics["missed_8pct_6h"]=sum(bool(x.get("six_hour_flags",{}).get("missed_8pct")) for x in mature)
+metrics["missed_10pct_6h"]=sum(bool(x.get("six_hour_flags",{}).get("missed_10pct")) for x in mature)
+
+# Workflow liveness for the unified architecture.
+latest_health("scan.yml",2100)
+if ENABLED:
+    latest_health("paper-evaluator.yml",2100)
 else:
-    metrics["paper_runtime_pause_reason"]=PAPER_CONTROL.get("reason")
+    metrics["paper_runtime_pause_reason"]=CONTROL.get("reason")
 
-# Bounded technical self-healing only. Never modify strategy/risk/real-money settings.
+# Bounded technical self-healing only.
 try:
-    if PAPER_RUNTIME_ENABLED:
-        if orphans: dispatch("paper-evaluator.yml","orphan candidate recovery")
-        if overdue: dispatch("paper-revalidator.yml","overdue WAIT recovery")
-        if missing_positions: dispatch("paper-position-tracker.yml","missing paper position lifecycle recovery")
-    repair_map=[("STALE_scan.yml","scan.yml"),("FAILED_scan.yml","scan.yml")]
-    if PAPER_RUNTIME_ENABLED:
-        repair_map += [("STALE_paper-evaluator.yml","paper-evaluator.yml"),("FAILED_paper-evaluator.yml","paper-evaluator.yml"),
-                       ("STALE_paper-revalidator.yml","paper-revalidator.yml"),("FAILED_paper-revalidator.yml","paper-revalidator.yml"),
-                       ("NO_RUN_paper-revalidator.yml","paper-revalidator.yml"),("NO_RUN_paper-evaluator.yml","paper-evaluator.yml"),
-                       ("STALE_paper-position-tracker.yml","paper-position-tracker.yml"),("FAILED_paper-position-tracker.yml","paper-position-tracker.yml"),
-                       ("NO_RUN_paper-position-tracker.yml","paper-position-tracker.yml")]
-    for code,wf in repair_map:
-        if any(i["code"]==code for i in issues): dispatch(wf,code)
-except Exception as e:
-    add("SELF_HEAL_FAILED","ERROR",repr(e))
+    runtime_reasons=[]
+    if ENABLED:
+        if orphans:
+            runtime_reasons.append("orphan candidate recovery")
+        if due_waits:
+            runtime_reasons.append("due WAIT revalidation")
+        if missing_positions:
+            runtime_reasons.append("missing position lifecycle")
+        if followup_due:
+            runtime_reasons.append("follow-up recovery")
+        if runtime_reasons:
+            dispatch("paper-evaluator.yml","; ".join(runtime_reasons))
 
-report={"schema_version":1,"kind":"CRYPTO_PROCESS_HEALTH_V1","audited_at_utc":datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),
-        "status":"CRITICAL" if any(i["severity"]=="CRITICAL" for i in issues) else ("WARNING" if issues else "HEALTHY"),
-        "metrics":metrics,"issues":issues,"repairs":repairs,
-        "guardrails":{"strategy_auto_change":False,"real_money_enable":False,"technical_dispatch_only":True}}
+    for code,wf in [
+        ("STALE_scan.yml","scan.yml"),("FAILED_scan.yml","scan.yml"),
+        ("NO_RUN_scan.yml","scan.yml"),
+        ("STALE_paper-evaluator.yml","paper-evaluator.yml"),
+        ("FAILED_paper-evaluator.yml","paper-evaluator.yml"),
+        ("NO_RUN_paper-evaluator.yml","paper-evaluator.yml"),
+    ]:
+        if any(i["code"]==code for i in issues):
+            dispatch(wf,code)
+except Exception as exc:
+    add("SELF_HEAL_FAILED","ERROR",repr(exc))
+
+report={
+    "schema_version":2,
+    "kind":"CRYPTO_PROCESS_HEALTH_V2",
+    "audited_at_utc":datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),
+    "status":"CRITICAL" if any(i["severity"]=="CRITICAL" for i in issues) else ("WARNING" if issues else "HEALTHY"),
+    "metrics":metrics,"issues":issues,"repairs":repairs,
+    "guardrails":{"strategy_auto_change":False,"real_money_enable":False,"technical_dispatch_only":True}
+}
 Path("process_health.json").write_text(json.dumps(report,indent=2,sort_keys=True)+"\n")
 print("PROCESS_HEALTH "+json.dumps(report,sort_keys=True))
 
 if issues and SLACK:
     msg="CRYPTO_HEALTH "+report["status"]+" | "+"; ".join(i["code"] for i in issues[:8])
     req=urllib.request.Request(SLACK,data=json.dumps({"text":msg}).encode(),method="POST",headers={"Content-Type":"application/json"})
-    try: urllib.request.urlopen(req,timeout=15).read()
-    except Exception as e: print("WARN slack health alert failed",repr(e))
+    try:
+        urllib.request.urlopen(req,timeout=15).read()
+    except Exception as exc:
+        print("WARN slack health alert failed",repr(exc))
 
-# Critical findings fail the audit after repair dispatches, making the fault visible in Actions.
 if any(i["severity"]=="CRITICAL" for i in issues):
     raise SystemExit(2)
