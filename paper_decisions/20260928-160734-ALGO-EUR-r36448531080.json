@@ -1,0 +1,60 @@
+{
+  "candidate_age_seconds": 14,
+  "candidate_event_time_utc": "2026-09-28T16:07:34Z",
+  "candidate_id": "20260928-160734-ALGO-EUR-r36448531080",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.12016 with follow-through",
+      "confirming closed-bar volume on the breakout"
+    ],
+    "reason_codes": [
+      "near_7d_30d_highs",
+      "below_3h_resistance",
+      "no_confirmed_breakout",
+      "recent_move_already_run",
+      "fees_and_spread_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Strong multi-period rise, but price is near recent highs and 3h resistance; current evidence does not establish enough net upside after costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-28T16:07:57.391689Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f575739bfba5ed9006aba90d534f487d2bdb5138c5bc24b01"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.11935,
+    "bid": 0.11922,
+    "last": 0.11937,
+    "spread_pct": 0.10898268851908557
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "ALGO/EUR",
+  "paper_entry": null,
+  "queue_id": "36448531080:ALGO-EUR:1790611654",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T16:07:34Z",
+    "candidate_detected_ts": 1790611654,
+    "candidate_snapshot_at_utc": "2026-09-28T16:07:34Z",
+    "detected_to_evaluation_complete_seconds": 23.392,
+    "detected_to_evaluation_start_seconds": 13.841,
+    "evaluation_completed_at_utc": "2026-09-28T16:07:57.391689Z",
+    "evaluation_runtime_seconds": 9.55,
+    "evaluation_started_at_utc": "2026-09-28T16:07:47.841463Z",
+    "handoff_to_evaluation_start_seconds": 11.166,
+    "handoff_written_at_utc": "2026-09-28T16:07:36.675949Z",
+    "scan_step_started_at_utc": "2026-09-28T16:05:57Z"
+  }
+}

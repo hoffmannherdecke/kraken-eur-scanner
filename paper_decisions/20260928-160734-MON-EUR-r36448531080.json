@@ -1,0 +1,59 @@
+{
+  "candidate_age_seconds": 31,
+  "candidate_event_time_utc": "2026-09-28T16:07:34Z",
+  "candidate_id": "20260928-160734-MON-EUR-r36448531080",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Post-breakout consolidation or retest",
+      "Evidence of sufficient remaining upside versus costs"
+    ],
+    "reason_codes": [
+      "EXTENDED_MOVE",
+      "LATE_ENTRY",
+      "SPREAD_WIDENED",
+      "REWARD_RISK_UNVERIFIED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stop_eur": null,
+    "summary": "Already-extended breakout near recent highs; fresh spread and execution costs leave no validated attractive remaining reward/risk.",
+    "ttl_minutes": 0
+  },
+  "evaluated_at_utc": "2026-09-28T16:08:16.920515Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0718c9250d775be0006aba90e5ab2887d2824da09bfe2da12f"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.02642,
+    "bid": 0.02633,
+    "last": 0.02638,
+    "spread_pct": 0.3412322274881509
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "MON/EUR",
+  "paper_entry": null,
+  "queue_id": "36448531080:MON-EUR:1790611654",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T16:07:34Z",
+    "candidate_detected_ts": 1790611654,
+    "candidate_snapshot_at_utc": "2026-09-28T16:07:34Z",
+    "detected_to_evaluation_complete_seconds": 42.921,
+    "detected_to_evaluation_start_seconds": 31.389,
+    "evaluation_completed_at_utc": "2026-09-28T16:08:16.920515Z",
+    "evaluation_runtime_seconds": 11.531,
+    "evaluation_started_at_utc": "2026-09-28T16:08:05.389102Z",
+    "handoff_to_evaluation_start_seconds": 28.713,
+    "handoff_written_at_utc": "2026-09-28T16:07:36.676192Z",
+    "scan_step_started_at_utc": "2026-09-28T16:05:57Z"
+  }
+}

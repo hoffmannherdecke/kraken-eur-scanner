@@ -1,0 +1,59 @@
+{
+  "candidate_age_seconds": 23,
+  "candidate_event_time_utc": "2026-09-28T16:07:34Z",
+  "candidate_id": "20260928-160734-CRV-EUR-r36448531080",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close and hold above 0.29412",
+      "closed-volume confirmation on the breakout"
+    ],
+    "reason_codes": [
+      "near_3h_resistance",
+      "weak_closed_volume",
+      "mixed_multiperiod_continuity",
+      "cost_hurdle"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stop_eur": null,
+    "summary": "Price has reclaimed 1h resistance but is approaching 3h resistance; weak closed volume and mixed-to-negative broader returns do not yet support an entry after Kraken costs.",
+    "ttl_minutes": 30
+  },
+  "evaluated_at_utc": "2026-09-28T16:08:05.324318Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_094056357c44bd59006aba90ddb5dc87d2829aa28d498af320"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.29303,
+    "bid": 0.29272,
+    "last": 0.29178,
+    "spread_pct": 0.10584720443876482
+  },
+  "frozen_strategy": "V2-2026-09-24",
+  "kind": "PAPER_V2_DECISION_V1",
+  "pair": "CRV/EUR",
+  "paper_entry": null,
+  "queue_id": "36448531080:CRV-EUR:1790611654",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "test_id": "SHADOW-V2-20260924-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-28T16:07:34Z",
+    "candidate_detected_ts": 1790611654,
+    "candidate_snapshot_at_utc": "2026-09-28T16:07:34Z",
+    "detected_to_evaluation_complete_seconds": 31.324,
+    "detected_to_evaluation_start_seconds": 23.456,
+    "evaluation_completed_at_utc": "2026-09-28T16:08:05.324318Z",
+    "evaluation_runtime_seconds": 7.869,
+    "evaluation_started_at_utc": "2026-09-28T16:07:57.455759Z",
+    "handoff_to_evaluation_start_seconds": 20.78,
+    "handoff_written_at_utc": "2026-09-28T16:07:36.676094Z",
+    "scan_step_started_at_utc": "2026-09-28T16:05:57Z"
+  }
+}
