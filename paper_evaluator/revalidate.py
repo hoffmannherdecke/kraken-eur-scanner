@@ -19,11 +19,18 @@ def ohlc15(altname):
 
 def main():
     root=Path(__file__).resolve().parents[1]
+    control=json.loads((root/"paper_runtime_control.json").read_text("utf-8"))
+    if control.get("enabled") is not True:
+        print("PAPER_RUNTIME_DISABLED")
+        return
+    series_start=control.get("series_started_at_utc")
+    series_start_dt=zdt(series_start) if series_start else datetime.fromtimestamp(0,tz=timezone.utc)
     out=root/"paper_revalidations"; out.mkdir(exist_ok=True)
     due=[]
     for p in (root/"paper_decisions").glob("*.json"):
         d=json.loads(p.read_text())
         if d["decision"]["decision"]!="WAIT": continue
+        if zdt(d["evaluated_at_utc"]) < series_start_dt: continue
         if (out/p.name).exists(): continue
         ttl=int(d["decision"]["ttl_minutes"])
         if nowz() >= zdt(d["evaluated_at_utc"])+timedelta(minutes=ttl):
