@@ -50,4 +50,21 @@ jobs:
                   if exc.code not in (409,422):
                       raise
           print("SCANNER_MAINTENANCE_RUNS_CANCELLED",stopped)
+
+          # Start one clean scanner run after maintenance if none is currently active.
+          data=req("GET","/actions/workflows/scan.yml/runs?per_page=10")
+          active=[r for r in data.get("workflow_runs",[]) if r.get("status") in ("queued","pending","in_progress")]
+          if not active:
+              payload=json.dumps({"ref":"main"}).encode("utf-8")
+              request=urllib.request.Request(
+                  "https://api.github.com/repos/"+repo+"/actions/workflows/scan.yml/dispatches",
+                  data=payload,method="POST",
+                  headers={**headers,"Content-Type":"application/json"},
+              )
+              with urllib.request.urlopen(request,timeout=30) as resp:
+                  if resp.status!=204:
+                      raise RuntimeError(f"scanner dispatch HTTP {resp.status}")
+              print("FRESH_SCANNER_DISPATCHED")
+          else:
+              print("FRESH_SCANNER_SKIPPED_ACTIVE",[(r["id"],r["status"]) for r in active])
           PY
