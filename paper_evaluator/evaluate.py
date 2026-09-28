@@ -32,6 +32,19 @@ def load_runtime():
     fingerprint=hashlib.sha256(spec_bytes).hexdigest()
     return control,spec,fingerprint
 
+def runtime_code_fingerprint():
+    h=hashlib.sha256()
+    for rel in (
+        "paper_evaluator/evaluate.py",
+        "paper_evaluator/revalidate.py",
+        "paper_context.py",
+    ):
+        p=ROOT/rel
+        h.update(rel.encode("utf-8")+b"\0")
+        h.update(p.read_bytes())
+        h.update(b"\0")
+    return h.hexdigest()
+
 def reserved_buy_ids(series_id):
     out=set()
     for dirname in ("paper_decisions","paper_revalidations"):
@@ -392,6 +405,7 @@ def main():
         "strategy_fingerprint_sha256":fingerprint,
         "prompt_schema_version":PROMPT_SCHEMA_VERSION,
         "runtime_code_sha":os.getenv("GITHUB_SHA"),
+        "runtime_code_fingerprint_sha256":runtime_code_fingerprint(),
         "real_money_actions_enabled":False,
         "fee_assumption_pct_per_side":FEE_PCT,
         "fresh_kraken_ticker":current,
