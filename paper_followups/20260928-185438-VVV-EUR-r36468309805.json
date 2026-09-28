@@ -1,0 +1,27 @@
+{
+  "baseline_ask_eur": 24.45,
+  "candidate_id": "20260928-185438-VVV-EUR-r36468309805",
+  "evaluated_at_utc": "2026-09-28T18:55:33.090480Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -1.624,
+      "expected_bars": 30,
+      "mae_pct": -1.652,
+      "mfe_pct": 0.143
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "VVV/EUR",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-28T19:25:54.961754Z",
+  "revalidation_decision": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-28T19:40:54.622624Z"
+}
