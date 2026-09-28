@@ -1,0 +1,77 @@
+name: Cleanup oversized paper capture artifacts
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/paper-artifact-cleanup.yml'
+  schedule:
+    - cron: '15 3 * * *'
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: paper-artifact-cleanup
+  cancel-in-progress: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Delete legacy multi-GB raw paper tapes
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+
+          repo=os.environ["REPO"]
+          token=os.environ["GH_TOKEN"]
+          headers={
+              "Authorization":"Bearer "+token,
+              "Accept":"application/vnd.github+json",
+              "X-GitHub-Api-Version":"2022-11-28",
+              "User-Agent":"paper-artifact-cleanup/1.0",
+          }
+
+          def request(method,path):
+              req=urllib.request.Request(
+                  "https://api.github.com/repos/"+repo+path,
+                  method=method,
+                  headers=headers,
+              )
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  raw=r.read()
+                  return json.loads(raw) if raw else None
+
+          page=1
+          victims=[]
+          while True:
+              data=request("GET",f"/actions/artifacts?per_page=100&page={page}")
+              rows=data.get("artifacts",[])
+              for a in rows:
+                  if a.get("name","").startswith("paper-market-tape-"):
+                      victims.append((int(a["id"]),a["name"],int(a.get("size_in_bytes") or 0)))
+              if len(rows)<100:
+                  break
+              page+=1
+
+          deleted=0
+          deleted_bytes=0
+          for artifact_id,name,size in victims:
+              request("DELETE",f"/actions/artifacts/{artifact_id}")
+              deleted+=1
+              deleted_bytes+=size
+              print("DELETED",artifact_id,name,size)
+
+          print("PAPER_TAPE_CLEANUP",json.dumps({
+              "deleted_artifacts":deleted,
+              "deleted_bytes":deleted_bytes,
+              "deleted_gib":round(deleted_bytes/(1024**3),3),
+          },sort_keys=True))
+          PY
