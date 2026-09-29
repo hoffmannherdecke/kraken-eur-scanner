@@ -143,9 +143,11 @@ Aktuelle V3-Research-Prioritäten:
 5. einfache Multi-Horizon Price×Volume-Signale;
 6. Orderflow / Tiefe / Imbalance mit Mini-PC/WebSocket;
 7. Makro-Event-Risk-Gates;
-8. Meta-Gate TAKE / NO-TAKE erst nach genügend sauberen Labels;
-9. On-Chain nur nach Daten-/Timing-Preflight;
-10. Maker-vs-Taker / Fill-Wahrscheinlichkeit erst vor späterer Execution-Stufe.
+8. Smart-Money / Trader-Activity als read-only Informationslayer (Hyperliquid-first; keine Copy-Trading-Abhängigkeit);
+9. Prediction Markets als read-only Event-/Expectation-Layer (Polymarket-first, Kalshi sekundär);
+10. Meta-Gate TAKE / NO-TAKE erst nach genügend sauberen Labels;
+11. On-Chain nur nach Daten-/Timing-Preflight;
+12. Maker-vs-Taker / Fill-Wahrscheinlichkeit erst vor späterer Execution-Stufe.
 
 V3-Sizing-Prinzip:
 Nicht einfach „hoher Score = viel Geld“. Zu testen ist Sizing als Funktion aus
