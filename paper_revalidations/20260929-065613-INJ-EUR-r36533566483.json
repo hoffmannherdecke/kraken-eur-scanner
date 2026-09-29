@@ -1,0 +1,224 @@
+{
+  "altname": "INJEUR",
+  "candidate_id": "20260929-065613-INJ-EUR-r36533566483",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained follow-through above recent highs on stronger closed volume.",
+      "Evidence of sufficient remaining upside relative to fees, spread and structural stop risk."
+    ],
+    "reason_codes": [
+      "LIQUIDITY_ACCEPTABLE",
+      "SPREAD_ACCEPTABLE",
+      "RESISTANCE_CONFIRMED",
+      "BREAKOUT_EXTENDED",
+      "RECENT_VOLUME_FADE",
+      "COSTS_MATERIAL",
+      "INSUFFICIENT_REMAINING_MOVE_EVIDENCE",
+      "NO_COIN_SPECIFIC_CATALYST_SUPPLIED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Price has repeatedly closed above prior resistance, but the move is extended and weakening recent volume does not establish enough remaining upside to justify Kraken spot costs and risk.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "INJUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 15.71,
+        "available": true,
+        "current_funding_rate": 0.000553867565052081,
+        "current_open_interest": 187167.7,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 0.5852,
+        "previous_funding_rate": 0.000553867565052081,
+        "previous_observed_at_utc": "2026-09-29T07:34:00.344629Z",
+        "previous_open_interest": 186078.7
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000553867565052081,
+        "index_price": 7.5695,
+        "last": 7.582,
+        "mark_price": 7.57595933329,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 187167.7,
+        "requested_symbols": [
+          "PF_INJUSD",
+          "PI_INJUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_INJUSD",
+        "volume24h": 286077.6
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 6.673,
+      "bid": 6.666,
+      "last": 6.685,
+      "spread_pct": 0.10495539395756313
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "1",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.27991166388923183,
+          "ret3h_pct": 1.1494441369602981
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.6571464678377215,
+          "ret3h_pct": 1.8472738432161462
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.6401681635773038,
+          "ret3h_pct": 1.7877850792423544
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": false,
+        "detail": "HTTP Error 404: Not Found",
+        "error": "HTTPError",
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T07:49:41.568163Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0cbb174cb055c164006abb6d96d84887d18379a71157a949c0"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 6.673,
+    "bid": 6.666,
+    "last": 6.685,
+    "spread_pct": 0.10495539395756313
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 6.588,
+      "high": 6.595,
+      "low": 6.545,
+      "open": 6.545,
+      "trades": 48,
+      "ts": 1790664300,
+      "volume": 1307.58299834,
+      "vwap": 6.568
+    },
+    {
+      "close": 6.635,
+      "high": 6.635,
+      "low": 6.575,
+      "open": 6.58,
+      "trades": 43,
+      "ts": 1790665200,
+      "volume": 972.71671892,
+      "vwap": 6.592
+    },
+    {
+      "close": 6.599,
+      "high": 6.633,
+      "low": 6.592,
+      "open": 6.625,
+      "trades": 65,
+      "ts": 1790666100,
+      "volume": 3147.27343006,
+      "vwap": 6.624
+    },
+    {
+      "close": 6.689,
+      "high": 6.691,
+      "low": 6.604,
+      "open": 6.604,
+      "trades": 34,
+      "ts": 1790667000,
+      "volume": 503.94341092,
+      "vwap": 6.658
+    },
+    {
+      "close": 6.685,
+      "high": 6.685,
+      "low": 6.668,
+      "open": 6.676,
+      "trades": 17,
+      "ts": 1790667900,
+      "volume": 407.12126048,
+      "vwap": 6.678
+    }
+  ],
+  "pair": "INJ/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-065613-INJ-EUR-r36533566483.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T07:49:52.466600Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "11210cfd150a37756ac936de19838f228fb7c057",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T07:49:52.466600Z",
+    "revalidation_started_at_utc": "2026-09-29T07:49:41.205561Z",
+    "ttl_due_at_utc": "2026-09-29T07:41:46.523637Z",
+    "ttl_lag_seconds": 474.682
+  }
+}

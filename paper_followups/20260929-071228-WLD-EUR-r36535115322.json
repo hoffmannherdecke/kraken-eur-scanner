@@ -1,0 +1,25 @@
+{
+  "baseline_ask_eur": 0.4403,
+  "candidate_id": "20260929-071228-WLD-EUR-r36535115322",
+  "evaluated_at_utc": "2026-09-29T07:13:43.107520Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.5,
+      "expected_bars": 30,
+      "mae_pct": -0.318,
+      "mfe_pct": 0.613
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "WLD/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T07:50:58.584618Z"
+}
