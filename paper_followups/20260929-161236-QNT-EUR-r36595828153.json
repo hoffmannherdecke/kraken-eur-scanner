@@ -1,0 +1,25 @@
+{
+  "baseline_ask_eur": 221.91,
+  "candidate_id": "20260929-161236-QNT-EUR-r36595828153",
+  "evaluated_at_utc": "2026-09-29T16:13:11.468308Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.915,
+      "expected_bars": 30,
+      "mae_pct": -2.366,
+      "mfe_pct": 1.248
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "REJECT",
+  "pair": "QNT/EUR",
+  "path_classification": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T16:49:42.307064Z"
+}
