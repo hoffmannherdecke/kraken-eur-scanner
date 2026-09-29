@@ -11,6 +11,14 @@
       "expected_bars": 30,
       "mae_pct": -0.074,
       "mfe_pct": 0.397
+    },
+    "60": {
+      "bars": 60,
+      "complete": true,
+      "end_close_pct": 0.061,
+      "expected_bars": 60,
+      "mae_pct": -0.074,
+      "mfe_pct": 0.397
     }
   },
   "interval_minutes": 1,
@@ -73,7 +81,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-29T23:49:52.806372Z"
+    "updated_at_utc": "2026-09-29T23:58:47.990419Z"
   },
   "original_decision": "WAIT",
   "pair": "DASH/EUR",
@@ -83,5 +91,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T23:20:42.122468Z"
+  "updated_at_utc": "2026-09-29T23:58:48.121388Z"
 }

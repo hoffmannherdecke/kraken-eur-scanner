@@ -1,0 +1,206 @@
+{
+  "altname": "SKYEUR",
+  "candidate_id": "20260929-232304-SKY-EUR-r36644752748",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.07353 with materially stronger closed volume",
+      "Follow-through holding above 0.07353 on the next 15m interval"
+    ],
+    "reason_codes": [
+      "RECLAIM_NOT_CONFIRMED",
+      "CLOSED_VOLUME_WEAK",
+      "BELOW_3H_RESISTANCE",
+      "ROUND_TRIP_COSTS_1_20_PERCENT",
+      "NO_DERIVATIVES_DATA"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation did not confirm the reclaim: price remains below 0.07353 resistance, recent closed-volume confirmation is weak, and the fresh ask is below the prior review price. No scout entry is justified after costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SKYUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_SKYUSD",
+          "PI_SKYUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.07214,
+      "bid": 0.07206,
+      "last": 0.07224,
+      "spread_pct": 0.11095700416088314
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "70",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.04015612048462458,
+          "ret3h_pct": -0.0027120887286957718
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.18949087017761101,
+          "ret3h_pct": -0.6073701546224552
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.11419870574800317,
+          "ret3h_pct": -0.019051247856749498
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T23:57:52.574263Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0317144cdb75d092006abc5081825087d19b4f4be69660e41a"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.07214,
+    "bid": 0.07206,
+    "last": 0.07224,
+    "spread_pct": 0.11095700416088314
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.07249,
+      "high": 0.07249,
+      "low": 0.07244,
+      "open": 0.07244,
+      "trades": 2,
+      "ts": 1790721900,
+      "volume": 4825.7864,
+      "vwap": 0.07246
+    },
+    {
+      "close": 0.07277,
+      "high": 0.07277,
+      "low": 0.07277,
+      "open": 0.07277,
+      "trades": 1,
+      "ts": 1790722800,
+      "volume": 620.7752,
+      "vwap": 0.07277
+    },
+    {
+      "close": 0.07288,
+      "high": 0.07305,
+      "low": 0.07288,
+      "open": 0.07297,
+      "trades": 5,
+      "ts": 1790723700,
+      "volume": 5133.66449,
+      "vwap": 0.07298
+    },
+    {
+      "close": 0.07227,
+      "high": 0.07227,
+      "low": 0.07227,
+      "open": 0.07227,
+      "trades": 1,
+      "ts": 1790724600,
+      "volume": 2516.32709,
+      "vwap": 0.07227
+    },
+    {
+      "close": 0.07224,
+      "high": 0.07224,
+      "low": 0.07223,
+      "open": 0.07223,
+      "trades": 6,
+      "ts": 1790725500,
+      "volume": 1184.1199,
+      "vwap": 0.07223
+    }
+  ],
+  "pair": "SKY/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-232304-SKY-EUR-r36644752748.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T23:57:58.567743Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "f887af11a826391181e0f33e569792ff58f45527",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T23:57:58.567743Z",
+    "revalidation_started_at_utc": "2026-09-29T23:57:52.202293Z",
+    "ttl_due_at_utc": "2026-09-29T23:53:28.283461Z",
+    "ttl_lag_seconds": 263.919
+  }
+}
