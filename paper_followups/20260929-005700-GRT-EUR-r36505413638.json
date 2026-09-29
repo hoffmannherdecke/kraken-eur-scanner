@@ -1,27 +1,27 @@
 {
-  "baseline_ask_eur": 0.219568,
-  "candidate_id": "20260929-004102-ADA-EUR-r36504146885",
-  "evaluated_at_utc": "2026-09-29T00:41:29.813175Z",
+  "baseline_ask_eur": 0.02686,
+  "candidate_id": "20260929-005700-GRT-EUR-r36505413638",
+  "evaluated_at_utc": "2026-09-29T00:57:32.030535Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
     "30": {
       "bars": 30,
       "complete": true,
-      "end_close_pct": -2.195,
+      "end_close_pct": 1.601,
       "expected_bars": 30,
-      "mae_pct": -2.195,
-      "mfe_pct": 0.087
+      "mae_pct": 1.601,
+      "mfe_pct": 1.601
     }
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "original_decision": "WAIT",
-  "pair": "ADA/EUR",
+  "pair": "GRT/EUR",
   "path_classification": "WAIT_TO_REJECT",
-  "revalidated_at_utc": "2026-09-29T01:28:15.752605Z",
+  "revalidated_at_utc": "2026-09-29T01:28:45.060120Z",
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T01:26:15.736377Z"
+  "updated_at_utc": "2026-09-29T01:28:46.030715Z"
 }

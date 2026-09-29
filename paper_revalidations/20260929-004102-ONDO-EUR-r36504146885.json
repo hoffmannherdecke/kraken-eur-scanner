@@ -1,0 +1,217 @@
+{
+  "altname": "ONDOEUR",
+  "candidate_id": "20260929-004102-ONDO-EUR-r36504146885",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "REVALIDATION_SETUP_INVALIDATED",
+      "PRICE_BELOW_RESISTANCE",
+      "RECENT_15M_DOWNSIDE_MOMENTUM",
+      "MAJOR_MARKET_WEAK",
+      "ROUND_TRIP_FEES_REQUIRE_LARGER_MOVE",
+      "NO_VALID_STOP_AND_STAGE2_PLAN"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The breakout setup has failed: spot price fell below the 0.46063 resistance and recent 15-minute closes show sharp downside movement. Weak major-market conditions and no supported post-cost upside invalidate a scout.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ONDOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 46.17,
+        "available": true,
+        "current_funding_rate": -1.623746526135e-05,
+        "current_open_interest": 4554923.0,
+        "funding_rate_delta": -1.8128395878938e-05,
+        "open_interest_pct": -0.0071,
+        "previous_funding_rate": 1.890930617588e-06,
+        "previous_observed_at_utc": "2026-09-29T00:42:20.757204Z",
+        "previous_open_interest": 4555247.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.623746526135e-05,
+        "index_price": 0.509004,
+        "last": 0.509,
+        "mark_price": 0.509027436,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4554923.0,
+        "requested_symbols": [
+          "PF_ONDOUSD",
+          "PI_ONDOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ONDOUSD",
+        "volume24h": 13696276
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.4479,
+      "bid": 0.44722,
+      "last": 0.44886,
+      "spread_pct": 0.15193493609795644
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "15",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.637312018817171,
+          "ret3h_pct": -0.19060380660685938
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.7695883695376549,
+          "ret3h_pct": -0.0481031194660142
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -1.0145482388973948,
+          "ret3h_pct": 0.11616650532431105
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T01:28:30.026654Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_03dfd14a7316e431006abb143f112887d1a43b53fc9e367806"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.4479,
+    "bid": 0.44722,
+    "last": 0.44886,
+    "spread_pct": 0.15193493609795644
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.45881,
+      "high": 0.46009,
+      "low": 0.45744,
+      "open": 0.46009,
+      "trades": 10,
+      "ts": 1790640900,
+      "volume": 4086.48968,
+      "vwap": 0.45962
+    },
+    {
+      "close": 0.46209,
+      "high": 0.46455,
+      "low": 0.46075,
+      "open": 0.46075,
+      "trades": 22,
+      "ts": 1790641800,
+      "volume": 19292.64595,
+      "vwap": 0.46352
+    },
+    {
+      "close": 0.45643,
+      "high": 0.4599,
+      "low": 0.45398,
+      "open": 0.45985,
+      "trades": 20,
+      "ts": 1790642700,
+      "volume": 3737.47599,
+      "vwap": 0.45691
+    },
+    {
+      "close": 0.45096,
+      "high": 0.45712,
+      "low": 0.45068,
+      "open": 0.4531,
+      "trades": 24,
+      "ts": 1790643600,
+      "volume": 5952.84696,
+      "vwap": 0.45158
+    },
+    {
+      "close": 0.44886,
+      "high": 0.45085,
+      "low": 0.44693,
+      "open": 0.44982,
+      "trades": 41,
+      "ts": 1790644500,
+      "volume": 13372.08775,
+      "vwap": 0.44908
+    }
+  ],
+  "pair": "ONDO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-004102-ONDO-EUR-r36504146885.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T01:28:34.693318Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "00851b0bf2bde20334b5db82017ac658c922891c",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T01:28:34.693318Z",
+    "revalidation_started_at_utc": "2026-09-29T01:28:29.851856Z",
+    "ttl_due_at_utc": "2026-09-29T01:27:20.757204Z",
+    "ttl_lag_seconds": 69.095
+  }
+}
