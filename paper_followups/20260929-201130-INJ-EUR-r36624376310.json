@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-09-29T20:12:10.494496Z",
     "evaluation_ask_eur": 6.782,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 0.662,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.265,
+        "mfe_pct": 0.692,
+        "peak_at_utc": "2026-09-29T20:21:00Z",
+        "trough_at_utc": "2026-09-29T20:12:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-09-29T17:51:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -41,7 +53,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-09-29T20:16:44.852201Z"
+    "updated_at_utc": "2026-09-29T20:30:27.981843Z"
   },
   "original_decision": "WAIT",
   "pair": "INJ/EUR",
