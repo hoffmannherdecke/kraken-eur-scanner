@@ -1,0 +1,218 @@
+{
+  "altname": "XPLEUR",
+  "candidate_id": "20260929-113333-XPL-EUR-r36562253528",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.0899 with stronger closed volume",
+      "Hold above 0.0899 on retest"
+    ],
+    "reason_codes": [
+      "NO_BREAKOUT_CLOSE",
+      "RESISTANCE_NOT_RECLAIMED",
+      "INSUFFICIENT_REMAINING_MOVE_AFTER_COSTS",
+      "SPREAD_AND_FEES_HIGH"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The impulse did not confirm acceptance above 0.0899: the latest traded bar closed at 0.0895, and the current ask remains below resistance. A confirmation trigger near the recent high offers too little visible movement to justify Kraken EUR round-trip costs; no scout plan is supported.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "XPLUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 30.93,
+        "available": true,
+        "current_funding_rate": 3.04575084873e-05,
+        "current_open_interest": 8484709.0,
+        "funding_rate_delta": 5.2079537313829986e-06,
+        "open_interest_pct": 1.5544,
+        "previous_funding_rate": 2.5249554755917e-05,
+        "previous_observed_at_utc": "2026-09-29T11:34:29.313476Z",
+        "previous_open_interest": 8354840.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.04575084873e-05,
+        "index_price": 0.101159,
+        "last": 0.10199,
+        "mark_price": 0.1014506295,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 8484709.0,
+        "requested_symbols": [
+          "PF_XPLUSD",
+          "PI_XPLUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_XPLUSD",
+        "volume24h": 9489752
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.0891,
+      "bid": 0.0889,
+      "last": 0.0895,
+      "spread_pct": 0.22471910112358637
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "60",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.36214607684088573,
+          "ret3h_pct": 0.5136682841964113
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.6299298173747081,
+          "ret3h_pct": 0.8318185245064003
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.5702337958563009,
+          "ret3h_pct": 0.7521660477958658
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T12:05:23.740694Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0ce5de2edb8b998f006abba984fb0c87d19c2c6fbd5cffedca"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0891,
+    "bid": 0.0889,
+    "last": 0.0895,
+    "spread_pct": 0.22471910112358637
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.0872,
+      "high": 0.0872,
+      "low": 0.0872,
+      "open": 0.0872,
+      "trades": 2,
+      "ts": 1790679600,
+      "volume": 1111.0545,
+      "vwap": 0.0872
+    },
+    {
+      "close": 0.0871,
+      "high": 0.0871,
+      "low": 0.0871,
+      "open": 0.0871,
+      "trades": 1,
+      "ts": 1790680500,
+      "volume": 4000.0,
+      "vwap": 0.0871
+    },
+    {
+      "close": 0.0895,
+      "high": 0.0895,
+      "low": 0.0876,
+      "open": 0.0876,
+      "trades": 20,
+      "ts": 1790681400,
+      "volume": 140748.0909,
+      "vwap": 0.0884
+    },
+    {
+      "close": 0.0895,
+      "high": 0.0902,
+      "low": 0.0895,
+      "open": 0.0896,
+      "trades": 17,
+      "ts": 1790682300,
+      "volume": 34978.50679,
+      "vwap": 0.0897
+    },
+    {
+      "close": 0.0895,
+      "high": 0.0895,
+      "low": 0.0895,
+      "open": 0.0895,
+      "trades": 0,
+      "ts": 1790683200,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "XPL/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-113333-XPL-EUR-r36562253528.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T12:05:32.916794Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "3e32650ffcad94d19e1c617a018c92f63ea74011",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T12:05:32.916794Z",
+    "revalidation_started_at_utc": "2026-09-29T12:05:23.358855Z",
+    "ttl_due_at_utc": "2026-09-29T12:04:29.313476Z",
+    "ttl_lag_seconds": 54.045
+  }
+}
