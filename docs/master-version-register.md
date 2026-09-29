@@ -45,6 +45,7 @@ Pflicht für Auswertung und nächste Version:
 - Scanner-Latenz getrennt von zu restriktiver Entry-/Revalidation-Logik messen.
 - V2R4: als verpflichtende Mess-/Revalidation-Anforderung und – sofern vor Freigabe validiert – als explizite Paper-Entry-Variante aufnehmen.
 - V3: Pflichtpunkt im Migrationsledger.
+- **Runtime-Messung seit 2026-09-29 aktiv:** `paper_followup.py` führt zusätzlich einen rein beobachtenden Post-Detection-Opportunity-Audit für WAIT/REJECT der aktiven V2R3-Serie. Er speichert Scanner-Erkennung, Evaluationslatenz, Detection-Preis, einen explizit als Proxy markierten Vorimpuls-Anker sowie MFE/MAE/Endkurs nach 15m / 1h / 4h / 12h / 24h. Die V2R3-Entscheidungs-, Entry-, Stop- und Sizing-Logik bleibt unverändert; der Evaluator-Fingerprint umfasst diesen Follow-up-Code nicht.
 
 ## Infrastruktur
 
