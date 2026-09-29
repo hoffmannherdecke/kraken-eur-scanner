@@ -1,0 +1,218 @@
+{
+  "altname": "ZROEUR",
+  "candidate_id": "20260928-233336-ZRO-EUR-r36498297568",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Evidence of credible remaining upside after fees, spread, and slippage",
+      "A confirmed retest of 1.375\u20131.377 as support"
+    ],
+    "reason_codes": [
+      "POST_BREAKOUT_CHASE",
+      "COST_HURDLE",
+      "3H_CONTINUITY_WEAK",
+      "DERIVATIVES_OI_DECLINING"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Price has cleared nearby resistance, but the move from the prior ticker to 1.385 leaves no supplied evidence of sufficient remaining post-cost potential for a scout entry; confirmation now risks chasing.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ZROUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 32.3,
+        "available": true,
+        "current_funding_rate": -0.000108462100265417,
+        "current_open_interest": 335805.0,
+        "funding_rate_delta": -1.8113888690418002e-05,
+        "open_interest_pct": -0.262,
+        "previous_funding_rate": -9.0348211574999e-05,
+        "previous_observed_at_utc": "2026-09-28T23:34:29.784413Z",
+        "previous_open_interest": 336687.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.000108462100265417,
+        "index_price": 1.57466,
+        "last": 1.5636,
+        "mark_price": 1.57366378943,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 335805.0,
+        "requested_symbols": [
+          "PF_ZROUSD",
+          "PI_ZROUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ZROUSD",
+        "volume24h": 1051303
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.385,
+      "bid": 1.384,
+      "last": 1.385,
+      "spread_pct": 0.07222824124233383
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.039213230108137154,
+          "ret3h_pct": -0.04125474327432155
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.05163671455055141,
+          "ret3h_pct": 0.22173701057808248
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2397391637897872,
+          "ret3h_pct": 0.05743275581506779
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T00:06:46.549180Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0717482684610f50006abb0117b7b887d0b7942dd4f9c4a22d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.385,
+    "bid": 1.384,
+    "last": 1.385,
+    "spread_pct": 0.07222824124233383
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.359,
+      "high": 1.362,
+      "low": 1.357,
+      "open": 1.359,
+      "trades": 26,
+      "ts": 1790636400,
+      "volume": 869.5181,
+      "vwap": 1.359
+    },
+    {
+      "close": 1.373,
+      "high": 1.375,
+      "low": 1.361,
+      "open": 1.361,
+      "trades": 34,
+      "ts": 1790637300,
+      "volume": 2477.50829,
+      "vwap": 1.366
+    },
+    {
+      "close": 1.366,
+      "high": 1.373,
+      "low": 1.366,
+      "open": 1.373,
+      "trades": 13,
+      "ts": 1790638200,
+      "volume": 516.38874,
+      "vwap": 1.368
+    },
+    {
+      "close": 1.372,
+      "high": 1.374,
+      "low": 1.367,
+      "open": 1.367,
+      "trades": 20,
+      "ts": 1790639100,
+      "volume": 625.15149,
+      "vwap": 1.371
+    },
+    {
+      "close": 1.385,
+      "high": 1.385,
+      "low": 1.373,
+      "open": 1.373,
+      "trades": 40,
+      "ts": 1790640000,
+      "volume": 952.83846,
+      "vwap": 1.379
+    }
+  ],
+  "pair": "ZRO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260928-233336-ZRO-EUR-r36498297568.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T00:06:53.469232Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "5b860b98f4411685b10f75948033699e81b70713",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T00:06:53.469232Z",
+    "revalidation_started_at_utc": "2026-09-29T00:06:46.192403Z",
+    "ttl_due_at_utc": "2026-09-29T00:04:29.784413Z",
+    "ttl_lag_seconds": 136.408
+  }
+}
