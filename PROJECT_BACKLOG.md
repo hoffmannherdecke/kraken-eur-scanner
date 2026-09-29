@@ -143,7 +143,8 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 Detailregeln bleiben in `docs/v3-research-framework.md` und Issue #7. Die Abgrenzung zu V2R4 ist verbindlich in `docs/strategy-version-map.md` festgelegt.
 
-- [ ] V2R3-Abschlussbefunde in die V3-Hypothesen übernehmen.
+- [ ] V2R3-Abschlussbefunde vollständig in den V3-Aufbau übernehmen; V3 startet vom besten validierten V2/V2R4-Gesamtstand, nicht bei null.
+- [ ] V2/V2R4→V3-Migrationsledger führen: jeder relevante Baustein = übernommen / modifiziert / ersetzt / verworfen / offen.
 - [ ] Literaturbefunde nur als Hypothesenquelle nutzen; nichts allein wegen Publikation übernehmen.
 - [ ] Mini-PC-/Altrady-Timingdaten gezielt einfließen lassen. Wenn Timing das Problem ist, zuerst Infrastrukturvariante testen, nicht sofort Entry-Regeln lockern.
 - [ ] Shadow-Varianten mit **einer klaren Änderung pro Kandidat** testen, z. B. früherer Entry, anderer TTL, anderer Stop/Trailing, anderer Exit.
@@ -161,7 +162,7 @@ Detailregeln bleiben in `docs/v3-research-framework.md` und Issue #7. Die Abgren
 - [ ] Nur nach bestandenem Promotion-Gate neue explizite Strategieversion erstellen.
 - [ ] Höhere Positionsgrößen/zusätzliches Kapital erst **nach** belastbarer Validierung separat prüfen.
 
-**Abschlusskriterium P6:** V3 hat historische/OOS- plus prospektive Shadow/Paper-Evidenz und ist als versionierter Nachfolger promotionsfähig.
+**Abschlusskriterium P6:** V3 hat den relevanten validierten V2/V2R4-Stand vollständig klassifiziert und integriert, besitzt historische/OOS- plus prospektive Shadow/Paper-Evidenz und ist als einheitlicher versionierter Nachfolger promotionsfähig.
 
 ---
 
