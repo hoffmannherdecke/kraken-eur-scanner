@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 208,
+        "bars": 193,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -73,7 +73,7 @@
         "trough_at_utc": null
       },
       "60": {
-        "bars": 28,
+        "bars": 13,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 60,
@@ -117,7 +117,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-29T19:29:59.720224Z"
+    "updated_at_utc": "2026-09-29T19:44:18.439400Z"
   },
   "original_decision": "WAIT",
   "pair": "INJ/EUR",
