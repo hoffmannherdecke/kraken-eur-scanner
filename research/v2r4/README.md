@@ -65,16 +65,21 @@ Only that fresh paper evaluation may create BUY_SCOUT.
 
 This keeps the improvement focused on **latency**, not removal of safety gates.
 
-### 4. Preserve the two-stage entry
+### 4. Preserve the two-stage entry, but not the old 50-EUR default
 
-Default paper sizing remains:
+V2R4 restores the later agreed adaptive paper sizing rather than treating EUR 50
+packages as the normal default:
 
-- scout: EUR 50;
-- stage 2: EUR 50;
-- stage 2 still needs its own explicit confirmation trigger.
+- B+ / early scout: EUR 75 + EUR 75 => EUR 150 total;
+- A-: EUR 75 + EUR 75 => EUR 150 total;
+- A: first stage EUR 100-125, confirmed total EUR 200-300;
+- A+: first stage EUR 150-200, confirmed total EUR 300-600.
 
-The goal is to enter promising momentum earlier with a small scout and demand more
-confirmation before full paper exposure.
+The second stage still requires an explicit confirmation trigger. Position size must
+not be increased merely to reach a nominal target, and late chasing remains prohibited.
+
+The research goal is to test whether earlier small-but-meaningful scouts plus quality-
+dependent scaling improve expectancy after fees, spread and slippage.
 
 ## Role of broader context in V2R4
 
@@ -100,8 +105,13 @@ Do not activate the V2R4 fast path immediately on first boot.
 5. Run `v2r4_wait_watcher.py --once` against a harmless synthetic plan.
 6. Run a live-market PAPER-only smoke test with one candidate and no order path.
 7. Verify receipt persistence, timestamps and watchdog recovery.
-8. Only then create a separate V2R4 paper series.
+8. As soon as that single end-to-end PAPER smoke test passes, create a separate V2R4
+   paper series; do not wait for V2R3 to somehow reach 20 completed trades first.
 9. Keep V2R3 artifacts immutable as the comparison control.
+
+A future major **V3** is not scheduled by calendar date. It is a separate strategy
+generation and should only be opened after prospective V2R4 evidence plus historical
+walk-forward validation shows that a larger mechanic change is justified.
 
 ## Required measurements
 
@@ -135,3 +145,13 @@ under the existing search-accounting discipline.
 - `tests/test_v2r4_trigger_contract.py`
 
 Nothing in this preparation is wired into the active V2R3 workflow.
+
+## Ongoing research intake before Mini-PC activation
+
+New findings discovered while V2R3 continues may be added to this V2R4 preparation,
+but only as explicitly documented hypotheses. Any change that alters entry, exit,
+sizing, trigger, state handling or cost assumptions must be versioned before it is
+tested; the active V2R3 control remains untouched.
+
+This allows the preparation to improve before Mini-PC activation without silently
+rewriting the live comparison series.
