@@ -1,0 +1,219 @@
+{
+  "altname": "GRTEUR",
+  "candidate_id": "20260929-083620-GRT-EUR-r36543600718",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.02719 with sustained volume",
+      "Hold above 0.02719 or confirm it on a retest"
+    ],
+    "reason_codes": [
+      "breakout_failed",
+      "no_sustained_volume",
+      "extended_context",
+      "post_cost_edge_unproven",
+      "weak_major_market_1h"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The breakout attempt failed: spot has pulled back below 0.02719 resistance, with no sustained-volume confirmation. The extended 7d/30d run and weak 1h major-market context leave post-cost upside unproven; no scout plan is justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "GRTUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 45.49,
+        "available": true,
+        "current_funding_rate": 1.206679705e-06,
+        "current_open_interest": 10138452.0,
+        "funding_rate_delta": 1.47819196375e-06,
+        "open_interest_pct": 0.9133,
+        "previous_funding_rate": -2.7151225875e-07,
+        "previous_observed_at_utc": "2026-09-29T08:37:23.282881Z",
+        "previous_open_interest": 10046697.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 1.206679705e-06,
+        "index_price": 0.03053,
+        "last": 0.03064,
+        "mark_price": 0.03054833578,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 10138452.0,
+        "requested_symbols": [
+          "PF_GRTUSD",
+          "PI_GRTUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_GRTUSD",
+        "volume24h": 11675194
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.02696,
+      "bid": 0.0269,
+      "last": 0.02692,
+      "spread_pct": 0.22279985146676948
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "300",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.21272170328631157,
+          "ret3h_pct": 0.14354066985644565
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.35185812010815054,
+          "ret3h_pct": 0.6950631933213103
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.23764258555133422,
+          "ret3h_pct": 0.16224470318764173
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T09:22:51.862741Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0ed1ae1f4f1c4f0e006abb836cfbb887d2a312d55ccb740ce9"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.02696,
+    "bid": 0.0269,
+    "last": 0.02692,
+    "spread_pct": 0.22279985146676948
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.02719,
+      "high": 0.02719,
+      "low": 0.02711,
+      "open": 0.02711,
+      "trades": 6,
+      "ts": 1790669700,
+      "volume": 151301.99441078,
+      "vwap": 0.02715
+    },
+    {
+      "close": 0.02726,
+      "high": 0.02726,
+      "low": 0.02726,
+      "open": 0.02726,
+      "trades": 2,
+      "ts": 1790670600,
+      "volume": 29090.63388367,
+      "vwap": 0.02726
+    },
+    {
+      "close": 0.0272,
+      "high": 0.0272,
+      "low": 0.0272,
+      "open": 0.0272,
+      "trades": 1,
+      "ts": 1790671500,
+      "volume": 1129.82900369,
+      "vwap": 0.0272
+    },
+    {
+      "close": 0.02692,
+      "high": 0.02707,
+      "low": 0.02692,
+      "open": 0.02707,
+      "trades": 2,
+      "ts": 1790672400,
+      "volume": 25369.00737057,
+      "vwap": 0.02697
+    },
+    {
+      "close": 0.02692,
+      "high": 0.02692,
+      "low": 0.02692,
+      "open": 0.02692,
+      "trades": 0,
+      "ts": 1790673300,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "GRT/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-083620-GRT-EUR-r36543600718.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T09:23:00.537642Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "4ea80856f5e007012ea95aec31537746a789f969",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T09:23:00.537642Z",
+    "revalidation_started_at_utc": "2026-09-29T09:22:51.603199Z",
+    "ttl_due_at_utc": "2026-09-29T09:06:45.216337Z",
+    "ttl_lag_seconds": 966.387
+  }
+}

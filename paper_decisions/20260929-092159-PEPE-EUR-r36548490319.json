@@ -1,0 +1,171 @@
+{
+  "altname": "PEPEEUR",
+  "candidate_age_seconds": 24,
+  "candidate_event_time_utc": "2026-09-29T09:21:59Z",
+  "candidate_id": "20260929-092159-PEPE-EUR-r36548490319",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close above 3.786e-6 followed by a hold above that level.",
+      "Confirmation on the break with closed volume at least 1.5x baseline."
+    ],
+    "reason_codes": [
+      "BELOW_1H_3H_RESISTANCE",
+      "WEAK_LIVE_VOLUME",
+      "MAJOR_MARKET_1H_NEGATIVE",
+      "ROUND_TRIP_COSTS_HIGH",
+      "NO_COIN_SPECIFIC_CATALYST_EVIDENCE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Constructive short-term structure, but price is below nearby resistance and the supplied evidence does not establish enough post-cost upside for entry.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "PEPEUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "available": false,
+        "reason": "no prior same-pair observation in active series"
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 1.18821717e-10,
+        "index_price": 4.26601e-06,
+        "last": 4.2698e-06,
+        "mark_price": 4.26556e-06,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 626492913000.0,
+        "requested_symbols": [
+          "PF_PEPEUSD",
+          "PI_PEPEUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_PEPEUSD",
+        "volume24h": 485496242000
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 3.761e-06,
+      "bid": 3.76e-06,
+      "last": 3.763e-06,
+      "spread_pct": 0.026592208482916505
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "1500000",
+      "pair_decimals": 9,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.21272170328631157,
+          "ret3h_pct": 0.14354066985644565
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.35185812010815054,
+          "ret3h_pct": 0.6950631933213103
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.23764258555133422,
+          "ret3h_pct": 0.16224470318764173
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T09:22:23.632311Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-29T09:22:35.303256Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_00e976137f237c82006abb8350c63c87d2af9aba2bb6ff17c6"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 3.761e-06,
+    "bid": 3.76e-06,
+    "last": 3.763e-06,
+    "spread_pct": 0.026592208482916505
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "PEPE/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36548490319:PEPE-EUR:1790673719",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "4ea80856f5e007012ea95aec31537746a789f969",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T09:21:59Z",
+    "candidate_detected_ts": 1790673719,
+    "candidate_snapshot_at_utc": "2026-09-29T09:21:59Z",
+    "detected_to_evaluation_complete_seconds": 36.303,
+    "detected_to_evaluation_start_seconds": 24.566,
+    "evaluation_completed_at_utc": "2026-09-29T09:22:35.303256Z",
+    "evaluation_runtime_seconds": 11.738,
+    "evaluation_started_at_utc": "2026-09-29T09:22:23.565586Z",
+    "handoff_to_evaluation_start_seconds": 21.891,
+    "handoff_written_at_utc": "2026-09-29T09:22:01.674327Z",
+    "scan_step_started_at_utc": "2026-09-29T09:20:25Z"
+  }
+}
