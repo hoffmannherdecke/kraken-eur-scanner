@@ -11,12 +11,59 @@
     "taker_pct_per_side": 0.6
   },
   "entry": {
-    "scout_notional_eur": 50,
-    "stage2_notional_eur": 50,
+    "simulation_sizing_mode": "ADAPTIVE_SETUP_QUALITY",
+    "minimum_scout_notional_eur": 75,
+    "default_scout_notional_eur": 75,
     "stage2_required_for_full_position": true,
     "stage2_requires_explicit_trigger_above_scout_ask": true,
     "stage2_max_ttl_minutes": 60,
-    "public_kraken_minimum_order_gate_required": true
+    "public_kraken_minimum_order_gate_required": true,
+    "sizing_tiers": {
+      "B_PLUS_OR_EARLY_SCOUT": {
+        "scout_notional_eur": 75,
+        "confirmation_notional_eur": 75,
+        "target_total_notional_eur": 150
+      },
+      "A_MINUS": {
+        "scout_notional_eur": 75,
+        "confirmation_notional_eur": 75,
+        "target_total_notional_eur": 150
+      },
+      "A": {
+        "scout_notional_eur_range": [
+          100,
+          125
+        ],
+        "confirmation_notional_eur_range": [
+          100,
+          175
+        ],
+        "target_total_notional_eur_range": [
+          200,
+          300
+        ]
+      },
+      "A_PLUS": {
+        "scout_notional_eur_range": [
+          150,
+          200
+        ],
+        "confirmation_notional_eur_range": [
+          150,
+          400
+        ],
+        "target_total_notional_eur_range": [
+          300,
+          600
+        ]
+      }
+    },
+    "sizing_constraints": {
+      "no_50_eur_micro_packages_as_normal_default": true,
+      "scale_only_with_setup_quality_and_confirmation": true,
+      "never_chase_only_to_reach_target_size": true,
+      "paper_results_must_report_percentage_and_eur_pnl": true
+    }
   },
   "wait_monitoring": {
     "enabled_when_activated": true,
@@ -108,7 +155,10 @@
       "expectancy_eur",
       "wait_to_trigger_rate",
       "trigger_to_buy_scout_rate",
-      "false_trigger_rate"
+      "false_trigger_rate",
+      "return_on_deployed_notional_pct",
+      "pnl_by_setup_quality_tier",
+      "pnl_by_simulation_size_tier"
     ],
     "discovery_examples_are_not_holdout_validation": true,
     "candidate_reviews_do_not_count_as_completed_trades": true
@@ -120,6 +170,9 @@
     "local_clock_and_network_health_required": true,
     "watchdog_required": true,
     "trigger_contract_tests_required": true,
-    "paper_only_until_separate_validation_complete": true
+    "paper_only_until_separate_validation_complete": true,
+    "v2r4_activation_timing": "AFTER_MINIPC_BASE_STABLE_AND_SINGLE_END_TO_END_PAPER_SMOKE_TEST_PASSES",
+    "v2r3_target_20_trades_not_required_before_v2r4_parallel_start": true,
+    "future_v3_gate": "ONLY_AFTER_PROSPECTIVE_V2R4_DATA_PLUS_HISTORICAL_WALK_FORWARD_VALIDATION_JUSTIFY_MAJOR_MECHANIC_CHANGE"
   }
 }
