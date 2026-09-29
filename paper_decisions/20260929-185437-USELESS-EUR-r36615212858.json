@@ -1,0 +1,160 @@
+{
+  "altname": "USELESSEUR",
+  "candidate_age_seconds": 41,
+  "candidate_event_time_utc": "2026-09-29T18:54:37Z",
+  "candidate_id": "20260929-185437-USELESS-EUR-r36615212858",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Pullback holds above the 0.21413 breakout level on a 15m close.",
+      "A subsequent 15m close above 0.220 with closed volume remaining above 2x baseline."
+    ],
+    "reason_codes": [
+      "fresh_move_already_7.28pct",
+      "no_higher_lows",
+      "ask_above_scanner_price",
+      "round_trip_fees_and_spread_material",
+      "no_derivatives_confirmation"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong breakout and volume, but price is extended from the recent base and entry costs leave insufficiently evidenced remaining edge.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "USELESSUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_USELESSUSD",
+          "PI_USELESSUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.21921,
+      "bid": 0.21861,
+      "last": 0.21818,
+      "spread_pct": 0.2740852405097937
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "50",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.3775270007365439,
+          "ret3h_pct": 0.5123157544592472
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.509457115050993,
+          "ret3h_pct": 0.42234764411186454
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.8545367258761427,
+          "ret3h_pct": 0.564863571086649
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T18:55:18.269937Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-29T18:55:31.968432Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_029a9826134f8b24006abc09975d5c87d092544272db267f50"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.21921,
+    "bid": 0.21861,
+    "last": 0.21818,
+    "spread_pct": 0.2740852405097937
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "USELESS/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36615212858:USELESS-EUR:1790708077",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "451abc20bb1d3737a23cdbb027b6242cf93cd6b8",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T18:54:37Z",
+    "candidate_detected_ts": 1790708077,
+    "candidate_snapshot_at_utc": "2026-09-29T18:54:37Z",
+    "detected_to_evaluation_complete_seconds": 54.968,
+    "detected_to_evaluation_start_seconds": 41.063,
+    "evaluation_completed_at_utc": "2026-09-29T18:55:31.968432Z",
+    "evaluation_runtime_seconds": 13.905,
+    "evaluation_started_at_utc": "2026-09-29T18:55:18.063229Z",
+    "handoff_to_evaluation_start_seconds": 37.054,
+    "handoff_written_at_utc": "2026-09-29T18:54:41.008730Z",
+    "scan_step_started_at_utc": "2026-09-29T18:53:00Z"
+  }
+}
