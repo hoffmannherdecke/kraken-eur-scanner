@@ -1,0 +1,165 @@
+{
+  "altname": "USELESSEUR",
+  "candidate_age_seconds": 22,
+  "candidate_event_time_utc": "2026-09-29T22:33:35Z",
+  "candidate_id": "20260929-223335-USELESS-EUR-r36640030675",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Kraken last price and executable ask converge or otherwise show a coherent fresh market.",
+      "A 15-minute close above 0.21505 with supporting volume confirms resistance clearance."
+    ],
+    "reason_codes": [
+      "quote_last_ask_dislocation",
+      "below_3h_resistance",
+      "live_volume_absent",
+      "cost_hurdle_unproven",
+      "mixed_multiperiod_momentum"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and quoted spread are acceptable, but the Kraken ask is materially below the reported last price and resistance is unconfirmed; remaining upside is not established against costs.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "USELESSUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_USELESSUSD",
+          "PI_USELESSUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.21176,
+      "bid": 0.21124,
+      "last": 0.21485,
+      "spread_pct": 0.24586288416075303
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "50",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2136519662508718,
+          "ret3h_pct": 0.05512761499741892
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.05801102632938537,
+          "ret3h_pct": -0.5488146193440513
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.3727420433909945,
+          "ret3h_pct": -0.09512937595129722
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T22:33:57.428417Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-29T22:34:07.724882Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0c88121252d60373006abc3cd6940887d29712fcda98eabe3a"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.21176,
+    "bid": 0.21124,
+    "last": 0.21485,
+    "spread_pct": 0.24586288416075303
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "USELESS/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36640030675:USELESS-EUR:1790721215",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "91f0d3d8f15c1ce643ead5f1c072c2f6e3700aac",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T22:33:35Z",
+    "candidate_detected_ts": 1790721215,
+    "candidate_snapshot_at_utc": "2026-09-29T22:33:35Z",
+    "detected_to_evaluation_complete_seconds": 32.725,
+    "detected_to_evaluation_start_seconds": 22.27,
+    "evaluation_completed_at_utc": "2026-09-29T22:34:07.724882Z",
+    "evaluation_runtime_seconds": 10.455,
+    "evaluation_started_at_utc": "2026-09-29T22:33:57.269968Z",
+    "handoff_to_evaluation_start_seconds": 19.566,
+    "handoff_written_at_utc": "2026-09-29T22:33:37.703654Z",
+    "scan_step_started_at_utc": "2026-09-29T22:31:12Z"
+  }
+}
