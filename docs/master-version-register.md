@@ -7,6 +7,7 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 ## Governance
 
 - Kein relevanter Bestandteil wird nur über Chat-Erinnerung verwaltet.
+- Dauerhaft projektrelevante Informationen aus Gesprächen werden proaktiv kanonisch dokumentiert, auch wenn der Nutzer nicht ausdrücklich „merk dir das“ sagt. Dazu zählen insbesondere Entscheidungen, Anforderungen, neue Daten-/Informationsquellen, Hypothesen, Testregeln, offene Punkte, Fehlerursachen, Architektur-/Strategieänderungen und verbindliche Arbeitsprinzipien. Reine Zwischenüberlegungen oder verworfene Ideen werden nur dann dauerhaft aufgenommen, wenn sie für die Nachvollziehbarkeit relevant sind.
 - Jede Mechanik-/Infrastrukturänderung erhält eine eindeutige Version oder einen dokumentierten Draft.
 - Eingefrorene Referenzstände bleiben unverändert.
 - Unklare Zuordnungen werden als **NICHT VERIFIZIERT / ZUORDNUNG OFFEN** markiert; niemals raten.
@@ -104,9 +105,12 @@ Jeder relevante V2/V2R4-Baustein erhält genau einen Status:
 
 ## Speicher-/Ablageregel für Chat-Beschlüsse
 
-Wenn der Nutzer „bitte speichern“, „merk dir das“ oder sinngleich sagt:
-1. Inhalt sichern.
-2. Fachlich klassifizieren.
-3. Der richtigen Komponente/Version/Registerebene zuordnen.
-4. Abhängigkeiten dokumentieren.
-5. Bei unklarer Zuordnung nicht raten, sondern **ZUORDNUNG OFFEN** markieren.
+Für jede dauerhaft projektrelevante Information aus einem Gespräch – unabhängig davon, ob der Nutzer ausdrücklich „bitte speichern“ / „merk dir das“ sagt – gilt:
+1. Inhalt zeitnah sichern.
+2. Fachlich klassifizieren: Entscheidung / Anforderung / Idee-Hypothese / Datenquelle / Testregel / Fehler / offener Punkt / Architektur / Arbeitsprinzip.
+3. Der passenden kanonischen GitHub-Stelle, Komponente und Version zuordnen; bestehende Dokumentation bevorzugen statt unnötig neue Einzeldokumente anzulegen.
+4. Abhängigkeiten, Status und ggf. Migrationsbezug dokumentieren.
+5. Relevante offene Punkte einzeln weiterführen und nicht durch Sammelzusammenfassungen verschwinden lassen.
+6. Bei unklarer Zuordnung nicht raten, sondern **ZUORDNUNG OFFEN** markieren.
+7. ChatGPT-Memory nur als knappen Projektindex für wenige dauerhafte Leitplanken nutzen; Detailwissen bleibt in GitHub.
+8. Reine Gesprächsfüllung, kurzfristige Zwischenstände und bewusst verworfene Ideen nicht unnötig dauerhaft speichern, sofern sie keinen Nachweis-/Historienwert haben.
