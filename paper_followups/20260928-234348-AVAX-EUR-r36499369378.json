@@ -1,0 +1,27 @@
+{
+  "baseline_ask_eur": 9.325,
+  "candidate_id": "20260928-234348-AVAX-EUR-r36499369378",
+  "evaluated_at_utc": "2026-09-28T23:44:11.399157Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 1.716,
+      "expected_bars": 30,
+      "mae_pct": -0.247,
+      "mfe_pct": 1.834
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "AVAX/EUR",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-29T00:19:23.393686Z",
+  "revalidation_decision": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T00:19:37.035081Z"
+}
