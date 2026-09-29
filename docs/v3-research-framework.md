@@ -3,7 +3,8 @@
 Status: ACTIVE RESEARCH  
 Created: 2026-09-28  
 Baseline: `V2R3-2026-09-28`  
-Primary research log: GitHub Issue #7 — V3 Research Track – Jansen evidence framework
+Primary research log: GitHub Issue #7 — V3 Research Track – Jansen evidence framework  
+Version relationship: `docs/strategy-version-map.md`
 
 ## 1. Purpose
 
@@ -396,3 +397,35 @@ No hypothesis above may alter scanner thresholds, entry logic, stops, position s
 4. receives an explicit promotion into a new strategy version.
 
 This document is therefore a strategy research knowledge base and promotion contract — not an active trading configuration.
+
+
+## 13. Relationship to V2R4 fast-trigger work
+
+V2R4 and V3 are separate but connected tracks.
+
+- **V2R4** is a narrow tactical paper variant focused on WAIT/trigger/revalidation latency,
+  Mini-PC event monitoring and earlier scout timing while preserving most V2R3 risk logic.
+- **V3** is the broader evidence-driven successor that may change signal families, state
+  conditioning, stop/exit logic, sizing methodology and other major mechanics only after
+  the full research pipeline.
+
+V2R4 may begin as a separate paper series once the Mini-PC base and one end-to-end
+paper-only smoke test are stable. It does not replace V3 and does not require V2R3 to
+artificially reach 20 completed trades first.
+
+V2R4 results become V3 evidence, especially:
+- trigger and decision latency;
+- WAIT → trigger → BUY conversion;
+- MFE/MAE and edge decay;
+- false-trigger rate;
+- cost impact of earlier entries;
+- setup-quality and paper-size tier outcomes;
+- Kraken / Altrady / local-runtime timing and feed reliability.
+
+Routing rule:
+- timing / trigger / revalidation improvements → V2R4;
+- major signal / state / stop / exit / sizing / ML changes → V3 research;
+- watchdog / recovery / backup / runtime reliability → infrastructure backlog.
+
+The canonical definitions and status of V2R3, V2R4 and V3 are maintained in
+`docs/strategy-version-map.md`.
