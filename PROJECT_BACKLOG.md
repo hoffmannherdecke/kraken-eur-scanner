@@ -52,8 +52,8 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [ ] Dauerbetrieb konfigurieren: kein unerwünschter Schlafmodus, kontrollierter Neustart, Dienste automatisch starten.
 - [ ] Automatisches Wiederanlaufen nach Stromausfall konfigurieren und praktisch testen.
 - [ ] Stabiles LAN als primärer Dauerpfad einrichten.
-- [ ] Fernbedienung zunächst einfach und zuverlässig halten; lokaler Windows-Remotezugriff reicht. Externer Fernzugriff/Tailscale nur später, falls wirklich gewünscht und nötig.
-- [ ] ChatGPT auf dem Mini-PC mit demselben Konto einrichten; iPhone bleibt bevorzugte Sprach-/Diktieroberfläche.
+- [ ] **Internen Windows-Remotezugriff sehr früh einrichten**: nach Basis-Setup/LAN möglichst schnell vom Laptop im selben Netz vollständig administrieren können.\n- [ ] Externen Fernzugriff ebenfalls beim Grundsetup vorbereiten: bevorzugt FRITZ!Box-VPN/WireGuard → internes RDP; **keine direkte RDP-Portfreigabe ins Internet**. Echten Außentest über Mobilfunk/iPhone-Hotspot durchführen.
+- [ ] ChatGPT auf dem Mini-PC mit demselben Konto einrichten; iPhone bleibt bevorzugte Sprach-/Diktieroberfläche. Work erst nach stabilem Basis-Setup und nur bei echtem Desktop-/Browser-/Dateikontext nutzen; zusätzliche Credits nicht vorsorglich kaufen.
 - [ ] Secrets/API-Schlüssel lokal und mit minimalen Rechten halten; niemals in Repo oder Logs schreiben.
 - [ ] Klare lokale Verzeichnisstruktur für Runtime, State, Logs, temporäre Daten, Archiv und Backup festlegen.
 - [ ] Externe SSD nur als Archiv/Backup verwenden, **nie als Live-Abhängigkeit**.
@@ -208,7 +208,7 @@ Erst nach stabiler Infrastruktur und validierter Strategie.
 
 ---
 
-## P9 — Dauerhafte Governance / „nicht wieder vergessen“
+## P9 — Dauerhafte Governance / „nicht wieder vergessen“\n\nKanonischer Komponenten-/Versionsindex: `docs/master-version-register.md`. Mini-PC-Runbook: `docs/minipc-preflight-runbook.md`.
 
 - [ ] Jede Entscheidung mit Strategieversion + Config-Hash/Revision nachvollziehbar machen.
 - [ ] Last-known-good Konfiguration und schneller Rollback erhalten.
