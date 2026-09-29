@@ -294,6 +294,80 @@ Potential inputs:
 
 Non-fills/cancels must be retained as censored observations, not discarded.
 
+### H10 — Smart-Money / Trader-Activity Layer
+Status: `NEW`  
+Priority: A/B
+
+Purpose:
+- Use observable behavior of demonstrably relevant traders/wallets as an additional information layer.
+- This is **not copy-trading** and must never blindly mirror another trader's orders.
+- Initial implementation is read-only / observational and remains isolated from execution.
+
+Candidate public/read-only sources:
+- Hyperliquid public trader/position/trade data as the primary candidate source.
+- Arkham public wallet/entity activity where available.
+- Nansen Smart Money only where access is economically/technically sensible; no dependency on a paid feed is assumed.
+- Binance public trader/leaderboard-style data only if stable, lawful and technically accessible.
+
+Candidate features:
+- number of independently selected high-quality traders active in the same asset/window;
+- direction/concentration and change in aggregate exposure;
+- entry/exit clustering and position build-up/reduction;
+- notional/exposure acceleration;
+- repeated accumulation/distribution by tracked wallets;
+- divergence or confirmation versus Kraken-EUR price/volume/orderflow;
+- lead time from observed trader activity to Kraken-EUR move.
+
+Trader/wallet selection must avoid simple ROI chasing and survivorship bias. Evaluate, where data permits:
+- sufficient history and sample size;
+- persistence across multiple horizons;
+- drawdown/risk profile;
+- consistency rather than one-off outliers;
+- liquidity and realistic observability;
+- stability of the public identifier/data source.
+
+Initial research design:
+1. build a watch cohort (roughly 20–30 candidate traders/wallets);
+2. observe prospectively for several weeks without affecting V2/V2R4 decisions;
+3. measure hit rate, lead time, false positives, asset coverage and incremental information;
+4. retain only a small subset if they show persistent value;
+5. only then test as a V3 state/confirmation or candidate-ranking feature.
+
+Promotion requirement:
+- measurable incremental prospective/OOS value after accounting for latency, source instability and selection bias;
+- no dependence on a single trader, wallet or platform;
+- no automatic order-following.
+
+### H11 — Prediction-Market Event Layer
+Status: `NEW`  
+Priority: A/B
+
+Purpose:
+- Use prediction markets as an independent collective-expectations / event-surprise layer.
+- Primary planned source: Polymarket public/read-only data.
+- Secondary cross-check candidate: Kalshi where accessible and useful.
+- No betting/trading integration, wallet, private key or order rights.
+
+Candidate features:
+- implied probability level;
+- probability change over 5m / 1h / event-relative windows;
+- probability-change acceleration / surprise;
+- bid/ask spread and liquidity;
+- volume and volume acceleration;
+- order-book depth / recent trade activity where available;
+- time to resolution;
+- divergence between related markets.
+
+Primary role:
+- macro/regulation/ETF/geopolitical/event state and catalyst detection;
+- not a simplistic rule that a prediction-market move directly means “buy coin X”.
+
+Possible later derived feature:
+- Prediction-Market Surprise Score, tested point-in-time and prospectively.
+
+Promotion requirement:
+- prove that the information arrives early enough and adds incremental value beyond existing news, macro, derivatives and price/orderflow inputs.
+
 ## 7. Explicitly deprioritized
 
 Do not prioritize as directional trading logic without new evidence:
@@ -365,10 +439,12 @@ These may be integrated into infrastructure without changing trading logic:
 4. Regime-dependent Stop / TTL research
 5. Orderflow / Depth / Imbalance on Mini-PC
 6. Macro Event Risk Gate
-7. Simple Price × Volume Trend
-8. Meta TAKE/NO-TAKE gate after enough labels
-9. On-Chain after timing/data preflight
-10. Fill-probability / maker-vs-taker model before live execution API
+7. Smart-Money / Trader-Activity observation (read-only; Hyperliquid-first feasibility)
+8. Prediction-Market Event Layer (Polymarket-first; Kalshi secondary)
+9. Simple Price × Volume Trend
+10. Meta TAKE/NO-TAKE gate after enough labels
+11. On-Chain after timing/data preflight
+12. Fill-probability / maker-vs-taker model before live execution API
 
 ## 11. Sources / evidence families already reviewed
 
