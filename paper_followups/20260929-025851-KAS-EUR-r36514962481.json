@@ -1,0 +1,25 @@
+{
+  "baseline_ask_eur": 0.03914,
+  "candidate_id": "20260929-025851-KAS-EUR-r36514962481",
+  "evaluated_at_utc": "2026-09-29T02:59:17.446974Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 1.277,
+      "expected_bars": 30,
+      "mae_pct": 0.077,
+      "mfe_pct": 1.277
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "REJECT",
+  "pair": "KAS/EUR",
+  "path_classification": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T03:42:46.979907Z"
+}
