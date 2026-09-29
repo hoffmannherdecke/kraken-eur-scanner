@@ -1,27 +1,27 @@
 {
-  "baseline_ask_eur": 77.05,
-  "candidate_id": "20260929-042847-HYPE-EUR-r36521681361",
-  "evaluated_at_utc": "2026-09-29T04:29:22.868111Z",
+  "baseline_ask_eur": 0.62139,
+  "candidate_id": "20260929-044323-ASTER-EUR-r36522758640",
+  "evaluated_at_utc": "2026-09-29T04:43:49.154521Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
     "30": {
       "bars": 30,
       "complete": true,
-      "end_close_pct": -0.519,
+      "end_close_pct": 0.117,
       "expected_bars": 30,
-      "mae_pct": -0.675,
-      "mfe_pct": 0.013
+      "mae_pct": -0.05,
+      "mfe_pct": 0.171
     }
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "original_decision": "WAIT",
-  "pair": "HYPE/EUR",
+  "pair": "ASTER/EUR",
   "path_classification": "WAIT_TO_REJECT",
-  "revalidated_at_utc": "2026-09-29T05:23:40.397684Z",
+  "revalidated_at_utc": "2026-09-29T05:23:23.070206Z",
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T05:05:19.036572Z"
+  "updated_at_utc": "2026-09-29T05:23:43.697865Z"
 }
