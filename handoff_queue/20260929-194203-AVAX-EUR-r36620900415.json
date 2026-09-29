@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "AVAXEUR",
+  "candidate_id": "20260929-194203-AVAX-EUR-r36620900415",
+  "event_time_utc": "2026-09-29T19:42:03Z",
+  "event_ts": 1790710923,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "AVAX/EUR",
+  "queue_id": "36620900415:AVAX-EUR:1790710923",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=AVAX/EUR | score=11.80 | price_eur=10.03 | ret15_live=0.27% | ret1h=1.63% | ret3h=2.03% | ret24h=9.83% | vol_live=1.04x | vol_closed=2.38x | rank=5 | rank_jump=13 | state_rank_jump=12 | breakout3h=1 | higher_lows=1 | base_tight=2.74% | fresh_move3h=2.87% | adx14=45.4 | spread=0.040% | turnover24h_eur=4500465 | coverage=100% | ret7d=4.11% | ret30d=56.48% | dist7d_high=-5.35% | dist30d_high=-5.35% | depth_1pct_eur=409599 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 45.42744569082341,
+    "altname": "AVAXEUR",
+    "base_tight_pct": 2.738461538461534,
+    "breakout3h": true,
+    "context30d": 56.48,
+    "context7d": 4.11,
+    "depth_eur_1pct": 409599.12,
+    "dist30d_high_pct": -5.35,
+    "dist7d_high_pct": -5.35,
+    "ema26_gt_50": true,
+    "fresh_move_3h": 2.871794871794875,
+    "higher_lows": true,
+    "late": false,
+    "pair": "AVAX/EUR",
+    "price": 10.03,
+    "rank15": 5,
+    "rank15_prev": 18,
+    "rank_jump": 13,
+    "ret15_closed": 0.09999999999998899,
+    "ret15_live": 0.26991902429269743,
+    "ret1h": 1.6313709595703774,
+    "ret24h": 9.833552343407792,
+    "ret3h": 2.0345879959308144,
+    "score": 11.8,
+    "spread_pct": 0.039884335427274265,
+    "stale": false,
+    "state_rank_jump": 12,
+    "turnover24h": 4500465.457577517,
+    "volume_ratio_closed": 2.3753547586658703,
+    "volume_ratio_live": 1.044767935132172
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-09-29T19:42:03Z",
+    "positive_1h_count": 48,
+    "positive_3h_count": 37,
+    "schema_version": 1,
+    "score_ge_5_count": 23,
+    "top_1h": [
+      {
+        "pair": "QNT/EUR",
+        "ret15_live": 0.34,
+        "ret1h": 4.148,
+        "ret3h": 8.341,
+        "score": 7.7,
+        "vol_live": 2.137
+      },
+      {
+        "pair": "PUMP/EUR",
+        "ret15_live": -1.155,
+        "ret1h": 2.736,
+        "ret3h": 2.959,
+        "score": 6.4,
+        "vol_live": 3.062
+      },
+      {
+        "pair": "FET/EUR",
+        "ret15_live": 0.499,
+        "ret1h": 2.648,
+        "ret3h": 2.439,
+        "score": 10.0,
+        "vol_live": 2.539
+      },
+      {
+        "pair": "TON/EUR",
+        "ret15_live": 0.594,
+        "ret1h": 2.112,
+        "ret3h": 0.969,
+        "score": 10.9,
+        "vol_live": 8.166
+      },
+      {
+        "pair": "VVV/EUR",
+        "ret15_live": -0.183,
+        "ret1h": 1.973,
+        "ret3h": 1.593,
+        "score": 5.5,
+        "vol_live": 0.155
+      },
+      {
+        "pair": "JUP/EUR",
+        "ret15_live": -0.292,
+        "ret1h": 1.879,
+        "ret3h": 0.253,
+        "score": 6.4,
+        "vol_live": 1.587
+      },
+      {
+        "pair": "WLD/EUR",
+        "ret15_live": 0.023,
+        "ret1h": 1.804,
+        "ret3h": -0.272,
+        "score": 7.4,
+        "vol_live": 0.069
+      },
+      {
+        "pair": "AVAX/EUR",
+        "ret15_live": 0.27,
+        "ret1h": 1.631,
+        "ret3h": 2.035,
+        "score": 11.8,
+        "vol_live": 1.045
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "RENDER/EUR",
+        "ret15_live": 0.889,
+        "ret1h": 1.612,
+        "ret3h": 0.236,
+        "score": 12.6,
+        "vol_live": 3.317
+      },
+      {
+        "pair": "AVAX/EUR",
+        "ret15_live": 0.27,
+        "ret1h": 1.631,
+        "ret3h": 2.035,
+        "score": 11.8,
+        "vol_live": 1.045
+      },
+      {
+        "pair": "TON/EUR",
+        "ret15_live": 0.594,
+        "ret1h": 2.112,
+        "ret3h": 0.969,
+        "score": 10.9,
+        "vol_live": 8.166
+      },
+      {
+        "pair": "FET/EUR",
+        "ret15_live": 0.499,
+        "ret1h": 2.648,
+        "ret3h": 2.439,
+        "score": 10.0,
+        "vol_live": 2.539
+      },
+      {
+        "pair": "QNT/EUR",
+        "ret15_live": 0.34,
+        "ret1h": 4.148,
+        "ret3h": 8.341,
+        "score": 7.7,
+        "vol_live": 2.137
+      },
+      {
+        "pair": "PEPE/EUR",
+        "ret15_live": 0.187,
+        "ret1h": 0.321,
+        "ret3h": 0.563,
+        "score": 7.5,
+        "vol_live": 8.137
+      },
+      {
+        "pair": "WLD/EUR",
+        "ret15_live": 0.023,
+        "ret1h": 1.804,
+        "ret3h": -0.272,
+        "score": 7.4,
+        "vol_live": 0.069
+      },
+      {
+        "pair": "INJ/EUR",
+        "ret15_live": 0.28,
+        "ret1h": 0.31,
+        "ret3h": 1.13,
+        "score": 6.9,
+        "vol_live": 2.698
+      }
+    ],
+    "total_rows": 60
+  },
+  "scanner_market_context": {
+    "altname": "AVAXEUR",
+    "atr15_eur": 0.06914285714285688,
+    "atr15_pct": 0.6907378335949739,
+    "closed_through_epoch": 1790709300,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 10.01,
+      "high": 10.017,
+      "low": 9.971,
+      "open": 10.0,
+      "volume": 6041.85799669
+    },
+    "pair": "AVAX/EUR",
+    "range_1h_pct": 1.4885114885114799,
+    "recent_closed_closes": [
+      9.861,
+      9.879,
+      9.963,
+      9.955,
+      9.989,
+      10.01
+    ],
+    "resistance_1h": 10.017,
+    "resistance_3h": 10.017,
+    "schema_version": 1,
+    "sensor_price_eur": 10.03,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 9.868,
+    "support_3h": 9.75,
+    "ts": 1790710923
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 36620900415,
+  "source_scanner_sha": "b9ad2edb0ba53786d2d632c067f2931e5ad93173",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T19:42:03Z",
+    "candidate_detected_ts": 1790710923,
+    "candidate_snapshot_at_utc": "2026-09-29T19:42:03Z",
+    "handoff_written_at_utc": "2026-09-29T19:42:06.591692Z",
+    "scan_step_started_at_utc": "2026-09-29T19:40:31Z"
+  }
+}
