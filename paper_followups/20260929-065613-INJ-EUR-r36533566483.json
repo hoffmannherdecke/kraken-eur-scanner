@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 10,
+        "bars": 8,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -117,7 +117,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-29T22:47:21.310120Z"
+    "updated_at_utc": "2026-09-29T22:49:46.266485Z"
   },
   "original_decision": "WAIT",
   "pair": "INJ/EUR",
