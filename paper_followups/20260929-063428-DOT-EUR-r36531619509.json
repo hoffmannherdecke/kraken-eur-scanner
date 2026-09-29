@@ -1,0 +1,27 @@
+{
+  "baseline_ask_eur": 1.0299,
+  "candidate_id": "20260929-063428-DOT-EUR-r36531619509",
+  "evaluated_at_utc": "2026-09-29T06:34:51.428075Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.097,
+      "expected_bars": 30,
+      "mae_pct": -0.311,
+      "mfe_pct": 0.563
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "DOT/EUR",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-29T07:13:55.507144Z",
+  "revalidation_decision": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T07:14:56.820094Z"
+}
