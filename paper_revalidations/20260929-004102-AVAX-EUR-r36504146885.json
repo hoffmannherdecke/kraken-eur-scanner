@@ -1,0 +1,217 @@
+{
+  "altname": "AVAXEUR",
+  "candidate_id": "20260929-004102-AVAX-EUR-r36504146885",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "FAILED_BREAKOUT_HOLD",
+      "MOMENTUM_FADED",
+      "VOLUME_CONTRACTION",
+      "MAJORS_WEAK",
+      "OPEN_INTEREST_DECLINING",
+      "COST_EDGE_UNCONFIRMED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The impulse has faded: AVAX is below the prior 9.496 resistance after retreating from 9.561, with recent candle volume contracting. No confirmed continuation or efficient entry is established after fees.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "AVAXUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 30.12,
+        "available": true,
+        "current_funding_rate": 0.00014007511955375,
+        "current_open_interest": 344161.58,
+        "funding_rate_delta": -7.5332735404587e-05,
+        "open_interest_pct": -0.0521,
+        "previous_funding_rate": 0.000215407854958337,
+        "previous_observed_at_utc": "2026-09-29T00:41:52.590022Z",
+        "previous_open_interest": 344340.94
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.00014007511955375,
+        "index_price": 10.6222,
+        "last": 10.668,
+        "mark_price": 10.62207571502,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 344161.58,
+        "requested_symbols": [
+          "PF_AVAXUSD",
+          "PI_AVAXUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_AVAXUSD",
+        "volume24h": 723785.88
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 9.348,
+      "bid": 9.344,
+      "last": 9.355,
+      "spread_pct": 0.042799058420729036
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.34297794207787113,
+          "ret3h_pct": -0.02200051653387103
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.3320811547117386,
+          "ret3h_pct": 0.18199213351759447
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.5835645269300693,
+          "ret3h_pct": 0.40579710144927894
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T01:11:58.545559Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0a76b4a6d4ab5738006abb105fe0c887d19ce85520b18638b3"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 9.348,
+    "bid": 9.344,
+    "last": 9.355,
+    "spread_pct": 0.042799058420729036
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 9.485,
+      "high": 9.496,
+      "low": 9.327,
+      "open": 9.329,
+      "trades": 170,
+      "ts": 1790640000,
+      "volume": 12474.47014671,
+      "vwap": 9.429
+    },
+    {
+      "close": 9.39,
+      "high": 9.491,
+      "low": 9.379,
+      "open": 9.491,
+      "trades": 28,
+      "ts": 1790640900,
+      "volume": 2355.26404459,
+      "vwap": 9.434
+    },
+    {
+      "close": 9.561,
+      "high": 9.581,
+      "low": 9.403,
+      "open": 9.403,
+      "trades": 84,
+      "ts": 1790641800,
+      "volume": 6554.46142364,
+      "vwap": 9.54
+    },
+    {
+      "close": 9.411,
+      "high": 9.557,
+      "low": 9.388,
+      "open": 9.557,
+      "trades": 36,
+      "ts": 1790642700,
+      "volume": 1302.67485079,
+      "vwap": 9.43
+    },
+    {
+      "close": 9.355,
+      "high": 9.421,
+      "low": 9.355,
+      "open": 9.403,
+      "trades": 23,
+      "ts": 1790643600,
+      "volume": 256.7541493,
+      "vwap": 9.406
+    }
+  ],
+  "pair": "AVAX/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-004102-AVAX-EUR-r36504146885.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T01:12:04.481580Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "992f787ce5d06970a368c368fa61cebf5f6fe00a",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T01:12:04.481580Z",
+    "revalidation_started_at_utc": "2026-09-29T01:11:58.142344Z",
+    "ttl_due_at_utc": "2026-09-29T01:11:52.590022Z",
+    "ttl_lag_seconds": 5.552
+  }
+}
