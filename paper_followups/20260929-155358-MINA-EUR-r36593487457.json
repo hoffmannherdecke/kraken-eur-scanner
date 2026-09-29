@@ -1,27 +1,27 @@
 {
-  "baseline_ask_eur": 1.36,
-  "candidate_id": "20260929-153637-TON-EUR-r36591290589",
-  "evaluated_at_utc": "2026-09-29T15:37:04.769061Z",
+  "baseline_ask_eur": 0.1315,
+  "candidate_id": "20260929-155358-MINA-EUR-r36593487457",
+  "evaluated_at_utc": "2026-09-29T15:54:42.330516Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
     "30": {
       "bars": 30,
       "complete": true,
-      "end_close_pct": -0.515,
+      "end_close_pct": 1.369,
       "expected_bars": 30,
-      "mae_pct": -0.515,
-      "mfe_pct": 0.588
+      "mae_pct": -0.228,
+      "mfe_pct": 1.597
     }
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "original_decision": "WAIT",
-  "pair": "TON/EUR",
+  "pair": "MINA/EUR",
   "path_classification": "WAIT_TO_REJECT",
-  "revalidated_at_utc": "2026-09-29T16:28:11.900588Z",
+  "revalidated_at_utc": "2026-09-29T16:28:21.849475Z",
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T16:13:12.403474Z"
+  "updated_at_utc": "2026-09-29T16:28:25.717108Z"
 }
