@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-09-29T15:54:00Z",
         "trough_at_utc": "2026-09-29T16:00:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -0.14,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -1.256,
+        "mfe_pct": 0.339,
+        "peak_at_utc": "2026-09-29T19:33:00Z",
+        "trough_at_utc": "2026-09-29T17:50:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -88,7 +99,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-29T19:44:22.112256Z"
+    "updated_at_utc": "2026-09-29T19:56:10.846604Z"
   },
   "original_decision": "REJECT",
   "pair": "BCH/EUR",
