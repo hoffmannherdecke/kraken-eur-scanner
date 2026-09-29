@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "POLEUR",
+  "candidate_id": "20260929-111833-POL-EUR-r36560555517",
+  "event_time_utc": "2026-09-29T11:18:33Z",
+  "event_ts": 1790680713,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "POL/EUR",
+  "queue_id": "36560555517:POL-EUR:1790680713",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=POL/EUR | score=10.30 | price_eur=0.10252 | ret15_live=0.27% | ret1h=0.51% | ret3h=0.22% | ret24h=1.64% | vol_live=148.46x | vol_closed=0.32x | rank=4 | rank_jump=15 | state_rank_jump=41 | breakout3h=0 | higher_lows=1 | base_tight=1.42% | fresh_move3h=1.00% | adx14=43.7 | spread=0.137% | turnover24h_eur=258258 | coverage=100% | ret7d=8.41% | ret30d=13.63% | dist7d_high=-6.74% | dist30d_high=-6.74% | depth_1pct_eur=104133 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 43.67147974825876,
+    "altname": "POLEUR",
+    "base_tight_pct": 1.418719211822661,
+    "breakout3h": false,
+    "context30d": 13.63,
+    "context7d": 8.41,
+    "depth_eur_1pct": 104133.43,
+    "dist30d_high_pct": -6.74,
+    "dist7d_high_pct": -6.74,
+    "ema26_gt_50": true,
+    "fresh_move_3h": 1.004926108374371,
+    "higher_lows": true,
+    "late": false,
+    "pair": "POL/EUR",
+    "price": 0.10252,
+    "rank15": 4,
+    "rank15_prev": 19,
+    "rank_jump": 15,
+    "ret15_closed": 0.029408881482217986,
+    "ret15_live": 0.27386541471048353,
+    "ret1h": 0.5098039215686301,
+    "ret24h": 1.6357688113413316,
+    "ret3h": 0.21505376344086446,
+    "score": 10.3,
+    "spread_pct": 0.13699970642920173,
+    "stale": false,
+    "state_rank_jump": 41,
+    "turnover24h": 258257.55752944815,
+    "volume_ratio_closed": 0.31584698965312824,
+    "volume_ratio_live": 148.4606731843122
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-09-29T11:18:33Z",
+    "positive_1h_count": 12,
+    "positive_3h_count": 31,
+    "schema_version": 1,
+    "score_ge_5_count": 17,
+    "top_1h": [
+      {
+        "pair": "NIGHT/EUR",
+        "ret15_live": 1.296,
+        "ret1h": 4.469,
+        "ret3h": 7.592,
+        "score": 8.0,
+        "vol_live": 0.445
+      },
+      {
+        "pair": "PUMP/EUR",
+        "ret15_live": 0.155,
+        "ret1h": 2.105,
+        "ret3h": 2.267,
+        "score": 6.3,
+        "vol_live": 0.411
+      },
+      {
+        "pair": "XDC/EUR",
+        "ret15_live": -0.986,
+        "ret1h": 0.974,
+        "ret3h": 4.149,
+        "score": 6.4,
+        "vol_live": 18.449
+      },
+      {
+        "pair": "ICP/EUR",
+        "ret15_live": 0.306,
+        "ret1h": 0.959,
+        "ret3h": -0.875,
+        "score": 8.0,
+        "vol_live": 1.839
+      },
+      {
+        "pair": "ASTER/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.598,
+        "ret3h": 0.984,
+        "score": 7.1,
+        "vol_live": 1.636
+      },
+      {
+        "pair": "POL/EUR",
+        "ret15_live": 0.274,
+        "ret1h": 0.51,
+        "ret3h": 0.215,
+        "score": 10.3,
+        "vol_live": 148.461
+      },
+      {
+        "pair": "TAO/EUR",
+        "ret15_live": -0.002,
+        "ret1h": 0.398,
+        "ret3h": 0.242,
+        "score": 5.9,
+        "vol_live": 0.181
+      },
+      {
+        "pair": "ARB/EUR",
+        "ret15_live": -0.377,
+        "ret1h": 0.325,
+        "ret3h": 2.547,
+        "score": 5.1,
+        "vol_live": 5.674
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "POL/EUR",
+        "ret15_live": 0.274,
+        "ret1h": 0.51,
+        "ret3h": 0.215,
+        "score": 10.3,
+        "vol_live": 148.461
+      },
+      {
+        "pair": "ZRO/EUR",
+        "ret15_live": 0.655,
+        "ret1h": -0.36,
+        "ret3h": 0.363,
+        "score": 9.4,
+        "vol_live": 5.086
+      },
+      {
+        "pair": "ICP/EUR",
+        "ret15_live": 0.306,
+        "ret1h": 0.959,
+        "ret3h": -0.875,
+        "score": 8.0,
+        "vol_live": 1.839
+      },
+      {
+        "pair": "NIGHT/EUR",
+        "ret15_live": 1.296,
+        "ret1h": 4.469,
+        "ret3h": 7.592,
+        "score": 8.0,
+        "vol_live": 0.445
+      },
+      {
+        "pair": "WLD/EUR",
+        "ret15_live": 0.0,
+        "ret1h": -0.046,
+        "ret3h": -0.858,
+        "score": 7.8,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "ASTER/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.598,
+        "ret3h": 0.984,
+        "score": 7.1,
+        "vol_live": 1.636
+      },
+      {
+        "pair": "HBAR/EUR",
+        "ret15_live": 0.067,
+        "ret1h": -0.202,
+        "ret3h": 0.483,
+        "score": 7.0,
+        "vol_live": 16.21
+      },
+      {
+        "pair": "SHIB/EUR",
+        "ret15_live": 0.0,
+        "ret1h": -0.371,
+        "ret3h": 0.513,
+        "score": 6.9,
+        "vol_live": 2.861
+      }
+    ],
+    "total_rows": 61
+  },
+  "scanner_market_context": {
+    "altname": "POLEUR",
+    "atr15_eur": 0.00039214285714285875,
+    "atr15_pct": 0.38430307442459694,
+    "closed_through_epoch": 1790679600,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.10204,
+      "high": 0.10204,
+      "low": 0.10201,
+      "open": 0.10201,
+      "volume": 1021.62367
+    },
+    "pair": "POL/EUR",
+    "range_1h_pct": 0.5292042336338679,
+    "recent_closed_closes": [
+      0.10267,
+      0.10271,
+      0.1019,
+      0.10153,
+      0.10162,
+      0.10204
+    ],
+    "resistance_1h": 0.10204,
+    "resistance_3h": 0.10294,
+    "schema_version": 1,
+    "sensor_price_eur": 0.10252,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.1015,
+    "support_3h": 0.1015,
+    "ts": 1790680713
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 36560555517,
+  "source_scanner_sha": "f330ad9fe786ec05c9cc437d9338a95d42f2aace",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T11:18:33Z",
+    "candidate_detected_ts": 1790680713,
+    "candidate_snapshot_at_utc": "2026-09-29T11:18:33Z",
+    "handoff_written_at_utc": "2026-09-29T11:18:35.137968Z",
+    "scan_step_started_at_utc": "2026-09-29T11:15:03Z"
+  }
+}
