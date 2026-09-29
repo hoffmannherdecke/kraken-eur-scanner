@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from v2r4_trigger_contract import validate_plan
+try:\n    from .v2r4_trigger_contract import validate_plan\nexcept ImportError:  # direct script execution\n    from v2r4_trigger_contract import validate_plan
 
 
 def _dt(value: str | datetime) -> datetime:
