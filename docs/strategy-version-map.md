@@ -115,9 +115,9 @@ erreicht. V2R3 bleibt jedoch unverändert als historische/prospektive Vergleichs
 **Kanonische Detailquellen:** `docs/v3-research-framework.md` und GitHub Issue #7  
 **Angelegt:** 2026-09-28 nach Literatur-/Methodik-Auswertung, u. a. Stefan Jansen.
 
-V3 ist die **größere nächste Strategiegeneration**. Sie entsteht nicht aus einem
-einzelnen Timing-Fix, sondern aus nachgewiesenen Verbesserungen über Research,
-historische Tests und prospektive Shadow/Paper-Evidenz.
+V3 ist die **größere nächste Strategiegeneration und der langfristige Nachfolger der V2-Linie**. Sie startet nicht bei null. Der jeweils letzte belastbare Stand aus V2/V2R4 wird als Ausgangsbasis übernommen und mit neuen, nachgewiesenen Verbesserungen aus Research, historischen Tests und prospektiver Shadow/Paper-Evidenz erweitert.
+
+Grundprinzip: **inherit first, replace only with stronger evidence**. Bewährte V2-Bausteine werden standardmäßig weitergeführt. Ein bestehender Baustein wird in V3 nur verändert oder verworfen, wenn eine versionierte Alternative unter realistischen Kosten und sauberer OOS/prospektiver Prüfung einen klaren zusätzlichen Nutzen oder eine relevante Risikoverbesserung zeigt.
 
 Nicht verhandelbare Methodik:
 - feste, versionierte Spezifikation;
@@ -172,7 +172,7 @@ V2R4 und V3 laufen nicht gegeneinander.
 > Welche Signale, States, Stops, Exits, Kostenmodelle und Sizing-Regeln erzeugen
 > nach sauberer Validierung tatsächlich robusten Netto-Mehrwert?
 
-Erkenntnisse aus V2R4 fließen als Evidenz in V3 ein:
+Erkenntnisse aus V2R4 fließen nicht nur als lose Evidenz in V3 ein, sondern erfolgreiche und weiterhin passende V2R4-Bausteine werden **als vererbte Baseline-Komponenten** in den V3-Kandidaten übernommen. Dazu gehören:
 - tatsächliche Triggerlatenz;
 - WAIT→Trigger→BUY-Konversion;
 - MFE/MAE;
@@ -181,7 +181,7 @@ Erkenntnisse aus V2R4 fließen als Evidenz in V3 ein:
 - Performance je Setup- und Größenklasse;
 - Mini-PC-/Altrady-/Kraken-Latenz und Feed-Qualität.
 
-V2R4 darf daher taktisch vor V3 starten, ohne V3 zu ersetzen.
+V2R4 darf daher taktisch vor V3 starten, ohne V3 zu ersetzen. Sobald ein V3-Kandidat gebaut wird, basiert er auf dem **besten bis dahin validierten V2/V2R4-Gesamtstand**, nicht auf einer leeren Forschungsarchitektur.
 
 ---
 
@@ -282,3 +282,42 @@ Wenn künftig unklar ist, welche Version gemeint ist:
 - **„neue Strategie aus Literatur, Backtests und Research“ = V3**
 
 Diese Begriffe sollen künftig nicht mehr vermischt werden.
+
+
+## 9. V3 Inheritance Policy — bewährte V2-Erkenntnisse vollständig überführen
+
+Für die spätere V3-Konstruktion gilt verbindlich:
+
+1. **Best-known V2 baseline**
+   - Ausgangspunkt von V3 ist der letzte belastbare, dokumentierte Gesamtstand aus V2/V2R4.
+   - Bewährte Entry-, Filter-, Kosten-, Risk-, Trigger-, Logging- und Recovery-Erkenntnisse werden nicht neu erfunden.
+
+2. **Erkenntnisgewichtung**
+   - Bereits prospektiv oder historisch belastbar bestätigte V2-Erkenntnisse erhalten höheres Anfangsvertrauen als neue, noch ungetestete V3-Hypothesen.
+   - Reine Altlasten oder nur intuitive V2-Regeln erhalten keinen automatischen Schutz.
+
+3. **Replace-by-evidence**
+   - Ein V2-Baustein bleibt Default, bis eine neue Alternative ihn in sauberer Prüfung robust schlägt oder das Risiko materiell verbessert.
+   - Ein neues Feature darf eine alte Regel ergänzen, bevor es sie ersetzt.
+
+4. **V3 = Integration, nicht Parallelwelt**
+   - V3 besteht am Ende aus dem besten Mix aus:
+     - validierten V2/V2R4-Erkenntnissen,
+     - neuen V3-Forschungsbausteinen,
+     - Mini-PC-/Realtime-Erkenntnissen,
+     - historischen Kraken-Tests,
+     - prospektiven Shadow/Paper-Ergebnissen.
+   - Ziel ist eine **einheitliche neue Strategie**, keine Sammlung unabhängiger Experimente.
+
+5. **Migration Ledger**
+   - Für jeden relevanten V2/V2R4-Baustein wird dokumentiert:
+     - übernommen,
+     - modifiziert,
+     - ersetzt,
+     - verworfen,
+     - noch offen.
+   - Jede Abweichung vom geerbten Stand braucht einen nachvollziehbaren Evidenzgrund.
+
+6. **Keine Wissenslücke beim Versionswechsel**
+   - Beim späteren V3-Release muss ein expliziter V2/V2R4→V3-Diff existieren.
+   - Keine zuvor gewonnene relevante Erkenntnis darf allein deshalb verloren gehen, weil sie aus einem älteren Chat, Test oder Versionszweig stammt.
