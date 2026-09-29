@@ -1,0 +1,25 @@
+{
+  "baseline_ask_eur": 270.71,
+  "candidate_id": "20260929-164832-BCH-EUR-r36600154032",
+  "evaluated_at_utc": "2026-09-29T16:48:58.087642Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.007,
+      "expected_bars": 30,
+      "mae_pct": -0.262,
+      "mfe_pct": 0.166
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "BCH/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T17:23:34.667566Z"
+}

@@ -1,27 +1,27 @@
 {
-  "baseline_ask_eur": 0.11498,
-  "candidate_id": "20260929-163331-ALGO-EUR-r36598104091",
-  "evaluated_at_utc": "2026-09-29T16:33:58.358265Z",
+  "baseline_ask_eur": 23.707,
+  "candidate_id": "20260929-164832-VVV-EUR-r36600154032",
+  "evaluated_at_utc": "2026-09-29T16:49:12.867915Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
     "30": {
       "bars": 30,
       "complete": true,
-      "end_close_pct": -2.322,
+      "end_close_pct": -0.333,
       "expected_bars": 30,
-      "mae_pct": -2.983,
-      "mfe_pct": 0.287
+      "mae_pct": -0.713,
+      "mfe_pct": 0.224
     }
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "original_decision": "WAIT",
-  "pair": "ALGO/EUR",
+  "pair": "VVV/EUR",
   "path_classification": "WAIT_TO_REJECT",
-  "revalidated_at_utc": "2026-09-29T17:23:18.916726Z",
+  "revalidated_at_utc": "2026-09-29T17:23:25.294590Z",
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T17:05:23.625728Z"
+  "updated_at_utc": "2026-09-29T17:23:35.293938Z"
 }
