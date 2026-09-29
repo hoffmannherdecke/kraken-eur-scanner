@@ -3,7 +3,16 @@
   "candidate_id": "20260929-204308-BCH-EUR-r36628118060",
   "evaluated_at_utc": "2026-09-29T20:43:40.316713Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.195,
+      "expected_bars": 30,
+      "mae_pct": -0.242,
+      "mfe_pct": 0.073
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -52,12 +61,15 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-29T21:11:54.890365Z"
+    "updated_at_utc": "2026-09-29T21:24:03.620832Z"
   },
   "original_decision": "WAIT",
   "pair": "BCH/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-29T21:23:13.794037Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T21:24:03.823118Z"
 }

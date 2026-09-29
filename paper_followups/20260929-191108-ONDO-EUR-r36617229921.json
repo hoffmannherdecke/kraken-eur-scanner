@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-09-29T19:11:45.392681Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": -1.304,
+      "expected_bars": 120,
+      "mae_pct": -1.735,
+      "mfe_pct": 0.161
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -81,7 +89,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-09-29T21:11:54.878781Z"
+    "updated_at_utc": "2026-09-29T21:24:01.342249Z"
   },
   "original_decision": "WAIT",
   "pair": "ONDO/EUR",
@@ -91,5 +99,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T20:16:42.699959Z"
+  "updated_at_utc": "2026-09-29T21:24:01.518857Z"
 }
