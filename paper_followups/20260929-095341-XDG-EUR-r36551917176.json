@@ -80,6 +80,17 @@
         "mfe_pct": 0.056,
         "peak_at_utc": "2026-09-29T09:54:00Z",
         "trough_at_utc": "2026-09-29T10:49:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -1.662,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -2.784,
+        "mfe_pct": 0.588,
+        "peak_at_utc": "2026-09-29T13:15:00Z",
+        "trough_at_utc": "2026-09-29T17:50:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -107,7 +118,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-29T21:54:36.447709Z"
+    "updated_at_utc": "2026-09-29T22:05:15.838718Z"
   },
   "original_decision": "WAIT",
   "pair": "XDG/EUR",

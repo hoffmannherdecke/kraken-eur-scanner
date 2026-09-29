@@ -20,6 +20,14 @@
       "mae_pct": -0.228,
       "mfe_pct": 1.597
     },
+    "360": {
+      "bars": 360,
+      "complete": true,
+      "end_close_pct": -3.194,
+      "expected_bars": 360,
+      "mae_pct": -3.498,
+      "mfe_pct": 1.597
+    },
     "60": {
       "bars": 60,
       "complete": true,
@@ -99,7 +107,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-29T21:54:36.496226Z"
+    "updated_at_utc": "2026-09-29T22:05:16.274398Z"
   },
   "original_decision": "WAIT",
   "pair": "MINA/EUR",
@@ -108,6 +116,12 @@
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "six_hour_flags": {
+    "missed_10pct": false,
+    "missed_15pct": false,
+    "missed_5pct": false,
+    "missed_8pct": false
+  },
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T18:04:03.976310Z"
+  "updated_at_utc": "2026-09-29T22:05:16.451770Z"
 }
