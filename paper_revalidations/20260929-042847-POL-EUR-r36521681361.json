@@ -1,0 +1,217 @@
+{
+  "altname": "POLEUR",
+  "candidate_id": "20260929-042847-POL-EUR-r36521681361",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Renewed volume-backed 15-minute close above 0.10176."
+    ],
+    "reason_codes": [
+      "retest_holds_above_breakout_area",
+      "no_renewed_breakout_confirmation",
+      "remaining_move_unsubstantiated_vs_1_20pct_fees",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The retest appears to hold above the breakout area, but price has not made a renewed volume-backed close above 0.10176. With no substantiated remaining move sufficient to cover Kraken spot costs, a scout and confirmation plan are not justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "POLUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 35.44,
+        "available": true,
+        "current_funding_rate": -3.544390062e-06,
+        "current_open_interest": 9990941.0,
+        "funding_rate_delta": -6.800557661208e-06,
+        "open_interest_pct": -0.3079,
+        "previous_funding_rate": 3.256167599208e-06,
+        "previous_observed_at_utc": "2026-09-29T04:29:34.712846Z",
+        "previous_open_interest": 10021797.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -3.544390062e-06,
+        "index_price": 0.11476,
+        "last": 0.11485,
+        "mark_price": 0.11466716848,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 9990941.0,
+        "requested_symbols": [
+          "PF_POLUSD",
+          "PI_POLUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_POLUSD",
+        "volume24h": 5973569
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.10107,
+      "bid": 0.10092,
+      "last": 0.10112,
+      "spread_pct": 0.14852220406950578
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "50",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.17881231410772358,
+          "ret3h_pct": 0.21706550971389849
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.12409752103474947,
+          "ret3h_pct": 0.15826767286797327
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.13501784164335895,
+          "ret3h_pct": 0.4754511934795147
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T05:05:00.418107Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_030204ebb93631cc006abb46fd6f8887d284f86b88c5ae6667"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.10107,
+    "bid": 0.10092,
+    "last": 0.10112,
+    "spread_pct": 0.14852220406950578
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.10085,
+      "high": 0.10086,
+      "low": 0.10009,
+      "open": 0.10053,
+      "trades": 28,
+      "ts": 1790654400,
+      "volume": 54854.58507,
+      "vwap": 0.10029
+    },
+    {
+      "close": 0.10147,
+      "high": 0.10176,
+      "low": 0.101,
+      "open": 0.10112,
+      "trades": 12,
+      "ts": 1790655300,
+      "volume": 51551.49229,
+      "vwap": 0.10152
+    },
+    {
+      "close": 0.10103,
+      "high": 0.10141,
+      "low": 0.10103,
+      "open": 0.10141,
+      "trades": 6,
+      "ts": 1790656200,
+      "volume": 2991.58538,
+      "vwap": 0.10121
+    },
+    {
+      "close": 0.10104,
+      "high": 0.10122,
+      "low": 0.10104,
+      "open": 0.10122,
+      "trades": 4,
+      "ts": 1790657100,
+      "volume": 5545.74035,
+      "vwap": 0.10116
+    },
+    {
+      "close": 0.10112,
+      "high": 0.10128,
+      "low": 0.10102,
+      "open": 0.10102,
+      "trades": 11,
+      "ts": 1790658000,
+      "volume": 26427.44877,
+      "vwap": 0.10112
+    }
+  ],
+  "pair": "POL/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-042847-POL-EUR-r36521681361.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T05:05:09.711941Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "e9344615ecaa579c86b943a2624ee8a03a384225",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T05:05:09.711941Z",
+    "revalidation_started_at_utc": "2026-09-29T05:05:00.175190Z",
+    "ttl_due_at_utc": "2026-09-29T04:59:34.712846Z",
+    "ttl_lag_seconds": 325.462
+  }
+}

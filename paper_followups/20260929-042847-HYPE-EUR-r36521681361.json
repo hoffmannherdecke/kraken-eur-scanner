@@ -1,0 +1,25 @@
+{
+  "baseline_ask_eur": 77.05,
+  "candidate_id": "20260929-042847-HYPE-EUR-r36521681361",
+  "evaluated_at_utc": "2026-09-29T04:29:22.868111Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.519,
+      "expected_bars": 30,
+      "mae_pct": -0.675,
+      "mfe_pct": 0.013
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "HYPE/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T05:05:19.036572Z"
+}
