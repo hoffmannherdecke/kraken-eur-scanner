@@ -1,0 +1,171 @@
+{
+  "altname": "ADAEUR",
+  "candidate_age_seconds": 15,
+  "candidate_event_time_utc": "2026-09-29T00:41:02Z",
+  "candidate_id": "20260929-004102-ADA-EUR-r36504146885",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close and hold above 0.218558 resistance",
+      "Renewed volume-backed continuation above 0.219907"
+    ],
+    "reason_codes": [
+      "breakout_not_closed_confirmed",
+      "strong_closed_volume",
+      "fresh_move_chase_risk",
+      "cost_adjusted_edge_unproven",
+      "major_market_context_mixed"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Promising breakout attempt with strong closed volume, but the latest closed candle remains below resistance and the current move has not yet confirmed above it. Wait for a close-and-hold and renewed continuation; cost-adjusted remaining edge is unproven.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ADAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "available": false,
+        "reason": "no prior same-pair observation in active series"
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 4.604366450175e-06,
+        "index_price": 0.249521,
+        "last": 0.24954,
+        "mark_price": 0.24961255389,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 19770470.0,
+        "requested_symbols": [
+          "PF_ADAUSD",
+          "PI_ADAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ADAUSD",
+        "volume24h": 37102484
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.219568,
+      "bid": 0.219567,
+      "last": 0.219519,
+      "spread_pct": 0.00045544080977421523
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "20",
+      "pair_decimals": 6,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.01769109443914285,
+          "ret3h_pct": 0.12442251870425913
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.02621065759157437,
+          "ret3h_pct": 0.30028628989502426
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.08607498087223053,
+          "ret3h_pct": 0.394003459542569
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T00:41:17.089108Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-29T00:41:29.813175Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_041787097e487d3e006abb092ed32487d0a680ddad056fcabb"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.219568,
+    "bid": 0.219567,
+    "last": 0.219519,
+    "spread_pct": 0.00045544080977421523
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ADA/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36504146885:ADA-EUR:1790642462",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "86572955fb4015e3e8305ad99acc8467f1ac6dce",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T00:41:02Z",
+    "candidate_detected_ts": 1790642462,
+    "candidate_snapshot_at_utc": "2026-09-29T00:41:02Z",
+    "detected_to_evaluation_complete_seconds": 27.813,
+    "detected_to_evaluation_start_seconds": 14.877,
+    "evaluation_completed_at_utc": "2026-09-29T00:41:29.813175Z",
+    "evaluation_runtime_seconds": 12.936,
+    "evaluation_started_at_utc": "2026-09-29T00:41:16.876753Z",
+    "handoff_to_evaluation_start_seconds": 12.088,
+    "handoff_written_at_utc": "2026-09-29T00:41:04.788629Z",
+    "scan_step_started_at_utc": "2026-09-29T00:39:26Z"
+  }
+}
