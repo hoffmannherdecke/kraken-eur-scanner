@@ -1,0 +1,25 @@
+{
+  "baseline_ask_eur": 0.02573,
+  "candidate_id": "20260929-095341-MON-EUR-r36551917176",
+  "evaluated_at_utc": "2026-09-29T09:54:27.806198Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -1.166,
+      "expected_bars": 30,
+      "mae_pct": -1.166,
+      "mfe_pct": 0.389
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "MON/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T10:38:26.763399Z"
+}
