@@ -88,7 +88,7 @@ Stand 2026-09-29:
 - Migrationen:
   - `20260928165535_create_paper_archive_tables`
   - `20260928173804_allow_unverified_paper_trade_status`
-- RLS ist auf allen drei Tabellen aktiviert; aktuell existieren keine RLS-Policies. Das ist bis zur bewusst definierten Zugriffsschicht fail-closed und wird nicht vorschnell geöffnet.
+- RLS ist auf allen drei Tabellen aktiviert; aktuell existieren keine RLS-Policies. Das ist bis zur bewusst definierten Zugriffsschicht fail-closed und wird nicht vorschnell geöffnet.\n- **Aktuelle Integrationslücke:** Die vorhandenen `paper_candidate_outcomes`-Zeilen gehören derzeit zu `PAPER-V2R2-20260928T1640Z`; für die aktive V2R3-Serie ist noch kein Outcome dort archiviert. Das ist als Sync-/Persistenzpunkt beim Mini-PC/Supabase-Setup zu prüfen, nicht als Strategieergebnis zu interpretieren.
 - Supabase bleibt sekundäre State-/Ergebnis-/Research-Schicht; kein Single Point of Failure und keine zweite Rohdatenkopie.
 
 ## V3 Migration Ledger — Pflichtstatus
