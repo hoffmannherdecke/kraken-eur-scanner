@@ -20,6 +20,14 @@
       "mae_pct": -0.529,
       "mfe_pct": 0.937
     },
+    "360": {
+      "bars": 360,
+      "complete": true,
+      "end_close_pct": -1.982,
+      "expected_bars": 360,
+      "mae_pct": -2.995,
+      "mfe_pct": 2.376
+    },
     "60": {
       "bars": 60,
       "complete": true,
@@ -36,6 +44,12 @@
   "path_classification": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "six_hour_flags": {
+    "missed_10pct": false,
+    "missed_15pct": false,
+    "missed_5pct": false,
+    "missed_8pct": false
+  },
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-28T21:42:04.870904Z"
+  "updated_at_utc": "2026-09-29T01:41:34.862673Z"
 }
