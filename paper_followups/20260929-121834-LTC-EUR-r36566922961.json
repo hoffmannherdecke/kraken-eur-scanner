@@ -1,27 +1,27 @@
 {
-  "baseline_ask_eur": 0.008788,
-  "candidate_id": "20260929-120334-PENGU-EUR-r36565057571",
-  "evaluated_at_utc": "2026-09-29T12:04:39.935956Z",
+  "baseline_ask_eur": 60.82,
+  "candidate_id": "20260929-121834-LTC-EUR-r36566922961",
+  "evaluated_at_utc": "2026-09-29T12:19:39.634902Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
     "30": {
       "bars": 30,
       "complete": true,
-      "end_close_pct": 0.626,
+      "end_close_pct": -0.493,
       "expected_bars": 30,
-      "mae_pct": -0.637,
-      "mfe_pct": 0.626
+      "mae_pct": -0.773,
+      "mfe_pct": 0.082
     }
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "original_decision": "WAIT",
-  "pair": "PENGU/EUR",
+  "pair": "LTC/EUR",
   "path_classification": "WAIT_TO_REJECT",
-  "revalidated_at_utc": "2026-09-29T12:55:13.392507Z",
+  "revalidated_at_utc": "2026-09-29T12:55:03.302850Z",
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T12:44:08.605234Z"
+  "updated_at_utc": "2026-09-29T12:55:45.643603Z"
 }
