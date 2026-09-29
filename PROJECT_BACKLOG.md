@@ -1,7 +1,7 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
 Status: **KANONISCHER MASTER-BACKLOG**  
-Letzte Vollsicht: 2026-09-28  
+Letzte Vollsicht: 2026-09-29  
 Aktive Vergleichsbasis: `V2R3-2026-09-28` / `PAPER-V2R3-FINAL-20260928T1752Z`
 
 ## Zweck und Pflege-Regeln
@@ -21,6 +21,7 @@ Ab jetzt gilt:
 - Kein einzelner Dienst darf alleiniger Trigger oder Single Point of Failure sein.
 
 Kanonische Detailquellen:
+- Strategie-Versionen / Routing V2R3 ↔ V2R4 ↔ V3: `docs/strategy-version-map.md`
 - V3 Research / Promotion: `docs/v3-research-framework.md`
 - V3 Research-Chronik: GitHub Issue #7
 - Action-Push / Slack-E2E: GitHub Issue #1
@@ -91,6 +92,8 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [ ] Detektionslatenz Kraken-native vs. Scanner vs. Altrady messen.
 - [ ] Nach stabiler Basis den Takt anhand realer Messungen verkürzen; Ziel grob ~7–8 Minuten, wo ein periodischer Takt nötig ist, ergänzt durch schnellere eventbasierte Trigger.
 - [ ] Evaluator/KI nur bei echten Kandidaten oder klaren Analyseblockern aufrufen; kein dauerndes KI-Polling.
+- [ ] V2R4-Fast-Trigger-Pfad aus Draft-PR #8 nach stabiler Mini-PC-Basis mit genau einem Paper-End-to-End-Smoke-Test prüfen.
+- [ ] Bei bestandenem Smoke-Test eine **separate V2R4-Paper-Serie** starten; dafür nicht künstlich auf 20 V2R3-Trades warten. V2R3-Artefakte bleiben unverändert als Vergleichsbasis.
 - [ ] Datenfrische und Entscheidungstimestamp in jedem Kandidaten nachvollziehbar halten.
 
 **Abschlusskriterium P3:** derselbe relevante Move kann über mehr als einen unabhängigen Pfad erkannt werden und Timing ist messbar.
@@ -138,7 +141,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 ## P6 — V3 aus Evidenz bauen, nicht aus Bauchgefühl
 
-Detailregeln bleiben in `docs/v3-research-framework.md` und Issue #7.
+Detailregeln bleiben in `docs/v3-research-framework.md` und Issue #7. Die Abgrenzung zu V2R4 ist verbindlich in `docs/strategy-version-map.md` festgelegt.
 
 - [ ] V2R3-Abschlussbefunde in die V3-Hypothesen übernehmen.
 - [ ] Literaturbefunde nur als Hypothesenquelle nutzen; nichts allein wegen Publikation übernehmen.
@@ -230,4 +233,4 @@ Diese Punkte gehören nicht in die Trading-Laufzeit und dürfen den Kernaufbau n
 
 ## Reihenfolge in einem Satz
 
-**V2R3 sauber messen → Mini-PC stabil → Watchdog/Recovery → Kraken/Altrady-Realtime → schlanke Integrationen → Historik/Backtests → V3 Shadow/Paper → Smart-Money-Forschung → Self-hosted/Trading-API zuletzt.**
+**V2R3 sauber messen → Mini-PC stabil → Watchdog/Recovery → Kraken/Altrady-Realtime → V2R4-Fast-Trigger Paper → schlanke Integrationen + Historik/Backtests → V3 Research/Shadow/Paper → Smart-Money-Forschung → Self-hosted/Trading-API zuletzt.**
