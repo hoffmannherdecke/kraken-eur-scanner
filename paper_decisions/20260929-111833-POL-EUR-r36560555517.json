@@ -1,0 +1,175 @@
+{
+  "altname": "POLEUR",
+  "candidate_age_seconds": 21,
+  "candidate_event_time_utc": "2026-09-29T11:18:33Z",
+  "candidate_id": "20260929-111833-POL-EUR-r36560555517",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "weak_multi_period_continuity",
+      "no_3h_breakout",
+      "closed_volume_below_baseline",
+      "weak_major_market_regime",
+      "insufficient_remaining_move_after_costs"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Tradable, but weak short-term follow-through and no breakout leave insufficient plausible upside after Kraken spot costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "POLUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 373.78,
+        "available": true,
+        "current_funding_rate": -5.301383497667e-06,
+        "current_open_interest": 10051317.0,
+        "funding_rate_delta": -1.7569934356669998e-06,
+        "open_interest_pct": 0.6043,
+        "previous_funding_rate": -3.544390062e-06,
+        "previous_observed_at_utc": "2026-09-29T05:05:09.711941Z",
+        "previous_open_interest": 9990941.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -5.301383497667e-06,
+        "index_price": 0.11599,
+        "last": 0.1159,
+        "mark_price": 0.11596648039,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 10051317.0,
+        "requested_symbols": [
+          "PF_POLUSD",
+          "PI_POLUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_POLUSD",
+        "volume24h": 3674767
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.1023,
+      "bid": 0.1022,
+      "last": 0.10252,
+      "spread_pct": 0.09779951100244778
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "50",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.30486778514361434,
+          "ret3h_pct": -0.006888131344495729
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.07389532747736904,
+          "ret3h_pct": 0.020894187654874052
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.5862884160756532,
+          "ret3h_pct": -0.06653992395437847
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T11:18:54.997668Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-29T11:19:05.116521Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_09f032e238b2a6e6006abb9ea06cd087d1a2d8197818caa122"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.1023,
+    "bid": 0.1022,
+    "last": 0.10252,
+    "spread_pct": 0.09779951100244778
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "POL/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36560555517:POL-EUR:1790680713",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "0467ef8613c341b31d06dd7b8caa7867d59e291d",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T11:18:33Z",
+    "candidate_detected_ts": 1790680713,
+    "candidate_snapshot_at_utc": "2026-09-29T11:18:33Z",
+    "detected_to_evaluation_complete_seconds": 32.117,
+    "detected_to_evaluation_start_seconds": 21.822,
+    "evaluation_completed_at_utc": "2026-09-29T11:19:05.116521Z",
+    "evaluation_runtime_seconds": 10.295,
+    "evaluation_started_at_utc": "2026-09-29T11:18:54.821908Z",
+    "handoff_to_evaluation_start_seconds": 19.684,
+    "handoff_written_at_utc": "2026-09-29T11:18:35.137968Z",
+    "scan_step_started_at_utc": "2026-09-29T11:15:03Z"
+  }
+}
