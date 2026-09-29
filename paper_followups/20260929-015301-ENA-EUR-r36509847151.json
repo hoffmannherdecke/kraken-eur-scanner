@@ -1,0 +1,25 @@
+{
+  "baseline_ask_eur": 0.2213,
+  "candidate_id": "20260929-015301-ENA-EUR-r36509847151",
+  "evaluated_at_utc": "2026-09-29T01:53:23.685401Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.678,
+      "expected_bars": 30,
+      "mae_pct": -0.949,
+      "mfe_pct": 0.045
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "REJECT",
+  "pair": "ENA/EUR",
+  "path_classification": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T02:34:26.650777Z"
+}
