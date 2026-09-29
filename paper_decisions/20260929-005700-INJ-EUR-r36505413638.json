@@ -1,0 +1,180 @@
+{
+  "altname": "INJEUR",
+  "candidate_age_seconds": 32,
+  "candidate_event_time_utc": "2026-09-29T00:57:00Z",
+  "candidate_id": "20260929-005700-INJ-EUR-r36505413638",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 6.633 followed by a hold above that level",
+      "Confirmation candle volume at or above the closed-volume baseline"
+    ],
+    "reason_codes": [
+      "SPREAD_ACCEPTABLE",
+      "LIQUIDITY_ADEQUATE",
+      "RESISTANCE_UNCLEARED",
+      "CLOSED_VOLUME_WEAK",
+      "SHORT_TERM_MOMENTUM_SOFT",
+      "REMAINING_MOVE_UNPROVEN",
+      "DERIVATIVES_CONTEXT_MIXED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but price is just below 1h/3h resistance and closed volume was weak; wait for confirmed continuation before considering entry.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "INJUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 26.36,
+        "available": true,
+        "current_funding_rate": 0.000802563793583336,
+        "current_open_interest": 188388.3,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -0.101,
+        "previous_funding_rate": 0.000802563793583336,
+        "previous_observed_at_utc": "2026-09-29T00:31:11.565470Z",
+        "previous_open_interest": 188578.7
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000802563793583336,
+        "index_price": 7.4816,
+        "last": 7.491,
+        "mark_price": 7.48677379687,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 188388.3,
+        "requested_symbols": [
+          "PF_INJUSD",
+          "PI_INJUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_INJUSD",
+        "volume24h": 312334.9
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 6.583,
+      "bid": 6.578,
+      "last": 6.582,
+      "spread_pct": 0.07598206823189564
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "1",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.013472063838526616,
+          "ret3h_pct": 0.16058300628292166
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.0029577048210494006,
+          "ret3h_pct": 0.41709097080786517
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.153212678349135,
+          "ret3h_pct": 0.6737895851381293
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T00:57:32.254838Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-29T00:57:40.081553Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_071ecac1e65c9af6006abb0cfd372087d2b331fa63e862a9bf"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 6.583,
+    "bid": 6.578,
+    "last": 6.582,
+    "spread_pct": 0.07598206823189564
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "INJ/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36505413638:INJ-EUR:1790643420",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "7ef8b349ba6788449aafb493a83c623bac013d7b",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T00:57:00Z",
+    "candidate_detected_ts": 1790643420,
+    "candidate_snapshot_at_utc": "2026-09-29T00:57:00Z",
+    "detected_to_evaluation_complete_seconds": 40.082,
+    "detected_to_evaluation_start_seconds": 32.1,
+    "evaluation_completed_at_utc": "2026-09-29T00:57:40.081553Z",
+    "evaluation_runtime_seconds": 7.982,
+    "evaluation_started_at_utc": "2026-09-29T00:57:32.099983Z",
+    "handoff_to_evaluation_start_seconds": 29.715,
+    "handoff_written_at_utc": "2026-09-29T00:57:02.385222Z",
+    "scan_step_started_at_utc": "2026-09-29T00:55:23Z"
+  }
+}
