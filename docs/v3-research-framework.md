@@ -8,11 +8,11 @@ Version relationship: `docs/strategy-version-map.md`
 
 ## 1. Purpose
 
-This document is the compact, versioned source of truth for the V3 research track.
+This document is the compact, versioned source of truth for the V3 development track. V3 includes research, validation, integration and eventual successor-strategy construction.
 
 It does **not** modify the active V2R3 paper strategy. New literature findings, historical analyses and paper-trade observations may create hypotheses and test candidates, but production rules must never change silently.
 
-V2R3 remains the frozen comparison baseline until an explicitly versioned successor passes the full research, shadow and promotion process.
+V2R3 remains the frozen comparison baseline for the current series. However, the eventual V3 successor will inherit the best validated V2/V2R4 knowledge as its starting baseline rather than being built from scratch.
 
 ## 2. Status model
 
@@ -429,3 +429,65 @@ Routing rule:
 
 The canonical definitions and status of V2R3, V2R4 and V3 are maintained in
 `docs/strategy-version-map.md`.
+
+
+## 14. V2/V2R4 → V3 inheritance and integration
+
+V3 is not a research-only side project. It is the **living successor strategy**.
+
+### Default-preserve rule
+
+The latest validated V2/V2R4 behavior is the default starting point for V3.
+A proven component is preserved unless a new candidate has stronger evidence.
+
+This applies to, where still relevant:
+- candidate detection and review lessons;
+- Kraken-EUR execution reality and cost treatment;
+- timing and trigger handling;
+- scout / confirmation architecture;
+- tradability and liquidity safeguards;
+- late-chase protection;
+- MAE/MFE and follow-up measurement;
+- state vs signal separation;
+- logging, auditability and data-quality fail-closed rules;
+- watchdog / stale-data / recovery principles;
+- sizing lessons that survive validation.
+
+### Evidence hierarchy
+
+When old and new ideas conflict, use this order as the default evidence hierarchy:
+
+1. clean prospective evidence on comparable market conditions;
+2. robust point-in-time OOS / walk-forward evidence after realistic costs;
+3. repeated evidence across regimes and liquidity buckets;
+4. well-supported V2/V2R4 operational observations;
+5. literature-supported but locally unvalidated hypotheses;
+6. intuition / anecdote.
+
+This means established V2 lessons are weighted more strongly than fresh untested ideas,
+but they can still be replaced by better evidence.
+
+### Migration ledger
+
+Before any V3 candidate is considered complete, every material V2/V2R4 component must
+have one explicit migration status:
+
+- `INHERITED_UNCHANGED`
+- `INHERITED_MODIFIED`
+- `REPLACED_BY_TESTED_V3_COMPONENT`
+- `REJECTED_WITH_EVIDENCE`
+- `NOT_APPLICABLE`
+- `OPEN_RESEARCH`
+
+A V3 release candidate is incomplete if relevant V2/V2R4 knowledge is unclassified.
+
+### Integrated target
+
+The target V3 is therefore one coherent strategy assembled from:
+- inherited validated V2/V2R4 components;
+- promoted V3 research candidates;
+- Mini-PC / realtime timing evidence;
+- Kraken historical and prospective evidence;
+- explicit cost / risk / reliability constraints.
+
+Research remains the input pipeline. **Integration into the successor strategy is the goal.**
