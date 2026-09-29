@@ -39,6 +39,85 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T05:25:37Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 43.879,
+    "detection_price_eur": 0.02531,
+    "evaluated_at_utc": "2026-09-29T05:26:20.878886Z",
+    "evaluation_ask_eur": 0.02544,
+    "flagged_as_already_run": true,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 132,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 13.315,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -2.608,
+        "mfe_pct": 15.093,
+        "peak_at_utc": "2026-09-29T14:55:00Z",
+        "trough_at_utc": "2026-09-29T06:25:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "NEAR_7D_30D_HIGH",
+      "RECENT_3H_RUN",
+      "FRESH_SPOT_SPREAD_ACCEPTABLE",
+      "ROUND_TRIP_FEES_1_20_PERCENT",
+      "NO_COIN_SPECIFIC_CATALYST_EVIDENCE",
+      "DERIVATIVES_CONTEXT_NONCONFIRMING"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T05:24:03Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 4.4141914191419,
+      "ret15_live_pct": 0.27733755942946914,
+      "ret1h_pct": 1.81013676588897,
+      "ret3h_pct": 3.4327748263179414,
+      "scanner_late_flag": false,
+      "score": 9.7
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-09-29T19:14:33.808745Z"
+  },
   "original_decision": "WAIT",
   "pair": "NIGHT/EUR",
   "path_classification": "WAIT_TO_REJECT",

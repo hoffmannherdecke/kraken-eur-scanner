@@ -39,6 +39,84 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T03:11:13Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 39.811,
+    "detection_price_eur": 0.0303,
+    "evaluated_at_utc": "2026-09-29T03:11:52.810811Z",
+    "evaluation_ask_eur": 0.03032,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 1.056,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -2.64,
+        "mfe_pct": 8.944,
+        "peak_at_utc": "2026-09-29T11:55:00Z",
+        "trough_at_utc": "2026-09-29T04:05:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "WEAK_LIVE_VOLUME",
+      "NO_BREAKOUT",
+      "NEGATIVE_3H_RETURN",
+      "RISK_OFF_MAJOR_MARKETS",
+      "INSUFFICIENT_REMAINING_MOVE_EVIDENCE"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T03:09:39Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 1.848739495798335,
+      "ret15_live_pct": -0.09891196834816984,
+      "ret1h_pct": 1.5755950385518025,
+      "ret3h_pct": -0.5579258286839472,
+      "scanner_late_flag": false,
+      "score": 8.0
+    },
+    "schema_version": 1,
+    "setup_lane": "NONE",
+    "updated_at_utc": "2026-09-29T19:14:11.926099Z"
+  },
   "original_decision": "WAIT",
   "pair": "XDC/EUR",
   "path_classification": "WAIT_TO_REJECT",

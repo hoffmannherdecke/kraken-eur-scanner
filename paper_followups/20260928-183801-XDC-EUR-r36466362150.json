@@ -39,6 +39,101 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-28T18:38:01Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 43.71,
+    "detection_price_eur": 0.03146,
+    "evaluated_at_utc": "2026-09-28T18:38:44.710205Z",
+    "evaluation_ask_eur": 0.03153,
+    "flagged_as_already_run": true,
+    "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -6.262,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -6.643,
+        "mfe_pct": 4.927,
+        "peak_at_utc": "2026-09-29T11:55:00Z",
+        "trough_at_utc": "2026-09-29T16:55:00Z"
+      },
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -2.606,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -6.484,
+        "mfe_pct": 1.653,
+        "peak_at_utc": "2026-09-28T19:15:00Z",
+        "trough_at_utc": "2026-09-28T20:55:00Z"
+      }
+    },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "extended_after_run",
+      "near_7d_30d_highs",
+      "live_momentum_fading",
+      "resistance_too_close",
+      "cost_hurdle_unmet",
+      "derivatives_unavailable"
+    ],
+    "scan_step_started_at_utc": "2026-09-28T18:36:24Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 6.283783783783781,
+      "ret15_live_pct": -0.6317119393556503,
+      "ret1h_pct": 2.2424439389015394,
+      "ret3h_pct": 5.076820307281227,
+      "scanner_late_flag": false,
+      "score": 8.2
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-09-29T19:12:13.779343Z"
+  },
   "original_decision": "WAIT",
   "pair": "XDC/EUR",
   "path_classification": "WAIT_TO_REJECT",

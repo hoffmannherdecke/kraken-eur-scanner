@@ -39,6 +39,78 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T10:03:33Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 37.449,
+    "detection_price_eur": 0.46802,
+    "evaluated_at_utc": "2026-09-29T10:04:10.448538Z",
+    "evaluation_ask_eur": 0.46727,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -1.385,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -1.402,
+        "mfe_pct": -0.085,
+        "peak_at_utc": "2026-09-29T10:04:00Z",
+        "trough_at_utc": "2026-09-29T10:18:00Z"
+      },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -2.966,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -3.397,
+        "mfe_pct": -0.085,
+        "peak_at_utc": "2026-09-29T10:04:00Z",
+        "trough_at_utc": "2026-09-29T13:46:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -1.953,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -2.021,
+        "mfe_pct": -0.085,
+        "peak_at_utc": "2026-09-29T10:04:00Z",
+        "trough_at_utc": "2026-09-29T10:43:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-29T09:23:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 2.787,
+      "price_eur": 0.45533
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "EUR_PAIR_VERIFIED",
+      "TIGHT_SPREAD",
+      "POSITIVE_MARKET_CONTEXT",
+      "BREAKOUT_ABOVE_RESISTANCE",
+      "LOW_LIVE_VOLUME",
+      "MOVE_ALREADY_RUN",
+      "FEES_CONSUME_MUCH_OF_PLAUSIBLE_UPSIDE"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T10:01:28Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.7869896558539997,
+      "ret15_live_pct": 0.9055236945366696,
+      "ret1h_pct": 2.288274505518517,
+      "ret3h_pct": 2.438277009280343,
+      "scanner_late_flag": false,
+      "score": 12.2
+    },
+    "schema_version": 1,
+    "setup_lane": "CONTINUITY",
+    "updated_at_utc": "2026-09-29T19:15:39.951897Z"
+  },
   "original_decision": "WAIT",
   "pair": "ONDO/EUR",
   "path_classification": "WAIT_TO_REJECT",

@@ -39,6 +39,77 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T07:48:33Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 39.711,
+    "detection_price_eur": 2.999,
+    "evaluated_at_utc": "2026-09-29T07:49:12.711272Z",
+    "evaluation_ask_eur": 3.0,
+    "flagged_as_already_run": true,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -1.567,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -1.567,
+        "mfe_pct": 0.033,
+        "peak_at_utc": "2026-09-29T07:49:00Z",
+        "trough_at_utc": "2026-09-29T08:01:00Z"
+      },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -0.634,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -3.434,
+        "mfe_pct": 0.4,
+        "peak_at_utc": "2026-09-29T08:26:00Z",
+        "trough_at_utc": "2026-09-29T10:33:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -1.267,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -2.301,
+        "mfe_pct": 0.4,
+        "peak_at_utc": "2026-09-29T08:26:00Z",
+        "trough_at_utc": "2026-09-29T08:05:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-29T07:20:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 2.46,
+      "price_eur": 2.927
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "EXTENDED_NEAR_HIGHS",
+      "LATE_ENTRY_COSTS",
+      "POSITIVE_BREADTH",
+      "RISING_FUNDING_AND_OI",
+      "NO_COIN_SPECIFIC_CATALYST",
+      "ACCOUNT_TRADABILITY_UNAVAILABLE"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T07:43:01Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 6.347517730496466,
+      "ret15_live_pct": 0.3681392235609149,
+      "ret1h_pct": 2.3549488054607437,
+      "ret3h_pct": 6.009190526687869,
+      "scanner_late_flag": false,
+      "score": 10.7
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-09-29T19:15:11.562261Z"
+  },
   "original_decision": "WAIT",
   "pair": "ICP/EUR",
   "path_classification": "WAIT_TO_REJECT",

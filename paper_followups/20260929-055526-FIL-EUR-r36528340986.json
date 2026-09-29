@@ -39,6 +39,87 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T05:55:26Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 23.827,
+    "detection_price_eur": 0.919,
+    "evaluated_at_utc": "2026-09-29T05:55:49.826569Z",
+    "evaluation_ask_eur": 0.92,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 162,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 1.741,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -0.109,
+        "mfe_pct": 6.855,
+        "peak_at_utc": "2026-09-29T14:55:00Z",
+        "trough_at_utc": "2026-09-29T06:05:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "spread_and_liquidity_acceptable",
+      "broad_scanner_strength",
+      "volume_expansion",
+      "marginal_resistance_break",
+      "no_higher_lows",
+      "ema_confirmation_absent",
+      "fees_and_slippage_raise_hurdle",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T05:53:52Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 3.0269058295964157,
+      "ret15_live_pct": 0.6571741511500528,
+      "ret1h_pct": 1.65929203539823,
+      "ret3h_pct": 2.3385300668151476,
+      "scanner_late_flag": false,
+      "score": 12.2
+    },
+    "schema_version": 1,
+    "setup_lane": "IGNITION",
+    "updated_at_utc": "2026-09-29T19:14:43.318050Z"
+  },
   "original_decision": "WAIT",
   "pair": "FIL/EUR",
   "path_classification": "WAIT_TO_REJECT",

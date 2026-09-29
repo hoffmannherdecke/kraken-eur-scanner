@@ -39,6 +39,78 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T10:20:35Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 26.068,
+    "detection_price_eur": 10.257,
+    "evaluated_at_utc": "2026-09-29T10:21:01.068277Z",
+    "evaluation_ask_eur": 10.276,
+    "flagged_as_already_run": true,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.136,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.263,
+        "mfe_pct": 0.292,
+        "peak_at_utc": "2026-09-29T10:24:00Z",
+        "trough_at_utc": "2026-09-29T10:34:00Z"
+      },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -0.224,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -1.375,
+        "mfe_pct": 3.11,
+        "peak_at_utc": "2026-09-29T12:07:00Z",
+        "trough_at_utc": "2026-09-29T10:48:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -0.468,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -1.375,
+        "mfe_pct": 0.292,
+        "peak_at_utc": "2026-09-29T10:24:00Z",
+        "trough_at_utc": "2026-09-29T10:48:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-29T07:22:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 4.291,
+      "price_eur": 9.835
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "tradable_spread_and_turnover",
+      "positive_multi_period_continuity",
+      "broad_scanner_strength",
+      "extended_near_7d_30d_highs",
+      "rising_funding_and_open_interest",
+      "remaining_move_unproven",
+      "scanner_is_not_entry_signal"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T10:19:01Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 4.48202098400734,
+      "ret15_live_pct": 0.26392961876831045,
+      "ret1h_pct": 2.641849294506149,
+      "ret3h_pct": 4.047474132684115,
+      "scanner_late_flag": false,
+      "score": 9.3
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-09-29T19:15:41.834906Z"
+  },
   "original_decision": "WAIT",
   "pair": "AVAX/EUR",
   "path_classification": "WAIT_TO_REJECT",

@@ -39,6 +39,84 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-28T23:13:52Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 22.792,
+    "detection_price_eur": 0.11463,
+    "evaluated_at_utc": "2026-09-28T23:14:14.791525Z",
+    "evaluation_ask_eur": 0.11436,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 0.201,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -0.968,
+        "mfe_pct": 3.603,
+        "peak_at_utc": "2026-09-29T05:10:00Z",
+        "trough_at_utc": "2026-09-29T01:45:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "closed_ohlc_zero_volume_unreliable",
+      "no_15m_continuation",
+      "near_3h_resistance",
+      "fees_and_spread_require_substantial_follow_through",
+      "no_coin_specific_catalyst_evidence"
+    ],
+    "scan_step_started_at_utc": "2026-09-28T23:12:15Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.623097582811096,
+      "ret15_live_pct": 0.0,
+      "ret1h_pct": 2.623097582811096,
+      "ret3h_pct": 2.165775401069525,
+      "scanner_late_flag": false,
+      "score": 11.1
+    },
+    "schema_version": 1,
+    "setup_lane": "IGNITION",
+    "updated_at_utc": "2026-09-29T19:13:19.464992Z"
+  },
   "original_decision": "WAIT",
   "pair": "CC/EUR",
   "path_classification": "WAIT_TO_REJECT",

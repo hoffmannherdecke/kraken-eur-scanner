@@ -39,6 +39,87 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-28T21:41:02Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 25.798,
+    "detection_price_eur": 0.913,
+    "evaluated_at_utc": "2026-09-28T21:41:27.797505Z",
+    "evaluation_ask_eur": 0.914,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 4.381,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -2.738,
+        "mfe_pct": 4.6,
+        "peak_at_utc": "2026-09-29T09:40:00Z",
+        "trough_at_utc": "2026-09-29T02:35:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "negative_1h_3h_24h_momentum",
+      "below_1h_support",
+      "no_breakout",
+      "zero_closed_volume",
+      "weak_major_market_breadth",
+      "nearby_resistance_limits_remaining_move",
+      "round_trip_fees_and_spread",
+      "no_coin_specific_catalyst_evidence"
+    ],
+    "scan_step_started_at_utc": "2026-09-28T21:39:24Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 0.5506607929515406,
+      "ret15_live_pct": -0.4362050163576936,
+      "ret1h_pct": -0.9761388286334105,
+      "ret3h_pct": -1.8279569892473146,
+      "scanner_late_flag": false,
+      "score": 6.0
+    },
+    "schema_version": 1,
+    "setup_lane": "NONE",
+    "updated_at_utc": "2026-09-29T19:12:54.086663Z"
+  },
   "original_decision": "REJECT",
   "pair": "FIL/EUR",
   "path_classification": "REJECT",

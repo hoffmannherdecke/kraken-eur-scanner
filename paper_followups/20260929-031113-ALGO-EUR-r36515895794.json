@@ -39,6 +39,84 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T03:11:13Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 22.047,
+    "detection_price_eur": 0.11833,
+    "evaluated_at_utc": "2026-09-29T03:11:35.046829Z",
+    "evaluation_ask_eur": 0.11849,
+    "flagged_as_already_run": true,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -4.031,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -4.682,
+        "mfe_pct": 4.462,
+        "peak_at_utc": "2026-09-29T05:00:00Z",
+        "trough_at_utc": "2026-09-29T15:10:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "EXTENDED_AFTER_RALLY",
+      "WEAK_3H_CONTINUITY",
+      "MAJOR_MARKETS_NEGATIVE",
+      "RESISTANCE_LIMITS_REMAINING_MOVE",
+      "COSTS_UNFAVORABLE_NEAR_RESISTANCE"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T03:09:39Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.1495165745856415,
+      "ret15_live_pct": 1.1021872863978155,
+      "ret1h_pct": 0.25417266796576854,
+      "ret3h_pct": -0.9707925349401569,
+      "scanner_late_flag": false,
+      "score": 6.4
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-09-29T19:14:09.788888Z"
+  },
   "original_decision": "WAIT",
   "pair": "ALGO/EUR",
   "path_classification": "WAIT_TO_REJECT",

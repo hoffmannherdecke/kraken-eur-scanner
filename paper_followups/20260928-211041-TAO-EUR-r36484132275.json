@@ -39,6 +39,86 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-28T21:10:41Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 26.229,
+    "detection_price_eur": 271.8802,
+    "evaluated_at_utc": "2026-09-28T21:11:07.229292Z",
+    "evaluation_ask_eur": 271.3276,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 1.884,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -4.465,
+        "mfe_pct": 2.413,
+        "peak_at_utc": "2026-09-29T08:20:00Z",
+        "trough_at_utc": "2026-09-29T02:30:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "spread_and_turnover_acceptable",
+      "breakout_not_yet_confirmed_by_close",
+      "live_volume_weak",
+      "24h_trend_negative",
+      "major_assets_negative_3h",
+      "elevated_funding_with_falling_open_interest",
+      "remaining_move_after_costs_uncertain"
+    ],
+    "scan_step_started_at_utc": "2026-09-28T21:09:04Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.9849242424242473,
+      "ret15_live_pct": 0.48899086773517286,
+      "ret1h_pct": 1.7794164496349962,
+      "ret3h_pct": 1.7399585750877966,
+      "scanner_late_flag": false,
+      "score": 9.3
+    },
+    "schema_version": 1,
+    "setup_lane": "IGNITION",
+    "updated_at_utc": "2026-09-29T19:12:47.872914Z"
+  },
   "original_decision": "WAIT",
   "pair": "TAO/EUR",
   "path_classification": "WAIT_TO_REJECT",

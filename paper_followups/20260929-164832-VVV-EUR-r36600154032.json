@@ -31,6 +31,66 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T16:48:32Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 40.868,
+    "detection_price_eur": 23.803,
+    "evaluated_at_utc": "2026-09-29T16:49:12.867915Z",
+    "evaluation_ask_eur": 23.707,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -1.042,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -1.042,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-09-29T16:49:00Z",
+        "trough_at_utc": "2026-09-29T17:03:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -1.185,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -1.307,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-09-29T16:49:00Z",
+        "trough_at_utc": "2026-09-29T17:32:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-29T15:58:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 1.307,
+      "price_eur": 23.496
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "major_market_weak",
+      "3h_return_negative",
+      "15m_momentum_negative",
+      "below_1h_resistance",
+      "scanner_rank_falling",
+      "cost_hurdle_material"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T16:46:30Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 1.306605379639092,
+      "ret15_live_pct": -0.3433117019049692,
+      "ret1h_pct": 1.1430271097136124,
+      "ret3h_pct": -1.550996773926705,
+      "scanner_late_flag": false,
+      "score": 8.6
+    },
+    "schema_version": 1,
+    "setup_lane": "NONE",
+    "updated_at_utc": "2026-09-29T19:16:39.078551Z"
+  },
   "original_decision": "WAIT",
   "pair": "VVV/EUR",
   "path_classification": "WAIT_TO_REJECT",

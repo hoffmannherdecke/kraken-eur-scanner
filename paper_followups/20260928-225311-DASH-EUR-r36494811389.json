@@ -39,6 +39,84 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-28T22:53:11Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 36.249,
+    "detection_price_eur": 57.048,
+    "evaluated_at_utc": "2026-09-28T22:53:47.249263Z",
+    "evaluation_ask_eur": 57.032,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -5.378,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -8.63,
+        "mfe_pct": 1.171,
+        "peak_at_utc": "2026-09-28T23:55:00Z",
+        "trough_at_utc": "2026-09-29T04:00:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "LIQUIDITY_SPREAD_ACCEPTABLE",
+      "FRESH_MOVE_VOLUME_SUPPORTED",
+      "RESISTANCE_CROSS_NOT_CONFIRMED",
+      "COST_HURDLE_HIGH",
+      "NO_GROUNDED_REMAINING_MOVE_ESTIMATE"
+    ],
+    "scan_step_started_at_utc": "2026-09-28T22:51:33Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.134059008879974,
+      "ret15_live_pct": 0.24072674878319322,
+      "ret1h_pct": 1.0826231018657984,
+      "ret3h_pct": 1.9314953454714345,
+      "scanner_late_flag": false,
+      "score": 9.8
+    },
+    "schema_version": 1,
+    "setup_lane": "IGNITION",
+    "updated_at_utc": "2026-09-29T19:13:16.223543Z"
+  },
   "original_decision": "WAIT",
   "pair": "DASH/EUR",
   "path_classification": "WAIT_TO_REJECT",

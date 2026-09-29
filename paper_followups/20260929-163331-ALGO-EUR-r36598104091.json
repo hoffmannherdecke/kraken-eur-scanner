@@ -31,6 +31,67 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T16:33:31Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 27.358,
+    "detection_price_eur": 0.11504,
+    "evaluated_at_utc": "2026-09-29T16:33:58.358265Z",
+    "evaluation_ask_eur": 0.11498,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -2.46,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -2.512,
+        "mfe_pct": 0.235,
+        "peak_at_utc": "2026-09-29T16:37:00Z",
+        "trough_at_utc": "2026-09-29T16:47:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -4.216,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -4.894,
+        "mfe_pct": 0.235,
+        "peak_at_utc": "2026-09-29T16:37:00Z",
+        "trough_at_utc": "2026-09-29T17:26:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-29T15:13:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 1.995,
+      "price_eur": 0.11279
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "pullback_after_volume_spike",
+      "ret15_live_negative",
+      "ret3h_negative",
+      "no_higher_lows_or_breakout",
+      "rank_deteriorated",
+      "major_3h_regime_weak",
+      "remaining_move_after_costs_unproven"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T16:29:45Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 1.9948577001507317,
+      "ret15_live_pct": -0.4499826929733386,
+      "ret1h_pct": 1.2408694886913763,
+      "ret3h_pct": -0.878855764259856,
+      "scanner_late_flag": false,
+      "score": 8.2
+    },
+    "schema_version": 1,
+    "setup_lane": "IGNITION",
+    "updated_at_utc": "2026-09-29T19:16:36.282146Z"
+  },
   "original_decision": "WAIT",
   "pair": "ALGO/EUR",
   "path_classification": "WAIT_TO_REJECT",

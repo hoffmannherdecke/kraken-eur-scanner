@@ -23,6 +23,66 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T17:48:36Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 34.241,
+    "detection_price_eur": 0.02858,
+    "evaluated_at_utc": "2026-09-29T17:49:10.241494Z",
+    "evaluation_ask_eur": 0.02847,
+    "flagged_as_already_run": true,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 0.035,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -1.819,
+        "mfe_pct": 0.07,
+        "peak_at_utc": "2026-09-29T18:01:00Z",
+        "trough_at_utc": "2026-09-29T17:51:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -3.009,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -3.009,
+        "mfe_pct": 0.175,
+        "peak_at_utc": "2026-09-29T18:20:00Z",
+        "trough_at_utc": "2026-09-29T18:44:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-29T16:25:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 3.289,
+      "price_eur": 0.02767
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "EXTENDED_24H_7D_30D_RUN",
+      "NO_3H_CONTINUITY_OR_BREAKOUT",
+      "LIVE_VOLUME_VERY_LOW",
+      "BELOW_1H_RESISTANCE",
+      "WEAK_3H_MAJOR_REGIME",
+      "UPSIDE_INSUFFICIENT_AFTER_COSTS"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T17:47:04Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 3.288760390314427,
+      "ret15_live_pct": 0.07002801120448154,
+      "ret1h_pct": 2.5843503230438047,
+      "ret3h_pct": 0.03500175008750439,
+      "scanner_late_flag": false,
+      "score": 6.7
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-09-29T19:16:45.319260Z"
+  },
   "original_decision": "REJECT",
   "pair": "NIGHT/EUR",
   "path_classification": "REJECT",

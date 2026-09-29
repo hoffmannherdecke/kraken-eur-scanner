@@ -1,0 +1,65 @@
+{
+  "baseline_ask_eur": 0.02447,
+  "candidate_id": "20260929-185437-MON-EUR-r36615212858",
+  "evaluated_at_utc": "2026-09-29T18:55:02.872498Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T18:54:37Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 25.872,
+    "detection_price_eur": 0.02447,
+    "evaluated_at_utc": "2026-09-29T18:55:02.872498Z",
+    "evaluation_ask_eur": 0.02447,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 0.409,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.041,
+        "mfe_pct": 0.531,
+        "peak_at_utc": "2026-09-29T19:07:00Z",
+        "trough_at_utc": "2026-09-29T18:55:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-29T17:05:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 2.858,
+      "price_eur": 0.02379
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "GOOD_SPREAD_LIQUIDITY",
+      "MIXED_MULTI_PERIOD_MOMENTUM",
+      "NO_CONFIRMED_BREAKOUT",
+      "NEARBY_RESISTANCE",
+      "CLOSED_VOLUME_WEAK",
+      "DERIVATIVES_OI_DECLINING",
+      "COSTS_EXCEED_EVIDENCED_HEADROOM"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T18:53:00Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.858343841950406,
+      "ret15_live_pct": -0.040849673202614234,
+      "ret1h_pct": 1.9158683881715932,
+      "ret3h_pct": -0.9712666936462999,
+      "scanner_late_flag": false,
+      "score": 9.1
+    },
+    "schema_version": 1,
+    "setup_lane": "IGNITION",
+    "updated_at_utc": "2026-09-29T19:16:56.174322Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "MON/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02"
+}

@@ -39,6 +39,86 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T05:42:40Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 23.496,
+    "detection_price_eur": 132.78,
+    "evaluated_at_utc": "2026-09-29T05:43:03.496395Z",
+    "evaluation_ask_eur": 133.58,
+    "flagged_as_already_run": true,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 149,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 10.725,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": 0.798,
+        "mfe_pct": 16.991,
+        "peak_at_utc": "2026-09-29T14:40:00Z",
+        "trough_at_utc": "2026-09-29T05:45:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "EUR_PAIR_VERIFIED",
+      "SPREAD_AND_TURNOVER_ACCEPTABLE",
+      "BREAKOUT_VOLUME_CONFIRMED",
+      "ENTRY_ABOVE_PRIOR_RESISTANCE",
+      "ROUND_TRIP_FEES_1_20_PERCENT",
+      "REMAINING_POTENTIAL_UNQUANTIFIED",
+      "ACCOUNT_TRADABILITY_UNAVAILABLE"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T05:41:06Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 3.2343336961592195,
+      "ret15_live_pct": 0.7435508345978725,
+      "ret1h_pct": 1.5215230522211298,
+      "ret3h_pct": 3.154133001864512,
+      "scanner_late_flag": false,
+      "score": 12.1
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-09-29T19:14:39.034176Z"
+  },
   "original_decision": "WAIT",
   "pair": "AAVE/EUR",
   "path_classification": "WAIT_TO_REJECT",

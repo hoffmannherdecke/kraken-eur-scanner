@@ -39,6 +39,84 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T00:41:02Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 87.075,
+    "detection_price_eur": 1.32188,
+    "evaluated_at_utc": "2026-09-29T00:42:29.074696Z",
+    "evaluation_ask_eur": 1.32175,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 3.53,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -2.825,
+        "mfe_pct": 3.703,
+        "peak_at_utc": "2026-09-29T12:35:00Z",
+        "trough_at_utc": "2026-09-29T01:30:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "breakout_not_confirmed_on_closed_candle",
+      "weak_closed_volume",
+      "recent_momentum_modest",
+      "24h_return_negative",
+      "fees_and_spread_require_substantial_followthrough"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T00:39:26Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 1.7370758325572888,
+      "ret15_live_pct": 0.3842590483133401,
+      "ret1h_pct": 0.4437555089510825,
+      "ret3h_pct": 0.6410549236367968,
+      "scanner_late_flag": false,
+      "score": 7.6
+    },
+    "schema_version": 1,
+    "setup_lane": "IGNITION",
+    "updated_at_utc": "2026-09-29T19:13:40.668838Z"
+  },
   "original_decision": "WAIT",
   "pair": "XRP/EUR",
   "path_classification": "WAIT_TO_REJECT",

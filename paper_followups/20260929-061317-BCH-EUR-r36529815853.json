@@ -39,6 +39,86 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T06:13:17Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 48.724,
+    "detection_price_eur": 271.33,
+    "evaluated_at_utc": "2026-09-29T06:14:05.724428Z",
+    "evaluation_ask_eur": 271.89,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 180,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -0.553,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -1.19,
+        "mfe_pct": 1.85,
+        "peak_at_utc": "2026-09-29T12:35:00Z",
+        "trough_at_utc": "2026-09-29T17:50:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "spread_and_turnover_pass",
+      "broad_market_positive",
+      "breakout_not_volume_confirmed",
+      "no_higher_lows",
+      "ret24h_negative",
+      "remaining_move_unclear_vs_costs",
+      "open_interest_declining"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T06:11:43Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 1.6788457935169365,
+      "ret15_live_pct": 0.29200857544169345,
+      "ret1h_pct": 0.7538061641292115,
+      "ret3h_pct": 1.5798734603721165,
+      "scanner_late_flag": false,
+      "score": 9.2
+    },
+    "schema_version": 1,
+    "setup_lane": "IGNITION",
+    "updated_at_utc": "2026-09-29T19:14:48.934509Z"
+  },
   "original_decision": "WAIT",
   "pair": "BCH/EUR",
   "path_classification": "WAIT_TO_REJECT",

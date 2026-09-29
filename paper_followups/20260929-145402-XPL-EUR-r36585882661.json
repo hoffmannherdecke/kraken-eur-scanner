@@ -31,6 +31,79 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T14:54:02Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 78.193,
+    "detection_price_eur": 0.0894,
+    "evaluated_at_utc": "2026-09-29T14:55:20.192652Z",
+    "evaluation_ask_eur": 0.0894,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -1.23,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -1.23,
+        "mfe_pct": 0.112,
+        "peak_at_utc": "2026-09-29T14:55:00Z",
+        "trough_at_utc": "2026-09-29T15:05:00Z"
+      },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -2.573,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -4.139,
+        "mfe_pct": 0.112,
+        "peak_at_utc": "2026-09-29T14:55:00Z",
+        "trough_at_utc": "2026-09-29T17:54:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -2.796,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -2.796,
+        "mfe_pct": 0.112,
+        "peak_at_utc": "2026-09-29T14:55:00Z",
+        "trough_at_utc": "2026-09-29T15:29:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-29T14:06:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 2.288,
+      "price_eur": 0.0874
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "spread_and_liquidity_acceptable",
+      "no_3h_breakout",
+      "weak_1h_continuity",
+      "below_3h_resistance",
+      "low_adx",
+      "major_markets_weak",
+      "nearby_move_insufficient_after_costs",
+      "account_tradability_unavailable"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T14:52:32Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.2883295194507935,
+      "ret15_live_pct": 0.6756756756756577,
+      "ret1h_pct": 0.9029345372460362,
+      "ret3h_pct": -0.22321428571429047,
+      "scanner_late_flag": false,
+      "score": 10.4
+    },
+    "schema_version": 1,
+    "setup_lane": "NONE",
+    "updated_at_utc": "2026-09-29T19:16:28.180450Z"
+  },
   "original_decision": "WAIT",
   "pair": "XPL/EUR",
   "path_classification": "WAIT_TO_REJECT",

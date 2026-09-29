@@ -39,6 +39,85 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T06:34:28Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 34.992,
+    "detection_price_eur": 4.975e-06,
+    "evaluated_at_utc": "2026-09-29T06:35:02.991575Z",
+    "evaluation_ask_eur": 4.977e-06,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 201,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 21,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 2.151,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -0.06,
+        "mfe_pct": 4.663,
+        "peak_at_utc": "2026-09-29T14:45:00Z",
+        "trough_at_utc": "2026-09-29T06:35:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "EUR_LIQUIDITY_OK",
+      "SPREAD_LOW",
+      "MARKET_BREADTH_POSITIVE",
+      "RESISTANCE_BREAK_UNCONFIRMED",
+      "ROUND_TRIP_COST_BURDEN",
+      "NO_COIN_SPECIFIC_CATALYST_EVIDENCE"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T06:32:54Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.0303527481542183,
+      "ret15_live_pct": -0.04018485031143104,
+      "ret1h_pct": 1.8215309046254458,
+      "ret3h_pct": 0.8514088789782992,
+      "scanner_late_flag": false,
+      "score": 9.7
+    },
+    "schema_version": 1,
+    "setup_lane": "IGNITION",
+    "updated_at_utc": "2026-09-29T19:14:53.883470Z"
+  },
   "original_decision": "WAIT",
   "pair": "SHIB/EUR",
   "path_classification": "WAIT_TO_REJECT",

@@ -39,6 +39,86 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T00:41:02Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 78.757,
+    "detection_price_eur": 0.46294,
+    "evaluated_at_utc": "2026-09-29T00:42:20.757204Z",
+    "evaluation_ask_eur": 0.46223,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 0,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -1.231,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -6.48,
+        "mfe_pct": 1.186,
+        "peak_at_utc": "2026-09-29T10:00:00Z",
+        "trough_at_utc": "2026-09-29T02:10:00Z"
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "SPREAD_AND_LIQUIDITY_ACCEPTABLE",
+      "RECENT_BREAKOUT_ABOVE_RESISTANCE",
+      "CLOSED_VOLUME_BELOW_BASELINE",
+      "PRICE_ALREADY_ABOVE_RESISTANCE",
+      "MAJOR_MARKET_MIXED_TO_WEAK",
+      "ROUND_TRIP_FEES_REQUIRE_LARGER_MOVE",
+      "INSUFFICIENT_EVIDENCE_FOR_STOP_AND_STAGE2"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T00:39:26Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 3.8307989054860325,
+      "ret15_live_pct": 0.47531199131851665,
+      "ret1h_pct": 1.9130434782608674,
+      "ret3h_pct": 2.4226199694683537,
+      "scanner_late_flag": false,
+      "score": 12.2
+    },
+    "schema_version": 1,
+    "setup_lane": "CONTINUITY",
+    "updated_at_utc": "2026-09-29T19:13:39.684351Z"
+  },
   "original_decision": "WAIT",
   "pair": "ONDO/EUR",
   "path_classification": "WAIT_TO_REJECT",

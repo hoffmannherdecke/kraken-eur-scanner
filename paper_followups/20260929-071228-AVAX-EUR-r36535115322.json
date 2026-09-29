@@ -39,6 +39,74 @@
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-29T07:12:28Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 33.458,
+    "detection_price_eur": 9.823,
+    "evaluated_at_utc": "2026-09-29T07:13:01.457847Z",
+    "evaluation_ask_eur": 9.827,
+    "flagged_as_already_run": true,
+    "horizons": {
+      "15": {
+        "bars": 13,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "240": {
+        "bars": 238,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      },
+      "60": {
+        "bars": 58,
+        "complete": false,
+        "end_close_pct": null,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": null,
+        "mfe_pct": null,
+        "peak_at_utc": null,
+        "reason": "incomplete_ohlc_coverage",
+        "trough_at_utc": null
+      }
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "extended_from_resistance",
+      "late_entry_efficiency",
+      "costs_high_vs_remaining_potential",
+      "positive_major_market_proxy",
+      "oi_slightly_declining",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "scan_step_started_at_utc": "2026-09-29T07:10:54Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 7.731958762886593,
+      "ret15_live_pct": 1.782198735882301,
+      "ret1h_pct": 4.868154158214999,
+      "ret3h_pct": 7.132729850583486,
+      "scanner_late_flag": false,
+      "score": 11.0
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-09-29T19:15:05.219640Z"
+  },
   "original_decision": "WAIT",
   "pair": "AVAX/EUR",
   "path_classification": "WAIT_TO_REJECT",
