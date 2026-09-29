@@ -1,0 +1,27 @@
+{
+  "baseline_ask_eur": 0.29363,
+  "candidate_id": "20260929-163331-JUP-EUR-r36598104091",
+  "evaluated_at_utc": "2026-09-29T16:34:10.491858Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.695,
+      "expected_bars": 30,
+      "mae_pct": -1.195,
+      "mfe_pct": 0.998
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "JUP/EUR",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-29T17:04:31.493425Z",
+  "revalidation_decision": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T17:05:24.015676Z"
+}
