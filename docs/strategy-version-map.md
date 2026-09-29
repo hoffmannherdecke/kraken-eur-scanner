@@ -11,7 +11,7 @@ Diese Datei ist die verbindliche Übersicht darüber, **welche Strategieversion 
 welche Erkenntnisse wohin gehören und wann eine Version aktiviert werden darf**.
 
 Sie ersetzt keine Detaildokumentation und keine To-do-Liste:
-- offene Projektarbeit bleibt im `PROJECT_BACKLOG.md`;
+- übergeordnete Komponenten-/Versionsführung: `docs/master-version-register.md`;\n- offene Projektarbeit bleibt im `PROJECT_BACKLOG.md`;
 - V3-Forschung im `docs/v3-research-framework.md` und GitHub Issue #7;
 - die vorbereitete V2R4-Implementierung liegt derzeit in Draft-PR #8.
 
@@ -321,3 +321,39 @@ Für die spätere V3-Konstruktion gilt verbindlich:
 6. **Keine Wissenslücke beim Versionswechsel**
    - Beim späteren V3-Release muss ein expliziter V2/V2R4→V3-Diff existieren.
    - Keine zuvor gewonnene relevante Erkenntnis darf allein deshalb verloren gehen, weil sie aus einem älteren Chat, Test oder Versionszweig stammt.
+
+
+## 10. Verbindliches Release-Gate vor jeder neuen aktiven Version
+
+Keine neue Strategie-/Paper-Version darf aktiv werden, bevor die laufende Version vollständig und gründlich ausgewertet wurde.
+
+Pflichtumfang:
+- BUY/Scout, WAIT, REJECT/NO-TRADE sowie technische Ausfälle und Datenlücken;
+- spätere Kursentwicklung, MFE/MAE, Edge-Decay und Kostenwirkung;
+- Scanner-, Persistenz-, Evaluator-, Revalidation- und Entry-Latenz getrennt;
+- Spread, Slippage und Gebühren;
+- Marktregime / Liquidität / Datenqualität;
+- verpasste Chancen und Fälle, in denen ein Nicht-Trade korrekt war.
+
+Jede Erkenntnis erhält vor Release einen Status:
+`CONFIRM`, `CHANGE`, `ADD`, `REJECT`, `MORE_TESTING_REQUIRED`.
+
+Belastbare Erkenntnisse müssen in die nächste Version migriert sein. Noch nicht belastbare
+Erkenntnisse bleiben dokumentierte Hypothesen und dürfen weder still verworfen noch als
+bereits bewiesen behandelt werden.
+
+### 2026-09-29 — Korrektur des „zu spät“-Bias
+
+„Ersten Impuls verpasst“ darf nicht mehr automatisch als „Trade verpasst“ gelten.
+Für neue Auswertungen und die V2R4-Freigabe ist deshalb verpflichtend:
+
+- Bewegungsbeginn → Scanner-Erkennung → Entscheidung → frühestmöglicher realistischer Entry → weiterer Verlauf;
+- Follow-up mindestens 15m / 1h / 4h / 12h / 24h, bei Bedarf mehrere Tage;
+- MFE/MAE **nach tatsächlicher Erkennung**;
+- getrennte Klassifikation: wirklich zu spät / Continuation / Pullback-Re-Entry /
+  Second Leg / mehrstündiger Trend / korrekt kein Trade / Systemfehler;
+- Scanner-Latenz getrennt von Entry-/Revalidation-Regelproblem.
+
+Für V2R4 ist dies mindestens eine verbindliche Mess- und Revalidation-Anforderung.
+Eine darüber hinausgehende neue Entry-Mechanik darf nur explizit versioniert und vor
+Aktivierung getestet werden. Für V3 ist der Punkt verpflichtend im Migration Ledger.
