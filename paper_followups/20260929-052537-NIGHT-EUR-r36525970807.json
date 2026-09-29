@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 21,
+        "bars": 15,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -116,7 +116,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-29T21:05:36.538820Z"
+    "updated_at_utc": "2026-09-29T21:11:43.063816Z"
   },
   "original_decision": "WAIT",
   "pair": "NIGHT/EUR",

@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 90,
+        "bars": 84,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -117,7 +117,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-29T21:05:41.972812Z"
+    "updated_at_utc": "2026-09-29T21:11:49.909680Z"
   },
   "original_decision": "WAIT",
   "pair": "SUI/EUR",
