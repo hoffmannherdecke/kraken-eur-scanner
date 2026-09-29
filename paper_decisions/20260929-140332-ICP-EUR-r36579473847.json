@@ -1,0 +1,178 @@
+{
+  "altname": "ICPEUR",
+  "candidate_age_seconds": 29,
+  "candidate_event_time_utc": "2026-09-29T14:03:32Z",
+  "candidate_id": "20260929-140332-ICP-EUR-r36579473847",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 3.053 EUR with sustained volume",
+      "Retest holds above 3.053 EUR without losing momentum"
+    ],
+    "reason_codes": [
+      "extended_24h_move",
+      "at_resistance",
+      "costs_and_remaining_potential_uncertain",
+      "mixed_major_market",
+      "rising_funding_and_open_interest"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong momentum and liquidity, but ICP is up 15.9% over 24h and testing resistance near its recent highs; wait for a confirmed hold before considering entry.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ICPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 30.13,
+        "available": true,
+        "current_funding_rate": 0.000181070718822249,
+        "current_open_interest": 205363.1,
+        "funding_rate_delta": 0.000195037132179749,
+        "open_interest_pct": 6.6491,
+        "previous_funding_rate": -1.39664133575e-05,
+        "previous_observed_at_utc": "2026-09-29T13:33:54.727587Z",
+        "previous_open_interest": 192559.6
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000181070718822249,
+        "index_price": 3.46269,
+        "last": 3.452,
+        "mark_price": 3.46607058866,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 205363.1,
+        "requested_symbols": [
+          "PF_ICPUSD",
+          "PI_ICPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ICPUSD",
+        "volume24h": 344173.9
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 3.056,
+      "bid": 3.051,
+      "last": 3.051,
+      "spread_pct": 0.1637465203864383
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "2",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.09727901316294307,
+          "ret3h_pct": 0.2959574988282032
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.3267079612262358,
+          "ret3h_pct": 0.4903169713208477
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2159218926023332,
+          "ret3h_pct": 1.4540961794335727
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T14:04:01.260161Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-29T14:04:13.931497Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_05e83ca0393ec651006abbc552c35087d1942e254802340607"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 3.056,
+    "bid": 3.051,
+    "last": 3.051,
+    "spread_pct": 0.1637465203864383
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ICP/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36579473847:ICP-EUR:1790690612",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "116cc5b13f421a835ef2209a36c0f8a29cca89bb",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T14:03:32Z",
+    "candidate_detected_ts": 1790690612,
+    "candidate_snapshot_at_utc": "2026-09-29T14:03:32Z",
+    "detected_to_evaluation_complete_seconds": 41.931,
+    "detected_to_evaluation_start_seconds": 29.008,
+    "evaluation_completed_at_utc": "2026-09-29T14:04:13.931497Z",
+    "evaluation_runtime_seconds": 12.924,
+    "evaluation_started_at_utc": "2026-09-29T14:04:01.007552Z",
+    "handoff_to_evaluation_start_seconds": 26.338,
+    "handoff_written_at_utc": "2026-09-29T14:03:34.669307Z",
+    "scan_step_started_at_utc": "2026-09-29T14:01:17Z"
+  }
+}
