@@ -1,0 +1,162 @@
+{
+  "altname": "XDCEUR",
+  "candidate_age_seconds": 75,
+  "candidate_event_time_utc": "2026-09-29T05:25:37Z",
+  "candidate_id": "20260929-052537-XDC-EUR-r36525970807",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.03053 with sustained elevated volume",
+      "Retest holds above 0.03053 while spread remains acceptable"
+    ],
+    "reason_codes": [
+      "tradability_acceptable",
+      "positive_multi_period_momentum",
+      "volume_elevated",
+      "breakout_unconfirmed",
+      "near_3h_resistance",
+      "net_potential_unclear",
+      "derivatives_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid pair with positive multi-period momentum, but price is pressing 3h resistance without a confirmed breakout; remaining upside after Kraken fees and spread is not established.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "XDCUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_XDCUSD",
+          "PI_XDCUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.03037,
+      "bid": 0.03031,
+      "last": 0.03035,
+      "spread_pct": 0.19775873434410357
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "180",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.14009047794771856,
+          "ret3h_pct": 0.3418246258896529
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.04303164316967756,
+          "ret3h_pct": 0.3808978244792094
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.1158636670850699,
+          "ret3h_pct": 0.8167233835683074
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T05:26:52.529550Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-29T05:27:00.209324Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0d89a5bba425805f006abb4c1d7b1887d1b513aa1260523236"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.03037,
+    "bid": 0.03031,
+    "last": 0.03035,
+    "spread_pct": 0.19775873434410357
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "XDC/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36525970807:XDC-EUR:1790659537",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "0dee2b0fd118355dbf07f1bc14b6b19acbdd66eb",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T05:25:37Z",
+    "candidate_detected_ts": 1790659537,
+    "candidate_snapshot_at_utc": "2026-09-29T05:25:37Z",
+    "detected_to_evaluation_complete_seconds": 83.209,
+    "detected_to_evaluation_start_seconds": 75.386,
+    "evaluation_completed_at_utc": "2026-09-29T05:27:00.209324Z",
+    "evaluation_runtime_seconds": 7.823,
+    "evaluation_started_at_utc": "2026-09-29T05:26:52.386129Z",
+    "handoff_to_evaluation_start_seconds": 72.215,
+    "handoff_written_at_utc": "2026-09-29T05:25:40.171457Z",
+    "scan_step_started_at_utc": "2026-09-29T05:24:03Z"
+  }
+}
