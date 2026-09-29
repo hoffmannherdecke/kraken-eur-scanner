@@ -1,0 +1,201 @@
+{
+  "altname": "SKYEUR",
+  "candidate_id": "20260929-151341-SKY-EUR-r36588361022",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Reclaim and hold above 0.07603 EUR with continued spot volume.",
+      "Major EUR pairs stabilize rather than remain broadly negative."
+    ],
+    "reason_codes": [
+      "failed_resistance_reclaim",
+      "weak_major_market_regime",
+      "extended_after_run",
+      "round_trip_fees_1_20pct",
+      "no_derivatives_or_account_tradability_data"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The required resistance reclaim and market stabilization are not confirmed: SKY is below 0.07603 EUR and all supplied major EUR pairs are negative. The prior run is extended, and no cost-adjusted opportunity or structural scout plan is supported.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SKYUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_SKYUSD",
+          "PI_SKYUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.07485,
+      "bid": 0.07478,
+      "last": 0.07468,
+      "spread_pct": 0.09356412484127598
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "70",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.7811378502458055,
+          "ret3h_pct": -1.4236642299821245
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -1.4128524809639331,
+          "ret3h_pct": -2.3014668689934292
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -1.7075471698113187,
+          "ret3h_pct": -2.18738265114532
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T16:06:37.947819Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_01bff553b043759d006abbe210affc87d193a9465135318375"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.07485,
+    "bid": 0.07478,
+    "last": 0.07468,
+    "spread_pct": 0.09356412484127598
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.07535,
+      "high": 0.07555,
+      "low": 0.07493,
+      "open": 0.07537,
+      "trades": 11,
+      "ts": 1790694000,
+      "volume": 37998.18591,
+      "vwap": 0.07527
+    },
+    {
+      "close": 0.07448,
+      "high": 0.07548,
+      "low": 0.07433,
+      "open": 0.07548,
+      "trades": 36,
+      "ts": 1790694900,
+      "volume": 146128.89218,
+      "vwap": 0.07464
+    },
+    {
+      "close": 0.07442,
+      "high": 0.07442,
+      "low": 0.07407,
+      "open": 0.07435,
+      "trades": 7,
+      "ts": 1790695800,
+      "volume": 14170.45372,
+      "vwap": 0.07429
+    },
+    {
+      "close": 0.07457,
+      "high": 0.07457,
+      "low": 0.07457,
+      "open": 0.07457,
+      "trades": 1,
+      "ts": 1790696700,
+      "volume": 1339.5309,
+      "vwap": 0.07457
+    },
+    {
+      "close": 0.07468,
+      "high": 0.07498,
+      "low": 0.07445,
+      "open": 0.07498,
+      "trades": 4,
+      "ts": 1790697600,
+      "volume": 17595.45548,
+      "vwap": 0.07485
+    }
+  ],
+  "pair": "SKY/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-151341-SKY-EUR-r36588361022.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T16:06:46.182890Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "02c8102d94058a281bd89fb3a5f15f206d27abb7",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T16:06:46.182890Z",
+    "revalidation_started_at_utc": "2026-09-29T16:06:37.468404Z",
+    "ttl_due_at_utc": "2026-09-29T15:59:17.445509Z",
+    "ttl_lag_seconds": 440.023
+  }
+}
