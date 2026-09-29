@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 89,
+        "bars": 78,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -116,7 +116,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-29T20:45:03.070784Z"
+    "updated_at_utc": "2026-09-29T20:56:19.751344Z"
   },
   "original_decision": "WAIT",
   "pair": "RAY/EUR",
