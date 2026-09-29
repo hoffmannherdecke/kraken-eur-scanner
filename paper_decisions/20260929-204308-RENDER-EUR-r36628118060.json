@@ -1,0 +1,183 @@
+{
+  "altname": "RENDEREUR",
+  "candidate_age_seconds": 40,
+  "candidate_event_time_utc": "2026-09-29T20:43:08Z",
+  "candidate_id": "20260929-204308-RENDER-EUR-r36628118060",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15-minute close above 1.711 with renewed volume",
+      "Hold above 1.711 on a retest within 30\u201360 minutes"
+    ],
+    "reason_codes": [
+      "liquid_pair",
+      "tight_spread",
+      "higher_lows",
+      "closed_volume_spike",
+      "near_resistance",
+      "live_volume_faded",
+      "cost_hurdle",
+      "no_spot_account_tradability"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Rising closed candles, higher lows and a closed-volume spike support continuity, but price is just below 1.711 resistance and live volume has faded. Wait for a confirmed break before considering entry; fees and spread require substantial follow-through.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "RENDERUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 28.55,
+        "available": true,
+        "current_funding_rate": 8.6482349470124e-05,
+        "current_open_interest": 230267.6,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 6.7398,
+        "previous_funding_rate": 8.6482349470124e-05,
+        "previous_observed_at_utc": "2026-09-29T20:15:15.988944Z",
+        "previous_open_interest": 215727.9
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 8.6482349470124e-05,
+        "index_price": 1.93623,
+        "last": 1.938,
+        "mark_price": 1.93674843701,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 230267.6,
+        "requested_symbols": [
+          "PF_RENDERUSD",
+          "PI_RENDERUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_RENDERUSD",
+        "volume24h": 232255.6
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.707,
+      "bid": 1.705,
+      "last": 1.706,
+      "spread_pct": 0.11723329425556869
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "2.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.15465604305928693,
+          "ret3h_pct": 0.4124794781249719
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.06481399645629216,
+          "ret3h_pct": 0.48241920536244987
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.06659056316591361,
+          "ret3h_pct": 0.7867216732226678
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": false,
+        "detail": "HTTP Error 404: Not Found",
+        "error": "HTTPError",
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T20:43:48.225904Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-29T20:43:56.587013Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0510ae393bef5055006abc2305360c87d1b1e8d4dd408b45ad"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.707,
+    "bid": 1.705,
+    "last": 1.706,
+    "spread_pct": 0.11723329425556869
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "RENDER/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36628118060:RENDER-EUR:1790714588",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "46d14c337a8bf8b376d37869e5a49a343dc8be21",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T20:43:08Z",
+    "candidate_detected_ts": 1790714588,
+    "candidate_snapshot_at_utc": "2026-09-29T20:43:08Z",
+    "detected_to_evaluation_complete_seconds": 48.587,
+    "detected_to_evaluation_start_seconds": 40.056,
+    "evaluation_completed_at_utc": "2026-09-29T20:43:56.587013Z",
+    "evaluation_runtime_seconds": 8.531,
+    "evaluation_started_at_utc": "2026-09-29T20:43:48.056415Z",
+    "handoff_to_evaluation_start_seconds": 38.014,
+    "handoff_written_at_utc": "2026-09-29T20:43:10.042712Z",
+    "scan_step_started_at_utc": "2026-09-29T20:41:33Z"
+  }
+}
