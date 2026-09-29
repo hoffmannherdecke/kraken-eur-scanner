@@ -1,0 +1,223 @@
+{
+  "altname": "BCHEUR",
+  "candidate_id": "20260929-164832-BCH-EUR-r36600154032",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 272.19 resistance with follow-through and sustained volume",
+      "BTC/EUR, ETH/EUR, and SOL/EUR stop declining or turn positive on 1h"
+    ],
+    "reason_codes": [
+      "NO_BREAKOUT",
+      "WEAK_CONTINUITY",
+      "NEGATIVE_MAJOR_REGIME",
+      "THIN_RECENT_ACTIVITY",
+      "COSTS_UNFAVORABLE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation shows no breakout or sustained follow-through; spot activity is very thin and all supplied major-market proxies remain negative.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "BCHUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 45.32,
+        "available": true,
+        "current_funding_rate": -0.008193877116016565,
+        "current_open_interest": 5693.08,
+        "funding_rate_delta": -0.0028924577663040647,
+        "open_interest_pct": -0.1016,
+        "previous_funding_rate": -0.0053014193497125,
+        "previous_observed_at_utc": "2026-09-29T16:48:58.087642Z",
+        "previous_open_interest": 5698.87
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.008193877116016565,
+        "index_price": 306.316,
+        "last": 306.47,
+        "mark_price": 306.26355839922,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 5693.08,
+        "requested_symbols": [
+          "PF_BCHUSD",
+          "PI_BCHUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_BCHUSD",
+        "volume24h": 4170.02
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 270.71,
+      "bid": 270.49,
+      "last": 270.52,
+      "spread_pct": 0.08130081300811916
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.01",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.01429180045380285,
+          "ret3h_pct": -0.7113652183903474
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.17741806031368323,
+          "ret3h_pct": -1.277948597974654
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.35372848948374,
+          "ret3h_pct": -1.910408432147559
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          },
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T17:34:15.763417Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_015430354941e99f006abbf69a05b887d191a5fe3b5c02026d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 270.71,
+    "bid": 270.49,
+    "last": 270.52,
+    "spread_pct": 0.08130081300811916
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 270.97,
+      "high": 272.02,
+      "low": 270.97,
+      "open": 271.91,
+      "trades": 35,
+      "ts": 1790699400,
+      "volume": 51.15961095,
+      "vwap": 271.68
+    },
+    {
+      "close": 270.83,
+      "high": 271.1,
+      "low": 270.0,
+      "open": 270.3,
+      "trades": 14,
+      "ts": 1790700300,
+      "volume": 13.01108084,
+      "vwap": 270.33
+    },
+    {
+      "close": 271.16,
+      "high": 271.16,
+      "low": 270.3,
+      "open": 271.11,
+      "trades": 11,
+      "ts": 1790701200,
+      "volume": 5.10705734,
+      "vwap": 270.7
+    },
+    {
+      "close": 270.69,
+      "high": 270.69,
+      "low": 270.69,
+      "open": 270.69,
+      "trades": 1,
+      "ts": 1790702100,
+      "volume": 0.0427,
+      "vwap": 270.69
+    },
+    {
+      "close": 270.52,
+      "high": 270.54,
+      "low": 270.52,
+      "open": 270.54,
+      "trades": 2,
+      "ts": 1790703000,
+      "volume": 0.075115,
+      "vwap": 270.53
+    }
+  ],
+  "pair": "BCH/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-164832-BCH-EUR-r36600154032.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T17:34:21.819455Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "b3802217947c48ec36d960159ec5a739b690f26a",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T17:34:21.819455Z",
+    "revalidation_started_at_utc": "2026-09-29T17:34:15.258447Z",
+    "ttl_due_at_utc": "2026-09-29T17:33:58.087642Z",
+    "ttl_lag_seconds": 17.171
+  }
+}
