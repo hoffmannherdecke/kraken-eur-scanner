@@ -1,0 +1,25 @@
+{
+  "baseline_ask_eur": 2.729,
+  "candidate_id": "20260929-021836-ICP-EUR-r36511641836",
+  "evaluated_at_utc": "2026-09-29T02:19:05.206651Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.77,
+      "expected_bars": 30,
+      "mae_pct": -1.392,
+      "mfe_pct": 0.183
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "ICP/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T02:51:34.335514Z"
+}
