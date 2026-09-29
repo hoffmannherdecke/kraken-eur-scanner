@@ -1,0 +1,27 @@
+{
+  "baseline_ask_eur": 0.3574,
+  "candidate_id": "20260929-034411-SPX-EUR-r36518325651",
+  "evaluated_at_utc": "2026-09-29T03:44:41.100740Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.616,
+      "expected_bars": 30,
+      "mae_pct": -1.091,
+      "mfe_pct": -0.084
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "SPX/EUR",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-29T04:30:01.318720Z",
+  "revalidation_decision": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T04:30:05.054885Z"
+}
