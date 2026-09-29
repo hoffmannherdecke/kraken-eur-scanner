@@ -1,0 +1,27 @@
+{
+  "baseline_ask_eur": 0.11961,
+  "candidate_id": "20260929-040333-ALGO-EUR-r36519474153",
+  "evaluated_at_utc": "2026-09-29T04:03:59.253219Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 1.02,
+      "expected_bars": 30,
+      "mae_pct": -1.271,
+      "mfe_pct": 1.555
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "ALGO/EUR",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-29T04:43:58.564809Z",
+  "revalidation_decision": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T04:44:19.174722Z"
+}
