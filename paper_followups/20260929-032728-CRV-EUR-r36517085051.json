@@ -1,16 +1,16 @@
 {
-  "baseline_ask_eur": 0.33568,
-  "candidate_id": "20260929-031113-CRV-EUR-r36515895794",
-  "evaluated_at_utc": "2026-09-29T03:11:44.435924Z",
+  "baseline_ask_eur": 0.34145,
+  "candidate_id": "20260929-032728-CRV-EUR-r36517085051",
+  "evaluated_at_utc": "2026-09-29T03:27:54.429385Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
     "30": {
       "bars": 30,
       "complete": true,
-      "end_close_pct": 1.436,
+      "end_close_pct": -0.357,
       "expected_bars": 30,
-      "mae_pct": -0.554,
-      "mfe_pct": 2.273
+      "mae_pct": -1.183,
+      "mfe_pct": 0.144
     }
   },
   "interval_minutes": 1,
@@ -18,10 +18,10 @@
   "original_decision": "WAIT",
   "pair": "CRV/EUR",
   "path_classification": "WAIT_TO_REJECT",
-  "revalidated_at_utc": "2026-09-29T04:04:08.603615Z",
+  "revalidated_at_utc": "2026-09-29T04:04:24.652580Z",
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T03:42:47.918059Z"
+  "updated_at_utc": "2026-09-29T04:04:51.388979Z"
 }
