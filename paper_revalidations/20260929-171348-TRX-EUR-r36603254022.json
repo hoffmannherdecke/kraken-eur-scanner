@@ -1,0 +1,219 @@
+{
+  "altname": "TRXEUR",
+  "candidate_id": "20260929-171348-TRX-EUR-r36603254022",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A strong 15m close above recent resistance with follow-through and stronger closed volume",
+      "Stabilization or reversal in major-market 3h performance"
+    ],
+    "reason_codes": [
+      "weak_follow_through",
+      "weak_closed_volume",
+      "major_assets_negative_3h",
+      "remaining_move_not_established",
+      "fees_and_slippage_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TRX/EUR has not established reliable follow-through: the latest close retreated from the local high on very weak volume while major assets remain negative over 3h. No defensible post-cost opportunity or confirmation entry is established.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "TRXUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 35.12,
+        "available": true,
+        "current_funding_rate": -8.887645416375e-06,
+        "current_open_interest": 12346005.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -0.0006,
+        "previous_funding_rate": -8.887645416375e-06,
+        "previous_observed_at_utc": "2026-09-29T17:14:12.002178Z",
+        "previous_open_interest": 12346082.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -8.887645416375e-06,
+        "index_price": 0.334878,
+        "last": 0.33487,
+        "mark_price": 0.33489340981,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 12346005.0,
+        "requested_symbols": [
+          "PF_TRXUSD",
+          "PI_TRXUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_TRXUSD",
+        "volume24h": 3192870
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.295928,
+      "bid": 0.295918,
+      "last": 0.295891,
+      "spread_pct": 0.0033792574419730806
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "16",
+      "pair_decimals": 6,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.20695770804910474,
+          "ret3h_pct": -0.6534135481532477
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.16487172640620162,
+          "ret3h_pct": -1.2085059422040634
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.05757604836387209,
+          "ret3h_pct": -2.0502210100630025
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T17:49:17.960400Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_096c9e18fb66fed0006abbfa1f3d9087d2bf4f9102578d73d5"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.295928,
+    "bid": 0.295918,
+    "last": 0.295891,
+    "spread_pct": 0.0033792574419730806
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.295687,
+      "high": 0.295688,
+      "low": 0.2953,
+      "open": 0.2953,
+      "trades": 21,
+      "ts": 1790700300,
+      "volume": 7118.57372603,
+      "vwap": 0.295464
+    },
+    {
+      "close": 0.295838,
+      "high": 0.2959,
+      "low": 0.295688,
+      "open": 0.295688,
+      "trades": 36,
+      "ts": 1790701200,
+      "volume": 47348.66567474,
+      "vwap": 0.295859
+    },
+    {
+      "close": 0.295977,
+      "high": 0.296084,
+      "low": 0.295651,
+      "open": 0.295793,
+      "trades": 38,
+      "ts": 1790702100,
+      "volume": 63472.06499049,
+      "vwap": 0.295882
+    },
+    {
+      "close": 0.29605,
+      "high": 0.296058,
+      "low": 0.295993,
+      "open": 0.296031,
+      "trades": 16,
+      "ts": 1790703000,
+      "volume": 10841.56214562,
+      "vwap": 0.296008
+    },
+    {
+      "close": 0.295891,
+      "high": 0.296024,
+      "low": 0.295891,
+      "open": 0.296021,
+      "trades": 12,
+      "ts": 1790703900,
+      "volume": 1550.33011627,
+      "vwap": 0.295961
+    }
+  ],
+  "pair": "TRX/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-171348-TRX-EUR-r36603254022.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T17:49:24.613907Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "f0e28a319ed8c299f2ad3a25d5fbf17a743fab1e",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T17:49:24.613907Z",
+    "revalidation_started_at_utc": "2026-09-29T17:49:17.697590Z",
+    "ttl_due_at_utc": "2026-09-29T17:44:12.002178Z",
+    "ttl_lag_seconds": 305.695
+  }
+}
