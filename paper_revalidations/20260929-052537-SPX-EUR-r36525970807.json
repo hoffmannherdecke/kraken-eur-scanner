@@ -1,0 +1,220 @@
+{
+  "altname": "SPXEUR",
+  "candidate_id": "20260929-052537-SPX-EUR-r36525970807",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained 15m acceptance above 0.3618 with a retest holding as support",
+      "A further structural confirmation level above the current 0.364 ask"
+    ],
+    "reason_codes": [
+      "broader_downtrend",
+      "single_breakout_close",
+      "volume_confirmation_weak",
+      "entry_above_prior_resistance",
+      "net_edge_after_costs_unproven",
+      "stage2_confirmation_not_defined"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "A 15m close has reclaimed resistance, but it is only a single, modest-volume confirmation against a pronounced 7d/30d downtrend. At the current ask the breakout is already above the prior trigger area, and no well-grounded second-stage trigger or sufficient net reward after fees is established.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SPXUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 48.19,
+        "available": true,
+        "current_funding_rate": -0.000108634696374542,
+        "current_open_interest": 473102.0,
+        "funding_rate_delta": 1.6070176520390983e-05,
+        "open_interest_pct": -3.0614,
+        "previous_funding_rate": -0.000124704872894933,
+        "previous_observed_at_utc": "2026-09-29T05:26:52.321397Z",
+        "previous_open_interest": 488043.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.000108634696374542,
+        "index_price": 0.413757,
+        "last": 0.4135,
+        "mark_price": 0.41308996057,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 473102.0,
+        "requested_symbols": [
+          "PF_SPXUSD",
+          "PI_SPXUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_SPXUSD",
+        "volume24h": 604465
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.364,
+      "bid": 0.3636,
+      "last": 0.3628,
+      "spread_pct": 0.1099505222649839
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "9",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.6926483734705391,
+          "ret3h_pct": 1.1769255665205591
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.8521710985810005,
+          "ret3h_pct": 1.2783118927056414
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 1.0512103385090121,
+          "ret3h_pct": 1.7973379966967684
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T06:15:03.249064Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0b8987fe89955c86006abb5767d08c87d2b3dfde67600fb9eb"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.364,
+    "bid": 0.3636,
+    "last": 0.3628,
+    "spread_pct": 0.1099505222649839
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.3607,
+      "high": 0.3615,
+      "low": 0.3593,
+      "open": 0.3604,
+      "trades": 30,
+      "ts": 1790658900,
+      "volume": 13536.06069,
+      "vwap": 0.3608
+    },
+    {
+      "close": 0.3607,
+      "high": 0.3607,
+      "low": 0.3607,
+      "open": 0.3607,
+      "trades": 0,
+      "ts": 1790659800,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 0.3605,
+      "high": 0.3605,
+      "low": 0.3582,
+      "open": 0.3582,
+      "trades": 4,
+      "ts": 1790660700,
+      "volume": 730.9272,
+      "vwap": 0.3604
+    },
+    {
+      "close": 0.3628,
+      "high": 0.3629,
+      "low": 0.3613,
+      "open": 0.3615,
+      "trades": 14,
+      "ts": 1790661600,
+      "volume": 4567.65939,
+      "vwap": 0.3619
+    },
+    {
+      "close": 0.3628,
+      "high": 0.3628,
+      "low": 0.3628,
+      "open": 0.3628,
+      "trades": 0,
+      "ts": 1790662500,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "SPX/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-052537-SPX-EUR-r36525970807.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T06:15:15.885349Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "1383ffac868acbfdc84f7b3c5d553ffd791b67e4",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T06:15:15.885349Z",
+    "revalidation_started_at_utc": "2026-09-29T06:15:02.965962Z",
+    "ttl_due_at_utc": "2026-09-29T05:56:52.321397Z",
+    "ttl_lag_seconds": 1090.645
+  }
+}

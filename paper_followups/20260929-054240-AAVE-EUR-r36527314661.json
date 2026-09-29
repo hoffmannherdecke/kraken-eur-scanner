@@ -1,0 +1,25 @@
+{
+  "baseline_ask_eur": 133.58,
+  "candidate_id": "20260929-054240-AAVE-EUR-r36527314661",
+  "evaluated_at_utc": "2026-09-29T05:43:03.496395Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 2.283,
+      "expected_bars": 30,
+      "mae_pct": 0.037,
+      "mfe_pct": 2.336
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "AAVE/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T06:15:51.235338Z"
+}

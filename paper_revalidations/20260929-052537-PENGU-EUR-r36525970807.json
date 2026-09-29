@@ -1,0 +1,219 @@
+{
+  "altname": "PENGUEUR",
+  "candidate_id": "20260929-052537-PENGU-EUR-r36525970807",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close above 0.008212 on volume at or above 1.5x followed by a hold was not confirmed.",
+      "No pullback toward 0.008128 with a bullish 15m close holding that level was supplied."
+    ],
+    "reason_codes": [
+      "extended_after_fresh_move",
+      "breakout_volume_confirmation_missing",
+      "entry_distance_increased",
+      "fees_and_spread_reduce_edge",
+      "remaining_move_unproven"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Price has moved above prior resistance, but the latest hold lacks the required volume confirmation. Chasing after the move with 1.20% round-trip taker fees and current spread leaves insufficient demonstrated edge for a scout.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "PENGUUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 48.23,
+        "available": true,
+        "current_funding_rate": -1.65721381551e-07,
+        "current_open_interest": 36096610.0,
+        "funding_rate_delta": 9.977478214100002e-08,
+        "open_interest_pct": -0.4501,
+        "previous_funding_rate": -2.65496163692e-07,
+        "previous_observed_at_utc": "2026-09-29T05:26:30.874148Z",
+        "previous_open_interest": 36259810.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.65721381551e-07,
+        "index_price": 0.0094061,
+        "last": 0.009412,
+        "mark_price": 0.00940438353,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 36096610.0,
+        "requested_symbols": [
+          "PF_PENGUUSD",
+          "PI_PENGUUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_PENGUUSD",
+        "volume24h": 156508260
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.008277,
+      "bid": 0.008266,
+      "last": 0.008262,
+      "spread_pct": 0.132986761772337
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "700",
+      "pair_decimals": 6,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.28037217254972546,
+          "ret3h_pct": 0.6440559488483322
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.3266832492844429,
+          "ret3h_pct": 0.7855721712342056
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.511830033800087,
+          "ret3h_pct": 1.1959163830821629
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T06:14:43.560471Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0b93acef2372c936006abb5754893087d2977f8874defdbb39"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.008277,
+    "bid": 0.008266,
+    "last": 0.008262,
+    "spread_pct": 0.132986761772337
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.008108,
+      "high": 0.008128,
+      "low": 0.008077,
+      "open": 0.008088,
+      "trades": 11,
+      "ts": 1790658000,
+      "volume": 107638.3355,
+      "vwap": 0.008095
+    },
+    {
+      "close": 0.008188,
+      "high": 0.008211,
+      "low": 0.008106,
+      "open": 0.008109,
+      "trades": 21,
+      "ts": 1790658900,
+      "volume": 195536.78577,
+      "vwap": 0.008156
+    },
+    {
+      "close": 0.008143,
+      "high": 0.008171,
+      "low": 0.008087,
+      "open": 0.008171,
+      "trades": 8,
+      "ts": 1790659800,
+      "volume": 196993.04556,
+      "vwap": 0.008114
+    },
+    {
+      "close": 0.008225,
+      "high": 0.008236,
+      "low": 0.008145,
+      "open": 0.008145,
+      "trades": 5,
+      "ts": 1790660700,
+      "volume": 106147.36434,
+      "vwap": 0.008205
+    },
+    {
+      "close": 0.008262,
+      "high": 0.008262,
+      "low": 0.008204,
+      "open": 0.008205,
+      "trades": 8,
+      "ts": 1790661600,
+      "volume": 58749.67921,
+      "vwap": 0.008239
+    }
+  ],
+  "pair": "PENGU/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-052537-PENGU-EUR-r36525970807.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T06:14:52.917843Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "1383ffac868acbfdc84f7b3c5d553ffd791b67e4",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T06:14:52.917843Z",
+    "revalidation_started_at_utc": "2026-09-29T06:14:43.295720Z",
+    "ttl_due_at_utc": "2026-09-29T05:56:30.874148Z",
+    "ttl_lag_seconds": 1092.422
+  }
+}

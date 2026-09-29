@@ -1,0 +1,27 @@
+{
+  "baseline_ask_eur": 1.5307,
+  "candidate_id": "20260929-052537-ATOM-EUR-r36525970807",
+  "evaluated_at_utc": "2026-09-29T05:26:08.307476Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.692,
+      "expected_bars": 30,
+      "mae_pct": -1.457,
+      "mfe_pct": 0.144
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "ATOM/EUR",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-29T06:15:28.593299Z",
+  "revalidation_decision": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T06:15:49.225142Z"
+}

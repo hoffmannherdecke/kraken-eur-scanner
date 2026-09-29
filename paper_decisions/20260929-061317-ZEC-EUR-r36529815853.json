@@ -1,0 +1,179 @@
+{
+  "altname": "ZECEUR",
+  "candidate_age_seconds": 72,
+  "candidate_event_time_utc": "2026-09-29T06:13:17Z",
+  "candidate_id": "20260929-061317-ZEC-EUR-r36529815853",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": 1.8,
+    "missing_triggers": [
+      "Hold or retest the 1224.401 EUR breakout level over the next 30 minutes without losing it.",
+      "Show renewed completed-candle volume and upward follow-through before reconsidering entry."
+    ],
+    "reason_codes": [
+      "SPREAD_AND_DEPTH_ADEQUATE",
+      "BROAD_MARKET_SUPPORTIVE",
+      "BREAKOUT_ALREADY_EXTENDED",
+      "CLOSED_VOLUME_WEAK",
+      "COST_ADJUSTED_EDGE_UNCLEAR",
+      "NO_COIN_SPECIFIC_CATALYST_EVIDENCE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid breakout candidate, but ZEC has already surged above 1h/3h resistance and recent momentum leaves inadequate cost-adjusted entry margin.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ZECUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 151.88,
+        "available": true,
+        "current_funding_rate": -0.035185780918,
+        "current_open_interest": 12186.88,
+        "funding_rate_delta": -0.127893331604515,
+        "open_interest_pct": -0.7699,
+        "previous_funding_rate": 0.092707550686515,
+        "previous_observed_at_utc": "2026-09-29T03:42:37.190503Z",
+        "previous_open_interest": 12281.44
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.035185780918,
+        "index_price": 1405.197,
+        "last": 1403.11,
+        "mark_price": 1405.10158913276,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 12186.88,
+        "requested_symbols": [
+          "PF_ZECUSD",
+          "PI_ZECUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ZECUSD",
+        "volume24h": 31651.83
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1236.956,
+      "bid": 1236.145,
+      "last": 1234.874,
+      "spread_pct": 0.06558567563556214
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.01",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.28037217254972546,
+          "ret3h_pct": 0.6440559488483322
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.3266832492844429,
+          "ret3h_pct": 0.7855721712342056
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.511830033800087,
+          "ret3h_pct": 1.1959163830821629
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T06:14:29.369748Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-29T06:14:43.188279Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0bfbf0b398af9c18006abb5746401087d29da32ea12d6f0bb6"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1236.956,
+    "bid": 1236.145,
+    "last": 1234.874,
+    "spread_pct": 0.06558567563556214
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ZEC/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36529815853:ZEC-EUR:1790662397",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "1383ffac868acbfdc84f7b3c5d553ffd791b67e4",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T06:13:17Z",
+    "candidate_detected_ts": 1790662397,
+    "candidate_snapshot_at_utc": "2026-09-29T06:13:17Z",
+    "detected_to_evaluation_complete_seconds": 86.188,
+    "detected_to_evaluation_start_seconds": 72.31,
+    "evaluation_completed_at_utc": "2026-09-29T06:14:43.188279Z",
+    "evaluation_runtime_seconds": 13.879,
+    "evaluation_started_at_utc": "2026-09-29T06:14:29.309681Z",
+    "handoff_to_evaluation_start_seconds": 68.851,
+    "handoff_written_at_utc": "2026-09-29T06:13:20.458854Z",
+    "scan_step_started_at_utc": "2026-09-29T06:11:43Z"
+  }
+}
