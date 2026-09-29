@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 35,
+        "bars": 32,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -118,7 +118,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-29T21:39:20.013109Z"
+    "updated_at_utc": "2026-09-29T21:42:48.321859Z"
   },
   "original_decision": "WAIT",
   "pair": "AVAX/EUR",
