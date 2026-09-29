@@ -49,7 +49,7 @@
     "flagged_as_already_run": false,
     "horizons": {
       "15": {
-        "bars": 13,
+        "bars": 0,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 15,
@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 238,
+        "bars": 223,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -73,7 +73,7 @@
         "trough_at_utc": null
       },
       "60": {
-        "bars": 58,
+        "bars": 43,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 60,
@@ -83,6 +83,17 @@
         "peak_at_utc": null,
         "reason": "incomplete_ohlc_coverage",
         "trough_at_utc": null
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 0.173,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -2.243,
+        "mfe_pct": 3.451,
+        "peak_at_utc": "2026-09-29T14:40:00Z",
+        "trough_at_utc": "2026-09-29T17:50:00Z"
       }
     },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
@@ -105,7 +116,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-29T19:15:06.003855Z"
+    "updated_at_utc": "2026-09-29T19:30:02.204905Z"
   },
   "original_decision": "WAIT",
   "pair": "OP/EUR",

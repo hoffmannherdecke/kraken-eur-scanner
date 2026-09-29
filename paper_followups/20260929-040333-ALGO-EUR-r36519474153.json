@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 50,
+        "bars": 35,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -115,7 +115,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-29T19:14:19.261943Z"
+    "updated_at_utc": "2026-09-29T19:29:50.142978Z"
   },
   "original_decision": "WAIT",
   "pair": "ALGO/EUR",

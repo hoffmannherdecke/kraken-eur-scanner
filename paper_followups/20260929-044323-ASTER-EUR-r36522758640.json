@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 90,
+        "bars": 75,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -114,7 +114,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-09-29T19:14:27.591988Z"
+    "updated_at_utc": "2026-09-29T19:29:52.077743Z"
   },
   "original_decision": "WAIT",
   "pair": "ASTER/EUR",

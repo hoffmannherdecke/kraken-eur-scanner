@@ -1,0 +1,179 @@
+{
+  "altname": "XPLEUR",
+  "candidate_age_seconds": 72,
+  "candidate_event_time_utc": "2026-09-29T19:27:28Z",
+  "candidate_id": "20260929-192728-XPL-EUR-r36619176851",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.0881 with follow-through volume",
+      "3h momentum turns positive while price holds above 0.0875"
+    ],
+    "reason_codes": [
+      "below_1h_and_3h_resistance",
+      "3h_return_negative",
+      "closed_volume_below_baseline",
+      "round_trip_fees_and_spread_material",
+      "open_interest_declining",
+      "broad_market_proxy_positive"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Early momentum is improving, but XPL remains below nearby resistance and the available move is not yet sufficient to justify Kraken EUR costs.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "XPLUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 216.79,
+        "available": true,
+        "current_funding_rate": 3.0295755906267e-05,
+        "current_open_interest": 8502632.0,
+        "funding_rate_delta": -1.4984121917910023e-06,
+        "open_interest_pct": -6.0385,
+        "previous_funding_rate": 3.1794168098058e-05,
+        "previous_observed_at_utc": "2026-09-29T15:51:53.716616Z",
+        "previous_open_interest": 9049061.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.0295755906267e-05,
+        "index_price": 0.098736,
+        "last": 0.09917,
+        "mark_price": 0.09893935823,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 8502632.0,
+        "requested_symbols": [
+          "PF_XPLUSD",
+          "PI_XPLUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_XPLUSD",
+        "volume24h": 9443779
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.0871,
+      "bid": 0.0869,
+      "last": 0.087,
+      "spread_pct": 0.229885057471255
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "60",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.16746138329626348,
+          "ret3h_pct": 0.5752624848336829
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4236554325467212,
+          "ret3h_pct": 0.7150603226243835
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.6987651957499841,
+          "ret3h_pct": 0.8049060942890041
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T19:28:40.130923Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-29T19:28:48.924283Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f734a6b20504f1a006abc1169767c87d29a2f9a3dcf325e1a"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0871,
+    "bid": 0.0869,
+    "last": 0.087,
+    "spread_pct": 0.229885057471255
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "XPL/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36619176851:XPL-EUR:1790710048",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "26a579abc0ba08c4f9b182fa7df4451526f18bb1",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-29T19:27:28Z",
+    "candidate_detected_ts": 1790710048,
+    "candidate_snapshot_at_utc": "2026-09-29T19:27:28Z",
+    "detected_to_evaluation_complete_seconds": 80.924,
+    "detected_to_evaluation_start_seconds": 72.059,
+    "evaluation_completed_at_utc": "2026-09-29T19:28:48.924283Z",
+    "evaluation_runtime_seconds": 8.865,
+    "evaluation_started_at_utc": "2026-09-29T19:28:40.058790Z",
+    "handoff_to_evaluation_start_seconds": 69.815,
+    "handoff_written_at_utc": "2026-09-29T19:27:30.243593Z",
+    "scan_step_started_at_utc": "2026-09-29T19:25:55Z"
+  }
+}
