@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 108,
+        "bars": 90,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -117,7 +117,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-29T19:55:56.683188Z"
+    "updated_at_utc": "2026-09-29T20:13:20.716615Z"
   },
   "original_decision": "WAIT",
   "pair": "AAVE/EUR",
