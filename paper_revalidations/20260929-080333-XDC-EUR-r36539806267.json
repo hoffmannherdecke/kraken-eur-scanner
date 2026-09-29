@@ -1,0 +1,196 @@
+{
+  "altname": "XDCEUR",
+  "candidate_id": "20260929-080333-XDC-EUR-r36539806267",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "extended_without_breakout_confirmation",
+      "cost_hurdle",
+      "insufficient_evidence_for_stop_and_stage2"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The prior hold condition has partly improved, but price has not confirmed above 0.03138 on a sustained 15m close. After the recent sharp move, no sufficiently supported remaining edge or robust two-stage plan is established after Kraken taker fees.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "XDCUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_XDCUSD",
+          "PI_XDCUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.03111,
+      "bid": 0.0311,
+      "last": 0.0311,
+      "spread_pct": 0.0321491721588156
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "180",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.29106214690792775,
+          "ret3h_pct": 1.1350384824690973
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.42158763119664044,
+          "ret3h_pct": 2.012469485484858
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2759802055576799,
+          "ret3h_pct": 1.4734206471494593
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T08:37:37.955238Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0692ca7d7dd34206006abb78d31b0087d2b6c2a1631d34bb47"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.03111,
+    "bid": 0.0311,
+    "last": 0.0311,
+    "spread_pct": 0.0321491721588156
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.03032,
+      "high": 0.03082,
+      "low": 0.0302,
+      "open": 0.0308,
+      "trades": 58,
+      "ts": 1790667000,
+      "volume": 140604.42225,
+      "vwap": 0.03057
+    },
+    {
+      "close": 0.03075,
+      "high": 0.0308,
+      "low": 0.0303,
+      "open": 0.03032,
+      "trades": 211,
+      "ts": 1790667900,
+      "volume": 983530.25441,
+      "vwap": 0.03051
+    },
+    {
+      "close": 0.03087,
+      "high": 0.03154,
+      "low": 0.03038,
+      "open": 0.03077,
+      "trades": 264,
+      "ts": 1790668800,
+      "volume": 2302239.16379,
+      "vwap": 0.03098
+    },
+    {
+      "close": 0.03094,
+      "high": 0.03094,
+      "low": 0.03085,
+      "open": 0.03085,
+      "trades": 10,
+      "ts": 1790669700,
+      "volume": 15560.09464,
+      "vwap": 0.03092
+    },
+    {
+      "close": 0.0311,
+      "high": 0.0311,
+      "low": 0.03094,
+      "open": 0.03094,
+      "trades": 129,
+      "ts": 1790670600,
+      "volume": 635548.65603,
+      "vwap": 0.03101
+    }
+  ],
+  "pair": "XDC/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-080333-XDC-EUR-r36539806267.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T08:37:49.029563Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "686ac0c33e1c084b5de7af77522493da35665912",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T08:37:49.029563Z",
+    "revalidation_started_at_utc": "2026-09-29T08:37:37.726181Z",
+    "ttl_due_at_utc": "2026-09-29T08:35:18.233808Z",
+    "ttl_lag_seconds": 139.492
+  }
+}
