@@ -1,0 +1,27 @@
+{
+  "baseline_ask_eur": 0.35372,
+  "candidate_id": "20260929-092159-CRV-EUR-r36548490319",
+  "evaluated_at_utc": "2026-09-29T09:22:23.495950Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -1.278,
+      "expected_bars": 30,
+      "mae_pct": -1.326,
+      "mfe_pct": 0.515
+    }
+  },
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "original_decision": "WAIT",
+  "pair": "CRV/EUR",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-29T09:55:04.148112Z",
+  "revalidation_decision": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-29T09:55:17.072064Z"
+}
