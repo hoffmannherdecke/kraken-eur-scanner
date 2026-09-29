@@ -1,27 +1,27 @@
 {
-  "baseline_ask_eur": 0.1883,
-  "candidate_id": "20260929-114834-ARB-EUR-r36563829504",
-  "evaluated_at_utc": "2026-09-29T11:49:01.600495Z",
+  "baseline_ask_eur": 10.518,
+  "candidate_id": "20260929-120334-AVAX-EUR-r36565057571",
+  "evaluated_at_utc": "2026-09-29T12:04:01.182519Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
     "30": {
       "bars": 30,
       "complete": true,
-      "end_close_pct": 0.584,
+      "end_close_pct": -1.245,
       "expected_bars": 30,
-      "mae_pct": -0.372,
-      "mfe_pct": 1.062
+      "mae_pct": -1.455,
+      "mfe_pct": 0.551
     }
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "original_decision": "WAIT",
-  "pair": "ARB/EUR",
+  "pair": "AVAX/EUR",
   "path_classification": "WAIT_TO_REJECT",
-  "revalidated_at_utc": "2026-09-29T12:43:26.579591Z",
+  "revalidated_at_utc": "2026-09-29T12:43:19.604422Z",
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T12:20:17.874764Z"
+  "updated_at_utc": "2026-09-29T12:44:07.611323Z"
 }
