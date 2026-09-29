@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.0397,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -3.27,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -4.175,
+        "mfe_pct": 4.2,
+        "peak_at_utc": "2026-09-29T08:25:00Z",
+        "trough_at_utc": "2026-09-29T11:50:00Z"
+      },
       "15": {
         "bars": 0,
         "complete": false,
@@ -96,6 +107,11 @@
         "trough_at_utc": "2026-09-29T02:30:00Z"
       }
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "weak_higher_timeframe_momentum",
@@ -116,7 +132,7 @@
     },
     "schema_version": 1,
     "setup_lane": "REVERSAL",
-    "updated_at_utc": "2026-09-29T20:55:33.587942Z"
+    "updated_at_utc": "2026-09-29T21:05:12.134958Z"
   },
   "original_decision": "WAIT",
   "pair": "KAS/EUR",

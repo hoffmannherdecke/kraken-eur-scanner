@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-09-29T20:43:40.316713Z",
     "evaluation_ask_eur": 272.42,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.224,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.253,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-09-29T20:44:00Z",
+        "trough_at_utc": "2026-09-29T20:53:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-09-29T17:50:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -40,7 +52,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-29T20:56:28.627821Z"
+    "updated_at_utc": "2026-09-29T21:05:52.820668Z"
   },
   "original_decision": "WAIT",
   "pair": "BCH/EUR",
