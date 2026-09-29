@@ -1,0 +1,201 @@
+{
+  "altname": "XDCEUR",
+  "candidate_id": "20260929-090333-XDC-EUR-r36546439461",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.03154 resistance",
+      "Volume recovery on breakout"
+    ],
+    "reason_codes": [
+      "EXTENDED_NEAR_HIGHS",
+      "NEAR_RESISTANCE",
+      "LOW_VOLUME",
+      "INSUFFICIENT_REMAINING_MOVE_AFTER_COSTS",
+      "NO_DERIVATIVES_DATA"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "No confirmed, volume-backed breakout: price remains below resistance with subdued activity, and the near-term ceiling is well below round-trip costs. Scout criteria are not met.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "XDCUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_XDCUSD",
+          "PI_XDCUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.03146,
+      "bid": 0.03142,
+      "last": 0.03139,
+      "spread_pct": 0.1272264631043426
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "180",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.26958394525787854,
+          "ret3h_pct": 0.2203586452144357
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.5365495735118686,
+          "ret3h_pct": 0.6645457460633608
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1423555091582096,
+          "ret3h_pct": 0.5062565670073571
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-28T13:46:30-04:00",
+            "title": "SEC Charges Registered Investment Adviser Zoe Financial for Failure to Disclose Conflict of Interest"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-29T09:39:42.440129Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0e5de913121ba358006abb876013b487d19f3b513e67f60466"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.03146,
+    "bid": 0.03142,
+    "last": 0.03139,
+    "spread_pct": 0.1272264631043426
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.03135,
+      "high": 0.03135,
+      "low": 0.03094,
+      "open": 0.03094,
+      "trades": 184,
+      "ts": 1790670600,
+      "volume": 978127.07716,
+      "vwap": 0.03106
+    },
+    {
+      "close": 0.03137,
+      "high": 0.03141,
+      "low": 0.03134,
+      "open": 0.03141,
+      "trades": 37,
+      "ts": 1790671500,
+      "volume": 105290.24973,
+      "vwap": 0.03139
+    },
+    {
+      "close": 0.03141,
+      "high": 0.03141,
+      "low": 0.03134,
+      "open": 0.03134,
+      "trades": 21,
+      "ts": 1790672400,
+      "volume": 71144.54987,
+      "vwap": 0.0314
+    },
+    {
+      "close": 0.03139,
+      "high": 0.03146,
+      "low": 0.03139,
+      "open": 0.03141,
+      "trades": 7,
+      "ts": 1790673300,
+      "volume": 33185.40766,
+      "vwap": 0.03141
+    },
+    {
+      "close": 0.03139,
+      "high": 0.03139,
+      "low": 0.03139,
+      "open": 0.03139,
+      "trades": 0,
+      "ts": 1790674200,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "XDC/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-090333-XDC-EUR-r36546439461.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-29T09:39:49.156443Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "c43091b9a380be8949d04159a172a2594c6339fd",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-29T09:39:49.156443Z",
+    "revalidation_started_at_utc": "2026-09-29T09:39:41.971384Z",
+    "ttl_due_at_utc": "2026-09-29T09:34:19.932307Z",
+    "ttl_lag_seconds": 322.039
+  }
+}
