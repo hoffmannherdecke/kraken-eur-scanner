@@ -1,27 +1,27 @@
 {
-  "baseline_ask_eur": 1.431,
-  "candidate_id": "20260929-125844-ZRO-EUR-r36571580204",
-  "evaluated_at_utc": "2026-09-29T12:59:23.106123Z",
+  "baseline_ask_eur": 0.21153,
+  "candidate_id": "20260929-131334-USELESS-EUR-r36573348151",
+  "evaluated_at_utc": "2026-09-29T13:14:30.462191Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
     "30": {
       "bars": 30,
       "complete": true,
-      "end_close_pct": 0.629,
+      "end_close_pct": 1.853,
       "expected_bars": 30,
-      "mae_pct": -0.14,
-      "mfe_pct": 1.048
+      "mae_pct": -0.681,
+      "mfe_pct": 2.052
     }
   },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "original_decision": "WAIT",
-  "pair": "ZRO/EUR",
+  "pair": "USELESS/EUR",
   "path_classification": "WAIT_TO_REJECT",
-  "revalidated_at_utc": "2026-09-29T13:52:16.042304Z",
+  "revalidated_at_utc": "2026-09-29T13:52:27.146787Z",
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T13:34:34.570014Z"
+  "updated_at_utc": "2026-09-29T13:52:35.958802Z"
 }
