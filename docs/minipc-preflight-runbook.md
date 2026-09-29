@@ -103,7 +103,7 @@ Vor Realtime-Strategie:
 Reihenfolge:
 1. Kraken Public REST/WebSocket lokal.
 2. Altrady als **zusätzlicher** Trigger, nie exklusiv.
-3. Supabase schlank als sekundäre State-/Ergebnisschicht.
+3. Supabase schlank als sekundäre State-/Ergebnisschicht. Dabei ausdrücklich prüfen, warum aktuell noch keine V2R3-Outcomes in `paper_candidate_outcomes` liegen; Sync-/Persistenzpfad erst nach E2E-Nachweis als funktionsfähig markieren.
 4. GitHub/API/Slack.
 5. ChatGPT Desktop installieren; Work nur für Aufgaben mit echtem Rechner-/Browserkontext.
 6. Uptime Kuma/Grafana nur bei belegtem Zusatznutzen.
