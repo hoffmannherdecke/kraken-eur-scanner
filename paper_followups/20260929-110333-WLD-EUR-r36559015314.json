@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-09-29T11:04:03.891558Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 0.318,
+      "expected_bars": 120,
+      "mae_pct": -0.34,
+      "mfe_pct": 1.634
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -31,5 +39,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T12:05:51.268552Z"
+  "updated_at_utc": "2026-09-29T13:15:01.613774Z"
 }
