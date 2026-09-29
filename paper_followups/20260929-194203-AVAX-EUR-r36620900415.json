@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-09-29T19:42:29.822592Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 0.719,
+      "expected_bars": 120,
+      "mae_pct": -0.419,
+      "mfe_pct": 1.718
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -79,7 +87,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-09-29T21:42:55.014772Z"
+    "updated_at_utc": "2026-09-29T21:54:36.910255Z"
   },
   "original_decision": "WAIT",
   "pair": "AVAX/EUR",
@@ -89,5 +97,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T20:45:12.484325Z"
+  "updated_at_utc": "2026-09-29T21:54:37.080185Z"
 }

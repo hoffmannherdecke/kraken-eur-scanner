@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 53,
+        "bars": 41,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -115,7 +115,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-09-29T21:42:51.635191Z"
+    "updated_at_utc": "2026-09-29T21:54:33.179592Z"
   },
   "original_decision": "WAIT",
   "pair": "ZRO/EUR",

@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 1,
+        "bars": 0,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -114,7 +114,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-29T21:42:46.244198Z"
+    "updated_at_utc": "2026-09-29T21:54:29.426539Z"
   },
   "original_decision": "REJECT",
   "pair": "PAXG/EUR",

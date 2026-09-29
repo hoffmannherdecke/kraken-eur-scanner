@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 32,
+        "bars": 20,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -116,7 +116,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-29T21:42:49.488672Z"
+    "updated_at_utc": "2026-09-29T21:54:31.801489Z"
   },
   "original_decision": "WAIT",
   "pair": "ZEC/EUR",

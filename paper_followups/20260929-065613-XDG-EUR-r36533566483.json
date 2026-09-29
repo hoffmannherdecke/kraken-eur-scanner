@@ -61,7 +61,7 @@
         "trough_at_utc": null
       },
       "240": {
-        "bars": 75,
+        "bars": 63,
         "complete": false,
         "end_close_pct": null,
         "expected_bars": 240,
@@ -117,7 +117,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-29T21:42:53.106930Z"
+    "updated_at_utc": "2026-09-29T21:54:34.333874Z"
   },
   "original_decision": "WAIT",
   "pair": "XDG/EUR",
