@@ -43,6 +43,7 @@ jobs:
             'tools/minipc-post-recovery-gate.ps1',
             'tools/minipc-phase2-enable.ps1',
             'tools/minipc-phase3-altrady-enable.ps1',
+            'tools/minipc-v2r4-preflight-smoke.ps1',
             'tools/minipc-altrady-secret-prep.ps1',
             'tools/uninstall-minipc-kraken-canary.ps1',
             'tools/install-minipc-kraken-canary.ps1',
