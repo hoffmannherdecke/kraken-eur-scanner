@@ -1,6 +1,6 @@
 param(
   [Parameter(Mandatory=$true)]
-  [ValidateSet("Url","TimeTestPayload","PricePayload")]
+  [ValidateSet("Url","TimeTestPayload","LivePriceTestPayload","PricePayload")]
   [string]$Mode,
   [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading")
 )
@@ -25,10 +25,16 @@ if ($token.Length -lt 24) {
 }
 $escaped = $token.Replace("\","\\").Replace('"','\"')
 
-if ($Mode -eq "TimeTestPayload") {
-  $payload = '{"token":"' + $escaped + '","exchange":"{{exchange}}","symbol":"{{symbol}}","direction":"LIVE_ALTRADY_TIME_TEST","time":"{{time}}"}'
-} else {
-  $payload = '{"token":"' + $escaped + '","exchange":"{{exchange}}","symbol":"{{symbol}}","direction":"{{direction}}","close":"{{close}}","time":"{{time}}","low":"{{low}}","high":"{{high}}"}'
+switch ($Mode) {
+  "TimeTestPayload" {
+    $payload = '{"token":"' + $escaped + '","exchange":"{{exchange}}","symbol":"{{symbol}}","direction":"LIVE_ALTRADY_TIME_TEST","time":"{{time}}"}'
+  }
+  "LivePriceTestPayload" {
+    $payload = '{"token":"' + $escaped + '","exchange":"{{exchange}}","symbol":"{{symbol}}","direction":"LIVE_ALTRADY_PRICE_TEST","altrady_direction":"{{direction}}","close":"{{close}}","time":"{{time}}"}'
+  }
+  "PricePayload" {
+    $payload = '{"token":"' + $escaped + '","exchange":"{{exchange}}","symbol":"{{symbol}}","direction":"{{direction}}","close":"{{close}}","time":"{{time}}","low":"{{low}}","high":"{{high}}"}'
+  }
 }
 
 Set-Clipboard -Value $payload
