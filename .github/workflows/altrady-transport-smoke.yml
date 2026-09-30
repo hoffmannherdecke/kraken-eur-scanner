@@ -1,0 +1,50 @@
+name: Altrady transport smoke
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/minipc-altrady-poller.py'
+      - 'tools/install-minipc-altrady-transport.ps1'
+      - 'tools/uninstall-minipc-altrady-transport.ps1'
+      - 'tools/minipc-watchdog.ps1'
+      - 'supabase/functions/altrady-trigger-relay/**'
+      - '.github/workflows/altrady-transport-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Compile Python poller
+        shell: powershell
+        run: python -m py_compile .\tools\minipc-altrady-poller.py
+      - name: Parse PowerShell task scripts
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @(
+            'tools/install-minipc-altrady-transport.ps1',
+            'tools/uninstall-minipc-altrady-transport.ps1',
+            'tools/minipc-watchdog.ps1'
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file), [ref]$tokens, [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | Format-List | Out-String | Write-Error
+              throw "PowerShell parse failed: $file"
+            }
+            Write-Host "PARSE_OK $file"
+          }
