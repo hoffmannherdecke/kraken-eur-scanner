@@ -258,3 +258,15 @@ Verified from the MINI-PC installer output:
 
 Backup/restore baseline is therefore locally active.
 
+### Next software gate prepared 2026-09-30
+
+Without MINI-PC user interaction, the next local verification bundle was prepared and Windows-CI tested:
+- `tools/minipc-marketdata-smoke.ps1` uses the existing isolated venv, pins `websockets==15.0.1`, runs shared market-data unit tests, then performs a bounded **public/read-only Kraken WebSocket v2** smoke against book + trades.
+- The smoke explicitly verifies verified book events, at least one trade event, no data gap and no subscription error; it writes only a compact JSON report under `Trading\Logs` plus temporary capture evidence under `Trading\Temp`.
+- Safety scope remains public data only: no account credentials, no order API, live evaluation disabled, real-money actions disabled.
+- The exact Windows path passed in CI twice (`MINI-PC marketdata smoke`).
+- `tools/minipc-selftest.ps1` was extended to include a second Windows OS/CIM identity check, physical-disk health/reliability counters where supported, CPU/RAM base-load snapshot, installed CryptoMiniPC task state and latest-backup age.
+- Extended PowerShell parsing/backup/watchdog CI remains green.
+
+The local market-data smoke itself still has to be run once on the actual MINI-PC; this will be bundled with the expanded machine self-test so the user only has to perform one next local command block.
+
