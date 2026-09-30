@@ -1,0 +1,30 @@
+name: V2R3 evidence summary
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/v2r3-evidence-summary.py'
+      - '.github/workflows/v2r3-evidence-summary.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  summarize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Build read-only active-series evidence summary
+        run: python tools/v2r3-evidence-summary.py
+      - uses: actions/upload-artifact@v7
+        with:
+          name: v2r3-evidence-summary-${{ github.run_id }}
+          path: v2r3-evidence-summary.json
+          retention-days: 14
+          if-no-files-found: error
