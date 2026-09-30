@@ -93,7 +93,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [ ] Detektionslatenz Kraken-native vs. Scanner vs. Altrady messen.
 - [ ] Nach stabiler Basis den Takt anhand realer Messungen verkürzen; Ziel grob ~7–8 Minuten, wo ein periodischer Takt nötig ist, ergänzt durch schnellere eventbasierte Trigger.
 - [ ] Evaluator/KI nur bei echten Kandidaten oder klaren Analyseblockern aufrufen; kein dauerndes KI-Polling.
-- [ ] V2R4-Fast-Trigger-Pfad aus Draft-PR #8: Compile/Unit-/Live-Public-Kraken-Prep-Smokes sind grün; offen bleibt genau ein MINI-PC Paper-End-to-End-Smoke-Test nach der V2R3-Evidenzauswertung.
+- [ ] V2R4-Fast-Trigger-Pfad aus Draft-PR #8: V2R3-Evidenzsnapshot erstellt; Compile/Unit-/Live-Public-Kraken-Prep-Smokes sind grün; live Kraken-AssetPairs statt statischer Blacklist und maschinenlesbare WAIT-Bedingungen sind vorbereitet. Offen bleibt der isolierte MINI-PC-Preflight-Smoke und danach der endgültige separate V2R4-Paper-Aktivierungsentscheid.
 - [ ] Bei bestandenem Smoke-Test eine **separate V2R4-Paper-Serie** starten; dafür nicht künstlich auf 20 V2R3-Trades warten. V2R3-Artefakte bleiben unverändert als Vergleichsbasis.
 - [ ] Datenfrische und Entscheidungstimestamp in jedem Kandidaten nachvollziehbar halten.
 
