@@ -80,6 +80,17 @@
         "mfe_pct": 0.872,
         "peak_at_utc": "2026-09-29T21:14:00Z",
         "trough_at_utc": "2026-09-29T21:27:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -3.219,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -3.744,
+        "mfe_pct": 0.872,
+        "peak_at_utc": "2026-09-29T21:10:00Z",
+        "trough_at_utc": "2026-09-30T07:15:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -107,7 +118,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T08:26:03.619902Z"
+    "updated_at_utc": "2026-09-30T08:39:52.721191Z"
   },
   "original_decision": "WAIT",
   "pair": "AVAX/EUR",
