@@ -112,9 +112,19 @@ try {
   $dns = Resolve-DnsName api.kraken.com -Type A -ErrorAction Stop | Select-Object -First 1
   $krakenDnsOk = [bool]$dns.IPAddress
 } catch {}
+
+# Use a bounded TcpClient connect instead of Test-NetConnection.
+# Test-NetConnection can remain visibly stuck for a long time on some Windows systems.
 try {
-  $krakenTcpOk = [bool](Test-NetConnection api.kraken.com -Port 443 -InformationLevel Quiet -WarningAction SilentlyContinue)
-} catch {}
+  $client = [System.Net.Sockets.TcpClient]::new()
+  $connectTask = $client.ConnectAsync("api.kraken.com",443)
+  if ($connectTask.Wait(5000) -and $client.Connected) {
+    $krakenTcpOk = $true
+  }
+  $client.Dispose()
+} catch {
+  try { if ($client) { $client.Dispose() } } catch {}
+}
 if (-not $krakenDnsOk) { Add-Issue "kraken_dns_failed" }
 if (-not $krakenTcpOk) { Add-Issue "kraken_tcp443_failed" }
 
