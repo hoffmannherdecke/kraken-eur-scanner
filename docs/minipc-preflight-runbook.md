@@ -245,3 +245,16 @@ Prepared and CI-verified after the initial watchdog installation:
 
 Local activation is still pending: rerun the baseline installer once from elevated PowerShell after pulling the current main branch.
 
+### Backup / Restore baseline activated 2026-09-30
+
+Verified from the MINI-PC installer output:
+- `CryptoMiniPC-Health` active: every 5 minutes + system startup.
+- `CryptoMiniPC-LogCleanup` active: daily 04:20.
+- `CryptoMiniPC-Backup` active: daily 04:00.
+- Immediate backup/restore seed completed before the final health probe.
+- Watchdog reports no active issues (`issues: []`).
+- Immediate health exit code: `0`.
+- Guardrails remain intact: no configuration mutation, no process restart, no Git mutation, no real-money action.
+
+Backup/restore baseline is therefore locally active.
+
