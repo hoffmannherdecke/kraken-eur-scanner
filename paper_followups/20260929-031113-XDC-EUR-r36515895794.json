@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.03032,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -3.465,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -3.828,
+        "mfe_pct": 8.944,
+        "peak_at_utc": "2026-09-29T11:55:00Z",
+        "trough_at_utc": "2026-09-30T01:45:00Z"
+      },
       "15": {
         "bars": 0,
         "complete": false,
@@ -96,6 +107,11 @@
         "trough_at_utc": "2026-09-29T04:05:00Z"
       }
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "WEAK_LIVE_VOLUME",
@@ -115,7 +131,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-30T03:15:43.223979Z"
+    "updated_at_utc": "2026-09-30T03:29:03.704438Z"
   },
   "original_decision": "WAIT",
   "pair": "XDC/EUR",

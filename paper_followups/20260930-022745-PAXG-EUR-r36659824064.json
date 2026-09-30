@@ -34,6 +34,17 @@
         "mfe_pct": 0.009,
         "peak_at_utc": "2026-09-30T02:39:00Z",
         "trough_at_utc": "2026-09-30T02:33:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": 0.103,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -0.105,
+        "mfe_pct": 0.135,
+        "peak_at_utc": "2026-09-30T02:53:00Z",
+        "trough_at_utc": "2026-09-30T02:33:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -60,7 +71,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-30T03:15:59.739598Z"
+    "updated_at_utc": "2026-09-30T03:29:27.670301Z"
   },
   "original_decision": "REJECT",
   "pair": "PAXG/EUR",
