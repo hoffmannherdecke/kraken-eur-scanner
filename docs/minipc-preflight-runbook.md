@@ -352,3 +352,20 @@ After the successful physical power-loss recovery test:
 
 Open local action: finish the non-destructive CHKDSK diagnostic (answer `N` to converting lost chains to files), then decide whether to repair/reformat the external FAT32 volume only after considering any data that must be preserved.
 
+### FAT32 diagnosis on external drive D: 2026-09-30
+
+Read-only `chkdsk D:` completed after the post-recovery volume warning:
+- filesystem: FAT32;
+- volume label: `MISTRAL_450`;
+- Windows found logical filesystem errors but did not repair them because `/F` was not specified;
+- CHKDSK reported lost chains and estimated that **320 KB** would be freed by repair;
+- user answered `N` to converting lost chains into files;
+- reported volume size: 488,265,248 KB;
+- reported free space: 319,072,384 KB;
+- physical disk remains reported `Healthy`, and the reversible write/read/delete smoke had passed.
+
+Operational interpretation:
+- this is currently a **filesystem/volume integrity issue**, not evidence of a failing physical disk;
+- do not reformat or run `chkdsk /F` blindly while existing data may matter;
+- preserve/backup important existing data first, then perform controlled repair and re-verify volume health.
+
