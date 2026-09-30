@@ -88,7 +88,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 - [ ] Kraken WebSocket/REST auf dem Mini-PC als kontinuierliche Primärdatenquelle für relevante Live-Mikrostruktur aufbauen.
 - [ ] Nur benötigte Rohdaten kurzfristig speichern; langfristig Features/Aggregate statt endloser Tick-/Orderbucharchive behalten.
-- [ ] Altrady als **zusätzlichen echten Echtzeit-Trigger** fertig anbinden, niemals als einzigen Trigger. Transportbasis ist jetzt lokal aktiv und E2E-verifiziert (Secret, Supabase Relay, MINI-PC-Poller, Ack, Heartbeat/Watchdog grün); offen bleiben reale Altrady-Alert/Webhook-Konfiguration, anschließende Strategie-/Fresh-Recheck-Kopplung und Latenzmessung.
+- [ ] Altrady als **zusätzlichen echten Echtzeit-Trigger** fertig anbinden, niemals als einzigen Trigger. Transportbasis ist lokal aktiv und synthetisch E2E-verifiziert (Secret, Supabase Relay, MINI-PC-Poller, Ack, Heartbeat/Watchdog grün). Erster echter UI-Versuch am 2026-10-01: Time Alert im aktuellen Plan nicht verfügbar; Price Alert eingerichtet, aber innerhalb des 600-s-Fensters kein Threshold-Cross/Event beobachtet, daher noch kein echter Transport-PASS und kein nachgewiesener Transportfehler. Nächster Schritt: enger echter Price-Alert mit kurzer Ablaufzeit, reale Latenz messen; danach erst Strategie-/Fresh-Recheck-Kopplung.
 - [ ] Altrady-Heartbeat/Fehlerrückmeldung überwachen; Ausfall darf die restliche Kette nicht stoppen.
 - [ ] Detektionslatenz Kraken-native vs. Scanner vs. Altrady messen.
 - [ ] Nach stabiler Basis den Takt anhand realer Messungen verkürzen; Ziel grob ~7–8 Minuten, wo ein periodischer Takt nötig ist, ergänzt durch schnellere eventbasierte Trigger.
