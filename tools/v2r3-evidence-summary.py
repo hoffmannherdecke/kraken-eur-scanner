@@ -340,6 +340,11 @@ def main() -> int:
     }, sort_keys=True))
 
     print("V2R3_TOP_REASONS " + json.dumps(reason_counts.most_common(12)))
+    print("V2R3_GROUPED_REASON_H6 " + json.dumps(report["grouped_by_reason_code_h6"][:20], separators=(",", ":"), sort_keys=True))
+    print("V2R3_SETUP_LANE_H6 " + json.dumps(report["grouped_by_setup_lane_h6"], separators=(",", ":"), sort_keys=True))
+    print("V2R3_SCANNER_LATE_H6 " + json.dumps(report["grouped_by_scanner_late_h6"], separators=(",", ":"), sort_keys=True))
+    print("V2R3_ALREADY_RUN " + json.dumps(report["already_run_flag_comparison"], separators=(",", ":"), sort_keys=True))
+    print("V2R3_OPPORTUNITY_HORIZONS " + json.dumps(report["opportunity_horizons"], separators=(",", ":"), sort_keys=True))
     print("V2R3_TOP_MISSED_6H " + json.dumps(top_missed[:10], separators=(",", ":"), sort_keys=True))
     return 0
 
