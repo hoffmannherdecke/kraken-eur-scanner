@@ -26,7 +26,7 @@ $healthArgs = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$watch
 $cleanupArgs = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$cleanup`" -TradingRoot `"$TradingRoot`""
 
 $healthAction = New-ScheduledTaskAction -Execute $ps -Argument $healthArgs
-$healthTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 5)
+$healthTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Days 3650)
 $healthStartup = New-ScheduledTaskTrigger -AtStartup
 $healthSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 3)
 Register-ScheduledTask -TaskName "CryptoMiniPC-Health" -Action $healthAction -Trigger @($healthTrigger,$healthStartup) -Settings $healthSettings -User "SYSTEM" -RunLevel Highest -Force | Out-Null
@@ -36,8 +36,8 @@ $cleanupTrigger = New-ScheduledTaskTrigger -Daily -At "04:20"
 $cleanupSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
 Register-ScheduledTask -TaskName "CryptoMiniPC-LogCleanup" -Action $cleanupAction -Trigger $cleanupTrigger -Settings $cleanupSettings -User "SYSTEM" -RunLevel Highest -Force | Out-Null
 
-# Run one health check immediately in the current elevated session.
-& $watchdog -TradingRoot $TradingRoot
+# Run one health check immediately in a child PowerShell so its exit code cannot terminate this installer.
+& $ps -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $watchdog -TradingRoot $TradingRoot
 $exit = $LASTEXITCODE
 
 Write-Host ""
