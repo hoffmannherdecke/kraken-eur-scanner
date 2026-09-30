@@ -70,13 +70,16 @@ def eur_pairs() -> list[dict[str, str]]:
     result = http_json("/0/public/AssetPairs")
     out: list[dict[str, str]] = []
     for pair_key, info in result.items():
+        status = str(info.get("status") or "").lower()
+        if status != "online":
+            continue
         wsname = str(info.get("wsname") or "")
         altname = str(info.get("altname") or pair_key)
         quote = str(info.get("quote") or "")
         if not (wsname.endswith("/EUR") or quote in {"ZEUR", "EUR"}):
             continue
         pair = wsname if wsname.endswith("/EUR") else altname.removesuffix("EUR") + "/EUR"
-        out.append({"pair": pair, "pair_key": str(pair_key), "altname": altname})
+        out.append({"pair": pair, "pair_key": str(pair_key), "altname": altname, "status": status})
     return out
 
 
