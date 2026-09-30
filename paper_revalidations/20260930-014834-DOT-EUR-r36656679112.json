@@ -1,0 +1,225 @@
+{
+  "altname": "DOTEUR",
+  "candidate_id": "20260930-014834-DOT-EUR-r36656679112",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.0743 with elevated volume",
+      "Hold above 1.0743 or form a higher low"
+    ],
+    "reason_codes": [
+      "liquid_pair",
+      "tight_spread",
+      "failed_confirmation",
+      "momentum_faded",
+      "negative_major_market",
+      "insufficient_remaining_move_evidence"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "DOT failed to confirm above 1.0743 and retreated from the prior ticker; current evidence does not support a scout or a concrete second-stage trigger.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "DOTUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 50.13,
+        "available": true,
+        "current_funding_rate": 3.403552885375e-05,
+        "current_open_interest": 3709996.8,
+        "funding_rate_delta": 2.3479434974416e-05,
+        "open_interest_pct": 0.032,
+        "previous_funding_rate": 1.0556093879334e-05,
+        "previous_observed_at_utc": "2026-09-30T01:49:39.843574Z",
+        "previous_open_interest": 3708810.5
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.403552885375e-05,
+        "index_price": 1.2034,
+        "last": 1.2022,
+        "mark_price": 1.20364718184,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 3709996.8,
+        "requested_symbols": [
+          "PF_DOTUSD",
+          "PI_DOTUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_DOTUSD",
+        "volume24h": 1163751.1
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.0615,
+      "bid": 1.0611,
+      "last": 1.0602,
+      "spread_pct": 0.037689625930479406
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "3.9",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.048664711015899975,
+          "ret3h_pct": -0.40728976899477853
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1964253138350469,
+          "ret3h_pct": -0.45951526640038987
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.028503562945370042,
+          "ret3h_pct": -0.009502993442944696
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T02:39:46.349168Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0460b6c889818579006abc7673dfcc87d1bc777ba90972aa36"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.0615,
+    "bid": 1.0611,
+    "last": 1.0602,
+    "spread_pct": 0.037689625930479406
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.0684,
+      "high": 1.0707,
+      "low": 1.0631,
+      "open": 1.0696,
+      "trades": 42,
+      "ts": 1790731800,
+      "volume": 3596.3826967,
+      "vwap": 1.067
+    },
+    {
+      "close": 1.0693,
+      "high": 1.0703,
+      "low": 1.0678,
+      "open": 1.0684,
+      "trades": 20,
+      "ts": 1790732700,
+      "volume": 1864.70120933,
+      "vwap": 1.0691
+    },
+    {
+      "close": 1.0649,
+      "high": 1.0717,
+      "low": 1.0649,
+      "open": 1.0673,
+      "trades": 36,
+      "ts": 1790733600,
+      "volume": 5934.64337821,
+      "vwap": 1.0683
+    },
+    {
+      "close": 1.0584,
+      "high": 1.0636,
+      "low": 1.0583,
+      "open": 1.0636,
+      "trades": 12,
+      "ts": 1790734500,
+      "volume": 612.675848,
+      "vwap": 1.0594
+    },
+    {
+      "close": 1.0602,
+      "high": 1.061,
+      "low": 1.0596,
+      "open": 1.0597,
+      "trades": 14,
+      "ts": 1790735400,
+      "volume": 1281.5096177,
+      "vwap": 1.0602
+    }
+  ],
+  "pair": "DOT/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-014834-DOT-EUR-r36656679112.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T02:39:52.559790Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "8e1ee3098f676172418b229c8aadf1e06ec2e3a7",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T02:39:52.559790Z",
+    "revalidation_started_at_utc": "2026-09-30T02:39:45.937771Z",
+    "ttl_due_at_utc": "2026-09-30T02:34:39.843574Z",
+    "ttl_lag_seconds": 306.094
+  }
+}
