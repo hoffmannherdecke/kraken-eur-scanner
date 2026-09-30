@@ -1,0 +1,174 @@
+{
+  "altname": "MOVREUR",
+  "candidate_age_seconds": 16,
+  "candidate_event_time_utc": "2026-09-30T14:18:31Z",
+  "candidate_id": "20260930-141831-MOVR-EUR-r36727398315",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "EXTENDED_24H_7D_RUN",
+      "RET3H_NEGATIVE",
+      "NO_BREAKOUT_OR_HIGHER_LOWS",
+      "CLOSED_VOLUME_WEAK",
+      "SPREAD_AND_DEPTH_RISK",
+      "MAJOR_MARKETS_NEGATIVE_1H",
+      "INSUFFICIENT_RISK_REWARD_AFTER_FEES"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Large prior run, weak closed-volume confirmation and failed short-term structure make a fresh entry unattractive after costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "MOVRUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "available": false,
+        "reason": "no prior same-pair observation in active series"
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.00022233723429675,
+        "index_price": 1.65415,
+        "last": 1.6518,
+        "mark_price": 1.66045338963,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 25173.3,
+        "requested_symbols": [
+          "PF_MOVRUSD",
+          "PI_MOVRUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_MOVRUSD",
+        "volume24h": 573813.4
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.4585,
+      "bid": 1.4475,
+      "last": 1.48,
+      "spread_pct": 0.7570543702684033
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "6",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -1.1451398135818858,
+          "ret3h_pct": 0.5904813005221943
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -1.0175482368596223,
+          "ret3h_pct": 0.5385245693915408
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -1.4491407338597329,
+          "ret3h_pct": 0.951565324959569
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          },
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T14:18:47.714314Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-30T14:18:57.272954Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0cd939cf29fae249006abd1a4a15f087d1880275339e4146c2"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.4585,
+    "bid": 1.4475,
+    "last": 1.48,
+    "spread_pct": 0.7570543702684033
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "MOVR/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36727398315:MOVR-EUR:1790777911",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "e1059fa1f5ef3893475b42069f919d345ac46121",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-30T14:18:31Z",
+    "candidate_detected_ts": 1790777911,
+    "candidate_snapshot_at_utc": "2026-09-30T14:18:31Z",
+    "detected_to_evaluation_complete_seconds": 26.273,
+    "detected_to_evaluation_start_seconds": 16.547,
+    "evaluation_completed_at_utc": "2026-09-30T14:18:57.272954Z",
+    "evaluation_runtime_seconds": 9.726,
+    "evaluation_started_at_utc": "2026-09-30T14:18:47.546765Z",
+    "handoff_to_evaluation_start_seconds": 14.247,
+    "handoff_written_at_utc": "2026-09-30T14:18:33.300208Z",
+    "scan_step_started_at_utc": "2026-09-30T14:13:00Z"
+  }
+}
