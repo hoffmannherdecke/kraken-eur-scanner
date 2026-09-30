@@ -1,12 +1,12 @@
 {
-  "schema_version": 3,
-  "strategy_revision": "V2R4-PROPOSED-2026-09-29",
+  "schema_version": 4,
+  "strategy_revision": "V2R4-PROPOSED-2026-09-30-PRECANDIDATE",
   "status": "PREPARED_NOT_ACTIVE",
   "inherits_from": "V2R3-2026-09-28",
-  "description": "Paper-only V2R4 proposal: preserve V2R3 risk discipline while reducing WAIT-to-trigger latency with deterministic local monitoring suitable for the 24/7 Mini-PC.",
+  "description": "Paper-only V2R4 proposal: preserve V2R3 risk discipline while reducing both pre-candidate discovery blind spots and WAIT-to-trigger latency with deterministic local monitoring suitable for the 24/7 Mini-PC.",
   "paper_only": true,
   "real_money_actions_enabled": false,
-  "research_hypothesis": "The main V2R3 weakness is delayed WAIT revalidation, not insufficient filtering. Faster deterministic trigger detection plus a fresh recheck can improve entry timing without broadly relaxing risk gates.",
+  "research_hypothesis": "Two timing blind spots are under test: (1) execution-liquidity filtering can hide early/persistent movers before they ever become candidates; (2) one-shot WAIT revalidation can miss later confirmation. V2R4 separates broad discovery from execution eligibility and uses fresh deterministic rechecks without broadly removing risk gates.",
   "fees": {
     "taker_pct_per_side": 0.6
   },
@@ -158,7 +158,13 @@
       "false_trigger_rate",
       "return_on_deployed_notional_pct",
       "pnl_by_setup_quality_tier",
-      "pnl_by_simulation_size_tier"
+      "pnl_by_simulation_size_tier",
+      "pre_candidate_detection_count",
+      "watch_only_to_review_eligible_rate",
+      "pre_candidate_to_buy_scout_rate",
+      "discovery_to_recheck_latency_seconds",
+      "missed_move_before_liquidity_gate_rate",
+      "pnl_by_liquidity_class"
     ],
     "discovery_examples_are_not_holdout_validation": true,
     "candidate_reviews_do_not_count_as_completed_trades": true
@@ -173,6 +179,58 @@
     "paper_only_until_separate_validation_complete": true,
     "v2r4_activation_timing": "AFTER_MINIPC_BASE_STABLE_AND_SINGLE_END_TO_END_PAPER_SMOKE_TEST_PASSES",
     "v2r3_target_20_trades_not_required_before_v2r4_parallel_start": true,
-    "future_v3_gate": "ONLY_AFTER_PROSPECTIVE_V2R4_DATA_PLUS_HISTORICAL_WALK_FORWARD_VALIDATION_JUSTIFY_MAJOR_MECHANIC_CHANGE"
+    "future_v3_gate": "ONLY_AFTER_PROSPECTIVE_V2R4_DATA_PLUS_HISTORICAL_WALK_FORWARD_VALIDATION_JUSTIFY_MAJOR_MECHANIC_CHANGE",
+    "precandidate_watcher_smoke_test_required": true,
+    "precandidate_lane_must_not_modify_v2r3_control": true
+  },
+  "pre_candidate_discovery": {
+    "enabled_when_activated": true,
+    "paper_only": true,
+    "scope": "ALL_KRAKEN_EUR_SPOT_PAIRS",
+    "visibility_turnover_gate_eur": null,
+    "preferred_runtime": "minipc_local_rolling_tape",
+    "primary_data_source": "kraken_public",
+    "rolling_windows_minutes": [
+      10,
+      30,
+      60,
+      180,
+      360,
+      720
+    ],
+    "recognition_rules": {
+      "fast_10m_pct": 1.25,
+      "fast_30m_pct": 2,
+      "momentum_1h_pct": 3,
+      "persistent_3h_pct": 4,
+      "persistent_6h_pct": 5,
+      "persistent_12h_pct": 7,
+      "utc_day_move_pct": 8,
+      "staircase_6h": {
+        "ret1h_min_pct": 0.8,
+        "ret3h_min_pct": 2,
+        "ret6h_min_pct": 4
+      }
+    },
+    "recognition_rules_are_buy_rules": false,
+    "orderbook_fetch_policy": "ONLY_AFTER_DISCOVERY_TRIGGER",
+    "standard_execution_review_gate": {
+      "min_turnover_eur_24h": 150000,
+      "max_spread_pct": 1.5
+    },
+    "microstructure_exception_shadow": {
+      "enabled": true,
+      "min_turnover_eur_24h": 50000,
+      "max_turnover_eur_24h_exclusive": 150000,
+      "max_spread_pct": 0.6,
+      "min_depth_1pct_eur_absolute": 3000,
+      "min_depth_1pct_multiple_of_intended_notional": 20,
+      "action": "FRESH_PAPER_RECHECK_ONLY",
+      "direct_order_allowed": false
+    },
+    "watch_only_below_review_gate": true,
+    "watch_to_review_transition_requests_immediate_recheck": true,
+    "direct_order_allowed": false,
+    "real_money_actions_enabled": false
   }
 }
