@@ -33,7 +33,7 @@ jobs:
 
       - name: Run V2R4 unit tests
         run: |
-          python -m unittest             tests.test_v2r4_trigger_contract             tests.test_v2r4_trigger_plan             tests.test_v2r4_precandidate_discovery             tests.test_v2r4_precandidate_watcher -v
+          python -m unittest             tests.test_v2r4_trigger_contract             tests.test_v2r4_trigger_plan             tests.test_v2r4_precandidate_discovery             tests.test_v2r4_precandidate_watcher             tests.test_v2r4_tradability_policy -v
 
       - name: Harmless live Kraken WAIT watcher smoke
         shell: bash
