@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "GRASSEUR",
+  "candidate_id": "20260930-091106-GRASS-EUR-r36694287199",
+  "event_time_utc": "2026-09-30T09:11:06Z",
+  "event_ts": 1790759466,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "GRASS/EUR",
+  "queue_id": "36694287199:GRASS-EUR:1790759466",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=GRASS/EUR | score=8.90 | price_eur=0.6352 | ret15_live=1.00% | ret1h=3.37% | ret3h=-1.03% | ret24h=6.42% | vol_live=4.17x | vol_closed=3.20x | rank=2 | rank_jump=1 | state_rank_jump=0 | breakout3h=0 | higher_lows=1 | base_tight=7.14% | fresh_move3h=3.37% | adx14=21.1 | spread=0.392% | turnover24h_eur=152192 | momentum_review_override=1 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 21.060538854674878,
+    "altname": "GRASSEUR",
+    "base_tight_pct": 7.144019528071599,
+    "breakout3h": false,
+    "context30d": 106.64,
+    "context7d": 59.72,
+    "depth_eur_1pct": 24595.62,
+    "dist30d_high_pct": -12.84,
+    "dist7d_high_pct": -12.84,
+    "ema26_gt_50": false,
+    "fresh_move_3h": 3.368592351505284,
+    "higher_lows": true,
+    "late": false,
+    "pair": "GRASS/EUR",
+    "price": 0.6352,
+    "rank15": 2,
+    "rank15_prev": 3,
+    "rank_jump": 1,
+    "ret15_closed": 1.2978689312610259,
+    "ret15_live": 1.0017490857052058,
+    "ret1h": 3.368592351505284,
+    "ret24h": 6.4164851733958805,
+    "ret3h": -1.0283577438454428,
+    "score": 8.9,
+    "spread_pct": 0.3923722828219331,
+    "stale": false,
+    "state_rank_jump": 0,
+    "turnover24h": 152192.4291169899,
+    "volume_ratio_closed": 3.195492259794315,
+    "volume_ratio_live": 4.16724742685414
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-09-30T09:11:06Z",
+    "positive_1h_count": 42,
+    "positive_3h_count": 29,
+    "schema_version": 1,
+    "score_ge_5_count": 23,
+    "top_1h": [
+      {
+        "pair": "ENA/EUR",
+        "ret15_live": 0.619,
+        "ret1h": 3.69,
+        "ret3h": 5.078,
+        "score": 9.0,
+        "vol_live": 7.053
+      },
+      {
+        "pair": "WLD/EUR",
+        "ret15_live": 1.26,
+        "ret1h": 3.643,
+        "ret3h": 3.973,
+        "score": 10.6,
+        "vol_live": 2.305
+      },
+      {
+        "pair": "GRASS/EUR",
+        "ret15_live": 1.002,
+        "ret1h": 3.369,
+        "ret3h": -1.028,
+        "score": 8.9,
+        "vol_live": 4.167
+      },
+      {
+        "pair": "DOT/EUR",
+        "ret15_live": 0.713,
+        "ret1h": 2.488,
+        "ret3h": 2.248,
+        "score": 9.5,
+        "vol_live": 1.7
+      },
+      {
+        "pair": "CRV/EUR",
+        "ret15_live": 0.66,
+        "ret1h": 2.205,
+        "ret3h": 1.114,
+        "score": 8.7,
+        "vol_live": 0.803
+      },
+      {
+        "pair": "NIGHT/EUR",
+        "ret15_live": 0.584,
+        "ret1h": 1.807,
+        "ret3h": 3.608,
+        "score": 8.5,
+        "vol_live": 0.227
+      },
+      {
+        "pair": "XDC/EUR",
+        "ret15_live": 0.393,
+        "ret1h": 1.626,
+        "ret3h": 3.27,
+        "score": 9.2,
+        "vol_live": 3.446
+      },
+      {
+        "pair": "OP/EUR",
+        "ret15_live": 0.171,
+        "ret1h": 1.564,
+        "ret3h": 1.829,
+        "score": 7.2,
+        "vol_live": 0.895
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "WLD/EUR",
+        "ret15_live": 1.26,
+        "ret1h": 3.643,
+        "ret3h": 3.973,
+        "score": 10.6,
+        "vol_live": 2.305
+      },
+      {
+        "pair": "DOT/EUR",
+        "ret15_live": 0.713,
+        "ret1h": 2.488,
+        "ret3h": 2.248,
+        "score": 9.5,
+        "vol_live": 1.7
+      },
+      {
+        "pair": "XDC/EUR",
+        "ret15_live": 0.393,
+        "ret1h": 1.626,
+        "ret3h": 3.27,
+        "score": 9.2,
+        "vol_live": 3.446
+      },
+      {
+        "pair": "ENA/EUR",
+        "ret15_live": 0.619,
+        "ret1h": 3.69,
+        "ret3h": 5.078,
+        "score": 9.0,
+        "vol_live": 7.053
+      },
+      {
+        "pair": "GRASS/EUR",
+        "ret15_live": 1.002,
+        "ret1h": 3.369,
+        "ret3h": -1.028,
+        "score": 8.9,
+        "vol_live": 4.167
+      },
+      {
+        "pair": "CRV/EUR",
+        "ret15_live": 0.66,
+        "ret1h": 2.205,
+        "ret3h": 1.114,
+        "score": 8.7,
+        "vol_live": 0.803
+      },
+      {
+        "pair": "NIGHT/EUR",
+        "ret15_live": 0.584,
+        "ret1h": 1.807,
+        "ret3h": 3.608,
+        "score": 8.5,
+        "vol_live": 0.227
+      },
+      {
+        "pair": "UNI/EUR",
+        "ret15_live": 0.311,
+        "ret1h": 0.534,
+        "ret3h": -0.465,
+        "score": 7.8,
+        "vol_live": 1.175
+      }
+    ],
+    "total_rows": 58
+  },
+  "scanner_market_context": {
+    "altname": "GRASSEUR",
+    "atr15_eur": 0.006028571428571423,
+    "atr15_pct": 0.9535861165092413,
+    "closed_through_epoch": 1790757900,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.6322,
+      "high": 0.6347,
+      "low": 0.6241,
+      "open": 0.6241,
+      "volume": 201.11353
+    },
+    "pair": "GRASS/EUR",
+    "range_1h_pct": 3.1951913951281234,
+    "recent_closed_closes": [
+      0.6147,
+      0.6147,
+      0.6145,
+      0.6165,
+      0.6165,
+      0.6322
+    ],
+    "resistance_1h": 0.6347,
+    "resistance_3h": 0.6584,
+    "schema_version": 1,
+    "sensor_price_eur": 0.6352,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.6145,
+    "support_3h": 0.6145,
+    "ts": 1790759466
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 36694287199,
+  "source_scanner_sha": "2743ca088a4706906869c0b92d24a53834f89dbd",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-30T09:11:06Z",
+    "candidate_detected_ts": 1790759466,
+    "candidate_snapshot_at_utc": "2026-09-30T09:11:06Z",
+    "handoff_written_at_utc": "2026-09-30T09:11:09.383468Z",
+    "scan_step_started_at_utc": "2026-09-30T09:09:36Z"
+  }
+}
