@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 76.02,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 6.109,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -1.843,
+        "mfe_pct": 6.649,
+        "peak_at_utc": "2026-09-30T21:40:00Z",
+        "trough_at_utc": "2026-09-30T15:25:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 1.415,
       "price_eur": 74.89
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "NO_BREAKOUT",
@@ -118,7 +134,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-30T22:31:14.621671Z"
+    "updated_at_utc": "2026-09-30T22:39:32.638740Z"
   },
   "original_decision": "WAIT",
   "pair": "HYPE/EUR",
