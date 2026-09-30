@@ -176,3 +176,24 @@ Ab 2026-09-30 gilt für die weitere MINI-PC-Inbetriebnahme:
 - Dafür liegt `tools/minipc-selftest.ps1` im kanonischen Repo. Das Skript verändert keine Systemkonfiguration und schreibt nur einen Diagnosebericht nach `%USERPROFILE%\Trading\Logs`.
 - Kein wiederholtes manuelles Copy/Paste einzelner Diagnosebefehle, wenn dieselbe Evidenz über den Sammeltest oder direkt aus verbundenen Systemen erhoben werden kann.
 
+### Lokaler Sammeltest 2026-09-30 18:58
+
+`tools/minipc-selftest.ps1` erfolgreich auf dem MINI-PC ausgeführt.
+
+Bestätigt:
+- Defender läuft automatisch; alle Windows-Firewallprofile sind aktiv.
+- Ethernet-IP `192.168.178.179/24` aktiv.
+- DNS-Auflösung für `api.kraken.com` funktioniert.
+- TCP/443 zu Kraken erfolgreich.
+- PowerShell-HTTPS gegen Kraken AssetPairs: HTTP 200.
+- Repo und venv vorhanden; Git `main` auf `origin/main`, sauberer Status.
+- Python 3.13.15 / pip 26.2.1 in der venv funktionieren.
+- Python-HTTPS gegen Kraken AssetPairs: HTTP 200. Der zuvor einmal beobachtete `CERTIFICATE_VERIFY_FAILED`-Fehler ist damit aktuell **nicht reproduzierbar** und gilt nicht mehr als aktiver Blocker.
+- Systemlaufwerk C: 237,4 GB gesamt / 185,1 GB frei.
+
+Beobachtungen ohne aktuellen Blocker-Status:
+- Ereignisanzeige enthält u. a. ältere DCOM-10010-Einträge, einen Intel-Grafikdienst-Timeout, einen TPM-WMI-1040-Eintrag sowie während der Einrichtung fehlgeschlagene Updateversuche. Diese werden vor Produktivsetzung nochmals gegen neue, nach der Einrichtung entstandene Ereignisse abgegrenzt.
+- Die `Get-ComputerInfo`-Ausgabe meldet `Windows 10 Pro / WindowsVersion 2009 / Build 26200`; die tatsächlich verwendete Oberfläche/Einrichtung ist Windows 11. Exakte Edition/Build daher später einmal direkt mit `winver` bzw. einer zweiten OS-Abfrage verifizieren, bevor der Runbook-Punkt final geschlossen wird.
+
+Damit ist Phase E (lokale Git/Python-Runtime + read-only Smoke-Test) im Wesentlichen bestanden. Offen bleiben vor allem die echten physischen/Netzpfad-Tests sowie Phase F/G.
+
