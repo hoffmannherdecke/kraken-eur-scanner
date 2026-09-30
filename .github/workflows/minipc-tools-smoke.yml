@@ -63,7 +63,7 @@ jobs:
         run: |
           $root = Join-Path $env:RUNNER_TEMP 'minipc-watchdog-smoke'
           New-Item -ItemType Directory -Force -Path $root | Out-Null
-          & .\tools\minipc-watchdog.ps1 -TradingRoot $root
+          & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File .\tools\minipc-watchdog.ps1 -TradingRoot $root
           $code = $LASTEXITCODE
           $state = Join-Path $root 'State\minipc-health.json'
           $log = Join-Path $root 'Logs\minipc-watchdog.log'
@@ -72,4 +72,5 @@ jobs:
           $json = Get-Content $state -Raw | ConvertFrom-Json
           if ($json.kind -ne 'MINIPC_LOCAL_HEALTH_V1') { throw 'unexpected watchdog schema' }
           if ($code -ne 2) { throw "expected critical exit 2 in empty sandbox, got $code" }
+          $global:LASTEXITCODE = 0
           Write-Host 'WATCHDOG_SMOKE_OK'
