@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-09-30T21:14:58.166157Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 0.497,
+      "expected_bars": 120,
+      "mae_pct": -1.064,
+      "mfe_pct": 1.187
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -81,7 +89,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-30T23:11:49.740514Z"
+    "updated_at_utc": "2026-09-30T23:24:59.666120Z"
   },
   "original_decision": "WAIT",
   "pair": "TAO/EUR",
@@ -91,5 +99,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-30T22:31:19.595457Z"
+  "updated_at_utc": "2026-09-30T23:24:59.867102Z"
 }
