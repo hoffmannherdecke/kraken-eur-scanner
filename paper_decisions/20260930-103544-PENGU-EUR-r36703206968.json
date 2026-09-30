@@ -1,0 +1,185 @@
+{
+  "altname": "PENGUEUR",
+  "candidate_age_seconds": 53,
+  "candidate_event_time_utc": "2026-09-30T10:35:44Z",
+  "candidate_id": "20260930-103544-PENGU-EUR-r36703206968",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above 0.00890 with volume recovery.",
+      "A hold above 0.00881 on a retest, preserving a higher low."
+    ],
+    "reason_codes": [
+      "liquid_pair",
+      "tight_spread",
+      "breakout_unconfirmed",
+      "closed_volume_weak",
+      "entry_above_resistance",
+      "remaining_move_uncertain",
+      "derivatives_oi_declining"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Tradable and showing a fresh breakout attempt, but price is already above the supplied resistance without a confirming close; weak closed-volume and limited remaining-move evidence do not yet justify a scout after costs.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "PENGUUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 151.95,
+        "available": true,
+        "current_funding_rate": 5.6562819056e-08,
+        "current_open_interest": 48587800.0,
+        "funding_rate_delta": 1.40724904763e-07,
+        "open_interest_pct": -1.2021,
+        "previous_funding_rate": -8.4162085707e-08,
+        "previous_observed_at_utc": "2026-09-30T08:04:42.552724Z",
+        "previous_open_interest": 49178960.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 5.6562819056e-08,
+        "index_price": 0.0100694,
+        "last": 0.010055,
+        "mark_price": 0.01007142075,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 48587800.0,
+        "requested_symbols": [
+          "PF_PENGUUSD",
+          "PI_PENGUUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_PENGUUSD",
+        "volume24h": 129280990
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.008866,
+      "bid": 0.008861,
+      "last": 0.008852,
+      "spread_pct": 0.056411124273704476
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "700",
+      "pair_decimals": 6,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4361377503570685,
+          "ret3h_pct": 0.5655417639231164
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.25420323569842473,
+          "ret3h_pct": 0.78235949418759
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.43893129770993244,
+          "ret3h_pct": 0.8430733857060835
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T10:36:37.579141Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-30T10:36:47.449032Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_03b4e6fb80728bd9006abce63768fc87d1bed87b73995c4e17"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.008866,
+    "bid": 0.008861,
+    "last": 0.008852,
+    "spread_pct": 0.056411124273704476
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "PENGU/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36703206968:PENGU-EUR:1790764544",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "17275590b67f2d7d13687777c3b91a703285c77e",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-30T10:35:44Z",
+    "candidate_detected_ts": 1790764544,
+    "candidate_snapshot_at_utc": "2026-09-30T10:35:44Z",
+    "detected_to_evaluation_complete_seconds": 63.449,
+    "detected_to_evaluation_start_seconds": 53.422,
+    "evaluation_completed_at_utc": "2026-09-30T10:36:47.449032Z",
+    "evaluation_runtime_seconds": 10.027,
+    "evaluation_started_at_utc": "2026-09-30T10:36:37.421685Z",
+    "handoff_to_evaluation_start_seconds": 49.714,
+    "handoff_written_at_utc": "2026-09-30T10:35:47.708160Z",
+    "scan_step_started_at_utc": "2026-09-30T10:34:13Z"
+  }
+}

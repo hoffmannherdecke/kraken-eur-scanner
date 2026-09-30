@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 10.276,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -4.241,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -5.499,
+        "mfe_pct": 3.11,
+        "peak_at_utc": "2026-09-29T12:05:00Z",
+        "trough_at_utc": "2026-09-30T08:35:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 4.291,
       "price_eur": 9.835
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "tradable_spread_and_turnover",
@@ -120,7 +136,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T10:20:31.020641Z"
+    "updated_at_utc": "2026-09-30T10:37:29.464169Z"
   },
   "original_decision": "WAIT",
   "pair": "AVAX/EUR",
