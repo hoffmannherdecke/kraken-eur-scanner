@@ -437,3 +437,14 @@ Actual MINI-PC activation proof from `tools/minipc-phase2-enable.ps1`:
 
 This closes the concrete local continuous-process/heartbeat contract for the Kraken transport canary. The independent GitHub cloud path remains in place. Strategy coupling is still intentionally absent.
 
+### V2R4 prep validation green after MINI-PC canary activation 2026-09-30
+
+After activating the local continuous Kraken canary, the inactive V2R4 draft was revalidated without activating strategy behavior:
+- explicit Python compile gate added for all V2R4 prep sources;
+- V2R4 unit tests: PASS;
+- live public Kraken WAIT-watcher smoke: PASS;
+- broad Kraken EUR pre-candidate discovery smoke: PASS;
+- GitHub workflow `V2R4 PR validation`: SUCCESS.
+
+Draft-PR #8 remains **draft / prep-only / paper-only / not merged / not active**. The next promotion gate still requires the documented V2R3 evidence review and one small MINI-PC end-to-end paper smoke.
+
