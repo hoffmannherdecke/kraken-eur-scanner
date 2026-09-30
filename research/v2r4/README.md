@@ -155,3 +155,31 @@ tested; the active V2R3 control remains untouched.
 
 This allows the preparation to improve before Mini-PC activation without silently
 rewriting the live comparison series.
+
+
+## Pre-candidate blind-spot lane
+
+The KSM / TRAC review on 2026-09-30 exposed a separate problem from WAIT latency:
+a pair can produce a multi-hour move yet never reach the evaluator because the
+liquidity filter is applied before candidate visibility.
+
+V2R4 therefore separates **discovery** from **execution eligibility**.
+
+- Discovery watches all Kraken EUR spot pairs and does not require EUR 150k turnover.
+- A triggered pair stays visible even when liquidity is not yet sufficient.
+- The existing EUR 150k / spread gate remains the normal execution-review path.
+- A second paper-only shadow class tests whether EUR 50k-150k pairs with spread
+  <=0.60% and strong 1%-book depth can safely reach a fresh evaluator recheck.
+- Pairs below those review gates remain WATCH_ONLY and are rechecked if liquidity improves.
+
+The rolling discovery tape observes 10m / 30m / 1h / 3h / 6h / 12h changes. Broad
+recognition triggers include fast momentum and persistent/stair-step trends. These
+are discovery rules, not entry rules, and KSM/TRAC remain discovery examples rather
+than validation evidence.
+
+Files:
+- `paper_evaluator/v2r4_precandidate_discovery.py`
+- `paper_evaluator/v2r4_precandidate_watcher.py`
+- `tests/test_v2r4_precandidate_discovery.py`
+
+The active V2R3 control remains unchanged.
