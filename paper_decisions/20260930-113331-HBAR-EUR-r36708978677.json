@@ -1,0 +1,183 @@
+{
+  "altname": "HBAREUR",
+  "candidate_age_seconds": 15,
+  "candidate_event_time_utc": "2026-09-30T11:33:31Z",
+  "candidate_id": "20260930-113331-HBAR-EUR-r36708978677",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.09555 with closed-volume expansion",
+      "hold above 0.09555 on a retest within 45 minutes"
+    ],
+    "reason_codes": [
+      "near_resistance_no_breakout",
+      "fresh_move_already_2.88_pct",
+      "live_volume_below_average",
+      "round_trip_fees_and_spread_require_substantial_remaining_move",
+      "no_structural_stop_confirmed"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Recovery structure is constructive, but price is just below 1h/3h resistance after an already-run move; wait for confirmation before assessing entry efficiency and costs.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "HBARUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 209.21,
+        "available": true,
+        "current_funding_rate": 2.2394001459e-06,
+        "current_open_interest": 21941027.0,
+        "funding_rate_delta": 5.4541971661e-06,
+        "open_interest_pct": 0.8582,
+        "previous_funding_rate": -3.2147970202e-06,
+        "previous_observed_at_utc": "2026-09-30T08:04:34.987938Z",
+        "previous_open_interest": 21754329.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 2.2394001459e-06,
+        "index_price": 0.108318,
+        "last": 0.10815,
+        "mark_price": 0.10826585932,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 21941027.0,
+        "requested_symbols": [
+          "PF_HBARUSD",
+          "PI_HBARUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_HBARUSD",
+        "volume24h": 61910401
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.09536,
+      "bid": 0.09525,
+      "last": 0.09525,
+      "spread_pct": 0.11541891820995644
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "55",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.059110308512444476,
+          "ret3h_pct": 0.7814921680092235
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.03501725549095447,
+          "ret3h_pct": 0.8643976229065542
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.019000570017091434,
+          "ret3h_pct": 1.094680238140966
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T11:33:46.344637Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-30T11:33:54.047034Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0692ac00b5bd695b006abcf39bc62c87d0bdf1e7e31875372d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.09536,
+    "bid": 0.09525,
+    "last": 0.09525,
+    "spread_pct": 0.11541891820995644
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "HBAR/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36708978677:HBAR-EUR:1790768011",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "726450dafd83d5073e0ad818904510cd78658314",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-30T11:33:31Z",
+    "candidate_detected_ts": 1790768011,
+    "candidate_snapshot_at_utc": "2026-09-30T11:33:31Z",
+    "detected_to_evaluation_complete_seconds": 23.047,
+    "detected_to_evaluation_start_seconds": 15.061,
+    "evaluation_completed_at_utc": "2026-09-30T11:33:54.047034Z",
+    "evaluation_runtime_seconds": 7.986,
+    "evaluation_started_at_utc": "2026-09-30T11:33:46.060828Z",
+    "handoff_to_evaluation_start_seconds": 12.869,
+    "handoff_written_at_utc": "2026-09-30T11:33:33.191652Z",
+    "scan_step_started_at_utc": "2026-09-30T11:30:45Z"
+  }
+}
