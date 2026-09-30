@@ -3,7 +3,16 @@
   "candidate_id": "20260930-222933-SEI-EUR-r36785711675",
   "evaluated_at_utc": "2026-09-30T22:29:58.771354Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.322,
+      "expected_bars": 30,
+      "mae_pct": -0.322,
+      "mfe_pct": 0.291
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -53,12 +62,15 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T22:58:12.396441Z"
+    "updated_at_utc": "2026-09-30T23:11:51.664248Z"
   },
   "original_decision": "WAIT",
   "pair": "SEI/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-30T23:10:45.640882Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-30T23:11:51.833051Z"
 }

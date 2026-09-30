@@ -1,0 +1,231 @@
+{
+  "altname": "MINAEUR",
+  "candidate_id": "20260930-221335-MINA-EUR-r36784145766",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A decisive break and hold above 0.1285 with sustained spot volume.",
+      "Clear continuation potential beyond resistance sufficient to outweigh fees, spread, and slippage."
+    ],
+    "reason_codes": [
+      "resistance_breakout_unconfirmed",
+      "recent_volume_thin",
+      "remaining_move_after_costs_unproven",
+      "short_term_trend_weak"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The 15-minute closes moved above prior 0.1261 resistance, but price remains below 0.1285 resistance and recent trade activity is sparse. A confirmation entry above resistance lacks demonstrated remaining potential to cover Kraken EUR fees and execution costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "MINAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 56.25,
+        "available": true,
+        "current_funding_rate": -5.8884990791342e-05,
+        "current_open_interest": 182205.0,
+        "funding_rate_delta": 7.832556796744997e-06,
+        "open_interest_pct": -0.0411,
+        "previous_funding_rate": -6.6717547588087e-05,
+        "previous_observed_at_utc": "2026-09-30T22:14:12.368606Z",
+        "previous_open_interest": 182280.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -5.8884990791342e-05,
+        "index_price": 0.143976,
+        "last": 0.14419,
+        "mark_price": 0.14355365104,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 182205.0,
+        "requested_symbols": [
+          "PF_MINAUSD",
+          "PI_MINAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_MINAUSD",
+        "volume24h": 132531
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.1273,
+      "bid": 0.1271,
+      "last": 0.1269,
+      "spread_pct": 0.15723270440252024
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "70",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.06769050816618494,
+          "ret3h_pct": 0.05855848528719676
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.11870213368141425,
+          "ret3h_pct": 0.5920725936174875
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.15368360388050561,
+          "ret3h_pct": 0.870658798490842
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T23:10:26.020603Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_096201688fea3e62006abd96e39c7087d08bd00c16de2cbd5a"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.1273,
+    "bid": 0.1271,
+    "last": 0.1269,
+    "spread_pct": 0.15723270440252024
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.1256,
+      "high": 0.1257,
+      "low": 0.1247,
+      "open": 0.1249,
+      "trades": 25,
+      "ts": 1790805600,
+      "volume": 53030.90755671,
+      "vwap": 0.1248
+    },
+    {
+      "close": 0.1263,
+      "high": 0.1263,
+      "low": 0.1258,
+      "open": 0.1259,
+      "trades": 7,
+      "ts": 1790806500,
+      "volume": 5770.7943,
+      "vwap": 0.1259
+    },
+    {
+      "close": 0.1263,
+      "high": 0.1263,
+      "low": 0.1263,
+      "open": 0.1263,
+      "trades": 0,
+      "ts": 1790807400,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 0.1269,
+      "high": 0.1269,
+      "low": 0.1267,
+      "open": 0.1268,
+      "trades": 6,
+      "ts": 1790808300,
+      "volume": 6697.70356786,
+      "vwap": 0.1267
+    },
+    {
+      "close": 0.1269,
+      "high": 0.1269,
+      "low": 0.1269,
+      "open": 0.1269,
+      "trades": 0,
+      "ts": 1790809200,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "MINA/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-221335-MINA-EUR-r36784145766.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T23:10:36.637296Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "5438ee206cc6e0edace827066649c3890622a338",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T23:10:36.637296Z",
+    "revalidation_started_at_utc": "2026-09-30T23:10:25.626436Z",
+    "ttl_due_at_utc": "2026-09-30T22:59:12.368606Z",
+    "ttl_lag_seconds": 673.258
+  }
+}
