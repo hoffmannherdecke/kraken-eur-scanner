@@ -57,9 +57,10 @@ Pflicht für Auswertung und nächste Version:
 | Netzwerk lokal | LAN über FRITZ!Box 7590 AX | ACTIVE / VERIFIED | lokaler Kraken HTTPS/WebSocket-Smoke erfolgreich |
 | Interner Fernzugriff | Windows RDP im LAN | ACTIVE | MINI-PC während Einrichtung erfolgreich per RDP administriert |
 | Externer Fernzugriff | FRITZ!Box-VPN/WireGuard → internes RDP | CONFIGURED / OUTSIDE TEST PENDING | kein direktes RDP-Portforwarding |
-| Stromausfall-Recovery | Dell BIOS AC Recovery = Power On | CONFIGURED / PRACTICAL TEST PENDING | praktischer Stromausfall-/Wiederanlauf-Test nach finaler Geräteplatzierung |
+| Stromausfall-Recovery | Dell BIOS AC Recovery = Power On | ACTIVE / VERIFIED | echter Stromverlust-/Umplatzierungs-Test bestanden; automatischer Boot ohne Tastendruck, RDP danach wieder erreichbar |
 | Watchdog/Recovery | lokaler Supervisor + unabhängiger GitHub-Fallback | CLOUD VERIFIED / LOCAL BASELINE ACTIVE | GitHub-Watchdog + Startup-Recovery aktiv; lokale SYSTEM-Tasks alle 5 Min + Startup und tägliche Log-Bereinigung 04:20 installiert; Immediate Health exit 0; prozessspezifischer Self-Heal folgt erst mit lokaler Runtime |
 | Backup/Restore | lokales State-Backup + Restore-Smoke | ACTIVE / VERIFIED | 04:00 daily, 14-day retention, no Secrets/Logs/Repo; immediate seed + restore smoke passed locally; watchdog warns only after 7 days without backup |
+| Externer Datenträger | `D:` / `Mistral_450`, ~304 GB frei | ATTACHED / ROLE DEFINED | Bulk-/Archive-/Capture-/sekundäre Backup-Fläche; nicht für Secrets oder primären Runtime-State bis Mount-/Recovery-Verhalten separat verifiziert |
 | Kraken local realtime data | Public WebSocket v2 book + trades via isolated venv | ACTIVE / SMOKE VERIFIED | 45s local smoke: 1544 verified book events, 103 trades, 0 gaps, 0 subscription errors; public/read-only only |
 | Altrady | zusätzlicher Echtzeit-Trigger | TRANSPORT PREPARED / NOT ACTIVE | Supabase-Eventtabelle + Relay-Quellcode + MINI-PC-Poller/Task-Installer vorbereitet und CI-geprüft; niemals alleiniger Trigger/SPOF; Relay-Secret/Deployment + E2E-Smoke noch offen |
 | Kraken realtime | Public REST/WebSocket lokal | SMOKE VERIFIED / CONTINUOUS DAEMON PENDING | primäre Marktwahrheit; 45s WS-Smoke ohne Gap/Subscription-Fehler bestanden |
