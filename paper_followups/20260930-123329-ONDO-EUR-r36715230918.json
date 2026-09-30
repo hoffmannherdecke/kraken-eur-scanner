@@ -3,7 +3,16 @@
   "candidate_id": "20260930-123329-ONDO-EUR-r36715230918",
   "evaluated_at_utc": "2026-09-30T12:34:36.100001Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 1.775,
+      "expected_bars": 30,
+      "mae_pct": 0.254,
+      "mfe_pct": 3.089
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -53,12 +62,15 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T12:50:16.177226Z"
+    "updated_at_utc": "2026-09-30T13:08:32.335465Z"
   },
   "original_decision": "WAIT",
   "pair": "ONDO/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-30T13:07:12.735741Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-30T13:08:32.530015Z"
 }
