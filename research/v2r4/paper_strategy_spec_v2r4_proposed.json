@@ -67,7 +67,8 @@
     "scout_notional_eur": 75,
     "stage2_notional_eur": 75,
     "runtime_default_tier": "B_PLUS_OR_EARLY_SCOUT",
-    "adaptive_sizing_runtime_status": "NOT_YET_WIRED_USE_75_PLUS_75_FOR_E2E_SMOKE_ONLY"
+    "adaptive_sizing_runtime_status": "NOT_YET_WIRED_USE_75_PLUS_75_FOR_E2E_SMOKE_ONLY",
+    "runtime_default_note": "Until a separately validated setup-quality sizing mapper is implemented, the executable paper default is 75 EUR scout + 75 EUR confirmation. Sizing tiers remain research targets and must not be inferred automatically."
   },
   "wait_monitoring": {
     "enabled_when_activated": true,
