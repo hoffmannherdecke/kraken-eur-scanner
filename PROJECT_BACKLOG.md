@@ -48,16 +48,17 @@ Kanonische Detailquellen:
 
 Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
-- [ ] Hardware-/OS-Preflight: BIOS, Windows, Treiber, SSD-Zustand, Uhrzeit/Zeitsynchronisation, Netzwerk.
-- [ ] Dauerbetrieb konfigurieren: kein unerwünschter Schlafmodus, kontrollierter Neustart, Dienste automatisch starten.
-- [ ] Automatisches Wiederanlaufen nach Stromausfall konfigurieren und praktisch testen.
-- [ ] Stabiles LAN als primärer Dauerpfad einrichten.
-- [ ] **Internen Windows-Remotezugriff sehr früh einrichten**: nach Basis-Setup/LAN möglichst schnell vom Laptop im selben Netz vollständig administrieren können.\n- [ ] Externen Fernzugriff ebenfalls beim Grundsetup vorbereiten: bevorzugt FRITZ!Box-VPN/WireGuard → internes RDP; **keine direkte RDP-Portfreigabe ins Internet**. Echten Außentest über Mobilfunk/iPhone-Hotspot durchführen.
-- [ ] ChatGPT auf dem Mini-PC mit demselben Konto einrichten; iPhone bleibt bevorzugte Sprach-/Diktieroberfläche. Work erst nach stabilem Basis-Setup und nur bei echtem Desktop-/Browser-/Dateikontext nutzen; zusätzliche Credits nicht vorsorglich kaufen.
+- [x] Hardware-/OS-Preflight: BIOS, Windows, Treiber, SSD-Zustand, Uhrzeit/Zeitsynchronisation, Netzwerk.
+- [x] Dauerbetrieb konfigurieren: kein unerwünschter Schlafmodus, kontrollierter Neustart, Dienste automatisch starten.
+- [x] Automatisches Wiederanlaufen nach Stromausfall konfigurieren und praktisch testen.
+- [x] Stabiles LAN als primärer Dauerpfad einrichten.
+- [x] **Internen Windows-Remotezugriff sehr früh einrichten**: interner RDP-Zugriff nach Neustart/Strom-Recovery verifiziert.
+- [ ] Externer Fernzugriff: WireGuard ist vorbereitet; echter Außentest über Mobilfunk/iPhone-Hotspot ist bewusst in Runbook **Phase H ganz nach hinten verschoben**; keine direkte RDP-Portfreigabe ins Internet.
+- [x] ChatGPT auf dem Mini-PC mit demselben Konto einrichten; iPhone bleibt bevorzugte Sprach-/Diktieroberfläche. Work nur bei echtem Desktop-/Browser-/Dateikontext; keine Credits vorsorglich kaufen.
 - [ ] Secrets/API-Schlüssel lokal und mit minimalen Rechten halten; niemals in Repo oder Logs schreiben.
-- [ ] Klare lokale Verzeichnisstruktur für Runtime, State, Logs, temporäre Daten, Archiv und Backup festlegen.
-- [ ] Externe SSD nur als Archiv/Backup verwenden, **nie als Live-Abhängigkeit**.
-- [ ] Von Anfang an Speicherlimits, TTL, Log-Rotation und Kompaktierung einrichten.
+- [x] Klare lokale Verzeichnisstruktur für Runtime, State, Logs, temporäre Daten, Archiv und Backup festgelegt.
+- [ ] Externes Laufwerk D: enthält wichtige Altdateien und FAT32-Fehler; Sicherung/Reparatur bewusst in Runbook **Phase H ganz nach hinten verschoben**. Bis dahin **keine Live-Abhängigkeit / keine aktive Projektablage**.
+- [x] Speicherlimits/TTLs/Log-Rotation für lokale Basis eingerichtet; weitere komponentenspezifische Limits folgen jeweils mit der Runtime.
 
 **Abschlusskriterium P1:** Mini-PC läuft nach Neustart/Stromunterbrechung selbstständig wieder stabil und ist lokal administrierbar.
 
@@ -65,7 +66,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 ## P2 — Lokaler Runtime-/Watchdog-/Recovery-Layer
 
-- [ ] Lokalen Prozess-Supervisor/Watchdog einrichten: Prozess lebt, Daten sind frisch, Queue bewegt sich, Ergebnisse sind plausibel.
+- [ ] Lokalen Prozess-Supervisor/Watchdog vervollständigen: Basis-Watchdog/Tasks sind aktiv; kontinuierlicher Kraken-Canary-Prozess + Heartbeat/Self-Heal sind vorbereitet und lokal noch einmalig zu aktivieren; danach Queue-/Runtime-Wirkung ergänzen.
 - [ ] Watchdog muss auch „grün aber wirkungslos“ erkennen, nicht nur Prozessstatus.
 - [ ] Täglichen sehr kurzen **10:00-Systemstatus** später lokal/GitHub-basiert erzeugen: tatsächliche End-to-End-Gesundheit statt nur „Workflow aktiv“; Work dafür nicht als Dauerlösung verwenden.
 - [ ] Uptime Kuma als kostenlose, unabhängige Health-Schicht prüfen/einrichten, sofern es echten Zusatznutzen liefert.
