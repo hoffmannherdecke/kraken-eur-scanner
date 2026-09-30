@@ -5,38 +5,14 @@ param(
 $ErrorActionPreference = "Stop"
 
 $repo = Join-Path $TradingRoot "Repos\kraken-eur-scanner"
-$preflight = Join-Path $repo "tools\minipc-v2r4-preflight-smoke.ps1"
-$secretPrep = Join-Path $repo "tools\minipc-altrady-secret-prep.ps1"
-$tokenFile = Join-Path $TradingRoot "Secrets\altrady-webhook-token.txt"
+$coreGate = Join-Path $repo "tools\minipc-local-core-gate.ps1"
 
-foreach ($p in @($preflight,$secretPrep)) {
-  if (-not (Test-Path $p)) { throw "Required path missing: $p" }
+if (-not (Test-Path $coreGate)) {
+  throw "Required path missing: $coreGate"
 }
 
-Write-Host "[NEXT-USER-STEP] 1/2 Run isolated V2R4 MINI-PC preflight"
-& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $preflight -TradingRoot $TradingRoot
+Write-Host "This compatibility entry point now delegates to the canonical local core gate."
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $coreGate -TradingRoot $TradingRoot
 if ($LASTEXITCODE -ne 0) {
-  throw "V2R4 MINI-PC preflight failed with exit code $LASTEXITCODE. Altrady secret was NOT generated."
+  throw "MINI-PC local core gate failed with exit code $LASTEXITCODE"
 }
-
-Write-Host ""
-Write-Host "[NEXT-USER-STEP] 2/2 Prepare Altrady relay secret"
-if (Test-Path $tokenFile) {
-  $token = (Get-Content $tokenFile -Raw).Trim()
-  if ($token.Length -lt 24) { throw "Existing Altrady token file is invalid/too short." }
-  Set-Clipboard -Value $token
-  Write-Host "Existing secret kept unchanged and copied to clipboard."
-  Write-Host ("Secret file: " + $tokenFile)
-} else {
-  & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $secretPrep -TradingRoot $TradingRoot
-  if ($LASTEXITCODE -ne 0) { throw "Altrady secret preparation failed with exit code $LASTEXITCODE" }
-}
-
-Write-Host ""
-Write-Host "=== NEXT USER STEP SUMMARY ==="
-Write-Host "V2R4 MINI-PC isolated preflight: PASS"
-Write-Host "Altrady relay token: PRESENT LOCALLY + COPIED TO CLIPBOARD"
-Write-Host "Token value was not printed."
-Write-Host "Next manual action: configure Supabase Edge Function secret ALTRADY_WEBHOOK_TOKEN using the clipboard value."
-Write-Host "Do not paste the token into ChatGPT/GitHub/Slack."
-Write-Host "=== END ==="
