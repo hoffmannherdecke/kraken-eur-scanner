@@ -121,9 +121,11 @@ if (Test-Path $repo) {
 
   if ($git) {
     try {
-      $branch = (& $git -C $repo branch --show-current 2>&1 | Out-String).Trim()
-      $head = (& $git -C $repo log -1 --format=%H 2>&1 | Out-String).Trim()
-      $origin = (& $git -C $repo remote get-url origin 2>&1 | Out-String).Trim()
+      # The task runs as SYSTEM while the working tree is owned by the local ADMIN user.
+      # Use a per-command safe.directory override instead of mutating global Git config.
+      $branch = (& $git -c "safe.directory=$repo" -C $repo branch --show-current 2>&1 | Out-String).Trim()
+      $head = (& $git -c "safe.directory=$repo" -C $repo log -1 --format=%H 2>&1 | Out-String).Trim()
+      $origin = (& $git -c "safe.directory=$repo" -C $repo remote get-url origin 2>&1 | Out-String).Trim()
       Add-Check "git_branch" ($branch -eq "main") ("branch=" + $branch) "WARNING"
       Add-Check "git_origin" ($origin -eq "https://github.com/hoffmannherdecke/kraken-eur-scanner.git") $origin "WARNING"
       Add-Check "git_head" ([bool]$head) $head "WARNING"
