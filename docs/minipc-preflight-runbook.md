@@ -422,3 +422,18 @@ To establish a concrete local 24/7 process/heartbeat contract before strategy co
 
 Next local action is intentionally a single administrator PowerShell bundle after one `git pull --ff-only`. After that evidence is captured, further P2/P3 code work can continue without user interaction until the next truly machine-local or secret-handling gate.
 
+### P2 continuous Kraken canary activated 2026-09-30
+
+Actual MINI-PC activation proof from `tools/minipc-phase2-enable.ps1`:
+- existing local watchdog before canary: **HEALTHY**;
+- `CryptoMiniPC-KrakenCanary` installed and **Running** as a SYSTEM startup task;
+- Task Scheduler `last_result=267009 / 0x41301` means the long-running task is currently running, not failed;
+- canary heartbeat: **HEALTHY**;
+- observed during activation summary: **509 total events**, **495 book events**, **3 trade events**;
+- **0 gaps**, **0 subscription errors**;
+- watchdog after canary: **HEALTHY**;
+- watchdog canary check: **True**, heartbeat age ~**1.9 s** at capture;
+- safety guardrails confirmed: **PUBLIC DATA ONLY / NO ACCOUNT / NO ORDERS / NO STRATEGY ACTION**.
+
+This closes the concrete local continuous-process/heartbeat contract for the Kraken transport canary. The independent GitHub cloud path remains in place. Strategy coupling is still intentionally absent.
+
