@@ -1,0 +1,224 @@
+{
+  "altname": "PAXGEUR",
+  "candidate_id": "20260930-001834-PAXG-EUR-r36649210734",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above 3696.81 with renewed live volume.",
+      "Follow-through holding above 3696.81 on the next 15-minute period."
+    ],
+    "reason_codes": [
+      "near_1h_resistance",
+      "weak_major_market_regime",
+      "live_volume_absent",
+      "remaining_move_vs_costs_unproven",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation did not confirm the setup: renewed live volume and a close above resistance are absent, while the major-market proxy is weak. No cost-justified scout plan is supported.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "PAXGUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 45.63,
+        "available": true,
+        "current_funding_rate": 0.07745798122779306,
+        "current_open_interest": 369.103,
+        "funding_rate_delta": -0.1705502437255389,
+        "open_interest_pct": 1.7839,
+        "previous_funding_rate": 0.24800822495333194,
+        "previous_observed_at_utc": "2026-09-30T00:18:56.666366Z",
+        "previous_open_interest": 362.634
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.07745798122779306,
+        "index_price": 4184.66,
+        "last": 4186.4,
+        "mark_price": 4185.83411771609,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 369.103,
+        "requested_symbols": [
+          "PF_PAXGUSD",
+          "PI_PAXGUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_PAXGUSD",
+        "volume24h": 168.969
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 3691.82,
+      "bid": 3691.27,
+      "last": 3695.13,
+      "spread_pct": 0.014898910889618897
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.001",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.26954652999519046,
+          "ret3h_pct": -0.04416528961558308
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.18976939629611334,
+          "ret3h_pct": -0.21386252662692895
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2856598743096517,
+          "ret3h_pct": -0.04772358499570695
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T01:04:32.752669Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_08f7cd081f3be1bb006abc6022729087d18b076821d3c1f19d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 3691.82,
+    "bid": 3691.27,
+    "last": 3695.13,
+    "spread_pct": 0.014898910889618897
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 3696.03,
+      "high": 3696.36,
+      "low": 3695.58,
+      "open": 3695.9,
+      "trades": 12,
+      "ts": 1790726400,
+      "volume": 0.49941744,
+      "vwap": 3696.11
+    },
+    {
+      "close": 3695.13,
+      "high": 3695.69,
+      "low": 3695.13,
+      "open": 3695.69,
+      "trades": 3,
+      "ts": 1790727300,
+      "volume": 0.72147948,
+      "vwap": 3695.68
+    },
+    {
+      "close": 3695.13,
+      "high": 3695.13,
+      "low": 3695.13,
+      "open": 3695.13,
+      "trades": 0,
+      "ts": 1790728200,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 3695.13,
+      "high": 3695.13,
+      "low": 3695.13,
+      "open": 3695.13,
+      "trades": 0,
+      "ts": 1790729100,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 3695.13,
+      "high": 3695.13,
+      "low": 3695.13,
+      "open": 3695.13,
+      "trades": 0,
+      "ts": 1790730000,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "PAXG/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-001834-PAXG-EUR-r36649210734.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T01:04:40.312505Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "5fc01e08da0b7464a1a5c8eec4bb0ad7fb18bfdf",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T01:04:40.312505Z",
+    "revalidation_started_at_utc": "2026-09-30T01:04:32.328500Z",
+    "ttl_due_at_utc": "2026-09-30T01:03:56.666366Z",
+    "ttl_lag_seconds": 35.662
+  }
+}

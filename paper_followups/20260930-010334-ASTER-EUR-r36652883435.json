@@ -1,0 +1,51 @@
+{
+  "baseline_ask_eur": 0.65491,
+  "candidate_id": "20260930-010334-ASTER-EUR-r36652883435",
+  "evaluated_at_utc": "2026-09-30T01:04:00.134418Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-30T01:03:34Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 26.134,
+    "detection_price_eur": 0.65133,
+    "evaluated_at_utc": "2026-09-30T01:04:00.134418Z",
+    "evaluation_ask_eur": 0.65491,
+    "flagged_as_already_run": false,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-29T22:04:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 1.971,
+      "price_eur": 0.63874
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "near_resistance",
+      "weekly_high_limits_upside",
+      "fees_and_spread_consume_potential",
+      "major_market_weak",
+      "no_confirmed_breakout"
+    ],
+    "scan_step_started_at_utc": "2026-09-30T00:58:48Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 1.9710680402041492,
+      "ret15_live_pct": -0.09356689265883622,
+      "ret1h_pct": 1.9391492158888246,
+      "ret3h_pct": 1.9710680402041492,
+      "scanner_late_flag": false,
+      "score": 11.1
+    },
+    "schema_version": 1,
+    "setup_lane": "NONE",
+    "updated_at_utc": "2026-09-30T01:05:46.256797Z"
+  },
+  "original_decision": "REJECT",
+  "pair": "ASTER/EUR",
+  "path_classification": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02"
+}
