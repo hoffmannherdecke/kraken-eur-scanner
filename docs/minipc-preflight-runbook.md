@@ -369,3 +369,15 @@ Operational interpretation:
 - do not reformat or run `chkdsk /F` blindly while existing data may matter;
 - preserve/backup important existing data first, then perform controlled repair and re-verify volume health.
 
+### External drive D: remediation deferred 2026-09-30
+
+User confirmed that `D:` / `MISTRAL_450` still contains files that must be preserved.
+
+Decision:
+- no `chkdsk /F`, no format and no migration to NTFS now;
+- do not use D: as active project storage until preservation/repair is completed;
+- later sequence: identify/preserve important files -> controlled filesystem repair or clean reformat -> re-run health + write/read/delete + cold-mount checks;
+- C: remains the only active project/runtime/state location for now.
+
+This storage-maintenance item is intentionally deferred so MINI-PC commissioning can continue.
+
