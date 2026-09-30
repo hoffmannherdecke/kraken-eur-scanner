@@ -1,0 +1,223 @@
+{
+  "altname": "HBAREUR",
+  "candidate_id": "20260930-114829-HBAR-EUR-r36710540360",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "tight_spot_spread",
+      "breakout_hold_unconfirmed",
+      "latest_volume_exceptionally_low",
+      "failed_follow_through",
+      "extended_prior_move",
+      "fees_and_slippage_material",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The resistance break did not sustain: price pulled back after the spike, and the latest 15m candle had exceptionally low volume. No supported confirmation entry or cost-adjusted remaining potential.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "HBARUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 0.13,
+        "available": true,
+        "current_funding_rate": -3.9337547427e-06,
+        "current_open_interest": 23162352.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 0.0,
+        "previous_funding_rate": -3.9337547427e-06,
+        "previous_observed_at_utc": "2026-09-30T12:31:30.736585Z",
+        "previous_open_interest": 23162352.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -3.9337547427e-06,
+        "index_price": 0.108997,
+        "last": 0.10881,
+        "mark_price": 0.10905764908,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 23162352.0,
+        "requested_symbols": [
+          "PF_HBARUSD",
+          "PI_HBARUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_HBARUSD",
+        "volume24h": 63922470
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.09584,
+      "bid": 0.09581,
+      "last": 0.09577,
+      "spread_pct": 0.03130707018000352
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "55",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0623272451357737,
+          "ret3h_pct": 0.5581419415278566
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4221687072190283,
+          "ret3h_pct": 0.7126995876070685
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2184650455927084,
+          "ret3h_pct": 0.6774809160305484
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T12:31:37.193600Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 2,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0d4a50cc318d68e8006abd0138f51087d1b82f2bfa45f132fd"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.09584,
+    "bid": 0.09581,
+    "last": 0.09577,
+    "spread_pct": 0.03130707018000352
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.09563,
+      "high": 0.09572,
+      "low": 0.09525,
+      "open": 0.09534,
+      "trades": 113,
+      "ts": 1790767800,
+      "volume": 479924.0422,
+      "vwap": 0.09537
+    },
+    {
+      "close": 0.09603,
+      "high": 0.09606,
+      "low": 0.09558,
+      "open": 0.09558,
+      "trades": 123,
+      "ts": 1790768700,
+      "volume": 528923.96244,
+      "vwap": 0.09588
+    },
+    {
+      "close": 0.0953,
+      "high": 0.09652,
+      "low": 0.0953,
+      "open": 0.09628,
+      "trades": 83,
+      "ts": 1790769600,
+      "volume": 180241.32601,
+      "vwap": 0.09618
+    },
+    {
+      "close": 0.09518,
+      "high": 0.09554,
+      "low": 0.09471,
+      "open": 0.09529,
+      "trades": 110,
+      "ts": 1790770500,
+      "volume": 435152.74492,
+      "vwap": 0.0952
+    },
+    {
+      "close": 0.09577,
+      "high": 0.0958,
+      "low": 0.09506,
+      "open": 0.09517,
+      "trades": 23,
+      "ts": 1790771400,
+      "volume": 22098.9841,
+      "vwap": 0.09529
+    }
+  ],
+  "pair": "HBAR/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-114829-HBAR-EUR-r36710540360.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T12:32:07.356129Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "c013f7aec7d19953acfd24ae72bf0de2eb43e77b",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T12:32:07.356129Z",
+    "revalidation_started_at_utc": "2026-09-30T12:31:36.887028Z",
+    "ttl_due_at_utc": "2026-09-30T12:19:03.725037Z",
+    "ttl_lag_seconds": 753.162
+  }
+}
