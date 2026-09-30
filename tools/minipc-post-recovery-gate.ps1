@@ -5,6 +5,11 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
+
+function Stage([string]$Text) {
+  Write-Host ("[POST-RECOVERY] " + $Text)
+}
 
 $repo = Join-Path $TradingRoot "Repos\kraken-eur-scanner"
 $stateDir = Join-Path $TradingRoot "State"
@@ -19,6 +24,7 @@ foreach ($p in @($repo,$stateDir,$logDir)) {
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $reportPath = Join-Path $logDir "minipc-post-recovery-$stamp.json"
 
+Stage "1/8 Boot-Zeit und Basisdaten"
 $os = Get-CimInstance Win32_OperatingSystem
 $boot = [datetime]$os.LastBootUpTime
 $now = Get-Date
@@ -35,6 +41,7 @@ function Add-Warning([string]$code) {
 }
 
 # --- Scheduled tasks: prove automatic post-boot recovery, not just existence.
+Stage "2/8 Scheduled Tasks nach Kaltstart"
 $taskNames = @("CryptoMiniPC-Health","CryptoMiniPC-Backup","CryptoMiniPC-LogCleanup")
 $tasks = @()
 foreach ($name in $taskNames) {
@@ -65,6 +72,7 @@ if ($healthTask) {
 }
 
 # --- Health state freshness: proves watchdog wrote fresh state after this boot.
+Stage "3/8 Watchdog-State und Log-Frische"
 $health = $null
 $healthAgeMinutes = $null
 $healthChecked = $null
@@ -92,6 +100,7 @@ if (Test-Path $healthLog) {
 }
 
 # --- Core connectivity after cold start.
+Stage "4/8 RDP/LAN nach Kaltstart"
 $termService = Get-Service TermService -ErrorAction SilentlyContinue
 if (-not $termService -or $termService.Status -ne "Running") {
   Add-Issue "rdp_service_not_running"
@@ -106,11 +115,14 @@ if ($ipv4 -notcontains "192.168.178.179") {
   Add-Warning "expected_lan_ip_not_seen"
 }
 
+Stage "5/8 Kraken DNS/TCP (je max. 5 Sekunden)"
 $krakenDnsOk = $false
 $krakenTcpOk = $false
 try {
-  $dns = Resolve-DnsName api.kraken.com -Type A -ErrorAction Stop | Select-Object -First 1
-  $krakenDnsOk = [bool]$dns.IPAddress
+  $dnsTask = [System.Net.Dns]::GetHostAddressesAsync("api.kraken.com")
+  if ($dnsTask.Wait(5000)) {
+    $krakenDnsOk = @($dnsTask.Result).Count -gt 0
+  }
 } catch {}
 
 # Use a bounded TcpClient connect instead of Test-NetConnection.
@@ -129,6 +141,7 @@ if (-not $krakenDnsOk) { Add-Issue "kraken_dns_failed" }
 if (-not $krakenTcpOk) { Add-Issue "kraken_tcp443_failed" }
 
 # --- External storage D: mount / identity / health / tiny reversible write-read-delete smoke.
+Stage "6/8 Externe Platte D: Mount/Identitaet/RW-Test"
 $driveLetter = $ExternalDriveLetter.TrimEnd(":")
 $external = [ordered]@{
   requested_drive = $ExternalDriveLetter
@@ -193,11 +206,14 @@ if (-not $volume) {
 }
 
 # --- Storage/system errors since this boot only.
+Stage "7/8 Ereignislog seit diesem Boot (max. 100 letzte Systemevents)"
 $postBootStorageErrors = @()
 try {
   $postBootStorageErrors = @(
-    Get-WinEvent -FilterHashtable @{LogName='System'; Level=1,2; StartTime=$boot} -ErrorAction SilentlyContinue |
+    Get-WinEvent -LogName System -MaxEvents 100 -ErrorAction SilentlyContinue |
       Where-Object {
+        $_.TimeCreated -ge $boot -and
+        $_.Level -in @(1,2) -and
         $_.ProviderName -match '(?i)(disk|ntfs|volmgr|partmgr|storage|storport|stornvme|usb)'
       } |
       Select-Object -First 20 TimeCreated,Id,ProviderName,LevelDisplayName,Message
@@ -208,6 +224,7 @@ try {
 }
 
 # Expected evidence of the deliberate hard power-loss can exist as Kernel-Power 41.
+Stage "8/8 Ergebnis schreiben"
 $kernelPower41 = @()
 try {
   $kernelPower41 = @(
