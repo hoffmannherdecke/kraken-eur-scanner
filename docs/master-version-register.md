@@ -52,13 +52,13 @@ Pflicht für Auswertung und nächste Version:
 
 | Komponente | Version / Stand | Status | Verknüpfung |
 |---|---|---|---|
-| Mini-PC Hardware | Dell OptiPlex 5060 Micro, i5-8500T, 16 GB, 256 GB SSD | RECEIVED / NOT CONFIGURED | künftige 24/7-Basis |
+| Mini-PC Hardware | Dell OptiPlex 5060 Micro, i5-8500T, 16 GB, 256 GB SSD | RECEIVED / BASE CONFIGURED | Windows/LAN/RDP/Git/Python/venv + read-only Kraken smoke verified; remaining physical/recovery/integration gates in Mini-PC runbook |
 | Betriebssystem | Windows 11 Pro | TO VERIFY ON DEVICE | ermöglicht RDP-Host |
 | Netzwerk lokal | LAN über FRITZ!Box 7590 AX | PLANNED | primärer Dauerpfad |
 | Interner Fernzugriff | Windows RDP im LAN | PLANNED / EARLY SETUP | sehr früh nach Basis-Setup aktivieren |
 | Externer Fernzugriff | FRITZ!Box-VPN/WireGuard → internes RDP | PLANNED | kein direktes RDP-Portforwarding |
-| Stromausfall-Recovery | Dell BIOS AC Recovery = Power On geplant | TO CONFIGURE / TEST | 24/7-Wiederanlauf |
-| Watchdog/Recovery | lokaler Supervisor + unabhängiger Fallback | PLANNED | keine Strategieänderungen durch Watchdog |
+| Stromausfall-Recovery | Dell BIOS AC Recovery = Power On | CONFIGURED / PRACTICAL TEST PENDING | praktischer Stromausfall-/Wiederanlauf-Test nach finaler Geräteplatzierung |
+| Watchdog/Recovery | lokaler Supervisor + unabhängiger GitHub-Fallback | CLOUD VERIFIED / LOCAL BASELINE PREPARED | GitHub-Watchdog + Startup-Recovery aktiv; lokale SYSTEM-Tasks vorbereitet, Installation/Smoke-Test noch offen; keine Strategieänderungen durch Watchdog |
 | Altrady | zusätzlicher Echtzeit-Trigger | PLANNED | niemals alleiniger Trigger/SPOF |
 | Kraken realtime | Public REST/WebSocket lokal | PLANNED | primäre Marktwahrheit |
 | GitHub Cloudpfad | bestehend | ACTIVE | unabhängiger Fallback bleibt erhalten |
