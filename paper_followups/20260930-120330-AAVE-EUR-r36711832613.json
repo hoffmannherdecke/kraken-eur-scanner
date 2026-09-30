@@ -3,7 +3,16 @@
   "candidate_id": "20260930-120330-AAVE-EUR-r36711832613",
   "evaluated_at_utc": "2026-09-30T12:03:54.239065Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 1.274,
+      "expected_bars": 30,
+      "mae_pct": -0.952,
+      "mfe_pct": 2.015
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -55,12 +64,13 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T12:33:00.707072Z"
+    "updated_at_utc": "2026-09-30T12:36:27.910274Z"
   },
   "original_decision": "WAIT",
   "pair": "AAVE/EUR",
   "path_classification": "WAIT_PENDING",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-30T12:36:28.141748Z"
 }

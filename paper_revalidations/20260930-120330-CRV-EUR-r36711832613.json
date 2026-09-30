@@ -1,0 +1,223 @@
+{
+  "altname": "CRVEUR",
+  "candidate_id": "20260930-120330-CRV-EUR-r36711832613",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above 0.3615 on stronger volume, followed by a continued hold above that level."
+    ],
+    "reason_codes": [
+      "EXTENDED_AFTER_STRONG_7D_30D_RUN",
+      "RESISTANCE_BREAKOUT_NOT_CONFIRMED",
+      "CLOSED_VOLUME_BELOW_BASELINE",
+      "OPEN_INTEREST_DECLINING",
+      "COST_ADJUSTED_UPSIDE_UNCONFIRMED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "CRV remains extended and has not confirmed a 15-minute close above 0.3615 with stronger volume and a hold. The pullback and falling open interest do not establish a cost-adjusted scout setup.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "CRVUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 30.92,
+        "available": true,
+        "current_funding_rate": -2.465401296167e-06,
+        "current_open_interest": 9212398.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -2.5149,
+        "previous_funding_rate": -2.465401296167e-06,
+        "previous_observed_at_utc": "2026-09-30T12:04:06.212088Z",
+        "previous_open_interest": 9450060.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -2.465401296167e-06,
+        "index_price": 0.4071,
+        "last": 0.4055,
+        "mark_price": 0.40734174087,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 9212398.0,
+        "requested_symbols": [
+          "PF_CRVUSD",
+          "PI_CRVUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_CRVUSD",
+        "volume24h": 11128485
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.35824,
+      "bid": 0.35728,
+      "last": 0.3568,
+      "spread_pct": 0.26833631484794734
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "20",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0623272451357737,
+          "ret3h_pct": 0.5581419415278566
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4221687072190283,
+          "ret3h_pct": 0.7126995876070685
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2184650455927084,
+          "ret3h_pct": 0.6774809160305484
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T12:34:59.507715Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_04f2d2770a176215006abd01f590bc87d0aa398346f144ebea"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.35824,
+    "bid": 0.35728,
+    "last": 0.3568,
+    "spread_pct": 0.26833631484794734
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.35435,
+      "high": 0.3544,
+      "low": 0.35295,
+      "open": 0.3544,
+      "trades": 12,
+      "ts": 1790767800,
+      "volume": 6019.95137137,
+      "vwap": 0.35357
+    },
+    {
+      "close": 0.35758,
+      "high": 0.35777,
+      "low": 0.35362,
+      "open": 0.35362,
+      "trades": 21,
+      "ts": 1790768700,
+      "volume": 5303.51999879,
+      "vwap": 0.35567
+    },
+    {
+      "close": 0.35484,
+      "high": 0.36116,
+      "low": 0.35469,
+      "open": 0.35884,
+      "trades": 63,
+      "ts": 1790769600,
+      "volume": 55290.10084534,
+      "vwap": 0.35849
+    },
+    {
+      "close": 0.35505,
+      "high": 0.3558,
+      "low": 0.35457,
+      "open": 0.3556,
+      "trades": 16,
+      "ts": 1790770500,
+      "volume": 6561.30421519,
+      "vwap": 0.35512
+    },
+    {
+      "close": 0.3568,
+      "high": 0.35797,
+      "low": 0.35474,
+      "open": 0.35505,
+      "trades": 20,
+      "ts": 1790771400,
+      "volume": 15640.50217467,
+      "vwap": 0.35634
+    }
+  ],
+  "pair": "CRV/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-120330-CRV-EUR-r36711832613.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T12:35:06.302774Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "e9453c528153baf58e2d94c2e757d79f63241896",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T12:35:06.302774Z",
+    "revalidation_started_at_utc": "2026-09-30T12:34:59.036364Z",
+    "ttl_due_at_utc": "2026-09-30T12:34:06.212088Z",
+    "ttl_lag_seconds": 52.824
+  }
+}

@@ -1,0 +1,184 @@
+{
+  "altname": "ONDOEUR",
+  "candidate_age_seconds": 53,
+  "candidate_event_time_utc": "2026-09-30T12:33:29Z",
+  "candidate_id": "20260930-123329-ONDO-EUR-r36715230918",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above \u20ac0.4512 with sustained volume",
+      "Hold the \u20ac0.4478\u2013\u20ac0.4497 area on a retest"
+    ],
+    "reason_codes": [
+      "live_price_faded",
+      "breakout_not_confirmed_on_closed_bar",
+      "higher_lows_absent",
+      "extended_7d_30d_context",
+      "fees_require_more_headroom",
+      "no_structural_stop_basis"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "High-volume breakout signal is promising, but the live quote has faded from the scanner snapshot and continuation is not yet confirmed; recent 7d/30d gains increase chase risk.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ONDOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 351.75,
+        "available": true,
+        "current_funding_rate": -1.0737453113912e-05,
+        "current_open_interest": 4490092.0,
+        "funding_rate_delta": 4.711084659220006e-07,
+        "open_interest_pct": -3.7994,
+        "previous_funding_rate": -1.1208561579834e-05,
+        "previous_observed_at_utc": "2026-09-30T06:42:38.879230Z",
+        "previous_open_interest": 4667425.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.0737453113912e-05,
+        "index_price": 0.511623,
+        "last": 0.5118,
+        "mark_price": 0.51180607389,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4490092.0,
+        "requested_symbols": [
+          "PF_ONDOUSD",
+          "PI_ONDOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ONDOUSD",
+        "volume24h": 5284377
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.44969,
+      "bid": 0.44925,
+      "last": 0.44936,
+      "spread_pct": 0.09789307406500901
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "15",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0623272451357737,
+          "ret3h_pct": 0.5581419415278566
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4221687072190283,
+          "ret3h_pct": 0.7126995876070685
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2184650455927084,
+          "ret3h_pct": 0.6774809160305484
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T12:34:22.671658Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-30T12:34:36.100001Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0c92d8152999e3d5006abd01d0195487d0ab348e180d2ab0c3"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.44969,
+    "bid": 0.44925,
+    "last": 0.44936,
+    "spread_pct": 0.09789307406500901
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ONDO/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36715230918:ONDO-EUR:1790771609",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "e9453c528153baf58e2d94c2e757d79f63241896",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-30T12:33:29Z",
+    "candidate_detected_ts": 1790771609,
+    "candidate_snapshot_at_utc": "2026-09-30T12:33:29Z",
+    "detected_to_evaluation_complete_seconds": 67.1,
+    "detected_to_evaluation_start_seconds": 53.432,
+    "evaluation_completed_at_utc": "2026-09-30T12:34:36.100001Z",
+    "evaluation_runtime_seconds": 13.668,
+    "evaluation_started_at_utc": "2026-09-30T12:34:22.431731Z",
+    "handoff_to_evaluation_start_seconds": 50.473,
+    "handoff_written_at_utc": "2026-09-30T12:33:31.958520Z",
+    "scan_step_started_at_utc": "2026-09-30T12:31:08Z"
+  }
+}
