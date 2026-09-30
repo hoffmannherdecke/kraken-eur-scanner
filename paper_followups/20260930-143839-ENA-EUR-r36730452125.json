@@ -3,7 +3,16 @@
   "candidate_id": "20260930-143839-ENA-EUR-r36730452125",
   "evaluated_at_utc": "2026-09-30T14:39:04.772059Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.975,
+      "expected_bars": 30,
+      "mae_pct": -2.036,
+      "mfe_pct": -0.339
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -54,12 +63,15 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T14:58:14.616294Z"
+    "updated_at_utc": "2026-09-30T15:15:51.432556Z"
   },
   "original_decision": "WAIT",
   "pair": "ENA/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-30T15:14:46.401515Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-30T15:15:51.608050Z"
 }
