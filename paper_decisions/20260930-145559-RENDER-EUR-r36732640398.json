@@ -1,0 +1,183 @@
+{
+  "altname": "RENDEREUR",
+  "candidate_age_seconds": 84,
+  "candidate_event_time_utc": "2026-09-30T14:55:59Z",
+  "candidate_id": "20260930-145559-RENDER-EUR-r36732640398",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.723 resistance, then hold/retest with live volume recovering to at least typical levels",
+      "BTC/EUR and ETH/EUR 1h momentum stabilize or turn positive"
+    ],
+    "reason_codes": [
+      "spot_liquidity_acceptable",
+      "major_markets_negative",
+      "short_term_trend_weak",
+      "no_breakout_or_higher_lows",
+      "live_volume_subdued",
+      "fees_and_slippage_hurdle"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but the 15m bounce lacks reversal confirmation amid weak spot momentum and a negative major-market backdrop; costs require a larger validated move.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "RENDERUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 576.4,
+        "available": true,
+        "current_funding_rate": -0.000113623825395126,
+        "current_open_interest": 240174.4,
+        "funding_rate_delta": -0.000128741022461584,
+        "open_interest_pct": 10.882,
+        "previous_funding_rate": 1.5117197066458e-05,
+        "previous_observed_at_utc": "2026-09-30T05:21:00.245632Z",
+        "previous_open_interest": 216603.6
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.000113623825395126,
+        "index_price": 1.93275,
+        "last": 1.9289,
+        "mark_price": 1.93154422055,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 240174.4,
+        "requested_symbols": [
+          "PF_RENDERUSD",
+          "PI_RENDERUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_RENDERUSD",
+        "volume24h": 302148.7
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.702,
+      "bid": 1.701,
+      "last": 1.7,
+      "spread_pct": 0.058771672054063466
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "2.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.946607104871311,
+          "ret3h_pct": -0.4140576567504106
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -1.0031869896822365,
+          "ret3h_pct": -0.8773259240549058
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -1.801294680551646,
+          "ret3h_pct": -0.7208574409560908
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          },
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T14:57:23.240597Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-30T14:57:32.482328Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0213b5e8e5060736006abd2354614887d1b8e681c177d887e2"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.702,
+    "bid": 1.701,
+    "last": 1.7,
+    "spread_pct": 0.058771672054063466
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "RENDER/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36732640398:RENDER-EUR:1790780159",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "cccd1affa6c0657fb79397df55c2b99b77e31275",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-30T14:55:59Z",
+    "candidate_detected_ts": 1790780159,
+    "candidate_snapshot_at_utc": "2026-09-30T14:55:59Z",
+    "detected_to_evaluation_complete_seconds": 93.482,
+    "detected_to_evaluation_start_seconds": 84.077,
+    "evaluation_completed_at_utc": "2026-09-30T14:57:32.482328Z",
+    "evaluation_runtime_seconds": 9.405,
+    "evaluation_started_at_utc": "2026-09-30T14:57:23.077318Z",
+    "handoff_to_evaluation_start_seconds": 82.573,
+    "handoff_written_at_utc": "2026-09-30T14:56:00.504087Z",
+    "scan_step_started_at_utc": "2026-09-30T14:54:27Z"
+  }
+}
