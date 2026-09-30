@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 1.5307,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -1.345,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -2.024,
+        "mfe_pct": 2.873,
+        "peak_at_utc": "2026-09-29T11:50:00Z",
+        "trough_at_utc": "2026-09-30T05:15:00Z"
+      },
       "15": {
         "bars": 0,
         "complete": false,
@@ -96,6 +107,11 @@
         "trough_at_utc": "2026-09-29T05:35:00Z"
       }
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "spread_acceptable",
@@ -118,7 +134,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-09-30T05:21:43.146554Z"
+    "updated_at_utc": "2026-09-30T05:37:22.973532Z"
   },
   "original_decision": "WAIT",
   "pair": "ATOM/EUR",

@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.02544,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 13.987,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -2.608,
+        "mfe_pct": 16.278,
+        "peak_at_utc": "2026-09-30T04:30:00Z",
+        "trough_at_utc": "2026-09-29T06:25:00Z"
+      },
       "15": {
         "bars": 0,
         "complete": false,
@@ -96,6 +107,11 @@
         "trough_at_utc": "2026-09-29T06:25:00Z"
       }
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "NEAR_7D_30D_HIGH",
@@ -116,7 +132,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T05:21:43.524088Z"
+    "updated_at_utc": "2026-09-30T05:37:23.271290Z"
   },
   "original_decision": "WAIT",
   "pair": "NIGHT/EUR",

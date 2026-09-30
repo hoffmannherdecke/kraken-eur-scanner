@@ -1,0 +1,223 @@
+{
+  "altname": "ZROEUR",
+  "candidate_id": "20260930-050333-ZRO-EUR-r36671462267",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A fresh, sustained breakout above the recent 1.662 high with adequate volume"
+    ],
+    "reason_codes": [
+      "extended_after_large_run",
+      "near_7d_30d_highs",
+      "entry_efficiency_poor",
+      "round_trip_fees_1_20pct",
+      "open_interest_declining"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "A 15m close above resistance and steadier major markets improve confirmation, but ZRO remains highly extended near its highs. Chasing at the current ask offers insufficiently supported post-cost potential relative to a structural stop.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ZROUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 32.72,
+        "available": true,
+        "current_funding_rate": 5.9909582697709e-05,
+        "current_open_interest": 298751.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -1.0516,
+        "previous_funding_rate": 5.9909582697709e-05,
+        "previous_observed_at_utc": "2026-09-30T05:04:09.081030Z",
+        "previous_open_interest": 301926.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 5.9909582697709e-05,
+        "index_price": 1.86677,
+        "last": 1.8739,
+        "mark_price": 1.86964148217,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 298751.0,
+        "requested_symbols": [
+          "PF_ZROUSD",
+          "PI_ZROUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ZROUSD",
+        "volume24h": 487412
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.647,
+      "bid": 1.645,
+      "last": 1.651,
+      "spread_pct": 0.12150668286755784
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.007614841325753741,
+          "ret3h_pct": 0.00843207015481795
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.002967610649462493,
+          "ret3h_pct": 0.27077577045695467
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2657050673752104,
+          "ret3h_pct": -0.11404675917126017
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T05:36:51.266485Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_04611073479b7337006abc9ff48c4487d1821522f4d6289efa"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.647,
+    "bid": 1.645,
+    "last": 1.651,
+    "spread_pct": 0.12150668286755784
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.643,
+      "high": 1.643,
+      "low": 1.615,
+      "open": 1.622,
+      "trades": 28,
+      "ts": 1790742600,
+      "volume": 4181.1287,
+      "vwap": 1.628
+    },
+    {
+      "close": 1.638,
+      "high": 1.645,
+      "low": 1.628,
+      "open": 1.64,
+      "trades": 62,
+      "ts": 1790743500,
+      "volume": 10674.85868,
+      "vwap": 1.638
+    },
+    {
+      "close": 1.643,
+      "high": 1.65,
+      "low": 1.625,
+      "open": 1.64,
+      "trades": 73,
+      "ts": 1790744400,
+      "volume": 11777.13232,
+      "vwap": 1.634
+    },
+    {
+      "close": 1.662,
+      "high": 1.662,
+      "low": 1.621,
+      "open": 1.633,
+      "trades": 71,
+      "ts": 1790745300,
+      "volume": 10897.14522,
+      "vwap": 1.642
+    },
+    {
+      "close": 1.651,
+      "high": 1.661,
+      "low": 1.65,
+      "open": 1.661,
+      "trades": 13,
+      "ts": 1790746200,
+      "volume": 3305.11857,
+      "vwap": 1.655
+    }
+  ],
+  "pair": "ZRO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-050333-ZRO-EUR-r36671462267.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T05:37:00.966918Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "afa4ed1c7ef4a8d4759aa11d788132cd86a14a7c",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T05:37:00.966918Z",
+    "revalidation_started_at_utc": "2026-09-30T05:36:51.018098Z",
+    "ttl_due_at_utc": "2026-09-30T05:34:09.081030Z",
+    "ttl_lag_seconds": 161.937
+  }
+}
