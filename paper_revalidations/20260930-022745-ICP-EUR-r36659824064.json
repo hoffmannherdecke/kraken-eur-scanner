@@ -1,0 +1,221 @@
+{
+  "altname": "ICPEUR",
+  "candidate_id": "20260930-022745-ICP-EUR-r36659824064",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Reclaim and hold above 3.009 on a closed 15-minute candle",
+      "Follow through above 3.084 with stronger closed-candle volume"
+    ],
+    "reason_codes": [
+      "support_reclaim_failed",
+      "short_term_weakness",
+      "closed_volume_weak",
+      "no_confirmed_breakout",
+      "insufficient_remaining_move_after_costs"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "ICP remains below the prior support-reclaim level, with weak follow-through and no confirmed breakout; the supplied evidence does not support a scout entry after costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ICPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 31.84,
+        "available": true,
+        "current_funding_rate": -0.000110108593649332,
+        "current_open_interest": 191499.1,
+        "funding_rate_delta": -5.7978636653332e-05,
+        "open_interest_pct": 0.0162,
+        "previous_funding_rate": -5.2129956996e-05,
+        "previous_observed_at_utc": "2026-09-30T02:43:07.466817Z",
+        "previous_open_interest": 191468.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.000110108593649332,
+        "index_price": 3.37347,
+        "last": 3.371,
+        "mark_price": 3.37240833861,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 191499.1,
+        "requested_symbols": [
+          "PF_ICPUSD",
+          "PI_ICPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ICPUSD",
+        "volume24h": 442377.7
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 2.975,
+      "bid": 2.973,
+      "last": 2.975,
+      "spread_pct": 0.0672494956287903
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "2",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.11863427891966039,
+          "ret3h_pct": -0.34344132820816053
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.03267141887304259,
+          "ret3h_pct": -0.13512597638049018
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.12340991076513763,
+          "ret3h_pct": 0.42848981146448306
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": false,
+        "detail": "HTTP Error 404: Not Found",
+        "error": "HTTPError",
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T03:14:56.572381Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0a20cddbaed68d0d006abc7eb27a3487d0a762d89000ecc6e4"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 2.975,
+    "bid": 2.973,
+    "last": 2.975,
+    "spread_pct": 0.0672494956287903
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 3.074,
+      "high": 3.074,
+      "low": 3.074,
+      "open": 3.074,
+      "trades": 4,
+      "ts": 1790733600,
+      "volume": 84.3748,
+      "vwap": 3.074
+    },
+    {
+      "close": 2.95,
+      "high": 3.026,
+      "low": 2.95,
+      "open": 3.022,
+      "trades": 87,
+      "ts": 1790734500,
+      "volume": 5410.93010942,
+      "vwap": 2.982
+    },
+    {
+      "close": 2.992,
+      "high": 2.992,
+      "low": 2.957,
+      "open": 2.958,
+      "trades": 46,
+      "ts": 1790735400,
+      "volume": 4056.61335118,
+      "vwap": 2.969
+    },
+    {
+      "close": 2.965,
+      "high": 2.994,
+      "low": 2.965,
+      "open": 2.982,
+      "trades": 24,
+      "ts": 1790736300,
+      "volume": 1112.00432251,
+      "vwap": 2.985
+    },
+    {
+      "close": 2.975,
+      "high": 2.975,
+      "low": 2.966,
+      "open": 2.974,
+      "trades": 7,
+      "ts": 1790737200,
+      "volume": 696.11892879,
+      "vwap": 2.971
+    }
+  ],
+  "pair": "ICP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-022745-ICP-EUR-r36659824064.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T03:15:02.860281Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "e2c4391fb3e2ba80ec22b0ea66cdb2aeebe562b5",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T03:15:02.860281Z",
+    "revalidation_started_at_utc": "2026-09-30T03:14:56.155305Z",
+    "ttl_due_at_utc": "2026-09-30T03:13:04.820511Z",
+    "ttl_lag_seconds": 111.335
+  }
+}
