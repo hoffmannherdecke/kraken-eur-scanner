@@ -1,0 +1,127 @@
+name: V2R4 local recheck live smoke
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v2r4-local-recheck-live-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: gpt-6-luna
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: prep/v2r4-fast-trigger-minipc-20260929
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Prepare isolated candidate/receipt/spec/control
+        run: |
+          set -euo pipefail
+          test -n "$OPENAI_API_KEY" || { echo "missing OPENAI_API_KEY"; exit 2; }
+          mkdir -p /tmp/v2r4-local-recheck/out
+          cp research/v2r4/paper_strategy_spec_v2r4_proposed.json /tmp/v2r4-local-recheck/spec.json
+          python - <<'PY'
+          import json,time
+          from datetime import datetime,timezone,timedelta
+          from pathlib import Path
+          now=datetime.now(timezone.utc)
+          ts=int(now.timestamp())
+          cid=f"{now.strftime('%Y%m%d-%H%M%S')}-BTC-EUR-r0"
+          candidate={
+            "candidate_id":cid,
+            "queue_id":f"0:BTC-EUR:{ts}",
+            "source_scanner_run_id":0,
+            "event_time_utc":now.isoformat().replace("+00:00","Z"),
+            "event_ts":ts,
+            "pair":"BTC/EUR",
+            "altname":"XBTEUR",
+            "action":"REVIEW_ONLY_NOT_ORDER",
+            "scanner_candidate":{
+              "price":1.0,"score":8.0,"ret15_live":0.0,"ret1h":0.0,"ret3h":0.0,
+              "volume_ratio_closed":1.0,"volume_ratio_live":1.0,"late":False,
+              "fresh_move_3h":0.0,"spread_pct":0.1,"turnover24h":1_000_000_000.0
+            },
+            "scanner_market_context":{"sensor_price_eur":1.0},
+            "timing":{"candidate_detected_at_utc":now.isoformat().replace("+00:00","Z")}
+          }
+          cpath=Path("/tmp/v2r4-local-recheck")/(cid+".json")
+          cpath.write_text(json.dumps(candidate,indent=2)+"\n","utf-8")
+          receipt={
+            "schema_version":1,
+            "kind":"V2R4_PAPER_WAIT_TRIGGER_RECEIPT",
+            "paper_only":True,
+            "candidate_id":cid,
+            "pair":"BTC/EUR",
+            "observed_at_utc":now.isoformat().replace("+00:00","Z"),
+            "matched":True,
+            "expired":False,
+            "reason":"MATCH_REQUIRES_FRESH_PAPER_RECHECK",
+            "condition_results":[True],
+            "metrics":{"spread_pct":0.1},
+            "next_action":"FRESH_PAPER_RECHECK_ONLY",
+            "real_money_actions_enabled":False
+          }
+          Path("/tmp/v2r4-local-recheck/receipt.json").write_text(json.dumps(receipt,indent=2)+"\n","utf-8")
+          control={
+            "enabled":True,
+            "test_id":"V2R4-LOCAL-RECHECK-LIVE-SMOKE",
+            "series_id":"PAPER-V2R4-LOCAL-RECHECK-LIVE-SMOKE",
+            "target_completed_paper_trades":1,
+            "real_money_actions_enabled":False
+          }
+          Path("/tmp/v2r4-local-recheck/control.json").write_text(json.dumps(control,indent=2)+"\n","utf-8")
+          Path("/tmp/v2r4-local-recheck/candidate-path.txt").write_text(str(cpath)+"\n","utf-8")
+          PY
+
+      - name: Run actual trigger -> fresh recheck bridge
+        run: |
+          set -euo pipefail
+          CANDIDATE="$(cat /tmp/v2r4-local-recheck/candidate-path.txt)"
+          python paper_evaluator/v2r4_local_recheck.py             --candidate "$CANDIDATE"             --trigger-receipt /tmp/v2r4-local-recheck/receipt.json             --spec /tmp/v2r4-local-recheck/spec.json             --control /tmp/v2r4-local-recheck/control.json             --out-dir /tmp/v2r4-local-recheck/out
+
+      - name: Verify bridge safety/timestamps
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import glob,json
+          from datetime import datetime
+          files=glob.glob("/tmp/v2r4-local-recheck/out/*.json")
+          assert len(files)==1, files
+          d=json.load(open(files[0]))
+          assert d["kind"]=="V2R4_LOCAL_TRIGGER_RECHECK_V1"
+          assert d["paper_only"] is True
+          assert d["real_money_actions_enabled"] is False
+          assert d["order_api"] is False
+          assert d["decision"]["decision"] in {"BUY_SCOUT","WAIT","REJECT"}
+          t0=datetime.fromisoformat(d["trigger_observed_at_utc"].replace("Z","+00:00"))
+          t1=datetime.fromisoformat(d["recheck_started_at_utc"].replace("Z","+00:00"))
+          t2=datetime.fromisoformat(d["recheck_completed_at_utc"].replace("Z","+00:00"))
+          assert t1>=t0
+          assert t2>=t1
+          if d["decision"]["decision"]=="WAIT":
+              assert d["next_wait_trigger_plan"] is not None
+              assert d["next_wait_trigger_plan"]["on_match"]=="FRESH_PAPER_RECHECK_ONLY"
+          if d["decision"]["decision"]=="BUY_SCOUT":
+              assert d["paper_entry"] is not None
+              assert d["paper_entry"]["status"].startswith("SCOUT_FILLED_SIMULATED")
+          print("V2R4_LOCAL_RECHECK_LIVE_SMOKE_PASS",json.dumps({
+            "decision":d["decision"]["decision"],
+            "trigger_to_recheck_start_s":round((t1-t0).total_seconds(),3),
+            "recheck_runtime_s":round((t2-t1).total_seconds(),3),
+            "paper_only":d["paper_only"],
+            "order_api":d["order_api"],
+          },sort_keys=True))
+          PY
