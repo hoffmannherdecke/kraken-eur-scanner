@@ -67,6 +67,7 @@ Pflicht für Auswertung und nächste Version:
 | Altrady | zusätzlicher Echtzeit-Trigger | RELAY DEPLOYED / NOT ACTIVE | Supabase-Eventtabelle + Edge Function `altrady-trigger-relay` v1 ACTIVE + MINI-PC-Poller/Task-Installer vorbereitet und CI-geprüft; niemals alleiniger Trigger/SPOF; gemeinsames Relay-Secret + E2E-Smoke noch offen |
 | Kraken realtime | Public REST/WebSocket lokal | SMOKE VERIFIED / CONTINUOUS DAEMON PENDING | primäre Marktwahrheit; 45s WS-Smoke ohne Gap/Subscription-Fehler bestanden |
 | GitHub Cloudpfad | bestehend | ACTIVE | unabhängiger Fallback bleibt erhalten |
+| Supabase archive | `paper_series` / `paper_candidate_outcomes` / `paper_trade_results` | ACTIVE / VERIFIED / FAIL-SOFT | Sync nach erfolgreichem Paper-Runtime-Workflow; zuletzt 570 V2R3-Outcomes archiviert, 0 Trades |
 | Slack Push | bestehender Pfad, echter iPhone-Push noch E2E nachzuweisen | OPEN | nur handlungs-/fehlerrelevante Pushs |
 | ChatGPT Desktop/Work | ChatGPT auf MINI-PC eingerichtet; Work sparsam | BASE ACTIVE | ChatGPT-Konto/Browserzugriff vorhanden; Work weiterhin nur bei echtem Desktop-/Browsermehrwert |
 
@@ -119,8 +120,10 @@ Stand 2026-09-29:
   - `20260928173804_allow_unverified_paper_trade_status`
   - `create_altrady_trigger_events` (2026-09-30)
 - RLS ist auf allen vier Tabellen aktiviert; aktuell existieren keine RLS-Policies. Das ist bis zur bewusst definierten Zugriffsschicht fail-closed und wird nicht vorschnell geöffnet.
-- `Supabase paper archive sync` ist als fail-soft GitHub-Workflow vorbereitet und der Repository-Quellbestand wird per Audit geprüft. Aktuell fehlen die GitHub-Actions-Backend-Credentials; deshalb wird der Sync bewusst übersprungen und beeinflusst Scanner/Paper nicht.
-- **Aktuelle Integrationslücke:** Die vorhandenen `paper_candidate_outcomes`-Zeilen gehören derzeit zu `PAPER-V2R2-20260928T1640Z`; für die aktive V2R3-Serie ist noch kein Outcome dort archiviert. Das ist als Sync-/Persistenzpunkt beim Mini-PC/Supabase-Setup zu prüfen, nicht als Strategieergebnis zu interpretieren.
+- `Supabase paper archive sync` ist **ACTIVE / VERIFIED / FAIL-SOFT**. Das GitHub-Secret `SUPABASE_SECRET_KEY` ist konfiguriert; der Workflow auditiert den Repository-Quellbestand und synchronisiert die aktive Serie.
+- Der Sync wird zusätzlich per `workflow_run` nach erfolgreichem Abschluss von `Paper runtime evaluator and lifecycle` gestartet. Das behebt die frühere Lücke, dass Bot-Pushes mit `GITHUB_TOKEN` keine nachgelagerten Push-Workflows auslösen.
+- Letzter verifizierter Stand 2026-09-30: aktive V2R3-Serie **570 Candidate-Outcomes**, **0 Trade-Results**; Supabase insgesamt 573 Candidate-Outcomes über alle Serien.
+- Supabase bleibt sekundär/fail-soft: ein Archivfehler darf Scanner oder Paper-Evaluator nicht blockieren.
 - Supabase bleibt sekundäre State-/Ergebnis-/Research-Schicht; kein Single Point of Failure und keine zweite Rohdatenkopie.
 
 ## V3 Migration Ledger — Pflichtstatus
