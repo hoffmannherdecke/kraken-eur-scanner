@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-09-30T13:57:50.690536Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": -3.98,
+      "expected_bars": 120,
+      "mae_pct": -5.938,
+      "mfe_pct": 0.695
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -82,7 +90,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T15:56:41.349003Z"
+    "updated_at_utc": "2026-09-30T16:12:56.007593Z"
   },
   "original_decision": "WAIT",
   "pair": "ZRO/EUR",
@@ -92,5 +100,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-30T15:15:51.230341Z"
+  "updated_at_utc": "2026-09-30T16:12:56.150443Z"
 }
