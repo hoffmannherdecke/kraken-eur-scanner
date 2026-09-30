@@ -8,6 +8,7 @@ name: MINI-PC tools smoke
       - 'tools/minipc-*.ps1'
       - 'tools/install-minipc-baseline-tasks.ps1'
       - 'tools/uninstall-minipc-baseline-tasks.ps1'
+      - 'tools/minipc-altrady-poller.py'
       - '.github/workflows/minipc-tools-smoke.yml'
 
 permissions:
@@ -19,6 +20,16 @@ jobs:
     timeout-minutes: 8
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Parse Python transport tools
+        shell: powershell
+        run: |
+          python -m py_compile .\tools\minipc-altrady-poller.py
+          Write-Host 'PYTHON_TRANSPORT_PARSE_OK'
 
       - name: Parse PowerShell scripts
         shell: powershell
