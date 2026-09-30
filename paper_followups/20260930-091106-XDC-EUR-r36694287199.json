@@ -3,7 +3,16 @@
   "candidate_id": "20260930-091106-XDC-EUR-r36694287199",
   "evaluated_at_utc": "2026-09-30T09:12:07.940346Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.979,
+      "expected_bars": 30,
+      "mae_pct": -1.175,
+      "mfe_pct": 0.0
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -54,12 +63,15 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-09-30T09:43:12.231071Z"
+    "updated_at_utc": "2026-09-30T09:50:26.773550Z"
   },
   "original_decision": "WAIT",
   "pair": "XDC/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-30T09:49:37.468545Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-30T09:50:26.893958Z"
 }

@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-09-30T09:29:30.845908Z",
     "evaluation_ask_eur": 0.200435,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 0.302,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": 0.008,
+        "mfe_pct": 0.537,
+        "peak_at_utc": "2026-09-30T09:33:00Z",
+        "trough_at_utc": "2026-09-30T09:28:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-09-30T07:12:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -42,7 +54,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T09:43:12.234214Z"
+    "updated_at_utc": "2026-09-30T09:50:28.192435Z"
   },
   "original_decision": "WAIT",
   "pair": "XLM/EUR",
