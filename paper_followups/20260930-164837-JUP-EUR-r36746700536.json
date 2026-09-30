@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-09-30T16:49:02.361251Z",
     "evaluation_ask_eur": 0.29239,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.062,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.12,
+        "mfe_pct": 0.099,
+        "peak_at_utc": "2026-09-30T16:52:00Z",
+        "trough_at_utc": "2026-09-30T16:55:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-09-30T15:27:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -40,7 +52,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-09-30T16:51:52.125579Z"
+    "updated_at_utc": "2026-09-30T17:05:03.754005Z"
   },
   "original_decision": "WAIT",
   "pair": "JUP/EUR",

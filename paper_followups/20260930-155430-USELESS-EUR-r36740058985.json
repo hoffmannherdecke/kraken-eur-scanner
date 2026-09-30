@@ -11,6 +11,14 @@
       "expected_bars": 30,
       "mae_pct": -0.709,
       "mfe_pct": 0.677
+    },
+    "60": {
+      "bars": 60,
+      "complete": true,
+      "end_close_pct": 1.143,
+      "expected_bars": 60,
+      "mae_pct": -0.946,
+      "mfe_pct": 1.335
     }
   },
   "interval_minutes": 1,
@@ -34,6 +42,17 @@
         "mfe_pct": 1.283,
         "peak_at_utc": "2026-09-30T16:06:00Z",
         "trough_at_utc": "2026-09-30T15:55:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": 1.753,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -0.35,
+        "mfe_pct": 1.946,
+        "peak_at_utc": "2026-09-30T16:46:00Z",
+        "trough_at_utc": "2026-09-30T16:38:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -63,7 +82,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-30T16:51:50.469427Z"
+    "updated_at_utc": "2026-09-30T17:05:03.291294Z"
   },
   "original_decision": "WAIT",
   "pair": "USELESS/EUR",
@@ -73,5 +92,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-30T16:35:31.491839Z"
+  "updated_at_utc": "2026-09-30T17:05:03.425047Z"
 }
