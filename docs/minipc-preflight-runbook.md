@@ -576,6 +576,7 @@ The archive path was rechecked after additional V2R3 paper activity:
 - repository audit at sync time: **570 active-series candidate rows**, **0 trade rows**;
 - GitHub archive sync run #6: **SUCCESS**;
 - direct Supabase verification after the run: **570 V2R3 candidate outcomes**, **573 candidate outcomes total**, **0 trade results**;
+- subsequent reconciliation run #7 successfully archived **578 V2R3 candidate outcomes**, confirming catch-up after further Paper Runtime activity;
 - the prior 551-row archive was therefore successfully brought current.
 
 Root cause of the earlier staleness:
@@ -584,9 +585,10 @@ Root cause of the earlier staleness:
 - therefore a push-only archive workflow could remain stale despite successful paper persistence.
 
 Fix:
-- `supabase-sync.yml` now also listens to successful `workflow_run` completion of `Paper runtime evaluator and lifecycle`;
-- push/manual triggers remain available;
-- sync remains fail-soft and secondary.
+- `supabase-sync.yml` keeps push/manual triggers and an opportunistic `workflow_run` hook for successful `Paper runtime evaluator and lifecycle` completion;
+- because the first post-change Paper Runtime completion did not itself produce an observable archive run, that hook is **not treated as the sole guarantee**;
+- an independent reconciliation schedule now runs at minute **:07 and :37** each hour;
+- the archive remains fail-soft/secondary and can safely lag without blocking scanner or evaluator.
 
 This closes the Supabase persistence gap as an infrastructure issue; it does not change strategy behavior.
 
