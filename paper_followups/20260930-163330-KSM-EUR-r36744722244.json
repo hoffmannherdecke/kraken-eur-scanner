@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-09-30T16:34:00Z",
         "trough_at_utc": "2026-09-30T16:38:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -1.948,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -3.68,
+        "mfe_pct": 0.216,
+        "peak_at_utc": "2026-09-30T16:34:00Z",
+        "trough_at_utc": "2026-09-30T18:37:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -88,7 +99,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T20:33:36.054023Z"
+    "updated_at_utc": "2026-09-30T20:35:52.830615Z"
   },
   "original_decision": "WAIT",
   "pair": "KSM/EUR",
