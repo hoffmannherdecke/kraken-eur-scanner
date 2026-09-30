@@ -58,7 +58,7 @@ Pflicht für Auswertung und nächste Version:
 | Interner Fernzugriff | Windows RDP im LAN | PLANNED / EARLY SETUP | sehr früh nach Basis-Setup aktivieren |
 | Externer Fernzugriff | FRITZ!Box-VPN/WireGuard → internes RDP | PLANNED | kein direktes RDP-Portforwarding |
 | Stromausfall-Recovery | Dell BIOS AC Recovery = Power On | CONFIGURED / PRACTICAL TEST PENDING | praktischer Stromausfall-/Wiederanlauf-Test nach finaler Geräteplatzierung |
-| Watchdog/Recovery | lokaler Supervisor + unabhängiger GitHub-Fallback | CLOUD VERIFIED / LOCAL BASELINE PREPARED | GitHub-Watchdog + Startup-Recovery aktiv; lokale SYSTEM-Tasks vorbereitet, Installation/Smoke-Test noch offen; keine Strategieänderungen durch Watchdog |
+| Watchdog/Recovery | lokaler Supervisor + unabhängiger GitHub-Fallback | CLOUD VERIFIED / LOCAL BASELINE ACTIVE | GitHub-Watchdog + Startup-Recovery aktiv; lokale SYSTEM-Tasks alle 5 Min + Startup und tägliche Log-Bereinigung 04:20 installiert; Immediate Health exit 0; prozessspezifischer Self-Heal folgt erst mit lokaler Runtime |
 | Altrady | zusätzlicher Echtzeit-Trigger | PLANNED | niemals alleiniger Trigger/SPOF |
 | Kraken realtime | Public REST/WebSocket lokal | PLANNED | primäre Marktwahrheit |
 | GitHub Cloudpfad | bestehend | ACTIVE | unabhängiger Fallback bleibt erhalten |
