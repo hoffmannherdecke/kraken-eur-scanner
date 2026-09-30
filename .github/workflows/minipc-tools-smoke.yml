@@ -27,6 +27,8 @@ jobs:
           $files = @(
             'tools/minipc-watchdog.ps1',
             'tools/minipc-log-cleanup.ps1',
+            'tools/minipc-backup.ps1',
+            'tools/minipc-restore-smoke.ps1',
             'tools/install-minipc-baseline-tasks.ps1',
             'tools/uninstall-minipc-baseline-tasks.ps1'
           )
@@ -57,6 +59,19 @@ jobs:
           if (Test-Path (Join-Path $root 'Logs\old.log')) { throw 'old log not deleted' }
           if (Test-Path (Join-Path $root 'Temp\old.tmp')) { throw 'old temp not deleted' }
           Write-Host 'CLEANUP_SMOKE_OK'
+
+      - name: Smoke backup and restore
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'minipc-backup-smoke'
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'State') | Out-Null
+          Set-Content (Join-Path $root 'State\example.json') '{"ok":true}'
+          .\tools\minipc-backup.ps1 -TradingRoot $root
+          .\tools\minipc-restore-smoke.ps1 -TradingRoot $root
+          $zips = @(Get-ChildItem (Join-Path $root 'Backup') -Filter 'minipc-state-*.zip')
+          if ($zips.Count -ne 1) { throw "expected one backup zip, got $($zips.Count)" }
+          Write-Host 'BACKUP_RESTORE_SMOKE_OK'
 
       - name: Smoke watchdog report creation
         shell: powershell
