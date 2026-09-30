@@ -45,11 +45,11 @@ try {
   Write-Host "[V2R4-PREFLIGHT] 2/6 Compile V2R4/evaluator sources"
   Push-Location $worktree
   try {
-    & $python -m py_compile paper_evaluator/evaluate.py paper_evaluator/revalidate.py paper_evaluator/v2r4_trigger_contract.py paper_evaluator/v2r4_trigger_plan.py paper_evaluator/v2r4_wait_watcher.py paper_evaluator/v2r4_precandidate_discovery.py paper_evaluator/v2r4_precandidate_watcher.py
+    & $python -m py_compile paper_evaluator/evaluate.py paper_evaluator/revalidate.py paper_evaluator/v2r4_trigger_contract.py paper_evaluator/v2r4_trigger_plan.py paper_evaluator/v2r4_wait_watcher.py paper_evaluator/v2r4_precandidate_discovery.py paper_evaluator/v2r4_precandidate_watcher.py paper_evaluator/v2r4_local_recheck.py
     if ($LASTEXITCODE -ne 0) { throw "V2R4 py_compile failed" }
 
     Write-Host "[V2R4-PREFLIGHT] 3/6 Run deterministic V2R4 tests"
-    & $python -m unittest tests.test_v2r4_trigger_contract tests.test_v2r4_trigger_plan tests.test_v2r4_precandidate_discovery tests.test_v2r4_precandidate_watcher tests.test_v2r4_tradability_policy tests.test_v2r4_evaluator_watch_conditions -v
+    & $python -m unittest tests.test_v2r4_trigger_contract tests.test_v2r4_trigger_plan tests.test_v2r4_precandidate_discovery tests.test_v2r4_precandidate_watcher tests.test_v2r4_tradability_policy tests.test_v2r4_evaluator_watch_conditions tests.test_v2r4_local_recheck -v
     if ($LASTEXITCODE -ne 0) { throw "V2R4 unit tests failed" }
 
     Write-Host "[V2R4-PREFLIGHT] 4/6 Build harmless synthetic WAIT trigger plan"
