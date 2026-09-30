@@ -1,0 +1,42 @@
+name: MINI-PC marketdata smoke
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/minipc-marketdata-smoke.ps1'
+      - 'market_data/**'
+      - 'paper_capture/market.py'
+      - '.github/workflows/minipc-marketdata-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-marketdata-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Prepare MINI-PC-like folders and venv
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'Trading'
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'Repos') | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'Runtime') | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'Logs') | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'Temp') | Out-Null
+          Copy-Item -Path $env:GITHUB_WORKSPACE -Destination (Join-Path $root 'Repos\kraken-eur-scanner') -Recurse
+          python -m venv (Join-Path $root 'Runtime\kraken-eur-scanner-venv')
+          "TRADING_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Run exact local market-data smoke
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\tools\minipc-marketdata-smoke.ps1" -TradingRoot "$env:TRADING_ROOT" -Seconds 30
