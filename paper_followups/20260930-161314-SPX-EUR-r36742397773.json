@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-09-30T16:14:03.926490Z",
     "evaluation_ask_eur": 0.3964,
     "flagged_as_already_run": true,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 0.303,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": 0.0,
+        "mfe_pct": 0.707,
+        "peak_at_utc": "2026-09-30T16:25:00Z",
+        "trough_at_utc": "2026-09-30T16:14:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-09-30T13:41:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -40,7 +52,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T16:15:16.472059Z"
+    "updated_at_utc": "2026-09-30T16:35:32.192806Z"
   },
   "original_decision": "WAIT",
   "pair": "SPX/EUR",
