@@ -84,6 +84,27 @@ if ($latestBackup) {
   $checks["backup_freshness"] = [ordered]@{ ok=$null; detail="no backup yet; warning threshold starts after scheduled backup is installed" }
 }
 
+# Altrady transport heartbeat is optional/non-exclusive.
+# Only evaluate it when the dedicated scheduled task is installed.
+try {
+  $altradyTask = Get-ScheduledTask -TaskName "CryptoMiniPC-AltradyTrigger" -ErrorAction SilentlyContinue
+  if ($altradyTask) {
+    $hb = Join-Path $TradingRoot "State\altrady-trigger-heartbeat.json"
+    if (-not (Test-Path $hb)) {
+      Add-Check "altrady_trigger_heartbeat" $false "task installed but heartbeat missing" "WARNING"
+    } else {
+      $h = Get-Content $hb -Raw | ConvertFrom-Json
+      $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
+      $ok = ($h.status -eq "HEALTHY" -and $ageSec -le 60)
+      Add-Check "altrady_trigger_heartbeat" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " detail=" + $h.detail) "WARNING"
+    }
+  } else {
+    $checks["altrady_trigger_heartbeat"] = [ordered]@{ ok=$null; detail="not configured; Kraken/GitHub paths remain independent" }
+  }
+} catch {
+  Add-Check "altrady_trigger_heartbeat" $false $_.Exception.Message "WARNING"
+}
+
 # Local repo identity. Never pull/checkout/reset from the watchdog.
 if (Test-Path $repo) {
   $git = $null
