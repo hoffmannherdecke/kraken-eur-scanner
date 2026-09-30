@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.178,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 0.618,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -5.278,
+        "mfe_pct": 6.85,
+        "peak_at_utc": "2026-09-29T12:15:00Z",
+        "trough_at_utc": "2026-09-29T01:25:00Z"
+      },
       "15": {
         "bars": 0,
         "complete": false,
@@ -96,6 +107,11 @@
         "trough_at_utc": "2026-09-29T01:25:00Z"
       }
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "liquid_pair_low_spread",
@@ -116,7 +132,7 @@
     },
     "schema_version": 1,
     "setup_lane": "REVERSAL",
-    "updated_at_utc": "2026-09-30T00:44:26.126513Z"
+    "updated_at_utc": "2026-09-30T00:55:57.225503Z"
   },
   "original_decision": "WAIT",
   "pair": "ARB/EUR",
