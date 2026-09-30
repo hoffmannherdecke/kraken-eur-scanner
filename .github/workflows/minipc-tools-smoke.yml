@@ -26,6 +26,8 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $files = @(
             'tools/minipc-watchdog.ps1',
+            'tools/minipc-selftest.ps1',
+            'tools/minipc-marketdata-smoke.ps1',
             'tools/minipc-log-cleanup.ps1',
             'tools/minipc-backup.ps1',
             'tools/minipc-restore-smoke.ps1',
