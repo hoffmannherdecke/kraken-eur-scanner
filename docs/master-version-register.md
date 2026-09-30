@@ -21,7 +21,7 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 |---|---|---|---|
 | Strategie | `V2R3-2026-09-28` | ACTIVE / PAPER / FROZEN | Aktive Vergleichsbasis; Regeln während Serie nicht ändern |
 | Paper-Serie | `PAPER-V2R3-FINAL-20260928T1752Z` | ACTIVE | Aktuelle homogene V2R3-Serie; vollständige Abschlussauswertung vor V2R4-Go-live |
-| Strategie | V2R4 | PREPARED / NOT ACTIVE / PAPER ONLY | Nächste operative Paper-Version nach Mini-PC-Basis + E2E-Smoke-Test; Draft-PR #8 |
+| Strategie | V2R4 | PREPARED / NOT ACTIVE / PAPER ONLY / VALIDATION GREEN | Draft-PR #8; compile + unit tests + live public Kraken WAIT-watcher + broad pre-candidate smoke bestanden; weiterhin nicht aktiviert/nicht gemergt |
 | Strategie | V3 | ACTIVE RESEARCH / NOT ACTIVE TRADING | Integrierter Nachfolger; Issue #7 + `docs/v3-research-framework.md` |
 
 ### Release-Gate V2R3 → V2R4
