@@ -529,3 +529,44 @@ Still required before V2R4 activation:
 - one actual MINI-PC trigger -> fresh recheck E2E proof with timestamps and heartbeat;
 - no V2R4 activation until that proof passes.
 
+### Exact V2R4 trigger→fresh-recheck gate validated on Windows CI 2026-09-30
+
+The exact local gate intended for the MINI-PC is now implemented as:
+- `tools/minipc-v2r4-trigger-recheck-e2e.ps1`.
+
+The script:
+- requires a fresh local Kraken canary heartbeat;
+- fetches the inactive V2R4 prep branch into an isolated Git worktree;
+- builds a synthetic canonical paper candidate;
+- creates a deterministic WAIT trigger plan;
+- matches that trigger against live public Kraken data;
+- writes a real trigger receipt;
+- immediately passes that receipt into `v2r4_local_recheck.py`;
+- re-fetches fresh Kraken execution/context data;
+- performs one actual OpenAI paper evaluator call;
+- verifies paper-only/no-order flags and trigger→recheck timestamps;
+- removes the temporary isolated test tree afterward.
+
+The **exact PowerShell gate** was executed successfully on `windows-latest` with the real model/API path:
+- prep branch SHA: `0e6a64629554f500c4aef8c2a4d4c76c65ea23ff`;
+- Kraken canary: HEALTHY;
+- trigger → local fresh-recheck start: **0.256 s**;
+- evaluator recheck runtime: **12.232 s**;
+- decision: REJECT in that harmless synthetic case;
+- order API: false;
+- real-money action: false;
+- result: **PASS**.
+
+This proves the code/runtime shape on Windows. It does **not** replace the required one-time proof on the actual physical MINI-PC.
+
+Additional V2R4 runtime defect caught and fixed before local activation:
+- proposed adaptive sizing had no executable top-level `scout_notional_eur` / `stage2_notional_eur` fields although the evaluator/recheck runtime requires them;
+- V2R4 now explicitly uses **75 EUR + 75 EUR** as the executable default until a separately validated setup-quality sizing mapper exists;
+- dedicated runtime-compatibility tests were added and the Windows preflight is green.
+
+Remaining V2R4 local activation blockers:
+1. provision a dedicated local OpenAI API key securely in `Trading\Secrets\openai-api-key.txt`;
+2. run the exact trigger→fresh-recheck gate once on the actual MINI-PC;
+3. configure the Altrady shared relay token and run the transport E2E smoke;
+4. only then decide whether to start a separate V2R4 paper series. No merge/activation has occurred.
+
