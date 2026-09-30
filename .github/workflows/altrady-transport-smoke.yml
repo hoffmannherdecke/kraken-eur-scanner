@@ -9,6 +9,8 @@ name: Altrady transport smoke
       - 'tools/minipc-phase3-altrady-enable.ps1'
       - 'tools/minipc-altrady-secret-prep.ps1'
       - 'tools/minipc-altrady-e2e-smoke.py'
+      - 'tools/minipc-altrady-live-alert-proof.py'
+      - 'tools/minipc-altrady-alert-helper.ps1'
       - 'tools/install-minipc-altrady-transport.ps1'
       - 'tools/uninstall-minipc-altrady-transport.ps1'
       - 'tools/minipc-watchdog.ps1'
@@ -27,9 +29,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - name: Compile Python poller
+      - name: Compile Python transport tools
         shell: powershell
-        run: python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-e2e-smoke.py
+        run: python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-altrady-live-alert-proof.py
       - name: Parse PowerShell task scripts
         shell: powershell
         run: |
@@ -38,6 +40,7 @@ jobs:
             'tools/install-minipc-altrady-transport.ps1',
             'tools/uninstall-minipc-altrady-transport.ps1',
             'tools/minipc-altrady-secret-prep.ps1',
+            'tools/minipc-altrady-alert-helper.ps1',
             'tools/minipc-phase3-altrady-enable.ps1',
             'tools/minipc-watchdog.ps1'
           )
