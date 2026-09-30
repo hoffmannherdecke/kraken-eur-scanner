@@ -53,19 +53,19 @@ Pflicht für Auswertung und nächste Version:
 | Komponente | Version / Stand | Status | Verknüpfung |
 |---|---|---|---|
 | Mini-PC Hardware | Dell OptiPlex 5060 Micro, i5-8500T, 16 GB, 256 GB SSD | RECEIVED / BASE CONFIGURED | Windows/LAN/RDP/Git/Python/venv + read-only Kraken smoke verified; remaining physical/recovery/integration gates in Mini-PC runbook |
-| Betriebssystem | Windows 11 Pro | TO VERIFY ON DEVICE | ermöglicht RDP-Host |
-| Netzwerk lokal | LAN über FRITZ!Box 7590 AX | PLANNED | primärer Dauerpfad |
-| Interner Fernzugriff | Windows RDP im LAN | PLANNED / EARLY SETUP | sehr früh nach Basis-Setup aktivieren |
-| Externer Fernzugriff | FRITZ!Box-VPN/WireGuard → internes RDP | PLANNED | kein direktes RDP-Portforwarding |
+| Betriebssystem | Windows 11 Pro, Build 26200 | VERIFIED | lokaler Sammeltest / next-gate |
+| Netzwerk lokal | LAN über FRITZ!Box 7590 AX | ACTIVE / VERIFIED | lokaler Kraken HTTPS/WebSocket-Smoke erfolgreich |
+| Interner Fernzugriff | Windows RDP im LAN | ACTIVE | MINI-PC während Einrichtung erfolgreich per RDP administriert |
+| Externer Fernzugriff | FRITZ!Box-VPN/WireGuard → internes RDP | CONFIGURED / OUTSIDE TEST PENDING | kein direktes RDP-Portforwarding |
 | Stromausfall-Recovery | Dell BIOS AC Recovery = Power On | CONFIGURED / PRACTICAL TEST PENDING | praktischer Stromausfall-/Wiederanlauf-Test nach finaler Geräteplatzierung |
 | Watchdog/Recovery | lokaler Supervisor + unabhängiger GitHub-Fallback | CLOUD VERIFIED / LOCAL BASELINE ACTIVE | GitHub-Watchdog + Startup-Recovery aktiv; lokale SYSTEM-Tasks alle 5 Min + Startup und tägliche Log-Bereinigung 04:20 installiert; Immediate Health exit 0; prozessspezifischer Self-Heal folgt erst mit lokaler Runtime |
 | Backup/Restore | lokales State-Backup + Restore-Smoke | ACTIVE / VERIFIED | 04:00 daily, 14-day retention, no Secrets/Logs/Repo; immediate seed + restore smoke passed locally; watchdog warns only after 7 days without backup |
 | Kraken local realtime data | Public WebSocket v2 book + trades via isolated venv | ACTIVE / SMOKE VERIFIED | 45s local smoke: 1544 verified book events, 103 trades, 0 gaps, 0 subscription errors; public/read-only only |
-| Altrady | zusätzlicher Echtzeit-Trigger | PLANNED | niemals alleiniger Trigger/SPOF |
-| Kraken realtime | Public REST/WebSocket lokal | PLANNED | primäre Marktwahrheit |
+| Altrady | zusätzlicher Echtzeit-Trigger | TRANSPORT PREPARED / NOT ACTIVE | Supabase-Eventtabelle + Relay-Quellcode + MINI-PC-Poller/Task-Installer vorbereitet und CI-geprüft; niemals alleiniger Trigger/SPOF; Relay-Secret/Deployment + E2E-Smoke noch offen |
+| Kraken realtime | Public REST/WebSocket lokal | SMOKE VERIFIED / CONTINUOUS DAEMON PENDING | primäre Marktwahrheit; 45s WS-Smoke ohne Gap/Subscription-Fehler bestanden |
 | GitHub Cloudpfad | bestehend | ACTIVE | unabhängiger Fallback bleibt erhalten |
 | Slack Push | bestehender Pfad, echter iPhone-Push noch E2E nachzuweisen | OPEN | nur handlungs-/fehlerrelevante Pushs |
-| ChatGPT Desktop/Work | Installation geplant; Work sparsam | PLANNED | Work nur bei echtem Desktop-/Browsermehrwert |
+| ChatGPT Desktop/Work | ChatGPT auf MINI-PC eingerichtet; Work sparsam | BASE ACTIVE | ChatGPT-Konto/Browserzugriff vorhanden; Work weiterhin nur bei echtem Desktop-/Browsermehrwert |
 
 ## Kraken-Handelbarkeit / Market-Universe
 
@@ -110,10 +110,14 @@ Stand 2026-09-29:
   - `public.paper_series`
   - `public.paper_candidate_outcomes`
   - `public.paper_trade_results`
+  - `public.altrady_trigger_events` — Transportpuffer für optionalen Altrady-Zusatztrigger; RLS aktiv, keine Client-Policies
 - Migrationen:
   - `20260928165535_create_paper_archive_tables`
   - `20260928173804_allow_unverified_paper_trade_status`
-- RLS ist auf allen drei Tabellen aktiviert; aktuell existieren keine RLS-Policies. Das ist bis zur bewusst definierten Zugriffsschicht fail-closed und wird nicht vorschnell geöffnet.\n- **Aktuelle Integrationslücke:** Die vorhandenen `paper_candidate_outcomes`-Zeilen gehören derzeit zu `PAPER-V2R2-20260928T1640Z`; für die aktive V2R3-Serie ist noch kein Outcome dort archiviert. Das ist als Sync-/Persistenzpunkt beim Mini-PC/Supabase-Setup zu prüfen, nicht als Strategieergebnis zu interpretieren.
+  - `create_altrady_trigger_events` (2026-09-30)
+- RLS ist auf allen vier Tabellen aktiviert; aktuell existieren keine RLS-Policies. Das ist bis zur bewusst definierten Zugriffsschicht fail-closed und wird nicht vorschnell geöffnet.
+- `Supabase paper archive sync` ist als fail-soft GitHub-Workflow vorbereitet und der Repository-Quellbestand wird per Audit geprüft. Aktuell fehlen die GitHub-Actions-Backend-Credentials; deshalb wird der Sync bewusst übersprungen und beeinflusst Scanner/Paper nicht.
+- **Aktuelle Integrationslücke:** Die vorhandenen `paper_candidate_outcomes`-Zeilen gehören derzeit zu `PAPER-V2R2-20260928T1640Z`; für die aktive V2R3-Serie ist noch kein Outcome dort archiviert. Das ist als Sync-/Persistenzpunkt beim Mini-PC/Supabase-Setup zu prüfen, nicht als Strategieergebnis zu interpretieren.
 - Supabase bleibt sekundäre State-/Ergebnis-/Research-Schicht; kein Single Point of Failure und keine zweite Rohdatenkopie.
 
 ## V3 Migration Ledger — Pflichtstatus
