@@ -448,3 +448,15 @@ After activating the local continuous Kraken canary, the inactive V2R4 draft was
 
 Draft-PR #8 remains **draft / prep-only / paper-only / not merged / not active**. The next promotion gate still requires the documented V2R3 evidence review and one small MINI-PC end-to-end paper smoke.
 
+### Altrady relay deployed 2026-09-30
+
+Autonomous infrastructure step completed after the Kraken canary activation:
+- Supabase Edge Function `altrady-trigger-relay` deployed successfully;
+- function status: **ACTIVE**, version 1;
+- JWT verification is intentionally disabled because the function implements its own dedicated shared-token authentication for webhook ingress and MINI-PC poll/ack;
+- no Altrady strategy coupling is active;
+- no order path exists;
+- remaining blocker is the dedicated `ALTRADY_WEBHOOK_TOKEN` secret, which must be configured securely before transport E2E can run.
+
+The MINI-PC poller/task installer and transport CI remain prepared. User interaction is not needed again until the shared secret is actually configured.
+
