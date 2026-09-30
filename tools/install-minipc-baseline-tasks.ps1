@@ -13,8 +13,10 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 $repo = Join-Path $TradingRoot "Repos\kraken-eur-scanner"
 $watchdog = Join-Path $repo "tools\minipc-watchdog.ps1"
 $cleanup = Join-Path $repo "tools\minipc-log-cleanup.ps1"
+$backup = Join-Path $repo "tools\minipc-backup.ps1"
+$restoreSmoke = Join-Path $repo "tools\minipc-restore-smoke.ps1"
 
-foreach ($p in @($watchdog,$cleanup)) {
+foreach ($p in @($watchdog,$cleanup,$backup,$restoreSmoke)) {
   if (-not (Test-Path $p)) { throw "Fehlende Datei: $p" }
 }
 foreach ($d in @("Runtime","State","Logs","Temp","Archive","Backup","Secrets","Repos")) {
@@ -24,6 +26,7 @@ foreach ($d in @("Runtime","State","Logs","Temp","Archive","Backup","Secrets","R
 $ps = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
 $healthArgs = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$watchdog`" -TradingRoot `"$TradingRoot`""
 $cleanupArgs = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$cleanup`" -TradingRoot `"$TradingRoot`""
+$backupArgs = "-NoProfile -NonInteractive -ExecutionPolicy Bypass -File `"$backup`" -TradingRoot `"$TradingRoot`""
 
 $healthAction = New-ScheduledTaskAction -Execute $ps -Argument $healthArgs
 $healthTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Days 3650)
@@ -36,6 +39,17 @@ $cleanupTrigger = New-ScheduledTaskTrigger -Daily -At "04:20"
 $cleanupSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 5)
 Register-ScheduledTask -TaskName "CryptoMiniPC-LogCleanup" -Action $cleanupAction -Trigger $cleanupTrigger -Settings $cleanupSettings -User "SYSTEM" -RunLevel Highest -Force | Out-Null
 
+$backupAction = New-ScheduledTaskAction -Execute $ps -Argument $backupArgs
+$backupTrigger = New-ScheduledTaskTrigger -Daily -At "04:00"
+$backupSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 10)
+Register-ScheduledTask -TaskName "CryptoMiniPC-Backup" -Action $backupAction -Trigger $backupTrigger -Settings $backupSettings -User "SYSTEM" -RunLevel Highest -Force | Out-Null
+
+# Seed one backup and prove that it can be expanded without touching live State.
+& $ps -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $backup -TradingRoot $TradingRoot
+if ($LASTEXITCODE -ne 0) { throw "Immediate backup failed with exit code $LASTEXITCODE" }
+& $ps -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $restoreSmoke -TradingRoot $TradingRoot
+if ($LASTEXITCODE -ne 0) { throw "Restore smoke failed with exit code $LASTEXITCODE" }
+
 # Run one health check immediately in a child PowerShell so its exit code cannot terminate this installer.
 & $ps -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $watchdog -TradingRoot $TradingRoot
 $exit = $LASTEXITCODE
@@ -44,6 +58,7 @@ Write-Host ""
 Write-Host "Installiert:"
 Write-Host "  CryptoMiniPC-Health      -> alle 5 Minuten + bei Systemstart"
 Write-Host "  CryptoMiniPC-LogCleanup  -> täglich 04:20"
+Write-Host "  CryptoMiniPC-Backup      -> täglich 04:00"
 Write-Host "Health state: $(Join-Path $TradingRoot 'State\minipc-health.json')"
 Write-Host "Health log:   $(Join-Path $TradingRoot 'Logs\minipc-watchdog.log')"
 Write-Host "Immediate health exit code: $exit"
