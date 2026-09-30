@@ -3,7 +3,16 @@
   "candidate_id": "20260930-132754-SPX-EUR-r36721618418",
   "evaluated_at_utc": "2026-09-30T13:29:08.419272Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -2.334,
+      "expected_bars": 30,
+      "mae_pct": -3.629,
+      "mfe_pct": -0.051
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -54,12 +63,15 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T13:58:24.918408Z"
+    "updated_at_utc": "2026-09-30T14:12:21.384811Z"
   },
   "original_decision": "WAIT",
   "pair": "SPX/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-30T14:11:25.099448Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-30T14:12:21.574226Z"
 }

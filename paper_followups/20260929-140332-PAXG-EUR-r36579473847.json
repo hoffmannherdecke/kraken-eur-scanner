@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 3679.31,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 0.122,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -0.254,
+        "mfe_pct": 0.907,
+        "peak_at_utc": "2026-09-30T12:45:00Z",
+        "trough_at_utc": "2026-09-29T15:25:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 0.35,
       "price_eur": 3664.5
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": false,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "remaining_move_insufficient_vs_costs",
@@ -117,7 +133,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T13:58:24.745615Z"
+    "updated_at_utc": "2026-09-30T14:12:15.169936Z"
   },
   "original_decision": "REJECT",
   "pair": "PAXG/EUR",
