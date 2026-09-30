@@ -1,0 +1,58 @@
+name: MINI-PC V2R4 local preflight smoke
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/minipc-v2r4-preflight-smoke.ps1'
+      - '.github/workflows/minipc-v2r4-preflight-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-local-shape:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Prepare MINI-PC-like tree
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'Trading'
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'Repos') | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'Runtime') | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'State') | Out-Null
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'Temp') | Out-Null
+          Copy-Item -Path $env:GITHUB_WORKSPACE -Destination (Join-Path $root 'Repos\kraken-eur-scanner') -Recurse
+          python -m venv (Join-Path $root 'Runtime\kraken-eur-scanner-venv')
+          $hb = @{
+            kind = 'MINIPC_KRAKEN_PUBLIC_CANARY_V1'
+            status = 'HEALTHY'
+            checked_at_utc = (Get-Date).ToUniversalTime().ToString('o')
+            events_total = 10
+            book_events = 9
+            trade_events = 1
+            gaps = 0
+            subscription_errors = 0
+          } | ConvertTo-Json
+          [System.IO.File]::WriteAllText(
+            (Join-Path $root 'State\kraken-canary-heartbeat.json'),
+            $hb,
+            [System.Text.UTF8Encoding]::new($false)
+          )
+          "TRADING_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Run exact local V2R4 preflight script
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\tools\minipc-v2r4-preflight-smoke.ps1" -TradingRoot "$env:TRADING_ROOT"
