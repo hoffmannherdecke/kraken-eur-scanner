@@ -8,6 +8,12 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from paper_context import build_context
+try:
+    from .v2r4_trigger_contract import ALLOWED_METRICS, ALLOWED_OPS
+    from .v2r4_trigger_plan import build_wait_trigger_plan
+except ImportError:
+    from v2r4_trigger_contract import ALLOWED_METRICS, ALLOWED_OPS
+    from v2r4_trigger_plan import build_wait_trigger_plan
 
 MODEL=os.getenv("OPENAI_MODEL","gpt-6-luna")
 FEE_PCT=0.60
@@ -78,6 +84,7 @@ def apply_sample_cap(d,control):
         "ttl_minutes":0,
         "stage2_trigger_eur":None,
         "stage2_ttl_minutes":0,
+        "watch_conditions":[],
     })
     return out
 
@@ -152,24 +159,19 @@ def apply_public_tradability_gate(d,current,external,spec):
         return d
     out=dict(d)
     reasons=list(out.get("reason_codes") or [])+permanent+transient
-    if permanent:
-        out.update({
-            "decision":"REJECT",
-            "summary":"Configured paper entry size fails Kraken public minimum-order constraints.",
-            "reason_codes":reasons[:10],
-            "missing_triggers":[],
-            "stop_eur":None,"ttl_minutes":0,
-            "stage2_trigger_eur":None,"stage2_ttl_minutes":0,
-        })
-    else:
-        out.update({
-            "decision":"WAIT",
-            "summary":"Public Kraken tradability status could not be safely confirmed.",
-            "reason_codes":reasons[:10],
-            "missing_triggers":["Kraken pair status/minimum-order metadata must be available and online"],
-            "stop_eur":None,"ttl_minutes":15,
-            "stage2_trigger_eur":None,"stage2_ttl_minutes":0,
-        })
+    out.update({
+        "decision":"REJECT",
+        "summary":(
+            "Configured paper entry size fails Kraken public minimum-order constraints."
+            if permanent
+            else "Public Kraken tradability could not be safely confirmed; fail closed rather than create an unwatchable WAIT."
+        ),
+        "reason_codes":reasons[:10],
+        "missing_triggers":[],
+        "stop_eur":None,"ttl_minutes":0,
+        "stage2_trigger_eur":None,"stage2_ttl_minutes":0,
+        "watch_conditions":[],
+    })
     return out
 
 def http_json(url, method="GET", headers=None, body=None, timeout=30):
@@ -238,7 +240,11 @@ Principles:
 - Avoid FOMO/late chasing. A strong scanner score alone is insufficient.
 - BUY_SCOUT only when evidence supplied is enough for a prospective scout entry AND a concrete second-stage confirmation trigger can be defined above the current ask.
 - The second stage is a confirmation stop-buy simulation, not an automatic immediate fill.
-- WAIT when 1-2 concrete confirmations could make the setup valid within 30-60 minutes. Otherwise REJECT.
+- WAIT only when 1-2 concrete confirmations could make the setup valid within 30-60 minutes AND those confirmations can be represented as deterministic watch_conditions.
+- For WAIT, watch_conditions must contain 1..6 objects with exactly metric/op/value using only these metrics: last_eur, bid_eur, ask_eur, spread_pct, closed_1m_close_eur, closed_1m_volume_ratio_5, closed_5m_close_eur, closed_5m_volume_ratio_5, closed_15m_close_eur, closed_15m_volume_ratio_4.
+- Allowed watch condition operators are >, >=, <, <=. Use numeric thresholds only.
+- For BUY_SCOUT or REJECT, watch_conditions must be an empty array.
+- If a WAIT thesis cannot be represented by those deterministic metrics, REJECT rather than emit free-text-only WAIT.
 - Do not use any static pair blacklist for Kraken tradability. Current public Kraken AssetPairs metadata is the operational source for whether the Spot EUR pair is online.
 - Account-private tradability is not required for this PAPER evaluator. If current public Kraken pair metadata is available/online and public minimum-order gates pass, account_specific_tradability unavailable is NOT negative evidence and must not be a standalone reason for WAIT/REJECT.
 - If BUY_SCOUT, stop_eur must be a positive structural/ATR-based invalidation below current ask.
@@ -266,6 +272,7 @@ expected_remaining_move_pct: number or null
 risk_reward_after_costs: number or null
 stage2_trigger_eur: number or null
 stage2_ttl_minutes: integer 0..60
+watch_conditions: array of 0..6 objects, each exactly {"metric": string, "op": string, "value": number}
 """
     payload={"model":MODEL,"input":prompt,"max_output_tokens":1700}
     body=json.dumps(payload).encode()
@@ -298,6 +305,24 @@ def common_validate(d):
     if not isinstance(s2ttl,int) or not 0<=s2ttl<=60:
         raise ValueError("invalid stage2 ttl")
 
+    watch=d.get("watch_conditions")
+    if not isinstance(watch,list) or len(watch)>6:
+        raise ValueError("watch_conditions must be list with max 6 entries")
+    if d["decision"]=="WAIT":
+        if not watch:
+            raise ValueError("V2R4 WAIT requires deterministic watch_conditions")
+        for idx,cond in enumerate(watch):
+            if not isinstance(cond,dict) or set(cond)!={"metric","op","value"}:
+                raise ValueError(f"invalid watch condition {idx}")
+            if cond["metric"] not in ALLOWED_METRICS:
+                raise ValueError(f"unsupported watch metric {idx}")
+            if cond["op"] not in ALLOWED_OPS:
+                raise ValueError(f"unsupported watch operator {idx}")
+            if _num(cond["value"]) is None:
+                raise ValueError(f"non-numeric watch threshold {idx}")
+    elif watch:
+        raise ValueError("BUY_SCOUT/REJECT must not carry watch_conditions")
+
 def fail_safe_normalize(d,current):
     common_validate(d)
     d=dict(d)
@@ -311,14 +336,15 @@ def fail_safe_normalize(d,current):
             reasons=list(d.get("reason_codes") or [])
             reasons.append("INVALID_OR_MISSING_TWO_STAGE_PLAN")
             d.update({
-                "decision":"WAIT",
-                "summary":str(d.get("summary") or "")[:220]+" | Fail-safe WAIT: stop/stage-2 plan incomplete.",
+                "decision":"REJECT",
+                "summary":str(d.get("summary") or "")[:220]+" | Fail-safe REJECT: stop/stage-2 plan incomplete.",
                 "reason_codes":reasons[:8],
-                "missing_triggers":["Valid structural stop and second-stage confirmation plan"],
+                "missing_triggers":[],
                 "stop_eur":None,
-                "ttl_minutes":max(15,min(60,int(d.get("ttl_minutes") or 30))),
+                "ttl_minutes":0,
                 "stage2_trigger_eur":None,
                 "stage2_ttl_minutes":0,
+                "watch_conditions":[],
             })
     else:
         d["stop_eur"]=None
@@ -326,6 +352,7 @@ def fail_safe_normalize(d,current):
         d["stage2_ttl_minutes"]=0
         if d["decision"]=="REJECT":
             d["ttl_minutes"]=0
+            d["watch_conditions"]=[]
     return d
 
 def main():
@@ -360,7 +387,7 @@ def main():
         d={"decision":"REJECT","setup_lane":"NONE","summary":"Candidate is stale for prospective paper entry.",
            "reason_codes":["STALE_OVER_60M"],"missing_triggers":[],"stop_eur":None,"ttl_minutes":0,
            "expected_remaining_move_pct":None,"risk_reward_after_costs":None,
-           "stage2_trigger_eur":None,"stage2_ttl_minutes":0}
+           "stage2_trigger_eur":None,"stage2_ttl_minutes":0,"watch_conditions":[]}
         api={"response_id":None,"model":None,"attempt":0}
     else:
         external=enrich_derivatives_delta(build_context(c,current),c["pair"],control["series_id"])
@@ -407,6 +434,10 @@ def main():
         "decision":d,
         "evaluator":api,
         "paper_entry":None,
+        "v2r4_trigger_plan":(
+            build_wait_trigger_plan(c,d,evaluation_completed_at_utc)
+            if d["decision"]=="WAIT" else None
+        ),
     }
 
     if d["decision"]=="BUY_SCOUT":
