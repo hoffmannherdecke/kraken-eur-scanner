@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Optional secure Paper -> Supabase archive sync.
 
-Requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in the host environment.
+Requires SUPABASE_URL plus either SUPABASE_SECRET_KEY (preferred modern backend key)
+or SUPABASE_SERVICE_ROLE_KEY (legacy JWT key) in the host environment.
 Never commit either value. The script refuses publishable/anon-style keys.
 """
 from __future__ import annotations
@@ -17,17 +18,21 @@ def post_rows(url,key,table,rows,on_conflict):
     if not rows:
         return
     endpoint=f"{url.rstrip('/')}/rest/v1/{table}?on_conflict={urllib.parse.quote(on_conflict)}"
+    headers={
+        "apikey":key,
+        "Content-Type":"application/json",
+        "Prefer":"resolution=merge-duplicates,return=minimal",
+        "User-Agent":"kraken-paper-supabase-sync/1.1",
+    }
+    # Legacy service_role keys are JWTs and may be sent as Bearer tokens.
+    # Modern sb_secret_ keys must be sent via apikey only.
+    if not key.startswith("sb_secret_"):
+        headers["Authorization"]="Bearer "+key
     req=urllib.request.Request(
         endpoint,
         data=json.dumps(rows,separators=(",",":")).encode("utf-8"),
         method="POST",
-        headers={
-            "Authorization":"Bearer "+key,
-            "apikey":key,
-            "Content-Type":"application/json",
-            "Prefer":"resolution=merge-duplicates,return=minimal",
-            "User-Agent":"kraken-paper-supabase-sync/1.0",
-        },
+        headers=headers,
     )
     with urllib.request.urlopen(req,timeout=30) as resp:
         if not 200<=resp.status<300:
@@ -35,9 +40,12 @@ def post_rows(url,key,table,rows,on_conflict):
 
 def main():
     url=os.environ.get("SUPABASE_URL","").strip()
-    key=os.environ.get("SUPABASE_SERVICE_ROLE_KEY","").strip()
+    key=(
+        os.environ.get("SUPABASE_SECRET_KEY","").strip()
+        or os.environ.get("SUPABASE_SERVICE_ROLE_KEY","").strip()
+    )
     if not url or not key:
-        raise SystemExit("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY missing")
+        raise SystemExit("SUPABASE_URL / SUPABASE_SECRET_KEY (or legacy SUPABASE_SERVICE_ROLE_KEY) missing")
     low=key.lower()
     if low.startswith("sb_publishable_") or "anon" in low:
         raise SystemExit("Refusing non-secret Supabase key for archive writer")
