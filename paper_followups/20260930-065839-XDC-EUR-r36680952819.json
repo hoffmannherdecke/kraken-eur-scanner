@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-09-30T06:59:27.658549Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 1.531,
+      "expected_bars": 120,
+      "mae_pct": -0.899,
+      "mfe_pct": 1.697
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -80,7 +88,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T08:55:49.218363Z"
+    "updated_at_utc": "2026-09-30T09:13:53.646928Z"
   },
   "original_decision": "WAIT",
   "pair": "XDC/EUR",
@@ -90,5 +98,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-30T08:05:36.373904Z"
+  "updated_at_utc": "2026-09-30T09:13:53.879761Z"
 }
