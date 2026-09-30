@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.45959,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -3.886,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -4.722,
+        "mfe_pct": 2.023,
+        "peak_at_utc": "2026-09-29T10:00:00Z",
+        "trough_at_utc": "2026-09-30T03:50:00Z"
+      },
       "15": {
         "bars": 0,
         "complete": false,
@@ -96,6 +107,11 @@
         "trough_at_utc": "2026-09-29T17:50:00Z"
       }
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "spread_acceptable",
@@ -117,7 +133,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T07:00:11.237051Z"
+    "updated_at_utc": "2026-09-30T07:13:55.381192Z"
   },
   "original_decision": "WAIT",
   "pair": "ONDO/EUR",

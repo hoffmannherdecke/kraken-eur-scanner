@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.0834652,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -1.774,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -1.854,
+        "mfe_pct": 1.789,
+        "peak_at_utc": "2026-09-29T13:15:00Z",
+        "trough_at_utc": "2026-09-30T06:45:00Z"
+      },
       "15": {
         "bars": 0,
         "complete": false,
@@ -96,6 +107,11 @@
         "trough_at_utc": "2026-09-29T17:50:00Z"
       }
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": false,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "spread_and_turnover_acceptable",
@@ -117,7 +133,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T07:00:11.976488Z"
+    "updated_at_utc": "2026-09-30T07:13:56.420042Z"
   },
   "original_decision": "WAIT",
   "pair": "XDG/EUR",
