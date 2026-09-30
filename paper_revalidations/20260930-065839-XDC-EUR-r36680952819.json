@@ -1,0 +1,205 @@
+{
+  "altname": "XDCEUR",
+  "candidate_id": "20260930-065839-XDC-EUR-r36680952819",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A renewed, volume-backed hold above 0.03005",
+      "BTC, ETH and SOL EUR turning positive over 3h"
+    ],
+    "reason_codes": [
+      "costs_not_covered_by_evidenced_potential",
+      "breakout_follow_through_unconfirmed",
+      "weak_3h_major_market_regime",
+      "scanner_signal_not_entry"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation does not establish enough remaining upside to cover Kraken EUR fees, spread and slippage; no scout entry is justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "XDCUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_XDCUSD",
+          "PI_XDCUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.0299,
+      "bid": 0.02984,
+      "last": 0.02988,
+      "spread_pct": 0.20087043856712763
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "180",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.436043333770586,
+          "ret3h_pct": -0.002448922950082366
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.5128008388961325,
+          "ret3h_pct": -0.010177210680994975
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.46060838691104333,
+          "ret3h_pct": -0.3901046622264426
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T07:49:41.187834Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_07634ee22697621c006abcbf16a10087d0b4b013351a64e1af"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0299,
+    "bid": 0.02984,
+    "last": 0.02988,
+    "spread_pct": 0.20087043856712763
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.03,
+      "high": 0.03005,
+      "low": 0.0297,
+      "open": 0.0297,
+      "trades": 68,
+      "ts": 1790750700,
+      "volume": 445197.7354,
+      "vwap": 0.02992
+    },
+    {
+      "close": 0.0299,
+      "high": 0.02999,
+      "low": 0.02989,
+      "open": 0.02999,
+      "trades": 89,
+      "ts": 1790751600,
+      "volume": 620103.89951,
+      "vwap": 0.02992
+    },
+    {
+      "close": 0.02981,
+      "high": 0.02981,
+      "low": 0.02978,
+      "open": 0.02978,
+      "trades": 9,
+      "ts": 1790752500,
+      "volume": 68047.21967,
+      "vwap": 0.02978
+    },
+    {
+      "close": 0.02988,
+      "high": 0.02988,
+      "low": 0.02988,
+      "open": 0.02988,
+      "trades": 18,
+      "ts": 1790753400,
+      "volume": 151054.99994,
+      "vwap": 0.02988
+    },
+    {
+      "close": 0.02988,
+      "high": 0.02988,
+      "low": 0.02988,
+      "open": 0.02988,
+      "trades": 0,
+      "ts": 1790754300,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "XDC/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-065839-XDC-EUR-r36680952819.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T07:49:47.887906Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "8361a8dff54532db5c1773fa8df3562972e60f8a",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T07:49:47.887906Z",
+    "revalidation_started_at_utc": "2026-09-30T07:49:40.725215Z",
+    "ttl_due_at_utc": "2026-09-30T07:44:27.658549Z",
+    "ttl_lag_seconds": 313.067
+  }
+}
