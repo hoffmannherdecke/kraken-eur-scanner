@@ -92,7 +92,7 @@ Vor Realtime-Strategie:
 Reihenfolge:
 1. Kraken Public REST/WebSocket lokal.
 2. Altrady als **zusätzlicher** Trigger, nie exklusiv.
-3. Supabase schlank als sekundäre State-/Ergebnisschicht. Dabei ausdrücklich prüfen, warum aktuell noch keine V2R3-Outcomes in `paper_candidate_outcomes` liegen; Sync-/Persistenzpfad erst nach E2E-Nachweis als funktionsfähig markieren.
+3. Supabase schlank als sekundäre State-/Ergebnisschicht. Der Archiv-Sync ist inzwischen E2E-verifiziert und wird nach erfolgreichem Paper-Runtime-Abschluss automatisch nachgezogen; Supabase bleibt fail-soft und keine Live-Abhängigkeit.
 4. GitHub/API/Slack.
 5. ChatGPT Desktop installieren; Work nur für Aufgaben mit echtem Rechner-/Browserkontext.
 6. Uptime Kuma/Grafana nur bei belegtem Zusatznutzen.
@@ -569,4 +569,24 @@ Remaining V2R4 local activation blockers:
 2. run the exact trigger→fresh-recheck gate once on the actual MINI-PC;
 3. configure the Altrady shared relay token and run the transport E2E smoke;
 4. only then decide whether to start a separate V2R4 paper series. No merge/activation has occurred.
+
+### Recurring Supabase archive sync hardened 2026-09-30
+
+The archive path was rechecked after additional V2R3 paper activity:
+- repository audit at sync time: **570 active-series candidate rows**, **0 trade rows**;
+- GitHub archive sync run #6: **SUCCESS**;
+- direct Supabase verification after the run: **570 V2R3 candidate outcomes**, **573 candidate outcomes total**, **0 trade results**;
+- the prior 551-row archive was therefore successfully brought current.
+
+Root cause of the earlier staleness:
+- paper state is persisted by GitHub Actions using `GITHUB_TOKEN`;
+- GitHub intentionally does not trigger ordinary downstream `push` workflows from those bot pushes;
+- therefore a push-only archive workflow could remain stale despite successful paper persistence.
+
+Fix:
+- `supabase-sync.yml` now also listens to successful `workflow_run` completion of `Paper runtime evaluator and lifecycle`;
+- push/manual triggers remain available;
+- sync remains fail-soft and secondary.
+
+This closes the Supabase persistence gap as an infrastructure issue; it does not change strategy behavior.
 
