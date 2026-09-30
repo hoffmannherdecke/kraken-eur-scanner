@@ -15,7 +15,10 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-try:\n    from .v2r4_trigger_contract import evaluate_plan, validate_plan\nexcept ImportError:  # direct script execution\n    from v2r4_trigger_contract import evaluate_plan, validate_plan
+try:
+    from .v2r4_trigger_contract import evaluate_plan, validate_plan
+except ImportError:  # direct script execution
+    from v2r4_trigger_contract import evaluate_plan, validate_plan
 
 UA = "kraken-v2r4-wait-watcher/0.1-paper-only"
 
