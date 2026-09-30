@@ -63,7 +63,7 @@ Pflicht für Auswertung und nächste Version:
 | Externer Datenträger | `D:` / `Mistral_450`, ~304 GB frei | ATTACHED / DEFERRED TO FINAL RUNBOOK PHASE | physische Platte Healthy, FAT32-Volume mit logischen Fehlern; wichtige Altdateien vorhanden; Sicherung/Reparatur bewusst erst ganz am Ende, bis dahin keine aktive Projektablage |
 | Kraken local realtime data | Public WebSocket v2 book + trades via isolated venv | ACTIVE / SMOKE VERIFIED | 45s local smoke: 1544 verified book events, 103 trades, 0 gaps, 0 subscription errors; public/read-only only |
 | Kraken runtime canary | continuous BTC/EUR public WebSocket heartbeat | ACTIVE / LOCAL+CI VERIFIED | SYSTEM startup task running; heartbeat HEALTHY; watchdog check HEALTHY; 0 gaps / 0 subscription errors at activation; transport-only, no account/order/strategy action |
-| Altrady | zusätzlicher Echtzeit-Trigger | TRANSPORT PREPARED / NOT ACTIVE | Supabase-Eventtabelle + Relay-Quellcode + MINI-PC-Poller/Task-Installer vorbereitet und CI-geprüft; niemals alleiniger Trigger/SPOF; Relay-Secret/Deployment + E2E-Smoke noch offen |
+| Altrady | zusätzlicher Echtzeit-Trigger | RELAY DEPLOYED / NOT ACTIVE | Supabase-Eventtabelle + Edge Function `altrady-trigger-relay` v1 ACTIVE + MINI-PC-Poller/Task-Installer vorbereitet und CI-geprüft; niemals alleiniger Trigger/SPOF; gemeinsames Relay-Secret + E2E-Smoke noch offen |
 | Kraken realtime | Public REST/WebSocket lokal | SMOKE VERIFIED / CONTINUOUS DAEMON PENDING | primäre Marktwahrheit; 45s WS-Smoke ohne Gap/Subscription-Fehler bestanden |
 | GitHub Cloudpfad | bestehend | ACTIVE | unabhängiger Fallback bleibt erhalten |
 | Slack Push | bestehender Pfad, echter iPhone-Push noch E2E nachzuweisen | OPEN | nur handlungs-/fehlerrelevante Pushs |
