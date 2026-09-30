@@ -88,12 +88,12 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 - [ ] Kraken WebSocket/REST auf dem Mini-PC als kontinuierliche Primärdatenquelle für relevante Live-Mikrostruktur aufbauen.
 - [ ] Nur benötigte Rohdaten kurzfristig speichern; langfristig Features/Aggregate statt endloser Tick-/Orderbucharchive behalten.
-- [ ] Altrady auf dem Mini-PC als **zusätzlichen Echtzeit-Trigger** einbinden, niemals als einzigen Trigger. Relay ist deployed/ACTIVE; offen sind gemeinsames Secret, MINI-PC-Transportaktivierung und E2E-Smoke.
+- [ ] Altrady als **zusätzlichen echten Echtzeit-Trigger** fertig anbinden, niemals als einzigen Trigger. Transportbasis ist jetzt lokal aktiv und E2E-verifiziert (Secret, Supabase Relay, MINI-PC-Poller, Ack, Heartbeat/Watchdog grün); offen bleiben reale Altrady-Alert/Webhook-Konfiguration, anschließende Strategie-/Fresh-Recheck-Kopplung und Latenzmessung.
 - [ ] Altrady-Heartbeat/Fehlerrückmeldung überwachen; Ausfall darf die restliche Kette nicht stoppen.
 - [ ] Detektionslatenz Kraken-native vs. Scanner vs. Altrady messen.
 - [ ] Nach stabiler Basis den Takt anhand realer Messungen verkürzen; Ziel grob ~7–8 Minuten, wo ein periodischer Takt nötig ist, ergänzt durch schnellere eventbasierte Trigger.
 - [ ] Evaluator/KI nur bei echten Kandidaten oder klaren Analyseblockern aufrufen; kein dauerndes KI-Polling.
-- [ ] V2R4-Fast-Trigger-Pfad aus Draft-PR #8: V2R3-Evidenzsnapshot, Compile/Unit-/Live-Public-Kraken-/Model-Contract-Smokes und der **exakte Windows trigger→fresh-recheck E2E-Gate** sind grün; live Kraken-AssetPairs statt statischer Blacklist, maschinenlesbare WAIT-Bedingungen und lokaler Fresh-Recheck-Bridge sind vorbereitet. Offen: lokales OpenAI-Secret, derselbe E2E-Gate einmal auf dem echten MINI-PC, Altrady-Secret/E2E und danach separater V2R4-Paper-Aktivierungsentscheid.
+- [ ] V2R4-Fast-Trigger-Pfad aus Draft-PR #8: V2R3-Evidenzsnapshot, Compile/Unit-/Live-Public-Kraken-/Model-Contract-Smokes, **physischer MINI-PC trigger→fresh-recheck E2E-Gate** und Altrady-Transport-E2E sind jetzt grün; live Kraken-AssetPairs statt statischer Blacklist, maschinenlesbare WAIT-Bedingungen und lokaler Fresh-Recheck-Bridge sind vorbereitet. Offen: separater V2R4-Paper-Aktivierungsentscheid nach Evidenzsicht; kein stilles Merge/Activation.
 - [ ] Bei bestandenem Smoke-Test eine **separate V2R4-Paper-Serie** starten; dafür nicht künstlich auf 20 V2R3-Trades warten. V2R3-Artefakte bleiben unverändert als Vergleichsbasis.
 - [ ] Datenfrische und Entscheidungstimestamp in jedem Kandidaten nachvollziehbar halten.
 
@@ -237,4 +237,4 @@ Diese Punkte gehören nicht in die Trading-Laufzeit und dürfen den Kernaufbau n
 
 **V2R3 sauber messen → Mini-PC stabil → Watchdog/Recovery → Kraken/Altrady-Realtime → V2R4-Fast-Trigger Paper → schlanke Integrationen + Historik/Backtests → V3 Research/Shadow/Paper → Smart-Money-Forschung → Self-hosted/Trading-API zuletzt.**
 
-- [ ] **V2R4 Trigger→fresh-recheck bridge** ist implementiert und im exakten Windows-E2E mit realem Evaluator grün. Der verbleibende physische Nachweis ist als ein kanonischer lokaler Sammelschritt (`tools/minipc-local-core-gate.ps1`) vorbereitet: sicherer lokaler OpenAI-Key → echter MINI-PC E2E → erst danach Altrady-Token-Prep. Keine V2R4-Aktivierung vor diesem lokalen E2E-Nachweis.
+- [ ] **V2R4 Paper-Aktivierungsentscheid** bleibt separat offen. Der physische trigger→fresh-recheck Nachweis auf dem MINI-PC und der Altrady-Transport-E2E sind bestanden; vor Aktivierung weiterhin Evidenzsicht, klarer Serienstart und Rollback-Punkt, keine Echtgeldaktion.
