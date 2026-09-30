@@ -53,7 +53,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 if ($FromClipboard) {
-  Set-Clipboard -Value ""
+  Set-Clipboard -Value "[clipboard cleared]"
 }
 
 Write-Host ""
