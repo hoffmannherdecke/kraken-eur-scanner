@@ -3,7 +3,16 @@
   "candidate_id": "20260930-092758-NIGHT-EUR-r36696109260",
   "evaluated_at_utc": "2026-09-30T09:29:04.418083Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.982,
+      "expected_bars": 30,
+      "mae_pct": -0.373,
+      "mfe_pct": 1.253
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -53,12 +62,13 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T09:59:03.752657Z"
+    "updated_at_utc": "2026-09-30T10:04:56.606331Z"
   },
   "original_decision": "WAIT",
   "pair": "NIGHT/EUR",
   "path_classification": "WAIT_PENDING",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-30T10:04:56.715413Z"
 }
