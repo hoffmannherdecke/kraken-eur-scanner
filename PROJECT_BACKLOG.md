@@ -109,9 +109,9 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [ ] Später unabhängigen zweiten Pushweg nur dann ergänzen, wenn er die Ausfallsicherheit wirklich verbessert.
 
 ### Supabase
-- [ ] Bestehende Supabase-Verbindung auf dem Mini-PC operativ machen: sichere Credentials, minimales Schema, klarer Sync-Pfad.
-- [ ] Supabase nur für strukturierten State/Ergebnis-/Research-Nutzen verwenden, nicht als zweite Kopie großer Rohdatenmengen.
-- [ ] Failover so bauen, dass Supabase-Ausfall den Trading-/Paper-Pfad nicht stoppt.
+- [x] Supabase-Archivpfad operativ und E2E-verifiziert: sichere GitHub-Backend-Credentials, minimales Schema, klarer Sync-Pfad; automatischer Nachzug nach erfolgreichem Paper-Runtime-Workflow.
+- [ ] Supabase weiterhin nur für strukturierten State/Ergebnis-/Research-Nutzen verwenden, nicht als zweite Kopie großer Rohdatenmengen.
+- [x] Supabase bleibt fail-soft/sekundär; Ausfall stoppt Scanner/Paper-Pfad nicht.
 
 ### ChatGPT / Work / API
 - [ ] Routinejobs vollständig aus Work heraushalten, soweit GitHub/Mini-PC/API sie zuverlässig übernehmen können.
