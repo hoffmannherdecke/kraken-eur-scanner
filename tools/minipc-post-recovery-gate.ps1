@@ -159,55 +159,19 @@ if (-not $volume) {
 Stage "5/5 Ergebnis"
 $status = if ($issues.Count -gt 0) { "FAIL" } elseif ($warnings.Count -gt 0) { "PASS_WITH_NOTES" } else { "PASS" }
 
-$result = [ordered]@{
-  kind = "MINIPC_POST_POWER_RECOVERY_GATE_V2"
-  checked_at_local = $now.ToString("o")
-  status = $status
-  issues = @($issues)
-  warnings = @($warnings)
-  boot = [ordered]@{
-    last_boot = $boot.ToString("o")
-    uptime_minutes = $uptimeMinutes
-  }
-  scheduled_tasks = $tasks
-  watchdog = [ordered]@{
-    state_path = $healthState
-    status = if ($health) { [string]$health.status } else { $null }
-    checked_at = if ($healthChecked) { $healthChecked.ToString("o") } else { $null }
-    age_minutes = $healthAgeMinutes
-    last_log_line = $lastHealthLogLine
-  }
-  external_storage = $external
-  evidence_note = "RDP and AC-recovery were already proven by the successful physical power-loss test and restored remote session. Fresh watchdog state additionally proves its built-in local Kraken DNS/TCP/HTTPS checks ran after boot."
-  guardrails = [ordered]@{
-    strategy_changes = $false
-    real_money_actions = $false
-    order_api = $false
-    git_mutation = $false
-    configuration_changes = $false
-    external_storage_test = "temporary write-read-delete only; file removed"
-  }
-  report = $reportPath
-}
-
-[System.IO.File]::WriteAllText(
-  $reportPath,
-  ($result | ConvertTo-Json -Depth 10) + [Environment]::NewLine,
-  [System.Text.UTF8Encoding]::new($false)
-)
-
 Write-Host ""
 Write-Host "=== POST-POWER-RECOVERY FINAL SUMMARY ==="
 Write-Host ("Status: " + $status)
 Write-Host ("Boot: " + $boot.ToString("yyyy-MM-dd HH:mm:ss") + " | uptime=" + $uptimeMinutes + " min")
 Write-Host ("Tasks found: " + $tasks.Count + "/3 | Health ran since boot=" + $(if ($healthTask) { $healthTask.ran_since_boot } else { $false }))
-Write-Host ("Watchdog: " + $result.watchdog.status + " | age=" + $healthAgeMinutes + " min")
+Write-Host ("Watchdog: " + $(if ($health) { [string]$health.status } else { "missing" }) + " | age=" + $healthAgeMinutes + " min")
 Write-Host ("D: present=" + $external.present + " | label=" + $external.label + " | fs=" + $external.filesystem + " | health=" + $external.health + " | free=" + $external.free_gb + " GB")
 Write-Host ("D: disk=" + $external.disk_model + " | bus=" + $external.bus_type + " | disk_health=" + $external.disk_health + " | RW-delete=" + $external.write_read_delete_smoke)
 if ($issues.Count -gt 0) { Write-Host ("Issues: " + ($issues -join ", ")) } else { Write-Host "Issues: none" }
 if ($warnings.Count -gt 0) { Write-Host ("Notes: " + ($warnings -join ", ")) } else { Write-Host "Notes: none" }
-Write-Host ("Report: " + $reportPath)
 Write-Host "=== END ==="
 
+# Intentionally no JSON serialization in this local-only gate.
+# The visible summary is the evidence; serialization previously caused an unnecessary local stall.
 if ($issues.Count -gt 0) { exit 2 }
 exit 0
