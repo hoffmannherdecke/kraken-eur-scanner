@@ -9,7 +9,6 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from paper_context import build_context
 
-BLOCKED={"DUSK/EUR","QNT/EUR","TION/EUR"}
 MODEL=os.getenv("OPENAI_MODEL","gpt-6-luna")
 FEE_PCT=0.60
 PROMPT_SCHEMA_VERSION=2
@@ -240,7 +239,8 @@ Principles:
 - BUY_SCOUT only when evidence supplied is enough for a prospective scout entry AND a concrete second-stage confirmation trigger can be defined above the current ask.
 - The second stage is a confirmation stop-buy simulation, not an automatic immediate fill.
 - WAIT when 1-2 concrete confirmations could make the setup valid within 30-60 minutes. Otherwise REJECT.
-- DUSK/EUR, QNT/EUR and TION/EUR are blocked.
+- Do not use any static pair blacklist for Kraken tradability. Current public Kraken AssetPairs metadata is the operational source for whether the Spot EUR pair is online.
+- Account-private tradability is not required for this PAPER evaluator. If current public Kraken pair metadata is available/online and public minimum-order gates pass, account_specific_tradability unavailable is NOT negative evidence and must not be a standalone reason for WAIT/REJECT.
 - If BUY_SCOUT, stop_eur must be a positive structural/ATR-based invalidation below current ask.
 - If BUY_SCOUT, stage2_trigger_eur must be strictly above current ask and represent confirmation, not arbitrary distance.
 - If evidence is insufficient to define either the stop or stage2 confirmation, use WAIT instead.
@@ -356,13 +356,7 @@ def main():
     age=max(0,int(time.time())-int(c["event_ts"]))
     external={"not_collected":True}
 
-    if c["pair"] in BLOCKED:
-        d={"decision":"REJECT","setup_lane":"NONE","summary":"Pair is blocked by strategy.",
-           "reason_codes":["PAIR_BLOCKED"],"missing_triggers":[],"stop_eur":None,"ttl_minutes":0,
-           "expected_remaining_move_pct":None,"risk_reward_after_costs":None,
-           "stage2_trigger_eur":None,"stage2_ttl_minutes":0}
-        api={"response_id":None,"model":None,"attempt":0}
-    elif age>3600:
+    if age>3600:
         d={"decision":"REJECT","setup_lane":"NONE","summary":"Candidate is stale for prospective paper entry.",
            "reason_codes":["STALE_OVER_60M"],"missing_triggers":[],"stop_eur":None,"ttl_minutes":0,
            "expected_remaining_move_pct":None,"risk_reward_after_costs":None,
