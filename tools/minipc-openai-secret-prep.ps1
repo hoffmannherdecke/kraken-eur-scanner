@@ -29,7 +29,7 @@ if ($FromClipboard) {
 
   # Accept a bare OpenAI key or a clipboard value that contains surrounding
   # text such as OPENAI_API_KEY=...; store only the single sk-* token.
-  $clean = $raw.Replace([char]0xFEFF,'').Replace([char]0x200B,'').Trim()
+  $clean = $raw.Trim()
   $matches = [regex]::Matches($clean, 'sk-[A-Za-z0-9_-]{20,}')
   $unique = @($matches | ForEach-Object { $_.Value } | Select-Object -Unique)
   if ($unique.Count -ne 1) {
