@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-09-30T10:36:08.531575Z",
     "evaluation_ask_eur": 0.67925,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -1.397,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -1.397,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-09-30T10:36:00Z",
+        "trough_at_utc": "2026-09-30T10:50:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-09-30T08:00:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -42,7 +54,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-09-30T10:37:37.548149Z"
+    "updated_at_utc": "2026-09-30T10:56:17.607906Z"
   },
   "original_decision": "WAIT",
   "pair": "ASTER/EUR",
