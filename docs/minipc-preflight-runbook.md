@@ -641,3 +641,33 @@ Interpretation:
 - the transport and fresh-recheck infrastructure gates are closed;
 - Altrady is not yet a live strategy trigger: real Altrady alert/webhook configuration, measured live latency and explicit strategy/Fresh-Recheck coupling remain separate open steps;
 - V2R4 itself remains a separate paper-activation decision and has not been silently promoted to live/real-money execution.
+
+### Current continuation checkpoint — before live Altrady alert wiring
+
+Resume point:
+- continue immediately with the **real Altrady alert/webhook configuration**;
+- do **not** repeat the already-passed physical V2R4 core gate or synthetic Altrady relay transport E2E unless a later change invalidates them;
+- current Altrady state is **TRANSPORT ACTIVE / LOCAL E2E VERIFIED / STRATEGY ACTION NONE_TRANSPORT_ONLY**;
+- next proof after real Altrady alert setup: actual Altrady event -> Supabase relay -> MINI-PC receipt/ack -> measured latency; only after that consider explicit Fresh-Recheck/strategy coupling;
+- V2R4 remains paper/prep only until its separate activation decision.
+
+### Final runbook items — intentionally last
+
+These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
+
+1. **Windows firewall / malware protection review**
+   - Verify Windows Defender Firewall profiles and inbound/outbound exposure for the MINI-PC.
+   - Decide whether built-in Microsoft Defender Antivirus is sufficient or whether any additional antivirus is justified.
+   - Avoid third-party security software that could destabilize 24/7 tasks, WebSocket connectivity, scheduled jobs, RDP/VPN, Python runtimes or API calls without a demonstrated benefit.
+
+2. **Native Windows app review for installed/used services**
+   - Review whether native Windows applications add operational value for services currently used in the project, including Altrady, Slack, GitHub/GitHub Desktop and any other regularly used component.
+   - Install only apps that improve reliability, notifications, startup behavior or administration versus the existing browser/CLI path; avoid duplicate clients that add background load or competing update mechanisms.
+
+3. **Planned automatic weekly MINI-PC restart / update window**
+   - Evaluate whether one scheduled weekly restart is useful for Windows update completion and long-running service hygiene.
+   - If adopted, implement it as a controlled Task Scheduler maintenance window.
+   - After reboot, automatically verify recovery of required startup tasks, Kraken canary, Altrady transport heartbeat, watchdog health, network reachability and RDP availability.
+   - A reboot must never silently advance strategy state or enable real-money execution.
+
+These three items remain the **final points** of the runbook, after the deferred external-drive work and external remote-access test unless dependencies require otherwise.
