@@ -77,6 +77,15 @@ Verbindliche Datenqualitätsregel ab 2026-09-30:
 - Anlass/Korrekturfall: KSM/TRAC am 2026-09-30. Beide dürfen nicht wegen eines veralteten oder nicht konsultierten Chat-Kontexts übersehen werden.
 - Diese Regel ist Infrastruktur-/Datenqualitätslogik und verändert die eingefrorenen V2R3-Entry-/Stop-/Sizing-/Scoring-Regeln nicht.
 
+## GitHub-Actions Recovery / Incident 2026-09-30
+
+- Scanner-Run #611 (`startup_failure`) erzeugte **keinen Job**; die unveränderte `scan.yml` war zuvor und danach erfolgreich. Damit ist der konkrete Fehler als GitHub-Actions-Start-/Scheduler-Ereignis und nicht als Scanner-/Strategiefehler einzuordnen.
+- Folgeeffekt: Ein VVV-`WAIT` wurde nach Ablauf seiner 45-Minuten-TTL nicht im nächsten Zyklus revalidiert, weil genau dieser Scanner-Zyklus ausfiel. Der Process-Health-Watchdog erkannte den überfälligen WAIT und den Scannerfehler und dispatchte Scanner + Paper-Runtime; VVV wurde anschließend revalidiert und auf `REJECT` geschlossen.
+- Härtegrad: als **echter Infrastrukturfehler mit erfolgreichem Self-Heal** behandeln; keine Strategieparameter ändern.
+- Neu ab 2026-09-30: `.github/workflows/scanner-startup-recovery.yml` reagiert ereignisgesteuert auf einen **scheduled** Scanner-`startup_failure` und dispatcht genau **einen** sofortigen `workflow_dispatch`-Retry. Ein fehlgeschlagener Recovery-Run wird nicht erneut automatisch retried (Loop-Schutz).
+- Der bestehende `process-health.yml` bleibt die zweite, zeitbasierte Recovery-/Escalation-Schicht. Damit hängt die Erstreaktion auf einen Scanner-Startfehler nicht mehr ausschließlich am nächsten Cron-Tick.
+- Späterer Mini-PC-Betrieb bleibt die geplante weitere Entkopplung vom GitHub-Scheduler; GitHub bleibt unabhängiger Cloud-Fallback.
+
 ## GitHub
 
 Aktuell verbundene Repositories:
