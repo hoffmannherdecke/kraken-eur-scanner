@@ -93,7 +93,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [ ] Detektionslatenz Kraken-native vs. Scanner vs. Altrady messen.
 - [ ] Nach stabiler Basis den Takt anhand realer Messungen verkürzen; Ziel grob ~7–8 Minuten, wo ein periodischer Takt nötig ist, ergänzt durch schnellere eventbasierte Trigger.
 - [ ] Evaluator/KI nur bei echten Kandidaten oder klaren Analyseblockern aufrufen; kein dauerndes KI-Polling.
-- [ ] V2R4-Fast-Trigger-Pfad aus Draft-PR #8: V2R3-Evidenzsnapshot erstellt; Compile/Unit-/Live-Public-Kraken-Prep-Smokes sind grün; live Kraken-AssetPairs statt statischer Blacklist und maschinenlesbare WAIT-Bedingungen sind vorbereitet. Offen bleibt der isolierte MINI-PC-Preflight-Smoke und danach der endgültige separate V2R4-Paper-Aktivierungsentscheid.
+- [ ] V2R4-Fast-Trigger-Pfad aus Draft-PR #8: V2R3-Evidenzsnapshot, Compile/Unit-/Live-Public-Kraken-/Model-Contract-Smokes und der **exakte Windows trigger→fresh-recheck E2E-Gate** sind grün; live Kraken-AssetPairs statt statischer Blacklist, maschinenlesbare WAIT-Bedingungen und lokaler Fresh-Recheck-Bridge sind vorbereitet. Offen: lokales OpenAI-Secret, derselbe E2E-Gate einmal auf dem echten MINI-PC, Altrady-Secret/E2E und danach separater V2R4-Paper-Aktivierungsentscheid.
 - [ ] Bei bestandenem Smoke-Test eine **separate V2R4-Paper-Serie** starten; dafür nicht künstlich auf 20 V2R3-Trades warten. V2R3-Artefakte bleiben unverändert als Vergleichsbasis.
 - [ ] Datenfrische und Entscheidungstimestamp in jedem Kandidaten nachvollziehbar halten.
 
@@ -237,4 +237,4 @@ Diese Punkte gehören nicht in die Trading-Laufzeit und dürfen den Kernaufbau n
 
 **V2R3 sauber messen → Mini-PC stabil → Watchdog/Recovery → Kraken/Altrady-Realtime → V2R4-Fast-Trigger Paper → schlanke Integrationen + Historik/Backtests → V3 Research/Shadow/Paper → Smart-Money-Forschung → Self-hosted/Trading-API zuletzt.**
 
-- [ ] **V2R4 Trigger→fresh-recheck bridge** fest implementieren: lokaler Kraken/Altrady Trigger darf nur `FRESH_PAPER_RECHECK_ONLY` auslösen; die frische Neubewertung muss current Kraken execution context holen, paper-only bleiben, timestamps/receipt persistieren und ohne GitHub-Schedule-Latenz auskommen. Keine Aktivierung von V2R4 vor diesem E2E-Nachweis.
+- [ ] **V2R4 Trigger→fresh-recheck bridge** ist implementiert und im exakten Windows-E2E mit realem Evaluator grün; offen bleibt der identische Nachweis auf dem physischen MINI-PC nach sicherer lokaler OpenAI-Key-Provisionierung. Keine Aktivierung von V2R4 vor diesem lokalen E2E-Nachweis.
