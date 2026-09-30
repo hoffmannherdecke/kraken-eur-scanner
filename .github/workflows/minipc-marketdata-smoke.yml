@@ -6,6 +6,7 @@ name: MINI-PC marketdata smoke
     branches: [main]
     paths:
       - 'tools/minipc-marketdata-smoke.ps1'
+      - 'tools/minipc-kraken-canary.py'
       - 'market_data/**'
       - 'paper_capture/market.py'
       - '.github/workflows/minipc-marketdata-smoke.yml'
@@ -40,3 +41,15 @@ jobs:
         shell: powershell
         run: |
           powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\tools\minipc-marketdata-smoke.ps1" -TradingRoot "$env:TRADING_ROOT" -Seconds 30
+
+      - name: Run bounded continuous-canary smoke
+        shell: powershell
+        run: |
+          $python = Join-Path $env:TRADING_ROOT 'Runtime\kraken-eur-scanner-venv\Scripts\python.exe'
+          & $python "$env:GITHUB_WORKSPACE\tools\minipc-kraken-canary.py" --trading-root "$env:TRADING_ROOT" --seconds 20
+          if ($LASTEXITCODE -ne 0) { throw "Kraken canary bounded smoke failed" }
+          $hb = Get-Content (Join-Path $env:TRADING_ROOT 'State\kraken-canary-heartbeat.json') -Raw | ConvertFrom-Json
+          if ($hb.status -ne 'HEALTHY' -or [int]$hb.events_total -le 0 -or [int]$hb.book_events -le 0) {
+            throw "Kraken canary heartbeat is not healthy"
+          }
+          Write-Host ("CANARY_PASS events=" + $hb.events_total + " book=" + $hb.book_events + " trade=" + $hb.trade_events + " gaps=" + $hb.gaps)
