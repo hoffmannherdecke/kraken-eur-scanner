@@ -408,3 +408,17 @@ Decision:
 
 This storage-maintenance item is intentionally deferred so MINI-PC commissioning can continue. Operative Bearbeitung erfolgt erst in **Phase H2 ganz am Ende des Runbooks**.
 
+### P2 continuous Kraken canary prepared 2026-09-30
+
+To establish a concrete local 24/7 process/heartbeat contract before strategy coupling:
+- `tools/minipc-kraken-canary.py` added: continuous public Kraken WebSocket canary on BTC/EUR; no account access, no strategy action, no order API.
+- `tools/install-minipc-kraken-canary.ps1` / uninstall rollback added.
+- Task name: `CryptoMiniPC-KrakenCanary`; runs as SYSTEM at startup with bounded Task Scheduler restart.
+- Heartbeat: `Trading\State\kraken-canary-heartbeat.json`.
+- Local watchdog now checks the canary heartbeat only when the task is installed; stale/degraded state becomes a warning while the independent GitHub path remains available.
+- `tools/minipc-phase2-enable.ps1` bundles the remaining local activation proof: verifies the fixed SYSTEM Git watchdog check, installs/starts the canary, then re-runs the watchdog against the live heartbeat.
+- Windows CI parsing is green.
+- Bounded live public Kraken canary smoke is green in `MINI-PC marketdata smoke`.
+
+Next local action is intentionally a single administrator PowerShell bundle after one `git pull --ff-only`. After that evidence is captured, further P2/P3 code work can continue without user interaction until the next truly machine-local or secret-handling gate.
+
