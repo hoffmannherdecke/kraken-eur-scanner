@@ -84,6 +84,28 @@ if ($latestBackup) {
   $checks["backup_freshness"] = [ordered]@{ ok=$null; detail="no backup yet; warning threshold starts after scheduled backup is installed" }
 }
 
+# Continuous public Kraken canary heartbeat is optional until the task is installed.
+try {
+  $canaryTask = Get-ScheduledTask -TaskName "CryptoMiniPC-KrakenCanary" -ErrorAction SilentlyContinue
+  if ($canaryTask) {
+    $hb = Join-Path $TradingRoot "State\kraken-canary-heartbeat.json"
+    if (-not (Test-Path $hb)) {
+      Add-Check "kraken_canary_heartbeat" $false "task installed but heartbeat missing" "WARNING"
+    } else {
+      $h = Get-Content $hb -Raw | ConvertFrom-Json
+      $checked = ([datetime]$h.checked_at_utc).ToUniversalTime()
+      $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - $checked).TotalSeconds,1)
+      $okStatus = [string]$h.status -in @("HEALTHY","CONNECTED")
+      $ok = ($okStatus -and $ageSec -le 30 -and [int]$h.events_total -gt 0)
+      Add-Check "kraken_canary_heartbeat" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " events=" + $h.events_total + " gaps=" + $h.gaps) "WARNING"
+    }
+  } else {
+    $checks["kraken_canary_heartbeat"] = [ordered]@{ ok=$null; detail="not installed yet; bounded Kraken smoke remains verified" }
+  }
+} catch {
+  Add-Check "kraken_canary_heartbeat" $false $_.Exception.Message "WARNING"
+}
+
 # Altrady transport heartbeat is optional/non-exclusive.
 # Only evaluate it when the dedicated scheduled task is installed.
 try {
