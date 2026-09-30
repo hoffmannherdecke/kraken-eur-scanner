@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 1236.956,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -0.474,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -1.964,
+        "mfe_pct": 4.144,
+        "peak_at_utc": "2026-09-29T12:00:00Z",
+        "trough_at_utc": "2026-09-29T15:20:00Z"
+      },
       "15": {
         "bars": 0,
         "complete": false,
@@ -96,6 +107,11 @@
         "trough_at_utc": "2026-09-29T15:20:00Z"
       }
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "SPREAD_AND_DEPTH_ADEQUATE",
@@ -116,7 +132,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T06:18:16.004525Z"
+    "updated_at_utc": "2026-09-30T06:21:40.190939Z"
   },
   "original_decision": "WAIT",
   "pair": "ZEC/EUR",
