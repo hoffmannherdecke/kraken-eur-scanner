@@ -86,7 +86,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 ## P3 — Realtime-Daten und Trigger: Kraken + Altrady + redundanter Pfad
 
-- [ ] Kraken WebSocket/REST auf dem Mini-PC als kontinuierliche Primärdatenquelle für relevante Live-Mikrostruktur aufbauen.
+- [ ] Kraken WebSocket/REST auf dem Mini-PC als kontinuierliche Primärdatenquelle für relevante Live-Mikrostruktur aufbauen. Audit 2026-10-01: Der V2R4-Pre-Candidate-Watcher deckt bereits das breite Kraken-EUR-Universum ab, arbeitet aktuell aber noch per REST-Ticker-Polling; vor Daueraktivierung den Primärpfad auf eventgetriebene Kraken-WebSocket-v2-Ticker-Daten umstellen bzw. separat beweisen. REST AssetPairs bleibt operative Universumsquelle und REST-Depth nur für bereits ausgelöste Kandidaten/Fallback.
 - [ ] Nur benötigte Rohdaten kurzfristig speichern; langfristig Features/Aggregate statt endloser Tick-/Orderbucharchive behalten.
 - [ ] Altrady als **zusätzlichen echten Echtzeit-Trigger** fertig anbinden, niemals als einzigen Trigger. Der Transportpfad ist synthetisch und durch einen echten One-shot-Price-Alert E2E verifiziert; offen bleibt die spätere explizite Fresh-Recheck-Kopplung sowie der Latenzvergleich mit Kraken-native und dem Legacy-Scanner. Kein erneuter manueller Altrady-Transporttest nötig, solange die Konfiguration unverändert bleibt.
 - [ ] Altrady-Heartbeat/Fehlerrückmeldung überwachen; Ausfall darf die restliche Kette nicht stoppen.
