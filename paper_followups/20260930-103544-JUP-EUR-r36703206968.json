@@ -80,6 +80,17 @@
         "mfe_pct": 0.105,
         "peak_at_utc": "2026-09-30T11:31:00Z",
         "trough_at_utc": "2026-09-30T11:03:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -0.687,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -3.43,
+        "mfe_pct": 2.055,
+        "peak_at_utc": "2026-09-30T13:05:00Z",
+        "trough_at_utc": "2026-09-30T15:25:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -107,7 +118,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T22:39:32.843939Z"
+    "updated_at_utc": "2026-09-30T22:45:36.974447Z"
   },
   "original_decision": "WAIT",
   "pair": "JUP/EUR",
