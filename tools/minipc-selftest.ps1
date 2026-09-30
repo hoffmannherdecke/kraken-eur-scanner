@@ -29,6 +29,10 @@ Line ("Timestamp: " + (Get-Date -Format "o"))
 Line ("ComputerName: " + $env:COMPUTERNAME)
 Line ("UserProfile: " + $env:USERPROFILE)
 Run "Windows version" { Get-ComputerInfo | Select-Object WindowsProductName,WindowsVersion,OsBuildNumber,OsArchitecture }
+Run "Windows OS via CIM" {
+    Get-CimInstance Win32_OperatingSystem |
+      Select-Object Caption,Version,BuildNumber,OSArchitecture,LastBootUpTime
+}
 
 Section "POWER"
 Run "Active power scheme" { powercfg /getactivescheme }
@@ -74,6 +78,73 @@ Section "DISK"
 Run "C drive capacity" {
     Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'" |
       Select-Object DeviceID,@{n='SizeGB';e={[math]::Round($_.Size/1GB,1)}},@{n='FreeGB';e={[math]::Round($_.FreeSpace/1GB,1)}}
+}
+
+Section "STORAGE HEALTH"
+Run "Physical disk health" {
+    Get-PhysicalDisk -ErrorAction SilentlyContinue |
+      Select-Object FriendlyName,MediaType,HealthStatus,OperationalStatus,
+        @{n='SizeGB';e={[math]::Round($_.Size/1GB,1)}}
+}
+Run "Reliability counters (if supported)" {
+    Get-PhysicalDisk -ErrorAction SilentlyContinue | ForEach-Object {
+        $disk = $_
+        try {
+            $r = $disk | Get-StorageReliabilityCounter -ErrorAction Stop
+            [PSCustomObject]@{
+                FriendlyName = $disk.FriendlyName
+                Temperature = $r.Temperature
+                Wear = $r.Wear
+                PowerOnHours = $r.PowerOnHours
+                ReadErrorsTotal = $r.ReadErrorsTotal
+                WriteErrorsTotal = $r.WriteErrorsTotal
+            }
+        } catch {
+            [PSCustomObject]@{ FriendlyName=$disk.FriendlyName; Detail="Reliability counters unsupported/unavailable" }
+        }
+    }
+}
+
+Section "BASE LOAD"
+Run "CPU / RAM snapshot" {
+    $os = Get-CimInstance Win32_OperatingSystem
+    $cpu = Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average
+    [PSCustomObject]@{
+        CpuLoadPct = [math]::Round([double]$cpu.Average,1)
+        TotalRamGB = [math]::Round($os.TotalVisibleMemorySize/1MB,1)
+        FreeRamGB = [math]::Round($os.FreePhysicalMemory/1MB,1)
+        UsedRamPct = [math]::Round((1-($os.FreePhysicalMemory/$os.TotalVisibleMemorySize))*100,1)
+    }
+}
+
+Section "LOCAL TASKS"
+Run "Crypto MINI-PC scheduled tasks" {
+    Get-ScheduledTask -TaskName "CryptoMiniPC-*" -ErrorAction SilentlyContinue |
+      ForEach-Object {
+        $info = $_ | Get-ScheduledTaskInfo
+        [PSCustomObject]@{
+            TaskName = $_.TaskName
+            State = $_.State
+            LastRunTime = $info.LastRunTime
+            LastTaskResult = $info.LastTaskResult
+            NextRunTime = $info.NextRunTime
+        }
+      }
+}
+Run "Latest backup" {
+    $backupDir = Join-Path $env:USERPROFILE "Trading\Backup"
+    $latest = Get-ChildItem $backupDir -File -Filter "minipc-state-*.zip" -ErrorAction SilentlyContinue |
+      Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    if ($latest) {
+        [PSCustomObject]@{
+            Name=$latest.Name
+            LastWriteTime=$latest.LastWriteTime
+            SizeKB=[math]::Round($latest.Length/1KB,1)
+            AgeHours=[math]::Round(((Get-Date)-$latest.LastWriteTime).TotalHours,2)
+        }
+    } else {
+        "No MINI-PC state backup found"
+    }
 }
 
 Section "RECENT SYSTEM ERRORS"
