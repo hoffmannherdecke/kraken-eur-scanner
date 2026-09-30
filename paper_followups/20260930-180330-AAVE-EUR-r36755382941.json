@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-09-30T18:04:00Z",
         "trough_at_utc": "2026-09-30T18:18:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -0.695,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -1.369,
+        "mfe_pct": -0.142,
+        "peak_at_utc": "2026-09-30T18:04:00Z",
+        "trough_at_utc": "2026-09-30T19:17:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -88,7 +99,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-30T21:59:18.428049Z"
+    "updated_at_utc": "2026-09-30T22:05:22.897605Z"
   },
   "original_decision": "WAIT",
   "pair": "AAVE/EUR",
