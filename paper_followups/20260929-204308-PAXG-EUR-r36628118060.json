@@ -20,6 +20,14 @@
       "mae_pct": -0.086,
       "mfe_pct": 0.002
     },
+    "360": {
+      "bars": 360,
+      "complete": true,
+      "end_close_pct": -0.09,
+      "expected_bars": 360,
+      "mae_pct": -0.247,
+      "mfe_pct": 0.059
+    },
     "60": {
       "bars": 60,
       "complete": true,
@@ -100,13 +108,19 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-30T02:43:59.766188Z"
+    "updated_at_utc": "2026-09-30T02:56:43.128821Z"
   },
   "original_decision": "REJECT",
   "pair": "PAXG/EUR",
   "path_classification": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "six_hour_flags": {
+    "missed_10pct": false,
+    "missed_15pct": false,
+    "missed_5pct": false,
+    "missed_8pct": false
+  },
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-29T22:47:25.796975Z"
+  "updated_at_utc": "2026-09-30T02:56:43.262107Z"
 }
