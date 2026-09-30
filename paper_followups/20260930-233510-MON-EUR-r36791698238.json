@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-09-30T23:35:42.434490Z",
     "evaluation_ask_eur": 0.02731,
     "flagged_as_already_run": true,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 2.229,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.11,
+        "mfe_pct": 2.558,
+        "peak_at_utc": "2026-09-30T23:41:00Z",
+        "trough_at_utc": "2026-09-30T23:36:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-09-30T20:57:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -41,7 +53,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T23:50:37.165891Z"
+    "updated_at_utc": "2026-09-30T23:59:20.461125Z"
   },
   "original_decision": "WAIT",
   "pair": "MON/EUR",

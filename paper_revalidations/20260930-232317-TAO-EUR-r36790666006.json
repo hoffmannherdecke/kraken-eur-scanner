@@ -1,0 +1,231 @@
+{
+  "altname": "TAOEUR",
+  "candidate_id": "20260930-232317-TAO-EUR-r36790666006",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 268.53 EUR resistance with renewed volume",
+      "Hold above or successful retest of 268.53 EUR with volume confirmation"
+    ],
+    "reason_codes": [
+      "RESISTANCE_UNBROKEN",
+      "WEAK_RECENT_VOLUME",
+      "OPEN_INTEREST_DECLINING",
+      "UPSIDE_INSUFFICIENT_AFTER_COSTS"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Price remains below 268.53 EUR resistance and has faded from the prior observation; weak recent volume and declining open interest do not support a scout. The likely move to resistance is insufficient after Kraken spot fees and execution costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "TAOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 34.19,
+        "available": true,
+        "current_funding_rate": 0.010072972955649899,
+        "current_open_interest": 15776.15,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -1.5691,
+        "previous_funding_rate": 0.010072972955649899,
+        "previous_observed_at_utc": "2026-09-30T23:24:05.380482Z",
+        "previous_open_interest": 16027.64
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.010072972955649899,
+        "index_price": 300.854,
+        "last": 300.73,
+        "mark_price": 300.62605977091,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 15776.15,
+        "requested_symbols": [
+          "PF_TAOUSD",
+          "PI_TAOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_TAOUSD",
+        "volume24h": 38879.78
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 265.5921,
+      "bid": 265.4442,
+      "last": 265.8568,
+      "spread_pct": 0.055702406784618234
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "0.02",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2120034256073544,
+          "ret3h_pct": -0.08155258787223563
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.09055987060468951,
+          "ret3h_pct": 0.3269549622711754
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.20103388856977933,
+          "ret3h_pct": 0.0671913995008655
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T23:58:15.733348Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0d347aee57116d90006abda219694487d0ac5a25bb016e8acc"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 265.5921,
+    "bid": 265.4442,
+    "last": 265.8568,
+    "spread_pct": 0.055702406784618234
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 266.8811,
+      "high": 268.0801,
+      "low": 266.8811,
+      "open": 268.0801,
+      "trades": 37,
+      "ts": 1790808300,
+      "volume": 97.87144,
+      "vwap": 267.4635
+    },
+    {
+      "close": 266.6979,
+      "high": 268.5307,
+      "low": 266.4015,
+      "open": 267.9203,
+      "trades": 52,
+      "ts": 1790809200,
+      "volume": 65.81647,
+      "vwap": 267.6197
+    },
+    {
+      "close": 266.7204,
+      "high": 267.8714,
+      "low": 266.7067,
+      "open": 267.2415,
+      "trades": 16,
+      "ts": 1790810100,
+      "volume": 4.96878,
+      "vwap": 267.3463
+    },
+    {
+      "close": 265.9149,
+      "high": 265.9149,
+      "low": 265.9149,
+      "open": 265.9149,
+      "trades": 1,
+      "ts": 1790811000,
+      "volume": 0.3413,
+      "vwap": 265.9149
+    },
+    {
+      "close": 265.8568,
+      "high": 265.8568,
+      "low": 265.7333,
+      "open": 265.7333,
+      "trades": 6,
+      "ts": 1790811900,
+      "volume": 1.61201,
+      "vwap": 265.7827
+    }
+  ],
+  "pair": "TAO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-232317-TAO-EUR-r36790666006.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T23:58:22.237019Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "46b9e5183b34d4437de1dfec78a50af0cb2b2661",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T23:58:22.237019Z",
+    "revalidation_started_at_utc": "2026-09-30T23:58:15.377919Z",
+    "ttl_due_at_utc": "2026-09-30T23:54:05.380482Z",
+    "ttl_lag_seconds": 249.997
+  }
+}
