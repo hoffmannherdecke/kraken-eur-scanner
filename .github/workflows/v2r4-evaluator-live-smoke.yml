@@ -105,15 +105,18 @@ jobs:
               "scan_step_started_at_utc":now.isoformat().replace("+00:00","Z")
             }
           }
-          Path("/tmp/v2r4-candidate.json").write_text(json.dumps(candidate,indent=2)+"\n","utf-8")
-          print("SMOKE_CANDIDATE",cid,price)
+          candidate_path=Path("/tmp")/(cid+".json")
+          candidate_path.write_text(json.dumps(candidate,indent=2)+"\n","utf-8")
+          Path("/tmp/v2r4-candidate-path.txt").write_text(str(candidate_path)+"\n","utf-8")
+          print("SMOKE_CANDIDATE",cid,price,candidate_path)
           PY
 
       - name: Run actual V2R4 evaluator once, isolated and paper-only
         run: |
           set -euo pipefail
           mkdir -p /tmp/v2r4-decisions
-          python paper_evaluator/evaluate.py /tmp/v2r4-candidate.json --out /tmp/v2r4-decisions
+          CANDIDATE_PATH="$(cat /tmp/v2r4-candidate-path.txt)"
+          python paper_evaluator/evaluate.py "$CANDIDATE_PATH" --out /tmp/v2r4-decisions
 
       - name: Verify paper-only decision contract
         run: |
