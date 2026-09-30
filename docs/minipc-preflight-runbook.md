@@ -505,3 +505,27 @@ Observed paper result in that smoke: `REJECT`; no paper entry and no trigger pla
 
 This materially reduces release risk, but does **not** yet prove the complete local trigger -> fresh evaluator recheck bridge. That final coupling remains a distinct gate before a real V2R4 paper-series activation.
 
+### V2R4 local trigger -> fresh recheck bridge prepared 2026-09-30
+
+The final timing-critical bridge is now implemented on the inactive V2R4 prep branch:
+- `paper_evaluator/v2r4_local_recheck.py`;
+- accepts only a matched paper-only trigger receipt with `next_action=FRESH_PAPER_RECHECK_ONLY`;
+- candidate/receipt identity and pair must match;
+- expired/unmatched/unsafe trigger actions fail closed;
+- fresh public Kraken ticker/context is re-fetched before the evaluator call;
+- no private Kraken credential and no order endpoint are present;
+- output is a local paper-only recheck record; BUY, if ever returned, is still only a simulated paper entry;
+- WAIT may emit a new bounded structured trigger plan.
+
+Validation status:
+- V2R4 complete unit set: PASS;
+- Windows/MINI-PC-shaped preflight: PASS with 22 tests;
+- live public Kraken WAIT watcher: PASS;
+- current online Kraken EUR universe observed in smoke: 500 pairs;
+- actual isolated V2R4 evaluator call: PASS after fixing a runtime-only prompt formatting defect.
+
+Still required before V2R4 activation:
+- secret provisioning for the chosen local evaluator/transport path;
+- one actual MINI-PC trigger -> fresh recheck E2E proof with timestamps and heartbeat;
+- no V2R4 activation until that proof passes.
+
