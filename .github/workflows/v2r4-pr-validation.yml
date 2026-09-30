@@ -31,7 +31,8 @@ jobs:
             paper_evaluator/v2r4_trigger_plan.py \
             paper_evaluator/v2r4_wait_watcher.py \
             paper_evaluator/v2r4_precandidate_discovery.py \
-            paper_evaluator/v2r4_precandidate_watcher.py
+            paper_evaluator/v2r4_precandidate_watcher.py \
+            paper_evaluator/v2r4_local_recheck.py
 
       - name: Run V2R4 unit tests
         run: |
