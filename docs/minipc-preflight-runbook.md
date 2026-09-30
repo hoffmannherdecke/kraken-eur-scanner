@@ -615,3 +615,29 @@ The old `tools/minipc-next-user-step.ps1` now delegates to this canonical gate t
 
 Windows PowerShell parsing is green. The only unavoidable user inputs are the actual local OpenAI API key (if not already provisioned) and the later one-time Supabase Edge Function secret entry for `ALTRADY_WEBHOOK_TOKEN`.
 
+
+### Physical V2R4 core gate + Altrady transport E2E passed 2026-09-30
+
+Actual MINI-PC evidence:
+- secure local OpenAI evaluator key provisioned with restricted ACL and authenticated successfully;
+- physical V2R4 trigger -> fresh paper recheck E2E: **PASS**;
+- observed trigger -> recheck start: **0.228 s**;
+- evaluator recheck runtime: **12.348 s**;
+- synthetic decision in the harmless BTC/EUR case: **WAIT**;
+- next WAIT trigger plan emitted: **true**;
+- paper entry simulated: **false**;
+- safety remained **PAPER ONLY / PUBLIC KRAKEN / NO EXCHANGE ACCOUNT / NO ORDER API / NO REAL-MONEY ACTION**.
+
+Altrady transport activation:
+- dedicated relay token stored locally and as Supabase Edge Function secret `ALTRADY_WEBHOOK_TOKEN`;
+- `CryptoMiniPC-AltradyTrigger` installed and running as the local transport poller;
+- heartbeat: **HEALTHY**;
+- synthetic relay -> MINI-PC -> ack smoke: **PASS**;
+- smoke evidence: **1 event received / 1 acknowledged**;
+- local Watchdog: **HEALTHY**, Altrady check **true**;
+- strategy action remains **NONE_TRANSPORT_ONLY**.
+
+Interpretation:
+- the transport and fresh-recheck infrastructure gates are closed;
+- Altrady is not yet a live strategy trigger: real Altrady alert/webhook configuration, measured live latency and explicit strategy/Fresh-Recheck coupling remain separate open steps;
+- V2R4 itself remains a separate paper-activation decision and has not been silently promoted to live/real-money execution.
