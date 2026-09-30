@@ -11,6 +11,14 @@
       "expected_bars": 30,
       "mae_pct": -0.747,
       "mfe_pct": 0.059
+    },
+    "60": {
+      "bars": 60,
+      "complete": true,
+      "end_close_pct": -0.445,
+      "expected_bars": 60,
+      "mae_pct": -0.747,
+      "mfe_pct": 0.059
     }
   },
   "interval_minutes": 1,
@@ -34,6 +42,17 @@
         "mfe_pct": 0.0,
         "peak_at_utc": "2026-09-30T02:04:00Z",
         "trough_at_utc": "2026-09-30T02:10:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -0.503,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -0.806,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-09-30T02:04:00Z",
+        "trough_at_utc": "2026-09-30T02:28:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -61,7 +80,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T02:56:47.770923Z"
+    "updated_at_utc": "2026-09-30T03:12:37.930220Z"
   },
   "original_decision": "WAIT",
   "pair": "DASH/EUR",
@@ -71,5 +90,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-30T02:41:01.847605Z"
+  "updated_at_utc": "2026-09-30T03:12:38.115921Z"
 }
