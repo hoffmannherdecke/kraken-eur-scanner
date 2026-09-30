@@ -88,7 +88,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 - [ ] Kraken WebSocket/REST auf dem Mini-PC als kontinuierliche Primärdatenquelle für relevante Live-Mikrostruktur aufbauen.
 - [ ] Nur benötigte Rohdaten kurzfristig speichern; langfristig Features/Aggregate statt endloser Tick-/Orderbucharchive behalten.
-- [ ] Altrady auf dem Mini-PC als **zusätzlichen Echtzeit-Trigger** einbinden, niemals als einzigen Trigger.
+- [ ] Altrady auf dem Mini-PC als **zusätzlichen Echtzeit-Trigger** einbinden, niemals als einzigen Trigger. Relay ist deployed/ACTIVE; offen sind gemeinsames Secret, MINI-PC-Transportaktivierung und E2E-Smoke.
 - [ ] Altrady-Heartbeat/Fehlerrückmeldung überwachen; Ausfall darf die restliche Kette nicht stoppen.
 - [ ] Detektionslatenz Kraken-native vs. Scanner vs. Altrady messen.
 - [ ] Nach stabiler Basis den Takt anhand realer Messungen verkürzen; Ziel grob ~7–8 Minuten, wo ein periodischer Takt nötig ist, ergänzt durch schnellere eventbasierte Trigger.
