@@ -1,0 +1,214 @@
+{
+  "altname": "XDCEUR",
+  "candidate_id": "20260930-180330-XDC-EUR-r36755382941",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.03065 with improving closed volume",
+      "Follow-through holding above 0.03065"
+    ],
+    "reason_codes": [
+      "RESISTANCE_UNCLEARED",
+      "CLOSED_VOLUME_WEAK",
+      "MARKET_1H_BREADTH_NEGATIVE",
+      "COSTS_UNCOVERED",
+      "NO_DERIVATIVES_DATA"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Revalidation did not clear 0.03065 resistance or show improving closed volume; price remains below the confirmation level, and plausible upside does not justify Kraken taker fees and spread.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "XDCUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_XDCUSD",
+          "PI_XDCUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.0301,
+      "bid": 0.03008,
+      "last": 0.03016,
+      "spread_pct": 0.06646726487204781
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "180",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.27676681385344626,
+          "ret3h_pct": 0.2545353071220946
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.22379772064133885,
+          "ret3h_pct": 0.3081951902871749
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.7197651292736085,
+          "ret3h_pct": 0.4407396761521465
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          },
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T18:39:09.368900Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_01fbf6d402d3a761006abd574f62e087d1a58a40fc45251420"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0301,
+    "bid": 0.03008,
+    "last": 0.03016,
+    "spread_pct": 0.06646726487204781
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.03026,
+      "high": 0.03034,
+      "low": 0.03026,
+      "open": 0.03028,
+      "trades": 18,
+      "ts": 1790789400,
+      "volume": 112716.2645,
+      "vwap": 0.03026
+    },
+    {
+      "close": 0.03026,
+      "high": 0.03026,
+      "low": 0.03026,
+      "open": 0.03026,
+      "trades": 7,
+      "ts": 1790790300,
+      "volume": 18568.52209,
+      "vwap": 0.03026
+    },
+    {
+      "close": 0.03023,
+      "high": 0.03032,
+      "low": 0.03023,
+      "open": 0.03027,
+      "trades": 19,
+      "ts": 1790791200,
+      "volume": 100617.71325,
+      "vwap": 0.03026
+    },
+    {
+      "close": 0.03011,
+      "high": 0.03013,
+      "low": 0.03009,
+      "open": 0.03013,
+      "trades": 5,
+      "ts": 1790792100,
+      "volume": 12527.61637,
+      "vwap": 0.03011
+    },
+    {
+      "close": 0.03016,
+      "high": 0.03019,
+      "low": 0.03011,
+      "open": 0.03019,
+      "trades": 28,
+      "ts": 1790793000,
+      "volume": 137900.04379,
+      "vwap": 0.03018
+    }
+  ],
+  "pair": "XDC/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-180330-XDC-EUR-r36755382941.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T18:39:17.439617Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "b0990e5a5e4f4ed8177e815b47bd0cec2ba5ff11",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T18:39:17.439617Z",
+    "revalidation_started_at_utc": "2026-09-30T18:39:08.886013Z",
+    "ttl_due_at_utc": "2026-09-30T18:34:30.519282Z",
+    "ttl_lag_seconds": 278.367
+  }
+}
