@@ -41,6 +41,8 @@ jobs:
             'tools/minipc-marketdata-smoke.ps1',
             'tools/minipc-next-gate.ps1',
             'tools/minipc-post-recovery-gate.ps1',
+            'tools/uninstall-minipc-kraken-canary.ps1',
+            'tools/install-minipc-kraken-canary.ps1',
             'tools/minipc-log-cleanup.ps1',
             'tools/minipc-backup.ps1',
             'tools/minipc-restore-smoke.ps1',
