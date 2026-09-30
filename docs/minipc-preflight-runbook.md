@@ -483,3 +483,25 @@ Guardrails:
 
 The script passes Windows PowerShell parse CI. Actual MINI-PC execution is the next local-only preflight evidence point.
 
+### V2R4 exact Windows/MINI-PC-shaped preflight + live evaluator smoke 2026-09-30
+
+Additional release-gate evidence completed without activating V2R4:
+- exact `tools/minipc-v2r4-preflight-smoke.ps1` executed on Windows CI in a MINI-PC-shaped directory tree: **PASS**;
+- isolated prep-branch worktree SHA tested: `6255fb12...` at that run;
+- Kraken canary prerequisite: **HEALTHY**;
+- synthetic deterministic WAIT receipt: **matched=True** with `FRESH_PAPER_RECHECK_ONLY`;
+- live broad pre-candidate smoke observed **500 current online Kraken EUR pairs**;
+- tradability contract: **LIVE PUBLIC KRAKEN ASSETPAIRS / NO STATIC BLACKLIST**;
+- safety: **PAPER/SHADOW ONLY / NO ACCOUNT / NO ORDERS / NO REAL-MONEY ACTION**.
+
+The actual V2R4 evaluator was then exercised once in an isolated GitHub smoke using:
+- current public Kraken BTC/EUR ticker;
+- the repository's existing `OPENAI_API_KEY` secret;
+- a temporary V2R4 control/spec that was never persisted;
+- actual evaluator code from the V2R4 prep branch.
+
+First attempt exposed a real runtime-only prompt-format bug (literal braces in the structured `watch_conditions` schema). The branch was patched and a regression test added. Second attempt: **PASS**.
+Observed paper result in that smoke: `REJECT`; no paper entry and no trigger plan were created, which is a valid safe outcome. `real_money_actions_enabled=false` remained enforced.
+
+This materially reduces release risk, but does **not** yet prove the complete local trigger -> fresh evaluator recheck bridge. That final coupling remains a distinct gate before a real V2R4 paper-series activation.
+
