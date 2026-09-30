@@ -1,0 +1,192 @@
+{
+  "altname": "MOVREUR",
+  "candidate_age_seconds": 13,
+  "candidate_event_time_utc": "2026-09-30T18:18:55Z",
+  "candidate_id": "20260930-181855-MOVR-EUR-r36757489966",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.5561 resistance with renewed volume expansion",
+      "Follow-through holding above 1.5561 within 30\u201360 minutes"
+    ],
+    "reason_codes": [
+      "extended_after_large_run",
+      "ret15_negative_and_live_volume_subdued",
+      "spot_spread_and_taker_costs_high",
+      "no_3h_breakout",
+      "major_assets_weak_1h",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "MOVR is sharply extended; require a volume-backed resistance break before reassessing, with Kraken EUR costs and weak major-asset breadth limiting the setup.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "MOVRUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 240.21,
+        "available": true,
+        "current_funding_rate": -0.00040591413842175,
+        "current_open_interest": 25423.2,
+        "funding_rate_delta": -0.00018357690412499998,
+        "open_interest_pct": 0.9927,
+        "previous_funding_rate": -0.00022233723429675,
+        "previous_observed_at_utc": "2026-09-30T14:18:57.272954Z",
+        "previous_open_interest": 25173.3
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.00040591413842175,
+        "index_price": 1.73517,
+        "last": 1.7377,
+        "mark_price": 1.73255389083,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 25423.2,
+        "requested_symbols": [
+          "PF_MOVRUSD",
+          "PI_MOVRUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_MOVRUSD",
+        "volume24h": 672939.8
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.5319,
+      "bid": 1.5229,
+      "last": 1.529,
+      "spread_pct": 0.5892366112347858
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "6",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.303946051257753,
+          "ret3h_pct": 0.24772233451579861
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.386272783565067,
+          "ret3h_pct": 0.17919400822683507
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -1.0472686102462436,
+          "ret3h_pct": 0.2772731618701618
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          },
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T18:19:08.538830Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-30T18:19:22.124667Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_067f94e935f0a024006abd529e19c087d1a79ea047b950951c"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.5319,
+    "bid": 1.5229,
+    "last": 1.529,
+    "spread_pct": 0.5892366112347858
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "MOVR/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36757489966:MOVR-EUR:1790792335",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "4f9c943330d623a7dc26192890757dbea36b0a45",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-30T18:18:55Z",
+    "candidate_detected_ts": 1790792335,
+    "candidate_snapshot_at_utc": "2026-09-30T18:18:55Z",
+    "detected_to_evaluation_complete_seconds": 27.125,
+    "detected_to_evaluation_start_seconds": 13.298,
+    "evaluation_completed_at_utc": "2026-09-30T18:19:22.124667Z",
+    "evaluation_runtime_seconds": 13.826,
+    "evaluation_started_at_utc": "2026-09-30T18:19:08.298344Z",
+    "handoff_to_evaluation_start_seconds": 11.625,
+    "handoff_written_at_utc": "2026-09-30T18:18:56.673460Z",
+    "scan_step_started_at_utc": "2026-09-30T18:17:24Z"
+  }
+}
