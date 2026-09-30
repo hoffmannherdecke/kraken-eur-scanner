@@ -37,23 +37,44 @@ jobs:
 
           spec=json.load(open("research/v2r4/paper_strategy_spec_v2r4_proposed.json"))
           control={"series_id":"V2R4-MODEL-CONTRACT-SMOKE"}
-          current={"bid":1.0000,"ask":1.0010,"last":1.0005,"spread_pct":0.09995}
-          candidate={
-            "candidate_id":"V2R4-MODEL-CONTRACT-SYNTHETIC",
-            "pair":"BTC/EUR",
-            "altname":"XXBTZEUR",
-            "action":"REVIEW_ONLY_NOT_ORDER",
-            "scanner_candidate":{
-              "score":8.2,"ret15_live":0.2,"ret1h":1.1,"ret3h":2.2,
-              "volume_ratio_closed":0.9,"higher_lows":True,"late":False,
-              "spread_pct":0.10,"turnover24h":10000000
+          scenarios=[
+            {
+              "name":"baseline",
+              "current":{"bid":1.0000,"ask":1.0010,"last":1.0005,"spread_pct":0.09995},
+              "candidate":{
+                "candidate_id":"V2R4-MODEL-CONTRACT-BASELINE",
+                "pair":"BTC/EUR","altname":"XXBTZEUR","action":"REVIEW_ONLY_NOT_ORDER",
+                "scanner_candidate":{
+                  "score":8.2,"ret15_live":0.2,"ret1h":1.1,"ret3h":2.2,
+                  "volume_ratio_closed":0.9,"higher_lows":True,"late":False,
+                  "spread_pct":0.10,"turnover24h":10000000
+                },
+                "scanner_market_context":{
+                  "resistance_1h":1.0030,"resistance_3h":1.0040,
+                  "support_1h":0.9950,"atr15_eur":0.0020
+                },
+                "scanner_market_breadth":{"positive_1h_count":25,"positive_3h_count":18}
+              }
             },
-            "scanner_market_context":{
-              "resistance_1h":1.0030,"resistance_3h":1.0040,
-              "support_1h":0.9950,"atr15_eur":0.0020
-            },
-            "scanner_market_breadth":{"positive_1h_count":25,"positive_3h_count":18}
-          }
+            {
+              "name":"near_breakout",
+              "current":{"bid":10.000,"ask":10.010,"last":10.005,"spread_pct":0.09995},
+              "candidate":{
+                "candidate_id":"V2R4-MODEL-CONTRACT-NEAR-BREAKOUT",
+                "pair":"BTC/EUR","altname":"XXBTZEUR","action":"REVIEW_ONLY_NOT_ORDER",
+                "scanner_candidate":{
+                  "score":11.4,"ret15_live":0.65,"ret1h":3.1,"ret3h":5.2,
+                  "volume_ratio_closed":1.25,"higher_lows":True,"late":False,
+                  "breakout3h":False,"spread_pct":0.10,"turnover24h":15000000
+                },
+                "scanner_market_context":{
+                  "resistance_1h":10.050,"resistance_3h":10.080,
+                  "support_1h":9.820,"support_3h":9.700,"atr15_eur":0.080
+                },
+                "scanner_market_breadth":{"positive_1h_count":38,"positive_3h_count":31}
+              }
+            }
+          ]
           external={
             "kraken_pair_metadata":{
               "available":True,"status":"online","ordermin":"0.0001","costmin":"0.45"
@@ -63,38 +84,56 @@ jobs:
               "reason":"No private Kraken trading credential is used by paper infrastructure."
             },
             "major_market_regime":{
-              "available_assets":3,"positive_1h_count":2,"positive_3h_count":2
+              "available_assets":3,"positive_1h_count":3,"positive_3h_count":3
             },
             "derivatives":{
-              "available":False,
-              "note":"Not supplied in this synthetic contract smoke."
+              "available":True,
+              "kraken_futures":{
+                "available":True,"funding_rate":0.00001,"open_interest":1000000
+              },
+              "delta_vs_previous_series_observation":{
+                "available":True,"open_interest_pct":1.2,"funding_rate_delta":0.0
+              }
             },
             "official_headlines":{"scope_note":"No coin-specific catalyst supplied."},
             "onchain":{"available":False,"reason":"not supplied"}
           }
 
-          raw,meta=call_evaluator(candidate,current,external,spec,control)
-          normalized=fail_safe_normalize(raw,current)
-          common_validate(normalized)
+          results=[]
+          wait_count=0
+          for scenario in scenarios:
+              current=scenario["current"]
+              candidate=scenario["candidate"]
+              raw,meta=call_evaluator(candidate,current,external,spec,control)
+              normalized=fail_safe_normalize(raw,current)
+              common_validate(normalized)
 
-          plan=None
-          if normalized["decision"]=="WAIT":
-              plan=build_wait_trigger_plan(
-                  candidate,normalized,datetime.now(timezone.utc)
-              )
-              assert plan["on_match"]=="FRESH_PAPER_RECHECK_ONLY"
-              assert plan["paper_only"] is True
-              assert 1 <= len(plan["conditions"]) <= 6
-          else:
-              assert normalized["watch_conditions"]==[]
+              plan=None
+              if normalized["decision"]=="WAIT":
+                  plan=build_wait_trigger_plan(
+                      candidate,normalized,datetime.now(timezone.utc)
+                  )
+                  assert plan["on_match"]=="FRESH_PAPER_RECHECK_ONLY"
+                  assert plan["paper_only"] is True
+                  assert 1 <= len(plan["conditions"]) <= 6
+                  wait_count += 1
+              else:
+                  assert normalized["watch_conditions"]==[]
 
+              results.append({
+                  "scenario":scenario["name"],
+                  "decision":normalized["decision"],
+                  "setup_lane":normalized["setup_lane"],
+                  "watch_condition_count":len(normalized["watch_conditions"]),
+                  "plan_created":plan is not None,
+                  "model":meta.get("model"),
+                  "response_id":meta.get("response_id"),
+              })
+
+          assert wait_count >= 1, "contract smoke did not exercise an actual WAIT output"
           print("V2R4_MODEL_CONTRACT_SMOKE_OK",json.dumps({
-              "decision":normalized["decision"],
-              "setup_lane":normalized["setup_lane"],
-              "watch_condition_count":len(normalized["watch_conditions"]),
-              "plan_created":plan is not None,
-              "model":meta.get("model"),
-              "response_id":meta.get("response_id"),
+              "results":results,
+              "wait_count":wait_count,
               "real_money_actions":False
           },sort_keys=True))
           PY
