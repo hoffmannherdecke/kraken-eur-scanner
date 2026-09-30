@@ -4,6 +4,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+if ($Seconds -lt 10 -or $Seconds -gt 120) { throw "Seconds must be between 10 and 120" }
 
 $repo = Join-Path $TradingRoot "Repos\kraken-eur-scanner"
 $python = Join-Path $TradingRoot "Runtime\kraken-eur-scanner-venv\Scripts\python.exe"
