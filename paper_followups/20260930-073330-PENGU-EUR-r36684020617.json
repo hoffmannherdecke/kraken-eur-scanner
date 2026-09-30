@@ -3,7 +3,16 @@
   "candidate_id": "20260930-073330-PENGU-EUR-r36684020617",
   "evaluated_at_utc": "2026-09-30T07:34:15.125014Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.046,
+      "expected_bars": 30,
+      "mae_pct": -0.046,
+      "mfe_pct": 0.933
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -55,7 +64,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T08:05:36.577190Z"
+    "updated_at_utc": "2026-09-30T08:20:24.414680Z"
   },
   "original_decision": "WAIT",
   "pair": "PENGU/EUR",
@@ -64,5 +73,6 @@
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-30T08:20:24.576905Z"
 }
