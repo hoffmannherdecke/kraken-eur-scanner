@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.34145,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -1.278,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -3.494,
+        "mfe_pct": 6.684,
+        "peak_at_utc": "2026-09-29T15:15:00Z",
+        "trough_at_utc": "2026-09-30T00:20:00Z"
+      },
       "15": {
         "bars": 0,
         "complete": false,
@@ -96,6 +107,11 @@
         "trough_at_utc": "2026-09-29T04:05:00Z"
       }
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "extended_after_15pct_24h_move",
@@ -115,7 +131,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T03:29:04.180552Z"
+    "updated_at_utc": "2026-09-30T03:34:20.613778Z"
   },
   "original_decision": "WAIT",
   "pair": "CRV/EUR",
