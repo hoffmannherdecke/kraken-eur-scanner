@@ -25,6 +25,8 @@ jobs:
       - name: Compile V2R4 Python sources
         run: |
           python -m py_compile \
+            paper_evaluator/evaluate.py \
+            paper_evaluator/revalidate.py \
             paper_evaluator/v2r4_trigger_contract.py \
             paper_evaluator/v2r4_trigger_plan.py \
             paper_evaluator/v2r4_wait_watcher.py \
@@ -33,7 +35,7 @@ jobs:
 
       - name: Run V2R4 unit tests
         run: |
-          python -m unittest             tests.test_v2r4_trigger_contract             tests.test_v2r4_trigger_plan             tests.test_v2r4_precandidate_discovery             tests.test_v2r4_precandidate_watcher             tests.test_v2r4_tradability_policy -v
+          python -m unittest             tests.test_v2r4_trigger_contract             tests.test_v2r4_trigger_plan             tests.test_v2r4_precandidate_discovery             tests.test_v2r4_precandidate_watcher             tests.test_v2r4_tradability_policy             tests.test_v2r4_evaluator_watch_conditions -v
 
       - name: Harmless live Kraken WAIT watcher smoke
         shell: bash
