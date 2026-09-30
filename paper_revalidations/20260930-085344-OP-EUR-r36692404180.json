@@ -1,0 +1,224 @@
+{
+  "altname": "OPEUR",
+  "candidate_id": "20260930-085344-OP-EUR-r36692404180",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A renewed-volume 15-minute close holding above 0.1175",
+      "Continued OP strength while BTC/EUR and ETH/EUR remain stable"
+    ],
+    "reason_codes": [
+      "breakout_follow_through_unconfirmed",
+      "volume_faded",
+      "entry_efficiency_poor",
+      "remaining_move_vs_costs_unproven",
+      "derivatives_oi_flat"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "OP has moved above nearby resistance, but follow-through is unconfirmed: recent candle volume faded and the latest candle has no trades. Positive major-market returns do not offset the weak continuation evidence or establish enough remaining movement to clear Kraken\u2019s 1.20% round-trip taker fees plus spread and slippage.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "OPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 0.39,
+        "available": true,
+        "current_funding_rate": -9.272316219208e-06,
+        "current_open_interest": 4633381.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 0.0,
+        "previous_funding_rate": -9.272316219208e-06,
+        "previous_observed_at_utc": "2026-09-30T09:29:40.722915Z",
+        "previous_open_interest": 4633381.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -9.272316219208e-06,
+        "index_price": 0.13366,
+        "last": 0.1335,
+        "mark_price": 0.13365512117,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4633381.0,
+        "requested_symbols": [
+          "PF_OPUSD",
+          "PI_OPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_OPUSD",
+        "volume24h": 2204843
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.1177,
+      "bid": 0.1176,
+      "last": 0.117,
+      "spread_pct": 0.0849978750531261
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "50",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2845762149451758,
+          "ret3h_pct": 0.3085467026888278
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.5734291317313067,
+          "ret3h_pct": 0.709234963366856
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.6337622431342282,
+          "ret3h_pct": 0.3639149588201551
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T09:30:02.526575Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_017336b90d0a6fc7006abcd69bf92887d0af3e40e799f3dd8b"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.1177,
+    "bid": 0.1176,
+    "last": 0.117,
+    "spread_pct": 0.0849978750531261
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.1159,
+      "high": 0.116,
+      "low": 0.1153,
+      "open": 0.1156,
+      "trades": 15,
+      "ts": 1790757000,
+      "volume": 10825.42248,
+      "vwap": 0.1157
+    },
+    {
+      "close": 0.1168,
+      "high": 0.1171,
+      "low": 0.1156,
+      "open": 0.1158,
+      "trades": 44,
+      "ts": 1790757900,
+      "volume": 42279.99911,
+      "vwap": 0.1163
+    },
+    {
+      "close": 0.1174,
+      "high": 0.1175,
+      "low": 0.1167,
+      "open": 0.1167,
+      "trades": 8,
+      "ts": 1790758800,
+      "volume": 5487.46511,
+      "vwap": 0.1168
+    },
+    {
+      "close": 0.117,
+      "high": 0.1173,
+      "low": 0.117,
+      "open": 0.1173,
+      "trades": 17,
+      "ts": 1790759700,
+      "volume": 6661.74254,
+      "vwap": 0.1172
+    },
+    {
+      "close": 0.117,
+      "high": 0.117,
+      "low": 0.117,
+      "open": 0.117,
+      "trades": 0,
+      "ts": 1790760600,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "OP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-085344-OP-EUR-r36692404180.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T09:30:11.770544Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "d26516cf97702c6d3b7c85ea851112f8fa9d4e55",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T09:30:11.770544Z",
+    "revalidation_started_at_utc": "2026-09-30T09:30:02.059344Z",
+    "ttl_due_at_utc": "2026-09-30T09:24:47.399478Z",
+    "ttl_lag_seconds": 314.66
+  }
+}
