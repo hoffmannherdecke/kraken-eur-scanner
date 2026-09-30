@@ -65,6 +65,18 @@ Pflicht für Auswertung und nächste Version:
 | Slack Push | bestehender Pfad, echter iPhone-Push noch E2E nachzuweisen | OPEN | nur handlungs-/fehlerrelevante Pushs |
 | ChatGPT Desktop/Work | Installation geplant; Work sparsam | PLANNED | Work nur bei echtem Desktop-/Browsermehrwert |
 
+## Kraken-Handelbarkeit / Market-Universe
+
+Verbindliche Datenqualitätsregel ab 2026-09-30:
+
+- Operative Quelle der Wahrheit ist die **aktuelle öffentliche Kraken-`AssetPairs`-Antwort**, nicht Chat-Memory und keine statische Whitelist.
+- Für den aktiven Scanner wird der aktuelle Kraken-Spot-EUR-Universe bereits pro Lauf geladen und auf `online` gefiltert.
+- Für V2R4 gilt dieselbe Regel: Live-Abgleich je Watcher-Zyklus; nur `online` Spot-EUR-Paare; Symbolauflösung über Kraken-Metadaten (`wsname`, `altname`, Pair-Key).
+- Der frühere 14-Tage-Abgleich bleibt höchstens als **Integritäts-/Listing-/Alias-Audit** bestehen. Er ist nicht die operative Entscheidung, ob ein Coin auf Kraken handelbar ist.
+- Bei manuellen/Chat-Analysen eines konkreten Coins muss vor einer Aussage „nicht auf Kraken handelbar“ der aktuelle Kraken-Universe-Stand geprüft werden.
+- Anlass/Korrekturfall: KSM/TRAC am 2026-09-30. Beide dürfen nicht wegen eines veralteten oder nicht konsultierten Chat-Kontexts übersehen werden.
+- Diese Regel ist Infrastruktur-/Datenqualitätslogik und verändert die eingefrorenen V2R3-Entry-/Stop-/Sizing-/Scoring-Regeln nicht.
+
 ## GitHub
 
 Aktuell verbundene Repositories:
