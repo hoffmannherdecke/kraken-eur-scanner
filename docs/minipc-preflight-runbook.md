@@ -337,3 +337,18 @@ Speicherrolle vorerst:
 - D: ist als **Bulk-/Archiv-/Capture-/sekundäre Backup-Fläche** vorgesehen.
 - Keine aktiven Secrets, keine primäre Runtime und kein alleiniger State auf D:, solange Mount-/Wiederanlauf-/Ausfallverhalten der externen Platte nicht separat verifiziert wurde.
 
+### Post-recovery local findings 2026-09-30
+
+After the successful physical power-loss recovery test:
+- all 3 local `CryptoMiniPC-*` scheduled tasks were present;
+- `CryptoMiniPC-Health` had run since the cold boot;
+- watchdog state was fresh after boot;
+- external drive `D:` / `MISTRAL_450` remounted automatically;
+- physical Toshiba USB disk reported `Healthy`;
+- reversible write/read/delete smoke on `D:` passed;
+- FAT32 volume itself reported `Warning` and read-only `chkdsk D:` found filesystem errors / lost chains. No repair has been authorized yet.
+- watchdog warning source was not network/runtime health: Git under the SYSTEM scheduled-task account rejected the ADMIN-owned working tree as `dubious ownership`.
+- watchdog Git checks were patched to use a per-command `safe.directory` override. No global Git configuration mutation is used.
+
+Open local action: finish the non-destructive CHKDSK diagnostic (answer `N` to converting lost chains to files), then decide whether to repair/reformat the external FAT32 volume only after considering any data that must be preserved.
+
