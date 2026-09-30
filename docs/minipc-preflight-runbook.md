@@ -590,3 +590,26 @@ Fix:
 
 This closes the Supabase persistence gap as an infrastructure issue; it does not change strategy behavior.
 
+### Canonical remaining local core gate prepared 2026-09-30
+
+To minimize further user interaction, the remaining physical V2R4 + secret-preparation steps are now bundled in:
+
+`tools/minipc-local-core-gate.ps1`
+
+Sequence:
+1. run the isolated V2R4 MINI-PC preflight against the real local Kraken canary/runtime;
+2. securely provision a local OpenAI API key only if `Trading\Secrets\openai-api-key.txt` is still missing (hidden input, restricted ACL, never printed);
+3. run the exact physical trigger -> fresh paper recheck E2E through the real evaluator;
+4. only if all prior steps pass, prepare the Altrady relay token locally and copy it to the Windows clipboard without printing it.
+
+Safety:
+- no exchange account access;
+- no order API;
+- no real-money action;
+- V2R4 remains prep/paper-only;
+- Altrady token is generated only after the physical V2R4 E2E passes.
+
+The old `tools/minipc-next-user-step.ps1` now delegates to this canonical gate to avoid two competing local sequences.
+
+Windows PowerShell parsing is green. The only unavoidable user inputs are the actual local OpenAI API key (if not already provisioned) and the later one-time Supabase Edge Function secret entry for `ALTRADY_WEBHOOK_TOKEN`.
+
