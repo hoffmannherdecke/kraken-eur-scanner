@@ -21,7 +21,7 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 |---|---|---|---|
 | Strategie | `V2R3-2026-09-28` | ACTIVE / PAPER / FROZEN | Aktive Vergleichsbasis; Regeln während Serie nicht ändern |
 | Paper-Serie | `PAPER-V2R3-FINAL-20260928T1752Z` | ACTIVE | Aktuelle homogene V2R3-Serie; vollständige Abschlussauswertung vor V2R4-Go-live |
-| Strategie | V2R4 | PREPARED / NOT ACTIVE / PAPER ONLY / VALIDATION GREEN | Draft-PR #8; live Kraken tradability policy + structured WAIT trigger contract + compile/unit/live-public-smokes green; isolated MINI-PC preflight bundle prepared; weiterhin nicht aktiviert/nicht gemergt |
+| Strategie | V2R4 | PREPARED / NOT ACTIVE / WINDOWS E2E GREEN | Draft-PR #8; compile/unit/live evaluator/model-contract/public Kraken + exact Windows trigger→fresh-recheck gate green; physical MINI-PC E2E + local OpenAI secret + Altrady secret/E2E still pending |
 | Strategie | V3 | ACTIVE RESEARCH / NOT ACTIVE TRADING | Integrierter Nachfolger; Issue #7 + `docs/v3-research-framework.md` |
 
 ### Release-Gate V2R3 → V2R4
@@ -63,6 +63,7 @@ Pflicht für Auswertung und nächste Version:
 | Externer Datenträger | `D:` / `Mistral_450`, ~304 GB frei | ATTACHED / DEFERRED TO FINAL RUNBOOK PHASE | physische Platte Healthy, FAT32-Volume mit logischen Fehlern; wichtige Altdateien vorhanden; Sicherung/Reparatur bewusst erst ganz am Ende, bis dahin keine aktive Projektablage |
 | Kraken local realtime data | Public WebSocket v2 book + trades via isolated venv | ACTIVE / SMOKE VERIFIED | 45s local smoke: 1544 verified book events, 103 trades, 0 gaps, 0 subscription errors; public/read-only only |
 | Kraken runtime canary | continuous BTC/EUR public WebSocket heartbeat | ACTIVE / LOCAL+CI VERIFIED | SYSTEM startup task running; heartbeat HEALTHY; watchdog check HEALTHY; 0 gaps / 0 subscription errors at activation; transport-only, no account/order/strategy action |
+| V2R4 local recheck gate | deterministic trigger → fresh paper evaluator recheck | WINDOWS-CI E2E VERIFIED / PHYSICAL MINI-PC PENDING | exact Windows gate passed: trigger→recheck start 0.256 s, evaluator 12.232 s, no order API/real money; local OpenAI key + physical E2E still required |
 | Altrady | zusätzlicher Echtzeit-Trigger | RELAY DEPLOYED / NOT ACTIVE | Supabase-Eventtabelle + Edge Function `altrady-trigger-relay` v1 ACTIVE + MINI-PC-Poller/Task-Installer vorbereitet und CI-geprüft; niemals alleiniger Trigger/SPOF; gemeinsames Relay-Secret + E2E-Smoke noch offen |
 | Kraken realtime | Public REST/WebSocket lokal | SMOKE VERIFIED / CONTINUOUS DAEMON PENDING | primäre Marktwahrheit; 45s WS-Smoke ohne Gap/Subscription-Fehler bestanden |
 | GitHub Cloudpfad | bestehend | ACTIVE | unabhängiger Fallback bleibt erhalten |
