@@ -24,8 +24,18 @@ if ((Test-Path $keyFile) -and -not $Rotate) {
 
 $key = $null
 if ($FromClipboard) {
-  $key = (Get-Clipboard -Raw).Trim()
-  if (-not $key) { throw "Clipboard does not contain a key." }
+  $raw = (Get-Clipboard -Raw)
+  if (-not $raw) { throw "Clipboard does not contain a key." }
+
+  # Accept a bare OpenAI key or a clipboard value that contains surrounding
+  # text such as OPENAI_API_KEY=...; store only the single sk-* token.
+  $clean = $raw.Replace([char]0xFEFF,'').Replace([char]0x200B,'').Trim()
+  $matches = [regex]::Matches($clean, 'sk-[A-Za-z0-9_-]{20,}')
+  $unique = @($matches | ForEach-Object { $_.Value } | Select-Object -Unique)
+  if ($unique.Count -ne 1) {
+    throw "Clipboard must contain exactly one OpenAI API key beginning with sk-. Copy the secret key again from the OpenAI API Keys page."
+  }
+  $key = $unique[0]
 } else {
   $secure = Read-Host "OpenAI API key (input hidden)" -AsSecureString
   $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
@@ -38,6 +48,9 @@ if ($FromClipboard) {
 
 if (-not $key -or $key.Length -lt 20) {
   throw "OpenAI API key is empty/too short."
+}
+if (-not $key.StartsWith("sk-")) {
+  throw "OpenAI API key has an unexpected format. Expected a secret key beginning with sk-."
 }
 
 [System.IO.File]::WriteAllText(
