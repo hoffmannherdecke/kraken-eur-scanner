@@ -304,3 +304,15 @@ The bundle printed `Status: REVIEW` solely because one freshly installed schedul
 
 Operational conclusion: the actual machine, isolated Python runtime and Kraken public realtime market-data path are healthy enough to proceed. A re-run is not required solely to clear this false-positive review.
 
+### Supabase archive sync activated 2026-09-30
+
+Verified end-to-end after adding the repository secret `SUPABASE_SECRET_KEY`:
+- GitHub workflow `Supabase paper archive sync` run #5 completed successfully.
+- Credential check reported configured.
+- `supabase_sync.py` archived the active series `PAPER-V2R3-FINAL-20260928T1752Z`.
+- Run output: **551 candidate rows**, **0 trade rows**.
+- Direct database verification after the run: **4 paper_series**, **554 paper_candidate_outcomes**, **0 paper_trade_results** total.
+- Secret value remains only in GitHub Actions secrets and is masked in logs.
+
+The Supabase archive path is now operational and remains secondary/fail-soft: archive failure must not block scanner or paper evaluation.
+
