@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-09-29T21:56:00Z",
         "trough_at_utc": "2026-09-29T21:54:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 0.809,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.704,
+        "mfe_pct": 0.809,
+        "peak_at_utc": "2026-09-30T01:23:00Z",
+        "trough_at_utc": "2026-09-29T21:54:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -88,7 +99,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T01:52:03.957079Z"
+    "updated_at_utc": "2026-09-30T02:05:13.239911Z"
   },
   "original_decision": "WAIT",
   "pair": "SYRUP/EUR",

@@ -34,6 +34,17 @@
         "mfe_pct": 0.0,
         "peak_at_utc": "2026-09-30T01:04:00Z",
         "trough_at_utc": "2026-09-30T01:10:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": 0.0,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -0.443,
+        "mfe_pct": 0.122,
+        "peak_at_utc": "2026-09-30T01:54:00Z",
+        "trough_at_utc": "2026-09-30T01:30:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -62,7 +73,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T01:52:05.103909Z"
+    "updated_at_utc": "2026-09-30T02:05:14.835374Z"
   },
   "original_decision": "WAIT",
   "pair": "SEI/EUR",
