@@ -1,0 +1,190 @@
+{
+  "altname": "KSMEUR",
+  "candidate_age_seconds": 663,
+  "candidate_event_time_utc": "2026-09-30T21:03:32Z",
+  "candidate_id": "20260930-210332-KSM-EUR-r36776331628",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above \u20ac4.56 followed by a hold above that level with stronger closed volume."
+    ],
+    "reason_codes": [
+      "extended_7d_30d_run",
+      "near_resistance",
+      "round_trip_fees_and_spread_require_more_edge",
+      "mixed_major_market_regime",
+      "candidate_snapshot_aged"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "KSM is near 1h/3h resistance after a sharp multi-day advance; wait for a confirmed hold above resistance before reassessing net edge after costs.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "KSMUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 60.13,
+        "available": true,
+        "current_funding_rate": -0.00262162480470875,
+        "current_open_interest": 4953.56,
+        "funding_rate_delta": -3.1735606441252e-05,
+        "open_interest_pct": 0.0,
+        "previous_funding_rate": -0.002589889198267498,
+        "previous_observed_at_utc": "2026-09-30T20:14:28.707194Z",
+        "previous_open_interest": 4953.56
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.00262162480470875,
+        "index_price": 5.1417,
+        "last": 5.186,
+        "mark_price": 5.12775655193,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4953.56,
+        "requested_symbols": [
+          "PF_KSMUSD",
+          "PI_KSMUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_KSMUSD",
+        "volume24h": 2808.12
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 4.54,
+      "bid": 4.53,
+      "last": 4.55,
+      "spread_pct": 0.220507166482906
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "1.4",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.04202113527551621,
+          "ret3h_pct": -0.4139781028792311
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.428669046275032,
+          "ret3h_pct": 0.02028954876889255
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.6965270387926825,
+          "ret3h_pct": -0.9704119493863517
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T21:14:35.160437Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-30T21:14:48.726212Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0bd0df28dc900905006abd7bbcb2c887d0b0419c583e4c2bda"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 4.54,
+    "bid": 4.53,
+    "last": 4.55,
+    "spread_pct": 0.220507166482906
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "KSM/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36776331628:KSM-EUR:1790802212",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "f3c137d4e92232053f0a72d1f4f44e35d88c773f",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-30T21:03:32Z",
+    "candidate_detected_ts": 1790802212,
+    "candidate_snapshot_at_utc": "2026-09-30T21:03:32Z",
+    "detected_to_evaluation_complete_seconds": 676.726,
+    "detected_to_evaluation_start_seconds": 662.952,
+    "evaluation_completed_at_utc": "2026-09-30T21:14:48.726212Z",
+    "evaluation_runtime_seconds": 13.775,
+    "evaluation_started_at_utc": "2026-09-30T21:14:34.951537Z",
+    "handoff_to_evaluation_start_seconds": 660.846,
+    "handoff_written_at_utc": "2026-09-30T21:03:34.105639Z",
+    "scan_step_started_at_utc": "2026-09-30T20:58:35Z"
+  }
+}

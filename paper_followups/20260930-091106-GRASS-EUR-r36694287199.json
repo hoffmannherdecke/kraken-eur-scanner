@@ -80,6 +80,17 @@
         "mfe_pct": 0.598,
         "peak_at_utc": "2026-09-30T09:37:00Z",
         "trough_at_utc": "2026-09-30T10:00:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -4.203,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -5.809,
+        "mfe_pct": 3.747,
+        "peak_at_utc": "2026-09-30T13:25:00Z",
+        "trough_at_utc": "2026-09-30T19:50:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -107,7 +118,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T20:49:06.719689Z"
+    "updated_at_utc": "2026-09-30T21:16:45.369870Z"
   },
   "original_decision": "REJECT",
   "pair": "GRASS/EUR",

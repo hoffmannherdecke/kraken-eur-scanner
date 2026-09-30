@@ -3,7 +3,16 @@
   "candidate_id": "20260930-201833-CRV-EUR-r36771498699",
   "evaluated_at_utc": "2026-09-30T20:19:07.014773Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.288,
+      "expected_bars": 30,
+      "mae_pct": -0.446,
+      "mfe_pct": 0.291
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -53,12 +62,15 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T20:49:10.658805Z"
+    "updated_at_utc": "2026-09-30T21:16:53.080764Z"
   },
   "original_decision": "WAIT",
   "pair": "CRV/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-30T21:15:52.204168Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-09-30T21:16:53.264113Z"
 }
