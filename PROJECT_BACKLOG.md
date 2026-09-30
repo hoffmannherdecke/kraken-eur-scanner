@@ -66,7 +66,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 ## P2 — Lokaler Runtime-/Watchdog-/Recovery-Layer
 
-- [ ] Lokalen Prozess-Supervisor/Watchdog vervollständigen: Basis-Watchdog/Tasks sind aktiv; kontinuierlicher Kraken-Canary-Prozess + Heartbeat/Self-Heal sind vorbereitet und lokal noch einmalig zu aktivieren; danach Queue-/Runtime-Wirkung ergänzen.
+- [ ] Lokalen Prozess-Supervisor/Watchdog vervollständigen: Basis-Watchdog/Tasks sind aktiv; kontinuierlicher Kraken-Canary-Prozess + Heartbeat/Task-Restart sind lokal aktiviert und HEALTHY. Offen bleiben Queue-/Runtime-Wirkung, Internet-Recovery/Reconciliation und später der konkrete Strategie-/Watcher-Prozess.
 - [ ] Watchdog muss auch „grün aber wirkungslos“ erkennen, nicht nur Prozessstatus.
 - [ ] Täglichen sehr kurzen **10:00-Systemstatus** später lokal/GitHub-basiert erzeugen: tatsächliche End-to-End-Gesundheit statt nur „Workflow aktiv“; Work dafür nicht als Dauerlösung verwenden.
 - [ ] Uptime Kuma als kostenlose, unabhängige Health-Schicht prüfen/einrichten, sofern es echten Zusatznutzen liefert.
