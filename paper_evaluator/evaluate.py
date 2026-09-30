@@ -272,7 +272,7 @@ expected_remaining_move_pct: number or null
 risk_reward_after_costs: number or null
 stage2_trigger_eur: number or null
 stage2_ttl_minutes: integer 0..60
-watch_conditions: array of 0..6 objects, each exactly {"metric": string, "op": string, "value": number}
+watch_conditions: array of 0..6 objects, each exactly {{"metric": string, "op": string, "value": number}}
 """
     payload={"model":MODEL,"input":prompt,"max_output_tokens":1700}
     body=json.dumps(payload).encode()
