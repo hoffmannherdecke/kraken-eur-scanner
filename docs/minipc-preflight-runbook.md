@@ -460,3 +460,26 @@ Autonomous infrastructure step completed after the Kraken canary activation:
 
 The MINI-PC poller/task installer and transport CI remain prepared. User interaction is not needed again until the shared secret is actually configured.
 
+### V2R4 MINI-PC preflight smoke prepared 2026-09-30
+
+A single isolated local smoke bundle is prepared as `tools/minipc-v2r4-preflight-smoke.ps1`.
+
+It does not modify the active V2R3 series:
+- verifies the already-running local Kraken canary is fresh/HEALTHY;
+- fetches the V2R4 prep branch into a temporary Git worktree;
+- compiles evaluator + V2R4 trigger/discovery modules;
+- runs deterministic V2R4 tests;
+- builds a harmless synthetic BTC/EUR WAIT trigger plan;
+- runs the live public Kraken WAIT watcher once and verifies the receipt can only request `FRESH_PAPER_RECHECK_ONLY`;
+- runs one broad live Kraken EUR pre-candidate discovery cycle using current public `AssetPairs`;
+- removes the temporary worktree/evidence afterward.
+
+Guardrails:
+- paper/shadow only;
+- no private Kraken account;
+- no order endpoint;
+- no strategy activation;
+- no changes to V2R3 runtime state.
+
+The script passes Windows PowerShell parse CI. Actual MINI-PC execution is the next local-only preflight evidence point.
+
