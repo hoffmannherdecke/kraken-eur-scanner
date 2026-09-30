@@ -110,7 +110,10 @@
     "missing_data_behavior": "EXPLICITLY_MISSING_NO_FABRICATION",
     "late_chase_protection": true,
     "cost_adjusted_edge_required": true,
-    "structural_stop_required_before_buy_scout": true
+    "structural_stop_required_before_buy_scout": true,
+    "account_private_tradability_role": "NOT_REQUIRED_NOT_NEGATIVE_WHEN_PUBLIC_KRAKEN_PAIR_IS_ONLINE",
+    "kraken_tradability_source": "LIVE_PUBLIC_ASSETPAIRS_ONLINE_SPOT_EUR",
+    "static_pair_blacklist_allowed": false
   },
   "exit": {
     "initial_stop_from_evaluator": true,
@@ -167,7 +170,9 @@
       "pnl_by_liquidity_class"
     ],
     "discovery_examples_are_not_holdout_validation": true,
-    "candidate_reviews_do_not_count_as_completed_trades": true
+    "candidate_reviews_do_not_count_as_completed_trades": true,
+    "reason_code_taxonomy_normalization_required": true,
+    "classify_tradability_data_errors_separately_from_strategy_rejections": true
   },
   "activation_gates": {
     "v2r3_must_remain_unchanged": true,
