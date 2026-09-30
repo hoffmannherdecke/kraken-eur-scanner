@@ -1,0 +1,224 @@
+{
+  "altname": "INJEUR",
+  "candidate_id": "20260930-014834-INJ-EUR-r36656679112",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close and hold above 6.90 with renewed live volume.",
+      "Follow-through above resistance with enough remaining upside to clear fees, spread, and slippage."
+    ],
+    "reason_codes": [
+      "resistance_unconfirmed",
+      "no_live_volume_confirmation",
+      "price_below_resistance",
+      "round_trip_costs",
+      "mixed_major_regime"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Revalidation shows no confirmed reclaim of 6.90: the latest supplied close is 6.75 on only 2 trades, and the ask remains below 1h/3h resistance. No evidenced scout entry or concrete confirmation plan supports BUY_SCOUT.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "INJUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 33.15,
+        "available": true,
+        "current_funding_rate": -3.0206575845836e-05,
+        "current_open_interest": 146882.6,
+        "funding_rate_delta": 5.270812253541401e-05,
+        "open_interest_pct": -0.0067,
+        "previous_funding_rate": -8.291469838125e-05,
+        "previous_observed_at_utc": "2026-09-30T01:49:51.256890Z",
+        "previous_open_interest": 146892.5
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -3.0206575845836e-05,
+        "index_price": 7.6716,
+        "last": 7.669,
+        "mark_price": 7.67175093558,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 146882.6,
+        "requested_symbols": [
+          "PF_INJUSD",
+          "PI_INJUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_INJUSD",
+        "volume24h": 311880.6
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 6.776,
+      "bid": 6.761,
+      "last": 6.75,
+      "spread_pct": 0.22161483341951216
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "1",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.06877719315654396,
+          "ret3h_pct": -0.39263066605151886
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.07674434381466089,
+          "ret3h_pct": -0.5292903541686877
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4471080669710803,
+          "ret3h_pct": 0.1327643432906589
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T02:22:58.502377Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0e58bdea99da8f26006abc7284d61c87d2bf13d06154512835"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 6.776,
+    "bid": 6.761,
+    "last": 6.75,
+    "spread_pct": 0.22161483341951216
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 6.859,
+      "high": 6.859,
+      "low": 6.831,
+      "open": 6.832,
+      "trades": 6,
+      "ts": 1790730900,
+      "volume": 217.83185539,
+      "vwap": 6.845
+    },
+    {
+      "close": 6.849,
+      "high": 6.849,
+      "low": 6.831,
+      "open": 6.837,
+      "trades": 6,
+      "ts": 1790731800,
+      "volume": 309.96625768,
+      "vwap": 6.835
+    },
+    {
+      "close": 6.847,
+      "high": 6.847,
+      "low": 6.847,
+      "open": 6.847,
+      "trades": 3,
+      "ts": 1790732700,
+      "volume": 36.5123,
+      "vwap": 6.847
+    },
+    {
+      "close": 6.847,
+      "high": 6.847,
+      "low": 6.847,
+      "open": 6.847,
+      "trades": 0,
+      "ts": 1790733600,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 6.75,
+      "high": 6.753,
+      "low": 6.75,
+      "open": 6.753,
+      "trades": 2,
+      "ts": 1790734500,
+      "volume": 69.0,
+      "vwap": 6.751
+    }
+  ],
+  "pair": "INJ/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-014834-INJ-EUR-r36656679112.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T02:23:05.512627Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "37f200fd758121e3e19262fe2f86058b5ad24e9e",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T02:23:05.512627Z",
+    "revalidation_started_at_utc": "2026-09-30T02:22:58.226538Z",
+    "ttl_due_at_utc": "2026-09-30T02:19:51.256890Z",
+    "ttl_lag_seconds": 186.97
+  }
+}

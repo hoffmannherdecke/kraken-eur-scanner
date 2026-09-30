@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-09-30T02:03:58.077044Z",
     "evaluation_ask_eur": 0.3438,
     "flagged_as_already_run": true,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.956,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -1.136,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-09-30T02:04:00Z",
+        "trough_at_utc": "2026-09-30T02:12:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-09-30T00:20:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -40,7 +52,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T02:15:06.469967Z"
+    "updated_at_utc": "2026-09-30T02:23:46.582427Z"
   },
   "original_decision": "WAIT",
   "pair": "CRV/EUR",
