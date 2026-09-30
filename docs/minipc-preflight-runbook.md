@@ -151,7 +151,7 @@ Erster realer Aufbau des Dell OptiPlex 5060 Micro:
 - Windows Remotedesktop aktiviert; interner RDP-Test auf `192.168.178.179` erfolgreich.
 - FRITZ!Box-WireGuard-Konfiguration auf dem Notebook eingerichtet; echter Außentest via Mobilfunk/iPhone-Hotspot noch offen.
 - Windows-Energie: Bildschirm 15 Minuten, Standby = Nie, Ruhezustand = Nie, Energiesparmodus = Aus, Energiestatus = Ausbalanciert.
-- BIOS: `AC Recovery = Power On` gesetzt. Praktischer Stromausfall-/Wiederanlauf-Test bewusst auf später nach finaler Geräteplatzierung verschoben.
+- BIOS: `AC Recovery = Power On` gesetzt. Praktischer Stromausfall-/Wiederanlauf-Test nach finaler Geräteplatzierung am 2026-09-30 erfolgreich bestanden: MINI-PC im laufenden Betrieb stromlos gemacht, am Zielort neu verkabelt, Netzstrom wieder angelegt → Gerät startete selbstständig; RDP war anschließend wieder erreichbar.
 - Dell Command | Update 5.7.2 installiert. Dell-/Intel-Treiberstand aktualisiert; danach meldet DCU „System auf neuestem Stand“. Geräte-Manager ohne gelbe Warnsymbole.
 - Lokale Projektstruktur unter `%USERPROFILE%\Trading` angelegt: `Runtime`, `State`, `Logs`, `Temp`, `Archive`, `Backup`, `Secrets`, `Repos`.
 - Git 2.55.0 und Python 3.13.15 installiert; `python` und `py` zeigen beide auf 3.13.15.
@@ -161,10 +161,10 @@ Erster realer Aufbau des Dell OptiPlex 5060 Micro:
 
 Noch offen aus diesem Block:
 - echter externer WireGuard/RDP-Test außerhalb des Heimnetzes,
-- praktischer Stromausfall-/Wiederanlauf-Test,
-- SSD-/Ereignisanzeige-/Grundlast-Check,
-- lokale Python-Runtime/venv und Smoke-Test,
-- danach Watchdog/Logging/Recovery und Integrationen gemäß Runbook.
+- Internet-Ausfall + Wiederkehr / Reconciliation,
+- prozessspezifischer lokaler Runtime-Heartbeat/Self-Heal,
+- Altrady-Relay-Secret + E2E-Transport-Smoke,
+- danach V2R3-Shadow auf der lokalen Dauer-Runtime und das V2R4-Release-Gate.
 
 ## Effizienzregel für weitere Inbetriebnahme
 
@@ -315,4 +315,25 @@ Verified end-to-end after adding the repository secret `SUPABASE_SECRET_KEY`:
 - Secret value remains only in GitHub Actions secrets and is masked in logs.
 
 The Supabase archive path is now operational and remains secondary/fail-soft: archive failure must not block scanner or paper evaluation.
+
+### Stromausfall-/Umplatzierungs-Test bestanden 2026-09-30
+
+Physischer End-to-End-Test am endgültigen Geräteplatz:
+- laufender MINI-PC wurde vollständig vom Netzstrom getrennt;
+- Gerät wurde an den endgültigen Standort umgesetzt und LAN/Strom neu verbunden;
+- nach erneutem Einstecken des Netzsteckers startete der Dell OptiPlex aufgrund `AC Recovery = Power On` selbstständig ohne manuellen Tastendruck;
+- Windows kam wieder hoch;
+- die RDP-Verbindung war anschließend wieder erreichbar.
+
+Damit ist der praktische Stromausfall-Recovery-Punkt **VERIFIED**.
+
+Zusätzlich angeschlossen:
+- externe Festplatte `Mistral_450`
+- Laufwerksbuchstabe: `D:`
+- aktuell verfügbar: ca. **304 GB frei**
+
+Speicherrolle vorerst:
+- C: bleibt für aktive Runtime, venv, Repo, Secrets, State und kurze Logs.
+- D: ist als **Bulk-/Archiv-/Capture-/sekundäre Backup-Fläche** vorgesehen.
+- Keine aktiven Secrets, keine primäre Runtime und kein alleiniger State auf D:, solange Mount-/Wiederanlauf-/Ausfallverhalten der externen Platte nicht separat verifiziert wurde.
 
