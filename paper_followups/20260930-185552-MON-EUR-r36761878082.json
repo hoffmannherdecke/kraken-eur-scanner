@@ -1,0 +1,64 @@
+{
+  "baseline_ask_eur": 0.02551,
+  "candidate_id": "20260930-185552-MON-EUR-r36761878082",
+  "evaluated_at_utc": "2026-09-30T19:13:06.919810Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-30T18:55:52Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 1034.92,
+    "detection_price_eur": 0.02541,
+    "evaluated_at_utc": "2026-09-30T19:13:06.919810Z",
+    "evaluation_ask_eur": 0.02551,
+    "flagged_as_already_run": true,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 1.102,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": 0.472,
+        "mfe_pct": 1.22,
+        "peak_at_utc": "2026-09-30T19:09:00Z",
+        "trough_at_utc": "2026-09-30T18:56:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-30T15:56:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 3.969,
+      "price_eur": 0.02444
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "major_market_weak",
+      "spot_volume_below_baseline",
+      "no_breakout",
+      "open_interest_falling",
+      "near_resistance",
+      "costs_not_clearly_covered"
+    ],
+    "scan_step_started_at_utc": "2026-09-30T18:54:20Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 4.610951008645525,
+      "ret15_live_pct": 0.8333333333333304,
+      "ret1h_pct": 1.3157894736842035,
+      "ret3h_pct": 4.610951008645525,
+      "scanner_late_flag": false,
+      "score": 8.2
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-09-30T19:14:27.277179Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "MON/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02"
+}

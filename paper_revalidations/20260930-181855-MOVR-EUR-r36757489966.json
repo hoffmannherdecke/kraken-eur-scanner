@@ -1,0 +1,230 @@
+{
+  "altname": "MOVREUR",
+  "candidate_id": "20260930-181855-MOVR-EUR-r36757489966",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Renewed volume expansion on a close above 1.5561",
+      "Follow-through holding above 1.5561"
+    ],
+    "reason_codes": [
+      "extended_after_large_run",
+      "ask_below_resistance",
+      "breakout_volume_subdued",
+      "major_assets_weak",
+      "high_spread_and_taker_costs",
+      "risk_reward_unfavorable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The move above prior resistance lacked convincing volume, and the current ask is back below that level. After the sharp run, weak major-asset context, and Kraken EUR costs, the remaining potential does not justify the structural risk.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "MOVRUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 54.23,
+        "available": true,
+        "current_funding_rate": 0.000181267340201124,
+        "current_open_interest": 22112.1,
+        "funding_rate_delta": 0.000587181478622874,
+        "open_interest_pct": -13.0239,
+        "previous_funding_rate": -0.00040591413842175,
+        "previous_observed_at_utc": "2026-09-30T18:19:22.124667Z",
+        "previous_open_interest": 25423.2
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000181267340201124,
+        "index_price": 1.75708,
+        "last": 1.7613,
+        "mark_price": 1.75432820055,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 22112.1,
+        "requested_symbols": [
+          "PF_MOVRUSD",
+          "PI_MOVRUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_MOVRUSD",
+        "volume24h": 687112
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.552,
+      "bid": 1.543,
+      "last": 1.5629,
+      "spread_pct": 0.5815831987076007
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "6",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.07245966142311877,
+          "ret3h_pct": -0.09672432353678984
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1039839374405549,
+          "ret3h_pct": -0.029188064196827845
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.313956807154403,
+          "ret3h_pct": -0.32343987823439946
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": false,
+        "detail": "HTTP Error 404: Not Found",
+        "error": "HTTPError",
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T19:13:34.795706Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0d778afbb57081f5006abd5f5fe5c887d2ac8223bd8f6241fe"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.552,
+    "bid": 1.543,
+    "last": 1.5629,
+    "spread_pct": 0.5815831987076007
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.5309,
+      "high": 1.5561,
+      "low": 1.5157,
+      "open": 1.5381,
+      "trades": 10,
+      "ts": 1790791200,
+      "volume": 1874.34738571,
+      "vwap": 1.5393
+    },
+    {
+      "close": 1.5171,
+      "high": 1.5379,
+      "low": 1.5094,
+      "open": 1.534,
+      "trades": 24,
+      "ts": 1790792100,
+      "volume": 5129.63052944,
+      "vwap": 1.533
+    },
+    {
+      "close": 1.5334,
+      "high": 1.5397,
+      "low": 1.5312,
+      "open": 1.5312,
+      "trades": 4,
+      "ts": 1790793000,
+      "volume": 78.17504253,
+      "vwap": 1.5328
+    },
+    {
+      "close": 1.5681,
+      "high": 1.5681,
+      "low": 1.5431,
+      "open": 1.5542,
+      "trades": 9,
+      "ts": 1790793900,
+      "volume": 451.69928673,
+      "vwap": 1.5585
+    },
+    {
+      "close": 1.5629,
+      "high": 1.5658,
+      "low": 1.5629,
+      "open": 1.5658,
+      "trades": 2,
+      "ts": 1790794800,
+      "volume": 45.97653242,
+      "vwap": 1.5653
+    }
+  ],
+  "pair": "MOVR/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-181855-MOVR-EUR-r36757489966.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T19:13:43.349303Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "73d63d991d2755bd671a10c2d42c606f7cacc361",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T19:13:43.349303Z",
+    "revalidation_started_at_utc": "2026-09-30T19:13:34.542847Z",
+    "ttl_due_at_utc": "2026-09-30T19:04:22.124667Z",
+    "ttl_lag_seconds": 552.418
+  }
+}
