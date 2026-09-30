@@ -289,3 +289,18 @@ Safety:
 
 The bundled script and all dependent PowerShell tools pass the Windows CI parse/smoke workflow. Local execution on the actual MINI-PC is the next required user action.
 
+### Local next gate executed 2026-09-30
+
+Actual MINI-PC result from the bundled local gate:
+- Windows: **Microsoft Windows 11 Pro**, build **26200**.
+- SSD: **KXG50ZNV256G NVMe TOSHIBA 256GB**, reported **Healthy**, ~238.5 GB device size.
+- Base-load snapshot: CPU ~**3%**, RAM used ~**34.7%**.
+- Local scheduled CryptoMiniPC tasks detected: **3**.
+- Latest local state backup age at check: ~**0.97 h**.
+- Kraken public WebSocket smoke: **PASS** with **1544** verified book events and **103** observed trades in 45 s; **0** data gaps and **0** subscription errors.
+- Safety guardrails remained read-only/public-data only.
+
+The bundle printed `Status: REVIEW` solely because one freshly installed scheduled task had a non-zero Task Scheduler status before its first scheduled execution. This is not an infrastructure failure. The gate logic was corrected to treat Task Scheduler's "has not yet run" result (`267011 / 0x41303`) as neutral rather than failed.
+
+Operational conclusion: the actual machine, isolated Python runtime and Kraken public realtime market-data path are healthy enough to proceed. A re-run is not required solely to clear this false-positive review.
+
