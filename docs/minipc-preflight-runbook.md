@@ -270,3 +270,22 @@ Without MINI-PC user interaction, the next local verification bundle was prepare
 
 The local market-data smoke itself still has to be run once on the actual MINI-PC; this will be bundled with the expanded machine self-test so the user only has to perform one next local command block.
 
+### Bundled local next gate prepared 2026-09-30
+
+To minimize user interaction, the remaining immediate local software checks were bundled into `tools/minipc-next-gate.ps1`.
+
+The bundle:
+- runs the expanded machine self-test;
+- runs the bounded public Kraken WebSocket/book/trade smoke;
+- summarizes Windows build, SSD health, CPU/RAM snapshot, scheduled-task state, backup freshness and WebSocket evidence;
+- writes a combined JSON report under `Trading\Logs`;
+- prints a short `FINAL SUMMARY` designed to be photographed instead of copying multiple command outputs.
+
+Safety:
+- public/read-only market data only;
+- no order API;
+- no real-money action;
+- no strategy mutation.
+
+The bundled script and all dependent PowerShell tools pass the Windows CI parse/smoke workflow. Local execution on the actual MINI-PC is the next required user action.
+
