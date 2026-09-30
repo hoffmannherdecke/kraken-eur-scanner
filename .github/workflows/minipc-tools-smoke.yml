@@ -1,0 +1,75 @@
+name: MINI-PC tools smoke
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/minipc-*.ps1'
+      - 'tools/install-minipc-baseline-tasks.ps1'
+      - 'tools/uninstall-minipc-baseline-tasks.ps1'
+      - '.github/workflows/minipc-tools-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Parse PowerShell scripts
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @(
+            'tools/minipc-watchdog.ps1',
+            'tools/minipc-log-cleanup.ps1',
+            'tools/install-minipc-baseline-tasks.ps1',
+            'tools/uninstall-minipc-baseline-tasks.ps1'
+          )
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path $file), [ref]$tokens, [ref]$errors
+            ) | Out-Null
+            if ($errors.Count -gt 0) {
+              $errors | Format-List | Out-String | Write-Error
+              throw "PowerShell parse failed: $file"
+            }
+            Write-Host "PARSE_OK $file"
+          }
+
+      - name: Smoke bounded cleanup
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'minipc-cleanup-smoke'
+          New-Item -ItemType Directory -Force -Path (Join-Path $root 'Logs'),(Join-Path $root 'Temp') | Out-Null
+          Set-Content (Join-Path $root 'Logs\old.log') 'old'
+          Set-Content (Join-Path $root 'Temp\old.tmp') 'old'
+          (Get-Item (Join-Path $root 'Logs\old.log')).LastWriteTime = (Get-Date).AddDays(-30)
+          (Get-Item (Join-Path $root 'Temp\old.tmp')).LastWriteTime = (Get-Date).AddDays(-5)
+          .\tools\minipc-log-cleanup.ps1 -TradingRoot $root
+          if (Test-Path (Join-Path $root 'Logs\old.log')) { throw 'old log not deleted' }
+          if (Test-Path (Join-Path $root 'Temp\old.tmp')) { throw 'old temp not deleted' }
+          Write-Host 'CLEANUP_SMOKE_OK'
+
+      - name: Smoke watchdog report creation
+        shell: powershell
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'minipc-watchdog-smoke'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          & .\tools\minipc-watchdog.ps1 -TradingRoot $root
+          $code = $LASTEXITCODE
+          $state = Join-Path $root 'State\minipc-health.json'
+          $log = Join-Path $root 'Logs\minipc-watchdog.log'
+          if (-not (Test-Path $state)) { throw 'watchdog state file missing' }
+          if (-not (Test-Path $log)) { throw 'watchdog log file missing' }
+          $json = Get-Content $state -Raw | ConvertFrom-Json
+          if ($json.kind -ne 'MINIPC_LOCAL_HEALTH_V1') { throw 'unexpected watchdog schema' }
+          if ($code -ne 2) { throw "expected critical exit 2 in empty sandbox, got $code" }
+          Write-Host 'WATCHDOG_SMOKE_OK'
