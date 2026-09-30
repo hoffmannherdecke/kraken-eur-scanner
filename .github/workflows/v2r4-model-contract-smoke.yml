@@ -1,0 +1,100 @@
+name: V2R4 evaluator model-contract smoke
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v2r4-model-contract-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENAI_MODEL: gpt-6-luna
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: prep/v2r4-fast-trigger-minipc-20260929
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Real evaluator output-contract smoke
+        run: |
+          set -euo pipefail
+          test -n "$OPENAI_API_KEY" || { echo "BLOCKER missing OPENAI_API_KEY"; exit 2; }
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from paper_evaluator.evaluate import call_evaluator, common_validate, fail_safe_normalize
+          from paper_evaluator.v2r4_trigger_plan import build_wait_trigger_plan
+
+          spec=json.load(open("research/v2r4/paper_strategy_spec_v2r4_proposed.json"))
+          control={"series_id":"V2R4-MODEL-CONTRACT-SMOKE"}
+          current={"bid":1.0000,"ask":1.0010,"last":1.0005,"spread_pct":0.09995}
+          candidate={
+            "candidate_id":"V2R4-MODEL-CONTRACT-SYNTHETIC",
+            "pair":"BTC/EUR",
+            "altname":"XXBTZEUR",
+            "action":"REVIEW_ONLY_NOT_ORDER",
+            "scanner_candidate":{
+              "score":8.2,"ret15_live":0.2,"ret1h":1.1,"ret3h":2.2,
+              "volume_ratio_closed":0.9,"higher_lows":True,"late":False,
+              "spread_pct":0.10,"turnover24h":10000000
+            },
+            "scanner_market_context":{
+              "resistance_1h":1.0030,"resistance_3h":1.0040,
+              "support_1h":0.9950,"atr15_eur":0.0020
+            },
+            "scanner_market_breadth":{"positive_1h_count":25,"positive_3h_count":18}
+          }
+          external={
+            "kraken_pair_metadata":{
+              "available":True,"status":"online","ordermin":"0.0001","costmin":"0.45"
+            },
+            "account_specific_tradability":{
+              "available":False,
+              "reason":"No private Kraken trading credential is used by paper infrastructure."
+            },
+            "major_market_regime":{
+              "available_assets":3,"positive_1h_count":2,"positive_3h_count":2
+            },
+            "derivatives":{
+              "available":False,
+              "note":"Not supplied in this synthetic contract smoke."
+            },
+            "official_headlines":{"scope_note":"No coin-specific catalyst supplied."},
+            "onchain":{"available":False,"reason":"not supplied"}
+          }
+
+          raw,meta=call_evaluator(candidate,current,external,spec,control)
+          normalized=fail_safe_normalize(raw,current)
+          common_validate(normalized)
+
+          plan=None
+          if normalized["decision"]=="WAIT":
+              plan=build_wait_trigger_plan(
+                  candidate,normalized,datetime.now(timezone.utc)
+              )
+              assert plan["on_match"]=="FRESH_PAPER_RECHECK_ONLY"
+              assert plan["paper_only"] is True
+              assert 1 <= len(plan["conditions"]) <= 6
+          else:
+              assert normalized["watch_conditions"]==[]
+
+          print("V2R4_MODEL_CONTRACT_SMOKE_OK",json.dumps({
+              "decision":normalized["decision"],
+              "setup_lane":normalized["setup_lane"],
+              "watch_condition_count":len(normalized["watch_conditions"]),
+              "plan_created":plan is not None,
+              "model":meta.get("model"),
+              "response_id":meta.get("response_id"),
+              "real_money_actions":False
+          },sort_keys=True))
+          PY
