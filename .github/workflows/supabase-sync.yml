@@ -6,6 +6,8 @@ name: Supabase paper archive sync
   workflow_run:
     workflows: ['Paper runtime evaluator and lifecycle']
     types: [completed]
+  schedule:
+    - cron: '7,37 * * * *'
   push:
     branches: [main]
     paths:
