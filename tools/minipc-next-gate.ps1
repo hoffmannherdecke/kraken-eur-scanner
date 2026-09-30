@@ -80,7 +80,14 @@ if ($market.status -ne "PASS") { $issues += "marketdata_not_pass" }
 if ([int]$market.data_gap -gt 0) { $issues += "marketdata_gap" }
 if ([int]$market.subscription_error -gt 0) { $issues += "marketdata_subscription_error" }
 if ($tasks.Count -lt 3) { $issues += "scheduled_tasks_missing" }
-if (@($tasks | Where-Object { $_.last_result -ne 0 }).Count -gt 0) { $issues += "scheduled_task_last_result_nonzero" }
+# Task Scheduler uses 267011 (0x41303) for "task has not yet run".
+# A freshly installed future-scheduled task is therefore not a failure.
+$badTaskResults = @($tasks | Where-Object {
+  $_.last_result -notin @(0,267011)
+})
+if ($badTaskResults.Count -gt 0) {
+  $issues += "scheduled_task_last_result_nonzero"
+}
 if (-not $latestBackup) { $issues += "backup_missing" }
 elseif ($backupAgeHours -ge 168) { $issues += "backup_stale_7d" }
 if ($disk -and [string]$disk.HealthStatus -notin @("Healthy","Unknown")) { $issues += "disk_health_$($disk.HealthStatus)" }
