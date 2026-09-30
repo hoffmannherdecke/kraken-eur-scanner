@@ -209,6 +209,7 @@ Local baseline prepared in the repository:
 - `tools/minipc-log-cleanup.ps1`: bounded cleanup only inside `Trading\Logs` and `Trading\Temp` (defaults: 14 days / 2 days).
 - `tools/install-minipc-baseline-tasks.ps1`: registers SYSTEM tasks `CryptoMiniPC-Health` (every 5 minutes + startup) and `CryptoMiniPC-LogCleanup` (daily 04:20), then performs an immediate health run.
 - `tools/uninstall-minipc-baseline-tasks.ps1`: explicit rollback for both scheduled tasks.
+- Windows CI-Smoke-Test (`MINI-PC tools smoke`) bestanden: PowerShell-Syntax, begrenzte Log-/Temp-Bereinigung und Watchdog-State/Log-Erzeugung wurden auf `windows-latest` erfolgreich geprüft.
 
 Deliberately **not** enabled yet:
 - no automatic restart/self-heal of a local scanner process until the concrete local runtime process/heartbeat contract exists;
