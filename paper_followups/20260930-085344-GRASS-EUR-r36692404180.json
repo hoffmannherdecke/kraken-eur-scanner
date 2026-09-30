@@ -1,0 +1,51 @@
+{
+  "baseline_ask_eur": 0.6312,
+  "candidate_id": "20260930-085344-GRASS-EUR-r36692404180",
+  "evaluated_at_utc": "2026-09-30T08:54:38.809877Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-30T08:53:44Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 54.81,
+    "detection_price_eur": 0.6322,
+    "evaluated_at_utc": "2026-09-30T08:54:38.809877Z",
+    "evaluation_ask_eur": 0.6312,
+    "flagged_as_already_run": true,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-30T08:08:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 2.88,
+      "price_eur": 0.6145
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "extended_multiday_run",
+      "zero_volume_closed_candles",
+      "negative_major_market_regime",
+      "insufficient_confirmed_continuity",
+      "costs_material"
+    ],
+    "scan_step_started_at_utc": "2026-09-30T08:52:14Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.8803905614320557,
+      "ret15_live_pct": 1.2978689312610259,
+      "ret1h_pct": 2.846917195379861,
+      "ret3h_pct": -0.581852492530277,
+      "scanner_late_flag": false,
+      "score": 10.8
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-09-30T08:55:53.108255Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "GRASS/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02"
+}
