@@ -219,3 +219,15 @@ Deliberately **not** enabled yet:
 
 Next local user action: pull the repository once and run the baseline-task installer from an elevated PowerShell. After its immediate health report is verified, Phase F baseline can be marked active.
 
+### Local baseline tasks installed 2026-09-30
+
+Verified from the MINI-PC installer output:
+- `CryptoMiniPC-Health` registered successfully: every 5 minutes + at system startup.
+- `CryptoMiniPC-LogCleanup` registered successfully: daily at 04:20.
+- Immediate local health run completed with `exit code 0`.
+- Health report contained no active issues (`issues: []`).
+- Guardrails confirmed: no configuration changes by the health probe, no process restart, no Git mutation, no real-money actions.
+- Local health state path: `%USERPROFILE%\Trading\State\minipc-health.json`.
+- Local health log path: `%USERPROFILE%\Trading\Logs\minipc-watchdog.log`.
+
+This closes the baseline local watchdog/log-rotation installation step. Process-specific self-heal remains intentionally deferred until a concrete local scanner process and heartbeat contract exist.
