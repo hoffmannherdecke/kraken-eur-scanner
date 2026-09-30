@@ -4,6 +4,15 @@
   "evaluated_at_utc": "2026-09-30T09:11:44.080620Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 110,
+      "complete": false,
+      "end_close_pct": null,
+      "expected_bars": 120,
+      "mae_pct": null,
+      "mfe_pct": null,
+      "reason": "incomplete_1m_coverage"
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -80,7 +89,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T11:05:13.189240Z"
+    "updated_at_utc": "2026-09-30T11:20:52.399466Z"
   },
   "original_decision": "REJECT",
   "pair": "GRASS/EUR",
@@ -88,5 +97,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-30T10:20:34.466619Z"
+  "updated_at_utc": "2026-09-30T11:20:52.638504Z"
 }

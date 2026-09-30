@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-09-30T07:27:00Z",
         "trough_at_utc": "2026-09-30T07:13:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 1.962,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.487,
+        "mfe_pct": 2.428,
+        "peak_at_utc": "2026-09-30T10:57:00Z",
+        "trough_at_utc": "2026-09-30T07:13:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -89,7 +100,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-30T11:05:10.664584Z"
+    "updated_at_utc": "2026-09-30T11:20:51.994297Z"
   },
   "original_decision": "WAIT",
   "pair": "ZEC/EUR",
