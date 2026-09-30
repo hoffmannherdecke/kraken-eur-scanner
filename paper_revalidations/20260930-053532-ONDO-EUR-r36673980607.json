@@ -1,0 +1,224 @@
+{
+  "altname": "ONDOEUR",
+  "candidate_id": "20260930-053532-ONDO-EUR-r36673980607",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.44533 with materially stronger closed volume",
+      "Higher-low retest above 0.44533 with acceptable spread"
+    ],
+    "reason_codes": [
+      "failed_resistance_reclaim",
+      "closed_volume_weak",
+      "major_market_negative",
+      "round_trip_costs_high",
+      "remaining_potential_unclear"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Failed breakout has fallen back below 0.44533 resistance; weak closed volume, negative major-market returns, and Kraken EUR costs leave no supported scout with adequate remaining potential.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ONDOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 24.57,
+        "available": true,
+        "current_funding_rate": -1.1208561579834e-05,
+        "current_open_interest": 4676973.0,
+        "funding_rate_delta": -1.449949886448e-05,
+        "open_interest_pct": 0.5318,
+        "previous_funding_rate": 3.290937284646e-06,
+        "previous_observed_at_utc": "2026-09-30T05:52:49.672632Z",
+        "previous_open_interest": 4652233.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.1208561579834e-05,
+        "index_price": 0.503285,
+        "last": 0.5032,
+        "mark_price": 0.50316236787,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4676973.0,
+        "requested_symbols": [
+          "PF_ONDOUSD",
+          "PI_ONDOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ONDOUSD",
+        "volume24h": 5301360
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.44357,
+      "bid": 0.44298,
+      "last": 0.4435,
+      "spread_pct": 0.1331002199537612
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "15",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.3042390550885288,
+          "ret3h_pct": -0.35444919493481386
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.26255193685159606,
+          "ret3h_pct": -0.3882399365238376
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.20064972291228278,
+          "ret3h_pct": -0.9295267001802165
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T06:17:22.811054Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_088fff58c0de28a8006abca973d74087d1bfc6a0fc1e632dd5"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.44357,
+    "bid": 0.44298,
+    "last": 0.4435,
+    "spread_pct": 0.1331002199537612
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.44192,
+      "high": 0.44192,
+      "low": 0.44126,
+      "open": 0.44126,
+      "trades": 3,
+      "ts": 1790745300,
+      "volume": 92.0742,
+      "vwap": 0.44149
+    },
+    {
+      "close": 0.44545,
+      "high": 0.44732,
+      "low": 0.44502,
+      "open": 0.44536,
+      "trades": 47,
+      "ts": 1790746200,
+      "volume": 14327.81052,
+      "vwap": 0.44615
+    },
+    {
+      "close": 0.44465,
+      "high": 0.44804,
+      "low": 0.44465,
+      "open": 0.44713,
+      "trades": 46,
+      "ts": 1790747100,
+      "volume": 35985.32493,
+      "vwap": 0.44705
+    },
+    {
+      "close": 0.44347,
+      "high": 0.44501,
+      "low": 0.44245,
+      "open": 0.44481,
+      "trades": 96,
+      "ts": 1790748000,
+      "volume": 26184.13462,
+      "vwap": 0.44347
+    },
+    {
+      "close": 0.4435,
+      "high": 0.44417,
+      "low": 0.44288,
+      "open": 0.44342,
+      "trades": 34,
+      "ts": 1790748900,
+      "volume": 6377.62632,
+      "vwap": 0.44361
+    }
+  ],
+  "pair": "ONDO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-053532-ONDO-EUR-r36673980607.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T06:17:28.003002Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "41393f25766a97578275cdbb0ae8f596e06ffc5d",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T06:17:28.003002Z",
+    "revalidation_started_at_utc": "2026-09-30T06:17:22.445295Z",
+    "ttl_due_at_utc": "2026-09-30T06:06:08.149123Z",
+    "ttl_lag_seconds": 674.296
+  }
+}
