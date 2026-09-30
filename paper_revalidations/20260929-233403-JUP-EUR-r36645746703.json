@@ -1,0 +1,224 @@
+{
+  "altname": "JUPEUR",
+  "candidate_id": "20260929-233403-JUP-EUR-r36645746703",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.2948 with stronger closed volume",
+      "Hold or successful retest above 0.2945"
+    ],
+    "reason_codes": [
+      "NO_BREAKOUT_CONFIRMATION",
+      "WEAK_CLOSED_VOLUME",
+      "NEAR_RESISTANCE",
+      "COSTS_EXCEED_NEARBY_UPSIDE",
+      "NEGATIVE_3H_MOMENTUM"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The latest uptick has not confirmed a breakout: price remains below 0.2945\u20130.2948 resistance and the latest 15m candle has only 9 trades. Nearby upside does not clear Kraken spot costs; no scout entry is justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "JUPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 58.72,
+        "available": true,
+        "current_funding_rate": -5.77832734765e-06,
+        "current_open_interest": 1953304.0,
+        "funding_rate_delta": 2.3676574876120006e-06,
+        "open_interest_pct": -0.1007,
+        "previous_funding_rate": -8.145984835262e-06,
+        "previous_observed_at_utc": "2026-09-29T23:34:26.284945Z",
+        "previous_open_interest": 1955273.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -5.77832734765e-06,
+        "index_price": 0.332052,
+        "last": 0.328,
+        "mark_price": 0.332217672,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 1953304.0,
+        "requested_symbols": [
+          "PF_JUPUSD",
+          "PI_JUPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_JUPUSD",
+        "volume24h": 2188638
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.2931,
+      "bid": 0.29271,
+      "last": 0.29279,
+      "spread_pct": 0.1331489732165724
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "23",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.22579050379590848,
+          "ret3h_pct": 0.17951661072639347
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.29364971904407566,
+          "ret3h_pct": -0.22018783716262202
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.361113750831521,
+          "ret3h_pct": 0.21026474242569204
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T00:33:08.020586Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0da18cbc167428da006abc58c57e4087d08e34ce52e42e20b3"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2931,
+    "bid": 0.29271,
+    "last": 0.29279,
+    "spread_pct": 0.1331489732165724
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.29027,
+      "high": 0.29244,
+      "low": 0.29027,
+      "open": 0.29184,
+      "trades": 31,
+      "ts": 1790724600,
+      "volume": 14048.23611,
+      "vwap": 0.29151
+    },
+    {
+      "close": 0.29082,
+      "high": 0.29189,
+      "low": 0.29082,
+      "open": 0.29176,
+      "trades": 4,
+      "ts": 1790725500,
+      "volume": 1013.70369,
+      "vwap": 0.29124
+    },
+    {
+      "close": 0.29018,
+      "high": 0.2913,
+      "low": 0.28983,
+      "open": 0.29125,
+      "trades": 21,
+      "ts": 1790726400,
+      "volume": 10638.52172,
+      "vwap": 0.29033
+    },
+    {
+      "close": 0.29008,
+      "high": 0.29016,
+      "low": 0.28975,
+      "open": 0.29016,
+      "trades": 8,
+      "ts": 1790727300,
+      "volume": 5093.04031,
+      "vwap": 0.28984
+    },
+    {
+      "close": 0.29279,
+      "high": 0.29279,
+      "low": 0.29279,
+      "open": 0.29279,
+      "trades": 9,
+      "ts": 1790728200,
+      "volume": 1898.4375,
+      "vwap": 0.29279
+    }
+  ],
+  "pair": "JUP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260929-233403-JUP-EUR-r36645746703.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T00:33:14.608132Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "895d7662aa6a95314104f8fa9d0607baab131a65",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T00:33:14.608132Z",
+    "revalidation_started_at_utc": "2026-09-30T00:33:07.549982Z",
+    "ttl_due_at_utc": "2026-09-30T00:19:26.284945Z",
+    "ttl_lag_seconds": 821.265
+  }
+}

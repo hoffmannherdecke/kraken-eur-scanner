@@ -62,11 +62,13 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-30T00:20:21.437881Z"
+    "updated_at_utc": "2026-09-30T00:34:14.489624Z"
   },
   "original_decision": "WAIT",
   "pair": "JUP/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-09-30T00:33:14.608132Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
