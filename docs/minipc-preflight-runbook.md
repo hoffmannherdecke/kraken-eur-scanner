@@ -231,3 +231,17 @@ Verified from the MINI-PC installer output:
 - Local health log path: `%USERPROFILE%\Trading\Logs\minipc-watchdog.log`.
 
 This closes the baseline local watchdog/log-rotation installation step. Process-specific self-heal remains intentionally deferred until a concrete local scanner process and heartbeat contract exist.
+
+### Backup / Restore baseline prepared 2026-09-30
+
+Prepared and CI-verified after the initial watchdog installation:
+- `tools/minipc-backup.ps1`: daily local state backup, limited to `Trading\State`; explicitly excludes `Secrets`, `Logs` and the Git repository; default retention 14 days.
+- `tools/minipc-restore-smoke.ps1`: non-destructive restore verification into a temporary directory; never overwrites live state.
+- `CryptoMiniPC-Backup` is now part of `tools/install-minipc-baseline-tasks.ps1` with schedule **04:00 daily**.
+- Installer seeds one immediate backup and runs one immediate restore smoke before the health check.
+- `minipc-watchdog.ps1` now tracks backup freshness and warns only after **7 full days** without a successful backup.
+- Rollback script removes the backup task too.
+- Windows CI smoke passed for PowerShell parsing, bounded cleanup, backup creation, non-destructive restore smoke and watchdog state/log creation.
+
+Local activation is still pending: rerun the baseline installer once from elevated PowerShell after pulling the current main branch.
+
