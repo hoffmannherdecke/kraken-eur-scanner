@@ -237,4 +237,4 @@ Diese Punkte gehören nicht in die Trading-Laufzeit und dürfen den Kernaufbau n
 
 **V2R3 sauber messen → Mini-PC stabil → Watchdog/Recovery → Kraken/Altrady-Realtime → V2R4-Fast-Trigger Paper → schlanke Integrationen + Historik/Backtests → V3 Research/Shadow/Paper → Smart-Money-Forschung → Self-hosted/Trading-API zuletzt.**
 
-- [ ] **V2R4 Trigger→fresh-recheck bridge** ist implementiert und im exakten Windows-E2E mit realem Evaluator grün; offen bleibt der identische Nachweis auf dem physischen MINI-PC nach sicherer lokaler OpenAI-Key-Provisionierung. Keine Aktivierung von V2R4 vor diesem lokalen E2E-Nachweis.
+- [ ] **V2R4 Trigger→fresh-recheck bridge** ist implementiert und im exakten Windows-E2E mit realem Evaluator grün. Der verbleibende physische Nachweis ist als ein kanonischer lokaler Sammelschritt (`tools/minipc-local-core-gate.ps1`) vorbereitet: sicherer lokaler OpenAI-Key → echter MINI-PC E2E → erst danach Altrady-Token-Prep. Keine V2R4-Aktivierung vor diesem lokalen E2E-Nachweis.
