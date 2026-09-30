@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 2.858,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 4.622,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -1.296,
+        "mfe_pct": 10.224,
+        "peak_at_utc": "2026-09-29T20:25:00Z",
+        "trough_at_utc": "2026-09-29T04:30:00Z"
+      },
       "15": {
         "bars": 0,
         "complete": false,
@@ -96,6 +107,11 @@
         "trough_at_utc": "2026-09-29T04:30:00Z"
       }
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "strong_volume_and_continuity",
@@ -114,7 +130,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-09-30T04:04:49.539802Z"
+    "updated_at_utc": "2026-09-30T04:19:50.783516Z"
   },
   "original_decision": "WAIT",
   "pair": "ICP/EUR",
