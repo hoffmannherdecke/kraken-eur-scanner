@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-09-29T23:34:26.284945Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 1.879,
+      "expected_bars": 120,
+      "mae_pct": -0.821,
+      "mfe_pct": 2.115
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -81,7 +89,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-09-30T01:35:00.471646Z"
+    "updated_at_utc": "2026-09-30T01:49:12.142673Z"
   },
   "original_decision": "WAIT",
   "pair": "JUP/EUR",
@@ -91,5 +99,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-09-30T00:44:46.187947Z"
+  "updated_at_utc": "2026-09-30T01:49:12.261919Z"
 }
