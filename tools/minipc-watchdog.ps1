@@ -72,6 +72,18 @@ if (Test-Path $venvPython) {
   }
 }
 
+# Backup freshness: alert only after a full week without a successful backup.
+$backupDir = Join-Path $TradingRoot "Backup"
+$latestBackup = Get-ChildItem $backupDir -File -Filter "minipc-state-*.zip" -ErrorAction SilentlyContinue |
+  Sort-Object LastWriteTime -Descending |
+  Select-Object -First 1
+if ($latestBackup) {
+  $backupAgeDays = [math]::Round((($now - $latestBackup.LastWriteTime).TotalDays),2)
+  Add-Check "backup_freshness" ($backupAgeDays -lt 7) ("latest=" + $latestBackup.Name + " age_days=" + $backupAgeDays) "WARNING"
+} else {
+  $checks["backup_freshness"] = [ordered]@{ ok=$null; detail="no backup yet; warning threshold starts after scheduled backup is installed" }
+}
+
 # Local repo identity. Never pull/checkout/reset from the watchdog.
 if (Test-Path $repo) {
   $git = $null
