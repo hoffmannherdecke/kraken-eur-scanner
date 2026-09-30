@@ -236,3 +236,5 @@ Diese Punkte gehören nicht in die Trading-Laufzeit und dürfen den Kernaufbau n
 ## Reihenfolge in einem Satz
 
 **V2R3 sauber messen → Mini-PC stabil → Watchdog/Recovery → Kraken/Altrady-Realtime → V2R4-Fast-Trigger Paper → schlanke Integrationen + Historik/Backtests → V3 Research/Shadow/Paper → Smart-Money-Forschung → Self-hosted/Trading-API zuletzt.**
+
+- [ ] **V2R4 Trigger→fresh-recheck bridge** fest implementieren: lokaler Kraken/Altrady Trigger darf nur `FRESH_PAPER_RECHECK_ONLY` auslösen; die frische Neubewertung muss current Kraken execution context holen, paper-only bleiben, timestamps/receipt persistieren und ohne GitHub-Schedule-Latenz auskommen. Keine Aktivierung von V2R4 vor diesem E2E-Nachweis.
