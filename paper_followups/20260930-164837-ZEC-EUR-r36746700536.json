@@ -1,0 +1,53 @@
+{
+  "baseline_ask_eur": 1298.936,
+  "candidate_id": "20260930-164837-ZEC-EUR-r36746700536",
+  "evaluated_at_utc": "2026-09-30T16:50:14.339631Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-09-30T16:48:37Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 97.34,
+    "detection_price_eur": 1303.033,
+    "evaluated_at_utc": "2026-09-30T16:50:14.339631Z",
+    "evaluation_ask_eur": 1298.936,
+    "flagged_as_already_run": false,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-30T15:20:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 4.841,
+      "price_eur": 1242.869
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "spread_and_liquidity_acceptable",
+      "higher_lows_and_positive_short_term_trend",
+      "3h_breakout_not_confirmed",
+      "nearby_resistance_limits_entry_efficiency",
+      "round_trip_costs_material",
+      "derivatives_cross_market_only",
+      "account_tradability_unavailable"
+    ],
+    "scan_step_started_at_utc": "2026-09-30T16:47:01Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 4.840735427466614,
+      "ret15_live_pct": 0.7817152721810716,
+      "ret1h_pct": 2.807285798594328,
+      "ret3h_pct": 1.2956654637948928,
+      "scanner_late_flag": false,
+      "score": 9.5
+    },
+    "schema_version": 1,
+    "setup_lane": "CONTINUITY",
+    "updated_at_utc": "2026-09-30T16:51:52.488986Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "ZEC/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02"
+}

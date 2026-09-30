@@ -1,0 +1,227 @@
+{
+  "altname": "SUIEUR",
+  "candidate_id": "20260930-161314-SUI-EUR-r36742397773",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.0662 with sustained spot volume",
+      "Retest holds above 1.0588 without renewed weakness in major-asset 3h returns"
+    ],
+    "reason_codes": [
+      "NO_3H_BREAKOUT",
+      "CLOSED_VOLUME_SUBDUED",
+      "WEAK_MAJOR_3H",
+      "FEES_REQUIRE_MEANINGFUL_RUNWAY"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The required breakout confirmation did not occur: price stayed below 1.0662, and the latest closed candle had subdued volume. Major-asset 3h returns remain weak, so no scout or second-stage plan is justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SUIUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 36.29,
+        "available": true,
+        "current_funding_rate": 4.1827457367463e-05,
+        "current_open_interest": 7667210.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 1.0116,
+        "previous_funding_rate": 4.1827457367463e-05,
+        "previous_observed_at_utc": "2026-09-30T16:14:19.152327Z",
+        "previous_open_interest": 7590423.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 4.1827457367463e-05,
+        "index_price": 1.201864,
+        "last": 1.2031,
+        "mark_price": 1.20246441688,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 7667210.0,
+        "requested_symbols": [
+          "PF_SUIUSD",
+          "PI_SUIUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_SUIUSD",
+        "volume24h": 12854972
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.0609,
+      "bid": 1.0604,
+      "last": 1.0596,
+      "spread_pct": 0.04714090416253665
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "5",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.39954091277341064,
+          "ret3h_pct": 0.10784131574481659
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.5121123682126028,
+          "ret3h_pct": -0.232086847571078
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 1.0980616824214584,
+          "ret3h_pct": -0.6661037620790067
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          },
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T16:50:35.524576Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0b8d2be671a8f223006abd3ddcd5e487d1a2f15d9f313154b6"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.0609,
+    "bid": 1.0604,
+    "last": 1.0596,
+    "spread_pct": 0.04714090416253665
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.0441,
+      "high": 1.0443,
+      "low": 1.0262,
+      "open": 1.0263,
+      "trades": 89,
+      "ts": 1790783100,
+      "volume": 47110.55181,
+      "vwap": 1.0425
+    },
+    {
+      "close": 1.0631,
+      "high": 1.0636,
+      "low": 1.0432,
+      "open": 1.0444,
+      "trades": 249,
+      "ts": 1790784000,
+      "volume": 113608.47684,
+      "vwap": 1.056
+    },
+    {
+      "close": 1.0494,
+      "high": 1.0643,
+      "low": 1.0476,
+      "open": 1.0612,
+      "trades": 357,
+      "ts": 1790784900,
+      "volume": 176978.24712,
+      "vwap": 1.0583
+    },
+    {
+      "close": 1.0529,
+      "high": 1.0553,
+      "low": 1.0419,
+      "open": 1.0492,
+      "trades": 103,
+      "ts": 1790785800,
+      "volume": 27062.69158,
+      "vwap": 1.047
+    },
+    {
+      "close": 1.0596,
+      "high": 1.0604,
+      "low": 1.0523,
+      "open": 1.0532,
+      "trades": 37,
+      "ts": 1790786700,
+      "volume": 22243.5383,
+      "vwap": 1.0566
+    }
+  ],
+  "pair": "SUI/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-161314-SUI-EUR-r36742397773.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T16:51:12.364139Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "018579d3004e91aea791a61038b6936e612016ed",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T16:51:12.364139Z",
+    "revalidation_started_at_utc": "2026-09-30T16:50:35.269027Z",
+    "ttl_due_at_utc": "2026-09-30T16:44:19.152327Z",
+    "ttl_lag_seconds": 376.117
+  }
+}

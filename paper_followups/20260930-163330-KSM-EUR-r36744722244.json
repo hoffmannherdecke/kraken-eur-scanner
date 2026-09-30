@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-09-30T16:35:57.095452Z",
     "evaluation_ask_eur": 4.63,
     "flagged_as_already_run": true,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.216,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.433,
+        "mfe_pct": 0.216,
+        "peak_at_utc": "2026-09-30T16:34:00Z",
+        "trough_at_utc": "2026-09-30T16:38:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-09-30T14:33:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -40,7 +52,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-09-30T16:36:49.805537Z"
+    "updated_at_utc": "2026-09-30T16:51:51.893921Z"
   },
   "original_decision": "WAIT",
   "pair": "KSM/EUR",

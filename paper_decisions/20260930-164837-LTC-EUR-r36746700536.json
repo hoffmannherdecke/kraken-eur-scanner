@@ -1,0 +1,187 @@
+{
+  "altname": "LTCEUR",
+  "candidate_age_seconds": 25,
+  "candidate_event_time_utc": "2026-09-30T16:48:37Z",
+  "candidate_id": "20260930-164837-LTC-EUR-r36746700536",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Break and hold above 59.49 with follow-through on closed-candle volume",
+      "Revalidate within 30\u201360 minutes; reject if price loses 58.96 support"
+    ],
+    "reason_codes": [
+      "BELOW_RESISTANCE",
+      "WEAK_CLOSED_VOLUME",
+      "MIXED_MULTI_PERIOD_MOMENTUM",
+      "FEES_REQUIRE_LARGER_MOVE",
+      "NO_CONFIRMED_CATALYST"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "LTC/EUR is tradable with a tight spread, but price is below nearby resistance and supplied evidence does not establish enough net upside after costs.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "LTCUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 898.43,
+        "available": true,
+        "current_funding_rate": 7.4517203041494e-05,
+        "current_open_interest": 770.0,
+        "funding_rate_delta": -6.680465557599806e-08,
+        "open_interest_pct": 0.0,
+        "previous_funding_rate": 7.458400769707e-05,
+        "previous_observed_at_utc": "2026-09-30T01:50:37.766158Z",
+        "previous_open_interest": 770.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 7.4517203041494e-05,
+        "index_price": 67.38,
+        "last": null,
+        "mark_price": 66.780257358,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 770.0,
+        "requested_symbols": [
+          "PF_LTCUSD",
+          "PI_LTCUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PI_LTCUSD",
+        "volume24h": 0
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 59.43,
+      "bid": 59.42,
+      "last": 59.43,
+      "spread_pct": 0.016827934371052605
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.1",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.39954091277341064,
+          "ret3h_pct": 0.10784131574481659
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.5121123682126028,
+          "ret3h_pct": -0.232086847571078
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 1.0980616824214584,
+          "ret3h_pct": -0.6661037620790067
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          },
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T16:49:02.599192Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-30T16:49:53.270145Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0d888d3adb9caeda006abd3d7fe31487d1b9e19f5012db4919"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 59.43,
+    "bid": 59.42,
+    "last": 59.43,
+    "spread_pct": 0.016827934371052605
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "LTC/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36746700536:LTC-EUR:1790786917",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "018579d3004e91aea791a61038b6936e612016ed",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-30T16:48:37Z",
+    "candidate_detected_ts": 1790786917,
+    "candidate_snapshot_at_utc": "2026-09-30T16:48:37Z",
+    "detected_to_evaluation_complete_seconds": 76.27,
+    "detected_to_evaluation_start_seconds": 25.431,
+    "evaluation_completed_at_utc": "2026-09-30T16:49:53.270145Z",
+    "evaluation_runtime_seconds": 50.839,
+    "evaluation_started_at_utc": "2026-09-30T16:49:02.430921Z",
+    "handoff_to_evaluation_start_seconds": 21.944,
+    "handoff_written_at_utc": "2026-09-30T16:48:40.487361Z",
+    "scan_step_started_at_utc": "2026-09-30T16:47:01Z"
+  }
+}

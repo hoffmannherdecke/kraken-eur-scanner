@@ -1,0 +1,189 @@
+{
+  "altname": "ZECEUR",
+  "candidate_age_seconds": 87,
+  "candidate_event_time_utc": "2026-09-30T16:48:37Z",
+  "candidate_id": "20260930-164837-ZEC-EUR-r36746700536",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Confirm a spot close above 1311.277 EUR and hold above that level with continued volume.",
+      "Reassess whether post-breakout upside supports reward after fees, spread and slippage, with a defined structural stop."
+    ],
+    "reason_codes": [
+      "spread_and_liquidity_acceptable",
+      "higher_lows_and_positive_short_term_trend",
+      "3h_breakout_not_confirmed",
+      "nearby_resistance_limits_entry_efficiency",
+      "round_trip_costs_material",
+      "derivatives_cross_market_only",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid, positive momentum, but price is approaching 3h resistance and remaining upside is not established against Kraken spot costs.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ZECUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 292.47,
+        "available": true,
+        "current_funding_rate": -0.003047726898498814,
+        "current_open_interest": 12254.57,
+        "funding_rate_delta": -0.0790905667241793,
+        "open_interest_pct": -1.1962,
+        "previous_funding_rate": 0.07604283982568048,
+        "previous_observed_at_utc": "2026-09-30T11:57:37.186588Z",
+        "previous_open_interest": 12402.94
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.003047726898498814,
+        "index_price": 1471.6322,
+        "last": 1471.66,
+        "mark_price": 1472.02060700025,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 12254.57,
+        "requested_symbols": [
+          "PF_ZECUSD",
+          "PI_ZECUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ZECUSD",
+        "volume24h": 33124.89
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1298.936,
+      "bid": 1297.064,
+      "last": 1299.269,
+      "spread_pct": 0.1442218798150881
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.01",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.39954091277341064,
+          "ret3h_pct": 0.10784131574481659
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.5121123682126028,
+          "ret3h_pct": -0.232086847571078
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 1.0980616824214584,
+          "ret3h_pct": -0.6661037620790067
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          },
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T16:50:04.626013Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-30T16:50:14.339631Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_043c32c898b230e8006abd3dbdb02087d1a9305519c7db3a4b"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1298.936,
+    "bid": 1297.064,
+    "last": 1299.269,
+    "spread_pct": 0.1442218798150881
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ZEC/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36746700536:ZEC-EUR:1790786917",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "018579d3004e91aea791a61038b6936e612016ed",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-30T16:48:37Z",
+    "candidate_detected_ts": 1790786917,
+    "candidate_snapshot_at_utc": "2026-09-30T16:48:37Z",
+    "detected_to_evaluation_complete_seconds": 97.34,
+    "detected_to_evaluation_start_seconds": 87.555,
+    "evaluation_completed_at_utc": "2026-09-30T16:50:14.339631Z",
+    "evaluation_runtime_seconds": 9.785,
+    "evaluation_started_at_utc": "2026-09-30T16:50:04.554738Z",
+    "handoff_to_evaluation_start_seconds": 84.067,
+    "handoff_written_at_utc": "2026-09-30T16:48:40.487759Z",
+    "scan_step_started_at_utc": "2026-09-30T16:47:01Z"
+  }
+}
