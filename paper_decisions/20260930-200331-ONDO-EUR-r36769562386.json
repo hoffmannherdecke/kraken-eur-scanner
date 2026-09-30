@@ -1,0 +1,191 @@
+{
+  "altname": "ONDOEUR",
+  "candidate_age_seconds": 15,
+  "candidate_event_time_utc": "2026-09-30T20:03:31Z",
+  "candidate_id": "20260930-200331-ONDO-EUR-r36769562386",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.43376 resistance with increased closed volume",
+      "Price holds above 0.43376 on a subsequent check"
+    ],
+    "reason_codes": [
+      "3H_AND_24H_WEAKNESS",
+      "NO_BREAKOUT_OR_HIGHER_LOWS",
+      "CLOSED_VOLUME_BELOW_BASELINE",
+      "MAJOR_MARKETS_NEGATIVE",
+      "FEES_REQUIRE_MEANINGFUL_FOLLOW_THROUGH"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid with a tight spread, but the rebound is unconfirmed amid weak broader-market momentum; wait for a resistance reclaim and stronger closed-candle volume before reassessing.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ONDOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 416.58,
+        "available": true,
+        "current_funding_rate": -1.6351688106025e-05,
+        "current_open_interest": 4678755.0,
+        "funding_rate_delta": -1.4774879062691e-05,
+        "open_interest_pct": -6.0781,
+        "previous_funding_rate": -1.576809043334e-06,
+        "previous_observed_at_utc": "2026-09-30T13:07:12.735741Z",
+        "previous_open_interest": 4981538.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.6351688106025e-05,
+        "index_price": 0.489542,
+        "last": 0.4897,
+        "mark_price": 0.48927510546,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4678755.0,
+        "requested_symbols": [
+          "PF_ONDOUSD",
+          "PI_ONDOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ONDOUSD",
+        "volume24h": 9823772
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.43206,
+      "bid": 0.43198,
+      "last": 0.43317,
+      "spread_pct": 0.018517661219393664
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "15",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.3836260152721316,
+          "ret3h_pct": -0.7560429626121912
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.30296747331051144,
+          "ret3h_pct": -0.8158248123560918
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -1.3456766558503475,
+          "ret3h_pct": -2.527109853842524
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T20:03:46.062770Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-09-30T20:03:57.505987Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_09c9aadef715469f006abd6b23b11087d1af61e6bb523aaaf4"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.43206,
+    "bid": 0.43198,
+    "last": 0.43317,
+    "spread_pct": 0.018517661219393664
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ONDO/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36769562386:ONDO-EUR:1790798611",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "9f8ceb3df12205d3d55e1aeffce2ab693d7145ea",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-09-30T20:03:31Z",
+    "candidate_detected_ts": 1790798611,
+    "candidate_snapshot_at_utc": "2026-09-30T20:03:31Z",
+    "detected_to_evaluation_complete_seconds": 26.506,
+    "detected_to_evaluation_start_seconds": 14.826,
+    "evaluation_completed_at_utc": "2026-09-30T20:03:57.505987Z",
+    "evaluation_runtime_seconds": 11.68,
+    "evaluation_started_at_utc": "2026-09-30T20:03:45.825956Z",
+    "handoff_to_evaluation_start_seconds": 12.524,
+    "handoff_written_at_utc": "2026-09-30T20:03:33.302230Z",
+    "scan_step_started_at_utc": "2026-09-30T20:00:22Z"
+  }
+}

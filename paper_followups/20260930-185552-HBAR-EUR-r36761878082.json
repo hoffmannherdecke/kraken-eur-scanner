@@ -34,6 +34,17 @@
         "mfe_pct": 0.933,
         "peak_at_utc": "2026-09-30T19:07:00Z",
         "trough_at_utc": "2026-09-30T18:56:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": 1.241,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -0.011,
+        "mfe_pct": 2.175,
+        "peak_at_utc": "2026-09-30T19:47:00Z",
+        "trough_at_utc": "2026-09-30T19:18:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -62,7 +73,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-09-30T19:54:58.546544Z"
+    "updated_at_utc": "2026-09-30T20:05:33.003271Z"
   },
   "original_decision": "WAIT",
   "pair": "HBAR/EUR",
