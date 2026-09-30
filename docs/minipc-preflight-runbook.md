@@ -60,18 +60,7 @@ So früh wie möglich vom direkten Arbeiten am Gerät auf Fernadministration wec
   - Secrets getrennt von Repo/Logs
 - TTLs/Log-Rotation/Speicherlimits von Anfang an vorsehen.
 
-## Phase D — externer Fernzugriff
-
-Zielpfad:
-`Laptop außerhalb Heimnetz → FRITZ!Box VPN/WireGuard → Heim-LAN → internes RDP → Mini-PC`
-
-Regeln:
-- keine direkte RDP-Portfreigabe ins Internet.
-- VPN getrennt vom lokalen RDP testen.
-- echter Außentest über Mobilfunk/iPhone-Hotspot.
-- erst als bestanden markieren, wenn Verbindung nach Mini-PC-Neustart ebenfalls klappt.
-
-## Phase E — Entwicklungs-/Runtime-Basis
+## Phase D — Entwicklungs-/Runtime-Basis
 
 Nach stabilem Remotezugriff:
 1. Git installieren/verifizieren.
@@ -84,7 +73,7 @@ Nach stabilem Remotezugriff:
 5. Keine API-Secrets in Git, Slack oder Chat kopieren.
 6. Tests/Smoke-Test zunächst read-only und paper-only.
 
-## Phase F — Watchdog / Logging / Recovery
+## Phase E — Watchdog / Logging / Recovery
 
 Vor Realtime-Strategie:
 - Prozess lebt?
@@ -98,7 +87,7 @@ Vor Realtime-Strategie:
 - kein blindes Replay alter Kandidaten.
 - Backup/Restore-Smoke-Test.
 
-## Phase G — Daten und Integrationen
+## Phase F — Daten und Integrationen
 
 Reihenfolge:
 1. Kraken Public REST/WebSocket lokal.
@@ -108,7 +97,7 @@ Reihenfolge:
 5. ChatGPT Desktop installieren; Work nur für Aufgaben mit echtem Rechner-/Browserkontext.
 6. Uptime Kuma/Grafana nur bei belegtem Zusatznutzen.
 
-## Phase H — V2R3 → neue Infrastruktur → V2R4
+## Phase G — V2R3 → neue Infrastruktur → V2R4
 
 1. V2R3 bleibt bis dahin unverändert.
 2. Dieselbe V2R3-Logik kurz über die neue Infrastruktur shadow/smoke testen.
@@ -117,6 +106,43 @@ Reihenfolge:
 5. Draft-PR #8 / V2R4-Spezifikation gegen alle bis dahin gewonnenen Erkenntnisse prüfen.
 6. Ein kleiner E2E-Paper-Smoke-Test.
 7. Erst danach V2R4 als separate aktive Paper-Serie.
+
+## Phase H — bewusst ganz zuletzt: externe Restarbeiten
+
+Diese beiden Punkte werden **absichtlich erst ganz am Ende des Runbooks** erledigt und blockieren die weitere MINI-PC-/Trading-Inbetriebnahme nicht.
+
+### H1 — externer Fernzugriff testen
+
+Zielpfad:
+`Laptop außerhalb Heimnetz → FRITZ!Box VPN/WireGuard → Heim-LAN → internes RDP → Mini-PC`
+
+Regeln:
+- keine direkte RDP-Portfreigabe ins Internet;
+- VPN getrennt vom lokalen RDP testen;
+- echter Außentest über Mobilfunk/iPhone-Hotspot;
+- erst als bestanden markieren, wenn die Verbindung außerhalb des Heimnetzes funktioniert.
+
+Aktueller Stand:
+- WireGuard-Konfiguration ist vorbereitet;
+- interner RDP-Zugriff ist verifiziert;
+- echter Außentest ist **DEFERRED / FINAL PHASE**.
+
+### H2 — Laufwerk D: sichern, reparieren und neu verifizieren
+
+Aktueller Stand:
+- `D:` / `MISTRAL_450` enthält wichtige vorhandene Dateien;
+- physische Toshiba-USB-Platte meldet `Healthy`;
+- FAT32-Volume weist logische Dateisystemfehler / verlorene Ketten auf;
+- read/write/delete-Smoke war erfolgreich;
+- keine aktive Projektablage auf D:, solange die Dateisystempflege nicht abgeschlossen ist.
+
+Spätere Reihenfolge:
+1. wichtige vorhandene Dateien identifizieren und vollständig sichern;
+2. kontrollierte Dateisystemreparatur oder bewusste Neuformatierung erst danach;
+3. anschließend Volume-Health, Schreib-/Lese-/Löschtest und Kaltstart-Mount erneut prüfen;
+4. erst dann D: ggf. als Bulk-/Archiv-/Capture-/sekundäre Backup-Fläche freigeben.
+
+Bis dahin bleibt **C:** die einzige aktive Projekt-/Runtime-/State-Ablage.
 
 ## Informationen, die erst am Gerät erhoben werden müssen
 
@@ -160,11 +186,12 @@ Erster realer Aufbau des Dell OptiPlex 5060 Micro:
 - ChatGPT im Browser auf dem MINI-PC angemeldet, damit Befehle direkt kopiert werden können.
 
 Noch offen aus diesem Block:
-- echter externer WireGuard/RDP-Test außerhalb des Heimnetzes,
 - Internet-Ausfall + Wiederkehr / Reconciliation,
 - prozessspezifischer lokaler Runtime-Heartbeat/Self-Heal,
 - Altrady-Relay-Secret + E2E-Transport-Smoke,
 - danach V2R3-Shadow auf der lokalen Dauer-Runtime und das V2R4-Release-Gate.
+
+Bewusst **nicht** in diesem Block: externer WireGuard/RDP-Außentest und Laufwerk-D:-Pflege. Beide stehen gesammelt in **Phase H ganz am Ende**.
 
 ## Effizienzregel für weitere Inbetriebnahme
 
@@ -195,7 +222,7 @@ Beobachtungen ohne aktuellen Blocker-Status:
 - Ereignisanzeige enthält u. a. ältere DCOM-10010-Einträge, einen Intel-Grafikdienst-Timeout, einen TPM-WMI-1040-Eintrag sowie während der Einrichtung fehlgeschlagene Updateversuche. Diese werden vor Produktivsetzung nochmals gegen neue, nach der Einrichtung entstandene Ereignisse abgegrenzt.
 - Die `Get-ComputerInfo`-Ausgabe meldet `Windows 10 Pro / WindowsVersion 2009 / Build 26200`; die tatsächlich verwendete Oberfläche/Einrichtung ist Windows 11. Exakte Edition/Build daher später einmal direkt mit `winver` bzw. einer zweiten OS-Abfrage verifizieren, bevor der Runbook-Punkt final geschlossen wird.
 
-Damit ist Phase E (lokale Git/Python-Runtime + read-only Smoke-Test) im Wesentlichen bestanden. Offen bleiben vor allem die echten physischen/Netzpfad-Tests sowie Phase F/G.
+Damit ist Phase D (lokale Git/Python-Runtime + read-only Smoke-Test) im Wesentlichen bestanden. Die operativen nächsten Schritte liegen in Phase E/F/G; externer Fernzugriff und Laufwerk D bleiben bewusst bis Phase H zurückgestellt.
 
 ### Watchdog / Logging / Recovery baseline prepared 2026-09-30
 
@@ -379,5 +406,5 @@ Decision:
 - later sequence: identify/preserve important files -> controlled filesystem repair or clean reformat -> re-run health + write/read/delete + cold-mount checks;
 - C: remains the only active project/runtime/state location for now.
 
-This storage-maintenance item is intentionally deferred so MINI-PC commissioning can continue.
+This storage-maintenance item is intentionally deferred so MINI-PC commissioning can continue. Operative Bearbeitung erfolgt erst in **Phase H2 ganz am Ende des Runbooks**.
 
