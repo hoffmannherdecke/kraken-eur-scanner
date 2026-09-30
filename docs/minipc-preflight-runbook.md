@@ -138,3 +138,31 @@ Diese Werte werden beim ersten Start erfasst und ins Versionsregister übernomme
 - Basis-Setup, LAN, RDP, Energie und Sicherheit ohne Work erledigen.
 - Work erst bei echtem Mehrwert für Browser-/Datei-/Desktopkontext verwenden.
 - falls vor der regulären Freischaltung keine Credits verfügbar sind, erst dann gezielt nachkaufen.
+
+## Inbetriebnahme-Stand 2026-09-30
+
+Erster realer Aufbau des Dell OptiPlex 5060 Micro:
+
+- Rechnername: `MINI-PC`.
+- Windows 11 Pro gestartet und vollständig aktualisiert; automatische Updates bleiben aktiv, aggressive/optionale Vorschauupdates nicht priorisiert.
+- Lokales Benutzerkonto mit Kennwort vorhanden; automatische Windows-Anmeldung für den 24/7-Betrieb eingerichtet.
+- FRITZ!Box-DHCP-Reservierung: interne IPv4 `192.168.178.179`.
+- Keine direkte RDP-Portfreigabe ins Internet.
+- Windows Remotedesktop aktiviert; interner RDP-Test auf `192.168.178.179` erfolgreich.
+- FRITZ!Box-WireGuard-Konfiguration auf dem Notebook eingerichtet; echter Außentest via Mobilfunk/iPhone-Hotspot noch offen.
+- Windows-Energie: Bildschirm 15 Minuten, Standby = Nie, Ruhezustand = Nie, Energiesparmodus = Aus, Energiestatus = Ausbalanciert.
+- BIOS: `AC Recovery = Power On` gesetzt. Praktischer Stromausfall-/Wiederanlauf-Test bewusst auf später nach finaler Geräteplatzierung verschoben.
+- Dell Command | Update 5.7.2 installiert. Dell-/Intel-Treiberstand aktualisiert; danach meldet DCU „System auf neuestem Stand“. Geräte-Manager ohne gelbe Warnsymbole.
+- Lokale Projektstruktur unter `%USERPROFILE%\Trading` angelegt: `Runtime`, `State`, `Logs`, `Temp`, `Archive`, `Backup`, `Secrets`, `Repos`.
+- Git 2.55.0 und Python 3.13.15 installiert; `python` und `py` zeigen beide auf 3.13.15.
+- Kanonisches Repository `hoffmannherdecke/kraken-eur-scanner` nach `%USERPROFILE%\Trading\Repos\kraken-eur-scanner` geklont.
+- Repository-Check: Branch `main`, clean working tree, `origin` korrekt, Stand bei Commit `c6a93610` (`[paper-runtime] persist active-series state`).
+- ChatGPT im Browser auf dem MINI-PC angemeldet, damit Befehle direkt kopiert werden können.
+
+Noch offen aus diesem Block:
+- echter externer WireGuard/RDP-Test außerhalb des Heimnetzes,
+- praktischer Stromausfall-/Wiederanlauf-Test,
+- SSD-/Ereignisanzeige-/Grundlast-Check,
+- lokale Python-Runtime/venv und Smoke-Test,
+- danach Watchdog/Logging/Recovery und Integrationen gemäß Runbook.
+
