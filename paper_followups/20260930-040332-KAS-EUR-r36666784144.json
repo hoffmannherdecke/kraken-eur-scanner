@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-09-30T04:10:00Z",
         "trough_at_utc": "2026-09-30T04:04:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 1.408,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": 0.0,
+        "mfe_pct": 1.852,
+        "peak_at_utc": "2026-09-30T05:07:00Z",
+        "trough_at_utc": "2026-09-30T04:04:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -88,7 +99,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-09-30T07:50:46.182793Z"
+    "updated_at_utc": "2026-09-30T08:05:33.499537Z"
   },
   "original_decision": "WAIT",
   "pair": "KAS/EUR",
