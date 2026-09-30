@@ -359,3 +359,15 @@ Für neue Auswertungen und die V2R4-Freigabe ist deshalb verpflichtend:
 Für V2R4 ist dies mindestens eine verbindliche Mess- und Revalidation-Anforderung.
 Eine darüber hinausgehende neue Entry-Mechanik darf nur explizit versioniert und vor
 Aktivierung getestet werden. Für V3 ist der Punkt verpflichtend im Migration Ledger.
+
+### 2026-09-30 — Laufentscheidung V2R3 → V2R4
+
+Verbindliche Arbeitsentscheidung:
+- V2R3 bleibt vorerst **unverändert aktiv**, damit die laufende Stichprobe nicht durch Regeländerungen verunreinigt wird.
+- Die aktuelle Zeitstempel-/Opportunity-Auswertung läuft weiter: Bewegungsbeginn bzw. Impulsanker → Scanner-Erkennung → Evaluationsbeginn/-ende → Revalidation → weiterer Kursverlauf.
+- Morgen bzw. übermorgen werden insbesondere WAIT-/REJECT-Gründe, Post-Detection-MFE/MAE sowie Fälle ausgewertet, in denen der Kurs nach Ablehnung trotzdem relevant weiterlief.
+- Parallel wird der Mini-PC als eventnähere 24/7-Basis in Betrieb genommen; GitHub-Schedule-Jitter bleibt bis dahin ein dokumentierter Infrastruktur-Nachteil.
+- V2R4 wird auf Basis dieser Auswertung und der Mini-PC-Inbetriebnahme als **neue homogene Paper-Serie** gestartet, nicht als stille Änderung der V2R3-Serie.
+- Für V2R4 gilt ausdrücklich: Die Strategie soll belastbar **mehr valide Trades erzeugen**, ohne Schutzfilter blind zu lockern. Anhaltend zu geringe Trade-Frequenz ist selbst ein Testbefund, weil eine praktisch leere 20-Trade-Serie keine belastbare Strategieauswertung ermöglicht.
+- Deshalb müssen vor V2R4 sowohl Fehlablehnungen/zu defensive Filter als auch echte Timing-/Revalidation-Verluste getrennt identifiziert werden. Ziel ist nicht „mehr Trades um jeden Preis“, sondern genügend prospektive Trades für eine aussagekräftige Testphase bei weiterhin kontrolliertem Risiko.
+
