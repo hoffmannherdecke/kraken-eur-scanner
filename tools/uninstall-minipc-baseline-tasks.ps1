@@ -7,7 +7,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
   throw "Bitte dieses Skript in einer als Administrator gestarteten PowerShell ausführen."
 }
 
-foreach ($name in @("CryptoMiniPC-Health","CryptoMiniPC-LogCleanup")) {
+foreach ($name in @("CryptoMiniPC-Health","CryptoMiniPC-LogCleanup","CryptoMiniPC-Backup")) {
   if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) {
     Unregister-ScheduledTask -TaskName $name -Confirm:$false
     Write-Host "Entfernt: $name"
