@@ -183,3 +183,15 @@ Files:
 - `tests/test_v2r4_precandidate_discovery.py`
 
 The active V2R3 control remains unchanged.
+
+## Kraken tradability / universe rule
+
+Kraken tradability is a live market-data property, not a remembered whitelist.
+
+- V2R4 discovery refreshes Kraken `/0/public/AssetPairs` on each watcher cycle.
+- Only Spot EUR pairs whose Kraken `status` is `online` belong to the actionable discovery universe.
+- Symbol aliases must be resolved from Kraken metadata (`wsname`, `altname`, pair key); a chat-memory or manually maintained symbol list must never be the primary source.
+- A periodic 14-day universe audit may remain as an integrity check for alias/listing drift, but it is not the operational source of truth.
+- Coin-specific reviews must not classify a symbol as unavailable on Kraken without a fresh Kraken-universe lookup.
+- This is infrastructure/data-quality behavior only; it does not modify V2R3 entry, stop, sizing or scoring rules.
+
