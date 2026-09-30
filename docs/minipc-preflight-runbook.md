@@ -197,3 +197,24 @@ Beobachtungen ohne aktuellen Blocker-Status:
 
 Damit ist Phase E (lokale Git/Python-Runtime + read-only Smoke-Test) im Wesentlichen bestanden. Offen bleiben vor allem die echten physischen/Netzpfad-Tests sowie Phase F/G.
 
+### Watchdog / Logging / Recovery baseline prepared 2026-09-30
+
+Cloud side verified:
+- `.github/workflows/process-health.yml` runs on the scheduled watchdog cadence and performs bounded technical self-heal only; it cannot enable real-money actions or alter strategy.
+- `.github/workflows/scanner-startup-recovery.yml` is an independent one-shot fallback for scheduled scanner `startup_failure`, with loop protection.
+- Latest verified health audit after recovery: scanner successful, paper runtime successful, zero orphan candidates, zero overdue WAITs, zero missing position states. Remaining status is `WARNING` solely because V2R3 still has 0 `BUY_SCOUT` across 530 terminal decisions; that is a strategy/test finding, not an infrastructure failure.
+
+Local baseline prepared in the repository:
+- `tools/minipc-watchdog.ps1`: every-run local health probe for disk, repo/venv presence, DNS/TCP/HTTPS to Kraken, Python HTTPS/TLS path and Git identity. Writes only `Trading\State\minipc-health.json` and `Trading\Logs\minipc-watchdog.log`; no configuration changes, no process restart, no Git mutation, no trading action.
+- `tools/minipc-log-cleanup.ps1`: bounded cleanup only inside `Trading\Logs` and `Trading\Temp` (defaults: 14 days / 2 days).
+- `tools/install-minipc-baseline-tasks.ps1`: registers SYSTEM tasks `CryptoMiniPC-Health` (every 5 minutes + startup) and `CryptoMiniPC-LogCleanup` (daily 04:20), then performs an immediate health run.
+- `tools/uninstall-minipc-baseline-tasks.ps1`: explicit rollback for both scheduled tasks.
+
+Deliberately **not** enabled yet:
+- no automatic restart/self-heal of a local scanner process until the concrete local runtime process/heartbeat contract exists;
+- no automatic Git pull/reset;
+- no Altrady dependency;
+- no real-money execution.
+
+Next local user action: pull the repository once and run the baseline-task installer from an elevated PowerShell. After its immediate health report is verified, Phase F baseline can be marked active.
+
