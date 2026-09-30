@@ -642,14 +642,45 @@ Interpretation:
 - Altrady is not yet a live strategy trigger: real Altrady alert/webhook configuration, measured live latency and explicit strategy/Fresh-Recheck coupling remain separate open steps;
 - V2R4 itself remains a separate paper-activation decision and has not been silently promoted to live/real-money execution.
 
-### Current continuation checkpoint — before live Altrady alert wiring
+### Current continuation checkpoint — paused after first real Altrady Price-Alert attempt, 2026-10-01 ~00:35 CEST
 
-Resume point:
-- continue immediately with the **real Altrady alert/webhook configuration**;
-- do **not** repeat the already-passed physical V2R4 core gate or synthetic Altrady relay transport E2E unless a later change invalidates them;
-- current Altrady state is **TRANSPORT ACTIVE / LOCAL E2E VERIFIED / STRATEGY ACTION NONE_TRANSPORT_ONLY**;
-- next proof after real Altrady alert setup: actual Altrady event -> Supabase relay -> MINI-PC receipt/ack -> measured latency; only after that consider explicit Fresh-Recheck/strategy coupling;
-- V2R4 remains paper/prep only until its separate activation decision.
+Current verified base:
+- physical V2R4 trigger -> fresh paper recheck gate remains **PASS**;
+- Altrady relay transport remains **TRANSPORT ACTIVE / LOCAL E2E VERIFIED / STRATEGY ACTION NONE_TRANSPORT_ONLY**;
+- synthetic Supabase relay -> MINI-PC -> ack smoke remains **PASS** with healthy Altrady heartbeat/watchdog;
+- do **not** repeat those already-passed gates unless a later change invalidates them;
+- V2R4 remains paper/prep only; no exchange account, no order API, no real-money action.
+
+What was done in the real Altrady UI:
+- Altrady login on the MINI-PC succeeded and the Trading Terminal / Alerts panel was opened.
+- `Time` alerts were found to be unavailable on the current Altrady plan (`Time Alerts are not available on your plan; Essential or higher required`), so the real transport proof was switched to an ordinary **Price Alert**.
+- A BTC/XBT market Price Alert was configured as `Once` with `Webhook = External URL`.
+- The webhook URL used is the prepared Supabase relay endpoint and was re-copied from the local helper to avoid manual transcription.
+- The Note/payload was copied from `tools/minipc-altrady-alert-helper.ps1 -Mode TimeTestPayload`; the shared relay secret was never printed and must never be copied into chat/logs.
+- The real-proof listener was started with `tools/minipc-altrady-live-alert-proof.py` and a 600-second timeout.
+- Result of this first live attempt: **TIMEOUT / no matching real Altrady event observed** (`No real Altrady time-test alert observed before timeout`).
+- This timeout is **not classified as a transport failure**: during the waiting period the configured BTC price threshold was not proven to have been crossed. No evidence currently shows a broken Altrady -> Supabase -> MINI-PC path.
+
+Exact resume plan for the next session:
+1. Work slowly through the Altrady Price Alert UI **one field at a time**; the user explicitly wants detailed guidance because alert creation is not yet routine.
+2. Use the current BTC/XBT market only for the transport proof.
+3. To avoid another long wait, create a very tight `Once` Price Alert just above the then-current price and, if helpful, a second tight `Once` Price Alert just below it. Give them a short expiry (about 15 minutes).
+4. Set `Webhook = External URL`.
+5. Re-copy the canonical relay URL with:
+   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\tools\minipc-altrady-alert-helper.ps1" -Mode Url`
+6. Re-copy the secret-bearing JSON payload with:
+   `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\tools\minipc-altrady-alert-helper.ps1" -Mode TimeTestPayload`
+   Paste it into Altrady `Note`; **do not send a screenshot after the secret-bearing Note is visible**.
+7. Save the alert(s), then start the proof listener again:
+   `python ".\tools\minipc-altrady-live-alert-proof.py" --trading-root "$env:USERPROFILE\Trading" --timeout-seconds 600`
+8. Expected success marker: `ALTRADY_REAL_ALERT_E2E_PROOF_V1` with `status: PASS`; capture relay -> MINI-PC latency.
+9. After PASS, remove/disable the temporary test alert(s), verify Altrady poller heartbeat + local watchdog remain HEALTHY, and record the measured real-alert proof.
+10. Only after that consider explicit Altrady -> Fresh-Recheck/strategy coupling. Altrady remains an additional trigger, never the sole trigger/SPOF.
+
+Important next architectural step after the Altrady transport proof (not for the paused session unless time permits):
+- the MINI-PC's current continuous Kraken BTC/EUR canary is only a transport/health canary;
+- the main purpose of the MINI-PC remains a broad continuous **Kraken WebSocket/REST realtime watcher across the relevant Kraken-EUR universe**, so fast moves can be detected event-near instead of waiting for periodic GitHub/scanner cycles;
+- Altrady is complementary, not the primary all-market realtime price source.
 
 ### Final runbook items — intentionally last
 
