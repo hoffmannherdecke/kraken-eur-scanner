@@ -1,0 +1,223 @@
+{
+  "altname": "AAVEEUR",
+  "candidate_id": "20260930-050333-AAVE-EUR-r36671462267",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A sustained closed-bar hold above the breakout with renewed volume.",
+      "Evidence of sufficient post-cost upside from a confirmed entry."
+    ],
+    "reason_codes": [
+      "breakout_already_run",
+      "fading_follow_through_volume",
+      "cost_hurdle",
+      "insufficient_remaining_edge"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "AAVE has cleared prior resistance and the major-asset tape has stabilized, but the move is already extended from the earlier entry area and follow-through volume is fading. The supplied evidence does not establish enough remaining upside after Kraken spot costs for a scout.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "AAVEUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 49.01,
+        "available": true,
+        "current_funding_rate": -0.00310017649913578,
+        "current_open_interest": 23014.49,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 0.4148,
+        "previous_funding_rate": -0.00310017649913578,
+        "previous_observed_at_utc": "2026-09-30T05:03:59.447516Z",
+        "previous_open_interest": 22919.41
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.00310017649913578,
+        "index_price": 162.4316,
+        "last": 162.98,
+        "mark_price": 162.38310094156,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 23014.49,
+        "requested_symbols": [
+          "PF_AAVEUSD",
+          "PI_AAVEUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_AAVEUSD",
+        "volume24h": 34337.36
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 143.26,
+      "bid": 143.16,
+      "last": 143.71,
+      "spread_pct": 0.06982752601074949
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.05",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.13401050587944496,
+          "ret3h_pct": 0.11575853124050628
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.16241132045067275,
+          "ret3h_pct": 0.273816750792788
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.27592768791626643,
+          "ret3h_pct": 0.028473804100226374
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T05:52:58.354334Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0c9018e79708ca08006abca3bbe4b887d1b92f68edea77d115"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 143.26,
+    "bid": 143.16,
+    "last": 143.71,
+    "spread_pct": 0.06982752601074949
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 142.03,
+      "high": 142.13,
+      "low": 141.81,
+      "open": 142.13,
+      "trades": 14,
+      "ts": 1790743500,
+      "volume": 149.17697427,
+      "vwap": 142.11
+    },
+    {
+      "close": 141.9,
+      "high": 142.93,
+      "low": 141.9,
+      "open": 142.01,
+      "trades": 84,
+      "ts": 1790744400,
+      "volume": 375.67700083,
+      "vwap": 142.4
+    },
+    {
+      "close": 143.28,
+      "high": 143.28,
+      "low": 141.83,
+      "open": 141.93,
+      "trades": 29,
+      "ts": 1790745300,
+      "volume": 104.89506343,
+      "vwap": 142.87
+    },
+    {
+      "close": 143.35,
+      "high": 143.49,
+      "low": 143.07,
+      "open": 143.3,
+      "trades": 32,
+      "ts": 1790746200,
+      "volume": 85.02168903,
+      "vwap": 143.31
+    },
+    {
+      "close": 143.71,
+      "high": 143.71,
+      "low": 143.21,
+      "open": 143.33,
+      "trades": 11,
+      "ts": 1790747100,
+      "volume": 10.05466542,
+      "vwap": 143.26
+    }
+  ],
+  "pair": "AAVE/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-050333-AAVE-EUR-r36671462267.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T05:53:08.093739Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "0c8499a15d2d26952190c467c6fd6d8c19328233",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T05:53:08.093739Z",
+    "revalidation_started_at_utc": "2026-09-30T05:52:57.890196Z",
+    "ttl_due_at_utc": "2026-09-30T05:48:59.447516Z",
+    "ttl_lag_seconds": 238.443
+  }
+}
