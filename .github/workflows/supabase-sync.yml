@@ -1,0 +1,62 @@
+name: Supabase paper archive sync
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'paper_runtime_control.json'
+      - 'paper_strategy_spec.json'
+      - 'paper_decisions/**'
+      - 'paper_revalidations/**'
+      - 'paper_followups/**'
+      - 'paper_positions/**'
+      - 'supabase_sync.py'
+      - 'tools/supabase-sync-audit.py'
+      - '.github/workflows/supabase-sync.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-paper-archive
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Audit repository-side archive payload
+        run: python tools/supabase-sync-audit.py
+
+      - name: Check archive credentials
+        id: creds
+        shell: bash
+        run: |
+          if [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "SUPABASE_ARCHIVE_CREDENTIALS configured"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "SUPABASE_ARCHIVE_CREDENTIALS missing; archive sync skipped without affecting paper runtime"
+          fi
+
+      - name: Sync active paper archive
+        if: steps.creds.outputs.configured == 'true'
+        run: python supabase_sync.py
+
+      - name: Report fail-soft state
+        if: steps.creds.outputs.configured != 'true'
+        run: |
+          echo "SUPABASE_SYNC_NOT_CONFIGURED"
+          echo "This is a secondary archive path only; scanner/evaluator execution remains independent."
