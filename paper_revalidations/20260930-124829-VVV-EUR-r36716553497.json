@@ -1,0 +1,206 @@
+{
+  "altname": "VVVEUR",
+  "candidate_id": "20260930-124829-VVV-EUR-r36716553497",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "breakout_hold_failed",
+      "failed_breakout",
+      "spread_and_fee_costs",
+      "derivatives_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The breakout level was briefly cleared, but price then closed sharply back below 24.664; the required hold failed. Current spread and round-trip fees further weaken the setup.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "VVVUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_VVVUSD",
+          "PI_VVVUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 24.39,
+      "bid": 24.302,
+      "last": 24.305,
+      "spread_pct": 0.36145568060462074
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "0.3",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 1.4591740013541132,
+          "ret3h_pct": 1.5824209196262595
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.580823988912682,
+          "ret3h_pct": 1.0408140879059502
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 1.8765993744668696,
+          "ret3h_pct": 2.118563556906694
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          },
+          {
+            "published_at": "2026-09-29T20:00:00+00:00",
+            "title": "Agencies publish resolution plan feedback letters for 15 banking organizations"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-29T09:55:53-04:00",
+            "title": "SEC Charges Multiple Entities in Fraud Schemes Totaling at Least $15 Million That Used WhatsApp and Other Platforms to Lure Investors"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-09-30T13:36:24.277898Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_086a97160a09263d006abd105971f087d196e946ad67f563cd"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 24.39,
+    "bid": 24.302,
+    "last": 24.305,
+    "spread_pct": 0.36145568060462074
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 24.585,
+      "high": 24.664,
+      "low": 24.101,
+      "open": 24.101,
+      "trades": 66,
+      "ts": 1790771400,
+      "volume": 543.56874,
+      "vwap": 24.521
+    },
+    {
+      "close": 24.556,
+      "high": 24.786,
+      "low": 24.556,
+      "open": 24.622,
+      "trades": 54,
+      "ts": 1790772300,
+      "volume": 841.04135,
+      "vwap": 24.632
+    },
+    {
+      "close": 24.7,
+      "high": 24.8,
+      "low": 24.586,
+      "open": 24.65,
+      "trades": 54,
+      "ts": 1790773200,
+      "volume": 423.04358,
+      "vwap": 24.702
+    },
+    {
+      "close": 24.84,
+      "high": 24.972,
+      "low": 24.737,
+      "open": 24.745,
+      "trades": 69,
+      "ts": 1790774100,
+      "volume": 1074.93678,
+      "vwap": 24.808
+    },
+    {
+      "close": 24.305,
+      "high": 24.812,
+      "low": 24.305,
+      "open": 24.811,
+      "trades": 10,
+      "ts": 1790775000,
+      "volume": 59.81859,
+      "vwap": 24.536
+    }
+  ],
+  "pair": "VVV/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20260930-124829-VVV-EUR-r36716553497.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-09-30T13:36:30.701314Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "4c10a0d5b98b1d9e37d5efa0bc6460009596e818",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-09-30T13:36:30.701314Z",
+    "revalidation_started_at_utc": "2026-09-30T13:36:23.922380Z",
+    "ttl_due_at_utc": "2026-09-30T13:34:08.347687Z",
+    "ttl_lag_seconds": 135.575
+  }
+}
