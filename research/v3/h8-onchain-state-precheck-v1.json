@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H8_ONCHAIN_STATE_PRECHECK_V1",
   "hypothesis_id": "V3-H8",
-  "status": "PRECHECK_SOURCE_COVERAGE_ONLY",
+  "status": "PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING",
   "prepared_at_utc": "2026-10-01T18:40:00Z",
   "purpose": "Audit public on-chain metric coverage and time-availability semantics before any historical or prospective signal test.",
   "first_source": "coinmetrics_community_network_data",
@@ -53,5 +53,73 @@
     "leverage_allowed": false,
     "real_money_actions_allowed": false
   },
-  "next_gate": "REAL_PUBLIC_COMMUNITY_COVERAGE_AUDIT_THEN_DECIDE_PROSPECTIVE_ONLY_VS_HISTORICAL_IF_KNOWN_AT_PROVEN"
+  "next_gate": "PROSPECTIVE_COMPACT_CAPTURE_TO_MEASURE_PUBLICATION_LAG_AND_KNOWN_AT_BEFORE_ANY_HISTORICAL_OR_SIGNAL_TRIAL",
+  "coverage_readiness": {
+    "audit": "CI_GREEN_RUN_1",
+    "requested_assets": [
+      "btc",
+      "eth",
+      "sol",
+      "xrp",
+      "ada"
+    ],
+    "returned_assets": [
+      "ada",
+      "btc",
+      "eth",
+      "sol",
+      "xrp"
+    ],
+    "active_addresses": {
+      "count": 4,
+      "coverage_pct": 80,
+      "assets": [
+        "ada",
+        "btc",
+        "eth",
+        "xrp"
+      ]
+    },
+    "mvrv": {
+      "count": 4,
+      "coverage_pct": 80,
+      "assets": [
+        "ada",
+        "btc",
+        "eth",
+        "xrp"
+      ]
+    },
+    "transaction_count": {
+      "count": 4,
+      "coverage_pct": 80,
+      "assets": [
+        "ada",
+        "btc",
+        "eth",
+        "xrp"
+      ]
+    },
+    "exchange_in_out_flow": {
+      "count": 2,
+      "coverage_pct": 40,
+      "assets": [
+        "btc",
+        "eth"
+      ],
+      "metric_ids": [
+        "FlowInExNtv",
+        "FlowInExUSD",
+        "FlowOutExNtv",
+        "FlowOutExUSD"
+      ]
+    },
+    "new_addresses": {
+      "count": 0,
+      "coverage_pct": 0,
+      "assets": []
+    },
+    "sol_target_metric_coverage": "NONE_IN_CHECKED_GROUPS",
+    "interpretation": "Coverage is heterogeneous. Missing metrics stay missing; no asset/metric backfill or survivorship filtering is allowed."
+  }
 }
