@@ -63,7 +63,7 @@ Pflicht für Auswertung und nächste Version:
 | Betriebssystem | Windows 11 Pro, Build 26200 | VERIFIED | lokaler Sammeltest / next-gate |
 | Netzwerk lokal | LAN über FRITZ!Box 7590 AX | ACTIVE / VERIFIED | lokaler Kraken HTTPS/WebSocket-Smoke erfolgreich |
 | Interner Fernzugriff | Windows RDP im LAN | ACTIVE | MINI-PC während Einrichtung erfolgreich per RDP administriert |
-| Externer Fernzugriff | FRITZ!Box-VPN/WireGuard → internes RDP | CONFIGURED / TEST DEFERRED TO FINAL RUNBOOK PHASE | kein direktes RDP-Portforwarding; Außentest bewusst erst ganz am Ende |
+| Externer Fernzugriff | FRITZ!Box-VPN/WireGuard → internes RDP | ACTIVE / EXTERNAL E2E VERIFIED | echter Außentest 2026-10-01 über Mobilfunk/iPhone-Hotspot bestanden; WireGuard aktiv, RDP auf MINI-PC `192.168.178.179` ohne Einschränkungen; kein direktes RDP-Portforwarding |
 | Stromausfall-Recovery | Dell BIOS AC Recovery = Power On | ACTIVE / VERIFIED | echter Stromverlust-/Umplatzierungs-Test bestanden; automatischer Boot ohne Tastendruck, RDP danach wieder erreichbar |
 | Watchdog/Recovery | lokaler Supervisor + unabhängiger GitHub-Fallback | CLOUD VERIFIED / LOCAL BASELINE ACTIVE | GitHub-Watchdog + Startup-Recovery aktiv; lokale SYSTEM-Tasks alle 5 Min + Startup und tägliche Log-Bereinigung 04:20 installiert; Immediate Health exit 0; prozessspezifischer Self-Heal folgt erst mit lokaler Runtime |
 | Backup/Restore | lokales State-Backup + Restore-Smoke | ACTIVE / VERIFIED | 04:00 daily, 14-day retention, no Secrets/Logs/Repo; immediate seed + restore smoke passed locally; watchdog warns only after 7 days without backup |
@@ -82,6 +82,7 @@ Pflicht für Auswertung und nächste Version:
 | MINI-PC runtime supervisor | bounded Task Scheduler liveness recovery | ACTIVE / SELF-HEAL VERIFIED | 2-min cadence + startup; 10-min per-task restart backoff; controlled stop of archive-only support task recovered automatically; heartbeat advanced; local watchdog HEALTHY; no strategy/evaluator/order path |
 | GitHub Cloudpfad | bestehend | ACTIVE | unabhängiger Fallback bleibt erhalten |
 | Supabase archive | `paper_series` / `paper_candidate_outcomes` / `paper_trade_results` | ACTIVE / VERIFIED / FAIL-SOFT | push/manual + opportunistic workflow_run + unabhängige Reconciliation :07/:37; zuletzt 578 V2R3-Outcomes archiviert, 0 Trades |
+| Historical/backtest research layer | Kraken OHLCVT + targeted Time & Sales, local research-only | PREFLIGHT PREPARED / CI VERIFIED / NO BULK DOWNLOAD | `docs/historical-backtest-preflight.md`; official 2026Q2 archive/checksum manifest, C:-storage layout, strict point-in-time contract, synthetic gap/future-leak smoke, immutable SQLite trial ledger and MINI-PC plan-only prep are green; active V2R3/V2R4 unchanged |
 | Slack Push | GitHub owner-approved action relay → Slack webhook → real `@Hoffis` mention → iPhone | ACTIVE / E2E VERIFIED | 2026-10-01 relay workflow SUCCESS, Slack HTTP 200/ok, physical iPhone push received; `#krypto-signale` mobile setting = Nur Erwähnungen; raw candidates remain silent |
 | ChatGPT Desktop/Work | ChatGPT auf MINI-PC eingerichtet; Work sparsam | BASE ACTIVE | ChatGPT-Konto/Browserzugriff vorhanden; Work weiterhin nur bei echtem Desktop-/Browsermehrwert |
 
