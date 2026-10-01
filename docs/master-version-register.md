@@ -7,6 +7,7 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 ## Governance
 
 - Kein relevanter Bestandteil wird nur über Chat-Erinnerung verwaltet.
+- Offene GitHub Issues dürfen keine zweite To-do-Liste bilden: `backlog-issue-reconciliation.yml` prüft automatisch, dass jeder offene Issue im kanonischen `PROJECT_BACKLOG.md` referenziert ist.
 - Storage-/Retention-Governance ist in `docs/storage-retention-policy.md` zentral festgelegt: kurzlebige Logs/Temp/diagnostische Artifacts/Caches werden begrenzt, immutable Paper-/Trial-/Provenance-Evidenz bleibt erhalten.
 - Dauerhaft projektrelevante Informationen aus Gesprächen werden proaktiv kanonisch dokumentiert, auch wenn der Nutzer nicht ausdrücklich „merk dir das“ sagt. Dazu zählen insbesondere Entscheidungen, Anforderungen, neue Daten-/Informationsquellen, Hypothesen, Testregeln, offene Punkte, Fehlerursachen, Architektur-/Strategieänderungen und verbindliche Arbeitsprinzipien. Reine Zwischenüberlegungen oder verworfene Ideen werden nur dann dauerhaft aufgenommen, wenn sie für die Nachvollziehbarkeit relevant sind.
 - **Autonome Arbeitsregel (verbindlich, 2026-10-01 nachgeschärft):** Innerhalb des bereits freigegebenen Projektumfangs arbeitet ChatGPT selbstständig und ohne erneute Zwischenfreigaben weiter, solange keine zwingende Nutzeraktion erforderlich ist. Kein Stoppen nach jedem Teilresultat, kein „Soll ich weitermachen?“, kein Warten auf ein Okay. Nach jeder vom Nutzer geleisteten Hilfestellung wird automatisch weitergearbeitet.
