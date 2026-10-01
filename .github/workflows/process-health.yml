@@ -31,7 +31,24 @@ jobs:
         with:
           python-version: '3.13'
       - name: Audit full paper chain and bounded self-heal
-        run: python process_audit.py
+        shell: bash
+        run: |
+          set +e
+          python process_audit.py
+          code=$?
+          set -e
+
+          # process_audit.py uses exit 2 for a detected CRITICAL health state.
+          # That is an application-level incident, not a broken GitHub workflow:
+          # self-healing and Slack escalation already happen inside the audit.
+          # Keep GitHub "Run failed" (and its email) for unexpected execution failures.
+          if [ "$code" -eq 0 ] || [ "$code" -eq 2 ]; then
+            echo "PROCESS_AUDIT_COMPLETED health_exit=$code"
+            exit 0
+          fi
+
+          echo "::error::process_audit.py failed unexpectedly with exit code $code"
+          exit "$code"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
