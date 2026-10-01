@@ -1,0 +1,216 @@
+{
+  "altname": "STXEUR",
+  "candidate_id": "20261001-055717-STX-EUR-r36822125934",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained 15m hold above resistance with renewed closed-bar volume",
+      "Controlled retest that holds without losing momentum"
+    ],
+    "reason_codes": [
+      "extended_24h_move",
+      "near_7d_30d_high",
+      "weak_closed_volume_follow_through",
+      "high_round_trip_costs",
+      "wide_current_spread",
+      "mixed_major_market_regime"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "STX remains sharply extended and near its 7d/30d high. The large breakout bar lacks sustained volume follow-through, while the current spread and taker fees make a late entry inefficient; no scout plan is justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "STXUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "HTTP Error 503: Service Unavailable",
+        "error": "HTTPError",
+        "requested_symbols": [
+          "PF_STXUSD",
+          "PI_STXUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.3618,
+      "bid": 0.3604,
+      "last": 0.3631,
+      "spread_pct": 0.38770423705345125
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "20",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1788291060157099,
+          "ret3h_pct": 0.5565458426215031
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.08750218755468886,
+          "ret3h_pct": 0.8042174119585965
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.10431484115694944,
+          "ret3h_pct": 0.6497229122874204
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T07:04:37.041620Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0ec08d7baa5739f7006abe0606887887d1a452ff32ed5539ee"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.3618,
+    "bid": 0.3604,
+    "last": 0.3631,
+    "spread_pct": 0.38770423705345125
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.3528,
+      "high": 0.3528,
+      "low": 0.3528,
+      "open": 0.3528,
+      "trades": 1,
+      "ts": 1790834400,
+      "volume": 708.5667245,
+      "vwap": 0.3528
+    },
+    {
+      "close": 0.3517,
+      "high": 0.3529,
+      "low": 0.3517,
+      "open": 0.3529,
+      "trades": 3,
+      "ts": 1790835300,
+      "volume": 1340.01175189,
+      "vwap": 0.3518
+    },
+    {
+      "close": 0.3538,
+      "high": 0.3538,
+      "low": 0.3538,
+      "open": 0.3538,
+      "trades": 1,
+      "ts": 1790836200,
+      "volume": 706.6139061,
+      "vwap": 0.3538
+    },
+    {
+      "close": 0.3642,
+      "high": 0.3642,
+      "low": 0.3558,
+      "open": 0.3566,
+      "trades": 17,
+      "ts": 1790837100,
+      "volume": 19713.308114,
+      "vwap": 0.3585
+    },
+    {
+      "close": 0.3631,
+      "high": 0.3631,
+      "low": 0.3631,
+      "open": 0.3631,
+      "trades": 1,
+      "ts": 1790838000,
+      "volume": 1011.8159221,
+      "vwap": 0.3631
+    }
+  ],
+  "pair": "STX/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-055717-STX-EUR-r36822125934.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T07:04:44.056346Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "079fded000530c1a3b1cca82720e84737d1d0fd1",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T07:04:44.056346Z",
+    "revalidation_started_at_utc": "2026-10-01T07:04:36.582694Z",
+    "ttl_due_at_utc": "2026-10-01T06:49:57.892095Z",
+    "ttl_lag_seconds": 878.691
+  }
+}
