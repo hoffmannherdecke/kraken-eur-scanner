@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "prepared_at_utc": "2026-10-01T00:00:00Z",
+  "mode": "metadata_only",
+  "storage_root_windows": "C:\\Users\\ADMIN\\Trading\\Historical",
+  "active_strategy_runtime_changes_allowed": false,
+  "bulk_downloads_allowed": false,
+  "source_snapshot_cutoff_utc": "2026-06-30T23:59:59Z",
+  "source_pages": {
+    "ohlcvt": "https://support.kraken.com/articles/360047124832-downloadable-historical-ohlcvt-open-high-low-close-volume-trades-data",
+    "trades": "https://support.kraken.com/articles/360047543791-downloadable-historical-market-data-time-and-sales-"
+  },
+  "datasets": [
+    {
+      "id": "kraken_ohlcvt_full_2026q2",
+      "kind": "ohlcvt",
+      "download_enabled": false,
+      "archive_name": "Kraken_OHLCVT_Full_2026Q2.zip",
+      "part_count": 5,
+      "approx_part_gb": 2,
+      "part_url_template": "https://assets.kraken.com/marketing/institutions/Kraken_OHLCVT_Full_2026Q2.zip.part{part:02d}",
+      "parts_checksum_url": "https://assets.kraken.com/marketing/institutions/OHLCVT_Full_PARTS_SHA256SUMS.txt",
+      "archive_sha256": "fc81b54cba6e12af3e9422dde9416179e6ef76af4831d48d839fbdb43018eaa4",
+      "intervals_minutes": [
+        1,
+        5,
+        15,
+        30,
+        60,
+        240,
+        720,
+        1440
+      ],
+      "csv_header": false,
+      "columns": [
+        "timestamp",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "trades"
+      ],
+      "no_trade_intervals_omitted": true,
+      "priority": 1
+    },
+    {
+      "id": "kraken_trades_full_2026q2",
+      "kind": "trades",
+      "download_enabled": false,
+      "archive_name": "Kraken_Trades_Full_2026Q2.zip",
+      "part_count": 13,
+      "approx_part_gb": 2,
+      "part_url_template": "https://assets.kraken.com/marketing/institutions/Kraken_Trades_Full_2026Q2.zip.part{part:02d}",
+      "parts_checksum_url": "https://assets.kraken.com/marketing/institutions/Trades_Full_PARTS_SHA256SUMS.txt",
+      "archive_sha256": "554184802aa7367c02cfde9230411d0069ef5b0b4d6f9617c4ec1a7ec8726e16",
+      "csv_header": true,
+      "columns": [
+        "timestamp",
+        "price",
+        "volume",
+        "type",
+        "order_type",
+        "misc",
+        "trade_id"
+      ],
+      "priority": 2,
+      "initial_use": "targeted_only_after_ohlcvt_smoke"
+    }
+  ],
+  "incremental_updates": [
+    {
+      "dataset_kind": "ohlcvt",
+      "period": "2026Q1",
+      "url": "https://assets.kraken.com/marketing/institutions/Kraken_OHLCVT_2026Q1.zip",
+      "download_enabled": false
+    },
+    {
+      "dataset_kind": "ohlcvt",
+      "period": "2026Q2",
+      "url": "https://assets.kraken.com/marketing/institutions/Kraken_OHLCVT_2026Q2.zip",
+      "download_enabled": false
+    },
+    {
+      "dataset_kind": "trades",
+      "period": "2026Q1",
+      "url": "https://assets.kraken.com/marketing/institutions/Kraken_Trades_2026Q1.zip",
+      "download_enabled": false
+    },
+    {
+      "dataset_kind": "trades",
+      "period": "2026Q2",
+      "url": "https://assets.kraken.com/marketing/institutions/Kraken_Trades_2026Q2.zip",
+      "download_enabled": false
+    }
+  ],
+  "initial_scope": {
+    "market": "Kraken Spot EUR",
+    "first_dataset_kind": "ohlcvt",
+    "first_interval_minutes": 15,
+    "first_replay_goal": "parser_timestamp_reproducibility_only",
+    "time_and_sales_policy": "targeted_only_until_explicit_storage_benefit_gate"
+  },
+  "point_in_time": {
+    "forbid_future_features": true,
+    "closed_candles_only_by_default": true,
+    "live_bar_requires_explicit_reconstruction": true,
+    "labels_after_decision_freeze_only": true,
+    "zero_fill_missing_ohlcvt_forbidden": true,
+    "current_online_universe_as_historical_filter_forbidden": true
+  },
+  "execution_baseline": {
+    "taker_fee_pct_per_side": 0.6,
+    "leverage": false,
+    "same_bar_stop_target_resolution": "fail_conservative_or_lower_resolution_required"
+  },
+  "storage_guardrails": {
+    "drive_d_allowed": false,
+    "raw_in_github_allowed": false,
+    "raw_in_supabase_allowed": false,
+    "github_actions_bulk_download_allowed": false,
+    "staging_restartable_required": true,
+    "checksum_before_join_required": true,
+    "checksum_after_join_required": true
+  }
+}
