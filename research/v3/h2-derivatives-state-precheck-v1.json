@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H2_DERIVATIVES_STATE_PRECHECK_V1",
   "hypothesis_id": "V3-H2",
-  "status": "PRECHECK",
+  "status": "PRECHECK_ASSOCIATION_CAPTURE_PREREGISTERED",
   "prepared_at_utc": "2026-10-01T18:20:00Z",
   "purpose": "Test whether point-in-time derivatives state adds incremental information to Kraken-EUR candidate quality after the frozen baseline signal, primarily as state/conditioning rather than a direct directional trigger.",
   "baseline": "Latest validated V2/V2R4 candidate stream at the time the research trial is eventually frozen.",
@@ -92,7 +92,10 @@
     "kraken_spot_eur_bases_with_mapped_perpetual_count": 142,
     "kraken_derivatives_coverage_pct_of_spot_eur_bases": 28.34,
     "kraken_representative_analytics_probe": "15_OF_15_OK_WITH_DATA_XBT_ETH_SOL_XRP_ADA_OI_FUNDING_BASIS",
-    "coverage_interpretation": "PARTIAL_COVERAGE_IS_VALID_MISSING_STATE_NOT_A_LICENSE_TO_BACKFILL_FROM_FUTURE_OR_UNVERIFIED_SOURCES"
+    "coverage_interpretation": "PARTIAL_COVERAGE_IS_VALID_MISSING_STATE_NOT_A_LICENSE_TO_BACKFILL_FROM_FUTURE_OR_UNVERIFIED_SOURCES",
+    "association_dataset_contract": "research/v3/h2-prospective-derivatives-association-dataset-contract-v1.json",
+    "association_dataset_id": "V3-H2-DERIV-ASSOC-PROSPECTIVE-001",
+    "association_capture_started": false
   },
-  "next_gate": "COVERAGE_SEMANTICS_PRECHECK_COMPLETE__NEXT_PREREGISTER_ASSOCIATION_DATASET_WITHOUT_HOLDOUT"
+  "next_gate": "ASSOCIATION_DATASET_CONTRACT_FROZEN__NEXT_PERSIST_ONE_LIVE_RESPONSE_SHAPE_SAMPLE_NO_HOLDOUT"
 }

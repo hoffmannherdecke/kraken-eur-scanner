@@ -6,6 +6,7 @@ name: V3 H2 derivatives precheck guard
     branches: [main]
     paths:
       - 'research/v3/h2-derivatives-state-precheck-v1.json'
+      - 'research/v3/h2-prospective-derivatives-association-dataset-contract-v1.json'
       - 'research/historical/binance-derivatives-context-preflight-v1.json'
       - 'tools/binance-derivatives-context-smoke.py'
       - 'tools/kraken-futures-h2-coverage-precheck.py'
@@ -33,7 +34,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path('research/v3/h2-derivatives-state-precheck-v1.json').read_text('utf-8'))
           assert j['kind']=='V3_H2_DERIVATIVES_STATE_PRECHECK_V1'
-          assert j['status']=='PRECHECK'
+          assert j['status'] in {'PRECHECK','PRECHECK_ASSOCIATION_CAPTURE_PREREGISTERED','PRECHECK_RESPONSE_SHAPE_GREEN_CAPTURE_PARSER_PENDING'}
           assert j['first_research_role']['mode']=='STATE_STRATIFICATION_AND_INCREMENTAL_INFORMATION_ONLY'
           assert j['first_research_role']['direct_buy_sell_rule'] is False
           assert j['selection_bias_guardrails']['threshold_sweep_allowed'] is False
@@ -47,7 +48,13 @@ jobs:
           assert j['runtime_guardrails']['real_money_actions_allowed'] is False
           assert j['current_data_readiness']['performance_trial_started'] is False
           assert j['current_data_readiness']['holdout_opened'] is False
-          assert j['next_gate']=='COVERAGE_SEMANTICS_PRECHECK_COMPLETE__NEXT_PREREGISTER_ASSOCIATION_DATASET_WITHOUT_HOLDOUT'
+          if j['status']=='PRECHECK':
+              assert j['next_gate']=='COVERAGE_SEMANTICS_PRECHECK_COMPLETE__NEXT_PREREGISTER_ASSOCIATION_DATASET_WITHOUT_HOLDOUT'
+          else:
+              assert j['current_data_readiness']['association_dataset_id']=='V3-H2-DERIV-ASSOC-PROSPECTIVE-001'
+              assert j['current_data_readiness']['association_capture_started'] is False
+              assert j['current_data_readiness']['performance_trial_started'] is False
+              assert j['current_data_readiness']['holdout_opened'] is False
           rd=j['current_data_readiness']
           assert rd['kraken_derivatives_coverage_audit']=='CI_GREEN_REAL_PUBLIC_PRECHECK_RUN_2'
           assert rd['kraken_spot_eur_base_count']==501
@@ -95,4 +102,51 @@ jobs:
             "analytics_probe_ok":j["analytics_probe_ok"],
             "analytics_probe_with_data":j["analytics_probe_with_data"],
           },sort_keys=True))
+          PY
+
+
+      - name: Validate H2 prospective association dataset contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("research/v3/h2-prospective-derivatives-association-dataset-contract-v1.json")
+          j=json.loads(p.read_text("utf-8"))
+          assert j["kind"]=="V3_H2_PROSPECTIVE_DERIVATIVES_ASSOCIATION_DATASET_CONTRACT_V1"
+          assert j["dataset_id"]=="V3-H2-DERIV-ASSOC-PROSPECTIVE-001"
+          assert j["status"]=="PREREGISTERED_NOT_CAPTURING"
+          assert j["event_clock"]["analytics_to_equals_event_epoch_seconds"] is True
+          s=j["primary_source"]
+          assert s["analytics_types"]==["open-interest","funding","future-basis"]
+          assert s["interval_seconds"]==300
+          assert s["lookback_seconds"]==3600
+          assert s["missing_mapping_action"]=="DERIVATIVES_STATE_MISSING_KEEP_CANDIDATE_ROW"
+          assert s["execution_authority"] is False
+          o=j["first_stage_outputs"]
+          assert o["coverage_rate"] is True
+          assert o["metric_age_distribution"] is True
+          assert o["response_shape_audit"] is True
+          assert o["future_candidate_outcome_label"] is False
+          assert o["trade_return"] is False
+          assert o["performance_metric"] is False
+          assert o["threshold_or_bin_selection"] is False
+          d=j["derivation_policy"]
+          assert all(d[k] is False for k in ["funding_delta","funding_persistence","oi_delta","basis_delta","taker_ratio","long_short_ratio"])
+          p=j["point_in_time_guardrails"]
+          assert p["only_rows_at_or_before_event"] is True
+          assert p["explicit_to_parameter_required"] is True
+          assert p["future_rows_forbidden"] is True
+          assert p["silent_forward_fill_forbidden"] is True
+          assert p["missing_state_does_not_drop_candidate"] is True
+          g=j["selection_and_holdout_guardrails"]
+          assert g["performance_trial_started"] is False
+          assert g["threshold_sweep"] is False
+          assert g["sealed_2026h1_holdout_opened"] is False
+          r=j["runtime_guardrails"]
+          assert r["active_v2r3_change_allowed"] is False
+          assert r["v2r4_activation_allowed"] is False
+          assert r["orders_allowed"] is False
+          assert r["real_money_actions_allowed"] is False
+          assert r["automatic_capture_schedule_enabled"] is False
+          print("V3_H2_ASSOC_CONTRACT PASS prospective/raw-state/no-performance/no-holdout")
           PY

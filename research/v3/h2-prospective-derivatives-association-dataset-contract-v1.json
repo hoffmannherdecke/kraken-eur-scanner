@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H2_PROSPECTIVE_DERIVATIVES_ASSOCIATION_DATASET_CONTRACT_V1",
+  "hypothesis_id": "V3-H2",
+  "dataset_id": "V3-H2-DERIV-ASSOC-PROSPECTIVE-001",
+  "status": "PREREGISTERED_NOT_CAPTURING",
+  "research_role": "POINT_IN_TIME_DERIVATIVES_STATE_ASSOCIATION_DATASET_ONLY",
+  "baseline_candidate_stream": {
+    "source": "latest validated V2/V2R4 candidate stream at capture start",
+    "freeze_exact_revision_at_capture_start": true,
+    "candidate_decision_must_remain_unchanged": true,
+    "candidate_generation_change_allowed": false
+  },
+  "event_clock": {
+    "field": "candidate_detected_at_or_frozen_decision_cutoff",
+    "timezone": "UTC",
+    "analytics_to_equals_event_epoch_seconds": true,
+    "rows_after_event_forbidden": true
+  },
+  "primary_source": {
+    "id": "kraken_futures_public",
+    "endpoint_pattern": "https://futures.kraken.com/api/charts/v1/analytics/:symbol/:analytics_type",
+    "analytics_types": [
+      "open-interest",
+      "funding",
+      "future-basis"
+    ],
+    "interval_seconds": 300,
+    "lookback_seconds": 3600,
+    "mapped_perpetual_required": true,
+    "missing_mapping_action": "DERIVATIVES_STATE_MISSING_KEEP_CANDIDATE_ROW",
+    "execution_authority": false
+  },
+  "supplementary_source": {
+    "id": "binance_futures_public",
+    "role": "SUPPLEMENTARY_CROSS_MARKET_CONTEXT_ONLY",
+    "permitted_only_after_point_in_time_semantics_pass": true,
+    "may_replace_missing_kraken_state": false,
+    "may_define_kraken_fill_or_tradability": false
+  },
+  "capture_fields": [
+    "candidate_id",
+    "candidate_event_utc",
+    "spot_eur_base",
+    "kraken_futures_symbol_or_null",
+    "analytics_type",
+    "latest_source_timestamp_at_or_before_event_or_null",
+    "metric_age_seconds_or_null",
+    "source_data_keys",
+    "source_payload_compact_or_null",
+    "source_retrieved_at_utc",
+    "missing_reason_or_null"
+  ],
+  "first_stage_outputs": {
+    "coverage_rate": true,
+    "metric_age_distribution": true,
+    "missingness_by_metric": true,
+    "timestamp_alignment_audit": true,
+    "response_shape_audit": true,
+    "future_candidate_outcome_label": false,
+    "trade_return": false,
+    "performance_metric": false,
+    "threshold_or_bin_selection": false,
+    "directional_rule": false
+  },
+  "derivation_policy": {
+    "funding_delta": false,
+    "funding_persistence": false,
+    "oi_delta": false,
+    "basis_delta": false,
+    "taker_ratio": false,
+    "long_short_ratio": false,
+    "note": "No derived state feature is frozen until live response-shape/timestamp evidence is persisted. Adding one later requires a new versioned contract."
+  },
+  "point_in_time_guardrails": {
+    "only_rows_at_or_before_event": true,
+    "explicit_to_parameter_required": true,
+    "future_rows_forbidden": true,
+    "silent_forward_fill_forbidden": true,
+    "missing_state_does_not_drop_candidate": true,
+    "current_live_universe_as_historical_filter_forbidden": true,
+    "source_and_retrieved_at_required": true
+  },
+  "selection_and_holdout_guardrails": {
+    "performance_trial_started": false,
+    "threshold_sweep": false,
+    "pair_subset_selection_by_seen_performance": false,
+    "metric_subset_selection_by_seen_performance": false,
+    "month_subset_selection": false,
+    "sealed_2026h1_holdout_opened": false
+  },
+  "runtime_guardrails": {
+    "active_v2r3_change_allowed": false,
+    "v2r4_activation_allowed": false,
+    "paper_decision_change_allowed": false,
+    "private_api_allowed": false,
+    "orders_allowed": false,
+    "leverage_allowed": false,
+    "real_money_actions_allowed": false,
+    "automatic_capture_schedule_enabled": false
+  },
+  "next_gate": "PERSIST_ONE_LIVE_KRAKEN_ANALYTICS_RESPONSE_SHAPE_SAMPLE_THEN_VERSION_CAPTURE_PARSER"
+}
