@@ -786,3 +786,30 @@ No live strategy, V2R3/V2R4 runtime, holdout, account or order path was changed.
 A later real use must be preregistered as a new research trial rather than being
 silently mixed into an existing result.
 
+## 11s. Historical storage lifecycle — 2026-10-01
+
+Historical cleanup is now governed separately from ordinary log retention.
+
+Canonical policy:
+- `docs/historical-storage-lifecycle.md`;
+- read-only planner: `tools/plan-historical-storage-cleanup.py`.
+
+Classification defaults:
+- joined source archives → provenance KEEP;
+- verified multipart pieces → REVIEW_REDUNDANT_PART only;
+- old `staging/` / `tmp/` → DELETE_CANDIDATE;
+- normalized / derived / catalog / trials / reports → KEEP;
+- unknown paths → HOLD_UNKNOWN.
+
+The planner has no delete mode and cannot mutate strategy/Paper/runtime state.
+Actual deletion remains a separate explicit action with prerequisites rechecked
+at execution time. The known Kraken OHLCVT multipart cleanup remains checksum-
+gated through its dedicated PowerShell tool.
+
+Synthetic lifecycle proof covers old/fresh staging, tmp, provenance ZIP/part,
+normalized, trial and unknown paths. Full Historical data preflight
+**Run #62: SUCCESS**.
+
+A later physical MINI-PC audit remains open before any real local historical file
+is removed.
+
