@@ -1,0 +1,162 @@
+{
+  "kind": "KRAKEN_EUR15_PERFORMANCE_REPLAY_SPEC_V1",
+  "schema_version": 1,
+  "status": "FROZEN_PRE_REGISTERED_NOT_YET_EXECUTED",
+  "frozen_date": "2026-10-01",
+  "freeze_anchor": "Git commit containing this file is the exact immutable freeze point.",
+  "research_role": "OHLCVT_ONLY_EVENT_STUDY_BASELINE",
+  "parent_hypothesis": "Price-volume continuation after a strong short-horizon move may retain enough 4h follow-through to survive conservative Kraken-EUR execution costs.",
+  "interpretation_guardrail": "This is a research baseline/event study, not a historical recreation of V2R3/V2R4 and not evidence for live-money deployment.",
+  "pre_registration": {
+    "historical_labels_inspected_for_threshold_tuning": false,
+    "thresholds_selected_before_aggregate_historical_performance_run": true,
+    "changes_after_first_execution_require_new_spec_version_and_new_trial_id": true,
+    "holdout_must_remain_sealed_during_v1_selection": true
+  },
+  "dataset": {
+    "source": "Kraken downloadable OHLCVT full history through 2026-06-30",
+    "normalized_schema": "KRAKEN_EUR15_NORMALIZED_V1",
+    "interval_minutes": 15,
+    "expected_normalized_pair_files": 648,
+    "raw_archive_sha256": "fc81b54cba6e12af3e9422dde9416179e6ef76af4831d48d839fbdb43018eaa4",
+    "missing_interval_semantics": "NO_TRADE_INTERVAL_ABSENT_DO_NOT_ZERO_FILL",
+    "survivorship_rule": "Do not filter historical membership by current Kraken AssetPairs. Eligibility is inferred from point-in-time market data availability."
+  },
+  "validation_topology": {
+    "research_train": {
+      "start_utc": "1970-01-01T00:00:00Z",
+      "end_utc_exclusive": "2024-01-01T00:00:00Z",
+      "purpose": "descriptive context only; no threshold optimization in V1"
+    },
+    "calibration": {
+      "start_utc": "2024-01-01T00:00:00Z",
+      "end_utc_exclusive": "2025-01-01T00:00:00Z",
+      "purpose": "report only; V1 parameters remain frozen"
+    },
+    "validation": {
+      "start_utc": "2025-01-01T00:00:00Z",
+      "end_utc_exclusive": "2026-01-01T00:00:00Z",
+      "purpose": "primary performance readout for V1"
+    },
+    "sealed_holdout": {
+      "start_utc": "2026-01-01T00:00:00Z",
+      "end_utc_exclusive": "2026-07-01T00:00:00Z",
+      "status": "LOCKED_DO_NOT_READ_IN_V1_SELECTION",
+      "open_condition": "Only after a frozen candidate and explicit holdout-open trial are recorded."
+    },
+    "purge_seconds": 14400,
+    "embargo_seconds": 14400
+  },
+  "point_in_time_contract": {
+    "feature_visibility_rule": "bar_end_epoch <= decision_cutoff_epoch",
+    "decision_cadence": "15m bar close",
+    "require_history_contiguous_15m": true,
+    "require_future_label_contiguous_15m": true,
+    "future_labels_generated_after_decision_freeze": true,
+    "live_incomplete_bar_allowed": false
+  },
+  "eligibility": {
+    "required_contiguous_history_bars": 20,
+    "required_contiguous_future_bars": 16,
+    "min_price_eur": 1e-8,
+    "min_trades_last_15m": 1,
+    "same_pair_cooldown_bars_after_signal": 16,
+    "current_listing_status_filter": false,
+    "stablecoin_or_asset_class_exclusions": []
+  },
+  "features": {
+    "return_1h_pct": "close[t] / close[t-4] - 1",
+    "return_3h_pct": "close[t] / close[t-12] - 1",
+    "mean_volume_20": "mean(volume[t-19:t])",
+    "volume_ratio_15m_vs_20": "volume[t] / mean_volume_20",
+    "mean_trades_20": "mean(trades[t-19:t])",
+    "trades_ratio_15m_vs_20": "trades[t] / mean_trades_20"
+  },
+  "signal": {
+    "side": "LONG_ONLY",
+    "all_conditions_required": [
+      {
+        "feature": "return_1h_pct",
+        "operator": ">=",
+        "value": 2
+      },
+      {
+        "feature": "return_3h_pct",
+        "operator": ">=",
+        "value": 4
+      },
+      {
+        "feature": "volume_ratio_15m_vs_20",
+        "operator": ">=",
+        "value": 1.5
+      },
+      {
+        "feature": "trades_ratio_15m_vs_20",
+        "operator": ">=",
+        "value": 1.25
+      }
+    ],
+    "no_cross_pair_ranking": true,
+    "no_score_optimization": true
+  },
+  "execution": {
+    "entry": "NEXT_CONTIGUOUS_15M_BAR_OPEN",
+    "exit": "CLOSE_OF_16TH_CONTIGUOUS_15M_BAR_AFTER_DECISION",
+    "holding_period_minutes": 240,
+    "stop_loss": null,
+    "take_profit": null,
+    "leverage": false,
+    "portfolio_capital_simulation": false,
+    "interpretation": "event-level trade return study; not a concurrent portfolio equity curve"
+  },
+  "cost_model": {
+    "taker_fee_pct_per_side": 0.6,
+    "slippage_pct_per_side": 0.1,
+    "spread_model": "NOT_SEPARATELY_OBSERVED_IN_15M_OHLCVT",
+    "total_assumed_round_trip_cost_pct": 1.4,
+    "cost_sensitivity_report_pct_round_trip": [
+      1.2,
+      1.4,
+      1.8
+    ],
+    "primary_cost_for_trial_selection_pct_round_trip": 1.4
+  },
+  "metrics": {
+    "primary": [
+      "validation_event_count",
+      "validation_mean_net_return_pct_at_1p40_cost",
+      "validation_median_net_return_pct_at_1p40_cost",
+      "validation_positive_net_rate_at_1p40_cost"
+    ],
+    "secondary": [
+      "gross_return_distribution",
+      "net_return_distribution_by_cost_sensitivity",
+      "mfe_pct_4h",
+      "mae_pct_4h",
+      "events_by_calendar_month",
+      "events_by_pair",
+      "pair_concentration_share_top10",
+      "train_calibration_validation_comparison"
+    ],
+    "prohibited_for_v1_selection": [
+      "sealed_holdout_metrics",
+      "best_threshold_sweep",
+      "best_pair_subset",
+      "best_month_subset"
+    ]
+  },
+  "search_accounting": {
+    "trial_family": "EUR15_PRICE_VOLUME_CONTINUATION_BASELINE",
+    "v1_counts_as_one_pre_registered_trial": true,
+    "every_threshold_or_horizon_change_counts_as_new_trial": true,
+    "multiple_testing_controls_required_before_promotion_after_multiple_variants": true
+  },
+  "safety": {
+    "network_used": false,
+    "active_strategy_changed": false,
+    "paper_shadow_runtime_changed": false,
+    "real_money_action": false,
+    "trading_api_required": false
+  },
+  "next_gate_after_v1_validation": "REVIEW_VALIDATION_WITHOUT_OPENING_HOLDOUT"
+}
