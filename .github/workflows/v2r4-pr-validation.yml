@@ -129,6 +129,25 @@ jobs:
           assert h["real_money_actions"] is False
           print("WS_SHADOW_SYNTHETIC_OK")
           PY
+          rm -rf /tmp/v2r4-ws-bounded
+          python paper_evaluator/v2r4_ws_shadow_watcher.py \
+            --snapshot /tmp/v2r4-ws-snapshot.json \
+            --state /tmp/v2r4-ws-bounded/state.json \
+            --event-dir /tmp/v2r4-ws-bounded/events \
+            --ledger /tmp/v2r4-ws-bounded/ledger.jsonl \
+            --heartbeat /tmp/v2r4-ws-bounded/heartbeat.json \
+            --poll-seconds 0.5 \
+            --max-runtime-seconds 3 \
+            --state-flush-seconds 5
+          python - <<'PY'
+          import json
+          s=json.load(open("/tmp/v2r4-ws-bounded/state.json"))
+          lines=[x for x in open("/tmp/v2r4-ws-bounded/ledger.jsonl") if x.strip()]
+          assert s["counters"]["snapshots_processed"] == 1
+          assert s["counters"]["duplicates_skipped"] >= 1
+          assert len(lines) == 1, lines
+          print("WS_SHADOW_BOUNDED_PERSISTENCE_OK")
+          PY
 
       - name: Broad Kraken EUR pre-candidate discovery smoke
         run: |
