@@ -49,13 +49,23 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def tool_fingerprint(repo_root: Path) -> str:
+def tool_fingerprint(repo_root: Path, replay_kind: str) -> str:
+    if replay_kind == "KRAKEN_EUR15_REAL_PAIR_PIT_REPLAY_SMOKE_V2":
+        rels = (
+            "tools/normalize-kraken-eur15.py",
+            "tools/historical-real-pair-replay-smoke-v2.py",
+        )
+    else:
+        # Preserve the original V1 fingerprint contract so the already-recorded
+        # immutable V1 trial remains idempotently reproducible.
+        rels = (
+            "tools/normalize-kraken-eur15.py",
+            "tools/historical-real-pair-replay-smoke.py",
+            "tools/run-minipc-eur15-normalization.ps1",
+        )
+
     parts = []
-    for rel in (
-        "tools/normalize-kraken-eur15.py",
-        "tools/historical-real-pair-replay-smoke.py",
-        "tools/run-minipc-eur15-normalization.ps1",
-    ):
+    for rel in rels:
         path = repo_root / rel
         parts.append(rel.encode("utf-8"))
         parts.append(b"\0")
@@ -101,6 +111,16 @@ def main() -> int:
 
     decision = replay["decision"]
     label = replay["label"]
+    replay_kind = str(replay.get("kind", ""))
+    if replay_kind == "KRAKEN_EUR15_REAL_PAIR_PIT_REPLAY_SMOKE_V2":
+        strategy_revision = "NO_STRATEGY_REPLAY_METHODOLOGY_SMOKE_V2"
+        parent_hypothesis = "docs/historical-backtest-preflight.md#replay-methodology-v2"
+    elif replay_kind == "KRAKEN_EUR15_REAL_PAIR_PIT_REPLAY_SMOKE_V1":
+        strategy_revision = "NO_STRATEGY_REPLAY_METHODOLOGY_SMOKE_V1"
+        parent_hypothesis = "docs/historical-backtest-preflight.md#real-pair-point-in-time-replay"
+    else:
+        raise SystemExit(f"unsupported replay kind: {replay_kind}")
+
     decision_sha = str(replay["decision_sha256"])
     if len(decision_sha) != 64:
         raise SystemExit("decision_sha256 invalid")
@@ -114,9 +134,9 @@ def main() -> int:
     record = {
         "trial_id": trial_id,
         "created_at_utc": decision["decision_time_utc"],
-        "parent_hypothesis": "docs/historical-backtest-preflight.md#real-pair-point-in-time-replay",
-        "strategy_revision": "NO_STRATEGY_REPLAY_METHODOLOGY_SMOKE_V1",
-        "code_fingerprint": tool_fingerprint(args.repo_root),
+        "parent_hypothesis": parent_hypothesis,
+        "strategy_revision": strategy_revision,
+        "code_fingerprint": tool_fingerprint(args.repo_root, replay_kind),
         "feature_schema_version": decision["feature_schema_version"],
         "dataset_snapshot": {
             "kind": "KRAKEN_EUR15_NORMALIZED_PAIR_V1",
@@ -125,6 +145,7 @@ def main() -> int:
             "source_archive_sha256": norm.get("source_archive_sha256"),
             "normalization_catalog_sha256": sha256_file(args.normalization_catalog),
             "replay_report_sha256": sha256_file(args.replay_report),
+            "replay_kind": replay_kind,
         },
         "dataset_sha256": normalized_pair_sha,
         "universe_method": (
