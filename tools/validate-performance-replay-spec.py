@@ -4,6 +4,7 @@ import argparse, hashlib, json
 from pathlib import Path
 
 def normalized_text_sha256(p: Path) -> str:
+    # Checkout-safe frozen identity: LF-normalized UTF-8.
     # Git may materialize text files with CRLF on Windows. The frozen spec
     # identity is based on LF-normalized UTF-8 bytes so checkout line endings
     # cannot change the lock identity.
