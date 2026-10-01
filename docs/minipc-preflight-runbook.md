@@ -776,9 +776,20 @@ Prepared local tooling on `main`:
 - `tools/uninstall-minipc-v2r4-ws-shadow.ps1`
 - local watchdog automatically checks the shadow heartbeat once the task exists.
 
-**Next physical MINI-PC action:** pull `main` and run the guarded installer once from elevated PowerShell. It first performs a bounded physical WS-shadow smoke against the live local Kraken snapshot. Only if that passes does it pin the inactive V2R4 prep commit and register `CryptoMiniPC-V2R4WSShadow` as a startup task.
+**Physical activation verified 2026-10-01:**
+- bounded physical WS-shadow smoke: **PASS**;
+- Kraken EUR snapshot: **500/500**;
+- fresh snapshots consumed during smoke: **13**; duplicates skipped: **18**;
+- stale inputs: **0**; gap recoveries during smoke: **0**;
+- healthy timing-ledger cycles: **13**;
+- source age: average **0.706 s**, maximum **2.175 s**;
+- shadow discovery events during the short smoke: **0** (valid; observation window only);
+- persistent startup task `CryptoMiniPC-V2R4WSShadow`: **HEALTHY**;
+- pinned inactive V2R4 prep commit: `ab78c9abaec940c35c96c179b6a16904c5192ad3`;
+- initial persistent heartbeat source age: **~0.409 s**;
+- V2R3 remained unchanged; no evaluator/account/order/real-money path was enabled.
 
-Safety remains: V2R3 unchanged / shadow-only / no evaluator / no account / no orders / no real-money action.
+This closes the physical WS-shadow activation gate. The shadow layer should now run prospectively and collect feed→discovery timing plus stale/dedup/recovery evidence before any separate V2R4 paper-series activation decision.
 
 ### Final runbook items — intentionally last
 
