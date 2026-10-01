@@ -3,7 +3,16 @@
   "candidate_id": "20261001-094832-BNB-EUR-r36844835925",
   "evaluated_at_utc": "2026-10-01T09:49:06.084824Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.059,
+      "expected_bars": 30,
+      "mae_pct": -0.324,
+      "mfe_pct": 0.107
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -14,7 +23,19 @@
     "evaluated_at_utc": "2026-10-01T09:49:06.084824Z",
     "evaluation_ask_eur": 681.14,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.232,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.236,
+        "mfe_pct": 0.054,
+        "peak_at_utc": "2026-10-01T10:00:00Z",
+        "trough_at_utc": "2026-10-01T10:02:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-01T07:58:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -41,12 +62,15 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-01T09:49:14.991457Z"
+    "updated_at_utc": "2026-10-01T10:20:22.343426Z"
   },
   "original_decision": "WAIT",
   "pair": "BNB/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-01T10:20:13.056408Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-01T10:20:22.470149Z"
 }
