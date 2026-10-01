@@ -1,0 +1,48 @@
+{
+  "trial_id": "SMOKE-HIST-20261001-001",
+  "created_at_utc": "2026-10-01T10:50:00Z",
+  "parent_hypothesis": "historical-preflight-smoke",
+  "strategy_revision": "NO_STRATEGY_REPLAY_SYNTHETIC",
+  "code_fingerprint": "synthetic-preflight",
+  "feature_schema_version": "HISTORICAL_PIT_SMOKE_V1",
+  "dataset_snapshot": "SYNTHETIC_OHLCVT_15M_GAP_FIXTURE",
+  "dataset_sha256": "536331f63f09e59b1e3b5caf0d4f200a87a4bcc2ccbb7e487a5007194115fca6",
+  "universe_method": "SYNTHETIC_SINGLE_PAIR",
+  "train_window": {
+    "start": "2026-01-01T00:00:00Z",
+    "end": "2026-01-01T00:30:00Z"
+  },
+  "calibration_window": {
+    "start": "2026-01-01T00:30:00Z",
+    "end": "2026-01-01T01:00:00Z"
+  },
+  "validation_window": {
+    "start": "2026-01-01T01:00:00Z",
+    "end": "2026-01-01T01:15:00Z"
+  },
+  "holdout_window": null,
+  "purge_seconds": 900,
+  "embargo_seconds": 900,
+  "fee_model": {
+    "kind": "baseline",
+    "taker_pct_per_side": 0.6
+  },
+  "spread_model": {
+    "kind": "none_synthetic_fixture"
+  },
+  "slippage_model": {
+    "kind": "none_synthetic_fixture"
+  },
+  "fill_ordering_policy": "fail_conservative_or_lower_resolution_required",
+  "stop_policy": "none_synthetic_fixture",
+  "ttl_policy": "none_synthetic_fixture",
+  "sizing_policy": "none_synthetic_fixture",
+  "parameters": {
+    "interval_minutes": 15
+  },
+  "metrics": {
+    "pit_smoke_pass": true,
+    "performance_interpretation_allowed": false
+  },
+  "influenced_later_design": false
+}
