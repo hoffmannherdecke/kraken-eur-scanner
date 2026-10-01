@@ -114,3 +114,4 @@ jobs:
           if ($code -ne 2) { throw "expected critical exit 2 in empty sandbox, got $code" }
           $global:LASTEXITCODE = 0
           Write-Host 'WATCHDOG_SMOKE_OK'
+          exit 0
