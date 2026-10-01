@@ -1,0 +1,196 @@
+{
+  "altname": "PENGUEUR",
+  "candidate_age_seconds": 37,
+  "candidate_event_time_utc": "2026-10-01T04:22:05Z",
+  "candidate_id": "20261001-042205-PENGU-EUR-r36814646584",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.008756 with renewed live volume",
+      "Hold or successful retest above 0.008736 after the breakout"
+    ],
+    "reason_codes": [
+      "RESISTANCE_NEARBY",
+      "LIVE_VOLUME_ABSENT",
+      "RECENT_MOVE_ALREADY_RUN",
+      "FEES_REQUIRE_MORE_HEADROOM",
+      "NO_COIN_SPECIFIC_CATALYST_EVIDENCE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Promising short-term continuity, but price is pressing 1h/3h resistance and live volume is absent; wait for confirmation before considering an entry.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": true,
+        "index_price": 0.00990381,
+        "last_funding_rate": 5e-05,
+        "mark_price": 0.0099,
+        "next_funding_time": 1790841600000,
+        "note": "Cross-market context only; never used as Kraken EUR execution price.",
+        "open_interest_base": 3276370144.0,
+        "retrieved_ms": 1790828563648,
+        "source": "binance_public_futures",
+        "symbol": "PENGUUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 12.66,
+        "available": true,
+        "current_funding_rate": 3.7720762717e-07,
+        "current_open_interest": 51514230.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 0.2384,
+        "previous_funding_rate": 3.7720762717e-07,
+        "previous_observed_at_utc": "2026-10-01T04:10:04.504982Z",
+        "previous_open_interest": 51391730.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.7720762717e-07,
+        "index_price": 0.0099026,
+        "last": 0.009878,
+        "mark_price": 0.00990484077,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 51514230.0,
+        "requested_symbols": [
+          "PF_PENGUUSD",
+          "PI_PENGUUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_PENGUUSD",
+        "volume24h": 208726220
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.008748,
+      "bid": 0.008744,
+      "last": 0.008736,
+      "spread_pct": 0.04573519323119747
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "700",
+      "pair_decimals": 6,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.49136513995082787,
+          "ret3h_pct": 0.43983117646020364
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4102265732378818,
+          "ret3h_pct": 0.46952912093012333
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4702495201535539,
+          "ret3h_pct": 0.5474452554744547
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T04:22:42.409581Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-01T04:22:50.322537Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f2c22473c570c83006abde013fa3c87d29ca246b70994ea69"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.008748,
+    "bid": 0.008744,
+    "last": 0.008736,
+    "spread_pct": 0.04573519323119747
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "PENGU/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36814646584:PENGU-EUR:1790828525",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "207873cdef6bc19d580fab677e4ac773acd7ddc1",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T04:22:05Z",
+    "candidate_detected_ts": 1790828525,
+    "candidate_snapshot_at_utc": "2026-10-01T04:22:05Z",
+    "detected_to_evaluation_complete_seconds": 45.323,
+    "detected_to_evaluation_start_seconds": 37.261,
+    "evaluation_completed_at_utc": "2026-10-01T04:22:50.322537Z",
+    "evaluation_runtime_seconds": 8.061,
+    "evaluation_started_at_utc": "2026-10-01T04:22:42.261077Z",
+    "handoff_to_evaluation_start_seconds": 34.667,
+    "handoff_written_at_utc": "2026-10-01T04:22:07.594465Z",
+    "scan_step_started_at_utc": "2026-10-01T04:20:30Z"
+  }
+}
