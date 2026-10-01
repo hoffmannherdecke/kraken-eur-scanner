@@ -5,7 +5,6 @@ name: Historical data preflight
   push:
     branches: [main]
     paths:
-      - 'docs/historical-backtest-preflight.md'
       - 'research/historical/**'
       - 'tools/kraken-historical-preflight.py'
       - 'tools/historical-pit-smoke.py'
@@ -22,7 +21,7 @@ permissions:
 
 concurrency:
   group: historical-data-preflight
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   preflight:
