@@ -1,0 +1,222 @@
+{
+  "altname": "POLEUR",
+  "candidate_id": "20261001-221828-POL-EUR-r36933751173",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.09608 EUR with sustained volume",
+      "Follow-through above resistance with sufficient post-cost movement"
+    ],
+    "reason_codes": [
+      "NO_BREAKOUT",
+      "WEAK_LIVE_VOLUME",
+      "COSTS_EXCEED_NEARBY_RESISTANCE",
+      "MARKET_3H_WEAK"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation failed: price remains below resistance, with weak recent spot activity and no confirmed breakout; the supplied evidence does not support a scout or second-stage plan.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "POLUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 39.73,
+        "available": true,
+        "current_funding_rate": 1.435034597333e-06,
+        "current_open_interest": 10382610.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -0.0114,
+        "previous_funding_rate": 1.435034597333e-06,
+        "previous_observed_at_utc": "2026-10-01T22:19:09.399323Z",
+        "previous_open_interest": 10383790.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 1.435034597333e-06,
+        "index_price": 0.10757,
+        "last": 0.10728,
+        "mark_price": 0.10756771012,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 10382610.0,
+        "requested_symbols": [
+          "PF_POLUSD",
+          "PI_POLUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_POLUSD",
+        "volume24h": 5626607
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.09568,
+      "bid": 0.09561,
+      "last": 0.09558,
+      "spread_pct": 0.07318730722986105
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "50",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.22950191162847133,
+          "ret3h_pct": 0.06592062943568955
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4264588446309947,
+          "ret3h_pct": 0.1446725480713118
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.5936991286028759,
+          "ret3h_pct": 0.12390392680137197
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T22:58:52.103517Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0fad94a26fa0944f006abee5ad155087d2ba15c3ee933a0b69"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.09568,
+    "bid": 0.09561,
+    "last": 0.09558,
+    "spread_pct": 0.07318730722986105
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.09537,
+      "high": 0.09541,
+      "low": 0.09537,
+      "open": 0.09541,
+      "trades": 2,
+      "ts": 1790891100,
+      "volume": 466.23756,
+      "vwap": 0.09538
+    },
+    {
+      "close": 0.09585,
+      "high": 0.09597,
+      "low": 0.09575,
+      "open": 0.09575,
+      "trades": 7,
+      "ts": 1790892000,
+      "volume": 72966.10752,
+      "vwap": 0.0959
+    },
+    {
+      "close": 0.09583,
+      "high": 0.09583,
+      "low": 0.09583,
+      "open": 0.09583,
+      "trades": 1,
+      "ts": 1790892900,
+      "volume": 999.99999,
+      "vwap": 0.09583
+    },
+    {
+      "close": 0.09583,
+      "high": 0.09583,
+      "low": 0.09583,
+      "open": 0.09583,
+      "trades": 1,
+      "ts": 1790893800,
+      "volume": 84.67629,
+      "vwap": 0.09583
+    },
+    {
+      "close": 0.09558,
+      "high": 0.09563,
+      "low": 0.09558,
+      "open": 0.09563,
+      "trades": 3,
+      "ts": 1790894700,
+      "volume": 1221.54603,
+      "vwap": 0.0956
+    }
+  ],
+  "pair": "POL/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-221828-POL-EUR-r36933751173.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T22:58:57.277074Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "e0808d0bf9bc2be0f752fc86f959e4111c8c4400",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T22:58:57.277074Z",
+    "revalidation_started_at_utc": "2026-10-01T22:58:51.837902Z",
+    "ttl_due_at_utc": "2026-10-01T22:49:09.399323Z",
+    "ttl_lag_seconds": 582.439
+  }
+}
