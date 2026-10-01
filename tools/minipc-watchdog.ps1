@@ -164,9 +164,13 @@ try {
       $processed = [int]$h.counters.snapshots_processed
       $sourceAgeSec = $null
       if ($h.source_age_seconds -ne $null) { $sourceAgeSec = [double]$h.source_age_seconds }
+      # Process heartbeat may briefly lag the 1s watcher loop under Windows scheduling/IO.
+      # Keep the underlying Kraken source freshness strict (15s), but allow 30s for
+      # the watcher heartbeat itself so a fresh feed is not mislabeled FEED_STALE
+      # during harmless duplicate-snapshot / scheduler jitter.
       $ok = (
         $okStatus -and
-        $ageSec -le 15 -and
+        $ageSec -le 30 -and
         $processed -gt 0 -and
         $sourceAgeSec -ne $null -and
         $sourceAgeSec -le 15
