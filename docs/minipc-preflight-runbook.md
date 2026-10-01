@@ -1024,6 +1024,20 @@ Physical controlled self-heal smoke result:
 
 This closes the bounded local self-heal gate for the MINI-PC runtime supervisor.
 
+### Watchdog effectiveness smoke verified 2026-10-01
+
+Physical MINI-PC result:
+- overall: **HEALTHY**;
+- Kraken canary: **OK**, fresh real WS event age ~2.3s;
+- Kraken EUR universe: **OK**, fresh ticker age ~4.2s, 500/500 observed, 100% coverage;
+- V2R4 WS shadow: **OK**, fresh upstream source age ~0.286s;
+- V2R4 outcome tracker: **OK**, 12 active prospective events with fresh samples;
+- runtime supervisor: **OK / HEALTHY**;
+- remote status sync: **OK / HEALTHY**;
+- issues: **none**.
+
+This closes the "green but ineffective" gate: health now depends on fresh underlying market/event flow, not merely on a running process or recently written heartbeat.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
