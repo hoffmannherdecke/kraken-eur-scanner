@@ -1135,6 +1135,20 @@ This closes the local secret-hygiene gate before any later private-account/self-
 
 The read-only `tools/paper-runtime-reconciliation-audit.py` passed Windows tool-smoke CI. It is ready for one physical/local run against the current repository state to verify restart/replay/TTL consistency after the earlier power interruption.
 
+### Reconciliation audit false-positive identified 2026-10-01
+
+The first physical `paper-runtime-reconciliation-audit.py` run printed many `CRITICAL HANDOFF_ID_MISMATCH` findings. These were traced to **historical pre-series handoffs from 2026-09-26**, which legitimately predate the later canonical `candidate_id` field.
+
+The active paper series starts at **2026-09-28 17:52 UTC**. Repository-level reconciliation performed after the failed audit showed:
+- total handoff files: 1036;
+- historical pre-series handoffs: **328**;
+- active-series handoffs: **708**;
+- active-series handoffs without matching decision file: **0**;
+- revalidation files without matching decision file: **0**;
+- the apparent identity failures shown in the physical audit were therefore legacy-schema false positives, not evidence of active-series replay corruption.
+
+The audit implementation must be revised so it filters pre-series diagnostic handoffs before enforcing the canonical candidate identity contract. Until then, the original audit result must not be treated as a real runtime failure.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
