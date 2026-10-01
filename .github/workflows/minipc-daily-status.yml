@@ -1,0 +1,219 @@
+name: MINI-PC daily 10am status
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/minipc-daily-status.yml'
+  schedule:
+    - cron: '0 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: minipc-daily-status
+  cancel-in-progress: false
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Render actual end-to-end status
+        env:
+          SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_USER_ID: U0C39EDQ1H8
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python - <<'PY'
+          import datetime as dt
+          import json
+          import os
+          import re
+          import urllib.parse
+          import urllib.request
+          from zoneinfo import ZoneInfo
+
+          url=os.environ["SUPABASE_URL"].rstrip("/")
+          key=(os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+          webhook=os.environ.get("SLACK_WEBHOOK_URL","").strip()
+          user_id=os.environ["SLACK_USER_ID"]
+          event_name=os.environ.get("EVENT_NAME","")
+          dry_run=event_name!="schedule"
+
+          if not key:
+              raise SystemExit("Supabase backend credential missing")
+          if not webhook:
+              raise SystemExit("Slack webhook missing")
+
+          berlin=ZoneInfo("Europe/Berlin")
+          now_utc=dt.datetime.now(dt.timezone.utc)
+          now_local=now_utc.astimezone(berlin)
+
+          # GitHub cron is UTC-only. Run hourly and gate on the Berlin local hour,
+          # preserving 10:00 behavior across CET/CEST transitions.
+          if event_name=="schedule" and now_local.hour!=10:
+              print(json.dumps({
+                  "skipped":True,
+                  "reason":"not_10am_europe_berlin",
+                  "local_time":now_local.isoformat(),
+              },sort_keys=True))
+              raise SystemExit(0)
+
+          headers={"apikey":key,"Content-Type":"application/json"}
+          if not key.startswith("sb_secret_"):
+              headers["Authorization"]="Bearer "+key
+
+          def request(method,path,body=None,extra_headers=None):
+              h=dict(headers)
+              if extra_headers:
+                  h.update(extra_headers)
+              data=None if body is None else json.dumps(body,separators=(",",":")).encode()
+              req=urllib.request.Request(url+path,data=data,method=method,headers=h)
+              with urllib.request.urlopen(req,timeout=20) as resp:
+                  raw=resp.read().decode("utf-8","replace")
+                  return resp.status, json.loads(raw) if raw else None
+
+          _,rows=request(
+              "GET",
+              "/rest/v1/minipc_status_current?select=node_id,observed_at,status,payload&order=observed_at.desc&limit=1"
+          )
+          if not rows:
+              print("MINIPC_DAILY_STATUS no remote status row")
+              raise SystemExit(0)
+
+          row=rows[0]
+          payload=row.get("payload") or {}
+          observed=dt.datetime.fromisoformat(row["observed_at"].replace("Z","+00:00"))
+          age_min=max(0.0,(now_utc-observed).total_seconds()/60.0)
+          coarse=str(row.get("status") or "UNKNOWN").upper()
+          health_state=str(payload.get("health_state") or ("OK" if coarse=="HEALTHY" else "DEGRADED")).upper()
+          issues=payload.get("issues") or []
+          checks=payload.get("checks") or {}
+
+          if age_min>20:
+              health_state="STOPPED"
+              coarse="CRITICAL"
+              issue_codes=["remote_status_stale"]
+          else:
+              issue_codes=[str(i.get("check") or "") for i in issues if isinstance(i,dict)]
+
+          def detail(name):
+              x=checks.get(name) or {}
+              return str(x.get("detail") or "")
+
+          def extract(pattern,text,default="?"):
+              m=re.search(pattern,text)
+              return m.group(1) if m else default
+
+          universe_detail=detail("kraken_universe_heartbeat")
+          shadow_detail=detail("v2r4_ws_shadow_heartbeat")
+          outcomes_detail=detail("v2r4_ws_shadow_outcomes")
+          supervisor_detail=detail("runtime_supervisor")
+
+          coverage=extract(r"coverage=([0-9.]+)%",universe_detail)
+          pairs=extract(r"pairs=([0-9]+)",universe_detail)
+          observed_pairs=extract(r"observed=([0-9]+)",universe_detail)
+          shadow_source_age=extract(r"source_age_sec=([0-9.]+)",shadow_detail)
+          active_outcomes=int(extract(r"active=([0-9]+)",outcomes_detail,"0"))
+          supervisor_status=extract(r"status=([A-Z_]+)",supervisor_detail,"?")
+
+          _,shadow_count_rows=request(
+              "GET",
+              "/rest/v1/v2r4_shadow_evidence?select=event_id"
+          )
+          shadow_events=len(shadow_count_rows or [])
+
+          _,completed_rows=request(
+              "GET",
+              "/rest/v1/v2r4_shadow_evidence?select=event_id&outcome_payload=not.is.null"
+          )
+          completed_outcomes=len(completed_rows or [])
+
+          since=(now_utc-dt.timedelta(hours=24)).isoformat().replace("+00:00","Z")
+          _,scanner_rows=request(
+              "GET",
+              "/rest/v1/scanner_detection_evidence?select=handoff_id&detected_at=gte."+urllib.parse.quote(since,safe=":-TZ+")
+          )
+          scanner_24h=len(scanner_rows or [])
+
+          icon={
+              "OK":"✅",
+              "WAITING_NO_DATA":"⏳",
+              "FEED_STALE":"⚠️",
+              "API_DISCONNECTED":"🔌",
+              "BACKLOG_STUCK":"⚠️",
+              "DEGRADED":"⚠️",
+              "STOPPED":"🛑",
+          }.get(health_state,"⚠️")
+
+          issue_text="none" if not issue_codes else ",".join(issue_codes[:5])
+          message=(
+              f"{icon} MINI-PC 10:00: {health_state} | "
+              f"Status {age_min:.1f}m alt | Kraken {observed_pairs}/{pairs} ({coverage}%) | "
+              f"Shadow-Quelle {shadow_source_age}s | Supervisor {supervisor_status} | "
+              f"Shadow-Events {shadow_events}, Outcomes {completed_outcomes}, aktiv {active_outcomes} | "
+              f"Scanner 24h {scanner_24h} | Issues {issue_text}"
+          )
+
+          should_mention=health_state not in {"OK","WAITING_NO_DATA"}
+          slack_text=(f"<@{user_id}> " if should_mention else "")+message
+
+          report={
+              "report_date":now_local.date().isoformat(),
+              "generated_at":now_utc.isoformat(),
+              "node_id":row["node_id"],
+              "status":coarse,
+              "health_state":health_state,
+              "remote_age_minutes":round(age_min,3),
+              "shadow_events":shadow_events,
+              "completed_outcomes":completed_outcomes,
+              "active_outcomes":active_outcomes,
+              "scanner_handoffs":scanner_24h,
+              "payload":{
+                  "message":message,
+                  "issue_codes":issue_codes,
+                  "kraken_universe":universe_detail,
+                  "shadow":shadow_detail,
+                  "outcomes":outcomes_detail,
+                  "supervisor":supervisor_detail,
+                  "dry_run":dry_run,
+              },
+              "updated_at":now_utc.isoformat(),
+          }
+
+          print(json.dumps({
+              "dry_run":dry_run,
+              "local_time":now_local.isoformat(),
+              "message":message,
+              "mention":should_mention,
+              "report":report,
+          },sort_keys=True))
+
+          if dry_run:
+              raise SystemExit(0)
+
+          request(
+              "POST",
+              "/rest/v1/minipc_daily_status?on_conflict=report_date",
+              [report],
+              {"Prefer":"resolution=merge-duplicates,return=minimal"},
+          )
+
+          req=urllib.request.Request(
+              webhook,
+              data=json.dumps({"text":slack_text}).encode(),
+              method="POST",
+              headers={"Content-Type":"application/json"},
+          )
+          with urllib.request.urlopen(req,timeout=15) as resp:
+              reply=resp.read().decode("utf-8","replace").strip()
+              print(f"Slack response: {resp.status} {reply}")
+              if not 200<=resp.status<300:
+                  raise RuntimeError(f"Slack HTTP {resp.status}")
+          PY
