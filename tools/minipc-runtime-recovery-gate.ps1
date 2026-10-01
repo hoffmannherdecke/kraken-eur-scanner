@@ -49,6 +49,10 @@ if (Get-ScheduledTask -TaskName "CryptoMiniPC-V2R4ShadowOutcomes" -ErrorAction S
   $taskNames += "CryptoMiniPC-V2R4ShadowOutcomes"
   $startupNames += "CryptoMiniPC-V2R4ShadowOutcomes"
 }
+if (Get-ScheduledTask -TaskName "CryptoMiniPC-V2R4ShadowCloudSync" -ErrorAction SilentlyContinue) {
+  $taskNames += "CryptoMiniPC-V2R4ShadowCloudSync"
+  $startupNames += "CryptoMiniPC-V2R4ShadowCloudSync"
+}
 $taskRows = @()
 
 foreach ($name in $taskNames) {
@@ -168,6 +172,26 @@ if ($outcomesTask) {
   }
 }
 
+$cloudSync = $null
+$cloudTask = Get-ScheduledTask -TaskName "CryptoMiniPC-V2R4ShadowCloudSync" -ErrorAction SilentlyContinue
+if ($cloudTask) {
+  $cloudPath = Join-Path $stateDir "v2r4-shadow-cloud-sync-heartbeat.json"
+  if (-not (Test-Path $cloudPath)) {
+    Add-Issue "v2r4_shadow_cloud_sync_heartbeat_missing"
+  } else {
+    try {
+      $cloudSync = Get-Content $cloudPath -Raw | ConvertFrom-Json
+      $age = Age-Sec $cloudSync.checked_at_utc
+      if ([string]$cloudSync.status -ne "HEALTHY") { Add-Issue "v2r4_shadow_cloud_sync_not_healthy" }
+      if ($age -gt 180) { Add-Issue "v2r4_shadow_cloud_sync_stale" }
+      if ([string]$cloudSync.strategy_action -ne "NONE_ARCHIVE_ONLY") { Add-Issue "v2r4_shadow_cloud_sync_guardrail_changed" }
+      if ([bool]$cloudSync.real_money_actions) { Add-Issue "v2r4_shadow_cloud_sync_real_money_guardrail_changed" }
+    } catch {
+      Add-Issue "v2r4_shadow_cloud_sync_invalid"
+    }
+  }
+}
+
 
 Write-Host "[RUNTIME-RECOVERY] 3/5 Watchdog"
 
@@ -262,6 +286,15 @@ $result = [ordered]@{
         strategy_action = $outcomes.strategy_action
       }
     } else { $null }
+    v2r4_shadow_cloud_sync = if ($cloudSync) {
+      [ordered]@{
+        status = $cloudSync.status
+        age_sec = Age-Sec $cloudSync.checked_at_utc
+        pending_records = [int]$cloudSync.pending_records
+        uploaded_records = [int]$cloudSync.uploaded_records
+        strategy_action = $cloudSync.strategy_action
+      }
+    } else { $null }
   }
   watchdog = if ($health) {
     [ordered]@{
@@ -307,6 +340,9 @@ if ($shadow) {
 }
 if ($outcomes) {
   Write-Host ("V2R4 shadow outcomes: " + $outcomes.status + " | age=" + (Age-Sec $outcomes.checked_at_utc) + "s | active=" + $outcomes.active_events + " | enrolled=" + $outcomes.counters.events_enrolled + " | completed=" + $outcomes.counters.events_completed)
+}
+if ($cloudSync) {
+  Write-Host ("V2R4 shadow cloud sync: " + $cloudSync.status + " | age=" + (Age-Sec $cloudSync.checked_at_utc) + "s | pending=" + $cloudSync.pending_records + " | uploaded=" + $cloudSync.uploaded_records)
 }
 Write-Host ("Watchdog: " + $(if ($health) { [string]$health.status } else { "missing" }))
 Write-Host ("Kraken HTTP: " + $(if ($krakenHttp) { $krakenHttp } else { "failed" }))
