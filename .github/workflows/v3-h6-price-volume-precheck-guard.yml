@@ -33,13 +33,20 @@ jobs:
           from pathlib import Path
           j=json.loads(Path("research/v3/h6-price-volume-trend-precheck-v1.json").read_text("utf-8"))
           assert j["kind"]=="V3_H6_PRICE_VOLUME_TREND_PRECHECK_V1"
-          assert j["status"]=="PRECHECK"
+          assert j["status"]=="PRECHECK_PIT_METHOD_GREEN"
           assert j["complexity_guardrails"]["ctrend_full_implementation_allowed"] is False
           assert j["complexity_guardrails"]["nonlinear_model_allowed_in_precheck"] is False
           assert j["complexity_guardrails"]["parameter_sweep_allowed"] is False
           assert j["future_trial_constraints"]["sealed_2026h1_holdout_open_allowed"] is False
           assert j["runtime_guardrails"]["active_v2r3_change_allowed"] is False
           assert j["runtime_guardrails"]["orders"] is False
+          assert j["next_gate"]=="PREREGISTER_REAL_NORMALIZED_EUR15_DEVELOPMENT_DATASET_AND_FIXED_PRIMITIVES_NO_HOLDOUT"
+          rd=j["methodology_readiness"]
+          assert rd["synthetic_price_volume_pit_smoke"]=="CI_GREEN_RUN_1"
+          assert rd["future_row_trap"]=="PASS_IGNORED"
+          assert rd["missing_prior_volume_window"]=="PASS_RATIO_REMAINS_NULL"
+          assert rd["performance_trial_started"] is False
+          assert rd["holdout_opened"] is False
           print("V3_H6_PREREG PASS transparent/no-search/no-holdout")
           PY
 
