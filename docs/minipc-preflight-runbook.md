@@ -1229,6 +1229,32 @@ While no user action was required, a guarded Supabase read-only summary view was
 
 This prepares the later timing review without changing any strategy/runtime behavior.
 
+### V2R3 completion monitor + provenance completeness added 2026-10-01
+
+Autonomous monitoring was added so the active V2R3 series does not require manual polling:
+
+- Supabase view `public.paper_series_completion_readiness` implements the bounded completion rule:
+  - primary gate = 20 completed trades;
+  - alternative gate = at least 7 full days + 1,000 Candidate-Outcomes + at least 95% complete 24h follow-up coverage;
+- current snapshot at creation:
+  - age ~2.64 days;
+  - 708 Candidate-Outcomes;
+  - 0 completed trades;
+  - 454 candidates currently old enough for 24h follow-up;
+  - 441 complete 24h follow-ups = ~97.14%;
+  - state = `COLLECTING_AGE`;
+  - 292 outcomes and ~104.6h remain to the alternative gate;
+- GitHub workflow `.github/workflows/paper-series-completion-watch.yml` checks the gate every 3 hours;
+- it remains silent while collecting and sends one real `@Hoffis` Slack push only when the completion gate first becomes ready;
+- push/manual validation run completed SUCCESS without sending a Slack notification.
+
+Provenance completeness was also verified across all 708 active V2R3 archived outcomes:
+- 708/708 contain candidate detection, handoff, evaluation-start and evaluation-complete timestamps;
+- 708/708 contain a fresh Kraken ticker snapshot;
+- 708/708 contain strategy revision, strategy fingerprint and runtime-code fingerprint.
+
+No strategy logic was changed.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
