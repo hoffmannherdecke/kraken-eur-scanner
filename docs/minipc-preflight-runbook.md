@@ -953,6 +953,39 @@ To make the Kraken-native WS shadow vs. legacy GitHub scanner timing comparison 
 
 The large Paper archive sync was also hardened after one PostgREST statement timeout: upserts are now bounded into small batches with retry only for transient 429/5xx/timeout failures. The repaired archive run completed SUCCESS.
 
+### Remote MINI-PC status activated; stale read-only runtimes detected 2026-10-01
+
+Physical MINI-PC status-sync activation:
+- `CryptoMiniPC-StatusSync`: **HEALTHY**;
+- authenticated one-shot upload succeeded;
+- persistent heartbeat: **HEALTHY** on node `MINI-PC`;
+- independent Supabase read verified the remote row in `public.minipc_status_current`;
+- transport/sync path itself is therefore **E2E VERIFIED**.
+
+The first centrally visible local watchdog state was **WARNING**, not because of network, disk, backup, Kraken transport, Altrady or cloud archive:
+- broad Kraken universe: HEALTHY, 500/500;
+- Kraken canary: HEALTHY;
+- Altrady transport: HEALTHY;
+- shadow cloud archive: HEALTHY;
+- backup fresh and local disk healthy;
+- warning sources were specifically:
+  - `CryptoMiniPC-V2R4WSShadow`: stale heartbeat (~34 min old at observation);
+  - `CryptoMiniPC-V2R4ShadowOutcomes`: stale heartbeat (~9.6 min old) with 5 active prospective events.
+
+This is useful evidence: the new remote status path surfaced a genuine local process-liveness gap that the existing Task Scheduler restart-on-failure settings had not recovered automatically.
+
+Remediation prepared:
+- `tools/minipc-runtime-supervisor.ps1` monitors only the already-authorized read-only/runtime tasks;
+- stale/stopped tasks are restarted in a bounded way;
+- repeated restart attempts are rate-limited by a 10-minute backoff;
+- `tools/install-minipc-runtime-supervisor.ps1` performs one immediate recovery, installs the supervisor every 2 minutes + startup, and refreshes the local watchdog;
+- outcome tracking now explicitly marks active evidence as `tracker_gap_affected` after a >60s tracker-cycle gap so MFE/MAE continuity is never silently assumed;
+- Windows PowerShell/Python smoke validation is green.
+
+The supervisor is deliberately restricted to public-data/transport/shadow/evidence/status tasks. It cannot change strategy, invoke an evaluator, place orders or perform real-money actions.
+
+**Next physical MINI-PC action:** pull `main` and install the runtime supervisor once. This should also recover the currently stale WS-shadow and outcome-tracker tasks and preserve the detected gap in evidence quality.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
