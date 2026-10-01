@@ -3,7 +3,7 @@
 -- scanner detection within +/-30 minutes and labels the temporal proximity.
 -- Temporal proximity is NOT proof that the two rows represent the identical impulse.
 
-create or replace view public.v2r4_shadow_scanner_match_quality as
+create or replace view public.v2r4_shadow_scanner_match_quality with (security_invoker=true) as
 select
     e.event_id,
     e.pair,
