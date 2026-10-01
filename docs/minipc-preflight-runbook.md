@@ -690,7 +690,18 @@ The next setup item after the verified Altrady transport is now prepared in the 
 - Existing BTC/EUR canary remains independent and is not replaced.
 - Altrady remains an additional independent trigger; no strategy coupling is introduced here.
 
-**Next required physical MINI-PC action:** pull \`main\` once and run the broad-feed installer from an elevated PowerShell. The installer itself performs the bounded live WebSocket proof before it creates the persistent startup task. After the final summary is verified, this infrastructure gate can be marked active.
+**Physical activation verified 2026-10-01:**
+- bounded live Kraken-EUR WebSocket proof passed on the actual MINI-PC;
+- persistent SYSTEM startup task `CryptoMiniPC-KrakenUniverse` installed;
+- status: **HEALTHY**;
+- current online EUR pairs: **500 / 500 observed (100.0% coverage)**;
+- ticker rows at proof: **502**; live updates observed: **2**;
+- subscription errors: **0**;
+- connections: **1**; reconnects: **0**;
+- compact heartbeat and latest-snapshot files are being written under `Trading\State`;
+- safety remained **PUBLIC DATA ONLY / NO ACCOUNT / NO ORDERS / NO STRATEGY ACTION**.
+
+This closes the broad Kraken-EUR realtime transport activation gate. The next infrastructure gate is restart/recovery verification for the full active local stack before any strategy activation.
 
 ### Final runbook items — intentionally last
 
