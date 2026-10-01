@@ -41,6 +41,7 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 - Active clean series is protected by `research/v2r3/clean-series-freeze-20261001.json` + CI freeze guard Run #1 SUCCESS.
 - Initial evaluator timing is now separated from one-shot WAIT-TTL lateness; `public.v2r3_revalidation_timing_summary` measures the scheduler/runtime delay beyond requested TTL without changing V2R3.
 - `public.v2r3_release_review_snapshot` is the fail-closed single-row evidence pack for the eventual final review; `final_review_allowed=false` until completion gate + clean integrity pass.
+- `tools/render-v2r3-final-review.py` is the fail-closed report renderer for that snapshot: blocked before maturity, evidence-only after maturity; renderer guard Run #1 SUCCESS.
 - `public.v2r4_activation_readiness` additionally blocks on `BLOCKED_V2R3_INTEGRITY` if clean-series integrity drifts; automatic activation stays permanently false.
 
 ### Release-Gate V2R3 → V2R4
