@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H4_REGIME_STOP_TTL_PRECHECK_V1",
+  "hypothesis_id": "V3-H4",
+  "status": "PRECHECK_DATA_READINESS_ONLY",
+  "prepared_at_utc": "2026-10-01T18:30:00Z",
+  "purpose": "Define evidence and regime semantics for later regime-dependent stop/TTL research without tuning the active clean series.",
+  "current_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "current_data_readiness_snapshot": {
+    "candidate_rows": 84,
+    "mature_30m_mae_mfe": 75,
+    "mature_60m_mae_mfe": 66,
+    "mature_120m_mae_mfe": 57,
+    "mature_360m_mae_mfe": 28,
+    "mature_post_detect_24h_mae_mfe": 0,
+    "trade_return_rows": 0,
+    "setup_lanes": [
+      "CONTINUITY",
+      "EXTENDED",
+      "IGNITION",
+      "NONE",
+      "REVERSAL"
+    ]
+  },
+  "not_ready_for_parameter_testing_because": [
+    "no_mature_24h_mae_mfe_yet",
+    "no_completed_trade_return_rows",
+    "clean_v2r3_completion_gate_not_reached",
+    "regime_state_not_yet_frozen_as_point_in_time_definition"
+  ],
+  "required_regime_definition_before_any_test": {
+    "state_only_first": true,
+    "candidate_axes": [
+      "market_breadth_state",
+      "realized_volatility_state",
+      "trend_vs_mean_reversion_state",
+      "liquidity_state",
+      "optional_derivatives_crowding_state_if_point_in_time_available"
+    ],
+    "exact_thresholds_must_be_preregistered_before_performance_metrics": true,
+    "current_live_universe_as_historical_filter_forbidden": true,
+    "future_information_forbidden": true,
+    "missing_state_remains_missing": true
+  },
+  "later_trial_contract": {
+    "one_changed_component_per_trial": true,
+    "allowed_first_changes": [
+      "stop_distance_only",
+      "ttl_only",
+      "trailing_rule_only",
+      "exit_timeout_only"
+    ],
+    "bundled_stop_ttl_trailing_change_forbidden": true,
+    "same_candidate_stream_required": true,
+    "same_market_clock_required": true,
+    "frozen_cost_model_required": true,
+    "mae_mfe_and_net_outcome_required": true,
+    "preregister_sample_gate_required": true,
+    "preregister_promotion_gate_required": true,
+    "no_winner_is_valid_outcome": true
+  },
+  "bias_guardrails": {
+    "threshold_sweep_allowed": false,
+    "pair_selection_by_seen_performance_allowed": false,
+    "setup_lane_selection_by_seen_performance_allowed": false,
+    "horizon_selection_by_seen_performance_allowed": false,
+    "current_sealed_holdout_open_allowed": false,
+    "clean_v2r3_may_be_tuned": false
+  },
+  "runtime_guardrails": {
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "paper_runtime_change_allowed": false,
+    "sizing_change_allowed": false,
+    "orders_allowed": false,
+    "leverage_allowed": false,
+    "real_money_actions_allowed": false
+  },
+  "next_gate": "WAIT_FOR_V2R3_MATURE_24H_AND_FINAL_REVIEW_THEN_FREEZE_POINT_IN_TIME_REGIME_DEFINITION"
+}
