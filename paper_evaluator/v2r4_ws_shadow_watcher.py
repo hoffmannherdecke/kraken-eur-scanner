@@ -77,8 +77,12 @@ def atomic_json(path: Path, payload: dict[str, Any]) -> None:
     tmp.replace(path)
 
 
-def append_jsonl(path: Path, payload: dict[str, Any]) -> None:
+def append_jsonl(path: Path, payload: dict[str, Any], max_bytes: int = 20 * 1024 * 1024) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and path.stat().st_size >= max_bytes:
+        stamp = utcnow().strftime("%Y%m%d-%H%M%S")
+        rotated = path.with_name(f"{path.stem}-{stamp}{path.suffix}")
+        path.replace(rotated)
     with path.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(payload, separators=(",", ":"), sort_keys=True) + "\n")
 
