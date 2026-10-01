@@ -1,0 +1,47 @@
+name: V3 H4 regime stop TTL precheck guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/h4-regime-stop-ttl-precheck-v1.json'
+      - '.github/workflows/v3-h4-precheck-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Validate H4 fail-closed precheck
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path('research/v3/h4-regime-stop-ttl-precheck-v1.json').read_text('utf-8'))
+          assert j['kind']=='V3_H4_REGIME_STOP_TTL_PRECHECK_V1'
+          assert j['status']=='PRECHECK_DATA_READINESS_ONLY'
+          s=j['current_data_readiness_snapshot']
+          assert s['mature_post_detect_24h_mae_mfe']==0
+          assert s['trade_return_rows']==0
+          assert 'no_mature_24h_mae_mfe_yet' in j['not_ready_for_parameter_testing_because']
+          assert j['later_trial_contract']['one_changed_component_per_trial'] is True
+          assert j['later_trial_contract']['bundled_stop_ttl_trailing_change_forbidden'] is True
+          assert j['bias_guardrails']['threshold_sweep_allowed'] is False
+          assert j['bias_guardrails']['current_sealed_holdout_open_allowed'] is False
+          assert j['bias_guardrails']['clean_v2r3_may_be_tuned'] is False
+          assert j['runtime_guardrails']['active_v2r3_change_allowed'] is False
+          assert j['runtime_guardrails']['v2r4_change_allowed'] is False
+          assert j['runtime_guardrails']['paper_runtime_change_allowed'] is False
+          assert j['runtime_guardrails']['orders_allowed'] is False
+          assert j['runtime_guardrails']['real_money_actions_allowed'] is False
+          assert j['next_gate']=='WAIT_FOR_V2R3_MATURE_24H_AND_FINAL_REVIEW_THEN_FREEZE_POINT_IN_TIME_REGIME_DEFINITION'
+          print('V3_H4_PRECHECK PASS data-readiness-only/no-tuning/no-holdout')
+          PY
