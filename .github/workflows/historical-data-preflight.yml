@@ -84,12 +84,12 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           Path("/tmp/kraken-trades-synthetic.csv").write_text(
-              "timestamp,price,volume,type,order_type,misc,trade_id\\n"
-              "1000.0,100.0,1.0,b,m,,1\\n"
-              "1002.0,100.2,2.0,s,l,,2\\n"
-              "1004.5,100.1,1.5,b,m,,3\\n"
-              "1006.0,100.4,1.0,b,m,,4\\n"
-              "1008.5,100.3,0.5,s,l,,5\\n",
+              "timestamp,price,volume,type,order_type,misc,trade_id\n"
+              "1000.0,100.0,1.0,b,m,,1\n"
+              "1002.0,100.2,2.0,s,l,,2\n"
+              "1004.5,100.1,1.5,b,m,,3\n"
+              "1006.0,100.4,1.0,b,m,,4\n"
+              "1008.5,100.3,0.5,s,l,,5\n",
               encoding="utf-8"
           )
           PY
