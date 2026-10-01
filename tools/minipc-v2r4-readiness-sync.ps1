@@ -23,8 +23,9 @@ $plan = [ordered]@{
   required_branch = "main"
   v2r4_candidate_branch = $V2R4Branch
   steps = @(
-    "verify clean main working tree",
+    "verify repository exists, main branch, and clean working tree",
     "fetch origin/main and fast-forward-only pull",
+    "verify post-pull readiness helper scripts are present",
     "run watchdog effectiveness smoke",
     "run isolated V2R4 preflight against refreshed candidate branch",
     "run latest backup restore smoke"
@@ -48,8 +49,11 @@ if ($Confirm -ne $ExpectedConfirm) {
   throw "Execution blocked. Re-run with -Confirm $ExpectedConfirm"
 }
 
-foreach ($p in @($repo,$watchdogSmoke,$v2r4Preflight,$restoreSmoke)) {
-  if (-not (Test-Path $p)) { throw "Required path missing: $p" }
+# Only the repository itself must exist before the pull. Helper scripts are
+# deliberately validated after the fast-forward so an older local checkout can
+# acquire newly prepared readiness/watchdog helpers in the same bounded run.
+if (-not (Test-Path $repo)) {
+  throw "Required repository missing: $repo"
 }
 
 Push-Location $repo
@@ -66,7 +70,7 @@ try {
 
   $beforeHead = (& git rev-parse HEAD).Trim()
 
-  Write-Host "[READINESS-SYNC] 1/4 Fetch + fast-forward-only pull current main"
+  Write-Host "[READINESS-SYNC] 1/5 Fetch + fast-forward-only pull current main"
   & git fetch origin main
   if ($LASTEXITCODE -ne 0) { throw "git fetch origin main failed" }
   $behindBefore = [int]((& git rev-list --count "HEAD..origin/main").Trim())
@@ -74,15 +78,20 @@ try {
   if ($LASTEXITCODE -ne 0) { throw "git pull --ff-only failed" }
   $afterHead = (& git rev-parse HEAD).Trim()
 
-  Write-Host "[READINESS-SYNC] 2/4 Watchdog effectiveness"
+  Write-Host "[READINESS-SYNC] 2/5 Verify post-pull readiness helpers"
+  foreach ($p in @($watchdogSmoke,$v2r4Preflight,$restoreSmoke)) {
+    if (-not (Test-Path $p)) { throw "Required post-pull helper missing: $p" }
+  }
+
+  Write-Host "[READINESS-SYNC] 3/5 Watchdog effectiveness"
   & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $watchdogSmoke -TradingRoot $TradingRoot
   if ($LASTEXITCODE -ne 0) { throw "Watchdog effectiveness smoke failed" }
 
-  Write-Host "[READINESS-SYNC] 3/4 Isolated V2R4 candidate preflight"
+  Write-Host "[READINESS-SYNC] 4/5 Isolated V2R4 candidate preflight"
   & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $v2r4Preflight -TradingRoot $TradingRoot -Branch $V2R4Branch
   if ($LASTEXITCODE -ne 0) { throw "V2R4 preflight smoke failed" }
 
-  Write-Host "[READINESS-SYNC] 4/4 Backup restore smoke"
+  Write-Host "[READINESS-SYNC] 5/5 Backup restore smoke"
   & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $restoreSmoke -TradingRoot $TradingRoot
   if ($LASTEXITCODE -ne 0) { throw "Backup restore smoke failed" }
 
@@ -94,6 +103,7 @@ try {
     commits_behind_before_pull = $behindBefore
     branch = $branch
     v2r4_candidate_branch = $V2R4Branch
+    post_pull_helpers = "PASS"
     watchdog_effectiveness = "PASS"
     v2r4_preflight = "PASS"
     backup_restore = "PASS"
