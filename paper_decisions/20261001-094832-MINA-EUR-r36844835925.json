@@ -1,0 +1,185 @@
+{
+  "altname": "MINAEUR",
+  "candidate_age_seconds": 34,
+  "candidate_event_time_utc": "2026-10-01T09:48:32Z",
+  "candidate_id": "20261001-094832-MINA-EUR-r36844835925",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.1318 with follow-through and sustained volume",
+      "Hold above 0.1318 on a retest while spread remains controlled"
+    ],
+    "reason_codes": [
+      "spread_and_turnover_acceptable",
+      "positive_1h_3h_continuity",
+      "no_resistance_breakout",
+      "live_return_negative",
+      "near_resistance",
+      "high_24h_and_30d_run",
+      "market_3h_context_mixed",
+      "remaining_move_unconfirmed",
+      "derivatives_cross_market_only"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "MINA shows short-term continuity and exceptional reported volume, but has not broken 1h/3h resistance; the ask is already close to that level and costs leave little margin for an unconfirmed entry.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "MINAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "available": false,
+        "reason": "no prior same-pair observation in active series"
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000728925,
+        "index_price": 0.147832,
+        "last": 0.1464,
+        "mark_price": 0.14848723577,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 216755.0,
+        "requested_symbols": [
+          "PF_MINAUSD",
+          "PI_MINAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_MINAUSD",
+        "volume24h": 165597
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.1316,
+      "bid": 0.1314,
+      "last": 0.1315,
+      "spread_pct": 0.15209125475285606
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "70",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4684113252171107,
+          "ret3h_pct": -0.12696704774712853
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.48837992590098356,
+          "ret3h_pct": -0.48490053910265063
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.23980815347721673,
+          "ret3h_pct": -0.7597340930674212
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": false,
+        "detail": "HTTP Error 404: Not Found",
+        "error": "HTTPError",
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T09:49:06.303171Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-01T09:49:14.216290Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_073330c9eb7af32e006abe2c93932487d1ab60e20d97c6121a"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.1316,
+    "bid": 0.1314,
+    "last": 0.1315,
+    "spread_pct": 0.15209125475285606
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "MINA/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36844835925:MINA-EUR:1790848112",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "0987b79f259976a2b49c287a00fa84dd386e0932",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T09:48:32Z",
+    "candidate_detected_ts": 1790848112,
+    "candidate_snapshot_at_utc": "2026-10-01T09:48:32Z",
+    "detected_to_evaluation_complete_seconds": 42.216,
+    "detected_to_evaluation_start_seconds": 34.158,
+    "evaluation_completed_at_utc": "2026-10-01T09:49:14.216290Z",
+    "evaluation_runtime_seconds": 8.058,
+    "evaluation_started_at_utc": "2026-10-01T09:49:06.157808Z",
+    "handoff_to_evaluation_start_seconds": 31.809,
+    "handoff_written_at_utc": "2026-10-01T09:48:34.348358Z",
+    "scan_step_started_at_utc": "2026-10-01T09:46:04Z"
+  }
+}
