@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-09-30T23:24:00Z",
         "trough_at_utc": "2026-09-30T23:34:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 0.33,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -1.711,
+        "mfe_pct": 0.742,
+        "peak_at_utc": "2026-10-01T03:01:00Z",
+        "trough_at_utc": "2026-10-01T00:30:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -88,7 +99,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-01T03:20:16.899640Z"
+    "updated_at_utc": "2026-10-01T03:38:06.037347Z"
   },
   "original_decision": "WAIT",
   "pair": "AVAX/EUR",
