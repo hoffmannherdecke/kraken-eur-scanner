@@ -50,6 +50,7 @@ def main() -> int:
     queue_ids: list[str] = []
     candidate_ids: list[str] = []
     findings: list[dict[str, Any]] = []
+    old_series_ignored = 0
 
     for path in sorted(handoff_dir.glob("*.json")) if handoff_dir.exists() else []:
         try:
@@ -57,6 +58,15 @@ def main() -> int:
         except Exception as exc:
             findings.append({"severity": "CRITICAL", "code": "HANDOFF_INVALID_JSON", "file": str(path), "detail": str(exc)})
             continue
+        try:
+            event_time = zdt(rec.get("event_time_utc") or datetime.fromtimestamp(int(rec["event_ts"]), timezone.utc).isoformat())
+        except Exception:
+            findings.append({"severity": "CRITICAL", "code": "HANDOFF_BAD_TIMESTAMP", "file": str(path)})
+            continue
+        if event_time < series_start:
+            old_series_ignored += 1
+            continue
+
         cid = str(rec.get("candidate_id") or "")
         qid = str(rec.get("queue_id") or "")
         if not cid or path.stem != cid:
@@ -95,7 +105,6 @@ def main() -> int:
 
     stale_orphans = 0
     replayable_fresh = 0
-    old_series_ignored = 0
     due_waits = 0
     overdue_waits = 0
 
@@ -104,10 +113,6 @@ def main() -> int:
             event_time = zdt(rec.get("event_time_utc") or datetime.fromtimestamp(int(rec["event_ts"]), timezone.utc).isoformat())
         except Exception:
             findings.append({"severity": "CRITICAL", "code": "HANDOFF_BAD_TIMESTAMP", "candidate_id": cid})
-            continue
-
-        if event_time < series_start:
-            old_series_ignored += 1
             continue
 
         age = max(0.0, (now - event_time).total_seconds())
@@ -191,7 +196,8 @@ def main() -> int:
     print("=== PAPER RUNTIME RECONCILIATION AUDIT SUMMARY ===")
     print(f"Status: {status}")
     print(f"Series: {series_id} | enabled={bool(control.get('enabled'))}")
-    print(f"Handoffs: {len(handoffs)} | decisions={len(decisions)} | revalidations={len(revals)}")
+    print(f"Active-series handoffs: {len(handoffs)} | decisions={len(decisions)} | revalidations={len(revals)}")
+    print(f"Historical pre-series handoffs ignored: {old_series_ignored}")
     print(f"Fresh unprocessed: {replayable_fresh} | stale unprocessed: {stale_orphans}")
     print(f"Due WAIT revalidations: {due_waits} | overdue>{REVALIDATION_GRACE_SECONDS}s: {overdue_waits}")
     print(f"Critical: {critical} | Warning: {warning}")
@@ -200,7 +206,7 @@ def main() -> int:
             print(f"{item['severity']} {item['code']} | {item.get('candidate_id') or item.get('file') or item.get('queue_id') or ''}")
     else:
         print("Findings: none")
-    print("Replay safety: >60m handoffs are not prospectively selected; existing candidate decision/revalidation files make evaluation idempotent/one-shot.")
+    print("Replay safety: pre-series legacy handoffs are ignored; >60m active-series handoffs are not prospectively selected; existing candidate decision/revalidation files make evaluation idempotent/one-shot.")
     print("Safety: READ-ONLY AUDIT / NO MODEL / NO EXCHANGE / NO ORDERS / NO STRATEGY CHANGE")
     print("=== END ===")
 
