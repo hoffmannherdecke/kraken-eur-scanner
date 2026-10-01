@@ -66,7 +66,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 ## P2 — Lokaler Runtime-/Watchdog-/Recovery-Layer
 
-- [ ] Lokalen Prozess-Supervisor/Watchdog vervollständigen: Remote-Status deckte 2026-10-01 stale `V2R4WSShadow`- und `V2R4ShadowOutcomes`-Heartbeats auf. Bounded Supervisor ist jetzt vorbereitet/CI-grün: automatische Recovery nur für autorisierte Read-only-/Transport-/Shadow-/Evidence-/Status-Tasks, 2-Minuten-Takt, 10-Minuten-Backoff, kein Strategie-/Evaluator-/Orderpfad. **Nächster physischer Gate: Supervisor installieren und Recovery der beiden stale Tasks nachweisen.**
+- [ ] Lokalen Prozess-Supervisor/Watchdog vervollständigen: `CryptoMiniPC-RuntimeSupervisor` ist seit 2026-10-01 **HEALTHY** aktiv (2-Minuten-Takt + Startup, 10-Minuten-Backoff, Read-only-Runtimes only). Lokaler Watchdog nach Installation **HEALTHY**. Offen bleibt nur noch der kontrollierte physische **Self-Heal-Proof** an einem idempotenten Support-Task; danach Gate schließen.
 - [ ] Watchdog muss auch „grün aber wirkungslos“ erkennen, nicht nur Prozessstatus.
 - [ ] Täglichen sehr kurzen **10:00-Systemstatus** später lokal/GitHub-basiert erzeugen: tatsächliche End-to-End-Gesundheit statt nur „Workflow aktiv“; Work dafür nicht als Dauerlösung verwenden.
 - [x] Unabhängige Health-Schicht ohne zusätzlichen Uptime-Kuma-Dienst vorbereitet: Supabase Last-Seen + GitHub-Cloud-Deadman überwacht MINI-PC außerhalb des Geräts und pusht nur bei CRITICAL/>20 min stale sowie einmal bei Recovery. Uptime Kuma bleibt damit vorerst unnötig; nur später neu bewerten, falls zusätzliche externe Checks echten Mehrwert bringen.
