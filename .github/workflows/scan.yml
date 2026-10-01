@@ -635,10 +635,10 @@ jobs:
         if: success() && hashFiles('.candidate-identity-manifest.json') != ''
         run: |
           set -euo pipefail
-          if git status --porcelain -- handoff_queue | grep -q .; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add handoff_queue
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add handoff_queue
+          if ! git diff --cached --quiet -- handoff_queue; then
             git commit -m "[auto-handoff] persist scanner candidates from run ${GITHUB_RUN_ID}"
             pushed=false
             for attempt in 1 2 3 4; do
