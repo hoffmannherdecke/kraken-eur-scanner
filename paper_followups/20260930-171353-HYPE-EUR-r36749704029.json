@@ -80,6 +80,17 @@
         "mfe_pct": 0.149,
         "peak_at_utc": "2026-09-30T17:14:00Z",
         "trough_at_utc": "2026-09-30T18:08:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -2.4,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -3.158,
+        "mfe_pct": 0.709,
+        "peak_at_utc": "2026-09-30T21:40:00Z",
+        "trough_at_utc": "2026-09-30T18:15:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -109,7 +120,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-01T04:56:35.573797Z"
+    "updated_at_utc": "2026-10-01T05:27:26.640223Z"
   },
   "original_decision": "WAIT",
   "pair": "HYPE/EUR",

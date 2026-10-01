@@ -1,0 +1,63 @@
+{
+  "baseline_ask_eur": 3701.67,
+  "candidate_id": "20261001-051107-PAXG-EUR-r36818436363",
+  "evaluated_at_utc": "2026-10-01T05:25:40.193417Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-01T05:11:07Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 873.193,
+    "detection_price_eur": 3699.82,
+    "evaluated_at_utc": "2026-10-01T05:25:40.193417Z",
+    "evaluation_ask_eur": 3701.67,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 0.0,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": 0.0,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-10-01T05:12:00Z",
+        "trough_at_utc": "2026-10-01T05:12:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-01T02:13:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 0.665,
+      "price_eur": 3675.39
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "remaining_move_insufficient_vs_costs",
+      "closed_volume_not_elevated",
+      "live_move_small",
+      "funding_elevated_oi_falling",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "scan_step_started_at_utc": "2026-10-01T05:09:36Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 0.6646913660863341,
+      "ret15_live_pct": 0.01946419399314614,
+      "ret1h_pct": 0.23651550084120565,
+      "ret3h_pct": 0.6646913660863341,
+      "scanner_late_flag": false,
+      "score": 7.1
+    },
+    "schema_version": 1,
+    "setup_lane": "CONTINUITY",
+    "updated_at_utc": "2026-10-01T05:27:45.552990Z"
+  },
+  "original_decision": "REJECT",
+  "pair": "PAXG/EUR",
+  "path_classification": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02"
+}
