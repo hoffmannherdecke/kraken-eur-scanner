@@ -115,6 +115,7 @@ def load_state(path: Path, now: datetime) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA,
         "tracker_started_at_utc": iso(now),
+        "last_cycle_at_utc": None,
         "active": {},
         "ignored_ids": [],
         "counters": {
@@ -182,6 +183,8 @@ def enroll_events(
             "last_sample_at_utc": None,
             "last_price_eur": None,
             "horizons": {},
+            "tracker_gap_affected": False,
+            "max_tracker_gap_seconds": 0.0,
         }
         state["counters"]["events_enrolled"] += 1
 
@@ -289,6 +292,22 @@ def run_once(args: argparse.Namespace, state: dict[str, Any] | None = None) -> d
     state = state or load_state(args.state, now)
     args.outcome_dir.mkdir(parents=True, exist_ok=True)
 
+    previous_cycle = state.get("last_cycle_at_utc")
+    if previous_cycle:
+        try:
+            cycle_gap = max(0.0, (now - parse_utc(previous_cycle)).total_seconds())
+        except Exception:
+            cycle_gap = 0.0
+        # Normal cadence is 10 seconds. A >60 second cycle gap means the
+        # prospective MFE/MAE path was not continuously observing the market.
+        if cycle_gap > 60:
+            for item in state.get("active", {}).values():
+                item["tracker_gap_affected"] = True
+                item["max_tracker_gap_seconds"] = round(
+                    max(float(item.get("max_tracker_gap_seconds") or 0.0), cycle_gap),
+                    3,
+                )
+
     enroll_events(state, args.event_dir, args.outcome_dir, now)
 
     snapshot = load_json(args.snapshot)
@@ -297,6 +316,7 @@ def run_once(args: argparse.Namespace, state: dict[str, Any] | None = None) -> d
 
     sample_active(state, snapshot, args.outcome_dir, args.outcome_ledger, now)
     state["updated_at_utc"] = iso(now)
+    state["last_cycle_at_utc"] = iso(now)
     atomic_json(args.state, state)
 
     heartbeat = {
