@@ -65,21 +65,26 @@ Only that fresh paper evaluation may create BUY_SCOUT.
 
 This keeps the improvement focused on **latency**, not removal of safety gates.
 
-### 4. Preserve the two-stage entry, but not the old 50-EUR default
+### 4. Preserve the two-stage entry; sizing remains a separate release decision
 
-V2R4 restores the later agreed adaptive paper sizing rather than treating EUR 50
-packages as the normal default:
+The proposal still contains the earlier 75+75 EUR smoke default and larger adaptive
+research tiers, but the setup-quality sizing mapper is **not wired**.  Therefore
+paper sizing must not be silently changed merely because V2R4 is activated.
 
-- B+ / early scout: EUR 75 + EUR 75 => EUR 150 total;
-- A-: EUR 75 + EUR 75 => EUR 150 total;
-- A: first stage EUR 100-125, confirmed total EUR 200-300;
-- A+: first stage EUR 150-200, confirmed total EUR 300-600.
+The release-readiness review now separates two questions:
 
-The second stage still requires an explicit confirmation trigger. Position size must
+- **timing/discovery hypothesis** — earlier discovery + deterministic WAIT monitoring;
+- **sizing hypothesis** — whether setup-quality-dependent notional improves outcomes.
+
+For the first full V2R4 series, the prepared release memo methodologically prefers
+holding V2R3 paper sizing constant (50+50 EUR) so the timing hypothesis can be
+measured without a sizing confounder.  Adaptive sizing remains a later separately
+versioned experiment unless an explicit manual release decision chooses otherwise.
+
+The second stage always requires an explicit confirmation trigger. Position size must
 not be increased merely to reach a nominal target, and late chasing remains prohibited.
 
-The research goal is to test whether earlier small-but-meaningful scouts plus quality-
-dependent scaling improve expectancy after fees, spread and slippage.
+See `docs/v2r4-sizing-release-decision.md` on `main` for the release decision memo.
 
 ## Role of broader context in V2R4
 
@@ -183,6 +188,32 @@ Files:
 - `tests/test_v2r4_precandidate_discovery.py`
 
 The active V2R3 control remains unchanged.
+
+## Inactive continuous WAIT runtime preparation
+
+The earlier single-plan watcher and trigger->fresh-recheck E2E proved the mechanics,
+but a release-ready 24/7 path also needs an explicit bounded plan lifecycle.  PR #9
+therefore contains an **inactive** runtime preparation:
+
+- `paper_evaluator/v2r4_wait_runtime.py`
+- `tests/test_v2r4_wait_runtime.py`
+
+Safety/behavior:
+
+- discovers persisted `v2r4_trigger_plan` and chained `next_wait_trigger_plan` records;
+- Kraken public data remains the only trigger-condition truth;
+- locally consumed Altrady events are **wakeup hints only** for a same-pair early check;
+- an Altrady event can never satisfy a condition or create a buy by itself;
+- normal Kraken fallback checking continues even when Altrady is silent;
+- one matched plan can request only one fresh paper recheck;
+- handled plans are idempotently recorded;
+- a failed fresh recheck fails closed and is not automatically hammered/retried;
+- no private Kraken API, order endpoint or real-money action exists;
+- long-running mode requires explicit `--execute-recheck`; receipt-only mode is
+  restricted to bounded smoke use.
+
+This module is **not installed or started**.  Scheduled-task installation and real
+series wiring remain part of the later explicit V2R4 paper activation gate.
 
 ## MINI-PC WebSocket shadow bridge
 
