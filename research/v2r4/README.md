@@ -184,11 +184,52 @@ Files:
 
 The active V2R3 control remains unchanged.
 
+## MINI-PC WebSocket shadow bridge
+
+The production-shaped V2R4 discovery path must not depend on the older broad REST
+ticker poller once the MINI-PC realtime transport is available.
+
+A separate inactive shadow consumer now exists:
+
+- `paper_evaluator/v2r4_ws_shadow_watcher.py`
+- input: the compact `kraken-eur-ticker-latest.json` snapshot written by the
+  already-running `CryptoMiniPC-KrakenUniverse` service;
+- no exchange connection of its own;
+- no evaluator invocation;
+- no order/account API;
+- no mutation of the active V2R3 series.
+
+The consumer builds rolling point-in-time 10m/30m/1h/3h/6h/12h returns from the
+local event-driven feed, writes a bounded timing ledger and emits only
+`V2R4_WS_SHADOW_DISCOVERY` observations.  Even when a shadow setup would qualify
+for a fresh recheck, the shadow action remains `SHADOW_OBSERVE_ONLY`.
+
+Recovery semantics are explicit:
+
+- stale global snapshots are rejected;
+- duplicate snapshots are not reprocessed into repeated events;
+- stale per-pair updates are ignored;
+- after a material feed gap/reconnect, the first fresh snapshot is consumed but
+  trigger emission is suppressed for one cycle;
+- no pre-gap condition is blindly replayed after reconnect;
+- continuous state is persisted on a bounded interval rather than rewritten every
+  one-second poll cycle.
+
+This bridge exists specifically to prove feed freshness, timestamp semantics,
+dedup/TTL behavior and discovery latency before V2R4 paper activation.
+
+Files:
+- `paper_evaluator/v2r4_ws_shadow_watcher.py`
+- `tests/test_v2r4_ws_shadow_watcher.py`
+
+The older REST pre-candidate watcher remains useful as a research/fallback harness,
+but it is not the intended timing-critical MINI-PC primary path.
+
 ## Kraken tradability / universe rule
 
 Kraken tradability is a live market-data property, not a remembered whitelist.
 
-- V2R4 discovery refreshes Kraken `/0/public/AssetPairs` on each watcher cycle.
+- The MINI-PC primary universe is refreshed by the local Kraken realtime service from public `/0/public/AssetPairs`; the WS shadow consumer inherits that current online-EUR universe from the feed snapshot. The legacy REST research watcher may still refresh `AssetPairs` directly per run.
 - Only Spot EUR pairs whose Kraken `status` is `online` belong to the actionable discovery universe.
 - Symbol aliases must be resolved from Kraken metadata (`wsname`, `altname`, pair key); a chat-memory or manually maintained symbol list must never be the primary source.
 - A periodic 14-day universe audit may remain as an integrity check for alias/listing drift, but it is not the operational source of truth.
