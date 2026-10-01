@@ -82,6 +82,7 @@ def main() -> int:
     ap.add_argument("--schema", type=Path, required=True)
     ap.add_argument("--output-record", type=Path, required=True)
     ap.add_argument("--repo-root", type=Path, required=True)
+    ap.add_argument("--expected-normalized-count", type=int, default=648)
     args = ap.parse_args()
 
     norm = load_json(args.normalization_catalog)
@@ -92,8 +93,11 @@ def main() -> int:
         raise SystemExit("normalization catalog status is not PASS")
     if replay.get("status") != "PASS":
         raise SystemExit("replay report status is not PASS")
-    if int(norm.get("file_count", -1)) != 648:
-        raise SystemExit("normalization catalog file_count is not 648")
+    if int(norm.get("file_count", -1)) != args.expected_normalized_count:
+        raise SystemExit(
+            f"normalization catalog file_count mismatch: expected "
+            f"{args.expected_normalized_count}, got {norm.get('file_count')}"
+        )
 
     decision = replay["decision"]
     label = replay["label"]
