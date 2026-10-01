@@ -7,6 +7,8 @@ name: V3 H1 breadth precheck guard
     paths:
       - 'research/v3/h1-cross-crypto-breadth-precheck-v1.json'
       - 'research/v3/h1-eur15-development-feature-trial-v1.json'
+      - 'tools/v3-h1-eur15-breadth-feature-integrity.py'
+      - 'tools/run-minipc-v3-feature-integrity-gates.ps1'
       - 'research/v3/fixtures/h1-cross-crypto-breadth-synthetic.json'
       - 'tools/v3-h1-breadth-pit-smoke.py'
       - '.github/workflows/v3-h1-breadth-precheck-guard.yml'
@@ -133,3 +135,9 @@ jobs:
           assert r["real_money_actions"] is False
           print("V3_H1_REAL_FEATURE_PREREG PASS 648-pair/pre-2026/breadth-no-label/no-holdout")
           PY
+
+
+      - name: H1 real feature runner self-test
+        run: |
+          python -m py_compile tools/v3-h1-eur15-breadth-feature-integrity.py
+          python tools/v3-h1-eur15-breadth-feature-integrity.py --self-test

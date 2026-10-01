@@ -7,6 +7,8 @@ name: V3 H6 price volume precheck guard
     paths:
       - 'research/v3/h6-price-volume-trend-precheck-v1.json'
       - 'research/v3/h6-eur15-development-feature-trial-v1.json'
+      - 'tools/v3-h6-eur15-feature-integrity.py'
+      - 'tools/run-minipc-v3-feature-integrity-gates.ps1'
       - 'research/v3/fixtures/h6-price-volume-synthetic.json'
       - 'tools/v3-h6-price-volume-pit-smoke.py'
       - '.github/workflows/v3-h6-price-volume-precheck-guard.yml'
@@ -160,3 +162,9 @@ jobs:
           assert r["real_money_actions"] is False
           print("V3_H6_REAL_FEATURE_PREREG PASS 648-pair/pre-2026/no-label/no-holdout")
           PY
+
+
+      - name: H6 real feature runner self-test
+        run: |
+          python -m py_compile tools/v3-h6-eur15-feature-integrity.py
+          python tools/v3-h6-eur15-feature-integrity.py --self-test
