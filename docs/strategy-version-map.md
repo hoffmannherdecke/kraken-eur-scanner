@@ -13,7 +13,7 @@ welche Erkenntnisse wohin gehören und wann eine Version aktiviert werden darf**
 Sie ersetzt keine Detaildokumentation und keine To-do-Liste:
 - übergeordnete Komponenten-/Versionsführung: `docs/master-version-register.md`;\n- offene Projektarbeit bleibt im `PROJECT_BACKLOG.md`;
 - V3-Forschung im `docs/v3-research-framework.md` und GitHub Issue #7;
-- die vorbereitete V2R4-Implementierung liegt derzeit in Draft-PR #8.
+- die vorbereitete V2R4-Implementierung liegt derzeit in **Draft-PR #9**; der alte Draft-PR #8 wurde wegen 995 Commits Divergenz von `main` als superseded geschlossen.
 
 Bei Widersprüchen gilt:
 1. aktive Runtime-Konfiguration für den aktuellen Ist-Zustand;
@@ -103,7 +103,7 @@ A particularly strong configuration hypothesis is the legacy hardcoded `PAIR_BLO
 ## V2R4 — vorbereitete taktische Timing-/Trigger-Version
 
 **Status:** PREPARED / NOT ACTIVE / PAPER ONLY  
-**Implementierung:** Draft-PR #8  
+**Implementierung:** Draft-PR #9 (auf aktuellen `main` neu aufgesetzt; V2R4 PR validation Run #11 SUCCESS)  
 **Zweck:** gezielt das in V2R3 erkannte WAIT-/Revalidation-Latenzproblem untersuchen.
 
 V2R4 ist **keine Ersatzbezeichnung für V3**. Sie ist eine eng begrenzte Zwischenversion,
