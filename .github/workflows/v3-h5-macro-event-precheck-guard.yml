@@ -7,6 +7,7 @@ name: V3 H5 macro event precheck guard
     branches: [main]
     paths:
       - 'research/v3/h5-macro-event-risk-precheck-v1.json'
+      - 'research/v3/h5-fomc-risk-variant-prereg-v1.json'
       - 'research/v3/fixtures/h5-fomc-event-window-synthetic.json'
       - 'research/v3/event-calendars/fomc-prospective-capture-20261001.json'
       - 'tools/validate-v3-h5-event-calendar-capture.py'
@@ -48,7 +49,10 @@ jobs:
           assert rd["december_est_statement_utc"]=="2026-12-09T19:00:00Z"
           assert rd["performance_trial_started"] is False
           assert rd["holdout_opened"] is False
-          assert j["next_gate"]=="CAPTURE_VERSIONED_OFFICIAL_FOMC_EVENT_CALENDAR_THEN_PREREGISTER_ONE_RISK_VARIANT_NO_HOLDOUT"
+          assert j["next_gate"]=="RISK_VARIANT_PREREGISTERED__WAIT_FOR_FINAL_BASELINE_FREEZE_THEN_MATERIALIZE_ONE_CHANGE_SHADOW_CANDIDATE"
+          assert rd["official_calendar_capture"]=="PROSPECTIVE_CAPTURE_VALIDATED_20261001"
+          assert rd["preregistered_risk_variant"]=="V3-H5-FOMC-STATEMENT-NO-NEW-ENTRY-30M30M-V1"
+          assert rd["preregistered_risk_variant_count"]==1
           assert j["future_trial_constraints"]["sealed_2026h1_holdout_open_allowed"] is False
           assert j["runtime_guardrails"]["active_v2r3_change_allowed"] is False
           assert j["runtime_guardrails"]["orders"] is False
@@ -113,3 +117,49 @@ jobs:
           python -m py_compile tools/validate-v3-h5-event-calendar-capture.py
           python tools/validate-v3-h5-event-calendar-capture.py \
             research/v3/event-calendars/fomc-prospective-capture-20261001.json
+
+
+      - name: Validate fixed H5 risk variant preregistration
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("research/v3/h5-fomc-risk-variant-prereg-v1.json")
+          j=json.loads(p.read_text("utf-8"))
+          assert j["kind"]=="V3_H5_FOMC_RISK_VARIANT_PREREG_V1"
+          assert j["status"]=="PREREGISTERED_NOT_RUNNING"
+          assert j["hypothesis_id"]=="V3-H5"
+          assert j["variant_id"]=="V3-H5-FOMC-STATEMENT-NO-NEW-ENTRY-30M30M-V1"
+          assert j["changed_component"]=="RISK_GATE"
+          s=j["source_contract"]
+          assert s["event_family"]=="FOMC_POLICY_STATEMENT"
+          assert s["press_conference_included"] is False
+          assert s["minutes_release_included"] is False
+          assert s["schedule_must_be_point_in_time_known"] is True
+          v=j["fixed_variant"]
+          assert v["pre_window_minutes"]==30
+          assert v["post_window_minutes"]==30
+          assert v["candidate_action"]=="NO_NEW_ENTRY_IN_CANDIDATE_SHADOW_ONLY"
+          for k in ["baseline_runtime_action","existing_position_management","sizing","stop","trailing","wait_ttl_revalidation","signal_score"]:
+              assert v[k]=="UNCHANGED"
+          assert v["directional_bias"]=="NONE"
+          b=j["preregistration_basis"]
+          assert b["chosen_before_any_real_fomc_performance_trial"] is True
+          assert b["event_window_selected_by_seen_performance"] is False
+          assert b["parameter_sweep_performed"] is False
+          assert b["sealed_2026h1_holdout_opened"] is False
+          e=j["evidence_plan"]
+          assert e["same_candidate_stream"] is True
+          assert e["shared_market_clock"] is True
+          assert e["first_use"]=="PROSPECTIVE_SHADOW_ONLY"
+          assert e["no_midrun_tuning"] is True
+          g=j["activation_guard"]
+          assert g["automatic_runtime_activation"] is False
+          assert g["active_v2r3_change_allowed"] is False
+          assert g["v2r4_change_allowed"] is False
+          assert g["orders_allowed"] is False
+          assert g["real_money_actions_allowed"] is False
+          assert g["requires_final_baseline_revision_freeze_before_shadow"] is True
+          assert j["next_gate"]=="FREEZE_FINAL_BASELINE_REVISION_THEN_MATERIALIZE_AS_ONE_CHANGE_V3_SHADOW_CANDIDATE"
+          print("V3_H5_RISK_VARIANT_PREREG PASS one-change/30m30m/no-runtime/no-holdout")
+          PY

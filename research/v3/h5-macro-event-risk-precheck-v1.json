@@ -54,7 +54,7 @@
     "leverage": false,
     "real_money_actions": false
   },
-  "next_gate": "CAPTURE_VERSIONED_OFFICIAL_FOMC_EVENT_CALENDAR_THEN_PREREGISTER_ONE_RISK_VARIANT_NO_HOLDOUT",
+  "next_gate": "RISK_VARIANT_PREREGISTERED__WAIT_FOR_FINAL_BASELINE_FREEZE_THEN_MATERIALIZE_ONE_CHANGE_SHADOW_CANDIDATE",
   "methodology_readiness": {
     "synthetic_dst_pit_smoke": "CI_GREEN_RUN_1",
     "october_edt_statement_utc": "2026-10-28T18:00:00Z",
@@ -62,6 +62,9 @@
     "candidate_before_calendar_known_at": "REJECTED_AS_SCHEDULE_NOT_POINT_IN_TIME_KNOWN",
     "source_registry_validation": "PASS",
     "performance_trial_started": false,
-    "holdout_opened": false
+    "holdout_opened": false,
+    "official_calendar_capture": "PROSPECTIVE_CAPTURE_VALIDATED_20261001",
+    "preregistered_risk_variant": "V3-H5-FOMC-STATEMENT-NO-NEW-ENTRY-30M30M-V1",
+    "preregistered_risk_variant_count": 1
   }
 }

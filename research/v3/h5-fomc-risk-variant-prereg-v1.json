@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H5_FOMC_RISK_VARIANT_PREREG_V1",
+  "hypothesis_id": "V3-H5",
+  "variant_id": "V3-H5-FOMC-STATEMENT-NO-NEW-ENTRY-30M30M-V1",
+  "status": "PREREGISTERED_NOT_RUNNING",
+  "changed_component": "RISK_GATE",
+  "baseline_reference": {
+    "current_active_strategy_revision": "V2R3-2026-09-28",
+    "current_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
+    "final_shadow_baseline_must_be_refrozen_at_shadow_start": true,
+    "inherit_latest_validated_v2_or_v2r4_baseline": true
+  },
+  "source_contract": {
+    "event_calendar_capture": "research/v3/event-calendars/fomc-prospective-capture-20261001.json",
+    "event_family": "FOMC_POLICY_STATEMENT",
+    "press_conference_included": false,
+    "minutes_release_included": false,
+    "schedule_must_be_point_in_time_known": true,
+    "revised_schedule_requires_new_versioned_capture": true
+  },
+  "fixed_variant": {
+    "pre_window_minutes": 30,
+    "post_window_minutes": 30,
+    "window_semantics": "candidate decision timestamp in [event-30m,event+30m] is inside risk window",
+    "candidate_action": "NO_NEW_ENTRY_IN_CANDIDATE_SHADOW_ONLY",
+    "baseline_runtime_action": "UNCHANGED",
+    "existing_position_management": "UNCHANGED",
+    "sizing": "UNCHANGED",
+    "stop": "UNCHANGED",
+    "trailing": "UNCHANGED",
+    "wait_ttl_revalidation": "UNCHANGED",
+    "signal_score": "UNCHANGED",
+    "directional_bias": "NONE"
+  },
+  "preregistration_basis": {
+    "chosen_before_any_real_fomc_performance_trial": true,
+    "chosen_from_predeclared_synthetic_method_smoke": true,
+    "event_window_selected_by_seen_performance": false,
+    "parameter_sweep_performed": false,
+    "pair_subset_selected_by_performance": false,
+    "sealed_2026h1_holdout_opened": false
+  },
+  "evidence_plan": {
+    "same_candidate_stream": true,
+    "shared_market_clock": true,
+    "preserve_baseline_decision_and_counterfactual_outcome": true,
+    "realistic_cost_reference": "V2R3 reference: 0.60% taker fee per side plus observed spread/slippage; H5 does not tune costs",
+    "first_use": "PROSPECTIVE_SHADOW_ONLY",
+    "no_midrun_tuning": true,
+    "no_winner_is_valid_outcome": true
+  },
+  "activation_guard": {
+    "automatic_runtime_activation": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "orders_allowed": false,
+    "real_money_actions_allowed": false,
+    "requires_final_baseline_revision_freeze_before_shadow": true,
+    "requires_materialized_v3_shadow_candidate_contract_before_shadow": true
+  },
+  "next_gate": "FREEZE_FINAL_BASELINE_REVISION_THEN_MATERIALIZE_AS_ONE_CHANGE_V3_SHADOW_CANDIDATE"
+}
