@@ -1,0 +1,146 @@
+name: Paper series completion watch
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/paper-series-completion-watch.yml'
+  schedule:
+    - cron: '23 */3 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paper-series-completion-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check bounded V2R3 completion gate
+        env:
+          SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_USER_ID: U0C39EDQ1H8
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python - <<'PY'
+          import datetime as dt
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+
+          base=os.environ["SUPABASE_URL"].rstrip("/")
+          key=(os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+          webhook=os.getenv("SLACK_WEBHOOK_URL","").strip()
+          uid=os.environ["SLACK_USER_ID"]
+          event=os.getenv("EVENT_NAME","")
+          dry_run=event!="schedule"
+
+          if not key:
+              raise SystemExit("Supabase backend credential missing")
+
+          headers={"apikey":key,"Content-Type":"application/json"}
+          if not key.startswith("sb_secret_"):
+              headers["Authorization"]="Bearer "+key
+
+          def req(method,path,body=None,extra=None):
+              h=dict(headers)
+              if extra:
+                  h.update(extra)
+              data=None if body is None else json.dumps(body,separators=(",",":")).encode()
+              r=urllib.request.Request(base+path,data=data,method=method,headers=h)
+              with urllib.request.urlopen(r,timeout=20) as resp:
+                  raw=resp.read().decode("utf-8","replace")
+                  return resp.status,(json.loads(raw) if raw else None)
+
+          _,rows=req("GET","/rest/v1/paper_series_completion_readiness?select=*")
+          if not rows:
+              raise SystemExit("No active paper-series completion readiness row")
+
+          s=rows[0]
+          sid=s["series_id"]
+          encoded=urllib.parse.quote(sid,safe="")
+          _,watch=req(
+              "GET",
+              f"/rest/v1/paper_series_completion_watch?series_id=eq.{encoded}&select=*"
+          )
+          prev=watch[0] if watch else None
+          already_notified=bool(prev and prev.get("ready_notified_at"))
+          ready=bool(s.get("completion_ready"))
+
+          snapshot={
+              "series_age_days":s.get("series_age_days"),
+              "candidate_outcomes":s.get("candidate_outcomes"),
+              "completed_trades":s.get("completed_trades"),
+              "eligible_24h":s.get("eligible_24h"),
+              "complete_24h":s.get("complete_24h"),
+              "coverage_24h_pct":s.get("coverage_24h_pct"),
+              "outcomes_remaining_to_alt_gate":s.get("outcomes_remaining_to_alt_gate"),
+              "hours_remaining_to_age_gate":s.get("hours_remaining_to_age_gate"),
+              "gate_state":s.get("gate_state"),
+          }
+
+          now=dt.datetime.now(dt.timezone.utc).isoformat()
+          ready_notified_at=(prev or {}).get("ready_notified_at")
+          should_notify=(ready and not already_notified and not dry_run)
+
+          if should_notify:
+              ready_notified_at=now
+
+          record={
+              "series_id":sid,
+              "last_gate_state":s["gate_state"],
+              "last_checked_at":now,
+              "ready_notified_at":ready_notified_at,
+              "snapshot":snapshot,
+              "updated_at":now,
+          }
+
+          print(json.dumps({
+              "dry_run":dry_run,
+              "completion_ready":ready,
+              "already_notified":already_notified,
+              "should_notify":should_notify,
+              "snapshot":snapshot,
+          },sort_keys=True))
+
+          if dry_run:
+              raise SystemExit(0)
+
+          req(
+              "POST",
+              "/rest/v1/paper_series_completion_watch?on_conflict=series_id",
+              [record],
+              {"Prefer":"resolution=merge-duplicates,return=minimal"},
+          )
+
+          if should_notify:
+              text=(
+                  f"<@{uid}> V2R3-Paper-Abschlussgate ist bereit: "
+                  f"State={s['gate_state']}, Trades={s['completed_trades']}, "
+                  f"Candidate-Outcomes={s['candidate_outcomes']}, "
+                  f"24h-Coverage={s['coverage_24h_pct']}%. "
+                  "Bitte Abschlussauswertung starten; keine automatische Strategie-/Echtgeldaktivierung."
+              )
+              if not webhook:
+                  raise SystemExit("Slack webhook missing at READY transition")
+              r=urllib.request.Request(
+                  webhook,
+                  data=json.dumps({"text":text}).encode(),
+                  method="POST",
+                  headers={"Content-Type":"application/json"},
+              )
+              with urllib.request.urlopen(r,timeout=15) as resp:
+                  reply=resp.read().decode("utf-8","replace").strip()
+                  print(f"Slack response: {resp.status} {reply}")
+                  if not 200<=resp.status<300:
+                      raise RuntimeError(f"Slack HTTP {resp.status}")
+          PY
