@@ -1001,6 +1001,16 @@ The first installer attempt exposed a robustness bug where the installer assumed
 
 Next validation gate: perform one controlled self-heal smoke against a non-strategy, idempotent read-only support task and prove that the supervisor restarts it without user intervention.
 
+### Post-supervisor remote health confirmation 2026-10-01
+
+After the successful supervisor installation, the next remote status-sync cycle independently reported:
+- node `MINI-PC`: **HEALTHY**;
+- issues: **none**.
+
+This confirms that the earlier stale WS-shadow/outcome warnings cleared after the local recovery path stabilized.
+
+A controlled self-heal smoke is now prepared as `tools/minipc-runtime-supervisor-selfheal-smoke.ps1`. It stops only the idempotent archive-only support task `CryptoMiniPC-V2R4ShadowCloudSync`, waits for the supervisor to recover it automatically, verifies heartbeat advancement and guardrails, then refreshes the local watchdog. Windows CI for the smoke is **PASS**.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
