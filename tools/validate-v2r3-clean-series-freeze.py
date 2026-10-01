@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Validate the active V2R3 clean-series freeze contract.
 
+CI trigger note: validator changes are themselves freeze-guarded.
+
 Fails closed if strategy spec/runtime fingerprint or scanner cadence/settings drift
 while the clean comparison series is still active.
 """
