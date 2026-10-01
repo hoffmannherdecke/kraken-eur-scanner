@@ -232,7 +232,7 @@ Erst nach stabiler Infrastruktur und validierter Strategie.
 ## P9 — Dauerhafte Governance / „nicht wieder vergessen“\n\nKanonischer Komponenten-/Versionsindex: `docs/master-version-register.md`. Mini-PC-Runbook: `docs/minipc-preflight-runbook.md`.
 
 - [x] Jede Entscheidung mit Strategieversion + Fingerprints nachvollziehbar: im diagnostisch eingefrorenen Vorgänger enthielten 708/708 geprüfte Outcomes `strategy_revision`, `strategy_fingerprint_sha256` und `runtime_code_fingerprint_sha256`; dieselbe unveränderte Provenance-Pflicht bleibt für `PAPER-V2R3-CLEAN-20261001T0925Z` aktiv.
-- [ ] Last-known-good Konfiguration und schneller Rollback erhalten.
+- [x] Last-known-good Konfiguration und schneller Rollback erhalten: `research/v2r3/clean-series-freeze-20261001.json` schützt die aktive V2R3-Referenz; `tools/paper-release-rollback-snapshot.py` erzeugt daraus fail-closed einen content-addressed Release-/Rollback-Snapshot mit Control-/Spec-/Runtime-/Scanner-Dateihashes. Whole-repo reset und Evidenz-/State-Rewind sind ausdrücklich verboten; nur geschützte Code-/Konfigurationsdateien dürfen auf den Snapshot-Stand zurückgeführt werden. V2R3 freeze guard ist selbsttestend und Snapshot-Smoke **SUCCESS**.
 - [ ] Vor größeren Änderungen immer kleiner End-to-End-Smoke-Test.
 - [ ] Neue Quellen/Apps nur aufnehmen, wenn sie einen klaren zusätzlichen Informations- oder Robustheitsnutzen liefern.
 - [ ] Datenquellen und Apps dürfen nicht still dieselben Daten mehrfach speichern.
