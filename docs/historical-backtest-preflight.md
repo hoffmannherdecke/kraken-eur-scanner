@@ -275,6 +275,12 @@ Prepared and verified now:
 
 Current CI preflight estimates that enabling both complete compressed archive families later would imply roughly 36 GB of downloads before extraction. This is why Time & Sales remains behind a separate benefit/storage gate.
 
+Additional guarded tooling now prepared and CI-verified:
+
+- `tools/download-kraken-ohlcvt-full.ps1`: resumable official-part downloader with an explicit execution token, minimum-free-space gate, per-part SHA-256 verification, full joined-archive SHA-256 verification and **no automatic extraction**;
+- `tools/inspect-kraken-ohlcvt-archive.py`: read-only ZIP/MANIFEST inventory for the next selective EUR/15m extraction gate;
+- Historical data preflight GitHub Action run #8: **SUCCESS**, including plan-only downloader and synthetic archive-inspector smoke.
+
 Next safe engineering work:
 
 - when useful, run the prepared MINI-PC plan/apply preflight to create only the local directory skeleton and record actual free space;
