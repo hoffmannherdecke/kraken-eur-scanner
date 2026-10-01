@@ -10,6 +10,7 @@ name: V3 H2 derivatives precheck guard
       - 'research/historical/binance-derivatives-context-preflight-v1.json'
       - 'tools/binance-derivatives-context-smoke.py'
       - 'tools/kraken-futures-h2-coverage-precheck.py'
+      - 'tools/v3-h2-kraken-analytics-shape-precheck.py'
       - '.github/workflows/v3-h2-precheck-guard.yml'
 
 permissions:
@@ -149,4 +150,46 @@ jobs:
           assert r["real_money_actions_allowed"] is False
           assert r["automatic_capture_schedule_enabled"] is False
           print("V3_H2_ASSOC_CONTRACT PASS prospective/raw-state/no-performance/no-holdout")
+          PY
+
+
+      - name: Live Kraken H2 analytics response-shape audit
+        run: |
+          python -m py_compile tools/v3-h2-kraken-analytics-shape-precheck.py
+          python tools/v3-h2-kraken-analytics-shape-precheck.py \
+            --symbol PF_XBTUSD \
+            --lookback-seconds 3600 \
+            --interval 300 \
+            --output /tmp/h2-shape.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/h2-shape.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["symbol"]=="PF_XBTUSD"
+          assert [p["metric"] for p in j["probes"]]==["open-interest","funding","future-basis"]
+          assert all(p["ok"] for p in j["probes"])
+          assert all(p["timestamp_count"]>0 for p in j["probes"])
+          assert all(p["last_timestamp_at_or_before_to"] is True for p in j["probes"])
+          assert j["interpretation"]["shape_only"] is True
+          assert j["interpretation"]["metric_values_evaluated"] is False
+          assert j["guardrails"]["performance_trial_started"] is False
+          assert j["guardrails"]["holdout_opened"] is False
+          assert j["guardrails"]["active_v2r3_changed"] is False
+          assert j["guardrails"]["v2r4_changed"] is False
+          assert j["guardrails"]["orders"] is False
+          assert j["guardrails"]["real_money_actions"] is False
+          print("V3_H2_RESPONSE_SHAPE PASS bounded/to-event-compatible/no-performance")
+          print("H2_SHAPE_COMPACT "+json.dumps({
+            "checked_at_utc":j["checked_at_utc"],
+            "symbol":j["symbol"],
+            "request_window":j["request_window"],
+            "probes":[{
+              "metric":p["metric"],
+              "timestamp_count":p["timestamp_count"],
+              "timestamp_unit":p["timestamp_unit"],
+              "last_timestamp_raw":p["last_timestamp_raw"],
+              "data_shape":p["data_shape"]
+            } for p in j["probes"]]
+          },sort_keys=True))
           PY
