@@ -1159,6 +1159,30 @@ The accidental MINI-PC power interruption provided a real independence test:
 
 This is practical evidence that the hosted GitHub path remains an independent fallback and the system is not single-trigger-dependent on MINI-PC or Altrady.
 
+### Reconciliation audit corrected and repository-verified 2026-10-01
+
+The false-positive legacy-schema problem was fixed:
+- historical pre-series handoffs are filtered before canonical candidate-ID validation;
+- paper decisions and revalidations are filtered to the active series before reconciliation checks;
+- one-time verification against current `main` completed successfully.
+
+Verification result:
+- status: **HEALTHY**;
+- active series: `PAPER-V2R3-FINAL-20260928T1752Z`;
+- active-series handoffs: **710**;
+- active-series decisions: **708**;
+- active-series revalidations: **642**;
+- historical pre-series handoffs ignored: **328**;
+- fresh unprocessed handoffs: **2**;
+- stale unprocessed handoffs: **0**;
+- due WAIT revalidations: **0**;
+- critical findings: **0**;
+- warnings: **0**.
+
+The two fresh unprocessed handoffs are normal in-flight candidates, not replay/stale artifacts.
+
+One final local MINI-PC rerun of the corrected audit remains as the physical proof before closing the restart/reconciliation gate.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
