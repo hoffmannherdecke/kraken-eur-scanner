@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+import argparse, hashlib, json
+from pathlib import Path
+
+def sha256_file(p: Path) -> str:
+    h=hashlib.sha256()
+    with p.open("rb") as f:
+        for chunk in iter(lambda:f.read(1024*1024),b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def main() -> int:
+    ap=argparse.ArgumentParser()
+    ap.add_argument("spec", type=Path)
+    args=ap.parse_args()
+    s=json.loads(args.spec.read_text("utf-8"))
+    assert s["kind"]=="KRAKEN_EUR15_PERFORMANCE_REPLAY_SPEC_V1"
+    assert s["status"]=="FROZEN_PRE_REGISTERED_NOT_YET_EXECUTED"
+    assert s["dataset"]["expected_normalized_pair_files"]==648
+    assert s["point_in_time_contract"]["require_history_contiguous_15m"] is True
+    assert s["point_in_time_contract"]["require_future_label_contiguous_15m"] is True
+    assert s["pre_registration"]["holdout_must_remain_sealed_during_v1_selection"] is True
+    assert s["validation_topology"]["sealed_holdout"]["status"]=="LOCKED_DO_NOT_READ_IN_V1_SELECTION"
+    assert s["execution"]["holding_period_minutes"]==240
+    assert s["execution"]["stop_loss"] is None
+    assert s["execution"]["take_profit"] is None
+    assert s["cost_model"]["primary_cost_for_trial_selection_pct_round_trip"]==1.40
+    assert s["signal"]["no_cross_pair_ranking"] is True
+    assert s["signal"]["no_score_optimization"] is True
+    assert s["search_accounting"]["v1_counts_as_one_pre_registered_trial"] is True
+    assert s["safety"]["active_strategy_changed"] is False
+    print(json.dumps({
+        "kind":"PERFORMANCE_REPLAY_SPEC_VALIDATION_V1",
+        "status":"PASS",
+        "spec_sha256":sha256_file(args.spec),
+        "holdout_status":s["validation_topology"]["sealed_holdout"]["status"],
+        "primary_cost_pct":s["cost_model"]["primary_cost_for_trial_selection_pct_round_trip"],
+        "signal_conditions":s["signal"]["all_conditions_required"],
+    },sort_keys=True))
+    return 0
+
+if __name__=="__main__":
+    raise SystemExit(main())
