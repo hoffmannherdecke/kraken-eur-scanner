@@ -11,6 +11,7 @@ name: Historical data preflight
       - 'tools/historical-pit-smoke.py'
       - 'tools/historical-trial-ledger.py'
       - 'tools/prepare-minipc-historical-research.ps1'
+      - 'tools/download-kraken-ohlcvt-full.ps1'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -81,6 +82,17 @@ jobs:
         shell: pwsh
         run: |
           ./tools/prepare-minipc-historical-research.ps1
+
+      - name: Guarded OHLCVT downloader plan-only smoke
+        shell: pwsh
+        run: |
+          ./tools/download-kraken-ohlcvt-full.ps1 | Tee-Object -Variable plan
+          if (($plan -join [Environment]::NewLine) -notmatch '"status":\s*"PLAN_ONLY"') {
+            throw "Downloader did not remain plan-only in CI"
+          }
+          if (($plan -join [Environment]::NewLine) -notmatch '"downloads_performed":\s*false') {
+            throw "Downloader plan violated no-download guardrail"
+          }
 
       - name: Safety assertion
         run: |
