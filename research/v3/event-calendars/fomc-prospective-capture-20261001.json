@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H5_OFFICIAL_EVENT_CALENDAR_CAPTURE_V1",
+  "status": "PROSPECTIVE_CAPTURE",
+  "captured_at_utc": "2026-10-01T18:35:00Z",
+  "point_in_time_validity": "ONLY_FOR_CANDIDATE_DECISIONS_AT_OR_AFTER_CAPTURED_AT_UTC",
+  "sources": [
+    {
+      "id": "fomc_calendar",
+      "url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+      "role": "official scheduled meeting dates",
+      "reported_last_update": "2026-09-16"
+    },
+    {
+      "id": "fomc_schedule_release",
+      "url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20240809a.htm",
+      "role": "official schedule announcement and standard 14:00 ET statement / 14:30 ET press-conference timing"
+    }
+  ],
+  "timezone": "America/New_York",
+  "events": [
+    {
+      "event_id": "FOMC_2026_10_28_STATEMENT",
+      "event_family": "FOMC_POLICY_STATEMENT",
+      "scheduled_local": "2026-10-28T14:00:00",
+      "scheduled_utc": "2026-10-28T18:00:00Z",
+      "known_at_utc": "2026-10-01T18:35:00Z",
+      "source_ids": [
+        "fomc_calendar",
+        "fomc_schedule_release"
+      ]
+    },
+    {
+      "event_id": "FOMC_2026_10_28_PRESS_CONFERENCE",
+      "event_family": "FOMC_PRESS_CONFERENCE",
+      "scheduled_local": "2026-10-28T14:30:00",
+      "scheduled_utc": "2026-10-28T18:30:00Z",
+      "known_at_utc": "2026-10-01T18:35:00Z",
+      "source_ids": [
+        "fomc_calendar",
+        "fomc_schedule_release"
+      ]
+    },
+    {
+      "event_id": "FOMC_2026_12_09_STATEMENT",
+      "event_family": "FOMC_POLICY_STATEMENT",
+      "scheduled_local": "2026-12-09T14:00:00",
+      "scheduled_utc": "2026-12-09T19:00:00Z",
+      "known_at_utc": "2026-10-01T18:35:00Z",
+      "source_ids": [
+        "fomc_calendar",
+        "fomc_schedule_release"
+      ]
+    },
+    {
+      "event_id": "FOMC_2026_12_09_PRESS_CONFERENCE",
+      "event_family": "FOMC_PRESS_CONFERENCE",
+      "scheduled_local": "2026-12-09T14:30:00",
+      "scheduled_utc": "2026-12-09T19:30:00Z",
+      "known_at_utc": "2026-10-01T18:35:00Z",
+      "source_ids": [
+        "fomc_calendar",
+        "fomc_schedule_release"
+      ]
+    }
+  ],
+  "guardrails": {
+    "retroactive_use_before_capture_allowed": false,
+    "event_outcome_or_statement_content_included": false,
+    "market_direction_label_included": false,
+    "automatic_trade_gate_enabled": false,
+    "active_v2r3_changed": false,
+    "v2r4_changed": false,
+    "orders": false,
+    "real_money_actions": false
+  }
+}
