@@ -26,7 +26,8 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 | Komponente | Version / ID | Status | Rolle / nächste Aktion |
 |---|---|---|---|
 | Strategie | `V2R3-2026-09-28` | ACTIVE / PAPER / FROZEN | Aktive Vergleichsbasis; Regeln während Serie nicht ändern |
-| Paper-Serie | `PAPER-V2R3-FINAL-20260928T1752Z` | ACTIVE | Aktuelle homogene V2R3-Serie; vollständige Abschlussauswertung vor V2R4-Go-live |
+| Paper-Serie | `PAPER-V2R3-CLEAN-20261001T0925Z` | ACTIVE / CLEAN RESTART | Aktuelle homogene V2R3-Serie nach Runtime-only Persistenzrepair; Strategie `V2R3-2026-09-28` unverändert. Vorgänger `PAPER-V2R3-FINAL-20260928T1752Z` = DIAGNOSTIC_COMPROMISED wegen wiederholbarer Evaluation vor Commit. |
+| Paper-Serie predecessor | `PAPER-V2R3-FINAL-20260928T1752Z` | DIAGNOSTIC_COMPROMISED / FROZEN | 708 Candidate-Outcomes bleiben für Fehler-/Missed-Move-/Timinganalyse nutzbar, aber nicht als saubere prospektive Abschlussserie; Persistenzbug am 2026-10-01 nachgewiesen und repariert. |
 | Strategie | V2R4 | PREPARED / NOT ACTIVE / PHYSICAL MINI-PC E2E GREEN | Draft-PR #8; compile/unit/live evaluator/model-contract/public Kraken + exact Windows and physical MINI-PC trigger→fresh-recheck gates green; local OpenAI secret provisioned; Altrady synthetic and real transport E2E verified; separate V2R4 paper-activation decision still open |
 | Strategie | V3 | ACTIVE RESEARCH / NOT ACTIVE TRADING | Integrierter Nachfolger; Issue #7 + `docs/v3-research-framework.md` |
 
