@@ -94,7 +94,6 @@ jobs:
             'tools/minipc-v2r4-preflight-smoke.ps1',
             'tools/minipc-v2r4-readiness-sync.ps1',
             'tools/minipc-v2r4-real-altrady-release-smoke.ps1',
-            'tools/v2r4-real-altrady-release-smoke.py',
             'tools/minipc-local-core-gate.ps1',
             'tools/minipc-next-user-step.ps1',
             'tools/minipc-altrady-secret-prep.ps1',
