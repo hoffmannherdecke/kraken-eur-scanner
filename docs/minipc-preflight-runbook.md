@@ -671,6 +671,27 @@ Additional read-only audit:
 - Supabase performance advisor: no findings.
 - Supabase security advisor: only the four known informational RLS-without-policy findings; these tables are intentionally backend-only/fail-closed at this stage.
 
+### Broad Kraken-EUR realtime feed prepared 2026-10-01
+
+The next setup item after the verified Altrady transport is now prepared in the canonical repository without activating any strategy:
+
+- \`tools/minipc-kraken-universe-feed.py\`:
+  - uses current public Kraken \`AssetPairs\` as the online Spot-EUR universe gate;
+  - consumes Kraken WebSocket v2 \`ticker\` as the event-driven broad market feed;
+  - persists only a compact latest-per-pair snapshot plus heartbeat, not an unbounded raw tick archive;
+  - has no account credentials, evaluator, order path or real-money action.
+- \`tools/install-minipc-kraken-universe-feed.ps1\`:
+  - first runs a bounded live proof;
+  - requires at least 80% universe snapshot coverage and zero subscription errors;
+  - only after that proof passes registers the SYSTEM startup task \`CryptoMiniPC-KrakenUniverse\`.
+- \`tools/uninstall-minipc-kraken-universe-feed.ps1\` is the explicit rollback.
+- \`minipc-watchdog.ps1\` now monitors the feed heartbeat when the task is installed.
+- Windows CI parse/smoke for the new Python/PowerShell tooling is green.
+- Existing BTC/EUR canary remains independent and is not replaced.
+- Altrady remains an additional independent trigger; no strategy coupling is introduced here.
+
+**Next required physical MINI-PC action:** pull \`main\` once and run the broad-feed installer from an elevated PowerShell. The installer itself performs the bounded live WebSocket proof before it creates the persistent startup task. After the final summary is verified, this infrastructure gate can be marked active.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
