@@ -239,6 +239,23 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11h. Replay methodology V2 prepared after wall-clock semantic review 2026-10-01
+
+Before expanding the historical replay, the V1 real-pair methodology was reviewed against the explicit no-gap-fill contract. A subtle semantic issue was identified:
+
+- V1 was still point-in-time safe (no future bar leakage), but its labels/features such as "4 rows = 1h" and "12 rows = 3h" could span more wall-clock time if a pair had omitted no-trade intervals inside that row window.
+- The already-recorded V1 Trial Ledger entry remains immutable and valid as **methodology/integrity evidence only**; it must not be reinterpreted as performance evidence.
+- V2 therefore requires exact 15-minute contiguity for the feature history and future label horizon before a replay observation is eligible.
+- A separate deterministic broad methodology smoke selects pairs/anchors without using performance labels and verifies the same invariants across multiple real-pair windows.
+
+CI status:
+
+- contiguous wall-clock real-pair replay V2: PASS;
+- broad deterministic PIT methodology smoke: PASS;
+- Historical data preflight run **#28: SUCCESS**.
+
+Next physical gate: run V2 + the broad methodology smoke on the actual 648-pair normalized MINI-PC dataset before freezing any first performance-oriented historical replay specification.
+
 ## 11g. Real-pair methodology replay recorded immutably 2026-10-01
 
 The physical MINI-PC replay was appended to the local immutable Trial Ledger.
