@@ -15,6 +15,8 @@ name: MINI-PC tools smoke
       - 'tools/v2r4-ws-shadow-outcome-tracker.py'
       - 'tools/v2r4-shadow-cloud-sync.py'
       - 'tools/minipc-status-sync.py'
+      - 'tools/minipc-runtime-supervisor.ps1'
+      - 'tools/install-minipc-runtime-supervisor.ps1'
       - 'tools/install-minipc-status-sync.ps1'
       - 'tools/uninstall-minipc-status-sync.ps1'
       - 'tools/install-minipc-v2r4-shadow-cloud-sync.ps1'
@@ -72,6 +74,8 @@ jobs:
             'tools/uninstall-minipc-v2r4-shadow-cloud-sync.ps1',
             'tools/install-minipc-status-sync.ps1',
             'tools/uninstall-minipc-status-sync.ps1',
+            'tools/minipc-runtime-supervisor.ps1',
+            'tools/install-minipc-runtime-supervisor.ps1',
             'tools/install-minipc-v2r4-ws-shadow.ps1',
             'tools/uninstall-minipc-v2r4-ws-shadow.ps1',
             'tools/minipc-internet-recovery-gate.ps1',
