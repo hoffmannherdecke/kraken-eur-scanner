@@ -43,6 +43,11 @@ def sha256_file(path: Path) -> str:
             h.update(chunk)
     return h.hexdigest()
 
+def normalized_text_sha256(path: Path) -> str:
+    text=path.read_text("utf-8")
+    text=text.replace("\r\n","\n").replace("\r","\n")
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
 def iso_epoch(s: str) -> int:
     return int(datetime.fromisoformat(s.replace("Z","+00:00")).timestamp())
 
@@ -167,7 +172,7 @@ def main() -> int:
     args=ap.parse_args()
 
     spec=load_spec(args.spec)
-    spec_sha=sha256_file(args.spec)
+    spec_sha=normalized_text_sha256(args.spec)
     norm=json.loads(args.normalization_catalog.read_text("utf-8"))
     if norm.get("status")!="PASS":
         raise SystemExit("normalization catalog status is not PASS")
