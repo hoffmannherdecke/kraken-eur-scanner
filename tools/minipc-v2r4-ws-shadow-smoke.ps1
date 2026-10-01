@@ -31,7 +31,7 @@ $events = Join-Path $runtime "events"
 $ledger = Join-Path $runtime "ledger.jsonl"
 $heartbeat = Join-Path $runtime "heartbeat.json"
 $report = Join-Path $logDir ("minipc-v2r4-ws-shadow-smoke-" + $stamp + ".json")
-$branch = "prep/v2r4-fast-trigger-minipc-20260929"
+$branch = "prep/v2r4-refresh-20261001"
 
 Write-Host "=== V2R4 WS SHADOW PHYSICAL SMOKE ==="
 Write-Host "1/4 Fetch inactive V2R4 prep branch..."
