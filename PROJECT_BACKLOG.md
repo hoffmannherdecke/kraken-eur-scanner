@@ -66,14 +66,14 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 ## P2 — Lokaler Runtime-/Watchdog-/Recovery-Layer
 
-- [ ] Lokalen Prozess-Supervisor/Watchdog vervollständigen: Basis-Watchdog/Tasks, Kraken-Canary, breiter Kraken-EUR-Feed und Altrady-Transport sind aktiv; **voller Windows-Neustart-Recovery-Test 2026-10-01 PASS (6/6 Tasks, alle Heartbeats HEALTHY, Kraken HTTP 200)**. Offen bleiben kontrollierter Internet-Ausfall/Wiederkehr, Queue-/Runtime-Wirkung und später der konkrete Strategie-/Watcher-Prozess.
+- [ ] Lokalen Prozess-Supervisor/Watchdog vervollständigen: Basis-Watchdog/Tasks, Kraken-Canary, breiter Kraken-EUR-Feed und Altrady-Transport sind aktiv; **voller Windows-Neustart-Recovery-Test 2026-10-01 PASS (6/6 Tasks, alle Heartbeats HEALTHY, Kraken HTTP 200)**. Transport-Recovery bei Internet-Ausfall ist verifiziert. Offen bleiben Queue-/Runtime-Wirkung, stale-signal/TTL/Dedup-Reconciliation und der konkrete Strategie-/Watcher-Prozess.
 - [ ] Watchdog muss auch „grün aber wirkungslos“ erkennen, nicht nur Prozessstatus.
 - [ ] Täglichen sehr kurzen **10:00-Systemstatus** später lokal/GitHub-basiert erzeugen: tatsächliche End-to-End-Gesundheit statt nur „Workflow aktiv“; Work dafür nicht als Dauerlösung verwenden.
 - [ ] Uptime Kuma als kostenlose, unabhängige Health-Schicht prüfen/einrichten, sofern es echten Zusatznutzen liefert.
 - [ ] Health-Zustände klar unterscheiden: OK, waiting/no-data, feed stale, API disconnected, backlog/queue stuck, degraded, stopped.
 - [ ] Automatischer begrenzter Self-Heal für eindeutig technische Fehler; keine automatische Strategie-/Threshold-Änderung.
-- [ ] Internet-Ausfall testen: Quellen stale markieren, Queue puffern, keine Entscheidungen auf alten Daten.
-- [ ] Wiederverbindung testen: Dedup, TTL alter Signale, **kein blindes Replay** veralteter Kandidaten.
+- [x] Kontrollierten Internet-Ausfall/Wiederkehr für die **aktiven Transportpfade** testen: 2026-10-01 PASS; Ethernet-Ausfall wurde erkannt, Kraken HTTPS/Canary/breiter EUR-Feed/Altrady/Watchdog erholten sich automatisch. Stale-Decision/Queue-Replay bleibt erst mit gekoppelter Strategie-Runtime separat zu beweisen.
+- [ ] Wiederverbindung auf **Strategie-Runtime-Ebene** testen: Dedup, TTL alter Signale, **kein blindes Replay** veralteter Kandidaten. Transport-Reconnect selbst ist seit 2026-10-01 verifiziert.
 - [ ] Neustart-Reconciliation: lokaler Zustand, GitHub-Zustand und spätere Exchange-Zustände müssen konsistent zusammengeführt werden.
 - [ ] GitHub-Cloudpfad als unabhängigen Fallback erhalten; weder Mini-PC noch Altrady dürfen alleiniger Trigger sein.
 - [ ] Tägliche Sicherung um 04:00 lokal; Alarm nur, wenn Backup mindestens eine Woche tatsächlich ausgefallen ist.
