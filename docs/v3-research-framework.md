@@ -245,8 +245,10 @@ Test variants:
 Default role:
 - risk/state gate, not directional signal
 
+Current precheck: DST-aware FOMC event timing and `known_at` point-in-time semantics are green. H5 guard **Run #4 SUCCESS** after state progression; no event-window, edge, sizing or performance winner has been selected.
+
 ### H6 — Simple Multi-Horizon Price × Volume Trend
-Status: `NEW`  
+Status: `PRECHECK_PIT_METHOD_GREEN`  
 Priority: B
 
 Use only transparent primitives:
@@ -256,6 +258,8 @@ Use only transparent primitives:
 - normalized trend ratios
 
 Do not copy a large CTREND implementation unless simple primitives first show incremental Kraken-EUR OOS value.
+
+Current precheck: synthetic PIT price/volume primitives are green; future bars are ignored, missing prior-volume windows remain missing rather than zero-filled, and the transparent/no-search/no-holdout guard is **Run #4 SUCCESS**. No performance trial has started.
 
 ### H7 — Meta Gate: TAKE / NO-TAKE
 Status: `DEFERRED`  
