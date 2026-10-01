@@ -205,6 +205,31 @@ try {
   Add-Check "v2r4_shadow_cloud_sync" $false $_.Exception.Message "WARNING"
 }
 
+# Local bounded runtime supervisor is optional until installed.
+try {
+  $supervisorTask = Get-ScheduledTask -TaskName "CryptoMiniPC-RuntimeSupervisor" -ErrorAction SilentlyContinue
+  if ($supervisorTask) {
+    $sp = Join-Path $TradingRoot "State\minipc-runtime-supervisor.json"
+    if (-not (Test-Path $sp)) {
+      Add-Check "runtime_supervisor" $false "task installed but state missing" "WARNING"
+    } else {
+      $s = Get-Content $sp -Raw | ConvertFrom-Json
+      $checked = ([datetime]$s.checked_at_utc).ToUniversalTime()
+      $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - $checked).TotalSeconds,1)
+      $ok = (
+        $s.status -eq "HEALTHY" -and
+        $ageSec -le 300 -and
+        -not [bool]$s.guardrails.real_money_actions
+      )
+      Add-Check "runtime_supervisor" $ok ("status=" + $s.status + " age_sec=" + $ageSec + " restarted=" + (($s.restarted | ForEach-Object { $_ }) -join ",")) "WARNING"
+    }
+  } else {
+    $checks["runtime_supervisor"] = [ordered]@{ ok=$null; detail="bounded runtime supervisor not installed yet" }
+  }
+} catch {
+  Add-Check "runtime_supervisor" $false $_.Exception.Message "WARNING"
+}
+
 # MINI-PC remote status sync is optional until installed.
 try {
   $statusTask = Get-ScheduledTask -TaskName "CryptoMiniPC-StatusSync" -ErrorAction SilentlyContinue
