@@ -76,6 +76,17 @@ jobs:
           already_notified=bool(prev and prev.get("ready_notified_at"))
           ready=bool(s.get("completion_ready"))
 
+          _,usage_rows=req(
+              "GET",
+              f"/rest/v1/paper_model_usage_guard?series_id=eq.{encoded}&select=*"
+          )
+          usage=usage_rows[0] if usage_rows else None
+          usage_state=str((usage or {}).get("usage_state") or "UNAVAILABLE").upper()
+          prev_snapshot=(prev or {}).get("snapshot") or {}
+          previous_usage_state=str(prev_snapshot.get("model_usage_state") or "UNKNOWN").upper()
+          usage_anomaly=(usage_state=="ANOMALY")
+          should_notify_usage=(usage_anomaly and previous_usage_state!="ANOMALY" and not dry_run)
+
           snapshot={
               "series_age_days":s.get("series_age_days"),
               "candidate_outcomes":s.get("candidate_outcomes"),
@@ -86,6 +97,13 @@ jobs:
               "outcomes_remaining_to_alt_gate":s.get("outcomes_remaining_to_alt_gate"),
               "hours_remaining_to_age_gate":s.get("hours_remaining_to_age_gate"),
               "gate_state":s.get("gate_state"),
+              "model_usage_state":usage_state,
+              "model_logical_calls":(usage or {}).get("logical_model_calls"),
+              "model_estimated_http_attempts":(usage or {}).get("estimated_http_attempts"),
+              "model_retry_overhead_requests":(usage or {}).get("retry_overhead_requests"),
+              "model_duplicate_response_ids":(usage or {}).get("duplicate_response_ids"),
+              "model_max_attempt":(usage or {}).get("max_attempt"),
+              "model_cost_precision":(usage or {}).get("cost_precision"),
           }
 
           now=dt.datetime.now(dt.timezone.utc).isoformat()
@@ -109,6 +127,8 @@ jobs:
               "completion_ready":ready,
               "already_notified":already_notified,
               "should_notify":should_notify,
+              "should_notify_usage":should_notify_usage,
+              "previous_usage_state":previous_usage_state,
               "snapshot":snapshot,
           },sort_keys=True))
 
@@ -122,16 +142,9 @@ jobs:
               {"Prefer":"resolution=merge-duplicates,return=minimal"},
           )
 
-          if should_notify:
-              text=(
-                  f"<@{uid}> V2R3-Paper-Abschlussgate ist bereit: "
-                  f"State={s['gate_state']}, Trades={s['completed_trades']}, "
-                  f"Candidate-Outcomes={s['candidate_outcomes']}, "
-                  f"24h-Coverage={s['coverage_24h_pct']}%. "
-                  "Bitte Abschlussauswertung starten; keine automatische Strategie-/Echtgeldaktivierung."
-              )
+          def slack(text):
               if not webhook:
-                  raise SystemExit("Slack webhook missing at READY transition")
+                  raise SystemExit("Slack webhook missing for required notification")
               r=urllib.request.Request(
                   webhook,
                   data=json.dumps({"text":text}).encode(),
@@ -143,4 +156,24 @@ jobs:
                   print(f"Slack response: {resp.status} {reply}")
                   if not 200<=resp.status<300:
                       raise RuntimeError(f"Slack HTTP {resp.status}")
+
+          if should_notify:
+              slack(
+                  f"<@{uid}> V2R3-Paper-Abschlussgate ist bereit: "
+                  f"State={s['gate_state']}, Trades={s['completed_trades']}, "
+                  f"Candidate-Outcomes={s['candidate_outcomes']}, "
+                  f"24h-Coverage={s['coverage_24h_pct']}%. "
+                  "Bitte Abschlussauswertung starten; keine automatische Strategie-/Echtgeldaktivierung."
+              )
+
+          if should_notify_usage:
+              slack(
+                  f"<@{uid}> Paper-Modellnutzung meldet ANOMALY für {sid}: "
+                  f"Calls={(usage or {}).get('logical_model_calls')}, "
+                  f"HTTP-Versuche={(usage or {}).get('estimated_http_attempts')}, "
+                  f"Retry-Overhead={(usage or {}).get('retry_overhead_requests')}, "
+                  f"Duplicate-Response-IDs={(usage or {}).get('duplicate_response_ids')}, "
+                  f"Max-Attempt={(usage or {}).get('max_attempt')}. "
+                  "Nur Nutzungs-/Infrastrukturprüfung; keine automatische Strategie- oder Budgetänderung."
+              )
           PY
