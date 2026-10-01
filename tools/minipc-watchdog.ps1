@@ -180,6 +180,31 @@ try {
   Add-Check "v2r4_ws_shadow_outcomes" $false $_.Exception.Message "WARNING"
 }
 
+# V2R4 shadow cloud archive sync is optional until installed.
+try {
+  $cloudTask = Get-ScheduledTask -TaskName "CryptoMiniPC-V2R4ShadowCloudSync" -ErrorAction SilentlyContinue
+  if ($cloudTask) {
+    $hb = Join-Path $TradingRoot "State\v2r4-shadow-cloud-sync-heartbeat.json"
+    if (-not (Test-Path $hb)) {
+      Add-Check "v2r4_shadow_cloud_sync" $false "task installed but heartbeat missing" "WARNING"
+    } else {
+      $h = Get-Content $hb -Raw | ConvertFrom-Json
+      $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
+      $ok = (
+        $h.status -eq "HEALTHY" -and
+        $ageSec -le 180 -and
+        [string]$h.strategy_action -eq "NONE_ARCHIVE_ONLY" -and
+        -not [bool]$h.real_money_actions
+      )
+      Add-Check "v2r4_shadow_cloud_sync" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " pending=" + $h.pending_records + " uploaded=" + $h.uploaded_records + " detail=" + $h.detail) "WARNING"
+    }
+  } else {
+    $checks["v2r4_shadow_cloud_sync"] = [ordered]@{ ok=$null; detail="shadow cloud archive sync not installed yet" }
+  }
+} catch {
+  Add-Check "v2r4_shadow_cloud_sync" $false $_.Exception.Message "WARNING"
+}
+
 # Altrady transport heartbeat is optional/non-exclusive.
 # Only evaluate it when the dedicated scheduled task is installed.
 try {
