@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-01T18:27:00Z",
+  "updated_at_utc": "2026-10-01T18:31:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -176,11 +176,13 @@
       "category": "risk_exit",
       "source_version": "V2R3",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Regime-dependent stop/TTL/exit research is a priority V3 hypothesis and cannot be inherited blindly.",
+      "rationale": "Regime-dependent stop/TTL/exit research is preregistered at data-readiness only. Current clean series has short-horizon MAE/MFE but no mature 24h MAE/MFE or completed trade returns; parameter testing is therefore blocked.",
       "evidence": [
-        "docs/v3-research-framework.md"
+        "research/v3/h4-regime-stop-ttl-precheck-v1.json",
+        "docs/v3-research-framework.md",
+        "public.v2r3_candidate_analysis_matrix"
       ],
-      "pending_gate": "V3_H4_RESEARCH"
+      "pending_gate": "WAIT_FOR_V2R3_MATURE_24H_AND_FINAL_REVIEW_THEN_FREEZE_POINT_IN_TIME_REGIME_DEFINITION"
     },
     {
       "id": "position_sizing_mapping",
