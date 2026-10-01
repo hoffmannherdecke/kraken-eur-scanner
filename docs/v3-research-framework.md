@@ -262,7 +262,7 @@ Do not copy a large CTREND implementation unless simple primitives first show in
 Current precheck: synthetic PIT price/volume primitives are green; future bars are ignored, missing prior-volume windows remain missing rather than zero-filled, and the transparent/no-search/no-holdout guard is **Run #4 SUCCESS**. No performance trial has started.
 
 ### H7 — Meta Gate: TAKE / NO-TAKE
-Status: `DEFERRED`  
+Status: `DEFERRED_LABELS_NOT_READY`  
 Priority: B, after enough clean labels
 
 Purpose:
@@ -285,6 +285,15 @@ Preferred starting models:
 - simple trees only if required
 
 Do not start before enough correctly labelled prospective/historical candidate outcomes exist.
+
+Current readiness control:
+- `research/v3/h7-meta-gate-readiness-v1.json`;
+- `public.v3_h7_meta_gate_readiness`;
+- training/model selection are explicitly false;
+- current live state is `WAITING_V2R3_FINAL_REVIEW`;
+- label definition is `NOT_FROZEN`;
+- no logistic/Lasso/tree trial may start before the label/cost/split contract is frozen after mature V2R3/V2R4 evidence;
+- H7 readiness guard: **SUCCESS**.
 
 ### H8 — On-Chain State
 Status: `DEFERRED`  
