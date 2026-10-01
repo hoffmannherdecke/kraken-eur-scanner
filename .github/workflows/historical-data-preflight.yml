@@ -16,6 +16,8 @@ name: Historical data preflight
       - 'tools/cleanup-verified-kraken-ohlcvt-parts.ps1'
       - 'tools/normalize-kraken-eur15.py'
       - 'tools/historical-real-pair-replay-smoke.py'
+      - 'tools/historical-real-pair-replay-smoke-v2.py'
+      - 'tools/historical-broad-pit-smoke.py'
       - 'tools/run-minipc-eur15-normalization.ps1'
       - 'tools/record-real-pair-replay-trial.py'
       - '.github/workflows/historical-data-preflight.yml'
@@ -44,6 +46,8 @@ jobs:
           python -m py_compile tools/extract-kraken-ohlcvt-eur15.py
           python -m py_compile tools/normalize-kraken-eur15.py
           python -m py_compile tools/historical-real-pair-replay-smoke.py
+          python -m py_compile tools/historical-real-pair-replay-smoke-v2.py
+          python -m py_compile tools/historical-broad-pit-smoke.py
           python -m py_compile tools/record-real-pair-replay-trial.py
 
       - name: Validate no-download Kraken manifest
@@ -215,6 +219,51 @@ jobs:
           assert j["label"]["generated_after_decision_freeze"] is True
           assert j["guardrails"]["historical_strategy_tuning_performed"] is False
           print("REAL_PAIR_PIT_REPLAY PASS")
+          PY
+
+      - name: Smoke contiguous wall-clock PIT replay V2
+        run: |
+          python tools/historical-real-pair-replay-smoke-v2.py \
+            /tmp/eur15-normalized-a/XBTEUR_15.normalized.csv.gz \
+            --lookback-bars 13 --horizon-bars 1 \
+            --output /tmp/real-pair-replay-smoke-v2.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/real-pair-replay-smoke-v2.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["decision"]["point_in_time_assertions"]["future_bar_in_features"] is False
+          assert j["decision"]["point_in_time_assertions"]["history_contiguous_15m"] is True
+          assert j["decision"]["point_in_time_assertions"]["return_1h_exact_wall_clock"] is True
+          assert j["decision"]["point_in_time_assertions"]["return_3h_exact_wall_clock"] is True
+          assert j["label"]["future_contiguous_15m"] is True
+          assert j["label"]["horizon_wall_clock_seconds"]==900
+          print("REAL_PAIR_PIT_REPLAY_V2 PASS contiguous/wall-clock exact")
+          PY
+
+      - name: Smoke broad deterministic PIT methodology
+        run: |
+          python tools/historical-broad-pit-smoke.py \
+            /tmp/eur15-normalized-a \
+            --repo-root . \
+            --expected-count 2 \
+            --pair-count 1 \
+            --anchors-per-pair 2 \
+            --lookback-bars 13 \
+            --horizon-bars 1 \
+            --output /tmp/broad-pit-smoke.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/broad-pit-smoke.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["selected_pair_count"]==1
+          assert j["case_count"]==2
+          assert j["selection_contract"]["performance_used_for_selection"] is False
+          assert all(v==0 for k,v in j["integrity_summary"].items() if k!="unique_decision_hashes")
+          assert j["integrity_summary"]["unique_decision_hashes"]==2
+          assert j["guardrails"]["performance_claim_made"] is False
+          print("BROAD_PIT_SMOKE PASS deterministic/no-leakage/no-performance-selection")
           PY
 
       - name: Smoke real-pair replay Trial Ledger record
