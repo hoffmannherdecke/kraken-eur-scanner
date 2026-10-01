@@ -695,3 +695,19 @@ Safety/storage boundary remains unchanged:
 
 Next gate: synthetic/small-existing-local-fixture methodology verification, then a separate storage-benefit decision before any full Kraken Trades archive download.
 
+Repository validation is now complete for this preparation layer:
+
+- committed synthetic trade fixture: `research/historical/fixtures/kraken-trades-targeted-synthetic.csv`;
+- point-in-time parser smoke: PASS;
+- identifiability guardrails: PASS;
+- storage-benefit fail-closed gate: PASS;
+- MINI-PC targeted-trades orchestrator plan-only guard: PASS;
+- full existing historical preflight suite remained green;
+- **Historical data preflight Run #57: SUCCESS**.
+
+Two preceding CI attempts failed only in test wiring and were corrected before Run #57:
+1. the first synthetic CSV generator encoded literal `\\n` text instead of real row separators;
+2. the plan-only PowerShell wrapper initially assumed Windows `USERPROFILE` even on the Ubuntu CI runner.
+
+Neither failure touched market data, active Paper/Shadow runtime, strategy rules, holdout state, exchange access or real-money paths.
+
