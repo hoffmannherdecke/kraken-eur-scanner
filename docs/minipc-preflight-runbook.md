@@ -714,7 +714,18 @@ After the broad Kraken-EUR feed activation, a dedicated read-only restart/recove
 - writes a compact JSON report under `Trading\Logs`;
 - no configuration change, no process restart, no strategy mutation and no real-money action.
 
-Next physical MINI-PC step: perform one controlled Windows restart, reconnect, then run this gate. This proves that the current local transport/watchdog stack actually recovers after reboot before any strategy activation.
+**Physical restart/recovery verification passed 2026-10-01:**
+- gate status: **PASS** about 1.5 minutes after boot;
+- expected local tasks: **6/6**;
+- Kraken BTC/EUR canary: **HEALTHY**, heartbeat age ~1.3 s, 975 events;
+- broad Kraken-EUR universe: **HEALTHY**, **500/500**, **100.0% coverage**, 0 subscription errors;
+- Altrady transport: **HEALTHY**, heartbeat age ~8.7 s;
+- local watchdog: **HEALTHY**;
+- public Kraken HTTPS: **200**;
+- issues: **none**; notes: **none**;
+- guardrails remained read-only/no config change/no strategy change/no real-money action.
+
+This closes the controlled Windows restart/recovery gate for the currently active local transport/watchdog stack.
 
 ### Final runbook items — intentionally last
 
