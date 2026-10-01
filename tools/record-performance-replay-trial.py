@@ -25,6 +25,12 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
+def normalized_text_sha256(path: Path) -> str:
+    text = path.read_text("utf-8")
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def load_json(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text("utf-8"))
     if not isinstance(value, dict):
@@ -73,7 +79,7 @@ def main() -> int:
     result = load_json(args.result)
     schema = load_json(args.schema)
 
-    spec_sha = sha256_file(args.spec)
+    spec_sha = normalized_text_sha256(args.spec)
     if lock_obj.get("status") != "LOCKED":
         raise SystemExit("performance replay spec lock is not LOCKED")
     if lock_obj.get("spec_sha256") != spec_sha:
