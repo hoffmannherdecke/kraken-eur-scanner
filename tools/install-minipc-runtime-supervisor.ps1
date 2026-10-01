@@ -22,10 +22,25 @@ foreach ($p in @($repo,$supervisor,$watchdog)) {
 Write-Host "=== MINI-PC RUNTIME SUPERVISOR INSTALL ==="
 Write-Host "1/4 Capture + immediate bounded recovery of stale read-only runtimes..."
 
-& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $supervisor -TradingRoot $TradingRoot -ForceRecovery | Out-Null
+$supervisorState = Join-Path $TradingRoot "State\minipc-runtime-supervisor.json"
+$supervisorLog = Join-Path $TradingRoot "Logs\minipc-runtime-supervisor-install-last.txt"
+
+& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $supervisor -TradingRoot $TradingRoot -ForceRecovery 2>&1 |
+  Tee-Object -FilePath $supervisorLog | Out-Null
 $firstCode = $LASTEXITCODE
-$first = Get-Content (Join-Path $TradingRoot "State\minipc-runtime-supervisor.json") -Raw | ConvertFrom-Json
-if ($firstCode -ne 0) {
+
+if (-not (Test-Path $supervisorState)) {
+  Write-Host ""
+  Write-Host "Supervisor did not create its state report. Last supervisor output:"
+  if (Test-Path $supervisorLog) { Get-Content $supervisorLog -Tail 40 }
+  throw "Initial supervisor run failed before producing a state report."
+}
+
+$first = Get-Content $supervisorState -Raw | ConvertFrom-Json
+if ($firstCode -ne 0 -or $first.status -eq "CRITICAL") {
+  Write-Host ""
+  Write-Host ("Supervisor status: " + $first.status)
+  if ($first.error) { Write-Host ("Supervisor error: " + $first.error) }
   throw "Initial supervisor recovery found an unrecoverable task failure."
 }
 
