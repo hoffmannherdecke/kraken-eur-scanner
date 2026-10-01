@@ -393,7 +393,9 @@ if ($critical -gt 0) {
 } elseif (@($issueNames | Where-Object { $_ -in @("kraken_dns","kraken_tcp443","kraken_powershell_https","kraken_python_https") }).Count -gt 0) {
   $healthState = "API_DISCONNECTED"
   $stateReasonCodes = @($issueNames)
-} elseif (@($issueNames | Where-Object { $_ -in @("kraken_canary_heartbeat","kraken_universe_heartbeat","v2r4_ws_shadow_heartbeat","v2r4_ws_shadow_outcomes") }).Count -gt 0) {
+} elseif (@($issueNames | Where-Object { $_ -in @("kraken_canary_heartbeat","kraken_universe_heartbeat") }).Count -gt 0) {
+  # Only underlying Kraken transport/source failures are FEED_STALE.
+  # Shadow/outcome support-process issues are DEGRADED while the source feed is healthy.
   $healthState = "FEED_STALE"
   $stateReasonCodes = @($issueNames)
 } elseif (@($issueNames | Where-Object { $_ -match "queue|backlog" }).Count -gt 0) {
