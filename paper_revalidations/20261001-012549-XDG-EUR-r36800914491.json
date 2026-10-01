@@ -1,0 +1,212 @@
+{
+  "altname": "XDGEUR",
+  "candidate_id": "20261001-012549-XDG-EUR-r36800914491",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A fresh close and retest hold above 0.0836388 with volume expansion"
+    ],
+    "reason_codes": [
+      "breakout_not_held",
+      "no_closed_volume_confirmation",
+      "insufficient_remaining_move",
+      "no_derivatives_confirmation"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The one-shot revalidation does not confirm the breakout: price is below the required 0.0836388 level and recent closes lack convincing volume expansion. No scout or second-stage confirmation plan is justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "DOGEUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_XDGUSD",
+          "PI_XDGUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.0835907,
+      "bid": 0.0835875,
+      "last": 0.0836508,
+      "spread_pct": 0.0038282503340851277
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "50",
+      "pair_decimals": 7,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.11762295804780276,
+          "ret3h_pct": -0.0605350649702352
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.25438100621819615,
+          "ret3h_pct": 0.1749327668040701
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2689204763734132,
+          "ret3h_pct": 0.06709479536088914
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T02:25:09.552296Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f6b744eecb0c7a7006abdc486c02c87d2a6e2166e2dcbbe11"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0835907,
+    "bid": 0.0835875,
+    "last": 0.0836508,
+    "spread_pct": 0.0038282503340851277
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.0839188,
+      "high": 0.0840818,
+      "low": 0.0835164,
+      "open": 0.0835164,
+      "trades": 17,
+      "ts": 1790817300,
+      "volume": 119114.73914494,
+      "vwap": 0.0837596
+    },
+    {
+      "close": 0.0836436,
+      "high": 0.0838375,
+      "low": 0.0836015,
+      "open": 0.083754,
+      "trades": 19,
+      "ts": 1790818200,
+      "volume": 112445.86743093,
+      "vwap": 0.0836608
+    },
+    {
+      "close": 0.0835611,
+      "high": 0.0837019,
+      "low": 0.0835023,
+      "open": 0.0837019,
+      "trades": 8,
+      "ts": 1790819100,
+      "volume": 109217.52360385,
+      "vwap": 0.0836285
+    },
+    {
+      "close": 0.083808,
+      "high": 0.083808,
+      "low": 0.0837016,
+      "open": 0.0837016,
+      "trades": 2,
+      "ts": 1790820000,
+      "volume": 8983.59629564,
+      "vwap": 0.0837073
+    },
+    {
+      "close": 0.0836508,
+      "high": 0.0837251,
+      "low": 0.0836508,
+      "open": 0.0837251,
+      "trades": 3,
+      "ts": 1790820900,
+      "volume": 35303.6106379,
+      "vwap": 0.0836981
+    }
+  ],
+  "pair": "XDG/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-012549-XDG-EUR-r36800914491.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T02:25:16.801431Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "91a0affc8d14afc751b7dab057da67e5906fb9a3",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T02:25:16.801431Z",
+    "revalidation_started_at_utc": "2026-10-01T02:25:09.411457Z",
+    "ttl_due_at_utc": "2026-10-01T02:14:07.235268Z",
+    "ttl_lag_seconds": 662.176
+  }
+}

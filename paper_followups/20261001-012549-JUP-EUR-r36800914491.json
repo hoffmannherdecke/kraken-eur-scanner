@@ -3,7 +3,16 @@
   "candidate_id": "20261001-012549-JUP-EUR-r36800914491",
   "evaluated_at_utc": "2026-10-01T01:43:27.095690Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.445,
+      "expected_bars": 30,
+      "mae_pct": -0.445,
+      "mfe_pct": -0.041
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -52,12 +61,15 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-01T01:57:13.166757Z"
+    "updated_at_utc": "2026-10-01T02:26:02.028051Z"
   },
   "original_decision": "WAIT",
   "pair": "JUP/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-01T02:25:01.548589Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-10-01T02:26:02.161813Z"
 }

@@ -1,0 +1,231 @@
+{
+  "altname": "ICPEUR",
+  "candidate_id": "20261001-014255-ICP-EUR-r36802275901",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close holding above 2.969 EUR",
+      "Closed-bar volume expansion supporting the hold"
+    ],
+    "reason_codes": [
+      "RESISTANCE_REJECTED",
+      "CLOSED_VOLUME_WEAK",
+      "FEES_MATERIAL",
+      "RECENT_RUNUP"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation fails: price briefly exceeded resistance but the latest 15-minute bar rejected it and closed below 2.969 EUR; falling recent volume does not confirm continuation. Costs further weaken the case.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ICPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 40.99,
+        "available": true,
+        "current_funding_rate": -0.000172576830186168,
+        "current_open_interest": 186964.8,
+        "funding_rate_delta": -0.000128230463129917,
+        "open_interest_pct": 0.0,
+        "previous_funding_rate": -4.4346367056251e-05,
+        "previous_observed_at_utc": "2026-10-01T01:44:18.783577Z",
+        "previous_open_interest": 186964.8
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.000172576830186168,
+        "index_price": 3.37548,
+        "last": 3.365,
+        "mark_price": 3.37435978735,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 186964.8,
+        "requested_symbols": [
+          "PF_ICPUSD",
+          "PI_ICPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ICPUSD",
+        "volume24h": 266460.1
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 2.978,
+      "bid": 2.976,
+      "last": 2.968,
+      "spread_pct": 0.06718172657038037
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "2",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.11762295804780276,
+          "ret3h_pct": -0.0605350649702352
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.25438100621819615,
+          "ret3h_pct": 0.1749327668040701
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2689204763734132,
+          "ret3h_pct": 0.06709479536088914
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T02:25:17.290103Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0a0ff8b16a94bc2d006abdc48e609887d2b08012c983bb4211"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 2.978,
+    "bid": 2.976,
+    "last": 2.968,
+    "spread_pct": 0.06718172657038037
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 2.969,
+      "high": 2.969,
+      "low": 2.958,
+      "open": 2.958,
+      "trades": 5,
+      "ts": 1790817300,
+      "volume": 140.625,
+      "vwap": 2.961
+    },
+    {
+      "close": 2.973,
+      "high": 2.976,
+      "low": 2.961,
+      "open": 2.964,
+      "trades": 15,
+      "ts": 1790818200,
+      "volume": 1178.50843663,
+      "vwap": 2.969
+    },
+    {
+      "close": 2.976,
+      "high": 2.983,
+      "low": 2.971,
+      "open": 2.977,
+      "trades": 9,
+      "ts": 1790819100,
+      "volume": 872.46736661,
+      "vwap": 2.975
+    },
+    {
+      "close": 2.983,
+      "high": 2.988,
+      "low": 2.97,
+      "open": 2.97,
+      "trades": 4,
+      "ts": 1790820000,
+      "volume": 592.24968843,
+      "vwap": 2.981
+    },
+    {
+      "close": 2.968,
+      "high": 2.976,
+      "low": 2.968,
+      "open": 2.976,
+      "trades": 5,
+      "ts": 1790820900,
+      "volume": 465.31995602,
+      "vwap": 2.972
+    }
+  ],
+  "pair": "ICP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-014255-ICP-EUR-r36802275901.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T02:25:26.720156Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "91a0affc8d14afc751b7dab057da67e5906fb9a3",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T02:25:26.720156Z",
+    "revalidation_started_at_utc": "2026-10-01T02:25:17.052427Z",
+    "ttl_due_at_utc": "2026-10-01T02:14:18.783577Z",
+    "ttl_lag_seconds": 658.269
+  }
+}

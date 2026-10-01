@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.009058,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -6.025,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -8.125,
+        "mfe_pct": 3.007,
+        "peak_at_utc": "2026-09-30T13:30:00Z",
+        "trough_at_utc": "2026-09-30T22:00:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 3.715,
       "price_eur": 0.008722
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "late_after_24h_run",
@@ -118,7 +134,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-01T01:57:07.889332Z"
+    "updated_at_utc": "2026-10-01T02:25:57.024967Z"
   },
   "original_decision": "WAIT",
   "pair": "PENGU/EUR",
