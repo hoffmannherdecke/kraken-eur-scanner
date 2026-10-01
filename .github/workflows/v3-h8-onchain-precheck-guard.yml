@@ -31,7 +31,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path('research/v3/h8-onchain-state-precheck-v1.json').read_text('utf-8'))
           assert j['kind']=='V3_H8_ONCHAIN_STATE_PRECHECK_V1'
-          assert j['status']=='PRECHECK_SOURCE_COVERAGE_ONLY'
+          assert j['status'] in {'PRECHECK_SOURCE_COVERAGE_ONLY','PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING'}
           assert j['point_in_time_contract']['metric_interval_time_is_not_assumed_equal_to_known_at_time'] is True
           assert j['point_in_time_contract']['historical_use_requires_known_at_or_proven_publication_lag'] is True
           assert 'historical_performance_trial' in j['forbidden_before_availability_lag_proven']
