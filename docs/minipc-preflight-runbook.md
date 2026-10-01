@@ -1038,6 +1038,30 @@ Physical MINI-PC result:
 
 This closes the "green but ineffective" gate: health now depends on fresh underlying market/event flow, not merely on a running process or recently written heartbeat.
 
+### Explicit health-state taxonomy + daily 10:00 brief prepared 2026-10-01
+
+After the physical effectiveness smoke passed, the operations layer was extended further:
+
+- local watchdog now emits a separate operational `health_state` in addition to coarse HEALTHY/WARNING/CRITICAL;
+- supported states:
+  - `OK`
+  - `WAITING_NO_DATA`
+  - `FEED_STALE`
+  - `API_DISCONNECTED`
+  - `BACKLOG_STUCK`
+  - `DEGRADED`
+  - `STOPPED`;
+- state reason codes are persisted in the local watchdog payload and therefore propagate through the already active remote status sync;
+- a timezone-aware GitHub workflow `.github/workflows/minipc-daily-status.yml` is prepared for the very short daily **10:00 Europe/Berlin** system brief;
+- because GitHub cron is UTC-only, the workflow runs hourly and gates on the local Europe/Berlin hour, preserving 10:00 across CET/CEST;
+- report data is based on real remote MINI-PC health plus Kraken-universe, WS-shadow, outcome-tracker, supervisor and evidence counts;
+- healthy daily reports post to Slack **without** an `@Hoffis` mention (therefore no iPhone push with the current channel setting);
+- degraded/problem states post with a real `@Hoffis` mention and therefore do push;
+- reports are also persisted to `public.minipc_daily_status` for later status-page/history use;
+- push-triggered dry-run rendered the actual live data successfully without sending a duplicate Slack message.
+
+One local pull + effectiveness smoke remains to activate/verify the new operational taxonomy on the MINI-PC itself.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
