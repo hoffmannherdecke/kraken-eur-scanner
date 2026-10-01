@@ -1,6 +1,6 @@
 # Historical Kraken / Backtest Preflight
 
-Status: **PREPARED / METADATA-ONLY / NO BULK DOWNLOAD**
+Status: **PREPARED / CI VERIFIED / METADATA-ONLY / NO BULK DOWNLOAD**
 Date: 2026-10-01
 
 This document defines the historical-data and backtest layer before any large
@@ -241,20 +241,25 @@ experiment run.
 
 ## 12. Current status / next autonomous steps
 
-Prepared now:
+Prepared and verified now:
 
 - official-source snapshot/checksum facts recorded;
-- no-download manifest added;
-- local storage layout fixed;
+- no-download manifest added and CI-validated;
+- local C:-storage layout fixed; drive D remains blocked;
 - point-in-time contract fixed;
 - chronological validation/search-accounting rules fixed;
-- minimal smoke gate fixed.
+- synthetic 15m fixture deliberately contains a no-trade gap;
+- point-in-time smoke is green: closed-bar cutoff, no zero-fill, post-decision labels and deterministic output verified;
+- immutable SQLite trial-ledger implementation + duplicate-trial rejection smoke are green;
+- MINI-PC preparation script has a plan-only default and passed CI without creating data or downloading archives;
+- Historical data preflight GitHub Action run #4: SUCCESS.
+
+Current CI preflight estimates that enabling both complete compressed archive families later would imply roughly 36 GB of downloads before extraction. This is why Time & Sales remains behind a separate benefit/storage gate.
 
 Next safe engineering work:
 
-- validate the manifest in CI without downloading archives;
-- add small synthetic parser/point-in-time fixtures;
-- create the trial-ledger schema;
-- build a metadata-only/local-disk preflight command.
+- when useful, run the prepared MINI-PC plan/apply preflight to create only the local directory skeleton and record actual free space;
+- after that, decide whether to enable the OHLCVT-only download phase;
+- do not enable Time & Sales bulk download until OHLCVT replay proves a concrete need.
 
 None of these steps changes V2R3/V2R4 runtime or strategy behavior.
