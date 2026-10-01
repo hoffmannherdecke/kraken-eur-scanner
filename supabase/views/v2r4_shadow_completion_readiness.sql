@@ -7,7 +7,7 @@
 -- been created. The last deliberately ignored pre-tracker event was observed at
 -- 2026-10-01T06:52:12.838Z. Events after this boundary are prospective/eligible.
 
-create or replace view public.v2r4_shadow_completion_readiness as
+create or replace view public.v2r4_shadow_completion_readiness with (security_invoker=true) as
 with params as (
     select timestamptz '2026-10-01 06:52:12.838+00' as tracker_eligibility_after
 ),
