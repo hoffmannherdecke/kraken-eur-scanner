@@ -1,6 +1,6 @@
 {
   "schema_version": 6,
-  "enabled": true,
+  "enabled": false,
   "test_id": "SHADOW-V2R3-20260928-02",
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "strategy_revision": "V2R3-2026-09-28",
@@ -18,5 +18,7 @@
   "supabase_archive_mode": "secure_secondary_manual_connector_until_service_credential_available",
   "independent_external_watchdog_required": true,
   "preserve_process_health": true,
-  "real_money_actions_enabled": false
+  "real_money_actions_enabled": false,
+  "paused_at_utc": "2026-10-01T09:20:00Z",
+  "pause_reason": "Technical data-quality pause: follow-up timestamp churn plus pipefail status detection could prevent persistence, causing repeated evaluation of the same candidate. Freeze current V2R3 evidence before runtime-only repair; no strategy-rule change."
 }
