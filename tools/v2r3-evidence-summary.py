@@ -14,6 +14,7 @@ import statistics
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
+from datetime import datetime, timezone
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -246,6 +247,7 @@ def main() -> int:
 
     report = {
         "kind": "V2R3_EVIDENCE_SUMMARY_V1",
+        "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "series_id": series_id,
         "strategy_revision": control.get("strategy_revision"),
         "target_completed_paper_trades": control.get("target_completed_paper_trades"),
