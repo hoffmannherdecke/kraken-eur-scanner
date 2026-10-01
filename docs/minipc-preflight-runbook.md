@@ -15,7 +15,7 @@ So früh wie möglich vom direkten Arbeiten am Gerät auf Fernadministration wec
 - Dell OptiPlex 5060 besitzt im BIOS `AC Recovery` mit `Power On` / `Power Off` / `Last Power State`; für 24/7 ist `Power On` vorgesehen.
 - GitHub-Hauptpfade und V2R4-Draft existieren.
 - Supabase-Projekt ist aktiv/gesund und besitzt bereits Paper-Archivtabellen.
-- V2R3 ist technisch als aktive Paper-Serie registriert: `PAPER-V2R3-FINAL-20260928T1752Z`.
+- V2R3 ist technisch als aktive saubere Paper-Serie registriert: `PAPER-V2R3-CLEAN-20261001T0925Z`; Vorgänger `PAPER-V2R3-FINAL-20260928T1752Z` ist seit 2026-10-01 `DIAGNOSTIC_COMPROMISED`.
 
 ## Phase A — direkt am Gerät, nur das Nötigste
 
@@ -1248,7 +1248,7 @@ Autonomous monitoring was added so the active V2R3 series does not require manua
 - it remains silent while collecting and sends one real `@Hoffis` Slack push only when the completion gate first becomes ready;
 - push/manual validation run completed SUCCESS without sending a Slack notification.
 
-Provenance completeness was also verified across all 708 active V2R3 archived outcomes:
+Historical provenance completeness was verified across 708 archived predecessor outcomes before that series was classified `DIAGNOSTIC_COMPROMISED`:
 - 708/708 contain candidate detection, handoff, evaluation-start and evaluation-complete timestamps;
 - 708/708 contain a fresh Kraken ticker snapshot;
 - 708/708 contain strategy revision, strategy fingerprint and runtime-code fingerprint.
