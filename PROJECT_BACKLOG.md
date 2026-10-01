@@ -237,7 +237,7 @@ Erst nach stabiler Infrastruktur und validierter Strategie.
 - [ ] Neue Quellen/Apps nur aufnehmen, wenn sie einen klaren zusätzlichen Informations- oder Robustheitsnutzen liefern.
 - [ ] Datenquellen und Apps dürfen nicht still dieselben Daten mehrfach speichern.
 - [x] Periodische Storage-/Retention-Hygiene ist umgesetzt und kanonisch in `docs/storage-retention-policy.md` dokumentiert: MINI-PC Logs 14 Tage, Temp 2 Tage, State-Backups 14 Tage; GitHub `paper-market-tape-*` >36 h wird täglich entfernt, Scanner-Caches werden auf 12 Generationen begrenzt. Immutable Paper-/Trial-/Provenance-Evidenz wird ausdrücklich **nicht** automatisch gelöscht. GitHub Artifact-Cleanup ist real SUCCESS-verifiziert; lokale Cleanup-/Backup-Tasks sind Bestandteil der installierten MINI-PC-Baseline.
-- [ ] Offene GitHub Issues regelmäßig gegen diesen Master-Backlog abgleichen; keine zweite konkurrierende To-do-Liste entstehen lassen.
+- [x] Offene GitHub Issues werden automatisch gegen den Master-Backlog abgeglichen: `tools/validate-backlog-issue-reconciliation.py` + `.github/workflows/backlog-issue-reconciliation.yml` laufen fail-closed bei Issue-Änderungen sowie täglich. Jeder offene Issue muss als `#Nummer` in `PROJECT_BACKLOG.md` verankert sein; PRs werden nicht als To-do-Issues gezählt. Erster echter Reconciliation-Lauf **Run #1 SUCCESS**; aktuell ist nur Issue #7 offen und korrekt verlinkt.
 - [ ] Bei jedem neuen „merk dir das/später“-Beschluss diese Datei oder das verlinkte Fachdokument aktualisieren.
 
 ---
