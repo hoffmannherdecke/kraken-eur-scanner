@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "TAOEUR",
+  "candidate_id": "20261001-141946-TAO-EUR-r36875262782",
+  "event_time_utc": "2026-10-01T14:19:46Z",
+  "event_ts": 1790864386,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "TAO/EUR",
+  "queue_id": "36875262782:TAO-EUR:1790864386",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=TAO/EUR | score=10.70 | price_eur=269.454 | ret15_live=0.30% | ret1h=1.22% | ret3h=0.23% | ret24h=-0.35% | vol_live=33.23x | vol_closed=1.32x | rank=3 | rank_jump=22 | state_rank_jump=19 | breakout3h=0 | higher_lows=0 | base_tight=2.06% | fresh_move3h=1.49% | adx14=25.4 | spread=0.063% | turnover24h_eur=1206605 | coverage=100% | ret7d=5.15% | ret30d=38.11% | dist7d_high=-10.25% | dist30d_high=-10.25% | depth_1pct_eur=60033 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 25.41099796454592,
+    "altname": "TAOEUR",
+    "base_tight_pct": 2.0632737794581857,
+    "breakout3h": false,
+    "context30d": 38.11,
+    "context7d": 5.15,
+    "depth_eur_1pct": 60032.69,
+    "dist30d_high_pct": -10.25,
+    "dist7d_high_pct": -10.25,
+    "ema26_gt_50": true,
+    "fresh_move_3h": 1.4928206524748244,
+    "higher_lows": false,
+    "late": false,
+    "pair": "TAO/EUR",
+    "price": 269.454,
+    "rank15": 3,
+    "rank15_prev": 25,
+    "rank_jump": 22,
+    "ret15_closed": -0.1259351333760761,
+    "ret15_live": 0.2964741352837752,
+    "ret1h": 1.2220469577676196,
+    "ret24h": -0.3520263426204706,
+    "ret3h": 0.23349649941244444,
+    "score": 10.7,
+    "spread_pct": 0.0625374505615453,
+    "stale": false,
+    "state_rank_jump": 19,
+    "turnover24h": 1206604.8595863301,
+    "volume_ratio_closed": 1.3190884580756335,
+    "volume_ratio_live": 33.22821869339567
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-10-01T14:19:46Z",
+    "positive_1h_count": 32,
+    "positive_3h_count": 18,
+    "schema_version": 1,
+    "score_ge_5_count": 18,
+    "top_1h": [
+      {
+        "pair": "AAVE/EUR",
+        "ret15_live": 0.49,
+        "ret1h": 3.862,
+        "ret3h": 2.744,
+        "score": 8.5,
+        "vol_live": 8.915
+      },
+      {
+        "pair": "USELESS/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 2.094,
+        "ret3h": 0.173,
+        "score": 6.3,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "UNI/EUR",
+        "ret15_live": -0.288,
+        "ret1h": 1.727,
+        "ret3h": 1.217,
+        "score": 9.1,
+        "vol_live": 2.104
+      },
+      {
+        "pair": "ARB/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.422,
+        "ret3h": 1.422,
+        "score": 4.2,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "TAO/EUR",
+        "ret15_live": 0.296,
+        "ret1h": 1.222,
+        "ret3h": 0.233,
+        "score": 10.7,
+        "vol_live": 33.228
+      },
+      {
+        "pair": "NEAR/EUR",
+        "ret15_live": 0.379,
+        "ret1h": 0.89,
+        "ret3h": -2.982,
+        "score": 9.2,
+        "vol_live": 0.624
+      },
+      {
+        "pair": "SOL/EUR",
+        "ret15_live": 0.25,
+        "ret1h": 0.869,
+        "ret3h": 0.153,
+        "score": 6.2,
+        "vol_live": 1.225
+      },
+      {
+        "pair": "ZRO/EUR",
+        "ret15_live": 0.336,
+        "ret1h": 0.743,
+        "ret3h": 3.539,
+        "score": 4.9,
+        "vol_live": 0.701
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "TAO/EUR",
+        "ret15_live": 0.296,
+        "ret1h": 1.222,
+        "ret3h": 0.233,
+        "score": 10.7,
+        "vol_live": 33.228
+      },
+      {
+        "pair": "NEAR/EUR",
+        "ret15_live": 0.379,
+        "ret1h": 0.89,
+        "ret3h": -2.982,
+        "score": 9.2,
+        "vol_live": 0.624
+      },
+      {
+        "pair": "UNI/EUR",
+        "ret15_live": -0.288,
+        "ret1h": 1.727,
+        "ret3h": 1.217,
+        "score": 9.1,
+        "vol_live": 2.104
+      },
+      {
+        "pair": "AAVE/EUR",
+        "ret15_live": 0.49,
+        "ret1h": 3.862,
+        "ret3h": 2.744,
+        "score": 8.5,
+        "vol_live": 8.915
+      },
+      {
+        "pair": "MON/EUR",
+        "ret15_live": 0.666,
+        "ret1h": 0.42,
+        "ret3h": 1.701,
+        "score": 8.5,
+        "vol_live": 0.597
+      },
+      {
+        "pair": "ETH/EUR",
+        "ret15_live": 0.229,
+        "ret1h": 0.318,
+        "ret3h": -0.026,
+        "score": 7.4,
+        "vol_live": 1.072
+      },
+      {
+        "pair": "XRP/EUR",
+        "ret15_live": 0.248,
+        "ret1h": 0.419,
+        "ret3h": -0.224,
+        "score": 6.4,
+        "vol_live": 0.125
+      },
+      {
+        "pair": "ADA/EUR",
+        "ret15_live": 0.212,
+        "ret1h": 0.263,
+        "ret3h": -0.576,
+        "score": 6.4,
+        "vol_live": 0.328
+      }
+    ],
+    "total_rows": 58
+  },
+  "scanner_market_context": {
+    "altname": "TAOEUR",
+    "atr15_eur": 1.6560500000000016,
+    "atr15_pct": 0.6159818662794337,
+    "closed_through_epoch": 1790863200,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 268.8472,
+      "high": 270.9685,
+      "low": 267.437,
+      "open": 269.1862,
+      "volume": 62.05465
+    },
+    "pair": "TAO/EUR",
+    "range_1h_pct": 2.037514246010374,
+    "recent_closed_closes": [
+      268.2796,
+      266.5032,
+      265.4907,
+      268.6959,
+      269.3942,
+      268.8472
+    ],
+    "resistance_1h": 270.9685,
+    "resistance_3h": 270.9685,
+    "schema_version": 1,
+    "sensor_price_eur": 269.454,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 265.4907,
+    "support_3h": 265.4907,
+    "ts": 1790864386
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 36875262782,
+  "source_scanner_sha": "7e777f7cc1079ba38cb608c68531e1c43448526d",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T14:19:46Z",
+    "candidate_detected_ts": 1790864386,
+    "candidate_snapshot_at_utc": "2026-10-01T14:19:46Z",
+    "handoff_written_at_utc": "2026-10-01T14:19:48.436501Z",
+    "scan_step_started_at_utc": "2026-10-01T14:18:16Z"
+  }
+}
