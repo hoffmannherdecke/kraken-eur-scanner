@@ -119,16 +119,13 @@ jobs:
       - name: Smoke selective EUR15 extractor
         run: |
           python - <<'PY'
-          import hashlib, zipfile
+          import zipfile
           from pathlib import Path
-          import tools.extract_kraken_ohlcvt_eur15 as x
           p=Path("/tmp/kraken-eur15-synthetic.zip")
           with zipfile.ZipFile(p,"w",compression=zipfile.ZIP_DEFLATED) as z:
               z.writestr("XBTEUR_15.csv", "1,2,3,4,5,6,7\n2,2,3,4,5,6,7\n")
               z.writestr("ETHEUR_15.csv", "1,2,3,4,5,6,7\n")
               z.writestr("SOLEUR_60.csv", "1,2,3,4,5,6,7\n")
-          sha=hashlib.sha256(p.read_bytes()).hexdigest()
-          x.EXPECTED_ARCHIVE_SHA256=sha
           PY
           python - <<'PY'
           import hashlib, importlib.util, pathlib, sys, zipfile
