@@ -239,6 +239,25 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11e. Redundant Kraken OHLCVT download parts removed 2026-10-01
+
+The checksum-gated cleanup was executed on the physical MINI-PC after the final joined archive and selective EUR/15m extraction were both verified.
+
+Observed result:
+
+- cleanup status: **PASS**;
+- source archive SHA-256 matched the pinned Kraken checksum before deletion;
+- verified download parts found: **5**;
+- reclaimable bytes: **8,972,380,104** (~**8.36 GB**);
+- `deleted=true`;
+- `parts_remaining=0`;
+- final joined ZIP retained unchanged as immutable provenance;
+- selective 648× EUR/15m raw extraction retained;
+- `active_strategy_changed=false`;
+- `paper_shadow_runtime_changed=false`.
+
+This closes the redundant-part cleanup gate. The next historical-data step is the normalized point-in-time EUR/15m layer.
+
 ## 11d. Selective Kraken EUR 15m extraction verified 2026-10-01
 
 The physical MINI-PC extraction completed successfully against the checksum-pinned full archive.
