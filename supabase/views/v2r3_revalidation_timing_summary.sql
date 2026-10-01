@@ -27,16 +27,20 @@ select
   series_id,
   count(*)::integer as revalidated_candidates,
   count(*) filter (where revalidation_decision is distinct from initial_decision)::integer as decision_changes,
+  round(percentile_cont(0.5) within group (order by eval_to_revalidation_seconds::double precision)::numeric,3) as p50_eval_to_revalidation_seconds,
+  round(percentile_cont(0.9) within group (order by eval_to_revalidation_seconds::double precision)::numeric,3) as p90_eval_to_revalidation_seconds,
+  round(percentile_cont(0.99) within group (order by eval_to_revalidation_seconds::double precision)::numeric,3) as p99_eval_to_revalidation_seconds,
+  round(max(eval_to_revalidation_seconds),3) as max_eval_to_revalidation_seconds,
+  count(*) filter (where eval_to_revalidation_seconds > 600)::integer as over_10m,
+  count(*) filter (where eval_to_revalidation_seconds > 1200)::integer as over_20m,
+  count(*) filter (where eval_to_revalidation_seconds > 1800)::integer as over_30m,
+  'Timing/operations diagnostic only. Revalidation latency is not strategy-performance evidence and must not be used to tune the active clean series before its completion gate.'::text as interpretation_guardrail,
   round(percentile_cont(0.5) within group (order by ttl_minutes::double precision) filter (where ttl_minutes is not null)::numeric,3) as p50_requested_ttl_minutes,
   round(percentile_cont(0.5) within group (order by ttl_lag_seconds::double precision) filter (where ttl_lag_seconds is not null)::numeric,3) as p50_ttl_lag_seconds,
   round(percentile_cont(0.9) within group (order by ttl_lag_seconds::double precision) filter (where ttl_lag_seconds is not null)::numeric,3) as p90_ttl_lag_seconds,
   round(percentile_cont(0.99) within group (order by ttl_lag_seconds::double precision) filter (where ttl_lag_seconds is not null)::numeric,3) as p99_ttl_lag_seconds,
   round(max(ttl_lag_seconds),3) as max_ttl_lag_seconds,
   count(*) filter (where ttl_lag_seconds > 60)::integer as ttl_lag_over_60s,
-  count(*) filter (where ttl_lag_seconds > 300)::integer as ttl_lag_over_300s,
-  round(percentile_cont(0.5) within group (order by eval_to_revalidation_seconds::double precision)::numeric,3) as p50_eval_to_revalidation_seconds,
-  round(percentile_cont(0.9) within group (order by eval_to_revalidation_seconds::double precision)::numeric,3) as p90_eval_to_revalidation_seconds,
-  round(max(eval_to_revalidation_seconds),3) as max_eval_to_revalidation_seconds,
-  'Timing/operations diagnostic only. TTL lag measures scheduler/runtime lateness beyond the evaluator-requested WAIT TTL; it is not strategy-performance evidence and must not be used to tune the active clean series before its completion gate.'::text as interpretation_guardrail
+  count(*) filter (where ttl_lag_seconds > 300)::integer as ttl_lag_over_300s
 from timed
 group by series_id;
