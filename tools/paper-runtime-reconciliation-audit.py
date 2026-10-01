@@ -82,6 +82,8 @@ def main() -> int:
         except Exception as exc:
             findings.append({"severity": "CRITICAL", "code": "DECISION_INVALID_JSON", "file": str(path), "detail": str(exc)})
             continue
+        if rec.get("series_id") != series_id:
+            continue
         cid = str(rec.get("candidate_id") or "")
         if cid:
             decisions[cid] = (path, rec)
@@ -91,6 +93,8 @@ def main() -> int:
             rec = load(path)
         except Exception as exc:
             findings.append({"severity": "CRITICAL", "code": "REVALIDATION_INVALID_JSON", "file": str(path), "detail": str(exc)})
+            continue
+        if rec.get("series_id") != series_id:
             continue
         cid = str(rec.get("candidate_id") or "")
         if cid:
