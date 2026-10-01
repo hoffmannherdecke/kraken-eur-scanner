@@ -1,5 +1,5 @@
 param(
-  [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
+  [string]$TradingRoot = "",
   [string]$CsvPath = "",
   [string]$EventTs = "",
   [int]$PreSeconds = 60,
@@ -10,6 +10,14 @@ param(
 
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
+
+if ([string]::IsNullOrWhiteSpace($TradingRoot)) {
+  $homeRoot = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
+  if ([string]::IsNullOrWhiteSpace($homeRoot)) {
+    throw "Unable to resolve user home directory."
+  }
+  $TradingRoot = Join-Path $homeRoot "Trading"
+}
 
 $ExpectedConfirm = "RUN_TARGETED_TRADES_SMOKE"
 $repo = Join-Path $TradingRoot "Repos\kraken-eur-scanner"
