@@ -96,8 +96,18 @@ try {
       $checked = ([datetime]$h.checked_at_utc).ToUniversalTime()
       $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - $checked).TotalSeconds,1)
       $okStatus = [string]$h.status -in @("HEALTHY","CONNECTED")
-      $ok = ($okStatus -and $ageSec -le 30 -and [int]$h.events_total -gt 0)
-      Add-Check "kraken_canary_heartbeat" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " events=" + $h.events_total + " gaps=" + $h.gaps) "WARNING"
+      $lastEventAgeSec = $null
+      if ($h.last_event_at_utc) {
+        $lastEventAgeSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.last_event_at_utc).ToUniversalTime()).TotalSeconds,1)
+      }
+      $ok = (
+        $okStatus -and
+        $ageSec -le 30 -and
+        [int]$h.events_total -gt 0 -and
+        $lastEventAgeSec -ne $null -and
+        $lastEventAgeSec -le 45
+      )
+      Add-Check "kraken_canary_heartbeat" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " last_event_age_sec=" + $lastEventAgeSec + " events=" + $h.events_total + " gaps=" + $h.gaps) "WARNING"
     }
   } else {
     $checks["kraken_canary_heartbeat"] = [ordered]@{ ok=$null; detail="not installed yet; bounded Kraken smoke remains verified" }
@@ -117,14 +127,21 @@ try {
       $h = Get-Content $hb -Raw | ConvertFrom-Json
       $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
       $okStatus = [string]$h.status -in @("HEALTHY","CONNECTED")
+      $lastTickerAgeSec = $null
+      if ($h.last_ticker_at_utc) {
+        $lastTickerAgeSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.last_ticker_at_utc).ToUniversalTime()).TotalSeconds,1)
+      }
       $ok = (
         $okStatus -and
         $ageSec -le 45 -and
+        $lastTickerAgeSec -ne $null -and
+        $lastTickerAgeSec -le 45 -and
         [int]$h.pair_count -gt 0 -and
         [int]$h.observed_pair_count -gt 0 -and
+        [double]$h.coverage_pct -ge 80.0 -and
         [int]$h.subscription_errors -eq 0
       )
-      Add-Check "kraken_universe_heartbeat" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " pairs=" + $h.pair_count + " observed=" + $h.observed_pair_count + " coverage=" + $h.coverage_pct + "% reconnects=" + $h.reconnects) "WARNING"
+      Add-Check "kraken_universe_heartbeat" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " last_ticker_age_sec=" + $lastTickerAgeSec + " pairs=" + $h.pair_count + " observed=" + $h.observed_pair_count + " coverage=" + $h.coverage_pct + "% reconnects=" + $h.reconnects) "WARNING"
     }
   } else {
     $checks["kraken_universe_heartbeat"] = [ordered]@{ ok=$null; detail="not installed yet; BTC/EUR canary remains the transport-health probe" }
@@ -145,8 +162,16 @@ try {
       $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
       $okStatus = [string]$h.status -in @("HEALTHY","DUPLICATE_SKIPPED")
       $processed = [int]$h.counters.snapshots_processed
-      $ok = ($okStatus -and $ageSec -le 15 -and $processed -gt 0)
-      Add-Check "v2r4_ws_shadow_heartbeat" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " snapshots=" + $processed + " events=" + $h.counters.events_emitted + " recovery_epoch=" + $h.recovery_epoch) "WARNING"
+      $sourceAgeSec = $null
+      if ($h.source_age_seconds -ne $null) { $sourceAgeSec = [double]$h.source_age_seconds }
+      $ok = (
+        $okStatus -and
+        $ageSec -le 15 -and
+        $processed -gt 0 -and
+        $sourceAgeSec -ne $null -and
+        $sourceAgeSec -le 15
+      )
+      Add-Check "v2r4_ws_shadow_heartbeat" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " source_age_sec=" + $sourceAgeSec + " snapshots=" + $processed + " events=" + $h.counters.events_emitted + " recovery_epoch=" + $h.recovery_epoch) "WARNING"
     }
   } else {
     $checks["v2r4_ws_shadow_heartbeat"] = [ordered]@{ ok=$null; detail="shadow runtime not installed; V2R3 remains active control" }
@@ -165,13 +190,41 @@ try {
     } else {
       $h = Get-Content $hb -Raw | ConvertFrom-Json
       $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
+      $activeSamplingOk = $true
+      $oldestActiveSampleAgeSec = $null
+      if ([int]$h.active_events -gt 0) {
+        $trackerStatePath = Join-Path $TradingRoot "State\v2r4-ws-shadow-outcome-state.json"
+        if (-not (Test-Path $trackerStatePath)) {
+          $activeSamplingOk = $false
+        } else {
+          try {
+            $trackerState = Get-Content $trackerStatePath -Raw | ConvertFrom-Json
+            $sampleAges = @()
+            foreach ($prop in $trackerState.active.PSObject.Properties) {
+              $sampleAt = $prop.Value.last_sample_at_utc
+              if ($sampleAt) {
+                $sampleAges += ((Get-Date).ToUniversalTime() - ([datetime]$sampleAt).ToUniversalTime()).TotalSeconds
+              } else {
+                $sampleAges += 999999
+              }
+            }
+            if ($sampleAges.Count -gt 0) {
+              $oldestActiveSampleAgeSec = [math]::Round(($sampleAges | Measure-Object -Maximum).Maximum,1)
+              $activeSamplingOk = ($oldestActiveSampleAgeSec -le 240)
+            }
+          } catch {
+            $activeSamplingOk = $false
+          }
+        }
+      }
       $ok = (
         $h.status -eq "HEALTHY" -and
         $ageSec -le 30 -and
+        $activeSamplingOk -and
         [string]$h.strategy_action -eq "NONE_EVIDENCE_ONLY" -and
         -not [bool]$h.real_money_actions
       )
-      Add-Check "v2r4_ws_shadow_outcomes" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " active=" + $h.active_events + " enrolled=" + $h.counters.events_enrolled + " completed=" + $h.counters.events_completed) "WARNING"
+      Add-Check "v2r4_ws_shadow_outcomes" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " active=" + $h.active_events + " oldest_active_sample_age_sec=" + $oldestActiveSampleAgeSec + " enrolled=" + $h.counters.events_enrolled + " completed=" + $h.counters.events_completed) "WARNING"
     }
   } else {
     $checks["v2r4_ws_shadow_outcomes"] = [ordered]@{ ok=$null; detail="prospective outcome tracker not installed yet" }
