@@ -80,6 +80,17 @@
         "mfe_pct": 0.793,
         "peak_at_utc": "2026-10-01T12:18:00Z",
         "trough_at_utc": "2026-10-01T12:51:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 0.996,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -3.211,
+        "mfe_pct": 3.173,
+        "peak_at_utc": "2026-10-01T17:50:00Z",
+        "trough_at_utc": "2026-10-01T14:50:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -108,7 +119,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-01T16:05:15.406989Z"
+    "updated_at_utc": "2026-10-01T23:59:32.030903Z"
   },
   "original_decision": "WAIT",
   "pair": "SUI/EUR",
