@@ -3,7 +3,16 @@
   "candidate_id": "20261001-190328-PAXG-EUR-r36910943435",
   "evaluated_at_utc": "2026-10-01T19:03:53.880802Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.003,
+      "expected_bars": 30,
+      "mae_pct": -0.003,
+      "mfe_pct": 0.059
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -14,7 +23,19 @@
     "evaluated_at_utc": "2026-10-01T19:03:53.880802Z",
     "evaluation_ask_eur": 3721.99,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 0.0,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": 0.0,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-10-01T19:04:00Z",
+        "trough_at_utc": "2026-10-01T19:04:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-01T16:28:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -39,12 +60,13 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-01T19:04:36.096729Z"
+    "updated_at_utc": "2026-10-01T19:35:35.405284Z"
   },
   "original_decision": "REJECT",
   "pair": "PAXG/EUR",
   "path_classification": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-01T19:35:35.586926Z"
 }

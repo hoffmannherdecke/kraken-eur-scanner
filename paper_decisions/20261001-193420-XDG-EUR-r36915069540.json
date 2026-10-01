@@ -1,0 +1,159 @@
+{
+  "altname": "XDGEUR",
+  "candidate_age_seconds": 35,
+  "candidate_event_time_utc": "2026-10-01T19:34:20Z",
+  "candidate_id": "20261001-193420-XDG-EUR-r36915069540",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.084856 resistance with follow-through",
+      "Hold above 0.084856 on a retest while forming higher lows"
+    ],
+    "reason_codes": [
+      "PRICE_FOLLOW_THROUGH_WEAK",
+      "NO_BREAKOUT_OR_HIGHER_LOWS",
+      "RESISTANCE_LIMITS_NET_UPSIDE",
+      "WEAK_1H_MARKET_CONTEXT"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but the volume spike lacks price follow-through: the latest closed 15m return and 1h return are negative, with no breakout or higher lows. Nearby resistance leaves too little room after Kraken taker fees.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "DOGEUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_XDGUSD",
+          "PI_XDGUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.0840784,
+      "bid": 0.0840734,
+      "last": 0.0841098,
+      "spread_pct": 0.005947007406392465
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "50",
+      "pair_decimals": 7,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.3184299798579482,
+          "ret3h_pct": 0.3919658347791177
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.36200375318833355,
+          "ret3h_pct": 0.26714568651835524
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.7781362687416915,
+          "ret3h_pct": 0.18204464884545857
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T19:34:55.760481Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-01T19:35:03.288017Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0c90fcb9e15d2eb0006abeb5e1309487d18b9d2ea9fdca6f6c"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0840784,
+    "bid": 0.0840734,
+    "last": 0.0841098,
+    "spread_pct": 0.005947007406392465
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "XDG/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36915069540:XDG-EUR:1790883260",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "320fda053b261167d0e38dd130669013649fdd07",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T19:34:20Z",
+    "candidate_detected_ts": 1790883260,
+    "candidate_snapshot_at_utc": "2026-10-01T19:34:20Z",
+    "detected_to_evaluation_complete_seconds": 43.288,
+    "detected_to_evaluation_start_seconds": 35.551,
+    "evaluation_completed_at_utc": "2026-10-01T19:35:03.288017Z",
+    "evaluation_runtime_seconds": 7.737,
+    "evaluation_started_at_utc": "2026-10-01T19:34:55.550970Z",
+    "handoff_to_evaluation_start_seconds": 32.77,
+    "handoff_written_at_utc": "2026-10-01T19:34:22.780546Z",
+    "scan_step_started_at_utc": "2026-10-01T19:32:52Z"
+  }
+}

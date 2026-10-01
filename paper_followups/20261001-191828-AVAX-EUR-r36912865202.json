@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-01T19:18:51.814311Z",
     "evaluation_ask_eur": 9.798,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.601,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.855,
+        "mfe_pct": -0.153,
+        "peak_at_utc": "2026-10-01T19:20:00Z",
+        "trough_at_utc": "2026-10-01T19:29:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-01T16:57:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -40,7 +52,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-01T19:19:20.050163Z"
+    "updated_at_utc": "2026-10-01T19:35:36.535482Z"
   },
   "original_decision": "WAIT",
   "pair": "AVAX/EUR",
