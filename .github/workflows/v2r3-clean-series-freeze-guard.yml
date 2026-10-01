@@ -14,6 +14,7 @@ name: V2R3 clean-series freeze guard
       - 'research/v2r3/clean-series-freeze-20261001.json'
       - 'tools/validate-v2r3-clean-series-freeze.py'
       - 'tools/paper-release-rollback-snapshot.py'
+      - '.github/workflows/v2r3-clean-series-freeze-guard.yml'
 
 permissions:
   contents: read
