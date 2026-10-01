@@ -46,6 +46,8 @@ Required:
 
 ### Mandatory sizing decision
 
+Prepared decision memo: `docs/v2r4-sizing-release-decision.md`
+
 The current proposal contains an unresolved sizing confounder.
 
 Choose and version **one** approach before activation:
