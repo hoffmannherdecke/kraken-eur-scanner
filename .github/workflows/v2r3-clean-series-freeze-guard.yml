@@ -13,6 +13,7 @@ name: V2R3 clean-series freeze guard
       - '.github/workflows/scan.yml'
       - 'research/v2r3/clean-series-freeze-20261001.json'
       - 'tools/validate-v2r3-clean-series-freeze.py'
+      - 'tools/paper-release-rollback-snapshot.py'
 
 permissions:
   contents: read
@@ -28,3 +29,24 @@ jobs:
           python-version: '3.13'
       - name: Validate frozen clean-series contract
         run: python tools/validate-v2r3-clean-series-freeze.py
+
+      - name: Build rollback snapshot smoke
+        run: |
+          python tools/paper-release-rollback-snapshot.py --output "$RUNNER_TEMP/v2r3-lkg.json"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path(os.environ["RUNNER_TEMP"])/"v2r3-lkg.json"
+          j=json.loads(p.read_text("utf-8"))
+          assert j["kind"]=="PAPER_RELEASE_ROLLBACK_SNAPSHOT_V1"
+          assert j["status"]=="LAST_KNOWN_GOOD_REFERENCE"
+          assert j["series_id"]=="PAPER-V2R3-CLEAN-20261001T0925Z"
+          assert j["strategy_revision"]=="V2R3-2026-09-28"
+          assert j["rollback_semantics"]["whole_repo_reset_allowed"] is False
+          assert j["rollback_semantics"]["evidence_or_state_rewind_allowed"] is False
+          assert j["rollback_semantics"]["protected_code_config_restore_only"] is True
+          assert j["guardrails"]["orders"] is False
+          assert j["guardrails"]["real_money_actions"] is False
+          assert len(j["protected_files_sha256"]) >= 6
+          print("ROLLBACK_SNAPSHOT PASS content-addressed/no-state-rewind")
+          PY
