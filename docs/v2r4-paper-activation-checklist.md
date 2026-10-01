@@ -95,6 +95,22 @@ Do not reuse an earlier diagnostic or shadow series ID.
 
 ## Gate 5 — one small end-to-end release smoke
 
+Prepared physical real-transport harness:
+
+- `tools/minipc-v2r4-real-altrady-release-smoke.ps1`
+- plan-only by default;
+- requires an explicitly confirmed execute token;
+- consumes only a **recent real MINI-PC Altrady transport event**;
+- maps that event to current public online Kraken Spot-EUR;
+- creates all candidate/WAIT/recheck state in an isolated temp tree;
+- Altrady is wake-up only; fresh Kraken public data is the condition truth;
+- performs one isolated fresh PAPER recheck and then proves idempotency;
+- never mutates the active V2R3 series or live V2R4 state;
+- no private Kraken API, order path or real-money action.
+
+This converts the remaining physical combined Altrady→Kraken release proof into one bounded command once a fresh real Altrady event is available.
+
+
 After the release candidate exists but before broad collection:
 - one harmless candidate/trigger path;
 - deterministic trigger receipt;
