@@ -93,6 +93,8 @@ jobs:
             'tools/minipc-phase3-altrady-enable.ps1',
             'tools/minipc-v2r4-preflight-smoke.ps1',
             'tools/minipc-v2r4-readiness-sync.ps1',
+            'tools/minipc-v2r4-real-altrady-release-smoke.ps1',
+            'tools/v2r4-real-altrady-release-smoke.py',
             'tools/minipc-local-core-gate.ps1',
             'tools/minipc-next-user-step.ps1',
             'tools/minipc-altrady-secret-prep.ps1',
@@ -119,6 +121,20 @@ jobs:
             }
             Write-Host "PARSE_OK $file"
           }
+
+      - name: Compile real-Altrady release smoke helper
+        run: python -m py_compile tools/v2r4-real-altrady-release-smoke.py
+
+      - name: Smoke real-Altrady V2R4 release plan-only
+        shell: powershell
+        run: |
+          $out = .\tools\minipc-v2r4-real-altrady-release-smoke.ps1
+          $json = ($out -join [Environment]::NewLine) | ConvertFrom-Json
+          if ($json.status -ne 'PLAN_ONLY') { throw 'real-Altrady release smoke did not stay plan-only' }
+          if ($json.altrady_role -ne 'WAKEUP_HINT_ONLY') { throw 'Altrady role changed' }
+          if ($json.kraken_public_is_condition_truth -ne $true) { throw 'Kraken truth guardrail changed' }
+          if ($json.guardrails.order_api -ne $false -or $json.guardrails.real_money_actions -ne $false) { throw 'real-money/order guardrail changed' }
+          Write-Host 'REAL_ALTRADY_V2R4_RELEASE_PLAN_SMOKE_OK'
 
       - name: Smoke V2R4 readiness sync plan-only
         shell: powershell
