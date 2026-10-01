@@ -1,3 +1,4 @@
+# Self-testing H5 macro event preregistration guard
 name: V3 H5 macro event precheck guard
 
 'on':
