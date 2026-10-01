@@ -1,0 +1,228 @@
+{
+  "altname": "NEAREUR",
+  "candidate_id": "20261001-141946-NEAR-EUR-r36875262782",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Reclaim 4.3324 and hold or successfully retest it",
+      "Volume-backed higher low followed by a close above 4.4523"
+    ],
+    "reason_codes": [
+      "support_breakdown",
+      "no_reversal_confirmation",
+      "declining_15m_closes",
+      "live_volume_below_average",
+      "derivatives_open_interest_fell",
+      "remaining_move_uncertain_after_costs"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Revalidation failed: NEAR broke below 1h support and continued lower, with no confirmed reversal or volume-backed higher low. Do not chase.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "NEARUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 48.53,
+        "available": true,
+        "current_funding_rate": 0.000389433250516665,
+        "current_open_interest": 1181216.0,
+        "funding_rate_delta": -0.00018906401259458707,
+        "open_interest_pct": -13.6768,
+        "previous_funding_rate": 0.000578497263111252,
+        "previous_observed_at_utc": "2026-10-01T14:20:26.579645Z",
+        "previous_open_interest": 1368365.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000389433250516665,
+        "index_price": 4.8412,
+        "last": 4.8469,
+        "mark_price": 4.841901363,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 1181216.0,
+        "requested_symbols": [
+          "PF_NEARUSD",
+          "PI_NEARUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_NEARUSD",
+        "volume24h": 7020700
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 4.3015,
+      "bid": 4.2996,
+      "last": 4.3,
+      "spread_pct": 0.0441803955308045
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "4",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.34001751890817555,
+          "ret3h_pct": 0.4987716014193566
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.007960982804289252,
+          "ret3h_pct": -0.2640870818795382
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.23946360153256352,
+          "ret3h_pct": -0.17252947378509909
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T15:08:56.565987Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_01999fae28176b63006abe778aa48c87d0b825e59362ca82c0"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 4.3015,
+    "bid": 4.2996,
+    "last": 4.3,
+    "spread_pct": 0.0441803955308045
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 4.3809,
+      "high": 4.4523,
+      "low": 4.3662,
+      "open": 4.3809,
+      "trades": 651,
+      "ts": 1790863200,
+      "volume": 116896.30976509,
+      "vwap": 4.4112
+    },
+    {
+      "close": 4.3888,
+      "high": 4.4157,
+      "low": 4.3729,
+      "open": 4.3824,
+      "trades": 217,
+      "ts": 1790864100,
+      "volume": 14513.97654709,
+      "vwap": 4.3871
+    },
+    {
+      "close": 4.3462,
+      "high": 4.3953,
+      "low": 4.3311,
+      "open": 4.3907,
+      "trades": 254,
+      "ts": 1790865000,
+      "volume": 17473.53914976,
+      "vwap": 4.3672
+    },
+    {
+      "close": 4.3054,
+      "high": 4.355,
+      "low": 4.2683,
+      "open": 4.3431,
+      "trades": 195,
+      "ts": 1790865900,
+      "volume": 24721.19527198,
+      "vwap": 4.3027
+    },
+    {
+      "close": 4.3,
+      "high": 4.3341,
+      "low": 4.2988,
+      "open": 4.3017,
+      "trades": 115,
+      "ts": 1790866800,
+      "volume": 12528.2195319,
+      "vwap": 4.3169
+    }
+  ],
+  "pair": "NEAR/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-141946-NEAR-EUR-r36875262782.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T15:09:06.467916Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "d1973557990755ce11a580c3a0c3c9d5f81ab3a3",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T15:09:06.467916Z",
+    "revalidation_started_at_utc": "2026-10-01T15:08:56.068055Z",
+    "ttl_due_at_utc": "2026-10-01T15:05:26.579645Z",
+    "ttl_lag_seconds": 209.488
+  }
+}
