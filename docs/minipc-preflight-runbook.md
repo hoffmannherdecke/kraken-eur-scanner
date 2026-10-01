@@ -1079,6 +1079,20 @@ For the remaining P3 timing comparison, Supabase now also exposes `public.altrad
 - observed relay→MINI-PC latency sample: min **0.335s**, max **3.297s**, average **1.816s**;
 - this is transport evidence only and is not yet a statistically meaningful Altrady-vs-Kraken-vs-scanner performance conclusion.
 
+### Secret hygiene audit prepared 2026-10-01
+
+This parallel hardening step does not depend on V2R4 evidence and is safe to perform while the realtime paths collect data:
+
+- `tools/minipc-secret-hygiene-audit.ps1` is read-only;
+- it never prints secret values;
+- checks tracked repository files for live Slack/Supabase/private-key patterns and forbidden key file types;
+- checks local `Trading\Logs` / `Trading\State` for accidentally persisted live-secret patterns while reporting only filenames;
+- checks that `Trading\Secrets` is outside the repository and flags obviously broad Everyone/Guests ACLs;
+- current repository-side search found no obvious live Slack webhook, Supabase secret-key or private-key material;
+- Windows CI parse validation: **PASS**.
+
+The local MINI-PC audit remains one physical gate before later self-hosted-runner/private-account work.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
