@@ -92,6 +92,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [ ] Altrady-Heartbeat/Fehlerrückmeldung überwachen; Ausfall darf die restliche Kette nicht stoppen.
 - [x] V2R4 WS-Shadow auf dem MINI-PC aktivieren: 2026-10-01 physischer Smoke **PASS**, `CryptoMiniPC-V2R4WSShadow` **HEALTHY**, 500/500 Kraken-EUR-Paare, 0 stale inputs, Smoke-Quellalter Ø ~0,706 s / max ~2,175 s; Shadow bleibt ohne Evaluator/Orders.
 - [ ] V2R4 WS-Shadow prospektiv laufen lassen und auswerten: Feed→Discovery-Latenz, Eventrate/Triggergründe sowie **Post-Detection-Outcome (5m/15m/30m/1h/3h/6h, MFE/MAE)** messen. Restart-/Internet-Recovery des Shadow-Prozesses ist 2026-10-01 **PASS** (runtime=0, Internet=0, evidence=0, issues=none). Erst nach belastbarer Evidenz separate V2R4-Paper-Aktivierung.
+- [ ] Prospektiven V2R4-Shadow-Outcome-Tracker lokal aktivieren: Code + Installer/Rollback + Watchdog-Hook + Windows-CI sind vorbereitet/grün; nächster physischer Schritt ist die einmalige Installation von `CryptoMiniPC-V2R4ShadowOutcomes`. Nur neue Events ab Trackerstart zählen, kein retrospektives Backfill.
 - [ ] Detektionslatenz Kraken-native vs. Scanner vs. Altrady messen.
 - [ ] Nach stabiler Basis den Takt anhand realer Messungen verkürzen; Ziel grob ~7–8 Minuten, wo ein periodischer Takt nötig ist, ergänzt durch schnellere eventbasierte Trigger.
 - [ ] Evaluator/KI nur bei echten Kandidaten oder klaren Analyseblockern aufrufen; kein dauerndes KI-Polling.
