@@ -3,7 +3,16 @@
   "candidate_id": "20261001-220328-ICP-EUR-r36932296722",
   "evaluated_at_utc": "2026-10-01T22:04:03.318281Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.034,
+      "expected_bars": 30,
+      "mae_pct": -0.345,
+      "mfe_pct": 0.0
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -57,8 +66,11 @@
   },
   "original_decision": "WAIT",
   "pair": "ICP/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-01T22:34:11.204597Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-01T22:49:29.730263Z"
 }
