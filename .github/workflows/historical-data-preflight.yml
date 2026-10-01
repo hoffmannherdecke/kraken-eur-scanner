@@ -20,6 +20,7 @@ name: Historical data preflight
       - 'tools/historical-broad-pit-smoke.py'
       - 'tools/run-minipc-eur15-normalization.ps1'
       - 'tools/record-real-pair-replay-trial.py'
+      - 'tools/run-minipc-broad-pit-v2.ps1'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -298,6 +299,42 @@ jobs:
           assert count==1
           print("REAL_PAIR_TRIAL_LEDGER PASS idempotent/immutable")
           PY
+
+      - name: Smoke V2 replay Trial Ledger record
+        run: |
+          python tools/record-real-pair-replay-trial.py \
+            --normalization-catalog /tmp/eur15-normalized-a.json \
+            --replay-report /tmp/real-pair-replay-smoke-v2.json \
+            --db /tmp/real-pair-v2-trial-ledger.sqlite3 \
+            --schema research/historical/trial-ledger-schema.json \
+            --output-record /tmp/real-pair-v2-trial-record.json \
+            --repo-root . \
+            --expected-normalized-count 2
+          python - <<'PY'
+          import json, sqlite3
+          from pathlib import Path
+          rec=json.loads(Path("/tmp/real-pair-v2-trial-record.json").read_text())
+          assert rec["strategy_revision"]=="NO_STRATEGY_REPLAY_METHODOLOGY_SMOKE_V2"
+          assert rec["metrics"]["methodology_integrity_only"] is True
+          con=sqlite3.connect("/tmp/real-pair-v2-trial-ledger.sqlite3")
+          try:
+              count=con.execute("select count(*) from trials").fetchone()[0]
+          finally:
+              con.close()
+          assert count==1
+          print("REAL_PAIR_V2_TRIAL_LEDGER PASS")
+          PY
+
+      - name: MINI-PC broad PIT V2 plan-only smoke
+        shell: pwsh
+        run: |
+          ./tools/run-minipc-broad-pit-v2.ps1 | Tee-Object -Variable plan
+          if (($plan -join [Environment]::NewLine) -notmatch '"status":\s*"PLAN_ONLY"') {
+            throw "broad PIT V2 orchestrator did not remain plan-only"
+          }
+          if (($plan -join [Environment]::NewLine) -notmatch '"performance_backtest_started":\s*false') {
+            throw "broad PIT V2 orchestrator plan violated methodology-only guardrail"
+          }
 
       - name: MINI-PC EUR15 normalization plan-only smoke
         shell: pwsh
