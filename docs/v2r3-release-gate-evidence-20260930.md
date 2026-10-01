@@ -120,3 +120,107 @@ The evidence is sufficient to justify **continuing V2R4 preparation and one smal
 It is **not** sufficient to claim that relaxing V2R3 filters broadly would be profitable, and it does not authorize real-money trading.
 
 V2R3 remains the preserved comparison baseline. V2R4 must start, if activated, as a separate paper series with its own version/fingerprint.
+
+
+---
+
+## Clean replacement series — prospective status 2026-10-01
+
+The predecessor series above is retained for diagnosis but is no longer accepted as clean release evidence because a runtime-persistence defect allowed repeated evaluation before the candidate state was committed.
+
+The replacement control series is:
+
+- series: `PAPER-V2R3-CLEAN-20261001T0925Z`
+- strategy: `V2R3-2026-09-28`
+- runtime/strategy fingerprints: internally consistent
+- integrity state: **HEALTHY**
+- duplicate candidate IDs: **0**
+- rule changes during series: **none**
+
+### Current clean-series maturity snapshot
+
+Read-only snapshot around 2026-10-01 16:26 UTC:
+
+- candidate outcomes: **62**
+- completed trades / BUY_SCOUT: **0 / 0**
+- decisions: **56 REJECT / 6 WAIT**
+- eligible mature 24h outcomes: **0**
+- clean-series completion state: **COLLECTING_AGE**
+- remaining to alternate 1,000-outcome floor: **938**
+- remaining to 7-day age floor: about **161.0 h**
+
+This clean series is therefore **not yet eligible for final strategy/release conclusions**.
+
+### Interim descriptive horizons
+
+These values are recorded to verify that the analysis machinery works prospectively. They must not be used to tune V2R3 or V2R4 before the documented completion gate.
+
+For current REJECT cases:
+
+- 30m mature: **56**
+  - median MFE: **+0.389%**
+  - median MAE: **-0.458%**
+  - MFE >=2%: **7**
+- 60m mature: **53**
+  - median MFE: **+0.516%**
+  - median MAE: **-0.589%**
+  - MFE >=2%: **9**
+- 120m mature: **43**
+  - median MFE: **+0.516%**
+  - median MAE: **-1.009%**
+  - MFE >=2%: **10**
+- 360m mature: **7**
+  - median MFE: **+1.064%**
+  - median MAE: **-2.144%**
+  - MFE >=2%: **1**
+- post-detection 4h mature: **29**
+  - median post-detection MFE: **+0.741%**
+
+WAIT cases are too young at this snapshot for meaningful comparable horizons.
+
+### Interim reason-family diagnostics
+
+The normalized reason-family views are now working prospectively on the clean series.
+
+Largest blocking/caution families among current REJECT evidence:
+
+- resistance / breakout: **52 reason instances / 42 candidates**
+- volume confirmation: **34 / 33**
+- cost / edge: **34 / 32**
+- trend / continuity: **29 / 26**
+- extension / late entry: **14 / 14**
+- market regime: **13 / 13**
+- tradability/data: **10 / 10**
+- catalyst/context: **10 / 10**
+
+These are descriptive overlaps, not mutually exclusive labels.
+
+At the current immature 4h horizon, no family is authorized for promotion/removal. In particular:
+
+- tradability/data blocking cases currently show low median post-detection MFE in the small mature subset;
+- resistance/breakout and extension families show some later upside in a subset;
+- those observations remain exploratory until 24h maturity and the final clean-series gate.
+
+### Current timing evidence
+
+The clean series no longer shows the severe multi-minute persistence tail seen in the compromised predecessor:
+
+- WAIT p50 total detection -> evaluation complete: roughly **32 s**
+- WAIT p90: roughly **44 s**
+- REJECT p50: roughly **37 s**
+- REJECT p90: roughly **55 s**
+- no clean-series case above **300 s** at the current snapshot
+
+This supports classifying the predecessor's extreme latency tail as at least partly a runtime/persistence infrastructure defect. It does **not** yet prove that the remaining strategy selectivity is correct.
+
+### Current release interpretation
+
+The clean evidence currently supports only the following:
+
+- **timing infrastructure is substantially healthier** than in the compromised predecessor;
+- **V2R3 is still producing no paper entries** in the young clean sample;
+- the reason/outcome and missed-move analytics pipeline is now ready for mature evidence;
+- V2R4 technical preparation may continue;
+- V2R4 activation remains fail-closed until the clean V2R3 completion/review gate is satisfied.
+
+No Entry/Stop/Sizing/Scanner rule is changed from these interim numbers.
