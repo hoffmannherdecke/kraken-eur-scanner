@@ -239,6 +239,29 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11k. Windows checkout checksum mismatch caught before V1 execution 2026-10-01
+
+The first physical MINI-PC launch of the frozen V1 replay stopped **before scanning any historical data** because the working-tree JSON file had Windows CRLF line endings while the frozen checksum had been computed from the repository LF representation.
+
+Observed safety outcome:
+
+- frozen-spec guard stopped the run before the performance replay began;
+- no historical performance result was produced;
+- no Trial Ledger performance entry was written;
+- the user-entered `PERF_V1_SCAN ...` lines afterward were only mistaken copies of example progress text and had no effect on project state;
+- active V2R3/V2R4 runtime remained unchanged.
+
+Fix:
+
+- frozen spec identity is now computed from UTF-8 text after LF line-ending normalization;
+- validator, replay engine, Trial Ledger recorder and MINI-PC orchestrator use the same checkout-independent identity;
+- CI now explicitly validates both LF and synthetic CRLF copies against the same frozen SHA-256;
+- frozen spec content and thresholds were **not changed**;
+- frozen identity remains `e8f82b9992228050188e334900b5ee35aeaa47111a526e38b1d0ae4234d33d27`;
+- Historical data preflight **run #40: SUCCESS**.
+
+The physical V1 execution may now be retried after pulling the fix.
+
 ## 11j. First performance-oriented replay V1 frozen and execution-ready 2026-10-01
 
 After the physical broad PIT V2 methodology gate passed, the first performance-oriented historical replay was pre-registered **before** any aggregate real-data performance result was computed.
