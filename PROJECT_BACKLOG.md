@@ -41,7 +41,7 @@ Kanonische Detailquellen:
 - [ ] MAE/MFE, 30/60/120/360-Minuten-Follow-up, Edge-Decay, „gestoppt und später erholt“, verpasste Moves und Gebührenwirkung systematisch zusammenführen.
 - [ ] Zeitkette messen: Scanner-Erkennung → Persistenz/Handoff → Evaluator → Revalidation → möglicher Entry. Verzögerung als eigene Fehlerklasse behandeln.
 - [ ] Gewinner-/Verlierer- und Positionsgrößenanalyse durchführen; insbesondere prüfen, ob hohe Scores tatsächlich höhere Netto-Edge tragen.
-- [ ] Missed-Move-Audit gegen frühe starke Bewegungen weiterverwenden und prüfen, welche Filter gute Moves verhindert bzw. schlechte Trades verhindert haben.
+- [ ] Missed-Move-Audit gegen frühe starke Bewegungen weiterverwenden und prüfen, welche Filter gute Moves verhindert bzw. schlechte Trades verhindert haben. **Diagnostischer Vorgänger-Hinweis:** 81 mature REJECTs erreichten später >=10% 24h-MFE; 71 davon hatten persistierte Evaluation <=60s und 42 waren nicht als „already run“ markiert. Das spricht neben Timing auch für mögliche Filter-/Continuation-Probleme, ist wegen der kompromittierten Vorgängerserie aber nur Hypothese bis zur prospektiven Bestätigung in der Clean-Serie.
 - [ ] Abschlussanalyse strikt klassifizieren: **Strategieproblem / Timing-Infrastruktur / Datenqualität / technischer Betriebsfehler / Kostenproblem**.
 - [ ] Aus V2R3 nur testbare Hypothesen für V3 ableiten; keine automatische Promotion.
 
