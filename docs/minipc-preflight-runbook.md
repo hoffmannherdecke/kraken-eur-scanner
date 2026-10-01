@@ -1062,6 +1062,23 @@ After the physical effectiveness smoke passed, the operations layer was extended
 
 One local pull + effectiveness smoke remains to activate/verify the new operational taxonomy on the MINI-PC itself.
 
+### Health taxonomy locally verified; Altrady timing view prepared 2026-10-01
+
+Physical MINI-PC effectiveness result after the taxonomy pull:
+- overall: **HEALTHY**;
+- operational state: **OK**;
+- state reasons: **none**;
+- Kraken canary/universe, WS-shadow, outcome tracker, runtime supervisor and status sync all reported OK;
+- issues: **none**.
+
+This closes the local operational-state taxonomy activation gate.
+
+For the remaining P3 timing comparison, Supabase now also exposes `public.altrady_transport_timing`:
+- derives relay→MINI-PC transport latency directly from the existing authenticated Altrady relay table;
+- current evidence contains 2 consumed transport-proof events;
+- observed relay→MINI-PC latency sample: min **0.335s**, max **3.297s**, average **1.816s**;
+- this is transport evidence only and is not yet a statistically meaningful Altrady-vs-Kraken-vs-scanner performance conclusion.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
