@@ -1,0 +1,227 @@
+{
+  "altname": "HYPEEUR",
+  "candidate_id": "20261001-153329-HYPE-EUR-r36884524362",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15-minute close above 78.82 resistance",
+      "renewed live volume expansion accompanying the reclaim"
+    ],
+    "reason_codes": [
+      "no_breakout_confirmation",
+      "intraday_weakness",
+      "no_higher_lows",
+      "live_volume_below_average",
+      "insufficient_remaining_edge_after_costs"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Tight spread and adequate spot liquidity, but the TTL update still shows no reclaim of 78.82 resistance or sustained upward continuity; recent weakness and insufficient evidence do not support a scout entry.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "HYPEUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 30.58,
+        "available": true,
+        "current_funding_rate": 0.000136203539260804,
+        "current_open_interest": 185251.0,
+        "funding_rate_delta": 0.0041106394558875,
+        "open_interest_pct": -0.0727,
+        "previous_funding_rate": -0.003974435916626696,
+        "previous_observed_at_utc": "2026-10-01T15:34:02.568945Z",
+        "previous_open_interest": 185385.7
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000136203539260804,
+        "index_price": 87.6881,
+        "last": 87.717,
+        "mark_price": 87.67498411109,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 185251.0,
+        "requested_symbols": [
+          "PF_HYPEUSD",
+          "PI_HYPEUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_HYPEUSD",
+        "volume24h": 332072.4
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 78.05,
+      "bid": 78.01,
+      "last": 78.18,
+      "spread_pct": 0.05126233499934902
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.1",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.40886440559779746,
+          "ret3h_pct": 0.9313027724758394
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.005446554635235579,
+          "ret3h_pct": 0.09351163444080157
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.21123379740759507,
+          "ret3h_pct": 0.4137002116605837
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          },
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T16:04:35.678368Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_01a975583b848af1006abe84957b0487d0a55273e2fdcdc1eb"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 78.05,
+    "bid": 78.01,
+    "last": 78.18,
+    "spread_pct": 0.05126233499934902
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 78.52,
+      "high": 78.75,
+      "low": 78.28,
+      "open": 78.7,
+      "trades": 31,
+      "ts": 1790866800,
+      "volume": 607.94166171,
+      "vwap": 78.5
+    },
+    {
+      "close": 78.57,
+      "high": 78.82,
+      "low": 78.5,
+      "open": 78.62,
+      "trades": 23,
+      "ts": 1790867700,
+      "volume": 637.7607524,
+      "vwap": 78.52
+    },
+    {
+      "close": 78.25,
+      "high": 78.53,
+      "low": 78.21,
+      "open": 78.4,
+      "trades": 30,
+      "ts": 1790868600,
+      "volume": 436.7777426,
+      "vwap": 78.27
+    },
+    {
+      "close": 77.86,
+      "high": 78.44,
+      "low": 77.77,
+      "open": 78.31,
+      "trades": 56,
+      "ts": 1790869500,
+      "volume": 387.86047334,
+      "vwap": 78.18
+    },
+    {
+      "close": 78.18,
+      "high": 78.18,
+      "low": 77.81,
+      "open": 77.88,
+      "trades": 26,
+      "ts": 1790870400,
+      "volume": 50.99757191,
+      "vwap": 77.96
+    }
+  ],
+  "pair": "HYPE/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-153329-HYPE-EUR-r36884524362.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T16:04:45.366016Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "28ac4db7d81a57c5d230edd2f75fbccde389bb13",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T16:04:45.366016Z",
+    "revalidation_started_at_utc": "2026-10-01T16:04:35.188865Z",
+    "ttl_due_at_utc": "2026-10-01T16:04:02.568945Z",
+    "ttl_lag_seconds": 32.62
+  }
+}
