@@ -28,7 +28,7 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 | Strategie | `V2R3-2026-09-28` | ACTIVE / PAPER / FROZEN | Aktive Vergleichsbasis; Regeln während Serie nicht ändern |
 | Paper-Serie | `PAPER-V2R3-CLEAN-20261001T0925Z` | ACTIVE / CLEAN / PERSISTENCE E2E VERIFIED | Aktuelle homogene V2R3-Serie nach Runtime-only Persistenzrepair; erster realer 3-Kandidaten-Cycle im selben Lauf committed, Repeat-Guard danach 0 Reselections/0 No-op-Follow-up-Changes; Process-Health 3/3 Provenance, 0 Orphans. Strategie `V2R3-2026-09-28` unverändert. |
 | Paper-Serie predecessor | `PAPER-V2R3-FINAL-20260928T1752Z` | DIAGNOSTIC_COMPROMISED / FROZEN | 708 Candidate-Outcomes bleiben für Fehler-/Missed-Move-/Timinganalyse nutzbar, aber nicht als saubere prospektive Abschlussserie; Persistenzbug am 2026-10-01 nachgewiesen und repariert. |
-| Strategie | V2R4 | PREPARED / NOT ACTIVE / PHYSICAL MINI-PC E2E GREEN | Draft-PR #8; compile/unit/live evaluator/model-contract/public Kraken + exact Windows and physical MINI-PC trigger→fresh-recheck gates green; local OpenAI secret provisioned; Altrady synthetic and real transport E2E verified; separate V2R4 paper-activation decision still open |
+| Strategie | V2R4 | PREPARED / NOT ACTIVE / PHYSICAL MINI-PC E2E GREEN | **Draft-PR #9** refreshed onto current `main`; old PR #8 superseded/closed after 995-commit divergence. Exact 21-file V2R4 delta preserved; V2R4 PR validation Run #11 SUCCESS; compile/unit/live evaluator/model-contract/public Kraken + Windows and physical MINI-PC trigger→fresh-recheck gates green; local OpenAI secret provisioned; Altrady synthetic and real transport E2E verified; separate V2R4 paper-activation decision still open |
 | Strategie | V3 | ACTIVE RESEARCH / NOT ACTIVE TRADING | Integrierter Nachfolger; Issue #7 + `docs/v3-research-framework.md` |
 
 ### Release-Gate V2R3 → V2R4
@@ -82,7 +82,7 @@ Pflicht für Auswertung und nächste Version:
 | MINI-PC runtime supervisor | bounded Task Scheduler liveness recovery | ACTIVE / SELF-HEAL VERIFIED | 2-min cadence + startup; 10-min per-task restart backoff; controlled stop of archive-only support task recovered automatically; heartbeat advanced; local watchdog HEALTHY; no strategy/evaluator/order path |
 | GitHub Cloudpfad | bestehend | ACTIVE | unabhängiger Fallback bleibt erhalten |
 | Supabase archive | `paper_series` / `paper_candidate_outcomes` / `paper_trade_results` | ACTIVE / VERIFIED / FAIL-SOFT | push/manual + opportunistic workflow_run + unabhängige Reconciliation :07/:37; zuletzt 578 V2R3-Outcomes archiviert, 0 Trades |
-| Historical/backtest research layer | Kraken OHLCVT + targeted Time & Sales, local research-only | V1 REJECTED / SECOND-LEG V2 FROZEN+READY | `docs/historical-backtest-preflight.md`; V1 validation/failure review rejected the fixed immediate-entry baseline (n=2,600; mean net -0.7207%, median net -1.5823%, right-skew; 263 pairs/12 months) with 2026H1 holdout sealed. Distinct V2 is pre-registered as a new search-accounting trial: original trigger + max-4-bar second-leg close confirmation above signal high, pre-confirmation invalidation below signal low, next-bar-open entry, same 4h hold and 1.40% round-trip cost. All pre-2026 evidence is explicitly development-only because V2 was influenced by V1; 2026H1 remains clean/sealed. V2 validator/engine/immutable recorder/guarded MINI-PC orchestrator CI-green through run #49. Active V2R3/V2R4 unchanged |
+| Historical/backtest research layer | Kraken OHLCVT + targeted Time & Sales, local research-only | **H1/H2 PERFORMANCE BRANCH CLOSED / HOLDOUT SEALED** | `docs/historical-backtest-preflight.md`; Historical Replay H1 was insufficient. Historical Replay H2 (second-leg confirmation) failed its preregistered development gate; positive-net-rate requirement failed while top-10 pair concentration requirement passed. 2026H1 holdout remains unopened (0 events / no metrics), no threshold/horizon/pair/month sweeps, no active V2R3/V2R4 mutation. Per preregistration: no holdout run and no H3/H4 search sequence; focus returns to V2R3/V2R4 readiness |
 | Slack Push | GitHub owner-approved action relay → Slack webhook → real `@Hoffis` mention → iPhone | ACTIVE / E2E VERIFIED | 2026-10-01 relay workflow SUCCESS, Slack HTTP 200/ok, physical iPhone push received; `#krypto-signale` mobile setting = Nur Erwähnungen; raw candidates remain silent |
 | ChatGPT Desktop/Work | ChatGPT auf MINI-PC eingerichtet; Work sparsam | BASE ACTIVE | ChatGPT-Konto/Browserzugriff vorhanden; Work weiterhin nur bei echtem Desktop-/Browsermehrwert |
 
@@ -118,7 +118,7 @@ Wichtige Referenzen:
 - `PROJECT_BACKLOG.md`
 - `docs/strategy-version-map.md`
 - `docs/v3-research-framework.md`
-- Draft-PR #8 — V2R4 Fast WAIT Triggers / Mini-PC
+- Draft-PR #9 — refreshed V2R4 Fast WAIT Triggers / Mini-PC on current `main` (PR #8 superseded)
 - Issue #7 — V3 Research Track
 
 ## Supabase
