@@ -39,6 +39,7 @@ jobs:
             paper_evaluator/v2r4_trigger_contract.py \
             paper_evaluator/v2r4_trigger_plan.py \
             paper_evaluator/v2r4_wait_watcher.py \
+            paper_evaluator/v2r4_wait_runtime.py \
             paper_evaluator/v2r4_precandidate_discovery.py \
             paper_evaluator/v2r4_precandidate_watcher.py \
             paper_evaluator/v2r4_ws_shadow_watcher.py \
@@ -56,6 +57,7 @@ jobs:
             tests.test_v2r4_evaluator_watch_conditions \
             tests.test_v2r4_evaluator_contract \
             tests.test_v2r4_local_recheck \
+            tests.test_v2r4_wait_runtime \
             -v
 
       - name: Harmless live Kraken WAIT watcher smoke
