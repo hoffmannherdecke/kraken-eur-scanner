@@ -1,0 +1,74 @@
+name: Historical data preflight
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/historical-backtest-preflight.md'
+      - 'research/historical/**'
+      - 'tools/kraken-historical-preflight.py'
+      - 'tools/historical-pit-smoke.py'
+      - '.github/workflows/historical-data-preflight.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: historical-data-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compile metadata-only tools
+        run: |
+          python -m py_compile tools/kraken-historical-preflight.py
+          python -m py_compile tools/historical-pit-smoke.py
+
+      - name: Validate no-download Kraken manifest
+        run: |
+          python tools/kraken-historical-preflight.py
+
+      - name: Run synthetic point-in-time smoke
+        run: |
+          python tools/historical-pit-smoke.py
+
+      - name: Validate trial-ledger schema JSON
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("research/historical/trial-ledger-schema.json")
+          obj=json.loads(p.read_text("utf-8"))
+          assert obj["schema_version"] == 1
+          assert obj["kind"] == "HISTORICAL_TRIAL_LEDGER_SCHEMA_V1"
+          assert obj["baseline_execution"]["taker_fee_pct_per_side"] == 0.60
+          assert obj["baseline_execution"]["leverage"] is False
+          required=set(obj["required_fields"])
+          for name in (
+              "trial_id","dataset_sha256","train_window","validation_window",
+              "holdout_window","purge_seconds","embargo_seconds","metrics"
+          ):
+              assert name in required, name
+          print("TRIAL_LEDGER_SCHEMA PASS")
+          PY
+
+      - name: Safety assertion
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("research/historical/kraken-historical-manifest.json").read_text())
+          assert m["bulk_downloads_allowed"] is False
+          assert m["active_strategy_runtime_changes_allowed"] is False
+          assert all(d["download_enabled"] is False for d in m["datasets"])
+          assert all(d["download_enabled"] is False for d in m["incremental_updates"])
+          assert m["storage_guardrails"]["github_actions_bulk_download_allowed"] is False
+          print("SAFETY_GUARDRAILS PASS: no downloads, no active runtime mutation")
+          PY
