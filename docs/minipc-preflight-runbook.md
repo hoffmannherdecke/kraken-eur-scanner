@@ -895,6 +895,20 @@ To make future shadow/outcome analysis available without repeated MINI-PC screen
 
 This closes the MINI-PC shadow cloud-archive activation gate. Future new shadow events and their eventual outcome payloads can now be inspected centrally without repeated manual file transfer from the MINI-PC.
 
+### Slack iPhone action-push E2E verified 2026-10-01
+
+The intended low-noise notification path is now physically verified again:
+
+- channel `#krypto-signale` remains configured on the iPhone for **Nur Erwähnungen**;
+- mobile Slack notifications are enabled and mobile delivery is set to **Immer**;
+- normal channel messages are intentionally not sufficient for a push;
+- the project action-push path uses GitHub Issue #1 -> `Slack action push relay` -> Slack incoming webhook -> real Slack mention `<@U0C39EDQ1H8>`;
+- the relay run completed **SUCCESS** and Slack returned **HTTP 200 / ok**;
+- the resulting webhook/bot message produced a real iPhone push for the user;
+- therefore future push logic remains: raw candidates silent; only explicitly actionable/error/completion messages receive the real Slack mention.
+
+A ChatGPT/Slack-connector message sent as the user's own Slack identity is **not** a valid push-path test and must not be used as evidence.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
