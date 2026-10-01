@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "PENGUEUR",
+  "candidate_id": "20261001-042205-PENGU-EUR-r36814646584",
+  "event_time_utc": "2026-10-01T04:22:05Z",
+  "event_ts": 1790828525,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "PENGU/EUR",
+  "queue_id": "36814646584:PENGU-EUR:1790828525",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=PENGU/EUR | score=11.60 | price_eur=0.008736 | ret15_live=0.00% | ret1h=1.43% | ret3h=2.56% | ret24h=-0.74% | vol_live=0.00x | vol_closed=6.29x | rank=4 | rank_jump=44 | state_rank_jump=13 | breakout3h=0 | higher_lows=1 | base_tight=3.29% | fresh_move3h=3.06% | adx14=26.1 | spread=0.138% | turnover24h_eur=338368 | coverage=100% | ret7d=-0.48% | ret30d=15.71% | dist7d_high=-8.91% | dist30d_high=-10.60% | depth_1pct_eur=37022 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 26.084169102159514,
+    "altname": "PENGUEUR",
+    "base_tight_pct": 3.29125870001179,
+    "breakout3h": false,
+    "context30d": 15.71,
+    "context7d": -0.48,
+    "depth_eur_1pct": 37021.76,
+    "dist30d_high_pct": -10.6,
+    "dist7d_high_pct": -8.91,
+    "ema26_gt_50": false,
+    "fresh_move_3h": 3.0553261767134687,
+    "higher_lows": true,
+    "late": false,
+    "pair": "PENGU/EUR",
+    "price": 0.008736,
+    "rank15": 4,
+    "rank15_prev": 48,
+    "rank_jump": 44,
+    "ret15_closed": -0.22841480127910874,
+    "ret15_live": 0.0,
+    "ret1h": 1.4280738418669392,
+    "ret24h": -0.7385524372230279,
+    "ret3h": 2.559286217421941,
+    "score": 11.6,
+    "spread_pct": 0.13761467889908097,
+    "stale": false,
+    "state_rank_jump": 13,
+    "turnover24h": 338368.0257001795,
+    "volume_ratio_closed": 6.285076831793193,
+    "volume_ratio_live": 0.0
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-10-01T04:22:05Z",
+    "positive_1h_count": 42,
+    "positive_3h_count": 47,
+    "schema_version": 1,
+    "score_ge_5_count": 25,
+    "top_1h": [
+      {
+        "pair": "STX/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 2.589,
+        "ret3h": 0.789,
+        "score": 7.0,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "AAVE/EUR",
+        "ret15_live": 0.503,
+        "ret1h": 2.267,
+        "ret3h": 4.981,
+        "score": 10.9,
+        "vol_live": 45.686
+      },
+      {
+        "pair": "PENGU/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.428,
+        "ret3h": 2.559,
+        "score": 11.6,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "ALGO/EUR",
+        "ret15_live": 0.228,
+        "ret1h": 1.224,
+        "ret3h": 3.473,
+        "score": 9.7,
+        "vol_live": 1.731
+      },
+      {
+        "pair": "INJ/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.871,
+        "ret3h": 0.671,
+        "score": 4.9,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "USELESS/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.819,
+        "ret3h": 1.499,
+        "score": 6.2,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "NEAR/EUR",
+        "ret15_live": -0.253,
+        "ret1h": 0.802,
+        "ret3h": 1.416,
+        "score": 3.7,
+        "vol_live": 1.098
+      },
+      {
+        "pair": "PUMP/EUR",
+        "ret15_live": 0.334,
+        "ret1h": 0.769,
+        "ret3h": 0.078,
+        "score": 8.4,
+        "vol_live": 0.565
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "PENGU/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.428,
+        "ret3h": 2.559,
+        "score": 11.6,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "AAVE/EUR",
+        "ret15_live": 0.503,
+        "ret1h": 2.267,
+        "ret3h": 4.981,
+        "score": 10.9,
+        "vol_live": 45.686
+      },
+      {
+        "pair": "ALGO/EUR",
+        "ret15_live": 0.228,
+        "ret1h": 1.224,
+        "ret3h": 3.473,
+        "score": 9.7,
+        "vol_live": 1.731
+      },
+      {
+        "pair": "PUMP/EUR",
+        "ret15_live": 0.334,
+        "ret1h": 0.769,
+        "ret3h": 0.078,
+        "score": 8.4,
+        "vol_live": 0.565
+      },
+      {
+        "pair": "SHIB/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.411,
+        "ret3h": 0.747,
+        "score": 8.3,
+        "vol_live": 0.056
+      },
+      {
+        "pair": "TAO/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.405,
+        "ret3h": 1.275,
+        "score": 7.4,
+        "vol_live": 0.144
+      },
+      {
+        "pair": "TON/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.377,
+        "ret3h": 0.075,
+        "score": 7.4,
+        "vol_live": 9.86
+      },
+      {
+        "pair": "HBAR/EUR",
+        "ret15_live": 0.237,
+        "ret1h": 0.032,
+        "ret3h": 0.923,
+        "score": 7.3,
+        "vol_live": 9.269
+      }
+    ],
+    "total_rows": 62
+  },
+  "scanner_market_context": {
+    "altname": "PENGUEUR",
+    "atr15_eur": 3.8285714285714286e-05,
+    "atr15_pct": 0.43825222396650965,
+    "closed_through_epoch": 1790827200,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.008736,
+      "high": 0.008756,
+      "low": 0.008736,
+      "open": 0.008756,
+      "volume": 258866.6955
+    },
+    "pair": "PENGU/EUR",
+    "range_1h_pct": 1.6369047619047508,
+    "recent_closed_closes": [
+      0.008614,
+      0.008594,
+      0.008618,
+      0.008618,
+      0.008736,
+      0.008736
+    ],
+    "resistance_1h": 0.008756,
+    "resistance_3h": 0.008756,
+    "schema_version": 1,
+    "sensor_price_eur": 0.008736,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.008613,
+    "support_3h": 0.008477,
+    "ts": 1790828525
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 36814646584,
+  "source_scanner_sha": "60635c1c44c22a5fcff95c4b4d233db0ae38b3aa",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T04:22:05Z",
+    "candidate_detected_ts": 1790828525,
+    "candidate_snapshot_at_utc": "2026-10-01T04:22:05Z",
+    "handoff_written_at_utc": "2026-10-01T04:22:07.594465Z",
+    "scan_step_started_at_utc": "2026-10-01T04:20:30Z"
+  }
+}
