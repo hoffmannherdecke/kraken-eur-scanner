@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H5_MACRO_EVENT_RISK_PRECHECK_V1",
+  "hypothesis_id": "V3-H5",
+  "status": "PRECHECK",
+  "prepared_at_utc": "2026-10-01T18:30:00Z",
+  "first_event_family": "FOMC_POLICY_STATEMENT",
+  "primary_source": "federal_reserve_fomc_calendar",
+  "role": "RISK_STATE_GATE_FIRST_NOT_DIRECTIONAL_SIGNAL",
+  "event_semantics": {
+    "statement_clock": "14:00 America/New_York on second day of regular scheduled meeting unless official source states otherwise",
+    "press_conference_clock": "14:30 America/New_York as separate event if later tested",
+    "minutes_release": "separate event family not silently merged with policy statement",
+    "timezone_conversion": "IANA_America/New_York_DST_AWARE",
+    "official_schedule_capture_timestamp_required": true,
+    "official_source_url_required": true
+  },
+  "point_in_time_contract": {
+    "event_must_have_known_at_timestamp": true,
+    "candidate_decision_time_must_be_at_or_after_calendar_known_at_for_schedule_feature": true,
+    "future_policy_outcome_or_statement_content_forbidden": true,
+    "event_timestamp_may_be_in_future_if_schedule_was_already_public": true,
+    "revised_schedule_requires_new_capture_version": true,
+    "hindsight_calendar_reconstruction_without_known_at_flag_forbidden": true
+  },
+  "candidate_risk_variants_for_later_testing": [
+    "BASELINE_NO_EVENT_GATE",
+    "NO_NEW_ENTRY_IN_PREDEFINED_EVENT_WINDOW",
+    "HIGHER_REQUIRED_EDGE_IN_PREDEFINED_EVENT_WINDOW",
+    "REDUCED_SIZE_IN_PREDEFINED_EVENT_WINDOW"
+  ],
+  "precheck_only": {
+    "event_window_selection_by_performance": false,
+    "direction_rule": false,
+    "strategy_change": false,
+    "sizing_change": false,
+    "holdout_opened": false,
+    "performance_trial_started": false
+  },
+  "future_trial_constraints": {
+    "pre_window_minutes_must_be_preregistered": true,
+    "post_window_minutes_must_be_preregistered": true,
+    "event_families_must_be_preregistered": true,
+    "one_change_shadow_contract_required": true,
+    "realistic_cost_reference_required": true,
+    "sealed_2026h1_holdout_open_allowed": false,
+    "no_winner_is_valid_outcome": true
+  },
+  "runtime_guardrails": {
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "automatic_trade_block_allowed": false,
+    "orders": false,
+    "leverage": false,
+    "real_money_actions": false
+  },
+  "next_gate": "SYNTHETIC_DST_AWARE_EVENT_WINDOW_PIT_SMOKE_ONLY"
+}
