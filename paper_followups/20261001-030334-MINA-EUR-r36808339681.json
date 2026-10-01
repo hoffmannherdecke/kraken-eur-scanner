@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-01T03:17:07.440676Z",
     "evaluation_ask_eur": 0.1301,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.689,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.689,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-10-01T03:04:00Z",
+        "trough_at_utc": "2026-10-01T03:13:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-01T01:01:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -41,7 +53,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-01T03:19:02.918043Z"
+    "updated_at_utc": "2026-10-01T03:20:17.393472Z"
   },
   "original_decision": "WAIT",
   "pair": "MINA/EUR",
