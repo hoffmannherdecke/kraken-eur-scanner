@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-01T19:40:41Z",
+  "updated_at_utc": "2026-10-01T19:43:09Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -385,13 +385,14 @@
       "category": "execution_cost",
       "source_version": "V3 later execution hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Fill-probability research is blocked until synchronized WS book/trade evidence and explicit queue/deadline/fee semantics exist. REST depth snapshots alone are insufficient.",
+      "rationale": "REST depth alone remains insufficient. H3 cloud WS book reconciliation is now green and a same-connection public book+trade clock smoke is prepared to prove trade sequence/timestamp join semantics. No queue/fill model, deadline rule, fee schedule or routing decision is authorized.",
       "evidence": [
         "research/v3/h9-maker-taker-readiness-v1.json",
         "research/v3/h3-orderbook-depth-precheck-v1.json",
-        "docs/v3-research-framework.md"
+        "docs/v3-research-framework.md",
+        "tools/v3-h9-public-book-trade-clock-smoke.py"
       ],
-      "pending_gate": "V3_H9_COMPLETE_H3_WS_BOOK_AND_SYNCHRONIZED_TRADE_PRINT_SMOKE"
+      "pending_gate": "V3_H9_CLOUD_BOOK_TRADE_CLOCK_SMOKE_THEN_PHYSICAL_CONFIRMATION_PLUS_FEE_DEADLINE_QUEUE_GATES"
     }
   ]
 }

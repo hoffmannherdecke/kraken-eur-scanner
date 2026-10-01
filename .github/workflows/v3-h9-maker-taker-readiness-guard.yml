@@ -6,6 +6,7 @@ name: V3 H9 maker taker readiness guard
     branches: [main]
     paths:
       - 'research/v3/h9-maker-taker-readiness-v1.json'
+      - 'tools/v3-h9-public-book-trade-clock-smoke.py'
       - '.github/workflows/v3-h9-maker-taker-readiness-guard.yml'
 
 permissions:
@@ -27,11 +28,15 @@ jobs:
           from pathlib import Path
           j=json.loads(Path('research/v3/h9-maker-taker-readiness-v1.json').read_text('utf-8'))
           assert j['kind']=='V3_H9_MAKER_TAKER_READINESS_V1'
-          assert j['status']=='DEFERRED_FILL_DATA_NOT_READY'
+          assert j['status'] in {'DEFERRED_FILL_DATA_NOT_READY','DEFERRED_FILL_MODEL_BOOK_TRADE_CLOCK_SMOKE_PREPARED','DEFERRED_FILL_MODEL_PUBLIC_CLOCK_GREEN_PHYSICAL_AND_MODEL_GATES_PENDING'}
           e=j['current_evidence']
           assert e['public_rest_l2_snapshot']=='GREEN_H3_REST_DEPTH'
-          assert e['public_ws_book_delta_capture']=='NOT_YET_PROVEN'
-          assert e['synchronized_book_and_trade_clock']=='NOT_YET_PROVEN'
+          if j['status']=='DEFERRED_FILL_DATA_NOT_READY':
+              assert e['public_ws_book_delta_capture']=='NOT_YET_PROVEN'
+              assert e['synchronized_book_and_trade_clock']=='NOT_YET_PROVEN'
+          else:
+              assert e['public_ws_book_delta_capture']=='GREEN_H3_CLOUD_CHECKSUM_RECONCILIATION__PHYSICAL_MINIPC_PENDING'
+              assert e['synchronized_book_and_trade_clock'] in {'CLOUD_SMOKE_PREPARED','GREEN_CLOUD_SAME_CONNECTION_PROTOCOL__PHYSICAL_MINIPC_PENDING'}
           assert e['queue_position_model']=='NOT_AVAILABLE'
           assert e['maker_fill_probability_model']=='NOT_AVAILABLE'
           assert 'queue_position' in j['public_rest_snapshot_is_insufficient_for']
@@ -44,6 +49,52 @@ jobs:
           assert j['runtime_guardrails']['private_api_allowed'] is False
           assert j['runtime_guardrails']['orders_allowed'] is False
           assert j['runtime_guardrails']['real_money_actions_allowed'] is False
-          assert j['next_gate']=='COMPLETE_H3_BOUNDED_PUBLIC_WS_BOOK_CAPTURE_AND_SYNCHRONIZED_TRADE_PRINT_SMOKE_BEFORE_H9_MODELLING'
+          if j['status']=='DEFERRED_FILL_DATA_NOT_READY':
+              assert j['next_gate']=='COMPLETE_H3_BOUNDED_PUBLIC_WS_BOOK_CAPTURE_AND_SYNCHRONIZED_TRADE_PRINT_SMOKE_BEFORE_H9_MODELLING'
           print('V3_H9_READINESS PASS fill-model-blocked/no-orders/no-holdout')
+          PY
+
+
+      - name: Install pinned websocket client for bounded H9 smoke
+        run: python -m pip install --disable-pip-version-check --no-input "websockets==15.0.1"
+
+      - name: Cloud H9 same-connection book trade clock smoke
+        run: |
+          python -m py_compile tools/v3-h9-public-book-trade-clock-smoke.py
+          python tools/v3-h9-public-book-trade-clock-smoke.py \
+            --symbols BTC/EUR,ETH/EUR,SOL/EUR --depth 10 --seconds 15 \
+            --output /tmp/h9-clock.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/h9-clock.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["totals"]["trades"]>0
+          assert j["totals"]["aligned_preceding_book_trades"]>0
+          assert not j["errors"]
+          for s,row in j["per_symbol"].items():
+              assert row["book"]["snapshots"]>=1
+              assert row["book"]["checksum_fail"]==0
+              seq=row["trade_id_sequence"]
+              assert seq["duplicates"]==0
+              assert seq["out_of_order"]==0
+          i=j["interpretation"]
+          assert i["same_websocket_connection"] is True
+          assert i["book_crc_reconciliation_used"] is True
+          assert i["trade_id_is_public_per_book_sequence"] is True
+          assert i["queue_position_proven"] is False
+          assert i["maker_fill_probability_proven"] is False
+          assert i["routing_decision_allowed"] is False
+          g=j["guardrails"]
+          assert g["active_v2r3_changed"] is False
+          assert g["v2r4_changed"] is False
+          assert g["orders"] is False
+          assert g["real_money_actions"] is False
+          print("V3_H9_BOOK_TRADE_CLOCK PASS same-connection/CRC/trade-sequence/no-fill-model")
+          print("H9_CLOCK_COMPACT "+json.dumps({
+            "checked_at_utc":j["checked_at_utc"],"totals":j["totals"],
+            "per_symbol":{s:{
+              "book":v["book"],"trades":v["trades"],"trade_id_sequence":v["trade_id_sequence"],
+              "clock_join":v["clock_join"]} for s,v in j["per_symbol"].items()}
+          },sort_keys=True))
           PY
