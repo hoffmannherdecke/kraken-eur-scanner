@@ -133,6 +133,28 @@ try {
   Add-Check "kraken_universe_heartbeat" $false $_.Exception.Message "WARNING"
 }
 
+# V2R4 WS shadow heartbeat is optional until the shadow task is installed.
+try {
+  $shadowTask = Get-ScheduledTask -TaskName "CryptoMiniPC-V2R4WSShadow" -ErrorAction SilentlyContinue
+  if ($shadowTask) {
+    $hb = Join-Path $TradingRoot "State\v2r4-ws-shadow-heartbeat.json"
+    if (-not (Test-Path $hb)) {
+      Add-Check "v2r4_ws_shadow_heartbeat" $false "task installed but heartbeat missing" "WARNING"
+    } else {
+      $h = Get-Content $hb -Raw | ConvertFrom-Json
+      $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
+      $okStatus = [string]$h.status -in @("HEALTHY","DUPLICATE_SKIPPED")
+      $processed = [int]$h.counters.snapshots_processed
+      $ok = ($okStatus -and $ageSec -le 15 -and $processed -gt 0)
+      Add-Check "v2r4_ws_shadow_heartbeat" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " snapshots=" + $processed + " events=" + $h.counters.events_emitted + " recovery_epoch=" + $h.recovery_epoch) "WARNING"
+    }
+  } else {
+    $checks["v2r4_ws_shadow_heartbeat"] = [ordered]@{ ok=$null; detail="shadow runtime not installed; V2R3 remains active control" }
+  }
+} catch {
+  Add-Check "v2r4_ws_shadow_heartbeat" $false $_.Exception.Message "WARNING"
+}
+
 # Altrady transport heartbeat is optional/non-exclusive.
 # Only evaluate it when the dedicated scheduled task is installed.
 try {
