@@ -95,7 +95,7 @@ Pflicht für Auswertung und nächste Version:
 | MINI-PC runtime supervisor | bounded Task Scheduler liveness recovery | ACTIVE / SELF-HEAL VERIFIED | 2-min cadence + startup; 10-min per-task restart backoff; controlled stop of archive-only support task recovered automatically; heartbeat advanced; local watchdog HEALTHY; no strategy/evaluator/order path |
 | GitHub Cloudpfad | bestehend | ACTIVE | unabhängiger Fallback bleibt erhalten |
 | Supabase archive | `paper_series` / `paper_candidate_outcomes` / `paper_trade_results` | ACTIVE / VERIFIED / FAIL-SOFT | push/manual + opportunistic workflow_run + unabhängige Reconciliation :07/:37; zuletzt 578 V2R3-Outcomes archiviert, 0 Trades |
-| Historical/backtest research layer | Kraken OHLCVT + targeted Time & Sales, local research-only | **H1/H2 PERFORMANCE BRANCH CLOSED / HOLDOUT SEALED / T&S METHOD PREP GREEN** | `docs/historical-backtest-preflight.md`; H1 insufficient, H2 failed preregistered development gate; 2026H1 holdout remains unopened. Targeted public-trades methodology is now CI-green (**Historical data preflight Run #57 SUCCESS**) with PIT parser, identifiability limits, storage-benefit gate and plan-only MINI-PC wrapper. Full ~26 GB Trades archive remains **NOT AUTHORIZED**; no performance selection or active V2R3/V2R4 mutation. |
+| Historical/backtest research layer | Kraken OHLCVT + targeted Time & Sales + supplementary Binance derivatives context, local research-only | **H1/H2 PERFORMANCE BRANCH CLOSED / HOLDOUT SEALED / T&S+BINANCE METHOD PREP GREEN** | `docs/historical-backtest-preflight.md`; H1 insufficient, H2 failed preregistered development gate; 2026H1 holdout remains unopened. Targeted public-trades methodology is now CI-green (**Historical data preflight Run #57 SUCCESS**) with PIT parser, identifiability limits, storage-benefit gate and plan-only MINI-PC wrapper. Full ~26 GB Trades archive remains **NOT AUTHORIZED**; no performance selection or active V2R3/V2R4 mutation. |
 | Slack Push | GitHub owner-approved action relay → Slack webhook → real `@Hoffis` mention → iPhone | ACTIVE / E2E VERIFIED | 2026-10-01 relay workflow SUCCESS, Slack HTTP 200/ok, physical iPhone push received; `#krypto-signale` mobile setting = Nur Erwähnungen; raw candidates remain silent |
 | ChatGPT Desktop/Work | ChatGPT auf MINI-PC eingerichtet; Work sparsam | BASE ACTIVE / COST ACCOUNTING SEPARATED | ChatGPT-Konto/Browserzugriff vorhanden; Work weiterhin nur bei echtem Desktop-/Browsermehrwert. Project-API-Aufrufe werden inzwischen strukturell über Supabase Usage-Views überwacht; exakte Token-/€-Kosten bleiben bis zur nächsten Runtime-Version offen, Work-Credits werden ausdrücklich separat behandelt. |
 
@@ -155,6 +155,8 @@ Stand 2026-09-29:
 - Supabase bleibt sekundäre State-/Ergebnis-/Research-Schicht; kein Single Point of Failure und keine zweite Rohdatenkopie.
 
 ## V3 Migration Ledger — Pflichtstatus
+
+Canonical ledger: `research/v3-migration-ledger.json` — guarded by `tools/validate-v3-migration-ledger.py` + `v3-migration-ledger-guard.yml`; initial self-test Run #1 SUCCESS. Strategy mechanics remain `OPEN_RESEARCH` until their named evidence gates mature.
 
 Jeder relevante V2/V2R4-Baustein erhält genau einen Status:
 - `INHERITED_UNCHANGED`
