@@ -35,6 +35,7 @@ name: Historical data preflight
       - 'tools/run-minipc-performance-replay-v2.ps1'
       - 'tools/minipc-binance-public-access-smoke.py'
       - 'tools/binance-derivatives-context-smoke.py'
+      - 'tools/plan-historical-storage-cleanup.py'
       - 'tools/run-minipc-binance-public-access-smoke.ps1'
       - '.github/workflows/historical-data-preflight.yml'
 
@@ -59,6 +60,7 @@ jobs:
           python -m py_compile tools/kraken-trades-targeted-smoke.py
           python -m py_compile tools/minipc-binance-public-access-smoke.py
           python -m py_compile tools/binance-derivatives-context-smoke.py
+          python -m py_compile tools/plan-historical-storage-cleanup.py
           python -m py_compile tools/historical-pit-smoke.py
           python -m py_compile tools/historical-trial-ledger.py
           python -m py_compile tools/inspect-kraken-ohlcvt-archive.py
@@ -813,6 +815,56 @@ jobs:
           if (($plan -join [Environment]::NewLine) -notmatch '"status":\s*"PLAN_ONLY"') {
             throw "cleanup did not remain plan-only"
           }
+
+      - name: Smoke historical storage lifecycle planner
+        run: |
+          python - <<'PY'
+          import os, time
+          from pathlib import Path
+          root=Path("/tmp/historical-lifecycle")
+          for rel in (
+              "raw/kraken/ohlcvt/archives/source.zip",
+              "raw/kraken/ohlcvt/archives/source.zip.part01",
+              "staging/old.tmp",
+              "staging/fresh.tmp",
+              "tmp/old.bin",
+              "normalized/kraken/eur/XBTEUR_15.csv.gz",
+              "catalog/source.json",
+              "trials/ledger.sqlite3",
+              "reports/report.json",
+              "mystery/file.bin",
+          ):
+              p=root/rel
+              p.parent.mkdir(parents=True,exist_ok=True)
+              p.write_bytes(b"x")
+          now=2000000000
+          old=now-72*3600
+          fresh=now-2*3600
+          for rel in ("staging/old.tmp","tmp/old.bin"):
+              os.utime(root/rel,(old,old))
+          os.utime(root/"staging/fresh.tmp",(fresh,fresh))
+          PY
+          python tools/plan-historical-storage-cleanup.py /tmp/historical-lifecycle \
+            --now-epoch 2000000000 \
+            --output /tmp/historical-lifecycle-plan.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/historical-lifecycle-plan.json").read_text())
+          by={x["path"]:x["classification"] for x in j["files"]}
+          assert j["status"]=="PLAN_ONLY"
+          assert by["raw/kraken/ohlcvt/archives/source.zip"]=="KEEP_PROVENANCE_ROOT"
+          assert by["raw/kraken/ohlcvt/archives/source.zip.part01"]=="REVIEW_REDUNDANT_PART"
+          assert by["staging/old.tmp"]=="DELETE_CANDIDATE"
+          assert by["staging/fresh.tmp"]=="KEEP_FRESH_WORKSPACE"
+          assert by["tmp/old.bin"]=="DELETE_CANDIDATE"
+          assert by["normalized/kraken/eur/XBTEUR_15.csv.gz"]=="KEEP_RESEARCH_EVIDENCE_OR_DERIVATIVE"
+          assert by["trials/ledger.sqlite3"]=="KEEP_RESEARCH_EVIDENCE_OR_DERIVATIVE"
+          assert by["mystery/file.bin"]=="HOLD_UNKNOWN"
+          assert j["guardrails"]["files_deleted"] is False
+          assert j["guardrails"]["provenance_archives_auto_deleted"] is False
+          print("HISTORICAL_STORAGE_LIFECYCLE PASS plan-only/provenance-safe")
+          PY
 
       - name: Safety assertion
         run: |
