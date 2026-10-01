@@ -1,0 +1,72 @@
+name: V3 shadow candidate contract guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/shadow-candidate-contract-v1.json'
+      - 'research/v3/fixtures/v3-shadow-candidate-example.json'
+      - 'tools/validate-v3-shadow-candidate.py'
+      - '.github/workflows/v3-shadow-candidate-contract-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Compile validator
+        run: python -m py_compile tools/validate-v3-shadow-candidate.py
+
+      - name: Validate one-change example
+        run: |
+          python tools/validate-v3-shadow-candidate.py \
+            research/v3/fixtures/v3-shadow-candidate-example.json
+
+      - name: Reject multi-change candidate
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path("research/v3/fixtures/v3-shadow-candidate-example.json")
+          j=json.loads(p.read_text("utf-8"))
+          j["changed_components"]=["WAIT_TTL_REVALIDATION","STOP"]
+          out=Path(os.environ["RUNNER_TEMP"])/"multi-change.json"
+          out.write_text(json.dumps(j),encoding="utf-8")
+          PY
+          if python tools/validate-v3-shadow-candidate.py "$RUNNER_TEMP/multi-change.json"; then
+            echo "ERROR: multi-change candidate was accepted"
+            exit 1
+          else
+            echo "ONE_CHANGE_FAIL_CLOSED PASS"
+          fi
+
+      - name: Reject unfrozen shadow candidate
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p=Path("research/v3/fixtures/v3-shadow-candidate-example.json")
+          j=json.loads(p.read_text("utf-8"))
+          j["status"]="FROZEN_FOR_SHADOW"
+          out=Path(os.environ["RUNNER_TEMP"])/"unfrozen.json"
+          out.write_text(json.dumps(j),encoding="utf-8")
+          PY
+          if python tools/validate-v3-shadow-candidate.py "$RUNNER_TEMP/unfrozen.json"; then
+            echo "ERROR: shadow candidate without predefined sample/cost/promotion gate was accepted"
+            exit 1
+          else
+            echo "FROZEN_GATE_FAIL_CLOSED PASS"
+          fi
