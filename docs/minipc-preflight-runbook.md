@@ -836,6 +836,27 @@ Physical MINI-PC compact result:
 
 This closes the explicit restart + Internet-recovery gate for the active `CryptoMiniPC-V2R4WSShadow` process itself.
 
+### Prospective V2R4 shadow outcome tracker prepared 2026-10-01
+
+After the shadow restart/Internet resilience gate passed, the next evidence layer was prepared without activating V2R4 paper decisions:
+
+- `tools/v2r4-ws-shadow-outcome-tracker.py` watches only **new** WS-shadow discovery events from the moment the tracker starts;
+- older events are deliberately not backfilled from the current price, avoiding invalid point-in-time evidence;
+- prospective horizons: **5m / 15m / 30m / 1h / 3h / 6h**;
+- records point return, running **MFE / MAE**, sample time and sampling lag;
+- uses only the already-running local Kraken latest snapshot;
+- stale per-pair prices are not used for outcome samples;
+- completed outcomes are persisted separately and the tracker state remains bounded;
+- persistent task installer/rollback prepared:
+  - `tools/install-minipc-v2r4-shadow-outcomes.ps1`
+  - `tools/uninstall-minipc-v2r4-shadow-outcomes.ps1`
+- local watchdog and restart-recovery tooling now detect the tracker automatically once installed;
+- Python/PowerShell/synthetic Windows CI: **PASS**.
+
+Safety remains evidence-only: no evaluator, no exchange account, no order API and no real-money action.
+
+**Next physical MINI-PC action:** pull `main` and run the outcome-tracker installer once from elevated PowerShell. The installer first runs an isolated synthetic smoke and only then registers `CryptoMiniPC-V2R4ShadowOutcomes`.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
