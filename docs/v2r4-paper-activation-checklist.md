@@ -21,6 +21,17 @@ If any automatic blocker is present, stop. Do not tune around the blocker.
 
 ## Gate 1 — freeze and review V2R3 clean evidence
 
+Final-review control surface:
+
+- `public.v2r3_release_review_snapshot`
+- `final_review_allowed` is fail-closed;
+- it stays false until the documented completion gate is ready **and** clean-series integrity is `HEALTHY`;
+- it bundles timing, direct WAIT-TTL lag, outcome, interim horizon, reason-family and mature missed-move evidence into one read-only row;
+- `automatic_strategy_change_allowed=false` is permanent.
+
+Current state at creation: `WAITING_COMPLETION`; no mature 24h missed-move rows yet.
+
+
 Before changing the active paper strategy:
 - snapshot the final active V2R3 series ID and counts;
 - wait for all required 24h follow-ups to mature to the documented coverage floor;
