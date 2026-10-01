@@ -208,9 +208,9 @@
     },
     {
       "id": "coinmetrics_community_network_data",
-      "status": "PRECHECK_CANDIDATE_READ_ONLY",
+      "status": "PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING",
       "class": "onchain_network_state",
-      "unique_value": "Public no-key network metrics can provide active/new-address and transaction-activity state for a subset of assets, subject to measured community-tier coverage and publication-lag semantics.",
+      "unique_value": "Public no-key network metrics provide measured community-tier coverage for activity/valuation/transaction state on part of the representative asset set, plus BTC/ETH exchange in/out flows; historical use remains blocked until publication-lag/known-at semantics are proven.",
       "authoritative_for": [
         "coinmetrics_community_metric_catalog_and_values_within_documented_coverage"
       ],
@@ -222,8 +222,8 @@
         "trade_signal"
       ],
       "overlap_with": [],
-      "overlap_strategy": "Potential V3 H8 state/confirmation source only. Must first pass coverage and availability-lag preflight; missing/pro-only metrics remain missing rather than being replaced silently.",
-      "persistence_mode": "precheck_catalog_and_compact_prospective_state_only_until_pit_availability_proven",
+      "overlap_strategy": "V3 H8 state/confirmation source only. Real catalog audit is green but coverage is heterogeneous. Missing/pro-only metrics remain missing; historical backtests are forbidden until known-at/publication-lag semantics are proven.",
+      "persistence_mode": "compact_catalog_evidence_and_future_prospective_known_at_capture_only_until_historical_pit_availability_proven",
       "duplicate_raw_storage_allowed": false,
       "access": "public_read_only_no_api_key_community_tier"
     }
