@@ -9,6 +9,7 @@ name: V3 migration ledger guard
       - 'research/v3-migration-ledger.json'
       - 'tools/validate-v3-migration-ledger.py'
       - 'tools/run-minipc-v3-next-physical-gates.ps1'
+      - 'tools/run-minipc-v3-next-physical-gates-sync.ps1'
       - 'docs/v3-research-framework.md'
       - '.github/workflows/v3-migration-ledger-guard.yml'
 
@@ -67,3 +68,14 @@ jobs:
           if ($text -notmatch '"real_money_actions":\s*false') {
             throw "V3 physical gate bundle violated real-money guard"
           }
+
+      - name: Safe sync wrapper plan-only smoke
+        shell: pwsh
+        run: |
+          ./tools/run-minipc-v3-next-physical-gates-sync.ps1 | Tee-Object -Variable plan
+          $text = $plan -join [Environment]::NewLine
+          if ($text -notmatch '"status":\s*"PLAN_ONLY"') { throw "safe-sync wrapper did not remain plan-only" }
+          if ($text -notmatch '"destructive_git_operations":\s*false') { throw "safe-sync wrapper permits destructive git" }
+          if ($text -notmatch '"force_reset":\s*false') { throw "safe-sync wrapper permits force reset" }
+          if ($text -notmatch '"orders":\s*false') { throw "safe-sync wrapper violated no-order guard" }
+          if ($text -notmatch '"real_money_actions":\s*false') { throw "safe-sync wrapper violated real-money guard" }
