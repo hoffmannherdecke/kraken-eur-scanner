@@ -3,7 +3,16 @@
   "candidate_id": "20261001-172105-SHIB-EUR-r36898520088",
   "evaluated_at_utc": "2026-10-01T17:22:04.699347Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.62,
+      "expected_bars": 30,
+      "mae_pct": -0.136,
+      "mfe_pct": 0.639
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -60,5 +69,6 @@
   "path_classification": "WAIT_PENDING",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-01T17:54:55.833676Z"
 }
