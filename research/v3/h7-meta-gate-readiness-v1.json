@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H7_META_GATE_READINESS_V1",
+  "hypothesis_id": "V3-H7",
+  "status": "DEFERRED_LABELS_NOT_READY",
+  "prepared_at_utc": "2026-10-01T18:36:00Z",
+  "purpose": "Prevent TAKE/NO-TAKE meta-model research from starting before label semantics and clean prospective evidence are mature.",
+  "current_snapshot": {
+    "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+    "candidate_outcomes": 84,
+    "completed_trades": 0,
+    "eligible_24h": 0,
+    "complete_24h": 0,
+    "completion_ready": false,
+    "integrity_state": "HEALTHY",
+    "buy_scouts": 0,
+    "waits": 12,
+    "rejects": 72
+  },
+  "label_contract": {
+    "frozen": false,
+    "label_name": null,
+    "positive_class_definition": null,
+    "negative_class_definition": null,
+    "label_horizon": null,
+    "cost_model_reference": null,
+    "abstain_or_unlabelled_policy": null,
+    "reason": "Must be defined after V2R3 final review and V2R4 comparative evidence; do not reverse-engineer labels from immature outcomes."
+  },
+  "minimum_gates_before_training": [
+    "V2R3_FINAL_REVIEW_ALLOWED_AND_COMPLETED",
+    "V2R3_INTEGRITY_HEALTHY",
+    "MATURE_OUTCOME_LABEL_DEFINITION_FROZEN",
+    "COST_MODEL_FROZEN",
+    "POINT_IN_TIME_FEATURE_SET_FROZEN",
+    "CHRONOLOGICAL_SPLIT_PURGING_EMBARGO_DEFINED",
+    "TRIAL_LEDGER_ENTRY_CREATED",
+    "NO_FEATURE_OR_LABEL_SELECTED_FROM_SEALED_HOLDOUT"
+  ],
+  "modelling_sequence_when_ready": [
+    "LOGISTIC_REGRESSION_BASELINE",
+    "LASSO_OR_ELASTICNET_IF_NEEDED",
+    "SIMPLE_TREE_ONLY_IF_LINEAR_BASELINE_INSUFFICIENT_AND_PREREGISTERED"
+  ],
+  "leakage_guardrails": {
+    "features_must_exist_at_candidate_decision_time": true,
+    "post_event_outcomes_as_features_forbidden": true,
+    "later_revalidation_state_as_initial_decision_feature_forbidden": true,
+    "current_live_universe_as_historical_filter_forbidden": true,
+    "label_horizon_overlap_requires_purging_embargo": true,
+    "threshold_selection_on_holdout_forbidden": true
+  },
+  "runtime_guardrails": {
+    "training_started": false,
+    "model_selected": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "automatic_take_no_take_allowed": false,
+    "orders": false,
+    "leverage": false,
+    "real_money_actions": false
+  },
+  "next_gate": "WAIT_FOR_V2R3_FINAL_REVIEW_AND_FREEZE_LABEL_CONTRACT_BEFORE_ANY_MODEL_TRAINING"
+}
