@@ -72,6 +72,8 @@ No sizing decision is made by this document.
 
 ## Methodological guardrail for later activation review
 
+Prepared sizing decision memo: `docs/v2r4-sizing-release-decision.md`
+
 Before V2R4 paper activation, choose and version exactly one of these approaches:
 
 1. **Timing-isolation approach**  
