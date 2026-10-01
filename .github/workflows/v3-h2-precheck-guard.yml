@@ -8,6 +8,7 @@ name: V3 H2 derivatives precheck guard
       - 'research/v3/h2-derivatives-state-precheck-v1.json'
       - 'research/historical/binance-derivatives-context-preflight-v1.json'
       - 'tools/binance-derivatives-context-smoke.py'
+      - 'tools/kraken-futures-h2-coverage-precheck.py'
       - '.github/workflows/v3-h2-precheck-guard.yml'
 
 permissions:
@@ -22,6 +23,9 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
+      - name: Compile public Kraken Futures precheck
+        run: python -m py_compile tools/kraken-futures-h2-coverage-precheck.py
+
       - name: Validate preregistered H2 precheck guardrails
         run: |
           python - <<'PY'
@@ -45,4 +49,43 @@ jobs:
           assert j['current_data_readiness']['holdout_opened'] is False
           assert j['next_gate']=='COVERAGE_AND_SEMANTICS_PRECHECK_ONLY'
           print('V3_H2_PRECHECK PASS no-tuning/no-holdout/no-runtime-change')
+          PY
+
+      - name: Public Kraken Futures coverage/semantics precheck
+        run: |
+          python tools/kraken-futures-h2-coverage-precheck.py \
+            --max-symbols 5 \
+            --lookback-seconds 3600 \
+            --interval 300 \
+            --output /tmp/kraken-futures-h2-coverage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/kraken-futures-h2-coverage.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["spot_online_eur_base_count"] > 0
+          assert j["futures_ticker_count"] > 0
+          assert j["futures_perpetual_count"] > 0
+          assert j["spot_eur_bases_with_mapped_perpetual_count"] > 0
+          assert len(j["selected_symbols"]) > 0
+          assert j["analytics_probe_ok"] > 0
+          assert j["interpretation"]["coverage_only"] is True
+          assert j["interpretation"]["performance_conclusion_allowed"] is False
+          assert j["interpretation"]["kraken_spot_eur_remains_execution_truth"] is True
+          assert j["guardrails"]["api_key_used"] is False
+          assert j["guardrails"]["holdout_opened"] is False
+          assert j["guardrails"]["performance_selection_performed"] is False
+          assert j["guardrails"]["orders"] is False
+          assert j["guardrails"]["real_money_actions"] is False
+          print("KRAKEN_FUTURES_H2_COVERAGE PASS public/bounded/no-performance")
+          print(json.dumps({
+            "spot_online_eur_base_count":j["spot_online_eur_base_count"],
+            "futures_ticker_count":j["futures_ticker_count"],
+            "futures_perpetual_count":j["futures_perpetual_count"],
+            "mapped_perpetual_count":j["spot_eur_bases_with_mapped_perpetual_count"],
+            "coverage_pct":j["coverage_pct_of_spot_eur_bases"],
+            "selected_symbols":j["selected_symbols"],
+            "analytics_probe_ok":j["analytics_probe_ok"],
+            "analytics_probe_with_data":j["analytics_probe_with_data"],
+          },sort_keys=True))
           PY
