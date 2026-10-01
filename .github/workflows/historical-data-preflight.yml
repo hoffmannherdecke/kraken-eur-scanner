@@ -225,14 +225,16 @@ jobs:
             --db /tmp/real-pair-trial-ledger.sqlite3 \
             --schema research/historical/trial-ledger-schema.json \
             --output-record /tmp/real-pair-trial-record.json \
-            --repo-root .
+            --repo-root . \
+            --expected-normalized-count 2
           python tools/record-real-pair-replay-trial.py \
             --normalization-catalog /tmp/eur15-normalized-a.json \
             --replay-report /tmp/real-pair-replay-smoke.json \
             --db /tmp/real-pair-trial-ledger.sqlite3 \
             --schema research/historical/trial-ledger-schema.json \
             --output-record /tmp/real-pair-trial-record.json \
-            --repo-root .
+            --repo-root . \
+            --expected-normalized-count 2
           python - <<'PY'
           import json, sqlite3
           from pathlib import Path
