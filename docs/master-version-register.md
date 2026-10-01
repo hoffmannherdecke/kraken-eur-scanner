@@ -28,7 +28,7 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 | Strategie | `V2R3-2026-09-28` | ACTIVE / PAPER / FROZEN | Aktive Vergleichsbasis; Regeln während Serie nicht ändern |
 | Paper-Serie | `PAPER-V2R3-CLEAN-20261001T0925Z` | ACTIVE / CLEAN / PERSISTENCE E2E VERIFIED | Aktuelle homogene V2R3-Serie nach Runtime-only Persistenzrepair; erster realer 3-Kandidaten-Cycle im selben Lauf committed, Repeat-Guard danach 0 Reselections/0 No-op-Follow-up-Changes; Process-Health 3/3 Provenance, 0 Orphans. Strategie `V2R3-2026-09-28` unverändert. |
 | Paper-Serie predecessor | `PAPER-V2R3-FINAL-20260928T1752Z` | DIAGNOSTIC_COMPROMISED / FROZEN | 708 Candidate-Outcomes bleiben für Fehler-/Missed-Move-/Timinganalyse nutzbar, aber nicht als saubere prospektive Abschlussserie; Persistenzbug am 2026-10-01 nachgewiesen und repariert. |
-| Strategie | V2R4 | PREPARED / NOT ACTIVE / PHYSICAL MINI-PC E2E GREEN | **Draft-PR #9** refreshed onto current `main`; old PR #8 superseded/closed after 995-commit divergence. Exact 21-file V2R4 delta preserved; V2R4 PR validation Run #11 SUCCESS; compile/unit/live evaluator/model-contract/public Kraken + Windows and physical MINI-PC trigger→fresh-recheck gates green; local OpenAI secret provisioned; Altrady synthetic and real transport E2E verified; separate V2R4 paper-activation decision still open |
+| Strategie | V2R4 | PREPARED / NOT ACTIVE / PHYSICAL MINI-PC E2E GREEN | **Draft-PR #9** refreshed onto current `main`; old PR #8 superseded/closed after 995-commit divergence. Exact 21-file V2R4 delta preserved; V2R4 PR validation Run #11 SUCCESS; compile/unit/live evaluator/model-contract/public Kraken + Windows and physical MINI-PC trigger→fresh-recheck gates green; local OpenAI secret provisioned; Altrady synthetic and real transport E2E verified; fail-closed `public.v2r4_activation_readiness` active with `automatic_activation_allowed=false`; V2R3 completion is current blocker; separate V2R4 paper-activation decision still open |
 | Strategie | V3 | ACTIVE RESEARCH / NOT ACTIVE TRADING | Integrierter Nachfolger; Issue #7 + `docs/v3-research-framework.md` |
 
 ### Release-Gate V2R3 → V2R4
@@ -162,3 +162,16 @@ Für jede dauerhaft projektrelevante Information aus einem Gespräch – unabhä
 6. Bei unklarer Zuordnung nicht raten, sondern **ZUORDNUNG OFFEN** markieren.
 7. ChatGPT-Memory nur als knappen Projektindex für wenige dauerhafte Leitplanken nutzen; Detailwissen bleibt in GitHub.
 8. Reine Gesprächsfüllung, kurzfristige Zwischenstände und bewusst verworfene Ideen nicht unnötig dauerhaft speichern, sofern sie keinen Nachweis-/Historienwert haben.
+
+
+### V2R3→V2R4 release diff / sizing blocker — 2026-10-01
+
+Canonical behavior matrix: `docs/v2r4-v2r3-release-diff.md`.
+
+The readiness review proved that V2R4 is not literally a timing-only delta:
+- deterministic WAIT monitoring, fresh recheck and broad pre-candidate visibility are the core intended timing/discovery changes;
+- live Kraken `AssetPairs` replaces legacy static pair blocking;
+- the proposal also changes paper sizing from V2R3's 50+50 EUR to a proposed 75+75 EUR default and larger adaptive tiers;
+- the proposed spec itself says the adaptive sizing contract is required before a full V2R4 series, while the mapper is still not wired.
+
+No silent sizing choice is permitted. The later activation review must explicitly version either a timing-isolation series that retains V2R3 sizing or a combined timing+sizing series after the adaptive mapper is separately implemented and tested.
