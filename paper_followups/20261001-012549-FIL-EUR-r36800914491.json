@@ -1,0 +1,63 @@
+{
+  "baseline_ask_eur": 0.926,
+  "candidate_id": "20261001-012549-FIL-EUR-r36800914491",
+  "evaluated_at_utc": "2026-10-01T01:43:17.412473Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-01T01:25:49Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 1048.412,
+    "detection_price_eur": 0.934,
+    "evaluated_at_utc": "2026-10-01T01:43:17.412473Z",
+    "evaluation_ask_eur": 0.926,
+    "flagged_as_already_run": false,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.964,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.964,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-10-01T01:26:00Z",
+        "trough_at_utc": "2026-10-01T01:37:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-09-30T22:26:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 2.188,
+      "price_eur": 0.914
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "ticker_below_scanner_snapshot",
+      "resistance_not_clearly_cleared",
+      "round_trip_fees_1_20pct_before_spread_slippage",
+      "remaining_move_unquantified",
+      "account_tradability_unavailable"
+    ],
+    "scan_step_started_at_utc": "2026-10-01T01:24:14Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.300109529025196,
+      "ret15_live_pct": 0.6465517241379226,
+      "ret1h_pct": 1.6322089227421177,
+      "ret3h_pct": 2.1881838074398363,
+      "scanner_late_flag": false,
+      "score": 11.0
+    },
+    "schema_version": 1,
+    "setup_lane": "CONTINUITY",
+    "updated_at_utc": "2026-10-01T01:45:45.830894Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "FIL/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02"
+}
