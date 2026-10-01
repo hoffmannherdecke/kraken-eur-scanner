@@ -153,8 +153,21 @@ jobs:
       - name: Smoke deterministic EUR15 normalizer
         run: |
           mkdir -p /tmp/eur15-normalize-src
-          printf '0,1,2,0.5,1.5,10,5\n900,1.5,2.5,1,2,12,6\n2700,2,3,1.5,2.5,14,7\n' > /tmp/eur15-normalize-src/XBTEUR_15.csv
-          printf '0,10,11,9,10.5,20,8\n900,10.5,11.5,10,11,22,9\n' > /tmp/eur15-normalize-src/ETHEUR_15.csv
+          python - <<'PY'
+          from pathlib import Path
+          root=Path("/tmp/eur15-normalize-src")
+          rows=[]
+          for i in range(40):
+              # Deliberately skip exactly one 15m interval after row 19.
+              slot=i if i < 20 else i + 1
+              ts=slot*900
+              base=100.0+i
+              rows.append(f"{ts},{base},{base+1},{base-1},{base+0.5},{10+i},{5+i}\n")
+          (root/"XBTEUR_15.csv").write_text("".join(rows))
+          (root/"ETHEUR_15.csv").write_text(
+              "0,10,11,9,10.5,20,8\n900,10.5,11.5,10,11,22,9\n"
+          )
+          PY
           python tools/normalize-kraken-eur15.py \
             /tmp/eur15-normalize-src /tmp/eur15-normalized-a /tmp/eur15-normalized-a.json \
             --expected-count 2
