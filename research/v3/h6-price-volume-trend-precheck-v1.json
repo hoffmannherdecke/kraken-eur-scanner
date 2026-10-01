@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H6_PRICE_VOLUME_TREND_PRECHECK_V1",
   "hypothesis_id": "V3-H6",
-  "status": "PRECHECK",
+  "status": "PRECHECK_PIT_METHOD_GREEN",
   "prepared_at_utc": "2026-10-01T18:35:00Z",
   "purpose": "Define transparent point-in-time multi-horizon price and volume trend primitives before any Kraken-EUR incremental-value trial.",
   "source": "KRAKEN_NORMALIZED_EUR_15M",
@@ -50,5 +50,13 @@
     "real_money_actions": false,
     "automatic_strategy_promotion": false
   },
-  "next_gate": "SYNTHETIC_PIT_PRICE_VOLUME_PRIMITIVES_SMOKE_ONLY"
+  "next_gate": "PREREGISTER_REAL_NORMALIZED_EUR15_DEVELOPMENT_FEATURE_TRIAL_NO_HOLDOUT",
+  "methodology_readiness": {
+    "synthetic_pit_price_volume_smoke": "CI_GREEN_RUN_1",
+    "future_rows_ignored": "PASS",
+    "missing_prior_volume_window_remains_missing": "PASS",
+    "zero_fill_missing_bars": "FORBIDDEN_AND_TESTED",
+    "performance_trial_started": false,
+    "holdout_opened": false
+  }
 }
