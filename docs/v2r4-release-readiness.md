@@ -114,6 +114,15 @@ Validation:
 - V2R4 PR validation **Run #14: SUCCESS**, including the new runtime tests;
 - refreshed trigger→fresh-recheck E2E **Run #2: SUCCESS** against PR #9.
 
+Real-transport release harness preparation:
+
+- `tools/v2r4-real-altrady-release-smoke.py`
+- `tools/minipc-v2r4-real-altrady-release-smoke.ps1`
+- plan-only by default; explicit execute token required;
+- temp worktree/temp runtime only; active V2R3/live V2R4 state is not mutated;
+- helper compile + PowerShell parse + plan guardrails are covered by **MINI-PC tools smoke Run #111: SUCCESS**;
+- an earlier CI Run #110 failed only because the Python helper was accidentally included in the PowerShell parser file list; this CI wiring defect was corrected immediately and did not affect runtime/strategy state.
+
 Still required at the actual release boundary:
 
 - physical combined Altrady-wakeup → Kraken-fresh-condition → paper-recheck smoke;
