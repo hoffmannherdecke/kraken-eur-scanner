@@ -10,6 +10,11 @@ shadow as (
   from public.v2r4_shadow_completion_readiness
   limit 1
 ),
+integrity as (
+  select *
+  from public.v2r3_clean_integrity_summary
+  limit 1
+),
 minipc as (
   select
     observed_at,
@@ -50,6 +55,8 @@ select
   case
     when coalesce(paper.completion_ready, false) is not true
       then 'BLOCKED_V2R3_COMPLETION'
+    when coalesce(integrity.integrity_state, '') <> 'HEALTHY'
+      then 'BLOCKED_V2R3_INTEGRITY'
     when coalesce(shadow.readiness_state, '') <> 'MATURE_COHORT_ARCHIVED'
       then 'BLOCKED_V2R4_SHADOW_MATURITY'
     when minipc.observed_at is null
@@ -60,7 +67,14 @@ select
     else 'MANUAL_RELEASE_REVIEW_REQUIRED'
   end as activation_review_state,
 
-  'Readiness/control view only. It can block activation but can never authorize activation automatically. V2R4 remains paper-only until the documented V2R3 review is completed and a separate explicit manual release decision is made.'::text as interpretation_guardrail
+  'Readiness/control view only. It can block activation but can never authorize activation automatically. V2R4 remains paper-only until the documented V2R3 review is completed and a separate explicit manual release decision is made.'::text as interpretation_guardrail,
+
+  integrity.integrity_state as v2r3_integrity_state,
+  integrity.duplicate_candidate_ids as v2r3_duplicate_candidate_ids,
+  integrity.duplicated_queue_ids as v2r3_duplicated_queue_ids,
+  integrity.distinct_strategy_fingerprints as v2r3_strategy_fingerprints,
+  integrity.distinct_runtime_fingerprints as v2r3_runtime_fingerprints
 from paper
 cross join shadow
+cross join integrity
 left join minipc on true;
