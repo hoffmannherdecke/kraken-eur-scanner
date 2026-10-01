@@ -239,6 +239,27 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11b. Full Kraken OHLCVT archive downloaded and verified 2026-10-01
+
+The guarded downloader was executed on the actual MINI-PC against Kraken's official public 2026Q2 full-history OHLCVT archive.
+
+Observed final result:
+
+- all five archive parts downloaded and individually SHA-256 verified;
+- parts 02/03/04 were visibly confirmed VERIFIED in the terminal output, and the script could only reach its final PASS report after all five part checks succeeded;
+- joined archive SHA-256 matched the pinned Kraken full-archive checksum;
+- final status: **PASS_ARCHIVE_VERIFIED_NO_EXTRACTION**;
+- free disk before: **189.49 GB**;
+- free disk after: **172.78 GB**;
+- part files were deliberately retained for now (`parts_deleted_after_verification=false`);
+- `downloads_performed=true`;
+- `extraction_performed=false`;
+- `active_strategy_changed=false`;
+- `paper_shadow_runtime_changed=false`;
+- next gate: archive inventory / MANIFEST inspection, then selective EUR 15m extraction only.
+
+The temporary disk usage is intentionally higher because the verified part files and the reassembled archive currently coexist. After archive inspection succeeds, the redundant verified part files may be removed to reclaim space while retaining the final immutable ZIP + official checksum provenance.
+
 ## 11a. Physical MINI-PC local preflight verified 2026-10-01
 
 The prepared local preflight was executed on the actual MINI-PC with `-Apply`.
