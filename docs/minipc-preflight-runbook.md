@@ -1286,6 +1286,40 @@ A previously hidden runtime/data-quality defect was proven while analyzing the 7
 
 The predecessor remains valuable for diagnostic missed-move/timing analysis but is excluded from clean prospective completion/promotion evidence.
 
+### Clean V2R3 first prospective cohort persistence proof 2026-10-01
+
+The first real scanner/evaluator cycle after the clean-series restart verified the runtime-only repair prospectively:
+
+- scanner run `36843059078` detected and persisted exactly three clean-series candidates:
+  - NIGHT/EUR
+  - SEI/EUR
+  - UNI/EUR
+- paper runtime run `36843513486` selected exactly those three candidates once;
+- decisions: three `WAIT`, all in `PAPER-V2R3-CLEAN-20261001T0925Z`;
+- detection→evaluation-complete latency:
+  - NIGHT: **21.943s**
+  - SEI: **34.177s**
+  - UNI: **42.854s**
+- all three decision files were committed in the **same runtime run** in commit `b819eaf8`;
+- initial follow-up creation changed exactly 3 files;
+- process-health run `36843955928` reported:
+  - status **HEALTHY**;
+  - active decisions = 3;
+  - provenance complete = 3;
+  - provenance failures = 0;
+  - orphan candidates = 0;
+  - overdue/stuck WAITs = 0.
+
+A separate one-time repeat-guard dispatch then ran paper runtime again without a new scanner candidate:
+- runtime run `36844126912`: **SUCCESS**;
+- `PAPER_SELECTED []`;
+- `REVALIDATION_DUE 0`;
+- `PAPER_FOLLOWUP_SUMMARY ... files_changed: 0`;
+- `PAPER_ACTION_MANIFEST []`;
+- `PAPER_RUNTIME_NO_STATE_CHANGES`.
+
+This is the prospective end-to-end proof that the repaired runtime now persists new decisions in the first evaluation run and does not immediately re-evaluate the same candidates merely because their decision files were lost. The temporary verification workflow was removed after use.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
