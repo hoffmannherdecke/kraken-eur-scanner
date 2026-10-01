@@ -166,7 +166,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 Detailregeln bleiben in `docs/v3-research-framework.md` und Issue #7. Die Abgrenzung zu V2R4 ist verbindlich in `docs/strategy-version-map.md` festgelegt.
 
 - [ ] V2R3-Abschlussbefunde vollständig in den V3-Aufbau übernehmen; V3 startet vom besten validierten V2/V2R4-Gesamtstand, nicht bei null.
-- [ ] V2/V2R4→V3-Migrationsledger führen: jeder relevante Baustein = übernommen / modifiziert / ersetzt / verworfen / offen.
+- [x] V2/V2R4→V3-Migrationsledger ist als lebender, maschinenlesbarer Kontrollpunkt eingerichtet: `research/v3-migration-ledger.json` klassifiziert aktuell 23 materielle Komponenten mit den verbindlichen Statuswerten; ungelöste Strategiebausteine bleiben bewusst `OPEN_RESEARCH` mit benanntem Next-Gate. `tools/validate-v3-migration-ledger.py` + selbsttestender Workflow sind fail-closed; **V3 migration ledger guard Run #1 SUCCESS**. Der Ledger wird mit neuer Evidenz fortgeschrieben, ersetzt aber nicht das jeweilige Research-/Release-Gate.
 - [ ] Literaturbefunde nur als Hypothesenquelle nutzen; nichts allein wegen Publikation übernehmen.
 - [ ] Mini-PC-/Altrady-Timingdaten gezielt einfließen lassen. Wenn Timing das Problem ist, zuerst Infrastrukturvariante testen, nicht sofort Entry-Regeln lockern.
 - [ ] Shadow-Varianten mit **einer klaren Änderung pro Kandidat** testen, z. B. früherer Entry, anderer TTL, anderer Stop/Trailing, anderer Exit.
