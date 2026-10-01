@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 257.29,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -1.527,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -5.615,
+        "mfe_pct": 12.22,
+        "peak_at_utc": "2026-09-30T11:35:00Z",
+        "trough_at_utc": "2026-09-30T21:50:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 4.747,
       "price_eur": 245.0
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "PAIR_BLOCKED"
@@ -114,7 +130,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-01T06:20:44.427538Z"
+    "updated_at_utc": "2026-10-01T06:31:02.886627Z"
   },
   "original_decision": "REJECT",
   "pair": "QNT/EUR",

@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-10-01T04:22:50.322537Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 0.057,
+      "expected_bars": 120,
+      "mae_pct": -0.709,
+      "mfe_pct": 0.229
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -80,7 +88,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-01T06:20:49.068953Z"
+    "updated_at_utc": "2026-10-01T06:31:05.290833Z"
   },
   "original_decision": "WAIT",
   "pair": "PENGU/EUR",
@@ -90,5 +98,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02",
-  "updated_at_utc": "2026-10-01T05:27:39.860522Z"
+  "updated_at_utc": "2026-10-01T06:31:05.544159Z"
 }
