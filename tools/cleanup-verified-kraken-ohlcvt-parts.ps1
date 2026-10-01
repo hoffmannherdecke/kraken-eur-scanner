@@ -25,9 +25,11 @@ if ($actual -ne $ExpectedArchiveSha256) {
 }
 
 $dir = Split-Path -Parent $ArchivePath
-$parts = Get-ChildItem -LiteralPath $dir -File -Filter "Kraken_OHLCVT_Full_2026Q2.zip.part??" | Sort-Object Name
-$bytes = ($parts | Measure-Object Length -Sum).Sum
-if ($null -eq $bytes) { $bytes = 0 }
+$parts = @(Get-ChildItem -LiteralPath $dir -File -Filter "Kraken_OHLCVT_Full_2026Q2.zip.part??" | Sort-Object Name)
+$bytes = [int64]0
+foreach ($p in $parts) {
+    $bytes += [int64]$p.Length
+}
 
 $result = [ordered]@{
     kind = "KRAKEN_OHLCVT_PART_CLEANUP_V1"
