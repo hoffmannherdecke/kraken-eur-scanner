@@ -108,8 +108,8 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 ## P4 — Integrationen, Benachrichtigung und Kostenkontrolle
 
 ### Slack / Push
-- [ ] GitHub → Relay → Slack → iPhone-**echten Push** unter Realbedingungen nachweisen; Issue #1 erst dann als erledigt betrachten.
-- [ ] Rohkandidaten bleiben ohne Push; Push nur bei echter Handlung, wichtigem Fehler oder definiertem Abschlussereignis.
+- [x] GitHub → Relay → Slack → iPhone-**echten Push** unter Realbedingungen nachgewiesen: 2026-10-01 echter GitHub-Relay/Webhook-Post mit realer `@Hoffis`-Mention, Workflow SUCCESS, Slack HTTP 200/ok und iPhone-Push angekommen.
+- [x] Push-Regel technisch festgelegt/verifiziert: `#krypto-signale` mobil auf **Nur Erwähnungen**; Rohkandidaten ohne Mention bleiben still, Push nur für echte Handlung, wichtigen Fehler oder definiertes Abschlussereignis mit realer `@Hoffis`-Mention.
 - [ ] Später unabhängigen zweiten Pushweg nur dann ergänzen, wenn er die Ausfallsicherheit wirklich verbessert.
 
 ### Supabase
