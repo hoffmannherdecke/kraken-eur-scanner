@@ -73,11 +73,6 @@ foreach ($required in @(
     }
 }
 
-$actualSpecSha = (Get-FileHash -LiteralPath $Spec -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($actualSpecSha -ne $ExpectedSpecSha256) {
-    throw "Frozen performance spec checksum mismatch. Expected $ExpectedSpecSha256 got $actualSpecSha"
-}
-
 $lockObj = Get-Content -LiteralPath $Lock -Raw | ConvertFrom-Json
 if ($lockObj.status -ne "LOCKED") {
     throw "Frozen performance spec lock status is not LOCKED"
@@ -117,8 +112,8 @@ if (-not $python) {
 
 New-Item -ItemType Directory -Force -Path $ReportsDir,$TrialsDir | Out-Null
 
-Write-Output "PERF_V1 validating frozen spec sha=$actualSpecSha"
-& $python $Validator $Spec
+Write-Output "PERF_V1 validating frozen spec (LF-normalized checksum)"
+& $python $Validator $Spec --expected-sha256 $ExpectedSpecSha256
 if ($LASTEXITCODE -ne 0) {
     throw "Frozen performance spec validation failed with exit code $LASTEXITCODE"
 }
