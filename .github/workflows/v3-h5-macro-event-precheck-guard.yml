@@ -8,6 +8,8 @@ name: V3 H5 macro event precheck guard
     paths:
       - 'research/v3/h5-macro-event-risk-precheck-v1.json'
       - 'research/v3/fixtures/h5-fomc-event-window-synthetic.json'
+      - 'research/v3/event-calendars/fomc-prospective-capture-20261001.json'
+      - 'tools/validate-v3-h5-event-calendar-capture.py'
       - 'research/source-registry.json'
       - 'tools/v3-h5-macro-event-window-smoke.py'
       - '.github/workflows/v3-h5-macro-event-precheck-guard.yml'
@@ -105,3 +107,9 @@ jobs:
 
       - name: Validate source registry after FOMC source addition
         run: python tools/validate-source-registry.py
+
+      - name: Validate prospective official FOMC capture
+        run: |
+          python -m py_compile tools/validate-v3-h5-event-calendar-capture.py
+          python tools/validate-v3-h5-event-calendar-capture.py \
+            research/v3/event-calendars/fomc-prospective-capture-20261001.json
