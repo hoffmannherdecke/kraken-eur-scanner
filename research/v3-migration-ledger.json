@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-01T18:15:00Z",
+  "updated_at_utc": "2026-10-01T18:19:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -211,12 +211,14 @@
       "category": "state_context",
       "source_version": "research preflight",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Funding/OI/taker/basis context is PIT-ready but not yet proven to add incremental Kraken-EUR value.",
+      "rationale": "Kraken Futures public OI/Funding/Basis plus supplementary Binance derivatives context are PIT-ready; real public precheck shows partial Kraken-Futures coverage (142/501 Spot-EUR bases, 28.34%) and 15/15 representative analytics probes with data. Incremental Kraken-EUR value is still untested.",
       "evidence": [
+        "research/v3/h2-derivatives-state-precheck-v1.json",
         "research/historical/binance-derivatives-context-preflight-v1.json",
-        "docs/historical-backtest-preflight.md"
+        "tools/kraken-futures-h2-coverage-precheck.py",
+        "docs/v3-research-framework.md"
       ],
-      "pending_gate": "V3_H2_OOS_AND_PROSPECTIVE_TEST"
+      "pending_gate": "V3_H2_PREREGISTERED_ASSOCIATION_DATASET_THEN_OOS_AND_PROSPECTIVE_TEST"
     },
     {
       "id": "orderflow_depth_imbalance",
