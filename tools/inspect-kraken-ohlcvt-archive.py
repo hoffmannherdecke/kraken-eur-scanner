@@ -15,6 +15,7 @@ from collections import Counter
 from pathlib import Path
 
 TOKEN_SPLIT = re.compile(r"[_./\\-]+")
+EUR15_RE = re.compile(r"(?i)(^|/)([^/]+EUR)_15\\.csv$")
 INTERVALS = {"1", "5", "15", "30", "60", "240", "720", "1440"}
 
 
@@ -32,12 +33,11 @@ def infer_interval(name: str) -> str | None:
 
 
 def looks_eur(name: str) -> bool:
-    tokens = [t.upper() for t in member_tokens(name)]
-    if any(t == "EUR" for t in tokens):
-        return True
-    # Kraken archive pair names can be compact (e.g. XBTEUR); only use the
-    # compact heuristic on the pair-like token, not on arbitrary directories.
-    return any(len(t) >= 6 and t.endswith("EUR") for t in tokens)
+    normalized = name.replace("\\", "/")
+    base = Path(normalized).name.upper()
+    stem = base[:-4] if base.endswith(".CSV") else base
+    pair_token = stem.rsplit("_", 1)[0]
+    return pair_token.endswith("EUR") and len(pair_token) > 3
 
 
 def inspect(path: Path) -> dict:
@@ -59,7 +59,8 @@ def inspect(path: Path) -> dict:
         for m in csvs:
             interval = infer_interval(m.filename)
             interval_counts[interval or "UNKNOWN"] += 1
-            if interval == "15" and looks_eur(m.filename):
+            normalized = m.filename.replace("\\", "/")
+            if interval == "15" and EUR15_RE.search(normalized) and looks_eur(normalized):
                 eur_15.append(m.filename)
 
         manifest_payload = None
