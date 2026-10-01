@@ -74,7 +74,7 @@ def main() -> int:
     eligible: list[dict[str, Any]] = []
     skipped: list[dict[str, Any]] = []
 
-    for path in files:
+    for file_index, path in enumerate(files, 1):
         rows = v2.load_rows(path)
         candidates = v2.eligible_indices(
             rows,
@@ -97,6 +97,12 @@ def main() -> int:
                     "reason": "no_contiguous_window",
                 }
             )
+        if file_index % 50 == 0 or file_index == len(files):
+            print(
+                f"BROAD_PIT_SCAN progress={file_index}/{len(files)} "
+                f"eligible={len(eligible)} skipped={len(skipped)}",
+                flush=True,
+            )
 
     if len(eligible) < args.pair_count:
         raise SystemExit(
@@ -107,6 +113,10 @@ def main() -> int:
     selected = [eligible[i] for i in even_indices(len(eligible), args.pair_count)]
 
     cases: list[dict[str, Any]] = []
+    expected_cases = sum(
+        len(even_indices(len(entry["eligible_indices"]), args.anchors_per_pair))
+        for entry in selected
+    )
     for pair_entry in selected:
         candidates = pair_entry["eligible_indices"]
         anchor_positions = even_indices(len(candidates), args.anchors_per_pair)
@@ -152,6 +162,11 @@ def main() -> int:
                         "mae_pct": label["mae_pct"],
                     },
                 }
+            )
+            print(
+                f"BROAD_PIT_CASE progress={len(cases)}/{expected_cases} "
+                f"pair={pair_entry['path'].name}",
+                flush=True,
             )
 
     hashes = [c["decision_sha256"] for c in cases]
