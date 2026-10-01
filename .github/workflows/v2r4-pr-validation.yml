@@ -2,9 +2,18 @@ name: V2R4 PR validation
 
 'on':
   workflow_dispatch:
-  push:
-    branches: [main]
+    inputs:
+      ref:
+        description: 'Branch/ref to validate'
+        required: true
+        type: string
+  pull_request:
     paths:
+      - 'paper_evaluator/evaluate.py'
+      - 'paper_evaluator/revalidate.py'
+      - 'paper_evaluator/v2r4_*.py'
+      - 'research/v2r4/**'
+      - 'tests/test_v2r4_*.py'
       - '.github/workflows/v2r4-pr-validation.yml'
 
 permissions:
@@ -17,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: prep/v2r4-fast-trigger-minipc-20260929
+          ref: ${{ github.event.pull_request.head.sha || inputs.ref }}
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
