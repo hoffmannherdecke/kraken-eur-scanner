@@ -1,0 +1,24 @@
+{
+  "funding": [
+    {"symbol":"BTCUSDT","fundingTime":1000000,"fundingRate":"0.00010","markPrice":"100.0"},
+    {"symbol":"BTCUSDT","fundingTime":1060000,"fundingRate":"0.00020","markPrice":"101.0"},
+    {"symbol":"BTCUSDT","fundingTime":1120000,"fundingRate":"0.00030","markPrice":"102.0"}
+  ],
+  "open_interest": [
+    {"symbol":"BTCUSDT","sumOpenInterest":"1000","sumOpenInterestValue":"100000","timestamp":1000000},
+    {"symbol":"BTCUSDT","sumOpenInterest":"1020","sumOpenInterestValue":"102000","timestamp":1060000},
+    {"symbol":"BTCUSDT","sumOpenInterest":"2000","sumOpenInterestValue":"200000","timestamp":1120000}
+  ],
+  "taker": [
+    {"buySellRatio":"1.2","sellVol":"100","buyVol":"120","timestamp":1060000},
+    {"buySellRatio":"9.9","sellVol":"10","buyVol":"99","timestamp":1120000}
+  ],
+  "basis": [
+    {"basisRate":"0.0010","timestamp":1060000},
+    {"basisRate":"0.0099","timestamp":1120000}
+  ],
+  "long_short": [
+    {"longShortRatio":"1.10","timestamp":1060000},
+    {"longShortRatio":"2.50","timestamp":1120000}
+  ]
+}
