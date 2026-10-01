@@ -45,6 +45,7 @@ jobs:
             'tools/minipc-marketdata-smoke.ps1',
             'tools/minipc-next-gate.ps1',
             'tools/minipc-runtime-recovery-gate.ps1',
+            'tools/minipc-internet-recovery-gate.ps1',
             'tools/minipc-post-recovery-gate.ps1',
             'tools/minipc-phase2-enable.ps1',
             'tools/minipc-phase3-altrady-enable.ps1',
