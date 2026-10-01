@@ -56,8 +56,9 @@ Each V3 hypothesis must have exactly one status:
 
 5. **Frozen candidate**
    - Version exact change vs baseline.
-   - Prefer one meaningful mechanics change per candidate.
-   - Freeze parameters before prospective evaluation.
+   - Exactly one material strategy component per Shadow candidate; contract: `research/v3/shadow-candidate-contract-v1.json`.
+   - `tools/validate-v3-shadow-candidate.py` rejects multi-change candidates and rejects Shadow freeze before sample/cost/promotion gates are predefined.
+   - Freeze parameters before prospective evaluation; no mid-run tuning.
 
 6. **Shadow / paper**
    - Same candidate stream and market clock as baseline.
