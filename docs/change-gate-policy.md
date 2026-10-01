@@ -1,0 +1,133 @@
+# Change Gate / Smoke-before-Scale Policy
+
+Status: **ACTIVE GOVERNANCE / FAIL-CLOSED**  
+Date: 2026-10-01
+
+This policy applies to material strategy, runtime, infrastructure, data-source,
+storage, historical-research and release changes.
+
+The governing rule is simple:
+
+> **Do not scale a change before its smallest meaningful end-to-end path works.**
+
+A larger sample, longer runtime, broader universe, full archive download, wider
+automation or release activation is not a substitute for proving the core path
+first.
+
+## Change classes covered
+
+A change is material when it can alter or materially affect any of:
+
+- strategy mechanics, thresholds, sizing, stops, TTL/revalidation or exits;
+- candidate/evaluator/revalidation/persistence behavior;
+- realtime feeds, trigger paths, queueing, supervisor/watchdog or recovery;
+- data-source authority, source timing or source failure behavior;
+- stored data/provenance/retention semantics;
+- external integrations, credentials or rights;
+- historical parser/replay/fill/cost semantics;
+- release/activation/rollback behavior;
+- anything that could create stale, duplicated, lost or incorrectly attributed
+  evidence.
+
+Documentation-only wording changes and read-only status queries do not require a
+new E2E gate unless they accompany a material implementation change.
+
+## Required progression
+
+### Gate A — static / plan-only
+
+Before execution where applicable:
+
+- compile/parse/schema validation;
+- explicit guardrails and no-action defaults;
+- plan-only path for destructive/network/large-data actions;
+- exact source/version/provenance identity;
+- fail-closed behavior for missing prerequisites.
+
+### Gate B — smallest deterministic smoke
+
+Prove the core transformation with one tiny synthetic/local case:
+
+- input is known;
+- output is deterministic enough to inspect;
+- timestamp/provenance semantics are explicit;
+- idempotency/dedup is checked when relevant;
+- failure is visible;
+- no large sample is started yet.
+
+### Gate C — one bounded real end-to-end proof
+
+Only when a real environment is necessary:
+
+- one candidate/event/source window/task;
+- minimum duration/data volume required to prove the path;
+- real persistence/relay/restore/recovery boundary if that is the thing under test;
+- no broad collection or production-scale loop until this passes.
+
+### Gate D — scale / collect
+
+Only after A–C as applicable:
+
+- broaden sample/universe/runtime;
+- collect prospective evidence;
+- keep the version frozen while measuring;
+- do not silently tune the same version after seeing results.
+
+## Explicit anti-patterns
+
+Do **not**:
+
+- launch 50/500/1000 cases because one-case E2E was never proven;
+- run a long Work/CI loop to discover a wiring error that a one-case smoke would
+  have exposed;
+- bulk-download a large archive before parser/storage/checksum value is proven;
+- treat transport success as proof of strategy-condition truth;
+- treat a healthy process heartbeat as proof of fresh underlying data;
+- modify thresholds to make a technical smoke pass;
+- use a failed smoke as justification to open a sealed holdout;
+- activate a runtime merely because unit tests are green.
+
+## Evidence to retain
+
+For a material gate, retain enough evidence to answer:
+
+- what exact version/commit/spec was tested;
+- what one small path was exercised;
+- what passed/failed;
+- whether live state was modified;
+- whether model/exchange/account/order paths were invoked;
+- what the next allowed gate is.
+
+Evidence can live in the relevant release/readiness document, Trial Ledger,
+Supabase evidence surface, GitHub Actions run, or MINI-PC report. Do not create a
+second competing project to-do list.
+
+## Existing examples
+
+This policy formalizes the pattern already used successfully in the project:
+
+- V2R3 persistence repair: tiny prospective cohort + immediate repeat guard before
+  trusting the clean series;
+- V2R4: local/Windows-shaped WAIT runtime smoke and isolated trigger→fresh-recheck
+  proof before any Paper activation;
+- historical OHLCVT: parser/PIT methodology gates before performance replay;
+- targeted Kraken Time & Sales: synthetic PIT/identifiability gate before any
+  large archive download;
+- Binance public access: plan-only CI before the later one-time physical network
+  smoke;
+- MINI-PC backup: immediate seed + non-destructive restore smoke before relying on
+  scheduled backups.
+
+## Safety boundary
+
+Passing a smoke authorizes only the **next documented gate**. It never implicitly
+authorizes:
+
+- strategy promotion;
+- larger sizing/capital;
+- private exchange rights;
+- live orders;
+- leverage;
+- withdrawal rights;
+- sealed holdout access;
+- destructive cleanup outside its explicit scope.
