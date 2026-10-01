@@ -21,8 +21,32 @@ foreach ($p in @($repo,$postboot,$shadowHeartbeat)) {
 }
 
 if (Test-Path $latest) {
-  Write-Host "Existing resilience summary found:"
-  Get-Content $latest
+  Write-Host "Existing resilience summary found."
+
+  $latestJson = Get-ChildItem (Join-Path $TradingRoot "Logs") -Filter "minipc-v2r4-shadow-resilience-*.json" -File |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1
+
+  if ($latestJson) {
+    try {
+      $r = Get-Content $latestJson.FullName -Raw | ConvertFrom-Json
+      Write-Host ""
+      Write-Host "=== V2R4 SHADOW RESILIENCE COMPACT STATUS ==="
+      Write-Host ("Status: " + $r.status)
+      Write-Host ("Runtime recovery: exit=" + $r.runtime_recovery.exit_code)
+      Write-Host ("Internet recovery: exit=" + $(if ($r.internet_recovery) { $r.internet_recovery.exit_code } else { "SKIPPED" }))
+      Write-Host ("Evidence summary: exit=" + $(if ($r.evidence_summary) { $r.evidence_summary.exit_code } else { "SKIPPED" }))
+      Write-Host ("Issues: " + $(if ($r.issues.Count -gt 0) { $r.issues -join ", " } else { "none" }))
+      Write-Host ("JSON report: " + $latestJson.FullName)
+      Write-Host "Safety: SHADOW ONLY / V2R3 UNCHANGED / NO EVALUATOR / NO ORDERS / NO REAL-MONEY ACTION"
+      Write-Host "=== END ==="
+      exit $(if ($r.status -eq "PASS") { 0 } else { 2 })
+    } catch {
+      Write-Warning ("Could not parse latest JSON report: " + $_.Exception.Message)
+    }
+  }
+
+  Get-Content $latest -TotalCount 12
   exit 0
 }
 
@@ -74,7 +98,28 @@ if (-not (Test-Path $latest)) {
 }
 
 Write-Host ""
-Get-Content $latest
+$latestJson = Get-ChildItem (Join-Path $TradingRoot "Logs") -Filter "minipc-v2r4-shadow-resilience-*.json" -File |
+  Sort-Object LastWriteTime -Descending |
+  Select-Object -First 1
+
+if ($latestJson) {
+  try {
+    $r = Get-Content $latestJson.FullName -Raw | ConvertFrom-Json
+    Write-Host "=== V2R4 SHADOW RESILIENCE COMPACT STATUS ==="
+    Write-Host ("Status: " + $r.status)
+    Write-Host ("Runtime recovery: exit=" + $r.runtime_recovery.exit_code)
+    Write-Host ("Internet recovery: exit=" + $(if ($r.internet_recovery) { $r.internet_recovery.exit_code } else { "SKIPPED" }))
+    Write-Host ("Evidence summary: exit=" + $(if ($r.evidence_summary) { $r.evidence_summary.exit_code } else { "SKIPPED" }))
+    Write-Host ("Issues: " + $(if ($r.issues.Count -gt 0) { $r.issues -join ", " } else { "none" }))
+    Write-Host ("JSON report: " + $latestJson.FullName)
+    Write-Host "Safety: SHADOW ONLY / V2R3 UNCHANGED / NO EVALUATOR / NO ORDERS / NO REAL-MONEY ACTION"
+    Write-Host "=== END ==="
+  } catch {
+    Get-Content $latest -Tail 18
+  }
+} else {
+  Get-Content $latest -Tail 18
+}
 
 if ($code -ne 0) { exit $code }
 exit 0
