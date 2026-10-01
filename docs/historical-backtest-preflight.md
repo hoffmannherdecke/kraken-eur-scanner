@@ -239,6 +239,46 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11n. Distinct second-leg V2 pre-registered after V1 rejection 2026-10-01
+
+V1 was **not** tuned in place. A distinct V2 hypothesis was frozen as a new search-accounting trial after the V1 validation/failure review.
+
+Frozen V2 mechanism:
+
+- keep the original V1 initial momentum/volume trigger unchanged;
+- after an initial signal, wait at most **4 contiguous 15m bars**;
+- confirmation = first subsequent bar whose **close is strictly above the original signal-bar high**;
+- invalidation before confirmation = any bar whose **close is strictly below the original signal-bar low**;
+- if confirmed, entry = **next contiguous 15m bar open**;
+- if no confirmation within 4 bars, no trade;
+- retain the same fixed **16-bar / 4h** holding period;
+- retain the same fixed **1.40%** primary round-trip cost assumption;
+- no stop/take-profit, pair subset, month subset, threshold sweep or horizon sweep.
+
+Bias control:
+
+- V2 is explicitly marked as **influenced by V1 validation**;
+- therefore **all pre-2026 data is development evidence only**, not clean V2 validation;
+- the 2026H1 holdout remains `LOCKED_DO_NOT_READ_IN_V2_DEVELOPMENT`;
+- a preregistered development gate is frozen before execution:
+  - at least 500 confirmed events;
+  - mean net > 0;
+  - median net > 0;
+  - positive-net rate >= 50%;
+  - top-10 pair event share <= 40%;
+- gate failure => reject V2 without opening holdout;
+- gate pass => merely eligible for a separate explicit holdout-open decision; it does **not** open the holdout automatically.
+
+Engineering:
+
+- spec + lock created;
+- V2 validator, engine, immutable Trial Ledger recorder and guarded MINI-PC orchestrator created;
+- Windows CRLF/LF frozen-checksum behavior covered;
+- synthetic second-leg confirmation, sealed-holdout and idempotent ledger checks are green;
+- Historical data preflight **run #49: SUCCESS**.
+
+Next physical gate: execute frozen V2 against pre-2026 development data only. The holdout remains sealed regardless of the development result until a separate gate decision.
+
 ## 11m. Validation-only V1 failure-mode review completed 2026-10-01
 
 The guarded validation-only diagnostic review was executed on the physical MINI-PC. The sealed 2026H1 holdout remained closed and no threshold/horizon/pair/month sweep was performed.
