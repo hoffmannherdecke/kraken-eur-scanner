@@ -239,6 +239,22 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11g. Real-pair methodology replay recorded immutably 2026-10-01
+
+The physical MINI-PC replay was appended to the local immutable Trial Ledger.
+
+Observed result:
+
+- recorder status: **PASS_RECORDED**;
+- Trial Ledger verification: no corrupt trial IDs;
+- ledger trial count after append: **1**;
+- trial ID: `REALPAIR-PIT-6C140F81717299F89A9C3`;
+- decision hash retained: `6c140f81717299f89a9c285bafef6d4e4a2ae8461154e5cdab4a69b8e0c3e94b`;
+- the record is explicitly tagged methodology/integrity-only and may not be interpreted as strategy-performance evidence;
+- active V2R3/V2R4 runtime remained unchanged.
+
+The immutable entry is retained even if later methodology revisions supersede it; revisions must create a new trial rather than overwriting this record.
+
 ## 11f. Physical MINI-PC EUR 15m normalization + real-pair replay verified 2026-10-01
 
 The guarded normalization orchestrator was executed on the physical MINI-PC.
