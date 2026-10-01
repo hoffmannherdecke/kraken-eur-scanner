@@ -1131,6 +1131,10 @@ Physical read-only audit result:
 
 This closes the local secret-hygiene gate before any later private-account/self-hosted-runner work.
 
+### Paper runtime reconciliation audit CI validated 2026-10-01
+
+The read-only `tools/paper-runtime-reconciliation-audit.py` passed Windows tool-smoke CI. It is ready for one physical/local run against the current repository state to verify restart/replay/TTL consistency after the earlier power interruption.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
