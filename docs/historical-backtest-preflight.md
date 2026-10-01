@@ -650,3 +650,48 @@ Next safe engineering work:
 - do not enable Time & Sales bulk download until OHLCVT replay proves a concrete need.
 
 None of these steps changes V2R3/V2R4 runtime or strategy behavior.
+
+## 11p. Targeted Kraken Time & Sales methodology prepared 2026-10-01
+
+The remaining P5 Time-&-Sales item has been narrowed to a methodology-only path. This does **not** reopen the failed H1/H2 historical performance branch and does not authorize the full ~13-part trades archive download.
+
+Prepared repository artifacts:
+
+- `research/historical/kraken-trades-targeted-preflight-v1.json`;
+- `tools/kraken-trades-targeted-smoke.py`;
+- Historical-data CI coverage for synthetic point-in-time trade-window parsing and guardrail validation.
+
+Allowed descriptive questions from public trade prints:
+
+- event/arrival → next public trade latency;
+- trade density and inter-trade gaps;
+- exact-window public-trade VWAP;
+- buy/sell public-trade volume balance;
+- realized trade-price range / short-horizon volatility;
+- arrival-price → subsequent public-trade impact proxy.
+
+Explicit identifiability limits:
+
+- true bid/ask spread is **not** inferred from Time & Sales alone;
+- order-book depth is not inferred;
+- queue position is not inferred;
+- maker fill probability is not inferred;
+- hidden liquidity/counterfactual fills are not claimed.
+
+Point-in-time contract:
+
+- pre-event metrics use only trades strictly before the event cutoff;
+- post-event descriptive labels are formed only after the event record is frozen;
+- timestamp order remains canonical;
+- current live Kraken `AssetPairs` is not used as a survivorship filter for historical trade samples.
+
+Safety/storage boundary remains unchanged:
+
+- `download_enabled=false`;
+- full archive download in CI forbidden;
+- no raw trades in GitHub or Supabase;
+- drive D remains blocked;
+- no performance selection, threshold sweep, holdout opening, active strategy change, Paper/Shadow mutation or real-money action.
+
+Next gate: synthetic/small-existing-local-fixture methodology verification, then a separate storage-benefit decision before any full Kraken Trades archive download.
+
