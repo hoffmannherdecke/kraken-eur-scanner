@@ -90,6 +90,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [ ] Nur benötigte Rohdaten kurzfristig speichern; langfristig Features/Aggregate statt endloser Tick-/Orderbucharchive behalten.
 - [ ] Altrady als **zusätzlichen echten Echtzeit-Trigger** fertig anbinden, niemals als einzigen Trigger. Der Transportpfad ist synthetisch und durch einen echten One-shot-Price-Alert E2E verifiziert; offen bleibt die spätere explizite Fresh-Recheck-Kopplung sowie der Latenzvergleich mit Kraken-native und dem Legacy-Scanner. Kein erneuter manueller Altrady-Transporttest nötig, solange die Konfiguration unverändert bleibt.
 - [ ] Altrady-Heartbeat/Fehlerrückmeldung überwachen; Ausfall darf die restliche Kette nicht stoppen.
+- [ ] V2R4 WS-Shadow auf dem MINI-PC aktivieren: Adapter/Unit-/Synthetic-CI + Installer/Rollback sind vorbereitet und grün; nächster physischer Gate ist der gebündelte Live-Snapshot-Smoke + Start von `CryptoMiniPC-V2R4WSShadow`. Shadow bleibt ohne Evaluator/Orders und sammelt Feed→Discovery-Timing sowie stale/dedup/recovery Evidenz.
 - [ ] Detektionslatenz Kraken-native vs. Scanner vs. Altrady messen.
 - [ ] Nach stabiler Basis den Takt anhand realer Messungen verkürzen; Ziel grob ~7–8 Minuten, wo ein periodischer Takt nötig ist, ergänzt durch schnellere eventbasierte Trigger.
 - [ ] Evaluator/KI nur bei echten Kandidaten oder klaren Analyseblockern aufrufen; kein dauerndes KI-Polling.
