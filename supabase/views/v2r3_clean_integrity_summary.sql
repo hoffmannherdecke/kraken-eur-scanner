@@ -1,7 +1,7 @@
 -- Read-only integrity summary for the active clean V2R3 prospective series.
 -- No strategy/runtime behavior is changed.
 
-create or replace view public.v2r3_clean_integrity_summary as
+create or replace view public.v2r3_clean_integrity_summary with (security_invoker=true) as
 with rows as (
     select
         candidate_id,
