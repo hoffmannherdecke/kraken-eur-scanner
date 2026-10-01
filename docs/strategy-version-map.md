@@ -30,6 +30,7 @@ Bei Widersprüchen gilt:
 **Status:** AKTIV / PAPER ONLY / eingefrorene Vergleichsbasis  
 **Start der aktuell sauberen homogenen Serie:** 2026-10-01 09:25 UTC  
 **Series-ID:** `PAPER-V2R3-CLEAN-20261001T0925Z`  
+**V2R3 Freeze-Guard:** aktiv / CI Run #1 SUCCESS; Strategie-/Runtime-Fingerprints, Scanner-Paket, 10-Minuten-Takt und zentrale Scanner-Settings fail-closed eingefroren.  
 
 **Vorgänger `PAPER-V2R3-FINAL-20260928T1752Z`: DIAGNOSTIC_COMPROMISED.**  
 Am 2026-10-01 wurde nach 708 archivierten Candidate-Outcomes ein technischer Persistenzfehler nachgewiesen: `paper_followup.py` schrieb bei jedem Lauf nur wegen `updated_at_utc` hunderte Follow-up-Dateien neu. Gleichzeitig nutzte der Persistenzschritt unter `set -o pipefail` die Form `git status ... | grep -q .`; bei großer Statusausgabe konnte dadurch der Pipeline-Exitcode trotz vorhandener Änderungen ungleich 0 werden. Ergebnis: neue Decisions wurden in einzelnen Läufen nicht committed und dieselben Kandidaten konnten später erneut evaluiert werden. Beispielhaft wurden Kandidaten vom Scanner-Run `36819697905` zunächst gegen 05:28 UTC evaluiert, aber erst in einem späteren Lauf persistiert. Die 708 Outcomes bleiben als **diagnostische Evidenz**, sind aber keine saubere prospektive Abschlussserie.  
@@ -103,7 +104,7 @@ A particularly strong configuration hypothesis is the legacy hardcoded `PAIR_BLO
 ## V2R4 — vorbereitete taktische Timing-/Trigger-Version
 
 **Status:** PREPARED / NOT ACTIVE / PAPER ONLY  
-**Implementierung:** Draft-PR #9 (refreshed candidate; V2R4 PR validation Run #14 SUCCESS inkl. inaktiver 24/7-WAIT-Runtime)  
+**Implementierung:** Draft-PR #9 (refreshed candidate; V2R4 PR validation through Run #17 SUCCESS inkl. inaktiver 24/7-WAIT-Runtime; Windows-shaped WAIT-runtime smoke #1 SUCCESS)  
 **Release-Readiness:** `docs/v2r4-release-readiness.md`  
 **V2R3→V2R4 Release-Diff:** `docs/v2r4-v2r3-release-diff.md`  
 **Zweck:** gezielt das in V2R3 erkannte WAIT-/Revalidation-Latenzproblem untersuchen.
