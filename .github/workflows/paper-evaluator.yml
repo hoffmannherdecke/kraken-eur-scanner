@@ -169,11 +169,11 @@ jobs:
           print("PAPER_RUNTIME_SAFETY_GATE_PASS",series_id)
           PY
 
-          if git status --porcelain -- paper_decisions paper_revalidations paper_positions paper_followups 2>/dev/null | grep -q .; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add paper_decisions/ paper_revalidations/ 2>/dev/null || true
-            git add paper_positions/ paper_followups/ 2>/dev/null || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add paper_decisions/ paper_revalidations/ 2>/dev/null || true
+          git add paper_positions/ paper_followups/ 2>/dev/null || true
+          if ! git diff --cached --quiet; then
             git commit -m "[paper-runtime] persist active-series state"
             pushed=false
             for attempt in 1 2 3 4; do
