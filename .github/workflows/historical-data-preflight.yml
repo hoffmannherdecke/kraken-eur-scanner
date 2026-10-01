@@ -8,6 +8,7 @@ name: Historical data preflight
       - 'research/historical/**'
       - 'tools/kraken-historical-preflight.py'
       - 'tools/kraken-trades-targeted-smoke.py'
+      - 'tools/run-minipc-kraken-trades-targeted-smoke.ps1'
       - 'tools/historical-pit-smoke.py'
       - 'tools/historical-trial-ledger.py'
       - 'tools/prepare-minipc-historical-research.ps1'
@@ -136,6 +137,42 @@ jobs:
           assert "true_bid_ask_spread" in j["not_identifiable_from_public_trades_alone"]
           print("KRAKEN_TRADES_PREFLIGHT_GUARDRAILS PASS")
           PY
+
+      - name: Validate Kraken trades storage benefit gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("research/historical/kraken-trades-storage-benefit-gate-v1.json")
+          j=json.loads(p.read_text("utf-8"))
+          assert j["status"]=="NOT_AUTHORIZED"
+          assert j["estimated_compressed_archive_gb"]==26
+          assert j["guardrails"]["download_authorized"] is False
+          assert j["guardrails"]["performance_selection_allowed"] is False
+          assert j["guardrails"]["active_strategy_change_allowed"] is False
+          assert j["guardrails"]["orders_allowed"] is False
+          assert j["guardrails"]["real_money_actions_allowed"] is False
+          assert len(j["must_all_be_true_before_full_download"]) >= 8
+          print("KRAKEN_TRADES_STORAGE_BENEFIT_GATE PASS no-download/fail-closed")
+          PY
+
+      - name: MINI-PC targeted Kraken trades plan-only smoke
+        shell: pwsh
+        run: |
+          ./tools/run-minipc-kraken-trades-targeted-smoke.ps1 | Tee-Object -Variable plan
+          $text = $plan -join [Environment]::NewLine
+          if ($text -notmatch '"status":\s*"PLAN_ONLY"') {
+            throw "targeted trades orchestrator did not remain plan-only"
+          }
+          if ($text -notmatch '"download_performed":\s*false') {
+            throw "targeted trades orchestrator violated no-download guardrail"
+          }
+          if ($text -notmatch '"full_archive_download_authorized":\s*false') {
+            throw "targeted trades orchestrator unexpectedly authorized full archive download"
+          }
+          if ($text -notmatch '"real_money_actions":\s*false') {
+            throw "targeted trades orchestrator violated real-money guardrail"
+          }
 
       - name: Validate trial-ledger schema JSON
         run: |
