@@ -83,9 +83,16 @@
   "current_data_readiness": {
     "binance_point_in_time_methodology": "CI_GREEN_RUN_61",
     "binance_physical_minipc_public_access": "PENDING_ONE_TIME_LOCAL_SMOKE",
-    "kraken_derivatives_coverage_audit": "NOT_YET_RUN",
+    "kraken_derivatives_coverage_audit": "CI_GREEN_REAL_PUBLIC_PRECHECK_RUN_2",
     "performance_trial_started": false,
-    "holdout_opened": false
+    "holdout_opened": false,
+    "kraken_spot_eur_base_count": 501,
+    "kraken_futures_ticker_count": 226,
+    "kraken_futures_perpetual_count": 208,
+    "kraken_spot_eur_bases_with_mapped_perpetual_count": 142,
+    "kraken_derivatives_coverage_pct_of_spot_eur_bases": 28.34,
+    "kraken_representative_analytics_probe": "15_OF_15_OK_WITH_DATA_XBT_ETH_SOL_XRP_ADA_OI_FUNDING_BASIS",
+    "coverage_interpretation": "PARTIAL_COVERAGE_IS_VALID_MISSING_STATE_NOT_A_LICENSE_TO_BACKFILL_FROM_FUTURE_OR_UNVERIFIED_SOURCES"
   },
-  "next_gate": "COVERAGE_AND_SEMANTICS_PRECHECK_ONLY"
+  "next_gate": "COVERAGE_SEMANTICS_PRECHECK_COMPLETE__NEXT_PREREGISTER_ASSOCIATION_DATASET_WITHOUT_HOLDOUT"
 }
