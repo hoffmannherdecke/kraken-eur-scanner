@@ -2,7 +2,7 @@
 
 Status: **KANONISCHER MASTER-BACKLOG**  
 Letzte Vollsicht: 2026-09-29  
-Aktive Vergleichsbasis: `V2R3-2026-09-28` / `PAPER-V2R3-FINAL-20260928T1752Z`
+Aktive Vergleichsbasis: `V2R3-2026-09-28` / `PAPER-V2R3-CLEAN-20261001T0925Z`
 
 ## Zweck und Pflege-Regeln
 
@@ -34,8 +34,8 @@ Kanonische Detailquellen:
 
 ## P0 — Laufende V2R3-Serie sauber beenden und auswerten
 
-- [ ] Homogene V2R3-Serie unverändert weiterlaufen lassen; keine Entry-/Stop-/Sizing-/Scanner-Regel während der Serie verändern.
-- [x] Alternativer V2R3-Abschlussmechanismus festgelegt (2026-10-01, nach Serienstart aber vor Abschlussanalyse): 20 Trades **oder** frühestens 7 volle Tage + mindestens 1.000 Candidate-Outcomes; anschließend Follow-ups bis 24h ausreifen lassen und mindestens 95 % 24h-Coverage der fälligen Kandidaten verlangen. Bei <20 Trades ist zu geringe Trade-Frequenz selbst ein Befund, kein Grund zur Endlosverlängerung. Aktueller Snapshot bei Festlegung: 708 Candidate-Outcomes, 0 Trades, 441/449 = 98,2 % 24h-Coverage der bereits fälligen Kandidaten.
+- [ ] Homogene V2R3-Serie `PAPER-V2R3-CLEAN-20261001T0925Z` unverändert weiterlaufen lassen; keine Entry-/Stop-/Sizing-/Scanner-Regel während der Serie verändern. Vorgänger mit 708 Outcomes ist als `DIAGNOSTIC_COMPROMISED` eingefroren, nachdem ein Runtime-Persistenzfehler wiederholte Evaluierungen vor Commit erlaubte.
+- [x] Alternativer V2R3-Abschlussmechanismus festgelegt: 20 Trades **oder** frühestens 7 volle Tage + mindestens 1.000 Candidate-Outcomes; anschließend Follow-ups bis 24h ausreifen lassen und mindestens 95 % 24h-Coverage der fälligen Kandidaten verlangen. Regel gilt für die aktuell saubere Serie `PAPER-V2R3-CLEAN-20261001T0925Z`; der frühere 708-Outcomes-Snapshot bleibt nur diagnostisch.
 - [ ] Alle relevanten Kandidatenpfade auswerten, nicht nur tatsächliche Entries: BUY/Scout, WAIT, REJECT/NO-TRADE sowie späteren Kursverlauf.
 - [ ] MAE/MFE, 30/60/120/360-Minuten-Follow-up, Edge-Decay, „gestoppt und später erholt“, verpasste Moves und Gebührenwirkung systematisch zusammenführen.
 - [ ] Zeitkette messen: Scanner-Erkennung → Persistenz/Handoff → Evaluator → Revalidation → möglicher Entry. Verzögerung als eigene Fehlerklasse behandeln.
