@@ -109,7 +109,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [ ] Nach stabiler Basis den Takt anhand realer Messungen verkürzen; Ziel grob ~7–8 Minuten, wo ein periodischer Takt nötig ist, ergänzt durch schnellere eventbasierte Trigger.
 - [x] Evaluator/KI nur ereignis-/kandidatenbezogen: `paper-evaluator.yml` hat keinen Cron-Dauerpoller; der Scanner dispatcht den Runtime-Lauf, das Modell wird nur für neue ungesehene Kandidaten <=60m bzw. fällige einmalige WAIT-Revalidierungen aufgerufen. Follow-up/Health laufen deterministisch ohne Modell.
 - [ ] V2R4-Fast-Trigger-Pfad aus **Draft-PR #9**: alter PR #8 wegen 995-Commit-Divergenz superseded/geschlossen; identischer 21-Dateien-V2R4-Delta wurde sauber auf aktuellem `main` neu aufgebaut, V2R4 PR validation **Run #11 SUCCESS**. Laufende Paper-Datencommits dürfen `main` während der Sammelphase weiterbewegen; deshalb kein sinnloses Dauer-Rebase, sondern finaler Sync erst am tatsächlichen Aktivierungsreview. V2R3-Evidenzsnapshot, Compile/Unit-/Live-Public-Kraken-/Model-Contract-Smokes, **physischer MINI-PC trigger→fresh-recheck E2E-Gate** und Altrady-Transport-E2E sind grün; live Kraken-AssetPairs statt statischer Blacklist, maschinenlesbare WAIT-Bedingungen und lokaler Fresh-Recheck-Bridge sind vorbereitet. Offen: separater V2R4-Paper-Aktivierungsentscheid nach Evidenzsicht; kein stilles Merge/Activation.
-- [ ] Bei bestandenem Smoke-Test eine **separate V2R4-Paper-Serie** starten; dafür nicht künstlich auf 20 V2R3-Trades warten. V2R3-Artefakte bleiben unverändert als Vergleichsbasis.
+- [ ] Nach bestandenem technischen Smoke **und** abgeschlossenem dokumentierten V2R3-Release-Review eine **separate V2R4-Paper-Serie** starten. Es besteht keine starre Pflicht auf genau 20 V2R3-Trades, weil der festgelegte alternative V2R3-Abschlussweg (7 Tage + >=1.000 Outcomes + >=95% fällige 24h-Coverage) gleichwertig gilt. V2R3-Artefakte bleiben danach unverändert als Vergleichsbasis.
 - [x] Datenfrische und Entscheidungstimestamp technisch nachvollziehbar: im eingefrorenen V2R3-Vorgänger waren 708/708 geprüfte Outcomes vollständig mit candidate_detected_at, handoff_written_at, evaluation_started_at, evaluation_completed_at und fresh_kraken_ticker. Dieselbe unveränderte Record-/Schema-Pflicht gilt für die neue saubere Serie und wird dort erneut prospektiv überwacht.
 
 **Abschlusskriterium P3:** derselbe relevante Move kann über mehr als einen unabhängigen Pfad erkannt werden und Timing ist messbar.
@@ -208,7 +208,7 @@ Erst nach stabiler Infrastruktur und validierter Strategie.
 
 - [ ] Self-hosted GitHub Runner erst nach stabilem Mini-PC-Grundbetrieb einführen.
 - [ ] Vor Trading-Rechten private Kraken-Kontoinformationen/Tradability/Orders/Zustand minimal und read-only integrieren, soweit für sichere Reconciliation nötig.
-- [ ] Kraken-Tradability-/Whitelist-Stand regelmäßig aktualisieren; bisher vorgesehener Rhythmus ~14 Tage.
+- [x] Kraken-Tradability nicht mehr über statische Chat-/Whitelist pflegen: operative Quelle ist live pro Lauf/Watcher-Zyklus die aktuelle öffentliche Kraken-`AssetPairs`-Liste; nur `online` Spot-EUR zählt. Ein ~14-Tage-Audit darf höchstens als Alias-/Listing-Integritätscheck bleiben, ist aber **nicht** die operative Handelbarkeitsquelle.
 - [ ] Trading-API nur mit minimalen Rechten, **ohne Auszahlungsrechte**.
 - [ ] Persistent Kill-Switch über Neustarts.
 - [ ] Startup-Reconciliation gegen Kraken-Konto.
