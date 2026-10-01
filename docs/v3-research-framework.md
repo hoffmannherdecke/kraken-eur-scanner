@@ -192,7 +192,7 @@ Sequence:
 4. deep LOB models only much later
 
 ### H4 — Regime-Dependent Stops / TTL
-Status: `NEW`  
+Status: `PRECHECK_DATA_READINESS_ONLY`  
 Priority: A
 
 Per trade capture:
@@ -214,6 +214,15 @@ Candidates:
 Thresholds:
 - calibrate only on calibration data
 - freeze before OOS / paper evaluation
+
+Current preregistered precheck:
+- `research/v3/h4-regime-stop-ttl-precheck-v1.json`;
+- clean-series snapshot at preregistration: 84 candidate rows; mature MAE/MFE counts 75/66/57/28 at 30m/60m/120m/360m;
+- mature post-detection 24h MAE/MFE: **0**; completed trade-return rows: **0**;
+- therefore no stop/TTL/trailing parameter testing is permitted yet;
+- first later trial must change exactly one component (stop **or** TTL **or** trailing **or** timeout), keep the same candidate stream/market clock, and preregister sample/cost/promotion gates;
+- regime definition itself must be point-in-time and frozen before metrics;
+- H4 precheck guard **SUCCESS**; no holdout or active runtime change.
 
 ### H5 — Macro Event Risk Gate
 Status: `NEW`  
