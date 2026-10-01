@@ -23,6 +23,8 @@ name: Historical data preflight
       - 'tools/run-minipc-broad-pit-v2.ps1'
       - 'tools/validate-performance-replay-spec.py'
       - 'tools/historical-performance-replay-v1.py'
+      - 'tools/record-performance-replay-trial.py'
+      - 'tools/run-minipc-performance-replay-v1.ps1'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -54,6 +56,7 @@ jobs:
           python -m py_compile tools/record-real-pair-replay-trial.py
           python -m py_compile tools/validate-performance-replay-spec.py
           python -m py_compile tools/historical-performance-replay-v1.py
+          python -m py_compile tools/record-performance-replay-trial.py
 
       - name: Validate no-download Kraken manifest
         run: |
@@ -415,6 +418,54 @@ jobs:
           assert j["execution_semantics"]["portfolio_equity_curve_computed"] is False
           print("PERFORMANCE_REPLAY_V1 PASS frozen/synthetic/holdout-sealed")
           PY
+
+      - name: Smoke immutable performance replay V1 Trial Ledger record
+        run: |
+          python tools/record-performance-replay-trial.py \
+            --spec research/historical/performance-replay-spec-v1.json \
+            --lock research/historical/performance-replay-spec-v1.lock.json \
+            --result /tmp/perf-v1-result.json \
+            --db /tmp/perf-v1-trial-ledger.sqlite3 \
+            --schema research/historical/trial-ledger-schema.json \
+            --output-record /tmp/perf-v1-trial-record.json \
+            --repo-root .
+          python tools/record-performance-replay-trial.py \
+            --spec research/historical/performance-replay-spec-v1.json \
+            --lock research/historical/performance-replay-spec-v1.lock.json \
+            --result /tmp/perf-v1-result.json \
+            --db /tmp/perf-v1-trial-ledger.sqlite3 \
+            --schema research/historical/trial-ledger-schema.json \
+            --output-record /tmp/perf-v1-trial-record.json \
+            --repo-root .
+          python - <<'PY'
+          import json, sqlite3
+          from pathlib import Path
+          rec=json.loads(Path("/tmp/perf-v1-trial-record.json").read_text())
+          assert rec["strategy_revision"]=="EUR15_PRICE_VOLUME_CONTINUATION_BASELINE_V1"
+          assert rec["holdout_window"] is None
+          assert rec["metrics"]["holdout_guard"]["holdout_metrics_computed"] is False
+          con=sqlite3.connect("/tmp/perf-v1-trial-ledger.sqlite3")
+          try:
+              count=con.execute("select count(*) from trials").fetchone()[0]
+          finally:
+              con.close()
+          assert count==1
+          print("PERFORMANCE_REPLAY_V1_TRIAL_LEDGER PASS idempotent/immutable/holdout-sealed")
+          PY
+
+      - name: MINI-PC frozen performance replay V1 plan-only smoke
+        shell: pwsh
+        run: |
+          ./tools/run-minipc-performance-replay-v1.ps1 | Tee-Object -Variable plan
+          if (($plan -join [Environment]::NewLine) -notmatch '"status":\s*"PLAN_ONLY"') {
+            throw "performance replay V1 orchestrator did not remain plan-only"
+          }
+          if (($plan -join [Environment]::NewLine) -notmatch '"holdout_status":\s*"LOCKED_DO_NOT_READ_IN_V1_SELECTION"') {
+            throw "performance replay V1 plan did not preserve sealed holdout"
+          }
+          if (($plan -join [Environment]::NewLine) -notmatch '"threshold_optimization_performed":\s*false') {
+            throw "performance replay V1 plan violated frozen-threshold guardrail"
+          }
 
       - name: MINI-PC broad PIT V2 plan-only smoke
         shell: pwsh
