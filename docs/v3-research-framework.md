@@ -225,7 +225,7 @@ Current preregistered precheck:
 - H4 precheck guard **SUCCESS**; no holdout or active runtime change.
 
 ### H5 — Macro Event Risk Gate
-Status: `NEW`  
+Status: `PRECHECK`  
 Priority: A/B
 
 Start with:
