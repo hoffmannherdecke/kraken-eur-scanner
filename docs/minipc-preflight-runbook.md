@@ -727,6 +727,20 @@ After the broad Kraken-EUR feed activation, a dedicated read-only restart/recove
 
 This closes the controlled Windows restart/recovery gate for the currently active local transport/watchdog stack.
 
+### Controlled Internet-loss recovery gate prepared 2026-10-01
+
+After the successful full Windows restart recovery, the next resilience check is prepared and Windows-CI green:
+
+- `tools/minipc-internet-recovery-gate.ps1`
+- temporarily disables only the active default-route network adapter for a short bounded window;
+- arms an independent SYSTEM one-shot safety task **before** disabling the adapter so it is automatically re-enabled even if the interactive/RDP session drops;
+- verifies that the outage is actually observed;
+- then verifies recovery of Kraken HTTPS, BTC/EUR canary, broad Kraken-EUR universe feed, Altrady heartbeat and local watchdog;
+- strategy remains uncoupled, so no candidate/order replay can occur in this test;
+- no real-money action.
+
+Recommended execution is from the MINI-PC's local console/monitor because an RDP session may disconnect briefly. The network adapter is automatically re-enabled by both the primary script and the pre-armed safety task.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
