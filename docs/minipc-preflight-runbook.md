@@ -1216,6 +1216,19 @@ Result:
 
 This closes the local restart/replay/TTL reconciliation gate for the current paper/read-only architecture.
 
+### Realtime path timing rollup added 2026-10-01
+
+While no user action was required, a guarded Supabase read-only summary view was added:
+
+- `public.realtime_path_timing_summary`;
+- aggregates current WS-shadow feed latency, archived scanner detections, nearest same-pair shadow↔scanner matches and Altrady relay→MINI-PC transport latency;
+- carries an explicit interpretation guardrail so these heterogeneous samples cannot be mistaken for a fair winner ranking;
+- current sample at creation: 58 shadow events, 869 scanner detections, 4 scanner-after / 12 scanner-before nearest same-pair matches, 2 Altrady transport events;
+- current medians: shadow feed→shadow ~2.106s; Altrady relay→MINI-PC ~1.816s;
+- scanner timing values are not treated as equivalent event-matched latency until matching quality/sample size improves.
+
+This prepares the later timing review without changing any strategy/runtime behavior.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
