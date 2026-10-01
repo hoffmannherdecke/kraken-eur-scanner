@@ -1,0 +1,223 @@
+{
+  "altname": "HBAREUR",
+  "candidate_id": "20261001-210328-HBAR-EUR-r36925535238",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above 0.09187 with volume-backed follow-through.",
+      "Positive HBAR 1-hour momentum while BTC, ETH, and SOL stabilize."
+    ],
+    "reason_codes": [
+      "LIQUID_TIGHT_SPREAD",
+      "NO_BREAKOUT_OR_FRESH_MOVE",
+      "NEGATIVE_SHORT_TERM_CONTINUITY",
+      "WEAK_MAJOR_MARKET",
+      "COSTS_UNDERWRITTEN"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Tradable with a tight spread, but revalidation shows no breakout or positive continuity: HBAR remains below resistance and BTC, ETH, and SOL are declining. The brief rebound does not establish enough post-cost upside for a scout.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "HBARUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 49.01,
+        "available": true,
+        "current_funding_rate": 4.91234388062e-07,
+        "current_open_interest": 20924425.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -1.162,
+        "previous_funding_rate": 4.91234388062e-07,
+        "previous_observed_at_utc": "2026-10-01T21:04:09.470111Z",
+        "previous_open_interest": 21170433.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 4.91234388062e-07,
+        "index_price": 0.102453,
+        "last": 0.1027,
+        "mark_price": 0.10245716473,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 20924425.0,
+        "requested_symbols": [
+          "PF_HBARUSD",
+          "PI_HBARUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_HBARUSD",
+        "volume24h": 32157125
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.09113,
+      "bid": 0.09111,
+      "last": 0.09132,
+      "spread_pct": 0.021949078138724893
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "55",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1304221236337999,
+          "ret3h_pct": -0.6008735889527217
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.26811551900992603,
+          "ret3h_pct": -0.6290170466112355
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.4765081482893341,
+          "ret3h_pct": -1.0892214434551906
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T21:53:09.190540Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0157571ebd4d4db6006abed64664ac87d094c14fdfcad42261"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.09113,
+    "bid": 0.09111,
+    "last": 0.09132,
+    "spread_pct": 0.021949078138724893
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.09154,
+      "high": 0.09181,
+      "low": 0.09154,
+      "open": 0.09166,
+      "trades": 29,
+      "ts": 1790887500,
+      "volume": 78988.48394,
+      "vwap": 0.09172
+    },
+    {
+      "close": 0.09132,
+      "high": 0.09161,
+      "low": 0.09132,
+      "open": 0.09154,
+      "trades": 30,
+      "ts": 1790888400,
+      "volume": 58924.39725,
+      "vwap": 0.09155
+    },
+    {
+      "close": 0.09111,
+      "high": 0.09156,
+      "low": 0.09106,
+      "open": 0.09126,
+      "trades": 31,
+      "ts": 1790889300,
+      "volume": 46098.14794,
+      "vwap": 0.09119
+    },
+    {
+      "close": 0.09107,
+      "high": 0.09122,
+      "low": 0.09097,
+      "open": 0.09115,
+      "trades": 12,
+      "ts": 1790890200,
+      "volume": 15311.26637,
+      "vwap": 0.09104
+    },
+    {
+      "close": 0.09132,
+      "high": 0.09133,
+      "low": 0.09113,
+      "open": 0.09113,
+      "trades": 5,
+      "ts": 1790891100,
+      "volume": 8124.57399,
+      "vwap": 0.09123
+    }
+  ],
+  "pair": "HBAR/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-210328-HBAR-EUR-r36925535238.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T21:53:15.977765Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "38cd173035ab68d74b8c67e699ce73fa2019f6a6",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T21:53:15.977765Z",
+    "revalidation_started_at_utc": "2026-10-01T21:53:08.831509Z",
+    "ttl_due_at_utc": "2026-10-01T21:49:09.470111Z",
+    "ttl_lag_seconds": 239.361
+  }
+}
