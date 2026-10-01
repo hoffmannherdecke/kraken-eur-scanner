@@ -105,6 +105,7 @@ A particularly strong configuration hypothesis is the legacy hardcoded `PAIR_BLO
 **Status:** PREPARED / NOT ACTIVE / PAPER ONLY  
 **Implementierung:** Draft-PR #9 (auf aktuellen `main` neu aufgesetzt; V2R4 PR validation Run #11 SUCCESS)  
 **Release-Readiness:** `docs/v2r4-release-readiness.md`  
+**V2R3→V2R4 Release-Diff:** `docs/v2r4-v2r3-release-diff.md`  
 **Zweck:** gezielt das in V2R3 erkannte WAIT-/Revalidation-Latenzproblem untersuchen.
 
 V2R4 ist **keine Ersatzbezeichnung für V3**. Sie ist eine eng begrenzte Zwischenversion,
