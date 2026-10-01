@@ -9,6 +9,7 @@ name: Historical data preflight
       - 'research/historical/**'
       - 'tools/kraken-historical-preflight.py'
       - 'tools/historical-pit-smoke.py'
+      - 'tools/historical-trial-ledger.py'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -30,6 +31,7 @@ jobs:
         run: |
           python -m py_compile tools/kraken-historical-preflight.py
           python -m py_compile tools/historical-pit-smoke.py
+          python -m py_compile tools/historical-trial-ledger.py
 
       - name: Validate no-download Kraken manifest
         run: |
@@ -58,6 +60,21 @@ jobs:
               assert name in required, name
           print("TRIAL_LEDGER_SCHEMA PASS")
           PY
+
+      - name: Smoke immutable trial ledger
+        run: |
+          DB="$RUNNER_TEMP/historical-trial-ledger.sqlite3"
+          python tools/historical-trial-ledger.py --db "$DB" init
+          python tools/historical-trial-ledger.py --db "$DB" append \
+            --record research/historical/fixtures/trial-record-sample.json
+          python tools/historical-trial-ledger.py --db "$DB" verify
+          if python tools/historical-trial-ledger.py --db "$DB" append \
+            --record research/historical/fixtures/trial-record-sample.json; then
+            echo "ERROR: immutable ledger accepted duplicate trial_id"
+            exit 1
+          else
+            echo "IMMUTABILITY_GUARD PASS: duplicate trial_id rejected"
+          fi
 
       - name: Safety assertion
         run: |
