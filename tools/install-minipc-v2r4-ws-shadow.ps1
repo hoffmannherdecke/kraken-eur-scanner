@@ -20,7 +20,7 @@ $state = Join-Path $TradingRoot "State\v2r4-ws-shadow-state.json"
 $heartbeat = Join-Path $TradingRoot "State\v2r4-ws-shadow-heartbeat.json"
 $eventDir = Join-Path $TradingRoot "State\v2r4-ws-shadow-events"
 $ledger = Join-Path $TradingRoot "Logs\v2r4-ws-shadow-ledger.jsonl"
-$branch = "prep/v2r4-fast-trigger-minipc-20260929"
+$branch = "prep/v2r4-refresh-20261001"
 $taskName = "CryptoMiniPC-V2R4WSShadow"
 
 foreach ($p in @($repo,$python,$snapshot,$smoke)) {
