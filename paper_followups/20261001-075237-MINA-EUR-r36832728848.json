@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-01T07:53:19.486596Z",
     "evaluation_ask_eur": 0.1294,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 0.0,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": 0.0,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-10-01T07:53:00Z",
+        "trough_at_utc": "2026-10-01T07:53:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-01T07:29:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -41,11 +53,13 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-01T08:08:03.946037Z"
+    "updated_at_utc": "2026-10-01T08:24:43.215138Z"
   },
   "original_decision": "WAIT",
   "pair": "MINA/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-01T08:24:08.621260Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "test_id": "SHADOW-V2R3-20260928-02"
