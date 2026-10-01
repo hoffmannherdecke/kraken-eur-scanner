@@ -1,9 +1,14 @@
 param(
-  [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
+  [string]$TradingRoot = "",
   [int]$SecondsPerCycle = 12,
   [switch]$Execute
 )
 $ErrorActionPreference="Stop"
+if ([string]::IsNullOrWhiteSpace($TradingRoot)) {
+  $homeRoot = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
+  if ([string]::IsNullOrWhiteSpace($homeRoot)) { throw "Unable to resolve user home directory." }
+  $TradingRoot = Join-Path $homeRoot "Trading"
+}
 if($SecondsPerCycle -lt 5 -or $SecondsPerCycle -gt 30){throw "SecondsPerCycle must be 5..30"}
 $repo=Join-Path $TradingRoot "Repos\kraken-eur-scanner"
 $python=Join-Path $TradingRoot "Runtime\kraken-eur-scanner-venv\Scripts\python.exe"

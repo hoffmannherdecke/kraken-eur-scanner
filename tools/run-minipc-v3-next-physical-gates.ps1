@@ -1,9 +1,14 @@
 param(
-  [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
+  [string]$TradingRoot = "",
   [switch]$Execute,
   [string]$Confirm = ""
 )
 $ErrorActionPreference="Stop"
+if ([string]::IsNullOrWhiteSpace($TradingRoot)) {
+  $homeRoot = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
+  if ([string]::IsNullOrWhiteSpace($homeRoot)) { throw "Unable to resolve user home directory." }
+  $TradingRoot = Join-Path $homeRoot "Trading"
+}
 Set-StrictMode -Version Latest
 
 $ExpectedConfirm="RUN_V3_NEXT_PHYSICAL_GATES"
