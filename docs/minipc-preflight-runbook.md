@@ -1149,6 +1149,16 @@ The active paper series starts at **2026-09-28 17:52 UTC**. Repository-level rec
 
 The audit implementation must be revised so it filters pre-series diagnostic handoffs before enforcing the canonical candidate identity contract. Until then, the original audit result must not be treated as a real runtime failure.
 
+### Real power-loss fallback evidence 2026-10-01
+
+The accidental MINI-PC power interruption provided a real independence test:
+- local MINI-PC/RDP/status-sync became unavailable;
+- hosted GitHub `Kraken EUR early sensor` runs continued successfully during the outage (including runs started around 08:21 UTC and 08:38 UTC);
+- hosted `Paper runtime evaluator and lifecycle` also continued successfully during the outage;
+- after power restoration, the MINI-PC remote status resumed and cloud health returned to a fresh state.
+
+This is practical evidence that the hosted GitHub path remains an independent fallback and the system is not single-trigger-dependent on MINI-PC or Altrady.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
