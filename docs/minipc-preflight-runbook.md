@@ -1107,6 +1107,18 @@ Current continuation point is preserved explicitly:
 
 **Resume keyword:** continue MINI-PC setup after RDP recovery → first restore/diagnose LAN reachability, then run the pending secret-hygiene audit.
 
+### 2026-10-01 — unexpected MINI-PC outage root cause resolved
+
+The internal RDP outage was traced to a **physical power interruption**:
+- the IEC mains connector on the MINI-PC power supply was not seated correctly;
+- power to the MINI-PC was therefore interrupted;
+- the connector was reseated manually and power restored;
+- RDP/local operation returned afterwards.
+
+This confirms the earlier simultaneous loss of RDP reachability and remote-status updates was caused by loss of power, not by the LAN, RDP service, firewall, or the MINI-PC software stack.
+
+Resume point remains unchanged: continue with the pending read-only `tools/minipc-secret-hygiene-audit.ps1` once the post-boot services have settled.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
