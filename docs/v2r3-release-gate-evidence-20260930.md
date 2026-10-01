@@ -201,6 +201,28 @@ At the current immature 4h horizon, no family is authorized for promotion/remova
 - resistance/breakout and extension families show some later upside in a subset;
 - those observations remain exploratory until 24h maturity and the final clean-series gate.
 
+### Direct WAIT TTL-lag diagnostics
+
+The clean series now has a dedicated prospective revalidation-timing view: `public.v2r3_revalidation_timing_summary`.
+
+Current clean-series snapshot:
+
+- revalidated candidates: **52**
+- median requested WAIT TTL: **30 min**
+- median scheduler/runtime lateness *after the requested TTL*: **262.149 s**
+- p90 TTL lateness: **908.851 s**
+- p99 TTL lateness: **1,170.903 s**
+- maximum TTL lateness: **1,401.471 s**
+- TTL lateness >60 s: **42 / 52**
+- TTL lateness >300 s: **22 / 52**
+
+This separates two timing layers cleanly:
+
+1. scanner detection -> initial evaluator completion is now generally tens of seconds;
+2. V2R3's one-shot WAIT lifecycle can still revalidate several minutes after the evaluator-requested TTL.
+
+This is classified as a **timing-infrastructure finding**, not as proof that a different entry rule would be profitable. V2R4's local/event-driven WAIT runtime is designed to remove this avoidable scheduling delay while still requiring a fresh Kraken paper recheck.
+
 ### Current timing evidence
 
 The clean series no longer shows the severe multi-minute persistence tail seen in the compromised predecessor:
