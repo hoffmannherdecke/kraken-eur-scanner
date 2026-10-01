@@ -34,11 +34,18 @@ jobs:
           from pathlib import Path
           j=json.loads(Path("research/v3/h5-macro-event-risk-precheck-v1.json").read_text("utf-8"))
           assert j["kind"]=="V3_H5_MACRO_EVENT_RISK_PRECHECK_V1"
-          assert j["status"]=="PRECHECK"
+          assert j["status"]=="PRECHECK_DST_PIT_METHOD_GREEN"
           assert j["role"]=="RISK_STATE_GATE_FIRST_NOT_DIRECTIONAL_SIGNAL"
           assert j["event_semantics"]["timezone_conversion"]=="IANA_America/New_York_DST_AWARE"
           assert j["precheck_only"]["direction_rule"] is False
           assert j["precheck_only"]["performance_trial_started"] is False
+          rd=j["methodology_readiness"]
+          assert rd["synthetic_dst_pit_smoke"]=="CI_GREEN_RUN_1"
+          assert rd["october_edt_statement_utc"]=="2026-10-28T18:00:00Z"
+          assert rd["december_est_statement_utc"]=="2026-12-09T19:00:00Z"
+          assert rd["performance_trial_started"] is False
+          assert rd["holdout_opened"] is False
+          assert j["next_gate"]=="CAPTURE_VERSIONED_OFFICIAL_FOMC_EVENT_CALENDAR_THEN_PREREGISTER_ONE_RISK_VARIANT_NO_HOLDOUT"
           assert j["future_trial_constraints"]["sealed_2026h1_holdout_open_allowed"] is False
           assert j["runtime_guardrails"]["active_v2r3_change_allowed"] is False
           assert j["runtime_guardrails"]["orders"] is False
