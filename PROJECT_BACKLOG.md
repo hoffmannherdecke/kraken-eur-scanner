@@ -59,7 +59,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [x] Automatisches Wiederanlaufen nach Stromausfall konfigurieren und praktisch testen.
 - [x] Stabiles LAN als primärer Dauerpfad einrichten.
 - [x] **Internen Windows-Remotezugriff sehr früh einrichten**: interner RDP-Zugriff nach Neustart/Strom-Recovery verifiziert.
-- [ ] Externer Fernzugriff: WireGuard ist vorbereitet; echter Außentest über Mobilfunk/iPhone-Hotspot ist bewusst in Runbook **Phase H ganz nach hinten verschoben**; keine direkte RDP-Portfreigabe ins Internet.
+- [x] Externer Fernzugriff: echter Außentest am 2026-10-01 über Mobilfunk/iPhone-Hotspot erfolgreich bestanden; WireGuard aktiv, RDP auf den MINI-PC unter `192.168.178.179` ohne Einschränkungen nutzbar; keine direkte RDP-Portfreigabe ins Internet.
 - [x] ChatGPT auf dem Mini-PC mit demselben Konto einrichten; iPhone bleibt bevorzugte Sprach-/Diktieroberfläche. Work nur bei echtem Desktop-/Browser-/Dateikontext; keine Credits vorsorglich kaufen.
 - [x] Secrets/API-Schlüssel lokal und mit minimalen Rechten halten; niemals in Repo oder Logs schreiben. Read-only Secret-Hygiene-Audit am MINI-PC 2026-10-01 **HEALTHY**: Critical 0, Warning 0, Findings none; keine Live-Secret-Muster/verbotswürdigen Key-Dateien oder offensichtlich zu breiten Secret-ACLs gefunden. Secretwerte wurden nie ausgegeben.
 - [x] Klare lokale Verzeichnisstruktur für Runtime, State, Logs, temporäre Daten, Archiv und Backup festgelegt.
