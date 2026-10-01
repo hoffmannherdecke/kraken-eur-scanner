@@ -21,6 +21,7 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 - Eingefrorene Referenzstände bleiben unverändert.
 - Unklare Zuordnungen werden als **NICHT VERIFIZIERT / ZUORDNUNG OFFEN** markiert; niemals raten.
 - Vor einem Release: aktuelle Version vollständig auswerten → Erkenntnisse klassifizieren → relevante Erkenntnisse migrieren → Smoke-Test → Freigabe → Rollback-Punkt.
+- Material changes follow `docs/change-gate-policy.md`: static/plan-only → smallest deterministic smoke → bounded real E2E if needed → only then scale/collect.
 - Last-known-good/Rollback wird content-addressed festgehalten: `tools/paper-release-rollback-snapshot.py` validiert den aktiven Freeze und schreibt exakte Control-/Spec-/Runtime-/Scanner-Hashes. Whole-repo reset oder Evidenz-/State-Rewind ist ausdrücklich verboten; der Snapshot gilt nur für die geschützten Code-/Konfigurationspfade.
 - Strategie- und Infrastrukturversionen werden getrennt geführt und miteinander verknüpft.
 - V3 gilt erst dann als vollständig integriert, wenn jeder relevante V2/V2R4-Baustein einen Migrationsstatus besitzt.
