@@ -113,15 +113,72 @@ No strategy logic was changed.
 
 ## Next actions before user input is needed
 
+Repository-side preparation is now complete for the current maintenance/release-readiness block:
+
+- refreshed V2R4 candidate preflight now targets PR #9 by default;
+- MINI-PC V2R4 local preflight smoke **Run #4: SUCCESS** against the refreshed candidate;
+- bundled safe local sync/readiness script exists at `tools/minipc-v2r4-readiness-sync.ps1`;
+- its plan-only/guardrail smoke is CI-green in MINI-PC tools smoke **Run #103: SUCCESS**;
+- watchdog/taxonomy fixes are repository-verified and do not require interrupting evidence collection.
+
+Until a genuine local maintenance or release gate is reached, continue without user action:
+
 1. keep V2R3 clean series frozen and collecting;
 2. keep V2R4 shadow/outcome evidence collecting without evaluator/orders;
-3. keep PR #9 draft and periodically reconcile it with `main` only when needed;
-4. verify the watchdog/taxonomy repair in CI;
-5. prepare one bundled local MINI-PC pull + effectiveness verification command;
-6. wait for sufficient clean V2R3 maturity before any activation review.
+3. keep PR #9 draft; do not churn/rebase it merely because runtime-state commits move `main`;
+4. monitor the fail-closed Supabase activation-readiness view;
+5. wait for sufficient clean V2R3 maturity before any activation review.
+
+At the eventual local maintenance/release boundary, use one bundled pull + read-only effectiveness/preflight/restore verification rather than piecemeal MINI-PC edits.
 
 A V2R4 paper activation decision is a separate explicit gate and must never be inferred from technical green status alone.
 
+
+## Latest control snapshot — 2026-10-01 15:45 UTC
+
+This later snapshot supersedes the earlier same-day counts for operational status only; it does not replace the frozen release rules above.
+
+### V2R3 clean series
+
+- Candidate-Outcomes: **53**
+- completed trades / BUY_SCOUT: **0 / 0**
+- final decisions: **5 WAIT / 48 REJECT**
+- integrity: **HEALTHY**
+- duplicate candidate IDs: **0**
+- missing queue/timing/ticker/fingerprint provenance: **0**
+- distinct strategy/runtime fingerprints: **1 / 1**
+- 24h-eligible outcomes: **0**
+- completion gate: **COLLECTING_AGE**
+- remaining to alternate outcome floor: **947**
+- remaining to 7-day age floor: about **161.7 h**
+
+Timing at this snapshot:
+- WAIT p50 / p90 total latency: **31.98 s / 43.72 s**
+- REJECT p50 / p90: **37.31 s / 54.98 s**
+- no case above **300 s**
+
+### V2R4 shadow operational evidence
+
+- total shadow events: **369**
+- prospective post-tracker events: **351**
+- due 6h: **87**
+- completed due 6h: **79**
+- unresolved due 6h: **8**
+- current due-6h archival coverage: **90.80%**
+- complete outcomes: **79** = **61 gap-free + 18 tracker-gap-affected**
+- feed -> shadow latency p50: **~1.65 s**
+- feed -> shadow latency p90: **~3.12 s**
+
+The 8 unresolved due-6h cases keep the current operational state at `MATURE_OUTCOMES_PENDING`; this is an archival-maturity state, not a strategy-performance judgment.
+
+### MINI-PC / activation control
+
+- latest centrally observed MINI-PC: **HEALTHY / OK / issues none**
+- Kraken canary, Kraken universe, WS shadow, outcome tracker, cloud sync, Altrady transport and runtime supervisor were healthy
+- fail-closed activation view: **BLOCKED_V2R3_COMPLETION**
+- `automatic_activation_allowed = false`
+
+This snapshot confirms that the current blocker is evidence maturity, not an active infrastructure failure.
 
 ## Supabase / analytics hardening — 2026-10-01
 
