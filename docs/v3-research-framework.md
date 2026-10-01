@@ -171,7 +171,7 @@ No H2 performance trial, threshold sweep, pair/month selection or holdout access
 Kraken Spot EUR remains the execution/fill reference.
 
 ### H3 — Orderflow / Depth / Imbalance
-Status: `DEFERRED`  
+Status: `PRECHECK_L2_SNAPSHOT_GREEN_WEBSOCKET_PENDING`  
 Priority: A after Mini-PC/WebSocket layer
 
 Capture:
@@ -190,6 +190,14 @@ Sequence:
 2. regime/liquidity conditioning
 3. nonlinear/tree models only if justified
 4. deep LOB models only much later
+
+Current precheck:
+- `research/v3/h3-orderbook-depth-precheck-v1.json`;
+- public Kraken REST Depth snapshot semantics are real-network green for XBT/EUR, ETH/EUR and SOL/EUR;
+- top-of-book spread and top-10 quote depth can be measured without account/private API;
+- sample values are diagnostic only and cannot become thresholds;
+- this does **not** prove order-flow deltas, queue position, maker fill probability, adverse selection or resiliency;
+- next gate is a bounded public MINI-PC WebSocket book capture with reconnect/staleness and snapshot/delta reconciliation.
 
 ### H4 — Regime-Dependent Stops / TTL
 Status: `PRECHECK_DATA_READINESS_ONLY`  
@@ -325,10 +333,12 @@ Current precheck:
 - missing metrics/coins remain missing; no backfill or performance-based subset selection.
 
 ### H9 — Maker-vs-Taker Fill Probability
-Status: `DEFERRED`  
+Status: `DEFERRED_FILL_DATA_NOT_READY`  
 Priority: later execution layer
 
 Concept:
+Readiness blocker: `research/v3/h9-maker-taker-readiness-v1.json`. H9 modelling remains prohibited until bounded WS book deltas and same-clock public trade prints exist, together with versioned fee/deadline/cleanup semantics. REST snapshots alone cannot identify queue position or fill probability.
+
 Expected cost must include:
 - fill probability
 - maker fee
