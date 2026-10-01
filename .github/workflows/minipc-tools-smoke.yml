@@ -11,6 +11,7 @@ name: MINI-PC tools smoke
       - 'tools/minipc-altrady-poller.py'
       - 'tools/minipc-altrady-live-alert-proof.py'
       - 'tools/minipc-kraken-universe-feed.py'
+      - 'tools/v2r4-ws-shadow-evidence.py'
       - 'tools/minipc-v2r4-ws-shadow-smoke.ps1'
       - 'tools/install-minipc-v2r4-ws-shadow.ps1'
       - 'tools/uninstall-minipc-v2r4-ws-shadow.ps1'
@@ -35,7 +36,7 @@ jobs:
       - name: Parse Python transport tools
         shell: powershell
         run: |
-          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py
+          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py .\tools\v2r4-ws-shadow-evidence.py
           Write-Host 'PYTHON_TRANSPORT_PARSE_OK'
 
       - name: Parse PowerShell scripts
