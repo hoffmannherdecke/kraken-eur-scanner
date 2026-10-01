@@ -909,6 +909,33 @@ The intended low-noise notification path is now physically verified again:
 
 A ChatGPT/Slack-connector message sent as the user's own Slack identity is **not** a valid push-path test and must not be used as evidence.
 
+### Remote MINI-PC status / independent cloud deadman prepared 2026-10-01
+
+After GitHub/API/Slack and the V2R4 evidence paths were verified, the next low-noise operations layer was prepared:
+
+- Supabase table `public.minipc_status_current` stores only the latest compact watchdog snapshot per node;
+- authenticated Edge Function `minipc-status-relay` is ACTIVE and accepts only the existing project relay token;
+- no Supabase admin/service-role key is placed on the MINI-PC;
+- local fail-soft sync prepared as `tools/minipc-status-sync.py`;
+- installer/rollback prepared:
+  - `tools/install-minipc-status-sync.ps1`
+  - `tools/uninstall-minipc-status-sync.ps1`;
+- local watchdog and runtime-recovery gate automatically include the status-sync heartbeat once installed;
+- Windows parse/compile tooling is green.
+
+An independent cloud deadman was also prepared as `.github/workflows/minipc-cloud-health-watch.yml`:
+- runs outside the MINI-PC every 15 minutes;
+- does nothing until a real remote MINI-PC status row exists;
+- alerts Slack with a real `@Hoffis` mention only for **CRITICAL** state or **>20 min stale** remote status;
+- repeated outage alerts are rate-limited to at most once per 2 hours for the same condition;
+- sends one recovery push when the status returns;
+- WARNING does not trigger push noise;
+- no trading action, evaluator or order path.
+
+This makes the cloud layer a genuine independent deadman: if the MINI-PC itself loses power/network, the cloud workflow can still detect the stale last-seen timestamp and push the user.
+
+**Next physical MINI-PC action:** run the status-sync installer once from elevated PowerShell. The first authenticated upload is performed before the persistent task is registered.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
