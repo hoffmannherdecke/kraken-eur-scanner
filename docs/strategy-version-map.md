@@ -52,8 +52,25 @@ Die 50+50-EUR-Größe ist **keine aktuelle strategische Präferenz**, sondern Te
 eingefrorenen V2R3-Spezifikation. Sie wird nicht rückwirkend geändert.
 
 Der Zielwert von 20 abgeschlossenen Paper-Trades ist ein **operativer/prospektiver
-Meilenstein**, kein statistischer Beweis für Edge. Falls V2R3 zu wenig handelt, muss
-ein alternatives, vorab definiertes Abschlusskriterium verwendet werden.
+Meilenstein**, kein statistischer Beweis für Edge. Falls V2R3 zu wenig handelt, gilt ab
+2026-10-01 zusätzlich folgender **nicht-strategischer Stop-/Abschlussmechanismus**:
+
+- Primär: Serie endet regulär bei **20 abgeschlossenen Paper-Trades**.
+- Alternativ, falls die Strategie zu wenig handelt: frühestens nach **7 vollständigen Tagen**
+  seit Serienstart **und** mindestens **1.000 archivierten Candidate-Outcomes**.
+- Danach werden keine neuen V2R3-Kandidaten mehr benötigt; für die Abschlussauswertung darf
+  die Follow-up-Schicht noch bis zu 24h ausreifen.
+- Abschlussbericht erst, wenn bei den bereits mindestens 24h alten Kandidaten mindestens
+  **95 % einen vollständigen 24h-Follow-up** besitzen oder verbleibende Lücken einzeln als
+  Datenqualitätsausnahme dokumentiert sind.
+- Offene CRITICAL-Infrastruktur-/Datenqualitätsfehler blockieren den Abschluss; normale
+  Strategie-REJECT/WAIT-Fälle blockieren ihn nicht.
+- Erreicht V2R3 dieses alternative Gate mit <20 Trades, ist **zu geringe Trade-Frequenz
+  selbst ein Testergebnis** und kein Grund, die eingefrorene Serie künstlich zu verlängern.
+
+Diese Regel wurde am 2026-10-01 **nach Serienstart**, aber vor der Abschlussanalyse festgelegt.
+Sie verändert keinerlei Entry-/Stop-/Sizing-/Scanner-Regel und wird deshalb als Governance-/
+Abschlussregel, nicht als nachträgliches Strategie-Tuning behandelt.
 
 ---
 
