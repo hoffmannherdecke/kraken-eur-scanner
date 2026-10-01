@@ -1,0 +1,183 @@
+{
+  "altname": "NIGHTEUR",
+  "candidate_age_seconds": 27,
+  "candidate_event_time_utc": "2026-10-01T23:08:47Z",
+  "candidate_id": "20261001-230847-NIGHT-EUR-r36939023036",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.03513 with stronger closed volume",
+      "Hold above 0.03477 on a retest"
+    ],
+    "reason_codes": [
+      "prior_7d_30d_run_is_extended",
+      "no_breakout_or_higher_lows",
+      "closed_volume_below_baseline",
+      "near_1h_resistance",
+      "fees_and_spread_raise_required_move",
+      "no_coin_specific_catalyst_evidence"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid enough for review, but the large prior run, weak closed-volume confirmation, and proximity to resistance do not support a scout entry after Kraken spot costs.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "NIGHTUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 94.49,
+        "available": true,
+        "current_funding_rate": -6.752301166667e-06,
+        "current_open_interest": 3069766.0,
+        "funding_rate_delta": 1.4183670749999457e-08,
+        "open_interest_pct": -0.3197,
+        "previous_funding_rate": -6.766484837417e-06,
+        "previous_observed_at_utc": "2026-10-01T21:34:45.748046Z",
+        "previous_open_interest": 3079611.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -6.752301166667e-06,
+        "index_price": 0.03901,
+        "last": 0.03878,
+        "mark_price": 0.0389683502,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 3069766.0,
+        "requested_symbols": [
+          "PF_NIGHTUSD",
+          "PI_NIGHTUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_NIGHTUSD",
+        "volume24h": 23792217
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.03479,
+      "bid": 0.03468,
+      "last": 0.03479,
+      "spread_pct": 0.316683460486538
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "250",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.18577177066960715,
+          "ret3h_pct": 0.09898359131070844
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.30094331747223535,
+          "ret3h_pct": 0.08163095312467838
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4584527220630408,
+          "ret3h_pct": 0.07611798287345817
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T23:09:14.268260Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-01T23:09:22.010330Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0ffc31fecfba9060006abee81b8c9887d2ab1a4e557867c23e"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.03479,
+    "bid": 0.03468,
+    "last": 0.03479,
+    "spread_pct": 0.316683460486538
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "NIGHT/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36939023036:NIGHT-EUR:1790896127",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "ca5bea1ab55ff1b1f7563c4de2b3d0c3b79c900a",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T23:08:47Z",
+    "candidate_detected_ts": 1790896127,
+    "candidate_snapshot_at_utc": "2026-10-01T23:08:47Z",
+    "detected_to_evaluation_complete_seconds": 35.01,
+    "detected_to_evaluation_start_seconds": 27.12,
+    "evaluation_completed_at_utc": "2026-10-01T23:09:22.010330Z",
+    "evaluation_runtime_seconds": 7.89,
+    "evaluation_started_at_utc": "2026-10-01T23:09:14.120363Z",
+    "handoff_to_evaluation_start_seconds": 24.728,
+    "handoff_written_at_utc": "2026-10-01T23:08:49.392724Z",
+    "scan_step_started_at_utc": "2026-10-01T23:07:18Z"
+  }
+}
