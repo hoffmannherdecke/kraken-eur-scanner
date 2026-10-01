@@ -1,0 +1,94 @@
+name: V3 H6 price volume precheck guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/h6-price-volume-trend-precheck-v1.json'
+      - 'research/v3/fixtures/h6-price-volume-synthetic.json'
+      - 'tools/v3-h6-price-volume-pit-smoke.py'
+      - '.github/workflows/v3-h6-price-volume-precheck-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Compile H6 smoke
+        run: python -m py_compile tools/v3-h6-price-volume-pit-smoke.py
+
+      - name: Validate H6 preregistration
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("research/v3/h6-price-volume-trend-precheck-v1.json").read_text("utf-8"))
+          assert j["kind"]=="V3_H6_PRICE_VOLUME_TREND_PRECHECK_V1"
+          assert j["status"]=="PRECHECK"
+          assert j["complexity_guardrails"]["ctrend_full_implementation_allowed"] is False
+          assert j["complexity_guardrails"]["nonlinear_model_allowed_in_precheck"] is False
+          assert j["complexity_guardrails"]["parameter_sweep_allowed"] is False
+          assert j["future_trial_constraints"]["sealed_2026h1_holdout_open_allowed"] is False
+          assert j["runtime_guardrails"]["active_v2r3_change_allowed"] is False
+          assert j["runtime_guardrails"]["orders"] is False
+          print("V3_H6_PREREG PASS transparent/no-search/no-holdout")
+          PY
+
+      - name: Complete price volume PIT smoke
+        run: |
+          python tools/v3-h6-price-volume-pit-smoke.py \
+            research/v3/fixtures/h6-price-volume-synthetic.json \
+            --cutoff-epoch 18000 \
+            --output /tmp/h6.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/h6.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["future_rows_present"]==1
+          assert j["price_returns_pct"]["1h"] > 0
+          assert j["price_returns_pct"]["4h"] < 30
+          assert j["volume"]["recent_1h_complete"] is True
+          assert j["volume"]["prior_1h_complete"] is True
+          assert j["volume"]["recent_vs_prior_1h_ratio"] > 1
+          assert j["agreement"]["price_up_with_volume_expansion"] is True
+          assert all(j["point_in_time_assertions"].values())
+          assert j["guardrails"]["performance_trial_started"] is False
+          assert j["guardrails"]["nonlinear_model_used"] is False
+          assert j["guardrails"]["holdout_opened"] is False
+          print("V3_H6_PRICE_VOLUME PASS future-ignored/transparent")
+          PY
+
+      - name: Missing prior volume bar must remain missing
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          src=json.loads(Path("research/v3/fixtures/h6-price-volume-synthetic.json").read_text("utf-8"))
+          src["bars"]=[x for x in src["bars"] if x["bar_end_epoch"]!=14400]
+          p=Path(os.environ["RUNNER_TEMP"])/"h6-missing.json"
+          p.write_text(json.dumps(src),encoding="utf-8")
+          PY
+          python tools/v3-h6-price-volume-pit-smoke.py "$RUNNER_TEMP/h6-missing.json" \
+            --cutoff-epoch 18000 --output /tmp/h6-missing-out.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/h6-missing-out.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["volume"]["prior_1h_complete"] is False
+          assert j["volume"]["prior_1h_mean"] is None
+          assert j["volume"]["recent_vs_prior_1h_ratio"] is None
+          print("V3_H6_MISSING PASS no-zero-fill/no-short-denominator")
+          PY
