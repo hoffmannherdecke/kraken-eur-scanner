@@ -1,0 +1,219 @@
+{
+  "altname": "SUIEUR",
+  "candidate_id": "20261001-180332-SUI-EUR-r36903768348",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A fresh base and sustained 15m recovery above the broken support/resistance zone"
+    ],
+    "reason_codes": [
+      "liquid_pair_tight_spread",
+      "prior_support_lost",
+      "resistance_rejection",
+      "weakening_spot_volume",
+      "no_valid_stage2_confirmation",
+      "positive_1h_major_proxy_absent"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "SUI failed the prior breakout condition and has fallen below 1.0531 support; the latest 15m close is 1.0442, so the scout thesis is invalidated.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SUIUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 22.41,
+        "available": true,
+        "current_funding_rate": 9.5378646711267e-05,
+        "current_open_interest": 7390698.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 0.2611,
+        "previous_funding_rate": 9.5378646711267e-05,
+        "previous_observed_at_utc": "2026-10-01T18:26:51.381536Z",
+        "previous_open_interest": 7371450.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 9.5378646711267e-05,
+        "index_price": 1.174368,
+        "last": 1.1738,
+        "mark_price": 1.17454640791,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 7390698.0,
+        "requested_symbols": [
+          "PF_SUIUSD",
+          "PI_SUIUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_SUIUSD",
+        "volume24h": 9510396
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.0449,
+      "bid": 1.0446,
+      "last": 1.0442,
+      "spread_pct": 0.028715003589372283
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "5",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.14362728257709678,
+          "ret3h_pct": 1.2844619506291677
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.13608772679559733,
+          "ret3h_pct": 1.0975302419354627
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.23622791269016785,
+          "ret3h_pct": 1.4704469005285992
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T18:49:15.096220Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0233bc61e61a76be006abeab2c0f2c87d28eebe792e8fc60f8"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.0449,
+    "bid": 1.0446,
+    "last": 1.0442,
+    "spread_pct": 0.028715003589372283
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.0588,
+      "high": 1.0666,
+      "low": 1.0531,
+      "open": 1.0627,
+      "trades": 284,
+      "ts": 1790876700,
+      "volume": 214267.56169,
+      "vwap": 1.0591
+    },
+    {
+      "close": 1.0607,
+      "high": 1.0622,
+      "low": 1.0513,
+      "open": 1.0584,
+      "trades": 193,
+      "ts": 1790877600,
+      "volume": 194928.68047,
+      "vwap": 1.0562
+    },
+    {
+      "close": 1.0482,
+      "high": 1.0631,
+      "low": 1.0478,
+      "open": 1.062,
+      "trades": 251,
+      "ts": 1790878500,
+      "volume": 220146.5843,
+      "vwap": 1.0571
+    },
+    {
+      "close": 1.0486,
+      "high": 1.0564,
+      "low": 1.0453,
+      "open": 1.0483,
+      "trades": 86,
+      "ts": 1790879400,
+      "volume": 57029.45165,
+      "vwap": 1.0492
+    },
+    {
+      "close": 1.0442,
+      "high": 1.049,
+      "low": 1.0442,
+      "open": 1.0482,
+      "trades": 15,
+      "ts": 1790880300,
+      "volume": 4960.51134,
+      "vwap": 1.0475
+    }
+  ],
+  "pair": "SUI/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-180332-SUI-EUR-r36903768348.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T18:49:23.989365Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "fe638582713b3a6b6c12de87918038404d6b185b",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T18:49:23.989365Z",
+    "revalidation_started_at_utc": "2026-10-01T18:49:14.915304Z",
+    "ttl_due_at_utc": "2026-10-01T18:34:01.341762Z",
+    "ttl_lag_seconds": 913.574
+  }
+}
