@@ -239,6 +239,23 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11c. Full Kraken OHLCVT archive inventory verified 2026-10-01
+
+Read-only inspection of the verified full archive on the physical MINI-PC completed successfully:
+
+- inspector status: **PASS**;
+- ZIP integrity test: no bad member;
+- CSV members: **12,035**;
+- interval inventory includes **1,713 15-minute CSVs**;
+- likely Kraken-EUR 15-minute members detected: **608**;
+- archive MANIFEST present and parsed successfully;
+- MANIFEST product: OHLCVT;
+- no extraction performed;
+- no active strategy/runtime changes;
+- next gate reported by the inspector: **selective_eur_15m_extraction**.
+
+This closes the archive naming/inventory gate. The next extraction must remain selective to EUR/15m and must preserve the original verified ZIP as the immutable provenance source.
+
 ## 11b. Full Kraken OHLCVT archive downloaded and verified 2026-10-01
 
 The guarded downloader was executed on the actual MINI-PC against Kraken's official public 2026Q2 full-history OHLCVT archive.
