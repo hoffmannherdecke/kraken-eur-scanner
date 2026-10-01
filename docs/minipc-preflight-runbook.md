@@ -791,6 +791,20 @@ Prepared local tooling on `main`:
 
 This closes the physical WS-shadow activation gate. The shadow layer should now run prospectively and collect feed→discovery timing plus stale/dedup/recovery evidence before any separate V2R4 paper-series activation decision.
 
+### V2R4 shadow resilience bundle prepared 2026-10-01
+
+Because the WS-shadow task was installed only after the earlier generic restart/Internet tests, the **shadow process itself** still needs explicit recovery evidence.
+
+Prepared and Windows-CI verified:
+- `tools/minipc-runtime-recovery-gate.ps1` now includes the 7th startup task `CryptoMiniPC-V2R4WSShadow` plus its fresh heartbeat/guardrails;
+- `tools/minipc-internet-recovery-gate.ps1` now verifies that the shadow advances again after a controlled network outage while remaining `NONE_SHADOW_ONLY`;
+- `tools/minipc-v2r4-shadow-resilience-bundle.ps1` arms a **one-shot** SYSTEM post-boot verifier and restarts Windows;
+- the one-shot task unregisters itself **before** any disruptive test, waits for startup stabilization, runs the full restart gate, then the guarded Internet-outage gate, then a read-only 6h shadow evidence summary;
+- it writes a compact final text report to `Trading\Logs\minipc-v2r4-shadow-resilience-latest.txt`;
+- safety remains: V2R3 unchanged / no evaluator / no account / no orders / no real-money action.
+
+**Next physical MINI-PC action:** pull `main` and run the resilience bundle once from elevated PowerShell. After Windows restarts, wait about four minutes before viewing the generated summary. No manual network toggling is required.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
