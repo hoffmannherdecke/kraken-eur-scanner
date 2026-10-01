@@ -2,6 +2,12 @@ name: Scanner timing evidence sync
 
 'on':
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'handoff_queue/**'
+      - 'tools/supabase-scanner-timing-sync.py'
+      - '.github/workflows/scanner-timing-sync.yml'
   schedule:
     - cron: '12,42 * * * *'
   workflow_run:
