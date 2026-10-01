@@ -1,0 +1,68 @@
+name: V3 H8 on-chain coverage precheck guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/h8-onchain-state-precheck-v1.json'
+      - 'research/source-registry.json'
+      - 'tools/v3-h8-coinmetrics-coverage-precheck.py'
+      - '.github/workflows/v3-h8-onchain-precheck-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Compile H8 coverage tool
+        run: python -m py_compile tools/v3-h8-coinmetrics-coverage-precheck.py
+      - name: Validate H8 preregistration
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path('research/v3/h8-onchain-state-precheck-v1.json').read_text('utf-8'))
+          assert j['kind']=='V3_H8_ONCHAIN_STATE_PRECHECK_V1'
+          assert j['status']=='PRECHECK_SOURCE_COVERAGE_ONLY'
+          assert j['point_in_time_contract']['metric_interval_time_is_not_assumed_equal_to_known_at_time'] is True
+          assert j['point_in_time_contract']['historical_use_requires_known_at_or_proven_publication_lag'] is True
+          assert 'historical_performance_trial' in j['forbidden_before_availability_lag_proven']
+          assert j['bias_guardrails']['metric_selection_by_seen_performance_allowed'] is False
+          assert j['bias_guardrails']['current_sealed_holdout_open_allowed'] is False
+          assert j['runtime_guardrails']['active_v2r3_change_allowed'] is False
+          assert j['runtime_guardrails']['orders_allowed'] is False
+          assert j['runtime_guardrails']['real_money_actions_allowed'] is False
+          print('V3_H8_PREREG PASS coverage-only/known-at-blocked/no-holdout')
+          PY
+      - name: Real public Coin Metrics community coverage audit
+        run: |
+          python tools/v3-h8-coinmetrics-coverage-precheck.py \
+            --assets btc,eth,sol,xrp,ada \
+            --output /tmp/h8-coverage.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path('/tmp/h8-coverage.json').read_text())
+          assert j['status']=='PASS'
+          assert len(j['returned_assets']) > 0
+          assert j['coverage']['active_addresses']['count'] > 0 or j['coverage']['transaction_count']['count'] > 0
+          assert j['point_in_time_interpretation']['historical_performance_trial_allowed'] is False
+          assert j['point_in_time_interpretation']['metric_interval_time_must_not_be_treated_as_publication_time'] is True
+          assert j['guardrails']['api_key_used'] is False
+          assert j['guardrails']['raw_history_downloaded'] is False
+          assert j['guardrails']['performance_trial_started'] is False
+          assert j['guardrails']['holdout_opened'] is False
+          assert j['guardrails']['orders'] is False
+          print('V3_H8_COVERAGE PASS public/no-key/no-history')
+          print(json.dumps({'returned_assets':j['returned_assets'],'coverage':j['coverage']},sort_keys=True))
+          PY
+      - name: Validate source registry
+        run: python tools/validate-source-registry.py
