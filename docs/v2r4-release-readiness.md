@@ -320,7 +320,7 @@ A transient remote sample had reported `WARNING / FEED_STALE` while the underlyi
 
 A subsequent centrally observed MINI-PC sample returned naturally to **HEALTHY / OK / issues none** with Kraken canary, universe feed, WS-shadow, outcome tracker, cloud sync, Altrady transport and runtime supervisor all healthy.
 
-The local MINI-PC repository had not yet pulled these final repository-side watchdog refinements at the time of that sample. They remain a low-risk bundled local pull + effectiveness verification for the next genuine local maintenance gate; there is no need to interrupt the running evidence collection solely for this.
+The bundled local maintenance sync was subsequently completed successfully on 2026-10-01. The MINI-PC fast-forwarded cleanly to `29cafc3d4479604c0ec549b43f9de91ba6007d91`, and the post-pull watchdog-effectiveness, V2R4 preflight and backup-restore checks all passed. Later routine/runtime commits may move `main` again; that alone is not a reason to interrupt evidence collection. A final release-boundary fast-forward/readiness verification remains appropriate immediately before any V2R4 paper activation review.
 
 
 ## Activation-control integrity hardening
@@ -398,3 +398,33 @@ A transient local `WARNING / FEED_STALE` sample immediately before this observat
 
 ### Draft-PR #9 drift handling
 At this snapshot the refreshed V2R4 draft branch is **29 commits ahead / 115 commits behind** `main`, and GitHub currently reports `mergeable=false`. The connector does not expose a reliable conflict reason here, so this must not be interpreted as a proven code conflict solely from the commit counts. Because runtime/evidence commits continue moving `main`, per the existing release rule do **not** churn/rebase merely to keep the draft cosmetically current. Final branch sync and any required conflict resolution belong at the actual activation-review boundary, after V2R3 completion and before any merge decision.
+
+## Physical bundled MINI-PC readiness sync — 2026-10-01 17:26 UTC
+
+The planned local maintenance/readiness gate was completed successfully without activating V2R4.
+
+Verified sequence:
+- the only dirty-tree blocker was an untracked `.paper-work/runtime-reconciliation-audit.json` produced by the existing read-only reconciliation audit;
+- that artifact was confirmed to be reproducible diagnostic output, removed locally, and `.paper-work/` was added to `.gitignore` so the same harmless artifact cannot block future safe syncs;
+- the pre-sync MINI-PC HEAD `89acd285a080b0b8a40e03313de3fc2264350003` was proven to be a direct ancestor of current `main` with **123 commits ahead on main / 0 divergent**;
+- the MINI-PC was fast-forwarded cleanly to `29cafc3d4479604c0ec549b43f9de91ba6007d91`;
+- bundled readiness summary: **PASS**;
+- post-pull helper verification: **PASS**;
+- watchdog effectiveness: **PASS**;
+- isolated V2R4 preflight: **PASS**;
+- backup restore smoke: **PASS**;
+- guardrails remained false for strategy change, paper activation, evaluator activation, private Kraken API, orders and real-money actions.
+
+The first centralized status upload after the pull showed the intended taxonomy correction in effect:
+- Kraken canary: **HEALTHY**;
+- Kraken universe: **HEALTHY**, 501/501 observed;
+- runtime supervisor: **HEALTHY**;
+- WS-shadow support heartbeat temporarily exceeded its 30 s process-heartbeat tolerance while its underlying Kraken source remained ~1.6 s fresh;
+- operational health therefore classified as **DEGRADED**, not `FEED_STALE`.
+
+This is the expected fail-safe distinction: support-process lag does not masquerade as a Kraken transport outage when the source feed is fresh.
+
+At the same control point, the V2R4 shadow due-6h cohort had fully archived again (**172/172, 100%**), while V2R3 remained **HEALTHY / COLLECTING_AGE** and activation stayed **BLOCKED_V2R3_COMPLETION**.
+
+No further local MINI-PC action is required for this maintenance block. The remaining physical V2R4 release proof is the separate real-transport Altrady-wakeup → Kraken-fresh-condition → paper-recheck smoke at the actual release boundary, followed by the normal final fast-forward/readiness verification if `main` has advanced.
+
