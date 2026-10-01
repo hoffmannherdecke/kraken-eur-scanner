@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H1_CROSS_CRYPTO_BREADTH_PRECHECK_V1",
+  "hypothesis_id": "V3-H1",
+  "status": "PRECHECK",
+  "prepared_at_utc": "2026-10-01T18:25:00Z",
+  "purpose": "Establish point-in-time-safe cross-crypto lead/lag and breadth feature semantics before any performance trial.",
+  "source_priority": [
+    "KRAKEN_NORMALIZED_EUR_15M_FOR_HISTORICAL_REPLAY",
+    "KRAKEN_LIVE_EUR_UNIVERSE_FOR_FUTURE_PROSPECTIVE_SHADOW_ONLY"
+  ],
+  "candidate_features": [
+    "target_return_15m",
+    "target_return_1h",
+    "target_return_4h",
+    "xbt_return_15m",
+    "xbt_return_1h",
+    "xbt_return_4h",
+    "eth_return_15m",
+    "eth_return_1h",
+    "eth_return_4h",
+    "breadth_positive_share_15m",
+    "breadth_positive_share_1h",
+    "cross_sectional_median_return_15m",
+    "cross_sectional_dispersion_15m",
+    "leader_minus_target_return_1h",
+    "target_minus_peer_median_return_1h"
+  ],
+  "feature_role": "STATE_AND_RELATIVE_CONTEXT_FIRST",
+  "point_in_time_contract": {
+    "explicit_decision_cutoff_required": true,
+    "closed_bars_only": true,
+    "bar_end_must_be_at_or_before_cutoff": true,
+    "future_rows_forbidden": true,
+    "exact_wall_clock_lookbacks_preferred": true,
+    "missing_pair_or_lookback_remains_missing": true,
+    "zero_fill_missing_bars_forbidden": true,
+    "current_live_universe_as_historical_survivorship_filter_forbidden": true,
+    "universe_membership_for_historical_event_must_be_defined_from_available_historical_data_or_preregistered_dataset_catalog": true
+  },
+  "precheck_questions": [
+    "Can multi-pair returns be aligned to one decision cutoff without future bars?",
+    "Can breadth denominator and missingness be reported explicitly rather than silently changing?",
+    "Can XBT/ETH leader context be separated from target momentum to avoid feature identity confusion?",
+    "Can cross-sectional median/dispersion be computed deterministically on only eligible rows?",
+    "Can later development trials freeze pair universe and horizons before seeing performance?"
+  ],
+  "first_research_role": {
+    "performance_trial": false,
+    "threshold_selection": false,
+    "pair_selection_by_performance": false,
+    "month_selection_by_performance": false,
+    "direct_buy_sell_rule": false,
+    "active_v2r3_change": false,
+    "v2r4_change": false
+  },
+  "future_trial_constraints": {
+    "preregister_pair_universe_before_metrics": true,
+    "preregister_feature_horizons_before_metrics": true,
+    "trial_ledger_required": true,
+    "purging_embargo_required_when_labels_overlap": true,
+    "sealed_2026h1_holdout_open_allowed": false,
+    "no_winner_is_valid_outcome": true
+  },
+  "runtime_guardrails": {
+    "account_api": false,
+    "orders": false,
+    "leverage": false,
+    "real_money_actions": false,
+    "automatic_strategy_promotion": false
+  },
+  "next_gate": "SYNTHETIC_PIT_MULTI_PAIR_FEATURE_SMOKE_ONLY"
+}
