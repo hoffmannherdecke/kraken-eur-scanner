@@ -150,6 +150,41 @@ active_revals={n:d for n,d in revals.items() if d.get("series_id")==SERIES_ID}
 active_positions={n:d for n,d in positions.items() if d.get("series_id")==SERIES_ID}
 active_followups={n:d for n,d in followups.items() if d.get("series_id")==SERIES_ID}
 active_alerts={n:d for n,d in alerts.items() if d.get("series_id")==SERIES_ID}
+
+# Prospective record-integrity invariants. Missing provenance is a data-quality
+# failure because the active clean series is intended to be reproducible.
+provenance_failures=[]
+for name,d in active_decisions.items():
+    timing=d.get("timing") or {}
+    missing=[]
+    if name != str(d.get("candidate_id",""))+".json":
+        missing.append("candidate_id_filename")
+    for key in (
+        "candidate_detected_at_utc",
+        "handoff_written_at_utc",
+        "evaluation_started_at_utc",
+        "evaluation_completed_at_utc",
+    ):
+        if not timing.get(key):
+            missing.append("timing."+key)
+    if not d.get("fresh_kraken_ticker"):
+        missing.append("fresh_kraken_ticker")
+    for key in ("strategy_revision","strategy_fingerprint_sha256","runtime_code_fingerprint_sha256"):
+        if not d.get(key):
+            missing.append(key)
+    if missing:
+        provenance_failures.append((name,missing))
+
+if provenance_failures:
+    add(
+        "DECISION_PROVENANCE_INCOMPLETE","CRITICAL",
+        f"{len(provenance_failures)} active decisions lack mandatory provenance: "+
+        ";".join(f"{n}:{','.join(m)}" for n,m in provenance_failures[:5])
+    )
+
+metrics["decision_provenance_failures"]=len(provenance_failures)
+metrics["decision_provenance_complete"]=len(active_decisions)-len(provenance_failures)
+
 metrics.update({
     "active_decisions":len(active_decisions),
     "active_revalidations":len(active_revals),
