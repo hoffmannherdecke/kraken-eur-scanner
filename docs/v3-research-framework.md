@@ -296,7 +296,7 @@ Current readiness control:
 - H7 readiness guard: **SUCCESS**.
 
 ### H8 — On-Chain State
-Status: `DEFERRED`  
+Status: `PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING`  
 Priority: C/B
 
 Possible inputs:
@@ -311,6 +311,18 @@ Default role:
 
 Precondition:
 - timing/availability and coin-coverage audit.
+
+Current precheck:
+- first public source candidate: Coin Metrics Community, no API key;
+- representative asset catalog: BTC/ETH/SOL/XRP/ADA all returned;
+- Active Addresses / MVRV / TxCount coverage: **4/5** each (ADA/BTC/ETH/XRP);
+- Exchange In/Out Flow coverage: **2/5** (BTC/ETH);
+- New Address coverage in checked community catalog: **0/5**;
+- SOL currently lacks the checked target metric groups;
+- coverage audit guard: **Run #6 SUCCESS**;
+- metric interval timestamp is **not** treated as publication/known-at time;
+- historical trials remain blocked until prospective availability/publication lag is measured;
+- missing metrics/coins remain missing; no backfill or performance-based subset selection.
 
 ### H9 — Maker-vs-Taker Fill Probability
 Status: `DEFERRED`  
