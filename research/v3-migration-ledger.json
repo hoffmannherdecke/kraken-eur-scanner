@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
+  "status": "ACTIVE_LIVING_LEDGER",
+  "updated_at_utc": "2026-10-01T18:15:00Z",
+  "baseline_strategy": "V2R3-2026-09-28",
+  "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "v2r4_status": "PREPARED_NOT_ACTIVE",
+  "allowed_migration_statuses": [
+    "INHERITED_UNCHANGED",
+    "INHERITED_MODIFIED",
+    "REPLACED_BY_TESTED_V3_COMPONENT",
+    "REJECTED_WITH_EVIDENCE",
+    "NOT_APPLICABLE",
+    "OPEN_RESEARCH"
+  ],
+  "release_rule": "V3 release candidate is incomplete while any material component is absent from this ledger or remains OPEN_RESEARCH without an explicit release disposition.",
+  "components": [
+    {
+      "id": "kraken_eur_execution_truth",
+      "category": "market_authority",
+      "source_version": "V2/V2R4 infrastructure",
+      "migration_status": "INHERITED_UNCHANGED",
+      "rationale": "Kraken Spot EUR remains execution-price, fill-realism and live tradability truth.",
+      "evidence": [
+        "research/source-registry.json",
+        "docs/source-intake-policy.md"
+      ],
+      "pending_gate": null
+    },
+    {
+      "id": "live_kraken_assetpairs_universe",
+      "category": "data_quality",
+      "source_version": "V2R3/V2R4 infrastructure",
+      "migration_status": "INHERITED_UNCHANGED",
+      "rationale": "Current public Kraken AssetPairs online Spot-EUR universe is the operational live tradability source; no static whitelist.",
+      "evidence": [
+        "PROJECT_BACKLOG.md",
+        "docs/master-version-register.md"
+      ],
+      "pending_gate": null
+    },
+    {
+      "id": "point_in_time_research_contract",
+      "category": "research_governance",
+      "source_version": "historical research layer",
+      "migration_status": "INHERITED_UNCHANGED",
+      "rationale": "Point-in-time timestamps, no future leakage, sealed holdout, trial ledger and search accounting are strategy-independent research safeguards.",
+      "evidence": [
+        "docs/historical-backtest-preflight.md",
+        "research/historical/trial-ledger-schema.json"
+      ],
+      "pending_gate": null
+    },
+    {
+      "id": "smoke_before_scale",
+      "category": "change_governance",
+      "source_version": "project governance",
+      "migration_status": "INHERITED_UNCHANGED",
+      "rationale": "Small deterministic/E2E proof before scale is a permanent release and research rule.",
+      "evidence": [
+        "docs/change-gate-policy.md"
+      ],
+      "pending_gate": null
+    },
+    {
+      "id": "source_authority_and_retention",
+      "category": "data_governance",
+      "source_version": "project governance",
+      "migration_status": "INHERITED_UNCHANGED",
+      "rationale": "Unique-value source intake, authority boundaries, no silent duplicate raw storage and bounded retention remain mandatory.",
+      "evidence": [
+        "docs/source-intake-policy.md",
+        "docs/storage-retention-policy.md",
+        "research/source-registry.json"
+      ],
+      "pending_gate": null
+    },
+    {
+      "id": "last_known_good_rollback",
+      "category": "release_governance",
+      "source_version": "V2R3 release infrastructure",
+      "migration_status": "INHERITED_UNCHANGED",
+      "rationale": "Content-addressed protected-code/config rollback without whole-repo evidence rewind is a permanent release safeguard.",
+      "evidence": [
+        "tools/paper-release-rollback-snapshot.py",
+        "docs/v2r4-paper-activation-checklist.md"
+      ],
+      "pending_gate": null
+    },
+    {
+      "id": "watchdog_stale_data_recovery",
+      "category": "runtime_reliability",
+      "source_version": "MINI-PC infrastructure",
+      "migration_status": "INHERITED_UNCHANGED",
+      "rationale": "Feed freshness, operational taxonomy, bounded self-heal, independent cloud fallback and no stale decisions are infrastructure invariants.",
+      "evidence": [
+        "docs/minipc-preflight-runbook.md",
+        "PROJECT_BACKLOG.md"
+      ],
+      "pending_gate": null
+    },
+    {
+      "id": "mae_mfe_post_detection_measurement",
+      "category": "measurement",
+      "source_version": "V2R3/V2R4 evidence layer",
+      "migration_status": "INHERITED_UNCHANGED",
+      "rationale": "MAE/MFE, follow-up horizons, post-detection continuation and timing decomposition are measurement requirements independent of the final entry rule.",
+      "evidence": [
+        "docs/master-version-register.md",
+        "PROJECT_BACKLOG.md"
+      ],
+      "pending_gate": null
+    },
+    {
+      "id": "v2r3_candidate_scoring_and_filters",
+      "category": "signal",
+      "source_version": "V2R3-2026-09-28",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Must wait for clean V2R3 completion; predecessor missed-move findings are diagnostic only.",
+      "evidence": [
+        "public.v2r3_release_review_snapshot",
+        "PROJECT_BACKLOG.md"
+      ],
+      "pending_gate": "V2R3_CLEAN_SERIES_FINAL_REVIEW"
+    },
+    {
+      "id": "wait_one_shot_revalidation",
+      "category": "entry_lifecycle",
+      "source_version": "V2R3-2026-09-28",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Current one-shot WAIT TTL behavior has measurable scheduler/revalidation latency and must be classified after clean-series review.",
+      "evidence": [
+        "public.v2r3_revalidation_timing_summary",
+        "PROJECT_BACKLOG.md"
+      ],
+      "pending_gate": "V2R3_CLEAN_SERIES_FINAL_REVIEW"
+    },
+    {
+      "id": "v2r4_event_driven_wait_wakeup",
+      "category": "entry_lifecycle",
+      "source_version": "V2R4 draft PR #9",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Kraken-fresh recheck with optional Altrady wakeup is technically prepared but has not completed separate V2R4 Paper evidence.",
+      "evidence": [
+        "docs/v2r4-release-readiness.md",
+        "docs/v2r4-paper-activation-checklist.md"
+      ],
+      "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE"
+    },
+    {
+      "id": "scout_confirmation_architecture",
+      "category": "entry",
+      "source_version": "V2R3/V2R4",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Two-stage scout/confirmation must be judged on clean prospective net edge and timing, not assumed permanent.",
+      "evidence": [
+        "paper_strategy_spec.json",
+        "docs/v2r4-v2r3-release-diff.md"
+      ],
+      "pending_gate": "V2R3_V2R4_COMPARATIVE_REVIEW"
+    },
+    {
+      "id": "late_chase_protection",
+      "category": "entry",
+      "source_version": "V2R3/V2R4",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Needs missed-move/continuation evidence to distinguish good chase protection from over-rejection.",
+      "evidence": [
+        "PROJECT_BACKLOG.md"
+      ],
+      "pending_gate": "V2R3_CLEAN_SERIES_FINAL_REVIEW"
+    },
+    {
+      "id": "stop_trailing_ttl_exit_logic",
+      "category": "risk_exit",
+      "source_version": "V2R3",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Regime-dependent stop/TTL/exit research is a priority V3 hypothesis and cannot be inherited blindly.",
+      "evidence": [
+        "docs/v3-research-framework.md"
+      ],
+      "pending_gate": "V3_H4_RESEARCH"
+    },
+    {
+      "id": "position_sizing_mapping",
+      "category": "risk_sizing",
+      "source_version": "V2R3 plus V2R4 proposal",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "V2R4 proposal contains a sizing delta not yet wired/validated; no silent size migration.",
+      "evidence": [
+        "docs/v2r4-v2r3-release-diff.md",
+        "docs/v2r4-paper-activation-checklist.md"
+      ],
+      "pending_gate": "EXPLICIT_SIZING_RESEARCH_AND_RELEASE_DECISION"
+    },
+    {
+      "id": "conservative_cost_model",
+      "category": "costs",
+      "source_version": "V2R3/historical",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "0.60% taker/side remains conservative reference, but spread/slippage/re-entry/fill realism still require targeted evidence.",
+      "evidence": [
+        "docs/historical-backtest-preflight.md",
+        "PROJECT_BACKLOG.md"
+      ],
+      "pending_gate": "TARGETED_MICROSTRUCTURE_COST_RESEARCH"
+    },
+    {
+      "id": "binance_derivatives_state",
+      "category": "state_context",
+      "source_version": "research preflight",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Funding/OI/taker/basis context is PIT-ready but not yet proven to add incremental Kraken-EUR value.",
+      "evidence": [
+        "research/historical/binance-derivatives-context-preflight-v1.json",
+        "docs/historical-backtest-preflight.md"
+      ],
+      "pending_gate": "V3_H2_OOS_AND_PROSPECTIVE_TEST"
+    },
+    {
+      "id": "orderflow_depth_imbalance",
+      "category": "state_signal",
+      "source_version": "V3 hypothesis",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Deferred until sufficient MINI-PC order-book evidence exists; simple OFI/depth baseline first.",
+      "evidence": [
+        "docs/v3-research-framework.md"
+      ],
+      "pending_gate": "V3_H3_DATA_AND_RESEARCH"
+    },
+    {
+      "id": "macro_event_risk_gate",
+      "category": "risk_state",
+      "source_version": "V3 hypothesis",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Must be tested as state/risk conditioning rather than assumed directional signal.",
+      "evidence": [
+        "docs/v3-research-framework.md"
+      ],
+      "pending_gate": "V3_H5_RESEARCH"
+    },
+    {
+      "id": "smart_money_trader_activity",
+      "category": "state_context",
+      "source_version": "V3 hypothesis",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Read-only observational research only; no copy trading.",
+      "evidence": [
+        "docs/v3-research-framework.md",
+        "PROJECT_BACKLOG.md"
+      ],
+      "pending_gate": "V3_H10_PROSPECTIVE_SHADOW"
+    },
+    {
+      "id": "prediction_market_event_layer",
+      "category": "state_context",
+      "source_version": "V3 hypothesis",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Prediction-market probability changes are an independent event-state hypothesis, not a direct trade rule.",
+      "evidence": [
+        "docs/v3-research-framework.md"
+      ],
+      "pending_gate": "V3_H11_DATA_PREFLIGHT_AND_RESEARCH"
+    },
+    {
+      "id": "historical_h1_h2_price_volume_branch",
+      "category": "rejected_research",
+      "source_version": "Historical Replay H1/H2",
+      "migration_status": "REJECTED_WITH_EVIDENCE",
+      "rationale": "Preregistered H1 was insufficient and distinct H2 failed its development gate; sealed 2026H1 holdout remained unopened. Do not resurrect via silent parameter search.",
+      "evidence": [
+        "docs/historical-backtest-preflight.md"
+      ],
+      "pending_gate": null
+    },
+    {
+      "id": "leverage",
+      "category": "execution_risk",
+      "source_version": "project-wide",
+      "migration_status": "REJECTED_WITH_EVIDENCE",
+      "rationale": "Current project path explicitly excludes leverage; V3 research is not authorized to introduce it.",
+      "evidence": [
+        "PROJECT_BACKLOG.md",
+        "docs/v3-research-framework.md"
+      ],
+      "pending_gate": null
+    }
+  ]
+}
