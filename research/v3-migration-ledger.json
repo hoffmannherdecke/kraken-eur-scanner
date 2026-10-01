@@ -238,11 +238,14 @@
       "category": "risk_state",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Must be tested as state/risk conditioning rather than assumed directional signal.",
+      "rationale": "FOMC scheduled-event source and DST/known-at point-in-time semantics are green, but no risk-window variant has been performance-tested or selected.",
       "evidence": [
+        "research/v3/h5-macro-event-risk-precheck-v1.json",
+        "tools/v3-h5-macro-event-window-smoke.py",
+        "research/source-registry.json",
         "docs/v3-research-framework.md"
       ],
-      "pending_gate": "V3_H5_RESEARCH"
+      "pending_gate": "V3_H5_VERSIONED_OFFICIAL_EVENT_CALENDAR_THEN_ONE_PREREGISTERED_RISK_VARIANT"
     },
     {
       "id": "smart_money_trader_activity",
