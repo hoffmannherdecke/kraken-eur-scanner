@@ -67,6 +67,7 @@ def horizon_record(rows,baseline,at,horizon_minutes,interval_minutes):
     }
 
 def ensure_opportunity_audit(rec,d,q,alt):
+    before=json.loads(json.dumps(rec.get("opportunity_audit"))) if rec.get("opportunity_audit") else None
     timing=d.get("timing") or {}
     detected_at=timing.get("candidate_detected_at_utc") or d.get("candidate_event_time_utc") or d.get("evaluated_at_utc")
     detected_ts=zdt(detected_at).timestamp()
@@ -154,8 +155,18 @@ def ensure_opportunity_audit(rec,d,q,alt):
             "continuation_ge_5pct":bool(h24.get("mfe_pct") is not None and h24["mfe_pct"]>=5),
             "drawdown_le_minus_2pct":bool(h24.get("mae_pct") is not None and h24["mae_pct"]<=-2)
         }
-    audit["updated_at_utc"]=datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
+    def _without_updated_at(value):
+        if value is None:
+            return None
+        out=json.loads(json.dumps(value))
+        out.pop("updated_at_utc",None)
+        return out
+
+    changed=(_without_updated_at(before)!=_without_updated_at(audit))
+    if changed or not audit.get("updated_at_utc"):
+        audit["updated_at_utc"]=datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
     rec["opportunity_audit"]=audit
+    return changed
 
 def main():
     control=json.loads((ROOT/"paper_runtime_control.json").read_text("utf-8"))
@@ -226,7 +237,7 @@ def main():
         alt=(q or {}).get("altname") or d.get("altname") or d["pair"].replace("/","")
 
         # Measurement-only audit. It never changes evaluator decisions, revalidation, entries, stops or sizing.
-        ensure_opportunity_audit(rec,d,q,alt)
+        audit_changed=ensure_opportunity_audit(rec,d,q,alt)
 
         due=[
             h for h in HORIZONS
@@ -234,7 +245,9 @@ def main():
             and not rec["horizons"].get(str(h),{}).get("complete")
         ]
         if not due:
-            target.write_text(json.dumps(rec,indent=2,sort_keys=True)+"\n","utf-8")
+            if audit_changed:
+                target.write_text(json.dumps(rec,indent=2,sort_keys=True)+"\n","utf-8")
+                changed+=1
             continue
 
         rows=get_ohlc(alt,at-120,INTERVAL)
