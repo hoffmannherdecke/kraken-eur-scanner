@@ -138,7 +138,7 @@ Current methodology precheck:
 - exact 15m/1h/4h closed-bar lookbacks, explicit breadth denominator and future-row rejection are proven;
 - an intentionally missing XRP 1h lookback remains missing while 15m/4h stay usable;
 - no performance trial, pair/month/threshold selection or holdout access has begun.
-- preceding red smoke runs were only negative-assertion-polarity wiring defects, not feature leakage or hypothesis failures.
+- initial red smoke runs were only negative-assertion-polarity wiring defects, not feature leakage or hypothesis failures; after advancing the prereg status, the expected old-state guard mismatch occurred once, and the final advanced-state guard is **Run #5 SUCCESS**.
 
 ### H2 — Basis / Premium / Funding / OI State Layer
 Status: `PRECHECK`  
