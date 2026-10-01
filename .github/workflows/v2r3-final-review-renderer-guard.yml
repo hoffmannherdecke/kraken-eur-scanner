@@ -1,0 +1,63 @@
+name: V2R3 final review renderer guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/render-v2r3-final-review.py'
+      - 'supabase/views/v2r3_release_review_snapshot.sql'
+      - '.github/workflows/v2r3-final-review-renderer-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Compile renderer
+        run: python -m py_compile tools/render-v2r3-final-review.py
+      - name: Blocked snapshot must fail closed
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          Path('/tmp/blocked.json').write_text(json.dumps({
+            'series_id':'S','strategy_revision':'V2R3','review_state':'WAITING_COMPLETION',
+            'final_review_allowed':False,'gate_state':'COLLECTING_AGE','candidate_outcomes':78,
+            'completed_trades':0,'coverage_24h_pct':0,'integrity_state':'HEALTHY'
+          }))
+          PY
+          python tools/render-v2r3-final-review.py /tmp/blocked.json --output /tmp/blocked.md --allow-blocked
+          grep -q 'BLOCKED — final review gate not mature' /tmp/blocked.md
+          if python tools/render-v2r3-final-review.py /tmp/blocked.json --output /tmp/blocked2.md; then
+            echo 'ERROR: blocked snapshot was accepted without --allow-blocked'
+            exit 1
+          else
+            echo 'FINAL_REVIEW_FAIL_CLOSED PASS'
+          fi
+      - name: Mature synthetic snapshot renders evidence-only pack
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          Path('/tmp/ready.json').write_text(json.dumps({
+            'series_id':'S','strategy_revision':'V2R3','review_state':'READY_FOR_FINAL_REVIEW',
+            'final_review_allowed':True,'gate_state':'ALT_GATE_READY','candidate_outcomes':1000,
+            'completed_trades':0,'coverage_24h_pct':97.0,'integrity_state':'HEALTHY',
+            'runtime_timing':[{'decision':'REJECT','candidates':900,'p50_detect_to_eval_start_seconds':35,'p90_detect_to_eval_start_seconds':55}],
+            'revalidation_timing':{'revalidated_candidates':100,'decision_changes':20,'p50_ttl_lag_seconds':100,'p90_ttl_lag_seconds':400,'max_ttl_lag_seconds':900},
+            'outcome_summary':[{'decision':'REJECT','candidates':900,'mature_24h':870,'p50_mfe_24h_pct':1.2,'p50_mae_24h_pct':-0.8}],
+            'interim_horizons':[], 'reason_family_rollup':[], 'mature_missed_move_candidates':[]
+          }))
+          PY
+          python tools/render-v2r3-final-review.py /tmp/ready.json --output /tmp/ready.md | tee /tmp/ready.out
+          grep -q '"status": "PASS"' /tmp/ready.out
+          grep -q 'Required causal classification' /tmp/ready.md
+          grep -q 'No real-money action is authorized' /tmp/ready.md
