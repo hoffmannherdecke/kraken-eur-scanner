@@ -14,6 +14,9 @@ name: MINI-PC tools smoke
       - 'tools/v2r4-ws-shadow-evidence.py'
       - 'tools/v2r4-ws-shadow-outcome-tracker.py'
       - 'tools/v2r4-shadow-cloud-sync.py'
+      - 'tools/minipc-status-sync.py'
+      - 'tools/install-minipc-status-sync.ps1'
+      - 'tools/uninstall-minipc-status-sync.ps1'
       - 'tools/install-minipc-v2r4-shadow-cloud-sync.ps1'
       - 'tools/uninstall-minipc-v2r4-shadow-cloud-sync.ps1'
       - 'tools/install-minipc-v2r4-shadow-outcomes.ps1'
@@ -45,7 +48,7 @@ jobs:
       - name: Parse Python transport tools
         shell: powershell
         run: |
-          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py .\tools\v2r4-ws-shadow-evidence.py .\tools\v2r4-ws-shadow-outcome-tracker.py .\tools\v2r4-shadow-cloud-sync.py
+          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py .\tools\v2r4-ws-shadow-evidence.py .\tools\v2r4-ws-shadow-outcome-tracker.py .\tools\v2r4-shadow-cloud-sync.py .\tools\minipc-status-sync.py
           Write-Host 'PYTHON_TRANSPORT_PARSE_OK'
 
       - name: Parse PowerShell scripts
@@ -67,6 +70,8 @@ jobs:
             'tools/uninstall-minipc-v2r4-shadow-outcomes.ps1',
             'tools/install-minipc-v2r4-shadow-cloud-sync.ps1',
             'tools/uninstall-minipc-v2r4-shadow-cloud-sync.ps1',
+            'tools/install-minipc-status-sync.ps1',
+            'tools/uninstall-minipc-status-sync.ps1',
             'tools/install-minipc-v2r4-ws-shadow.ps1',
             'tools/uninstall-minipc-v2r4-ws-shadow.ps1',
             'tools/minipc-internet-recovery-gate.ps1',
