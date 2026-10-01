@@ -130,8 +130,8 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [x] Supabase bleibt fail-soft/sekundär; Ausfall stoppt Scanner/Paper-Pfad nicht.
 
 ### ChatGPT / Work / API
-- [ ] Routinejobs vollständig aus Work heraushalten, soweit GitHub/Mini-PC/API sie zuverlässig übernehmen können.
-- [ ] Work nur für kleine unvermeidbare Aufgaben oder gezielte Analyse verwenden; keine Dauerpoller.
+- [x] Projekt-Routinejobs sind aus ChatGPT Work herausgelöst, soweit technisch sinnvoll: Scanner/Evaluator-Lifecycle läuft in GitHub, Realtime/Watchdog/Backup/Shadow auf dem MINI-PC, strukturierter State in Supabase. Für den Regelbetrieb besteht keine Work-Dauerabhängigkeit.
+- [x] Work-Rolle verbindlich begrenzt: nur gezielte, nicht sinnvoll über GitHub/MINI-PC/API lösbare Analyse-/Desktopaufgaben; **keine Dauerpoller und keine kritische Runtime-Abhängigkeit**.
 - [ ] API-Verbrauch und Work-Credits getrennt überwachen und Kostenlimits/Guardrails festlegen.
 - [x] Ereignisgesteuerte Analyse bevorzugt: Scanner→Evaluator ist Dispatch-basiert; ohne neue Kandidaten/fällige WAIT-Revalidation erfolgt kein neuer Modellentscheid. Health-, Archive-, Timing- und Completion-Watches laufen ohne KI.
 - [ ] n8n Community erst später prüfen, wenn echte Orchestrierungs-Komplexität vorhanden ist; nicht vorsorglich einführen.
