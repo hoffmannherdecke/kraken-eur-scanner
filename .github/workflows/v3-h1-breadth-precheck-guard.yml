@@ -6,6 +6,7 @@ name: V3 H1 breadth precheck guard
     branches: [main]
     paths:
       - 'research/v3/h1-cross-crypto-breadth-precheck-v1.json'
+      - 'research/v3/h1-eur15-development-feature-trial-v1.json'
       - 'research/v3/fixtures/h1-cross-crypto-breadth-synthetic.json'
       - 'tools/v3-h1-breadth-pit-smoke.py'
       - '.github/workflows/v3-h1-breadth-precheck-guard.yml'
@@ -45,7 +46,12 @@ jobs:
           assert j["future_trial_constraints"]["sealed_2026h1_holdout_open_allowed"] is False
           assert j["runtime_guardrails"]["orders"] is False
           assert j["runtime_guardrails"]["real_money_actions"] is False
-          assert j["next_gate"]=="PREREGISTER_REAL_NORMALIZED_EUR15_DEVELOPMENT_DATASET_AND_FEATURE_ONLY_TRIAL_NO_HOLDOUT"
+          assert j["next_gate"]=="REAL_EUR15_BREADTH_FEATURE_TRIAL_PREREGISTERED__NEXT_EXECUTE_PHYSICALLY_WITH_HOLDOUT_SEALED"
+          assert rd["real_eur15_feature_trial_preregistered"]=="V3-H1-EUR15-BREADTH-FEATURE-INTEGRITY-001"
+          assert rd["real_eur15_expected_pair_files"]==648
+          assert rd["real_eur15_expected_rows"]==20960798
+          assert rd["fixed_leaders"]==["XBTEUR","ETHEUR"]
+          assert rd["feature_trial_performance_labels_allowed"] is False
           rd=j["methodology_readiness"]
           assert rd["synthetic_pit_multi_pair_smoke"]=="CI_GREEN_RUN_3"
           assert rd["future_rows_leakage_trap"]=="PASS_IGNORED"
@@ -78,4 +84,52 @@ jobs:
           assert j["guardrails"]["holdout_opened"] is False
           assert j["guardrails"]["active_v2r3_changed"] is False
           print("V3_H1_BREADTH_PIT_SMOKE PASS future-ignored/missing-explicit")
+          PY
+
+
+      - name: Validate real EUR15 H1 breadth feature-only preregistration
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("research/v3/h1-eur15-development-feature-trial-v1.json").read_text("utf-8"))
+          assert j["kind"]=="V3_H1_EUR15_DEVELOPMENT_FEATURE_TRIAL_V1"
+          assert j["status"]=="FROZEN_PREREGISTERED_NOT_EXECUTED"
+          assert j["trial_id"]=="V3-H1-EUR15-BREADTH-FEATURE-INTEGRITY-001"
+          d=j["dataset"]
+          assert d["normalized_schema"]=="KRAKEN_EUR15_NORMALIZED_V1"
+          assert d["expected_normalized_pair_files"]==648
+          assert d["expected_total_normalized_rows"]==20960798
+          assert d["development_window"]["end_utc_exclusive"]=="2026-01-01T00:00:00Z"
+          assert d["sealed_holdout"]["status"]=="LOCKED_DO_NOT_READ_IN_H1_FEATURE_TRIAL"
+          assert d["current_live_universe_filter"] is False
+          f=j["fixed_feature_contract"]
+          assert f["horizons_seconds"]=={"15m":900,"1h":3600,"4h":14400}
+          assert f["leaders"]==["XBTEUR","ETHEUR"]
+          m=j["denominator_and_missingness_contract"]
+          assert m["denominator_is_horizon_specific"] is True
+          assert m["eligible_pair_requires_exact_cutoff_and_exact_lookback"] is True
+          assert m["missing_pair_count_reported"] is True
+          assert m["no_zero_fill"] is True
+          assert m["no_forward_fill"] is True
+          assert m["no_current_listing_filter"] is True
+          o=j["outputs_allowed"]
+          assert o["future_return_labels"] is False
+          assert o["trade_returns"] is False
+          assert o["edge_metrics"] is False
+          assert o["threshold_ranking"] is False
+          assert o["pair_ranking_by_performance"] is False
+          g=j["search_and_selection_guardrails"]
+          assert g["target_pair_subset_selected_by_seen_performance"] is False
+          assert g["horizon_sweep"] is False
+          assert g["threshold_selection"] is False
+          assert g["performance_trial_started"] is False
+          assert g["sealed_holdout_opened"] is False
+          r=j["runtime_guardrails"]
+          assert r["active_v2r3_change_allowed"] is False
+          assert r["v2r4_change_allowed"] is False
+          assert r["paper_shadow_runtime_change_allowed"] is False
+          assert r["orders"] is False
+          assert r["real_money_actions"] is False
+          print("V3_H1_REAL_FEATURE_PREREG PASS 648-pair/pre-2026/breadth-no-label/no-holdout")
           PY

@@ -69,7 +69,7 @@
     "real_money_actions": false,
     "automatic_strategy_promotion": false
   },
-  "next_gate": "PREREGISTER_REAL_NORMALIZED_EUR15_DEVELOPMENT_DATASET_AND_FEATURE_ONLY_TRIAL_NO_HOLDOUT",
+  "next_gate": "REAL_EUR15_BREADTH_FEATURE_TRIAL_PREREGISTERED__NEXT_EXECUTE_PHYSICALLY_WITH_HOLDOUT_SEALED",
   "methodology_readiness": {
     "synthetic_pit_multi_pair_smoke": "CI_GREEN_RUN_3",
     "future_rows_leakage_trap": "PASS_IGNORED",
@@ -77,6 +77,14 @@
     "exact_wall_clock_alignment": "PASS",
     "performance_trial_started": false,
     "holdout_opened": false,
-    "note": "Two preceding failed CI attempts were assertion-polarity wiring errors in the smoke output guard, not point-in-time/data failures."
+    "note": "Two preceding failed CI attempts were assertion-polarity wiring errors in the smoke output guard, not point-in-time/data failures.",
+    "real_eur15_feature_trial_preregistered": "V3-H1-EUR15-BREADTH-FEATURE-INTEGRITY-001",
+    "real_eur15_expected_pair_files": 648,
+    "real_eur15_expected_rows": 20960798,
+    "fixed_leaders": [
+      "XBTEUR",
+      "ETHEUR"
+    ],
+    "feature_trial_performance_labels_allowed": false
   }
 }
