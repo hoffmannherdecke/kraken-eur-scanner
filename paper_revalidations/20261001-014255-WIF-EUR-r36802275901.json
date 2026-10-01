@@ -1,0 +1,233 @@
+{
+  "altname": "WIFEUR",
+  "candidate_id": "20261001-014255-WIF-EUR-r36802275901",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.2214 with clear volume expansion",
+      "Hold or successful retest above 0.2214"
+    ],
+    "reason_codes": [
+      "NO_BREAKOUT",
+      "WEAK_LIVE_VOLUME",
+      "BELOW_RESISTANCE",
+      "NEGATIVE_MAJOR_MARKET_CONTEXT",
+      "COST_HURDLE",
+      "ACCOUNT_TRADABILITY_UNAVAILABLE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The one-shot revalidation still shows no confirmed breakout: price remains below 0.2214 resistance, and the latest 15m candle has no trades. Weak live activity, a negative major-market backdrop, and Kraken EUR round-trip fees leave insufficient evidence for a scout.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "WIFUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 60.66,
+        "available": true,
+        "current_funding_rate": 3.339148691935e-06,
+        "current_open_interest": 2642884.0,
+        "funding_rate_delta": 2.407732209879e-06,
+        "open_interest_pct": 0.3697,
+        "previous_funding_rate": 9.31416482056e-07,
+        "previous_observed_at_utc": "2026-10-01T01:44:29.077176Z",
+        "previous_open_interest": 2633150.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.339148691935e-06,
+        "index_price": 0.24977,
+        "last": 0.2498,
+        "mark_price": 0.24977192318,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 2642884.0,
+        "requested_symbols": [
+          "PF_WIFUSD",
+          "PI_WIFUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_WIFUSD",
+        "volume24h": 9304842
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.2206,
+      "bid": 0.2205,
+      "last": 0.2204,
+      "spread_pct": 0.04534119247335706
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "25",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.11624925902966599,
+          "ret3h_pct": -0.16540758054807148
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.12009101634923303,
+          "ret3h_pct": -0.06829765975117086
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.08631437613886295,
+          "ret3h_pct": -0.06714628297361802
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T02:45:08.004730Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_065cc9a53471ba60006abdc934fc6887d1908bd45e0339851d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2206,
+    "bid": 0.2205,
+    "last": 0.2204,
+    "spread_pct": 0.04534119247335706
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.2193,
+      "high": 0.2193,
+      "low": 0.219,
+      "open": 0.219,
+      "trades": 2,
+      "ts": 1790819100,
+      "volume": 988.01991,
+      "vwap": 0.219
+    },
+    {
+      "close": 0.2199,
+      "high": 0.22,
+      "low": 0.2189,
+      "open": 0.2189,
+      "trades": 8,
+      "ts": 1790820000,
+      "volume": 5659.52598,
+      "vwap": 0.2198
+    },
+    {
+      "close": 0.2208,
+      "high": 0.2208,
+      "low": 0.2197,
+      "open": 0.2197,
+      "trades": 6,
+      "ts": 1790820900,
+      "volume": 650.41376,
+      "vwap": 0.2199
+    },
+    {
+      "close": 0.2204,
+      "high": 0.2213,
+      "low": 0.2202,
+      "open": 0.2211,
+      "trades": 14,
+      "ts": 1790821800,
+      "volume": 6495.95758,
+      "vwap": 0.2208
+    },
+    {
+      "close": 0.2204,
+      "high": 0.2204,
+      "low": 0.2204,
+      "open": 0.2204,
+      "trades": 0,
+      "ts": 1790822700,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "WIF/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-014255-WIF-EUR-r36802275901.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T02:45:14.157875Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "b3902f27d25bcdf43199a7ff7714bbbdc55e7a2f",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T02:45:14.157875Z",
+    "revalidation_started_at_utc": "2026-10-01T02:45:07.710928Z",
+    "ttl_due_at_utc": "2026-10-01T02:29:29.077176Z",
+    "ttl_lag_seconds": 938.634
+  }
+}

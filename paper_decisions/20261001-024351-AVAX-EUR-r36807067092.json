@@ -1,0 +1,192 @@
+{
+  "altname": "AVAXEUR",
+  "candidate_age_seconds": 13,
+  "candidate_event_time_utc": "2026-10-01T02:43:51Z",
+  "candidate_id": "20261001-024351-AVAX-EUR-r36807067092",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 9.667 followed by a hold or successful retest of that level",
+      "continued buying volume with price holding above 9.667 on a fresh Kraken EUR quote"
+    ],
+    "reason_codes": [
+      "breakout_not_close_confirmed",
+      "weak_major_market_regime",
+      "low_adx_trend_strength",
+      "24h_return_negative",
+      "open_interest_declining",
+      "fees_and_spread_require_substantial_upside"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Fresh breakout attempt with elevated volume, but price lacks closed-bar confirmation and broader market support; wait for continuation before assessing an entry net of costs.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "AVAXUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 165.84,
+        "available": true,
+        "current_funding_rate": -0.000219833063515,
+        "current_open_interest": 342199.42,
+        "funding_rate_delta": -0.00012360790448791298,
+        "open_interest_pct": -1.3179,
+        "previous_funding_rate": -9.6225159027087e-05,
+        "previous_observed_at_utc": "2026-09-30T23:58:15.126778Z",
+        "previous_open_interest": 346769.34
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.000219833063515,
+        "index_price": 10.9979,
+        "last": 10.997,
+        "mark_price": 10.99816795141,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 342199.42,
+        "requested_symbols": [
+          "PF_AVAXUSD",
+          "PI_AVAXUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_AVAXUSD",
+        "volume24h": 649399.36
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 9.713,
+      "bid": 9.709,
+      "last": 9.716,
+      "spread_pct": 0.04119040263618124
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.05194072519014714,
+          "ret3h_pct": -0.11560630969207342
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.005057209684555808,
+          "ret3h_pct": 0.01685935504536218
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1820097710508617,
+          "ret3h_pct": -0.028782500239854514
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T02:44:04.244390Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-01T02:44:14.705948Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0bd577d2c3308e2e006abdc8f6222087d1b4664be793b43096"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 9.713,
+    "bid": 9.709,
+    "last": 9.716,
+    "spread_pct": 0.04119040263618124
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "AVAX/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36807067092:AVAX-EUR:1790822631",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "b3902f27d25bcdf43199a7ff7714bbbdc55e7a2f",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T02:43:51Z",
+    "candidate_detected_ts": 1790822631,
+    "candidate_snapshot_at_utc": "2026-10-01T02:43:51Z",
+    "detected_to_evaluation_complete_seconds": 23.706,
+    "detected_to_evaluation_start_seconds": 13.083,
+    "evaluation_completed_at_utc": "2026-10-01T02:44:14.705948Z",
+    "evaluation_runtime_seconds": 10.623,
+    "evaluation_started_at_utc": "2026-10-01T02:44:04.083052Z",
+    "handoff_to_evaluation_start_seconds": 10.602,
+    "handoff_written_at_utc": "2026-10-01T02:43:53.481413Z",
+    "scan_step_started_at_utc": "2026-10-01T02:42:18Z"
+  }
+}
