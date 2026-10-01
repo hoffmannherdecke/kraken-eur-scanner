@@ -3,7 +3,16 @@
   "candidate_id": "20261001-182525-PUMP-EUR-r36906508478",
   "evaluated_at_utc": "2026-10-01T18:26:04.285824Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.931,
+      "expected_bars": 30,
+      "mae_pct": -1.242,
+      "mfe_pct": 0.893
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -57,8 +66,11 @@
   },
   "original_decision": "WAIT",
   "pair": "PUMP/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-01T19:04:19.775431Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-01T19:04:34.803161Z"
 }

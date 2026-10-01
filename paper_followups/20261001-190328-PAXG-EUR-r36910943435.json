@@ -1,0 +1,50 @@
+{
+  "baseline_ask_eur": 3721.99,
+  "candidate_id": "20261001-190328-PAXG-EUR-r36910943435",
+  "evaluated_at_utc": "2026-10-01T19:03:53.880802Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-01T19:03:28Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 25.881,
+    "detection_price_eur": 3722.15,
+    "evaluated_at_utc": "2026-10-01T19:03:53.880802Z",
+    "evaluation_ask_eur": 3721.99,
+    "flagged_as_already_run": false,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-01T16:28:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 0.268,
+      "price_eur": 3712.2
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "no_ignition_or_continuity",
+      "breakout_absent",
+      "resistance_nearby",
+      "remaining_move_below_cost_hurdle"
+    ],
+    "scan_step_started_at_utc": "2026-10-01T18:59:29Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 0.2680351274177095,
+      "ret15_live_pct": 0.0,
+      "ret1h_pct": 0.15202475447329,
+      "ret3h_pct": 0.09896543470837571,
+      "scanner_late_flag": false,
+      "score": 7.8
+    },
+    "schema_version": 1,
+    "setup_lane": "NONE",
+    "updated_at_utc": "2026-10-01T19:04:36.096729Z"
+  },
+  "original_decision": "REJECT",
+  "pair": "PAXG/EUR",
+  "path_classification": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01"
+}
