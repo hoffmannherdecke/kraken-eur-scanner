@@ -247,14 +247,14 @@ Read-only inspection of the verified full archive on the physical MINI-PC comple
 - ZIP integrity test: no bad member;
 - CSV members: **12,035**;
 - interval inventory includes **1,713 15-minute CSVs**;
-- likely Kraken-EUR 15-minute members detected: **608**;
+- Kraken-EUR 15-minute members detected after aligning the inventory matcher with the extractor: **648**;
 - archive MANIFEST present and parsed successfully;
 - MANIFEST product: OHLCVT;
 - no extraction performed;
 - no active strategy/runtime changes;
 - next gate reported by the inspector: **selective_eur_15m_extraction**.
 
-This closes the archive naming/inventory gate. The next extraction must remain selective to EUR/15m and must preserve the original verified ZIP as the immutable provenance source.
+The first inventory heuristic undercounted short compact Kraken pair symbols and reported 608; the extractor's fail-closed count exposed this before any extraction. The inventory matcher is now aligned to the extractor, yielding the correct physical-archive count of 648. This closes the archive naming/inventory gate. The next extraction must remain selective to EUR/15m and must preserve the original verified ZIP as the immutable provenance source.
 
 ## 11b. Full Kraken OHLCVT archive downloaded and verified 2026-10-01
 
