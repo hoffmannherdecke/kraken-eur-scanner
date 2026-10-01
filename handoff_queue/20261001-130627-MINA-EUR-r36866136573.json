@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "MINAEUR",
+  "candidate_id": "20261001-130627-MINA-EUR-r36866136573",
+  "event_time_utc": "2026-10-01T13:06:27Z",
+  "event_ts": 1790859987,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "MINA/EUR",
+  "queue_id": "36866136573:MINA-EUR:1790859987",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=MINA/EUR | score=8.40 | price_eur=0.1325 | ret15_live=0.15% | ret1h=0.61% | ret3h=1.22% | ret24h=0.99% | vol_live=0.03x | vol_closed=1.77x | rank=3 | rank_jump=25 | state_rank_jump=3 | breakout3h=1 | higher_lows=0 | base_tight=2.32% | fresh_move3h=2.55% | adx14=36.0 | spread=0.303% | turnover24h_eur=169810 | coverage=100% | ret7d=2.16% | ret30d=118.65% | dist7d_high=-4.88% | dist30d_high=-18.21% | depth_1pct_eur=37563 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 35.95956946377759,
+    "altname": "MINAEUR",
+    "base_tight_pct": 2.3219814241486114,
+    "breakout3h": true,
+    "context30d": 118.65,
+    "context7d": 2.16,
+    "depth_eur_1pct": 37562.94,
+    "dist30d_high_pct": -18.21,
+    "dist7d_high_pct": -4.88,
+    "ema26_gt_50": true,
+    "fresh_move_3h": 2.554179566563475,
+    "higher_lows": false,
+    "late": false,
+    "pair": "MINA/EUR",
+    "price": 0.1325,
+    "rank15": 3,
+    "rank15_prev": 28,
+    "rank_jump": 25,
+    "ret15_closed": -0.15174506828528056,
+    "ret15_live": 0.15117157974300355,
+    "ret1h": 0.6074411541381997,
+    "ret24h": 0.9908536585365724,
+    "ret3h": 1.2223071046600698,
+    "score": 8.4,
+    "spread_pct": 0.3034901365705701,
+    "stale": false,
+    "state_rank_jump": 3,
+    "turnover24h": 169810.00432068165,
+    "volume_ratio_closed": 1.7693829499031966,
+    "volume_ratio_live": 0.03134493504446783
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-10-01T13:06:27Z",
+    "positive_1h_count": 9,
+    "positive_3h_count": 15,
+    "schema_version": 1,
+    "score_ge_5_count": 14,
+    "top_1h": [
+      {
+        "pair": "ZRO/EUR",
+        "ret15_live": -0.067,
+        "ret1h": 1.642,
+        "ret3h": 2.412,
+        "score": 7.6,
+        "vol_live": 0.731
+      },
+      {
+        "pair": "ENA/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.174,
+        "ret3h": 1.086,
+        "score": 4.9,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "MINA/EUR",
+        "ret15_live": 0.151,
+        "ret1h": 0.607,
+        "ret3h": 1.222,
+        "score": 8.4,
+        "vol_live": 0.031
+      },
+      {
+        "pair": "XDC/EUR",
+        "ret15_live": -0.189,
+        "ret1h": 0.413,
+        "ret3h": 1.802,
+        "score": 8.3,
+        "vol_live": 35.023
+      },
+      {
+        "pair": "HBAR/EUR",
+        "ret15_live": -0.226,
+        "ret1h": 0.238,
+        "ret3h": -0.215,
+        "score": 4.3,
+        "vol_live": 0.766
+      },
+      {
+        "pair": "TRX/EUR",
+        "ret15_live": 0.003,
+        "ret1h": 0.23,
+        "ret3h": -1.152,
+        "score": 5.7,
+        "vol_live": 0.04
+      },
+      {
+        "pair": "ALGO/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.187,
+        "ret3h": -0.31,
+        "score": 4.4,
+        "vol_live": 1.034
+      },
+      {
+        "pair": "PAXG/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.17,
+        "ret3h": 0.554,
+        "score": 4.9,
+        "vol_live": 0.0
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "MINA/EUR",
+        "ret15_live": 0.151,
+        "ret1h": 0.607,
+        "ret3h": 1.222,
+        "score": 8.4,
+        "vol_live": 0.031
+      },
+      {
+        "pair": "XDC/EUR",
+        "ret15_live": -0.189,
+        "ret1h": 0.413,
+        "ret3h": 1.802,
+        "score": 8.3,
+        "vol_live": 35.023
+      },
+      {
+        "pair": "ZRO/EUR",
+        "ret15_live": -0.067,
+        "ret1h": 1.642,
+        "ret3h": 2.412,
+        "score": 7.6,
+        "vol_live": 0.731
+      },
+      {
+        "pair": "HYPE/EUR",
+        "ret15_live": 0.0,
+        "ret1h": -1.227,
+        "ret3h": -0.025,
+        "score": 7.4,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "XDG/EUR",
+        "ret15_live": -0.26,
+        "ret1h": -0.662,
+        "ret3h": -0.162,
+        "score": 7.4,
+        "vol_live": 3.45
+      },
+      {
+        "pair": "ETH/EUR",
+        "ret15_live": -0.216,
+        "ret1h": -0.604,
+        "ret3h": -0.289,
+        "score": 6.4,
+        "vol_live": 5.256
+      },
+      {
+        "pair": "CRV/EUR",
+        "ret15_live": -0.183,
+        "ret1h": -0.902,
+        "ret3h": -0.519,
+        "score": 6.3,
+        "vol_live": 5.857
+      },
+      {
+        "pair": "RENDER/EUR",
+        "ret15_live": 0.0,
+        "ret1h": -0.704,
+        "ret3h": -0.295,
+        "score": 6.0,
+        "vol_live": 0.0
+      }
+    ],
+    "total_rows": 58
+  },
+  "scanner_market_context": {
+    "altname": "MINAEUR",
+    "atr15_eur": 0.0009285714285714294,
+    "atr15_pct": 0.7056013894919677,
+    "closed_through_epoch": 1790858700,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.1316,
+      "high": 0.1321,
+      "low": 0.1314,
+      "open": 0.1318,
+      "volume": 51725.2933175
+    },
+    "pair": "MINA/EUR",
+    "range_1h_pct": 0.6838905775076078,
+    "recent_closed_closes": [
+      0.131,
+      0.1307,
+      0.1316,
+      0.1317,
+      0.1316,
+      0.1316
+    ],
+    "resistance_1h": 0.1322,
+    "resistance_3h": 0.1322,
+    "schema_version": 1,
+    "sensor_price_eur": 0.1325,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.1313,
+    "support_3h": 0.1292,
+    "ts": 1790859987
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 36866136573,
+  "source_scanner_sha": "c4c0b30b7b77baec83e79f11c495594b9f5f92aa",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T13:06:27Z",
+    "candidate_detected_ts": 1790859987,
+    "candidate_snapshot_at_utc": "2026-10-01T13:06:27Z",
+    "handoff_written_at_utc": "2026-10-01T13:06:29.108012Z",
+    "scan_step_started_at_utc": "2026-10-01T13:04:56Z"
+  }
+}
