@@ -357,3 +357,44 @@ At creation-time snapshot:
 - MINI-PC: an old local watchdog revision intermittently still labels harmless WS-shadow heartbeat jitter as `FEED_STALE`, while Kraken canary/universe remain fresh. The repository correction is CI-green but has intentionally not interrupted evidence collection for a local pull yet.
 
 This view is a release-safety guard, not strategy-performance evidence.
+
+
+## Latest verified control snapshot — 2026-10-01 16:55 UTC
+
+Direct Supabase control-plane verification at **2026-10-01 16:55:58 UTC**:
+
+### V2R3 clean series
+- series: `PAPER-V2R3-CLEAN-20261001T0925Z`
+- Candidate-Outcomes: **64**
+- completed trades / BUY_SCOUT: **0 / 0**
+- final decisions: **6 WAIT / 58 REJECT**
+- integrity: **HEALTHY**
+- duplicate candidate IDs / duplicated queue IDs: **0 / 0**
+- distinct strategy/runtime fingerprints: **1 / 1**
+- 24h-eligible / complete: **0 / 0**
+- completion gate: **COLLECTING_AGE**
+- remaining to alternate outcome floor: **936**
+- remaining to 7-day age floor: **160.48 h**
+
+### V2R4 shadow
+- total events: **407**
+- prospective events: **389**
+- due 6h: **141**
+- completed due 6h: **138**
+- unresolved due 6h: **3**
+- 6h archival coverage: **97.87%**
+- readiness state: **MATURE_OUTCOMES_PENDING**
+
+The unresolved rows are current cohort maturation/archival lag, not evidence of a strategy fault.
+
+### MINI-PC / activation control
+- latest MINI-PC observation: **2026-10-01 16:54:26 UTC**
+- centralized state: **HEALTHY / OK**
+- status age at verification: **1.53 min**
+- activation review state: **BLOCKED_V2R3_COMPLETION**
+- `automatic_activation_allowed = false`
+
+A transient local `WARNING / FEED_STALE` sample immediately before this observation self-cleared without intervention. Together with fresh Kraken-source evidence, this remains consistent with the already-known older local watchdog/shadow-heartbeat false-stale classification rather than a Kraken transport outage. The repository-side watchdog/readiness hardening remains queued for the next bundled local sync; no interruption of the running evidence collection is warranted solely for this.
+
+### Draft-PR #9 drift handling
+At this snapshot the refreshed V2R4 draft branch is **29 commits ahead / 115 commits behind** `main` and therefore reported non-mergeable in its current state. This is expected while runtime/evidence commits continue moving `main`. Per the existing release rule, do **not** churn/rebase merely to keep the draft cosmetically current. Final branch sync/conflict resolution belongs at the actual activation-review boundary, after V2R3 completion and before any merge decision.
