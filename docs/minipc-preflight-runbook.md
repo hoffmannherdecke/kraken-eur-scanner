@@ -1119,6 +1119,18 @@ This confirms the earlier simultaneous loss of RDP reachability and remote-statu
 
 Resume point remains unchanged: continue with the pending read-only `tools/minipc-secret-hygiene-audit.ps1` once the post-boot services have settled.
 
+### MINI-PC secret hygiene audit verified 2026-10-01
+
+Physical read-only audit result:
+- status: **HEALTHY**;
+- critical findings: **0**;
+- warnings: **0**;
+- findings: **none**;
+- audit did not print any secret values;
+- no files were changed, no credentials rotated, and no network login was performed.
+
+This closes the local secret-hygiene gate before any later private-account/self-hosted-runner work.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
