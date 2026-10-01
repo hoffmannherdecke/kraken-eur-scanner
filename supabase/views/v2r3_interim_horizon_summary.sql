@@ -1,4 +1,4 @@
-create or replace view public.v2r3_interim_horizon_summary as
+create or replace view public.v2r3_interim_horizon_summary with (security_invoker=true) as
 select
   series_id,
   initial_decision as decision,
