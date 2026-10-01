@@ -239,6 +239,36 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11l. Physical frozen performance replay V1 validation completed 2026-10-01
+
+The frozen V1 OHLCVT price×volume continuation baseline was executed successfully on the physical MINI-PC after the checkout-safe checksum fix.
+
+Observed validation-only result:
+
+- frozen spec identity remained unchanged;
+- validation event count: **2,600**;
+- primary frozen round-trip cost: **1.40%**;
+- validation mean net return: **-0.720653025202%**;
+- validation median net return: **-1.582316769154%**;
+- validation positive-net rate: **0.358461538462** (~**35.85%**);
+- implied mean gross return before the frozen 1.40% round-trip cost: approximately **+0.67935%**;
+- implied median gross return before the frozen 1.40% round-trip cost: approximately **-0.18232%**;
+- 2026H1 holdout events generated: **0**;
+- holdout metrics computed: **false**;
+- holdout used for threshold selection: **false**;
+- holdout status remained `LOCKED_DO_NOT_READ_IN_V1_SELECTION`;
+- threshold optimization performed: **false**;
+- active strategy / Paper / Shadow runtime changed: **false**;
+- real-money action: **false**.
+
+Interpretation:
+
+The pre-registered V1 baseline does **not** pass validation as a positive post-cost continuation edge. The negative median is already slightly negative before the frozen execution-cost assumption, while the positive gross mean is driven by a right-skewed tail and is not sufficient to overcome the fixed cost model.
+
+This result must be retained as a failed/insufficient V1 research outcome rather than tuned in place. The sealed 2026H1 holdout remains closed. Any later hypothesis, threshold, horizon, exit, or feature change must be a new version/trial under search accounting.
+
+Next gate: perform a validation-only failure-mode review without threshold sweeps or holdout access; only after that may a separately frozen V2 research hypothesis be considered.
+
 ## 11k. Windows checkout checksum mismatch caught before V1 execution 2026-10-01
 
 The first physical MINI-PC launch of the frozen V1 replay stopped **before scanning any historical data** because the working-tree JSON file had Windows CRLF line endings while the frozen checksum had been computed from the repository LF representation.
