@@ -208,9 +208,9 @@
     },
     {
       "id": "coinmetrics_community_network_data",
-      "status": "PRECHECK_CAPTURE_METHOD_PREREGISTERED_LIVE_SMOKE_PENDING",
+      "status": "PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING",
       "class": "onchain_network_state",
-      "unique_value": "Public no-key network metrics provide measured community-tier coverage for activity/valuation/transaction state on part of the representative asset set, plus BTC/ETH exchange in/out flows; historical use remains blocked until publication-lag/known-at semantics are proven.",
+      "unique_value": "Public no-key network metrics with measured representative coverage plus a first prospective known-at capture. The first capture demonstrates that provider EOD-completion and per-metric status/revision timing can differ, so historical point-in-time use remains blocked pending repeated bounded captures.",
       "authoritative_for": [
         "coinmetrics_community_metric_catalog_and_values_within_documented_coverage"
       ],
@@ -222,7 +222,7 @@
         "trade_signal"
       ],
       "overlap_with": [],
-      "overlap_strategy": "V3 H8 state/confirmation source only. Coverage audit is green. Compact prospective known-at capture is preregistered; interval time is never publication time, AssetEODCompletionTime is all-metrics completion context rather than exact per-metric publication, and historical signal tests remain blocked until repeated first-seen/publication-lag evidence exists.",
+      "overlap_strategy": "V3 H8 state/confirmation source only. First prospective capture is green; interval time is not publication time and AssetEODCompletionTime is not exact per-metric finality. Repeated captures across distinct EOD cycles are required before any historical known-at claim, signal trial, or threshold test.",
       "persistence_mode": "compact_catalog_evidence_plus_bounded_prospective_known_at_captures_only; no endless raw archive",
       "duplicate_raw_storage_allowed": false,
       "access": "public_read_only_no_api_key_community_tier"

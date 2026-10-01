@@ -7,6 +7,7 @@ name: V3 H8 on-chain coverage precheck guard
     paths:
       - 'research/v3/h8-onchain-state-precheck-v1.json'
       - 'research/v3/h8-known-at-capture-contract-v1.json'
+      - 'research/v3/captures/h8-coinmetrics-known-at-*.json'
       - 'tools/v3-h8-coinmetrics-known-at-capture.py'
       - 'research/source-registry.json'
       - 'tools/v3-h8-coinmetrics-coverage-precheck.py'
@@ -57,6 +58,11 @@ jobs:
                   assert j['known_at_capture_readiness']['automatic_schedule_enabled'] is False
                   assert j['known_at_capture_readiness']['performance_trial_started'] is False
                   assert j['known_at_capture_readiness']['holdout_opened'] is False
+                  if j['status']=='PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING':
+                      assert j['known_at_capture_readiness']['historical_known_at_claim_allowed'] is False
+                      assert j['known_at_capture_readiness']['first_live_capture']['status']=='PASS'
+                      assert j['known_at_capture_readiness']['first_live_capture']['distinct_eod_cycles_observed']==1
+                      assert j['next_gate']=='BOUNDED_REPEATED_PROSPECTIVE_CAPTURE_ACROSS_AT_LEAST_TWO_DISTINCT_EOD_CYCLES_BEFORE_HISTORICAL_OR_SIGNAL_TRIAL'
           print('V3_H8_PREREG PASS coverage-only/known-at-blocked/no-holdout')
           PY
       - name: Real public Coin Metrics community coverage audit
@@ -142,4 +148,31 @@ jobs:
               "provider_asset_eod_completion_utc":r.get("provider_asset_eod_completion_utc"),
               "returned_metric_ids":sorted((r.get("metrics") or {}).keys())} for r in j["rows"]]
           },sort_keys=True))
+          PY
+
+
+      - name: Validate persisted first H8 prospective capture
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("research/v3/captures/h8-coinmetrics-known-at-20261001T192024Z.json")
+          j=json.loads(p.read_text("utf-8"))
+          assert j["kind"]=="V3_H8_COINMETRICS_PROSPECTIVE_KNOWN_AT_CAPTURE_V1"
+          assert j["status"]=="PASS"
+          assert j["request_started_at_utc"]=="2026-10-01T19:20:24.691857Z"
+          by={r["asset"]:r for r in j["rows"]}
+          assert by["sol"]["status"]=="NO_ROW"
+          for asset in ["btc","eth","xrp","ada"]:
+              assert by[asset]["status"]=="ROW_RETURNED"
+              assert by[asset]["observation_time_utc"]=="2026-09-30T00:00:00Z"
+          assert by["eth"]["provider_asset_eod_completion_utc"]=="2026-10-01T03:22:28Z"
+          assert by["eth"]["metric_status_times_if_returned"]["FlowInExUSD"] > "2026-10-01T03:22:28Z"
+          assert by["eth"]["metric_status_times_if_returned"]["FlowOutExUSD"] > "2026-10-01T03:22:28Z"
+          assert j["known_at_interpretation"]["single_capture_proves_historical_known_at"] is False
+          assert j["guardrails"]["holdout_opened"] is False
+          assert j["guardrails"]["active_v2r3_changed"] is False
+          assert j["guardrails"]["v2r4_changed"] is False
+          assert j["guardrails"]["orders"] is False
+          print("V3_H8_CAPTURE_PERSISTENCE PASS first-cycle/versioned/revision-evidence")
           PY
