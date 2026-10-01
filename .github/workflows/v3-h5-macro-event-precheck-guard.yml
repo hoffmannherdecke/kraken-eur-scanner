@@ -1,0 +1,99 @@
+name: V3 H5 macro event precheck guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/h5-macro-event-risk-precheck-v1.json'
+      - 'research/v3/fixtures/h5-fomc-event-window-synthetic.json'
+      - 'research/source-registry.json'
+      - 'tools/v3-h5-macro-event-window-smoke.py'
+      - '.github/workflows/v3-h5-macro-event-precheck-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Compile H5 smoke
+        run: python -m py_compile tools/v3-h5-macro-event-window-smoke.py
+
+      - name: Validate H5 preregistration
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("research/v3/h5-macro-event-risk-precheck-v1.json").read_text("utf-8"))
+          assert j["kind"]=="V3_H5_MACRO_EVENT_RISK_PRECHECK_V1"
+          assert j["status"]=="PRECHECK"
+          assert j["role"]=="RISK_STATE_GATE_FIRST_NOT_DIRECTIONAL_SIGNAL"
+          assert j["event_semantics"]["timezone_conversion"]=="IANA_America/New_York_DST_AWARE"
+          assert j["precheck_only"]["direction_rule"] is False
+          assert j["precheck_only"]["performance_trial_started"] is False
+          assert j["future_trial_constraints"]["sealed_2026h1_holdout_open_allowed"] is False
+          assert j["runtime_guardrails"]["active_v2r3_change_allowed"] is False
+          assert j["runtime_guardrails"]["orders"] is False
+          assert j["runtime_guardrails"]["real_money_actions"] is False
+          print("V3_H5_PREREG PASS risk-state/no-direction/no-holdout")
+          PY
+
+      - name: October EDT event window smoke
+        run: |
+          python tools/v3-h5-macro-event-window-smoke.py \
+            research/v3/fixtures/h5-fomc-event-window-synthetic.json \
+            --event-id FOMC_2026_10_28_STATEMENT \
+            --pre-minutes 30 --post-minutes 30 \
+            --output /tmp/h5-oct.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/h5-oct.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["event"]["scheduled_utc"]=="2026-10-28T18:00:00Z"
+          assert j["event"]["utc_offset_seconds"]==-14400
+          by={x["candidate_utc"]:x["relation"] for x in j["candidate_relations"]}
+          assert by["2024-08-01T12:00:00Z"]=="SCHEDULE_NOT_POINT_IN_TIME_KNOWN"
+          assert by["2026-10-28T17:00:00Z"]=="OUTSIDE_WINDOW"
+          assert by["2026-10-28T17:45:00Z"]=="PRE_EVENT_WINDOW"
+          assert by["2026-10-28T18:00:00Z"]=="EVENT_OR_POST_WINDOW"
+          assert by["2026-10-28T18:15:00Z"]=="EVENT_OR_POST_WINDOW"
+          assert by["2026-10-28T19:00:00Z"]=="OUTSIDE_WINDOW"
+          assert j["guardrails"]["performance_trial_started"] is False
+          assert j["guardrails"]["holdout_opened"] is False
+          print("V3_H5_OCT_DST PASS EDT/PIT-known-at")
+          PY
+
+      - name: December EST event window smoke
+        run: |
+          python tools/v3-h5-macro-event-window-smoke.py \
+            research/v3/fixtures/h5-fomc-event-window-synthetic.json \
+            --event-id FOMC_2026_12_09_STATEMENT \
+            --pre-minutes 30 --post-minutes 30 \
+            --output /tmp/h5-dec.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/h5-dec.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["event"]["scheduled_utc"]=="2026-12-09T19:00:00Z"
+          assert j["event"]["utc_offset_seconds"]==-18000
+          by={x["candidate_utc"]:x["relation"] for x in j["candidate_relations"]}
+          assert by["2026-12-09T18:30:00Z"]=="PRE_EVENT_WINDOW"
+          assert by["2026-12-09T18:45:00Z"]=="PRE_EVENT_WINDOW"
+          assert by["2026-12-09T19:00:00Z"]=="EVENT_OR_POST_WINDOW"
+          assert by["2026-12-09T19:15:00Z"]=="EVENT_OR_POST_WINDOW"
+          assert by["2026-12-09T20:00:00Z"]=="OUTSIDE_WINDOW"
+          print("V3_H5_DEC_DST PASS EST/PIT-known-at")
+          PY
+
+      - name: Validate source registry after FOMC source addition
+        run: python tools/validate-source-registry.py
