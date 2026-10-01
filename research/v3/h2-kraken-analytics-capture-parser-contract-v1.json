@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H2_KRAKEN_ANALYTICS_CAPTURE_PARSER_CONTRACT_V1",
+  "hypothesis_id": "V3-H2",
+  "parser_id": "V3-H2-KRAKEN-ANALYTICS-PARSER-001",
+  "status": "FROZEN_NOT_ATTACHED_TO_CANDIDATE_STREAM",
+  "source_evidence": "research/v3/h2-kraken-analytics-response-shape-20261001T192657Z.json",
+  "supported_types": {
+    "open-interest": {
+      "timestamp_unit": "seconds",
+      "data_shape": "top-level array aligned 1:1 with timestamp array; observed element is 4-string array",
+      "payload_semantics": "OPAQUE_4_STRING_BUCKET_UNTIL_SEPARATE_SEMANTIC_PROOF"
+    },
+    "funding": {
+      "timestamp_unit": "milliseconds",
+      "data_shape": "object with rate and relativeRate arrays aligned 1:1 with timestamp array; each observed element is 4-string array",
+      "payload_semantics": "OPAQUE_4_STRING_BUCKET_UNTIL_SEPARATE_SEMANTIC_PROOF"
+    },
+    "future-basis": {
+      "timestamp_unit": "seconds",
+      "data_shape": "object with basis string array aligned 1:1 with timestamp array",
+      "payload_semantics": "PRESERVE_STRING_SCALAR_NO_THRESHOLD_INTERPRETATION"
+    }
+  },
+  "event_join": {
+    "request_interval_seconds": 300,
+    "request_lookback_seconds": 3600,
+    "explicit_to_equals_candidate_event_epoch_seconds": true,
+    "normalize_funding_timestamp_ms_to_seconds": true,
+    "choose_latest_timestamp_at_or_before_event": true,
+    "future_timestamp_action": "FAIL_CLOSED_NO_STATE",
+    "no_row_action": "MISSING_STATE_KEEP_CANDIDATE",
+    "shape_mismatch_action": "FAIL_CLOSED_NO_STATE_AND_RAISE_RESEARCH_ERROR",
+    "metric_age_seconds": "candidate_event_epoch_seconds - normalized_source_timestamp_seconds"
+  },
+  "storage": {
+    "preserve_raw_bucket_payload_compactly": true,
+    "preserve_source_timestamp_raw": true,
+    "preserve_source_timestamp_normalized_seconds": true,
+    "preserve_retrieved_at_utc": true,
+    "preserve_symbol_and_analytics_type": true,
+    "derive_scalar_from_opaque_4tuple": false,
+    "endless_raw_archive": false
+  },
+  "prohibited": {
+    "assume_4tuple_is_ohlc": false,
+    "direct_direction_rule": true,
+    "threshold_selection": true,
+    "candidate_drop_for_missing_derivatives": true,
+    "future_outcome_label_in_first_capture": true,
+    "historical_holdout_access": true
+  },
+  "runtime_guardrails": {
+    "active_v2r3_change_allowed": false,
+    "v2r4_activation_allowed": false,
+    "paper_decision_change_allowed": false,
+    "private_api_allowed": false,
+    "orders_allowed": false,
+    "leverage_allowed": false,
+    "real_money_actions_allowed": false,
+    "automatic_schedule_enabled": false
+  },
+  "next_gate": "IMPLEMENT_ONE_BOUNDED_PROSPECTIVE_CANDIDATE_CAPTURE_PATH_WITHOUT_OUTCOME_LABELS_OR_DECISION_CHANGES"
+}

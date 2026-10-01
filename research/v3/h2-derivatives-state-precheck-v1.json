@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H2_DERIVATIVES_STATE_PRECHECK_V1",
   "hypothesis_id": "V3-H2",
-  "status": "PRECHECK_ASSOCIATION_CAPTURE_PREREGISTERED",
+  "status": "PRECHECK_RESPONSE_SHAPE_GREEN_CAPTURE_PARSER_FROZEN",
   "prepared_at_utc": "2026-10-01T18:20:00Z",
   "purpose": "Test whether point-in-time derivatives state adds incremental information to Kraken-EUR candidate quality after the frozen baseline signal, primarily as state/conditioning rather than a direct directional trigger.",
   "baseline": "Latest validated V2/V2R4 candidate stream at the time the research trial is eventually frozen.",
@@ -95,7 +95,11 @@
     "coverage_interpretation": "PARTIAL_COVERAGE_IS_VALID_MISSING_STATE_NOT_A_LICENSE_TO_BACKFILL_FROM_FUTURE_OR_UNVERIFIED_SOURCES",
     "association_dataset_contract": "research/v3/h2-prospective-derivatives-association-dataset-contract-v1.json",
     "association_dataset_id": "V3-H2-DERIV-ASSOC-PROSPECTIVE-001",
-    "association_capture_started": false
+    "association_capture_started": false,
+    "response_shape_evidence": "research/v3/h2-kraken-analytics-response-shape-20261001T192657Z.json",
+    "response_shape_guard_run": "CI_GREEN_RUN_6",
+    "capture_parser_contract": "research/v3/h2-kraken-analytics-capture-parser-contract-v1.json",
+    "opaque_4tuple_semantics_resolved": false
   },
-  "next_gate": "ASSOCIATION_DATASET_CONTRACT_FROZEN__NEXT_PERSIST_ONE_LIVE_RESPONSE_SHAPE_SAMPLE_NO_HOLDOUT"
+  "next_gate": "RESPONSE_SHAPE_AND_PARSER_CONTRACT_FROZEN__NEXT_IMPLEMENT_ONE_BOUNDED_PROSPECTIVE_CANDIDATE_CAPTURE_NO_OUTCOMES"
 }

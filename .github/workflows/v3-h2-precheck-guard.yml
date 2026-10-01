@@ -7,6 +7,8 @@ name: V3 H2 derivatives precheck guard
     paths:
       - 'research/v3/h2-derivatives-state-precheck-v1.json'
       - 'research/v3/h2-prospective-derivatives-association-dataset-contract-v1.json'
+      - 'research/v3/h2-kraken-analytics-capture-parser-contract-v1.json'
+      - 'research/v3/h2-kraken-analytics-response-shape-20261001T192657Z.json'
       - 'research/historical/binance-derivatives-context-preflight-v1.json'
       - 'tools/binance-derivatives-context-smoke.py'
       - 'tools/kraken-futures-h2-coverage-precheck.py'
@@ -35,7 +37,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path('research/v3/h2-derivatives-state-precheck-v1.json').read_text('utf-8'))
           assert j['kind']=='V3_H2_DERIVATIVES_STATE_PRECHECK_V1'
-          assert j['status'] in {'PRECHECK','PRECHECK_ASSOCIATION_CAPTURE_PREREGISTERED','PRECHECK_RESPONSE_SHAPE_GREEN_CAPTURE_PARSER_PENDING'}
+          assert j['status'] in {'PRECHECK','PRECHECK_ASSOCIATION_CAPTURE_PREREGISTERED','PRECHECK_RESPONSE_SHAPE_GREEN_CAPTURE_PARSER_PENDING','PRECHECK_RESPONSE_SHAPE_GREEN_CAPTURE_PARSER_FROZEN'}
           assert j['first_research_role']['mode']=='STATE_STRATIFICATION_AND_INCREMENTAL_INFORMATION_ONLY'
           assert j['first_research_role']['direct_buy_sell_rule'] is False
           assert j['selection_bias_guardrails']['threshold_sweep_allowed'] is False
@@ -192,4 +194,43 @@ jobs:
               "data_shape":p["data_shape"]
             } for p in j["probes"]]
           },sort_keys=True))
+          PY
+
+
+      - name: Validate persisted H2 response shape and parser contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          e=json.loads(Path("research/v3/h2-kraken-analytics-response-shape-20261001T192657Z.json").read_text("utf-8"))
+          assert e["kind"]=="V3_H2_KRAKEN_ANALYTICS_RESPONSE_SHAPE_EVIDENCE_V1"
+          assert e["status"]=="PASS"
+          by={p["metric"]:p for p in e["probes"]}
+          assert by["open-interest"]["timestamp_unit"]=="seconds"
+          assert by["open-interest"]["data_shape"]["kind"]=="array"
+          assert by["open-interest"]["data_shape"]["sample_element_shapes"][0]["kind"]=="array"
+          assert by["open-interest"]["data_shape"]["sample_element_shapes"][0]["length"]==4
+          assert by["funding"]["timestamp_unit"]=="milliseconds"
+          assert by["funding"]["data_shape"]["kind"]=="object"
+          assert by["funding"]["data_shape"]["keys"]==["rate","relativeRate"]
+          assert by["future-basis"]["timestamp_unit"]=="seconds"
+          assert by["future-basis"]["data_shape"]["keys"]==["basis"]
+          assert e["semantic_guard"]["four_element_array_meaning"]=="UNRESOLVED_OPAQUE_PAYLOAD_DO_NOT_ASSUME_OHLC_ORDER"
+
+          p=json.loads(Path("research/v3/h2-kraken-analytics-capture-parser-contract-v1.json").read_text("utf-8"))
+          assert p["kind"]=="V3_H2_KRAKEN_ANALYTICS_CAPTURE_PARSER_CONTRACT_V1"
+          assert p["status"]=="FROZEN_NOT_ATTACHED_TO_CANDIDATE_STREAM"
+          assert p["event_join"]["explicit_to_equals_candidate_event_epoch_seconds"] is True
+          assert p["event_join"]["normalize_funding_timestamp_ms_to_seconds"] is True
+          assert p["event_join"]["choose_latest_timestamp_at_or_before_event"] is True
+          assert p["event_join"]["future_timestamp_action"]=="FAIL_CLOSED_NO_STATE"
+          assert p["event_join"]["no_row_action"]=="MISSING_STATE_KEEP_CANDIDATE"
+          assert p["storage"]["derive_scalar_from_opaque_4tuple"] is False
+          assert p["prohibited"]["direct_direction_rule"] is True
+          assert p["prohibited"]["threshold_selection"] is True
+          assert p["prohibited"]["historical_holdout_access"] is True
+          assert p["runtime_guardrails"]["active_v2r3_change_allowed"] is False
+          assert p["runtime_guardrails"]["orders_allowed"] is False
+          assert p["runtime_guardrails"]["real_money_actions_allowed"] is False
+          print("V3_H2_PARSER_CONTRACT PASS exact-shape/opaque-4tuple/fail-closed/no-performance")
           PY
