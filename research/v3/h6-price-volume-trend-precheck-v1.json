@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H6_PRICE_VOLUME_TREND_PRECHECK_V1",
+  "hypothesis_id": "V3-H6",
+  "status": "PRECHECK",
+  "prepared_at_utc": "2026-10-01T18:35:00Z",
+  "purpose": "Define transparent point-in-time multi-horizon price and volume trend primitives before any Kraken-EUR incremental-value trial.",
+  "source": "KRAKEN_NORMALIZED_EUR_15M",
+  "role": "SIMPLE_SIGNAL_OR_STATE_PRIMITIVES_TO_TEST_INCREMENTALLY",
+  "candidate_primitives": [
+    "price_return_15m",
+    "price_return_1h",
+    "price_return_4h",
+    "recent_1h_mean_volume",
+    "prior_1h_mean_volume",
+    "volume_ratio_recent_vs_prior_1h",
+    "price_up_with_volume_expansion",
+    "price_down_with_volume_expansion"
+  ],
+  "point_in_time_contract": {
+    "explicit_cutoff_required": true,
+    "closed_bars_only": true,
+    "exact_bar_end_alignment": true,
+    "future_rows_forbidden": true,
+    "missing_bars_remain_missing": true,
+    "zero_fill_forbidden": true,
+    "recent_and_prior_volume_windows_non_overlapping": true
+  },
+  "complexity_guardrails": {
+    "ctrend_full_implementation_allowed": false,
+    "nonlinear_model_allowed_in_precheck": false,
+    "ensemble_allowed_in_precheck": false,
+    "parameter_sweep_allowed": false,
+    "threshold_selection_allowed": false,
+    "start_with_transparent_primitives": true
+  },
+  "future_trial_constraints": {
+    "horizons_frozen_before_trial": true,
+    "volume_windows_frozen_before_trial": true,
+    "pair_universe_frozen_before_metrics": true,
+    "trial_ledger_required": true,
+    "sealed_2026h1_holdout_open_allowed": false,
+    "no_winner_is_valid_outcome": true
+  },
+  "runtime_guardrails": {
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "orders": false,
+    "leverage": false,
+    "real_money_actions": false,
+    "automatic_strategy_promotion": false
+  },
+  "next_gate": "SYNTHETIC_PIT_PRICE_VOLUME_PRIMITIVES_SMOKE_ONLY"
+}
