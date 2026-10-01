@@ -50,6 +50,7 @@ jobs:
             'tools/minipc-next-gate.ps1',
             'tools/minipc-runtime-recovery-gate.ps1',
             'tools/minipc-v2r4-ws-shadow-smoke.ps1',
+            'tools/minipc-v2r4-ws-shadow-evidence.ps1',
             'tools/install-minipc-v2r4-ws-shadow.ps1',
             'tools/uninstall-minipc-v2r4-ws-shadow.ps1',
             'tools/minipc-internet-recovery-gate.ps1',
