@@ -104,7 +104,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [ ] Evaluator/KI nur bei echten Kandidaten oder klaren Analyseblockern aufrufen; kein dauerndes KI-Polling.
 - [ ] V2R4-Fast-Trigger-Pfad aus Draft-PR #8: V2R3-Evidenzsnapshot, Compile/Unit-/Live-Public-Kraken-/Model-Contract-Smokes, **physischer MINI-PC trigger→fresh-recheck E2E-Gate** und Altrady-Transport-E2E sind jetzt grün; live Kraken-AssetPairs statt statischer Blacklist, maschinenlesbare WAIT-Bedingungen und lokaler Fresh-Recheck-Bridge sind vorbereitet. Offen: separater V2R4-Paper-Aktivierungsentscheid nach Evidenzsicht; kein stilles Merge/Activation.
 - [ ] Bei bestandenem Smoke-Test eine **separate V2R4-Paper-Serie** starten; dafür nicht künstlich auf 20 V2R3-Trades warten. V2R3-Artefakte bleiben unverändert als Vergleichsbasis.
-- [ ] Datenfrische und Entscheidungstimestamp in jedem Kandidaten nachvollziehbar halten.
+- [x] Datenfrische und Entscheidungstimestamp in jedem Kandidaten nachvollziehbar: Supabase-Prüfung 2026-10-01 zeigt 708/708 aktive V2R3-Outcomes mit candidate_detected_at, handoff_written_at, evaluation_started_at, evaluation_completed_at und fresh_kraken_ticker.
 
 **Abschlusskriterium P3:** derselbe relevante Move kann über mehr als einen unabhängigen Pfad erkannt werden und Timing ist messbar.
 
@@ -220,7 +220,7 @@ Erst nach stabiler Infrastruktur und validierter Strategie.
 
 ## P9 — Dauerhafte Governance / „nicht wieder vergessen“\n\nKanonischer Komponenten-/Versionsindex: `docs/master-version-register.md`. Mini-PC-Runbook: `docs/minipc-preflight-runbook.md`.
 
-- [ ] Jede Entscheidung mit Strategieversion + Config-Hash/Revision nachvollziehbar machen.
+- [x] Jede Entscheidung mit Strategieversion + Fingerprints nachvollziehbar: 708/708 aktive V2R3-Outcomes enthalten `strategy_revision`, `strategy_fingerprint_sha256` und `runtime_code_fingerprint_sha256`.
 - [ ] Last-known-good Konfiguration und schneller Rollback erhalten.
 - [ ] Vor größeren Änderungen immer kleiner End-to-End-Smoke-Test.
 - [ ] Neue Quellen/Apps nur aufnehmen, wenn sie einen klaren zusätzlichen Informations- oder Robustheitsnutzen liefern.
