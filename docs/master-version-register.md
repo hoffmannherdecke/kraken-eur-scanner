@@ -136,7 +136,7 @@ Stand 2026-09-29:
 - RLS ist auf allen vier Tabellen aktiviert; aktuell existieren keine RLS-Policies. Das ist bis zur bewusst definierten Zugriffsschicht fail-closed und wird nicht vorschnell geöffnet.
 - `Supabase paper archive sync` ist **ACTIVE / VERIFIED / FAIL-SOFT**. Das GitHub-Secret `SUPABASE_SECRET_KEY` ist konfiguriert; der Workflow auditiert den Repository-Quellbestand und synchronisiert die aktive Serie.
 - Der Sync besitzt einen opportunistischen `workflow_run`-Hook nach `Paper runtime evaluator and lifecycle`, verlässt sich darauf aber nicht allein. Zusätzlich läuft eine unabhängige Reconciliation um **:07/:37** jeder Stunde, weil ein erster Paper-Runtime-Abschluss nach Einführung des Hooks keinen beobachtbaren Archive-Run erzeugte.
-- Letzter verifizierter Stand 2026-09-30: aktive V2R3-Serie **578 Candidate-Outcomes**, **0 Trade-Results**.
+- Historischer Stand des später kompromittiert eingestuften V2R3-Vorgängers: final **712 archivierte Candidate-Outcomes**, **0 Trade-Results**; nur diagnostisch verwenden. Aktive saubere Vergleichsserie ist `PAPER-V2R3-CLEAN-20261001T0925Z`.
 - Supabase bleibt sekundär/fail-soft: ein Archivfehler darf Scanner oder Paper-Evaluator nicht blockieren.
 - Supabase bleibt sekundäre State-/Ergebnis-/Research-Schicht; kein Single Point of Failure und keine zweite Rohdatenkopie.
 
