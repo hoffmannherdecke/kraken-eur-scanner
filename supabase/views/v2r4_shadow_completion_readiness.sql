@@ -1,13 +1,32 @@
 -- Read-only operational readiness view for the prospective V2R4 WS-shadow evidence.
 -- This does not change strategy/runtime behavior and does not infer performance.
--- It answers only whether time-matured shadow events have corresponding archived outcomes.
+-- It answers only whether time-matured, outcome-eligible shadow events have
+-- corresponding archived outcomes.
+--
+-- The outcome tracker was activated after exactly 18 older events had already
+-- been created. The last deliberately ignored pre-tracker event was observed at
+-- 2026-10-01T06:52:12.838Z. Events after this boundary are prospective/eligible.
 
 create or replace view public.v2r4_shadow_completion_readiness as
-with base as (
+with params as (
+    select timestamptz '2026-10-01 06:52:12.838+00' as tracker_eligibility_after
+),
+eligible as (
+    select e.*
+    from public.v2r4_shadow_evidence e
+    cross join params p
+    where e.observed_at > p.tracker_eligibility_after
+),
+base as (
     select
-        count(*)::integer as events_total,
-        min(observed_at) as first_event_at,
-        max(observed_at) as last_event_at,
+        (select count(*)::integer from public.v2r4_shadow_evidence) as events_total,
+        (select count(*)::integer
+           from public.v2r4_shadow_evidence e
+           cross join params p
+          where e.observed_at <= p.tracker_eligibility_after) as pretracker_events,
+        count(*)::integer as prospective_events,
+        min(observed_at) as first_prospective_event_at,
+        max(observed_at) as last_prospective_event_at,
         count(*) filter (where observed_at <= now() - interval '5 minutes')::integer as due_5m,
         count(*) filter (where observed_at <= now() - interval '15 minutes')::integer as due_15m,
         count(*) filter (where observed_at <= now() - interval '30 minutes')::integer as due_30m,
@@ -25,14 +44,20 @@ with base as (
               and outcome_status = 'INCOMPLETE_TIMEOUT'
         )::integer as incomplete_timeout_due_6h,
         count(distinct source_runtime_commit)::integer as runtime_commits
-    from public.v2r4_shadow_evidence
+    from eligible
 )
 select
     now() as generated_at,
+    p.tracker_eligibility_after,
     events_total,
-    first_event_at,
-    last_event_at,
-    case when first_event_at is null then null else first_event_at + interval '6 hours' end as first_6h_maturity_at,
+    pretracker_events,
+    prospective_events,
+    first_prospective_event_at,
+    last_prospective_event_at,
+    case
+        when first_prospective_event_at is null then null
+        else first_prospective_event_at + interval '6 hours'
+    end as first_6h_maturity_at,
     due_5m,
     due_15m,
     due_30m,
@@ -50,11 +75,12 @@ select
     end as complete_6h_coverage_pct,
     runtime_commits,
     case
-        when events_total = 0 then 'WAITING_NO_EVENTS'
+        when prospective_events = 0 then 'WAITING_NO_PROSPECTIVE_EVENTS'
         when due_6h = 0 then 'COLLECTING_AGE'
         when (completed_due_6h + incomplete_timeout_due_6h) = due_6h then 'MATURE_COHORT_ARCHIVED'
         else 'MATURE_OUTCOMES_PENDING'
     end as readiness_state,
-    'Operational maturity/archival view only. Do not interpret as strategy-performance evidence.'::text
+    'Operational maturity/archival view only. Pre-tracker events are excluded. Do not interpret as strategy-performance evidence.'::text
         as interpretation_guardrail
-from base;
+from base
+cross join params p;
