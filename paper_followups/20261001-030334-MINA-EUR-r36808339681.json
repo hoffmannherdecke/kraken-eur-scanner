@@ -3,7 +3,16 @@
   "candidate_id": "20261001-030334-MINA-EUR-r36808339681",
   "evaluated_at_utc": "2026-10-01T03:17:07.440676Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.231,
+      "expected_bars": 30,
+      "mae_pct": -0.307,
+      "mfe_pct": 0.384
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -24,6 +33,17 @@
         "mae_pct": -0.689,
         "mfe_pct": 0.0,
         "peak_at_utc": "2026-10-01T03:04:00Z",
+        "trough_at_utc": "2026-10-01T03:13:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": 0.077,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -0.689,
+        "mfe_pct": 0.077,
+        "peak_at_utc": "2026-10-01T04:02:00Z",
         "trough_at_utc": "2026-10-01T03:13:00Z"
       }
     },
@@ -53,12 +73,15 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-01T03:38:10.453708Z"
+    "updated_at_utc": "2026-10-01T04:12:01.439323Z"
   },
   "original_decision": "WAIT",
   "pair": "MINA/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-01T04:10:46.164346Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "test_id": "SHADOW-V2R3-20260928-02"
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "updated_at_utc": "2026-10-01T04:12:01.566981Z"
 }
