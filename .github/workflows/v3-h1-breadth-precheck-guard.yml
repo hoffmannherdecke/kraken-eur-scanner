@@ -47,12 +47,12 @@ jobs:
           assert j["runtime_guardrails"]["orders"] is False
           assert j["runtime_guardrails"]["real_money_actions"] is False
           assert j["next_gate"]=="REAL_EUR15_BREADTH_FEATURE_TRIAL_PREREGISTERED__NEXT_EXECUTE_PHYSICALLY_WITH_HOLDOUT_SEALED"
+          rd=j["methodology_readiness"]
           assert rd["real_eur15_feature_trial_preregistered"]=="V3-H1-EUR15-BREADTH-FEATURE-INTEGRITY-001"
           assert rd["real_eur15_expected_pair_files"]==648
           assert rd["real_eur15_expected_rows"]==20960798
           assert rd["fixed_leaders"]==["XBTEUR","ETHEUR"]
           assert rd["feature_trial_performance_labels_allowed"] is False
-          rd=j["methodology_readiness"]
           assert rd["synthetic_pit_multi_pair_smoke"]=="CI_GREEN_RUN_3"
           assert rd["future_rows_leakage_trap"]=="PASS_IGNORED"
           assert rd["missing_exact_1h_lookback"]=="PASS_REMAINS_MISSING_AND_DENOMINATOR_EXPLICIT"
