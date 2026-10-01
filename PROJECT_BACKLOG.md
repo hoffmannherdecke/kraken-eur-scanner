@@ -137,6 +137,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 ## P5 — Historische Daten-/Backtest-Schicht
 
+- [x] **Preflight/Architektur ohne Bulk-Download abgeschlossen:** offizielle Kraken-OHLCVT-/Time-&-Sales-Quellen bis 30.06.2026, Checksummen/Part-Layout, C:-Speicherlayout, strikter Point-in-time-Vertrag, Kosten-/Fill-Guardrails, chronologische Walk-Forward/Purging/Embargo-Topologie und Trial-Ledger-Schema sind in `docs/historical-backtest-preflight.md` / `research/historical/` kanonisch festgelegt. GitHub-CI darf ausdrücklich **keine** großen Archive laden; Drive D bleibt gesperrt. Synthetischer Point-in-time-Smoke + Manifest-Preflight sind vorbereitet.
 - [ ] Kraken historische OHLCVT-Daten vom Marktstart bis 30.06.2026 plus spätere Updates lokal/kompakt verfügbar machen.
 - [ ] Kraken historische Time-&-Sales-/Tickdaten gezielt für Fill-, Mikrostruktur- und Entry/Exit-Fragen nutzbar machen.
 - [ ] Binance nur ergänzend für Cross-Market-/Derivatehistorie nutzen; Kraken-EUR bleibt Ausführungs- und Fill-Referenz.
