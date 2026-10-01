@@ -103,7 +103,7 @@ A particularly strong configuration hypothesis is the legacy hardcoded `PAIR_BLO
 ## V2R4 — vorbereitete taktische Timing-/Trigger-Version
 
 **Status:** PREPARED / NOT ACTIVE / PAPER ONLY  
-**Implementierung:** Draft-PR #9 (auf aktuellen `main` neu aufgesetzt; V2R4 PR validation Run #11 SUCCESS)  
+**Implementierung:** Draft-PR #9 (refreshed candidate; V2R4 PR validation Run #14 SUCCESS inkl. inaktiver 24/7-WAIT-Runtime)  
 **Release-Readiness:** `docs/v2r4-release-readiness.md`  
 **V2R3→V2R4 Release-Diff:** `docs/v2r4-v2r3-release-diff.md`  
 **Zweck:** gezielt das in V2R3 erkannte WAIT-/Revalidation-Latenzproblem untersuchen.
@@ -132,25 +132,26 @@ Ziel-Latenz:
 - Trigger → frische Neubewertung Zielgröße <= ca. 20 s;
 - tatsächliche Intervalle werden erst nach Mini-PC-/Rate-Limit-Messung festgelegt.
 
-V2R4-Positionsgrößen im Paper-Test:
-- B+ / früher Scout: 75 + 75 EUR → 150 EUR gesamt;
-- A-: 75 + 75 EUR → 150 EUR gesamt;
-- A: erste Stufe 100–125 EUR, bestätigt ca. 200–300 EUR gesamt;
-- A+: erste Stufe 150–200 EUR, bestätigt ca. 300–600 EUR gesamt.
-
-Diese Staffel ist eine **Paper-Test-Spezifikation**, keine automatische spätere
-Echtgeldfreigabe. Skalierung erfolgt nur mit Setup-Qualität und Bestätigung; niemals
-nur, um eine Zielgröße zu erreichen.
+V2R4-Positionsgrößen sind **vor dem Serienstart noch ein expliziter Release-Entscheid**.
+Der vorgeschlagene Spec enthält zwar 75+75 EUR als bisherigen E2E-Smoke-Default und
+größere adaptive Research-Tiers, aber der Setup-Qualitäts-Sizing-Mapper ist nicht
+verdrahtet. Methodisch bevorzugt ist deshalb für die erste vollständige V2R4-Serie
+eine Timing-Isolation mit dem unveränderten V2R3-Paper-Sizing 50+50 EUR. Details und
+Alternative: `docs/v2r4-sizing-release-decision.md`.
 
 Aktivierungsbedingung:
-V2R4 darf als **separate Paper-Serie** starten, sobald
-- die Mini-PC-Basis stabil ist,
-- Uhrzeit/Netzwerk/Watchdog funktionieren,
-- ein kleiner End-to-End-Paper-Smoke-Test bestanden ist,
-- Trigger-Vertrag und Logging nachweislich funktionieren.
+V2R4 darf erst nach dem kanonischen Release-Gate als **separate Paper-Serie** starten:
+- V2R3-Clean-Serie erfüllt entweder 20 abgeschlossene Trades **oder** den gleichwertigen
+  alternativen Abschlussweg (>=7 Tage, >=1.000 Candidate-Outcomes, >=95% Coverage der
+  fälligen 24h-Follow-ups);
+- dokumentierter V2R3-Release-Review ist abgeschlossen;
+- Sizing-Entscheid ist explizit getroffen und im Release-Candidate eingefroren;
+- MINI-PC/Uhrzeit/Netzwerk/Watchdog sind gesund;
+- finaler PR-Sync + Contract/Unit/E2E-Release-Smokes sind grün;
+- separate Series-/Test-ID und Rollback-Punkt sind festgelegt.
 
-V2R4 muss **nicht** darauf warten, dass V2R3 zwangsläufig 20 abgeschlossene Trades
-erreicht. V2R3 bleibt jedoch unverändert als historische/prospektive Vergleichsbasis.
+Es besteht weiterhin **keine starre Pflicht auf genau 20 Trades**; der alternative
+V2R3-Abschlussweg ist gleichwertig. V2R3 bleibt unverändert als Vergleichsbasis.
 
 ---
 
