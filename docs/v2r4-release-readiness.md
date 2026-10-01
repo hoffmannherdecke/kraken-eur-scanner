@@ -290,6 +290,19 @@ A subsequent centrally observed MINI-PC sample returned naturally to **HEALTHY /
 The local MINI-PC repository had not yet pulled these final repository-side watchdog refinements at the time of that sample. They remain a low-risk bundled local pull + effectiveness verification for the next genuine local maintenance gate; there is no need to interrupt the running evidence collection solely for this.
 
 
+## Activation-control integrity hardening
+
+The fail-closed Supabase release-control view now also consumes `public.v2r3_clean_integrity_summary`.
+
+New behavior:
+
+- completion readiness alone is no longer sufficient to reach manual release review;
+- if the clean V2R3 series is not `HEALTHY`, the view returns `BLOCKED_V2R3_INTEGRITY`;
+- the view exposes duplicate candidate/queue counts and distinct strategy/runtime fingerprint counts;
+- `automatic_activation_allowed` remains hard-coded `false`.
+
+This means a future completion-gate pass cannot accidentally route to manual release review if the prospective clean-series integrity has drifted.
+
 ## Fail-closed activation control view
 
 Supabase now exposes `public.v2r4_activation_readiness` as a compact read-only control plane.
