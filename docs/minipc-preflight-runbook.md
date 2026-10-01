@@ -824,6 +824,18 @@ The large cumulative stale-pair observation count is a **per-pair freshness diag
 
 Formal overall resilience bundle status is recorded separately from the evidence summary and must be checked from the compact JSON status before closing the shadow restart/Internet-recovery gate.
 
+### V2R4 WS-shadow restart / Internet resilience verified 2026-10-01
+
+Physical MINI-PC compact result:
+- overall status: **PASS**;
+- runtime recovery gate: **exit 0**;
+- controlled Internet recovery gate: **exit 0**;
+- shadow evidence summary: **exit 0**;
+- issues: **none**;
+- safety guardrails remained **SHADOW ONLY / V2R3 UNCHANGED / NO EVALUATOR / NO ORDERS / NO REAL-MONEY ACTION**.
+
+This closes the explicit restart + Internet-recovery gate for the active `CryptoMiniPC-V2R4WSShadow` process itself.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
