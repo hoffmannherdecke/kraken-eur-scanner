@@ -1,0 +1,175 @@
+{
+  "altname": "USELESSEUR",
+  "candidate_age_seconds": 24,
+  "candidate_event_time_utc": "2026-10-01T10:35:54Z",
+  "candidate_id": "20261001-103554-USELESS-EUR-r36849955337",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Hold above 0.2032 and form a higher low on Kraken EUR",
+      "Confirm a volume-supported break above 0.21088"
+    ],
+    "reason_codes": [
+      "spread_costs_material",
+      "3h_and_24h_trend_negative",
+      "no_3h_breakout",
+      "no_higher_lows",
+      "price_near_3h_resistance",
+      "volume_elevated",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "High-volume short-term rebound, but 1h/3h continuity and breakout structure are not established; wait for confirmation before considering entry.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "USELESSUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_USELESSUSD",
+          "PI_USELESSUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.2038,
+      "bid": 0.20313,
+      "last": 0.20386,
+      "spread_pct": 0.3292949647359516
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "50",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.025101248449721503,
+          "ret3h_pct": 0.5248695628574662
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.13050776332355074,
+          "ret3h_pct": 0.3965424869963652
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.46952855500190793,
+          "ret3h_pct": -0.06734654608426816
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T10:36:18.693541Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-01T10:36:31.739313Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0b9601b81e58b28f006abe37a4657487d1b204e69f3995d46e"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2038,
+    "bid": 0.20313,
+    "last": 0.20386,
+    "spread_pct": 0.3292949647359516
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "USELESS/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36849955337:USELESS-EUR:1790850954",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "aad466aad82a1851f390c0439e405413b8f2750e",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T10:35:54Z",
+    "candidate_detected_ts": 1790850954,
+    "candidate_snapshot_at_utc": "2026-10-01T10:35:54Z",
+    "detected_to_evaluation_complete_seconds": 37.739,
+    "detected_to_evaluation_start_seconds": 24.525,
+    "evaluation_completed_at_utc": "2026-10-01T10:36:31.739313Z",
+    "evaluation_runtime_seconds": 13.214,
+    "evaluation_started_at_utc": "2026-10-01T10:36:18.525142Z",
+    "handoff_to_evaluation_start_seconds": 21.663,
+    "handoff_written_at_utc": "2026-10-01T10:35:56.862087Z",
+    "scan_step_started_at_utc": "2026-10-01T10:34:22Z"
+  }
+}

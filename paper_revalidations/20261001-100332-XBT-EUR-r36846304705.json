@@ -1,0 +1,233 @@
+{
+  "altname": "XBTEUR",
+  "candidate_id": "20261001-100332-XBT-EUR-r36846304705",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15-minute close above 74270.3 followed by a hold above 74409.7",
+      "Completed-bar volume expansion with positive 3-hour continuity"
+    ],
+    "reason_codes": [
+      "below_resistance",
+      "rejected_reclaim",
+      "mixed_continuity",
+      "closed_volume_unconfirmed",
+      "fees_material",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The one-shot revalidation does not support a scout: price remains below resistance after a rejection, and completed-bar continuity and volume are unconfirmed. Expected movement after Kraken taker fees is not established.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "BTCUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 32.68,
+        "available": true,
+        "current_funding_rate": 3.74775753e-10,
+        "current_open_interest": 2296026.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 0.0009,
+        "previous_funding_rate": 3.74775753e-10,
+        "previous_observed_at_utc": "2026-10-01T10:04:00.412459Z",
+        "previous_open_interest": 2296006.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.74775753e-10,
+        "index_price": 83722.41,
+        "last": 83589.5,
+        "mark_price": 83743.83756308779,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 2296026.0,
+        "requested_symbols": [
+          "PF_XBTUSD",
+          "PI_XBTUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PI_XBTUSD",
+        "volume24h": 219810
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 74113.9,
+      "bid": 74113.8,
+      "last": 74112.9,
+      "spread_pct": 0.00013492754726851842
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.00005",
+      "pair_decimals": 1,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.025101248449721503,
+          "ret3h_pct": 0.5248695628574662
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.13050776332355074,
+          "ret3h_pct": 0.3965424869963652
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.46952855500190793,
+          "ret3h_pct": -0.06734654608426816
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T10:36:40.195150Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0481d1574f392192006abe37b9984087d1b28122d6a4afec97"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 74113.9,
+    "bid": 74113.8,
+    "last": 74112.9,
+    "spread_pct": 0.00013492754726851842
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 74255.6,
+      "high": 74256.5,
+      "low": 74100.0,
+      "open": 74100.0,
+      "trades": 177,
+      "ts": 1790847000,
+      "volume": 2.47740305,
+      "vwap": 74185.2
+    },
+    {
+      "close": 74267.6,
+      "high": 74270.3,
+      "low": 74204.5,
+      "open": 74255.5,
+      "trades": 204,
+      "ts": 1790847900,
+      "volume": 2.82411503,
+      "vwap": 74229.4
+    },
+    {
+      "close": 74169.0,
+      "high": 74297.6,
+      "low": 73963.9,
+      "open": 74270.8,
+      "trades": 263,
+      "ts": 1790848800,
+      "volume": 7.32043306,
+      "vwap": 74188.8
+    },
+    {
+      "close": 74081.3,
+      "high": 74198.7,
+      "low": 74035.0,
+      "open": 74169.0,
+      "trades": 167,
+      "ts": 1790849700,
+      "volume": 1.95852937,
+      "vwap": 74112.0
+    },
+    {
+      "close": 74112.9,
+      "high": 74177.4,
+      "low": 74084.9,
+      "open": 74084.9,
+      "trades": 117,
+      "ts": 1790850600,
+      "volume": 0.93279069,
+      "vwap": 74149.3
+    }
+  ],
+  "pair": "XBT/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-100332-XBT-EUR-r36846304705.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T10:36:46.465010Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "aad466aad82a1851f390c0439e405413b8f2750e",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T10:36:46.465010Z",
+    "revalidation_started_at_utc": "2026-10-01T10:36:39.840898Z",
+    "ttl_due_at_utc": "2026-10-01T10:34:00.412459Z",
+    "ttl_lag_seconds": 159.428
+  }
+}
