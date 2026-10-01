@@ -239,6 +239,38 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11o. Historical Replay H2 development gate failed; branch closed 2026-10-01
+
+To avoid confusion with the production strategy names V2R3/V2R4, the two historical research attempts are now referred to operationally as:
+
+- **Historical Replay H1** = earlier internal Performance Replay V1;
+- **Historical Replay H2** = earlier internal Performance Replay V2 / second-leg confirmation test.
+
+Physical H2 result shown on the MINI-PC:
+
+- preregistered development gate: **FAIL**;
+- positive-net-rate requirement: **failed**;
+- top-10 pair concentration requirement: **passed**;
+- 2026H1 holdout events generated: **0**;
+- holdout metrics computed: **false**;
+- holdout used for rule selection: **false**;
+- holdout status remained `LOCKED_DO_NOT_READ_IN_V2_DEVELOPMENT`;
+- threshold sweep: **false**;
+- horizon sweep: **false**;
+- pair subset selection: **false**;
+- month subset selection: **false**;
+- active strategy / Paper / Shadow runtime changed: **false**;
+- real-money action: **false**.
+
+Per the preregistered rule, a failed H2 development gate means:
+
+- **do not open the 2026H1 holdout**;
+- **do not run an H3/H4 search sequence** merely to find a passing variant;
+- retain H1/H2 as negative/insufficient historical research evidence;
+- close this historical performance-test branch for now and return focus to actual strategy readiness work on **V2R3/V2R4**.
+
+No further historical strategy-performance test is authorized by this branch unless a future, separately scoped research decision explicitly reopens it.
+
 ## 11n. Distinct second-leg V2 pre-registered after V1 rejection 2026-10-01
 
 V1 was **not** tuned in place. A distinct V2 hypothesis was frozen as a new search-accounting trial after the V1 validation/failure review.
