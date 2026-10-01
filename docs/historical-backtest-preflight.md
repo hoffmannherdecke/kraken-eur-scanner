@@ -239,6 +239,31 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11f. Physical MINI-PC EUR 15m normalization + real-pair replay verified 2026-10-01
+
+The guarded normalization orchestrator was executed on the physical MINI-PC.
+
+Observed result:
+
+- overall orchestrator status: **PASS**;
+- normalized files: **648**;
+- total normalized OHLCVT rows: **20,960,798**;
+- pairs with at least one preserved historical gap: **647**;
+- total gap events preserved: **5,854,568**;
+- total missing 15m intervals intentionally **not filled**: **31,577,413**;
+- normalization catalog written to `Trading\\Historical\\catalog\\kraken-eur15-normalization.json`;
+- methodology replay pair: `XBTEUR_15.normalized.csv.gz`;
+- real-pair replay report status: **PASS**;
+- decision hash: `6c140f81717299f89a9c285bafef6d4e4a2ae8461154e5cdab4a69b8e0c3e94b`;
+- replay is explicitly methodology/integrity evidence only, not strategy-performance evidence;
+- `network_used=false`;
+- `raw_source_modified=false`;
+- `active_strategy_changed=false`;
+- `paper_shadow_runtime_changed=false`;
+- next gate: record the real-pair replay immutably in the Trial Ledger, then begin a broader historical replay.
+
+This closes the physical normalization gate. The large historical gap counts are expected to remain explicit because Kraken OHLCVT omits no-trade intervals and many listed pairs have discontinuous histories. No zero-filling or future-data synthesis is permitted.
+
 ## 11e. Redundant Kraken OHLCVT download parts removed 2026-10-01
 
 The checksum-gated cleanup was executed on the physical MINI-PC after the final joined archive and selective EUR/15m extraction were both verified.
