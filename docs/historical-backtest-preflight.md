@@ -239,6 +239,32 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11i. Physical broad PIT V2 methodology smoke verified 2026-10-01
+
+The contiguous-wall-clock V2 replay and the deterministic broad methodology smoke were executed on the physical MINI-PC dataset.
+
+Observed result:
+
+- overall MINI-PC orchestrator status: **PASS**;
+- V2 real-pair replay status: **PASS**;
+- V2 contiguous eligible windows on the selected replay pair: **399,700**;
+- normalized file count checked: **648**;
+- pairs with at least one eligible contiguous history/future window: **461**;
+- pairs skipped for insufficient contiguous windows: **187**;
+- deterministically selected pairs: **12**;
+- replay anchors per selected pair: **3**;
+- total broad real-data methodology cases: **36**;
+- future feature leakage cases: **0**;
+- labels generated before decision freeze: **0**;
+- non-contiguous history cases: **0**;
+- non-contiguous future-horizon cases: **0**;
+- unique decision hashes: **36**;
+- Trial Ledger verification after V2 methodology append: **PASS**, corrupt IDs: **0**, trial count: **2**;
+- no performance backtest was started;
+- no network, active-strategy, Paper or Shadow runtime mutation occurred.
+
+This closes the broad methodology gate. The next step is to freeze the first performance-oriented historical replay specification **before** any aggregate performance result is computed or inspected.
+
 ## 11h. Replay methodology V2 prepared after wall-clock semantic review 2026-10-01
 
 Before expanding the historical replay, the V1 real-pair methodology was reviewed against the explicit no-gap-fill contract. A subtle semantic issue was identified:
