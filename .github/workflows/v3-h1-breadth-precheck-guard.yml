@@ -1,0 +1,75 @@
+name: V3 H1 breadth precheck guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/h1-cross-crypto-breadth-precheck-v1.json'
+      - 'research/v3/fixtures/h1-cross-crypto-breadth-synthetic.json'
+      - 'tools/v3-h1-breadth-pit-smoke.py'
+      - '.github/workflows/v3-h1-breadth-precheck-guard.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v3-h1-breadth-precheck-guard
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Compile H1 smoke
+        run: python -m py_compile tools/v3-h1-breadth-pit-smoke.py
+
+      - name: Validate H1 preregistration guardrails
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("research/v3/h1-cross-crypto-breadth-precheck-v1.json").read_text("utf-8"))
+          assert j["kind"]=="V3_H1_CROSS_CRYPTO_BREADTH_PRECHECK_V1"
+          assert j["status"]=="PRECHECK"
+          assert j["feature_role"]=="STATE_AND_RELATIVE_CONTEXT_FIRST"
+          assert j["first_research_role"]["performance_trial"] is False
+          assert j["first_research_role"]["threshold_selection"] is False
+          assert j["first_research_role"]["pair_selection_by_performance"] is False
+          assert j["future_trial_constraints"]["sealed_2026h1_holdout_open_allowed"] is False
+          assert j["runtime_guardrails"]["orders"] is False
+          assert j["runtime_guardrails"]["real_money_actions"] is False
+          assert j["next_gate"]=="SYNTHETIC_PIT_MULTI_PAIR_FEATURE_SMOKE_ONLY"
+          print("V3_H1_PREREG PASS no-performance/no-holdout")
+          PY
+
+      - name: Synthetic multi-pair PIT breadth smoke
+        run: |
+          python tools/v3-h1-breadth-pit-smoke.py             research/v3/fixtures/h1-cross-crypto-breadth-synthetic.json             --cutoff-epoch 18000             --target SOLEUR             --leaders XBTEUR,ETHEUR             --output /tmp/h1-breadth-smoke.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/h1-breadth-smoke.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["future_rows_present"]==5
+          assert j["cross_section"]["15m"]["eligible_pair_count"]==5
+          assert j["cross_section"]["1h"]["eligible_pair_count"]==4
+          assert j["cross_section"]["1h"]["missing_pair_count"]==1
+          assert j["cross_section"]["4h"]["eligible_pair_count"]==5
+          assert j["returns_pct"]["XRPEUR"]["1h"] is None
+          assert j["returns_pct"]["XRPEUR"]["15m"] is not None
+          assert j["returns_pct"]["XRPEUR"]["4h"] is not None
+          assert j["returns_pct"]["SOLEUR"]["1h"] < 20
+          assert all(j["point_in_time_assertions"].values())
+          assert j["guardrails"]["performance_trial_started"] is False
+          assert j["guardrails"]["threshold_selection_performed"] is False
+          assert j["guardrails"]["holdout_opened"] is False
+          assert j["guardrails"]["active_v2r3_changed"] is False
+          print("V3_H1_BREADTH_PIT_SMOKE PASS future-ignored/missing-explicit")
+          PY
