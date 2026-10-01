@@ -739,3 +739,50 @@ Repository/CI verification:
 
 This does **not** prove Binance public availability from the physical MINI-PC yet. The backlog item remains open until the one-time local network smoke is actually executed. An account must not be added merely to make public data work.
 
+## 11r. Binance derivatives context methodology — 2026-10-01
+
+Binance is permitted only as **supplementary cross-market/derivatives state**.
+Kraken Spot EUR remains the project's execution-price, fill and tradability truth.
+
+Prepared artifacts:
+- `research/historical/binance-derivatives-context-preflight-v1.json`;
+- `tools/binance-derivatives-context-smoke.py`;
+- `research/historical/fixtures/binance-derivatives-context-synthetic.json`.
+
+Public USD-M context classes:
+- funding-rate history;
+- open-interest statistics;
+- taker buy/sell flow;
+- futures basis;
+- optional long/short ratios.
+
+Point-in-time contract:
+- an explicit event timestamp is mandatory;
+- each metric uses only the last row at or before that event;
+- rows after the event are forbidden;
+- missing metrics remain missing;
+- no silent forward-fill across an unverified source gap;
+- current Binance listings cannot be used as a survivorship filter for old events.
+
+Authority boundary:
+- Binance does **not** determine Kraken-EUR execution price, spread, slippage,
+  fill probability or pair tradability;
+- Binance state does not itself produce a Paper BUY/SELL decision;
+- a recent API window is not represented as complete long-history evidence.
+
+The official public derivatives API was rechecked before preparation. Several
+statistics families expose bounded recent-history windows, so older context must
+remain unavailable unless a separate official archive/source path is first
+verified and versioned.
+
+CI proof:
+- synthetic event cutoff excludes intentionally planted future Funding/OI/Taker/
+  Basis/Long-Short rows;
+- derived OI change and taker ratio are formed only from eligible rows;
+- all no-account/no-order/no-leverage/no-performance-selection guardrails pass;
+- full Historical data preflight **Run #61: SUCCESS**.
+
+No live strategy, V2R3/V2R4 runtime, holdout, account or order path was changed.
+A later real use must be preregistered as a new research trial rather than being
+silently mixed into an existing result.
+
