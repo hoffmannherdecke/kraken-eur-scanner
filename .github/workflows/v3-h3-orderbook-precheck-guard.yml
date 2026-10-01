@@ -30,7 +30,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path('research/v3/h3-orderbook-depth-precheck-v1.json').read_text('utf-8'))
           assert j['kind']=='V3_H3_ORDERBOOK_DEPTH_PRECHECK_V1'
-          assert j['status']=='PRECHECK_L2_SNAPSHOT_ONLY_WEBSOCKET_PENDING'
+          assert j['status'] in {'PRECHECK_L2_SNAPSHOT_ONLY_WEBSOCKET_PENDING','PRECHECK_L2_SNAPSHOT_GREEN_WEBSOCKET_PENDING'}
           assert 'queue_position' in j['not_proven_by_snapshot']
           assert 'maker_fill_probability' in j['not_proven_by_snapshot']
           assert j['future_ws_gate']['required'] is True
@@ -41,6 +41,13 @@ jobs:
           assert j['runtime_guardrails']['active_v2r3_change_allowed'] is False
           assert j['runtime_guardrails']['orders_allowed'] is False
           assert j['runtime_guardrails']['real_money_actions_allowed'] is False
+          if j['status']=='PRECHECK_L2_SNAPSHOT_GREEN_WEBSOCKET_PENDING':
+              rd=j['snapshot_readiness']
+              assert rd['audit']=='CI_GREEN_RUN_1'
+              assert rd['representative_pairs_ok']==3
+              assert rd['queue_position_proven'] is False
+              assert rd['maker_fill_probability_proven'] is False
+              assert j['next_gate']=='BOUNDED_MINIPC_PUBLIC_WS_BOOK_CAPTURE_SMOKE_BEFORE_H3_OR_H9_RESEARCH'
           print('V3_H3_PREREG PASS snapshot-only/ws-pending/no-fill-claim')
           PY
       - name: Real public Kraken depth snapshot smoke
