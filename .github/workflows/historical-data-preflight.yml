@@ -26,6 +26,7 @@ name: Historical data preflight
       - 'tools/record-performance-replay-trial.py'
       - 'tools/run-minipc-performance-replay-v1.ps1'
       - 'tools/review-performance-replay-v1.py'
+      - 'tools/run-minipc-performance-v1-validation-review.ps1'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -488,6 +489,23 @@ jobs:
           assert count==1
           print("PERFORMANCE_REPLAY_V1_TRIAL_LEDGER PASS idempotent/immutable/holdout-sealed")
           PY
+
+      - name: MINI-PC Performance V1 validation-review plan-only smoke
+        shell: pwsh
+        run: |
+          ./tools/run-minipc-performance-v1-validation-review.ps1 | Tee-Object -Variable plan
+          if (($plan -join [Environment]::NewLine) -notmatch '"status":\s*"PLAN_ONLY"') {
+            throw "validation review orchestrator did not remain plan-only"
+          }
+          if (($plan -join [Environment]::NewLine) -notmatch '"review_scope":\s*"VALIDATION_ONLY"') {
+            throw "validation review plan scope is not validation-only"
+          }
+          if (($plan -join [Environment]::NewLine) -notmatch '"holdout_opened":\s*false') {
+            throw "validation review plan violated sealed-holdout guardrail"
+          }
+          if (($plan -join [Environment]::NewLine) -notmatch '"threshold_sweep_performed":\s*false') {
+            throw "validation review plan violated no-threshold-sweep guardrail"
+          }
 
       - name: MINI-PC frozen performance replay V1 plan-only smoke
         shell: pwsh
