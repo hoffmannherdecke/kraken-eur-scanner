@@ -55,7 +55,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [x] **Internen Windows-Remotezugriff sehr früh einrichten**: interner RDP-Zugriff nach Neustart/Strom-Recovery verifiziert.
 - [ ] Externer Fernzugriff: WireGuard ist vorbereitet; echter Außentest über Mobilfunk/iPhone-Hotspot ist bewusst in Runbook **Phase H ganz nach hinten verschoben**; keine direkte RDP-Portfreigabe ins Internet.
 - [x] ChatGPT auf dem Mini-PC mit demselben Konto einrichten; iPhone bleibt bevorzugte Sprach-/Diktieroberfläche. Work nur bei echtem Desktop-/Browser-/Dateikontext; keine Credits vorsorglich kaufen.
-- [ ] Secrets/API-Schlüssel lokal und mit minimalen Rechten halten; niemals in Repo oder Logs schreiben.
+- [ ] Secrets/API-Schlüssel lokal und mit minimalen Rechten halten; niemals in Repo oder Logs schreiben. **Read-only Secret-Hygiene-Audit ist vorbereitet und Windows-CI grün:** prüft Repo auf Live-Secret-Muster/verbotswürdige Key-Dateien, lokale Logs/State auf versehentlich persistierte Live-Secrets und grob zu breite ACLs im `Trading\\Secrets`-Ordner; Secretwerte werden nie ausgegeben. Repo-Suche 2026-10-01 ergab keine offensichtlichen Slack-/Supabase-/Private-Key-Live-Secrets. Einmaliger physischer MINI-PC-Audit steht noch aus.
 - [x] Klare lokale Verzeichnisstruktur für Runtime, State, Logs, temporäre Daten, Archiv und Backup festgelegt.
 - [ ] Externes Laufwerk D: enthält wichtige Altdateien und FAT32-Fehler; Sicherung/Reparatur bewusst in Runbook **Phase H ganz nach hinten verschoben**. Bis dahin **keine Live-Abhängigkeit / keine aktive Projektablage**.
 - [x] Speicherlimits/TTLs/Log-Rotation für lokale Basis eingerichtet; weitere komponentenspezifische Limits folgen jeweils mit der Runtime.
