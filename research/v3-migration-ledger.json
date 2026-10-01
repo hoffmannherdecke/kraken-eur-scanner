@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-01T19:39:20Z",
+  "updated_at_utc": "2026-10-01T19:40:41Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -213,14 +213,18 @@
       "category": "state_context",
       "source_version": "research preflight",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Kraken Futures public OI/Funding/Basis plus supplementary Binance derivatives context are PIT-ready; real public precheck shows partial Kraken-Futures coverage (142/501 Spot-EUR bases, 28.34%) and 15/15 representative analytics probes with data. Incremental Kraken-EUR value is still untested.",
+      "rationale": "Kraken Futures OI/Funding/Basis coverage is public-precheck green; H2 now also has a frozen prospective association contract, persisted live response-shape evidence, a fail-closed parser contract, and an isolated prospective candidate capture smoke. The path remains unattached to the live candidate stream and has no performance/threshold evidence.",
       "evidence": [
         "research/v3/h2-derivatives-state-precheck-v1.json",
         "research/historical/binance-derivatives-context-preflight-v1.json",
         "tools/kraken-futures-h2-coverage-precheck.py",
-        "docs/v3-research-framework.md"
+        "docs/v3-research-framework.md",
+        "research/v3/h2-prospective-derivatives-association-dataset-contract-v1.json",
+        "research/v3/h2-kraken-analytics-response-shape-20261001T192657Z.json",
+        "research/v3/h2-kraken-analytics-capture-parser-contract-v1.json",
+        "tools/v3-h2-prospective-candidate-capture.py"
       ],
-      "pending_gate": "V3_H2_PREREGISTERED_ASSOCIATION_DATASET_THEN_OOS_AND_PROSPECTIVE_TEST"
+      "pending_gate": "V3_H2_EXPLICIT_REVIEW_BEFORE_ATTACHING_ISOLATED_CAPTURE_TO_REAL_PROSPECTIVE_RESEARCH_STREAM"
     },
     {
       "id": "orderflow_depth_imbalance",
@@ -244,14 +248,16 @@
       "category": "risk_state",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "FOMC event calendar DST/known-at PIT semantics are methodology-green; no event window/risk variant has been performance-selected.",
+      "rationale": "FOMC calendar/DST/known-at methodology is green and exactly one 30m-before/30m-after FOMC statement no-new-entry RISK_GATE variant is preregistered. It is not running and cannot be materialized until the final inherited baseline is frozen.",
       "evidence": [
         "research/v3/h5-macro-event-risk-precheck-v1.json",
         "tools/v3-h5-macro-event-window-smoke.py",
         "research/source-registry.json",
-        "docs/v3-research-framework.md"
+        "docs/v3-research-framework.md",
+        "research/v3/h5-fomc-risk-variant-prereg-v1.json",
+        "research/v3/event-calendars/fomc-prospective-capture-20261001.json"
       ],
-      "pending_gate": "V3_H5_VERSIONED_OFFICIAL_EVENT_CALENDAR_THEN_ONE_PREREGISTERED_RISK_VARIANT"
+      "pending_gate": "V3_H5_FINAL_BASELINE_FREEZE_THEN_MATERIALIZE_ONE_CHANGE_SHADOW_CANDIDATE"
     },
     {
       "id": "smart_money_trader_activity",
@@ -362,14 +368,17 @@
       "category": "state_context",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Public community coverage is measured for representative assets, but historical point-in-time availability is not proven because metric interval time is not assumed to equal publication/known-at time.",
+      "rationale": "Representative Coin Metrics Community coverage is green and the first prospective known-at capture is persisted. The capture proved that provider AssetEODCompletionTime can precede later per-metric flow status times, so historical known-at use remains blocked until at least one additional distinct EOD cycle establishes first-seen/revision behavior.",
       "evidence": [
         "research/v3/h8-onchain-state-precheck-v1.json",
         "tools/v3-h8-coinmetrics-coverage-precheck.py",
         "research/source-registry.json",
-        "docs/v3-research-framework.md"
+        "docs/v3-research-framework.md",
+        "research/v3/h8-known-at-capture-contract-v1.json",
+        "research/v3/captures/h8-coinmetrics-known-at-20261001T192024Z.json",
+        "tools/v3-h8-coinmetrics-known-at-capture.py"
       ],
-      "pending_gate": "V3_H8_PROSPECTIVE_PUBLICATION_LAG_AND_KNOWN_AT_CAPTURE_BEFORE_HISTORICAL_OR_SIGNAL_TRIAL"
+      "pending_gate": "V3_H8_CAPTURE_AT_LEAST_ONE_ADDITIONAL_DISTINCT_EOD_CYCLE_THEN_REVIEW_KNOWN_AT_ELIGIBILITY"
     },
     {
       "id": "maker_taker_fill_probability",
