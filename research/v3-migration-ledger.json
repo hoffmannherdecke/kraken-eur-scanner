@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-01T18:19:00Z",
+  "updated_at_utc": "2026-10-01T18:27:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -287,6 +287,19 @@
         "docs/v3-research-framework.md"
       ],
       "pending_gate": null
+    },
+    {
+      "id": "cross_crypto_lead_lag_breadth",
+      "category": "state_signal",
+      "source_version": "V3 H1 hypothesis",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Point-in-time multi-pair feature semantics are green, but incremental net Kraken-EUR value has not been tested on preregistered real development/OOS data.",
+      "evidence": [
+        "research/v3/h1-cross-crypto-breadth-precheck-v1.json",
+        "tools/v3-h1-breadth-pit-smoke.py",
+        "docs/v3-research-framework.md"
+      ],
+      "pending_gate": "V3_H1_PREREGISTERED_REAL_DEVELOPMENT_DATASET_THEN_OOS_AND_PROSPECTIVE_TEST"
     }
   ]
 }
