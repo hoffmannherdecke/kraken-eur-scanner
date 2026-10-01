@@ -3,7 +3,7 @@
 Status: **KANONISCHE STRATEGIE-ÜBERSICHT**  
 Stand: 2026-09-29  
 Aktive Strategie: `V2R3-2026-09-28`  
-Aktive Serie: `PAPER-V2R3-FINAL-20260928T1752Z`
+Aktive Serie: `PAPER-V2R3-CLEAN-20261001T0925Z`
 
 ## 1. Zweck
 
@@ -28,8 +28,18 @@ Bei Widersprüchen gilt:
 ### V2R3 — aktive, eingefrorene Kontroll-/Paper-Version
 
 **Status:** AKTIV / PAPER ONLY / eingefrorene Vergleichsbasis  
-**Start der homogenen Serie:** 2026-09-28 17:52 UTC  
-**Series-ID:** `PAPER-V2R3-FINAL-20260928T1752Z`  
+**Start der aktuell sauberen homogenen Serie:** 2026-10-01 09:25 UTC  
+**Series-ID:** `PAPER-V2R3-CLEAN-20261001T0925Z`  
+
+**Vorgänger `PAPER-V2R3-FINAL-20260928T1752Z`: DIAGNOSTIC_COMPROMISED.**  
+Am 2026-10-01 wurde nach 708 archivierten Candidate-Outcomes ein technischer Persistenzfehler nachgewiesen: `paper_followup.py` schrieb bei jedem Lauf nur wegen `updated_at_utc` hunderte Follow-up-Dateien neu. Gleichzeitig nutzte der Persistenzschritt unter `set -o pipefail` die Form `git status ... | grep -q .`; bei großer Statusausgabe konnte dadurch der Pipeline-Exitcode trotz vorhandener Änderungen ungleich 0 werden. Ergebnis: neue Decisions wurden in einzelnen Läufen nicht committed und dieselben Kandidaten konnten später erneut evaluiert werden. Beispielhaft wurden Kandidaten vom Scanner-Run `36819697905` zunächst gegen 05:28 UTC evaluiert, aber erst in einem späteren Lauf persistiert. Die 708 Outcomes bleiben als **diagnostische Evidenz**, sind aber keine saubere prospektive Abschlussserie.  
+
+Runtime-only Repair vor Neustart der Serie:
+- Follow-up schreibt `updated_at_utc` nur noch bei tatsächlicher Inhaltsänderung;
+- Persistenz staged zuerst deterministisch mit `git add` und prüft anschließend `git diff --cached --quiet`;
+- separater Integritäts-Smoke = SUCCESS;
+- Entry-/Stop-/Sizing-/Scanner-/Strategieregeln unverändert.
+
 **Echtgeld:** deaktiviert
 
 Zweck:
