@@ -28,6 +28,8 @@ $focus = @(
 Write-Host ""
 Write-Host "=== MINI-PC EFFECTIVENESS WATCHDOG SUMMARY ==="
 Write-Host ("Overall: " + $h.status)
+Write-Host ("Operational state: " + $(if ($h.health_state) { $h.health_state } else { "LEGACY_NOT_SET" }))
+Write-Host ("State reasons: " + $(if ($h.state_reason_codes.Count -gt 0) { $h.state_reason_codes -join "," } else { "none" }))
 
 $failed = 0
 foreach ($name in $focus) {
