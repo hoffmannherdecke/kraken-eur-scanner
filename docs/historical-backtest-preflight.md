@@ -309,7 +309,7 @@ Engineering:
 - synthetic second-leg confirmation, sealed-holdout and idempotent ledger checks are green;
 - Historical data preflight **run #49: SUCCESS**.
 
-Next physical gate: execute frozen V2 against pre-2026 development data only. The holdout remains sealed regardless of the development result until a separate gate decision.
+**Superseded by section 11o above:** the frozen second-leg development replay was subsequently executed on the physical MINI-PC, failed its preregistered development gate, and the H1/H2 performance-test branch was closed without opening the 2026H1 holdout.
 
 ## 11m. Validation-only V1 failure-mode review completed 2026-10-01
 
