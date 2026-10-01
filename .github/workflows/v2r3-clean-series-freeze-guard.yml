@@ -1,0 +1,30 @@
+name: V2R3 clean-series freeze guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'paper_strategy_spec.json'
+      - 'paper_runtime_control.json'
+      - 'paper_evaluator/evaluate.py'
+      - 'paper_evaluator/revalidate.py'
+      - 'paper_context.py'
+      - '.github/workflows/scan.yml'
+      - 'research/v2r3/clean-series-freeze-20261001.json'
+      - 'tools/validate-v2r3-clean-series-freeze.py'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Validate frozen clean-series contract
+        run: python tools/validate-v2r3-clean-series-freeze.py
