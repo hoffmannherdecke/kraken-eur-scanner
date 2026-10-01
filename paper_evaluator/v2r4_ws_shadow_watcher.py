@@ -437,6 +437,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--heartbeat", type=Path, default=trading / "State" / "v2r4-ws-shadow-heartbeat.json")
     parser.add_argument("--poll-seconds", type=float, default=1.0)
     parser.add_argument("--once", action="store_true")
+    parser.add_argument(
+        "--max-runtime-seconds",
+        type=float,
+        default=None,
+        help="bounded shadow runtime for smoke tests; omit for continuous mode",
+    )
     parser.add_argument("--max-snapshot-age-seconds", type=float, default=15.0)
     parser.add_argument("--max-pair-age-seconds", type=float, default=180.0)
     parser.add_argument("--max-gap-seconds", type=float, default=45.0)
@@ -447,11 +453,18 @@ def parse_args() -> argparse.Namespace:
         raise SystemExit("--poll-seconds must be >= 0.25")
     if args.sample_seconds < 10:
         raise SystemExit("--sample-seconds must be >= 10")
+    if args.max_runtime_seconds is not None and args.max_runtime_seconds < 2:
+        raise SystemExit("--max-runtime-seconds must be >= 2")
     return args
 
 
 def main() -> int:
     args = parse_args()
+    stop_at = (
+        time.monotonic() + args.max_runtime_seconds
+        if args.max_runtime_seconds is not None
+        else None
+    )
     while True:
         try:
             run_once(args)
@@ -471,7 +484,14 @@ def main() -> int:
             print("V2R4_WS_SHADOW " + json.dumps(heartbeat, separators=(",", ":"), sort_keys=True), flush=True)
         if args.once:
             return 0
-        time.sleep(args.poll_seconds)
+        if stop_at is not None and time.monotonic() >= stop_at:
+            return 0
+        sleep_for = args.poll_seconds
+        if stop_at is not None:
+            sleep_for = min(sleep_for, max(0.0, stop_at - time.monotonic()))
+        if sleep_for <= 0:
+            return 0
+        time.sleep(sleep_for)
 
 
 if __name__ == "__main__":
