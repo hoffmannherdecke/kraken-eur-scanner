@@ -33,6 +33,7 @@ Kanonische Detailquellen:
 ---
 
 ## P0 — Laufende V2R3-Serie sauber beenden und auswerten
+- [x] Runtime-Persistenzfehler 2026-10-01 erkannt und repariert: Follow-up-No-op-Churn + `status|grep -q` unter pipefail konnte reale Änderungen als „keine Änderungen“ behandeln; reale Logs zeigen wiederholte Evaluation derselben Kandidaten vor Commit. Vorgänger-Serie mit 712 Outcomes als `DIAGNOSTIC_COMPROMISED` eingefroren, saubere identische V2R3-Serie ab 09:25 UTC neu gestartet.
 
 - [ ] Homogene V2R3-Serie `PAPER-V2R3-CLEAN-20261001T0925Z` unverändert weiterlaufen lassen; keine Entry-/Stop-/Sizing-/Scanner-Regel während der Serie verändern. Vorgänger mit 708 Outcomes ist als `DIAGNOSTIC_COMPROMISED` eingefroren, nachdem ein Runtime-Persistenzfehler wiederholte Evaluierungen vor Commit erlaubte.
 - [x] Alternativer V2R3-Abschlussmechanismus festgelegt: 20 Trades **oder** frühestens 7 volle Tage + mindestens 1.000 Candidate-Outcomes; anschließend Follow-ups bis 24h ausreifen lassen und mindestens 95 % 24h-Coverage der fälligen Kandidaten verlangen. Regel gilt für die aktuell saubere Serie `PAPER-V2R3-CLEAN-20261001T0925Z`; der frühere 708-Outcomes-Snapshot bleibt nur diagnostisch.
