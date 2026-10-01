@@ -36,17 +36,22 @@ function Age-Sec([string]$Timestamp) {
 $canaryPath = Join-Path $stateDir "kraken-canary-heartbeat.json"
 $universePath = Join-Path $stateDir "kraken-eur-universe-heartbeat.json"
 $altradyPath = Join-Path $stateDir "altrady-trigger-heartbeat.json"
+$shadowPath = Join-Path $stateDir "v2r4-ws-shadow-heartbeat.json"
 
 $beforeCanary = Read-Json $canaryPath
 $beforeUniverse = Read-Json $universePath
 $beforeAltrady = Read-Json $altradyPath
+$beforeShadow = Read-Json $shadowPath
 
-if (-not $beforeCanary -or -not $beforeUniverse -or -not $beforeAltrady) {
+if (-not $beforeCanary -or -not $beforeUniverse -or -not $beforeAltrady -or -not $beforeShadow) {
   throw "One or more required pre-test heartbeats are missing."
 }
 if ($beforeCanary.status -notin @("HEALTHY","CONNECTED")) { throw "Kraken canary is not healthy before outage test." }
 if ($beforeUniverse.status -notin @("HEALTHY","CONNECTED")) { throw "Kraken universe feed is not healthy before outage test." }
 if ($beforeAltrady.status -ne "HEALTHY") { throw "Altrady transport is not healthy before outage test." }
+if ($beforeShadow.status -notin @("HEALTHY","DUPLICATE_SKIPPED")) { throw "V2R4 WS shadow is not healthy before outage test." }
+if ([string]$beforeShadow.strategy_action -ne "NONE_SHADOW_ONLY") { throw "V2R4 WS shadow guardrail is not shadow-only before outage test." }
+if ([bool]$beforeShadow.real_money_actions) { throw "V2R4 WS shadow real-money guardrail changed before outage test." }
 
 $defaultRoute = Get-NetRoute -AddressFamily IPv4 -DestinationPrefix "0.0.0.0/0" -ErrorAction Stop |
   Where-Object { $_.State -eq "Alive" } |
@@ -124,6 +129,7 @@ $deadline = (Get-Date).AddSeconds(120)
 $afterCanary = $null
 $afterUniverse = $null
 $afterAltrady = $null
+$afterShadow = $null
 $krakenHttp = $null
 $adapterRecovered = $false
 
@@ -147,6 +153,7 @@ while ((Get-Date) -lt $deadline) {
   $afterCanary = Read-Json $canaryPath
   $afterUniverse = Read-Json $universePath
   $afterAltrady = Read-Json $altradyPath
+  $afterShadow = Read-Json $shadowPath
 
   $canaryGood = (
     $afterCanary -and
@@ -167,8 +174,17 @@ while ((Get-Date) -lt $deadline) {
     $afterAltrady.status -eq "HEALTHY" -and
     (Age-Sec $afterAltrady.checked_at_utc) -le 90
   )
+  $shadowGood = (
+    $afterShadow -and
+    $afterShadow.status -in @("HEALTHY","DUPLICATE_SKIPPED") -and
+    (Age-Sec $afterShadow.checked_at_utc) -le 30 -and
+    [int]$afterShadow.counters.snapshots_processed -gt [int]$beforeShadow.counters.snapshots_processed -and
+    [int]$afterShadow.counters.gap_recoveries -ge [int]$beforeShadow.counters.gap_recoveries -and
+    [string]$afterShadow.strategy_action -eq "NONE_SHADOW_ONLY" -and
+    -not [bool]$afterShadow.real_money_actions
+  )
 
-  if ($adapterRecovered -and $krakenHttp -eq 200 -and $canaryGood -and $universeGood -and $altradyGood) {
+  if ($adapterRecovered -and $krakenHttp -eq 200 -and $canaryGood -and $universeGood -and $altradyGood -and $shadowGood) {
     break
   }
 }
@@ -200,6 +216,18 @@ if (-not $afterAltrady) {
   if ($afterAltrady.status -ne "HEALTHY") { $issues.Add("altrady_not_healthy_after_recovery") }
   if ((Age-Sec $afterAltrady.checked_at_utc) -gt 90) { $issues.Add("altrady_stale_after_recovery") }
 }
+
+if (-not $afterShadow) {
+  $issues.Add("v2r4_ws_shadow_missing_after_recovery")
+} else {
+  if ($afterShadow.status -notin @("HEALTHY","DUPLICATE_SKIPPED")) { $issues.Add("v2r4_ws_shadow_not_healthy_after_recovery") }
+  if ((Age-Sec $afterShadow.checked_at_utc) -gt 30) { $issues.Add("v2r4_ws_shadow_stale_after_recovery") }
+  if ([int]$afterShadow.counters.snapshots_processed -le [int]$beforeShadow.counters.snapshots_processed) { $issues.Add("v2r4_ws_shadow_not_advancing_after_recovery") }
+  if ([int]$afterShadow.counters.gap_recoveries -lt [int]$beforeShadow.counters.gap_recoveries) { $issues.Add("v2r4_ws_shadow_gap_counter_regressed") }
+  if ([string]$afterShadow.strategy_action -ne "NONE_SHADOW_ONLY") { $issues.Add("v2r4_ws_shadow_guardrail_changed_after_recovery") }
+  if ([bool]$afterShadow.real_money_actions) { $issues.Add("v2r4_ws_shadow_real_money_guardrail_changed_after_recovery") }
+}
+
 
 & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $watchdog -TradingRoot $TradingRoot | Out-Null
 $watchdogCode = $LASTEXITCODE
@@ -266,14 +294,30 @@ $result = [ordered]@{
         age_sec = Age-Sec $afterAltrady.checked_at_utc
       }
     } else { $null }
+    v2r4_ws_shadow = if ($afterShadow) {
+      [ordered]@{
+        status = $afterShadow.status
+        age_sec = Age-Sec $afterShadow.checked_at_utc
+        snapshots_before = [int]$beforeShadow.counters.snapshots_processed
+        snapshots_after = [int]$afterShadow.counters.snapshots_processed
+        gap_recoveries_before = [int]$beforeShadow.counters.gap_recoveries
+        gap_recoveries_after = [int]$afterShadow.counters.gap_recoveries
+        recovery_epoch_before = [int]$beforeShadow.recovery_epoch
+        recovery_epoch_after = [int]$afterShadow.recovery_epoch
+        events_before = [int]$beforeShadow.counters.events_emitted
+        events_after = [int]$afterShadow.counters.events_emitted
+        strategy_action = $afterShadow.strategy_action
+      }
+    } else { $null }
     watchdog = if ($health) { $health.status } else { $null }
   }
   issues = @($issues)
   notes = @($notes)
   guardrails = [ordered]@{
     transport_only = $true
-    strategy_action = "NONE_TRANSPORT_ONLY"
-    queue_replay = "NOT_APPLICABLE_STRATEGY_NOT_COUPLED"
+    strategy_action = "NONE_SHADOW_ONLY"
+    shadow_recovery_checked = $true
+    queue_replay = "NO_EVALUATOR_OR_ORDER_QUEUE_COUPLED"
     real_money_actions = $false
   }
 }
@@ -299,11 +343,14 @@ if ($afterUniverse) {
 if ($afterAltrady) {
   Write-Host ("Altrady transport: " + $afterAltrady.status + " | age=" + (Age-Sec $afterAltrady.checked_at_utc) + "s")
 }
+if ($afterShadow) {
+  Write-Host ("V2R4 WS shadow: " + $afterShadow.status + " | snapshots " + $beforeShadow.counters.snapshots_processed + " -> " + $afterShadow.counters.snapshots_processed + " | gap_recoveries " + $beforeShadow.counters.gap_recoveries + " -> " + $afterShadow.counters.gap_recoveries + " | recovery_epoch " + $beforeShadow.recovery_epoch + " -> " + $afterShadow.recovery_epoch)
+}
 Write-Host ("Watchdog: " + $(if ($health) { $health.status } else { "missing" }))
 if ($issues.Count -gt 0) { Write-Host ("Issues: " + ($issues -join ", ")) } else { Write-Host "Issues: none" }
 if ($notes.Count -gt 0) { Write-Host ("Notes: " + ($notes -join ", ")) } else { Write-Host "Notes: none" }
 Write-Host ("Report: " + $reportPath)
-Write-Host "Safety: TRANSPORT-ONLY / STRATEGY NOT COUPLED / NO REAL-MONEY ACTION"
+Write-Host "Safety: SHADOW-ONLY / NO EVALUATOR / NO ORDERS / NO REAL-MONEY ACTION"
 Write-Host "=== END ==="
 
 if ($issues.Count -gt 0) { exit 2 }
