@@ -1,0 +1,186 @@
+{
+  "altname": "AAVEEUR",
+  "candidate_age_seconds": 18,
+  "candidate_event_time_utc": "2026-10-01T14:54:45Z",
+  "candidate_id": "20261001-145445-AAVE-EUR-r36879879660",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 151.31 EUR resistance with follow-through",
+      "Hold above reclaimed resistance on a retest"
+    ],
+    "reason_codes": [
+      "SPREAD_ACCEPTABLE",
+      "MIXED_INTRADAY_CONTINUITY",
+      "RESISTANCE_OVERHEAD",
+      "UPSIDE_AFTER_COSTS_UNCLEAR",
+      "NO_COIN_SPECIFIC_CATALYST_SUPPLIED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity is adequate, but the pullback and overhead resistance leave insufficient net upside after Kraken spot costs; wait for a confirmed reclaim.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "AAVEUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 1.49,
+        "available": true,
+        "current_funding_rate": -0.005361469713462555,
+        "current_open_interest": 23191.48,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 0.1198,
+        "previous_funding_rate": -0.005361469713462555,
+        "previous_observed_at_utc": "2026-10-01T14:53:35.689430Z",
+        "previous_open_interest": 23163.73
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.005361469713462555,
+        "index_price": 166.1621,
+        "last": 165.92,
+        "mark_price": 166.11856099992,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 23191.48,
+        "requested_symbols": [
+          "PF_AAVEUSD",
+          "PI_AAVEUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_AAVEUSD",
+        "volume24h": 16578.27
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 147.52,
+      "bid": 147.36,
+      "last": 147.34,
+      "spread_pct": 0.10851871947910784
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.05",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.21268838931256528,
+          "ret3h_pct": 0.27879076692363114
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.10628415529202462,
+          "ret3h_pct": -0.2219352250072082
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.06705623143979933,
+          "ret3h_pct": -0.028749401054151136
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T14:55:03.444865Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-01T14:55:15.902141Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_09c3f4a1efa5458f006abe7449722c87d08120f0c95f243999"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 147.52,
+    "bid": 147.36,
+    "last": 147.34,
+    "spread_pct": 0.10851871947910784
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "AAVE/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36879879660:AAVE-EUR:1790866485",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "d51211ab940c403a0f22755fbb0c86a64874848a",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T14:54:45Z",
+    "candidate_detected_ts": 1790866485,
+    "candidate_snapshot_at_utc": "2026-10-01T14:54:45Z",
+    "detected_to_evaluation_complete_seconds": 30.902,
+    "detected_to_evaluation_start_seconds": 18.198,
+    "evaluation_completed_at_utc": "2026-10-01T14:55:15.902141Z",
+    "evaluation_runtime_seconds": 12.704,
+    "evaluation_started_at_utc": "2026-10-01T14:55:03.198039Z",
+    "handoff_to_evaluation_start_seconds": 16.399,
+    "handoff_written_at_utc": "2026-10-01T14:54:46.799490Z",
+    "scan_step_started_at_utc": "2026-10-01T14:53:13Z"
+  }
+}
