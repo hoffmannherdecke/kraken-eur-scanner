@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H9_MAKER_TAKER_READINESS_V1",
+  "hypothesis_id": "V3-H9",
+  "status": "DEFERRED_FILL_DATA_NOT_READY",
+  "prepared_at_utc": "2026-10-01T18:47:00Z",
+  "purpose": "Block maker-vs-taker/fill-probability research until the required execution microstructure evidence exists.",
+  "current_evidence": {
+    "public_rest_l2_snapshot": "GREEN_H3_REST_DEPTH",
+    "public_ws_book_delta_capture": "NOT_YET_PROVEN",
+    "public_trade_sequence_targeted_method": "PREPARED_NO_BULK_DOWNLOAD",
+    "synchronized_book_and_trade_clock": "NOT_YET_PROVEN",
+    "queue_position_model": "NOT_AVAILABLE",
+    "maker_fill_probability_model": "NOT_AVAILABLE"
+  },
+  "public_rest_snapshot_is_insufficient_for": [
+    "queue_position",
+    "maker_fill_probability",
+    "fill_before_deadline_probability",
+    "cancel_fill_race",
+    "adverse_selection_after_fill",
+    "book_resiliency",
+    "execution_edge_decay"
+  ],
+  "minimum_data_gates_before_modelling": [
+    "BOUNDED_PUBLIC_WS_BOOK_CAPTURE_WITH_SEQUENCE_OR_RECONCILIATION",
+    "SAME_CLOCK_PUBLIC_TRADE_PRINT_CAPTURE",
+    "STALE_DATA_AND_RECONNECT_BEHAVIOR_MEASURED",
+    "MAKER_TAKER_FEE_SCHEDULE_VERSIONED",
+    "DEADLINE_AND_CLEANUP_TAKER_RULE_PREREGISTERED",
+    "QUEUE_ASSUMPTION_EXPLICIT_AND_TESTABLE",
+    "NO_PRIVATE_ORDER_OR_ACCOUNT_DATA_REQUIRED_FOR_PRECHECK"
+  ],
+  "later_model_outputs": [
+    "maker_fill_probability_before_deadline",
+    "expected_effective_cost_maker_route",
+    "expected_effective_cost_taker_route",
+    "adverse_selection_after_maker_fill",
+    "edge_decay_during_wait"
+  ],
+  "decision_contract_when_later_ready": {
+    "choose_route_by_expected_net_edge_not_fee_alone": true,
+    "no_fill_is_valid_outcome": true,
+    "cleanup_taker_cost_must_be_included": true,
+    "cancel_fill_race_must_be_modelled": true,
+    "price_move_during_wait_must_be_included": true
+  },
+  "bias_guardrails": {
+    "threshold_selection_allowed": false,
+    "pair_selection_by_seen_fill_performance_allowed": false,
+    "deadline_sweep_allowed": false,
+    "current_sealed_holdout_open_allowed": false
+  },
+  "runtime_guardrails": {
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "live_order_routing_change_allowed": false,
+    "private_api_allowed": false,
+    "orders_allowed": false,
+    "leverage_allowed": false,
+    "real_money_actions_allowed": false
+  },
+  "next_gate": "COMPLETE_H3_BOUNDED_PUBLIC_WS_BOOK_CAPTURE_AND_SYNCHRONIZED_TRADE_PRINT_SMOKE_BEFORE_H9_MODELLING"
+}
