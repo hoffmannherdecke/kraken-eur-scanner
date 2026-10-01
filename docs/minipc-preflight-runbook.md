@@ -1255,6 +1255,37 @@ Provenance completeness was also verified across all 708 active V2R3 archived ou
 
 No strategy logic was changed.
 
+### Paper-runtime persistence integrity incident + clean V2R3 restart 2026-10-01
+
+A previously hidden runtime/data-quality defect was proven while analyzing the 708-outcome V2R3 snapshot.
+
+**Observed evidence**
+- GitHub run `36819834710` selected five new candidates from scanner run `36819697905` and evaluated them around 05:28 UTC.
+- The same run printed a non-empty `PAPER_ACTION_MANIFEST` containing all five newly created decision files.
+- Despite those new files, the persistence step ended with `PAPER_RUNTIME_NO_STATE_CHANGES`.
+- The same candidates were subsequently selected and evaluated again in later runtime runs; their first Git commit only appeared in commit `1458facb` at ~06:01 UTC.
+- This explains the severe timing tail in the old series: 64 persisted decisions exceed 300s detection→evaluation-complete; for the severe tail the median total was ~921s, median evaluator runtime only ~10s, and ~98.4% of elapsed time was pre-evaluator wait/repeat latency.
+
+**Root cause**
+1. `paper_followup.py` refreshed `opportunity_audit.updated_at_utc` on every lifecycle run even when no follow-up content changed, dirtying hundreds of tracked follow-up files.
+2. The persistence shell used `set -o pipefail` together with `git status ... | grep -q .`. With sufficiently large status output, early `grep -q` termination can make the upstream `git status` exit via SIGPIPE, so the conditional can evaluate false despite real changes.
+3. New decision files could therefore remain uncommitted in an ephemeral runner and be lost at job end; a later dispatch would treat the candidate as unseen and evaluate it again.
+
+**Repair**
+- old series `PAPER-V2R3-FINAL-20260928T1752Z` paused/frozen and marked `DIAGNOSTIC_COMPROMISED`;
+- final archived diagnostic count after in-flight sync: 712 Candidate-Outcomes, 0 trades;
+- `paper_followup.py` now writes the audit timestamp/file only on real content change;
+- paper runtime persistence now stages deterministically first and checks `git diff --cached --quiet`, eliminating the status-pipe ambiguity;
+- dedicated integrity smoke passed:
+  - Python compile PASS;
+  - no-op follow-up stability PASS;
+  - deterministic staged-change detection PASS with 500 modified follow-up files;
+- strategy rules were not changed;
+- clean replacement series started at 2026-10-01 09:25 UTC:
+  `PAPER-V2R3-CLEAN-20261001T0925Z`.
+
+The predecessor remains valuable for diagnostic missed-move/timing analysis but is excluded from clean prospective completion/promotion evidence.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
