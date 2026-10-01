@@ -6,13 +6,28 @@ or SUPABASE_SERVICE_ROLE_KEY (legacy JWT key) in the host environment.
 Never commit either value. The script refuses publishable/anon-style keys.
 """
 from __future__ import annotations
-import json, os, urllib.parse, urllib.request
+import json, os, time, urllib.error, urllib.parse, urllib.request
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parent
 
 def load(path):
     return json.loads(path.read_text("utf-8"))
+
+def _batches(rows, max_rows=50, max_bytes=900_000):
+    batch=[]
+    size=2
+    for row in rows:
+        encoded=json.dumps(row,separators=(",",":")).encode("utf-8")
+        row_size=len(encoded)+(1 if batch else 0)
+        if batch and (len(batch)>=max_rows or size+row_size>max_bytes):
+            yield batch
+            batch=[]
+            size=2
+        batch.append(row)
+        size+=row_size
+    if batch:
+        yield batch
 
 def post_rows(url,key,table,rows,on_conflict):
     if not rows:
@@ -22,21 +37,42 @@ def post_rows(url,key,table,rows,on_conflict):
         "apikey":key,
         "Content-Type":"application/json",
         "Prefer":"resolution=merge-duplicates,return=minimal",
-        "User-Agent":"kraken-paper-supabase-sync/1.1",
+        "User-Agent":"kraken-paper-supabase-sync/1.2",
     }
     # Legacy service_role keys are JWTs and may be sent as Bearer tokens.
     # Modern sb_secret_ keys must be sent via apikey only.
     if not key.startswith("sb_secret_"):
         headers["Authorization"]="Bearer "+key
-    req=urllib.request.Request(
-        endpoint,
-        data=json.dumps(rows,separators=(",",":")).encode("utf-8"),
-        method="POST",
-        headers=headers,
-    )
-    with urllib.request.urlopen(req,timeout=30) as resp:
-        if not 200<=resp.status<300:
-            raise RuntimeError(f"{table} HTTP {resp.status}")
+
+    total=0
+    batches=0
+    for batch in _batches(rows):
+        payload=json.dumps(batch,separators=(",",":")).encode("utf-8")
+        for attempt in range(3):
+            req=urllib.request.Request(
+                endpoint,
+                data=payload,
+                method="POST",
+                headers=headers,
+            )
+            try:
+                with urllib.request.urlopen(req,timeout=30) as resp:
+                    if not 200<=resp.status<300:
+                        raise RuntimeError(f"{table} HTTP {resp.status}")
+                break
+            except urllib.error.HTTPError as exc:
+                # Retry only gateway/rate/transient server failures; schema/data
+                # errors remain fail-fast so archive problems are visible.
+                if exc.code not in (429,500,502,503,504) or attempt==2:
+                    raise
+                time.sleep(2**attempt)
+            except (TimeoutError, urllib.error.URLError):
+                if attempt==2:
+                    raise
+                time.sleep(2**attempt)
+        total+=len(batch)
+        batches+=1
+    print(json.dumps({"archive_table":table,"rows":total,"batches":batches},sort_keys=True))
 
 def main():
     url=os.environ.get("SUPABASE_URL","").strip()
