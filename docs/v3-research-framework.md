@@ -151,6 +151,7 @@ Default interpretation:
 Current preregistered precheck:
 - `research/v3/h2-derivatives-state-precheck-v1.json`;
 - public Kraken Futures coverage/semantics audit is real-network CI green;
+- H2 guard **Run #4 SUCCESS** after the coverage gate advanced; intervening Run #3 failure was only the old guard still asserting the pre-coverage `next_gate`, not a market-data or hypothesis failure;
 - current observed coverage: 142 mapped Perpetual bases across 501 online Kraken Spot-EUR bases (**28.34%**);
 - bounded XBT/ETH/SOL/XRP/ADA OI/Funding/Basis probe: **15/15 successful with data**;
 - incomplete derivatives coverage is represented as missing state, never future-filled or treated as an error;
@@ -401,6 +402,24 @@ Do not prioritize as directional trading logic without new evidence:
 - Ridge/Lasso/ElasticNet preferred when many correlated features appear.
 - Trees/boosting only when simple linear models miss demonstrable nonlinear structure.
 - Statistical forecast metrics are secondary to economic net edge after realistic costs.
+
+## 8a. Timing evidence intake
+
+Timing/infrastructure evidence is deliberately kept separate from signal/filter
+evidence. Canonical read-only snapshot: `public.v3_timing_evidence_snapshot`.
+
+It combines:
+- V2R3 candidate detection → evaluator timing;
+- one-shot WAIT requested TTL → actual revalidation lag;
+- V2R4 prospective shadow maturity;
+- Kraken-native WS-shadow vs. legacy scanner temporal proximity;
+- Altrady relay transport evidence.
+
+Current control semantics are fail-closed:
+- no path ranking while the underlying comparison view says samples are insufficient;
+- timing evidence may motivate an infrastructure/timing variant;
+- it does **not** automatically justify loosening entry filters;
+- no automatic entry-rule change or strategy promotion is allowed.
 
 ## 9. Production / Mini-PC architecture rules
 
