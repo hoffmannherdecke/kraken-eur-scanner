@@ -1,0 +1,57 @@
+name: Reconciliation audit legacy fix once
+
+'on':
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/reconciliation-audit-fix-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - name: Patch active-series filtering
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("tools/paper-runtime-reconciliation-audit.py")
+          c=p.read_text("utf-8")
+          c=c.replace(
+              '    findings: list[dict[str, Any]] = []\n\n    for path in sorted(handoff_dir.glob("*.json")) if handoff_dir.exists() else []:\n',
+              '    findings: list[dict[str, Any]] = []\n    old_series_ignored = 0\n\n    for path in sorted(handoff_dir.glob("*.json")) if handoff_dir.exists() else []:\n'
+          )
+          needle='        cid = str(rec.get("candidate_id") or "")\n        qid = str(rec.get("queue_id") or "")\n'
+          insert='        try:\n            event_time = zdt(rec.get("event_time_utc") or datetime.fromtimestamp(int(rec["event_ts"]), timezone.utc).isoformat())\n        except Exception:\n            findings.append({"severity": "CRITICAL", "code": "HANDOFF_BAD_TIMESTAMP", "file": str(path)})\n            continue\n        if event_time < series_start:\n            old_series_ignored += 1\n            continue\n\n'+needle
+          if needle not in c:
+              raise SystemExit("candidate marker missing")
+          c=c.replace(needle,insert,1)
+          c=c.replace(
+              '    stale_orphans = 0\n    replayable_fresh = 0\n    old_series_ignored = 0\n    due_waits = 0\n',
+              '    stale_orphans = 0\n    replayable_fresh = 0\n    due_waits = 0\n'
+          )
+          c=c.replace(
+              '        if event_time < series_start:\n            old_series_ignored += 1\n            continue\n\n        age = max(0.0, (now - event_time).total_seconds())\n',
+              '        age = max(0.0, (now - event_time).total_seconds())\n',
+              1
+          )
+          c=c.replace(
+              '    print(f"Handoffs: {len(handoffs)} | decisions={len(decisions)} | revalidations={len(revals)}")\n',
+              '    print(f"Active-series handoffs: {len(handoffs)} | decisions={len(decisions)} | revalidations={len(revals)}")\n    print(f"Historical pre-series handoffs ignored: {old_series_ignored}")\n'
+          )
+          c=c.replace(
+              '    print("Replay safety: >60m handoffs are not prospectively selected; existing candidate decision/revalidation files make evaluation idempotent/one-shot.")\n',
+              '    print("Replay safety: pre-series legacy handoffs are ignored; >60m active-series handoffs are not prospectively selected; existing candidate decision/revalidation files make evaluation idempotent/one-shot.")\n'
+          )
+          p.write_text(c,"utf-8")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/paper-runtime-reconciliation-audit.py
+          git commit -m "ops: ignore pre-series legacy handoffs in reconciliation audit"
+          git push origin HEAD:main
