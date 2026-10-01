@@ -106,6 +106,33 @@ try {
   Add-Check "kraken_canary_heartbeat" $false $_.Exception.Message "WARNING"
 }
 
+# Broad public Kraken EUR universe feed is optional until installed.
+try {
+  $universeTask = Get-ScheduledTask -TaskName "CryptoMiniPC-KrakenUniverse" -ErrorAction SilentlyContinue
+  if ($universeTask) {
+    $hb = Join-Path $TradingRoot "State\kraken-eur-universe-heartbeat.json"
+    if (-not (Test-Path $hb)) {
+      Add-Check "kraken_universe_heartbeat" $false "task installed but heartbeat missing" "WARNING"
+    } else {
+      $h = Get-Content $hb -Raw | ConvertFrom-Json
+      $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
+      $okStatus = [string]$h.status -in @("HEALTHY","CONNECTED")
+      $ok = (
+        $okStatus -and
+        $ageSec -le 45 -and
+        [int]$h.pair_count -gt 0 -and
+        [int]$h.observed_pair_count -gt 0 -and
+        [int]$h.subscription_errors -eq 0
+      )
+      Add-Check "kraken_universe_heartbeat" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " pairs=" + $h.pair_count + " observed=" + $h.observed_pair_count + " coverage=" + $h.coverage_pct + "% reconnects=" + $h.reconnects) "WARNING"
+    }
+  } else {
+    $checks["kraken_universe_heartbeat"] = [ordered]@{ ok=$null; detail="not installed yet; BTC/EUR canary remains the transport-health probe" }
+  }
+} catch {
+  Add-Check "kraken_universe_heartbeat" $false $_.Exception.Message "WARNING"
+}
+
 # Altrady transport heartbeat is optional/non-exclusive.
 # Only evaluate it when the dedicated scheduled task is installed.
 try {
