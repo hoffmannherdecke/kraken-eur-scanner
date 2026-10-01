@@ -1,0 +1,126 @@
+{
+  "kind": "KRAKEN_EUR15_PERFORMANCE_REPLAY_SPEC_V2",
+  "schema_version": 1,
+  "status": "FROZEN_PRE_REGISTERED_NOT_YET_EXECUTED",
+  "frozen_date": "2026-10-01",
+  "research_role": "OHLCVT_ONLY_SECOND_LEG_CONFIRMATION_BASELINE",
+  "provenance": {
+    "influenced_by_v1_validation": true,
+    "v1_result": "V1 median gross non-positive; right-skew winner distribution; V1 rejected/insufficient",
+    "search_accounting_note": "V2 is a distinct hypothesis/trial. V1 is not tuned in place."
+  },
+  "parent_hypothesis": "A second-leg close confirmation after the original V1 momentum trigger may filter immediate-failure signals while preserving the right-tail continuation cases.",
+  "interpretation_guardrail": "Pre-2026 data is development evidence for V2 because the V2 concept was influenced by the already-seen 2025 V1 validation. No clean out-of-sample claim is permitted until the sealed 2026H1 holdout is explicitly opened in a later, separately recorded gate.",
+  "dataset": {
+    "source": "Kraken downloadable OHLCVT full history through 2026-06-30",
+    "normalized_schema": "KRAKEN_EUR15_NORMALIZED_V1",
+    "interval_minutes": 15,
+    "expected_normalized_pair_files": 648,
+    "raw_archive_sha256": "fc81b54cba6e12af3e9422dde9416179e6ef76af4831d48d839fbdb43018eaa4",
+    "missing_interval_semantics": "NO_TRADE_INTERVAL_ABSENT_DO_NOT_ZERO_FILL",
+    "survivorship_rule": "Do not filter historical membership by current Kraken AssetPairs."
+  },
+  "evaluation_topology": {
+    "development_seen": {
+      "start_utc": "1970-01-01T00:00:00Z",
+      "end_utc_exclusive": "2026-01-01T00:00:00Z",
+      "purpose": "development/robustness evidence only; includes 2025 because V2 was influenced by V1 validation"
+    },
+    "sealed_holdout": {
+      "start_utc": "2026-01-01T00:00:00Z",
+      "end_utc_exclusive": "2026-07-01T00:00:00Z",
+      "status": "LOCKED_DO_NOT_READ_IN_V2_DEVELOPMENT",
+      "open_condition": "Only after V2 development result is immutable and the preregistered holdout-open gate passes."
+    }
+  },
+  "point_in_time_contract": {
+    "feature_visibility_rule": "bar_end_epoch <= signal_cutoff_epoch",
+    "decision_cadence": "15m bar close",
+    "require_contiguous_15m": true,
+    "confirmation_is_observed_before_entry": true,
+    "entry_occurs_only_after_confirmation_close": true,
+    "future_labels_generated_after_entry_freeze": true,
+    "live_incomplete_bar_allowed": false
+  },
+  "initial_signal": {
+    "required_contiguous_history_bars": 20,
+    "min_trades_last_15m": 1,
+    "all_conditions_required": [
+      {
+        "feature": "return_1h_pct",
+        "operator": ">=",
+        "value": 2
+      },
+      {
+        "feature": "return_3h_pct",
+        "operator": ">=",
+        "value": 4
+      },
+      {
+        "feature": "volume_ratio_15m_vs_20",
+        "operator": ">=",
+        "value": 1.5
+      },
+      {
+        "feature": "trades_ratio_15m_vs_20",
+        "operator": ">=",
+        "value": 1.25
+      }
+    ]
+  },
+  "confirmation": {
+    "max_wait_bars": 4,
+    "condition": "FIRST_SUBSEQUENT_CONTIGUOUS_BAR_CLOSE_STRICTLY_ABOVE_SIGNAL_BAR_HIGH",
+    "invalidation": "ANY_PRE_CONFIRMATION_BAR_CLOSE_STRICTLY_BELOW_SIGNAL_BAR_LOW",
+    "no_confirmation_action": "NO_TRADE",
+    "entry": "NEXT_CONTIGUOUS_15M_BAR_OPEN_AFTER_CONFIRMATION_CLOSE"
+  },
+  "execution": {
+    "side": "LONG_ONLY",
+    "holding_period_bars": 16,
+    "holding_period_minutes": 240,
+    "exit": "CLOSE_OF_16TH_CONTIGUOUS_15M_BAR_AFTER_ENTRY",
+    "stop_loss": null,
+    "take_profit": null,
+    "leverage": false,
+    "portfolio_capital_simulation": false,
+    "same_pair_initial_signal_cooldown_bars": 16
+  },
+  "cost_model": {
+    "taker_fee_pct_per_side": 0.6,
+    "slippage_pct_per_side": 0.1,
+    "spread_model": "NOT_SEPARATELY_OBSERVED_IN_15M_OHLCVT",
+    "total_assumed_round_trip_cost_pct": 1.4,
+    "primary_cost_pct_round_trip": 1.4
+  },
+  "development_gate_before_holdout": {
+    "min_confirmed_event_count": 500,
+    "require_mean_net_return_gt_zero": true,
+    "require_median_net_return_gt_zero": true,
+    "require_positive_net_rate_gte": 0.5,
+    "require_top10_pair_event_share_lte": 0.4,
+    "action_if_gate_fails": "REJECT_V2_WITHOUT_OPENING_HOLDOUT",
+    "action_if_gate_passes": "ELIGIBLE_FOR_SEPARATE_EXPLICIT_HOLDOUT_OPEN_DECISION"
+  },
+  "prohibited": {
+    "threshold_sweep": true,
+    "horizon_sweep": true,
+    "pair_subset_selection": true,
+    "month_subset_selection": true,
+    "holdout_metrics": true,
+    "holdout_event_generation": true
+  },
+  "search_accounting": {
+    "trial_family": "EUR15_SECOND_LEG_CONFIRMATION_V2",
+    "counts_as_new_trial": true,
+    "influenced_by_prior_trial": true,
+    "any_rule_change_requires_v3_or_new_variant": true
+  },
+  "safety": {
+    "network_used": false,
+    "active_strategy_changed": false,
+    "paper_shadow_runtime_changed": false,
+    "real_money_action": false
+  },
+  "next_gate_after_development": "APPLY_PREREGISTERED_DEVELOPMENT_GATE_WITH_HOLDOUT_STILL_SEALED"
+}
