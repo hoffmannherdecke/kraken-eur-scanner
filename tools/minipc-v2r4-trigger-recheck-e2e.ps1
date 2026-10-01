@@ -1,6 +1,6 @@
 param(
   [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
-  [string]$Branch = "prep/v2r4-fast-trigger-minipc-20260929"
+  [string]$Branch = "prep/v2r4-refresh-20261001"
 )
 
 $ErrorActionPreference = "Stop"
