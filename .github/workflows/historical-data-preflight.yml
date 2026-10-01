@@ -16,6 +16,7 @@ name: Historical data preflight
       - 'tools/cleanup-verified-kraken-ohlcvt-parts.ps1'
       - 'tools/normalize-kraken-eur15.py'
       - 'tools/historical-real-pair-replay-smoke.py'
+      - 'tools/run-minipc-eur15-normalization.ps1'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -213,6 +214,17 @@ jobs:
           assert j["guardrails"]["historical_strategy_tuning_performed"] is False
           print("REAL_PAIR_PIT_REPLAY PASS")
           PY
+
+      - name: MINI-PC EUR15 normalization plan-only smoke
+        shell: pwsh
+        run: |
+          ./tools/run-minipc-eur15-normalization.ps1 | Tee-Object -Variable plan
+          if (($plan -join [Environment]::NewLine) -notmatch '"status":\s*"PLAN_ONLY"') {
+            throw "normalization orchestrator did not remain plan-only"
+          }
+          if (($plan -join [Environment]::NewLine) -notmatch '"network_used":\s*false') {
+            throw "normalization orchestrator plan violated offline guardrail"
+          }
 
       - name: Smoke OHLCVT cleanup plan-only
         shell: pwsh
