@@ -31,7 +31,7 @@ Kanonische Detailquellen:
 ## P0 — Laufende V2R3-Serie sauber beenden und auswerten
 
 - [ ] Homogene V2R3-Serie unverändert weiterlaufen lassen; keine Entry-/Stop-/Sizing-/Scanner-Regel während der Serie verändern.
-- [ ] Zusätzlich zum Ziel „20 abgeschlossene Paper-Trades“ einen **vorab definierten alternativen Abschlussmechanismus** festlegen, falls die Strategie zu wenige Trades erzeugt (z. B. ausreichende Kandidatenzahl und/oder Beobachtungszeit), damit eine überstrenge Strategie nicht endlos im Test bleibt.
+- [x] Alternativer V2R3-Abschlussmechanismus festgelegt (2026-10-01, nach Serienstart aber vor Abschlussanalyse): 20 Trades **oder** frühestens 7 volle Tage + mindestens 1.000 Candidate-Outcomes; anschließend Follow-ups bis 24h ausreifen lassen und mindestens 95 % 24h-Coverage der fälligen Kandidaten verlangen. Bei <20 Trades ist zu geringe Trade-Frequenz selbst ein Befund, kein Grund zur Endlosverlängerung. Aktueller Snapshot bei Festlegung: 708 Candidate-Outcomes, 0 Trades, 441/449 = 98,2 % 24h-Coverage der bereits fälligen Kandidaten.
 - [ ] Alle relevanten Kandidatenpfade auswerten, nicht nur tatsächliche Entries: BUY/Scout, WAIT, REJECT/NO-TRADE sowie späteren Kursverlauf.
 - [ ] MAE/MFE, 30/60/120/360-Minuten-Follow-up, Edge-Decay, „gestoppt und später erholt“, verpasste Moves und Gebührenwirkung systematisch zusammenführen.
 - [ ] Zeitkette messen: Scanner-Erkennung → Persistenz/Handoff → Evaluator → Revalidation → möglicher Entry. Verzögerung als eigene Fehlerklasse behandeln.
