@@ -1,7 +1,7 @@
 -- Read-only normalized V2R4 WS-shadow completed-outcome metrics.
 -- No strategy/runtime changes. Rows appear only after local 6h outcomes are archived.
 
-create or replace view public.v2r4_shadow_outcome_metrics as
+create or replace view public.v2r4_shadow_outcome_metrics with (security_invoker=true) as
 select
     e.event_id,
     e.pair,
