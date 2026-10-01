@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_ORDERBOOK_DEPTH_PRECHECK_V1",
+  "hypothesis_id": "V3-H3",
+  "status": "PRECHECK_L2_SNAPSHOT_ONLY_WEBSOCKET_PENDING",
+  "prepared_at_utc": "2026-10-01T18:45:00Z",
+  "purpose": "Verify public Kraken-EUR L2 snapshot semantics and bounded depth calculations before any persistent WebSocket orderflow capture.",
+  "source": "KRAKEN_PUBLIC_REST_DEPTH",
+  "role": "DATA_SEMANTICS_AND_COVERAGE_ONLY",
+  "representative_pairs": [
+    "XBTEUR",
+    "ETHEUR",
+    "SOLEUR"
+  ],
+  "derived_snapshot_fields": [
+    "best_bid",
+    "best_ask",
+    "mid",
+    "spread_bps",
+    "bid_depth_quote_top10",
+    "ask_depth_quote_top10"
+  ],
+  "not_proven_by_snapshot": [
+    "orderflow_imbalance_over_time",
+    "book_delta_sequence",
+    "queue_position",
+    "maker_fill_probability",
+    "adverse_selection",
+    "resiliency_after_shock"
+  ],
+  "future_ws_gate": {
+    "required": true,
+    "public_read_only": true,
+    "bounded_pairs_first": true,
+    "bounded_duration_first": true,
+    "sequence_or_snapshot_delta_reconciliation_required": true,
+    "staleness_and_reconnect_measurement_required": true,
+    "no_endless_raw_archive": true
+  },
+  "runtime_guardrails": {
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "private_api_allowed": false,
+    "orders_allowed": false,
+    "leverage_allowed": false,
+    "real_money_actions_allowed": false
+  },
+  "research_guardrails": {
+    "performance_trial_started": false,
+    "threshold_selection_allowed": false,
+    "holdout_opened": false,
+    "direct_buy_sell_rule": false
+  },
+  "next_gate": "BOUNDED_MINIPC_PUBLIC_WS_BOOK_CAPTURE_SMOKE_BEFORE_H3_OR_H9_RESEARCH"
+}
