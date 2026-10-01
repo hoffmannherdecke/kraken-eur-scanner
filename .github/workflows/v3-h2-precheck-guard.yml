@@ -47,7 +47,14 @@ jobs:
           assert j['runtime_guardrails']['real_money_actions_allowed'] is False
           assert j['current_data_readiness']['performance_trial_started'] is False
           assert j['current_data_readiness']['holdout_opened'] is False
-          assert j['next_gate']=='COVERAGE_AND_SEMANTICS_PRECHECK_ONLY'
+          assert j['next_gate']=='COVERAGE_SEMANTICS_PRECHECK_COMPLETE__NEXT_PREREGISTER_ASSOCIATION_DATASET_WITHOUT_HOLDOUT'
+          rd=j['current_data_readiness']
+          assert rd['kraken_derivatives_coverage_audit']=='CI_GREEN_REAL_PUBLIC_PRECHECK_RUN_2'
+          assert rd['kraken_spot_eur_base_count']==501
+          assert rd['kraken_spot_eur_bases_with_mapped_perpetual_count']==142
+          assert abs(float(rd['kraken_derivatives_coverage_pct_of_spot_eur_bases'])-28.34) < 1e-9
+          assert rd['performance_trial_started'] is False
+          assert rd['holdout_opened'] is False
           print('V3_H2_PRECHECK PASS no-tuning/no-holdout/no-runtime-change')
           PY
 
