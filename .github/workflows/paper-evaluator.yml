@@ -203,10 +203,10 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
-          if git status --porcelain paper_alerts/ 2>/dev/null | grep -q .; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add paper_alerts/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add paper_alerts/ 2>/dev/null || true
+          if ! git diff --cached --quiet -- paper_alerts/; then
             git commit -m "[paper-alert] persist Slack alert receipt"
             pushed=false
             for attempt in 1 2 3 4; do
