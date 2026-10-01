@@ -2,7 +2,7 @@
 
 Status: **PREPARED / NOT ACTIVE / PAPER ONLY**
 
-This document is the compact release-readiness control point for V2R4. It does not replace `docs/strategy-version-map.md`, the V2R3 completion gate, or the Mini-PC runbook.
+This document is the compact release-readiness control point for V2R4. It does not replace `docs/strategy-version-map.md`, the V2R3 completion gate, the Mini-PC runbook, or the explicit behavior matrix in `docs/v2r4-v2r3-release-diff.md`.
 
 ## Current code candidate
 
