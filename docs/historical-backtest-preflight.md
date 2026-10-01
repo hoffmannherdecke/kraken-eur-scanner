@@ -358,10 +358,23 @@ Additional guarded tooling now prepared and CI-verified:
 - `tools/inspect-kraken-ohlcvt-archive.py`: read-only ZIP/MANIFEST inventory for the next selective EUR/15m extraction gate;
 - Historical data preflight GitHub Action run #8: **SUCCESS**, including plan-only downloader and synthetic archive-inspector smoke.
 
+Current execution state:
+
+- physical MINI-PC preflight: PASS;
+- full official OHLCVT archive: downloaded and SHA-256 verified;
+- archive inventory: PASS;
+- selective EUR/15m raw extraction: PASS 648/648 with CSV validation;
+- redundant download parts: deleted after checksum recheck, 8.36 GB reclaimed;
+- deterministic point-in-time EUR/15m normalizer: CI PASS;
+- real-pair point-in-time replay smoke: CI PASS;
+- guarded MINI-PC normalization orchestrator: CI PASS (Historical data preflight run #24).
+
 Next safe engineering work:
 
-- when useful, run the prepared MINI-PC plan/apply preflight to create only the local directory skeleton and record actual free space;
-- after that, decide whether to enable the OHLCVT-only download phase;
+- execute the guarded normalization orchestrator on the physical MINI-PC;
+- verify the resulting normalization catalog and real-pair replay report;
+- append that real replay as an immutable search-accounting/trial-ledger entry;
+- only then expand from methodology smoke to a broader historical replay;
 - do not enable Time & Sales bulk download until OHLCVT replay proves a concrete need.
 
 None of these steps changes V2R3/V2R4 runtime or strategy behavior.
