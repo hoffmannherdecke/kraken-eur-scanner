@@ -75,7 +75,7 @@
       "unique_value": "Independent external alert/wakeup transport that can accelerate same-pair Kraken fresh rechecks.",
       "authoritative_for": ["wakeup_hint_only"],
       "not_authoritative_for": ["trade_condition_truth", "kraken_price", "direct_buy_decision"],
-      "overlap_with": ["kraken_spot_ws_public", "github_scanner"],
+      "overlap_with": ["kraken_spot_ws_public", "internal:github_scanner"],
       "overlap_strategy": "Redundant trigger path by design; Kraken public data remains condition truth and GitHub/Kraken-native paths remain independent.",
       "persistence_mode": "compact_event_transport_evidence",
       "duplicate_raw_storage_allowed": false,
