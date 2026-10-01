@@ -21,6 +21,8 @@ name: Historical data preflight
       - 'tools/run-minipc-eur15-normalization.ps1'
       - 'tools/record-real-pair-replay-trial.py'
       - 'tools/run-minipc-broad-pit-v2.ps1'
+      - 'tools/validate-performance-replay-spec.py'
+      - 'tools/historical-performance-replay-v1.py'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -50,6 +52,8 @@ jobs:
           python -m py_compile tools/historical-real-pair-replay-smoke-v2.py
           python -m py_compile tools/historical-broad-pit-smoke.py
           python -m py_compile tools/record-real-pair-replay-trial.py
+          python -m py_compile tools/validate-performance-replay-spec.py
+          python -m py_compile tools/historical-performance-replay-v1.py
 
       - name: Validate no-download Kraken manifest
         run: |
@@ -323,6 +327,93 @@ jobs:
               con.close()
           assert count==1
           print("REAL_PAIR_V2_TRIAL_LEDGER PASS")
+          PY
+
+      - name: Validate frozen performance replay spec V1
+        run: |
+          python tools/validate-performance-replay-spec.py \
+            research/historical/performance-replay-spec-v1.json
+
+      - name: Smoke frozen performance replay V1 on synthetic chronology
+        run: |
+          python - <<'PY'
+          import csv, gzip, io, json
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root=Path("/tmp/perf-v1-normalized")
+          root.mkdir(parents=True,exist_ok=True)
+          header=[
+              "bar_start_epoch","bar_end_epoch","bar_start_utc","bar_end_utc",
+              "open","high","low","close","volume","trades"
+          ]
+
+          def iso(ts):
+              return datetime.fromtimestamp(ts,tz=timezone.utc).isoformat().replace("+00:00","Z")
+
+          def segment(start_ts, base):
+              rows=[]
+              for i in range(60):
+                  ts=start_ts+i*900
+                  close=base
+                  volume=10.0
+                  trades=5
+                  if i==25:
+                      close=base*1.05
+                      volume=80.0
+                      trades=40
+                  elif i>25:
+                      close=base*1.05*(1.0+0.001*(i-25))
+                      volume=12.0
+                      trades=6
+                  row=[
+                      ts,ts+900,iso(ts),iso(ts+900),
+                      close,close*1.002,close*0.998,close,volume,trades
+                  ]
+                  rows.append(row)
+              return rows
+
+          starts=[
+              int(datetime(2023,6,1,tzinfo=timezone.utc).timestamp()),
+              int(datetime(2024,6,1,tzinfo=timezone.utc).timestamp()),
+              int(datetime(2025,6,1,tzinfo=timezone.utc).timestamp()),
+          ]
+
+          for pair,base in (("XBTEUR",100.0),("ETHEUR",50.0)):
+              path=root/f"{pair}_15.normalized.csv.gz"
+              with path.open("wb") as raw:
+                  with gzip.GzipFile(fileobj=raw,mode="wb",mtime=0,filename="") as gz:
+                      with io.TextIOWrapper(gz,encoding="utf-8",newline="") as out:
+                          w=csv.writer(out,lineterminator="\n")
+                          w.writerow(header)
+                          for start in starts:
+                              w.writerows(segment(start,base))
+
+          Path("/tmp/perf-v1-normalization.json").write_text(json.dumps({
+              "status":"PASS","file_count":2
+          }))
+          PY
+          python tools/historical-performance-replay-v1.py \
+            /tmp/perf-v1-normalized \
+            --spec research/historical/performance-replay-spec-v1.json \
+            --normalization-catalog /tmp/perf-v1-normalization.json \
+            --output /tmp/perf-v1-result.json \
+            --events-output /tmp/perf-v1-events.jsonl.gz \
+            --expected-count 2
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/perf-v1-result.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["split_event_counts"]["research_train"]>0
+          assert j["split_event_counts"]["calibration"]>0
+          assert j["split_event_counts"]["validation"]>0
+          assert j["holdout_guard"]["holdout_events_generated"]==0
+          assert j["holdout_guard"]["holdout_metrics_computed"] is False
+          assert j["guardrails"]["threshold_optimization_performed"] is False
+          assert j["guardrails"]["cross_pair_ranking_performed"] is False
+          assert j["execution_semantics"]["portfolio_equity_curve_computed"] is False
+          print("PERFORMANCE_REPLAY_V1 PASS frozen/synthetic/holdout-sealed")
           PY
 
       - name: MINI-PC broad PIT V2 plan-only smoke
