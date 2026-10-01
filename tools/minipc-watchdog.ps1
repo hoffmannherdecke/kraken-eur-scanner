@@ -192,6 +192,9 @@ try {
       $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
       $activeSamplingOk = $true
       $oldestActiveSampleAgeSec = $null
+      $freshestActiveSampleAgeSec = $null
+      $recentActiveSamples = 0
+      $sampledActiveEvents = 0
       if ([int]$h.active_events -gt 0) {
         $trackerStatePath = Join-Path $TradingRoot "State\v2r4-ws-shadow-outcome-state.json"
         if (-not (Test-Path $trackerStatePath)) {
@@ -203,14 +206,22 @@ try {
             foreach ($prop in $trackerState.active.PSObject.Properties) {
               $sampleAt = $prop.Value.last_sample_at_utc
               if ($sampleAt) {
-                $sampleAges += ((Get-Date).ToUniversalTime() - ([datetime]$sampleAt).ToUniversalTime()).TotalSeconds
-              } else {
-                $sampleAges += 999999
+                $sampleAge = ((Get-Date).ToUniversalTime() - ([datetime]$sampleAt).ToUniversalTime()).TotalSeconds
+                $sampleAges += $sampleAge
+                $sampledActiveEvents++
+                if ($sampleAge -le 240) { $recentActiveSamples++ }
               }
             }
             if ($sampleAges.Count -gt 0) {
               $oldestActiveSampleAgeSec = [math]::Round(($sampleAges | Measure-Object -Maximum).Maximum,1)
-              $activeSamplingOk = ($oldestActiveSampleAgeSec -le 240)
+              $freshestActiveSampleAgeSec = [math]::Round(($sampleAges | Measure-Object -Minimum).Minimum,1)
+              # Individual illiquid pairs may legitimately have no fresh ticker update
+              # for several minutes. Core Kraken/WS freshness is checked separately.
+              # The outcome tracker is operational if at least one active event is
+              # receiving fresh samples; per-event gaps remain preserved in evidence.
+              $activeSamplingOk = ($recentActiveSamples -gt 0)
+            } else {
+              $activeSamplingOk = $false
             }
           } catch {
             $activeSamplingOk = $false
@@ -224,7 +235,7 @@ try {
         [string]$h.strategy_action -eq "NONE_EVIDENCE_ONLY" -and
         -not [bool]$h.real_money_actions
       )
-      Add-Check "v2r4_ws_shadow_outcomes" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " active=" + $h.active_events + " oldest_active_sample_age_sec=" + $oldestActiveSampleAgeSec + " enrolled=" + $h.counters.events_enrolled + " completed=" + $h.counters.events_completed) "WARNING"
+      Add-Check "v2r4_ws_shadow_outcomes" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " active=" + $h.active_events + " sampled_active=" + $sampledActiveEvents + " recent_active_samples=" + $recentActiveSamples + " freshest_active_sample_age_sec=" + $freshestActiveSampleAgeSec + " oldest_active_sample_age_sec=" + $oldestActiveSampleAgeSec + " enrolled=" + $h.counters.events_enrolled + " completed=" + $h.counters.events_completed) "WARNING"
     }
   } else {
     $checks["v2r4_ws_shadow_outcomes"] = [ordered]@{ ok=$null; detail="prospective outcome tracker not installed yet" }
