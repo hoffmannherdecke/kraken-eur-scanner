@@ -1,0 +1,181 @@
+{
+  "altname": "XBTEUR",
+  "candidate_age_seconds": 15,
+  "candidate_event_time_utc": "2026-10-01T10:03:32Z",
+  "candidate_id": "20261001-100332-XBT-EUR-r36846304705",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15-minute close above 74270.3, followed by a hold above 74409.7",
+      "Completed-bar volume expansion with positive 3-hour continuity"
+    ],
+    "reason_codes": [
+      "below_resistance",
+      "mixed_continuity",
+      "closed_volume_unconfirmed",
+      "fees_material",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid, tight-spread market, but price is below nearby resistance and multi-period continuity is mixed; wait for a confirmed reclaim before reassessing net movement after fees.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "BTCUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "available": false,
+        "reason": "no prior same-pair observation in active series"
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.74775753e-10,
+        "index_price": 83535.27,
+        "last": 83594,
+        "mark_price": 83554.10377299425,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 2296006.0,
+        "requested_symbols": [
+          "PF_XBTUSD",
+          "PI_XBTUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PI_XBTUSD",
+        "volume24h": 226920
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 74128.6,
+      "bid": 74128.1,
+      "last": 74138.4,
+      "spread_pct": 0.0006745057727576561
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.00005",
+      "pair_decimals": 1,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4218747464695083,
+          "ret3h_pct": -0.037552745455637915
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.3503400359172071,
+          "ret3h_pct": -0.49294364928436085
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.00958221540821036,
+          "ret3h_pct": -0.9398139358268498
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": false,
+        "detail": "HTTP Error 404: Not Found",
+        "error": "HTTPError",
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T10:03:47.703048Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-01T10:04:00.412459Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_091d72680c4b8dd9006abe3006402887d0a2f4a97a8d638fe5"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 74128.6,
+    "bid": 74128.1,
+    "last": 74138.4,
+    "spread_pct": 0.0006745057727576561
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "XBT/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36846304705:XBT-EUR:1790849012",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "c1be38e51bc93ec09d9e481941038828f1016a22",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T10:03:32Z",
+    "candidate_detected_ts": 1790849012,
+    "candidate_snapshot_at_utc": "2026-10-01T10:03:32Z",
+    "detected_to_evaluation_complete_seconds": 28.412,
+    "detected_to_evaluation_start_seconds": 15.431,
+    "evaluation_completed_at_utc": "2026-10-01T10:04:00.412459Z",
+    "evaluation_runtime_seconds": 12.982,
+    "evaluation_started_at_utc": "2026-10-01T10:03:47.430704Z",
+    "handoff_to_evaluation_start_seconds": 13.554,
+    "handoff_written_at_utc": "2026-10-01T10:03:33.876541Z",
+    "scan_step_started_at_utc": "2026-10-01T09:59:58Z"
+  }
+}
