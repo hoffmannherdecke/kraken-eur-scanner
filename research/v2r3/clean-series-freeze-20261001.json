@@ -1,0 +1,39 @@
+{
+  "kind": "V2R3_CLEAN_SERIES_FREEZE_V1",
+  "schema_version": 1,
+  "status": "ACTIVE_UNTIL_RELEASE_REVIEW_COMPLETE",
+  "created_at_utc": "2026-10-01T16:32:00Z",
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "strategy_revision": "V2R3-2026-09-28",
+  "expected_strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "expected_runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_fingerprint_files": [
+    "paper_evaluator/evaluate.py",
+    "paper_evaluator/revalidate.py",
+    "paper_context.py"
+  ],
+  "scanner": {
+    "workflow": ".github/workflows/scan.yml",
+    "expected_schedule_cron": "2,12,22,32,42,52 * * * *",
+    "expected_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+    "expected_runtime_settings": {
+      "MIN_TURNOVER_EUR_24H": "150000",
+      "MAX_STAGE2_PAIRS": "120",
+      "MAX_SPREAD_PCT": "1.5",
+      "CANDIDATE_THRESHOLD": "5.0",
+      "COOLDOWN_SECONDS": "2700",
+      "REQUEST_SPACING": "1.05",
+      "ALIGN_SAFE_PHASE": "1"
+    }
+  },
+  "guardrails": {
+    "no_entry_rule_change": true,
+    "no_stop_rule_change": true,
+    "no_sizing_change": true,
+    "no_scanner_rule_or_cadence_change": true,
+    "v2r4_draft_work_allowed": true,
+    "documentation_and_observability_changes_allowed": true
+  },
+  "completion_note": "After the documented V2R3 clean-series completion/release review, retire or replace this freeze manifest explicitly. Do not silently edit expected hashes during the active series."
+}
