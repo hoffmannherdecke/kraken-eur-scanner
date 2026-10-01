@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.6312,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -2.294,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -5.362,
+        "mfe_pct": 4.239,
+        "peak_at_utc": "2026-09-30T13:25:00Z",
+        "trough_at_utc": "2026-09-30T19:50:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 2.88,
       "price_eur": 0.6145
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "extended_multiday_run",
@@ -118,7 +134,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-01T08:52:09.149024Z"
+    "updated_at_utc": "2026-10-01T09:07:02.935582Z"
   },
   "original_decision": "WAIT",
   "pair": "GRASS/EUR",
