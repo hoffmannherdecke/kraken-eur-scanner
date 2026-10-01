@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H5_MACRO_EVENT_RISK_PRECHECK_V1",
   "hypothesis_id": "V3-H5",
-  "status": "PRECHECK",
+  "status": "PRECHECK_DST_PIT_METHOD_GREEN",
   "prepared_at_utc": "2026-10-01T18:30:00Z",
   "first_event_family": "FOMC_POLICY_STATEMENT",
   "primary_source": "federal_reserve_fomc_calendar",
@@ -54,5 +54,14 @@
     "leverage": false,
     "real_money_actions": false
   },
-  "next_gate": "SYNTHETIC_DST_AWARE_EVENT_WINDOW_PIT_SMOKE_ONLY"
+  "next_gate": "CAPTURE_VERSIONED_OFFICIAL_FOMC_EVENT_CALENDAR_THEN_PREREGISTER_ONE_RISK_VARIANT_NO_HOLDOUT",
+  "methodology_readiness": {
+    "synthetic_dst_pit_smoke": "CI_GREEN_RUN_1",
+    "october_edt_statement_utc": "2026-10-28T18:00:00Z",
+    "december_est_statement_utc": "2026-12-09T19:00:00Z",
+    "candidate_before_calendar_known_at": "REJECTED_AS_SCHEDULE_NOT_POINT_IN_TIME_KNOWN",
+    "source_registry_validation": "PASS",
+    "performance_trial_started": false,
+    "holdout_opened": false
+  }
 }
