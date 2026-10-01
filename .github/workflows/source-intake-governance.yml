@@ -1,0 +1,58 @@
+name: Source intake governance
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/source-registry.json'
+      - 'docs/source-intake-policy.md'
+      - 'docs/storage-retention-policy.md'
+      - 'tools/validate-source-registry.py'
+      - '.github/workflows/source-intake-governance.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: source-intake-governance
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Compile validator
+        run: python -m py_compile tools/validate-source-registry.py
+
+      - name: Validate canonical source registry
+        run: python tools/validate-source-registry.py
+
+      - name: Fail-closed duplicate storage smoke
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          src=json.loads(Path("research/source-registry.json").read_text("utf-8"))
+          src["sources"][0]["duplicate_raw_storage_allowed"]=True
+          src["sources"][0].pop("duplicate_storage_justification",None)
+          p=Path(os.environ["RUNNER_TEMP"])/"bad-source-registry.json"
+          p.write_text(json.dumps(src),encoding="utf-8")
+          PY
+          if python tools/validate-source-registry.py --registry "$RUNNER_TEMP/bad-source-registry.json"; then
+            echo "ERROR: unjustified duplicate raw storage was accepted"
+            exit 1
+          else
+            echo "DUPLICATE_STORAGE_FAIL_CLOSED PASS"
+          fi
