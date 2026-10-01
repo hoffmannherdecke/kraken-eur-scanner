@@ -1,0 +1,157 @@
+name: MINI-PC cloud health watch
+
+'on':
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: minipc-cloud-health-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Check remote MINI-PC status and alert only on real outage
+        env:
+          SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_USER_ID: U0C39EDQ1H8
+        run: |
+          python - <<'PY'
+          import datetime as dt
+          import json
+          import os
+          import urllib.parse
+          import urllib.request
+
+          url=os.environ["SUPABASE_URL"].rstrip("/")
+          key=(os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+          webhook=os.environ.get("SLACK_WEBHOOK_URL","").strip()
+          user_id=os.environ["SLACK_USER_ID"]
+          if not key:
+              raise SystemExit("Supabase backend credential missing")
+          if not webhook:
+              raise SystemExit("Slack webhook missing")
+
+          headers={"apikey":key,"Content-Type":"application/json"}
+          if not key.startswith("sb_secret_"):
+              headers["Authorization"]="Bearer "+key
+
+          def request(method,path,body=None,extra_headers=None):
+              h=dict(headers)
+              if extra_headers:
+                  h.update(extra_headers)
+              data=None if body is None else json.dumps(body,separators=(",",":")).encode()
+              req=urllib.request.Request(url+path,data=data,method=method,headers=h)
+              with urllib.request.urlopen(req,timeout=20) as resp:
+                  raw=resp.read().decode("utf-8","replace")
+                  return resp.status, json.loads(raw) if raw else None
+
+          _,rows=request(
+              "GET",
+              "/rest/v1/minipc_status_current?select=node_id,observed_at,status&order=observed_at.desc&limit=1"
+          )
+          if not rows:
+              print("MINIPC_STATUS_NOT_ACTIVATED")
+              raise SystemExit(0)
+
+          row=rows[0]
+          node=row["node_id"]
+          observed=dt.datetime.fromisoformat(row["observed_at"].replace("Z","+00:00"))
+          now=dt.datetime.now(dt.timezone.utc)
+          age_min=(now-observed).total_seconds()/60.0
+          status=str(row.get("status") or "UNKNOWN").upper()
+
+          if age_min>20:
+              condition="STALE"
+          elif status=="CRITICAL":
+              condition="CRITICAL"
+          else:
+              condition="OK"
+
+          state_path=(
+              "/rest/v1/minipc_status_alert_state?select=node_id,last_condition,last_alert_at,last_recovery_at"
+              "&node_id=eq."+urllib.parse.quote(node,safe="")
+          )
+          _,states=request("GET",state_path)
+          state=states[0] if states else None
+          previous=(state or {}).get("last_condition","UNKNOWN")
+          last_alert_raw=(state or {}).get("last_alert_at")
+          last_alert=None
+          if last_alert_raw:
+              last_alert=dt.datetime.fromisoformat(last_alert_raw.replace("Z","+00:00"))
+
+          def slack(text):
+              payload={"text":f"<@{user_id}> {text}"}
+              req=urllib.request.Request(
+                  webhook,
+                  data=json.dumps(payload).encode(),
+                  method="POST",
+                  headers={"Content-Type":"application/json"},
+              )
+              with urllib.request.urlopen(req,timeout=15) as resp:
+                  reply=resp.read().decode("utf-8","replace").strip()
+                  print(f"Slack response: {resp.status} {reply}")
+                  if not 200<=resp.status<300:
+                      raise RuntimeError(f"Slack HTTP {resp.status}")
+
+          sent_alert=False
+          sent_recovery=False
+
+          if condition in {"STALE","CRITICAL"}:
+              due=(
+                  previous!=condition
+                  or last_alert is None
+                  or (now-last_alert).total_seconds()>=7200
+              )
+              if due:
+                  if condition=="STALE":
+                      slack(
+                          f"MINI-PC Status ist seit {age_min:.0f} Minuten veraltet. "
+                          "Bitte Netzwerk/Strom/Windows-Dienste prüfen. Kein Handelssignal."
+                      )
+                  else:
+                      slack(
+                          f"MINI-PC meldet CRITICAL (letzter Status vor {age_min:.0f} Min.). "
+                          "Bitte Infrastruktur prüfen. Kein Handelssignal."
+                      )
+                  sent_alert=True
+          elif previous in {"STALE","CRITICAL"}:
+              slack(
+                  f"MINI-PC Status wieder erreichbar: {status}, Alter {age_min:.1f} Min. "
+                  "Recovery bestätigt. Keine Handelsaktion."
+              )
+              sent_recovery=True
+
+          upsert={
+              "node_id":node,
+              "last_condition":condition,
+              "last_alert_at":now.isoformat() if sent_alert else (state or {}).get("last_alert_at"),
+              "last_recovery_at":now.isoformat() if sent_recovery else (state or {}).get("last_recovery_at"),
+              "updated_at":now.isoformat(),
+          }
+          request(
+              "POST",
+              "/rest/v1/minipc_status_alert_state?on_conflict=node_id",
+              [upsert],
+              {"Prefer":"resolution=merge-duplicates,return=minimal"},
+          )
+
+          print(json.dumps({
+              "node_id":node,
+              "status":status,
+              "age_minutes":round(age_min,2),
+              "condition":condition,
+              "previous":previous,
+              "alert_sent":sent_alert,
+              "recovery_sent":sent_recovery,
+          },sort_keys=True))
+          PY
