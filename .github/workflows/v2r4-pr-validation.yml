@@ -32,6 +32,7 @@ jobs:
             paper_evaluator/v2r4_wait_watcher.py \
             paper_evaluator/v2r4_precandidate_discovery.py \
             paper_evaluator/v2r4_precandidate_watcher.py \
+            paper_evaluator/v2r4_ws_shadow_watcher.py \
             paper_evaluator/v2r4_local_recheck.py
 
       - name: Run V2R4 unit tests
@@ -41,6 +42,7 @@ jobs:
             tests.test_v2r4_trigger_plan \
             tests.test_v2r4_precandidate_discovery \
             tests.test_v2r4_precandidate_watcher \
+            tests.test_v2r4_ws_shadow_watcher \
             tests.test_v2r4_tradability_policy \
             tests.test_v2r4_evaluator_watch_conditions \
             tests.test_v2r4_evaluator_contract \
