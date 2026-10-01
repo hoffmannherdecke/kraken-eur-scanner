@@ -1,0 +1,10 @@
+{
+  "kind": "KRAKEN_EUR15_PERFORMANCE_REPLAY_SPEC_LOCK_V2",
+  "spec_path": "research/historical/performance-replay-spec-v2.json",
+  "spec_sha256": "3920161d4912815f193d6dcc7291dfab064a794447162d9d2fe5ec1dc7da1b3f",
+  "frozen_date": "2026-10-01",
+  "status": "LOCKED",
+  "influenced_by_v1_validation": true,
+  "holdout_status": "LOCKED_DO_NOT_READ_IN_V2_DEVELOPMENT",
+  "mutation_rule": "Any V2 rule change requires a new version/variant and new trial ID. Do not overwrite V2."
+}
