@@ -33,6 +33,30 @@ Control:
 | Reason-code taxonomy | current free model reason codes | normalization explicitly required by proposal | MORE_TESTING_REQUIRED | not a reason to alter active V2R3 |
 | Scanner cadence | ~10-minute target + event dispatch | local event-near discovery/recheck plus fallback | ADD | measure, do not infer superiority from heterogeneous samples |
 
+## Prospective V2R3 tradability-policy diagnostic — 2026-10-01
+
+The clean V2R3 control series provides a concrete example of why the V2R4 public-tradability policy must be treated as a real behavioral change rather than documentation cleanup.
+
+At a prospective snapshot of the active clean V2R3 series:
+
+- total candidate outcomes observed: **56**;
+- candidates whose evaluator reason codes included `account_tradability_unavailable`: **9**;
+- of those 9, **all 9** also carried:
+  - `kraken_public_pair_verified = true`;
+  - Kraken public pair metadata `status = online`.
+
+So about **16.1%** of the current clean-series candidates had an account-private-availability reason attached even though public Kraken Spot-EUR metadata verified the pair as online.
+
+Interpretation guardrail:
+
+- this does **not** prove that those 9 decisions would have become BUY under V2R4;
+- reason codes are multi-factor and the same cases also contain structural, volume, resistance, cost or continuity objections;
+- no V2R3 rule is changed mid-series;
+- no candidate is relabelled;
+- this is release-diff evidence only, showing that V2R4's public-online-Spot-EUR policy can remove an account-private-data confounder from future paper decisions.
+
+The later mature 24h outcome review should separately measure whether this reason cluster was associated with missed movement; do not infer that before follow-ups mature.
+
 ## Important release finding
 
 The current V2R4 proposal is **not purely a timing-only change**.
