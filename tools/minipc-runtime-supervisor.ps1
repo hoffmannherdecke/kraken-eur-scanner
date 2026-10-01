@@ -1,7 +1,9 @@
 param(
   [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
   [switch]$ForceRecovery,
-  [int]$MinRestartIntervalMinutes = 10
+  [int]$MinRestartIntervalMinutes = 10,
+  [int]$StopWaitSeconds = 15,
+  [int]$PostRestartVerifySeconds = 20
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,14 +50,25 @@ function Write-JsonAtomic([string]$Path,[object]$Payload,[int]$Depth=10) {
   Move-Item -LiteralPath $tmp -Destination $Path -Force
 }
 
+function Wait-TaskNotRunning([string]$TaskName,[int]$TimeoutSeconds) {
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  do {
+    $task = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    if (-not $task) { return $false }
+    if ([string]$task.State -ne "Running") { return $true }
+    Start-Sleep -Milliseconds 250
+  } while ((Get-Date) -lt $deadline)
+  return $false
+}
+
 $specs = @(
-  [pscustomobject]@{ name="CryptoMiniPC-KrakenCanary"; path=(Join-Path $stateDir "kraken-canary-heartbeat.json"); max_age=60.0; good=@("HEALTHY","CONNECTED") },
-  [pscustomobject]@{ name="CryptoMiniPC-KrakenUniverse"; path=(Join-Path $stateDir "kraken-eur-universe-heartbeat.json"); max_age=90.0; good=@("HEALTHY","CONNECTED") },
-  [pscustomobject]@{ name="CryptoMiniPC-AltradyTrigger"; path=(Join-Path $stateDir "altrady-trigger-heartbeat.json"); max_age=120.0; good=@("HEALTHY") },
-  [pscustomobject]@{ name="CryptoMiniPC-V2R4WSShadow"; path=(Join-Path $stateDir "v2r4-ws-shadow-heartbeat.json"); max_age=45.0; good=@("HEALTHY","DUPLICATE_SKIPPED") },
-  [pscustomobject]@{ name="CryptoMiniPC-V2R4ShadowOutcomes"; path=(Join-Path $stateDir "v2r4-ws-shadow-outcome-heartbeat.json"); max_age=90.0; good=@("HEALTHY") },
-  [pscustomobject]@{ name="CryptoMiniPC-V2R4ShadowCloudSync"; path=(Join-Path $stateDir "v2r4-shadow-cloud-sync-heartbeat.json"); max_age=240.0; good=@("HEALTHY") },
-  [pscustomobject]@{ name="CryptoMiniPC-StatusSync"; path=(Join-Path $stateDir "minipc-status-sync-heartbeat.json"); max_age=900.0; good=@("HEALTHY") }
+  [pscustomobject]@{ name="CryptoMiniPC-KrakenCanary"; path=(Join-Path $stateDir "kraken-canary-heartbeat.json"); max_age=60.0; good=@("HEALTHY","CONNECTED"); restart_backoff_min=$MinRestartIntervalMinutes },
+  [pscustomobject]@{ name="CryptoMiniPC-KrakenUniverse"; path=(Join-Path $stateDir "kraken-eur-universe-heartbeat.json"); max_age=90.0; good=@("HEALTHY","CONNECTED"); restart_backoff_min=$MinRestartIntervalMinutes },
+  [pscustomobject]@{ name="CryptoMiniPC-AltradyTrigger"; path=(Join-Path $stateDir "altrady-trigger-heartbeat.json"); max_age=120.0; good=@("HEALTHY"); restart_backoff_min=$MinRestartIntervalMinutes },
+  [pscustomobject]@{ name="CryptoMiniPC-V2R4WSShadow"; path=(Join-Path $stateDir "v2r4-ws-shadow-heartbeat.json"); max_age=45.0; good=@("HEALTHY","DUPLICATE_SKIPPED"); restart_backoff_min=2 },
+  [pscustomobject]@{ name="CryptoMiniPC-V2R4ShadowOutcomes"; path=(Join-Path $stateDir "v2r4-ws-shadow-outcome-heartbeat.json"); max_age=90.0; good=@("HEALTHY"); restart_backoff_min=$MinRestartIntervalMinutes },
+  [pscustomobject]@{ name="CryptoMiniPC-V2R4ShadowCloudSync"; path=(Join-Path $stateDir "v2r4-shadow-cloud-sync-heartbeat.json"); max_age=240.0; good=@("HEALTHY"); restart_backoff_min=$MinRestartIntervalMinutes },
+  [pscustomobject]@{ name="CryptoMiniPC-StatusSync"; path=(Join-Path $stateDir "minipc-status-sync-heartbeat.json"); max_age=900.0; good=@("HEALTHY"); restart_backoff_min=$MinRestartIntervalMinutes }
 )
 
 $rows = @()
@@ -104,18 +117,20 @@ try {
     }
     $restartAllowed = [bool]$ForceRecovery
     if (-not $restartAllowed) {
-      $restartAllowed = (-not $lastRestart) -or (($now - $lastRestart).TotalMinutes -ge $MinRestartIntervalMinutes)
+      $restartAllowed = (-not $lastRestart) -or (($now - $lastRestart).TotalMinutes -ge [double]$spec.restart_backoff_min)
     }
 
     $action = "NONE"
     if ($needsRecovery -and $restartAllowed) {
       try {
         Stop-ScheduledTask -TaskName $spec.name -ErrorAction SilentlyContinue
-        Start-Sleep -Milliseconds 500
+        $stopped = Wait-TaskNotRunning -TaskName $spec.name -TimeoutSeconds $StopWaitSeconds
+        if (-not $stopped) {
+          throw "Task did not leave Running state within $StopWaitSeconds seconds."
+        }
         Start-ScheduledTask -TaskName $spec.name
         $restarted += $spec.name
-        $restartHistory[$spec.name] = $now
-        $action = "RESTART"
+        $action = "RESTART_STARTED"
       } catch {
         $failed += $spec.name
         $action = "RESTART_FAILED"
@@ -139,7 +154,7 @@ try {
     }
   }
 
-  if ($restarted.Count -gt 0) { Start-Sleep -Seconds 20 }
+  if ($restarted.Count -gt 0) { Start-Sleep -Seconds $PostRestartVerifySeconds }
 
   $allHealthy = $true
   foreach ($row in $rows) {
@@ -168,6 +183,16 @@ try {
       heartbeat_age_sec=$age
     }) -Force
 
+    if ($row.action -eq "RESTART_STARTED") {
+      if ($healthy) {
+        $row.action = "RESTART_VERIFIED"
+        $restartHistory[$row.task] = $now
+      } else {
+        $row.action = "RESTART_UNVERIFIED"
+        if ($row.task -notin $failed) { $failed += $row.task }
+      }
+    }
+
     if (-not $healthy) { $allHealthy = $false }
   }
 
@@ -188,6 +213,8 @@ $report = [pscustomobject]@{
   tasks=@($rows)
   guardrails=[pscustomobject]@{
     monitored_tasks_only=$true
+    restart_requires_task_stop_confirmation=$true
+    restart_history_records_verified_recovery_only=$true
     strategy_changes=$false
     evaluator_invoked=$false
     order_api=$false
