@@ -102,7 +102,7 @@ def main() -> int:
     ap.add_argument("archive", type=Path)
     ap.add_argument("destination", type=Path)
     ap.add_argument("catalog", type=Path)
-    ap.add_argument("--expected-count", type=int, default=608)
+    ap.add_argument("--expected-count", type=int, default=648)
     ap.add_argument("--validate-csv", action="store_true")
     args = ap.parse_args()
 
