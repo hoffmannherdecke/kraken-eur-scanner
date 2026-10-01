@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "kind": "V3_SHADOW_CANDIDATE_CONTRACT_V1",
+  "status": "ACTIVE_GOVERNANCE",
+  "allowed_candidate_statuses": [
+    "DRAFT",
+    "FROZEN_FOR_SHADOW",
+    "SHADOW_RUNNING",
+    "SHADOW_COMPLETE",
+    "PROMOTION_REVIEW",
+    "REJECTED"
+  ],
+  "required_candidate_fields": [
+    "candidate_id",
+    "hypothesis_id",
+    "baseline_strategy_revision",
+    "candidate_strategy_revision",
+    "status",
+    "changed_components",
+    "change_summary",
+    "frozen_config_sha256",
+    "evidence_plan",
+    "promotion_gate",
+    "guardrails"
+  ],
+  "one_change_rule": {
+    "changed_components_exact_count": 1,
+    "allowed_component_classes": [
+      "ENTRY_TIMING",
+      "WAIT_TTL_REVALIDATION",
+      "STOP",
+      "TRAILING",
+      "EXIT",
+      "SIZING",
+      "SIGNAL_FEATURE",
+      "STATE_CONDITIONING",
+      "RISK_GATE",
+      "EXECUTION_MECHANIC"
+    ],
+    "infrastructure_only_changes_are_not_strategy_shadow_candidates": true,
+    "multi_component_bundle_requires_separate_candidates_first": true
+  },
+  "evidence_rules": {
+    "same_candidate_stream_preferred": true,
+    "baseline_market_clock_shared": true,
+    "parameters_frozen_before_shadow": true,
+    "technical_failures_excluded_from_strategy_conclusions": true,
+    "minimum_sample_or_time_gate_required": true,
+    "realistic_cost_model_reference_required": true,
+    "no_midrun_tuning": true
+  },
+  "promotion_rules": {
+    "automatic_promotion": false,
+    "prospective_evidence_required": true,
+    "net_value_after_costs_required": true,
+    "release_gate_required": true,
+    "real_money_activation_separate": true
+  }
+}
