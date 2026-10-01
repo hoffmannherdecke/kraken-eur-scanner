@@ -31,6 +31,13 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 | Strategie | V2R4 | PREPARED / NOT ACTIVE / PHYSICAL MINI-PC E2E GREEN | **Draft-PR #9** refreshed candidate; old PR #8 superseded. Original V2R4 delta remains and the readiness review additionally prepared an inactive bounded 24/7 WAIT-plan runtime with Kraken as condition truth and Altrady as optional wakeup. V2R4 PR validation through **Run #17 SUCCESS**; refreshed trigger-to-fresh-recheck E2E Run #2 SUCCESS; Windows-shaped WAIT-runtime smoke #1 SUCCESS (1 wakeup/1 Kraken match/1 fresh recheck/0 duplicate rechecks); real-Altrady physical release harness prepared and CI-green in MINI-PC tools smoke #111. Fail-closed `public.v2r4_activation_readiness` keeps automatic activation disabled and now also blocks on V2R3 integrity. Current blocker: V2R3 clean-series completion/review plus explicit sizing/release decision |
 | Strategie | V3 | ACTIVE RESEARCH / NOT ACTIVE TRADING | Integrierter Nachfolger; Issue #7 + `docs/v3-research-framework.md` |
 
+### Prospective V2R3 review controls — 2026-10-01
+
+- Active clean series is protected by `research/v2r3/clean-series-freeze-20261001.json` + CI freeze guard Run #1 SUCCESS.
+- Initial evaluator timing is now separated from one-shot WAIT-TTL lateness; `public.v2r3_revalidation_timing_summary` measures the scheduler/runtime delay beyond requested TTL without changing V2R3.
+- `public.v2r3_release_review_snapshot` is the fail-closed single-row evidence pack for the eventual final review; `final_review_allowed=false` until completion gate + clean integrity pass.
+- `public.v2r4_activation_readiness` additionally blocks on `BLOCKED_V2R3_INTEGRITY` if clean-series integrity drifts; automatic activation stays permanently false.
+
 ### Release-Gate V2R3 → V2R4
 
 Vor V2R4-Aktivierung zwingend:
