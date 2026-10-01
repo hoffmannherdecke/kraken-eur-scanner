@@ -855,7 +855,35 @@ After the shadow restart/Internet resilience gate passed, the next evidence laye
 
 Safety remains evidence-only: no evaluator, no exchange account, no order API and no real-money action.
 
-**Next physical MINI-PC action:** pull `main` and run the outcome-tracker installer once from elevated PowerShell. The installer first runs an isolated synthetic smoke and only then registers `CryptoMiniPC-V2R4ShadowOutcomes`.
+**Physical activation verified 2026-10-01:**
+- installer synthetic smoke: **PASS**;
+- persistent task `CryptoMiniPC-V2R4ShadowOutcomes`: **HEALTHY**;
+- active prospective events at activation: **0**;
+- enrolled prospective events at activation: **0**;
+- pre-tracker historical events deliberately ignored for outcome tracking: **18**;
+- horizons armed: **5m / 15m / 30m / 1h / 3h / 6h + running MFE/MAE**;
+- safety remained **EVIDENCE ONLY / NO EVALUATOR / NO ACCOUNT / NO ORDERS / NO REAL-MONEY ACTION**.
+
+The tracker is now waiting for genuinely new WS-shadow events. No retrospective price backfill is allowed for the 18 pre-tracker events.
+
+### V2R4 shadow cloud archive prepared 2026-10-01
+
+To make future shadow/outcome analysis available without repeated MINI-PC screenshots:
+
+- Supabase table `public.v2r4_shadow_evidence` created with RLS enabled and **no client policies**;
+- authenticated Edge Function `v2r4-shadow-evidence-relay` deployed ACTIVE;
+- function accepts only the already-provisioned shared project relay token and performs server-side upserts through the service role;
+- no Supabase service-role/secret key is stored on the MINI-PC;
+- local fail-soft sync prepared as `tools/v2r4-shadow-cloud-sync.py`;
+- sync uploads only shadow discovery/evidence payloads and completed outcome payloads;
+- local state makes uploads idempotent and only re-sends when an outcome becomes available;
+- installer/rollback prepared:
+  - `tools/install-minipc-v2r4-shadow-cloud-sync.ps1`
+  - `tools/uninstall-minipc-v2r4-shadow-cloud-sync.ps1`;
+- Watchdog and runtime-recovery tooling detect the sync automatically once installed;
+- RLS-with-no-policy advisor result is intentional for this server-only archive path.
+
+**Next physical MINI-PC action:** pull `main` and run the cloud-archive installer once. It performs an authenticated one-shot archive smoke first and registers `CryptoMiniPC-V2R4ShadowCloudSync` only if that succeeds. The secret is never printed.
 
 ### Final runbook items — intentionally last
 
