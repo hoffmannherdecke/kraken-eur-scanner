@@ -239,6 +239,26 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11d. Selective Kraken EUR 15m extraction verified 2026-10-01
+
+The physical MINI-PC extraction completed successfully against the checksum-pinned full archive.
+
+Observed result:
+
+- progress reached **648/648**;
+- final extractor status: **PASS**;
+- extracted file count: **648**;
+- CSV validation enabled: `validate_csv=true`;
+- source archive SHA-256 matched the pinned Kraken full-archive checksum;
+- destination: `Trading\\Historical\\raw\\kraken\\ohlcvt\\selected\\eur\\15m`;
+- extraction catalog written under `Trading\\Historical\\catalog\\kraken-ohlcvt-eur15-extraction.json`;
+- `network_used=false`;
+- `active_strategy_changed=false`;
+- `paper_shadow_runtime_changed=false`;
+- next gate reported by the extractor: **normalize_eur15_point_in_time_dataset**.
+
+This closes the selective raw-extraction gate. The original verified full ZIP remains the immutable provenance source. The five verified download parts are now redundant and may be removed through the checksum-gated cleanup tool before normalization work continues.
+
 ## 11c. Full Kraken OHLCVT archive inventory verified 2026-10-01
 
 Read-only inspection of the verified full archive on the physical MINI-PC completed successfully:
