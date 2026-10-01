@@ -2,6 +2,10 @@ name: MINI-PC cloud health watch
 
 'on':
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/minipc-cloud-health-watch.yml'
   schedule:
     - cron: '*/15 * * * *'
 
