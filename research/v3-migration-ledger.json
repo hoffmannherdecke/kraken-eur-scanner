@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-01T18:43:00Z",
+  "updated_at_utc": "2026-10-01T18:48:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -227,11 +227,13 @@
       "category": "state_signal",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Deferred until sufficient MINI-PC order-book evidence exists; simple OFI/depth baseline first.",
+      "rationale": "Public Kraken L2 snapshot semantics are proven on representative EUR pairs, but WebSocket deltas, sequence/reconnect behavior, OFI over time and queue/fill mechanics remain unproven.",
       "evidence": [
+        "research/v3/h3-orderbook-depth-precheck-v1.json",
+        "tools/v3-h3-kraken-depth-precheck.py",
         "docs/v3-research-framework.md"
       ],
-      "pending_gate": "V3_H3_DATA_AND_RESEARCH"
+      "pending_gate": "V3_H3_BOUNDED_MINIPC_PUBLIC_WS_BOOK_CAPTURE"
     },
     {
       "id": "macro_event_risk_gate",
@@ -358,6 +360,19 @@
         "docs/v3-research-framework.md"
       ],
       "pending_gate": "V3_H8_PROSPECTIVE_PUBLICATION_LAG_AND_KNOWN_AT_CAPTURE_BEFORE_HISTORICAL_OR_SIGNAL_TRIAL"
+    },
+    {
+      "id": "maker_taker_fill_probability",
+      "category": "execution_cost",
+      "source_version": "V3 later execution hypothesis",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Fill-probability research is blocked until synchronized WS book/trade evidence and explicit queue/deadline/fee semantics exist. REST depth snapshots alone are insufficient.",
+      "evidence": [
+        "research/v3/h9-maker-taker-readiness-v1.json",
+        "research/v3/h3-orderbook-depth-precheck-v1.json",
+        "docs/v3-research-framework.md"
+      ],
+      "pending_gate": "V3_H9_COMPLETE_H3_WS_BOOK_AND_SYNCHRONIZED_TRADE_PRINT_SMOKE"
     }
   ]
 }
