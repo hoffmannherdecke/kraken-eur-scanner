@@ -239,6 +239,25 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11a. Physical MINI-PC local preflight verified 2026-10-01
+
+The prepared local preflight was executed on the actual MINI-PC with `-Apply`.
+
+Observed result:
+
+- overall status: **PASS**;
+- historical root created at `C:\\Users\\ADMIN\\Trading\\Historical`;
+- all planned research directories created on C:;
+- actual disk probe: **237.38 GB total / 47.89 GB used / 189.49 GB free**;
+- metadata preflight: **PASS / errors=[]**;
+- archive plan still estimates roughly **36 GB compressed** if both complete OHLCVT and Time & Sales families were ever enabled;
+- `downloads_performed=false`;
+- `active_strategy_changed=false`;
+- `paper_shadow_runtime_changed=false`;
+- trial ledger local init/verify was already **PASS** with 0 corrupt rows.
+
+This closes the physical storage/layout preflight gate. It does **not** authorize a bulk download by itself. OHLCVT remains the only candidate for a first controlled historical download; full Time & Sales remains behind its separate benefit/storage gate.
+
 ## 12. Current status / next autonomous steps
 
 Prepared and verified now:
