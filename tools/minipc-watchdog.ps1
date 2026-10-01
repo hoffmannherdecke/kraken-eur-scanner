@@ -205,6 +205,31 @@ try {
   Add-Check "v2r4_shadow_cloud_sync" $false $_.Exception.Message "WARNING"
 }
 
+# MINI-PC remote status sync is optional until installed.
+try {
+  $statusTask = Get-ScheduledTask -TaskName "CryptoMiniPC-StatusSync" -ErrorAction SilentlyContinue
+  if ($statusTask) {
+    $hb = Join-Path $TradingRoot "State\minipc-status-sync-heartbeat.json"
+    if (-not (Test-Path $hb)) {
+      Add-Check "minipc_status_sync" $false "task installed but heartbeat missing" "WARNING"
+    } else {
+      $h = Get-Content $hb -Raw | ConvertFrom-Json
+      $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
+      $ok = (
+        $h.status -eq "HEALTHY" -and
+        $ageSec -le 900 -and
+        [string]$h.strategy_action -eq "NONE_STATUS_ONLY" -and
+        -not [bool]$h.real_money_actions
+      )
+      Add-Check "minipc_status_sync" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " uploaded_health_status=" + $h.uploaded_health_status + " detail=" + $h.detail) "WARNING"
+    }
+  } else {
+    $checks["minipc_status_sync"] = [ordered]@{ ok=$null; detail="remote status sync not installed yet" }
+  }
+} catch {
+  Add-Check "minipc_status_sync" $false $_.Exception.Message "WARNING"
+}
+
 # Altrady transport heartbeat is optional/non-exclusive.
 # Only evaluate it when the dedicated scheduled task is installed.
 try {
