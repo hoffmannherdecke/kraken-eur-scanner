@@ -1,0 +1,45 @@
+name: V3 H7 meta gate readiness guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/h7-meta-gate-readiness-v1.json'
+      - 'supabase/views/v3_h7_meta_gate_readiness.sql'
+      - '.github/workflows/v3-h7-meta-readiness-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Validate H7 readiness contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path('research/v3/h7-meta-gate-readiness-v1.json').read_text('utf-8'))
+          assert j['kind']=='V3_H7_META_GATE_READINESS_V1'
+          assert j['status']=='DEFERRED_LABELS_NOT_READY'
+          assert j['label_contract']['frozen'] is False
+          assert j['runtime_guardrails']['training_started'] is False
+          assert j['runtime_guardrails']['model_selected'] is False
+          assert j['runtime_guardrails']['automatic_take_no_take_allowed'] is False
+          assert j['runtime_guardrails']['active_v2r3_change_allowed'] is False
+          assert j['runtime_guardrails']['v2r4_change_allowed'] is False
+          assert j['runtime_guardrails']['orders'] is False
+          assert j['runtime_guardrails']['real_money_actions'] is False
+          assert j['leakage_guardrails']['features_must_exist_at_candidate_decision_time'] is True
+          assert j['leakage_guardrails']['post_event_outcomes_as_features_forbidden'] is True
+          assert j['leakage_guardrails']['threshold_selection_on_holdout_forbidden'] is True
+          assert j['next_gate']=='WAIT_FOR_V2R3_FINAL_REVIEW_AND_FREEZE_LABEL_CONTRACT_BEFORE_ANY_MODEL_TRAINING'
+          print('V3_H7_READINESS PASS training-blocked/no-leakage/no-holdout')
+          PY
