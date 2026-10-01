@@ -1,0 +1,208 @@
+{
+  "altname": "USELESSEUR",
+  "candidate_id": "20261001-143938-USELESS-EUR-r36877841630",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A renewed close and hold above 0.20463 with volume-backed continuation.",
+      "Evidence of meaningful upside beyond resistance after fees and slippage."
+    ],
+    "reason_codes": [
+      "BREAKOUT_FAILED",
+      "SELLING_PRESSURE",
+      "ROUND_TRIP_COSTS_HIGH",
+      "ACCOUNT_TRADABILITY_UNAVAILABLE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The breakout failed: price fell back below resistance and is near recent support. The remaining move to resistance does not provide adequate room after Kraken fees and slippage.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "USELESSUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_USELESSUSD",
+          "PI_USELESSUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.19866,
+      "bid": 0.19834,
+      "last": 0.19797,
+      "spread_pct": 0.16120906801008297
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "50",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.34001751890817555,
+          "ret3h_pct": 0.4987716014193566
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.007960982804289252,
+          "ret3h_pct": -0.2640870818795382
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.23946360153256352,
+          "ret3h_pct": -0.17252947378509909
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T15:12:43.460827Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_022b542184655d01006abe786c88b087d298a5175f0e9c4d09"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.19866,
+    "bid": 0.19834,
+    "last": 0.19797,
+    "spread_pct": 0.16120906801008297
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.20236,
+      "high": 0.20316,
+      "low": 0.20163,
+      "open": 0.20163,
+      "trades": 8,
+      "ts": 1790863200,
+      "volume": 3231.3444,
+      "vwap": 0.20229
+    },
+    {
+      "close": 0.20463,
+      "high": 0.20463,
+      "low": 0.20325,
+      "open": 0.20408,
+      "trades": 20,
+      "ts": 1790864100,
+      "volume": 16268.72034,
+      "vwap": 0.20401
+    },
+    {
+      "close": 0.20337,
+      "high": 0.20508,
+      "low": 0.20312,
+      "open": 0.20474,
+      "trades": 29,
+      "ts": 1790865000,
+      "volume": 9218.22708,
+      "vwap": 0.20423
+    },
+    {
+      "close": 0.1982,
+      "high": 0.2026,
+      "low": 0.19819,
+      "open": 0.2026,
+      "trades": 34,
+      "ts": 1790865900,
+      "volume": 17954.89775,
+      "vwap": 0.19929
+    },
+    {
+      "close": 0.19797,
+      "high": 0.20069,
+      "low": 0.19724,
+      "open": 0.19917,
+      "trades": 42,
+      "ts": 1790866800,
+      "volume": 31675.14209,
+      "vwap": 0.19979
+    }
+  ],
+  "pair": "USELESS/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-143938-USELESS-EUR-r36877841630.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T15:12:53.208937Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "f68d2f74c40244bcc2e4707f9b074187ec510e51",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T15:12:53.208937Z",
+    "revalidation_started_at_utc": "2026-10-01T15:12:43.115556Z",
+    "ttl_due_at_utc": "2026-10-01T15:10:14.881875Z",
+    "ttl_lag_seconds": 148.234
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "altname": "ZROEUR",
+  "candidate_age_seconds": 32,
+  "candidate_event_time_utc": "2026-10-01T15:11:59Z",
+  "candidate_id": "20261001-151159-ZRO-EUR-r36882126237",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15-minute close above 1.495 with sustained volume",
+      "reclaim and hold above 1.506 resistance"
+    ],
+    "reason_codes": [
+      "acceptable_spread_and_turnover",
+      "no_breakout_or_higher_lows",
+      "short_term_returns_mixed",
+      "nearby_resistance_limits_room",
+      "scanner_volume_and_rank_jump_not_entry_signal",
+      "round_trip_fees_1_20pct_before_spread_slippage",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but the rebound has not confirmed a reversal and nearby resistance leaves insufficient evidenced room after costs.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ZROUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 83.22,
+        "available": true,
+        "current_funding_rate": -7.5672697976249e-05,
+        "current_open_interest": 259804.0,
+        "funding_rate_delta": 7.092217191375101e-05,
+        "open_interest_pct": 2.0476,
+        "previous_funding_rate": -0.00014659486989,
+        "previous_observed_at_utc": "2026-10-01T13:49:19.492293Z",
+        "previous_open_interest": 254591.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -7.5672697976249e-05,
+        "index_price": 1.67367,
+        "last": 1.6612,
+        "mark_price": 1.67408157137,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 259804.0,
+        "requested_symbols": [
+          "PF_ZROUSD",
+          "PI_ZROUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ZROUSD",
+        "volume24h": 519841
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.487,
+      "bid": 1.486,
+      "last": 1.485,
+      "spread_pct": 0.06727211570804655
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.34001751890817555,
+          "ret3h_pct": 0.4987716014193566
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.007960982804289252,
+          "ret3h_pct": -0.2640870818795382
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.23946360153256352,
+          "ret3h_pct": -0.17252947378509909
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T15:12:31.442247Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-01T15:12:42.966802Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0b6213594d4ce30f006abe7860b8e087d2b72d1fe0594d66b3"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.487,
+    "bid": 1.486,
+    "last": 1.485,
+    "spread_pct": 0.06727211570804655
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ZRO/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36882126237:ZRO-EUR:1790867519",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "f68d2f74c40244bcc2e4707f9b074187ec510e51",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T15:11:59Z",
+    "candidate_detected_ts": 1790867519,
+    "candidate_snapshot_at_utc": "2026-10-01T15:11:59Z",
+    "detected_to_evaluation_complete_seconds": 43.967,
+    "detected_to_evaluation_start_seconds": 32.287,
+    "evaluation_completed_at_utc": "2026-10-01T15:12:42.966802Z",
+    "evaluation_runtime_seconds": 11.679,
+    "evaluation_started_at_utc": "2026-10-01T15:12:31.287421Z",
+    "handoff_to_evaluation_start_seconds": 29.085,
+    "handoff_written_at_utc": "2026-10-01T15:12:02.202559Z",
+    "scan_step_started_at_utc": "2026-10-01T15:10:28Z"
+  }
+}
