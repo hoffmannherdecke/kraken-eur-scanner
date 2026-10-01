@@ -1093,6 +1093,20 @@ This parallel hardening step does not depend on V2R4 evidence and is safe to per
 
 The local MINI-PC audit remains one physical gate before later self-hosted-runner/private-account work.
 
+### 2026-10-01 — session handoff after unexpected LAN RDP loss
+
+Current continuation point is preserved explicitly:
+
+- last completed physical gate: health taxonomy/effectiveness smoke = **HEALTHY / Operational state OK / reasons none**;
+- next intended parallel task: run the read-only `tools/minipc-secret-hygiene-audit.ps1`;
+- before that audit could be run, the existing internal Windows RDP session to the MINI-PC dropped and reconnect attempts failed with the generic Windows Remote Desktop unavailable error;
+- the notebook remained online, so the wider LAN/internet path was still available, but this does **not** yet distinguish MINI-PC power/NIC/IP/RDP-service failure;
+- last centrally observed MINI-PC remote status before troubleshooting was at 2026-10-01 08:14:27 UTC (10:14:27 Europe/Berlin), i.e. shortly before the RDP failure;
+- do not skip ahead to the secret audit until local reachability/RDP is restored or the outage is classified;
+- external WireGuard/RDP testing and drive D remain intentionally deferred to final Phase H.
+
+**Resume keyword:** continue MINI-PC setup after RDP recovery → first restore/diagnose LAN reachability, then run the pending secret-hygiene audit.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
