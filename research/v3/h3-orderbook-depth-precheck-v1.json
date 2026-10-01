@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H3_ORDERBOOK_DEPTH_PRECHECK_V1",
   "hypothesis_id": "V3-H3",
-  "status": "PRECHECK_L2_SNAPSHOT_ONLY_WEBSOCKET_PENDING",
+  "status": "PRECHECK_L2_SNAPSHOT_GREEN_WEBSOCKET_PENDING",
   "prepared_at_utc": "2026-10-01T18:45:00Z",
   "purpose": "Verify public Kraken-EUR L2 snapshot semantics and bounded depth calculations before any persistent WebSocket orderflow capture.",
   "source": "KRAKEN_PUBLIC_REST_DEPTH",
@@ -51,5 +51,35 @@
     "holdout_opened": false,
     "direct_buy_sell_rule": false
   },
-  "next_gate": "BOUNDED_MINIPC_PUBLIC_WS_BOOK_CAPTURE_SMOKE_BEFORE_H3_OR_H9_RESEARCH"
+  "next_gate": "BOUNDED_MINIPC_PUBLIC_WS_BOOK_CAPTURE_SMOKE_BEFORE_H3_OR_H9_RESEARCH",
+  "snapshot_readiness": {
+    "audit": "CI_GREEN_RUN_1",
+    "representative_pairs_ok": 3,
+    "representative_pairs": [
+      "XBTEUR",
+      "ETHEUR",
+      "SOLEUR"
+    ],
+    "diagnostic_sample_only": {
+      "XBTEUR": {
+        "spread_bps": 2.118,
+        "bid_depth_quote_top10": 59374.05,
+        "ask_depth_quote_top10": 40053.77
+      },
+      "ETHEUR": {
+        "spread_bps": 0.748,
+        "bid_depth_quote_top10": 103160.26,
+        "ask_depth_quote_top10": 135932.63
+      },
+      "SOLEUR": {
+        "spread_bps": 0.947,
+        "bid_depth_quote_top10": 90622.79,
+        "ask_depth_quote_top10": 142467.55
+      }
+    },
+    "diagnostic_values_may_not_become_thresholds": true,
+    "websocket_delta_sequence_proven": false,
+    "queue_position_proven": false,
+    "maker_fill_probability_proven": false
+  }
 }
