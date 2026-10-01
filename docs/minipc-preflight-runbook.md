@@ -805,6 +805,25 @@ Prepared and Windows-CI verified:
 
 **Next physical MINI-PC action:** pull `main` and run the resilience bundle once from elevated PowerShell. After Windows restarts, wait about four minutes before viewing the generated summary. No manual network toggling is required.
 
+### First prospective V2R4 WS-shadow evidence snapshot 2026-10-01
+
+Read-only 6h MINI-PC evidence after the shadow runtime was activated:
+- heartbeat: **HEALTHY**;
+- cycles: **321**;
+- shadow discovery events: **9**;
+- triggered-pair observations: **15**;
+- cycle status counts: **318 HEALTHY / 3 STALE_INPUT**;
+- source age: median **0.502 s**, p90 **0.94 s**, maximum **40.501 s**;
+- event feed→shadow latency: median **~2933.9 ms**, p90/max **~3187.5 ms**;
+- one gap-suppressed recovery cycle and max recovery epoch **1**, matching the deliberate reconnect exercise;
+- observed event pairs included MOVR/EUR, PROMPT/EUR, TRAC/EUR, QNT/EUR, CHEX/EUR, KULA/EUR, NOS/EUR, ORCA/EUR and SYN/EUR;
+- observed trigger reason in this first sample: **FAST_10M** (9 events);
+- safety remained read-only shadow-only with no evaluator/order/real-money action.
+
+The large cumulative stale-pair observation count is a **per-pair freshness diagnostic**, not a global feed outage count: illiquid pairs whose ticker row has not updated recently are deliberately ignored until a fresh market update arrives. Global source freshness remained sub-second at median/p90 except during the deliberate outage/recovery window.
+
+Formal overall resilience bundle status is recorded separately from the evidence summary and must be checked from the compact JSON status before closing the shadow restart/Internet-recovery gate.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
