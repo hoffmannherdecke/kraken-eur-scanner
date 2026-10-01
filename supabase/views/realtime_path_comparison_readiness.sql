@@ -51,8 +51,8 @@ altrady as (
 select
     now() as generated_at,
     shadow.shadow_events,
-    round(shadow.shadow_feed_p50_ms,3) as shadow_feed_p50_ms,
-    round(shadow.shadow_feed_p90_ms,3) as shadow_feed_p90_ms,
+    round(shadow.shadow_feed_p50_ms::numeric,3) as shadow_feed_p50_ms,
+    round(shadow.shadow_feed_p90_ms::numeric,3) as shadow_feed_p90_ms,
     tight.same_pair_within_30m as scanner_same_pair_within_30m,
     tight.same_pair_within_15m as scanner_same_pair_within_15m,
     tight.same_pair_within_5m as scanner_same_pair_within_5m,
