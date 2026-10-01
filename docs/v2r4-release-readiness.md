@@ -158,3 +158,26 @@ A transient remote sample had reported `WARNING / FEED_STALE` while the underlyi
 A subsequent centrally observed MINI-PC sample returned naturally to **HEALTHY / OK / issues none** with Kraken canary, universe feed, WS-shadow, outcome tracker, cloud sync, Altrady transport and runtime supervisor all healthy.
 
 The local MINI-PC repository had not yet pulled these final repository-side watchdog refinements at the time of that sample. They remain a low-risk bundled local pull + effectiveness verification for the next genuine local maintenance gate; there is no need to interrupt the running evidence collection solely for this.
+
+
+## Fail-closed activation control view
+
+Supabase now exposes `public.v2r4_activation_readiness` as a compact read-only control plane.
+
+It combines:
+- the active V2R3 completion gate;
+- V2R4 shadow 6h operational maturity;
+- the latest MINI-PC health sample.
+
+Important semantics:
+- `automatic_activation_allowed` is hard-coded **false**;
+- the view can only block or route to `MANUAL_RELEASE_REVIEW_REQUIRED`;
+- it can never authorize or perform activation;
+- the first blocking condition is currently `BLOCKED_V2R3_COMPLETION`.
+
+At creation-time snapshot:
+- V2R3: 48 clean outcomes, 0 completed trades, 0 mature 24h outcomes, `COLLECTING_AGE`;
+- V2R4 shadow: 343 prospective events, 47/47 due 6h outcomes archived, 100% 6h coverage;
+- MINI-PC: an old local watchdog revision intermittently still labels harmless WS-shadow heartbeat jitter as `FEED_STALE`, while Kraken canary/universe remain fresh. The repository correction is CI-green but has intentionally not interrupted evidence collection for a local pull yet.
+
+This view is a release-safety guard, not strategy-performance evidence.
