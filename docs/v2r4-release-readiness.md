@@ -134,23 +134,23 @@ At the eventual local maintenance/release boundary, use one bundled pull + read-
 A V2R4 paper activation decision is a separate explicit gate and must never be inferred from technical green status alone.
 
 
-## Latest control snapshot — 2026-10-01 15:45 UTC
+## Latest control snapshot — 2026-10-01 15:53 UTC
 
 This later snapshot supersedes the earlier same-day counts for operational status only; it does not replace the frozen release rules above.
 
 ### V2R3 clean series
 
-- Candidate-Outcomes: **53**
+- Candidate-Outcomes: **56**
 - completed trades / BUY_SCOUT: **0 / 0**
-- final decisions: **5 WAIT / 48 REJECT**
+- final decisions: **6 WAIT / 50 REJECT**
 - integrity: **HEALTHY**
 - duplicate candidate IDs: **0**
 - missing queue/timing/ticker/fingerprint provenance: **0**
 - distinct strategy/runtime fingerprints: **1 / 1**
 - 24h-eligible outcomes: **0**
 - completion gate: **COLLECTING_AGE**
-- remaining to alternate outcome floor: **947**
-- remaining to 7-day age floor: about **161.7 h**
+- remaining to alternate outcome floor: **944**
+- remaining to 7-day age floor: about **161.5 h**
 
 Timing at this snapshot:
 - WAIT p50 / p90 total latency: **31.98 s / 43.72 s**
@@ -159,17 +159,17 @@ Timing at this snapshot:
 
 ### V2R4 shadow operational evidence
 
-- total shadow events: **369**
-- prospective post-tracker events: **351**
-- due 6h: **87**
-- completed due 6h: **79**
-- unresolved due 6h: **8**
-- current due-6h archival coverage: **90.80%**
-- complete outcomes: **79** = **61 gap-free + 18 tracker-gap-affected**
+- total shadow events: **372**
+- prospective post-tracker events: **354**
+- due 6h: **95**
+- completed due 6h: **95**
+- unresolved due 6h: **0**
+- current due-6h archival coverage: **100.00%**
+- due-6h cohort fully archived; current operational state: **MATURE_COHORT_ARCHIVED**
 - feed -> shadow latency p50: **~1.65 s**
 - feed -> shadow latency p90: **~3.12 s**
 
-The 8 unresolved due-6h cases keep the current operational state at `MATURE_OUTCOMES_PENDING`; this is an archival-maturity state, not a strategy-performance judgment.
+The currently due 6h cohort is fully archived. This remains an operational-maturity fact, not strategy-performance evidence.
 
 ### MINI-PC / activation control
 
@@ -178,7 +178,7 @@ The 8 unresolved due-6h cases keep the current operational state at `MATURE_OUTC
 - fail-closed activation view: **BLOCKED_V2R3_COMPLETION**
 - `automatic_activation_allowed = false`
 
-This snapshot confirms that the current blocker is evidence maturity, not an active infrastructure failure.
+This snapshot confirms that the current blocker is **V2R3 clean-series maturity**, not V2R4 shadow archival maturity and not an active infrastructure failure.
 
 ## Supabase / analytics hardening — 2026-10-01
 
