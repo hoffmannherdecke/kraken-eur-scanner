@@ -1183,6 +1183,20 @@ The two fresh unprocessed handoffs are normal in-flight candidates, not replay/s
 
 One final local MINI-PC rerun of the corrected audit remains as the physical proof before closing the restart/reconciliation gate.
 
+### Autonomous post-outage hardening completed 2026-10-01
+
+While the user was not needed, the following were completed:
+- corrected the reconciliation audit's legacy/pre-series false positives;
+- verified corrected reconciliation against current `main`: **HEALTHY**, 710 active handoffs, 708 decisions, 642 revalidations, 2 fresh in-flight candidates, 0 stale, 0 overdue WAIT, 0 critical/warning;
+- removed temporary one-time patch/verification workflows after successful use;
+- used the real power outage as evidence that hosted GitHub scanner/evaluator paths remain independent of MINI-PC/Altrady;
+- refined the outcome-tracker watchdog so individual illiquid pairs with temporarily old samples do not incorrectly mark the entire tracker/feed stale when other active outcomes are sampling freshly; core Kraken/WS freshness remains separately enforced;
+- prepared `tools/minipc-post-fix-verification.ps1` to bundle the remaining local verification into one command;
+- Windows MINI-PC tools smoke for the bundled verifier and watchdog changes: **SUCCESS**;
+- central MINI-PC status subsequently returned to **HEALTHY / operational state OK / issues none** without manual runtime intervention.
+
+Only one local pull + bundled verification is now required before closing the strategy-runtime reconnect gate.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
