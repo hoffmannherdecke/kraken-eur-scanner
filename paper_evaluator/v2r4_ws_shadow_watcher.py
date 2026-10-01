@@ -366,10 +366,16 @@ def process_snapshot(
     return state, events, heartbeat
 
 
-def run_once(args: argparse.Namespace) -> dict[str, Any]:
+def run_once(
+    args: argparse.Namespace,
+    *,
+    state: dict[str, Any] | None = None,
+    persist_state: bool = True,
+) -> tuple[dict[str, Any], dict[str, Any]]:
     now = utcnow()
     snapshot = load_json(args.snapshot)
-    state = load_state(args.state)
+    if state is None:
+        state = load_state(args.state)
     state, events, cycle = process_snapshot(
         snapshot,
         state,
@@ -381,9 +387,7 @@ def run_once(args: argparse.Namespace) -> dict[str, Any]:
         sample_seconds=args.sample_seconds,
     )
 
-    if cycle["status"] not in {"STALE_INPUT", "DUPLICATE_SKIPPED"}:
-        atomic_json(args.state, state)
-    elif not args.state.exists():
+    if persist_state:
         atomic_json(args.state, state)
 
     for event in events:
@@ -406,7 +410,10 @@ def run_once(args: argparse.Namespace) -> dict[str, Any]:
             "real_money_actions": False,
         },
     }
-    append_jsonl(args.ledger, ledger_cycle)
+    # A continuously polled local snapshot will naturally be unchanged for some
+    # one-second cycles.  Do not turn those duplicates into an unbounded ledger.
+    if cycle["status"] != "DUPLICATE_SKIPPED":
+        append_jsonl(args.ledger, ledger_cycle)
 
     heartbeat = {
         "schema_version": HEARTBEAT_SCHEMA,
@@ -423,7 +430,7 @@ def run_once(args: argparse.Namespace) -> dict[str, Any]:
     print("V2R4_WS_SHADOW " + json.dumps(heartbeat, separators=(",", ":"), sort_keys=True), flush=True)
     for event in events:
         print("V2R4_WS_SHADOW_EVENT " + json.dumps(event, separators=(",", ":"), sort_keys=True), flush=True)
-    return heartbeat
+    return heartbeat, state
 
 
 def parse_args() -> argparse.Namespace:
@@ -448,6 +455,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-gap-seconds", type=float, default=45.0)
     parser.add_argument("--cooldown-seconds", type=int, default=1800)
     parser.add_argument("--sample-seconds", type=int, default=DEFAULT_SAMPLE_SECONDS)
+    parser.add_argument(
+        "--state-flush-seconds",
+        type=float,
+        default=30.0,
+        help="continuous-mode interval for compact state persistence",
+    )
     args = parser.parse_args()
     if args.poll_seconds < 0.25:
         raise SystemExit("--poll-seconds must be >= 0.25")
@@ -455,6 +468,8 @@ def parse_args() -> argparse.Namespace:
         raise SystemExit("--sample-seconds must be >= 10")
     if args.max_runtime_seconds is not None and args.max_runtime_seconds < 2:
         raise SystemExit("--max-runtime-seconds must be >= 2")
+    if args.state_flush_seconds < 5:
+        raise SystemExit("--state-flush-seconds must be >= 5")
     return args
 
 
@@ -465,33 +480,50 @@ def main() -> int:
         if args.max_runtime_seconds is not None
         else None
     )
-    while True:
-        try:
-            run_once(args)
-        except FileNotFoundError:
-            now = utcnow()
-            heartbeat = {
-                "schema_version": HEARTBEAT_SCHEMA,
-                "kind": "V2R4_WS_SHADOW_HEARTBEAT_V1",
-                "checked_at_utc": iso(now),
-                "status": "WAITING_FOR_FEED",
-                "source_path": str(args.snapshot),
-                "strategy_action": "NONE_SHADOW_ONLY",
-                "paper_only": True,
-                "real_money_actions": False,
-            }
-            atomic_json(args.heartbeat, heartbeat)
-            print("V2R4_WS_SHADOW " + json.dumps(heartbeat, separators=(",", ":"), sort_keys=True), flush=True)
-        if args.once:
-            return 0
-        if stop_at is not None and time.monotonic() >= stop_at:
-            return 0
-        sleep_for = args.poll_seconds
-        if stop_at is not None:
-            sleep_for = min(sleep_for, max(0.0, stop_at - time.monotonic()))
-        if sleep_for <= 0:
-            return 0
-        time.sleep(sleep_for)
+    state = load_state(args.state)
+    last_state_flush = time.monotonic()
+
+    try:
+        while True:
+            try:
+                _heartbeat, state = run_once(
+                    args,
+                    state=state,
+                    persist_state=args.once,
+                )
+            except FileNotFoundError:
+                now = utcnow()
+                heartbeat = {
+                    "schema_version": HEARTBEAT_SCHEMA,
+                    "kind": "V2R4_WS_SHADOW_HEARTBEAT_V1",
+                    "checked_at_utc": iso(now),
+                    "status": "WAITING_FOR_FEED",
+                    "source_path": str(args.snapshot),
+                    "strategy_action": "NONE_SHADOW_ONLY",
+                    "paper_only": True,
+                    "real_money_actions": False,
+                }
+                atomic_json(args.heartbeat, heartbeat)
+                print("V2R4_WS_SHADOW " + json.dumps(heartbeat, separators=(",", ":"), sort_keys=True), flush=True)
+
+            if args.once:
+                return 0
+
+            now_mono = time.monotonic()
+            if now_mono - last_state_flush >= args.state_flush_seconds:
+                atomic_json(args.state, state)
+                last_state_flush = now_mono
+
+            if stop_at is not None and now_mono >= stop_at:
+                return 0
+            sleep_for = args.poll_seconds
+            if stop_at is not None:
+                sleep_for = min(sleep_for, max(0.0, stop_at - time.monotonic()))
+            if sleep_for <= 0:
+                return 0
+            time.sleep(sleep_for)
+    finally:
+        atomic_json(args.state, state)
 
 
 if __name__ == "__main__":
