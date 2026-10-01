@@ -36,8 +36,10 @@ def main() -> int:
             continue
 
         pair = h.get("pair")
-        detected = h.get("candidate_detected_at_utc")
-        queued = h.get("queued_at")
+        timing = h.get("timing") if isinstance(h.get("timing"), dict) else {}
+        scanner = h.get("scanner_candidate") if isinstance(h.get("scanner_candidate"), dict) else {}
+        detected = timing.get("candidate_detected_at_utc")
+        queued = timing.get("handoff_written_at_utc")
         if not pair or not detected or not queued:
             continue
 
@@ -47,9 +49,9 @@ def main() -> int:
                 "pair": pair,
                 "detected_at": detected,
                 "queued_at": queued,
-                "source_run_id": h.get("source_run_id"),
-                "rank": h.get("rank"),
-                "score": h.get("score"),
+                "source_run_id": h.get("source_scanner_run_id"),
+                "rank": scanner.get("rank15"),
+                "score": scanner.get("score"),
                 "payload": h,
             }
         )
