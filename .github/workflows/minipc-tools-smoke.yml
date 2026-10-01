@@ -12,6 +12,9 @@ name: MINI-PC tools smoke
       - 'tools/minipc-altrady-live-alert-proof.py'
       - 'tools/minipc-kraken-universe-feed.py'
       - 'tools/v2r4-ws-shadow-evidence.py'
+      - 'tools/v2r4-ws-shadow-outcome-tracker.py'
+      - 'tools/install-minipc-v2r4-shadow-outcomes.ps1'
+      - 'tools/uninstall-minipc-v2r4-shadow-outcomes.ps1'
       - 'tools/minipc-v2r4-ws-shadow-smoke.ps1'
       - 'tools/minipc-v2r4-shadow-postboot-resilience.ps1'
       - 'tools/minipc-v2r4-shadow-resilience-bundle.ps1'
@@ -39,7 +42,7 @@ jobs:
       - name: Parse Python transport tools
         shell: powershell
         run: |
-          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py .\tools\v2r4-ws-shadow-evidence.py
+          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py .\tools\v2r4-ws-shadow-evidence.py .\tools\v2r4-ws-shadow-outcome-tracker.py
           Write-Host 'PYTHON_TRANSPORT_PARSE_OK'
 
       - name: Parse PowerShell scripts
@@ -57,6 +60,8 @@ jobs:
             'tools/minipc-v2r4-shadow-resilience-bundle.ps1',
             'tools/minipc-v2r4-shadow-resilience-resume.ps1',
             'tools/minipc-v2r4-ws-shadow-evidence.ps1',
+            'tools/install-minipc-v2r4-shadow-outcomes.ps1',
+            'tools/uninstall-minipc-v2r4-shadow-outcomes.ps1',
             'tools/install-minipc-v2r4-ws-shadow.ps1',
             'tools/uninstall-minipc-v2r4-ws-shadow.ps1',
             'tools/minipc-internet-recovery-gate.ps1',
@@ -119,6 +124,21 @@ jobs:
           if ($zips.Count -ne 1) { throw "expected one backup zip, got $($zips.Count)" }
           Write-Host 'BACKUP_RESTORE_SMOKE_OK'
 
+      - name: Smoke V2R4 shadow outcome tracker
+        shell: powershell
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'v2r4-outcome-tracker-smoke'
+          $events = Join-Path $root 'State\v2r4-ws-shadow-events'
+          New-Item -ItemType Directory -Force -Path $events | Out-Null
+          $now = [datetime]::UtcNow.ToString('o').Replace('+00:00','Z')
+          @{kind='V2R4_WS_SHADOW_DISCOVERY';pair='TEST/EUR';observed_at_utc=$now;source_pair_received_at_utc=$now;last_eur=100.0;reasons=@('FAST_10M')} | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $events 'event.json')
+          @{schema_version=1;kind='MINIPC_KRAKEN_EUR_TICKER_LATEST_V1';written_at_utc=$now;pair_count=1;observed_pair_count=1;pairs=@{'TEST/EUR'=@{symbol='TEST/EUR';received_at_utc=$now;last_eur=101.0}}} | ConvertTo-Json -Depth 8 | Set-Content (Join-Path $root 'State\kraken-eur-ticker-latest.json')
+          python .\tools\v2r4-ws-shadow-outcome-tracker.py --trading-root $root --once
+          if ($LASTEXITCODE -ne 0) { throw 'outcome tracker smoke failed' }
+          $h = Get-Content (Join-Path $root 'State\v2r4-ws-shadow-outcome-heartbeat.json') -Raw | ConvertFrom-Json
+          if ($h.status -ne 'HEALTHY' -or $h.active_events -ne 1 -or $h.counters.events_enrolled -ne 1) { throw 'unexpected tracker heartbeat' }
+          if ($h.strategy_action -ne 'NONE_EVIDENCE_ONLY' -or $h.real_money_actions -ne $false) { throw 'outcome tracker guardrail changed' }
+          Write-Host 'V2R4_SHADOW_OUTCOME_TRACKER_SMOKE_OK'
       - name: Smoke watchdog report creation
         shell: powershell
         run: |
