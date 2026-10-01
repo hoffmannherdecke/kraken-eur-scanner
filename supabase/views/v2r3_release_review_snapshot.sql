@@ -47,7 +47,7 @@ missed_moves as (
     select m.*
     from public.v2r3_missed_move_candidates m
     join ready r on r.series_id = m.series_id
-    where m.mature_24h is true
+    where m.mfe_24h_pct is not null
     order by m.mfe_24h_pct desc nulls last, m.evaluated_at
     limit 100
   ) z
