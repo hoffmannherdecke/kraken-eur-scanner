@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "kind": "V3_SHADOW_CANDIDATE_V1",
+  "candidate_id": "EXAMPLE-V3-WAIT-TTL-001",
+  "hypothesis_id": "EXAMPLE",
+  "baseline_strategy_revision": "BASELINE_PLACEHOLDER",
+  "candidate_strategy_revision": "CANDIDATE_PLACEHOLDER",
+  "status": "DRAFT",
+  "changed_components": [
+    "WAIT_TTL_REVALIDATION"
+  ],
+  "change_summary": "Example only: change exactly one WAIT TTL/revalidation mechanic while all other strategy mechanics remain baseline-frozen.",
+  "frozen_config_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "evidence_plan": {
+    "same_candidate_stream": true,
+    "shared_market_clock": true,
+    "minimum_gate": "MUST_BE_DEFINED_BEFORE_FROZEN_FOR_SHADOW",
+    "cost_model_reference": "MUST_BE_DEFINED_BEFORE_FROZEN_FOR_SHADOW"
+  },
+  "promotion_gate": {
+    "predefined": false,
+    "automatic_promotion": false
+  },
+  "guardrails": {
+    "active_baseline_changed": false,
+    "midrun_tuning_allowed": false,
+    "real_money_actions": false,
+    "leverage": false
+  }
+}
