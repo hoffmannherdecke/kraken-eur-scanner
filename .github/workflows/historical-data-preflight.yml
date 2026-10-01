@@ -14,6 +14,7 @@ name: Historical data preflight
       - 'tools/inspect-kraken-ohlcvt-archive.py'
       - 'tools/extract-kraken-ohlcvt-eur15.py'
       - 'tools/cleanup-verified-kraken-ohlcvt-parts.ps1'
+      - 'tools/normalize-kraken-eur15.py'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -38,6 +39,7 @@ jobs:
           python -m py_compile tools/historical-trial-ledger.py
           python -m py_compile tools/inspect-kraken-ohlcvt-archive.py
           python -m py_compile tools/extract-kraken-ohlcvt-eur15.py
+          python -m py_compile tools/normalize-kraken-eur15.py
 
       - name: Validate no-download Kraken manifest
         run: |
@@ -144,6 +146,40 @@ jobs:
           assert j["file_count"]==2
           assert all(e["csv_validation"]["bad_column_rows"]==0 for e in j["entries"])
           print("EUR15_EXTRACTOR PASS")
+          PY
+
+      - name: Smoke deterministic EUR15 normalizer
+        run: |
+          mkdir -p /tmp/eur15-normalize-src
+          printf '0,1,2,0.5,1.5,10,5\n900,1.5,2.5,1,2,12,6\n2700,2,3,1.5,2.5,14,7\n' > /tmp/eur15-normalize-src/XBTEUR_15.csv
+          printf '0,10,11,9,10.5,20,8\n900,10.5,11.5,10,11,22,9\n' > /tmp/eur15-normalize-src/ETHEUR_15.csv
+          python tools/normalize-kraken-eur15.py \
+            /tmp/eur15-normalize-src /tmp/eur15-normalized-a /tmp/eur15-normalized-a.json \
+            --expected-count 2
+          python tools/normalize-kraken-eur15.py \
+            /tmp/eur15-normalize-src /tmp/eur15-normalized-b /tmp/eur15-normalized-b.json \
+            --expected-count 2
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+
+          a=json.loads(Path("/tmp/eur15-normalized-a.json").read_text())
+          b=json.loads(Path("/tmp/eur15-normalized-b.json").read_text())
+
+          assert a["status"]=="PASS"
+          assert a["schema_version"]=="KRAKEN_EUR15_NORMALIZED_V1"
+          assert a["file_count"]==2
+          assert a["total_gap_events"]==1
+          assert a["total_missing_intervals_not_filled"]==1
+          assert a["point_in_time_contract"]["synthetic_gap_fill_used"] is False
+          assert a["point_in_time_contract"]["feature_visibility_rule"]=="bar_end_epoch <= data_cutoff_epoch"
+
+          for name in ("XBTEUR_15.normalized.csv.gz","ETHEUR_15.normalized.csv.gz"):
+              da=hashlib.sha256((Path("/tmp/eur15-normalized-a")/name).read_bytes()).hexdigest()
+              db=hashlib.sha256((Path("/tmp/eur15-normalized-b")/name).read_bytes()).hexdigest()
+              assert da==db, name
+
+          print("EUR15_NORMALIZER PASS deterministic/no-gap-fill/explicit-close-time")
           PY
 
       - name: Smoke OHLCVT cleanup plan-only
