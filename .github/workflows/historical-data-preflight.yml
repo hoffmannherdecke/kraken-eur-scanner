@@ -33,6 +33,8 @@ name: Historical data preflight
       - 'tools/historical-performance-replay-v2.py'
       - 'tools/record-performance-replay-trial-v2.py'
       - 'tools/run-minipc-performance-replay-v2.ps1'
+      - 'tools/minipc-binance-public-access-smoke.py'
+      - 'tools/run-minipc-binance-public-access-smoke.ps1'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -54,6 +56,7 @@ jobs:
         run: |
           python -m py_compile tools/kraken-historical-preflight.py
           python -m py_compile tools/kraken-trades-targeted-smoke.py
+          python -m py_compile tools/minipc-binance-public-access-smoke.py
           python -m py_compile tools/historical-pit-smoke.py
           python -m py_compile tools/historical-trial-ledger.py
           python -m py_compile tools/inspect-kraken-ohlcvt-archive.py
@@ -160,6 +163,24 @@ jobs:
           }
           if ($text -notmatch '"real_money_actions":\s*false') {
             throw "targeted trades orchestrator violated real-money guardrail"
+          }
+
+      - name: MINI-PC Binance public-access plan-only smoke
+        shell: pwsh
+        run: |
+          ./tools/run-minipc-binance-public-access-smoke.ps1 | Tee-Object -Variable plan
+          $text = $plan -join [Environment]::NewLine
+          if ($text -notmatch '"status":\s*"PLAN_ONLY"') {
+            throw "Binance public-access smoke did not remain plan-only"
+          }
+          if ($text -notmatch '"api_key":\s*false') {
+            throw "Binance public-access smoke unexpectedly requires an API key"
+          }
+          if ($text -notmatch '"orders":\s*false') {
+            throw "Binance public-access smoke violated no-order guardrail"
+          }
+          if ($text -notmatch '"real_money_actions":\s*false') {
+            throw "Binance public-access smoke violated real-money guardrail"
           }
 
       - name: Validate trial-ledger schema JSON
