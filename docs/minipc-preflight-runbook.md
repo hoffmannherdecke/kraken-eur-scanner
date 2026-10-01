@@ -1356,3 +1356,31 @@ These checks are deliberately deferred to the end of the MINI-PC commissioning r
    - A reboot must never silently advance strategy state or enable real-money execution.
 
 These three items remain the **final points** of the runbook, after the deferred external-drive work and external remote-access test unless dependencies require otherwise.
+
+
+### 2026-10-01 ~15:24 UTC — V2R4 WS-shadow heartbeat stall requires one local recovery gate
+
+During the autonomous V2R4 readiness review, central status showed a real local support-process stall:
+
+- underlying Kraken canary: healthy/fresh;
+- Kraken universe feed: healthy/fresh, 501/501 observed;
+- V2R4 outcome tracker: healthy;
+- V2R4 cloud sync: healthy;
+- Altrady poll path remained active;
+- **V2R4 WS-shadow heartbeat stopped advancing** and reached >15 minutes stale;
+- runtime supervisor remained WARNING and had not restored a fresh shadow heartbeat within the normal backoff/recovery window;
+- V2R3 hosted scanner/evaluator path remains independent and is not blocked by this shadow-only issue.
+
+This is no longer just the earlier 15–20 second heartbeat-jitter false positive. A local task recovery is justified.
+
+Repository-side watchdog fixes are already CI-green, but the MINI-PC local repository still predates them. Therefore the next physical/local gate is intentionally bundled:
+
+1. verify local repo is clean;
+2. fast-forward-only pull of current `main`;
+3. run the runtime supervisor once with `-ForceRecovery` (it restarts only monitored tasks that actually need recovery);
+4. wait briefly;
+5. run the existing read-only post-fix/effectiveness verification.
+
+No Windows reboot, Internet cut, model call, exchange account, order, strategy change or real-money action is required.
+
+**Resume after local gate:** verify central status returns to fresh shadow heartbeat and `HEALTHY / OK`; then continue autonomous V2R3/V2R4 evidence work.
