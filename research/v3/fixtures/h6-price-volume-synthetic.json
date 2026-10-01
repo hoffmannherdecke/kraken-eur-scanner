@@ -1,0 +1,95 @@
+{
+  "kind": "V3_H6_SYNTHETIC_PRICE_VOLUME_FIXTURE_V1",
+  "bars": [
+    {
+      "bar_end_epoch": 3600,
+      "close": 100,
+      "volume": 80
+    },
+    {
+      "bar_end_epoch": 4500,
+      "close": 101,
+      "volume": 80
+    },
+    {
+      "bar_end_epoch": 5400,
+      "close": 102,
+      "volume": 80
+    },
+    {
+      "bar_end_epoch": 6300,
+      "close": 103,
+      "volume": 80
+    },
+    {
+      "bar_end_epoch": 7200,
+      "close": 104,
+      "volume": 80
+    },
+    {
+      "bar_end_epoch": 8100,
+      "close": 105,
+      "volume": 80
+    },
+    {
+      "bar_end_epoch": 9000,
+      "close": 106,
+      "volume": 80
+    },
+    {
+      "bar_end_epoch": 9900,
+      "close": 107,
+      "volume": 80
+    },
+    {
+      "bar_end_epoch": 10800,
+      "close": 108,
+      "volume": 80
+    },
+    {
+      "bar_end_epoch": 11700,
+      "close": 109,
+      "volume": 100
+    },
+    {
+      "bar_end_epoch": 12600,
+      "close": 110,
+      "volume": 100
+    },
+    {
+      "bar_end_epoch": 13500,
+      "close": 111,
+      "volume": 100
+    },
+    {
+      "bar_end_epoch": 14400,
+      "close": 112,
+      "volume": 100
+    },
+    {
+      "bar_end_epoch": 15300,
+      "close": 113,
+      "volume": 170
+    },
+    {
+      "bar_end_epoch": 16200,
+      "close": 114,
+      "volume": 180
+    },
+    {
+      "bar_end_epoch": 17100,
+      "close": 115,
+      "volume": 190
+    },
+    {
+      "bar_end_epoch": 18000,
+      "close": 116,
+      "volume": 200
+    },
+    {
+      "bar_end_epoch": 18900,
+      "close": 9999,
+      "volume": 9999
+    }
+  ]
+}
