@@ -1,0 +1,53 @@
+{
+  "baseline_ask_eur": 9.793,
+  "candidate_id": "20261001-205146-AVAX-EUR-r36924474639",
+  "evaluated_at_utc": "2026-10-01T20:52:07.718491Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-01T20:51:46Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 21.718,
+    "detection_price_eur": 9.788,
+    "evaluated_at_utc": "2026-10-01T20:52:07.718491Z",
+    "evaluation_ask_eur": 9.793,
+    "flagged_as_already_run": false,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-01T18:07:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 0.72,
+      "price_eur": 9.718
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "tight_spread",
+      "adequate_turnover_and_depth",
+      "below_resistance",
+      "weak_closed_volume",
+      "scanner_rank_falling",
+      "weak_major_market_regime",
+      "remaining_move_unclear_after_costs"
+    ],
+    "scan_step_started_at_utc": "2026-10-01T20:50:18Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 0.7203128215682364,
+      "ret15_live_pct": -0.02042900919304591,
+      "ret1h_pct": 0.4103405826836326,
+      "ret3h_pct": 0.14323715981174878,
+      "scanner_late_flag": false,
+      "score": 7.0
+    },
+    "schema_version": 1,
+    "setup_lane": "CONTINUITY",
+    "updated_at_utc": "2026-10-01T20:52:18.931717Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "AVAX/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01"
+}
