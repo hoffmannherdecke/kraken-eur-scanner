@@ -17,6 +17,7 @@ name: Historical data preflight
       - 'tools/normalize-kraken-eur15.py'
       - 'tools/historical-real-pair-replay-smoke.py'
       - 'tools/run-minipc-eur15-normalization.ps1'
+      - 'tools/record-real-pair-replay-trial.py'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -43,6 +44,7 @@ jobs:
           python -m py_compile tools/extract-kraken-ohlcvt-eur15.py
           python -m py_compile tools/normalize-kraken-eur15.py
           python -m py_compile tools/historical-real-pair-replay-smoke.py
+          python -m py_compile tools/record-real-pair-replay-trial.py
 
       - name: Validate no-download Kraken manifest
         run: |
@@ -213,6 +215,37 @@ jobs:
           assert j["label"]["generated_after_decision_freeze"] is True
           assert j["guardrails"]["historical_strategy_tuning_performed"] is False
           print("REAL_PAIR_PIT_REPLAY PASS")
+          PY
+
+      - name: Smoke real-pair replay Trial Ledger record
+        run: |
+          python tools/record-real-pair-replay-trial.py \
+            --normalization-catalog /tmp/eur15-normalized-a.json \
+            --replay-report /tmp/real-pair-replay-smoke.json \
+            --db /tmp/real-pair-trial-ledger.sqlite3 \
+            --schema research/historical/trial-ledger-schema.json \
+            --output-record /tmp/real-pair-trial-record.json \
+            --repo-root .
+          python tools/record-real-pair-replay-trial.py \
+            --normalization-catalog /tmp/eur15-normalized-a.json \
+            --replay-report /tmp/real-pair-replay-smoke.json \
+            --db /tmp/real-pair-trial-ledger.sqlite3 \
+            --schema research/historical/trial-ledger-schema.json \
+            --output-record /tmp/real-pair-trial-record.json \
+            --repo-root .
+          python - <<'PY'
+          import json, sqlite3
+          from pathlib import Path
+          rec=json.loads(Path("/tmp/real-pair-trial-record.json").read_text())
+          assert rec["metrics"]["methodology_integrity_only"] is True
+          assert rec["metrics"]["performance_interpretation_allowed"] is False
+          con=sqlite3.connect("/tmp/real-pair-trial-ledger.sqlite3")
+          try:
+              count=con.execute("select count(*) from trials").fetchone()[0]
+          finally:
+              con.close()
+          assert count==1
+          print("REAL_PAIR_TRIAL_LEDGER PASS idempotent/immutable")
           PY
 
       - name: MINI-PC EUR15 normalization plan-only smoke
