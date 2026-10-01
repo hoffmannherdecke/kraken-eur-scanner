@@ -26,6 +26,8 @@ Verified before any V2R4 paper activation:
 - GitHub cloud path remains independent fallback
 - Slack push path separately verified
 - no order API / no real-money path
+- inactive bounded WAIT-plan lifecycle runtime prepared in PR #9; Kraken remains condition truth, Altrady is wakeup-only; PR validation **Run #14 SUCCESS**
+- refreshed trigger→fresh-recheck E2E workflow points to PR #9 and **Run #2 SUCCESS**
 
 ## Evidence snapshot — 2026-10-01 15:01 UTC
 
@@ -76,6 +78,39 @@ Scanner matching is still sparse and must not be used as a winner ranking:
 - within 15m: **17**
 - within 5m: **7**
 - temporal proximity is not proof of the same impulse
+
+## Continuous WAIT runtime readiness
+
+The readiness review found that the existing single-plan watcher and trigger→fresh-recheck E2E proved the mechanics but did not yet define the full 24/7 plan lifecycle. Draft-PR #9 now prepares that missing runtime shape without activating it.
+
+Prepared in PR #9:
+
+- `paper_evaluator/v2r4_wait_runtime.py`
+- `tests/test_v2r4_wait_runtime.py`
+
+Contract:
+
+- discovers persisted initial and chained WAIT trigger plans;
+- normal fallback Kraken checks continue even if Altrady is silent;
+- locally consumed Altrady events may only wake the same pair for an earlier Kraken check;
+- Altrady data can never satisfy a trigger condition by itself;
+- trigger match can only request one `FRESH_PAPER_RECHECK_ONLY`;
+- handled plans are idempotent;
+- recheck failure fails closed rather than auto-hammering the model;
+- long-running mode requires an explicit executable-paper flag;
+- no private Kraken API, order method or real-money action exists;
+- no scheduled task has been installed and nothing is active.
+
+Validation:
+
+- V2R4 PR validation **Run #14: SUCCESS**, including the new runtime tests;
+- refreshed trigger→fresh-recheck E2E **Run #2: SUCCESS** against PR #9.
+
+Still required at the actual release boundary:
+
+- physical combined Altrady-wakeup → Kraken-fresh-condition → paper-recheck smoke;
+- final directory/control/series wiring for the new immutable V2R4 paper series;
+- no activation before the V2R3 release review and explicit sizing/release decision.
 
 ## Current blocker to V2R4 activation review
 
