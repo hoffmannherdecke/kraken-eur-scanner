@@ -239,6 +239,36 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11m. Validation-only V1 failure-mode review completed 2026-10-01
+
+The guarded validation-only diagnostic review was executed on the physical MINI-PC. The sealed 2026H1 holdout remained closed and no threshold/horizon/pair/month sweep was performed.
+
+Visible diagnostic findings from the physical run:
+
+- validation events: **2,600**;
+- unique validation pairs: **263**;
+- unique validation months: **12**;
+- top-10 pair event share: **0.252692307692** (~**25.27%**), so the failure is not explained by only a tiny handful of pairs;
+- top 5% of events contributed **0.478599139817** (~**47.86%**) of positive gross contribution, confirming a materially right-skewed winner distribution;
+- failure flags:
+  - majority negative after cost: **true**;
+  - mean net negative: **true**;
+  - median gross non-positive: **true**;
+  - median net negative: **true**;
+  - right-skew signature: **true**;
+- holdout opened: **false**;
+- threshold sweep performed: **false**;
+- horizon sweep performed: **false**;
+- pair selection performed: **false**;
+- month selection performed: **false**;
+- active strategy / Paper / Shadow runtime changed: **false**;
+- real-money action: **false**;
+- diagnostic next gate: **decide_reject_family_or_preregister_distinct_v2_hypothesis**.
+
+Interpretation:
+
+V1's weakness is not merely the frozen 1.40% execution-cost assumption. The median gross outcome is already non-positive, while a relatively small upper tail supplies a disproportionate share of positive gross contribution. Because the 2,600 validation events span 263 pairs and all 12 months, the result is not obviously attributable to one narrow pair/month pocket. V1 therefore remains rejected/insufficient as specified; any attempt to capture the right tail more effectively must be expressed as a distinct pre-registered V2 hypothesis rather than an in-place tune of V1.
+
 ## 11l. Physical frozen performance replay V1 validation completed 2026-10-01
 
 The frozen V1 OHLCVT price×volume continuation baseline was executed successfully on the physical MINI-PC after the checkout-safe checksum fix.
