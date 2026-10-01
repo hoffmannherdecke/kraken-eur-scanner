@@ -1,0 +1,232 @@
+{
+  "altname": "ASTEREUR",
+  "candidate_id": "20261001-113545-ASTER-EUR-r36856174895",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Renewed volume with a 15m close and subsequent hold above 0.66273",
+      "Evidence that remaining upside can cover fees, spread, slippage, and structural risk"
+    ],
+    "reason_codes": [
+      "RESISTANCE_REJECTION",
+      "RECENT_VOLUME_UNCONFIRMED",
+      "MULTI_PERIOD_CONTINUITY_MIXED",
+      "INSUFFICIENT_POST_COST_MOVE",
+      "NO_CONFIRMED_SCOUT_SETUP"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "ASTER failed to hold near 3h resistance and has retreated; recent tape lacks volume confirmation, with insufficient evidence of post-cost upside for a scout.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ASTERUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 53.38,
+        "available": true,
+        "current_funding_rate": -5.313808926525e-05,
+        "current_open_interest": 802984.0,
+        "funding_rate_delta": -1.9754311002250002e-05,
+        "open_interest_pct": -0.3699,
+        "previous_funding_rate": -3.3383778263e-05,
+        "previous_observed_at_utc": "2026-10-01T11:36:09.103274Z",
+        "previous_open_interest": 805965.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -5.313808926525e-05,
+        "index_price": 0.74442,
+        "last": 0.7446,
+        "mark_price": 0.74448652224,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 802984.0,
+        "requested_symbols": [
+          "PF_ASTERUSD",
+          "PI_ASTERUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ASTERUSD",
+        "volume24h": 773426
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.65905,
+      "bid": 0.65869,
+      "last": 0.6596,
+      "spread_pct": 0.054639003141746766
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "7",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.10561596740994439,
+          "ret3h_pct": 0.37754913204224305
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.29605869248421346,
+          "ret3h_pct": 0.6399482326840067
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.05753739930954849,
+          "ret3h_pct": -0.05753739930954849
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T12:29:30.925738Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0114eedb9f127f6a006abe522d8db487d2b76cd9c97abbcc33"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.65905,
+    "bid": 0.65869,
+    "last": 0.6596,
+    "spread_pct": 0.054639003141746766
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.66102,
+      "high": 0.66102,
+      "low": 0.66082,
+      "open": 0.66082,
+      "trades": 3,
+      "ts": 1790853300,
+      "volume": 3292.62092,
+      "vwap": 0.66089
+    },
+    {
+      "close": 0.66168,
+      "high": 0.66168,
+      "low": 0.66168,
+      "open": 0.66168,
+      "trades": 1,
+      "ts": 1790854200,
+      "volume": 669.00513,
+      "vwap": 0.66168
+    },
+    {
+      "close": 0.66136,
+      "high": 0.66146,
+      "low": 0.66014,
+      "open": 0.66014,
+      "trades": 4,
+      "ts": 1790855100,
+      "volume": 2677.70651,
+      "vwap": 0.66081
+    },
+    {
+      "close": 0.66273,
+      "high": 0.66273,
+      "low": 0.66147,
+      "open": 0.66147,
+      "trades": 2,
+      "ts": 1790856000,
+      "volume": 1336.46723,
+      "vwap": 0.66209
+    },
+    {
+      "close": 0.6596,
+      "high": 0.66167,
+      "low": 0.6596,
+      "open": 0.66167,
+      "trades": 2,
+      "ts": 1790856900,
+      "volume": 1339.85511,
+      "vwap": 0.66063
+    }
+  ],
+  "pair": "ASTER/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-113545-ASTER-EUR-r36856174895.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T12:29:41.855046Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "7195549eed80f47485f4c22161cbfd6886c8d710",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T12:29:41.855046Z",
+    "revalidation_started_at_utc": "2026-10-01T12:29:30.574033Z",
+    "ttl_due_at_utc": "2026-10-01T12:06:09.103274Z",
+    "ttl_lag_seconds": 1401.471
+  }
+}
