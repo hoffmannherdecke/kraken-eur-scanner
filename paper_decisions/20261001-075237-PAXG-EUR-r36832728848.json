@@ -1,0 +1,194 @@
+{
+  "altname": "PAXGEUR",
+  "candidate_age_seconds": 42,
+  "candidate_event_time_utc": "2026-10-01T07:52:37Z",
+  "candidate_id": "20261001-075237-PAXG-EUR-r36832728848",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "NO_BREAKOUT_OR_HIGHER_LOWS",
+      "NEGATIVE_1H_3H_24H_RETURNS",
+      "WEAK_MAJOR_MARKET_REGIME",
+      "NEARBY_RESISTANCE",
+      "EXPECTED_MOVE_INSUFFICIENT_AFTER_COSTS",
+      "NO_COIN_SPECIFIC_CATALYST_SUPPLIED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong scanner volume has not produced price continuation; weak multi-period returns and nearby resistance leave inadequate movement versus Kraken taker fees.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": true,
+        "index_price": 4171.10218291,
+        "last_funding_rate": 5e-05,
+        "mark_price": 4170.6,
+        "next_funding_time": 1790841600000,
+        "note": "Cross-market context only; never used as Kraken EUR execution price.",
+        "open_interest_base": 24723.602,
+        "retrieved_ms": 1790841202060,
+        "source": "binance_public_futures",
+        "symbol": "PAXGUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 147.7,
+        "available": true,
+        "current_funding_rate": 0.1626932175765,
+        "current_open_interest": 324.581,
+        "funding_rate_delta": -0.0008926641268347524,
+        "open_interest_pct": -1.7282,
+        "previous_funding_rate": 0.16358588170333474,
+        "previous_observed_at_utc": "2026-10-01T05:25:40.193417Z",
+        "previous_open_interest": 330.289
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.1626932175765,
+        "index_price": 4170.11,
+        "last": 4171,
+        "mark_price": 4169.42122425792,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 324.581,
+        "requested_symbols": [
+          "PF_PAXGUSD",
+          "PI_PAXGUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_PAXGUSD",
+        "volume24h": 314.136
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 3688.42,
+      "bid": 3687.65,
+      "last": 3690.31,
+      "spread_pct": 0.020878326805466377
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.001",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.6420981842636064,
+          "ret3h_pct": -0.2934269132136458
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -1.1078080244159572,
+          "ret3h_pct": -0.4344705126752002
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -1.225071225071217,
+          "ret3h_pct": -0.7348730673792714
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T07:53:19.840900Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-01T07:53:31.032834Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_04adadc9e513231b006abe1172949c87d1af87f1dd1fb02fb6"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 3688.42,
+    "bid": 3687.65,
+    "last": 3690.31,
+    "spread_pct": 0.020878326805466377
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "PAXG/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36832728848:PAXG-EUR:1790841157",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "ef20ea866ce4057a062c034930e9630135bb0a6e",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T07:52:37Z",
+    "candidate_detected_ts": 1790841157,
+    "candidate_snapshot_at_utc": "2026-10-01T07:52:37Z",
+    "detected_to_evaluation_complete_seconds": 54.033,
+    "detected_to_evaluation_start_seconds": 42.545,
+    "evaluation_completed_at_utc": "2026-10-01T07:53:31.032834Z",
+    "evaluation_runtime_seconds": 11.488,
+    "evaluation_started_at_utc": "2026-10-01T07:53:19.544715Z",
+    "handoff_to_evaluation_start_seconds": 39.609,
+    "handoff_written_at_utc": "2026-10-01T07:52:39.936207Z",
+    "scan_step_started_at_utc": "2026-10-01T07:51:05Z"
+  }
+}
