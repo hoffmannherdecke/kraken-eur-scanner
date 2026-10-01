@@ -82,6 +82,54 @@ jobs:
           print("WAIT_WATCHER_SMOKE_OK",p)
           PY
 
+      - name: Synthetic WS-snapshot shadow runtime smoke
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, time
+          from datetime import datetime, timezone
+          now=datetime.now(timezone.utc)
+          snap={
+            "schema_version":1,
+            "kind":"MINIPC_KRAKEN_EUR_TICKER_LATEST_V1",
+            "written_at_utc":now.isoformat().replace("+00:00","Z"),
+            "universe_sha256":"synthetic",
+            "pair_count":1,
+            "observed_pair_count":1,
+            "pairs":{
+              "BTC/EUR":{
+                "symbol":"BTC/EUR",
+                "exchange_at_utc":now.isoformat().replace("+00:00","Z"),
+                "received_at_utc":now.isoformat().replace("+00:00","Z"),
+                "bid_eur":50000.0,
+                "ask_eur":50001.0,
+                "last_eur":50000.5,
+                "spread_pct":0.002,
+                "volume24_base":100.0,
+                "vwap24_eur":50000.0,
+                "turnover24_est_eur":5000000.0
+              }
+            }
+          }
+          open("/tmp/v2r4-ws-snapshot.json","w").write(json.dumps(snap))
+          PY
+          python paper_evaluator/v2r4_ws_shadow_watcher.py \
+            --snapshot /tmp/v2r4-ws-snapshot.json \
+            --state /tmp/v2r4-ws/state.json \
+            --event-dir /tmp/v2r4-ws/events \
+            --ledger /tmp/v2r4-ws/ledger.jsonl \
+            --heartbeat /tmp/v2r4-ws/heartbeat.json \
+            --once
+          python - <<'PY'
+          import json
+          h=json.load(open("/tmp/v2r4-ws/heartbeat.json"))
+          assert h["kind"]=="V2R4_WS_SHADOW_HEARTBEAT_V1"
+          assert h["status"]=="HEALTHY"
+          assert h["strategy_action"]=="NONE_SHADOW_ONLY"
+          assert h["real_money_actions"] is False
+          print("WS_SHADOW_SYNTHETIC_OK")
+          PY
+
       - name: Broad Kraken EUR pre-candidate discovery smoke
         run: |
           python paper_evaluator/v2r4_precandidate_watcher.py             --once             --state /tmp/v2r4-pre/state.json             --event-dir /tmp/v2r4-pre/events             --max-depth-checks 2             --cooldown-seconds 0
