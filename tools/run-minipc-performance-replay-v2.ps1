@@ -9,7 +9,7 @@ Set-StrictMode -Version Latest
 
 $ExpectedConfirm = "RUN_FROZEN_PERFORMANCE_REPLAY_V2"
 $ExpectedCount = 648
-$ExpectedSpecSha256 = "3920161d4912815f193d6dcc7291dfab064a794447162d9d2fe5ec1dc7da1b3f"
+$ExpectedSpecSha256 = "7c8f1ae3b2291a62c5b64c9ec0e25a83ced7c63e64086823f07951431bc53743"
 
 if ([string]::IsNullOrWhiteSpace($TradingRoot)) {
     $homeRoot = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
