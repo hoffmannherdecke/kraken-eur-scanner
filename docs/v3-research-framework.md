@@ -114,7 +114,7 @@ Required output:
 ## 6. Priority hypotheses
 
 ### H1 — Cross-Crypto Lead/Lag + Breadth
-Status: `NEW`  
+Status: `PRECHECK`  
 Priority: A
 
 Candidate features:
@@ -131,6 +131,14 @@ Test principle:
 
 Promotion requirement:
 - Incremental OOS value above existing momentum / market-breadth context after full costs.
+
+Current methodology precheck:
+- preregistration: `research/v3/h1-cross-crypto-breadth-precheck-v1.json`;
+- synthetic 5-pair PIT feature smoke: **Run #3 SUCCESS**;
+- exact 15m/1h/4h closed-bar lookbacks, explicit breadth denominator and future-row rejection are proven;
+- an intentionally missing XRP 1h lookback remains missing while 15m/4h stay usable;
+- no performance trial, pair/month/threshold selection or holdout access has begun.
+- preceding red smoke runs were only negative-assertion-polarity wiring defects, not feature leakage or hypothesis failures.
 
 ### H2 — Basis / Premium / Funding / OI State Layer
 Status: `PRECHECK`  
