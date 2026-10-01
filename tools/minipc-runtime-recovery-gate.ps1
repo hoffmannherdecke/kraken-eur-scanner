@@ -53,6 +53,10 @@ if (Get-ScheduledTask -TaskName "CryptoMiniPC-V2R4ShadowCloudSync" -ErrorAction 
   $taskNames += "CryptoMiniPC-V2R4ShadowCloudSync"
   $startupNames += "CryptoMiniPC-V2R4ShadowCloudSync"
 }
+if (Get-ScheduledTask -TaskName "CryptoMiniPC-StatusSync" -ErrorAction SilentlyContinue) {
+  $taskNames += "CryptoMiniPC-StatusSync"
+  $startupNames += "CryptoMiniPC-StatusSync"
+}
 $taskRows = @()
 
 foreach ($name in $taskNames) {
@@ -192,6 +196,26 @@ if ($cloudTask) {
   }
 }
 
+$statusSync = $null
+$statusTask = Get-ScheduledTask -TaskName "CryptoMiniPC-StatusSync" -ErrorAction SilentlyContinue
+if ($statusTask) {
+  $statusPath = Join-Path $stateDir "minipc-status-sync-heartbeat.json"
+  if (-not (Test-Path $statusPath)) {
+    Add-Issue "minipc_status_sync_heartbeat_missing"
+  } else {
+    try {
+      $statusSync = Get-Content $statusPath -Raw | ConvertFrom-Json
+      $age = Age-Sec $statusSync.checked_at_utc
+      if ([string]$statusSync.status -ne "HEALTHY") { Add-Issue "minipc_status_sync_not_healthy" }
+      if ($age -gt 900) { Add-Issue "minipc_status_sync_stale" }
+      if ([string]$statusSync.strategy_action -ne "NONE_STATUS_ONLY") { Add-Issue "minipc_status_sync_guardrail_changed" }
+      if ([bool]$statusSync.real_money_actions) { Add-Issue "minipc_status_sync_real_money_guardrail_changed" }
+    } catch {
+      Add-Issue "minipc_status_sync_invalid"
+    }
+  }
+}
+
 
 Write-Host "[RUNTIME-RECOVERY] 3/5 Watchdog"
 
@@ -295,6 +319,14 @@ $result = [ordered]@{
         strategy_action = $cloudSync.strategy_action
       }
     } else { $null }
+    minipc_status_sync = if ($statusSync) {
+      [ordered]@{
+        status = $statusSync.status
+        age_sec = Age-Sec $statusSync.checked_at_utc
+        uploaded_health_status = $statusSync.uploaded_health_status
+        strategy_action = $statusSync.strategy_action
+      }
+    } else { $null }
   }
   watchdog = if ($health) {
     [ordered]@{
@@ -343,6 +375,9 @@ if ($outcomes) {
 }
 if ($cloudSync) {
   Write-Host ("V2R4 shadow cloud sync: " + $cloudSync.status + " | age=" + (Age-Sec $cloudSync.checked_at_utc) + "s | pending=" + $cloudSync.pending_records + " | uploaded=" + $cloudSync.uploaded_records)
+}
+if ($statusSync) {
+  Write-Host ("MINI-PC status sync: " + $statusSync.status + " | age=" + (Age-Sec $statusSync.checked_at_utc) + "s | uploaded_health_status=" + $statusSync.uploaded_health_status)
 }
 Write-Host ("Watchdog: " + $(if ($health) { [string]$health.status } else { "missing" }))
 Write-Host ("Kraken HTTP: " + $(if ($krakenHttp) { $krakenHttp } else { "failed" }))
