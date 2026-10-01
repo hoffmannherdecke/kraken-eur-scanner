@@ -155,6 +155,31 @@ try {
   Add-Check "v2r4_ws_shadow_heartbeat" $false $_.Exception.Message "WARNING"
 }
 
+# V2R4 WS shadow outcome tracker is optional until installed.
+try {
+  $outcomeTask = Get-ScheduledTask -TaskName "CryptoMiniPC-V2R4ShadowOutcomes" -ErrorAction SilentlyContinue
+  if ($outcomeTask) {
+    $hb = Join-Path $TradingRoot "State\v2r4-ws-shadow-outcome-heartbeat.json"
+    if (-not (Test-Path $hb)) {
+      Add-Check "v2r4_ws_shadow_outcomes" $false "task installed but heartbeat missing" "WARNING"
+    } else {
+      $h = Get-Content $hb -Raw | ConvertFrom-Json
+      $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
+      $ok = (
+        $h.status -eq "HEALTHY" -and
+        $ageSec -le 30 -and
+        [string]$h.strategy_action -eq "NONE_EVIDENCE_ONLY" -and
+        -not [bool]$h.real_money_actions
+      )
+      Add-Check "v2r4_ws_shadow_outcomes" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " active=" + $h.active_events + " enrolled=" + $h.counters.events_enrolled + " completed=" + $h.counters.events_completed) "WARNING"
+    }
+  } else {
+    $checks["v2r4_ws_shadow_outcomes"] = [ordered]@{ ok=$null; detail="prospective outcome tracker not installed yet" }
+  }
+} catch {
+  Add-Check "v2r4_ws_shadow_outcomes" $false $_.Exception.Message "WARNING"
+}
+
 # Altrady transport heartbeat is optional/non-exclusive.
 # Only evaluate it when the dedicated scheduled task is installed.
 try {
