@@ -11,6 +11,14 @@
       "expected_bars": 30,
       "mae_pct": -1.041,
       "mfe_pct": 0.644
+    },
+    "60": {
+      "bars": 60,
+      "complete": true,
+      "end_close_pct": -1.259,
+      "expected_bars": 60,
+      "mae_pct": -1.477,
+      "mfe_pct": 0.644
     }
   },
   "interval_minutes": 1,
@@ -87,5 +95,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "test_id": "SHADOW-V2R3-20261001-01",
-  "updated_at_utc": "2026-10-01T18:49:34.090765Z"
+  "updated_at_utc": "2026-10-01T19:19:19.268122Z"
 }
