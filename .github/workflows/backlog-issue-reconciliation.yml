@@ -1,0 +1,68 @@
+name: Backlog issue reconciliation
+
+'on':
+  workflow_dispatch:
+  issues:
+    types: [opened, reopened, closed, edited]
+  schedule:
+    - cron: '25 5 * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'PROJECT_BACKLOG.md'
+      - 'tools/validate-backlog-issue-reconciliation.py'
+      - '.github/workflows/backlog-issue-reconciliation.yml'
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: backlog-issue-reconciliation
+  cancel-in-progress: true
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Compile validator
+        run: python -m py_compile tools/validate-backlog-issue-reconciliation.py
+
+      - name: Synthetic pass/fail semantics
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])
+          (root/"backlog-ok.md").write_text("Canonical issue: #999999\n", encoding="utf-8")
+          (root/"issues.json").write_text(json.dumps({"issues":[{"number":999999,"title":"Synthetic"}]}), encoding="utf-8")
+          PY
+          python tools/validate-backlog-issue-reconciliation.py \
+            --backlog "$RUNNER_TEMP/backlog-ok.md" \
+            --issues-json "$RUNNER_TEMP/issues.json"
+          printf 'No matching issue marker\n' > "$RUNNER_TEMP/backlog-bad.md"
+          if python tools/validate-backlog-issue-reconciliation.py \
+            --backlog "$RUNNER_TEMP/backlog-bad.md" \
+            --issues-json "$RUNNER_TEMP/issues.json"; then
+            echo "ERROR: missing issue reference was accepted"
+            exit 1
+          else
+            echo "FAIL_CLOSED_GUARD PASS"
+          fi
+
+      - name: Reconcile current open issues against master backlog
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python tools/validate-backlog-issue-reconciliation.py
