@@ -150,6 +150,19 @@ It intentionally allows documentation, observability and inactive V2R4 preparati
 
 The freeze must be retired or replaced explicitly after the documented V2R3 completion/release review; expected hashes must not be silently rewritten while the series is active.
 
+## V2R3 final-review evidence pack
+
+A single fail-closed Supabase evidence surface is now prepared for the eventual completion boundary:
+
+- `public.v2r3_release_review_snapshot`
+- current `review_state = WAITING_COMPLETION`
+- current `final_review_allowed = false`
+- current integrity = `HEALTHY`
+- mature 24h missed-move rows = **0** at creation time
+- `automatic_strategy_change_allowed = false`
+
+Once the completion gate matures, this view will expose the already-versioned clean evidence in one place without changing the active series: initial timing, WAIT-TTL lag, outcomes, horizon summaries, reason families and mature missed-move candidates. It reduces the later release review to evidence classification rather than fresh data plumbing.
+
 ## Current blocker to V2R4 activation review
 
 The technical preparation is largely green, but the **V2R3 clean control series has not matured enough for the mandatory release review**.
