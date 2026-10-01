@@ -365,6 +365,43 @@ $critical = @($issues | Where-Object { $_.severity -eq "CRITICAL" }).Count
 $warning = @($issues | Where-Object { $_.severity -eq "WARNING" }).Count
 $status = if ($critical -gt 0) { "CRITICAL" } elseif ($warning -gt 0) { "WARNING" } else { "HEALTHY" }
 
+# Human-readable operational taxonomy. This is intentionally separate from the
+# coarse HEALTHY/WARNING/CRITICAL status so dashboards/alerts can distinguish
+# transport loss from stale data or a merely degraded support component.
+$issueNames = @($issues | ForEach-Object { [string]$_.check })
+$healthState = "OK"
+$stateReasonCodes = @()
+
+if ($critical -gt 0) {
+  $healthState = "STOPPED"
+  $stateReasonCodes = @($issueNames)
+} elseif (@($issueNames | Where-Object { $_ -in @("kraken_dns","kraken_tcp443","kraken_powershell_https","kraken_python_https") }).Count -gt 0) {
+  $healthState = "API_DISCONNECTED"
+  $stateReasonCodes = @($issueNames)
+} elseif (@($issueNames | Where-Object { $_ -in @("kraken_canary_heartbeat","kraken_universe_heartbeat","v2r4_ws_shadow_heartbeat","v2r4_ws_shadow_outcomes") }).Count -gt 0) {
+  $healthState = "FEED_STALE"
+  $stateReasonCodes = @($issueNames)
+} elseif (@($issueNames | Where-Object { $_ -match "queue|backlog" }).Count -gt 0) {
+  $healthState = "BACKLOG_STUCK"
+  $stateReasonCodes = @($issueNames)
+} elseif ($warning -gt 0) {
+  $healthState = "DEGRADED"
+  $stateReasonCodes = @($issueNames)
+} else {
+  # If the core runtime stack has not been installed yet, report WAITING_NO_DATA
+  # instead of claiming a fully operational OK state.
+  $coreOptional = @(
+    $checks["kraken_canary_heartbeat"],
+    $checks["kraken_universe_heartbeat"],
+    $checks["v2r4_ws_shadow_heartbeat"]
+  )
+  $installedCoreCount = @($coreOptional | Where-Object { $_ -and $_.ok -ne $null }).Count
+  if ($installedCoreCount -eq 0) {
+    $healthState = "WAITING_NO_DATA"
+    $stateReasonCodes = @("core_runtime_not_installed")
+  }
+}
+
 $report = [ordered]@{
   schema_version = 1
   kind = "MINIPC_LOCAL_HEALTH_V1"
@@ -372,6 +409,8 @@ $report = [ordered]@{
   computer_name = $env:COMPUTERNAME
   trading_root = $TradingRoot
   status = $status
+  health_state = $healthState
+  state_reason_codes = @($stateReasonCodes)
   checks = $checks
   issues = $issues
   guardrails = [ordered]@{
@@ -388,7 +427,7 @@ $statePath = Join-Path $stateDir "minipc-health.json"
 
 $logPath = Join-Path $logDir "minipc-watchdog.log"
 $issueCodes = ($issues | ForEach-Object { "$($_.severity):$($_.check)" }) -join ","
-$line = "{0} status={1} critical={2} warning={3} issues={4}" -f $now.ToString("o"),$status,$critical,$warning,$issueCodes
+$line = "{0} status={1} health_state={2} critical={3} warning={4} issues={5}" -f $now.ToString("o"),$status,$healthState,$critical,$warning,$issueCodes
 Add-Content -Path $logPath -Value $line -Encoding UTF8
 
 Write-Output $json
