@@ -132,7 +132,7 @@ Promotion requirement:
 - Incremental OOS value above existing momentum / market-breadth context after full costs.
 
 ### H2 — Basis / Premium / Funding / OI State Layer
-Status: `NEW`  
+Status: `PRECHECK`  
 Priority: A
 
 Candidate features:
@@ -147,6 +147,16 @@ Candidate features:
 Default interpretation:
 - State / crowding / confirmation first.
 - Directional use only after OOS evidence.
+
+Current preregistered precheck:
+- `research/v3/h2-derivatives-state-precheck-v1.json`;
+- public Kraken Futures coverage/semantics audit is real-network CI green;
+- current observed coverage: 142 mapped Perpetual bases across 501 online Kraken Spot-EUR bases (**28.34%**);
+- bounded XBT/ETH/SOL/XRP/ADA OI/Funding/Basis probe: **15/15 successful with data**;
+- incomplete derivatives coverage is represented as missing state, never future-filled or treated as an error;
+- Binance public USD-M remains supplementary cross-market context only.
+
+No H2 performance trial, threshold sweep, pair/month selection or holdout access has begun.
 
 Kraken Spot EUR remains the execution/fill reference.
 
