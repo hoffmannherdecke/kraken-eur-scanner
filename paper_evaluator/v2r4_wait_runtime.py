@@ -328,6 +328,14 @@ def run_cycle(
             state["handled"][key] = terminal
             continue
 
+        # Persist an IN_FLIGHT terminal marker before invoking the evaluator.
+        # If Windows/the process dies during the model call, restart must fail
+        # closed rather than silently duplicate a paper decision/entry.
+        terminal["status"] = "FRESH_PAPER_RECHECK_IN_FLIGHT"
+        state["handled"][key] = terminal
+        bounded_state(state)
+        atomic_json(state_path, state)
+
         try:
             if spec_path is None or control_path is None:
                 raise RuntimeError("spec/control required for executable paper recheck")
