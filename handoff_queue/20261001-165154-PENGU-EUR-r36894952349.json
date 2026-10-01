@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "PENGUEUR",
+  "candidate_id": "20261001-165154-PENGU-EUR-r36894952349",
+  "event_time_utc": "2026-10-01T16:51:54Z",
+  "event_ts": 1790873514,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "PENGU/EUR",
+  "queue_id": "36894952349:PENGU-EUR:1790873514",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=PENGU/EUR | score=7.60 | price_eur=0.008306 | ret15_live=0.25% | ret1h=0.64% | ret3h=-1.40% | ret24h=-5.81% | vol_live=0.71x | vol_closed=2.14x | rank=7 | rank_jump=47 | state_rank_jump=19 | breakout3h=0 | higher_lows=0 | base_tight=2.52% | fresh_move3h=1.07% | adx14=59.7 | spread=0.181% | turnover24h_eur=262551 | coverage=100% | ret7d=-5.83% | ret30d=11.45% | dist7d_high=-13.74% | dist30d_high=-15.34% | depth_1pct_eur=23312 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 59.70717486862539,
+    "altname": "PENGUEUR",
+    "base_tight_pct": 2.5188610367486097,
+    "breakout3h": false,
+    "context30d": 11.45,
+    "context7d": -5.83,
+    "depth_eur_1pct": 23312.26,
+    "dist30d_high_pct": -15.34,
+    "dist7d_high_pct": -13.74,
+    "ema26_gt_50": false,
+    "fresh_move_3h": 1.0708201508882853,
+    "higher_lows": false,
+    "late": false,
+    "pair": "PENGU/EUR",
+    "price": 0.008306,
+    "rank15": 7,
+    "rank15_prev": 54,
+    "rank_jump": 47,
+    "ret15_closed": -1.228091093358774,
+    "ret15_live": 0.25347012673504477,
+    "ret1h": 0.6421907185265807,
+    "ret24h": -5.8063052846450525,
+    "ret3h": -1.400759734093071,
+    "score": 7.6,
+    "spread_pct": 0.18103916480597895,
+    "stale": false,
+    "state_rank_jump": 19,
+    "turnover24h": 262550.82432709984,
+    "volume_ratio_closed": 2.143733224278254,
+    "volume_ratio_live": 0.7118283298050524
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-10-01T16:51:54Z",
+    "positive_1h_count": 28,
+    "positive_3h_count": 20,
+    "schema_version": 1,
+    "score_ge_5_count": 14,
+    "top_1h": [
+      {
+        "pair": "MOVR/EUR",
+        "ret15_live": -3.144,
+        "ret1h": 10.088,
+        "ret3h": 13.075,
+        "score": 1.8,
+        "vol_live": 2.192
+      },
+      {
+        "pair": "NIGHT/EUR",
+        "ret15_live": 0.249,
+        "ret1h": 4.642,
+        "ret3h": 3.804,
+        "score": 5.1,
+        "vol_live": 0.293
+      },
+      {
+        "pair": "ZRO/EUR",
+        "ret15_live": -0.384,
+        "ret1h": 3.384,
+        "ret3h": 4.494,
+        "score": 10.2,
+        "vol_live": 0.244
+      },
+      {
+        "pair": "PUMP/EUR",
+        "ret15_live": -0.401,
+        "ret1h": 2.899,
+        "ret3h": -0.897,
+        "score": 6.7,
+        "vol_live": 0.422
+      },
+      {
+        "pair": "QNT/EUR",
+        "ret15_live": 0.551,
+        "ret1h": 2.251,
+        "ret3h": 1.409,
+        "score": 5.4,
+        "vol_live": 0.577
+      },
+      {
+        "pair": "WLD/EUR",
+        "ret15_live": 0.184,
+        "ret1h": 1.515,
+        "ret3h": -4.558,
+        "score": 8.5,
+        "vol_live": 0.167
+      },
+      {
+        "pair": "SUI/EUR",
+        "ret15_live": -0.311,
+        "ret1h": 1.316,
+        "ret3h": -0.486,
+        "score": 6.2,
+        "vol_live": 1.547
+      },
+      {
+        "pair": "MON/EUR",
+        "ret15_live": 0.069,
+        "ret1h": 0.727,
+        "ret3h": 0.588,
+        "score": 4.5,
+        "vol_live": 1.332
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "ZRO/EUR",
+        "ret15_live": -0.384,
+        "ret1h": 3.384,
+        "ret3h": 4.494,
+        "score": 10.2,
+        "vol_live": 0.244
+      },
+      {
+        "pair": "WLD/EUR",
+        "ret15_live": 0.184,
+        "ret1h": 1.515,
+        "ret3h": -4.558,
+        "score": 8.5,
+        "vol_live": 0.167
+      },
+      {
+        "pair": "PENGU/EUR",
+        "ret15_live": 0.253,
+        "ret1h": 0.642,
+        "ret3h": -1.401,
+        "score": 7.6,
+        "vol_live": 0.712
+      },
+      {
+        "pair": "FIL/EUR",
+        "ret15_live": -0.111,
+        "ret1h": 0.335,
+        "ret3h": 0.447,
+        "score": 7.0,
+        "vol_live": 2.568
+      },
+      {
+        "pair": "PUMP/EUR",
+        "ret15_live": -0.401,
+        "ret1h": 2.899,
+        "ret3h": -0.897,
+        "score": 6.7,
+        "vol_live": 0.422
+      },
+      {
+        "pair": "SUI/EUR",
+        "ret15_live": -0.311,
+        "ret1h": 1.316,
+        "ret3h": -0.486,
+        "score": 6.2,
+        "vol_live": 1.547
+      },
+      {
+        "pair": "USELESS/EUR",
+        "ret15_live": -0.194,
+        "ret1h": 0.646,
+        "ret3h": -0.278,
+        "score": 6.2,
+        "vol_live": 3.224
+      },
+      {
+        "pair": "LTC/EUR",
+        "ret15_live": 0.101,
+        "ret1h": 0.117,
+        "ret3h": 0.607,
+        "score": 5.6,
+        "vol_live": 4.355
+      }
+    ],
+    "total_rows": 59
+  },
+  "scanner_market_context": {
+    "altname": "PENGUEUR",
+    "atr15_eur": 6.578571428571428e-05,
+    "atr15_pct": 0.7941298199627509,
+    "closed_through_epoch": 1790872200,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.008284,
+      "high": 0.008425,
+      "low": 0.008283,
+      "open": 0.008387,
+      "volume": 376110.51793
+    },
+    "pair": "PENGU/EUR",
+    "range_1h_pct": 2.1004345726702143,
+    "recent_closed_closes": [
+      0.008311,
+      0.008249,
+      0.008305,
+      0.008316,
+      0.008315,
+      0.008284
+    ],
+    "resistance_1h": 0.008425,
+    "resistance_3h": 0.008425,
+    "schema_version": 1,
+    "sensor_price_eur": 0.008306,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.008251,
+    "support_3h": 0.008218,
+    "ts": 1790873514
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 36894952349,
+  "source_scanner_sha": "a1cabe59363ad0be8c6697f00fc1dac7331a22d3",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T16:51:54Z",
+    "candidate_detected_ts": 1790873514,
+    "candidate_snapshot_at_utc": "2026-10-01T16:51:54Z",
+    "handoff_written_at_utc": "2026-10-01T16:51:56.434449Z",
+    "scan_step_started_at_utc": "2026-10-01T16:50:22Z"
+  }
+}
