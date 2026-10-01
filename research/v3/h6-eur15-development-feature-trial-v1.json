@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H6_EUR15_DEVELOPMENT_FEATURE_TRIAL_V1",
+  "hypothesis_id": "V3-H6",
+  "trial_id": "V3-H6-EUR15-FEATURE-INTEGRITY-001",
+  "status": "FROZEN_PREREGISTERED_NOT_EXECUTED",
+  "research_role": "REAL_DATA_FEATURE_INTEGRITY_AND_COVERAGE_ONLY",
+  "dataset": {
+    "source": "Kraken downloadable OHLCVT full history through 2026-06-30",
+    "normalized_schema": "KRAKEN_EUR15_NORMALIZED_V1",
+    "interval_minutes": 15,
+    "expected_normalized_pair_files": 648,
+    "expected_total_normalized_rows": 20960798,
+    "raw_archive_sha256": "fc81b54cba6e12af3e9422dde9416179e6ef76af4831d48d839fbdb43018eaa4",
+    "local_catalog_windows": "C:\\Users\\ADMIN\\Trading\\Historical\\catalog\\kraken-eur15-normalization.json",
+    "development_window": {
+      "start_utc": "1970-01-01T00:00:00Z",
+      "end_utc_exclusive": "2026-01-01T00:00:00Z"
+    },
+    "sealed_holdout": {
+      "start_utc": "2026-01-01T00:00:00Z",
+      "end_utc_exclusive": "2026-07-01T00:00:00Z",
+      "status": "LOCKED_DO_NOT_READ_IN_H6_FEATURE_TRIAL"
+    },
+    "universe_method": "ALL_NORMALIZED_PAIR_FILES_WITH_POINT_IN_TIME_DATA_AVAILABILITY; NO CURRENT_LISTING_STATUS_FILTER",
+    "missing_interval_semantics": "NO_TRADE_INTERVAL_ABSENT_DO_NOT_ZERO_FILL"
+  },
+  "fixed_primitives": {
+    "price_return_15m": "close[t] / close[t-1] - 1 using exact 15m bar-end alignment",
+    "price_return_1h": "close[t] / close[t-4] - 1 using exact 15m bar-end alignment",
+    "price_return_4h": "close[t] / close[t-16] - 1 using exact 15m bar-end alignment",
+    "recent_1h_mean_volume": "mean(volume[t],volume[t-1],volume[t-2],volume[t-3]) only if all four exact bars exist",
+    "prior_1h_mean_volume": "mean(volume[t-4],volume[t-5],volume[t-6],volume[t-7]) only if all four exact bars exist",
+    "volume_ratio_recent_vs_prior_1h": "recent_1h_mean_volume / prior_1h_mean_volume; null if either window incomplete or prior mean is zero",
+    "price_up_with_volume_expansion": "price_return_1h > 0 AND volume_ratio_recent_vs_prior_1h > 1",
+    "price_down_with_volume_expansion": "price_return_1h < 0 AND volume_ratio_recent_vs_prior_1h > 1"
+  },
+  "point_in_time_contract": {
+    "cutoff_is_bar_end": true,
+    "only_bar_end_at_or_before_cutoff": true,
+    "exact_wall_clock_lookbacks": true,
+    "future_rows_forbidden": true,
+    "live_incomplete_bar_forbidden": true,
+    "missing_bars_remain_missing": true,
+    "zero_fill_forbidden": true,
+    "recent_and_prior_volume_windows_non_overlapping": true,
+    "current_live_universe_as_historical_filter_forbidden": true
+  },
+  "outputs_allowed": {
+    "per_pair_eligible_cutoff_count": true,
+    "primitive_non_null_counts": true,
+    "missingness_counts": true,
+    "compact_descriptive_distributions": true,
+    "deterministic_summary_hash": true,
+    "future_return_labels": false,
+    "trade_returns": false,
+    "edge_metrics": false,
+    "threshold_ranking": false,
+    "pair_ranking": false,
+    "month_ranking": false
+  },
+  "search_and_selection_guardrails": {
+    "parameter_sweep": false,
+    "threshold_selection": false,
+    "pair_subset_selection_by_seen_metrics": false,
+    "horizon_sweep": false,
+    "nonlinear_model": false,
+    "ensemble": false,
+    "performance_trial_started": false,
+    "sealed_holdout_opened": false
+  },
+  "runtime_guardrails": {
+    "network_used": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "paper_shadow_runtime_change_allowed": false,
+    "orders": false,
+    "leverage": false,
+    "real_money_actions": false
+  },
+  "next_gate": "EXECUTE_ON_PHYSICAL_NORMALIZED_EUR15_DATA_THEN_REVIEW_COVERAGE_ONLY_BEFORE_ANY_ASSOCIATION_TRIAL"
+}

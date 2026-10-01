@@ -50,13 +50,17 @@
     "real_money_actions": false,
     "automatic_strategy_promotion": false
   },
-  "next_gate": "PREREGISTER_REAL_NORMALIZED_EUR15_DEVELOPMENT_DATASET_AND_FIXED_PRIMITIVES_NO_HOLDOUT",
+  "next_gate": "REAL_EUR15_FEATURE_TRIAL_PREREGISTERED__NEXT_EXECUTE_PHYSICALLY_WITH_HOLDOUT_SEALED",
   "methodology_readiness": {
     "synthetic_price_volume_pit_smoke": "CI_GREEN_RUN_1",
     "future_row_trap": "PASS_IGNORED",
     "missing_prior_volume_window": "PASS_RATIO_REMAINS_NULL",
     "non_overlapping_volume_windows": "PASS",
     "performance_trial_started": false,
-    "holdout_opened": false
+    "holdout_opened": false,
+    "real_eur15_feature_trial_preregistered": "V3-H6-EUR15-FEATURE-INTEGRITY-001",
+    "real_eur15_expected_pair_files": 648,
+    "real_eur15_expected_rows": 20960798,
+    "feature_trial_performance_labels_allowed": false
   }
 }
