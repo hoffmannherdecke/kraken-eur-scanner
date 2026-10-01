@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H8_ONCHAIN_STATE_PRECHECK_V1",
   "hypothesis_id": "V3-H8",
-  "status": "PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING",
+  "status": "PRECHECK_CAPTURE_METHOD_PREREGISTERED_LIVE_SMOKE_PENDING",
   "prepared_at_utc": "2026-10-01T18:40:00Z",
   "purpose": "Audit public on-chain metric coverage and time-availability semantics before any historical or prospective signal test.",
   "first_source": "coinmetrics_community_network_data",
@@ -53,7 +53,7 @@
     "leverage_allowed": false,
     "real_money_actions_allowed": false
   },
-  "next_gate": "PROSPECTIVE_COMPACT_CAPTURE_TO_MEASURE_PUBLICATION_LAG_AND_KNOWN_AT_BEFORE_ANY_HISTORICAL_OR_SIGNAL_TRIAL",
+  "next_gate": "ONE_LIVE_KNOWN_AT_CAPTURE_SMOKE_THEN_BOUNDED_REPEATED_CAPTURE_ACROSS_AT_LEAST_TWO_EOD_CYCLES",
   "coverage_readiness": {
     "audit": "CI_GREEN_RUN_1",
     "requested_assets": [
@@ -121,5 +121,27 @@
     },
     "sol_target_metric_coverage": "NONE_IN_CHECKED_GROUPS",
     "interpretation": "Coverage is heterogeneous. Missing metrics stay missing; no asset/metric backfill or survivorship filtering is allowed."
+  },
+  "known_at_capture_readiness": {
+    "contract": "research/v3/h8-known-at-capture-contract-v1.json",
+    "tool": "tools/v3-h8-coinmetrics-known-at-capture.py",
+    "fixed_assets": [
+      "btc",
+      "eth",
+      "sol",
+      "xrp",
+      "ada"
+    ],
+    "fixed_metrics": [
+      "AdrActCnt",
+      "TxCnt",
+      "CapMVRVCur",
+      "FlowInExUSD",
+      "FlowOutExUSD",
+      "AssetEODCompletionTime"
+    ],
+    "automatic_schedule_enabled": false,
+    "performance_trial_started": false,
+    "holdout_opened": false
   }
 }

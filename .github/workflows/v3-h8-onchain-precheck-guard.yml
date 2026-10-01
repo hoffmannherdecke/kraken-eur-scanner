@@ -6,6 +6,8 @@ name: V3 H8 on-chain coverage precheck guard
     branches: [main]
     paths:
       - 'research/v3/h8-onchain-state-precheck-v1.json'
+      - 'research/v3/h8-known-at-capture-contract-v1.json'
+      - 'tools/v3-h8-coinmetrics-known-at-capture.py'
       - 'research/source-registry.json'
       - 'tools/v3-h8-coinmetrics-coverage-precheck.py'
       - '.github/workflows/v3-h8-onchain-precheck-guard.yml'
@@ -31,7 +33,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path('research/v3/h8-onchain-state-precheck-v1.json').read_text('utf-8'))
           assert j['kind']=='V3_H8_ONCHAIN_STATE_PRECHECK_V1'
-          assert j['status'] in {'PRECHECK_SOURCE_COVERAGE_ONLY','PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING'}
+          assert j['status'] in {'PRECHECK_SOURCE_COVERAGE_ONLY','PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING','PRECHECK_CAPTURE_METHOD_PREREGISTERED_LIVE_SMOKE_PENDING','PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING'}
           assert j['point_in_time_contract']['metric_interval_time_is_not_assumed_equal_to_known_at_time'] is True
           assert j['point_in_time_contract']['historical_use_requires_known_at_or_proven_publication_lag'] is True
           assert 'historical_performance_trial' in j['forbidden_before_availability_lag_proven']
@@ -40,7 +42,7 @@ jobs:
           assert j['runtime_guardrails']['active_v2r3_change_allowed'] is False
           assert j['runtime_guardrails']['orders_allowed'] is False
           assert j['runtime_guardrails']['real_money_actions_allowed'] is False
-          if j['status']=='PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING':
+          if j['status'] in {'PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING','PRECHECK_CAPTURE_METHOD_PREREGISTERED_LIVE_SMOKE_PENDING','PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING'}:
               rd=j['coverage_readiness']
               assert rd['audit']=='CI_GREEN_RUN_1'
               assert rd['active_addresses']['count']==4
@@ -49,7 +51,7 @@ jobs:
               assert rd['exchange_in_out_flow']['count']==2
               assert rd['new_addresses']['count']==0
               assert rd['sol_target_metric_coverage']=='NONE_IN_CHECKED_GROUPS'
-              assert j['next_gate']=='PROSPECTIVE_COMPACT_CAPTURE_TO_MEASURE_PUBLICATION_LAG_AND_KNOWN_AT_BEFORE_ANY_HISTORICAL_OR_SIGNAL_TRIAL'
+              if j['status']=='PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING':\n                  assert j['next_gate']=='PROSPECTIVE_COMPACT_CAPTURE_TO_MEASURE_PUBLICATION_LAG_AND_KNOWN_AT_BEFORE_ANY_HISTORICAL_OR_SIGNAL_TRIAL'\n              else:\n                  assert j['known_at_capture_readiness']['automatic_schedule_enabled'] is False\n                  assert j['known_at_capture_readiness']['performance_trial_started'] is False\n                  assert j['known_at_capture_readiness']['holdout_opened'] is False
           print('V3_H8_PREREG PASS coverage-only/known-at-blocked/no-holdout')
           PY
       - name: Real public Coin Metrics community coverage audit
@@ -76,3 +78,63 @@ jobs:
           PY
       - name: Validate source registry
         run: python tools/validate-source-registry.py
+
+
+      - name: Validate H8 known-at capture contract
+        run: |
+          python -m py_compile tools/v3-h8-coinmetrics-known-at-capture.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("research/v3/h8-known-at-capture-contract-v1.json").read_text("utf-8"))
+          assert j["kind"]=="V3_H8_COINMETRICS_KNOWN_AT_CAPTURE_CONTRACT_V1"
+          assert j["status"]=="PREREGISTERED_CAPTURE_METHOD_NOT_SIGNAL_TRIAL"
+          assert j["fixed_assets"]==["btc","eth","sol","xrp","ada"]
+          assert j["fixed_metrics"]==["AdrActCnt","TxCnt","CapMVRVCur","FlowInExUSD","FlowOutExUSD","AssetEODCompletionTime"]
+          assert j["semantic_contract"]["first_seen_requires_prospective_capture"] is True
+          assert j["repeated_capture_gate"]["minimum_distinct_eod_cycles"]==2
+          assert j["repeated_capture_gate"]["automatic_schedule_enabled_by_this_contract"] is False
+          assert j["repeated_capture_gate"]["raw_endless_archive_allowed"] is False
+          assert j["guardrails"]["active_v2r3_change_allowed"] is False
+          assert j["guardrails"]["v2r4_change_allowed"] is False
+          assert j["guardrails"]["orders"] is False
+          assert j["guardrails"]["real_money_actions"] is False
+          assert j["guardrails"]["sealed_2026h1_holdout_open_allowed"] is False
+          print("V3_H8_CAPTURE_CONTRACT PASS prospective/bounded/no-signal/no-holdout")
+          PY
+
+      - name: One live public H8 known-at capture smoke
+        run: |
+          python tools/v3-h8-coinmetrics-known-at-capture.py --assets btc,eth,sol,xrp,ada --output /tmp/h8-known-at.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/h8-known-at.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["returned_asset_count"] > 0
+          k=j["known_at_interpretation"]
+          assert k["observation_time_is_publication_time"] is False
+          assert k["retrieved_at_is_safe_known_at_upper_bound"] is True
+          assert k["asset_eod_completion_is_exact_per_metric_publication_time"] is False
+          assert k["single_capture_proves_historical_known_at"] is False
+          assert k["repeated_prospective_capture_required_for_first_seen_lag"] is True
+          g=j["guardrails"]
+          assert g["api_key_used"] is False
+          assert g["historical_backfill_performed"] is False
+          assert g["performance_trial_started"] is False
+          assert g["holdout_opened"] is False
+          assert g["active_v2r3_changed"] is False
+          assert g["v2r4_changed"] is False
+          assert g["orders"] is False
+          assert g["real_money_actions"] is False
+          print("V3_H8_KNOWN_AT_LIVE_CAPTURE PASS public/first-seen-upper-bound/no-history")
+          print("H8_CAPTURE_COMPACT "+json.dumps({
+            "request_started_at_utc":j["request_started_at_utc"],
+            "request_finished_at_utc":j["request_finished_at_utc"],
+            "returned_asset_count":j["returned_asset_count"],
+            "rows":[{"asset":r["asset"],"status":r["status"],"retrieved_at_utc":r["retrieved_at_utc"],
+              "observation_time_utc":r.get("observation_time_utc"),
+              "provider_asset_eod_completion_utc":r.get("provider_asset_eod_completion_utc"),
+              "returned_metric_ids":sorted((r.get("metrics") or {}).keys())} for r in j["rows"]]
+          },sort_keys=True))
+          PY

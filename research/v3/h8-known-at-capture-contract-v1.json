@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H8_COINMETRICS_KNOWN_AT_CAPTURE_CONTRACT_V1",
+  "hypothesis_id": "V3-H8",
+  "status": "PREREGISTERED_CAPTURE_METHOD_NOT_SIGNAL_TRIAL",
+  "source": "coinmetrics_community_network_data",
+  "endpoint": "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics",
+  "fixed_assets": [
+    "btc",
+    "eth",
+    "sol",
+    "xrp",
+    "ada"
+  ],
+  "fixed_metrics": [
+    "AdrActCnt",
+    "TxCnt",
+    "CapMVRVCur",
+    "FlowInExUSD",
+    "FlowOutExUSD",
+    "AssetEODCompletionTime"
+  ],
+  "frequency": "1d",
+  "semantic_contract": {
+    "row_time": "metric interval timestamp; never treated as publication/known-at time",
+    "retrieved_at_utc": "safe upper bound for when returned values were known to this project",
+    "AssetEODCompletionTime": "provider-reported time when the asset daily metric set has completed; conservative availability context, not exact per-metric publication time",
+    "status_time_fields_if_returned": "record only; do not assume present for every metric or community response",
+    "first_seen_requires_prospective_capture": true,
+    "revisions_do_not_rewrite_prior_capture": true,
+    "missing_or_unsupported_metric_stays_missing": true
+  },
+  "first_capture_goal": {
+    "prove_public_no_key_value_retrieval": true,
+    "record_retrieval_clock": true,
+    "record_latest_returned_observation_per_asset": true,
+    "record_provider_eod_completion_when_available": true,
+    "performance_metrics_allowed": false,
+    "threshold_selection_allowed": false,
+    "signal_decision_allowed": false
+  },
+  "repeated_capture_gate": {
+    "required_before_historical_known_at_claim": true,
+    "minimum_distinct_eod_cycles": 2,
+    "purpose": "observe first appearance/revision behavior and bound publication lag prospectively",
+    "automatic_schedule_enabled_by_this_contract": false,
+    "raw_endless_archive_allowed": false,
+    "compact_capture_only": true
+  },
+  "guardrails": {
+    "private_api": false,
+    "api_key": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "paper_runtime_change_allowed": false,
+    "orders": false,
+    "leverage": false,
+    "real_money_actions": false,
+    "sealed_2026h1_holdout_open_allowed": false
+  },
+  "next_gate": "ONE_LIVE_CAPTURE_SMOKE_THEN_BOUNDED_REPEATED_CAPTURE_ACROSS_AT_LEAST_TWO_EOD_CYCLES"
+}
