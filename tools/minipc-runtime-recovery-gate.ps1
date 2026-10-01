@@ -35,13 +35,15 @@ $taskNames = @(
   "CryptoMiniPC-LogCleanup",
   "CryptoMiniPC-KrakenCanary",
   "CryptoMiniPC-AltradyTrigger",
-  "CryptoMiniPC-KrakenUniverse"
+  "CryptoMiniPC-KrakenUniverse",
+  "CryptoMiniPC-V2R4WSShadow"
 )
 $startupNames = @(
   "CryptoMiniPC-Health",
   "CryptoMiniPC-KrakenCanary",
   "CryptoMiniPC-AltradyTrigger",
-  "CryptoMiniPC-KrakenUniverse"
+  "CryptoMiniPC-KrakenUniverse",
+  "CryptoMiniPC-V2R4WSShadow"
 )
 $taskRows = @()
 
@@ -124,6 +126,25 @@ if (-not (Test-Path $altradyPath)) {
   }
 }
 
+$shadow = $null
+$shadowPath = Join-Path $stateDir "v2r4-ws-shadow-heartbeat.json"
+if (-not (Test-Path $shadowPath)) {
+  Add-Issue "v2r4_ws_shadow_heartbeat_missing"
+} else {
+  try {
+    $shadow = Get-Content $shadowPath -Raw | ConvertFrom-Json
+    $age = Age-Sec $shadow.checked_at_utc
+    if ([string]$shadow.status -notin @("HEALTHY","DUPLICATE_SKIPPED")) { Add-Issue "v2r4_ws_shadow_not_healthy" }
+    if ($age -gt 30) { Add-Issue "v2r4_ws_shadow_stale" }
+    if ([int]$shadow.counters.snapshots_processed -le 0) { Add-Issue "v2r4_ws_shadow_no_processed_snapshots" }
+    if ([string]$shadow.strategy_action -ne "NONE_SHADOW_ONLY") { Add-Issue "v2r4_ws_shadow_guardrail_changed" }
+    if ([bool]$shadow.real_money_actions) { Add-Issue "v2r4_ws_shadow_real_money_guardrail_changed" }
+  } catch {
+    Add-Issue "v2r4_ws_shadow_invalid"
+  }
+}
+
+
 Write-Host "[RUNTIME-RECOVERY] 3/5 Watchdog"
 
 $health = $null
@@ -195,6 +216,17 @@ $result = [ordered]@{
         detail = $altrady.detail
       }
     } else { $null }
+    v2r4_ws_shadow = if ($shadow) {
+      [ordered]@{
+        status = $shadow.status
+        age_sec = Age-Sec $shadow.checked_at_utc
+        snapshots_processed = [int]$shadow.counters.snapshots_processed
+        events_emitted = [int]$shadow.counters.events_emitted
+        gap_recoveries = [int]$shadow.counters.gap_recoveries
+        recovery_epoch = [int]$shadow.recovery_epoch
+        strategy_action = $shadow.strategy_action
+      }
+    } else { $null }
   }
   watchdog = if ($health) {
     [ordered]@{
@@ -234,6 +266,9 @@ if ($universe) {
 }
 if ($altrady) {
   Write-Host ("Altrady transport: " + $altrady.status + " | age=" + (Age-Sec $altrady.checked_at_utc) + "s")
+}
+if ($shadow) {
+  Write-Host ("V2R4 WS shadow: " + $shadow.status + " | age=" + (Age-Sec $shadow.checked_at_utc) + "s | snapshots=" + $shadow.counters.snapshots_processed + " | events=" + $shadow.counters.events_emitted + " | recovery_epoch=" + $shadow.recovery_epoch)
 }
 Write-Host ("Watchdog: " + $(if ($health) { [string]$health.status } else { "missing" }))
 Write-Host ("Kraken HTTP: " + $(if ($krakenHttp) { $krakenHttp } else { "failed" }))
