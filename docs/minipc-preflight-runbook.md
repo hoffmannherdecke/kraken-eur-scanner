@@ -1320,6 +1320,20 @@ A separate one-time repeat-guard dispatch then ran paper runtime again without a
 
 This is the prospective end-to-end proof that the repaired runtime now persists new decisions in the first evaluation run and does not immediately re-evaluate the same candidates merely because their decision files were lost. The temporary verification workflow was removed after use.
 
+### Clean V2R3 post-repair live integrity recheck 2026-10-01
+
+After the runtime-only persistence repair and clean-series restart, three independent prospective evaluator batches were observed:
+
+- first batch: 3 new candidates persisted once;
+- immediate repeat-guard verification runs selected **0** already-persisted candidates;
+- second batch: 3 new candidates persisted once;
+- third batch: 1 new candidate persisted once;
+- all observed clean-series decisions remained paper-only and no trade was opened;
+- the active strategy fingerprint remains identical to the predecessor V2R3 strategy fingerprint;
+- current MINI-PC cloud health remains **HEALTHY / OK / issues none**.
+
+This strengthens the evidence that the persistence repair fixed the repeat-evaluation contamination without changing strategy logic.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
