@@ -131,7 +131,7 @@ def main()->int:
             "exact_wall_clock_lookbacks_used":True,
             "missing_lookbacks_remain_missing":True,
             "zero_fill_not_used":True,
-            "current_live_universe_filter_used":False,
+            "current_live_universe_filter_not_used":True,
         },
         "guardrails":{
             "performance_trial_started":False,
