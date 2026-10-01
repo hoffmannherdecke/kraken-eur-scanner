@@ -105,6 +105,12 @@ Contract:
 
 Validation:
 
+- MINI-PC V2R4 WAIT runtime smoke **Run #1: SUCCESS** on a Windows-shaped runner;
+- one local Altrady wakeup hint caused exactly one same-pair Kraken condition check and one fresh paper recheck;
+- trigger -> recheck start in that bounded smoke: **0.002 s**;
+- second run on identical state produced **0 duplicate rechecks** (`IDEMPOTENT_PASS`);
+- heartbeat proved `kraken_public_is_condition_truth=true`, `altrady_role=WAKEUP_HINT_ONLY`, `strategy_action=FRESH_PAPER_RECHECK_ONLY`, `order_api=false`, `real_money_actions=false`;
+
 - V2R4 PR validation **Run #14: SUCCESS**, including the new runtime tests;
 - refreshed trigger→fresh-recheck E2E **Run #2: SUCCESS** against PR #9.
 
