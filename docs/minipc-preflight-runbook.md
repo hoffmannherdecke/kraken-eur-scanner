@@ -199,6 +199,8 @@ Ab 2026-09-30 gilt für die weitere MINI-PC-Inbetriebnahme:
 
 - ChatGPT übernimmt alle Prüfungen selbst, die über GitHub, GitHub Actions, Supabase, Slack, öffentliche APIs/Marktdaten oder reine Code-/Konfigurationsanalyse möglich sind.
 - Der Nutzer soll nur noch Tests ausführen, die zwingend den konkreten MINI-PC, dessen Windows-/Zertifikats-/Netzwerk-/BIOS-Zustand oder den echten Heimnetz-/VPN-Pfad betreffen.
+- **Arbeitsfluss ab 2026-10-01 verbindlich nachgeschärft:** Keine Zwischenfreigaben mehr für jeden Teilschritt. ChatGPT arbeitet bis zum nächsten echten physischen/Account-/Sicherheits-Gate selbstständig durch. Nach einer Nutzeraktion wird die Arbeit automatisch fortgesetzt, ohne dass ein erneutes „weiter“ nötig ist.
+- Wenn ein Test nur Zeit braucht oder Evidenz reifen muss, wird diese Wartezeit für andere unabhängige Runbook-/Backlog-Punkte genutzt. Nutzeraktionen werden nach Möglichkeit als gebündelter Sammeltest vorbereitet.
 - Mehrere lokale Einzelprüfungen werden nach Möglichkeit in einem einzigen read-only Sammeltest gebündelt.
 - Dafür liegt `tools/minipc-selftest.ps1` im kanonischen Repo. Das Skript verändert keine Systemkonfiguration und schreibt nur einen Diagnosebericht nach `%USERPROFILE%\Trading\Logs`.
 - Kein wiederholtes manuelles Copy/Paste einzelner Diagnosebefehle, wenn dieselbe Evidenz über den Sammeltest oder direkt aus verbundenen Systemen erhoben werden kann.
