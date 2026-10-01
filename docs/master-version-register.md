@@ -175,3 +175,8 @@ The readiness review proved that V2R4 is not literally a timing-only delta:
 - the proposed spec itself says the adaptive sizing contract is required before a full V2R4 series, while the mapper is still not wired.
 
 No silent sizing choice is permitted. The later activation review must explicitly version either a timing-isolation series that retains V2R3 sizing or a combined timing+sizing series after the adaptive mapper is separately implemented and tested.
+
+
+### V2R4 paper release checklist
+
+The bounded release/rollback procedure is now canonical in `docs/v2r4-paper-activation-checklist.md`. It preserves a fail-closed manual release boundary, requires final V2R3 review first, requires an explicit sizing decision, and forbids reusing/rewriting the closed V2R3 series as V2R4.
