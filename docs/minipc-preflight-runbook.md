@@ -883,7 +883,17 @@ To make future shadow/outcome analysis available without repeated MINI-PC screen
 - Watchdog and runtime-recovery tooling detect the sync automatically once installed;
 - RLS-with-no-policy advisor result is intentional for this server-only archive path.
 
-**Next physical MINI-PC action:** pull `main` and run the cloud-archive installer once. It performs an authenticated one-shot archive smoke first and registers `CryptoMiniPC-V2R4ShadowCloudSync` only if that succeeds. The secret is never printed.
+**Physical activation verified 2026-10-01:**
+- authenticated one-shot archive smoke: **PASS**;
+- persistent task `CryptoMiniPC-V2R4ShadowCloudSync`: **HEALTHY**;
+- initial upload: **23 records** in **1 batch**;
+- persistent heartbeat immediately after install: **pending=0 / uploaded_this_cycle=0**;
+- independent Supabase verification: **23 rows** present in `public.v2r4_shadow_evidence`;
+- no outcome payloads yet at activation time, as expected because the prospective outcome tracker had only just started;
+- secret was not printed;
+- safety remained **ARCHIVE ONLY / NO EVALUATOR / NO ACCOUNT / NO ORDERS / NO REAL-MONEY ACTION**.
+
+This closes the MINI-PC shadow cloud-archive activation gate. Future new shadow events and their eventual outcome payloads can now be inspected centrally without repeated manual file transfer from the MINI-PC.
 
 ### Final runbook items — intentionally last
 
