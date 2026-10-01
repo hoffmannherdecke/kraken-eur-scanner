@@ -1011,6 +1011,19 @@ This confirms that the earlier stale WS-shadow/outcome warnings cleared after th
 
 A controlled self-heal smoke is now prepared as `tools/minipc-runtime-supervisor-selfheal-smoke.ps1`. It stops only the idempotent archive-only support task `CryptoMiniPC-V2R4ShadowCloudSync`, waits for the supervisor to recover it automatically, verifies heartbeat advancement and guardrails, then refreshes the local watchdog. Windows CI for the smoke is **PASS**.
 
+### MINI-PC runtime supervisor self-heal verified 2026-10-01
+
+Physical controlled self-heal smoke result:
+- status: **PASS**;
+- target support task: `CryptoMiniPC-V2R4ShadowCloudSync`;
+- target task after test: **Running**;
+- target heartbeat advanced after the forced stop;
+- runtime supervisor: **HEALTHY**;
+- local watchdog after recovery: **HEALTHY**;
+- safety remained **ARCHIVE SUPPORT TASK ONLY / NO STRATEGY CHANGE / NO EVALUATOR / NO ORDERS / NO REAL-MONEY ACTION**.
+
+This closes the bounded local self-heal gate for the MINI-PC runtime supervisor.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
