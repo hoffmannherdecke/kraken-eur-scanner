@@ -45,6 +45,10 @@ $startupNames = @(
   "CryptoMiniPC-KrakenUniverse",
   "CryptoMiniPC-V2R4WSShadow"
 )
+if (Get-ScheduledTask -TaskName "CryptoMiniPC-V2R4ShadowOutcomes" -ErrorAction SilentlyContinue) {
+  $taskNames += "CryptoMiniPC-V2R4ShadowOutcomes"
+  $startupNames += "CryptoMiniPC-V2R4ShadowOutcomes"
+}
 $taskRows = @()
 
 foreach ($name in $taskNames) {
@@ -144,6 +148,26 @@ if (-not (Test-Path $shadowPath)) {
   }
 }
 
+$outcomes = $null
+$outcomesTask = Get-ScheduledTask -TaskName "CryptoMiniPC-V2R4ShadowOutcomes" -ErrorAction SilentlyContinue
+if ($outcomesTask) {
+  $outcomesPath = Join-Path $stateDir "v2r4-ws-shadow-outcome-heartbeat.json"
+  if (-not (Test-Path $outcomesPath)) {
+    Add-Issue "v2r4_ws_shadow_outcomes_heartbeat_missing"
+  } else {
+    try {
+      $outcomes = Get-Content $outcomesPath -Raw | ConvertFrom-Json
+      $age = Age-Sec $outcomes.checked_at_utc
+      if ([string]$outcomes.status -ne "HEALTHY") { Add-Issue "v2r4_ws_shadow_outcomes_not_healthy" }
+      if ($age -gt 60) { Add-Issue "v2r4_ws_shadow_outcomes_stale" }
+      if ([string]$outcomes.strategy_action -ne "NONE_EVIDENCE_ONLY") { Add-Issue "v2r4_ws_shadow_outcomes_guardrail_changed" }
+      if ([bool]$outcomes.real_money_actions) { Add-Issue "v2r4_ws_shadow_outcomes_real_money_guardrail_changed" }
+    } catch {
+      Add-Issue "v2r4_ws_shadow_outcomes_invalid"
+    }
+  }
+}
+
 
 Write-Host "[RUNTIME-RECOVERY] 3/5 Watchdog"
 
@@ -227,6 +251,17 @@ $result = [ordered]@{
         strategy_action = $shadow.strategy_action
       }
     } else { $null }
+    v2r4_ws_shadow_outcomes = if ($outcomes) {
+      [ordered]@{
+        status = $outcomes.status
+        age_sec = Age-Sec $outcomes.checked_at_utc
+        active_events = [int]$outcomes.active_events
+        enrolled = [int]$outcomes.counters.events_enrolled
+        completed = [int]$outcomes.counters.events_completed
+        incomplete_timeout = [int]$outcomes.counters.events_incomplete_timeout
+        strategy_action = $outcomes.strategy_action
+      }
+    } else { $null }
   }
   watchdog = if ($health) {
     [ordered]@{
@@ -269,6 +304,9 @@ if ($altrady) {
 }
 if ($shadow) {
   Write-Host ("V2R4 WS shadow: " + $shadow.status + " | age=" + (Age-Sec $shadow.checked_at_utc) + "s | snapshots=" + $shadow.counters.snapshots_processed + " | events=" + $shadow.counters.events_emitted + " | recovery_epoch=" + $shadow.recovery_epoch)
+}
+if ($outcomes) {
+  Write-Host ("V2R4 shadow outcomes: " + $outcomes.status + " | age=" + (Age-Sec $outcomes.checked_at_utc) + "s | active=" + $outcomes.active_events + " | enrolled=" + $outcomes.counters.events_enrolled + " | completed=" + $outcomes.counters.events_completed)
 }
 Write-Host ("Watchdog: " + $(if ($health) { [string]$health.status } else { "missing" }))
 Write-Host ("Kraken HTTP: " + $(if ($krakenHttp) { $krakenHttp } else { "failed" }))
