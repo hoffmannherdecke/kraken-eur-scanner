@@ -7,6 +7,7 @@ name: Historical data preflight
     paths:
       - 'research/historical/**'
       - 'tools/kraken-historical-preflight.py'
+      - 'tools/kraken-trades-targeted-smoke.py'
       - 'tools/historical-pit-smoke.py'
       - 'tools/historical-trial-ledger.py'
       - 'tools/prepare-minipc-historical-research.ps1'
@@ -51,6 +52,7 @@ jobs:
       - name: Compile metadata-only tools
         run: |
           python -m py_compile tools/kraken-historical-preflight.py
+          python -m py_compile tools/kraken-trades-targeted-smoke.py
           python -m py_compile tools/historical-pit-smoke.py
           python -m py_compile tools/historical-trial-ledger.py
           python -m py_compile tools/inspect-kraken-ohlcvt-archive.py
@@ -75,6 +77,65 @@ jobs:
       - name: Run synthetic point-in-time smoke
         run: |
           python tools/historical-pit-smoke.py
+
+      - name: Smoke targeted Kraken Time & Sales methodology
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          Path("/tmp/kraken-trades-synthetic.csv").write_text(
+              "timestamp,price,volume,type,order_type,misc,trade_id\\n"
+              "1000.0,100.0,1.0,b,m,,1\\n"
+              "1002.0,100.2,2.0,s,l,,2\\n"
+              "1004.5,100.1,1.5,b,m,,3\\n"
+              "1006.0,100.4,1.0,b,m,,4\\n"
+              "1008.5,100.3,0.5,s,l,,5\\n",
+              encoding="utf-8"
+          )
+          PY
+          python tools/kraken-trades-targeted-smoke.py \
+            /tmp/kraken-trades-synthetic.csv \
+            --event-ts 1005 \
+            --pre-seconds 5 \
+            --post-seconds 5 \
+            --output /tmp/kraken-trades-targeted-smoke.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/kraken-trades-targeted-smoke.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["event_record_frozen_before_post_labels"] is True
+          assert j["pre_event_metrics"]["trade_count"]==3
+          assert j["post_event_metrics"]["trade_count"]==2
+          assert abs(j["arrival_to_next_public_trade_seconds"]-1.0) < 1e-9
+          assert all(j["point_in_time_assertions"].values())
+          assert j["identifiability_guardrails"]["true_bid_ask_spread_computed"] is False
+          assert j["identifiability_guardrails"]["maker_fill_probability_computed"] is False
+          assert j["guardrails"]["download_performed"] is False
+          assert j["guardrails"]["performance_selection_performed"] is False
+          assert j["guardrails"]["active_strategy_changed"] is False
+          print("KRAKEN_TRADES_TARGETED_SMOKE PASS point-in-time/no-download/no-fake-spread")
+          PY
+
+      - name: Validate targeted Kraken trades preflight guardrails
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("research/historical/kraken-trades-targeted-preflight-v1.json")
+          j=json.loads(p.read_text("utf-8"))
+          assert j["status"]=="PREPARED_NO_DOWNLOAD"
+          assert j["download_enabled"] is False
+          assert j["bulk_download_authorized"] is False
+          assert j["research_role"]=="TARGETED_MICROSTRUCTURE_METHODOLOGY_ONLY"
+          g=j["scope_guardrails"]
+          assert g["full_archive_download_in_ci"] is False
+          assert g["performance_selection_allowed"] is False
+          assert g["holdout_open_allowed"] is False
+          assert g["active_strategy_change_allowed"] is False
+          assert g["real_money_actions_allowed"] is False
+          assert "true_bid_ask_spread" in j["not_identifiable_from_public_trades_alone"]
+          print("KRAKEN_TRADES_PREFLIGHT_GUARDRAILS PASS")
+          PY
 
       - name: Validate trial-ledger schema JSON
         run: |
