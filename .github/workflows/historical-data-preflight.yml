@@ -34,6 +34,7 @@ name: Historical data preflight
       - 'tools/record-performance-replay-trial-v2.py'
       - 'tools/run-minipc-performance-replay-v2.ps1'
       - 'tools/minipc-binance-public-access-smoke.py'
+      - 'tools/binance-derivatives-context-smoke.py'
       - 'tools/run-minipc-binance-public-access-smoke.ps1'
       - '.github/workflows/historical-data-preflight.yml'
 
@@ -57,6 +58,7 @@ jobs:
           python -m py_compile tools/kraken-historical-preflight.py
           python -m py_compile tools/kraken-trades-targeted-smoke.py
           python -m py_compile tools/minipc-binance-public-access-smoke.py
+          python -m py_compile tools/binance-derivatives-context-smoke.py
           python -m py_compile tools/historical-pit-smoke.py
           python -m py_compile tools/historical-trial-ledger.py
           python -m py_compile tools/inspect-kraken-ohlcvt-archive.py
@@ -182,6 +184,52 @@ jobs:
           if ($text -notmatch '"real_money_actions":\s*false') {
             throw "Binance public-access smoke violated real-money guardrail"
           }
+
+      - name: Smoke Binance derivatives point-in-time context
+        run: |
+          python tools/binance-derivatives-context-smoke.py \
+            research/historical/fixtures/binance-derivatives-context-synthetic.json \
+            --event-ts-ms 1100000 \
+            --output /tmp/binance-derivatives-context-smoke.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/binance-derivatives-context-smoke.json").read_text())
+          assert j["status"]=="PASS"
+          assert abs(j["context"]["funding_rate"]-0.00020) < 1e-12
+          assert abs(j["context"]["open_interest_value"]-102000.0) < 1e-9
+          assert abs(j["context"]["open_interest_change_pct"]-2.0) < 1e-9
+          assert abs(j["context"]["taker_buy_sell_ratio"]-1.2) < 1e-9
+          assert abs(j["context"]["basis_rate"]-0.0010) < 1e-12
+          assert abs(j["context"]["long_short_ratio"]-1.10) < 1e-12
+          assert all(j["point_in_time_assertions"].values())
+          assert j["authority_guardrails"]["kraken_eur_execution_price_claimed"] is False
+          assert j["authority_guardrails"]["kraken_eur_fill_probability_claimed"] is False
+          assert j["safety_guardrails"]["network_used"] is False
+          assert j["safety_guardrails"]["performance_selection_performed"] is False
+          assert j["safety_guardrails"]["active_strategy_changed"] is False
+          print("BINANCE_DERIVATIVES_CONTEXT_SMOKE PASS PIT/no-future-leakage/context-only")
+          PY
+
+      - name: Validate Binance derivatives context preflight
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("research/historical/binance-derivatives-context-preflight-v1.json").read_text("utf-8"))
+          assert j["status"]=="PREPARED_NO_BULK_DOWNLOAD"
+          assert j["role"]=="SUPPLEMENTARY_CROSS_MARKET_DERIVATIVES_CONTEXT_ONLY"
+          assert j["primary_market_truth"]=="KRAKEN_SPOT_EUR"
+          assert j["history_guardrails"]["bulk_archive_download_authorized"] is False
+          assert j["history_guardrails"]["recent_api_window_may_be_treated_as_full_history"] is False
+          assert j["history_guardrails"]["performance_selection_allowed"] is False
+          assert j["history_guardrails"]["holdout_open_allowed"] is False
+          assert j["runtime_guardrails"]["api_key_required"] is False
+          assert j["runtime_guardrails"]["orders_allowed"] is False
+          assert j["runtime_guardrails"]["real_money_actions_allowed"] is False
+          assert "kraken_eur_fill_probability" in j["explicitly_not_authoritative_for"]
+          print("BINANCE_DERIVATIVES_PREFLIGHT PASS supplementary/no-bulk/no-execution-truth")
+          PY
 
       - name: Validate trial-ledger schema JSON
         run: |
