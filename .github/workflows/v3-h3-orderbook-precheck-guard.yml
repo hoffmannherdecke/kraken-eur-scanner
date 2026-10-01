@@ -1,0 +1,71 @@
+name: V3 H3 orderbook depth precheck guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/h3-orderbook-depth-precheck-v1.json'
+      - 'tools/v3-h3-kraken-depth-precheck.py'
+      - '.github/workflows/v3-h3-orderbook-precheck-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Compile H3 depth precheck
+        run: python -m py_compile tools/v3-h3-kraken-depth-precheck.py
+      - name: Validate H3 preregistration
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path('research/v3/h3-orderbook-depth-precheck-v1.json').read_text('utf-8'))
+          assert j['kind']=='V3_H3_ORDERBOOK_DEPTH_PRECHECK_V1'
+          assert j['status']=='PRECHECK_L2_SNAPSHOT_ONLY_WEBSOCKET_PENDING'
+          assert 'queue_position' in j['not_proven_by_snapshot']
+          assert 'maker_fill_probability' in j['not_proven_by_snapshot']
+          assert j['future_ws_gate']['required'] is True
+          assert j['future_ws_gate']['bounded_pairs_first'] is True
+          assert j['future_ws_gate']['no_endless_raw_archive'] is True
+          assert j['research_guardrails']['performance_trial_started'] is False
+          assert j['research_guardrails']['threshold_selection_allowed'] is False
+          assert j['runtime_guardrails']['active_v2r3_change_allowed'] is False
+          assert j['runtime_guardrails']['orders_allowed'] is False
+          assert j['runtime_guardrails']['real_money_actions_allowed'] is False
+          print('V3_H3_PREREG PASS snapshot-only/ws-pending/no-fill-claim')
+          PY
+      - name: Real public Kraken depth snapshot smoke
+        run: |
+          python tools/v3-h3-kraken-depth-precheck.py \
+            --pairs XBTEUR,ETHEUR,SOLEUR \
+            --count 10 \
+            --output /tmp/h3-depth.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path('/tmp/h3-depth.json').read_text())
+          assert j['status']=='PASS'
+          assert len(j['pairs'])==3
+          for row in j['pairs']:
+              assert row['best_ask'] > row['best_bid'] > 0
+              assert row['spread_bps'] > 0
+              assert row['bid_levels'] > 0 and row['ask_levels'] > 0
+              assert row['bid_depth_quote_top_n'] > 0 and row['ask_depth_quote_top_n'] > 0
+          assert j['interpretation']['snapshot_semantics_only'] is True
+          assert j['interpretation']['websocket_delta_sequence_proven'] is False
+          assert j['interpretation']['queue_position_proven'] is False
+          assert j['interpretation']['maker_fill_probability_proven'] is False
+          assert j['guardrails']['performance_trial_started'] is False
+          assert j['guardrails']['orders'] is False
+          print('V3_H3_DEPTH PASS public-L2-snapshot/no-queue-no-fill')
+          print(json.dumps({'pairs':[{'pair':x['requested_pair'],'spread_bps':round(x['spread_bps'],3),'bid_depth':round(x['bid_depth_quote_top_n'],2),'ask_depth':round(x['ask_depth_quote_top_n'],2)} for x in j['pairs']]},sort_keys=True))
+          PY
