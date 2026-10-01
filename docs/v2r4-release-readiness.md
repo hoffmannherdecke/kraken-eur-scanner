@@ -287,6 +287,26 @@ Affected views:
 This was an infrastructure/security hardening change only; no strategy rule, score, threshold, stop, sizing or order path changed.
 
 
+## Additional WS-shadow support-process recovery sample — 2026-10-01 16:44–16:54 UTC
+
+A later status sample again showed the local **old-revision** watchdog as `WARNING / FEED_STALE` because the WS-shadow support heartbeat had stopped advancing for about 10 minutes. During that window:
+
+- Kraken canary remained healthy;
+- Kraken universe remained healthy at full coverage;
+- outcome tracker remained healthy;
+- cloud sync and Altrady transport remained healthy;
+- no real-money/order path existed.
+
+By 16:54 UTC, without user intervention:
+
+- MINI-PC returned to **HEALTHY / OK / issues=[]**;
+- WS-shadow heartbeat resumed at age ~0 s;
+- source age was ~2.4 s;
+- shadow event count advanced again;
+- runtime supervisor was HEALTHY.
+
+This is retained as a short operational evidence gap, not strategy-performance evidence. It also confirms that no emergency user action was required. The repository-side jitter/taxonomy hardening remains queued for the single planned local sync rather than interrupting the clean V2R3 series.
+
 ## MINI-PC watchdog false-stale hardening — repository verified
 
 A transient remote sample had reported `WARNING / FEED_STALE` while the underlying Kraken source was fresh. The repository fix is now CI-verified:
