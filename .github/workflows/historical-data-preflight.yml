@@ -25,6 +25,7 @@ name: Historical data preflight
       - 'tools/historical-performance-replay-v1.py'
       - 'tools/record-performance-replay-trial.py'
       - 'tools/run-minipc-performance-replay-v1.ps1'
+      - 'tools/review-performance-replay-v1.py'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -57,6 +58,7 @@ jobs:
           python -m py_compile tools/validate-performance-replay-spec.py
           python -m py_compile tools/historical-performance-replay-v1.py
           python -m py_compile tools/record-performance-replay-trial.py
+          python -m py_compile tools/review-performance-replay-v1.py
 
       - name: Validate no-download Kraken manifest
         run: |
@@ -429,6 +431,28 @@ jobs:
           assert j["guardrails"]["cross_pair_ranking_performed"] is False
           assert j["execution_semantics"]["portfolio_equity_curve_computed"] is False
           print("PERFORMANCE_REPLAY_V1 PASS frozen/synthetic/holdout-sealed")
+          PY
+
+      - name: Smoke validation-only Performance Replay V1 review
+        run: |
+          python tools/review-performance-replay-v1.py \
+            --spec research/historical/performance-replay-spec-v1.json \
+            --result /tmp/perf-v1-result.json \
+            --events /tmp/perf-v1-events.jsonl.gz \
+            --output /tmp/perf-v1-validation-review.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/perf-v1-validation-review.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["interpretation"]["threshold_sweep_performed"] is False
+          assert j["interpretation"]["horizon_sweep_performed"] is False
+          assert j["interpretation"]["pair_selection_performed"] is False
+          assert j["interpretation"]["month_selection_performed"] is False
+          assert j["interpretation"]["holdout_opened"] is False
+          assert j["interpretation"]["diagnostic_only"] is True
+          assert j["guardrails"]["active_strategy_changed"] is False
+          print("PERFORMANCE_V1_VALIDATION_REVIEW PASS diagnostic-only/holdout-sealed")
           PY
 
       - name: Smoke immutable performance replay V1 Trial Ledger record
