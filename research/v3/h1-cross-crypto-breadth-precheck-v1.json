@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H1_CROSS_CRYPTO_BREADTH_PRECHECK_V1",
   "hypothesis_id": "V3-H1",
-  "status": "PRECHECK",
+  "status": "PRECHECK_PIT_METHOD_GREEN",
   "prepared_at_utc": "2026-10-01T18:25:00Z",
   "purpose": "Establish point-in-time-safe cross-crypto lead/lag and breadth feature semantics before any performance trial.",
   "source_priority": [
@@ -69,5 +69,14 @@
     "real_money_actions": false,
     "automatic_strategy_promotion": false
   },
-  "next_gate": "SYNTHETIC_PIT_MULTI_PAIR_FEATURE_SMOKE_ONLY"
+  "next_gate": "PREREGISTER_REAL_NORMALIZED_EUR15_DEVELOPMENT_DATASET_AND_FEATURE_ONLY_TRIAL_NO_HOLDOUT",
+  "methodology_readiness": {
+    "synthetic_pit_multi_pair_smoke": "CI_GREEN_RUN_3",
+    "future_rows_leakage_trap": "PASS_IGNORED",
+    "missing_exact_1h_lookback": "PASS_REMAINS_MISSING_AND_DENOMINATOR_EXPLICIT",
+    "exact_wall_clock_alignment": "PASS",
+    "performance_trial_started": false,
+    "holdout_opened": false,
+    "note": "Two preceding failed CI attempts were assertion-polarity wiring errors in the smoke output guard, not point-in-time/data failures."
+  }
 }
