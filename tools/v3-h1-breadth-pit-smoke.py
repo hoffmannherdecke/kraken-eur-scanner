@@ -130,7 +130,7 @@ def main()->int:
             "exact_cutoff_bar_required":close_exact(pairs[target],args.cutoff_epoch) is not None,
             "exact_wall_clock_lookbacks_used":True,
             "missing_lookbacks_remain_missing":True,
-            "zero_fill_used":False,
+            "zero_fill_not_used":True,
             "current_live_universe_filter_used":False,
         },
         "guardrails":{
