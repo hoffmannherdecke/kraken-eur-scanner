@@ -3,16 +3,18 @@ from __future__ import annotations
 import argparse, hashlib, json
 from pathlib import Path
 
-def sha256_file(p: Path) -> str:
-    h=hashlib.sha256()
-    with p.open("rb") as f:
-        for chunk in iter(lambda:f.read(1024*1024),b""):
-            h.update(chunk)
-    return h.hexdigest()
+def normalized_text_sha256(p: Path) -> str:
+    # Git may materialize text files with CRLF on Windows. The frozen spec
+    # identity is based on LF-normalized UTF-8 bytes so checkout line endings
+    # cannot change the lock identity.
+    text=p.read_text("utf-8")
+    text=text.replace("\r\n","\n").replace("\r","\n")
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 def main() -> int:
     ap=argparse.ArgumentParser()
     ap.add_argument("spec", type=Path)
+    ap.add_argument("--expected-sha256")
     args=ap.parse_args()
     s=json.loads(args.spec.read_text("utf-8"))
     assert s["kind"]=="KRAKEN_EUR15_PERFORMANCE_REPLAY_SPEC_V1"
@@ -30,10 +32,15 @@ def main() -> int:
     assert s["signal"]["no_score_optimization"] is True
     assert s["search_accounting"]["v1_counts_as_one_pre_registered_trial"] is True
     assert s["safety"]["active_strategy_changed"] is False
+    spec_sha=normalized_text_sha256(args.spec)
+    if args.expected_sha256 and spec_sha != args.expected_sha256.lower():
+        raise SystemExit(
+            f"frozen spec checksum mismatch: expected {args.expected_sha256.lower()} got {spec_sha}"
+        )
     print(json.dumps({
         "kind":"PERFORMANCE_REPLAY_SPEC_VALIDATION_V1",
         "status":"PASS",
-        "spec_sha256":sha256_file(args.spec),
+        "spec_sha256":spec_sha,
         "holdout_status":s["validation_topology"]["sealed_holdout"]["status"],
         "primary_cost_pct":s["cost_model"]["primary_cost_for_trial_selection_pct_round_trip"],
         "signal_conditions":s["signal"]["all_conditions_required"],
