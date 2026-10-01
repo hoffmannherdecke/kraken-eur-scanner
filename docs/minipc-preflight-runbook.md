@@ -986,6 +986,21 @@ The supervisor is deliberately restricted to public-data/transport/shadow/eviden
 
 **Next physical MINI-PC action:** pull `main` and install the runtime supervisor once. This should also recover the currently stale WS-shadow and outcome-tracker tasks and preserve the detected gap in evidence quality.
 
+### MINI-PC runtime supervisor activated 2026-10-01
+
+Physical installer result:
+- supervisor status: **HEALTHY**;
+- recovered tasks during this install: **none** (all monitored runtimes were healthy by the time of the successful installer run);
+- local watchdog after recovery refresh: **HEALTHY**;
+- persistent task `CryptoMiniPC-RuntimeSupervisor` installed;
+- cadence: **every 2 minutes + at startup**;
+- repeated restart attempts for the same task are limited to once per **10 minutes**;
+- safety remained **READ-ONLY RUNTIMES ONLY / NO STRATEGY CHANGE / NO EVALUATOR / NO ORDERS / NO REAL-MONEY ACTION**.
+
+The first installer attempt exposed a robustness bug where the installer assumed the supervisor report file existed even after an early supervisor failure. The supervisor/installer were hardened to always emit diagnostics before the successful activation.
+
+Next validation gate: perform one controlled self-heal smoke against a non-strategy, idempotent read-only support task and prove that the supervisor restarts it without user intervention.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
