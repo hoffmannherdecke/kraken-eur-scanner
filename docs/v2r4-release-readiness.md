@@ -121,3 +121,40 @@ No strategy logic was changed.
 6. wait for sufficient clean V2R3 maturity before any activation review.
 
 A V2R4 paper activation decision is a separate explicit gate and must never be inferred from technical green status alone.
+
+
+## Supabase / analytics hardening — 2026-10-01
+
+The release-readiness review also exposed a database-linter issue that was independent of strategy performance:
+
+- five analytics/readiness views were flagged as owner-permission / security-definer views;
+- all five repository view definitions now explicitly use `security_invoker=true`;
+- the matching Supabase migration was applied;
+- security advisor recheck: **no remaining security-definer-view ERROR**;
+- the remaining `RLS enabled, no policy` notices are INFO-level and intentional for the current server-only/fail-closed tables; no anonymous/client policy was added merely to silence the advisor;
+- one unused-index performance INFO remains and is not a release blocker.
+
+Affected views:
+- `public.v2r3_clean_integrity_summary`
+- `public.v2r3_interim_horizon_summary`
+- `public.v2r4_shadow_completion_readiness`
+- `public.v2r4_shadow_outcome_metrics`
+- `public.v2r4_shadow_scanner_match_quality`
+
+This was an infrastructure/security hardening change only; no strategy rule, score, threshold, stop, sizing or order path changed.
+
+
+## MINI-PC watchdog false-stale hardening — repository verified
+
+A transient remote sample had reported `WARNING / FEED_STALE` while the underlying Kraken source was fresh. The repository fix is now CI-verified:
+
+- harmless V2R4 watcher heartbeat scheduling jitter gets up to 30 s;
+- underlying Kraken source freshness remains strict at 15 s;
+- `FEED_STALE` is reserved for Kraken canary/universe source failures;
+- shadow/outcome support-process failures classify as `DEGRADED` when source transport is still healthy;
+- MINI-PC tools smoke **#99 SUCCESS** for heartbeat tolerance;
+- MINI-PC tools smoke **#100 SUCCESS** for the taxonomy correction.
+
+A subsequent centrally observed MINI-PC sample returned naturally to **HEALTHY / OK / issues none** with Kraken canary, universe feed, WS-shadow, outcome tracker, cloud sync, Altrady transport and runtime supervisor all healthy.
+
+The local MINI-PC repository had not yet pulled these final repository-side watchdog refinements at the time of that sample. They remain a low-risk bundled local pull + effectiveness verification for the next genuine local maintenance gate; there is no need to interrupt the running evidence collection solely for this.
