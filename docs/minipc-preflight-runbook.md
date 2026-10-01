@@ -757,6 +757,29 @@ Actual MINI-PC result:
 
 This closes the controlled Internet-loss/reconnect transport gate. Because no strategy runtime is coupled yet, stale candidate replay is not applicable at this stage; that behavior remains a separate strategy-runtime gate before any later live execution.
 
+### V2R4 WS-driven shadow layer prepared 2026-10-01
+
+After the transport/recovery gates passed, the next timing layer was prepared without activating V2R4 decisions:
+
+- Draft-PR #8 now contains `paper_evaluator/v2r4_ws_shadow_watcher.py`;
+- it consumes the already-running local `kraken-eur-ticker-latest.json` instead of polling broad REST ticker data;
+- it builds rolling point-in-time 10m/30m/1h/3h/6h/12h observations;
+- it rejects stale global input, ignores duplicate/stale pair updates and suppresses one trigger cycle after a material feed gap;
+- it writes a rotating timing ledger and compact bounded-persistence state;
+- it never invokes the evaluator and cannot place orders;
+- focused unit tests + bounded synthetic runtime CI are **PASS**;
+- Windows parse/smoke for the physical smoke, installer and rollback scripts is **PASS**.
+
+Prepared local tooling on `main`:
+- `tools/minipc-v2r4-ws-shadow-smoke.ps1`
+- `tools/install-minipc-v2r4-ws-shadow.ps1`
+- `tools/uninstall-minipc-v2r4-ws-shadow.ps1`
+- local watchdog automatically checks the shadow heartbeat once the task exists.
+
+**Next physical MINI-PC action:** pull `main` and run the guarded installer once from elevated PowerShell. It first performs a bounded physical WS-shadow smoke against the live local Kraken snapshot. Only if that passes does it pin the inactive V2R4 prep commit and register `CryptoMiniPC-V2R4WSShadow` as a startup task.
+
+Safety remains: V2R3 unchanged / shadow-only / no evaluator / no account / no orders / no real-money action.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
