@@ -123,9 +123,11 @@ Regeln:
 - erst als bestanden markieren, wenn die Verbindung außerhalb des Heimnetzes funktioniert.
 
 Aktueller Stand:
-- WireGuard-Konfiguration ist vorbereitet;
+- WireGuard-Konfiguration ist eingerichtet;
 - interner RDP-Zugriff ist verifiziert;
-- echter Außentest ist **DEFERRED / FINAL PHASE**.
+- **echter Außentest am 2026-10-01 erfolgreich bestanden:** Notebook ausschließlich über Smartphone-Hotspot/Mobilfunk angebunden, WireGuard-Tunnel aktiv, anschließend RDP-Verbindung auf den MINI-PC unter `192.168.178.179` hergestellt und ohne Einschränkungen bedient;
+- keine direkte RDP-Portfreigabe ins Internet verwendet;
+- **H1 ist damit abgeschlossen.**
 
 ### H2 — Laufwerk D: sichern, reparieren und neu verifizieren
 
