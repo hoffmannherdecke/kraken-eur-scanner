@@ -6,6 +6,8 @@ name: V3 H3 orderbook depth precheck guard
     branches: [main]
     paths:
       - 'research/v3/h3-orderbook-depth-precheck-v1.json'
+      - 'research/v3/h3-ws-book-reconciliation-evidence-20261001T193640Z.json'
+      - 'tools/run-minipc-v3-h3-ws-book-smoke.ps1'
       - 'tools/v3-h3-kraken-depth-precheck.py'
       - 'tools/v3-h3-kraken-ws-book-reconciliation-smoke.py'
       - '.github/workflows/v3-h3-orderbook-precheck-guard.yml'
@@ -134,4 +136,24 @@ jobs:
               "symbols":c["symbols"]
             } for c in j["cycles"]]
           },sort_keys=True))
+          PY
+
+
+      - name: Validate persisted H3 cloud WS evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("research/v3/h3-ws-book-reconciliation-evidence-20261001T193640Z.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["totals"]["updates"]==1611
+          assert j["totals"]["checksum_pass"]==1617
+          assert j["totals"]["checksum_fail"]==0
+          assert len(j["cycles"])==2
+          assert all(not c["errors"] for c in j["cycles"])
+          assert j["interpretation"]["l2_snapshot_and_delta_reconciliation_proven"] is True
+          assert j["interpretation"]["bounded_reconnect_resubscribe_proven"] is True
+          assert j["interpretation"]["queue_position_proven"] is False
+          assert j["interpretation"]["maker_fill_probability_proven"] is False
+          print("V3_H3_PERSISTED_EVIDENCE PASS cloud-ws/checksum/reconnect/no-fill-claim")
           PY

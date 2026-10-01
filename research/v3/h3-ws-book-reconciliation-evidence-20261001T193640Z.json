@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_KRAKEN_SPOT_WS_BOOK_RECONCILIATION_EVIDENCE_V1",
+  "status": "PASS",
+  "provenance": {
+    "github_workflow": "V3 H3 orderbook depth precheck guard",
+    "github_run_id": 36915469722,
+    "github_run_number": 4,
+    "github_job_id": 110548240465,
+    "source_commit": "e2bd0a121d7d4d1831bd115f07d52dc3df8d157c"
+  },
+  "checked_at_utc": "2026-10-01T19:36:40.067410Z",
+  "cycles": [
+    {
+      "book_messages": 699,
+      "cycle": 1,
+      "elapsed_seconds": 13.462,
+      "errors": [],
+      "symbols": {
+        "BTC/EUR": {
+          "ask_levels": 10,
+          "bid_levels": 10,
+          "checksum_fail": 0,
+          "checksum_pass": 192,
+          "last_exchange_at_utc": "2026-10-01T19:36:25.285431Z",
+          "last_received_at_utc": "2026-10-01T19:36:25.355655Z",
+          "max_source_age_ms": 164.508,
+          "snapshots": 1,
+          "spread_bps_last": 0.013277,
+          "updates": 191
+        },
+        "ETH/EUR": {
+          "ask_levels": 10,
+          "bid_levels": 10,
+          "checksum_fail": 0,
+          "checksum_pass": 346,
+          "last_exchange_at_utc": "2026-10-01T19:36:25.336629Z",
+          "last_received_at_utc": "2026-10-01T19:36:25.405562Z",
+          "max_source_age_ms": 153.152,
+          "snapshots": 1,
+          "spread_bps_last": 0.083446,
+          "updates": 345
+        },
+        "SOL/EUR": {
+          "ask_levels": 10,
+          "bid_levels": 10,
+          "checksum_fail": 0,
+          "checksum_pass": 161,
+          "last_exchange_at_utc": "2026-10-01T19:36:23.286810Z",
+          "last_received_at_utc": "2026-10-01T19:36:23.354678Z",
+          "max_source_age_ms": 155.514,
+          "snapshots": 1,
+          "spread_bps_last": 0.954608,
+          "updates": 160
+        }
+      }
+    },
+    {
+      "book_messages": 918,
+      "cycle": 2,
+      "elapsed_seconds": 13.463,
+      "errors": [],
+      "symbols": {
+        "BTC/EUR": {
+          "ask_levels": 10,
+          "bid_levels": 10,
+          "checksum_fail": 0,
+          "checksum_pass": 345,
+          "last_exchange_at_utc": "2026-10-01T19:36:38.591732Z",
+          "last_received_at_utc": "2026-10-01T19:36:38.661270Z",
+          "max_source_age_ms": 159.852,
+          "snapshots": 1,
+          "spread_bps_last": 0.026565,
+          "updates": 344
+        },
+        "ETH/EUR": {
+          "ask_levels": 10,
+          "bid_levels": 10,
+          "checksum_fail": 0,
+          "checksum_pass": 391,
+          "last_exchange_at_utc": "2026-10-01T19:36:39.473288Z",
+          "last_received_at_utc": "2026-10-01T19:36:39.541849Z",
+          "max_source_age_ms": 109.753,
+          "snapshots": 1,
+          "spread_bps_last": 0.166944,
+          "updates": 390
+        },
+        "SOL/EUR": {
+          "ask_levels": 10,
+          "bid_levels": 10,
+          "checksum_fail": 0,
+          "checksum_pass": 182,
+          "last_exchange_at_utc": "2026-10-01T19:36:38.883056Z",
+          "last_received_at_utc": "2026-10-01T19:36:38.951466Z",
+          "max_source_age_ms": 108.282,
+          "snapshots": 1,
+          "spread_bps_last": 0.954973,
+          "updates": 181
+        }
+      }
+    }
+  ],
+  "totals": {
+    "checksum_fail": 0,
+    "checksum_pass": 1617,
+    "updates": 1611
+  },
+  "interpretation": {
+    "l2_snapshot_and_delta_reconciliation_proven": true,
+    "crc32_top10_validation_used": true,
+    "bounded_reconnect_resubscribe_proven": true,
+    "explicit_sequence_number_observed": false,
+    "checksum_used_as_synchronization_guard": true,
+    "queue_position_proven": false,
+    "maker_fill_probability_proven": false,
+    "performance_conclusion_allowed": false
+  },
+  "guardrails": {
+    "active_v2r3_changed": false,
+    "v2r4_changed": false,
+    "orders": false,
+    "real_money_actions": false,
+    "threshold_selection": false,
+    "holdout_opened": false,
+    "raw_endless_archive": false
+  }
+}

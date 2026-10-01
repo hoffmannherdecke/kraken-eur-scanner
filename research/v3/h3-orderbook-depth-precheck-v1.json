@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H3_ORDERBOOK_DEPTH_PRECHECK_V1",
   "hypothesis_id": "V3-H3",
-  "status": "PRECHECK_WS_PROTOCOL_SMOKE_PREPARED_CLOUD_PENDING",
+  "status": "PRECHECK_WS_PROTOCOL_GREEN_MINIPC_PENDING",
   "prepared_at_utc": "2026-10-01T18:45:00Z",
   "purpose": "Verify public Kraken-EUR L2 snapshot semantics and bounded depth calculations before any persistent WebSocket orderflow capture.",
   "source": "KRAKEN_PUBLIC_REST_DEPTH",
@@ -51,7 +51,7 @@
     "holdout_opened": false,
     "direct_buy_sell_rule": false
   },
-  "next_gate": "CLOUD_WS_PROTOCOL_RECONCILIATION_SMOKE_THEN_PHYSICAL_MINIPC_BOUNDED_CONFIRMATION",
+  "next_gate": "BOUNDED_MINIPC_PUBLIC_WS_BOOK_CONFIRMATION_SAME_CHECKSUM_CONTRACT",
   "snapshot_readiness": {
     "audit": "CI_GREEN_RUN_1",
     "representative_pairs_ok": 3,
@@ -96,5 +96,21 @@
     "synchronization_guard": "CRC32_TOP10_EVERY_PROCESSED_BOOK_MESSAGE",
     "bounded_reconnect_cycles": 2,
     "raw_archive": false
+  },
+  "ws_protocol_readiness": {
+    "cloud_guard_run": "CI_GREEN_RUN_4",
+    "evidence": "research/v3/h3-ws-book-reconciliation-evidence-20261001T193640Z.json",
+    "reconnect_cycles": 2,
+    "updates": 1611,
+    "checksum_pass": 1617,
+    "checksum_fail": 0,
+    "representative_symbols": [
+      "BTC/EUR",
+      "ETH/EUR",
+      "SOL/EUR"
+    ],
+    "physical_minipc_confirmation": false,
+    "queue_position_proven": false,
+    "maker_fill_probability_proven": false
   }
 }
