@@ -68,17 +68,17 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 - [x] Lokalen Prozess-Supervisor/Watchdog vervollständigen: `CryptoMiniPC-RuntimeSupervisor` HEALTHY, 2-Minuten-Takt + Startup, 10-Minuten-Backoff, Read-only-Runtimes only. Kontrollierter physischer Self-Heal-Proof 2026-10-01 **PASS**: Archive-Support-Task absichtlich gestoppt, Supervisor startete ihn ohne Nutzereingriff neu, Heartbeat lief weiter, Watchdog blieb HEALTHY.
 - [x] Watchdog erkennt jetzt auch **„grün aber wirkungslos“**: physischer Effectiveness-Smoke 2026-10-01 **HEALTHY / issues=none**; geprüft werden frische Kraken-Canary-Events, frische Universe-Ticker, frische Shadow-Quelle und aktive Outcome-Samples – nicht nur Prozess-/Heartbeat-Alter.
-- [ ] Täglichen sehr kurzen **10:00-Systemstatus** später lokal/GitHub-basiert erzeugen: tatsächliche End-to-End-Gesundheit statt nur „Workflow aktiv“; Work dafür nicht als Dauerlösung verwenden.
+- [ ] Täglichen sehr kurzen **10:00-Systemstatus** GitHub-basiert erzeugen: Workflow ist timezone-aware für Europe/Berlin vorbereitet und Dry-Run **SUCCESS**; er nutzt echten Remote-Health-State + Kraken/Shadow/Supervisor/Evidence-Daten. Bei OK ohne `@Hoffis`-Push, bei Problem mit echter Mention. Erster regulärer 10:00-Lauf steht noch aus.
 - [x] Unabhängige Health-Schicht ohne zusätzlichen Uptime-Kuma-Dienst vorbereitet: Supabase Last-Seen + GitHub-Cloud-Deadman überwacht MINI-PC außerhalb des Geräts und pusht nur bei CRITICAL/>20 min stale sowie einmal bei Recovery. Uptime Kuma bleibt damit vorerst unnötig; nur später neu bewerten, falls zusätzliche externe Checks echten Mehrwert bringen.
 - [x] MINI-PC-Status remote aktiviert/E2E-verifiziert: `CryptoMiniPC-StatusSync` HEALTHY; erster echter Remote-Status in Supabase angekommen. Der Pfad deckte unmittelbar zwei stale Read-only-Runtimes auf, daher ist die zentrale Statusschicht praktisch wirksam.
-- [ ] Health-Zustände klar unterscheiden: OK, waiting/no-data, feed stale, API disconnected, backlog/queue stuck, degraded, stopped.
-- [ ] Automatischer begrenzter Self-Heal für eindeutig technische Fehler; keine automatische Strategie-/Threshold-Änderung.
+- [ ] Health-Zustände klar unterscheiden: Taxonomie im lokalen Watchdog implementiert (`OK`, `WAITING_NO_DATA`, `FEED_STALE`, `API_DISCONNECTED`, `BACKLOG_STUCK`, `DEGRADED`, `STOPPED`) und CI-grün; einmaliger lokaler Pull/Smoke steht noch aus, damit die neue Taxonomie in den Remote-Status übernommen wird.
+- [x] Automatischer begrenzter Self-Heal für eindeutig technische Fehler verifiziert: Runtime-Supervisor 2-Minuten-Takt, 10-Minuten-Backoff, physischer Self-Heal-Smoke PASS; keine automatische Strategie-/Threshold-Änderung.
 - [x] Kontrollierten Internet-Ausfall/Wiederkehr für die **aktiven Transportpfade** testen: 2026-10-01 PASS; Ethernet-Ausfall wurde erkannt, Kraken HTTPS/Canary/breiter EUR-Feed/Altrady/Watchdog erholten sich automatisch. Stale-Decision/Queue-Replay bleibt erst mit gekoppelter Strategie-Runtime separat zu beweisen.
 - [ ] Wiederverbindung auf **Strategie-Runtime-Ebene** testen: Dedup, TTL alter Signale, **kein blindes Replay** veralteter Kandidaten. Transport-Reconnect selbst ist seit 2026-10-01 verifiziert.
 - [ ] Neustart-Reconciliation: lokaler Zustand, GitHub-Zustand und spätere Exchange-Zustände müssen konsistent zusammengeführt werden.
 - [ ] GitHub-Cloudpfad als unabhängigen Fallback erhalten; weder Mini-PC noch Altrady dürfen alleiniger Trigger sein.
-- [ ] Tägliche Sicherung um 04:00 lokal; Alarm nur, wenn Backup mindestens eine Woche tatsächlich ausgefallen ist.
-- [ ] Restore-/Recovery-Smoke-Test einplanen.
+- [x] Tägliche Sicherung um 04:00 lokal aktiv; 14 Tage Retention; Watchdog alarmiert erst nach mindestens 7 Tagen ohne erfolgreiche Sicherung.
+- [x] Restore-/Recovery-Smoke-Test vorhanden und nicht-destruktiv verifiziert; Restore erfolgt in temporäres Verzeichnis und überschreibt keinen Live-State.
 - [ ] Grafana-Statusseite erst ergänzen, wenn stabile Metriken vorhanden sind; kein Dashboard nur um des Dashboards willen.
 
 **Abschlusskriterium P2:** definierte Strom-, Internet-, Prozess- und Datenfehler können ohne Datenchaos und ohne stale Decisions überstanden werden.
