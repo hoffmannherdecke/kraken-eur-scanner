@@ -1,0 +1,372 @@
+{
+  "kind": "V3_H1_SYNTHETIC_MULTI_PAIR_FIXTURE_V1",
+  "cutoff_epoch": 18000,
+  "pairs": {
+    "XBTEUR": [
+      {
+        "bar_end_epoch": 3600,
+        "close": 100
+      },
+      {
+        "bar_end_epoch": 4500,
+        "close": 101
+      },
+      {
+        "bar_end_epoch": 5400,
+        "close": 102
+      },
+      {
+        "bar_end_epoch": 6300,
+        "close": 103
+      },
+      {
+        "bar_end_epoch": 7200,
+        "close": 104
+      },
+      {
+        "bar_end_epoch": 8100,
+        "close": 105
+      },
+      {
+        "bar_end_epoch": 9000,
+        "close": 106
+      },
+      {
+        "bar_end_epoch": 9900,
+        "close": 107
+      },
+      {
+        "bar_end_epoch": 10800,
+        "close": 108
+      },
+      {
+        "bar_end_epoch": 11700,
+        "close": 109
+      },
+      {
+        "bar_end_epoch": 12600,
+        "close": 110
+      },
+      {
+        "bar_end_epoch": 13500,
+        "close": 111
+      },
+      {
+        "bar_end_epoch": 14400,
+        "close": 112
+      },
+      {
+        "bar_end_epoch": 15300,
+        "close": 113
+      },
+      {
+        "bar_end_epoch": 16200,
+        "close": 114
+      },
+      {
+        "bar_end_epoch": 17100,
+        "close": 115
+      },
+      {
+        "bar_end_epoch": 18000,
+        "close": 116
+      },
+      {
+        "bar_end_epoch": 18900,
+        "close": 9999
+      }
+    ],
+    "ETHEUR": [
+      {
+        "bar_end_epoch": 3600,
+        "close": 50
+      },
+      {
+        "bar_end_epoch": 4500,
+        "close": 50.5
+      },
+      {
+        "bar_end_epoch": 5400,
+        "close": 51
+      },
+      {
+        "bar_end_epoch": 6300,
+        "close": 51.5
+      },
+      {
+        "bar_end_epoch": 7200,
+        "close": 52
+      },
+      {
+        "bar_end_epoch": 8100,
+        "close": 52.5
+      },
+      {
+        "bar_end_epoch": 9000,
+        "close": 53
+      },
+      {
+        "bar_end_epoch": 9900,
+        "close": 53.5
+      },
+      {
+        "bar_end_epoch": 10800,
+        "close": 54
+      },
+      {
+        "bar_end_epoch": 11700,
+        "close": 54.5
+      },
+      {
+        "bar_end_epoch": 12600,
+        "close": 55
+      },
+      {
+        "bar_end_epoch": 13500,
+        "close": 55.5
+      },
+      {
+        "bar_end_epoch": 14400,
+        "close": 56
+      },
+      {
+        "bar_end_epoch": 15300,
+        "close": 56.5
+      },
+      {
+        "bar_end_epoch": 16200,
+        "close": 57
+      },
+      {
+        "bar_end_epoch": 17100,
+        "close": 57.5
+      },
+      {
+        "bar_end_epoch": 18000,
+        "close": 58
+      },
+      {
+        "bar_end_epoch": 18900,
+        "close": 9999
+      }
+    ],
+    "SOLEUR": [
+      {
+        "bar_end_epoch": 3600,
+        "close": 20
+      },
+      {
+        "bar_end_epoch": 4500,
+        "close": 20.2
+      },
+      {
+        "bar_end_epoch": 5400,
+        "close": 20.4
+      },
+      {
+        "bar_end_epoch": 6300,
+        "close": 20.6
+      },
+      {
+        "bar_end_epoch": 7200,
+        "close": 20.8
+      },
+      {
+        "bar_end_epoch": 8100,
+        "close": 21
+      },
+      {
+        "bar_end_epoch": 9000,
+        "close": 21.2
+      },
+      {
+        "bar_end_epoch": 9900,
+        "close": 21.4
+      },
+      {
+        "bar_end_epoch": 10800,
+        "close": 21.6
+      },
+      {
+        "bar_end_epoch": 11700,
+        "close": 21.8
+      },
+      {
+        "bar_end_epoch": 12600,
+        "close": 22
+      },
+      {
+        "bar_end_epoch": 13500,
+        "close": 22.2
+      },
+      {
+        "bar_end_epoch": 14400,
+        "close": 22.4
+      },
+      {
+        "bar_end_epoch": 15300,
+        "close": 22.6
+      },
+      {
+        "bar_end_epoch": 16200,
+        "close": 22.8
+      },
+      {
+        "bar_end_epoch": 17100,
+        "close": 23
+      },
+      {
+        "bar_end_epoch": 18000,
+        "close": 23.2
+      },
+      {
+        "bar_end_epoch": 18900,
+        "close": 9999
+      }
+    ],
+    "ADAEUR": [
+      {
+        "bar_end_epoch": 3600,
+        "close": 10
+      },
+      {
+        "bar_end_epoch": 4500,
+        "close": 9.95
+      },
+      {
+        "bar_end_epoch": 5400,
+        "close": 9.9
+      },
+      {
+        "bar_end_epoch": 6300,
+        "close": 9.85
+      },
+      {
+        "bar_end_epoch": 7200,
+        "close": 9.8
+      },
+      {
+        "bar_end_epoch": 8100,
+        "close": 9.75
+      },
+      {
+        "bar_end_epoch": 9000,
+        "close": 9.7
+      },
+      {
+        "bar_end_epoch": 9900,
+        "close": 9.65
+      },
+      {
+        "bar_end_epoch": 10800,
+        "close": 9.6
+      },
+      {
+        "bar_end_epoch": 11700,
+        "close": 9.55
+      },
+      {
+        "bar_end_epoch": 12600,
+        "close": 9.5
+      },
+      {
+        "bar_end_epoch": 13500,
+        "close": 9.45
+      },
+      {
+        "bar_end_epoch": 14400,
+        "close": 9.4
+      },
+      {
+        "bar_end_epoch": 15300,
+        "close": 9.35
+      },
+      {
+        "bar_end_epoch": 16200,
+        "close": 9.3
+      },
+      {
+        "bar_end_epoch": 17100,
+        "close": 9.25
+      },
+      {
+        "bar_end_epoch": 18000,
+        "close": 9.2
+      },
+      {
+        "bar_end_epoch": 18900,
+        "close": 9999
+      }
+    ],
+    "XRPEUR": [
+      {
+        "bar_end_epoch": 3600,
+        "close": 5
+      },
+      {
+        "bar_end_epoch": 4500,
+        "close": 5.02
+      },
+      {
+        "bar_end_epoch": 5400,
+        "close": 5.04
+      },
+      {
+        "bar_end_epoch": 6300,
+        "close": 5.06
+      },
+      {
+        "bar_end_epoch": 7200,
+        "close": 5.08
+      },
+      {
+        "bar_end_epoch": 8100,
+        "close": 5.1
+      },
+      {
+        "bar_end_epoch": 9000,
+        "close": 5.12
+      },
+      {
+        "bar_end_epoch": 9900,
+        "close": 5.14
+      },
+      {
+        "bar_end_epoch": 10800,
+        "close": 5.16
+      },
+      {
+        "bar_end_epoch": 11700,
+        "close": 5.18
+      },
+      {
+        "bar_end_epoch": 12600,
+        "close": 5.2
+      },
+      {
+        "bar_end_epoch": 13500,
+        "close": 5.22
+      },
+      {
+        "bar_end_epoch": 15300,
+        "close": 5.26
+      },
+      {
+        "bar_end_epoch": 16200,
+        "close": 5.28
+      },
+      {
+        "bar_end_epoch": 17100,
+        "close": 5.3
+      },
+      {
+        "bar_end_epoch": 18000,
+        "close": 5.32
+      },
+      {
+        "bar_end_epoch": 18900,
+        "close": 9999
+      }
+    ]
+  }
+}
