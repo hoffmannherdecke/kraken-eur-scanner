@@ -1197,6 +1197,23 @@ While the user was not needed, the following were completed:
 
 Only one local pull + bundled verification is now required before closing the strategy-runtime reconnect gate.
 
+### Physical post-fix verification PASS 2026-10-01
+
+The bundled local verification was run on the MINI-PC after the reconciliation/watchdog fixes.
+
+Result:
+- `MINI-PC POST-FIX VERIFICATION SUMMARY`: **PASS**;
+- reconciliation audit exit: **0**;
+- effectiveness watchdog exit: **0**;
+- overall health: **HEALTHY**;
+- operational state: **OK**;
+- state reasons: **none**;
+- Kraken canary/universe, WS-shadow, outcome tracker, runtime supervisor and status sync: **OK**;
+- issues: **none**;
+- safety remained read-only: no model, no exchange account, no orders, no strategy change.
+
+This closes the local restart/replay/TTL reconciliation gate for the current paper/read-only architecture.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
