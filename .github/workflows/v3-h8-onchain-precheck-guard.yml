@@ -40,6 +40,16 @@ jobs:
           assert j['runtime_guardrails']['active_v2r3_change_allowed'] is False
           assert j['runtime_guardrails']['orders_allowed'] is False
           assert j['runtime_guardrails']['real_money_actions_allowed'] is False
+          if j['status']=='PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING':
+              rd=j['coverage_readiness']
+              assert rd['audit']=='CI_GREEN_RUN_1'
+              assert rd['active_addresses']['count']==4
+              assert rd['mvrv']['count']==4
+              assert rd['transaction_count']['count']==4
+              assert rd['exchange_in_out_flow']['count']==2
+              assert rd['new_addresses']['count']==0
+              assert rd['sol_target_metric_coverage']=='NONE_IN_CHECKED_GROUPS'
+              assert j['next_gate']=='PROSPECTIVE_COMPACT_CAPTURE_TO_MEASURE_PUBLICATION_LAG_AND_KNOWN_AT_BEFORE_ANY_HISTORICAL_OR_SIGNAL_TRIAL'
           print('V3_H8_PREREG PASS coverage-only/known-at-blocked/no-holdout')
           PY
       - name: Real public Coin Metrics community coverage audit
