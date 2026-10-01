@@ -102,7 +102,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [x] V2R4-Shadow-/Outcome-Evidenz automatisch in Supabase archivieren: `CryptoMiniPC-V2R4ShadowCloudSync` seit 2026-10-01 **HEALTHY**; erster echter Upload **23 Records / 1 Batch**, danach pending=0; Supabase unabhängig mit 23 Zeilen verifiziert. Fail-soft, server-only RLS, kein Admin-Key auf dem MINI-PC.
 - [ ] Detektionslatenz Kraken-native vs. Scanner vs. Altrady messen. Kraken-native WS-shadow + Legacy-Scanner-Zeitstempel sind zentral vergleichbar; zusätzlich liefert `public.realtime_path_timing_summary` eine read-only Rollup-Ansicht mit Shadow-Latenz, Scanner-Match-Stichprobe und Altrady-Transportlatenz samt explizitem Interpretations-Guardrail. Aktuell noch **keine Rangfolge ableiten**: Shadow↔Scanner sind nur nearest same-pair Matches innerhalb ±6h, Altrady bisher nur 2 Transportfälle.
 - [ ] Nach stabiler Basis den Takt anhand realer Messungen verkürzen; Ziel grob ~7–8 Minuten, wo ein periodischer Takt nötig ist, ergänzt durch schnellere eventbasierte Trigger.
-- [ ] Evaluator/KI nur bei echten Kandidaten oder klaren Analyseblockern aufrufen; kein dauerndes KI-Polling.
+- [x] Evaluator/KI nur ereignis-/kandidatenbezogen: `paper-evaluator.yml` hat keinen Cron-Dauerpoller; der Scanner dispatcht den Runtime-Lauf, das Modell wird nur für neue ungesehene Kandidaten <=60m bzw. fällige einmalige WAIT-Revalidierungen aufgerufen. Follow-up/Health laufen deterministisch ohne Modell.
 - [ ] V2R4-Fast-Trigger-Pfad aus Draft-PR #8: V2R3-Evidenzsnapshot, Compile/Unit-/Live-Public-Kraken-/Model-Contract-Smokes, **physischer MINI-PC trigger→fresh-recheck E2E-Gate** und Altrady-Transport-E2E sind jetzt grün; live Kraken-AssetPairs statt statischer Blacklist, maschinenlesbare WAIT-Bedingungen und lokaler Fresh-Recheck-Bridge sind vorbereitet. Offen: separater V2R4-Paper-Aktivierungsentscheid nach Evidenzsicht; kein stilles Merge/Activation.
 - [ ] Bei bestandenem Smoke-Test eine **separate V2R4-Paper-Serie** starten; dafür nicht künstlich auf 20 V2R3-Trades warten. V2R3-Artefakte bleiben unverändert als Vergleichsbasis.
 - [x] Datenfrische und Entscheidungstimestamp technisch nachvollziehbar: im eingefrorenen V2R3-Vorgänger waren 708/708 geprüfte Outcomes vollständig mit candidate_detected_at, handoff_written_at, evaluation_started_at, evaluation_completed_at und fresh_kraken_ticker. Dieselbe unveränderte Record-/Schema-Pflicht gilt für die neue saubere Serie und wird dort erneut prospektiv überwacht.
@@ -120,14 +120,14 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 ### Supabase
 - [x] Supabase-Archivpfad operativ und E2E-verifiziert: sichere GitHub-Backend-Credentials, minimales Schema, klarer Sync-Pfad; automatischer Nachzug nach erfolgreichem Paper-Runtime-Workflow.
-- [ ] Supabase weiterhin nur für strukturierten State/Ergebnis-/Research-Nutzen verwenden, nicht als zweite Kopie großer Rohdatenmengen.
+- [x] Supabase bleibt strukturierte State-/Ergebnis-/Research-Schicht: Candidate-Outcomes, Trade-Results, Shadow-/Timing-Evidenz, Health-/Completion-State und kompakte Views; keine vollständige Tick-/Orderbuch-Rohdatenkopie.
 - [x] Supabase bleibt fail-soft/sekundär; Ausfall stoppt Scanner/Paper-Pfad nicht.
 
 ### ChatGPT / Work / API
 - [ ] Routinejobs vollständig aus Work heraushalten, soweit GitHub/Mini-PC/API sie zuverlässig übernehmen können.
 - [ ] Work nur für kleine unvermeidbare Aufgaben oder gezielte Analyse verwenden; keine Dauerpoller.
 - [ ] API-Verbrauch und Work-Credits getrennt überwachen und Kostenlimits/Guardrails festlegen.
-- [ ] Ereignisgesteuerte Analyse bevorzugen; bei „kein Handlungsbedarf“ keine unnötige KI-Kette.
+- [x] Ereignisgesteuerte Analyse bevorzugt: Scanner→Evaluator ist Dispatch-basiert; ohne neue Kandidaten/fällige WAIT-Revalidation erfolgt kein neuer Modellentscheid. Health-, Archive-, Timing- und Completion-Watches laufen ohne KI.
 - [ ] n8n Community erst später prüfen, wenn echte Orchestrierungs-Komplexität vorhanden ist; nicht vorsorglich einführen.
 
 **Abschlusskriterium P4:** Benachrichtigung, State-Sync und KI-Aufrufe funktionieren sparsam, entkoppelt und ohne unnötige doppelte Dienste.
