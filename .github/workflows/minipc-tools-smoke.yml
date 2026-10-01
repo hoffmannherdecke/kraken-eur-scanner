@@ -10,6 +10,9 @@ name: MINI-PC tools smoke
       - 'tools/uninstall-minipc-baseline-tasks.ps1'
       - 'tools/minipc-altrady-poller.py'
       - 'tools/minipc-altrady-live-alert-proof.py'
+      - 'tools/minipc-kraken-universe-feed.py'
+      - 'tools/install-minipc-kraken-universe-feed.ps1'
+      - 'tools/uninstall-minipc-kraken-universe-feed.ps1'
       - '.github/workflows/minipc-tools-smoke.yml'
 
 permissions:
@@ -29,7 +32,7 @@ jobs:
       - name: Parse Python transport tools
         shell: powershell
         run: |
-          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py
+          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py
           Write-Host 'PYTHON_TRANSPORT_PARSE_OK'
 
       - name: Parse PowerShell scripts
@@ -51,6 +54,8 @@ jobs:
             'tools/minipc-altrady-alert-helper.ps1',
             'tools/uninstall-minipc-kraken-canary.ps1',
             'tools/install-minipc-kraken-canary.ps1',
+            'tools/uninstall-minipc-kraken-universe-feed.ps1',
+            'tools/install-minipc-kraken-universe-feed.ps1',
             'tools/minipc-log-cleanup.ps1',
             'tools/minipc-backup.ps1',
             'tools/minipc-restore-smoke.ps1',
