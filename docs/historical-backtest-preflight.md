@@ -711,3 +711,31 @@ Two preceding CI attempts failed only in test wiring and were corrected before R
 
 Neither failure touched market data, active Paper/Shadow runtime, strategy rules, holdout state, exchange access or real-money paths.
 
+## 11q. Binance public-access MINI-PC smoke prepared 2026-10-01
+
+The remaining Binance infrastructure check is intentionally limited to public, account-independent connectivity.
+
+Prepared tools:
+- `tools/minipc-binance-public-access-smoke.py`;
+- `tools/run-minipc-binance-public-access-smoke.ps1`.
+
+Scope:
+- public Spot server time;
+- public USD-M Futures BTCUSDT premium/funding context;
+- public USD-M Futures BTCUSDT open interest;
+- no API key;
+- no account/private endpoint;
+- no order path;
+- no leverage action;
+- no real-money action;
+- no active V2R3/V2R4 mutation.
+
+The PowerShell wrapper is `PLAN_ONLY` by default and requires an explicit execution token before any network request is made from the MINI-PC.
+
+Repository/CI verification:
+- Python compile: PASS;
+- plan-only wrapper guardrails: PASS;
+- full Historical data preflight **Run #58: SUCCESS**.
+
+This does **not** prove Binance public availability from the physical MINI-PC yet. The backlog item remains open until the one-time local network smoke is actually executed. An account must not be added merely to make public data work.
+
