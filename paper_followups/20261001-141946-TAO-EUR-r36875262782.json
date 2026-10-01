@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-01T14:32:00Z",
         "trough_at_utc": "2026-10-01T14:22:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 0.935,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.802,
+        "mfe_pct": 2.294,
+        "peak_at_utc": "2026-10-01T15:20:00Z",
+        "trough_at_utc": "2026-10-01T16:56:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -90,7 +101,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-01T15:33:33.859792Z"
+    "updated_at_utc": "2026-10-01T18:27:55.810160Z"
   },
   "original_decision": "WAIT",
   "pair": "TAO/EUR",
