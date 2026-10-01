@@ -20,7 +20,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: prep/v2r4-fast-trigger-minipc-20260929
+          ref: prep/v2r4-refresh-20261001
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
