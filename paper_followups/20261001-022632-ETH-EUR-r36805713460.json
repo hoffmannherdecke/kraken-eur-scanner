@@ -1,0 +1,51 @@
+{
+  "baseline_ask_eur": 2369.38,
+  "candidate_id": "20261001-022632-ETH-EUR-r36805713460",
+  "evaluated_at_utc": "2026-10-01T02:27:00.077003Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-01T02:26:32Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 28.077,
+    "detection_price_eur": 2371.97,
+    "evaluated_at_utc": "2026-10-01T02:27:00.077003Z",
+    "evaluation_ask_eur": 2369.38,
+    "flagged_as_already_run": false,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-01T00:18:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 0.386,
+      "price_eur": 2362.84
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "NO_BREAKOUT",
+      "WEAK_SHORT_TERM_MOMENTUM",
+      "PRICE_BELOW_RESISTANCE",
+      "FEES_CONSUME_SMALL_MOVES",
+      "ACCOUNT_TRADABILITY_UNAVAILABLE"
+    ],
+    "scan_step_started_at_utc": "2026-10-01T02:24:57Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 0.3863994176499297,
+      "ret15_live_pct": 0.007167552070130867,
+      "ret1h_pct": 0.11564938819783599,
+      "ret3h_pct": 0.04175488616520173,
+      "scanner_late_flag": false,
+      "score": 9.1
+    },
+    "schema_version": 1,
+    "setup_lane": "CONTINUITY",
+    "updated_at_utc": "2026-10-01T02:28:25.422387Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "ETH/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02"
+}
