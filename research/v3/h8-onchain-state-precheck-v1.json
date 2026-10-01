@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H8_ONCHAIN_STATE_PRECHECK_V1",
+  "hypothesis_id": "V3-H8",
+  "status": "PRECHECK_SOURCE_COVERAGE_ONLY",
+  "prepared_at_utc": "2026-10-01T18:40:00Z",
+  "purpose": "Audit public on-chain metric coverage and time-availability semantics before any historical or prospective signal test.",
+  "first_source": "coinmetrics_community_network_data",
+  "candidate_metric_families": [
+    "active_addresses",
+    "new_addresses",
+    "transaction_count",
+    "mvrv_or_related_valuation_state",
+    "exchange_flow_if_publicly_available",
+    "stablecoin_flow_via_separate_source_if_needed"
+  ],
+  "role": "STATE_OR_CONFIRMATION_FIRST_NOT_PRIMARY_TRIGGER",
+  "point_in_time_contract": {
+    "metric_interval_time_is_not_assumed_equal_to_known_at_time": true,
+    "historical_use_requires_known_at_or_proven_publication_lag": true,
+    "retrospective_latest_value_for_old_candidate_forbidden": true,
+    "revisions_must_not_rewrite_historical_candidate_state": true,
+    "missing_metric_or_asset_coverage_remains_missing": true,
+    "current_asset_coverage_must_not_be_used_as_historical_survivorship_filter": true,
+    "source_and_retrieved_at_required": true
+  },
+  "allowed_before_availability_lag_proven": [
+    "catalog_coverage_audit",
+    "metric_frequency_audit",
+    "prospective_compact_shadow_capture",
+    "source_latency_and_freshness_measurement"
+  ],
+  "forbidden_before_availability_lag_proven": [
+    "historical_performance_trial",
+    "threshold_selection",
+    "candidate_filter_rule",
+    "direct_buy_sell_rule",
+    "sealed_holdout_access"
+  ],
+  "bias_guardrails": {
+    "asset_subset_selection_by_seen_performance_allowed": false,
+    "metric_selection_by_seen_performance_allowed": false,
+    "horizon_sweep_allowed": false,
+    "current_sealed_holdout_open_allowed": false,
+    "no_winner_is_valid_outcome": true
+  },
+  "runtime_guardrails": {
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "paper_runtime_change_allowed": false,
+    "private_api_allowed": false,
+    "orders_allowed": false,
+    "leverage_allowed": false,
+    "real_money_actions_allowed": false
+  },
+  "next_gate": "REAL_PUBLIC_COMMUNITY_COVERAGE_AUDIT_THEN_DECIDE_PROSPECTIVE_ONLY_VS_HISTORICAL_IF_KNOWN_AT_PROVEN"
+}
