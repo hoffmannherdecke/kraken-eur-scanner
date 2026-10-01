@@ -13,6 +13,7 @@ name: V3 H2 derivatives precheck guard
       - 'tools/binance-derivatives-context-smoke.py'
       - 'tools/kraken-futures-h2-coverage-precheck.py'
       - 'tools/v3-h2-kraken-analytics-shape-precheck.py'
+      - 'tools/v3-h2-prospective-candidate-capture.py'
       - '.github/workflows/v3-h2-precheck-guard.yml'
 
 permissions:
@@ -233,4 +234,61 @@ jobs:
           assert p["runtime_guardrails"]["orders_allowed"] is False
           assert p["runtime_guardrails"]["real_money_actions_allowed"] is False
           print("V3_H2_PARSER_CONTRACT PASS exact-shape/opaque-4tuple/fail-closed/no-performance")
+          PY
+
+
+      - name: Isolated H2 prospective candidate capture smoke
+        run: |
+          python -m py_compile tools/v3-h2-prospective-candidate-capture.py
+          python - <<'PY'
+          import json
+          from datetime import datetime, timezone
+          from pathlib import Path
+          p=Path("/tmp/h2-smoke-candidate.json")
+          p.write_text(json.dumps({
+            "candidate_id":"H2-CAPTURE-SMOKE",
+            "base":"XBT",
+            "event_utc":datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
+          }),"utf-8")
+          PY
+          CID=$(python -c "import json; print(json.load(open('/tmp/h2-smoke-candidate.json'))['candidate_id'])")
+          BASE=$(python -c "import json; print(json.load(open('/tmp/h2-smoke-candidate.json'))['base'])")
+          EVENT=$(python -c "import json; print(json.load(open('/tmp/h2-smoke-candidate.json'))['event_utc'])")
+          python tools/v3-h2-prospective-candidate-capture.py \
+            --candidate-id "$CID" --base "$BASE" --event-utc "$EVENT" \
+            --output /tmp/h2-candidate-capture.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/h2-candidate-capture.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["candidate"]["candidate_id"]=="H2-CAPTURE-SMOKE"
+          assert j["candidate"]["spot_eur_base"]=="XBT"
+          assert j["mapping"]["prospective_only"] is True
+          assert j["mapping"]["mapping_lag_seconds"] <= 120
+          assert j["request_contract"]["explicit_to_epoch_seconds"]==j["candidate"]["event_epoch_seconds"]
+          assert [x["analytics_type"] for x in j["states"]]==["open-interest","funding","future-basis"]
+          assert all(x["status"] in {"CAPTURED","MISSING"} for x in j["states"])
+          for x in j["states"]:
+              if x["status"]=="CAPTURED":
+                  assert x["metric_age_seconds"] >= 0
+                  assert x["source_timestamp_seconds"] <= j["candidate"]["event_epoch_seconds"]
+          assert j["interpretation"]["opaque_4tuple_semantics_resolved"] is False
+          assert j["interpretation"]["derived_scalar_created"] is False
+          assert j["interpretation"]["candidate_decision_mutated"] is False
+          g=j["guardrails"]
+          assert g["historical_candidate_use_allowed"] is False
+          assert g["outcome_label_joined"] is False
+          assert g["holdout_opened"] is False
+          assert g["active_v2r3_changed"] is False
+          assert g["v2r4_changed"] is False
+          assert g["orders"] is False
+          assert g["real_money_actions"] is False
+          print("V3_H2_CANDIDATE_CAPTURE PASS isolated/prospective/opaque/no-decision-change")
+          print("H2_CAPTURE_SMOKE "+json.dumps({
+            "candidate":j["candidate"],"mapping":j["mapping"],
+            "states":[{"analytics_type":x["analytics_type"],"status":x["status"],
+              "source_timestamp_seconds":x.get("source_timestamp_seconds"),
+              "metric_age_seconds":x.get("metric_age_seconds")} for x in j["states"]]
+          },sort_keys=True))
           PY
