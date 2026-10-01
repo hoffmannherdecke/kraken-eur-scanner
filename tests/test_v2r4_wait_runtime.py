@@ -220,6 +220,80 @@ class V2R4WaitRuntimeTests(unittest.TestCase):
             self.assertEqual(out2["counters"]["fresh_rechecks"], 0)
             self.assertEqual(rr.call_count, 1)
 
+    def test_inflight_marker_is_persisted_before_fresh_recheck(self):
+        now = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            decisions = root / "decisions"
+            rechecks = root / "rechecks"
+            candidates = root / "candidates"
+            receipts = root / "receipts"
+            state = root / "state.json"
+            heartbeat = root / "heartbeat.json"
+            altrady = root / "altrady.jsonl"
+            spec = root / "spec.json"
+            control = root / "control.json"
+            for d in (decisions, rechecks, candidates, receipts):
+                d.mkdir()
+
+            p = plan(now, candidate_id="C1", value=100.0)
+            (decisions / "d.json").write_text(
+                json.dumps({"v2r4_trigger_plan": p}), "utf-8"
+            )
+            (candidates / "C1.json").write_text(
+                json.dumps({"candidate_id": "C1"}), "utf-8"
+            )
+            spec.write_text("{}", "utf-8")
+            control.write_text("{}", "utf-8")
+
+            def crash_after_inflight(**kwargs):
+                persisted = json.loads(state.read_text("utf-8"))
+                row = next(iter(persisted["handled"].values()))
+                self.assertEqual(row["status"], "FRESH_PAPER_RECHECK_IN_FLIGHT")
+                raise RuntimeError("synthetic crash")
+
+            with patch.object(
+                runtime, "market_metrics", return_value={"last_eur": 101.0}
+            ), patch.object(runtime, "run_recheck", side_effect=crash_after_inflight) as rr:
+                out1 = runtime.run_cycle(
+                    decision_dir=decisions,
+                    recheck_dir=rechecks,
+                    candidate_dir=candidates,
+                    receipt_dir=receipts,
+                    state_path=state,
+                    heartbeat_path=heartbeat,
+                    altrady_log=altrady,
+                    spec_path=spec,
+                    control_path=control,
+                    api_key_file=None,
+                    fallback_seconds=10,
+                    execute_recheck=True,
+                    now=now + timedelta(seconds=5),
+                )
+                out2 = runtime.run_cycle(
+                    decision_dir=decisions,
+                    recheck_dir=rechecks,
+                    candidate_dir=candidates,
+                    receipt_dir=receipts,
+                    state_path=state,
+                    heartbeat_path=heartbeat,
+                    altrady_log=altrady,
+                    spec_path=spec,
+                    control_path=control,
+                    api_key_file=None,
+                    fallback_seconds=10,
+                    execute_recheck=True,
+                    now=now + timedelta(seconds=6),
+                )
+
+            self.assertEqual(out1["status"], "DEGRADED")
+            self.assertEqual(out1["counters"]["fresh_recheck_failures"], 1)
+            self.assertEqual(out2["counters"]["fresh_rechecks"], 0)
+            self.assertEqual(rr.call_count, 1)
+            persisted = json.loads(state.read_text("utf-8"))
+            row = next(iter(persisted["handled"].values()))
+            self.assertEqual(row["status"], "FRESH_PAPER_RECHECK_FAILED")
+
     def test_long_running_receipt_only_mode_is_not_an_allowed_main_configuration(self):
         # The safety rule is represented in CLI main; core cycle remains testable.
         # Assert the documented action is never an order action.
