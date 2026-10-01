@@ -741,6 +741,22 @@ After the successful full Windows restart recovery, the next resilience check is
 
 Recommended execution is from the MINI-PC's local console/monitor because an RDP session may disconnect briefly. The network adapter is automatically re-enabled by both the primary script and the pre-armed safety task.
 
+### Controlled Internet-loss recovery verified 2026-10-01
+
+Actual MINI-PC result:
+- gate status: **PASS**;
+- active adapter: Ethernet; disable was observed and automatic recovery succeeded;
+- Kraken outage probe failed during the offline window as expected;
+- Kraken HTTPS recovered to **HTTP 200**;
+- BTC/EUR canary recovered **HEALTHY**, events advanced **5744 -> 5781**, connection count **1 -> 2**;
+- broad Kraken-EUR feed recovered with **500/500 pairs, 100.0% coverage**, ticker rows advanced **1659 -> 1667**; reconnect counter **0 -> 6** during the bounded outage/recovery window;
+- Altrady transport recovered **HEALTHY** (heartbeat age ~6.2 s);
+- local watchdog: **HEALTHY**;
+- issues: **none**; notes: **none**;
+- safety remained transport-only; strategy not coupled; no real-money action.
+
+This closes the controlled Internet-loss/reconnect transport gate. Because no strategy runtime is coupled yet, stale candidate replay is not applicable at this stage; that behavior remains a separate strategy-runtime gate before any later live execution.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
