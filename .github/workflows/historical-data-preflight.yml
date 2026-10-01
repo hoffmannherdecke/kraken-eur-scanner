@@ -27,6 +27,10 @@ name: Historical data preflight
       - 'tools/run-minipc-performance-replay-v1.ps1'
       - 'tools/review-performance-replay-v1.py'
       - 'tools/run-minipc-performance-v1-validation-review.ps1'
+      - 'tools/validate-performance-replay-spec-v2.py'
+      - 'tools/historical-performance-replay-v2.py'
+      - 'tools/record-performance-replay-trial-v2.py'
+      - 'tools/run-minipc-performance-replay-v2.ps1'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -60,6 +64,9 @@ jobs:
           python -m py_compile tools/historical-performance-replay-v1.py
           python -m py_compile tools/record-performance-replay-trial.py
           python -m py_compile tools/review-performance-replay-v1.py
+          python -m py_compile tools/record-performance-replay-trial-v2.py
+          python -m py_compile tools/historical-performance-replay-v2.py
+          python -m py_compile tools/validate-performance-replay-spec-v2.py
 
       - name: Validate no-download Kraken manifest
         run: |
@@ -433,6 +440,100 @@ jobs:
           assert j["execution_semantics"]["portfolio_equity_curve_computed"] is False
           print("PERFORMANCE_REPLAY_V1 PASS frozen/synthetic/holdout-sealed")
           PY
+
+      - name: Validate frozen performance replay spec V2
+        run: |
+          python tools/validate-performance-replay-spec-v2.py \
+            research/historical/performance-replay-spec-v2.json \
+            --expected-sha256 3920161d4912815f193d6dcc7291dfab064a794447162d9d2fe5ec1dc7da1b3f
+          python - <<'PY'
+          from pathlib import Path
+          src=Path("research/historical/performance-replay-spec-v2.json")
+          text=src.read_text("utf-8")
+          Path("/tmp/performance-replay-spec-v2-crlf.json").write_bytes(
+              text.replace("\n","\r\n").encode("utf-8")
+          )
+          PY
+          python tools/validate-performance-replay-spec-v2.py \
+            /tmp/performance-replay-spec-v2-crlf.json \
+            --expected-sha256 3920161d4912815f193d6dcc7291dfab064a794447162d9d2fe5ec1dc7da1b3f
+
+      - name: Smoke frozen second-leg performance replay V2
+        run: |
+          python tools/historical-performance-replay-v2.py \
+            /tmp/perf-v1-normalized \
+            --spec research/historical/performance-replay-spec-v2.json \
+            --normalization-catalog /tmp/perf-v1-normalization.json \
+            --output /tmp/perf-v2-result.json \
+            --events-output /tmp/perf-v2-events.jsonl.gz \
+            --expected-count 2
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/perf-v2-result.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["initial_signal_count"]>0
+          assert j["confirmed_event_count"]>0
+          assert j["holdout_guard"]["holdout_events_generated"]==0
+          assert j["holdout_guard"]["holdout_metrics_computed"] is False
+          assert j["holdout_guard"]["holdout_used_for_rule_selection"] is False
+          assert j["guardrails"]["threshold_sweep_performed"] is False
+          assert j["guardrails"]["horizon_sweep_performed"] is False
+          assert j["guardrails"]["pair_subset_selection_performed"] is False
+          assert j["guardrails"]["month_subset_selection_performed"] is False
+          print("PERFORMANCE_REPLAY_V2 PASS distinct/second-leg/holdout-sealed")
+          PY
+
+      - name: Smoke immutable performance replay V2 Trial Ledger record
+        run: |
+          python tools/record-performance-replay-trial-v2.py \
+            --spec research/historical/performance-replay-spec-v2.json \
+            --lock research/historical/performance-replay-spec-v2.lock.json \
+            --result /tmp/perf-v2-result.json \
+            --db /tmp/perf-v2-trial-ledger.sqlite3 \
+            --schema research/historical/trial-ledger-schema.json \
+            --output-record /tmp/perf-v2-trial-record.json \
+            --repo-root .
+          python tools/record-performance-replay-trial-v2.py \
+            --spec research/historical/performance-replay-spec-v2.json \
+            --lock research/historical/performance-replay-spec-v2.lock.json \
+            --result /tmp/perf-v2-result.json \
+            --db /tmp/perf-v2-trial-ledger.sqlite3 \
+            --schema research/historical/trial-ledger-schema.json \
+            --output-record /tmp/perf-v2-trial-record.json \
+            --repo-root .
+          python - <<'PY'
+          import json, sqlite3
+          from pathlib import Path
+          rec=json.loads(Path("/tmp/perf-v2-trial-record.json").read_text())
+          assert rec["strategy_revision"]=="EUR15_SECOND_LEG_CONFIRMATION_V2"
+          assert rec["holdout_window"] is None
+          assert rec["metrics"]["holdout_guard"]["holdout_metrics_computed"] is False
+          con=sqlite3.connect("/tmp/perf-v2-trial-ledger.sqlite3")
+          try:
+              count=con.execute("select count(*) from trials").fetchone()[0]
+          finally:
+              con.close()
+          assert count==1
+          print("PERFORMANCE_REPLAY_V2_TRIAL_LEDGER PASS idempotent/immutable/holdout-sealed")
+          PY
+
+      - name: MINI-PC frozen performance replay V2 plan-only smoke
+        shell: pwsh
+        run: |
+          ./tools/run-minipc-performance-replay-v2.ps1 | Tee-Object -Variable plan
+          if (($plan -join [Environment]::NewLine) -notmatch '"status":\s*"PLAN_ONLY"') {
+            throw "performance replay V2 orchestrator did not remain plan-only"
+          }
+          if (($plan -join [Environment]::NewLine) -notmatch '"research_role":\s*"SECOND_LEG_CONFIRMATION_DEVELOPMENT_ONLY"') {
+            throw "performance replay V2 plan role mismatch"
+          }
+          if (($plan -join [Environment]::NewLine) -notmatch '"pre2026_is_clean_validation":\s*false') {
+            throw "performance replay V2 incorrectly treats seen data as clean validation"
+          }
+          if (($plan -join [Environment]::NewLine) -notmatch '"holdout_opened":\s*false') {
+            throw "performance replay V2 plan violated sealed holdout"
+          }
 
       - name: Smoke validation-only Performance Replay V1 review
         run: |
