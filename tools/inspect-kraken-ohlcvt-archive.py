@@ -15,7 +15,7 @@ from collections import Counter
 from pathlib import Path
 
 TOKEN_SPLIT = re.compile(r"[_./\\-]+")
-EUR15_RE = re.compile(r"(?i)(^|/)([^/]+EUR)_15\\.csv$")
+EUR15_RE = re.compile(r"(?i)(^|/)([^/]+EUR)_15\.csv$")
 INTERVALS = {"1", "5", "15", "30", "60", "240", "720", "1440"}
 
 
