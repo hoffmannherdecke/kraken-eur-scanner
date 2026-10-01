@@ -28,6 +28,7 @@ Kanonische Detailquellen:
 - Strategie-Versionen / Routing V2R3 ↔ V2R4 ↔ V3: `docs/strategy-version-map.md`
 - V2R4 Release-/Readiness-Kontrollpunkt: `docs/v2r4-release-readiness.md`
 - V2R3→V2R4 Verhaltens-/Release-Diff: `docs/v2r4-v2r3-release-diff.md`
+- V2R4 Paper-Aktivierungs-/Rollback-Checkliste: `docs/v2r4-paper-activation-checklist.md`
 - Fail-closed V2R4 Aktivierungsstatus: Supabase View `public.v2r4_activation_readiness` (`automatic_activation_allowed=false`)
 - V3 Research / Promotion: `docs/v3-research-framework.md`
 - V3 Research-Chronik: GitHub Issue #7
