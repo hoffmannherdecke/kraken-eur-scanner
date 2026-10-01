@@ -1,0 +1,190 @@
+{
+  "altname": "ENAEUR",
+  "candidate_age_seconds": 87,
+  "candidate_event_time_utc": "2026-10-01T06:18:31Z",
+  "candidate_id": "20261001-061831-ENA-EUR-r36823617301",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close holds above 0.2439 with closed volume recovering above baseline.",
+      "A shallow retest holds 0.2438\u20130.2439 without losing 0.2421."
+    ],
+    "reason_codes": [
+      "EXTENDED_AFTER_STRONG_RUN",
+      "CLOSED_VOLUME_BELOW_BASELINE",
+      "COSTS_REQUIRE_MORE_HEADROOM",
+      "NO_COIN_SPECIFIC_CATALYST_EVIDENCE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong trend and acceptable spot liquidity, but the move is extended and closed volume is weak; wait for confirmation before considering entry.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ENAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 20.31,
+        "available": true,
+        "current_funding_rate": -1.1016879578008e-05,
+        "current_open_interest": 10632185.0,
+        "funding_rate_delta": -1.135453357942e-05,
+        "open_interest_pct": -0.0927,
+        "previous_funding_rate": 3.37654001412e-07,
+        "previous_observed_at_utc": "2026-10-01T05:59:40.413111Z",
+        "previous_open_interest": 10642052.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.1016879578008e-05,
+        "index_price": 0.276628,
+        "last": 0.27691,
+        "mark_price": 0.27658817309,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 10632185.0,
+        "requested_symbols": [
+          "PF_ENAUSD",
+          "PI_ENAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ENAUSD",
+        "volume24h": 15640203
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.2443,
+      "bid": 0.2441,
+      "last": 0.2445,
+      "spread_pct": 0.08190008190007288
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "30",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.09986854449997029,
+          "ret3h_pct": 1.0856183395930419
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.23415587017494577,
+          "ret3h_pct": 1.2475441214911287
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.17094017094017033,
+          "ret3h_pct": 1.2284069097888706
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T06:19:58.089251Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-01T06:20:06.948189Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_081ebcef86de238d006abdfb8f039c87d296bffdd73263fa90"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2443,
+    "bid": 0.2441,
+    "last": 0.2445,
+    "spread_pct": 0.08190008190007288
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ENA/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36823617301:ENA-EUR:1790835511",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "5cf83e005a90c7ea053e51e9c9fe13d5d649c8e2",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-01T06:18:31Z",
+    "candidate_detected_ts": 1790835511,
+    "candidate_snapshot_at_utc": "2026-10-01T06:18:31Z",
+    "detected_to_evaluation_complete_seconds": 95.948,
+    "detected_to_evaluation_start_seconds": 86.961,
+    "evaluation_completed_at_utc": "2026-10-01T06:20:06.948189Z",
+    "evaluation_runtime_seconds": 8.987,
+    "evaluation_started_at_utc": "2026-10-01T06:19:57.961254Z",
+    "handoff_to_evaluation_start_seconds": 84.745,
+    "handoff_written_at_utc": "2026-10-01T06:18:33.216740Z",
+    "scan_step_started_at_utc": "2026-10-01T06:13:24Z"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "baseline_ask_eur": 0.21889,
+  "candidate_id": "20261001-054313-USELESS-EUR-r36820994941",
+  "evaluated_at_utc": "2026-10-01T06:19:00.512094Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-01T05:43:13Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 2147.512,
+    "detection_price_eur": 0.21631,
+    "evaluated_at_utc": "2026-10-01T06:19:00.512094Z",
+    "evaluation_ask_eur": 0.21889,
+    "flagged_as_already_run": true,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 0.601,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.06,
+        "mfe_pct": 0.606,
+        "peak_at_utc": "2026-10-01T05:53:00Z",
+        "trough_at_utc": "2026-10-01T05:47:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-01T02:44:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 5.071,
+      "price_eur": 0.20587
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "price_above_resistance",
+      "candidate_data_stale",
+      "closed_volume_unconfirmed",
+      "entry_efficiency_uncertain",
+      "costs_material"
+    ],
+    "scan_step_started_at_utc": "2026-10-01T05:41:40Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 5.071161412541891,
+      "ret15_live_pct": 0.43645818823419,
+      "ret1h_pct": 3.3295117989873058,
+      "ret3h_pct": 5.071161412541891,
+      "scanner_late_flag": false,
+      "score": 11.7
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-10-01T06:20:49.776156Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "USELESS/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02"
+}

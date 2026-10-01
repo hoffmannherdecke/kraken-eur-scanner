@@ -1,0 +1,63 @@
+{
+  "baseline_ask_eur": 0.67887,
+  "candidate_id": "20261001-055717-ASTER-EUR-r36822125934",
+  "evaluated_at_utc": "2026-10-01T06:19:14.188299Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-01T05:57:17Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 1317.188,
+    "detection_price_eur": 0.67315,
+    "evaluated_at_utc": "2026-10-01T06:19:14.188299Z",
+    "evaluation_ask_eur": 0.67887,
+    "flagged_as_already_run": true,
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 0.38,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": 0.0,
+        "mfe_pct": 0.813,
+        "peak_at_utc": "2026-10-01T06:03:00Z",
+        "trough_at_utc": "2026-10-01T05:58:00Z"
+      }
+    },
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-01T03:25:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 1.775,
+      "price_eur": 0.66141
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "price_run_ahead_of_snapshot",
+      "extended_above_resistance",
+      "closed_volume_unreliable",
+      "remaining_move_not_established",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "scan_step_started_at_utc": "2026-10-01T05:55:45Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 1.7749958422158763,
+      "ret15_live_pct": 1.4987711283002358,
+      "ret1h_pct": 1.0220007803823927,
+      "ret3h_pct": 1.1434324007572716,
+      "scanner_late_flag": false,
+      "score": 11.7
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-10-01T06:20:50.038561Z"
+  },
+  "original_decision": "REJECT",
+  "pair": "ASTER/EUR",
+  "path_classification": "REJECT",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "test_id": "SHADOW-V2R3-20260928-02"
+}
