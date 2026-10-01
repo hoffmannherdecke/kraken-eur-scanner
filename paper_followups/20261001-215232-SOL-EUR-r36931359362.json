@@ -3,7 +3,16 @@
   "candidate_id": "20261001-215232-SOL-EUR-r36931359362",
   "evaluated_at_utc": "2026-10-01T21:53:01.698367Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.478,
+      "expected_bars": 30,
+      "mae_pct": 0.057,
+      "mfe_pct": 0.584
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -56,8 +65,11 @@
   },
   "original_decision": "WAIT",
   "pair": "SOL/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-01T22:29:24.613604Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-01T22:29:29.353626Z"
 }
