@@ -557,6 +557,8 @@ have one explicit migration status:
 
 A V3 release candidate is incomplete if relevant V2/V2R4 knowledge is unclassified.
 
+Canonical living ledger: `research/v3-migration-ledger.json`. It is guarded by `.github/workflows/v3-migration-ledger-guard.yml` + `tools/validate-v3-migration-ledger.py`. Every `OPEN_RESEARCH` component must name its next evidence gate; closed statuses may not retain a pending gate. Initial ledger validation **Run #1 SUCCESS**. Current initialization intentionally classifies durable authority/governance/reliability rules immediately while leaving unresolved strategy mechanics open until V2R3/V2R4 evidence matures.
+
 ### Integrated target
 
 The target V3 is therefore one coherent strategy assembled from:
