@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "kind": "KRAKEN_TRADES_TARGETED_PREFLIGHT_V1",
+  "status": "PREPARED_NO_DOWNLOAD",
+  "prepared_at_utc": "2026-10-01T17:30:00Z",
+  "source_dataset_id": "kraken_trades_full_2026q2",
+  "source_archive": "Kraken_Trades_Full_2026Q2.zip",
+  "source_archive_sha256": "554184802aa7367c02cfde9230411d0069ef5b0b4d6f9617c4ec1a7ec8726e16",
+  "source_cutoff_utc": "2026-06-30T23:59:59Z",
+  "download_enabled": false,
+  "bulk_download_authorized": false,
+  "research_role": "TARGETED_MICROSTRUCTURE_METHODOLOGY_ONLY",
+  "allowed_questions": [
+    "arrival_to_next_public_trade_latency",
+    "trade_density_and_intertrade_gap",
+    "public_trade_vwap_by_exact_time_window",
+    "buy_sell_public_trade_flow_balance",
+    "realized_trade_price_range_and_short_horizon_volatility",
+    "arrival_price_to_subsequent_public_trade_impact_proxy"
+  ],
+  "not_identifiable_from_public_trades_alone": [
+    "true_bid_ask_spread",
+    "order_book_depth",
+    "queue_position",
+    "maker_fill_probability",
+    "hidden_liquidity",
+    "counterfactual_order_fill"
+  ],
+  "point_in_time_rules": {
+    "event_cutoff_must_be_explicit": true,
+    "pre_event_metrics_may_not_read_post_event_trades": true,
+    "post_event_labels_must_be_generated_after_event_record_freeze": true,
+    "trade_id_order_must_not_replace_timestamp_order": true,
+    "historical_pair_membership_must_not_use_current_online_universe_filter": true
+  },
+  "scope_guardrails": {
+    "initial_mode": "synthetic_and_existing_local_fixture_only",
+    "full_archive_download_in_ci": false,
+    "raw_market_data_in_github": false,
+    "raw_market_data_in_supabase": false,
+    "drive_d_allowed": false,
+    "performance_selection_allowed": false,
+    "threshold_sweep_allowed": false,
+    "holdout_open_allowed": false,
+    "active_strategy_change_allowed": false,
+    "paper_shadow_runtime_change_allowed": false,
+    "real_money_actions_allowed": false
+  },
+  "next_gate": "PARSER_AND_SYNTHETIC_POINT_IN_TIME_SMOKE_THEN_DECIDE_IF_A_SMALL_LOCAL_TARGET_WINDOW_JUSTIFIES_ARCHIVE_STORAGE"
+}
