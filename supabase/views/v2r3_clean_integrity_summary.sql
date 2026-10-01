@@ -16,7 +16,12 @@ with rows as (
         payload #>> '{decision,timing,evaluation_completed_at_utc}' as evaluation_completed_at_utc,
         payload #>> '{decision,strategy_fingerprint_sha256}' as strategy_fingerprint,
         payload #>> '{decision,runtime_code_fingerprint_sha256}' as runtime_fingerprint,
-        payload #>> '{decision,decision,decision}' as nested_decision,
+        payload #>> '{decision,decision,decision}' as initial_decision,
+        payload #>> '{revalidation,decision,decision}' as revalidation_decision,
+        coalesce(
+            payload #>> '{revalidation,decision,decision}',
+            payload #>> '{decision,decision,decision}'
+        ) as final_payload_decision,
         payload #> '{decision,fresh_kraken_ticker}' as fresh_kraken_ticker
     from public.paper_candidate_outcomes
     where series_id = 'PAPER-V2R3-CLEAN-20261001T0925Z'
@@ -45,9 +50,14 @@ select
     count(distinct strategy_fingerprint)::integer as distinct_strategy_fingerprints,
     count(distinct runtime_fingerprint)::integer as distinct_runtime_fingerprints,
     count(*) filter (
-        where nested_decision is null
-           or nested_decision is distinct from table_decision
+        where final_payload_decision is null
+           or final_payload_decision is distinct from table_decision
     )::integer as decision_field_mismatches,
+    count(*) filter (where revalidation_decision is not null)::integer as revalidated_candidates,
+    count(*) filter (
+        where revalidation_decision is not null
+          and revalidation_decision is distinct from initial_decision
+    )::integer as decision_changes_on_revalidation,
     count(*) filter (where table_decision = 'BUY_SCOUT')::integer as buy_scouts,
     count(*) filter (where table_decision = 'WAIT')::integer as waits,
     count(*) filter (where table_decision = 'REJECT')::integer as rejects,
@@ -63,13 +73,13 @@ select
                or fresh_kraken_ticker is null
                or strategy_fingerprint is null
                or runtime_fingerprint is null
-               or nested_decision is null
-               or nested_decision is distinct from table_decision
+               or final_payload_decision is null
+               or final_payload_decision is distinct from table_decision
         ) > 0 then 'INTEGRITY_FAIL'
         when count(distinct strategy_fingerprint) <> 1 then 'INTEGRITY_FAIL'
         when count(distinct runtime_fingerprint) <> 1 then 'INTEGRITY_FAIL'
         else 'HEALTHY'
     end as integrity_state,
-    'Prospective data-integrity check only; this view does not evaluate strategy performance.'::text
+    'Prospective data-integrity check only. Table decision is compared with revalidation decision when present, otherwise with initial decision. This view does not evaluate strategy performance.'::text
         as interpretation_guardrail
 from rows;
