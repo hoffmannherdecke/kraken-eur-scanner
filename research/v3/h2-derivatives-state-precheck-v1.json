@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H2_DERIVATIVES_STATE_PRECHECK_V1",
+  "hypothesis_id": "V3-H2",
+  "status": "PRECHECK",
+  "prepared_at_utc": "2026-10-01T18:20:00Z",
+  "purpose": "Test whether point-in-time derivatives state adds incremental information to Kraken-EUR candidate quality after the frozen baseline signal, primarily as state/conditioning rather than a direct directional trigger.",
+  "baseline": "Latest validated V2/V2R4 candidate stream at the time the research trial is eventually frozen.",
+  "authority": {
+    "execution_and_fill_truth": "KRAKEN_SPOT_EUR",
+    "preferred_derivatives_context": "KRAKEN_PUBLIC_FUTURES_WHERE_AVAILABLE",
+    "supplementary_cross_market_context": "BINANCE_PUBLIC_USD_M",
+    "direct_direction_rule_from_funding_sign_allowed": false,
+    "binance_price_as_kraken_fill_truth_allowed": false
+  },
+  "candidate_inputs": [
+    "funding_level",
+    "funding_delta",
+    "funding_persistence",
+    "basis_or_premium_level",
+    "basis_or_premium_delta",
+    "open_interest_delta",
+    "taker_buy_sell_ratio",
+    "optional_long_short_ratio",
+    "cross_venue_kraken_binance_divergence",
+    "metric_age_seconds"
+  ],
+  "point_in_time_contract": {
+    "event_clock": "candidate_detected_at_or_frozen_decision_cutoff",
+    "only_rows_at_or_before_event": true,
+    "future_rows_forbidden": true,
+    "missing_values_remain_missing": true,
+    "silent_forward_fill_forbidden": true,
+    "current_listing_universe_as_historical_filter_forbidden": true,
+    "source_and_timestamp_provenance_required": true
+  },
+  "first_research_role": {
+    "mode": "STATE_STRATIFICATION_AND_INCREMENTAL_INFORMATION_ONLY",
+    "new_candidate_generation": false,
+    "direct_buy_sell_rule": false,
+    "sizing_change": false,
+    "stop_change": false,
+    "ttl_change": false
+  },
+  "precheck_questions": [
+    "Which Kraken-EUR candidate assets have contemporaneous public derivatives coverage?",
+    "What fraction of prospective candidate events can be joined point-in-time without stale or post-event data?",
+    "How old are funding/OI/basis/taker observations at the candidate clock?",
+    "Where do Kraken and Binance metric semantics differ enough to prevent direct comparison?",
+    "Can coverage be obtained without account/private endpoints or an uncontrolled raw-data mirror?"
+  ],
+  "phased_evidence_path": [
+    "PRECHECK_COVERAGE_AND_TIMESTAMP_SEMANTICS",
+    "PREREGISTERED_DEVELOPMENT_ASSOCIATION_ON_POINT_IN_TIME_DATA",
+    "FROZEN_INCREMENTAL_MODEL_OR_SIMPLE_RULE_COMPARISON",
+    "CLEAN_OOS_OR_WALK_FORWARD_VALIDATION",
+    "PROSPECTIVE_SHADOW_ON_SAME_CANDIDATE_STREAM",
+    "PROMOTION_REVIEW_ONLY_IF_INCREMENTAL_NET_VALUE"
+  ],
+  "selection_bias_guardrails": {
+    "threshold_sweep_allowed": false,
+    "pair_subset_selection_by_seen_performance_allowed": false,
+    "month_subset_selection_by_seen_performance_allowed": false,
+    "horizon_sweep_allowed": false,
+    "current_sealed_holdout_open_allowed": false,
+    "precheck_may_select_winner": false,
+    "no_winner_is_valid_outcome": true
+  },
+  "economics_guardrails": {
+    "kraken_fee_spread_slippage_remain_execution_cost_reference": true,
+    "derivatives_context_cannot_erase_execution_costs": true,
+    "incremental_value_must_be_net_of_costs_at_promotion_stage": true
+  },
+  "runtime_guardrails": {
+    "active_v2r3_change_allowed": false,
+    "v2r4_activation_allowed": false,
+    "paper_decision_change_allowed": false,
+    "private_api_allowed": false,
+    "orders_allowed": false,
+    "leverage_allowed": false,
+    "real_money_actions_allowed": false
+  },
+  "current_data_readiness": {
+    "binance_point_in_time_methodology": "CI_GREEN_RUN_61",
+    "binance_physical_minipc_public_access": "PENDING_ONE_TIME_LOCAL_SMOKE",
+    "kraken_derivatives_coverage_audit": "NOT_YET_RUN",
+    "performance_trial_started": false,
+    "holdout_opened": false
+  },
+  "next_gate": "COVERAGE_AND_SEMANTICS_PRECHECK_ONLY"
+}
