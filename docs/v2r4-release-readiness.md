@@ -71,6 +71,8 @@ Runtime timing at this snapshot:
 - feed -> shadow latency p50: **~2.04 s**
 - feed -> shadow latency p90: **~3.63 s**
 
+A separate fail-closed comparison control is now available as `public.realtime_path_comparison_readiness`; it reports sample sufficiency and keeps `ranking_allowed=false` until event identity and sample size are genuinely adequate.
+
 Scanner matching is still sparse and must not be used as a winner ranking:
 
 - shadow events in match-quality view: **353**
