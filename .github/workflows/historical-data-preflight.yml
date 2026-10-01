@@ -15,6 +15,7 @@ name: Historical data preflight
       - 'tools/extract-kraken-ohlcvt-eur15.py'
       - 'tools/cleanup-verified-kraken-ohlcvt-parts.ps1'
       - 'tools/normalize-kraken-eur15.py'
+      - 'tools/historical-real-pair-replay-smoke.py'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -40,6 +41,7 @@ jobs:
           python -m py_compile tools/inspect-kraken-ohlcvt-archive.py
           python -m py_compile tools/extract-kraken-ohlcvt-eur15.py
           python -m py_compile tools/normalize-kraken-eur15.py
+          python -m py_compile tools/historical-real-pair-replay-smoke.py
 
       - name: Validate no-download Kraken manifest
         run: |
@@ -180,6 +182,23 @@ jobs:
               assert da==db, name
 
           print("EUR15_NORMALIZER PASS deterministic/no-gap-fill/explicit-close-time")
+          PY
+
+      - name: Smoke real-pair point-in-time replay methodology
+        run: |
+          python tools/historical-real-pair-replay-smoke.py \
+            /tmp/eur15-normalized-a/XBTEUR_15.normalized.csv.gz \
+            --lookback-bars 13 --horizon-bars 1 \
+            --output /tmp/real-pair-replay-smoke.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/real-pair-replay-smoke.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["decision"]["point_in_time_assertions"]["future_bar_in_features"] is False
+          assert j["label"]["generated_after_decision_freeze"] is True
+          assert j["guardrails"]["historical_strategy_tuning_performed"] is False
+          print("REAL_PAIR_PIT_REPLAY PASS")
           PY
 
       - name: Smoke OHLCVT cleanup plan-only
