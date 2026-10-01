@@ -84,7 +84,23 @@ Abschlussregel, nicht als nachträgliches Strategie-Tuning behandelt.
 
 ---
 
-### V2R4 — vorbereitete taktische Timing-/Trigger-Version
+### Diagnostic predecessor findings — hypotheses only (2026-10-01)
+
+The compromised predecessor series is **not** valid promotion evidence, but it remains useful for generating testable hypotheses.
+
+From mature 24h REJECT follow-ups in `PAPER-V2R3-FINAL-20260928T1752Z`:
+- 81 persisted REJECT cases later reached at least +10% MFE within 24h;
+- 71/81 of those persisted decisions had detection→evaluation-complete <=60s;
+- 0/81 of those +10% cases had detection→evaluation-complete >300s;
+- 42/81 were not flagged as already-run/late by the opportunity audit.
+
+Therefore the diagnostic evidence does **not** support a single-cause explanation of "we only missed them because the evaluator was too slow". Runtime persistence produced a separate severe latency tail, but many very large post-detection moves were rejected even when the persisted evaluation completed quickly. Candidate hypotheses for later V2R4/V3 testing include overly conservative resistance/breakout/volume/cost gates and missing continuation/second-leg handling.
+
+A particularly strong configuration hypothesis is the legacy hardcoded `PAIR_BLOCKED` path (e.g. QNT/EUR): multiple blocked QNT observations later showed large 24h MFE. This is one reason V2R4 must rely on the current live Kraken Spot-EUR universe rather than a static blocklist/whitelist assumption.
+
+**Guardrail:** because the predecessor could re-evaluate candidates before persistence, these figures are diagnostic/hypothesis-generating only. The clean replacement series must confirm/refute them prospectively before any strategy rule is changed.
+
+## V2R4 — vorbereitete taktische Timing-/Trigger-Version
 
 **Status:** PREPARED / NOT ACTIVE / PAPER ONLY  
 **Implementierung:** Draft-PR #8  
