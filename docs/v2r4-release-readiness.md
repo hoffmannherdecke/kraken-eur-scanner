@@ -114,6 +114,27 @@ Still required at the actual release boundary:
 - final directory/control/series wiring for the new immutable V2R4 paper series;
 - no activation before the V2R3 release review and explicit sizing/release decision.
 
+## V2R3 clean-series freeze guard
+
+To prevent accidental contamination while the clean control series is still collecting, the repository now contains an explicit fail-closed freeze contract:
+
+- manifest: `research/v2r3/clean-series-freeze-20261001.json`
+- validator: `tools/validate-v2r3-clean-series-freeze.py`
+- workflow: `.github/workflows/v2r3-clean-series-freeze-guard.yml`
+- first validation: **Run #1 SUCCESS**
+
+The guard verifies:
+
+- exact active series/test/strategy revision;
+- frozen strategy-spec fingerprint;
+- frozen evaluator/revalidator/context runtime fingerprint;
+- frozen legacy scanner package checksum;
+- frozen 10-minute scanner cadence and scanner runtime settings.
+
+It intentionally allows documentation, observability and inactive V2R4 preparation, but it makes any silent V2R3 entry/stop/sizing/scanner/cadence drift visible immediately.
+
+The freeze must be retired or replaced explicitly after the documented V2R3 completion/release review; expected hashes must not be silently rewritten while the series is active.
+
 ## Current blocker to V2R4 activation review
 
 The technical preparation is largely green, but the **V2R3 clean control series has not matured enough for the mandatory release review**.
