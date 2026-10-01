@@ -16,6 +16,10 @@ Ab jetzt gilt:
 - Erst einen Baustein stabil und mit kleinem End-to-End-Smoke-Test nachweisen, dann den nächsten hinzufügen.
 - Keine stillen Strategieänderungen. V2R3 bleibt bis zum Ende seiner laufenden Vergleichsserie eingefroren.
 - Routinearbeit lokal / GitHub / API zuerst; ChatGPT Work nur für kleine, nicht sinnvoll auslagerbare Aufgaben.
+- **Autonomie-Protokoll:** Innerhalb des freigegebenen Projektumfangs arbeitet ChatGPT ohne erneutes Okay in einem durch. Nach einem Nutzer-Gate wird automatisch weitergearbeitet. Blockierte Pfade führen nicht zum Stillstand; stattdessen den nächsten unabhängigen offenen Punkt bearbeiten und Blocker dokumentieren.
+- Nutzer nur dann unterbrechen, wenn seine Mitwirkung technisch zwingend ist (physischer MINI-PC/Heimnetz/BIOS/Gerät, Login/Secret/Account-Bestätigung, echte UI-Interaktion) oder wenn ein bestehendes Sicherheits-/Release-Gate bewusst eine menschliche Entscheidung verlangt.
+- Lokale Nutzeraktionen nach Möglichkeit bündeln; keine Serien einzelner „bitte noch diesen Befehl“-Rückfragen, wenn ein sicherer Sammeltest möglich ist.
+- Keine Zwischenfreigaben für GitHub-/Supabase-/öffentliche API-/Read-only-Test-/Dokumentations-/Analysearbeiten einholen, solange die bestehenden Guardrails eingehalten werden.
 - Architektur schlank halten: wenig Rohdaten, kurze TTLs, Log-Rotation, Kompaktierung, keine unnötigen Datenkopien.
 - Technische Fehler und statistische/strategische Schwäche getrennt behandeln.
 - Kein einzelner Dienst darf alleiniger Trigger oder Single Point of Failure sein.
