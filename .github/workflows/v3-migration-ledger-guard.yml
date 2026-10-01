@@ -8,6 +8,7 @@ name: V3 migration ledger guard
     paths:
       - 'research/v3-migration-ledger.json'
       - 'tools/validate-v3-migration-ledger.py'
+      - 'tools/run-minipc-v3-next-physical-gates.ps1'
       - 'docs/v3-research-framework.md'
       - '.github/workflows/v3-migration-ledger-guard.yml'
 
@@ -48,3 +49,21 @@ jobs:
           else
             echo 'V3_LEDGER_FAIL_CLOSED PASS'
           fi
+
+      - name: Physical gate bundle plan-only smoke
+        shell: pwsh
+        run: |
+          ./tools/run-minipc-v3-next-physical-gates.ps1 | Tee-Object -Variable plan
+          $text = $plan -join [Environment]::NewLine
+          if ($text -notmatch '"status":\s*"PLAN_ONLY"') {
+            throw "V3 physical gate bundle did not remain plan-only"
+          }
+          if ($text -notmatch '"holdout_opened":\s*false') {
+            throw "V3 physical gate bundle violated holdout guard"
+          }
+          if ($text -notmatch '"orders":\s*false') {
+            throw "V3 physical gate bundle violated no-order guard"
+          }
+          if ($text -notmatch '"real_money_actions":\s*false') {
+            throw "V3 physical gate bundle violated real-money guard"
+          }
