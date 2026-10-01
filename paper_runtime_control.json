@@ -1,14 +1,14 @@
 {
-  "schema_version": 6,
-  "enabled": false,
-  "test_id": "SHADOW-V2R3-20260928-02",
-  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "schema_version": 7,
+  "enabled": true,
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "strategy_revision": "V2R3-2026-09-28",
-  "series_started_at_utc": "2026-09-28T17:52:00Z",
-  "resumed_at_utc": "2026-09-28T17:52:00Z",
-  "reason": "Final homogeneous V2R3 series after all scanner/runtime/storage hardening. Any earlier V2R3 candidates are diagnostic only.",
+  "series_started_at_utc": "2026-10-01T09:25:00Z",
+  "resumed_at_utc": "2026-10-01T09:25:00Z",
+  "reason": "Clean V2R3 restart after runtime-only persistence integrity repair. Strategy/entry/stop/sizing/scanner rules unchanged; predecessor retained as diagnostic because repeated evaluator passes could overwrite the first prospective decision before persistence.",
   "target_completed_paper_trades": 20,
-  "warmup_excluded_before_utc": "2026-09-28T17:52:00Z",
+  "warmup_excluded_before_utc": "2026-10-01T09:25:00Z",
   "preserve_scanner_handoffs": true,
   "scanner_target_interval_minutes": 10,
   "continuous_raw_market_capture_enabled": false,
@@ -19,6 +19,6 @@
   "independent_external_watchdog_required": true,
   "preserve_process_health": true,
   "real_money_actions_enabled": false,
-  "paused_at_utc": "2026-10-01T09:20:00Z",
-  "pause_reason": "Technical data-quality pause: follow-up timestamp churn plus pipefail status detection could prevent persistence, causing repeated evaluation of the same candidate. Freeze current V2R3 evidence before runtime-only repair; no strategy-rule change."
+  "predecessor_series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "data_quality_restart_reason": "followup timestamp churn + non-deterministic status|grep persistence gate caused repeated evaluation before commit"
 }
