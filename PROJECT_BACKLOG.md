@@ -76,7 +76,7 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 - [x] Kontrollierten Internet-Ausfall/Wiederkehr für die **aktiven Transportpfade** testen: 2026-10-01 PASS; Ethernet-Ausfall wurde erkannt, Kraken HTTPS/Canary/breiter EUR-Feed/Altrady/Watchdog erholten sich automatisch. Stale-Decision/Queue-Replay bleibt erst mit gekoppelter Strategie-Runtime separat zu beweisen.
 - [ ] Wiederverbindung auf **Strategie-Runtime-Ebene** testen: Dedup, TTL alter Signale, **kein blindes Replay** veralteter Kandidaten. Transport-Reconnect selbst ist seit 2026-10-01 verifiziert.
 - [ ] Neustart-Reconciliation: lokaler Zustand, GitHub-Zustand und spätere Exchange-Zustände müssen konsistent zusammengeführt werden.
-- [ ] GitHub-Cloudpfad als unabhängigen Fallback erhalten; weder Mini-PC noch Altrady dürfen alleiniger Trigger sein.
+- [x] GitHub-Cloudpfad als unabhängigen Fallback erhalten: der reale MINI-PC-Stromausfall am 2026-10-01 lieferte den Praxisnachweis. Während der MINI-PC/RDP offline war, liefen `Kraken EUR early sensor` und `Paper runtime evaluator and lifecycle` in GitHub weiter erfolgreich; weder MINI-PC noch Altrady sind alleiniger Trigger.
 - [x] Tägliche Sicherung um 04:00 lokal aktiv; 14 Tage Retention; Watchdog alarmiert erst nach mindestens 7 Tagen ohne erfolgreiche Sicherung.
 - [x] Restore-/Recovery-Smoke-Test vorhanden und nicht-destruktiv verifiziert; Restore erfolgt in temporäres Verzeichnis und überschreibt keinen Live-State.
 - [ ] Grafana-Statusseite erst ergänzen, wenn stabile Metriken vorhanden sind; kein Dashboard nur um des Dashboards willen.
