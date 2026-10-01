@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "kind": "KRAKEN_TRADES_STORAGE_BENEFIT_GATE_V1",
+  "status": "NOT_AUTHORIZED",
+  "prepared_at_utc": "2026-10-01T17:40:00Z",
+  "dataset_id": "kraken_trades_full_2026q2",
+  "estimated_compressed_archive_gb": 26,
+  "decision_scope": "whether a large local Kraken public-trades archive is justified for targeted microstructure research",
+  "must_all_be_true_before_full_download": [
+    "at_least_two_concrete_questions_require_trade_level_timing_or_flow_and_cannot_be_answered_from_existing_OHLCVT_or_live_shadow_evidence",
+    "target_pairs_and_event_windows_are_defined_before_download",
+    "no_threshold_pair_or_month_selection_is_being_driven_by_seen_performance",
+    "parser_and_point_in_time_smoke_is_green_on_synthetic_or_existing_small_local_data",
+    "official_archive_part_checksums_and_joined_archive_checksum_are available_and_versioned",
+    "measured_local_storage_plan_leaves_at_least_100_GB_free_after_compressed_archive_staging_and_expected_target_extraction",
+    "drive_D_remains_unused_until_its_separate_repair_backup_gate_is_closed",
+    "raw_trade_data_stays_out_of_GitHub_and_Supabase",
+    "download_is_explicitly_separate_from_active_V2R3_V2R4_runtime"
+  ],
+  "prefer_no_download_when": [
+    "question_can_be_answered_from_15m_OHLCVT",
+    "question_can_be_answered_from_existing_V2R4_shadow_event_and_outcome_evidence",
+    "question_requires_true_bid_ask_spread_or_order_book_depth_because_public_trades_alone_cannot_supply_it",
+    "only_exploratory_parameter_search_is_proposed_without_a_pre_registered_question",
+    "storage_reserve_or_cleanup_plan_is_uncertain"
+  ],
+  "initial_targeted_scope_if_gate_later_passes": {
+    "mode": "selected_pairs_selected_windows_only",
+    "full_universe_performance_backtest": false,
+    "primary_outputs": [
+      "arrival_to_next_public_trade_latency",
+      "window_vwap",
+      "trade_density",
+      "buy_sell_volume_balance",
+      "realized_trade_price_range",
+      "short_horizon_public_trade_impact_proxy"
+    ]
+  },
+  "guardrails": {
+    "download_authorized": false,
+    "performance_selection_allowed": false,
+    "holdout_open_allowed": false,
+    "active_strategy_change_allowed": false,
+    "paper_shadow_runtime_change_allowed": false,
+    "private_exchange_api_allowed": false,
+    "orders_allowed": false,
+    "real_money_actions_allowed": false
+  },
+  "next_gate": "RUN_SYNTHETIC_OR_EXISTING_SMALL_LOCAL_TARGETED_SMOKE_ONLY"
+}
