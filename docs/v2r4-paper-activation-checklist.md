@@ -39,7 +39,9 @@ Before changing the active paper strategy:
 - include MFE/MAE, edge decay, costs, missed moves, latency chain and data-quality incidents;
 - classify findings as strategy / timing-infrastructure / data-quality / technical-runtime / cost;
 - record every finding as `CONFIRM`, `CHANGE`, `ADD`, `REJECT`, or `MORE_TESTING_REQUIRED`;
-- preserve the clean V2R3 artifacts immutable after closure.
+- preserve the clean V2R3 artifacts immutable after closure;
+- **before any V2R4 activation mutation**, generate a content-addressed rollback reference with `tools/paper-release-rollback-snapshot.py` and archive it with the release evidence;
+- the rollback snapshot must validate the active V2R3 freeze manifest and exact strategy/runtime fingerprints before it is accepted.
 
 Do not use the compromised predecessor series as promotion evidence.
 
@@ -168,7 +170,7 @@ Rollback is technical, not a strategy retune.
 If V2R4 release smoke/runtime is unhealthy:
 1. disable the new V2R4 paper runtime;
 2. leave already-written V2R4 evidence intact and mark the series technical/diagnostic as appropriate;
-3. restore the last-known-good paper runtime/code configuration;
+3. restore only the protected code/configuration files identified by the last-known-good rollback snapshot; **never reset the whole repository** because paper evidence/state continues to evolve;
 4. keep Kraken/health/shadow transport read-only paths running where safe;
 5. reconcile queue/TTL/persistence before any restart;
 6. do not silently append post-rollback data to a supposedly homogeneous failed V2R4 series.
