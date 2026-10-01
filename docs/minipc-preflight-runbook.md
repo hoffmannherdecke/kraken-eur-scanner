@@ -703,6 +703,19 @@ The next setup item after the verified Altrady transport is now prepared in the 
 
 This closes the broad Kraken-EUR realtime transport activation gate. The next infrastructure gate is restart/recovery verification for the full active local stack before any strategy activation.
 
+### Full local runtime recovery gate prepared 2026-10-01
+
+After the broad Kraken-EUR feed activation, a dedicated read-only restart/recovery verification bundle was added and Windows-CI verified:
+
+- `tools/minipc-runtime-recovery-gate.ps1`
+- checks all six expected local CryptoMiniPC tasks;
+- verifies fresh heartbeats for Kraken BTC/EUR canary, broad Kraken-EUR universe feed and Altrady transport;
+- verifies local watchdog state and public Kraken HTTPS reachability;
+- writes a compact JSON report under `Trading\Logs`;
+- no configuration change, no process restart, no strategy mutation and no real-money action.
+
+Next physical MINI-PC step: perform one controlled Windows restart, reconnect, then run this gate. This proves that the current local transport/watchdog stack actually recovers after reboot before any strategy activation.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
