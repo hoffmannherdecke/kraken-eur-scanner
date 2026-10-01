@@ -1,3 +1,4 @@
+# Self-testing canonical V3 migration ledger guard
 name: V3 migration ledger guard
 
 'on':
