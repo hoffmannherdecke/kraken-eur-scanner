@@ -40,6 +40,13 @@ jobs:
           assert j["future_trial_constraints"]["sealed_2026h1_holdout_open_allowed"] is False
           assert j["runtime_guardrails"]["active_v2r3_change_allowed"] is False
           assert j["runtime_guardrails"]["orders"] is False
+          rd=j["methodology_readiness"]
+          assert rd["synthetic_price_volume_pit_smoke"]=="CI_GREEN_RUN_1"
+          assert rd["future_row_trap"]=="PASS_IGNORED"
+          assert rd["missing_prior_volume_window"]=="PASS_RATIO_REMAINS_NULL"
+          assert rd["performance_trial_started"] is False
+          assert rd["holdout_opened"] is False
+          assert j["next_gate"]=="PREREGISTER_REAL_NORMALIZED_EUR15_DEVELOPMENT_DATASET_AND_FIXED_PRIMITIVES_NO_HOLDOUT"
           assert j["next_gate"]=="PREREGISTER_REAL_NORMALIZED_EUR15_DEVELOPMENT_DATASET_AND_FIXED_PRIMITIVES_NO_HOLDOUT"
           rd=j["methodology_readiness"]
           assert rd["synthetic_price_volume_pit_smoke"]=="CI_GREEN_RUN_1"
