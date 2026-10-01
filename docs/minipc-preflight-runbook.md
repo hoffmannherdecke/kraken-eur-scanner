@@ -936,6 +936,23 @@ This makes the cloud layer a genuine independent deadman: if the MINI-PC itself 
 
 **Next physical MINI-PC action:** run the status-sync installer once from elevated PowerShell. The first authenticated upload is performed before the persistent task is registered.
 
+### Legacy scanner timing archive activated 2026-10-01
+
+To make the Kraken-native WS shadow vs. legacy GitHub scanner timing comparison measurable without manual log inspection:
+
+- Supabase table `public.scanner_detection_evidence` is active;
+- `.github/workflows/scanner-timing-sync.yml` archives canonical handoff timestamps after successful early-sensor runs and on a 30-minute reconciliation schedule;
+- canonical nested timing fields are used:
+  - `timing.candidate_detected_at_utc`
+  - `timing.handoff_written_at_utc`
+  - `source_scanner_run_id`
+  - scanner score/rank from `scanner_candidate`;
+- first successful archive contained **854 scanner detection records** covering 2026-09-27 21:08:25 UTC through 2026-10-01 07:18:30 UTC;
+- Supabase view `public.v2r4_shadow_scanner_timing` provides a read-only comparison aid between WS-shadow event times and the nearest same-pair scanner detections before/after within ±6h;
+- current early sample: 23 shadow events, 3 scanner detections afterwards within 6h, 8 scanner detections beforehand within 6h; this is **timing evidence only**, not proof that matched rows represent the identical market impulse.
+
+The large Paper archive sync was also hardened after one PostgREST statement timeout: upserts are now bounded into small batches with retry only for transient 429/5xx/timeout failures. The repaired archive run completed SUCCESS.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
