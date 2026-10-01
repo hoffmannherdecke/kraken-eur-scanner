@@ -13,6 +13,8 @@ name: MINI-PC tools smoke
       - 'tools/minipc-kraken-universe-feed.py'
       - 'tools/v2r4-ws-shadow-evidence.py'
       - 'tools/minipc-v2r4-ws-shadow-smoke.ps1'
+      - 'tools/minipc-v2r4-shadow-postboot-resilience.ps1'
+      - 'tools/minipc-v2r4-shadow-resilience-bundle.ps1'
       - 'tools/install-minipc-v2r4-ws-shadow.ps1'
       - 'tools/uninstall-minipc-v2r4-ws-shadow.ps1'
       - 'tools/install-minipc-kraken-universe-feed.ps1'
@@ -50,6 +52,8 @@ jobs:
             'tools/minipc-next-gate.ps1',
             'tools/minipc-runtime-recovery-gate.ps1',
             'tools/minipc-v2r4-ws-shadow-smoke.ps1',
+            'tools/minipc-v2r4-shadow-postboot-resilience.ps1',
+            'tools/minipc-v2r4-shadow-resilience-bundle.ps1',
             'tools/minipc-v2r4-ws-shadow-evidence.ps1',
             'tools/install-minipc-v2r4-ws-shadow.ps1',
             'tools/uninstall-minipc-v2r4-ws-shadow.ps1',
