@@ -34,6 +34,17 @@
         "mfe_pct": 0.0,
         "peak_at_utc": "2026-10-01T03:54:00Z",
         "trough_at_utc": "2026-10-01T03:57:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -0.329,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -1.577,
+        "mfe_pct": 0.066,
+        "peak_at_utc": "2026-10-01T04:51:00Z",
+        "trough_at_utc": "2026-10-01T04:40:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -64,7 +75,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-01T04:41:37.787931Z"
+    "updated_at_utc": "2026-10-01T04:56:39.856528Z"
   },
   "original_decision": "WAIT",
   "pair": "ZRO/EUR",

@@ -1,0 +1,232 @@
+{
+  "altname": "ALGOEUR",
+  "candidate_id": "20261001-042205-ALGO-EUR-r36814646584",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.11539 with sustained volume",
+      "Hold or successful retest above 0.11539"
+    ],
+    "reason_codes": [
+      "extended_7d_30d_run",
+      "resistance_rejection_no_breakout",
+      "recent_15m_downtrend",
+      "round_trip_fees_1_20pct_before_spread_slippage",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "ALGO remains extended after a substantial 7d/30d run; post-rejection candles continued lower and no breakout confirmation is supplied. Entry is not justified after Kraken EUR costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ALGOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 32.52,
+        "available": true,
+        "current_funding_rate": -1.3473419794575e-05,
+        "current_open_interest": 6692035.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -0.0485,
+        "previous_funding_rate": -1.3473419794575e-05,
+        "previous_observed_at_utc": "2026-10-01T04:22:57.493156Z",
+        "previous_open_interest": 6695281.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.3473419794575e-05,
+        "index_price": 0.128374,
+        "last": 0.12816,
+        "mark_price": 0.12825895181,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 6692035.0,
+        "requested_symbols": [
+          "PF_ALGOUSD",
+          "PI_ALGOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ALGOUSD",
+        "volume24h": 10717346
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.11331,
+      "bid": 0.1132,
+      "last": 0.11328,
+      "spread_pct": 0.09712595470398569
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "41",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.289538835969938,
+          "ret3h_pct": 0.5006721296131778
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.23773858013262927,
+          "ret3h_pct": 0.3796561604584525
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2679425837320615,
+          "ret3h_pct": 0.4891147981202604
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T13:00:00+00:00",
+            "title": "Federal Reserve Board finalizes changes to enhance the transparency and public accountability of its stress test and reduce volatility in its stress test-related capital requiremen"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-09-30T14:30:01-04:00",
+            "title": "SEC Charges Meyer Global Management and Its CEO With Defrauding Retail Investors in Private Funds That Held Interests in SpaceX and Other Pre-IPO Securities"
+          },
+          {
+            "published_at": "2026-09-30T12:42:15-04:00",
+            "title": "SEC Charges Two Individuals With Orchestrating Fraud Scheme That Targeted Veterans"
+          },
+          {
+            "published_at": "2026-09-30T11:45:00-04:00",
+            "title": "SEC Proposes Amendments to Expand Responsible Retailization of Private Markets"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-01T04:55:28.071532Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_018d596414895efc006abde7c0e84c87d1addbcf978786e230"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.11331,
+    "bid": 0.1132,
+    "last": 0.11328,
+    "spread_pct": 0.09712595470398569
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.11489,
+      "high": 0.11511,
+      "low": 0.11436,
+      "open": 0.11462,
+      "trades": 34,
+      "ts": 1790826300,
+      "volume": 39135.19633745,
+      "vwap": 0.11467
+    },
+    {
+      "close": 0.11407,
+      "high": 0.11539,
+      "low": 0.11403,
+      "open": 0.11504,
+      "trades": 38,
+      "ts": 1790827200,
+      "volume": 63485.03174448,
+      "vwap": 0.11472
+    },
+    {
+      "close": 0.11375,
+      "high": 0.11411,
+      "low": 0.11375,
+      "open": 0.11384,
+      "trades": 29,
+      "ts": 1790828100,
+      "volume": 16605.96520738,
+      "vwap": 0.11389
+    },
+    {
+      "close": 0.11347,
+      "high": 0.11348,
+      "low": 0.11304,
+      "open": 0.11344,
+      "trades": 16,
+      "ts": 1790829000,
+      "volume": 5623.81825143,
+      "vwap": 0.11329
+    },
+    {
+      "close": 0.11328,
+      "high": 0.11372,
+      "low": 0.11325,
+      "open": 0.1135,
+      "trades": 17,
+      "ts": 1790829900,
+      "volume": 21548.88197159,
+      "vwap": 0.11341
+    }
+  ],
+  "pair": "ALGO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261001-042205-ALGO-EUR-r36814646584.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-01T04:55:34.024516Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "8775d74c030f12cc7a6ed0e51293dcb19746a5b6",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20260928-02",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-01T04:55:34.024516Z",
+    "revalidation_started_at_utc": "2026-10-01T04:55:27.793699Z",
+    "ttl_due_at_utc": "2026-10-01T04:52:42.191452Z",
+    "ttl_lag_seconds": 165.602
+  }
+}
