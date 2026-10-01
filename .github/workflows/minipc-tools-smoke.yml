@@ -19,6 +19,7 @@ name: MINI-PC tools smoke
       - 'tools/install-minipc-runtime-supervisor.ps1'
       - 'tools/minipc-runtime-supervisor-selfheal-smoke.ps1'
       - 'tools/minipc-watchdog-effectiveness-smoke.ps1'
+      - 'tools/minipc-secret-hygiene-audit.ps1'
       - 'tools/install-minipc-status-sync.ps1'
       - 'tools/uninstall-minipc-status-sync.ps1'
       - 'tools/install-minipc-v2r4-shadow-cloud-sync.ps1'
@@ -80,6 +81,7 @@ jobs:
             'tools/install-minipc-runtime-supervisor.ps1',
             'tools/minipc-runtime-supervisor-selfheal-smoke.ps1',
             'tools/minipc-watchdog-effectiveness-smoke.ps1',
+            'tools/minipc-secret-hygiene-audit.ps1',
             'tools/install-minipc-v2r4-ws-shadow.ps1',
             'tools/uninstall-minipc-v2r4-ws-shadow.ps1',
             'tools/minipc-internet-recovery-gate.ps1',
