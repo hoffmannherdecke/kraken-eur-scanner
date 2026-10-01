@@ -239,6 +239,39 @@ experiment run.
 - Time & Sales bulk download requires a separate explicit storage-benefit
   decision after OHLCVT proves useful.
 
+## 11j. First performance-oriented replay V1 frozen and execution-ready 2026-10-01
+
+After the physical broad PIT V2 methodology gate passed, the first performance-oriented historical replay was pre-registered **before** any aggregate real-data performance result was computed.
+
+Frozen artifacts:
+
+- spec: `research/historical/performance-replay-spec-v1.json`;
+- lock: `research/historical/performance-replay-spec-v1.lock.json`;
+- frozen spec SHA-256: `e8f82b9992228050188e334900b5ee35aeaa47111a526e38b1d0ae4234d33d27`;
+- frozen baseline role: OHLCVT-only price×volume continuation event study;
+- fixed 15m point-in-time features and fixed 4h horizon;
+- fixed baseline cost model: 0.60% taker fee per side + 0.10% slippage proxy per side = 1.40% round trip;
+- 2026-01-01 through 2026-06-30 remains a **sealed holdout** and is not read for V1 selection/results;
+- no threshold sweep, pair ranking or parameter optimization is permitted in V1.
+
+Prepared tooling:
+
+- frozen-spec validator;
+- local performance replay engine;
+- immutable Trial Ledger recorder;
+- guarded MINI-PC orchestrator with plan-only default and explicit execution token.
+
+CI evidence:
+
+- synthetic chronology spans research/calibration/validation windows;
+- validation report generation PASS;
+- sealed holdout generated **0 events** and **0 metrics**;
+- immutable performance-trial recorder PASS and idempotency verified;
+- MINI-PC orchestrator plan-only guard PASS;
+- Historical data preflight **run #35: SUCCESS**.
+
+Next physical gate: execute the frozen V1 replay on the actual normalized MINI-PC dataset, record its validation result immutably, and review that validation result **without opening the sealed holdout**.
+
 ## 11i. Physical broad PIT V2 methodology smoke verified 2026-10-01
 
 The contiguous-wall-clock V2 replay and the deterministic broad methodology smoke were executed on the physical MINI-PC dataset.
