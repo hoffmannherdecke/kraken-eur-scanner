@@ -10,6 +10,7 @@ name: Historical data preflight
       - 'tools/kraken-historical-preflight.py'
       - 'tools/historical-pit-smoke.py'
       - 'tools/historical-trial-ledger.py'
+      - 'tools/prepare-minipc-historical-research.ps1'
       - '.github/workflows/historical-data-preflight.yml'
 
 permissions:
@@ -75,6 +76,11 @@ jobs:
           else
             echo "IMMUTABILITY_GUARD PASS: duplicate trial_id rejected"
           fi
+
+      - name: PowerShell MINI-PC plan-only smoke
+        shell: pwsh
+        run: |
+          ./tools/prepare-minipc-historical-research.ps1
 
       - name: Safety assertion
         run: |
