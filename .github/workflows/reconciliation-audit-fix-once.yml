@@ -16,53 +16,29 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: main
-      - name: Patch active-series decision filtering
+      - name: Filter decisions and revalidations to active series
         run: |
           python - <<'PY'
           from pathlib import Path
           p=Path("tools/paper-runtime-reconciliation-audit.py")
-          c=p.read_text("utf-8")
-
-          old='''        except Exception as exc:
-              findings.append({"severity": "CRITICAL", "code": "DECISION_INVALID_JSON", "file": str(path), "detail": str(exc)})
-              continue
-          cid = str(rec.get("candidate_id") or "")
-          if cid:
-              decisions[cid] = (path, rec)
-          '''
-          new='''        except Exception as exc:
-              findings.append({"severity": "CRITICAL", "code": "DECISION_INVALID_JSON", "file": str(path), "detail": str(exc)})
-              continue
-          if rec.get("series_id") != series_id:
-              continue
-          cid = str(rec.get("candidate_id") or "")
-          if cid:
-              decisions[cid] = (path, rec)
-          '''
-          if old not in c:
-              raise SystemExit("decision marker missing")
-          c=c.replace(old,new,1)
-
-          old='''        except Exception as exc:
-              findings.append({"severity": "CRITICAL", "code": "REVALIDATION_INVALID_JSON", "file": str(path), "detail": str(exc)})
-              continue
-          cid = str(rec.get("candidate_id") or "")
-          if cid:
-              revals[cid] = (path, rec)
-          '''
-          new='''        except Exception as exc:
-              findings.append({"severity": "CRITICAL", "code": "REVALIDATION_INVALID_JSON", "file": str(path), "detail": str(exc)})
-              continue
-          if rec.get("series_id") != series_id:
-              continue
-          cid = str(rec.get("candidate_id") or "")
-          if cid:
-              revals[cid] = (path, rec)
-          '''
-          if old not in c:
-              raise SystemExit("revalidation marker missing")
-          c=c.replace(old,new,1)
-          p.write_text(c,"utf-8")
+          lines=p.read_text("utf-8").splitlines()
+          out=[]
+          pending=None
+          inserted=set()
+          for line in lines:
+              out.append(line)
+              if "DECISION_INVALID_JSON" in line:
+                  pending="decision"
+              elif "REVALIDATION_INVALID_JSON" in line:
+                  pending="revalidation"
+              elif pending and line.strip()=="continue":
+                  out.append('        if rec.get("series_id") != series_id:')
+                  out.append("            continue")
+                  inserted.add(pending)
+                  pending=None
+          if inserted != {"decision","revalidation"}:
+              raise SystemExit("active-series filter insertion incomplete: "+repr(inserted))
+          p.write_text("\n".join(out)+"\n","utf-8")
           PY
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
