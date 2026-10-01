@@ -205,6 +205,27 @@
       "persistence_mode": "compact_event_time_source_url_capture_timestamp_only",
       "duplicate_raw_storage_allowed": false,
       "access": "public_read_only"
+    },
+    {
+      "id": "coinmetrics_community_network_data",
+      "status": "PRECHECK_CANDIDATE_READ_ONLY",
+      "class": "onchain_network_state",
+      "unique_value": "Public no-key network metrics can provide active/new-address and transaction-activity state for a subset of assets, subject to measured community-tier coverage and publication-lag semantics.",
+      "authoritative_for": [
+        "coinmetrics_community_metric_catalog_and_values_within_documented_coverage"
+      ],
+      "not_authoritative_for": [
+        "kraken_eur_execution_price",
+        "kraken_pair_tradability",
+        "metric_availability_at_historical_candidate_time_without_known_at_proof",
+        "exchange_flow_coverage_unless_explicitly_available",
+        "trade_signal"
+      ],
+      "overlap_with": [],
+      "overlap_strategy": "Potential V3 H8 state/confirmation source only. Must first pass coverage and availability-lag preflight; missing/pro-only metrics remain missing rather than being replaced silently.",
+      "persistence_mode": "precheck_catalog_and_compact_prospective_state_only_until_pit_availability_proven",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_read_only_no_api_key_community_tier"
     }
   ]
 }
