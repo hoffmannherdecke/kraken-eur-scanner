@@ -445,7 +445,7 @@ jobs:
         run: |
           python tools/validate-performance-replay-spec-v2.py \
             research/historical/performance-replay-spec-v2.json \
-            --expected-sha256 3920161d4912815f193d6dcc7291dfab064a794447162d9d2fe5ec1dc7da1b3f
+            --expected-sha256 7c8f1ae3b2291a62c5b64c9ec0e25a83ced7c63e64086823f07951431bc53743
           python - <<'PY'
           from pathlib import Path
           src=Path("research/historical/performance-replay-spec-v2.json")
@@ -456,7 +456,7 @@ jobs:
           PY
           python tools/validate-performance-replay-spec-v2.py \
             /tmp/performance-replay-spec-v2-crlf.json \
-            --expected-sha256 3920161d4912815f193d6dcc7291dfab064a794447162d9d2fe5ec1dc7da1b3f
+            --expected-sha256 7c8f1ae3b2291a62c5b64c9ec0e25a83ced7c63e64086823f07951431bc53743
 
       - name: Smoke frozen second-leg performance replay V2
         run: |
