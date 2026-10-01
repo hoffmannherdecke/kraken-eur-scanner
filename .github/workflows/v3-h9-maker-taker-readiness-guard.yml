@@ -6,6 +6,8 @@ name: V3 H9 maker taker readiness guard
     branches: [main]
     paths:
       - 'research/v3/h9-maker-taker-readiness-v1.json'
+      - 'research/v3/h9-book-trade-clock-evidence-20261001T194344Z.json'
+      - 'tools/run-minipc-v3-h9-book-trade-clock-smoke.ps1'
       - 'tools/v3-h9-public-book-trade-clock-smoke.py'
       - '.github/workflows/v3-h9-maker-taker-readiness-guard.yml'
 
@@ -97,4 +99,26 @@ jobs:
               "book":v["book"],"trades":v["trades"],"trade_id_sequence":v["trade_id_sequence"],
               "clock_join":v["clock_join"]} for s,v in j["per_symbol"].items()}
           },sort_keys=True))
+          PY
+
+
+      - name: Validate persisted H9 cloud clock evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("research/v3/h9-book-trade-clock-evidence-20261001T194344Z.json").read_text())
+          assert j["status"]=="PASS"
+          assert j["totals"]["trades"]==3
+          assert j["totals"]["aligned_preceding_book_trades"]==2
+          assert j["per_symbol"]["SOL/EUR"]["clock_join"]["no_book_yet"]==1
+          for row in j["per_symbol"].values():
+              assert row["book"]["checksum_fail"]==0
+              assert row["trade_id_sequence"]["duplicates"]==0
+              assert row["trade_id_sequence"]["out_of_order"]==0
+          assert j["interpretation"]["no_book_yet_is_valid_missing_join"] is True
+          assert j["interpretation"]["queue_position_proven"] is False
+          assert j["interpretation"]["maker_fill_probability_proven"] is False
+          assert j["interpretation"]["routing_decision_allowed"] is False
+          print("V3_H9_PERSISTED_CLOCK PASS sparse-trades/safe-join/no-fill-claim")
           PY

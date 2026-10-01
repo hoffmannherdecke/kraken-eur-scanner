@@ -25,6 +25,7 @@ $plan=[ordered]@{
     "H6 frozen pre-2026 EUR15 feature-integrity",
     "H1 frozen pre-2026 EUR15 breadth feature-integrity",
     "H3 bounded public Kraken Spot WS-v2 book checksum/reconnect confirmation",
+    "H9 same-connection public book+trade clock/sequence confirmation",
     "Binance public-only local connectivity smoke"
   )
   explicitly_not_included=@(
@@ -55,7 +56,7 @@ if(-not $Execute){
 if($Confirm -ne $ExpectedConfirm){
   throw "Execution blocked. Re-run with -Confirm $ExpectedConfirm"
 }
-foreach($p in @($repo,$feature,$h3,$binance)){
+foreach($p in @($repo,$feature,$h3,$h9,$binance)){
   if(-not(Test-Path -LiteralPath $p)){throw "Required path missing: $p"}
 }
 
@@ -75,7 +76,11 @@ try{
   & $h3 -TradingRoot $TradingRoot -Execute
   if($LASTEXITCODE -ne 0){throw "H3 physical WS smoke failed"}
 
-  Write-Host "3/3 Binance public access..."
+  Write-Host "3/4 Kraken H9 same-connection book+trade clock..."
+  & $h9 -TradingRoot $TradingRoot -Execute
+  if($LASTEXITCODE -ne 0){throw "H9 physical book+trade clock smoke failed"}
+
+  Write-Host "4/4 Binance public access..."
   & $binance -TradingRoot $TradingRoot -Execute -Confirm "RUN_BINANCE_PUBLIC_ACCESS_SMOKE"
   if($LASTEXITCODE -ne 0){throw "Binance public-access smoke failed"}
 }finally{
@@ -86,5 +91,6 @@ Write-Host ""
 Write-Host "=== V3 PHYSICAL GATE BUNDLE COMPLETE ==="
 Write-Host "H1/H6: feature-integrity only, holdout closed"
 Write-Host "H3: public L2 transport/reconciliation only; queue/fill not claimed"
+Write-Host "H9: public book+trade clock/sequence only; queue/fill/routing not claimed"
 Write-Host "Binance: public connectivity only"
 Write-Host "V2R3/V2R4 unchanged / no orders / no real-money action"

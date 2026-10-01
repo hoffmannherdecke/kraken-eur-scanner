@@ -2,16 +2,25 @@
   "schema_version": 1,
   "kind": "V3_H9_MAKER_TAKER_READINESS_V1",
   "hypothesis_id": "V3-H9",
-  "status": "DEFERRED_FILL_MODEL_BOOK_TRADE_CLOCK_SMOKE_PREPARED",
+  "status": "DEFERRED_FILL_MODEL_PUBLIC_CLOCK_GREEN_PHYSICAL_AND_MODEL_GATES_PENDING",
   "prepared_at_utc": "2026-10-01T18:47:00Z",
   "purpose": "Block maker-vs-taker/fill-probability research until the required execution microstructure evidence exists.",
   "current_evidence": {
     "public_rest_l2_snapshot": "GREEN_H3_REST_DEPTH",
     "public_ws_book_delta_capture": "GREEN_H3_CLOUD_CHECKSUM_RECONCILIATION__PHYSICAL_MINIPC_PENDING",
     "public_trade_sequence_targeted_method": "PREPARED_NO_BULK_DOWNLOAD",
-    "synchronized_book_and_trade_clock": "CLOUD_SMOKE_PREPARED",
+    "synchronized_book_and_trade_clock": "GREEN_CLOUD_SAME_CONNECTION_PROTOCOL__PHYSICAL_MINIPC_PENDING",
     "queue_position_model": "NOT_AVAILABLE",
-    "maker_fill_probability_model": "NOT_AVAILABLE"
+    "maker_fill_probability_model": "NOT_AVAILABLE",
+    "cloud_book_trade_clock": {
+      "guard_run": "CI_GREEN_RUN_2",
+      "evidence": "research/v3/h9-book-trade-clock-evidence-20261001T194344Z.json",
+      "trades": 3,
+      "safely_aligned_preceding_book_trades": 2,
+      "no_book_yet_trades": 1,
+      "duplicate_trade_ids": 0,
+      "out_of_order_trade_ids": 0
+    }
   },
   "public_rest_snapshot_is_insufficient_for": [
     "queue_position",
@@ -60,5 +69,5 @@
     "leverage_allowed": false,
     "real_money_actions_allowed": false
   },
-  "next_gate": "RUN_BOUNDED_PUBLIC_SAME_CONNECTION_BOOK_TRADE_CLOCK_SMOKE_THEN_REQUIRE_PHYSICAL_CONFIRMATION_AND_REMAINING_FILL_MODEL_GATES"
+  "next_gate": "PHYSICAL_MINIPC_H3_H9_PUBLIC_CLOCK_CONFIRMATION_THEN_VERSION_FEES_DEADLINE_CLEANUP_AND_QUEUE_ASSUMPTION_BEFORE_MODELLING"
 }

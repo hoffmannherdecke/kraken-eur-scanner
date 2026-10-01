@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H9_PUBLIC_BOOK_TRADE_CLOCK_EVIDENCE_V1",
+  "status": "PASS",
+  "provenance": {
+    "github_workflow": "V3 H9 maker taker readiness guard",
+    "github_run_id": 36916367479,
+    "github_run_number": 2,
+    "github_job_id": 110551217980,
+    "source_commit": "439e5f450da5409436538c086135ba3a9721c354"
+  },
+  "checked_at_utc": "2026-10-01T19:43:44.750070Z",
+  "per_symbol": {
+    "BTC/EUR": {
+      "book": {
+        "checksum_fail": 0,
+        "checksum_pass": 227,
+        "snapshots": 1,
+        "updates": 226
+      },
+      "clock_join": {
+        "book_at_or_before_trade": 2,
+        "book_clock_ahead_of_trade": 0,
+        "no_book_yet": 0,
+        "trade_exchange_to_receive_ms": {
+          "max": 84.937,
+          "mean": 84.7945,
+          "median": 84.7945,
+          "n": 2,
+          "p90": 84.937
+        },
+        "trade_minus_preceding_book_exchange_ms": {
+          "max": 260.261,
+          "mean": 246.498,
+          "median": 246.498,
+          "n": 2,
+          "p90": 260.261
+        },
+        "trade_receive_minus_latest_book_receive_ms": {
+          "max": 255.876,
+          "mean": 229.126,
+          "median": 229.126,
+          "n": 2,
+          "p90": 255.876
+        }
+      },
+      "trade_id_sequence": {
+        "duplicates": 0,
+        "gaps": 0,
+        "max": 109672514,
+        "min": 109672513,
+        "n": 2,
+        "out_of_order": 0
+      },
+      "trades": 2
+    },
+    "ETH/EUR": {
+      "book": {
+        "checksum_fail": 0,
+        "checksum_pass": 309,
+        "snapshots": 1,
+        "updates": 308
+      },
+      "clock_join": {
+        "book_at_or_before_trade": 0,
+        "book_clock_ahead_of_trade": 0,
+        "no_book_yet": 0,
+        "trade_exchange_to_receive_ms": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "n": 0,
+          "p90": null
+        },
+        "trade_minus_preceding_book_exchange_ms": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "n": 0,
+          "p90": null
+        },
+        "trade_receive_minus_latest_book_receive_ms": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "n": 0,
+          "p90": null
+        }
+      },
+      "trade_id_sequence": {
+        "duplicates": 0,
+        "gaps": 0,
+        "n": 0,
+        "out_of_order": 0
+      },
+      "trades": 0
+    },
+    "SOL/EUR": {
+      "book": {
+        "checksum_fail": 0,
+        "checksum_pass": 183,
+        "snapshots": 1,
+        "updates": 182
+      },
+      "clock_join": {
+        "book_at_or_before_trade": 0,
+        "book_clock_ahead_of_trade": 0,
+        "no_book_yet": 1,
+        "trade_exchange_to_receive_ms": {
+          "max": 85.589,
+          "mean": 85.589,
+          "median": 85.589,
+          "n": 1,
+          "p90": 85.589
+        },
+        "trade_minus_preceding_book_exchange_ms": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "n": 0,
+          "p90": null
+        },
+        "trade_receive_minus_latest_book_receive_ms": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "n": 0,
+          "p90": null
+        }
+      },
+      "trade_id_sequence": {
+        "duplicates": 0,
+        "gaps": 0,
+        "max": 15146535,
+        "min": 15146535,
+        "n": 1,
+        "out_of_order": 0
+      },
+      "trades": 1
+    }
+  },
+  "totals": {
+    "aligned_preceding_book_trades": 2,
+    "trades": 3
+  },
+  "interpretation": {
+    "same_websocket_connection": true,
+    "book_crc_reconciliation_used": true,
+    "trade_id_public_per_book_sequence": true,
+    "only_preceding_book_exchange_time_counts_as_aligned": true,
+    "no_book_yet_is_valid_missing_join": true,
+    "queue_position_proven": false,
+    "maker_fill_probability_proven": false,
+    "fill_before_deadline_probability_proven": false,
+    "cancel_fill_race_proven": false,
+    "routing_decision_allowed": false
+  },
+  "guardrails": {
+    "active_v2r3_changed": false,
+    "v2r4_changed": false,
+    "orders": false,
+    "real_money_actions": false,
+    "threshold_selection": false,
+    "performance_trial_started": false,
+    "holdout_opened": false
+  }
+}
