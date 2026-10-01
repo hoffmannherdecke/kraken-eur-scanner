@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-01T18:36:00Z",
+  "updated_at_utc": "2026-10-01T18:38:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -331,6 +331,19 @@
         "docs/v3-research-framework.md"
       ],
       "pending_gate": "V3_H6_PREREGISTERED_REAL_EUR15_DEVELOPMENT_FEATURE_TRIAL_NO_HOLDOUT"
+    },
+    {
+      "id": "meta_take_no_take",
+      "category": "meta_decision",
+      "source_version": "V3 hypothesis",
+      "migration_status": "OPEN_RESEARCH",
+      "rationale": "Meta TAKE/NO-TAKE training is blocked until V2R3 final review and a point-in-time label/cost/split contract are frozen. Current label readiness is explicitly NOT_FROZEN.",
+      "evidence": [
+        "research/v3/h7-meta-gate-readiness-v1.json",
+        "supabase/views/v3_h7_meta_gate_readiness.sql",
+        "docs/v3-research-framework.md"
+      ],
+      "pending_gate": "V3_H7_WAIT_FOR_V2R3_FINAL_REVIEW_THEN_FREEZE_LABEL_CONTRACT"
     }
   ]
 }
