@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "kind": "BINANCE_DERIVATIVES_CONTEXT_PREFLIGHT_V1",
+  "status": "PREPARED_NO_BULK_DOWNLOAD",
+  "prepared_at_utc": "2026-10-01T18:10:00Z",
+  "role": "SUPPLEMENTARY_CROSS_MARKET_DERIVATIVES_CONTEXT_ONLY",
+  "primary_market_truth": "KRAKEN_SPOT_EUR",
+  "preferred_binance_market": "USD-M_PERPETUAL",
+  "public_sources": [
+    {
+      "metric": "funding_rate",
+      "endpoint_family": "fapi/v1/fundingRate",
+      "timestamp_field": "fundingTime",
+      "public_read_only": true,
+      "historical_scope": "PAGINATED_PUBLIC_HISTORY",
+      "use": "state_context_only"
+    },
+    {
+      "metric": "open_interest",
+      "endpoint_family": "futures/data/openInterestHist",
+      "timestamp_field": "timestamp",
+      "public_read_only": true,
+      "historical_scope": "RECENT_WINDOW_ONLY",
+      "use": "state_context_only"
+    },
+    {
+      "metric": "taker_buy_sell",
+      "endpoint_family": "futures/data/takerlongshortRatio",
+      "timestamp_field": "timestamp",
+      "public_read_only": true,
+      "historical_scope": "RECENT_WINDOW_ONLY",
+      "use": "state_context_only"
+    },
+    {
+      "metric": "basis",
+      "endpoint_family": "futures/data/basis",
+      "timestamp_field": "timestamp",
+      "public_read_only": true,
+      "historical_scope": "RECENT_WINDOW_ONLY",
+      "use": "state_context_only"
+    },
+    {
+      "metric": "long_short_ratio",
+      "endpoint_family": "futures/data/globalLongShortAccountRatio",
+      "timestamp_field": "timestamp",
+      "public_read_only": true,
+      "historical_scope": "RECENT_WINDOW_ONLY",
+      "use": "optional_state_context_only"
+    }
+  ],
+  "point_in_time_contract": {
+    "event_timestamp_required": true,
+    "latest_metric_row_must_be_at_or_before_event": true,
+    "future_metric_rows_forbidden": true,
+    "missing_metric_must_remain_missing": true,
+    "no_forward_fill_across_unverified_source_gap": true,
+    "historical_symbol_mapping_must_be_explicit": true,
+    "current_binance_universe_must_not_be_used_as_historical_survivorship_filter": true
+  },
+  "derived_context_allowed": [
+    "funding_rate",
+    "open_interest_level",
+    "open_interest_change_pct",
+    "taker_buy_sell_ratio",
+    "basis_rate",
+    "long_short_ratio",
+    "metric_age_seconds"
+  ],
+  "explicitly_not_authoritative_for": [
+    "kraken_eur_execution_price",
+    "kraken_eur_spread",
+    "kraken_eur_fill_probability",
+    "kraken_eur_slippage",
+    "kraken_pair_tradability",
+    "paper_buy_sell_decision"
+  ],
+  "history_guardrails": {
+    "bulk_archive_download_authorized": false,
+    "unverified_archive_path_allowed": false,
+    "recent_api_window_may_be_treated_as_full_history": false,
+    "silent_gap_fill_allowed": false,
+    "performance_selection_allowed": false,
+    "threshold_sweep_allowed": false,
+    "holdout_open_allowed": false
+  },
+  "runtime_guardrails": {
+    "api_key_required": false,
+    "account_endpoint_allowed": false,
+    "private_data_allowed": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_activation_allowed": false,
+    "orders_allowed": false,
+    "leverage_action_allowed": false,
+    "real_money_actions_allowed": false
+  },
+  "next_gate": "SYNTHETIC_POINT_IN_TIME_CONTEXT_SMOKE_THEN_OPTIONAL_RECENT_30D_RESEARCH_ONLY"
+}
