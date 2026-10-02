@@ -109,6 +109,10 @@ $cryptoTasks=Get-ScheduledTask -ErrorAction SilentlyContinue |
   Where-Object {$_.TaskName -like 'CryptoMiniPC-*'} |
   Select-Object TaskName,State
 
+$defenderHealthy=($null -ne $def -and [bool]$def.RealTimeProtectionEnabled -and [bool]$def.AntivirusEnabled)
+$firewallProfilesHealthy=([bool]$domainEnabled -and [bool]$privateEnabled -and [bool]$publicEnabled)
+$securityReviewStatus=if(-not $defenderHealthy){"REVIEW_DEFENDER"}elseif(-not $firewallProfilesHealthy){"REVIEW_FIREWALL_PROFILE"}elseif(@($rdpPublicAnyRemote).Count -gt 0){"REVIEW_RDP_PUBLIC_ANYREMOTE"}else{"PASS_BASELINE"}
+
 $report=[ordered]@{
   schema_version=1
   kind="MINIPC_FINAL_SECURITY_APPS_REBOOT_AUDIT_V1"
@@ -128,6 +132,13 @@ $report=[ordered]@{
   defender=[ordered]@{
     status=$def
     registered_antivirus_products=$avProducts
+  }
+  security_review=[ordered]@{
+    status=$securityReviewStatus
+    defender_healthy=[bool]$defenderHealthy
+    firewall_profiles_enabled=[bool]$firewallProfilesHealthy
+    rdp_public_any_remote_review_required=(@($rdpPublicAnyRemote).Count -gt 0)
+    changes_performed=$false
   }
   native_project_apps=$projectApps
   reboot=[ordered]@{
@@ -160,6 +171,7 @@ foreach($r in @($rdpRuleDetails)){
 }
 Write-Host ("All enabled inbound allow filters with RemoteAddress Any: "+@($allowInbound).Count)
 if($def){Write-Host ("Defender realtime="+$def.RealTimeProtectionEnabled+" antivirus="+$def.AntivirusEnabled+" signatures="+$def.AntivirusSignatureLastUpdated)}
+Write-Host ("Security review: "+$securityReviewStatus)
 Write-Host ("Registered AV products: "+@($avProducts).Count)
 Write-Host ("Project native apps detected: "+@($projectApps).Count)
 foreach($a in $projectApps){Write-Host ("  "+$a.DisplayName+" "+$a.DisplayVersion)}
