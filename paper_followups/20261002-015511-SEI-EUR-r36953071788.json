@@ -3,7 +3,16 @@
   "candidate_id": "20261002-015511-SEI-EUR-r36953071788",
   "evaluated_at_utc": "2026-10-02T01:56:10.835231Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.493,
+      "expected_bars": 30,
+      "mae_pct": 0.08,
+      "mfe_pct": 0.557
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -63,5 +72,6 @@
   "path_classification": "WAIT_PENDING",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-02T02:39:37.732238Z"
 }
