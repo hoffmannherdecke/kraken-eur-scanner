@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T05:22:00Z",
+  "updated_at_utc": "2026-10-02T05:25:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -384,7 +384,7 @@
       "category": "state_context",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Two EOD cycles establish retrieved_at as a conservative prospective known-at upper bound only. A fixed prospective-only state contract is now frozen; it does not permit historical backfill, future outcomes, thresholds, model training, scheduling or trading rules.",
+      "rationale": "Two distinct EOD known-at cycles and one bounded prospective state capture are green. Coverage remains heterogeneous (4 returned / SOL missing), retrieved_at is the conservative prospective known-at bound, and no historical backfill/outcome join/threshold/schedule is authorized.",
       "evidence": [
         "research/v3/h8-onchain-state-precheck-v1.json",
         "tools/v3-h8-coinmetrics-coverage-precheck.py",
@@ -398,7 +398,7 @@
         "research/v3/h8-prospective-onchain-state-contract-v1.json",
         "tools/v3-h8-prospective-state-capture.py"
       ],
-      "pending_gate": "V3_H8_RUN_BOUNDED_PROSPECTIVE_STATE_CAPTURE_SMOKE_THEN_REVIEW_COVERAGE_FRESHNESS_NO_OUTCOMES"
+      "pending_gate": "V3_H8_ACCUMULATE_ADDITIONAL_BOUNDED_PROSPECTIVE_STATE_CAPTURES_BEFORE_ASSOCIATION_NO_AUTO_SCHEDULE"
     },
     {
       "id": "maker_taker_fill_probability",
