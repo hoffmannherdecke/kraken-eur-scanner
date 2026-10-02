@@ -1,0 +1,224 @@
+{
+  "altname": "MOVREUR",
+  "candidate_id": "20261002-152109-MOVR-EUR-r37026151610",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained volume-backed continuation above the recent 2.09 high",
+      "Stronger major-market conditions"
+    ],
+    "reason_codes": [
+      "recent_move_extended",
+      "major_market_weak",
+      "follow_through_volume_faded",
+      "taker_fees_and_spread_high",
+      "risk_reward_after_costs_unfavorable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Price has held above prior resistance, but the sharp move is extended and recent follow-through volume has faded. Weak majors and round-trip costs leave no adequately supported scout and confirmation plan.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "MOVRUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 32.93,
+        "available": true,
+        "current_funding_rate": -0.000109243159300126,
+        "current_open_interest": 42592.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 2.5532,
+        "previous_funding_rate": -0.000109243159300126,
+        "previous_observed_at_utc": "2026-10-02T15:22:00.792456Z",
+        "previous_open_interest": 41531.6
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.000109243159300126,
+        "index_price": 2.30674,
+        "last": 2.3043,
+        "mark_price": 2.30536665023,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 42592.0,
+        "requested_symbols": [
+          "PF_MOVRUSD",
+          "PI_MOVRUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_MOVRUSD",
+        "volume24h": 1792705.4
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 2.0548,
+      "bid": 2.0455,
+      "last": 2.0477,
+      "spread_pct": 0.4536253444869929
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "2.5",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.5125923125592347,
+          "ret3h_pct": -1.4799283498896365
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.8390345718687242,
+          "ret3h_pct": -1.801225423853936
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.9763808815324682,
+          "ret3h_pct": -1.6894387001477051
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T15:54:55.678649Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0256ef89a347580b006abfd3d0ab3087d2968e76f65fd0d775"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 2.0548,
+    "bid": 2.0455,
+    "last": 2.0477,
+    "spread_pct": 0.4536253444869929
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.9351,
+      "high": 1.9351,
+      "low": 1.9015,
+      "open": 1.9015,
+      "trades": 5,
+      "ts": 1790952300,
+      "volume": 291.40457346,
+      "vwap": 1.927
+    },
+    {
+      "close": 1.9337,
+      "high": 1.9914,
+      "low": 1.9337,
+      "open": 1.979,
+      "trades": 12,
+      "ts": 1790953200,
+      "volume": 500.78417394,
+      "vwap": 1.9534
+    },
+    {
+      "close": 2.02,
+      "high": 2.04,
+      "low": 1.945,
+      "open": 1.945,
+      "trades": 34,
+      "ts": 1790954100,
+      "volume": 5233.63594498,
+      "vwap": 2.0203
+    },
+    {
+      "close": 2.0243,
+      "high": 2.09,
+      "low": 2.0243,
+      "open": 2.0753,
+      "trades": 15,
+      "ts": 1790955000,
+      "volume": 900.61988667,
+      "vwap": 2.0567
+    },
+    {
+      "close": 2.0477,
+      "high": 2.0748,
+      "low": 2.0447,
+      "open": 2.0447,
+      "trades": 5,
+      "ts": 1790955900,
+      "volume": 122.22955346,
+      "vwap": 2.0631
+    }
+  ],
+  "pair": "MOVR/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-152109-MOVR-EUR-r37026151610.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T15:55:05.500075Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "b5fa0f7b874a9229240260d047c763578d78bec1",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T15:55:05.500075Z",
+    "revalidation_started_at_utc": "2026-10-02T15:54:55.460160Z",
+    "ttl_due_at_utc": "2026-10-02T15:52:00.792456Z",
+    "ttl_lag_seconds": 174.668
+  }
+}
