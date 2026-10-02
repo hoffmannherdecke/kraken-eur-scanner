@@ -3,7 +3,16 @@
   "candidate_id": "20261002-083829-POL-EUR-r36985034478",
   "evaluated_at_utc": "2026-10-02T08:39:09.325741Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.809,
+      "expected_bars": 30,
+      "mae_pct": -0.869,
+      "mfe_pct": 0.131
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -57,5 +66,6 @@
   "path_classification": "WAIT_PENDING",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-02T09:16:14.812385Z"
 }
