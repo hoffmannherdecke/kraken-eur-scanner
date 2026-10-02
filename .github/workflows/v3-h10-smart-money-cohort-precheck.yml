@@ -1,0 +1,78 @@
+name: V3 H10 smart money cohort precheck
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/h10-trader-cohort-selection-contract-v1.json'
+      - 'tools/v3-h10-hyperliquid-cohort.py'
+      - '.github/workflows/v3-h10-smart-money-cohort-precheck.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v3-h10-smart-money-cohort-precheck
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Compile and self-test
+        run: |
+          python -m py_compile tools/v3-h10-hyperliquid-cohort.py
+          python tools/v3-h10-hyperliquid-cohort.py --self-test
+      - name: Bounded public discovery + official-info smoke
+        run: |
+          python tools/v3-h10-hyperliquid-cohort.py \
+            --mode smoke --smoke-count 3 \
+            --output /tmp/h10-smoke.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v3-h10-public-smoke
+          path: /tmp/h10-smoke.json
+          retention-days: 7
+
+  cohort:
+    needs: smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Execute frozen deterministic cohort selection
+        run: |
+          python tools/v3-h10-hyperliquid-cohort.py \
+            --mode select \
+            --output /tmp/h10-cohort.json
+      - name: Cohort contract guard
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('/tmp/h10-cohort.json'))
+          assert x['status']=='PASS',x
+          assert x['selected_primary_count']==20,x
+          assert x['selected_control_count']==6,x
+          g=x['guardrails']
+          assert g['kraken_outcomes_used_for_selection'] is False
+          assert g['authentication_used'] is False
+          assert g['wallet_key_used'] is False
+          assert g['orders'] is False
+          assert g['real_money_actions'] is False
+          assert g['active_v3_feature_authorized'] is False
+          print('V3_H10_COHORT PASS 20 primary + 6 controls / no-orders / no-Kraken-selection')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v3-h10-cohort-selection
+          path: /tmp/h10-cohort.json
+          retention-days: 14

@@ -228,6 +228,30 @@
       "access": "public_read_only_no_api_key_community_tier"
     },
     {
+      "id": "hyperliquid_stats_leaderboard_discovery",
+      "status": "PREREGISTERED_DISCOVERY_ONLY_PRECHECK_PENDING",
+      "class": "smart_money_address_discovery",
+      "unique_value": "Public Hyperliquid leaderboard snapshot used only to discover a broad reproducible candidate-address pool before official public Info-endpoint verification.",
+      "authoritative_for": [
+        "public_candidate_address_discovery_snapshot_only"
+      ],
+      "not_authoritative_for": [
+        "wallet_owner_identity",
+        "trader_quality",
+        "future_profitability",
+        "kraken_price_or_outcome",
+        "current_positions_or_fills",
+        "trade_signal"
+      ],
+      "overlap_with": [
+        "hyperliquid_public_info"
+      ],
+      "overlap_strategy": "Stats leaderboard is discovery-only and its undocumented response shape is validated each run. Official api.hyperliquid.xyz/info verifies public-address role/portfolio/fills before cohort inclusion. No Kraken outcomes enter selection.",
+      "persistence_mode": "single_versioned_selection_snapshot_plus_compact_provenance_no_continuous_raw_leaderboard_archive",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_read_only_no_auth_undocumented_stats_host"
+    },
+    {
       "id": "hyperliquid_public_info",
       "status": "PRECHECK_CONNECTIVITY_GREEN_NOT_ACTIVE_FEATURE",
       "class": "smart_money_trader_activity",

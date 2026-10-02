@@ -368,7 +368,7 @@ Potential inputs:
 Non-fills/cancels must be retained as censored observations, not discarded.
 
 ### H10 — Smart-Money / Trader-Activity Layer
-Status: `PRECHECK_PUBLIC_TRANSPORT_GREEN_SELECTION_PENDING`  
+Status: `COHORT_SELECTION_V1_PREREGISTERED_EXECUTION_PENDING`  
 Priority: A/B
 
 Purpose:
@@ -416,7 +416,12 @@ Current source precheck:
 - bounded CI smoke **Run #1 SUCCESS**: `allMids` returned 1,141 numeric mids; public-address `openOrders` and `userFills` response shapes were reachable without auth;
 - this proves transport/shape only, **not** trader quality, wallet identity or predictive value;
 - canonical evidence: `research/v3/h10-h11-public-source-evidence-20261002.json`;
-- next gate: freeze a reproducible public-address provenance/selection rule before any activity capture or trader scoring.
+- **selection V1 is now preregistered before any Kraken-outcome join:** `research/v3/h10-trader-cohort-selection-contract-v1.json` / trial `V3-H10-COHORT-001`;
+- target cohort = **20 primary + 6 active controls**. Primary wallets must pass fixed account/activity/anomaly guards and be positive across week/month/allTime; selection inside fixed account-value strata is deterministic SHA-256, not ranked by seen PnL. Controls pass the same activity floor but are not positive across all three windows;
+- discovery uses Hyperliquid's public stats leaderboard **only as an unstable discovery source**; official `api.hyperliquid.xyz/info` `userRole`, `portfolio` and 30-day `userFillsByTime` must verify every included address;
+- selection explicitly forbids Kraken future returns/MFE/MAE, V2R3/V2R4 outcomes, future Hyperliquid performance, identity guesses and manual post-outcome cherry-picking;
+- CI workflow `.github/workflows/v3-h10-smart-money-cohort-precheck.yml` first runs a 3-address bounded smoke, then executes the frozen cohort selection only if the smoke passes; no schedule and no active strategy coupling;
+- next gate: inspect and freeze the generated cohort evidence, then start compact prospective activity capture in shadow mode.
 
 
 ### H11 — Prediction-Market Event Layer

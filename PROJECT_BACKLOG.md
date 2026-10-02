@@ -196,7 +196,7 @@ Detailregeln bleiben in `docs/v3-research-framework.md` und Issue #7. Die Abgren
 Erst nach stabilem Kernsystem. Keine Schreibrechte auf Hauptqueue, keine Orders.
 
 - [ ] Eigenständige lokale Shadow-Architektur anlegen; Hauptsystem unverändert lassen.
-- [ ] Hyperliquid zuerst: genau einen kleinen End-to-End-Daten-/Wallet-Test durchführen.
+- [ ] Hyperliquid zuerst: `V3-H10-COHORT-001` sauber ausführen. **Auswahlvertrag V1 preregistriert:** 3-Address public discovery→official Info smoke vor Skalierung; danach deterministische 20-Primary+6-Control-Kohorte ohne Kraken-Outcomes/Copy-Trading/Orders. Contract: `research/v3/h10-trader-cohort-selection-contract-v1.json`; Workflow: `.github/workflows/v3-h10-smart-money-cohort-precheck.yml`. Nach PASS die Cohort-Evidence unverändert einfrieren und erst dann den kompakten prospektiven 60s-Shadow-Capture vorbereiten.
 - [ ] Provenance, Zeitstempel, Datenqualität und Reproduzierbarkeit nachweisen.
 - [ ] Binance später für Spot-Trader-Finder/Qualitätsvergleich/Crowding-Forschung ergänzen.
 - [ ] Prospektiv messen, ob beobachtete Smart-Money-Signale tatsächlich vor verwertbaren Kraken-EUR-Moves liegen.
