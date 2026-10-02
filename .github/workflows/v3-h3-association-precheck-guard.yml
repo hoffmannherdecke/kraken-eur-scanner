@@ -21,6 +21,30 @@ jobs:
         run: python -m py_compile tools/v3-h3-prospective-association.py
       - name: Self-test
         run: python tools/v3-h3-prospective-association.py --self-test
+      - name: Ledger compatibility
+        run: |
+          python - <<'PY'
+          import json, pathlib, tempfile, subprocess, sys
+          p=pathlib.Path('research/v3/h3-association-trial-ledger-record-v1.json')
+          r=json.loads(p.read_text(encoding='utf-8'))
+          r['code_fingerprint']='ci-selftest'
+          with tempfile.TemporaryDirectory() as td:
+              rec=pathlib.Path(td)/'record.json'
+              db=pathlib.Path(td)/'ledger.sqlite3'
+              rec.write_text(json.dumps(r),encoding='utf-8')
+              subprocess.run([sys.executable,'tools/historical-trial-ledger.py','--db',str(db),'append','--record',str(rec)],check=True)
+              subprocess.run([sys.executable,'tools/historical-trial-ledger.py','--db',str(db),'verify'],check=True)
+          print('V3_H3_LEDGER_COMPAT PASS')
+          PY
+      - name: Wrapper static guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('tools/run-minipc-v3-h3-prospective-association.ps1').read_text(encoding='utf-8')
+          for needle in ['RUN_V3_H3_ASSOC_001','1800','trial-ledger.sqlite3','holdout_opened','orders','--self-test']:
+              assert needle in s, needle
+          print('V3_H3_MINIPC_WRAPPER_STATIC_GUARD PASS')
+          PY
       - name: Contract guard
         run: |
           python - <<'PY'
