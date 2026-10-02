@@ -1,6 +1,6 @@
 # Mini-PC Preflight / Inbetriebnahme-Runbook
 
-Status: **CORE COMMISSIONING ACTIVE / PHASE H FINALIZATION**  
+Status: **CORE COMMISSIONING COMPLETE / OPTIONAL HARDENING DEFERRED**  
 Stand: 2026-10-02  
 Gerät: Dell OptiPlex 5060 Micro — i5-8500T / 16 GB RAM / 256 GB SSD / Windows 11 Pro erwartet  
 Netz: LAN, FRITZ!Box 7590 AX
@@ -1496,11 +1496,15 @@ Enhanced physical audit result (2026-10-02 ~15:30 local):
 
 This does **not** satisfy the Phase-B target that RDP be reachable only from the intended private/VPN administration path. Treat as a hardening item, not as a runtime failure.
 
-Next physical gate:
-- first preserve a rollback snapshot of the existing RDP firewall rules;
-- then narrow RDP exposure without disabling Windows Firewall, Defender, LAN RDP or the already-verified WireGuard remote administration path;
-- immediately verify LAN RDP and external WireGuard RDP after the change;
-- if either path fails, restore the captured rules.
+Final disposition after user-level review:
+- full Windows Firewall rollback snapshot was exported successfully before any change;
+- LAN is `192.168.178.0/24` with MINI-PC `192.168.178.179/24`;
+- external WireGuard -> FRITZ!Box -> RDP access had already been physically verified on 2026-10-01 and is not repeated;
+- no direct Internet RDP exposure/port-forwarding is part of the approved architecture; remote administration remains WireGuard/VPN-first;
+- the broad Windows RDP `Profile=Any / RemoteAddress=Any` rules are retained as an **optional hardening item**, not a commissioning blocker, to avoid unnecessary lockout risk in a working VPN/RDP setup;
+- no firewall mutation was performed during this review.
+
+**MINI-PC core commissioning is therefore CLOSED.** Re-open infrastructure commissioning only for a concrete incident, material architecture change, or a deliberately scheduled hardening/maintenance window. Strategy/research release gates remain separate and must not be conflated with MINI-PC commissioning.
 
 
 ### 2026-10-01 ~15:24 UTC — V2R4 WS-shadow heartbeat stall requires one local recovery gate
