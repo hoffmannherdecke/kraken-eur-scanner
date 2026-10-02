@@ -270,7 +270,7 @@
         "binance_futures_public"
       ],
       "overlap_strategy": "Potential H10 independent trader-activity sensor only; never replaces Kraken market truth or derivatives context. Wallet selection must be separately preregistered and cannot be chosen by seen Kraken performance.",
-      "persistence_mode": "compact prospective wallet-state plus deduplicated fill-event evidence; no full exchange archive",
+      "persistence_mode": "exact deduplicated fill events max 48h; compact 5m wallet/asset aggregates + wallet-state/capture health max 120d; frozen cohort/contracts immutable; no full exchange archive",
       "duplicate_raw_storage_allowed": false,
       "access": "public_read_only_no_signer_no_wallet_key_no_order_rights"
     },
