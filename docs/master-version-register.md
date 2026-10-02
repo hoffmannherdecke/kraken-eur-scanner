@@ -22,6 +22,7 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 - Unklare Zuordnungen werden als **NICHT VERIFIZIERT / ZUORDNUNG OFFEN** markiert; niemals raten.
 - Vor einem Release: aktuelle Version vollständig auswerten → Erkenntnisse klassifizieren → relevante Erkenntnisse migrieren → Smoke-Test → Freigabe → Rollback-Punkt.
 - Material changes follow `docs/change-gate-policy.md`: static/plan-only → smallest deterministic smoke → bounded real E2E if needed → only then scale/collect.
+- Test-Triage / Autonomy / No-Repeat is governed by `docs/test-strategy-runbook.md`: only decision-/safety-relevant tests are pursued; previous PASS evidence is reused absent relevant change/incident/freshness expiry; autonomous GitHub/Supabase/public-API work is preferred, and physical user actions are reserved for proofs that truly require the MINI-PC/account/hardware.
 - Last-known-good/Rollback wird content-addressed festgehalten: `tools/paper-release-rollback-snapshot.py` validiert den aktiven Freeze und schreibt exakte Control-/Spec-/Runtime-/Scanner-Hashes. Whole-repo reset oder Evidenz-/State-Rewind ist ausdrücklich verboten; der Snapshot gilt nur für die geschützten Code-/Konfigurationspfade.
 - Strategie- und Infrastrukturversionen werden getrennt geführt und miteinander verknüpft.
 - V3 gilt erst dann als vollständig integriert, wenn jeder relevante V2/V2R4-Baustein einen Migrationsstatus besitzt.
@@ -132,6 +133,7 @@ Wichtige Referenzen:
 - `PROJECT_BACKLOG.md`
 - `docs/strategy-version-map.md`
 - `docs/v3-research-framework.md`
+- `docs/test-strategy-runbook.md`
 - Draft-PR #9 — refreshed V2R4 Fast WAIT Triggers / Mini-PC on current `main` (PR #8 superseded)
 - Issue #7 — V3 Research Track
 
