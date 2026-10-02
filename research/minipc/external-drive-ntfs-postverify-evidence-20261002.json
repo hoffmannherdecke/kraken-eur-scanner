@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "kind": "MINIPC_EXTERNAL_DRIVE_NTFS_POSTVERIFY_EVIDENCE_V1",
+  "status": "PASS_NTFS_VERIFIED",
+  "observed_local": "2026-10-02T15:02:39+02:00",
+  "source": "physical MINI-PC PowerShell screenshot",
+  "drive": "D:",
+  "label": "MISTRAL_450",
+  "filesystem": "NTFS",
+  "pre_manifest_rows": 53939,
+  "checked_preexisting_files": 53920,
+  "skipped_ntfs_system_metadata_rows": 19,
+  "missing_preexisting_files": 0,
+  "size_changed_preexisting_files": 0,
+  "access_errors_on_user_data_paths": 0,
+  "reversible_write_read_delete_smoke": "PASS",
+  "local_report": "C:\\Users\\ADMIN\\Trading\\Logs\\external-drive-d-ntfs-postverify-20261002-150239.json",
+  "interpretation": {
+    "fat32_to_ntfs_conversion_verified": true,
+    "preexisting_user_data_preserved": true,
+    "ntfs_system_metadata_excluded_only": true,
+    "phase_h2_complete": true,
+    "formatting_performed": false
+  }
+}
