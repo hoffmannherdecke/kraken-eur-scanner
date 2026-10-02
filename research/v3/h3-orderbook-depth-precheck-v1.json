@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H3_ORDERBOOK_DEPTH_PRECHECK_V1",
   "hypothesis_id": "V3-H3",
-  "status": "PRECHECK_WS_PROTOCOL_AND_MINIPC_GREEN_ORDERFLOW_RESEARCH_PREREG_PENDING",
+  "status": "ORDERBOOK_STATE_CONTRACT_FROZEN_CAPTURE_SMOKE_PENDING",
   "prepared_at_utc": "2026-10-01T18:45:00Z",
   "purpose": "Verify public Kraken-EUR L2 snapshot semantics and bounded depth calculations before any persistent WebSocket orderflow capture.",
   "source": "KRAKEN_PUBLIC_REST_DEPTH",
@@ -51,7 +51,7 @@
     "holdout_opened": false,
     "direct_buy_sell_rule": false
   },
-  "next_gate": "PREREGISTER_BOUNDED_H3_ORDERFLOW_STATE_CAPTURE_OR_ASSOCIATION_NO_THRESHOLD_NO_FILL_CLAIM",
+  "next_gate": "RUN_BOUNDED_H3_ORDERBOOK_STATE_CAPTURE_SMOKE_NO_OUTCOMES_NO_THRESHOLDS",
   "snapshot_readiness": {
     "audit": "CI_GREEN_RUN_1",
     "representative_pairs_ok": 3,
@@ -122,5 +122,25 @@
       "ETH/EUR": 259.186,
       "SOL/EUR": 242.799
     }
+  },
+  "orderbook_state_readiness": {
+    "contract": "research/v3/h3-orderbook-state-contract-v1.json",
+    "tool": "tools/v3-h3-orderbook-state-capture.py",
+    "fixed_symbols": [
+      "BTC/EUR",
+      "ETH/EUR",
+      "SOL/EUR"
+    ],
+    "fixed_depth": 10,
+    "fixed_features": [
+      "spread_bps",
+      "bid_depth_quote_top10",
+      "ask_depth_quote_top10",
+      "depth_imbalance_top10"
+    ],
+    "performance_trial_started": false,
+    "threshold_selection_started": false,
+    "holdout_opened": false,
+    "automatic_schedule_enabled": false
   }
 }

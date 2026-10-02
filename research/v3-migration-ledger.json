@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T05:16:00Z",
+  "updated_at_utc": "2026-10-02T05:20:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -232,7 +232,7 @@
       "category": "state_signal",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Kraken Spot WS-v2 L2 reconciliation is now cloud- and MINI-PC-proven. Physical run: 8,189 updates, 8,195 CRC32 passes, 0 failures across two cycles; max source age 225-259 ms on BTC/ETH/SOL. Queue position and maker-fill mechanics remain explicitly unproven.",
+      "rationale": "Cloud and MINI-PC checksum reconciliation are proven. A fixed bounded H3 state contract is frozen for spread/top10 depth/normalized imbalance only, with no outcomes, thresholds, raw archive, queue/fill inference or runtime effect.",
       "evidence": [
         "research/v3/h3-orderbook-depth-precheck-v1.json",
         "tools/v3-h3-kraken-depth-precheck.py",
@@ -241,9 +241,11 @@
         ".github/workflows/v3-h3-orderbook-precheck-guard.yml",
         "research/v3/h3-ws-book-reconciliation-evidence-20261001T193640Z.json",
         "tools/run-minipc-v3-h3-ws-book-smoke.ps1",
-        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json"
+        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
+        "research/v3/h3-orderbook-state-contract-v1.json",
+        "tools/v3-h3-orderbook-state-capture.py"
       ],
-      "pending_gate": "V3_H3_PREREGISTER_BOUNDED_ORDERFLOW_STATE_CAPTURE_OR_ASSOCIATION_NO_THRESHOLD_NO_FILL_CLAIM"
+      "pending_gate": "V3_H3_RUN_BOUNDED_ORDERBOOK_STATE_CAPTURE_SMOKE_NO_OUTCOMES"
     },
     {
       "id": "macro_event_risk_gate",

@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_ORDERBOOK_STATE_CAPTURE_CONTRACT_V1",
+  "hypothesis_id": "V3-H3",
+  "state_id": "V3-H3-ORDERBOOK-STATE-001",
+  "status": "FROZEN_PREREGISTERED_BOUNDED_CAPTURE_ONLY",
+  "evidence_basis": "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
+  "source": {
+    "endpoint": "wss://ws.kraken.com/v2",
+    "channel": "book",
+    "symbols": [
+      "BTC/EUR",
+      "ETH/EUR",
+      "SOL/EUR"
+    ],
+    "depth": 10,
+    "duration_seconds": 12,
+    "reconciliation": "apply all levels -> trim to depth -> validate Kraken CRC32 top10 before accepting state"
+  },
+  "fixed_state_features": {
+    "spread_bps": "(best_ask-best_bid)/mid*10000",
+    "bid_depth_quote_top10": "sum(price*qty over reconciled top10 bids)",
+    "ask_depth_quote_top10": "sum(price*qty over reconciled top10 asks)",
+    "depth_imbalance_top10": "(bid_depth_quote_top10-ask_depth_quote_top10)/(bid_depth_quote_top10+ask_depth_quote_top10)"
+  },
+  "aggregation": {
+    "unit": "each checksum-valid snapshot/update after local reconciliation",
+    "outputs": [
+      "count",
+      "mean",
+      "population_std",
+      "min",
+      "max"
+    ],
+    "raw_book_archive": false,
+    "per_message_rows_persisted": false,
+    "cross_pair_ranking": false
+  },
+  "prohibited": [
+    "future outcome join",
+    "threshold selection",
+    "directional signal",
+    "pair selection",
+    "performance metric",
+    "trade return",
+    "queue position inference",
+    "maker fill probability inference",
+    "order routing decision",
+    "sealed holdout access",
+    "automatic strategy promotion"
+  ],
+  "runtime_guardrails": {
+    "public_endpoint_only": true,
+    "automatic_schedule_enabled": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "private_api_allowed": false,
+    "orders_allowed": false,
+    "leverage_allowed": false,
+    "real_money_actions_allowed": false
+  },
+  "next_gate": "RUN_BOUNDED_PUBLIC_STATE_CAPTURE_SMOKE_THEN_REVIEW_ONLY_DATA_QUALITY_AND_FEATURE_DISTRIBUTIONS"
+}

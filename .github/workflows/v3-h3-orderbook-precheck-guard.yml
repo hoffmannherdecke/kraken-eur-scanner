@@ -6,6 +6,8 @@ name: V3 H3 orderbook depth precheck guard
     branches: [main]
     paths:
       - 'research/v3/h3-orderbook-depth-precheck-v1.json'
+      - 'research/v3/h3-orderbook-state-contract-v1.json'
+      - 'tools/v3-h3-orderbook-state-capture.py'
       - 'research/v3/h3-ws-book-reconciliation-evidence-20261001T193640Z.json'
       - 'tools/run-minipc-v3-h3-ws-book-smoke.ps1'
       - 'tools/v3-h3-kraken-depth-precheck.py'
@@ -33,7 +35,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path('research/v3/h3-orderbook-depth-precheck-v1.json').read_text('utf-8'))
           assert j['kind']=='V3_H3_ORDERBOOK_DEPTH_PRECHECK_V1'
-          assert j['status'] in {'PRECHECK_L2_SNAPSHOT_ONLY_WEBSOCKET_PENDING','PRECHECK_L2_SNAPSHOT_GREEN_WEBSOCKET_PENDING','PRECHECK_WS_PROTOCOL_SMOKE_PREPARED_CLOUD_PENDING','PRECHECK_WS_PROTOCOL_GREEN_MINIPC_PENDING'}
+          assert j['status'] in {'PRECHECK_L2_SNAPSHOT_ONLY_WEBSOCKET_PENDING','PRECHECK_L2_SNAPSHOT_GREEN_WEBSOCKET_PENDING','PRECHECK_WS_PROTOCOL_SMOKE_PREPARED_CLOUD_PENDING','PRECHECK_WS_PROTOCOL_GREEN_MINIPC_PENDING','PRECHECK_WS_PROTOCOL_AND_MINIPC_GREEN_ORDERFLOW_RESEARCH_PREREG_PENDING','ORDERBOOK_STATE_CONTRACT_FROZEN_CAPTURE_SMOKE_PENDING','ORDERBOOK_STATE_CAPTURE_GREEN_ASSOCIATION_PREREG_PENDING'}
           assert 'queue_position' in j['not_proven_by_snapshot']
           assert 'maker_fill_probability' in j['not_proven_by_snapshot']
           assert j['future_ws_gate']['required'] is True
@@ -44,7 +46,7 @@ jobs:
           assert j['runtime_guardrails']['active_v2r3_change_allowed'] is False
           assert j['runtime_guardrails']['orders_allowed'] is False
           assert j['runtime_guardrails']['real_money_actions_allowed'] is False
-          if j['status'] in {'PRECHECK_L2_SNAPSHOT_GREEN_WEBSOCKET_PENDING','PRECHECK_WS_PROTOCOL_SMOKE_PREPARED_CLOUD_PENDING','PRECHECK_WS_PROTOCOL_GREEN_MINIPC_PENDING'}:
+          if j['status'] in {'PRECHECK_L2_SNAPSHOT_GREEN_WEBSOCKET_PENDING','PRECHECK_WS_PROTOCOL_SMOKE_PREPARED_CLOUD_PENDING','PRECHECK_WS_PROTOCOL_GREEN_MINIPC_PENDING','PRECHECK_WS_PROTOCOL_AND_MINIPC_GREEN_ORDERFLOW_RESEARCH_PREREG_PENDING','ORDERBOOK_STATE_CONTRACT_FROZEN_CAPTURE_SMOKE_PENDING','ORDERBOOK_STATE_CAPTURE_GREEN_ASSOCIATION_PREREG_PENDING'}:
               rd=j['snapshot_readiness']
               assert rd['audit']=='CI_GREEN_RUN_1'
               assert rd['representative_pairs_ok']==3
@@ -156,4 +158,43 @@ jobs:
           assert j["interpretation"]["queue_position_proven"] is False
           assert j["interpretation"]["maker_fill_probability_proven"] is False
           print("V3_H3_PERSISTED_EVIDENCE PASS cloud-ws/checksum/reconnect/no-fill-claim")
+          PY
+
+
+      - name: Validate H3 orderbook state contract
+        run: |
+          python -m py_compile tools/v3-h3-orderbook-state-capture.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path("research/v3/h3-orderbook-state-contract-v1.json").read_text())
+          assert c["status"]=="FROZEN_PREREGISTERED_BOUNDED_CAPTURE_ONLY"
+          assert c["source"]["symbols"]==["BTC/EUR","ETH/EUR","SOL/EUR"]
+          assert c["source"]["depth"]==10
+          assert "future outcome join" in c["prohibited"]
+          assert "threshold selection" in c["prohibited"]
+          assert "queue position inference" in c["prohibited"]
+          assert c["aggregation"]["raw_book_archive"] is False
+          assert c["runtime_guardrails"]["orders_allowed"] is False
+          print("V3_H3_STATE_CONTRACT PASS fixed/bounded/no-outcomes/no-fill-claim")
+          PY
+
+      - name: Bounded H3 orderbook state capture smoke
+        run: |
+          python tools/v3-h3-orderbook-state-capture.py --seconds 12 --output /tmp/h3-state.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/h3-state.json").read_text())
+          assert j["status"]=="PASS" and not j["errors"]
+          for r in j["per_symbol"].values():
+              assert r["snapshots"]>=1 and r["checksum_pass"]>=1 and r["checksum_fail"]==0
+              for f in ["spread_bps","bid_depth_quote_top10","ask_depth_quote_top10","depth_imbalance_top10"]:
+                  assert r["features"][f]["n"]>=1
+          assert j["interpretation"]["future_outcomes_joined"] is False
+          assert j["interpretation"]["thresholds_selected"] is False
+          assert j["interpretation"]["queue_position_proven"] is False
+          assert j["guardrails"]["raw_book_archive"] is False
+          assert j["guardrails"]["orders"] is False
+          print("V3_H3_STATE_CAPTURE PASS checksum-valid/descriptive/no-outcomes")
           PY
