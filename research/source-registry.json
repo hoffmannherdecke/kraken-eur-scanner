@@ -229,7 +229,7 @@
     },
     {
       "id": "hyperliquid_public_info",
-      "status": "PRECHECK_READ_ONLY_NOT_ACTIVE_FEATURE",
+      "status": "PRECHECK_CONNECTIVITY_GREEN_NOT_ACTIVE_FEATURE",
       "class": "smart_money_trader_activity",
       "unique_value": "Public Hyperliquid market/account activity context (including public-address open orders/fills) that can test whether trader activity leads later Kraken-EUR moves.",
       "authoritative_for": [
@@ -252,7 +252,7 @@
     },
     {
       "id": "polymarket_public_market_data",
-      "status": "PRECHECK_READ_ONLY_NOT_ACTIVE_FEATURE",
+      "status": "PRECHECK_CONNECTIVITY_GREEN_NOT_ACTIVE_FEATURE",
       "class": "prediction_market_event_state",
       "unique_value": "Public event/market metadata plus CLOB prices/order books can provide point-in-time probability, spread, liquidity and change context for event-risk research.",
       "authoritative_for": [
