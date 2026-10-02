@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H10_STORAGE_RETENTION_AMENDMENT_V1",
+  "amendment_id": "V3-H10-STORAGE-RETENTION-001",
+  "applies_to_capture_id": "V3-H10-CAPTURE-001",
+  "status": "ACTIVE_INFRASTRUCTURE_ONLY_NO_STRATEGY_EFFECT",
+  "created_at_utc": "2026-10-02T19:40:00Z",
+  "reason": "First live capture showed that exact public fill events can be high-frequency and would be wasteful to retain indefinitely. Preserve timing value while bounding storage.",
+  "retention": {
+    "exact_fill_events": {
+      "table": "public.v3_h10_fill_events",
+      "keep_hours": 48,
+      "role": "short-lived source-timestamp/debug evidence only"
+    },
+    "wallet_asset_5m": {
+      "table": "public.v3_h10_wallet_asset_5m",
+      "keep_days": 120,
+      "role": "long-term prospective research evidence; one compact row per wallet/asset/complete 5m bucket"
+    },
+    "wallet_state_snapshots": {
+      "table": "public.v3_h10_wallet_states",
+      "keep_days": 120,
+      "role": "coarse position-state research snapshots"
+    },
+    "capture_batches_and_errors": {
+      "tables": [
+        "public.v3_h10_capture_batches",
+        "public.v3_h10_capture_errors"
+      ],
+      "keep_days": 120,
+      "role": "capture health/provenance; batch deletion cascades states/errors"
+    },
+    "frozen_repo_evidence": {
+      "keep": "immutable",
+      "items": [
+        "research/v3/h10-trader-cohort-v1.json",
+        "research/v3/h10-trader-cohort-selection-contract-v1.json",
+        "research/v3/h10-first-analysis-gate-v1.json",
+        "this amendment"
+      ]
+    }
+  },
+  "aggregation": {
+    "bucket_minutes": 5,
+    "only_complete_buckets": true,
+    "fields": [
+      "fill_count",
+      "first_fill_time",
+      "last_fill_time",
+      "net_exposure_change_quote",
+      "gross_fill_notional_quote",
+      "closed_pnl_sum",
+      "fee_sum"
+    ],
+    "anti_double_count": "upsert by cohort_id,address,coin,bucket_start",
+    "research_view": "public.v3_h10_asset_consensus_30m_history"
+  },
+  "guardrails": {
+    "no_full_exchange_archive": true,
+    "no_strategy_change": true,
+    "no_v2r3_change": true,
+    "no_v2r4_change": true,
+    "no_orders": true,
+    "no_copy_trading": true
+  }
+}
