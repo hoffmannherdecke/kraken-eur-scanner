@@ -9,7 +9,6 @@
     "Install or update ChatGPT Windows desktop app on MINI-PC if local Work is available.",
     "Run one bounded read-only local folder/report smoke with least-privilege access.",
     "Check Krypto Paper – gezielte Analyse first: restore only if its evidence gate is met and the current architecture still benefits from a Work-level deep analysis.",
-    "Review Weltlagen-Watch only as a possible targeted/low-frequency research task; do not auto-restore high-frequency polling.",
     "Keep all technical/routine functions already replaced by GitHub/MINI-PC/Supabase outside Work."
   ],
   "keep_outside_work": [
@@ -39,7 +38,7 @@
       "trigger": "Work usage exceeded roughly 75% of available quota; user required drastic reduction without losing needed planned functions.",
       "intermediate_state": [
         "Krypto MAIN + Paper – sparsam reduced to 4x daily at 04:15/10:15/16:15/22:15.",
-        "Krypto-Slack A/B, Krypto Tagesstatus, Weltlagen-Watch and old test/ALT tasks were paused.",
+        "Krypto-Slack A/B, Krypto Tagesstatus, Weltlagen-Watch and old test/ALT tasks were paused; Weltlagen is now permanently removed from project scope.",
         "Scanner→handoff→evaluator→persistence was moved toward GitHub; Work was no longer the primary runtime."
       ]
     },
@@ -79,11 +78,19 @@
       "Paper-Handlungsbedarf",
       "old test/ALT Work tasks"
     ],
-    "review_but_do_not_auto_restore": [
-      {
-        "name": "Weltlagen-Watch / Weltlagen-Frühwarnsystem",
-        "reason": "Was reduced/disabled during quota crisis. No later final instruction found that it must automatically restart; reassess only for unique value versus current macro/event sources and no high-frequency Work polling."
-      }
+    "review_but_do_not_auto_restore": [],
+    "permanently_removed": [
+      "Weltlagen-Watch / Weltlagen-Frühwarnsystem — permanently out of scope; do not reactivate, reassess, schedule, or spend Work quota on it."
     ]
+  },
+  "scope_policy": {
+    "project_scope": "Work is reserved exclusively for the crypto project and MINI-PC related work.",
+    "quota_policy": "Use Work only in a very lean, targeted manner to preserve data/usage limits.",
+    "excluded_scope": [
+      "Weltlagen-Watch",
+      "Weltlagen-Frühwarnsystem",
+      "unrelated general news/geopolitics monitoring"
+    ],
+    "no_auto_restore": true
   }
 }
