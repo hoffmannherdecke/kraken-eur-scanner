@@ -197,4 +197,10 @@ jobs:
           assert j["guardrails"]["raw_book_archive"] is False
           assert j["guardrails"]["orders"] is False
           print("V3_H3_STATE_CAPTURE PASS checksum-valid/descriptive/no-outcomes")
+          print("H3_STATE_COMPACT "+json.dumps({
+            "symbols":j["symbols"],
+            "per_symbol":j["per_symbol"],
+            "wire_messages":j["wire_messages"],
+            "subscription_acks":j["subscription_acks"]
+          },sort_keys=True))
           PY
