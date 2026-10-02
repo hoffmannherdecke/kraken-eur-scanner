@@ -23,6 +23,10 @@ name: V3 H6 price volume precheck guard
       - 'tools/v3-h6-price-volume-pit-smoke.py'
       - '.github/workflows/v3-h6-price-volume-precheck-guard.yml'
 
+concurrency:
+  group: v3-h6-price-volume-precheck-guard
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
