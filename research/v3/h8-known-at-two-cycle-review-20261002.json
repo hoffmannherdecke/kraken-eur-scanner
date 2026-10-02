@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H8_KNOWN_AT_TWO_CYCLE_REVIEW_V1",
+  "status": "PASS_MINIMUM_TWO_DISTINCT_EOD_CYCLES_PROSPECTIVE_ONLY",
+  "hypothesis_id": "V3-H8",
+  "capture_paths": [
+    "research/v3/captures/h8-coinmetrics-known-at-20261001T192024Z.json",
+    "research/v3/captures/h8-coinmetrics-known-at-20261002T045719Z.json"
+  ],
+  "distinct_observation_dates": [
+    "2026-09-30",
+    "2026-10-01"
+  ],
+  "fixed_assets": [
+    "btc",
+    "eth",
+    "sol",
+    "xrp",
+    "ada"
+  ],
+  "fixed_metrics": [
+    "AdrActCnt",
+    "TxCnt",
+    "CapMVRVCur",
+    "FlowInExUSD",
+    "FlowOutExUSD",
+    "AssetEODCompletionTime"
+  ],
+  "repeated_findings": {
+    "returned_assets_each_cycle": [
+      "btc",
+      "eth",
+      "xrp",
+      "ada"
+    ],
+    "no_row_assets_each_cycle": [
+      "sol"
+    ],
+    "exchange_flow_assets_when_returned": [
+      "btc",
+      "eth"
+    ],
+    "heterogeneous_coverage_persists": true
+  },
+  "timing_findings": {
+    "cycle_1": {
+      "observation_date": "2026-09-30",
+      "btc_eod_completion_utc": "2026-10-01T03:44:11Z",
+      "btc_flow_status_times": {
+        "FlowInExUSD": "2026-10-01T03:13:11.816451000Z",
+        "FlowOutExUSD": "2026-10-01T03:13:57.762705000Z"
+      },
+      "eth_eod_completion_utc": "2026-10-01T03:22:28Z",
+      "eth_flow_status_times": {
+        "FlowInExUSD": "2026-10-01T17:00:57.605449000Z",
+        "FlowOutExUSD": "2026-10-01T17:00:57.764463000Z"
+      },
+      "eth_flow_status_after_asset_eod_completion": true
+    },
+    "cycle_2": {
+      "observation_date": "2026-10-01",
+      "btc_eod_completion_utc": "2026-10-02T02:51:16Z",
+      "btc_flow_status_times": {
+        "FlowInExUSD": "2026-10-02T02:11:51.288392000Z",
+        "FlowOutExUSD": "2026-10-02T02:09:45.039832000Z"
+      },
+      "eth_eod_completion_utc": "2026-10-02T03:30:29Z",
+      "eth_flow_status_times": {
+        "FlowInExUSD": "2026-10-02T03:17:51.878508000Z",
+        "FlowOutExUSD": "2026-10-02T03:18:42.723009000Z"
+      },
+      "btc_and_eth_flow_status_before_asset_eod_completion": true
+    },
+    "conclusion": "Relationship between AssetEODCompletionTime and per-metric flow status/revision timing is not stable enough to treat EOD completion as exact per-metric publication/finality."
+  },
+  "eligibility": {
+    "minimum_distinct_eod_cycles_met": true,
+    "prospective_retrieved_at_upper_bound_state_capture_allowed": true,
+    "prospective_state_must_preserve_retrieved_at": true,
+    "missing_metric_or_asset_must_remain_missing": true,
+    "revisions_must_not_rewrite_prior_capture": true,
+    "historical_known_at_reconstruction_allowed": false,
+    "historical_backfill_performance_trial_allowed": false,
+    "asset_eod_completion_as_exact_metric_finality_allowed": false,
+    "threshold_selection_allowed": false,
+    "direct_trade_rule_allowed": false,
+    "sealed_2026h1_holdout_open_allowed": false
+  },
+  "next_gate": "PREREGISTER_PROSPECTIVE_ONLY_H8_STATE_CAPTURE_OR_ASSOCIATION_USING_RETRIEVED_AT_FAIL_CLOSED_MISSING_NO_HISTORICAL_BACKFILL"
+}

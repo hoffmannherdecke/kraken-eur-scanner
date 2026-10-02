@@ -208,9 +208,9 @@
     },
     {
       "id": "coinmetrics_community_network_data",
-      "status": "PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING",
+      "status": "PRECHECK_TWO_EOD_CYCLES_GREEN_PROSPECTIVE_ONLY",
       "class": "onchain_network_state",
-      "unique_value": "Public no-key network metrics with measured representative coverage plus a first prospective known-at capture. The first capture demonstrates that provider EOD-completion and per-metric status/revision timing can differ, so historical point-in-time use remains blocked pending repeated bounded captures.",
+      "unique_value": "Public no-key network metrics with heterogeneous fixed coverage and two persisted prospective known-at cycles. retrieved_at is usable as a conservative prospective known-at upper bound; AssetEODCompletionTime is not exact per-metric finality and historical backfill remains blocked.",
       "authoritative_for": [
         "coinmetrics_community_metric_catalog_and_values_within_documented_coverage"
       ],
@@ -222,7 +222,7 @@
         "trade_signal"
       ],
       "overlap_with": [],
-      "overlap_strategy": "V3 H8 state/confirmation source only. First prospective capture is green; interval time is not publication time and AssetEODCompletionTime is not exact per-metric finality. Repeated captures across distinct EOD cycles are required before any historical known-at claim, signal trial, or threshold test.",
+      "overlap_strategy": "V3 H8 state/confirmation source only. Prospective-only compact capture may proceed under fixed assets/metrics with retrieved_at preserved and missingness fail-closed. Historical performance/backfill is not authorized by the two-cycle evidence.",
       "persistence_mode": "compact_catalog_evidence_plus_bounded_prospective_known_at_captures_only; no endless raw archive",
       "duplicate_raw_storage_allowed": false,
       "access": "public_read_only_no_api_key_community_tier"

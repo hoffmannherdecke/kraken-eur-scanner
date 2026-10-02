@@ -1,0 +1,144 @@
+{
+  "endpoint": "timeseries/asset-metrics",
+  "errors": [],
+  "guardrails": {
+    "active_v2r3_changed": false,
+    "api_key_used": false,
+    "historical_backfill_performed": false,
+    "holdout_opened": false,
+    "orders": false,
+    "paper_runtime_changed": false,
+    "performance_trial_started": false,
+    "private_data_accessed": false,
+    "public_endpoint_only": true,
+    "real_money_actions": false,
+    "threshold_selection_performed": false,
+    "v2r4_changed": false
+  },
+  "kind": "V3_H8_COINMETRICS_PROSPECTIVE_KNOWN_AT_CAPTURE_V1",
+  "known_at_interpretation": {
+    "asset_eod_completion_is_exact_per_metric_publication_time": false,
+    "observation_time_is_publication_time": false,
+    "repeated_prospective_capture_required_for_first_seen_lag": true,
+    "retrieved_at_is_safe_known_at_upper_bound": true,
+    "single_capture_proves_historical_known_at": false
+  },
+  "request_finished_at_utc": "2026-10-02T04:57:20.005049Z",
+  "request_started_at_utc": "2026-10-02T04:57:19.655664Z",
+  "requested_assets": [
+    "btc",
+    "eth",
+    "sol",
+    "xrp",
+    "ada"
+  ],
+  "requested_metrics": [
+    "AdrActCnt",
+    "TxCnt",
+    "CapMVRVCur",
+    "FlowInExUSD",
+    "FlowOutExUSD",
+    "AssetEODCompletionTime"
+  ],
+  "returned_asset_count": 4,
+  "rows": [
+    {
+      "asset": "btc",
+      "metric_status_times_if_returned": {
+        "FlowInExUSD": "2026-10-02T02:11:51.288392000Z",
+        "FlowOutExUSD": "2026-10-02T02:09:45.039832000Z"
+      },
+      "metrics": {
+        "AdrActCnt": "712825",
+        "CapMVRVCur": "1.580581704523888007",
+        "FlowInExUSD": "2190687692.097228526609266859",
+        "FlowOutExUSD": "2559950315.515604479213654942",
+        "TxCnt": "537656"
+      },
+      "observation_age_at_retrieval_seconds": 104239.749981,
+      "observation_time_utc": "2026-10-01T00:00:00Z",
+      "provider_asset_eod_completion_utc": "2026-10-02T02:51:16Z",
+      "provider_completion_at_or_before_retrieval": true,
+      "provider_completion_lag_from_observation_seconds": 96676,
+      "retrieved_at_utc": "2026-10-02T04:57:19.749981Z",
+      "safe_known_at_upper_bound_utc": "2026-10-02T04:57:19.749981Z",
+      "status": "ROW_RETURNED"
+    },
+    {
+      "asset": "eth",
+      "metric_status_times_if_returned": {
+        "FlowInExUSD": "2026-10-02T03:17:51.878508000Z",
+        "FlowOutExUSD": "2026-10-02T03:18:42.723009000Z"
+      },
+      "metrics": {
+        "AdrActCnt": "834251",
+        "CapMVRVCur": "1.149208237958443272",
+        "FlowInExUSD": "581105488.84749728155312498192082022873",
+        "FlowOutExUSD": "618350852.36154085979244268190646617586",
+        "TxCnt": "2036041"
+      },
+      "observation_age_at_retrieval_seconds": 104239.819682,
+      "observation_time_utc": "2026-10-01T00:00:00Z",
+      "provider_asset_eod_completion_utc": "2026-10-02T03:30:29Z",
+      "provider_completion_at_or_before_retrieval": true,
+      "provider_completion_lag_from_observation_seconds": 99029,
+      "retrieved_at_utc": "2026-10-02T04:57:19.819682Z",
+      "safe_known_at_upper_bound_utc": "2026-10-02T04:57:19.819682Z",
+      "status": "ROW_RETURNED"
+    },
+    {
+      "asset": "sol",
+      "metrics": {},
+      "observation_time_utc": null,
+      "provider_asset_eod_completion_utc": null,
+      "retrieved_at_utc": "2026-10-02T04:57:19.865548Z",
+      "safe_known_at_upper_bound_utc": "2026-10-02T04:57:19.865548Z",
+      "status": "NO_ROW"
+    },
+    {
+      "asset": "xrp",
+      "metric_status_times_if_returned": {},
+      "metrics": {
+        "AdrActCnt": "41137",
+        "CapMVRVCur": "0.993792678211533727",
+        "TxCnt": "2914060"
+      },
+      "observation_age_at_retrieval_seconds": 104239.947515,
+      "observation_time_utc": "2026-10-01T00:00:00Z",
+      "provider_asset_eod_completion_utc": "2026-10-02T00:48:48Z",
+      "provider_completion_at_or_before_retrieval": true,
+      "provider_completion_lag_from_observation_seconds": 89328,
+      "retrieved_at_utc": "2026-10-02T04:57:19.947515Z",
+      "safe_known_at_upper_bound_utc": "2026-10-02T04:57:19.947515Z",
+      "status": "ROW_RETURNED"
+    },
+    {
+      "asset": "ada",
+      "metric_status_times_if_returned": {},
+      "metrics": {
+        "AdrActCnt": "27548",
+        "CapMVRVCur": "0.662106196973964781",
+        "TxCnt": "43181"
+      },
+      "observation_age_at_retrieval_seconds": 104240.005003,
+      "observation_time_utc": "2026-10-01T00:00:00Z",
+      "provider_asset_eod_completion_utc": "2026-10-02T00:24:36Z",
+      "provider_completion_at_or_before_retrieval": true,
+      "provider_completion_lag_from_observation_seconds": 87876,
+      "retrieved_at_utc": "2026-10-02T04:57:20.005003Z",
+      "safe_known_at_upper_bound_utc": "2026-10-02T04:57:20.005003Z",
+      "status": "ROW_RETURNED"
+    }
+  ],
+  "schema_version": 1,
+  "source": "coinmetrics_community_network_data",
+  "status": "PASS",
+  "provenance": {
+    "github_workflow": "V3 H8 on-chain coverage precheck guard",
+    "github_run_id": 36966790178,
+    "github_run_number": 10,
+    "github_job_id": 110712171443,
+    "source_commit": "9f147e28aa3fd8fea7973108a175e408b5b065b9",
+    "persistence_note": "Second distinct prospective EOD cycle. Public Community API observation; not retroactive historical known-at reconstruction."
+  }
+}

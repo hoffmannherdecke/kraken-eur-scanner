@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T05:05:00Z",
+  "updated_at_utc": "2026-10-02T05:12:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -382,7 +382,7 @@
       "category": "state_context",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Representative Coin Metrics Community coverage is green and the first prospective known-at capture is persisted. The capture proved that provider AssetEODCompletionTime can precede later per-metric flow status times, so historical known-at use remains blocked until at least one additional distinct EOD cycle establishes first-seen/revision behavior.",
+      "rationale": "Two distinct prospective Coin Metrics EOD cycles are now persisted. Coverage stayed heterogeneous (BTC/ETH/XRP/ADA rows, SOL missing), while the relationship between AssetEODCompletionTime and flow status times changed across cycles. retrieved_at is therefore acceptable only as a conservative prospective known-at upper bound; historical known-at reconstruction/backfill remains blocked.",
       "evidence": [
         "research/v3/h8-onchain-state-precheck-v1.json",
         "tools/v3-h8-coinmetrics-coverage-precheck.py",
@@ -390,9 +390,11 @@
         "docs/v3-research-framework.md",
         "research/v3/h8-known-at-capture-contract-v1.json",
         "research/v3/captures/h8-coinmetrics-known-at-20261001T192024Z.json",
-        "tools/v3-h8-coinmetrics-known-at-capture.py"
+        "tools/v3-h8-coinmetrics-known-at-capture.py",
+        "research/v3/captures/h8-coinmetrics-known-at-20261002T045719Z.json",
+        "research/v3/h8-known-at-two-cycle-review-20261002.json"
       ],
-      "pending_gate": "V3_H8_CAPTURE_AT_LEAST_ONE_ADDITIONAL_DISTINCT_EOD_CYCLE_THEN_REVIEW_KNOWN_AT_ELIGIBILITY"
+      "pending_gate": "V3_H8_PREREGISTER_PROSPECTIVE_ONLY_STATE_CAPTURE_OR_ASSOCIATION_RETRIEVED_AT_NO_HISTORICAL_BACKFILL"
     },
     {
       "id": "maker_taker_fill_probability",

@@ -8,6 +8,7 @@ name: V3 H8 on-chain coverage precheck guard
       - 'research/v3/h8-onchain-state-precheck-v1.json'
       - 'research/v3/h8-known-at-capture-contract-v1.json'
       - 'research/v3/captures/h8-coinmetrics-known-at-*.json'
+      - 'research/v3/h8-known-at-two-cycle-review-20261002.json'
       - 'tools/v3-h8-coinmetrics-known-at-capture.py'
       - 'research/source-registry.json'
       - 'tools/v3-h8-coinmetrics-coverage-precheck.py'
@@ -34,7 +35,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path('research/v3/h8-onchain-state-precheck-v1.json').read_text('utf-8'))
           assert j['kind']=='V3_H8_ONCHAIN_STATE_PRECHECK_V1'
-          assert j['status'] in {'PRECHECK_SOURCE_COVERAGE_ONLY','PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING','PRECHECK_CAPTURE_METHOD_PREREGISTERED_LIVE_SMOKE_PENDING','PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING'}
+          assert j['status'] in {'PRECHECK_SOURCE_COVERAGE_ONLY','PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING','PRECHECK_CAPTURE_METHOD_PREREGISTERED_LIVE_SMOKE_PENDING','PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING','PRECHECK_TWO_EOD_CYCLES_GREEN_PROSPECTIVE_ONLY_STATE_PREREG_PENDING'}
           assert j['point_in_time_contract']['metric_interval_time_is_not_assumed_equal_to_known_at_time'] is True
           assert j['point_in_time_contract']['historical_use_requires_known_at_or_proven_publication_lag'] is True
           assert 'historical_performance_trial' in j['forbidden_before_availability_lag_proven']
@@ -43,7 +44,7 @@ jobs:
           assert j['runtime_guardrails']['active_v2r3_change_allowed'] is False
           assert j['runtime_guardrails']['orders_allowed'] is False
           assert j['runtime_guardrails']['real_money_actions_allowed'] is False
-          if j['status'] in {'PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING','PRECHECK_CAPTURE_METHOD_PREREGISTERED_LIVE_SMOKE_PENDING','PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING'}:
+          if j['status'] in {'PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING','PRECHECK_CAPTURE_METHOD_PREREGISTERED_LIVE_SMOKE_PENDING','PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING','PRECHECK_TWO_EOD_CYCLES_GREEN_PROSPECTIVE_ONLY_STATE_PREREG_PENDING'}:
               rd=j['coverage_readiness']
               assert rd['audit']=='CI_GREEN_RUN_1'
               assert rd['active_addresses']['count']==4
@@ -175,4 +176,28 @@ jobs:
           assert j["guardrails"]["v2r4_changed"] is False
           assert j["guardrails"]["orders"] is False
           print("V3_H8_CAPTURE_PERSISTENCE PASS first-cycle/versioned/revision-evidence")
+          PY
+
+
+      - name: Validate H8 two-cycle known-at review
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          a=json.loads(Path("research/v3/captures/h8-coinmetrics-known-at-20261001T192024Z.json").read_text())
+          b=json.loads(Path("research/v3/captures/h8-coinmetrics-known-at-20261002T045719Z.json").read_text())
+          r=json.loads(Path("research/v3/h8-known-at-two-cycle-review-20261002.json").read_text())
+          assert a["status"]=="PASS" and b["status"]=="PASS"
+          assert {x["observation_time_utc"] for x in a["rows"] if x["status"]=="ROW_RETURNED"}=={"2026-09-30T00:00:00Z"}
+          assert {x["observation_time_utc"] for x in b["rows"] if x["status"]=="ROW_RETURNED"}=={"2026-10-01T00:00:00Z"}
+          assert r["status"]=="PASS_MINIMUM_TWO_DISTINCT_EOD_CYCLES_PROSPECTIVE_ONLY"
+          e=r["eligibility"]
+          assert e["minimum_distinct_eod_cycles_met"] is True
+          assert e["prospective_retrieved_at_upper_bound_state_capture_allowed"] is True
+          assert e["historical_known_at_reconstruction_allowed"] is False
+          assert e["historical_backfill_performance_trial_allowed"] is False
+          assert e["asset_eod_completion_as_exact_metric_finality_allowed"] is False
+          assert e["threshold_selection_allowed"] is False
+          assert e["sealed_2026h1_holdout_open_allowed"] is False
+          print("V3_H8_TWO_CYCLE_REVIEW PASS prospective-only/historical-blocked/no-holdout")
           PY

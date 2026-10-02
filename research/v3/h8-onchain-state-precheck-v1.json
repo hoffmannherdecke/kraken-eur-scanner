@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H8_ONCHAIN_STATE_PRECHECK_V1",
   "hypothesis_id": "V3-H8",
-  "status": "PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING",
+  "status": "PRECHECK_TWO_EOD_CYCLES_GREEN_PROSPECTIVE_ONLY_STATE_PREREG_PENDING",
   "prepared_at_utc": "2026-10-01T18:40:00Z",
   "purpose": "Audit public on-chain metric coverage and time-availability semantics before any historical or prospective signal test.",
   "first_source": "coinmetrics_community_network_data",
@@ -53,7 +53,7 @@
     "leverage_allowed": false,
     "real_money_actions_allowed": false
   },
-  "next_gate": "BOUNDED_REPEATED_PROSPECTIVE_CAPTURE_ACROSS_AT_LEAST_TWO_DISTINCT_EOD_CYCLES_BEFORE_HISTORICAL_OR_SIGNAL_TRIAL",
+  "next_gate": "PREREGISTER_PROSPECTIVE_ONLY_H8_STATE_CAPTURE_OR_ASSOCIATION_USING_RETRIEVED_AT_FAIL_CLOSED_MISSING_NO_HISTORICAL_BACKFILL",
   "coverage_readiness": {
     "audit": "CI_GREEN_RUN_1",
     "requested_assets": [
@@ -164,6 +164,29 @@
       "eth_flow_status_time_later_than_asset_eod_completion_observed": true
     },
     "repeated_capture_minimum_distinct_eod_cycles": 2,
-    "historical_known_at_claim_allowed": false
+    "historical_known_at_claim_allowed": false,
+    "second_live_capture": {
+      "status": "PASS",
+      "capture_path": "research/v3/captures/h8-coinmetrics-known-at-20261002T045719Z.json",
+      "github_run_number": 10,
+      "request_started_at_utc": "2026-10-02T04:57:19.655664Z",
+      "observation_dates": [
+        "2026-10-01"
+      ],
+      "returned_assets": [
+        "btc",
+        "eth",
+        "xrp",
+        "ada"
+      ],
+      "no_row_assets": [
+        "sol"
+      ]
+    },
+    "distinct_eod_cycles_observed": 2,
+    "two_cycle_review": "research/v3/h8-known-at-two-cycle-review-20261002.json",
+    "minimum_distinct_eod_cycles_met": true,
+    "prospective_retrieved_at_upper_bound_state_capture_allowed": true,
+    "historical_backfill_performance_trial_allowed": false
   }
 }
