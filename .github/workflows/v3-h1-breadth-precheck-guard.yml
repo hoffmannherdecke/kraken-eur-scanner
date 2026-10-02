@@ -8,6 +8,8 @@ name: V3 H1 breadth precheck guard
       - 'research/v3/h1-cross-crypto-breadth-precheck-v1.json'
       - 'research/v3/h1-eur15-development-feature-trial-v1.json'
       - 'research/v3/h1-association-trial-ledger-record-v1.json'
+      - 'research/v3/association/v3-h1-h6-association-evidence-20261002.json'
+      - 'research/v3/h1-h6-association-review-20261002.json'
       - 'research/v3/h1-breadth-association-trial-v1.json'
       - 'tools/v3-h1-eur15-breadth-feature-integrity.py'
       - 'tools/v3-h1-association-trial.py'
@@ -44,7 +46,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path("research/v3/h1-cross-crypto-breadth-precheck-v1.json").read_text("utf-8"))
           assert j["kind"]=="V3_H1_CROSS_CRYPTO_BREADTH_PRECHECK_V1"
-          assert j["status"] in {"PRECHECK_PIT_METHOD_GREEN","PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING","ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED"}
+          assert j["status"] in {"PRECHECK_PIT_METHOD_GREEN","PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING","ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED","ASSOCIATION_001_GREEN_INCREMENTAL_VALUE_PREREG_PENDING"}
           assert j["feature_role"]=="STATE_AND_RELATIVE_CONTEXT_FIRST"
           assert j["first_research_role"]["performance_trial"] is False
           assert j["first_research_role"]["threshold_selection"] is False
@@ -56,8 +58,10 @@ jobs:
               assert j["next_gate"]=="REAL_EUR15_BREADTH_FEATURE_TRIAL_PREREGISTERED__NEXT_EXECUTE_PHYSICALLY_WITH_HOLDOUT_SEALED"
           elif j["status"]=="PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING":
               assert j["next_gate"]=="PREREGISTER_H1_ASSOCIATION_TRIAL_ON_DEVELOPMENT_ONLY_NO_HOLDOUT_NO_THRESHOLD_SEARCH"
-          else:
+          elif j["status"]=="ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED":
               assert j["next_gate"]=="IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H1_ASSOC_001_ON_PRE2026_DEVELOPMENT_ONLY"
+          else:
+              assert j["next_gate"]=="PREREGISTER_H1_INCREMENTAL_RELATIVE_CONTEXT_TRIAL_CONTROLLING_TARGET_RETURN_1H_NO_HOLDOUT"
           rd=j["methodology_readiness"]
           assert rd["real_eur15_feature_trial_preregistered"]=="V3-H1-EUR15-BREADTH-FEATURE-INTEGRITY-001"
           assert rd["real_eur15_expected_pair_files"]==648
@@ -186,3 +190,29 @@ jobs:
         run: |
           python -m py_compile tools/v3-h1-association-trial.py
           python tools/v3-h1-association-trial.py --self-test
+
+
+      - name: Validate completed H1 H6 association evidence and review
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          e=json.loads(Path("research/v3/association/v3-h1-h6-association-evidence-20261002.json").read_text())
+          r=json.loads(Path("research/v3/h1-h6-association-review-20261002.json").read_text())
+          assert e["kind"]=="V3_H1_H6_ASSOCIATION_EVIDENCE_V1"
+          assert e["status"]=="PASS"
+          assert e["trial_ledger"]["verify"]["status"]=="PASS"
+          assert e["trial_ledger"]["verify"]["corrupt_trial_ids"]==[]
+          assert e["h1"]["dataset"]["holdout_status"]=="LOCKED_DO_NOT_READ_OR_LABEL"
+          assert e["h6"]["dataset"]["holdout_status"]=="LOCKED_DO_NOT_READ_OR_LABEL"
+          assert e["collector_guardrails"]["holdout_opened"] is False
+          assert e["collector_guardrails"]["threshold_search"] is False
+          assert e["collector_guardrails"]["winner_selected"] is False
+          assert r["status"]=="PASS_ASSOCIATION_REVIEW_HOLDOUT_SEALED"
+          assert r["h1"]["review"]["unique_incremental_value_beyond_target_return_proven"] is False
+          assert r["h6"]["review"]["raw_volume_ratio_incremental_signal_supported"] is False
+          assert r["h6"]["review"]["volume_expansion_incremental_value_beyond_price_direction_proven"] is False
+          assert r["governance"]["next_trials_must_set_influenced_later_design_true"] is True
+          assert r["governance"]["sealed_2026h1_holdout_opened"] is False
+          print("V3_H1_H6_ASSOC_REVIEW PASS canonical/no-holdout/no-auto-promotion")
+          PY

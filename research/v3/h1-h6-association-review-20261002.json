@@ -1,0 +1,356 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H1_H6_ASSOCIATION_REVIEW_V1",
+  "status": "PASS_ASSOCIATION_REVIEW_HOLDOUT_SEALED",
+  "reviewed_at_utc": "2026-10-02T05:55:00Z",
+  "evidence": "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
+  "source_report_summary_sha256": {
+    "h1": "a572ad9415813a42b24359cbd51125b00df11a4abacc4b31516440375201e29d",
+    "h6": "b61b54d6a445eb2cf34bee9828ac8ba6e4ce023a602ce8a48652d284a589618b"
+  },
+  "trial_ledger": {
+    "status": "PASS",
+    "trial_count": 6,
+    "corrupt_trial_ids": [],
+    "h1_influenced_later_design": false,
+    "h6_influenced_later_design": false
+  },
+  "h1": {
+    "fixed_split_order": [
+      "research_train",
+      "calibration",
+      "validation"
+    ],
+    "one_hour": {
+      "target_return_1h": {
+        "observation_weighted_pearson_r": [
+          -0.06285093940777885,
+          -0.06270170462226811,
+          -0.08547131272152696
+        ],
+        "equal_pair_median_pearson_r": [
+          -0.08263796380317552,
+          -0.04338878406145439,
+          -0.0732587262036337
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "leader_minus_target_return_1h": {
+        "observation_weighted_pearson_r": [
+          0.06502876849282432,
+          0.0699833636930872,
+          0.09385800432345395
+        ],
+        "equal_pair_median_pearson_r": [
+          0.09511749613635669,
+          0.04870068194225978,
+          0.09397919497079919
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "target_minus_peer_median_return_1h": {
+        "observation_weighted_pearson_r": [
+          -0.06454145147174974,
+          -0.07468031590106443,
+          -0.08933523922502556
+        ],
+        "equal_pair_median_pearson_r": [
+          -0.09689588349307979,
+          -0.05473295006835449,
+          -0.0909336900896246
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "breadth_positive_share_1h": {
+        "observation_weighted_pearson_r": [
+          0.011554045289276699,
+          0.017529902584870128,
+          0.020573111160593485
+        ],
+        "equal_pair_median_pearson_r": [
+          0.024622127386900367,
+          0.03221095048393906,
+          0.0324345007213489
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "cross_sectional_median_return_1h": {
+        "observation_weighted_pearson_r": [
+          -0.00946412002805211,
+          0.007387401165166431,
+          -0.0071457418459517615
+        ],
+        "equal_pair_median_pearson_r": [
+          -0.007014433587486748,
+          0.020444536884277144,
+          0.010827817868647505
+        ],
+        "observation_sign_consistent": false,
+        "pair_sign_consistent": false
+      }
+    },
+    "four_hour": {
+      "target_return_1h": {
+        "observation_weighted_pearson_r": [
+          -0.0428221076668992,
+          -0.017682482280965153,
+          -0.03691507705840112
+        ],
+        "equal_pair_median_pearson_r": [
+          -0.0507994857335695,
+          -0.0312374779130826,
+          -0.03092768352900884
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "leader_minus_target_return_1h": {
+        "observation_weighted_pearson_r": [
+          0.03852095918600553,
+          0.014106133095568324,
+          0.04380396401805898
+        ],
+        "equal_pair_median_pearson_r": [
+          0.044568096806192295,
+          0.021920414197919322,
+          0.046549341202506346
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "target_minus_peer_median_return_1h": {
+        "observation_weighted_pearson_r": [
+          -0.03786982241274606,
+          -0.012550441027220744,
+          -0.04457452003420142
+        ],
+        "equal_pair_median_pearson_r": [
+          -0.04692653432707109,
+          -0.018699027036189742,
+          -0.06048253714572026
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "breadth_positive_share_1h": {
+        "observation_weighted_pearson_r": [
+          0.002057485215235777,
+          0.005416404335469767,
+          0.020912322678019058
+        ],
+        "equal_pair_median_pearson_r": [
+          0.008431735402405414,
+          0.016191932954936657,
+          0.045476156378844924
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "cross_sectional_median_return_1h": {
+        "observation_weighted_pearson_r": [
+          -0.021749542067668385,
+          -0.013765495948512039,
+          0.014177887915961095
+        ],
+        "equal_pair_median_pearson_r": [
+          -0.017801891191285123,
+          -0.009169695129809374,
+          0.04026255319743948
+        ],
+        "observation_sign_consistent": false,
+        "pair_sign_consistent": false
+      }
+    },
+    "review": {
+      "stable_relative_context_1h": true,
+      "target_own_mean_reversion_1h": true,
+      "breadth_association_weak_but_same_sign": true,
+      "cross_sectional_median_unstable": true,
+      "four_hour_relative_context_same_sign_but_weaker": true,
+      "unique_incremental_value_beyond_target_return_proven": false,
+      "conclusion": "The fixed H1 relative-context features show repeatable 1h association signs across research_train/calibration/validation and both weighting schemes, but their incremental information beyond target's own short-horizon mean reversion is not yet proven."
+    },
+    "next_gate": "PREREGISTER_INCREMENTAL_RELATIVE_CONTEXT_TEST_CONTROLLING_TARGET_RETURN_1H_DEVELOPMENT_ONLY"
+  },
+  "h6": {
+    "fixed_split_order": [
+      "research_train",
+      "calibration",
+      "validation"
+    ],
+    "numeric": {
+      "price_return_1h_to_future_1h": {
+        "observation_weighted_pearson_r": [
+          -0.060104216444374456,
+          -0.07086982663245273,
+          -0.08940256896272553
+        ],
+        "equal_pair_median_pearson_r": [
+          -0.08373148637966854,
+          -0.061524961834088246,
+          -0.09427646519760405
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "price_return_1h_to_future_4h": {
+        "observation_weighted_pearson_r": [
+          -0.044138322614277775,
+          -0.027125360680346537,
+          -0.042679645058421076
+        ],
+        "equal_pair_median_pearson_r": [
+          -0.05270099480873435,
+          -0.04143173172949924,
+          -0.06560171756815658
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "price_return_4h_to_future_1h": {
+        "observation_weighted_pearson_r": [
+          -0.0649856182879441,
+          -0.0675524354322818,
+          -0.052361644799490785
+        ],
+        "equal_pair_median_pearson_r": [
+          -0.07904497438799861,
+          -0.08455596237544613,
+          -0.07755559180661796
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "price_return_4h_to_future_4h": {
+        "observation_weighted_pearson_r": [
+          -0.06097662153711644,
+          -0.038008851038539,
+          -0.034028488589995874
+        ],
+        "equal_pair_median_pearson_r": [
+          -0.0605498550409688,
+          -0.07394163022565943,
+          -0.1086072365703378
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "raw_volume_ratio_to_future_1h": {
+        "observation_weighted_pearson_r": [
+          -0.00008444757060182497,
+          0.0016928671765263897,
+          -0.0038296515789831677
+        ],
+        "equal_pair_median_pearson_r": [
+          0.00039085463534430695,
+          -0.0017845202639005051,
+          -0.001003827494528991
+        ],
+        "observation_sign_consistent": false,
+        "pair_sign_consistent": false
+      },
+      "raw_volume_ratio_to_future_4h": {
+        "observation_weighted_pearson_r": [
+          0.00018365976748369817,
+          0.00327086686024511,
+          -0.0031149100166135914
+        ],
+        "equal_pair_median_pearson_r": [
+          0.0016099701895884023,
+          -0.0002739101242941357,
+          -0.005333915796092415
+        ],
+        "observation_sign_consistent": false,
+        "pair_sign_consistent": false
+      }
+    },
+    "boolean": {
+      "price_down_with_volume_expansion_to_future_1h": {
+        "observation_weighted_true_minus_false_mean": [
+          0.0006348026266806581,
+          0.0006526854744452738,
+          0.00022402702954045105
+        ],
+        "equal_pair_median_true_minus_false_mean": [
+          0.001174854456722123,
+          0.0010082308414030975,
+          0.0008445114067721516
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "price_down_with_volume_expansion_to_future_4h": {
+        "observation_weighted_true_minus_false_mean": [
+          0.0008030062744929685,
+          0.0003374808711222889,
+          -0.0007643927554639233
+        ],
+        "equal_pair_median_true_minus_false_mean": [
+          0.0012300579493490684,
+          0.0003973777750041175,
+          0.00005335837935092926
+        ],
+        "observation_sign_consistent": false,
+        "pair_sign_consistent": true
+      },
+      "price_up_with_volume_expansion_to_future_1h": {
+        "observation_weighted_true_minus_false_mean": [
+          -0.0004083308140834551,
+          -0.000576693704984362,
+          -0.00026538609664183613
+        ],
+        "equal_pair_median_true_minus_false_mean": [
+          -0.0010780836625686786,
+          -0.0010734849179722707,
+          -0.0009927922300553274
+        ],
+        "observation_sign_consistent": true,
+        "pair_sign_consistent": true
+      },
+      "price_up_with_volume_expansion_to_future_4h": {
+        "observation_weighted_true_minus_false_mean": [
+          -0.00031776261020379306,
+          -0.00016087965312713858,
+          0.0006352559011623125
+        ],
+        "equal_pair_median_true_minus_false_mean": [
+          -0.0007290970266008185,
+          -0.0007005866820943349,
+          -0.00021323480947243057
+        ],
+        "observation_sign_consistent": false,
+        "pair_sign_consistent": true
+      }
+    },
+    "raw_volume_ratio_means": {
+      "research_train_future_1h": 1181.2272000791766,
+      "research_train_future_4h": 1452.5144590004638,
+      "calibration_future_1h": 2.6685789320256803,
+      "validation_future_1h": 2.775421119838261
+    },
+    "review": {
+      "price_mean_reversion_numeric_stable": true,
+      "raw_volume_ratio_incremental_signal_supported": false,
+      "raw_volume_ratio_outlier_sensitivity_flag": true,
+      "volume_expansion_direction_flags_1h_same_sign_across_all_splits": true,
+      "volume_expansion_direction_flags_4h_observation_weighted_sign_stable": false,
+      "volume_expansion_incremental_value_beyond_price_direction_proven": false,
+      "conclusion": "Price-return primitives show stable mean-reversion association. Raw volume ratio is near-zero/unstable and highly outlier-sensitive in early history. The 1h direction+volume-expansion flags are sign-stable, but the next question is whether volume adds information beyond price direction alone."
+    },
+    "next_gate": "PREREGISTER_INCREMENTAL_VOLUME_CONTRIBUTION_TEST_WITHIN_FIXED_PRICE_DIRECTION_STRATA_DEVELOPMENT_ONLY"
+  },
+  "governance": {
+    "descriptive_association_only": true,
+    "automatic_winner_selected": false,
+    "strategy_promotion_allowed": false,
+    "threshold_selection_performed": false,
+    "sealed_2026h1_holdout_opened": false,
+    "next_trials_must_set_influenced_later_design_true": true,
+    "search_accounting_increment_required": true,
+    "no_holdout_open_before_fixed_candidate_spec": true
+  }
+}

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T05:28:00Z",
+  "updated_at_utc": "2026-10-02T05:55:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -315,7 +315,7 @@
       "category": "state_signal",
       "source_version": "V3 H1 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Physical feature-integrity is green. A fixed, descriptive development-only association trial (V3-H1-ASSOC-001) is now preregistered with exact 1h/4h labels, chronological 4h purge/embargo, no selection and sealed 2026H1 holdout.",
+      "rationale": "V3-H1-ASSOC-001 completed with holdout sealed. Target own 1h mean reversion, leader-minus-target positive association and target-minus-peer negative association keep the same 1h sign across research_train/calibration/validation and both observation/equal-pair weighting. Breadth is weak; cross-sectional median is unstable. Incremental value beyond target return itself is not yet proven.",
       "evidence": [
         "research/v3/h1-cross-crypto-breadth-precheck-v1.json",
         "tools/v3-h1-breadth-pit-smoke.py",
@@ -325,16 +325,18 @@
         "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
         "research/v3/h1-breadth-association-trial-v1.json",
         "tools/v3-h1-association-trial.py",
-        "tools/run-minipc-v3-h1-h6-association.ps1"
+        "tools/run-minipc-v3-h1-h6-association.ps1",
+        "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
+        "research/v3/h1-h6-association-review-20261002.json"
       ],
-      "pending_gate": "V3_H1_EXECUTE_FROZEN_ASSOC_001_PHYSICAL_MINIPC"
+      "pending_gate": "V3_H1_PREREGISTER_INCREMENTAL_RELATIVE_CONTEXT_TEST_CONTROLLING_TARGET_RETURN_1H_NO_HOLDOUT"
     },
     {
       "id": "price_volume_trend_primitives",
       "category": "signal_state",
       "source_version": "V3 H6 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Physical feature-integrity is green. A fixed, descriptive development-only association trial (V3-H6-ASSOC-001) is now preregistered with exact 1h/4h labels, chronological 4h purge/embargo, no selection and sealed 2026H1 holdout.",
+      "rationale": "V3-H6-ASSOC-001 completed with holdout sealed. Price-return primitives show stable negative/mean-reverting association. Raw volume ratio has near-zero unstable association and strong outlier sensitivity. Direction+volume-expansion 1h effects keep their sign across splits, but volume's incremental contribution beyond price direction is not yet proven.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "tools/v3-h6-price-volume-pit-smoke.py",
@@ -344,16 +346,18 @@
         "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
         "research/v3/h6-price-volume-association-trial-v1.json",
         "tools/v3-h6-association-trial.py",
-        "tools/run-minipc-v3-h1-h6-association.ps1"
+        "tools/run-minipc-v3-h1-h6-association.ps1",
+        "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
+        "research/v3/h1-h6-association-review-20261002.json"
       ],
-      "pending_gate": "V3_H6_EXECUTE_FROZEN_ASSOC_001_PHYSICAL_MINIPC"
+      "pending_gate": "V3_H6_PREREGISTER_INCREMENTAL_VOLUME_CONTRIBUTION_WITHIN_DIRECTION_STRATA_NO_HOLDOUT"
     },
     {
       "id": "simple_price_volume_primitives",
       "category": "signal_state",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "H6 physical feature-integrity is green and the next immutable research step is the fixed V3-H6-ASSOC-001 development-only association trial; no performance/winner claim is permitted.",
+      "rationale": "V3-H6-ASSOC-001 confirms stable price mean-reversion association but does not establish raw volume-ratio value. The next search-accounted step must isolate volume's contribution within fixed price-direction strata; no holdout or silent transform/threshold tuning.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "tools/v3-h6-price-volume-pit-smoke.py",
@@ -363,9 +367,11 @@
         "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
         "research/v3/h6-price-volume-association-trial-v1.json",
         "tools/v3-h6-association-trial.py",
-        "tools/run-minipc-v3-h1-h6-association.ps1"
+        "tools/run-minipc-v3-h1-h6-association.ps1",
+        "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
+        "research/v3/h1-h6-association-review-20261002.json"
       ],
-      "pending_gate": "V3_H6_EXECUTE_FROZEN_ASSOC_001_PHYSICAL_MINIPC"
+      "pending_gate": "V3_H6_PREREGISTER_INCREMENTAL_VOLUME_CONTRIBUTION_WITHIN_DIRECTION_STRATA_NO_HOLDOUT"
     },
     {
       "id": "meta_take_no_take",
