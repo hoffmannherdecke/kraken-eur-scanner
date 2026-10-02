@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H10_TRADER_COHORT_SELECTION_CONTRACT_V1",
+  "trial_id": "V3-H10-COHORT-001",
+  "status": "FROZEN_PREREGISTERED_NOT_EXECUTED",
+  "frozen_at_utc": "2026-10-02T19:00:00Z",
+  "purpose": "Create a reproducible Hyperliquid public trader cohort for prospective Smart-Money/Trader-Activity shadow research without using Kraken outcome performance for wallet selection.",
+  "source_authority": {
+    "discovery": {
+      "source_id": "hyperliquid_stats_leaderboard_discovery",
+      "endpoint": "https://stats-data.hyperliquid.xyz/Mainnet/leaderboard",
+      "role": "address discovery and coarse public performance/activity snapshot only",
+      "compatibility_status": "UNDOCUMENTED_STATS_HOST_SHAPE_MUST_BE_VALIDATED_EACH_RUN"
+    },
+    "verification": {
+      "source_id": "hyperliquid_public_info",
+      "endpoint": "https://api.hyperliquid.xyz/info",
+      "role": "official public-address role/portfolio/fill verification",
+      "authentication": false,
+      "wallet_key": false,
+      "signer": false,
+      "orders": false
+    }
+  },
+  "selection_seed": "V3-H10-COHORT-001-20261002",
+  "target": {
+    "primary_traders": 20,
+    "active_controls": 6,
+    "total": 26
+  },
+  "leaderboard_windows": [
+    "week",
+    "month",
+    "allTime"
+  ],
+  "base_eligibility": {
+    "min_account_value_usd": 50000,
+    "min_week_volume_usd": 100000,
+    "min_month_volume_usd": 1000000,
+    "max_month_turnover_to_equity": 1000,
+    "max_abs_month_roi_decimal": 5,
+    "allowed_user_roles": [
+      "user",
+      "subAccount"
+    ],
+    "min_recent_30d_fills": 20,
+    "min_recent_30d_distinct_coins": 2
+  },
+  "primary_rule": {
+    "required_positive_pnl_windows": [
+      "week",
+      "month",
+      "allTime"
+    ],
+    "account_value_strata": [
+      {
+        "name": "50k_250k",
+        "min": 50000,
+        "max_exclusive": 250000,
+        "quota": 5
+      },
+      {
+        "name": "250k_1m",
+        "min": 250000,
+        "max_exclusive": 1000000,
+        "quota": 5
+      },
+      {
+        "name": "1m_5m",
+        "min": 1000000,
+        "max_exclusive": 5000000,
+        "quota": 5
+      },
+      {
+        "name": "5m_plus",
+        "min": 5000000,
+        "max_exclusive": null,
+        "quota": 5
+      }
+    ],
+    "within_stratum_order": "sha256(selection_seed + ':' + lowercase_address), ascending",
+    "underfill_rule": "Backfill from remaining primary-eligible verified addresses in the same deterministic hash order; do not rerank by PnL/ROI."
+  },
+  "control_rule": {
+    "description": "Active benchmark addresses that pass the same base eligibility but do not have positive PnL in all three frozen windows.",
+    "positive_window_count_min": 1,
+    "positive_window_count_max": 2,
+    "order": "sha256(selection_seed + ':CONTROL:' + lowercase_address), ascending",
+    "quota": 6
+  },
+  "verification": {
+    "public_info_calls": [
+      "userRole",
+      "portfolio",
+      "userFillsByTime"
+    ],
+    "fills_lookback_days": 30,
+    "aggregate_fills_by_time": true,
+    "max_verification_attempts_per_primary_stratum": 30,
+    "max_control_verification_attempts": 60
+  },
+  "prohibited_selection_inputs": [
+    "Kraken-EUR future returns",
+    "Kraken-EUR MFE/MAE",
+    "V2R3/V2R4 candidate outcomes",
+    "future Hyperliquid performance after cohort freeze",
+    "wallet owner identity guesses",
+    "social-media popularity",
+    "manual cherry-picking after seeing outcomes"
+  ],
+  "prospective_measurement_plan": {
+    "role": "shadow only",
+    "planned_local_capture_interval_seconds": 60,
+    "first_features": [
+      "position direction and size change",
+      "new fills since prior capture",
+      "position build-up/reduction",
+      "independent trader count per asset/window",
+      "aggregate directional concentration",
+      "activity acceleration",
+      "lead time to later Kraken-EUR move"
+    ],
+    "kraken_outcome_horizons": [
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "3h",
+      "6h",
+      "24h"
+    ],
+    "automatic_strategy_change_allowed": false,
+    "automatic_order_following_allowed": false
+  },
+  "promotion_guardrails": {
+    "copy_trading": false,
+    "v2r3_change": false,
+    "v2r4_change": false,
+    "active_v3_feature_authorized": false,
+    "real_money_actions": false,
+    "requires_incremental_prospective_value": true,
+    "requires_no_single_wallet_dependency": true
+  }
+}
