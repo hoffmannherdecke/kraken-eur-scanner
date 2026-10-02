@@ -1,0 +1,219 @@
+{
+  "altname": "PUMPEUR",
+  "candidate_id": "20261002-034422-PUMP-EUR-r36961360203",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "EXTENDED_7D_30D",
+      "BELOW_3H_RESISTANCE",
+      "INSUFFICIENT_ROOM_AFTER_COSTS",
+      "LATE_ENTRY_EFFICIENCY"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The latest close recovered above 1h resistance with stronger volume, and open interest rose, but price remains below 3h resistance only about 0.8% above the ask. That leaves insufficient demonstrated room after Kraken spot costs for a scout entry.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "PUMPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 30.25,
+        "available": true,
+        "current_funding_rate": -2.52029224545e-07,
+        "current_open_interest": 129516100.0,
+        "funding_rate_delta": 3.2243957027000006e-08,
+        "open_interest_pct": 7.7277,
+        "previous_funding_rate": -2.84273181572e-07,
+        "previous_observed_at_utc": "2026-10-02T03:44:44.594706Z",
+        "previous_open_interest": 120225400.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -2.52029224545e-07,
+        "index_price": 0.00580699,
+        "last": 0.0058,
+        "mark_price": 0.00580518142,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 129516100.0,
+        "requested_symbols": [
+          "PF_PUMPUSD",
+          "PI_PUMPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_PUMPUSD",
+        "volume24h": 1711611000
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.005159,
+      "bid": 0.005155,
+      "last": 0.005151,
+      "spread_pct": 0.07756447547024492
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "1100",
+      "pair_decimals": 6,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.3356644095370065,
+          "ret3h_pct": 0.7324467965229564
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.09013441604890371,
+          "ret3h_pct": 0.31967053177399674
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.9182048158905554,
+          "ret3h_pct": 1.87269459945143
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T04:14:58.218632Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_018e9bd50e4726f0006abf2fc3cdd487d18c4c05dd81a1c2d2"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.005159,
+    "bid": 0.005155,
+    "last": 0.005151,
+    "spread_pct": 0.07756447547024492
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.005134,
+      "high": 0.005135,
+      "low": 0.005101,
+      "open": 0.005101,
+      "trades": 17,
+      "ts": 1790910000,
+      "volume": 913624.39904,
+      "vwap": 0.005117
+    },
+    {
+      "close": 0.00511,
+      "high": 0.005137,
+      "low": 0.00511,
+      "open": 0.005119,
+      "trades": 24,
+      "ts": 1790910900,
+      "volume": 556741.85019,
+      "vwap": 0.005126
+    },
+    {
+      "close": 0.0051,
+      "high": 0.005126,
+      "low": 0.00507,
+      "open": 0.005115,
+      "trades": 68,
+      "ts": 1790911800,
+      "volume": 5673086.18641,
+      "vwap": 0.005096
+    },
+    {
+      "close": 0.005134,
+      "high": 0.005139,
+      "low": 0.005082,
+      "open": 0.005106,
+      "trades": 52,
+      "ts": 1790912700,
+      "volume": 3708310.77567,
+      "vwap": 0.00511
+    },
+    {
+      "close": 0.005151,
+      "high": 0.005186,
+      "low": 0.005124,
+      "open": 0.005124,
+      "trades": 51,
+      "ts": 1790913600,
+      "volume": 2044640.9204,
+      "vwap": 0.00516
+    }
+  ],
+  "pair": "PUMP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-034422-PUMP-EUR-r36961360203.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T04:15:06.908111Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "012984434294abdc32f58de6e459b363fbe2da09",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T04:15:06.908111Z",
+    "revalidation_started_at_utc": "2026-10-02T04:14:57.846258Z",
+    "ttl_due_at_utc": "2026-10-02T04:14:44.594706Z",
+    "ttl_lag_seconds": 13.252
+  }
+}
