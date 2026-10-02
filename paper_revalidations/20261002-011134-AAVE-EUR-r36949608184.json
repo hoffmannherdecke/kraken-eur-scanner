@@ -1,0 +1,225 @@
+{
+  "altname": "AAVEEUR",
+  "candidate_id": "20261002-011134-AAVE-EUR-r36949608184",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained hold above resistance without first requiring a chase through the recent 158.22 spike high"
+    ],
+    "reason_codes": [
+      "LIQUIDITY_OK",
+      "STRONG_PRIOR_RUNUP",
+      "NEAR_7D_30D_HIGH",
+      "EXTENDED_ENTRY",
+      "BREAKOUT_HOLD_UNCONFIRMED",
+      "COST_HURDLE",
+      "OPEN_INTEREST_FALLING",
+      "NO_COIN_SPECIFIC_CATALYST_SUPPLIED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "AAVE is liquid, but the move is extended near recent highs. Price has traded above prior resistance, yet a prior spike to 158.22 failed to hold; the confirmation needed for a scout would require chasing higher, with plausible remaining movement not clearly sufficient to cover Kraken costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "AAVEUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 53.86,
+        "available": true,
+        "current_funding_rate": -0.006756285641760501,
+        "current_open_interest": 23274.0,
+        "funding_rate_delta": -0.00782446770325643,
+        "open_interest_pct": -1.2712,
+        "previous_funding_rate": 0.001068182061495929,
+        "previous_observed_at_utc": "2026-10-02T01:11:59.099988Z",
+        "previous_open_interest": 23573.66
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.006756285641760501,
+        "index_price": 175.7441,
+        "last": 175.59,
+        "mark_price": 175.63996661466,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 23274.0,
+        "requested_symbols": [
+          "PF_AAVEUSD",
+          "PI_AAVEUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_AAVEUSD",
+        "volume24h": 26776.29
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 156.27,
+      "bid": 156.11,
+      "last": 156.1,
+      "spread_pct": 0.10243933670529265
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.05",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.1384026163927521,
+          "ret3h_pct": 0.26148302019524117
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2710972172057513,
+          "ret3h_pct": 0.5097773209433276
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.5769412654875516,
+          "ret3h_pct": 1.1028712683019526
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T02:05:49.154743Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_099c5e7ead7de227006abf117f643c87d08337db2dd203ceff"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 156.27,
+    "bid": 156.11,
+    "last": 156.1,
+    "spread_pct": 0.10243933670529265
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 154.51,
+      "high": 154.91,
+      "low": 152.64,
+      "open": 153.75,
+      "trades": 134,
+      "ts": 1790902800,
+      "volume": 533.2780392,
+      "vwap": 153.69
+    },
+    {
+      "close": 155.92,
+      "high": 156.3,
+      "low": 154.48,
+      "open": 154.68,
+      "trades": 90,
+      "ts": 1790903700,
+      "volume": 213.53493836,
+      "vwap": 155.68
+    },
+    {
+      "close": 154.76,
+      "high": 158.22,
+      "low": 154.76,
+      "open": 156.04,
+      "trades": 212,
+      "ts": 1790904600,
+      "volume": 873.90077842,
+      "vwap": 157.11
+    },
+    {
+      "close": 156.68,
+      "high": 156.88,
+      "low": 154.55,
+      "open": 154.55,
+      "trades": 40,
+      "ts": 1790905500,
+      "volume": 131.17597397,
+      "vwap": 155.55
+    },
+    {
+      "close": 156.1,
+      "high": 156.75,
+      "low": 156.1,
+      "open": 156.75,
+      "trades": 2,
+      "ts": 1790906400,
+      "volume": 1.87605614,
+      "vwap": 156.65
+    }
+  ],
+  "pair": "AAVE/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-011134-AAVE-EUR-r36949608184.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T02:06:01.636230Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "0c76e246032f73502517c4b9442a407d6d6b78cd",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T02:06:01.636230Z",
+    "revalidation_started_at_utc": "2026-10-02T02:05:48.661710Z",
+    "ttl_due_at_utc": "2026-10-02T01:56:59.099988Z",
+    "ttl_lag_seconds": 529.562
+  }
+}
