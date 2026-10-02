@@ -217,9 +217,10 @@ jobs:
       - name: H1 H6 association physical wrapper remains plan-only
         shell: pwsh
         run: |
-          ./tools/run-minipc-v3-h1-h6-association.ps1 | Tee-Object -Variable plan
-          $text=$plan -join [Environment]::NewLine
-          if($text -notmatch '"status":s*"PLAN_ONLY"'){throw "association wrapper not plan-only"}
-          if($text -notmatch '"holdout_opened":s*false'){throw "holdout guard failed"}
-          if($text -notmatch '"winner_selection":s*false'){throw "winner-selection guard failed"}
-          if($text -notmatch '"orders":s*false'){throw "order guard failed"}
+          $raw = ./tools/run-minipc-v3-h1-h6-association.ps1 | Out-String
+          $j = $raw | ConvertFrom-Json
+          if($j.status -ne "PLAN_ONLY"){throw "association wrapper not plan-only"}
+          if($j.holdout_opened -ne $false){throw "holdout guard failed"}
+          if($j.winner_selection -ne $false){throw "winner-selection guard failed"}
+          if($j.orders -ne $false){throw "order guard failed"}
+          if($j.real_money_actions -ne $false){throw "real-money guard failed"}
