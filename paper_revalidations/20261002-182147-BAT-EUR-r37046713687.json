@@ -1,0 +1,218 @@
+{
+  "altname": "BATEUR",
+  "candidate_id": "20261002-182147-BAT-EUR-r37046713687",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Reclaim and hold above prior support with improving closed-candle volume",
+      "Short-term momentum turns positive"
+    ],
+    "reason_codes": [
+      "support_broken",
+      "weak_short_term_momentum",
+      "negative_major_market_regime",
+      "costs_high_vs_near_term_range"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "BAT has broken below prior support and continued lower; weak market conditions and execution costs leave no supported scout setup.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "BATUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 34.11,
+        "available": true,
+        "current_funding_rate": 5.89973125242e-07,
+        "current_open_interest": 1506580.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -0.059,
+        "previous_funding_rate": 5.89973125242e-07,
+        "previous_observed_at_utc": "2026-10-02T18:22:10.356510Z",
+        "previous_open_interest": 1507469.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 5.89973125242e-07,
+        "index_price": 0.094235,
+        "last": 0.09357,
+        "mark_price": 0.09417838482,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 1506580.0,
+        "requested_symbols": [
+          "PF_BATUSD",
+          "PI_BATUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_BATUSD",
+        "volume24h": 567475
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.08392,
+      "bid": 0.0836,
+      "last": 0.08352,
+      "spread_pct": 0.38204393505253204
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "50",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.7207954815964368,
+          "ret3h_pct": -1.5017634043137051
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.8844579704061384,
+          "ret3h_pct": -1.3882276292379925
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -1.4615747289014602,
+          "ret3h_pct": -1.868720067611973
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T18:56:15.363519Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0cc14113176999d9006abffe50e5e087d0ad801dbf0d23c3d5"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.08392,
+    "bid": 0.0836,
+    "last": 0.08352,
+    "spread_pct": 0.38204393505253204
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.08662,
+      "high": 0.08708,
+      "low": 0.0859,
+      "open": 0.0859,
+      "trades": 16,
+      "ts": 1790963100,
+      "volume": 46795.86350348,
+      "vwap": 0.08688
+    },
+    {
+      "close": 0.08625,
+      "high": 0.08667,
+      "low": 0.08619,
+      "open": 0.08667,
+      "trades": 8,
+      "ts": 1790964000,
+      "volume": 19747.69557628,
+      "vwap": 0.08632
+    },
+    {
+      "close": 0.08524,
+      "high": 0.08611,
+      "low": 0.08516,
+      "open": 0.08611,
+      "trades": 10,
+      "ts": 1790964900,
+      "volume": 104391.497383,
+      "vwap": 0.08591
+    },
+    {
+      "close": 0.08339,
+      "high": 0.08449,
+      "low": 0.08339,
+      "open": 0.08449,
+      "trades": 16,
+      "ts": 1790965800,
+      "volume": 66976.35635763,
+      "vwap": 0.0842
+    },
+    {
+      "close": 0.08352,
+      "high": 0.08352,
+      "low": 0.08352,
+      "open": 0.08352,
+      "trades": 1,
+      "ts": 1790966700,
+      "volume": 10841.34787933,
+      "vwap": 0.08352
+    }
+  ],
+  "pair": "BAT/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-182147-BAT-EUR-r37046713687.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T18:56:21.320214Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "9a47123dfcc34de85e529b911eb369b6909cad62",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T18:56:21.320214Z",
+    "revalidation_started_at_utc": "2026-10-02T18:56:14.945173Z",
+    "ttl_due_at_utc": "2026-10-02T18:52:10.356510Z",
+    "ttl_lag_seconds": 244.589
+  }
+}

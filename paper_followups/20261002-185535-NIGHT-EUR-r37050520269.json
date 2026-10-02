@@ -1,0 +1,52 @@
+{
+  "baseline_ask_eur": 0.04167,
+  "candidate_id": "20261002-185535-NIGHT-EUR-r37050520269",
+  "evaluated_at_utc": "2026-10-02T18:56:03.597771Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-02T18:55:35Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 28.598,
+    "detection_price_eur": 0.04171,
+    "evaluated_at_utc": "2026-10-02T18:56:03.597771Z",
+    "evaluation_ask_eur": 0.04167,
+    "flagged_as_already_run": true,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-02T18:42:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 2.205,
+      "price_eur": 0.04081
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "extended_7d_30d_run",
+      "no_3h_breakout_or_higher_lows",
+      "weak_major_market_regime",
+      "low_adx",
+      "nearby_resistance",
+      "fees_reduce_edge"
+    ],
+    "scan_step_started_at_utc": "2026-10-02T18:53:58Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.2053418279833314,
+      "ret15_live_pct": 1.1642008246422364,
+      "ret1h_pct": -0.9969143128412128,
+      "ret3h_pct": 1.3608748481166444,
+      "scanner_late_flag": false,
+      "score": 9.0
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-10-02T18:56:38.313656Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "NIGHT/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01"
+}
