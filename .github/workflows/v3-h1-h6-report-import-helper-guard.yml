@@ -1,0 +1,55 @@
+name: V3 H1 H6 report import helper guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/run-minipc-v3-import-h1-h6-incremental-reports.ps1'
+      - '.github/workflows/v3-h1-h6-report-import-helper-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Plan-only wrapper smoke
+        shell: pwsh
+        run: |
+          $raw=& ./tools/run-minipc-v3-import-h1-h6-incremental-reports.ps1
+          $j=$raw|ConvertFrom-Json
+          if($j.kind -ne "V3_H1_H6_INCREMENTAL_REPORT_IMPORT_V1"){throw "unexpected kind"}
+          if($j.status -ne "PLAN_ONLY"){throw "plan-only default violated"}
+          if($j.exact_payload_copy -ne $true){throw "exact copy guard missing"}
+          if($j.report_mutation -ne $false){throw "report mutation guard failed"}
+          if($j.holdout_opened -ne $false){throw "holdout guard failed"}
+          if($j.strategy_change -ne $false){throw "strategy guard failed"}
+          if($j.orders -ne $false -or $j.real_money_actions -ne $false){throw "action guard failed"}
+          Write-Host "V3_H1_H6_IMPORT_PLAN_GUARD PASS"
+      - name: Static import safety guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path("tools/run-minipc-v3-import-h1-h6-incremental-reports.ps1").read_text("utf-8")
+          required=[
+            "IMPORT_V3_H1_H6_INCR_REPORTS",
+            "v3-h1-incremental-001-20261002-095841.json",
+            "v3-h6-incremental-001-20261002-095841.json",
+            "Repository must be clean",
+            "deterministic summary hash mismatch",
+            "git pull --ff-only",
+            "git diff --cached --name-only",
+            "Expected exactly 3 staged files",
+            "git push origin main",
+            "holdout_opened",
+            "real_money_actions"
+          ]
+          for x in required:
+              assert x in s, x
+          assert "git add -- "research/v3/incremental-reports/"" in s
+          print("V3_H1_H6_IMPORT_STATIC_GUARD PASS")
+          PY
