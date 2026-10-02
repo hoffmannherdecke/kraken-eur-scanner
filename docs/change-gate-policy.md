@@ -131,3 +131,29 @@ authorizes:
 - withdrawal rights;
 - sealed holdout access;
 - destructive cleanup outside its explicit scope.
+
+
+## Test-value / autonomy overlay
+
+Detailed test-selection rules are canonical in `docs/test-strategy-runbook.md`.
+
+Additional binding rules:
+
+- A new test must close or materially inform a named evidence, strategy, runtime,
+  execution-safety or release-integrity question.
+- A previous PASS is reused unless relevant code/config/source semantics/environment
+  changed, an explicit freshness rule expired, or an incident contradicts it.
+- Do not repeat long physical tests after a technical failure until a shorter regression
+  smoke proves the fix.
+- ChatGPT executes GitHub/Supabase/public-API/read-only/static/CI work autonomously
+  inside the existing project guardrails.
+- User involvement is reserved for genuinely physical MINI-PC/home-network/hardware
+  proof, unavailable login/secret/account UI, account-specific private state, real
+  external transport, or an explicit human release/live-activation decision.
+- Physical user actions should be batched and minimized.
+- Not every open research hypothesis is a blocker for the first V3 shadow candidate.
+  Only components actually proposed for that candidate must close their component gate.
+- Deferred/data-maturity branches remain open instead of being forced through low-value
+  repeated smokes.
+- When the preregistered gate is met and the intended decision can be made, stop expanding
+  the branch merely because additional tests are possible.
