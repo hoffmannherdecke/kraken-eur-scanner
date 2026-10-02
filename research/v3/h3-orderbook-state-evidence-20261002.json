@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_ORDERBOOK_STATE_CAPTURE_EVIDENCE_V1",
+  "status": "PASS",
+  "provenance": {
+    "github_workflow": "V3 H3 orderbook depth precheck guard",
+    "github_run_id": 36968598068,
+    "github_run_number": 9,
+    "source_commit": "35de0e78f5017374380a099755dc2792ed1551fa"
+  },
+  "symbols": [
+    "BTC/EUR",
+    "ETH/EUR",
+    "SOL/EUR"
+  ],
+  "subscription_acks": 3,
+  "wire_messages": 928,
+  "per_symbol": {
+    "BTC/EUR": {
+      "checksum_fail": 0,
+      "checksum_pass": 246,
+      "features": {
+        "ask_depth_quote_top10": {
+          "max": 138917.786878998,
+          "mean": 99077.0288667377,
+          "min": 56265.466994926,
+          "n": 246,
+          "std_population": 17364.398781702017
+        },
+        "bid_depth_quote_top10": {
+          "max": 101192.997044522,
+          "mean": 57399.421397934246,
+          "min": 23060.130826331,
+          "n": 246,
+          "std_population": 13751.99488422469
+        },
+        "depth_imbalance_top10": {
+          "max": -0.013944982129385745,
+          "mean": -0.2686423249705158,
+          "min": -0.548409612861309,
+          "n": 246,
+          "std_population": 0.11439661631033361
+        },
+        "spread_bps": {
+          "max": 1.119839784782419,
+          "mean": 0.3042605784243857,
+          "min": 0.013020875718996482,
+          "n": 246,
+          "std_population": 0.41058544125381696
+        }
+      },
+      "max_source_age_ms": 96.005,
+      "snapshots": 1,
+      "updates": 245
+    },
+    "ETH/EUR": {
+      "checksum_fail": 0,
+      "checksum_pass": 410,
+      "features": {
+        "ask_depth_quote_top10": {
+          "max": 197678.3987849018,
+          "mean": 147564.60816660372,
+          "min": 84400.2600247928,
+          "n": 410,
+          "std_population": 27538.13908697328
+        },
+        "bid_depth_quote_top10": {
+          "max": 144908.9282384425,
+          "mean": 97283.81743267644,
+          "min": 28107.4627251999,
+          "n": 410,
+          "std_population": 21744.003980229965
+        },
+        "depth_imbalance_top10": {
+          "max": 0.14370927644832918,
+          "mean": -0.20838815939547592,
+          "min": -0.5949491196831485,
+          "n": 410,
+          "std_population": 0.1290560411610078
+        },
+        "spread_bps": {
+          "max": 2.1027416039795415,
+          "mean": 0.7701357030917813,
+          "min": 0.04123447779626457,
+          "n": 410,
+          "std_population": 0.5353495716824185
+        }
+      },
+      "max_source_age_ms": 82.478,
+      "snapshots": 1,
+      "updates": 409
+    },
+    "SOL/EUR": {
+      "checksum_fail": 0,
+      "checksum_pass": 256,
+      "features": {
+        "ask_depth_quote_top10": {
+          "max": 79342.056055789,
+          "mean": 57528.340068423495,
+          "min": 29535.1135877297,
+          "n": 256,
+          "std_population": 10538.79456433025
+        },
+        "bid_depth_quote_top10": {
+          "max": 106213.3794475092,
+          "mean": 61597.50372183645,
+          "min": 27118.048270269,
+          "n": 256,
+          "std_population": 22924.765590564246
+        },
+        "depth_imbalance_top10": {
+          "max": 0.5335536813467692,
+          "mean": 0.008576570503462513,
+          "min": -0.3444630835133768,
+          "n": 256,
+          "std_population": 0.19437734004523877
+        },
+        "spread_bps": {
+          "max": 3.664010259228726,
+          "mean": 1.506264292713781,
+          "min": 0.9156251430664286,
+          "n": 256,
+          "std_population": 0.8768724875268457
+        }
+      },
+      "max_source_age_ms": 95.993,
+      "snapshots": 1,
+      "updates": 255
+    }
+  },
+  "interpretation": {
+    "descriptive_state_only": true,
+    "future_outcomes_joined": false,
+    "thresholds_selected": false,
+    "directional_signal_created": false,
+    "queue_position_proven": false,
+    "maker_fill_probability_proven": false,
+    "raw_book_archive": false
+  },
+  "next_gate": "ACCUMULATE_OR_PREREGISTER_PROSPECTIVE_H3_STATE_ASSOCIATION_SEPARATELY_NO_THRESHOLD_NO_FILL_CLAIM"
+}
