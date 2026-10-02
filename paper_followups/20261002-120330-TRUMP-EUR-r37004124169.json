@@ -1,0 +1,51 @@
+{
+  "baseline_ask_eur": 1.913,
+  "candidate_id": "20261002-120330-TRUMP-EUR-r37004124169",
+  "evaluated_at_utc": "2026-10-02T12:04:07.073366Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-02T12:03:30Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 37.073,
+    "detection_price_eur": 1.913,
+    "evaluated_at_utc": "2026-10-02T12:04:07.073366Z",
+    "evaluation_ask_eur": 1.913,
+    "flagged_as_already_run": false,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-02T09:04:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 2.464,
+      "price_eur": 1.867
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "below_resistance",
+      "no_breakout",
+      "closed_volume_weak",
+      "fees_material",
+      "market_regime_mixed"
+    ],
+    "scan_step_started_at_utc": "2026-10-02T12:00:12Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.463845741831827,
+      "ret15_live_pct": 0.3672612801679076,
+      "ret1h_pct": 0.6842105263157983,
+      "ret3h_pct": 2.463845741831827,
+      "scanner_late_flag": false,
+      "score": 9.2
+    },
+    "schema_version": 1,
+    "setup_lane": "CONTINUITY",
+    "updated_at_utc": "2026-10-02T12:04:24.386018Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "TRUMP/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01"
+}
