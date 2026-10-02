@@ -15,6 +15,10 @@ name: V3 H3 orderbook depth precheck guard
       - 'tools/v3-h3-kraken-ws-book-reconciliation-smoke.py'
       - '.github/workflows/v3-h3-orderbook-precheck-guard.yml'
 
+concurrency:
+  group: v3-h3-orderbook-precheck-guard
+  cancel-in-progress: true
+
 permissions:
   contents: read
 

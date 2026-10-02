@@ -118,6 +118,21 @@ This policy formalizes the pattern already used successfully in the project:
 - MINI-PC backup: immediate seed + non-destructive restore smoke before relying on
   scheduled backups.
 
+## CI notification / guard-edit discipline
+
+Guard failures must remain visible, but incomplete intermediate edits must not create a storm of false-actionable GitHub failure notifications.
+
+Binding workflow for multi-step CI/guard/research-contract changes:
+
+- Stage iterative edits on a temporary branch instead of committing incomplete states directly to `main`.
+- Push-triggered validation guards should be scoped to `branches: [main]` unless there is an explicit reason to validate every development branch.
+- Merge/squash only the coherent completed change into `main`; the resulting main update should trigger the relevant guard once against the complete state.
+- Guard workflows that can be superseded by a newer run use a workflow-specific `concurrency` group with `cancel-in-progress: true` so stale overlapping validations do not accumulate.
+- `[skip ci]` / equivalent skip markers are **not** the default mechanism. GitHub supports them for push/pull-request events, but skipped required checks may remain pending and the commit receives no validation evidence. Use only for an explicitly documented exceptional case, never to bypass a release/freeze/safety guard.
+- Runtime evidence/state commits, scheduled scanner/paper execution and fail-closed strategy guards are not weakened by this policy. A genuinely failing final guard remains red and actionable.
+
+Reason: on 2026-10-02, iterative direct-to-main development produced 20 failure runs across seven guards; every affected guard later passed. The problem was notification noise from intermediate states, not seven persistent production faults.
+
 ## Safety boundary
 
 Passing a smoke authorizes only the **next documented gate**. It never implicitly

@@ -1,6 +1,7 @@
 name: V3 H3 association precheck guard
 on:
   push:
+    branches: [main]
     paths:
       - 'tools/v3-h3-prospective-association.py'
       - 'tools/run-minipc-v3-h3-prospective-association.ps1'
@@ -8,6 +9,10 @@ on:
       - 'research/v3/h3-association-trial-ledger-record-v2.json'
       - '.github/workflows/v3-h3-association-precheck-guard.yml'
   workflow_dispatch:
+concurrency:
+  group: v3-h3-association-precheck-guard
+  cancel-in-progress: true
+
 permissions:
   contents: read
 jobs:
