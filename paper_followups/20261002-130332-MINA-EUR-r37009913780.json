@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-02T13:17:00Z",
         "trough_at_utc": "2026-10-02T13:11:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 1.05,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -1.26,
+        "mfe_pct": 1.819,
+        "peak_at_utc": "2026-10-02T16:55:00Z",
+        "trough_at_utc": "2026-10-02T14:55:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -88,7 +99,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-02T14:07:00.320736Z"
+    "updated_at_utc": "2026-10-02T17:14:55.429039Z"
   },
   "original_decision": "WAIT",
   "pair": "MINA/EUR",
