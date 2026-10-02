@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-02T09:21:00Z",
         "trough_at_utc": "2026-10-02T09:29:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -0.302,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -1.06,
+        "mfe_pct": 0.16,
+        "peak_at_utc": "2026-10-02T12:30:00Z",
+        "trough_at_utc": "2026-10-02T12:03:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -90,7 +101,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-02T10:24:23.689486Z"
+    "updated_at_utc": "2026-10-02T13:34:02.791178Z"
   },
   "original_decision": "WAIT",
   "pair": "XDG/EUR",
