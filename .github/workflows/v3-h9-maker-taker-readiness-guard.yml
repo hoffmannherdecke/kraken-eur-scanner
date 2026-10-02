@@ -12,6 +12,10 @@ name: V3 H9 maker taker readiness guard
       - 'tools/v3-h9-public-book-trade-clock-smoke.py'
       - '.github/workflows/v3-h9-maker-taker-readiness-guard.yml'
 
+concurrency:
+  group: v3-h9-maker-taker-readiness-guard
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
