@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-01T20:16:00Z",
         "trough_at_utc": "2026-10-01T20:11:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -0.38,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -1.195,
+        "mfe_pct": 0.163,
+        "peak_at_utc": "2026-10-01T20:40:00Z",
+        "trough_at_utc": "2026-10-01T21:39:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -87,7 +98,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-01T21:19:11.340259Z"
+    "updated_at_utc": "2026-10-02T00:06:11.534174Z"
   },
   "original_decision": "WAIT",
   "pair": "TRUMP/EUR",
