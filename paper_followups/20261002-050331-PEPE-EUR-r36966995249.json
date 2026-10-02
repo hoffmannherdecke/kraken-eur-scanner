@@ -3,7 +3,16 @@
   "candidate_id": "20261002-050331-PEPE-EUR-r36966995249",
   "evaluated_at_utc": "2026-10-02T05:05:41.469640Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -1.211,
+      "expected_bars": 30,
+      "mae_pct": -1.623,
+      "mfe_pct": -0.121
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -59,8 +68,11 @@
   },
   "original_decision": "WAIT",
   "pair": "PEPE/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-02T05:39:15.460708Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-02T05:39:48.220519Z"
 }
