@@ -1478,7 +1478,12 @@ Physical read-only audit and post-reboot verification have now established:
 
 Decisions already closed:
 - **Additional antivirus:** not justified at this stage. Keep built-in Microsoft Defender active; do not add a third-party AV layer without a concrete security requirement because the current 24/7 Python/WebSocket/RDP/VPN runtime is already healthy and additional filter/update layers would add operational complexity.
-- **Native project apps:** no installation is required merely for parity with browser/CLI paths. Slack action push is already E2E verified, Git operations are CLI-based, Altrady transport is service/API based, and ChatGPT browser access exists. Native apps remain optional only if a later concrete operational benefit appears.
+- **Native project apps — reviewed individually 2026-10-02:**
+  - **Altrady Desktop (Windows): DO NOT INSTALL for runtime reliability.** Altrady officially exposes the same trading platform/features in desktop and browser; the project's verified Altrady path is webhook/service based and does not require the desktop client to stay running. Installing it would add another background/update surface without improving the existing transport path.
+  - **Slack Desktop (Windows): DO NOT INSTALL on the MINI-PC.** The operational notification target is the iPhone; the verified project path is GitHub/Supabase -> Slack webhook -> real @mention -> iPhone push. A second always-on Slack client on the MINI-PC would duplicate notifications/background load without improving delivery reliability.
+  - **GitHub Desktop: DO NOT INSTALL.** The MINI-PC uses Git CLI plus GitHub Actions and guarded scripts; Desktop would duplicate an already-proven automation/admin path and is not needed by scheduled tasks.
+  - **ChatGPT Desktop: OPTIONAL / DEFER.** The current Windows app can provide Chat, Work, Codex and local desktop/file workflows, so it may add value later for deliberate interactive maintenance/development. It is not required by any 24/7 runtime component, and browser access is already working. Install only when a concrete local Work/Codex/file workflow is needed, not as a background service.
+  - Result: **no native project app is required for commissioning.** This is an explicit per-app decision, not a generic skip.
 - **Fixed weekly reboot:** not adopted. Prefer update-/maintenance-driven controlled reboots rather than unconditional weekly downtime. Startup tasks, supervisor, watchdog, restart recovery and post-boot health have already been physically verified. A future update-driven reboot must preserve the same fail-closed/no-real-money guardrails.
 
 One final physical security detail remains before the firewall item can be closed:
@@ -1504,7 +1509,7 @@ Final disposition after user-level review:
 - the broad Windows RDP `Profile=Any / RemoteAddress=Any` rules are retained as an **optional hardening item**, not a commissioning blocker, to avoid unnecessary lockout risk in a working VPN/RDP setup;
 - no firewall mutation was performed during this review.
 
-**MINI-PC core commissioning is therefore CLOSED.** Re-open infrastructure commissioning only for a concrete incident, material architecture change, or a deliberately scheduled hardening/maintenance window. Strategy/research release gates remain separate and must not be conflated with MINI-PC commissioning.
+**MINI-PC core commissioning is therefore CLOSED after explicit completion of the final three runbook items:** Defender/firewall review, per-app native Windows review, and restart/update-window decision. Re-open infrastructure commissioning only for a concrete incident, material architecture change, or a deliberately scheduled hardening/maintenance window. Strategy/research release gates remain separate and must not be conflated with MINI-PC commissioning.
 
 
 ### 2026-10-01 ~15:24 UTC — V2R4 WS-shadow heartbeat stall requires one local recovery gate
