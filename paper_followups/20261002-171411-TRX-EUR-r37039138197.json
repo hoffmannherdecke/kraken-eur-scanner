@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-02T17:14:43.685933Z",
     "evaluation_ask_eur": 0.298655,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.019,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.05,
+        "mfe_pct": 0.04,
+        "peak_at_utc": "2026-10-02T17:24:00Z",
+        "trough_at_utc": "2026-10-02T17:15:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-02T14:17:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -42,7 +54,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-02T17:15:00.535440Z"
+    "updated_at_utc": "2026-10-02T17:36:00.646527Z"
   },
   "original_decision": "WAIT",
   "pair": "TRX/EUR",
