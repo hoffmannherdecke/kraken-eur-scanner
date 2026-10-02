@@ -1,0 +1,224 @@
+{
+  "altname": "LTCEUR",
+  "candidate_id": "20261002-135407-LTC-EUR-r37015919291",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m retest holding 62.55\u201362.58.",
+      "A subsequent spot close above 63.00 with sustained volume."
+    ],
+    "reason_codes": [
+      "LIQUID_SPOT",
+      "TIGHT_SPREAD",
+      "FAILED_RESISTANCE_RETEST",
+      "NO_63_CONFIRMATION",
+      "MAJOR_MARKET_NEGATIVE",
+      "COSTS_MATERIAL"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The breakout failed to hold above resistance: recent closes fell to 62.40 and 62.28, below the required retest and confirmation levels. Weak major-market context and taker fees further undermine the setup.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "LTCUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 34.1,
+        "available": true,
+        "current_funding_rate": -7.0295804746373e-05,
+        "current_open_interest": 650.0,
+        "funding_rate_delta": 1.2533781619579888e-06,
+        "open_interest_pct": 0.0,
+        "previous_funding_rate": -7.1549182908331e-05,
+        "previous_observed_at_utc": "2026-10-02T13:54:35.565073Z",
+        "previous_open_interest": 650.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -7.0295804746373e-05,
+        "index_price": 70.2427,
+        "last": 67.3,
+        "mark_price": 70.12970759278,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 650.0,
+        "requested_symbols": [
+          "PF_LTCUSD",
+          "PI_LTCUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PI_LTCUSD",
+        "volume24h": 5970
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 62.29,
+      "bid": 62.26,
+      "last": 62.27,
+      "spread_pct": 0.048173424327581114
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.1",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.6582618151053765,
+          "ret3h_pct": -0.5167820990942928
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.837514773057213,
+          "ret3h_pct": -0.8922294701391276
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.7073954983922826,
+          "ret3h_pct": -0.6252298639205622
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T14:28:40.757314Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0653bd163e364614006abfbf99b7f887d283fca55e27a9209b"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 62.29,
+    "bid": 62.26,
+    "last": 62.27,
+    "spread_pct": 0.048173424327581114
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 62.45,
+      "high": 62.48,
+      "low": 62.12,
+      "open": 62.12,
+      "trades": 41,
+      "ts": 1790946900,
+      "volume": 199.2403766,
+      "vwap": 62.38
+    },
+    {
+      "close": 62.34,
+      "high": 62.55,
+      "low": 62.31,
+      "open": 62.4,
+      "trades": 185,
+      "ts": 1790947800,
+      "volume": 2073.95323447,
+      "vwap": 62.39
+    },
+    {
+      "close": 63.1,
+      "high": 63.11,
+      "low": 62.37,
+      "open": 62.37,
+      "trades": 268,
+      "ts": 1790948700,
+      "volume": 1754.29725915,
+      "vwap": 62.71
+    },
+    {
+      "close": 62.4,
+      "high": 63.25,
+      "low": 62.32,
+      "open": 63.1,
+      "trades": 240,
+      "ts": 1790949600,
+      "volume": 933.32925406,
+      "vwap": 62.91
+    },
+    {
+      "close": 62.28,
+      "high": 62.41,
+      "low": 62.19,
+      "open": 62.4,
+      "trades": 56,
+      "ts": 1790950500,
+      "volume": 343.6142783,
+      "vwap": 62.29
+    }
+  ],
+  "pair": "LTC/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-135407-LTC-EUR-r37015919291.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T14:28:46.524122Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "086cde5ec9b0a56bd4eb3287151409ac3aa4f841",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T14:28:46.524122Z",
+    "revalidation_started_at_utc": "2026-10-02T14:28:40.582570Z",
+    "ttl_due_at_utc": "2026-10-02T14:24:35.565073Z",
+    "ttl_lag_seconds": 245.017
+  }
+}
