@@ -1356,6 +1356,30 @@ Next physical gate:
 
 No `/f`, `Repair-Volume`, format, delete or write-to-D action is authorized by this step.
 
+Preferred preservation path after review of the existing 2026-09-30 evidence:
+
+1. **Do not reformat D:** as the first choice.
+2. Preserve the existing file tree and use the supported Windows FAT/FAT32 -> NTFS in-place conversion path after filesystem repair.
+3. Because read-only CHKDSK already proved logical FAT32 corruption / lost chains, do **not** run `convert.exe` on the currently dirty/corrupt volume.
+4. Before repair:
+   - protect irreplaceable/high-value files with a separate copy if available;
+   - avoid filling C: with a blind whole-volume copy if doing so would leave inadequate system free space.
+5. Repair FAT32 with a controlled CHKDSK fix only after preservation scope is confirmed. If CHKDSK asks whether lost chains should be converted to files, prefer preserving them as `.chk` recovery files rather than discarding their contents.
+6. Re-run read-only CHKDSK and require a clean result.
+7. Then use Windows `convert D: /fs:ntfs /v` (or equivalent startup conversion if Windows cannot lock the volume). This conversion is intended to preserve existing files/directories.
+8. After conversion:
+   - verify filesystem = NTFS;
+   - verify file/folder counts and selected hashes/spot-checks;
+   - run a read/write/delete smoke;
+   - verify cold-start/remount behavior;
+   - only then authorize D: for bulk/archive/capture/secondary-backup use.
+
+Important:
+- NTFS is the intended Windows-only project filesystem for this drive; exFAT is not chosen because the project benefits from NTFS journaling/Windows semantics and there is no supported in-place FAT32 -> exFAT preservation path.
+- The in-place conversion is not treated as a substitute for protecting irreplaceable data first, especially because corruption was already observed.
+- No formatting is authorized unless repair/conversion fails or a later explicit decision chooses a clean rebuild after backup.
+
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
