@@ -1,0 +1,220 @@
+{
+  "altname": "WLDEUR",
+  "candidate_id": "20261002-124330-WLD-EUR-r37008238752",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "extended_7d_30d_performance",
+      "recent_momentum_fading",
+      "spread_and_taker_costs_material",
+      "remaining_move_after_costs_unproven",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "WLD has rallied but is fading near recent highs; at the current ask, fees, spread and structural risk leave insufficient evidenced upside for a scout.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "WLDUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 15.27,
+        "available": true,
+        "current_funding_rate": 4.3317775721667e-05,
+        "current_open_interest": 3326306.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -0.1688,
+        "previous_funding_rate": 4.3317775721667e-05,
+        "previous_observed_at_utc": "2026-10-02T13:04:15.119685Z",
+        "previous_open_interest": 3331930.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 4.3317775721667e-05,
+        "index_price": 0.56625,
+        "last": 0.5672,
+        "mark_price": 0.56674069752,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 3326306.0,
+        "requested_symbols": [
+          "PF_WLDUSD",
+          "PI_WLDUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_WLDUSD",
+        "volume24h": 6929865
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.505,
+      "bid": 0.5023,
+      "last": 0.5022,
+      "spread_pct": 0.5360865680532187
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "11",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.13018667886248725,
+          "ret3h_pct": 0.34883402974270616
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.011449086322035118,
+          "ret3h_pct": 0.1954469466024289
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.3410766961651879,
+          "ret3h_pct": 0.6379437869822535
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T13:19:30.233326Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0a53894b578af9e0006abfaf6334a887d29ca009ab07aa7d51"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.505,
+    "bid": 0.5023,
+    "last": 0.5022,
+    "spread_pct": 0.5360865680532187
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.49,
+      "high": 0.4938,
+      "low": 0.49,
+      "open": 0.4925,
+      "trades": 26,
+      "ts": 1790943300,
+      "volume": 32081.38936,
+      "vwap": 0.4925
+    },
+    {
+      "close": 0.4955,
+      "high": 0.4973,
+      "low": 0.4888,
+      "open": 0.4892,
+      "trades": 32,
+      "ts": 1790944200,
+      "volume": 46209.72922,
+      "vwap": 0.4931
+    },
+    {
+      "close": 0.5051,
+      "high": 0.5063,
+      "low": 0.4957,
+      "open": 0.4957,
+      "trades": 11,
+      "ts": 1790945100,
+      "volume": 9367.26183,
+      "vwap": 0.5019
+    },
+    {
+      "close": 0.5028,
+      "high": 0.5081,
+      "low": 0.5012,
+      "open": 0.5048,
+      "trades": 35,
+      "ts": 1790946000,
+      "volume": 30728.51453,
+      "vwap": 0.5045
+    },
+    {
+      "close": 0.5022,
+      "high": 0.5048,
+      "low": 0.5016,
+      "open": 0.5048,
+      "trades": 7,
+      "ts": 1790946900,
+      "volume": 3040.39116,
+      "vwap": 0.5026
+    }
+  ],
+  "pair": "WLD/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-124330-WLD-EUR-r37008238752.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T13:19:38.863725Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "f6844e4a1073c573ed8a71ee54331904e27edf65",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T13:19:38.863725Z",
+    "revalidation_started_at_utc": "2026-10-02T13:19:29.990501Z",
+    "ttl_due_at_utc": "2026-10-02T13:14:39.815602Z",
+    "ttl_lag_seconds": 290.175
+  }
+}
