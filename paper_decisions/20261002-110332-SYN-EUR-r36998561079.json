@@ -1,0 +1,177 @@
+{
+  "altname": "SYNEUR",
+  "candidate_age_seconds": 24,
+  "candidate_event_time_utc": "2026-10-02T11:03:32Z",
+  "candidate_id": "20261002-110332-SYN-EUR-r36998561079",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained spot trade and 15-minute close above 0.1571 with meaningful live volume",
+      "Follow-through above the breakout level without quickly losing it"
+    ],
+    "reason_codes": [
+      "spread_and_turnover_acceptable",
+      "price_at_recent_resistance",
+      "no_3h_breakout_or_higher_lows",
+      "live_volume_zero",
+      "ask_1_15pct_above_last",
+      "costs_material",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Possible early breakout attempt, but spot confirmation and live participation are absent; the ask is already above the recent resistance reference.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SYNUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "available": false,
+        "reason": "no prior same-pair observation in active series"
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 4.5834885928975e-05,
+        "index_price": 0.178221,
+        "last": 0.181,
+        "mark_price": 0.17868540412,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 477210.0,
+        "requested_symbols": [
+          "PF_SYNUSD",
+          "PI_SYNUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_SYNUSD",
+        "volume24h": 1834672
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.1589,
+      "bid": 0.1585,
+      "last": 0.1571,
+      "spread_pct": 0.252047889098936
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "60",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.04143122741966376,
+          "ret3h_pct": 0.44725784761574516
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.009011702925110221,
+          "ret3h_pct": 0.48036947698590904
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.22172949002217113,
+          "ret3h_pct": 0.43514489399130163
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T11:03:56.217076Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-02T11:04:07.285766Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_06964d4354851553006abf8f9dfa8c87d2a93bacf1dc0e3008"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.1589,
+    "bid": 0.1585,
+    "last": 0.1571,
+    "spread_pct": 0.252047889098936
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "SYN/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36998561079:SYN-EUR:1790939012",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "cf4bcb8ccc7d4c8d2219f4e4e09f8d2a74dbf0b3",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-02T11:03:32Z",
+    "candidate_detected_ts": 1790939012,
+    "candidate_snapshot_at_utc": "2026-10-02T11:03:32Z",
+    "detected_to_evaluation_complete_seconds": 35.286,
+    "detected_to_evaluation_start_seconds": 24.082,
+    "evaluation_completed_at_utc": "2026-10-02T11:04:07.285766Z",
+    "evaluation_runtime_seconds": 11.204,
+    "evaluation_started_at_utc": "2026-10-02T11:03:56.082050Z",
+    "handoff_to_evaluation_start_seconds": 21.18,
+    "handoff_written_at_utc": "2026-10-02T11:03:34.902247Z",
+    "scan_step_started_at_utc": "2026-10-02T11:00:08Z"
+  }
+}
