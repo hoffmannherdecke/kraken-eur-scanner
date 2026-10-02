@@ -3,7 +3,16 @@
   "candidate_id": "20261002-024230-MINA-EUR-r36956744378",
   "evaluated_at_utc": "2026-10-02T02:42:59.758722Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.143,
+      "expected_bars": 30,
+      "mae_pct": -0.143,
+      "mfe_pct": 0.502
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -62,5 +71,6 @@
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-02T03:28:59.735409Z"
 }
