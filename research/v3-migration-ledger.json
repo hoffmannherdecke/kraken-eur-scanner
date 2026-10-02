@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T05:25:00Z",
+  "updated_at_utc": "2026-10-02T05:28:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -232,7 +232,7 @@
       "category": "state_signal",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Cloud and MINI-PC checksum reconciliation are proven. A fixed bounded H3 state contract is frozen for spread/top10 depth/normalized imbalance only, with no outcomes, thresholds, raw archive, queue/fill inference or runtime effect.",
+      "rationale": "Cloud+MINI-PC WS reconciliation is proven and a bounded checksum-valid H3 state capture is now persisted for fixed spread/top10 depth/normalized imbalance features. No outcomes, thresholds, raw archive, queue or fill inference exist yet.",
       "evidence": [
         "research/v3/h3-orderbook-depth-precheck-v1.json",
         "tools/v3-h3-kraken-depth-precheck.py",
@@ -243,9 +243,10 @@
         "tools/run-minipc-v3-h3-ws-book-smoke.ps1",
         "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
         "research/v3/h3-orderbook-state-contract-v1.json",
-        "tools/v3-h3-orderbook-state-capture.py"
+        "tools/v3-h3-orderbook-state-capture.py",
+        "research/v3/h3-orderbook-state-evidence-20261002.json"
       ],
-      "pending_gate": "V3_H3_RUN_BOUNDED_ORDERBOOK_STATE_CAPTURE_SMOKE_NO_OUTCOMES"
+      "pending_gate": "V3_H3_PREREGISTER_PROSPECTIVE_STATE_ASSOCIATION_OR_BOUNDED_DATA_ACCUMULATION_NO_THRESHOLD_NO_FILL_CLAIM"
     },
     {
       "id": "macro_event_risk_gate",
