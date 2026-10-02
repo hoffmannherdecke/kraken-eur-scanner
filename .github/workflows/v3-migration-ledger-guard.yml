@@ -79,3 +79,18 @@ jobs:
           if ($text -notmatch '"force_reset":\s*false') { throw "safe-sync wrapper permits force reset" }
           if ($text -notmatch '"orders":\s*false') { throw "safe-sync wrapper violated no-order guard" }
           if ($text -notmatch '"real_money_actions":\s*false') { throw "safe-sync wrapper violated real-money guard" }
+
+      - name: Static validate physical bundle child paths
+        shell: pwsh
+        run: |
+          $text = Get-Content ./tools/run-minipc-v3-next-physical-gates.ps1 -Raw
+          foreach ($needle in @(
+            '$feature=Join-Path $repo "tools\run-minipc-v3-feature-integrity-gates.ps1"',
+            '$h3=Join-Path $repo "tools\run-minipc-v3-h3-ws-book-smoke.ps1"',
+            '$h9=Join-Path $repo "tools\run-minipc-v3-h9-book-trade-clock-smoke.ps1"',
+            '$binance=Join-Path $repo "tools\run-minipc-binance-public-access-smoke.ps1"',
+            'foreach($p in @($repo,$feature,$h3,$h9,$binance))'
+          )) {
+            if (-not $text.Contains($needle)) { throw "Physical bundle missing required wiring: $needle" }
+          }
+          Write-Host "V3_PHYSICAL_BUNDLE_STATIC_WIRING PASS"

@@ -15,6 +15,7 @@ $ExpectedConfirm="RUN_V3_NEXT_PHYSICAL_GATES"
 $repo=Join-Path $TradingRoot "Repos\kraken-eur-scanner"
 $feature=Join-Path $repo "tools\run-minipc-v3-feature-integrity-gates.ps1"
 $h3=Join-Path $repo "tools\run-minipc-v3-h3-ws-book-smoke.ps1"
+$h9=Join-Path $repo "tools\run-minipc-v3-h9-book-trade-clock-smoke.ps1"
 $binance=Join-Path $repo "tools\run-minipc-binance-public-access-smoke.ps1"
 
 $plan=[ordered]@{
@@ -68,11 +69,11 @@ try{
   $head=(git rev-parse HEAD).Trim()
   Write-Host "=== V3 NEXT PHYSICAL GATES ==="
   Write-Host ("Repo HEAD: "+$head)
-  Write-Host "1/3 Historical H6+H1 feature-integrity..."
+  Write-Host "1/4 Historical H6+H1 feature-integrity..."
   & $feature -TradingRoot $TradingRoot -Execute
   if($LASTEXITCODE -ne 0){throw "H1/H6 feature bundle failed"}
 
-  Write-Host "2/3 Kraken H3 WS book checksum/reconnect..."
+  Write-Host "2/4 Kraken H3 WS book checksum/reconnect..."
   & $h3 -TradingRoot $TradingRoot -Execute
   if($LASTEXITCODE -ne 0){throw "H3 physical WS smoke failed"}
 
