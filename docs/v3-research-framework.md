@@ -526,6 +526,24 @@ These may be integrated into infrastructure without changing trading logic:
 - order lifecycle state machine + audit trail
 - circuit breakers with CLOSED / OPEN / HALF_OPEN recovery
 
+## First V3 shadow candidate readiness
+
+Canonical snapshot: `research/v3/shadow-candidate-readiness-20261002.json`.
+
+Purpose:
+- show which single-component shadow routes are near materialization;
+- name exactly one remaining gate per route where possible;
+- keep optional/data-maturity/later-execution branches from blocking unrelated forward progress;
+- avoid selecting a candidate before its frozen evidence review exists.
+
+Current practical focus:
+- H1 and H6: physical incremental executions are PASS; exact local report import + fixed effect-size review remain;
+- H3: two valid 1800s sessions are PASS; exactly one additional second-UTC-date session + fixed review remain;
+- H5: one FOMC risk-gate variant is already preregistered but waits for the appropriate baseline freeze;
+- H2/H4/H7/H8/H9/H10/H11 are not mandatory blockers for the first shadow unless one is explicitly selected as the changed component.
+
+A first shadow candidate must still obey the one-change contract. This readiness snapshot does not select a winner, freeze a candidate, promote a strategy, alter V2R3/V2R4, or authorize orders.
+
 ## 10. Current V3 research order
 
 1. Measurement / validation layer:
