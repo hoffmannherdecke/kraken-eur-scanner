@@ -11,6 +11,7 @@ name: V2R3 clean-series freeze guard
       - 'paper_evaluator/revalidate.py'
       - 'paper_context.py'
       - '.github/workflows/scan.yml'
+      - '.github/workflows/paper-evaluator.yml'
       - 'research/v2r3/clean-series-freeze-20261001.json'
       - 'tools/validate-v2r3-clean-series-freeze.py'
       - 'tools/paper-release-rollback-snapshot.py'
