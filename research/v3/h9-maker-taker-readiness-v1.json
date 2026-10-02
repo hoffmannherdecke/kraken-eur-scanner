@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H9_MAKER_TAKER_READINESS_V1",
   "hypothesis_id": "V3-H9",
-  "status": "DEFERRED_FILL_MODEL_PHYSICAL_CLOCK_GREEN_FEE_DEADLINE_QUEUE_GATES_PENDING",
+  "status": "DEFERRED_FILL_MODEL_PUBLIC_FEES_VERSIONED_ACCOUNT_TIER_AND_DEADLINE_QUEUE_GATES_PENDING",
   "prepared_at_utc": "2026-10-01T18:47:00Z",
   "purpose": "Block maker-vs-taker/fill-probability research until the required execution microstructure evidence exists.",
   "current_evidence": {
@@ -30,6 +30,16 @@
       "out_of_order_trade_ids": 0,
       "no_book_yet_trades": 0,
       "book_checksum_fail": 0
+    },
+    "public_fee_schedule": {
+      "evidence": "research/v3/h9-kraken-spot-public-fee-schedule-20261002.json",
+      "status": "PUBLIC_SCHEDULE_VERSIONED_ACCOUNT_TIER_UNVERIFIED",
+      "representative_pairs": [
+        "BTC/EUR",
+        "ETH/EUR",
+        "SOL/EUR"
+      ],
+      "account_specific_fee_tier_verified": false
     }
   },
   "public_rest_snapshot_is_insufficient_for": [
@@ -79,5 +89,5 @@
     "leverage_allowed": false,
     "real_money_actions_allowed": false
   },
-  "next_gate": "VERSION_MAKER_TAKER_FEES_THEN_PREREGISTER_DEADLINE_CLEANUP_AND_EXPLICIT_QUEUE_ASSUMPTION_BEFORE_ANY_FILL_MODEL"
+  "next_gate": "VERIFY_ACCOUNT_SPECIFIC_FEE_TIER_THEN_PREREGISTER_DEADLINE_CLEANUP_AND_EXPLICIT_QUEUE_ASSUMPTION_BEFORE_ANY_FILL_MODEL"
 }
