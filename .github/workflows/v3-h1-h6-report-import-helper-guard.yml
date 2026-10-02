@@ -8,6 +8,10 @@ name: V3 H1 H6 report import helper guard
       - 'tools/run-minipc-v3-import-h1-h6-incremental-reports.ps1'
       - '.github/workflows/v3-h1-h6-report-import-helper-guard.yml'
 
+concurrency:
+  group: v3-h1-h6-report-import-helper-guard
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
