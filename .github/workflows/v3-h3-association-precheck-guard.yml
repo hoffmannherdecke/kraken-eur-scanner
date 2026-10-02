@@ -1,0 +1,44 @@
+name: V3 H3 association precheck guard
+on:
+  push:
+    paths:
+      - 'tools/v3-h3-prospective-association.py'
+      - 'research/v3/h3-prospective-state-association-trial-v1.json'
+      - 'research/v3/h3-association-trial-ledger-record-v1.json'
+      - '.github/workflows/v3-h3-association-precheck-guard.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile tools/v3-h3-prospective-association.py
+      - name: Self-test
+        run: python tools/v3-h3-prospective-association.py --self-test
+      - name: Contract guard
+        run: |
+          python - <<'PY'
+          import json
+          s=json.load(open('research/v3/h3-prospective-state-association-trial-v1.json',encoding='utf-8'))
+          assert s['trial_id']=='V3-H3-ASSOC-001'
+          assert s['status']=='FROZEN_PREREGISTERED_CAPTURE_NOT_STARTED'
+          assert s['source']['symbols']==['BTC/EUR','ETH/EUR','SOL/EUR']
+          assert s['source']['depth']==10
+          assert s['sampling']['observation_clock']=='FIXED_5_SECOND_WALL_CLOCK_GRID'
+          assert s['sampling']['maximum_state_age_ms']==2000
+          assert s['metrics']['p_values'] is False
+          assert s['metrics']['threshold_search'] is False
+          assert s['metrics']['feature_transform_search'] is False
+          assert s['metrics']['horizon_search'] is False
+          assert s['metrics']['pair_selection'] is False
+          assert s['metrics']['model_training'] is False
+          assert 'maker fill probability inference' in s['prohibited']
+          assert 'sealed historical holdout access' in s['prohibited']
+          print('V3_H3_ASSOC_CONTRACT_GUARD PASS')
+          PY
