@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T06:00:00Z",
+  "updated_at_utc": "2026-10-02T06:05:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -329,9 +329,11 @@
         "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
         "research/v3/h1-h6-association-review-20261002.json",
         "research/v3/h1-incremental-relative-context-trial-v1.json",
-        "research/v3/h1-incremental-trial-ledger-record-v1.json"
+        "research/v3/h1-incremental-trial-ledger-record-v1.json",
+        "tools/v3-h1-incremental-relative-context.py",
+        "tools/run-minipc-v3-h1-h6-incremental.ps1"
       ],
-      "pending_gate": "V3_H1_IMPLEMENT_VALIDATE_EXECUTE_INCR_001_PRE2026_ONLY"
+      "pending_gate": "V3_H1_EXECUTE_FROZEN_INCR_001_PHYSICAL_MINIPC"
     },
     {
       "id": "price_volume_trend_primitives",
@@ -352,9 +354,11 @@
         "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
         "research/v3/h1-h6-association-review-20261002.json",
         "research/v3/h6-incremental-volume-contribution-trial-v1.json",
-        "research/v3/h6-incremental-trial-ledger-record-v1.json"
+        "research/v3/h6-incremental-trial-ledger-record-v1.json",
+        "tools/v3-h6-incremental-volume-contribution.py",
+        "tools/run-minipc-v3-h1-h6-incremental.ps1"
       ],
-      "pending_gate": "V3_H6_IMPLEMENT_VALIDATE_EXECUTE_INCR_001_PRE2026_ONLY"
+      "pending_gate": "V3_H6_EXECUTE_FROZEN_INCR_001_PHYSICAL_MINIPC"
     },
     {
       "id": "simple_price_volume_primitives",
@@ -374,9 +378,11 @@
         "tools/run-minipc-v3-h1-h6-association.ps1",
         "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
         "research/v3/h1-h6-association-review-20261002.json",
-        "research/v3/h6-incremental-volume-contribution-trial-v1.json"
+        "research/v3/h6-incremental-volume-contribution-trial-v1.json",
+        "tools/v3-h6-incremental-volume-contribution.py",
+        "tools/run-minipc-v3-h1-h6-incremental.ps1"
       ],
-      "pending_gate": "V3_H6_IMPLEMENT_VALIDATE_EXECUTE_INCR_001_PRE2026_ONLY"
+      "pending_gate": "V3_H6_EXECUTE_FROZEN_INCR_001_PHYSICAL_MINIPC"
     },
     {
       "id": "meta_take_no_take",
