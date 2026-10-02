@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T05:20:00Z",
+  "updated_at_utc": "2026-10-02T05:22:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -405,7 +405,7 @@
       "category": "execution_cost",
       "source_version": "V3 later execution hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "H3 book reconciliation and H9 same-connection book+trade clock are now physically confirmed on the MINI-PC. H9 captured 23 trades and all 23 had a safe preceding reconciled book, with 0 duplicate/out-of-order trade IDs and 0 book checksum failures. Fill modelling remains blocked pending versioned fees, deadline/cleanup and explicit queue assumptions.",
+      "rationale": "Book+trade public clock is cloud/physical green. Kraken's current public standard spot fee schedule is versioned, but the account-specific tier is deliberately unverified and must not be guessed. Fill/routing modelling remains blocked pending account-tier evidence plus fixed deadline/cleanup and explicit queue assumptions.",
       "evidence": [
         "research/v3/h9-maker-taker-readiness-v1.json",
         "research/v3/h3-orderbook-depth-precheck-v1.json",
@@ -413,9 +413,10 @@
         "tools/v3-h9-public-book-trade-clock-smoke.py",
         "research/v3/h9-book-trade-clock-evidence-20261001T194344Z.json",
         "tools/run-minipc-v3-h9-book-trade-clock-smoke.ps1",
-        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json"
+        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
+        "research/v3/h9-kraken-spot-public-fee-schedule-20261002.json"
       ],
-      "pending_gate": "V3_H9_VERSION_FEES_THEN_PREREGISTER_DEADLINE_CLEANUP_AND_QUEUE_ASSUMPTION"
+      "pending_gate": "V3_H9_VERIFY_ACCOUNT_SPECIFIC_FEE_TIER_THEN_PREREGISTER_DEADLINE_CLEANUP_QUEUE_CONTRACTS"
     }
   ]
 }
