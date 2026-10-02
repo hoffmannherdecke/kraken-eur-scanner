@@ -226,6 +226,52 @@
       "persistence_mode": "compact_catalog_evidence_plus_bounded_prospective_known_at_captures_only; no endless raw archive",
       "duplicate_raw_storage_allowed": false,
       "access": "public_read_only_no_api_key_community_tier"
+    },
+    {
+      "id": "hyperliquid_public_info",
+      "status": "PRECHECK_READ_ONLY_NOT_ACTIVE_FEATURE",
+      "class": "smart_money_trader_activity",
+      "unique_value": "Public Hyperliquid market/account activity context (including public-address open orders/fills) that can test whether trader activity leads later Kraken-EUR moves.",
+      "authoritative_for": [
+        "hyperliquid_public_market_and_public_address_activity_only"
+      ],
+      "not_authoritative_for": [
+        "kraken_spot_eur_execution_price",
+        "kraken_live_tradability",
+        "identity_or_quality_of_wallet_owner",
+        "future_trade_profitability"
+      ],
+      "overlap_with": [
+        "kraken_spot_ws_public",
+        "binance_futures_public"
+      ],
+      "overlap_strategy": "Potential H10 independent trader-activity sensor only; never replaces Kraken market truth or derivatives context. Wallet selection must be separately preregistered and cannot be chosen by seen Kraken performance.",
+      "persistence_mode": "bounded_compact_public_activity_evidence_only_no_full_chain_or_exchange_archive",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_read_only_no_signer_no_wallet_key_no_order_rights"
+    },
+    {
+      "id": "polymarket_public_market_data",
+      "status": "PRECHECK_READ_ONLY_NOT_ACTIVE_FEATURE",
+      "class": "prediction_market_event_state",
+      "unique_value": "Public event/market metadata plus CLOB prices/order books can provide point-in-time probability, spread, liquidity and change context for event-risk research.",
+      "authoritative_for": [
+        "polymarket_public_event_market_and_clob_state_only"
+      ],
+      "not_authoritative_for": [
+        "objective_real_world_probability",
+        "kraken_spot_eur_execution_price",
+        "kraken_live_tradability",
+        "crypto_direction"
+      ],
+      "overlap_with": [
+        "official_fed_sec_headlines",
+        "federal_reserve_fomc_calendar"
+      ],
+      "overlap_strategy": "H11 event-state sensor only. Official sources remain authoritative for scheduled/released facts; Polymarket measures market-implied state and must prove incremental timing/value separately.",
+      "persistence_mode": "compact_point_in_time_market_state_and_change_evidence_only_no_full_orderbook_archive",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_read_only_no_auth_no_wallet_no_order_rights"
     }
   ]
 }
