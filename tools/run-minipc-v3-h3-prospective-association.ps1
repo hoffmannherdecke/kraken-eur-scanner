@@ -14,7 +14,7 @@ if([string]::IsNullOrWhiteSpace($TradingRoot)){
   $TradingRoot=Join-Path $homeRoot "Trading"
 }
 
-$ExpectedConfirm="RUN_V3_H3_ASSOC_001"
+$ExpectedConfirm="RUN_V3_H3_ASSOC_002"
 $repo=Join-Path $TradingRoot "Repos\kraken-eur-scanner"
 $python=Join-Path $TradingRoot "Runtime\kraken-eur-scanner-venv\Scripts\python.exe"
 $reports=Join-Path $TradingRoot "Historical\reports"
@@ -22,14 +22,14 @@ $trials=Join-Path $TradingRoot "Historical\trials"
 $ledger=Join-Path $trials "trial-ledger.sqlite3"
 $ledgerTool=Join-Path $repo "tools\historical-trial-ledger.py"
 $runner=Join-Path $repo "tools\v3-h3-prospective-association.py"
-$spec=Join-Path $repo "research\v3\h3-prospective-state-association-trial-v1.json"
-$record=Join-Path $repo "research\v3\h3-association-trial-ledger-record-v1.json"
-$freeze=Join-Path $trials "v3-h3-assoc-001-freeze.json"
+$spec=Join-Path $repo "research\v3\h3-prospective-state-association-trial-v2.json"
+$record=Join-Path $repo "research\v3\h3-association-trial-ledger-record-v2.json"
+$freeze=Join-Path $trials "v3-h3-assoc-002-freeze.json"
 
 $plan=[ordered]@{
   kind="V3_H3_PROSPECTIVE_ASSOCIATION_MINIPC_GATE_V1"
   status=$(if($Execute){"READY_TO_EXECUTE"}else{"PLAN_ONLY"})
-  trial_id="V3-H3-ASSOC-001"
+  trial_id="V3-H3-ASSOC-002"
   mode=$(if($Evaluate){"EVALUATE"}else{"CAPTURE"})
   seconds=$Seconds
   symbols=@("BTC/EUR","ETH/EUR","SOL/EUR")
@@ -69,13 +69,13 @@ try{
 
   if(Test-Path -LiteralPath $freeze){
     $f=Get-Content $freeze -Raw|ConvertFrom-Json
-    if($f.trial_id -ne "V3-H3-ASSOC-001"){throw "Unexpected H3 freeze trial id"}
+    if($f.trial_id -ne "V3-H3-ASSOC-002"){throw "Unexpected H3 freeze trial id"}
     if($f.runner_sha256 -ne $runnerSha){throw "H3 runner changed after first prospective session; new trial id required"}
     if($f.spec_sha256 -ne $specSha){throw "H3 spec changed after first prospective session; new trial id required"}
   } else {
     $f=[ordered]@{
       schema_version=1
-      trial_id="V3-H3-ASSOC-001"
+      trial_id="V3-H3-ASSOC-002"
       frozen_at_utc=[DateTime]::UtcNow.ToString("o")
       first_execution_head=$head
       runner_sha256=$runnerSha
@@ -94,22 +94,22 @@ try{
   $line=($ledgerList|Select-Object -Last 1)
   if(-not $line.StartsWith($prefix)){throw "Unexpected trial ledger output"}
   $ledgerObj=$line.Substring($prefix.Length)|ConvertFrom-Json
-  $registered=@($ledgerObj.trials|Where-Object {$_.trial_id -eq "V3-H3-ASSOC-001"}).Count -gt 0
+  $registered=@($ledgerObj.trials|Where-Object {$_.trial_id -eq "V3-H3-ASSOC-002"}).Count -gt 0
   if(-not $registered){
     $obj=Get-Content $record -Raw|ConvertFrom-Json
     $obj.code_fingerprint=$head
-    $tmp=Join-Path $env:TEMP "v3-h3-assoc-001-ledger.json"
+    $tmp=Join-Path $env:TEMP "v3-h3-assoc-002-ledger.json"
     $utf8NoBom=New-Object System.Text.UTF8Encoding($false)
     [System.IO.File]::WriteAllText($tmp,($obj|ConvertTo-Json -Depth 30),$utf8NoBom)
     & $python $ledgerTool --db $ledger append --record $tmp
-    if($LASTEXITCODE -ne 0){throw "Immutable trial ledger append failed for V3-H3-ASSOC-001"}
+    if($LASTEXITCODE -ne 0){throw "Immutable trial ledger append failed for V3-H3-ASSOC-002"}
   }
 
   & $python $ledgerTool --db $ledger verify
   if($LASTEXITCODE -ne 0){throw "Trial ledger verify failed"}
 
   if($Evaluate){
-    $inputs=@(Get-ChildItem -LiteralPath $reports -Filter "v3-h3-assoc-001-session-*.json"|Sort-Object Name|ForEach-Object {$_.FullName})
+    $inputs=@(Get-ChildItem -LiteralPath $reports -Filter "v3-h3-assoc-002-session-*.json"|Sort-Object Name|ForEach-Object {$_.FullName})
     if($inputs.Count -lt 1){throw "No H3 session reports found"}
     $stamp=Get-Date -Format "yyyyMMdd-HHmmss"
     $out=Join-Path $reports ("v3-h3-association-001-"+$stamp+".json")
@@ -124,8 +124,8 @@ try{
     Write-Host ("SHA256: "+(Get-FileHash -Algorithm SHA256 -LiteralPath $out).Hash.ToLowerInvariant())
   } else {
     $stamp=Get-Date -Format "yyyyMMdd-HHmmss"
-    $sid="V3-H3-ASSOC-001-"+([DateTime]::UtcNow.ToString("yyyyMMddTHHmmssZ"))
-    $out=Join-Path $reports ("v3-h3-assoc-001-session-"+$stamp+".json")
+    $sid="V3-H3-ASSOC-002-"+([DateTime]::UtcNow.ToString("yyyyMMddTHHmmssZ"))
+    $out=Join-Path $reports ("v3-h3-assoc-002-session-"+$stamp+".json")
     & $python $runner --spec $spec capture --seconds $Seconds --session-id $sid --output $out
     if($LASTEXITCODE -ne 0){throw "H3 prospective capture failed"}
     $r=Get-Content $out -Raw|ConvertFrom-Json
@@ -137,13 +137,13 @@ try{
     Write-Host ("Report: "+$out)
     Write-Host ("SHA256: "+(Get-FileHash -Algorithm SHA256 -LiteralPath $out).Hash.ToLowerInvariant())
 
-    $sessionFiles=@(Get-ChildItem -LiteralPath $reports -Filter "v3-h3-assoc-001-session-*.json"|Sort-Object Name)
+    $sessionFiles=@(Get-ChildItem -LiteralPath $reports -Filter "v3-h3-assoc-002-session-*.json"|Sort-Object Name)
     $dates=@{}
     $totals=@{"BTC/EUR"=0;"ETH/EUR"=0;"SOL/EUR"=0}
     $eligibleSessions=0
     foreach($sf in $sessionFiles){
       $s=Get-Content $sf.FullName -Raw|ConvertFrom-Json
-      if($s.trial_id -ne "V3-H3-ASSOC-001" -or $s.status -ne "PASS"){continue}
+      if($s.trial_id -ne "V3-H3-ASSOC-002" -or $s.status -ne "PASS"){continue}
       if([double]$s.duration_seconds -ge 1800){$eligibleSessions++}
       $d=([string]$s.started_at_utc).Substring(0,10);$dates[$d]=$true
       foreach($sym in @("BTC/EUR","ETH/EUR","SOL/EUR")){
