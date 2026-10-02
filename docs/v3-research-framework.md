@@ -171,7 +171,7 @@ No H2 performance trial, threshold sweep, pair/month selection or holdout access
 Kraken Spot EUR remains the execution/fill reference.
 
 ### H3 — Orderflow / Depth / Imbalance
-Status: `PRECHECK_L2_SNAPSHOT_GREEN_WEBSOCKET_PENDING`  
+Status: `PROSPECTIVE_ASSOC_002_COLLECTION_2_OF_3`  
 Priority: A after Mini-PC/WebSocket layer
 
 Capture:
@@ -198,6 +198,15 @@ Current precheck:
 - sample values are diagnostic only and cannot become thresholds;
 - this does **not** prove order-flow deltas, queue position, maker fill probability, adverse selection or resiliency;
 - next gate is a bounded public MINI-PC WebSocket book capture with reconnect/staleness and snapshot/delta reconciliation.
+
+Current prospective association status:
+- `V3-H3-ASSOC-001` is INVALID_TECHNICAL only (0 rows from unreachable scheduler branch), never strategy evidence;
+- replacement `V3-H3-ASSOC-002` preserves symbols/features/horizons/gates and fixes only scheduler implementation;
+- cloud real-WS regression smoke PASS and physical MINI-PC smoke PASS;
+- valid 1800s sessions: 2/3; distinct UTC dates: 1/2; cumulative rows BTC=705 / ETH=697 / SOL=693;
+- effect-size review remains blocked until exactly one additional valid 1800s session on a second UTC date and >=1000 rows per symbol;
+- no threshold search, no fill inference, no automatic promotion.
+
 
 ### H4 — Regime-Dependent Stops / TTL
 Status: `PRECHECK_DATA_READINESS_ONLY`  
