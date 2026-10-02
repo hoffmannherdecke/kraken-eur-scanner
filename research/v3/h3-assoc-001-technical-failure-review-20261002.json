@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_ASSOC_001_TECHNICAL_FAILURE_REVIEW_V1",
+  "status": "INVALID_TECHNICAL_CAPTURE_NO_MARKET_INFERENCE",
+  "observed_at_local": "2026-10-02T11:19:00+02:00",
+  "trial_id": "V3-H3-ASSOC-001",
+  "physical_platform": "MINI_PC",
+  "execution": {
+    "requested_seconds": 1800,
+    "completed_process": true,
+    "status": "FAIL",
+    "counts": {
+      "BTC/EUR": 0,
+      "ETH/EUR": 0,
+      "SOL/EUR": 0
+    },
+    "immutable_ledger_trial_count_after_registration": 9,
+    "ledger_verify": "PASS",
+    "corrupt_trial_ids": []
+  },
+  "root_cause": {
+    "component": "tools/v3-h3-prospective-association.py",
+    "class": "SAMPLING_SCHEDULER_LOGIC_BUG",
+    "detail": "timeout was clamped to minimum 0.01 and immediately tested with if timeout<=0, making the sampling branch unreachable.",
+    "market_data_hypothesis_failure": false,
+    "websocket_transport_failure_proven": false
+  },
+  "treatment": {
+    "count_as_effect_size_evidence": false,
+    "count_as_valid_prospective_session": false,
+    "include_in_collection_gate": false,
+    "mutate_or_delete_immutable_trial_ledger": false,
+    "replacement_trial_id": "V3-H3-ASSOC-002"
+  },
+  "guardrails": {
+    "orders": false,
+    "real_money_actions": false,
+    "holdout_opened": false,
+    "strategy_promotion": false
+  }
+}
