@@ -8,6 +8,10 @@ name: MINI-PC final audit guard
       - 'tools/minipc-final-security-apps-reboot-audit.ps1'
       - '.github/workflows/minipc-final-audit-guard.yml'
 
+concurrency:
+  group: minipc-final-audit-guard
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
