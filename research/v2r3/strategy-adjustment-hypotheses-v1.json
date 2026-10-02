@@ -1,0 +1,137 @@
+{
+  "kind": "V2R3_STRATEGY_ADJUSTMENT_HYPOTHESIS_CARD_V1",
+  "card_id": "V2R3-ADJ-HYP-20261002-V1",
+  "schema_version": 1,
+  "status": "HYPOTHESIS_ONLY_NOT_ACTIVE",
+  "created_at_utc": "2026-10-02T16:57:19.965390Z",
+  "source_series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "source_strategy_revision": "V2R3-2026-09-28",
+  "purpose": "Preserve interim clean-series strategy-adjustment hypotheses for the next version/release review without changing frozen V2R3.",
+  "evidence_snapshot": {
+    "candidate_outcomes": 324,
+    "completed_trades": 0,
+    "final_decisions": {
+      "reject": 321,
+      "wait": 3,
+      "buy_scout": 0
+    },
+    "eligible_24h": 66,
+    "complete_24h": 64,
+    "coverage_24h_pct": 96.97,
+    "integrity_state": "HEALTHY",
+    "distinct_strategy_fingerprints": 1,
+    "distinct_runtime_fingerprints": 1
+  },
+  "hypotheses": [
+    {
+      "id": "HYP-01-WAIT-LIFECYCLE",
+      "title": "WAIT should remain a bounded watch state instead of collapsing to one late recheck then terminal REJECT",
+      "routing": "V2R4",
+      "evidence": {
+        "path_classification": "WAIT_TO_REJECT",
+        "mature_24h_n": 60,
+        "mfe_ge_2pct": 50,
+        "mfe_ge_5pct": 30,
+        "mfe_ge_10pct": 15,
+        "p50_mfe_24h_pct": 4.974,
+        "p50_mae_24h_pct": -1.8725
+      },
+      "candidate_change": "Replace one-shot TTL semantics with bounded event-near watch conditions and fresh whole-strategy recheck. Never direct-buy from a trigger.",
+      "validation_gate": "Compare frozen V2R3 against separate V2R4 paper series; measure WAIT->trigger->fresh-recheck conversion, false triggers, timing, MFE/MAE and net costs."
+    },
+    {
+      "id": "HYP-02-CONTINUATION-SECOND-LEG",
+      "title": "Continuation/second-leg opportunities may be underweighted",
+      "routing": "V2R4_AND_V3",
+      "evidence": {
+        "setup_lane": "CONTINUITY",
+        "mature_24h_n": 16,
+        "mfe_ge_2pct": 13,
+        "mfe_ge_5pct": 8,
+        "mfe_ge_10pct": 5,
+        "p50_mfe_24h_pct": 5.8645,
+        "p50_mae_24h_pct": -1.546
+      },
+      "candidate_change": "Preserve good candidates after the first impulse and test continuation/second-leg confirmation separately from initial-breakout entry.",
+      "validation_gate": "Versioned one-change comparison; do not infer entry quality from MFE alone."
+    },
+    {
+      "id": "HYP-03-RESISTANCE-BREAKOUT",
+      "title": "Resistance/breakout caution may be too terminal",
+      "routing": "V2R4_AND_V3",
+      "evidence": {
+        "reason_family": "RESISTANCE_BREAKOUT",
+        "reason_polarity": "BLOCKING_OR_CAUTION",
+        "mature_post_detect_24h": 56,
+        "p50_post_detect_mfe_24h_pct": 6.163
+      },
+      "candidate_change": "Test routing selected cases to WAIT/watch for confirmation instead of immediate idea death; do not simply remove resistance checks.",
+      "validation_gate": "Prospective test with explicit confirmation conditions, costs and false-breakout rate."
+    },
+    {
+      "id": "HYP-04-EXTENDED-PULLBACK",
+      "title": "Extended setups should not be broadly loosened; pullback/rebuild handling is safer than chase",
+      "routing": "V3",
+      "evidence": {
+        "setup_lane": "EXTENDED",
+        "mature_24h_n": 17,
+        "mfe_ge_5pct": 10,
+        "mfe_ge_10pct": 5,
+        "p50_mfe_24h_pct": 5.263,
+        "p50_mae_24h_pct": -2.93
+      },
+      "candidate_change": "Keep anti-chase protection; test pullback/structure rebuild/second-leg entry rather than immediate entry after extension.",
+      "validation_gate": "MAE/MFE plus structure-aware entry simulation with realistic Kraken EUR costs."
+    },
+    {
+      "id": "HYP-05-COST-EDGE-ROUTING",
+      "title": "Cost/edge objections may sometimes identify a bad current entry rather than a dead setup",
+      "routing": "V2R4_AND_V3",
+      "evidence": {
+        "reason_family": "COST_EDGE",
+        "reason_polarity": "BLOCKING_OR_CAUTION",
+        "mature_post_detect_24h": 39,
+        "p50_post_detect_mfe_24h_pct": 4.932
+      },
+      "candidate_change": "Separate 'setup dead' from 'entry inefficient now'; allow bounded watch/re-entry conditions while retaining fee/spread/slippage hurdle.",
+      "validation_gate": "Net-after-cost prospective comparison; never drop the 0.60%/side Kraken reference merely because later MFE was large."
+    },
+    {
+      "id": "HYP-06-TRADABILITY-AUTHORITY",
+      "title": "Successor versions should use live public Kraken Spot-EUR tradability rather than legacy static blocks/private-account absence",
+      "routing": "V2R4",
+      "evidence": {
+        "legacy_blocked_pair_rejects": {
+          "pair": "QNT/EUR",
+          "n": 7
+        },
+        "account_tradability_unavailable_initial_reason_count": 32,
+        "account_tradability_unavailable_revalidation_reason_count": 24,
+        "total_candidates": 324
+      },
+      "candidate_change": "Live Kraken AssetPairs online Spot-EUR is operational truth; missing account-private tradability must not be negative paper evidence.",
+      "validation_gate": "Already prepared in V2R4 policy; reconfirm at final release diff and contract tests."
+    }
+  ],
+  "governance": {
+    "active_v2r3_change_allowed": false,
+    "automatic_strategy_promotion_allowed": false,
+    "automatic_v2r4_activation_allowed": false,
+    "overwrite_policy": "Do not rewrite this snapshot when evidence matures. Create V2 or a final-review disposition record.",
+    "required_final_disposition_values": [
+      "CONFIRM",
+      "CHANGE",
+      "ADD",
+      "REJECT",
+      "MORE_TESTING_REQUIRED"
+    ],
+    "next_review": "V2R3 final release review after completion gate"
+  },
+  "source_views": [
+    "public.paper_series_completion_readiness",
+    "public.v2r3_clean_integrity_summary",
+    "public.v2r3_candidate_analysis_matrix",
+    "public.v2r3_reason_family_rollup",
+    "public.paper_candidate_outcomes"
+  ]
+}
