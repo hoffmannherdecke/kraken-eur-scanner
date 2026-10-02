@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 1.56,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 12.922,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -0.584,
+        "mfe_pct": 15.39,
+        "peak_at_utc": "2026-10-02T14:20:00Z",
+        "trough_at_utc": "2026-10-01T16:50:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 5.769,
       "price_eur": 1.456
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "adequate_spread_and_turnover",
@@ -121,7 +137,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-02T04:25:24.403190Z"
+    "updated_at_utc": "2026-10-02T16:25:25.985697Z"
   },
   "original_decision": "WAIT",
   "pair": "ZRO/EUR",
