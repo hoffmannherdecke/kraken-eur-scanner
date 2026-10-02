@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H10_FIRST_PROSPECTIVE_ANALYSIS_GATE_V1",
+  "gate_id": "V3-H10-ANALYSIS-GATE-001",
+  "status": "FROZEN_NOT_YET_MATURE",
+  "frozen_at_utc": "2026-10-02T19:05:00Z",
+  "cohort_id": "V3-H10-COHORT-001",
+  "capture_id": "V3-H10-CAPTURE-001",
+  "purpose": "Define the first descriptive Smart-Money value review before seeing Kraken-EUR outcome results, preventing threshold/coin/wallet cherry-picking.",
+  "minimum_evidence": {
+    "elapsed_hours": 72,
+    "capture_health_success_pct": 95,
+    "minimum_capture_batches": 100,
+    "minimum_unique_primary_wallet_asset_activity_windows_30m": 100,
+    "minimum_multi_primary_wallet_same_asset_windows_30m": 20
+  },
+  "fixed_event_definition": {
+    "window_minutes": 30,
+    "primary_multi_wallet_consensus_min": 2,
+    "direction_rule": "wallet net exposure-change notional from Hyperliquid fill directions; one wallet counts once per asset/window regardless of fill count",
+    "single_wallet_high_frequency_guard": "raw fill count cannot increase independent-wallet count",
+    "eligible_asset_rule": "later Kraken join only if the asset maps point-in-time to an online Kraken Spot-EUR pair; no retrospective inclusion based on outcome"
+  },
+  "fixed_outcome_horizons": [
+    "15m",
+    "1h",
+    "3h",
+    "6h",
+    "24h"
+  ],
+  "first_review_outputs": [
+    "capture reliability and source lag",
+    "primary versus active-control activity frequency",
+    "multi-wallet consensus count by asset without winner ranking",
+    "directional Kraken-EUR MFE/MAE/close at fixed horizons",
+    "lead-time distribution using Hyperliquid source fill timestamp",
+    "false-positive rate under one frozen outcome label",
+    "incremental comparison against contemporaneous Kraken price/volume/orderflow context"
+  ],
+  "prohibited_before_gate": [
+    "wallet re-selection using Kraken outcomes",
+    "coin subset selection by observed performance",
+    "threshold search",
+    "horizon search",
+    "manual deletion of losing events",
+    "active V3 signal promotion",
+    "V2R3 or V2R4 rule changes",
+    "orders or copy trading"
+  ],
+  "next_gate_if_mature": "Render evidence-only H10 review, classify KEEP/REJECT/MORE_TESTING without changing active strategy; only then preregister one candidate feature if justified."
+}
