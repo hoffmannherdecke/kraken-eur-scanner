@@ -1,0 +1,178 @@
+{
+  "altname": "KASEUR",
+  "candidate_age_seconds": 31,
+  "candidate_event_time_utc": "2026-10-02T19:43:52Z",
+  "candidate_id": "20261002-194352-KAS-EUR-r37055813325",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.0370 with sustained volume",
+      "At least two of BTC/EUR, ETH/EUR and SOL/EUR stop falling on the 1h timeframe"
+    ],
+    "reason_codes": [
+      "below_1h_resistance",
+      "negative_1h_3h_momentum",
+      "weak_market_regime",
+      "scanner_signal_unconfirmed",
+      "cost_threshold_uncertain"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Developing but unconfirmed reversal: price is below nearby resistance, short-term returns and major-market context are weak, and the elevated volume/rank jump alone does not justify entry.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "KASUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 243.69,
+        "available": true,
+        "current_funding_rate": -1.28474876267e-07,
+        "current_open_interest": 7778063.0,
+        "funding_rate_delta": -4.101388136267e-06,
+        "open_interest_pct": -4.8709,
+        "previous_funding_rate": 3.97291326e-06,
+        "previous_observed_at_utc": "2026-10-02T15:40:44.107757Z",
+        "previous_open_interest": 8176325.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.28474876267e-07,
+        "index_price": 0.041501,
+        "last": 0.04154,
+        "mark_price": 0.04151250901,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 7778063.0,
+        "requested_symbols": [
+          "PF_KASUSD",
+          "PI_KASUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_KASUSD",
+        "volume24h": 10704103
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.03691,
+      "bid": 0.0369,
+      "last": 0.0369,
+      "spread_pct": 0.02709659937676771
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "120",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.5978977828843823,
+          "ret3h_pct": -1.2666086352354777
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.5547180428237319,
+          "ret3h_pct": -1.031815351439902
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.9456264775413725,
+          "ret3h_pct": -1.7262407355286613
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T19:44:23.681004Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-02T19:44:34.799297Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_04768975586adcb6006ac0099974dc87d1bb0fa36c1c944c1d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.03691,
+    "bid": 0.0369,
+    "last": 0.0369,
+    "spread_pct": 0.02709659937676771
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "KAS/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37055813325:KAS-EUR:1790970232",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "aff1b8c68506ace1569ce23689a222a00f24d691",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-02T19:43:52Z",
+    "candidate_detected_ts": 1790970232,
+    "candidate_snapshot_at_utc": "2026-10-02T19:43:52Z",
+    "detected_to_evaluation_complete_seconds": 42.799,
+    "detected_to_evaluation_start_seconds": 31.387,
+    "evaluation_completed_at_utc": "2026-10-02T19:44:34.799297Z",
+    "evaluation_runtime_seconds": 11.413,
+    "evaluation_started_at_utc": "2026-10-02T19:44:23.386555Z",
+    "handoff_to_evaluation_start_seconds": 28.689,
+    "handoff_written_at_utc": "2026-10-02T19:43:54.697238Z",
+    "scan_step_started_at_utc": "2026-10-02T19:42:14Z"
+  }
+}

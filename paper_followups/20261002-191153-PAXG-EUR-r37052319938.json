@@ -3,7 +3,16 @@
   "candidate_id": "20261002-191153-PAXG-EUR-r37052319938",
   "evaluated_at_utc": "2026-10-02T19:12:18.168944Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.052,
+      "expected_bars": 30,
+      "mae_pct": -0.054,
+      "mfe_pct": -0.031
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -56,8 +65,11 @@
   },
   "original_decision": "WAIT",
   "pair": "PAXG/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-02T19:45:04.190869Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-02T19:45:20.613612Z"
 }
