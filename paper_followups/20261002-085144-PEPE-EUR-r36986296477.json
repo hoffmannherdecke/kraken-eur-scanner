@@ -80,6 +80,17 @@
         "mfe_pct": 0.049,
         "peak_at_utc": "2026-10-02T08:55:00Z",
         "trough_at_utc": "2026-10-02T09:46:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -9.763,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -11.13,
+        "mfe_pct": 0.049,
+        "peak_at_utc": "2026-10-02T08:55:00Z",
+        "trough_at_utc": "2026-10-02T18:35:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -108,7 +119,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-02T12:54:41.616214Z"
+    "updated_at_utc": "2026-10-02T20:57:38.111227Z"
   },
   "original_decision": "WAIT",
   "pair": "PEPE/EUR",

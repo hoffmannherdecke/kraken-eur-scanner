@@ -1,0 +1,227 @@
+{
+  "altname": "POLEUR",
+  "candidate_id": "20261002-200337-POL-EUR-r37057553428",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.09398 followed by a hold above that level",
+      "Follow-through with improving short-term structure toward 0.09656 resistance"
+    ],
+    "reason_codes": [
+      "resistance_confirmation_failed",
+      "negative_3h_momentum",
+      "weak_market_breadth",
+      "costs_reduce_edge",
+      "no_scout_confirmation"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "One-shot revalidation failed: price remains below 0.09398 resistance, with no confirmed hold or follow-through; weak multi-hour context and costs leave insufficient evidence for a scout.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "POLUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 53.27,
+        "available": true,
+        "current_funding_rate": 3.59662615375e-06,
+        "current_open_interest": 10002050.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 0.0102,
+        "previous_funding_rate": 3.59662615375e-06,
+        "previous_observed_at_utc": "2026-10-02T20:04:15.364255Z",
+        "previous_open_interest": 10001027.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.59662615375e-06,
+        "index_price": 0.10512,
+        "last": 0.10534,
+        "mark_price": 0.10510464148,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 10002050.0,
+        "requested_symbols": [
+          "PF_POLUSD",
+          "PI_POLUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_POLUSD",
+        "volume24h": 7318882
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.09354,
+      "bid": 0.09347,
+      "last": 0.0938,
+      "spread_pct": 0.0748623068285125
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "50",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.1456219152290661,
+          "ret3h_pct": -0.40308691968981014
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.05615866300157091,
+          "ret3h_pct": -0.6418302025396172
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1335113484646211,
+          "ret3h_pct": -1.2541254125412515
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T20:57:30.511547Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_078a7e4210627a10006ac01abbe67087d093df03ddb049923f"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.09354,
+    "bid": 0.09347,
+    "last": 0.0938,
+    "spread_pct": 0.0748623068285125
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.09387,
+      "high": 0.09387,
+      "low": 0.09382,
+      "open": 0.09382,
+      "trades": 3,
+      "ts": 1790970300,
+      "volume": 35897.07607,
+      "vwap": 0.09382
+    },
+    {
+      "close": 0.09384,
+      "high": 0.09409,
+      "low": 0.09377,
+      "open": 0.09403,
+      "trades": 9,
+      "ts": 1790971200,
+      "volume": 47138.1999,
+      "vwap": 0.09398
+    },
+    {
+      "close": 0.09376,
+      "high": 0.09404,
+      "low": 0.09364,
+      "open": 0.09374,
+      "trades": 16,
+      "ts": 1790972100,
+      "volume": 26826.16478,
+      "vwap": 0.09373
+    },
+    {
+      "close": 0.09353,
+      "high": 0.09415,
+      "low": 0.09353,
+      "open": 0.09393,
+      "trades": 10,
+      "ts": 1790973000,
+      "volume": 62401.16824,
+      "vwap": 0.09393
+    },
+    {
+      "close": 0.0938,
+      "high": 0.0938,
+      "low": 0.09349,
+      "open": 0.09356,
+      "trades": 8,
+      "ts": 1790973900,
+      "volume": 6478.54171,
+      "vwap": 0.09362
+    }
+  ],
+  "pair": "POL/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-200337-POL-EUR-r37057553428.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T20:57:36.097983Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "8685687bd2c7122de203a9b3744f7532062adaab",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T20:57:36.097983Z",
+    "revalidation_started_at_utc": "2026-10-02T20:57:30.015376Z",
+    "ttl_due_at_utc": "2026-10-02T20:49:15.364255Z",
+    "ttl_lag_seconds": 494.651
+  }
+}
