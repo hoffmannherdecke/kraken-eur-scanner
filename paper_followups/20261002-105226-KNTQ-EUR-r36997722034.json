@@ -1,0 +1,55 @@
+{
+  "baseline_ask_eur": 0.2768,
+  "candidate_id": "20261002-105226-KNTQ-EUR-r36997722034",
+  "evaluated_at_utc": "2026-10-02T10:53:01.568084Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-02T10:52:26Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 35.568,
+    "detection_price_eur": 0.27722,
+    "evaluated_at_utc": "2026-10-02T10:53:01.568084Z",
+    "evaluation_ask_eur": 0.2768,
+    "flagged_as_already_run": false,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-02T09:47:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 1.867,
+      "price_eur": 0.27214
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "verified_pair_tight_spread",
+      "modest_depth",
+      "broad_market_positive",
+      "24h_drawdown",
+      "3h_trend_negative",
+      "no_higher_lows_or_breakout",
+      "nearby_resistance",
+      "fees_consume_upside",
+      "no_derivatives_data"
+    ],
+    "scan_step_started_at_utc": "2026-10-02T10:50:55Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 1.8666862644227233,
+      "ret15_live_pct": -0.0864989548042816,
+      "ret1h_pct": 1.784402996034662,
+      "ret3h_pct": -2.8933725655037046,
+      "scanner_late_flag": false,
+      "score": 8.5
+    },
+    "schema_version": 1,
+    "setup_lane": "REVERSAL",
+    "updated_at_utc": "2026-10-02T10:53:37.525327Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "KNTQ/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01"
+}
