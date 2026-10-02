@@ -1,0 +1,54 @@
+name: MINI-PC FAT32 preservation repair guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/minipc-external-drive-fat32-preservation-repair.ps1'
+      - '.github/workflows/minipc-fat32-preservation-repair-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path './tools/minipc-external-drive-fat32-preservation-repair.ps1'),
+            [ref]$null,[ref]$errors
+          )|Out-Null
+          if($errors.Count -gt 0){$errors|ForEach-Object{Write-Error $_};exit 1}
+          Write-Host "MINIPC_FAT32_PRESERVATION_REPAIR_PARSE PASS"
+      - name: Plan-only guard
+        shell: pwsh
+        run: |
+          $raw=& ./tools/minipc-external-drive-fat32-preservation-repair.ps1
+          $j=$raw|ConvertFrom-Json
+          if($j.status -ne 'PLAN_ONLY'){throw 'plan-only default violated'}
+          if($j.format -ne $false){throw 'format guard failed'}
+          if($j.convert_filesystem -ne $false){throw 'conversion guard failed'}
+          if($j.delete_existing_files -ne $false){throw 'delete guard failed'}
+          if($j.free_orphaned_chains -ne $false){throw 'orphan discard guard failed'}
+          if($j.copies_recovered_chk_to_c -ne $true){throw 'recovery-copy guard missing'}
+          Write-Host "MINIPC_FAT32_PRESERVATION_REPAIR_PLAN PASS"
+      - name: Static destructive guard
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('tools/minipc-external-drive-fat32-preservation-repair.ps1').read_text('utf-8').lower()
+          forbidden=['format-volume','format.com','convert.exe',' /freeorphanedchains','clear-disk','remove-item -literalpath $root']
+          for x in forbidden:
+              assert x not in s, x
+          assert 'chkdsk.exe ($driveletter+":") /f' in s
+          assert 'copy-item -literalpath $_.fullname -destination $dest -force' in s
+          print('MINIPC_FAT32_PRESERVATION_REPAIR_STATIC PASS')
+          PY
