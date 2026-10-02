@@ -195,11 +195,11 @@ Detailregeln bleiben in `docs/v3-research-framework.md` und Issue #7. Die Abgren
 
 Erst nach stabilem Kernsystem. Keine Schreibrechte auf Hauptqueue, keine Orders.
 
-- [ ] Eigenständige lokale Shadow-Architektur anlegen; Hauptsystem unverändert lassen.
-- [ ] Hyperliquid zuerst: `V3-H10-COHORT-001` sauber ausführen. **Auswahlvertrag V1 preregistriert:** 3-Address public discovery→official Info smoke vor Skalierung; danach deterministische 20-Primary+6-Control-Kohorte ohne Kraken-Outcomes/Copy-Trading/Orders. Contract: `research/v3/h10-trader-cohort-selection-contract-v1.json`; Workflow: `.github/workflows/v3-h10-smart-money-cohort-precheck.yml`. Nach PASS die Cohort-Evidence unverändert einfrieren und erst dann den kompakten prospektiven 60s-Shadow-Capture vorbereiten.
-- [ ] Provenance, Zeitstempel, Datenqualität und Reproduzierbarkeit nachweisen.
+- [x] Eigenständige H10-Shadow-Architektur aktiv: server-side Cloud-Bootstrap :17/:47 mit kompakter Supabase-Persistenz, 26/26 erster Capture erfolgreich; Hauptsystem/V2R3/V2R4 unverändert. Lokaler 60s-MINI-PC-Pfad bleibt spätere Optimierung über Relay, ohne Admin-Key auf dem MINI-PC.
+- [x] Hyperliquid Cohort V1 sauber aufgebaut: `V3-H10-COHORT-001` Run #1 SUCCESS; 46.994 öffentliche Leaderboard-Zeilen, 81 offizielle Address-Verifikationen, anschließend unveränderlich **20 Primary + 6 Active Controls** in `research/v3/h10-trader-cohort-v1.json` eingefroren. Keine Kraken-Outcomes/Identitätsannahmen/Copy-Trading/Orders in der Auswahl.
+- [x] Provenance/Zeitstempel/Datenqualität für Startpfad nachgewiesen: frozen Cohort-ID, Source-Run/Artifact-Digest, exakte Hyperliquid Fill-Timestamps, Capture-Batch-ID, 26/26 Erfolg/0 Fehler; First-Analysis-Gate `research/v3/h10-first-analysis-gate-v1.json` fail-closed preregistriert.
 - [ ] Binance später für Spot-Trader-Finder/Qualitätsvergleich/Crowding-Forschung ergänzen.
-- [ ] Prospektiv messen, ob beobachtete Smart-Money-Signale tatsächlich vor verwertbaren Kraken-EUR-Moves liegen.
+- [ ] Prospektiv messen, ob beobachtete Smart-Money-Aktivität tatsächlich vor verwertbaren Kraken-EUR-Moves liegt. **Nicht vor Gate:** mindestens 72h, >=95% Capture-Health, >=100 Batches, >=100 Primary-Wallet-Asset-30m-Windows und >=20 Multi-Wallet-Same-Asset-Windows; danach nur point-in-time online Kraken Spot-EUR und feste 15m/1h/3h/6h/24h-Horizonte. Primary gegen Active Controls vergleichen; keine Threshold-/Coin-/Wallet-Auswahl nach Outcome.
 - [ ] Realistischen Paper-Simulator/A-B-Vergleich bauen.
 - [ ] Arkham erst danach für Entity-/Wallet-Cluster/Webhooks testen.
 - [ ] Nansen nur dann erwägen, wenn kostenlose Quellen eine klar belegte Lücke lassen.
