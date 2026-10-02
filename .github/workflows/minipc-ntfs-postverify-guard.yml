@@ -1,0 +1,54 @@
+name: MINI-PC NTFS postverify guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/minipc-external-drive-ntfs-postverify.ps1'
+      - '.github/workflows/minipc-ntfs-postverify-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path './tools/minipc-external-drive-ntfs-postverify.ps1'),
+            [ref]$null,[ref]$errors
+          )|Out-Null
+          if($errors.Count -gt 0){$errors|ForEach-Object{Write-Error $_};exit 1}
+          Write-Host "MINIPC_NTFS_POSTVERIFY_PARSE PASS"
+      - name: Plan-only guard
+        shell: pwsh
+        run: |
+          $raw=& ./tools/minipc-external-drive-ntfs-postverify.ps1
+          $j=$raw|ConvertFrom-Json
+          if($j.status -ne 'PLAN_ONLY'){throw 'plan-only default violated'}
+          if($j.runs_filesystem_conversion -ne $false){throw 'conversion rerun guard failed'}
+          if($j.format -ne $false){throw 'format guard failed'}
+          if($j.deletes_existing_files -ne $false){throw 'delete guard failed'}
+          if($j.verifies_preconversion_manifest -ne $true){throw 'manifest verification guard missing'}
+          Write-Host "MINIPC_NTFS_POSTVERIFY_PLAN PASS"
+      - name: Static safety guard
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('tools/minipc-external-drive-ntfs-postverify.ps1').read_text('utf-8').lower()
+          forbidden=['convert.exe','format-volume','format.com','clear-disk','remove-partition','new-partition']
+          for x in forbidden:
+              assert x not in s, x
+          assert 'system volume information' in s
+          assert '$recycle.bin' in s
+          assert 'source_preconversion_manifest' in s
+          print('MINIPC_NTFS_POSTVERIFY_STATIC PASS')
+          PY
