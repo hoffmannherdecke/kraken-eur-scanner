@@ -411,7 +411,7 @@ Current source precheck:
 
 
 ### H11 — Prediction-Market Event Layer
-Status: `PRECHECK_PUBLIC_MARKET_DATA_GREEN_CAPTURE_CONTRACT_PENDING`  
+Status: `PRECHECK_BOUNDED_STATE_CAPTURE_1_GREEN`  
 Priority: A/B
 
 Purpose:
@@ -607,6 +607,13 @@ Current source precheck:
 - this proves public transport/shape only, **not** objective probability, crypto direction or incremental predictive value;
 - canonical evidence: `research/v3/h10-h11-public-source-evidence-20261002.json`;
 - next gate: freeze event-selection + point-in-time prospective capture contract before any scheduled collection or surprise-score research.
+
+First prospective state capture:
+- frozen bounded contract: `research/v3/h11-polymarket-prospective-state-contract-v1.json`;
+- fixed first-stage selection: first 5 active Gamma markets in API response order, no rerank/topic/performance filter;
+- **Run #3 SUCCESS**: 5 markets / 10 token states captured; public read-only only, no auth/wallet/orders/schedule;
+- canonical evidence: `research/v3/h11-polymarket-prospective-state-evidence-20261002.json`;
+- next gate: at least one temporally separated second capture, then review only state-change observability/known-at quality — still no signal, threshold, surprise score or Kraken outcome join.
 
 
 ### Default-preserve rule
