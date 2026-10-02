@@ -1,7 +1,7 @@
 # Mini-PC Preflight / Inbetriebnahme-Runbook
 
-Status: **PREPARED BEFORE FIRST BOOT**  
-Stand: 2026-09-29  
+Status: **CORE COMMISSIONING ACTIVE / PHASE H FINALIZATION**  
+Stand: 2026-10-02  
 Gerät: Dell OptiPlex 5060 Micro — i5-8500T / 16 GB RAM / 256 GB SSD / Windows 11 Pro erwartet  
 Netz: LAN, FRITZ!Box 7590 AX
 
@@ -1335,6 +1335,26 @@ After the runtime-only persistence repair and clean-series restart, three indepe
 - current MINI-PC cloud health remains **HEALTHY / OK / issues none**.
 
 This strengthens the evidence that the persistence repair fixed the repeat-evaluation contamination without changing strategy logic.
+
+### Phase H2 read-only audit prepared 2026-10-02
+
+The deferred external-drive branch is now the next unfinished commissioning item because:
+- external WireGuard/RDP H1 is already complete;
+- current paper/read-only restart/reconciliation, backup, watchdog, Kraken, Altrady and remote-status core paths are already verified;
+- the final firewall/app/restart reviews are intentionally ordered after the external-drive branch.
+
+Prepared:
+- `tools/minipc-external-drive-audit.ps1` is plan-only by default and writes its report only to `Trading\Logs` on C:;
+- target drive D: is never written, repaired, formatted or deleted from;
+- read-only `chkdsk D:` output, volume/disk identity, filesystem/health, recursive size/file inventory, largest-file list and C:-backup-capacity context are collected;
+- Windows CI `MINI-PC external drive audit guard` Run #1 SUCCESS verifies PowerShell parse, plan-only safety and absence of destructive repair/format commands.
+
+Next physical gate:
+1. run exactly one read-only audit on the actual MINI-PC with D: attached;
+2. review report/capacity before choosing any backup destination;
+3. only after confirmed backup of important files may a repair or reformat decision be considered.
+
+No `/f`, `Repair-Volume`, format, delete or write-to-D action is authorized by this step.
 
 ### Final runbook items — intentionally last
 
