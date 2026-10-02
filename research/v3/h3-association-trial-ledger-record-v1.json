@@ -5,8 +5,8 @@
   "strategy_revision": "V3-H3-ASSOC-001",
   "code_fingerprint": "TO_BE_FILLED_WITH_EXECUTION_COMMIT_AT_LOCAL_RUN",
   "feature_schema_version": "V3_H3_PROSPECTIVE_ORDERBOOK_STATE_ASSOCIATION_V1",
-  "dataset_snapshot": "PROSPECTIVE_KRAKEN_WS_V2_DEPTH10_FIXED_5S_GRID",
-  "dataset_sha256": "NOT_APPLICABLE_PROSPECTIVE_CAPTURE",
+  "dataset_snapshot": "PROSPECTIVE_CAPTURE_CONTRACT__KRAKEN_WS_V2_DEPTH10_FIXED_5S_GRID",
+  "dataset_sha256": "30791826ef264d54ba13f8fac3de03713caddc9f76254f7c2ea3cbf99688a2d9",
   "universe_method": "FIXED_SYMBOLS_BTC_EUR_ETH_EUR_SOL_EUR",
   "train_window": null,
   "calibration_window": null,
@@ -14,11 +14,12 @@
   "holdout_window": {
     "status": "HISTORICAL_SEALED_HOLDOUT_NOT_USED"
   },
-  "purge_seconds": null,
-  "embargo_seconds": null,
+  "purge_seconds": 0,
+  "embargo_seconds": 0,
   "fee_model": {
+    "taker_pct_per_side": 0.6,
     "applied": false,
-    "note": "No trade/net-return metric in H3 association trial."
+    "note": "Reference lineage only. No trade/net-return metric in H3 prospective association trial."
   },
   "spread_model": "SPREAD_BPS_IS_STATE_FEATURE_ONLY_NOT_EXECUTION_COST_MODEL",
   "slippage_model": "NOT_APPLIED_ASSOCIATION_ONLY",
@@ -70,5 +71,6 @@
     "equal_session_weighted": "median session Pearson r where defined",
     "pooled_observation_weighted": "Pearson r with explicit session counts"
   },
-  "influenced_later_design": false
+  "influenced_later_design": false,
+  "dataset_fingerprint_kind": "PREREGISTERED_PROSPECTIVE_CAPTURE_CONTRACT_SHA256_NOT_OBSERVED_DATA_CONTENT"
 }
