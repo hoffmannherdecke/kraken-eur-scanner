@@ -359,7 +359,7 @@ Potential inputs:
 Non-fills/cancels must be retained as censored observations, not discarded.
 
 ### H10 — Smart-Money / Trader-Activity Layer
-Status: `NEW`  
+Status: `PRECHECK_PUBLIC_TRANSPORT_GREEN_SELECTION_PENDING`  
 Priority: A/B
 
 Purpose:
@@ -402,8 +402,16 @@ Promotion requirement:
 - no dependence on a single trader, wallet or platform;
 - no automatic order-following.
 
+Current source precheck:
+- official Hyperliquid public Info endpoint is registered read-only; no signer/private key/order path is authorized;
+- bounded CI smoke **Run #1 SUCCESS**: `allMids` returned 1,141 numeric mids; public-address `openOrders` and `userFills` response shapes were reachable without auth;
+- this proves transport/shape only, **not** trader quality, wallet identity or predictive value;
+- canonical evidence: `research/v3/h10-h11-public-source-evidence-20261002.json`;
+- next gate: freeze a reproducible public-address provenance/selection rule before any activity capture or trader scoring.
+
+
 ### H11 — Prediction-Market Event Layer
-Status: `NEW`  
+Status: `PRECHECK_PUBLIC_MARKET_DATA_GREEN_CAPTURE_CONTRACT_PENDING`  
 Priority: A/B
 
 Purpose:
@@ -592,6 +600,14 @@ The canonical definitions and status of V2R3, V2R4 and V3 are maintained in
 ## 14. V2/V2R4 → V3 inheritance and integration
 
 V3 is not a research-only side project. It is the **living successor strategy**.
+
+Current source precheck:
+- official Polymarket public market-data/CLOB paths are registered read-only; no wallet/auth/order path is authorized;
+- bounded CI smoke **Run #1 SUCCESS**: active event/market discovery returned 20/20 records and the first tested active market exposed a timestamped/hashed CLOB book plus midpoint/spread shape;
+- this proves public transport/shape only, **not** objective probability, crypto direction or incremental predictive value;
+- canonical evidence: `research/v3/h10-h11-public-source-evidence-20261002.json`;
+- next gate: freeze event-selection + point-in-time prospective capture contract before any scheduled collection or surprise-score research.
+
 
 ### Default-preserve rule
 
