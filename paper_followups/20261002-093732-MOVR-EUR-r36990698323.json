@@ -3,7 +3,16 @@
   "candidate_id": "20261002-093732-MOVR-EUR-r36990698323",
   "evaluated_at_utc": "2026-10-02T09:37:55.001120Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -4.702,
+      "expected_bars": 30,
+      "mae_pct": -4.702,
+      "mfe_pct": -0.05
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -62,5 +71,6 @@
   "path_classification": "WAIT_PENDING",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-02T10:19:45.155600Z"
 }

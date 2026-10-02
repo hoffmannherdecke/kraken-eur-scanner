@@ -1,0 +1,179 @@
+{
+  "altname": "MOVREUR",
+  "candidate_age_seconds": 29,
+  "candidate_event_time_utc": "2026-10-02T10:18:33Z",
+  "candidate_id": "20261002-101833-MOVR-EUR-r36994431063",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "nearby_resistance_limits_remaining_move",
+      "round_trip_fees_and_spread_high",
+      "no_breakout_or_higher_lows",
+      "closed_volume_below_baseline",
+      "recent_24h_drawdown_extreme"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "No cost-adjusted entry case: the sharp rebound lacks structural confirmation, and nearby resistance limits plausible upside after Kraken costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "MOVRUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 41.15,
+        "available": true,
+        "current_funding_rate": 0.000185296829743334,
+        "current_open_interest": 54461.9,
+        "funding_rate_delta": -7.006781282483201e-05,
+        "open_interest_pct": 1.8419,
+        "previous_funding_rate": 0.000255364642568166,
+        "previous_observed_at_utc": "2026-10-02T09:37:55.001120Z",
+        "previous_open_interest": 53476.9
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000185296829743334,
+        "index_price": 2.18037,
+        "last": 2.1821,
+        "mark_price": 2.18036944704,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 54461.9,
+        "requested_symbols": [
+          "PF_MOVRUSD",
+          "PI_MOVRUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_MOVRUSD",
+        "volume24h": 1858237
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.9447,
+      "bid": 1.9351,
+      "last": 1.9494,
+      "spread_pct": 0.49487086963245797
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "6",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.21517920291045378,
+          "ret3h_pct": 0.6728679406544424
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.23341658933805354,
+          "ret3h_pct": 0.7118362900330633
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.3225509169661911,
+          "ret3h_pct": 0.30603728090512483
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T10:19:02.936360Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-02T10:19:12.443533Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0cc8fab5752b0d07006abf8517f78c87d1ba0ef6054e82133b"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.9447,
+    "bid": 1.9351,
+    "last": 1.9494,
+    "spread_pct": 0.49487086963245797
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "MOVR/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36994431063:MOVR-EUR:1790936313",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "6365e707b01cea8aa7ad9c00e05f76f04425db51",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-02T10:18:33Z",
+    "candidate_detected_ts": 1790936313,
+    "candidate_snapshot_at_utc": "2026-10-02T10:18:33Z",
+    "detected_to_evaluation_complete_seconds": 39.444,
+    "detected_to_evaluation_start_seconds": 29.778,
+    "evaluation_completed_at_utc": "2026-10-02T10:19:12.443533Z",
+    "evaluation_runtime_seconds": 9.666,
+    "evaluation_started_at_utc": "2026-10-02T10:19:02.777856Z",
+    "handoff_to_evaluation_start_seconds": 26.757,
+    "handoff_written_at_utc": "2026-10-02T10:18:36.021135Z",
+    "scan_step_started_at_utc": "2026-10-02T10:15:17Z"
+  }
+}
