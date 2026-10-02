@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H1_CROSS_CRYPTO_BREADTH_PRECHECK_V1",
   "hypothesis_id": "V3-H1",
-  "status": "INCREMENTAL_TRIAL_PREREGISTERED_NOT_EXECUTED",
+  "status": "INCREMENTAL_TRIAL_RUNNER_READY_PHYSICAL_PENDING",
   "prepared_at_utc": "2026-10-01T18:25:00Z",
   "purpose": "Establish point-in-time-safe cross-crypto lead/lag and breadth feature semantics before any performance trial.",
   "source_priority": [
@@ -69,7 +69,7 @@
     "real_money_actions": false,
     "automatic_strategy_promotion": false
   },
-  "next_gate": "IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H1_INCR_001_PRE2026_ONLY_NO_HOLDOUT",
+  "next_gate": "EXECUTE_FROZEN_V3_H1_INCR_001_ON_MINIPC_PRE2026_ONLY_NO_HOLDOUT",
   "methodology_readiness": {
     "synthetic_pit_multi_pair_smoke": "CI_GREEN_RUN_3",
     "future_rows_leakage_trap": "PASS_IGNORED",
@@ -105,6 +105,8 @@
     "incremental_trial": "research/v3/h1-incremental-relative-context-trial-v1.json",
     "incremental_trial_id": "V3-H1-INCR-001",
     "incremental_trial_executed": false,
-    "incremental_trial_influenced_later_design": true
+    "incremental_trial_influenced_later_design": true,
+    "incremental_runner": "tools/v3-h1-incremental-relative-context.py",
+    "incremental_runner_selftest": "CI_PENDING"
   }
 }
