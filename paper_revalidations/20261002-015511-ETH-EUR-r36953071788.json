@@ -1,0 +1,223 @@
+{
+  "altname": "ETHEUR",
+  "candidate_id": "20261002-015511-ETH-EUR-r36953071788",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A stronger-volume closed candle holding above 2409.23",
+      "Sustained ETH and broader-market momentum"
+    ],
+    "reason_codes": [
+      "GOOD_SPOT_LIQUIDITY",
+      "TIGHT_SPREAD",
+      "BREAKOUT_HOLD_UNCONFIRMED",
+      "WEAK_CLOSED_VOLUME",
+      "COST_ADJUSTED_UPSIDE_UNCLEAR"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The breakout briefly cleared resistance, but the latest candle retreated with very weak volume. No supplied evidence establishes enough remaining upside after Kraken fees to justify a scout.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ETHUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 30.58,
+        "available": true,
+        "current_funding_rate": 1.0218090325e-08,
+        "current_open_interest": 2019200.0,
+        "funding_rate_delta": 8.858985860000008e-10,
+        "open_interest_pct": 0.0,
+        "previous_funding_rate": 9.332191739e-09,
+        "previous_observed_at_utc": "2026-10-02T01:55:36.891151Z",
+        "previous_open_interest": 2019200.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 1.0218090325e-08,
+        "index_price": 2710.14,
+        "last": 2702.7,
+        "mark_price": 2707.56781591352,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 2019200.0,
+        "requested_symbols": [
+          "PF_ETHUSD",
+          "PI_ETHUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PI_ETHUSD",
+        "volume24h": 2334602
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 2411.17,
+      "bid": 2411.1,
+      "last": 2411.1,
+      "spread_pct": 0.002903197042063746
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.001",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4678343940588636,
+          "ret3h_pct": 0.5443180081973198
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.5601111074149179,
+          "ret3h_pct": 0.7650031875132912
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.9462528387585101,
+          "ret3h_pct": 1.5129888666856939
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T02:26:09.886668Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0d82b361ccc831d5006abf1643a67087d0b8bab72a1d868870"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 2411.17,
+    "bid": 2411.1,
+    "last": 2411.1,
+    "spread_pct": 0.002903197042063746
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 2402.7,
+      "high": 2407.72,
+      "low": 2399.31,
+      "open": 2405.11,
+      "trades": 25,
+      "ts": 1790903700,
+      "volume": 7.30214776,
+      "vwap": 2401.56
+    },
+    {
+      "close": 2402.75,
+      "high": 2404.2,
+      "low": 2402.29,
+      "open": 2403.43,
+      "trades": 22,
+      "ts": 1790904600,
+      "volume": 1.88297884,
+      "vwap": 2402.97
+    },
+    {
+      "close": 2415.26,
+      "high": 2419.27,
+      "low": 2402.34,
+      "open": 2403.19,
+      "trades": 69,
+      "ts": 1790905500,
+      "volume": 55.73377913,
+      "vwap": 2415.92
+    },
+    {
+      "close": 2418.35,
+      "high": 2418.77,
+      "low": 2412.68,
+      "open": 2415.0,
+      "trades": 42,
+      "ts": 1790906400,
+      "volume": 15.91521863,
+      "vwap": 2416.28
+    },
+    {
+      "close": 2411.1,
+      "high": 2418.68,
+      "low": 2410.76,
+      "open": 2417.84,
+      "trades": 19,
+      "ts": 1790907300,
+      "volume": 2.51410581,
+      "vwap": 2414.2
+    }
+  ],
+  "pair": "ETH/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-015511-ETH-EUR-r36953071788.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T02:26:18.125543Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "c37d27de42ee9c5a021dcc624e65ea2913839d40",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T02:26:18.125543Z",
+    "revalidation_started_at_utc": "2026-10-02T02:26:09.396505Z",
+    "ttl_due_at_utc": "2026-10-02T02:25:36.891151Z",
+    "ttl_lag_seconds": 32.505
+  }
+}
