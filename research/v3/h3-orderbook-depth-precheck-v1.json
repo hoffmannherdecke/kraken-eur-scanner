@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H3_ORDERBOOK_DEPTH_PRECHECK_V1",
   "hypothesis_id": "V3-H3",
-  "status": "ORDERBOOK_STATE_CONTRACT_FROZEN_CAPTURE_SMOKE_PENDING",
+  "status": "ORDERBOOK_STATE_CAPTURE_GREEN_ASSOCIATION_PREREG_PENDING",
   "prepared_at_utc": "2026-10-01T18:45:00Z",
   "purpose": "Verify public Kraken-EUR L2 snapshot semantics and bounded depth calculations before any persistent WebSocket orderflow capture.",
   "source": "KRAKEN_PUBLIC_REST_DEPTH",
@@ -51,7 +51,7 @@
     "holdout_opened": false,
     "direct_buy_sell_rule": false
   },
-  "next_gate": "RUN_BOUNDED_H3_ORDERBOOK_STATE_CAPTURE_SMOKE_NO_OUTCOMES_NO_THRESHOLDS",
+  "next_gate": "PREREGISTER_PROSPECTIVE_H3_STATE_ASSOCIATION_OR_BOUNDED_DATA_ACCUMULATION_NO_THRESHOLD_NO_FILL_CLAIM",
   "snapshot_readiness": {
     "audit": "CI_GREEN_RUN_1",
     "representative_pairs_ok": 3,
@@ -141,6 +141,22 @@
     "performance_trial_started": false,
     "threshold_selection_started": false,
     "holdout_opened": false,
-    "automatic_schedule_enabled": false
+    "automatic_schedule_enabled": false,
+    "capture_smoke": {
+      "status": "PASS",
+      "github_run_number": 9,
+      "evidence": "research/v3/h3-orderbook-state-evidence-20261002.json",
+      "symbols": [
+        "BTC/EUR",
+        "ETH/EUR",
+        "SOL/EUR"
+      ],
+      "subscription_acks": 3,
+      "wire_messages": 928,
+      "checksum_fail_total": 0,
+      "raw_book_archive": false,
+      "future_outcomes_joined": false,
+      "thresholds_selected": false
+    }
   }
 }
