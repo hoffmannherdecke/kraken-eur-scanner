@@ -9,7 +9,7 @@
   "parent_evidence": "research/v3/h10-h11-public-source-evidence-20261002.json",
   "purpose": "Measure public Polymarket market-state availability/timing prospectively before any event-to-Kraken association, threshold or surprise-score research.",
   "source": {
-    "discovery": "https://gamma-api.polymarket.com/markets/keyset?closed=false&limit=20",
+    "discovery": "https://gamma-api.polymarket.com/markets/keyset?closed=false&limit=5",
     "market_detail_template": "https://gamma-api.polymarket.com/markets/{MARKET_ID}",
     "clob_book_template": "https://clob.polymarket.com/book?token_id={TOKEN_ID}",
     "midpoint_template": "https://clob.polymarket.com/midpoint?token_id={TOKEN_ID}",
@@ -17,12 +17,12 @@
     "public_read_only": true
   },
   "selection": {
-    "rule": "TAKE_FIRST_20_ACTIVE_MARKETS_IN_GAMMA_KEYSET_RESPONSE_ORDER_NO_RERANK_NO_TOPIC_FILTER",
+    "rule": "TAKE_FIRST_5_ACTIVE_MARKETS_IN_GAMMA_KEYSET_RESPONSE_ORDER_NO_RERANK_NO_TOPIC_FILTER",
     "performance_based_selection": false,
     "liquidity_threshold": false,
     "probability_threshold": false,
     "manual_market_picking": false,
-    "note": "This first-stage universe is for source/timing/data-quality only and is not a predictive candidate universe."
+    "note": "This first-stage universe is deliberately small and bounded for source/timing/data-quality only; it is not a predictive candidate universe."
   },
   "capture_fields": [
     "retrieved_at_utc",
