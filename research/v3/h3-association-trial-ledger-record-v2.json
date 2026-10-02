@@ -1,0 +1,88 @@
+{
+  "trial_id": "V3-H3-ASSOC-002",
+  "created_at_utc": "2026-10-02T09:22:00Z",
+  "parent_hypothesis": "V3-H3",
+  "strategy_revision": "V3-H3-ASSOC-002",
+  "code_fingerprint": "TO_BE_FILLED_WITH_EXECUTION_COMMIT_AT_LOCAL_RUN",
+  "feature_schema_version": "V3_H3_PROSPECTIVE_ORDERBOOK_STATE_ASSOCIATION_V2",
+  "dataset_snapshot": "PROSPECTIVE_CAPTURE_CONTRACT__KRAKEN_WS_V2_DEPTH10_FIXED_5S_GRID__BUGFIX_V2",
+  "dataset_sha256": "3b7f83f4ca9c4f5ae5c0c4f76e6a28080a13dc0c1ea4a85f3a6db52e8b27fe4b",
+  "universe_method": "FIXED_SYMBOLS_BTC_EUR_ETH_EUR_SOL_EUR",
+  "train_window": null,
+  "calibration_window": null,
+  "validation_window": null,
+  "holdout_window": {
+    "status": "HISTORICAL_SEALED_HOLDOUT_NOT_USED"
+  },
+  "purge_seconds": 0,
+  "embargo_seconds": 0,
+  "fee_model": {
+    "taker_pct_per_side": 0.6,
+    "applied": false,
+    "note": "Reference lineage only. No trade/net-return metric in H3 prospective association trial."
+  },
+  "spread_model": "SPREAD_BPS_IS_STATE_FEATURE_ONLY_NOT_EXECUTION_COST_MODEL",
+  "slippage_model": "NOT_APPLIED_ASSOCIATION_ONLY",
+  "fill_ordering_policy": "NOT_APPLICABLE_ASSOCIATION_ONLY",
+  "stop_policy": "NOT_APPLICABLE_ASSOCIATION_ONLY",
+  "ttl_policy": "NOT_APPLICABLE_ASSOCIATION_ONLY",
+  "sizing_policy": "NOT_APPLICABLE_ASSOCIATION_ONLY",
+  "parameters": {
+    "parent_state_contract": "research/v3/h3-orderbook-state-contract-v1.json",
+    "parent_state_evidence": "research/v3/h3-orderbook-state-evidence-20261002.json",
+    "symbols": [
+      "BTC/EUR",
+      "ETH/EUR",
+      "SOL/EUR"
+    ],
+    "depth": 10,
+    "fixed_features": [
+      "spread_bps",
+      "bid_depth_quote_top10",
+      "ask_depth_quote_top10",
+      "depth_imbalance_top10"
+    ],
+    "sampling_grid_seconds": 5,
+    "maximum_state_age_ms": 2000,
+    "horizons_seconds": [
+      60,
+      300,
+      900
+    ],
+    "collection_gate": {
+      "minimum_distinct_sessions": 3,
+      "minimum_session_seconds": 1800,
+      "minimum_distinct_utc_dates": 2,
+      "minimum_valid_feature_rows_per_symbol": 1000
+    },
+    "outputs_guard": {
+      "p_values": false,
+      "threshold_search": false,
+      "feature_transform_search": false,
+      "horizon_search": false,
+      "pair_selection": false,
+      "model_training": false,
+      "automatic_winner_selection": false,
+      "automatic_strategy_promotion": false
+    },
+    "lineage": {
+      "replaces_trial_id": "V3-H3-ASSOC-001",
+      "replacement_reason": "TECHNICAL_CAPTURE_SCHEDULER_BUG_NO_SAMPLED_ROWS",
+      "prior_trial_market_evidence_valid": false,
+      "prior_trial_rows_written": 0,
+      "research_question_changed": false,
+      "features_changed": false,
+      "symbols_changed": false,
+      "horizons_changed": false,
+      "collection_gate_changed": false,
+      "threshold_or_model_search_introduced": false
+    }
+  },
+  "metrics": {
+    "per_symbol": "count, missingness, Pearson r fixed feature x fixed horizon",
+    "equal_session_weighted": "median session Pearson r where defined",
+    "pooled_observation_weighted": "Pearson r with explicit session counts"
+  },
+  "influenced_later_design": false,
+  "dataset_fingerprint_kind": "PREREGISTERED_PROSPECTIVE_CAPTURE_CONTRACT_SHA256_NOT_OBSERVED_DATA_CONTENT"
+}
