@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H11_POLYMARKET_READONLY_PRECHECK_V1",
+  "hypothesis_id": "V3-H11",
+  "status": "PREREGISTERED_SOURCE_PREFLIGHT_NOT_SIGNAL",
+  "checked_docs_at_utc": "2026-10-02T08:30:00Z",
+  "official_docs": {
+    "market_discovery": "https://docs.polymarket.com/market-data/discover-markets",
+    "prices_orderbooks": "https://docs.polymarket.com/market-data/prices-order-books",
+    "realtime_data": "https://docs.polymarket.com/market-data/realtime-data"
+  },
+  "public_endpoints": {
+    "active_events": "https://gamma-api.polymarket.com/events/keyset?closed=false&limit=20",
+    "order_book_template": "https://clob.polymarket.com/book?token_id={TOKEN_ID}",
+    "midpoint_template": "https://clob.polymarket.com/midpoint?token_id={TOKEN_ID}",
+    "spread_template": "https://clob.polymarket.com/spread?token_id={TOKEN_ID}",
+    "last_trade_template": "https://clob.polymarket.com/last-trade-price?token_id={TOKEN_ID}"
+  },
+  "first_stage_capture_fields": [
+    "retrieved_at_utc",
+    "event_id",
+    "event_slug",
+    "event_title",
+    "market_id",
+    "market_slug",
+    "question",
+    "condition_id",
+    "yes_token_id",
+    "no_token_id",
+    "book_timestamp_if_present",
+    "book_hash",
+    "best_bid",
+    "best_ask",
+    "midpoint",
+    "spread",
+    "last_trade_price"
+  ],
+  "interpretation_guardrails": {
+    "price_as_objective_probability": false,
+    "directional_crypto_signal": false,
+    "market_selection_by_seen_crypto_performance": false,
+    "historical_backfill_performance_allowed": false,
+    "surprise_score_allowed": false
+  },
+  "runtime_guardrails": {
+    "public_read_only_only": true,
+    "authentication_allowed": false,
+    "wallet_allowed": false,
+    "private_key_allowed": false,
+    "automatic_schedule_enabled": false,
+    "orders": false,
+    "real_money_actions": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false
+  },
+  "next_gate": "BOUNDED_PUBLIC_DISCOVERY_PLUS_ONE_MARKET_CLOB_RESPONSE_SHAPE_SMOKE_NO_SIGNAL_NO_SCHEDULE"
+}
