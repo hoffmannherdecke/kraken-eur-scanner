@@ -1466,6 +1466,27 @@ These checks are deliberately deferred to the end of the MINI-PC commissioning r
 These three items remain the **final points** of the runbook, after the deferred external-drive work and external remote-access test unless dependencies require otherwise.
 
 
+### Final commissioning review — progress 2026-10-02
+
+Physical read-only audit and post-reboot verification have now established:
+- Microsoft Defender Antivirus is active with real-time protection enabled; exactly one antivirus product is registered.
+- All Windows Firewall profiles are enabled.
+- The initial audit found no classic native project-app installs for Slack, GitHub Desktop, Altrady or ChatGPT.
+- The one pending reboot reason (`PENDING_FILE_RENAME_OPERATIONS`) cleared after a controlled Windows restart.
+- After reboot, all **11 `CryptoMiniPC-*` scheduled tasks** were still present.
+- The final audit itself is read-only and changes no firewall, Defender, app, reboot or scheduled-task configuration.
+
+Decisions already closed:
+- **Additional antivirus:** not justified at this stage. Keep built-in Microsoft Defender active; do not add a third-party AV layer without a concrete security requirement because the current 24/7 Python/WebSocket/RDP/VPN runtime is already healthy and additional filter/update layers would add operational complexity.
+- **Native project apps:** no installation is required merely for parity with browser/CLI paths. Slack action push is already E2E verified, Git operations are CLI-based, Altrady transport is service/API based, and ChatGPT browser access exists. Native apps remain optional only if a later concrete operational benefit appears.
+- **Fixed weekly reboot:** not adopted. Prefer update-/maintenance-driven controlled reboots rather than unconditional weekly downtime. Startup tasks, supervisor, watchdog, restart recovery and post-boot health have already been physically verified. A future update-driven reboot must preserve the same fail-closed/no-real-money guardrails.
+
+One final physical security detail remains before the firewall item can be closed:
+- re-run the enhanced read-only final audit after pulling current `main`;
+- it now prints RDP allow-rule profile scope, remote-address scope, local port and the count of Public+AnyRemote RDP exposure;
+- do not change firewall rules until that evidence is reviewed.
+
+
 ### 2026-10-01 ~15:24 UTC — V2R4 WS-shadow heartbeat stall requires one local recovery gate
 
 During the autonomous V2R4 readiness review, central status showed a real local support-process stall:
