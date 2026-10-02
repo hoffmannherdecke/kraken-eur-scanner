@@ -12,6 +12,8 @@ name: V3 migration ledger guard
       - 'tools/run-minipc-v3-next-physical-gates.ps1'
       - 'tools/run-minipc-v3-next-physical-gates-sync.ps1'
       - 'tools/collect-v3-physical-gate-evidence.py'
+      - 'tools/collect-v3-h1-h6-association-evidence.py'
+      - 'tools/collect-v3-h1-h6-association-evidence.ps1'
       - 'tools/collect-v3-physical-gate-evidence.ps1'
       - 'docs/v3-research-framework.md'
       - '.github/workflows/v3-migration-ledger-guard.yml'
@@ -137,3 +139,6 @@ jobs:
           assert g["reports_reexecuted"] is False
           print("V3_PHYSICAL_GATE_CANONICAL_EVIDENCE PASS")
           PY
+
+      - name: Compile H1 H6 association evidence collector
+        run: python -m py_compile tools/collect-v3-h1-h6-association-evidence.py
