@@ -170,6 +170,17 @@ Diese Werte werden beim ersten Start erfasst und ins Versionsregister übernomme
 - Work bleibt **kein kritischer Runtime-Bestandteil**: Scanner, Evaluator, Watchdog, Realtime, Backup, Status/Health, Slack-Transport und Persistenz müssen unabhängig von Work weiterlaufen.
 - Erster lokaler Work-Smoke nach Verfügbarkeit: nur read-only einen bekannten Repo-/Report-Pfad öffnen, Inhalt plausibilisieren und schließen; keine Strategieänderung, kein Secret-Zugriff, keine Order-/Account-Aktion.
 
+### Rekonstruierte Work-Reduktionshistorie 27.–29.09.2026
+
+Die letzten Chats wurden gegen den aktuellen Projektstand rekonstruiert. Entscheidend ist die **finale** damalige Regel, nicht jeder Zwischenzustand:
+
+- 27.09.: Work-Verbrauch >~75 % → drastische Reduktion. Zwischenstand: `Krypto MAIN + Paper – sparsam` nur noch 4× täglich (04:15 / 10:15 / 16:15 / 22:15); `Krypto-Slack A/B`, `Krypto Tagesstatus`, `Weltlagen-Watch` und alte Test-/ALT-Aufgaben pausiert.
+- 28.09. ca. 04:17: `Krypto MAIN + Paper – sparsam` vollständig deaktiviert; technische MAIN-/Paper-Routine dauerhaft aus Work herausgezogen.
+- Danach als **einziger ausdrücklich vorgesehener Work-Analyse-Nachfolger**: `Krypto Paper – gezielte Analyse`, ursprünglich Restart **04.10.2026 10:15**, danach **alle 2 Tage**. Substantive Analyse nur bei **>=3 reifen Paper-Fällen**, **Serienabschluss** oder **UNKNOWN/Blocker**.
+- Ebenfalls deaktiviert geblieben: `Krypto-Slack A/B`, `Krypto Tagesstatus`, `Paper-Handlungsbedarf`, alte Test-/ALT-Aufgaben. Diese Funktionen wurden inzwischen technisch durch GitHub/MINI-PC/Supabase/Slack ersetzt und sollen nicht wegen neuem Kontingent zurück in Work verschoben werden.
+- `Weltlagen-Watch / Weltlagen-Frühwarnsystem` wurde während der Sparphase deaktiviert. Es gibt in den rekonstruierten Chats **keine spätere eindeutige Festlegung**, dass es automatisch wieder hochgefahren werden muss. Am 04.10. nur auf einzigartigen Zusatznutzen prüfen; kein 6h-Dauerpolling vorsorglich reaktivieren.
+- 29.09.: zusätzliche Leitplanke bestätigt: MINI-PC-Einrichtung ohne unnötigen Work-Verbrauch; Work nur dort, wo lokaler Datei-/App-/Browserkontext einen echten Vorteil bringt.
+
 ### Reaktivierungsreview ab 2026-10-04
 
 Fester Reviewpunkt: **`WORK-REACTIVATION-20261004`**.
