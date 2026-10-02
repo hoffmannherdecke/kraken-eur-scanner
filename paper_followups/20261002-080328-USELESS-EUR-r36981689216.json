@@ -3,7 +3,16 @@
   "candidate_id": "20261002-080328-USELESS-EUR-r36981689216",
   "evaluated_at_utc": "2026-10-02T08:04:18.858822Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.648,
+      "expected_bars": 30,
+      "mae_pct": -0.751,
+      "mfe_pct": 0.515
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -59,5 +68,6 @@
   "path_classification": "WAIT_PENDING",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-02T08:39:46.117716Z"
 }
