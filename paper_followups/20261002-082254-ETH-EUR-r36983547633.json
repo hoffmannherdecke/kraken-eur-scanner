@@ -80,6 +80,17 @@
         "mfe_pct": -0.091,
         "peak_at_utc": "2026-10-02T08:42:00Z",
         "trough_at_utc": "2026-10-02T09:04:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -3.509,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -4.195,
+        "mfe_pct": 0.102,
+        "peak_at_utc": "2026-10-02T13:35:00Z",
+        "trough_at_utc": "2026-10-02T18:35:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -110,7 +121,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-02T12:31:02.244641Z"
+    "updated_at_utc": "2026-10-02T20:28:55.687431Z"
   },
   "original_decision": "WAIT",
   "pair": "ETH/EUR",
