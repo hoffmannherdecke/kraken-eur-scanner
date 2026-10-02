@@ -1,0 +1,53 @@
+name: MINI-PC NTFS conversion guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/minipc-external-drive-fat32-to-ntfs.ps1'
+      - '.github/workflows/minipc-ntfs-conversion-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path './tools/minipc-external-drive-fat32-to-ntfs.ps1'),
+            [ref]$null,[ref]$errors
+          )|Out-Null
+          if($errors.Count -gt 0){$errors|ForEach-Object{Write-Error $_};exit 1}
+          Write-Host "MINIPC_NTFS_CONVERSION_PARSE PASS"
+      - name: Plan-only guard
+        shell: pwsh
+        run: |
+          $raw=& ./tools/minipc-external-drive-fat32-to-ntfs.ps1
+          $j=$raw|ConvertFrom-Json
+          if($j.status -ne 'PLAN_ONLY'){throw 'plan-only default violated'}
+          if($j.format -ne $false){throw 'format guard failed'}
+          if($j.preserve_existing_files -ne $true){throw 'preservation guard failed'}
+          if($j.require_prior_repair_pass -ne $true){throw 'repair dependency guard failed'}
+          Write-Host "MINIPC_NTFS_CONVERSION_PLAN PASS"
+      - name: Static safety guard
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('tools/minipc-external-drive-fat32-to-ntfs.ps1').read_text('utf-8').lower()
+          forbidden=['format-volume','format.com','clear-disk','remove-partition','new-partition']
+          for x in forbidden:
+              assert x not in s, x
+          assert 'convert.exe ($driveletter+":") /fs:ntfs /v' in s
+          assert 'pass_ready_for_separate_ntfs_conversion' in s
+          assert 'missing_preexisting_files' in s
+          print('MINIPC_NTFS_CONVERSION_STATIC PASS')
+          PY
