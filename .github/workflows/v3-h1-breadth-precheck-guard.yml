@@ -11,6 +11,8 @@ name: V3 H1 breadth precheck guard
       - 'research/v3/association/v3-h1-h6-association-evidence-20261002.json'
       - 'research/v3/h1-h6-association-review-20261002.json'
       - 'research/v3/h1-breadth-association-trial-v1.json'
+      - 'research/v3/h1-incremental-relative-context-trial-v1.json'
+      - 'research/v3/h1-incremental-trial-ledger-record-v1.json'
       - 'tools/v3-h1-eur15-breadth-feature-integrity.py'
       - 'tools/v3-h1-association-trial.py'
       - 'tools/run-minipc-v3-h1-h6-association.ps1'
@@ -46,7 +48,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path("research/v3/h1-cross-crypto-breadth-precheck-v1.json").read_text("utf-8"))
           assert j["kind"]=="V3_H1_CROSS_CRYPTO_BREADTH_PRECHECK_V1"
-          assert j["status"] in {"PRECHECK_PIT_METHOD_GREEN","PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING","ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED","ASSOCIATION_001_GREEN_INCREMENTAL_VALUE_PREREG_PENDING"}
+          assert j["status"] in {"PRECHECK_PIT_METHOD_GREEN","PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING","ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED","ASSOCIATION_001_GREEN_INCREMENTAL_VALUE_PREREG_PENDING","INCREMENTAL_TRIAL_PREREGISTERED_NOT_EXECUTED"}
           assert j["feature_role"]=="STATE_AND_RELATIVE_CONTEXT_FIRST"
           assert j["first_research_role"]["performance_trial"] is False
           assert j["first_research_role"]["threshold_selection"] is False
@@ -60,8 +62,10 @@ jobs:
               assert j["next_gate"]=="PREREGISTER_H1_ASSOCIATION_TRIAL_ON_DEVELOPMENT_ONLY_NO_HOLDOUT_NO_THRESHOLD_SEARCH"
           elif j["status"]=="ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED":
               assert j["next_gate"]=="IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H1_ASSOC_001_ON_PRE2026_DEVELOPMENT_ONLY"
-          else:
+          elif j["status"]=="ASSOCIATION_001_GREEN_INCREMENTAL_VALUE_PREREG_PENDING":
               assert j["next_gate"]=="PREREGISTER_H1_INCREMENTAL_RELATIVE_CONTEXT_TRIAL_CONTROLLING_TARGET_RETURN_1H_NO_HOLDOUT"
+          else:
+              assert j["next_gate"]=="IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H1_INCR_001_PRE2026_ONLY_NO_HOLDOUT"
           rd=j["methodology_readiness"]
           assert rd["real_eur15_feature_trial_preregistered"]=="V3-H1-EUR15-BREADTH-FEATURE-INTEGRITY-001"
           assert rd["real_eur15_expected_pair_files"]==648
@@ -215,4 +219,26 @@ jobs:
           assert r["governance"]["next_trials_must_set_influenced_later_design_true"] is True
           assert r["governance"]["sealed_2026h1_holdout_opened"] is False
           print("V3_H1_H6_ASSOC_REVIEW PASS canonical/no-holdout/no-auto-promotion")
+          PY
+
+      - name: Validate H1 incremental preregistration
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          s=json.loads(Path("research/v3/h1-incremental-relative-context-trial-v1.json").read_text())
+          assert s["kind"]=="V3_H1_INCREMENTAL_RELATIVE_CONTEXT_TRIAL_V1"
+          assert s["trial_id"]=="V3-H1-INCR-001"
+          assert s["status"]=="FROZEN_PREREGISTERED_NOT_EXECUTED"
+          assert s["fixed_control"]=="target_return_1h"
+          assert s["fixed_incremental_features"]==["leader_minus_target_return_1h","target_minus_peer_median_return_1h"]
+          assert s["label"]["name"]=="future_return_1h"
+          assert s["search_accounting"]["influenced_later_design"] is True
+          assert s["outputs_guard"]["threshold_search"] is False
+          assert s["outputs_guard"]["holdout_open"] is False
+          assert s["topology"]["sealed_holdout"]["status"]=="LOCKED_DO_NOT_READ_OR_LABEL"
+          r=json.loads(Path("research/v3/h1-incremental-trial-ledger-record-v1.json").read_text())
+          assert r["trial_id"]=="V3-H1-INCR-001"
+          assert r["influenced_later_design"] is True
+          print("V3_H1_INCR_PREREG PASS partial-correlation/no-holdout/search-accounted")
           PY

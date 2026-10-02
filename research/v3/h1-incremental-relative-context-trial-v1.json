@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H1_INCREMENTAL_RELATIVE_CONTEXT_TRIAL_V1",
+  "hypothesis_id": "V3-H1",
+  "trial_id": "V3-H1-INCR-001",
+  "status": "FROZEN_PREREGISTERED_NOT_EXECUTED",
+  "frozen_at_utc": "2026-10-02T06:00:00Z",
+  "purpose": "Test whether fixed H1 relative-context features retain linear association with future 1h return after controlling for target's own 1h return, without thresholds or trading-rule construction.",
+  "dataset": {
+    "source": "Kraken downloadable OHLCVT full history through 2026-06-30",
+    "normalized_schema": "KRAKEN_EUR15_NORMALIZED_V1",
+    "interval_minutes": 15,
+    "expected_normalized_pair_files": 648,
+    "raw_archive_sha256": "fc81b54cba6e12af3e9422dde9416179e6ef76af4831d48d839fbdb43018eaa4",
+    "development_end_utc_exclusive": "2026-01-01T00:00:00Z",
+    "missing_interval_semantics": "NO_TRADE_INTERVAL_ABSENT_DO_NOT_ZERO_FILL",
+    "historical_universe_method": "ALL_NORMALIZED_PAIR_FILES_WITH_POINT_IN_TIME_DATA_AVAILABILITY_ONLY; NO CURRENT_LISTING_FILTER"
+  },
+  "topology": {
+    "research_train": {
+      "nominal_start_utc": "1970-01-01T00:00:00Z",
+      "nominal_end_utc_exclusive": "2024-01-01T00:00:00Z",
+      "effective_cutoff_end_utc_exclusive": "2023-12-31T20:00:00Z"
+    },
+    "calibration": {
+      "nominal_start_utc": "2024-01-01T00:00:00Z",
+      "effective_cutoff_start_utc": "2024-01-01T04:00:00Z",
+      "nominal_end_utc_exclusive": "2025-01-01T00:00:00Z",
+      "effective_cutoff_end_utc_exclusive": "2024-12-31T20:00:00Z"
+    },
+    "validation": {
+      "nominal_start_utc": "2025-01-01T00:00:00Z",
+      "effective_cutoff_start_utc": "2025-01-01T04:00:00Z",
+      "nominal_end_utc_exclusive": "2026-01-01T00:00:00Z",
+      "effective_cutoff_end_utc_exclusive": "2025-12-31T20:00:00Z"
+    },
+    "sealed_holdout": {
+      "start_utc": "2026-01-01T00:00:00Z",
+      "end_utc_exclusive": "2026-07-01T00:00:00Z",
+      "status": "LOCKED_DO_NOT_READ_OR_LABEL"
+    },
+    "purge_seconds": 14400,
+    "embargo_seconds": 14400
+  },
+  "runtime_guardrails": {
+    "network_used": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "paper_shadow_runtime_change_allowed": false,
+    "orders": false,
+    "leverage": false,
+    "real_money_actions": false
+  },
+  "provenance": {
+    "parent_association_review": "research/v3/h1-h6-association-review-20261002.json",
+    "parent_association_evidence": "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
+    "design_was_informed_by_seen_association_results": true
+  },
+  "outputs_guard": {
+    "trade_return": false,
+    "fee_adjusted_return": false,
+    "strategy_equity_curve": false,
+    "threshold_search": false,
+    "pair_subset_search": false,
+    "month_subset_search": false,
+    "model_training": false,
+    "p_value_feature_selection": false,
+    "automatic_winner_selection": false,
+    "automatic_strategy_promotion": false,
+    "holdout_open": false
+  },
+  "search_accounting": {
+    "counts_as_one_new_preregistered_trial": true,
+    "influenced_later_design": true,
+    "parent_trial_results_were_viewed": true,
+    "no_winner_is_valid_outcome": true,
+    "any_feature_control_label_split_metric_or_threshold_change_requires_new_trial_id": true
+  },
+  "label": {
+    "name": "future_return_1h",
+    "definition": "close[t+4 exact contiguous 15m bars] / close[t] - 1",
+    "exact_contiguous_future_required": true,
+    "holdout_labels_forbidden": true
+  },
+  "fixed_control": "target_return_1h",
+  "fixed_incremental_features": [
+    "leader_minus_target_return_1h",
+    "target_minus_peer_median_return_1h"
+  ],
+  "fixed_leaders": [
+    "XBTEUR",
+    "ETHEUR"
+  ],
+  "complete_case_contract": "For each incremental feature, compute all pairwise correlations on the identical rows where target_return_1h, incremental feature, and future_return_1h are all present.",
+  "metric_definition": {
+    "partial_correlation": "r(y,z|x)=(r_yz-r_yx*r_zx)/sqrt((1-r_yx^2)*(1-r_zx^2)); x=target_return_1h; z=incremental feature",
+    "observation_weighted": "per split: complete-case n, r_yz, r_yx, r_zx, partial correlation",
+    "equal_pair_weighted": "per split and feature: per-pair partial correlation where defined; eligible pair count and median pair partial correlation",
+    "no_p_values": true,
+    "no_multiple_testing_selection": true,
+    "no_delta_r2_model_selection": true
+  },
+  "interpretation": "Incremental linear association audit only. Even sign-consistent partial correlation does not authorize a threshold, trade rule, holdout open, or promotion.",
+  "next_gate_after_execution": "REVIEW_INCREMENTAL_RELATIVE_CONTEXT_EFFECT_SIZES_SEARCH_ACCOUNTING_HOLDOUT_STILL_SEALED"
+}

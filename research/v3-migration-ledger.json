@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T05:55:00Z",
+  "updated_at_utc": "2026-10-02T06:00:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -315,7 +315,7 @@
       "category": "state_signal",
       "source_version": "V3 H1 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "V3-H1-ASSOC-001 completed with holdout sealed. Target own 1h mean reversion, leader-minus-target positive association and target-minus-peer negative association keep the same 1h sign across research_train/calibration/validation and both observation/equal-pair weighting. Breadth is weak; cross-sectional median is unstable. Incremental value beyond target return itself is not yet proven.",
+      "rationale": "H1 Association-001 showed stable relative-context signs but did not prove uniqueness beyond target mean reversion. V3-H1-INCR-001 is frozen as a new search-accounted partial-correlation trial controlling target_return_1h; holdout remains sealed.",
       "evidence": [
         "research/v3/h1-cross-crypto-breadth-precheck-v1.json",
         "tools/v3-h1-breadth-pit-smoke.py",
@@ -327,16 +327,18 @@
         "tools/v3-h1-association-trial.py",
         "tools/run-minipc-v3-h1-h6-association.ps1",
         "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
-        "research/v3/h1-h6-association-review-20261002.json"
+        "research/v3/h1-h6-association-review-20261002.json",
+        "research/v3/h1-incremental-relative-context-trial-v1.json",
+        "research/v3/h1-incremental-trial-ledger-record-v1.json"
       ],
-      "pending_gate": "V3_H1_PREREGISTER_INCREMENTAL_RELATIVE_CONTEXT_TEST_CONTROLLING_TARGET_RETURN_1H_NO_HOLDOUT"
+      "pending_gate": "V3_H1_IMPLEMENT_VALIDATE_EXECUTE_INCR_001_PRE2026_ONLY"
     },
     {
       "id": "price_volume_trend_primitives",
       "category": "signal_state",
       "source_version": "V3 H6 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "V3-H6-ASSOC-001 completed with holdout sealed. Price-return primitives show stable negative/mean-reverting association. Raw volume ratio has near-zero unstable association and strong outlier sensitivity. Direction+volume-expansion 1h effects keep their sign across splits, but volume's incremental contribution beyond price direction is not yet proven.",
+      "rationale": "H6 Association-001 showed stable price mean reversion, unstable raw volume ratio, and sign-stable 1h direction+volume flags. V3-H6-INCR-001 is frozen to isolate volume-expansion contribution within fixed price-direction strata while controlling price-return magnitude; no threshold search or holdout.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "tools/v3-h6-price-volume-pit-smoke.py",
@@ -348,16 +350,18 @@
         "tools/v3-h6-association-trial.py",
         "tools/run-minipc-v3-h1-h6-association.ps1",
         "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
-        "research/v3/h1-h6-association-review-20261002.json"
+        "research/v3/h1-h6-association-review-20261002.json",
+        "research/v3/h6-incremental-volume-contribution-trial-v1.json",
+        "research/v3/h6-incremental-trial-ledger-record-v1.json"
       ],
-      "pending_gate": "V3_H6_PREREGISTER_INCREMENTAL_VOLUME_CONTRIBUTION_WITHIN_DIRECTION_STRATA_NO_HOLDOUT"
+      "pending_gate": "V3_H6_IMPLEMENT_VALIDATE_EXECUTE_INCR_001_PRE2026_ONLY"
     },
     {
       "id": "simple_price_volume_primitives",
       "category": "signal_state",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "V3-H6-ASSOC-001 confirms stable price mean-reversion association but does not establish raw volume-ratio value. The next search-accounted step must isolate volume's contribution within fixed price-direction strata; no holdout or silent transform/threshold tuning.",
+      "rationale": "The next H6 trial is explicitly influenced by Association-001 and isolates volume's incremental contribution inside fixed price-direction strata. No silent transform or threshold tuning is allowed.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "tools/v3-h6-price-volume-pit-smoke.py",
@@ -369,9 +373,10 @@
         "tools/v3-h6-association-trial.py",
         "tools/run-minipc-v3-h1-h6-association.ps1",
         "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
-        "research/v3/h1-h6-association-review-20261002.json"
+        "research/v3/h1-h6-association-review-20261002.json",
+        "research/v3/h6-incremental-volume-contribution-trial-v1.json"
       ],
-      "pending_gate": "V3_H6_PREREGISTER_INCREMENTAL_VOLUME_CONTRIBUTION_WITHIN_DIRECTION_STRATA_NO_HOLDOUT"
+      "pending_gate": "V3_H6_IMPLEMENT_VALIDATE_EXECUTE_INCR_001_PRE2026_ONLY"
     },
     {
       "id": "meta_take_no_take",

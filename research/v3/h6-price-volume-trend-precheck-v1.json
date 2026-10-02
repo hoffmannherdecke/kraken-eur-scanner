@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H6_PRICE_VOLUME_TREND_PRECHECK_V1",
   "hypothesis_id": "V3-H6",
-  "status": "ASSOCIATION_001_GREEN_INCREMENTAL_VOLUME_VALUE_PREREG_PENDING",
+  "status": "INCREMENTAL_TRIAL_PREREGISTERED_NOT_EXECUTED",
   "prepared_at_utc": "2026-10-01T18:35:00Z",
   "purpose": "Define transparent point-in-time multi-horizon price and volume trend primitives before any Kraken-EUR incremental-value trial.",
   "source": "KRAKEN_NORMALIZED_EUR_15M",
@@ -50,7 +50,7 @@
     "real_money_actions": false,
     "automatic_strategy_promotion": false
   },
-  "next_gate": "PREREGISTER_H6_INCREMENTAL_VOLUME_CONTRIBUTION_TRIAL_WITHIN_PRICE_DIRECTION_STRATA_NO_HOLDOUT",
+  "next_gate": "IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H6_INCR_001_PRE2026_ONLY_NO_HOLDOUT",
   "methodology_readiness": {
     "synthetic_price_volume_pit_smoke": "CI_GREEN_RUN_1",
     "future_row_trap": "PASS_IGNORED",
@@ -76,6 +76,10 @@
     "association_evidence": "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
     "association_review": "research/v3/h1-h6-association-review-20261002.json",
     "association_result_summary_sha256": "b61b54d6a445eb2cf34bee9828ac8ba6e4ce023a602ce8a48652d284a589618b",
-    "incremental_volume_value_beyond_price_direction_proven": false
+    "incremental_volume_value_beyond_price_direction_proven": false,
+    "incremental_trial": "research/v3/h6-incremental-volume-contribution-trial-v1.json",
+    "incremental_trial_id": "V3-H6-INCR-001",
+    "incremental_trial_executed": false,
+    "incremental_trial_influenced_later_design": true
   }
 }
