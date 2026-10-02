@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H11_POLYMARKET_PROSPECTIVE_STATE_CAPTURE_CONTRACT_V1",
+  "hypothesis_id": "V3-H11",
+  "dataset_id": "V3-H11-PM-STATE-001",
+  "status": "FROZEN_PREREGISTERED_BOUNDED_CAPTURE_ONLY",
+  "frozen_at_utc": "2026-10-02T08:40:00Z",
+  "parent_precheck": "research/v3/h11-polymarket-readonly-precheck-v1.json",
+  "parent_evidence": "research/v3/h10-h11-public-source-evidence-20261002.json",
+  "purpose": "Measure public Polymarket market-state availability/timing prospectively before any event-to-Kraken association, threshold or surprise-score research.",
+  "source": {
+    "discovery": "https://gamma-api.polymarket.com/markets/keyset?closed=false&limit=20",
+    "market_detail_template": "https://gamma-api.polymarket.com/markets/{MARKET_ID}",
+    "clob_book_template": "https://clob.polymarket.com/book?token_id={TOKEN_ID}",
+    "midpoint_template": "https://clob.polymarket.com/midpoint?token_id={TOKEN_ID}",
+    "spread_template": "https://clob.polymarket.com/spread?token_id={TOKEN_ID}",
+    "public_read_only": true
+  },
+  "selection": {
+    "rule": "TAKE_FIRST_20_ACTIVE_MARKETS_IN_GAMMA_KEYSET_RESPONSE_ORDER_NO_RERANK_NO_TOPIC_FILTER",
+    "performance_based_selection": false,
+    "liquidity_threshold": false,
+    "probability_threshold": false,
+    "manual_market_picking": false,
+    "note": "This first-stage universe is for source/timing/data-quality only and is not a predictive candidate universe."
+  },
+  "capture_fields": [
+    "retrieved_at_utc",
+    "market_id",
+    "market_slug",
+    "question",
+    "condition_id",
+    "yes_token_id",
+    "no_token_id",
+    "per_token_status",
+    "book_timestamp",
+    "book_hash",
+    "best_bid",
+    "best_ask",
+    "midpoint",
+    "spread",
+    "bid_level_count",
+    "ask_level_count",
+    "missing_reason"
+  ],
+  "derived_fields": {
+    "probability_change": false,
+    "volume_acceleration": false,
+    "liquidity_score": false,
+    "surprise_score": false,
+    "crypto_direction": false
+  },
+  "known_at_policy": {
+    "retrieved_at_utc_required": true,
+    "source_book_timestamp_preserved_if_present": true,
+    "historical_backfill_for_performance": false,
+    "silent_forward_fill": false
+  },
+  "runtime_guardrails": {
+    "automatic_schedule_enabled": false,
+    "authentication_allowed": false,
+    "wallet_allowed": false,
+    "private_key_allowed": false,
+    "orders": false,
+    "real_money_actions": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false
+  },
+  "next_gate": "RUN_TWO_OR_MORE_SEPARATED_PROSPECTIVE_BOUNDED_CAPTURES_THEN_REVIEW_SOURCE_STABILITY_CHANGE_OBSERVABILITY_AND_KNOWN_AT_ONLY"
+}
