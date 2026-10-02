@@ -411,7 +411,7 @@ Current source precheck:
 
 
 ### H11 — Prediction-Market Event Layer
-Status: `PRECHECK_BOUNDED_STATE_CAPTURE_1_GREEN`  
+Status: `PRECHECK_TWO_CAPTURE_STATE_CHANGE_GREEN`  
 Priority: A/B
 
 Purpose:
@@ -614,6 +614,15 @@ First prospective state capture:
 - **Run #3 SUCCESS**: 5 markets / 10 token states captured; public read-only only, no auth/wallet/orders/schedule;
 - canonical evidence: `research/v3/h11-polymarket-prospective-state-evidence-20261002.json`;
 - next gate: at least one temporally separated second capture, then review only state-change observability/known-at quality — still no signal, threshold, surprise score or Kraken outcome join.
+
+Two-capture state-change review:
+- identical code/contract, workflow Run #4 attempts 1→2, 24.525 s apart;
+- same 5 markets / same 10 token states;
+- 10/10 order-book hashes changed and 10/10 book timestamps advanced;
+- midpoint changes 0/10 and spread changes 0/10 in this short interval — this is reported, not treated as failure;
+- therefore public state change is technically observable, but probability-change usefulness/predictive value remains untested;
+- canonical review: `research/v3/h11-polymarket-two-capture-state-change-review-20261002.json`;
+- next gate: freeze a longer-horizon prospective sampling + event-relevance contract before any Kraken outcome association or surprise-score research.
 
 
 ### Default-preserve rule
