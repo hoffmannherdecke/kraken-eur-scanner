@@ -1,0 +1,235 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H10_FROZEN_TRADER_COHORT_V1",
+  "cohort_id": "V3-H10-COHORT-001",
+  "status": "FROZEN_PROSPECTIVE_SHADOW_ONLY",
+  "selected_at_utc": "2026-10-02T18:58:05.170906+00:00",
+  "source_workflow_run_id": 37050896744,
+  "source_artifact_id": 11246386422,
+  "source_artifact_sha256": "7bf11cee2718dea5d4f7de239b100e60580a0a62b0150b2c5e815f4e51380f52",
+  "leaderboard_rows_total": 46994,
+  "verification_attempts": 81,
+  "primary_count": 20,
+  "control_count": 6,
+  "guardrails": {
+    "kraken_outcomes_used_for_selection": false,
+    "manual_post_outcome_cherry_pick": false,
+    "authentication_used": false,
+    "wallet_key_used": false,
+    "orders": false,
+    "real_money_actions": false,
+    "v2r3_changed": false,
+    "v2r4_changed": false,
+    "active_v3_feature_authorized": false
+  },
+  "traders": [
+    {
+      "address": "0x33a9bfecf63e33a4c3b7e84a8f7536bd51f04b6d",
+      "role": "PRIMARY",
+      "stratum": "50k_250k",
+      "account_value_usd": 147140.876342,
+      "fills_30d": 394,
+      "distinct_coins_30d": 21
+    },
+    {
+      "address": "0x53069d0367e125510745b6c6af03cd2d428f878a",
+      "role": "PRIMARY",
+      "stratum": "50k_250k",
+      "account_value_usd": 183456.261232,
+      "fills_30d": 208,
+      "distinct_coins_30d": 24
+    },
+    {
+      "address": "0xc68eed4ed5e3edd8781633b5080c21f1fcbf750c",
+      "role": "PRIMARY",
+      "stratum": "50k_250k",
+      "account_value_usd": 225826.479672,
+      "fills_30d": 163,
+      "distinct_coins_30d": 4
+    },
+    {
+      "address": "0x3bc9826c55531ed736b1a6ceeb39e2b6669e4fc2",
+      "role": "PRIMARY",
+      "stratum": "50k_250k",
+      "account_value_usd": 93673.353727,
+      "fills_30d": 332,
+      "distinct_coins_30d": 6
+    },
+    {
+      "address": "0x1413f58a2a83ad5aee4cdb3862ae432b291c6b66",
+      "role": "PRIMARY",
+      "stratum": "50k_250k",
+      "account_value_usd": 143949.857585,
+      "fills_30d": 323,
+      "distinct_coins_30d": 9
+    },
+    {
+      "address": "0x78c305976508a97adb6775044d962e56af617a7c",
+      "role": "PRIMARY",
+      "stratum": "250k_1m",
+      "account_value_usd": 511079.309667,
+      "fills_30d": 1803,
+      "distinct_coins_30d": 7
+    },
+    {
+      "address": "0xf00eabc409c51cf884ec7861cb839524af6afe3d",
+      "role": "PRIMARY",
+      "stratum": "250k_1m",
+      "account_value_usd": 425626.471048,
+      "fills_30d": 979,
+      "distinct_coins_30d": 15
+    },
+    {
+      "address": "0x36c097864a03c7f0215c0d43165a734152a12e0b",
+      "role": "PRIMARY",
+      "stratum": "250k_1m",
+      "account_value_usd": 478610.966213,
+      "fills_30d": 1767,
+      "distinct_coins_30d": 32
+    },
+    {
+      "address": "0xc324f6282a0190386505faa74de5d14cf2cd1b7f",
+      "role": "PRIMARY",
+      "stratum": "250k_1m",
+      "account_value_usd": 321305.110258,
+      "fills_30d": 189,
+      "distinct_coins_30d": 3
+    },
+    {
+      "address": "0x987163b6b482c30c2f5f3aa2760109668eb0091d",
+      "role": "PRIMARY",
+      "stratum": "250k_1m",
+      "account_value_usd": 262797.273048,
+      "fills_30d": 118,
+      "distinct_coins_30d": 11
+    },
+    {
+      "address": "0x57f2819c959abbcf22623d5ec1d3164b213e9711",
+      "role": "PRIMARY",
+      "stratum": "1m_5m",
+      "account_value_usd": 1578024.223557,
+      "fills_30d": 2000,
+      "distinct_coins_30d": 8
+    },
+    {
+      "address": "0xe912cac1a6641004a8803687ee7699227fdb0550",
+      "role": "PRIMARY",
+      "stratum": "1m_5m",
+      "account_value_usd": 1438779.405754,
+      "fills_30d": 2000,
+      "distinct_coins_30d": 7
+    },
+    {
+      "address": "0x86a8c6ad0e90d3a3c25fcadcbf20ab9e89013137",
+      "role": "PRIMARY",
+      "stratum": "1m_5m",
+      "account_value_usd": 1759480.995823,
+      "fills_30d": 1136,
+      "distinct_coins_30d": 3
+    },
+    {
+      "address": "0xf9faba57a81d1575d3e506dd3eafe7db6f2a3275",
+      "role": "PRIMARY",
+      "stratum": "1m_5m",
+      "account_value_usd": 1268043.97736,
+      "fills_30d": 2000,
+      "distinct_coins_30d": 18
+    },
+    {
+      "address": "0xfd6a531508649697c6e133adcb82efcd0c737737",
+      "role": "PRIMARY",
+      "stratum": "1m_5m",
+      "account_value_usd": 4216566.907378,
+      "fills_30d": 916,
+      "distinct_coins_30d": 11
+    },
+    {
+      "address": "0x71038a3e5fd46ba4ca5edc81339a4d1e9e493104",
+      "role": "PRIMARY",
+      "stratum": "5m_plus",
+      "account_value_usd": 6589538.327734,
+      "fills_30d": 2000,
+      "distinct_coins_30d": 10
+    },
+    {
+      "address": "0x7eb9026d0183942458bd4660371c3cc0a2df3beb",
+      "role": "PRIMARY",
+      "stratum": "5m_plus",
+      "account_value_usd": 5427404.045482,
+      "fills_30d": 725,
+      "distinct_coins_30d": 3
+    },
+    {
+      "address": "0xb0026ca48937bd18c5941c05decab68b0fcced8a",
+      "role": "PRIMARY",
+      "stratum": "5m_plus",
+      "account_value_usd": 5781831.532138,
+      "fills_30d": 119,
+      "distinct_coins_30d": 10
+    },
+    {
+      "address": "0x8d134fe41651db874e73cc019a0f572294b0d55d",
+      "role": "PRIMARY",
+      "stratum": "250k_1m",
+      "account_value_usd": 518607.362149,
+      "fills_30d": 337,
+      "distinct_coins_30d": 7
+    },
+    {
+      "address": "0xb72591e6dffc4432f5d475a53511f8a83c4eb75f",
+      "role": "PRIMARY",
+      "stratum": "50k_250k",
+      "account_value_usd": 97609.186212,
+      "fills_30d": 598,
+      "distinct_coins_30d": 8
+    },
+    {
+      "address": "0x25fcb75a422f1eeef23c272f8712d6df16c49c38",
+      "role": "CONTROL",
+      "stratum": "50k_250k",
+      "account_value_usd": 220200.498967,
+      "fills_30d": 94,
+      "distinct_coins_30d": 18
+    },
+    {
+      "address": "0x196556b34668a7de8e30fd9d1fedc28522b717f9",
+      "role": "CONTROL",
+      "stratum": "50k_250k",
+      "account_value_usd": 159066.545443,
+      "fills_30d": 601,
+      "distinct_coins_30d": 22
+    },
+    {
+      "address": "0x7b666af4f977342446f43f02268b48dd081181e0",
+      "role": "CONTROL",
+      "stratum": "250k_1m",
+      "account_value_usd": 321608.162288,
+      "fills_30d": 211,
+      "distinct_coins_30d": 13
+    },
+    {
+      "address": "0xae2f170d1fc65418d0aff2ca880ce81033fb4674",
+      "role": "CONTROL",
+      "stratum": "50k_250k",
+      "account_value_usd": 69039.303494,
+      "fills_30d": 94,
+      "distinct_coins_30d": 3
+    },
+    {
+      "address": "0x3f973e7dab2e5acbc33ae4d1b32f3873517e08d8",
+      "role": "CONTROL",
+      "stratum": "250k_1m",
+      "account_value_usd": 468882.615131,
+      "fills_30d": 2000,
+      "distinct_coins_30d": 8
+    },
+    {
+      "address": "0x288262dcdf3e2f3dbcb2dcfbf9dcc0d9adc50f8a",
+      "role": "CONTROL",
+      "stratum": "50k_250k",
+      "account_value_usd": 111873.890953,
+      "fills_30d": 639,
+      "distinct_coins_30d": 22
+    }
+  ]
+}
