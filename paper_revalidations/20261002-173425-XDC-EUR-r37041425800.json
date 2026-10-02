@@ -1,0 +1,200 @@
+{
+  "altname": "XDCEUR",
+  "candidate_id": "20261002-173425-XDC-EUR-r37041425800",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close above 0.03014 EUR followed by a hold above 0.02971 with recovering live volume.",
+      "Major-market 3h momentum turns positive."
+    ],
+    "reason_codes": [
+      "NO_BREAKOUT",
+      "LOW_LIVE_VOLUME",
+      "MAJORS_NEGATIVE_3H",
+      "ROUND_TRIP_COST_BURDEN"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Revalidation did not confirm a breakout: XDC remains below 0.03014 EUR, recent live volume is negligible, and majors remain negative over 3h. No scout or confirmation plan is justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "XDCUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_XDCUSD",
+          "PI_XDCUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.02976,
+      "bid": 0.02975,
+      "last": 0.02976,
+      "spread_pct": 0.033607797008916356
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "150",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.015510967049126023,
+          "ret3h_pct": -0.7342085941879128
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2599737086362408,
+          "ret3h_pct": -0.6169807079041911
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.08464215179160295,
+          "ret3h_pct": -0.2250140633789588
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T18:18:55.187210Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0e8551abf5ae7cf9006abff591b5a487d18989b755e4134b15"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.02976,
+    "bid": 0.02975,
+    "last": 0.02976,
+    "spread_pct": 0.033607797008916356
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.02962,
+      "high": 0.02962,
+      "low": 0.02893,
+      "open": 0.02954,
+      "trades": 215,
+      "ts": 1790961300,
+      "volume": 2686441.16218,
+      "vwap": 0.02925
+    },
+    {
+      "close": 0.02969,
+      "high": 0.02974,
+      "low": 0.02967,
+      "open": 0.02971,
+      "trades": 15,
+      "ts": 1790962200,
+      "volume": 23630.84094,
+      "vwap": 0.02971
+    },
+    {
+      "close": 0.02969,
+      "high": 0.02969,
+      "low": 0.02969,
+      "open": 0.02969,
+      "trades": 0,
+      "ts": 1790963100,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 0.02971,
+      "high": 0.02971,
+      "low": 0.02969,
+      "open": 0.02969,
+      "trades": 4,
+      "ts": 1790964000,
+      "volume": 3476.35748,
+      "vwap": 0.02969
+    },
+    {
+      "close": 0.02976,
+      "high": 0.02976,
+      "low": 0.02976,
+      "open": 0.02976,
+      "trades": 1,
+      "ts": 1790964900,
+      "volume": 9070.26253,
+      "vwap": 0.02976
+    }
+  ],
+  "pair": "XDC/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-173425-XDC-EUR-r37041425800.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T18:19:16.463194Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "33abf7a8f8aa758b90f625fbd591019662ef14da",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T18:19:16.463194Z",
+    "revalidation_started_at_utc": "2026-10-02T18:18:54.727195Z",
+    "ttl_due_at_utc": "2026-10-02T18:05:18.375901Z",
+    "ttl_lag_seconds": 816.351
+  }
+}
