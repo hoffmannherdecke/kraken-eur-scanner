@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H11_POLYMARKET_PROSPECTIVE_STATE_EVIDENCE_V1",
+  "status": "PASS",
+  "captured_at_utc": "2026-10-02T08:36:31Z",
+  "contract": "research/v3/h11-polymarket-prospective-state-contract-v1.json",
+  "github": {
+    "workflow": "V3 H11 Polymarket state precheck",
+    "run_id": 36984987354,
+    "run_number": 3,
+    "head_sha": "435f1a1ffffe3267bb8b49252b2acadbcffc5e40",
+    "conclusion": "success",
+    "url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/actions/runs/36984987354"
+  },
+  "bounded_capture": {
+    "active_market_limit": 5,
+    "market_count": 5,
+    "captured_token_states": 10,
+    "selection_rule": "FIRST_5_ACTIVE_GAMMA_KEYSET_RESPONSE_ORDER_NO_RERANK_NO_TOPIC_FILTER"
+  },
+  "interpretation": {
+    "source_data_quality_only": true,
+    "predictive_conclusion_allowed": false,
+    "surprise_score_created": false,
+    "outcome_joined": false,
+    "active_feature_authorized": false
+  },
+  "guardrails": {
+    "public_read_only": true,
+    "authentication_used": false,
+    "wallet_used": false,
+    "orders": false,
+    "automatic_schedule_enabled": false,
+    "active_v2r3_changed": false,
+    "v2r4_changed": false,
+    "real_money_actions": false
+  },
+  "next_gate": "RUN_AT_LEAST_ONE_SEPARATED_SECOND_CAPTURE_THEN_REVIEW_STATE_CHANGE_OBSERVABILITY_AND_KNOWN_AT_ONLY"
+}
