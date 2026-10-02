@@ -1,0 +1,229 @@
+{
+  "altname": "WLDEUR",
+  "candidate_id": "20261002-205644-WLD-EUR-r37063610645",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close above 0.485 with stronger volume",
+      "Follow-through holding above reclaimed resistance"
+    ],
+    "reason_codes": [
+      "extended_run",
+      "resistance_confirmation_failed",
+      "selloff_and_weak_rebound",
+      "closed_volume_weak",
+      "market_3h_weak",
+      "cost_hurdle",
+      "spread_elevated"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation failed: price did not confirm above 0.485 resistance, and the sharp selloff was followed by only a low-volume rebound. Weak market context and Kraken taker fees plus spread leave no supported scout plan.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "WLDUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 43.15,
+        "available": true,
+        "current_funding_rate": -1.7523185749167e-05,
+        "current_open_interest": 2253635.0,
+        "funding_rate_delta": -1.8853575866669993e-06,
+        "open_interest_pct": 0.0687,
+        "previous_funding_rate": -1.56378281625e-05,
+        "previous_observed_at_utc": "2026-10-02T20:57:29.880567Z",
+        "previous_open_interest": 2252088.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.7523185749167e-05,
+        "index_price": 0.53517,
+        "last": 0.5366,
+        "mark_price": 0.5350183497,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 2253635.0,
+        "requested_symbols": [
+          "PF_WLDUSD",
+          "PI_WLDUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_WLDUSD",
+        "volume24h": 8157380
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.4765,
+      "bid": 0.4753,
+      "last": 0.4759,
+      "spread_pct": 0.2521538138264297
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "11",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.13379130956747698,
+          "ret3h_pct": -0.17154985318523774
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2459438252491064,
+          "ret3h_pct": -0.7037906432797558
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.181124880838901,
+          "ret3h_pct": -0.9834515366430319
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T21:40:36.990629Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_085f0453156ea279006ac024d7ca2c87d198989f10008439b1"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.4765,
+    "bid": 0.4753,
+    "last": 0.4759,
+    "spread_pct": 0.2521538138264297
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.4814,
+      "high": 0.485,
+      "low": 0.4806,
+      "open": 0.4806,
+      "trades": 20,
+      "ts": 1790973000,
+      "volume": 20395.45204,
+      "vwap": 0.4825
+    },
+    {
+      "close": 0.4842,
+      "high": 0.4851,
+      "low": 0.4815,
+      "open": 0.4815,
+      "trades": 16,
+      "ts": 1790973900,
+      "volume": 43017.68368,
+      "vwap": 0.4843
+    },
+    {
+      "close": 0.4865,
+      "high": 0.4865,
+      "low": 0.4841,
+      "open": 0.4841,
+      "trades": 10,
+      "ts": 1790974800,
+      "volume": 20388.0,
+      "vwap": 0.4859
+    },
+    {
+      "close": 0.4706,
+      "high": 0.4867,
+      "low": 0.4698,
+      "open": 0.4867,
+      "trades": 20,
+      "ts": 1790975700,
+      "volume": 59357.76469,
+      "vwap": 0.4747
+    },
+    {
+      "close": 0.4759,
+      "high": 0.4759,
+      "low": 0.4719,
+      "open": 0.4719,
+      "trades": 4,
+      "ts": 1790976600,
+      "volume": 6245.51657,
+      "vwap": 0.4734
+    }
+  ],
+  "pair": "WLD/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-205644-WLD-EUR-r37063610645.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T21:40:45.038275Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "a9b28e957f88dd76b2bc824c8c5864bd9dae250f",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T21:40:45.038275Z",
+    "revalidation_started_at_utc": "2026-10-02T21:40:36.447539Z",
+    "ttl_due_at_utc": "2026-10-02T21:27:29.880567Z",
+    "ttl_lag_seconds": 786.567
+  }
+}

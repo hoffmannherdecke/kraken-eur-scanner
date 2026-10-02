@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-02T17:35:00Z",
         "trough_at_utc": "2026-10-02T17:42:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -4.709,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -4.801,
+        "mfe_pct": 0.092,
+        "peak_at_utc": "2026-10-02T17:35:00Z",
+        "trough_at_utc": "2026-10-02T21:27:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -89,7 +100,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-02T18:42:04.154977Z"
+    "updated_at_utc": "2026-10-02T21:40:46.536665Z"
   },
   "original_decision": "WAIT",
   "pair": "ENA/EUR",
