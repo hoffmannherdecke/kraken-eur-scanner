@@ -1,0 +1,35 @@
+name: V3 H11 Polymarket state precheck
+on:
+  push:
+    paths:
+      - 'research/v3/h11-polymarket-prospective-state-contract-v1.json'
+      - 'tools/v3-h11-polymarket-state-capture.py'
+      - '.github/workflows/v3-h11-polymarket-state-precheck.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bounded-capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile
+        run: python -m py_compile tools/v3-h11-polymarket-state-capture.py
+      - name: Bounded public capture
+        run: python tools/v3-h11-polymarket-state-capture.py --output h11-state.json
+      - name: Guard output
+        run: |
+          python - <<'PY'
+          import json
+          x=json.load(open('h11-state.json',encoding='utf-8'))
+          assert x['status']=='PASS'
+          assert x['market_count']>0
+          assert x['guardrails']['orders'] is False
+          assert x['guardrails']['authentication_used'] is False
+          assert x['interpretation']['predictive_conclusion_allowed'] is False
+          print('V3_H11_STATE_GUARD PASS markets=',x['market_count'],'captured_tokens=',x['captured_token_states'])
+          PY
