@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-02T05:34:00Z",
         "trough_at_utc": "2026-10-02T05:45:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 0.503,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.375,
+        "mfe_pct": 1.109,
+        "peak_at_utc": "2026-10-02T08:47:00Z",
+        "trough_at_utc": "2026-10-02T05:45:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -91,7 +102,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-02T06:44:46.885815Z"
+    "updated_at_utc": "2026-10-02T09:36:29.644046Z"
   },
   "original_decision": "WAIT",
   "pair": "ASTER/EUR",
