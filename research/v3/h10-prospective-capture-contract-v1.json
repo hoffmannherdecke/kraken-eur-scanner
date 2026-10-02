@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H10_PROSPECTIVE_ACTIVITY_CAPTURE_CONTRACT_V1",
+  "capture_id": "V3-H10-CAPTURE-001",
+  "cohort_id": "V3-H10-COHORT-001",
+  "status": "FROZEN_BOOTSTRAP_CLOUD_CAPTURE",
+  "purpose": "Start prospective Smart-Money shadow evidence without affecting V2R3/V2R4 or orders.",
+  "capture_paths": {
+    "cloud_bootstrap": {
+      "status": "ACTIVE_AFTER_GREEN_SMOKE",
+      "cadence": "17,47 * * * *",
+      "expected_interval_minutes": 30,
+      "scheduler_precision_note": "GitHub-hosted schedule jitter is allowed; fill timestamps come from Hyperliquid source. Position-state observation time is coarse and must not be treated as 60s local timing evidence."
+    },
+    "future_minipc": {
+      "status": "PREPARED_LATER",
+      "target_interval_seconds": 60,
+      "write_path": "server-side relay only; no Supabase admin/service key on MINI-PC"
+    }
+  },
+  "sources": {
+    "cohort": "research/v3/h10-trader-cohort-v1.json",
+    "hyperliquid_info": "https://api.hyperliquid.xyz/info"
+  },
+  "per_wallet_requests": [
+    "clearinghouseState",
+    "userFillsByTime"
+  ],
+  "fill_lookback_minutes": 45,
+  "stored_data": {
+    "wallet_state": [
+      "account_value",
+      "total_ntl_pos",
+      "total_margin_used",
+      "withdrawable",
+      "positions_compact"
+    ],
+    "fills": [
+      "source_timestamp",
+      "coin",
+      "direction",
+      "side",
+      "price",
+      "size",
+      "closed_pnl",
+      "fee",
+      "crossed",
+      "source_hash",
+      "oid",
+      "tid"
+    ]
+  },
+  "retention_role": "compact prospective evidence; no full raw exchange archive",
+  "first_analysis_questions": [
+    "Which primary wallets build/reduce exposure before Kraken-EUR moves?",
+    "Does multi-wallet same-asset agreement add value over active controls?",
+    "What is the lead-time distribution from source fill timestamp to Kraken-EUR move?",
+    "Are continuation/build-up patterns more informative than one-off entries?"
+  ],
+  "guardrails": {
+    "public_read_only": true,
+    "authentication_used": false,
+    "wallet_key_used": false,
+    "orders": false,
+    "copy_trading": false,
+    "v2r3_change": false,
+    "v2r4_change": false,
+    "active_v3_feature_authorized": false,
+    "automatic_strategy_promotion": false
+  }
+}
