@@ -8,7 +8,9 @@
     "Refresh account-side Work availability/quota state.",
     "Install or update ChatGPT Windows desktop app on MINI-PC if local Work is available.",
     "Run one bounded read-only local folder/report smoke with least-privilege access.",
-    "Review formerly reduced/paused Work functions against current GitHub/MINI-PC/Supabase architecture."
+    "Check Krypto Paper – gezielte Analyse first: restore only if its evidence gate is met and the current architecture still benefits from a Work-level deep analysis.",
+    "Review Weltlagen-Watch only as a possible targeted/low-frequency research task; do not auto-restore high-frequency polling.",
+    "Keep all technical/routine functions already replaced by GitHub/MINI-PC/Supabase outside Work."
   ],
   "keep_outside_work": [
     "Kraken-EUR scanner",
@@ -31,5 +33,57 @@
     "no private keys/password stores unless a later explicit account/security gate requires and authorizes it",
     "no orders or real-money actions from this checkpoint",
     "Work is not a single point of failure or critical runtime dependency"
-  ]
+  ],
+  "reconstructed_history": {
+    "2026-09-27": {
+      "trigger": "Work usage exceeded roughly 75% of available quota; user required drastic reduction without losing needed planned functions.",
+      "intermediate_state": [
+        "Krypto MAIN + Paper – sparsam reduced to 4x daily at 04:15/10:15/16:15/22:15.",
+        "Krypto-Slack A/B, Krypto Tagesstatus, Weltlagen-Watch and old test/ALT tasks were paused.",
+        "Scanner→handoff→evaluator→persistence was moved toward GitHub; Work was no longer the primary runtime."
+      ]
+    },
+    "2026-09-28": {
+      "finalized_reduction": [
+        "Krypto MAIN + Paper – sparsam was disabled around 04:17.",
+        "Technical MAIN/Paper routine was moved out of Work permanently.",
+        "Only Krypto Paper – gezielte Analyse was reactivated as the intended Work analysis successor.",
+        "Planned schedule for that analysis: first run 2026-10-04 10:15 local, then every 2 days.",
+        "Analysis gate: only perform substantive Work analysis when >=3 mature paper cases exist, the series completes, or UNKNOWN/blocker requires investigation.",
+        "Krypto-Slack A/B, Krypto Tagesstatus, Weltlagen-Watch and Paper-Handlungsbedarf remained disabled.",
+        "Event-driven analysis support was built outside Work via GitHub/API; routine operation remains outside Work."
+      ]
+    },
+    "2026-09-29": {
+      "constraint": [
+        "Do not burn Work before regular quota recovery.",
+        "MINI-PC setup proceeds without Work except where local file/app/browser context gives a real advantage."
+      ]
+    }
+  },
+  "explicit_reactivation_classification": {
+    "resume_or_review_first": [
+      {
+        "name": "Krypto Paper – gezielte Analyse",
+        "status": "EXPLICITLY_INTENDED_TO_RESUME",
+        "original_restart": "2026-10-04 10:15 local",
+        "original_cadence": "every 2 days",
+        "gate": "substantive analysis only with >=3 mature paper cases, series completion, or UNKNOWN/blocker"
+      }
+    ],
+    "keep_disabled_replaced_by_current_architecture": [
+      "Krypto MAIN + Paper – sparsam / full MAIN+Paper Work loop",
+      "Krypto-Slack A",
+      "Krypto-Slack B",
+      "Krypto Tagesstatus",
+      "Paper-Handlungsbedarf",
+      "old test/ALT Work tasks"
+    ],
+    "review_but_do_not_auto_restore": [
+      {
+        "name": "Weltlagen-Watch / Weltlagen-Frühwarnsystem",
+        "reason": "Was reduced/disabled during quota crisis. No later final instruction found that it must automatically restart; reassess only for unique value versus current macro/event sources and no high-frequency Work polling."
+      }
+    ]
+  }
 }
