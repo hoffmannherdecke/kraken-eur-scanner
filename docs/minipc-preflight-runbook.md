@@ -129,14 +129,14 @@ Aktueller Stand:
 - keine direkte RDP-Portfreigabe ins Internet verwendet;
 - **H1 ist damit abgeschlossen.**
 
-### H2 — Laufwerk D: sichern, reparieren und neu verifizieren
+### H2 — Laufwerk D: sichern, reparieren und neu verifizieren — **ABGESCHLOSSEN**
 
 Aktueller Stand:
 - `D:` / `MISTRAL_450` enthält wichtige vorhandene Dateien;
 - physische Toshiba-USB-Platte meldet `Healthy`;
 - FAT32-Volume weist logische Dateisystemfehler / verlorene Ketten auf;
 - read/write/delete-Smoke war erfolgreich;
-- keine aktive Projektablage auf D:, solange die Dateisystempflege nicht abgeschlossen ist.
+- Dateisystempflege **abgeschlossen**: FAT32 repariert, vorhandene Dateien erhalten, anschließend in-place nach NTFS konvertiert und vollständig nachverifiziert.
 
 Spätere Reihenfolge:
 1. wichtige vorhandene Dateien identifizieren und vollständig sichern;
@@ -144,7 +144,7 @@ Spätere Reihenfolge:
 3. anschließend Volume-Health, Schreib-/Lese-/Löschtest und Kaltstart-Mount erneut prüfen;
 4. erst dann D: ggf. als Bulk-/Archiv-/Capture-/sekundäre Backup-Fläche freigeben.
 
-Bis dahin bleibt **C:** die einzige aktive Projekt-/Runtime-/State-Ablage.
+**Abschlussstatus 2026-10-02:** D: / `MISTRAL_450` ist jetzt NTFS. Post-Verify = `PASS_NTFS_VERIFIED`; 53.939 Pre-Manifest-Zeilen, 53.920 Bestandsdateien geprüft, 19 NTFS-Systemmetadatenzeilen übersprungen, 0 fehlende Dateien, 0 Größenänderungen, 0 Zugriffsfehler auf Nutzerdaten, RW/Delete-Smoke PASS. Kanonische Evidenz: `research/minipc/external-drive-ntfs-postverify-evidence-20261002.json`. Keine Formatierung. D: darf damit wieder als Bulk-/Archiv-/Capture-/sekundäre Backup-Fläche genutzt werden; aktive Runtime/Secrets/primärer State bleiben weiter auf C:.
 
 ## Informationen, die erst am Gerät erhoben werden müssen
 
@@ -1426,6 +1426,23 @@ Prepared resume-only verifier:
 - ignores only NTFS system metadata paths such as `System Volume Information` and `$RECYCLE.BIN`;
 - runs read-only CHKDSK and a reversible write/read/delete smoke;
 - Windows CI `MINI-PC NTFS postverify guard` Run #1 = **SUCCESS**.
+
+### Phase H2 complete 2026-10-02
+
+Final physical result:
+- filesystem: **NTFS**;
+- status: **PASS_NTFS_VERIFIED**;
+- pre-conversion manifest rows: **53,939**;
+- checked pre-existing user files: **53,920**;
+- skipped NTFS-only system metadata rows: **19**;
+- missing pre-existing files: **0**;
+- size-changed pre-existing files: **0**;
+- access errors on user-data paths: **0**;
+- reversible write/read/delete smoke: **PASS**;
+- no format was performed;
+- canonical evidence: `research/minipc/external-drive-ntfs-postverify-evidence-20261002.json`.
+
+Phase H2 is closed.
 
 ### Final runbook items — intentionally last
 
