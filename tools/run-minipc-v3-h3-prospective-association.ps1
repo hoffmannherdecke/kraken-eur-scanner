@@ -178,7 +178,30 @@ try{
       " BTC_rows="+$totals["BTC/EUR"]+" ETH_rows="+$totals["ETH/EUR"]+" SOL_rows="+$totals["SOL/EUR"]+
       " gate_met="+$gateMet)
     if($gateMet){
-      Write-Host "COLLECTION GATE MET. Effect-size evaluation is now permitted with -Evaluate."
+      Write-Host "COLLECTION GATE MET. Running the frozen effect-size evaluation automatically."
+      $validInputs=@()
+      foreach($sf in $sessionFiles){
+        $s=Get-Content $sf.FullName -Raw|ConvertFrom-Json
+        if($s.trial_id -eq "V3-H3-ASSOC-002" -and $s.status -eq "PASS" -and [double]$s.duration_seconds -ge 1800){
+          $validInputs += $sf.FullName
+        }
+      }
+      if($validInputs.Count -lt 3){throw "Collection gate said met but fewer than 3 valid session files were found"}
+      $evalStamp=Get-Date -Format "yyyyMMdd-HHmmss"
+      $evalOut=Join-Path $reports ("v3-h3-association-002-"+$evalStamp+".json")
+      $evalArgs=@($runner,"--spec",$spec,"evaluate")+@($validInputs)+@("--output",$evalOut)
+      & $python @evalArgs
+      if($LASTEXITCODE -ne 0){throw "H3 automatic association evaluation failed"}
+      $er=Get-Content $evalOut -Raw|ConvertFrom-Json
+      if($er.status -ne "PASS" -or $er.guardrails.holdout_opened -ne $false -or $er.guardrails.orders -ne $false){
+        throw "H3 automatic association evaluation guard failed"
+      }
+      Write-Host ""
+      Write-Host "=== V3 H3 ASSOCIATION EVALUATION COMPLETE ==="
+      Write-Host ("Status: "+$er.status)
+      Write-Host ("Report: "+$evalOut)
+      Write-Host ("SHA256: "+(Get-FileHash -Algorithm SHA256 -LiteralPath $evalOut).Hash.ToLowerInvariant())
+      Write-Host "Descriptive fixed-effect review only; no threshold search / no winner / no promotion."
     } else {
       Write-Host "Collection gate not met yet. Run another >=1800s session; no effect-size conclusion is permitted."
     }
