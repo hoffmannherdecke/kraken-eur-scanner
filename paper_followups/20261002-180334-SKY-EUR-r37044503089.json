@@ -3,7 +3,16 @@
   "candidate_id": "20261002-180334-SKY-EUR-r37044503089",
   "evaluated_at_utc": "2026-10-02T18:04:10.738224Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -1.228,
+      "expected_bars": 30,
+      "mae_pct": -1.228,
+      "mfe_pct": 0.267
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -59,5 +68,6 @@
   "path_classification": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-02T18:42:06.215536Z"
 }
