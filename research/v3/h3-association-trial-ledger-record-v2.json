@@ -6,7 +6,7 @@
   "code_fingerprint": "TO_BE_FILLED_WITH_EXECUTION_COMMIT_AT_LOCAL_RUN",
   "feature_schema_version": "V3_H3_PROSPECTIVE_ORDERBOOK_STATE_ASSOCIATION_V2",
   "dataset_snapshot": "PROSPECTIVE_CAPTURE_CONTRACT__KRAKEN_WS_V2_DEPTH10_FIXED_5S_GRID__BUGFIX_V2",
-  "dataset_sha256": "3b7f83f4ca9c4f5ae5c0c4f76e6a28080a13dc0c1ea4a85f3a6db52e8b27fe4b",
+  "dataset_sha256": "83a3af72fb08cf70152c8a3363e462c722d2aa144f6565ed8b90e3b1f4275756",
   "universe_method": "FIXED_SYMBOLS_BTC_EUR_ETH_EUR_SOL_EUR",
   "train_window": null,
   "calibration_window": null,
@@ -84,5 +84,5 @@
     "pooled_observation_weighted": "Pearson r with explicit session counts"
   },
   "influenced_later_design": false,
-  "dataset_fingerprint_kind": "PREREGISTERED_PROSPECTIVE_CAPTURE_CONTRACT_SHA256_NOT_OBSERVED_DATA_CONTENT"
+  "dataset_fingerprint_kind": "SHA256_UTF8_OF_DATASET_SNAPSHOT_STRING"
 }
