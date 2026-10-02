@@ -1408,6 +1408,25 @@ NTFS conversion helper preflight bug 2026-10-02:
 - helper fixed to validate array counts correctly;
 - Windows CI `MINI-PC NTFS conversion guard` Run #2 = **SUCCESS** after the fix.
 
+### NTFS conversion completed; post-verification resumed 2026-10-02
+
+Physical MINI-PC screenshot shows the FAT32 -> NTFS conversion itself completed successfully and the immediate read-only CHKDSK reported no filesystem problems. The verification then stopped only while recursively enumerating the NTFS-protected path `D:\System Volume Information` for the post-manifest.
+
+Interpretation:
+- do **not** rerun the filesystem conversion;
+- D: is treated as converted to NTFS pending final preservation verification;
+- the failure is limited to the post-verification enumerator, not the conversion.
+
+Prepared resume-only verifier:
+- `tools/minipc-external-drive-ntfs-postverify.ps1`;
+- requires filesystem NTFS + label `MISTRAL_450`;
+- does not run conversion and does not format;
+- reads the already-saved pre-conversion manifest from C:;
+- verifies each pre-existing non-system file path and byte size directly;
+- ignores only NTFS system metadata paths such as `System Volume Information` and `$RECYCLE.BIN`;
+- runs read-only CHKDSK and a reversible write/read/delete smoke;
+- Windows CI `MINI-PC NTFS postverify guard` Run #1 = **SUCCESS**.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
