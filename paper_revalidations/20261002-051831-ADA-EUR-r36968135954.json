@@ -1,0 +1,224 @@
+{
+  "altname": "ADAEUR",
+  "candidate_id": "20261002-051831-ADA-EUR-r36968135954",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.228537 with follow-through",
+      "Ret15 turns positive and holds after breakout"
+    ],
+    "reason_codes": [
+      "LIQUIDITY_OK",
+      "RESISTANCE_REJECTION",
+      "NO_BREAKOUT_CONFIRMATION",
+      "WEAKENING_PRICE_ACTION",
+      "COST_HURDLE",
+      "NO_COIN_SPECIFIC_CATALYST_SUPPLIED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation failed: ADA retreated from 0.228537 resistance, and no breakout confirmation or positive hold is supplied. Do not chase.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ADAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 33.67,
+        "available": true,
+        "current_funding_rate": 1.409135348625e-05,
+        "current_open_interest": 18695791.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -0.7742,
+        "previous_funding_rate": 1.409135348625e-05,
+        "previous_observed_at_utc": "2026-10-02T05:18:59.090574Z",
+        "previous_open_interest": 18841655.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 1.409135348625e-05,
+        "index_price": 0.253449,
+        "last": 0.25365,
+        "mark_price": 0.25352497884,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 18695791.0,
+        "requested_symbols": [
+          "PF_ADAUSD",
+          "PI_ADAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ADAUSD",
+        "volume24h": 19626932
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.225341,
+      "bid": 0.225302,
+      "last": 0.225188,
+      "spread_pct": 0.017308601265308126
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "20",
+      "pair_decimals": 6,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.4493039886951822,
+          "ret3h_pct": 1.257062539456899
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.7024018938958099,
+          "ret3h_pct": 0.18660662080289825
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2940635912516032,
+          "ret3h_pct": 1.964101118315953
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T05:52:38.263983Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_067ede7c9984d0af006abf46a73c3c87d2bd7763ed2a5d7372"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.225341,
+    "bid": 0.225302,
+    "last": 0.225188,
+    "spread_pct": 0.017308601265308126
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.227659,
+      "high": 0.227659,
+      "low": 0.225213,
+      "open": 0.225621,
+      "trades": 173,
+      "ts": 1790916300,
+      "volume": 472845.24440336,
+      "vwap": 0.226287
+    },
+    {
+      "close": 0.226443,
+      "high": 0.228537,
+      "low": 0.226119,
+      "open": 0.22766,
+      "trades": 197,
+      "ts": 1790917200,
+      "volume": 380940.79055288,
+      "vwap": 0.226879
+    },
+    {
+      "close": 0.225635,
+      "high": 0.226765,
+      "low": 0.22521,
+      "open": 0.226494,
+      "trades": 155,
+      "ts": 1790918100,
+      "volume": 349446.89142277,
+      "vwap": 0.225632
+    },
+    {
+      "close": 0.225273,
+      "high": 0.226306,
+      "low": 0.223394,
+      "open": 0.225839,
+      "trades": 245,
+      "ts": 1790919000,
+      "volume": 556561.60365116,
+      "vwap": 0.224728
+    },
+    {
+      "close": 0.225275,
+      "high": 0.2253,
+      "low": 0.224952,
+      "open": 0.225233,
+      "trades": 40,
+      "ts": 1790919900,
+      "volume": 161299.78903025,
+      "vwap": 0.225117
+    }
+  ],
+  "pair": "ADA/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-051831-ADA-EUR-r36968135954.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T05:52:43.578982Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "9561c432fac10916a97b7c891d5e5b3227ea6d76",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T05:52:43.578982Z",
+    "revalidation_started_at_utc": "2026-10-02T05:52:38.018312Z",
+    "ttl_due_at_utc": "2026-10-02T05:48:59.090574Z",
+    "ttl_lag_seconds": 218.928
+  }
+}

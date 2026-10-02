@@ -1,0 +1,182 @@
+{
+  "altname": "HYPEEUR",
+  "candidate_age_seconds": 12,
+  "candidate_event_time_utc": "2026-10-02T05:52:07Z",
+  "candidate_id": "20261002-055207-HYPE-EUR-r36970745822",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close holding above 79.59 with volume sustained rather than fading",
+      "Continued price strength over the next 30 minutes without a sharp rejection toward the breakout level"
+    ],
+    "reason_codes": [
+      "breakout_with_volume",
+      "price_above_resistance",
+      "hourly_major_market_weakness",
+      "positive_funding_rising_oi_down",
+      "remaining_move_unproven_after_costs"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong-volume breakout attempt, but price is already above resistance and the remaining move is not established after Kraken EUR costs; avoid chasing pending confirmation.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "HYPEUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 58.05,
+        "available": true,
+        "current_funding_rate": 0.002081844603289196,
+        "current_open_interest": 199476.5,
+        "funding_rate_delta": 0.002900909655341696,
+        "open_interest_pct": -1.2444,
+        "previous_funding_rate": -0.0008190650520525,
+        "previous_observed_at_utc": "2026-10-02T04:54:17.732068Z",
+        "previous_open_interest": 201990.1
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.002081844603289196,
+        "index_price": 90.0928,
+        "last": 90.124,
+        "mark_price": 90.14705217707,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 199476.5,
+        "requested_symbols": [
+          "PF_HYPEUSD",
+          "PI_HYPEUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_HYPEUSD",
+        "volume24h": 210008.7
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 80.14,
+      "bid": 80.1,
+      "last": 80.14,
+      "spread_pct": 0.04992511233151055
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.1",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.4493039886951822,
+          "ret3h_pct": 1.257062539456899
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.7024018938958099,
+          "ret3h_pct": 0.18660662080289825
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2940635912516032,
+          "ret3h_pct": 1.964101118315953
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T05:52:19.571133Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-02T05:52:30.724002Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0432cbdec3ca3509006abf4694db9087d29f4f3a586c69d49a"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 80.14,
+    "bid": 80.1,
+    "last": 80.14,
+    "spread_pct": 0.04992511233151055
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "HYPE/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36970745822:HYPE-EUR:1790920327",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "9561c432fac10916a97b7c891d5e5b3227ea6d76",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-02T05:52:07Z",
+    "candidate_detected_ts": 1790920327,
+    "candidate_snapshot_at_utc": "2026-10-02T05:52:07Z",
+    "detected_to_evaluation_complete_seconds": 23.724,
+    "detected_to_evaluation_start_seconds": 12.359,
+    "evaluation_completed_at_utc": "2026-10-02T05:52:30.724002Z",
+    "evaluation_runtime_seconds": 11.365,
+    "evaluation_started_at_utc": "2026-10-02T05:52:19.358800Z",
+    "handoff_to_evaluation_start_seconds": 9.99,
+    "handoff_written_at_utc": "2026-10-02T05:52:09.369285Z",
+    "scan_step_started_at_utc": "2026-10-02T05:50:36Z"
+  }
+}
