@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'tools/v3-h3-prospective-association.py'
+      - 'tools/run-minipc-v3-h3-prospective-association.ps1'
       - 'research/v3/h3-prospective-state-association-trial-v1.json'
       - 'research/v3/h3-association-trial-ledger-record-v1.json'
       - '.github/workflows/v3-h3-association-precheck-guard.yml'
