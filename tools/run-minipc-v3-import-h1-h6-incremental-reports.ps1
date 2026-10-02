@@ -1,3 +1,4 @@
+# Guarded exact-payload import helper; plan-only by default.
 param(
   [string]$TradingRoot = "",
   [switch]$Execute,
