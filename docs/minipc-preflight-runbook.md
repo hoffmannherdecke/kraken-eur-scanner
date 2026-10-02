@@ -1487,6 +1487,22 @@ One final physical security detail remains before the firewall item can be close
 - do not change firewall rules until that evidence is reviewed.
 
 
+Enhanced physical audit result (2026-10-02 ~15:30 local):
+- firewall profiles Domain/Private/Public enabled;
+- Defender real-time + antivirus enabled; one AV product registered;
+- pending reboot = false; 11 `CryptoMiniPC-*` tasks present;
+- **three enabled RDP inbound allow rules are scoped to `Profile=Any` and `RemoteAddress=Any`**, including TCP/3389 and UDP/3389;
+- security review correctly returned `REVIEW_RDP_PUBLIC_ANYREMOTE`.
+
+This does **not** satisfy the Phase-B target that RDP be reachable only from the intended private/VPN administration path. Treat as a hardening item, not as a runtime failure.
+
+Next physical gate:
+- first preserve a rollback snapshot of the existing RDP firewall rules;
+- then narrow RDP exposure without disabling Windows Firewall, Defender, LAN RDP or the already-verified WireGuard remote administration path;
+- immediately verify LAN RDP and external WireGuard RDP after the change;
+- if either path fails, restore the captured rules.
+
+
 ### 2026-10-01 ~15:24 UTC — V2R4 WS-shadow heartbeat stall requires one local recovery gate
 
 During the autonomous V2R4 readiness review, central status showed a real local support-process stall:
