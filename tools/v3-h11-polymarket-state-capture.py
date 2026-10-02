@@ -5,7 +5,7 @@ from datetime import datetime,timezone
 from pathlib import Path
 from typing import Any
 UA="kraken-eur-scanner-v3-h11-state-capture/1.0"
-DISCOVERY="https://gamma-api.polymarket.com/markets/keyset?closed=false&limit=20"
+DISCOVERY="https://gamma-api.polymarket.com/markets/keyset?closed=false&limit=5"
 
 def now()->str:return datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
 def get(url:str,timeout:float=20.0)->Any:
@@ -31,7 +31,7 @@ def main()->int:
     ms=(page.get("markets") if isinstance(page,dict) else None) or (page.get("items") if isinstance(page,dict) else None)
     if not isinstance(ms,list) or not ms:raise SystemExit("market discovery empty/unexpected")
     out_rows=[]
-    for x in ms[:20]:
+    for x in ms[:5]:
         if not isinstance(x,dict):continue
         mid=str(x.get("id") or "")
         if not mid:continue
@@ -60,7 +60,7 @@ def main()->int:
         out_rows.append(row)
     captured=sum(1 for r in out_rows for tkn in r.get("tokens",[]) if tkn.get("status")=="CAPTURED")
     out={"schema_version":1,"kind":"V3_H11_POLYMARKET_PROSPECTIVE_STATE_CAPTURE_V1","status":"PASS" if out_rows else "FAIL",
-         "retrieved_at_utc":t,"selection_rule":"FIRST_20_ACTIVE_GAMMA_KEYSET_RESPONSE_ORDER","market_count":len(out_rows),
+         "retrieved_at_utc":t,"selection_rule":"FIRST_5_ACTIVE_GAMMA_KEYSET_RESPONSE_ORDER","market_count":len(out_rows),
          "captured_token_states":captured,"rows":out_rows,
          "interpretation":{"source_data_quality_only":True,"outcome_joined":False,"surprise_score_created":False,"predictive_conclusion_allowed":False},
          "guardrails":{"public_read_only":True,"authentication_used":False,"wallet_used":False,"orders":False,"automatic_schedule_enabled":False,
