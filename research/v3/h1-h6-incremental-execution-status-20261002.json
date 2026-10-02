@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H1_H6_INCREMENTAL_EXECUTION_STATUS_V1",
+  "status": "PHYSICAL_EXECUTION_PASS_REPORT_PAYLOAD_IMPORT_PENDING",
+  "recorded_at_utc": "2026-10-02T08:16:00Z",
+  "execution": {
+    "platform": "MINI_PC",
+    "bundle": "tools/run-minipc-v3-h1-h6-incremental.ps1",
+    "trials": [
+      "V3-H6-INCR-001",
+      "V3-H1-INCR-001"
+    ],
+    "reports": [
+      {
+        "trial_id": "V3-H6-INCR-001",
+        "filename": "v3-h6-incremental-001-20261002-095841.json",
+        "present_in_repository": false,
+        "quantitative_payload_reviewed": false
+      },
+      {
+        "trial_id": "V3-H1-INCR-001",
+        "filename": "v3-h1-incremental-001-20261002-095841.json",
+        "present_in_repository": false,
+        "quantitative_payload_reviewed": false
+      }
+    ]
+  },
+  "verified_run_summary": {
+    "h6_status": "PASS",
+    "h1_status": "PASS",
+    "trial_ledger_verify": "PASS",
+    "trial_count": 8,
+    "corrupt_trial_ids": [],
+    "holdout_status": "CLOSED"
+  },
+  "integrity_interpretation": {
+    "immutable_trial_registration_passed": true,
+    "holdout_remained_sealed": true,
+    "execution_guardrails_passed": true,
+    "quantitative_effect_size_conclusion": "BLOCKED_UNTIL_EXACT_REPORT_PAYLOADS_ARE_IMPORTED",
+    "automatic_winner_selected": false,
+    "automatic_strategy_promotion": false,
+    "threshold_or_rule_change_authorized": false
+  },
+  "provenance_note": "The local run summary and exact report filenames were confirmed in the project handoff on 2026-10-02. The report JSON payloads are not present on main and were not available in the connected file library at recording time; effect sizes are therefore intentionally not reconstructed or guessed.",
+  "next_gates": [
+    "IMPORT_EXACT_H1_H6_INCREMENTAL_REPORT_JSON_PAYLOADS_AND_HASHES",
+    "REVIEW_FIXED_INCREMENTAL_EFFECT_SIZES_WITH_SEARCH_ACCOUNTING_AND_HOLDOUT_STILL_SEALED",
+    "IN_PARALLEL_PROCEED_WITH_INDEPENDENT_V3_H3_PROSPECTIVE_STATE_ASSOCIATION_PREREGISTRATION"
+  ]
+}
