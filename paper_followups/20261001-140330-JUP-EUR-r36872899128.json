@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.28328,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 3.608,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -2.05,
+        "mfe_pct": 6.844,
+        "peak_at_utc": "2026-10-02T04:55:00Z",
+        "trough_at_utc": "2026-10-01T14:50:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 0.937,
       "price_eur": 0.28169
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "no_breakout",
@@ -118,7 +134,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-02T02:12:17.041788Z"
+    "updated_at_utc": "2026-10-02T14:13:57.710903Z"
   },
   "original_decision": "WAIT",
   "pair": "JUP/EUR",
