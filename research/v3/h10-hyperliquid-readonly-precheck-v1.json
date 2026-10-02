@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H10_HYPERLIQUID_READONLY_PRECHECK_V1",
+  "hypothesis_id": "V3-H10",
+  "status": "PREREGISTERED_SOURCE_PREFLIGHT_NOT_SIGNAL",
+  "checked_docs_at_utc": "2026-10-02T08:30:00Z",
+  "official_docs": {
+    "info_endpoint": "https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint",
+    "endpoint": "https://api.hyperliquid.xyz/info",
+    "transport": "POST_JSON"
+  },
+  "allowed_first_stage_requests": [
+    "allMids",
+    "openOrders for a public address",
+    "userFills or userFillsByTime for a public address"
+  ],
+  "address_policy": {
+    "selection_by_seen_kraken_performance": false,
+    "user_private_wallet_required": false,
+    "private_key_allowed": false,
+    "signer_allowed": false,
+    "arbitrary_public_address_claimed_identity": false,
+    "next_requirement": "freeze a reproducible public-address provenance/selection rule before any trader-quality scoring"
+  },
+  "first_stage_outputs": [
+    "endpoint reachability",
+    "response-shape/timestamp audit",
+    "public-address activity availability",
+    "asset mapping feasibility",
+    "retrieved_at provenance"
+  ],
+  "prohibited": [
+    "order placement",
+    "exchange endpoint write action",
+    "private key",
+    "wallet signing",
+    "copy trading",
+    "wallet ranking by future Kraken performance",
+    "automatic V2R3/V2R4 change",
+    "automatic strategy promotion"
+  ],
+  "runtime_guardrails": {
+    "public_read_only_only": true,
+    "automatic_schedule_enabled": false,
+    "orders": false,
+    "real_money_actions": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false
+  },
+  "next_gate": "BOUNDED_PUBLIC_CONNECTIVITY_AND_RESPONSE_SHAPE_SMOKE_THEN_FREEZE_PUBLIC_ADDRESS_SELECTION_PROVENANCE"
+}
