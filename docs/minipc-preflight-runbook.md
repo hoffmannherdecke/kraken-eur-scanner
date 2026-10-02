@@ -1402,6 +1402,12 @@ runs Windows `convert.exe`, requires NTFS afterwards, runs read-only CHKDSK, com
 all pre-existing paths and byte sizes, and performs a reversible write/read/delete smoke.
 Windows CI `MINI-PC NTFS conversion guard` Run #1 = **SUCCESS**.
 
+NTFS conversion helper preflight bug 2026-10-02:
+- first physical conversion attempt stopped **before** `convert.exe` because the helper treated JSON array fields (`missing_preexisting_files=[]`, `size_changed_preexisting_files=[]`) as scalar integers;
+- no filesystem conversion or D:-mutation occurred in that failed attempt;
+- helper fixed to validate array counts correctly;
+- Windows CI `MINI-PC NTFS conversion guard` Run #2 = **SUCCESS** after the fix.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
