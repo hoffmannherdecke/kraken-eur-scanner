@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-02T01:56:10.835231Z",
     "evaluation_ask_eur": 0.06283,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": 0.333,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.143,
+        "mfe_pct": 0.333,
+        "peak_at_utc": "2026-10-02T02:09:00Z",
+        "trough_at_utc": "2026-10-02T01:56:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-02T01:09:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -44,7 +56,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-02T01:56:33.235359Z"
+    "updated_at_utc": "2026-10-02T02:12:17.671561Z"
   },
   "original_decision": "WAIT",
   "pair": "SEI/EUR",
