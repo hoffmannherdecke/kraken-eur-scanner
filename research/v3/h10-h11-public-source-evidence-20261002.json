@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H10_H11_PUBLIC_READONLY_SOURCE_EVIDENCE_V1",
+  "status": "PASS",
+  "checked_at_utc": "2026-10-02T08:31:16.454642Z",
+  "github": {
+    "workflow": "V3 H10 H11 public source precheck",
+    "run_id": 36984479808,
+    "run_number": 1,
+    "head_sha": "da0d3b9220e406a6f370fff19d2f59b5a6e87b0f",
+    "conclusion": "success",
+    "url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/actions/runs/36984479808"
+  },
+  "hyperliquid": {
+    "status": "PASS",
+    "endpoint": "https://api.hyperliquid.xyz/info",
+    "all_mids_count": 1141,
+    "all_mids_numeric_count": 1141,
+    "public_zero_address_open_orders_shape": "LIST",
+    "public_zero_address_user_fills_shape": "LIST",
+    "address_selection_or_trader_quality_tested": false
+  },
+  "polymarket": {
+    "status": "PASS",
+    "events_count": 20,
+    "markets_count": 20,
+    "markets_attempted": 1,
+    "selected_market_id": "559651",
+    "selected_token_id": "32338220190071351435772801779725302244575775216413325951443816017994629993401",
+    "book_bids": 25,
+    "book_asks": 126,
+    "book_hash_present": true,
+    "book_timestamp_present": true,
+    "midpoint_shape_keys": [
+      "mid"
+    ],
+    "spread_shape_keys": [
+      "spread"
+    ]
+  },
+  "guardrails": {
+    "public_read_only": true,
+    "authentication_used": false,
+    "wallet_used": false,
+    "private_key_used": false,
+    "orders": false,
+    "real_money_actions": false,
+    "automatic_schedule_enabled": false,
+    "active_v2r3_changed": false,
+    "v2r4_changed": false,
+    "signal_or_threshold_selected": false
+  },
+  "interpretation": {
+    "h10_transport_and_public_response_shape_green": true,
+    "h10_wallet_selection_or_trader_quality_not_proven": true,
+    "h11_public_discovery_and_clob_shape_green": true,
+    "h11_incremental_predictive_value_not_proven": true,
+    "active_v3_feature_authorized": false,
+    "automatic_schedule_authorized": false
+  },
+  "next_gates": {
+    "h10": "FREEZE_REPRODUCIBLE_PUBLIC_ADDRESS_SELECTION_PROVENANCE_THEN_BOUNDED_ACTIVITY_CAPTURE",
+    "h11": "FREEZE_EVENT_SELECTION_AND_POINT_IN_TIME_CAPTURE_CONTRACT_THEN_BOUNDED_PROSPECTIVE_STATE_CAPTURE"
+  }
+}
