@@ -1,0 +1,167 @@
+{
+  "altname": "KNTQEUR",
+  "candidate_age_seconds": 15,
+  "candidate_event_time_utc": "2026-10-02T09:53:10Z",
+  "candidate_id": "20261002-095310-KNTQ-EUR-r36992196558",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.280 with volume sustained above recent closed-volume baseline",
+      "Subsequent higher low holding above 0.27571"
+    ],
+    "reason_codes": [
+      "24h_and_3h_trend_strongly_negative",
+      "no_breakout_or_higher_lows",
+      "live_volume_spike_not_confirmed_by_closed_volume",
+      "spread_plus_taker_fees_high",
+      "depth_modest",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "A sharp live uptick follows a severe selloff, but reversal structure is unconfirmed and costs leave little margin for error.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "KNTQUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_KNTQUSD",
+          "PI_KNTQUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.27753,
+      "bid": 0.27699,
+      "last": 0.27776,
+      "spread_pct": 0.1947630383033921
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "30",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.03349978948576915,
+          "ret3h_pct": 0.48880898476220125
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.41634214271442094,
+          "ret3h_pct": 0.7396345965835716
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2853460972017663,
+          "ret3h_pct": 0.07390300230947222
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": false,
+        "detail": "HTTP Error 404: Not Found",
+        "error": "HTTPError",
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T09:53:25.577941Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-02T09:53:35.788387Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0a66b64a3d81b48f006abf7f17b7cc87d1ae6623597b39855d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.27753,
+    "bid": 0.27699,
+    "last": 0.27776,
+    "spread_pct": 0.1947630383033921
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "KNTQ/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "36992196558:KNTQ-EUR:1790934790",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "006c2484605cb3dffbe8a42f9018f0e68b2b4b20",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-02T09:53:10Z",
+    "candidate_detected_ts": 1790934790,
+    "candidate_snapshot_at_utc": "2026-10-02T09:53:10Z",
+    "detected_to_evaluation_complete_seconds": 25.788,
+    "detected_to_evaluation_start_seconds": 15.296,
+    "evaluation_completed_at_utc": "2026-10-02T09:53:35.788387Z",
+    "evaluation_runtime_seconds": 10.492,
+    "evaluation_started_at_utc": "2026-10-02T09:53:25.296339Z",
+    "handoff_to_evaluation_start_seconds": 12.835,
+    "handoff_written_at_utc": "2026-10-02T09:53:12.461541Z",
+    "scan_step_started_at_utc": "2026-10-02T09:51:40Z"
+  }
+}
