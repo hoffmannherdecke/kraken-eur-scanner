@@ -31,6 +31,7 @@ Kanonische Detailquellen:
 - V2R4 Paper-Aktivierungs-/Rollback-Checkliste: `docs/v2r4-paper-activation-checklist.md`
 - Fail-closed V2R4 Aktivierungsstatus: Supabase View `public.v2r4_activation_readiness` (`automatic_activation_allowed=false`)
 - V3 Research / Promotion: `docs/v3-research-framework.md`
+- Test-Triage / Autonomie / No-Repeat: `docs/test-strategy-runbook.md`
 - V3 Research-Chronik: GitHub Issue #7
 - Action-Push / Slack-E2E: GitHub Issue #1
 
@@ -232,6 +233,8 @@ Erst nach stabiler Infrastruktur und validierter Strategie.
 ---
 
 ## P9 — Dauerhafte Governance / „nicht wieder vergessen“\n\nKanonischer Komponenten-/Versionsindex: `docs/master-version-register.md`. Mini-PC-Runbook: `docs/minipc-preflight-runbook.md`.
+
+- [x] **Teststrategie ist jetzt kanonisch triagiert:** `docs/test-strategy-runbook.md` definiert verbindlich Test-Value-Gate, Autonomy-first, No-Repeat, Smoke-before-Duration, physisches Nutzerbudget und phasenabhängige Pflichtgates. Offene Aufgaben bleiben ausschließlich hier im Master-Backlog; das Runbook ist keine zweite To-do-Liste. Grundsatz: nur entscheidungs-/sicherheitsrelevante Tests, autonome GitHub/Supabase/Public-API-Arbeit ohne Nutzerunterbrechung, physische Nutzeraktionen nur wenn technisch unvermeidbar und möglichst gebündelt. Bereits bestandene Tests werden ohne relevante Änderung/Incident/Freshness-Grund nicht wiederholt.
 
 - [x] Jede Entscheidung mit Strategieversion + Fingerprints nachvollziehbar: im diagnostisch eingefrorenen Vorgänger enthielten 708/708 geprüfte Outcomes `strategy_revision`, `strategy_fingerprint_sha256` und `runtime_code_fingerprint_sha256`; dieselbe unveränderte Provenance-Pflicht bleibt für `PAPER-V2R3-CLEAN-20261001T0925Z` aktiv.
 - [x] Last-known-good Konfiguration und schneller Rollback erhalten: `research/v2r3/clean-series-freeze-20261001.json` schützt die aktive V2R3-Referenz; `tools/paper-release-rollback-snapshot.py` erzeugt daraus fail-closed einen content-addressed Release-/Rollback-Snapshot mit Control-/Spec-/Runtime-/Scanner-Dateihashes. Whole-repo reset und Evidenz-/State-Rewind sind ausdrücklich verboten; nur geschützte Code-/Konfigurationsdateien dürfen auf den Snapshot-Stand zurückgeführt werden. V2R3 freeze guard ist selbsttestend und Snapshot-Smoke **SUCCESS**.
