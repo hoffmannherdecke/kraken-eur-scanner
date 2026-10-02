@@ -3,7 +3,8 @@ param(
   [switch]$Execute,
   [string]$Confirm = "",
   [int]$Seconds = 1800,
-  [switch]$Evaluate
+  [switch]$Evaluate,
+  [switch]$Smoke
 )
 $ErrorActionPreference="Stop"
 Set-StrictMode -Version Latest
@@ -14,7 +15,7 @@ if([string]::IsNullOrWhiteSpace($TradingRoot)){
   $TradingRoot=Join-Path $homeRoot "Trading"
 }
 
-$ExpectedConfirm="RUN_V3_H3_ASSOC_002"
+$ExpectedConfirm=$(if($Smoke){"RUN_V3_H3_SMOKE_002"}else{"RUN_V3_H3_ASSOC_002"})
 $repo=Join-Path $TradingRoot "Repos\kraken-eur-scanner"
 $python=Join-Path $TradingRoot "Runtime\kraken-eur-scanner-venv\Scripts\python.exe"
 $reports=Join-Path $TradingRoot "Historical\reports"
@@ -30,7 +31,7 @@ $plan=[ordered]@{
   kind="V3_H3_PROSPECTIVE_ASSOCIATION_MINIPC_GATE_V1"
   status=$(if($Execute){"READY_TO_EXECUTE"}else{"PLAN_ONLY"})
   trial_id="V3-H3-ASSOC-002"
-  mode=$(if($Evaluate){"EVALUATE"}else{"CAPTURE"})
+  mode=$(if($Smoke){"SMOKE"}elseif($Evaluate){"EVALUATE"}else{"CAPTURE"})
   seconds=$Seconds
   symbols=@("BTC/EUR","ETH/EUR","SOL/EUR")
   sampling_seconds=5
@@ -47,7 +48,8 @@ $plan=[ordered]@{
 }
 if(-not $Execute){$plan|ConvertTo-Json -Depth 6;exit 0}
 if($Confirm -ne $ExpectedConfirm){throw "Execution blocked. Re-run with -Confirm $ExpectedConfirm"}
-if(-not $Evaluate -and ($Seconds -lt 1800 -or $Seconds -gt 3600)){throw "Physical collection sessions must be 1800..3600 seconds."}
+if($Smoke -and ($Seconds -lt 30 -or $Seconds -gt 120)){throw "Smoke duration must be 30..120 seconds."}
+if(-not $Smoke -and -not $Evaluate -and ($Seconds -lt 1800 -or $Seconds -gt 3600)){throw "Physical collection sessions must be 1800..3600 seconds."}
 
 foreach($p in @($repo,$python,$ledgerTool,$runner,$spec,$record)){
   if(-not(Test-Path -LiteralPath $p)){throw "Required path missing: $p"}
@@ -63,6 +65,27 @@ try{
 
   & $python $runner --self-test
   if($LASTEXITCODE -ne 0){throw "H3 association runner self-test failed"}
+
+  if($Smoke){
+    $stamp=Get-Date -Format "yyyyMMdd-HHmmss"
+    $sid="V3-H3-ASSOC-002-SMOKE-"+([DateTime]::UtcNow.ToString("yyyyMMddTHHmmssZ"))
+    $out=Join-Path $reports ("v3-h3-assoc-002-smoke-"+$stamp+".json")
+    & $python $runner --spec $spec capture --seconds $Seconds --session-id $sid --output $out
+    if($LASTEXITCODE -ne 0){throw "H3 real-WS smoke failed"}
+    $r=Get-Content $out -Raw|ConvertFrom-Json
+    $allPositive=([int]$r.counts.'BTC/EUR' -gt 0 -and [int]$r.counts.'ETH/EUR' -gt 0 -and [int]$r.counts.'SOL/EUR' -gt 0)
+    if($r.status -ne "PASS" -or -not $allPositive -or $r.guardrails.holdout_opened -ne $false -or $r.guardrails.orders -ne $false){
+      throw "H3 smoke guard failed"
+    }
+    Write-Host ""
+    Write-Host "=== V3 H3 REAL-WS SMOKE COMPLETE ==="
+    Write-Host ("Status: "+$r.status)
+    Write-Host ("Counts: BTC="+$r.counts.'BTC/EUR'+" ETH="+$r.counts.'ETH/EUR'+" SOL="+$r.counts.'SOL/EUR')
+    Write-Host ("Wire messages: "+$r.wire_messages+" / subscription_acks: "+$r.subscription_acks)
+    Write-Host ("Report: "+$out)
+    Write-Host "SMOKE ONLY: not registered in immutable trial ledger and never counted toward the collection gate."
+    exit 0
+  }
 
   $runnerSha=(Get-FileHash -Algorithm SHA256 -LiteralPath $runner).Hash.ToLowerInvariant()
   $specSha=(Get-FileHash -Algorithm SHA256 -LiteralPath $spec).Hash.ToLowerInvariant()
@@ -112,7 +135,7 @@ try{
     $inputs=@(Get-ChildItem -LiteralPath $reports -Filter "v3-h3-assoc-002-session-*.json"|Sort-Object Name|ForEach-Object {$_.FullName})
     if($inputs.Count -lt 1){throw "No H3 session reports found"}
     $stamp=Get-Date -Format "yyyyMMdd-HHmmss"
-    $out=Join-Path $reports ("v3-h3-association-001-"+$stamp+".json")
+    $out=Join-Path $reports ("v3-h3-association-002-"+$stamp+".json")
     $args=@($runner,"--spec",$spec,"evaluate")+@($inputs)+@("--output",$out)
     & $python @args
     if($LASTEXITCODE -ne 0){throw "H3 association evaluation failed"}
