@@ -1,0 +1,176 @@
+{
+  "altname": "TRUMPEUR",
+  "candidate_age_seconds": 39,
+  "candidate_event_time_utc": "2026-10-02T23:48:38Z",
+  "candidate_id": "20261002-234838-TRUMP-EUR-r37078927704",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.883 with volume sustained near recent elevated levels",
+      "Successful retest and hold above 1.883"
+    ],
+    "reason_codes": [
+      "resistance_unbroken",
+      "strong_volume_but_late_in_move",
+      "fees_reduce_remaining_edge",
+      "spot_liquidity_and_spread_acceptable",
+      "major_markets_mildly_positive",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong volume and rising closes support momentum, but price is directly below 1h/3h resistance with no confirmed breakout; wait for confirmation before assessing an entry.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "TRUMPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 184.79,
+        "available": true,
+        "current_funding_rate": -6.198935845625e-05,
+        "current_open_interest": 535569.3,
+        "funding_rate_delta": 0.00012142509395333399,
+        "open_interest_pct": 0.5353,
+        "previous_funding_rate": -0.000183414452409584,
+        "previous_observed_at_utc": "2026-10-02T20:44:31.336224Z",
+        "previous_open_interest": 532717.5
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -6.198935845625e-05,
+        "index_price": 2.1172,
+        "last": 2.116,
+        "mark_price": 2.11725336251,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 535569.3,
+        "requested_symbols": [
+          "PF_TRUMPUSD",
+          "PI_TRUMPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_TRUMPUSD",
+        "volume24h": 762154.6
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.882,
+      "bid": 1.881,
+      "last": 1.88,
+      "spread_pct": 0.053149083178309325
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "2.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.07652534985393977,
+          "ret3h_pct": 0.4064541283668621
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.12234531754935496,
+          "ret3h_pct": 0.26531922803934016
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.20890703636882169,
+          "ret3h_pct": 0.7734912146676765
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": false,
+        "detail": "HTTP Error 404: Not Found",
+        "error": "HTTPError",
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T23:49:17.694397Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-02T23:49:26.566524Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0feddb4c8b349e70006ac042fea2c887d2991f293ed56bd087"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.882,
+    "bid": 1.881,
+    "last": 1.88,
+    "spread_pct": 0.053149083178309325
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "TRUMP/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37078927704:TRUMP-EUR:1790984918",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "56de3f10a5981e628da094c5c3a3b3f01f20a4a1",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-02T23:48:38Z",
+    "candidate_detected_ts": 1790984918,
+    "candidate_snapshot_at_utc": "2026-10-02T23:48:38Z",
+    "detected_to_evaluation_complete_seconds": 48.567,
+    "detected_to_evaluation_start_seconds": 39.564,
+    "evaluation_completed_at_utc": "2026-10-02T23:49:26.566524Z",
+    "evaluation_runtime_seconds": 9.002,
+    "evaluation_started_at_utc": "2026-10-02T23:49:17.564125Z",
+    "handoff_to_evaluation_start_seconds": 36.299,
+    "handoff_written_at_utc": "2026-10-02T23:48:41.265349Z",
+    "scan_step_started_at_utc": "2026-10-02T23:43:49Z"
+  }
+}

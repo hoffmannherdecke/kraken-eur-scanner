@@ -1,0 +1,227 @@
+{
+  "altname": "PUMPEUR",
+  "candidate_id": "20261002-225511-PUMP-EUR-r37074859850",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.004806 with stronger-than-average closed volume",
+      "Hold above 0.004806 on a retest"
+    ],
+    "reason_codes": [
+      "resistance_unbroken",
+      "closed_volume_weak",
+      "weak_24h_context",
+      "costs_require_material_followthrough",
+      "no_structural_entry_plan"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation shows no confirmed breakout: spot remains below 0.004806 resistance, and recent closed volume is weak. The evidence does not support a scout or a defined second-stage plan.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "PUMPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 53.96,
+        "available": true,
+        "current_funding_rate": 5.8201181553e-08,
+        "current_open_interest": 240024400.0,
+        "funding_rate_delta": -2.8449573996200003e-07,
+        "open_interest_pct": 0.1073,
+        "previous_funding_rate": 3.42696921515e-07,
+        "previous_observed_at_utc": "2026-10-02T22:56:07.199395Z",
+        "previous_open_interest": 239767100.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 5.8201181553e-08,
+        "index_price": 0.00539398,
+        "last": 0.005395,
+        "mark_price": 0.00539556454,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 240024400.0,
+        "requested_symbols": [
+          "PF_PUMPUSD",
+          "PI_PUMPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_PUMPUSD",
+        "volume24h": 2376356800
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.0048,
+      "bid": 0.004793,
+      "last": 0.0048,
+      "spread_pct": 0.14593974773270496
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "900",
+      "pair_decimals": 6,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.07652534985393977,
+          "ret3h_pct": 0.4064541283668621
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.12234531754935496,
+          "ret3h_pct": 0.26531922803934016
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.20890703636882169,
+          "ret3h_pct": 0.7734912146676765
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T23:50:04.142754Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f9b59c234a75155006ac0432cfed487d2a33af48558802949"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0048,
+    "bid": 0.004793,
+    "last": 0.0048,
+    "spread_pct": 0.14593974773270496
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.004794,
+      "high": 0.004816,
+      "low": 0.004783,
+      "open": 0.004789,
+      "trades": 50,
+      "ts": 1790981100,
+      "volume": 4271878.61886,
+      "vwap": 0.004797
+    },
+    {
+      "close": 0.004803,
+      "high": 0.004803,
+      "low": 0.004789,
+      "open": 0.004796,
+      "trades": 4,
+      "ts": 1790982000,
+      "volume": 185571.17905,
+      "vwap": 0.00479
+    },
+    {
+      "close": 0.004788,
+      "high": 0.004788,
+      "low": 0.004788,
+      "open": 0.004788,
+      "trades": 1,
+      "ts": 1790982900,
+      "volume": 50000.0,
+      "vwap": 0.004788
+    },
+    {
+      "close": 0.004789,
+      "high": 0.004789,
+      "low": 0.004789,
+      "open": 0.004789,
+      "trades": 1,
+      "ts": 1790983800,
+      "volume": 742030.0,
+      "vwap": 0.004789
+    },
+    {
+      "close": 0.0048,
+      "high": 0.004801,
+      "low": 0.0048,
+      "open": 0.004801,
+      "trades": 2,
+      "ts": 1790984700,
+      "volume": 100000.0,
+      "vwap": 0.0048
+    }
+  ],
+  "pair": "PUMP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-225511-PUMP-EUR-r37074859850.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T23:50:12.140608Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "56de3f10a5981e628da094c5c3a3b3f01f20a4a1",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T23:50:12.140608Z",
+    "revalidation_started_at_utc": "2026-10-02T23:50:04.075938Z",
+    "ttl_due_at_utc": "2026-10-02T23:41:07.199395Z",
+    "ttl_lag_seconds": 536.877
+  }
+}
