@@ -1,0 +1,211 @@
+{
+  "altname": "SKYEUR",
+  "candidate_id": "20261002-122121-SKY-EUR-r37006022006",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.08345 followed by a hold or successful retest",
+      "Closed-volume expansion on a renewed breakout"
+    ],
+    "reason_codes": [
+      "extended_move",
+      "failed_breakout_rejection",
+      "below_resistance",
+      "closed_volume_weak",
+      "remaining_move_uncertain",
+      "fees_and_slippage_hurdle"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The move above resistance was rejected: price fell back below 0.08345 and the latest closed volume is weak. No scout entry is justified on this revalidation.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": true,
+        "index_price": 0.09322796,
+        "last_funding_rate": 5e-05,
+        "mark_price": 0.09323157,
+        "next_funding_time": 1790956800000,
+        "note": "Cross-market context only; never used as Kraken EUR execution price.",
+        "open_interest_base": 264643320.0,
+        "retrieved_ms": 1790945650849,
+        "source": "binance_public_futures",
+        "symbol": "SKYUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_SKYUSD",
+          "PI_SKYUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "binance_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.08288,
+      "bid": 0.08279,
+      "last": 0.0828,
+      "spread_pct": 0.10864972535763008
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "70",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.021582883473225678,
+          "ret3h_pct": 0.2434110911019305
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.24464881848530462,
+          "ret3h_pct": -0.1539658490643192
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2118839244587778,
+          "ret3h_pct": -0.009231053263181188
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T12:54:08.743700Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_02bc0f9035d67a5e006abfa973f34887d1b1b89ac8ac1822e8"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.08288,
+    "bid": 0.08279,
+    "last": 0.0828,
+    "spread_pct": 0.10864972535763008
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.08179,
+      "high": 0.08345,
+      "low": 0.08179,
+      "open": 0.08228,
+      "trades": 61,
+      "ts": 1790941500,
+      "volume": 120555.15502,
+      "vwap": 0.08267
+    },
+    {
+      "close": 0.08273,
+      "high": 0.08295,
+      "low": 0.08187,
+      "open": 0.08187,
+      "trades": 46,
+      "ts": 1790942400,
+      "volume": 48873.34754,
+      "vwap": 0.08266
+    },
+    {
+      "close": 0.08409,
+      "high": 0.08449,
+      "low": 0.08225,
+      "open": 0.08225,
+      "trades": 115,
+      "ts": 1790943300,
+      "volume": 158173.35431,
+      "vwap": 0.08343
+    },
+    {
+      "close": 0.08232,
+      "high": 0.08402,
+      "low": 0.08225,
+      "open": 0.08402,
+      "trades": 91,
+      "ts": 1790944200,
+      "volume": 165699.94364,
+      "vwap": 0.08291
+    },
+    {
+      "close": 0.0828,
+      "high": 0.08315,
+      "low": 0.0825,
+      "open": 0.08253,
+      "trades": 22,
+      "ts": 1790945100,
+      "volume": 33130.67257,
+      "vwap": 0.08286
+    }
+  ],
+  "pair": "SKY/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-122121-SKY-EUR-r37006022006.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T12:54:18.634596Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "c8087a13068454e5b5b7e514637736c3da2a7fc6",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T12:54:18.634596Z",
+    "revalidation_started_at_utc": "2026-10-02T12:54:08.156733Z",
+    "ttl_due_at_utc": "2026-10-02T12:51:59.192815Z",
+    "ttl_lag_seconds": 128.964
+  }
+}

@@ -1,0 +1,226 @@
+{
+  "altname": "TRUMPEUR",
+  "candidate_id": "20261002-122121-TRUMP-EUR-r37006022006",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "liquid_pair_tight_spread",
+      "breakout_level_held",
+      "major_market_breadth_weak",
+      "limited_room_to_7d_high",
+      "remaining_move_after_costs_unproven",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Price has held above the breakout level, but a confirmation entry above the recent swing high would leave too little demonstrated upside relative to Kraken fees and execution costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": true,
+        "index_price": 2.18301223,
+        "last_funding_rate": 5e-05,
+        "mark_price": 2.18362618,
+        "next_funding_time": 1790956800000,
+        "note": "Cross-market context only; never used as Kraken EUR execution price.",
+        "open_interest_base": 30752666.79,
+        "retrieved_ms": 1790945661299,
+        "source": "binance_public_futures",
+        "symbol": "TRUMPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 9.44,
+        "available": true,
+        "current_funding_rate": 0.000172243728066666,
+        "current_open_interest": 587071.1,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -0.7443,
+        "previous_funding_rate": 0.000172243728066666,
+        "previous_observed_at_utc": "2026-10-02T12:44:55.458570Z",
+        "previous_open_interest": 591473.7
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000172243728066666,
+        "index_price": 2.1827,
+        "last": 2.185,
+        "mark_price": 2.18536824705,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 587071.1,
+        "requested_symbols": [
+          "PF_TRUMPUSD",
+          "PI_TRUMPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_TRUMPUSD",
+        "volume24h": 593247.9
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.94,
+      "bid": 1.939,
+      "last": 1.94,
+      "spread_pct": 0.05155968032997628
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "2.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.021582883473225678,
+          "ret3h_pct": 0.2434110911019305
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.24464881848530462,
+          "ret3h_pct": -0.1539658490643192
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2118839244587778,
+          "ret3h_pct": -0.009231053263181188
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T12:54:19.449799Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0df04c7848ea878a006abfa97dc76887d1878ae71bcd3659a6"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.94,
+    "bid": 1.939,
+    "last": 1.94,
+    "spread_pct": 0.05155968032997628
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.907,
+      "high": 1.91,
+      "low": 1.907,
+      "open": 1.909,
+      "trades": 15,
+      "ts": 1790941500,
+      "volume": 322.74127,
+      "vwap": 1.908
+    },
+    {
+      "close": 1.928,
+      "high": 1.93,
+      "low": 1.906,
+      "open": 1.906,
+      "trades": 40,
+      "ts": 1790942400,
+      "volume": 2638.86914,
+      "vwap": 1.921
+    },
+    {
+      "close": 1.946,
+      "high": 1.968,
+      "low": 1.924,
+      "open": 1.924,
+      "trades": 132,
+      "ts": 1790943300,
+      "volume": 15717.39652,
+      "vwap": 1.949
+    },
+    {
+      "close": 1.941,
+      "high": 1.964,
+      "low": 1.936,
+      "open": 1.949,
+      "trades": 69,
+      "ts": 1790944200,
+      "volume": 6315.40517,
+      "vwap": 1.946
+    },
+    {
+      "close": 1.94,
+      "high": 1.944,
+      "low": 1.935,
+      "open": 1.939,
+      "trades": 37,
+      "ts": 1790945100,
+      "volume": 2583.0046,
+      "vwap": 1.94
+    }
+  ],
+  "pair": "TRUMP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-122121-TRUMP-EUR-r37006022006.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T12:54:28.883067Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "c8087a13068454e5b5b7e514637736c3da2a7fc6",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T12:54:28.883067Z",
+    "revalidation_started_at_utc": "2026-10-02T12:54:18.885567Z",
+    "ttl_due_at_utc": "2026-10-02T12:52:08.996549Z",
+    "ttl_lag_seconds": 129.889
+  }
+}
