@@ -63,7 +63,12 @@ foreach($rule in @($rdpRules)){
     Protocol=@($protocols)
   }
 }
-$rdpPublicAllow=@($rdpRuleDetails | Where-Object {$_.Profile -match '(^|,| )Public($|,| )|^Any
+$rdpPublicAllow=@($rdpRuleDetails | Where-Object {$_.Profile -match '(^|,| )Public($|,| )|^Any$'})
+$rdpAnyRemote=@($rdpRuleDetails | Where-Object {@($_.RemoteAddress) -contains 'Any'})
+$rdpPublicAnyRemote=@($rdpRuleDetails | Where-Object {
+  ($_.Profile -match '(^|,| )Public($|,| )|^Any$') -and (@($_.RemoteAddress) -contains 'Any')
+})
+
 $def=$null
 try{
   $def=Get-MpComputerStatus | Select-Object AMServiceEnabled,AntivirusEnabled,AntispywareEnabled,BehaviorMonitorEnabled,IoavProtectionEnabled,NISEnabled,RealTimeProtectionEnabled,AntivirusSignatureLastUpdated,QuickScanAge,FullScanAge
