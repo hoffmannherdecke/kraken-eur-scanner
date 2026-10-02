@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "kind": "V3_FIRST_SHADOW_CANDIDATE_READINESS_SNAPSHOT_V1",
+  "status": "PREPARATION_ACTIVE_NO_CANDIDATE_SELECTED",
+  "generated_at_utc": "2026-10-02T10:55:00Z",
+  "authority": {
+    "master_todo": "PROJECT_BACKLOG.md",
+    "test_triage": "docs/test-strategy-runbook.md",
+    "candidate_contract": "research/v3/shadow-candidate-contract-v1.json",
+    "migration_ledger": "research/v3-migration-ledger.json"
+  },
+  "baseline_state": {
+    "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+    "strategy_revision": "V2R3-2026-09-28",
+    "integrity_state": "HEALTHY",
+    "gate_state": "COLLECTING_AGE",
+    "completion_ready": false,
+    "final_review_allowed": false,
+    "candidate_outcomes": 261,
+    "completed_trades": 0,
+    "complete_24h": 13,
+    "coverage_24h_pct": 100,
+    "series_age_days": 1.06,
+    "outcomes_remaining_to_alternative_gate": 739,
+    "hours_remaining_to_age_gate": 142.57,
+    "note": "This does not prevent drafting isolated one-change V3 shadow candidates. It blocks any claim that the final inherited V3 baseline or promotion decision is complete."
+  },
+  "shadow_governance": {
+    "one_change_only": true,
+    "same_candidate_stream": true,
+    "shared_market_clock": true,
+    "baseline_must_remain_unchanged": true,
+    "minimum_sample_or_time_gate_required": true,
+    "realistic_cost_reference_required": true,
+    "no_midrun_tuning": true,
+    "automatic_promotion": false,
+    "real_money_activation_separate": true
+  },
+  "candidate_tracks": [
+    {
+      "hypothesis_id": "V3-H1",
+      "component_class": "SIGNAL_FEATURE",
+      "readiness": "BLOCKED_SINGLE_GATE",
+      "missing_gate": "IMPORT_AND_REVIEW_EXACT_V3_H1_INCR_001_REPORT",
+      "user_dependency": "ONE_BATCHED_MINIPC_REPORT_IMPORT_OR_FILE_UPLOAD",
+      "after_gate": "DRAFT_MATERIALIZATION_CAN_BE_DECIDED_FROM_FROZEN_INCREMENTAL_EFFECT_REVIEW",
+      "first_shadow_blocker_if_not_selected": false
+    },
+    {
+      "hypothesis_id": "V3-H3",
+      "component_class": "STATE_CONDITIONING",
+      "readiness": "BLOCKED_SINGLE_COLLECTION_GATE",
+      "missing_gate": "ONE_MORE_VALID_1800S_SESSION_ON_SECOND_UTC_DATE_THEN_FIXED_EFFECT_SIZE_REVIEW",
+      "user_dependency": "ONE_30_MIN_MINIPC_SESSION_ALREADY_SCHEDULED",
+      "after_gate": "DRAFT_MATERIALIZATION_CAN_BE_DECIDED_FROM_FROZEN_EFFECT_REVIEW",
+      "first_shadow_blocker_if_not_selected": false
+    },
+    {
+      "hypothesis_id": "V3-H5",
+      "component_class": "RISK_GATE",
+      "readiness": "METHOD_AND_VARIANT_FROZEN_BASELINE_DISPOSITION_PENDING",
+      "missing_gate": "FINAL_BASELINE_FREEZE_BEFORE_MATERIALIZING_FOMC_30M_30M_ONE_CHANGE_CANDIDATE",
+      "user_dependency": "NONE_NOW",
+      "after_gate": "CAN_MATERIALIZE_PREEXISTING_SINGLE_RISK_GATE_VARIANT_WITHOUT_PARAMETER_SEARCH",
+      "first_shadow_blocker_if_not_selected": false
+    },
+    {
+      "hypothesis_id": "V3-H6",
+      "component_class": "SIGNAL_FEATURE",
+      "readiness": "BLOCKED_SINGLE_GATE",
+      "missing_gate": "IMPORT_AND_REVIEW_EXACT_V3_H6_INCR_001_REPORT",
+      "user_dependency": "ONE_BATCHED_MINIPC_REPORT_IMPORT_OR_FILE_UPLOAD",
+      "after_gate": "DRAFT_MATERIALIZATION_CAN_BE_DECIDED_FROM_FROZEN_INCREMENTAL_EFFECT_REVIEW",
+      "first_shadow_blocker_if_not_selected": false
+    },
+    {
+      "hypothesis_id": "V3-H2",
+      "component_class": "STATE_CONDITIONING",
+      "readiness": "OPTIONAL_DEFERRED_FOR_FIRST_SHADOW",
+      "missing_gate": "SEPARATE_REVIEW_THEN_ONE_REAL_PROSPECTIVE_RESEARCH_CAPTURE",
+      "user_dependency": "NONE_CURRENTLY",
+      "after_gate": "MAY_BECOME_LATER_STATE_CONDITIONING_CANDIDATE",
+      "first_shadow_blocker_if_not_selected": false
+    },
+    {
+      "hypothesis_id": "V3-H4",
+      "component_class": "STOP_OR_WAIT_TTL_REVALIDATION",
+      "readiness": "DEFERRED_DATA_MATURITY",
+      "missing_gate": "MATURE_V2R3_24H_MAE_MFE_AND_FINAL_REVIEW",
+      "user_dependency": "NONE",
+      "after_gate": "FREEZE_ONE_COMPONENT_TRIAL_ONLY",
+      "first_shadow_blocker_if_not_selected": false
+    },
+    {
+      "hypothesis_id": "V3-H7",
+      "component_class": "STATE_CONDITIONING",
+      "readiness": "DEFERRED_LABEL_MATURITY",
+      "missing_gate": "V2R3_FINAL_REVIEW_AND_FROZEN_LABEL_COST_SPLIT_CONTRACT",
+      "user_dependency": "NONE",
+      "after_gate": "META_MODEL_RESEARCH_MAY_BEGIN",
+      "first_shadow_blocker_if_not_selected": false
+    },
+    {
+      "hypothesis_id": "V3-H8",
+      "component_class": "STATE_CONDITIONING",
+      "readiness": "OPTIONAL_DEFERRED_PROSPECTIVE_DEPTH",
+      "missing_gate": "ADDITIONAL_BOUNDED_PROSPECTIVE_STATE_DEPTH_BEFORE_ASSOCIATION",
+      "user_dependency": "NONE",
+      "after_gate": "ASSOCIATION_TRIAL_MAY_BE_PREREGISTERED",
+      "first_shadow_blocker_if_not_selected": false
+    },
+    {
+      "hypothesis_id": "V3-H9",
+      "component_class": "EXECUTION_MECHANIC",
+      "readiness": "LATER_EXECUTION_ONLY",
+      "missing_gate": "ACCOUNT_FEE_TIER_PLUS_DEADLINE_CLEANUP_AND_QUEUE_ASSUMPTIONS",
+      "user_dependency": "LATER_ACCOUNT_SPECIFIC",
+      "after_gate": "FILL_ROUTING_RESEARCH_ONLY_BEFORE_LIVE_EXECUTION",
+      "first_shadow_blocker_if_not_selected": false
+    },
+    {
+      "hypothesis_id": "V3-H10",
+      "component_class": "STATE_CONDITIONING",
+      "readiness": "OPTIONAL_DEFERRED_SELECTION_PROVENANCE",
+      "missing_gate": "UNBIASED_PUBLIC_ADDRESS_SELECTION_PROVENANCE_AND_PROSPECTIVE_OBSERVATION",
+      "user_dependency": "NONE",
+      "after_gate": "LATER_STATE_CONTEXT_CANDIDATE_ONLY_IF_INCREMENTAL_VALUE",
+      "first_shadow_blocker_if_not_selected": false
+    },
+    {
+      "hypothesis_id": "V3-H11",
+      "component_class": "STATE_CONDITIONING",
+      "readiness": "OPTIONAL_DEFERRED_EVENT_CONTRACT",
+      "missing_gate": "LONGER_HORIZON_SAMPLING_AND_EVENT_RELEVANCE_CONTRACT",
+      "user_dependency": "NONE",
+      "after_gate": "LATER_EVENT_STATE_CANDIDATE_ONLY_IF_INCREMENTAL_VALUE",
+      "first_shadow_blocker_if_not_selected": false
+    }
+  ],
+  "current_execution_focus": [
+    "COMPLETE_H3_EXISTING_COLLECTION_GATE_WITH_ONE_MORE_SESSION_ONLY",
+    "IMPORT_AND_REVIEW_H1_H6_EXACT_REPORTS_AS_ONE_BATCHED_PHYSICAL_STEP",
+    "DO_NOT_FORCE_OPTIONAL_OR_DATA_MATURITY_BRANCHES_TO_COMPLETION",
+    "AFTER_EVIDENCE_REVIEWS_MATERIALIZE_AT_MOST_ONE_CHANGED_COMPONENT_PER_SHADOW_CANDIDATE"
+  ],
+  "interpretation": {
+    "first_shadow_candidate_selected": false,
+    "first_shadow_candidate_frozen": false,
+    "promotion_allowed": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_activation_allowed": false,
+    "orders": false,
+    "real_money_actions": false
+  }
+}
