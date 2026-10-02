@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H9_KRAKEN_SPOT_PUBLIC_FEE_SCHEDULE_SNAPSHOT_V1",
+  "status": "PUBLIC_SCHEDULE_VERSIONED_ACCOUNT_TIER_UNVERIFIED",
+  "checked_at_utc": "2026-10-02T05:22:00Z",
+  "source": {
+    "fee_schedule_url": "https://www.kraken.com/features/fee-schedule",
+    "maker_taker_definition_url": "https://support.kraken.com/articles/360000526126-what-are-maker-and-taker-fees-",
+    "maker_rebate_eligible_pairs_url": "https://support.kraken.com/articles/pairs-eligible-for-maker-fee-rebates",
+    "source_role": "PUBLIC_REFERENCE_ONLY_NOT_ACCOUNT_SPECIFIC"
+  },
+  "product": "SPOT_CRYPTO_STANDARD_ORDERBOOK",
+  "public_standard_tiers": [
+    {
+      "tier": "Tier 1",
+      "spot_30d_volume_usd_min": 0,
+      "aop_usd_min": null,
+      "maker_pct": 0.4,
+      "taker_pct": 0.8
+    },
+    {
+      "tier": "Tier 2",
+      "spot_30d_volume_usd_min": 2500,
+      "aop_usd_min": null,
+      "maker_pct": 0.3,
+      "taker_pct": 0.6
+    },
+    {
+      "tier": "Tier 3",
+      "spot_30d_volume_usd_min": 10000,
+      "aop_usd_min": 20000,
+      "maker_pct": 0.22,
+      "taker_pct": 0.38
+    },
+    {
+      "tier": "Tier 4",
+      "spot_30d_volume_usd_min": 25000,
+      "aop_usd_min": 50000,
+      "maker_pct": 0.2,
+      "taker_pct": 0.35
+    },
+    {
+      "tier": "Tier 5",
+      "spot_30d_volume_usd_min": 50000,
+      "aop_usd_min": 100000,
+      "maker_pct": 0.15,
+      "taker_pct": 0.3
+    },
+    {
+      "tier": "Tier 6",
+      "spot_30d_volume_usd_min": 100000,
+      "aop_usd_min": 200000,
+      "maker_pct": 0.12,
+      "taker_pct": 0.25
+    },
+    {
+      "tier": "Tier 7",
+      "spot_30d_volume_usd_min": 250000,
+      "aop_usd_min": 400000,
+      "maker_pct": 0.1,
+      "taker_pct": 0.22
+    },
+    {
+      "tier": "Tier 8",
+      "spot_30d_volume_usd_min": 500000,
+      "aop_usd_min": 600000,
+      "maker_pct": 0.08,
+      "taker_pct": 0.2
+    },
+    {
+      "tier": "Tier 9",
+      "spot_30d_volume_usd_min": 1000000,
+      "aop_usd_min": 1000000,
+      "maker_pct": 0.06,
+      "taker_pct": 0.18
+    },
+    {
+      "tier": "Tier 10",
+      "spot_30d_volume_usd_min": 2500000,
+      "aop_usd_min": 2500000,
+      "maker_pct": 0.04,
+      "taker_pct": 0.15
+    },
+    {
+      "tier": "Tier 11",
+      "spot_30d_volume_usd_min": 5000000,
+      "aop_usd_min": 5000000,
+      "maker_pct": 0.02,
+      "taker_pct": 0.12
+    },
+    {
+      "tier": "Tier 12",
+      "spot_30d_volume_usd_min": 10000000,
+      "aop_usd_min": 10000000,
+      "maker_pct": 0,
+      "taker_pct": 0.1
+    }
+  ],
+  "representative_execution_pairs": {
+    "checked": [
+      "BTC/EUR",
+      "ETH/EUR",
+      "SOL/EUR"
+    ],
+    "listed_on_current_maker_rebate_eligible_pair_page": [],
+    "treatment": "USE_STANDARD_SPOT_CRYPTO_PUBLIC_SCHEDULE_AS_REFERENCE_UNLESS_PAIR_SPECIFIC_SCHEDULE_CHANGES"
+  },
+  "account_specific_state": {
+    "fee_tier_verified": false,
+    "maker_pct_verified": false,
+    "taker_pct_verified": false,
+    "verification_requires_account_specific_evidence": true,
+    "public_schedule_may_not_be_used_to_guess_user_tier": true
+  },
+  "maker_taker_semantics": {
+    "maker": "order adds liquidity and does not match immediately; post-only can enforce maker-or-cancel semantics",
+    "taker": "order removes resting liquidity by matching immediately"
+  },
+  "guardrails": {
+    "private_api_used": false,
+    "account_accessed": false,
+    "orders": false,
+    "routing_decision_allowed": false,
+    "fill_probability_model_allowed": false,
+    "real_money_actions": false,
+    "active_v2r3_changed": false,
+    "v2r4_changed": false
+  },
+  "next_gate": "VERIFY_ACCOUNT_SPECIFIC_CURRENT_FEE_TIER_SEPARATELY_BEFORE_ANY_EXPECTED_COST_ROUTE_MODEL"
+}
