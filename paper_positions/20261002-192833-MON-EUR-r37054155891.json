@@ -15,13 +15,35 @@
       "price_eur": 0.02889,
       "stop_eur": 0.02835,
       "type": "SCOUT_OPENED"
+    },
+    {
+      "at_utc": "2026-10-02T20:58:00Z",
+      "fill_price_eur": 0.02834,
+      "net_pnl_eur": -1.5461751471097236,
+      "reason": "INITIAL_STOP",
+      "type": "CLOSED"
     }
   ],
-  "exit": null,
+  "exit": {
+    "closed_at_utc": "2026-10-02T20:58:00Z",
+    "entry_fee_total_eur": 0.3,
+    "entry_notional_eur": 50.0,
+    "execution_quality": "CONSERVATIVE_OHLC_FALLBACK",
+    "exit_fee_eur": 0.2942886812045691,
+    "fill_model": "stop market; worse of active stop/bar open and no better than historical bid when available",
+    "fill_price_eur": 0.02834,
+    "gross_pnl_eur": -0.9518864659051545,
+    "gross_return_pct": -1.9037729318103103,
+    "net_pnl_eur": -1.5461751471097236,
+    "net_return_pct": -3.092350294219447,
+    "reason": "INITIAL_STOP",
+    "spread_observation": null,
+    "trigger_bar_start_utc": "2026-10-02T20:57:00Z"
+  },
   "fee_assumption_pct_per_side": 0.6,
   "initial_stop_eur": 0.02835,
   "kind": "PAPER_POSITION_V3",
-  "last_processed_bar_start_utc": "2026-10-02T20:56:00Z",
+  "last_processed_bar_start_utc": "2026-10-02T20:57:00Z",
   "legs": [
     {
       "execution_quality": "FRESH_KRAKEN_BEST_ASK",
@@ -39,8 +61,8 @@
   "max_gain_pct": 0.0,
   "max_hold_at_utc": "2026-10-05T20:28:34.792490Z",
   "max_hold_hours": 72.0,
-  "min_seen_price_eur": 0.02839,
-  "open_age_hours": 0.484,
+  "min_seen_price_eur": 0.02834,
+  "open_age_hours": 0.703,
   "opened_at_utc": "2026-10-02T20:28:34.792490Z",
   "pair": "MON/EUR",
   "peak_price_eur": 0.02889,
@@ -60,7 +82,7 @@
     "ttl_minutes": 30
   },
   "stale_position_review_due": false,
-  "status": "OPEN",
+  "status": "CLOSED",
   "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
   "strategy_revision": "V2R3-2026-09-28",
   "test_id": "SHADOW-V2R3-20261001-01",
