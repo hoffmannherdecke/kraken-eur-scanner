@@ -10,6 +10,8 @@ name: V3 migration ledger guard
       - 'tools/validate-v3-migration-ledger.py'
       - 'tools/run-minipc-v3-next-physical-gates.ps1'
       - 'tools/run-minipc-v3-next-physical-gates-sync.ps1'
+      - 'tools/collect-v3-physical-gate-evidence.py'
+      - 'tools/collect-v3-physical-gate-evidence.ps1'
       - 'docs/v3-research-framework.md'
       - '.github/workflows/v3-migration-ledger-guard.yml'
 
@@ -94,3 +96,6 @@ jobs:
             if (-not $text.Contains($needle)) { throw "Physical bundle missing required wiring: $needle" }
           }
           Write-Host "V3_PHYSICAL_BUNDLE_STATIC_WIRING PASS"
+
+      - name: Compile physical evidence collector
+        run: python -m py_compile tools/collect-v3-physical-gate-evidence.py
