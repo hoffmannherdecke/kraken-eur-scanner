@@ -1,0 +1,183 @@
+{
+  "altname": "LTCEUR",
+  "candidate_age_seconds": 15,
+  "candidate_event_time_utc": "2026-10-02T16:10:36Z",
+  "candidate_id": "20261002-161036-LTC-EUR-r37031928384",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": 1.66,
+    "missing_triggers": [
+      "Break and hold above 63.77 EUR with renewed spot volume",
+      "BTC/EUR, ETH/EUR, and SOL/EUR stabilize or turn positive"
+    ],
+    "reason_codes": [
+      "major_market_weakness",
+      "below_resistance",
+      "live_volume_weak",
+      "remaining_move_insufficient_after_costs",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid pair and tight spread, but price is below 1h/3h resistance while major EUR pairs are falling. A move only to resistance is about 1.7%, insufficient against round-trip fees and execution costs; wait for confirmation.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "LTCUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 49.14,
+        "available": true,
+        "current_funding_rate": -7.0457664807524e-05,
+        "current_open_interest": 230.0,
+        "funding_rate_delta": 1.2980099900169925e-06,
+        "open_interest_pct": -64.6154,
+        "previous_funding_rate": -7.1755674797541e-05,
+        "previous_observed_at_utc": "2026-10-02T15:21:45.275292Z",
+        "previous_open_interest": 650.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -7.0457664807524e-05,
+        "index_price": 70.5583,
+        "last": 72,
+        "mark_price": 70.44479991862,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 230.0,
+        "requested_symbols": [
+          "PF_LTCUSD",
+          "PI_LTCUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PI_LTCUSD",
+        "volume24h": 5300
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 62.73,
+      "bid": 62.67,
+      "last": 62.74,
+      "spread_pct": 0.0956937799042985
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.1",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.24668054080166923,
+          "ret3h_pct": -1.68716869611244
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2968112563483283,
+          "ret3h_pct": -2.1049877992454724
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.43937552584836226,
+          "ret3h_pct": -2.1769082391843497
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T16:10:51.898351Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-02T16:11:03.566728Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0107ae28fbf4df52006abfd78e489487d1adf4a9682fc8897a"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 62.73,
+    "bid": 62.67,
+    "last": 62.74,
+    "spread_pct": 0.0956937799042985
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "LTC/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37031928384:LTC-EUR:1790957436",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "e04190a0b6d991f430f572ca183b6baa61b1a327",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-02T16:10:36Z",
+    "candidate_detected_ts": 1790957436,
+    "candidate_snapshot_at_utc": "2026-10-02T16:10:36Z",
+    "detected_to_evaluation_complete_seconds": 27.567,
+    "detected_to_evaluation_start_seconds": 15.686,
+    "evaluation_completed_at_utc": "2026-10-02T16:11:03.566728Z",
+    "evaluation_runtime_seconds": 11.881,
+    "evaluation_started_at_utc": "2026-10-02T16:10:51.685743Z",
+    "handoff_to_evaluation_start_seconds": 13.409,
+    "handoff_written_at_utc": "2026-10-02T16:10:38.276256Z",
+    "scan_step_started_at_utc": "2026-10-02T16:09:02Z"
+  }
+}
