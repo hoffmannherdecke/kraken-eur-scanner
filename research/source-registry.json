@@ -229,7 +229,7 @@
     },
     {
       "id": "hyperliquid_stats_leaderboard_discovery",
-      "status": "PREREGISTERED_DISCOVERY_ONLY_PRECHECK_PENDING",
+      "status": "FROZEN_COHORT_SELECTION_COMPLETED_DISCOVERY_ONLY",
       "class": "smart_money_address_discovery",
       "unique_value": "Public Hyperliquid leaderboard snapshot used only to discover a broad reproducible candidate-address pool before official public Info-endpoint verification.",
       "authoritative_for": [
@@ -247,13 +247,13 @@
         "hyperliquid_public_info"
       ],
       "overlap_strategy": "Stats leaderboard is discovery-only and its undocumented response shape is validated each run. Official api.hyperliquid.xyz/info verifies public-address role/portfolio/fills before cohort inclusion. No Kraken outcomes enter selection.",
-      "persistence_mode": "single_versioned_selection_snapshot_plus_compact_provenance_no_continuous_raw_leaderboard_archive",
+      "persistence_mode": "one frozen cohort-selection provenance snapshot; no continuous leaderboard archive",
       "duplicate_raw_storage_allowed": false,
       "access": "public_read_only_no_auth_undocumented_stats_host"
     },
     {
       "id": "hyperliquid_public_info",
-      "status": "PRECHECK_CONNECTIVITY_GREEN_NOT_ACTIVE_FEATURE",
+      "status": "ACTIVE_PROSPECTIVE_SHADOW_CAPTURE_PUBLIC_ONLY",
       "class": "smart_money_trader_activity",
       "unique_value": "Public Hyperliquid market/account activity context (including public-address open orders/fills) that can test whether trader activity leads later Kraken-EUR moves.",
       "authoritative_for": [
@@ -270,7 +270,7 @@
         "binance_futures_public"
       ],
       "overlap_strategy": "Potential H10 independent trader-activity sensor only; never replaces Kraken market truth or derivatives context. Wallet selection must be separately preregistered and cannot be chosen by seen Kraken performance.",
-      "persistence_mode": "bounded_compact_public_activity_evidence_only_no_full_chain_or_exchange_archive",
+      "persistence_mode": "compact prospective wallet-state plus deduplicated fill-event evidence; no full exchange archive",
       "duplicate_raw_storage_allowed": false,
       "access": "public_read_only_no_signer_no_wallet_key_no_order_rights"
     },
