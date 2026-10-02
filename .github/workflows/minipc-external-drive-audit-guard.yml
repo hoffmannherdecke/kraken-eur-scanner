@@ -1,0 +1,51 @@
+name: MINI-PC external drive audit guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/minipc-external-drive-audit.ps1'
+      - '.github/workflows/minipc-external-drive-audit-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path './tools/minipc-external-drive-audit.ps1'),
+            [ref]$null,[ref]$errors
+          )|Out-Null
+          if($errors.Count -gt 0){$errors|ForEach-Object{Write-Error $_};exit 1}
+          Write-Host "MINIPC_EXTERNAL_DRIVE_AUDIT_PARSE PASS"
+      - name: Plan-only safety guard
+        shell: pwsh
+        run: |
+          $raw=& ./tools/minipc-external-drive-audit.ps1
+          $j=$raw|ConvertFrom-Json
+          if($j.status -ne 'PLAN_ONLY'){throw 'plan-only default violated'}
+          if($j.writes_to_target_drive -ne $false){throw 'target-drive write guard failed'}
+          if($j.repair -ne $false -or $j.format -ne $false -or $j.delete -ne $false -or $j.chkdsk_fix -ne $false){throw 'destructive guard failed'}
+          Write-Host "MINIPC_EXTERNAL_DRIVE_AUDIT_PLAN_GUARD PASS"
+      - name: Static destructive-command guard
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('tools/minipc-external-drive-audit.ps1').read_text('utf-8').lower()
+          forbidden=['format-volume','clear-disk','repair-volume -driveletter','chkdsk.exe ($driveletter+":") /f']
+          for x in forbidden:
+              assert x not in s, x
+          assert 'chkdsk.exe ($driveletter+":")' in s
+          assert 'wrote_to_target_drive=$false' in s
+          print('MINIPC_EXTERNAL_DRIVE_AUDIT_DESTRUCTIVE_GUARD PASS')
+          PY
