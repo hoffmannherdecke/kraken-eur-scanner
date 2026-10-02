@@ -4,8 +4,8 @@ on:
     paths:
       - 'tools/v3-h3-prospective-association.py'
       - 'tools/run-minipc-v3-h3-prospective-association.ps1'
-      - 'research/v3/h3-prospective-state-association-trial-v1.json'
-      - 'research/v3/h3-association-trial-ledger-record-v1.json'
+      - 'research/v3/h3-prospective-state-association-trial-v2.json'
+      - 'research/v3/h3-association-trial-ledger-record-v2.json'
       - '.github/workflows/v3-h3-association-precheck-guard.yml'
   workflow_dispatch:
 permissions:
@@ -26,7 +26,7 @@ jobs:
         run: |
           python - <<'PY'
           import json, pathlib, tempfile, subprocess, sys
-          p=pathlib.Path('research/v3/h3-association-trial-ledger-record-v1.json')
+          p=pathlib.Path('research/v3/h3-association-trial-ledger-record-v2.json')
           r=json.loads(p.read_text(encoding='utf-8'))
           r['code_fingerprint']='ci-selftest'
           with tempfile.TemporaryDirectory() as td:
@@ -50,9 +50,12 @@ jobs:
         run: |
           python - <<'PY'
           import json
-          s=json.load(open('research/v3/h3-prospective-state-association-trial-v1.json',encoding='utf-8'))
-          assert s['trial_id']=='V3-H3-ASSOC-001'
+          s=json.load(open('research/v3/h3-prospective-state-association-trial-v2.json',encoding='utf-8'))
+          assert s['trial_id']=='V3-H3-ASSOC-002'
           assert s['status']=='FROZEN_PREREGISTERED_CAPTURE_NOT_STARTED'
+          assert s['lineage']['replaces_trial_id']=='V3-H3-ASSOC-001'
+          assert s['lineage']['prior_trial_rows_written']==0
+          assert s['lineage']['research_question_changed'] is False
           assert s['source']['symbols']==['BTC/EUR','ETH/EUR','SOL/EUR']
           assert s['source']['depth']==10
           assert s['sampling']['observation_clock']=='FIXED_5_SECOND_WALL_CLOCK_GRID'
