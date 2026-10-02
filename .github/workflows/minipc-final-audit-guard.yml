@@ -1,0 +1,50 @@
+name: MINI-PC final audit guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/minipc-final-security-apps-reboot-audit.ps1'
+      - '.github/workflows/minipc-final-audit-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Parse PowerShell
+        shell: pwsh
+        run: |
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path './tools/minipc-final-security-apps-reboot-audit.ps1'),
+            [ref]$null,[ref]$errors
+          )|Out-Null
+          if($errors.Count -gt 0){$errors|ForEach-Object{Write-Error $_};exit 1}
+          Write-Host "MINIPC_FINAL_AUDIT_PARSE PASS"
+      - name: Plan-only guard
+        shell: pwsh
+        run: |
+          $raw=& ./tools/minipc-final-security-apps-reboot-audit.ps1
+          $j=$raw|ConvertFrom-Json
+          if($j.status -ne 'PLAN_ONLY'){throw 'plan-only default violated'}
+          foreach($k in 'firewall_changes','defender_changes','app_installs_or_removals','reboot','scheduled_task_changes'){
+            if($j.$k -ne $false){throw "$k guard failed"}
+          }
+          Write-Host "MINIPC_FINAL_AUDIT_PLAN PASS"
+      - name: Static mutation guard
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          s=Path('tools/minipc-final-security-apps-reboot-audit.ps1').read_text('utf-8').lower()
+          forbidden=['set-netfirewall','new-netfirewall','remove-netfirewall','set-mppreference','add-mppreference','winget install','winget uninstall','restart-computer','shutdown.exe','register-scheduledtask','unregister-scheduledtask']
+          for x in forbidden:
+              assert x not in s, x
+          print('MINIPC_FINAL_AUDIT_STATIC PASS')
+          PY
