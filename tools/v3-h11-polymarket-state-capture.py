@@ -68,5 +68,18 @@ def main()->int:
     raw=json.dumps(out,indent=2,sort_keys=True)+"\n"
     if a.output:a.output.write_text(raw,"utf-8")
     print("V3_H11_STATE_CAPTURE "+json.dumps({"status":out["status"],"market_count":out["market_count"],"captured_token_states":captured},sort_keys=True))
+    fingerprints=[]
+    for row in out_rows:
+        for tr in row.get("tokens",[]):
+            if tr.get("status")=="CAPTURED":
+                fingerprints.append({
+                    "market_id":row.get("market_id"),
+                    "token_id":tr.get("token_id"),
+                    "book_timestamp":tr.get("book_timestamp"),
+                    "book_hash":tr.get("book_hash"),
+                    "midpoint":tr.get("midpoint"),
+                    "spread":tr.get("spread")
+                })
+    print("V3_H11_STATE_FINGERPRINT "+json.dumps({"retrieved_at_utc":t,"states":fingerprints},sort_keys=True))
     return 0 if out["status"]=="PASS" else 2
 if __name__=="__main__":raise SystemExit(main())
