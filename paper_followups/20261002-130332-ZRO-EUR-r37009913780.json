@@ -3,7 +3,16 @@
   "candidate_id": "20261002-130332-ZRO-EUR-r37009913780",
   "evaluated_at_utc": "2026-10-02T13:04:22.941448Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 2.442,
+      "expected_bars": 30,
+      "mae_pct": -0.715,
+      "mfe_pct": 2.799
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -58,8 +67,11 @@
   },
   "original_decision": "WAIT",
   "pair": "ZRO/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-02T13:39:04.001132Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-02T13:39:07.807494Z"
 }

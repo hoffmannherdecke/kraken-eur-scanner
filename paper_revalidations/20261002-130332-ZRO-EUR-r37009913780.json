@@ -1,0 +1,224 @@
+{
+  "altname": "ZROEUR",
+  "candidate_id": "20261002-130332-ZRO-EUR-r37009913780",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustain a 15m close above 1.718 with stronger volume.",
+      "Demonstrate follow-through with enough remaining upside to clear costs."
+    ],
+    "reason_codes": [
+      "extended_from_7d_30d_gains",
+      "pullback_after_breakout",
+      "weak_latest_volume",
+      "near_recent_high",
+      "remaining_upside_unclear_after_costs",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The breakout had a high-volume 15m candle, but the latest candle pulled back on weak volume and price remains below the 1.718 local high. At this extended level, remaining upside is unclear relative to fees and execution costs; no scout plan is justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ZROUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 34.56,
+        "available": true,
+        "current_funding_rate": 6.5552686877166e-05,
+        "current_open_interest": 263521.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 1.0426,
+        "previous_funding_rate": 6.5552686877166e-05,
+        "previous_observed_at_utc": "2026-10-02T13:04:22.941448Z",
+        "previous_open_interest": 260802.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 6.5552686877166e-05,
+        "index_price": 1.9097,
+        "last": 1.9134,
+        "mark_price": 1.9115271928,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 263521.0,
+        "requested_symbols": [
+          "PF_ZROUSD",
+          "PI_ZROUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ZROUSD",
+        "volume24h": 439846
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.697,
+      "bid": 1.695,
+      "last": 1.703,
+      "spread_pct": 0.11792452830188689
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "2.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1819072908130992,
+          "ret3h_pct": 0.1423043153068182
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.11769128920999794,
+          "ret3h_pct": 0.058540099968462656
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.05515719801434393,
+          "ret3h_pct": 0.3137110167927615
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T13:38:55.170317Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0e73ddd2208f1882006abfb3f0d25087d19f7b4f7958bfba73"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.697,
+    "bid": 1.695,
+    "last": 1.703,
+    "spread_pct": 0.11792452830188689
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.642,
+      "high": 1.669,
+      "low": 1.637,
+      "open": 1.66,
+      "trades": 56,
+      "ts": 1790944200,
+      "volume": 8887.72098,
+      "vwap": 1.65
+    },
+    {
+      "close": 1.678,
+      "high": 1.678,
+      "low": 1.637,
+      "open": 1.646,
+      "trades": 91,
+      "ts": 1790945100,
+      "volume": 11747.53067,
+      "vwap": 1.654
+    },
+    {
+      "close": 1.674,
+      "high": 1.679,
+      "low": 1.667,
+      "open": 1.679,
+      "trades": 35,
+      "ts": 1790946000,
+      "volume": 6724.775,
+      "vwap": 1.673
+    },
+    {
+      "close": 1.718,
+      "high": 1.718,
+      "low": 1.675,
+      "open": 1.675,
+      "trades": 124,
+      "ts": 1790946900,
+      "volume": 32217.86598,
+      "vwap": 1.694
+    },
+    {
+      "close": 1.703,
+      "high": 1.726,
+      "low": 1.703,
+      "open": 1.724,
+      "trades": 34,
+      "ts": 1790947800,
+      "volume": 2123.17822,
+      "vwap": 1.71
+    }
+  ],
+  "pair": "ZRO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-130332-ZRO-EUR-r37009913780.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T13:39:04.001132Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "7c3653eb613797af41d60eb70c7bb92d318be172",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T13:39:04.001132Z",
+    "revalidation_started_at_utc": "2026-10-02T13:38:54.568622Z",
+    "ttl_due_at_utc": "2026-10-02T13:34:22.941448Z",
+    "ttl_lag_seconds": 271.627
+  }
+}
