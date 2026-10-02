@@ -50,6 +50,6 @@ jobs:
           ]
           for x in required:
               assert x in s, x
-          assert "git add -- "research/v3/incremental-reports/"" in s
+          assert 'git add -- "research/v3/incremental-reports/"' in s
           print("V3_H1_H6_IMPORT_STATIC_GUARD PASS")
           PY
