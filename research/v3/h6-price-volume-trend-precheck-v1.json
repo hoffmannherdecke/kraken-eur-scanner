@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H6_PRICE_VOLUME_TREND_PRECHECK_V1",
   "hypothesis_id": "V3-H6",
-  "status": "PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING",
+  "status": "ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED",
   "prepared_at_utc": "2026-10-01T18:35:00Z",
   "purpose": "Define transparent point-in-time multi-horizon price and volume trend primitives before any Kraken-EUR incremental-value trial.",
   "source": "KRAKEN_NORMALIZED_EUR_15M",
@@ -50,7 +50,7 @@
     "real_money_actions": false,
     "automatic_strategy_promotion": false
   },
-  "next_gate": "PREREGISTER_H6_ASSOCIATION_TRIAL_ON_DEVELOPMENT_ONLY_NO_HOLDOUT_NO_THRESHOLD_SEARCH",
+  "next_gate": "IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H6_ASSOC_001_ON_PRE2026_DEVELOPMENT_ONLY",
   "methodology_readiness": {
     "synthetic_price_volume_pit_smoke": "CI_GREEN_RUN_1",
     "future_row_trap": "PASS_IGNORED",
@@ -69,6 +69,9 @@
       "rows_processed_before_holdout": 18377820,
       "pairs_with_any_eligible_cutoff": 563,
       "deterministic_summary_sha256": "8a9c968250798c41ce6aa46c7fe6392791d1ec8dee68bfd07c455ecb45536427"
-    }
+    },
+    "association_trial": "research/v3/h6-price-volume-association-trial-v1.json",
+    "association_trial_id": "V3-H6-ASSOC-001",
+    "association_trial_executed": false
   }
 }

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T04:52:05Z",
+  "updated_at_utc": "2026-10-02T05:00:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -312,48 +312,51 @@
       "category": "state_signal",
       "source_version": "V3 H1 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Point-in-time semantics and the frozen physical feature-integrity run are green: 648 files, 18,377,820 pre-holdout rows, 422,536 cutoffs, 418,576 leader-available cutoffs. This proves data/feature integrity only; incremental association/net edge remains untested and 2026H1 stays sealed.",
+      "rationale": "Physical feature-integrity is green. A fixed, descriptive development-only association trial (V3-H1-ASSOC-001) is now preregistered with exact 1h/4h labels, chronological 4h purge/embargo, no selection and sealed 2026H1 holdout.",
       "evidence": [
         "research/v3/h1-cross-crypto-breadth-precheck-v1.json",
         "tools/v3-h1-breadth-pit-smoke.py",
         "docs/v3-research-framework.md",
         "tools/v3-h1-eur15-breadth-feature-integrity.py",
         "tools/run-minipc-v3-feature-integrity-gates.ps1",
-        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json"
+        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
+        "research/v3/h1-breadth-association-trial-v1.json"
       ],
-      "pending_gate": "V3_H1_PREREGISTER_DEVELOPMENT_ONLY_ASSOCIATION_TRIAL_NO_HOLDOUT_NO_THRESHOLD_SEARCH"
+      "pending_gate": "V3_H1_IMPLEMENT_VALIDATE_EXECUTE_ASSOC_001_PRE2026_ONLY"
     },
     {
       "id": "price_volume_trend_primitives",
       "category": "signal_state",
       "source_version": "V3 H6 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Transparent PIT price/volume primitives passed the frozen physical feature-integrity run on 648 files and 18,377,820 pre-holdout rows; 563 pairs had at least one eligible 1h+volume-ratio cutoff. This is feature integrity, not edge evidence.",
+      "rationale": "Physical feature-integrity is green. A fixed, descriptive development-only association trial (V3-H6-ASSOC-001) is now preregistered with exact 1h/4h labels, chronological 4h purge/embargo, no selection and sealed 2026H1 holdout.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "tools/v3-h6-price-volume-pit-smoke.py",
         "docs/v3-research-framework.md",
         "tools/v3-h6-eur15-feature-integrity.py",
         "tools/run-minipc-v3-feature-integrity-gates.ps1",
-        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json"
+        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
+        "research/v3/h6-price-volume-association-trial-v1.json"
       ],
-      "pending_gate": "V3_H6_PREREGISTER_DEVELOPMENT_ONLY_ASSOCIATION_TRIAL_NO_HOLDOUT_NO_THRESHOLD_SEARCH"
+      "pending_gate": "V3_H6_IMPLEMENT_VALIDATE_EXECUTE_ASSOC_001_PRE2026_ONLY"
     },
     {
       "id": "simple_price_volume_primitives",
       "category": "signal_state",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "The H6 physical feature-integrity run is green on pre-2026 development data only. No outcome labels, performance metrics, threshold selection or holdout access occurred.",
+      "rationale": "H6 physical feature-integrity is green and the next immutable research step is the fixed V3-H6-ASSOC-001 development-only association trial; no performance/winner claim is permitted.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "tools/v3-h6-price-volume-pit-smoke.py",
         "docs/v3-research-framework.md",
         "tools/v3-h6-eur15-feature-integrity.py",
         "tools/run-minipc-v3-feature-integrity-gates.ps1",
-        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json"
+        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
+        "research/v3/h6-price-volume-association-trial-v1.json"
       ],
-      "pending_gate": "V3_H6_PREREGISTER_DEVELOPMENT_ONLY_ASSOCIATION_TRIAL_NO_HOLDOUT_NO_THRESHOLD_SEARCH"
+      "pending_gate": "V3_H6_IMPLEMENT_VALIDATE_EXECUTE_ASSOC_001_PRE2026_ONLY"
     },
     {
       "id": "meta_take_no_take",

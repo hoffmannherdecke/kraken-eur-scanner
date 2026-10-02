@@ -7,6 +7,8 @@ name: V3 H1 breadth precheck guard
     paths:
       - 'research/v3/h1-cross-crypto-breadth-precheck-v1.json'
       - 'research/v3/h1-eur15-development-feature-trial-v1.json'
+      - 'research/v3/h1-association-trial-ledger-record-v1.json'
+      - 'research/v3/h1-breadth-association-trial-v1.json'
       - 'tools/v3-h1-eur15-breadth-feature-integrity.py'
       - 'tools/run-minipc-v3-feature-integrity-gates.ps1'
       - 'research/v3/fixtures/h1-cross-crypto-breadth-synthetic.json'
@@ -141,3 +143,34 @@ jobs:
         run: |
           python -m py_compile tools/v3-h1-eur15-breadth-feature-integrity.py
           python tools/v3-h1-eur15-breadth-feature-integrity.py --self-test
+
+
+      - name: Validate H1 association preregistration
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          s=json.loads(Path("research/v3/h1-breadth-association-trial-v1.json").read_text())
+          assert s["kind"]=="V3_H1_BREADTH_ASSOCIATION_TRIAL_V1"
+          assert s["status"]=="FROZEN_PREREGISTERED_NOT_EXECUTED"
+          assert s["trial_id"]=="V3-H1-ASSOC-001"
+          assert s["fixed_features"]==[
+            "target_return_1h","breadth_positive_share_1h","cross_sectional_median_return_1h",
+            "leader_minus_target_return_1h","target_minus_peer_median_return_1h"]
+          assert s["topology"]["sealed_holdout"]["status"]=="LOCKED_DO_NOT_READ_OR_LABEL"
+          assert s["topology"]["purge_seconds"]==14400
+          assert s["topology"]["embargo_seconds"]==14400
+          assert s["labels"]["exact_contiguous_future_required"] is True
+          assert s["outputs_guard"]["threshold_search"] is False
+          assert s["outputs_guard"]["pair_subset_search"] is False
+          assert s["outputs_guard"]["p_value_feature_selection"] is False
+          assert s["outputs_guard"]["automatic_winner_selection"] is False
+          assert s["runtime_guardrails"]["orders"] is False
+          assert s["runtime_guardrails"]["real_money_actions"] is False
+          r=json.loads(Path("research/v3/h1-association-trial-ledger-record-v1.json").read_text())
+          assert r["trial_id"]=="V3-H1-ASSOC-001"
+          assert r["dataset_sha256"]=="fc81b54cba6e12af3e9422dde9416179e6ef76af4831d48d839fbdb43018eaa4"
+          assert r["purge_seconds"]==14400 and r["embargo_seconds"]==14400
+          assert r["influenced_later_design"] is False
+          print("V3_H1_ASSOC_PREREG PASS fixed/descriptive/no-holdout/no-selection")
+          PY

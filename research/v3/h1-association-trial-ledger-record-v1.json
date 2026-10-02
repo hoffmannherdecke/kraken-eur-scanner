@@ -1,0 +1,111 @@
+{
+  "trial_id": "V3-H1-ASSOC-001",
+  "created_at_utc": "2026-10-02T05:00:00Z",
+  "parent_hypothesis": "V3-H1",
+  "strategy_revision": "V3-H1-ASSOC-001",
+  "code_fingerprint": "TO_BE_FILLED_WITH_EXECUTION_COMMIT_AT_LOCAL_RUN",
+  "feature_schema_version": "V3_H1_ASSOC_FEATURES_V1",
+  "dataset_snapshot": "KRAKEN_EUR15_NORMALIZED_V1__648_FILES__PRE2026_DEVELOPMENT_ONLY",
+  "dataset_sha256": "fc81b54cba6e12af3e9422dde9416179e6ef76af4831d48d839fbdb43018eaa4",
+  "universe_method": "ALL_NORMALIZED_PAIR_FILES_WITH_POINT_IN_TIME_DATA_AVAILABILITY_ONLY; NO CURRENT_LISTING_FILTER",
+  "train_window": {
+    "nominal_start_utc": "1970-01-01T00:00:00Z",
+    "nominal_end_utc_exclusive": "2024-01-01T00:00:00Z",
+    "effective_cutoff_end_utc_exclusive": "2023-12-31T20:00:00Z"
+  },
+  "calibration_window": {
+    "nominal_start_utc": "2024-01-01T00:00:00Z",
+    "effective_cutoff_start_utc": "2024-01-01T04:00:00Z",
+    "nominal_end_utc_exclusive": "2025-01-01T00:00:00Z",
+    "effective_cutoff_end_utc_exclusive": "2024-12-31T20:00:00Z"
+  },
+  "validation_window": {
+    "nominal_start_utc": "2025-01-01T00:00:00Z",
+    "effective_cutoff_start_utc": "2025-01-01T04:00:00Z",
+    "nominal_end_utc_exclusive": "2026-01-01T00:00:00Z",
+    "effective_cutoff_end_utc_exclusive": "2025-12-31T20:00:00Z"
+  },
+  "holdout_window": {
+    "start_utc": "2026-01-01T00:00:00Z",
+    "end_utc_exclusive": "2026-07-01T00:00:00Z",
+    "status": "LOCKED_DO_NOT_READ_OR_LABEL"
+  },
+  "purge_seconds": 14400,
+  "embargo_seconds": 14400,
+  "fee_model": {
+    "taker_pct_per_side": 0.6,
+    "applied_to_association_metrics": false,
+    "note": "Fee reference retained for research lineage; no trade/net-return metric in this association trial."
+  },
+  "spread_model": "NOT_APPLIED_ASSOCIATION_ONLY",
+  "slippage_model": "NOT_APPLIED_ASSOCIATION_ONLY",
+  "fill_ordering_policy": "NOT_APPLICABLE_ASSOCIATION_ONLY",
+  "stop_policy": "NOT_APPLICABLE_ASSOCIATION_ONLY",
+  "ttl_policy": "NOT_APPLICABLE_ASSOCIATION_ONLY",
+  "sizing_policy": "NOT_APPLICABLE_ASSOCIATION_ONLY",
+  "parameters": {
+    "labels": {
+      "future_return_1h": "close[t+4 exact contiguous 15m bars] / close[t] - 1",
+      "future_return_4h": "close[t+16 exact contiguous 15m bars] / close[t] - 1",
+      "label_visibility": "generated only after feature record at t is frozen",
+      "exact_contiguous_future_required": true,
+      "labels_crossing_split_boundary_forbidden": true,
+      "holdout_labels_forbidden": true
+    },
+    "features": [
+      "target_return_1h",
+      "breadth_positive_share_1h",
+      "cross_sectional_median_return_1h",
+      "leader_minus_target_return_1h",
+      "target_minus_peer_median_return_1h"
+    ],
+    "topology": {
+      "research_train": {
+        "nominal_start_utc": "1970-01-01T00:00:00Z",
+        "nominal_end_utc_exclusive": "2024-01-01T00:00:00Z",
+        "effective_cutoff_end_utc_exclusive": "2023-12-31T20:00:00Z"
+      },
+      "calibration": {
+        "nominal_start_utc": "2024-01-01T00:00:00Z",
+        "effective_cutoff_start_utc": "2024-01-01T04:00:00Z",
+        "nominal_end_utc_exclusive": "2025-01-01T00:00:00Z",
+        "effective_cutoff_end_utc_exclusive": "2024-12-31T20:00:00Z"
+      },
+      "validation": {
+        "nominal_start_utc": "2025-01-01T00:00:00Z",
+        "effective_cutoff_start_utc": "2025-01-01T04:00:00Z",
+        "nominal_end_utc_exclusive": "2026-01-01T00:00:00Z",
+        "effective_cutoff_end_utc_exclusive": "2025-12-31T20:00:00Z"
+      },
+      "sealed_holdout": {
+        "start_utc": "2026-01-01T00:00:00Z",
+        "end_utc_exclusive": "2026-07-01T00:00:00Z",
+        "status": "LOCKED_DO_NOT_READ_OR_LABEL"
+      },
+      "purge_seconds": 14400,
+      "embargo_seconds": 14400
+    },
+    "outputs_guard": {
+      "trade_return": false,
+      "fee_adjusted_return": false,
+      "strategy_equity_curve": false,
+      "threshold_search": false,
+      "pair_subset_search": false,
+      "month_subset_search": false,
+      "horizon_search": false,
+      "model_training": false,
+      "p_value_feature_selection": false,
+      "automatic_winner_selection": false,
+      "automatic_strategy_promotion": false
+    }
+  },
+  "metrics": {
+    "numeric_feature_label_pairs": "all 5 fixed features x {future_return_1h,future_return_4h}",
+    "observation_weighted": "count, missingness, means, covariance, Pearson r by split",
+    "equal_pair_weighted": "per-pair Pearson r where defined; report eligible-pair count and median per-pair r by split",
+    "stability": "report calibration-vs-validation sign agreement only; do not select by it",
+    "p_values": false,
+    "multiple_testing_selection": false
+  },
+  "influenced_later_design": false
+}

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H1_CROSS_CRYPTO_BREADTH_PRECHECK_V1",
   "hypothesis_id": "V3-H1",
-  "status": "PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING",
+  "status": "ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED",
   "prepared_at_utc": "2026-10-01T18:25:00Z",
   "purpose": "Establish point-in-time-safe cross-crypto lead/lag and breadth feature semantics before any performance trial.",
   "source_priority": [
@@ -69,7 +69,7 @@
     "real_money_actions": false,
     "automatic_strategy_promotion": false
   },
-  "next_gate": "PREREGISTER_H1_ASSOCIATION_TRIAL_ON_DEVELOPMENT_ONLY_NO_HOLDOUT_NO_THRESHOLD_SEARCH",
+  "next_gate": "IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H1_ASSOC_001_ON_PRE2026_DEVELOPMENT_ONLY",
   "methodology_readiness": {
     "synthetic_pit_multi_pair_smoke": "CI_GREEN_RUN_3",
     "future_rows_leakage_trap": "PASS_IGNORED",
@@ -94,6 +94,9 @@
       "cutoffs_processed": 422536,
       "leader_cutoffs": 418576,
       "deterministic_summary_sha256": "9e482f1bcfce81d74e463f943f8aa4f3aff4994d1010d6216cfe39ecc35e0a66"
-    }
+    },
+    "association_trial": "research/v3/h1-breadth-association-trial-v1.json",
+    "association_trial_id": "V3-H1-ASSOC-001",
+    "association_trial_executed": false
   }
 }

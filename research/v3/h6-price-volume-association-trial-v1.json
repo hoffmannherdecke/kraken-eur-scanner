@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H6_PRICE_VOLUME_ASSOCIATION_TRIAL_V1",
+  "hypothesis_id": "V3-H6",
+  "trial_id": "V3-H6-ASSOC-001",
+  "status": "FROZEN_PREREGISTERED_NOT_EXECUTED",
+  "frozen_at_utc": "2026-10-02T05:00:00Z",
+  "parent_evidence": "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
+  "purpose": "Measure fixed descriptive association between transparent price/volume primitives and fixed 1h/4h forward Kraken-EUR returns without selecting thresholds or a trading rule.",
+  "dataset": {
+    "source": "Kraken downloadable OHLCVT full history through 2026-06-30",
+    "normalized_schema": "KRAKEN_EUR15_NORMALIZED_V1",
+    "interval_minutes": 15,
+    "expected_normalized_pair_files": 648,
+    "raw_archive_sha256": "fc81b54cba6e12af3e9422dde9416179e6ef76af4831d48d839fbdb43018eaa4",
+    "development_end_utc_exclusive": "2026-01-01T00:00:00Z",
+    "missing_interval_semantics": "NO_TRADE_INTERVAL_ABSENT_DO_NOT_ZERO_FILL",
+    "historical_universe_method": "ALL_NORMALIZED_PAIR_FILES_WITH_POINT_IN_TIME_DATA_AVAILABILITY_ONLY; NO CURRENT_LISTING_FILTER"
+  },
+  "topology": {
+    "research_train": {
+      "nominal_start_utc": "1970-01-01T00:00:00Z",
+      "nominal_end_utc_exclusive": "2024-01-01T00:00:00Z",
+      "effective_cutoff_end_utc_exclusive": "2023-12-31T20:00:00Z"
+    },
+    "calibration": {
+      "nominal_start_utc": "2024-01-01T00:00:00Z",
+      "effective_cutoff_start_utc": "2024-01-01T04:00:00Z",
+      "nominal_end_utc_exclusive": "2025-01-01T00:00:00Z",
+      "effective_cutoff_end_utc_exclusive": "2024-12-31T20:00:00Z"
+    },
+    "validation": {
+      "nominal_start_utc": "2025-01-01T00:00:00Z",
+      "effective_cutoff_start_utc": "2025-01-01T04:00:00Z",
+      "nominal_end_utc_exclusive": "2026-01-01T00:00:00Z",
+      "effective_cutoff_end_utc_exclusive": "2025-12-31T20:00:00Z"
+    },
+    "sealed_holdout": {
+      "start_utc": "2026-01-01T00:00:00Z",
+      "end_utc_exclusive": "2026-07-01T00:00:00Z",
+      "status": "LOCKED_DO_NOT_READ_OR_LABEL"
+    },
+    "purge_seconds": 14400,
+    "embargo_seconds": 14400
+  },
+  "labels": {
+    "future_return_1h": "close[t+4 exact contiguous 15m bars] / close[t] - 1",
+    "future_return_4h": "close[t+16 exact contiguous 15m bars] / close[t] - 1",
+    "label_visibility": "generated only after feature record at t is frozen",
+    "exact_contiguous_future_required": true,
+    "labels_crossing_split_boundary_forbidden": true,
+    "holdout_labels_forbidden": true
+  },
+  "outputs_guard": {
+    "trade_return": false,
+    "fee_adjusted_return": false,
+    "strategy_equity_curve": false,
+    "threshold_search": false,
+    "pair_subset_search": false,
+    "month_subset_search": false,
+    "horizon_search": false,
+    "model_training": false,
+    "p_value_feature_selection": false,
+    "automatic_winner_selection": false,
+    "automatic_strategy_promotion": false
+  },
+  "runtime_guardrails": {
+    "network_used": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "paper_shadow_runtime_change_allowed": false,
+    "orders": false,
+    "leverage": false,
+    "real_money_actions": false
+  },
+  "search_accounting": {
+    "counts_as_one_preregistered_trial": true,
+    "any_feature_label_horizon_split_or_metric_change_requires_new_trial_id": true,
+    "no_winner_is_valid_outcome": true,
+    "result_may_inform_later_distinct_preregistered_candidate_only": true
+  },
+  "fixed_numeric_features": [
+    "price_return_1h",
+    "price_return_4h",
+    "volume_ratio_recent_vs_prior_1h"
+  ],
+  "fixed_boolean_features": [
+    "price_up_with_volume_expansion",
+    "price_down_with_volume_expansion"
+  ],
+  "metrics": {
+    "numeric_feature_label_pairs": "all 3 numeric features x {future_return_1h,future_return_4h}",
+    "numeric_observation_weighted": "count, missingness, means, covariance, Pearson r by split",
+    "numeric_equal_pair_weighted": "per-pair Pearson r where defined; eligible-pair count and median per-pair r by split",
+    "boolean_effects": "for each boolean feature x label: true count, false count, mean label true, mean label false, true-minus-false mean by split",
+    "boolean_equal_pair_weighted": "per-pair true-minus-false mean where both states occur; eligible-pair count and median effect by split",
+    "stability": "report calibration-vs-validation effect-sign agreement only; do not select by it",
+    "p_values": false,
+    "multiple_testing_selection": false
+  },
+  "interpretation": "Association/effect-size screen only. Existing >1 volume-expansion flag is part of the frozen primitive definition, not a threshold sweep.",
+  "next_gate_after_execution": "REVIEW_FIXED_ASSOCIATION_EFFECT_SIZES_AND_SEARCH_ACCOUNTING_WITH_HOLDOUT_STILL_SEALED"
+}
