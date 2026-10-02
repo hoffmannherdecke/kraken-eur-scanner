@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "kind": "MINIPC_EXTERNAL_DRIVE_FAT32_PRESERVATION_REPAIR_EVIDENCE_V1",
+  "status": "PASS_READY_FOR_SEPARATE_NTFS_CONVERSION",
+  "observed_local": "2026-10-02T13:22:04+02:00",
+  "source": "physical MINI-PC PowerShell screenshot",
+  "drive": "D:",
+  "label": "MISTRAL_450",
+  "post_repair_chkdsk": {
+    "filesystem_checked": true,
+    "problems_found": false,
+    "further_action_required": false
+  },
+  "manifest_comparison": {
+    "pre_files": 53938,
+    "post_files": 53939,
+    "missing_preexisting_files": 0,
+    "size_changed_preexisting_files": 0,
+    "recovered_chk_copied_to_c": 1
+  },
+  "local_report": "C:\\Users\\ADMIN\\Trading\\Logs\\external-drive-d-repair-report-20261002-132204.json",
+  "interpretation": {
+    "existing_visible_files_preserved": true,
+    "one_additional_recovery_file_created": true,
+    "fat32_repair_gate_complete": true,
+    "ntfs_conversion_may_proceed_as_separate_gate": true
+  },
+  "guardrails": {
+    "format_performed": false,
+    "filesystem_conversion_performed": false,
+    "existing_file_delete_performed": false
+  }
+}
