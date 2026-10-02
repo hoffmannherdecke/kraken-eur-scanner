@@ -178,8 +178,16 @@ Die letzten Chats wurden gegen den aktuellen Projektstand rekonstruiert. Entsche
 - 28.09. ca. 04:17: `Krypto MAIN + Paper – sparsam` vollständig deaktiviert; technische MAIN-/Paper-Routine dauerhaft aus Work herausgezogen.
 - Danach als **einziger ausdrücklich vorgesehener Work-Analyse-Nachfolger**: `Krypto Paper – gezielte Analyse`, ursprünglich Restart **04.10.2026 10:15**, danach **alle 2 Tage**. Substantive Analyse nur bei **>=3 reifen Paper-Fällen**, **Serienabschluss** oder **UNKNOWN/Blocker**.
 - Ebenfalls deaktiviert geblieben: `Krypto-Slack A/B`, `Krypto Tagesstatus`, `Paper-Handlungsbedarf`, alte Test-/ALT-Aufgaben. Diese Funktionen wurden inzwischen technisch durch GitHub/MINI-PC/Supabase/Slack ersetzt und sollen nicht wegen neuem Kontingent zurück in Work verschoben werden.
-- `Weltlagen-Watch / Weltlagen-Frühwarnsystem` wurde während der Sparphase deaktiviert. Es gibt in den rekonstruierten Chats **keine spätere eindeutige Festlegung**, dass es automatisch wieder hochgefahren werden muss. Am 04.10. nur auf einzigartigen Zusatznutzen prüfen; kein 6h-Dauerpolling vorsorglich reaktivieren.
+- `Weltlagen-Watch / Weltlagen-Frühwarnsystem` ist **dauerhaft aus dem Projektumfang entfernt**. Nicht reaktivieren, nicht neu bewerten, nicht schedulen und kein Work-Kontingent dafür verwenden.
 - 29.09.: zusätzliche Leitplanke bestätigt: MINI-PC-Einrichtung ohne unnötigen Work-Verbrauch; Work nur dort, wo lokaler Datei-/App-/Browserkontext einen echten Vorteil bringt.
+
+### Verbindlicher Work-Scope ab 2026-10-02
+
+- Work ausschließlich für das **Krypto-Projekt und MINI-PC-bezogene Aufgaben** verwenden.
+- Nutzung bewusst **sehr schlank, gezielt und ereignis-/bedarfsgesteuert**, um das Work-/Datenlimit zu schonen.
+- Keine allgemeinen News-/Geopolitik-/Weltlagen-Watches in Work.
+- Keine Reaktivierung alter Dauerpoller nur weil Kontingent wieder verfügbar ist.
+- Priorität haben konkrete Krypto-/Paper-/Shadow-/V3-/MINI-PC-Aufgaben, bei denen Work gegenüber GitHub/MINI-PC/Supabase/API tatsächlich Zusatznutzen hat.
 
 ### Reaktivierungsreview ab 2026-10-04
 
