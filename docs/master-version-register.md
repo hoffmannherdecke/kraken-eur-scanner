@@ -74,7 +74,7 @@ Pflicht für Auswertung und nächste Version:
 
 | Komponente | Version / Stand | Status | Verknüpfung |
 |---|---|---|---|
-| Mini-PC Hardware | Dell OptiPlex 5060 Micro, i5-8500T, 16 GB, 256 GB SSD | CORE COMMISSIONING NEAR COMPLETE / FINAL FIREWALL SCOPE AUDIT PENDING | Windows/LAN/RDP/WireGuard/Git/Python, power/restart/Internet recovery, watchdog/supervisor, Kraken realtime, Altrady transport, backup/restore, D: NTFS and post-reboot 11-task recovery verified; Defender active; no extra AV/native-app/weekly-reboot requirement adopted. One enhanced read-only RDP/firewall scope audit remains in Mini-PC runbook. |
+| Mini-PC Hardware | Dell OptiPlex 5060 Micro, i5-8500T, 16 GB, 256 GB SSD | CORE COMMISSIONING COMPLETE / OPTIONAL HARDENING DEFERRED | Windows/LAN/RDP/WireGuard/Git/Python, power/restart/Internet recovery, watchdog/supervisor, Kraken realtime, Altrady transport, backup/restore, D: NTFS and post-reboot 11-task recovery verified; Defender active; no extra AV/native-app/weekly-reboot requirement adopted. RDP firewall scope was audited and rollback snapshot exported; broad Windows RDP Any/Any scope is documented as optional hardening, not a commissioning blocker, because approved external administration is VPN-first and already physically verified. |
 | Betriebssystem | Windows 11 Pro, Build 26200 | VERIFIED | lokaler Sammeltest / next-gate |
 | Netzwerk lokal | LAN über FRITZ!Box 7590 AX | ACTIVE / VERIFIED | lokaler Kraken HTTPS/WebSocket-Smoke erfolgreich |
 | Interner Fernzugriff | Windows RDP im LAN | ACTIVE | MINI-PC während Einrichtung erfolgreich per RDP administriert |
