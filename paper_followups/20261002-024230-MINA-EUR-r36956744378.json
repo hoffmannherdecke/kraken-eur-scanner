@@ -1,0 +1,52 @@
+{
+  "baseline_ask_eur": 0.1394,
+  "candidate_id": "20261002-024230-MINA-EUR-r36956744378",
+  "evaluated_at_utc": "2026-10-02T02:42:59.758722Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-02T02:42:30Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 29.759,
+    "detection_price_eur": 0.1391,
+    "evaluated_at_utc": "2026-10-02T02:42:59.758722Z",
+    "evaluation_ask_eur": 0.1394,
+    "flagged_as_already_run": true,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-01T23:48:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 4.117,
+      "price_eur": 0.1336
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "positive_multi_period_momentum",
+      "broad_market_positive",
+      "near_7d_high_after_rapid_run",
+      "volume_confirmation_weak",
+      "round_trip_costs_material",
+      "no_coin_specific_catalyst_evidence"
+    ],
+    "scan_step_started_at_utc": "2026-10-02T02:41:00Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 4.116766467065869,
+      "ret15_live_pct": 1.0901162790697638,
+      "ret1h_pct": 2.1292217327459673,
+      "ret3h_pct": 3.343239227340278,
+      "scanner_late_flag": false,
+      "score": 10.3
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-10-02T02:43:54.603446Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "MINA/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01"
+}
