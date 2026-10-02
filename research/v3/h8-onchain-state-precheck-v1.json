@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H8_ONCHAIN_STATE_PRECHECK_V1",
   "hypothesis_id": "V3-H8",
-  "status": "PROSPECTIVE_ONLY_STATE_CONTRACT_FROZEN_CAPTURE_SMOKE_PENDING",
+  "status": "PROSPECTIVE_ONLY_STATE_CAPTURE_GREEN_NOT_SCHEDULED",
   "prepared_at_utc": "2026-10-01T18:40:00Z",
   "purpose": "Audit public on-chain metric coverage and time-availability semantics before any historical or prospective signal test.",
   "first_source": "coinmetrics_community_network_data",
@@ -53,7 +53,7 @@
     "leverage_allowed": false,
     "real_money_actions_allowed": false
   },
-  "next_gate": "RUN_ONE_BOUNDED_PROSPECTIVE_H8_STATE_CAPTURE_NO_OUTCOMES",
+  "next_gate": "ACCUMULATE_ADDITIONAL_BOUNDED_PROSPECTIVE_STATE_CAPTURES_BEFORE_ANY_OUTCOME_ASSOCIATION_NO_AUTO_SCHEDULE",
   "coverage_readiness": {
     "audit": "CI_GREEN_RUN_1",
     "requested_assets": [
@@ -189,6 +189,16 @@
     "prospective_retrieved_at_upper_bound_state_capture_allowed": true,
     "historical_backfill_performance_trial_allowed": false,
     "prospective_state_contract": "research/v3/h8-prospective-onchain-state-contract-v1.json",
-    "prospective_state_capture_tool": "tools/v3-h8-prospective-state-capture.py"
+    "prospective_state_capture_tool": "tools/v3-h8-prospective-state-capture.py",
+    "prospective_state_smoke": {
+      "status": "PASS",
+      "github_run_number": 12,
+      "requested_assets": 5,
+      "returned_assets": 4,
+      "missing_assets": 1,
+      "missing_asset_policy": "KEEP_MISSING_NO_BACKFILL",
+      "outcomes_joined": false,
+      "thresholds_selected": false
+    }
   }
 }
