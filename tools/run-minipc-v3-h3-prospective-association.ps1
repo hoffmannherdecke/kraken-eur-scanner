@@ -136,7 +136,29 @@ try{
     Write-Host ("Counts: BTC="+$r.counts.'BTC/EUR'+" ETH="+$r.counts.'ETH/EUR'+" SOL="+$r.counts.'SOL/EUR')
     Write-Host ("Report: "+$out)
     Write-Host ("SHA256: "+(Get-FileHash -Algorithm SHA256 -LiteralPath $out).Hash.ToLowerInvariant())
-    Write-Host "Need >=3 x >=1800s sessions across >=2 UTC dates and >=1000 valid feature rows/symbol before effect-size review."
+
+    $sessionFiles=@(Get-ChildItem -LiteralPath $reports -Filter "v3-h3-assoc-001-session-*.json"|Sort-Object Name)
+    $dates=@{}
+    $totals=@{"BTC/EUR"=0;"ETH/EUR"=0;"SOL/EUR"=0}
+    $eligibleSessions=0
+    foreach($sf in $sessionFiles){
+      $s=Get-Content $sf.FullName -Raw|ConvertFrom-Json
+      if($s.trial_id -ne "V3-H3-ASSOC-001" -or $s.status -ne "PASS"){continue}
+      if([double]$s.duration_seconds -ge 1800){$eligibleSessions++}
+      $d=([string]$s.started_at_utc).Substring(0,10);$dates[$d]=$true
+      foreach($sym in @("BTC/EUR","ETH/EUR","SOL/EUR")){
+        $totals[$sym]+=[int]$s.counts.$sym
+      }
+    }
+    $gateMet=($eligibleSessions -ge 3 -and $dates.Count -ge 2 -and $totals["BTC/EUR"] -ge 1000 -and $totals["ETH/EUR"] -ge 1000 -and $totals["SOL/EUR"] -ge 1000)
+    Write-Host ("Collection gate progress: eligible_sessions="+$eligibleSessions+" utc_dates="+$dates.Count+
+      " BTC_rows="+$totals["BTC/EUR"]+" ETH_rows="+$totals["ETH/EUR"]+" SOL_rows="+$totals["SOL/EUR"]+
+      " gate_met="+$gateMet)
+    if($gateMet){
+      Write-Host "COLLECTION GATE MET. Effect-size evaluation is now permitted with -Evaluate."
+    } else {
+      Write-Host "Collection gate not met yet. Run another >=1800s session; no effect-size conclusion is permitted."
+    }
   }
 } finally {
   Pop-Location
