@@ -31,15 +31,29 @@ jobs:
           from pathlib import Path
           j=json.loads(Path('research/v3/h9-maker-taker-readiness-v1.json').read_text('utf-8'))
           assert j['kind']=='V3_H9_MAKER_TAKER_READINESS_V1'
-          assert j['status'] in {'DEFERRED_FILL_DATA_NOT_READY','DEFERRED_FILL_MODEL_BOOK_TRADE_CLOCK_SMOKE_PREPARED','DEFERRED_FILL_MODEL_PUBLIC_CLOCK_GREEN_PHYSICAL_AND_MODEL_GATES_PENDING'}
+          assert j['status'] in {'DEFERRED_FILL_DATA_NOT_READY','DEFERRED_FILL_MODEL_BOOK_TRADE_CLOCK_SMOKE_PREPARED','DEFERRED_FILL_MODEL_PUBLIC_CLOCK_GREEN_PHYSICAL_AND_MODEL_GATES_PENDING','DEFERRED_FILL_MODEL_PHYSICAL_CLOCK_GREEN_FEE_DEADLINE_QUEUE_GATES_PENDING','DEFERRED_FILL_MODEL_PUBLIC_FEES_VERSIONED_ACCOUNT_TIER_AND_DEADLINE_QUEUE_GATES_PENDING'}
           e=j['current_evidence']
           assert e['public_rest_l2_snapshot']=='GREEN_H3_REST_DEPTH'
           if j['status']=='DEFERRED_FILL_DATA_NOT_READY':
               assert e['public_ws_book_delta_capture']=='NOT_YET_PROVEN'
               assert e['synchronized_book_and_trade_clock']=='NOT_YET_PROVEN'
           else:
-              assert e['public_ws_book_delta_capture']=='GREEN_H3_CLOUD_CHECKSUM_RECONCILIATION__PHYSICAL_MINIPC_PENDING'
-              assert e['synchronized_book_and_trade_clock'] in {'CLOUD_SMOKE_PREPARED','GREEN_CLOUD_SAME_CONNECTION_PROTOCOL__PHYSICAL_MINIPC_PENDING'}
+              assert e['public_ws_book_delta_capture'] in {
+                  'GREEN_H3_CLOUD_CHECKSUM_RECONCILIATION__PHYSICAL_MINIPC_PENDING',
+                  'GREEN_H3_CLOUD_AND_PHYSICAL_MINIPC_CHECKSUM_RECONCILIATION'
+              }
+              assert e['synchronized_book_and_trade_clock'] in {
+                  'CLOUD_SMOKE_PREPARED',
+                  'GREEN_CLOUD_SAME_CONNECTION_PROTOCOL__PHYSICAL_MINIPC_PENDING',
+                  'GREEN_CLOUD_AND_PHYSICAL_MINIPC_SAME_CONNECTION_PROTOCOL'
+              }
+              if 'physical_book_trade_clock' in e:
+                  p=e['physical_book_trade_clock']
+                  assert p['trades']>0
+                  assert p['safely_aligned_preceding_book_trades']>0
+                  assert p['duplicate_trade_ids']==0
+                  assert p['out_of_order_trade_ids']==0
+                  assert p['book_checksum_fail']==0
           assert e['queue_position_model']=='NOT_AVAILABLE'
           assert e['maker_fill_probability_model']=='NOT_AVAILABLE'
           assert 'queue_position' in j['public_rest_snapshot_is_insufficient_for']
@@ -54,6 +68,10 @@ jobs:
           assert j['runtime_guardrails']['real_money_actions_allowed'] is False
           if j['status']=='DEFERRED_FILL_DATA_NOT_READY':
               assert j['next_gate']=='COMPLETE_H3_BOUNDED_PUBLIC_WS_BOOK_CAPTURE_AND_SYNCHRONIZED_TRADE_PRINT_SMOKE_BEFORE_H9_MODELLING'
+          if j['status']=='DEFERRED_FILL_MODEL_PUBLIC_FEES_VERSIONED_ACCOUNT_TIER_AND_DEADLINE_QUEUE_GATES_PENDING':
+              assert e['public_fee_schedule']['status']=='PUBLIC_SCHEDULE_VERSIONED_ACCOUNT_TIER_UNVERIFIED'
+              assert e['public_fee_schedule']['account_specific_fee_tier_verified'] is False
+              assert j['next_gate']=='VERIFY_ACCOUNT_SPECIFIC_FEE_TIER_THEN_PREREGISTER_DEADLINE_CLEANUP_AND_EXPLICIT_QUEUE_ASSUMPTION_BEFORE_ANY_FILL_MODEL'
           print('V3_H9_READINESS PASS fill-model-blocked/no-orders/no-holdout')
           PY
 
