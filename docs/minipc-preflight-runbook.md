@@ -94,7 +94,7 @@ Reihenfolge:
 2. Altrady als **zusätzlicher** Trigger, nie exklusiv.
 3. Supabase schlank als sekundäre State-/Ergebnisschicht. Der Archiv-Sync ist inzwischen E2E-verifiziert und wird nach erfolgreichem Paper-Runtime-Abschluss automatisch nachgezogen; Supabase bleibt fail-soft und keine Live-Abhängigkeit.
 4. GitHub/API/Slack.
-5. ChatGPT Desktop installieren; Work nur für Aufgaben mit echtem Rechner-/Browserkontext.
+5. ChatGPT Desktop installieren/aktualisieren und Work **nur** für Aufgaben mit echtem lokalen Datei-/Desktop-/Browserkontext verwenden. Für direkten Zugriff auf lokale MINI-PC-Dateien/Apps ist die Desktop-App der vorgesehene Pfad; Browser-/Mobile-Work bleibt Cloud-basiert.
 6. Uptime Kuma/Grafana nur bei belegtem Zusatznutzen.
 
 ## Phase G — V2R3 → neue Infrastruktur → V2R4
@@ -160,12 +160,45 @@ Diese Werte werden beim ersten Start erfasst und ins Versionsregister übernomme
 - gemessene Latenz zu Kraken, Supabase und GitHub.
 - Verhalten nach Stromverlust, Neustart und Internetunterbrechung.
 
-## Work-Credits
+## ChatGPT Desktop / Work — lokale Einbindung und Reaktivierungs-Gate
+
+### Lokale MINI-PC-Einbindung
+
+- Für Work mit **lokalen MINI-PC-Dateien oder Desktop-Apps** die aktuelle ChatGPT-Desktop-App auf Windows installieren/aktualisieren und dort ChatGPT → Work verwenden; der reine Browserzugang bleibt für lokale Dateien nicht gleichwertig.
+- Zugriff nach Least-Privilege: standardmäßig nur der konkret benötigte Projektordner, insbesondere `%USERPROFILE%\Trading\Repos\kraken-eur-scanner` und bei Bedarf ausgewählte Research-/Report-Verzeichnisse.
+- `Trading\Secrets`, private API-Schlüssel, Passwortspeicher, Browser-Credentials und andere nicht benötigte sensible Pfade **nicht** für Work freigeben.
+- Work bleibt **kein kritischer Runtime-Bestandteil**: Scanner, Evaluator, Watchdog, Realtime, Backup, Status/Health, Slack-Transport und Persistenz müssen unabhängig von Work weiterlaufen.
+- Erster lokaler Work-Smoke nach Verfügbarkeit: nur read-only einen bekannten Repo-/Report-Pfad öffnen, Inhalt plausibilisieren und schließen; keine Strategieänderung, kein Secret-Zugriff, keine Order-/Account-Aktion.
+
+### Reaktivierungsreview ab 2026-10-04
+
+Fester Reviewpunkt: **`WORK-REACTIVATION-20261004`**.
+
+Ab 04.10.2026 zuerst prüfen, ob Work-Kontingent und lokaler Desktop-Zugriff im Konto tatsächlich wieder verfügbar sind. Das Datum ist ein **Prüfzeitpunkt**, keine technische Garantie für accountseitige Freischaltung.
+
+Beim Review **nicht einfach alte Work-Dauerläufe wieder einschalten**. Die zwischenzeitlich erfolgreich ausgelagerten Funktionen bleiben außerhalb von Work:
+- Kraken-EUR-Scanner;
+- Watchdog/Health/Recovery;
+- Read-only Markt-/Snapshot-Erfassung;
+- Paper-Evaluator + WAIT-Revalidation;
+- Paper-Follow-up/Missed-Move-Audit;
+- Slack-/Push-Transport;
+- MAIN-/Paper-Routinechecks, soweit GitHub/MINI-PC/Supabase diese inzwischen zuverlässig erledigen.
+
+Work soll nach der Freischaltung gezielt für den Teil reaktiviert werden, der **zusätzlichen Nutzen** bringt:
+- tiefe, zusammenhängende Strategie-/Paper-/Shadow-Auswertungen über viele Artefakte;
+- lokale Datei-/Desktopaufgaben auf dem MINI-PC, die über GitHub/Supabase/API nicht sinnvoll lösbar sind;
+- komplexe Browser-/UI-Arbeiten, z. B. Altrady/Supabase/GitHub oder später accountbezogene read-only Prüfungen, wenn dafür wirklich UI-Kontext nötig ist;
+- einmalige Audits, Fehlersuche, Umbauten und größere Multi-Step-Arbeiten.
+
+Start nach Wiederverfügbarkeit zunächst **manuell/gezielt**, nicht wieder sofort 4× täglich oder stündlich. Erst nach kurzer Nutzungsmessung entscheiden, ob irgendeine wiederkehrende Work-Aufgabe echten Mehrwert gegenüber der inzwischen schlanken GitHub/MINI-PC-Architektur hat.
+
+### Work-Credits / Kostenregel
 
 - keine zusätzlichen Work-Credits vorsorglich kaufen.
-- Basis-Setup, LAN, RDP, Energie und Sicherheit ohne Work erledigen.
-- Work erst bei echtem Mehrwert für Browser-/Datei-/Desktopkontext verwenden.
-- falls vor der regulären Freischaltung keine Credits verfügbar sind, erst dann gezielt nachkaufen.
+- Basisbetrieb und 24/7-Runtime ohne Work aufrechterhalten.
+- Work-Credits strikt getrennt von API-Token-/€-Kosten behandeln.
+- nur gezielt nachkaufen, wenn vor regulärer Freischaltung eine konkrete nicht auslagerbare Work-Aufgabe ansteht.
 
 ## Inbetriebnahme-Stand 2026-09-30
 
