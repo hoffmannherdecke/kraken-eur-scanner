@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_PROSPECTIVE_ORDERBOOK_STATE_ASSOCIATION_TRIAL_V1",
+  "hypothesis_id": "V3-H3",
+  "trial_id": "V3-H3-ASSOC-001",
+  "status": "FROZEN_PREREGISTERED_CAPTURE_NOT_STARTED",
+  "frozen_at_utc": "2026-10-02T08:16:00Z",
+  "parent_state_contract": "research/v3/h3-orderbook-state-contract-v1.json",
+  "parent_state_evidence": "research/v3/h3-orderbook-state-evidence-20261002.json",
+  "purpose": "Measure prospective descriptive association between fixed checksum-valid Kraken depth-10 orderbook state features and later Kraken mid-price returns, without thresholds, signal construction, fill claims, routing or strategy promotion.",
+  "source": {
+    "endpoint": "wss://ws.kraken.com/v2",
+    "channel": "book",
+    "symbols": [
+      "BTC/EUR",
+      "ETH/EUR",
+      "SOL/EUR"
+    ],
+    "depth": 10,
+    "reconciliation": "apply levels -> trim depth10 -> validate Kraken CRC32 before state is eligible",
+    "public_endpoint_only": true
+  },
+  "fixed_features": [
+    "spread_bps",
+    "bid_depth_quote_top10",
+    "ask_depth_quote_top10",
+    "depth_imbalance_top10"
+  ],
+  "sampling": {
+    "observation_clock": "FIXED_5_SECOND_WALL_CLOCK_GRID",
+    "state_rule": "latest checksum-valid reconciled state at or before each grid timestamp",
+    "maximum_state_age_ms": 2000,
+    "stale_state_action": "MARK_MISSING_DO_NOT_FORWARD_FILL",
+    "raw_book_archive": false,
+    "per_message_rows_persisted": false,
+    "persisted_row_content": "timestamp,symbol,mid_price,four_fixed_features,source_age_ms,session_id only"
+  },
+  "labels": {
+    "future_mid_return_1m": "mid[t+60s exact grid] / mid[t] - 1",
+    "future_mid_return_5m": "mid[t+300s exact grid] / mid[t] - 1",
+    "future_mid_return_15m": "mid[t+900s exact grid] / mid[t] - 1",
+    "exact_future_grid_required": true,
+    "missing_future_state": "LABEL_MISSING",
+    "label_visibility": "generated only after feature row at t is frozen"
+  },
+  "collection_gate": {
+    "minimum_distinct_sessions": 3,
+    "minimum_session_seconds": 1800,
+    "minimum_distinct_utc_dates": 2,
+    "minimum_valid_feature_rows_per_symbol": 1000,
+    "interpretation_before_gate": "DATA_QUALITY_ONLY_NO_EFFECT_SIZE_CONCLUSION"
+  },
+  "metrics": {
+    "per_symbol": "count, missingness, Pearson r for each fixed feature x each fixed horizon",
+    "equal_session_weighted": "median session Pearson r where defined",
+    "pooled_observation_weighted": "Pearson r with session counts reported explicitly",
+    "p_values": false,
+    "threshold_search": false,
+    "feature_transform_search": false,
+    "horizon_search": false,
+    "pair_selection": false,
+    "model_training": false
+  },
+  "search_accounting": {
+    "counts_as_one_preregistered_trial": true,
+    "influenced_later_design": false,
+    "no_winner_is_valid_outcome": true,
+    "any_feature_symbol_horizon_sampling_freshness_metric_or_collection_gate_change_requires_new_trial_id": true
+  },
+  "prohibited": [
+    "directional trading signal",
+    "feature threshold selection",
+    "pair selection",
+    "maker fill probability inference",
+    "queue position inference",
+    "order routing decision",
+    "trade return or fee-adjusted return",
+    "active V2R3/V2R4 mutation",
+    "sealed historical holdout access",
+    "automatic strategy promotion",
+    "orders or real-money actions"
+  ],
+  "next_gate_after_freeze": "IMPLEMENT_AND_VALIDATE_BOUNDED_CAPTURE_ASSOCIATION_RUNNER_THEN_RUN_PROSPECTIVE_SESSIONS"
+}
