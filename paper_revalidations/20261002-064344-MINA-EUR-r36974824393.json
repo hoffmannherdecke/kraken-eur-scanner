@@ -1,0 +1,206 @@
+{
+  "altname": "MINAEUR",
+  "candidate_id": "20261002-064344-MINA-EUR-r36974824393",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained continuation above the recent 0.148 high",
+      "A defined structural invalidation with acceptable after-cost risk/reward"
+    ],
+    "reason_codes": [
+      "extended_after_sharp_run",
+      "breakout_retraced",
+      "major_market_weak",
+      "round_trip_cost_hurdle",
+      "insufficient_remaining_reward",
+      "derivatives_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The prior breakout trigger was exceeded, but price then pulled back from 0.148 to 0.1445. At the 0.1467 ask, chasing an extended move in a weak major-market regime lacks a clear after-cost edge or reliable confirmation plan.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "MINAUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_MINAUSD",
+          "PI_MINAUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.1467,
+      "bid": 0.1463,
+      "last": 0.1445,
+      "spread_pct": 0.2730375426621049
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "70",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.12504255374865547,
+          "ret3h_pct": -1.0104195460249654
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.12298498592688833,
+          "ret3h_pct": -0.717517855897476
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.6004064289673039,
+          "ret3h_pct": -0.9024772078460308
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T07:38:43.259450Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0a212a724b1d3e39006abf5f8438a887d28bd608320878976f"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.1467,
+    "bid": 0.1463,
+    "last": 0.1445,
+    "spread_pct": 0.2730375426621049
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.1418,
+      "high": 0.1418,
+      "low": 0.1401,
+      "open": 0.1401,
+      "trades": 10,
+      "ts": 1790922600,
+      "volume": 998.2665544,
+      "vwap": 0.1406
+    },
+    {
+      "close": 0.1422,
+      "high": 0.1422,
+      "low": 0.1421,
+      "open": 0.1421,
+      "trades": 3,
+      "ts": 1790923500,
+      "volume": 1908.7744394,
+      "vwap": 0.1421
+    },
+    {
+      "close": 0.148,
+      "high": 0.148,
+      "low": 0.1428,
+      "open": 0.1428,
+      "trades": 23,
+      "ts": 1790924400,
+      "volume": 55487.78870515,
+      "vwap": 0.1447
+    },
+    {
+      "close": 0.1456,
+      "high": 0.1474,
+      "low": 0.1454,
+      "open": 0.1474,
+      "trades": 25,
+      "ts": 1790925300,
+      "volume": 25639.06396217,
+      "vwap": 0.1459
+    },
+    {
+      "close": 0.1445,
+      "high": 0.1445,
+      "low": 0.1445,
+      "open": 0.1445,
+      "trades": 2,
+      "ts": 1790926200,
+      "volume": 19034.73626699,
+      "vwap": 0.1445
+    }
+  ],
+  "pair": "MINA/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-064344-MINA-EUR-r36974824393.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T07:38:50.986196Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "8c30dbb779bf93006f8618a4598a6a7284b58451",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T07:38:50.986196Z",
+    "revalidation_started_at_utc": "2026-10-02T07:38:43.059392Z",
+    "ttl_due_at_utc": "2026-10-02T07:29:09.346562Z",
+    "ttl_lag_seconds": 573.713
+  }
+}
