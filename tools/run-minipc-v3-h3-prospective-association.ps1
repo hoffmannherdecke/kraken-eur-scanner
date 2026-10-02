@@ -200,8 +200,78 @@ try{
       Write-Host "=== V3 H3 ASSOCIATION EVALUATION COMPLETE ==="
       Write-Host ("Status: "+$er.status)
       Write-Host ("Report: "+$evalOut)
-      Write-Host ("SHA256: "+(Get-FileHash -Algorithm SHA256 -LiteralPath $evalOut).Hash.ToLowerInvariant())
+      $evalSha=(Get-FileHash -Algorithm SHA256 -LiteralPath $evalOut).Hash.ToLowerInvariant()
+      Write-Host ("SHA256: "+$evalSha)
       Write-Host "Descriptive fixed-effect review only; no threshold search / no winner / no promotion."
+
+      # Convenience-only canonical import. Import failure must never invalidate the
+      # already completed capture/evaluation evidence.
+      try{
+        $importDir=Join-Path $repo "research\v3\h3-association-reports"
+        $repoDirty=git status --porcelain
+        if($LASTEXITCODE -ne 0 -or $repoDirty){throw "Repository not clean before H3 evidence import"}
+        git pull --ff-only
+        if($LASTEXITCODE -ne 0){throw "git pull --ff-only failed before H3 evidence import"}
+        New-Item -ItemType Directory -Force -Path $importDir|Out-Null
+
+        $evalDest=Join-Path $importDir (Split-Path $evalOut -Leaf)
+        Copy-Item -LiteralPath $evalOut -Destination $evalDest -Force
+
+        $manifest=[ordered]@{
+          schema_version=1
+          kind="V3_H3_ASSOC_002_FINAL_REPORT_IMPORT_MANIFEST_V1"
+          imported_at_utc=[DateTime]::UtcNow.ToString("o")
+          trial_id="V3-H3-ASSOC-002"
+          evaluation=[ordered]@{
+            filename=(Split-Path $evalOut -Leaf)
+            sha256=$evalSha
+            status=$er.status
+          }
+          frozen_execution=[ordered]@{
+            first_execution_head=$f.first_execution_head
+            runner_sha256=$f.runner_sha256
+            spec_sha256=$f.spec_sha256
+          }
+          sessions=@()
+          guardrails=[ordered]@{
+            exact_evaluation_payload_copy=$true
+            raw_session_rows_imported=$false
+            holdout_opened=$false
+            strategy_change=$false
+            orders=$false
+            real_money_actions=$false
+          }
+        }
+        foreach($vf in $validInputs){
+          $vs=Get-Content $vf -Raw|ConvertFrom-Json
+          $manifest.sessions += [ordered]@{
+            session_id=$vs.session_id
+            filename=(Split-Path $vf -Leaf)
+            sha256=(Get-FileHash -Algorithm SHA256 -LiteralPath $vf).Hash.ToLowerInvariant()
+            duration_seconds=[double]$vs.duration_seconds
+            counts=$vs.counts
+          }
+        }
+        $manifestName="v3-h3-association-002-import-manifest-"+$evalStamp+".json"
+        $manifestPath=Join-Path $importDir $manifestName
+        [System.IO.File]::WriteAllText($manifestPath,($manifest|ConvertTo-Json -Depth 20),(New-Object System.Text.UTF8Encoding($false)))
+
+        $evalRel="research/v3/h3-association-reports/"+(Split-Path $evalOut -Leaf)
+        $manifestRel="research/v3/h3-association-reports/"+$manifestName
+        git add -- $evalRel $manifestRel
+        if($LASTEXITCODE -ne 0){throw "git add failed for H3 evidence import"}
+        $staged=@(git diff --cached --name-only)
+        if($staged.Count -ne 2 -or $staged -notcontains $evalRel -or $staged -notcontains $manifestRel){
+          throw "Unexpected staged paths during H3 evidence import"
+        }
+        git commit -m "v3: import H3 assoc 002 final evaluation"
+        if($LASTEXITCODE -ne 0){throw "git commit failed for H3 evidence import"}
+        git push origin main
+        if($LASTEXITCODE -ne 0){throw "git push failed for H3 evidence import"}
+        Write-Host ("Canonical import: PASS -> "+$evalRel)
+      } catch {
+        Write-Warning ("H3 evaluation remains PASS, but canonical report import is pending: "+$_.Exception.Message)
+      }
     } else {
       Write-Host "Collection gate not met yet. Run another >=1800s session; no effect-size conclusion is permitted."
     }
