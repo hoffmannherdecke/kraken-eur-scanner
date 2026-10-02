@@ -10,6 +10,8 @@ name: V3 H6 price volume precheck guard
       - 'research/v3/h6-association-trial-ledger-record-v1.json'
       - 'research/v3/h6-price-volume-association-trial-v1.json'
       - 'tools/v3-h6-eur15-feature-integrity.py'
+      - 'tools/v3-h6-association-trial.py'
+      - 'tools/run-minipc-v3-h1-h6-association.ps1'
       - 'tools/run-minipc-v3-feature-integrity-gates.ps1'
       - 'research/v3/fixtures/h6-price-volume-synthetic.json'
       - 'tools/v3-h6-price-volume-pit-smoke.py'
@@ -207,3 +209,17 @@ jobs:
           assert r["influenced_later_design"] is False
           print("V3_H6_ASSOC_PREREG PASS fixed/descriptive/no-holdout/no-selection")
           PY
+
+      - name: H6 association runner self-test
+        run: |
+          python -m py_compile tools/v3-h6-association-trial.py
+          python tools/v3-h6-association-trial.py --self-test
+      - name: H1 H6 association physical wrapper remains plan-only
+        shell: pwsh
+        run: |
+          ./tools/run-minipc-v3-h1-h6-association.ps1 | Tee-Object -Variable plan
+          $text=$plan -join [Environment]::NewLine
+          if($text -notmatch '"status":s*"PLAN_ONLY"'){throw "association wrapper not plan-only"}
+          if($text -notmatch '"holdout_opened":s*false'){throw "holdout guard failed"}
+          if($text -notmatch '"winner_selection":s*false'){throw "winner-selection guard failed"}
+          if($text -notmatch '"orders":s*false'){throw "order guard failed"}

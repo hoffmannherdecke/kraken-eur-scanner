@@ -10,6 +10,8 @@ name: V3 H1 breadth precheck guard
       - 'research/v3/h1-association-trial-ledger-record-v1.json'
       - 'research/v3/h1-breadth-association-trial-v1.json'
       - 'tools/v3-h1-eur15-breadth-feature-integrity.py'
+      - 'tools/v3-h1-association-trial.py'
+      - 'tools/run-minipc-v3-h1-h6-association.ps1'
       - 'tools/run-minipc-v3-feature-integrity-gates.ps1'
       - 'research/v3/fixtures/h1-cross-crypto-breadth-synthetic.json'
       - 'tools/v3-h1-breadth-pit-smoke.py'
@@ -179,3 +181,8 @@ jobs:
           assert r["influenced_later_design"] is False
           print("V3_H1_ASSOC_PREREG PASS fixed/descriptive/no-holdout/no-selection")
           PY
+
+      - name: H1 association runner self-test
+        run: |
+          python -m py_compile tools/v3-h1-association-trial.py
+          python tools/v3-h1-association-trial.py --self-test

@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T05:00:00Z",
+  "updated_at_utc": "2026-10-02T05:05:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -320,9 +320,11 @@
         "tools/v3-h1-eur15-breadth-feature-integrity.py",
         "tools/run-minipc-v3-feature-integrity-gates.ps1",
         "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
-        "research/v3/h1-breadth-association-trial-v1.json"
+        "research/v3/h1-breadth-association-trial-v1.json",
+        "tools/v3-h1-association-trial.py",
+        "tools/run-minipc-v3-h1-h6-association.ps1"
       ],
-      "pending_gate": "V3_H1_IMPLEMENT_VALIDATE_EXECUTE_ASSOC_001_PRE2026_ONLY"
+      "pending_gate": "V3_H1_EXECUTE_FROZEN_ASSOC_001_PHYSICAL_MINIPC"
     },
     {
       "id": "price_volume_trend_primitives",
@@ -337,9 +339,11 @@
         "tools/v3-h6-eur15-feature-integrity.py",
         "tools/run-minipc-v3-feature-integrity-gates.ps1",
         "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
-        "research/v3/h6-price-volume-association-trial-v1.json"
+        "research/v3/h6-price-volume-association-trial-v1.json",
+        "tools/v3-h6-association-trial.py",
+        "tools/run-minipc-v3-h1-h6-association.ps1"
       ],
-      "pending_gate": "V3_H6_IMPLEMENT_VALIDATE_EXECUTE_ASSOC_001_PRE2026_ONLY"
+      "pending_gate": "V3_H6_EXECUTE_FROZEN_ASSOC_001_PHYSICAL_MINIPC"
     },
     {
       "id": "simple_price_volume_primitives",
@@ -354,9 +358,11 @@
         "tools/v3-h6-eur15-feature-integrity.py",
         "tools/run-minipc-v3-feature-integrity-gates.ps1",
         "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
-        "research/v3/h6-price-volume-association-trial-v1.json"
+        "research/v3/h6-price-volume-association-trial-v1.json",
+        "tools/v3-h6-association-trial.py",
+        "tools/run-minipc-v3-h1-h6-association.ps1"
       ],
-      "pending_gate": "V3_H6_IMPLEMENT_VALIDATE_EXECUTE_ASSOC_001_PRE2026_ONLY"
+      "pending_gate": "V3_H6_EXECUTE_FROZEN_ASSOC_001_PHYSICAL_MINIPC"
     },
     {
       "id": "meta_take_no_take",
