@@ -1,0 +1,223 @@
+{
+  "altname": "MANAEUR",
+  "candidate_id": "20261002-115222-MANA-EUR-r37003252264",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Reclaim and hold above 0.09475 on a 15m close with improving closed volume.",
+      "Show follow-through above resistance without rapid rejection."
+    ],
+    "reason_codes": [
+      "failed_confirmation",
+      "sharp_rejection",
+      "extended_move",
+      "spread_and_fees",
+      "no_confirmed_remaining_edge"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "MANA failed the prior confirmation: price rejected sharply from 0.10001 and is below the required 0.09475 hold. The extended move and Kraken EUR trading costs do not support a scout entry.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "MANAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 38.04,
+        "available": true,
+        "current_funding_rate": -9.8105446539258e-05,
+        "current_open_interest": 1728687.0,
+        "funding_rate_delta": 1.0557652988292006e-05,
+        "open_interest_pct": 4.9795,
+        "previous_funding_rate": -0.00010866309952755,
+        "previous_observed_at_utc": "2026-10-02T11:52:52.406812Z",
+        "previous_open_interest": 1646690.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -9.8105446539258e-05,
+        "index_price": 0.10547,
+        "last": 0.10421,
+        "mark_price": 0.1044153,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 1728687.0,
+        "requested_symbols": [
+          "PF_MANAUSD",
+          "PI_MANAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_MANAUSD",
+        "volume24h": 3347573
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.09404,
+      "bid": 0.09366,
+      "last": 0.09362,
+      "spread_pct": 0.40490143846564236
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "50",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2902319775304196,
+          "ret3h_pct": 0.7436201881190652
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.14405212067638562,
+          "ret3h_pct": 0.3144202901521398
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.16574585635360517,
+          "ret3h_pct": 0.536044362292043
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T12:30:53.649072Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_001e99535ebbca14006abfa3ff0bdc87d192353c1e6d014c64"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.09404,
+    "bid": 0.09366,
+    "last": 0.09362,
+    "spread_pct": 0.40490143846564236
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.09428,
+      "high": 0.09463,
+      "low": 0.09323,
+      "open": 0.09449,
+      "trades": 21,
+      "ts": 1790940600,
+      "volume": 68522.00081457,
+      "vwap": 0.09389
+    },
+    {
+      "close": 0.09733,
+      "high": 0.09733,
+      "low": 0.09384,
+      "open": 0.09438,
+      "trades": 42,
+      "ts": 1790941500,
+      "volume": 222433.70470622,
+      "vwap": 0.0955
+    },
+    {
+      "close": 0.09457,
+      "high": 0.10001,
+      "low": 0.0936,
+      "open": 0.09709,
+      "trades": 68,
+      "ts": 1790942400,
+      "volume": 250883.0504702,
+      "vwap": 0.09824
+    },
+    {
+      "close": 0.09355,
+      "high": 0.09513,
+      "low": 0.09349,
+      "open": 0.0943,
+      "trades": 28,
+      "ts": 1790943300,
+      "volume": 125684.64066487,
+      "vwap": 0.09436
+    },
+    {
+      "close": 0.09362,
+      "high": 0.09362,
+      "low": 0.09362,
+      "open": 0.09362,
+      "trades": 1,
+      "ts": 1790944200,
+      "volume": 1971.23880632,
+      "vwap": 0.09362
+    }
+  ],
+  "pair": "MANA/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-115222-MANA-EUR-r37003252264.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T12:30:59.470873Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "d3610409853dbd4645564f8ea328b2245a1fd2aa",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T12:30:59.470873Z",
+    "revalidation_started_at_utc": "2026-10-02T12:30:53.276750Z",
+    "ttl_due_at_utc": "2026-10-02T12:22:52.406812Z",
+    "ttl_lag_seconds": 480.87
+  }
+}
