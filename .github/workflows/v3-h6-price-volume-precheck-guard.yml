@@ -15,6 +15,8 @@ name: V3 H6 price volume precheck guard
       - 'research/v3/h6-incremental-trial-ledger-record-v1.json'
       - 'tools/v3-h6-eur15-feature-integrity.py'
       - 'tools/v3-h6-association-trial.py'
+      - 'tools/v3-h6-incremental-volume-contribution.py'
+      - 'tools/run-minipc-v3-h1-h6-incremental.ps1'
       - 'tools/run-minipc-v3-h1-h6-association.ps1'
       - 'tools/run-minipc-v3-feature-integrity-gates.ps1'
       - 'research/v3/fixtures/h6-price-volume-synthetic.json'
@@ -44,7 +46,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path("research/v3/h6-price-volume-trend-precheck-v1.json").read_text("utf-8"))
           assert j["kind"]=="V3_H6_PRICE_VOLUME_TREND_PRECHECK_V1"
-          assert j["status"] in {"PRECHECK_PIT_METHOD_GREEN","PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING","ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED","ASSOCIATION_001_GREEN_INCREMENTAL_VOLUME_VALUE_PREREG_PENDING","INCREMENTAL_TRIAL_PREREGISTERED_NOT_EXECUTED"}
+          assert j["status"] in {"PRECHECK_PIT_METHOD_GREEN","PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING","ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED","ASSOCIATION_001_GREEN_INCREMENTAL_VOLUME_VALUE_PREREG_PENDING","INCREMENTAL_TRIAL_PREREGISTERED_NOT_EXECUTED","INCREMENTAL_TRIAL_RUNNER_READY_PHYSICAL_PENDING"}
           assert j["complexity_guardrails"]["ctrend_full_implementation_allowed"] is False
           assert j["complexity_guardrails"]["nonlinear_model_allowed_in_precheck"] is False
           assert j["complexity_guardrails"]["parameter_sweep_allowed"] is False
@@ -65,8 +67,10 @@ jobs:
               assert j["next_gate"]=="IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H6_ASSOC_001_ON_PRE2026_DEVELOPMENT_ONLY"
           elif j["status"]=="ASSOCIATION_001_GREEN_INCREMENTAL_VOLUME_VALUE_PREREG_PENDING":
               assert j["next_gate"]=="PREREGISTER_H6_INCREMENTAL_VOLUME_CONTRIBUTION_TRIAL_WITHIN_PRICE_DIRECTION_STRATA_NO_HOLDOUT"
-          else:
+          elif j["status"]=="INCREMENTAL_TRIAL_PREREGISTERED_NOT_EXECUTED":
               assert j["next_gate"]=="IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H6_INCR_001_PRE2026_ONLY_NO_HOLDOUT"
+          else:
+              assert j["next_gate"]=="EXECUTE_FROZEN_V3_H6_INCR_001_ON_MINIPC_PRE2026_ONLY_NO_HOLDOUT"
           if j["status"]=="PRECHECK_PIT_METHOD_GREEN":
               assert j["next_gate"]=="REAL_EUR15_FEATURE_TRIAL_PREREGISTERED__NEXT_EXECUTE_PHYSICALLY_WITH_HOLDOUT_SEALED"
           elif j["status"]=="PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING":
@@ -75,8 +79,10 @@ jobs:
               assert j["next_gate"]=="IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H6_ASSOC_001_ON_PRE2026_DEVELOPMENT_ONLY"
           elif j["status"]=="ASSOCIATION_001_GREEN_INCREMENTAL_VOLUME_VALUE_PREREG_PENDING":
               assert j["next_gate"]=="PREREGISTER_H6_INCREMENTAL_VOLUME_CONTRIBUTION_TRIAL_WITHIN_PRICE_DIRECTION_STRATA_NO_HOLDOUT"
-          else:
+          elif j["status"]=="INCREMENTAL_TRIAL_PREREGISTERED_NOT_EXECUTED":
               assert j["next_gate"]=="IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H6_INCR_001_PRE2026_ONLY_NO_HOLDOUT"
+          else:
+              assert j["next_gate"]=="EXECUTE_FROZEN_V3_H6_INCR_001_ON_MINIPC_PRE2026_ONLY_NO_HOLDOUT"
           rd=j["methodology_readiness"]
           assert rd["synthetic_price_volume_pit_smoke"]=="CI_GREEN_RUN_1"
           assert rd["future_row_trap"]=="PASS_IGNORED"
@@ -294,3 +300,20 @@ jobs:
           assert r["influenced_later_design"] is True
           print("V3_H6_INCR_PREREG PASS within-direction/no-threshold-sweep/no-holdout")
           PY
+
+
+      - name: H6 incremental runner self-test
+        run: |
+          python -m py_compile tools/v3-h6-incremental-volume-contribution.py
+          python tools/v3-h6-incremental-volume-contribution.py --self-test
+
+      - name: H1 H6 incremental physical wrapper remains plan-only
+        shell: pwsh
+        run: |
+          $raw=./tools/run-minipc-v3-h1-h6-incremental.ps1 | Out-String
+          $j=$raw|ConvertFrom-Json
+          if($j.status -ne "PLAN_ONLY"){throw "incremental wrapper not plan-only"}
+          if($j.influenced_later_design -ne $true){throw "search-accounting guard failed"}
+          if($j.holdout_opened -ne $false){throw "holdout guard failed"}
+          if($j.threshold_search -ne $false){throw "threshold guard failed"}
+          if($j.orders -ne $false -or $j.real_money_actions -ne $false){throw "execution guard failed"}
