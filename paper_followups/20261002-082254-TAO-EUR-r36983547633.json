@@ -1,0 +1,52 @@
+{
+  "baseline_ask_eur": 277.1874,
+  "candidate_id": "20261002-082254-TAO-EUR-r36983547633",
+  "evaluated_at_utc": "2026-10-02T08:23:50.315022Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-02T08:22:54Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 56.315,
+    "detection_price_eur": 277.5775,
+    "evaluated_at_utc": "2026-10-02T08:23:50.315022Z",
+    "evaluation_ask_eur": 277.1874,
+    "flagged_as_already_run": false,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-02T07:31:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 1.959,
+      "price_eur": 272.2453
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "spread_and_turnover_acceptable",
+      "price_above_1h_3h_resistance",
+      "live_volume_unconfirmed_by_closed_volume",
+      "mixed_major_market_regime",
+      "remaining_move_uncertain_after_1_2pct_taker_fees",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "scan_step_started_at_utc": "2026-10-02T08:21:24Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 1.9586013055138185,
+      "ret15_live_pct": 0.9174562085990434,
+      "ret1h_pct": 1.1120310849989101,
+      "ret3h_pct": 0.5615382525291812,
+      "scanner_late_flag": false,
+      "score": 10.7
+    },
+    "schema_version": 1,
+    "setup_lane": "IGNITION",
+    "updated_at_utc": "2026-10-02T08:25:05.999910Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "TAO/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01"
+}
