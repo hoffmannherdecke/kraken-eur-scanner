@@ -43,8 +43,8 @@ $repairReports=Get-ChildItem -LiteralPath $logs -Filter ("external-drive-"+$Driv
 if(-not $repairReports){throw "No prior preservation repair report found on C:"}
 $repair=Get-Content -LiteralPath $repairReports[0].FullName -Raw | ConvertFrom-Json
 if($repair.status -ne "PASS_READY_FOR_SEPARATE_NTFS_CONVERSION"){throw "Latest repair report is not conversion-ready: "+$repair.status}
-if([int]$repair.missing_preexisting_files -ne 0){throw "Repair report contains missing pre-existing files"}
-if([int]$repair.size_changed_preexisting_files -ne 0){throw "Repair report contains size-changed pre-existing files"}
+if(@($repair.missing_preexisting_files).Count -ne 0){throw "Repair report contains missing pre-existing files"}
+if(@($repair.size_changed_preexisting_files).Count -ne 0){throw "Repair report contains size-changed pre-existing files"}
 if([int]$repair.post_repair_readonly_chkdsk_exit -ne 0){throw "Repair report does not contain clean post-repair CHKDSK"}
 
 function Get-Manifest([string]$Base,[string]$Out){
