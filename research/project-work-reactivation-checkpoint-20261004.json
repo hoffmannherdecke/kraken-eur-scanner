@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "kind": "PROJECT_WORK_REACTIVATION_CHECKPOINT_V1",
+  "checkpoint_id": "WORK-REACTIVATION-20261004",
+  "earliest_review_date_local": "2026-10-04",
+  "trigger_phrase": "Work-Check 04.10.",
+  "first_actions": [
+    "Refresh account-side Work availability/quota state.",
+    "Install or update ChatGPT Windows desktop app on MINI-PC if local Work is available.",
+    "Run one bounded read-only local folder/report smoke with least-privilege access.",
+    "Review formerly reduced/paused Work functions against current GitHub/MINI-PC/Supabase architecture."
+  ],
+  "keep_outside_work": [
+    "Kraken-EUR scanner",
+    "watchdog / health / recovery",
+    "read-only market snapshot/realtime capture",
+    "paper evaluator and WAIT revalidation",
+    "paper follow-up and missed-move audit",
+    "Slack/push transport",
+    "routine MAIN/Paper checks now covered by GitHub/MINI-PC/Supabase"
+  ],
+  "candidate_work_uses": [
+    "deep multi-artifact strategy/paper/shadow analysis",
+    "local MINI-PC file/desktop tasks not practical through APIs/connectors",
+    "complex browser/UI workflows with real desktop context",
+    "one-off audits, troubleshooting, restructuring and large multi-step work"
+  ],
+  "activation_principle": "manual/targeted first; no automatic restoration of old 4x-daily/hourly Work schedules; recurring use only after measured incremental value and acceptable quota consumption",
+  "security": [
+    "no Trading/Secrets access",
+    "no private keys/password stores unless a later explicit account/security gate requires and authorizes it",
+    "no orders or real-money actions from this checkpoint",
+    "Work is not a single point of failure or critical runtime dependency"
+  ]
+}
