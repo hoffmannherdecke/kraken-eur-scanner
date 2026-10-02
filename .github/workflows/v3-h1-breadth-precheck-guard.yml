@@ -15,6 +15,8 @@ name: V3 H1 breadth precheck guard
       - 'research/v3/h1-incremental-trial-ledger-record-v1.json'
       - 'tools/v3-h1-eur15-breadth-feature-integrity.py'
       - 'tools/v3-h1-association-trial.py'
+      - 'tools/v3-h1-incremental-relative-context.py'
+      - 'tools/run-minipc-v3-h1-h6-incremental.ps1'
       - 'tools/run-minipc-v3-h1-h6-association.ps1'
       - 'tools/run-minipc-v3-feature-integrity-gates.ps1'
       - 'research/v3/fixtures/h1-cross-crypto-breadth-synthetic.json'
@@ -48,7 +50,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path("research/v3/h1-cross-crypto-breadth-precheck-v1.json").read_text("utf-8"))
           assert j["kind"]=="V3_H1_CROSS_CRYPTO_BREADTH_PRECHECK_V1"
-          assert j["status"] in {"PRECHECK_PIT_METHOD_GREEN","PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING","ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED","ASSOCIATION_001_GREEN_INCREMENTAL_VALUE_PREREG_PENDING","INCREMENTAL_TRIAL_PREREGISTERED_NOT_EXECUTED"}
+          assert j["status"] in {"PRECHECK_PIT_METHOD_GREEN","PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING","ASSOCIATION_TRIAL_PREREGISTERED_NOT_EXECUTED","ASSOCIATION_001_GREEN_INCREMENTAL_VALUE_PREREG_PENDING","INCREMENTAL_TRIAL_PREREGISTERED_NOT_EXECUTED","INCREMENTAL_TRIAL_RUNNER_READY_PHYSICAL_PENDING"}
           assert j["feature_role"]=="STATE_AND_RELATIVE_CONTEXT_FIRST"
           assert j["first_research_role"]["performance_trial"] is False
           assert j["first_research_role"]["threshold_selection"] is False
@@ -64,8 +66,10 @@ jobs:
               assert j["next_gate"]=="IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H1_ASSOC_001_ON_PRE2026_DEVELOPMENT_ONLY"
           elif j["status"]=="ASSOCIATION_001_GREEN_INCREMENTAL_VALUE_PREREG_PENDING":
               assert j["next_gate"]=="PREREGISTER_H1_INCREMENTAL_RELATIVE_CONTEXT_TRIAL_CONTROLLING_TARGET_RETURN_1H_NO_HOLDOUT"
-          else:
+          elif j["status"]=="INCREMENTAL_TRIAL_PREREGISTERED_NOT_EXECUTED":
               assert j["next_gate"]=="IMPLEMENT_VALIDATE_AND_EXECUTE_V3_H1_INCR_001_PRE2026_ONLY_NO_HOLDOUT"
+          else:
+              assert j["next_gate"]=="EXECUTE_FROZEN_V3_H1_INCR_001_ON_MINIPC_PRE2026_ONLY_NO_HOLDOUT"
           rd=j["methodology_readiness"]
           assert rd["real_eur15_feature_trial_preregistered"]=="V3-H1-EUR15-BREADTH-FEATURE-INTEGRITY-001"
           assert rd["real_eur15_expected_pair_files"]==648
@@ -242,3 +246,9 @@ jobs:
           assert r["influenced_later_design"] is True
           print("V3_H1_INCR_PREREG PASS partial-correlation/no-holdout/search-accounted")
           PY
+
+
+      - name: H1 incremental runner self-test
+        run: |
+          python -m py_compile tools/v3-h1-incremental-relative-context.py
+          python tools/v3-h1-incremental-relative-context.py --self-test
