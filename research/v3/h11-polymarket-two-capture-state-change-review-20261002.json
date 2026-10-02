@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H11_POLYMARKET_TWO_CAPTURE_STATE_CHANGE_REVIEW_V1",
+  "status": "PASS_STATE_CHANGE_OBSERVABLE_NO_PREDICTIVE_CLAIM",
+  "contract": "research/v3/h11-polymarket-prospective-state-contract-v1.json",
+  "code_head_sha": "2b164fa5adeb052387fafcf19a7c4374d9ed53f8",
+  "workflow": {
+    "run_id": 36985229406,
+    "run_number": 4,
+    "attempts": [
+      {
+        "attempt": 1,
+        "retrieved_at_utc": "2026-10-02T08:39:00.020380Z",
+        "job_id": 110768630371,
+        "market_count": 5,
+        "captured_token_states": 10
+      },
+      {
+        "attempt": 2,
+        "retrieved_at_utc": "2026-10-02T08:39:24.545221Z",
+        "job_id": 110768747281,
+        "market_count": 5,
+        "captured_token_states": 10
+      }
+    ],
+    "separation_seconds": 24.524841
+  },
+  "comparability": {
+    "same_market_ids": true,
+    "same_token_ids": true,
+    "compared_token_states": 10,
+    "book_hash_changed_count": 10,
+    "book_timestamp_advanced_count": 10,
+    "midpoint_changed_count": 0,
+    "spread_changed_count": 0
+  },
+  "interpretation": {
+    "public_state_change_observable": true,
+    "orderbook_state_changed_within_interval": true,
+    "price_or_spread_change_required_for_pass": false,
+    "probability_change_signal_proven": false,
+    "predictive_value_proven": false,
+    "crypto_direction_proven": false,
+    "threshold_or_surprise_score_selected": false,
+    "active_feature_authorized": false
+  },
+  "guardrails": {
+    "public_read_only": true,
+    "authentication_used": false,
+    "wallet_used": false,
+    "orders": false,
+    "automatic_schedule_enabled": false,
+    "active_v2r3_changed": false,
+    "v2r4_changed": false,
+    "real_money_actions": false
+  },
+  "next_gate": "FREEZE_LONGER_HORIZON_PROSPECTIVE_SAMPLING_AND_EVENT_RELEVANCE_CONTRACT_BEFORE_ANY_KRAKEN_OUTCOME_ASSOCIATION_OR_SURPRISE_SCORE"
+}
