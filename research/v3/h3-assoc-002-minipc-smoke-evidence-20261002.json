@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_ASSOC_002_MINIPC_REAL_WS_SMOKE_EVIDENCE_V1",
+  "status": "PASS",
+  "observed_local": "2026-10-02T11:26:21+02:00",
+  "physical_platform": "MINI_PC",
+  "trial_id": "V3-H3-ASSOC-002",
+  "mode": "SMOKE_ONLY_NOT_LEDGER_NOT_COLLECTION_GATE",
+  "result": {
+    "counts": {
+      "BTC/EUR": 6,
+      "ETH/EUR": 6,
+      "SOL/EUR": 5
+    },
+    "wire_messages": 913,
+    "subscription_acks": 3,
+    "capture_status": "PASS",
+    "report_path": "C:\\Users\\ADMIN\\Trading\\Historical\\reports\\v3-h3-assoc-002-smoke-20261002-112621.json"
+  },
+  "interpretation": {
+    "fixed_grid_sampling_proven_on_minipc": true,
+    "nonzero_samples_all_symbols": true,
+    "valid_collection_session": false,
+    "counted_toward_collection_gate": false,
+    "effect_size_conclusion_allowed": false
+  },
+  "guardrails": {
+    "orders": false,
+    "real_money_actions": false,
+    "holdout_opened": false,
+    "immutable_trial_ledger_modified": false
+  },
+  "next_gate": "RUN_FIRST_VALID_1800S_MINIPC_SESSION_FOR_V3_H3_ASSOC_002"
+}
