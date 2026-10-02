@@ -1,0 +1,48 @@
+name: V3 H1 H6 incremental fixed review
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/incremental-reports/v3-h1-incremental-001-20261002-095841.json'
+      - 'research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json'
+      - 'tools/v3-h1-h6-incremental-review.py'
+      - '.github/workflows/v3-h1-h6-incremental-review.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Compile and self-test
+        run: |
+          python -m py_compile tools/v3-h1-h6-incremental-review.py
+          python tools/v3-h1-h6-incremental-review.py --self-test
+      - name: Review imported exact reports if present
+        run: |
+          H1=research/v3/incremental-reports/v3-h1-incremental-001-20261002-095841.json
+          H6=research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json
+          if [ ! -f "$H1" ] || [ ! -f "$H6" ]; then
+            echo "V3_H1_H6_INCREMENTAL_REVIEW WAITING_EXACT_REPORT_IMPORT"
+            exit 0
+          fi
+          python tools/v3-h1-h6-incremental-review.py "$H1" "$H6" --output /tmp/v3-h1-h6-incremental-review.json
+          python - <<'PY'
+          import json
+          x=json.load(open('/tmp/v3-h1-h6-incremental-review.json',encoding='utf-8'))
+          assert x['status']=='PASS_FIXED_DESCRIPTIVE_REVIEW_HOLDOUT_SEALED'
+          assert x['governance']['holdout_opened'] is False
+          assert x['governance']['automatic_winner_selected'] is False
+          assert x['governance']['automatic_shadow_candidate_selected'] is False
+          assert x['governance']['automatic_strategy_promotion'] is False
+          print('V3_H1_H6_INCREMENTAL_FIXED_REVIEW_GUARD PASS')
+          print(json.dumps(x,sort_keys=True,separators=(',',':')))
+          PY
