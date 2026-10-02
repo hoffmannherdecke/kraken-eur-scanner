@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T06:05:00Z",
+  "updated_at_utc": "2026-10-02T10:50:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -232,21 +232,15 @@
       "category": "state_signal",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Cloud+MINI-PC WS reconciliation is proven and a bounded checksum-valid H3 state capture is now persisted for fixed spread/top10 depth/normalized imbalance features. No outcomes, thresholds, raw archive, queue or fill inference exist yet.",
+      "rationale": "WS reconciliation/state capture and physical MINI-PC smoke are proven. Replacement prospective trial V3-H3-ASSOC-002 fixed a technical scheduler bug without changing the research question. Two valid 1800s MINI-PC sessions are PASS; cumulative rows BTC=705/ETH=697/SOL=693 on one UTC date. No effect-size conclusion until one more valid 1800s session on a second UTC date and >=1000 rows/symbol.",
       "evidence": [
-        "research/v3/h3-orderbook-depth-precheck-v1.json",
-        "tools/v3-h3-kraken-depth-precheck.py",
-        "docs/v3-research-framework.md",
-        "tools/v3-h3-kraken-ws-book-reconciliation-smoke.py",
-        ".github/workflows/v3-h3-orderbook-precheck-guard.yml",
-        "research/v3/h3-ws-book-reconciliation-evidence-20261001T193640Z.json",
-        "tools/run-minipc-v3-h3-ws-book-smoke.ps1",
-        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
-        "research/v3/h3-orderbook-state-contract-v1.json",
-        "tools/v3-h3-orderbook-state-capture.py",
-        "research/v3/h3-orderbook-state-evidence-20261002.json"
+        "research/v3/h3-assoc-001-technical-failure-review-20261002.json",
+        "research/v3/h3-prospective-state-association-trial-v2.json",
+        "research/v3/h3-assoc-002-minipc-smoke-evidence-20261002.json",
+        "research/v3/h3-assoc-002-valid-session-001-20261002.json",
+        "research/v3/h3-assoc-002-valid-session-002-20261002.json"
       ],
-      "pending_gate": "V3_H3_PREREGISTER_PROSPECTIVE_STATE_ASSOCIATION_OR_BOUNDED_DATA_ACCUMULATION_NO_THRESHOLD_NO_FILL_CLAIM"
+      "pending_gate": "V3_H3_ONE_MORE_VALID_1800S_SESSION_ON_SECOND_UTC_DATE_THEN_FIXED_EFFECT_SIZE_REVIEW"
     },
     {
       "id": "macro_event_risk_gate",
@@ -269,23 +263,27 @@
       "category": "state_context",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Read-only observational research only; no copy trading.",
+      "rationale": "Hyperliquid public read-only transport/response shape is green. No trader-quality, wallet-selection or predictive-value claim exists. This branch is not required for the first V3 shadow unless explicitly selected later.",
       "evidence": [
-        "docs/v3-research-framework.md",
-        "PROJECT_BACKLOG.md"
+        "research/v3/h10-hyperliquid-readonly-precheck-v1.json",
+        "research/v3/h10-h11-public-source-evidence-20261002.json",
+        "docs/v3-research-framework.md"
       ],
-      "pending_gate": "V3_H10_PROSPECTIVE_SHADOW"
+      "pending_gate": "V3_H10_FREEZE_UNBIASED_PUBLIC_ADDRESS_SELECTION_PROVENANCE_BEFORE_PROSPECTIVE_ACTIVITY_CAPTURE"
     },
     {
       "id": "prediction_market_event_layer",
       "category": "state_context",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Prediction-market probability changes are an independent event-state hypothesis, not a direct trade rule.",
+      "rationale": "Polymarket public read-only discovery/CLOB transport is green. Two identical-code bounded captures proved order-book state changes are observable; no predictive value, crypto direction or surprise-score validity is proven. This branch is not required for the first V3 shadow unless explicitly selected later.",
       "evidence": [
+        "research/v3/h11-polymarket-readonly-precheck-v1.json",
+        "research/v3/h11-polymarket-prospective-state-contract-v1.json",
+        "research/v3/h11-polymarket-two-capture-state-change-review-20261002.json",
         "docs/v3-research-framework.md"
       ],
-      "pending_gate": "V3_H11_DATA_PREFLIGHT_AND_RESEARCH"
+      "pending_gate": "V3_H11_FREEZE_LONGER_HORIZON_SAMPLING_AND_EVENT_RELEVANCE_CONTRACT_BEFORE_ANY_KRAKEN_ASSOCIATION"
     },
     {
       "id": "historical_h1_h2_price_volume_branch",
@@ -315,74 +313,42 @@
       "category": "state_signal",
       "source_version": "V3 H1 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "H1 Association-001 showed stable relative-context signs but did not prove uniqueness beyond target mean reversion. V3-H1-INCR-001 is frozen as a new search-accounted partial-correlation trial controlling target_return_1h; holdout remains sealed.",
+      "rationale": "H1 Association-001 showed stable relative-context signs but did not prove uniqueness beyond target mean reversion. Frozen V3-H1-INCR-001 has now completed physical MINI-PC execution PASS with immutable ledger verify PASS and holdout CLOSED. Exact local report payload/hash still must be imported before any quantitative effect-size conclusion or shadow use.",
       "evidence": [
         "research/v3/h1-cross-crypto-breadth-precheck-v1.json",
-        "tools/v3-h1-breadth-pit-smoke.py",
-        "docs/v3-research-framework.md",
-        "tools/v3-h1-eur15-breadth-feature-integrity.py",
-        "tools/run-minipc-v3-feature-integrity-gates.ps1",
-        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
-        "research/v3/h1-breadth-association-trial-v1.json",
-        "tools/v3-h1-association-trial.py",
-        "tools/run-minipc-v3-h1-h6-association.ps1",
-        "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
         "research/v3/h1-h6-association-review-20261002.json",
         "research/v3/h1-incremental-relative-context-trial-v1.json",
         "research/v3/h1-incremental-trial-ledger-record-v1.json",
-        "tools/v3-h1-incremental-relative-context.py",
-        "tools/run-minipc-v3-h1-h6-incremental.ps1"
+        "research/v3/h1-h6-incremental-execution-status-20261002.json"
       ],
-      "pending_gate": "V3_H1_EXECUTE_FROZEN_INCR_001_PHYSICAL_MINIPC"
+      "pending_gate": "IMPORT_EXACT_V3_H1_INCR_001_REPORT_AND_REVIEW_PREREGISTERED_INCREMENTAL_EFFECT_SIZE"
     },
     {
       "id": "price_volume_trend_primitives",
       "category": "signal_state",
       "source_version": "V3 H6 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "H6 Association-001 showed stable price mean reversion, unstable raw volume ratio, and sign-stable 1h direction+volume flags. V3-H6-INCR-001 is frozen to isolate volume-expansion contribution within fixed price-direction strata while controlling price-return magnitude; no threshold search or holdout.",
+      "rationale": "H6 Association-001 showed stable price mean-reversion structure and some sign-stable direction+volume flags. Frozen V3-H6-INCR-001 has now completed physical MINI-PC execution PASS with immutable ledger verify PASS and holdout CLOSED. Exact local report payload/hash still must be imported before any quantitative incremental-volume conclusion or shadow use.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
-        "tools/v3-h6-price-volume-pit-smoke.py",
-        "docs/v3-research-framework.md",
-        "tools/v3-h6-eur15-feature-integrity.py",
-        "tools/run-minipc-v3-feature-integrity-gates.ps1",
-        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
-        "research/v3/h6-price-volume-association-trial-v1.json",
-        "tools/v3-h6-association-trial.py",
-        "tools/run-minipc-v3-h1-h6-association.ps1",
-        "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
         "research/v3/h1-h6-association-review-20261002.json",
         "research/v3/h6-incremental-volume-contribution-trial-v1.json",
         "research/v3/h6-incremental-trial-ledger-record-v1.json",
-        "tools/v3-h6-incremental-volume-contribution.py",
-        "tools/run-minipc-v3-h1-h6-incremental.ps1"
+        "research/v3/h1-h6-incremental-execution-status-20261002.json"
       ],
-      "pending_gate": "V3_H6_EXECUTE_FROZEN_INCR_001_PHYSICAL_MINIPC"
+      "pending_gate": "IMPORT_EXACT_V3_H6_INCR_001_REPORT_AND_REVIEW_PREREGISTERED_INCREMENTAL_VOLUME_EFFECT"
     },
     {
       "id": "simple_price_volume_primitives",
       "category": "signal_state",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "The next H6 trial is explicitly influenced by Association-001 and isolates volume's incremental contribution inside fixed price-direction strata. No silent transform or threshold tuning is allowed.",
+      "rationale": "The H6 incremental trial is physically complete but quantitative review remains blocked on exact local report import. No threshold/transform retuning or holdout access is allowed.",
       "evidence": [
-        "research/v3/h6-price-volume-trend-precheck-v1.json",
-        "tools/v3-h6-price-volume-pit-smoke.py",
-        "docs/v3-research-framework.md",
-        "tools/v3-h6-eur15-feature-integrity.py",
-        "tools/run-minipc-v3-feature-integrity-gates.ps1",
-        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
-        "research/v3/h6-price-volume-association-trial-v1.json",
-        "tools/v3-h6-association-trial.py",
-        "tools/run-minipc-v3-h1-h6-association.ps1",
-        "research/v3/association/v3-h1-h6-association-evidence-20261002.json",
-        "research/v3/h1-h6-association-review-20261002.json",
         "research/v3/h6-incremental-volume-contribution-trial-v1.json",
-        "tools/v3-h6-incremental-volume-contribution.py",
-        "tools/run-minipc-v3-h1-h6-incremental.ps1"
+        "research/v3/h1-h6-incremental-execution-status-20261002.json"
       ],
-      "pending_gate": "V3_H6_EXECUTE_FROZEN_INCR_001_PHYSICAL_MINIPC"
+      "pending_gate": "IMPORT_EXACT_V3_H6_INCR_001_REPORT_AND_REVIEW_PREREGISTERED_INCREMENTAL_VOLUME_EFFECT"
     },
     {
       "id": "meta_take_no_take",
