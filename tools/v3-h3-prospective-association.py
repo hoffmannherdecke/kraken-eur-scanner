@@ -17,7 +17,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-DEFAULT_SPEC=Path(__file__).resolve().parents[1]/"research/v3/h3-prospective-state-association-trial-v1.json"
+DEFAULT_SPEC=Path(__file__).resolve().parents[1]/"research/v3/h3-prospective-state-association-trial-v2.json"
 WS_URL="wss://ws.kraken.com/v2"
 FEATURES=("spread_bps","bid_depth_quote_top10","ask_depth_quote_top10","depth_imbalance_top10")
 SYMBOLS=("BTC/EUR","ETH/EUR","SOL/EUR")
@@ -91,8 +91,8 @@ async def capture(seconds:int,session_id:str,spec:dict[str,Any])->dict[str,Any]:
         await ws.send(json.dumps({"method":"subscribe","params":{"channel":"book","symbol":list(SYMBOLS),"depth":10,"snapshot":True},"req_id":1}))
         next_grid=first_grid
         while time.time()<end:
-            timeout=max(.01,min(.25,next_grid-time.time(),end-time.time()))
-            if timeout<=0:
+            wall=time.time()
+            if wall>=next_grid:
                 g=next_grid
                 for sym in SYMBOLS:
                     eligible=[x for x in history[sym] if x["recv_epoch"]<=g]
@@ -102,7 +102,9 @@ async def capture(seconds:int,session_id:str,spec:dict[str,Any])->dict[str,Any]:
                     row={"schema_version":1,"session_id":session_id,"sample_epoch":int(g),"sample_utc":iso(g),
                          "symbol":sym,"source_age_ms":age_ms}
                     row.update({k:st[k] for k in ("mid_price",)+FEATURES});rows.append(row)
-                next_grid+=grid;continue
+                next_grid+=grid
+                continue
+            timeout=max(.01,min(.25,next_grid-wall,end-wall))
             try: raw=await asyncio.wait_for(ws.recv(),timeout=timeout)
             except asyncio.TimeoutError:continue
             wire+=1;recv=time.time();j=json.loads(raw,parse_float=Decimal)
@@ -184,7 +186,12 @@ def self_test()->int:
     c=Corr()
     for x in (1.,2.,3.,4.):c.add(x,2*x)
     assert abs(c.out()["pearson_r"]-1.0)<1e-12
-    spec={"trial_id":"V3-H3-ASSOC-001","collection_gate":{"minimum_distinct_sessions":1,"minimum_session_seconds":0,
+    # Regression guard for the original scheduler bug: a wall clock past next_grid must enter sampling.
+    wall=105.2;next_grid=105.0;end=120.0
+    assert wall>=next_grid
+    timeout=max(.01,min(.25,next_grid-wall,end-wall))
+    assert timeout==.01  # proves timeout itself must NOT be used as the sampling predicate
+    spec={"trial_id":"V3-H3-ASSOC-002","collection_gate":{"minimum_distinct_sessions":1,"minimum_session_seconds":0,
           "minimum_distinct_utc_dates":1,"minimum_valid_feature_rows_per_symbol":3}}
     rows=[]
     for sym in SYMBOLS:
@@ -193,7 +200,7 @@ def self_test()->int:
             rows.append({"session_id":"S1","sample_epoch":t,"sample_utc":iso(t),"symbol":sym,"source_age_ms":10.,
                          "mid_price":100+i,"spread_bps":v,"bid_depth_quote_top10":1000+10*i,
                          "ask_depth_quote_top10":900+5*i,"depth_imbalance_top10":-0.1+i/1000})
-    cap={"kind":"V3_H3_PROSPECTIVE_CAPTURE_SESSION_V1","status":"PASS","trial_id":"V3-H3-ASSOC-001","session_id":"S1",
+    cap={"kind":"V3_H3_PROSPECTIVE_CAPTURE_SESSION_V1","status":"PASS","trial_id":"V3-H3-ASSOC-002","session_id":"S1",
          "started_at_utc":"2023-11-14T00:00:00Z","duration_seconds":1800,"rows":rows}
     import tempfile
     with tempfile.TemporaryDirectory() as td:
