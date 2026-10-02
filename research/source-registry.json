@@ -252,7 +252,7 @@
     },
     {
       "id": "polymarket_public_market_data",
-      "status": "PRECHECK_BOUNDED_STATE_CAPTURE_1_GREEN_NOT_ACTIVE_FEATURE",
+      "status": "PRECHECK_TWO_CAPTURE_STATE_CHANGE_GREEN_NOT_ACTIVE_FEATURE",
       "class": "prediction_market_event_state",
       "unique_value": "Public event/market metadata plus CLOB prices/order books can provide point-in-time probability, spread, liquidity and change context for event-risk research.",
       "authoritative_for": [
@@ -268,7 +268,7 @@
         "official_fed_sec_headlines",
         "federal_reserve_fomc_calendar"
       ],
-      "overlap_strategy": "H11 event-state sensor only. Official sources remain authoritative for scheduled/released facts; Polymarket measures market-implied state. Public transport plus one bounded 5-market prospective capture are green; a separated second capture is still required before state-change review, and incremental predictive value remains unproven.",
+      "overlap_strategy": "H11 event-state sensor only. Official sources remain authoritative for scheduled/released facts; Polymarket measures market-implied state. Two identical-code bounded captures show state changes are observable (10/10 book hashes changed and timestamps advanced over 24.5s), but midpoint/spread did not change in that short interval and predictive value remains entirely unproven.",
       "persistence_mode": "compact_point_in_time_market_state_and_change_evidence_only_no_full_orderbook_archive",
       "duplicate_raw_storage_allowed": false,
       "access": "public_read_only_no_auth_no_wallet_no_order_rights"
