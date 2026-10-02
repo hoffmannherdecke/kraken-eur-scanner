@@ -1,0 +1,164 @@
+{
+  "altname": "SKYEUR",
+  "candidate_age_seconds": 31,
+  "candidate_event_time_utc": "2026-10-02T12:21:21Z",
+  "candidate_id": "20261002-122121-SKY-EUR-r37006022006",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.08345 followed by a hold or successful retest",
+      "Closed-volume expansion on the breakout"
+    ],
+    "reason_codes": [
+      "near_1h_3h_resistance",
+      "extended_24h_7d_move",
+      "closed_volume_weak",
+      "remaining_move_uncertain",
+      "derivatives_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong trend, but price is near resistance after a large run; weak closed volume and insufficient room-to-cost evidence argue against entry now.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SKYUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_SKYUSD",
+          "PI_SKYUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.08314,
+      "bid": 0.08307,
+      "last": 0.08297,
+      "spread_pct": 0.08423079237109754
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "70",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.012214613355499004,
+          "ret3h_pct": 0.4340121460765234
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.043732731701717764,
+          "ret3h_pct": -0.02697985095675426
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2574475910261165,
+          "ret3h_pct": -0.027647221454241144
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-01T12:16:07-04:00",
+            "title": "SEC Proposal Would Address How Investment Advisers and Funds Can Custody Crypto Assets Under the Federal Securities Laws"
+          },
+          {
+            "published_at": "2026-10-01T11:03:35-04:00",
+            "title": "SEC\u2019s Division of Examinations Announces New Exam Handbook"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T12:21:52.580551Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-02T12:21:59.192815Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0013dc8bea217c6e006abfa1e1d88487d19d8ea54c6e6fabe3"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.08314,
+    "bid": 0.08307,
+    "last": 0.08297,
+    "spread_pct": 0.08423079237109754
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "SKY/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37006022006:SKY-EUR:1790943681",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "2caf0938766e71ea04f59409e5119b3d6ff8eef0",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-02T12:21:21Z",
+    "candidate_detected_ts": 1790943681,
+    "candidate_snapshot_at_utc": "2026-10-02T12:21:21Z",
+    "detected_to_evaluation_complete_seconds": 38.193,
+    "detected_to_evaluation_start_seconds": 31.345,
+    "evaluation_completed_at_utc": "2026-10-02T12:21:59.192815Z",
+    "evaluation_runtime_seconds": 6.848,
+    "evaluation_started_at_utc": "2026-10-02T12:21:52.345265Z",
+    "handoff_to_evaluation_start_seconds": 29.212,
+    "handoff_written_at_utc": "2026-10-02T12:21:23.133668Z",
+    "scan_step_started_at_utc": "2026-10-02T12:19:49Z"
+  }
+}
