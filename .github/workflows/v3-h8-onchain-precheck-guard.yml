@@ -7,6 +7,8 @@ name: V3 H8 on-chain coverage precheck guard
     paths:
       - 'research/v3/h8-onchain-state-precheck-v1.json'
       - 'research/v3/h8-known-at-capture-contract-v1.json'
+      - 'tools/v3-h8-prospective-state-capture.py'
+      - 'research/v3/h8-prospective-onchain-state-contract-v1.json'
       - 'research/v3/captures/h8-coinmetrics-known-at-*.json'
       - 'research/v3/h8-known-at-two-cycle-review-20261002.json'
       - 'tools/v3-h8-coinmetrics-known-at-capture.py'
@@ -35,7 +37,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path('research/v3/h8-onchain-state-precheck-v1.json').read_text('utf-8'))
           assert j['kind']=='V3_H8_ONCHAIN_STATE_PRECHECK_V1'
-          assert j['status'] in {'PRECHECK_SOURCE_COVERAGE_ONLY','PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING','PRECHECK_CAPTURE_METHOD_PREREGISTERED_LIVE_SMOKE_PENDING','PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING','PRECHECK_TWO_EOD_CYCLES_GREEN_PROSPECTIVE_ONLY_STATE_PREREG_PENDING'}
+          assert j['status'] in {'PRECHECK_SOURCE_COVERAGE_ONLY','PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING','PRECHECK_CAPTURE_METHOD_PREREGISTERED_LIVE_SMOKE_PENDING','PRECHECK_LIVE_CAPTURE_GREEN_REPEATED_LAG_PENDING','PRECHECK_TWO_EOD_CYCLES_GREEN_PROSPECTIVE_ONLY_STATE_PREREG_PENDING','PROSPECTIVE_ONLY_STATE_CONTRACT_FROZEN_CAPTURE_SMOKE_PENDING','PROSPECTIVE_ONLY_STATE_CAPTURE_GREEN_NOT_SCHEDULED'}
           assert j['point_in_time_contract']['metric_interval_time_is_not_assumed_equal_to_known_at_time'] is True
           assert j['point_in_time_contract']['historical_use_requires_known_at_or_proven_publication_lag'] is True
           assert 'historical_performance_trial' in j['forbidden_before_availability_lag_proven']
@@ -200,4 +202,44 @@ jobs:
           assert e["threshold_selection_allowed"] is False
           assert e["sealed_2026h1_holdout_open_allowed"] is False
           print("V3_H8_TWO_CYCLE_REVIEW PASS prospective-only/historical-blocked/no-holdout")
+          PY
+
+
+      - name: Validate H8 prospective-only state contract
+        run: |
+          python -m py_compile tools/v3-h8-prospective-state-capture.py
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path("research/v3/h8-prospective-onchain-state-contract-v1.json").read_text())
+          assert c["status"]=="FROZEN_PREREGISTERED_NOT_SCHEDULED"
+          assert c["fixed_assets"]==["btc","eth","sol","xrp","ada"]
+          assert c["capture_semantics"]["retrieved_at_is_known_at_upper_bound"] is True
+          assert c["capture_semantics"]["historical_backfill_for_state_forbidden"] is True
+          assert "future outcome join" in c["prohibited"]
+          assert "threshold selection" in c["prohibited"]
+          assert c["runtime_guardrails"]["automatic_schedule_enabled"] is False
+          assert c["runtime_guardrails"]["orders_allowed"] is False
+          assert c["runtime_guardrails"]["real_money_actions_allowed"] is False
+          print("V3_H8_PROSPECTIVE_STATE_CONTRACT PASS fixed/no-history/no-outcomes/no-schedule")
+          PY
+
+      - name: One bounded H8 prospective state capture smoke
+        run: |
+          python tools/v3-h8-prospective-state-capture.py --output /tmp/h8-state.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("/tmp/h8-state.json").read_text())
+          assert j["status"]=="PASS"
+          assert len(j["rows"])==5
+          assert j["interpretation"]["retrieved_at_is_known_at_upper_bound"] is True
+          assert j["interpretation"]["historical_known_at_reconstruction_performed"] is False
+          assert j["interpretation"]["future_outcomes_joined"] is False
+          assert j["interpretation"]["thresholds_selected"] is False
+          assert j["guardrails"]["automatic_schedule_enabled"] is False
+          assert j["guardrails"]["holdout_opened"] is False
+          assert j["guardrails"]["orders"] is False
+          assert j["guardrails"]["real_money_actions"] is False
+          print("V3_H8_PROSPECTIVE_STATE_CAPTURE PASS bounded/no-outcomes/no-schedule")
           PY

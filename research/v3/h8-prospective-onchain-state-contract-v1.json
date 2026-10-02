@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H8_PROSPECTIVE_ONCHAIN_STATE_CONTRACT_V1",
+  "hypothesis_id": "V3-H8",
+  "state_id": "V3-H8-PROSPECTIVE-STATE-001",
+  "status": "FROZEN_PREREGISTERED_NOT_SCHEDULED",
+  "evidence_basis": "research/v3/h8-known-at-two-cycle-review-20261002.json",
+  "source": "coinmetrics_community_network_data",
+  "fixed_assets": [
+    "btc",
+    "eth",
+    "sol",
+    "xrp",
+    "ada"
+  ],
+  "fixed_metrics": [
+    "AdrActCnt",
+    "TxCnt",
+    "CapMVRVCur",
+    "FlowInExUSD",
+    "FlowOutExUSD",
+    "AssetEODCompletionTime"
+  ],
+  "capture_semantics": {
+    "frequency": "1d",
+    "retrieved_at_is_known_at_upper_bound": true,
+    "interval_time_is_not_known_at": true,
+    "asset_eod_completion_is_not_exact_metric_finality": true,
+    "preserve_metric_status_times_when_returned": true,
+    "revisions_do_not_rewrite_prior_capture": true,
+    "missing_asset_or_metric_stays_missing": true,
+    "historical_backfill_for_state_forbidden": true
+  },
+  "state_fields": {
+    "observation_time_utc": true,
+    "retrieved_at_utc": true,
+    "metric_values_as_returned": true,
+    "metric_status_times_if_returned": true,
+    "provider_asset_eod_completion_utc": true,
+    "freshness_seconds_from_observation_to_retrieval": true,
+    "availability_lag_fields_are_descriptive_only": true
+  },
+  "allowed_first_stage_outputs": [
+    "coverage by asset and metric",
+    "freshness/availability-lag distributions",
+    "revision/first-seen observations across prospective captures",
+    "compact raw-as-returned metric snapshot with provenance"
+  ],
+  "prohibited": [
+    "historical performance backfill",
+    "threshold selection",
+    "asset subset selection by seen performance",
+    "metric subset selection by seen performance",
+    "directional buy/sell rule",
+    "candidate filter rule",
+    "future outcome join",
+    "model training",
+    "sealed 2026H1 holdout access",
+    "automatic strategy promotion"
+  ],
+  "runtime_guardrails": {
+    "automatic_schedule_enabled": false,
+    "private_api_allowed": false,
+    "api_key_required": false,
+    "active_v2r3_change_allowed": false,
+    "v2r4_change_allowed": false,
+    "paper_runtime_change_allowed": false,
+    "orders_allowed": false,
+    "leverage_allowed": false,
+    "real_money_actions_allowed": false
+  },
+  "next_gate": "BOUNDED_MANUAL_OR_CI_PROSPECTIVE_STATE_CAPTURE_ONLY_NO_OUTCOMES_THEN_REVIEW_COVERAGE_FRESHNESS"
+}
