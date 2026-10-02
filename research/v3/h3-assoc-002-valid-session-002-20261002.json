@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_ASSOC_002_VALID_SESSION_EVIDENCE_V1",
+  "status": "PASS",
+  "physical_platform": "MINI_PC",
+  "trial_id": "V3-H3-ASSOC-002",
+  "session_id": "V3-H3-ASSOC-002-20261002T101132Z",
+  "observed_local": "2026-10-02T12:11:32+02:00",
+  "result": {
+    "counts": {
+      "BTC/EUR": 353,
+      "ETH/EUR": 349,
+      "SOL/EUR": 349
+    },
+    "capture_status": "PASS",
+    "eligible_session": true,
+    "report_path": "C:\\Users\\ADMIN\\Trading\\Historical\\reports\\v3-h3-assoc-002-session-20261002-121132.json"
+  },
+  "immutable_ledger": {
+    "verify_status": "PASS",
+    "trial_count": 10,
+    "corrupt_trial_ids": []
+  },
+  "collection_gate_progress": {
+    "eligible_sessions": 2,
+    "distinct_utc_dates": 1,
+    "btc_rows": 705,
+    "eth_rows": 697,
+    "sol_rows": 693,
+    "gate_met": false
+  },
+  "interpretation": {
+    "valid_collection_session": true,
+    "effect_size_conclusion_allowed": false,
+    "automatic_winner_selected": false,
+    "strategy_promotion_allowed": false
+  },
+  "next_gate": "ONE_MORE_VALID_1800S_SESSION_ON_A_SECOND_UTC_DATE_AND_MIN_1000_ROWS_PER_SYMBOL"
+}
