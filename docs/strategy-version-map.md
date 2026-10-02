@@ -101,6 +101,27 @@ A particularly strong configuration hypothesis is the legacy hardcoded `PAIR_BLO
 
 **Guardrail:** because the predecessor could re-evaluate candidates before persistence, these figures are diagnostic/hypothesis-generating only. The clean replacement series must confirm/refute them prospectively before any strategy rule is changed.
 
+### Clean-series interim strategy hypothesis card — V1 (2026-10-02)
+
+Canonical versioned snapshot:
+- human-readable: `research/v2r3/strategy-adjustment-hypotheses-v1.md`
+- machine-readable: `research/v2r3/strategy-adjustment-hypotheses-v1.json`
+- card ID: `V2R3-ADJ-HYP-20261002-V1`
+- status: **HYPOTHESIS_ONLY_NOT_ACTIVE**
+- source snapshot: 2026-10-02 16:57:19 UTC, clean series only.
+
+The card preserves six explicit candidate adjustments for the later release review without modifying frozen V2R3:
+1. bounded WAIT/watch lifecycle instead of one late recheck → terminal REJECT;
+2. stronger continuation/second-leg handling;
+3. resistance/breakout caution routed more often to confirmation-watch rather than immediate idea death;
+4. extended setups handled through pullback/rebuild research, not broad chase relaxation;
+5. cost-edge distinction between `SETUP_DEAD` and `ENTRY_INEFFICIENT_NOW`;
+6. live public Kraken Spot-EUR metadata as tradability authority, with no negative inference from missing private-account data.
+
+Capture evidence included 324 clean Candidate-Outcomes, 64 complete 24h follow-ups, HEALTHY integrity, and one strategy/runtime fingerprint. In the mature subset, `WAIT_TO_REJECT` had 60 cases with 30 later reaching >=5% MFE and 15 >=10%; CONTINUITY had p50 24h MFE +5.8645% with p50 MAE -1.546%; resistance/breakout blocking/caution had p50 post-detection 24h MFE +6.163%.
+
+**Versioning rule:** V1 is an immutable interim evidence card. Do not overwrite it as the series matures. Materially changed evidence becomes V2 or a final-review disposition artifact. At final review every hypothesis must be classified `CONFIRM`, `CHANGE`, `ADD`, `REJECT` or `MORE_TESTING_REQUIRED`.
+
 ## V2R4 — vorbereitete taktische Timing-/Trigger-Version
 
 **Status:** PREPARED / NOT ACTIVE / PAPER ONLY  
