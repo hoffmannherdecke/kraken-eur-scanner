@@ -1380,6 +1380,28 @@ Important:
 - No formatting is authorized unless repair/conversion fails or a later explicit decision chooses a clean rebuild after backup.
 
 
+### FAT32 preservation repair PASS 2026-10-02
+
+Physical MINI-PC result:
+- status: **PASS_READY_FOR_SEPARATE_NTFS_CONVERSION**;
+- pre-repair visible files: **53,938**;
+- post-repair visible files: **53,939**;
+- missing pre-existing files: **0**;
+- size-changed pre-existing files: **0**;
+- recovered orphan-chain payloads copied to C: **1 .CHK file**;
+- post-repair read-only CHKDSK: **no filesystem problems found / no further action required**;
+- local report: `C:\Users\ADMIN\Trading\Logs\external-drive-d-repair-report-20261002-132204.json`;
+- canonical compact evidence: `research/minipc/external-drive-fat32-repair-evidence-20261002.json`.
+
+This closes the FAT32 repair/preservation gate. No format and no filesystem conversion occurred in that step.
+
+The next physical gate is a separate in-place FAT32 -> NTFS conversion using
+`tools/minipc-external-drive-fat32-to-ntfs.ps1`. The helper requires the successful
+repair report, checks D:/`MISTRAL_450` is still FAT32, records pre/post manifests on C:,
+runs Windows `convert.exe`, requires NTFS afterwards, runs read-only CHKDSK, compares
+all pre-existing paths and byte sizes, and performs a reversible write/read/delete smoke.
+Windows CI `MINI-PC NTFS conversion guard` Run #1 = **SUCCESS**.
+
 ### Final runbook items — intentionally last
 
 These checks are deliberately deferred to the end of the MINI-PC commissioning runbook:
