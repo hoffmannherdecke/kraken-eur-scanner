@@ -42,9 +42,27 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           s=Path('tools/run-minipc-v3-h3-prospective-association.ps1').read_text(encoding='utf-8')
-          for needle in ['RUN_V3_H3_ASSOC_001','1800','trial-ledger.sqlite3','holdout_opened','orders','--self-test']:
+          for needle in ['RUN_V3_H3_ASSOC_002','RUN_V3_H3_SMOKE_002','1800','trial-ledger.sqlite3','holdout_opened','orders','--self-test','v3-h3-assoc-002-session-']:
               assert needle in s, needle
           print('V3_H3_MINIPC_WRAPPER_STATIC_GUARD PASS')
+          PY
+      - name: Install pinned websocket client
+        run: python -m pip install --disable-pip-version-check --no-input "websockets==15.0.1"
+      - name: Real WS fixed-grid sampling smoke
+        run: |
+          python tools/v3-h3-prospective-association.py --spec research/v3/h3-prospective-state-association-trial-v2.json capture --seconds 30 --session-id CI-H3-ASSOC-002-SMOKE --output /tmp/h3-assoc-002-smoke.json
+          python - <<'PY'
+          import json
+          x=json.load(open('/tmp/h3-assoc-002-smoke.json',encoding='utf-8'))
+          assert x['status']=='PASS', x
+          assert x['trial_id']=='V3-H3-ASSOC-002'
+          assert x['wire_messages']>0
+          assert x['subscription_acks']>=1
+          for sym in ['BTC/EUR','ETH/EUR','SOL/EUR']:
+              assert x['counts'][sym]>0, (sym,x['counts'])
+          assert x['guardrails']['orders'] is False
+          assert x['guardrails']['holdout_opened'] is False
+          print('V3_H3_ASSOC_002_REAL_WS_SMOKE PASS',x['counts'])
           PY
       - name: Contract guard
         run: |
