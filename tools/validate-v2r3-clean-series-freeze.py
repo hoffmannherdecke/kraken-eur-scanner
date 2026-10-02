@@ -81,6 +81,24 @@ def main() -> int:
                 f"freeze guard failed: scanner runtime setting {key}={value!r} changed/missing"
             )
 
+    # The unified paper workflow contains behaviorally relevant execution semantics
+    # that are not part of evaluate.py/revalidate.py fingerprints (model selection,
+    # prospective age window, bounded batch selection and lifecycle ordering).
+    # Freeze those semantics too, while still allowing persistence/observability-only
+    # workflow edits that do not change these invariants.
+    runtime_workflow=(ROOT/".github/workflows/paper-evaluator.yml").read_text("utf-8")
+    for needle,label in (
+        ("group: paper-runtime-v2r2","paper runtime concurrency group"),
+        ("cancel-in-progress: false","paper runtime non-cancelling concurrency"),
+        ("OPENAI_MODEL: gpt-6-luna","paper evaluator model"),
+        ("0<=age<=3600","prospective candidate age window"),
+        ("sorted(rows)][:8]","bounded candidate batch size"),
+        ("PYTHONPATH=paper_evaluator python paper_evaluator/revalidate.py","WAIT revalidation lifecycle"),
+        ("python paper_position_tracker.py","paper position lifecycle"),
+        ("python paper_followup.py","paper follow-up lifecycle"),
+    ):
+        require_text(runtime_workflow,needle,label)
+
     out={
         "kind":"V2R3_CLEAN_SERIES_FREEZE_VALIDATION_V1",
         "status":"PASS",
