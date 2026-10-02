@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.1133,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 2.977,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -4.624,
+        "mfe_pct": 4.033,
+        "peak_at_utc": "2026-10-02T08:00:00Z",
+        "trough_at_utc": "2026-10-01T22:50:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 1.93,
       "price_eur": 0.1114
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "SPREAD_AND_DEPTH_ACCEPTABLE",
@@ -121,7 +137,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-02T00:43:04.799390Z"
+    "updated_at_utc": "2026-10-02T12:45:07.468116Z"
   },
   "original_decision": "WAIT",
   "pair": "ALGO/EUR",
