@@ -1,0 +1,133 @@
+{
+  "binance": {
+    "checked_at_utc": "2026-10-02T04:21:58.282673Z",
+    "checks": [
+      {
+        "latency_ms": 327.3,
+        "name": "spot_server_time",
+        "ok": true,
+        "url_host": "api.binance.com"
+      },
+      {
+        "latency_ms": 300.4,
+        "name": "futures_premium_index_btcusdt",
+        "ok": true,
+        "url_host": "fapi.binance.com"
+      },
+      {
+        "latency_ms": 260.7,
+        "name": "futures_open_interest_btcusdt",
+        "ok": true,
+        "url_host": "fapi.binance.com"
+      }
+    ],
+    "status": "HEALTHY"
+  },
+  "collected_at_utc": "2026-10-02T04:52:05.933034Z",
+  "global_guardrails": {
+    "active_v2r3_changed": false,
+    "holdout_opened": false,
+    "leverage_action": false,
+    "network_used_by_collector": false,
+    "orders": false,
+    "private_api_used": false,
+    "real_money_actions": false,
+    "reports_reexecuted": false,
+    "v2r4_changed": false
+  },
+  "h1": {
+    "cutoffs_processed": 422536,
+    "deterministic_summary_sha256": "9e482f1bcfce81d74e463f943f8aa4f3aff4994d1010d6216cfe39ecc35e0a66",
+    "feature_rows_processed_before_holdout": 18377820,
+    "file_count": 648,
+    "leader_cutoffs": 418576,
+    "trial_id": "V3-H1-EUR15-BREADTH-FEATURE-INTEGRITY-001"
+  },
+  "h3": {
+    "checked_at_utc": "2026-10-02T04:21:35.558823Z",
+    "checksum_fail": 0,
+    "checksum_pass": 8195,
+    "cycles_completed": 2,
+    "max_source_age_ms_by_symbol": {
+      "BTC/EUR": 224.675,
+      "ETH/EUR": 259.186,
+      "SOL/EUR": 242.799
+    },
+    "symbols": [
+      "BTC/EUR",
+      "ETH/EUR",
+      "SOL/EUR"
+    ],
+    "updates": 8189
+  },
+  "h6": {
+    "deterministic_summary_sha256": "8a9c968250798c41ce6aa46c7fe6392791d1ec8dee68bfd07c455ecb45536427",
+    "file_count": 648,
+    "pairs_with_any_eligible_cutoff": 563,
+    "rows_processed_before_holdout": 18377820,
+    "trial_id": "V3-H6-EUR15-FEATURE-INTEGRITY-001"
+  },
+  "h9": {
+    "aligned_preceding_book_trades": 23,
+    "checked_at_utc": "2026-10-02T04:21:57.171337Z",
+    "per_symbol": {
+      "BTC/EUR": {
+        "book_checksum_fail": 0,
+        "no_book_yet": 0,
+        "trade_id_duplicates": 0,
+        "trade_id_out_of_order": 0,
+        "trades": 9
+      },
+      "ETH/EUR": {
+        "book_checksum_fail": 0,
+        "no_book_yet": 0,
+        "trade_id_duplicates": 0,
+        "trade_id_out_of_order": 0,
+        "trades": 1
+      },
+      "SOL/EUR": {
+        "book_checksum_fail": 0,
+        "no_book_yet": 0,
+        "trade_id_duplicates": 0,
+        "trade_id_out_of_order": 0,
+        "trades": 13
+      }
+    },
+    "symbols": [
+      "BTC/EUR",
+      "ETH/EUR",
+      "SOL/EUR"
+    ],
+    "trades": 23
+  },
+  "kind": "V3_PHYSICAL_GATE_BUNDLE_EVIDENCE_V1",
+  "schema_version": 1,
+  "source_reports": {
+    "binance": {
+      "bytes": 1133,
+      "path": "C:\\Users\\ADMIN\\Trading\\Logs\\minipc-binance-public-access-latest.json",
+      "sha256": "abbcedcf8139c398025f063fc9e2fe2bdd83f69558151e2f8cc9244f5f911c03"
+    },
+    "h1": {
+      "bytes": 5200,
+      "path": "C:\\Users\\ADMIN\\Trading\\Historical\\reports\\v3-h1-breadth-feature-integrity-20261002-061120.json",
+      "sha256": "767cf3310d4446de12f4d02a3dfee55768d95e7641f301e6ef0ea7b8b6b28e6c"
+    },
+    "h3": {
+      "bytes": 4517,
+      "path": "C:\\Users\\ADMIN\\Trading\\Logs\\v3-h3-ws-book-smoke-20261002-062107.json",
+      "sha256": "b1c1d4110dd3d0d9ca3ad49dcf09827cd4a39958d5eeefecd709501f50897653"
+    },
+    "h6": {
+      "bytes": 2939,
+      "path": "C:\\Users\\ADMIN\\Trading\\Historical\\reports\\v3-h6-feature-integrity-20261002-061120.json",
+      "sha256": "7701042fb74a97ac0dd1e9d0e636ecfc5baa582d1d9416d9f818fe37b9b9991b"
+    },
+    "h9": {
+      "bytes": 4878,
+      "path": "C:\\Users\\ADMIN\\Trading\\Logs\\v3-h9-book-trade-clock-20261002-062135.json",
+      "sha256": "7b8ccba17cd90fa467c404fc380cf90e784d61ab3a428edc4dc0aebf011ef47a"
+    }
+  },
+  "status": "PASS"
+}

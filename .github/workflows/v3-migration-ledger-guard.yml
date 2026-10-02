@@ -7,6 +7,7 @@ name: V3 migration ledger guard
     branches: [main]
     paths:
       - 'research/v3-migration-ledger.json'
+      - 'research/v3/physical-gates/v3-physical-gate-evidence-20261002.json'
       - 'tools/validate-v3-migration-ledger.py'
       - 'tools/run-minipc-v3-next-physical-gates.ps1'
       - 'tools/run-minipc-v3-next-physical-gates-sync.ps1'
@@ -99,3 +100,40 @@ jobs:
 
       - name: Compile physical evidence collector
         run: python -m py_compile tools/collect-v3-physical-gate-evidence.py
+
+      - name: Validate canonical V3 physical gate evidence
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("research/v3/physical-gates/v3-physical-gate-evidence-20261002.json")
+          j=json.loads(p.read_text("utf-8"))
+          assert j["kind"]=="V3_PHYSICAL_GATE_BUNDLE_EVIDENCE_V1"
+          assert j["status"]=="PASS"
+          assert j["h1"]["file_count"]==648
+          assert j["h1"]["feature_rows_processed_before_holdout"]==18377820
+          assert j["h1"]["cutoffs_processed"]==422536
+          assert j["h6"]["file_count"]==648
+          assert j["h6"]["rows_processed_before_holdout"]==18377820
+          assert j["h6"]["pairs_with_any_eligible_cutoff"]==563
+          assert j["h3"]["cycles_completed"]==2
+          assert j["h3"]["updates"]==8189
+          assert j["h3"]["checksum_pass"]==8195
+          assert j["h3"]["checksum_fail"]==0
+          assert j["h9"]["trades"]==23
+          assert j["h9"]["aligned_preceding_book_trades"]==23
+          assert all(r["book_checksum_fail"]==0 for r in j["h9"]["per_symbol"].values())
+          assert all(r["trade_id_duplicates"]==0 for r in j["h9"]["per_symbol"].values())
+          assert all(r["trade_id_out_of_order"]==0 for r in j["h9"]["per_symbol"].values())
+          assert j["binance"]["status"]=="HEALTHY"
+          assert all(x["ok"] for x in j["binance"]["checks"])
+          g=j["global_guardrails"]
+          assert g["holdout_opened"] is False
+          assert g["active_v2r3_changed"] is False
+          assert g["v2r4_changed"] is False
+          assert g["orders"] is False
+          assert g["private_api_used"] is False
+          assert g["real_money_actions"] is False
+          assert g["reports_reexecuted"] is False
+          print("V3_PHYSICAL_GATE_CANONICAL_EVIDENCE PASS")
+          PY

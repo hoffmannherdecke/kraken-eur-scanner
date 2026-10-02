@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H3_ORDERBOOK_DEPTH_PRECHECK_V1",
   "hypothesis_id": "V3-H3",
-  "status": "PRECHECK_WS_PROTOCOL_GREEN_MINIPC_PENDING",
+  "status": "PRECHECK_WS_PROTOCOL_AND_MINIPC_GREEN_ORDERFLOW_RESEARCH_PREREG_PENDING",
   "prepared_at_utc": "2026-10-01T18:45:00Z",
   "purpose": "Verify public Kraken-EUR L2 snapshot semantics and bounded depth calculations before any persistent WebSocket orderflow capture.",
   "source": "KRAKEN_PUBLIC_REST_DEPTH",
@@ -51,7 +51,7 @@
     "holdout_opened": false,
     "direct_buy_sell_rule": false
   },
-  "next_gate": "BOUNDED_MINIPC_PUBLIC_WS_BOOK_CONFIRMATION_SAME_CHECKSUM_CONTRACT",
+  "next_gate": "PREREGISTER_BOUNDED_H3_ORDERFLOW_STATE_CAPTURE_OR_ASSOCIATION_NO_THRESHOLD_NO_FILL_CLAIM",
   "snapshot_readiness": {
     "audit": "CI_GREEN_RUN_1",
     "representative_pairs_ok": 3,
@@ -109,8 +109,18 @@
       "ETH/EUR",
       "SOL/EUR"
     ],
-    "physical_minipc_confirmation": false,
+    "physical_minipc_confirmation": true,
     "queue_position_proven": false,
-    "maker_fill_probability_proven": false
+    "maker_fill_probability_proven": false,
+    "physical_evidence": "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
+    "physical_checked_at_utc": "2026-10-02T04:21:35.558823Z",
+    "physical_updates": 8189,
+    "physical_checksum_pass": 8195,
+    "physical_checksum_fail": 0,
+    "physical_max_source_age_ms_by_symbol": {
+      "BTC/EUR": 224.675,
+      "ETH/EUR": 259.186,
+      "SOL/EUR": 242.799
+    }
   }
 }

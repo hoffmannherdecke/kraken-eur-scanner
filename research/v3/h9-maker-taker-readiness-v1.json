@@ -2,14 +2,14 @@
   "schema_version": 1,
   "kind": "V3_H9_MAKER_TAKER_READINESS_V1",
   "hypothesis_id": "V3-H9",
-  "status": "DEFERRED_FILL_MODEL_PUBLIC_CLOCK_GREEN_PHYSICAL_AND_MODEL_GATES_PENDING",
+  "status": "DEFERRED_FILL_MODEL_PHYSICAL_CLOCK_GREEN_FEE_DEADLINE_QUEUE_GATES_PENDING",
   "prepared_at_utc": "2026-10-01T18:47:00Z",
   "purpose": "Block maker-vs-taker/fill-probability research until the required execution microstructure evidence exists.",
   "current_evidence": {
     "public_rest_l2_snapshot": "GREEN_H3_REST_DEPTH",
-    "public_ws_book_delta_capture": "GREEN_H3_CLOUD_CHECKSUM_RECONCILIATION__PHYSICAL_MINIPC_PENDING",
+    "public_ws_book_delta_capture": "GREEN_H3_CLOUD_AND_PHYSICAL_MINIPC_CHECKSUM_RECONCILIATION",
     "public_trade_sequence_targeted_method": "PREPARED_NO_BULK_DOWNLOAD",
-    "synchronized_book_and_trade_clock": "GREEN_CLOUD_SAME_CONNECTION_PROTOCOL__PHYSICAL_MINIPC_PENDING",
+    "synchronized_book_and_trade_clock": "GREEN_CLOUD_AND_PHYSICAL_MINIPC_SAME_CONNECTION_PROTOCOL",
     "queue_position_model": "NOT_AVAILABLE",
     "maker_fill_probability_model": "NOT_AVAILABLE",
     "cloud_book_trade_clock": {
@@ -20,6 +20,16 @@
       "no_book_yet_trades": 1,
       "duplicate_trade_ids": 0,
       "out_of_order_trade_ids": 0
+    },
+    "physical_book_trade_clock": {
+      "evidence": "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
+      "checked_at_utc": "2026-10-02T04:21:57.171337Z",
+      "trades": 23,
+      "safely_aligned_preceding_book_trades": 23,
+      "duplicate_trade_ids": 0,
+      "out_of_order_trade_ids": 0,
+      "no_book_yet_trades": 0,
+      "book_checksum_fail": 0
     }
   },
   "public_rest_snapshot_is_insufficient_for": [
@@ -69,5 +79,5 @@
     "leverage_allowed": false,
     "real_money_actions_allowed": false
   },
-  "next_gate": "PHYSICAL_MINIPC_H3_H9_PUBLIC_CLOCK_CONFIRMATION_THEN_VERSION_FEES_DEADLINE_CLEANUP_AND_QUEUE_ASSUMPTION_BEFORE_MODELLING"
+  "next_gate": "VERSION_MAKER_TAKER_FEES_THEN_PREREGISTER_DEADLINE_CLEANUP_AND_EXPLICIT_QUEUE_ASSUMPTION_BEFORE_ANY_FILL_MODEL"
 }

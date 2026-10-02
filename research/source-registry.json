@@ -83,7 +83,7 @@
     },
     {
       "id": "binance_futures_public",
-      "status": "ACTIVE_SUPPLEMENTARY_PUBLIC_CONTEXT",
+      "status": "ACTIVE_SUPPLEMENTARY_PUBLIC_CONTEXT__MINIPC_CONNECTIVITY_PROVEN",
       "class": "derivatives_context",
       "unique_value": "Independent cross-market funding/open-interest context when it adds information unavailable from Kraken Futures.",
       "authoritative_for": [
@@ -96,7 +96,7 @@
       "overlap_with": [
         "kraken_futures_public"
       ],
-      "overlap_strategy": "Supplementary only; never replaces Kraken-EUR execution truth. Physical MINI-PC public-connectivity proof remains a separate open gate.",
+      "overlap_strategy": "Supplementary only; never replaces Kraken-EUR execution truth. Physical MINI-PC public connectivity is proven HEALTHY on 2026-10-02; research use still requires a preregistered point-in-time trial.",
       "persistence_mode": "decision_context_only",
       "duplicate_raw_storage_allowed": false,
       "access": "public_read_only"

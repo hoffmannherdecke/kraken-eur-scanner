@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-01T19:45:16Z",
+  "updated_at_utc": "2026-10-02T04:52:05Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -213,7 +213,7 @@
       "category": "state_context",
       "source_version": "research preflight",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Kraken Futures OI/Funding/Basis coverage is public-precheck green; H2 now also has a frozen prospective association contract, persisted live response-shape evidence, a fail-closed parser contract, and an isolated prospective candidate capture smoke. The path remains unattached to the live candidate stream and has no performance/threshold evidence.",
+      "rationale": "Kraken Futures H2 research tooling remains isolated/unattached. Separately, Binance public connectivity on the MINI-PC is now physically proven HEALTHY for spot server time, BTCUSDT premium/funding and open interest without API key/account/orders. Binance remains supplementary only.",
       "evidence": [
         "research/v3/h2-derivatives-state-precheck-v1.json",
         "research/historical/binance-derivatives-context-preflight-v1.json",
@@ -222,7 +222,8 @@
         "research/v3/h2-prospective-derivatives-association-dataset-contract-v1.json",
         "research/v3/h2-kraken-analytics-response-shape-20261001T192657Z.json",
         "research/v3/h2-kraken-analytics-capture-parser-contract-v1.json",
-        "tools/v3-h2-prospective-candidate-capture.py"
+        "tools/v3-h2-prospective-candidate-capture.py",
+        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json"
       ],
       "pending_gate": "V3_H2_EXPLICIT_REVIEW_BEFORE_ATTACHING_ISOLATED_CAPTURE_TO_REAL_PROSPECTIVE_RESEARCH_STREAM"
     },
@@ -231,7 +232,7 @@
       "category": "state_signal",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Public Kraken L2 snapshot plus Spot WS-v2 snapshot/delta reconciliation are cloud-verified with 1,617/1,617 CRC32 checks passing across two reconnect cycles. Physical MINI-PC confirmation remains required; queue position and maker-fill mechanics remain unproven.",
+      "rationale": "Kraken Spot WS-v2 L2 reconciliation is now cloud- and MINI-PC-proven. Physical run: 8,189 updates, 8,195 CRC32 passes, 0 failures across two cycles; max source age 225-259 ms on BTC/ETH/SOL. Queue position and maker-fill mechanics remain explicitly unproven.",
       "evidence": [
         "research/v3/h3-orderbook-depth-precheck-v1.json",
         "tools/v3-h3-kraken-depth-precheck.py",
@@ -239,9 +240,10 @@
         "tools/v3-h3-kraken-ws-book-reconciliation-smoke.py",
         ".github/workflows/v3-h3-orderbook-precheck-guard.yml",
         "research/v3/h3-ws-book-reconciliation-evidence-20261001T193640Z.json",
-        "tools/run-minipc-v3-h3-ws-book-smoke.ps1"
+        "tools/run-minipc-v3-h3-ws-book-smoke.ps1",
+        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json"
       ],
-      "pending_gate": "V3_H3_BOUNDED_MINIPC_PUBLIC_WS_BOOK_CONFIRMATION_SAME_CHECKSUM_CONTRACT"
+      "pending_gate": "V3_H3_PREREGISTER_BOUNDED_ORDERFLOW_STATE_CAPTURE_OR_ASSOCIATION_NO_THRESHOLD_NO_FILL_CLAIM"
     },
     {
       "id": "macro_event_risk_gate",
@@ -310,45 +312,48 @@
       "category": "state_signal",
       "source_version": "V3 H1 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Point-in-time multi-pair feature semantics are green, but incremental net Kraken-EUR value has not been tested on preregistered real development/OOS data.",
+      "rationale": "Point-in-time semantics and the frozen physical feature-integrity run are green: 648 files, 18,377,820 pre-holdout rows, 422,536 cutoffs, 418,576 leader-available cutoffs. This proves data/feature integrity only; incremental association/net edge remains untested and 2026H1 stays sealed.",
       "evidence": [
         "research/v3/h1-cross-crypto-breadth-precheck-v1.json",
         "tools/v3-h1-breadth-pit-smoke.py",
         "docs/v3-research-framework.md",
         "tools/v3-h1-eur15-breadth-feature-integrity.py",
-        "tools/run-minipc-v3-feature-integrity-gates.ps1"
+        "tools/run-minipc-v3-feature-integrity-gates.ps1",
+        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json"
       ],
-      "pending_gate": "V3_H1_EXECUTE_FROZEN_FEATURE_INTEGRITY_ON_PHYSICAL_NORMALIZED_DATA"
+      "pending_gate": "V3_H1_PREREGISTER_DEVELOPMENT_ONLY_ASSOCIATION_TRIAL_NO_HOLDOUT_NO_THRESHOLD_SEARCH"
     },
     {
       "id": "price_volume_trend_primitives",
       "category": "signal_state",
       "source_version": "V3 H6 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Transparent point-in-time price and non-overlapping volume primitives are methodology-green, but incremental net Kraken-EUR value is untested on preregistered real development/OOS data.",
+      "rationale": "Transparent PIT price/volume primitives passed the frozen physical feature-integrity run on 648 files and 18,377,820 pre-holdout rows; 563 pairs had at least one eligible 1h+volume-ratio cutoff. This is feature integrity, not edge evidence.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "tools/v3-h6-price-volume-pit-smoke.py",
         "docs/v3-research-framework.md",
         "tools/v3-h6-eur15-feature-integrity.py",
-        "tools/run-minipc-v3-feature-integrity-gates.ps1"
+        "tools/run-minipc-v3-feature-integrity-gates.ps1",
+        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json"
       ],
-      "pending_gate": "V3_H6_EXECUTE_FROZEN_FEATURE_INTEGRITY_ON_PHYSICAL_NORMALIZED_DATA"
+      "pending_gate": "V3_H6_PREREGISTER_DEVELOPMENT_ONLY_ASSOCIATION_TRIAL_NO_HOLDOUT_NO_THRESHOLD_SEARCH"
     },
     {
       "id": "simple_price_volume_primitives",
       "category": "signal_state",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "Transparent PIT price/volume primitives are methodology-green, but no real development trial or incremental Kraken-EUR evidence exists yet.",
+      "rationale": "The H6 physical feature-integrity run is green on pre-2026 development data only. No outcome labels, performance metrics, threshold selection or holdout access occurred.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "tools/v3-h6-price-volume-pit-smoke.py",
         "docs/v3-research-framework.md",
         "tools/v3-h6-eur15-feature-integrity.py",
-        "tools/run-minipc-v3-feature-integrity-gates.ps1"
+        "tools/run-minipc-v3-feature-integrity-gates.ps1",
+        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json"
       ],
-      "pending_gate": "V3_H6_EXECUTE_FROZEN_FEATURE_INTEGRITY_ON_PHYSICAL_NORMALIZED_DATA"
+      "pending_gate": "V3_H6_PREREGISTER_DEVELOPMENT_ONLY_ASSOCIATION_TRIAL_NO_HOLDOUT_NO_THRESHOLD_SEARCH"
     },
     {
       "id": "meta_take_no_take",
@@ -385,16 +390,17 @@
       "category": "execution_cost",
       "source_version": "V3 later execution hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "H3 cloud WS book reconciliation and H9 same-connection public book+trade clock/sequence smoke are green. Sparse trade capture correctly preserved a no-book-yet case instead of fabricating a join. Physical MINI-PC confirmation plus fee/deadline/queue contracts are still required before any fill-probability or route model.",
+      "rationale": "H3 book reconciliation and H9 same-connection book+trade clock are now physically confirmed on the MINI-PC. H9 captured 23 trades and all 23 had a safe preceding reconciled book, with 0 duplicate/out-of-order trade IDs and 0 book checksum failures. Fill modelling remains blocked pending versioned fees, deadline/cleanup and explicit queue assumptions.",
       "evidence": [
         "research/v3/h9-maker-taker-readiness-v1.json",
         "research/v3/h3-orderbook-depth-precheck-v1.json",
         "docs/v3-research-framework.md",
         "tools/v3-h9-public-book-trade-clock-smoke.py",
         "research/v3/h9-book-trade-clock-evidence-20261001T194344Z.json",
-        "tools/run-minipc-v3-h9-book-trade-clock-smoke.ps1"
+        "tools/run-minipc-v3-h9-book-trade-clock-smoke.ps1",
+        "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json"
       ],
-      "pending_gate": "V3_H9_PHYSICAL_H3_H9_CLOCK_CONFIRMATION_THEN_FEE_DEADLINE_CLEANUP_QUEUE_CONTRACTS"
+      "pending_gate": "V3_H9_VERSION_FEES_THEN_PREREGISTER_DEADLINE_CLEANUP_AND_QUEUE_ASSUMPTION"
     }
   ]
 }

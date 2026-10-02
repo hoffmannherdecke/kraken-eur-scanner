@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H6_PRICE_VOLUME_TREND_PRECHECK_V1",
   "hypothesis_id": "V3-H6",
-  "status": "PRECHECK_PIT_METHOD_GREEN",
+  "status": "PRECHECK_REAL_FEATURE_INTEGRITY_GREEN_ASSOCIATION_PREREG_PENDING",
   "prepared_at_utc": "2026-10-01T18:35:00Z",
   "purpose": "Define transparent point-in-time multi-horizon price and volume trend primitives before any Kraken-EUR incremental-value trial.",
   "source": "KRAKEN_NORMALIZED_EUR_15M",
@@ -50,7 +50,7 @@
     "real_money_actions": false,
     "automatic_strategy_promotion": false
   },
-  "next_gate": "REAL_EUR15_FEATURE_TRIAL_PREREGISTERED__NEXT_EXECUTE_PHYSICALLY_WITH_HOLDOUT_SEALED",
+  "next_gate": "PREREGISTER_H6_ASSOCIATION_TRIAL_ON_DEVELOPMENT_ONLY_NO_HOLDOUT_NO_THRESHOLD_SEARCH",
   "methodology_readiness": {
     "synthetic_price_volume_pit_smoke": "CI_GREEN_RUN_1",
     "future_row_trap": "PASS_IGNORED",
@@ -61,6 +61,14 @@
     "real_eur15_feature_trial_preregistered": "V3-H6-EUR15-FEATURE-INTEGRITY-001",
     "real_eur15_expected_pair_files": 648,
     "real_eur15_expected_rows": 20960798,
-    "feature_trial_performance_labels_allowed": false
+    "feature_trial_performance_labels_allowed": false,
+    "physical_feature_integrity": {
+      "status": "PASS",
+      "evidence": "research/v3/physical-gates/v3-physical-gate-evidence-20261002.json",
+      "file_count": 648,
+      "rows_processed_before_holdout": 18377820,
+      "pairs_with_any_eligible_cutoff": 563,
+      "deterministic_summary_sha256": "8a9c968250798c41ce6aa46c7fe6392791d1ec8dee68bfd07c455ecb45536427"
+    }
   }
 }
