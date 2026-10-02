@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "ONDOEUR",
+  "candidate_id": "20261002-212542-ONDO-EUR-r37066590310",
+  "event_time_utc": "2026-10-02T21:25:42Z",
+  "event_ts": 1790976342,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "ONDO/EUR",
+  "queue_id": "37066590310:ONDO-EUR:1790976342",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=ONDO/EUR | score=8.00 | price_eur=0.4335 | ret15_live=-0.12% | ret1h=0.80% | ret3h=-2.22% | ret24h=-0.82% | vol_live=3.89x | vol_closed=0.13x | rank=10 | rank_jump=16 | state_rank_jump=-3 | breakout3h=0 | higher_lows=1 | base_tight=5.81% | fresh_move3h=3.43% | adx14=54.2 | spread=0.018% | turnover24h_eur=688248 | coverage=100% | ret7d=-10.27% | ret30d=45.60% | dist7d_high=-18.82% | dist30d_high=-18.82% | depth_1pct_eur=76276 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 54.19693890311316,
+    "altname": "ONDOEUR",
+    "base_tight_pct": 5.80993056715422,
+    "breakout3h": false,
+    "context30d": 45.6,
+    "context7d": -10.27,
+    "depth_eur_1pct": 76275.86,
+    "dist30d_high_pct": -18.82,
+    "dist7d_high_pct": -18.82,
+    "ema26_gt_50": false,
+    "fresh_move_3h": 3.4334661544701994,
+    "higher_lows": true,
+    "late": false,
+    "pair": "ONDO/EUR",
+    "price": 0.4335,
+    "rank15": 10,
+    "rank15_prev": 26,
+    "rank_jump": 16,
+    "ret15_closed": 0.2591392873669607,
+    "ret15_live": -0.1175088131609936,
+    "ret1h": 0.8045763184820087,
+    "ret24h": -0.8168028004667538,
+    "ret3h": -2.223926380368091,
+    "score": 8.0,
+    "spread_pct": 0.018452312305378617,
+    "stale": false,
+    "state_rank_jump": -3,
+    "turnover24h": 688247.598945946,
+    "volume_ratio_closed": 0.128584411596518,
+    "volume_ratio_live": 3.894266408895111
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-10-02T21:25:42Z",
+    "positive_1h_count": 34,
+    "positive_3h_count": 2,
+    "schema_version": 1,
+    "score_ge_5_count": 9,
+    "top_1h": [
+      {
+        "pair": "WLD/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.799,
+        "ret3h": -3.009,
+        "score": 7.2,
+        "vol_live": 0.004
+      },
+      {
+        "pair": "MINA/EUR",
+        "ret15_live": 0.709,
+        "ret1h": 1.284,
+        "ret3h": -1.662,
+        "score": 4.9,
+        "vol_live": 0.455
+      },
+      {
+        "pair": "TRUMP/EUR",
+        "ret15_live": -0.055,
+        "ret1h": 1.169,
+        "ret3h": -1.411,
+        "score": 4.9,
+        "vol_live": 0.428
+      },
+      {
+        "pair": "RENDER/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.891,
+        "ret3h": -2.693,
+        "score": 4.4,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "ONDO/EUR",
+        "ret15_live": -0.118,
+        "ret1h": 0.805,
+        "ret3h": -2.224,
+        "score": 8.0,
+        "vol_live": 3.894
+      },
+      {
+        "pair": "LTC/EUR",
+        "ret15_live": 0.146,
+        "ret1h": 0.785,
+        "ret3h": -0.581,
+        "score": 6.9,
+        "vol_live": 6.886
+      },
+      {
+        "pair": "XLM/EUR",
+        "ret15_live": 0.094,
+        "ret1h": 0.754,
+        "ret3h": -2.346,
+        "score": 4.9,
+        "vol_live": 0.455
+      },
+      {
+        "pair": "AVAX/EUR",
+        "ret15_live": -0.032,
+        "ret1h": 0.661,
+        "ret3h": -3.642,
+        "score": 5.5,
+        "vol_live": 0.512
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "ONDO/EUR",
+        "ret15_live": -0.118,
+        "ret1h": 0.805,
+        "ret3h": -2.224,
+        "score": 8.0,
+        "vol_live": 3.894
+      },
+      {
+        "pair": "XBT/EUR",
+        "ret15_live": -0.007,
+        "ret1h": 0.182,
+        "ret3h": -0.428,
+        "score": 7.3,
+        "vol_live": 0.332
+      },
+      {
+        "pair": "WLD/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.799,
+        "ret3h": -3.009,
+        "score": 7.2,
+        "vol_live": 0.004
+      },
+      {
+        "pair": "LTC/EUR",
+        "ret15_live": 0.146,
+        "ret1h": 0.785,
+        "ret3h": -0.581,
+        "score": 6.9,
+        "vol_live": 6.886
+      },
+      {
+        "pair": "ICP/EUR",
+        "ret15_live": 0.244,
+        "ret1h": 0.314,
+        "ret3h": -1.305,
+        "score": 6.8,
+        "vol_live": 1.311
+      },
+      {
+        "pair": "MOVR/EUR",
+        "ret15_live": 0.811,
+        "ret1h": -1.366,
+        "ret3h": -9.631,
+        "score": 6.6,
+        "vol_live": 1.073
+      },
+      {
+        "pair": "PAXG/EUR",
+        "ret15_live": 0.037,
+        "ret1h": 0.093,
+        "ret3h": 0.168,
+        "score": 5.9,
+        "vol_live": 33.234
+      },
+      {
+        "pair": "XPL/EUR",
+        "ret15_live": 0.123,
+        "ret1h": 0.369,
+        "ret3h": -4.455,
+        "score": 5.9,
+        "vol_live": 1.504
+      }
+    ],
+    "total_rows": 65
+  },
+  "scanner_market_context": {
+    "altname": "ONDOEUR",
+    "atr15_eur": 0.004537857142857141,
+    "atr15_pct": 1.0472300246600992,
+    "closed_through_epoch": 1790974800,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.43332,
+      "high": 0.4338,
+      "low": 0.43216,
+      "open": 0.4322,
+      "volume": 1766.3956
+    },
+    "pair": "ONDO/EUR",
+    "range_1h_pct": 1.0177236222653063,
+    "recent_closed_closes": [
+      0.42733,
+      0.43023,
+      0.43269,
+      0.43013,
+      0.43276,
+      0.43332
+    ],
+    "resistance_1h": 0.4338,
+    "resistance_3h": 0.44346,
+    "schema_version": 1,
+    "sensor_price_eur": 0.4335,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.42939,
+    "support_3h": 0.41911,
+    "ts": 1790976342
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 37066590310,
+  "source_scanner_sha": "462e8e4c5444fa7b3ac4d313cc1ebb3e1e6cbed0",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-02T21:25:42Z",
+    "candidate_detected_ts": 1790976342,
+    "candidate_snapshot_at_utc": "2026-10-02T21:25:42Z",
+    "handoff_written_at_utc": "2026-10-02T21:25:44.978150Z",
+    "scan_step_started_at_utc": "2026-10-02T21:24:04Z"
+  }
+}
