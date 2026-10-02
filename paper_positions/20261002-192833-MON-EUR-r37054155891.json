@@ -21,7 +21,7 @@
   "fee_assumption_pct_per_side": 0.6,
   "initial_stop_eur": 0.02835,
   "kind": "PAPER_POSITION_V3",
-  "last_processed_bar_start_utc": "2026-10-02T20:29:00Z",
+  "last_processed_bar_start_utc": "2026-10-02T20:43:00Z",
   "legs": [
     {
       "execution_quality": "FRESH_KRAKEN_BEST_ASK",
@@ -39,8 +39,8 @@
   "max_gain_pct": 0.0,
   "max_hold_at_utc": "2026-10-05T20:28:34.792490Z",
   "max_hold_hours": 72.0,
-  "min_seen_price_eur": 0.02888,
-  "open_age_hours": 0.039,
+  "min_seen_price_eur": 0.02851,
+  "open_age_hours": 0.27,
   "opened_at_utc": "2026-10-02T20:28:34.792490Z",
   "pair": "MON/EUR",
   "peak_price_eur": 0.02889,
