@@ -35,7 +35,6 @@ def compact_positions(state):
     return sorted(out,key=lambda x:x["coin"])
 
 def event_id(address,f):
-    parts=[address,str(f.get(k,"")) for k in []]
     s="|".join([address,str(f.get("time","")),str(f.get("coin","")),str(f.get("hash","")),
                 str(f.get("oid","")),str(f.get("tid","")),str(f.get("px","")),str(f.get("sz","")),str(f.get("dir",""))])
     return hashlib.sha256(s.encode()).hexdigest()
