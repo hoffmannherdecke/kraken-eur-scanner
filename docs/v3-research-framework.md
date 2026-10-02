@@ -368,7 +368,7 @@ Potential inputs:
 Non-fills/cancels must be retained as censored observations, not discarded.
 
 ### H10 — Smart-Money / Trader-Activity Layer
-Status: `COHORT_SELECTION_V1_PREREGISTERED_EXECUTION_PENDING`  
+Status: `PROSPECTIVE_SHADOW_CAPTURE_ACTIVE`  
 Priority: A/B
 
 Purpose:
@@ -421,7 +421,13 @@ Current source precheck:
 - discovery uses Hyperliquid's public stats leaderboard **only as an unstable discovery source**; official `api.hyperliquid.xyz/info` `userRole`, `portfolio` and 30-day `userFillsByTime` must verify every included address;
 - selection explicitly forbids Kraken future returns/MFE/MAE, V2R3/V2R4 outcomes, future Hyperliquid performance, identity guesses and manual post-outcome cherry-picking;
 - CI workflow `.github/workflows/v3-h10-smart-money-cohort-precheck.yml` first runs a 3-address bounded smoke, then executes the frozen cohort selection only if the smoke passes; no schedule and no active strategy coupling;
-- next gate: inspect and freeze the generated cohort evidence, then start compact prospective activity capture in shadow mode.
+- cohort execution **Run #1 SUCCESS**: 46,994 leaderboard rows inspected; deterministic cohort frozen as `research/v3/h10-trader-cohort-v1.json` with **20 primary + 6 active controls** after 81 official-address verification attempts;
+- first prospective capture **SUCCESS**: 26/26 wallets, 0 errors, 63 current positions and 652 source-timestamped fill events seen in the 45-minute lookback; Supabase `public.v3_h10_capture_health` = `HEALTHY`;
+- active cloud bootstrap capture: `.github/workflows/v3-h10-smart-money-shadow-capture.yml` at :17/:47 each hour. It is intentionally a coarse bootstrap/fallback path; source fill timestamps remain exact, but GitHub scheduler timing must not be interpreted as 60-second observation latency;
+- storage is compact and server-side only: `v3_h10_capture_batches`, `v3_h10_wallet_states`, `v3_h10_fill_events`, `v3_h10_capture_errors`; MINI-PC receives no Supabase admin/service key;
+- anti-HFT aggregation is explicit: `v3_h10_wallet_asset_activity_30m` counts each wallet once per asset/window and `v3_h10_asset_consensus_30m` measures independent-wallet agreement, so hundreds of fills from one trader cannot masquerade as broad Smart-Money consensus;
+- first descriptive review is preregistered in `research/v3/h10-first-analysis-gate-v1.json`: minimum 72h, >=95% healthy capture, >=100 batches, >=100 primary wallet-asset windows and >=20 multi-wallet same-asset windows; no wallet/coin/threshold/horizon selection from seen Kraken outcomes;
+- next gate: let the frozen cohort collect prospectively; after the analysis gate matures, join only point-in-time online Kraken Spot-EUR assets at fixed 15m/1h/3h/6h/24h horizons and compare primary cohort versus active controls. No active strategy change before that review.
 
 
 ### H11 — Prediction-Market Event Layer
