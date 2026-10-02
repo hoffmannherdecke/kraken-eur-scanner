@@ -1,0 +1,51 @@
+name: V3 H10 smart money shadow capture
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/h10-trader-cohort-v1.json'
+      - 'research/v3/h10-prospective-capture-contract-v1.json'
+      - 'tools/v3-h10-activity-capture.py'
+      - '.github/workflows/v3-h10-smart-money-shadow-capture.yml'
+  schedule:
+    - cron: '17,47 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v3-h10-smart-money-shadow-capture
+  cancel-in-progress: true
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Static/self-test
+        run: |
+          python -m py_compile tools/v3-h10-activity-capture.py
+          python tools/v3-h10-activity-capture.py --self-test
+      - name: Bounded two-wallet public smoke
+        if: github.event_name != 'schedule'
+        run: python tools/v3-h10-activity-capture.py --dry-run --max-wallets 2 --path GITHUB_BOOTSTRAP_SMOKE
+      - name: Check server-side archive credential
+        run: |
+          python - <<'PY'
+          import os
+          k=(os.getenv('SUPABASE_SECRET_KEY') or os.getenv('SUPABASE_SERVICE_ROLE_KEY') or '').strip()
+          if not k: raise SystemExit('H10 Supabase server credential missing')
+          print('H10_ARCHIVE_CREDENTIAL configured')
+          PY
+      - name: Capture frozen cohort
+        run: python tools/v3-h10-activity-capture.py --path GITHUB_BOOTSTRAP_30M
