@@ -1,0 +1,218 @@
+{
+  "altname": "RENDEREUR",
+  "candidate_id": "20261002-161036-RENDER-EUR-r37031928384",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A renewed 15m close above 1.783 EUR with sustained volume.",
+      "BTC/EUR, ETH/EUR, and SOL/EUR stop declining together on the 1h view."
+    ],
+    "reason_codes": [
+      "failed_resistance_hold",
+      "weak_major_market_regime",
+      "negative_open_interest_delta",
+      "costs_exceed_runway"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The brief move above 1.783 EUR failed to hold; the latest close is back below resistance, major-market proxies remain weak, and cost-adjusted runway does not support a scout.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "RENDERUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 33.52,
+        "available": true,
+        "current_funding_rate": -1.0455580417667e-05,
+        "current_open_interest": 248846.1,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -1.2438,
+        "previous_funding_rate": -1.0455580417667e-05,
+        "previous_observed_at_utc": "2026-10-02T16:11:16.150170Z",
+        "previous_open_interest": 251980.3
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.0455580417667e-05,
+        "index_price": 1.98737,
+        "last": 1.9878,
+        "mark_price": 1.98765467783,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 248846.1,
+        "requested_symbols": [
+          "PF_RENDERUSD",
+          "PI_RENDERUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_RENDERUSD",
+        "volume24h": 251991.6
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.766,
+      "bid": 1.765,
+      "last": 1.765,
+      "spread_pct": 0.05664117813651158
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "2.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.27688388396167607,
+          "ret3h_pct": -1.6636596615787758
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.3024836154708388,
+          "ret3h_pct": -2.1000736437280065
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.037541060534973525,
+          "ret3h_pct": -1.9591611479028659
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-02T16:44:45.931784Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_08acdff8024d551f006abfdf7fc50c87d1923c0a83fa1bd732"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.766,
+    "bid": 1.765,
+    "last": 1.765,
+    "spread_pct": 0.05664117813651158
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.752,
+      "high": 1.762,
+      "low": 1.752,
+      "open": 1.762,
+      "trades": 5,
+      "ts": 1790955000,
+      "volume": 28.63971,
+      "vwap": 1.757
+    },
+    {
+      "close": 1.756,
+      "high": 1.757,
+      "low": 1.754,
+      "open": 1.755,
+      "trades": 23,
+      "ts": 1790955900,
+      "volume": 1998.36294,
+      "vwap": 1.756
+    },
+    {
+      "close": 1.772,
+      "high": 1.773,
+      "low": 1.758,
+      "open": 1.758,
+      "trades": 9,
+      "ts": 1790956800,
+      "volume": 359.34606,
+      "vwap": 1.768
+    },
+    {
+      "close": 1.787,
+      "high": 1.787,
+      "low": 1.777,
+      "open": 1.777,
+      "trades": 21,
+      "ts": 1790957700,
+      "volume": 2733.17964,
+      "vwap": 1.783
+    },
+    {
+      "close": 1.765,
+      "high": 1.772,
+      "low": 1.758,
+      "open": 1.772,
+      "trades": 27,
+      "ts": 1790958600,
+      "volume": 1817.75207,
+      "vwap": 1.767
+    }
+  ],
+  "pair": "RENDER/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-161036-RENDER-EUR-r37031928384.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-02T16:44:54.069569Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "3478d53047cf32a6f40764e232386c0621924335",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-02T16:44:54.069569Z",
+    "revalidation_started_at_utc": "2026-10-02T16:44:45.470815Z",
+    "ttl_due_at_utc": "2026-10-02T16:41:16.150170Z",
+    "ttl_lag_seconds": 209.321
+  }
+}
