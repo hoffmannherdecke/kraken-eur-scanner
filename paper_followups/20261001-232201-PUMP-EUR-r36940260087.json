@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.005215,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -8.399,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -14.329,
+        "mfe_pct": 5.204,
+        "peak_at_utc": "2026-10-02T16:20:00Z",
+        "trough_at_utc": "2026-10-02T18:35:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 4.061,
       "price_eur": 0.005023
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "WEAK_CLOSED_VOLUME",
@@ -118,7 +134,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-02T11:31:51.540470Z"
+    "updated_at_utc": "2026-10-02T23:34:36.813294Z"
   },
   "original_decision": "WAIT",
   "pair": "PUMP/EUR",
