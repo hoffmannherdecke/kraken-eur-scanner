@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 60.63,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 0.742,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -0.907,
+        "mfe_pct": 5.214,
+        "peak_at_utc": "2026-10-02T15:45:00Z",
+        "trough_at_utc": "2026-10-02T18:35:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 1.712,
       "price_eur": 59.59
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "good_liquidity",
@@ -120,7 +136,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-02T08:04:19.635141Z"
+    "updated_at_utc": "2026-10-02T20:04:24.821651Z"
   },
   "original_decision": "WAIT",
   "pair": "LTC/EUR",
