@@ -42,7 +42,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           s=Path('tools/run-minipc-v3-h3-prospective-association.ps1').read_text(encoding='utf-8')
-          for needle in ['RUN_V3_H3_ASSOC_002','RUN_V3_H3_SMOKE_002','1800','trial-ledger.sqlite3','holdout_opened','orders','--self-test','v3-h3-assoc-002-session-']:
+          for needle in ['RUN_V3_H3_ASSOC_002','RUN_V3_H3_SMOKE_002','1800','trial-ledger.sqlite3','holdout_opened','orders','--self-test','v3-h3-assoc-002-session-','research\\v3\\h3-association-reports','raw_session_rows_imported=$false','Unexpected staged paths during H3 evidence import','git push origin main','H3 evaluation remains PASS, but canonical report import is pending']:
               assert needle in s, needle
           print('V3_H3_MINIPC_WRAPPER_STATIC_GUARD PASS')
           PY
