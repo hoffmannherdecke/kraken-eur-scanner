@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 147.52,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 9.507,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -0.366,
+        "mfe_pct": 12.92,
+        "peak_at_utc": "2026-10-02T05:00:00Z",
+        "trough_at_utc": "2026-10-01T17:00:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 2.461,
       "price_eur": 143.83
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "SPREAD_ACCEPTABLE",
@@ -118,7 +134,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-02T03:13:28.558996Z"
+    "updated_at_utc": "2026-10-02T15:04:36.704786Z"
   },
   "original_decision": "WAIT",
   "pair": "AAVE/EUR",
