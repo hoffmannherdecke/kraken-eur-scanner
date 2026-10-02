@@ -163,6 +163,8 @@ Start erst nach Eintreffen des Geräts; Einrichtung schrittweise.
 
 ---
 
+> **Nächster gebündelter Nutzer-Checkpoint:** `NEXT-GATES-20261003-AM` / Stichwort **„V3-Morgencheck 03.10.“**. Sinnvoll ab 03.10.2026 ca. 06:30 MESZ: H1/H6-Reportimport + H3-Session #3 bündeln; vorher V2R3/H10 bewusst nur Daten sammeln lassen. Kanonischer Plan: `research/project-next-action-checkpoint-20261003.json`.
+
 ## P6 — V3 aus Evidenz bauen, nicht aus Bauchgefühl
 
 Detailregeln bleiben in `docs/v3-research-framework.md` und Issue #7. Die Abgrenzung zu V2R4 ist verbindlich in `docs/strategy-version-map.md` festgelegt.
