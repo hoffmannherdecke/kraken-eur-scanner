@@ -6,6 +6,7 @@ name: V3 H9 maker taker readiness guard
     branches: [main]
     paths:
       - 'research/v3/h9-maker-taker-readiness-v1.json'
+      - 'research/v3/h9-kraken-spot-public-fee-schedule-20261002.json'
       - 'research/v3/h9-book-trade-clock-evidence-20261001T194344Z.json'
       - 'tools/run-minipc-v3-h9-book-trade-clock-smoke.ps1'
       - 'tools/v3-h9-public-book-trade-clock-smoke.py'
@@ -121,4 +122,25 @@ jobs:
           assert j["interpretation"]["maker_fill_probability_proven"] is False
           assert j["interpretation"]["routing_decision_allowed"] is False
           print("V3_H9_PERSISTED_CLOCK PASS sparse-trades/safe-join/no-fill-claim")
+          PY
+
+
+      - name: Validate H9 public fee schedule snapshot
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          j=json.loads(Path("research/v3/h9-kraken-spot-public-fee-schedule-20261002.json").read_text())
+          assert j["status"]=="PUBLIC_SCHEDULE_VERSIONED_ACCOUNT_TIER_UNVERIFIED"
+          assert j["public_standard_tiers"][0]["maker_pct"]==0.40
+          assert j["public_standard_tiers"][0]["taker_pct"]==0.80
+          assert j["public_standard_tiers"][1]["maker_pct"]==0.30
+          assert j["public_standard_tiers"][1]["taker_pct"]==0.60
+          assert j["representative_execution_pairs"]["checked"]==["BTC/EUR","ETH/EUR","SOL/EUR"]
+          assert j["account_specific_state"]["fee_tier_verified"] is False
+          assert j["account_specific_state"]["public_schedule_may_not_be_used_to_guess_user_tier"] is True
+          assert j["guardrails"]["account_accessed"] is False
+          assert j["guardrails"]["orders"] is False
+          assert j["guardrails"]["routing_decision_allowed"] is False
+          print("V3_H9_PUBLIC_FEES PASS versioned/account-tier-unverified/no-routing")
           PY
