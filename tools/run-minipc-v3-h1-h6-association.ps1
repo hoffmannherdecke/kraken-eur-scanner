@@ -54,7 +54,9 @@ try{
     $obj=Get-Content $source -Raw|ConvertFrom-Json
     $obj.code_fingerprint=$head
     $tmp=Join-Path $env:TEMP $tmpName
-    $obj|ConvertTo-Json -Depth 30|Set-Content -LiteralPath $tmp -Encoding UTF8
+    $json=$obj|ConvertTo-Json -Depth 30
+    $utf8NoBom=New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($tmp,$json,$utf8NoBom)
     & $python $ledgerTool --db $ledger append --record $tmp
     if($LASTEXITCODE -ne 0){throw "Immutable trial ledger append failed for "+$obj.trial_id}
   }
