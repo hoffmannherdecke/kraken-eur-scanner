@@ -224,3 +224,12 @@ jobs:
           if($j.winner_selection -ne $false){throw "winner-selection guard failed"}
           if($j.orders -ne $false){throw "order guard failed"}
           if($j.real_money_actions -ne $false){throw "real-money guard failed"}
+
+      - name: Association wrapper Windows UTF8-no-BOM guard
+        shell: pwsh
+        run: |
+          $text=Get-Content ./tools/run-minipc-v3-h1-h6-association.ps1 -Raw
+          if(-not $text.Contains('New-Object System.Text.UTF8Encoding($false)')){throw "missing UTF8-no-BOM writer"}
+          if(-not $text.Contains('[System.IO.File]::WriteAllText')){throw "missing explicit no-BOM write"}
+          if($text.Contains('Set-Content -LiteralPath $tmp -Encoding UTF8')){throw "BOM-prone temp ledger write still present"}
+          Write-Host "V3_ASSOC_WINDOWS_UTF8_NOBOM PASS"
