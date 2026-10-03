@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "kind": "PROCESS_HEALTH_PUSH_ROUTING_EVIDENCE_V1",
+  "status": "PASS",
+  "implemented_at_utc": "2026-10-03T08:40:40Z",
+  "scope": "Crypto process-health Slack/iPhone routing only; no strategy/runtime decision logic changed.",
+  "architecture": {
+    "detector": "process_audit.py",
+    "router": "tools/process-health-alert-router.py",
+    "persistent_state": "public.process_health_alert_state",
+    "slack_delivery": "mention-gated via SLACK_USER_ID",
+    "repeat_after_seconds": 7200
+  },
+  "routing_rules": {
+    "first_actionable_critical": "MENTION_IMMEDIATELY",
+    "changed_critical_fingerprint": "MENTION_IMMEDIATELY",
+    "same_unresolved_critical": "SUPPRESS_UNTIL_2H_REMINDER",
+    "recovery_from_critical": "ONE_RECOVERY_MENTION",
+    "warning": "NO_PUSH",
+    "healthy": "NO_PUSH",
+    "strategy_change": false,
+    "real_money_action": false
+  },
+  "validation": {
+    "github_workflow": "Crypto process health watchdog",
+    "github_run_id": 37110489976,
+    "github_run_number": 435,
+    "github_conclusion": "success",
+    "router_selftest": "PASS transition/dedupe/new-fingerprint/2h-repeat/recovery",
+    "live_report_status": "WARNING",
+    "live_warning_codes": [
+      "VERY_LOW_TRADE_RATE"
+    ],
+    "live_router_action": "NONE",
+    "live_alert_sent": false,
+    "state_row_verified": {
+      "watch_id": "CRYPTO_PROCESS_HEALTH_V2",
+      "last_condition": "OK",
+      "last_alert_at": null,
+      "last_recovery_at": null
+    }
+  },
+  "note": "No artificial CRITICAL was sent to Slack during validation. Critical-path behavior is covered by deterministic self-test; the live run correctly kept a WARNING silent."
+}
