@@ -637,7 +637,7 @@ jobs:
           python -m py_compile tools/v3-h1-shadow-context.py
           python tools/v3-h1-shadow-context.py --self-test
           python tools/v3-h1-shadow-context.py \
-            --handoff-jsonl .scanner/kraken_eur_scanner/handoff/candidates.jsonl \
+            --handoff-jsonl .scanner/kraken_eur_scanner/.state/audit_history.jsonl \
             --candidate-manifest .candidate-identity-manifest.json \
             --output-dir research/v3/shadow-runtime/h1-context
 
