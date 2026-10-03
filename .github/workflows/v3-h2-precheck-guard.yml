@@ -14,6 +14,10 @@ name: V3 H2 derivatives precheck guard
       - 'tools/kraken-futures-h2-coverage-precheck.py'
       - 'tools/v3-h2-kraken-analytics-shape-precheck.py'
       - 'tools/v3-h2-prospective-candidate-capture.py'
+      - 'tools/v3-h2-first-prospective-capture.py'
+      - 'research/v3/h2-first-real-prospective-capture-plan-20261003.json'
+      - 'research/v3/h2-research-stream-attachment-review-20261003.json'
+      - '.github/workflows/scan.yml'
       - '.github/workflows/v3-h2-precheck-guard.yml'
 
 permissions:
@@ -29,7 +33,7 @@ jobs:
         with:
           python-version: '3.13'
       - name: Compile public Kraken Futures precheck
-        run: python -m py_compile tools/kraken-futures-h2-coverage-precheck.py
+        run: python -m py_compile tools/kraken-futures-h2-coverage-precheck.py tools/v3-h2-first-prospective-capture.py
 
       - name: Validate preregistered H2 precheck guardrails
         run: |
@@ -38,7 +42,7 @@ jobs:
           from pathlib import Path
           j=json.loads(Path('research/v3/h2-derivatives-state-precheck-v1.json').read_text('utf-8'))
           assert j['kind']=='V3_H2_DERIVATIVES_STATE_PRECHECK_V1'
-          assert j['status'] in {'PRECHECK','PRECHECK_ASSOCIATION_CAPTURE_PREREGISTERED','PRECHECK_RESPONSE_SHAPE_GREEN_CAPTURE_PARSER_PENDING','PRECHECK_RESPONSE_SHAPE_GREEN_CAPTURE_PARSER_FROZEN','PRECHECK_ISOLATED_CANDIDATE_CAPTURE_GREEN_NOT_ATTACHED'}
+          assert j['status'] in {'PRECHECK','PRECHECK_ASSOCIATION_CAPTURE_PREREGISTERED','PRECHECK_RESPONSE_SHAPE_GREEN_CAPTURE_PARSER_PENDING','PRECHECK_RESPONSE_SHAPE_GREEN_CAPTURE_PARSER_FROZEN','PRECHECK_ISOLATED_CANDIDATE_CAPTURE_GREEN_NOT_ATTACHED','PRECHECK_BOUNDED_ONE_SHOT_REAL_CANDIDATE_CAPTURE_AUTHORIZED'}
           assert j['first_research_role']['mode']=='STATE_STRATIFICATION_AND_INCREMENTAL_INFORMATION_ONLY'
           assert j['first_research_role']['direct_buy_sell_rule'] is False
           assert j['selection_bias_guardrails']['threshold_sweep_allowed'] is False
@@ -65,6 +69,17 @@ jobs:
                   assert j['current_data_readiness']['automatic_capture_schedule_enabled'] is False
                   assert j['current_data_readiness']['capture_smoke']['candidate_decision_mutated'] is False
                   assert j['next_gate']=='ISOLATED_CAPTURE_PATH_GREEN__NEXT_REAL_PROSPECTIVE_CANDIDATE_CAPTURE_ONLY_AFTER_EXPLICIT_RESEARCH_STREAM_ATTACHMENT_REVIEW'
+              if j['status']=='PRECHECK_BOUNDED_ONE_SHOT_REAL_CANDIDATE_CAPTURE_AUTHORIZED':
+                  rd=j['current_data_readiness']
+                  assert rd['isolated_candidate_capture_guard_run']=='CI_GREEN_RUN_8'
+                  assert rd['attached_to_live_candidate_stream'] is True
+                  assert rd['automatic_capture_schedule_enabled'] is True
+                  assert rd['automatic_capture_schedule_mode']=='BOUNDED_ONE_SHOT_AUTO_STOP_AFTER_FIRST_USEFUL_CAPTURE'
+                  assert rd['bounded_research_attachment_review']=='research/v3/h2-research-stream-attachment-review-20261003.json'
+                  assert rd['bounded_first_capture_plan']=='research/v3/h2-first-real-prospective-capture-plan-20261003.json'
+                  assert rd['max_useful_real_captures']==1
+                  assert rd['capture_smoke']['candidate_decision_mutated'] is False
+                  assert j['next_gate']=='BOUNDED_ONE_SHOT_REAL_CAPTURE_ACTIVE__AUTO_STOP_AFTER_FIRST_USEFUL_CAPTURE_THEN_REVIEW_BEFORE_H2_SHADOW'
           rd=j['current_data_readiness']
           assert rd['kraken_derivatives_coverage_audit']=='CI_GREEN_REAL_PUBLIC_PRECHECK_RUN_2'
           assert rd['kraken_spot_eur_base_count']==501
