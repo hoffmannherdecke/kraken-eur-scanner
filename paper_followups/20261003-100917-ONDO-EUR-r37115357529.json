@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-03T10:10:07.021336Z",
     "evaluation_ask_eur": 0.43317,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.187,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.187,
+        "mfe_pct": 0.377,
+        "peak_at_utc": "2026-10-03T10:19:00Z",
+        "trough_at_utc": "2026-10-03T10:24:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-03T07:42:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -43,7 +55,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-03T10:11:29.118438Z"
+    "updated_at_utc": "2026-10-03T10:26:18.142850Z"
   },
   "original_decision": "WAIT",
   "pair": "ONDO/EUR",
