@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_ASSOC_002_VALID_SESSION_EVIDENCE_V1",
+  "status": "PASS",
+  "physical_platform": "MINI_PC",
+  "trial_id": "V3-H3-ASSOC-002",
+  "session_id": "V3-H3-ASSOC-002-20261003T062844Z",
+  "evidence_source": "MINI-PC wrapper final console output reviewed after the run; raw session report remains local.",
+  "result": {
+    "counts": {
+      "BTC/EUR": 274,
+      "ETH/EUR": 292,
+      "SOL/EUR": 319
+    },
+    "capture_status": "PASS",
+    "eligible_session": true,
+    "report_path": "C:\\Users\\ADMIN\\Trading\\Historical\\reports\\v3-h3-assoc-002-session-20261003-082844.json",
+    "report_sha256": "30d663bc32ed92e27d5d3cf39426590d3b6cbd88eda57b02f201ffc72b1aafc3"
+  },
+  "immutable_ledger": {
+    "verify_status": "PASS",
+    "trial_count": 10,
+    "corrupt_trial_ids": []
+  },
+  "collection_gate_progress": {
+    "eligible_sessions": 3,
+    "distinct_utc_dates": 2,
+    "btc_rows": 979,
+    "eth_rows": 989,
+    "sol_rows": 1012,
+    "gate_met": false,
+    "deficits_to_preregistered_minimum": {
+      "BTC/EUR": 21,
+      "ETH/EUR": 11,
+      "SOL/EUR": 0
+    }
+  },
+  "interpretation": {
+    "valid_collection_session": true,
+    "effect_size_conclusion_allowed": false,
+    "automatic_winner_selected": false,
+    "strategy_promotion_allowed": false,
+    "note": "The preregistered session-count and UTC-date minima are satisfied, but the fixed >=1000 valid feature rows per symbol gate is not. The trial/spec must not be changed to bypass the shortfall."
+  },
+  "next_gate": "ONE_ADDITIONAL_VALID_1800S_SESSION_IS_REQUIRED_TO_MATURE_THE_FIXED_ROW_COUNT_GATE; THEN_ALLOW_THE_EXISTING_WRAPPER_TO_AUTO_EVALUATE_AND_BEST_EFFORT_IMPORT. DO_NOT RUN FURTHER H3 SESSIONS AFTER GATE/EVALUATION."
+}
