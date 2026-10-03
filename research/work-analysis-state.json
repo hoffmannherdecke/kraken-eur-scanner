@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "WORK_ANALYSIS_STATE_V1",
+  "task_title": "Krypto Paper – gezielte Analyse",
+  "automation_id": "6ab431f212488191b072c400bc3cdb86",
+  "armed_at_local": "2026-10-03T21:08:00+02:00",
+  "schedule": {
+    "timezone": "Europe/Berlin",
+    "first_run_local": "2026-10-04T10:15:00+02:00",
+    "cadence": "every 2 days at 10:15 local"
+  },
+  "gate_policy": {
+    "v2r3_batch": "at least 3 new V2R3 cases with complete 24h follow-up since the last acknowledged Work analysis",
+    "v2r3_final": "PAPER-V2R3-CLEAN-20261001T0925Z reaches final_review_allowed=true or equivalent documented series-completion gate",
+    "blocker": "UNKNOWN, inconsistent completion, provenance/data blocker, or unresolved contradiction requiring multi-artifact diagnosis",
+    "v2r4_v3": "a documented V2R4 or V3 readiness/research gate explicitly requires Work-level synthesis; mere data accumulation does not qualify"
+  },
+  "last_substantive_analysis_at": null,
+  "last_gate_reason": null,
+  "acknowledgements": {
+    "v2r3_24h_candidate_ids": [],
+    "v2r3_final_review_marker": null,
+    "v2r4_gate_markers": [],
+    "v3_gate_markers": [],
+    "blocker_fingerprints": []
+  },
+  "safeguards": {
+    "no_strategy_mutation": true,
+    "no_runtime_mutation": true,
+    "no_real_money_actions": true,
+    "no_secrets_access": true,
+    "no_blanket_full_access": true,
+    "no_notification_when_gate_closed": true,
+    "no_state_write_when_gate_closed": true
+  },
+  "notes": [
+    "This file is the dedup/ack state for the single minimal recurring Work analysis.",
+    "Routine scanner, watchdog, realtime, paper evaluator/revalidation, follow-up, Slack/push and data collection remain outside Work.",
+    "Update acknowledgements only after a substantive Work analysis actually consumes the corresponding evidence."
+  ]
+}
