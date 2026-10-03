@@ -1,0 +1,226 @@
+{
+  "altname": "JUPEUR",
+  "candidate_id": "20261003-012530-JUP-EUR-r37085918301",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above 0.28446 with nonzero volume",
+      "Hold or successful retest above 0.28446"
+    ],
+    "reason_codes": [
+      "resistance_reclaim_failed",
+      "no_sustained_hold_above_resistance",
+      "recent_volume_unconfirmed",
+      "remaining_move_unclear_after_costs"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The earlier close above resistance was not sustained; subsequent bars returned below 0.28446, and the latest supplied bars have zero volume. No confirmed continuation entry is supported.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "JUPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 37.78,
+        "available": true,
+        "current_funding_rate": -3.5554596678567e-05,
+        "current_open_interest": 811876.0,
+        "funding_rate_delta": -4.803809131170026e-07,
+        "open_interest_pct": -0.3213,
+        "previous_funding_rate": -3.507421576545e-05,
+        "previous_observed_at_utc": "2026-10-03T01:26:30.332488Z",
+        "previous_open_interest": 814493.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -3.5554596678567e-05,
+        "index_price": 0.318292,
+        "last": 0.3183,
+        "mark_price": 0.31802235003,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 811876.0,
+        "requested_symbols": [
+          "PF_JUPUSD",
+          "PI_JUPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_JUPUSD",
+        "volume24h": 4515549
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.28301,
+      "bid": 0.28276,
+      "last": 0.28318,
+      "spread_pct": 0.08837513477207079
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "15",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.030565149616412768,
+          "ret3h_pct": 0.06065402597748015
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.11391340899538083,
+          "ret3h_pct": 0.40427971603460566
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.10401891252955764,
+          "ret3h_pct": 0.44596261504885604
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T02:04:15.661388Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0464934c45850928006ac062a118f087d295744cdb429681f7"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.28301,
+    "bid": 0.28276,
+    "last": 0.28318,
+    "spread_pct": 0.08837513477207079
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.28435,
+      "high": 0.28435,
+      "low": 0.28435,
+      "open": 0.28435,
+      "trades": 0,
+      "ts": 1790989200,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 0.28463,
+      "high": 0.28463,
+      "low": 0.28463,
+      "open": 0.28463,
+      "trades": 1,
+      "ts": 1790990100,
+      "volume": 843.75,
+      "vwap": 0.28463
+    },
+    {
+      "close": 0.28318,
+      "high": 0.2832,
+      "low": 0.28318,
+      "open": 0.2832,
+      "trades": 2,
+      "ts": 1790991000,
+      "volume": 343.279,
+      "vwap": 0.28318
+    },
+    {
+      "close": 0.28318,
+      "high": 0.28318,
+      "low": 0.28318,
+      "open": 0.28318,
+      "trades": 0,
+      "ts": 1790991900,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 0.28318,
+      "high": 0.28318,
+      "low": 0.28318,
+      "open": 0.28318,
+      "trades": 0,
+      "ts": 1790992800,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "JUP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261003-012530-JUP-EUR-r37085918301.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T02:04:22.184497Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "706ef4898a3be58b19f4f9d49a462ec1b1f5c7fd",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T02:04:22.184497Z",
+    "revalidation_started_at_utc": "2026-10-03T02:04:15.430741Z",
+    "ttl_due_at_utc": "2026-10-03T01:56:30.332488Z",
+    "ttl_lag_seconds": 465.098
+  }
+}
