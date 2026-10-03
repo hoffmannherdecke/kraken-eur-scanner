@@ -1,0 +1,228 @@
+{
+  "altname": "TRUMPEUR",
+  "candidate_id": "20261002-234838-TRUMP-EUR-r37078927704",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.883 with sustained volume",
+      "Successful retest and hold above 1.883"
+    ],
+    "reason_codes": [
+      "resistance_unbroken",
+      "breakout_confirmation_absent",
+      "recent_closes_weakened",
+      "fees_reduce_remaining_edge",
+      "open_interest_declined",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation failed: price remains below 1.883 resistance, and recent closes show no confirmed breakout or successful retest. The momentum evidence is not sufficient to justify a scout after costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "TRUMPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 42.2,
+        "available": true,
+        "current_funding_rate": 1.2652587219999e-05,
+        "current_open_interest": 534691.4,
+        "funding_rate_delta": 7.4641945676249e-05,
+        "open_interest_pct": -0.1639,
+        "previous_funding_rate": -6.198935845625e-05,
+        "previous_observed_at_utc": "2026-10-02T23:49:26.566524Z",
+        "previous_open_interest": 535569.3
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 1.2652587219999e-05,
+        "index_price": 2.1099,
+        "last": 2.111,
+        "mark_price": 2.11103292393,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 534691.4,
+        "requested_symbols": [
+          "PF_TRUMPUSD",
+          "PI_TRUMPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_TRUMPUSD",
+        "volume24h": 794853.9
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.876,
+      "bid": 1.875,
+      "last": 1.874,
+      "spread_pct": 0.053319114902686746
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "2.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.027131014872838755,
+          "ret3h_pct": 0.13654323158531767
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.12219736137972781,
+          "ret3h_pct": 0.48548821591538616
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.3795066413662118,
+          "ret3h_pct": 1.0409702989208292
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T00:31:37.188357Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_01ec60b202ff620a006ac04cea957087d0b541a2f7833535d7"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.876,
+    "bid": 1.875,
+    "last": 1.874,
+    "spread_pct": 0.053319114902686746
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.878,
+      "high": 1.883,
+      "low": 1.868,
+      "open": 1.868,
+      "trades": 24,
+      "ts": 1790983800,
+      "volume": 3241.88311,
+      "vwap": 1.878
+    },
+    {
+      "close": 1.881,
+      "high": 1.886,
+      "low": 1.876,
+      "open": 1.876,
+      "trades": 21,
+      "ts": 1790984700,
+      "volume": 2955.09824,
+      "vwap": 1.881
+    },
+    {
+      "close": 1.88,
+      "high": 1.883,
+      "low": 1.874,
+      "open": 1.88,
+      "trades": 29,
+      "ts": 1790985600,
+      "volume": 4768.36916,
+      "vwap": 1.879
+    },
+    {
+      "close": 1.874,
+      "high": 1.892,
+      "low": 1.874,
+      "open": 1.881,
+      "trades": 19,
+      "ts": 1790986500,
+      "volume": 2447.67811,
+      "vwap": 1.883
+    },
+    {
+      "close": 1.874,
+      "high": 1.874,
+      "low": 1.874,
+      "open": 1.874,
+      "trades": 1,
+      "ts": 1790987400,
+      "volume": 56.25,
+      "vwap": 1.874
+    }
+  ],
+  "pair": "TRUMP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-234838-TRUMP-EUR-r37078927704.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T00:31:43.215913Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "d4100ad5ba7a786b8bab55940b63082ef89f86a2",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T00:31:43.215913Z",
+    "revalidation_started_at_utc": "2026-10-03T00:31:36.773804Z",
+    "ttl_due_at_utc": "2026-10-03T00:19:26.566524Z",
+    "ttl_lag_seconds": 730.207
+  }
+}
