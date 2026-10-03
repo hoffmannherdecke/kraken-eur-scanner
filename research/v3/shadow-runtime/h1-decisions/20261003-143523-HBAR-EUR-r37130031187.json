@@ -1,0 +1,129 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.09059 with stronger closed volume",
+      "Hold above 0.09059 on a retest within 30\u201360 minutes"
+    ],
+    "reason_codes": [
+      "tradability_pass",
+      "tight_spread",
+      "market_mildly_positive",
+      "resistance_unconfirmed",
+      "closed_volume_weak",
+      "remaining_move_unclear",
+      "fees_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid pair with tight spread and a mildly constructive market backdrop, but momentum is modest and the fresh ask remains just below 1h/3h resistance; no entry yet.",
+    "ttl_minutes": 45
+  },
+  "baseline_evaluated_at_utc": "2026-10-03T14:36:08.122926Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-03T14:35:23Z",
+  "candidate_id": "20261003-143523-HBAR-EUR-r37130031187",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_027ef1c93f9462b6006ac115754bf487d2ba2bdfbf1988cd6a"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 0.09051,
+      "bid": 0.0905,
+      "last": 0.09079,
+      "spread_pct": 0.011049113308652696
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261003-143523-HBAR-EUR-r37130031187",
+    "event_time_utc": "2026-10-03T14:35:23Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 76,
+      "leader_median_return_1h_pct": 0.05256389934437111,
+      "leader_minus_target_return_1h_pct": -0.6797117025639676,
+      "peer_median_return_1h_pct": 0.20286226446242228,
+      "target_minus_peer_median_return_1h_pct": 0.5294133374459165,
+      "target_return_1h_pct": 0.7322756019083387
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "HBAR/EUR",
+    "queue_id": "37130031187:HBAR-EUR:1791038123",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37130031187,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "HBAR/EUR",
+  "queue_id": "37130031187:HBAR-EUR:1791038123",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above 0.09059 with stronger closed volume",
+      "Price holds above 0.09059 on revalidation without losing 0.09013 support"
+    ],
+    "reason_codes": [
+      "tradable_liquidity",
+      "tight_spread",
+      "nascent_breakout",
+      "broad_scanner_strength",
+      "ask_below_resistance",
+      "closed_volume_subdued",
+      "cost_hurdle"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid, tight-spread HBAR has a nascent breakout and positive relative strength, but spot confirmation is weak: the fresh ask is below nearby resistance and closed volume is subdued. Wait for confirmation before considering entry against 1.20% round-trip taker fees.",
+    "ttl_minutes": 45
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}
