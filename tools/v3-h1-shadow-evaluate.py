@@ -104,14 +104,21 @@ def main()->int:
       "interpretation":"Additional relative-market context only. No fixed threshold, transform, score weight or automatic trade rule."
     }
 
-    shadow_spec=copy.deepcopy(spec)
-    shadow_spec["strategy_revision"]=CANDIDATE_ID
-    raw,api=base.call_evaluator(candidate,current,external,shadow_spec,control)
-    normalized=base.fail_safe_normalize(raw,current)
-    # Keep the same public tradability/minimum-order gate. Sample-cap state is not
-    # re-applied because this pilot does not reserve/open positions and must not
-    # depend on later baseline reservation counts.
-    decision=base.apply_public_tradability_gate(normalized,current,external,shadow_spec)
+    invariant_reason_codes=set(baseline.get("decision",{}).get("reason_codes") or [])
+    invariant_passthrough=bool(invariant_reason_codes & {"PAIR_BLOCKED","STALE_OVER_60M","PAPER_SAMPLE_CAP_REACHED"})
+    if invariant_passthrough:
+        decision=copy.deepcopy(baseline["decision"])
+        api={"response_id":None,"model":None,"attempt":0,"passthrough_reason":"strategy-invariant baseline gate"}
+    else:
+        # Keep the prompt's baseline strategy revision and every baseline rule
+        # identical. The only prompt delta is external.v3_h1_relative_context.
+        shadow_spec=copy.deepcopy(spec)
+        raw,api=base.call_evaluator(candidate,current,external,shadow_spec,control)
+        normalized=base.fail_safe_normalize(raw,current)
+        # Keep the same public tradability/minimum-order gate. Sample-cap state is not
+        # re-applied because this pilot does not reserve/open positions and must not
+        # depend on later baseline reservation counts.
+        decision=base.apply_public_tradability_gate(normalized,current,external,shadow_spec)
 
     baseline_action=baseline["decision"]["decision"]
     shadow_action=decision["decision"]
@@ -144,6 +151,7 @@ def main()->int:
         "same_candidate_snapshot_as_baseline":True,
         "same_fresh_ticker_as_baseline":True,
         "same_public_context_as_baseline_except_h1_addition":True,
+        "same_prompt_strategy_revision_as_baseline":True,
         "baseline_mutated":False,
         "paper_position_created":False,
         "slack_action_created":False,
