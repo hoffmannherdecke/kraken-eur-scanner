@@ -3,7 +3,16 @@
   "candidate_id": "20261003-011053-WLD-EUR-r37084977858",
   "evaluated_at_utc": "2026-10-03T01:12:05.696811Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.238,
+      "expected_bars": 30,
+      "mae_pct": -0.97,
+      "mfe_pct": 0.772
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -56,8 +65,11 @@
   },
   "original_decision": "WAIT",
   "pair": "WLD/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-03T01:44:20.657315Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-03T01:44:26.653567Z"
 }
