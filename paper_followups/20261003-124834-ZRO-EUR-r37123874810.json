@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-10-03T12:49:21.454462Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 3.303,
+      "expected_bars": 120,
+      "mae_pct": -0.56,
+      "mfe_pct": 5.207
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -41,6 +49,17 @@
         "mae_pct": -0.56,
         "mfe_pct": 3.751,
         "peak_at_utc": "2026-10-03T13:03:00Z",
+        "trough_at_utc": "2026-10-03T12:50:00Z"
+      },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 2.968,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.56,
+        "mfe_pct": 5.823,
+        "peak_at_utc": "2026-10-03T16:13:00Z",
         "trough_at_utc": "2026-10-03T12:50:00Z"
       },
       "60": {
@@ -84,7 +103,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-03T14:34:25.575844Z"
+    "updated_at_utc": "2026-10-03T17:39:11.276959Z"
   },
   "original_decision": "WAIT",
   "pair": "ZRO/EUR",
@@ -94,5 +113,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "test_id": "SHADOW-V2R3-20261001-01",
-  "updated_at_utc": "2026-10-03T14:34:25.696300Z"
+  "updated_at_utc": "2026-10-03T17:39:11.406019Z"
 }

@@ -80,6 +80,17 @@
         "mfe_pct": 18.138,
         "peak_at_utc": "2026-10-03T03:36:00Z",
         "trough_at_utc": "2026-10-03T02:45:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 6.26,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -0.642,
+        "mfe_pct": 20.225,
+        "peak_at_utc": "2026-10-03T05:05:00Z",
+        "trough_at_utc": "2026-10-03T02:45:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -109,7 +120,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-03T06:45:44.670206Z"
+    "updated_at_utc": "2026-10-03T17:38:53.168319Z"
   },
   "original_decision": "WAIT",
   "pair": "SAND/EUR",

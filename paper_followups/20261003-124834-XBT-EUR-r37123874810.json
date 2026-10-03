@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-10-03T12:49:11.030458Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 0.032,
+      "expected_bars": 120,
+      "mae_pct": -0.091,
+      "mfe_pct": 0.163
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -43,6 +51,17 @@
         "peak_at_utc": "2026-10-03T12:57:00Z",
         "trough_at_utc": "2026-10-03T12:49:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 0.043,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.085,
+        "mfe_pct": 0.17,
+        "peak_at_utc": "2026-10-03T13:36:00Z",
+        "trough_at_utc": "2026-10-03T14:41:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -80,7 +99,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-03T14:34:25.077286Z"
+    "updated_at_utc": "2026-10-03T17:39:10.754667Z"
   },
   "original_decision": "WAIT",
   "pair": "XBT/EUR",
@@ -90,5 +109,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "test_id": "SHADOW-V2R3-20261001-01",
-  "updated_at_utc": "2026-10-03T14:34:25.213495Z"
+  "updated_at_utc": "2026-10-03T17:39:10.880977Z"
 }
