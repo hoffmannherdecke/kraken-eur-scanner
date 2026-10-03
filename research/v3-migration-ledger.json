@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-02T10:50:00Z",
+  "updated_at_utc": "2026-10-03T07:56:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -232,15 +232,18 @@
       "category": "state_signal",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "WS reconciliation/state capture and physical MINI-PC smoke are proven. Replacement prospective trial V3-H3-ASSOC-002 fixed a technical scheduler bug without changing the research question. Two valid 1800s MINI-PC sessions are PASS; cumulative rows BTC=705/ETH=697/SOL=693 on one UTC date. No effect-size conclusion until one more valid 1800s session on a second UTC date and >=1000 rows/symbol.",
+      "rationale": "WS reconciliation/state capture and physical MINI-PC smoke are proven. Replacement prospective trial V3-H3-ASSOC-002 fixed only the technical scheduler bug. Four valid >=1800s MINI-PC sessions across two UTC dates matured the frozen collection gate with BTC=1252, ETH=1314, SOL=1331 valid rows. Fixed descriptive association evaluation PASS and canonical import PASS. Associations are feature/symbol/horizon-specific rather than a universal cross-symbol direction; no threshold, feature-transform, pair or horizon search was performed.",
       "evidence": [
         "research/v3/h3-assoc-001-technical-failure-review-20261002.json",
         "research/v3/h3-prospective-state-association-trial-v2.json",
         "research/v3/h3-assoc-002-minipc-smoke-evidence-20261002.json",
         "research/v3/h3-assoc-002-valid-session-001-20261002.json",
-        "research/v3/h3-assoc-002-valid-session-002-20261002.json"
+        "research/v3/h3-assoc-002-valid-session-002-20261002.json",
+        "research/v3/h3-assoc-002-valid-session-003-20261003.json",
+        "research/v3/h3-association-reports/v3-h3-association-002-20261003-095025.json",
+        "research/v3/h3-assoc-002-fixed-review-20261003.json"
       ],
-      "pending_gate": "V3_H3_ONE_MORE_VALID_1800S_SESSION_ON_SECOND_UTC_DATE_THEN_FIXED_EFFECT_SIZE_REVIEW"
+      "pending_gate": "PROJECT_REVIEW_BEFORE_ANY_ONE_CHANGE_SHADOW_MATERIALIZATION; ANY NEW SYMBOL_SPECIFIC_THRESHOLD_OR_TRANSFORM_SEARCH_REQUIRES_NEW_SEARCH_ACCOUNTED_TRIAL"
     },
     {
       "id": "macro_event_risk_gate",
@@ -313,42 +316,45 @@
       "category": "state_signal",
       "source_version": "V3 H1 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "H1 Association-001 showed stable relative-context signs but did not prove uniqueness beyond target mean reversion. Frozen V3-H1-INCR-001 has now completed physical MINI-PC execution PASS with immutable ledger verify PASS and holdout CLOSED. Exact local report payload/hash still must be imported before any quantitative effect-size conclusion or shadow use.",
+      "rationale": "Exact V3-H1-INCR-001 MINI-PC report is imported and the fixed review is complete with holdout sealed. The preregistered relative-context features retain small but sign-consistent incremental partial association after controlling target 1h return across research_train/calibration/validation and both weighting schemes. No threshold search, winner selection or promotion was performed.",
       "evidence": [
         "research/v3/h1-cross-crypto-breadth-precheck-v1.json",
         "research/v3/h1-h6-association-review-20261002.json",
         "research/v3/h1-incremental-relative-context-trial-v1.json",
         "research/v3/h1-incremental-trial-ledger-record-v1.json",
-        "research/v3/h1-h6-incremental-execution-status-20261002.json"
+        "research/v3/incremental-reports/v3-h1-incremental-001-20261002-095841.json",
+        "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
       ],
-      "pending_gate": "IMPORT_EXACT_V3_H1_INCR_001_REPORT_AND_REVIEW_PREREGISTERED_INCREMENTAL_EFFECT_SIZE"
+      "pending_gate": "PROJECT_REVIEW_BEFORE_ANY_ONE_CHANGE_SHADOW_MATERIALIZATION"
     },
     {
       "id": "price_volume_trend_primitives",
       "category": "signal_state",
       "source_version": "V3 H6 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "H6 Association-001 showed stable price mean-reversion structure and some sign-stable direction+volume flags. Frozen V3-H6-INCR-001 has now completed physical MINI-PC execution PASS with immutable ledger verify PASS and holdout CLOSED. Exact local report payload/hash still must be imported before any quantitative incremental-volume conclusion or shadow use.",
+      "rationale": "Exact V3-H6-INCR-001 MINI-PC report is imported and the fixed review is complete with holdout sealed. Incremental volume contribution conditional on fixed price-direction strata is small/near zero; partial-correlation signs are internally consistent by stratum but simple effects are not uniformly sign-stable. No threshold/transform search, winner selection or promotion was performed.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "research/v3/h1-h6-association-review-20261002.json",
         "research/v3/h6-incremental-volume-contribution-trial-v1.json",
         "research/v3/h6-incremental-trial-ledger-record-v1.json",
-        "research/v3/h1-h6-incremental-execution-status-20261002.json"
+        "research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json",
+        "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
       ],
-      "pending_gate": "IMPORT_EXACT_V3_H6_INCR_001_REPORT_AND_REVIEW_PREREGISTERED_INCREMENTAL_VOLUME_EFFECT"
+      "pending_gate": "PROJECT_REVIEW_BEFORE_ANY_ONE_CHANGE_SHADOW_MATERIALIZATION"
     },
     {
       "id": "simple_price_volume_primitives",
       "category": "signal_state",
       "source_version": "V3 hypothesis",
       "migration_status": "OPEN_RESEARCH",
-      "rationale": "The H6 incremental trial is physically complete but quantitative review remains blocked on exact local report import. No threshold/transform retuning or holdout access is allowed.",
+      "rationale": "The H6 incremental physical report is imported and fixed quantitative review is complete. Incremental volume contribution beyond fixed price direction is small/near zero in the preregistered development splits; no retuning or holdout access occurred.",
       "evidence": [
         "research/v3/h6-incremental-volume-contribution-trial-v1.json",
-        "research/v3/h1-h6-incremental-execution-status-20261002.json"
+        "research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json",
+        "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
       ],
-      "pending_gate": "IMPORT_EXACT_V3_H6_INCR_001_REPORT_AND_REVIEW_PREREGISTERED_INCREMENTAL_VOLUME_EFFECT"
+      "pending_gate": "PROJECT_REVIEW_BEFORE_ANY ONE_CHANGE_SHADOW_MATERIALIZATION"
     },
     {
       "id": "meta_take_no_take",
