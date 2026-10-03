@@ -1,7 +1,7 @@
 # AI / API Cost Guardrails
 
-Status: **CALL-LEVEL MONITORING ACTIVE / TOKEN+EUR ACCOUNTING DEFERRED TO VERSION BOUNDARY**  
-Date: 2026-10-01
+Status: **CALL-LEVEL MONITORING ACTIVE / NATIVE PREPAID FAILSAFE VERIFIED / LOCAL COST WATCH PREPARED, NOT INSTALLED**  
+Date: 2026-10-03
 
 This project uses model calls only for candidate evaluation and one-shot WAIT
 revalidation. Health, archive, timing, completion and most infrastructure checks
@@ -113,3 +113,55 @@ A future hard currency cap requires:
 
 Until then, the reliable control is structural: event-driven calls, one-shot
 revalidation, retry bounds, duplicate detection, and no AI polling.
+
+
+## Quota / prepaid monitoring decision — 2026-10-03
+
+The low-balance problem is split into two different control surfaces and must not be conflated.
+
+### OpenAI API prepaid balance
+
+Verified against current OpenAI documentation:
+
+- API Billing supports native **prepaid auto-reload** based on the actual credit-balance threshold;
+- the minimum recharge amount is **5 USD**;
+- an optional monthly auto-reload cap can bound automatic purchases;
+- a failed auto-reload generates an OpenAI billing email;
+- exhausted prepaid credit produces the documented `credit_balance_exhausted` error;
+- the documented Administration API exposes organization **usage/costs**, including `GET /v1/organization/costs`, but no documented machine endpoint was found for the exact current prepaid-credit balance.
+
+Therefore the authoritative protection against “only ~1 USD left” is **native API Billing auto-reload**, not a project-side estimate. The project must never derive a fake remaining balance from call count, token estimates or monthly spend.
+
+### Optional local cost telemetry
+
+A separate read-only MINI-PC watcher is prepared but deliberately **not installed yet**:
+
+- `tools/minipc-openai-cost-watch.py` performs only `GET /v1/organization/costs`;
+- it creates no model request and therefore consumes **0 model tokens** itself;
+- it records month-to-date API spend only and explicitly persists `prepaid_remaining_usd = null`;
+- it cannot change billing, spend limits, model settings, strategy, orders or trading state;
+- offline safety self-test is enforced by `.github/workflows/openai-cost-watch-guard.yml`;
+- optional local installation is prepared via `tools/install-minipc-openai-cost-watch.ps1`.
+
+Important security boundary: the documented organization-cost endpoint is an Administration API surface and requires an **Admin API key**. That credential is broader/more sensitive than the existing evaluator key. If this optional watcher is activated later, the key stays only in `C:\\Users\\ADMIN\\Trading\\Secrets\\openai-admin-key.txt`, with restricted ACL. It is never stored in GitHub, exposed to Work/Codex or printed to logs. Native billing controls are configured first; the Admin-key watcher remains optional rather than becoming a dependency.
+
+### ChatGPT Work / Codex weekly quota
+
+No documented machine-readable endpoint was found that exposes the exact remaining personal Work/Codex weekly quota percentage. Consequently:
+
+- do not scrape the ChatGPT UI;
+- do not infer Work quota from API usage;
+- keep the existing daily 10:15 Work run gate-only/minimal;
+- use a small reserve/credit mechanism only if the account UI actually offers it and only after an explicit monetary setting is chosen;
+- the project must remain operational when Work is unavailable.
+
+### Pending account-level gates
+
+These require the user account UI and cannot be completed safely from the repository alone:
+
+1. inspect API Billing and set the exact native auto-reload **threshold / restore-to amount / monthly cap**;
+2. inspect native API spend-alert controls;
+3. inspect whether the current ChatGPT account offers a Work/Codex reserve-credit / auto-reload control;
+4. only if local spend telemetry still adds value after those native controls are active: create a separate Admin API key and provision it locally.
+
+Machine-readable checkpoint: `research/openai-quota-monitoring-decision-20261003.json`.
