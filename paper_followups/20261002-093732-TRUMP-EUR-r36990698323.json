@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 1.885,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -2.915,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -6.783,
+        "mfe_pct": 4.293,
+        "peak_at_utc": "2026-10-02T12:25:00Z",
+        "trough_at_utc": "2026-10-02T18:40:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 1.835,
       "price_eur": 1.853
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "MARGINAL_BREAKOUT",
@@ -119,7 +135,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-02T21:44:02.912878Z"
+    "updated_at_utc": "2026-10-03T09:43:47.009790Z"
   },
   "original_decision": "WAIT",
   "pair": "TRUMP/EUR",
