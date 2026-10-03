@@ -1,0 +1,227 @@
+{
+  "altname": "TIAEUR",
+  "candidate_id": "20261003-095416-TIA-EUR-r37114512943",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Evidence of additional upside potential sufficient to cover costs and structural stop risk.",
+      "A confirmed continuation level above the recent 0.4120 high with a defensible structural stop."
+    ],
+    "reason_codes": [
+      "entry_extended_above_resistance",
+      "low_adx",
+      "remaining_potential_uncertain",
+      "taker_fees_high",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TIA has held above prior resistance, but price is extended from the breakout and the supplied evidence does not establish enough remaining upside after Kraken EUR costs for a scout entry.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "TIAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 35.57,
+        "available": true,
+        "current_funding_rate": 3.5460403626667e-05,
+        "current_open_interest": 1337100.0,
+        "funding_rate_delta": 9.424757871669945e-07,
+        "open_interest_pct": 0.6368,
+        "previous_funding_rate": 3.45179278395e-05,
+        "previous_observed_at_utc": "2026-10-03T10:24:52.441932Z",
+        "previous_open_interest": 1328639.3
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.5460403626667e-05,
+        "index_price": 0.45911,
+        "last": 0.4601,
+        "mark_price": 0.45912135025,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 1337100.0,
+        "requested_symbols": [
+          "PF_TIAUSD",
+          "PI_TIAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_TIAUSD",
+        "volume24h": 1657689.8
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.4085,
+      "bid": 0.4082,
+      "last": 0.4092,
+      "spread_pct": 0.07346638912696632
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "11",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.04280224432637869,
+          "ret3h_pct": 0.09788757027355821
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0994152537395987,
+          "ret3h_pct": 0.09059832644757737
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.11305822498586249,
+          "ret3h_pct": 0.12249128427401779
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T11:00:25.307185Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0962880e00ecc849006ac0e04ae25c87d187be22acef7cff31"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.4085,
+    "bid": 0.4082,
+    "last": 0.4092,
+    "spread_pct": 0.07346638912696632
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.4081,
+      "high": 0.4084,
+      "low": 0.4047,
+      "open": 0.4047,
+      "trades": 15,
+      "ts": 1791021600,
+      "volume": 4294.25722,
+      "vwap": 0.4061
+    },
+    {
+      "close": 0.4084,
+      "high": 0.4096,
+      "low": 0.4074,
+      "open": 0.4076,
+      "trades": 36,
+      "ts": 1791022500,
+      "volume": 6376.7436,
+      "vwap": 0.4085
+    },
+    {
+      "close": 0.411,
+      "high": 0.4115,
+      "low": 0.4077,
+      "open": 0.4077,
+      "trades": 25,
+      "ts": 1791023400,
+      "volume": 8595.92115,
+      "vwap": 0.4091
+    },
+    {
+      "close": 0.4092,
+      "high": 0.412,
+      "low": 0.4092,
+      "open": 0.411,
+      "trades": 20,
+      "ts": 1791024300,
+      "volume": 4681.9078,
+      "vwap": 0.4107
+    },
+    {
+      "close": 0.4092,
+      "high": 0.4092,
+      "low": 0.4092,
+      "open": 0.4092,
+      "trades": 0,
+      "ts": 1791025200,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "TIA/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261003-095416-TIA-EUR-r37114512943.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T11:00:35.135294Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "5a1b4d8b16daece7ff62c5fedb422ebb0f5e6962",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T11:00:35.135294Z",
+    "revalidation_started_at_utc": "2026-10-03T11:00:24.981086Z",
+    "ttl_due_at_utc": "2026-10-03T10:40:15.008455Z",
+    "ttl_lag_seconds": 1209.973
+  }
+}
