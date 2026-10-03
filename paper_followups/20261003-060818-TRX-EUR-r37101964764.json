@@ -3,7 +3,16 @@
   "candidate_id": "20261003-060818-TRX-EUR-r37101964764",
   "evaluated_at_utc": "2026-10-03T06:09:02.352809Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.12,
+      "expected_bars": 30,
+      "mae_pct": -0.176,
+      "mfe_pct": 0.066
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -58,5 +67,6 @@
   "path_classification": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-03T06:45:48.279176Z"
 }

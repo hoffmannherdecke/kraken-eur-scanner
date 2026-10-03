@@ -1,0 +1,227 @@
+{
+  "altname": "INJEUR",
+  "candidate_id": "20261003-055348-INJ-EUR-r37101203291",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 6.953 with renewed elevated volume",
+      "Retest and hold above 6.953"
+    ],
+    "reason_codes": [
+      "resistance_overhead",
+      "failed_resistance_retest",
+      "momentum_fade",
+      "fees_and_slippage_hurdle",
+      "positive_funding_oi_rising"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The pullback has not confirmed a new entry: recent candles faded below resistance at 6.953, and the remaining move to that level is only about 1.3% before round-trip fees and slippage.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "INJUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 51.2,
+        "available": true,
+        "current_funding_rate": 0.0003045283083,
+        "current_open_interest": 145002.5,
+        "funding_rate_delta": 9.317358481333599e-05,
+        "open_interest_pct": 1.2713,
+        "previous_funding_rate": 0.000211354723486664,
+        "previous_observed_at_utc": "2026-10-03T05:54:19.881389Z",
+        "previous_open_interest": 143182.2
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.0003045283083,
+        "index_price": 7.7141,
+        "last": 7.716,
+        "mark_price": 7.71896794984,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 145002.5,
+        "requested_symbols": [
+          "PF_INJUSD",
+          "PI_INJUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_INJUSD",
+        "volume24h": 193464.7
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 6.861,
+      "bid": 6.857,
+      "last": 6.853,
+      "spread_pct": 0.05831753899984778
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.7",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.04347040024672566,
+          "ret3h_pct": 0.023791042871734724
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0920512292411857,
+          "ret3h_pct": -0.037360579970524554
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.14128284826220305,
+          "ret3h_pct": 0.30188679245282124
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T06:45:30.719526Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0fbdde8447895b8b006ac0a48c5d7c87d096f32695594a117a"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 6.861,
+    "bid": 6.857,
+    "last": 6.853,
+    "spread_pct": 0.05831753899984778
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 6.874,
+      "high": 6.963,
+      "low": 6.874,
+      "open": 6.914,
+      "trades": 60,
+      "ts": 1791006300,
+      "volume": 1680.21564647,
+      "vwap": 6.93
+    },
+    {
+      "close": 6.857,
+      "high": 6.899,
+      "low": 6.85,
+      "open": 6.872,
+      "trades": 61,
+      "ts": 1791007200,
+      "volume": 3301.49676415,
+      "vwap": 6.858
+    },
+    {
+      "close": 6.839,
+      "high": 6.876,
+      "low": 6.839,
+      "open": 6.857,
+      "trades": 31,
+      "ts": 1791008100,
+      "volume": 1069.45586324,
+      "vwap": 6.856
+    },
+    {
+      "close": 6.853,
+      "high": 6.854,
+      "low": 6.803,
+      "open": 6.837,
+      "trades": 46,
+      "ts": 1791009000,
+      "volume": 1574.35897002,
+      "vwap": 6.824
+    },
+    {
+      "close": 6.853,
+      "high": 6.853,
+      "low": 6.853,
+      "open": 6.853,
+      "trades": 0,
+      "ts": 1791009900,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "INJ/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261003-055348-INJ-EUR-r37101203291.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T06:45:41.144940Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "eef171e00380815d34b023ac22da743c09f3c52b",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T06:45:41.144940Z",
+    "revalidation_started_at_utc": "2026-10-03T06:45:30.327776Z",
+    "ttl_due_at_utc": "2026-10-03T06:39:19.881389Z",
+    "ttl_lag_seconds": 370.446
+  }
+}
