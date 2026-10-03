@@ -1,0 +1,227 @@
+{
+  "altname": "ZECEUR",
+  "candidate_id": "20261003-095416-ZEC-EUR-r37114512943",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A renewed 15-minute close and hold above 1171.812",
+      "Sustained follow-through volume with improving short-term relative strength"
+    ],
+    "reason_codes": [
+      "spot_pair_online_account_tradability_unavailable",
+      "resistance_hold_failed",
+      "follow_through_volume_missing",
+      "weak_multi_period_continuity",
+      "remaining_move_unproven_after_fees"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The resistance break did not hold: subsequent 15-minute closes fell back below 1171.812, with sharply diminished volume. No supported confirmation entry or sufficient remaining upside after costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ZECUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 37.52,
+        "available": true,
+        "current_funding_rate": 0.04700141523144789,
+        "current_open_interest": 12147.17,
+        "funding_rate_delta": -0.01278424434966461,
+        "open_interest_pct": -0.0753,
+        "previous_funding_rate": 0.0597856595811125,
+        "previous_observed_at_utc": "2026-10-03T09:55:34.639145Z",
+        "previous_open_interest": 12156.32
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.04700141523144789,
+        "index_price": 1317.0323,
+        "last": 1317.4,
+        "mark_price": 1317.39962487293,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 12147.17,
+        "requested_symbols": [
+          "PF_ZECUSD",
+          "PI_ZECUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ZECUSD",
+        "volume24h": 24874.83
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1171.669,
+      "bid": 1170.986,
+      "last": 1171.165,
+      "spread_pct": 0.058309909056177084
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.01",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0018611848568772515,
+          "ret3h_pct": -0.03548219909899064
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.0511084672486839,
+          "ret3h_pct": 0.1015339173631391
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.22639373643995597,
+          "ret3h_pct": 0.1602564102564097
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T10:33:04.496074Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0bb6df302abbd08f006ac0d9e22f3487d0b5fe169739a275cb"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1171.669,
+    "bid": 1170.986,
+    "last": 1171.165,
+    "spread_pct": 0.058309909056177084
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1168.844,
+      "high": 1168.844,
+      "low": 1167.447,
+      "open": 1167.683,
+      "trades": 20,
+      "ts": 1791019800,
+      "volume": 11.85613739,
+      "vwap": 1168.596
+    },
+    {
+      "close": 1173.011,
+      "high": 1173.011,
+      "low": 1168.473,
+      "open": 1168.473,
+      "trades": 27,
+      "ts": 1791020700,
+      "volume": 24.67846837,
+      "vwap": 1171.632
+    },
+    {
+      "close": 1171.459,
+      "high": 1173.304,
+      "low": 1171.459,
+      "open": 1172.325,
+      "trades": 6,
+      "ts": 1791021600,
+      "volume": 0.29208974,
+      "vwap": 1172.225
+    },
+    {
+      "close": 1172.001,
+      "high": 1174.503,
+      "low": 1172.0,
+      "open": 1174.501,
+      "trades": 7,
+      "ts": 1791022500,
+      "volume": 1.12064839,
+      "vwap": 1174.029
+    },
+    {
+      "close": 1171.165,
+      "high": 1172.474,
+      "low": 1171.165,
+      "open": 1172.474,
+      "trades": 2,
+      "ts": 1791023400,
+      "volume": 0.05474123,
+      "vwap": 1171.534
+    }
+  ],
+  "pair": "ZEC/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261003-095416-ZEC-EUR-r37114512943.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T10:33:13.729553Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "bc505c69a8d771c1f278e7e3a357778693b93520",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T10:33:13.729553Z",
+    "revalidation_started_at_utc": "2026-10-03T10:33:03.961339Z",
+    "ttl_due_at_utc": "2026-10-03T10:25:34.639145Z",
+    "ttl_lag_seconds": 449.322
+  }
+}
