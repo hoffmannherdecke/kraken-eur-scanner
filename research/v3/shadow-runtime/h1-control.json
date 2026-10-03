@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H1_SHADOW_RUNTIME_CONTROL_V1",
+  "enabled": true,
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "baseline_series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_strategy_revision": "V3-H1-SHADOW-001",
+  "start_anchor": "FIRST_H1_CONTEXT_SIDECAR_AFTER_ACTIVATION",
+  "max_shadow_records": 200,
+  "max_new_evaluations_per_run": 8,
+  "minimum_elapsed_hours": 24,
+  "minimum_capture_success_pct": 95,
+  "minimum_decision_divergences_for_non_low_impact": 5,
+  "automatic_extension": false,
+  "automatic_promotion": false,
+  "orders": false,
+  "real_money_actions": false
+}
