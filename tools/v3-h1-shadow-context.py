@@ -102,7 +102,7 @@ def main()->int:
     if not a.handoff_jsonl or not a.candidate_manifest or not a.output_dir:
         raise SystemExit("--handoff-jsonl, --candidate-manifest and --output-dir are required")
     rows=[json.loads(line) for line in a.handoff_jsonl.read_text("utf-8").splitlines() if line.strip()]
-    row_features={r["pair"]:r["features"] for r in rows if r.get("kind")=="row" and r.get("pair") and isinstance(r.get("features"),dict)}
+    row_features={r["pair"]:r["features"] for r in rows if (r.get("kind")=="row" or r.get("type")=="row") and r.get("pair") and isinstance(r.get("features"),dict)}
     manifest=json.loads(a.candidate_manifest.read_text("utf-8"))
     a.output_dir.mkdir(parents=True,exist_ok=True)
     written=[]
