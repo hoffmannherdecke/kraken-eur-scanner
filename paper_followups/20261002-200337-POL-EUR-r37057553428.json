@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.09393,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 3.996,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -0.638,
+        "mfe_pct": 3.996,
+        "peak_at_utc": "2026-10-03T20:00:00Z",
+        "trough_at_utc": "2026-10-02T20:45:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 1.686,
       "price_eur": 0.09253
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "near_1h_resistance",
@@ -118,7 +134,7 @@
     },
     "schema_version": 1,
     "setup_lane": "REVERSAL",
-    "updated_at_utc": "2026-10-03T08:19:34.626573Z"
+    "updated_at_utc": "2026-10-03T21:19:55.749137Z"
   },
   "original_decision": "WAIT",
   "pair": "POL/EUR",

@@ -80,6 +80,17 @@
         "mfe_pct": 0.125,
         "peak_at_utc": "2026-10-03T10:12:00Z",
         "trough_at_utc": "2026-10-03T09:25:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 2.429,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -0.069,
+        "mfe_pct": 3.286,
+        "peak_at_utc": "2026-10-03T19:15:00Z",
+        "trough_at_utc": "2026-10-03T09:25:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -108,7 +119,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-03T14:34:19.193582Z"
+    "updated_at_utc": "2026-10-03T21:19:59.991759Z"
   },
   "original_decision": "WAIT",
   "pair": "BNB/EUR",
