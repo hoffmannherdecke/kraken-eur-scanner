@@ -80,6 +80,17 @@
         "mfe_pct": 0.466,
         "peak_at_utc": "2026-10-02T17:52:00Z",
         "trough_at_utc": "2026-10-02T18:47:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -3.725,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -7.683,
+        "mfe_pct": 0.233,
+        "peak_at_utc": "2026-10-02T17:55:00Z",
+        "trough_at_utc": "2026-10-02T18:45:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -109,7 +120,7 @@
     },
     "schema_version": 1,
     "setup_lane": "REVERSAL",
-    "updated_at_utc": "2026-10-02T21:55:56.831868Z"
+    "updated_at_utc": "2026-10-03T06:09:32.175829Z"
   },
   "original_decision": "WAIT",
   "pair": "XPL/EUR",

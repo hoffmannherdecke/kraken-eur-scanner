@@ -1,0 +1,64 @@
+{
+  "altname": "QNTEUR",
+  "candidate_age_seconds": 35,
+  "candidate_event_time_utc": "2026-10-03T06:08:18Z",
+  "candidate_id": "20261003-060818-QNT-EUR-r37101964764",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "PAIR_BLOCKED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Pair is blocked by strategy.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "not_collected": true
+  },
+  "evaluated_at_utc": "2026-10-03T06:08:53.119561Z",
+  "evaluator": {
+    "attempt": 0,
+    "model": null,
+    "response_id": null
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 228.42,
+    "bid": 228.1,
+    "last": 228.12,
+    "spread_pct": 0.14019101025146463
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "QNT/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37101964764:QNT-EUR:1791007698",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "cc29f65438a34e8bc59b2d7bd9ed9deb1ca4e1a9",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-03T06:08:18Z",
+    "candidate_detected_ts": 1791007698,
+    "candidate_snapshot_at_utc": "2026-10-03T06:08:18Z",
+    "detected_to_evaluation_complete_seconds": 35.12,
+    "detected_to_evaluation_start_seconds": 34.989,
+    "evaluation_completed_at_utc": "2026-10-03T06:08:53.119561Z",
+    "evaluation_runtime_seconds": 0.13,
+    "evaluation_started_at_utc": "2026-10-03T06:08:52.989178Z",
+    "handoff_to_evaluation_start_seconds": 30.356,
+    "handoff_written_at_utc": "2026-10-03T06:08:22.633427Z",
+    "scan_step_started_at_utc": "2026-10-03T06:06:40Z"
+  }
+}
