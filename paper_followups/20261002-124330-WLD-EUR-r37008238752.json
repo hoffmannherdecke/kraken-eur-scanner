@@ -80,6 +80,17 @@
         "mfe_pct": 3.643,
         "peak_at_utc": "2026-10-02T13:42:00Z",
         "trough_at_utc": "2026-10-02T12:44:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 0.302,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -5.454,
+        "mfe_pct": 5.051,
+        "peak_at_utc": "2026-10-02T13:40:00Z",
+        "trough_at_utc": "2026-10-02T21:25:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -109,7 +120,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-02T16:44:58.104228Z"
+    "updated_at_utc": "2026-10-03T00:54:20.585837Z"
   },
   "original_decision": "WAIT",
   "pair": "WLD/EUR",
