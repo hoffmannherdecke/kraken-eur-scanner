@@ -271,3 +271,55 @@ Diese Punkte gehören nicht in die Trading-Laufzeit und dürfen den Kernaufbau n
 **V2R3 sauber messen → Mini-PC stabil → Watchdog/Recovery → Kraken/Altrady-Realtime → V2R4-Fast-Trigger Paper → schlanke Integrationen + Historik/Backtests → V3 Research/Shadow/Paper → Smart-Money-Forschung → Self-hosted/Trading-API zuletzt.**
 
 - [ ] **V2R4 Paper-Aktivierungsentscheid** bleibt separat offen. Technische Kernpfade sind weitgehend vorbereitet/CI-grün; aktueller Fail-Closed-Control-State ist `BLOCKED_V2R3_COMPLETION`. Vor Aktivierung: reife V2R3-Evidenzsicht, expliziter Sizing-Entscheid (Timing-Isolation 50+50 methodisch bevorzugt, nicht automatisch autorisiert), finaler PR-Sync, gebündelter MINI-PC-Readiness-Sync, kleiner Release-Smoke, klarer Serienstart/Rollback. Keine Echtgeldaktion.
+## Fast-Track execution block — 2026-10-03
+
+Status: **ACTIVE WORKING ORDER**
+
+Objective: reduce calendar time to a useful strategy decision without weakening the
+existing evidence/release gates.
+
+Execution order:
+
+1. **V2R3 — finish, do not tune**
+   - keep `PAPER-V2R3-CLEAN-20261001T0925Z` frozen;
+   - complete the existing alternative completion gate and mature final follow-ups;
+   - at maturity, render/review the prepared release evidence immediately;
+   - classify all frozen adjustment hypotheses and route each to V2R4, V3, reject or
+     more-testing-required.
+
+2. **V2R4 — make release-ready in parallel**
+   - finish only remaining release-boundary wiring/sync/smoke work;
+   - do not activate before V2R3 completion review;
+   - after review, start a new homogeneous paper series without an arbitrary extra delay;
+   - measure whether WAIT/revalidation, continuation/second-leg routing and live Kraken
+     tradability materially improve usable trade production without broad filter relaxation.
+
+3. **V3 — smallest valid shadow candidate in parallel**
+   - do not wait for every open V3/H-component;
+   - include only components whose required component gates are already closed;
+   - preserve holdout/search-accounting rules;
+   - start shadow collection as soon as the candidate contract and required E2E smoke are
+     valid, independently of V2R4 paper performance.
+
+4. **Decision cadence for each new strategy candidate**
+   - ~24h: technical/mechanical sanity only;
+   - ~72h: early productivity / candidate-to-trade / WAIT-REJECT structure review;
+   - ~7d: continue, reject, or create a separately versioned successor unless a frozen
+     evidence-maturity contract explicitly requires more time.
+
+5. **Anti-delay rules**
+   - no repeated PASS tests without a relevant change/incident/freshness requirement;
+   - no long extension solely to chase a trade-count target when the version is clearly
+     producing essentially no trades;
+   - no completion of unrelated research branches merely because they are open;
+   - no mid-run threshold/entry/stop/sizing changes;
+   - technical waiting time is used for independent successor/research preparation.
+
+Success criterion for this block:
+- the project reaches a state where trade frequency and trade quality can both be measured
+  prospectively on a non-trivial sample, and weak candidate branches are rejected quickly
+  enough that progress toward that state remains visible.
+
+This block does **not** authorize real-money trading, private Kraken rights, leverage,
+automatic strategy promotion or any bypass of the existing V2R3/V2R4/V3 release gates.
+
