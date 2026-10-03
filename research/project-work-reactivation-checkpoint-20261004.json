@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "kind": "PROJECT_WORK_REACTIVATION_CHECKPOINT_V1",
   "checkpoint_id": "WORK-REACTIVATION-20261004",
   "earliest_review_date_local": "2026-10-04",
@@ -64,10 +64,11 @@
     "resume_or_review_first": [
       {
         "name": "Krypto Paper – gezielte Analyse",
-        "status": "EXPLICITLY_INTENDED_TO_RESUME",
+        "status": "INFRASTRUCTURE_REACTIVATED_ANALYSIS_GATE_WAITING",
         "original_restart": "2026-10-04 10:15 local",
         "original_cadence": "every 2 days",
-        "gate": "substantive analysis only with >=3 mature paper cases, series completion, or UNKNOWN/blocker"
+        "gate": "substantive analysis only with >=3 mature paper cases, series completion, or UNKNOWN/blocker",
+        "current_operating_mode": "manual/event-driven/targeted; original every-2-days cadence retained as historical intent only and not automatically restored"
       }
     ],
     "keep_disabled_replaced_by_current_architecture": [
@@ -92,5 +93,33 @@
       "unrelated general news/geopolitics monitoring"
     ],
     "no_auto_restore": true
+  },
+  "status": "COMPLETED_EARLY_LOCAL_SMOKE_PASS_ANALYSIS_GATE_WAITING",
+  "completed_at_local": "2026-10-03T19:46:00+02:00",
+  "completion_note": "Originally scheduled for review on 2026-10-04; completed one evening early after the weekly Work/agent usage limit returned to 100%. The date was a review target, not a technical lock.",
+  "account_usage_state_at_completion": {
+    "weekly_work_agent_limit_remaining_pct": 100,
+    "planning_rule": "Weekly Work/agent usage limit is the operative account-side constraint for this project.",
+    "credits_ui_note": "A displayed 0 Credits value is not treated as project budget or as a reactivation blocker."
+  },
+  "local_desktop_work": {
+    "windows_desktop_app_installed": true,
+    "execution_mode": "Auf deinem Computer",
+    "smoke_result": "PASS",
+    "smoke_target": "C:\\Users\\ADMIN\\Trading\\Repos\\kraken-eur-scanner\\PROJECT_BACKLOG.md",
+    "smoke_mode": "read-only",
+    "verified_effects": [
+      "File content/title was read successfully.",
+      "No file was changed, moved or deleted.",
+      "No access to C:\\Users\\ADMIN\\Trading\\Secrets or other credential/secret directories."
+    ]
+  },
+  "analysis_gate": {
+    "work_item": "Krypto Paper – gezielte Analyse",
+    "infrastructure_status": "READY",
+    "current_status_at_completion": "WAITING",
+    "gate": "substantive analysis only with >=3 mature paper cases, series completion, or UNKNOWN/blocker",
+    "scheduling_status": "NO_RECURRING_WORK_SCHEDULE_RESTORED",
+    "operating_mode": "manual/event-driven/targeted until measured incremental value justifies any recurring cadence"
   }
 }
