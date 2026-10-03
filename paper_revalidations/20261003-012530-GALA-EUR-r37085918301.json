@@ -1,0 +1,227 @@
+{
+  "altname": "GALAEUR",
+  "candidate_id": "20261003-012530-GALA-EUR-r37085918301",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.002405 with volume holding up",
+      "retest of 0.002405 area holds as support"
+    ],
+    "reason_codes": [
+      "resistance_unbroken",
+      "price_weakening",
+      "extended_after_sharp_run",
+      "fees_raise_required_follow_through",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The one-shot revalidation shows no confirmed break of 0.002405 resistance; the fresh ask is below that level after weakening recent closes. No evidence supports a scout entry with a defined confirmation plan.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "GALAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 52.72,
+        "available": true,
+        "current_funding_rate": 6.8764683348e-08,
+        "current_open_interest": 354258505.0,
+        "funding_rate_delta": -2.1403930406e-08,
+        "open_interest_pct": 0.2406,
+        "previous_funding_rate": 9.0168613754e-08,
+        "previous_observed_at_utc": "2026-10-03T01:26:19.847478Z",
+        "previous_open_interest": 353408034.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 6.8764683348e-08,
+        "index_price": 0.0026573,
+        "last": 0.002655,
+        "mark_price": 0.00265666728,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 354258505.0,
+        "requested_symbols": [
+          "PF_GALAUSD",
+          "PI_GALAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_GALAUSD",
+        "volume24h": 2609596632
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.002363,
+      "bid": 0.002361,
+      "last": 0.002343,
+      "spread_pct": 0.08467400508045154
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "2000",
+      "pair_decimals": 6,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.04678387444910781,
+          "ret3h_pct": 0.10315878866291595
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.025623146522379958,
+          "ret3h_pct": 0.38677621811311624
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.08488163727247144,
+          "ret3h_pct": 0.6173425776426988
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T02:19:01.973583Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_073750208fb90cc4006ac06616e50087d29136d89533d0f583"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.002363,
+    "bid": 0.002361,
+    "last": 0.002343,
+    "spread_pct": 0.08467400508045154
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.002401,
+      "high": 0.002401,
+      "low": 0.002396,
+      "open": 0.002396,
+      "trades": 2,
+      "ts": 1790990100,
+      "volume": 412384.463854,
+      "vwap": 0.002396
+    },
+    {
+      "close": 0.002361,
+      "high": 0.002361,
+      "low": 0.002361,
+      "open": 0.002361,
+      "trades": 1,
+      "ts": 1790991000,
+      "volume": 4500.0,
+      "vwap": 0.002361
+    },
+    {
+      "close": 0.002328,
+      "high": 0.002338,
+      "low": 0.002328,
+      "open": 0.002338,
+      "trades": 9,
+      "ts": 1790991900,
+      "volume": 881461.8708883,
+      "vwap": 0.002331
+    },
+    {
+      "close": 0.002343,
+      "high": 0.002343,
+      "low": 0.002328,
+      "open": 0.002328,
+      "trades": 3,
+      "ts": 1790992800,
+      "volume": 569525.908619,
+      "vwap": 0.002339
+    },
+    {
+      "close": 0.002343,
+      "high": 0.002343,
+      "low": 0.002343,
+      "open": 0.002343,
+      "trades": 0,
+      "ts": 1790993700,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "GALA/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261003-012530-GALA-EUR-r37085918301.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T02:19:09.889277Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "bbc0def1a4ba97e3973e5fd6fdcfe09bb894cbd0",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T02:19:09.889277Z",
+    "revalidation_started_at_utc": "2026-10-03T02:19:01.713774Z",
+    "ttl_due_at_utc": "2026-10-03T02:11:19.847478Z",
+    "ttl_lag_seconds": 461.866
+  }
+}
