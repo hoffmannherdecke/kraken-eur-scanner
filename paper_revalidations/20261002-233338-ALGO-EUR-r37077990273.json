@@ -1,0 +1,226 @@
+{
+  "altname": "ALGOEUR",
+  "candidate_id": "20261002-233338-ALGO-EUR-r37077990273",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A completed 15-minute close above 0.11311 with volume at or above its recent baseline."
+    ],
+    "reason_codes": [
+      "SPREAD_AND_TURNOVER_OK",
+      "RANK_DROPPED",
+      "CLOSED_VOLUME_WEAK",
+      "BREAKOUT_UNCONFIRMED",
+      "REMAINING_MOVE_VS_COSTS_UNCLEAR"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The pullback held above 0.11272, but the latest completed close above 0.11311 had weak volume; the apparent higher-volume candle is not yet closed. Continuation and remaining movement do not justify costs or a scout entry.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ALGOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 32.07,
+        "available": true,
+        "current_funding_rate": 1.35739826945e-06,
+        "current_open_interest": 7226941.0,
+        "funding_rate_delta": 4.129497881275e-06,
+        "open_interest_pct": -0.4416,
+        "previous_funding_rate": -2.772099611825e-06,
+        "previous_observed_at_utc": "2026-10-02T23:34:03.207629Z",
+        "previous_open_interest": 7258998.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 1.35739826945e-06,
+        "index_price": 0.127079,
+        "last": 0.12702,
+        "mark_price": 0.1271185506,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 7226941.0,
+        "requested_symbols": [
+          "PF_ALGOUSD",
+          "PI_ALGOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ALGOUSD",
+        "volume24h": 6549425
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.11301,
+      "bid": 0.11292,
+      "last": 0.11301,
+      "spread_pct": 0.07967069446288041
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "41",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.053471312374875346,
+          "ret3h_pct": 0.07031796237721988
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.04089169181997754,
+          "ret3h_pct": 0.28991264585438437
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.06641996394343153,
+          "ret3h_pct": 0.6585854729407314
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T00:06:05.868294Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_083ac6e14f05c2cf006ac046f0534887d18b8009f4952b47af"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.11301,
+    "bid": 0.11292,
+    "last": 0.11301,
+    "spread_pct": 0.07967069446288041
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.11176,
+      "high": 0.11201,
+      "low": 0.11166,
+      "open": 0.11194,
+      "trades": 16,
+      "ts": 1790982000,
+      "volume": 17231.15223348,
+      "vwap": 0.11187
+    },
+    {
+      "close": 0.11272,
+      "high": 0.11272,
+      "low": 0.11173,
+      "open": 0.11173,
+      "trades": 7,
+      "ts": 1790982900,
+      "volume": 6354.90582184,
+      "vwap": 0.11215
+    },
+    {
+      "close": 0.1134,
+      "high": 0.11342,
+      "low": 0.11288,
+      "open": 0.11293,
+      "trades": 10,
+      "ts": 1790983800,
+      "volume": 8376.14250456,
+      "vwap": 0.11307
+    },
+    {
+      "close": 0.11319,
+      "high": 0.11353,
+      "low": 0.11309,
+      "open": 0.11353,
+      "trades": 8,
+      "ts": 1790984700,
+      "volume": 2193.5936,
+      "vwap": 0.11338
+    },
+    {
+      "close": 0.11301,
+      "high": 0.11307,
+      "low": 0.11301,
+      "open": 0.11307,
+      "trades": 7,
+      "ts": 1790985600,
+      "volume": 11510.19084968,
+      "vwap": 0.11301
+    }
+  ],
+  "pair": "ALGO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261002-233338-ALGO-EUR-r37077990273.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T00:06:18.089136Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "f903c1782c9e121056cc362fa57b21ed6c973d19",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T00:06:18.089136Z",
+    "revalidation_started_at_utc": "2026-10-03T00:06:05.313949Z",
+    "ttl_due_at_utc": "2026-10-03T00:04:03.207629Z",
+    "ttl_lag_seconds": 122.106
+  }
+}
