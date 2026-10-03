@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "kind": "OPENAI_QUOTA_MONITORING_DECISION_V1",
+  "decision_id": "OPENAI-QUOTA-MONITORING-20261003",
+  "decided_at_local": "2026-10-03",
+  "status": "PREPARED_ACCOUNT_UI_GATES_PENDING",
+  "goals": [
+    "avoid unnoticed OpenAI API credit exhaustion",
+    "avoid unnoticed ChatGPT Work/Codex quota exhaustion where supported",
+    "keep monitoring low-noise and independent from model calls"
+  ],
+  "verified_constraints": {
+    "api_prepaid_auto_reload_available": true,
+    "api_auto_reload_is_balance_threshold_based": true,
+    "minimum_api_recharge_usd": 5,
+    "api_costs_endpoint_available": true,
+    "api_costs_endpoint_requires_admin_api_key": true,
+    "documented_direct_prepaid_balance_endpoint_found": false,
+    "work_codex_machine_readable_remaining_quota_endpoint_found": false
+  },
+  "architecture": {
+    "api_balance_authority": "OpenAI native prepaid auto-reload in API Billing",
+    "api_spend_visibility": "optional local GET-only /v1/organization/costs watcher",
+    "admin_key_location_if_enabled": "C:\\\\Users\\\\ADMIN\\\\Trading\\\\Secrets\\\\openai-admin-key.txt",
+    "work_codex": "keep daily minimal gate; use reserve/credits only if account UI offers it; no scraping",
+    "notification_policy": "native billing/spend alerts first; local monitor is observability only until a separately proven alert route is needed"
+  },
+  "prepared_artifacts": [
+    "tools/minipc-openai-cost-watch.py",
+    "tools/minipc-openai-admin-secret-prep.ps1",
+    "tools/install-minipc-openai-cost-watch.ps1",
+    ".github/workflows/openai-cost-watch-guard.yml"
+  ],
+  "pending_user_account_actions": [
+    "inspect API Billing auto-reload controls and choose exact threshold/restore/monthly cap",
+    "inspect native API spend-alert controls",
+    "inspect ChatGPT Work/Codex reserve-credit controls if offered",
+    "only if local spend telemetry is still desired: create a separate Admin API key and provision it locally"
+  ],
+  "safety": {
+    "work_codex_secret_access": false,
+    "github_admin_key_storage": false,
+    "model_polling_for_monitoring": false,
+    "automatic_billing_mutation_by_project_code": false,
+    "real_money_trading_actions": false
+  }
+}
