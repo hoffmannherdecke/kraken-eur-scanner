@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-03T02:42:17.950571Z",
     "evaluation_ask_eur": 0.002384,
     "flagged_as_already_run": true,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.294,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -1.006,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-10-03T02:42:00Z",
+        "trough_at_utc": "2026-10-03T02:44:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-03T01:57:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -40,7 +52,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-03T02:43:20.642847Z"
+    "updated_at_utc": "2026-10-03T03:00:42.503220Z"
   },
   "original_decision": "WAIT",
   "pair": "GALA/EUR",
