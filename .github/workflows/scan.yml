@@ -472,6 +472,17 @@ jobs:
           scanner.run()
           PY
 
+      - name: Bounded first real V3 H2 prospective capture
+        if: success() && hashFiles('.scanner/kraken_eur_scanner/handoff/candidates.jsonl') != ''
+        run: |
+          set -euo pipefail
+          python -m py_compile tools/v3-h2-prospective-candidate-capture.py tools/v3-h2-first-prospective-capture.py
+          python tools/v3-h2-first-prospective-capture.py \
+            --handoff-jsonl .scanner/kraken_eur_scanner/handoff/candidates.jsonl \
+            --source-run-id "${{ github.run_id }}" \
+            --output-dir research/v3/h2-prospective-captures \
+            --max-attempts 3
+
       - name: Upload compact ChatGPT handoff
         if: always()
         uses: actions/upload-artifact@v7
@@ -650,6 +661,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add handoff_queue
           git add research/v3/shadow-runtime/h1-context 2>/dev/null || true
+          git add research/v3/h2-prospective-captures 2>/dev/null || true
           if ! git diff --cached --quiet -- handoff_queue; then
             git commit -m "[auto-handoff] persist scanner candidates from run ${GITHUB_RUN_ID}"
             pushed=false
