@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H2_RESEARCH_STREAM_ATTACHMENT_REVIEW_V1",
+  "review_id": "V3-H2-ATTACH-20261003",
+  "status": "APPROVED_BOUNDED_ONE_SHOT_ONLY",
+  "reviewed_at_local": "2026-10-03",
+  "reason": "Project sequence now explicitly tests H1 first while preparing H2 in parallel. The next H2 gate was one real prospective candidate capture; this review authorizes exactly that research-only sidecar attachment.",
+  "authorized_attachment": {
+    "source": "fresh scanner candidate stream",
+    "mode": "BOUNDED_ONE_SHOT_EVENT_HOOK",
+    "max_useful_captures": 1,
+    "max_candidate_attempts_per_scan": 3,
+    "auto_stop_condition": "first PASS capture with current Kraken Futures perpetual mapping and at least one CAPTURED fixed analytics state",
+    "capture_tool": "tools/v3-h2-prospective-candidate-capture.py",
+    "bounded_wrapper": "tools/v3-h2-first-prospective-capture.py",
+    "evidence_dir": "research/v3/h2-prospective-captures"
+  },
+  "not_authorized": [
+    "continuous H2 dataset collection",
+    "outcome join",
+    "threshold or bin search",
+    "derived scalar interpretation of opaque 4-tuples",
+    "candidate decision change",
+    "H2 shadow decision use",
+    "active V2R3 mutation",
+    "orders",
+    "real-money actions"
+  ],
+  "next_gate": "AFTER_FIRST_USEFUL_CAPTURE_REVIEW_DATA_AVAILABILITY_AND_SEMANTICS_THEN_FREEZE_SEPARATE_H2_ONE_CHANGE_SHADOW_CANDIDATE"
+}
