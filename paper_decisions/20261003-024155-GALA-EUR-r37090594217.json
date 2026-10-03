@@ -1,0 +1,186 @@
+{
+  "altname": "GALAEUR",
+  "candidate_age_seconds": 13,
+  "candidate_event_time_utc": "2026-10-03T02:41:55Z",
+  "candidate_id": "20261003-024155-GALA-EUR-r37090594217",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.002405 with live volume strengthening",
+      "Hold above 0.002405 on a retest"
+    ],
+    "reason_codes": [
+      "recently_extended",
+      "no_3h_breakout",
+      "live_volume_weak",
+      "entry_confirmation_missing",
+      "round_trip_costs_1_20pct"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but the sharp 24h advance, weak live volume, and unbroken 3h resistance do not support a scout entry yet.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "GALAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 22.99,
+        "available": true,
+        "current_funding_rate": 6.8764683348e-08,
+        "current_open_interest": 354126524.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -0.0373,
+        "previous_funding_rate": 6.8764683348e-08,
+        "previous_observed_at_utc": "2026-10-03T02:19:09.889277Z",
+        "previous_open_interest": 354258505.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 6.8764683348e-08,
+        "index_price": 0.0026822,
+        "last": 0.002682,
+        "mark_price": 0.00268210886,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 354126524.0,
+        "requested_symbols": [
+          "PF_GALAUSD",
+          "PI_GALAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_GALAUSD",
+        "volume24h": 2496264473
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.002384,
+      "bid": 0.002382,
+      "last": 0.002385,
+      "spread_pct": 0.08392782207301015
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "2000",
+      "pair_decimals": 6,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.05651693446828698,
+          "ret3h_pct": 0.06716256132739407
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.04620101642236474,
+          "ret3h_pct": 0.37038441604408945
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.00944108761329332,
+          "ret3h_pct": 0.4838709677419173
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T02:42:08.180922Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-03T02:42:17.950571Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_06990908993b1872006ac06b824d9c87d193456d1f8d260ff4"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.002384,
+    "bid": 0.002382,
+    "last": 0.002385,
+    "spread_pct": 0.08392782207301015
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "GALA/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37090594217:GALA-EUR:1790995315",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "639a01d7b6d73f440ec25001a1fc26bf19d04ce2",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-03T02:41:55Z",
+    "candidate_detected_ts": 1790995315,
+    "candidate_snapshot_at_utc": "2026-10-03T02:41:55Z",
+    "detected_to_evaluation_complete_seconds": 22.951,
+    "detected_to_evaluation_start_seconds": 12.929,
+    "evaluation_completed_at_utc": "2026-10-03T02:42:17.950571Z",
+    "evaluation_runtime_seconds": 10.022,
+    "evaluation_started_at_utc": "2026-10-03T02:42:07.928839Z",
+    "handoff_to_evaluation_start_seconds": 10.9,
+    "handoff_written_at_utc": "2026-10-03T02:41:57.028702Z",
+    "scan_step_started_at_utc": "2026-10-03T02:40:15Z"
+  }
+}
