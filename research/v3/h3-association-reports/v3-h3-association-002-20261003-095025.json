@@ -1,0 +1,424 @@
+{
+  "association_metrics": {
+    "BTC/EUR": {
+      "ask_depth_quote_top10": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.08481886782163978
+          },
+          "pooled_observation_weighted": {
+            "n": 927,
+            "pearson_r": 0.058194027688867576
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.031150978000456648
+          },
+          "pooled_observation_weighted": {
+            "n": 1074,
+            "pearson_r": 0.01752386903752626
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.2058353881591815
+          },
+          "pooled_observation_weighted": {
+            "n": 554,
+            "pearson_r": 0.1620864270318613
+          }
+        }
+      },
+      "bid_depth_quote_top10": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.023659374697520063
+          },
+          "pooled_observation_weighted": {
+            "n": 927,
+            "pearson_r": -0.017360484198873705
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.05612371988496716
+          },
+          "pooled_observation_weighted": {
+            "n": 1074,
+            "pearson_r": 0.028315521212623443
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.004583396484455549
+          },
+          "pooled_observation_weighted": {
+            "n": 554,
+            "pearson_r": -0.1115962083016271
+          }
+        }
+      },
+      "depth_imbalance_top10": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.02541688272254789
+          },
+          "pooled_observation_weighted": {
+            "n": 927,
+            "pearson_r": -0.056366840779250166
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.052433384999255504
+          },
+          "pooled_observation_weighted": {
+            "n": 1074,
+            "pearson_r": 0.023196406765730544
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.09718255552785413
+          },
+          "pooled_observation_weighted": {
+            "n": 554,
+            "pearson_r": -0.17814636514341903
+          }
+        }
+      },
+      "spread_bps": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.060617562659610214
+          },
+          "pooled_observation_weighted": {
+            "n": 927,
+            "pearson_r": 0.026500905668228505
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.018615602475072535
+          },
+          "pooled_observation_weighted": {
+            "n": 1074,
+            "pearson_r": -0.012636050556855216
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.005026984959135035
+          },
+          "pooled_observation_weighted": {
+            "n": 554,
+            "pearson_r": 0.13888694757271214
+          }
+        }
+      }
+    },
+    "ETH/EUR": {
+      "ask_depth_quote_top10": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.03353394812353008
+          },
+          "pooled_observation_weighted": {
+            "n": 1007,
+            "pearson_r": 0.05880430569838119
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.033757326382620585
+          },
+          "pooled_observation_weighted": {
+            "n": 1163,
+            "pearson_r": 0.01574100331517625
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.19211426250203872
+          },
+          "pooled_observation_weighted": {
+            "n": 606,
+            "pearson_r": 0.24385075420853805
+          }
+        }
+      },
+      "bid_depth_quote_top10": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.07654752581683506
+          },
+          "pooled_observation_weighted": {
+            "n": 1007,
+            "pearson_r": 0.10920604762957037
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.06398195450397161
+          },
+          "pooled_observation_weighted": {
+            "n": 1163,
+            "pearson_r": 0.07846469418342428
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.027689431013790594
+          },
+          "pooled_observation_weighted": {
+            "n": 606,
+            "pearson_r": 0.05570428854182264
+          }
+        }
+      },
+      "depth_imbalance_top10": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.005683272043247468
+          },
+          "pooled_observation_weighted": {
+            "n": 1007,
+            "pearson_r": 0.028653066365834097
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.07298352137953718
+          },
+          "pooled_observation_weighted": {
+            "n": 1163,
+            "pearson_r": 0.04207628417506565
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.13266915896467835
+          },
+          "pooled_observation_weighted": {
+            "n": 606,
+            "pearson_r": -0.12455496195180217
+          }
+        }
+      },
+      "spread_bps": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.0719806601217544
+          },
+          "pooled_observation_weighted": {
+            "n": 1007,
+            "pearson_r": 0.0827836757585163
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.04187612592928708
+          },
+          "pooled_observation_weighted": {
+            "n": 1163,
+            "pearson_r": -0.0038891108080232302
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.03330452618667208
+          },
+          "pooled_observation_weighted": {
+            "n": 606,
+            "pearson_r": 0.15070805583970923
+          }
+        }
+      }
+    },
+    "SOL/EUR": {
+      "ask_depth_quote_top10": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.1877140508197749
+          },
+          "pooled_observation_weighted": {
+            "n": 1030,
+            "pearson_r": -0.2153469436680525
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.13525163846371654
+          },
+          "pooled_observation_weighted": {
+            "n": 1194,
+            "pearson_r": -0.11380608448784726
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.1751181925065069
+          },
+          "pooled_observation_weighted": {
+            "n": 616,
+            "pearson_r": -0.3724532224895013
+          }
+        }
+      },
+      "bid_depth_quote_top10": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.014500395255774083
+          },
+          "pooled_observation_weighted": {
+            "n": 1030,
+            "pearson_r": 0.015261314951020141
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.05034373120822691
+          },
+          "pooled_observation_weighted": {
+            "n": 1194,
+            "pearson_r": -0.0219095351549911
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.15502117618565348
+          },
+          "pooled_observation_weighted": {
+            "n": 616,
+            "pearson_r": 0.08323904302948869
+          }
+        }
+      },
+      "depth_imbalance_top10": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.0737607951487678
+          },
+          "pooled_observation_weighted": {
+            "n": 1030,
+            "pearson_r": 0.13018390157791632
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.005378058473002018
+          },
+          "pooled_observation_weighted": {
+            "n": 1194,
+            "pearson_r": 0.04137021649841152
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.0047095665529141816
+          },
+          "pooled_observation_weighted": {
+            "n": 616,
+            "pearson_r": 0.2536476508895148
+          }
+        }
+      },
+      "spread_bps": {
+        "future_mid_return_300s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.004877083886678434
+          },
+          "pooled_observation_weighted": {
+            "n": 1030,
+            "pearson_r": 0.010948554677697658
+          }
+        },
+        "future_mid_return_60s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": -0.012362492717209541
+          },
+          "pooled_observation_weighted": {
+            "n": 1194,
+            "pearson_r": -0.038014270027852445
+          }
+        },
+        "future_mid_return_900s": {
+          "equal_session_weighted": {
+            "eligible_session_count": 4,
+            "median_session_pearson_r": 0.02701827734883411
+          },
+          "pooled_observation_weighted": {
+            "n": 616,
+            "pearson_r": 0.07217993007944615
+          }
+        }
+      }
+    }
+  },
+  "collection": {
+    "distinct_utc_dates": 2,
+    "session_count": 4,
+    "valid_rows": {
+      "BTC/EUR": 1252,
+      "ETH/EUR": 1314,
+      "SOL/EUR": 1331
+    }
+  },
+  "guardrails": {
+    "feature_transform_search": false,
+    "holdout_opened": false,
+    "horizon_search": false,
+    "orders": false,
+    "p_values": false,
+    "pair_selection": false,
+    "real_money_actions": false,
+    "threshold_search": false
+  },
+  "interpretation": {
+    "automatic_winner_selected": false,
+    "descriptive_association_only": true,
+    "maker_fill_probability_proven": false,
+    "promotion_allowed": false,
+    "queue_position_proven": false
+  },
+  "kind": "V3_H3_PROSPECTIVE_ASSOCIATION_RESULT_V1",
+  "schema_version": 1,
+  "status": "PASS",
+  "trial_id": "V3-H3-ASSOC-002"
+}

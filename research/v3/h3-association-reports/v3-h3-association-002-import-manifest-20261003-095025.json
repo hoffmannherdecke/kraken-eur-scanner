@@ -1,0 +1,70 @@
+{
+    "schema_version":  1,
+    "kind":  "V3_H3_ASSOC_002_FINAL_REPORT_IMPORT_MANIFEST_V1",
+    "imported_at_utc":  "2026-10-03T07:50:27.7677339Z",
+    "trial_id":  "V3-H3-ASSOC-002",
+    "evaluation":  {
+                       "filename":  "v3-h3-association-002-20261003-095025.json",
+                       "sha256":  "1fc0deadc7ddd90c3621cd4ec08dba0b50ba6d6a5e768de0e13c73c8bcb37c4f",
+                       "status":  "PASS"
+                   },
+    "frozen_execution":  {
+                             "first_execution_head":  "83bc56d2639eb75dc7acbf2e0fc8fdf8ac8fcabb",
+                             "runner_sha256":  "a0aedd421c9c27396634b79a746b586fb0ca9eb097ced6d3f4f5ed7e44fc6512",
+                             "spec_sha256":  "9705ae778235d95477461fee9227e0e06ebb9d0a7b32070d9a7148c7f529b338"
+                         },
+    "sessions":  [
+                     {
+                         "session_id":  "V3-H3-ASSOC-002-20261002T093220Z",
+                         "filename":  "v3-h3-assoc-002-session-20261002-113220.json",
+                         "sha256":  "e16a4228d5a41a4d7afd515d1442e69479b561f332246cb8b93eec3f8ef89f22",
+                         "duration_seconds":  1800.0339550971985,
+                         "counts":  {
+                                        "BTC/EUR":  352,
+                                        "ETH/EUR":  348,
+                                        "SOL/EUR":  344
+                                    }
+                     },
+                     {
+                         "session_id":  "V3-H3-ASSOC-002-20261002T101132Z",
+                         "filename":  "v3-h3-assoc-002-session-20261002-121132.json",
+                         "sha256":  "db71b571f2615c52edf42c52a7a9ae9cb1461cf06e5d6b1ffc857e1d01f7ebc7",
+                         "duration_seconds":  1800.0299365520475,
+                         "counts":  {
+                                        "BTC/EUR":  353,
+                                        "ETH/EUR":  349,
+                                        "SOL/EUR":  349
+                                    }
+                     },
+                     {
+                         "session_id":  "V3-H3-ASSOC-002-20261003T062844Z",
+                         "filename":  "v3-h3-assoc-002-session-20261003-082844.json",
+                         "sha256":  "30d663bc32ed92e27d5d3cf39426590d3b6cbd88eda57b02f201ffc72b1aafc3",
+                         "duration_seconds":  1800.0397713184357,
+                         "counts":  {
+                                        "BTC/EUR":  274,
+                                        "ETH/EUR":  292,
+                                        "SOL/EUR":  319
+                                    }
+                     },
+                     {
+                         "session_id":  "V3-H3-ASSOC-002-20261003T072025Z",
+                         "filename":  "v3-h3-assoc-002-session-20261003-092025.json",
+                         "sha256":  "dd9451f7b737880912a4b916c989d3123645ca3dbd785a600fd47c3fe651783b",
+                         "duration_seconds":  1800.0245413780212,
+                         "counts":  {
+                                        "BTC/EUR":  273,
+                                        "ETH/EUR":  325,
+                                        "SOL/EUR":  319
+                                    }
+                     }
+                 ],
+    "guardrails":  {
+                       "exact_evaluation_payload_copy":  true,
+                       "raw_session_rows_imported":  false,
+                       "holdout_opened":  false,
+                       "strategy_change":  false,
+                       "orders":  false,
+                       "real_money_actions":  false
+                   }
+}
