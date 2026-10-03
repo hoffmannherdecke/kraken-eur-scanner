@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H2_FIRST_REAL_PROSPECTIVE_CAPTURE_PLAN_V1",
+  "status": "ACTIVE_BOUNDED_PREP",
+  "created_at_local": "2026-10-03",
+  "purpose": "While the H1 standalone shadow pilot runs, complete the previously pending H2 real prospective research capture without changing any candidate decision.",
+  "capture_rule": {
+    "source": "fresh canonical scanner candidate stream",
+    "max_candidates_attempted_per_scan": 3,
+    "candidate_must_be_fresh_for_existing_120s_mapper_contract": true,
+    "completion": "Stop automatically after the first PASS capture with a current Kraken Futures perpetual mapping and at least one CAPTURED fixed analytics state.",
+    "fixed_analytics": [
+      "open-interest",
+      "funding",
+      "future-basis"
+    ],
+    "interval_seconds": 300,
+    "no_derived_scalar_from_opaque_4tuple": true
+  },
+  "guardrails": {
+    "outcome_join": false,
+    "threshold_search": false,
+    "model_training": false,
+    "paper_decision_changed": false,
+    "active_v2r3_changed": false,
+    "v2r4_changed": false,
+    "orders": false,
+    "real_money_actions": false
+  },
+  "next_gate": "After one useful real prospective capture, review H2 data availability/semantics. Only then freeze a separate H2 one-change shadow candidate; do not stack H2 onto H1 yet."
+}
