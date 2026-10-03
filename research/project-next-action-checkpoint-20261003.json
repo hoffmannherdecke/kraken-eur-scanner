@@ -21,13 +21,19 @@
       "status": "COMPLETED",
       "action": "Four valid >=1800s H3 sessions across two UTC dates matured the frozen row gate; automatic association evaluation PASS and canonical compact report import PASS.",
       "user_interaction": "None.",
-      "stop_rule": "Do not run further H3 sessions."
+      "stop_rule": "Do not run further H3 collection sessions."
     },
     {
-      "id": "FIRST_V3_ONE_CHANGE_SHADOW_DECISION",
-      "status": "PROJECT_DECISION_REQUIRED",
-      "action": "Review completed H1/H3/H6 evidence and decide whether to materialize exactly one changed component for a draft shadow candidate or defer all three. Do not auto-select a winner.",
-      "user_interaction": "User/project decision required before strategy materialization."
+      "id": "V3_SHADOW_SEQUENCE_SELECTION",
+      "status": "COMPLETED_CORRECTED",
+      "action": "Selected sequence after naming clarification: H1 early-warning standalone, then H3 orderbook-confirmation standalone, then H6 volume-plausibility standalone, then a separate combination test of retained components. H2 derivatives remains a separate optional research branch.",
+      "user_interaction": "None."
+    },
+    {
+      "id": "V3_H1_SHADOW_001",
+      "status": "ACTIVE_BOUNDED_PILOT",
+      "action": "Run the frozen H1 one-change shadow against unchanged V2R3 using the predefined sample/time/capture gate. No mid-run tuning or automatic extension/promotion.",
+      "user_interaction": "None until the H1 pilot review gate matures."
     }
   ],
   "passive_wait_gates": [
@@ -47,6 +53,6 @@
       "note": "Real Altrady->Kraken fresh-recheck release smoke stays deferred to release boundary for freshness."
     }
   ],
-  "instruction_on_user_return": "Do not repeat H1/H6 import or any H3 collection. Resume from FIRST_V3_ONE_CHANGE_SHADOW_DECISION. V2R3 clean-series collection continues unchanged in parallel.",
-  "updated_at_local": "2026-10-03T09:55:00+02:00"
+  "instruction_on_user_return": "Do not repeat H1/H6 import or any H3 collection. Continue V3-H1-SHADOW-001 unchanged. After its predefined review gate, prepare H3 as the second standalone one-change shadow, then H6 as the third. H2 is not part of this selected sequence.",
+  "updated_at_local": "2026-10-03T10:30:00+02:00"
 }
