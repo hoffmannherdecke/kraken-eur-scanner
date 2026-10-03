@@ -1,8 +1,8 @@
 {
   "schema_version": 2,
   "kind": "V3_FIRST_SHADOW_CANDIDATE_READINESS_SNAPSHOT_V2",
-  "status": "EVIDENCE_REVIEWS_COMPLETE_PROJECT_DECISION_REQUIRED",
-  "generated_at_utc": "2026-10-03T07:54:00Z",
+  "status": "H1_ONE_CHANGE_SHADOW_ACTIVE_SEQUENCE_CORRECTED",
+  "generated_at_utc": "2026-10-03T08:30:00Z",
   "authority": {
     "master_todo": "PROJECT_BACKLOG.md",
     "candidate_contract": "research/v3/shadow-candidate-contract-v1.json",
@@ -35,18 +35,19 @@
     {
       "hypothesis_id": "V3-H1",
       "component_class": "SIGNAL_FEATURE",
-      "readiness": "FIXED_INCREMENTAL_REVIEW_COMPLETE",
+      "readiness": "ONE_CHANGE_SHADOW_ACTIVE",
       "evidence": [
         "research/v3/incremental-reports/v3-h1-incremental-001-20261002-095841.json",
         "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
       ],
       "descriptive_result": "Small but sign-consistent incremental partial association for the two preregistered relative-context features after controlling target 1h return across research_train/calibration/validation and both weighting schemes.",
-      "direct_promotion_allowed": false
+      "direct_promotion_allowed": false,
+      "shadow_candidate": "research/v3/shadow-candidates/v3-h1-shadow-001.json"
     },
     {
       "hypothesis_id": "V3-H3",
       "component_class": "STATE_CONDITIONING",
-      "readiness": "FIXED_PROSPECTIVE_REVIEW_COMPLETE",
+      "readiness": "FIXED_PROSPECTIVE_REVIEW_COMPLETE_QUEUED_SECOND_STANDALONE_SHADOW",
       "evidence": [
         "research/v3/h3-association-reports/v3-h3-association-002-20261003-095025.json",
         "research/v3/h3-assoc-002-fixed-review-20261003.json"
@@ -57,7 +58,7 @@
     {
       "hypothesis_id": "V3-H6",
       "component_class": "SIGNAL_FEATURE",
-      "readiness": "FIXED_INCREMENTAL_REVIEW_COMPLETE",
+      "readiness": "FIXED_INCREMENTAL_REVIEW_COMPLETE_QUEUED_THIRD_STANDALONE_SHADOW",
       "evidence": [
         "research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json",
         "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
@@ -73,7 +74,7 @@
     },
     {
       "hypothesis_id": "V3-H2",
-      "reason": "Optional; separate review plus real prospective research capture still needed."
+      "reason": "Optional separate derivatives research branch; explicitly not part of the selected H1→H3→H6 standalone sequence. No active live-stream attachment."
     },
     {
       "hypothesis_id": "V3-H4",
@@ -110,11 +111,23 @@
     "automatic_promotion": false,
     "real_money_activation_separate": true
   },
-  "next_gate": "HUMAN_PROJECT_REVIEW_SELECT_OR_DEFER_FIRST_ONE_CHANGE_SHADOW_CANDIDATE; DO_NOT AUTO-SELECT H1/H3/H6 FROM DESCRIPTIVE EFFECT SIZES.",
+  "next_gate": "COMPLETE_PREDEFINED_H1_SHADOW_PILOT_REVIEW; THEN MATERIALIZE H3 AS A SEPARATE ONE_CHANGE_SHADOW; THEN H6; ONLY AFTERWARD CONSIDER COMBINATION.",
   "current_execution_focus": [
-    "NO_MORE_H3_COLLECTION_SESSIONS",
     "KEEP_V2R3_CLEAN_SERIES_COLLECTING_UNCHANGED",
-    "DO_NOT OPEN SEALED HOLDOUT",
-    "AWAIT PROJECT DECISION BEFORE MATERIALIZING ONE CHANGED COMPONENT"
-  ]
+    "RUN_BOUNDED_V3_H1_SHADOW_001_ONLY",
+    "DO_NOT_ACTIVATE_H2_FROM_THE_EARLIER_LABELING_MIXUP",
+    "NO_MORE_H3_COLLECTION_SESSIONS",
+    "DO_NOT_OPEN_SEALED_HOLDOUT",
+    "AFTER_H1_REVIEW_PREPARE_H3_STANDALONE_THEN_H6_STANDALONE"
+  ],
+  "selected_sequence": {
+    "clarification": "The intended three building blocks are H1 early-warning relative context, H3 orderbook confirmation, and H6 volume plausibility. H2 derivatives is separate and optional.",
+    "ordered_steps": [
+      "V3-H1",
+      "V3-H3",
+      "V3-H6",
+      "COMBINATION_AFTER_STANDALONE_REVIEWS"
+    ],
+    "decision_record": "research/v3/v3-shadow-test-sequence-decision-20261003.json"
+  }
 }
