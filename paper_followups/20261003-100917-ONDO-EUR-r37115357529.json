@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-10-03T10:10:07.021336Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 0.252,
+      "expected_bars": 120,
+      "mae_pct": -0.459,
+      "mfe_pct": 0.579
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -11,6 +19,14 @@
       "expected_bars": 30,
       "mae_pct": -0.459,
       "mfe_pct": 0.339
+    },
+    "60": {
+      "bars": 60,
+      "complete": true,
+      "end_close_pct": -0.051,
+      "expected_bars": 60,
+      "mae_pct": -0.459,
+      "mfe_pct": 0.344
     }
   },
   "interval_minutes": 1,
@@ -34,6 +50,17 @@
         "mfe_pct": 0.377,
         "peak_at_utc": "2026-10-03T10:19:00Z",
         "trough_at_utc": "2026-10-03T10:24:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": 0.243,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -0.275,
+        "mfe_pct": 0.53,
+        "peak_at_utc": "2026-10-03T10:47:00Z",
+        "trough_at_utc": "2026-10-03T10:25:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -64,7 +91,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-03T10:26:18.142850Z"
+    "updated_at_utc": "2026-10-03T12:50:29.582514Z"
   },
   "original_decision": "WAIT",
   "pair": "ONDO/EUR",
@@ -74,5 +101,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "test_id": "SHADOW-V2R3-20261001-01",
-  "updated_at_utc": "2026-10-03T11:02:37.916927Z"
+  "updated_at_utc": "2026-10-03T12:50:29.760704Z"
 }

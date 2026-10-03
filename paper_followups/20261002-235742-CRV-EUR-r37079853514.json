@@ -80,6 +80,17 @@
         "mfe_pct": 1.559,
         "peak_at_utc": "2026-10-03T00:45:00Z",
         "trough_at_utc": "2026-10-02T23:58:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 2.28,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -0.043,
+        "mfe_pct": 3.598,
+        "peak_at_utc": "2026-10-03T10:05:00Z",
+        "trough_at_utc": "2026-10-03T04:35:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -110,7 +121,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-03T04:14:34.126483Z"
+    "updated_at_utc": "2026-10-03T12:50:08.344890Z"
   },
   "original_decision": "WAIT",
   "pair": "CRV/EUR",
