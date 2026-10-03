@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "kind": "V3_SHADOW_TEST_SEQUENCE_DECISION_V1",
+  "decision_id": "V3-SHADOW-SEQUENCE-20261003",
+  "decided_at_local": "2026-10-03",
+  "status": "ACTIVE",
+  "sequence": [
+    {
+      "step": 1,
+      "hypothesis_id": "V3-H1",
+      "mode": "ONE_CHANGE_SHADOW",
+      "action": "Run H1 alone first against unchanged V2R3 on the same prospective candidate stream."
+    },
+    {
+      "step": 2,
+      "hypothesis_id": "V3-H2",
+      "mode": "RESEARCH_PREP_IN_PARALLEL_THEN_ONE_CHANGE_SHADOW",
+      "action": "While H1 runs, complete H2 prospective research capture/readiness. After H1 pilot review, test H2 alone rather than stacking it immediately onto H1."
+    },
+    {
+      "step": 3,
+      "hypothesis_id": "V3-H3",
+      "mode": "ONE_CHANGE_SHADOW",
+      "action": "After the H2 standalone pilot/review, test H3 alone as state-conditioning context."
+    },
+    {
+      "step": 4,
+      "hypothesis_id": "COMBINATION",
+      "mode": "SEPARATE_SEARCH_ACCOUNTED_COMBINATION_TEST",
+      "action": "Only after standalone evidence, combine retained components in a new explicitly frozen test. Do not assume H1+H2+H3 is better merely because each sounds useful."
+    }
+  ],
+  "deferred": [
+    {
+      "hypothesis_id": "V3-H6",
+      "reason": "Incremental volume contribution beyond price direction was small/near zero in the fixed review; keep available for later but do not include in the first sequence."
+    }
+  ],
+  "governance": {
+    "active_v2r3_unchanged": true,
+    "one_change_per_standalone_shadow": true,
+    "same_candidate_stream": true,
+    "no_midrun_tuning": true,
+    "automatic_winner_selection": false,
+    "automatic_promotion": false,
+    "real_money_actions": false
+  },
+  "next_action": "Implement and smoke-test the frozen V3-H1-SHADOW-001 context-only shadow path without touching active V2R3. In parallel prepare the isolated H2 prospective capture path for later standalone shadow readiness."
+}
