@@ -1,0 +1,120 @@
+{
+  "schema_version": 2,
+  "kind": "V3_FIRST_SHADOW_CANDIDATE_READINESS_SNAPSHOT_V2",
+  "status": "EVIDENCE_REVIEWS_COMPLETE_PROJECT_DECISION_REQUIRED",
+  "generated_at_utc": "2026-10-03T07:54:00Z",
+  "authority": {
+    "master_todo": "PROJECT_BACKLOG.md",
+    "candidate_contract": "research/v3/shadow-candidate-contract-v1.json",
+    "migration_ledger": "research/v3-migration-ledger.json"
+  },
+  "baseline_state": {
+    "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+    "strategy_revision": "V2R3-2026-09-28",
+    "completion_watch_state": "COLLECTING_AGE",
+    "completion_watch_last_checked_at_utc": "2026-10-03T06:50:28.480913Z",
+    "completion_watch_snapshot": {
+      "candidate_outcomes": 469,
+      "completed_trades": 1,
+      "complete_24h": 218,
+      "eligible_24h": 223,
+      "coverage_24h_pct": 97.76,
+      "series_age_days": 1.893,
+      "outcomes_remaining_to_alt_gate": 531,
+      "hours_remaining_to_age_gate": 122.57591224361111
+    },
+    "direct_table_counts_at_review": {
+      "candidate_outcomes": 481,
+      "buy_scout": 1,
+      "wait": 5,
+      "reject": 475
+    },
+    "note": "The clean V2R3 baseline is still collecting and is not final. This does not prevent preparation of a one-change shadow draft, but it blocks final inherited-baseline or promotion conclusions."
+  },
+  "completed_candidate_near_reviews": [
+    {
+      "hypothesis_id": "V3-H1",
+      "component_class": "SIGNAL_FEATURE",
+      "readiness": "FIXED_INCREMENTAL_REVIEW_COMPLETE",
+      "evidence": [
+        "research/v3/incremental-reports/v3-h1-incremental-001-20261002-095841.json",
+        "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
+      ],
+      "descriptive_result": "Small but sign-consistent incremental partial association for the two preregistered relative-context features after controlling target 1h return across research_train/calibration/validation and both weighting schemes.",
+      "direct_promotion_allowed": false
+    },
+    {
+      "hypothesis_id": "V3-H3",
+      "component_class": "STATE_CONDITIONING",
+      "readiness": "FIXED_PROSPECTIVE_REVIEW_COMPLETE",
+      "evidence": [
+        "research/v3/h3-association-reports/v3-h3-association-002-20261003-095025.json",
+        "research/v3/h3-assoc-002-fixed-review-20261003.json"
+      ],
+      "descriptive_result": "Collection gate complete with four sessions and >1000 rows/symbol. Associations are symbol/feature/horizon-specific; no universal cross-symbol direction is established. Any new symbol-specific threshold/transform search requires a new search-accounted trial.",
+      "direct_promotion_allowed": false
+    },
+    {
+      "hypothesis_id": "V3-H6",
+      "component_class": "SIGNAL_FEATURE",
+      "readiness": "FIXED_INCREMENTAL_REVIEW_COMPLETE",
+      "evidence": [
+        "research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json",
+        "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
+      ],
+      "descriptive_result": "Incremental volume contribution beyond fixed price direction is small/near zero; partial-correlation signs are internally consistent by stratum while simple effects are not uniformly sign-stable.",
+      "direct_promotion_allowed": false
+    }
+  ],
+  "deferred_or_blocked": [
+    {
+      "hypothesis_id": "V3-H5",
+      "reason": "Final inherited baseline freeze still pending before materializing the preregistered FOMC risk-gate candidate."
+    },
+    {
+      "hypothesis_id": "V3-H2",
+      "reason": "Optional; separate review plus real prospective research capture still needed."
+    },
+    {
+      "hypothesis_id": "V3-H4",
+      "reason": "Wait for mature V2R3 24h MAE/MFE and final review."
+    },
+    {
+      "hypothesis_id": "V3-H7",
+      "reason": "Wait for V2R3 final review and frozen point-in-time label/cost contract."
+    },
+    {
+      "hypothesis_id": "V3-H8",
+      "reason": "Additional bounded prospective state depth needed."
+    },
+    {
+      "hypothesis_id": "V3-H9",
+      "reason": "Later execution research; account-specific fee tier and queue/deadline assumptions pending."
+    },
+    {
+      "hypothesis_id": "V3-H10",
+      "reason": "Optional prospective smart-money branch; not required for first shadow."
+    },
+    {
+      "hypothesis_id": "V3-H11",
+      "reason": "Optional event-state branch; longer-horizon sampling/event contract pending."
+    }
+  ],
+  "governance": {
+    "one_change_only": true,
+    "automatic_winner_selection": false,
+    "automatic_shadow_candidate_selection": false,
+    "baseline_must_remain_unchanged": true,
+    "parameters_frozen_before_shadow": true,
+    "no_midrun_tuning": true,
+    "automatic_promotion": false,
+    "real_money_activation_separate": true
+  },
+  "next_gate": "HUMAN_PROJECT_REVIEW_SELECT_OR_DEFER_FIRST_ONE_CHANGE_SHADOW_CANDIDATE; DO_NOT AUTO-SELECT H1/H3/H6 FROM DESCRIPTIVE EFFECT SIZES.",
+  "current_execution_focus": [
+    "NO_MORE_H3_COLLECTION_SESSIONS",
+    "KEEP_V2R3_CLEAN_SERIES_COLLECTING_UNCHANGED",
+    "DO_NOT OPEN SEALED HOLDOUT",
+    "AWAIT PROJECT DECISION BEFORE MATERIALIZING ONE CHANGED COMPONENT"
+  ]
+}
