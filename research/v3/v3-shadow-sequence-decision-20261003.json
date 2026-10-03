@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "kind": "V3_SHADOW_SEQUENCE_DECISION_V1",
+  "status": "ACTIVE_PROJECT_DECISION",
+  "decided_at_utc": "2026-10-03T08:10:00Z",
+  "decision_source": "User explicitly approved the staged sequence after project review.",
+  "baseline": {
+    "strategy_revision": "V2R3-2026-09-28",
+    "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+    "must_remain_unchanged_during_component_shadows": true
+  },
+  "sequence": [
+    {
+      "order": 1,
+      "hypothesis_id": "V3-H1",
+      "mode": "STANDALONE_ONE_CHANGE_SHADOW",
+      "purpose": "Test cross-crypto relative-context signal as the only changed strategy component."
+    },
+    {
+      "order": 2,
+      "hypothesis_id": "V3-H2",
+      "mode": "STANDALONE_ONE_CHANGE_SHADOW_AFTER_H2_PROSPECTIVE_RESEARCH_GATE",
+      "purpose": "Test derivatives state/conditioning separately; first finish the already-defined real prospective H2 research capture/mapping gate."
+    },
+    {
+      "order": 3,
+      "hypothesis_id": "V3-H3",
+      "mode": "STANDALONE_ONE_CHANGE_SHADOW",
+      "purpose": "Test orderbook/depth/imbalance conditioning separately using the completed prospective H3 evidence lineage."
+    },
+    {
+      "order": 4,
+      "hypothesis_id": "COMBINATION",
+      "mode": "ONLY_AFTER_STANDALONE_REVIEWS",
+      "purpose": "Combine only components that show useful standalone prospective evidence; exact combination and interaction test must be frozen after standalone reviews, not preselected now."
+    }
+  ],
+  "governance": {
+    "one_change_per_standalone_shadow": true,
+    "short_but_predefined_gate_required": true,
+    "no_midrun_tuning": true,
+    "same_candidate_stream_required": true,
+    "shared_market_clock_required": true,
+    "automatic_winner_selection": false,
+    "automatic_promotion": false,
+    "real_money_actions": false,
+    "leverage": false
+  }
+}
