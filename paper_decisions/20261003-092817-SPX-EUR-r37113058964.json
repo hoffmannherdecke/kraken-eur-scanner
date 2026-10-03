@@ -1,0 +1,175 @@
+{
+  "altname": "SPXEUR",
+  "candidate_age_seconds": 29,
+  "candidate_event_time_utc": "2026-10-03T09:28:17Z",
+  "candidate_id": "20261003-092817-SPX-EUR-r37113058964",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A fresh 15m close above 0.3845 with nonzero volume and price holding above 0.3822",
+      "A confirming retest that holds above 0.3822"
+    ],
+    "reason_codes": [
+      "closed_volume_missing",
+      "weak_trend_adx",
+      "daily_context_negative",
+      "fees_and_spread_material",
+      "account_tradability_unverified"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Potential breakout, but closed-candle volume is absent and the move lacks confirmation; do not chase above resistance without a fresh, liquid close.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SPXUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 515.43,
+        "available": true,
+        "current_funding_rate": -1.2381985954433e-05,
+        "current_open_interest": 429047.0,
+        "funding_rate_delta": 4.8546836110717e-05,
+        "open_interest_pct": -1.5123,
+        "previous_funding_rate": -6.092882206515e-05,
+        "previous_observed_at_utc": "2026-10-03T00:53:22.155284Z",
+        "previous_open_interest": 435635.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.2381985954433e-05,
+        "index_price": 0.431413,
+        "last": 0.4317,
+        "mark_price": 0.4314054237,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 429047.0,
+        "requested_symbols": [
+          "PF_SPXUSD",
+          "PI_SPXUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_SPXUSD",
+        "volume24h": 299421
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.3836,
+      "bid": 0.3833,
+      "last": 0.3845,
+      "spread_pct": 0.07823705828661429
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "11",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.00664377664154614,
+          "ret3h_pct": 0.04439718197526421
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.09682692710737406,
+          "ret3h_pct": 0.3968771152415229
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.018837713101627074,
+          "ret3h_pct": -0.009416195856881693
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": false,
+        "detail": "HTTP Error 404: Not Found",
+        "error": "HTTPError",
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T09:28:46.642011Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-03T09:28:55.638319Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_09e4e4d1851a6bf5006ac0cacff60887d1bd10dc82378b3ff0"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.3836,
+    "bid": 0.3833,
+    "last": 0.3845,
+    "spread_pct": 0.07823705828661429
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "SPX/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37113058964:SPX-EUR:1791019697",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "c5c71ea30ceb404e99052c8bdafed35611b4124a",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-03T09:28:17Z",
+    "candidate_detected_ts": 1791019697,
+    "candidate_snapshot_at_utc": "2026-10-03T09:28:17Z",
+    "detected_to_evaluation_complete_seconds": 38.638,
+    "detected_to_evaluation_start_seconds": 29.448,
+    "evaluation_completed_at_utc": "2026-10-03T09:28:55.638319Z",
+    "evaluation_runtime_seconds": 9.19,
+    "evaluation_started_at_utc": "2026-10-03T09:28:46.448256Z",
+    "handoff_to_evaluation_start_seconds": 27.415,
+    "handoff_written_at_utc": "2026-10-03T09:28:19.033681Z",
+    "scan_step_started_at_utc": "2026-10-03T09:26:41Z"
+  }
+}

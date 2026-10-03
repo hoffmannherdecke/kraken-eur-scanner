@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-03T09:13:10.203274Z",
     "evaluation_ask_eur": 1.669,
     "flagged_as_already_run": true,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -1.376,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -1.376,
+        "mfe_pct": 0.179,
+        "peak_at_utc": "2026-10-03T09:14:00Z",
+        "trough_at_utc": "2026-10-03T09:27:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-03T07:43:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -40,7 +52,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-03T09:13:37.332586Z"
+    "updated_at_utc": "2026-10-03T09:28:59.164432Z"
   },
   "original_decision": "WAIT",
   "pair": "ZRO/EUR",
