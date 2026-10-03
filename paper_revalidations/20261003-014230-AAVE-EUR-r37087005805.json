@@ -1,0 +1,228 @@
+{
+  "altname": "AAVEEUR",
+  "candidate_id": "20261003-014230-AAVE-EUR-r37087005805",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": 2.5,
+    "missing_triggers": [
+      "Closed-candle volume confirmation above recent baseline"
+    ],
+    "reason_codes": [
+      "adequate_liquidity",
+      "spread_acceptable",
+      "resistance_reclaimed",
+      "weak_latest_volume",
+      "limited_remaining_potential",
+      "costs_material",
+      "mixed_market_context"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "AAVE has reclaimed prior resistance, but the latest candle\u2019s low volume and limited room to the recent high leave insufficient expected reward after Kraken EUR costs; no scout plan is justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "AAVEUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 53.37,
+        "available": true,
+        "current_funding_rate": -0.000504320486328689,
+        "current_open_interest": 23022.3,
+        "funding_rate_delta": -0.001041204244680713,
+        "open_interest_pct": 0.2953,
+        "previous_funding_rate": 0.000536883758352024,
+        "previous_observed_at_utc": "2026-10-03T01:43:30.957765Z",
+        "previous_open_interest": 22954.51
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.000504320486328689,
+        "index_price": 182.454,
+        "last": 182.58,
+        "mark_price": 182.45287681747,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 23022.3,
+        "requested_symbols": [
+          "PF_AAVEUSD",
+          "PI_AAVEUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_AAVEUSD",
+        "volume24h": 28196.63
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 162.22,
+      "bid": 162.09,
+      "last": 162.38,
+      "spread_pct": 0.08017020751749589
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.05",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.05651693446828698,
+          "ret3h_pct": 0.06716256132739407
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.04620101642236474,
+          "ret3h_pct": 0.37038441604408945
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.00944108761329332,
+          "ret3h_pct": 0.4838709677419173
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T02:36:51.622175Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_017ca8d623f9e3f6006ac06a457c1c87d0b316174005f667a8"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 162.22,
+    "bid": 162.09,
+    "last": 162.38,
+    "spread_pct": 0.08017020751749589
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 161.12,
+      "high": 161.12,
+      "low": 160.25,
+      "open": 160.33,
+      "trades": 21,
+      "ts": 1790991000,
+      "volume": 19.17719813,
+      "vwap": 160.72
+    },
+    {
+      "close": 161.11,
+      "high": 161.37,
+      "low": 160.67,
+      "open": 161.08,
+      "trades": 49,
+      "ts": 1790991900,
+      "volume": 5.07048831,
+      "vwap": 161.08
+    },
+    {
+      "close": 160.95,
+      "high": 161.94,
+      "low": 160.74,
+      "open": 161.81,
+      "trades": 38,
+      "ts": 1790992800,
+      "volume": 47.78566193,
+      "vwap": 161.15
+    },
+    {
+      "close": 161.56,
+      "high": 161.56,
+      "low": 161.25,
+      "open": 161.25,
+      "trades": 13,
+      "ts": 1790993700,
+      "volume": 17.79757751,
+      "vwap": 161.37
+    },
+    {
+      "close": 162.38,
+      "high": 162.38,
+      "low": 161.69,
+      "open": 161.69,
+      "trades": 12,
+      "ts": 1790994600,
+      "volume": 12.94870693,
+      "vwap": 161.97
+    }
+  ],
+  "pair": "AAVE/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261003-014230-AAVE-EUR-r37087005805.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T02:37:02.029510Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "6648cb929a7da1fa226b602f22c816e11b9f28be",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T02:37:02.029510Z",
+    "revalidation_started_at_utc": "2026-10-03T02:36:51.063662Z",
+    "ttl_due_at_utc": "2026-10-03T02:28:30.957765Z",
+    "ttl_lag_seconds": 500.106
+  }
+}

@@ -1,0 +1,225 @@
+{
+  "altname": "BATEUR",
+  "candidate_id": "20261003-015339-BAT-EUR-r37087703512",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained trade above the reclaim with expanding volume"
+    ],
+    "reason_codes": [
+      "follow_through_volume_weak",
+      "recent_move_already_substantial",
+      "taker_fees_and_spread_material",
+      "remaining_potential_uncertain"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Resistance was reclaimed on a strong 15m candle, but follow-through volume is weak and the move is already substantial; a scout does not have enough confirmed continuation edge after Kraken EUR costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "BATUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 42.38,
+        "available": true,
+        "current_funding_rate": 5.342344693917e-06,
+        "current_open_interest": 1516822.0,
+        "funding_rate_delta": 4.022169398400058e-08,
+        "open_interest_pct": 0.0,
+        "previous_funding_rate": 5.302122999933e-06,
+        "previous_observed_at_utc": "2026-10-03T01:54:05.859251Z",
+        "previous_open_interest": 1516822.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 5.342344693917e-06,
+        "index_price": 0.097312,
+        "last": 0.096,
+        "mark_price": 0.09718832618,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 1516822.0,
+        "requested_symbols": [
+          "PF_BATUSD",
+          "PI_BATUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_BATUSD",
+        "volume24h": 629561
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.08657,
+      "bid": 0.08634,
+      "last": 0.08675,
+      "spread_pct": 0.26603435313168017
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "50",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.05651693446828698,
+          "ret3h_pct": 0.06716256132739407
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.04620101642236474,
+          "ret3h_pct": 0.37038441604408945
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.00944108761329332,
+          "ret3h_pct": 0.4838709677419173
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T02:36:27.207671Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_089327c011eea9df006ac06a2d5f8087d0927a04d720b69b3c"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.08657,
+    "bid": 0.08634,
+    "last": 0.08675,
+    "spread_pct": 0.26603435313168017
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.08572,
+      "high": 0.0862,
+      "low": 0.08572,
+      "open": 0.08606,
+      "trades": 5,
+      "ts": 1790991000,
+      "volume": 23310.21858642,
+      "vwap": 0.08612
+    },
+    {
+      "close": 0.08541,
+      "high": 0.08541,
+      "low": 0.08541,
+      "open": 0.08541,
+      "trades": 1,
+      "ts": 1790991900,
+      "volume": 152.72449572,
+      "vwap": 0.08541
+    },
+    {
+      "close": 0.08541,
+      "high": 0.08541,
+      "low": 0.08541,
+      "open": 0.08541,
+      "trades": 0,
+      "ts": 1790992800,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 0.08645,
+      "high": 0.08678,
+      "low": 0.08602,
+      "open": 0.08602,
+      "trades": 16,
+      "ts": 1790993700,
+      "volume": 70758.28324954,
+      "vwap": 0.08634
+    },
+    {
+      "close": 0.08675,
+      "high": 0.08675,
+      "low": 0.08625,
+      "open": 0.08625,
+      "trades": 4,
+      "ts": 1790994600,
+      "volume": 17730.14747922,
+      "vwap": 0.08646
+    }
+  ],
+  "pair": "BAT/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261003-015339-BAT-EUR-r37087703512.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T02:36:50.812717Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "6648cb929a7da1fa226b602f22c816e11b9f28be",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T02:36:50.812717Z",
+    "revalidation_started_at_utc": "2026-10-03T02:36:26.543460Z",
+    "ttl_due_at_utc": "2026-10-03T02:24:05.859251Z",
+    "ttl_lag_seconds": 740.684
+  }
+}
