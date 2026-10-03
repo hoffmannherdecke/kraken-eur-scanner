@@ -1,0 +1,187 @@
+{
+  "altname": "ENAEUR",
+  "candidate_age_seconds": 12,
+  "candidate_event_time_utc": "2026-10-03T00:56:46Z",
+  "candidate_id": "20261003-005646-ENA-EUR-r37084028382",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.2092 resistance on sustained volume",
+      "Hold or successful retest above 0.2092 with spread and liquidity remaining acceptable"
+    ],
+    "reason_codes": [
+      "resistance_unbroken",
+      "recent_move_already_run",
+      "24h_and_7d_weakness",
+      "market_proxy_mildly_positive",
+      "derivatives_context_supportive_but_cross_market",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid, tight-spread candidate with rising recent closes and elevated volume, but price is at the 1h/3h resistance without a confirmed breakout; wait for confirmation before considering entry.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ENAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 394.39,
+        "available": true,
+        "current_funding_rate": -2.0616017755e-07,
+        "current_open_interest": 11514721.0,
+        "funding_rate_delta": 7.573744064863e-06,
+        "open_interest_pct": 9.784,
+        "previous_funding_rate": -7.779904242413e-06,
+        "previous_observed_at_utc": "2026-10-02T18:22:35.511637Z",
+        "previous_open_interest": 10488527.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -2.0616017755e-07,
+        "index_price": 0.235085,
+        "last": 0.23489,
+        "mark_price": 0.23493315183,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 11514721.0,
+        "requested_symbols": [
+          "PF_ENAUSD",
+          "PI_ENAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ENAUSD",
+        "volume24h": 14762063
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.2089,
+      "bid": 0.2088,
+      "last": 0.2093,
+      "spread_pct": 0.04788125448886233
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "20",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.02633118782915389,
+          "ret3h_pct": 0.0896892016330364
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.198462860899018,
+          "ret3h_pct": 0.4698267302678971
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.29375533023785483,
+          "ret3h_pct": 0.7616146230007503
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T00:56:58.295765Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-03T00:57:08.074918Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0059bbdc27158d23006ac052dc124087d29e17e1188c03b361"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2089,
+    "bid": 0.2088,
+    "last": 0.2093,
+    "spread_pct": 0.04788125448886233
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ENA/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37084028382:ENA-EUR:1790989006",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "6fdfb2f1bfa1291e0780d391f092257056060c44",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-03T00:56:46Z",
+    "candidate_detected_ts": 1790989006,
+    "candidate_snapshot_at_utc": "2026-10-03T00:56:46Z",
+    "detected_to_evaluation_complete_seconds": 22.075,
+    "detected_to_evaluation_start_seconds": 12.159,
+    "evaluation_completed_at_utc": "2026-10-03T00:57:08.074918Z",
+    "evaluation_runtime_seconds": 9.916,
+    "evaluation_started_at_utc": "2026-10-03T00:56:58.158741Z",
+    "handoff_to_evaluation_start_seconds": 9.796,
+    "handoff_written_at_utc": "2026-10-03T00:56:48.362922Z",
+    "scan_step_started_at_utc": "2026-10-03T00:55:06Z"
+  }
+}
