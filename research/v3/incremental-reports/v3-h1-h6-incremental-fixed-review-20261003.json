@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H1_H6_INCREMENTAL_FIXED_REVIEW_V1",
+  "status": "PASS_FIXED_DESCRIPTIVE_REVIEW_HOLDOUT_SEALED",
+  "source_reports": {
+    "h1": {
+      "filename": "v3-h1-incremental-001-20261002-095841.json",
+      "file_sha256": "8ea47a8744eeebdc2004a848277a7a69154b86972e6829e5092b03eecebccc65",
+      "summary_sha256": "4619cc1d71bf02d912d41785dccfbafe7758567a4ffcea52f44fcd89e237d3df"
+    },
+    "h6": {
+      "filename": "v3-h6-incremental-001-20261002-095841.json",
+      "file_sha256": "a14ef346446b68e4cee18707afaa32f9e3cf4ef31f960ed4325dcc390dec42e9",
+      "summary_sha256": "b528e283ef75a4728bf836189130eb8e95af3fe8972186163741003ab0881fbc"
+    }
+  },
+  "fixed_split_order": [
+    "research_train",
+    "calibration",
+    "validation"
+  ],
+  "h1": {
+    "leader_minus_target_return_1h": {
+      "observation_weighted_partial_r": [
+        0.017332274057510304,
+        0.03299934833362093,
+        0.04553017599765207
+      ],
+      "equal_pair_median_partial_r": [
+        0.030265493298630073,
+        0.02446716023479752,
+        0.051922734056223385
+      ],
+      "complete_cases": [
+        5602072,
+        1388604,
+        1481207
+      ],
+      "eligible_pair_counts": [
+        233,
+        305,
+        550
+      ],
+      "observation_sign_consistent": true,
+      "pair_sign_consistent": true
+    },
+    "target_minus_peer_median_return_1h": {
+      "observation_weighted_partial_r": [
+        -0.016798832007948777,
+        -0.04120530679347696,
+        -0.026753771668959446
+      ],
+      "equal_pair_median_partial_r": [
+        -0.033299121069513535,
+        -0.0470632880677367,
+        -0.039303428376856915
+      ],
+      "complete_cases": [
+        5553515,
+        1388604,
+        1481207
+      ],
+      "eligible_pair_counts": [
+        233,
+        305,
+        549
+      ],
+      "observation_sign_consistent": true,
+      "pair_sign_consistent": true
+    }
+  },
+  "h6": {
+    "down": {
+      "observation_weighted_partial_r": [
+        -0.005467447269308202,
+        -0.006229683226099114,
+        -0.008738575530009424
+      ],
+      "equal_pair_median_partial_r": [
+        -0.004942255291995215,
+        -0.005680536987675204,
+        -0.012123172518005699
+      ],
+      "simple_true_minus_false_mean": [
+        0.00021317006601387334,
+        0.00011814520730312362,
+        -0.0001190450002064104
+      ],
+      "complete_cases": [
+        2265597,
+        504788,
+        539108
+      ],
+      "volume_expansion_true_counts": [
+        1124616,
+        250465,
+        266337
+      ],
+      "volume_expansion_false_counts": [
+        1140981,
+        254323,
+        272771
+      ],
+      "observation_partial_sign_consistent": true,
+      "pair_partial_sign_consistent": true,
+      "simple_effect_sign_consistent": false
+    },
+    "up": {
+      "observation_weighted_partial_r": [
+        0.00855151358229782,
+        0.0032040522454800167,
+        0.00811031210019799
+      ],
+      "equal_pair_median_partial_r": [
+        0.009071675394640023,
+        0.00028209215150295987,
+        0.006297482876713313
+      ],
+      "simple_true_minus_false_mean": [
+        0.00011165096716649335,
+        -0.000043638523826954447,
+        0.0000512210742612
+      ],
+      "complete_cases": [
+        2302611,
+        514506,
+        528960
+      ],
+      "volume_expansion_true_counts": [
+        1123247,
+        252978,
+        260655
+      ],
+      "volume_expansion_false_counts": [
+        1179364,
+        261528,
+        268305
+      ],
+      "observation_partial_sign_consistent": true,
+      "pair_partial_sign_consistent": true,
+      "simple_effect_sign_consistent": false
+    }
+  },
+  "governance": {
+    "search_accounted_trials": [
+      "V3-H1-INCR-001",
+      "V3-H6-INCR-001"
+    ],
+    "parent_results_influenced_design": true,
+    "threshold_search_performed": false,
+    "feature_or_stratum_search_performed": false,
+    "p_value_selection_performed": false,
+    "holdout_opened": false,
+    "automatic_winner_selected": false,
+    "automatic_shadow_candidate_selected": false,
+    "automatic_strategy_promotion": false,
+    "orders": false,
+    "real_money_actions": false
+  },
+  "interpretation": {
+    "descriptive_incremental_effect_review_only": true,
+    "sign_consistency_is_not_a_promotion_criterion": true,
+    "no_winner_is_valid_outcome": true,
+    "next_decision": "HUMAN_PROJECT_REVIEW_OF_FIXED_EFFECT_SIZES_VERSUS_EXISTING_EVIDENCE_BEFORE_ANY_ONE_CHANGE_SHADOW_MATERIALIZATION"
+  }
+}
