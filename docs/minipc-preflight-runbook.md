@@ -169,6 +169,7 @@ Diese Werte werden beim ersten Start erfasst und ins Versionsregister übernomme
 - `Trading\Secrets`, private API-Schlüssel, Passwortspeicher, Browser-Credentials und andere nicht benötigte sensible Pfade **nicht** für Work freigeben.
 - Work bleibt **kein kritischer Runtime-Bestandteil**: Scanner, Evaluator, Watchdog, Realtime, Backup, Status/Health, Slack-Transport und Persistenz müssen unabhängig von Work weiterlaufen.
 - Erster lokaler Work-Smoke nach Verfügbarkeit: nur read-only einen bekannten Repo-/Report-Pfad öffnen, Inhalt plausibilisieren und schließen; keine Strategieänderung, kein Secret-Zugriff, keine Order-/Account-Aktion.
+- **Physischer Work-Smoke 2026-10-03 ~19:46 CEST: PASS.** Offizielle ChatGPT-Windows-App installiert, Work im lokalen Modus **„Auf deinem Computer“** ausgeführt und `C:\Users\ADMIN\Trading\Repos\kraken-eur-scanner\PROJECT_BACKLOG.md` ausschließlich lesend geöffnet. Inhalt/Titel korrekt erkannt; keine Dateien geändert, verschoben oder gelöscht; `C:\Users\ADMIN\Trading\Secrets`/Credential-Verzeichnisse blieben unangetastet.
 
 ### Rekonstruierte Work-Reduktionshistorie 27.–29.09.2026
 
@@ -189,13 +190,13 @@ Die letzten Chats wurden gegen den aktuellen Projektstand rekonstruiert. Entsche
 - Keine Reaktivierung alter Dauerpoller nur weil Kontingent wieder verfügbar ist.
 - Priorität haben konkrete Krypto-/Paper-/Shadow-/V3-/MINI-PC-Aufgaben, bei denen Work gegenüber GitHub/MINI-PC/Supabase/API tatsächlich Zusatznutzen hat.
 
-### Reaktivierungsreview ab 2026-10-04
+### Work-Reaktivierung — am 2026-10-03 vorgezogen und abgeschlossen
 
-Fester Reviewpunkt: **`WORK-REACTIVATION-20261004`**.
+Kanonischer Checkpoint bleibt **`WORK-REACTIVATION-20261004`**; der ursprünglich für 04.10. geplante Review wurde am Abend des 03.10. vorgezogen, weil das wöchentliche Work-/Agenten-Nutzungslimit wieder **100 % verfügbar** war. Das Datum 04.10. war nur ein Prüfzeitpunkt, kein technisches Sperrdatum.
 
-Ab 04.10.2026 zuerst prüfen, ob Work-Kontingent und lokaler Desktop-Zugriff im Konto tatsächlich wieder verfügbar sind. Das Datum ist ein **Prüfzeitpunkt**, keine technische Garantie für accountseitige Freischaltung.
+Ergebnis: Desktop-App installiert, lokaler Work-Zugriff **PASS**, Least-Privilege-Smoke bestanden. `Krypto Paper – gezielte Analyse` ist damit technisch wieder nutzbar, führt aber erst dann eine substantielle Analyse aus, wenn `>=3` reife Paper-Fälle, Serienabschluss oder UNKNOWN/Blocker vorliegen. **Aktueller Zustand bei Abschluss: ANALYSE-GATE WAITING.**
 
-Beim Review **nicht einfach alte Work-Dauerläufe wieder einschalten**. Die zwischenzeitlich erfolgreich ausgelagerten Funktionen bleiben außerhalb von Work:
+Beim abgeschlossenen Review wurden **keine alten Work-Dauerläufe wieder eingeschaltet**. Die zwischenzeitlich erfolgreich ausgelagerten Funktionen bleiben außerhalb von Work:
 - Kraken-EUR-Scanner;
 - Watchdog/Health/Recovery;
 - Read-only Markt-/Snapshot-Erfassung;
@@ -210,14 +211,15 @@ Work soll nach der Freischaltung gezielt für den Teil reaktiviert werden, der *
 - komplexe Browser-/UI-Arbeiten, z. B. Altrady/Supabase/GitHub oder später accountbezogene read-only Prüfungen, wenn dafür wirklich UI-Kontext nötig ist;
 - einmalige Audits, Fehlersuche, Umbauten und größere Multi-Step-Arbeiten.
 
-Start nach Wiederverfügbarkeit zunächst **manuell/gezielt**, nicht wieder sofort 4× täglich oder stündlich. Erst nach kurzer Nutzungsmessung entscheiden, ob irgendeine wiederkehrende Work-Aufgabe echten Mehrwert gegenüber der inzwischen schlanken GitHub/MINI-PC-Architektur hat.
+Der Wiederanlauf erfolgt **manuell/gezielt**; es wurde kein 4×-täglicher oder stündlicher Work-Takt reaktiviert. Erst nach gemessenem Zusatznutzen darf eine wiederkehrende Work-Aufgabe gegenüber der inzwischen schlanken GitHub/MINI-PC-Architektur neu erwogen werden.
 
-### Work-Credits / Kostenregel
+### Work-Kontingent / Kostenregel
 
-- keine zusätzlichen Work-Credits vorsorglich kaufen.
+- Für den aktuellen ChatGPT-Account ist operativ das **wöchentliche Work-/Agenten-Nutzungslimit** maßgeblich; am 03.10.2026 war es wieder bei **100 % verfügbar**.
+- Die UI-Anzeige `0 Credits` wird für dieses Projekt **nicht als Budget, Blocker oder Nachkaufplanung** verwendet.
 - Basisbetrieb und 24/7-Runtime ohne Work aufrechterhalten.
-- Work-Credits strikt getrennt von API-Token-/€-Kosten behandeln.
-- nur gezielt nachkaufen, wenn vor regulärer Freischaltung eine konkrete nicht auslagerbare Work-Aufgabe ansteht.
+- Work-/Agenten-Kontingent strikt getrennt von API-Token-/€-Kosten behandeln.
+- Work weiterhin nur schlank und gezielt einsetzen; keine Dauerläufe allein wegen freien Kontingents.
 
 ## Inbetriebnahme-Stand 2026-09-30
 
