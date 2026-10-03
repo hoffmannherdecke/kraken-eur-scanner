@@ -20,6 +20,14 @@
       "mae_pct": -0.762,
       "mfe_pct": 1.651
     },
+    "360": {
+      "bars": 360,
+      "complete": true,
+      "end_close_pct": 18.222,
+      "expected_bars": 360,
+      "mae_pct": -0.762,
+      "mfe_pct": 19.302
+    },
     "60": {
       "bars": 60,
       "complete": true,
@@ -109,6 +117,12 @@
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "six_hour_flags": {
+    "missed_10pct": true,
+    "missed_15pct": true,
+    "missed_5pct": true,
+    "missed_8pct": true
+  },
   "test_id": "SHADOW-V2R3-20261001-01",
-  "updated_at_utc": "2026-10-03T10:26:12.602480Z"
+  "updated_at_utc": "2026-10-03T14:34:18.445221Z"
 }
