@@ -1,0 +1,52 @@
+name: V3 H1 shadow guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/shadow-candidates/v3-h1-shadow-001*.json'
+      - 'research/v3/shadow-runtime/h1-control.json'
+      - 'tools/v3-h1-shadow-context.py'
+      - 'tools/v3-h1-shadow-evaluate.py'
+      - '.github/workflows/v3-h1-shadow-pilot.yml'
+      - '.github/workflows/v3-h1-shadow-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Compile and validate
+        run: |
+          set -euo pipefail
+          python -m py_compile tools/v3-h1-shadow-context.py tools/v3-h1-shadow-evaluate.py tools/validate-v3-shadow-candidate.py
+          python tools/v3-h1-shadow-context.py --self-test
+          python tools/validate-v3-shadow-candidate.py research/v3/shadow-candidates/v3-h1-shadow-001.json
+          python - <<'PY'
+          import hashlib, json, re
+          from pathlib import Path
+
+          cfg=Path("research/v3/shadow-candidates/v3-h1-shadow-001-config.json")
+          cand=json.loads(Path("research/v3/shadow-candidates/v3-h1-shadow-001.json").read_text("utf-8"))
+          actual=hashlib.sha256(cfg.read_bytes()).hexdigest()
+          assert actual==cand["frozen_config_sha256"], (actual,cand["frozen_config_sha256"])
+          text=Path("tools/v3-h1-shadow-evaluate.py").read_text("utf-8")
+          m=re.search(r'EXPECTED_CONFIG_SHA="([0-9a-f]{64})"',text)
+          assert m and m.group(1)==actual
+          control=json.loads(Path("research/v3/shadow-runtime/h1-control.json").read_text("utf-8"))
+          assert control["shadow_candidate_id"]==cand["candidate_id"]
+          assert control["max_shadow_records"]==200
+          assert control["automatic_extension"] is False
+          assert control["automatic_promotion"] is False
+          assert control["orders"] is False
+          assert control["real_money_actions"] is False
+          print("V3_H1_SHADOW_GUARD PASS frozen-hash/one-change/bounded-cost/no-baseline-mutation")
+          PY
