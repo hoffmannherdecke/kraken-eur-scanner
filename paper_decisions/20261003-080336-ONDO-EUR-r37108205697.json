@@ -1,0 +1,186 @@
+{
+  "altname": "ONDOEUR",
+  "candidate_age_seconds": 16,
+  "candidate_event_time_utc": "2026-10-03T08:03:36Z",
+  "candidate_id": "20261003-080336-ONDO-EUR-r37108205697",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.42776 resistance with stronger closed volume",
+      "Hold a higher low above 0.42650 on a retest"
+    ],
+    "reason_codes": [
+      "short_term_continuity_weak",
+      "no_breakout_or_higher_lows",
+      "live_volume_subdued",
+      "resistance_overhead",
+      "fees_and_spread_require_more_headroom"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity is adequate, but ONDO has not confirmed a reversal: short-term returns are weak, price is at 1h resistance, and live volume is low. Reassess for a confirmed breakout within 30 minutes; current evidence does not support a scout entry.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ONDOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 637.72,
+        "available": true,
+        "current_funding_rate": -2.5772096331483e-05,
+        "current_open_interest": 3975979.0,
+        "funding_rate_delta": -1.9715768489982998e-05,
+        "open_interest_pct": -1.8208,
+        "previous_funding_rate": -6.0563278415e-06,
+        "previous_observed_at_utc": "2026-10-02T21:26:10.245054Z",
+        "previous_open_interest": 4049717.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -2.5772096331483e-05,
+        "index_price": 0.479934,
+        "last": 0.4806,
+        "mark_price": 0.47973512875,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 3975979.0,
+        "requested_symbols": [
+          "PF_ONDOUSD",
+          "PI_ONDOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ONDOUSD",
+        "volume24h": 3666054
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.42686,
+      "bid": 0.42634,
+      "last": 0.42667,
+      "spread_pct": 0.12189404594468366
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "10",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.01609033994498521,
+          "ret3h_pct": 0.008246643815468246
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.06421502379734267,
+          "ret3h_pct": 0.2400733253729248
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.06591337099812744,
+          "ret3h_pct": 0.18880392712168348
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T08:03:52.350513Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-03T08:04:04.435290Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0ab66f98d17a00a6006ac0b6ea478c87d084be210e14a24925"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.42686,
+    "bid": 0.42634,
+    "last": 0.42667,
+    "spread_pct": 0.12189404594468366
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ONDO/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37108205697:ONDO-EUR:1791014616",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "c7624f455aa7b4ccdbf5217e640bf833dd608bb7",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-03T08:03:36Z",
+    "candidate_detected_ts": 1791014616,
+    "candidate_snapshot_at_utc": "2026-10-03T08:03:36Z",
+    "detected_to_evaluation_complete_seconds": 28.435,
+    "detected_to_evaluation_start_seconds": 16.121,
+    "evaluation_completed_at_utc": "2026-10-03T08:04:04.435290Z",
+    "evaluation_runtime_seconds": 12.314,
+    "evaluation_started_at_utc": "2026-10-03T08:03:52.121080Z",
+    "handoff_to_evaluation_start_seconds": 13.929,
+    "handoff_written_at_utc": "2026-10-03T08:03:38.192055Z",
+    "scan_step_started_at_utc": "2026-10-03T08:00:08Z"
+  }
+}
