@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "kind": "PROJECT_WORK_REACTIVATION_CHECKPOINT_V1",
   "checkpoint_id": "WORK-REACTIVATION-20261004",
   "earliest_review_date_local": "2026-10-04",
@@ -31,7 +31,8 @@
     "no Trading/Secrets access",
     "no private keys/password stores unless a later explicit account/security gate requires and authorizes it",
     "no orders or real-money actions from this checkpoint",
-    "Work is not a single point of failure or critical runtime dependency"
+    "Work is not a single point of failure or critical runtime dependency",
+    "No blanket full-access mode; sandbox remains active and higher-risk actions stay approval-controlled."
   ],
   "reconstructed_history": {
     "2026-09-27": {
@@ -94,9 +95,9 @@
     ],
     "no_auto_restore": true
   },
-  "status": "COMPLETED_EARLY_LOCAL_SMOKE_PASS_ANALYSIS_GATE_WAITING",
+  "status": "COMPLETED_EARLY_LOCAL_AUTONOMY_VERIFIED_ANALYSIS_GATE_WAITING",
   "completed_at_local": "2026-10-03T19:46:00+02:00",
-  "completion_note": "Originally scheduled for review on 2026-10-04; completed one evening early after the weekly Work/agent usage limit returned to 100%. The date was a review target, not a technical lock.",
+  "completion_note": "Originally scheduled for review on 2026-10-04; completed one evening early after the weekly Work/agent usage limit returned to 100%. The date was a review target, not a technical lock. Local autonomy was subsequently verified for Work file actions and Codex repo/Python execution with automatic approval of the required sandbox escalation.",
   "account_usage_state_at_completion": {
     "weekly_work_agent_limit_remaining_pct": 100,
     "planning_rule": "Weekly Work/agent usage limit is the operative account-side constraint for this project.",
@@ -112,7 +113,20 @@
       "File content/title was read successfully.",
       "No file was changed, moved or deleted.",
       "No access to C:\\Users\\ADMIN\\Trading\\Secrets or other credential/secret directories."
-    ]
+    ],
+    "approval_mode": "Für mich genehmigen",
+    "write_action_smoke": {
+      "result": "PASS",
+      "target": "C:\\Users\\ADMIN\\Trading\\Temp\\work-local-action-smoke.txt",
+      "lifecycle": [
+        "create",
+        "read",
+        "delete"
+      ],
+      "content": "WORK_LOCAL_ACTION_SMOKE_PASS",
+      "user_prompt_required": false,
+      "automatic_approval_check": true
+    }
   },
   "analysis_gate": {
     "work_item": "Krypto Paper – gezielte Analyse",
@@ -121,5 +135,25 @@
     "gate": "substantive analysis only with >=3 mature paper cases, series completion, or UNKNOWN/blocker",
     "scheduling_status": "NO_RECURRING_WORK_SCHEDULE_RESTORED",
     "operating_mode": "manual/event-driven/targeted until measured incremental value justifies any recurring cadence"
+  },
+  "local_codex": {
+    "project_root": "C:\\Users\\ADMIN\\Trading\\Repos\\kraken-eur-scanner",
+    "broader_trading_root_not_granted": true,
+    "git_status": {
+      "result": "PASS",
+      "output": "main...origin/main",
+      "working_tree_clean": true,
+      "user_prompt_required": false
+    },
+    "python": {
+      "global_python_path": "C:\\Users\\ADMIN\\AppData\\Local\\Programs\\Python\\Python313\\python.exe",
+      "project_venv": ".venv",
+      "version": "Python 3.13.15",
+      "venv_gitignored": true,
+      "normal_sandbox_direct_exec": "BLOCKED_ACCESS_DENIED",
+      "escalated_exec": "PASS",
+      "escalation_auto_approved": true,
+      "user_prompt_required": false
+    }
   }
 }
