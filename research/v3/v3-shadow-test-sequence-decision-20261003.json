@@ -3,37 +3,41 @@
   "kind": "V3_SHADOW_TEST_SEQUENCE_DECISION_V1",
   "decision_id": "V3-SHADOW-SEQUENCE-20261003",
   "decided_at_local": "2026-10-03",
-  "status": "ACTIVE",
+  "status": "ACTIVE_CORRECTED_LABELING",
   "sequence": [
     {
       "step": 1,
       "hypothesis_id": "V3-H1",
+      "role": "EARLY_WARNING_RADAR",
       "mode": "ONE_CHANGE_SHADOW",
       "action": "Run H1 alone first against unchanged V2R3 on the same prospective candidate stream."
     },
     {
       "step": 2,
-      "hypothesis_id": "V3-H2",
-      "mode": "RESEARCH_PREP_IN_PARALLEL_THEN_ONE_CHANGE_SHADOW",
-      "action": "While H1 runs, complete H2 prospective research capture/readiness. After H1 pilot review, test H2 alone rather than stacking it immediately onto H1."
+      "hypothesis_id": "V3-H3",
+      "role": "ORDERBOOK_CONFIRMATION",
+      "mode": "ONE_CHANGE_SHADOW",
+      "action": "After H1 pilot review, test H3 alone as the direct-market orderbook/depth/imbalance confirmation layer."
     },
     {
       "step": 3,
-      "hypothesis_id": "V3-H3",
+      "hypothesis_id": "V3-H6",
+      "role": "VOLUME_PLAUSIBILITY",
       "mode": "ONE_CHANGE_SHADOW",
-      "action": "After the H2 standalone pilot/review, test H3 alone as state-conditioning context."
+      "action": "After H3 standalone review, test H6 alone as the additional price-plus-volume plausibility layer."
     },
     {
       "step": 4,
       "hypothesis_id": "COMBINATION",
+      "role": "COMBINATION_AFTER_STANDALONE_EVIDENCE",
       "mode": "SEPARATE_SEARCH_ACCOUNTED_COMBINATION_TEST",
-      "action": "Only after standalone evidence, combine retained components in a new explicitly frozen test. Do not assume H1+H2+H3 is better merely because each sounds useful."
+      "action": "Only after the three standalone reviews, combine retained components in a new explicitly frozen test. Do not assume the bundle is better merely because each component sounds useful."
     }
   ],
   "deferred": [
     {
-      "hypothesis_id": "V3-H6",
-      "reason": "Incremental volume contribution beyond price direction was small/near zero in the fixed review; keep available for later but do not include in the first sequence."
+      "hypothesis_id": "V3-H2",
+      "reason": "Derivatives state (basis/premium/funding/open interest) remains a separate optional research branch and is not one of the three user-selected building blocks for this sequence."
     }
   ],
   "governance": {
@@ -45,5 +49,6 @@
     "automatic_promotion": false,
     "real_money_actions": false
   },
-  "next_action": "Implement and smoke-test the frozen V3-H1-SHADOW-001 context-only shadow path without touching active V2R3. In parallel prepare the isolated H2 prospective capture path for later standalone shadow readiness."
+  "next_action": "Continue the already-started V3-H1-SHADOW-001 pilot. Do not activate H2 because of the earlier naming mix-up. After H1 review, prepare H3 standalone shadow; then H6 standalone shadow; only then test combinations.",
+  "correction_note": "User clarified that the intended three strategy building blocks were H1 early-warning relative context, H3 orderbook confirmation, and H6 volume plausibility. The previous H2 placement was a naming mix-up, not an intended strategy change."
 }
