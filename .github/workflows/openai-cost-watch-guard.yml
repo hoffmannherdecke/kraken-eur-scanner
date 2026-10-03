@@ -1,0 +1,28 @@
+name: OpenAI cost watch guard
+
+'on':
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/minipc-openai-cost-watch.py'
+      - 'tools/minipc-openai-admin-secret-prep.ps1'
+      - 'tools/install-minipc-openai-cost-watch.ps1'
+      - '.github/workflows/openai-cost-watch-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Compile and run offline safety self-test
+        run: |
+          python -m py_compile tools/minipc-openai-cost-watch.py
+          python tools/minipc-openai-cost-watch.py --self-test
