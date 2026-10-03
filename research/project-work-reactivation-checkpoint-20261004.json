@@ -1,5 +1,5 @@
 {
-  "schema_version": 3,
+  "schema_version": 4,
   "kind": "PROJECT_WORK_REACTIVATION_CHECKPOINT_V1",
   "checkpoint_id": "WORK-REACTIVATION-20261004",
   "earliest_review_date_local": "2026-10-04",
@@ -95,9 +95,9 @@
     ],
     "no_auto_restore": true
   },
-  "status": "COMPLETED_EARLY_LOCAL_AUTONOMY_VERIFIED_ANALYSIS_GATE_WAITING",
+  "status": "COMPLETED_EARLY_LOCAL_AUTONOMY_VERIFIED_MINIMAL_WORK_ANALYSIS_ARMED",
   "completed_at_local": "2026-10-03T19:46:00+02:00",
-  "completion_note": "Originally scheduled for review on 2026-10-04; completed one evening early after the weekly Work/agent usage limit returned to 100%. The date was a review target, not a technical lock. Local autonomy was subsequently verified for Work file actions and Codex repo/Python execution with automatic approval of the required sandbox escalation.",
+  "completion_note": "Originally scheduled for review on 2026-10-04; completed one evening early after the weekly Work/agent usage limit returned to 100%. The date was a review target, not a technical lock. Local autonomy was subsequently verified for Work file actions and Codex repo/Python execution with automatic approval of the required sandbox escalation. The single minimal recurring Work analysis was then armed for 2026-10-04 10:15 Europe/Berlin and every 2 days thereafter, with a cheap gate-first design and persistent dedup state.",
   "account_usage_state_at_completion": {
     "weekly_work_agent_limit_remaining_pct": 100,
     "planning_rule": "Weekly Work/agent usage limit is the operative account-side constraint for this project.",
@@ -130,11 +130,21 @@
   },
   "analysis_gate": {
     "work_item": "Krypto Paper – gezielte Analyse",
+    "automation_id": "6ab431f212488191b072c400bc3cdb86",
     "infrastructure_status": "READY",
-    "current_status_at_completion": "WAITING",
-    "gate": "substantive analysis only with >=3 mature paper cases, series completion, or UNKNOWN/blocker",
-    "scheduling_status": "NO_RECURRING_WORK_SCHEDULE_RESTORED",
-    "operating_mode": "manual/event-driven/targeted until measured incremental value justifies any recurring cadence"
+    "current_status_at_completion": "ARMED_GATE_WAITING",
+    "first_run_local": "2026-10-04T10:15:00+02:00",
+    "cadence": "every 2 days at 10:15 Europe/Berlin",
+    "scheduling_status": "ENABLED_SINGLE_MINIMAL_RECURRING_WORK_TASK",
+    "gate_conditions": [
+      ">=3 new V2R3 cases with complete 24h follow-up since the last acknowledged Work analysis",
+      "PAPER-V2R3-CLEAN-20261001T0925Z final review allowed / documented series completion",
+      "UNKNOWN, inconsistent completion, provenance/data blocker, or unresolved contradiction requiring multi-artifact diagnosis",
+      "documented V2R4/V3 readiness or research gate explicitly requiring Work-level synthesis"
+    ],
+    "cheap_gate_behavior": "persisted/read-only state only; no web, market scan, Slack search, local desktop/Codex use, broad GitHub history, writes, or notification when gate is closed",
+    "dedup_state": "research/work-analysis-state.json",
+    "operating_mode": "single recurring gate-only check; deep analysis only after gate opens"
   },
   "local_codex": {
     "project_root": "C:\\Users\\ADMIN\\Trading\\Repos\\kraken-eur-scanner",
