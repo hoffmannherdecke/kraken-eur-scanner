@@ -1,0 +1,208 @@
+{
+  "altname": "XDGEUR",
+  "candidate_id": "20261003-043339-XDG-EUR-r37096660617",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Record a 15-minute close above 0.082945 resistance with renewed live volume.",
+      "Hold a higher low above 0.082564 support."
+    ],
+    "reason_codes": [
+      "no_breakout_confirmation",
+      "live_volume_absent",
+      "resistance_too_close_after_costs",
+      "insufficient_remaining_move_evidence"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "No scout entry: price remains below nearby resistance without a confirmed breakout or renewed volume, and the supplied evidence does not support enough remaining movement after costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "DOGEUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_XDGUSD",
+          "PI_XDGUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.082789,
+      "bid": 0.0827867,
+      "last": 0.082733,
+      "spread_pct": 0.0027781854462904268
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "50",
+      "pair_decimals": 7,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.10261884353488515,
+          "ret3h_pct": -0.04213117281488543
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.07740393918742594,
+          "ret3h_pct": -0.12678421494541903
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.47263446450516167,
+          "ret3h_pct": 0.35879520347466
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T05:30:14.761592Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0868caacb2ae977d006ac092e79b8c87d1acc427ffbd8383f0"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.082789,
+    "bid": 0.0827867,
+    "last": 0.082733,
+    "spread_pct": 0.0027781854462904268
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.0826017,
+      "high": 0.0826017,
+      "low": 0.0824686,
+      "open": 0.0825354,
+      "trades": 11,
+      "ts": 1791001800,
+      "volume": 59384.76617872,
+      "vwap": 0.0825223
+    },
+    {
+      "close": 0.0826409,
+      "high": 0.0827297,
+      "low": 0.0826409,
+      "open": 0.0827297,
+      "trades": 2,
+      "ts": 1791002700,
+      "volume": 11001.74393864,
+      "vwap": 0.0827283
+    },
+    {
+      "close": 0.0827406,
+      "high": 0.0827671,
+      "low": 0.0826286,
+      "open": 0.0826286,
+      "trades": 3,
+      "ts": 1791003600,
+      "volume": 21538.3433255,
+      "vwap": 0.0826812
+    },
+    {
+      "close": 0.082733,
+      "high": 0.082733,
+      "low": 0.082702,
+      "open": 0.0827198,
+      "trades": 5,
+      "ts": 1791004500,
+      "volume": 2534.16065011,
+      "vwap": 0.0827236
+    },
+    {
+      "close": 0.082733,
+      "high": 0.082733,
+      "low": 0.082733,
+      "open": 0.082733,
+      "trades": 0,
+      "ts": 1791005400,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "XDG/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261003-043339-XDG-EUR-r37096660617.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T05:30:21.811344Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "402e4f2795702a87f5747b57daefd4fdf278f727",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T05:30:21.811344Z",
+    "revalidation_started_at_utc": "2026-10-03T05:30:14.498382Z",
+    "ttl_due_at_utc": "2026-10-03T05:19:12.618849Z",
+    "ttl_lag_seconds": 661.88
+  }
+}
