@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H2_RESEARCH_STREAM_ATTACHMENT_REVIEW_V1",
   "review_id": "V3-H2-ATTACH-20261003",
-  "status": "APPROVED_BOUNDED_ONE_SHOT_ONLY",
+  "status": "SUPERSEDED_NOT_ACTIVE",
   "reviewed_at_local": "2026-10-03",
   "reason": "Project sequence now explicitly tests H1 first while preparing H2 in parallel. The next H2 gate was one real prospective candidate capture; this review authorizes exactly that research-only sidecar attachment.",
   "authorized_attachment": {
@@ -26,5 +26,7 @@
     "orders",
     "real-money actions"
   ],
-  "next_gate": "AFTER_FIRST_USEFUL_CAPTURE_REVIEW_DATA_AVAILABILITY_AND_SEMANTICS_THEN_FREEZE_SEPARATE_H2_ONE_CHANGE_SHADOW_CANDIDATE"
+  "next_gate": "AFTER_FIRST_USEFUL_CAPTURE_REVIEW_DATA_AVAILABILITY_AND_SEMANTICS_THEN_FREEZE_SEPARATE_H2_ONE_CHANGE_SHADOW_CANDIDATE",
+  "superseded_reason": "The bounded H2 attachment authorization is revoked/superseded after the labeling correction. H2 remains a separate optional research branch and is not attached to the live candidate stream.",
+  "active": false
 }
