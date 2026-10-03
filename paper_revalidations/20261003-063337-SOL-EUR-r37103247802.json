@@ -1,0 +1,228 @@
+{
+  "altname": "SOLEUR",
+  "candidate_id": "20261003-063337-SOL-EUR-r37103247802",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close above 106.44 followed by continued acceptance",
+      "Strengthening closed-bar volume on the breakout"
+    ],
+    "reason_codes": [
+      "resistance_not_confirmed",
+      "price_rejected_below_resistance",
+      "weak_closed_volume",
+      "continuity_failed",
+      "cost_hurdle",
+      "no_valid_confirmation_plan"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Revalidation failed: SOL did not confirm above 106.44 resistance and has fallen to 106.08, with the latest closed bar weak. No prospective scout entry is supported.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SOLUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 52.18,
+        "available": true,
+        "current_funding_rate": 0.00156063161999996,
+        "current_open_interest": 276651.01,
+        "funding_rate_delta": -0.001235132944541667,
+        "open_interest_pct": 0.0513,
+        "previous_funding_rate": 0.002795764564541627,
+        "previous_observed_at_utc": "2026-10-03T06:34:43.380601Z",
+        "previous_open_interest": 276509.07
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.00156063161999996,
+        "index_price": 119.29,
+        "last": 119.3,
+        "mark_price": 119.31710804179,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 276651.01,
+        "requested_symbols": [
+          "PF_SOLUSD",
+          "PI_SOLUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_SOLUSD",
+        "volume24h": 363289.73
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 106.09,
+      "bid": 106.08,
+      "last": 106.08,
+      "spread_pct": 0.009426403355804417
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.06",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.009304798617570942,
+          "ret3h_pct": -0.030034978789461597
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.21315328117312848,
+          "ret3h_pct": 0.04406968886798701
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.07532956685498693,
+          "ret3h_pct": 0.27361071799227865
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T07:26:52.781808Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_08188b3e82d77f33006ac0ae3e574087d1a725a7aa14a2f7cb"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 106.09,
+    "bid": 106.08,
+    "last": 106.08,
+    "spread_pct": 0.009426403355804417
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 106.38,
+      "high": 106.41,
+      "low": 106.19,
+      "open": 106.19,
+      "trades": 24,
+      "ts": 1791008100,
+      "volume": 60.06817363,
+      "vwap": 106.34
+    },
+    {
+      "close": 106.32,
+      "high": 106.52,
+      "low": 106.24,
+      "open": 106.44,
+      "trades": 83,
+      "ts": 1791009000,
+      "volume": 912.44576872,
+      "vwap": 106.42
+    },
+    {
+      "close": 106.2,
+      "high": 106.36,
+      "low": 106.18,
+      "open": 106.3,
+      "trades": 66,
+      "ts": 1791009900,
+      "volume": 1501.32629646,
+      "vwap": 106.25
+    },
+    {
+      "close": 106.28,
+      "high": 106.35,
+      "low": 106.11,
+      "open": 106.21,
+      "trades": 87,
+      "ts": 1791010800,
+      "volume": 1928.65246329,
+      "vwap": 106.26
+    },
+    {
+      "close": 106.08,
+      "high": 106.32,
+      "low": 106.08,
+      "open": 106.25,
+      "trades": 32,
+      "ts": 1791011700,
+      "volume": 175.88681873,
+      "vwap": 106.26
+    }
+  ],
+  "pair": "SOL/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261003-063337-SOL-EUR-r37103247802.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T07:26:58.630646Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "bdfd40f8b551e28bee9bf5f3aa04a0b30729a235",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T07:26:58.630646Z",
+    "revalidation_started_at_utc": "2026-10-03T07:26:52.407336Z",
+    "ttl_due_at_utc": "2026-10-03T07:19:43.380601Z",
+    "ttl_lag_seconds": 429.027
+  }
+}
