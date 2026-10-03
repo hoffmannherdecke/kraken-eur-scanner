@@ -8,6 +8,8 @@ name: Crypto process health watchdog
     branches: [main]
     paths:
       - 'process_audit.py'
+      - 'tools/process-health-alert-router.py'
+      - 'supabase/process_health_alert_state.sql'
       - '.github/workflows/process-health.yml'
 
 permissions:
@@ -24,12 +26,16 @@ jobs:
     timeout-minutes: 8
     env:
       GH_TOKEN: ${{ github.token }}
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
+      - name: Validate health alert routing logic
+        run: |
+          python -m py_compile tools/process-health-alert-router.py
+          python tools/process-health-alert-router.py --self-test
+
       - name: Audit full paper chain and bounded self-heal
         shell: bash
         run: |
@@ -40,7 +46,8 @@ jobs:
 
           # process_audit.py uses exit 2 for a detected CRITICAL health state.
           # That is an application-level incident, not a broken GitHub workflow:
-          # self-healing and Slack escalation already happen inside the audit.
+          # bounded self-healing happens inside the audit; transition-/dedupe-controlled
+          # Slack escalation is handled by the next step from process_health.json.
           # Keep GitHub "Run failed" (and its email) for unexpected execution failures.
           if [ "$code" -eq 0 ] || [ "$code" -eq 2 ]; then
             echo "PROCESS_AUDIT_COMPLETED health_exit=$code"
@@ -49,6 +56,16 @@ jobs:
 
           echo "::error::process_audit.py failed unexpectedly with exit code $code"
           exit "$code"
+      - name: Route actionable CRITICAL transitions to Slack
+        if: always() && hashFiles('process_health.json') != ''
+        env:
+          SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_USER_ID: U0C39EDQ1H8
+        run: python tools/process-health-alert-router.py process_health.json
+
       - uses: actions/upload-artifact@v7
         if: always()
         with:
