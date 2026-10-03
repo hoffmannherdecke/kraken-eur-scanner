@@ -10,7 +10,7 @@
     "SIGNAL_FEATURE"
   ],
   "change_summary": "Add only the two preregistered H1 relative-context features as additional context to an isolated shadow evaluator. No threshold, transform, score weight, model, pair subset, baseline rule, entry/exit/risk mechanic or active V2R3 behavior is changed.",
-  "frozen_config_sha256": "24b381673094ec3ff2451ad06d8889c90e1a00956cc13e64083ed20640b71e9a",
+  "frozen_config_sha256": "30b84c8591d7122371e5834d36dddfc964114bdf1bec4290abfe560ea68dd888",
   "evidence_plan": {
     "same_candidate_stream": true,
     "shared_market_clock": true,
