@@ -11,17 +11,23 @@
   ],
   "bundled_next_actions": [
     {
-      "id": "H1_H6_REPORT_IMPORT",
+      "id": "H1_H6_REPORT_IMPORT_AND_FIXED_REVIEW",
       "status": "COMPLETED",
-      "action": "H1/H6 incremental reports were imported before the H3 session-3 run.",
+      "action": "Exact H1/H6 incremental reports imported; fixed review completed with holdout sealed.",
       "user_interaction": "None."
     },
     {
-      "id": "H3_ASSOC_COLLECTION_GATE",
-      "status": "NEEDS_ONE_ADDITIONAL_1800S_SESSION",
-      "action": "Run exactly one additional valid >=1800s V3-H3-ASSOC-002 session. Session #3 satisfied the session/date minima but cumulative rows are BTC=979, ETH=989, SOL=1012; fixed preregistered minimum is >=1000 per symbol. Do not change the gate/spec and do not use a short top-up.",
-      "user_interaction": "MINI-PC PowerShell required. Existing wrapper will automatically evaluate after the gate matures and best-effort import the compact final report.",
-      "stop_rule": "After gate/evaluation, do not run further H3 sessions. If the command fails, stop and report the error instead of retrying blindly."
+      "id": "H3_ASSOC_COLLECTION_AND_FIXED_REVIEW",
+      "status": "COMPLETED",
+      "action": "Four valid >=1800s H3 sessions across two UTC dates matured the frozen row gate; automatic association evaluation PASS and canonical compact report import PASS.",
+      "user_interaction": "None.",
+      "stop_rule": "Do not run further H3 sessions."
+    },
+    {
+      "id": "FIRST_V3_ONE_CHANGE_SHADOW_DECISION",
+      "status": "PROJECT_DECISION_REQUIRED",
+      "action": "Review completed H1/H3/H6 evidence and decide whether to materialize exactly one changed component for a draft shadow candidate or defer all three. Do not auto-select a winner.",
+      "user_interaction": "User/project decision required before strategy materialization."
     }
   ],
   "passive_wait_gates": [
@@ -41,6 +47,6 @@
       "note": "Real Altrady->Kraken fresh-recheck release smoke stays deferred to release boundary for freshness."
     }
   ],
-  "instruction_on_user_return": "Continue from H3_ASSOC_COLLECTION_GATE. First git pull --ff-only, then run exactly one additional >=1800s H3 ASSOC-002 session with the existing guarded wrapper. Do not repeat already-passed H1/H6 import or earlier H3 sessions.",
-  "updated_at_local": "2026-10-03"
+  "instruction_on_user_return": "Do not repeat H1/H6 import or any H3 collection. Resume from FIRST_V3_ONE_CHANGE_SHADOW_DECISION. V2R3 clean-series collection continues unchanged in parallel.",
+  "updated_at_local": "2026-10-03T09:55:00+02:00"
 }
