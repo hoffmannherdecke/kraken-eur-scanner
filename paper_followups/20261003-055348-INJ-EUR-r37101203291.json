@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-03T05:54:00Z",
         "trough_at_utc": "2026-10-03T06:07:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -3.233,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -3.709,
+        "mfe_pct": -0.173,
+        "peak_at_utc": "2026-10-03T05:54:00Z",
+        "trough_at_utc": "2026-10-03T09:26:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -89,7 +100,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-03T07:04:58.637424Z"
+    "updated_at_utc": "2026-10-03T09:55:36.388923Z"
   },
   "original_decision": "WAIT",
   "pair": "INJ/EUR",
