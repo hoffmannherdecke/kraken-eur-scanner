@@ -8,7 +8,6 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parent
 REPO=os.environ.get("GITHUB_REPOSITORY","hoffmannherdecke/kraken-eur-scanner")
 TOKEN=os.environ.get("GH_TOKEN","")
-SLACK=os.environ.get("SLACK_WEBHOOK_URL","")
 NOW=int(time.time())
 CONTROL_PATH=ROOT/"paper_runtime_control.json"
 
@@ -399,18 +398,10 @@ report={
     "audited_at_utc":datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),
     "status":"CRITICAL" if any(i["severity"]=="CRITICAL" for i in issues) else ("WARNING" if issues else "HEALTHY"),
     "metrics":metrics,"issues":issues,"repairs":repairs,
-    "guardrails":{"strategy_auto_change":False,"real_money_enable":False,"technical_dispatch_only":True}
+    "guardrails":{"strategy_auto_change":False,"real_money_enable":False,"technical_dispatch_only":True,"alert_routing":"EXTERNAL_TRANSITION_DEDUPE_ROUTER"}
 }
 Path("process_health.json").write_text(json.dumps(report,indent=2,sort_keys=True)+"\n")
 print("PROCESS_HEALTH "+json.dumps(report,sort_keys=True))
-
-if report["status"]=="CRITICAL" and SLACK:
-    msg="CRYPTO_HEALTH "+report["status"]+" | "+"; ".join(i["code"] for i in issues[:8])
-    req=urllib.request.Request(SLACK,data=json.dumps({"text":msg}).encode(),method="POST",headers={"Content-Type":"application/json"})
-    try:
-        urllib.request.urlopen(req,timeout=15).read()
-    except Exception as exc:
-        print("WARN slack health alert failed",repr(exc))
 
 if any(i["severity"]=="CRITICAL" for i in issues):
     raise SystemExit(2)
