@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H1_SHADOW_CONTEXT_CONFIG_V1",
+  "candidate_id": "V3-H1-SHADOW-001",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "FROZEN",
+  "changed_component": "SIGNAL_FEATURE",
+  "purpose": "Add the two fixed H1 relative-context features as context to an isolated shadow evaluator while leaving the active V2R3 baseline unchanged.",
+  "candidate_stream": {
+    "source": "same canonical handoff_queue candidates as active V2R3",
+    "same_candidate_stream": true,
+    "shared_market_clock": true,
+    "no_extra_candidate_discovery": true
+  },
+  "fixed_features": {
+    "target_return_1h_pct": "candidate scanner_candidate.ret1h at the candidate event",
+    "leader_median_return_1h_pct": "median of XBT/EUR and ETH/EUR 1h returns from the same point-in-time scan snapshot when available",
+    "leader_minus_target_return_1h_pct": "leader_median_return_1h_pct - target_return_1h_pct",
+    "peer_median_return_1h_pct": "median 1h return of all eligible same-snapshot Kraken EUR peers excluding the target",
+    "target_minus_peer_median_return_1h_pct": "target_return_1h_pct - peer_median_return_1h_pct"
+  },
+  "missingness": {
+    "no_forward_fill": true,
+    "no_historical_backfill_at_decision_time": true,
+    "missing_feature_behavior": "KEEP_CANDIDATE_AND_MARK_H1_CONTEXT_MISSING"
+  },
+  "shadow_decision_change": {
+    "mode": "CONTEXT_ONLY",
+    "baseline_prompt_and_rules_otherwise_identical": true,
+    "additional_context_fields": [
+      "leader_minus_target_return_1h_pct",
+      "target_minus_peer_median_return_1h_pct"
+    ],
+    "threshold_search": false,
+    "feature_transform_search": false,
+    "score_weight_change": false,
+    "pair_subset_search": false,
+    "model_change": false
+  },
+  "pilot_gate": {
+    "minimum_elapsed_hours": 24,
+    "minimum_matched_candidates": 200,
+    "minimum_h1_capture_success_pct": 95,
+    "low_impact_rule": "If fewer than 5 baseline-vs-H1 decision divergences occur by the minimum gate, classify the pilot INCONCLUSIVE_LOW_IMPACT; do not tune or extend automatically.",
+    "followup_horizons_minutes": [
+      30,
+      60,
+      120,
+      360
+    ]
+  },
+  "cost_reference": {
+    "taker_pct_per_side": 0.6,
+    "note": "Same conservative V2R3 reference. Pilot shadow decisions do not authorize real orders."
+  },
+  "review_rules": {
+    "automatic_winner_selection": false,
+    "automatic_promotion": false,
+    "pilot_can_promote_to_live": false,
+    "human_review_required": true,
+    "net_value_after_costs_required_before_any_later_promotion": true,
+    "no_midrun_tuning": true
+  },
+  "guardrails": {
+    "active_v2r3_changed": false,
+    "v2r4_changed": false,
+    "sealed_holdout_opened": false,
+    "orders": false,
+    "real_money_actions": false,
+    "leverage": false
+  }
+}
