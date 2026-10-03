@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_ASSOC_002_FIXED_DESCRIPTIVE_REVIEW_V1",
+  "status": "PASS_FIXED_DESCRIPTIVE_REVIEW_NO_SELECTION",
+  "reviewed_at_utc": "2026-10-03T07:53:00Z",
+  "source_report": "research/v3/h3-association-reports/v3-h3-association-002-20261003-095025.json",
+  "source_status": "PASS",
+  "collection": {
+    "session_count": 4,
+    "distinct_utc_dates": 2,
+    "valid_rows": {
+      "BTC/EUR": 1252,
+      "ETH/EUR": 1314,
+      "SOL/EUR": 1331
+    }
+  },
+  "fixed_features": [
+    "spread_bps",
+    "bid_depth_quote_top10",
+    "ask_depth_quote_top10",
+    "depth_imbalance_top10"
+  ],
+  "fixed_horizons_seconds": [
+    60,
+    300,
+    900
+  ],
+  "descriptive_patterns": {
+    "60s": "Pooled correlations are generally small across the fixed features and symbols; no common cross-symbol direction is established.",
+    "300s": "Associations remain mostly small-to-modest; SOL ask depth is negative while SOL depth imbalance is positive, illustrating symbol/feature-specific structure rather than a universal direction.",
+    "900s": "Magnitude is larger for several combinations, but signs differ by symbol and feature. Examples include positive BTC/ETH ask-depth association and negative SOL ask-depth association; SOL depth imbalance is positive while BTC/ETH depth imbalance is negative."
+  },
+  "selected_reference_values": {
+    "BTC/EUR": {
+      "ask_depth_quote_top10_900s": {
+        "pooled_r": 0.1620864270318613,
+        "equal_session_median_r": 0.2058353881591815
+      },
+      "depth_imbalance_top10_900s": {
+        "pooled_r": -0.17814636514341903,
+        "equal_session_median_r": -0.09718255552785413
+      }
+    },
+    "ETH/EUR": {
+      "ask_depth_quote_top10_900s": {
+        "pooled_r": 0.24385075420853805,
+        "equal_session_median_r": 0.19211426250203872
+      },
+      "depth_imbalance_top10_900s": {
+        "pooled_r": -0.12455496195180217,
+        "equal_session_median_r": -0.13266915896467835
+      }
+    },
+    "SOL/EUR": {
+      "ask_depth_quote_top10_900s": {
+        "pooled_r": -0.3724532224895013,
+        "equal_session_median_r": -0.1751181925065069
+      },
+      "depth_imbalance_top10_900s": {
+        "pooled_r": 0.2536476508895148,
+        "equal_session_median_r": 0.0047095665529141816
+      }
+    }
+  },
+  "governance": {
+    "descriptive_association_only": true,
+    "threshold_search_performed": false,
+    "feature_transform_search_performed": false,
+    "horizon_search_performed": false,
+    "pair_selection_performed": false,
+    "holdout_opened": false,
+    "automatic_winner_selected": false,
+    "automatic_shadow_candidate_selected": false,
+    "automatic_strategy_promotion": false,
+    "orders": false,
+    "real_money_actions": false
+  },
+  "interpretation": {
+    "collection_gate_complete": true,
+    "h3_trial_complete": true,
+    "universal_cross_symbol_direction_proven": false,
+    "direct_threshold_or_rule_materialization_from_this_review": false,
+    "next_decision": "PROJECT_REVIEW_BEFORE_ANY_ONE_CHANGE_SHADOW_MATERIALIZATION; ANY NEW SYMBOL-SPECIFIC THRESHOLD OR TRANSFORM SEARCH REQUIRES A NEW SEARCH-ACCOUNTED TRIAL."
+  }
+}
