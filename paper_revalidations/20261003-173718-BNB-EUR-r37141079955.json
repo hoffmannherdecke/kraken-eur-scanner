@@ -1,0 +1,224 @@
+{
+  "altname": "BNBEUR",
+  "candidate_id": "20261003-173718-BNB-EUR-r37141079955",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 703.74 with follow-through",
+      "renewed live volume and positive short-term momentum"
+    ],
+    "reason_codes": [
+      "near_resistance",
+      "no_resistance_breakout",
+      "weak_live_volume",
+      "negative_short_term_momentum",
+      "cost_hurdle_unproven",
+      "ttl_revalidation_failed"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Price remains below 703.74 resistance, with no follow-through or renewed volume; the required confirmation failed and remaining upside does not clear costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "BNBUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 59.32,
+        "available": true,
+        "current_funding_rate": 0.028694163550804428,
+        "current_open_interest": 4192.97,
+        "funding_rate_delta": 0.0009816149713213554,
+        "open_interest_pct": 0.0188,
+        "previous_funding_rate": 0.027712548579483073,
+        "previous_observed_at_utc": "2026-10-03T17:37:42.881710Z",
+        "previous_open_interest": 4192.18
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.028694163550804428,
+        "index_price": 788.482,
+        "last": 789.29,
+        "mark_price": 788.68318907519,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4192.97,
+        "requested_symbols": [
+          "PF_BNBUSD",
+          "PI_BNBUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_BNBUSD",
+        "volume24h": 1077.63
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 701.86,
+      "bid": 701.76,
+      "last": 701.71,
+      "spread_pct": 0.014248870776994164
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "0.007",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.14475709150820748,
+          "ret3h_pct": 0.20142294710925324
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.10095128786196117,
+          "ret3h_pct": 0.1949644661537242
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.15962441314554265,
+          "ret3h_pct": 0.3197592401015692
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T18:37:00.479250Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0b4be51f7cc23f1c006ac14b4ed38c87d188345468ffbbf2cf"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 701.86,
+    "bid": 701.76,
+    "last": 701.71,
+    "spread_pct": 0.014248870776994164
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 702.68,
+      "high": 702.84,
+      "low": 700.5,
+      "open": 702.84,
+      "trades": 22,
+      "ts": 1791048600,
+      "volume": 2.47789,
+      "vwap": 701.96
+    },
+    {
+      "close": 701.05,
+      "high": 703.33,
+      "low": 701.05,
+      "open": 703.0,
+      "trades": 15,
+      "ts": 1791049500,
+      "volume": 3.10589,
+      "vwap": 702.18
+    },
+    {
+      "close": 701.53,
+      "high": 702.73,
+      "low": 701.19,
+      "open": 701.27,
+      "trades": 11,
+      "ts": 1791050400,
+      "volume": 1.68459,
+      "vwap": 701.45
+    },
+    {
+      "close": 701.15,
+      "high": 701.22,
+      "low": 701.11,
+      "open": 701.18,
+      "trades": 8,
+      "ts": 1791051300,
+      "volume": 4.5302,
+      "vwap": 701.14
+    },
+    {
+      "close": 701.71,
+      "high": 702.05,
+      "low": 701.71,
+      "open": 702.0,
+      "trades": 3,
+      "ts": 1791052200,
+      "volume": 0.039,
+      "vwap": 701.89
+    }
+  ],
+  "pair": "BNB/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261003-173718-BNB-EUR-r37141079955.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-03T18:37:08.540097Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "c80f00cc96d3b8353e5b8288d60d765872225176",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-03T18:37:08.540097Z",
+    "revalidation_started_at_utc": "2026-10-03T18:37:00.097579Z",
+    "ttl_due_at_utc": "2026-10-03T18:07:42.881710Z",
+    "ttl_lag_seconds": 1757.216
+  }
+}
