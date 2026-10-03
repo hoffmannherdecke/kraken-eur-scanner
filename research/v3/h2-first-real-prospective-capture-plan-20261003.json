@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "V3_H2_FIRST_REAL_PROSPECTIVE_CAPTURE_PLAN_V1",
-  "status": "ACTIVE_BOUNDED_PREP",
+  "status": "SUPERSEDED_NOT_ACTIVE",
   "created_at_local": "2026-10-03",
   "purpose": "While the H1 standalone shadow pilot runs, complete the previously pending H2 real prospective research capture without changing any candidate decision.",
   "capture_rule": {
@@ -27,5 +27,7 @@
     "orders": false,
     "real_money_actions": false
   },
-  "next_gate": "After one useful real prospective capture, review H2 data availability/semantics. Only then freeze a separate H2 one-change shadow candidate; do not stack H2 onto H1 yet."
+  "next_gate": "After one useful real prospective capture, review H2 data availability/semantics. Only then freeze a separate H2 one-change shadow candidate; do not stack H2 onto H1 yet.",
+  "superseded_reason": "Superseded after user clarified the selected sequence is H1/H3/H6, not H1/H2/H3. No useful real H2 capture was persisted from this plan.",
+  "active": false
 }
