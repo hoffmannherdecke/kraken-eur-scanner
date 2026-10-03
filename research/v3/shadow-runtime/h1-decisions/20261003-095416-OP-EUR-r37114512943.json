@@ -1,0 +1,127 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.1181 with closed-volume recovery",
+      "Hold or successful retest of 0.1171\u20130.1176 as support"
+    ],
+    "reason_codes": [
+      "tradable_liquidity",
+      "tight_spread",
+      "breakout_attempt",
+      "weak_closed_volume",
+      "no_higher_lows",
+      "entry_confirmation_missing",
+      "costs_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid, tight-spread breakout attempt, but follow-through is unconfirmed: closed volume is weak, there are no higher lows, and the move has already run about 2.7% in 3h. Wait for confirmation before defining an entry, stop, or remaining-move estimate.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-03T09:54:52.671122Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-03T09:54:16Z",
+  "candidate_id": "20261003-095416-OP-EUR-r37114512943",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_022acf9be1e4e4f5006ac0d168516887d2af1f261653eada57"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 0.1176,
+      "bid": 0.1175,
+      "last": 0.1181,
+      "spread_pct": 0.08507018290089569
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261003-095416-OP-EUR-r37114512943",
+    "event_time_utc": "2026-10-03T09:54:16Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 76,
+      "leader_median_return_1h_pct": -0.02391777617253843,
+      "leader_minus_target_return_1h_pct": -1.3973083341124404,
+      "peer_median_return_1h_pct": 0.12374055481125801,
+      "target_minus_peer_median_return_1h_pct": 1.249650003128644,
+      "target_return_1h_pct": 1.373390557939902
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "OP/EUR",
+    "queue_id": "37114512943:OP-EUR:1791021256",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37114512943,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "OP/EUR",
+  "queue_id": "37114512943:OP-EUR:1791021256",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close holding above the current ask with stronger closed-bar volume",
+      "A confirmed higher low to define structural invalidation"
+    ],
+    "reason_codes": [
+      "closed_volume_weak",
+      "adx_weak",
+      "no_higher_lows",
+      "mixed_market_regime",
+      "costs_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Tradable spread and adequate liquidity, with relative strength and a fresh move; weak ADX, very low closed-bar volume, and no higher lows leave confirmation and remaining upside uncertain.",
+    "ttl_minutes": 30
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}

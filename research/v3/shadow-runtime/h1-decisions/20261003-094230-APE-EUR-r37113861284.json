@@ -1,0 +1,124 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.1478 with confirmed nonzero, expanding closed-bar volume",
+      "Pullback holds above 0.1449 and resumes upward within 30\u201360 minutes"
+    ],
+    "reason_codes": [
+      "mixed_short_term_continuity",
+      "no_3h_breakout",
+      "closed_volume_unconfirmed",
+      "limited_room_after_1_20pct_taker_fees",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but short-term continuity is mixed and the 3h resistance leaves too little cost-adjusted room to justify entry now.",
+    "ttl_minutes": 45
+  },
+  "baseline_evaluated_at_utc": "2026-10-03T09:42:59.881945Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-03T09:42:30Z",
+  "candidate_id": "20261003-094230-APE-EUR-r37113861284",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_04bb3e4ab1dd569e006ac0d14a7bbc87d282612220177ae1e3"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 0.1454,
+      "bid": 0.1452,
+      "last": 0.1454,
+      "spread_pct": 0.1376462491397149
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261003-094230-APE-EUR-r37113861284",
+    "event_time_utc": "2026-10-03T09:42:30Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 76,
+      "leader_median_return_1h_pct": 0.07232213989664116,
+      "leader_minus_target_return_1h_pct": -0.8292035189105706,
+      "peer_median_return_1h_pct": 0.03826794615738871,
+      "target_minus_peer_median_return_1h_pct": 0.8632577126498231,
+      "target_return_1h_pct": 0.9015256588072118
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "APE/EUR",
+    "queue_id": "37113861284:APE-EUR:1791020550",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37113861284,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "APE/EUR",
+  "queue_id": "37113861284:APE-EUR:1791020550",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.1478 resistance with meaningful closed-bar volume",
+      "Hold above 0.1449 on revalidation"
+    ],
+    "reason_codes": [
+      "mixed_3h_continuity",
+      "no_closed_volume_confirmation",
+      "nearby_resistance",
+      "taker_fee_hurdle"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity is adequate, but mixed price continuity and absent closed-bar volume confirmation leave the breakout unverified; the nearby resistance also leaves little cost-adjusted room.",
+    "ttl_minutes": 30
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}
