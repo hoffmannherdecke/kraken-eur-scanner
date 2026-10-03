@@ -11,6 +11,7 @@ name: V3 H1 shadow guard
       - 'tools/v3-h1-shadow-evaluate.py'
       - '.github/workflows/v3-h1-shadow-pilot.yml'
       - '.github/workflows/v3-h1-shadow-guard.yml'
+      - '.github/workflows/scan.yml'
 
 permissions:
   contents: read
