@@ -223,3 +223,56 @@ additional research branches if they can materially improve the next decision.**
 
 The project should prefer forward progress with bounded, decision-relevant evidence
 over exhaustive completion of every research idea.
+
+## 11. Fast-track strategy iteration — adopted 2026-10-03
+
+Purpose: shorten calendar time to a decision without weakening evidence quality, safety,
+or release integrity.
+
+Binding rules:
+
+- **Parallelize independent work.** While a frozen prospective series is collecting,
+  successor implementation, inactive shadow preparation, component research and release
+  plumbing may proceed in parallel, provided none of those changes mutate the active
+  series or contaminate its evidence.
+- **Do not serialize V2R4 and V3 unnecessarily.** After the V2R3 completion/release
+  review, V2R4 paper evaluation and the smallest valid V3 shadow candidate may collect
+  evidence concurrently because they answer different questions.
+- **Use the smallest valid V3 candidate.** The first serious V3 shadow candidate does
+  not wait for every H-component. Only components actually selected for that candidate
+  must have their own required gate closed.
+- **24h sanity gate:** verify mechanics, persistence, duplicate/stale behavior and obvious
+  decision-path defects. This is not a performance-promotion gate.
+- **72h early productivity gate:** review trade/candidate frequency, WAIT/REJECT structure,
+  obvious pathological selectivity and technical validity. A clearly unproductive branch
+  may be stopped early; no threshold is changed inside the running frozen version.
+- **~7-day decision gate:** unless a preregistered component-specific gate requires more
+  maturity, decide whether the candidate has earned continued collection, should be
+  rejected, or should be replaced by a separately versioned successor.
+- **No automatic long extension for low trade count.** If hundreds of valid candidate
+  decisions again produce essentially no trades, low trade frequency is a strategy result,
+  not a reason to keep the same version running indefinitely.
+- **No mid-run tuning.** Any material strategy change creates a new version/series. Existing
+  evidence remains attached to the old frozen version.
+- **Reuse prior PASS evidence.** Infrastructure/source/recovery tests are not rerun merely
+  because a strategy version changes when the tested path itself did not change.
+- **Stop dead branches early.** Once a preregistered gate is sufficient to conclude that a
+  component/branch lacks decision-relevant incremental value, stop expanding it and route
+  effort to the next highest-value hypothesis.
+- **Quality remains primary.** Fast-track means reducing idle/duplicate calendar time, not
+  loosening cost, liquidity, stale-data, execution-safety or release-integrity controls.
+
+Current calendar intent, subject to evidence maturity rather than date alone:
+
+1. 2026-10-03 through V2R3 completion: keep V2R3 frozen while finalizing V2R4 readiness
+   and preparing the smallest valid V3 shadow candidate in parallel.
+2. At the V2R3 completion gate: perform the final evidence classification immediately;
+   do not add an arbitrary extra waiting period.
+3. After review: start the new homogeneous V2R4 paper series and the eligible V3 shadow
+   candidate concurrently.
+4. Apply the 24h / 72h / ~7-day decision cadence to new strategy candidates.
+5. Live/private execution remains a later, separate gate and is not accelerated by this rule.
+
+This section complements, and does not override, the smoke-before-duration, no-repeat,
+freeze, holdout, and explicit release rules above.
+
