@@ -43,5 +43,16 @@
     "model_polling_for_monitoring": false,
     "automatic_billing_mutation_by_project_code": false,
     "real_money_trading_actions": false
+  },
+  "ci_guard": {
+    "workflow": "OpenAI cost watch guard",
+    "run_id": 37148533269,
+    "job_id": 111277347512,
+    "conclusion": "SUCCESS",
+    "verified_at_utc": "2026-10-03T19:37:09Z",
+    "checks": [
+      "python compile",
+      "offline parser/safety self-test"
+    ]
   }
 }
