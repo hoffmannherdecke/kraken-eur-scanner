@@ -12,15 +12,16 @@
   "bundled_next_actions": [
     {
       "id": "H1_H6_REPORT_IMPORT",
-      "status": "READY_NOT_TIME_DEPENDENT",
-      "action": "Import the exact local H1/H6 incremental reports from MINI-PC using the prepared guarded helper, then run the fixed quantitative review autonomously.",
-      "user_interaction": "Only if local file access on MINI-PC is required; bundle with H3."
+      "status": "COMPLETED",
+      "action": "H1/H6 incremental reports were imported before the H3 session-3 run.",
+      "user_interaction": "None."
     },
     {
-      "id": "H3_ASSOC_SESSION_3",
-      "status": "WAIT_SECOND_UTC_DATE",
-      "earliest_local": "2026-10-03T02:00:00+02:00",
-      "action": "Run exactly one additional valid 1800s V3-H3-ASSOC-002 session. If row counts remain similar, the >=3 sessions / >=2 UTC days / >=1000 rows per BTC/ETH/SOL collection gate should mature, then trigger the frozen association review."
+      "id": "H3_ASSOC_COLLECTION_GATE",
+      "status": "NEEDS_ONE_ADDITIONAL_1800S_SESSION",
+      "action": "Run exactly one additional valid >=1800s V3-H3-ASSOC-002 session. Session #3 satisfied the session/date minima but cumulative rows are BTC=979, ETH=989, SOL=1012; fixed preregistered minimum is >=1000 per symbol. Do not change the gate/spec and do not use a short top-up.",
+      "user_interaction": "MINI-PC PowerShell required. Existing wrapper will automatically evaluate after the gate matures and best-effort import the compact final report.",
+      "stop_rule": "After gate/evaluation, do not run further H3 sessions. If the command fails, stop and report the error instead of retrying blindly."
     }
   ],
   "passive_wait_gates": [
@@ -40,5 +41,6 @@
       "note": "Real Altrady->Kraken fresh-recheck release smoke stays deferred to release boundary for freshness."
     }
   ],
-  "instruction_on_user_return": "When the user says the trigger phrase, first refresh GitHub/Supabase status, then continue autonomously from the first still-open bundled gate. Do not repeat already-passed tests."
+  "instruction_on_user_return": "Continue from H3_ASSOC_COLLECTION_GATE. First git pull --ff-only, then run exactly one additional >=1800s H3 ASSOC-002 session with the existing guarded wrapper. Do not repeat already-passed H1/H6 import or earlier H3 sessions.",
+  "updated_at_local": "2026-10-03"
 }
