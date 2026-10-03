@@ -2,6 +2,15 @@ name: V3 H1 one-change shadow pilot
 
 'on':
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'paper_decisions/**'
+      - 'research/v3/shadow-runtime/h1-context/**'
+      - 'research/v3/shadow-runtime/h1-control.json'
+      - 'research/v3/shadow-candidates/v3-h1-shadow-001*.json'
+      - 'tools/v3-h1-shadow-evaluate.py'
+      - '.github/workflows/v3-h1-shadow-pilot.yml'
   schedule:
     - cron: '7,17,27,37,47,57 * * * *'
 
