@@ -1,0 +1,186 @@
+{
+  "altname": "BCHEUR",
+  "candidate_age_seconds": 14,
+  "candidate_event_time_utc": "2026-10-03T07:18:37Z",
+  "candidate_id": "20261003-071837-BCH-EUR-r37105757465",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close holding above 276.27 with stronger closed volume",
+      "Follow-through above resistance that establishes sufficient remaining upside after costs"
+    ],
+    "reason_codes": [
+      "closed_volume_weak",
+      "no_higher_lows",
+      "breakout_unconfirmed",
+      "costs_vs_runway_unclear",
+      "mixed_major_regime"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but the breakout lacks closed-volume and structural confirmation, and remaining upside is not established beyond Kraken round-trip costs.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "BCHUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 2244.78,
+        "available": true,
+        "current_funding_rate": -0.00792838739565823,
+        "current_open_interest": 2978.53,
+        "funding_rate_delta": -0.004768416868095629,
+        "open_interest_pct": -14.2319,
+        "previous_funding_rate": -0.003159970527562601,
+        "previous_observed_at_utc": "2026-10-01T17:54:06.709223Z",
+        "previous_open_interest": 3472.77
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.00792838739565823,
+        "index_price": 310.918,
+        "last": 311.17,
+        "mark_price": 310.87373016996,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 2978.53,
+        "requested_symbols": [
+          "PF_BCHUSD",
+          "PI_BCHUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_BCHUSD",
+        "volume24h": 2381.82
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 276.51,
+      "bid": 276.37,
+      "last": 276.71,
+      "spread_pct": 0.05064390102734277
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.01",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.009304798617570942,
+          "ret3h_pct": -0.030034978789461597
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.21315328117312848,
+          "ret3h_pct": 0.04406968886798701
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.07532956685498693,
+          "ret3h_pct": 0.27361071799227865
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-02T20:45:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Fleur Capital Corporation"
+          },
+          {
+            "published_at": "2026-10-02T20:00:00+00:00",
+            "title": "Federal Reserve Board announces it will extend, until November 4, the comment period on its proposal to modernize Regulation O"
+          },
+          {
+            "published_at": "2026-10-02T15:00:00+00:00",
+            "title": "Federal Reserve Board issues enforcement action with Ontario Bancorporation, Inc."
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-03T07:18:51.667152Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-03T07:19:03.736345Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_035be1e61f29a7e5006ac0ac5de3b487d1bc74e87ae98b4fce"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 276.51,
+    "bid": 276.37,
+    "last": 276.71,
+    "spread_pct": 0.05064390102734277
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "BCH/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37105757465:BCH-EUR:1791011917",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "13e6b3ee5f1d482cb32259f1b088dbc2b3cea7ca",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-03T07:18:37Z",
+    "candidate_detected_ts": 1791011917,
+    "candidate_snapshot_at_utc": "2026-10-03T07:18:37Z",
+    "detected_to_evaluation_complete_seconds": 26.736,
+    "detected_to_evaluation_start_seconds": 14.409,
+    "evaluation_completed_at_utc": "2026-10-03T07:19:03.736345Z",
+    "evaluation_runtime_seconds": 12.328,
+    "evaluation_started_at_utc": "2026-10-03T07:18:51.408836Z",
+    "handoff_to_evaluation_start_seconds": 12.128,
+    "handoff_written_at_utc": "2026-10-03T07:18:39.280636Z",
+    "scan_step_started_at_utc": "2026-10-03T07:15:44Z"
+  }
+}
