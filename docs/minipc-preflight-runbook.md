@@ -224,6 +224,21 @@ Der Wiederanlauf bleibt **gezielt und minimal im Fasttrack-Modus**. Es wurde kei
 - Work-/Agenten-Kontingent strikt getrennt von API-Token-/€-Kosten behandeln.
 - Work weiterhin nur schlank und gezielt einsetzen; keine Dauerläufe allein wegen freien Kontingents.
 
+### API-Guthaben / Work-Kontingent — Absicherung vorbereitet 2026-10-03
+
+Status: **ARCHITEKTUR VERIFIZIERT / ACCOUNT-UI-GATES OFFEN / KEIN ADMIN-KEY INSTALLIERT**.
+
+- API-Prepaid: OpenAI-native Auto-Reload ist die autoritative Low-Balance-Sicherung. Projektcode versucht **nicht**, aus Kosten oder Call-Zahlen einen verbleibenden Dollarstand zu schätzen.
+- Aktuelle OpenAI-Dokumentation bestätigt: native Auto-Reload-Schwelle nach Credit-Balance, Mindest-Recharge 5 USD, optionaler monatlicher Reload-Cap; bei fehlgeschlagenem Reload erfolgt eine Billing-E-Mail; bei leerem Guthaben ist `credit_balance_exhausted` dokumentiert.
+- Die Administration API stellt `GET /v1/organization/costs` bereit, aber keinen dokumentierten direkten Prepaid-Balance-Endpunkt. Für diesen GET ist ein **Admin API key** erforderlich.
+- Deshalb ist nur ein optionaler lokaler Kosten-Watcher vorbereitet: `tools/minipc-openai-cost-watch.py` + `tools/install-minipc-openai-cost-watch.ps1`. Standardtakt bei späterer Installation: 6 h. Er macht **keinen Modellaufruf**, verbraucht 0 Modell-Tokens und ändert keine Billing-/Strategie-/Trading-Einstellung.
+- Separater Secret-Helper `tools/minipc-openai-admin-secret-prep.ps1` ist vorbereitet, aber erst nach explizitem Bedarf verwenden. Admin-Key ausschließlich `C:\\Users\\ADMIN\\Trading\\Secrets\\openai-admin-key.txt`; nie GitHub, Work/Codex, Slack oder Logs.
+- Work/Codex: kein dokumentierter Maschinen-Endpunkt für exakten verbleibenden Wochen-Prozentsatz gefunden; deshalb kein Screen-Scraping und kein künstlicher 10-%-Alarm. Basisbetrieb bleibt Work-unabhängig. Reserve-Credits/Auto-Reload nur verwenden, falls die Konto-UI diese Option konkret anbietet.
+- Kanonische Entscheidung: `research/openai-quota-monitoring-decision-20261003.json`; Fachregeln: `docs/ai-api-cost-guardrails.md`.
+
+**Nächster manueller Account-Gate (einmalig, gemeinsam):** API Billing öffnen und Auto-Reload-Schwelle, Restore-Ziel und Monats-Cap festlegen; nativen Spend-Alert prüfen; danach ChatGPT Usage/Credits auf mögliche Work/Codex-Reserve prüfen. Erst anschließend entscheiden, ob der lokale Admin-Cost-Watcher zusätzlich installiert wird. Kein API-/Work-Monitoring benötigt eine Strategieänderung oder Echtgeldfreigabe.
+
+
 ## Inbetriebnahme-Stand 2026-09-30
 
 Erster realer Aufbau des Dell OptiPlex 5060 Micro:
