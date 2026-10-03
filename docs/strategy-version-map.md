@@ -439,3 +439,43 @@ Verbindliche Arbeitsentscheidung:
 - Für V2R4 gilt ausdrücklich: Die Strategie soll belastbar **mehr valide Trades erzeugen**, ohne Schutzfilter blind zu lockern. Anhaltend zu geringe Trade-Frequenz ist selbst ein Testbefund, weil eine praktisch leere 20-Trade-Serie keine belastbare Strategieauswertung ermöglicht.
 - Deshalb müssen vor V2R4 sowohl Fehlablehnungen/zu defensive Filter als auch echte Timing-/Revalidation-Verluste getrennt identifiziert werden. Ziel ist nicht „mehr Trades um jeden Preis“, sondern genügend prospektive Trades für eine aussagekräftige Testphase bei weiterhin kontrolliertem Risiko.
 
+## 2026-10-03 — Fast-Track-Beschluss für V2R3 → V2R4 → V3
+
+Verbindliche Arbeitsentscheidung:
+
+- Ziel ist nicht die schnellstmögliche Echtgeld-Rückkehr, sondern ein sichtbar kürzerer Weg
+  zu einer Strategie, die genügend valide Trades produziert, um ihren Edge überhaupt
+  belastbar messen zu können.
+- V2R3 bleibt bis zu seinem bestehenden Abschlussgate vollständig eingefroren. Das
+  Abschlussgate wird **nicht** verkürzt oder rückwirkend verändert.
+- Während V2R3 ausreift, werden V2R4-Releasefähigkeit und der **kleinstmögliche valide
+  V3-Shadow-Kandidat** parallel vorbereitet. Warten auf V2R3 darf unabhängige Arbeit nicht
+  blockieren.
+- Nach Abschluss von V2R3 erfolgt die Abschlussklassifikation unmittelbar. Kein zusätzlicher
+  künstlicher Wartezeitraum wird angehängt.
+- V2R4 Paper und der erste freigegebene V3 Shadow dürfen danach **parallel** laufen, weil
+  sie unterschiedliche Fragen beantworten: V2R4 prüft die praktische Verbesserung der
+  Trade-Produktion/Entry-Revalidation; V3 prüft zusätzlichen Informationswert neuer
+  Signal-/Kontextbausteine.
+- Neue Strategieversionen erhalten frühe Entscheidungsfenster:
+  - nach ~24h: Technik-/Mechanik-Sanity;
+  - nach ~72h: frühe Produktivität, Trade-Frequenz und Entscheidungsstruktur;
+  - nach ~7 Tagen: Fortsetzen / Verwerfen / separat versionierten Nachfolger bauen,
+    sofern kein vorab festgelegtes längeres Reifegate zwingend ist.
+- Hunderte valide Kandidaten bei erneut praktisch null Trades gelten als **negatives
+  Strategieergebnis** und rechtfertigen keine automatische Verlängerung derselben Version.
+- Keine laufende Version wird nach Sichtung ihrer Ergebnisse still getunt. Jede materielle
+  Änderung erzeugt eine neue Version/Serie.
+- Bereits bestandene Infrastruktur-, Recovery-, Transport- oder Datenpfadtests werden nur
+  wiederholt, wenn sich ihr relevanter Pfad geändert hat oder ein Incident die alte Evidenz
+  widerspricht.
+- V3 muss vor dem ersten ernsthaften Shadow-Kandidaten nicht alle Forschungsbausteine
+  H1–H11 abschließen. Nur tatsächlich verwendete Komponenten müssen ihr jeweiliges Gate
+  erfüllt haben.
+- Live-/Private-Ausführung bleibt ein separates späteres Release- und Sicherheitsgate und
+  wird durch diesen Fast-Track nicht vorgezogen.
+
+Damit wird der Entwicklungsprozess bewusst von einem seriellen „Version vollständig
+abwarten → nächste Version bauen“ zu einem kontrollierten parallelen Iterationsmodell
+umgestellt, ohne Freeze-, Holdout-, Kosten-, Risiko- oder Release-Schutzregeln abzuschwächen.
+
