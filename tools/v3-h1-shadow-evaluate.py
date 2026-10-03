@@ -28,7 +28,7 @@ _spec.loader.exec_module(base)
 
 CANDIDATE_ID="V3-H1-SHADOW-001"
 CONFIG=ROOT/"research/v3/shadow-candidates/v3-h1-shadow-001-config.json"
-EXPECTED_CONFIG_SHA="24b381673094ec3ff2451ad06d8889c90e1a00956cc13e64083ed20640b71e9a"
+EXPECTED_CONFIG_SHA="30b84c8591d7122371e5834d36dddfc964114bdf1bec4290abfe560ea68dd888"
 
 def sha256_file(p:Path)->str:
     return hashlib.sha256(p.read_bytes()).hexdigest()
