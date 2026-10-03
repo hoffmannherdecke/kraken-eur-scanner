@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "V3_H2_DERIVATIVES_STATE_PRECHECK_V1",
   "hypothesis_id": "V3-H2",
-  "status": "PRECHECK_BOUNDED_ONE_SHOT_REAL_CANDIDATE_CAPTURE_AUTHORIZED",
+  "status": "PRECHECK_ISOLATED_CANDIDATE_CAPTURE_GREEN_NOT_ATTACHED",
   "prepared_at_utc": "2026-10-01T18:20:00Z",
   "purpose": "Test whether point-in-time derivatives state adds incremental information to Kraken-EUR candidate quality after the frozen baseline signal, primarily as state/conditioning rather than a direct directional trigger.",
   "baseline": "Latest validated V2/V2R4 candidate stream at the time the research trial is eventually frozen.",
@@ -114,13 +114,9 @@
       "metric_age_seconds_each": 32,
       "candidate_decision_mutated": false
     },
-    "attached_to_live_candidate_stream": true,
-    "automatic_capture_schedule_enabled": true,
-    "automatic_capture_schedule_mode": "BOUNDED_ONE_SHOT_AUTO_STOP_AFTER_FIRST_USEFUL_CAPTURE",
-    "bounded_research_attachment_review": "research/v3/h2-research-stream-attachment-review-20261003.json",
-    "bounded_first_capture_plan": "research/v3/h2-first-real-prospective-capture-plan-20261003.json",
-    "bounded_wrapper": "tools/v3-h2-first-prospective-capture.py",
-    "max_useful_real_captures": 1
+    "attached_to_live_candidate_stream": false,
+    "automatic_capture_schedule_enabled": false
   },
-  "next_gate": "BOUNDED_ONE_SHOT_REAL_CAPTURE_ACTIVE__AUTO_STOP_AFTER_FIRST_USEFUL_CAPTURE_THEN_REVIEW_BEFORE_H2_SHADOW"
+  "next_gate": "ISOLATED_CAPTURE_PATH_GREEN__NEXT_REAL_PROSPECTIVE_CANDIDATE_CAPTURE_ONLY_AFTER_EXPLICIT_RESEARCH_STREAM_ATTACHMENT_REVIEW",
+  "correction_note": "A bounded H2 attachment was briefly prepared due to a labeling mix-up in the selected H1/H3/H6 sequence. No useful real H2 capture was persisted; the attachment was removed before becoming part of the chosen sequence."
 }
