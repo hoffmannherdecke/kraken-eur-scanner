@@ -1,6 +1,5 @@
 param(
-  [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
-  [int]$IntervalHours = 6
+  [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading")
 )
 
 $ErrorActionPreference = "Stop"
@@ -10,10 +9,6 @@ $principal = New-Object Security.Principal.WindowsPrincipal($identity)
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
   throw "Bitte dieses Skript in einer als Administrator gestarteten PowerShell ausführen."
 }
-if ($IntervalHours -lt 1 -or $IntervalHours -gt 24) {
-  throw "IntervalHours must be between 1 and 24."
-}
-
 $repo = Join-Path $TradingRoot "Repos\kraken-eur-scanner"
 $python = Join-Path $TradingRoot "Runtime\kraken-eur-scanner-venv\Scripts\python.exe"
 $tool = Join-Path $repo "tools\minipc-openai-cost-watch.py"
@@ -49,19 +44,24 @@ if ($first.status -ne "HEALTHY") { throw "One-shot cost query did not finish HEA
 if ($first.direct_prepaid_balance_supported -ne $false) { throw "Safety contract violated: prepaid balance must remain unsupported." }
 if ($first.billing_mutation -ne $false -or $first.model_request_made -ne $false) { throw "Safety contract violated." }
 
-Write-Host "3/4 Register 6h-by-default read-only task..."
+Write-Host "3/4 Register four daily triggers (6h cadence)..."
 $argLine = @(
   ('"' + $tool + '"'),
   "--trading-root",('"' + $TradingRoot + '"')
 ) -join " "
 $action = New-ScheduledTaskAction -Execute $python -Argument $argLine
-$trigger = New-ScheduledTaskTrigger -Once -At ((Get-Date).AddMinutes(2)) -RepetitionInterval (New-TimeSpan -Hours $IntervalHours) -RepetitionDuration (New-TimeSpan -Days 3650)
+$triggers = @(
+  (New-ScheduledTaskTrigger -Daily -At "00:17"),
+  (New-ScheduledTaskTrigger -Daily -At "06:17"),
+  (New-ScheduledTaskTrigger -Daily -At "12:17"),
+  (New-ScheduledTaskTrigger -Daily -At "18:17")
+)
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -RestartCount 2 -RestartInterval (New-TimeSpan -Minutes 5) -ExecutionTimeLimit (New-TimeSpan -Minutes 3)
-Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -User "SYSTEM" -RunLevel Highest -Force | Out-Null
+Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $triggers -Settings $settings -User "SYSTEM" -RunLevel Highest -Force | Out-Null
 
 Write-Host "4/4 Summary..."
 Write-Host ("Task: " + $taskName)
-Write-Host ("Interval hours: " + $IntervalHours)
+Write-Host "Cadence: 00:17 / 06:17 / 12:17 / 18:17 local time"
 Write-Host ("Month spend USD: " + $first.month_spend_usd)
 Write-Host "Exact prepaid balance: intentionally NOT claimed/not available from documented endpoint."
 Write-Host "Model tokens used by watcher: 0"
