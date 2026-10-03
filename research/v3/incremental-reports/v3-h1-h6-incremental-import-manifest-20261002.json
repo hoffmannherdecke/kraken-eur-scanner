@@ -1,0 +1,29 @@
+{
+    "schema_version":  1,
+    "kind":  "V3_H1_H6_INCREMENTAL_REPORT_IMPORT_MANIFEST_V1",
+    "imported_at_utc":  "2026-10-03T06:17:14.2410759Z",
+    "source_platform":  "MINI_PC",
+    "exact_payload_copy":  true,
+    "reports":  [
+                    {
+                        "deterministic_summary_sha256":  "4619cc1d71bf02d912d41785dccfbafe7758567a4ffcea52f44fcd89e237d3df",
+                        "file":  "v3-h1-incremental-001-20261002-095841.json",
+                        "file_sha256":  "8ea47a8744eeebdc2004a848277a7a69154b86972e6829e5092b03eecebccc65",
+                        "status":  "PASS",
+                        "trial_id":  "V3-H1-INCR-001"
+                    },
+                    {
+                        "deterministic_summary_sha256":  "b528e283ef75a4728bf836189130eb8e95af3fe8972186163741003ab0881fbc",
+                        "file":  "v3-h6-incremental-001-20261002-095841.json",
+                        "file_sha256":  "a14ef346446b68e4cee18707afaa32f9e3cf4ef31f960ed4325dcc390dec42e9",
+                        "status":  "PASS",
+                        "trial_id":  "V3-H6-INCR-001"
+                    }
+                ],
+    "guardrails":  {
+                       "holdout_opened":  false,
+                       "strategy_change":  false,
+                       "orders":  false,
+                       "real_money_actions":  false
+                   }
+}

@@ -1,0 +1,195 @@
+{
+  "dataset": {
+    "catalog_sha256": "cdbeea82ddc2faecfe69c70c1d5bb71b27869868531f44e9f5e7765082b478d9",
+    "development_end_utc_exclusive": "2026-01-01T00:00:00Z",
+    "file_count": 648,
+    "holdout_status": "LOCKED_DO_NOT_READ_OR_LABEL"
+  },
+  "deterministic_summary_sha256": "b528e283ef75a4728bf836189130eb8e95af3fe8972186163741003ab0881fbc",
+  "guardrails": {
+    "active_v2r3_changed": false,
+    "fee_adjusted_returns": false,
+    "holdout_labels_generated": false,
+    "holdout_opened": false,
+    "leverage": false,
+    "month_subset_search": false,
+    "network_used": false,
+    "orders": false,
+    "p_value_feature_selection": false,
+    "pair_subset_search": false,
+    "real_money_actions": false,
+    "threshold_search": false,
+    "trade_returns": false,
+    "v2r4_changed": false,
+    "volume_transform_search": false
+  },
+  "interpretation": {
+    "automatic_winner_selected": false,
+    "incremental_association_only": true,
+    "promotion_allowed": false,
+    "threshold_tuned": false
+  },
+  "kind": "V3_H6_INCREMENTAL_VOLUME_CONTRIBUTION_RESULT_V1",
+  "schema_version": 1,
+  "spec_sha256": "988dc8bae3a741ced27f7900f32705f4446b7bf93f842cca38f72d5181802e00",
+  "splits": {
+    "calibration": {
+      "down": {
+        "coverage": {
+          "complete_cases": 504788,
+          "volume_expansion_false": 254323,
+          "volume_expansion_true": 250465
+        },
+        "equal_pair_weighted": {
+          "eligible_pair_count": 284,
+          "median_pair_partial_r": -0.005680536987675204
+        },
+        "observation_weighted": {
+          "n": 504788,
+          "partial_r_y_volume_given_price": -0.006229683226099114,
+          "r_volume_price": -0.07852858455646358,
+          "r_y_price": -0.11755146874195525,
+          "r_y_volume": 0.003063763657083084
+        },
+        "simple_effect": {
+          "mean_false": 0.000690330714366775,
+          "mean_true": 0.0008084759216698986,
+          "n_false": 254323,
+          "n_true": 250465,
+          "true_minus_false_mean": 0.00011814520730312362
+        }
+      },
+      "up": {
+        "coverage": {
+          "complete_cases": 514506,
+          "volume_expansion_false": 261528,
+          "volume_expansion_true": 252978
+        },
+        "equal_pair_weighted": {
+          "eligible_pair_count": 286,
+          "median_pair_partial_r": 0.00028209215150295987
+        },
+        "observation_weighted": {
+          "n": 514506,
+          "partial_r_y_volume_given_price": 0.0032040522454800167,
+          "r_volume_price": 0.0843850161399773,
+          "r_y_price": -0.05021416084868624,
+          "r_y_volume": -0.0010487262467478076
+        },
+        "simple_effect": {
+          "mean_false": -7.930724289323827e-05,
+          "mean_true": -0.00012294576672019272,
+          "n_false": 261528,
+          "n_true": 252978,
+          "true_minus_false_mean": -4.3638523826954447e-05
+        }
+      }
+    },
+    "research_train": {
+      "down": {
+        "coverage": {
+          "complete_cases": 2265597,
+          "volume_expansion_false": 1140981,
+          "volume_expansion_true": 1124616
+        },
+        "equal_pair_weighted": {
+          "eligible_pair_count": 227,
+          "median_pair_partial_r": -0.004942255291995215
+        },
+        "observation_weighted": {
+          "n": 2265597,
+          "partial_r_y_volume_given_price": -0.005467447269308202,
+          "r_volume_price": -0.10447114854129985,
+          "r_y_price": -0.10539576081343885,
+          "r_y_volume": 0.005603572334233559
+        },
+        "simple_effect": {
+          "mean_false": 0.00045093294478800003,
+          "mean_true": 0.0006641030108018734,
+          "n_false": 1140981,
+          "n_true": 1124616,
+          "true_minus_false_mean": 0.00021317006601387334
+        }
+      },
+      "up": {
+        "coverage": {
+          "complete_cases": 2302611,
+          "volume_expansion_false": 1179364,
+          "volume_expansion_true": 1123247
+        },
+        "equal_pair_weighted": {
+          "eligible_pair_count": 225,
+          "median_pair_partial_r": 0.009071675394640023
+        },
+        "observation_weighted": {
+          "n": 2302611,
+          "partial_r_y_volume_given_price": 0.00855151358229782,
+          "r_volume_price": 0.10251364169978093,
+          "r_y_price": -0.05386715903092486,
+          "r_y_volume": 0.0029719916956861933
+        },
+        "simple_effect": {
+          "mean_false": -0.00023748038042231727,
+          "mean_true": -0.00012582941325582392,
+          "n_false": 1179364,
+          "n_true": 1123247,
+          "true_minus_false_mean": 0.00011165096716649335
+        }
+      }
+    },
+    "validation": {
+      "down": {
+        "coverage": {
+          "complete_cases": 539108,
+          "volume_expansion_false": 272771,
+          "volume_expansion_true": 266337
+        },
+        "equal_pair_weighted": {
+          "eligible_pair_count": 480,
+          "median_pair_partial_r": -0.012123172518005699
+        },
+        "observation_weighted": {
+          "n": 539108,
+          "partial_r_y_volume_given_price": -0.008738575530009424,
+          "r_volume_price": -0.060346502028095106,
+          "r_y_price": -0.10245950145418112,
+          "r_y_volume": -0.0024936711052771132
+        },
+        "simple_effect": {
+          "mean_false": 0.0003323363748962974,
+          "mean_true": 0.000213291374689887,
+          "n_false": 272771,
+          "n_true": 266337,
+          "true_minus_false_mean": -0.0001190450002064104
+        }
+      },
+      "up": {
+        "coverage": {
+          "complete_cases": 528960,
+          "volume_expansion_false": 268305,
+          "volume_expansion_true": 260655
+        },
+        "equal_pair_weighted": {
+          "eligible_pair_count": 472,
+          "median_pair_partial_r": 0.006297482876713313
+        },
+        "observation_weighted": {
+          "n": 528960,
+          "partial_r_y_volume_given_price": 0.00811031210019799,
+          "r_volume_price": 0.07610195930315686,
+          "r_y_price": -0.09302368328984202,
+          "r_y_volume": 0.0009724427965948126
+        },
+        "simple_effect": {
+          "mean_false": -0.00020882113527032317,
+          "mean_true": -0.00015760006100912316,
+          "n_false": 268305,
+          "n_true": 260655,
+          "true_minus_false_mean": 5.12210742612e-05
+        }
+      }
+    }
+  },
+  "status": "PASS",
+  "trial_id": "V3-H6-INCR-001"
+}

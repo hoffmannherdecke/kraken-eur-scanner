@@ -1,0 +1,128 @@
+{
+  "cutoffs_processed": 422456,
+  "dataset": {
+    "catalog_sha256": "cdbeea82ddc2faecfe69c70c1d5bb71b27869868531f44e9f5e7765082b478d9",
+    "development_end_utc_exclusive": "2026-01-01T00:00:00Z",
+    "file_count": 648,
+    "holdout_status": "LOCKED_DO_NOT_READ_OR_LABEL"
+  },
+  "deterministic_summary_sha256": "4619cc1d71bf02d912d41785dccfbafe7758567a4ffcea52f44fcd89e237d3df",
+  "guardrails": {
+    "active_v2r3_changed": false,
+    "fee_adjusted_returns": false,
+    "holdout_labels_generated": false,
+    "holdout_opened": false,
+    "leverage": false,
+    "month_subset_search": false,
+    "network_used": false,
+    "orders": false,
+    "p_value_feature_selection": false,
+    "pair_subset_search": false,
+    "real_money_actions": false,
+    "threshold_search": false,
+    "trade_returns": false,
+    "v2r4_changed": false
+  },
+  "interpretation": {
+    "automatic_winner_selected": false,
+    "incremental_association_only": true,
+    "promotion_allowed": false
+  },
+  "kind": "V3_H1_INCREMENTAL_RELATIVE_CONTEXT_RESULT_V1",
+  "schema_version": 1,
+  "spec_sha256": "c7353ff3d586a4685083ea398aefdb6d3b21d158f4b270c9f7645d99dbe45054",
+  "splits": {
+    "calibration": {
+      "leader_minus_target_return_1h": {
+        "complete_cases": 1388604,
+        "equal_pair_weighted": {
+          "eligible_pair_count": 305,
+          "median_pair_partial_r": 0.02446716023479752
+        },
+        "observation_weighted": {
+          "n": 1388604,
+          "partial_r_y_incremental_given_control": 0.03299934833362093,
+          "r_incremental_control": -0.9462590535178454,
+          "r_y_control": -0.06270170462226811,
+          "r_y_incremental": 0.0699833636930872
+        }
+      },
+      "target_minus_peer_median_return_1h": {
+        "complete_cases": 1388604,
+        "equal_pair_weighted": {
+          "eligible_pair_count": 305,
+          "median_pair_partial_r": -0.0470632880677367
+        },
+        "observation_weighted": {
+          "n": 1388604,
+          "partial_r_y_incremental_given_control": -0.04120530679347696,
+          "r_incremental_control": 0.8821647103390727,
+          "r_y_control": -0.06270170462226811,
+          "r_y_incremental": -0.07468031590106443
+        }
+      }
+    },
+    "research_train": {
+      "leader_minus_target_return_1h": {
+        "complete_cases": 5602072,
+        "equal_pair_weighted": {
+          "eligible_pair_count": 233,
+          "median_pair_partial_r": 0.030265493298630073
+        },
+        "observation_weighted": {
+          "n": 5602072,
+          "partial_r_y_incremental_given_control": 0.017332274057510304,
+          "r_incremental_control": -0.9431634391653304,
+          "r_y_control": -0.06285245273825674,
+          "r_y_incremental": 0.06502876849282432
+        }
+      },
+      "target_minus_peer_median_return_1h": {
+        "complete_cases": 5553515,
+        "equal_pair_weighted": {
+          "eligible_pair_count": 233,
+          "median_pair_partial_r": -0.033299121069513535
+        },
+        "observation_weighted": {
+          "n": 5553515,
+          "partial_r_y_incremental_given_control": -0.016798832007948777,
+          "r_incremental_control": 0.9260413376487655,
+          "r_y_control": -0.06286300473978684,
+          "r_y_incremental": -0.06454145147174974
+        }
+      }
+    },
+    "validation": {
+      "leader_minus_target_return_1h": {
+        "complete_cases": 1481207,
+        "equal_pair_weighted": {
+          "eligible_pair_count": 550,
+          "median_pair_partial_r": 0.051922734056223385
+        },
+        "observation_weighted": {
+          "n": 1481207,
+          "partial_r_y_incremental_given_control": 0.04553017599765207,
+          "r_incremental_control": -0.9707982212573438,
+          "r_y_control": -0.08547131272152696,
+          "r_y_incremental": 0.09385800432345395
+        }
+      },
+      "target_minus_peer_median_return_1h": {
+        "complete_cases": 1481207,
+        "equal_pair_weighted": {
+          "eligible_pair_count": 549,
+          "median_pair_partial_r": -0.039303428376856915
+        },
+        "observation_weighted": {
+          "n": 1481207,
+          "partial_r_y_incremental_given_control": -0.026753771668959446,
+          "r_incremental_control": 0.9328589959466179,
+          "r_y_control": -0.08547131272152696,
+          "r_y_incremental": -0.08933523922502556
+        }
+      }
+    }
+  },
+  "status": "PASS",
+  "trial_id": "V3-H1-INCR-001"
+}
