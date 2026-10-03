@@ -140,7 +140,7 @@ A separate read-only MINI-PC watcher is prepared but deliberately **not installe
 - it creates no model request and therefore consumes **0 model tokens** itself;
 - it records month-to-date API spend only and explicitly persists `prepaid_remaining_usd = null`;
 - it cannot change billing, spend limits, model settings, strategy, orders or trading state;
-- offline safety self-test is enforced by `.github/workflows/openai-cost-watch-guard.yml`;
+- offline safety self-test is enforced by `.github/workflows/openai-cost-watch-guard.yml`; **Run 37148533269 / job 111277347512 SUCCESS** on 2026-10-03 (compile + offline parser/safety self-test);
 - optional local installation is prepared via `tools/install-minipc-openai-cost-watch.ps1`.
 
 Important security boundary: the documented organization-cost endpoint is an Administration API surface and requires an **Admin API key**. That credential is broader/more sensitive than the existing evaluator key. If this optional watcher is activated later, the key stays only in `C:\\Users\\ADMIN\\Trading\\Secrets\\openai-admin-key.txt`, with restricted ACL. It is never stored in GitHub, exposed to Work/Codex or printed to logs. Native billing controls are configured first; the Admin-key watcher remains optional rather than becoming a dependency.
