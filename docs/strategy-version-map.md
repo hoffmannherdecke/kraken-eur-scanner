@@ -479,3 +479,50 @@ Damit wird der Entwicklungsprozess bewusst von einem seriellen „Version vollst
 abwarten → nächste Version bauen“ zu einem kontrollierten parallelen Iterationsmodell
 umgestellt, ohne Freeze-, Holdout-, Kosten-, Risiko- oder Release-Schutzregeln abzuschwächen.
 
+## 11. Permanente Strategie-Linienregel — über V3 hinaus
+
+Die bisherige V3-Inheritance-Policy ist ein konkreter Anwendungsfall einer **dauerhaften
+versionsübergreifenden Regel**. Sie endet nicht mit V3.
+
+Für jede zukünftige Version/Generation gilt:
+
+1. **Nachfolger starten vom besten validierten Vorgängerstand.**
+   - V3 erbt aus V2/V2R4.
+   - Eine spätere V4 erbt aus dem besten validierten V3-Gesamtstand plus noch relevante
+     ältere Erkenntnisse, die bewusst weitergeführt wurden.
+   - Dasselbe Prinzip gilt für V5 usw.
+
+2. **Jede materielle Vorgänger-Erkenntnis braucht vor Release eine explizite Disposition.**
+   Zulässige dauerhafte Status:
+   - `INHERIT_UNCHANGED`
+   - `INHERIT_MODIFIED`
+   - `REPLACE_WITH_VALIDATED_SUCCESSOR`
+   - `DEFER_TO_LATER_GENERATION`
+   - `MORE_TESTING_REQUIRED`
+   - `REJECT_WITH_EVIDENCE`
+   - `NO_SUCCESSOR_CHANGE`
+
+3. **Kein stilles Vergessen.**
+   - Ungeklärte materielle Erkenntnisse blockieren den Release einer neuen aktiven Version.
+   - `DEFER_TO_LATER_GENERATION` braucht ein benanntes Ziel/Research-Gate; es darf keine
+     Ablageform für 'später vielleicht' sein.
+
+4. **Eigener predecessor→successor Migrationsnachweis je Generation.**
+   - Für jeden Generationswechsel wird ein Migration-Ledger bzw. äquivalenter versionierter
+     Diff geführt.
+   - Der aktuelle `research/v3-migration-ledger.json` ist damit der erste konkrete Ledger
+     dieser dauerhaften Reihe, nicht das letzte Migrationsdokument des Projekts.
+
+5. **Lernen soll kumulieren, nicht zurückgesetzt werden.**
+   - Bestätigte Verbesserungen, Guardrails, Kosten-/Timing-Erkenntnisse und robuste
+     Strategiebausteine werden standardmäßig weitergetragen.
+   - Ersetzen oder Entfernen ist erlaubt, aber nur mit dokumentierter stärkerer Evidenz.
+
+6. **Analyse→Konsequenz→Migration→Test→Release bleibt die Dauerschleife.**
+   - Erkenntnisse werden automatisch verarbeitet und geroutet.
+   - Genehmigungspflichtige Änderungen werden als `ENTSCHEIDUNG ERFORDERLICH` eskaliert.
+   - Nach Zustimmung werden sie in den inaktiven Nachfolger eingebaut und getestet.
+   - Aktivierung erfolgt weiterhin ausschließlich über das separate Release-Gate.
+
+Damit ist die Strategieentwicklung ausdrücklich als fortlaufende Lernlinie angelegt und nicht
+als Folge voneinander isolierter Versionsprojekte.
