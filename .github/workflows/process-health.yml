@@ -3,7 +3,7 @@ name: Crypto process health watchdog
 'on':
   workflow_dispatch:
   schedule:
-    - cron: '7,17,27,37,47,57 * * * *'
+    - cron: '4,9,14,19,24,29,34,39,44,49,54,59 * * * *'
   push:
     branches: [main]
     paths:
@@ -48,6 +48,8 @@ jobs:
           # That is an application-level incident, not a broken GitHub workflow:
           # bounded self-healing happens inside the audit; transition-/dedupe-controlled
           # Slack escalation is handled by the next step from process_health.json.
+          # Repairable CRITICAL incidents get a 15-minute grace before user-facing
+          # escalation; non-repairable integrity/safety faults remain immediate.
           # Keep GitHub "Run failed" (and its email) for unexpected execution failures.
           if [ "$code" -eq 0 ] || [ "$code" -eq 2 ]; then
             echo "PROCESS_AUDIT_COMPLETED health_exit=$code"
