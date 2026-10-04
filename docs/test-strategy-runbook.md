@@ -320,3 +320,31 @@ consequence-processing for a later chat is therefore considered **incomplete**.
 This rule applies equally to V2R3 intermediate/final reviews and later V2R4/V3
 Work-level synthesis. It complements the fast-track rules and never weakens freeze,
 holdout, no-midrun-tuning, cost, safety or release controls.
+
+### 12.1 Gated-change escalation — mandatory user decision packet
+
+If consequence-processing concludes that a currently gated change is **materially warranted**
+(for example a strategy/threshold/entry/stop/sizing/scanner rule change, V2R4 activation,
+V3 promotion, or another release-boundary change), the system must not merely leave it as
+a passive note.
+
+It must create a compact **DECISION REQUIRED** packet and notify the user at the next
+meaningful analysis/gate completion. The packet must contain:
+
+- **What should change** — exact component/rule/version.
+- **Why now** — evidence and sample/gate that justify the change.
+- **Expected benefit** — what problem the change is intended to solve.
+- **Main risk / downside** — including overfitting, trade-frequency, cost or runtime risk.
+- **Exact proposed implementation** — bounded diff/variant; no vague “optimize further”.
+- **Validation plan** — which paper/shadow gate proves or rejects it.
+- **Rollback** — explicit previous version / revert path.
+- **Recommendation** — `APPROVE`, `REJECT`, or `MORE_TESTING` with a clear preferred choice.
+
+The user notification must be action-oriented and clearly labeled **ENTSCHEIDUNG ERFORDERLICH**.
+Routine findings that do not justify a gated change remain silent.
+
+After user approval, execute the already-defined safe release/change workflow automatically
+as far as possible, including versioning, tests, documentation, and rollback preparation.
+Only stop again if a further genuine human/release gate is reached.
+
+No gated change may be activated without the required explicit approval.
