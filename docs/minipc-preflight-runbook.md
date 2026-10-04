@@ -1640,10 +1640,16 @@ Verifikation vor physischer Aktivierung:
 - neue PowerShell-Installer/Secret-/Rollback-Skripte: Parse **PASS**;
 - geänderter lokaler Watchdog: Smoke **PASS**.
 
-Offenes Nutzer-Gate:
-1. Fine-grained PAT im GitHub-Account anlegen (nur dieses Repository; Actions Read/write).
-2. Token auf dem MINI-PC lokal/verdeckt speichern.
-3. Guard mit dem vorbereiteten Installer aktivieren; dabei wird einmal der No-op-Auth-Workflow dispatcht und anschließend ein frischer Heartbeat geprüft.
+Physische Aktivierung abgeschlossen 2026-10-04:
+1. Fine-grained PAT wurde ausschließlich auf `hoffmannherdecke/kraken-eur-scanner` begrenzt; Repository-Permission Actions = Read/write, Metadata = required read-only.
+2. Token wurde lokal unter `Trading\Secrets\github-actions-dispatch-token.txt` mit restriktiver ACL gespeichert; Secretwert wurde nie ausgegeben und die Zwischenablage danach geleert.
+3. Installer-Selftest PASS; No-op-Auth-Workflow `MINI-PC dispatch auth smoke` Run `37184784133` = SUCCESS.
+4. Task `CryptoMiniPC-GitHubCadenceGuard` aktiv: alle 5 Minuten + Startup, Recovery-Schwelle 20 Min, Dispatch-Backoff 15 Min.
+5. Erster echter Recovery-Fall trat direkt beim Installationszeitpunkt auf: Guard erkannte die bestehende Scanner-Liveness-Lücke und dispatchte `scan.yml`; Scanner Run `37184786088` schloss SUCCESS ab und startete anschließend regulär den Paper-Evaluator.
+6. Während der Abschlusskontrolle war der V2R4-WS-Shadow kurz in einem separaten Recoveryzustand. Task blieb Running; Heartbeat erholte sich auf frisch/HEALTHY bzw. normales `DUPLICATE_SKIPPED`, Kraken-Quelle blieb frisch. Nach Supervisor-/Watchdog-Refresh meldete der lokale Watchdog `issues: []` und damit HEALTHY / OK.
+7. GitHub-Cron bleibt unverändert als unabhängiger Cloud-Fallback; der lokale Guard ist nur Recovery-Layer.
+
+Keine V2R3-Regel, Strategie-Schwelle, Entry, Stop, Sizing, Account-/Orderberechtigung oder Echtgeldfunktion wurde verändert.
 
 Den Token niemals in ChatGPT, Slack, GitHub-Dateien oder Logs einfügen.
 \n
