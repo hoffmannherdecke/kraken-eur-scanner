@@ -1,0 +1,128 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.03067 with sustained volume",
+      "Hold above 0.03067 on a retest within 60 minutes"
+    ],
+    "reason_codes": [
+      "resistance_unbroken",
+      "near_resistance_limited_immediate_room",
+      "strong_closed_volume",
+      "positive_1h_3h_continuity",
+      "low_spread",
+      "weak_to_mixed_major_regime",
+      "fees_require_meaningful_followthrough"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong volume and multi-hour gains support continuation, but spot is still below nearby resistance after a short-term pullback; wait for confirmation rather than chase.",
+    "ttl_minutes": 45
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T18:09:31.980748Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T18:08:50Z",
+  "candidate_id": "20261004-180850-MON-EUR-r37223170490",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_043429ee82bef0e1006ac2e4aa999c87d1b44d3ceb71133502"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 0.03054,
+      "bid": 0.03052,
+      "last": 0.03048,
+      "spread_pct": 0.06550933508025762
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-180850-MON-EUR-r37223170490",
+    "event_time_utc": "2026-10-04T18:08:50Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 71,
+      "leader_median_return_1h_pct": -0.08456454488303122,
+      "leader_minus_target_return_1h_pct": -2.6426258037184516,
+      "peer_median_return_1h_pct": -0.0555935682517994,
+      "target_minus_peer_median_return_1h_pct": 2.6136548270872195,
+      "target_return_1h_pct": 2.55806125883542
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "MON/EUR",
+    "queue_id": "37223170490:MON-EUR:1791137330",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37223170490,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "MON/EUR",
+  "queue_id": "37223170490:MON-EUR:1791137330",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.03067 with sustained volume",
+      "Hold above 0.03067 on a retest"
+    ],
+    "reason_codes": [
+      "RESISTANCE_UNBROKEN",
+      "RECENT_RUNUP",
+      "MAJORS_MIXED",
+      "RELATIVE_STRENGTH",
+      "SPOT_LIQUIDITY_ADEQUATE",
+      "NO_COIN_SPECIFIC_CATALYST_SUPPLIED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong relative momentum and usable spot liquidity, but price is pressing 1h/3h resistance without a confirmed breakout; wait for confirmation before considering entry.",
+    "ttl_minutes": 45
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}

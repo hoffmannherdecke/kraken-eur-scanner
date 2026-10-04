@@ -1,0 +1,128 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.2224 resistance",
+      "Renewed live volume accompanying the breakout"
+    ],
+    "reason_codes": [
+      "near_7d_high",
+      "ret15_live_negative",
+      "live_volume_very_low",
+      "rank_deteriorating",
+      "below_3h_resistance",
+      "round_trip_fees_high",
+      "open_interest_declining",
+      "major_market_mixed"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid and tradable, but recent momentum and live volume do not confirm continuation; price is near resistance after a substantial 30-day advance.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T18:34:18.685768Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T18:33:53Z",
+  "candidate_id": "20261004-183353-FET-EUR-r37224831163",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0390336378ec926b006ac2e4b4978087d1bc9c0005662a0a46"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 0.2193,
+      "bid": 0.2191,
+      "last": 0.2189,
+      "spread_pct": 0.09124087591241137
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-183353-FET-EUR-r37224831163",
+    "event_time_utc": "2026-10-04T18:33:53Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 71,
+      "leader_median_return_1h_pct": -0.058203836893966354,
+      "leader_minus_target_return_1h_pct": -0.6556303074822134,
+      "peer_median_return_1h_pct": 0.10944363652718447,
+      "target_minus_peer_median_return_1h_pct": 0.4879828340610626,
+      "target_return_1h_pct": 0.597426470588247
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "FET/EUR",
+    "queue_id": "37224831163:FET-EUR:1791138833",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37224831163,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "FET/EUR",
+  "queue_id": "37224831163:FET-EUR:1791138833",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.2224 with clear volume recovery",
+      "Follow-through holding above 0.2224 on the next 15m check"
+    ],
+    "reason_codes": [
+      "below_3h_resistance",
+      "weak_live_volume",
+      "rank_deterioration",
+      "insufficient_nearby_reward_after_costs",
+      "open_interest_declining"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but price is below nearby resistance, live volume is very weak, and the remaining move to 3h resistance is insufficient after costs. Wait for renewed participation and a confirmed breakout.",
+    "ttl_minutes": 30
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}
