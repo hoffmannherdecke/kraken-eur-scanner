@@ -1,0 +1,127 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15-minute close above 80.13 (one ATR above 79.94 resistance)",
+      "hold above 79.94 on retest"
+    ],
+    "reason_codes": [
+      "weak_price_progress",
+      "resistance_unconfirmed",
+      "rank_deteriorating",
+      "cost_hurdle",
+      "mixed_breadth"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are adequate, but price progress is weak relative to the volume spike and the nearby resistance is only marginally cleared. Wait for a 15-minute close above 80.13 and a hold above 79.94 before reassessing; current evidence does not support a cost-adjusted scout entry.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T04:33:39.032654Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T04:33:15Z",
+  "candidate_id": "20261004-043315-HYPE-EUR-r37177185904",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0e4b14a0b9a883ad006ac22dbbfdf887d1b591f58cca8cd822"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 80.0,
+      "bid": 79.99,
+      "last": 80.0,
+      "spread_pct": 0.012500781298837572
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-043315-HYPE-EUR-r37177185904",
+    "event_time_utc": "2026-10-04T04:33:15Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 76,
+      "leader_median_return_1h_pct": 0.003909229125792502,
+      "leader_minus_target_return_1h_pct": -0.24671733729024203,
+      "peer_median_return_1h_pct": -0.02124126644790225,
+      "target_minus_peer_median_return_1h_pct": 0.2718678328639368,
+      "target_return_1h_pct": 0.25062656641603454
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "HYPE/EUR",
+    "queue_id": "37177185904:HYPE-EUR:1791088395",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37177185904,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "HYPE/EUR",
+  "queue_id": "37177185904:HYPE-EUR:1791088395",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above 80.13 EUR with volume sustained above baseline.",
+      "A subsequent hold above 79.94 EUR while short-term momentum remains positive."
+    ],
+    "reason_codes": [
+      "GOOD_SPREAD",
+      "ADEQUATE_TURNOVER",
+      "HIGH_VOLUME_RATIO",
+      "MODEST_CONTINUITY",
+      "RESISTANCE_NEARBY",
+      "RANK_FADING",
+      "COSTS_NOT_COVERED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, with strong volume and modest relative strength, but price action is weak near recent resistance and remaining upside is not established against costs.",
+    "ttl_minutes": 30
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}
