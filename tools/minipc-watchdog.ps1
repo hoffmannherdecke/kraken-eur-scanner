@@ -323,6 +323,40 @@ try {
   Add-Check "minipc_status_sync" $false $_.Exception.Message "WARNING"
 }
 
+# Local GitHub scanner-cadence recovery guard is optional until installed.
+# It is a periodic one-shot task, so Ready is normal; health is heartbeat-based.
+try {
+  $cadenceTask = Get-ScheduledTask -TaskName "CryptoMiniPC-GitHubCadenceGuard" -ErrorAction SilentlyContinue
+  if ($cadenceTask) {
+    $hb = Join-Path $TradingRoot "State\github-cadence-guard.json"
+    if (-not (Test-Path $hb)) {
+      Add-Check "github_cadence_guard" $false "task installed but heartbeat missing" "WARNING"
+    } else {
+      $h = Get-Content $hb -Raw | ConvertFrom-Json
+      $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
+      $safe = (
+        [bool]$h.guardrails.recovery_only -and
+        -not [bool]$h.guardrails.strategy_changes -and
+        -not [bool]$h.guardrails.threshold_changes -and
+        -not [bool]$h.guardrails.evaluator_invoked_directly -and
+        -not [bool]$h.guardrails.order_api -and
+        -not [bool]$h.guardrails.real_money_actions
+      )
+      $ok = (
+        $h.status -eq "HEALTHY" -and
+        $ageSec -le 600 -and
+        [string]$cadenceTask.State -ne "Disabled" -and
+        $safe
+      )
+      Add-Check "github_cadence_guard" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " task_state=" + $cadenceTask.State + " action=" + $h.action + " latest_scan_age_sec=" + $h.latest_scan_run.age_seconds + " detail=" + $h.detail) "WARNING"
+    }
+  } else {
+    $checks["github_cadence_guard"] = [ordered]@{ ok=$null; detail="not installed yet; GitHub cloud schedule + process-health recovery remain active" }
+  }
+} catch {
+  Add-Check "github_cadence_guard" $false $_.Exception.Message "WARNING"
+}
+
 # Altrady transport heartbeat is optional/non-exclusive.
 # Only evaluate it when the dedicated scheduled task is installed.
 try {
