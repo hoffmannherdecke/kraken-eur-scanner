@@ -348,3 +348,25 @@ as far as possible, including versioning, tests, documentation, and rollback pre
 Only stop again if a further genuine human/release gate is reached.
 
 No gated change may be activated without the required explicit approval.
+
+### 12.2 Mandatory V2R3 → V2R4 inheritance disposition
+
+Every material V2R3 strategy learning produced by an interim or final analysis must receive
+an explicit V2R4 inheritance disposition before V2R4 paper activation can be approved.
+Allowed dispositions:
+
+- `ALREADY_COVERED_V2R4` — the prepared V2R4 candidate already implements the intended behavior; link exact component/evidence.
+- `PROPOSE_V2R4_CHANGE` — evidence supports a concrete change to the inactive V2R4 candidate; prepare the exact bounded diff and validation/rollback plan, then raise `ENTSCHEIDUNG ERFORDERLICH` before modifying strategy mechanics.
+- `MORE_TESTING_BEFORE_V2R4` — potentially relevant but evidence is not mature enough; define the smallest required test/gate.
+- `V3_ONLY` — structural/experimental change is deliberately not part of V2R4; route to V3 with rationale.
+- `NO_V2R4_CHANGE` — evidence supports retaining current V2R4 behavior or no actionable change.
+- `REJECTED` — hypothesis is contradicted or economically/operationally unjustified.
+
+No material V2R3 finding may remain without one of these dispositions at the V2R3 final review.
+The V2R4 release review must reconcile the complete disposition set against the exact
+V2R4 behavior diff/spec. Any `PROPOSE_V2R4_CHANGE` without explicit user approval or any
+unresolved material disposition blocks V2R4 activation.
+
+After explicit approval of a proposed V2R4 change, implementation into the inactive V2R4
+candidate, versioning, tests, documentation and rollback preparation should proceed
+automatically as far as existing gates allow. Activation remains a separate explicit release gate.
