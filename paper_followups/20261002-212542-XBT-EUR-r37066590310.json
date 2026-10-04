@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 75114.1,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 0.325,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -0.083,
+        "mfe_pct": 0.689,
+        "peak_at_utc": "2026-10-03T18:05:00Z",
+        "trough_at_utc": "2026-10-02T21:30:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 0.75,
       "price_eur": 74560.4
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": false,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "excellent_liquidity",
@@ -121,7 +137,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-03T09:43:47.547348Z"
+    "updated_at_utc": "2026-10-04T02:15:49.051690Z"
   },
   "original_decision": "WAIT",
   "pair": "XBT/EUR",

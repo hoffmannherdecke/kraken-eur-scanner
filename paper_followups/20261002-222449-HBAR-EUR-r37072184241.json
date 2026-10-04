@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.08989,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 0.768,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -0.813,
+        "mfe_pct": 1.882,
+        "peak_at_utc": "2026-10-03T17:25:00Z",
+        "trough_at_utc": "2026-10-03T08:00:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 2.301,
       "price_eur": 0.0878
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": false,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "liquid_spot_pair",
@@ -121,7 +137,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-03T10:33:22.375783Z"
+    "updated_at_utc": "2026-10-04T02:15:50.362738Z"
   },
   "original_decision": "WAIT",
   "pair": "HBAR/EUR",
