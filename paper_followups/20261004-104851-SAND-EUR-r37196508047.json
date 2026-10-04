@@ -3,7 +3,16 @@
   "candidate_id": "20261004-104851-SAND-EUR-r37196508047",
   "evaluated_at_utc": "2026-10-04T10:49:31.630364Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.902,
+      "expected_bars": 30,
+      "mae_pct": -0.451,
+      "mfe_pct": 1.053
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -58,8 +67,11 @@
   },
   "original_decision": "WAIT",
   "pair": "SAND/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-04T11:39:33.965144Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-04T11:39:59.220865Z"
 }
