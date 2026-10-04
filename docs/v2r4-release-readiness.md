@@ -14,6 +14,8 @@ This document is the compact release-readiness control point for V2R4. It does n
 
 ## Existing technical gates
 
+- **V2R3-learning inheritance gate:** before V2R4 activation, every material V2R3 interim/final finding must have an explicit V2R4 disposition (`ALREADY_COVERED_V2R4`, `PROPOSE_V2R4_CHANGE`, `MORE_TESTING_BEFORE_V2R4`, `V3_ONLY`, `NO_V2R4_CHANGE`, or `REJECTED`). Any unresolved material finding or unapproved `PROPOSE_V2R4_CHANGE` blocks activation. Approved changes are implemented/tested on the inactive V2R4 candidate before the separate activation decision.
+
 Verified before any V2R4 paper activation:
 
 - broad Kraken Spot-EUR realtime feed on the MINI-PC
