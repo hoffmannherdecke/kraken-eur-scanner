@@ -19,6 +19,8 @@ ORPHAN_CRITICAL_AFTER_SECONDS=1500
 WAIT_WARN_AFTER_SECONDS=300
 WAIT_CRITICAL_AFTER_SECONDS=1200
 RECENT_WORKFLOW_FAILURE_GRACE_SECONDS=900
+SCAN_STALE_AFTER_SECONDS=1200
+PAPER_RUNTIME_STALE_AFTER_SECONDS=1500
 
 try:
     CONTROL=json.loads(CONTROL_PATH.read_text("utf-8"))
@@ -255,6 +257,8 @@ metrics["recovery_thresholds_seconds"]={
     "wait_warning":WAIT_WARN_AFTER_SECONDS,
     "wait_critical":WAIT_CRITICAL_AFTER_SECONDS,
     "workflow_failure_grace":RECENT_WORKFLOW_FAILURE_GRACE_SECONDS,
+    "scan_stale":SCAN_STALE_AFTER_SECONDS,
+    "paper_runtime_stale":PAPER_RUNTIME_STALE_AFTER_SECONDS,
 }
 
 # Current BUY -> position lifecycle completeness.
@@ -357,9 +361,9 @@ metrics["missed_8pct_6h"]=sum(bool(x.get("six_hour_flags",{}).get("missed_8pct")
 metrics["missed_10pct_6h"]=sum(bool(x.get("six_hour_flags",{}).get("missed_10pct")) for x in mature)
 
 # Workflow liveness for the unified architecture.
-latest_health("scan.yml",1500)
+latest_health("scan.yml",SCAN_STALE_AFTER_SECONDS)
 if ENABLED:
-    latest_health("paper-evaluator.yml",1800)
+    latest_health("paper-evaluator.yml",PAPER_RUNTIME_STALE_AFTER_SECONDS)
 else:
     metrics["paper_runtime_pause_reason"]=CONTROL.get("reason")
 
