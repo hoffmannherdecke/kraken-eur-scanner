@@ -1,0 +1,176 @@
+{
+  "altname": "FETEUR",
+  "candidate_age_seconds": 17,
+  "candidate_event_time_utc": "2026-10-04T18:33:53Z",
+  "candidate_id": "20261004-183353-FET-EUR-r37224831163",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.2224 resistance",
+      "Renewed live volume accompanying the breakout"
+    ],
+    "reason_codes": [
+      "near_7d_high",
+      "ret15_live_negative",
+      "live_volume_very_low",
+      "rank_deteriorating",
+      "below_3h_resistance",
+      "round_trip_fees_high",
+      "open_interest_declining",
+      "major_market_mixed"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid and tradable, but recent momentum and live volume do not confirm continuation; price is near resistance after a substantial 30-day advance.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "FETUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 89.61,
+        "available": true,
+        "current_funding_rate": 1.134920783425e-05,
+        "current_open_interest": 4736169.0,
+        "funding_rate_delta": 2.974012367476e-06,
+        "open_interest_pct": -2.1056,
+        "previous_funding_rate": 8.375195466774e-06,
+        "previous_observed_at_utc": "2026-10-04T17:04:35.629836Z",
+        "previous_open_interest": 4838037.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 1.134920783425e-05,
+        "index_price": 0.24694,
+        "last": 0.24657,
+        "mark_price": 0.24679627125,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4736169.0,
+        "requested_symbols": [
+          "PF_FETUSD",
+          "PI_FETUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_FETUSD",
+        "volume24h": 13234216
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.2193,
+      "bid": 0.2191,
+      "last": 0.2189,
+      "spread_pct": 0.09124087591241137
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "18",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.08247563938381663,
+          "ret3h_pct": 0.002373517869957986
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.08530328438450807,
+          "ret3h_pct": 0.08294604339036393
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2955847034916026,
+          "ret3h_pct": -0.23107496071725908
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-04T18:34:10.370934Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-04T18:34:18.685768Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_07880015f00c36f8006ac29c2456b887d0a901328a59445b18"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2193,
+    "bid": 0.2191,
+    "last": 0.2189,
+    "spread_pct": 0.09124087591241137
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "FET/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37224831163:FET-EUR:1791138833",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "f5d575b6d499804a47693c74b6281021ca81074b",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-04T18:33:53Z",
+    "candidate_detected_ts": 1791138833,
+    "candidate_snapshot_at_utc": "2026-10-04T18:33:53Z",
+    "detected_to_evaluation_complete_seconds": 25.686,
+    "detected_to_evaluation_start_seconds": 16.316,
+    "evaluation_completed_at_utc": "2026-10-04T18:34:18.685768Z",
+    "evaluation_runtime_seconds": 9.37,
+    "evaluation_started_at_utc": "2026-10-04T18:34:09.315605Z",
+    "handoff_to_evaluation_start_seconds": 14.062,
+    "handoff_written_at_utc": "2026-10-04T18:33:55.253691Z",
+    "scan_step_started_at_utc": "2026-10-04T18:32:38Z"
+  }
+}

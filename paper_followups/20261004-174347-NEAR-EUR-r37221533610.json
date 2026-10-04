@@ -3,7 +3,16 @@
   "candidate_id": "20261004-174347-NEAR-EUR-r37221533610",
   "evaluated_at_utc": "2026-10-04T17:44:11.741979Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.31,
+      "expected_bars": 30,
+      "mae_pct": -0.183,
+      "mfe_pct": 0.676
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -55,8 +64,11 @@
   },
   "original_decision": "WAIT",
   "pair": "NEAR/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-04T18:34:49.127032Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-04T18:34:56.916833Z"
 }
