@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-04T15:00:12.900063Z",
     "evaluation_ask_eur": 0.5228,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.517,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.556,
+        "mfe_pct": 0.402,
+        "peak_at_utc": "2026-10-04T15:04:00Z",
+        "trough_at_utc": "2026-10-04T15:12:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-04T14:04:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -40,7 +52,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-04T15:00:50.656032Z"
+    "updated_at_utc": "2026-10-04T15:25:01.784143Z"
   },
   "original_decision": "WAIT",
   "pair": "WLD/EUR",

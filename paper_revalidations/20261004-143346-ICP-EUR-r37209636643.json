@@ -1,0 +1,214 @@
+{
+  "altname": "ICPEUR",
+  "candidate_id": "20261004-143346-ICP-EUR-r37209636643",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close and hold above \u20ac3.075",
+      "Sustained volume on a successful retest of \u20ac3.075"
+    ],
+    "reason_codes": [
+      "resistance_rejection",
+      "momentum_breakdown",
+      "extended_30d_run",
+      "taker_costs_material",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Revalidation shows a sharp retreat below resistance with no confirmed hold or retest; do not chase the prior momentum.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ICPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 50.03,
+        "available": true,
+        "current_funding_rate": -0.0003136148773725,
+        "current_open_interest": 184448.2,
+        "funding_rate_delta": 5.114879150016602e-05,
+        "open_interest_pct": 1.7246,
+        "previous_funding_rate": -0.000364763668872666,
+        "previous_observed_at_utc": "2026-10-04T14:34:40.365190Z",
+        "previous_open_interest": 181321.1
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.0003136148773725,
+        "index_price": 3.38858,
+        "last": 3.39,
+        "mark_price": 3.38645370648,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 184448.2,
+        "requested_symbols": [
+          "PF_ICPUSD",
+          "PI_ICPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ICPUSD",
+        "volume24h": 140185.6
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 3.01,
+      "bid": 3.008,
+      "last": 3.009,
+      "spread_pct": 0.0664672648720432
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "1.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.13609554937190627,
+          "ret3h_pct": 0.06423954623400174
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.08300936045249063,
+          "ret3h_pct": -0.042494157053407644
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.19413885550521037,
+          "ret3h_pct": 0.370438970179654
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-04T15:24:40.730304Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_02a4073c92326875006ac26fba213087d19f4f1e9cc9f9f8ac"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 3.01,
+    "bid": 3.008,
+    "last": 3.009,
+    "spread_pct": 0.0664672648720432
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 3.057,
+      "high": 3.075,
+      "low": 3.042,
+      "open": 3.049,
+      "trades": 30,
+      "ts": 1791123300,
+      "volume": 2586.82978679,
+      "vwap": 3.064
+    },
+    {
+      "close": 3.057,
+      "high": 3.066,
+      "low": 3.057,
+      "open": 3.058,
+      "trades": 15,
+      "ts": 1791124200,
+      "volume": 1108.02147759,
+      "vwap": 3.06
+    },
+    {
+      "close": 3.054,
+      "high": 3.063,
+      "low": 3.05,
+      "open": 3.063,
+      "trades": 10,
+      "ts": 1791125100,
+      "volume": 635.13442356,
+      "vwap": 3.056
+    },
+    {
+      "close": 3.02,
+      "high": 3.042,
+      "low": 3.012,
+      "open": 3.042,
+      "trades": 34,
+      "ts": 1791126000,
+      "volume": 9726.53808776,
+      "vwap": 3.015
+    },
+    {
+      "close": 3.009,
+      "high": 3.019,
+      "low": 3.009,
+      "open": 3.019,
+      "trades": 11,
+      "ts": 1791126900,
+      "volume": 883.92042462,
+      "vwap": 3.014
+    }
+  ],
+  "pair": "ICP/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261004-143346-ICP-EUR-r37209636643.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-04T15:24:46.418608Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "9f3b4abaee8065adbe1973a618e7a2046e6b1d08",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-04T15:24:46.418608Z",
+    "revalidation_started_at_utc": "2026-10-04T15:24:40.449602Z",
+    "ttl_due_at_utc": "2026-10-04T15:04:30.677537Z",
+    "ttl_lag_seconds": 1209.772
+  }
+}
