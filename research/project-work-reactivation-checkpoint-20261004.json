@@ -1,5 +1,5 @@
 {
-  "schema_version": 4,
+  "schema_version": 5,
   "kind": "PROJECT_WORK_REACTIVATION_CHECKPOINT_V1",
   "checkpoint_id": "WORK-REACTIVATION-20261004",
   "earliest_review_date_local": "2026-10-04",
@@ -144,7 +144,26 @@
     ],
     "cheap_gate_behavior": "persisted/read-only state only; no web, market scan, Slack search, local desktop/Codex use, broad GitHub history, writes, or notification when gate is closed",
     "dedup_state": "research/work-analysis-state.json",
-    "operating_mode": "single daily gate-only check for fasttrack responsiveness; deep analysis only after gate opens"
+    "operating_mode": "single daily gate-only check for fasttrack responsiveness; deep analysis only after gate opens",
+    "post_analysis_processing": {
+      "mandatory": true,
+      "principle": "A substantive Work analysis is incomplete until evidence-backed learnings are deduplicated and all already-authorized downstream consequences are processed automatically.",
+      "required_steps": [
+        "extract and classify evidence-backed learnings versus unresolved confounders/outliers",
+        "deduplicate against existing V2R4/V3 hypotheses, guards, backlog items and research contracts",
+        "route material findings to versioned hypothesis/evidence artifacts, V2R4/V3/migration ledger and backlog/master only where materially changed",
+        "execute safe reversible/documentable follow-through immediately within existing autonomy boundaries",
+        "persist consequence-processing acknowledgements so the same finding is not reprocessed",
+        "leave strategy/runtime/release changes as documented recommendations or inactive test preparation unless an existing release/user gate explicitly authorizes them"
+      ],
+      "forbidden_automatic_changes": [
+        "active/frozen V2R3 strategy or runtime mechanics",
+        "thresholds, entries, stops, sizing or scanner rules",
+        "V2R4 activation or V3 promotion",
+        "real-money, account, order, leverage, withdrawal, secret/credential or destructive actions"
+      ],
+      "notification_rule": "Routine successful consequence-processing stays silent; notify only for material strategic conclusions, closed meaningful gates, required user/release decisions, manual MINI-PC actions, failed approvals or non-self-healable blockers."
+    }
   },
   "local_codex": {
     "project_root": "C:\\Users\\ADMIN\\Trading\\Repos\\kraken-eur-scanner",
