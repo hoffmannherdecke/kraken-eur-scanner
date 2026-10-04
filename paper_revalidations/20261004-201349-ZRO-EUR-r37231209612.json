@@ -1,0 +1,213 @@
+{
+  "altname": "ZROEUR",
+  "candidate_id": "20261004-201349-ZRO-EUR-r37231209612",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.796 EUR with materially stronger closed volume",
+      "Hold or successful retest above 1.796 EUR while preserving higher lows"
+    ],
+    "reason_codes": [
+      "failed_breakout_confirmation",
+      "weak_closed_volume",
+      "extended_run",
+      "insufficient_cost_adjusted_upside"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Spot has retreated below the prior 1.796 EUR resistance and no longer shows a confirmed breakout; the extended run and trading costs leave insufficient evidence for a scout entry.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ZROUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 50.18,
+        "available": true,
+        "current_funding_rate": -8.7429128652e-05,
+        "current_open_interest": 227205.0,
+        "funding_rate_delta": -4.4161188552e-05,
+        "open_interest_pct": 0.8026,
+        "previous_funding_rate": -4.32679401e-05,
+        "previous_observed_at_utc": "2026-10-04T20:14:38.054596Z",
+        "previous_open_interest": 225396.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -8.7429128652e-05,
+        "index_price": 1.98306,
+        "last": 1.9833,
+        "mark_price": 1.9828540433,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 227205.0,
+        "requested_symbols": [
+          "PF_ZROUSD",
+          "PI_ZROUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ZROUSD",
+        "volume24h": 501358
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.762,
+      "bid": 1.759,
+      "last": 1.762,
+      "spread_pct": 0.1704061346208528
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "2.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.4455877200608027,
+          "ret3h_pct": 0.556313012107279
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.13160086623356104,
+          "ret3h_pct": 0.10408600001665658
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.1672551570339964,
+          "ret3h_pct": -0.17594221687192713
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-04T21:04:47.273660Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0db517bd721bfafb006ac2bf71203887d1b7cc96f5e77fe593"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.762,
+    "bid": 1.759,
+    "last": 1.762,
+    "spread_pct": 0.1704061346208528
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.776,
+      "high": 1.778,
+      "low": 1.765,
+      "open": 1.774,
+      "trades": 26,
+      "ts": 1791144000,
+      "volume": 4693.25952,
+      "vwap": 1.771
+    },
+    {
+      "close": 1.779,
+      "high": 1.783,
+      "low": 1.778,
+      "open": 1.778,
+      "trades": 6,
+      "ts": 1791144900,
+      "volume": 784.49324,
+      "vwap": 1.779
+    },
+    {
+      "close": 1.769,
+      "high": 1.769,
+      "low": 1.765,
+      "open": 1.767,
+      "trades": 7,
+      "ts": 1791145800,
+      "volume": 635.22438,
+      "vwap": 1.767
+    },
+    {
+      "close": 1.757,
+      "high": 1.764,
+      "low": 1.757,
+      "open": 1.764,
+      "trades": 41,
+      "ts": 1791146700,
+      "volume": 5688.35388,
+      "vwap": 1.761
+    },
+    {
+      "close": 1.762,
+      "high": 1.762,
+      "low": 1.758,
+      "open": 1.758,
+      "trades": 4,
+      "ts": 1791147600,
+      "volume": 977.44346,
+      "vwap": 1.758
+    }
+  ],
+  "pair": "ZRO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261004-201349-ZRO-EUR-r37231209612.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-04T21:04:52.934777Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "18384434836ef814e6da15a6d8d5333bb68ba2b1",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-04T21:04:52.934777Z",
+    "revalidation_started_at_utc": "2026-10-04T21:04:46.825046Z",
+    "ttl_due_at_utc": "2026-10-04T20:59:38.054596Z",
+    "ttl_lag_seconds": 308.77
+  }
+}
