@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-04T15:49:53.360447Z",
     "evaluation_ask_eur": 1.1158,
     "flagged_as_already_run": true,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -1.35,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -1.627,
+        "mfe_pct": 0.492,
+        "peak_at_utc": "2026-10-04T15:51:00Z",
+        "trough_at_utc": "2026-10-04T16:03:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-04T13:11:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -40,7 +52,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-04T15:50:48.478465Z"
+    "updated_at_utc": "2026-10-04T16:14:56.010955Z"
   },
   "original_decision": "WAIT",
   "pair": "SUI/EUR",
