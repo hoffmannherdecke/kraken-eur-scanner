@@ -1,0 +1,126 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": 1.8,
+    "missing_triggers": [
+      "A 15-minute close above 12.55593 with volume sustained above its recent baseline",
+      "Price holds above 12.55593 on a subsequent retest"
+    ],
+    "reason_codes": [
+      "LIQUIDITY_OK",
+      "SPREAD_TIGHT",
+      "MAJORS_MILDLY_POSITIVE",
+      "RESISTANCE_UNCONFIRMED",
+      "COST_EDGE_INSUFFICIENT",
+      "DERIVATIVES_CONTEXT_STALE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Tradable with supportive short-term breadth, but LINK is testing resistance and the likely remaining move does not yet justify Kraken taker costs.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T09:59:17.703959Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T09:58:54Z",
+  "candidate_id": "20261004-095854-LINK-EUR-r37193798810",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0119acdc973b1cac006ac2c700273887d0b52ec78ce00269fe"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 12.55334,
+      "bid": 12.55256,
+      "last": 12.56751,
+      "spread_pct": 0.0062136788563697705
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-095854-LINK-EUR-r37193798810",
+    "event_time_utc": "2026-10-04T09:58:54Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 73,
+      "leader_median_return_1h_pct": 0.15529541218148868,
+      "leader_minus_target_return_1h_pct": -0.46101150193664786,
+      "peer_median_return_1h_pct": 0.08810572687223406,
+      "target_minus_peer_median_return_1h_pct": 0.5282011872459025,
+      "target_return_1h_pct": 0.6163069141181365
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "LINK/EUR",
+    "queue_id": "37193798810:LINK-EUR:1791107934",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37193798810,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "LINK/EUR",
+  "queue_id": "37193798810:LINK-EUR:1791107934",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 12.55593 resistance with continued volume",
+      "Follow-through that supports plausible remaining movement materially above 1.2% round-trip fees"
+    ],
+    "reason_codes": [
+      "LIQUID_SPREAD_TIGHT",
+      "MODEST_CONTINUITY",
+      "BREAKOUT_UNCONFIRMED",
+      "COSTS_HIGH_VS_RECENT_MOVE",
+      "DERIVATIVES_CONTEXT_MIXED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid pair with supportive but modest continuity; wait for a confirmed breakout and enough runway to clear round-trip costs.",
+    "ttl_minutes": 30
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}

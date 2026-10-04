@@ -1,0 +1,129 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 4.3055 EUR with follow-through volume",
+      "Hold above 4.3055 EUR on a retest within 30 minutes"
+    ],
+    "reason_codes": [
+      "spread_and_liquidity_acceptable",
+      "live_volume_surge",
+      "closed_momentum_not_confirmed",
+      "near_3h_resistance",
+      "round_trip_cost_hurdle",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "High-volume live impulse is unconfirmed and pressing 3h resistance; wait for a clean break before reassessing.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T09:59:27.766426Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T09:58:54Z",
+  "candidate_id": "20261004-095854-NEAR-EUR-r37193798810",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_043dbfa08da8268b006ac2c7098ddc87d0a1df1d2940dba262"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 4.2974,
+      "bid": 4.2922,
+      "last": 4.293,
+      "spread_pct": 0.12107665083355283
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-095854-NEAR-EUR-r37193798810",
+    "event_time_utc": "2026-10-04T09:58:54Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 73,
+      "leader_median_return_1h_pct": 0.15529541218148868,
+      "leader_minus_target_return_1h_pct": -0.5824345410642806,
+      "peer_median_return_1h_pct": 0.08810572687223406,
+      "target_minus_peer_median_return_1h_pct": 0.6496242263735352,
+      "target_return_1h_pct": 0.7377299532457693
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "NEAR/EUR",
+    "queue_id": "37193798810:NEAR-EUR:1791107934",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37193798810,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "NEAR/EUR",
+  "queue_id": "37193798810:NEAR-EUR:1791107934",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 4.3055 with sustained volume",
+      "Retest and hold above 4.2746 with a higher low"
+    ],
+    "reason_codes": [
+      "GOOD_SPOT_LIQUIDITY",
+      "TIGHT_SPREAD",
+      "POSITIVE_MARKET_BREADTH",
+      "LIVE_VOLUME_SURGE",
+      "NO_3H_BREAKOUT",
+      "CLOSED_15M_NEGATIVE",
+      "NEAR_3H_RESISTANCE",
+      "COSTS_MATERIAL"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid, broad-market-supported ignition watch, but NEAR is pressing 3h resistance without a breakout or closed-bar continuity; wait for confirmation.",
+    "ttl_minutes": 30
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}
