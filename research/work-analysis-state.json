@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "kind": "WORK_ANALYSIS_STATE_V1",
   "task_title": "Krypto Paper – gezielte Analyse",
   "automation_id": "6ab431f212488191b072c400bc3cdb86",
@@ -520,5 +520,36 @@
       "report": "research/work-analysis/2026-10-04-v2r3-mature-24h-batch-001.md",
       "final_review_allowed": false
     }
-  ]
+  ],
+  "post_analysis_policy": {
+    "mandatory": true,
+    "canonical_rule": "docs/test-strategy-runbook.md#12-mandatory-analysis-to-action-loop--adopted-2026-10-04",
+    "requirement": "After every substantive analysis, automatically process evidence-backed consequences within existing autonomy boundaries instead of waiting for a follow-up chat.",
+    "deduplication": "Link/strengthen existing V2R4/V3/backlog/hypothesis mechanisms when they already cover the finding; do not create duplicate machinery.",
+    "safe_auto_actions": [
+      "versioned hypothesis/evidence/disposition updates",
+      "V2R4/V3/migration-ledger routing",
+      "backlog/master updates only for material status/open-point changes",
+      "read-only follow-up checks and inactive bounded test/research preparation already inside approved scope",
+      "analysis/consequence acknowledgement updates"
+    ],
+    "gated_actions": [
+      "strategy/threshold/entry/stop/sizing/scanner changes",
+      "frozen-series mutation",
+      "V2R4 activation",
+      "V3 promotion",
+      "real-money/account/order/leverage/withdrawal/secrets/destructive actions"
+    ]
+  },
+  "last_consequence_processing": {
+    "source_analysis": "research/work-analysis/2026-10-04-v2r3-mature-24h-batch-001.md",
+    "processed_at_utc": "2026-10-04T08:28:00Z",
+    "status": "PROCESSED",
+    "downstream_artifacts": [
+      "research/v2r3/strategy-adjustment-hypotheses-v2-20261004.md",
+      "research/v2r3/strategy-adjustment-hypotheses-v2-20261004.json",
+      "PROJECT_BACKLOG.md"
+    ],
+    "note": "The first mature-24h Work analysis was retrospectively processed into the mandatory analysis-to-action loop: low trade conversion, realistic-path requirement for REJECT MFE, anti-chase retention and bounded watch/pullback-rebuild routing were canonically preserved without changing frozen V2R3 or activating V2R4."
+  }
 }
