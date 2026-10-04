@@ -1,0 +1,52 @@
+{
+  "kind": "V2R3_STRATEGY_ADJUSTMENT_HYPOTHESIS_CARD_V2_INTERIM",
+  "card_id": "V2R3-ADJ-HYP-20261004-V2",
+  "status": "HYPOTHESIS_ONLY_NOT_ACTIVE",
+  "source_series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "source_strategy_revision": "V2R3-2026-09-28",
+  "source_work_analysis": "research/work-analysis/2026-10-04-v2r3-mature-24h-batch-001.md",
+  "lessons": [
+    {
+      "id": "LOW_TRADE_FREQUENCY",
+      "disposition": "ROUTE_TO_SUCCESSOR_COMPARISON",
+      "meaning": "Strategy/routing issue dominates; do not loosen thresholds just to increase count.",
+      "routing": [
+        "V2R4",
+        "V3_H7"
+      ]
+    },
+    {
+      "id": "REJECT_LATER_MFE",
+      "disposition": "REALISTIC_PATH_RECONSTRUCTION_REQUIRED",
+      "meaning": "MFE alone is not tradable edge; require ordered path and full costs.",
+      "routing": [
+        "V2R3_FINAL_AUDIT",
+        "V3_H4",
+        "V3_H7"
+      ]
+    },
+    {
+      "id": "ANTI_CHASE",
+      "disposition": "RETAIN_GUARDRAIL",
+      "meaning": "already_run later upside does not justify immediate chase.",
+      "routing": [
+        "V3_PULLBACK_REBUILD"
+      ]
+    },
+    {
+      "id": "BOUNDED_REBUILD_SECOND_LEG",
+      "disposition": "PRIORITIZE_PROSPECTIVE_TEST",
+      "meaning": "Use bounded watch and fresh full paper recheck; no direct-buy trigger.",
+      "routing": [
+        "V2R4_EXISTING_WAIT_RUNTIME",
+        "V3_STRUCTURAL_RESEARCH"
+      ]
+    }
+  ],
+  "governance": {
+    "active_v2r3_change_allowed": false,
+    "automatic_v2r4_activation_allowed": false,
+    "automatic_strategy_promotion_allowed": false,
+    "real_money_actions_allowed": false
+  }
+}
