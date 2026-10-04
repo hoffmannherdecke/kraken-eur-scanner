@@ -1,0 +1,177 @@
+{
+  "altname": "XRPEUR",
+  "candidate_age_seconds": 36,
+  "candidate_event_time_utc": "2026-10-04T22:10:15Z",
+  "candidate_id": "20261004-221015-XRP-EUR-r37238892806",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close holding above 1.34433 with stronger closed volume",
+      "A subsequent higher low above 1.34433"
+    ],
+    "reason_codes": [
+      "liquid_pair_tight_spread",
+      "price_above_1h_3h_resistance",
+      "low_adx",
+      "no_higher_lows",
+      "closed_volume_weak",
+      "live_volume_not_confirmed_closed",
+      "major_market_mixed",
+      "remaining_move_not_established_after_costs",
+      "derivatives_context_inconclusive"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "XRP/EUR is above the 3h resistance, but the breakout lacks closed-volume and trend confirmation; wait for acceptance before reassessing.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "XRPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 115.71,
+        "available": true,
+        "current_funding_rate": 3.512348510825e-05,
+        "current_open_interest": 10189367.0,
+        "funding_rate_delta": 2.0246860378666e-05,
+        "open_interest_pct": 0.1132,
+        "previous_funding_rate": 1.4876624729584e-05,
+        "previous_observed_at_utc": "2026-10-04T20:15:09.719820Z",
+        "previous_open_interest": 10177850.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.512348510825e-05,
+        "index_price": 1.51651,
+        "last": 1.5161,
+        "mark_price": 1.51671441171,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 10189367.0,
+        "requested_symbols": [
+          "PF_XRPUSD",
+          "PI_XRPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_XRPUSD",
+        "volume24h": 6479627
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.34775,
+      "bid": 1.34745,
+      "last": 1.34763,
+      "spread_pct": 0.02226179875333682
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "1.65",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.04353498862450511,
+          "ret3h_pct": 0.5790032232761311
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1572143938511794,
+          "ret3h_pct": -0.01291187851171216
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.16697588126158847,
+          "ret3h_pct": -0.32416411966286196
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-04T22:10:51.263059Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-04T22:10:59.829766Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_080bcb273eef3d8c006ac2ceec420087d18e85217e1eca73d2"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.34775,
+    "bid": 1.34745,
+    "last": 1.34763,
+    "spread_pct": 0.02226179875333682
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "XRP/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37238892806:XRP-EUR:1791151815",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "235f55a8167357d7ffd63f729d90fe668bc48428",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-04T22:10:15Z",
+    "candidate_detected_ts": 1791151815,
+    "candidate_snapshot_at_utc": "2026-10-04T22:10:15Z",
+    "detected_to_evaluation_complete_seconds": 44.83,
+    "detected_to_evaluation_start_seconds": 36.126,
+    "evaluation_completed_at_utc": "2026-10-04T22:10:59.829766Z",
+    "evaluation_runtime_seconds": 8.703,
+    "evaluation_started_at_utc": "2026-10-04T22:10:51.126308Z",
+    "handoff_to_evaluation_start_seconds": 33.447,
+    "handoff_written_at_utc": "2026-10-04T22:10:17.679534Z",
+    "scan_step_started_at_utc": "2026-10-04T22:09:02Z"
+  }
+}
