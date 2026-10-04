@@ -403,3 +403,39 @@ replace inherited logic, but only with explicit evidence and a recorded reason.
 This permanent lineage rule does not authorize silent activation. Strategy mechanics still pass
 through the gated-change decision packet, versioning, validation, rollback preparation and the
 normal release gate.
+
+### 12.4 Permanent live-learning loop — real-money strategies are not the endpoint
+
+The automatic improvement process applies **without exception to the later real-money phase**.
+Live trading creates additional high-value evidence and must feed the same strategy-lineage loop.
+
+For every active real-money strategy/version, continuously retain and analyze at least:
+
+- realized and unrealized outcome path after actual fees, spread and slippage;
+- fill quality, partial fills, rejects, cancels, maker/taker behavior and execution latency;
+- entry quality, stage-2 behavior, stop/exit/trailing behavior and re-entry outcomes;
+- missed opportunities, false positives, false negatives and user/manual overrides;
+- market regime, liquidity, volatility and event context known at decision time;
+- scanner→decision→order→fill timing and stale-data/recovery incidents;
+- infrastructure/execution failures separately from strategy failures;
+- concentration, sizing, drawdown and portfolio interaction where applicable.
+
+Every material live finding must enter the normal analysis-to-action and lineage process:
+`live evidence → analysis → verified learning → consequence → successor disposition →
+inactive candidate/test → validation → gated release`.
+
+A live finding may strengthen, modify, replace, defer or reject a strategy component, but it
+must not disappear merely because the strategy is already trading real money.
+
+**No self-modifying live strategy:** live evidence must never silently retune thresholds, entries,
+stops, sizing, scanner logic or model parameters inside the currently active real-money version.
+Material strategy changes are built in an inactive successor/candidate, validated under the
+appropriate shadow/paper/OOS gate, receive a decision packet when approval is required, and
+only then may pass the separate live-release gate.
+
+Protective runtime safety actions already covered by execution safeguards (for example stale-data
+rejection, duplicate-order prevention, kill switch or circuit breaker) remain allowed according
+to their safety contracts; they are not strategy learning/tuning.
+
+The live phase therefore extends rather than ends the improvement loop. Each real-money version
+must leave a complete evidence and migration trail for its successor.
