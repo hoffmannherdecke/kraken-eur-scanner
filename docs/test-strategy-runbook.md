@@ -276,3 +276,47 @@ Current calendar intent, subject to evidence maturity rather than date alone:
 This section complements, and does not override, the smoke-before-duration, no-repeat,
 freeze, holdout, and explicit release rules above.
 
+## 12. Mandatory analysis-to-action loop — adopted 2026-10-04
+
+Every **substantive** targeted interim or final analysis is incomplete until its
+decision-relevant consequences have been processed. The report itself is not the end
+product.
+
+After an analysis gate opens and real analysis is performed, execute this sequence
+automatically within the existing autonomy/safety boundaries:
+
+1. **Extract learnings.** Separate evidence-backed findings from speculation, outliers and
+   unresolved confounders. Explicitly distinguish strategy/filter issues, timing/runtime
+   issues, data/provenance issues, cost/execution issues and genuine no-change findings.
+2. **Deduplicate against current design.** Check whether each learning is already covered
+   by V2R4/V3, an existing hypothesis, research contract, backlog item or guardrail. If so,
+   strengthen/link the existing item rather than creating duplicate machinery.
+3. **Convert to consequences.** For each material learning choose the smallest appropriate
+   downstream action:
+   - update/create a versioned hypothesis/evidence/disposition artifact;
+   - route the point to V2R4, V3 or the migration ledger;
+   - update backlog/master status when materially changed;
+   - prepare a bounded preregistered test/research contract or read-only analysis step when
+     this is already within the approved project scope;
+   - record explicitly that no action is warranted when evidence does not justify one.
+4. **Execute safe follow-through immediately.** Documentation, deduplication, read-only
+   checks, report linking, Ack-state updates, inactive research/test preparation and other
+   reversible/documentable actions are performed without waiting for a separate user
+   prompt when they are clearly inside the already approved scope.
+5. **Preserve release boundaries.** Never turn an analysis result directly into a silent
+   strategy/runtime/release change. No automatic threshold, entry, stop, sizing, scanner,
+   frozen-series, V2R4 activation, V3 promotion or real-money/account/order change.
+   Those remain subject to the existing version/freeze/release/user gates.
+6. **Persist processing state.** Record which analysis/report was processed, what
+   downstream artifacts/items were updated, and whether anything remains
+   decision-gated. This prevents the same learning from consuming Work again.
+7. **Notify only when useful.** Routine successful consequence-processing stays silent.
+   Notify the user only for a material strategic conclusion, a meaningful closed gate,
+   a required user/release decision, a manual MINI-PC action or a non-self-healable blocker.
+
+A substantive analysis that merely writes a report but leaves obvious approved
+consequence-processing for a later chat is therefore considered **incomplete**.
+
+This rule applies equally to V2R3 intermediate/final reviews and later V2R4/V3
+Work-level synthesis. It complements the fast-track rules and never weakens freeze,
+holdout, no-midrun-tuning, cost, safety or release controls.
