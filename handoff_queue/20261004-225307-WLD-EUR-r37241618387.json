@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "WLDEUR",
+  "candidate_id": "20261004-225307-WLD-EUR-r37241618387",
+  "event_time_utc": "2026-10-04T22:53:07Z",
+  "event_ts": 1791154387,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "WLD/EUR",
+  "queue_id": "37241618387:WLD-EUR:1791154387",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=WLD/EUR | score=8.90 | price_eur=0.517 | ret15_live=0.04% | ret1h=0.74% | ret3h=0.49% | ret24h=-3.07% | vol_live=4.42x | vol_closed=1.36x | rank=5 | rank_jump=11 | state_rank_jump=5 | breakout3h=0 | higher_lows=1 | base_tight=1.84% | fresh_move3h=1.37% | adx14=31.9 | spread=0.232% | turnover24h_eur=304665 | coverage=100% | ret7d=7.98% | ret30d=58.54% | dist7d_high=-6.10% | dist30d_high=-6.10% | depth_1pct_eur=44765 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 31.93826220201017,
+    "altname": "WLDEUR",
+    "base_tight_pct": 1.8431372549019498,
+    "breakout3h": false,
+    "context30d": 58.54,
+    "context7d": 7.98,
+    "depth_eur_1pct": 44764.77,
+    "dist30d_high_pct": -6.1,
+    "dist7d_high_pct": -6.1,
+    "ema26_gt_50": false,
+    "fresh_move_3h": 1.3725490196078383,
+    "higher_lows": true,
+    "late": false,
+    "pair": "WLD/EUR",
+    "price": 0.517,
+    "rank15": 5,
+    "rank15_prev": 16,
+    "rank_jump": 11,
+    "ret15_closed": 0.19364833462431896,
+    "ret15_live": 0.038699690402466125,
+    "ret1h": 0.740452065471553,
+    "ret24h": -3.074615673040859,
+    "ret3h": 0.4859086491739717,
+    "score": 8.9,
+    "spread_pct": 0.2316155182397394,
+    "stale": false,
+    "state_rank_jump": 5,
+    "turnover24h": 304665.1911338278,
+    "volume_ratio_closed": 1.3563356545454546,
+    "volume_ratio_live": 4.422638672371204
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-10-04T22:53:07Z",
+    "positive_1h_count": 31,
+    "positive_3h_count": 24,
+    "schema_version": 1,
+    "score_ge_5_count": 13,
+    "top_1h": [
+      {
+        "pair": "ADA/EUR",
+        "ret15_live": -1.606,
+        "ret1h": 3.599,
+        "ret3h": 3.081,
+        "score": 8.5,
+        "vol_live": 1.632
+      },
+      {
+        "pair": "SAND/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.196,
+        "ret3h": 1.652,
+        "score": 4.8,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "XLM/EUR",
+        "ret15_live": -0.251,
+        "ret1h": 1.034,
+        "ret3h": 1.626,
+        "score": 2.9,
+        "vol_live": 0.447
+      },
+      {
+        "pair": "FET/EUR",
+        "ret15_live": 0.668,
+        "ret1h": 1.028,
+        "ret3h": -1.137,
+        "score": 8.4,
+        "vol_live": 0.897
+      },
+      {
+        "pair": "ALGO/EUR",
+        "ret15_live": -0.178,
+        "ret1h": 0.944,
+        "ret3h": -0.407,
+        "score": 4.8,
+        "vol_live": 0.91
+      },
+      {
+        "pair": "BCH/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.893,
+        "ret3h": 0.861,
+        "score": 8.4,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "ETH/EUR",
+        "ret15_live": -0.026,
+        "ret1h": 0.775,
+        "ret3h": 0.85,
+        "score": 9.4,
+        "vol_live": 0.438
+      },
+      {
+        "pair": "WLD/EUR",
+        "ret15_live": 0.039,
+        "ret1h": 0.74,
+        "ret3h": 0.486,
+        "score": 8.9,
+        "vol_live": 4.423
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "ETH/EUR",
+        "ret15_live": -0.026,
+        "ret1h": 0.775,
+        "ret3h": 0.85,
+        "score": 9.4,
+        "vol_live": 0.438
+      },
+      {
+        "pair": "WLD/EUR",
+        "ret15_live": 0.039,
+        "ret1h": 0.74,
+        "ret3h": 0.486,
+        "score": 8.9,
+        "vol_live": 4.423
+      },
+      {
+        "pair": "ADA/EUR",
+        "ret15_live": -1.606,
+        "ret1h": 3.599,
+        "ret3h": 3.081,
+        "score": 8.5,
+        "vol_live": 1.632
+      },
+      {
+        "pair": "FET/EUR",
+        "ret15_live": 0.668,
+        "ret1h": 1.028,
+        "ret3h": -1.137,
+        "score": 8.4,
+        "vol_live": 0.897
+      },
+      {
+        "pair": "BCH/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.893,
+        "ret3h": 0.861,
+        "score": 8.4,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "BAT/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.329,
+        "ret3h": -1.231,
+        "score": 6.9,
+        "vol_live": 0.0
+      },
+      {
+        "pair": "XDC/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.594,
+        "ret3h": 0.348,
+        "score": 6.8,
+        "vol_live": 0.482
+      },
+      {
+        "pair": "HBAR/EUR",
+        "ret15_live": -0.043,
+        "ret1h": 0.479,
+        "ret3h": 0.033,
+        "score": 6.5,
+        "vol_live": 4.266
+      }
+    ],
+    "total_rows": 41
+  },
+  "scanner_market_context": {
+    "altname": "WLDEUR",
+    "atr15_eur": 0.002485714285714274,
+    "atr15_pct": 0.48042409851454854,
+    "closed_through_epoch": 1791153000,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.5174,
+      "high": 0.5192,
+      "low": 0.5164,
+      "open": 0.5164,
+      "volume": 3729.92305
+    },
+    "pair": "WLD/EUR",
+    "range_1h_pct": 1.8167761886354783,
+    "recent_closed_closes": [
+      0.5145,
+      0.5144,
+      0.51,
+      0.5137,
+      0.5156,
+      0.5174
+    ],
+    "resistance_1h": 0.5194,
+    "resistance_3h": 0.5194,
+    "schema_version": 1,
+    "sensor_price_eur": 0.517,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.51,
+    "support_3h": 0.51,
+    "ts": 1791154387
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 37241618387,
+  "source_scanner_sha": "e5b479338319ebed83171d2ddda3d6164929494a",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-04T22:53:07Z",
+    "candidate_detected_ts": 1791154387,
+    "candidate_snapshot_at_utc": "2026-10-04T22:53:07Z",
+    "handoff_written_at_utc": "2026-10-04T22:53:09.583964Z",
+    "scan_step_started_at_utc": "2026-10-04T22:51:55Z"
+  }
+}
