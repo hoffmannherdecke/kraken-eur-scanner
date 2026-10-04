@@ -1610,3 +1610,40 @@ Repository-side watchdog fixes are already CI-green, but the MINI-PC local repos
 No Windows reboot, Internet cut, model call, exchange account, order, strategy change or real-money action is required.
 
 **Resume after local gate:** verify central status returns to fresh shadow heartbeat and `HEALTHY / OK`; then continue autonomous V2R3/V2R4 evidence work.
+
+### GitHub-Scheduler-Entkopplung vorbereitet 2026-10-04
+
+Auslöser:
+- der nominale 10-Minuten-Cron von `scan.yml` sowie der Process-Health-Cron zeigten am 2026-10-04 mehrfach reale Lücken von deutlich über einer Stunde;
+- die Workflows selbst liefen bei manuellem/`workflow_dispatch`-Start erfolgreich; der Fehler ist deshalb als Scheduler-/Trigger-Liveness-Problem getrennt von Strategie und Scanner-Code zu behandeln;
+- der Cloud-Process-Health-Self-Heal hat die Kette wieder hergestellt, hängt als zeitbasierte Zweitschicht aber selbst am GitHub-Scheduler.
+
+Vorbereitete Entkopplung:
+- `tools/minipc-github-cadence-guard.py` prüft lokal alle 5 Minuten ausschließlich die GitHub-Actions-Liveness von `scan.yml`;
+- der normale 10-Minuten-Scanner-Cron bleibt unverändert und primär;
+- nur wenn kein Scanner-Run aktiv ist und der letzte Run >20 Minuten alt ist oder ein fehlgeschlagener Run seine 5-Minuten-Grace überschritten hat, darf genau ein bestehendes `scan.yml` per `workflow_dispatch` gestartet werden;
+- Dispatch-Backoff = mindestens 15 Minuten; kein Loop/kein enger Retry;
+- der Guard bewertet/ändert keine Coins, Scores, Entries, Stops, Sizing oder Strategie und ruft weder Kraken-Account-/Order-API noch einen Evaluator direkt auf;
+- Heartbeat: `Trading\State\github-cadence-guard.json`; der bestehende lokale Watchdog überwacht ihn, sobald die Task installiert ist;
+- Taskname nach Aktivierung: `CryptoMiniPC-GitHubCadenceGuard`, alle 5 Minuten + Startup;
+- Rollback: `tools/uninstall-minipc-github-cadence-guard.ps1`.
+
+Least-Privilege/Auth:
+- lokales Secret bleibt außerhalb des Repositories unter `Trading\Secrets\github-actions-dispatch-token.txt`;
+- vorgesehen ist ein Fine-grained GitHub PAT ausschließlich für `hoffmannherdecke/kraken-eur-scanner` mit Repository-Permission **Actions: Read and write**;
+- `tools/minipc-github-dispatch-secret-prep.ps1` speichert den Token mit eingeschränkter ACL und druckt ihn nie aus;
+- `.github/workflows/minipc-dispatch-auth-smoke.yml` ist ein absichtlich wirkungsloser `workflow_dispatch`-Test. Der Installer prüft damit Actions-Schreibrecht, ohne einen zusätzlichen Scanner-/Evaluator-Fall in die eingefrorene V2R3-Serie einzubringen.
+
+Verifikation vor physischer Aktivierung:
+- `MINI-PC tools smoke` Run #127 / ID `37183283638`: **SUCCESS**;
+- Guard-Selftest: **PASS** für fresh / active / stale / failed / dispatch-backoff;
+- neue PowerShell-Installer/Secret-/Rollback-Skripte: Parse **PASS**;
+- geänderter lokaler Watchdog: Smoke **PASS**.
+
+Offenes Nutzer-Gate:
+1. Fine-grained PAT im GitHub-Account anlegen (nur dieses Repository; Actions Read/write).
+2. Token auf dem MINI-PC lokal/verdeckt speichern.
+3. Guard mit dem vorbereiteten Installer aktivieren; dabei wird einmal der No-op-Auth-Workflow dispatcht und anschließend ein frischer Heartbeat geprüft.
+
+Den Token niemals in ChatGPT, Slack, GitHub-Dateien oder Logs einfügen.
+\n
