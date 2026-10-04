@@ -721,3 +721,15 @@ The target V3 is therefore one coherent strategy assembled from:
 - explicit cost / risk / reliability constraints.
 
 Research remains the input pipeline. **Integration into the successor strategy is the goal.**
+
+## 13. Future live-feedback contract
+
+V3 and all later generations must be designed so that eventual real-money execution produces
+versioned learning evidence for the next successor rather than becoming a terminal production
+state. Live fills, costs, slippage, stop/exit behavior, missed opportunities, regime context,
+manual overrides and execution incidents must be joinable back to the originating strategy
+version and decision provenance.
+
+Live evidence may generate new hypotheses or successor changes, but it may not retune the
+currently active strategy in place. Any material change follows the same frozen-candidate,
+validation, migration-ledger, rollback and explicit live-release process as other strategy changes.
