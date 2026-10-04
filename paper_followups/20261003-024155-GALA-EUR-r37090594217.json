@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.002384,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -6.247,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -6.792,
+        "mfe_pct": 2.851,
+        "peak_at_utc": "2026-10-03T03:20:00Z",
+        "trough_at_utc": "2026-10-04T00:10:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 2.448,
       "price_eur": 0.002328
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "recently_extended",
@@ -118,7 +134,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-03T17:38:52.931557Z"
+    "updated_at_utc": "2026-10-04T02:50:56.719124Z"
   },
   "original_decision": "WAIT",
   "pair": "GALA/EUR",
