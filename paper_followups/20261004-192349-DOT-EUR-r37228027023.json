@@ -1,0 +1,50 @@
+{
+  "baseline_ask_eur": 1.0967,
+  "candidate_id": "20261004-192349-DOT-EUR-r37228027023",
+  "evaluated_at_utc": "2026-10-04T19:24:25.282104Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-04T19:23:49Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 36.282,
+    "detection_price_eur": 1.0912,
+    "evaluated_at_utc": "2026-10-04T19:24:25.282104Z",
+    "evaluation_ask_eur": 1.0967,
+    "flagged_as_already_run": true,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-04T17:25:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 3.138,
+      "price_eur": 1.058
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "EUR liquidity and spread acceptable",
+      "price about 4.8 ATR above 1h resistance",
+      "weak closed-volume confirmation",
+      "remaining move unclear after 1.20% taker fees"
+    ],
+    "scan_step_started_at_utc": "2026-10-04T19:22:37Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 3.137996219281658,
+      "ret15_live_pct": 1.9527235354573458,
+      "ret1h_pct": 2.0576131687242816,
+      "ret3h_pct": 2.6915113871635477,
+      "scanner_late_flag": false,
+      "score": 12.2
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-10-04T19:25:18.350208Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "DOT/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01"
+}
