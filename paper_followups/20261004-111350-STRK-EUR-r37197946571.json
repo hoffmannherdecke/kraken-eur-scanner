@@ -3,7 +3,16 @@
   "candidate_id": "20261004-111350-STRK-EUR-r37197946571",
   "evaluated_at_utc": "2026-10-04T11:14:26.617423Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.949,
+      "expected_bars": 30,
+      "mae_pct": 0.0,
+      "mfe_pct": 1.92
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -60,5 +69,6 @@
   "path_classification": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-04T12:04:59.705474Z"
 }
