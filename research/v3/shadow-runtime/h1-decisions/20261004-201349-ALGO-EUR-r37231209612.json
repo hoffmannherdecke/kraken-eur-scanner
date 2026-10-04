@@ -1,0 +1,129 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above \u20ac0.1190 with sustained volume.",
+      "A retest that holds above \u20ac0.1182, followed by renewed upward momentum."
+    ],
+    "reason_codes": [
+      "EUR_PAIR_VERIFIED",
+      "SPREAD_COSTS_MATERIAL",
+      "STRONG_SHORT_TERM_MOMENTUM",
+      "EXTENDED_7D_30D_RUN",
+      "ABOVE_PRIOR_RESISTANCE",
+      "NO_CLOSED_BREAKOUT_CONFIRMATION",
+      "DERIVATIVES_CROSS_MARKET_ONLY",
+      "ACCOUNT_TRADABILITY_UNAVAILABLE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong ALGO momentum and a breakout are offset by an already extended run and price above prior resistance without a confirming closed candle; wait for confirmation rather than chase.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T20:14:15.716020Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T20:13:49Z",
+  "candidate_id": "20261004-201349-ALGO-EUR-r37231209612",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0beef06c1acdaeb0006ac2e809033c87d28045dc51c6fa7f12"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 0.11895,
+      "bid": 0.1188,
+      "last": 0.11867,
+      "spread_pct": 0.12618296529968231
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-201349-ALGO-EUR-r37231209612",
+    "event_time_utc": "2026-10-04T20:13:49Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 71,
+      "leader_median_return_1h_pct": -0.0032596661772299473,
+      "leader_minus_target_return_1h_pct": -1.1625811221485816,
+      "peer_median_return_1h_pct": 0.0002710335593736346,
+      "target_minus_peer_median_return_1h_pct": 1.159050422411978,
+      "target_return_1h_pct": 1.1593214559713516
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "ALGO/EUR",
+    "queue_id": "37231209612:ALGO-EUR:1791144829",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37231209612,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "ALGO/EUR",
+  "queue_id": "37231209612:ALGO-EUR:1791144829",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m candle closes above 0.1182 and price holds that level on a retest.",
+      "Follow-through volume remains supportive while price holds above 0.1182 over the next 30\u201360 minutes."
+    ],
+    "reason_codes": [
+      "spread_wider_than_scan",
+      "intrabar_breakout_unconfirmed",
+      "negative_closed_15m",
+      "mixed_major_regime",
+      "open_interest_declining",
+      "cost_hurdle"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid and relatively strong, but the fresh ask is above resistance without a confirming closed candle; the 15m close was negative and declining open interest plus mixed major-market context weaken confirmation. Await a hold before considering entry; Kraken taker fees alone are 1.20% round trip.",
+    "ttl_minutes": 45
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}

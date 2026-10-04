@@ -1,0 +1,128 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.227 with elevated volume",
+      "Hold or successful retest above 0.227"
+    ],
+    "reason_codes": [
+      "liquid_pair",
+      "tight_spread",
+      "sharp_recent_run",
+      "near_resistance",
+      "breakout_unconfirmed",
+      "cost_hurdle",
+      "major_market_muted",
+      "derivatives_context_only"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong rising structure and scanner breadth, but FET is near 1h/3h resistance after a sharp run; a breakout is not confirmed and remaining movement is uncertain after Kraken taker fees and spread.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T19:24:31.438566Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T19:23:49Z",
+  "candidate_id": "20261004-192349-FET-EUR-r37228027023",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0ed5441f2fb9ef58006ac2e7dec55c87d2830a6a099c453563"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 0.2262,
+      "bid": 0.2259,
+      "last": 0.2262,
+      "spread_pct": 0.13271400132714994
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-192349-FET-EUR-r37228027023",
+    "event_time_utc": "2026-10-04T19:23:49Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 71,
+      "leader_median_return_1h_pct": 0.06739041047608696,
+      "leader_minus_target_return_1h_pct": -4.21043847636845,
+      "peer_median_return_1h_pct": 0.09619838244203649,
+      "target_minus_peer_median_return_1h_pct": 4.1816305044025,
+      "target_return_1h_pct": 4.277828886844537
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "FET/EUR",
+    "queue_id": "37228027023:FET-EUR:1791141829",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37228027023,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "FET/EUR",
+  "queue_id": "37228027023:FET-EUR:1791141829",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.227 followed by a hold or successful retest with volume",
+      "Evidence of at least 3% plausible remaining upside after fees and execution costs"
+    ],
+    "reason_codes": [
+      "resistance_unbroken",
+      "extended_24h_move",
+      "post_cost_edge_unproven",
+      "major_market_flat",
+      "spot_spread_and_turnover_acceptable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong momentum and adequate spot liquidity, but price is testing unbroken 0.227 resistance after a 12.8% 24h rise; remaining post-cost upside is unproven.",
+    "ttl_minutes": 30
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}

@@ -1,0 +1,129 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close holding above 1.33901, followed by continued strength rather than an immediate fade.",
+      "Follow-through above the recent high with improving XRP relative strength; reassess within 30 minutes."
+    ],
+    "reason_codes": [
+      "liquid_pair",
+      "tight_spread",
+      "modest_continuity",
+      "weak_relative_strength",
+      "breakout_unconfirmed",
+      "fees_exceed_observed_move",
+      "no_coin_specific_catalyst"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid, tight-spread pair with modest positive momentum, but XRP is lagging the supplied leaders and the apparent breakout lacks closed-candle follow-through. Current evidence does not justify a scout after Kraken taker fees.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T19:24:56.649320Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T19:23:49Z",
+  "candidate_id": "20261004-192349-XRP-EUR-r37228027023",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0fb28cf2252d40a0006ac2e7fa425487d29645d55e4220539a"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 1.33974,
+      "bid": 1.33949,
+      "last": 1.34027,
+      "spread_pct": 0.01866207828367564
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-192349-XRP-EUR-r37228027023",
+    "event_time_utc": "2026-10-04T19:23:49Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 71,
+      "leader_median_return_1h_pct": 0.06739041047608696,
+      "leader_minus_target_return_1h_pct": -0.41090989914464027,
+      "peer_median_return_1h_pct": 0.09619838244203649,
+      "target_minus_peer_median_return_1h_pct": 0.38210192717869074,
+      "target_return_1h_pct": 0.4783003096207272
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "XRP/EUR",
+    "queue_id": "37228027023:XRP-EUR:1791141829",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37228027023,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "XRP/EUR",
+  "queue_id": "37228027023:XRP-EUR:1791141829",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.34027 with continued volume",
+      "Hold 1.33901 as support on a retest"
+    ],
+    "reason_codes": [
+      "liquid_spot_pair",
+      "tight_spread",
+      "elevated_volume",
+      "weak_price_continuity",
+      "breakout_not_confirmed_on_close",
+      "cost_hurdle",
+      "derivatives_context_stale"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid with tight spread and elevated volume, but the breakout lacks closed-candle follow-through; expected upside is not established against 1.20% taker fees plus execution costs.",
+    "ttl_minutes": 30
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}
