@@ -1,0 +1,127 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close and hold above 0.2120 with follow-through volume.",
+      "Improved 1h/3h relative strength while holding above the breakout level."
+    ],
+    "reason_codes": [
+      "closed_volume_weak",
+      "breakout_unconfirmed",
+      "weak_3h_continuity",
+      "major_market_soft",
+      "cost_hurdle"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid and tight-spread, but the live volume/rank surge lacks closed-bar follow-through; ENA has weak 3h continuity and the ask is only marginally above 3h resistance. No entry or stop is justified yet.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T14:59:42.439590Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T14:58:48Z",
+  "candidate_id": "20261004-145848-ENA-EUR-r37211180558",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_02fa341fc025d860006ac2d86fc18087d18f905f8efdb3598d"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 0.2121,
+      "bid": 0.2119,
+      "last": 0.2116,
+      "spread_pct": 0.09433962264151213
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-145848-ENA-EUR-r37211180558",
+    "event_time_utc": "2026-10-04T14:58:48Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 72,
+      "leader_median_return_1h_pct": 0.04557838416917592,
+      "leader_minus_target_return_1h_pct": -0.66836735595458,
+      "peer_median_return_1h_pct": 0.12180862626383071,
+      "target_minus_peer_median_return_1h_pct": 0.5921371138599252,
+      "target_return_1h_pct": 0.7139457401237559
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "ENA/EUR",
+    "queue_id": "37211180558:ENA-EUR:1791125928",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37211180558,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "ENA/EUR",
+  "queue_id": "37211180558:ENA-EUR:1791125928",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained break and hold above 0.212 EUR resistance",
+      "Closed-period volume confirmation"
+    ],
+    "reason_codes": [
+      "spread_and_turnover_acceptable",
+      "near_3h_resistance",
+      "live_volume_unconfirmed_by_closed_volume",
+      "weak_3h_continuity",
+      "negative_major_market_tone",
+      "oi_declining",
+      "remaining_move_uncertain_after_costs"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid enough, but ENA is pressing 3h resistance with weak closed-volume confirmation; costs and mixed context do not support a scout yet.",
+    "ttl_minutes": 30
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}
