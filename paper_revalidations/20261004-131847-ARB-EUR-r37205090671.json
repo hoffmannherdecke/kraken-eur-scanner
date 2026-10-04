@@ -1,0 +1,214 @@
+{
+  "altname": "ARBEUR",
+  "candidate_id": "20261004-131847-ARB-EUR-r37205090671",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.179 EUR with materially stronger closed volume",
+      "BTC/EUR and ETH/EUR stabilize or turn positive over 30\u201360 minutes"
+    ],
+    "reason_codes": [
+      "resistance_unbroken",
+      "closed_volume_weak",
+      "price_faded",
+      "no_confirmed_remaining_move",
+      "costs_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Revalidation failed: ARB remains below 0.179 EUR resistance, recent closed volume is weak, and price has slipped from the prior resistance test. No evidence supports a scout entry or confirmation plan.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ARBUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 50.36,
+        "available": true,
+        "current_funding_rate": -2.28586589725e-06,
+        "current_open_interest": 5328528.0,
+        "funding_rate_delta": 6.361422443330001e-07,
+        "open_interest_pct": -0.0453,
+        "previous_funding_rate": -2.922008141583e-06,
+        "previous_observed_at_utc": "2026-10-04T13:19:12.063609Z",
+        "previous_open_interest": 5330945.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -2.28586589725e-06,
+        "index_price": 0.1996,
+        "last": 0.19988,
+        "mark_price": 0.19956074114,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 5328528.0,
+        "requested_symbols": [
+          "PF_ARBUSD",
+          "PI_ARBUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ARBUSD",
+        "volume24h": 2835831
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.1775,
+      "bid": 0.1773,
+      "last": 0.1772,
+      "spread_pct": 0.11273957158961555
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "25",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.1226102236843829,
+          "ret3h_pct": -0.06936349106713147
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.13896887597968366,
+          "ret3h_pct": -0.12736149437486688
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.29668088262562176,
+          "ret3h_pct": 0.2873829609715495
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-04T14:09:32.117179Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_00ff9750cfbc371e006ac25e1d8dfc87d0b8f04f5dcca63118"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.1775,
+    "bid": 0.1773,
+    "last": 0.1772,
+    "spread_pct": 0.11273957158961555
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.1783,
+      "high": 0.1783,
+      "low": 0.1783,
+      "open": 0.1783,
+      "trades": 3,
+      "ts": 1791118800,
+      "volume": 1283.79,
+      "vwap": 0.1783
+    },
+    {
+      "close": 0.1779,
+      "high": 0.1781,
+      "low": 0.1778,
+      "open": 0.1781,
+      "trades": 23,
+      "ts": 1791119700,
+      "volume": 57039.20797,
+      "vwap": 0.1779
+    },
+    {
+      "close": 0.1779,
+      "high": 0.1782,
+      "low": 0.1779,
+      "open": 0.1781,
+      "trades": 12,
+      "ts": 1791120600,
+      "volume": 16553.72491,
+      "vwap": 0.178
+    },
+    {
+      "close": 0.178,
+      "high": 0.178,
+      "low": 0.1779,
+      "open": 0.1779,
+      "trades": 3,
+      "ts": 1791121500,
+      "volume": 2770.74228,
+      "vwap": 0.1779
+    },
+    {
+      "close": 0.1772,
+      "high": 0.1772,
+      "low": 0.1772,
+      "open": 0.1772,
+      "trades": 1,
+      "ts": 1791122400,
+      "volume": 2760.14728,
+      "vwap": 0.1772
+    }
+  ],
+  "pair": "ARB/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261004-131847-ARB-EUR-r37205090671.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-04T14:09:38.285814Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "a95926670e2fedbc0a643cb5a2844be6a5ea35a7",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-04T14:09:38.285814Z",
+    "revalidation_started_at_utc": "2026-10-04T14:09:31.669702Z",
+    "ttl_due_at_utc": "2026-10-04T14:04:12.063609Z",
+    "ttl_lag_seconds": 319.606
+  }
+}
