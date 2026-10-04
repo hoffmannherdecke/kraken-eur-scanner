@@ -1,0 +1,215 @@
+{
+  "altname": "ALGOEUR",
+  "candidate_id": "20261004-084355-ALGO-EUR-r37189789336",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Show renewed volume confirmation alongside sustained closes above \u20ac0.11614.",
+      "Form a higher low that holds above \u20ac0.11614."
+    ],
+    "reason_codes": [
+      "SPREAD_AND_LIQUIDITY_ACCEPTABLE",
+      "EXTENDED_MULTIWEEK_MOVE",
+      "LIVE_VOLUME_WEAK",
+      "VOLUME_CONFIRMATION_UNVERIFIED",
+      "HIGHER_LOW_NOT_CONFIRMED",
+      "COST_HURDLE_UNCONFIRMED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The revalidation shows some closes above resistance, but does not establish the required volume-backed continuation and higher-low hold; the extended move and round-trip costs leave no supported scout plan.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ALGOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 49.57,
+        "available": true,
+        "current_funding_rate": -2.238786565187e-06,
+        "current_open_interest": 7398403.0,
+        "funding_rate_delta": 6.275148073113001e-06,
+        "open_interest_pct": -0.1119,
+        "previous_funding_rate": -8.5139346383e-06,
+        "previous_observed_at_utc": "2026-10-04T08:45:02.508033Z",
+        "previous_open_interest": 7406693.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -2.238786565187e-06,
+        "index_price": 0.13088,
+        "last": 0.13092,
+        "mark_price": 0.13078693222,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 7398403.0,
+        "requested_symbols": [
+          "PF_ALGOUSD",
+          "PI_ALGOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ALGOUSD",
+        "volume24h": 4434726
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.11648,
+      "bid": 0.11628,
+      "last": 0.11639,
+      "spread_pct": 0.17185083347654728
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "41",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.16352905744916324,
+          "ret3h_pct": 0.3642437574284729
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.027052223276546883,
+          "ret3h_pct": 0.376294687604406
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0928677563150071,
+          "ret3h_pct": 0.372508847085129
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-04T09:34:35.624324Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0052e89d5e3be97e006ac21dace17c87d0bae7755d6913a624"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.11648,
+    "bid": 0.11628,
+    "last": 0.11639,
+    "spread_pct": 0.17185083347654728
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.11637,
+      "high": 0.11637,
+      "low": 0.11637,
+      "open": 0.11637,
+      "trades": 2,
+      "ts": 1791102600,
+      "volume": 494.04153784,
+      "vwap": 0.11637
+    },
+    {
+      "close": 0.11615,
+      "high": 0.11646,
+      "low": 0.11615,
+      "open": 0.11646,
+      "trades": 6,
+      "ts": 1791103500,
+      "volume": 8343.98122499,
+      "vwap": 0.1163
+    },
+    {
+      "close": 0.11619,
+      "high": 0.11619,
+      "low": 0.11611,
+      "open": 0.11611,
+      "trades": 2,
+      "ts": 1791104400,
+      "volume": 687.14772603,
+      "vwap": 0.11618
+    },
+    {
+      "close": 0.11619,
+      "high": 0.11619,
+      "low": 0.11619,
+      "open": 0.11619,
+      "trades": 0,
+      "ts": 1791105300,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 0.11639,
+      "high": 0.11646,
+      "low": 0.11639,
+      "open": 0.11646,
+      "trades": 3,
+      "ts": 1791106200,
+      "volume": 2924.10231355,
+      "vwap": 0.11644
+    }
+  ],
+  "pair": "ALGO/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261004-084355-ALGO-EUR-r37189789336.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-04T09:34:44.979677Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "8dc60cd7fe4a0fe35d21463cdf516873cfae8e70",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-04T09:34:44.979677Z",
+    "revalidation_started_at_utc": "2026-10-04T09:34:35.263957Z",
+    "ttl_due_at_utc": "2026-10-04T09:29:21.451513Z",
+    "ttl_lag_seconds": 313.812
+  }
+}
