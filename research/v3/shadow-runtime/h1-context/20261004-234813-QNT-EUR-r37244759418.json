@@ -1,0 +1,33 @@
+{
+  "candidate_id": "20261004-234813-QNT-EUR-r37244759418",
+  "event_time_utc": "2026-10-04T23:48:13Z",
+  "features": {
+    "available_leader_count": 2,
+    "eligible_peer_count": 71,
+    "leader_median_return_1h_pct": 0.09049926186056045,
+    "leader_minus_target_return_1h_pct": -1.748694910277221,
+    "peer_median_return_1h_pct": 0.050720227226608294,
+    "target_minus_peer_median_return_1h_pct": 1.788473944911173,
+    "target_return_1h_pct": 1.8391941721377814
+  },
+  "guardrails": {
+    "active_v2r3_changed": false,
+    "canonical_handoff_mutated": false,
+    "feature_transform_search": false,
+    "orders": false,
+    "real_money_actions": false,
+    "threshold_search": false
+  },
+  "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+  "leader_pairs": [
+    "XBT/EUR",
+    "ETH/EUR"
+  ],
+  "pair": "QNT/EUR",
+  "queue_id": "37244759418:QNT-EUR:1791157693",
+  "schema_version": 1,
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+  "source_scanner_run_id": 37244759418,
+  "status": "PASS"
+}
