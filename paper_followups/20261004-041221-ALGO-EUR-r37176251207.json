@@ -3,7 +3,24 @@
   "candidate_id": "20261004-041221-ALGO-EUR-r37176251207",
   "evaluated_at_utc": "2026-10-04T04:12:46.343654Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": 0.131,
+      "expected_bars": 30,
+      "mae_pct": 0.026,
+      "mfe_pct": 0.131
+    },
+    "60": {
+      "bars": 60,
+      "complete": true,
+      "end_close_pct": -0.061,
+      "expected_bars": 60,
+      "mae_pct": -0.061,
+      "mfe_pct": 0.131
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -25,6 +42,17 @@
         "mfe_pct": 0.026,
         "peak_at_utc": "2026-10-04T04:13:00Z",
         "trough_at_utc": "2026-10-04T04:13:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -0.061,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -0.061,
+        "mfe_pct": 0.131,
+        "peak_at_utc": "2026-10-04T04:36:00Z",
+        "trough_at_utc": "2026-10-04T05:12:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -54,12 +82,15 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-04T04:34:04.697897Z"
+    "updated_at_utc": "2026-10-04T06:09:40.556266Z"
   },
   "original_decision": "WAIT",
   "pair": "ALGO/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-04T06:09:09.358987Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-04T06:09:40.750089Z"
 }

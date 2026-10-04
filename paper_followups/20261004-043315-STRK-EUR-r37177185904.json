@@ -3,7 +3,24 @@
   "candidate_id": "20261004-043315-STRK-EUR-r37177185904",
   "evaluated_at_utc": "2026-10-04T04:34:01.782242Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -1.044,
+      "expected_bars": 30,
+      "mae_pct": -1.315,
+      "mfe_pct": 0.25
+    },
+    "60": {
+      "bars": 60,
+      "complete": true,
+      "end_close_pct": -2.171,
+      "expected_bars": 60,
+      "mae_pct": -2.818,
+      "mfe_pct": 0.25
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -14,7 +31,30 @@
     "evaluated_at_utc": "2026-10-04T04:34:01.782242Z",
     "evaluation_ask_eur": 0.04791,
     "flagged_as_already_run": true,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.962,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.962,
+        "mfe_pct": 0.418,
+        "peak_at_utc": "2026-10-04T04:36:00Z",
+        "trough_at_utc": "2026-10-04T04:44:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -1.903,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -2.655,
+        "mfe_pct": 0.418,
+        "peak_at_utc": "2026-10-04T04:36:00Z",
+        "trough_at_utc": "2026-10-04T05:21:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-04T03:39:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -41,12 +81,15 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-04T04:34:05.981675Z"
+    "updated_at_utc": "2026-10-04T06:09:43.342822Z"
   },
   "original_decision": "WAIT",
   "pair": "STRK/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-04T06:09:23.701279Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-04T06:09:43.455408Z"
 }
