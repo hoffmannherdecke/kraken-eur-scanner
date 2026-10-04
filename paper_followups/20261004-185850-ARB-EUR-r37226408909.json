@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-04T19:02:00Z",
         "trough_at_utc": "2026-10-04T19:09:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -0.11,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.662,
+        "mfe_pct": 0.496,
+        "peak_at_utc": "2026-10-04T20:22:00Z",
+        "trough_at_utc": "2026-10-04T21:22:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -89,7 +100,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-04T20:15:29.047226Z"
+    "updated_at_utc": "2026-10-04T23:03:47.022493Z"
   },
   "original_decision": "WAIT",
   "pair": "ARB/EUR",
