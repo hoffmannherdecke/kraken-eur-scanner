@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "NIGHTEUR",
+  "candidate_id": "20261004-231353-NIGHT-EUR-r37242915809",
+  "event_time_utc": "2026-10-04T23:13:53Z",
+  "event_ts": 1791155633,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "NIGHT/EUR",
+  "queue_id": "37242915809:NIGHT-EUR:1791155633",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=NIGHT/EUR | score=8.30 | price_eur=0.03953 | ret15_live=0.10% | ret1h=1.83% | ret3h=-3.63% | ret24h=-7.12% | vol_live=2.51x | vol_closed=1.25x | rank=3 | rank_jump=36 | state_rank_jump=-1 | breakout3h=0 | higher_lows=0 | base_tight=5.75% | fresh_move3h=1.91% | adx14=80.2 | spread=0.101% | turnover24h_eur=462655 | coverage=100% | ret7d=65.33% | ret30d=115.42% | dist7d_high=-16.07% | dist30d_high=-16.07% | depth_1pct_eur=134564 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 80.21768565966978,
+    "altname": "NIGHTEUR",
+    "base_tight_pct": 5.748904356793005,
+    "breakout3h": false,
+    "context30d": 115.42,
+    "context7d": 65.33,
+    "depth_eur_1pct": 134564.0,
+    "dist30d_high_pct": -16.07,
+    "dist7d_high_pct": -16.07,
+    "ema26_gt_50": false,
+    "fresh_move_3h": 1.9077081722093547,
+    "higher_lows": false,
+    "late": false,
+    "pair": "NIGHT/EUR",
+    "price": 0.03953,
+    "rank15": 3,
+    "rank15_prev": 39,
+    "rank_jump": 36,
+    "ret15_closed": -0.27763755678950064,
+    "ret15_live": 0.10129146619397567,
+    "ret1h": 1.8289541473467397,
+    "ret24h": -7.119360902255634,
+    "ret3h": -3.632374451487075,
+    "score": 8.3,
+    "spread_pct": 0.1011633788568497,
+    "stale": false,
+    "state_rank_jump": -1,
+    "turnover24h": 462654.7431879097,
+    "volume_ratio_closed": 1.2541507979002802,
+    "volume_ratio_live": 2.513202314596373
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-10-04T23:13:53Z",
+    "positive_1h_count": 34,
+    "positive_3h_count": 29,
+    "schema_version": 1,
+    "score_ge_5_count": 14,
+    "top_1h": [
+      {
+        "pair": "ADA/EUR",
+        "ret15_live": 0.387,
+        "ret1h": 3.77,
+        "ret3h": 4.042,
+        "score": 8.0,
+        "vol_live": 1.038
+      },
+      {
+        "pair": "NIGHT/EUR",
+        "ret15_live": 0.101,
+        "ret1h": 1.829,
+        "ret3h": -3.632,
+        "score": 8.3,
+        "vol_live": 2.513
+      },
+      {
+        "pair": "VVV/EUR",
+        "ret15_live": -0.394,
+        "ret1h": 1.675,
+        "ret3h": 3.944,
+        "score": 8.2,
+        "vol_live": 1.296
+      },
+      {
+        "pair": "ONDO/EUR",
+        "ret15_live": 0.316,
+        "ret1h": 1.451,
+        "ret3h": 1.372,
+        "score": 9.7,
+        "vol_live": 0.381
+      },
+      {
+        "pair": "SPX/EUR",
+        "ret15_live": 0.945,
+        "ret1h": 1.437,
+        "ret3h": 1.802,
+        "score": 12.7,
+        "vol_live": 12.985
+      },
+      {
+        "pair": "ALGO/EUR",
+        "ret15_live": 0.221,
+        "ret1h": 1.323,
+        "ret3h": -0.473,
+        "score": 4.9,
+        "vol_live": 0.111
+      },
+      {
+        "pair": "SUI/EUR",
+        "ret15_live": 0.13,
+        "ret1h": 1.209,
+        "ret3h": 0.056,
+        "score": 4.9,
+        "vol_live": 0.23
+      },
+      {
+        "pair": "BAT/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 1.207,
+        "ret3h": -0.828,
+        "score": 4.9,
+        "vol_live": 0.023
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "SPX/EUR",
+        "ret15_live": 0.945,
+        "ret1h": 1.437,
+        "ret3h": 1.802,
+        "score": 12.7,
+        "vol_live": 12.985
+      },
+      {
+        "pair": "ONDO/EUR",
+        "ret15_live": 0.316,
+        "ret1h": 1.451,
+        "ret3h": 1.372,
+        "score": 9.7,
+        "vol_live": 0.381
+      },
+      {
+        "pair": "NIGHT/EUR",
+        "ret15_live": 0.101,
+        "ret1h": 1.829,
+        "ret3h": -3.632,
+        "score": 8.3,
+        "vol_live": 2.513
+      },
+      {
+        "pair": "VVV/EUR",
+        "ret15_live": -0.394,
+        "ret1h": 1.675,
+        "ret3h": 3.944,
+        "score": 8.2,
+        "vol_live": 1.296
+      },
+      {
+        "pair": "ADA/EUR",
+        "ret15_live": 0.387,
+        "ret1h": 3.77,
+        "ret3h": 4.042,
+        "score": 8.0,
+        "vol_live": 1.038
+      },
+      {
+        "pair": "LINK/EUR",
+        "ret15_live": 0.284,
+        "ret1h": 0.698,
+        "ret3h": 1.213,
+        "score": 6.9,
+        "vol_live": 2.055
+      },
+      {
+        "pair": "SOL/EUR",
+        "ret15_live": 0.324,
+        "ret1h": 0.669,
+        "ret3h": 0.734,
+        "score": 6.8,
+        "vol_live": 2.501
+      },
+      {
+        "pair": "XDC/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.627,
+        "ret3h": 0.873,
+        "score": 6.7,
+        "vol_live": 0.419
+      }
+    ],
+    "total_rows": 42
+  },
+  "scanner_market_context": {
+    "altname": "NIGHTEUR",
+    "atr15_eur": 0.0006028571428571426,
+    "atr15_pct": 1.5258343276566504,
+    "closed_through_epoch": 1791153900,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.03951,
+      "high": 0.03962,
+      "low": 0.03935,
+      "open": 0.03962,
+      "volume": 133747.82122
+    },
+    "pair": "NIGHT/EUR",
+    "range_1h_pct": 3.087825866869144,
+    "recent_closed_closes": [
+      0.03974,
+      0.03889,
+      0.03937,
+      0.03955,
+      0.03991,
+      0.03951
+    ],
+    "resistance_1h": 0.04004,
+    "resistance_3h": 0.04102,
+    "schema_version": 1,
+    "sensor_price_eur": 0.03953,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.03882,
+    "support_3h": 0.03879,
+    "ts": 1791155633
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 37242915809,
+  "source_scanner_sha": "c587f0d5d286cf4997309c3a4c406f3cb233de28",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-04T23:13:53Z",
+    "candidate_detected_ts": 1791155633,
+    "candidate_snapshot_at_utc": "2026-10-04T23:13:53Z",
+    "handoff_written_at_utc": "2026-10-04T23:13:54.377611Z",
+    "scan_step_started_at_utc": "2026-10-04T23:12:39Z"
+  }
+}
