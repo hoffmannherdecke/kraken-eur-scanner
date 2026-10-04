@@ -370,3 +370,36 @@ unresolved material disposition blocks V2R4 activation.
 After explicit approval of a proposed V2R4 change, implementation into the inactive V2R4
 candidate, versioning, tests, documentation and rollback preparation should proceed
 automatically as far as existing gates allow. Activation remains a separate explicit release gate.
+
+### 12.3 Permanent strategy-lineage inheritance — all future versions
+
+The inheritance rule is **not limited to V2R3 → V2R4 or V2/V2R4 → V3**.
+It is a permanent project rule for every strategy generation and every successor version.
+
+For each material finding from version `N`, the successor planning for `N+1` (or a deliberately
+later generation) must assign one explicit lineage disposition before release:
+
+- `INHERIT_UNCHANGED` — validated behavior remains part of the successor baseline.
+- `INHERIT_MODIFIED` — validated learning is retained but implemented differently; exact diff and evidence required.
+- `REPLACE_WITH_VALIDATED_SUCCESSOR` — old component is superseded by a tested alternative with stronger evidence.
+- `DEFER_TO_LATER_GENERATION` — valid/interesting learning is intentionally not in the immediate successor; named future research/version destination required.
+- `MORE_TESTING_REQUIRED` — evidence is insufficient for migration or rejection; smallest next gate required.
+- `REJECT_WITH_EVIDENCE` — finding/hypothesis is contradicted or not economically/operationally justified.
+- `NO_SUCCESSOR_CHANGE` — evidence supports keeping the successor design as-is.
+
+Every new active strategy version must have a **lineage reconciliation** against the latest
+relevant predecessor evidence and all unresolved inherited findings. A release is blocked if
+a material predecessor finding has no disposition, or if an approved required change has not
+been implemented/tested in the candidate.
+
+When a new generation is created (for example V4 after V3), create or extend a migration ledger
+for the predecessor→successor transition. Do not rely on chat memory or on an older generation's
+ledger as the sole carrier of knowledge.
+
+Validated improvements should therefore compound across generations: each successor starts from
+the best-known validated baseline, not from a clean slate. A later version may still reject or
+replace inherited logic, but only with explicit evidence and a recorded reason.
+
+This permanent lineage rule does not authorize silent activation. Strategy mechanics still pass
+through the gated-change decision packet, versioning, validation, rollback preparation and the
+normal release gate.
