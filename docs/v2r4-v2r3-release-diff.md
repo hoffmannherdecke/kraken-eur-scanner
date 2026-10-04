@@ -10,6 +10,23 @@ Control:
 - V2R4 code candidate: Draft-PR #9
 - V2R4 proposed spec: `research/v2r4/paper_strategy_spec_v2r4_proposed.json`
 
+## Continuous V2R3 → V2R4 learning inheritance rule
+
+V2R4 is not a static snapshot prepared once and then insulated from later V2R3 evidence.
+Every material V2R3 interim/final analysis finding must be reconciled against this release diff
+before V2R4 paper activation.
+
+Required disposition per material finding:
+`ALREADY_COVERED_V2R4` / `PROPOSE_V2R4_CHANGE` / `MORE_TESTING_BEFORE_V2R4` / `V3_ONLY` / `NO_V2R4_CHANGE` / `REJECTED`.
+
+`PROPOSE_V2R4_CHANGE` means: prepare an exact bounded candidate diff plus evidence, validation
+and rollback plan and raise `ENTSCHEIDUNG ERFORDERLICH`. It does **not** authorize silent
+strategy modification. After explicit approval, apply the change to the inactive V2R4 candidate
+and run the normal tests automatically. V2R4 activation remains separately gated.
+
+Therefore the eventual V2R4 paper version must reflect the **latest approved V2R3 learnings**,
+not merely the older draft state of PR #9.
+
 ## Behavioral diff matrix
 
 | Area | V2R3 | V2R4 candidate | Release classification | Current status |
