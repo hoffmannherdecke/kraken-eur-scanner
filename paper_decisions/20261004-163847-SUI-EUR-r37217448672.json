@@ -1,0 +1,173 @@
+{
+  "altname": "SUIEUR",
+  "candidate_age_seconds": 28,
+  "candidate_event_time_utc": "2026-10-04T16:38:47Z",
+  "candidate_id": "20261004-163847-SUI-EUR-r37217448672",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": 2.04,
+    "missing_triggers": [
+      "15m close above 1.1146 with expanding spot volume",
+      "Break and hold above 1.1241 resistance"
+    ],
+    "reason_codes": [
+      "EXTENDED_MOVE",
+      "NO_BREAKOUT_CONFIRMATION",
+      "WEAK_MAJOR_MARKET_BREADTH",
+      "RESISTANCE_LIMITS_NET_EDGE",
+      "GOOD_SPOT_LIQUIDITY"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong 3h advance, but no breakout or higher-low structure; nearby resistance leaves insufficient room after Kraken spot costs.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SUIUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 48.89,
+        "available": true,
+        "current_funding_rate": 6.708388229137e-06,
+        "current_open_interest": 7523273.0,
+        "funding_rate_delta": -3.4812349570447e-05,
+        "open_interest_pct": 1.4238,
+        "previous_funding_rate": 4.1520737799584e-05,
+        "previous_observed_at_utc": "2026-10-04T15:50:23.151355Z",
+        "previous_open_interest": 7417663.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 6.708388229137e-06,
+        "index_price": 1.239571,
+        "last": 1.2386,
+        "mark_price": 1.23949218459,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 7523273.0,
+        "requested_symbols": [
+          "PF_SUIUSD",
+          "PI_SUIUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_SUIUSD",
+        "volume24h": 8269245
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.1016,
+      "bid": 1.1015,
+      "last": 1.1009,
+      "spread_pct": 0.009078117198492032
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "5",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.06474429300815654,
+          "ret3h_pct": 0.03009309060000298
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0,
+          "ret3h_pct": -0.0004168125510517484
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.16637397171641588,
+          "ret3h_pct": -0.03701989819526741
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-04T16:39:15.346418Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-04T16:39:26.328818Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_05ee2cd317e7a696006ac28134887087d1877ee10d64359c8d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.1016,
+    "bid": 1.1015,
+    "last": 1.1009,
+    "spread_pct": 0.009078117198492032
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "SUI/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37217448672:SUI-EUR:1791131927",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "845abd21858f9d9b079286470ddd5bfc7f153cb6",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-04T16:38:47Z",
+    "candidate_detected_ts": 1791131927,
+    "candidate_snapshot_at_utc": "2026-10-04T16:38:47Z",
+    "detected_to_evaluation_complete_seconds": 39.329,
+    "detected_to_evaluation_start_seconds": 28.191,
+    "evaluation_completed_at_utc": "2026-10-04T16:39:26.328818Z",
+    "evaluation_runtime_seconds": 11.138,
+    "evaluation_started_at_utc": "2026-10-04T16:39:15.190673Z",
+    "handoff_to_evaluation_start_seconds": 25.803,
+    "handoff_written_at_utc": "2026-10-04T16:38:49.387597Z",
+    "scan_step_started_at_utc": "2026-10-04T16:37:36Z"
+  }
+}
