@@ -1,0 +1,17 @@
+name: MINI-PC dispatch auth smoke
+
+'on':
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Confirm workflow-dispatch permission path
+        run: |
+          echo "MINIPC_GITHUB_DISPATCH_AUTH_SMOKE_OK"
+          echo "No scanner, evaluator, strategy, account or order action is executed."
