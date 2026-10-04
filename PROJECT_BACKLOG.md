@@ -52,6 +52,7 @@ Kanonische Detailquellen:
 - [ ] Abschlussanalyse strikt klassifizieren: **Strategieproblem / Timing-Infrastruktur / Datenqualität / technischer Betriebsfehler / Kostenproblem**.
 - [ ] Aus V2R3 nur testbare Hypothesen für V3 ableiten; keine automatische Promotion.
 - [ ] Beim V2R3-Abschlussreview die versionierte Hypothesenkarte `V2R3-ADJ-HYP-20261002-V1` (`research/v2r3/strategy-adjustment-hypotheses-v1.{md,json}`) zwingend laden und jeden HYP-Punkt mit `CONFIRM / CHANGE / ADD / REJECT / MORE_TESTING_REQUIRED` disponieren. V1 bleibt unverändert; bei materiell neuer Zwischen-Evidenz V2 anlegen. Bestätigte Timing-/Watch-Punkte nach V2R4 routen, größere Signal-/State-/Entry-Struktur-Punkte in V3/Migrationsledger übernehmen; kein Punkt darf beim Versionswechsel still verloren gehen.
+- [ ] **V2-Zwischenkarte 2026-10-04 einbeziehen:** `research/v2r3/strategy-adjustment-hypotheses-v2-20261004.{md,json}` konserviert die größere 24h-Stichprobe. Fasttrack-Priorität: niedrige Trade-Konversion als Strategie/Routing-Frage messen; MFE nie als Entry-Proof behandeln; Anti-Chase beibehalten; vorhandene V2R4 bounded-WAIT/fresh-recheck-Mechanik nicht duplizieren, sondern später prospektiv gegen Pullback/Rebuild/Second-Leg-Hypothesen testen. Keine Aktivierung/Threshold-Änderung vor Release-Gate.
 
 **Abschlusskriterium P0:** belastbarer V2R3-Abschlussbericht mit klaren Ursachen, nicht nur einer Gewinn-/Verlustzahl.
 
