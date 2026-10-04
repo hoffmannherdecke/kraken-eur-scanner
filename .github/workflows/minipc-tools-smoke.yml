@@ -15,6 +15,10 @@ name: MINI-PC tools smoke
       - 'tools/v2r4-ws-shadow-outcome-tracker.py'
       - 'tools/v2r4-shadow-cloud-sync.py'
       - 'tools/minipc-status-sync.py'
+      - 'tools/minipc-github-cadence-guard.py'
+      - 'tools/minipc-github-dispatch-secret-prep.ps1'
+      - 'tools/install-minipc-github-cadence-guard.ps1'
+      - 'tools/uninstall-minipc-github-cadence-guard.ps1'
       - 'tools/minipc-runtime-supervisor.ps1'
       - 'tools/install-minipc-runtime-supervisor.ps1'
       - 'tools/minipc-runtime-supervisor-selfheal-smoke.ps1'
@@ -55,7 +59,8 @@ jobs:
       - name: Parse Python transport tools
         shell: powershell
         run: |
-          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py .\tools\v2r4-ws-shadow-evidence.py .\tools\v2r4-ws-shadow-outcome-tracker.py .\tools\v2r4-shadow-cloud-sync.py .\tools\minipc-status-sync.py .\tools\paper-runtime-reconciliation-audit.py
+          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py .\tools\v2r4-ws-shadow-evidence.py .\tools\v2r4-ws-shadow-outcome-tracker.py .\tools\v2r4-shadow-cloud-sync.py .\tools\minipc-status-sync.py .\tools\minipc-github-cadence-guard.py .\tools\paper-runtime-reconciliation-audit.py
+          python .\tools\minipc-github-cadence-guard.py --self-test
           Write-Host 'PYTHON_TRANSPORT_PARSE_OK'
 
       - name: Parse PowerShell scripts
@@ -64,6 +69,9 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $files = @(
             'tools/minipc-watchdog.ps1',
+            'tools/minipc-github-dispatch-secret-prep.ps1',
+            'tools/install-minipc-github-cadence-guard.ps1',
+            'tools/uninstall-minipc-github-cadence-guard.ps1',
             'tools/minipc-selftest.ps1',
             'tools/minipc-marketdata-smoke.ps1',
             'tools/minipc-next-gate.ps1',
