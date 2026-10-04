@@ -1,0 +1,175 @@
+{
+  "altname": "SANDEUR",
+  "candidate_age_seconds": 29,
+  "candidate_event_time_utc": "2026-10-04T10:48:51Z",
+  "candidate_id": "20261004-104851-SAND-EUR-r37196508047",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.0664 with increased volume",
+      "Follow-through toward 0.068 resistance while holding above breakout"
+    ],
+    "reason_codes": [
+      "spread_and_liquidity_acceptable",
+      "near_1h_resistance",
+      "ret3h_negative",
+      "live_volume_absent",
+      "extended_7d_30d_performance",
+      "costs_reduce_available_headroom",
+      "mildly_supportive_market_context"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Wait for a volume-backed breakout: SAND is near 1h resistance, with no live volume and negative 3h momentum; the 3h resistance leaves limited assumed room after costs.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SANDUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 280.33,
+        "available": true,
+        "current_funding_rate": -1.8785186075833e-05,
+        "current_open_interest": 4460676.0,
+        "funding_rate_delta": 4.722217353500002e-06,
+        "open_interest_pct": 4.008,
+        "previous_funding_rate": -2.3507403429333e-05,
+        "previous_observed_at_utc": "2026-10-04T06:09:01.864349Z",
+        "previous_open_interest": 4288782.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.8785186075833e-05,
+        "index_price": 0.07468,
+        "last": 0.07456,
+        "mark_price": 0.07450463815,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4460676.0,
+        "requested_symbols": [
+          "PF_SANDUSD",
+          "PI_SANDUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_SANDUSD",
+        "volume24h": 25523801
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.0665,
+      "bid": 0.0664,
+      "last": 0.0663,
+      "spread_pct": 0.15048908954101256
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "120",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.09190873475823924,
+          "ret3h_pct": 0.4487426339909062
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.01705505037479238,
+          "ret3h_pct": 0.316253687192547
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.09270418095854716,
+          "ret3h_pct": 0.3438661710037261
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-04T10:49:20.547587Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-04T10:49:31.630364Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0d22a0a971fabd04006ac22f31e18487d0a785f54bbe38b5e9"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.0665,
+    "bid": 0.0664,
+    "last": 0.0663,
+    "spread_pct": 0.15048908954101256
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "SAND/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37196508047:SAND-EUR:1791110931",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "5fc6353ecdfe5faf9cc83c84a35b49a6f71ff074",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-04T10:48:51Z",
+    "candidate_detected_ts": 1791110931,
+    "candidate_snapshot_at_utc": "2026-10-04T10:48:51Z",
+    "detected_to_evaluation_complete_seconds": 40.63,
+    "detected_to_evaluation_start_seconds": 29.337,
+    "evaluation_completed_at_utc": "2026-10-04T10:49:31.630364Z",
+    "evaluation_runtime_seconds": 11.294,
+    "evaluation_started_at_utc": "2026-10-04T10:49:20.336760Z",
+    "handoff_to_evaluation_start_seconds": 26.689,
+    "handoff_written_at_utc": "2026-10-04T10:48:53.647788Z",
+    "scan_step_started_at_utc": "2026-10-04T10:47:37Z"
+  }
+}
