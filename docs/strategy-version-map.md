@@ -526,3 +526,27 @@ Für jede zukünftige Version/Generation gilt:
 
 Damit ist die Strategieentwicklung ausdrücklich als fortlaufende Lernlinie angelegt und nicht
 als Folge voneinander isolierter Versionsprojekte.
+
+## 12. Echtgeldphase als dauerhafte Lernquelle
+
+Die spätere Echtgeldphase beendet den Research-/Verbesserungsprozess **nicht**.
+Sie liefert zusätzliche, besonders realitätsnahe Evidenz für die nächste Strategieversion.
+
+Verbindliche Live-Lernkette:
+
+`aktive Echtgeldversion → reale Outcomes/Execution-Evidenz → Analyse → Lerneffekt →
+Nachfolger-Disposition → inaktiver Nachfolger → Shadow/Paper/OOS-Validierung →
+ENTSCHEIDUNG ERFORDERLICH falls gegatet → Live-Release-Gate`
+
+Pflichtquellen für spätere Live-Auswertung umfassen mindestens Netto-P&L nach echten Kosten,
+Slippage/Spread/Fills, Entry-/Stop-/Exit-/Re-Entry-Verhalten, verpasste Chancen, False Positives/
+False Negatives, Marktregime, Sizing/Drawdown, Nutzer-Overrides sowie technische Execution-/
+Runtime-Ereignisse. Technische Fehler bleiben von Strategieergebnissen getrennt.
+
+Keine aktive Echtgeldstrategie darf sich selbst aus diesen Daten still retunen. Verbesserungen
+werden stattdessen versioniert in einem inaktiven Nachfolger umgesetzt und vor Live-Aktivierung
+erneut getestet. Safety-Mechanismen wie Kill-Switch, stale-data rejection, Duplicate-Order-Gates
+und Circuit Breaker bleiben davon getrennte Schutzfunktionen.
+
+Auch nach Beginn des Echtgeldhandels gilt somit dauerhaft:
+**inherit first, replace only with stronger evidence, never lose validated learning.**
