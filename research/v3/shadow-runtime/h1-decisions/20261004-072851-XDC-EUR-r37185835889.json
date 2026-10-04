@@ -1,0 +1,129 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Hold above 0.02915 through a 15-minute close",
+      "Form a higher low while maintaining positive short-term momentum"
+    ],
+    "reason_codes": [
+      "breakout_not_confirmed",
+      "no_higher_lows",
+      "ema_trend_unconfirmed",
+      "move_already_run",
+      "upside_vs_costs_unclear",
+      "derivatives_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid with a tight spread and price above the supplied breakout levels, but confirmation and remaining upside are unclear after a 2.63% fresh move; fees and structural risk make chasing unattractive.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T07:29:30.397709Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T07:28:51Z",
+  "candidate_id": "20261004-072851-XDC-EUR-r37185835889",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f3dd7f4196c348a006ac28b29c9fc87d19477e3898cde75b7"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 0.0292,
+      "bid": 0.02917,
+      "last": 0.02922,
+      "spread_pct": 0.10279253040945271
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-072851-XDC-EUR-r37185835889",
+    "event_time_utc": "2026-10-04T07:28:51Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 74,
+      "leader_median_return_1h_pct": -0.010266428346500378,
+      "leader_minus_target_return_1h_pct": -0.9751182546731629,
+      "peer_median_return_1h_pct": -0.015459899035596969,
+      "target_minus_peer_median_return_1h_pct": 0.9803117253622595,
+      "target_return_1h_pct": 0.9648518263266626
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "XDC/EUR",
+    "queue_id": "37185835889:XDC-EUR:1791098931",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37185835889,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "XDC/EUR",
+  "queue_id": "37185835889:XDC-EUR:1791098931",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close and hold above 0.02920 with sustained volume",
+      "Revalidate continuation and upside room versus Kraken EUR fees and slippage"
+    ],
+    "reason_codes": [
+      "LIQUIDITY_OK",
+      "SPREAD_OK",
+      "BREAKOUT_WITH_VOLUME_SPIKE",
+      "NO_HIGHER_LOWS",
+      "EMA_CONFIRMATION_ABSENT",
+      "ENTRY_AFTER_MOVE",
+      "REMAINING_UPSIDE_UNCLEAR",
+      "DERIVATIVES_UNAVAILABLE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid, tight-spread breakout candidate, but the volume spike and 3h move are already underway; continuation and post-cost upside are not established.",
+    "ttl_minutes": 30
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}
