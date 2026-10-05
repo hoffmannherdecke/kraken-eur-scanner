@@ -7,7 +7,8 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from paper_context import build_context
+from paper_evaluator.v2r4_context import build_context
+from market_data.rest import kraken_public
 try:
     from .v2r4_trigger_contract import ALLOWED_METRICS, ALLOWED_OPS
     from .v2r4_trigger_plan import build_wait_trigger_plan
@@ -42,7 +43,9 @@ def runtime_code_fingerprint():
     for rel in (
         "paper_evaluator/evaluate.py",
         "paper_evaluator/revalidate.py",
-        "paper_context.py",
+        "paper_evaluator/v2r4_context.py",
+        "market_data/rest.py",
+        "market_data/universe.py",
     ):
         p=ROOT/rel
         h.update(rel.encode("utf-8")+b"\0")
@@ -180,11 +183,8 @@ def http_json(url, method="GET", headers=None, body=None, timeout=30):
         return json.loads(r.read().decode())
 
 def kraken_ticker(altname):
-    q=urllib.parse.urlencode({"pair":altname})
-    data=http_json("https://api.kraken.com/0/public/Ticker?"+q,headers={"User-Agent":"paper-evaluator/2.0"})
-    if data.get("error"):
-        raise RuntimeError("Kraken ticker: "+repr(data["error"]))
-    row=next(iter(data["result"].values()))
+    data=kraken_public("/0/public/Ticker",{"pair":altname})
+    row=next(iter(data.values()))
     bid=float(row["b"][0]); ask=float(row["a"][0]); last=float(row["c"][0])
     return {"bid":bid,"ask":ask,"last":last,"spread_pct":100*(ask-bid)/((ask+bid)/2)}
 
