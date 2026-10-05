@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check bounded V2R3 completion gate
+      - name: Check evidence-diversity V2R3 completion gate
         env:
           SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
@@ -96,6 +96,19 @@ jobs:
               "coverage_24h_pct":s.get("coverage_24h_pct"),
               "outcomes_remaining_to_alt_gate":s.get("outcomes_remaining_to_alt_gate"),
               "hours_remaining_to_age_gate":s.get("hours_remaining_to_age_gate"),
+              "hours_remaining_to_temporal_span_gate":s.get("hours_remaining_to_temporal_span_gate"),
+              "fasttrack_policy_version":s.get("fasttrack_policy_version"),
+              "qualifying_cohort_size":s.get("qualifying_cohort_size"),
+              "qualifying_sample_target":s.get("qualifying_sample_target"),
+              "qualifying_span_hours":s.get("qualifying_span_hours"),
+              "qualifying_active_days":s.get("qualifying_active_days"),
+              "qualifying_max_single_day_share_pct":s.get("qualifying_max_single_day_share_pct"),
+              "qualifying_max_rolling_24h_share_pct":s.get("qualifying_max_rolling_24h_share_pct"),
+              "qualifying_eligible_24h":s.get("qualifying_eligible_24h"),
+              "qualifying_complete_24h":s.get("qualifying_complete_24h"),
+              "qualifying_coverage_24h_pct":s.get("qualifying_coverage_24h_pct"),
+              "temporal_diversity_ready":s.get("temporal_diversity_ready"),
+              "qualifying_maturity_ready":s.get("qualifying_maturity_ready"),
               "gate_state":s.get("gate_state"),
               "model_usage_state":usage_state,
               "model_logical_calls":(usage or {}).get("logical_model_calls"),
@@ -162,8 +175,11 @@ jobs:
                   f"<@{uid}> V2R3-Paper-Abschlussgate ist bereit: "
                   f"State={s['gate_state']}, Trades={s['completed_trades']}, "
                   f"Candidate-Outcomes={s['candidate_outcomes']}, "
-                  f"24h-Coverage={s['coverage_24h_pct']}%. "
-                  "Bitte Abschlussauswertung starten; keine automatische Strategie-/Echtgeldaktivierung."
+                  f"24h-Coverage={s['coverage_24h_pct']}%, "
+                  f"Policy={s.get('fasttrack_policy_version')}, "
+                  f"Diversity={s.get('temporal_diversity_ready')}, "
+                  f"Qualifying-24h={s.get('qualifying_eligible_24h')}/{s.get('qualifying_cohort_size')}. "
+                  "Bitte Abschlussauswertung sofort starten; keine automatische Strategie-/Echtgeldaktivierung."
               )
 
           if should_notify_usage:
