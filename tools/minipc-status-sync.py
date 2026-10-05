@@ -73,12 +73,16 @@ def post_status(endpoint: str, token: str, health: dict[str, Any]) -> dict[str, 
             "X-MiniPC-Status-Token": token,
         },
     )
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        raw = resp.read().decode("utf-8")
-        payload = json.loads(raw)
-        if resp.status != 200 or not payload.get("ok"):
-            raise RuntimeError(f"relay HTTP {resp.status}: {raw[:240]}")
-        return payload
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read().decode("utf-8")
+            payload = json.loads(raw)
+            if resp.status != 200 or not payload.get("ok"):
+                raise RuntimeError(f"relay HTTP {resp.status}: {raw[:240]}")
+            return payload
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")[:320]
+        raise RuntimeError(f"relay HTTP {exc.code}: {body}") from exc
 
 
 def run_once(args: argparse.Namespace) -> dict[str, Any]:
