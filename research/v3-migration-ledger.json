@@ -2,7 +2,7 @@
   "schema_version": 2,
   "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-05T06:20:00Z",
+  "updated_at_utc": "2026-10-05T08:28:21Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -106,10 +106,12 @@
       "category": "measurement",
       "source_version": "V2R3/V2R4 evidence layer",
       "migration_status": "INHERIT_UNCHANGED",
-      "rationale": "MAE/MFE, follow-up horizons, post-detection continuation and timing decomposition are measurement requirements independent of the final entry rule.",
+      "rationale": "MAE/MFE, follow-up horizons, post-detection continuation and timing decomposition remain inherited measurement requirements. Batch 002 additionally proves that temporally adjacent mature cohorts can have materially different 24h close/MAE profiles; the V2R3 final audit and later H4/H7 work must therefore preserve observation-window/regime stratification rather than pooling blindly.",
       "evidence": [
         "docs/master-version-register.md",
-        "PROJECT_BACKLOG.md"
+        "PROJECT_BACKLOG.md",
+        "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
+        "research/v2r3/strategy-adjustment-hypotheses-v3-20261005.json"
       ],
       "pending_gate": null
     },
@@ -118,10 +120,12 @@
       "category": "signal",
       "source_version": "V2R3-2026-09-28",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Must wait for clean V2R3 completion; predecessor missed-move findings are diagnostic only.",
+      "rationale": "Clean V2R3 now has 768 outcomes but only 1 BUY_SCOUT/1 completed trade; 566 cases are mature to 24h with HEALTHY integrity. Low conversion and later REJECT MFE are material successor evidence, but final filter dispositions still wait for the clean-series completion review and realistic path/cost reconstruction.",
       "evidence": [
         "public.v2r3_release_review_snapshot",
-        "PROJECT_BACKLOG.md"
+        "PROJECT_BACKLOG.md",
+        "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
+        "research/v2r3/strategy-adjustment-hypotheses-v3-20261005.json"
       ],
       "pending_gate": "V2R3_CLEAN_SERIES_FINAL_REVIEW"
     },
@@ -130,10 +134,12 @@
       "category": "entry_lifecycle",
       "source_version": "V2R3-2026-09-28",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Current one-shot WAIT TTL behavior has measurable scheduler/revalidation latency and must be classified after clean-series review.",
+      "rationale": "At Batch 002 the clean series had 712 revalidations; median extra TTL lag was about 337s and p90 about 1,210s, while trade conversion remained 1/768. This confirms a separate timing/runtime problem but does not explain the full strategy/filter selectivity. Final classification remains gated by the V2R3 review; V2R4's inactive bounded-WAIT/fresh-recheck path already covers the successor mechanism.",
       "evidence": [
         "public.v2r3_revalidation_timing_summary",
-        "PROJECT_BACKLOG.md"
+        "PROJECT_BACKLOG.md",
+        "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
+        "research/v2r3/strategy-adjustment-hypotheses-v3-20261005.json"
       ],
       "pending_gate": "V2R3_CLEAN_SERIES_FINAL_REVIEW"
     },
@@ -166,9 +172,11 @@
       "category": "entry",
       "source_version": "V2R3/V2R4",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Needs missed-move/continuation evidence to distinguish good chase protection from over-rejection.",
+      "rationale": "Batch 002 strengthens anti-chase: already-run cases retained higher MFE but worse MAE and no better 24h close. Immediate chase relaxation is not supported; only a separately versioned pullback/rebuild/second-leg hypothesis remains eligible for later prospective testing.",
       "evidence": [
-        "PROJECT_BACKLOG.md"
+        "PROJECT_BACKLOG.md",
+        "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
+        "research/v2r3/strategy-adjustment-hypotheses-v3-20261005.json"
       ],
       "pending_gate": "V2R3_CLEAN_SERIES_FINAL_REVIEW"
     },
@@ -177,11 +185,13 @@
       "category": "risk_exit",
       "source_version": "V2R3",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Regime-dependent stop/TTL/exit research is preregistered at data-readiness only. Current clean series has short-horizon MAE/MFE but no mature 24h MAE/MFE or completed trade returns; parameter testing is therefore blocked.",
+      "rationale": "The clean series now has 566 mature 24h candidate paths, enough for descriptive temporal/regime MAE/MFE analysis, but only 1 completed trade, which is insufficient to calibrate stop/TTL/exit parameters or infer net trade performance. Keep the preregistered H4 branch blocked until final V2R3 review and a frozen point-in-time regime definition.",
       "evidence": [
         "research/v3/h4-regime-stop-ttl-precheck-v1.json",
         "docs/v3-research-framework.md",
-        "public.v2r3_candidate_analysis_matrix"
+        "public.v2r3_candidate_analysis_matrix",
+        "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
+        "research/v2r3/strategy-adjustment-hypotheses-v3-20261005.json"
       ],
       "pending_gate": "WAIT_FOR_V2R3_MATURE_24H_AND_FINAL_REVIEW_THEN_FREEZE_POINT_IN_TIME_REGIME_DEFINITION"
     },
