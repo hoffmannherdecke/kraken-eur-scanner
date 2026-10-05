@@ -246,9 +246,10 @@ Binding rules:
 - **72h early productivity gate:** review trade/candidate frequency, WAIT/REJECT structure,
   obvious pathological selectivity and technical validity. A clearly unproductive branch
   may be stopped early; no threshold is changed inside the running frozen version.
-- **~7-day decision gate:** unless a preregistered component-specific gate requires more
-  maturity, decide whether the candidate has earned continued collection, should be
-  rejected, or should be replaced by a separately versioned successor.
+- **Evidence-diversity decision gate:** make the final continue/reject/promote/successor
+  decision as soon as the preregistered sample, maturity, temporal-diversity and integrity
+  gates are satisfied. Do not wait for day 7 merely because a week has not elapsed.
+  Canonical policy: `docs/fasttrack-evidence-diversity-policy.md`.
 - **No automatic long extension for low trade count.** If hundreds of valid candidate
   decisions again produce essentially no trades, low trade frequency is a strategy result,
   not a reason to keep the same version running indefinitely.
@@ -270,11 +271,37 @@ Current calendar intent, subject to evidence maturity rather than date alone:
    do not add an arbitrary extra waiting period.
 3. After review: start the new homogeneous V2R4 paper series and the eligible V3 shadow
    candidate concurrently.
-4. Apply the 24h / 72h / ~7-day decision cadence to new strategy candidates.
-5. Live/private execution remains a later, separate gate and is not accelerated by this rule.
+4. Apply the 24h / 72h early-review cadence, then decide at the earliest valid
+   evidence-diversity gate rather than at a fixed day count.
+5. Live/private execution remains a later, separate safety/release gate. During the later
+   live phase, successor strategies use the same evidence-diversity fast-track for
+   validation/promotion, but active live strategies never self-retune.
 
 This section complements, and does not override, the smoke-before-duration, no-repeat,
 freeze, holdout, and explicit release rules above.
+
+## 11.1 Evidence-diversity timing rule — permanent from 2026-10-05
+
+The fixed-duration interpretation of the former ~7-day gate is superseded by
+`EVIDENCE_DIVERSITY_FASTTRACK_V1`.
+
+Default for high-frequency candidate strategies:
+- preregistered version-specific sample floor;
+- observation span >= `max(48h, 2 × required follow-up horizon)`;
+- >=3 distinct UTC observation dates;
+- <=50% of qualifying observations from any single UTC date;
+- <=60% of qualifying observations in any rolling 24h window;
+- >=95% of the fixed qualifying cohort mature to the required follow-up horizon;
+- >=95% complete follow-up coverage among mature qualifying observations;
+- integrity/provenance gates healthy.
+
+The earliest moment all required criteria are true is the review point. A longer fixed
+duration is allowed only when a component-specific regime/maturity contract was
+preregistered before results were inspected.
+
+This rule applies to V2R4, V3 and every later strategy generation. It also applies to
+successor validation after real-money trading begins. Execution safety, explicit live release,
+kill-switch, reconciliation and other safety controls remain independent hard gates.
 
 ## 12. Mandatory analysis-to-action loop — adopted 2026-10-04
 
