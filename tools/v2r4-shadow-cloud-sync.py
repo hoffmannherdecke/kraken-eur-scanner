@@ -53,10 +53,7 @@ def load_token(root: Path) -> str:
     if env:
         return env
     dedicated = root / "Secrets" / "shadow-evidence-token.txt"
-    if dedicated.exists():
-        return dedicated.read_text("utf-8").strip()
-    legacy = root / "Secrets" / "altrady-webhook-token.txt"
-    return legacy.read_text("utf-8").strip() if legacy.exists() else ""
+    return dedicated.read_text("utf-8").strip() if dedicated.exists() else ""
 
 
 def post_batch(endpoint: str, token: str, records: list[dict[str, Any]]) -> dict[str, Any]:
