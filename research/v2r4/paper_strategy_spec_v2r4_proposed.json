@@ -1,7 +1,7 @@
 {
-  "schema_version": 4,
-  "strategy_revision": "V2R4-PROPOSED-2026-09-30-PRECANDIDATE",
-  "status": "PREPARED_NOT_ACTIVE",
+  "schema_version": 5,
+  "strategy_revision": "V2R4-PROPOSED-2026-10-05-CLEAN",
+  "status": "PREPARED_NOT_ACTIVE_RELEASE_GATED",
   "inherits_from": "V2R3-2026-09-28",
   "description": "Paper-only V2R4 proposal: preserve V2R3 risk discipline while reducing both pre-candidate discovery blind spots and WAIT-to-trigger latency with deterministic local monitoring suitable for the 24/7 Mini-PC.",
   "paper_only": true,
@@ -11,64 +11,18 @@
     "taker_pct_per_side": 0.6
   },
   "entry": {
-    "simulation_sizing_mode": "ADAPTIVE_SETUP_QUALITY",
-    "minimum_scout_notional_eur": 75,
-    "default_scout_notional_eur": 75,
+    "simulation_sizing_mode": "FIXED_TIMING_ISOLATION",
+    "scout_notional_eur": 50,
+    "stage2_notional_eur": 50,
+    "target_total_notional_eur": 100,
     "stage2_required_for_full_position": true,
     "stage2_requires_explicit_trigger_above_scout_ask": true,
     "stage2_max_ttl_minutes": 60,
     "public_kraken_minimum_order_gate_required": true,
-    "sizing_tiers": {
-      "B_PLUS_OR_EARLY_SCOUT": {
-        "scout_notional_eur": 75,
-        "confirmation_notional_eur": 75,
-        "target_total_notional_eur": 150
-      },
-      "A_MINUS": {
-        "scout_notional_eur": 75,
-        "confirmation_notional_eur": 75,
-        "target_total_notional_eur": 150
-      },
-      "A": {
-        "scout_notional_eur_range": [
-          100,
-          125
-        ],
-        "confirmation_notional_eur_range": [
-          100,
-          175
-        ],
-        "target_total_notional_eur_range": [
-          200,
-          300
-        ]
-      },
-      "A_PLUS": {
-        "scout_notional_eur_range": [
-          150,
-          200
-        ],
-        "confirmation_notional_eur_range": [
-          150,
-          400
-        ],
-        "target_total_notional_eur_range": [
-          300,
-          600
-        ]
-      }
-    },
-    "sizing_constraints": {
-      "no_50_eur_micro_packages_as_normal_default": true,
-      "scale_only_with_setup_quality_and_confirmation": true,
-      "never_chase_only_to_reach_target_size": true,
-      "paper_results_must_report_percentage_and_eur_pnl": true
-    },
-    "scout_notional_eur": 75,
-    "stage2_notional_eur": 75,
-    "runtime_default_tier": "B_PLUS_OR_EARLY_SCOUT",
-    "adaptive_sizing_runtime_status": "NOT_YET_WIRED_USE_75_PLUS_75_FOR_E2E_SMOKE_ONLY",
-    "runtime_default_note": "Until a separately validated setup-quality sizing mapper is implemented, the executable paper default is 75 EUR scout + 75 EUR confirmation. Sizing tiers remain research targets and must not be inferred automatically."
+    "sizing_experiment_status": "DEFERRED_TO_SEPARATELY_VERSIONED_SUCCESSOR",
+    "adaptive_sizing_allowed_in_this_series": false,
+    "never_chase_only_to_reach_target_size": true,
+    "paper_results_must_report_percentage_and_eur_pnl": true
   },
   "wait_monitoring": {
     "enabled_when_activated": true,
@@ -177,23 +131,34 @@
     "discovery_examples_are_not_holdout_validation": true,
     "candidate_reviews_do_not_count_as_completed_trades": true,
     "reason_code_taxonomy_normalization_required": true,
-    "classify_tradability_data_errors_separately_from_strategy_rejections": true
+    "classify_tradability_data_errors_separately_from_strategy_rejections": true,
+    "fasttrack_policy": "EVIDENCE_DIVERSITY_FASTTRACK_V2",
+    "runtime_evidence_destination": "SUPABASE_STRUCTURED_ARCHIVE",
+    "github_high_frequency_runtime_persistence": false
   },
   "activation_gates": {
     "v2r3_must_remain_unchanged": true,
     "separate_series_id_required": true,
+    "v2r3_evidence_diversity_completion_required": true,
+    "v2r3_integrity_healthy_required": true,
+    "v2r3_final_causal_review_completed_required": true,
+    "validated_findings_migration_review_completed_required": true,
+    "v2r4_shadow_maturity_required": true,
     "mini_pc_smoke_test_required": true,
     "local_clock_and_network_health_required": true,
     "watchdog_required": true,
     "trigger_contract_tests_required": true,
+    "explicit_release_record_required": true,
+    "explicit_release_status_required": "APPROVED_PAPER",
+    "automatic_activation_allowed": false,
     "paper_only_until_separate_validation_complete": true,
-    "v2r4_activation_timing": "AFTER_MINIPC_BASE_STABLE_AND_SINGLE_END_TO_END_PAPER_SMOKE_TEST_PASSES",
-    "v2r3_target_20_trades_not_required_before_v2r4_parallel_start": true,
-    "future_v3_gate": "ONLY_AFTER_PROSPECTIVE_V2R4_DATA_PLUS_HISTORICAL_WALK_FORWARD_VALIDATION_JUSTIFY_MAJOR_MECHANIC_CHANGE",
-    "precandidate_watcher_smoke_test_required": true,
-    "precandidate_lane_must_not_modify_v2r3_control": true,
-    "adaptive_sizing_contract_required_before_full_v2r4_series": true,
-    "e2e_smoke_may_use_default_75_plus_75": true
+    "first_full_series_sizing": "50_PLUS_50_TIMING_ISOLATION",
+    "adaptive_sizing_allowed": false,
+    "e2e_smoke_is_sufficient_for_activation": false,
+    "runtime_evidence_destination": "SUPABASE_AND_BOUNDED_MINIPC_STATE",
+    "github_runtime_database_allowed": false,
+    "canonical_market_data_layer_required": "market_data",
+    "future_live_release_is_separate_gate": true
   },
   "pre_candidate_discovery": {
     "enabled_when_activated": true,
@@ -244,5 +209,14 @@
     "watch_to_review_transition_requests_immediate_recheck": true,
     "direct_order_allowed": false,
     "real_money_actions_enabled": false
+  },
+  "architecture": {
+    "canonical_market_data_layer": "market_data",
+    "tradability_source": "LIVE_PUBLIC_KRAKEN_ASSETPAIRS_ONLINE_SPOT_EUR",
+    "durable_runtime_evidence": "SUPABASE",
+    "local_operational_state": "MINIPC_BOUNDED_STATE_WITH_TTL",
+    "source_control": "GITHUB_CODE_CONTRACTS_TESTS_DOCS_COMPACT_RELEASE_EVIDENCE_ONLY",
+    "direct_order_path": false,
+    "private_exchange_credentials_required": false
   }
 }
