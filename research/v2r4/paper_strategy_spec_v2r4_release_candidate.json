@@ -1,9 +1,9 @@
 {
-  "schema_version": 5,
+  "schema_version": 6,
   "strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
   "status": "PREPARED_NOT_ACTIVE_RELEASE_CONTRACT",
   "inherits_from": "V2R3-2026-09-28",
-  "description": "Paper-only V2R4 release candidate contract. Primary test is timing/discovery/revalidation versus frozen V2R3, with sizing held constant at 50+50 EUR to avoid confounding.",
+  "description": "Paper-only V2R4 release candidate contract. Primary first-series test is timing/discovery/revalidation plus the already-explicit public-tradability/data-quality repairs versus frozen V2R3; sizing and signal-role semantics stay inherited to reduce confounding.",
   "paper_only": true,
   "real_money_actions_enabled": false,
   "research_hypothesis": "Two timing blind spots are under test: (1) execution-liquidity filtering can hide early/persistent movers before they ever become candidates; (2) one-shot WAIT revalidation can miss later confirmation. V2R4 separates broad discovery from execution eligibility and uses fresh deterministic rechecks without broadly removing risk gates.",
@@ -63,16 +63,17 @@
     "never_place_order_directly_from_trigger": true
   },
   "decision_policy": {
-    "major_market_regime_role": "STATE_AND_RISK_SCALER_NOT_AUTOMATIC_VETO",
-    "derivatives_role": "SUPPORTING_CONTEXT_NOT_MANDATORY",
-    "coin_specific_catalyst_role": "BONUS_NOT_REQUIRED_FOR_TECHNICALLY_STRONG_SETUP",
+    "major_market_regime_role": "INHERIT_FROZEN_V2R3_BEHAVIOR_FIRST_SERIES",
+    "derivatives_role": "INHERIT_FROZEN_V2R3_BEHAVIOR_FIRST_SERIES",
+    "coin_specific_catalyst_role": "INHERIT_FROZEN_V2R3_BEHAVIOR_FIRST_SERIES",
     "missing_data_behavior": "EXPLICITLY_MISSING_NO_FABRICATION",
     "late_chase_protection": true,
     "cost_adjusted_edge_required": true,
     "structural_stop_required_before_buy_scout": true,
     "account_private_tradability_role": "NOT_REQUIRED_NOT_NEGATIVE_WHEN_PUBLIC_KRAKEN_PAIR_IS_ONLINE",
     "kraken_tradability_source": "LIVE_PUBLIC_ASSETPAIRS_ONLINE_SPOT_EUR",
-    "static_pair_blacklist_allowed": false
+    "static_pair_blacklist_allowed": false,
+    "role_relaxations_status": "DEFERRED_PENDING_SEPARATE_EVIDENCE_AND_EXPLICIT_MIGRATION_DISPOSITION"
   },
   "exit": {
     "initial_stop_from_evaluator": true,
@@ -103,7 +104,8 @@
       30,
       60,
       120,
-      360
+      360,
+      1440
     ],
     "compare_metrics": [
       "trigger_latency_seconds",
@@ -120,7 +122,6 @@
       "false_trigger_rate",
       "return_on_deployed_notional_pct",
       "pnl_by_setup_quality_tier",
-      "pnl_by_simulation_size_tier",
       "pre_candidate_detection_count",
       "watch_only_to_review_eligible_rate",
       "pre_candidate_to_buy_scout_rate",
@@ -215,6 +216,15 @@
       "status": "DEFER_TO_LATER_GENERATION",
       "previous_research_tiers": "75+75 through adaptive 600 EUR total",
       "rule": "Must be separately versioned, mapped deterministically, tested and release-gated after timing-isolation evidence."
+    },
+    "decision_role_relaxations": {
+      "status": "DEFER_TO_LATER_GENERATION",
+      "scope": [
+        "major_market_regime_role",
+        "derivatives_role",
+        "coin_specific_catalyst_role"
+      ],
+      "rule": "Do not change these V2R3 signal/context semantics in the first V2R4 timing series. Any relaxation requires a separately versioned, evidence-backed migration disposition and release gate."
     }
   }
 }
