@@ -1,0 +1,74 @@
+name: V2R4 release contract guard
+
+'on':
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'research/v2r4/paper_strategy_spec_v2r4_release_candidate.json'
+      - 'research/v2r4/README_RELEASE_CANDIDATE.md'
+      - 'docs/v2r4-**'
+      - '.github/workflows/v2r4-release-contract-guard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'research/v2r4/paper_strategy_spec_v2r4_release_candidate.json'
+      - 'research/v2r4/README_RELEASE_CANDIDATE.md'
+      - 'docs/v2r4-**'
+      - '.github/workflows/v2r4-release-contract-guard.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Validate V2R4 first-series contract
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path('research/v2r4/paper_strategy_spec_v2r4_release_candidate.json')
+          j=json.loads(p.read_text('utf-8'))
+          assert j['status']=='PREPARED_NOT_ACTIVE_RELEASE_CONTRACT'
+          assert j['paper_only'] is True
+          assert j['real_money_actions_enabled'] is False
+          e=j['entry']
+          assert e['simulation_sizing_mode']=='FIXED_V2R3_PARITY'
+          assert e['scout_notional_eur']==50
+          assert e['stage2_notional_eur']==50
+          assert e['target_total_notional_eur']==100
+          assert e['adaptive_sizing_enabled'] is False
+          g=j['activation_gates']
+          for key in (
+            'v2r3_completion_ready_required',
+            'v2r3_integrity_healthy_required',
+            'v2r3_final_review_allowed_required',
+            'v2r3_final_causal_review_completed_required',
+            'predecessor_successor_migration_review_completed_required',
+          ):
+              assert g[key] is True, key
+          assert g['v2r4_activation_readiness_state_required']=='MANUAL_RELEASE_REVIEW_REQUIRED'
+          assert g['explicit_release_decision_required']=='APPROVED_PAPER'
+          assert g['automatic_activation_allowed'] is False
+          assert g['runtime_evidence_storage']=='SUPABASE_PRIMARY_BOUNDED_LOCAL_STATE_NO_PER_EVENT_GIT_COMMITS'
+          assert j['measurement']['git_runtime_event_commits_allowed'] is False
+          assert j['deferred_research']['adaptive_sizing']['status']=='DEFER_TO_LATER_GENERATION'
+          print('V2R4_RELEASE_CONTRACT_GUARD_PASS')
+          PY
+      - name: Reject obsolete activation shortcut wording
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          text=Path('research/v2r4/README_RELEASE_CANDIDATE.md').read_text('utf-8')
+          assert 'Technical smoke success is necessary but **never sufficient**' in text
+          assert 'automatic_activation_allowed' in text
+          assert '50 EUR scout + 50 EUR stage 2' in text
+          assert 'No V2R4 or later runtime may reproduce' in text
+          print('V2R4_RELEASE_DOC_GUARD_PASS')
+          PY
