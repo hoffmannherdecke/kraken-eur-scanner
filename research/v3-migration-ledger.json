@@ -2,7 +2,7 @@
   "schema_version": 2,
   "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-05T08:28:21Z",
+  "updated_at_utc": "2026-10-05T09:45:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -255,7 +255,7 @@
         "research/v3/h3-association-reports/v3-h3-association-002-20261003-095025.json",
         "research/v3/h3-assoc-002-fixed-review-20261003.json"
       ],
-      "pending_gate": "PROJECT_REVIEW_BEFORE_ANY_ONE_CHANGE_SHADOW_MATERIALIZATION; ANY NEW SYMBOL_SPECIFIC_THRESHOLD_OR_TRANSFORM_SEARCH_REQUIRES_NEW_SEARCH_ACCOUNTED_TRIAL"
+      "pending_gate": "WAIT_FOR_V3_H1_SHADOW_001_REVIEW_THEN_PROJECT_REVIEW_BEFORE_H3_ONE_CHANGE_SHADOW; ANY NEW SYMBOL_SPECIFIC_THRESHOLD_OR_TRANSFORM_SEARCH_REQUIRES_NEW_SEARCH_ACCOUNTED_TRIAL"
     },
     {
       "id": "macro_event_risk_gate",
@@ -276,15 +276,19 @@
     {
       "id": "smart_money_trader_activity",
       "category": "state_context",
-      "source_version": "V3 hypothesis",
+      "source_version": "V3 H10 prospective shadow",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Hyperliquid public read-only transport/response shape is green. No trader-quality, wallet-selection or predictive-value claim exists. This branch is not required for the first V3 shadow unless explicitly selected later.",
+      "rationale": "Hyperliquid public read-only transport is green and the unbiased V3-H10-COHORT-001 selection is already frozen at 20 Primary + 6 Active Controls. Prospective server-side capture is active and healthy with exact source fill timestamps plus compact Supabase persistence. No trader-quality or predictive-value claim is made yet; the preregistered first analysis gate must mature before any Kraken-EUR association review or strategy coupling.",
       "evidence": [
         "research/v3/h10-hyperliquid-readonly-precheck-v1.json",
         "research/v3/h10-h11-public-source-evidence-20261002.json",
-        "docs/v3-research-framework.md"
+        "docs/v3-research-framework.md",
+        "research/v3/h10-trader-cohort-v1.json",
+        "research/v3/h10-first-analysis-gate-v1.json",
+        "public.v3_h10_capture_health",
+        "docs/storage-retention-policy.md"
       ],
-      "pending_gate": "V3_H10_FREEZE_UNBIASED_PUBLIC_ADDRESS_SELECTION_PROVENANCE_BEFORE_PROSPECTIVE_ACTIVITY_CAPTURE"
+      "pending_gate": "V3_H10_FIRST_ANALYSIS_GATE_72H_HEALTH_SAMPLE_MATURITY_THEN_FIXED_KRAKEN_ASSOCIATION_REVIEW"
     },
     {
       "id": "prediction_market_event_layer",
@@ -328,16 +332,19 @@
       "category": "state_signal",
       "source_version": "V3 H1 hypothesis",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Exact V3-H1-INCR-001 MINI-PC report is imported and the fixed review is complete with holdout sealed. The preregistered relative-context features retain small but sign-consistent incremental partial association after controlling target 1h return across research_train/calibration/validation and both weighting schemes. No threshold search, winner selection or promotion was performed.",
+      "rationale": "V3-H1-INCR-001 and its fixed review are complete with the holdout sealed. The one-change pilot V3-H1-SHADOW-001 subsequently closed at its preregistered minimum gate with 200/200 PASS context records, 100% capture and 9 baseline-vs-H1 decision divergences. Collection is complete; the fixed divergence review is now the only H1 gate before any H3 one-change shadow.",
       "evidence": [
         "research/v3/h1-cross-crypto-breadth-precheck-v1.json",
         "research/v3/h1-h6-association-review-20261002.json",
         "research/v3/h1-incremental-relative-context-trial-v1.json",
         "research/v3/h1-incremental-trial-ledger-record-v1.json",
         "research/v3/incremental-reports/v3-h1-incremental-001-20261002-095841.json",
-        "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
+        "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json",
+        "research/v3/shadow-runtime/h1-status.json",
+        "research/v3/shadow-runtime/h1-control.json",
+        "public.v3_h1_shadow_summary"
       ],
-      "pending_gate": "PROJECT_REVIEW_BEFORE_ANY_ONE_CHANGE_SHADOW_MATERIALIZATION"
+      "pending_gate": "V3_H1_SHADOW_001_FIXED_REVIEW_BEFORE_H3_SHADOW_MATERIALIZATION"
     },
     {
       "id": "price_volume_trend_primitives",
@@ -353,20 +360,21 @@
         "research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json",
         "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
       ],
-      "pending_gate": "PROJECT_REVIEW_BEFORE_ANY_ONE_CHANGE_SHADOW_MATERIALIZATION"
+      "pending_gate": "WAIT_FOR_H1_THEN_H3_SEQUENCE_REVIEWS_BEFORE_H6_ONE_CHANGE_SHADOW"
     },
     {
       "id": "simple_price_volume_primitives",
-      "category": "signal_state",
+      "category": "legacy_alias",
       "source_version": "V3 hypothesis",
-      "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "The H6 incremental physical report is imported and fixed quantitative review is complete. Incremental volume contribution beyond fixed price direction is small/near zero in the preregistered development splits; no retuning or holdout access occurred.",
+      "migration_status": "NO_SUCCESSOR_CHANGE",
+      "rationale": "Legacy duplicate label for the canonical H6 component `price_volume_trend_primitives`. It is retained only so older references remain interpretable; all active H6 evidence, gates and future dispositions belong to the canonical component.",
       "evidence": [
         "research/v3/h6-incremental-volume-contribution-trial-v1.json",
         "research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json",
         "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
       ],
-      "pending_gate": "PROJECT_REVIEW_BEFORE_ANY ONE_CHANGE_SHADOW_MATERIALIZATION"
+      "pending_gate": null,
+      "superseded_by": "price_volume_trend_primitives"
     },
     {
       "id": "meta_take_no_take",
