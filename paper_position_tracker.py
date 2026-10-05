@@ -158,6 +158,18 @@ def close_state(state,bar,fill,spread,reason,fill_model):
     net=exit_notional-entry_notional-entry_fees-exit_fee
     closed_at=iso_ts(bar["start"]+60)
     state["status"]="CLOSED"
+    s2=state.get("stage2_plan")
+    if s2 and s2.get("status")=="PENDING":
+        s2.update({
+            "status":"CANCELLED_ON_EXIT",
+            "cancelled_at_utc":closed_at,
+            "cancel_reason":reason,
+        })
+        state["events"].append({
+            "type":"STAGE2_CANCELLED_ON_EXIT",
+            "at_utc":closed_at,
+            "reason":reason,
+        })
     state["exit"]={
         "reason":reason,"closed_at_utc":closed_at,
         "trigger_bar_start_utc":iso_ts(bar["start"]),
