@@ -1,0 +1,220 @@
+{
+  "schema_version": 5,
+  "strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+  "status": "PREPARED_NOT_ACTIVE_RELEASE_CONTRACT",
+  "inherits_from": "V2R3-2026-09-28",
+  "description": "Paper-only V2R4 release candidate contract. Primary test is timing/discovery/revalidation versus frozen V2R3, with sizing held constant at 50+50 EUR to avoid confounding.",
+  "paper_only": true,
+  "real_money_actions_enabled": false,
+  "research_hypothesis": "Two timing blind spots are under test: (1) execution-liquidity filtering can hide early/persistent movers before they ever become candidates; (2) one-shot WAIT revalidation can miss later confirmation. V2R4 separates broad discovery from execution eligibility and uses fresh deterministic rechecks without broadly removing risk gates.",
+  "fees": {
+    "taker_pct_per_side": 0.6
+  },
+  "entry": {
+    "simulation_sizing_mode": "FIXED_V2R3_PARITY",
+    "scout_notional_eur": 50,
+    "stage2_notional_eur": 50,
+    "target_total_notional_eur": 100,
+    "stage2_required_for_full_position": true,
+    "stage2_requires_explicit_trigger_above_scout_ask": true,
+    "stage2_max_ttl_minutes": 60,
+    "public_kraken_minimum_order_gate_required": true,
+    "adaptive_sizing_enabled": false,
+    "adaptive_sizing_status": "DEFERRED_TO_SEPARATELY_VERSIONED_SUCCESSOR_EXPERIMENT",
+    "never_chase_only_to_reach_target_size": true,
+    "paper_results_must_report_percentage_and_eur_pnl": true
+  },
+  "wait_monitoring": {
+    "enabled_when_activated": true,
+    "paper_only": true,
+    "preferred_runtime": "minipc_event_driven",
+    "primary_data_source": "kraken_public",
+    "optional_wakeup_sources": [
+      "altrady"
+    ],
+    "altrady_may_never_be_sole_source": true,
+    "fallback_poll_seconds": 10,
+    "minimum_poll_seconds": 5,
+    "max_trigger_to_recheck_seconds_target": 20,
+    "github_schedule_is_not_timing_critical": true,
+    "trigger_action": "FRESH_PAPER_RECHECK_ONLY",
+    "allowed_trigger_metrics": [
+      "last_eur",
+      "bid_eur",
+      "ask_eur",
+      "spread_pct",
+      "closed_1m_close_eur",
+      "closed_1m_volume_ratio_5",
+      "closed_5m_close_eur",
+      "closed_5m_volume_ratio_5",
+      "closed_15m_close_eur",
+      "closed_15m_volume_ratio_4"
+    ],
+    "allowed_operators": [
+      ">",
+      ">=",
+      "<",
+      "<="
+    ],
+    "condition_logic": [
+      "ALL"
+    ],
+    "on_expiry_without_trigger": "REJECT_OR_STANDARD_TTL_REVIEW",
+    "never_place_order_directly_from_trigger": true
+  },
+  "decision_policy": {
+    "major_market_regime_role": "STATE_AND_RISK_SCALER_NOT_AUTOMATIC_VETO",
+    "derivatives_role": "SUPPORTING_CONTEXT_NOT_MANDATORY",
+    "coin_specific_catalyst_role": "BONUS_NOT_REQUIRED_FOR_TECHNICALLY_STRONG_SETUP",
+    "missing_data_behavior": "EXPLICITLY_MISSING_NO_FABRICATION",
+    "late_chase_protection": true,
+    "cost_adjusted_edge_required": true,
+    "structural_stop_required_before_buy_scout": true,
+    "account_private_tradability_role": "NOT_REQUIRED_NOT_NEGATIVE_WHEN_PUBLIC_KRAKEN_PAIR_IS_ONLINE",
+    "kraken_tradability_source": "LIVE_PUBLIC_ASSETPAIRS_ONLINE_SPOT_EUR",
+    "static_pair_blacklist_allowed": false
+  },
+  "exit": {
+    "initial_stop_from_evaluator": true,
+    "trailing_tiers": [
+      {
+        "gain_pct": 7,
+        "trail_pct": 4
+      },
+      {
+        "gain_pct": 12,
+        "trail_pct": 3
+      },
+      {
+        "gain_pct": 15,
+        "trail_pct": 2
+      }
+    ],
+    "forced_time_exit": true,
+    "max_hold_hours": 72,
+    "stale_position_review_hours": 24,
+    "contiguous_1m_coverage_required": true,
+    "data_gap_behavior": "UNVERIFIED_NOT_COUNTED"
+  },
+  "measurement": {
+    "comparison_control": "V2R3-2026-09-28",
+    "target_completed_trades": 20,
+    "followup_horizons_minutes": [
+      30,
+      60,
+      120,
+      360
+    ],
+    "compare_metrics": [
+      "trigger_latency_seconds",
+      "decision_latency_seconds",
+      "entry_latency_seconds",
+      "MFE_pct",
+      "MAE_pct",
+      "net_pnl_after_fees_spread_slippage",
+      "win_rate",
+      "profit_factor",
+      "expectancy_eur",
+      "wait_to_trigger_rate",
+      "trigger_to_buy_scout_rate",
+      "false_trigger_rate",
+      "return_on_deployed_notional_pct",
+      "pnl_by_setup_quality_tier",
+      "pnl_by_simulation_size_tier",
+      "pre_candidate_detection_count",
+      "watch_only_to_review_eligible_rate",
+      "pre_candidate_to_buy_scout_rate",
+      "discovery_to_recheck_latency_seconds",
+      "missed_move_before_liquidity_gate_rate",
+      "pnl_by_liquidity_class"
+    ],
+    "discovery_examples_are_not_holdout_validation": true,
+    "candidate_reviews_do_not_count_as_completed_trades": true,
+    "reason_code_taxonomy_normalization_required": true,
+    "classify_tradability_data_errors_separately_from_strategy_rejections": true,
+    "first_series_confounded_by_sizing": false,
+    "runtime_evidence_destination": "SUPABASE_STRUCTURED_EVIDENCE",
+    "git_runtime_event_commits_allowed": false
+  },
+  "activation_gates": {
+    "v2r3_must_remain_unchanged": true,
+    "separate_series_id_required": true,
+    "v2r3_completion_ready_required": true,
+    "v2r3_integrity_healthy_required": true,
+    "v2r3_final_review_allowed_required": true,
+    "v2r3_final_causal_review_completed_required": true,
+    "predecessor_successor_migration_review_completed_required": true,
+    "v2r4_activation_readiness_state_required": "MANUAL_RELEASE_REVIEW_REQUIRED",
+    "explicit_release_decision_required": "APPROVED_PAPER",
+    "mini_pc_smoke_test_required": true,
+    "local_clock_and_network_health_required": true,
+    "watchdog_required": true,
+    "trigger_contract_tests_required": true,
+    "paper_only_until_separate_validation_complete": true,
+    "automatic_activation_allowed": false,
+    "real_money_actions_enabled": false,
+    "precandidate_watcher_smoke_test_required": true,
+    "precandidate_lane_must_not_modify_v2r3_control": true,
+    "first_series_sizing": "FIXED_50_PLUS_50",
+    "adaptive_sizing_deferred": true,
+    "evidence_diversity_policy": "EVIDENCE_DIVERSITY_FASTTRACK_V2",
+    "runtime_evidence_storage": "SUPABASE_PRIMARY_BOUNDED_LOCAL_STATE_NO_PER_EVENT_GIT_COMMITS"
+  },
+  "pre_candidate_discovery": {
+    "enabled_when_activated": true,
+    "paper_only": true,
+    "scope": "ALL_KRAKEN_EUR_SPOT_PAIRS",
+    "visibility_turnover_gate_eur": null,
+    "preferred_runtime": "minipc_local_rolling_tape",
+    "primary_data_source": "kraken_public",
+    "rolling_windows_minutes": [
+      10,
+      30,
+      60,
+      180,
+      360,
+      720
+    ],
+    "recognition_rules": {
+      "fast_10m_pct": 1.25,
+      "fast_30m_pct": 2,
+      "momentum_1h_pct": 3,
+      "persistent_3h_pct": 4,
+      "persistent_6h_pct": 5,
+      "persistent_12h_pct": 7,
+      "utc_day_move_pct": 8,
+      "staircase_6h": {
+        "ret1h_min_pct": 0.8,
+        "ret3h_min_pct": 2,
+        "ret6h_min_pct": 4
+      }
+    },
+    "recognition_rules_are_buy_rules": false,
+    "orderbook_fetch_policy": "ONLY_AFTER_DISCOVERY_TRIGGER",
+    "standard_execution_review_gate": {
+      "min_turnover_eur_24h": 150000,
+      "max_spread_pct": 1.5
+    },
+    "microstructure_exception_shadow": {
+      "enabled": true,
+      "min_turnover_eur_24h": 50000,
+      "max_turnover_eur_24h_exclusive": 150000,
+      "max_spread_pct": 0.6,
+      "min_depth_1pct_eur_absolute": 3000,
+      "min_depth_1pct_multiple_of_intended_notional": 20,
+      "action": "FRESH_PAPER_RECHECK_ONLY",
+      "direct_order_allowed": false
+    },
+    "watch_only_below_review_gate": true,
+    "watch_to_review_transition_requests_immediate_recheck": true,
+    "direct_order_allowed": false,
+    "real_money_actions_enabled": false
+  },
+  "deferred_research": {
+    "adaptive_sizing": {
+      "status": "DEFER_TO_LATER_GENERATION",
+      "previous_research_tiers": "75+75 through adaptive 600 EUR total",
+      "rule": "Must be separately versioned, mapped deterministically, tested and release-gated after timing-isolation evidence."
+    }
+  }
+}
