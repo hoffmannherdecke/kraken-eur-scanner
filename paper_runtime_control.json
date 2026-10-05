@@ -1,5 +1,5 @@
 {
-  "schema_version": 7,
+  "schema_version": 8,
   "enabled": true,
   "test_id": "SHADOW-V2R3-20261001-01",
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
@@ -15,10 +15,14 @@
   "market_capture_mode": "manual_diagnostic_only",
   "compact_followup_enabled": true,
   "unified_runtime_enabled": true,
-  "supabase_archive_mode": "secure_secondary_manual_connector_until_service_credential_available",
+  "supabase_archive_mode": "AUTOMATIC_SECURE_BACKEND_ARCHIVE_PRIMARY_RUNTIME_EVIDENCE",
   "independent_external_watchdog_required": true,
   "preserve_process_health": true,
   "real_money_actions_enabled": false,
   "predecessor_series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
-  "data_quality_restart_reason": "followup timestamp churn + non-deterministic status|grep persistence gate caused repeated evaluation before commit"
+  "data_quality_restart_reason": "followup timestamp churn + non-deterministic status|grep persistence gate caused repeated evaluation before commit",
+  "git_runtime_compatibility_mode": "V2R3_ONLY_UNTIL_COMPLETION_AND_ARCHIVE_RECONCILIATION",
+  "successor_runtime_storage_policy": "SUPABASE_PRIMARY_GIT_COMPACT_RELEASE_EVIDENCE_ONLY",
+  "runtime_storage_policy": "docs/runtime-state-storage-policy.md",
+  "branch_protection_cutover": "AFTER_V2R3_GIT_COMPATIBILITY_LANE_RETIRES"
 }
