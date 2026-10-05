@@ -136,7 +136,7 @@ Capture evidence included 324 clean Candidate-Outcomes, 64 complete 24h follow-u
 ## V2R4 — vorbereitete taktische Timing-/Trigger-Version
 
 **Status:** PREPARED / NOT ACTIVE / PAPER ONLY  
-**Implementierung:** frühere Drafts #8/#9 superseded; technisches Modul-Evidenzmaterial bleibt als Historie verwertbar, der neue Candidate entsteht sauber aus dem bereinigten `main`  
+**Implementierung:** frühere Drafts #8/#9 superseded; technisches Modul-Evidenzmaterial bleibt als Historie verwertbar. Der vorbereitete, noch inaktive Machine-Contract liegt in `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`; der spätere ausführbare Candidate wird daraus sauber auf dem bereinigten aktuellen `main` materialisiert und validiert.  
 **Release-Readiness:** `docs/v2r4-release-readiness.md`  
 **V2R3→V2R4 Release-Diff:** `docs/v2r4-v2r3-release-diff.md`  
 **Zweck:** gezielt das in V2R3 erkannte WAIT-/Revalidation-Latenzproblem untersuchen.
