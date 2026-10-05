@@ -1,0 +1,56 @@
+{
+  "policy_id": "EVIDENCE_DIVERSITY_FASTTRACK_V1",
+  "effective_at_utc": "2026-10-05T05:19:00Z",
+  "scope": [
+    "V2R3",
+    "V2R4",
+    "V3",
+    "future_paper_shadow_generations",
+    "future_live_successor_validation"
+  ],
+  "principles": {
+    "earliest_methodologically_defensible_decision": true,
+    "fixed_calendar_wait_required_by_itself": false,
+    "no_midrun_tuning": true,
+    "integrity_is_hard_gate": true,
+    "live_execution_safety_is_separate": true
+  },
+  "default_temporal_diversity": {
+    "minimum_observation_span_formula": "max(48h, 2x_required_followup_horizon)",
+    "minimum_observation_span_hours_floor": 48,
+    "minimum_distinct_utc_dates": 3,
+    "maximum_single_utc_date_share_pct": 50,
+    "maximum_rolling_24h_share_pct": 60
+  },
+  "default_maturity": {
+    "minimum_mature_qualifying_cohort_pct": 95,
+    "minimum_followup_coverage_pct": 95
+  },
+  "current_v2r3": {
+    "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+    "primary_completed_trade_target": 20,
+    "alternative_candidate_sample_target": 1000,
+    "qualifying_cohort": "earliest_1000_valid_candidate_outcomes",
+    "required_followup_horizon_hours": 24,
+    "minimum_observation_span_hours": 48,
+    "minimum_distinct_utc_dates": 3,
+    "maximum_single_utc_date_share_pct": 50,
+    "maximum_rolling_24h_share_pct": 60,
+    "minimum_mature_qualifying_outcomes": 950,
+    "minimum_followup_coverage_pct": 95
+  },
+  "future_contract_requirements": [
+    "sample_unit_and_floor",
+    "maturity_horizon",
+    "temporal_diversity_gate",
+    "integrity_and_provenance_gate",
+    "decision_target",
+    "predecessor_and_rollback_reference"
+  ],
+  "live_phase": {
+    "same_evidence_diversity_principle": true,
+    "active_live_strategy_self_retuning": false,
+    "successor_requires_inactive_validation": true,
+    "explicit_live_release_gate_required": true
+  }
+}
