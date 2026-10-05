@@ -68,6 +68,7 @@ Required:
 ### Binding sizing decision
 
 Decision memo: `docs/v2r4-sizing-release-decision.md`
+Binding machine contract: `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`
 
 For the **first full V2R4 Paper series**, sizing is fixed at **50 EUR scout + 50 EUR stage 2**, inherited from V2R3. This isolates the timing/discovery/revalidation hypothesis.
 
@@ -78,7 +79,7 @@ Adaptive setup-quality sizing is explicitly deferred to a later, separately vers
 The former Draft-PR #9 is superseded/closed and must not be revived.
 
 Before release:
-- create/use the fresh V2R4 candidate from the cleaned current `main`;
+- materialize and validate the fresh V2R4 candidate from the cleaned current `main` against the binding machine contract;
 - ensure the diff contains only the intended V2R4/release changes;
 - first full-series sizing must be 50+50 EUR;
 - runtime evidence destination must be Supabase/bounded MINI-PC state, never high-frequency `main` commits;
