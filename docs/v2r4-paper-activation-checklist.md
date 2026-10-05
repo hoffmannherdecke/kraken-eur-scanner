@@ -68,6 +68,7 @@ Required:
 ### Binding sizing decision
 
 Decision memo: `docs/v2r4-sizing-release-decision.md`
+Binding machine contract: `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`
 
 For the **first full V2R4 Paper series**, sizing is fixed at **50 EUR scout + 50 EUR stage 2**, inherited from V2R3. This isolates the timing/discovery/revalidation hypothesis.
 
@@ -75,10 +76,10 @@ Adaptive setup-quality sizing is explicitly deferred to a later, separately vers
 
 ## Gate 3 — code candidate
 
-The former superseded superseded PR #9 is superseded/closed and must not be revived.
+The former Draft-PR #9 is superseded/closed and must not be revived.
 
 Before release:
-- create/use the fresh V2R4 candidate from the cleaned current `main`;
+- materialize and validate the fresh V2R4 candidate from the cleaned current `main` against the binding machine contract;
 - ensure the diff contains only the intended V2R4/release changes;
 - first full-series sizing must be 50+50 EUR;
 - runtime evidence destination must be Supabase/bounded MINI-PC state, never high-frequency `main` commits;
@@ -185,8 +186,3 @@ Nothing in this checklist authorizes:
 - automatic capital scaling.
 
 Those remain a separate later execution-security program.
-
-
-### V2R4 release-contract supersession — 2026-10-05
-
-The historical V2R4 PR #9 is closed and superseded. The binding first-series machine contract is `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`: fixed 50+50 EUR sizing, V2R3 completion/final causal review/migration review required, explicit `APPROVED_PAPER` required, automatic activation forbidden, and successor runtime evidence stored in Supabase/bounded MINI-PC state rather than per-event Git commits.
