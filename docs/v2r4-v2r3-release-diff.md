@@ -116,3 +116,13 @@ This is a release-design decision, not an infrastructure repair. It must be expl
 This diff does not permit merge or activation.
 
 The fail-closed Supabase view `public.v2r4_activation_readiness` remains authoritative for automated blocking only, and `automatic_activation_allowed=false` by design. A later release review still requires mature clean V2R3 evidence plus an explicit manual decision.
+
+
+## Evidence-diversity release timing — governance only
+
+Effective 2026-10-05, V2R3→V2R4 release timing uses
+`EVIDENCE_DIVERSITY_FASTTRACK_V1` from `docs/fasttrack-evidence-diversity-policy.md`.
+This is **not** a V2R4 behavior/mechanics change. It removes the former fixed 7-day
+completion floor and allows the release review at the earliest valid sample/diversity/
+maturity/integrity point. Entry, stop, sizing, trigger, recheck and scanner behavior remain
+subject to the exact diff in this document.
