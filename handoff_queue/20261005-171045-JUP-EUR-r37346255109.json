@@ -1,0 +1,237 @@
+{
+  "action": "REVIEW_ONLY_NOT_ORDER",
+  "altname": "JUPEUR",
+  "candidate_id": "20261005-171045-JUP-EUR-r37346255109",
+  "event_time_utc": "2026-10-05T17:10:45Z",
+  "event_ts": 1791220245,
+  "kind": "CANONICAL_CANDIDATE_HANDOFF_V1",
+  "pair": "JUP/EUR",
+  "queue_id": "37346255109:JUP-EUR:1791220245",
+  "review_message": "SCANNER_CANDIDATE_V1 | pair=JUP/EUR | score=10.60 | price_eur=0.30535 | ret15_live=-0.03% | ret1h=1.29% | ret3h=2.52% | ret24h=4.02% | vol_live=4.69x | vol_closed=0.02x | rank=3 | rank_jump=13 | state_rank_jump=4 | breakout3h=0 | higher_lows=1 | base_tight=3.53% | fresh_move3h=3.57% | adx14=16.8 | spread=0.108% | turnover24h_eur=219018 | coverage=100% | ret7d=4.45% | ret30d=59.36% | dist7d_high=-0.47% | dist30d_high=-7.12% | depth_1pct_eur=141012 | action=REVIEW_ONLY_NOT_ORDER",
+  "scanner_candidate": {
+    "adx14": 16.761329307554558,
+    "altname": "JUPEUR",
+    "base_tight_pct": 3.534240070549144,
+    "breakout3h": false,
+    "context30d": 59.36,
+    "context7d": 4.45,
+    "depth_eur_1pct": 141012.24,
+    "dist30d_high_pct": -7.12,
+    "dist7d_high_pct": -0.47,
+    "ema26_gt_50": true,
+    "fresh_move_3h": 3.5681579215141035,
+    "higher_lows": true,
+    "late": false,
+    "pair": "JUP/EUR",
+    "price": 0.30535,
+    "rank15": 3,
+    "rank15_prev": 16,
+    "rank_jump": 13,
+    "ret15_closed": 0.30230342062893545,
+    "ret15_live": -0.029465688842322812,
+    "ret1h": 1.2870269015158975,
+    "ret24h": 4.02330176466581,
+    "ret3h": 2.5180459963068724,
+    "score": 10.6,
+    "spread_pct": 0.10791543354207783,
+    "stale": false,
+    "state_rank_jump": 4,
+    "turnover24h": 219018.18520305373,
+    "volume_ratio_closed": 0.017122455767460607,
+    "volume_ratio_live": 4.693750494104599
+  },
+  "scanner_market_breadth": {
+    "generated_at_utc": "2026-10-05T17:10:45Z",
+    "positive_1h_count": 26,
+    "positive_3h_count": 6,
+    "schema_version": 1,
+    "score_ge_5_count": 14,
+    "top_1h": [
+      {
+        "pair": "ZRO/EUR",
+        "ret15_live": 0.968,
+        "ret1h": 2.512,
+        "ret3h": 6.708,
+        "score": 9.2,
+        "vol_live": 0.371
+      },
+      {
+        "pair": "STRK/EUR",
+        "ret15_live": 0.063,
+        "ret1h": 1.459,
+        "ret3h": -2.274,
+        "score": 4.9,
+        "vol_live": 1.038
+      },
+      {
+        "pair": "JUP/EUR",
+        "ret15_live": -0.029,
+        "ret1h": 1.287,
+        "ret3h": 2.518,
+        "score": 10.6,
+        "vol_live": 4.694
+      },
+      {
+        "pair": "XDC/EUR",
+        "ret15_live": 0.034,
+        "ret1h": 0.828,
+        "ret3h": -1.116,
+        "score": 4.9,
+        "vol_live": 0.133
+      },
+      {
+        "pair": "HYPE/EUR",
+        "ret15_live": -0.263,
+        "ret1h": 0.786,
+        "ret3h": 0.241,
+        "score": 7.6,
+        "vol_live": 1.386
+      },
+      {
+        "pair": "LTC/EUR",
+        "ret15_live": -0.127,
+        "ret1h": 0.673,
+        "ret3h": -0.992,
+        "score": 7.1,
+        "vol_live": 1.696
+      },
+      {
+        "pair": "AAVE/EUR",
+        "ret15_live": 0.043,
+        "ret1h": 0.521,
+        "ret3h": -0.865,
+        "score": 4.9,
+        "vol_live": 0.867
+      },
+      {
+        "pair": "RENDER/EUR",
+        "ret15_live": -0.673,
+        "ret1h": 0.511,
+        "ret3h": -0.784,
+        "score": 5.5,
+        "vol_live": 0.914
+      }
+    ],
+    "top_score": [
+      {
+        "pair": "JUP/EUR",
+        "ret15_live": -0.029,
+        "ret1h": 1.287,
+        "ret3h": 2.518,
+        "score": 10.6,
+        "vol_live": 4.694
+      },
+      {
+        "pair": "ZRO/EUR",
+        "ret15_live": 0.968,
+        "ret1h": 2.512,
+        "ret3h": 6.708,
+        "score": 9.2,
+        "vol_live": 0.371
+      },
+      {
+        "pair": "HYPE/EUR",
+        "ret15_live": -0.263,
+        "ret1h": 0.786,
+        "ret3h": 0.241,
+        "score": 7.6,
+        "vol_live": 1.386
+      },
+      {
+        "pair": "ENA/EUR",
+        "ret15_live": 0.0,
+        "ret1h": 0.046,
+        "ret3h": -2.447,
+        "score": 7.4,
+        "vol_live": 3.762
+      },
+      {
+        "pair": "LTC/EUR",
+        "ret15_live": -0.127,
+        "ret1h": 0.673,
+        "ret3h": -0.992,
+        "score": 7.1,
+        "vol_live": 1.696
+      },
+      {
+        "pair": "XMR/EUR",
+        "ret15_live": -0.049,
+        "ret1h": -0.123,
+        "ret3h": 0.807,
+        "score": 6.5,
+        "vol_live": 2.138
+      },
+      {
+        "pair": "VVV/EUR",
+        "ret15_live": 0.308,
+        "ret1h": -1.043,
+        "ret3h": -5.711,
+        "score": 6.1,
+        "vol_live": 3.335
+      },
+      {
+        "pair": "ALGO/EUR",
+        "ret15_live": -0.642,
+        "ret1h": -0.062,
+        "ret3h": -2.93,
+        "score": 6.0,
+        "vol_live": 3.814
+      }
+    ],
+    "total_rows": 61
+  },
+  "scanner_market_context": {
+    "altname": "JUPEUR",
+    "atr15_eur": 0.0022835714285714325,
+    "atr15_pct": 0.7480987480987493,
+    "closed_through_epoch": 1791218700,
+    "interval_min": 15,
+    "last_closed": {
+      "close": 0.30525,
+      "high": 0.30525,
+      "low": 0.30433,
+      "open": 0.30433,
+      "volume": 330.82028
+    },
+    "pair": "JUP/EUR",
+    "range_1h_pct": 1.8771498771498811,
+    "recent_closed_closes": [
+      0.3016,
+      0.30258,
+      0.30109,
+      0.30048,
+      0.30356,
+      0.30525
+    ],
+    "resistance_1h": 0.30525,
+    "resistance_3h": 0.30525,
+    "schema_version": 1,
+    "sensor_price_eur": 0.30535,
+    "source": "kraken_public_ohlc_via_github_runner",
+    "support_1h": 0.29952,
+    "support_3h": 0.29483,
+    "ts": 1791220245
+  },
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "scanner_runtime_settings": {
+    "candidate_threshold": 5.0,
+    "max_spread_pct": 1.5,
+    "max_stage2_pairs": 120,
+    "min_turnover_eur_24h": 150000,
+    "native_cooldown_seconds": 2700,
+    "review_override_cooldown_seconds": 2700
+  },
+  "schema_version": 1,
+  "source_repo": "hoffmannherdecke/kraken-eur-scanner",
+  "source_scanner_run_attempt": 1,
+  "source_scanner_run_id": 37346255109,
+  "source_scanner_sha": "cb6cbc460c79b75ed874cbba6db32c4883611334",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-05T17:10:45Z",
+    "candidate_detected_ts": 1791220245,
+    "candidate_snapshot_at_utc": "2026-10-05T17:10:45Z",
+    "handoff_written_at_utc": "2026-10-05T17:10:48.851933Z",
+    "scan_step_started_at_utc": "2026-10-05T17:09:11Z"
+  }
+}
