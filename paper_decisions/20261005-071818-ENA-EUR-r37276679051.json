@@ -1,0 +1,173 @@
+{
+  "altname": "ENAEUR",
+  "candidate_age_seconds": 16,
+  "candidate_event_time_utc": "2026-10-05T07:18:18Z",
+  "candidate_id": "20261005-071818-ENA-EUR-r37276679051",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.2179 with sustained volume",
+      "Breakout hold or retest above 0.2179"
+    ],
+    "reason_codes": [
+      "RESISTANCE_NEAR_ASK",
+      "RECENT_MOVE_ALREADY_RUN",
+      "LIVE_VOLUME_SUBDUED",
+      "COSTS_REQUIRE_MORE_HEADROOM",
+      "NO_STRUCTURAL_ENTRY_PLAN_YET"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid, broadly supported continuation setup, but ENA is pressing 1h/3h resistance after a recent move; wait for breakout confirmation before considering entry.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ENAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 139.21,
+        "available": true,
+        "current_funding_rate": -1.260131855275e-05,
+        "current_open_interest": 11058767.0,
+        "funding_rate_delta": -1.6917490831542e-05,
+        "open_interest_pct": -0.1182,
+        "previous_funding_rate": 4.316172278792e-06,
+        "previous_observed_at_utc": "2026-10-05T04:59:22.723561Z",
+        "previous_open_interest": 11071856.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.260131855275e-05,
+        "index_price": 0.243665,
+        "last": 0.24368,
+        "mark_price": 0.24361475459,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 11058767.0,
+        "requested_symbols": [
+          "PF_ENAUSD",
+          "PI_ENAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ENAUSD",
+        "volume24h": 8915876
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.2177,
+      "bid": 0.2175,
+      "last": 0.2174,
+      "spread_pct": 0.09191176470588498
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "20",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.46473440025023294,
+          "ret3h_pct": 0.22948274718801454
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.555172598826914,
+          "ret3h_pct": 0.3608859007316445
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.6858202038924954,
+          "ret3h_pct": 0.7792207792207906
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T07:18:34.169756Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-05T07:18:42.388181Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_04daf876ba256bd6006ac34f4b990887d1b5b5e1c22de9f13d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2177,
+    "bid": 0.2175,
+    "last": 0.2174,
+    "spread_pct": 0.09191176470588498
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ENA/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37276679051:ENA-EUR:1791184698",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "868876380cf1c33d67322f026b87f9b67ffe8019",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-05T07:18:18Z",
+    "candidate_detected_ts": 1791184698,
+    "candidate_snapshot_at_utc": "2026-10-05T07:18:18Z",
+    "detected_to_evaluation_complete_seconds": 24.388,
+    "detected_to_evaluation_start_seconds": 15.958,
+    "evaluation_completed_at_utc": "2026-10-05T07:18:42.388181Z",
+    "evaluation_runtime_seconds": 8.43,
+    "evaluation_started_at_utc": "2026-10-05T07:18:33.958305Z",
+    "handoff_to_evaluation_start_seconds": 12.118,
+    "handoff_written_at_utc": "2026-10-05T07:18:21.840227Z",
+    "scan_step_started_at_utc": "2026-10-05T07:15:09Z"
+  }
+}
