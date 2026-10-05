@@ -2,6 +2,14 @@ name: MINI-PC tools smoke
 
 'on':
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/minipc-*.ps1'
+      - 'tools/*minipc*.py'
+      - 'tools/v2r4-shadow-cloud-sync.py'
+      - 'tools/v2r4-ws-shadow-*.py'
+      - '.github/workflows/minipc-tools-smoke.yml'
   push:
     branches: [main]
     paths:
