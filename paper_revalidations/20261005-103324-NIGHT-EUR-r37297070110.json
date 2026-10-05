@@ -1,0 +1,215 @@
+{
+  "altname": "NIGHTEUR",
+  "candidate_id": "20261005-103324-NIGHT-EUR-r37297070110",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.04203 with volume expansion",
+      "Break and hold above 0.04240 with follow-through"
+    ],
+    "reason_codes": [
+      "extended_move",
+      "no_breakout_confirmation",
+      "weak_volume",
+      "negative_major_market_3h_breadth",
+      "round_trip_costs_high",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Revalidation shows no confirmed breakout: spot is below nearby resistance after falling closes, with weak volume and negative major-market 3h breadth. Extended 7d/30d gains and execution costs leave no supported scout plan.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "NIGHTUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 30.23,
+        "available": true,
+        "current_funding_rate": -5.162984801375e-06,
+        "current_open_interest": 3373419.0,
+        "funding_rate_delta": -3.844844214875e-06,
+        "open_interest_pct": 0.5012,
+        "previous_funding_rate": -1.3181405865e-06,
+        "previous_observed_at_utc": "2026-10-05T10:33:58.189770Z",
+        "previous_open_interest": 3356596.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -5.162984801375e-06,
+        "index_price": 0.04666,
+        "last": 0.04684,
+        "mark_price": 0.04660046412,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 3373419.0,
+        "requested_symbols": [
+          "PF_NIGHTUSD",
+          "PI_NIGHTUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_NIGHTUSD",
+        "volume24h": 7706645
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.04171,
+      "bid": 0.04161,
+      "last": 0.04141,
+      "spread_pct": 0.2400384061449734
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "120",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.21889026935626443,
+          "ret3h_pct": -0.08487320359301664
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.06393703645648507,
+          "ret3h_pct": -0.28773311520422507
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.10222098318000139,
+          "ret3h_pct": -0.7920427334684121
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T11:04:11.420980Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_01e64d8c2b119e53006ac3842c58a087d288c25bb2f34c3663"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.04171,
+    "bid": 0.04161,
+    "last": 0.04141,
+    "spread_pct": 0.2400384061449734
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.04197,
+      "high": 0.04197,
+      "low": 0.04165,
+      "open": 0.04165,
+      "trades": 6,
+      "ts": 1791194400,
+      "volume": 2163.98957,
+      "vwap": 0.04172
+    },
+    {
+      "close": 0.04175,
+      "high": 0.04203,
+      "low": 0.04175,
+      "open": 0.04197,
+      "trades": 15,
+      "ts": 1791195300,
+      "volume": 39859.2328,
+      "vwap": 0.04187
+    },
+    {
+      "close": 0.04184,
+      "high": 0.04184,
+      "low": 0.04167,
+      "open": 0.04167,
+      "trades": 6,
+      "ts": 1791196200,
+      "volume": 26379.5466,
+      "vwap": 0.04181
+    },
+    {
+      "close": 0.0416,
+      "high": 0.04174,
+      "low": 0.04144,
+      "open": 0.04162,
+      "trades": 25,
+      "ts": 1791197100,
+      "volume": 69563.89298,
+      "vwap": 0.04162
+    },
+    {
+      "close": 0.04141,
+      "high": 0.04149,
+      "low": 0.04141,
+      "open": 0.04149,
+      "trades": 8,
+      "ts": 1791198000,
+      "volume": 132833.3765,
+      "vwap": 0.04142
+    }
+  ],
+  "pair": "NIGHT/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-103324-NIGHT-EUR-r37297070110.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T11:04:18.266375Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "46d0a08559ab2c184b96258939d6885fe0d8954e",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T11:04:18.266375Z",
+    "revalidation_started_at_utc": "2026-10-05T11:04:11.159445Z",
+    "ttl_due_at_utc": "2026-10-05T11:03:58.189770Z",
+    "ttl_lag_seconds": 12.97
+  }
+}

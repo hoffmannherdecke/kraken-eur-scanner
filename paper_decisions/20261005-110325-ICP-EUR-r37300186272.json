@@ -1,0 +1,175 @@
+{
+  "altname": "ICPEUR",
+  "candidate_age_seconds": 26,
+  "candidate_event_time_utc": "2026-10-05T11:03:25Z",
+  "candidate_id": "20261005-110325-ICP-EUR-r37300186272",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 2.964 resistance and hold above it",
+      "Positive follow-through with a higher low and sustained volume"
+    ],
+    "reason_codes": [
+      "tradable_public_pair",
+      "acceptable_spread",
+      "high_relative_volume",
+      "resistance_unconfirmed",
+      "weak_price_continuity",
+      "mixed_major_regime",
+      "round_trip_cost_hurdle"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "High relative volume and rank improvement suggest an ignition attempt, but price is stalled at 1h/3h resistance with weak follow-through; wait for confirmation.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ICPUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 278.93,
+        "available": true,
+        "current_funding_rate": -5.3625067994959e-05,
+        "current_open_interest": 194807.5,
+        "funding_rate_delta": 0.000220622990660834,
+        "open_interest_pct": 0.5857,
+        "previous_funding_rate": -0.000274248058655793,
+        "previous_observed_at_utc": "2026-10-05T06:24:56.095467Z",
+        "previous_open_interest": 193673.2
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -5.3625067994959e-05,
+        "index_price": 3.32084,
+        "last": 3.321,
+        "mark_price": 3.3187346666,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 194807.5,
+        "requested_symbols": [
+          "PF_ICPUSD",
+          "PI_ICPUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ICPUSD",
+        "volume24h": 181365.1
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 2.964,
+      "bid": 2.962,
+      "last": 2.966,
+      "spread_pct": 0.0674991562605393
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "1.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.21889026935626443,
+          "ret3h_pct": -0.08487320359301664
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.06393703645648507,
+          "ret3h_pct": -0.28773311520422507
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.10222098318000139,
+          "ret3h_pct": -0.7920427334684121
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T11:03:51.119189Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-05T11:04:02.290976Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0654eb5b5fbb0cab006ac38418218087d281e321018d72ad6d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 2.964,
+    "bid": 2.962,
+    "last": 2.966,
+    "spread_pct": 0.0674991562605393
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ICP/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37300186272:ICP-EUR:1791198205",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "46d0a08559ab2c184b96258939d6885fe0d8954e",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-05T11:03:25Z",
+    "candidate_detected_ts": 1791198205,
+    "candidate_snapshot_at_utc": "2026-10-05T11:03:25Z",
+    "detected_to_evaluation_complete_seconds": 37.291,
+    "detected_to_evaluation_start_seconds": 25.988,
+    "evaluation_completed_at_utc": "2026-10-05T11:04:02.290976Z",
+    "evaluation_runtime_seconds": 11.303,
+    "evaluation_started_at_utc": "2026-10-05T11:03:50.987784Z",
+    "handoff_to_evaluation_start_seconds": 22.676,
+    "handoff_written_at_utc": "2026-10-05T11:03:28.311803Z",
+    "scan_step_started_at_utc": "2026-10-05T11:00:48Z"
+  }
+}

@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-05T06:54:00Z",
         "trough_at_utc": "2026-10-05T06:54:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 1.576,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.394,
+        "mfe_pct": 6.567,
+        "peak_at_utc": "2026-10-05T09:03:00Z",
+        "trough_at_utc": "2026-10-05T07:11:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -89,7 +100,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-05T07:56:52.344785Z"
+    "updated_at_utc": "2026-10-05T11:04:20.098457Z"
   },
   "original_decision": "REJECT",
   "pair": "FET/EUR",

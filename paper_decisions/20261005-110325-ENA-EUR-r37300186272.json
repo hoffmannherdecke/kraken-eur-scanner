@@ -1,0 +1,174 @@
+{
+  "altname": "ENAEUR",
+  "candidate_age_seconds": 14,
+  "candidate_event_time_utc": "2026-10-05T11:03:25Z",
+  "candidate_id": "20261005-110325-ENA-EUR-r37300186272",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close above 0.2296 with stronger closed volume, followed by a hold or successful retest.",
+      "Improved 3h confirmation from major-market context."
+    ],
+    "reason_codes": [
+      "EXTENDED_MOVE",
+      "NEAR_3H_RESISTANCE",
+      "LOW_CLOSED_VOLUME",
+      "WEAK_3H_MAJOR_REGIME",
+      "ROUND_TRIP_COST_BARRIER",
+      "NO_CONFIRMED_CATALYST"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "ENA is liquid with a tight spread, but the move is extended and near resistance; closed volume and the broader 3h regime do not yet confirm continuation.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ENAUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 77.27,
+        "available": true,
+        "current_funding_rate": -1.435458995625e-05,
+        "current_open_interest": 11984928.0,
+        "funding_rate_delta": -1.4423405335983e-05,
+        "open_interest_pct": 5.3697,
+        "previous_funding_rate": 6.8815379733e-08,
+        "previous_observed_at_utc": "2026-10-05T09:46:24.346161Z",
+        "previous_open_interest": 11374164.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.435458995625e-05,
+        "index_price": 0.257278,
+        "last": 0.25735,
+        "mark_price": 0.25741493768,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 11984928.0,
+        "requested_symbols": [
+          "PF_ENAUSD",
+          "PI_ENAUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ENAUSD",
+        "volume24h": 13497172
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.2298,
+      "bid": 0.2297,
+      "last": 0.2295,
+      "spread_pct": 0.04352557127313025
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "20",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.21889026935626443,
+          "ret3h_pct": -0.08487320359301664
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.06393703645648507,
+          "ret3h_pct": -0.28773311520422507
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.10222098318000139,
+          "ret3h_pct": -0.7920427334684121
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T11:03:39.366159Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-05T11:03:50.917504Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0760c33b4c63f33a006ac3840d139487d2a8310cd426a9017b"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2298,
+    "bid": 0.2297,
+    "last": 0.2295,
+    "spread_pct": 0.04352557127313025
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ENA/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37300186272:ENA-EUR:1791198205",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "46d0a08559ab2c184b96258939d6885fe0d8954e",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-05T11:03:25Z",
+    "candidate_detected_ts": 1791198205,
+    "candidate_snapshot_at_utc": "2026-10-05T11:03:25Z",
+    "detected_to_evaluation_complete_seconds": 25.918,
+    "detected_to_evaluation_start_seconds": 14.225,
+    "evaluation_completed_at_utc": "2026-10-05T11:03:50.917504Z",
+    "evaluation_runtime_seconds": 11.692,
+    "evaluation_started_at_utc": "2026-10-05T11:03:39.225303Z",
+    "handoff_to_evaluation_start_seconds": 10.914,
+    "handoff_written_at_utc": "2026-10-05T11:03:28.311506Z",
+    "scan_step_started_at_utc": "2026-10-05T11:00:48Z"
+  }
+}
