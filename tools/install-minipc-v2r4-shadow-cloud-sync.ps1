@@ -13,7 +13,7 @@ if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administra
 $repo = Join-Path $TradingRoot "Repos\kraken-eur-scanner"
 $python = Join-Path $TradingRoot "Runtime\kraken-eur-scanner-venv\Scripts\python.exe"
 $tool = Join-Path $repo "tools\v2r4-shadow-cloud-sync.py"
-$token = Join-Path $TradingRoot "Secrets\altrady-webhook-token.txt"
+$token = Join-Path $TradingRoot "Secrets\shadow-evidence-token.txt"
 $heartbeat = Join-Path $TradingRoot "State\v2r4-shadow-cloud-sync-heartbeat.json"
 $taskName = "CryptoMiniPC-V2R4ShadowCloudSync"
 

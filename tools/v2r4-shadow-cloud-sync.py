@@ -49,14 +49,10 @@ def event_id(event: dict[str, Any]) -> str:
 
 
 def load_token(root: Path) -> str:
-    env = os.environ.get("SHADOW_EVIDENCE_TOKEN", "").strip()
-    if env:
-        return env
     dedicated = root / "Secrets" / "shadow-evidence-token.txt"
     if dedicated.exists():
         return dedicated.read_text("utf-8").strip()
-    legacy = root / "Secrets" / "altrady-webhook-token.txt"
-    return legacy.read_text("utf-8").strip() if legacy.exists() else ""
+    return os.environ.get("SHADOW_EVIDENCE_TOKEN", "").strip()
 
 
 def post_batch(endpoint: str, token: str, records: list[dict[str, Any]]) -> dict[str, Any]:

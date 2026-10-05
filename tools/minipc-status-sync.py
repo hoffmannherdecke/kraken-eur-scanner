@@ -32,14 +32,10 @@ def atomic_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def load_token(root: Path) -> str:
-    env = os.environ.get("MINIPC_STATUS_TOKEN", "").strip()
-    if env:
-        return env
     dedicated = root / "Secrets" / "minipc-status-token.txt"
     if dedicated.exists():
         return dedicated.read_text("utf-8").strip()
-    legacy = root / "Secrets" / "altrady-webhook-token.txt"
-    return legacy.read_text("utf-8").strip() if legacy.exists() else ""
+    return os.environ.get("MINIPC_STATUS_TOKEN", "").strip()
 
 
 def load_health(path: Path) -> dict[str, Any]:
