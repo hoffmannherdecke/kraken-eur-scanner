@@ -44,8 +44,8 @@ not merely the older draft state of PR #9.
 | Public tradability metadata unavailable | may become WAIT in V2R3 | V2R4 branch fails closed to REJECT if public tradability cannot be safely confirmed | CHANGE | covered by contract tests |
 | Invalid/incomplete BUY two-stage plan | V2R3 fail-safe can downgrade to WAIT | V2R4 branch fail-safe rejects rather than creating an unwatchable WAIT | CHANGE | covered by contract tests |
 | Account-private tradability unavailable | can appear in V2R3 decision evidence | explicitly not negative evidence when public online Spot-EUR metadata is valid | CHANGE | proposed/tested paper policy |
-| Paper sizing | 50 EUR scout + 50 EUR stage 2 | proposed default 75 + 75; higher adaptive tiers described | **UNRESOLVED / CONFOUNDER** | adaptive mapper not wired |
-| Setup-quality tier mapper | none | proposed but not implemented | **MORE_TESTING_REQUIRED** | explicit spec gate currently unsatisfied |
+| Paper sizing | 50 EUR scout + 50 EUR stage 2 | **50 + 50 for first full V2R4 series** | CONFIRM / CONTROLLED | timing-isolation decision fixed 2026-10-05 |
+| Setup-quality tier mapper | none | deferred to later separately versioned experiment | DEFER_TO_LATER_GENERATION | must not affect first V2R4 series |
 | Major-market/derivatives/catalyst roles | current V2R3 evaluator behavior | proposal documents research roles | MORE_TESTING_REQUIRED | do not assume metadata equals wired behavior |
 | Reason-code taxonomy | current free model reason codes | normalization explicitly required by proposal | MORE_TESTING_REQUIRED | not a reason to alter active V2R3 |
 | Scanner cadence | ~10-minute target + event dispatch | local event-near discovery/recheck plus fallback | ADD | measure, do not infer superiority from heterogeneous samples |
@@ -83,23 +83,18 @@ The timing/monitoring additions are the core hypothesis, but the proposed paper 
 - `adaptive_sizing_contract_required_before_full_v2r4_series = true`
 - `adaptive_sizing_runtime_status = NOT_YET_WIRED_USE_75_PLUS_75_FOR_E2E_SMOKE_ONLY`
 
-Therefore a full V2R4 paper series cannot honestly be called release-ready until the sizing question is resolved explicitly.
-
-No sizing decision is made by this document.
+The sizing confounder is now resolved for the first full V2R4 Paper series: **50+50 EUR is binding** so timing/discovery remains the main measured delta. Adaptive tiers are not part of that release candidate.
 
 ## Methodological guardrail for later activation review
 
 Prepared sizing decision memo: `docs/v2r4-sizing-release-decision.md`
 
-Before V2R4 paper activation, choose and version exactly one of these approaches:
+The first-series choice is now fixed to the timing-isolation approach:
 
 1. **Timing-isolation approach**  
    Keep V2R3 paper sizing unchanged for the first V2R4 timing/revalidation series, so timing/discovery effects are easier to attribute. Adaptive sizing becomes a later separately versioned experiment.
 
-2. **Combined V2R4 approach**  
-   Implement and test the adaptive sizing contract first, then accept that the V2R4-vs-V2R3 result combines timing/discovery and sizing changes and cannot isolate their causal contributions.
-
-This is a release-design decision, not an infrastructure repair. It must be explicit in the final activation review rather than silently inferred.
+Adaptive sizing remains a later separately versioned successor experiment. It must not be silently folded into the first V2R4 release candidate.
 
 ## What can continue without that decision
 
@@ -121,7 +116,7 @@ The fail-closed Supabase view `public.v2r4_activation_readiness` remains authori
 ## Evidence-diversity release timing — governance only
 
 Effective 2026-10-05, V2R3→V2R4 release timing uses
-`EVIDENCE_DIVERSITY_FASTTRACK_V1` from `docs/fasttrack-evidence-diversity-policy.md`.
+`EVIDENCE_DIVERSITY_FASTTRACK_V2` from `docs/fasttrack-evidence-diversity-policy.md`.
 This is **not** a V2R4 behavior/mechanics change. It removes the former fixed 7-day
 completion floor and allows the release review at the earliest valid sample/diversity/
 maturity/integrity point. Entry, stop, sizing, trigger, recheck and scanner behavior remain
