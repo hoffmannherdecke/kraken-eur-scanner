@@ -3,18 +3,18 @@
   "baseline_series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "capture_success_pct": 100.0,
   "decision_divergences": 8,
-  "elapsed_hours_from_first_candidate": 40.672,
+  "elapsed_hours_from_first_candidate": 41.102,
   "first_candidate_event_utc": "2026-10-03T08:18:37Z",
-  "generated_at_utc": "2026-10-05T00:58:56.957729Z",
+  "generated_at_utc": "2026-10-05T01:24:45.598825Z",
   "kind": "V3_H1_SHADOW_PILOT_STATUS_V1",
-  "last_candidate_event_utc": "2026-10-04T22:10:15Z",
+  "last_candidate_event_utc": "2026-10-04T22:41:17Z",
   "low_impact_if_gate_met": false,
   "minimum_gate_met": false,
   "missing_context_records": 0,
   "orders": false,
-  "pass_records": 176,
+  "pass_records": 184,
   "real_money_actions": false,
   "schema_version": 1,
   "shadow_candidate_id": "V3-H1-SHADOW-001",
-  "shadow_records": 176
+  "shadow_records": 184
 }
