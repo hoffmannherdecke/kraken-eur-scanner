@@ -71,12 +71,16 @@ def post_batch(endpoint: str, token: str, records: list[dict[str, Any]]) -> dict
             "X-Shadow-Evidence-Token": token,
         },
     )
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        raw = resp.read().decode("utf-8")
-        payload = json.loads(raw)
-        if resp.status != 200 or not payload.get("ok"):
-            raise RuntimeError(f"relay HTTP {resp.status}: {raw[:240]}")
-        return payload
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read().decode("utf-8")
+            payload = json.loads(raw)
+            if resp.status != 200 or not payload.get("ok"):
+                raise RuntimeError(f"relay HTTP {resp.status}: {raw[:240]}")
+            return payload
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")[:320]
+        raise RuntimeError(f"relay HTTP {exc.code}: {body}") from exc
 
 
 def load_state(path: Path) -> dict[str, Any]:
