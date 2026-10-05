@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-05T06:15:00Z",
         "trough_at_utc": "2026-10-05T06:10:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 0.35,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.439,
+        "mfe_pct": 1.527,
+        "peak_at_utc": "2026-10-05T08:13:00Z",
+        "trough_at_utc": "2026-10-05T06:45:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -90,7 +101,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-05T07:15:39.084668Z"
+    "updated_at_utc": "2026-10-05T10:14:40.907313Z"
   },
   "original_decision": "WAIT",
   "pair": "ONDO/EUR",
