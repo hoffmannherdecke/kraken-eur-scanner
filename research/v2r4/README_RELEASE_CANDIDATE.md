@@ -11,9 +11,13 @@ activation authority.
 Canonical machine-readable contract:
 `paper_strategy_spec_v2r4_release_candidate.json`.
 
-The first full V2R4 Paper series isolates the timing/discovery/revalidation hypothesis:
+The first full V2R4 Paper series isolates the timing/discovery/revalidation hypothesis
+as far as practical while keeping explicit data-quality correctness repairs separate and visible:
 - **50 EUR scout + 50 EUR stage 2**, inherited from V2R3;
 - adaptive sizing is disabled and deferred to a separately versioned successor experiment;
+- major-market, derivatives and catalyst decision-role semantics inherit the frozen V2R3 behavior for this first series; any relaxation is a later separately versioned experiment;
+- live public Kraken Spot-EUR tradability replaces legacy static blocked-pair/account-private confounding as an explicit data-quality repair, not a hidden signal change;
+- 24h follow-up is explicitly required for `EVIDENCE_DIVERSITY_FASTTRACK_V2` maturity;
 - Kraken public data remains execution/condition truth;
 - deterministic WAIT wakeups can request only `FRESH_PAPER_RECHECK_ONLY`;
 - Altrady is an optional wake-up source, never sole condition truth;
