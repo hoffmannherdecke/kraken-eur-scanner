@@ -137,6 +137,13 @@ The replacement control series is:
 - duplicate candidate IDs: **0**
 - rule changes during series: **none**
 
+### Historical gate note — superseded 2026-10-05
+
+The `COLLECTING_AGE` / 7-day-age-floor values in the dated snapshot below are retained
+only as historical evidence of the control state that existed on 2026-10-01. The current
+governing completion rule is `EVIDENCE_DIVERSITY_FASTTRACK_V1` from
+`docs/fasttrack-evidence-diversity-policy.md`; no fixed 7-day minimum remains.
+
 ### Current clean-series maturity snapshot
 
 Read-only snapshot around 2026-10-01 16:26 UTC:
