@@ -41,6 +41,29 @@ Deno.serve(async (req: Request) => {
   const admin = createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
 
   const supplied = req.headers.get("X-Shadow-Evidence-Token") ?? "";
+  const mode=new URL(req.url).searchParams.get("mode") ?? "normal";
+
+  if(mode==="bootstrap_dedicated_credential"){
+    const legacy=Deno.env.get("SHADOW_EVIDENCE_TOKEN") ?? Deno.env.get("ALTRADY_WEBHOOK_TOKEN") ?? "";
+    if(!legacy || supplied!==legacy) return response(401,{ok:false,error:"unauthorized"});
+    const {data:existing,error:lookupError}=await admin.from("internal_relay_credentials")
+      .select("relay_id,enabled").eq("relay_id","v2r4-shadow-evidence-relay").maybeSingle();
+    if(lookupError) return response(500,{ok:false,error:"credential_lookup_failed"});
+    if(!existing || existing.enabled===true) return response(409,{ok:false,error:"bootstrap_already_closed"});
+    let bootstrapBody:any;
+    try{bootstrapBody=await req.json();}catch{return response(400,{ok:false,error:"invalid_json"});}
+    const newToken=typeof bootstrapBody?.new_token==="string"?bootstrapBody.new_token.trim():"";
+    if(newToken.length<32 || newToken.length>256) return response(400,{ok:false,error:"invalid_new_token"});
+    if(newToken===legacy) return response(400,{ok:false,error:"dedicated_token_must_differ_from_legacy"});
+    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(newToken));
+    const tokenSha256=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
+    const {error:updateError}=await admin.from("internal_relay_credentials")
+      .update({token_sha256:tokenSha256,enabled:true,rotated_at:new Date().toISOString(),note:"dedicated credential active"})
+      .eq("relay_id","v2r4-shadow-evidence-relay").eq("enabled",false);
+    if(updateError) return response(500,{ok:false,error:"credential_bootstrap_failed"});
+    return response(200,{ok:true,relay_id:"v2r4-shadow-evidence-relay",credential_state:"DEDICATED_ENABLED",token_persisted:false,bootstrap_closed:true});
+  }
+
   const {data:cred,error:credError}=await admin.from("internal_relay_credentials")
     .select("token_sha256,enabled").eq("relay_id","v2r4-shadow-evidence-relay").maybeSingle();
   if(credError) return response(500,{ok:false,error:"credential_lookup_failed"});
