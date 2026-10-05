@@ -4,6 +4,22 @@ Status: **PREPARED / NOT ACTIVE / PAPER ONLY**
 
 This document is the compact release-readiness control point for V2R4. It does not replace `docs/strategy-version-map.md`, the V2R3 completion gate, the Mini-PC runbook, the explicit behavior matrix in `docs/v2r4-v2r3-release-diff.md`, the sizing decision memo in `docs/v2r4-sizing-release-decision.md`, or the release/rollback sequence in `docs/v2r4-paper-activation-checklist.md`.
 
+## Current governing fast-track policy — 2026-10-05
+
+V2R4 release timing now inherits the permanent
+`EVIDENCE_DIVERSITY_FASTTRACK_V1` policy from
+`docs/fasttrack-evidence-diversity-policy.md`.
+
+The V2R3 completion prerequisite is no longer a fixed 7-day age floor. The active
+Supabase completion control now requires the configured sample floor plus temporal
+diversity, evidence maturity and follow-up coverage. Once those gates and integrity are
+satisfied, the final V2R3 review should begin immediately.
+
+**Historical note:** dated snapshots below that show `COLLECTING_AGE` or a
+"7-day age floor" accurately describe the control state that existed on 2026-10-01,
+but that fixed-duration rule was superseded on 2026-10-05. They are retained only as
+historical evidence and must not be used as the current release rule.
+
 ## Current code candidate
 
 - active preparation PR: **Draft-PR #9**
