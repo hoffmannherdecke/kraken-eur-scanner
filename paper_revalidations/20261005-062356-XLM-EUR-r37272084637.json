@@ -1,0 +1,214 @@
+{
+  "altname": "XLMEUR",
+  "candidate_id": "20261005-062356-XLM-EUR-r37272084637",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15-minute close above 0.200364 with follow-through",
+      "Sustained volume confirming continuation beyond resistance"
+    ],
+    "reason_codes": [
+      "LIQUIDITY_ADEQUATE",
+      "SPREAD_LOW",
+      "RESISTANCE_NOT_CLEARED",
+      "COSTS_EXCEED_NEARBY_POTENTIAL",
+      "MAJORS_3H_MIXED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "XLM has rebounded but has not confirmed a break above 1-hour resistance; plausible movement to the supplied 3-hour resistance is insufficient after Kraken spot fees and spread.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "XLMUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 30.23,
+        "available": true,
+        "current_funding_rate": 1.4276526186878e-05,
+        "current_open_interest": 14308016.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 0.4481,
+        "previous_funding_rate": 1.4276526186878e-05,
+        "previous_observed_at_utc": "2026-10-05T06:24:38.753603Z",
+        "previous_open_interest": 14244189.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 1.4276526186878e-05,
+        "index_price": 0.2238543,
+        "last": 0.22425,
+        "mark_price": 0.22396496777,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 14308016.0,
+        "requested_symbols": [
+          "PF_XLMUSD",
+          "PI_XLMUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_XLMUSD",
+        "volume24h": 7498084
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.200144,
+      "bid": 0.200003,
+      "last": 0.200257,
+      "spread_pct": 0.0704741007679689
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "30",
+      "pair_decimals": 6,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.10488881003383188,
+          "ret3h_pct": -0.5505600211514583
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.24517099953695887,
+          "ret3h_pct": -0.4602070726560603
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.3157210511653963,
+          "ret3h_pct": 0.02777777777778212
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T06:54:51.783796Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_095ad0c726c66d02006ac349bca46887d1ba3563b8e36d6e78"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.200144,
+    "bid": 0.200003,
+    "last": 0.200257,
+    "spread_pct": 0.0704741007679689
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.1988,
+      "high": 0.198835,
+      "low": 0.198402,
+      "open": 0.198402,
+      "trades": 5,
+      "ts": 1791179100,
+      "volume": 1272.37242902,
+      "vwap": 0.198796
+    },
+    {
+      "close": 0.200346,
+      "high": 0.200364,
+      "low": 0.200199,
+      "open": 0.200313,
+      "trades": 5,
+      "ts": 1791180000,
+      "volume": 248.58494429,
+      "vwap": 0.200286
+    },
+    {
+      "close": 0.199789,
+      "high": 0.200741,
+      "low": 0.199789,
+      "open": 0.200383,
+      "trades": 18,
+      "ts": 1791180900,
+      "volume": 8453.52878566,
+      "vwap": 0.199911
+    },
+    {
+      "close": 0.199186,
+      "high": 0.199832,
+      "low": 0.199186,
+      "open": 0.199832,
+      "trades": 8,
+      "ts": 1791181800,
+      "volume": 4386.8614007,
+      "vwap": 0.199758
+    },
+    {
+      "close": 0.200257,
+      "high": 0.200257,
+      "low": 0.19922,
+      "open": 0.199222,
+      "trades": 16,
+      "ts": 1791182700,
+      "volume": 4128.24334349,
+      "vwap": 0.199723
+    }
+  ],
+  "pair": "XLM/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-062356-XLM-EUR-r37272084637.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T06:54:59.583926Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "d23f7d0d9694db1eca47af2b8b7e4eee484b2193",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T06:54:59.583926Z",
+    "revalidation_started_at_utc": "2026-10-05T06:54:51.610730Z",
+    "ttl_due_at_utc": "2026-10-05T06:54:38.753603Z",
+    "ttl_lag_seconds": 12.857
+  }
+}
