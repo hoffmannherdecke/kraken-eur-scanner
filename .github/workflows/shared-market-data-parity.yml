@@ -54,9 +54,16 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           readme=Path("market_data/README.md").read_text("utf-8")
-          assert "Consumers must import these modules rather than copying the transport or calculations." in readme
-          assert "The active V2R3 clean series predates full consolidation" in readme
-          assert "From the next runtime boundary onward" in readme
+          required=[
+            "Consumers must import these modules",
+            "active V2R3 clean series predates full consolidation",
+            "From the next runtime boundary onward",
+            "market_data.universe",
+            "market_data.microstructure",
+            "market_data.rest",
+          ]
+          missing=[x for x in required if x not in readme]
+          assert not missing, f"missing canonical market-data declarations: {missing}"
           print("MARKET_DATA_SOURCE_OF_TRUTH_GUARD_PASS")
           PY
 
