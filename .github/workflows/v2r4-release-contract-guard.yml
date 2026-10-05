@@ -62,7 +62,15 @@ jobs:
           assert g['automatic_activation_allowed'] is False
           assert g['runtime_evidence_storage']=='SUPABASE_PRIMARY_BOUNDED_LOCAL_STATE_NO_PER_EVENT_GIT_COMMITS'
           assert j['measurement']['git_runtime_event_commits_allowed'] is False
+          assert 1440 in j['measurement']['followup_horizons_minutes']
+          assert 'pnl_by_simulation_size_tier' not in j['measurement']['compare_metrics']
+          d=j['decision_policy']
+          assert d['major_market_regime_role']=='INHERIT_FROZEN_V2R3_BEHAVIOR_FIRST_SERIES'
+          assert d['derivatives_role']=='INHERIT_FROZEN_V2R3_BEHAVIOR_FIRST_SERIES'
+          assert d['coin_specific_catalyst_role']=='INHERIT_FROZEN_V2R3_BEHAVIOR_FIRST_SERIES'
+          assert d['role_relaxations_status']=='DEFERRED_PENDING_SEPARATE_EVIDENCE_AND_EXPLICIT_MIGRATION_DISPOSITION'
           assert j['deferred_research']['adaptive_sizing']['status']=='DEFER_TO_LATER_GENERATION'
+          assert j['deferred_research']['decision_role_relaxations']['status']=='DEFER_TO_LATER_GENERATION'
           print('V2R4_RELEASE_CONTRACT_GUARD_PASS')
           PY
       - name: Reject obsolete activation shortcut wording
@@ -119,6 +127,8 @@ jobs:
           assert 'Binding first-series release contract: `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`' in diff
           assert 'V2R4 code candidate: Draft-PR #9' not in diff
           assert 'historical V2R4 proposal was **not purely a timing-only change**' in diff
+          assert 'INHERIT frozen V2R3 behavior for first series' in diff
+          assert '24h follow-up' in diff
 
           print('V2R4_GOVERNANCE_CONSISTENCY_PASS')
           PY
