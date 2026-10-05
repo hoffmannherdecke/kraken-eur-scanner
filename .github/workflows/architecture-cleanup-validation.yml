@@ -38,11 +38,17 @@ jobs:
             tools/minipc-kraken-universe-feed.py \
             tools/repository-runtime-compaction.py \
             tools/v3-h1-shadow-archive.py \
-            tools/validate-v3-migration-ledger.py
+            tools/validate-v3-migration-ledger.py \
+            tools/validate-artifact-retention.py \
+            tools/minipc-status-sync.py \
+            tools/v2r4-shadow-cloud-sync.py
       - name: V2R3 freeze guard
         run: python tools/validate-v2r3-clean-series-freeze.py
       - name: Strategy lineage guard
         run: python tools/validate-v3-migration-ledger.py
+
+      - name: Artifact retention guard
+        run: python tools/validate-artifact-retention.py
       - name: Shared market data tests
         run: python -m unittest discover -s market_data -p 'test_*.py' -v
       - name: Completed H1 pilot guard
@@ -78,5 +84,14 @@ jobs:
           assert 'PAPER_NEW_INTAKE_FROZEN_BY_COMPLETION_GOVERNANCE' in e
           assert 'paper_series_completion_readiness' in e
           assert '0<=age<=3600' in e and 'sorted(rows)][:8]' in e
+          control=json.loads(Path('paper_runtime_control.json').read_text())
+          assert control['supabase_archive_mode']=='AUTOMATIC_SECURE_BACKEND_ARCHIVE_PRIMARY_RUNTIME_EVIDENCE'
+          assert control['successor_runtime_storage_policy']=='SUPABASE_PRIMARY_GIT_COMPACT_RELEASE_EVIDENCE_ONLY'
+          status_sync=Path('tools/minipc-status-sync.py').read_text()
+          shadow_sync=Path('tools/v2r4-shadow-cloud-sync.py').read_text()
+          assert 'minipc-status-relay-token.txt' in status_sync
+          assert 'v2r4-shadow-evidence-token.txt' in shadow_sync
+          assert 'altrady-webhook-token.txt' not in status_sync
+          assert 'altrady-webhook-token.txt' not in shadow_sync
           print('ARCHITECTURE_CONTRACT_PASS')
           PY
