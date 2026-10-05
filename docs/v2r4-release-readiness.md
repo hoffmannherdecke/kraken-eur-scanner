@@ -7,7 +7,7 @@ This document is the compact release-readiness control point for V2R4. It does n
 ## Current governing fast-track policy — 2026-10-05
 
 V2R4 release timing now inherits the permanent
-`EVIDENCE_DIVERSITY_FASTTRACK_V1` policy from
+`EVIDENCE_DIVERSITY_FASTTRACK_V2` policy from
 `docs/fasttrack-evidence-diversity-policy.md`.
 
 The V2R3 completion prerequisite is no longer a fixed 7-day age floor. The active
@@ -183,7 +183,7 @@ Once the completion gate matures, this view will expose the already-versioned cl
 
 ## Current blocker to V2R4 activation review
 
-The technical preparation is largely green, but the **V2R3 clean control series has not matured enough for the mandatory release review**.
+The technical preparation is largely green. The **V2R3 clean control series remains the mandatory strategy-review gate**; once the V2 fast-track freezes intake, existing follow-ups mature without admitting further candidates.
 
 Specifically:
 
@@ -446,3 +446,13 @@ At the same control point, the V2R4 shadow due-6h cohort had fully archived agai
 
 No further local MINI-PC action is required for this maintenance block. The remaining physical V2R4 release proof is the separate real-transport Altrady-wakeup → Kraken-fresh-condition → paper-recheck smoke at the actual release boundary, followed by the normal final fast-forward/readiness verification if `main` has advanced.
 
+
+
+## Architecture cleanup rule — 2026-10-05
+
+The V2R4 release candidate must not reintroduce Git-as-runtime-database behavior.
+Per-event WAIT/decision/outcome state belongs in bounded local state and Supabase.
+GitHub retains code, frozen contracts, compact release snapshots and provenance only.
+
+The first full V2R4 series is now fixed to 50+50 EUR paper sizing. Any adaptive
+setup-quality sizing is a later separately versioned experiment.
