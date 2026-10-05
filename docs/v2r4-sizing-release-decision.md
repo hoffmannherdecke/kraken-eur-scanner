@@ -85,6 +85,19 @@ At the actual activation-review boundary:
 5. rerun contract/unit/E2E release smokes;
 6. start paper-only collection only after the normal release checklist passes.
 
+## Fast-track handoff into the sizing successor
+
+The sizing successor must **not** become a calendar-delay stage after the first V2R4 timing series.
+
+- prepare the deterministic setup-quality → size mapper, tier contract, caps and tests **in parallel while V2R4 is collecting evidence**;
+- do not start the sizing series before the first V2R4 timing series reaches its preregistered evidence/review gate;
+- once that gate is closed and the sizing contract is technically ready, start the separately versioned sizing Paper series **without an arbitrary waiting period**;
+- apply the permanent Evidence-Diversity Fast-Track rule to the sizing series as well: run **as short as possible, as long as necessary**;
+- weak/inconclusive sizing variants should be stopped or revised at their preregistered decision gate rather than extended merely to fill calendar time;
+- a later V3/V4 generation inherits only sizing rules that survive this separate evidence path.
+
+This is a permanent project handoff rule and is intended to prevent the clean isolation of V2R4 timing from artificially lengthening the overall strategy-development cycle.
+
 ## Later adaptive-sizing experiment
 
 Do not activate the current proposal directly.
