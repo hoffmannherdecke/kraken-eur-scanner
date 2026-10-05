@@ -30,7 +30,7 @@ jobs:
           from pathlib import Path
           Path('/tmp/blocked.json').write_text(json.dumps({
             'series_id':'S','strategy_revision':'V2R3','review_state':'WAITING_COMPLETION',
-            'final_review_allowed':False,'gate_state':'COLLECTING_AGE','candidate_outcomes':78,
+            'final_review_allowed':False,'gate_state':'COLLECTING_OUTCOMES','candidate_outcomes':78,
             'completed_trades':0,'coverage_24h_pct':0,'integrity_state':'HEALTHY'
           }))
           PY
@@ -49,7 +49,7 @@ jobs:
           from pathlib import Path
           Path('/tmp/ready.json').write_text(json.dumps({
             'series_id':'S','strategy_revision':'V2R3','review_state':'READY_FOR_FINAL_REVIEW',
-            'final_review_allowed':True,'gate_state':'ALT_GATE_READY','candidate_outcomes':1000,
+            'final_review_allowed':True,'gate_state':'ALTERNATIVE_READY','candidate_outcomes':1000,
             'completed_trades':0,'coverage_24h_pct':97.0,'integrity_state':'HEALTHY',
             'runtime_timing':[{'decision':'REJECT','candidates':900,'p50_detect_to_eval_start_seconds':35,'p90_detect_to_eval_start_seconds':55}],
             'revalidation_timing':{'revalidated_candidates':100,'decision_changes':20,'p50_ttl_lag_seconds':100,'p90_ttl_lag_seconds':400,'max_ttl_lag_seconds':900},
