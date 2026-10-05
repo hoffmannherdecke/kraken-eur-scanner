@@ -3,8 +3,10 @@
 Status: **PREPARED, NOT ACTIVE**
 
 This preparation must not change the active V2R3 series. V2R3 remains the control.
-V2R4 is a separate future paper series and may only be activated after the Mini-PC
-runtime has passed a minimal end-to-end smoke test.
+V2R4 is a separate future paper series. A Mini-PC end-to-end smoke is necessary but
+**never sufficient** for activation. The binding release sequence is the fail-closed
+V2R3 completion/integrity/final-review/migration gate plus mature V2R4 shadow evidence,
+healthy MINI-PC state and an explicit APPROVED_PAPER release decision.
 
 ## Research conclusion behind V2R4
 
@@ -65,21 +67,14 @@ Only that fresh paper evaluation may create BUY_SCOUT.
 
 This keeps the improvement focused on **latency**, not removal of safety gates.
 
-### 4. Preserve the two-stage entry; sizing remains a separate release decision
+### 4. Preserve the two-stage entry; first full series uses fixed 50+50 EUR
 
-The proposal still contains the earlier 75+75 EUR smoke default and larger adaptive
-research tiers, but the setup-quality sizing mapper is **not wired**.  Therefore
-paper sizing must not be silently changed merely because V2R4 is activated.
+The first full V2R4 Paper series **must** use the V2R3 comparison sizing:
+50 EUR scout + 50 EUR Stage 2. This isolates the timing/discovery/revalidation
+hypothesis and prevents sizing from becoming a confounder.
 
-The release-readiness review now separates two questions:
-
-- **timing/discovery hypothesis** — earlier discovery + deterministic WAIT monitoring;
-- **sizing hypothesis** — whether setup-quality-dependent notional improves outcomes.
-
-For the first full V2R4 series, the prepared release memo methodologically prefers
-holding V2R3 paper sizing constant (50+50 EUR) so the timing hypothesis can be
-measured without a sizing confounder.  Adaptive sizing remains a later separately
-versioned experiment unless an explicit manual release decision chooses otherwise.
+The older 75+75 smoke default and adaptive research tiers are not part of this release.
+Adaptive setup-quality sizing remains a separate, later, explicitly versioned experiment.
 
 The second stage always requires an explicit confirmation trigger. Position size must
 not be increased merely to reach a nominal target, and late chasing remains prohibited.
@@ -99,24 +94,28 @@ The proposal records the following research hypothesis for later validation:
 These are proposed hypotheses, not proven improvements. They must be validated in a
 new versioned paper series and compared with V2R3.
 
-## Mini-PC activation sequence
+## Binding V2R4 activation sequence
 
-Do not activate the V2R4 fast path immediately on first boot.
+Technical setup and smoke tests are prerequisites only. The release order is:
 
-1. Finish Windows / driver / network / time synchronization.
-2. Configure automatic recovery after power loss and unattended login/runtime.
-3. Install repository runtime and verify read-only Kraken connectivity.
-4. Start logging, watchdog and local health status.
-5. Run `v2r4_wait_watcher.py --once` against a harmless synthetic plan.
-6. Run a live-market PAPER-only smoke test with one candidate and no order path.
-7. Verify receipt persistence, timestamps and watchdog recovery.
-8. As soon as that single end-to-end PAPER smoke test passes, create a separate V2R4
-   paper series; do not wait for V2R3 to somehow reach 20 completed trades first.
-9. Keep V2R3 artifacts immutable as the comparison control.
+1. Keep V2R3 frozen while its evidence-diversity collection continues.
+2. Stop new V2R3 intake automatically when its sample/temporal-diversity collection gate is met.
+3. Let the frozen V2R3 cohort finish required 24h maturity/follow-up.
+4. Require V2R3 integrity = HEALTHY.
+5. Complete the final V2R3 causal review.
+6. Give every material finding an explicit predecessor→successor migration disposition.
+7. Require V2R4 shadow/runtime maturity and current MINI-PC HEALTHY/OK.
+8. Record `final_review_completed_at` and `migration_review_completed_at` in the
+   backend-only strategy release record.
+9. Record an explicit `APPROVED_PAPER` decision.
+10. Only then create/start a **new immutable V2R4 Paper series**.
 
-A future major **V3** is not scheduled by calendar date. It is a separate strategy
-generation and should only be opened after prospective V2R4 evidence plus historical
-walk-forward validation shows that a larger mechanic change is justified.
+`automatic_activation_allowed=false` is permanent. A green smoke test never starts
+V2R4 by itself.
+
+Runtime evidence for this and later strategy generations belongs in Supabase and
+bounded MINI-PC state. High-frequency runtime evidence must not be committed to
+GitHub `main`.
 
 ## Required measurements
 
@@ -191,9 +190,8 @@ The active V2R3 control remains unchanged.
 
 ## Inactive continuous WAIT runtime preparation
 
-The earlier single-plan watcher and trigger->fresh-recheck E2E proved the mechanics,
-but a release-ready 24/7 path also needs an explicit bounded plan lifecycle.  PR #9
-therefore contains an **inactive** runtime preparation:
+The earlier single-plan watcher and trigger->fresh-recheck E2E proved the mechanics.
+This clean successor branch preserves the validated inactive bounded WAIT-plan runtime:
 
 - `paper_evaluator/v2r4_wait_runtime.py`
 - `tests/test_v2r4_wait_runtime.py`
@@ -267,3 +265,18 @@ Kraken tradability is a live market-data property, not a remembered whitelist.
 - Coin-specific reviews must not classify a symbol as unavailable on Kraken without a fresh Kraken-universe lookup.
 - This is infrastructure/data-quality behavior only; it does not modify V2R3 entry, stop, sizing or scoring rules.
 
+
+
+## Architecture cleanup inheritance — 2026-10-05
+
+This clean V2R4 candidate is based on the post-cleanup `main` and supersedes old
+Draft-PRs #8/#9.
+
+Binding architecture:
+- `market_data/` is the canonical public Kraken market/transport semantics layer for
+  successor assessment code; intentional research transforms must be explicitly versioned;
+- Supabase is the durable structured runtime/evidence archive;
+- MINI-PC stores only bounded operational state/logs/heartbeats;
+- GitHub stores code, contracts, tests, canonical docs and compact release evidence;
+- `EVIDENCE_DIVERSITY_FASTTRACK_V2` governs the earliest valid completion point;
+- no automatic paper activation and no real-money path.
