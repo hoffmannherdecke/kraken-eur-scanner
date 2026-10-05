@@ -6,6 +6,12 @@ name: Architecture cleanup validation
     paths:
       - 'market_data/**'
       - 'tools/minipc-kraken-universe-feed.py'
+      - 'tools/minipc-status-sync.py'
+      - 'tools/v2r4-shadow-cloud-sync.py'
+      - 'tools/install-minipc-status-sync.ps1'
+      - 'tools/install-minipc-v2r4-shadow-cloud-sync.ps1'
+      - 'tools/minipc-secret-hygiene-audit.ps1'
+      - 'tools/minipc-relay-credential-cutover.ps1'
       - 'tools/repository-runtime-compaction.py'
       - 'tools/v3-h1-shadow-archive.py'
       - 'research/v3-migration-ledger.json'
@@ -41,6 +47,7 @@ jobs:
             tools/validate-v3-migration-ledger.py \
             tools/validate-artifact-retention.py \
             tools/minipc-status-sync.py \
+            tools/v2r4-shadow-cloud-sync.py
       - name: V2R3 freeze guard
         run: python tools/validate-v2r3-clean-series-freeze.py
       - name: Strategy lineage guard
@@ -86,5 +93,18 @@ jobs:
           control=json.loads(Path('paper_runtime_control.json').read_text())
           assert control['supabase_archive_mode']=='AUTOMATIC_SECURE_BACKEND_ARCHIVE_PRIMARY_RUNTIME_EVIDENCE'
           assert control['successor_runtime_storage_policy']=='SUPABASE_PRIMARY_GIT_COMPACT_RELEASE_EVIDENCE_ONLY'
+          status_sync=Path('tools/minipc-status-sync.py').read_text()
+          shadow_sync=Path('tools/v2r4-shadow-cloud-sync.py').read_text()
+          assert 'minipc-status-token.txt' in status_sync
+          assert 'shadow-evidence-token.txt' in shadow_sync
+          assert 'altrady-webhook-token.txt' not in status_sync
+          assert 'altrady-webhook-token.txt' not in shadow_sync
+          status_install=Path('tools/install-minipc-status-sync.ps1').read_text()
+          shadow_install=Path('tools/install-minipc-v2r4-shadow-cloud-sync.ps1').read_text()
+          assert 'minipc-status-token.txt' in status_install
+          assert 'shadow-evidence-token.txt' in shadow_install
+          cutover=Path('tools/minipc-relay-credential-cutover.ps1').read_text()
+          assert 'bootstrap_dedicated_credential' in cutover
+          assert 'NO EVALUATOR' in cutover or 'Real-money/order actions: NONE' in cutover
           print('ARCHITECTURE_CONTRACT_PASS')
           PY
