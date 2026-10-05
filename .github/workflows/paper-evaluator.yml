@@ -20,6 +20,9 @@ jobs:
     env:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       OPENAI_MODEL: gpt-6-luna
+      SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -43,7 +46,7 @@ jobs:
           python -m py_compile             paper_context.py paper_followup.py paper_position_tracker.py             paper_evaluator/evaluate.py paper_evaluator/revalidate.py paper_evaluator/slack_action_push.py
           mkdir -p .paper-work
           python - <<'PY'
-          import json, time
+          import json, os, time, urllib.parse, urllib.request
           from datetime import datetime
           from pathlib import Path
 
@@ -55,6 +58,35 @@ jobs:
 
           series_id=control["series_id"]
           target=int(control.get("target_completed_paper_trades",20))
+
+          # Completion governance is observational and fail-soft: once the frozen
+          # series has enough sample + temporal diversity, stop admitting NEW
+          # candidates while allowing existing WAITs/positions/follow-ups to mature.
+          # This does not change evaluator strategy code or its fingerprint.
+          stop_new_intake=False
+          try:
+              base=os.environ.get("SUPABASE_URL","").rstrip("/")
+              key=(os.environ.get("SUPABASE_SECRET_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+              if base and key:
+                  headers={"apikey":key}
+                  if not key.startswith("sb_secret_"):
+                      headers["Authorization"]="Bearer "+key
+                  sid=urllib.parse.quote(series_id,safe="")
+                  url=base+f"/rest/v1/paper_series_completion_readiness?series_id=eq.{sid}&select=series_id,intake_should_stop,completion_ready,gate_state"
+                  req=urllib.request.Request(url,headers=headers)
+                  with urllib.request.urlopen(req,timeout=12) as resp:
+                      rows=json.loads(resp.read().decode("utf-8"))
+                  if rows and rows[0].get("series_id")==series_id:
+                      stop_new_intake=bool(rows[0].get("intake_should_stop"))
+                      print("PAPER_INTAKE_GATE",json.dumps({
+                          "series_id":series_id,
+                          "intake_should_stop":stop_new_intake,
+                          "completion_ready":bool(rows[0].get("completion_ready")),
+                          "gate_state":rows[0].get("gate_state"),
+                      },sort_keys=True))
+          except Exception as exc:
+              print("PAPER_INTAKE_GATE_FAILSOFT",type(exc).__name__)
+
           closed=0
           for p in Path("paper_positions").glob("*.json") if Path("paper_positions").exists() else []:
               try:
@@ -66,7 +98,7 @@ jobs:
 
           start_ts=int(datetime.fromisoformat(control["series_started_at_utc"].replace("Z","+00:00")).timestamp())
           rows=[]
-          if closed < target:
+          if closed < target and not stop_new_intake:
               now=int(time.time())
               for p in Path("handoff_queue").glob("*.json"):
                   try:
@@ -76,6 +108,8 @@ jobs:
                           rows.append((int(d["event_ts"]),str(p)))
                   except Exception:
                       continue
+          elif stop_new_intake:
+              print("PAPER_NEW_INTAKE_FROZEN_BY_COMPLETION_GOVERNANCE",series_id)
           else:
               print("PAPER_TARGET_REACHED",closed,target)
 
