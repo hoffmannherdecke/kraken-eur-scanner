@@ -13,7 +13,9 @@ Read `public.v2r4_activation_readiness`.
 Required before entering a manual release review:
 - `activation_review_state = MANUAL_RELEASE_REVIEW_REQUIRED`
 - `automatic_activation_allowed = false` must remain false
-- active V2R3 clean series completion gate must be satisfied
+- active V2R3 clean series completion gate must be satisfied under
+  `EVIDENCE_DIVERSITY_FASTTRACK_V1` (`docs/fasttrack-evidence-diversity-policy.md`);
+  no fixed 7-day wait is added once sample/diversity/maturity/integrity are ready
 - V2R4 shadow maturity must be archived
 - current MINI-PC status must be fresh / HEALTHY / OK
 
@@ -34,7 +36,8 @@ Current state at creation: `WAITING_COMPLETION`; no mature 24h missed-move rows 
 
 Before changing the active paper strategy:
 - snapshot the final active V2R3 series ID and counts;
-- wait for all required 24h follow-ups to mature to the documented coverage floor;
+- wait only until the fixed qualifying cohort reaches the documented maturity/coverage
+  floor from the evidence-diversity policy; do not add an arbitrary calendar delay;
 - produce the final V2R3 report across BUY/WAIT/REJECT paths;
 - include MFE/MAE, edge decay, costs, missed moves, latency chain and data-quality incidents;
 - classify findings as strategy / timing-infrastructure / data-quality / technical-runtime / cost;
