@@ -1,0 +1,23 @@
+{
+  "active_series_deleted": false,
+  "active_series_preserved": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "apply": true,
+  "archive_ref": "archive/runtime-pre-compaction-20261005",
+  "by_scope": {
+    "handoff_queue": 1040,
+    "paper_decisions": 724,
+    "paper_followups": 712,
+    "paper_revalidations": 646,
+    "research/v3/shadow-runtime/h1-context": 258,
+    "research/v3/shadow-runtime/h1-decisions": 200
+  },
+  "bytes_selected": 18543032,
+  "closed_series_archive_verified": true,
+  "files_selected": 3580,
+  "generated_at_utc": "2026-10-05T06:37:10.640065Z",
+  "h1_archive_verified": true,
+  "kind": "REPOSITORY_RUNTIME_COMPACTION_V1",
+  "real_money_actions": false,
+  "schema_version": 1,
+  "strategy_changed": false
+}
