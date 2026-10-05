@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 5.332e-06,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -1.311,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -2.304,
+        "mfe_pct": 0.468,
+        "peak_at_utc": "2026-10-05T08:35:00Z",
+        "trough_at_utc": "2026-10-05T16:20:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 3.933,
       "price_eur": 5.136e-06
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": false,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "spread_liquid",
@@ -121,7 +137,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-05T10:14:39.813356Z"
+    "updated_at_utc": "2026-10-05T22:04:50.980294Z"
   },
   "original_decision": "WAIT",
   "pair": "SHIB/EUR",
