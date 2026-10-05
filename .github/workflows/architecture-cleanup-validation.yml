@@ -104,7 +104,24 @@ jobs:
           assert 'minipc-status-token.txt' in status_install
           assert 'shadow-evidence-token.txt' in shadow_install
           cutover=Path('tools/minipc-relay-credential-cutover.ps1').read_text()
-          assert 'bootstrap_dedicated_credential' in cutover
-          assert 'NO EVALUATOR' in cutover or 'Real-money/order actions: NONE' in cutover
+          assert 'bootstrap_dedicated_credential' not in cutover
+          assert 'VERIFY_ONLY_NO_ROTATION' in cutover
+          assert 'Credential mutation: NONE' in cutover
+          assert 'Real-money/order actions: NONE' in cutover
+          for relay in (
+            'supabase/functions/minipc-status-relay/index.ts',
+            'supabase/functions/v2r4-shadow-evidence-relay/index.ts',
+          ):
+              text=Path(relay).read_text()
+              assert 'bootstrap_dedicated_credential' not in text, relay
+              assert 'ALTRADY_WEBHOOK_TOKEN' not in text, relay
+              assert 'dedicated_credential_not_ready' in text, relay
+              assert 'sameFixedHex' in text, relay
+          framework=Path('docs/v3-research-framework.md').read_text()
+          allowed={'NEW','PRECHECK','OFFLINE_TEST','SHADOW','KEEP_TESTING','PROMOTE_CANDIDATE','PROMOTED','REJECTED','DEFERRED'}
+          import re
+          for value in re.findall(r'^Status: `([^`]+)`',framework,re.M):
+              assert value in allowed, value
+          assert 'EVIDENCE_DIVERSITY_FASTTRACK_V1' not in Path('PROJECT_BACKLOG.md').read_text()
           print('ARCHITECTURE_CONTRACT_PASS')
           PY
