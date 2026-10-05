@@ -7,6 +7,8 @@ name: V2R4 release contract guard
       - 'research/v2r4/paper_strategy_spec_v2r4_release_candidate.json'
       - 'research/v2r4/README_RELEASE_CANDIDATE.md'
       - 'docs/v2r4-**'
+      - 'docs/master-version-register.md'
+      - 'docs/strategy-version-map.md'
       - '.github/workflows/v2r4-release-contract-guard.yml'
   push:
     branches: [main]
@@ -14,6 +16,8 @@ name: V2R4 release contract guard
       - 'research/v2r4/paper_strategy_spec_v2r4_release_candidate.json'
       - 'research/v2r4/README_RELEASE_CANDIDATE.md'
       - 'docs/v2r4-**'
+      - 'docs/master-version-register.md'
+      - 'docs/strategy-version-map.md'
       - '.github/workflows/v2r4-release-contract-guard.yml'
 
 permissions:
@@ -71,4 +75,50 @@ jobs:
           assert '50 EUR scout + 50 EUR stage 2' in text
           assert 'No V2R4 or later runtime may reproduce' in text
           print('V2R4_RELEASE_DOC_GUARD_PASS')
+          PY
+
+      - name: Validate canonical V2R4 governance consistency
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          paths = [
+              'docs/master-version-register.md',
+              'docs/strategy-version-map.md',
+              'docs/v2r4-paper-activation-checklist.md',
+              'docs/v2r4-release-readiness.md',
+              'docs/v2r4-v2r3-release-diff.md',
+          ]
+          docs = {p: Path(p).read_text('utf-8') for p in paths}
+          joined = '\n'.join(docs.values())
+
+          # Never allow accidental repeated replacement artifacts.
+          for bad in ('superseded superseded', 'Draft-the superseded', 'the superseded Draft-the'):
+              assert bad not in joined, bad
+
+          master = docs['docs/master-version-register.md']
+          assert 'CLEAN-MAIN RELEASE CONTRACT' in master
+          assert 'research/v2r4/paper_strategy_spec_v2r4_release_candidate.json' in master
+          assert 'release diff / sizing decision — updated 2026-10-05' in master
+          assert 'Strategy mechanics remain `OPEN_RESEARCH`' not in master
+
+          strategy = docs['docs/strategy-version-map.md']
+          assert 'research/v2r4/paper_strategy_spec_v2r4_release_candidate.json' in strategy
+          assert '50 EUR scout + 50 EUR stage 2' in strategy
+
+          checklist = docs['docs/v2r4-paper-activation-checklist.md']
+          assert 'Binding machine contract: `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`' in checklist
+          assert 'first full V2R4 Paper series' in checklist
+          assert '50 EUR scout + 50 EUR stage 2' in checklist
+
+          readiness = docs['docs/v2r4-release-readiness.md']
+          assert 'prepared binding machine contract is `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`' in readiness
+          assert 'first-series sizing is already bindingly fixed at 50+50 EUR' in readiness
+
+          diff = docs['docs/v2r4-v2r3-release-diff.md']
+          assert 'Binding first-series release contract: `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`' in diff
+          assert 'V2R4 code candidate: Draft-PR #9' not in diff
+          assert 'historical V2R4 proposal was **not purely a timing-only change**' in diff
+
+          print('V2R4_GOVERNANCE_CONSISTENCY_PASS')
           PY
