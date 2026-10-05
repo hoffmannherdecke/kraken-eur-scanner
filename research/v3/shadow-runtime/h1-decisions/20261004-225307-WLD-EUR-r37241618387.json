@@ -1,0 +1,125 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.5194 with stronger closed volume",
+      "Retest holds above 0.5194 with positive 15m momentum"
+    ],
+    "reason_codes": [
+      "RESISTANCE_UNCLEARED",
+      "WEAK_CLOSED_VOLUME",
+      "HIGH_ALL_IN_COST",
+      "OI_DECLINING",
+      "MARKET_SUPPORTIVE"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Developing but unconfirmed continuity; ask is immediately below 1h/3h resistance, and spread plus taker fees make entry inefficient without a clear breakout.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T22:54:07.714735Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T22:53:07Z",
+  "candidate_id": "20261004-225307-WLD-EUR-r37241618387",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_07777b5bb82f1dcb006ac300c9b45087d19878f2683d8d2c68"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 0.5192,
+      "bid": 0.5177,
+      "last": 0.517,
+      "spread_pct": 0.28932394637861814
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-225307-WLD-EUR-r37241618387",
+    "event_time_utc": "2026-10-04T22:53:07Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 71,
+      "leader_median_return_1h_pct": 0.5957606052869213,
+      "leader_minus_target_return_1h_pct": -0.14469146018463164,
+      "peer_median_return_1h_pct": 0.20396810680511912,
+      "target_minus_peer_median_return_1h_pct": 0.5364839586664338,
+      "target_return_1h_pct": 0.740452065471553
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "WLD/EUR",
+    "queue_id": "37241618387:WLD-EUR:1791154387",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37241618387,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "WLD/EUR",
+  "queue_id": "37241618387:WLD-EUR:1791154387",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.5194 with stronger closed volume",
+      "Hold above 0.5194 on a retest within 30\u201360 minutes"
+    ],
+    "reason_codes": [
+      "resistance_unbroken",
+      "ask_near_resistance",
+      "round_trip_costs_high",
+      "closed_volume_moderate",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Positive short-term and relative strength, but WLD is testing 0.5194 resistance with no confirmed breakout; costs and limited evidence do not support entry yet.",
+    "ttl_minutes": 45
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}
