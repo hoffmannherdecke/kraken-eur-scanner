@@ -1,0 +1,215 @@
+{
+  "altname": "SHIBEUR",
+  "candidate_id": "20261005-081342-SHIB-EUR-r37282167950",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close above 5.35e-06 EUR followed by continued trading above 5.334e-06 EUR",
+      "Renewed volume-supported follow-through sufficient to improve remaining potential after fees and slippage"
+    ],
+    "reason_codes": [
+      "SPOT_LIQUIDITY_ADEQUATE",
+      "TIGHT_SPREAD",
+      "BREAKOUT_NOT_CONFIRMED",
+      "FOLLOW_THROUGH_UNCONFIRMED",
+      "NEAR_7D_HIGH",
+      "COST_BURDEN_HIGH"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The required breakout hold and renewed volume-supported follow-through are not confirmed; price remains below the prior 5.35e-06 threshold, so a scout and confirmation plan are not justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SHIBUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 37.28,
+        "available": true,
+        "current_funding_rate": 2.73211834e-10,
+        "current_open_interest": 174903068000.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": -0.4633,
+        "previous_funding_rate": 2.73211834e-10,
+        "previous_observed_at_utc": "2026-10-05T08:14:42.417092Z",
+        "previous_open_interest": 175717187000.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 2.73211834e-10,
+        "index_price": 5.988e-06,
+        "last": 5.984e-06,
+        "mark_price": 5.98851e-06,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 174903068000.0,
+        "requested_symbols": [
+          "PF_SHIBUSD",
+          "PI_SHIBUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_SHIBUSD",
+        "volume24h": 78482446000
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 5.341e-06,
+      "bid": 5.34e-06,
+      "last": 5.335e-06,
+      "spread_pct": 0.018724838498277288
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "770000",
+      "pair_decimals": 9,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.16785575301594413,
+          "ret3h_pct": 0.40181285435849645
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1890025186639943,
+          "ret3h_pct": 0.4345273533108429
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.24855012427505985,
+          "ret3h_pct": 0.6221561890611849
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T08:51:58.687561Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0ed05fb4665b78fd006ac3652f99fc87d2a90659c9da9f96c9"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 5.341e-06,
+    "bid": 5.34e-06,
+    "last": 5.335e-06,
+    "spread_pct": 0.018724838498277288
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 5.323e-06,
+      "high": 5.331e-06,
+      "low": 5.32e-06,
+      "open": 5.328e-06,
+      "trades": 18,
+      "ts": 1791186300,
+      "volume": 1471301816.06525,
+      "vwap": 5.327e-06
+    },
+    {
+      "close": 5.343e-06,
+      "high": 5.347e-06,
+      "low": 5.318e-06,
+      "open": 5.319e-06,
+      "trades": 25,
+      "ts": 1791187200,
+      "volume": 740535380.10061,
+      "vwap": 5.339e-06
+    },
+    {
+      "close": 5.326e-06,
+      "high": 5.335e-06,
+      "low": 5.32e-06,
+      "open": 5.335e-06,
+      "trades": 16,
+      "ts": 1791188100,
+      "volume": 263677411.99911,
+      "vwap": 5.326e-06
+    },
+    {
+      "close": 5.348e-06,
+      "high": 5.363e-06,
+      "low": 5.333e-06,
+      "open": 5.333e-06,
+      "trades": 72,
+      "ts": 1791189000,
+      "volume": 1749624122.54212,
+      "vwap": 5.354e-06
+    },
+    {
+      "close": 5.335e-06,
+      "high": 5.347e-06,
+      "low": 5.329e-06,
+      "open": 5.347e-06,
+      "trades": 31,
+      "ts": 1791189900,
+      "volume": 521861240.51591,
+      "vwap": 5.339e-06
+    }
+  ],
+  "pair": "SHIB/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-081342-SHIB-EUR-r37282167950.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T08:52:05.763598Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "8c0f42bf7c6877135f5058419b41146200323f8b",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T08:52:05.763598Z",
+    "revalidation_started_at_utc": "2026-10-05T08:51:58.466820Z",
+    "ttl_due_at_utc": "2026-10-05T08:44:42.417092Z",
+    "ttl_lag_seconds": 436.05
+  }
+}
