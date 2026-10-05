@@ -1,0 +1,196 @@
+{
+  "altname": "VVVEUR",
+  "candidate_id": "20261005-075519-VVV-EUR-r37280318766",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": 2.2,
+    "missing_triggers": [
+      "A 15-minute close above 26.90 EUR with sustained volume.",
+      "A pullback that holds above 26.764 EUR."
+    ],
+    "reason_codes": [
+      "breakout_confirmation_failed",
+      "resistance_not_held",
+      "extended_multiperiod_run",
+      "costs_vs_nearby_upside",
+      "derivatives_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Revalidation did not confirm a sustained breakout: the latest completed candle closed below 26.764 resistance after a failed push above 26.90. Nearby upside remains limited relative to Kraken EUR costs and downside risk.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "VVVUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_VVVUSD",
+          "PI_VVVUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 26.768,
+      "bid": 26.748,
+      "last": 26.779,
+      "spread_pct": 0.07474400179385444
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "0.18",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.033851964451558914,
+          "ret3h_pct": 0.8946582141371451
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.006575216365711789,
+          "ret3h_pct": 0.9507927421161355
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.08281954541271563,
+          "ret3h_pct": 1.098696461824944
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T08:32:37.395389Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_060e085a8052aa6f006ac360a66b5487d080c1fd545722f8a2"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 26.768,
+    "bid": 26.748,
+    "last": 26.779,
+    "spread_pct": 0.07474400179385444
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 26.546,
+      "high": 26.546,
+      "low": 26.512,
+      "open": 26.534,
+      "trades": 13,
+      "ts": 1791185400,
+      "volume": 102.69993,
+      "vwap": 26.534
+    },
+    {
+      "close": 26.876,
+      "high": 26.901,
+      "low": 26.475,
+      "open": 26.477,
+      "trades": 44,
+      "ts": 1791186300,
+      "volume": 148.1171,
+      "vwap": 26.753
+    },
+    {
+      "close": 26.893,
+      "high": 26.931,
+      "low": 26.85,
+      "open": 26.927,
+      "trades": 25,
+      "ts": 1791187200,
+      "volume": 45.01887,
+      "vwap": 26.876
+    },
+    {
+      "close": 26.757,
+      "high": 26.979,
+      "low": 26.752,
+      "open": 26.901,
+      "trades": 28,
+      "ts": 1791188100,
+      "volume": 78.71064,
+      "vwap": 26.876
+    },
+    {
+      "close": 26.779,
+      "high": 26.779,
+      "low": 26.779,
+      "open": 26.779,
+      "trades": 1,
+      "ts": 1791189000,
+      "volume": 1.0039,
+      "vwap": 26.779
+    }
+  ],
+  "pair": "VVV/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-075519-VVV-EUR-r37280318766.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T08:32:50.289468Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "d9a961a9809f6b0f6a96ca115bb510f81703087d",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T08:32:50.289468Z",
+    "revalidation_started_at_utc": "2026-10-05T08:32:37.033909Z",
+    "ttl_due_at_utc": "2026-10-05T08:26:46.220005Z",
+    "ttl_lag_seconds": 350.814
+  }
+}

@@ -3,7 +3,16 @@
   "candidate_id": "20261005-075519-LINK-EUR-r37280318766",
   "evaluated_at_utc": "2026-10-05T07:55:57.090906Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -0.51,
+      "expected_bars": 30,
+      "mae_pct": -0.51,
+      "mfe_pct": -0.034
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -57,8 +66,11 @@
   },
   "original_decision": "WAIT",
   "pair": "LINK/EUR",
-  "path_classification": "WAIT_PENDING",
+  "path_classification": "WAIT_TO_REJECT",
+  "revalidated_at_utc": "2026-10-05T08:32:20.673974Z",
+  "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-05T08:32:58.135795Z"
 }
