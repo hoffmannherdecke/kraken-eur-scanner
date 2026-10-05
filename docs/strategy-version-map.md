@@ -575,3 +575,8 @@ und Circuit Breaker bleiben davon getrennte Schutzfunktionen.
 
 Auch nach Beginn des Echtgeldhandels gilt somit dauerhaft:
 **inherit first, replace only with stronger evidence, never lose validated learning.**
+
+
+### V2R4 release-contract supersession — 2026-10-05
+
+The historical V2R4 PR #9 is closed and superseded. The binding first-series machine contract is `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`: fixed 50+50 EUR sizing, V2R3 completion/final causal review/migration review required, explicit `APPROVED_PAPER` required, automatic activation forbidden, and successor runtime evidence stored in Supabase/bounded MINI-PC state rather than per-event Git commits.

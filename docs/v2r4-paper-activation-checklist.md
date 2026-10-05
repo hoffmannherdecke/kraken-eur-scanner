@@ -75,7 +75,7 @@ Adaptive setup-quality sizing is explicitly deferred to a later, separately vers
 
 ## Gate 3 — code candidate
 
-The former Draft-PR #9 is superseded/closed and must not be revived.
+The former superseded superseded PR #9 is superseded/closed and must not be revived.
 
 Before release:
 - create/use the fresh V2R4 candidate from the cleaned current `main`;
@@ -185,3 +185,8 @@ Nothing in this checklist authorizes:
 - automatic capital scaling.
 
 Those remain a separate later execution-security program.
+
+
+### V2R4 release-contract supersession — 2026-10-05
+
+The historical V2R4 PR #9 is closed and superseded. The binding first-series machine contract is `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`: fixed 50+50 EUR sizing, V2R3 completion/final causal review/migration review required, explicit `APPROVED_PAPER` required, automatic activation forbidden, and successor runtime evidence stored in Supabase/bounded MINI-PC state rather than per-event Git commits.
