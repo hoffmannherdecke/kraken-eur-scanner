@@ -34,6 +34,17 @@
         "mfe_pct": 0.45,
         "peak_at_utc": "2026-10-05T17:50:00Z",
         "trough_at_utc": "2026-10-05T17:58:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": 2.156,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": 0.032,
+        "mfe_pct": 2.445,
+        "peak_at_utc": "2026-10-05T18:37:00Z",
+        "trough_at_utc": "2026-10-05T17:58:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -61,7 +72,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-05T18:00:51.758545Z"
+    "updated_at_utc": "2026-10-05T18:45:22.003689Z"
   },
   "original_decision": "WAIT",
   "pair": "ICP/EUR",
