@@ -1,0 +1,202 @@
+{
+  "altname": "MINAEUR",
+  "candidate_id": "20261005-143331-MINA-EUR-r37325134753",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained 15-minute close above 0.1515 EUR with renewed live volume",
+      "Evidence of remaining upside sufficient to cover fees, spread, and slippage"
+    ],
+    "reason_codes": [
+      "extended_7d_30d_run",
+      "below_reclaim_trigger",
+      "negligible_recent_volume",
+      "negative_major_market_context",
+      "round_trip_fees_and_spread",
+      "insufficient_evidenced_upside"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation fails: MINA remains below the required 0.1515 EUR reclaim, recent candles show negligible activity, and all supplied major-market returns are negative. No evidence supports a scout with a defined confirmation plan after costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "MINAUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_MINAUSD",
+          "PI_MINAUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.1491,
+      "bid": 0.1487,
+      "last": 0.1483,
+      "spread_pct": 0.26863666890531324
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "30",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.9970242143705565,
+          "ret3h_pct": -0.6717192920432047
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.8511250385287217,
+          "ret3h_pct": -0.5560524808019829
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -1.2319377547239663,
+          "ret3h_pct": -1.0945181337538301
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T15:06:09.034094Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_09204dd4388a14c7006ac3bce299b487d084c2436dd302a9a3"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.1491,
+    "bid": 0.1487,
+    "last": 0.1483,
+    "spread_pct": 0.26863666890531324
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.1482,
+      "high": 0.1482,
+      "low": 0.1482,
+      "open": 0.1482,
+      "trades": 0,
+      "ts": 1791208800,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 0.1507,
+      "high": 0.151,
+      "low": 0.1507,
+      "open": 0.1507,
+      "trades": 17,
+      "ts": 1791209700,
+      "volume": 32934.50431215,
+      "vwap": 0.1508
+    },
+    {
+      "close": 0.1486,
+      "high": 0.1487,
+      "low": 0.1486,
+      "open": 0.1487,
+      "trades": 3,
+      "ts": 1791210600,
+      "volume": 16205.180866,
+      "vwap": 0.1486
+    },
+    {
+      "close": 0.1481,
+      "high": 0.1482,
+      "low": 0.1481,
+      "open": 0.1482,
+      "trades": 4,
+      "ts": 1791211500,
+      "volume": 1592.39164067,
+      "vwap": 0.1481
+    },
+    {
+      "close": 0.1483,
+      "high": 0.1483,
+      "low": 0.1483,
+      "open": 0.1483,
+      "trades": 1,
+      "ts": 1791212400,
+      "volume": 39.94003875,
+      "vwap": 0.1483
+    }
+  ],
+  "pair": "MINA/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-143331-MINA-EUR-r37325134753.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T15:06:15.442396Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "49110ed5c9227a7d0240387be90158738cd96d45",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T15:06:15.442396Z",
+    "revalidation_started_at_utc": "2026-10-05T15:06:08.368935Z",
+    "ttl_due_at_utc": "2026-10-05T15:04:14.881790Z",
+    "ttl_lag_seconds": 113.487
+  }
+}
