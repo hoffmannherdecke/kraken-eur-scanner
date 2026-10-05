@@ -1,0 +1,77 @@
+name: Shared market data parity guard
+
+'on':
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'market_data/**'
+      - 'paper_capture/**'
+      - 'paper_context.py'
+      - 'tools/minipc-kraken-universe-feed.py'
+      - 'paper_evaluator/**'
+      - '.github/workflows/shared-market-data-parity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'market_data/**'
+      - 'paper_capture/**'
+      - 'paper_context.py'
+      - 'tools/minipc-kraken-universe-feed.py'
+      - 'paper_evaluator/**'
+      - '.github/workflows/shared-market-data-parity.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shared-market-data-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - name: Compile shared market layer
+        run: |
+          python -m py_compile market_data/*.py
+
+      - name: Shared market-data unit/parity tests
+        run: |
+          python -m unittest discover -s market_data -p 'test_*.py' -v
+
+      - name: Paper adapter tests
+        run: |
+          python -m unittest discover -s paper_capture -p 'test_*.py' -v
+
+      - name: Future-runtime source-of-truth guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          readme=Path("market_data/README.md").read_text("utf-8")
+          required=[
+            "Consumers must import these modules",
+            "active V2R3 clean series predates full consolidation",
+            "From the next runtime boundary onward",
+            "market_data.universe",
+            "market_data.microstructure",
+            "market_data.rest",
+          ]
+          missing=[x for x in required if x not in readme]
+          assert not missing, f"missing canonical market-data declarations: {missing}"
+          print("MARKET_DATA_SOURCE_OF_TRUTH_GUARD_PASS")
+          PY
+
+      - name: Safety guard
+        run: |
+          python - <<'PY'
+          from market_data.runtime import LIVE_EVALUATION_ENABLED, REAL_MONEY_ACTIONS_ENABLED
+          assert LIVE_EVALUATION_ENABLED is False
+          assert REAL_MONEY_ACTIONS_ENABLED is False
+          print("MARKET_DATA_NO_LIVE_ACTION_PASS")
+          PY
