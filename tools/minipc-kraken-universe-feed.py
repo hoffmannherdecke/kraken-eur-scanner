@@ -18,10 +18,14 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+import sys
+
+ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
+from market_data.universe import online_eur_universe, ticker_record
 
 WS_URL = "wss://ws.kraken.com/v2"
 UA = "kraken-eur-minipc-universe/1.0-public-only"
-SYMBOL_ALIASES = {"XBT": "BTC", "XDG": "DOGE"}
 SUBSCRIBE_CHUNK = 80
 HEALTHY_COVERAGE = 0.80
 
@@ -58,45 +62,9 @@ def public_json(url: str, timeout: int = 20) -> dict[str, Any]:
     return result
 
 
-def ws_v2_symbol(wsname: str) -> str | None:
-    parts = str(wsname or "").split("/")
-    if len(parts) != 2:
-        return None
-    base, quote = (part.strip().upper() for part in parts)
-    base = SYMBOL_ALIASES.get(base, base)
-    quote = SYMBOL_ALIASES.get(quote, quote)
-    if not base or quote != "EUR":
-        return None
-    return f"{base}/EUR"
-
-
 def fetch_online_eur_universe() -> list[dict[str, str]]:
     result = public_json("https://api.kraken.com/0/public/AssetPairs")
-    rows: list[dict[str, str]] = []
-    seen: set[str] = set()
-    for pair_key, info in result.items():
-        if not isinstance(info, dict):
-            continue
-        if str(info.get("status") or "").lower() != "online":
-            continue
-        wsname = str(info.get("wsname") or "")
-        quote = str(info.get("quote") or "")
-        if not (wsname.endswith("/EUR") or quote in {"ZEUR", "EUR"}):
-            continue
-        symbol = ws_v2_symbol(wsname)
-        if not symbol or symbol in seen:
-            continue
-        seen.add(symbol)
-        rows.append(
-            {
-                "symbol": symbol,
-                "pair_key": str(pair_key),
-                "altname": str(info.get("altname") or pair_key),
-                "rest_wsname": wsname,
-                "status": "online",
-            }
-        )
-    rows.sort(key=lambda row: row["symbol"])
+    rows = online_eur_universe(result)
     if not rows:
         raise RuntimeError("Kraken AssetPairs yielded zero online EUR spot pairs")
     return rows
@@ -108,50 +76,6 @@ def universe_hash(symbols: list[str]) -> str:
 
 def chunks(items: list[str], size: int) -> list[list[str]]:
     return [items[i : i + size] for i in range(0, len(items), size)]
-
-
-def ticker_record(row: dict[str, Any], received_at: str) -> dict[str, Any]:
-    def num(key: str) -> float | None:
-        value = row.get(key)
-        if value is None:
-            return None
-        try:
-            return float(value)
-        except (TypeError, ValueError):
-            return None
-
-    bid = num("bid")
-    ask = num("ask")
-    last = num("last")
-    volume = num("volume")
-    vwap = num("vwap")
-    spread_pct = None
-    if bid is not None and ask is not None and bid > 0 and ask >= bid:
-        mid = (bid + ask) / 2.0
-        if mid > 0:
-            spread_pct = 100.0 * (ask - bid) / mid
-    turnover = None
-    if volume is not None:
-        ref = vwap if vwap and vwap > 0 else last
-        if ref is not None:
-            turnover = volume * ref
-
-    return {
-        "symbol": str(row.get("symbol") or ""),
-        "exchange_at_utc": row.get("timestamp"),
-        "received_at_utc": received_at,
-        "bid_eur": bid,
-        "ask_eur": ask,
-        "last_eur": last,
-        "spread_pct": spread_pct,
-        "volume24_base": volume,
-        "vwap24_eur": vwap,
-        "turnover24_est_eur": turnover,
-        "change24_eur": num("change"),
-        "change24_pct": num("change_pct"),
-        "high24_eur": num("high"),
-        "low24_eur": num("low"),
-    }
 
 
 async def run_feed(trading_root: Path, seconds: int | None, refresh_seconds: int) -> int:

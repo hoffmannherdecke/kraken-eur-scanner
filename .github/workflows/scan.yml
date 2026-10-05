@@ -630,17 +630,6 @@ jobs:
           }, sort_keys=True))
           PY
 
-      - name: Build isolated H1 shadow context sidecars
-        if: success() && hashFiles('.candidate-identity-manifest.json') != ''
-        run: |
-          set -euo pipefail
-          python -m py_compile tools/v3-h1-shadow-context.py
-          python tools/v3-h1-shadow-context.py --self-test
-          python tools/v3-h1-shadow-context.py \
-            --handoff-jsonl .scanner/kraken_eur_scanner/.state/audit_history.jsonl \
-            --candidate-manifest .candidate-identity-manifest.json \
-            --output-dir research/v3/shadow-runtime/h1-context
-
       - name: Commit validated canonical handoff queue
         id: queue_commit
         if: success() && hashFiles('.candidate-identity-manifest.json') != ''
@@ -649,7 +638,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add handoff_queue
-          git add research/v3/shadow-runtime/h1-context 2>/dev/null || true
           if ! git diff --cached --quiet -- handoff_queue; then
             git commit -m "[auto-handoff] persist scanner candidates from run ${GITHUB_RUN_ID}"
             pushed=false

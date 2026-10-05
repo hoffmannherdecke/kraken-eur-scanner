@@ -1,0 +1,10 @@
+# Supabase project function configuration.
+# External/custom-auth relays verify their own narrow request credentials.
+[functions.altrady-trigger-relay]
+verify_jwt = false
+
+[functions.v2r4-shadow-evidence-relay]
+verify_jwt = false
+
+[functions.minipc-status-relay]
+verify_jwt = false

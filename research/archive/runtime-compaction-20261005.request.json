@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "kind": "RUNTIME_COMPACTION_REQUEST_V1",
+  "requested_at_utc": "2026-10-05T06:30:00Z",
+  "archive_ref_required": "archive/runtime-pre-compaction-20261005",
+  "scope": "closed-paper-series-and-completed-v3-h1-runtime-only",
+  "preserve_active_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "apply": true,
+  "one_shot": true,
+  "strategy_change": false,
+  "real_money_actions": false
+}

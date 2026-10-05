@@ -8,6 +8,7 @@ from market_data.runtime import (LIVE_EVALUATION_ENABLED, REAL_MONEY_ACTIONS_ENA
                                  require_live_evaluation_disabled,
                                  require_real_money_actions_disabled)
 from market_data.stream import subscription_payloads
+from market_data.universe import online_eur_universe, ticker_record, ws_v2_symbol
 
 
 def _book(bid=99.9, ask=100.1, bid_qty=10, ask_qty=10):
@@ -102,6 +103,20 @@ class SharedMarketDataParityTests(unittest.TestCase):
             {"monotonic_ns": 1_000_000_000, "side": "buy", "price": "100", "qty": "1"},
             {"monotonic_ns": 1_500_000_000, "side": "sell", "price": "100", "qty": "1"},
         ], 2_000_000_000, 15)["pressure"], 0.0)
+
+    def test_shared_universe_and_ticker_normalization(self):
+        payload={
+            "XXBTZEUR":{"status":"online","wsname":"XBT/EUR","quote":"ZEUR","altname":"XBTEUR"},
+            "XXDGZEUR":{"status":"online","wsname":"XDG/EUR","quote":"ZEUR","altname":"XDGEUR"},
+            "OFF":{"status":"cancel_only","wsname":"OFF/EUR","quote":"ZEUR","altname":"OFFEUR"},
+            "USD":{"status":"online","wsname":"BTC/USD","quote":"ZUSD","altname":"XBTUSD"},
+        }
+        rows=online_eur_universe(payload)
+        self.assertEqual([x["symbol"] for x in rows],["BTC/EUR","DOGE/EUR"])
+        self.assertEqual(ws_v2_symbol("XBT/EUR"),"BTC/EUR")
+        tick=ticker_record({"symbol":"BTC/EUR","bid":99,"ask":101,"last":100,"volume":2,"vwap":100},"T")
+        self.assertEqual(tick["spread_pct"],2.0)
+        self.assertEqual(tick["turnover24_est_eur"],200.0)
 
     def test_shared_transport_builds_read_only_public_subscriptions(self):
         payloads = subscription_payloads(["RAY/EUR", "BTC/EUR", "RAY/EUR"])

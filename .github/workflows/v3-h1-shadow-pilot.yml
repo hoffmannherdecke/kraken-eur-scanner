@@ -1,188 +1,48 @@
-name: V3 H1 one-change shadow pilot
+name: V3 H1 completed pilot archive
 
 'on':
   workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - 'paper_decisions/**'
-      - 'research/v3/shadow-runtime/h1-context/**'
+      - 'tools/v3-h1-shadow-archive.py'
       - 'research/v3/shadow-runtime/h1-control.json'
-      - 'research/v3/shadow-candidates/v3-h1-shadow-001*.json'
-      - 'tools/v3-h1-shadow-evaluate.py'
       - '.github/workflows/v3-h1-shadow-pilot.yml'
-  schedule:
-    - cron: '7,17,27,37,47,57 * * * *'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: v3-h1-shadow-pilot
-  cancel-in-progress: false
+  group: v3-h1-completed-pilot-archive
+  cancel-in-progress: true
 
 jobs:
-  shadow:
+  archive:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 8
     env:
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      OPENAI_MODEL: gpt-6-luna
+      SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 2
-
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-
-      - name: Sync to latest main and validate frozen candidate
+      - name: Validate frozen completed pilot
         run: |
-          set -euo pipefail
-          git fetch origin main
-          git reset --hard origin/main
-          python -m py_compile tools/v3-h1-shadow-context.py tools/v3-h1-shadow-evaluate.py tools/validate-v3-shadow-candidate.py
-          python tools/v3-h1-shadow-context.py --self-test
-          python tools/validate-v3-shadow-candidate.py research/v3/shadow-candidates/v3-h1-shadow-001.json
-
-      - name: Select matched baseline decisions
-        run: |
-          set -euo pipefail
-          mkdir -p .v3-h1-work research/v3/shadow-runtime/h1-decisions
+          python -m py_compile tools/v3-h1-shadow-archive.py
           python - <<'PY'
           import json
           from pathlib import Path
-
-          control=json.loads(Path("research/v3/shadow-runtime/h1-control.json").read_text("utf-8"))
-          outdir=Path("research/v3/shadow-runtime/h1-decisions")
-          existing=list(outdir.glob("*.json"))
-          cap=int(control["max_shadow_records"])
-          room=max(0,cap-len(existing))
-          max_new=min(room,int(control["max_new_evaluations_per_run"]))
-          selected=[]
-          if control.get("enabled") is True and max_new>0:
-              contexts=Path("research/v3/shadow-runtime/h1-context")
-              for p in sorted(Path("paper_decisions").glob("*.json")):
-                  try:
-                      d=json.loads(p.read_text("utf-8"))
-                  except Exception:
-                      continue
-                  cid=d.get("candidate_id")
-                  if (
-                      d.get("series_id")==control["baseline_series_id"]
-                      and d.get("strategy_revision")==control["baseline_strategy_revision"]
-                      and cid
-                      and (Path("handoff_queue")/(cid+".json")).exists()
-                      and (contexts/(cid+".json")).exists()
-                      and not (outdir/(cid+".json")).exists()
-                  ):
-                      selected.append({
-                        "candidate":str(Path("handoff_queue")/(cid+".json")),
-                        "baseline":str(p),
-                        "context":str(contexts/(cid+".json")),
-                        "output":str(outdir/(cid+".json"))
-                      })
-          selected=selected[:max_new]
-          Path(".v3-h1-work/selected.json").write_text(json.dumps(selected,sort_keys=True)+"\n","utf-8")
-          print("V3_H1_SHADOW_SELECTED "+json.dumps({"count":len(selected),"existing":len(existing),"cap":cap},sort_keys=True))
+          c=json.loads(Path('research/v3/shadow-runtime/h1-control.json').read_text())
+          s=json.loads(Path('research/v3/shadow-runtime/h1-status.json').read_text())
+          assert c['enabled'] is False
+          assert s['minimum_gate_met'] is True
+          assert s['shadow_records']==200 and s['pass_records']==200
+          assert s['automatic_promotion'] is False
+          assert s['orders'] is False and s['real_money_actions'] is False
+          print('V3_H1_CLOSED_PILOT_GUARD_PASS')
           PY
-
-      - name: Evaluate H1 shadow decisions
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json, os, subprocess
-          rows=json.load(open(".v3-h1-work/selected.json"))
-          if rows and not os.environ.get("OPENAI_API_KEY"):
-              raise SystemExit("OPENAI_API_KEY missing")
-          for row in rows:
-              subprocess.run([
-                "python","tools/v3-h1-shadow-evaluate.py",
-                "--candidate",row["candidate"],
-                "--baseline-decision",row["baseline"],
-                "--h1-context",row["context"],
-                "--output",row["output"],
-              ],check=True)
-          PY
-
-      - name: Build compact pilot status
-        if: always()
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import json
-          from datetime import datetime, timezone
-          from pathlib import Path
-
-          control=json.loads(Path("research/v3/shadow-runtime/h1-control.json").read_text("utf-8"))
-          records=[]
-          for p in Path("research/v3/shadow-runtime/h1-decisions").glob("*.json"):
-              try:
-                  records.append(json.loads(p.read_text("utf-8")))
-              except Exception:
-                  pass
-          passed=[r for r in records if r.get("status")=="PASS"]
-          missing=[r for r in records if r.get("status")=="SKIPPED_H1_CONTEXT_MISSING"]
-          divergent=[r for r in passed if r.get("decision_diverged") is True]
-          events=sorted([r.get("candidate_event_time_utc") for r in passed if r.get("candidate_event_time_utc")])
-          elapsed=None
-          if events:
-              a=datetime.fromisoformat(events[0].replace("Z","+00:00"))
-              elapsed=(datetime.now(timezone.utc)-a).total_seconds()/3600
-          total=len(records)
-          success_pct=(100.0*len(passed)/total) if total else None
-          minimum_gate=(
-              total>=int(control["max_shadow_records"])
-              and elapsed is not None and elapsed>=float(control["minimum_elapsed_hours"])
-              and success_pct is not None and success_pct>=float(control["minimum_capture_success_pct"])
-          )
-          status={
-            "schema_version":1,
-            "kind":"V3_H1_SHADOW_PILOT_STATUS_V1",
-            "shadow_candidate_id":control["shadow_candidate_id"],
-            "baseline_series_id":control["baseline_series_id"],
-            "generated_at_utc":datetime.now(timezone.utc).isoformat().replace("+00:00","Z"),
-            "shadow_records":total,
-            "pass_records":len(passed),
-            "missing_context_records":len(missing),
-            "capture_success_pct":round(success_pct,3) if success_pct is not None else None,
-            "decision_divergences":len(divergent),
-            "first_candidate_event_utc":events[0] if events else None,
-            "last_candidate_event_utc":events[-1] if events else None,
-            "elapsed_hours_from_first_candidate":round(elapsed,3) if elapsed is not None else None,
-            "minimum_gate_met":minimum_gate,
-            "low_impact_if_gate_met":minimum_gate and len(divergent)<int(control["minimum_decision_divergences_for_non_low_impact"]),
-            "automatic_promotion":False,
-            "orders":False,
-            "real_money_actions":False
-          }
-          Path("research/v3/shadow-runtime/h1-status.json").write_text(json.dumps(status,indent=2,sort_keys=True)+"\n","utf-8")
-          print("V3_H1_SHADOW_STATUS "+json.dumps(status,sort_keys=True))
-          PY
-
-      - name: Persist isolated H1 shadow evidence
-        if: always()
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add research/v3/shadow-runtime/h1-decisions/ research/v3/shadow-runtime/h1-status.json 2>/dev/null || true
-          if ! git diff --cached --quiet; then
-            git commit -m "[v3-h1-shadow] persist isolated pilot evidence"
-            pushed=false
-            for attempt in 1 2 3 4; do
-              git fetch origin main
-              git rebase origin/main
-              if git push origin HEAD:main; then
-                pushed=true
-                break
-              fi
-              sleep $((attempt * 2))
-            done
-            test "$pushed" = "true" || { echo "H1 shadow evidence push failed after retries"; exit 1; }
-          else
-            echo "V3_H1_SHADOW_NO_STATE_CHANGES"
-          fi
+      - name: Archive immutable pilot evidence
+        run: python tools/v3-h1-shadow-archive.py

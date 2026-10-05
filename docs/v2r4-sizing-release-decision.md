@@ -1,6 +1,6 @@
 # V2R4 Sizing Release Decision Memo
 
-Status: **PREPARED RECOMMENDATION / NOT AUTHORIZED / NO ACTIVATION**
+Status: **DECIDED FOR FIRST FULL V2R4 PAPER SERIES / NO ACTIVATION**
 
 Purpose: reduce the later V2R4 paper-release decision to one explicit choice instead of mixing timing/discovery and sizing changes at the release boundary.
 
@@ -64,17 +64,17 @@ Before first full V2R4 collection:
 - additional implementation and test surface before release;
 - higher risk of needing another version merely to disentangle sizing from timing.
 
-## Prepared recommendation
+## Binding first-series decision — 2026-10-05
 
-**Methodologically preferred first-series choice: Option A — timing isolation.**
+**Option A is selected: timing isolation.**
 
 Reason: V2R4 exists primarily to test whether earlier discovery and faster fresh rechecks fix the observed timing blind spots. Holding paper sizing constant is the cleanest way to answer that question.
 
 Adaptive sizing should remain a separately versioned follow-up experiment after the first V2R4 timing series has enough evidence.
 
-This recommendation does **not** change any active strategy or proposed spec automatically. The final sizing choice remains an explicit manual release decision.
+This decision does **not** change active V2R3 and does not activate V2R4. It resolves only the inactive V2R4 release design: the first full V2R4 Paper series must use **50 EUR scout + 50 EUR stage 2**. Adaptive sizing remains a separately versioned successor experiment and must not be mixed into that first series.
 
-## Release implementation if Option A is approved later
+## Required release implementation
 
 At the actual activation-review boundary:
 
@@ -85,7 +85,7 @@ At the actual activation-review boundary:
 5. rerun contract/unit/E2E release smokes;
 6. start paper-only collection only after the normal release checklist passes.
 
-## Release implementation if Option B is approved later
+## Later adaptive-sizing experiment
 
 Do not activate the current proposal directly.
 

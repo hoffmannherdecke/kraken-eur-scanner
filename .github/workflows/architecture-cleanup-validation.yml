@@ -1,0 +1,82 @@
+name: Architecture cleanup validation
+
+'on':
+  pull_request:
+    branches: [main]
+    paths:
+      - 'market_data/**'
+      - 'tools/minipc-kraken-universe-feed.py'
+      - 'tools/repository-runtime-compaction.py'
+      - 'tools/v3-h1-shadow-archive.py'
+      - 'research/v3-migration-ledger.json'
+      - 'research/v3/shadow-runtime/h1-control.json'
+      - 'docs/**'
+      - 'supabase/**'
+      - '.github/workflows/paper-evaluator.yml'
+      - '.github/workflows/paper-series-completion-watch.yml'
+      - '.github/workflows/v3-h1-shadow-pilot.yml'
+      - '.github/workflows/runtime-repository-compaction.yml'
+      - '.github/workflows/architecture-cleanup-validation.yml'
+      - 'README.md'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Compile changed Python
+        run: |
+          python -m py_compile \
+            market_data/universe.py \
+            tools/minipc-kraken-universe-feed.py \
+            tools/repository-runtime-compaction.py \
+            tools/v3-h1-shadow-archive.py \
+            tools/validate-v3-migration-ledger.py
+      - name: V2R3 freeze guard
+        run: python tools/validate-v2r3-clean-series-freeze.py
+      - name: Strategy lineage guard
+        run: python tools/validate-v3-migration-ledger.py
+      - name: Shared market data tests
+        run: python -m unittest discover -s market_data -p 'test_*.py' -v
+      - name: Completed H1 pilot guard
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          c=json.loads(Path('research/v3/shadow-runtime/h1-control.json').read_text())
+          s=json.loads(Path('research/v3/shadow-runtime/h1-status.json').read_text())
+          assert c['enabled'] is False
+          assert c['closed_reason']=='PREREGISTERED_MINIMUM_GATE_MET_200_OF_200_PASS'
+          assert s['shadow_records']==200 and s['pass_records']==200
+          assert s['minimum_gate_met'] is True
+          assert s['orders'] is False and s['real_money_actions'] is False
+          print('H1_CLOSED_PILOT_PASS')
+          PY
+      - name: JSON and safety contract checks
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          for p in [
+            'docs/fasttrack-evidence-diversity-policy.json',
+            'research/v3-migration-ledger.json',
+            'research/v3/shadow-runtime/h1-control.json',
+          ]:
+            json.loads(Path(p).read_text())
+          sql=Path('supabase/evidence-diversity-fasttrack-v2.sql').read_text()
+          assert 'security_invoker=true' in sql
+          assert 'intake_should_stop' in sql
+          assert 'PRIMARY_WAITING_24H_MATURITY' in sql
+          e=Path('.github/workflows/paper-evaluator.yml').read_text()
+          assert 'PAPER_NEW_INTAKE_FROZEN_BY_COMPLETION_GOVERNANCE' in e
+          assert 'paper_series_completion_readiness' in e
+          assert '0<=age<=3600' in e and 'sorted(rows)][:8]' in e
+          print('ARCHITECTURE_CONTRACT_PASS')
+          PY

@@ -21,6 +21,8 @@ records, provenance roots, or historical source archives merely to save space.
 | H10 exact Hyperliquid fill events | keep **48 hours** | `tools/v3-h10-activity-capture.py` retention maintenance | short-lived exact source-timestamp/debug evidence only; long-term value first aggregated to 5-minute wallet/asset buckets |
 | H10 compact wallet/asset 5m aggregates | keep **120 days** | same H10 capture retention maintenance | one row per wallet/asset/complete 5m bucket; upserted/deduplicated; sufficient for fixed-horizon/lead-time research |
 | H10 wallet-state snapshots + capture batches/errors | keep **120 days** | same H10 capture retention maintenance; batch delete cascades state/error rows | frozen cohort/contracts remain immutable in GitHub |
+| GitHub Paper runtime working tree | only the **active frozen series** may keep per-candidate working files; closed series are compacted after Supabase-ID verification | `tools/repository-runtime-compaction.py` + one bounded maintenance commit | pre-compaction archive ref + Git history retained; active series fail-closed excluded |
+| V3/H1 and future shadow runtime evidence | **Supabase/local runtime, not per-event commits to main** | H1 closed-pilot archive + successor contracts | GitHub keeps code/contracts/compact status/release evidence only |
 
 GitHub cleanup implementation evidence:
 - paper-artifact cleanup check on commit `eefb490c5d82f850bf9171179eaed47d690c0f99`: **SUCCESS**;
@@ -33,7 +35,9 @@ MINI-PC baseline:
 
 ## Deliberately not auto-deleted
 
-The following are provenance/evidence, not disposable cache:
+The following are provenance/evidence, not disposable cache. "Retained" does not require thousands
+of individual files to remain in the default branch: once a backend archive is verified, Git
+history plus a named archive ref may preserve provenance while the active working tree is compacted.
 
 - frozen V2R3/V2R4 Paper decisions, revalidations and outcome evidence;
 - immutable historical Trial Ledger entries;
@@ -74,3 +78,15 @@ production-ready until one of these is true:
 Retention changes are infrastructure/governance changes only and must not alter
 strategy rules, Paper decisions, release gates, private exchange access, orders,
 or real-money behavior.
+
+
+## Repository working-tree rule — 2026-10-05
+
+Git is source/release control, not the primary runtime database.
+
+- active frozen V2R3 is the last compatibility series allowed to persist per-event working files on `main`;
+- closed/predecessor Paper series are removed from the current tree only after candidate-level Supabase verification;
+- a named pre-compaction archive ref preserves an easy historical root in addition to ordinary Git history;
+- V2R4 and later Paper/Shadow runtimes must persist event/outcome state in Supabase and/or bounded local state, not by creating a commit for every observation;
+- GitHub may retain compact release snapshots, checksums, contracts and manifests;
+- no cleanup may remove the currently active series or the only copy of evidence.

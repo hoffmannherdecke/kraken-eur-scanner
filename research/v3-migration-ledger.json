@@ -1,26 +1,27 @@
 {
-  "schema_version": 1,
-  "kind": "V2_V2R4_TO_V3_MIGRATION_LEDGER_V1",
+  "schema_version": 2,
+  "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-03T07:56:00Z",
+  "updated_at_utc": "2026-10-05T06:20:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
   "allowed_migration_statuses": [
-    "INHERITED_UNCHANGED",
-    "INHERITED_MODIFIED",
-    "REPLACED_BY_TESTED_V3_COMPONENT",
-    "REJECTED_WITH_EVIDENCE",
-    "NOT_APPLICABLE",
-    "OPEN_RESEARCH"
+    "INHERIT_UNCHANGED",
+    "INHERIT_MODIFIED",
+    "REPLACE_WITH_VALIDATED_SUCCESSOR",
+    "DEFER_TO_LATER_GENERATION",
+    "MORE_TESTING_REQUIRED",
+    "REJECT_WITH_EVIDENCE",
+    "NO_SUCCESSOR_CHANGE"
   ],
-  "release_rule": "V3 release candidate is incomplete while any material component is absent from this ledger or remains OPEN_RESEARCH without an explicit release disposition.",
+  "release_rule": "Every material predecessor finding must have an explicit successor disposition. MORE_TESTING_REQUIRED blocks release until resolved or explicitly DEFER_TO_LATER_GENERATION under a non-material/deferred scope; validated improvements accumulate across generations.",
   "components": [
     {
       "id": "kraken_eur_execution_truth",
       "category": "market_authority",
       "source_version": "V2/V2R4 infrastructure",
-      "migration_status": "INHERITED_UNCHANGED",
+      "migration_status": "INHERIT_UNCHANGED",
       "rationale": "Kraken Spot EUR remains execution-price, fill-realism and live tradability truth.",
       "evidence": [
         "research/source-registry.json",
@@ -32,7 +33,7 @@
       "id": "live_kraken_assetpairs_universe",
       "category": "data_quality",
       "source_version": "V2R3/V2R4 infrastructure",
-      "migration_status": "INHERITED_UNCHANGED",
+      "migration_status": "INHERIT_UNCHANGED",
       "rationale": "Current public Kraken AssetPairs online Spot-EUR universe is the operational live tradability source; no static whitelist.",
       "evidence": [
         "PROJECT_BACKLOG.md",
@@ -44,7 +45,7 @@
       "id": "point_in_time_research_contract",
       "category": "research_governance",
       "source_version": "historical research layer",
-      "migration_status": "INHERITED_UNCHANGED",
+      "migration_status": "INHERIT_UNCHANGED",
       "rationale": "Point-in-time timestamps, no future leakage, sealed holdout, trial ledger and search accounting are strategy-independent research safeguards.",
       "evidence": [
         "docs/historical-backtest-preflight.md",
@@ -56,7 +57,7 @@
       "id": "smoke_before_scale",
       "category": "change_governance",
       "source_version": "project governance",
-      "migration_status": "INHERITED_UNCHANGED",
+      "migration_status": "INHERIT_UNCHANGED",
       "rationale": "Small deterministic/E2E proof before scale is a permanent release and research rule.",
       "evidence": [
         "docs/change-gate-policy.md"
@@ -67,7 +68,7 @@
       "id": "source_authority_and_retention",
       "category": "data_governance",
       "source_version": "project governance",
-      "migration_status": "INHERITED_UNCHANGED",
+      "migration_status": "INHERIT_UNCHANGED",
       "rationale": "Unique-value source intake, authority boundaries, no silent duplicate raw storage and bounded retention remain mandatory.",
       "evidence": [
         "docs/source-intake-policy.md",
@@ -80,7 +81,7 @@
       "id": "last_known_good_rollback",
       "category": "release_governance",
       "source_version": "V2R3 release infrastructure",
-      "migration_status": "INHERITED_UNCHANGED",
+      "migration_status": "INHERIT_UNCHANGED",
       "rationale": "Content-addressed protected-code/config rollback without whole-repo evidence rewind is a permanent release safeguard.",
       "evidence": [
         "tools/paper-release-rollback-snapshot.py",
@@ -92,7 +93,7 @@
       "id": "watchdog_stale_data_recovery",
       "category": "runtime_reliability",
       "source_version": "MINI-PC infrastructure",
-      "migration_status": "INHERITED_UNCHANGED",
+      "migration_status": "INHERIT_UNCHANGED",
       "rationale": "Feed freshness, operational taxonomy, bounded self-heal, independent cloud fallback and no stale decisions are infrastructure invariants.",
       "evidence": [
         "docs/minipc-preflight-runbook.md",
@@ -104,7 +105,7 @@
       "id": "mae_mfe_post_detection_measurement",
       "category": "measurement",
       "source_version": "V2R3/V2R4 evidence layer",
-      "migration_status": "INHERITED_UNCHANGED",
+      "migration_status": "INHERIT_UNCHANGED",
       "rationale": "MAE/MFE, follow-up horizons, post-detection continuation and timing decomposition are measurement requirements independent of the final entry rule.",
       "evidence": [
         "docs/master-version-register.md",
@@ -116,7 +117,7 @@
       "id": "v2r3_candidate_scoring_and_filters",
       "category": "signal",
       "source_version": "V2R3-2026-09-28",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Must wait for clean V2R3 completion; predecessor missed-move findings are diagnostic only.",
       "evidence": [
         "public.v2r3_release_review_snapshot",
@@ -128,7 +129,7 @@
       "id": "wait_one_shot_revalidation",
       "category": "entry_lifecycle",
       "source_version": "V2R3-2026-09-28",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Current one-shot WAIT TTL behavior has measurable scheduler/revalidation latency and must be classified after clean-series review.",
       "evidence": [
         "public.v2r3_revalidation_timing_summary",
@@ -140,7 +141,7 @@
       "id": "v2r4_event_driven_wait_wakeup",
       "category": "entry_lifecycle",
       "source_version": "V2R4 draft PR #9",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Kraken-fresh recheck with optional Altrady wakeup is technically prepared but has not completed separate V2R4 Paper evidence.",
       "evidence": [
         "docs/v2r4-release-readiness.md",
@@ -152,7 +153,7 @@
       "id": "scout_confirmation_architecture",
       "category": "entry",
       "source_version": "V2R3/V2R4",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Two-stage scout/confirmation must be judged on clean prospective net edge and timing, not assumed permanent.",
       "evidence": [
         "paper_strategy_spec.json",
@@ -164,7 +165,7 @@
       "id": "late_chase_protection",
       "category": "entry",
       "source_version": "V2R3/V2R4",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Needs missed-move/continuation evidence to distinguish good chase protection from over-rejection.",
       "evidence": [
         "PROJECT_BACKLOG.md"
@@ -175,7 +176,7 @@
       "id": "stop_trailing_ttl_exit_logic",
       "category": "risk_exit",
       "source_version": "V2R3",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Regime-dependent stop/TTL/exit research is preregistered at data-readiness only. Current clean series has short-horizon MAE/MFE but no mature 24h MAE/MFE or completed trade returns; parameter testing is therefore blocked.",
       "evidence": [
         "research/v3/h4-regime-stop-ttl-precheck-v1.json",
@@ -188,7 +189,7 @@
       "id": "position_sizing_mapping",
       "category": "risk_sizing",
       "source_version": "V2R3 plus V2R4 proposal",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "V2R4 proposal contains a sizing delta not yet wired/validated; no silent size migration.",
       "evidence": [
         "docs/v2r4-v2r3-release-diff.md",
@@ -200,7 +201,7 @@
       "id": "conservative_cost_model",
       "category": "costs",
       "source_version": "V2R3/historical",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "0.60% taker/side remains conservative reference, but spread/slippage/re-entry/fill realism still require targeted evidence.",
       "evidence": [
         "docs/historical-backtest-preflight.md",
@@ -212,7 +213,7 @@
       "id": "binance_derivatives_state",
       "category": "state_context",
       "source_version": "research preflight",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Kraken Futures H2 research tooling remains isolated/unattached. Separately, Binance public connectivity on the MINI-PC is now physically proven HEALTHY for spot server time, BTCUSDT premium/funding and open interest without API key/account/orders. Binance remains supplementary only.",
       "evidence": [
         "research/v3/h2-derivatives-state-precheck-v1.json",
@@ -231,7 +232,7 @@
       "id": "orderflow_depth_imbalance",
       "category": "state_signal",
       "source_version": "V3 hypothesis",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "WS reconciliation/state capture and physical MINI-PC smoke are proven. Replacement prospective trial V3-H3-ASSOC-002 fixed only the technical scheduler bug. Four valid >=1800s MINI-PC sessions across two UTC dates matured the frozen collection gate with BTC=1252, ETH=1314, SOL=1331 valid rows. Fixed descriptive association evaluation PASS and canonical import PASS. Associations are feature/symbol/horizon-specific rather than a universal cross-symbol direction; no threshold, feature-transform, pair or horizon search was performed.",
       "evidence": [
         "research/v3/h3-assoc-001-technical-failure-review-20261002.json",
@@ -249,7 +250,7 @@
       "id": "macro_event_risk_gate",
       "category": "risk_state",
       "source_version": "V3 hypothesis",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "FOMC calendar/DST/known-at methodology is green and exactly one 30m-before/30m-after FOMC statement no-new-entry RISK_GATE variant is preregistered. It is not running and cannot be materialized until the final inherited baseline is frozen.",
       "evidence": [
         "research/v3/h5-macro-event-risk-precheck-v1.json",
@@ -265,7 +266,7 @@
       "id": "smart_money_trader_activity",
       "category": "state_context",
       "source_version": "V3 hypothesis",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Hyperliquid public read-only transport/response shape is green. No trader-quality, wallet-selection or predictive-value claim exists. This branch is not required for the first V3 shadow unless explicitly selected later.",
       "evidence": [
         "research/v3/h10-hyperliquid-readonly-precheck-v1.json",
@@ -278,7 +279,7 @@
       "id": "prediction_market_event_layer",
       "category": "state_context",
       "source_version": "V3 hypothesis",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Polymarket public read-only discovery/CLOB transport is green. Two identical-code bounded captures proved order-book state changes are observable; no predictive value, crypto direction or surprise-score validity is proven. This branch is not required for the first V3 shadow unless explicitly selected later.",
       "evidence": [
         "research/v3/h11-polymarket-readonly-precheck-v1.json",
@@ -292,7 +293,7 @@
       "id": "historical_h1_h2_price_volume_branch",
       "category": "rejected_research",
       "source_version": "Historical Replay H1/H2",
-      "migration_status": "REJECTED_WITH_EVIDENCE",
+      "migration_status": "REJECT_WITH_EVIDENCE",
       "rationale": "Preregistered H1 was insufficient and distinct H2 failed its development gate; sealed 2026H1 holdout remained unopened. Do not resurrect via silent parameter search.",
       "evidence": [
         "docs/historical-backtest-preflight.md"
@@ -303,7 +304,7 @@
       "id": "leverage",
       "category": "execution_risk",
       "source_version": "project-wide",
-      "migration_status": "REJECTED_WITH_EVIDENCE",
+      "migration_status": "REJECT_WITH_EVIDENCE",
       "rationale": "Current project path explicitly excludes leverage; V3 research is not authorized to introduce it.",
       "evidence": [
         "PROJECT_BACKLOG.md",
@@ -315,7 +316,7 @@
       "id": "cross_crypto_lead_lag_breadth",
       "category": "state_signal",
       "source_version": "V3 H1 hypothesis",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Exact V3-H1-INCR-001 MINI-PC report is imported and the fixed review is complete with holdout sealed. The preregistered relative-context features retain small but sign-consistent incremental partial association after controlling target 1h return across research_train/calibration/validation and both weighting schemes. No threshold search, winner selection or promotion was performed.",
       "evidence": [
         "research/v3/h1-cross-crypto-breadth-precheck-v1.json",
@@ -331,7 +332,7 @@
       "id": "price_volume_trend_primitives",
       "category": "signal_state",
       "source_version": "V3 H6 hypothesis",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Exact V3-H6-INCR-001 MINI-PC report is imported and the fixed review is complete with holdout sealed. Incremental volume contribution conditional on fixed price-direction strata is small/near zero; partial-correlation signs are internally consistent by stratum but simple effects are not uniformly sign-stable. No threshold/transform search, winner selection or promotion was performed.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
@@ -347,7 +348,7 @@
       "id": "simple_price_volume_primitives",
       "category": "signal_state",
       "source_version": "V3 hypothesis",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "The H6 incremental physical report is imported and fixed quantitative review is complete. Incremental volume contribution beyond fixed price direction is small/near zero in the preregistered development splits; no retuning or holdout access occurred.",
       "evidence": [
         "research/v3/h6-incremental-volume-contribution-trial-v1.json",
@@ -360,7 +361,7 @@
       "id": "meta_take_no_take",
       "category": "meta_decision",
       "source_version": "V3 hypothesis",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Meta TAKE/NO-TAKE training is blocked until V2R3 final review and a point-in-time label/cost/split contract are frozen. Current label readiness is explicitly NOT_FROZEN.",
       "evidence": [
         "research/v3/h7-meta-gate-readiness-v1.json",
@@ -373,7 +374,7 @@
       "id": "onchain_state",
       "category": "state_context",
       "source_version": "V3 hypothesis",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Two distinct EOD known-at cycles and one bounded prospective state capture are green. Coverage remains heterogeneous (4 returned / SOL missing), retrieved_at is the conservative prospective known-at bound, and no historical backfill/outcome join/threshold/schedule is authorized.",
       "evidence": [
         "research/v3/h8-onchain-state-precheck-v1.json",
@@ -394,7 +395,7 @@
       "id": "maker_taker_fill_probability",
       "category": "execution_cost",
       "source_version": "V3 later execution hypothesis",
-      "migration_status": "OPEN_RESEARCH",
+      "migration_status": "MORE_TESTING_REQUIRED",
       "rationale": "Book+trade public clock is cloud/physical green. Kraken's current public standard spot fee schedule is versioned, but the account-specific tier is deliberately unverified and must not be guessed. Fill/routing modelling remains blocked pending account-tier evidence plus fixed deadline/cleanup and explicit queue assumptions.",
       "evidence": [
         "research/v3/h9-maker-taker-readiness-v1.json",

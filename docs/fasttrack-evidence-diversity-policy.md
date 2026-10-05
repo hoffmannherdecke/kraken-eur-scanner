@@ -1,7 +1,7 @@
 # Evidence-Diversity Fast-Track Policy
 
 Status: **CANONICAL / BINDING GOVERNANCE POLICY**  
-Policy ID: `EVIDENCE_DIVERSITY_FASTTRACK_V1`  
+Policy ID: `EVIDENCE_DIVERSITY_FASTTRACK_V2`  
 Effective: 2026-10-05  
 Scope: V2R3, V2R4, V3, every later paper/shadow strategy generation, and successor validation during the later real-money phase.
 
@@ -56,15 +56,21 @@ release controls.
    are never silently changed inside a frozen collection series. A material change creates a new
    version/series with its own evidence.
 
-8. **Immediate review at gate.**
+8. **Stop intake before final maturity when the collection target is satisfied.**
+   As soon as the preregistered sample/primary target and temporal-diversity gate are satisfied,
+   no new candidates are admitted to that frozen cohort. Existing WAIT/revalidation, positions and
+   required follow-ups continue until mature. This prevents unnecessary model calls and prevents
+   the completion cohort from moving indefinitely.
+
+9. **Immediate review at gate.**
    When sample, diversity, maturity and integrity gates are satisfied, the final/release review
    starts immediately. No arbitrary extra waiting period is added.
 
-9. **Low trade frequency is evidence.**
+10. **Low trade frequency is evidence.**
    A large valid candidate cohort with very few or zero trades is a strategy result, not a reason
    to keep the same version running indefinitely.
 
-10. **Safety gates are separate.**
+11. **Safety gates are separate.**
     Fast-track never bypasses execution safety, least-privilege API controls, kill switch,
     reconciliation, stale/duplicate protection, rollback, explicit release approval or other
     live/private safety requirements.
@@ -75,10 +81,15 @@ Series: `PAPER-V2R3-CLEAN-20261001T0925Z`
 
 Primary path:
 - target completed paper trades: 20;
-- temporal-diversity gate still required.
+- temporal-diversity gate still required;
+- once trade target + temporal diversity are reached, **new-candidate intake stops automatically**;
+- the already admitted cohort is then allowed to mature without adding new observations;
+- >=95% of that frozen primary cohort must be at least 24h old;
+- >=95% 24h follow-up coverage among the mature primary cohort is required before `PRIMARY_READY`.
 
 Alternative path:
 - 1,000 qualifying Candidate-Outcomes;
+- once 1,000 outcomes + temporal diversity are reached, **new-candidate intake stops automatically** while maturity finishes;
 - qualifying cohort = earliest 1,000 valid outcomes;
 - observation span >= 48h;
 - >= 3 UTC dates;
