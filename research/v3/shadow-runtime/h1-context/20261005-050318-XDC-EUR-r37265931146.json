@@ -1,0 +1,33 @@
+{
+  "candidate_id": "20261005-050318-XDC-EUR-r37265931146",
+  "event_time_utc": "2026-10-05T05:03:18Z",
+  "features": {
+    "available_leader_count": 2,
+    "eligible_peer_count": 72,
+    "leader_median_return_1h_pct": -0.7225276762007626,
+    "leader_minus_target_return_1h_pct": -1.9853263110130526,
+    "peer_median_return_1h_pct": -0.382179286572204,
+    "target_minus_peer_median_return_1h_pct": 1.644977921384494,
+    "target_return_1h_pct": 1.26279863481229
+  },
+  "guardrails": {
+    "active_v2r3_changed": false,
+    "canonical_handoff_mutated": false,
+    "feature_transform_search": false,
+    "orders": false,
+    "real_money_actions": false,
+    "threshold_search": false
+  },
+  "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+  "leader_pairs": [
+    "XBT/EUR",
+    "ETH/EUR"
+  ],
+  "pair": "XDC/EUR",
+  "queue_id": "37265931146:XDC-EUR:1791176598",
+  "schema_version": 1,
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+  "source_scanner_run_id": 37265931146,
+  "status": "PASS"
+}
