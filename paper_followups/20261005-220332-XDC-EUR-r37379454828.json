@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-05T22:04:41.724496Z",
     "evaluation_ask_eur": 0.02936,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.205,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.307,
+        "mfe_pct": 0.102,
+        "peak_at_utc": "2026-10-05T22:07:00Z",
+        "trough_at_utc": "2026-10-05T22:10:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-05T19:10:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -41,7 +53,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-05T22:04:53.684612Z"
+    "updated_at_utc": "2026-10-05T22:23:24.300967Z"
   },
   "original_decision": "WAIT",
   "pair": "XDC/EUR",
