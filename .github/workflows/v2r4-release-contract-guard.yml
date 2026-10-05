@@ -104,7 +104,7 @@ jobs:
 
           strategy = docs['docs/strategy-version-map.md']
           assert 'research/v2r4/paper_strategy_spec_v2r4_release_candidate.json' in strategy
-          assert '50 EUR scout + 50 EUR stage 2' in strategy
+          assert '50 EUR Scout + 50 EUR Stage 2' in strategy
 
           checklist = docs['docs/v2r4-paper-activation-checklist.md']
           assert 'Binding machine contract: `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`' in checklist
