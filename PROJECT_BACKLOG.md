@@ -32,6 +32,7 @@ Kanonische Detailquellen:
 - Fail-closed V2R4 Aktivierungsstatus: Supabase View `public.v2r4_activation_readiness` (`automatic_activation_allowed=false`)
 - V3 Research / Promotion: `docs/v3-research-framework.md`
 - Test-Triage / Autonomie / No-Repeat: `docs/test-strategy-runbook.md`
+- Permanente Fast-Track-/Evidenz-Diversitätsregel: `docs/fasttrack-evidence-diversity-policy.md`
 - V3 Research-Chronik: GitHub Issue #7
 - Action-Push / Slack-E2E: GitHub Issue #1
 
@@ -43,7 +44,7 @@ Kanonische Detailquellen:
 - [x] Auswertungsinfrastruktur für die spätere Abschlussanalyse vorbereitet, ohne V2R3 zu verändern: `public.v2r3_interim_horizon_summary` bündelt unreife 30/60/120/360m-/Post-Detection-Horizonte mit Interpretations-Guardrail; `public.v2r3_reason_family_events` / `public.v2r3_reason_family_rollup` normalisieren freie Reason-Codes nur post-hoc/deskriptiv. `public.v2r3_release_review_snapshot` bleibt der single-row Evidence-Pack; zusätzlich rendert `tools/render-v2r3-final-review.py` daraus erst bei `final_review_allowed=true` einen Markdown-Abschlussreview. Unreife Snapshots werden fail-closed als BLOCKED behandelt; Strategy-/V2R4-/Echtgeld-Automatik bleibt verboten. **V2R3 final review renderer guard Run #1 SUCCESS**. Keine dieser Ebenen darf vor dem Abschluss-Gate zum Tuning genutzt werden.
 
 - [ ] Homogene V2R3-Serie `PAPER-V2R3-CLEAN-20261001T0925Z` unverändert weiterlaufen lassen; keine Entry-/Stop-/Sizing-/Scanner-Regel während der Serie verändern. Vorgänger mit 708 Outcomes ist als `DIAGNOSTIC_COMPROMISED` eingefroren, nachdem ein Runtime-Persistenzfehler wiederholte Evaluierungen vor Commit erlaubte. **Freeze-Guard aktiv:** Strategie-/Runtime-Fingerprints, Scanner-Paket, 10-Minuten-Takt und zentrale Scanner-Settings sind jetzt fail-closed eingefroren; CI `V2R3 clean-series freeze guard` Run #1 SUCCESS.
-- [x] Alternativer V2R3-Abschlussmechanismus festgelegt: 20 Trades **oder** frühestens 7 volle Tage + mindestens 1.000 Candidate-Outcomes; anschließend Follow-ups bis 24h ausreifen lassen und mindestens 95 % 24h-Coverage der fälligen Kandidaten verlangen. Regel gilt für die aktuell saubere Serie `PAPER-V2R3-CLEAN-20261001T0925Z`; der frühere 708-Outcomes-Snapshot bleibt nur diagnostisch.
+- [x] **Evidence-Diversity-Fast-Track V1 aktiv:** kein starres 7-Tage-Mindestalter mehr. V2R3 schließt primär bei 20 abgeschlossenen Trades + Temporal Diversity oder alternativ bei 1.000 Candidate-Outcomes ab, sobald der feste Qualifikationskohort mindestens 48h/3 UTC-Tage abdeckt, kein einzelner UTC-Tag >50% und kein rollierendes 24h-Fenster >60% beiträgt, mindestens 950/1.000 Fälle 24h gereift sind und davon >=95% vollständige 24h-Follow-ups besitzen. Policy: `docs/fasttrack-evidence-diversity-policy.md`. Aktive Serie trägt die Policy auch maschinenlesbar in Supabase; Entry/Stop/Sizing/Scanner unverändert.
 - [ ] Alle relevanten Kandidatenpfade auswerten, nicht nur tatsächliche Entries: BUY/Scout, WAIT, REJECT/NO-TRADE sowie späteren Kursverlauf.
 - [ ] MAE/MFE, 30/60/120/360-Minuten-Follow-up, Edge-Decay, „gestoppt und später erholt“, verpasste Moves und Gebührenwirkung systematisch zusammenführen.
 - [x] Zeitkette messen: Scanner-Erkennung → Persistenz/Handoff → Evaluator → Revalidation → möglicher Entry. Verzögerung als eigene Fehlerklasse behandeln. **Prospektiv umgesetzt:** `public.v2r3_runtime_timing_summary` + `public.v2r3_revalidation_timing_summary`. Clean-Serie aktuell: initiale Evaluation p50 ~37s / p90 ~55–56s; WAIT-TTL p50 30 min, zusätzliche TTL-Latenz p50 **262s**, p90 **909s**, max **1.401s**; 42/52 Revalidierungen >60s und 22/52 >300s über dem angeforderten TTL-Zeitpunkt. Das bestätigt: Initial-Evaluation ist inzwischen vergleichsweise sauber, die one-shot WAIT-Revalidation bleibt eine eigene Timing-Infrastrukturklasse. Keine Regeländerung während der Serie.
@@ -310,8 +311,8 @@ Execution order:
 4. **Decision cadence for each new strategy candidate**
    - ~24h: technical/mechanical sanity only;
    - ~72h: early productivity / candidate-to-trade / WAIT-REJECT structure review;
-   - ~7d: continue, reject, or create a separately versioned successor unless a frozen
-     evidence-maturity contract explicitly requires more time.
+   - final continue/reject/promote/successor decision: **immediately when the preregistered
+     evidence-diversity gate is satisfied**; no automatic day-7 wait.
 
 5. **Anti-delay rules**
    - no repeated PASS tests without a relevant change/incident/freshness requirement;
@@ -320,6 +321,11 @@ Execution order:
    - no completion of unrelated research branches merely because they are open;
    - no mid-run threshold/entry/stop/sizing changes;
    - technical waiting time is used for independent successor/research preparation.
+
+**Fast-Track policy supersession — 2026-10-05:** fixed-duration defaults are replaced by
+`EVIDENCE_DIVERSITY_FASTTRACK_V1`. Sample floor, maturity, temporal diversity and integrity
+govern the earliest valid decision point. The same rule is permanent for V2R4/V3/future
+paper-shadow generations and successor validation in the later live phase.
 
 Success criterion for this block:
 - the project reaches a state where trade frequency and trade quality can both be measured
