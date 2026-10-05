@@ -1,0 +1,219 @@
+{
+  "altname": "NIGHTEUR",
+  "candidate_id": "20261005-130441-NIGHT-EUR-r37313777062",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained, volume-backed spot hold above 0.04331",
+      "Broader market breadth improvement"
+    ],
+    "reason_codes": [
+      "extended_7d_runup",
+      "below_resistance",
+      "spot_confirmation_insufficient",
+      "round_trip_cost_hurdle",
+      "remaining_potential_unproven"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "NIGHT remains extended after a 7-day 80% run-up; spot is still below resistance and supplied data do not establish enough remaining movement to clear Kraken EUR costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "NIGHTUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 46.2,
+        "available": true,
+        "current_funding_rate": -8.277247592e-06,
+        "current_open_interest": 3477604.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 0.3919,
+        "previous_funding_rate": -8.277247592e-06,
+        "previous_observed_at_utc": "2026-10-05T13:05:51.045112Z",
+        "previous_open_interest": 3464028.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -8.277247592e-06,
+        "index_price": 0.04843,
+        "last": 0.0481,
+        "mark_price": 0.04838754462,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 3477604.0,
+        "requested_symbols": [
+          "PF_NIGHTUSD",
+          "PI_NIGHTUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_NIGHTUSD",
+        "volume24h": 10584415
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.04333,
+      "bid": 0.04324,
+      "last": 0.04326,
+      "spread_pct": 0.20792422317199907
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "120",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.1924052746438587,
+          "ret3h_pct": 0.04975876118922251
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.30554866451666385,
+          "ret3h_pct": 0.1639127670291618
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.11162790697674119,
+          "ret3h_pct": 0.027883632307834638
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T13:52:01.842312Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_00e9d054f7a3f53e006ac3ab830b6c87d0ba2c0e2f7fa38b98"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.04333,
+    "bid": 0.04324,
+    "last": 0.04326,
+    "spread_pct": 0.20792422317199907
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.04318,
+      "high": 0.04324,
+      "low": 0.04283,
+      "open": 0.04286,
+      "trades": 46,
+      "ts": 1791204300,
+      "volume": 294464.01886,
+      "vwap": 0.04317
+    },
+    {
+      "close": 0.0433,
+      "high": 0.04338,
+      "low": 0.04324,
+      "open": 0.04326,
+      "trades": 21,
+      "ts": 1791205200,
+      "volume": 21965.82582,
+      "vwap": 0.0433
+    },
+    {
+      "close": 0.04316,
+      "high": 0.04337,
+      "low": 0.04307,
+      "open": 0.04324,
+      "trades": 17,
+      "ts": 1791206100,
+      "volume": 4989.4359,
+      "vwap": 0.04318
+    },
+    {
+      "close": 0.04318,
+      "high": 0.04318,
+      "low": 0.04288,
+      "open": 0.04298,
+      "trades": 12,
+      "ts": 1791207000,
+      "volume": 11090.4462,
+      "vwap": 0.04301
+    },
+    {
+      "close": 0.04326,
+      "high": 0.04326,
+      "low": 0.04298,
+      "open": 0.04308,
+      "trades": 9,
+      "ts": 1791207900,
+      "volume": 65230.87849,
+      "vwap": 0.04308
+    }
+  ],
+  "pair": "NIGHT/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-130441-NIGHT-EUR-r37313777062.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T13:52:10.677073Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "967064f00ee4ddd808ba23f0374cb8fb147b0c6f",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T13:52:10.677073Z",
+    "revalidation_started_at_utc": "2026-10-05T13:52:01.211908Z",
+    "ttl_due_at_utc": "2026-10-05T13:50:32.904535Z",
+    "ttl_lag_seconds": 88.307
+  }
+}
