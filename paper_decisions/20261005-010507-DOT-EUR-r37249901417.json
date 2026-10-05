@@ -1,0 +1,175 @@
+{
+  "altname": "DOTEUR",
+  "candidate_age_seconds": 26,
+  "candidate_event_time_utc": "2026-10-05T01:05:07Z",
+  "candidate_id": "20261005-010507-DOT-EUR-r37249901417",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.0759 resistance with sustained volume",
+      "Hold above 1.0759 on a retest"
+    ],
+    "reason_codes": [
+      "adequate_turnover_depth_and_spread",
+      "major_market_proxy_mildly_positive",
+      "near_term_returns_muted",
+      "no_3h_breakout",
+      "ask_above_1h_resistance_below_3h_resistance",
+      "round_trip_fees_make_small_moves_insufficient",
+      "open_interest_declining_slightly"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Tradable conditions and mildly supportive market context, but DOT has weak near-term momentum and no confirmed 3h breakout; wait for confirmation before reassessing net reward after costs.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "DOTUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 245.99,
+        "available": true,
+        "current_funding_rate": 3.6366631994292e-05,
+        "current_open_interest": 3523768.0,
+        "funding_rate_delta": -3.2570464525829974e-06,
+        "open_interest_pct": -1.2152,
+        "previous_funding_rate": 3.9623678446875e-05,
+        "previous_observed_at_utc": "2026-10-04T20:59:34.852040Z",
+        "previous_open_interest": 3567116.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.6366631994292e-05,
+        "index_price": 1.20686,
+        "last": 1.2057,
+        "mark_price": 1.2071680995,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 3523768.0,
+        "requested_symbols": [
+          "PF_DOTUSD",
+          "PI_DOTUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_DOTUSD",
+        "volume24h": 1058973.9
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.0738,
+      "bid": 1.073,
+      "last": 1.0717,
+      "spread_pct": 0.07452953232719713
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "3.9",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.2099170866525668,
+          "ret3h_pct": 0.9898589267527846
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.18241924234108087,
+          "ret3h_pct": 1.1176465687458892
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.09260116677469732,
+          "ret3h_pct": 0.2508827355510057
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T01:05:33.012138Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-05T01:05:42.597624Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_08830d4e88e274e2006ac2f7de252c87d1a11e945e77f5cb3d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.0738,
+    "bid": 1.073,
+    "last": 1.0717,
+    "spread_pct": 0.07452953232719713
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "DOT/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37249901417:DOT-EUR:1791162307",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "e9a9ec103ddb8ac7bbc537c6a9f96e58ca7ba7cc",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-05T01:05:07Z",
+    "candidate_detected_ts": 1791162307,
+    "candidate_snapshot_at_utc": "2026-10-05T01:05:07Z",
+    "detected_to_evaluation_complete_seconds": 35.598,
+    "detected_to_evaluation_start_seconds": 25.766,
+    "evaluation_completed_at_utc": "2026-10-05T01:05:42.597624Z",
+    "evaluation_runtime_seconds": 9.831,
+    "evaluation_started_at_utc": "2026-10-05T01:05:32.766379Z",
+    "handoff_to_evaluation_start_seconds": 23.636,
+    "handoff_written_at_utc": "2026-10-05T01:05:09.130869Z",
+    "scan_step_started_at_utc": "2026-10-05T01:03:53Z"
+  }
+}
