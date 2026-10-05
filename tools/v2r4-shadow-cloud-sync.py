@@ -52,8 +52,7 @@ def load_token(root: Path) -> str:
     env = os.environ.get("SHADOW_EVIDENCE_TOKEN", "").strip()
     if env:
         return env
-    # Reuse the already-provisioned project relay secret without exposing it.
-    path = root / "Secrets" / "altrady-webhook-token.txt"
+    path = root / "Secrets" / "shadow-evidence-token.txt"
     return path.read_text("utf-8").strip() if path.exists() else ""
 
 
@@ -179,7 +178,7 @@ def run_once(args: argparse.Namespace) -> dict[str, Any]:
 
     if len(token) < 24:
         result["status"] = "DEGRADED"
-        result["detail"] = "shared relay token missing/too short"
+        result["detail"] = "dedicated shadow-evidence token missing/too short"
         atomic_json(heartbeat_path, result)
         return result
 
