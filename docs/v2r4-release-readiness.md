@@ -23,7 +23,7 @@ historical evidence and must not be used as the current release rule.
 ## Current code candidate
 
 - prior Draft-PR #8: superseded/closed because of severe runtime-state branch drift;
-- prior Draft-PR #9: **SUPERSEDED/CLOSED on 2026-10-05** because its README/spec still contained pre-cleanup activation wording and a non-binding 75+75/adaptive sizing proposal;
+- prior the superseded Draft-the superseded superseded PR #9: **SUPERSEDED/CLOSED on 2026-10-05** because its README/spec still contained pre-cleanup activation wording and a non-binding 75+75/adaptive sizing proposal;
 - the next V2R4 candidate must be created from the cleaned current `main`, not by reviving either old branch;
 - old PR validation/smokes remain useful technical evidence for unchanged modules, but they do **not** authorize release;
 - safety boundary remains paper-only; no private Kraken order path and no real-money activation.
@@ -69,8 +69,8 @@ Verified before any V2R4 paper activation:
 - GitHub cloud path remains independent fallback
 - Slack push path separately verified
 - no order API / no real-money path
-- inactive bounded WAIT-plan lifecycle runtime prepared in the superseded PR #9; Kraken remains condition truth, Altrady is wakeup-only; PR validation **Run #14 SUCCESS**
-- refreshed trigger→fresh-recheck E2E workflow points to the superseded PR #9 and **Run #2 SUCCESS**
+- inactive bounded WAIT-plan lifecycle runtime prepared in the superseded superseded PR #9; Kraken remains condition truth, Altrady is wakeup-only; PR validation **Run #14 SUCCESS**
+- refreshed trigger→fresh-recheck E2E workflow points to the superseded superseded PR #9 and **Run #2 SUCCESS**
 
 ## Evidence snapshot — 2026-10-01 15:01 UTC
 
@@ -126,9 +126,9 @@ Scanner matching is still sparse and must not be used as a winner ranking:
 
 ## Continuous WAIT runtime readiness
 
-The readiness review found that the existing single-plan watcher and trigger→fresh-recheck E2E proved the mechanics but did not yet define the full 24/7 plan lifecycle. The now-superseded PR #9 prepared that missing runtime shape without activating it; this remains historical module evidence only.
+The readiness review found that the existing single-plan watcher and trigger→fresh-recheck E2E proved the mechanics but did not yet define the full 24/7 plan lifecycle. the superseded Draft-the superseded superseded PR #9 now prepares that missing runtime shape without activating it.
 
-Prepared in the superseded PR #9:
+Prepared in the superseded superseded PR #9:
 
 - `paper_evaluator/v2r4_wait_runtime.py`
 - `tests/test_v2r4_wait_runtime.py`
@@ -155,7 +155,7 @@ Validation:
 - heartbeat proved `kraken_public_is_condition_truth=true`, `altrady_role=WAKEUP_HINT_ONLY`, `strategy_action=FRESH_PAPER_RECHECK_ONLY`, `order_api=false`, `real_money_actions=false`;
 
 - V2R4 PR validation **Run #14: SUCCESS**, including the new runtime tests;
-- refreshed trigger→fresh-recheck E2E **Run #2: SUCCESS** against the superseded PR #9.
+- refreshed trigger→fresh-recheck E2E **Run #2: SUCCESS** against the superseded superseded PR #9.
 
 Real-transport release harness preparation:
 
@@ -170,7 +170,7 @@ Still required at the actual release boundary:
 
 - physical combined Altrady-wakeup → Kraken-fresh-condition → paper-recheck smoke;
 - final directory/control/series wiring for the new immutable V2R4 paper series;
-- no activation before the V2R3 release review and explicit Paper release decision; first-series sizing is already bindingly fixed at 50+50 EUR.
+- no activation before the V2R3 release review and explicit sizing/release decision.
 
 ## V2R3 clean-series freeze guard
 
@@ -240,13 +240,11 @@ Repository-side repair prepared on 2026-10-01:
 
 No strategy logic was changed.
 
-## Historical next-actions snapshot — superseded 2026-10-05
+## Next actions before user input is needed
 
-The bullet list below is retained only as a 2026-10-01 operational snapshot. PR #9 is now closed/superseded, the next V2R4 candidate must be built from cleaned current `main`, and first-series sizing is already fixed at 50+50 EUR. It is not the current action list.
+Repository-side preparation is now complete for the current maintenance/release-readiness block:
 
-Repository-side preparation at that historical control point was:
-
-- refreshed V2R4 candidate preflight now targets the superseded PR #9 by default;
+- refreshed V2R4 candidate preflight now targets the superseded superseded PR #9 by default;
 - MINI-PC V2R4 local preflight smoke **Run #4: SUCCESS** against the refreshed candidate;
 - bundled safe local sync/readiness script exists at `tools/minipc-v2r4-readiness-sync.ps1`;
 - its plan-only/guardrail smoke is CI-green in MINI-PC tools smoke **Run #103: SUCCESS**;
@@ -256,7 +254,7 @@ Until a genuine local maintenance or release gate is reached, continue without u
 
 1. keep V2R3 clean series frozen and collecting;
 2. keep V2R4 shadow/outcome evidence collecting without evaluator/orders;
-3. keep the superseded PR #9 draft; do not churn/rebase it merely because runtime-state commits move `main`;
+3. keep the superseded superseded PR #9 draft; do not churn/rebase it merely because runtime-state commits move `main`;
 4. monitor the fail-closed Supabase activation-readiness view;
 5. wait for sufficient clean V2R3 maturity before any activation review.
 
@@ -441,7 +439,7 @@ The unresolved rows are current cohort maturation/archival lag, not evidence of 
 
 A transient local `WARNING / FEED_STALE` sample immediately before this observation self-cleared without intervention. Together with fresh Kraken-source evidence, this remains consistent with the already-known older local watchdog/shadow-heartbeat false-stale classification rather than a Kraken transport outage. The repository-side watchdog/readiness hardening remains queued for the next bundled local sync; no interruption of the running evidence collection is warranted solely for this.
 
-### Historical superseded PR #9 drift handling
+### the superseded Draft-the superseded superseded PR #9 drift handling
 At this snapshot the refreshed V2R4 draft branch is **29 commits ahead / 115 commits behind** `main`, and GitHub currently reports `mergeable=false`. The connector does not expose a reliable conflict reason here, so this must not be interpreted as a proven code conflict solely from the commit counts. Because runtime/evidence commits continue moving `main`, per the existing release rule do **not** churn/rebase merely to keep the draft cosmetically current. Final branch sync and any required conflict resolution belong at the actual activation-review boundary, after V2R3 completion and before any merge decision.
 
 ## Physical bundled MINI-PC readiness sync — 2026-10-01 17:26 UTC
@@ -483,3 +481,8 @@ GitHub retains code, frozen contracts, compact release snapshots and provenance 
 
 The first full V2R4 series is now fixed to 50+50 EUR paper sizing. Any adaptive
 setup-quality sizing is a later separately versioned experiment.
+
+
+### V2R4 release-contract supersession — 2026-10-05
+
+The historical V2R4 PR #9 is closed and superseded. The binding first-series machine contract is `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`: fixed 50+50 EUR sizing, V2R3 completion/final causal review/migration review required, explicit `APPROVED_PAPER` required, automatic activation forbidden, and successor runtime evidence stored in Supabase/bounded MINI-PC state rather than per-event Git commits.
