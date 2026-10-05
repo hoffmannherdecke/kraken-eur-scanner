@@ -7,8 +7,8 @@ Purpose: make every behaviorally relevant V2R4 difference explicit before a late
 Control:
 - V2R3 runtime: `V2R3-2026-09-28`
 - active clean series: `PAPER-V2R3-CLEAN-20261001T0925Z`
-- V2R4 code candidate: Draft-PR #9
-- V2R4 proposed spec: `research/v2r4/paper_strategy_spec_v2r4_proposed.json`
+- Historical V2R4 module candidate: superseded PR #9 (evidence only)
+- Binding first-series release contract: `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`
 
 ## Continuous V2R3 → V2R4 learning inheritance rule
 
@@ -76,7 +76,7 @@ The later mature 24h outcome review should separately measure whether this reaso
 
 ## Important release finding
 
-The current V2R4 proposal is **not purely a timing-only change**.
+The historical V2R4 proposal was **not purely a timing-only change**.
 
 The timing/monitoring additions are the core hypothesis, but the proposed paper spec also changes paper sizing from V2R3's 50+50 EUR default to 75+75 EUR and describes larger adaptive tiers. The same spec says:
 
@@ -102,7 +102,7 @@ Adaptive sizing remains a later separately versioned successor experiment. It mu
 - V2R4 WS shadow/outcome collection;
 - scanner-vs-shadow timing matching;
 - health/watchdog hardening;
-- PR #9 compile/unit/public-data validation;
+- superseded PR #9 compile/unit/public-data validation as historical module evidence;
 - release-readiness documentation;
 - reason-code and outcome analysis that does not change the active strategy.
 
