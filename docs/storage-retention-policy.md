@@ -3,6 +3,8 @@
 Status: **ACTIVE GOVERNANCE / NO STRATEGY EFFECT**  
 Date: 2026-10-01
 
+Canonical runtime/state placement policy: `docs/runtime-state-storage-policy.md`.
+
 This document is the compact retention matrix for project-generated operational
 data. It does not authorize deleting immutable strategy evidence, frozen trial
 records, provenance roots, or historical source archives merely to save space.
