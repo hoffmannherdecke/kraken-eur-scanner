@@ -11,6 +11,14 @@
       "expected_bars": 30,
       "mae_pct": -0.528,
       "mfe_pct": -0.123
+    },
+    "60": {
+      "bars": 60,
+      "complete": true,
+      "end_close_pct": -0.184,
+      "expected_bars": 60,
+      "mae_pct": -0.552,
+      "mfe_pct": -0.098
     }
   },
   "interval_minutes": 1,
@@ -34,6 +42,17 @@
         "mfe_pct": -0.061,
         "peak_at_utc": "2026-10-05T04:49:00Z",
         "trough_at_utc": "2026-10-05T05:01:00Z"
+      },
+      "60": {
+        "bars": 60,
+        "complete": true,
+        "end_close_pct": -0.209,
+        "expected_bars": 60,
+        "interval_minutes": 1,
+        "mae_pct": -0.577,
+        "mfe_pct": -0.061,
+        "peak_at_utc": "2026-10-05T04:49:00Z",
+        "trough_at_utc": "2026-10-05T05:25:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -62,7 +81,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-05T05:24:44.813253Z"
+    "updated_at_utc": "2026-10-05T05:50:40.790485Z"
   },
   "original_decision": "WAIT",
   "pair": "HYPE/EUR",
@@ -72,5 +91,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "test_id": "SHADOW-V2R3-20261001-01",
-  "updated_at_utc": "2026-10-05T05:24:45.034034Z"
+  "updated_at_utc": "2026-10-05T05:50:40.951083Z"
 }
