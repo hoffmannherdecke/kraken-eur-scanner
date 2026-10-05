@@ -22,11 +22,36 @@ historical evidence and must not be used as the current release rule.
 
 ## Current code candidate
 
-- active preparation PR: **Draft-PR #9**
-- old PR #8: superseded/closed because the branch had drifted 995 commits behind `main`
-- PR #9 reproduces the same 21-file V2R4 delta on top of current `main`
-- V2R4 PR validation **Run #11: SUCCESS**
-- safety boundary remains paper-only; no private Kraken order path and no real-money activation
+- prior Draft-PR #8: superseded/closed because of severe runtime-state branch drift;
+- prior the superseded Draft-the superseded PR #9: **SUPERSEDED/CLOSED on 2026-10-05** because its README/spec still contained pre-cleanup activation wording and a non-binding 75+75/adaptive sizing proposal;
+- the next V2R4 candidate must be created from the cleaned current `main`, not by reviving either old branch;
+- old PR validation/smokes remain useful technical evidence for unchanged modules, but they do **not** authorize release;
+- safety boundary remains paper-only; no private Kraken order path and no real-money activation.
+
+## Binding release sequence — 2026-10-05
+
+The only valid V2R4 paper-release sequence is:
+
+1. V2R3 evidence-diversity collection gate reached;
+2. frozen cohort reaches required maturity/follow-up coverage;
+3. V2R3 integrity remains HEALTHY;
+4. final V2R3 causal review is completed;
+5. every material finding receives an explicit successor disposition in the migration ledger;
+6. V2R4 shadow/runtime readiness is mature and current;
+7. MINI-PC health is fresh/HEALTHY/OK;
+8. `public.strategy_release_decisions` records both
+   `final_review_completed_at` and `migration_review_completed_at`;
+9. an explicit `APPROVED_PAPER` release decision is recorded;
+10. a separate activation mutation may then start a new immutable V2R4 Paper series.
+
+`public.v2r4_activation_readiness.automatic_activation_allowed` is permanently
+`false`. Technical smoke success is a prerequisite, never an activation trigger.
+
+For the first full V2R4 comparison series, paper sizing is fixed at **50+50 EUR** to
+isolate timing/discovery/revalidation. Adaptive sizing is a separate later experiment.
+
+Runtime evidence for V2R4 and later generations belongs in Supabase/bounded local state,
+not as high-frequency commits to `main`.
 
 ## Existing technical gates
 
@@ -44,8 +69,8 @@ Verified before any V2R4 paper activation:
 - GitHub cloud path remains independent fallback
 - Slack push path separately verified
 - no order API / no real-money path
-- inactive bounded WAIT-plan lifecycle runtime prepared in PR #9; Kraken remains condition truth, Altrady is wakeup-only; PR validation **Run #14 SUCCESS**
-- refreshed trigger→fresh-recheck E2E workflow points to PR #9 and **Run #2 SUCCESS**
+- inactive bounded WAIT-plan lifecycle runtime prepared in the superseded PR #9; Kraken remains condition truth, Altrady is wakeup-only; PR validation **Run #14 SUCCESS**
+- refreshed trigger→fresh-recheck E2E workflow points to the superseded PR #9 and **Run #2 SUCCESS**
 
 ## Evidence snapshot — 2026-10-01 15:01 UTC
 
@@ -101,9 +126,9 @@ Scanner matching is still sparse and must not be used as a winner ranking:
 
 ## Continuous WAIT runtime readiness
 
-The readiness review found that the existing single-plan watcher and trigger→fresh-recheck E2E proved the mechanics but did not yet define the full 24/7 plan lifecycle. Draft-PR #9 now prepares that missing runtime shape without activating it.
+The readiness review found that the existing single-plan watcher and trigger→fresh-recheck E2E proved the mechanics but did not yet define the full 24/7 plan lifecycle. the superseded Draft-the superseded PR #9 now prepares that missing runtime shape without activating it.
 
-Prepared in PR #9:
+Prepared in the superseded PR #9:
 
 - `paper_evaluator/v2r4_wait_runtime.py`
 - `tests/test_v2r4_wait_runtime.py`
@@ -130,7 +155,7 @@ Validation:
 - heartbeat proved `kraken_public_is_condition_truth=true`, `altrady_role=WAKEUP_HINT_ONLY`, `strategy_action=FRESH_PAPER_RECHECK_ONLY`, `order_api=false`, `real_money_actions=false`;
 
 - V2R4 PR validation **Run #14: SUCCESS**, including the new runtime tests;
-- refreshed trigger→fresh-recheck E2E **Run #2: SUCCESS** against PR #9.
+- refreshed trigger→fresh-recheck E2E **Run #2: SUCCESS** against the superseded PR #9.
 
 Real-transport release harness preparation:
 
@@ -219,7 +244,7 @@ No strategy logic was changed.
 
 Repository-side preparation is now complete for the current maintenance/release-readiness block:
 
-- refreshed V2R4 candidate preflight now targets PR #9 by default;
+- refreshed V2R4 candidate preflight now targets the superseded PR #9 by default;
 - MINI-PC V2R4 local preflight smoke **Run #4: SUCCESS** against the refreshed candidate;
 - bundled safe local sync/readiness script exists at `tools/minipc-v2r4-readiness-sync.ps1`;
 - its plan-only/guardrail smoke is CI-green in MINI-PC tools smoke **Run #103: SUCCESS**;
@@ -229,7 +254,7 @@ Until a genuine local maintenance or release gate is reached, continue without u
 
 1. keep V2R3 clean series frozen and collecting;
 2. keep V2R4 shadow/outcome evidence collecting without evaluator/orders;
-3. keep PR #9 draft; do not churn/rebase it merely because runtime-state commits move `main`;
+3. keep the superseded PR #9 draft; do not churn/rebase it merely because runtime-state commits move `main`;
 4. monitor the fail-closed Supabase activation-readiness view;
 5. wait for sufficient clean V2R3 maturity before any activation review.
 
@@ -414,7 +439,7 @@ The unresolved rows are current cohort maturation/archival lag, not evidence of 
 
 A transient local `WARNING / FEED_STALE` sample immediately before this observation self-cleared without intervention. Together with fresh Kraken-source evidence, this remains consistent with the already-known older local watchdog/shadow-heartbeat false-stale classification rather than a Kraken transport outage. The repository-side watchdog/readiness hardening remains queued for the next bundled local sync; no interruption of the running evidence collection is warranted solely for this.
 
-### Draft-PR #9 drift handling
+### the superseded Draft-the superseded PR #9 drift handling
 At this snapshot the refreshed V2R4 draft branch is **29 commits ahead / 115 commits behind** `main`, and GitHub currently reports `mergeable=false`. The connector does not expose a reliable conflict reason here, so this must not be interpreted as a proven code conflict solely from the commit counts. Because runtime/evidence commits continue moving `main`, per the existing release rule do **not** churn/rebase merely to keep the draft cosmetically current. Final branch sync and any required conflict resolution belong at the actual activation-review boundary, after V2R3 completion and before any merge decision.
 
 ## Physical bundled MINI-PC readiness sync — 2026-10-01 17:26 UTC
