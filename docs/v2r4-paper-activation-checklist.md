@@ -14,7 +14,7 @@ Required before entering a manual release review:
 - `activation_review_state = MANUAL_RELEASE_REVIEW_REQUIRED`
 - `automatic_activation_allowed = false` must remain false
 - active V2R3 clean series completion gate must be satisfied under
-  `EVIDENCE_DIVERSITY_FASTTRACK_V1` (`docs/fasttrack-evidence-diversity-policy.md`);
+  `EVIDENCE_DIVERSITY_FASTTRACK_V2` (`docs/fasttrack-evidence-diversity-policy.md`);
   no fixed 7-day wait is added once sample/diversity/maturity/integrity are ready
 - V2R4 shadow maturity must be archived
 - current MINI-PC status must be fresh / HEALTHY / OK
@@ -60,25 +60,13 @@ Required:
 - reconnect/stale/dedup guardrails remain enabled;
 - pre-candidate discovery remains discovery/review, not a buy rule.
 
-### Mandatory sizing decision
+### Binding sizing decision
 
-Prepared decision memo: `docs/v2r4-sizing-release-decision.md`
+Decision memo: `docs/v2r4-sizing-release-decision.md`
 
-The current proposal contains an unresolved sizing confounder.
+For the **first full V2R4 Paper series**, sizing is fixed at **50 EUR scout + 50 EUR stage 2**, inherited from V2R3. This isolates the timing/discovery/revalidation hypothesis.
 
-Choose and version **one** approach before activation:
-
-**A. Timing-isolation series**
-- retain V2R3 paper sizing for the first V2R4 series;
-- test timing/discovery/revalidation changes first;
-- adaptive sizing becomes a later separately versioned experiment.
-
-**B. Combined timing+sizing series**
-- first implement a deterministic, tested setup-quality sizing mapper;
-- freeze the mapper in the V2R4 spec;
-- accept that comparison against V2R3 combines timing/discovery and sizing effects.
-
-No implicit fallback to 75+75 is allowed for a full series merely because that value was used in E2E smoke preparation.
+Adaptive setup-quality sizing is explicitly deferred to a later, separately versioned experiment. No 75+75 or adaptive tier may enter the first V2R4 series merely because it appeared in earlier smoke preparation.
 
 ## Gate 3 — code candidate
 
