@@ -1,0 +1,33 @@
+{
+  "candidate_id": "20261005-021409-ONDO-EUR-r37254494405",
+  "event_time_utc": "2026-10-05T02:14:09Z",
+  "features": {
+    "available_leader_count": 2,
+    "eligible_peer_count": 71,
+    "leader_median_return_1h_pct": 0.1773537190314034,
+    "leader_minus_target_return_1h_pct": -0.43954109364872096,
+    "peer_median_return_1h_pct": 0.13485350006130492,
+    "target_minus_peer_median_return_1h_pct": 0.48204131261881944,
+    "target_return_1h_pct": 0.6168948126801244
+  },
+  "guardrails": {
+    "active_v2r3_changed": false,
+    "canonical_handoff_mutated": false,
+    "feature_transform_search": false,
+    "orders": false,
+    "real_money_actions": false,
+    "threshold_search": false
+  },
+  "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+  "leader_pairs": [
+    "XBT/EUR",
+    "ETH/EUR"
+  ],
+  "pair": "ONDO/EUR",
+  "queue_id": "37254494405:ONDO-EUR:1791166449",
+  "schema_version": 1,
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+  "source_scanner_run_id": 37254494405,
+  "status": "PASS"
+}
