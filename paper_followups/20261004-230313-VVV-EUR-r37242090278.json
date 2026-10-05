@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 26.841,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -4.445,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -9.077,
+        "mfe_pct": 0.694,
+        "peak_at_utc": "2026-10-05T08:15:00Z",
+        "trough_at_utc": "2026-10-05T16:25:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 4.176,
       "price_eur": 25.719
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": false,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "extended_30d_run",
@@ -118,7 +134,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-05T11:20:16.983599Z"
+    "updated_at_utc": "2026-10-05T23:10:26.147056Z"
   },
   "original_decision": "REJECT",
   "pair": "VVV/EUR",
