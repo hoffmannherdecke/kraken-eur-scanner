@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-05T06:03:44.571356Z",
     "evaluation_ask_eur": 81.8,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.086,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.232,
+        "mfe_pct": 0.061,
+        "peak_at_utc": "2026-10-05T06:04:00Z",
+        "trough_at_utc": "2026-10-05T06:11:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-05T03:23:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -41,7 +53,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-05T06:03:57.168666Z"
+    "updated_at_utc": "2026-10-05T06:25:12.228761Z"
   },
   "original_decision": "WAIT",
   "pair": "HYPE/EUR",
