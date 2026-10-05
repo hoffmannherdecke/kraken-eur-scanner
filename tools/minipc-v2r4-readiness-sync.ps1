@@ -2,7 +2,7 @@ param(
   [switch]$Execute,
   [string]$Confirm = "",
   [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
-  [string]$V2R4Branch = "prep/v2r4-refresh-20261001"
+  [string]$V2R4Branch = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -21,13 +21,13 @@ $plan = [ordered]@{
   trading_root = $TradingRoot
   repo = $repo
   required_branch = "main"
-  v2r4_candidate_branch = $V2R4Branch
+  v2r4_candidate_branch = $(if ([string]::IsNullOrWhiteSpace($V2R4Branch)) { $null } else { $V2R4Branch })
   steps = @(
     "verify repository exists, main branch, and clean working tree",
     "fetch origin/main and fast-forward-only pull",
     "verify post-pull readiness helper scripts are present",
     "run watchdog effectiveness smoke",
-    "run isolated V2R4 preflight against refreshed candidate branch",
+    "run isolated V2R4 preflight only when an explicit current release-candidate branch is supplied",
     "run latest backup restore smoke"
   )
   guardrails = [ordered]@{
@@ -88,8 +88,14 @@ try {
   if ($LASTEXITCODE -ne 0) { throw "Watchdog effectiveness smoke failed" }
 
   Write-Host "[READINESS-SYNC] 4/5 Isolated V2R4 candidate preflight"
-  & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $v2r4Preflight -TradingRoot $TradingRoot -Branch $V2R4Branch
-  if ($LASTEXITCODE -ne 0) { throw "V2R4 preflight smoke failed" }
+  $preflightState = "DEFERRED_NO_CURRENT_RELEASE_BRANCH"
+  if (-not [string]::IsNullOrWhiteSpace($V2R4Branch)) {
+    & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $v2r4Preflight -TradingRoot $TradingRoot -Branch $V2R4Branch
+    if ($LASTEXITCODE -ne 0) { throw "V2R4 preflight smoke failed" }
+    $preflightState = "PASS"
+  } else {
+    Write-Host "No explicit current V2R4 release branch supplied; stale/superseded branches are never used implicitly."
+  }
 
   Write-Host "[READINESS-SYNC] 5/5 Backup restore smoke"
   & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $restoreSmoke -TradingRoot $TradingRoot
@@ -102,13 +108,13 @@ try {
     after_head = $afterHead
     commits_behind_before_pull = $behindBefore
     branch = $branch
-    v2r4_candidate_branch = $V2R4Branch
+    v2r4_candidate_branch = $(if ([string]::IsNullOrWhiteSpace($V2R4Branch)) { $null } else { $V2R4Branch })
     post_pull_helpers = "PASS"
     watchdog_effectiveness = "PASS"
-    v2r4_preflight = "PASS"
+    v2r4_preflight = $preflightState
     backup_restore = "PASS"
     guardrails = $plan.guardrails
-    next_gate = "WAIT_FOR_V2R3_CLEAN_SERIES_MATURITY_THEN_MANUAL_RELEASE_REVIEW"
+    next_gate = "WAIT_FOR_V2R3_COMPLETION_AND_FINAL_MIGRATION_REVIEW_THEN_MATERIALIZE_FRESH_V2R4_RELEASE_BRANCH"
   }
 
   Write-Host ""
