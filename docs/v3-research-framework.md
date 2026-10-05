@@ -733,3 +733,24 @@ version and decision provenance.
 Live evidence may generate new hypotheses or successor changes, but it may not retune the
 currently active strategy in place. Any material change follows the same frozen-candidate,
 validation, migration-ledger, rollback and explicit live-release process as other strategy changes.
+
+
+## Evidence-Diversity Fast-Track inheritance — permanent from 2026-10-05
+
+V3 and every later research/strategy generation inherit
+`docs/fasttrack-evidence-diversity-policy.md`.
+
+Promotion is therefore not tied to a fixed 7-day/14-day calendar duration. Each frozen
+candidate preregisters its sample unit/floor, maturity horizon and any component-specific
+regime requirement. The final continue/reject/promote decision is taken at the earliest
+point where the required sample, temporal diversity, maturity, follow-up coverage,
+PIT/provenance integrity and release controls are all satisfied.
+
+Default high-frequency temporal-diversity guard: >=max(48h, 2×required follow-up horizon),
+>=3 UTC dates, <=50% from one UTC date and <=60% in any rolling 24h window. A stricter
+component-specific gate may be preregistered when the research question genuinely needs
+more regime/event diversity; it must not be relaxed post-hoc because results are weak.
+
+The same principle continues into the later live phase: live observations accelerate the
+creation/evaluation of inactive successors, but the active real-money version never
+self-retunes and live execution-safety/release gates remain independent hard requirements.
