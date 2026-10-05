@@ -71,7 +71,7 @@ It also runs `unzip -t` and the full unit/regression suite before touching live 
 - Transport was replaced by checksum-verified Base64 chunks.
 - Second live run: package checksum OK, ZIP integrity OK, **14/14 regression tests passed**, Kraken live scan succeeded.
 - Kraken live universe: **495 EUR pairs**, **61** survived the initial liquidity/spread stage, **100% OHLC coverage (61/61)**.
-- End-to-end Slack delivery to `#krypto-signale` was confirmed with real structured `SCANNER_CANDIDATE_V1` messages.
+- **Historical 2026-09-21 transport proof:** direct structured scanner-message delivery to Slack was tested at that time. This is no longer the operating alert model; raw scanner candidates are silent and only downstream actionable Paper/critical infrastructure events are user-facing.
 - The GitHub secret remained masked in logs.
 
 ## GitHub secret
@@ -111,3 +111,4 @@ The active frozen V2R3 compatibility series may still persist per-candidate work
 files until it closes. Closed-series evidence is compacted only after verified
 Supabase archival. V2R4 and later versions must use Supabase and bounded local
 state for runtime evidence and keep only compact release/provenance artifacts in Git.
+Canonical policy: `docs/runtime-state-storage-policy.md`.
