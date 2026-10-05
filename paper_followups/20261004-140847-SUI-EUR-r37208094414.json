@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 1.0594,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 3.108,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -0.066,
+        "mfe_pct": 6.187,
+        "peak_at_utc": "2026-10-04T15:50:00Z",
+        "trough_at_utc": "2026-10-04T14:10:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 1.243,
       "price_eur": 1.0456
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "spread_and_liquidity_acceptable",
@@ -119,7 +135,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-05T02:15:35.449533Z"
+    "updated_at_utc": "2026-10-05T14:30:15.138022Z"
   },
   "original_decision": "WAIT",
   "pair": "SUI/EUR",
