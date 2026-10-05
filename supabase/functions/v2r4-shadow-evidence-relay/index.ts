@@ -35,12 +35,25 @@ async function sha24(material: string): Promise<string> {
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return response(405, { ok:false, error:"method_not_allowed" });
 
-  // Compatibility auth during the local-token transition. The client-specific
-  // header prevents accidental cross-wiring; payload integrity/immutability below
-  // limits blast radius even while the legacy secret is still shared.
-  const expected = Deno.env.get("ALTRADY_WEBHOOK_TOKEN") ?? "";
+  const url = Deno.env.get("SUPABASE_URL") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if (!url || !serviceKey) return response(500, {ok:false,error:"server_credentials_missing"});
+  const admin = createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+
   const supplied = req.headers.get("X-Shadow-Evidence-Token") ?? "";
-  if (!expected || supplied !== expected) return response(401, { ok:false, error:"unauthorized" });
+  const {data:cred,error:credError}=await admin.from("internal_relay_credentials")
+    .select("token_sha256,enabled").eq("relay_id","v2r4-shadow-evidence-relay").maybeSingle();
+  if(credError) return response(500,{ok:false,error:"credential_lookup_failed"});
+  let authorized=false;
+  if(cred?.enabled===true){
+    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(supplied));
+    const hash=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
+    authorized=hash===cred.token_sha256;
+  }else{
+    const legacy=Deno.env.get("SHADOW_EVIDENCE_TOKEN") ?? Deno.env.get("ALTRADY_WEBHOOK_TOKEN") ?? "";
+    authorized=Boolean(legacy) && supplied===legacy;
+  }
+  if(!authorized) return response(401,{ok:false,error:"unauthorized"});
 
   let body: unknown;
   try { body = await req.json(); }
@@ -50,11 +63,6 @@ Deno.serve(async (req: Request) => {
   if (!Array.isArray(records) || records.length < 1 || records.length > 100) {
     return response(400, { ok:false, error:"records_must_be_array_1_to_100" });
   }
-
-  const url = Deno.env.get("SUPABASE_URL") ?? "";
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  if (!url || !serviceKey) return response(500, {ok:false,error:"server_credentials_missing"});
-  const admin = createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
 
   const nowMs=Date.now();
   const nowIso=new Date(nowMs).toISOString();
