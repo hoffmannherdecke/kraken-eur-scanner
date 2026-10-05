@@ -46,8 +46,9 @@ not merely the older draft state of PR #9.
 | Account-private tradability unavailable | can appear in V2R3 decision evidence | explicitly not negative evidence when public online Spot-EUR metadata is valid | CHANGE | proposed/tested paper policy |
 | Paper sizing | 50 EUR scout + 50 EUR stage 2 | **50 + 50 for first full V2R4 series** | CONFIRM / CONTROLLED | timing-isolation decision fixed 2026-10-05 |
 | Setup-quality tier mapper | none | deferred to later separately versioned experiment | DEFER_TO_LATER_GENERATION | must not affect first V2R4 series |
-| Major-market/derivatives/catalyst roles | current V2R3 evaluator behavior | proposal documents research roles | MORE_TESTING_REQUIRED | do not assume metadata equals wired behavior |
+| Major-market/derivatives/catalyst roles | current frozen V2R3 evaluator behavior | **INHERIT frozen V2R3 behavior for first series**; any role relaxation is a separately versioned later experiment | CONFIRM / DEFER | first-series causal isolation; no unvalidated signal-role relaxation |
 | Reason-code taxonomy | current free model reason codes | normalization explicitly required by proposal | MORE_TESTING_REQUIRED | not a reason to alter active V2R3 |
+| 24h follow-up / Fast-Track maturity | runtime opportunity audit provides 24h evidence | **24h follow-up explicitly required in the V2R4 machine contract** | CONFIRM / MEASUREMENT | needed for `EVIDENCE_DIVERSITY_FASTTRACK_V2`; no strategy-rule change |
 | Scanner cadence | ~10-minute target + event dispatch | local event-near discovery/recheck plus fallback | ADD | measure, do not infer superiority from heterogeneous samples |
 
 ## Prospective V2R3 tradability-policy diagnostic — 2026-10-01
