@@ -118,8 +118,11 @@ def main():
         expected={x["candidate_id"] for x in outcomes if x["series_id"]==sid}
         rows=[]; off=0
         while True:
-            q="/rest/v1/paper_candidate_outcomes?select=candidate_id&series_id=eq."+urllib.parse.quote(sid,safe="")+
-              f"&limit=1000&offset={off}"
+            q=(
+                "/rest/v1/paper_candidate_outcomes?select=candidate_id&series_id=eq."
+                + urllib.parse.quote(sid,safe="")
+                + f"&limit=1000&offset={off}"
+            )
             part=get(q) or []; rows.extend(part)
             if len(part)<1000: break
             off+=1000
