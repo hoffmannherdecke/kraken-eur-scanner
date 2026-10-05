@@ -14,7 +14,19 @@
     "evaluated_at_utc": "2026-10-05T11:04:02.290976Z",
     "evaluation_ask_eur": 2.964,
     "flagged_as_already_run": false,
-    "horizons": {},
+    "horizons": {
+      "15": {
+        "bars": 15,
+        "complete": true,
+        "end_close_pct": -0.303,
+        "expected_bars": 15,
+        "interval_minutes": 1,
+        "mae_pct": -0.337,
+        "mfe_pct": 0.0,
+        "peak_at_utc": "2026-10-05T11:04:00Z",
+        "trough_at_utc": "2026-10-05T11:06:00Z"
+      }
+    },
     "impulse_anchor_proxy": {
       "at_utc": "2026-10-05T08:49:00Z",
       "method": "lowest_1m_low_in_prior_3h",
@@ -42,7 +54,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-05T11:04:21.151626Z"
+    "updated_at_utc": "2026-10-05T11:20:22.088855Z"
   },
   "original_decision": "WAIT",
   "pair": "ICP/EUR",
