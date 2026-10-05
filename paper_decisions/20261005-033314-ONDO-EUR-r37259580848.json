@@ -1,0 +1,172 @@
+{
+  "altname": "ONDOEUR",
+  "candidate_age_seconds": 35,
+  "candidate_event_time_utc": "2026-10-05T03:33:14Z",
+  "candidate_id": "20261005-033314-ONDO-EUR-r37259580848",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above \u20ac0.45307 with sustained volume, then hold above that level"
+    ],
+    "reason_codes": [
+      "resistance_overhead",
+      "no_breakout_confirmation",
+      "no_higher_lows",
+      "cost_hurdle",
+      "derivatives_context_mixed"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but price is just below 1h/3h resistance and the supplied candles lack breakout or higher-low confirmation. Wait for confirmation; the nearby resistance leaves too little evidenced upside to clear costs now.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ONDOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 40.29,
+        "available": true,
+        "current_funding_rate": 5.659176385012e-06,
+        "current_open_interest": 4212086.0,
+        "funding_rate_delta": 1.089444781897e-05,
+        "open_interest_pct": -0.6801,
+        "previous_funding_rate": -5.235271433958e-06,
+        "previous_observed_at_utc": "2026-10-05T02:53:33.617721Z",
+        "previous_open_interest": 4240928.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 5.659176385012e-06,
+        "index_price": 0.504264,
+        "last": 0.5034,
+        "mark_price": 0.50425384523,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4212086.0,
+        "requested_symbols": [
+          "PF_ONDOUSD",
+          "PI_ONDOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ONDOUSD",
+        "volume24h": 1727718
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.45074,
+      "bid": 0.45026,
+      "last": 0.44987,
+      "spread_pct": 0.10654827968922984
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "10",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.16358847258661768,
+          "ret3h_pct": 0.7382859198979963
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.052476436849946406,
+          "ret3h_pct": 0.8300797405949023
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.01848087229716633,
+          "ret3h_pct": 0.595016734845677
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T03:33:49.867201Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-05T03:33:58.450706Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0dfe3562cacce999006ac31a9f556487d1af0f350b9832f83d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.45074,
+    "bid": 0.45026,
+    "last": 0.44987,
+    "spread_pct": 0.10654827968922984
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ONDO/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37259580848:ONDO-EUR:1791171194",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "a9bc4b6868a39c91cd1a04132ce0b5d3fe6d1307",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-05T03:33:14Z",
+    "candidate_detected_ts": 1791171194,
+    "candidate_snapshot_at_utc": "2026-10-05T03:33:14Z",
+    "detected_to_evaluation_complete_seconds": 44.451,
+    "detected_to_evaluation_start_seconds": 35.681,
+    "evaluation_completed_at_utc": "2026-10-05T03:33:58.450706Z",
+    "evaluation_runtime_seconds": 8.769,
+    "evaluation_started_at_utc": "2026-10-05T03:33:49.681392Z",
+    "handoff_to_evaluation_start_seconds": 33.449,
+    "handoff_written_at_utc": "2026-10-05T03:33:16.232823Z",
+    "scan_step_started_at_utc": "2026-10-05T03:28:37Z"
+  }
+}
