@@ -164,19 +164,24 @@ Stand 2026-09-29:
 - Der Sync besitzt einen opportunistischen `workflow_run`-Hook nach `Paper runtime evaluator and lifecycle`, verlässt sich darauf aber nicht allein. Zusätzlich läuft eine unabhängige Reconciliation um **:07/:37** jeder Stunde, weil ein erster Paper-Runtime-Abschluss nach Einführung des Hooks keinen beobachtbaren Archive-Run erzeugte.
 - Historischer Stand des später kompromittiert eingestuften V2R3-Vorgängers: final **712 archivierte Candidate-Outcomes**, **0 Trade-Results**; nur diagnostisch verwenden. Aktive saubere Vergleichsserie ist `PAPER-V2R3-CLEAN-20261001T0925Z`.
 - Supabase bleibt sekundär/fail-soft: ein Archivfehler darf Scanner oder Paper-Evaluator nicht blockieren.
-- Supabase bleibt sekundäre State-/Ergebnis-/Research-Schicht; kein Single Point of Failure und keine zweite Rohdatenkopie.
+- **Runtime-State-Speicherregel (2026-10-05):** Für V2R4/V3 und alle Nachfolger ist Supabase die dauerhafte strukturierte Runtime-/Evidenzschicht; `main` enthält Code, Verträge, Tests, kanonische Doku und kompakte Release-Evidenz. Die aktive V2R3-Clean-Serie behält ihren bisherigen Git-State ausschließlich als befristete Homogenitäts-/Kompatibilitätsausnahme bis zum Abschlussgate; danach wird dieser Pfad automatisch ausgeräumt. Kanonisch: `docs/runtime-state-storage-policy.md`.
+- Supabase bleibt für die noch laufende V2R3-Ausführung fail-soft; für neue Generationen ist sie die primäre strukturierte Evidenzablage, ohne private Exchange-/Order-Rechte.
 
 ## V3 Migration Ledger — Pflichtstatus
 
 Canonical ledger: `research/v3-migration-ledger.json` — guarded by `tools/validate-v3-migration-ledger.py` + `v3-migration-ledger-guard.yml`; initial self-test Run #1 SUCCESS. Strategy mechanics remain `OPEN_RESEARCH` until their named evidence gates mature.
 
-Jeder relevante V2/V2R4-Baustein erhält genau einen Status:
-- `INHERITED_UNCHANGED`
-- `INHERITED_MODIFIED`
-- `REPLACED_BY_TESTED_V3_COMPONENT`
-- `REJECTED_WITH_EVIDENCE`
-- `NOT_APPLICABLE`
-- `OPEN_RESEARCH`
+Jeder relevante Vorgänger-Baustein erhält genau einen kanonischen Status:
+- `INHERIT_UNCHANGED`
+- `INHERIT_MODIFIED`
+- `REPLACE_WITH_VALIDATED_SUCCESSOR`
+- `DEFER_TO_LATER_GENERATION`
+- `MORE_TESTING_REQUIRED`
+- `REJECT_WITH_EVIDENCE`
+- `NO_SUCCESSOR_CHANGE`
+
+Diese Taxonomie ist identisch mit `research/v3-migration-ledger.json` und seinem Validator;
+ältere Bezeichner wie `INHERITED_UNCHANGED` oder `OPEN_RESEARCH` sind nur Historie.
 
 ## Speicher-/Ablageregel für Chat-Beschlüsse
 

@@ -10,14 +10,19 @@ It does **not** authorize activation.
 
 Read `public.v2r4_activation_readiness`.
 
-Required before entering a manual release review:
-- `activation_review_state = MANUAL_RELEASE_REVIEW_REQUIRED`
-- `automatic_activation_allowed = false` must remain false
+Required before release approval:
+- `automatic_activation_allowed = false` must remain false permanently;
 - active V2R3 clean series completion gate must be satisfied under
-  `EVIDENCE_DIVERSITY_FASTTRACK_V2` (`docs/fasttrack-evidence-diversity-policy.md`);
-  no fixed 7-day wait is added once sample/diversity/maturity/integrity are ready
-- V2R4 shadow maturity must be archived
-- current MINI-PC status must be fresh / HEALTHY / OK
+  `EVIDENCE_DIVERSITY_FASTTRACK_V2`;
+- clean-series integrity must be `HEALTHY`;
+- V2R4 shadow maturity must be archived;
+- current MINI-PC status must be fresh / HEALTHY / OK;
+- `strategy_release_decisions.final_review_completed_at` must be set only after the completed V2R3 causal review;
+- `strategy_release_decisions.migration_review_completed_at` must be set only after every material finding has an explicit successor disposition;
+- `strategy_release_decisions.status` must explicitly become `APPROVED_PAPER`.
+
+Until all of these hold, `public.v2r4_activation_readiness` remains blocked/manual.
+Even `APPROVED_PAPER` does not activate anything automatically.
 
 If any automatic blocker is present, stop. Do not tune around the blocker.
 
@@ -70,15 +75,17 @@ Adaptive setup-quality sizing is explicitly deferred to a later, separately vers
 
 ## Gate 3 — code candidate
 
-Before merge:
-- refresh Draft-PR #9 onto the then-current `main` once, at the actual release boundary;
-- ensure the diff contains only the intended V2R4/release changes;
-- rerun V2R4 PR validation;
-- compile/unit/model-contract/public-Kraken smokes must pass;
-- no active V2R3 state files may be unintentionally changed by the PR;
-- real-money/order flags must remain false.
+The former Draft-PR #9 is superseded/closed and must not be revived.
 
-Do not continuously rebase PR #9 during data collection just because paper-state commits move `main`.
+Before release:
+- create/use the fresh V2R4 candidate from the cleaned current `main`;
+- ensure the diff contains only the intended V2R4/release changes;
+- first full-series sizing must be 50+50 EUR;
+- runtime evidence destination must be Supabase/bounded MINI-PC state, never high-frequency `main` commits;
+- shared Kraken execution/market semantics must import the canonical `market_data` layer;
+- rerun V2R4 validation and only the smokes whose relevant implementation changed;
+- no active V2R3 state files may be unintentionally changed;
+- real-money/order flags must remain false.
 
 ## Gate 4 — create a new immutable paper series
 

@@ -69,6 +69,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $files = @(
             'tools/minipc-watchdog.ps1',
+            'tools/minipc-create-separated-relay-secrets.ps1',
             'tools/minipc-github-dispatch-secret-prep.ps1',
             'tools/install-minipc-github-cadence-guard.ps1',
             'tools/uninstall-minipc-github-cadence-guard.ps1',

@@ -487,13 +487,47 @@ jobs:
         env:
           SOURCE_RUN_ID: ${{ github.run_id }}
           SOURCE_RUN_ATTEMPT: ${{ github.run_attempt }}
+          SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           set -euo pipefail
           python - <<'PY'
           import json
           import os
+          import urllib.request
           from datetime import datetime, timezone
           from pathlib import Path
+
+          # Governance-only gate: scanner detection still runs, but once the frozen
+          # V2R3 collection target + temporal diversity are met, no new handoff
+          # files are admitted. Fail-soft on control-plane lookup errors.
+          try:
+              base=os.environ.get("SUPABASE_URL","").rstrip("/")
+              key=(os.environ.get("SUPABASE_SECRET_KEY") or os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
+              if base and key:
+                  headers={"apikey":key}
+                  if not key.startswith("sb_secret_"):
+                      headers["Authorization"]="Bearer "+key
+                  req=urllib.request.Request(
+                      base+"/rest/v1/paper_series_completion_readiness?select=series_id,intake_should_stop,gate_state",
+                      headers=headers,
+                  )
+                  with urllib.request.urlopen(req,timeout=12) as resp:
+                      rows=json.loads(resp.read().decode("utf-8"))
+                  if rows and bool(rows[0].get("intake_should_stop")):
+                      Path(".candidate-identity-manifest.json").write_text(
+                          json.dumps({"candidate_files":[],"intake_frozen":True,
+                                      "series_id":rows[0].get("series_id"),
+                                      "gate_state":rows[0].get("gate_state")},sort_keys=True)+"\n",
+                          encoding="utf-8",
+                      )
+                      print("PAPER_INTAKE_FROZEN_NO_NEW_HANDOFFS "+json.dumps(rows[0],sort_keys=True))
+                      raise SystemExit(0)
+          except SystemExit:
+              raise
+          except Exception as exc:
+              print("PAPER_INTAKE_GATE_FAILSOFT "+type(exc).__name__)
 
           source = Path(".scanner/kraken_eur_scanner/handoff/candidates.jsonl")
           rows = [json.loads(line) for line in source.read_text("utf-8").splitlines() if line.strip()]
