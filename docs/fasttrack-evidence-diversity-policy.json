@@ -1,5 +1,5 @@
 {
-  "policy_id": "EVIDENCE_DIVERSITY_FASTTRACK_V1",
+  "policy_id": "EVIDENCE_DIVERSITY_FASTTRACK_V2",
   "effective_at_utc": "2026-10-05T05:19:00Z",
   "scope": [
     "V2R3",
@@ -13,7 +13,8 @@
     "fixed_calendar_wait_required_by_itself": false,
     "no_midrun_tuning": true,
     "integrity_is_hard_gate": true,
-    "live_execution_safety_is_separate": true
+    "live_execution_safety_is_separate": true,
+    "stop_new_intake_when_collection_target_and_diversity_met": true
   },
   "default_temporal_diversity": {
     "minimum_observation_span_formula": "max(48h, 2x_required_followup_horizon)",
@@ -24,7 +25,8 @@
   },
   "default_maturity": {
     "minimum_mature_qualifying_cohort_pct": 95,
-    "minimum_followup_coverage_pct": 95
+    "minimum_followup_coverage_pct": 95,
+    "freeze_intake_before_maturity_wait": true
   },
   "current_v2r3": {
     "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
@@ -37,7 +39,11 @@
     "maximum_single_utc_date_share_pct": 50,
     "maximum_rolling_24h_share_pct": 60,
     "minimum_mature_qualifying_outcomes": 950,
-    "minimum_followup_coverage_pct": 95
+    "minimum_followup_coverage_pct": 95,
+    "primary_intake_stop": "completed_trades>=20 AND temporal_diversity_ready",
+    "primary_minimum_mature_cohort_pct": 95,
+    "primary_minimum_followup_coverage_pct": 95,
+    "alternative_intake_stop": "candidate_outcomes>=1000 AND temporal_diversity_ready"
   },
   "future_contract_requirements": [
     "sample_unit_and_floor",
