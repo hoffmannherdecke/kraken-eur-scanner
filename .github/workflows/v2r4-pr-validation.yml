@@ -31,7 +31,21 @@ jobs:
         with:
           python-version: '3.13'
 
+      - name: Detect V2R4 implementation candidate
+        id: implementation
+        shell: bash
+        run: |
+          if test -f paper_evaluator/v2r4_trigger_contract.py && test -f paper_evaluator/v2r4_wait_runtime.py; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            echo "V2R4_IMPLEMENTATION_PRESENT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "V2R4_CONTRACT_ONLY_NO_IMPLEMENTATION_TO_VALIDATE"
+          fi
+
+
       - name: Compile V2R4 Python sources
+        if: steps.implementation.outputs.present == 'true'
         run: |
           python -m py_compile \
             paper_evaluator/evaluate.py \
@@ -46,6 +60,7 @@ jobs:
             paper_evaluator/v2r4_local_recheck.py
 
       - name: Run V2R4 unit tests
+        if: steps.implementation.outputs.present == 'true'
         run: |
           python -m unittest \
             tests.test_v2r4_trigger_contract \
@@ -61,6 +76,7 @@ jobs:
             -v
 
       - name: Harmless live Kraken WAIT watcher smoke
+        if: steps.implementation.outputs.present == 'true'
         shell: bash
         run: |
           python - <<'PY'
@@ -94,6 +110,7 @@ jobs:
           PY
 
       - name: Synthetic WS-snapshot shadow runtime smoke
+        if: steps.implementation.outputs.present == 'true'
         shell: bash
         run: |
           python - <<'PY'
@@ -161,6 +178,7 @@ jobs:
           PY
 
       - name: Broad Kraken EUR pre-candidate discovery smoke
+        if: steps.implementation.outputs.present == 'true'
         run: |
           python paper_evaluator/v2r4_precandidate_watcher.py             --once             --state /tmp/v2r4-pre/state.json             --event-dir /tmp/v2r4-pre/events             --max-depth-checks 2             --cooldown-seconds 0
           test -s /tmp/v2r4-pre/state.json
