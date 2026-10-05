@@ -136,7 +136,7 @@ Capture evidence included 324 clean Candidate-Outcomes, 64 complete 24h follow-u
 ## V2R4 — vorbereitete taktische Timing-/Trigger-Version
 
 **Status:** PREPARED / NOT ACTIVE / PAPER ONLY  
-**Implementierung:** frühere Drafts #8/#9 superseded; technisches Modul-Evidenzmaterial bleibt als Historie verwertbar, der neue Candidate entsteht sauber aus dem bereinigten `main`  
+**Implementierung:** frühere Drafts #8/#9 superseded; technisches Modul-Evidenzmaterial bleibt als Historie verwertbar. Der vorbereitete, noch inaktive Machine-Contract liegt in `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`; der spätere ausführbare Candidate wird daraus sauber auf dem bereinigten aktuellen `main` materialisiert und validiert.  
 **Release-Readiness:** `docs/v2r4-release-readiness.md`  
 **V2R3→V2R4 Release-Diff:** `docs/v2r4-v2r3-release-diff.md`  
 **Zweck:** gezielt das in V2R3 erkannte WAIT-/Revalidation-Latenzproblem untersuchen.
@@ -575,8 +575,3 @@ und Circuit Breaker bleiben davon getrennte Schutzfunktionen.
 
 Auch nach Beginn des Echtgeldhandels gilt somit dauerhaft:
 **inherit first, replace only with stronger evidence, never lose validated learning.**
-
-
-### V2R4 release-contract supersession — 2026-10-05
-
-The historical V2R4 PR #9 is closed and superseded. The binding first-series machine contract is `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`: fixed 50+50 EUR sizing, V2R3 completion/final causal review/migration review required, explicit `APPROVED_PAPER` required, automatic activation forbidden, and successor runtime evidence stored in Supabase/bounded MINI-PC state rather than per-event Git commits.
