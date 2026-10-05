@@ -1,0 +1,177 @@
+{
+  "altname": "SPXEUR",
+  "candidate_age_seconds": 28,
+  "candidate_event_time_utc": "2026-10-05T16:18:31Z",
+  "candidate_id": "20261005-161831-SPX-EUR-r37339596292",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.4078 with follow-through",
+      "BTC/EUR, ETH/EUR and SOL/EUR stop declining over the next 30\u201360 minutes"
+    ],
+    "reason_codes": [
+      "NO_PRICE_CONTINUITY",
+      "NO_BREAKOUT",
+      "MAJOR_MARKET_WEAKNESS",
+      "INSUFFICIENT_ROOM_AFTER_COSTS"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "No entry edge: price momentum is negative, breakout and higher-low structure are absent, and nearby resistance offers too little room after costs. Reassess only after a confirmed resistance break with market stabilization.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SPXUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 446.75,
+        "available": true,
+        "current_funding_rate": -1.03629196817e-07,
+        "current_open_interest": 410913.0,
+        "funding_rate_delta": -4.298295676879e-06,
+        "open_interest_pct": 0.1211,
+        "previous_funding_rate": 4.194666480062e-06,
+        "previous_observed_at_utc": "2026-10-05T08:52:15.383015Z",
+        "previous_open_interest": 410416.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.03629196817e-07,
+        "index_price": 0.449888,
+        "last": 0.4499,
+        "mark_price": 0.45026896794,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 410913.0,
+        "requested_symbols": [
+          "PF_SPXUSD",
+          "PI_SPXUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_SPXUSD",
+        "volume24h": 397341
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.4015,
+      "bid": 0.4011,
+      "last": 0.4016,
+      "spread_pct": 0.09967605282831085
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "11",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.25543018613098933,
+          "ret3h_pct": -1.0362296591955755
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.07306724677631493,
+          "ret3h_pct": -0.8538911154956752
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1686340640809414,
+          "ret3h_pct": -0.9941466133977506
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T16:18:59.534845Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-05T16:19:08.187957Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_08e81eb8d46a3f22006ac3cdf493dc87d1975c0ee3b7ed438d"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.4015,
+    "bid": 0.4011,
+    "last": 0.4016,
+    "spread_pct": 0.09967605282831085
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "SPX/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37339596292:SPX-EUR:1791217111",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "c3a7d3e40bc50d9137696d80c032093e262f5cf8",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-05T16:18:31Z",
+    "candidate_detected_ts": 1791217111,
+    "candidate_snapshot_at_utc": "2026-10-05T16:18:31Z",
+    "detected_to_evaluation_complete_seconds": 37.188,
+    "detected_to_evaluation_start_seconds": 28.378,
+    "evaluation_completed_at_utc": "2026-10-05T16:19:08.187957Z",
+    "evaluation_runtime_seconds": 8.81,
+    "evaluation_started_at_utc": "2026-10-05T16:18:59.377909Z",
+    "handoff_to_evaluation_start_seconds": 25.344,
+    "handoff_written_at_utc": "2026-10-05T16:18:34.033658Z",
+    "scan_step_started_at_utc": "2026-10-05T16:16:53Z"
+  }
+}
