@@ -3,7 +3,16 @@
   "candidate_id": "20261005-160332-PLUME-EUR-r37337327229",
   "evaluated_at_utc": "2026-10-05T16:04:07.580056Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -1.48,
+      "expected_bars": 30,
+      "mae_pct": -1.48,
+      "mfe_pct": 0.569
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -59,5 +68,6 @@
   "path_classification": "WAIT_PENDING",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-05T16:39:05.030528Z"
 }
