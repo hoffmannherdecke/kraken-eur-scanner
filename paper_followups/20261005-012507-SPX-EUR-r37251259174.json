@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-05T01:29:00Z",
         "trough_at_utc": "2026-10-05T01:32:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -0.502,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.954,
+        "mfe_pct": 2.034,
+        "peak_at_utc": "2026-10-05T02:49:00Z",
+        "trough_at_utc": "2026-10-05T04:33:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -88,7 +99,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-05T02:36:30.010548Z"
+    "updated_at_utc": "2026-10-05T05:26:12.759849Z"
   },
   "original_decision": "WAIT",
   "pair": "SPX/EUR",
