@@ -1,0 +1,176 @@
+{
+  "altname": "NIGHTEUR",
+  "candidate_age_seconds": 38,
+  "candidate_event_time_utc": "2026-10-05T12:14:14Z",
+  "candidate_id": "20261005-121414-NIGHT-EUR-r37307946823",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Reclaim and hold above 0.04311 with continued volume",
+      "Confirm the reclaim without an abrupt loss of the 0.04276 breakout area"
+    ],
+    "reason_codes": [
+      "tradable_liquidity",
+      "tight_spread",
+      "strong_short_term_momentum",
+      "high_volume",
+      "extended_7d_30d",
+      "pullback_below_snapshot_price",
+      "muted_major_market",
+      "no_coin_specific_catalyst_supplied"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but the sharp 7d/30d advance and pullback from the scanner price argue against chasing; wait for renewed confirmation.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "NIGHTUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 35.5,
+        "available": true,
+        "current_funding_rate": -5.262049386e-06,
+        "current_open_interest": 3431100.0,
+        "funding_rate_delta": -9.906458462500009e-08,
+        "open_interest_pct": 1.6728,
+        "previous_funding_rate": -5.162984801375e-06,
+        "previous_observed_at_utc": "2026-10-05T11:39:24.276177Z",
+        "previous_open_interest": 3374650.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -5.262049386e-06,
+        "index_price": 0.04795,
+        "last": 0.04797,
+        "mark_price": 0.04789126371,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 3431100.0,
+        "requested_symbols": [
+          "PF_NIGHTUSD",
+          "PI_NIGHTUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_NIGHTUSD",
+        "volume24h": 10072102
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.04285,
+      "bid": 0.04281,
+      "last": 0.04288,
+      "spread_pct": 0.09339248190520283
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "120",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.08312411379807205,
+          "ret3h_pct": 0.04720379294829158
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.009069135670158879,
+          "ret3h_pct": -0.03831954379139857
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.08354994430004314,
+          "ret3h_pct": -0.17592592592592382
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T12:14:52.934130Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-05T12:15:05.786164Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_05e181de78f6ef8f006ac394be7ec887d0bbf0eaf6f25958d5"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.04285,
+    "bid": 0.04281,
+    "last": 0.04288,
+    "spread_pct": 0.09339248190520283
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "NIGHT/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37307946823:NIGHT-EUR:1791202454",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "23fbfd39cc0d5ba19e6caac43e07861e940e9671",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-05T12:14:14Z",
+    "candidate_detected_ts": 1791202454,
+    "candidate_snapshot_at_utc": "2026-10-05T12:14:14Z",
+    "detected_to_evaluation_complete_seconds": 51.786,
+    "detected_to_evaluation_start_seconds": 38.721,
+    "evaluation_completed_at_utc": "2026-10-05T12:15:05.786164Z",
+    "evaluation_runtime_seconds": 13.065,
+    "evaluation_started_at_utc": "2026-10-05T12:14:52.720944Z",
+    "handoff_to_evaluation_start_seconds": 34.565,
+    "handoff_written_at_utc": "2026-10-05T12:14:18.156120Z",
+    "scan_step_started_at_utc": "2026-10-05T12:12:45Z"
+  }
+}

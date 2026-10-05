@@ -1,0 +1,197 @@
+{
+  "altname": "PLUMEEUR",
+  "candidate_id": "20261005-113846-PLUME-EUR-r37304102647",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close above 0.0180 with sustained volume, then a hold or retest.",
+      "A pullback holding the supplied 0.01707 support."
+    ],
+    "reason_codes": [
+      "breakout_confirmation_failed",
+      "momentum_faded",
+      "support_not_tested_or_confirmed",
+      "fees_and_spread_material",
+      "derivatives_unavailable",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation shows a failed push above 0.0180 followed by fading prices; neither continuation nor a supported pullback is confirmed. No scout entry is justified after costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "PLUMEUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_PLUMEUSD",
+          "PI_PLUMEUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.01746,
+      "bid": 0.01742,
+      "last": 0.01747,
+      "spread_pct": 0.22935779816512827
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "250",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.173545740116543,
+          "ret3h_pct": 0.3463852080203722
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.11726572661396872,
+          "ret3h_pct": 0.06314069231911912
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0,
+          "ret3h_pct": -0.05571547961742418
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T12:15:34.905812Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_01e2f8fefa4a9593006ac394e8be7487d0912b8e387b835b44"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.01746,
+    "bid": 0.01742,
+    "last": 0.01747,
+    "spread_pct": 0.22935779816512827
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.01763,
+      "high": 0.01767,
+      "low": 0.01762,
+      "open": 0.01767,
+      "trades": 10,
+      "ts": 1791198900,
+      "volume": 61520.29388,
+      "vwap": 0.01763
+    },
+    {
+      "close": 0.01784,
+      "high": 0.01784,
+      "low": 0.01762,
+      "open": 0.01766,
+      "trades": 33,
+      "ts": 1791199800,
+      "volume": 266162.67201,
+      "vwap": 0.01769
+    },
+    {
+      "close": 0.01762,
+      "high": 0.01804,
+      "low": 0.01762,
+      "open": 0.018,
+      "trades": 22,
+      "ts": 1791200700,
+      "volume": 672808.90046,
+      "vwap": 0.01764
+    },
+    {
+      "close": 0.01747,
+      "high": 0.01757,
+      "low": 0.01747,
+      "open": 0.01757,
+      "trades": 4,
+      "ts": 1791201600,
+      "volume": 33365.81198,
+      "vwap": 0.01747
+    },
+    {
+      "close": 0.01747,
+      "high": 0.01747,
+      "low": 0.01747,
+      "open": 0.01747,
+      "trades": 0,
+      "ts": 1791202500,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "PLUME/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-113846-PLUME-EUR-r37304102647.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T12:15:42.668102Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "23fbfd39cc0d5ba19e6caac43e07861e940e9671",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T12:15:42.668102Z",
+    "revalidation_started_at_utc": "2026-10-05T12:15:34.485336Z",
+    "ttl_due_at_utc": "2026-10-05T12:09:49.098592Z",
+    "ttl_lag_seconds": 345.387
+  }
+}
