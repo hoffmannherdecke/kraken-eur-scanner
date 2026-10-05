@@ -28,3 +28,18 @@ Run the tests with:
 python -m unittest discover -s paper_capture -p 'test_*.py' -v
 python -m unittest discover -s market_data -p 'test_*.py' -v
 ```
+
+
+## Frozen-runtime exception and successor rule
+
+The active V2R3 clean series predates full consolidation and its `paper_context.py`
+must remain byte-for-byte frozen until that series closes because it is part of the
+runtime fingerprint. That is an explicit temporary exception, not a second authority.
+
+From the next runtime boundary onward:
+- AssetPairs / symbol aliases / ticker normalization use `market_data.universe`;
+- book/flow/wall semantics use `market_data.microstructure`;
+- REST candle context uses `market_data.rest`;
+- any V2R4/V3/live adapter that intentionally derives a different research feature
+  must label it as a versioned research transform rather than silently duplicating
+  canonical execution-data semantics.
