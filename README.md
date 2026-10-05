@@ -17,8 +17,9 @@ Read-only early-momentum sensor for **Kraken Spot EUR** markets using 15-minute 
 3. Uses a timing guard so a delayed job does not normally scan across a 15m candle boundary, then fetches 15m OHLC sequentially at ~1 request/sec.
 4. Computes live/closed 15m momentum, 1h/3h/24h returns, volume acceleration, rank/rank jump, 3h breakout/base structure, higher lows, EMA26/50, ADX14 and fresh impulse distance.
 5. For plausible candidates only, adds 7d/30d context from 1h candles and shallow order-book depth.
-6. Sends at most three structured **review-only** candidates to Slack. The Slack message explicitly says `REVIEW_ONLY_NOT_ORDER`.
-7. Uses a small GitHub Actions cache for N-vs-N-1 ranks and cooldown/dedup state.
+6. Hands at most a bounded set of structured **review-only** candidates to the Paper evaluator. Raw scanner candidates are not user-facing trade alerts and remain `REVIEW_ONLY_NOT_ORDER`.
+7. User-facing Slack is reserved for downstream actionable Paper events / critical infrastructure alerts.
+8. Uses a small GitHub Actions cache for N-vs-N-1 ranks and cooldown/dedup state.
 
 ## Safety / fail-closed rules
 
@@ -28,11 +29,12 @@ Read-only early-momentum sensor for **Kraken Spot EUR** markets using 15-minute 
 - Fresh 3h move >12% is marked late and is not sent as a new early candidate.
 - Missing 7d/30d or depth data is a warning, not an automatic veto.
 - Same pair is suppressed for 45 minutes unless the signal improves materially.
-- Slack is a sensor feed only. Final buy/stop/size decisions remain in the ChatGPT strategy using fresh Kraken-EUR execution data.
+- Scanner output is a sensor feed only. It never places orders and never directly becomes a user-facing buy signal.
+- Final Paper buy/stop/size decisions require the fresh evaluator path; real-money actions remain disabled.
 
 ## Production schedule
 
-Current production schedule: **:07 and :37 each hour** (UTC minute-of-hour; therefore the same minute values in Europe/Berlin), i.e. approximately every 30 minutes. GitHub scheduled runs are best-effort and can start late.
+Current production schedule: **:02, :12, :22, :32, :42 and :52 each hour**, i.e. a 10-minute target cadence. GitHub scheduled runs are best-effort; the MINI-PC cadence guard provides bounded recovery if a scheduled run is missed.
 
 A manual `workflow_dispatch` remains available for troubleshooting.
 
@@ -100,3 +102,12 @@ Each production run writes machine-readable `AUDIT_ROW` lines for the complete l
 A separate workflow, **Kraken missed-move audit**, runs daily at 03:18 UTC. It reads the rolling telemetry without ChatGPT Work usage, measures the following six-hour Kraken-EUR move using 15-minute OHLC, and classifies strong early moves as scanner-posted, score-filtered, top-3-capped, cooldown-suppressed, or unresolved. Reports are stored as a 30-day GitHub Actions artifact.
 
 The audit is diagnostic only. It never changes scanner thresholds automatically and never places orders.
+
+
+## Runtime-state architecture
+
+GitHub is the source/release control plane, not the long-term runtime database.
+The active frozen V2R3 compatibility series may still persist per-candidate working
+files until it closes. Closed-series evidence is compacted only after verified
+Supabase archival. V2R4 and later versions must use Supabase and bounded local
+state for runtime evidence and keep only compact release/provenance artifacts in Git.
