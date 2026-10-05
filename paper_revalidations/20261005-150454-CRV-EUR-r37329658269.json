@@ -1,0 +1,217 @@
+{
+  "altname": "CRVEUR",
+  "candidate_id": "20261005-150454-CRV-EUR-r37329658269",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.33915 on stronger volume",
+      "BTC/EUR, ETH/EUR and SOL/EUR stop declining"
+    ],
+    "reason_codes": [
+      "NO_BREAKOUT",
+      "WEAK_MAJOR_REGIME",
+      "COSTS_UNCOVERED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The required breakout did not occur; CRV remains below resistance while majors are still declining, so there is no supported scout or second-stage plan.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "CRVUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 55.41,
+        "available": true,
+        "current_funding_rate": -2.862569488e-06,
+        "current_open_interest": 8655003.0,
+        "funding_rate_delta": -1.3143855897042e-05,
+        "open_interest_pct": -0.9505,
+        "previous_funding_rate": 1.0281286409042e-05,
+        "previous_observed_at_utc": "2026-10-05T15:05:42.790700Z",
+        "previous_open_interest": 8738057.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -2.862569488e-06,
+        "index_price": 0.37355,
+        "last": 0.3735,
+        "mark_price": 0.37342222207,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 8655003.0,
+        "requested_symbols": [
+          "PF_CRVUSD",
+          "PI_CRVUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_CRVUSD",
+        "volume24h": 4418089
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.33325,
+      "bid": 0.33301,
+      "last": 0.33298,
+      "spread_pct": 0.072043946807558
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "20",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.4832498256348794,
+          "ret3h_pct": -0.7367980024877485
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2785446044417883,
+          "ret3h_pct": -0.5135966653433743
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.16880802775953718,
+          "ret3h_pct": -0.847615499254839
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T16:01:05.946281Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_036e9288689fc699006ac3c9c42bcc87d0b31aeb219a49c781"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.33325,
+    "bid": 0.33301,
+    "last": 0.33298,
+    "spread_pct": 0.072043946807558
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.33627,
+      "high": 0.33627,
+      "low": 0.33435,
+      "open": 0.33435,
+      "trades": 9,
+      "ts": 1791212400,
+      "volume": 1712.19606363,
+      "vwap": 0.33524
+    },
+    {
+      "close": 0.33636,
+      "high": 0.33636,
+      "low": 0.33592,
+      "open": 0.33592,
+      "trades": 3,
+      "ts": 1791213300,
+      "volume": 614.74716394,
+      "vwap": 0.33604
+    },
+    {
+      "close": 0.33286,
+      "high": 0.33539,
+      "low": 0.33271,
+      "open": 0.33539,
+      "trades": 23,
+      "ts": 1791214200,
+      "volume": 14897.54900478,
+      "vwap": 0.33355
+    },
+    {
+      "close": 0.33298,
+      "high": 0.33435,
+      "low": 0.33298,
+      "open": 0.33397,
+      "trades": 19,
+      "ts": 1791215100,
+      "volume": 7366.47625888,
+      "vwap": 0.33359
+    },
+    {
+      "close": 0.33298,
+      "high": 0.33298,
+      "low": 0.33298,
+      "open": 0.33298,
+      "trades": 0,
+      "ts": 1791216000,
+      "volume": 0.0,
+      "vwap": 0.0
+    }
+  ],
+  "pair": "CRV/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-150454-CRV-EUR-r37329658269.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T16:01:12.468189Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "d3c7d4685f0d4cb9d226096cf6489d1887b44850",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T16:01:12.468189Z",
+    "revalidation_started_at_utc": "2026-10-05T16:01:05.415398Z",
+    "ttl_due_at_utc": "2026-10-05T15:50:42.790700Z",
+    "ttl_lag_seconds": 622.625
+  }
+}
