@@ -471,8 +471,9 @@ Verbindliche Arbeitsentscheidung:
 - Neue Strategieversionen erhalten frühe Entscheidungsfenster:
   - nach ~24h: Technik-/Mechanik-Sanity;
   - nach ~72h: frühe Produktivität, Trade-Frequenz und Entscheidungsstruktur;
-  - nach ~7 Tagen: Fortsetzen / Verwerfen / separat versionierten Nachfolger bauen,
-    sofern kein vorab festgelegtes längeres Reifegate zwingend ist.
+  - finale Fortsetzen-/Verwerfen-/Promote-/Nachfolgerentscheidung **sofort am frühesten
+    bestandenen Evidence-Diversity-Gate** gemäß
+    `docs/fasttrack-evidence-diversity-policy.md`; kein pauschales Tag-7-Warten.
 - Hunderte valide Kandidaten bei erneut praktisch null Trades gelten als **negatives
   Strategieergebnis** und rechtfertigen keine automatische Verlängerung derselben Version.
 - Keine laufende Version wird nach Sichtung ihrer Ergebnisse still getunt. Jede materielle
