@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.192586,
     "flagged_as_already_run": false,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": 3.893,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -0.426,
+        "mfe_pct": 5.042,
+        "peak_at_utc": "2026-10-05T01:25:00Z",
+        "trough_at_utc": "2026-10-04T14:05:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 0.709,
       "price_eur": 0.19101
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": true,
+      "continuation_ge_5pct": true,
+      "drawdown_le_minus_2pct": false
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "liquid_pair",
@@ -120,7 +136,7 @@
     },
     "schema_version": 1,
     "setup_lane": "IGNITION",
-    "updated_at_utc": "2026-10-04T20:15:25.967174Z"
+    "updated_at_utc": "2026-10-05T08:10:22.207342Z"
   },
   "original_decision": "WAIT",
   "pair": "XLM/EUR",
