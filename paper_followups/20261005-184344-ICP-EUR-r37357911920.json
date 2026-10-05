@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-05T18:57:00Z",
         "trough_at_utc": "2026-10-05T18:47:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 0.409,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -1.385,
+        "mfe_pct": 1.133,
+        "peak_at_utc": "2026-10-05T21:40:00Z",
+        "trough_at_utc": "2026-10-05T20:45:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -90,7 +101,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-05T21:33:55.611916Z"
+    "updated_at_utc": "2026-10-05T22:49:18.679510Z"
   },
   "original_decision": "WAIT",
   "pair": "ICP/EUR",
