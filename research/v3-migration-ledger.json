@@ -140,9 +140,9 @@
     {
       "id": "v2r4_event_driven_wait_wakeup",
       "category": "entry_lifecycle",
-      "source_version": "V2R4 draft PR #9",
+      "source_version": "V2R4 historical prep (superseded PR #9 module evidence)",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Kraken-fresh recheck with optional Altrady wakeup is technically prepared but has not completed separate V2R4 Paper evidence.",
+      "rationale": "Kraken-fresh recheck with optional Altrady wakeup is technically proven by historical superseded-PR module evidence, but the final V2R4 candidate must be rebuilt from cleaned current main and complete separate prospective V2R4 Paper evidence.",
       "evidence": [
         "docs/v2r4-release-readiness.md",
         "docs/v2r4-paper-activation-checklist.md"
@@ -190,12 +190,13 @@
       "category": "risk_sizing",
       "source_version": "V2R3 plus V2R4 proposal",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "V2R4 proposal contains a sizing delta not yet wired/validated; no silent size migration.",
+      "rationale": "The first full V2R4 Paper series is now bindingly fixed at the inherited V2R3 sizing of 50 EUR scout + 50 EUR stage 2 so timing/discovery/revalidation is isolated. Adaptive setup-quality sizing is excluded from that release and remains a separately versioned later research experiment.",
       "evidence": [
         "docs/v2r4-v2r3-release-diff.md",
-        "docs/v2r4-paper-activation-checklist.md"
+        "docs/v2r4-paper-activation-checklist.md",
+        "docs/v2r4-sizing-release-decision.md"
       ],
-      "pending_gate": "EXPLICIT_SIZING_RESEARCH_AND_RELEASE_DECISION"
+      "pending_gate": "POST_V2R4_TIMING_SERIES_SEPARATE_ADAPTIVE_SIZING_RESEARCH"
     },
     {
       "id": "conservative_cost_model",

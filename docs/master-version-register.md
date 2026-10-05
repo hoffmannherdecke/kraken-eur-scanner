@@ -40,7 +40,7 @@ Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade u
 | Paper-Serie | `PAPER-V2R3-CLEAN-20261001T0925Z` | ACTIVE / CLEAN / FROZEN / PERSISTENCE E2E VERIFIED | Aktuelle homogene V2R3-Serie nach Runtime-only Persistenzrepair; erster realer 3-Kandidaten-Cycle im selben Lauf committed, Repeat-Guard danach 0 Reselections/0 No-op-Follow-up-Changes; Process-Health Provenance sauber. Strategie `V2R3-2026-09-28` unverändert. Fail-closed Freeze-Guard prüft Series/Test/Strategy, Strategy-/Runtime-Fingerprints, Scanner-Paket, 10-Minuten-Takt/Scanner-Settings und seit Full-System-Audit 2026-10-02 zusätzlich die behaviorally relevanten `paper-evaluator.yml`-Runtime-Semantiken; Post-Fix Guard SUCCESS. Audit: `docs/full-system-audit-20261002.md`. |
 | Strategie-Hypothesenkarte | `V2R3-ADJ-HYP-20261002-V1` | CAPTURED / HYPOTHESIS ONLY / NOT ACTIVE | Versionierter Clean-Series-Zwischenstand für nächste Strategieüberarbeitung: WAIT-Lifecycle, Continuation/Second-Leg, Resistance/Breakout-Routing, Extended-Pullback, Cost-Edge-Routing und Kraken-Tradability-Autorität. Human: `research/v2r3/strategy-adjustment-hypotheses-v1.md`; Machine: `research/v2r3/strategy-adjustment-hypotheses-v1.json`. V1 nicht überschreiben; finale Disposition erst am V2R3-Release-Review. |
 | Paper-Serie predecessor | `PAPER-V2R3-FINAL-20260928T1752Z` | DIAGNOSTIC_COMPROMISED / FROZEN | 708 Candidate-Outcomes bleiben für Fehler-/Missed-Move-/Timinganalyse nutzbar, aber nicht als saubere prospektive Abschlussserie; Persistenzbug am 2026-10-01 nachgewiesen und repariert. |
-| Strategie | V2R4 | PREPARED / NOT ACTIVE / PHYSICAL MINI-PC E2E GREEN | **Draft-PR #9** refreshed candidate; old PR #8 superseded. Original V2R4 delta remains and the readiness review additionally prepared an inactive bounded 24/7 WAIT-plan runtime with Kraken as condition truth and Altrady as optional wakeup. V2R4 PR validation through **Run #17 SUCCESS**; refreshed trigger-to-fresh-recheck E2E Run #2 SUCCESS; Windows-shaped WAIT-runtime smoke #1 SUCCESS (1 wakeup/1 Kraken match/1 fresh recheck/0 duplicate rechecks); real-Altrady physical release harness prepared and CI-green in MINI-PC tools smoke #111. Fail-closed `public.v2r4_activation_readiness` keeps automatic activation disabled and now also blocks on V2R3 integrity. Current blocker: V2R3 clean-series completion/review plus explicit sizing/release decision |
+| Strategie | V2R4 | PREPARED / NOT ACTIVE / CLEAN-MAIN REBUILD REQUIRED | Prior PR #8/#9 are superseded/closed; unchanged-module smokes remain historical technical evidence only. The first full V2R4 Paper series is bindingly fixed at **50+50 EUR**; adaptive sizing is deferred to a separate later series. The next candidate must be rebuilt from cleaned current `main`. Fail-closed `public.v2r4_activation_readiness` keeps automatic activation disabled. Current blockers are V2R3 completion/final review, successor-migration review, explicit `APPROVED_PAPER` release decision and the release-boundary MINI-PC/real-Altrady smoke. |
 | Strategie | V3 | ACTIVE RESEARCH / NOT ACTIVE TRADING | Integrierter Nachfolger; Issue #7 + `docs/v3-research-framework.md` |
 | V3 H10 Smart-Money | `V3-H10-COHORT-001 / V3-H10-CAPTURE-001` | PROSPECTIVE SHADOW ACTIVE / NO STRATEGY COUPLING | Hyperliquid public read-only; frozen 20 Primary + 6 Controls; first capture 26/26 / 0 errors / HEALTHY. Coarse GitHub bootstrap :17/:47 → Supabase compact state/fills. First analysis gate frozen at 72h + sample/health minima; no copy-trading/orders. |
 
@@ -143,7 +143,7 @@ Wichtige Referenzen:
 - `docs/strategy-version-map.md`
 - `docs/v3-research-framework.md`
 - `docs/test-strategy-runbook.md`
-- Draft-PR #9 — refreshed V2R4 Fast WAIT Triggers / Mini-PC on current `main` (PR #8 superseded)
+- Historical module evidence from superseded PR #9 — refreshed V2R4 Fast WAIT Triggers / Mini-PC; the branch must not be reactivated.
 - Issue #7 — V3 Research Track
 
 ## Supabase
@@ -169,7 +169,7 @@ Stand 2026-09-29:
 
 ## V3 Migration Ledger — Pflichtstatus
 
-Canonical ledger: `research/v3-migration-ledger.json` — guarded by `tools/validate-v3-migration-ledger.py` + `v3-migration-ledger-guard.yml`; initial self-test Run #1 SUCCESS. Strategy mechanics remain `OPEN_RESEARCH` until their named evidence gates mature.
+Canonical ledger: `research/v3-migration-ledger.json` — guarded by `tools/validate-v3-migration-ledger.py` + `v3-migration-ledger-guard.yml`. Unresolved components remain in the canonical statuses such as `MORE_TESTING_REQUIRED` / `DEFER_TO_LATER_GENERATION` until their named evidence gates mature; the legacy label `OPEN_RESEARCH` is no longer an active taxonomy value.
 
 Jeder relevante Vorgänger-Baustein erhält genau einen kanonischen Status:
 - `INHERIT_UNCHANGED`
@@ -196,19 +196,13 @@ Für jede dauerhaft projektrelevante Information aus einem Gespräch – unabhä
 8. Reine Gesprächsfüllung, kurzfristige Zwischenstände und bewusst verworfene Ideen nicht unnötig dauerhaft speichern, sofern sie keinen Nachweis-/Historienwert haben.
 
 
-### V2R3→V2R4 release diff / sizing blocker — 2026-10-01
+### V2R3→V2R4 release diff / sizing decision — updated 2026-10-05
 
 Canonical behavior matrix: `docs/v2r4-v2r3-release-diff.md`.
 
-The readiness review proved that V2R4 is not literally a timing-only delta:
-- deterministic WAIT monitoring, fresh recheck and broad pre-candidate visibility are the core intended timing/discovery changes;
-- live Kraken `AssetPairs` replaces legacy static pair blocking;
-- the proposal also changes paper sizing from V2R3's 50+50 EUR to a proposed 75+75 EUR default and larger adaptive tiers;
-- the proposed spec itself says the adaptive sizing contract is required before a full V2R4 series, while the mapper is still not wired.
-
-No silent sizing choice is permitted. The later activation review must explicitly version either a timing-isolation series that retains V2R3 sizing or a combined timing+sizing series after the adaptive mapper is separately implemented and tested.
+The readiness review originally identified a confounder: the historical V2R4 proposal mixed the intended timing/discovery/revalidation changes with a 75+75 EUR/adaptive-sizing proposal. That release-design ambiguity is now resolved. For the **first full V2R4 Paper series**, sizing is bindingly frozen at the inherited V2R3 level of **50 EUR scout + 50 EUR stage 2**. The 75+75/adaptive proposal is excluded from this release and may only return as a separately versioned later sizing experiment after its mapper and validation contract exist.
 
 
 ### V2R4 paper release checklist
 
-The bounded release/rollback procedure is now canonical in `docs/v2r4-paper-activation-checklist.md`. It preserves a fail-closed manual release boundary, requires final V2R3 review first, requires an explicit sizing decision, and forbids reusing/rewriting the closed V2R3 series as V2R4.
+The bounded release/rollback procedure is canonical in `docs/v2r4-paper-activation-checklist.md`. It preserves a fail-closed manual release boundary, requires final V2R3 review first, requires the already-decided 50+50 EUR sizing to be frozen in the fresh candidate, requires explicit successor-migration review plus `APPROVED_PAPER`, and forbids reusing/rewriting the closed V2R3 series as V2R4.

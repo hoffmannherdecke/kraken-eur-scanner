@@ -23,7 +23,7 @@ historical evidence and must not be used as the current release rule.
 ## Current code candidate
 
 - prior Draft-PR #8: superseded/closed because of severe runtime-state branch drift;
-- prior the superseded Draft-the superseded PR #9: **SUPERSEDED/CLOSED on 2026-10-05** because its README/spec still contained pre-cleanup activation wording and a non-binding 75+75/adaptive sizing proposal;
+- prior Draft-PR #9: **SUPERSEDED/CLOSED on 2026-10-05** because its README/spec still contained pre-cleanup activation wording and a non-binding 75+75/adaptive sizing proposal;
 - the next V2R4 candidate must be created from the cleaned current `main`, not by reviving either old branch;
 - old PR validation/smokes remain useful technical evidence for unchanged modules, but they do **not** authorize release;
 - safety boundary remains paper-only; no private Kraken order path and no real-money activation.
@@ -126,7 +126,7 @@ Scanner matching is still sparse and must not be used as a winner ranking:
 
 ## Continuous WAIT runtime readiness
 
-The readiness review found that the existing single-plan watcher and trigger→fresh-recheck E2E proved the mechanics but did not yet define the full 24/7 plan lifecycle. the superseded Draft-the superseded PR #9 now prepares that missing runtime shape without activating it.
+The readiness review found that the existing single-plan watcher and trigger→fresh-recheck E2E proved the mechanics but did not yet define the full 24/7 plan lifecycle. The now-superseded PR #9 prepared that missing runtime shape without activating it; this remains historical module evidence only.
 
 Prepared in the superseded PR #9:
 
@@ -170,7 +170,7 @@ Still required at the actual release boundary:
 
 - physical combined Altrady-wakeup → Kraken-fresh-condition → paper-recheck smoke;
 - final directory/control/series wiring for the new immutable V2R4 paper series;
-- no activation before the V2R3 release review and explicit sizing/release decision.
+- no activation before the V2R3 release review and explicit Paper release decision; first-series sizing is already bindingly fixed at 50+50 EUR.
 
 ## V2R3 clean-series freeze guard
 
@@ -240,9 +240,11 @@ Repository-side repair prepared on 2026-10-01:
 
 No strategy logic was changed.
 
-## Next actions before user input is needed
+## Historical next-actions snapshot — superseded 2026-10-05
 
-Repository-side preparation is now complete for the current maintenance/release-readiness block:
+The bullet list below is retained only as a 2026-10-01 operational snapshot. PR #9 is now closed/superseded, the next V2R4 candidate must be built from cleaned current `main`, and first-series sizing is already fixed at 50+50 EUR. It is not the current action list.
+
+Repository-side preparation at that historical control point was:
 
 - refreshed V2R4 candidate preflight now targets the superseded PR #9 by default;
 - MINI-PC V2R4 local preflight smoke **Run #4: SUCCESS** against the refreshed candidate;
@@ -439,7 +441,7 @@ The unresolved rows are current cohort maturation/archival lag, not evidence of 
 
 A transient local `WARNING / FEED_STALE` sample immediately before this observation self-cleared without intervention. Together with fresh Kraken-source evidence, this remains consistent with the already-known older local watchdog/shadow-heartbeat false-stale classification rather than a Kraken transport outage. The repository-side watchdog/readiness hardening remains queued for the next bundled local sync; no interruption of the running evidence collection is warranted solely for this.
 
-### the superseded Draft-the superseded PR #9 drift handling
+### Historical superseded PR #9 drift handling
 At this snapshot the refreshed V2R4 draft branch is **29 commits ahead / 115 commits behind** `main`, and GitHub currently reports `mergeable=false`. The connector does not expose a reliable conflict reason here, so this must not be interpreted as a proven code conflict solely from the commit counts. Because runtime/evidence commits continue moving `main`, per the existing release rule do **not** churn/rebase merely to keep the draft cosmetically current. Final branch sync and any required conflict resolution belong at the actual activation-review boundary, after V2R3 completion and before any merge decision.
 
 ## Physical bundled MINI-PC readiness sync — 2026-10-01 17:26 UTC
