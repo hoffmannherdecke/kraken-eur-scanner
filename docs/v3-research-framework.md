@@ -114,7 +114,8 @@ Required output:
 ## 6. Priority hypotheses
 
 ### H1 — Cross-Crypto Lead/Lag + Breadth
-Status: `PRECHECK`  
+Status: `SHADOW`  
+Stage: `V3-H1-SHADOW-001_CLOSED_AT_PREREGISTERED_GATE_REVIEW_PENDING`  
 Priority: A
 
 Candidate features:
@@ -137,8 +138,10 @@ Current methodology precheck:
 - synthetic 5-pair PIT feature smoke: **Run #3 SUCCESS**;
 - exact 15m/1h/4h closed-bar lookbacks, explicit breadth denominator and future-row rejection are proven;
 - an intentionally missing XRP 1h lookback remains missing while 15m/4h stay usable;
-- no performance trial, pair/month/threshold selection or holdout access has begun.
-- initial red smoke runs were only negative-assertion-polarity wiring defects, not feature leakage or hypothesis failures; after advancing the prereg status, the expected old-state guard mismatch occurred once, and the final advanced-state guard is **Run #5 SUCCESS**.
+- incremental `V3-H1-INCR-001` review completed with the sealed holdout untouched; no threshold/pair/transform winner was selected;
+- one-change pilot `V3-H1-SHADOW-001` then completed its preregistered gate: **200/200 PASS context records, 100% capture, 9 decision divergences**;
+- runtime control is now disabled with `closed_reason=PREREGISTERED_MINIMUM_GATE_MET_200_OF_200_PASS`;
+- next gate is the fixed project review of those 9 divergences before any H3 one-change shadow materialization; no auto-extension, tuning or promotion.
 
 ### H2 — Basis / Premium / Funding / OI State Layer
 Status: `PRECHECK`  
@@ -171,7 +174,8 @@ No H2 performance trial, threshold sweep, pair/month selection or holdout access
 Kraken Spot EUR remains the execution/fill reference.
 
 ### H3 — Orderflow / Depth / Imbalance
-Status: `PROSPECTIVE_ASSOC_002_COLLECTION_2_OF_3`  
+Status: `KEEP_TESTING`  
+Stage: `ASSOC_002_COMPLETE_H1_REVIEW_BEFORE_H3_SHADOW`  
 Priority: A after Mini-PC/WebSocket layer
 
 Capture:
@@ -200,16 +204,17 @@ Current precheck:
 - next gate is a bounded public MINI-PC WebSocket book capture with reconnect/staleness and snapshot/delta reconciliation.
 
 Current prospective association status:
-- `V3-H3-ASSOC-001` is INVALID_TECHNICAL only (0 rows from unreachable scheduler branch), never strategy evidence;
-- replacement `V3-H3-ASSOC-002` preserves symbols/features/horizons/gates and fixes only scheduler implementation;
-- cloud real-WS regression smoke PASS and physical MINI-PC smoke PASS;
-- valid 1800s sessions: 2/3; distinct UTC dates: 1/2; cumulative rows BTC=705 / ETH=697 / SOL=693;
-- effect-size review remains blocked until exactly one additional valid 1800s session on a second UTC date and >=1000 rows per symbol;
-- no threshold search, no fill inference, no automatic promotion.
+- `V3-H3-ASSOC-001` remains INVALID_TECHNICAL only (0 rows from unreachable scheduler branch), never strategy evidence;
+- replacement `V3-H3-ASSOC-002` completed the frozen collection gate with **four valid >=1800s MINI-PC sessions across two UTC dates**;
+- final valid rows: **BTC=1252 / ETH=1314 / SOL=1331**;
+- fixed descriptive association review is PASS, but effects are symbol/feature/horizon-specific rather than a universal cross-symbol direction;
+- no threshold/transform/pair/horizon search, fill inference or automatic promotion occurred;
+- next gate is the H1-pilot review, then a separate project decision before any H3 one-change shadow materialization.
 
 
 ### H4 — Regime-Dependent Stops / TTL
-Status: `PRECHECK_DATA_READINESS_ONLY`  
+Status: `PRECHECK`  
+Stage: `DATA_READINESS_ONLY`  
 Priority: A
 
 Per trade capture:
@@ -265,7 +270,8 @@ Default role:
 Current precheck: DST-aware FOMC event timing and `known_at` point-in-time semantics are green. H5 guard **Run #4 SUCCESS** after state progression; no event-window, edge, sizing or performance winner has been selected.
 
 ### H6 — Simple Multi-Horizon Price × Volume Trend
-Status: `PRECHECK_PIT_METHOD_GREEN`  
+Status: `KEEP_TESTING`  
+Stage: `INCREMENTAL_REVIEW_COMPLETE_WAIT_FOR_SEQUENCE_GATE`  
 Priority: B
 
 Use only transparent primitives:
@@ -276,10 +282,11 @@ Use only transparent primitives:
 
 Do not copy a large CTREND implementation unless simple primitives first show incremental Kraken-EUR OOS value.
 
-Current precheck: synthetic PIT price/volume primitives are green; future bars are ignored, missing prior-volume windows remain missing rather than zero-filled, and the transparent/no-search/no-holdout guard is **Run #4 SUCCESS**. No performance trial has started.
+Current evidence: synthetic PIT price/volume primitives are green and `V3-H6-INCR-001` completed its fixed incremental review with the sealed holdout untouched. Incremental volume contribution beyond fixed price direction is small/near zero; partial-correlation signs are internally consistent by stratum, while simple True-vs-False effects are not uniformly sign-stable. No threshold/transform winner was selected. H6 stays third in the chosen H1 → H3 → H6 sequence and must not be promoted before the earlier stage reviews.
 
 ### H7 — Meta Gate: TAKE / NO-TAKE
-Status: `DEFERRED_LABELS_NOT_READY`  
+Status: `DEFERRED`  
+Stage: `LABELS_NOT_READY`  
 Priority: B, after enough clean labels
 
 Purpose:
@@ -313,7 +320,8 @@ Current readiness control:
 - H7 readiness guard: **SUCCESS**.
 
 ### H8 — On-Chain State
-Status: `PRECHECK_COVERAGE_GREEN_KNOWN_AT_PENDING`  
+Status: `PRECHECK`  
+Stage: `PROSPECTIVE_ONLY_STATE_SMOKE_GREEN_ASSOCIATION_DEPTH_PENDING`  
 Priority: C/B
 
 Possible inputs:
@@ -342,7 +350,8 @@ Current precheck:
 - missing metrics/coins remain missing; no backfill or performance-based subset selection.
 
 ### H9 — Maker-vs-Taker Fill Probability
-Status: `DEFERRED_FILL_DATA_NOT_READY`  
+Status: `DEFERRED`  
+Stage: `FILL_MODEL_BLOCKED_ACCOUNT_TIER_QUEUE_CONTRACT_PENDING`  
 Priority: later execution layer
 
 Concept:
@@ -368,7 +377,8 @@ Potential inputs:
 Non-fills/cancels must be retained as censored observations, not discarded.
 
 ### H10 — Smart-Money / Trader-Activity Layer
-Status: `PROSPECTIVE_SHADOW_CAPTURE_ACTIVE`  
+Status: `SHADOW`  
+Stage: `PROSPECTIVE_CAPTURE_ACTIVE_FIRST_ANALYSIS_GATE_PENDING`  
 Priority: A/B
 
 Purpose:
@@ -431,7 +441,8 @@ Current source precheck:
 
 
 ### H11 — Prediction-Market Event Layer
-Status: `PRECHECK_TWO_CAPTURE_STATE_CHANGE_GREEN`  
+Status: `PRECHECK`  
+Stage: `TWO_CAPTURE_STATE_CHANGE_GREEN`  
 Priority: A/B
 
 Purpose:
