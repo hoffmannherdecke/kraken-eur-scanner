@@ -8,5 +8,8 @@
   "apply": true,
   "one_shot": true,
   "strategy_change": false,
-  "real_money_actions": false
+  "real_money_actions": false,
+  "retry_reason": "ARCHIVE_PRE_V2R3_CLOSED_SERIES_BEFORE_COMPACTION",
+  "retry_requested_at_utc": "2026-10-05T06:36:00Z",
+  "closed_series_archive_required": true
 }

@@ -35,9 +35,10 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - name: Archive completed H1 pilot first
+      - name: Archive closed Paper series and completed H1 pilot first
         run: |
-          python -m py_compile tools/v3-h1-shadow-archive.py tools/repository-runtime-compaction.py
+          python -m py_compile tools/archive-closed-paper-series.py tools/v3-h1-shadow-archive.py tools/repository-runtime-compaction.py
+          python tools/archive-closed-paper-series.py
           python tools/v3-h1-shadow-archive.py
       - name: Dry-run compaction gate
         run: python tools/repository-runtime-compaction.py
