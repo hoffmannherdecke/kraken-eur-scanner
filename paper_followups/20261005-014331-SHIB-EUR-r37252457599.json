@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-05T01:44:00Z",
         "trough_at_utc": "2026-10-05T01:53:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -0.922,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -1.542,
+        "mfe_pct": 0.339,
+        "peak_at_utc": "2026-10-05T02:46:00Z",
+        "trough_at_utc": "2026-10-05T04:33:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -89,7 +100,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-05T02:53:39.040263Z"
+    "updated_at_utc": "2026-10-05T05:45:00.260819Z"
   },
   "original_decision": "WAIT",
   "pair": "SHIB/EUR",
