@@ -63,27 +63,38 @@ Die 50+50-EUR-Größe ist **keine aktuelle strategische Präferenz**, sondern Te
 eingefrorenen V2R3-Spezifikation. Sie wird nicht rückwirkend geändert.
 
 Der Zielwert von 20 abgeschlossenen Paper-Trades ist ein **operativer/prospektiver
-Meilenstein**, kein statistischer Beweis für Edge. Falls V2R3 zu wenig handelt, gilt ab
-2026-10-01 zusätzlich folgender **nicht-strategischer Stop-/Abschlussmechanismus**:
+Meilenstein**, kein statistischer Beweis für Edge. Für Abschluss und Promotion gilt ab
+2026-10-05 die permanente Evidence-Diversity-Fast-Track-Policy
+`EVIDENCE_DIVERSITY_FASTTRACK_V1` aus
+`docs/fasttrack-evidence-diversity-policy.md`.
 
-- Primär: Serie endet regulär bei **20 abgeschlossenen Paper-Trades**.
-- Alternativ, falls die Strategie zu wenig handelt: frühestens nach **7 vollständigen Tagen**
-  seit Serienstart **und** mindestens **1.000 archivierten Candidate-Outcomes**.
-- Danach werden keine neuen V2R3-Kandidaten mehr benötigt; für die Abschlussauswertung darf
-  die Follow-up-Schicht noch bis zu 24h ausreifen.
-- Abschlussbericht erst, wenn bei den bereits mindestens 24h alten Kandidaten mindestens
-  **95 % einen vollständigen 24h-Follow-up** besitzen oder verbleibende Lücken einzeln als
-  Datenqualitätsausnahme dokumentiert sind.
+Für die aktuelle V2R3-Clean-Serie:
+- Primärpfad: **20 abgeschlossene Paper-Trades**, jedoch nur zusammen mit bestandenem
+  Temporal-Diversity-Gate.
+- Alternativpfad: **1.000 archivierte Candidate-Outcomes**; die frühesten 1.000 gültigen
+  Outcomes bilden den festen Qualifikationskohort.
+- Kein starres 7-Tage-Mindestalter mehr.
+- Temporal Diversity: mindestens **48 h** Beobachtungsspanne, mindestens **3 UTC-Tage**,
+  höchstens **50 %** des Kohorts an einem UTC-Tag und höchstens **60 %** in irgendeinem
+  rollierenden 24-h-Fenster.
+- Evidence Maturity: mindestens **950/1.000** Outcomes des Qualifikationskohorts müssen
+  24 h gereift sein; von den gereiften Fällen müssen mindestens **95 %** einen vollständigen
+  24-h-Follow-up besitzen.
 - Offene CRITICAL-Infrastruktur-/Datenqualitätsfehler blockieren den Abschluss; normale
   Strategie-REJECT/WAIT-Fälle blockieren ihn nicht.
-- Erreicht V2R3 dieses alternative Gate mit <20 Trades, ist **zu geringe Trade-Frequenz
-  selbst ein Testergebnis** und kein Grund, die eingefrorene Serie künstlich zu verlängern.
+- Sobald Sample, Diversität, Reife und Integrität erfüllt sind, beginnt der Abschlussreview
+  **sofort**. Es wird keine zusätzliche Kalenderwartezeit angehängt.
+- Erreicht V2R3 dieses Gate mit <20 Trades, ist **zu geringe Trade-Frequenz selbst ein
+  Testergebnis** und kein Grund, die eingefrorene Serie künstlich zu verlängern.
 
-Diese Regel wurde am 2026-10-01 **nach Serienstart**, aber vor der Abschlussanalyse festgelegt.
-Sie verändert keinerlei Entry-/Stop-/Sizing-/Scanner-Regel und wird deshalb als Governance-/
-Abschlussregel, nicht als nachträgliches Strategie-Tuning behandelt.
+Diese Änderung betrifft ausschließlich Governance/Abschluss/Promotion. Entry-, Stop-, Sizing-,
+Scanner-, Gebühren- und Ausführungsregeln der eingefrorenen V2R3-Serie bleiben unverändert.
+Die Policy gilt zugleich für V2R4, V3 und alle späteren Generationen einschließlich
+Nachfolger-Validierung in der Echtgeldphase.
 
 ---
+
+### Diagnostic predecessor findings---
 
 ### Diagnostic predecessor findings — hypotheses only (2026-10-01)
 
@@ -163,9 +174,9 @@ Alternative: `docs/v2r4-sizing-release-decision.md`.
 
 Aktivierungsbedingung:
 V2R4 darf erst nach dem kanonischen Release-Gate als **separate Paper-Serie** starten:
-- V2R3-Clean-Serie erfüllt entweder 20 abgeschlossene Trades **oder** den gleichwertigen
-  alternativen Abschlussweg (>=7 Tage, >=1.000 Candidate-Outcomes, >=95% Coverage der
-  fälligen 24h-Follow-ups);
+- V2R3-Clean-Serie erfüllt das kanonische `EVIDENCE_DIVERSITY_FASTTRACK_V1`-Gate:
+  Primärpfad 20 abgeschlossene Trades plus Temporal Diversity oder Alternativpfad mit
+  1.000 Candidate-Outcomes, bestandenem Diversitätsgate und gereiftem 24h-Qualifikationskohort;
 - dokumentierter V2R3-Release-Review ist abgeschlossen;
 - Sizing-Entscheid ist explizit getroffen und im Release-Candidate eingefroren;
 - MINI-PC/Uhrzeit/Netzwerk/Watchdog sind gesund;
@@ -478,6 +489,20 @@ Verbindliche Arbeitsentscheidung:
 Damit wird der Entwicklungsprozess bewusst von einem seriellen „Version vollständig
 abwarten → nächste Version bauen“ zu einem kontrollierten parallelen Iterationsmodell
 umgestellt, ohne Freeze-, Holdout-, Kosten-, Risiko- oder Release-Schutzregeln abzuschwächen.
+
+## 2026-10-05 — Evidence-Diversity Fast-Track supersedes fixed-duration defaults
+
+Der Fast-Track vom 2026-10-03 bleibt in seinem Kern bestehen, wird aber beim Timing präzisiert:
+
+- Die damalige Formulierung mit einem ~7-Tage-Entscheidungsfenster ist **kein fixes Wartegate mehr**.
+- Abschluss/Promotion erfolgt am **frühest methodisch belastbaren Evidenzpunkt** gemäß
+  `docs/fasttrack-evidence-diversity-policy.md`.
+- 24h- und ~72h-Checks bleiben frühe Technik-/Produktivitätsreviews, nicht Promotion-Gates.
+- Sample-Floor, Reife, zeitliche Diversität, Datenintegrität und Release-Sicherheit ersetzen
+  pauschale Kalenderdauer.
+- Diese Regel gilt dauerhaft für V2R4, V3, V4+ und für Nachfolger aktiver Echtgeldstrategien.
+- Live-/Private-Sicherheitsgates, explizite Freigaben und No-Mid-Run-Tuning bleiben unverändert.
+
 
 ## 11. Permanente Strategie-Linienregel — über V3 hinaus
 
