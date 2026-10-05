@@ -51,6 +51,17 @@
         "peak_at_utc": "2026-10-05T06:38:00Z",
         "trough_at_utc": "2026-10-05T06:30:00Z"
       },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": -0.682,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.994,
+        "mfe_pct": 0.335,
+        "peak_at_utc": "2026-10-05T07:08:00Z",
+        "trough_at_utc": "2026-10-05T09:31:00Z"
+      },
       "60": {
         "bars": 60,
         "complete": true,
@@ -88,7 +99,7 @@
     },
     "schema_version": 1,
     "setup_lane": "NONE",
-    "updated_at_utc": "2026-10-05T07:38:40.412345Z"
+    "updated_at_utc": "2026-10-05T10:34:06.753144Z"
   },
   "original_decision": "REJECT",
   "pair": "BNB/EUR",
