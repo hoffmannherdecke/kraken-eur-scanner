@@ -80,6 +80,17 @@
         "mfe_pct": 0.0,
         "peak_at_utc": "2026-10-05T07:56:00Z",
         "trough_at_utc": "2026-10-05T08:48:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": -2.985,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -5.444,
+        "mfe_pct": -0.458,
+        "peak_at_utc": "2026-10-05T11:30:00Z",
+        "trough_at_utc": "2026-10-05T17:00:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -109,7 +120,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-05T12:15:46.128287Z"
+    "updated_at_utc": "2026-10-05T21:33:30.839335Z"
   },
   "original_decision": "WAIT",
   "pair": "PENGU/EUR",

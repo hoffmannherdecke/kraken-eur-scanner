@@ -1,0 +1,207 @@
+{
+  "altname": "USELESSEUR",
+  "candidate_id": "20261005-182027-USELESS-EUR-r37354993212",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A retest establishing a confirmed higher low and hold",
+      "Evidence of sufficient remaining upside after fees and slippage"
+    ],
+    "reason_codes": [
+      "price_extended_above_resistance",
+      "late_entry_efficiency_poor",
+      "round_trip_fees_material",
+      "latest_bar_confirmation_weak",
+      "no_derivatives_confirmation",
+      "remaining_move_unsubstantiated"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Price has run about 4.7% above the supplied 3h resistance at 0.20585. Despite acceptable spread and prior breakout volume, the move is extended and the supplied latest bar has only one trade; a prospective scout, structural stop, and non-arbitrary confirmation trigger are not justified after costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "USELESSUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_USELESSUSD",
+          "PI_USELESSUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.21548,
+      "bid": 0.21519,
+      "last": 0.21564,
+      "spread_pct": 0.13467388023313093
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "20",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.011639144666708567,
+          "ret3h_pct": 0.22476033209486435
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.046326935804108516,
+          "ret3h_pct": 0.1328911906802066
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.32649253731342753,
+          "ret3h_pct": 0.4764573991031362
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 3,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T21:32:29.504329Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0df4bbe1290d85f8006ac4176f674087d0adf8f354da18d784"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.21548,
+    "bid": 0.21519,
+    "last": 0.21564,
+    "spread_pct": 0.13467388023313093
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.20916,
+      "high": 0.20916,
+      "low": 0.20748,
+      "open": 0.2075,
+      "trades": 12,
+      "ts": 1791232200,
+      "volume": 13257.0579,
+      "vwap": 0.20897
+    },
+    {
+      "close": 0.21143,
+      "high": 0.21155,
+      "low": 0.21085,
+      "open": 0.21085,
+      "trades": 8,
+      "ts": 1791233100,
+      "volume": 5458.84987,
+      "vwap": 0.21121
+    },
+    {
+      "close": 0.2125,
+      "high": 0.2125,
+      "low": 0.21186,
+      "open": 0.21247,
+      "trades": 16,
+      "ts": 1791234000,
+      "volume": 11706.86524,
+      "vwap": 0.21249
+    },
+    {
+      "close": 0.21518,
+      "high": 0.21596,
+      "low": 0.2127,
+      "open": 0.2127,
+      "trades": 19,
+      "ts": 1791234900,
+      "volume": 30557.18257,
+      "vwap": 0.21463
+    },
+    {
+      "close": 0.21564,
+      "high": 0.21564,
+      "low": 0.21564,
+      "open": 0.21564,
+      "trades": 1,
+      "ts": 1791235800,
+      "volume": 1500.0,
+      "vwap": 0.21564
+    }
+  ],
+  "pair": "USELESS/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-182027-USELESS-EUR-r37354993212.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T21:32:38.025258Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "9e774f58268c8b65372ef39feec8cefb8bc36171",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T21:32:38.025258Z",
+    "revalidation_started_at_utc": "2026-10-05T21:32:29.089585Z",
+    "ttl_due_at_utc": "2026-10-05T18:51:03.882790Z",
+    "ttl_lag_seconds": 9685.207
+  }
+}

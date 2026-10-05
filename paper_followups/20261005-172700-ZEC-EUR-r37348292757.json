@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-10-05T17:27:42.092380Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 1.684,
+      "expected_bars": 120,
+      "mae_pct": -0.156,
+      "mfe_pct": 2.056
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -41,6 +49,17 @@
         "mae_pct": -0.168,
         "mfe_pct": 0.192,
         "peak_at_utc": "2026-10-05T17:38:00Z",
+        "trough_at_utc": "2026-10-05T17:33:00Z"
+      },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 3.06,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.168,
+        "mfe_pct": 3.35,
+        "peak_at_utc": "2026-10-05T21:22:00Z",
         "trough_at_utc": "2026-10-05T17:33:00Z"
       },
       "60": {
@@ -81,7 +100,7 @@
     },
     "schema_version": 1,
     "setup_lane": "REVERSAL",
-    "updated_at_utc": "2026-10-05T18:45:20.631207Z"
+    "updated_at_utc": "2026-10-05T21:33:50.960924Z"
   },
   "original_decision": "WAIT",
   "pair": "ZEC/EUR",
@@ -91,5 +110,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "test_id": "SHADOW-V2R3-20261001-01",
-  "updated_at_utc": "2026-10-05T18:45:20.886332Z"
+  "updated_at_utc": "2026-10-05T21:33:51.157273Z"
 }

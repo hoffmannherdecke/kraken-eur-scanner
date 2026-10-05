@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-10-05T17:45:03.493149Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 2.215,
+      "expected_bars": 120,
+      "mae_pct": -0.193,
+      "mfe_pct": 2.536
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -11,6 +19,14 @@
       "expected_bars": 30,
       "mae_pct": -0.193,
       "mfe_pct": 1.637
+    },
+    "60": {
+      "bars": 60,
+      "complete": true,
+      "end_close_pct": 1.734,
+      "expected_bars": 60,
+      "mae_pct": -0.193,
+      "mfe_pct": 2.215
     }
   },
   "interval_minutes": 1,
@@ -82,5 +98,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "test_id": "SHADOW-V2R3-20261001-01",
-  "updated_at_utc": "2026-10-05T18:21:29.409539Z"
+  "updated_at_utc": "2026-10-05T21:33:52.370055Z"
 }

@@ -4,6 +4,14 @@
   "evaluated_at_utc": "2026-10-05T17:11:55.297184Z",
   "excluded_from_missed_move_stats": false,
   "horizons": {
+    "120": {
+      "bars": 120,
+      "complete": true,
+      "end_close_pct": 2.001,
+      "expected_bars": 120,
+      "mae_pct": -0.268,
+      "mfe_pct": 2.259
+    },
     "30": {
       "bars": 30,
       "complete": true,
@@ -41,6 +49,17 @@
         "mae_pct": -0.121,
         "mfe_pct": 0.779,
         "peak_at_utc": "2026-10-05T17:17:00Z",
+        "trough_at_utc": "2026-10-05T17:11:00Z"
+      },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 1.644,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.121,
+        "mfe_pct": 2.433,
+        "peak_at_utc": "2026-10-05T18:58:00Z",
         "trough_at_utc": "2026-10-05T17:11:00Z"
       },
       "60": {
@@ -81,7 +100,7 @@
     },
     "schema_version": 1,
     "setup_lane": "CONTINUITY",
-    "updated_at_utc": "2026-10-05T18:21:27.420553Z"
+    "updated_at_utc": "2026-10-05T21:33:49.066602Z"
   },
   "original_decision": "WAIT",
   "pair": "JUP/EUR",
@@ -91,5 +110,5 @@
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "test_id": "SHADOW-V2R3-20261001-01",
-  "updated_at_utc": "2026-10-05T18:21:27.605309Z"
+  "updated_at_utc": "2026-10-05T21:33:49.260069Z"
 }

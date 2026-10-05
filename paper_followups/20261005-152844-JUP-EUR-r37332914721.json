@@ -20,6 +20,14 @@
       "mae_pct": -0.546,
       "mfe_pct": 0.106
     },
+    "360": {
+      "bars": 360,
+      "complete": true,
+      "end_close_pct": 3.203,
+      "expected_bars": 360,
+      "mae_pct": -0.907,
+      "mfe_pct": 3.48
+    },
     "60": {
       "bars": 60,
       "complete": true,
@@ -50,6 +58,17 @@
         "mfe_pct": 0.0,
         "peak_at_utc": "2026-10-05T15:29:00Z",
         "trough_at_utc": "2026-10-05T15:36:00Z"
+      },
+      "240": {
+        "bars": 240,
+        "complete": true,
+        "end_close_pct": 3.425,
+        "expected_bars": 240,
+        "interval_minutes": 1,
+        "mae_pct": -0.887,
+        "mfe_pct": 3.501,
+        "peak_at_utc": "2026-10-05T18:58:00Z",
+        "trough_at_utc": "2026-10-05T16:04:00Z"
       },
       "60": {
         "bars": 60,
@@ -89,7 +108,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-05T16:39:01.084708Z"
+    "updated_at_utc": "2026-10-05T21:33:43.618004Z"
   },
   "original_decision": "WAIT",
   "pair": "JUP/EUR",
@@ -98,6 +117,12 @@
   "revalidation_decision": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "six_hour_flags": {
+    "missed_10pct": false,
+    "missed_15pct": false,
+    "missed_5pct": false,
+    "missed_8pct": false
+  },
   "test_id": "SHADOW-V2R3-20261001-01",
-  "updated_at_utc": "2026-10-05T17:45:50.114385Z"
+  "updated_at_utc": "2026-10-05T21:33:43.825742Z"
 }
