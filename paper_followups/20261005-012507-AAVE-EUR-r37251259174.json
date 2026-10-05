@@ -1,0 +1,53 @@
+{
+  "baseline_ask_eur": 161.9,
+  "candidate_id": "20261005-012507-AAVE-EUR-r37251259174",
+  "evaluated_at_utc": "2026-10-05T01:25:30.254810Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-05T01:25:07Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 23.255,
+    "detection_price_eur": 161.75,
+    "evaluated_at_utc": "2026-10-05T01:25:30.254810Z",
+    "evaluation_ask_eur": 161.9,
+    "flagged_as_already_run": true,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-05T00:09:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 2.276,
+      "price_eur": 158.15
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "EUR_SPREAD_ACCEPTABLE",
+      "TURNOVER_AND_DEPTH_ADEQUATE",
+      "BREAKOUT_ABOVE_RECENT_RESISTANCE",
+      "MULTIDAY_MOVE_EXTENDED",
+      "TAKER_FEES_AND_SLIPPAGE_RAISE_RETURN_HURDLE",
+      "NO_CONFIRMED_POST_BREAKOUT_HOLD",
+      "DERIVATIVES_CONTEXT_MIXED"
+    ],
+    "scan_step_started_at_utc": "2026-10-05T01:23:54Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.2763199494151065,
+      "ret15_live_pct": 0.434647624961193,
+      "ret1h_pct": 1.7295597484276781,
+      "ret3h_pct": 1.28999937378671,
+      "scanner_late_flag": false,
+      "score": 10.6
+    },
+    "schema_version": 1,
+    "setup_lane": "EXTENDED",
+    "updated_at_utc": "2026-10-05T01:26:36.804505Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "AAVE/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01"
+}
