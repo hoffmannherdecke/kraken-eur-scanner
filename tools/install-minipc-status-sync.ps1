@@ -13,7 +13,7 @@ $repo = Join-Path $TradingRoot "Repos\kraken-eur-scanner"
 $python = Join-Path $TradingRoot "Runtime\kraken-eur-scanner-venv\Scripts\python.exe"
 $tool = Join-Path $repo "tools\minipc-status-sync.py"
 $health = Join-Path $TradingRoot "State\minipc-health.json"
-$token = Join-Path $TradingRoot "Secrets\altrady-webhook-token.txt"
+$token = Join-Path $TradingRoot "Secrets\minipc-status-token.txt"
 $heartbeat = Join-Path $TradingRoot "State\minipc-status-sync-heartbeat.json"
 $taskName = "CryptoMiniPC-StatusSync"
 
