@@ -12,9 +12,25 @@ function response(status:number,body:Record<string,unknown>){
 Deno.serve(async(req:Request)=>{
   if(req.method!=="POST") return response(405,{ok:false,error:"method_not_allowed"});
 
-  const expected=Deno.env.get("ALTRADY_WEBHOOK_TOKEN") ?? "";
+  const url=Deno.env.get("SUPABASE_URL") ?? "";
+  const serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if(!url || !serviceKey) return response(500,{ok:false,error:"server_credentials_missing"});
+  const admin=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+
   const supplied=req.headers.get("X-MiniPC-Status-Token") ?? "";
-  if(!expected || supplied!==expected) return response(401,{ok:false,error:"unauthorized"});
+  const {data:cred,error:credError}=await admin.from("internal_relay_credentials")
+    .select("token_sha256,enabled").eq("relay_id","minipc-status-relay").maybeSingle();
+  if(credError) return response(500,{ok:false,error:"credential_lookup_failed"});
+  let authorized=false;
+  if(cred?.enabled===true){
+    const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(supplied));
+    const hash=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
+    authorized=hash===cred.token_sha256;
+  }else{
+    const legacy=Deno.env.get("MINIPC_STATUS_TOKEN") ?? Deno.env.get("ALTRADY_WEBHOOK_TOKEN") ?? "";
+    authorized=Boolean(legacy) && supplied===legacy;
+  }
+  if(!authorized) return response(401,{ok:false,error:"unauthorized"});
 
   let body:any;
   try{body=await req.json();}catch{return response(400,{ok:false,error:"invalid_json"});}
@@ -40,11 +56,6 @@ Deno.serve(async(req:Request)=>{
   if(Number.isNaN(payloadTime.getTime()) || Math.abs(payloadTime.getTime()-dt.getTime())>90*1000){
     return response(400,{ok:false,error:"payload_timestamp_mismatch"});
   }
-
-  const url=Deno.env.get("SUPABASE_URL") ?? "";
-  const serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  if(!url || !serviceKey) return response(500,{ok:false,error:"server_credentials_missing"});
-  const admin=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
 
   const {data:existing,error:readError}=await admin.from("minipc_status_current")
     .select("node_id,observed_at").eq("node_id",nodeId).maybeSingle();
