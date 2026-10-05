@@ -35,7 +35,7 @@ def load_token(root: Path) -> str:
     env = os.environ.get("MINIPC_STATUS_TOKEN", "").strip()
     if env:
         return env
-    path = root / "Secrets" / "altrady-webhook-token.txt"
+    path = root / "Secrets" / "minipc-status-relay-token.txt"
     return path.read_text("utf-8").strip() if path.exists() else ""
 
 
@@ -97,7 +97,7 @@ def run_once(args: argparse.Namespace) -> dict[str, Any]:
     try:
         token = load_token(root)
         if len(token) < 24:
-            raise RuntimeError("shared relay token missing/too short")
+            raise RuntimeError("dedicated MINI-PC status relay token missing/too short")
         health = load_health(health_path)
         response = post_status(args.endpoint, token, health)
         result["status"] = "HEALTHY"
