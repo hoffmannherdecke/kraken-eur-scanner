@@ -69,6 +69,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $files = @(
             'tools/minipc-watchdog.ps1',
+            'tools/minipc-relay-credential-cutover.ps1',
             'tools/minipc-create-separated-relay-secrets.ps1',
             'tools/minipc-github-dispatch-secret-prep.ps1',
             'tools/install-minipc-github-cadence-guard.ps1',
@@ -151,7 +152,7 @@ jobs:
           $json = ($out -join [Environment]::NewLine) | ConvertFrom-Json
           if ($json.status -ne 'PLAN_ONLY') { throw 'readiness sync did not stay plan-only' }
           if ($json.required_branch -ne 'main') { throw 'unexpected required branch' }
-          if ($json.v2r4_candidate_branch -ne 'prep/v2r4-refresh-20261001') { throw 'stale V2R4 candidate branch' }
+          if ($null -ne $json.v2r4_candidate_branch) { throw 'readiness sync must not default to a superseded V2R4 branch' }
           if ($json.guardrails.paper_activation -ne $false -or $json.guardrails.real_money_actions -ne $false) { throw 'readiness sync guardrails changed' }
           Write-Host 'V2R4_READINESS_SYNC_PLAN_SMOKE_OK'
 
