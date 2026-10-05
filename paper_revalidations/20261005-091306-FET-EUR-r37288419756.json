@@ -1,0 +1,214 @@
+{
+  "altname": "FETEUR",
+  "candidate_id": "20261005-091306-FET-EUR-r37288419756",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.241 with improving closed volume",
+      "Hold or successful retest above 0.241 with spread controlled"
+    ],
+    "reason_codes": [
+      "extended_24h_and_30d_run",
+      "resistance_break_not_confirmed",
+      "weak_recent_closed_volume",
+      "major_market_1h_weak",
+      "round_trip_costs_material"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The required break and hold above 0.241 did not materialize; spot remains below resistance after a substantial run, with weak recent closed volume and a broadly soft major-market proxy. No prospective scout with a defensible stop and confirmation trigger is supported.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "FETUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 19.47,
+        "available": true,
+        "current_funding_rate": 4.7746083676e-05,
+        "current_open_interest": 7062391.0,
+        "funding_rate_delta": 0.0,
+        "open_interest_pct": 2.04,
+        "previous_funding_rate": 4.7746083676e-05,
+        "previous_observed_at_utc": "2026-10-05T09:26:58.321141Z",
+        "previous_open_interest": 6921197.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 4.7746083676e-05,
+        "index_price": 0.26603,
+        "last": 0.26592,
+        "mark_price": 0.26617747979,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 7062391.0,
+        "requested_symbols": [
+          "PF_FETUSD",
+          "PI_FETUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_FETUSD",
+        "volume24h": 29812523
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.2377,
+      "bid": 0.2373,
+      "last": 0.2377,
+      "spread_pct": 0.1684210526315721
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "18",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.31977401423586294,
+          "ret3h_pct": -0.024109574759234587
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1687777608542551,
+          "ret3h_pct": 0.01979667168456878
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.6736803248431178,
+          "ret3h_pct": -0.3702675182819637
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T09:46:25.037757Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0df517300e89ee0d006ac371f2749887d08bc858bc8cf2ffba"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.2377,
+    "bid": 0.2373,
+    "last": 0.2377,
+    "spread_pct": 0.1684210526315721
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.2398,
+      "high": 0.24,
+      "low": 0.2363,
+      "open": 0.2381,
+      "trades": 49,
+      "ts": 1791189900,
+      "volume": 18415.40800101,
+      "vwap": 0.2376
+    },
+    {
+      "close": 0.2394,
+      "high": 0.2434,
+      "low": 0.2387,
+      "open": 0.2398,
+      "trades": 62,
+      "ts": 1791190800,
+      "volume": 91090.57117417,
+      "vwap": 0.2401
+    },
+    {
+      "close": 0.2359,
+      "high": 0.2392,
+      "low": 0.2359,
+      "open": 0.2392,
+      "trades": 32,
+      "ts": 1791191700,
+      "volume": 7762.14845839,
+      "vwap": 0.2378
+    },
+    {
+      "close": 0.2383,
+      "high": 0.2383,
+      "low": 0.2362,
+      "open": 0.2362,
+      "trades": 12,
+      "ts": 1791192600,
+      "volume": 11100.49088957,
+      "vwap": 0.2375
+    },
+    {
+      "close": 0.2377,
+      "high": 0.2377,
+      "low": 0.2377,
+      "open": 0.2377,
+      "trades": 1,
+      "ts": 1791193500,
+      "volume": 746.15061001,
+      "vwap": 0.2377
+    }
+  ],
+  "pair": "FET/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-091306-FET-EUR-r37288419756.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T09:46:31.898093Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "06b9ced0e8b37135f2870222a4ae9e9d48b4024e",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T09:46:31.898093Z",
+    "revalidation_started_at_utc": "2026-10-05T09:46:24.597114Z",
+    "ttl_due_at_utc": "2026-10-05T09:43:39.169636Z",
+    "ttl_lag_seconds": 165.427
+  }
+}
