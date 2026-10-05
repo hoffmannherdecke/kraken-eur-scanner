@@ -1,0 +1,218 @@
+{
+  "altname": "ATOMEUR",
+  "candidate_id": "20261005-145021-ATOM-EUR-r37327723988",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained hold above the breakout level",
+      "Major-market returns turn non-negative"
+    ],
+    "reason_codes": [
+      "MAJORS_WEAK",
+      "BREAKOUT_EXTENDED",
+      "FEES_EXCEED_NEAR_TERM_EDGE",
+      "REMAINING_MOVE_UNCONFIRMED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "ATOM has closed above prior resistance, but the entry is already near the prior 7-day high while BTC, ETH and SOL remain weak. The supplied evidence does not establish enough remaining movement to overcome Kraken spot costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ATOMUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 36.62,
+        "available": true,
+        "current_funding_rate": -6.7918437632709e-05,
+        "current_open_interest": 1646038.0,
+        "funding_rate_delta": -5.2144683914043e-05,
+        "open_interest_pct": 0.2103,
+        "previous_funding_rate": -1.5773753718666e-05,
+        "previous_observed_at_utc": "2026-10-05T14:50:51.067080Z",
+        "previous_open_interest": 1642583.4
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -6.7918437632709e-05,
+        "index_price": 1.80039,
+        "last": 1.8,
+        "mark_price": 1.79821091621,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 1646038.0,
+        "requested_symbols": [
+          "PF_ATOMUSD",
+          "PI_ATOMUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ATOMUSD",
+        "volume24h": 506793.7
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.6045,
+      "bid": 1.6042,
+      "last": 1.604,
+      "spread_pct": 0.01869916165425044
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "3",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -1.4688554581113178,
+          "ret3h_pct": -0.8087371708245916
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -1.1592169028186383,
+          "ret3h_pct": -0.657816050711646
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -1.3037447988904383,
+          "ret3h_pct": -0.8269069961906572
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T15:27:27.429923Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_02fc48dcbae74be3006ac3c1e0add887d09bd92d0e0bf7c5d8"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.6045,
+    "bid": 1.6042,
+    "last": 1.604,
+    "spread_pct": 0.01869916165425044
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.5893,
+      "high": 1.5927,
+      "low": 1.5816,
+      "open": 1.5826,
+      "trades": 72,
+      "ts": 1791209700,
+      "volume": 12113.32905067,
+      "vwap": 1.5901
+    },
+    {
+      "close": 1.588,
+      "high": 1.5914,
+      "low": 1.5743,
+      "open": 1.5895,
+      "trades": 108,
+      "ts": 1791210600,
+      "volume": 14371.00538062,
+      "vwap": 1.582
+    },
+    {
+      "close": 1.5887,
+      "high": 1.5949,
+      "low": 1.5837,
+      "open": 1.5864,
+      "trades": 71,
+      "ts": 1791211500,
+      "volume": 4057.73725077,
+      "vwap": 1.5884
+    },
+    {
+      "close": 1.6042,
+      "high": 1.605,
+      "low": 1.5862,
+      "open": 1.5896,
+      "trades": 87,
+      "ts": 1791212400,
+      "volume": 13699.48859325,
+      "vwap": 1.6007
+    },
+    {
+      "close": 1.604,
+      "high": 1.6085,
+      "low": 1.6003,
+      "open": 1.6042,
+      "trades": 142,
+      "ts": 1791213300,
+      "volume": 18898.95352882,
+      "vwap": 1.6053
+    }
+  ],
+  "pair": "ATOM/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-145021-ATOM-EUR-r37327723988.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T15:27:36.491506Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "91dd2f761edc0d8b2979171c7c91d52e818f2704",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T15:27:36.491506Z",
+    "revalidation_started_at_utc": "2026-10-05T15:27:27.059830Z",
+    "ttl_due_at_utc": "2026-10-05T15:20:51.067080Z",
+    "ttl_lag_seconds": 395.993
+  }
+}
