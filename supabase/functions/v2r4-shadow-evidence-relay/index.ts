@@ -35,12 +35,28 @@ async function sha24(material: string): Promise<string> {
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return response(405, { ok:false, error:"method_not_allowed" });
 
-  // Compatibility auth during the local-token transition. The client-specific
-  // header prevents accidental cross-wiring; payload integrity/immutability below
-  // limits blast radius even while the legacy secret is still shared.
-  const expected = Deno.env.get("ALTRADY_WEBHOOK_TOKEN") ?? "";
-  const supplied = req.headers.get("X-Shadow-Evidence-Token") ?? "";
-  if (!expected || supplied !== expected) return response(401, { ok:false, error:"unauthorized" });
+  const url=Deno.env.get("SUPABASE_URL") ?? "";
+  const serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if(!url || !serviceKey) return response(500,{ok:false,error:"server_credentials_missing"});
+  const admin=createClient(url,serviceKey,{auth:{persistSession:false,autoRefreshToken:false}});
+
+  const supplied=req.headers.get("X-Shadow-Evidence-Token") ?? "";
+  if(supplied.length < 24) return response(401,{ok:false,error:"unauthorized"});
+  const tokenBytes=new TextEncoder().encode(supplied);
+  const tokenDigest=await crypto.subtle.digest("SHA-256",tokenBytes);
+  const suppliedHash=Array.from(new Uint8Array(tokenDigest)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  const {data:credential,error:credentialError}=await admin.from("internal_relay_credentials")
+    .select("relay_id,token_sha256,enabled")
+    .eq("relay_id","v2r4-shadow-evidence-relay")
+    .maybeSingle();
+  if(credentialError) return response(500,{ok:false,error:"credential_lookup_failed"});
+  if(!credential || credential.enabled!==true) return response(503,{ok:false,error:"relay_credential_not_enabled"});
+  const expectedHash=String(credential.token_sha256 ?? "");
+  let diff=expectedHash.length===suppliedHash.length ? 0 : 1;
+  if(expectedHash.length===suppliedHash.length){
+    for(let i=0;i<expectedHash.length;i++) diff |= expectedHash.charCodeAt(i)^suppliedHash.charCodeAt(i);
+  }
+  if(diff!==0) return response(401,{ok:false,error:"unauthorized"});
 
   let body: unknown;
   try { body = await req.json(); }
