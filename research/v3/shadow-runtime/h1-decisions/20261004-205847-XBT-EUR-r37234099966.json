@@ -1,0 +1,122 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close above 76200 with continued volume.",
+      "A hold or successful retest above 76200 without sharp rejection."
+    ],
+    "reason_codes": [
+      "excellent_spot_liquidity",
+      "minimal_spread",
+      "breakout_unconfirmed",
+      "modest_multi_period_returns",
+      "mixed_major_market_context",
+      "fees_exceed_plausible_move"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid XBT/EUR has a marginal intrabar break above 1h/3h resistance, but no closed-bar confirmation; do not chase above resistance.",
+    "ttl_minutes": 45
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T20:59:22.426457Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T20:58:47Z",
+  "candidate_id": "20261004-205847-XBT-EUR-r37234099966",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": true,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0d8f31e27401d45f006ac2ef628b7087d1ad48fd41f58fb383"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 76270.6,
+      "bid": 76270.5,
+      "last": 76272.1,
+      "spread_pct": 0.00013111220517725487
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-205847-XBT-EUR-r37234099966",
+    "event_time_utc": "2026-10-04T20:58:47Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 71,
+      "leader_median_return_1h_pct": 0.25512045625805113,
+      "leader_minus_target_return_1h_pct": -0.14106072059357766,
+      "peer_median_return_1h_pct": -0.027811254287568588,
+      "target_minus_peer_median_return_1h_pct": 0.4239924311391974,
+      "target_return_1h_pct": 0.3961811768516288
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "XBT/EUR",
+    "queue_id": "37234099966:XBT-EUR:1791147527",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37234099966,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "XBT/EUR",
+  "queue_id": "37234099966:XBT-EUR:1791147527",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "REJECT",
+  "shadow_decision_payload": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [],
+    "reason_codes": [
+      "near_recent_high",
+      "limited_remaining_move_after_costs",
+      "no_confirmed_catalyst",
+      "mixed_major_market_regime"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid and tight-spread, with positive short-term structure and a volume surge, but price is already above nearby resistance and only 1.64% below the recent high\u2014insufficient plausible headroom after 1.20% round-trip taker fees and slippage.",
+    "ttl_minutes": 0
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}

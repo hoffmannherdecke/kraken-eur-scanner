@@ -1,0 +1,124 @@
+{
+  "baseline_decision": "WAIT",
+  "baseline_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close and hold above 8.05 with continued elevated volume",
+      "Improved 1h market breadth or major-asset participation"
+    ],
+    "reason_codes": [
+      "RESISTANCE_UNCONFIRMED",
+      "WEAK_MAJOR_REGIME",
+      "INSUFFICIENT_COST_ADJUSTED_UPSIDE",
+      "OI_DECLINING"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but momentum is modest and price is sitting at resistance; wait for a confirmed hold above it and stronger market participation.",
+    "ttl_minutes": 30
+  },
+  "baseline_evaluated_at_utc": "2026-10-04T20:34:54.373630Z",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_event_time_utc": "2026-10-04T20:34:21Z",
+  "candidate_id": "20261004-203421-UNI-EUR-r37232528365",
+  "cost_reference_pct_per_side": 0.6,
+  "decision_diverged": false,
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_064fe2e3170232a9006ac2ef4d0fcc87d1b6f31dbf294ab940"
+  },
+  "frozen_market_snapshot": {
+    "baseline_decision_context_reused": true,
+    "fresh_kraken_ticker": {
+      "ask": 8.05,
+      "bid": 8.0458,
+      "last": 8.0504,
+      "spread_pct": 0.05218752718101455
+    }
+  },
+  "guardrails": {
+    "automatic_promotion": false,
+    "automatic_winner_selection": false,
+    "baseline_mutated": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false,
+    "paper_position_created": false,
+    "real_money_actions": false,
+    "same_candidate_snapshot_as_baseline": true,
+    "same_fresh_ticker_as_baseline": true,
+    "same_prompt_strategy_revision_as_baseline": true,
+    "same_public_context_as_baseline_except_h1_addition": true,
+    "slack_action_created": false,
+    "threshold_search": false
+  },
+  "h1_context": {
+    "candidate_id": "20261004-203421-UNI-EUR-r37232528365",
+    "event_time_utc": "2026-10-04T20:34:21Z",
+    "features": {
+      "available_leader_count": 2,
+      "eligible_peer_count": 71,
+      "leader_median_return_1h_pct": -0.08305776821659894,
+      "leader_minus_target_return_1h_pct": -0.27736554675557024,
+      "peer_median_return_1h_pct": -0.1506024096385561,
+      "target_minus_peer_median_return_1h_pct": 0.3449101881775274,
+      "target_return_1h_pct": 0.1943077785389713
+    },
+    "guardrails": {
+      "active_v2r3_changed": false,
+      "canonical_handoff_mutated": false,
+      "feature_transform_search": false,
+      "orders": false,
+      "real_money_actions": false,
+      "threshold_search": false
+    },
+    "kind": "V3_H1_SHADOW_CONTEXT_SIDECAR_V1",
+    "leader_pairs": [
+      "XBT/EUR",
+      "ETH/EUR"
+    ],
+    "pair": "UNI/EUR",
+    "queue_id": "37232528365:UNI-EUR:1791146061",
+    "schema_version": 1,
+    "shadow_candidate_id": "V3-H1-SHADOW-001",
+    "source": "SAME_SCANNER_RUN_FULL_ROW_SET",
+    "source_scanner_run_id": 37232528365,
+    "status": "PASS"
+  },
+  "kind": "V3_H1_SHADOW_DECISION_V1",
+  "pair": "UNI/EUR",
+  "queue_id": "37232528365:UNI-EUR:1791146061",
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "shadow_decision": "WAIT",
+  "shadow_decision_payload": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15-minute close above \u20ac8.06 with sustained elevated volume, followed by a hold above that level.",
+      "Improved short-term market breadth; only 9 of 40 scanner pairs are positive over 1h and 0 of 3 supplied majors are positive."
+    ],
+    "reason_codes": [
+      "WEAK_ABSOLUTE_MOMENTUM",
+      "AT_RESISTANCE",
+      "BREADTH_WEAK",
+      "COST_HURDLE_UNMET",
+      "VOLUME_WITHOUT_BREAKOUT"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but UNI is pressing nearby resistance in a weak short-term market; current momentum does not establish sufficient post-cost potential for entry.",
+    "ttl_minutes": 30
+  },
+  "shadow_strategy_revision": "V3-H1-SHADOW-001",
+  "status": "PASS"
+}
