@@ -38,9 +38,42 @@ if (-not (Test-Path $secretsDir)) {
     Add-Finding $findings "CRITICAL" "secrets_inside_repo" $secretsResolved
   }
 
-  $expected = Join-Path $secretsDir "altrady-webhook-token.txt"
-  if (-not (Test-Path $expected)) {
-    Add-Finding $findings "WARNING" "project_relay_secret_missing" "Expected local relay token file is missing."
+  $expectedNames = @(
+    "altrady-webhook-token.txt",
+    "minipc-status-relay-token.txt",
+    "v2r4-shadow-evidence-token.txt"
+  )
+  $expectedPaths = @{}
+  foreach ($name in $expectedNames) {
+    $path = Join-Path $secretsDir $name
+    $expectedPaths[$name] = $path
+    if (-not (Test-Path $path)) {
+      Add-Finding $findings "WARNING" "dedicated_relay_secret_missing" $name
+    }
+  }
+
+  $hashes = @{}
+  foreach ($name in $expectedNames) {
+    $path = $expectedPaths[$name]
+    if (-not (Test-Path $path)) { continue }
+    $value = (Get-Content -LiteralPath $path -Raw).Trim()
+    if ($value.Length -lt 24) {
+      Add-Finding $findings "CRITICAL" "relay_secret_too_short" $name
+      continue
+    }
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+      $bytes = [System.Text.Encoding]::UTF8.GetBytes($value)
+      $hashes[$name] = ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()
+    } finally { $sha.Dispose() }
+  }
+  if ($hashes.Count -ge 2) {
+    $groups = $hashes.GetEnumerator() | Group-Object Value
+    foreach ($g in $groups) {
+      if ($g.Count -gt 1) {
+        Add-Finding $findings "CRITICAL" "relay_secret_reuse" (($g.Group | ForEach-Object { $_.Key }) -join ",")
+      }
+    }
   }
 
   foreach ($file in Get-ChildItem -Path $secretsDir -File -ErrorAction SilentlyContinue) {
