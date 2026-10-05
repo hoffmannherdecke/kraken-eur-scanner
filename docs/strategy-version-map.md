@@ -13,7 +13,7 @@ welche Erkenntnisse wohin gehören und wann eine Version aktiviert werden darf**
 Sie ersetzt keine Detaildokumentation und keine To-do-Liste:
 - übergeordnete Komponenten-/Versionsführung: `docs/master-version-register.md`;\n- offene Projektarbeit bleibt im `PROJECT_BACKLOG.md`;
 - V3-Forschung im `docs/v3-research-framework.md` und GitHub Issue #7;
-- die vorbereitete V2R4-Implementierung liegt derzeit in **Draft-PR #9**; der alte Draft-PR #8 wurde wegen 995 Commits Divergenz von `main` als superseded geschlossen.
+- die früheren V2R4-Drafts #8 und #9 sind **superseded/closed**. Der nächste V2R4-Codekandidat wird ausschließlich aus dem bereinigten aktuellen `main` erstellt, damit keine Runtime-State-Branch-Drift oder veraltete Aktivierungsregel übernommen wird.
 
 Bei Widersprüchen gilt:
 1. aktive Runtime-Konfiguration für den aktuellen Ist-Zustand;
@@ -65,7 +65,7 @@ eingefrorenen V2R3-Spezifikation. Sie wird nicht rückwirkend geändert.
 Der Zielwert von 20 abgeschlossenen Paper-Trades ist ein **operativer/prospektiver
 Meilenstein**, kein statistischer Beweis für Edge. Für Abschluss und Promotion gilt ab
 2026-10-05 die permanente Evidence-Diversity-Fast-Track-Policy
-`EVIDENCE_DIVERSITY_FASTTRACK_V1` aus
+`EVIDENCE_DIVERSITY_FASTTRACK_V2` aus
 `docs/fasttrack-evidence-diversity-policy.md`.
 
 Für die aktuelle V2R3-Clean-Serie:
@@ -136,7 +136,7 @@ Capture evidence included 324 clean Candidate-Outcomes, 64 complete 24h follow-u
 ## V2R4 — vorbereitete taktische Timing-/Trigger-Version
 
 **Status:** PREPARED / NOT ACTIVE / PAPER ONLY  
-**Implementierung:** Draft-PR #9 (refreshed candidate; V2R4 PR validation through Run #17 SUCCESS inkl. inaktiver 24/7-WAIT-Runtime; Windows-shaped WAIT-runtime smoke #1 SUCCESS)  
+**Implementierung:** frühere Drafts #8/#9 superseded; technisches Modul-Evidenzmaterial bleibt als Historie verwertbar, der neue Candidate entsteht sauber aus dem bereinigten `main`  
 **Release-Readiness:** `docs/v2r4-release-readiness.md`  
 **V2R3→V2R4 Release-Diff:** `docs/v2r4-v2r3-release-diff.md`  
 **Zweck:** gezielt das in V2R3 erkannte WAIT-/Revalidation-Latenzproblem untersuchen.
@@ -165,16 +165,15 @@ Ziel-Latenz:
 - Trigger → frische Neubewertung Zielgröße <= ca. 20 s;
 - tatsächliche Intervalle werden erst nach Mini-PC-/Rate-Limit-Messung festgelegt.
 
-V2R4-Positionsgrößen sind **vor dem Serienstart noch ein expliziter Release-Entscheid**.
-Der vorgeschlagene Spec enthält zwar 75+75 EUR als bisherigen E2E-Smoke-Default und
-größere adaptive Research-Tiers, aber der Setup-Qualitäts-Sizing-Mapper ist nicht
-verdrahtet. Methodisch bevorzugt ist deshalb für die erste vollständige V2R4-Serie
-eine Timing-Isolation mit dem unveränderten V2R3-Paper-Sizing 50+50 EUR. Details und
-Alternative: `docs/v2r4-sizing-release-decision.md`.
+Für die **erste vollständige V2R4-Serie ist der Sizing-Entscheid jetzt verbindlich**:
+50 EUR Scout + 50 EUR Stage 2 wie V2R3. Damit wird die Timing-/Discovery-/Revalidation-
+Hypothese isoliert. 75+75 und adaptive Setup-Quality-Tiers sind aus diesem Release
+ausgeschlossen und dürfen nur in einer späteren separat versionierten Sizing-Serie
+getestet werden.
 
 Aktivierungsbedingung:
 V2R4 darf erst nach dem kanonischen Release-Gate als **separate Paper-Serie** starten:
-- V2R3-Clean-Serie erfüllt das kanonische `EVIDENCE_DIVERSITY_FASTTRACK_V1`-Gate:
+- V2R3-Clean-Serie erfüllt das kanonische `EVIDENCE_DIVERSITY_FASTTRACK_V2`-Gate:
   Primärpfad 20 abgeschlossene Trades plus Temporal Diversity oder Alternativpfad mit
   1.000 Candidate-Outcomes, bestandenem Diversitätsgate und gereiftem 24h-Qualifikationskohort;
 - dokumentierter V2R3-Release-Review ist abgeschlossen;
