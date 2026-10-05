@@ -24,7 +24,8 @@ historical evidence and must not be used as the current release rule.
 
 - prior Draft-PR #8: superseded/closed because of severe runtime-state branch drift;
 - prior Draft-PR #9: **SUPERSEDED/CLOSED on 2026-10-05** because its README/spec still contained pre-cleanup activation wording and a non-binding 75+75/adaptive sizing proposal;
-- the next V2R4 candidate must be created from the cleaned current `main`, not by reviving either old branch;
+- the prepared binding machine contract is `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json` (`PREPARED_NOT_ACTIVE_RELEASE_CONTRACT`);
+- the later executable V2R4 candidate must be materialized from the cleaned current `main` against that contract, not by reviving either old branch;
 - old PR validation/smokes remain useful technical evidence for unchanged modules, but they do **not** authorize release;
 - safety boundary remains paper-only; no private Kraken order path and no real-money activation.
 
