@@ -1,0 +1,217 @@
+{
+  "altname": "BNBEUR",
+  "candidate_id": "20261005-012507-BNB-EUR-r37251259174",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A closed 15-minute candle above 711.43 with stronger volume than the preceding confirming candle.",
+      "A fresh confirmation level above the current ask with sufficient remaining movement after all costs."
+    ],
+    "reason_codes": [
+      "tight_spread",
+      "breakout_level_held",
+      "continuation_close_missing",
+      "price_extended_from_breakout",
+      "material_taker_fees",
+      "mixed_major_market_regime",
+      "funding_rising",
+      "open_interest_declining"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation did not confirm continuation: the later closed 15-minute candle finished below 711.43 despite the current ask being higher. Price remains above the breakout, but follow-through is unconfirmed and remaining potential does not justify taker fees and execution costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "BNBUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 16.53,
+        "available": true,
+        "current_funding_rate": 0.024551053687475,
+        "current_open_interest": 4186.52,
+        "funding_rate_delta": 0.006668431088808598,
+        "open_interest_pct": -0.1231,
+        "previous_funding_rate": 0.017882622598666402,
+        "previous_observed_at_utc": "2026-10-05T01:43:51.427176Z",
+        "previous_open_interest": 4191.68
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.024551053687475,
+        "index_price": 799.364,
+        "last": 799.48,
+        "mark_price": 799.7976397601,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4186.52,
+        "requested_symbols": [
+          "PF_BNBUSD",
+          "PI_BNBUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_BNBUSD",
+        "volume24h": 923.17
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 711.99,
+      "bid": 711.98,
+      "last": 712.16,
+      "spread_pct": 0.0014045239717116098
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "0.007",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0842322213555402,
+          "ret3h_pct": 0.461178898329595
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.07168133936993337,
+          "ret3h_pct": -0.0024734822094751863
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.027806098804339374,
+          "ret3h_pct": -0.19431849727028494
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-05T02:00:22.393625Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_04dfd85525548b8d006ac304b7799887d1a1e1f093a6ab8ace"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 711.99,
+    "bid": 711.98,
+    "last": 712.16,
+    "spread_pct": 0.0014045239717116098
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 708.9,
+      "high": 708.9,
+      "low": 708.45,
+      "open": 708.45,
+      "trades": 3,
+      "ts": 1791162000,
+      "volume": 1.58993,
+      "vwap": 708.87
+    },
+    {
+      "close": 711.89,
+      "high": 712.8,
+      "low": 710.45,
+      "open": 710.61,
+      "trades": 25,
+      "ts": 1791162900,
+      "volume": 6.30008,
+      "vwap": 711.35
+    },
+    {
+      "close": 710.44,
+      "high": 710.6,
+      "low": 709.25,
+      "open": 709.25,
+      "trades": 5,
+      "ts": 1791163800,
+      "volume": 0.51327,
+      "vwap": 709.46
+    },
+    {
+      "close": 711.39,
+      "high": 713.05,
+      "low": 711.39,
+      "open": 711.62,
+      "trades": 28,
+      "ts": 1791164700,
+      "volume": 7.92887,
+      "vwap": 712.27
+    },
+    {
+      "close": 712.16,
+      "high": 712.16,
+      "low": 712.16,
+      "open": 712.16,
+      "trades": 1,
+      "ts": 1791165600,
+      "volume": 0.007,
+      "vwap": 712.16
+    }
+  ],
+  "pair": "BNB/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261005-012507-BNB-EUR-r37251259174.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-05T02:00:31.944758Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "57740e8677a8719408e5f60e1546f840df5deccb",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-05T02:00:31.944758Z",
+    "revalidation_started_at_utc": "2026-10-05T02:00:22.148587Z",
+    "ttl_due_at_utc": "2026-10-05T01:55:38.137142Z",
+    "ttl_lag_seconds": 284.011
+  }
+}
