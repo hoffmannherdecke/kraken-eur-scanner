@@ -48,6 +48,17 @@
     "evaluation_ask_eur": 0.2252,
     "flagged_as_already_run": true,
     "horizons": {
+      "1440": {
+        "bars": 288,
+        "complete": true,
+        "end_close_pct": -3.727,
+        "expected_bars": 288,
+        "interval_minutes": 5,
+        "mae_pct": -4.259,
+        "mfe_pct": 1.464,
+        "peak_at_utc": "2026-10-06T00:20:00Z",
+        "trough_at_utc": "2026-10-06T17:10:00Z"
+      },
       "15": {
         "bars": 15,
         "complete": true,
@@ -99,6 +110,11 @@
       "move_to_detection_pct": 3.728,
       "price_eur": 0.2173
     },
+    "objective_flags_24h": {
+      "continuation_ge_2pct": false,
+      "continuation_ge_5pct": false,
+      "drawdown_le_minus_2pct": true
+    },
     "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
     "reason_codes": [
       "adequate_pair_liquidity",
@@ -122,7 +138,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-06T05:53:52.190072Z"
+    "updated_at_utc": "2026-10-06T17:56:24.481438Z"
   },
   "original_decision": "WAIT",
   "pair": "FET/EUR",
