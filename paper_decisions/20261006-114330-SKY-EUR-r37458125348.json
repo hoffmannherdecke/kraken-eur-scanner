@@ -1,0 +1,168 @@
+{
+  "altname": "SKYEUR",
+  "candidate_age_seconds": 49,
+  "candidate_event_time_utc": "2026-10-06T11:43:30Z",
+  "candidate_id": "20261006-114330-SKY-EUR-r37458125348",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Hold above 0.07982 on a retest",
+      "Renewed move above the current ask with sustained volume"
+    ],
+    "reason_codes": [
+      "spread_and_turnover_acceptable",
+      "breakout_with_elevated_volume",
+      "higher_lows_absent",
+      "entry_above_resistance",
+      "daily_return_weak",
+      "major_market_mixed_to_weak",
+      "round_trip_costs_material",
+      "confirmation_not_established"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Volume-backed short-term breakout, but price is already above the supplied resistance and lacks follow-through structure; wait for a hold and renewed confirmation before considering entry.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "SKYUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_SKYUSD",
+          "PI_SKYUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.08013,
+      "bid": 0.08006,
+      "last": 0.08013,
+      "spread_pct": 0.08739621699232239
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "70",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.07651289229176905,
+          "ret3h_pct": 0.09011141642329967
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.195856780247039,
+          "ret3h_pct": -0.31432234583729235
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.22440392706872814,
+          "ret3h_pct": -0.6146968426934962
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T11:44:19.236926Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-06T11:44:31.972138Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_00bd3b72f1d3d0b8006ac4df14f0ac87d0a301f5342fac161e"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.08013,
+    "bid": 0.08006,
+    "last": 0.08013,
+    "spread_pct": 0.08739621699232239
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "SKY/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37458125348:SKY-EUR:1791287010",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "8617b2e0df44595b51cd38230f530d11ec466ce2",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-06T11:43:30Z",
+    "candidate_detected_ts": 1791287010,
+    "candidate_snapshot_at_utc": "2026-10-06T11:43:30Z",
+    "detected_to_evaluation_complete_seconds": 61.972,
+    "detected_to_evaluation_start_seconds": 48.991,
+    "evaluation_completed_at_utc": "2026-10-06T11:44:31.972138Z",
+    "evaluation_runtime_seconds": 12.981,
+    "evaluation_started_at_utc": "2026-10-06T11:44:18.990695Z",
+    "handoff_to_evaluation_start_seconds": 45.247,
+    "handoff_written_at_utc": "2026-10-06T11:43:33.743275Z",
+    "scan_step_started_at_utc": "2026-10-06T11:42:00Z"
+  }
+}
