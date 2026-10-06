@@ -1,0 +1,113 @@
+{
+  "kind": "V2R3_STRATEGY_ADJUSTMENT_HYPOTHESIS_CARD_V4_INTERIM",
+  "card_id": "V2R3-ADJ-HYP-20261006-V4",
+  "status": "HYPOTHESIS_ONLY_NOT_ACTIVE",
+  "created_at_utc": "2026-10-06T08:15:04Z",
+  "source_series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "source_strategy_revision": "V2R3-2026-09-28",
+  "source_work_analysis": "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md",
+  "supersedes_for_new_evidence_only": "V2R3-ADJ-HYP-20261005-V3",
+  "evidence_snapshot": {
+    "candidate_outcomes": 949,
+    "completed_trades": 1,
+    "eligible_24h": 768,
+    "complete_24h": 757,
+    "coverage_24h_pct": 98.57,
+    "integrity_state": "HEALTHY",
+    "final_review_allowed": false,
+    "outcomes_remaining_to_alt_gate": 51,
+    "temporal_diversity_ready": true
+  },
+  "batch_003": {
+    "mature_24h_n": 191,
+    "final_decision": "REJECT",
+    "wait_to_reject_n": 180,
+    "direct_reject_n": 11,
+    "p50_mfe_24h_pct": 2.925,
+    "p90_mfe_24h_pct": 9.618,
+    "p50_mae_24h_pct": -2.294,
+    "p50_close_24h_pct": -0.136,
+    "mfe_ge_5pct": 52,
+    "mfe_ge_10pct": 18,
+    "unique_pairs": 44,
+    "retriggered_pairs": 38,
+    "mfe_ge_10_unique_pair_episodes_6h": 5
+  },
+  "lessons": [
+    {
+      "id": "LOW_TRADE_FREQUENCY",
+      "disposition": "EVIDENCE_STRENGTHENED",
+      "v2r4_inheritance_disposition": "MORE_TESTING_BEFORE_V2R4",
+      "routing": [
+        "V2R3_FINAL_AUDIT",
+        "V2R4_COMPARISON",
+        "V3_H7"
+      ],
+      "action": "Do not loosen thresholds mid-series; distinguish filter selectivity from runtime delay at the closed final gate."
+    },
+    {
+      "id": "WAIT_TO_REJECT_SELECTIVITY",
+      "disposition": "EVIDENCE_STRENGTHENED",
+      "v2r4_inheritance_disposition": "ALREADY_COVERED_V2R4",
+      "routing": [
+        "V2R4_EXISTING_BOUNDED_WAIT_FRESH_RECHECK",
+        "V2R3_FINAL_AUDIT"
+      ],
+      "action": "Reuse the existing inactive V2R4 lifecycle mechanism and validate it prospectively; no duplicate implementation."
+    },
+    {
+      "id": "RETRIGGER_EPISODE_DEPENDENCE",
+      "disposition": "ADD_MEASUREMENT_REQUIREMENT",
+      "v2r4_inheritance_disposition": "NO_V2R4_CHANGE",
+      "routing": [
+        "V2R3_FINAL_AUDIT",
+        "V3_H4",
+        "V3_H7"
+      ],
+      "action": "Report candidate-level results together with pair/time-clustered episodes so repeated observations of one move are not treated as independent evidence."
+    },
+    {
+      "id": "ANTI_CHASE",
+      "disposition": "EVIDENCE_STRENGTHENED",
+      "v2r4_inheritance_disposition": "NO_V2R4_CHANGE",
+      "routing": [
+        "V3_PULLBACK_REBUILD"
+      ],
+      "action": "Retain anti-chase; test only a separate pullback/rebuild/second-leg hypothesis after the release gate."
+    },
+    {
+      "id": "REVALIDATION_DELAY",
+      "disposition": "EVIDENCE_STRENGTHENED",
+      "v2r4_inheritance_disposition": "ALREADY_COVERED_V2R4",
+      "routing": [
+        "V2R4_EXISTING_WAIT_RUNTIME",
+        "RUNTIME_TIMING_AUDIT"
+      ],
+      "action": "Keep timing/runtime separate from signal evidence; prospective V2R4 proof remains required."
+    },
+    {
+      "id": "TEMPORAL_REGIME_HETEROGENEITY",
+      "disposition": "CONFIRMED_MEASUREMENT_NEED",
+      "v2r4_inheritance_disposition": "NO_V2R4_CHANGE",
+      "routing": [
+        "V2R3_FINAL_AUDIT",
+        "V3_H4",
+        "V3_H7"
+      ],
+      "action": "Stratify final evidence by UTC window/regime; do not create an active trading rule from the interim split."
+    }
+  ],
+  "consequence_processing": {
+    "duplicate_implementation_created": false,
+    "new_gated_strategy_change_warranted": false,
+    "user_decision_required": false,
+    "disposition": "NO_NEW_GATED_CHANGE_EXISTING_SUCCESSOR_PATHS_STRENGTHENED"
+  },
+  "governance": {
+    "active_v2r3_change_allowed": false,
+    "automatic_v2r4_activation_allowed": false,
+    "automatic_strategy_promotion_allowed": false,
+    "real_money_actions_allowed": false,
+    "final_dispositions_still_required_at_v2r3_completion": true
+  }
+}
