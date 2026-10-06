@@ -1,0 +1,184 @@
+{
+  "altname": "INJEUR",
+  "candidate_age_seconds": 28,
+  "candidate_event_time_utc": "2026-10-06T05:52:31Z",
+  "candidate_id": "20261006-055231-INJ-EUR-r37420577005",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 6.768 followed by a hold or successful retest with volume continuity",
+      "Evidence of sufficient remaining upside to clear round-trip fees, spread and slippage"
+    ],
+    "reason_codes": [
+      "resistance_unconfirmed",
+      "no_higher_lows",
+      "weak_major_3h_regime",
+      "30d_runup",
+      "fees_require_substantial_followthrough",
+      "derivatives_open_interest_declining"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquid, tight-spread candidate with elevated volume, but price is testing nearby resistance and broader 3h context is weak. Wait for confirmation before considering entry.",
+    "ttl_minutes": 30
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "INJUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 344.65,
+        "available": true,
+        "current_funding_rate": 0.000192500466049586,
+        "current_open_interest": 117587.5,
+        "funding_rate_delta": -0.00033040549359958295,
+        "open_interest_pct": -1.0053,
+        "previous_funding_rate": 0.000522905959649169,
+        "previous_observed_at_utc": "2026-10-06T00:08:21.958113Z",
+        "previous_open_interest": 118781.6
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000192500466049586,
+        "index_price": 7.5821,
+        "last": 7.576,
+        "mark_price": 7.58635770108,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 117587.5,
+        "requested_symbols": [
+          "PF_INJUSD",
+          "PI_INJUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_INJUSD",
+        "volume24h": 108147.6
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 6.764,
+      "bid": 6.759,
+      "last": 6.776,
+      "spread_pct": 0.0739480884419122
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.7",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.033296628388646,
+          "ret3h_pct": -0.03523880512942279
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.0257459045325259,
+          "ret3h_pct": -0.12977320784444135
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.17723880597014796,
+          "ret3h_pct": -0.34457068355372433
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T05:52:59.178552Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-06T05:53:08.683061Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_05b411261d205572006ac48cbcebd087d0ab60ceb5377bd412"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 6.764,
+    "bid": 6.759,
+    "last": 6.776,
+    "spread_pct": 0.0739480884419122
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "INJ/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37420577005:INJ-EUR:1791265951",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "98c0356dd3dcd31e7b321102f211908a306652a0",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-06T05:52:31Z",
+    "candidate_detected_ts": 1791265951,
+    "candidate_snapshot_at_utc": "2026-10-06T05:52:31Z",
+    "detected_to_evaluation_complete_seconds": 37.683,
+    "detected_to_evaluation_start_seconds": 27.939,
+    "evaluation_completed_at_utc": "2026-10-06T05:53:08.683061Z",
+    "evaluation_runtime_seconds": 9.744,
+    "evaluation_started_at_utc": "2026-10-06T05:52:58.939272Z",
+    "handoff_to_evaluation_start_seconds": 25.329,
+    "handoff_written_at_utc": "2026-10-06T05:52:33.610163Z",
+    "scan_step_started_at_utc": "2026-10-06T05:51:00Z"
+  }
+}
