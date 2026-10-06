@@ -1,0 +1,224 @@
+{
+  "altname": "AVAXEUR",
+  "candidate_id": "20261006-070449-AVAX-EUR-r37427284962",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 10.164 with sustained volume",
+      "Retest holds above 10.164 or forms a clear higher low"
+    ],
+    "reason_codes": [
+      "below_resistance",
+      "breakout_not_confirmed",
+      "weak_market_regime",
+      "remaining_move_unproven_after_costs",
+      "derivatives_oi_and_funding_rising"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Price has risen but remains below 10.164 resistance; recent follow-through and volume do not confirm a breakout, and remaining upside is unproven against Kraken costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "AVAXUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 268.31,
+        "available": true,
+        "current_funding_rate": 0.000466726899000003,
+        "current_open_interest": 398933.16,
+        "funding_rate_delta": 0.000542639699708333,
+        "open_interest_pct": 21.1143,
+        "previous_funding_rate": -7.591280070833e-05,
+        "previous_observed_at_utc": "2026-10-06T03:33:58.652513Z",
+        "previous_open_interest": 329385.78
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000466726899000003,
+        "index_price": 11.3529,
+        "last": 11.364,
+        "mark_price": 11.36001333139,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 398933.16,
+        "requested_symbols": [
+          "PF_AVAXUSD",
+          "PI_AVAXUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_AVAXUSD",
+        "volume24h": 348606.35
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 10.102,
+      "bid": 10.099,
+      "last": 10.104,
+      "spread_pct": 0.029701499925747374
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.01734678322302674,
+          "ret3h_pct": -0.2762097936550356
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.12676641729012506,
+          "ret3h_pct": 0.008302717064179177
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.07485730326564077,
+          "ret3h_pct": -0.06540833489067088
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T08:02:15.508434Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0c6f20cd44516f6e006ac4ab0a3f8087d19d8891f308d502ba"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 10.102,
+    "bid": 10.099,
+    "last": 10.104,
+    "spread_pct": 0.029701499925747374
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 10.025,
+      "high": 10.067,
+      "low": 10.02,
+      "open": 10.067,
+      "trades": 50,
+      "ts": 1791270000,
+      "volume": 2052.28082968,
+      "vwap": 10.039
+    },
+    {
+      "close": 10.032,
+      "high": 10.039,
+      "low": 9.997,
+      "open": 10.011,
+      "trades": 19,
+      "ts": 1791270900,
+      "volume": 256.61350755,
+      "vwap": 10.009
+    },
+    {
+      "close": 10.078,
+      "high": 10.078,
+      "low": 9.999,
+      "open": 10.038,
+      "trades": 42,
+      "ts": 1791271800,
+      "volume": 1682.75406903,
+      "vwap": 10.022
+    },
+    {
+      "close": 10.09,
+      "high": 10.12,
+      "low": 10.081,
+      "open": 10.081,
+      "trades": 23,
+      "ts": 1791272700,
+      "volume": 231.33587029,
+      "vwap": 10.102
+    },
+    {
+      "close": 10.104,
+      "high": 10.104,
+      "low": 10.103,
+      "open": 10.103,
+      "trades": 17,
+      "ts": 1791273600,
+      "volume": 344.43717979,
+      "vwap": 10.103
+    }
+  ],
+  "pair": "AVAX/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261006-070449-AVAX-EUR-r37427284962.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-06T08:02:26.502059Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "24e8ee26f4bf738967da19fcf70c012b21483f88",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-06T08:02:26.502059Z",
+    "revalidation_started_at_utc": "2026-10-06T08:02:15.004584Z",
+    "ttl_due_at_utc": "2026-10-06T07:50:18.993195Z",
+    "ttl_lag_seconds": 716.011
+  }
+}
