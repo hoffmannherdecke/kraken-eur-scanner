@@ -1,0 +1,225 @@
+{
+  "altname": "RENDEREUR",
+  "candidate_id": "20261006-055231-RENDER-EUR-r37420577005",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A renewed 15-minute close above 1.862 with price holding that level.",
+      "Stronger live spot volume accompanying any renewed breakout."
+    ],
+    "reason_codes": [
+      "failed_resistance_breakout",
+      "high_volume_selloff",
+      "weak_bounce_volume",
+      "major_market_bearish",
+      "costs_material",
+      "oi_declining"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "REVERSAL",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The resistance breakout did not confirm; price sold off sharply and the bounce is weak, with bearish major-market context. No valid scout entry or confirmation plan is supported.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "RENDERUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 32.36,
+        "available": true,
+        "current_funding_rate": 0.000193624699891583,
+        "current_open_interest": 291825.6,
+        "funding_rate_delta": 1.177743230908399e-05,
+        "open_interest_pct": -2.1806,
+        "previous_funding_rate": 0.000181847267582499,
+        "previous_observed_at_utc": "2026-10-06T05:53:21.487247Z",
+        "previous_open_interest": 298331.1
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 0.000193624699891583,
+        "index_price": 2.05675,
+        "last": 2.0544,
+        "mark_price": 2.05813985663,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 291825.6,
+        "requested_symbols": [
+          "PF_RENDERUSD",
+          "PI_RENDERUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_RENDERUSD",
+        "volume24h": 475817.8
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.836,
+      "bid": 1.833,
+      "last": 1.834,
+      "spread_pct": 0.16353229762878788
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "2.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.5109956363093637,
+          "ret3h_pct": -0.3290884551467754
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.33361826435512887,
+          "ret3h_pct": -0.2151984977649235
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.625583566760024,
+          "ret3h_pct": -0.6441374159820712
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T06:25:42.444868Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0a677d1ed6ebf72a006ac49467458487d29e8c25abf9382cce"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.836,
+    "bid": 1.833,
+    "last": 1.834,
+    "spread_pct": 0.16353229762878788
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.856,
+      "high": 1.86,
+      "low": 1.842,
+      "open": 1.844,
+      "trades": 26,
+      "ts": 1791263700,
+      "volume": 1707.86028,
+      "vwap": 1.848
+    },
+    {
+      "close": 1.861,
+      "high": 1.862,
+      "low": 1.844,
+      "open": 1.85,
+      "trades": 39,
+      "ts": 1791264600,
+      "volume": 2385.54558,
+      "vwap": 1.851
+    },
+    {
+      "close": 1.852,
+      "high": 1.864,
+      "low": 1.852,
+      "open": 1.863,
+      "trades": 20,
+      "ts": 1791265500,
+      "volume": 434.38691,
+      "vwap": 1.856
+    },
+    {
+      "close": 1.824,
+      "high": 1.847,
+      "low": 1.824,
+      "open": 1.847,
+      "trades": 49,
+      "ts": 1791266400,
+      "volume": 8992.14581,
+      "vwap": 1.827
+    },
+    {
+      "close": 1.834,
+      "high": 1.834,
+      "low": 1.825,
+      "open": 1.825,
+      "trades": 6,
+      "ts": 1791267300,
+      "volume": 228.3928,
+      "vwap": 1.831
+    }
+  ],
+  "pair": "RENDER/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261006-055231-RENDER-EUR-r37420577005.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-06T06:25:49.270782Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "413f38d869eed4b6ba24e4b6295489ac0592128b",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-06T06:25:49.270782Z",
+    "revalidation_started_at_utc": "2026-10-06T06:25:42.202409Z",
+    "ttl_due_at_utc": "2026-10-06T06:23:21.487247Z",
+    "ttl_lag_seconds": 140.715
+  }
+}
