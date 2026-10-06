@@ -80,6 +80,17 @@
         "mfe_pct": -0.268,
         "peak_at_utc": "2026-10-06T05:56:00Z",
         "trough_at_utc": "2026-10-06T06:14:00Z"
+      },
+      "720": {
+        "bars": 144,
+        "complete": true,
+        "end_close_pct": 3.755,
+        "expected_bars": 144,
+        "interval_minutes": 5,
+        "mae_pct": -2.146,
+        "mfe_pct": 4.828,
+        "peak_at_utc": "2026-10-06T17:35:00Z",
+        "trough_at_utc": "2026-10-06T06:10:00Z"
       }
     },
     "impulse_anchor_proxy": {
@@ -107,7 +118,7 @@
     },
     "schema_version": 1,
     "setup_lane": "EXTENDED",
-    "updated_at_utc": "2026-10-06T10:04:18.163586Z"
+    "updated_at_utc": "2026-10-06T18:11:46.050274Z"
   },
   "original_decision": "WAIT",
   "pair": "RENDER/EUR",
