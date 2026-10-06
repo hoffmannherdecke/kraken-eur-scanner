@@ -1,0 +1,226 @@
+{
+  "altname": "LTCEUR",
+  "candidate_id": "20261006-064405-LTC-EUR-r37425255282",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A completed 15m candle holds above 62.16 and price confirms above 62.22 with sustained volume.",
+      "BTC/EUR, ETH/EUR and SOL/EUR stop declining over 3h."
+    ],
+    "reason_codes": [
+      "spread_and_liquidity_acceptable",
+      "breakout_confirmation_failed",
+      "price_below_resistance",
+      "follow_through_volume_declined",
+      "major_markets_negative_3h",
+      "round_trip_fees_1_20pct",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "The breakout attempt failed to confirm: subsequent 15m candles faded below resistance with declining volume, while major markets remain negative over 3h. No valid scout or confirmation plan is supported.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "LTCUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 47.9,
+        "available": true,
+        "current_funding_rate": 7.1908509365364e-05,
+        "current_open_interest": 77.0,
+        "funding_rate_delta": 1.029587963049985e-07,
+        "open_interest_pct": 0.0,
+        "previous_funding_rate": 7.1805550569059e-05,
+        "previous_observed_at_utc": "2026-10-06T06:44:46.404887Z",
+        "previous_open_interest": 77.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 7.1908509365364e-05,
+        "index_price": 69.5003,
+        "last": 67.89,
+        "mark_price": 69.38850181742,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 77.0,
+        "requested_symbols": [
+          "PF_LTCUSD",
+          "PI_LTCUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PI_LTCUSD",
+        "volume24h": 250
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 61.97,
+      "bid": 61.96,
+      "last": 61.93,
+      "spread_pct": 0.01613814249979506
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.1",
+      "pair_decimals": 2,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.021296342550347624,
+          "ret3h_pct": -0.2915742386818465
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.08406158967957378,
+          "ret3h_pct": -0.21905986806622924
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.25333083130043565,
+          "ret3h_pct": -0.2985910236073641
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 2,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T07:32:39.485305Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0de8a8eae90b18b2006ac4a418bcc887d28325159b8226b088"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 61.97,
+    "bid": 61.96,
+    "last": 61.93,
+    "spread_pct": 0.01613814249979506
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 62.22,
+      "high": 62.24,
+      "low": 61.9,
+      "open": 61.91,
+      "trades": 54,
+      "ts": 1791268200,
+      "volume": 137.03193097,
+      "vwap": 62.09
+    },
+    {
+      "close": 62.02,
+      "high": 62.23,
+      "low": 62.02,
+      "open": 62.19,
+      "trades": 51,
+      "ts": 1791269100,
+      "volume": 28.44626474,
+      "vwap": 62.11
+    },
+    {
+      "close": 61.89,
+      "high": 62.03,
+      "low": 61.87,
+      "open": 62.02,
+      "trades": 22,
+      "ts": 1791270000,
+      "volume": 31.15508297,
+      "vwap": 61.96
+    },
+    {
+      "close": 61.89,
+      "high": 61.98,
+      "low": 61.85,
+      "open": 61.92,
+      "trades": 36,
+      "ts": 1791270900,
+      "volume": 18.74379787,
+      "vwap": 61.9
+    },
+    {
+      "close": 61.93,
+      "high": 61.93,
+      "low": 61.87,
+      "open": 61.9,
+      "trades": 22,
+      "ts": 1791271800,
+      "volume": 12.2150716,
+      "vwap": 61.88
+    }
+  ],
+  "pair": "LTC/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261006-064405-LTC-EUR-r37425255282.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-06T07:32:45.910316Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "0655a84df41c1daca1ef3e86341e071f63be16e9",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-06T07:32:45.910316Z",
+    "revalidation_started_at_utc": "2026-10-06T07:32:39.299822Z",
+    "ttl_due_at_utc": "2026-10-06T07:29:46.404887Z",
+    "ttl_lag_seconds": 172.895
+  }
+}
