@@ -1,0 +1,180 @@
+{
+  "altname": "ZROEUR",
+  "candidate_age_seconds": 27,
+  "candidate_event_time_utc": "2026-10-06T10:03:30Z",
+  "candidate_id": "20261006-100330-ZRO-EUR-r37446702562",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": 1.8,
+    "missing_triggers": [],
+    "reason_codes": [
+      "EXTENDED_7D_30D_ADVANCE",
+      "RESISTANCE_OVERHEAD",
+      "NET_EDGE_INSUFFICIENT_AFTER_COSTS",
+      "MIXED_WEAK_MAJOR_MARKET",
+      "NO_COIN_SPECIFIC_CATALYST_SUPPLIED"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Strong prior advance, but price is near resistance and plausible upside does not clear Kraken EUR round-trip costs.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ZROUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 68.09,
+        "available": true,
+        "current_funding_rate": 5.7897913239249e-05,
+        "current_open_interest": 284982.0,
+        "funding_rate_delta": -7.730875507723301e-05,
+        "open_interest_pct": 1.965,
+        "previous_funding_rate": 0.000135206668316482,
+        "previous_observed_at_utc": "2026-10-06T08:55:53.654038Z",
+        "previous_open_interest": 279490.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 5.7897913239249e-05,
+        "index_price": 2.12672,
+        "last": 2.1296,
+        "mark_price": 2.12875115021,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 284982.0,
+        "requested_symbols": [
+          "PF_ZROUSD",
+          "PI_ZROUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ZROUSD",
+        "volume24h": 1126378
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.891,
+      "bid": 1.89,
+      "last": 1.892,
+      "spread_pct": 0.052896059243592274
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "2.5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.0482264053292214,
+          "ret3h_pct": 0.5025310533702587
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2511793428784159,
+          "ret3h_pct": 0.188279301745653
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.7743982086210188,
+          "ret3h_pct": -0.48657247122673164
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T10:03:57.068749Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-06T10:04:07.499457Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_02750a167b6ca90b006ac4c78ee40c87d0bb98ada92ec6317a"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.891,
+    "bid": 1.89,
+    "last": 1.892,
+    "spread_pct": 0.052896059243592274
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ZRO/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37446702562:ZRO-EUR:1791281010",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "2df4ea9254718d0542aa43674b4a84fc2f856596",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-06T10:03:30Z",
+    "candidate_detected_ts": 1791281010,
+    "candidate_snapshot_at_utc": "2026-10-06T10:03:30Z",
+    "detected_to_evaluation_complete_seconds": 37.499,
+    "detected_to_evaluation_start_seconds": 26.831,
+    "evaluation_completed_at_utc": "2026-10-06T10:04:07.499457Z",
+    "evaluation_runtime_seconds": 10.668,
+    "evaluation_started_at_utc": "2026-10-06T10:03:56.831018Z",
+    "handoff_to_evaluation_start_seconds": 23.883,
+    "handoff_written_at_utc": "2026-10-06T10:03:32.947946Z",
+    "scan_step_started_at_utc": "2026-10-06T09:59:15Z"
+  }
+}

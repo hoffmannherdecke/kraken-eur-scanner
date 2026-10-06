@@ -1,0 +1,186 @@
+{
+  "altname": "ONDOEUR",
+  "candidate_age_seconds": 17,
+  "candidate_event_time_utc": "2026-10-06T10:03:30Z",
+  "candidate_id": "20261006-100330-ONDO-EUR-r37446702562",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close and hold above 0.44271 resistance",
+      "Retest holds above 0.44271 with sustained volume"
+    ],
+    "reason_codes": [
+      "liquid_pair_verified",
+      "tight_spread",
+      "volume_expansion",
+      "weak_adx",
+      "no_higher_lows",
+      "near_term_move_already_run",
+      "market_context_mixed",
+      "remaining_edge_uncertain"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Promising volume-backed breakout attempt, but price is only marginally above resistance and structure is weak; wait for confirmation before considering entry.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ONDOUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 1633.79,
+        "available": true,
+        "current_funding_rate": 3.54739494767e-07,
+        "current_open_interest": 4432796.0,
+        "funding_rate_delta": 7.518225959642e-06,
+        "open_interest_pct": 4.7222,
+        "previous_funding_rate": -7.163486464875e-06,
+        "previous_observed_at_utc": "2026-10-05T06:50:01.682138Z",
+        "previous_open_interest": 4232909.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 3.54739494767e-07,
+        "index_price": 0.498016,
+        "last": 0.4987,
+        "mark_price": 0.49808427637,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 4432796.0,
+        "requested_symbols": [
+          "PF_ONDOUSD",
+          "PI_ONDOUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ONDOUSD",
+        "volume24h": 3149513
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.4429,
+      "bid": 0.44259,
+      "last": 0.44306,
+      "spread_pct": 0.0700177302962275
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "10",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.0482264053292214,
+          "ret3h_pct": 0.5025310533702587
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.2511793428784159,
+          "ret3h_pct": 0.188279301745653
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.7743982086210188,
+          "ret3h_pct": -0.48657247122673164
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 2,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T10:03:47.490604Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-06T10:03:56.772533Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0f1eb09c9e06ff45006ac4c785f35c87d0af98c027209c786a"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.4429,
+    "bid": 0.44259,
+    "last": 0.44306,
+    "spread_pct": 0.0700177302962275
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "ONDO/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37446702562:ONDO-EUR:1791281010",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "2df4ea9254718d0542aa43674b4a84fc2f856596",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-06T10:03:30Z",
+    "candidate_detected_ts": 1791281010,
+    "candidate_snapshot_at_utc": "2026-10-06T10:03:30Z",
+    "detected_to_evaluation_complete_seconds": 26.773,
+    "detected_to_evaluation_start_seconds": 17.26,
+    "evaluation_completed_at_utc": "2026-10-06T10:03:56.772533Z",
+    "evaluation_runtime_seconds": 9.512,
+    "evaluation_started_at_utc": "2026-10-06T10:03:47.260480Z",
+    "handoff_to_evaluation_start_seconds": 14.313,
+    "handoff_written_at_utc": "2026-10-06T10:03:32.947622Z",
+    "scan_step_started_at_utc": "2026-10-06T09:59:15Z"
+  }
+}
