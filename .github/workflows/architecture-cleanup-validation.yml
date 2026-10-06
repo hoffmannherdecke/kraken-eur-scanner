@@ -69,7 +69,8 @@ jobs:
 
           for p in workflows:
               text=p.read_text(encoding='utf-8')
-              assert 'pull_request_target:' not in text, f'forbidden privileged PR trigger: {p}'
+              forbidden_trigger='pull_request_' + 'target:'
+              assert forbidden_trigger not in text, f'forbidden privileged PR trigger: {p}'
               if re.search(r'(?m)^\s*pull_request:\s*$', text):
                   secret_expr='$' + '{{' + ' secrets.'
                   assert secret_expr not in text, f'PR workflow may not consume repository secrets: {p}'
