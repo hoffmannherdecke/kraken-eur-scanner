@@ -1,0 +1,54 @@
+{
+  "baseline_ask_eur": 0.44606,
+  "candidate_id": "20261006-112800-ONDO-EUR-r37456392506",
+  "evaluated_at_utc": "2026-10-06T11:28:52.600267Z",
+  "excluded_from_missed_move_stats": false,
+  "horizons": {},
+  "interval_minutes": 1,
+  "kind": "PAPER_FOLLOWUP_V2",
+  "opportunity_audit": {
+    "candidate_detected_at_utc": "2026-10-06T11:28:00Z",
+    "classification": "PENDING_REVIEW",
+    "detected_to_evaluation_complete_seconds": 52.6,
+    "detection_price_eur": 0.44724,
+    "evaluated_at_utc": "2026-10-06T11:28:52.600267Z",
+    "evaluation_ask_eur": 0.44606,
+    "flagged_as_already_run": false,
+    "horizons": {},
+    "impulse_anchor_proxy": {
+      "at_utc": "2026-10-06T09:30:00Z",
+      "method": "lowest_1m_low_in_prior_3h",
+      "move_to_detection_pct": 2.776,
+      "price_eur": 0.43516
+    },
+    "purpose": "measure whether 'already moved/too late' was truly untradeable after scanner detection",
+    "reason_codes": [
+      "GOOD_SPOT_LIQUIDITY_AND_SPREAD",
+      "PRICE_ABOVE_LOCAL_RESISTANCE",
+      "LOW_CLOSED_VOLUME",
+      "NO_HIGHER_LOWS",
+      "ENTRY_ALREADY_RAN",
+      "COSTS_MATERIAL",
+      "NO_COIN_SPECIFIC_CATALYST",
+      "ACCOUNT_TRADABILITY_UNAVAILABLE"
+    ],
+    "scan_step_started_at_utc": "2026-10-06T11:26:30Z",
+    "scanner_snapshot": {
+      "fresh_move_3h_pct": 2.7759904402978375,
+      "ret15_live_pct": 0.6503882074941014,
+      "ret1h_pct": 0.7229241267481923,
+      "ret3h_pct": 1.7310010690808175,
+      "scanner_late_flag": false,
+      "score": 11.2
+    },
+    "schema_version": 1,
+    "setup_lane": "CONTINUITY",
+    "updated_at_utc": "2026-10-06T11:28:55.671080Z"
+  },
+  "original_decision": "WAIT",
+  "pair": "ONDO/EUR",
+  "path_classification": "WAIT_PENDING",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01"
+}
