@@ -1,0 +1,184 @@
+{
+  "altname": "DOTEUR",
+  "candidate_age_seconds": 15,
+  "candidate_event_time_utc": "2026-10-06T03:54:04Z",
+  "candidate_id": "20261006-035404-DOT-EUR-r37411012521",
+  "decision": {
+    "decision": "WAIT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1.0945 with follow-through",
+      "BTC/EUR and ETH/EUR stabilize or turn positive on 1h"
+    ],
+    "reason_codes": [
+      "major_markets_negative",
+      "no_breakout_or_higher_lows",
+      "last_closed_15m_weak",
+      "near_1h_resistance",
+      "remaining_move_uncertain_after_costs",
+      "derivatives_not_confirmatory"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "Liquidity and spread are acceptable, but DOT lacks a confirmed breakout and broad-market conditions are weak; wait for price and market confirmation.",
+    "ttl_minutes": 45
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "DOTUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 68.87,
+        "available": true,
+        "current_funding_rate": 1.8410422573125e-05,
+        "current_open_interest": 3742558.2,
+        "funding_rate_delta": 4.560434925374998e-06,
+        "open_interest_pct": -0.0281,
+        "previous_funding_rate": 1.384998764775e-05,
+        "previous_observed_at_utc": "2026-10-06T02:45:28.919204Z",
+        "previous_open_interest": 3743608.5
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 1.8410422573125e-05,
+        "index_price": 1.22762,
+        "last": 1.227,
+        "mark_price": 1.22794451647,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 3742558.2,
+        "requested_symbols": [
+          "PF_DOTUSD",
+          "PI_DOTUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_DOTUSD",
+        "volume24h": 1448109.5
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.0936,
+      "bid": 1.093,
+      "last": 1.0915,
+      "spread_pct": 0.05487972194273612
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "3.9",
+      "pair_decimals": 4,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.25911656708538233,
+          "ret3h_pct": -0.45459180871842975
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.36485758116009404,
+          "ret3h_pct": -0.6490821895154708
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.5773887129819189,
+          "ret3h_pct": -0.8911994058670603
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T03:54:19.094192Z",
+    "schema_version": 1
+  },
+  "evaluated_at_utc": "2026-10-06T03:54:32.053408Z",
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0ff486b748c79c1d006ac470ed7ab487d189a9f206c34e0571"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.0936,
+    "bid": 1.093,
+    "last": 1.0915,
+    "spread_pct": 0.05487972194273612
+  },
+  "kind": "PAPER_V2_DECISION_V2",
+  "pair": "DOT/EUR",
+  "paper_entry": null,
+  "prompt_schema_version": 2,
+  "queue_id": "37411012521:DOT-EUR:1791258844",
+  "real_money_actions_enabled": false,
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "9ae14e2256f7a4ad0054e0a5ca20e36706b48e2f",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "altrady_detected_at_utc": null,
+    "candidate_detected_at_utc": "2026-10-06T03:54:04Z",
+    "candidate_detected_ts": 1791258844,
+    "candidate_snapshot_at_utc": "2026-10-06T03:54:04Z",
+    "detected_to_evaluation_complete_seconds": 28.053,
+    "detected_to_evaluation_start_seconds": 14.81,
+    "evaluation_completed_at_utc": "2026-10-06T03:54:32.053408Z",
+    "evaluation_runtime_seconds": 13.243,
+    "evaluation_started_at_utc": "2026-10-06T03:54:18.809945Z",
+    "handoff_to_evaluation_start_seconds": 11.917,
+    "handoff_written_at_utc": "2026-10-06T03:54:06.892885Z",
+    "scan_step_started_at_utc": "2026-10-06T03:52:28Z"
+  }
+}
