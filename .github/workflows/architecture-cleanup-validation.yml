@@ -18,11 +18,12 @@ name: Architecture cleanup validation
       - 'research/v3/shadow-runtime/h1-control.json'
       - 'docs/**'
       - 'supabase/**'
-      - '.github/workflows/paper-evaluator.yml'
-      - '.github/workflows/paper-series-completion-watch.yml'
-      - '.github/workflows/v3-h1-shadow-pilot.yml'
-      - '.github/workflows/runtime-repository-compaction.yml'
-      - '.github/workflows/architecture-cleanup-validation.yml'
+      - '.github/workflows/**'
+      - 'tools/minipc-final-security-apps-reboot-audit.ps1'
+      - 'tools/minipc-secret-hygiene-audit.ps1'
+      - 'tools/minipc-watchdog.ps1'
+      - 'tools/minipc-altrady-*.ps1'
+      - 'tools/minipc-altrady-*.py'
       - 'README.md'
 
 permissions:
@@ -57,6 +58,61 @@ jobs:
         run: python tools/validate-artifact-retention.py
       - name: Shared market data tests
         run: python -m unittest discover -s market_data -p 'test_*.py' -v
+      - name: Security and resilience regression guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          workflows=list(Path('.github/workflows').glob('*.yml')) + list(Path('.github/workflows').glob('*.yaml'))
+          assert workflows, 'no workflows found'
+
+          for p in workflows:
+              text=p.read_text(encoding='utf-8')
+              forbidden_trigger='pull_request_' + 'target:'
+              assert forbidden_trigger not in text, f'forbidden privileged PR trigger: {p}'
+              if re.search(r'(?m)^\s*pull_request:\s*$', text):
+                  secret_expr='$' + '{{' + ' secrets.'
+                  assert secret_expr not in text, f'PR workflow may not consume repository secrets: {p}'
+                  m=re.search(r'(?ms)^permissions:\s*\n((?:[ \t]+.*\n?)*)', text)
+                  perms=(m.group(1) if m else '')
+                  assert not re.search(r':\s*write\b', perms), f'PR workflow may not have write permission: {p}'
+
+          relay=Path('.github/workflows/action-push-relay.yml').read_text(encoding='utf-8')
+          assert 'issue_comment:' in relay
+          assert "author_association == 'OWNER'" in relay
+          assert "github.event.issue.number == 1" in relay
+          assert "startsWith(github.event.comment.body, 'SLACK_ACTION_V1 | ')" in relay
+
+          config=Path('supabase/config.toml').read_text(encoding='utf-8')
+          approved={
+              'altrady-trigger-relay': ('ALTRADY_WEBHOOK_TOKEN','sameToken'),
+              'v2r4-shadow-evidence-relay': ('internal_relay_credentials','sameFixedHex'),
+              'minipc-status-relay': ('internal_relay_credentials','sameFixedHex'),
+          }
+          for name,markers in approved.items():
+              section=config.split(f'[functions.{name}]',1)
+              assert len(section)==2, f'missing function config: {name}'
+              block=section[1].split('[functions.',1)[0]
+              assert 'verify_jwt = false' in block
+              src=Path(f'supabase/functions/{name}/index.ts').read_text(encoding='utf-8')
+              for expected in markers:
+                  assert expected in src, f'{name} missing custom-auth marker {expected}'
+
+          tracked=[p.as_posix().lower() for p in Path('.').rglob('*') if p.is_file() and '.git/' not in p.as_posix()]
+          forbidden_suffixes=('.pem','.pfx','.p12','.key')
+          for name in tracked:
+              assert not (name=='.env' or '/.env' in name or name.endswith(forbidden_suffixes)), f'sensitive file present: {name}'
+
+          final_audit=Path('tools/minipc-final-security-apps-reboot-audit.ps1').read_text(encoding='utf-8')
+          assert 'read_only=$true' in final_audit
+          assert 'firewall_changes=$false' in final_audit
+          assert 'defender_changes=$false' in final_audit
+          hygiene=Path('tools/minipc-secret-hygiene-audit.ps1').read_text(encoding='utf-8')
+          assert 'READ-ONLY AUDIT' in hygiene and 'NO CREDENTIAL ROTATION' in hygiene
+
+          print('SECURITY_RESILIENCE_BASELINE_PASS')
+          PY
       - name: Completed H1 pilot guard
         run: |
           python - <<'PY'
