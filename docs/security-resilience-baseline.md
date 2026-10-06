@@ -96,3 +96,17 @@ Until those gates pass, research/paper signals have **no authority to place orde
   real-time observations that were never captured during the outage.
 
 Overall result: **PASS_WITH_DOCUMENTED_PRODUCTION_GATES**.
+
+
+### Local MINI-PC verification 2026-10-06
+
+Physical/local verification completed successfully:
+
+- Windows network profile changed from Public to Private for the dedicated Ethernet connection.
+- Enabled inbound Remote Desktop rules are restricted to the Private profile; audit confirms `Public+AnyRemote=0`.
+- Final local security audit result: `PASS_BASELINE`.
+- Defender real-time protection and antivirus are active.
+- Secret-hygiene audit result: `HEALTHY`, with `Critical: 0`, `Warning: 0`, and no findings.
+- No credential rotation, firewall disablement, app installation, or reboot was performed by the audits.
+
+Paper/research-phase security and resilience audit status: **COMPLETE / PASS**.
