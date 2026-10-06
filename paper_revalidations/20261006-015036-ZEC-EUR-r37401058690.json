@@ -1,0 +1,224 @@
+{
+  "altname": "ZECEUR",
+  "candidate_id": "20261006-015036-ZEC-EUR-r37401058690",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 1211.2 with recovering closed volume",
+      "major-market weakness easing with broader positive participation"
+    ],
+    "reason_codes": [
+      "tight_spread_and_adequate_liquidity",
+      "below_resistance",
+      "weak_closed_candle_follow_through",
+      "major_markets_negative_1h_and_3h",
+      "remaining_move_unproven_after_costs"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "NONE",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "ZEC/EUR remains below 1211.2 resistance with weak recent follow-through while BTC, ETH and SOL are negative across 1h and 3h; no confirmed breakout supports a scout entry.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "ZECUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 36.56,
+        "available": true,
+        "current_funding_rate": -0.0430157936694375,
+        "current_open_interest": 11596.95,
+        "funding_rate_delta": -0.036389115926817504,
+        "open_interest_pct": -1.7047,
+        "previous_funding_rate": -0.00662667774262,
+        "previous_observed_at_utc": "2026-10-06T01:51:16.421737Z",
+        "previous_open_interest": 11798.07
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -0.0430157936694375,
+        "index_price": 1345.3272,
+        "last": 1345.2,
+        "mark_price": 1345.45047706441,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 11596.95,
+        "requested_symbols": [
+          "PF_ZECUSD",
+          "PI_ZECUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_ZECUSD",
+        "volume24h": 29575.27
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1199.492,
+      "bid": 1199.274,
+      "last": 1199.241,
+      "spread_pct": 0.018176012166261704
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "0.01",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.5484596674009024,
+          "ret3h_pct": -0.4192940598483741
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.44850827634057566,
+          "ret3h_pct": -0.3435573691195182
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.5004170141784781,
+          "ret3h_pct": -0.30640668523677084
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T02:27:47.394147Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_05b2daabec964a94006ac45ca66d0487d0860db9a4d56e7ea6"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1199.492,
+    "bid": 1199.274,
+    "last": 1199.241,
+    "spread_pct": 0.018176012166261704
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1204.858,
+      "high": 1206.931,
+      "low": 1202.016,
+      "open": 1206.931,
+      "trades": 49,
+      "ts": 1791249300,
+      "volume": 1.78010537,
+      "vwap": 1204.285
+    },
+    {
+      "close": 1198.753,
+      "high": 1206.869,
+      "low": 1197.934,
+      "open": 1205.72,
+      "trades": 22,
+      "ts": 1791250200,
+      "volume": 4.06058336,
+      "vwap": 1200.285
+    },
+    {
+      "close": 1202.21,
+      "high": 1205.967,
+      "low": 1198.419,
+      "open": 1198.419,
+      "trades": 56,
+      "ts": 1791251100,
+      "volume": 18.24396733,
+      "vwap": 1202.805
+    },
+    {
+      "close": 1199.831,
+      "high": 1202.928,
+      "low": 1199.125,
+      "open": 1202.928,
+      "trades": 37,
+      "ts": 1791252000,
+      "volume": 8.30495324,
+      "vwap": 1200.307
+    },
+    {
+      "close": 1199.241,
+      "high": 1199.7,
+      "low": 1196.428,
+      "open": 1196.716,
+      "trades": 16,
+      "ts": 1791252900,
+      "volume": 0.42878806,
+      "vwap": 1198.412
+    }
+  ],
+  "pair": "ZEC/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261006-015036-ZEC-EUR-r37401058690.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-06T02:27:57.188279Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "8594ba42b028ab9b901093eb595e556189d72f65",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-06T02:27:57.188279Z",
+    "revalidation_started_at_utc": "2026-10-06T02:27:46.903645Z",
+    "ttl_due_at_utc": "2026-10-06T02:21:16.421737Z",
+    "ttl_lag_seconds": 390.482
+  }
+}
