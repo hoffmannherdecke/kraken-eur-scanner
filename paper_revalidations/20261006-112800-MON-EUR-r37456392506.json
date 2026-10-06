@@ -1,0 +1,228 @@
+{
+  "altname": "MONEUR",
+  "candidate_id": "20261006-112800-MON-EUR-r37456392506",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "15m close above 0.02585 with sustained elevated volume",
+      "Retest holds above 0.02585 and forms a higher low"
+    ],
+    "reason_codes": [
+      "tradable_public_pair",
+      "tight_spread",
+      "below_resistance",
+      "breakout_unconfirmed",
+      "higher_lows_absent",
+      "weak_24h_context",
+      "negative_major_market_context",
+      "fee_hurdle_material",
+      "account_tradability_unavailable"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "IGNITION",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation still shows no confirmed breakout above 0.02585 or higher-low retest. Plausible remaining movement is not sufficient to justify the fee and execution hurdle; no scout or stage-two entry is supported.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "MONUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 45.46,
+        "available": true,
+        "current_funding_rate": -1.954783468667e-06,
+        "current_open_interest": 17030053.0,
+        "funding_rate_delta": -3.797665081959e-06,
+        "open_interest_pct": -1.2481,
+        "previous_funding_rate": 1.842881613292e-06,
+        "previous_observed_at_utc": "2026-10-06T11:28:42.525521Z",
+        "previous_open_interest": 17245289.0
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": -1.954783468667e-06,
+        "index_price": 0.02887,
+        "last": 0.02876,
+        "mark_price": 0.02885512478,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 17030053.0,
+        "requested_symbols": [
+          "PF_MONUSD",
+          "PI_MONUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_MONUSD",
+        "volume24h": 17641348
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 0.02561,
+      "bid": 0.02559,
+      "last": 0.02561,
+      "spread_pct": 0.07812499999999681
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "150",
+      "pair_decimals": 5,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": -0.08679592515972168,
+          "ret3h_pct": 0.0469194566752984
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.18560715913328307,
+          "ret3h_pct": -0.3053877348340728
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.1402786869914907,
+          "ret3h_pct": -0.37320395596194267
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 0,
+      "positive_3h_count": 1,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T12:14:08.448532Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0c208b880773a0aa006ac4e61253d087d092e6d1d340945e8e"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 0.02561,
+    "bid": 0.02559,
+    "last": 0.02561,
+    "spread_pct": 0.07812499999999681
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 0.02561,
+      "high": 0.02585,
+      "low": 0.02538,
+      "open": 0.02581,
+      "trades": 141,
+      "ts": 1791284400,
+      "volume": 894780.02716,
+      "vwap": 0.02567
+    },
+    {
+      "close": 0.02571,
+      "high": 0.0258,
+      "low": 0.02562,
+      "open": 0.02562,
+      "trades": 29,
+      "ts": 1791285300,
+      "volume": 133458.1978,
+      "vwap": 0.02571
+    },
+    {
+      "close": 0.02552,
+      "high": 0.02572,
+      "low": 0.02552,
+      "open": 0.02564,
+      "trades": 21,
+      "ts": 1791286200,
+      "volume": 129355.98746,
+      "vwap": 0.02559
+    },
+    {
+      "close": 0.02555,
+      "high": 0.02562,
+      "low": 0.0255,
+      "open": 0.02562,
+      "trades": 22,
+      "ts": 1791287100,
+      "volume": 90388.81533,
+      "vwap": 0.02553
+    },
+    {
+      "close": 0.02561,
+      "high": 0.02561,
+      "low": 0.02554,
+      "open": 0.02554,
+      "trades": 62,
+      "ts": 1791288000,
+      "volume": 580911.6949,
+      "vwap": 0.02559
+    }
+  ],
+  "pair": "MON/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261006-112800-MON-EUR-r37456392506.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-06T12:14:15.847413Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "1a7c5c81534ee3a12275ea0eca2f5f54790996af",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-06T12:14:15.847413Z",
+    "revalidation_started_at_utc": "2026-10-06T12:14:08.020059Z",
+    "ttl_due_at_utc": "2026-10-06T12:13:42.525521Z",
+    "ttl_lag_seconds": 25.495
+  }
+}
