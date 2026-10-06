@@ -1,0 +1,205 @@
+{
+  "altname": "VVVEUR",
+  "candidate_id": "20261006-021832-VVV-EUR-r37403075696",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "A 15m close above \u20ac26.025 followed by a hold above that level.",
+      "Renewed live volume on the move while BTC, ETH, and SOL stop falling."
+    ],
+    "reason_codes": [
+      "resistance_confirmation_failed",
+      "live_volume_absent",
+      "major_market_weak",
+      "costs_high_vs_plausible_move"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "CONTINUITY",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "TTL revalidation failed: price is below the \u20ac26.025 resistance, renewed volume is absent, and major markets remain weak. No scout entry is justified.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": false,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "VVVUSDT"
+      },
+      "kraken_futures": {
+        "available": false,
+        "detail": "No matching Kraken Futures USD contract",
+        "requested_symbols": [
+          "PF_VVVUSD",
+          "PI_VVVUSD"
+        ],
+        "source": "kraken_futures_public"
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": null
+    },
+    "kraken_execution_ticker": {
+      "ask": 25.85,
+      "bid": 25.828,
+      "last": 25.876,
+      "spread_pct": 0.08514261387825388
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 5,
+      "ordermin": "0.18",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.010874122209414416,
+          "ret3h_pct": -0.2162043457857754
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": -0.045586406962283554,
+          "ret3h_pct": -0.3021647562634011
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": -0.05584512285927712,
+          "ret3h_pct": -0.22300687604535074
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 1,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T02:53:07.537656Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_0ae01eb363d3f830006ac46294e8c887d1a1693aef59a73e16"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 25.85,
+    "bid": 25.828,
+    "last": 25.876,
+    "spread_pct": 0.08514261387825388
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 25.487,
+      "high": 25.487,
+      "low": 25.487,
+      "open": 25.487,
+      "trades": 0,
+      "ts": 1791251100,
+      "volume": 0.0,
+      "vwap": 0.0
+    },
+    {
+      "close": 25.999,
+      "high": 26.025,
+      "low": 25.632,
+      "open": 25.764,
+      "trades": 38,
+      "ts": 1791252000,
+      "volume": 99.37532,
+      "vwap": 25.839
+    },
+    {
+      "close": 25.892,
+      "high": 25.979,
+      "low": 25.883,
+      "open": 25.979,
+      "trades": 7,
+      "ts": 1791252900,
+      "volume": 20.57832,
+      "vwap": 25.934
+    },
+    {
+      "close": 25.895,
+      "high": 25.895,
+      "low": 25.895,
+      "open": 25.895,
+      "trades": 1,
+      "ts": 1791253800,
+      "volume": 7.7534,
+      "vwap": 25.895
+    },
+    {
+      "close": 25.876,
+      "high": 25.876,
+      "low": 25.876,
+      "open": 25.876,
+      "trades": 1,
+      "ts": 1791254700,
+      "volume": 0.5695,
+      "vwap": 25.876
+    }
+  ],
+  "pair": "VVV/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261006-021832-VVV-EUR-r37403075696.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-06T02:53:15.392072Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "1fc85f6e41cfaf424cc99528c829051d398b904c",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-06T02:53:15.392072Z",
+    "revalidation_started_at_utc": "2026-10-06T02:53:07.156177Z",
+    "ttl_due_at_utc": "2026-10-06T02:48:56.117563Z",
+    "ttl_lag_seconds": 251.039
+  }
+}

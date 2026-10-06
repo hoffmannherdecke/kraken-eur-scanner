@@ -3,7 +3,16 @@
   "candidate_id": "20261006-021832-QNT-EUR-r37403075696",
   "evaluated_at_utc": "2026-10-06T02:18:47.491481Z",
   "excluded_from_missed_move_stats": false,
-  "horizons": {},
+  "horizons": {
+    "30": {
+      "bars": 30,
+      "complete": true,
+      "end_close_pct": -1.705,
+      "expected_bars": 30,
+      "mae_pct": -1.969,
+      "mfe_pct": 0.285
+    }
+  },
   "interval_minutes": 1,
   "kind": "PAPER_FOLLOWUP_V2",
   "opportunity_audit": {
@@ -55,5 +64,6 @@
   "path_classification": "REJECT",
   "schema_version": 2,
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "test_id": "SHADOW-V2R3-20261001-01"
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "updated_at_utc": "2026-10-06T02:53:18.438550Z"
 }
