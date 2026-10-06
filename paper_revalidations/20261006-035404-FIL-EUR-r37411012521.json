@@ -1,0 +1,223 @@
+{
+  "altname": "FILEUR",
+  "candidate_id": "20261006-035404-FIL-EUR-r37411012521",
+  "decision": {
+    "decision": "REJECT",
+    "expected_remaining_move_pct": null,
+    "missing_triggers": [
+      "Sustained close above 1.043 with stronger volume",
+      "BTC, ETH and SOL stabilization beyond a modest 1h bounce"
+    ],
+    "reason_codes": [
+      "EXTENDED_RUNUP",
+      "NO_CONFIRMED_BREAKOUT",
+      "MAJORS_NEGATIVE_3H",
+      "COST_ADJUSTED_REWARD_UNCLEAR"
+    ],
+    "risk_reward_after_costs": null,
+    "setup_lane": "EXTENDED",
+    "stage2_trigger_eur": null,
+    "stage2_ttl_minutes": 0,
+    "stop_eur": null,
+    "summary": "FIL remains extended after a sharp multi-day run; price has not established a sustained breakout above 1.043, and available headroom does not justify Kraken spot costs and execution risk.",
+    "ttl_minutes": 0
+  },
+  "decision_context": {
+    "account_specific_tradability": {
+      "available": false,
+      "reason": "No private Kraken trading credential is used by paper infrastructure."
+    },
+    "derivatives": {
+      "available": true,
+      "binance_futures": {
+        "available": false,
+        "detail": "HTTP Error 451: ",
+        "error": "HTTPError",
+        "source": "binance_public_futures",
+        "symbol": "FILUSDT"
+      },
+      "delta_vs_previous_series_observation": {
+        "age_minutes": 39.89,
+        "available": true,
+        "current_funding_rate": 2.623160042125e-06,
+        "current_open_interest": 1344917.4,
+        "funding_rate_delta": -2.4396082448375e-05,
+        "open_interest_pct": 0.0943,
+        "previous_funding_rate": 2.70192424905e-05,
+        "previous_observed_at_utc": "2026-10-06T03:54:46.920807Z",
+        "previous_open_interest": 1343649.8
+      },
+      "kraken_futures": {
+        "available": true,
+        "funding_rate": 2.623160042125e-06,
+        "index_price": 1.16824,
+        "last": 1.1691,
+        "mark_price": 1.16786431641,
+        "note": "Kraken Futures public cross-market context only; never used as Kraken Spot EUR execution price.",
+        "open_interest": 1344917.4,
+        "requested_symbols": [
+          "PF_FILUSD",
+          "PI_FILUSD"
+        ],
+        "source": "kraken_futures_public",
+        "symbol": "PF_FILUSD",
+        "volume24h": 1162961.6
+      },
+      "note": "Derivatives are supplementary context only; Kraken Spot EUR controls execution.",
+      "preferred_source": "kraken_futures"
+    },
+    "kraken_execution_ticker": {
+      "ask": 1.041,
+      "bid": 1.039,
+      "last": 1.039,
+      "spread_pct": 0.19230769230769248
+    },
+    "kraken_pair_metadata": {
+      "available": true,
+      "costmin": "0.45",
+      "fees": [],
+      "lot_decimals": 8,
+      "ordermin": "5",
+      "pair_decimals": 3,
+      "source": "kraken_public_assetpairs",
+      "status": "online"
+    },
+    "kraken_public_pair_verified": true,
+    "major_market_regime": {
+      "assets": {
+        "BTC/EUR": {
+          "available": true,
+          "ret1h_pct": 0.14323882546789513,
+          "ret3h_pct": -0.3883875517479929
+        },
+        "ETH/EUR": {
+          "available": true,
+          "ret1h_pct": 0.20412490282242235,
+          "ret3h_pct": -0.3662428280890806
+        },
+        "SOL/EUR": {
+          "available": true,
+          "ret1h_pct": 0.19633507853404897,
+          "ret3h_pct": -0.5105829929446637
+        }
+      },
+      "available_assets": 3,
+      "note": "Raw breadth proxy only; evaluator must not infer unavailable global market data.",
+      "positive_1h_count": 3,
+      "positive_3h_count": 0,
+      "source": "kraken_public_ohlc"
+    },
+    "official_headlines": {
+      "federal_reserve": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T20:30:00+00:00",
+            "title": "Federal Reserve Board announces approval of application by Isabella Bank Corporation"
+          }
+        ],
+        "source": "Federal Reserve official RSS"
+      },
+      "scope_note": "Official headline context only; absence of a headline is not evidence that no catalyst exists.",
+      "sec": {
+        "available": true,
+        "items": [
+          {
+            "published_at": "2026-10-05T08:47:36-04:00",
+            "title": "SEC Coordinates with Global Financial Regulators to Raise Fraud Awareness During World Investor Week"
+          }
+        ],
+        "source": "SEC official press releases"
+      }
+    },
+    "onchain": {
+      "available": false,
+      "reason": "No reliable free account-independent on-chain source integrated in this revision."
+    },
+    "retrieved_at_utc": "2026-10-06T04:34:39.041351Z",
+    "schema_version": 1
+  },
+  "evaluator": {
+    "attempt": 1,
+    "model": "gpt-6-luna",
+    "response_id": "resp_00f47465c8e98a79006ac47a604d7087d1ad3a836bbaac12ea"
+  },
+  "fee_assumption_pct_per_side": 0.6,
+  "fresh_kraken_ticker": {
+    "ask": 1.041,
+    "bid": 1.039,
+    "last": 1.039,
+    "spread_pct": 0.19230769230769248
+  },
+  "kind": "PAPER_V2_REVALIDATION_V2",
+  "kraken_15m_recent": [
+    {
+      "close": 1.034,
+      "high": 1.037,
+      "low": 1.031,
+      "open": 1.037,
+      "trades": 14,
+      "ts": 1791257400,
+      "volume": 4264.11623714,
+      "vwap": 1.033
+    },
+    {
+      "close": 1.038,
+      "high": 1.04,
+      "low": 1.035,
+      "open": 1.035,
+      "trades": 17,
+      "ts": 1791258300,
+      "volume": 4021.55043725,
+      "vwap": 1.037
+    },
+    {
+      "close": 1.042,
+      "high": 1.042,
+      "low": 1.036,
+      "open": 1.037,
+      "trades": 23,
+      "ts": 1791259200,
+      "volume": 3354.33734499,
+      "vwap": 1.038
+    },
+    {
+      "close": 1.044,
+      "high": 1.046,
+      "low": 1.042,
+      "open": 1.043,
+      "trades": 29,
+      "ts": 1791260100,
+      "volume": 4806.55050574,
+      "vwap": 1.043
+    },
+    {
+      "close": 1.039,
+      "high": 1.043,
+      "low": 1.039,
+      "open": 1.043,
+      "trades": 5,
+      "ts": 1791261000,
+      "volume": 1738.9907249,
+      "vwap": 1.04
+    }
+  ],
+  "pair": "FIL/EUR",
+  "paper_entry": null,
+  "prior_decision_file": "paper_decisions/20261006-035404-FIL-EUR-r37411012521.json",
+  "real_money_actions_enabled": false,
+  "revalidated_at_utc": "2026-10-06T04:34:48.181653Z",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "runtime_code_sha": "62bd6d6025b79d8603d683a9a611dbe83eefdb03",
+  "schema_version": 2,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "strategy_revision": "V2R3-2026-09-28",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "timing": {
+    "revalidation_completed_at_utc": "2026-10-06T04:34:48.181653Z",
+    "revalidation_started_at_utc": "2026-10-06T04:34:38.641726Z",
+    "ttl_due_at_utc": "2026-10-06T04:24:46.920807Z",
+    "ttl_lag_seconds": 591.721
+  }
+}
