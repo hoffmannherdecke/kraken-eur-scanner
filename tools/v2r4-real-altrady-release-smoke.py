@@ -104,6 +104,7 @@ def prepare(args: argparse.Namespace) -> int:
     price=float(trow["c"][0])
 
     sys.path.insert(0,str(args.code_root))
+    from paper_evaluator.evaluate import validate_candidate
     from paper_evaluator.v2r4_trigger_plan import build_wait_trigger_plan
 
     root=args.root
@@ -113,14 +114,15 @@ def prepare(args: argparse.Namespace) -> int:
     now=datetime.now(timezone.utc)
     ts=int(now.timestamp())
     tag=pair.replace("/","-")
-    cid=f"{now.strftime('%Y%m%d-%H%M%S')}-{tag}-real-altrady-smoke"
+    source_run_id=0
+    cid=f"{now.strftime('%Y%m%d-%H%M%S')}-{tag}-r{source_run_id}"
 
     candidate={
         "schema_version":1,
         "kind":"CANONICAL_CANDIDATE_HANDOFF_V1",
         "candidate_id":cid,
-        "queue_id":f"REAL-ALTRADY-SMOKE:{tag}:{ts}",
-        "source_scanner_run_id":0,
+        "queue_id":f"{source_run_id}:{tag}:{ts}",
+        "source_scanner_run_id":source_run_id,
         "event_time_utc":now.isoformat().replace("+00:00","Z"),
         "event_ts":ts,
         "pair":pair,
@@ -150,6 +152,9 @@ def prepare(args: argparse.Namespace) -> int:
         },
     }
 
+    candidate_file=root/"candidates"/f"{cid}.json"
+    validate_candidate(candidate,candidate_file)
+
     decision={
         "decision":"WAIT",
         "ttl_minutes":10,
@@ -157,7 +162,7 @@ def prepare(args: argparse.Namespace) -> int:
     }
     plan=build_wait_trigger_plan(candidate,decision,now)
 
-    (root/"candidates"/f"{cid}.json").write_text(
+    candidate_file.write_text(
         json.dumps(candidate,indent=2,sort_keys=True)+"\n","utf-8"
     )
     (root/"decisions"/f"{cid}.json").write_text(

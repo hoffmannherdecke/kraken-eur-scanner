@@ -16,7 +16,6 @@ $keyFile = Join-Path $TradingRoot "Secrets\openai-api-key.txt"
 $heartbeat = Join-Path $TradingRoot "State\kraken-canary-heartbeat.json"
 $realAltradyLog = Join-Path $TradingRoot "Logs\altrady-trigger-events.jsonl"
 $tempRoot = Join-Path $TradingRoot "Temp"
-$helper = Join-Path $repo "tools\v2r4-real-altrady-release-smoke.py"
 
 $plan = [ordered]@{
   kind = "MINIPC_V2R4_REAL_ALTRADY_KRAKEN_SMOKE_V1"
@@ -53,7 +52,7 @@ if ($Confirm -ne $ExpectedConfirm) {
   throw "Execution blocked. Re-run with -Confirm $ExpectedConfirm"
 }
 
-foreach ($p in @($repo,$python,$keyFile,$heartbeat,$realAltradyLog,$tempRoot,$helper)) {
+foreach ($p in @($repo,$python,$keyFile,$heartbeat,$realAltradyLog,$tempRoot)) {
   if (-not (Test-Path $p)) { throw "Required path missing: $p" }
 }
 
@@ -81,6 +80,11 @@ try {
   Pop-Location
 }
 
+$helper = Join-Path $worktree "tools\v2r4-real-altrady-release-smoke.py"
+if (-not (Test-Path $helper)) {
+  throw "Release-candidate Altrady smoke helper missing: $helper"
+}
+
 try {
   Push-Location $worktree
   try {
@@ -90,7 +94,8 @@ try {
       "paper_evaluator/v2r4_trigger_contract.py",
       "paper_evaluator/v2r4_trigger_plan.py",
       "paper_evaluator/v2r4_local_recheck.py",
-      "paper_evaluator/v2r4_wait_runtime.py"
+      "paper_evaluator/v2r4_wait_runtime.py",
+      "tools/v2r4-real-altrady-release-smoke.py"
     )
     & $python @compileArgs
     if ($LASTEXITCODE -ne 0) { throw "V2R4 runtime compile failed" }
