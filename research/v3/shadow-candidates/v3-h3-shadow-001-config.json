@@ -1,18 +1,24 @@
 {
-  "schema_version": 1,
-  "kind": "V3_H3_SHADOW_CONTEXT_CONFIG_V1",
+  "schema_version": 2,
+  "kind": "V3_H3_SHADOW_CONTEXT_CONFIG_V2",
   "candidate_id": "V3-H3-SHADOW-001",
-  "baseline_strategy_revision": "BIND_AT_FREEZE_CURRENT_ACTIVE_PAPER_BASELINE",
-  "candidate_strategy_revision": "V3-H3-SHADOW-001-DRAFT",
-  "status": "DRAFT_PREPARED_NOT_ACTIVE",
+  "baseline_series_id": "PAPER-V2R4-20261007T184255Z",
+  "baseline_strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+  "baseline_release_repo_sha": "3c6729a6c548d169f56a97f07f75892f37211636",
+  "baseline_strategy_fingerprint_sha256": "55c15f6c0735e524409594ece173ab30e4d84eecafefa18b57f8dc9c48cca32c",
+  "candidate_strategy_revision": "V3-H3-SHADOW-001",
+  "status": "FROZEN_FOR_SHADOW",
+  "frozen_at_utc": "2026-10-07T20:32:00Z",
   "changed_component": "STATE_CONDITIONING",
-  "purpose": "Test whether fixed, checksum-valid Kraken depth-10 orderbook state adds useful confirmation context on the preregistered H3 symbols without thresholds, transforms, pair ranking, model change, extra candidate discovery, orders or baseline mutation.",
+  "purpose": "Prospectively test whether fixed checksum-valid Kraken depth-10 orderbook state adds useful decision context on preregistered XBT/ETH/SOL candidates while leaving the active V2R4 Paper baseline unchanged.",
   "candidate_stream": {
-    "source": "same canonical candidate stream as the active comparison baseline/successor runtime",
+    "source": "PAPER-V2R4-20261007T184255Z local canonical handoff queue",
     "same_candidate_stream": true,
     "shared_market_clock": true,
     "no_extra_candidate_discovery": true,
-    "eligible_pair_behavior": "Apply H3 context only to preregistered supported pairs; all other candidates are baseline passthrough and are excluded from the H3 eligible-sample count."
+    "start_anchor": "FIRST_ELIGIBLE_CANDIDATE_AFTER_H3_RUNTIME_READY",
+    "backfill_before_runtime_ready": false,
+    "eligible_pair_behavior": "Capture H3 only for XBT/EUR, ETH/EUR and SOL/EUR. Other pairs are baseline passthrough and excluded from the H3 eligible sample."
   },
   "supported_pairs": {
     "candidate_pairs": [
@@ -30,23 +36,25 @@
       "ETH/EUR": "ETH/EUR",
       "SOL/EUR": "SOL/EUR"
     },
-    "selection_basis": "Exact symbols frozen before the completed V3-H3-ASSOC-002 prospective association trial; no outcome-driven pair expansion or pruning."
+    "selection_basis": "Frozen before V3-H3-ASSOC-002; no outcome-driven pair expansion or pruning."
   },
   "source_contract": {
     "endpoint": "wss://ws.kraken.com/v2",
     "channel": "book",
     "depth": 10,
-    "reconciliation": "apply levels -> trim depth10 -> validate Kraken CRC32 before state is eligible",
-    "state_rule": "latest checksum-valid reconciled state at or before the candidate evaluation clock",
+    "reconciliation": "apply snapshot/deltas, trim depth10, validate Kraken CRC32 before state eligibility",
+    "state_rule": "latest checksum-valid state captured prospectively from the physical MINI-PC when the canonical candidate becomes visible",
     "maximum_state_age_ms": 2000,
+    "capture_acceptance_age_ms": 1500,
+    "maximum_source_clock_lead_ms": 250,
     "stale_or_missing_behavior": "BASELINE_PASSTHROUGH_MARK_H3_CONTEXT_MISSING",
     "public_endpoint_only": true
   },
   "fixed_features": {
-    "spread_bps": "raw fixed feature from the H3 state contract",
-    "bid_depth_quote_top10": "raw fixed feature from the H3 state contract",
-    "ask_depth_quote_top10": "raw fixed feature from the H3 state contract",
-    "depth_imbalance_top10": "raw fixed feature from the H3 state contract"
+    "spread_bps": "raw fixed feature",
+    "bid_depth_quote_top10": "raw fixed feature",
+    "ask_depth_quote_top10": "raw fixed feature",
+    "depth_imbalance_top10": "raw fixed feature"
   },
   "shadow_decision_change": {
     "mode": "CONTEXT_ONLY",
@@ -57,7 +65,9 @@
     "score_weight_change": false,
     "pair_subset_search": false,
     "model_change": false,
-    "automatic_trade_rule": false
+    "automatic_trade_rule": false,
+    "baseline_control_replay": true,
+    "causal_divergence_rule": "Count H3 decision divergence only when the same-snapshot baseline control replay matches the official V2R4 baseline decision. Otherwise mark baseline_replay_unstable and exclude that row from causal divergence counts."
   },
   "pilot_gate": {
     "minimum_eligible_matched_candidates": 20,
@@ -69,27 +79,20 @@
       120,
       360
     ],
-    "low_impact_rule": "If fewer than 3 baseline-vs-H3 decision divergences occur by the minimum gate, classify INCONCLUSIVE_LOW_IMPACT; do not tune or auto-extend.",
-    "fasttrack_note": "No arbitrary fixed day-count floor. Review as soon as the sample, temporal-diversity and integrity gates are met.",
-    "promotion_limit": "This is a bounded shadow feasibility/value pilot only; it cannot directly promote H3 into a live or paper strategy."
-  },
-  "operational_feasibility_snapshot": {
-    "source": "Supabase paper_candidate_outcomes for PAPER-V2R3-CLEAN-20261001T0925Z; candidate incidence only, not outcome selection",
-    "observed_supported_pair_candidates": {
-      "XBT/EUR": 15,
-      "ETH/EUR": 4,
-      "SOL/EUR": 11,
-      "total": 30
-    },
-    "observed_window_utc": {
-      "first_supported_candidate": "2026-10-01T10:04:00.412459Z",
-      "last_supported_candidate": "2026-10-06T14:04:12.765173Z"
-    },
-    "gate_rationale": "Twenty eligible candidates across at least two UTC dates is a short, bounded pilot sized to the observed incidence. Any positive result still requires a later stronger evidence gate before promotion."
+    "low_impact_rule": "If fewer than 3 causal baseline-vs-H3 decision divergences occur by the minimum gate, classify INCONCLUSIVE_LOW_IMPACT. Do not tune or auto-extend.",
+    "stop_intake_when_minimum_gate_met": true,
+    "automatic_extension": false,
+    "fasttrack_note": "No arbitrary day-count floor. Stop intake as soon as sample, temporal-diversity and capture-integrity gates are met; outcome review waits for required followups.",
+    "promotion_limit": "Shadow evidence cannot directly promote H3 into Paper or real-money strategy."
   },
   "cost_reference": {
     "taker_pct_per_side": 0.6,
-    "note": "Same conservative reference used by the baseline research path; no actual orders are created by this pilot."
+    "note": "Same conservative project cost reference; H3 creates no orders."
+  },
+  "evidence_storage": {
+    "primary": "Supabase public.v3_h3_shadow_evidence and public.v3_h3_shadow_status through authenticated Edge relay",
+    "local": "bounded MINI-PC runtime files and heartbeat",
+    "per_event_git_commits": false
   },
   "review_rules": {
     "automatic_winner_selection": false,
@@ -102,24 +105,37 @@
   "activation_preconditions": {
     "h1_fixed_review_complete": true,
     "candidate_contract_guard_pass": true,
-    "physical_minipc_point_in_time_context_smoke_pass": false,
-    "physical_trigger_to_shadow_evaluation_smoke_pass": false,
-    "explicit_shadow_start_decision": false
+    "physical_minipc_point_in_time_context_smoke_pass": true,
+    "physical_trigger_to_shadow_evaluation_smoke_pass": true,
+    "duplicate_and_passthrough_guard_pass": true,
+    "explicit_shadow_start_decision": true
+  },
+  "physical_gate_evidence": {
+    "reconciliation_report": "v3-h3-ws-book-smoke-20261007-221153.json",
+    "reconciliation_status": "PASS",
+    "updates": 931,
+    "checksum_pass": 937,
+    "checksum_fail": 0,
+    "e2e_report": "v3-h3-shadow-e2e-20261007-223154.json",
+    "e2e_status": "PASS",
+    "e2e_baseline_decision": "REJECT",
+    "e2e_h3_decision": "REJECT",
+    "e2e_decision_diverged": false,
+    "active_v2r4_changed": false,
+    "orders": false,
+    "real_money_actions": false
   },
   "guardrails": {
-    "active_v2r3_changed": false,
-    "v2r4_changed": false,
+    "active_baseline_changed": false,
     "sealed_holdout_opened": false,
     "private_api_allowed": false,
     "orders": false,
     "real_money_actions": false,
-    "leverage": false
+    "leverage": false,
+    "automatic_promotion": false
   },
   "baseline_binding": {
-    "mode": "BIND_AT_FREEZE_TO_CURRENT_ACTIVE_PAPER_BASELINE",
-    "provisional_evidence_reference": "V2R3-2026-09-28",
-    "rule": "At H3 freeze/start, bind to the exact then-current active Paper comparison baseline and its candidate stream. If V2R4 has been activated, H3 must compare against that exact V2R4 Paper revision rather than replaying stale V2R3 as the primary pilot.",
-    "prefreeze_rebinding_allowed": true,
+    "mode": "FROZEN_EXACT_ACTIVE_PAPER_BASELINE",
     "postfreeze_rebinding_allowed": false
   }
 }
