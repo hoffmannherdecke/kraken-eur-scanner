@@ -75,6 +75,21 @@ release controls.
     reconciliation, stale/duplicate protection, rollback, explicit release approval or other
     live/private safety requirements.
 
+12. **Completed-gate finality / no moving-target re-blocking.**
+    Once a preregistered completion/release gate has been satisfied for its fixed qualifying
+    cohort, the required review has been completed, and any required explicit approval has been
+    recorded, that gate is frozen as a timestamped decision snapshot. Later rolling telemetry,
+    newly arriving shadow events, denominator growth, or continuously accumulating observations
+    must not retroactively turn that already-completed gate back into a blocker or force the same
+    release/strategy transition into another waiting loop. New post-snapshot evidence belongs to
+    ongoing monitoring or the successor evidence set.
+
+    A completed gate may be reopened only by a **new material validity or safety defect** that
+    specifically invalidates the frozen evidence, release artifact, runtime integrity, or safety
+    assumptions used for the decision. Ordinary arrival of additional valid observations is not
+    such a defect. This rule applies permanently to V2R4, V3, every later paper/shadow generation,
+    all future strategy switches, and successor validation in the real-money phase.
+
 ## Current V2R3 application
 
 Series: `PAPER-V2R3-CLEAN-20261001T0925Z`
