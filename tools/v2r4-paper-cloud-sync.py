@@ -63,6 +63,54 @@ def _chunks(rows,size):
     for i in range(0,len(rows),size):
         yield rows[i:i+size]
 
+def actionable_keys(control,candidates,trades):
+    sid=control['series_id']; keys=set()
+    for row in candidates:
+        payload=row.get('payload') or {}
+        term=payload.get('recheck') or payload.get('decision') or {}
+        if (term.get('decision') or {}).get('decision')=='BUY_SCOUT' and term.get('paper_entry'):
+            stamp=term.get('recheck_completed_at_utc') or term.get('revalidated_at_utc') or term.get('evaluated_at_utc') or ''
+            keys.add(f"{sid}|{row.get('candidate_id')}|BUY_SCOUT|{stamp}")
+    important={'STAGE2_FILLED','TRAIL_TIER','CLOSED','DATA_GAP_UNVERIFIED'}
+    for row in trades:
+        pos=row.get('payload') or {}
+        for idx,event in enumerate(pos.get('events') or []):
+            typ=event.get('type')
+            if typ in important:
+                keys.add(f"{sid}|{row.get('candidate_id')}|{idx}|{typ}|{event.get('at_utc') or ''}")
+    return keys
+
+def dispatch_alerts_if_needed(root,control,candidates,trades):
+    state_path=root/'State/v2r4-paper-alert-dispatch-state.json'
+    state=load_json(state_path) if state_path.exists() else {'schema_version':1,'dispatched':[]}
+    dispatched=set(state.get('dispatched') or [])
+    current=actionable_keys(control,candidates,trades)
+    pending=sorted(current-dispatched)
+    if not pending:
+        return {'status':'NONE_PENDING','new_actionable':0}
+    token_path=root/'Secrets/github-actions-dispatch-token.txt'
+    token=token_path.read_text('utf-8').strip() if token_path.exists() else ''
+    if len(token)<20:
+        raise RuntimeError('GitHub Actions dispatch token missing/too short for actionable V2R4 PAPER alert')
+    url='https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner/actions/workflows/v2r4-paper-alerts.yml/dispatches'
+    req=urllib.request.Request(
+        url,data=b'{"ref":"main"}',method='POST',
+        headers={
+            'Authorization':'Bearer '+token,
+            'Accept':'application/vnd.github+json',
+            'X-GitHub-Api-Version':'2022-11-28',
+            'Content-Type':'application/json',
+            'User-Agent':'minipc-v2r4-paper-alert-dispatch/1.0',
+        },
+    )
+    with urllib.request.urlopen(req,timeout=20) as resp:
+        if resp.status!=204:
+            raise RuntimeError(f'alert workflow dispatch HTTP {resp.status}')
+    state['dispatched']=sorted((dispatched|set(pending)))[-2000:]
+    state['updated_at_utc']=iso()
+    atomic_json(state_path,state)
+    return {'status':'DISPATCHED','new_actionable':len(pending)}
+
 def run_once(args):
     hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'; token=load_token(args.trading_root)
     result={'schema_version':1,'kind':'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1','checked_at_utc':iso(),'status':'UNKNOWN','paper_only':True,'order_api':False,'real_money_actions':False}
@@ -84,9 +132,11 @@ def run_once(args):
             for batch in _chunks(trades,50):
                 resp=post(args.endpoint,token,{'action':'sync','series_id':control['series_id'],'strategy_revision':control['strategy_revision'],'candidates':[],'trades':batch})
                 accepted_trades+=int(resp.get('accepted_trades') or 0); batches+=1
+        alert_state=dispatch_alerts_if_needed(args.trading_root,control,candidates,trades)
         result.update(
             status='HEALTHY',series_id=control['series_id'],candidates=len(candidates),trades=len(trades),
             accepted_candidates=accepted_candidates,accepted_trades=accepted_trades,batches=batches,
+            alert_dispatch=alert_state,
             detail='paper evidence relay reachable; bounded batches complete'
         )
     except Exception as exc: result.update(status='DEGRADED',detail=f'{type(exc).__name__}: {str(exc)[:300]}')
