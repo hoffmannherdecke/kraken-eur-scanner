@@ -112,29 +112,88 @@ def run_candidates(args):
       if args.once: return 0
       time.sleep(args.interval_seconds)
 
-def reconcile_rechecks_and_expiry(app:Path):
+def _terminal_wait_expiry(control, source, now, reason):
+    return {
+        'schema_version':1,'kind':'V2R4_WAIT_EXPIRY_V1',
+        'test_id':control['test_id'],'series_id':control['series_id'],
+        'strategy_revision':control['strategy_revision'],
+        'candidate_id':source['candidate_id'],'pair':source['pair'],
+        'recheck_started_at_utc':iso(now),'recheck_completed_at_utc':iso(now),
+        'decision':{
+            'decision':'REJECT','setup_lane':'NONE',
+            'summary':'WAIT expired without a deterministic trigger match.' if reason=='TTL_EXPIRED_NO_TRIGGER' else 'WAIT could not be monitored safely and was rejected fail-closed.',
+            'reason_codes':[reason],'missing_triggers':[],
+            'stop_eur':None,'ttl_minutes':0,'expected_remaining_move_pct':None,
+            'risk_reward_after_costs':None,'stage2_trigger_eur':None,
+            'stage2_ttl_minutes':0,'watch_conditions':[]
+        },
+        'paper_entry':None,'next_wait_trigger_plan':None,
+        'evaluator':{'response_id':None,'model':None,'attempt':0},
+        'paper_only':True,'real_money_actions_enabled':False,'order_api':False
+    }
+
+def _expiry_path(rdir, now, cid, suffix):
+    return rdir/f"{now.strftime('%Y%m%dT%H%M%SZ')}-{cid}-{suffix}.json"
+
+def reconcile_rechecks_and_expiry(app:Path, now=None):
     control=load_json(app/'paper_runtime_control.json'); series_id=control['series_id']
-    rdir=app/'paper_rechecks'; legacy=app/'paper_revalidations'; rdir.mkdir(exist_ok=True); legacy.mkdir(exist_ok=True)
+    if control.get('real_money_actions_enabled') is not False:
+        raise RuntimeError('unsafe V2R4 control')
+    rdir=app/'paper_rechecks'; legacy=app/'paper_revalidations'
+    rdir.mkdir(exist_ok=True); legacy.mkdir(exist_ok=True)
     latest={}
     for rp in rdir.glob('*.json'):
         try: rr=load_json(rp)
         except Exception: continue
         if rr.get('series_id')!=series_id or not rr.get('candidate_id'): continue
         when=rr.get('recheck_completed_at_utc') or rr.get('completed_at_utc') or rr.get('revalidated_at_utc') or ''
-        if rr['candidate_id'] not in latest or when>latest[rr['candidate_id']][0]: latest[rr['candidate_id']]=(when,rr)
-    now=utcnow()
+        cid=rr['candidate_id']
+        if cid not in latest or when>latest[cid][0]:
+            latest[cid]=(when,rr)
+
+    now=(now or utcnow()).astimezone(timezone.utc)
     for dp in (app/'paper_decisions').glob('*.json'):
         try: d=load_json(dp)
         except Exception: continue
-        if d.get('series_id')!=series_id or (d.get('decision') or {}).get('decision')!='WAIT': continue
-        cid=d.get('candidate_id'); rr=latest.get(cid,(None,None))[1]
+        if d.get('series_id')!=series_id or (d.get('decision') or {}).get('decision')!='WAIT':
+            continue
+        cid=d.get('candidate_id')
+        rr=latest.get(cid,(None,None))[1]
+
         if rr is None:
             ttl=int((d.get('decision') or {}).get('ttl_minutes') or 0)
             due=parse_utc(d['evaluated_at_utc']).timestamp()+ttl*60
             if ttl>0 and now.timestamp()>=due:
-                rr={'schema_version':1,'kind':'V2R4_WAIT_EXPIRY_V1','test_id':control['test_id'],'series_id':series_id,'strategy_revision':control['strategy_revision'],'candidate_id':cid,'pair':d['pair'],'recheck_started_at_utc':iso(now),'recheck_completed_at_utc':iso(now),'decision':{'decision':'REJECT','setup_lane':'NONE','summary':'WAIT expired without a deterministic trigger match.','reason_codes':['TTL_EXPIRED_NO_TRIGGER'],'missing_triggers':[],'stop_eur':None,'ttl_minutes':0,'expected_remaining_move_pct':None,'risk_reward_after_costs':None,'stage2_trigger_eur':None,'stage2_ttl_minutes':0,'watch_conditions':[]},'paper_entry':None,'next_wait_trigger_plan':None,'evaluator':{'response_id':None,'model':None,'attempt':0},'paper_only':True,'real_money_actions_enabled':False,'order_api':False}
-                target=rdir/f"{now.strftime('%Y%m%dT%H%M%SZ')}-{cid}-ttl-expired.json"
-                if not target.exists(): target.write_text(json.dumps(rr,indent=2,sort_keys=True)+'\n','utf-8')
+                rr=_terminal_wait_expiry(control,d,now,'TTL_EXPIRED_NO_TRIGGER')
+                target=_expiry_path(rdir,now,cid,'ttl-expired')
+                if not target.exists():
+                    target.write_text(json.dumps(rr,indent=2,sort_keys=True)+'\n','utf-8')
+                latest[cid]=(rr['recheck_completed_at_utc'],rr)
+        else:
+            terminal=(rr.get('decision') or {}).get('decision')
+            if terminal=='WAIT':
+                plan=rr.get('next_wait_trigger_plan')
+                if not isinstance(plan,dict):
+                    rr=_terminal_wait_expiry(control,rr,now,'WAIT_WITHOUT_TRIGGER_PLAN')
+                    target=_expiry_path(rdir,now,cid,'unsafe-wait')
+                    if not target.exists():
+                        target.write_text(json.dumps(rr,indent=2,sort_keys=True)+'\n','utf-8')
+                    latest[cid]=(rr['recheck_completed_at_utc'],rr)
+                else:
+                    expires=plan.get('expires_at_utc')
+                    if not expires:
+                        rr=_terminal_wait_expiry(control,rr,now,'WAIT_WITHOUT_TRIGGER_PLAN')
+                        target=_expiry_path(rdir,now,cid,'unsafe-wait')
+                        if not target.exists():
+                            target.write_text(json.dumps(rr,indent=2,sort_keys=True)+'\n','utf-8')
+                        latest[cid]=(rr['recheck_completed_at_utc'],rr)
+                    elif parse_utc(expires)<=now:
+                        rr=_terminal_wait_expiry(control,rr,now,'TTL_EXPIRED_NO_TRIGGER')
+                        target=_expiry_path(rdir,now,cid,'chained-ttl-expired')
+                        if not target.exists():
+                            target.write_text(json.dumps(rr,indent=2,sort_keys=True)+'\n','utf-8')
+                        latest[cid]=(rr['recheck_completed_at_utc'],rr)
+
         if rr is not None:
             mirror=legacy/dp.name
             mirror.write_text(json.dumps(rr,indent=2,sort_keys=True)+'\n','utf-8')

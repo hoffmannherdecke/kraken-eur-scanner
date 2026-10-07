@@ -1,0 +1,31 @@
+name: V2R4 paper alert relay
+
+'on':
+  workflow_dispatch:
+  schedule:
+    - cron: '27 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v2r4-paper-alert-relay
+  cancel-in-progress: false
+
+jobs:
+  alerts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    env:
+      SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
+      SUPABASE_SECRET_KEY: \${{ secrets.SUPABASE_SECRET_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: \${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SLACK_WEBHOOK_URL: \${{ secrets.SLACK_WEBHOOK_URL }}
+      SLACK_USER_ID: U0C39EDQ1H8
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Deliver idempotent V2R4 PAPER alerts
+        run: python tools/v2r4-paper-alerts.py
