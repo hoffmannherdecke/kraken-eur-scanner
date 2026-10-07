@@ -122,3 +122,17 @@ This is **not** a V2R4 behavior/mechanics change. It removes the former fixed 7-
 completion floor and allows the release review at the earliest valid sample/diversity/
 maturity/integrity point. Entry, stop, sizing, trigger, recheck and scanner behavior remain
 subject to the exact diff in this document.
+
+
+## Final V2R3 learning reconciliation — 2026-10-07
+
+Canonical review: `research/work-analysis/2026-10-07-v2r3-final-review.md`; exact dispositions: `research/v2r3/strategy-adjustment-hypotheses-final-20261007.json`.
+
+- bounded deterministic WAIT + fresh whole-strategy recheck: `ALREADY_COVERED_V2R4`;
+- public online Kraken `AssetPairs` authority: `ALREADY_COVERED_V2R4`;
+- anti-chase, 50+50 sizing, 0.60%/side fees, two-stage entry and exit structure: `NO_V2R4_CHANGE` for the first comparison;
+- pullback/rebuild/second-leg: `V3_ONLY / MORE_TESTING_REQUIRED`;
+- scanner score as entry/sizing override: unsupported (MFE24 correlation -0.024, close24 -0.035);
+- pair/time episode clustering and temporal stratification: measurement requirements only.
+
+No `PROPOSE_V2R4_CHANGE` remains. This clears learning reconciliation only; current-main candidate materialization, current shadow readiness, physical bounded smoke, MINI-PC readiness and explicit `APPROVED_PAPER` remain separate gates.
