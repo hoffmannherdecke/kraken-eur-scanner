@@ -183,7 +183,7 @@
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "POST_V2R4_PROSPECTIVE_COMPARATIVE_REVIEW"
+      "future_research_gate": "POST_V2R4_PROSPECTIVE_COMPARATIVE_REVIEW"
     },
     {
       "id": "late_chase_protection",
@@ -200,7 +200,7 @@
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS"
+      "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS"
     },
     {
       "id": "stop_trailing_ttl_exit_logic",
@@ -219,7 +219,7 @@
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "POST_V2R4_MATERIAL_TRADE_SAMPLE"
+      "future_research_gate": "POST_V2R4_MATERIAL_TRADE_SAMPLE"
     },
     {
       "id": "position_sizing_mapping",
@@ -234,7 +234,7 @@
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "POST_V2R4_TIMING_SERIES_SEPARATE_ADAPTIVE_SIZING_RESEARCH"
+      "future_research_gate": "POST_V2R4_TIMING_SERIES_SEPARATE_ADAPTIVE_SIZING_RESEARCH"
     },
     {
       "id": "conservative_cost_model",
@@ -248,7 +248,7 @@
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "TARGETED_MICROSTRUCTURE_COST_RESEARCH"
+      "future_research_gate": "TARGETED_MICROSTRUCTURE_COST_RESEARCH"
     },
     {
       "id": "binance_derivatives_state",
