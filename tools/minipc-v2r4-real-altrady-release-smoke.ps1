@@ -2,7 +2,7 @@ param(
   [switch]$Execute,
   [string]$Confirm = "",
   [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
-  [string]$Branch = "prep/v2r4-refresh-20261001",
+  [string]$Branch = "main",
   [int]$MaxEventAgeMinutes = 30
 )
 
@@ -23,6 +23,7 @@ $plan = [ordered]@{
   status = $(if ($Execute) { "READY_TO_EXECUTE" } else { "PLAN_ONLY" })
   execute = [bool]$Execute
   branch = $Branch
+  binding_spec = "research/v2r4/paper_strategy_spec_v2r4_release_candidate.json"
   max_event_age_minutes = $MaxEventAgeMinutes
   real_altrady_log = $realAltradyLog
   isolation = "TEMP_WORKTREE_AND_TEMP_RUNTIME_ONLY"
@@ -64,7 +65,7 @@ $worktree = Join-Path $tempRoot ("v2r4-real-altrady-smoke-code-" + $stamp)
 $caseRoot = Join-Path $tempRoot ("v2r4-real-altrady-smoke-case-" + $stamp)
 New-Item -ItemType Directory -Force -Path $caseRoot | Out-Null
 
-Write-Host "[REAL-ALTRADY-V2R4] 1/8 Fetch isolated refreshed candidate branch"
+Write-Host "[REAL-ALTRADY-V2R4] 1/8 Fetch isolated current candidate branch"
 Push-Location $repo
 try {
   & git fetch origin $Branch
@@ -102,7 +103,9 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "real Altrady fixture preparation failed" }
     $fixture = $fixtureJson | ConvertFrom-Json
 
-    Copy-Item "research\v2r4\paper_strategy_spec_v2r4_proposed.json" (Join-Path $caseRoot "spec.json")
+    $bindingSpec = Join-Path $worktree "research\v2r4\paper_strategy_spec_v2r4_release_candidate.json"
+    if (-not (Test-Path $bindingSpec)) { throw "Binding V2R4 release-candidate spec missing: $bindingSpec" }
+    Copy-Item $bindingSpec (Join-Path $caseRoot "spec.json")
 
     Write-Host "[REAL-ALTRADY-V2R4] 4/8 Execute real transport wakeup -> fresh Kraken condition -> isolated paper recheck"
     $runArgs = @(
