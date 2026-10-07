@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H1_SHADOW_001_FIXED_REVIEW_V1",
+  "review_id": "V3-H1-SHADOW-001-REVIEW-20261007",
+  "status": "COMPLETE_REJECT_STANDALONE_DECISION_AUTHORITY",
+  "reviewed_at_utc": "2026-10-07T09:45:00Z",
+  "shadow_candidate_id": "V3-H1-SHADOW-001",
+  "baseline_series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "source_surfaces": {
+    "supabase_tables": [
+      "public.v3_h1_shadow_evidence",
+      "public.v3_h1_shadow_status",
+      "public.paper_candidate_outcomes"
+    ],
+    "frozen_candidate": "research/v3/shadow-candidates/v3-h1-shadow-001.json",
+    "frozen_config": "research/v3/shadow-candidates/v3-h1-shadow-001-config.json",
+    "upstream_fixed_review": "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
+  },
+  "completion_gate": {
+    "shadow_records": 200,
+    "pass_records": 200,
+    "capture_success_pct": 100,
+    "decision_divergences": 9,
+    "decision_divergence_pct": 4.5,
+    "first_candidate_event_utc": "2026-10-03T08:18:37Z",
+    "last_candidate_event_utc": "2026-10-05T00:18:13Z",
+    "elapsed_hours_from_first_candidate_at_close": 45.702,
+    "minimum_gate_met": true,
+    "automatic_extension": false
+  },
+  "decision_matrix": [
+    {
+      "baseline_decision": "WAIT",
+      "shadow_decision": "WAIT",
+      "count": 187
+    },
+    {
+      "baseline_decision": "WAIT",
+      "shadow_decision": "REJECT",
+      "count": 5
+    },
+    {
+      "baseline_decision": "REJECT",
+      "shadow_decision": "WAIT",
+      "count": 4
+    },
+    {
+      "baseline_decision": "REJECT",
+      "shadow_decision": "REJECT",
+      "count": 4
+    }
+  ],
+  "divergence_followup_summary": {
+    "WAIT_TO_REJECT": {
+      "count": 5,
+      "avg_mfe_360m_pct": 3.409,
+      "avg_mfe_24h_pct": 6.443,
+      "avg_mae_24h_pct": -0.757,
+      "avg_close_24h_pct": 3.563,
+      "mfe_360m_above_1_2pct_roundtrip_reference_count": 4,
+      "mfe_24h_above_1_2pct_roundtrip_reference_count": 5,
+      "close_24h_above_1_2pct_roundtrip_reference_count": 4,
+      "interpretation": "The H1-only context frequently converted baseline WAITs into REJECTs even though most of those cases later retained material upside. This is adverse evidence against granting H1 standalone decision authority."
+    },
+    "REJECT_TO_WAIT": {
+      "count": 4,
+      "avg_mfe_360m_pct": 4.535,
+      "avg_mfe_24h_pct": 5.872,
+      "avg_mae_24h_pct": -4.588,
+      "avg_close_24h_pct": -0.775,
+      "mfe_360m_above_1_2pct_roundtrip_reference_count": 2,
+      "mfe_24h_above_1_2pct_roundtrip_reference_count": 3,
+      "close_24h_above_1_2pct_roundtrip_reference_count": 1,
+      "interpretation": "The H1-only context also loosened some baseline REJECTs, but outcomes were mixed and included large adverse 24h paths. No stable net-benefit pattern is established."
+    }
+  },
+  "cost_reference": {
+    "taker_pct_per_side": 0.6,
+    "roundtrip_reference_pct_before_spread_slippage": 1.2,
+    "note": "The pilot created no real or paper orders; the cost reference is used only as a fixed descriptive hurdle, not as a reconstructed trade PnL."
+  },
+  "fixed_conclusion": {
+    "standalone_decision_modifier": "REJECT",
+    "automatic_promotion": false,
+    "active_v2r3_change": false,
+    "v2r4_change": false,
+    "orders": false,
+    "real_money_actions": false,
+    "reason": "The pilot cleared its preregistered completion gate and produced enough divergences to be informative, but the direction of those changes is not reliably beneficial. In particular, tightening WAIT to REJECT often removed cases with later material upside.",
+    "retained_role": "RESEARCH_DIAGNOSTIC_ONLY",
+    "retained_role_note": "The two H1 relative-context features may remain available as research diagnostics. They must not alter decisions in V3 or any later strategy unless a new, separately preregistered hypothesis demonstrates incremental value.",
+    "combination_eligibility": "NOT_AUTOMATICALLY_RETAINED_FOR_COMBINATION",
+    "combination_note": "A later bundle must not silently include H1 merely because the upstream association was sign-consistent. Re-entry requires an explicit new hypothesis and search accounting."
+  },
+  "sequence_disposition": {
+    "h1_pilot_review_complete": true,
+    "next_standalone_component": "V3-H3",
+    "h3_materialization_allowed": true,
+    "h3_activation_allowed_now": false,
+    "reason_h3_not_active": "H3 physical point-in-time depth-10 context wiring still requires a bounded local MINI-PC feasibility/E2E gate before any shadow run."
+  },
+  "governance": {
+    "threshold_search_performed": false,
+    "feature_transform_search_performed": false,
+    "pair_selection_by_outcome_performed": false,
+    "horizon_search_performed": false,
+    "holdout_opened": false,
+    "automatic_winner_selected": false,
+    "automatic_strategy_promotion": false,
+    "no_midrun_tuning": true,
+    "no_duplicate_rerun_without_relevant_change": true
+  }
+}

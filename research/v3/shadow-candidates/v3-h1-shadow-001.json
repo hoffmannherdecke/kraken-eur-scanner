@@ -5,7 +5,7 @@
   "hypothesis_id": "V3-H1",
   "baseline_strategy_revision": "V2R3-2026-09-28",
   "candidate_strategy_revision": "V3-H1-SHADOW-001",
-  "status": "FROZEN_FOR_SHADOW",
+  "status": "REJECTED",
   "changed_components": [
     "SIGNAL_FEATURE"
   ],
@@ -36,5 +36,13 @@
   "source_evidence": [
     "research/v3/incremental-reports/v3-h1-incremental-001-20261002-095841.json",
     "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
-  ]
+  ],
+  "final_review": {
+    "status": "COMPLETE_REJECT_STANDALONE_DECISION_AUTHORITY",
+    "artifact": "research/v3/h1-shadow-001-fixed-review-20261007.json",
+    "standalone_decision_modifier": "REJECT",
+    "retained_role": "RESEARCH_DIAGNOSTIC_ONLY",
+    "rerun_required": false,
+    "next_sequence_component": "V3-H3"
+  }
 }

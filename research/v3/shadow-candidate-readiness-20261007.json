@@ -1,0 +1,68 @@
+{
+  "schema_version": 3,
+  "kind": "V3_SHADOW_CANDIDATE_READINESS_SNAPSHOT_V3",
+  "status": "H1_REVIEW_COMPLETE_H3_DRAFT_PREPARED_NOT_ACTIVE",
+  "generated_at_utc": "2026-10-07T09:45:00Z",
+  "authority": {
+    "master_todo": "PROJECT_BACKLOG.md",
+    "candidate_contract": "research/v3/shadow-candidate-contract-v1.json",
+    "sequence_decision": "research/v3/v3-shadow-test-sequence-decision-20261003.json"
+  },
+  "h1": {
+    "candidate_id": "V3-H1-SHADOW-001",
+    "state": "FIXED_REVIEW_COMPLETE_STANDALONE_DECISION_AUTHORITY_REJECTED",
+    "records": 200,
+    "capture_success_pct": 100,
+    "decision_divergences": 9,
+    "review": "research/v3/h1-shadow-001-fixed-review-20261007.json",
+    "next_use": "research diagnostic only; no silent inclusion in later combination"
+  },
+  "h3": {
+    "candidate_id": "V3-H3-SHADOW-001",
+    "state": "DRAFT_PREPARED_NOT_ACTIVE",
+    "candidate": "research/v3/shadow-candidates/v3-h3-shadow-001.json",
+    "config": "research/v3/shadow-candidates/v3-h3-shadow-001-config.json",
+    "preparation_record": "research/v3/h3-shadow-001-preparation-20261007.json",
+    "physical_gate_required": true,
+    "activation_allowed_now": false,
+    "baseline_binding": "BIND_AT_FREEZE_TO_CURRENT_ACTIVE_PAPER_BASELINE",
+    "v2r4_if_active": "USE_EXACT_ACTIVE_V2R4_PAPER_REVISION_AND_STREAM"
+  },
+  "h6": {
+    "state": "QUEUED_THIRD_STANDALONE_AFTER_H3_FIXED_REVIEW",
+    "automatic_start": false
+  },
+  "h10": {
+    "state": "COLLECTING_NOT_YET_MATURE_FOR_FIRST_ANALYSIS",
+    "capture_batches": 157,
+    "elapsed_hours": 110.44,
+    "wallet_capture_success_pct": 99.95,
+    "primary_wallet_asset_windows_30m": 312,
+    "multi_primary_same_asset_windows_30m": 11,
+    "required_multi_primary_same_asset_windows_30m": 20,
+    "action": "continue passive collection only; do not analyze outcomes yet"
+  },
+  "v2r4_boundary": {
+    "changed_by_this_v3_work": false,
+    "paper_release_decision": "PENDING",
+    "physical_minipc_release_gate": "SEPARATE_AND_STILL_REQUIRED",
+    "real_money_actions": false
+  },
+  "governance": {
+    "one_change_only": true,
+    "no_duplicate_rerun_without_relevant_change": true,
+    "no_midrun_tuning": true,
+    "automatic_winner_selection": false,
+    "automatic_promotion": false,
+    "real_money_activation_separate": true,
+    "work_quota_consumed_by_this_preparation": false
+  },
+  "next_gate": "PHYSICAL_MINIPC_H3_POINT_IN_TIME_CONTEXT_AND_E2E_SMOKE AFTER OR SEPARATE FROM THE PENDING V2R4 LOCAL RELEASE GATE; DO NOT ACTIVATE H3 BEFORE THOSE H3-SPECIFIC PHYSICAL CHECKS.",
+  "governance_repair": {
+    "discovered_during_pr_validation": true,
+    "issue": "Five closed INHERIT_UNCHANGED V3 migration-ledger entries still carried pending_gate fields, contradicting the ledger validator.",
+    "resolution": "PR #42 merged separately; future research intent preserved as future_research_gate without reopening closed migration decisions.",
+    "main_commit": "e0c5b56b6048d89d45e26d487ec6a09ac824d9dc",
+    "strategy_or_runtime_change": false
+  }
+}

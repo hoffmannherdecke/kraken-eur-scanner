@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "kind": "V3_SHADOW_CANDIDATE_V1",
+  "candidate_id": "V3-H3-SHADOW-001",
+  "hypothesis_id": "V3-H3",
+  "baseline_strategy_revision": "BIND_AT_FREEZE_CURRENT_ACTIVE_PAPER_BASELINE",
+  "candidate_strategy_revision": "V3-H3-SHADOW-001-DRAFT",
+  "status": "DRAFT",
+  "changed_components": [
+    "STATE_CONDITIONING"
+  ],
+  "change_summary": "Add only the four preregistered checksum-valid Kraken depth-10 H3 orderbook state features as raw context on XBT/ETH/SOL eligible candidates. No threshold, transform, score weight, pair ranking, model, entry/exit/risk mechanic, extra candidate discovery or active baseline behavior is changed.",
+  "frozen_config_sha256": "a6bfa660ce5cab7e8a1a200a0e7feb7659cdd334f0ca0400b6faf4d88ab1939a",
+  "evidence_plan": {
+    "same_candidate_stream": true,
+    "shared_market_clock": true,
+    "minimum_gate": ">=20 eligible matched XBT/ETH/SOL candidates across >=2 distinct UTC dates AND >=95% H3 point-in-time context capture. If <3 baseline-vs-H3 decision divergences occur, classify INCONCLUSIVE_LOW_IMPACT and do not tune or auto-extend.",
+    "cost_model_reference": "0.60% taker per side, same conservative project reference; pilot creates no orders.",
+    "noneligible_pair_behavior": "baseline passthrough; not counted toward H3 eligible sample"
+  },
+  "promotion_gate": {
+    "predefined": true,
+    "automatic_promotion": false,
+    "rule": "Pilot evidence can only proceed to human project review. Any later promotion requires prospective incremental value after costs under a separate preregistered gate and separate release approval; this draft alone cannot promote."
+  },
+  "guardrails": {
+    "active_baseline_changed": false,
+    "midrun_tuning_allowed": false,
+    "real_money_actions": false,
+    "leverage": false,
+    "sealed_holdout_opened": false,
+    "threshold_search": false,
+    "feature_transform_search": false,
+    "model_change": false,
+    "orders": false
+  },
+  "frozen_config": "research/v3/shadow-candidates/v3-h3-shadow-001-config.json",
+  "source_evidence": [
+    "research/v3/h3-association-reports/v3-h3-association-002-20261003-095025.json",
+    "research/v3/h3-assoc-002-fixed-review-20261003.json",
+    "research/v3/h3-prospective-state-association-trial-v2.json",
+    "research/v3/h3-orderbook-state-contract-v1.json"
+  ],
+  "preparation_state": {
+    "h1_predecessor_review": "research/v3/h1-shadow-001-fixed-review-20261007.json",
+    "physical_runtime_wiring": "NOT_YET_PROVEN",
+    "shadow_activation": false,
+    "baseline_binding": "BIND_AT_FREEZE_TO_CURRENT_ACTIVE_PAPER_BASELINE",
+    "v2r4_if_active": "USE_EXACT_ACTIVE_V2R4_PAPER_REVISION_AND_STREAM"
+  }
+}

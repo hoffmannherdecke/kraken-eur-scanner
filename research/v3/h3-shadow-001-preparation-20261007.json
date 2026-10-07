@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_SHADOW_001_PREPARATION_RECORD_V1",
+  "status": "PREPARED_NOT_ACTIVE",
+  "prepared_at_utc": "2026-10-07T09:45:00Z",
+  "candidate": "research/v3/shadow-candidates/v3-h3-shadow-001.json",
+  "config": "research/v3/shadow-candidates/v3-h3-shadow-001-config.json",
+  "predecessor_review": "research/v3/h1-shadow-001-fixed-review-20261007.json",
+  "why_now": "The H1 standalone pilot has completed its fixed review. The selected sequence therefore permits H3 preparation next, while physical activation remains gated.",
+  "completed_preparation": [
+    "H3 one-change component class fixed as STATE_CONDITIONING",
+    "exact four H3 raw features fixed from the completed prospective association trial",
+    "supported XBT/ETH/SOL scope fixed from the preregistered H3 evidence",
+    "XBT/EUR to BTC/EUR Kraken WebSocket alias made explicit",
+    "no-threshold/no-transform/no-directional-sign assumption frozen",
+    "outcome-blind candidate-incidence feasibility checked",
+    "bounded fast-track pilot gate fixed",
+    "missing/stale H3 state fails closed to baseline passthrough",
+    "automatic promotion/orders/real-money paths explicitly disabled",
+    "H3 baseline deliberately left unbound while V2R4 Paper release is pending; binding occurs once at H3 freeze to the then-current active Paper baseline"
+  ],
+  "remaining_before_shadow_start": [
+    "Bind the exact then-current active Paper baseline revision at H3 freeze; if V2R4 is active, use that V2R4 revision/candidate stream rather than stale V2R3",
+    "Implement or bind the point-in-time depth-10 context handoff on the physical MINI-PC without mutating V2R4 release work",
+    "Run one bounded physical checksum/freshness context smoke",
+    "Run one bounded candidate -> H3 context -> isolated shadow evaluation E2E smoke",
+    "Verify no duplicate evaluation and baseline passthrough for noneligible/missing-state cases",
+    "Only then change candidate status from DRAFT to FROZEN_FOR_SHADOW and start the bounded pilot"
+  ],
+  "anti_duplication": {
+    "h1_rerun_required": false,
+    "h3_assoc_collection_rerun_required": false,
+    "h3_assoc_002_is_authoritative_source": true,
+    "no_repeat_pass_tests_without_change_incident_or_freshness_reason": true
+  },
+  "interaction_with_v2r4": {
+    "v2r4_release_candidate_changed": false,
+    "v2r4_activation_changed": false,
+    "approved_paper_state_changed": false,
+    "real_money_state_changed": false,
+    "physical_v2r4_gate_must_remain_separate": true
+  }
+}
