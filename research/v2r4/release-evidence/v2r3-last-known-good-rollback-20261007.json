@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "kind": "PAPER_RELEASE_ROLLBACK_SNAPSHOT_V1",
+  "created_at_utc": "2026-10-07T08:50:46.606Z",
+  "status": "LAST_KNOWN_GOOD_REFERENCE",
+  "source_git_head": "292d311d4657ad91d0315c92932267c57e82510b",
+  "source_git_head_scope": "audit reference only; NEVER reset the whole repository to this commit because paper evidence/state continues to evolve",
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "test_id": "SHADOW-V2R3-20261001-01",
+  "strategy_revision": "V2R3-2026-09-28",
+  "strategy_fingerprint_sha256": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+  "runtime_code_fingerprint_sha256": "0515459f1b20c359ade9aaa71bf5614a73072d871c1830f23de194b8dd70e386",
+  "scanner_schedule_cron": "2,12,22,32,42,52 * * * *",
+  "scanner_package_sha256": "601c00f35a2df01a0f8c28c2cdf463629d7a77450043ea61f174b0b535ae18f6",
+  "protected_files_sha256": {
+    "paper_runtime_control.json": "88b4b1713394deb78c2c594a571ffb58d532ae392712a2821c4cca4446ab26f4",
+    "paper_strategy_spec.json": "6672137cd0ed9c54d69f8dd5b70a8846dae1169986323c5bc4a3deb99235cb66",
+    "paper_evaluator/evaluate.py": "c1b7c309498bf7de0b6f525b4714b7d6b150a31a25d330d23a97cbfe2e5463ec",
+    "paper_evaluator/revalidate.py": "a17f59f52eaee2e9f08ca30ec33f426d4a75144ea2becd1fb1397997f0ec3bfc",
+    "paper_context.py": "38a0a84e328c4a7f69ba6220a11237b4e3fc6658d27a3a526afa4087c0260e8f",
+    ".github/workflows/scan.yml": "9fe5e42c000be47ae24c4af7a297550e22d4e75032db0c3a48929e21d586f482",
+    "research/v2r3/clean-series-freeze-20261001.json": "8f16582443030225d34ca77e4f971c867a4f79ce181a4a155a31c2c1a0f6fab4"
+  },
+  "rollback_semantics": {
+    "whole_repo_reset_allowed": false,
+    "evidence_or_state_rewind_allowed": false,
+    "protected_code_config_restore_only": true,
+    "preserve_failed_new_series_evidence": true,
+    "queue_ttl_persistence_reconciliation_required_before_restart": true
+  },
+  "guardrails": {
+    "strategy_changed": false,
+    "runtime_enabled_or_disabled": false,
+    "exchange_called": false,
+    "orders": false,
+    "real_money_actions": false
+  },
+  "provenance": {
+    "generation_method": "AUTHORIZED_GITHUB_SAME_COMMIT_HASH_RECONCILIATION",
+    "canonical_tool_equivalence": "Mirrors tools/paper-release-rollback-snapshot.py hashing and protected-file semantics because the session container has no outbound GitHub DNS.",
+    "freeze_manifest": "research/v2r3/clean-series-freeze-20261001.json"
+  }
+}
