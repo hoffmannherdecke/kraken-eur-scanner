@@ -29,7 +29,9 @@ jobs:
             tools/minipc-status-sync.py \
             tools/v2r4-shadow-cloud-sync.py
       - name: V3 H3 shadow routing tests
-        run: python tests/test_v3_h3_shadow_common.py
+        run: |
+          python tests/test_v3_h3_shadow_common.py
+          python tests/test_v3_h3_shadow_e2e_report.py
       - name: V2R3 freeze guard
         run: python tools/validate-v2r3-clean-series-freeze.py
       - name: Strategy lineage guard
