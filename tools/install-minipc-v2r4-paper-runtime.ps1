@@ -89,7 +89,10 @@ $watchdog=Join-Path $repo 'tools\minipc-watchdog.ps1'
 & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $watchdog -TradingRoot $TradingRoot | Out-Null
 if($LASTEXITCODE -ne 0){ throw "Post-pull watchdog failed with exit code $LASTEXITCODE" }
 $health=Get-Content $healthPath -Raw | ConvertFrom-Json
-$healthAge=[math]::Round(((Get-Date).ToUniversalTime()-([datetime]$health.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
+$healthStamp=[string]$health.checked_at_utc
+if([string]::IsNullOrWhiteSpace($healthStamp)){ $healthStamp=[string]$health.checked_at_local }
+if([string]::IsNullOrWhiteSpace($healthStamp)){ throw 'MINI-PC health timestamp missing from watchdog report.' }
+$healthAge=[math]::Round(((Get-Date).ToUniversalTime()-([datetime]$healthStamp).ToUniversalTime()).TotalSeconds,1)
 if($health.status -ne 'HEALTHY' -or $health.health_state -ne 'OK' -or $healthAge -gt 120){
   throw "MINI-PC health is not fresh HEALTHY/OK: $($health.status)/$($health.health_state) age_sec=$healthAge"
 }
