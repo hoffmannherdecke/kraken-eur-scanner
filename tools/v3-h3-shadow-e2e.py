@@ -58,6 +58,7 @@ def load_module(path: Path, name: str):
     if spec is None or spec.loader is None:
         raise RuntimeError(f"unable to import {path}")
     mod = importlib.util.module_from_spec(spec)
+    sys.modules[name] = mod
     spec.loader.exec_module(mod)
     return mod
 
@@ -235,7 +236,9 @@ def latest_physical_report(logs: Path) -> tuple[Path, dict[str, Any]]:
         raise RuntimeError("latest H3 physical report kind mismatch")
     if j.get("status") != "PASS":
         raise RuntimeError("latest H3 physical report is not PASS")
-    if int((j.get("totals") or {}).get("checksum_fail") or -1) != 0:
+    totals = j.get("totals") or {}
+    checksum_fail = totals.get("checksum_fail")
+    if checksum_fail is None or int(checksum_fail) != 0:
         raise RuntimeError("latest H3 physical report contains checksum failure")
     if (j.get("interpretation") or {}).get("bounded_reconnect_resubscribe_proven") is not True:
         raise RuntimeError("latest H3 physical report lacks reconnect proof")
@@ -288,16 +291,6 @@ def main() -> int:
     os.environ["OPENAI_API_KEY"] = api_key
     os.environ.setdefault("OPENAI_MODEL", "gpt-6-luna")
 
-    h3 = asyncio.run(capture_h3_context(REPO, args.capture_seconds))
-    capture_clock = utcnow()
-    if not context_is_fresh(
-        source_exchange_at_utc=h3["source_exchange_at_utc"],
-        received_at_utc=h3["received_at_utc"],
-        evaluation_clock_utc=capture_clock,
-        maximum_state_age_ms=MAX_STATE_AGE_MS,
-    ):
-        raise RuntimeError("fresh H3 context exceeded 2000ms gate")
-
     current = base.kraken_ticker("XXBTZEUR")
     candidate = synthetic_candidate(current)
     paths = synthetic_paths(args.app_root, candidate["candidate_id"])
@@ -312,6 +305,18 @@ def main() -> int:
     baseline_decision, baseline_api = evaluate_once(
         base, candidate, current, copy.deepcopy(external), spec, control
     )
+
+    # Capture H3 immediately before the shadow evaluation so the 2s
+    # point-in-time freshness contract is actually exercised at handoff.
+    h3 = asyncio.run(capture_h3_context(REPO, args.capture_seconds))
+    capture_clock = utcnow()
+    if not context_is_fresh(
+        source_exchange_at_utc=h3["source_exchange_at_utc"],
+        received_at_utc=h3["received_at_utc"],
+        evaluation_clock_utc=capture_clock,
+        maximum_state_age_ms=MAX_STATE_AGE_MS,
+    ):
+        raise RuntimeError("fresh H3 context exceeded 2000ms gate")
 
     h3_external = copy.deepcopy(external)
     h3_external["v3_h3_orderbook_context"] = h3
