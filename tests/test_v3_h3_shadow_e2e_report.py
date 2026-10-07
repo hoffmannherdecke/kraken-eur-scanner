@@ -35,17 +35,17 @@ class H3PhysicalReportValidationTests(unittest.TestCase):
             self.assertEqual(selected, p)
             self.assertEqual(loaded["totals"]["checksum_fail"], 0)
 
-    def test_capture_freshness_helper(self):
+    def test_capture_freshness_helper_keeps_500ms_handoff_headroom(self):
         self.assertTrue(
             M.captured_state_is_fresh(
                 "2026-10-07T20:00:00Z",
-                "2026-10-07T20:00:01.500000Z",
+                "2026-10-07T20:00:01.400000Z",
             )
         )
         self.assertFalse(
             M.captured_state_is_fresh(
                 "2026-10-07T20:00:00Z",
-                "2026-10-07T20:00:02.100000Z",
+                "2026-10-07T20:00:01.600000Z",
             )
         )
 
