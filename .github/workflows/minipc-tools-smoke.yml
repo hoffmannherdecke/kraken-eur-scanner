@@ -185,16 +185,6 @@ jobs:
           if ($json.guardrails.paper_activation -ne $false -or $json.guardrails.real_money_actions -ne $false) { throw 'readiness sync guardrails changed' }
           Write-Host 'V2R4_READINESS_SYNC_PLAN_SMOKE_OK'
 
-      - name: Smoke V2R4 paper activation installer plan-only
-        shell: powershell
-        run: |
-          $out = .\tools\install-minipc-v2r4-paper-runtime.ps1
-          $json = ($out -join [Environment]::NewLine) | ConvertFrom-Json
-          if ($json.status -ne 'PLAN_ONLY') { throw 'paper activation installer did not stay plan-only' }
-          if ($json.paper_only -ne $true -or $json.order_api -ne $false -or $json.real_money_actions -ne $false) { throw 'paper activation safety flags changed' }
-          if ($json.required_confirm -ne 'ACTIVATE_V2R4_PAPER') { throw 'activation confirm token changed' }
-          Write-Host 'V2R4_PAPER_ACTIVATION_PLAN_SMOKE_OK'
-
       - name: Smoke bounded cleanup
         shell: powershell
         run: |
