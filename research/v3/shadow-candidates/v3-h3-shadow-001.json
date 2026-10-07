@@ -3,14 +3,14 @@
   "kind": "V3_SHADOW_CANDIDATE_V1",
   "candidate_id": "V3-H3-SHADOW-001",
   "hypothesis_id": "V3-H3",
-  "baseline_strategy_revision": "V2R3-2026-09-28",
-  "candidate_strategy_revision": "V3-H3-SHADOW-001",
+  "baseline_strategy_revision": "BIND_AT_FREEZE_CURRENT_ACTIVE_PAPER_BASELINE",
+  "candidate_strategy_revision": "V3-H3-SHADOW-001-DRAFT",
   "status": "DRAFT",
   "changed_components": [
     "STATE_CONDITIONING"
   ],
   "change_summary": "Add only the four preregistered checksum-valid Kraken depth-10 H3 orderbook state features as raw context on XBT/ETH/SOL eligible candidates. No threshold, transform, score weight, pair ranking, model, entry/exit/risk mechanic, extra candidate discovery or active baseline behavior is changed.",
-  "frozen_config_sha256": "5abbb1425027d1590881c82add92d659d5dbf1087a84a5a247b674d2c94e6804",
+  "frozen_config_sha256": "a6bfa660ce5cab7e8a1a200a0e7feb7659cdd334f0ca0400b6faf4d88ab1939a",
   "evidence_plan": {
     "same_candidate_stream": true,
     "shared_market_clock": true,
@@ -44,6 +44,8 @@
   "preparation_state": {
     "h1_predecessor_review": "research/v3/h1-shadow-001-fixed-review-20261007.json",
     "physical_runtime_wiring": "NOT_YET_PROVEN",
-    "shadow_activation": false
+    "shadow_activation": false,
+    "baseline_binding": "BIND_AT_FREEZE_TO_CURRENT_ACTIVE_PAPER_BASELINE",
+    "v2r4_if_active": "USE_EXACT_ACTIVE_V2R4_PAPER_REVISION_AND_STREAM"
   }
 }
