@@ -151,6 +151,15 @@ jobs:
           if ($json.altrady_role -ne 'WAKEUP_HINT_ONLY') { throw 'Altrady role changed' }
           if ($json.kraken_public_is_condition_truth -ne $true) { throw 'Kraken truth guardrail changed' }
           if ($json.guardrails.order_api -ne $false -or $json.guardrails.real_money_actions -ne $false) { throw 'real-money/order guardrail changed' }
+          if ($json.branch -ne 'main') { throw 'release smoke must default to current main, never a superseded branch' }
+          if ($json.binding_spec -ne 'research/v2r4/paper_strategy_spec_v2r4_release_candidate.json') { throw 'release smoke must use binding release-candidate spec' }
+          $preflightText = Get-Content .\tools\minipc-v2r4-preflight-smoke.ps1 -Raw
+          $releaseSmokeText = Get-Content .\tools\minipc-v2r4-real-altrady-release-smoke.ps1 -Raw
+          foreach ($text in @($preflightText,$releaseSmokeText)) {
+            if ($text -match 'prep/v2r4-refresh-20261001') { throw 'superseded V2R4 branch reference reintroduced' }
+          }
+          if ($releaseSmokeText -match 'paper_strategy_spec_v2r4_proposed\.json') { throw 'obsolete V2R4 proposed spec reference reintroduced' }
+          if ($releaseSmokeText -notmatch 'paper_strategy_spec_v2r4_release_candidate\.json') { throw 'binding V2R4 release-candidate spec reference missing' }
           Write-Host 'REAL_ALTRADY_V2R4_RELEASE_PLAN_SMOKE_OK'
 
       - name: Smoke V2R4 readiness sync plan-only
