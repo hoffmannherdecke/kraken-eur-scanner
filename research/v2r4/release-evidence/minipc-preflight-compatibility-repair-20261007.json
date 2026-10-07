@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "kind": "V2R4_MINIPC_PREFLIGHT_COMPATIBILITY_REPAIR_V1",
+  "observed_at_local": "2026-10-07T17:21:00+02:00",
+  "status": "REPAIR_PREPARED_AWAITING_PHYSICAL_RERUN",
+  "physical_observation": {
+    "gate": "MINIPC_V2R4_READINESS_SYNC",
+    "failed_step": "V2R4 deterministic unit tests",
+    "error": "ModuleNotFoundError: No module named 'tests.test_v2r4_spec_runtime_compatibility'",
+    "effect": "Preflight failed closed before live WAIT watcher / pre-candidate smoke and before any Altrady release smoke."
+  },
+  "root_cause": {
+    "classification": "RELEASE_TOOLING_TEST_PARITY_GAP",
+    "detail": "The MINI-PC preflight still referenced the spec-runtime compatibility test from superseded PR #9, but fresh PR #40 had ported the runtime modules/tests without that compatibility module. Cloud PR validation did not name the missing module, so it could remain green while the physical preflight correctly failed closed.",
+    "minipc_fault": false,
+    "strategy_fault": false
+  },
+  "repair": {
+    "restored_test": "tests/test_v2r4_spec_runtime_compatibility.py",
+    "binding_spec": "research/v2r4/paper_strategy_spec_v2r4_release_candidate.json",
+    "first_series_sizing": "50+50 EUR",
+    "cloud_coverage": "tests/test_v2r4_evaluator_contract.py imports the compatibility TestCase so the existing V2R4 PR validation executes it without changing the canonical workflow.",
+    "rerun_required": true
+  },
+  "guardrails": {
+    "v2r4_activation": false,
+    "approved_paper_unchanged": true,
+    "real_money_actions": false,
+    "orders": false,
+    "real_altrady_smoke_started": false
+  },
+  "next_gate": "WAIT_FOR_PR40_CI_GREEN_THEN_RERUN_THE_SAME_PHYSICAL_MINIPC_READINESS_SYNC_COMMAND; DO_NOT_RUN_REAL_ALTRADY_SMOKE YET"
+}
