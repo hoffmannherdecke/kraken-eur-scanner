@@ -35,6 +35,8 @@ Kanonische Detailquellen:
 - Permanente Fast-Track-/Evidenz-Diversitätsregel: `docs/fasttrack-evidence-diversity-policy.md`
 - V3 Research-Chronik: GitHub Issue #7
 - Action-Push / Slack-E2E: GitHub Issue #1
+- Deferred MINI-PC maintenance (Codex update): GitHub Issue #36
+- 2026-10-07 release/handoff checkpoint: GitHub Issue #38
 
 ---
 
