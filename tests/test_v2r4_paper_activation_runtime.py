@@ -173,6 +173,16 @@ class V2R4PaperActivationRuntimeTests(unittest.TestCase):
             self.assertEqual(result["batches"], 6)
             self.assertEqual(len(calls), 6)
 
+            # Same unchanged cohort must not be re-uploaded every minute.
+            with patch.object(self.cloud_sync, "collect", return_value=(control, candidates, trades)), \
+                 patch.object(self.cloud_sync, "post", side_effect=fake_post):
+                second = self.cloud_sync.run_once(args)
+            self.assertEqual(second["status"], "HEALTHY")
+            self.assertEqual(second["pending_candidates"], 0)
+            self.assertEqual(second["pending_trades"], 0)
+            self.assertEqual(second["batches"], 0)
+            self.assertEqual(len(calls), 6)
+
     def test_activation_installer_and_relay_require_exact_provenance(self):
         installer = (ROOT / "tools" / "install-minipc-v2r4-paper-runtime.ps1").read_text("utf-8")
         relay = (ROOT / "supabase" / "functions" / "v2r4-paper-evidence-relay" / "index.ts").read_text("utf-8")
@@ -189,6 +199,11 @@ class V2R4PaperActivationRuntimeTests(unittest.TestCase):
         self.assertIn("real_money_actions_enabled=$false", installer)
         self.assertIn('config.real_money_actions_enabled!==false', relay)
         self.assertIn('unexpected_first_series_sizing', relay)
+        alerts = (ROOT / "tools" / "v2r4-paper-alerts.py").read_text("utf-8")
+        workflow = (ROOT / ".github" / "workflows" / "v2r4-paper-alerts.yml").read_text("utf-8")
+        self.assertIn("v2r4_paper_alert_receipts", alerts)
+        self.assertIn("workflow_dispatch", workflow)
+        self.assertIn("cancel-in-progress: false", workflow)
 
 
 if __name__ == "__main__":
