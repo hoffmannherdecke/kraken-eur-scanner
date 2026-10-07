@@ -124,8 +124,19 @@ Deno.serve(async(req:Request)=>{
     const {data:series,error:sErr}=await admin.from("paper_series").select("series_id,status,strategy_revision").eq("series_id",seriesId).maybeSingle();
     if(sErr||!series)return response(409,{ok:false,error:"series_not_found"});
     if(series.status!=="active"||series.strategy_revision!==revision)return response(409,{ok:false,error:"series_not_active"});
-    for(const row of candidates){if(row?.series_id!==seriesId||typeof row?.candidate_id!=="string"||typeof row?.pair!=="string"||row?.payload?.decision?.real_money_actions_enabled!==false)return response(400,{ok:false,error:"unsafe_candidate_payload"});}
-    for(const row of trades){if(row?.series_id!==seriesId||typeof row?.candidate_id!=="string"||row?.payload?.real_money_actions_enabled!==false)return response(400,{ok:false,error:"unsafe_trade_payload"});}
+    for(const row of candidates){
+      if(row?.series_id!==seriesId||typeof row?.candidate_id!=="string"||typeof row?.pair!=="string"||row?.payload?.decision?.real_money_actions_enabled!==false)
+        return response(400,{ok:false,error:"unsafe_candidate_payload"});
+      if(!["BUY_SCOUT","WAIT","REJECT"].includes(String(row?.decision??"")))
+        return response(400,{ok:false,error:"invalid_candidate_decision"});
+      const recheck=row?.payload?.recheck;
+      if(recheck!=null && (recheck.paper_only!==true||recheck.real_money_actions_enabled!==false||recheck.order_api!==false))
+        return response(400,{ok:false,error:"unsafe_recheck_payload"});
+    }
+    for(const row of trades){
+      if(row?.series_id!==seriesId||typeof row?.candidate_id!=="string"||row?.payload?.real_money_actions_enabled!==false)
+        return response(400,{ok:false,error:"unsafe_trade_payload"});
+    }
     if(candidates.length){const {error}=await admin.from("paper_candidate_outcomes").upsert(candidates,{onConflict:"candidate_id"}); if(error)return response(500,{ok:false,error:"candidate_upsert_failed",detail:error.message});}
     if(trades.length){const {error}=await admin.from("paper_trade_results").upsert(trades,{onConflict:"candidate_id"}); if(error)return response(500,{ok:false,error:"trade_upsert_failed",detail:error.message});}
     return response(200,{ok:true,action:"sync",accepted_candidates:candidates.length,accepted_trades:trades.length,paper_only:true,real_money_actions:false});
