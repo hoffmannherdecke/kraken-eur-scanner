@@ -48,7 +48,8 @@ jobs:
             "git pull --ff-only",
             "git diff --cached --name-only",
             "Expected exactly 3 staged files",
-            "git push origin main",
+            "refs/heads/",
+            "PR_REQUIRED",
             "holdout_opened",
             "real_money_actions"
           ]

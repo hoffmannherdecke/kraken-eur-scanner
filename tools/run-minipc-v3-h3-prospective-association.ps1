@@ -264,11 +264,16 @@ try{
         if($staged.Count -ne 2 -or $staged -notcontains $evalRel -or $staged -notcontains $manifestRel){
           throw "Unexpected staged paths during H3 evidence import"
         }
+        $preImportHead=(git rev-parse HEAD).Trim()
         git commit -m "v3: import H3 assoc 002 final evaluation"
         if($LASTEXITCODE -ne 0){throw "git commit failed for H3 evidence import"}
-        git push origin main
-        if($LASTEXITCODE -ne 0){throw "git push failed for H3 evidence import"}
-        Write-Host ("Canonical import: PASS -> "+$evalRel)
+        $evidenceBranch="evidence/v3-h3-assoc-002-"+$evalStamp
+        git push origin ("HEAD:refs/heads/"+$evidenceBranch)
+        if($LASTEXITCODE -ne 0){throw "evidence branch push failed"}
+        git reset --hard $preImportHead
+        if($LASTEXITCODE -ne 0){throw "failed to restore clean local main after H3 evidence branch push"}
+        Write-Host ("Canonical import prepared on evidence branch: "+$evidenceBranch)
+        Write-Host "PR_REQUIRED: merge through protected main after validation."
       } catch {
         Write-Warning ("H3 evaluation remains PASS, but canonical report import is pending: "+$_.Exception.Message)
       }

@@ -85,13 +85,19 @@ Any new evidence stream must define before activation:
 
 ## Branch protection target
 
-Once the V2R3 compatibility lane has retired, `main` must no longer require runtime bot
-pushes. At that point strict branch protection/rulesets become mandatory:
-- normal code changes through PR;
-- required validation checks;
-- no force-push/delete;
-- least-privilege automation;
-- emergency bypass only by explicit owner action.
+The V2R3 compatibility lane retired on 2026-10-07 after the clean series reached
+`closed_complete`, its 1005 candidate outcomes were verified in Supabase, and V2R4 PAPER
+became the active MINI-PC/Supabase runtime.
 
-Until that exact cutover, V2R3 freeze/integrity guards remain the protection layer so that
-branch protection is not enabled in a way that would silently break the frozen runtime.
+Repository-side cutover requirements are now binding:
+- no high-frequency runtime state is written to `main`;
+- scanner and runtime automation use read-only repository access unless a future PR workflow
+  explicitly needs a feature branch;
+- compact code/config/release-evidence changes go through PR;
+- no force-push/delete on `main`;
+- required validation checks protect merges;
+- automation has no normal bypass of `main`;
+- emergency bypass is owner-only and explicit.
+
+The code-side cutover is complete. The GitHub-hosted branch/ruleset setting is an external
+repository-admin control and must be enabled after this cleanup PR is merged.
