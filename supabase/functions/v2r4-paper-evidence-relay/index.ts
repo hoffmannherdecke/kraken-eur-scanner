@@ -49,12 +49,39 @@ Deno.serve(async(req:Request)=>{
     const {data:existing,error:exErr}=await admin.from("paper_series").select("series_id,status,strategy_revision").eq("series_id",seriesId).maybeSingle();
     if(exErr)return response(500,{ok:false,error:"series_lookup_failed"});
     if(existing && (existing.status!=="active"||existing.strategy_revision!==revision))return response(409,{ok:false,error:"series_identity_conflict"});
+
+    let freshActivation=false;
     if(!existing){
-      const {error:insErr}=await admin.from("paper_series").insert({series_id:seriesId,test_id:testId,strategy_revision:revision,started_at:dt.toISOString(),target_completed_trades:20,status:"active",config});
-      if(insErr)return response(500,{ok:false,error:"series_insert_failed",detail:insErr.message});
+      // Fail closed at the strategy boundary: retire the completed predecessor
+      // before inserting the successor, so two active paper series can never
+      // coexist. On any subsequent failure, compensate back to the predecessor.
+      const {data:closed,error:closeErr}=await admin.from("paper_series")
+        .update({status:"closed_complete",updated_at:new Date().toISOString()})
+        .eq("series_id","PAPER-V2R3-CLEAN-20261001T0925Z").eq("status","active")
+        .select("series_id");
+      if(closeErr)return response(500,{ok:false,error:"predecessor_close_failed",detail:closeErr.message});
+      if(!closed || closed.length!==1)return response(409,{ok:false,error:"predecessor_not_active_without_successor"});
+
+      const {error:insErr}=await admin.from("paper_series").insert({
+        series_id:seriesId,test_id:testId,strategy_revision:revision,started_at:dt.toISOString(),
+        target_completed_trades:20,status:"active",config
+      });
+      if(insErr){
+        await admin.from("paper_series")
+          .update({status:"active",updated_at:new Date().toISOString()})
+          .eq("series_id","PAPER-V2R3-CLEAN-20261001T0925Z").eq("status","closed_complete");
+        return response(500,{ok:false,error:"series_insert_failed",detail:insErr.message});
+      }
+      freshActivation=true;
+    } else {
+      // Idempotent retry after a server-success/client-timeout: ensure the old
+      // completed series is not still marked active.
+      const {error:closeErr}=await admin.from("paper_series")
+        .update({status:"closed_complete",updated_at:new Date().toISOString()})
+        .eq("series_id","PAPER-V2R3-CLEAN-20261001T0925Z").eq("status","active");
+      if(closeErr)return response(500,{ok:false,error:"predecessor_close_failed",detail:closeErr.message});
     }
-    const {error:closeErr}=await admin.from("paper_series").update({status:"closed_complete",updated_at:new Date().toISOString()}).eq("series_id","PAPER-V2R3-CLEAN-20261001T0925Z");
-    if(closeErr)return response(500,{ok:false,error:"predecessor_close_failed",detail:closeErr.message});
+
     if(!recordedSeries){
       const evidence={
         ...(release.decision_evidence??{}),
@@ -69,8 +96,18 @@ Deno.serve(async(req:Request)=>{
         activation_runtime_bundle_fingerprint_sha256:runtimeFingerprint,
         real_money_actions_allowed:false
       };
-      const {error:updErr}=await admin.from("strategy_release_decisions").update({decision_evidence:evidence,updated_at:new Date().toISOString()}).eq("release_id","V2R3_TO_V2R4_20261005");
-      if(updErr)return response(500,{ok:false,error:"release_evidence_update_failed"});
+      const {error:updErr}=await admin.from("strategy_release_decisions")
+        .update({decision_evidence:evidence,updated_at:new Date().toISOString()})
+        .eq("release_id","V2R3_TO_V2R4_20261005");
+      if(updErr){
+        if(freshActivation){
+          await admin.from("paper_series").delete().eq("series_id",seriesId);
+          await admin.from("paper_series")
+            .update({status:"active",updated_at:new Date().toISOString()})
+            .eq("series_id","PAPER-V2R3-CLEAN-20261001T0925Z").eq("status","closed_complete");
+        }
+        return response(500,{ok:false,error:"release_evidence_update_failed"});
+      }
     }
     return response(200,{
       ok:true,action:"activate",series_id:seriesId,status:"active",idempotent:Boolean(recordedSeries),
