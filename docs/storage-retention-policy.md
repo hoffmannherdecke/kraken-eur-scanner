@@ -25,6 +25,7 @@ records, provenance roots, or historical source archives merely to save space.
 | H10 wallet-state snapshots + capture batches/errors | keep **120 days** | same H10 capture retention maintenance; batch delete cascades state/error rows | frozen cohort/contracts remain immutable in GitHub |
 | GitHub Paper runtime working tree | only the **active frozen series** may keep per-candidate working files; closed series are compacted after Supabase-ID verification | `tools/repository-runtime-compaction.py` + one bounded maintenance commit | pre-compaction archive ref + Git history retained; active series fail-closed excluded |
 | V3/H1 and future shadow runtime evidence | **Supabase/local runtime, not per-event commits to main** | H1 closed-pilot archive + successor contracts | GitHub keeps code/contracts/compact status/release evidence only |
+| V3/H3 MINI-PC sidecar evidence | keep at most **200 local evidence/context pairs**, prune oldest only **after successful Supabase sync** | `tools/v3-h3-shadow-runtime.py` using frozen `local_retention_max_evidence_files` | unsynced evidence is never deleted; Supabase remains primary evidence store |
 
 GitHub cleanup implementation evidence:
 - paper-artifact cleanup check on commit `eefb490c5d82f850bf9171179eaed47d690c0f99`: **SUCCESS**;
