@@ -16,9 +16,11 @@
     "outcome-blind candidate-incidence feasibility checked",
     "bounded fast-track pilot gate fixed",
     "missing/stale H3 state fails closed to baseline passthrough",
-    "automatic promotion/orders/real-money paths explicitly disabled"
+    "automatic promotion/orders/real-money paths explicitly disabled",
+    "H3 baseline deliberately left unbound while V2R4 Paper release is pending; binding occurs once at H3 freeze to the then-current active Paper baseline"
   ],
   "remaining_before_shadow_start": [
+    "Bind the exact then-current active Paper baseline revision at H3 freeze; if V2R4 is active, use that V2R4 revision/candidate stream rather than stale V2R3",
     "Implement or bind the point-in-time depth-10 context handoff on the physical MINI-PC without mutating V2R4 release work",
     "Run one bounded physical checksum/freshness context smoke",
     "Run one bounded candidate -> H3 context -> isolated shadow evaluation E2E smoke",
