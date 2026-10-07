@@ -73,6 +73,7 @@ jobs:
               'altrady-trigger-relay': ('ALTRADY_WEBHOOK_TOKEN','sameToken'),
               'v2r4-shadow-evidence-relay': ('internal_relay_credentials','sameFixedHex'),
               'minipc-status-relay': ('internal_relay_credentials','sameFixedHex'),
+              'v2r4-paper-evidence-relay': ('internal_relay_credentials','sameFixedHex'),
           }
           for name,markers in approved.items():
               section=config.split(f'[functions.{name}]',1)
