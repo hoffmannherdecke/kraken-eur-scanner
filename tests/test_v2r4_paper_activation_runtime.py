@@ -197,6 +197,8 @@ class V2R4PaperActivationRuntimeTests(unittest.TestCase):
         self.assertIn("$healthAge", installer)
         self.assertIn("checked_at_local", installer)
         self.assertIn("MINI-PC health timestamp missing from watchdog report.", installer)
+        self.assertIn("minipc-runtime-supervisor.ps1", installer)
+        self.assertIn("Runtime supervisor refresh failed", installer)
         self.assertIn("git pull --ff-only", installer)
         self.assertIn("real_money_actions_enabled=$false", installer)
         self.assertIn('config.real_money_actions_enabled!==false', relay)
