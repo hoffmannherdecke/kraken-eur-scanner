@@ -85,6 +85,14 @@ try {
   if($releaseSha -ne $originSha){ throw "Local main is not exactly origin/main: local=$releaseSha origin=$originSha" }
 } finally { Pop-Location }
 
+$supervisor=Join-Path $repo 'tools\minipc-runtime-supervisor.ps1'
+$supervisorTask=Get-ScheduledTask -TaskName 'CryptoMiniPC-RuntimeSupervisor' -ErrorAction SilentlyContinue
+if($supervisorTask -and (Test-Path $supervisor)){
+  # Refresh the supervisor snapshot at the release boundary so watchdog health
+  # cannot be blocked by a stale pre-activation recovery report.
+  & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $supervisor -TradingRoot $TradingRoot | Out-Null
+  if($LASTEXITCODE -ne 0){ throw "Runtime supervisor refresh failed with exit code $LASTEXITCODE" }
+}
 $watchdog=Join-Path $repo 'tools\minipc-watchdog.ps1'
 & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $watchdog -TradingRoot $TradingRoot | Out-Null
 if($LASTEXITCODE -ne 0){ throw "Post-pull watchdog failed with exit code $LASTEXITCODE" }
