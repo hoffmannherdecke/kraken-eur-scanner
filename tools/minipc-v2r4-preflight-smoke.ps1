@@ -1,10 +1,28 @@
 param(
   [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
-  [string]$Branch = "main"
+  [string]$Branch = ""
 )
 
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
+
+if ([string]::IsNullOrWhiteSpace($Branch)) {
+  [ordered]@{
+    kind = "MINIPC_V2R4_PREFLIGHT_V1"
+    status = "DEFERRED_NO_CURRENT_RELEASE_BRANCH"
+    branch = $null
+    binding_spec = "research/v2r4/paper_strategy_spec_v2r4_release_candidate.json"
+    reason = "Fresh executable V2R4 candidate has not yet been materialized from current main."
+    guardrails = [ordered]@{
+      strategy_change = $false
+      paper_activation = $false
+      private_kraken_api = $false
+      orders = $false
+      real_money_actions = $false
+    }
+  } | ConvertTo-Json -Depth 8
+  exit 0
+}
 
 $repo = Join-Path $TradingRoot "Repos\kraken-eur-scanner"
 $python = Join-Path $TradingRoot "Runtime\kraken-eur-scanner-venv\Scripts\python.exe"
