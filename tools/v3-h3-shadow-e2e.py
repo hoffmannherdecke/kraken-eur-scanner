@@ -40,6 +40,7 @@ from v3_h3_shadow_common import (  # noqa: E402
 )
 
 EXPECTED_REVISION = "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION"
+CAPTURE_ACCEPTANCE_AGE_MS = 1500.0
 
 
 def utcnow() -> str:
@@ -70,7 +71,7 @@ def captured_state_is_fresh(source_exchange_at_utc: str | None, received_at_utc:
         source_exchange_at_utc=source_exchange_at_utc,
         received_at_utc=received_at_utc,
         evaluation_clock_utc=received_at_utc,
-        maximum_state_age_ms=MAX_STATE_AGE_MS,
+        maximum_state_age_ms=CAPTURE_ACCEPTANCE_AGE_MS,
     )
 
 
@@ -219,7 +220,7 @@ async def capture_h3_context(repo: Path, seconds: float) -> dict[str, Any]:
             - datetime.fromisoformat(book.last_exchange_at_utc.replace("Z", "+00:00"))
         ).total_seconds() * 1000.0
         raise RuntimeError(
-            f"H3 capture saw {stale_valid_states} checksum-valid states but none <=2000ms "
+            f"H3 capture saw {stale_valid_states} checksum-valid states but none <=1500ms "
             f"within {seconds:.1f}s; latest_source_age_ms={latest_age_ms:.1f}"
         )
 
