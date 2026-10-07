@@ -4,6 +4,13 @@ Status: **KANONISCHER MASTER-BACKLOG**
 Letzte Vollsicht: 2026-09-29  
 Aktive Vergleichsbasis: `V2R3-2026-09-28` / `PAPER-V2R3-CLEAN-20261001T0925Z`
 
+## Materialstatus 2026-10-07 — V2R3-Finalreview abgeschlossen
+
+- Die feste 1.000er-Kohorte hat das Fast-Track-Abschlussgate bei gesunder Integrität erreicht; Finalreview und Hypothesen-Disposition sind abgeschlossen.
+- Kanonisch: `research/work-analysis/2026-10-07-v2r3-final-review.md` und `research/v2r3/strategy-adjustment-hypotheses-final-20261007.json`.
+- Kein neuer V2R4-Strategiediff: bounded WAIT/fresh recheck und AssetPairs werden wiederverwendet; Anti-Chase, 50+50, 0,60%/Seite, Two-Stage und Exitstruktur bleiben für die erste V2R4-Serie unverändert.
+- Offen: aktueller `main`-Candidate, aktuelle Shadow-Reife, gebündelter MINI-PC-Sync, physischer Smoke und explizites `APPROVED_PAPER`. V2R4 und Echtgeld bleiben inaktiv.
+
 ## Zweck und Pflege-Regeln
 
 Diese Datei ist der zentrale Kontrollpunkt gegen das Vergessen offener Projektpunkte.
