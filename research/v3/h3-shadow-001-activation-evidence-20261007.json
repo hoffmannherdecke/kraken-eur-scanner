@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_SHADOW_001_ACTIVATION_EVIDENCE_V1",
+  "shadow_candidate_id": "V3-H3-SHADOW-001",
+  "decision": "APPROVED_SHADOW",
+  "decided_at_utc": "2026-10-07T20:32:00Z",
+  "baseline_series_id": "PAPER-V2R4-20261007T184255Z",
+  "baseline_strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+  "frozen_config_sha256": "e533f05d31a5b80248076b4870addf4606dae3d8f0432a11ae66bea03db73ded",
+  "physical_gate": {
+    "status": "PASS",
+    "report": "v3-h3-ws-book-smoke-20261007-221153.json",
+    "updates": 931,
+    "checksum_pass": 937,
+    "checksum_fail": 0,
+    "reconnect_resubscribe_proven": true
+  },
+  "isolated_e2e_gate": {
+    "status": "PASS",
+    "report": "v3-h3-shadow-e2e-20261007-223154.json",
+    "baseline_decision": "REJECT",
+    "h3_shadow_decision": "REJECT",
+    "decision_diverged": false,
+    "v2r4_unchanged": true,
+    "orders": false,
+    "real_money_actions": false
+  },
+  "activation_scope": {
+    "shadow_only": true,
+    "same_v2r4_candidate_stream": true,
+    "no_backfill": true,
+    "active_v2r4_mutation": false,
+    "automatic_promotion": false,
+    "orders": false,
+    "real_money_actions": false
+  }
+}
