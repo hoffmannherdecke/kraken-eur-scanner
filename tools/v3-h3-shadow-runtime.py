@@ -57,7 +57,8 @@ def parse_utc(value: str) -> datetime:
 
 def sha256_file(path: Path) -> str:
     import hashlib
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    text = path.read_text("utf-8").replace("\r\n", "\n").replace("\r", "\n")
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def atomic_json(path: Path, payload: dict[str, Any]) -> None:

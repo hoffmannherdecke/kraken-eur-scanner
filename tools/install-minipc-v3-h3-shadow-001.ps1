@@ -23,6 +23,18 @@ $expectedSeries = "PAPER-V2R4-20261007T184255Z"
 $expectedRevision = "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION"
 $expectedConfigSha = "e533f05d31a5b80248076b4870addf4606dae3d8f0432a11ae66bea03db73ded"
 
+function Get-CanonicalTextSha256([string]$Path) {
+  $text = [System.IO.File]::ReadAllText($Path)
+  $canonical = $text.Replace([string][char]13 + [char]10, [string][char]10).Replace([string][char]13, [string][char]10)
+  $temp = [System.IO.Path]::GetTempFileName()
+  try {
+    [System.IO.File]::WriteAllText($temp, $canonical, [System.Text.UTF8Encoding]::new($false))
+    return (Get-FileHash $temp -Algorithm SHA256).Hash.ToLowerInvariant()
+  } finally {
+    Remove-Item $temp -Force -ErrorAction SilentlyContinue
+  }
+}
+
 foreach($p in @($repo,$v2app,$python,$apiKey,$relayToken)){
   if(-not(Test-Path -LiteralPath $p)){ throw "Required path missing: $p" }
 }
@@ -50,7 +62,7 @@ $bookSource = Join-Path $repo "tools\v3-h3-kraken-ws-book-reconciliation-smoke.p
 foreach($p in @($configSource,$controlSource,$runtimeSource,$commonSource,$bookSource)){
   if(-not(Test-Path -LiteralPath $p)){ throw "Frozen H3 source missing: $p" }
 }
-$configSha = (Get-FileHash $configSource -Algorithm SHA256).Hash.ToLowerInvariant()
+$configSha = Get-CanonicalTextSha256 $configSource
 if($configSha -ne $expectedConfigSha){ throw "Frozen H3 config SHA mismatch." }
 
 $control = Get-Content $controlSource -Raw | ConvertFrom-Json
@@ -86,7 +98,7 @@ Copy-Item $bookSource (Join-Path $app "v3-h3-kraken-ws-book-reconciliation-smoke
 Copy-Item $configSource (Join-Path $app "v3-h3-shadow-001-config.json") -Force
 Copy-Item $controlSource (Join-Path $app "h3-control.json") -Force
 
-$appConfigSha = (Get-FileHash (Join-Path $app "v3-h3-shadow-001-config.json") -Algorithm SHA256).Hash.ToLowerInvariant()
+$appConfigSha = Get-CanonicalTextSha256 (Join-Path $app "v3-h3-shadow-001-config.json")
 if($appConfigSha -ne $expectedConfigSha){ throw "Copied H3 config hash mismatch." }
 
 $compileTargets = @(
