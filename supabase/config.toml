@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.minipc-status-relay]
 verify_jwt = false
+
+[functions.v2r4-paper-evidence-relay]
+verify_jwt = false
