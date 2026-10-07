@@ -59,6 +59,10 @@ def collect(app):
         trades.append({'candidate_id':s['candidate_id'],'series_id':series_id,'pair':s['pair'],'status':s['status'],'opened_at':s['opened_at_utc'],'closed_at':ex.get('closed_at_utc'),'net_pnl_eur':ex.get('net_pnl_eur'),'net_return_pct':ex.get('net_return_pct'),'payload':s})
     return control,candidates,trades
 
+def _chunks(rows,size):
+    for i in range(0,len(rows),size):
+        yield rows[i:i+size]
+
 def run_once(args):
     hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'; token=load_token(args.trading_root)
     result={'schema_version':1,'kind':'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1','checked_at_utc':iso(),'status':'UNKNOWN','paper_only':True,'order_api':False,'real_money_actions':False}
@@ -66,9 +70,25 @@ def run_once(args):
         result.update(status='DEGRADED',detail='archive token missing/too short'); atomic_json(hb,result); return result
     try:
         control,candidates,trades=collect(args.app_root)
-        payload={'action':'sync','series_id':control['series_id'],'strategy_revision':control['strategy_revision'],'candidates':candidates,'trades':trades}
-        resp=post(args.endpoint,token,payload)
-        result.update(status='HEALTHY',series_id=control['series_id'],candidates=len(candidates),trades=len(trades),accepted_candidates=resp.get('accepted_candidates'),accepted_trades=resp.get('accepted_trades'),detail='paper evidence relay reachable')
+        accepted_candidates=0; accepted_trades=0; batches=0
+        # The relay intentionally caps one request at 500 candidates / 100 trades.
+        # Keep requests well below that so a >500-candidate V2R4 cohort cannot
+        # silently break archival mid-series. Upserts are idempotent.
+        if not candidates and not trades:
+            resp=post(args.endpoint,token,{'action':'sync','series_id':control['series_id'],'strategy_revision':control['strategy_revision'],'candidates':[],'trades':[]})
+            batches=1
+        else:
+            for batch in _chunks(candidates,200):
+                resp=post(args.endpoint,token,{'action':'sync','series_id':control['series_id'],'strategy_revision':control['strategy_revision'],'candidates':batch,'trades':[]})
+                accepted_candidates+=int(resp.get('accepted_candidates') or 0); batches+=1
+            for batch in _chunks(trades,50):
+                resp=post(args.endpoint,token,{'action':'sync','series_id':control['series_id'],'strategy_revision':control['strategy_revision'],'candidates':[],'trades':batch})
+                accepted_trades+=int(resp.get('accepted_trades') or 0); batches+=1
+        result.update(
+            status='HEALTHY',series_id=control['series_id'],candidates=len(candidates),trades=len(trades),
+            accepted_candidates=accepted_candidates,accepted_trades=accepted_trades,batches=batches,
+            detail='paper evidence relay reachable; bounded batches complete'
+        )
     except Exception as exc: result.update(status='DEGRADED',detail=f'{type(exc).__name__}: {str(exc)[:300]}')
     atomic_json(hb,result); return result
 
