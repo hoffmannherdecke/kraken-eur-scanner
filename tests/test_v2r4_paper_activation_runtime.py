@@ -204,6 +204,10 @@ class V2R4PaperActivationRuntimeTests(unittest.TestCase):
         self.assertIn("v2r4_paper_alert_receipts", alerts)
         self.assertIn("workflow_dispatch", workflow)
         self.assertIn("cancel-in-progress: false", workflow)
+        constraints = (ROOT / "supabase" / "v2r4-paper-activation-constraints.sql").read_text("utf-8")
+        self.assertIn("paper_series_single_active_idx", constraints)
+        self.assertIn("where status = 'active'", constraints)
+        self.assertIn("predecessor_not_active_without_successor", relay)
 
 
 if __name__ == "__main__":
