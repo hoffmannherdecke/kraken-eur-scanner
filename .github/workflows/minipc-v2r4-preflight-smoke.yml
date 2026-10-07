@@ -52,7 +52,11 @@ jobs:
           )
           "TRADING_ROOT=$root" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Run exact local V2R4 preflight script
+      - name: Verify preflight remains deferred without explicit current candidate
         shell: powershell
         run: |
-          powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\tools\minipc-v2r4-preflight-smoke.ps1" -TradingRoot "$env:TRADING_ROOT"
+          $out = powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$env:GITHUB_WORKSPACE\tools\minipc-v2r4-preflight-smoke.ps1" -TradingRoot "$env:TRADING_ROOT"
+          $json = ($out -join [Environment]::NewLine) | ConvertFrom-Json
+          if ($json.status -ne 'DEFERRED_NO_CURRENT_RELEASE_BRANCH') { throw 'unexpected preflight state' }
+          if ($null -ne $json.branch) { throw 'preflight must not select a branch implicitly' }
+          Write-Host 'V2R4_PREFLIGHT_EXPECTED_DEFERRED_OK'

@@ -2,7 +2,7 @@ param(
   [switch]$Execute,
   [string]$Confirm = "",
   [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
-  [string]$Branch = "main",
+  [string]$Branch = "",
   [int]$MaxEventAgeMinutes = 30
 )
 
@@ -22,7 +22,7 @@ $plan = [ordered]@{
   kind = "MINIPC_V2R4_REAL_ALTRADY_KRAKEN_SMOKE_V1"
   status = $(if ($Execute) { "READY_TO_EXECUTE" } else { "PLAN_ONLY" })
   execute = [bool]$Execute
-  branch = $Branch
+  branch = $(if ([string]::IsNullOrWhiteSpace($Branch)) { $null } else { $Branch })
   binding_spec = "research/v2r4/paper_strategy_spec_v2r4_release_candidate.json"
   max_event_age_minutes = $MaxEventAgeMinutes
   real_altrady_log = $realAltradyLog
@@ -43,6 +43,10 @@ $plan = [ordered]@{
 if (-not $Execute) {
   $plan | ConvertTo-Json -Depth 8
   exit 0
+}
+
+if ([string]::IsNullOrWhiteSpace($Branch)) {
+  throw "Execution blocked. Supply the explicit current V2R4 release-candidate branch."
 }
 
 if ($Confirm -ne $ExpectedConfirm) {
