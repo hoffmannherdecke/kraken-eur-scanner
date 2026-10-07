@@ -119,13 +119,19 @@ for name in sys.argv[1:]:
   foreach($p in $staged){ if($allowed -notcontains $p){ throw "Unexpected staged path: $p" } }
   if(@($staged).Count -ne 3){throw "Expected exactly 3 staged files; got "+@($staged).Count}
 
+  $baseHead=(git rev-parse HEAD).Trim()
   git commit -m "v3: import exact H1 H6 incremental report payloads"
   if($LASTEXITCODE -ne 0){throw "git commit failed"}
-  git push origin main
-  if($LASTEXITCODE -ne 0){throw "git push failed"}
+  $evidenceBranch="evidence/v3-h1-h6-incremental-"+([DateTime]::UtcNow.ToString("yyyyMMddTHHmmssZ"))
+  git push origin ("HEAD:refs/heads/"+$evidenceBranch)
+  if($LASTEXITCODE -ne 0){throw "evidence branch push failed; local commit intentionally preserved"}
+  git reset --hard $baseHead
+  if($LASTEXITCODE -ne 0){throw "failed to restore clean local main after evidence branch push"}
 
   Write-Host ""
-  Write-Host "=== V3 H1/H6 REPORT IMPORT COMPLETE ==="
+  Write-Host "=== V3 H1/H6 REPORT IMPORT PREPARED ==="
+  Write-Host ("Evidence branch: "+$evidenceBranch)
+  Write-Host "PR_REQUIRED: merge through protected main after validation."
   foreach($line in $validation){Write-Host $line}
   Write-Host ("Manifest: "+$manifestPath)
   Write-Host "Exact payloads imported; no holdout, strategy, order or real-money action."

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent health audit + bounded technical self-healing for the paper crypto chain."""
+"""Independent health audit + bounded technical self-healing for the active scanner/control plane."""
 from __future__ import annotations
 import json, os, time, urllib.request
 from datetime import datetime, timezone
@@ -362,34 +362,14 @@ metrics["missed_10pct_6h"]=sum(bool(x.get("six_hour_flags",{}).get("missed_10pct
 
 # Workflow liveness for the unified architecture.
 latest_health("scan.yml",SCAN_STALE_AFTER_SECONDS)
-if ENABLED:
-    latest_health("paper-evaluator.yml",PAPER_RUNTIME_STALE_AFTER_SECONDS)
-else:
-    metrics["paper_runtime_pause_reason"]=CONTROL.get("reason")
+metrics["legacy_git_paper_runtime_retired"]=CONTROL.get("git_runtime_compatibility_mode")=="DISABLED_V2R4_LOCAL_SUPABASE_PRIMARY"
+metrics["paper_runtime_pause_reason"]=CONTROL.get("reason")
 
 # Bounded technical self-healing only.
 try:
-    runtime_reasons=[]
-    if ENABLED:
-        if orphans:
-            runtime_reasons.append("orphan candidate recovery")
-        if due_waits:
-            runtime_reasons.append("due WAIT revalidation")
-        if missing_positions:
-            runtime_reasons.append("missing position lifecycle")
-        if followup_due:
-            runtime_reasons.append("follow-up recovery")
-        if pending_alerts:
-            runtime_reasons.append("pending BUY alert retry")
-        if runtime_reasons:
-            dispatch("paper-evaluator.yml","; ".join(runtime_reasons))
-
     for code,wf in [
         ("STALE_scan.yml","scan.yml"),("FAILED_scan.yml","scan.yml"),
         ("NO_RUN_scan.yml","scan.yml"),
-        ("STALE_paper-evaluator.yml","paper-evaluator.yml"),
-        ("FAILED_paper-evaluator.yml","paper-evaluator.yml"),
-        ("NO_RUN_paper-evaluator.yml","paper-evaluator.yml"),
     ]:
         if any(i["code"]==code for i in issues):
             dispatch(wf,code)
