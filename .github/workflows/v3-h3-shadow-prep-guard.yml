@@ -44,12 +44,17 @@ jobs:
           cfg=json.loads(cfg_path.read_text('utf-8'))
           prep=json.loads(Path('research/v3/h3-shadow-001-preparation-20261007.json').read_text('utf-8'))
           h1=json.loads(Path('research/v3/h1-shadow-001-fixed-review-20261007.json').read_text('utf-8'))
+          h1_cand=json.loads(Path('research/v3/shadow-candidates/v3-h1-shadow-001.json').read_text('utf-8'))
 
           actual=hashlib.sha256(cfg_path.read_bytes()).hexdigest()
           assert actual==cand['frozen_config_sha256'], (actual,cand['frozen_config_sha256'])
           assert cand['status']=='DRAFT'
+          assert cand['baseline_strategy_revision']=='BIND_AT_FREEZE_CURRENT_ACTIVE_PAPER_BASELINE'
+          assert cand['candidate_strategy_revision']=='V3-H3-SHADOW-001-DRAFT'
           assert cand['changed_components']==['STATE_CONDITIONING']
           assert cfg['status']=='DRAFT_PREPARED_NOT_ACTIVE'
+          assert cfg['baseline_binding']['mode']=='BIND_AT_FREEZE_TO_CURRENT_ACTIVE_PAPER_BASELINE'
+          assert cfg['baseline_binding']['postfreeze_rebinding_allowed'] is False
           assert cfg['supported_pairs']['candidate_pairs']==['XBT/EUR','ETH/EUR','SOL/EUR']
           assert cfg['supported_pairs']['alias_map']['XBT/EUR']=='BTC/EUR'
           assert list(cfg['fixed_features'])==[
@@ -67,6 +72,9 @@ jobs:
           assert prep['anti_duplication']['h1_rerun_required'] is False
           assert prep['anti_duplication']['h3_assoc_collection_rerun_required'] is False
           assert h1['fixed_conclusion']['standalone_decision_modifier']=='REJECT'
+          assert h1_cand['status']=='REJECTED'
+          assert h1_cand['final_review']['artifact']=='research/v3/h1-shadow-001-fixed-review-20261007.json'
+          assert h1_cand['final_review']['rerun_required'] is False
           assert h1['sequence_disposition']['h3_materialization_allowed'] is True
           assert h1['sequence_disposition']['h3_activation_allowed_now'] is False
           print('V3_H3_SHADOW_PREP_GUARD_PASS')
