@@ -63,6 +63,17 @@ def load_module(path: Path, name: str):
     return mod
 
 
+def captured_state_is_fresh(source_exchange_at_utc: str | None, received_at_utc: str | None) -> bool:
+    if not source_exchange_at_utc or not received_at_utc:
+        return False
+    return context_is_fresh(
+        source_exchange_at_utc=source_exchange_at_utc,
+        received_at_utc=received_at_utc,
+        evaluation_clock_utc=received_at_utc,
+        maximum_state_age_ms=MAX_STATE_AGE_MS,
+    )
+
+
 def synthetic_candidate(current: dict[str, float]) -> dict[str, Any]:
     now = datetime.now(timezone.utc)
     event_time = now.isoformat().replace("+00:00", "Z")
@@ -141,6 +152,7 @@ async def capture_h3_context(repo: Path, seconds: float) -> dict[str, Any]:
     symbol = "BTC/EUR"
     book = smoke_mod.Book(depth=10)
     errors: list[str] = []
+    stale_valid_states = 0
     deadline = time.monotonic() + seconds
     async with connect(
         smoke_mod.WS_URL,
@@ -191,7 +203,9 @@ async def capture_h3_context(repo: Path, seconds: float) -> dict[str, Any]:
             if errors:
                 break
             if book.snapshots >= 1 and book.updates >= 1 and book.checksum_fail == 0:
-                break
+                if captured_state_is_fresh(book.last_exchange_at_utc, book.last_received_at_utc):
+                    break
+                stale_valid_states += 1
 
     if errors:
         raise RuntimeError("H3 fresh capture failed: " + "; ".join(errors))
@@ -199,6 +213,15 @@ async def capture_h3_context(repo: Path, seconds: float) -> dict[str, Any]:
         raise RuntimeError("H3 fresh capture incomplete")
     if not book.last_exchange_at_utc or not book.last_received_at_utc:
         raise RuntimeError("H3 timestamps missing")
+    if not captured_state_is_fresh(book.last_exchange_at_utc, book.last_received_at_utc):
+        latest_age_ms = (
+            datetime.fromisoformat(book.last_received_at_utc.replace("Z", "+00:00"))
+            - datetime.fromisoformat(book.last_exchange_at_utc.replace("Z", "+00:00"))
+        ).total_seconds() * 1000.0
+        raise RuntimeError(
+            f"H3 capture saw {stale_valid_states} checksum-valid states but none <=2000ms "
+            f"within {seconds:.1f}s; latest_source_age_ms={latest_age_ms:.1f}"
+        )
 
     best_bid = max(book.bids)
     best_ask = min(book.asks)
