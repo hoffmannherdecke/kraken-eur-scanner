@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from paper_evaluator import evaluate
+from tests.test_v2r4_spec_runtime_compatibility import V2R4SpecRuntimeCompatibilityTests
 
 
 def base_wait():
