@@ -91,7 +91,8 @@ def main():
                 "missing_triggers":[],"stop_eur":None,"ttl_minutes":0,
                 "expected_remaining_move_pct":d.get("expected_remaining_move_pct"),
                 "risk_reward_after_costs":d.get("risk_reward_after_costs"),
-                "stage2_trigger_eur":None,"stage2_ttl_minutes":0
+                "stage2_trigger_eur":None,"stage2_ttl_minutes":0,
+                "watch_conditions":[]
             }
 
         completed=utcnow()
