@@ -273,6 +273,39 @@ try {
   Add-Check "v2r4_shadow_cloud_sync" $false $_.Exception.Message "WARNING"
 }
 
+# Active V2R4 Paper local runtime tasks are optional until installed.
+$paperRuntimeSpecs = @(
+  @{ task="CryptoMiniPC-V2R4PaperCandidates"; check="v2r4_paper_candidates"; hb="v2r4-paper-candidate-runtime-heartbeat.json"; max_age=60 },
+  @{ task="CryptoMiniPC-V2R4PaperWait"; check="v2r4_paper_wait"; hb="v2r4-paper-wait-runtime-heartbeat.json"; max_age=30 },
+  @{ task="CryptoMiniPC-V2R4PaperLifecycle"; check="v2r4_paper_lifecycle"; hb="v2r4-paper-lifecycle-heartbeat.json"; max_age=180 },
+  @{ task="CryptoMiniPC-V2R4PaperCloudSync"; check="v2r4_paper_cloud_sync"; hb="v2r4-paper-cloud-sync-heartbeat.json"; max_age=180 }
+)
+foreach ($spec in $paperRuntimeSpecs) {
+  try {
+    $task = Get-ScheduledTask -TaskName $spec.task -ErrorAction SilentlyContinue
+    if ($task) {
+      $hb = Join-Path $TradingRoot ("State\" + $spec.hb)
+      if (-not (Test-Path $hb)) {
+        Add-Check $spec.check $false "task installed but heartbeat missing" "WARNING"
+      } else {
+        $h = Get-Content $hb -Raw | ConvertFrom-Json
+        $ageSec = [math]::Round(((Get-Date).ToUniversalTime() - ([datetime]$h.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
+        $safe = (
+          $h.status -eq "HEALTHY" -and
+          $ageSec -le [double]$spec.max_age -and
+          -not [bool]$h.order_api -and
+          -not [bool]$h.real_money_actions
+        )
+        Add-Check $spec.check $safe ("status=" + $h.status + " age_sec=" + $ageSec + " task_state=" + $task.State) "WARNING"
+      }
+    } else {
+      $checks[$spec.check] = [ordered]@{ ok=$null; detail="V2R4 Paper task not installed yet" }
+    }
+  } catch {
+    Add-Check $spec.check $false $_.Exception.Message "WARNING"
+  }
+}
+
 # Local bounded runtime supervisor is optional until installed.
 try {
   $supervisorTask = Get-ScheduledTask -TaskName "CryptoMiniPC-RuntimeSupervisor" -ErrorAction SilentlyContinue
