@@ -4,6 +4,32 @@ Status: **PREPARED / NOT ACTIVE / PAPER ONLY**
 
 This document is the compact release-readiness control point for V2R4. It does not replace `docs/strategy-version-map.md`, the V2R3 completion gate, the Mini-PC runbook, the explicit behavior matrix in `docs/v2r4-v2r3-release-diff.md`, the sizing decision memo in `docs/v2r4-sizing-release-decision.md`, or the release/rollback sequence in `docs/v2r4-paper-activation-checklist.md`.
 
+## Release progression — 2026-10-07 after final V2R3 review
+
+Latest authoritative progression after the completed Work final review:
+
+- V2R3 final causal review: **COMPLETE**; canonical report `research/work-analysis/2026-10-07-v2r3-final-review.md`.
+- predecessor→successor finding disposition/migration review: **COMPLETE**; canonical artifact `research/v2r3/strategy-adjustment-hypotheses-final-20261007.json`.
+- Supabase release control `V2R3_TO_V2R4_20261005` now records both `final_review_completed_at` and `migration_review_completed_at`; release status remains `PENDING`.
+- V2R4 operational shadow: **MATURE_COHORT_ARCHIVED**, 4,429/4,429 due 6h outcomes complete, unresolved=0, coverage=100%.
+- current MINI-PC central health sample at the progression check: **HEALTHY / OK**; prior transient supervisor/WS-shadow warning self-healed.
+- fail-closed `public.v2r4_activation_readiness` therefore reaches `MANUAL_RELEASE_DECISION_REQUIRED`; `automatic_activation_allowed=false` remains permanent.
+- content-addressed V2R3 last-known-good rollback evidence is archived at `research/v2r4/release-evidence/v2r3-last-known-good-rollback-20261007.json`; strategy/runtime fingerprints exactly match the active freeze manifest.
+- fresh inactive executable candidate: **Draft PR #40**, branch `release/v2r4-paper-candidate-20261007`, candidate SHA `732151170ce5239ee0d6c1d3dfd82e73c6b3ad21`.
+- PR #40 contains only the intended technical runtime/evaluator modules and tests ported from previously validated module evidence; it does not restore the superseded proposed spec/README or old activation wording.
+- current V2R4 PR validation **Run #23 SUCCESS**; compile, unit tests, live Kraken WAIT watcher smoke, synthetic WS-shadow smoke and broad Kraken-EUR pre-candidate smoke all passed.
+- Shared market-data parity guard **Run #4 SUCCESS**.
+
+Remaining release gates are deliberately **not** cloud-shortcut:
+
+1. final release-boundary MINI-PC fast-forward/readiness sync when local access is available;
+2. bounded physical real-Altrady wakeup → fresh Kraken condition → paper recheck smoke;
+3. prepare/verify the new immutable V2R4 paper series/control wiring;
+4. explicit `APPROVED_PAPER` user release decision;
+5. only then perform the separate paper activation mutation. Echtgeld remains blocked.
+
+PR #40 stays inactive/draft until those gates are satisfied. Technical green status alone is not activation authority.
+
 ## Current governing fast-track policy — 2026-10-05
 
 V2R4 release timing now inherits the permanent
