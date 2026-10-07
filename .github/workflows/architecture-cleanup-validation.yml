@@ -3,29 +3,6 @@ name: Architecture cleanup validation
 'on':
   pull_request:
     branches: [main]
-    paths:
-      - 'market_data/**'
-      - 'tools/minipc-kraken-universe-feed.py'
-      - 'tools/minipc-status-sync.py'
-      - 'tools/v2r4-shadow-cloud-sync.py'
-      - 'tools/install-minipc-status-sync.ps1'
-      - 'tools/install-minipc-v2r4-shadow-cloud-sync.ps1'
-      - 'tools/minipc-secret-hygiene-audit.ps1'
-      - 'tools/minipc-relay-credential-cutover.ps1'
-      - 'tools/repository-runtime-compaction.py'
-      - 'tools/v3-h1-shadow-archive.py'
-      - 'research/v3-migration-ledger.json'
-      - 'research/v3/shadow-runtime/h1-control.json'
-      - 'docs/**'
-      - 'supabase/**'
-      - '.github/workflows/**'
-      - 'tools/minipc-final-security-apps-reboot-audit.ps1'
-      - 'tools/minipc-secret-hygiene-audit.ps1'
-      - 'tools/minipc-watchdog.ps1'
-      - 'tools/minipc-altrady-*.ps1'
-      - 'tools/minipc-altrady-*.py'
-      - 'README.md'
-
 permissions:
   contents: read
 
