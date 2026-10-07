@@ -35,6 +35,20 @@ class H3PhysicalReportValidationTests(unittest.TestCase):
             self.assertEqual(selected, p)
             self.assertEqual(loaded["totals"]["checksum_fail"], 0)
 
+    def test_capture_freshness_helper(self):
+        self.assertTrue(
+            M.captured_state_is_fresh(
+                "2026-10-07T20:00:00Z",
+                "2026-10-07T20:00:01.500000Z",
+            )
+        )
+        self.assertFalse(
+            M.captured_state_is_fresh(
+                "2026-10-07T20:00:00Z",
+                "2026-10-07T20:00:02.100000Z",
+            )
+        )
+
     def test_missing_checksum_fail_fails_closed(self):
         with tempfile.TemporaryDirectory() as td:
             logs = Path(td)
