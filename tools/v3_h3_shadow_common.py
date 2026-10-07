@@ -12,6 +12,7 @@ WS_ALIAS = {
     "SOL/EUR": "SOL/EUR",
 }
 MAX_STATE_AGE_MS = 2000.0
+MAX_SOURCE_CLOCK_LEAD_MS = 250.0
 
 
 def parse_utc(value: str) -> datetime:
@@ -34,14 +35,29 @@ def context_is_fresh(
     received_at_utc: str,
     evaluation_clock_utc: str,
     maximum_state_age_ms: float = MAX_STATE_AGE_MS,
+    maximum_source_clock_lead_ms: float = MAX_SOURCE_CLOCK_LEAD_MS,
 ) -> bool:
     source = parse_utc(source_exchange_at_utc)
     received = parse_utc(received_at_utc)
     evaluation = parse_utc(evaluation_clock_utc)
-    if source > received or received > evaluation:
+    if received > evaluation:
         return False
-    age_ms = (evaluation - source).total_seconds() * 1000.0
-    return 0.0 <= age_ms <= float(maximum_state_age_ms)
+
+    # Kraken exchange timestamps and the local Windows clock are independently
+    # synchronized. A very small negative transport age can therefore be benign
+    # clock skew rather than "future market data". Bound that skew separately
+    # instead of weakening the 2s point-in-time freshness requirement.
+    source_lead_ms = (source - received).total_seconds() * 1000.0
+    if source_lead_ms > float(maximum_source_clock_lead_ms):
+        return False
+
+    source_age_ms = (evaluation - source).total_seconds() * 1000.0
+    local_handoff_age_ms = (evaluation - received).total_seconds() * 1000.0
+    effective_source_age_ms = max(0.0, source_age_ms)
+    return (
+        0.0 <= local_handoff_age_ms <= float(maximum_state_age_ms)
+        and effective_source_age_ms <= float(maximum_state_age_ms)
+    )
 
 
 def compact_h3_context(

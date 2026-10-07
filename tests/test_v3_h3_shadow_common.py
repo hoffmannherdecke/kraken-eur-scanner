@@ -32,7 +32,7 @@ class H3ShadowCommonTests(unittest.TestCase):
         )
         self.assertEqual(M.route_shadow("SOL/EUR", "PASS", True), "DUPLICATE_SKIPPED")
 
-    def test_freshness_requires_point_in_time_order_and_2s_cap(self):
+    def test_freshness_requires_2s_cap_but_allows_small_clock_skew(self):
         t = datetime(2026, 10, 7, 20, 0, 0, tzinfo=timezone.utc)
         self.assertTrue(
             M.context_is_fresh(
@@ -41,18 +41,28 @@ class H3ShadowCommonTests(unittest.TestCase):
                 evaluation_clock_utc=z(t + timedelta(milliseconds=500)),
             )
         )
+        # Exchange timestamp 17.3ms ahead of local receive time is benign skew.
+        self.assertTrue(
+            M.context_is_fresh(
+                source_exchange_at_utc=z(t + timedelta(milliseconds=17.3)),
+                received_at_utc=z(t),
+                evaluation_clock_utc=z(t + timedelta(milliseconds=20)),
+            )
+        )
+        # But a material future lead remains fail-closed.
+        self.assertFalse(
+            M.context_is_fresh(
+                source_exchange_at_utc=z(t + timedelta(milliseconds=300)),
+                received_at_utc=z(t),
+                evaluation_clock_utc=z(t + timedelta(milliseconds=20)),
+            )
+        )
+        # The original 2s freshness cap is unchanged.
         self.assertFalse(
             M.context_is_fresh(
                 source_exchange_at_utc=z(t),
                 received_at_utc=z(t + timedelta(milliseconds=100)),
                 evaluation_clock_utc=z(t + timedelta(milliseconds=2100)),
-            )
-        )
-        self.assertFalse(
-            M.context_is_fresh(
-                source_exchange_at_utc=z(t + timedelta(milliseconds=200)),
-                received_at_utc=z(t + timedelta(milliseconds=100)),
-                evaluation_clock_utc=z(t + timedelta(milliseconds=300)),
             )
         )
 
