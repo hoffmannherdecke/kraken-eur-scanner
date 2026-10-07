@@ -52,7 +52,7 @@ def runtime_code_fingerprint():
 
 def reserved_buy_ids(series_id):
     out=set()
-    for dirname in ("paper_decisions","paper_revalidations"):
+    for dirname in ("paper_decisions","paper_revalidations","paper_rechecks"):
         d=ROOT/dirname
         if not d.exists():
             continue
@@ -99,7 +99,7 @@ def enrich_derivatives_delta(external,pair,series_id):
     if not cur.get("available"):
         return external
     previous=[]
-    for dirname in ("paper_decisions","paper_revalidations"):
+    for dirname in ("paper_decisions","paper_revalidations","paper_rechecks"):
         d=ROOT/dirname
         if not d.exists():
             continue
