@@ -1,0 +1,70 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const jsonHeaders={"Content-Type":"application/json"};
+function response(status:number,body:Record<string,unknown>){return new Response(JSON.stringify(body),{status,headers:jsonHeaders});}
+function sameFixedHex(a:string,b:string){if(a.length!==64||b.length!==64)return false;let d=0;for(let i=0;i<64;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0;}
+async function authorized(admin:any,req:Request){
+  const supplied=req.headers.get("X-Shadow-Evidence-Token")??"";
+  const {data:cred,error}=await admin.from("internal_relay_credentials").select("token_sha256,enabled").eq("relay_id","v2r4-shadow-evidence-relay").maybeSingle();
+  if(error||cred?.enabled!==true||typeof cred.token_sha256!=="string"||!supplied)return false;
+  const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(supplied));
+  const hash=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  return sameFixedHex(hash,cred.token_sha256);
+}
+
+Deno.serve(async(req:Request)=>{
+  if(req.method!=="POST")return response(405,{ok:false,error:"method_not_allowed"});
+  const url=Deno.env.get("SUPABASE_URL")??""; const key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
+  if(!url||!key)return response(500,{ok:false,error:"server_credentials_missing"});
+  const admin=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+  if(!(await authorized(admin,req)))return response(401,{ok:false,error:"unauthorized"});
+  let body:any; try{body=await req.json();}catch{return response(400,{ok:false,error:"invalid_json"});}
+  const action=String(body?.action??"");
+
+  if(action==="activate"){
+    const seriesId=String(body?.series_id??""); const testId=String(body?.test_id??""); const revision=String(body?.strategy_revision??""); const startedAt=String(body?.started_at??""); const config=body?.config;
+    if(!/^PAPER-V2R4-\d{8}T\d{6}Z$/.test(seriesId))return response(400,{ok:false,error:"invalid_series_id"});
+    if(!/^PAPER-V2R4-SERIES1-\d{8}$/.test(testId))return response(400,{ok:false,error:"invalid_test_id"});
+    if(revision!=="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION")return response(400,{ok:false,error:"invalid_strategy_revision"});
+    const dt=new Date(startedAt); if(Number.isNaN(dt.getTime()))return response(400,{ok:false,error:"invalid_started_at"});
+    if(!config||typeof config!=="object"||config.paper_only!==true||config.real_money_actions_enabled!==false||config.enabled!==true)return response(400,{ok:false,error:"unsafe_config"});
+    if(config.series_id!==seriesId||config.test_id!==testId||config.strategy_revision!==revision)return response(400,{ok:false,error:"config_identity_mismatch"});
+    if(Number(config.target_completed_paper_trades)!==20)return response(400,{ok:false,error:"unexpected_target"});
+
+    const {data:release,error:relErr}=await admin.from("strategy_release_decisions").select("status,predecessor_series_id,successor_revision,final_review_completed_at,migration_review_completed_at,decision_evidence").eq("release_id","V2R3_TO_V2R4_20261005").maybeSingle();
+    if(relErr||!release)return response(500,{ok:false,error:"release_lookup_failed"});
+    if(release.status!=="APPROVED_PAPER"||release.predecessor_series_id!=="PAPER-V2R3-CLEAN-20261001T0925Z"||release.successor_revision!=="V2R4"||!release.final_review_completed_at||!release.migration_review_completed_at)return response(409,{ok:false,error:"release_not_approved"});
+    if(release.decision_evidence?.activation_series_id)return response(409,{ok:false,error:"activation_already_recorded",series_id:release.decision_evidence.activation_series_id});
+
+    const {data:existing,error:exErr}=await admin.from("paper_series").select("series_id,status,strategy_revision").eq("series_id",seriesId).maybeSingle();
+    if(exErr)return response(500,{ok:false,error:"series_lookup_failed"});
+    if(existing && (existing.status!=="active"||existing.strategy_revision!==revision))return response(409,{ok:false,error:"series_identity_conflict"});
+    if(!existing){
+      const {error:insErr}=await admin.from("paper_series").insert({series_id:seriesId,test_id:testId,strategy_revision:revision,started_at:dt.toISOString(),target_completed_trades:20,status:"active",config});
+      if(insErr)return response(500,{ok:false,error:"series_insert_failed",detail:insErr.message});
+    }
+    const {error:closeErr}=await admin.from("paper_series").update({status:"closed_complete",updated_at:new Date().toISOString()}).eq("series_id","PAPER-V2R3-CLEAN-20261001T0925Z");
+    if(closeErr)return response(500,{ok:false,error:"predecessor_close_failed",detail:closeErr.message});
+    const evidence={...(release.decision_evidence??{}),activation_series_id:seriesId,activation_test_id:testId,activation_started_at:dt.toISOString(),activation_runtime_owner:"MINIPC_LOCAL_V2R4",activation_recorded_at:new Date().toISOString(),real_money_actions_allowed:false};
+    const {error:updErr}=await admin.from("strategy_release_decisions").update({decision_evidence:evidence,updated_at:new Date().toISOString()}).eq("release_id","V2R3_TO_V2R4_20261005");
+    if(updErr)return response(500,{ok:false,error:"release_evidence_update_failed"});
+    return response(200,{ok:true,action:"activate",series_id:seriesId,status:"active",paper_only:true,real_money_actions:false});
+  }
+
+  if(action==="sync"){
+    const seriesId=String(body?.series_id??""); const revision=String(body?.strategy_revision??""); const candidates=body?.candidates; const trades=body?.trades;
+    if(!/^PAPER-V2R4-\d{8}T\d{6}Z$/.test(seriesId))return response(400,{ok:false,error:"invalid_series_id"});
+    if(revision!=="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION")return response(400,{ok:false,error:"invalid_strategy_revision"});
+    if(!Array.isArray(candidates)||candidates.length>500||!Array.isArray(trades)||trades.length>100)return response(400,{ok:false,error:"invalid_batch"});
+    const {data:series,error:sErr}=await admin.from("paper_series").select("series_id,status,strategy_revision").eq("series_id",seriesId).maybeSingle();
+    if(sErr||!series)return response(409,{ok:false,error:"series_not_found"});
+    if(series.status!=="active"||series.strategy_revision!==revision)return response(409,{ok:false,error:"series_not_active"});
+    for(const row of candidates){if(row?.series_id!==seriesId||typeof row?.candidate_id!=="string"||typeof row?.pair!=="string"||row?.payload?.decision?.real_money_actions_enabled!==false)return response(400,{ok:false,error:"unsafe_candidate_payload"});}
+    for(const row of trades){if(row?.series_id!==seriesId||typeof row?.candidate_id!=="string"||row?.payload?.real_money_actions_enabled!==false)return response(400,{ok:false,error:"unsafe_trade_payload"});}
+    if(candidates.length){const {error}=await admin.from("paper_candidate_outcomes").upsert(candidates,{onConflict:"candidate_id"}); if(error)return response(500,{ok:false,error:"candidate_upsert_failed",detail:error.message});}
+    if(trades.length){const {error}=await admin.from("paper_trade_results").upsert(trades,{onConflict:"candidate_id"}); if(error)return response(500,{ok:false,error:"trade_upsert_failed",detail:error.message});}
+    return response(200,{ok:true,action:"sync",accepted_candidates:candidates.length,accepted_trades:trades.length,paper_only:true,real_money_actions:false});
+  }
+  return response(400,{ok:false,error:"unsupported_action"});
+});
