@@ -139,6 +139,7 @@ class Runtime:
         self.cloud_sync_status = "PENDING"
         self.cloud_sync_error: str | None = None
         self.last_cloud_sync_utc: str | None = None
+        self.capture_error: str | None = None
         self.eval_error: str | None = None
         self.last_eval_utc: str | None = None
         self.lock = asyncio.Lock()
@@ -232,6 +233,7 @@ class Runtime:
             and self.books_ready()
             and self.runtime_ready_at_utc is not None
             and (age is None or age <= 15)
+            and self.capture_error is None
             and self.eval_error is None
         )
         payload = {
@@ -259,6 +261,7 @@ class Runtime:
                 for symbol, b in self.books.items()
             },
             "pilot_status": status,
+            "capture_error": self.capture_error,
             "last_eval_utc": self.last_eval_utc,
             "eval_error": self.eval_error,
             "cloud_sync_status": self.cloud_sync_status,
@@ -420,9 +423,10 @@ class Runtime:
                                 "guardrails": {"orders": False, "real_money_actions": False},
                             }
                         atomic_json(target, sidecar)
+                self.capture_error = None
                 await asyncio.sleep(0.35)
             except Exception as exc:
-                self.eval_error = f"capture:{type(exc).__name__}:{str(exc)[:240]}"
+                self.capture_error = f"{type(exc).__name__}:{str(exc)[:240]}"
                 await asyncio.sleep(1)
 
     def evaluate_pair(self, candidate: dict[str, Any], baseline: dict[str, Any], sidecar: dict[str, Any]) -> dict[str, Any]:
