@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_SHADOW_CONTEXT_CONFIG_V1",
+  "candidate_id": "V3-H3-SHADOW-001",
+  "baseline_strategy_revision": "V2R3-2026-09-28",
+  "candidate_strategy_revision": "V3-H3-SHADOW-001",
+  "status": "DRAFT_PREPARED_NOT_ACTIVE",
+  "changed_component": "STATE_CONDITIONING",
+  "purpose": "Test whether fixed, checksum-valid Kraken depth-10 orderbook state adds useful confirmation context on the preregistered H3 symbols without thresholds, transforms, pair ranking, model change, extra candidate discovery, orders or baseline mutation.",
+  "candidate_stream": {
+    "source": "same canonical candidate stream as the active comparison baseline/successor runtime",
+    "same_candidate_stream": true,
+    "shared_market_clock": true,
+    "no_extra_candidate_discovery": true,
+    "eligible_pair_behavior": "Apply H3 context only to preregistered supported pairs; all other candidates are baseline passthrough and are excluded from the H3 eligible-sample count."
+  },
+  "supported_pairs": {
+    "candidate_pairs": [
+      "XBT/EUR",
+      "ETH/EUR",
+      "SOL/EUR"
+    ],
+    "kraken_ws_symbols": [
+      "BTC/EUR",
+      "ETH/EUR",
+      "SOL/EUR"
+    ],
+    "alias_map": {
+      "XBT/EUR": "BTC/EUR",
+      "ETH/EUR": "ETH/EUR",
+      "SOL/EUR": "SOL/EUR"
+    },
+    "selection_basis": "Exact symbols frozen before the completed V3-H3-ASSOC-002 prospective association trial; no outcome-driven pair expansion or pruning."
+  },
+  "source_contract": {
+    "endpoint": "wss://ws.kraken.com/v2",
+    "channel": "book",
+    "depth": 10,
+    "reconciliation": "apply levels -> trim depth10 -> validate Kraken CRC32 before state is eligible",
+    "state_rule": "latest checksum-valid reconciled state at or before the candidate evaluation clock",
+    "maximum_state_age_ms": 2000,
+    "stale_or_missing_behavior": "BASELINE_PASSTHROUGH_MARK_H3_CONTEXT_MISSING",
+    "public_endpoint_only": true
+  },
+  "fixed_features": {
+    "spread_bps": "raw fixed feature from the H3 state contract",
+    "bid_depth_quote_top10": "raw fixed feature from the H3 state contract",
+    "ask_depth_quote_top10": "raw fixed feature from the H3 state contract",
+    "depth_imbalance_top10": "raw fixed feature from the H3 state contract"
+  },
+  "shadow_decision_change": {
+    "mode": "CONTEXT_ONLY",
+    "baseline_prompt_and_rules_otherwise_identical": true,
+    "directional_sign_assumption": false,
+    "threshold_search": false,
+    "feature_transform_search": false,
+    "score_weight_change": false,
+    "pair_subset_search": false,
+    "model_change": false,
+    "automatic_trade_rule": false
+  },
+  "pilot_gate": {
+    "minimum_eligible_matched_candidates": 20,
+    "minimum_distinct_utc_dates": 2,
+    "minimum_h3_capture_success_pct": 95,
+    "fixed_followup_horizons_minutes": [
+      30,
+      60,
+      120,
+      360
+    ],
+    "low_impact_rule": "If fewer than 3 baseline-vs-H3 decision divergences occur by the minimum gate, classify INCONCLUSIVE_LOW_IMPACT; do not tune or auto-extend.",
+    "fasttrack_note": "No arbitrary fixed day-count floor. Review as soon as the sample, temporal-diversity and integrity gates are met.",
+    "promotion_limit": "This is a bounded shadow feasibility/value pilot only; it cannot directly promote H3 into a live or paper strategy."
+  },
+  "operational_feasibility_snapshot": {
+    "source": "Supabase paper_candidate_outcomes for PAPER-V2R3-CLEAN-20261001T0925Z; candidate incidence only, not outcome selection",
+    "observed_supported_pair_candidates": {
+      "XBT/EUR": 15,
+      "ETH/EUR": 4,
+      "SOL/EUR": 11,
+      "total": 30
+    },
+    "observed_window_utc": {
+      "first_supported_candidate": "2026-10-01T10:04:00.412459Z",
+      "last_supported_candidate": "2026-10-06T14:04:12.765173Z"
+    },
+    "gate_rationale": "Twenty eligible candidates across at least two UTC dates is a short, bounded pilot sized to the observed incidence. Any positive result still requires a later stronger evidence gate before promotion."
+  },
+  "cost_reference": {
+    "taker_pct_per_side": 0.6,
+    "note": "Same conservative reference used by the baseline research path; no actual orders are created by this pilot."
+  },
+  "review_rules": {
+    "automatic_winner_selection": false,
+    "automatic_promotion": false,
+    "pilot_can_promote_to_live": false,
+    "human_project_review_required": true,
+    "net_value_after_costs_required_before_any_later_promotion": true,
+    "no_midrun_tuning": true
+  },
+  "activation_preconditions": {
+    "h1_fixed_review_complete": true,
+    "candidate_contract_guard_pass": true,
+    "physical_minipc_point_in_time_context_smoke_pass": false,
+    "physical_trigger_to_shadow_evaluation_smoke_pass": false,
+    "explicit_shadow_start_decision": false
+  },
+  "guardrails": {
+    "active_v2r3_changed": false,
+    "v2r4_changed": false,
+    "sealed_holdout_opened": false,
+    "private_api_allowed": false,
+    "orders": false,
+    "real_money_actions": false,
+    "leverage": false
+  }
+}
