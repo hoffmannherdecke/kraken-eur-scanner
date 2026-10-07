@@ -2,8 +2,8 @@
   "schema_version": 1,
   "kind": "V3_H3_SHADOW_CONTEXT_CONFIG_V1",
   "candidate_id": "V3-H3-SHADOW-001",
-  "baseline_strategy_revision": "V2R3-2026-09-28",
-  "candidate_strategy_revision": "V3-H3-SHADOW-001",
+  "baseline_strategy_revision": "BIND_AT_FREEZE_CURRENT_ACTIVE_PAPER_BASELINE",
+  "candidate_strategy_revision": "V3-H3-SHADOW-001-DRAFT",
   "status": "DRAFT_PREPARED_NOT_ACTIVE",
   "changed_component": "STATE_CONDITIONING",
   "purpose": "Test whether fixed, checksum-valid Kraken depth-10 orderbook state adds useful confirmation context on the preregistered H3 symbols without thresholds, transforms, pair ranking, model change, extra candidate discovery, orders or baseline mutation.",
@@ -114,5 +114,12 @@
     "orders": false,
     "real_money_actions": false,
     "leverage": false
+  },
+  "baseline_binding": {
+    "mode": "BIND_AT_FREEZE_TO_CURRENT_ACTIVE_PAPER_BASELINE",
+    "provisional_evidence_reference": "V2R3-2026-09-28",
+    "rule": "At H3 freeze/start, bind to the exact then-current active Paper comparison baseline and its candidate stream. If V2R4 has been activated, H3 must compare against that exact V2R4 Paper revision rather than replaying stale V2R3 as the primary pilot.",
+    "prefreeze_rebinding_allowed": true,
+    "postfreeze_rebinding_allowed": false
   }
 }
