@@ -11,6 +11,7 @@ $app = Join-Path $TradingRoot "Runtime\v2r4-paper-app"
 $python = Join-Path $TradingRoot "Runtime\kraken-eur-scanner-venv\Scripts\python.exe"
 $apiKey = Join-Path $TradingRoot "Secrets\openai-api-key.txt"
 $relayToken = Join-Path $TradingRoot "Secrets\shadow-evidence-token.txt"
+$githubDispatchToken = Join-Path $TradingRoot "Secrets\github-actions-dispatch-token.txt"
 $healthPath = Join-Path $TradingRoot "State\minipc-health.json"
 $shadowEvents = Join-Path $TradingRoot "State\v2r4-ws-shadow-events"
 $endpoint = "https://nlgzjmqgwueojlyqmoru.supabase.co/functions/v1/v2r4-paper-evidence-relay"
@@ -57,7 +58,7 @@ $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
 $principal=New-Object Security.Principal.WindowsPrincipal($identity)
 if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){ throw "Run this command in an Administrator PowerShell." }
 
-foreach($p in @($repo,$python,$apiKey,$relayToken,$healthPath,$shadowEvents)) { if(-not (Test-Path $p)){ throw "Required path missing: $p" } }
+foreach($p in @($repo,$python,$apiKey,$relayToken,$githubDispatchToken,$healthPath,$shadowEvents)) { if(-not (Test-Path $p)){ throw "Required path missing: $p" } }
 
 if(-not $Execute){
   [pscustomobject]@{
@@ -157,6 +158,7 @@ Write-Host "3/8 Compile active runtime and protect local secrets for SYSTEM task
 if($LASTEXITCODE -ne 0){ throw 'V2R4 runtime compile failed.' }
 icacls $apiKey /grant:r 'SYSTEM:(R)' /C | Out-Null
 icacls $relayToken /grant:r 'SYSTEM:(R)' /C | Out-Null
+icacls $githubDispatchToken /grant:r 'SYSTEM:(R)' /C | Out-Null
 
 Write-Host "4/8 Register V2R4 local tasks (not started yet)..."
 $taskSpecs=@(
