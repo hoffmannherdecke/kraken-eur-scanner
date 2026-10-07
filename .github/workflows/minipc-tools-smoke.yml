@@ -113,6 +113,8 @@ jobs:
             'tools/minipc-v2r4-readiness-sync.ps1',
             'tools/minipc-v2r4-real-altrady-release-smoke.ps1',
             'tools/install-minipc-v2r4-paper-runtime.ps1',
+            'tools/install-minipc-v2r4-paper-runtime-v2.ps1',
+            'tools/install-minipc-v2r4-paper-runtime-v3.ps1',
             'tools/minipc-local-core-gate.ps1',
             'tools/minipc-next-user-step.ps1',
             'tools/minipc-altrady-secret-prep.ps1',
