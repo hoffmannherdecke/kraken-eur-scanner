@@ -24,7 +24,9 @@
     "config": "research/v3/shadow-candidates/v3-h3-shadow-001-config.json",
     "preparation_record": "research/v3/h3-shadow-001-preparation-20261007.json",
     "physical_gate_required": true,
-    "activation_allowed_now": false
+    "activation_allowed_now": false,
+    "baseline_binding": "BIND_AT_FREEZE_TO_CURRENT_ACTIVE_PAPER_BASELINE",
+    "v2r4_if_active": "USE_EXACT_ACTIVE_V2R4_PAPER_REVISION_AND_STREAM"
   },
   "h6": {
     "state": "QUEUED_THIRD_STANDALONE_AFTER_H3_FIXED_REVIEW",
