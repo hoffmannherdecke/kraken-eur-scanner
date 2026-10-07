@@ -72,6 +72,7 @@ jobs:
             tests.test_v2r4_evaluator_watch_conditions \
             tests.test_v2r4_evaluator_contract \
             tests.test_v2r4_local_recheck \
+            tests.test_v2r4_spec_runtime_compatibility \
             tests.test_v2r4_wait_runtime \
             -v
 
