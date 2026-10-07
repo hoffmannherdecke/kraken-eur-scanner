@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "kind": "V2R4_REAL_ALTRADY_PHYSICAL_SMOKE_FIXTURE_REPAIR_V1",
+  "observed_at_local": "2026-10-07T18:16:22+02:00",
+  "status": "REPAIRED_AWAITING_PHYSICAL_RERUN",
+  "physical_evidence": {
+    "real_altrady_transport_event_observed": true,
+    "real_event_symbol": "XXBTZEUR",
+    "real_event_direction": "LIVE_ALTRADY_TIME_TEST",
+    "altrady_webhook_ui_status": "Success",
+    "kraken_condition_match": true,
+    "paper_recheck_attempted": true,
+    "paper_recheck_result": "FAILED_CLOSED",
+    "runtime_status": "DEGRADED",
+    "fresh_rechecks": 0,
+    "fresh_recheck_failures": 1,
+    "error_class": "ValueError"
+  },
+  "root_cause": {
+    "classification": "SMOKE_FIXTURE_CANONICAL_IDENTITY_MISMATCH",
+    "detail": "The isolated smoke fixture used candidate_id '<timestamp>-<PAIR>-real-altrady-smoke' and queue_id 'REAL-ALTRADY-SMOKE:<PAIR>:<ts>', while the production evaluator requires '<timestamp>-<PAIR>-r<source_scanner_run_id>' and '<source_scanner_run_id>:<PAIR>:<event_ts>'. The runtime therefore correctly failed closed before any paper decision.",
+    "minipc_fault": false,
+    "altrady_transport_fault": false,
+    "kraken_data_fault": false,
+    "strategy_fault": false
+  },
+  "repair": {
+    "main_fix_pr": 43,
+    "main_fix_commit": "6be37a4d25dd718fb1b638c44a97ddbe7487bdff",
+    "canonical_candidate_id_suffix": "-r0",
+    "canonical_queue_id_prefix": "0:<PAIR>:",
+    "production_validate_candidate_guard_added": true,
+    "smoke_helper_bound_to_release_candidate_worktree": true,
+    "helper_compile_added_to_physical_smoke": true,
+    "deterministic_v2r4_fixture_test_added": true,
+    "v2r4_pr_validation_run": 30,
+    "v2r4_pr_validation_result": "SUCCESS",
+    "shared_market_data_parity_run": 11,
+    "shared_market_data_parity_result": "SUCCESS"
+  },
+  "guardrails": {
+    "strategy_change": false,
+    "paper_activation": false,
+    "approved_paper_changed": false,
+    "private_kraken_api": false,
+    "order_api": false,
+    "real_money_actions": false
+  },
+  "next_gate": "FAST_FORWARD_LOCAL_MAIN_THEN_RERUN_THE_SAME_REAL_ALTRADY_PHYSICAL_RELEASE_SMOKE_USING_THE_STILL_FRESH_EVENT_IF_WITHIN_30_MINUTES"
+}
