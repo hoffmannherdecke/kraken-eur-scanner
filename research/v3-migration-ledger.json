@@ -2,7 +2,7 @@
   "schema_version": 2,
   "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-06T08:15:04Z",
+  "updated_at_utc": "2026-10-07T08:25:00Z",
   "baseline_strategy": "V2R3-2026-09-28",
   "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "v2r4_status": "PREPARED_NOT_ACTIVE",
@@ -34,10 +34,12 @@
       "category": "data_quality",
       "source_version": "V2R3/V2R4 infrastructure",
       "migration_status": "INHERIT_UNCHANGED",
-      "rationale": "Current public Kraken AssetPairs online Spot-EUR universe is the operational live tradability source; no static whitelist.",
+      "rationale": "130 mature cases carried account-unavailable/pair-blocked reasons; 109 were public online Kraken Spot-EUR. Public AssetPairs remains paper authority.",
       "evidence": [
         "PROJECT_BACKLOG.md",
-        "docs/master-version-register.md"
+        "docs/master-version-register.md",
+        "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
       "pending_gate": null
     },
@@ -106,14 +108,16 @@
       "category": "measurement",
       "source_version": "V2R3/V2R4 evidence layer",
       "migration_status": "INHERIT_UNCHANGED",
-      "rationale": "MAE/MFE, horizon, post-detection and timing decomposition remain inherited requirements. Batch 003 adds a mandatory dependence guardrail: 18 candidate-level >=10% MFE observations collapse to five pair/6h episodes, so final and successor analysis must report both candidate and clustered episode counts. Temporal-window stratification remains required.",
+      "rationale": "Final review: 946 mature 24h paths; 945 mature REJECTs reached p50 MFE/MAE +3.148/-2.923% at 24h. Raw >=5% MFE (291) compresses to 174 pair/6h episodes; >=10% (103) to 65. Candidate and episode counts plus temporal strata remain mandatory.",
       "evidence": [
         "docs/master-version-register.md",
         "PROJECT_BACKLOG.md",
         "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
         "research/v2r3/strategy-adjustment-hypotheses-v3-20261005.json",
         "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md",
-        "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json"
+        "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json",
+        "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
       "pending_gate": null
     },
@@ -122,78 +126,88 @@
       "category": "signal",
       "source_version": "V2R3-2026-09-28",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "The clean series now has 949 outcomes, 757 mature 24h paths and HEALTHY integrity, but still only 1 BUY_SCOUT/1 completed trade. Batch 003 added 191 final REJECTs (180 raw WAIT→REJECT) and no trade. Low conversion remains material successor evidence, while repeated re-trigger clustering and the still-open 51-outcome completion gap prohibit a rule conclusion before final review.",
+      "rationale": "Final cohort: 1 BUY_SCOUT/1 trade from 1,000, 999 REJECT, HEALTHY integrity. Scanner score correlations to MFE24/close24 were -0.024/-0.035. Low frequency is real but does not identify a safe global filter relaxation.",
       "evidence": [
         "public.v2r3_release_review_snapshot",
         "PROJECT_BACKLOG.md",
         "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
         "research/v2r3/strategy-adjustment-hypotheses-v3-20261005.json",
         "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md",
-        "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json"
+        "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json",
+        "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "V2R3_CLEAN_SERIES_FINAL_REVIEW"
+      "pending_gate": "V2R4_PROSPECTIVE_COMPARISON_AND_V3_H7_LABEL_CONTRACT"
     },
     {
       "id": "wait_one_shot_revalidation",
       "category": "entry_lifecycle",
       "source_version": "V2R3-2026-09-28",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Batch 003 contains 180 raw WAIT→REJECT paths; extra TTL lag remained p50 344s and p90 1,214s, with 169/180 above 60s. This strengthens the separate timing/runtime diagnosis. V2R4's inactive bounded-WAIT/fresh-recheck path already covers the intended successor mechanism; prospective validation and final V2R3 disposition remain required.",
+      "rationale": "891 mature WAIT→REJECT and one WAIT→BUY; TTL lag p50 348s, p90 1,203s, p99 8,312s. Existing inactive V2R4 bounded-WAIT/fresh-recheck is selected but requires prospective proof.",
       "evidence": [
         "public.v2r3_revalidation_timing_summary",
         "PROJECT_BACKLOG.md",
         "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
         "research/v2r3/strategy-adjustment-hypotheses-v3-20261005.json",
         "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md",
-        "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json"
+        "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json",
+        "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "V2R3_CLEAN_SERIES_FINAL_REVIEW"
+      "pending_gate": "V2R4_BOUNDED_WAIT_PROSPECTIVE_PAPER_EVIDENCE"
     },
     {
       "id": "v2r4_event_driven_wait_wakeup",
       "category": "entry_lifecycle",
       "source_version": "V2R4 historical prep (superseded PR #9 module evidence)",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Kraken-fresh recheck with optional Altrady wakeup is technically proven by historical superseded-PR module evidence, but the final V2R4 candidate must be rebuilt from cleaned current main and complete separate prospective V2R4 Paper evidence.",
+      "rationale": "Final evidence selects the existing bounded WAIT + fresh Kraken recheck mechanism. A current-main candidate, physical bounded smoke and prospective Paper evidence remain required.",
       "evidence": [
         "docs/v2r4-release-readiness.md",
-        "docs/v2r4-paper-activation-checklist.md"
+        "docs/v2r4-paper-activation-checklist.md",
+        "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE"
+      "pending_gate": "CURRENT_MAIN_CANDIDATE_PHYSICAL_SMOKE_THEN_V2R4_PROSPECTIVE_PAPER_EVIDENCE"
     },
     {
       "id": "scout_confirmation_architecture",
       "category": "entry",
       "source_version": "V2R3/V2R4",
-      "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Two-stage scout/confirmation must be judged on clean prospective net edge and timing, not assumed permanent.",
+      "migration_status": "INHERIT_UNCHANGED",
+      "rationale": "Only one scout completed and stage 2 never filled; inherit 50+50 two-stage architecture for the first V2R4 comparison.",
       "evidence": [
         "paper_strategy_spec.json",
-        "docs/v2r4-v2r3-release-diff.md"
+        "docs/v2r4-v2r3-release-diff.md",
+        "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "V2R3_V2R4_COMPARATIVE_REVIEW"
+      "pending_gate": "POST_V2R4_PROSPECTIVE_COMPARATIVE_REVIEW"
     },
     {
       "id": "late_chase_protection",
       "category": "entry",
       "source_version": "V2R3/V2R4",
-      "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Batch 003 again supports anti-chase: already-run cases had p50 MAE -3.777% and 24h close -1.877% versus -1.454% and +0.165% when not already run. Higher MFE does not justify immediate chase relaxation. Only a separately versioned pullback/rebuild/second-leg hypothesis remains eligible for later prospective testing.",
+      "migration_status": "INHERIT_UNCHANGED",
+      "rationale": "Already-run REJECTs had p50 MFE +3.821% but MAE -4.133% and close -1.311%, versus +2.899/-2.260/-0.077% otherwise. Keep anti-chase; pullback/rebuild remains separate.",
       "evidence": [
         "PROJECT_BACKLOG.md",
         "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
         "research/v2r3/strategy-adjustment-hypotheses-v3-20261005.json",
         "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md",
-        "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json"
+        "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json",
+        "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "V2R3_CLEAN_SERIES_FINAL_REVIEW"
+      "pending_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS"
     },
     {
       "id": "stop_trailing_ttl_exit_logic",
       "category": "risk_exit",
       "source_version": "V2R3",
-      "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Despite 757 mature 24h candidate paths, the clean series still has only one completed trade. Batch 003 adds no trade. Candidate excursions and episode-clustered missed moves remain descriptive and cannot calibrate stop, TTL, trailing or exit parameters without realistic ordered entry/fill/cost paths and the closed final gate.",
+      "migration_status": "INHERIT_UNCHANGED",
+      "rationale": "The sole trade stopped at -3.092% net; one fill path cannot calibrate stops, trailing, TTL or exits. Inherit unchanged for first V2R4.",
       "evidence": [
         "research/v3/h4-regime-stop-ttl-precheck-v1.json",
         "docs/v3-research-framework.md",
@@ -201,20 +215,24 @@
         "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
         "research/v2r3/strategy-adjustment-hypotheses-v3-20261005.json",
         "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md",
-        "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json"
+        "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json",
+        "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "WAIT_FOR_V2R3_MATURE_24H_AND_FINAL_REVIEW_THEN_FREEZE_POINT_IN_TIME_REGIME_DEFINITION"
+      "pending_gate": "POST_V2R4_MATERIAL_TRADE_SAMPLE"
     },
     {
       "id": "position_sizing_mapping",
       "category": "risk_sizing",
       "source_version": "V2R3 plus V2R4 proposal",
-      "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "The first full V2R4 Paper series is now bindingly fixed at the inherited V2R3 sizing of 50 EUR scout + 50 EUR stage 2 so timing/discovery/revalidation is isolated. Adaptive setup-quality sizing is excluded from that release and remains a separately versioned later research experiment.",
+      "migration_status": "INHERIT_UNCHANGED",
+      "rationale": "One trade cannot support adaptive sizing; first V2R4 remains 50+50 EUR.",
       "evidence": [
         "docs/v2r4-v2r3-release-diff.md",
         "docs/v2r4-paper-activation-checklist.md",
-        "docs/v2r4-sizing-release-decision.md"
+        "docs/v2r4-sizing-release-decision.md",
+        "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
       "pending_gate": "POST_V2R4_TIMING_SERIES_SEPARATE_ADAPTIVE_SIZING_RESEARCH"
     },
@@ -222,11 +240,13 @@
       "id": "conservative_cost_model",
       "category": "costs",
       "source_version": "V2R3/historical",
-      "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "0.60% taker/side remains conservative reference, but spread/slippage/re-entry/fill realism still require targeted evidence.",
+      "migration_status": "INHERIT_UNCHANGED",
+      "rationale": "The sole trade paid 0.5943 EUR modeled fees and closed -1.5462 EUR net. Keep 0.60% per side for first V2R4.",
       "evidence": [
         "docs/historical-backtest-preflight.md",
-        "PROJECT_BACKLOG.md"
+        "PROJECT_BACKLOG.md",
+        "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
       "pending_gate": "TARGETED_MICROSTRUCTURE_COST_RESEARCH"
     },
@@ -391,13 +411,15 @@
       "category": "meta_decision",
       "source_version": "V3 hypothesis",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Meta TAKE/NO-TAKE training is blocked until V2R3 final review and a point-in-time label/cost/split contract are frozen. Current label readiness is explicitly NOT_FROZEN.",
+      "rationale": "V2R3 final review is complete. H7 may prepare, but not activate, a fixed point-in-time label/cost/split contract; no training or promotion is authorized.",
       "evidence": [
         "research/v3/h7-meta-gate-readiness-v1.json",
         "supabase/views/v3_h7_meta_gate_readiness.sql",
-        "docs/v3-research-framework.md"
+        "docs/v3-research-framework.md",
+        "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "V3_H7_WAIT_FOR_V2R3_FINAL_REVIEW_THEN_FREEZE_LABEL_CONTRACT"
+      "pending_gate": "V3_H7_FREEZE_POINT_IN_TIME_LABEL_COST_SPLIT_CONTRACT_BEFORE_ANY_TRAINING"
     },
     {
       "id": "onchain_state",
@@ -438,5 +460,12 @@
       ],
       "pending_gate": "V3_H9_VERIFY_ACCOUNT_SPECIFIC_FEE_TIER_THEN_PREREGISTER_DEADLINE_CLEANUP_QUEUE_CONTRACTS"
     }
-  ]
+  ],
+  "final_v2r3_review": {
+    "status": "COMPLETE",
+    "completed_at_utc": "2026-10-07T08:25:00Z",
+    "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+    "report": "research/work-analysis/2026-10-07-v2r3-final-review.md",
+    "dispositions": "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
+  }
 }
