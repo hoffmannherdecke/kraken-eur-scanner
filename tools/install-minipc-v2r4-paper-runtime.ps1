@@ -12,6 +12,7 @@ $python = Join-Path $TradingRoot "Runtime\kraken-eur-scanner-venv\Scripts\python
 $apiKey = Join-Path $TradingRoot "Secrets\openai-api-key.txt"
 $relayToken = Join-Path $TradingRoot "Secrets\shadow-evidence-token.txt"
 $githubDispatchToken = Join-Path $TradingRoot "Secrets\github-actions-dispatch-token.txt"
+$statusRelayToken = Join-Path $TradingRoot "Secrets\minipc-status-token.txt"
 $healthPath = Join-Path $TradingRoot "State\minipc-health.json"
 $shadowEvents = Join-Path $TradingRoot "State\v2r4-ws-shadow-events"
 $endpoint = "https://nlgzjmqgwueojlyqmoru.supabase.co/functions/v1/v2r4-paper-evidence-relay"
@@ -58,7 +59,7 @@ $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
 $principal=New-Object Security.Principal.WindowsPrincipal($identity)
 if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){ throw "Run this command in an Administrator PowerShell." }
 
-foreach($p in @($repo,$python,$apiKey,$relayToken,$githubDispatchToken,$healthPath,$shadowEvents)) { if(-not (Test-Path $p)){ throw "Required path missing: $p" } }
+foreach($p in @($repo,$python,$apiKey,$relayToken,$githubDispatchToken,$statusRelayToken,$healthPath,$shadowEvents)) { if(-not (Test-Path $p)){ throw "Required path missing: $p" } }
 
 if(-not $Execute){
   [pscustomobject]@{
@@ -92,6 +93,9 @@ $healthAge=[math]::Round(((Get-Date).ToUniversalTime()-([datetime]$health.checke
 if($health.status -ne 'HEALTHY' -or $health.health_state -ne 'OK' -or $healthAge -gt 120){
   throw "MINI-PC health is not fresh HEALTHY/OK: $($health.status)/$($health.health_state) age_sec=$healthAge"
 }
+$statusSync=Join-Path $repo 'tools\minipc-status-sync.py'
+& $python $statusSync --trading-root $TradingRoot --once | Out-Null
+if($LASTEXITCODE -ne 0){ throw "Fresh MINI-PC health could not be uploaded before activation." }
 
 $strategySpecSource=Join-Path $repo 'research\v2r4\paper_strategy_spec_v2r4_release_candidate.json'
 $strategyFingerprint=(Get-FileHash $strategySpecSource -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -159,6 +163,7 @@ if($LASTEXITCODE -ne 0){ throw 'V2R4 runtime compile failed.' }
 icacls $apiKey /grant:r 'SYSTEM:(R)' /C | Out-Null
 icacls $relayToken /grant:r 'SYSTEM:(R)' /C | Out-Null
 icacls $githubDispatchToken /grant:r 'SYSTEM:(R)' /C | Out-Null
+icacls $statusRelayToken /grant:r 'SYSTEM:(R)' /C | Out-Null
 
 Write-Host "4/8 Register V2R4 local tasks (not started yet)..."
 $taskSpecs=@(
@@ -177,8 +182,9 @@ foreach($spec in $taskSpecs){
 
 Write-Host "5/8 Record explicit V2R4 Paper series activation in Supabase..."
 $token=(Get-Content $relayToken -Raw).Trim(); if($token.Length -lt 24){ throw 'Paper evidence relay token missing/too short.' }
+$statusToken=(Get-Content $statusRelayToken -Raw).Trim(); if($statusToken.Length -lt 24){ throw 'MINI-PC status relay token missing/too short.' }
 $payload=@{action='activate';series_id=$seriesId;test_id=$testId;strategy_revision=$revision;started_at=$startedAt;config=$control} | ConvertTo-Json -Depth 12
-$resp=Invoke-RestMethod -Uri $endpoint -Method Post -Headers @{'X-Shadow-Evidence-Token'=$token} -ContentType 'application/json' -Body $payload -TimeoutSec 30
+$resp=Invoke-RestMethod -Uri $endpoint -Method Post -Headers @{'X-Shadow-Evidence-Token'=$token;'X-MiniPC-Status-Token'=$statusToken} -ContentType 'application/json' -Body $payload -TimeoutSec 30
 if(-not $resp.ok -or $resp.status -ne 'active'){ throw 'Supabase activation relay did not confirm active series.' }
 
 Write-Host "6/8 Start local V2R4 Paper tasks..."
@@ -192,7 +198,6 @@ $sync=Wait-FreshHeartbeat (Join-Path $TradingRoot 'State\v2r4-paper-cloud-sync-h
 
 Write-Host "8/8 Refresh watchdog + remote status..."
 & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $repo 'tools\minipc-watchdog.ps1') -TradingRoot $TradingRoot | Out-Null
-$statusSync=Join-Path $repo 'tools\minipc-status-sync.py'
 if(Test-Path $statusSync){ & $python $statusSync --trading-root $TradingRoot --once | Out-Null }
 
 $summary=[ordered]@{
