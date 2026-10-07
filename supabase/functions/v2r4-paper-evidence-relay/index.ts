@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { withSupabase } from "npm:@supabase/server";
 
 const jsonHeaders={"Content-Type":"application/json"};
 function response(status:number,body:Record<string,unknown>){return new Response(JSON.stringify(body),{status,headers:jsonHeaders});}
@@ -13,11 +13,9 @@ async function authorized(admin:any,req:Request){
   return sameFixedHex(hash,cred.token_sha256);
 }
 
-Deno.serve(async(req:Request)=>{
+Deno.serve(withSupabase({ auth: "publishable" }, async(req:Request,ctx:any)=>{
   if(req.method!=="POST")return response(405,{ok:false,error:"method_not_allowed"});
-  const url=Deno.env.get("SUPABASE_URL")??""; const key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
-  if(!url||!key)return response(500,{ok:false,error:"server_credentials_missing"});
-  const admin=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+  const admin=ctx.supabaseAdmin;
   if(!(await authorized(admin,req)))return response(401,{ok:false,error:"unauthorized"});
   let body:any; try{body=await req.json();}catch{return response(400,{ok:false,error:"invalid_json"});}
   const action=String(body?.action??"");
@@ -70,4 +68,4 @@ Deno.serve(async(req:Request)=>{
     return response(200,{ok:true,action:"sync",accepted_candidates:candidates.length,accepted_trades:trades.length,paper_only:true,real_money_actions:false});
   }
   return response(400,{ok:false,error:"unsupported_action"});
-});
+}));
