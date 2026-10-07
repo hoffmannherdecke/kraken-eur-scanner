@@ -57,5 +57,12 @@
     "real_money_activation_separate": true,
     "work_quota_consumed_by_this_preparation": false
   },
-  "next_gate": "PHYSICAL_MINIPC_H3_POINT_IN_TIME_CONTEXT_AND_E2E_SMOKE AFTER OR SEPARATE FROM THE PENDING V2R4 LOCAL RELEASE GATE; DO NOT ACTIVATE H3 BEFORE THOSE H3-SPECIFIC PHYSICAL CHECKS."
+  "next_gate": "PHYSICAL_MINIPC_H3_POINT_IN_TIME_CONTEXT_AND_E2E_SMOKE AFTER OR SEPARATE FROM THE PENDING V2R4 LOCAL RELEASE GATE; DO NOT ACTIVATE H3 BEFORE THOSE H3-SPECIFIC PHYSICAL CHECKS.",
+  "governance_repair": {
+    "discovered_during_pr_validation": true,
+    "issue": "Five closed INHERIT_UNCHANGED V3 migration-ledger entries still carried pending_gate fields, contradicting the ledger validator.",
+    "resolution": "PR #42 merged separately; future research intent preserved as future_research_gate without reopening closed migration decisions.",
+    "main_commit": "e0c5b56b6048d89d45e26d487ec6a09ac824d9dc",
+    "strategy_or_runtime_change": false
+  }
 }
