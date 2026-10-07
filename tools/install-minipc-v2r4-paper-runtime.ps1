@@ -22,6 +22,22 @@ function Write-JsonAtomic([string]$Path,[object]$Payload,[int]$Depth=12) {
   Move-Item -LiteralPath $tmp -Destination $Path -Force
 }
 
+function Get-BundleFingerprint([string]$Root,[string[]]$RelativePaths) {
+  $builder = New-Object System.Text.StringBuilder
+  foreach($rel in ($RelativePaths | Sort-Object)) {
+    $path = Join-Path $Root $rel
+    if(-not (Test-Path $path)){ throw "Runtime fingerprint input missing: $path" }
+    $hash = (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant()
+    [void]$builder.Append($rel.Replace('\','/') + ':' + $hash + [Environment]::NewLine)
+  }
+  $bytes=[System.Text.Encoding]::UTF8.GetBytes($builder.ToString())
+  $sha=[System.Security.Cryptography.SHA256]::Create()
+  try {
+    return ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()
+  } finally {
+    $sha.Dispose()
+  }
+}
 function Wait-FreshHeartbeat([string]$Path,[int]$MaxAgeSeconds=45,[int]$TimeoutSeconds=90) {
   $deadline=(Get-Date).AddSeconds($TimeoutSeconds)
   while((Get-Date)-lt $deadline){
@@ -53,31 +69,71 @@ if(-not $Execute){
 if($Confirm -ne $expectedConfirm){ throw "Refusing activation: -Confirm must equal $expectedConfirm" }
 
 Write-Host "=== V2R4 PAPER ACTIVATION ==="
-Write-Host "1/8 Verify repository + current machine health..."
+Write-Host "1/8 Fast-forward main, refresh machine health and pin exact provenance..."
 Push-Location $repo
 try {
   if((git branch --show-current).Trim() -ne 'main'){ throw 'MINI-PC repository must be on main.' }
   if(git status --porcelain){ throw 'MINI-PC repository must be clean before activation.' }
-  git fetch origin main
-  git pull --ff-only origin main
+  & git fetch origin main
+  if($LASTEXITCODE -ne 0){ throw 'git fetch origin main failed.' }
+  & git pull --ff-only origin main
   if($LASTEXITCODE -ne 0){ throw 'Fast-forward pull failed.' }
+  $releaseSha=(& git rev-parse HEAD).Trim().ToLowerInvariant()
+  $originSha=(& git rev-parse origin/main).Trim().ToLowerInvariant()
+  if($releaseSha -ne $originSha){ throw "Local main is not exactly origin/main: local=$releaseSha origin=$originSha" }
 } finally { Pop-Location }
+
+$watchdog=Join-Path $repo 'tools\minipc-watchdog.ps1'
+& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $watchdog -TradingRoot $TradingRoot | Out-Null
+if($LASTEXITCODE -ne 0){ throw "Post-pull watchdog failed with exit code $LASTEXITCODE" }
 $health=Get-Content $healthPath -Raw | ConvertFrom-Json
-if($health.status -ne 'HEALTHY' -or $health.health_state -ne 'OK'){ throw "MINI-PC health is not HEALTHY/OK: $($health.status)/$($health.health_state)" }
+$healthAge=[math]::Round(((Get-Date).ToUniversalTime()-([datetime]$health.checked_at_utc).ToUniversalTime()).TotalSeconds,1)
+if($health.status -ne 'HEALTHY' -or $health.health_state -ne 'OK' -or $healthAge -gt 120){
+  throw "MINI-PC health is not fresh HEALTHY/OK: $($health.status)/$($health.health_state) age_sec=$healthAge"
+}
+
+$strategySpecSource=Join-Path $repo 'research\v2r4\paper_strategy_spec_v2r4_release_candidate.json'
+$strategyFingerprint=(Get-FileHash $strategySpecSource -Algorithm SHA256).Hash.ToLowerInvariant()
+$runtimeFiles=@(
+  'paper_evaluator\evaluate.py',
+  'paper_evaluator\v2r4_trigger_contract.py',
+  'paper_evaluator\v2r4_trigger_plan.py',
+  'paper_evaluator\v2r4_wait_runtime.py',
+  'paper_evaluator\v2r4_local_recheck.py',
+  'paper_position_tracker.py',
+  'paper_followup.py',
+  'tools\v2r4-paper-local-runtime.py',
+  'tools\v2r4-paper-cloud-sync.py'
+)
+$runtimeFingerprint=Get-BundleFingerprint $repo $runtimeFiles
+$approvalPath=Join-Path $repo 'research\v2r4\release-evidence\v2r4-paper-approval-20261007.json'
+$approval=Get-Content $approvalPath -Raw | ConvertFrom-Json
+if($approval.decision -ne 'APPROVED_PAPER' -or $approval.real_money_actions_allowed -ne $false){
+  throw 'Repository release approval evidence is not a safe APPROVED_PAPER record.'
+}
+$candidateMergeSha=[string]$approval.candidate_merge_sha
 
 Write-Host "2/8 Materialize isolated local V2R4 runtime app..."
 New-Item -ItemType Directory -Force -Path $app | Out-Null
-Copy-Item (Join-Path $repo 'paper_evaluator') (Join-Path $app 'paper_evaluator') -Recurse -Force
+$evaluatorApp=Join-Path $app 'paper_evaluator'
+New-Item -ItemType Directory -Force -Path $evaluatorApp | Out-Null
+Copy-Item (Join-Path $repo 'paper_evaluator\*') $evaluatorApp -Recurse -Force
 foreach($name in @('paper_context.py','paper_position_tracker.py','paper_followup.py')){ Copy-Item (Join-Path $repo $name) (Join-Path $app $name) -Force }
 Copy-Item (Join-Path $repo 'tools\v2r4-paper-local-runtime.py') (Join-Path $app 'v2r4-paper-local-runtime.py') -Force
 Copy-Item (Join-Path $repo 'tools\v2r4-paper-cloud-sync.py') (Join-Path $app 'v2r4-paper-cloud-sync.py') -Force
-Copy-Item (Join-Path $repo 'research\v2r4\paper_strategy_spec_v2r4_release_candidate.json') (Join-Path $app 'paper_strategy_spec.json') -Force
+Copy-Item $strategySpecSource (Join-Path $app 'paper_strategy_spec.json') -Force
+$appStrategyFingerprint=(Get-FileHash (Join-Path $app 'paper_strategy_spec.json') -Algorithm SHA256).Hash.ToLowerInvariant()
+if($appStrategyFingerprint -ne $strategyFingerprint){ throw 'Copied V2R4 strategy fingerprint mismatch.' }
 foreach($d in @('handoff_queue','paper_decisions','paper_rechecks','paper_revalidations','paper_positions','paper_followups','paper_trigger_receipts')){ New-Item -ItemType Directory -Force -Path (Join-Path $app $d) | Out-Null }
 
 $controlPath=Join-Path $app 'paper_runtime_control.json'
 if(Test-Path $controlPath){
   $control=Get-Content $controlPath -Raw | ConvertFrom-Json
   if($control.strategy_revision -ne $revision){ throw 'Existing V2R4 app has a different strategy revision; refusing overwrite.' }
+  if([string]$control.release_repo_sha -ne $releaseSha){ throw 'Existing V2R4 app is pinned to a different release SHA; refusing mixed-series code.' }
+  if([string]$control.strategy_fingerprint_sha256 -ne $strategyFingerprint){ throw 'Existing V2R4 app strategy fingerprint differs; refusing overwrite.' }
+  if([string]$control.runtime_bundle_fingerprint_sha256 -ne $runtimeFingerprint){ throw 'Existing V2R4 app runtime fingerprint differs; refusing overwrite.' }
+  if($control.real_money_actions_enabled -ne $false -or $control.paper_only -ne $true){ throw 'Existing V2R4 app safety flags are invalid.' }
   $seriesId=[string]$control.series_id; $testId=[string]$control.test_id; $startedAt=[string]$control.series_started_at_utc
 }else{
   $now=(Get-Date).ToUniversalTime(); $stamp=$now.ToString('yyyyMMddTHHmmssZ'); $day=$now.ToString('yyyyMMdd')
@@ -89,7 +145,9 @@ if(Test-Path $controlPath){
     supabase_archive_mode='AUTHENTICATED_EDGE_RELAY_PRIMARY_RUNTIME_EVIDENCE';
     runtime_storage_policy='SUPABASE_PRIMARY_BOUNDED_LOCAL_STATE_NO_PER_EVENT_GIT_COMMITS';
     wait_fallback_seconds=10; scout_notional_eur=50; stage2_notional_eur=50;
-    release_decision='APPROVED_PAPER'; automatic_activation_allowed=$false
+    release_decision='APPROVED_PAPER'; automatic_activation_allowed=$false;
+    release_repo_sha=$releaseSha; candidate_merge_sha=$candidateMergeSha;
+    strategy_fingerprint_sha256=$strategyFingerprint; runtime_bundle_fingerprint_sha256=$runtimeFingerprint
   }
   Write-JsonAtomic $controlPath $control 10
 }
@@ -138,7 +196,9 @@ if(Test-Path $statusSync){ & $python $statusSync --trading-root $TradingRoot --o
 $summary=[ordered]@{
   kind='MINIPC_V2R4_PAPER_ACTIVATION_SUMMARY_V1'; status='PASS'; series_id=$seriesId; test_id=$testId; strategy_revision=$revision;
   series_started_at_utc=$startedAt; runtime_owner='MINIPC_LOCAL_V2R4'; candidate_runtime=$cand.status; wait_runtime=$wait.status;
-  lifecycle=$life.status; cloud_sync=$sync.status; paper_only=$true; order_api=$false; real_money_actions=$false
+  lifecycle=$life.status; cloud_sync=$sync.status; release_repo_sha=$releaseSha; candidate_merge_sha=$candidateMergeSha;
+  strategy_fingerprint_sha256=$strategyFingerprint; runtime_bundle_fingerprint_sha256=$runtimeFingerprint;
+  paper_only=$true; order_api=$false; real_money_actions=$false
 }
 Write-Host ""
 Write-Host "=== V2R4 PAPER ACTIVATION SUMMARY ==="
