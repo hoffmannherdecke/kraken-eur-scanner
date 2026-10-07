@@ -31,7 +31,7 @@ jobs:
         with:
           python-version: '3.13'
 
-      - name: Validate H3 draft contract and frozen preparation invariants
+      - name: Validate frozen H3 shadow activation contract
         run: |
           set -euo pipefail
           python tools/validate-v3-shadow-candidate.py research/v3/shadow-candidates/v3-h3-shadow-001.json
@@ -48,12 +48,13 @@ jobs:
 
           actual=hashlib.sha256(cfg_path.read_bytes()).hexdigest()
           assert actual==cand['frozen_config_sha256'], (actual,cand['frozen_config_sha256'])
-          assert cand['status']=='DRAFT'
-          assert cand['baseline_strategy_revision']=='BIND_AT_FREEZE_CURRENT_ACTIVE_PAPER_BASELINE'
-          assert cand['candidate_strategy_revision']=='V3-H3-SHADOW-001-DRAFT'
+          assert cand['status']=='FROZEN_FOR_SHADOW'
+          assert cand['baseline_series_id']=='PAPER-V2R4-20261007T184255Z'
+          assert cand['baseline_strategy_revision']=='V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION'
+          assert cand['candidate_strategy_revision']=='V3-H3-SHADOW-001'
           assert cand['changed_components']==['STATE_CONDITIONING']
-          assert cfg['status']=='DRAFT_PREPARED_NOT_ACTIVE'
-          assert cfg['baseline_binding']['mode']=='BIND_AT_FREEZE_TO_CURRENT_ACTIVE_PAPER_BASELINE'
+          assert cfg['status']=='FROZEN_FOR_SHADOW'
+          assert cfg['baseline_binding']['mode']=='FROZEN_EXACT_ACTIVE_PAPER_BASELINE'
           assert cfg['baseline_binding']['postfreeze_rebinding_allowed'] is False
           assert cfg['supported_pairs']['candidate_pairs']==['XBT/EUR','ETH/EUR','SOL/EUR']
           assert cfg['supported_pairs']['alias_map']['XBT/EUR']=='BTC/EUR'
@@ -61,21 +62,27 @@ jobs:
             'spread_bps','bid_depth_quote_top10','ask_depth_quote_top10','depth_imbalance_top10'
           ]
           assert cfg['source_contract']['maximum_state_age_ms']==2000
+          assert cfg['source_contract']['capture_acceptance_age_ms']==1500
+          assert cfg['source_contract']['maximum_source_clock_lead_ms']==250
           assert cfg['shadow_decision_change']['mode']=='CONTEXT_ONLY'
+          assert cfg['shadow_decision_change']['baseline_control_replay'] is True
           assert cfg['shadow_decision_change']['directional_sign_assumption'] is False
           assert cfg['shadow_decision_change']['threshold_search'] is False
           assert cfg['shadow_decision_change']['feature_transform_search'] is False
-          assert cfg['activation_preconditions']['physical_minipc_point_in_time_context_smoke_pass'] is False
-          assert cfg['activation_preconditions']['physical_trigger_to_shadow_evaluation_smoke_pass'] is False
-          assert cfg['activation_preconditions']['explicit_shadow_start_decision'] is False
-          assert prep['status']=='PREPARED_NOT_ACTIVE'
+          assert cfg['activation_preconditions']['physical_minipc_point_in_time_context_smoke_pass'] is True
+          assert cfg['activation_preconditions']['physical_trigger_to_shadow_evaluation_smoke_pass'] is True
+          assert cfg['activation_preconditions']['duplicate_and_passthrough_guard_pass'] is True
+          assert cfg['activation_preconditions']['explicit_shadow_start_decision'] is True
+          assert prep['status']=='READY_TO_ACTIVATE'
           assert prep['anti_duplication']['h1_rerun_required'] is False
           assert prep['anti_duplication']['h3_assoc_collection_rerun_required'] is False
+          assert prep['physical_gate']['status']=='PASS'
+          assert prep['physical_gate']['checksum_fail']==0
+          assert prep['isolated_e2e_gate']['status']=='PASS'
           assert h1['fixed_conclusion']['standalone_decision_modifier']=='REJECT'
           assert h1_cand['status']=='REJECTED'
           assert h1_cand['final_review']['artifact']=='research/v3/h1-shadow-001-fixed-review-20261007.json'
           assert h1_cand['final_review']['rerun_required'] is False
           assert h1['sequence_disposition']['h3_materialization_allowed'] is True
-          assert h1['sequence_disposition']['h3_activation_allowed_now'] is False
           print('V3_H3_SHADOW_PREP_GUARD_PASS')
           PY
