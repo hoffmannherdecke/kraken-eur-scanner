@@ -4,13 +4,16 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const jsonHeaders={"Content-Type":"application/json"};
 function response(status:number,body:Record<string,unknown>){return new Response(JSON.stringify(body),{status,headers:jsonHeaders});}
 function sameFixedHex(a:string,b:string){if(a.length!==64||b.length!==64)return false;let d=0;for(let i=0;i<64;i++)d|=a.charCodeAt(i)^b.charCodeAt(i);return d===0;}
-async function authorized(admin:any,req:Request){
-  const supplied=req.headers.get("X-Shadow-Evidence-Token")??"";
-  const {data:cred,error}=await admin.from("internal_relay_credentials").select("token_sha256,enabled").eq("relay_id","v2r4-shadow-evidence-relay").maybeSingle();
+async function credentialAuthorized(admin:any,supplied:string,relayId:string){
+  const {data:cred,error}=await admin.from("internal_relay_credentials")
+    .select("token_sha256,enabled").eq("relay_id",relayId).maybeSingle();
   if(error||cred?.enabled!==true||typeof cred.token_sha256!=="string"||!supplied)return false;
   const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(supplied));
   const hash=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
   return sameFixedHex(hash,cred.token_sha256);
+}
+async function authorized(admin:any,req:Request){
+  return credentialAuthorized(admin,req.headers.get("X-Shadow-Evidence-Token")??"","v2r4-shadow-evidence-relay");
 }
 
 Deno.serve(async(req:Request)=>{
@@ -23,6 +26,18 @@ Deno.serve(async(req:Request)=>{
   const action=String(body?.action??"");
 
   if(action==="activate"){
+    const statusToken=req.headers.get("X-MiniPC-Status-Token")??"";
+    if(!(await credentialAuthorized(admin,statusToken,"minipc-status-relay")))
+      return response(401,{ok:false,error:"activation_second_factor_unauthorized"});
+
+    const {data:minipc,error:minipcErr}=await admin.from("minipc_status_current")
+      .select("observed_at,status,payload").order("observed_at",{ascending:false}).limit(1).maybeSingle();
+    if(minipcErr||!minipc)return response(409,{ok:false,error:"minipc_health_unavailable"});
+    const minipcAgeMs=Date.now()-new Date(minipc.observed_at).getTime();
+    if(Number.isNaN(minipcAgeMs)||minipcAgeMs<0||minipcAgeMs>5*60*1000||
+       minipc.status!=="HEALTHY"||minipc.payload?.health_state!=="OK")
+      return response(409,{ok:false,error:"minipc_not_fresh_healthy_ok"});
+
     const seriesId=String(body?.series_id??""); const testId=String(body?.test_id??""); const revision=String(body?.strategy_revision??""); const startedAt=String(body?.started_at??""); const config=body?.config;
     if(!/^PAPER-V2R4-\d{8}T\d{6}Z$/.test(seriesId))return response(400,{ok:false,error:"invalid_series_id"});
     if(!/^PAPER-V2R4-SERIES1-\d{8}$/.test(testId))return response(400,{ok:false,error:"invalid_test_id"});
@@ -42,8 +57,18 @@ Deno.serve(async(req:Request)=>{
 
     const {data:release,error:relErr}=await admin.from("strategy_release_decisions").select("status,predecessor_series_id,successor_revision,final_review_completed_at,migration_review_completed_at,decision_evidence").eq("release_id","V2R3_TO_V2R4_20261005").maybeSingle();
     if(relErr||!release)return response(500,{ok:false,error:"release_lookup_failed"});
-    if(release.status!=="APPROVED_PAPER"||release.predecessor_series_id!=="PAPER-V2R3-CLEAN-20261001T0925Z"||release.successor_revision!=="V2R4"||!release.final_review_completed_at||!release.migration_review_completed_at)return response(409,{ok:false,error:"release_not_approved"});
-    const recordedSeries=release.decision_evidence?.activation_series_id;
+    const releaseEvidence=release.decision_evidence??{};
+    if(
+      release.status!=="APPROVED_PAPER"||
+      release.predecessor_series_id!=="PAPER-V2R3-CLEAN-20261001T0925Z"||
+      release.successor_revision!=="V2R4"||
+      !release.final_review_completed_at||!release.migration_review_completed_at||
+      releaseEvidence.explicit_user_release_decision!=="APPROVED_PAPER"||
+      releaseEvidence.minipc_release_gate?.status!=="PASS"||
+      releaseEvidence.real_altrady_release_smoke?.status!=="PASS"||
+      releaseEvidence.real_money_actions_allowed!==false
+    )return response(409,{ok:false,error:"release_not_approved"});
+    const recordedSeries=releaseEvidence.activation_series_id;
     if(recordedSeries && recordedSeries!==seriesId)return response(409,{ok:false,error:"different_activation_already_recorded",series_id:recordedSeries});
 
     const {data:existing,error:exErr}=await admin.from("paper_series").select("series_id,status,strategy_revision").eq("series_id",seriesId).maybeSingle();
