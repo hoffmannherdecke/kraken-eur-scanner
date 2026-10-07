@@ -208,6 +208,10 @@ class V2R4PaperActivationRuntimeTests(unittest.TestCase):
         self.assertIn("paper_series_single_active_idx", constraints)
         self.assertIn("where status = 'active'", constraints)
         self.assertIn("predecessor_not_active_without_successor", relay)
+        self.assertIn("activation_second_factor_unauthorized", relay)
+        self.assertIn("minipc_not_fresh_healthy_ok", relay)
+        self.assertIn("X-MiniPC-Status-Token", installer)
+        self.assertIn("minipc-status-sync.py", installer)
 
 
 if __name__ == "__main__":
