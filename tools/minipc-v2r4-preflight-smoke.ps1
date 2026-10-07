@@ -1,6 +1,6 @@
 param(
   [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
-  [string]$Branch = "prep/v2r4-refresh-20261001"
+  [string]$Branch = "main"
 )
 
 $ErrorActionPreference = "Stop"
@@ -29,7 +29,7 @@ $receipts = Join-Path $tempRoot ("v2r4-receipts-" + $stamp)
 $preState = Join-Path $tempRoot ("v2r4-pre-state-" + $stamp + ".json")
 $preEvents = Join-Path $tempRoot ("v2r4-pre-events-" + $stamp)
 
-Write-Host "[V2R4-PREFLIGHT] 1/6 Fetch isolated prep branch"
+Write-Host "[V2R4-PREFLIGHT] 1/6 Fetch isolated current candidate branch"
 Push-Location $repo
 try {
   & git fetch origin $Branch
