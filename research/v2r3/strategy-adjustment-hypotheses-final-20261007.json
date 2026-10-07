@@ -1,0 +1,113 @@
+{
+  "kind": "V2R3_FINAL_HYPOTHESIS_DISPOSITIONS_V1",
+  "artifact_id": "V2R3-FINAL-DISPOSITIONS-20261007",
+  "status": "FINAL_REVIEW_COMPLETE_NOT_ACTIVE",
+  "created_at_utc": "2026-10-07T08:25:00Z",
+  "source_series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "qualification_cohort": {
+    "ordering": "evaluated_at,candidate_id",
+    "limit": 1000,
+    "complete_24h": 946,
+    "integrity_state": "HEALTHY"
+  },
+  "dispositions": [
+    {
+      "id": "HYP-01",
+      "title": "WAIT lifecycle",
+      "disposition": "CONFIRM",
+      "v2r4": "ALREADY_COVERED_V2R4",
+      "rationale": "941 of 942 initial WAIT cases ended REJECT; mature TTL lag p50 348s/p90 1203s. Use bounded watch conditions and a fresh whole-strategy paper recheck, never direct execution."
+    },
+    {
+      "id": "HYP-02",
+      "title": "Continuation / second leg",
+      "disposition": "MORE_TESTING_REQUIRED",
+      "v2r4": "V3_ONLY",
+      "rationale": "Later movement is material, but 291 >=5% candidate observations compress to 174 pair/6h episodes and do not identify a safe entry rule."
+    },
+    {
+      "id": "HYP-03",
+      "title": "Resistance / breakout too terminal",
+      "disposition": "CHANGE",
+      "v2r4": "ALREADY_COVERED_V2R4",
+      "rationale": "Do not relax resistance filters globally. Route only explicitly watchable cases to bounded WAIT with fresh recheck; otherwise REJECT."
+    },
+    {
+      "id": "HYP-04",
+      "title": "Extended pullback / rebuild",
+      "disposition": "CONFIRM",
+      "v2r4": "V3_ONLY",
+      "rationale": "Already-run cases had worse p50 MAE and close despite higher MFE. Keep anti-chase; test pullback/rebuild separately."
+    },
+    {
+      "id": "HYP-05",
+      "title": "Cost-edge routing",
+      "disposition": "CHANGE",
+      "v2r4": "ALREADY_COVERED_V2R4",
+      "rationale": "Keep the 0.60%/side hurdle. Distinguish bad-current-entry from dead setup through bounded WAIT; do not reinterpret raw MFE as net tradable edge."
+    },
+    {
+      "id": "HYP-06",
+      "title": "Live Kraken tradability authority",
+      "disposition": "CONFIRM",
+      "v2r4": "ALREADY_COVERED_V2R4",
+      "rationale": "109 flagged mature cases were nevertheless public online Kraken Spot-EUR. Current AssetPairs authority removes the account-private/static-list confounder."
+    },
+    {
+      "id": "LOW_TRADE_FREQUENCY",
+      "disposition": "CONFIRM",
+      "v2r4": "MORE_TESTING_BEFORE_V2R4",
+      "rationale": "1 BUY_SCOUT/1 completed trade in 1000 outcomes; exact filter relaxation is not identified."
+    },
+    {
+      "id": "REJECT_LATER_MFE",
+      "disposition": "CONFIRM",
+      "v2r4": "NO_V2R4_CHANGE",
+      "rationale": "612/291/103 mature REJECTs reached >=2/5/10% MFE, but movement alone is not an executable edge."
+    },
+    {
+      "id": "RETRIGGER_EPISODE_DEPENDENCE",
+      "disposition": "CONFIRM",
+      "v2r4": "NO_V2R4_CHANGE",
+      "rationale": "All successor analysis must report pair/time clustered episodes alongside raw candidates."
+    },
+    {
+      "id": "TEMPORAL_REGIME_HETEROGENEITY",
+      "disposition": "CONFIRM",
+      "v2r4": "NO_V2R4_CHANGE",
+      "rationale": "Daily outcome medians differ materially; retain stratified measurement without creating an active rule."
+    },
+    {
+      "id": "REVALIDATION_DELAY",
+      "disposition": "CONFIRM",
+      "v2r4": "ALREADY_COVERED_V2R4",
+      "rationale": "Severe TTL lag is a runtime issue; prospective V2R4 timing proof remains required."
+    },
+    {
+      "id": "WAIT_TO_REJECT_SELECTIVITY",
+      "disposition": "CONFIRM",
+      "v2r4": "ALREADY_COVERED_V2R4",
+      "rationale": "Bounded WAIT/fresh recheck is the existing successor mechanism; no duplicate implementation."
+    },
+    {
+      "id": "SCANNER_SCORE_MONOTONICITY",
+      "disposition": "ADD",
+      "v2r4": "NO_V2R4_CHANGE",
+      "rationale": "Score correlation with MFE24 (-0.024) and close24 (-0.035) provides no basis for an entry or sizing override."
+    },
+    {
+      "id": "TRADE_SAMPLE_LIMIT",
+      "disposition": "ADD",
+      "v2r4": "NO_V2R4_CHANGE",
+      "rationale": "One stopped scout cannot calibrate stop, trailing, exit, sizing, win rate or EV. Inherit first-series controls unchanged."
+    }
+  ],
+  "consequence_processing": {
+    "new_v2r4_strategy_change_warranted": false,
+    "existing_successor_mechanisms_reused": true,
+    "duplicate_implementation_created": false,
+    "automatic_activation_allowed": false,
+    "real_money_actions_allowed": false,
+    "disposition": "NO_NEW_STRATEGY_DIFF_V2R4_RELEASE_REVIEW_MAY_PROCEED_THROUGH_EXISTING_GATES"
+  }
+}
