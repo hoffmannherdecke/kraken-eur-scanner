@@ -35,7 +35,8 @@ Deno.serve(async(req:Request)=>{
     const {data:release,error:relErr}=await admin.from("strategy_release_decisions").select("status,predecessor_series_id,successor_revision,final_review_completed_at,migration_review_completed_at,decision_evidence").eq("release_id","V2R3_TO_V2R4_20261005").maybeSingle();
     if(relErr||!release)return response(500,{ok:false,error:"release_lookup_failed"});
     if(release.status!=="APPROVED_PAPER"||release.predecessor_series_id!=="PAPER-V2R3-CLEAN-20261001T0925Z"||release.successor_revision!=="V2R4"||!release.final_review_completed_at||!release.migration_review_completed_at)return response(409,{ok:false,error:"release_not_approved"});
-    if(release.decision_evidence?.activation_series_id)return response(409,{ok:false,error:"activation_already_recorded",series_id:release.decision_evidence.activation_series_id});
+    const recordedSeries=release.decision_evidence?.activation_series_id;
+    if(recordedSeries && recordedSeries!==seriesId)return response(409,{ok:false,error:"different_activation_already_recorded",series_id:recordedSeries});
 
     const {data:existing,error:exErr}=await admin.from("paper_series").select("series_id,status,strategy_revision").eq("series_id",seriesId).maybeSingle();
     if(exErr)return response(500,{ok:false,error:"series_lookup_failed"});
@@ -46,10 +47,12 @@ Deno.serve(async(req:Request)=>{
     }
     const {error:closeErr}=await admin.from("paper_series").update({status:"closed_complete",updated_at:new Date().toISOString()}).eq("series_id","PAPER-V2R3-CLEAN-20261001T0925Z");
     if(closeErr)return response(500,{ok:false,error:"predecessor_close_failed",detail:closeErr.message});
-    const evidence={...(release.decision_evidence??{}),activation_series_id:seriesId,activation_test_id:testId,activation_started_at:dt.toISOString(),activation_runtime_owner:"MINIPC_LOCAL_V2R4",activation_recorded_at:new Date().toISOString(),real_money_actions_allowed:false};
-    const {error:updErr}=await admin.from("strategy_release_decisions").update({decision_evidence:evidence,updated_at:new Date().toISOString()}).eq("release_id","V2R3_TO_V2R4_20261005");
-    if(updErr)return response(500,{ok:false,error:"release_evidence_update_failed"});
-    return response(200,{ok:true,action:"activate",series_id:seriesId,status:"active",paper_only:true,real_money_actions:false});
+    if(!recordedSeries){
+      const evidence={...(release.decision_evidence??{}),activation_series_id:seriesId,activation_test_id:testId,activation_started_at:dt.toISOString(),activation_runtime_owner:"MINIPC_LOCAL_V2R4",activation_recorded_at:new Date().toISOString(),real_money_actions_allowed:false};
+      const {error:updErr}=await admin.from("strategy_release_decisions").update({decision_evidence:evidence,updated_at:new Date().toISOString()}).eq("release_id","V2R3_TO_V2R4_20261005");
+      if(updErr)return response(500,{ok:false,error:"release_evidence_update_failed"});
+    }
+    return response(200,{ok:true,action:"activate",series_id:seriesId,status:"active",idempotent:Boolean(recordedSeries),paper_only:true,real_money_actions:false});
   }
 
   if(action==="sync"){
