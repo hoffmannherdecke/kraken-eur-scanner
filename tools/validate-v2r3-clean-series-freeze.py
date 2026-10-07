@@ -38,10 +38,40 @@ def require_text(text: str, needle: str, label: str) -> None:
 
 def main() -> int:
     m=json.loads(MANIFEST.read_text("utf-8"))
-    if m.get("status")!="ACTIVE_UNTIL_RELEASE_REVIEW_COMPLETE":
-        raise SystemExit("freeze manifest is not active")
-
     control=json.loads((ROOT/"paper_runtime_control.json").read_text("utf-8"))
+
+    if m.get("status")=="RETIRED_AFTER_RELEASE_REVIEW_COMPLETE":
+        approval_path=ROOT/str(m.get("retirement_approval_artifact") or "")
+        if not approval_path.exists():
+            raise SystemExit("freeze retirement evidence is missing")
+        approval=json.loads(approval_path.read_text("utf-8"))
+        if approval.get("decision")!="APPROVED_PAPER":
+            raise SystemExit("freeze retirement evidence is not APPROVED_PAPER")
+        if approval.get("predecessor_series_id")!=m.get("series_id"):
+            raise SystemExit("freeze retirement predecessor mismatch")
+        if approval.get("automatic_activation_allowed") is not False:
+            raise SystemExit("freeze retirement automatic-activation guardrail changed")
+        if approval.get("real_money_actions_allowed") is not False:
+            raise SystemExit("freeze retirement real-money guardrail changed")
+        if control.get("enabled") is not False:
+            raise SystemExit("retired V2R3 freeze requires legacy runtime disabled")
+        if control.get("git_runtime_compatibility_mode")!="DISABLED_V2R4_LOCAL_SUPABASE_PRIMARY":
+            raise SystemExit("retired V2R3 freeze requires explicit V2R4 local-runtime cutover")
+        print(json.dumps({
+            "kind":"V2R3_CLEAN_SERIES_FREEZE_VALIDATION_V1",
+            "status":"RETIRED_AFTER_RELEASE_REVIEW_COMPLETE",
+            "series_id":m["series_id"],
+            "historical_strategy_fingerprint_sha256":m["expected_strategy_fingerprint_sha256"],
+            "historical_runtime_code_fingerprint_sha256":m["expected_runtime_code_fingerprint_sha256"],
+            "retirement_release_id":m.get("retirement_release_id"),
+            "retirement_approval_artifact":m.get("retirement_approval_artifact"),
+            "guardrails":m["guardrails"],
+        },sort_keys=True))
+        return 0
+
+    if m.get("status")!="ACTIVE_UNTIL_RELEASE_REVIEW_COMPLETE":
+        raise SystemExit("freeze manifest has unknown status")
+
     for key in ("series_id","test_id","strategy_revision"):
         if control.get(key)!=m.get(key):
             raise SystemExit(
