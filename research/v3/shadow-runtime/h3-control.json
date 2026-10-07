@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H3_SHADOW_RUNTIME_CONTROL_V1",
+  "enabled": true,
+  "shadow_candidate_id": "V3-H3-SHADOW-001",
+  "baseline_series_id": "PAPER-V2R4-20261007T184255Z",
+  "baseline_strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+  "baseline_release_repo_sha": "3c6729a6c548d169f56a97f07f75892f37211636",
+  "baseline_strategy_fingerprint_sha256": "55c15f6c0735e524409594ece173ab30e4d84eecafefa18b57f8dc9c48cca32c",
+  "candidate_strategy_revision": "V3-H3-SHADOW-001",
+  "frozen_config_sha256": "e533f05d31a5b80248076b4870addf4606dae3d8f0432a11ae66bea03db73ded",
+  "start_anchor": "FIRST_ELIGIBLE_CANDIDATE_AFTER_RUNTIME_READY",
+  "eligible_pairs": [
+    "XBT/EUR",
+    "ETH/EUR",
+    "SOL/EUR"
+  ],
+  "minimum_eligible_matched_candidates": 20,
+  "minimum_distinct_utc_dates": 2,
+  "minimum_capture_success_pct": 95,
+  "minimum_causal_divergences_for_non_low_impact": 3,
+  "maximum_state_age_ms": 2000,
+  "capture_acceptance_age_ms": 1500,
+  "maximum_source_clock_lead_ms": 250,
+  "fixed_followup_horizons_minutes": [
+    30,
+    60,
+    120,
+    360
+  ],
+  "stop_intake_when_minimum_gate_met": true,
+  "automatic_extension": false,
+  "automatic_promotion": false,
+  "baseline_replay_stability_required_for_causal_divergence": true,
+  "orders": false,
+  "real_money_actions": false,
+  "local_retention_max_evidence_files": 200,
+  "runtime_evidence_destination": "SUPABASE_V3_H3_SHADOW_EVIDENCE",
+  "runtime_storage_policy": "SUPABASE_PRIMARY_BOUNDED_LOCAL_STATE_NO_PER_EVENT_GIT_COMMITS"
+}
