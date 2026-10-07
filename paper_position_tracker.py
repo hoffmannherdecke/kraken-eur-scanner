@@ -70,7 +70,7 @@ def lifecycle_code_fingerprint():
 def source_buys(control):
     series_id=control["series_id"]
     found={}
-    for dirname in ("paper_decisions","paper_revalidations"):
+    for dirname in ("paper_decisions","paper_revalidations","paper_rechecks"):
         d=ROOT/dirname
         if not d.exists():
             continue

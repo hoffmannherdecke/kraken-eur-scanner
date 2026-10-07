@@ -499,6 +499,13 @@ jobs:
           from datetime import datetime, timezone
           from pathlib import Path
 
+          control_path = Path("paper_runtime_control.json")
+          if control_path.exists():
+              control = json.loads(control_path.read_text("utf-8"))
+              if control.get("git_runtime_compatibility_mode") == "DISABLED_V2R4_LOCAL_SUPABASE_PRIMARY":
+                  print("V2R4_LOCAL_RUNTIME_OWNS_INTAKE | scanner remains observation-only; no Git handoff persistence")
+                  raise SystemExit(0)
+
           # Governance-only gate: scanner detection still runs, but once the frozen
           # V2R3 collection target + temporal diversity are met, no new handoff
           # files are admitted. Fail-soft on control-plane lookup errors.

@@ -87,6 +87,9 @@ def main():
         raise SystemExit("Refusing non-secret Supabase key for archive writer")
 
     control=load(ROOT/"paper_runtime_control.json")
+    if control.get("git_runtime_compatibility_mode")=="DISABLED_V2R4_LOCAL_SUPABASE_PRIMARY":
+        print(json.dumps({"status":"SKIP_V2R4_LOCAL_RUNTIME_OWNS_ARCHIVE"},sort_keys=True))
+        return
     series_id=control["series_id"]
     spec=load(ROOT/"paper_strategy_spec.json")
     series=[{

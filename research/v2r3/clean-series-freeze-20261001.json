@@ -1,7 +1,7 @@
 {
   "kind": "V2R3_CLEAN_SERIES_FREEZE_V1",
   "schema_version": 1,
-  "status": "ACTIVE_UNTIL_RELEASE_REVIEW_COMPLETE",
+  "status": "RETIRED_AFTER_RELEASE_REVIEW_COMPLETE",
   "created_at_utc": "2026-10-01T16:32:00Z",
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "test_id": "SHADOW-V2R3-20261001-01",
@@ -35,5 +35,9 @@
     "v2r4_draft_work_allowed": true,
     "documentation_and_observability_changes_allowed": true
   },
-  "completion_note": "After the documented V2R3 clean-series completion/release review, retire or replace this freeze manifest explicitly. Do not silently edit expected hashes during the active series."
+  "completion_note": "After the documented V2R3 clean-series completion/release review, retire or replace this freeze manifest explicitly. Do not silently edit expected hashes during the active series.",
+  "retired_at_utc": "2026-10-07T16:58:47.678853Z",
+  "retirement_release_id": "V2R3_TO_V2R4_20261005",
+  "retirement_approval_artifact": "research/v2r4/release-evidence/v2r4-paper-approval-20261007.json",
+  "retirement_note": "Explicitly retired after V2R3 completion, final causal review, migration review and APPROVED_PAPER. Historical expected hashes remain unchanged."
 }

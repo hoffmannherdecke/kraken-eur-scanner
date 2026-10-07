@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "kind": "V2R4_PAPER_RELEASE_APPROVAL_V1",
+  "release_id": "V2R3_TO_V2R4_20261005",
+  "decision": "APPROVED_PAPER",
+  "decided_at_utc": "2026-10-07T16:58:47.678853Z",
+  "predecessor_series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+  "candidate_merge_sha": "f020a67afb91c07b19dc0d7b1df56e563c9b91c6",
+  "activation_authority": "EXPLICIT_USER_DECISION",
+  "automatic_activation_allowed": false,
+  "paper_only": true,
+  "real_money_actions_allowed": false,
+  "next_step": "MINIPC_LOCAL_V2R4_SERIES_ACTIVATION"
+}

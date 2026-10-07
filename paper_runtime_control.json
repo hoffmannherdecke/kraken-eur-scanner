@@ -1,12 +1,12 @@
 {
-  "schema_version": 8,
-  "enabled": true,
+  "schema_version": 9,
+  "enabled": false,
   "test_id": "SHADOW-V2R3-20261001-01",
   "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
   "strategy_revision": "V2R3-2026-09-28",
   "series_started_at_utc": "2026-10-01T09:25:00Z",
   "resumed_at_utc": "2026-10-01T09:25:00Z",
-  "reason": "Clean V2R3 restart after runtime-only persistence integrity repair. Strategy/entry/stop/sizing/scanner rules unchanged; predecessor retained as diagnostic because repeated evaluator passes could overwrite the first prospective decision before persistence.",
+  "reason": "V2R3 clean series completed and V2R4 PAPER release approved. Legacy GitHub evaluator/intake lane is retired before the separate MINI-PC-local V2R4 activation.",
   "target_completed_paper_trades": 20,
   "warmup_excluded_before_utc": "2026-10-01T09:25:00Z",
   "preserve_scanner_handoffs": true,
@@ -21,8 +21,12 @@
   "real_money_actions_enabled": false,
   "predecessor_series_id": "PAPER-V2R3-FINAL-20260928T1752Z",
   "data_quality_restart_reason": "followup timestamp churn + non-deterministic status|grep persistence gate caused repeated evaluation before commit",
-  "git_runtime_compatibility_mode": "V2R3_ONLY_UNTIL_COMPLETION_AND_ARCHIVE_RECONCILIATION",
-  "successor_runtime_storage_policy": "SUPABASE_PRIMARY_GIT_COMPACT_RELEASE_EVIDENCE_ONLY",
+  "git_runtime_compatibility_mode": "DISABLED_V2R4_LOCAL_SUPABASE_PRIMARY",
+  "successor_runtime_storage_policy": "SUPABASE_PRIMARY_BOUNDED_LOCAL_STATE_NO_PER_EVENT_GIT_COMMITS",
   "runtime_storage_policy": "docs/runtime-state-storage-policy.md",
-  "branch_protection_cutover": "AFTER_V2R3_GIT_COMPATIBILITY_LANE_RETIRES"
+  "branch_protection_cutover": "AFTER_V2R3_GIT_COMPATIBILITY_LANE_RETIRES",
+  "paper_only": true,
+  "runtime_owner": "MINIPC_LOCAL_V2R4_PENDING_ACTIVATION",
+  "v2r4_release_status": "APPROVED_PAPER",
+  "automatic_activation_allowed": false
 }

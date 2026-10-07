@@ -147,8 +147,18 @@ jobs:
           assert 'paper_series_completion_readiness' in e
           assert '0<=age<=3600' in e and 'sorted(rows)][:8]' in e
           control=json.loads(Path('paper_runtime_control.json').read_text())
-          assert control['supabase_archive_mode']=='AUTOMATIC_SECURE_BACKEND_ARCHIVE_PRIMARY_RUNTIME_EVIDENCE'
-          assert control['successor_runtime_storage_policy']=='SUPABASE_PRIMARY_GIT_COMPACT_RELEASE_EVIDENCE_ONLY'
+          if control.get('git_runtime_compatibility_mode')=='DISABLED_V2R4_LOCAL_SUPABASE_PRIMARY':
+              assert control['enabled'] is False
+              assert control['real_money_actions_enabled'] is False
+              assert control['runtime_owner']=='MINIPC_LOCAL_V2R4_PENDING_ACTIVATION'
+              assert control['successor_runtime_storage_policy']=='SUPABASE_PRIMARY_BOUNDED_LOCAL_STATE_NO_PER_EVENT_GIT_COMMITS'
+              approval=json.loads(Path('research/v2r4/release-evidence/v2r4-paper-approval-20261007.json').read_text())
+              assert approval['decision']=='APPROVED_PAPER'
+              assert approval['automatic_activation_allowed'] is False
+              assert approval['real_money_actions_allowed'] is False
+          else:
+              assert control['supabase_archive_mode']=='AUTOMATIC_SECURE_BACKEND_ARCHIVE_PRIMARY_RUNTIME_EVIDENCE'
+              assert control['successor_runtime_storage_policy']=='SUPABASE_PRIMARY_GIT_COMPACT_RELEASE_EVIDENCE_ONLY'
           status_sync=Path('tools/minipc-status-sync.py').read_text()
           shadow_sync=Path('tools/v2r4-shadow-cloud-sync.py').read_text()
           assert 'minipc-status-token.txt' in status_sync

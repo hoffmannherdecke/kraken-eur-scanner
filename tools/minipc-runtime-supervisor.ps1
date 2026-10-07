@@ -68,6 +68,10 @@ $specs = @(
   [pscustomobject]@{ name="CryptoMiniPC-V2R4WSShadow"; path=(Join-Path $stateDir "v2r4-ws-shadow-heartbeat.json"); max_age=45.0; good=@("HEALTHY","DUPLICATE_SKIPPED"); restart_backoff_min=2 },
   [pscustomobject]@{ name="CryptoMiniPC-V2R4ShadowOutcomes"; path=(Join-Path $stateDir "v2r4-ws-shadow-outcome-heartbeat.json"); max_age=90.0; good=@("HEALTHY"); restart_backoff_min=$MinRestartIntervalMinutes },
   [pscustomobject]@{ name="CryptoMiniPC-V2R4ShadowCloudSync"; path=(Join-Path $stateDir "v2r4-shadow-cloud-sync-heartbeat.json"); max_age=240.0; good=@("HEALTHY"); restart_backoff_min=$MinRestartIntervalMinutes },
+  [pscustomobject]@{ name="CryptoMiniPC-V2R4PaperCandidates"; path=(Join-Path $stateDir "v2r4-paper-candidate-runtime-heartbeat.json"); max_age=60.0; good=@("HEALTHY"); restart_backoff_min=2 },
+  [pscustomobject]@{ name="CryptoMiniPC-V2R4PaperWait"; path=(Join-Path $stateDir "v2r4-paper-wait-runtime-heartbeat.json"); max_age=30.0; good=@("HEALTHY"); restart_backoff_min=2 },
+  [pscustomobject]@{ name="CryptoMiniPC-V2R4PaperLifecycle"; path=(Join-Path $stateDir "v2r4-paper-lifecycle-heartbeat.json"); max_age=180.0; good=@("HEALTHY"); restart_backoff_min=5 },
+  [pscustomobject]@{ name="CryptoMiniPC-V2R4PaperCloudSync"; path=(Join-Path $stateDir "v2r4-paper-cloud-sync-heartbeat.json"); max_age=180.0; good=@("HEALTHY"); restart_backoff_min=5 },
   [pscustomobject]@{ name="CryptoMiniPC-StatusSync"; path=(Join-Path $stateDir "minipc-status-sync-heartbeat.json"); max_age=900.0; good=@("HEALTHY"); restart_backoff_min=$MinRestartIntervalMinutes }
 )
 

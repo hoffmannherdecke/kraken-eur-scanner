@@ -67,7 +67,7 @@ jobs:
       - name: Parse Python transport tools
         shell: powershell
         run: |
-          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py .\tools\v2r4-ws-shadow-evidence.py .\tools\v2r4-ws-shadow-outcome-tracker.py .\tools\v2r4-shadow-cloud-sync.py .\tools\minipc-status-sync.py .\tools\minipc-github-cadence-guard.py .\tools\paper-runtime-reconciliation-audit.py
+          python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py .\tools\v2r4-ws-shadow-evidence.py .\tools\v2r4-ws-shadow-outcome-tracker.py .\tools\v2r4-shadow-cloud-sync.py .\tools\minipc-status-sync.py .\tools\minipc-github-cadence-guard.py .\tools\paper-runtime-reconciliation-audit.py .\tools\v2r4-paper-local-runtime.py .\tools\v2r4-paper-cloud-sync.py
           python .\tools\minipc-github-cadence-guard.py --self-test
           Write-Host 'PYTHON_TRANSPORT_PARSE_OK'
 
@@ -112,6 +112,7 @@ jobs:
             'tools/minipc-v2r4-preflight-smoke.ps1',
             'tools/minipc-v2r4-readiness-sync.ps1',
             'tools/minipc-v2r4-real-altrady-release-smoke.ps1',
+            'tools/install-minipc-v2r4-paper-runtime.ps1',
             'tools/minipc-local-core-gate.ps1',
             'tools/minipc-next-user-step.ps1',
             'tools/minipc-altrady-secret-prep.ps1',
