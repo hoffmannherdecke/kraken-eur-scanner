@@ -174,8 +174,8 @@ No H2 performance trial, threshold sweep, pair/month selection or holdout access
 Kraken Spot EUR remains the execution/fill reference.
 
 ### H3 — Orderflow / Depth / Imbalance
-Status: `KEEP_TESTING`  
-Stage: `ASSOC_002_COMPLETE_H1_REVIEW_BEFORE_H3_SHADOW`  
+Status: `SHADOW`  
+Stage: `V3_H3_SHADOW_001_FROZEN_ACTIVE_PENDING_MINIPC_INSTALL`  
 Priority: A after Mini-PC/WebSocket layer
 
 Capture:
@@ -208,8 +208,17 @@ Current prospective association status:
 - replacement `V3-H3-ASSOC-002` completed the frozen collection gate with **four valid >=1800s MINI-PC sessions across two UTC dates**;
 - final valid rows: **BTC=1252 / ETH=1314 / SOL=1331**;
 - fixed descriptive association review is PASS, but effects are symbol/feature/horizon-specific rather than a universal cross-symbol direction;
-- no threshold/transform/pair/horizon search, fill inference or automatic promotion occurred;
-- next gate is the H1-pilot review, then a separate project decision before any H3 one-change shadow materialization.
+- no threshold/transform/pair/horizon search, fill inference or automatic promotion occurred.
+
+Current shadow status:
+- `V3-H3-SHADOW-001` is frozen against active baseline `PAPER-V2R4-20261007T184255Z` / `V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION`;
+- physical Kraken L2 reconciliation PASS: **931 updates / 937 checksum PASS / 0 failures** with bounded reconnect/resubscribe;
+- isolated candidate -> baseline -> +H3 E2E PASS with V2R4 unchanged, no orders and no real-money path;
+- only XBT/EUR, ETH/EUR and SOL/EUR are eligible; all other pairs are baseline passthrough;
+- frozen gate: >=20 eligible matched candidates, >=2 UTC dates, >=95% H3 capture success; <3 causal divergences => `INCONCLUSIVE_LOW_IMPACT`; no tuning or automatic extension;
+- H3 divergence counts require a same-snapshot baseline control replay that matches the official V2R4 decision, reducing false attribution from evaluator instability;
+- runtime evidence is Supabase-primary with bounded MINI-PC local state; no per-event Git persistence;
+- promotion remains manual and requires separate after-cost review.
 
 
 ### H4 — Regime-Dependent Stops / TTL

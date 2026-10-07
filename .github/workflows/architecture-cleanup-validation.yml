@@ -24,6 +24,7 @@ jobs:
             tools/v3-h1-shadow-archive.py \
             tools/v3_h3_shadow_common.py \
             tools/v3-h3-shadow-e2e.py \
+            tools/v3-h3-shadow-runtime.py \
             tools/validate-v3-migration-ledger.py \
             tools/validate-artifact-retention.py \
             tools/minipc-status-sync.py \
@@ -72,6 +73,7 @@ jobs:
               'altrady-trigger-relay': ('ALTRADY_WEBHOOK_TOKEN','sameToken'),
               'v2r4-shadow-evidence-relay': ('internal_relay_credentials','sameFixedHex'),
               'minipc-status-relay': ('internal_relay_credentials','sameFixedHex'),
+              'v2r4-paper-evidence-relay': ('internal_relay_credentials','sameFixedHex'),
           }
           for name,markers in approved.items():
               section=config.split(f'[functions.{name}]',1)
@@ -119,6 +121,8 @@ jobs:
             'docs/fasttrack-evidence-diversity-policy.json',
             'research/v3-migration-ledger.json',
             'research/v3/shadow-runtime/h1-control.json',
+            'research/v3/shadow-runtime/h3-control.json',
+            'research/v3/shadow-candidates/v3-h3-shadow-001-config.json',
           ]:
             json.loads(Path(p).read_text())
           sql=Path('supabase/evidence-diversity-fasttrack-v2.sql').read_text()
@@ -173,6 +177,29 @@ jobs:
               assert 'ALTRADY_WEBHOOK_TOKEN' not in text, relay
               assert 'dedicated_credential_not_ready' in text, relay
               assert 'sameFixedHex' in text, relay
+          h3_control=json.loads(Path('research/v3/shadow-runtime/h3-control.json').read_text())
+          h3_candidate=json.loads(Path('research/v3/shadow-candidates/v3-h3-shadow-001.json').read_text())
+          h3_config_path=Path('research/v3/shadow-candidates/v3-h3-shadow-001-config.json')
+          import hashlib
+          assert h3_control['enabled'] is True
+          assert h3_control['orders'] is False and h3_control['real_money_actions'] is False
+          assert h3_control['automatic_promotion'] is False
+          assert h3_control['baseline_series_id']=='PAPER-V2R4-20261007T184255Z'
+          assert h3_candidate['status']=='FROZEN_FOR_SHADOW'
+          assert hashlib.sha256(h3_config_path.read_bytes()).hexdigest()==h3_control['frozen_config_sha256']==h3_candidate['frozen_config_sha256']
+          h3_runtime=Path('tools/v3-h3-shadow-runtime.py').read_text()
+          assert 'private Kraken' not in h3_runtime
+          assert 'v2r4_mutated": False' in h3_runtime
+          assert '"orders": False' in h3_runtime
+          assert '"real_money_actions": False' in h3_runtime
+          h3_relay=Path('supabase/functions/v2r4-paper-evidence-relay/index.ts').read_text()
+          assert 'sync_h3_shadow' in h3_relay
+          assert 'v3_h3_shadow_evidence' in h3_relay
+          assert 'unsafe_h3_evidence_payload' in h3_relay
+          h3_schema=Path('supabase/v3-h3-shadow-evidence.sql').read_text()
+          assert 'enable row level security' in h3_schema.lower()
+          assert 'revoke all on public.v3_h3_shadow_evidence from anon, authenticated' in h3_schema
+          assert 'revoke all on public.v3_h3_shadow_status from anon, authenticated' in h3_schema
           framework=Path('docs/v3-research-framework.md').read_text()
           allowed={'NEW','PRECHECK','OFFLINE_TEST','SHADOW','KEEP_TESTING','PROMOTE_CANDIDATE','PROMOTED','REJECTED','DEFERRED'}
           import re

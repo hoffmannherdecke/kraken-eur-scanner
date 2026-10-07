@@ -166,5 +166,65 @@ Deno.serve(async(req:Request)=>{
     if(trades.length){const {error}=await admin.from("paper_trade_results").upsert(trades,{onConflict:"candidate_id"}); if(error)return response(500,{ok:false,error:"trade_upsert_failed",detail:error.message});}
     return response(200,{ok:true,action:"sync",accepted_candidates:candidates.length,accepted_trades:trades.length,paper_only:true,real_money_actions:false});
   }
+
+  if(action==="sync_h3_shadow"){
+    const shadowId=String(body?.shadow_candidate_id??"");
+    const seriesId=String(body?.baseline_series_id??"");
+    const revision=String(body?.baseline_strategy_revision??"");
+    const evidence=body?.evidence;
+    const status=body?.status;
+    if(shadowId!=="V3-H3-SHADOW-001")return response(400,{ok:false,error:"invalid_h3_shadow_id"});
+    if(seriesId!=="PAPER-V2R4-20261007T184255Z")return response(400,{ok:false,error:"invalid_h3_baseline_series"});
+    if(revision!=="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION")return response(400,{ok:false,error:"invalid_h3_baseline_revision"});
+    if(!Array.isArray(evidence)||evidence.length>100||!status||typeof status!=="object")
+      return response(400,{ok:false,error:"invalid_h3_batch"});
+
+    const {data:series,error:sErr}=await admin.from("paper_series")
+      .select("series_id,status,strategy_revision").eq("series_id",seriesId).maybeSingle();
+    if(sErr||!series)return response(409,{ok:false,error:"h3_baseline_series_not_found"});
+    if(series.status!=="active"||series.strategy_revision!==revision)
+      return response(409,{ok:false,error:"h3_baseline_series_not_active"});
+
+    const allowedPairs=new Set(["XBT/EUR","ETH/EUR","SOL/EUR"]);
+    const allowedDecisions=new Set(["BUY_SCOUT","WAIT","REJECT"]);
+    for(const row of evidence){
+      if(row?.shadow_candidate_id!==shadowId||row?.baseline_series_id!==seriesId||
+         typeof row?.candidate_id!=="string"||!allowedPairs.has(String(row?.pair??"")))
+        return response(400,{ok:false,error:"invalid_h3_evidence_identity"});
+      if(!["PASS","MISSING_FAIL_CLOSED"].includes(String(row?.context_status??"")))
+        return response(400,{ok:false,error:"invalid_h3_context_status"});
+      for(const field of ["baseline_decision","control_replay_decision","shadow_decision"]){
+        if(!allowedDecisions.has(String(row?.[field]??"")))
+          return response(400,{ok:false,error:"invalid_h3_decision_field",field});
+      }
+      const g=row?.payload?.guardrails;
+      if(!g||g.orders!==false||g.real_money_actions!==false||g.automatic_promotion!==false)
+        return response(400,{ok:false,error:"unsafe_h3_evidence_payload"});
+      if(row?.decision_diverged!==true&&row?.decision_diverged!==false)
+        return response(400,{ok:false,error:"invalid_h3_divergence_flag"});
+      if(row?.baseline_replay_stable!==true&&row?.baseline_replay_stable!==false)
+        return response(400,{ok:false,error:"invalid_h3_replay_stability_flag"});
+    }
+    const sg=status?.payload?.guardrails;
+    if(status.shadow_candidate_id!==shadowId||typeof status.generated_at!=="string"||
+       !status.payload||status.payload.shadow_candidate_id!==shadowId||
+       status.payload.baseline_series_id!==seriesId||
+       status.payload.orders!==false||status.payload.real_money_actions!==false||
+       status.payload.automatic_promotion!==false)
+      return response(400,{ok:false,error:"unsafe_h3_status_payload"});
+
+    if(evidence.length){
+      const {error}=await admin.from("v3_h3_shadow_evidence").upsert(evidence,{onConflict:"candidate_id"});
+      if(error)return response(500,{ok:false,error:"h3_evidence_upsert_failed",detail:error.message});
+    }
+    const {error:stErr}=await admin.from("v3_h3_shadow_status").upsert(status,{onConflict:"shadow_candidate_id"});
+    if(stErr)return response(500,{ok:false,error:"h3_status_upsert_failed",detail:stErr.message});
+    return response(200,{
+      ok:true,action:"sync_h3_shadow",accepted_evidence:evidence.length,
+      shadow_candidate_id:shadowId,baseline_series_id:seriesId,
+      orders:false,real_money_actions:false,automatic_promotion:false
+    });
+  }
+
   return response(400,{ok:false,error:"unsupported_action"});
 });
