@@ -145,10 +145,12 @@ jobs:
           # Post-V2R3 cutover: direct runtime persistence to main is forbidden.
           checked=list(Path('.github/workflows').glob('*.yml'))+list(Path('.github/workflows').glob('*.yaml'))
           checked+=list(Path('tools').glob('run-minipc-v3-*.ps1'))
+          forbidden_direct='git push origin ' + 'main'
+          forbidden_head='git push origin HEAD:' + 'main'
           for fp in checked:
               body=fp.read_text(encoding='utf-8')
-              assert 'git push origin main' not in body, f'direct main push forbidden after cutover: {fp}'
-              assert 'git push origin HEAD:main' not in body, f'direct main push forbidden after cutover: {fp}'
+              assert forbidden_direct not in body, f'direct main push forbidden after cutover: {fp}'
+              assert forbidden_head not in body, f'direct main push forbidden after cutover: {fp}'
           control=json.loads(Path('paper_runtime_control.json').read_text())
           if control.get('git_runtime_compatibility_mode')=='DISABLED_V2R4_LOCAL_SUPABASE_PRIMARY':
               assert control['enabled'] is False
