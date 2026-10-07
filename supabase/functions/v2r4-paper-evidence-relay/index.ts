@@ -31,6 +31,14 @@ Deno.serve(async(req:Request)=>{
     if(!config||typeof config!=="object"||config.paper_only!==true||config.real_money_actions_enabled!==false||config.enabled!==true)return response(400,{ok:false,error:"unsafe_config"});
     if(config.series_id!==seriesId||config.test_id!==testId||config.strategy_revision!==revision)return response(400,{ok:false,error:"config_identity_mismatch"});
     if(Number(config.target_completed_paper_trades)!==20)return response(400,{ok:false,error:"unexpected_target"});
+    if(config.release_decision!=="APPROVED_PAPER"||config.automatic_activation_allowed!==false)return response(400,{ok:false,error:"invalid_release_control"});
+    if(Number(config.scout_notional_eur)!==50||Number(config.stage2_notional_eur)!==50)return response(400,{ok:false,error:"unexpected_first_series_sizing"});
+    const releaseRepoSha=String(config.release_repo_sha??"").toLowerCase();
+    const candidateMergeSha=String(config.candidate_merge_sha??"").toLowerCase();
+    const strategyFingerprint=String(config.strategy_fingerprint_sha256??"").toLowerCase();
+    const runtimeFingerprint=String(config.runtime_bundle_fingerprint_sha256??"").toLowerCase();
+    if(!/^[a-f0-9]{40}$/.test(releaseRepoSha)||!/^[a-f0-9]{40}$/.test(candidateMergeSha))return response(400,{ok:false,error:"invalid_release_sha_provenance"});
+    if(!/^[a-f0-9]{64}$/.test(strategyFingerprint)||!/^[a-f0-9]{64}$/.test(runtimeFingerprint))return response(400,{ok:false,error:"invalid_fingerprint_provenance"});
 
     const {data:release,error:relErr}=await admin.from("strategy_release_decisions").select("status,predecessor_series_id,successor_revision,final_review_completed_at,migration_review_completed_at,decision_evidence").eq("release_id","V2R3_TO_V2R4_20261005").maybeSingle();
     if(relErr||!release)return response(500,{ok:false,error:"release_lookup_failed"});
@@ -48,11 +56,27 @@ Deno.serve(async(req:Request)=>{
     const {error:closeErr}=await admin.from("paper_series").update({status:"closed_complete",updated_at:new Date().toISOString()}).eq("series_id","PAPER-V2R3-CLEAN-20261001T0925Z");
     if(closeErr)return response(500,{ok:false,error:"predecessor_close_failed",detail:closeErr.message});
     if(!recordedSeries){
-      const evidence={...(release.decision_evidence??{}),activation_series_id:seriesId,activation_test_id:testId,activation_started_at:dt.toISOString(),activation_runtime_owner:"MINIPC_LOCAL_V2R4",activation_recorded_at:new Date().toISOString(),real_money_actions_allowed:false};
+      const evidence={
+        ...(release.decision_evidence??{}),
+        activation_series_id:seriesId,
+        activation_test_id:testId,
+        activation_started_at:dt.toISOString(),
+        activation_runtime_owner:"MINIPC_LOCAL_V2R4",
+        activation_recorded_at:new Date().toISOString(),
+        activation_release_repo_sha:releaseRepoSha,
+        activation_candidate_merge_sha:candidateMergeSha,
+        activation_strategy_fingerprint_sha256:strategyFingerprint,
+        activation_runtime_bundle_fingerprint_sha256:runtimeFingerprint,
+        real_money_actions_allowed:false
+      };
       const {error:updErr}=await admin.from("strategy_release_decisions").update({decision_evidence:evidence,updated_at:new Date().toISOString()}).eq("release_id","V2R3_TO_V2R4_20261005");
       if(updErr)return response(500,{ok:false,error:"release_evidence_update_failed"});
     }
-    return response(200,{ok:true,action:"activate",series_id:seriesId,status:"active",idempotent:Boolean(recordedSeries),paper_only:true,real_money_actions:false});
+    return response(200,{
+      ok:true,action:"activate",series_id:seriesId,status:"active",idempotent:Boolean(recordedSeries),
+      release_repo_sha:releaseRepoSha,strategy_fingerprint_sha256:strategyFingerprint,
+      runtime_bundle_fingerprint_sha256:runtimeFingerprint,paper_only:true,real_money_actions:false
+    });
   }
 
   if(action==="sync"){
