@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 DEFAULT_ENDPOINT='https://nlgzjmqgwueojlyqmoru.supabase.co/functions/v1/v2r4-paper-evidence-relay'
+PUBLISHABLE_KEY='sb_publishable_SaoibLcejS6rJDLg-lS3jw_IfSfi-ad'
 
 def iso(): return datetime.now(timezone.utc).isoformat().replace('+00:00','Z')
 def load_json(p): return json.loads(p.read_text('utf-8'))
@@ -14,7 +15,7 @@ def load_token(root):
     p=root/'Secrets/shadow-evidence-token.txt'
     return p.read_text('utf-8').strip() if p.exists() else os.environ.get('SHADOW_EVIDENCE_TOKEN','').strip()
 def post(endpoint,token,payload):
-    req=urllib.request.Request(endpoint,data=json.dumps(payload,separators=(',',':')).encode(),method='POST',headers={'Content-Type':'application/json','User-Agent':'minipc-v2r4-paper-cloud-sync/1.0','X-Shadow-Evidence-Token':token})
+    req=urllib.request.Request(endpoint,data=json.dumps(payload,separators=(',',':')).encode(),method='POST',headers={'Content-Type':'application/json','User-Agent':'minipc-v2r4-paper-cloud-sync/1.0','apikey':PUBLISHABLE_KEY,'X-Shadow-Evidence-Token':token})
     try:
         with urllib.request.urlopen(req,timeout=30) as r:
             body=json.loads(r.read().decode())
