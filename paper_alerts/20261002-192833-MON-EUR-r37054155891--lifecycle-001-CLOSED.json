@@ -1,0 +1,13 @@
+{
+  "candidate_id": "20261002-192833-MON-EUR-r37054155891",
+  "delivery_scope": "Slack webhook accepted; device delivery is not observable here",
+  "event_at_utc": "2026-10-02T20:58:00Z",
+  "event_index": 1,
+  "event_type": "CLOSED",
+  "kind": "PAPER_SLACK_LIFECYCLE_RECEIPT_V1",
+  "pair": "MON/EUR",
+  "real_money_actions_enabled": false,
+  "schema_version": 1,
+  "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "slack_webhook_accepted_at_utc": "2026-10-07T17:33:50.694344Z"
+}
