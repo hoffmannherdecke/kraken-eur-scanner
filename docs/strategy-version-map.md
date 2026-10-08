@@ -4,6 +4,7 @@ Status: **KANONISCHE STRATEGIE-ÜBERSICHT**
 Stand: 2026-09-29  
 Aktive Strategie: `V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION`  
 Aktive Serie: `PAPER-V2R4-20261007T184255Z`
+Aktueller maschinenlesbarer Control-Plane-Status: `project-current-state.json` (bei aktuellen Statusfragen vorrangig; dieses Dokument bleibt Versions-/Strategiekarte).
 
 ## 1. Zweck
 
@@ -172,7 +173,7 @@ ausgeschlossen und dürfen nur in einer späteren separat versionierten Sizing-S
 getestet werden.
 
 Aktivierungsbedingung:
-V2R4 darf erst nach dem kanonischen Release-Gate als **separate Paper-Serie** starten:
+**Historischer, am 07.10.2026 erfüllter Aktivierungsweg:** V2R4 durfte erst nach dem kanonischen Release-Gate als **separate Paper-Serie** starten:
 - V2R3-Clean-Serie erfüllt das kanonische `EVIDENCE_DIVERSITY_FASTTRACK_V2`-Gate:
   Primärpfad 20 abgeschlossene Trades plus Temporal Diversity oder Alternativpfad mit
   1.000 Candidate-Outcomes, bestandenem Diversitätsgate und gereiftem 24h-Qualifikationskohort;
@@ -207,6 +208,10 @@ Für die weitere Auswertung ist die tatsächliche **Trade-Entstehung ein eigenes
   Zeitplan, keine zusätzliche Hintergrundprüfung und keine höhere Systemlast.
 
 ---
+
+### Permanente Shadow-WIP-Regel
+
+Für V3 und alle späteren Generationen gilt: maximal **ein strategieändernder Shadow gleichzeitig**. Reine Beobachtungs-/Capture-Zweige ohne Entscheidungsautorität (z. B. H10) dürfen parallel laufen. Jede behauptete kausale Shadow-Divergenz benötigt einen same-snapshot Baseline-Replay-Match. Nach Einzelkomponenten-Reviews ist vor einer kombinierten Promotion ein separat versionierter Integrationskandidat Pflicht.
 
 ### V3 — bereits angelegter größerer Research-/Strategie-Nachfolger
 
@@ -425,6 +430,8 @@ Für die spätere V3-Konstruktion gilt verbindlich:
 
 
 ## 10. Verbindliches Release-Gate vor jeder neuen aktiven Version
+
+Für den jeweils **aktuellen** Aktiv-/Shadow-Status ist ausschließlich `project-current-state.json` maßgeblich. Ein abgeschlossenes Release-Gate wird nicht durch fortlaufende Evidenz wieder zu einem offenen Gate.
 
 Keine neue Strategie-/Paper-Version darf aktiv werden, bevor die laufende Version vollständig und gründlich ausgewertet wurde.
 
