@@ -38,7 +38,12 @@ async function sourceGate(admin:any,technicalQuiesce=false){
     .select("observed_at,status,payload").limit(1).maybeSingle();
   if(error||!data)return {ok:false,code:"status_missing"};
   const age=Date.now()-Date.parse(data.observed_at);
-  if(!Number.isFinite(age)||age<0||age>180000)return {ok:false,code:"status_stale"};
+  // Status-sync itself runs every ~300 seconds. Readiness can be checked
+  // within one bounded cadence; actual MUTATING cutover requires the explicit
+  // fresh status-sync performed by the operator immediately before the RPC.
+  const maxStatusAgeMs=technicalQuiesce?120000:420000;
+  if(!Number.isFinite(age)||age<0||age>maxStatusAgeMs)
+    return {ok:false,code:"status_stale"};
   const c=data.payload?.checks||{};
   // Independent public data sources must ALWAYS be fresh and healthy.
   const required=["kraken_universe_heartbeat","kraken_canary_heartbeat",
