@@ -31,7 +31,8 @@ create table public.paper_trade_results (
 );
 create table public.v3_h3_shadow_status (
   shadow_candidate_id text primary key,
-  payload jsonb not null
+  payload jsonb not null,
+  updated_at timestamptz not null default now()
 );
 
 insert into public.paper_series (
@@ -129,6 +130,8 @@ begin
       or (select count(*) from public.paper_series where status='active') <> 1
       or (select status from public.paper_series where series_id='PAPER-V2R4-20261007T184255Z') <> 'technical_closed'
       or (select status from public.paper_series where series_id=new_sid) <> 'active'
+      or (select payload->>'status' from public.v3_h3_shadow_status where shadow_candidate_id='V3-H3-SHADOW-001') <> 'FROZEN_TECHNICAL_CUTOVER'
+      or (select payload->>'baseline_series_id' from public.v3_h3_shadow_status where shadow_candidate_id='V3-H3-SHADOW-001') <> 'PAPER-V2R4-20261007T184255Z'
       or (select count(*) from public.paper_technical_rotations) <> 1 then
     raise exception 'atomic rotate invariants failed';
   end if;
