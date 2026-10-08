@@ -126,6 +126,10 @@ Deno.serve(async(req:Request)=>{
      config?.technical_change_approved!==true||
      !Number.isSafeInteger(m.expected_old_outcomes)||
      !Number.isSafeInteger(m.expected_old_trades)||
+     !safeHex(m.expected_old_candidate_ids_sha256,64)||
+     m.expected_old_candidate_ids_sha256!==proof?.old_candidate_ids_sha256||
+     proof?.staged_code_bundle_sha256!==config?.runtime_bundle_fingerprint_sha256||
+     proof?.strategy_fingerprint_sha256!==config?.strategy_fingerprint_sha256||
      m.expected_old_outcomes<0||m.expected_old_trades<0||
      typeof m.cutover_at_utc!=="string"||
      typeof m.expected_old_last_updated_at!=="string"||
@@ -142,6 +146,17 @@ Deno.serve(async(req:Request)=>{
   // operator script; this endpoint cannot independently read its filesystem.
   const gate=await sourceGate(admin);
   if(!gate.ok)return send(409,{ok:false,error:"source_gate_blocked",details:gate});
+  // Match Mini-PC snapshot against exact cloud candidate identities, not only
+  // a mutable row count. The SQL transaction separately locks and rechecks
+  // counts plus the latest update timestamp just before committing.
+  let checkpoint:any;
+  try{checkpoint=await oldCloudCheckpoint(admin);}
+  catch{return send(503,{ok:false,error:"cloud_checkpoint_unavailable"});}
+  if(checkpoint.candidate_count!==m.expected_old_outcomes||
+     checkpoint.trade_count!==m.expected_old_trades||
+     checkpoint.candidate_ids_sha256!==m.expected_old_candidate_ids_sha256||
+     Date.parse(checkpoint.last_outcome_updated_at??"")!==Date.parse(m.expected_old_last_updated_at))
+    return send(409,{ok:false,error:"local_cloud_snapshot_mismatch"});
   const {data:prior,error:priorErr}=await admin.from("paper_technical_rotations")
     .select("predecessor_series_id,successor_series_id").eq("predecessor_series_id",OLD).maybeSingle();
   // Only the already-applied schema is accepted. Fail closed if missing.
