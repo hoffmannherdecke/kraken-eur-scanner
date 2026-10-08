@@ -3,6 +3,36 @@
 -- Invocation requires a separately reviewed dual-token Edge Function and
 -- a quiesced/snapshotted MINI-PC. This file does NOT install or run itself.
 
+-- The candidate_id primary keys are global, not composite (series_id,id).
+-- Reject any cross-series UPDATE/UPSERT that would overwrite historical evidence.
+create or replace function public.guard_paper_evidence_series_immutability()
+returns trigger language plpgsql security invoker set search_path = ''
+as $guard$
+begin
+  if new.series_id IS DISTINCT FROM old.series_id
+     or new.candidate_id IS DISTINCT FROM old.candidate_id then
+    raise exception 'paper evidence candidate identity cannot change series';
+  end if;
+  return new;
+end;
+$guard$;
+revoke all on function public.guard_paper_evidence_series_immutability()
+  from public, anon, authenticated;
+grant execute on function public.guard_paper_evidence_series_immutability()
+  to service_role;
+
+drop trigger if exists paper_candidate_series_immutable_guard
+  on public.paper_candidate_outcomes;
+create trigger paper_candidate_series_immutable_guard
+before update on public.paper_candidate_outcomes
+for each row execute function public.guard_paper_evidence_series_immutability();
+
+drop trigger if exists paper_trade_series_immutable_guard
+  on public.paper_trade_results;
+create trigger paper_trade_series_immutable_guard
+before update on public.paper_trade_results
+for each row execute function public.guard_paper_evidence_series_immutability();
+
 create table if not exists public.paper_technical_rotations (
   predecessor_series_id text primary key references public.paper_series(series_id),
   successor_series_id text not null unique references public.paper_series(series_id),
@@ -72,10 +102,8 @@ begin
      or p_new_test_id is null or p_new_test_id !~ '^PAPER-V2R4-TECH-[0-9]{8}$' then
     raise exception 'unexpected technical rotation identity';
   end if;
-  if p_cutover_at_utc is null
-     or p_cutover_at_utc > clock_timestamp()
-     or p_cutover_at_utc < clock_timestamp() - interval '10 minutes' then
-    raise exception 'cutover time outside bounded recent UTC window';
+  if p_cutover_at_utc is null then
+    raise exception 'cutover UTC missing';
   end if;
   if p_new_series_id IS DISTINCT FROM ('PAPER-V2R4-' || to_char(p_cutover_at_utc at time zone 'UTC','YYYYMMDD"T"HH24MISS"Z"'))
      or p_new_test_id IS DISTINCT FROM ('PAPER-V2R4-TECH-' || to_char(p_cutover_at_utc at time zone 'UTC','YYYYMMDD'))
@@ -115,6 +143,12 @@ begin
       'predecessor_series_id',p_old_series_id,
       'successor_series_id',p_new_series_id,
       'cutover_at_utc',p_cutover_at_utc);
+  end if;
+
+  -- Late retry is safe ONLY after matching the immutable prior record.
+  if p_cutover_at_utc > clock_timestamp()
+     or p_cutover_at_utc < clock_timestamp() - interval '10 minutes' then
+    raise exception 'cutover time outside bounded recent UTC window';
   end if;
 
   if (p_expected_old_last_updated_at is null and p_expected_old_outcomes > 0)
