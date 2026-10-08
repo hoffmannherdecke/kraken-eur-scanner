@@ -8,6 +8,8 @@ name: Autonomous project milestone control
     branches: [main]
     paths:
       - 'tools/project_milestone_controller.py'
+      - 'tools/select-autonomous-implementation.py'
+      - 'research/autonomous-implementation-queue-v1.json'
       - 'project-current-state.json'
       - '.github/workflows/autonomous-project-milestones.yml'
 
@@ -36,6 +38,8 @@ jobs:
           python -m py_compile tools/project_milestone_controller.py
           python -m unittest discover -s tests -p 'test_project_milestone_controller.py'
           python tools/validate-project-current-state.py
+          python tools/select-autonomous-implementation.py
+          python -m unittest discover -s tests -p 'test_autonomous_implementation.py'
       - name: Inspect live evidence; publish only from scheduled run
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
