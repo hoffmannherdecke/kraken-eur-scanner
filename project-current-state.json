@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "PROJECT_CURRENT_STATE_V1",
   "status": "ACTIVE_CONTROL_PLANE",
-  "as_of_utc": "2026-10-08T08:15:00Z",
+  "as_of_utc": "2026-10-08T08:28:05Z",
   "authority": {
     "purpose": "Single machine-readable authority for current project/strategy/control-plane state.",
     "precedence": [
@@ -84,7 +84,7 @@
     {
       "id": "V2R4-PRODUCTIVITY-REVIEW",
       "trigger": "Preregistered V2R4 evidence/productivity gate or clear low-trade pathology review point",
-      "action": "Assess candidate-to-trade production and causes; low trade frequency is evidence, not justification for indefinite extension."
+      "action": "Assess candidate-to-trade production and root causes using the full funnel, WAIT->REJECT/TTL-expiry rates, mature MFE/MAE/missed-move evidence, and input-data freshness/completeness. Low trade frequency is evidence, not justification for indefinite extension or silent tuning."
     }
   ],
   "permanent_invariants": {
@@ -103,5 +103,30 @@
     "LEVERAGE",
     "AUTOMATIC_STRATEGY_PROMOTION",
     "SECOND_CONCURRENT_STRATEGY_CHANGING_SHADOW"
-  ]
+  ],
+  "active_strategy_observations": {
+    "v2r4_productivity_watch": {
+      "status": "EARLY_WARNING_OBSERVE_NO_TUNING",
+      "captured_at_utc": "2026-10-08T08:28:05Z",
+      "series_id": "PAPER-V2R4-20261007T184255Z",
+      "candidate_outcomes": 214,
+      "direct_rejects": 96,
+      "initial_waits": 118,
+      "terminal_buys": 0,
+      "paper_trades": 0,
+      "wait_terminal_rejects": 118,
+      "wait_expired_no_trigger": 102,
+      "mature_24h_followups_sufficient_for_strategy_conclusion": false,
+      "interpretation": "Trade production is a mandatory review criterion. Current zero-buy conversion and high WAIT-to-REJECT rate are early warning evidence only; do not tune the frozen series before mature follow-up evidence distinguishes correct rejection from restrictive triggers or missing context.",
+      "future_review_requirements": [
+        "Measure Candidate->WAIT->Trigger->Fresh Recheck->BUY_SCOUT->Paper-Trade funnel.",
+        "Measure WAIT->REJECT and TTL_EXPIRED_NO_TRIGGER rates.",
+        "Compare later MFE/MAE and missed-move rates for REJECT and WAIT->REJECT cases.",
+        "Separate true setup invalidity from WAIT/TTL strictness, data/context insufficiency, cost hurdle, and scanner/discovery timing.",
+        "Check freshness/completeness of OHLC, ATR/structural-stop, volume and execution-cost context.",
+        "Carry any validated finding into the next version/migration ledger; never silently retune the active frozen series."
+      ],
+      "successor_carry_forward": "Applies to V2R4 review, V3/V4+ inheritance and later live-learning successor reviews."
+    }
+  }
 }
