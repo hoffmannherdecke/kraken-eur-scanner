@@ -135,6 +135,27 @@ if(Test-Path -LiteralPath $maintenanceFile){
   } catch { $maintenanceMode="INVALID_FAIL_CLOSED" }
 }
 
+# Post-cutover V3-H3-001 is permanently frozen on its ORIGINAL baseline.
+# A committed, fully verified local record only prevents restarting that
+# retired old H3 task; Kraken and successor Paper tasks remain supervised.
+$h3Retired=$false
+$retirementFile=Join-Path $stateDir "v2r4-technical-cutover-completed.json"
+if(Test-Path -LiteralPath $retirementFile){
+  try {
+    $retired=Get-Content -LiteralPath $retirementFile -Raw | ConvertFrom-Json
+    $h3=Get-ScheduledTask -TaskName "CryptoMiniPC-V3H3Shadow001" -ErrorAction SilentlyContinue
+    $h3Retired=(
+      $retired.kind -eq "V2R4_TECHNICAL_CUTOVER_COMPLETED_V1" -and
+      $retired.predecessor_series_id -eq "PAPER-V2R4-20261007T184255Z" -and
+      [string]$retired.successor_series_id -match '^PAPER-V2R4-[0-9]{8}T[0-9]{6}Z$' -and
+      $retired.h3_001_retired -eq $true -and
+      $retired.real_money_actions -eq $false -and
+      $retired.orders -eq $false -and
+      $h3 -and [string]$h3.State -eq "Disabled"
+    )
+  }catch{$h3Retired=$false}
+}
+
 $rows = @()
 $restarted = @()
 $failed = @()
@@ -165,6 +186,13 @@ $status = "UNKNOWN"
 
 try {
   foreach ($spec in $specs) {
+    if($h3Retired -and $spec.name -eq "CryptoMiniPC-V3H3Shadow001"){
+      $rows += [pscustomobject]@{
+        task=$spec.name; installed=$true; healthy_before=$null
+        action="ARCHIVED_BASELINE_NOT_RESTARTED"; before=$null; healthy_after=$null; after=$null
+      }
+      continue
+    }
     if($maintenanceMode -ne "NONE" -and $spec.name -in $maintenanceTasks){
       $rows += [pscustomobject]@{
         task=$spec.name; installed=$true; healthy_before=$null
@@ -263,7 +291,7 @@ try {
 
   $allHealthy = $true
   foreach ($row in $rows) {
-    if($row.action -in @("MAINTENANCE_SKIP","MAINTENANCE_FAIL_CLOSED")){ continue }
+    if($row.action -in @("MAINTENANCE_SKIP","MAINTENANCE_FAIL_CLOSED","ARCHIVED_BASELINE_NOT_RESTARTED")){ continue }
     if (-not $row.installed) { continue }
     $spec = $specs | Where-Object { $_.name -eq $row.task } | Select-Object -First 1
     $task = Get-ScheduledTask -TaskName $row.task -ErrorAction SilentlyContinue
@@ -317,6 +345,7 @@ $report = [pscustomobject]@{
   status=$status
   restarted=@($restarted)
   failed_restarts=@($failed)
+  h3_001_archived=$h3Retired
   maintenance=[pscustomobject]@{
     mode=$maintenanceMode
     expires_at_utc=$(if($maintenanceExpires){$maintenanceExpires.ToString("o")}else{$null})
