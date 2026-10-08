@@ -2,7 +2,7 @@
   "schema_version": 2,
   "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-08T06:15:00Z",
+  "updated_at_utc": "2026-10-08T06:48:00Z",
   "baseline_strategy": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
   "active_clean_series": "PAPER-V2R4-20261007T184255Z",
   "v2r4_status": "ACTIVE_PAPER_APPROVED",
@@ -308,7 +308,7 @@
       "category": "state_context",
       "source_version": "V3 H10 prospective shadow",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Hyperliquid public read-only transport is healthy and the frozen 20 Primary + 6 Active Controls cohort has matured its preregistered first analysis gate: >72h, >95% capture health, >100 batches, >100 primary wallet-asset windows and >=20 multi-wallet same-asset windows. The next allowed step is the fixed evidence-only Kraken-EUR association review; no wallet/coin/threshold/horizon reselection or strategy coupling is authorized.",
+      "rationale": "First preregistered H10 capture/sample gate is mature and the evidence-only review is complete. Capture reliability is strong (199 batches; 5172/5174 wallet requests; 99.961%), but the archive lacks a fully preregistered per-event Kraken-EUR outcome/context join, and the gate's false-positive label was not materialized before outcome inspection. Direction also needs one fixed tie/conflict rule. H10 remains shadow-only; no predictive-value claim or strategy coupling is authorized.",
       "evidence": [
         "research/v3/h10-hyperliquid-readonly-precheck-v1.json",
         "research/v3/h10-h11-public-source-evidence-20261002.json",
@@ -316,9 +316,11 @@
         "research/v3/h10-trader-cohort-v1.json",
         "research/v3/h10-first-analysis-gate-v1.json",
         "public.v3_h10_capture_health",
-        "docs/storage-retention-policy.md"
+        "docs/storage-retention-policy.md",
+        "research/v3/h10-first-analysis-review-20261008.json",
+        "research/v3/h10-first-analysis-review-20261008.md"
       ],
-      "pending_gate": "V3_H10_FIXED_KRAKEN_ASSOCIATION_REVIEW"
+      "pending_gate": "V3_H10_FREEZE_KRAKEN_OUTCOME_CONTEXT_JOIN_CONTRACT_THEN_PROSPECTIVE_FIXED_REVIEW"
     },
     {
       "id": "prediction_market_event_layer",
