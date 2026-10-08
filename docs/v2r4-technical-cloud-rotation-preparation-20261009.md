@@ -35,3 +35,23 @@ Status: **PREPARED IN SEPARATE GITHUB BRANCH — NOT APPLIED. DO NOT INVOKE THE 
 The current old-series sync rejects non-active series. For old 6h/24h evidence that matures after cutover, an independently permissioned, **archive-only** evidence path is required to preserve explicit pending/MISSING; it must never create retroactive BUY/REJECT or alter completed original decisions. A generic upsert into a closed series is not an acceptable substitute.
 
 The draft is intentionally kept outside main to prevent accidental deployment; leave the current production Paper/H3 unaffected until a proper cohesive runtime+cloud release is ready.
+
+## Progress in draft PR #94 (not deployed; 09.10.2026)
+
+- Added dedicated dual-token `v2r4-technical-cutover` Edge source in a new separate function; its `checkpoint` action returns an authenticated **read-only cloud candidate-ID SHA-256 digest**, count, last update and trade count. Its `cutover` action checks those exact identities against the physical manifest before calling the atomic SQL transaction. This is not the first-series `activate` path.
+- Added a read-only MINI-PC `tools/minipc-v2r4-technical-cutover-readiness.ps1` inventory. Its explicit `-SuccessorReleaseSha` must be the **final reviewed successor Git SHA**; the 08.10 stage SHA was only a successful historical inert preparation, not necessarily the final eligible successor.
+- New candidate/sync code accepts optional `--paper-state-dir` so the successor can use a separate per-release *cursor* directory, while existing shared heartbeat paths can still feed watchdog/supervisor. Legacy startup arguments default to the original shared state path. WAIT receives its own versioned `--state`; no copied WAIT, alert, candidate or sync cursors.
+- Added targeted local-state-isolation regression, existing Windows parser/read-only failure test, disposable SQL rollback/idempotent/cross-series evidence isolation fixture and new Edge typecheck to **existing validation paths**. CI evidence must be checked on the **latest** PR head before any merge or production use.
+- Because the successor runtime code changed to support isolated state, **rebuild inert staging once from the final reviewed/merged SHA**. Never overwrite the old `Runtime/v2r4-paper-app` and never reuse the 08.10 stage path with a falsely claimed newer fingerprint.
+- `V2R4_TECHNICAL_RELEASE_SHA` in the isolated Edge function is a **nonsecret release pin**, required at final deployment. Missing or malformed pin must block the endpoint. It must exactly match the local staged manifest and successor config; no new API token is needed.
+- The endpoint deliberately tolerates only the known old Paper candidate failure and bounded WARNING-level supervisor state with **no active restarted task**. It still requires fresh Kraken canary, universe, WS source and Shadow cloud sync, rejects any unexpected component fault, and permits deliberate PAPER/H3 task-quiescence only in the explicitly authenticated cutover path.
+
+### Remaining exact operational blocker
+
+The present supervisor auto-restarts missing/unhealthy named Paper/H3 tasks. A physical cutover script cannot just stop those tasks and then call the cloud RPC: the supervisor may restart the frozen old series during snapshot or while the new one is starting. The physical operator release must include an **audited and expiration-bounded maintenance/quiescence mechanism** (or equivalent securely reversible supervisor stop with a cloud health lease), followed by final cloud ACK and hash-verified snapshot, unique new Paper app and state paths, atomic Cloud RPC, task action switch, supervisor restore and one fresh E2E. A failure before cloud commit must restore exactly the original scheduled task configuration; a failure after commit must fail closed and preserve both snapshots, not create another active series.
+
+No switch command is approved or runnable from this draft. In particular, do not invoke the historical `install-minipc-v2r4-paper-runtime.ps1 -Execute` which copies into the **old** immutable app.
+
+### Remaining historical evidence policy
+
+The current first-release relay refuses sync for non-active Paper series. Post-cutover 6h/24h old followups therefore require a **separate append-only evidence-only archive contract**, not another call to the active-series sync API. Completed original BUY/WAIT/REJECT decisions, price clocks and unique candidate IDs remain immutable; explicit `MISSING` is preferred to retrospective reevaluation.
