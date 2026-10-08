@@ -12,6 +12,18 @@ Der bestehende, außerhalb von ChatGPT Work aktivierte 2h-Kraken-Marktphasen-Wä
 
 **Sicherheits- und Kosteninvarianten:** Ein Episodenwechsel öffnet niemals selbst das Work-Gate, blockiert nie die Strategie, erzeugt weder Push noch zusätzliche Work-/Scanner-Läufe und verändert keine aktiven Parameter, H1-Entscheidungsautorität, V2R4-/H3-Freeze, Orders oder Echtgeldrechte. H1-Standalone bleibt verworfen. Beobachtung ist keine bewiesene Trading-Verbesserung.
 
+### Erste Marktphasen-Referenz (2026-10-08)
+
+Die zuvor bereits im Chat belegte breite Krypto-Schwäche wurde als
+`MARKET_REGIME_SEED_V1` mit öffentlichen CoinGecko-24h-Werten und
+Zeitpunkt in [V3 Issue #7](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/7#issuecomment-6066250115)
+persistiert. Dies ist ein **Kontext-Anker für spätere Erholungsanalyse**,
+kein validiertes Kraken-EUR-Entry-/Regime-Label. Der reguläre Watcher
+muss die erste bestätigte Kraken-EUR-Phase separat schreiben; erst
+danach sind prospektive Episode→Outcome-Vergleiche zulässig.
+Details/fehlende Daten: `research/v3/market-phase-reversal-observation-v1.md`.
+Keine zusätzlichen Work-Läufe/Pushs.
+
 ## Statusentscheidung 2026-10-08 — V2R4 aktiv / V3 Shadow aktiv
 
 V2R4 PAPER ist seit 2026-10-07 als eigene immutable Serie `PAPER-V2R4-20261007T184255Z` aktiv; Release-Status `APPROVED_PAPER`, 50+50 EUR, `paper_only=true`, keine Echtgeldaktionen und keine automatische Aktivierung. V2R3 `PAPER-V2R3-CLEAN-20261001T0925Z` ist `closed_complete` und sein Release-Gate bleibt als abgeschlossene Historie fest an diese Serie gebunden. V3-H1 wurde nach festem Review als eigenständige Decision-Authority verworfen; V3-H3-SHADOW-001 ist auf dem MINI-PC aktiv und sammelt isolierte Evidenz gegen V2R4. H10 hat sein preregistriertes erstes Sample-/Health-Gate erreicht und ist bereit für den festen ersten Review; weiterhin keine Strategie-Kopplung.

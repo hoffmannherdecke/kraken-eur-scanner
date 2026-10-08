@@ -28,6 +28,42 @@ prognostischer Nutzen oder ein darauf basierender Entry-/Stop-/Sizing-Filter
 als validiert gilt. Forschungsergebnisse können auch keinen Mehrwert
 zeigen; dann `NO_ACTION_WARRANTED` statt einer erzwungenen Strategieänderung.
 
+## Initialer Referenzpunkt: Markt-Abverkauf am 2026-10-08
+
+Der **erste protokollierte Forschungsanker** steht im bestehenden V3-Research-
+Issue #7: `MARKET_REGIME_SEED_V1` vom 2026-10-08,
+https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/7#issuecomment-6066250115.
+Er konserviert die vorliegenden *öffentlichen CoinGecko-Snapshotdaten*
+(Gesamtmarkt 24h -6,31%, BTC ca. -3,32%; mehrere Altcoins deutlich schwächer),
+mit beobachteten USD-Kursen, Quelle und echtem `known_at`. Er ist der Beginn
+der **Erholungshistorie**, nicht bloß eine nachträgliche Gesprächsnotiz.
+
+WICHTIGE UNTERSCHEIDUNG: Das ist ein `MARKET_REGIME_SEED_V1`
+(*CONTEXT_ONLY / NOT_KRAKEN_REGIME_LABEL*), **kein** synthetisch
+nachberechnetes `MARKET_REGIME_EPISODE_V1`: keine geprüften
+Kraken-EUR-Closed-Bars, kein exakter Sell-off-Beginn, keine Intraday-Basis
+oder voll belegte Marktphasen-Übergangszeit. Niemals auf Datum/Zeiten
+vor dem tatsächlichen `known_at` zurückdatieren. USD-Preise nicht als
+Kraken-EUR-Entry-Kurse verwenden; ein 24h-Verlust beweist weder ein
+exaktes lokales Tief noch wann die Trendwende einsetzt.
+
+Beim **nächsten regulären** Watcher-Lauf sind der Seed und vorhandene
+`MARKET_REGIME_EPISODE_V1`-Marker zu lesen. Die **erste vollständige,
+prospektiv geprüfte Kraken-Spot-EUR-Phase** wird mit dem echten neuen
+`observed_at_utc` separat als INITIAL_BASELINE protokolliert, auch wenn
+sie ebenfalls `RISK_OFF` lautet: Der Seed zählt nicht als bereits
+validierte Kraken-Phase. Danach nur echte bestätigte Phasenwechsel,
+ohne gleichförmige 2h-Snapshots zu speichern. Ein etwaiger Abstand
+Seed→erstes Kraken-Episode-Label bleibt als Datenlücke kenntlich.
+
+In späteren **ohnehin zulässigen** Analysen dürfen wir den Seed
+zur Einordnung eines bekannten breiten Abverkaufs und zum Vergleich
+späterer Erholung nutzen. Die punktgenaue Zuordnung zu Paper-/Live-
+Einzelentscheidungen ist aber erst ab **damals tatsächlich bekannten,
+separat bestätigten** Kraken-Episoden zulässig. Kein im Nachhinein
+rekonstruiertes Episode-Label, keine Strategie-/Orderwirkung; bei
+unzureichendem E2E-Nachweis `NOT_EVALUABLE`.
+
 ## Zweck und Abgrenzung
 
 Nach einem breiten Altcoin-Abverkauf soll das Projekt zwischen anhaltendem
