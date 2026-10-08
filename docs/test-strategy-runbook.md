@@ -592,3 +592,44 @@ ausdrücklich als **ausgewertet**, nicht als nicht eingesetzt.
 Bei E2E-Lücke `NOT_EVALUABLE` plus einen konkreten einmaligen
 Akzeptanznachweis im bisherigen Backlog erhalten; keine
 Scheinbestätigung aus einem aktivierten ChatGPT-Aufgabentext.
+
+### 12.8 Eigenständig ausführbarer Safe-Work-Implementation-Pfad (2026-10-08)
+
+Zusätzlich zu **bestehenden** Strategie-Reife-/Analyse-Gates darf
+der täglich ohnehin angesetzte Work-Check **nur nach**
+`tools/select-autonomous-implementation.py` `READY_SAFE_WORK`
+auch eine kleine vorab klar autorisierte **Umsetzung** starten.
+`docs/autonomous-followthrough-governance-v1.md` ist maßgeblich,
+`research/autonomous-implementation-queue-v1.json` die
+**einzige** zulässige Safe-Implementation-Allowlist.
+
+Beispiel: H10-Erstreview belegt + H10-Kraken-EUR-`known_at`-
+Join-Vertrag fehlt → autonom eng begrenzten **inaktiven**
+Research-/Testvertrag und nötige Tests auf Branch/PR erstellen,
+CI vollständig abwarten, bei grünen relevanten Guards
+selbstständig mergen, danach Nachweis/Gate-Abschluss
+idempotent registrieren. Bei neuem `next_control_decision`
+nur den kleinsten Read-only-Adapter implementieren, nie
+automatisch Strategy-Runtime/Schwellen/Orders schalten.
+
+Ein Safe-Work-Gate gilt nur für die **vorgegebene konkrete
+Aufgabe**, nicht als Freifahrtschein für Backlog-Vollauswertung,
+H6-Shadow-Neustart, V3-Release, neue Automationsschleife
+oder Echtgeldaktionen. Vor jedem Task: Source-of-truth-/PR-
+Duplikate prüfen; höchstens ein Implementierungsbranch offen,
+maximal zwei Tasks pro bestehendem Work-Turn. Nach jedem
+tatsächlichen Bearbeitungsversuch in den vorhandenen
+`research/work-analysis-state.json`-Ack `autonomy_task_attempts`
+mit `task_id`, `gate_fingerprint`, `status` =
+`BLOCKED`/`ACTIVE_PR`/`COMPLETED`, `evidence_url`
+oder präzisem Blocker aufnehmen. Bei derselben blockierten
+Evidenz keine Wiederholung. Nach PR-Merge auf `main`
+erneut reinen Gate-Selektor prüfen. Veraltete, noch nicht
+belegte automationsbedingte Source-E2E-Pfade werden nicht
+als Erfolg gemeldet.
+
+**Jede neue materielle Chat-Entscheidung** wird während der
+Bearbeitung in kanonischer Form persistiert/zugeordnet.
+Kann ein zukünftiger ungesichteter Chat nicht gelesen
+werden, ist er aus Sicht des autonomen Runners nicht
+automatisch bekannt; keine erfundene Allwissenheit.
