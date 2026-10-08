@@ -466,3 +466,7 @@ to their safety contracts; they are not strategy learning/tuning.
 
 The live phase therefore extends rather than ends the improvement loop. Each real-money version
 must leave a complete evidence and migration trail for its successor.
+
+### 12.4 Marktphasen-Episoden als Forschungs-Evidenz (2026-10-08)
+
+Für jede **ohnehin ausgelöste** substantielle V2R4-/V3-Analyse ist bei vorhandenen `MARKET_REGIME_EPISODE_V1`-Belegen im bestehenden GitHub Issue #7 die zeitpunktgerechte Abgleichprüfung gemäß `research/v3/market-phase-reversal-observation-v1.md` Teil der Analyse→Konsequenz-Schleife: Regime zum tatsächlichen Entscheidungszeitpunkt, spätere Outcomes/Trade-Quote/Missed-Moves, Datenlücken und inkrementeller Nutzen gegenüber bereits erfassten Kraken-Regimefeatures. Bei fehlender Evidenz `NOT_EVALUABLE`, ohne relevanten Zusatznutzen `NO_ACTION_WARRANTED` dokumentieren. Keine rückwirkende Signalverbesserung, kein neuer Analyse-Termin/Work-Lauf, kein H1-Reaktivieren und keinerlei Änderungen am aktiven Paper/Shadow/Live-Gate.
