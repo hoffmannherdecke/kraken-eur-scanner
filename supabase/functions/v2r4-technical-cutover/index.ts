@@ -44,8 +44,10 @@ async function sourceGate(admin:any){
     "v2r4_ws_shadow_heartbeat","runtime_supervisor","v2r4_paper_cloud_sync"];
   const bad=required.filter(key=>c[key]?.ok!==true);
   if(bad.length)return {ok:false,code:"source_or_supervisor_unhealthy",failed:bad};
-  if(c.git_head?.ok!==true||String(c.git_head?.detail??"").includes(STAGED_SHA)!==true)
-    return {ok:false,code:"unexpected_repo_head"};
+  // The repository HEAD may advance when this reviewed migration merges.
+  // The *staged runtime* remains pinned to STAGED_SHA in the physical manifest.
+  if(c.git_branch?.ok!==true||c.git_head?.ok!==true)
+    return {ok:false,code:"repo_health_unavailable"};
   return {ok:true,code:"SOURCE_GATE_PASS"};
 }
 Deno.serve(async(req:Request)=>{
