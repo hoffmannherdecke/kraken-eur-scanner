@@ -42,5 +42,65 @@ Scores sind erst **nach mindestens fünf unabhängig überprüften relevanten Er
 - Source-Registry-Aktivität und eine tatsächlich **technisch regelmäßig funktionierende** Versorgung sind verschieden. Vor Aktiv-Nennung einmal echten unbeaufsichtigten Read+Zeitstempel+Failsoft prüfen; ansonsten Status `PILOT_READ_ONLY` oder `ACCESS_CHECK_REQUIRED`.
 - Versionierte Quelldiff-Änderung als Branch/PR, vorhandene Validierungschecks, Provenance-Referenz und rollbackfähiger Merge; **keine neuen Rechte**, keine Löschung von Evidenz und keine geheime Runtimeänderung. Relevante V3-Lerneffekte ins bestehende Migrationsledger übernehmen, nicht eigene Strategie forcieren.
 
-## 6. Erste Bestandsaufnahme (2026-10-08)
+## 6. Pflichtübergabe: Quellen-Erkenntnis → Strategie-Nutzenprüfung
+
+**Verbindlicher, generationsübergreifender Schließkreis.** Gute Quellen dauerhaft
+zu lesen ist **nicht** das Projektziel; ihre materiellen Erkenntnisse müssen bei
+einem ohnehin offenen V2R4-/V3-/V4+- bzw. späteren Live-Nachfolger-Analyse-Gate
+eine begründete Entscheidung erhalten. Der Source-Steward bleibt eigenständig
+für **Qualität / Source-Routing**; nur der bereits vorhandene Strategie-
+Analyse-/Releasepfad ist verantwortlich für **Trading-Inkrementalnutzen**.
+Das eine öffnet nie das Gate des anderen. Keine neue Work-Aufgabe.
+
+1. **Erfassung / echter Kenntniszeitpunkt:** nur relevanter, neu belegter Claim
+   oder Marktphasenwechsel. Provenienz `source_id`, `first_seen_utc`,
+   `publication_utc`, `source_asof_utc`, `primary_evidence_url`,
+   betroffene Kraken-Spot-EUR-Assets/Thema, Wirkungshypothese,
+   Duplikate/Unsicherheit und `source_e2e_verified`; sonst
+   `NOT_EVALUABLE`. Kompaktes bestehendes Issue #7, kein Raw-News-Archiv.
+2. **Einmaliges Wirkungsrouting:** Bei *ohnehin* geöffnetem Analyse-Gate
+   identische Fälle auf vorhandenem Baseline-Kandidatenstrom zeitlich
+   korrekt abgleichen: BUY/WAIT/REJECT, gereifte MFE/MAE, False
+   REJECT/Missed Move, Cost/Slippage, Trade-Frequenz, mögliche neue
+   Kandidaten und Fehltrades. Quelle gegen **bereits bekannte**
+   Kraken-/BTC-/ETH-/Breadth-/News-Information abgleichen. Keine
+   nachträglichen Newslabels, kein im Nachhinein ausgesuchter Gewinner.
+3. **Inkrementalitätsprüfung:** Vor separatem Test exakt **eine**
+   Anwendungshypothese spezifizieren: z. B. frühere selektive
+   Gegenbewegungserkennung, bestätigtes Risikoevent, echter
+   Coin-/Sektor-Katalysator oder begründete WAIT-Revalidation.
+   Gleichzeitig messen, ob ein zusätzlicher Filter gute BUYs zerstört.
+   Negative/fehlende Quellen erzeugen keinen neuen Handels-Blocker.
+4. **Pflichtdisposition statt Endlosbeobachtung:** Nach tatsächlicher
+   Evidenzprüfung genau eine Entscheidung mit Beleg, Datum und
+   nächstem erlaubtem Gate:
+   `NO_ACTION_WARRANTED` (kein Mehrwert / doppelt),
+   `NOT_EVALUABLE` (fehlt bekanntzeitliche/reife Basis, kleinsten
+   sinnvollen nächsten Evidenz-Gate nennen, **nicht** extra Work
+   anstoßen), `PREPARE_ONE_CHANGE_TRIAL` (nach reifen, konsistenten
+   Anzeichen: versionierter **inaktiver** V3-/Nachfolger-Kandidat,
+   eingefrorene Kosten-/Holdout-/Trade-Quote-/False-Reject-Gates)
+   oder `REJECT_WITH_EVIDENCE` (nach geprüftem Negativergebnis).
+   Pilot-Erfolg = **Quellengüte**, nicht automatisch `PREPARE`.
+5. **Ausführung und Aufbewahrung:** Wo genehmigt, den Folgeschritt
+   *im selben bereits geöffneten Analysevorgang* autonom erledigen
+   (verknüpfter Research-Claim, One-change-Precheck, Versionsledger,
+   deduplizierter Ack im `research/work-analysis-state.json`);
+   nicht auf eine neue Nutzerfrage schieben. Benötigte Strategie-/
+   Release-Freigaben explizit eskalieren; keine stille Aktivierung.
+   Quellenergebnisse veralten nicht still: bei der nächsten
+   einschlägigen Strategie-Integrations-/Releaseprüfung müssen sie
+   explizit disponiert oder mit konkretem, nicht kalenderbasiertem
+   Datenmaturitäts-Gate nach V4+ weitergegeben werden. Fehlende
+   Quellen-E2E-Funktion darf keinen V3-Promotion-Gate künstlich sperren.
+
+Die Forschungsspur bleibt unabhängig von der Wirksamkeit: Eine
+hochqualitative Nachrichtenquelle ohne Handelssignal darf als
+**Kontextquelle** erhalten bleiben; ein bestätigter Trading-Nachteil
+erzwingt `NO_ACTION_WARRANTED` bzw. `REJECT_WITH_EVIDENCE`.
+Wegen mehr Quellen **niemals** automatisch breitere Kaufveto-Ketten
+erzeugen. Handelsänderungen ausschließlich über bewährte
+Version-/Shadow-/Paper-/Freigabeprozesse.
+
+## 7. Erste Bestandsaufnahme (2026-10-08)
 Öffentliche Web-Zugänglichkeit/Quelle bzw. aktuelle Berichte wurden für Teile des Katalogs geprüft; **kein** hier aufgeführtes Nachrichtenmedium ist dadurch bereits als autonomer API-/RSS-Feed in unserer Scanner-/Mini-PC-Runtime belegt. CoinDesk/The Block/Decrypt/Reuters und DefiLlama/CoinGlass sind **Pilot-Vorschläge**, kein Live-Schalten. [CoinDesk](https://www.coindesk.com/) trennt sichtbare redaktionelle Rubriken und sponsored content; [CoinMarketCal](https://coinmarketcal.com/) bietet Event-Kalender; [DefiLlama](https://defillama.com/) liefert DeFi- und Stablecoin-Aggregate. Bei Reddit warnt selbst r/CryptoCurrency vor Marktmanipulation und Scams. Blockworks/Messari erfordern wegen berichteter 2026-Geschäftsmodelländerungen einen neuen Angebotscheck. Kein bezahltes Abonnement oder verstecktes Scraping gestartet.

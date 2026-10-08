@@ -507,3 +507,48 @@ eines beobachteten Marktphasenwechsels aktive Entry-/Stop-/Sizing-/Scanner-
 oder Echtgeldregeln ändern. Erst versionierter inaktiver Nachfolger,
 prospektive Validierung, Kostenrechnung, Release-/Nutzerfreigabe; Live-
 Trading/Orderrechte bleiben davon getrennt.
+
+### 12.6 Automatischer Quellen-Erkenntnis-Transfer in geprüfte Nachfolger (ab 2026-10-08)
+
+Dieser Abschnitt schließt die Lücke zwischen autonomem Quellen-Controlling
+(`docs/market-source-autonomy-v1.md` / Kandidatenregister) und einem
+tatsächlich **nützlichen Strategieergebnis**. Quellenauswahl und
+Strategie-Einfluss sind zwei getrennte, verpflichtend verbundene Gates;
+hohe Quellengüte allein beweist **keinen** profitablen Entry-Vorteil.
+
+Bei jedem **ohnehin unabhängig geöffneten, substanziellen**
+V2R4/V3/V4+/späteren Live-Analyse-Gate sind material neue
+`MARKET_CONTEXT_EVENT_V1`-, `SOURCE_STEWARD_DECISION_V1`-
+und `MARKET_REGIME_EPISODE_V1`-Erkenntnisse aus dem bisherigen
+GitHub-Research-Issue #7 zu lesen und gegenüber bereits im
+Strategiekontext enthaltenen Informationen **dedupliziert**
+zu beurteilen, soweit zum konkreten Analysefenster relevant:
+`known_at` VOR dem Candidate/Entry, Primärfakten, Reifegrad,
+BUY/WAIT/REJECT, Trade-Konversion, verpasste Chancen, Kosten,
+Kandidatenqualität, falsche Risikoblocks. Keine historische
+Rückprojektion oder Datengleichheit zwischen CoinGecko/USD und
+Kraken/EUR unterstellen.
+
+Jeder **materiell bewertbare Quellen-Befund** erhält im normalen
+Konsequenz-/Migrationspfad eine begründete Disposition
+`NO_ACTION_WARRANTED`, `NOT_EVALUABLE` (mit präzisem kleinsten
+nächsten Datengate), `PREPARE_ONE_CHANGE_TRIAL` (nur inaktiver,
+vorregistrierter Shadow-Kandidat) oder
+`REJECT_WITH_EVIDENCE`, mit `source_id`, Zeitfenster,
+Evidenz und Ack/Dedupe im bestehenden `research/work-analysis-state.json`.
+**Ein Quellen-Event öffnet niemals selbst das Analyse-Gate.**
+Ein bereits geöffnetes Gate, das relevante bewertbare Erkenntnisse
+bloß referiert, aber keine Disposition/erlaubte Konsequenz festhält,
+ist noch nicht abgeschlossen. Nicht bewertbare Datensammlungen dürfen
+V3 nicht künstlich blockieren; sie werden mit exaktem Evidenz-Gate
+und Linienstammbaum nach V4+ weitergereicht. Kein zusätzlicher Work-
+Lauf, keine neue Cron-/GitHub-Task, keine zusätzliche Scanner-Schleife.
+
+Eine belegte neue Quellenwirkung kann innerhalb bestehender
+Freigaben autonom bis zu einer **inaktiven** Hypothese oder einem
+einzelnen V3-Vergleichstest vorbereitet werden. Für jede Änderung von
+Entry/WAIT/REJECT/Stop/Sizing/Scanner/Live sind hingegen weiterhin
+gesonderter Shadow/Paper-/Kosten- und Release-Gate sowie erforderliche
+Nutzerfreigabe unverzichtbar. Keine eigenmächtige Anpassung der
+aktiven V2R4-Strategie oder H3/H6-Sequenz; alte H1-Ablehnung bleibt
+gültig.
