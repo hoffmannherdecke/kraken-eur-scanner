@@ -59,10 +59,11 @@ def get_rows(base: str, key: str, view: str) -> list:
     require(view in {"paper_series_completion_readiness", "v3_h3_shadow_status"},
             "unapproved evidence view")
     url = base.rstrip("/") + "/rest/v1/" + view + "?select=*"
-    req = urllib.request.Request(url, headers={
-        "apikey": key, "Authorization": "Bearer " + key,
-        "Accept": "application/json", "User-Agent": "project-milestone-controller/1",
-    })
+    headers = {"apikey": key, "Accept": "application/json",
+               "User-Agent": "project-milestone-controller/1"}
+    if not key.startswith("sb_secret_"):
+        headers["Authorization"] = "Bearer " + key
+    req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=15) as response:
         rows = json.load(response)
     require(isinstance(rows, list) and len(rows) == 1, view + " must return exactly one row")
