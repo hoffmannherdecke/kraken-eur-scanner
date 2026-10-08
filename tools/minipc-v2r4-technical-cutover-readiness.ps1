@@ -11,7 +11,7 @@ $newSha=$SuccessorReleaseSha.ToLowerInvariant()
 # source SHA after the final isolation/rotation release was reviewed.
 if($newSha -notmatch '^[0-9a-f]{40}$'){
   Write-Output ('{"kind":"V2R4_TECHNICAL_CUTOVER_READINESS_V1","mode":"READ_ONLY","status":"READ_ONLY_GATE_BLOCKED","reason":"EXPLICIT_REVIEWED_SUCCESSOR_SHA_REQUIRED"}')
-  exit 2
+  return
 }
 $oldSha='3c6729a6c548d169f56a97f07f75892f37211636'
 $oldApp=Join-Path $TradingRoot 'Runtime\v2r4-paper-app'
