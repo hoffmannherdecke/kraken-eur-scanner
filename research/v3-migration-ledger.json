@@ -2,10 +2,10 @@
   "schema_version": 2,
   "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-07T08:25:00Z",
-  "baseline_strategy": "V2R3-2026-09-28",
-  "active_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
-  "v2r4_status": "PREPARED_NOT_ACTIVE",
+  "updated_at_utc": "2026-10-08T06:15:00Z",
+  "baseline_strategy": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+  "active_clean_series": "PAPER-V2R4-20261007T184255Z",
+  "v2r4_status": "ACTIVE_PAPER_APPROVED",
   "allowed_migration_statuses": [
     "INHERIT_UNCHANGED",
     "INHERIT_MODIFIED",
@@ -162,14 +162,14 @@
       "category": "entry_lifecycle",
       "source_version": "V2R4 historical prep (superseded PR #9 module evidence)",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Final evidence selects the existing bounded WAIT + fresh Kraken recheck mechanism. A current-main candidate, physical bounded smoke and prospective Paper evidence remain required.",
+      "rationale": "Final V2R3 evidence selected bounded WAIT + fresh Kraken recheck. The current-main candidate, physical smoke, real Altrady wakeup proof and explicit APPROVED_PAPER activation are complete; the active V2R4 series now provides the required prospective evidence.",
       "evidence": [
         "docs/v2r4-release-readiness.md",
         "docs/v2r4-paper-activation-checklist.md",
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
       ],
-      "pending_gate": "CURRENT_MAIN_CANDIDATE_PHYSICAL_SMOKE_THEN_V2R4_PROSPECTIVE_PAPER_EVIDENCE"
+      "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE"
     },
     {
       "id": "scout_confirmation_architecture",
@@ -274,7 +274,7 @@
       "category": "state_signal",
       "source_version": "V3 hypothesis",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "WS reconciliation/state capture and physical MINI-PC smoke are proven. Replacement prospective trial V3-H3-ASSOC-002 fixed only the technical scheduler bug. Four valid >=1800s MINI-PC sessions across two UTC dates matured the frozen collection gate with BTC=1252, ETH=1314, SOL=1331 valid rows. Fixed descriptive association evaluation PASS and canonical import PASS. Associations are feature/symbol/horizon-specific rather than a universal cross-symbol direction; no threshold, feature-transform, pair or horizon search was performed.",
+      "rationale": "WS reconciliation/state capture, physical MINI-PC smoke and the one-change V3-H3-SHADOW-001 activation are complete. H3 now collects raw point-in-time XBT/ETH/SOL depth context against active V2R4 with no threshold/transform/directional-sign search, no orders and no automatic promotion.",
       "evidence": [
         "research/v3/h3-assoc-001-technical-failure-review-20261002.json",
         "research/v3/h3-prospective-state-association-trial-v2.json",
@@ -285,7 +285,7 @@
         "research/v3/h3-association-reports/v3-h3-association-002-20261003-095025.json",
         "research/v3/h3-assoc-002-fixed-review-20261003.json"
       ],
-      "pending_gate": "WAIT_FOR_V3_H1_SHADOW_001_REVIEW_THEN_PROJECT_REVIEW_BEFORE_H3_ONE_CHANGE_SHADOW; ANY NEW SYMBOL_SPECIFIC_THRESHOLD_OR_TRANSFORM_SEARCH_REQUIRES_NEW_SEARCH_ACCOUNTED_TRIAL"
+      "pending_gate": "V3_H3_SHADOW_001_MINIMUM_GATE_AND_FIXED_REVIEW"
     },
     {
       "id": "macro_event_risk_gate",
@@ -308,7 +308,7 @@
       "category": "state_context",
       "source_version": "V3 H10 prospective shadow",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Hyperliquid public read-only transport is green and the unbiased V3-H10-COHORT-001 selection is already frozen at 20 Primary + 6 Active Controls. Prospective server-side capture is active and healthy with exact source fill timestamps plus compact Supabase persistence. No trader-quality or predictive-value claim is made yet; the preregistered first analysis gate must mature before any Kraken-EUR association review or strategy coupling.",
+      "rationale": "Hyperliquid public read-only transport is healthy and the frozen 20 Primary + 6 Active Controls cohort has matured its preregistered first analysis gate: >72h, >95% capture health, >100 batches, >100 primary wallet-asset windows and >=20 multi-wallet same-asset windows. The next allowed step is the fixed evidence-only Kraken-EUR association review; no wallet/coin/threshold/horizon reselection or strategy coupling is authorized.",
       "evidence": [
         "research/v3/h10-hyperliquid-readonly-precheck-v1.json",
         "research/v3/h10-h11-public-source-evidence-20261002.json",
@@ -318,7 +318,7 @@
         "public.v3_h10_capture_health",
         "docs/storage-retention-policy.md"
       ],
-      "pending_gate": "V3_H10_FIRST_ANALYSIS_GATE_72H_HEALTH_SAMPLE_MATURITY_THEN_FIXED_KRAKEN_ASSOCIATION_REVIEW"
+      "pending_gate": "V3_H10_FIXED_KRAKEN_ASSOCIATION_REVIEW"
     },
     {
       "id": "prediction_market_event_layer",
@@ -361,8 +361,8 @@
       "id": "cross_crypto_lead_lag_breadth",
       "category": "state_signal",
       "source_version": "V3 H1 hypothesis",
-      "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "V3-H1-INCR-001 and its fixed review are complete with the holdout sealed. The one-change pilot V3-H1-SHADOW-001 subsequently closed at its preregistered minimum gate with 200/200 PASS context records, 100% capture and 9 baseline-vs-H1 decision divergences. Collection is complete; the fixed divergence review is now the only H1 gate before any H3 one-change shadow.",
+      "migration_status": "REJECT_WITH_EVIDENCE",
+      "rationale": "V3-H1-SHADOW-001 closed at its preregistered gate with 200/200 PASS context records, 100% capture and 9 divergences. Fixed review found no stable net benefit and repeated WAIT→REJECT tightening despite later upside. Standalone H1 decision authority is rejected; features may remain diagnostics only and cannot be silently reintroduced as a strategy signal.",
       "evidence": [
         "research/v3/h1-cross-crypto-breadth-precheck-v1.json",
         "research/v3/h1-h6-association-review-20261002.json",
@@ -372,16 +372,16 @@
         "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json",
         "research/v3/shadow-runtime/h1-status.json",
         "research/v3/shadow-runtime/h1-control.json",
-        "public.v3_h1_shadow_summary"
-      ],
-      "pending_gate": "V3_H1_SHADOW_001_FIXED_REVIEW_BEFORE_H3_SHADOW_MATERIALIZATION"
+        "public.v3_h1_shadow_summary",
+        "research/v3/h1-shadow-001-fixed-review-20261007.json"
+      ]
     },
     {
       "id": "price_volume_trend_primitives",
       "category": "signal_state",
       "source_version": "V3 H6 hypothesis",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Exact V3-H6-INCR-001 MINI-PC report is imported and the fixed review is complete with holdout sealed. Incremental volume contribution conditional on fixed price-direction strata is small/near zero; partial-correlation signs are internally consistent by stratum but simple effects are not uniformly sign-stable. No threshold/transform search, winner selection or promotion was performed.",
+      "rationale": "Exact V3-H6-INCR-001 MINI-PC report and fixed review are complete with holdout sealed. Incremental volume contribution conditional on fixed price-direction strata is small/near zero. H6 remains sequenced after the active H3 one-change shadow fixed review; no threshold/transform search, winner selection or promotion is authorized.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "research/v3/h1-h6-association-review-20261002.json",
@@ -390,7 +390,7 @@
         "research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json",
         "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
       ],
-      "pending_gate": "WAIT_FOR_H1_THEN_H3_SEQUENCE_REVIEWS_BEFORE_H6_ONE_CHANGE_SHADOW"
+      "pending_gate": "V3_H3_SHADOW_001_FIXED_REVIEW_BEFORE_H6_ONE_CHANGE_SHADOW"
     },
     {
       "id": "simple_price_volume_primitives",
@@ -467,5 +467,7 @@
     "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
     "report": "research/work-analysis/2026-10-07-v2r3-final-review.md",
     "dispositions": "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
-  }
+  },
+  "predecessor_clean_series": "PAPER-V2R3-CLEAN-20261001T0925Z",
+  "active_paper_series": "PAPER-V2R4-20261007T184255Z"
 }
