@@ -108,15 +108,21 @@ try{
  $admin=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
  Need ($admin.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) 'Admin PowerShell required'
  Need (Test-Path $python) 'Python venv missing'
- $phase='PRE_COMMIT'
+ $phase='BACKUP_PREPARATION'
  $started=[datetime]::UtcNow
  $backup=Join-Path $TradingRoot ('Backups\v2r4-technical-'+$started.ToString('yyyyMMddTHHmmssZ'))
  Need (-not(Test-Path $backup)) 'Backup path already exists'
  New-Item -ItemType Directory -Force (Join-Path $backup 'tasks')|Out-Null
- Atomic $lock ([ordered]@{kind='V2R4_TECHNICAL_LOCK_V1';started_at=$started.ToString('o');orders=$false;sha=$sha})
  foreach($n in @($taskNames)+@($supervisorName)){
    [IO.File]::WriteAllText((Join-Path $backup ('tasks\'+$n+'.xml')),(Export-ScheduledTask -TaskName $n),[Text.UTF8Encoding]::new($false))
  }
+ foreach($n in @($taskNames)+@($supervisorName)){
+   Need (Test-Path (Join-Path $backup ('tasks\'+$n+'.xml'))) "Task XML not safely exported: $n"
+ }
+ # This is the first persisted mutation intended to affect recovery flow.
+ # Before this point failed XML export leaves running services unchanged.
+ Atomic $lock ([ordered]@{kind='V2R4_TECHNICAL_LOCK_V1';started_at=$started.ToString('o');orders=$false;sha=$sha})
+ $phase='PRE_COMMIT'
  $lease=[ordered]@{kind='V2R4_TECHNICAL_MAINTENANCE_V1';phase='ARMING';created_at_utc=$started.ToString('o');expires_at_utc=$started.AddMinutes(10).ToString('o');predecessor_series_id=$oldId;successor_repo_sha=$sha;task_names=@($taskNames);orders_enabled=$false}
  Atomic $marker $lease
  # The running supervisor may otherwise race with the old tasks during
