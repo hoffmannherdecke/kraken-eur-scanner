@@ -6,7 +6,7 @@
   "baseline_series_id": "PAPER-V2R4-20261007T184255Z",
   "baseline_strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
   "candidate_strategy_revision": "V3-H3-SHADOW-001",
-  "status": "FROZEN_FOR_SHADOW",
+  "status": "SHADOW_RUNNING",
   "frozen_at_utc": "2026-10-07T20:32:00Z",
   "changed_components": [
     "STATE_CONDITIONING"
@@ -27,7 +27,8 @@
       120,
       360
     ],
-    "cost_model_reference": "0.60% taker per side; no orders."
+    "cost_model_reference": "0.60% taker per side; no orders.",
+    "baseline_replay_required_for_causal_divergence": true
   },
   "promotion_gate": {
     "predefined": true,
