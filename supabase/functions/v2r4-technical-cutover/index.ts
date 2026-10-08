@@ -30,25 +30,40 @@ async function credential(admin:any,token:string,relayId:string){
 function safeHex(value:unknown,n:number){
   return typeof value==="string"&&new RegExp("^[0-9a-f]{"+n+"}$").test(value);
 }
-async function sourceGate(admin:any){
+async function sourceGate(admin:any,technicalQuiesce=false){
   const {data,error}=await admin.from("minipc_status_current")
     .select("observed_at,status,payload").limit(1).maybeSingle();
   if(error||!data)return {ok:false,code:"status_missing"};
   const age=Date.now()-Date.parse(data.observed_at);
   if(!Number.isFinite(age)||age<0||age>180000)return {ok:false,code:"status_stale"};
   const c=data.payload?.checks||{};
-  // Deliberately do NOT demand old PaperCandidates=HEALTHY here: that runtime
-  // is the known frozen alias bug we are replacing. Independent market and
-  // supervisor processes MUST be healthy; no generic warning bypass.
+  // Independent public data sources must ALWAYS be fresh and healthy.
   const required=["kraken_universe_heartbeat","kraken_canary_heartbeat",
-    "v2r4_ws_shadow_heartbeat","runtime_supervisor","v2r4_paper_cloud_sync"];
+    "v2r4_ws_shadow_heartbeat","v2r4_shadow_cloud_sync"];
   const bad=required.filter(key=>c[key]?.ok!==true);
-  if(bad.length)return {ok:false,code:"source_or_supervisor_unhealthy",failed:bad};
-  // The repository HEAD may advance when this reviewed migration merges.
-  // The *staged runtime* remains pinned to STAGED_SHA in the physical manifest.
+  if(bad.length)return {ok:false,code:"source_unhealthy",failed:bad};
   if(c.git_branch?.ok!==true||c.git_head?.ok!==true)
     return {ok:false,code:"repo_health_unavailable"};
-  return {ok:true,code:"SOURCE_GATE_PASS"};
+
+  const permitted=new Set(["v2r4_paper_candidates","runtime_supervisor"]);
+  if(technicalQuiesce){
+    for(const key of ["v2r4_paper_wait","v2r4_paper_lifecycle",
+      "v2r4_paper_cloud_sync","v3_h3_shadow"])permitted.add(key);
+  }else if(c.v2r4_paper_cloud_sync?.ok!==true){
+    return {ok:false,code:"old_cloud_sync_not_healthy"};
+  }
+  // A known old alias failure may produce WARNING, but never accept a
+  // supervisor CRITICAL state or a new restart attempt during the cutover.
+  const sup=String(c.runtime_supervisor?.detail??"");
+  const supervisedOk=c.runtime_supervisor?.ok===true||
+    (c.runtime_supervisor?.ok===false &&
+      sup.startsWith("status=WARNING ") && /restarted=\s*$/.test(sup));
+  if(!supervisedOk)return {ok:false,code:"supervisor_unstable"};
+  const unexpected=Object.keys(c).filter(k=>c[k]?.ok===false&&!permitted.has(k));
+  if(unexpected.length)return {ok:false,code:"unexpected_component_fault",failed:unexpected};
+  if(data.status!=="HEALTHY"&&data.status!=="WARNING")
+    return {ok:false,code:"machine_critical"};
+  return {ok:true,code:technicalQuiesce?"MAINTENANCE_SOURCE_GATE_PASS":"SOURCE_GATE_PASS"};
 }
 // Read-only digest of exact old-series candidate identities for the final
 // physical snapshot reconciliation. Fixed cap; never silently truncate.
@@ -144,7 +159,7 @@ Deno.serve(async(req:Request)=>{
     return send(409,{ok:false,error:"manifest_or_physical_proof_incomplete"});
   // Physical proofs must come from the dedicated, hash-verifying Mini-PC
   // operator script; this endpoint cannot independently read its filesystem.
-  const gate=await sourceGate(admin);
+  const gate=await sourceGate(admin,true);
   if(!gate.ok)return send(409,{ok:false,error:"source_gate_blocked",details:gate});
   // Match Mini-PC snapshot against exact cloud candidate identities, not only
   // a mutable row count. The SQL transaction separately locks and rechecks
