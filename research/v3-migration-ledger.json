@@ -490,6 +490,21 @@
         "docs/market-context-source-fusion-v1.md"
       ],
       "pending_gate": "V3_REGIME_KRAKEN_EUR_PROSPECTIVE_EPISODES_AND_MATURE_OUTCOMES_THEN_PREDECLARE_ONE_CHANGE_NET_COST_TRIAL_BEFORE_V3_INTEGRATION_REVIEW"
+    },
+    {
+      "id": "v3_external_source_context_incremental_value",
+      "category": "strategy_candidate_external_context",
+      "source_version": "V3 source steward and market-context generation 2026-10-08",
+      "migration_status": "MORE_TESTING_REQUIRED",
+      "rationale": "Mandatory handoff from prospectively verified market/news/source events into V3 or next-version incremental-value classification; positive source quality does not prove alpha. Compare against already-known Kraken, BTC/ETH/breadth, cost and trade-frequency evidence. Either record NO_ACTION_WARRANTED, NOT_EVALUABLE with bounded future gate, REJECT_WITH_EVIDENCE, or prepare a separately gated one-change inactive research candidate. Do not force V3 promotion/delay, reinstate H1 standalone, alter live/frozen rules, or bypass H3/H6 sequence.",
+      "evidence": [
+        "docs/market-source-autonomy-v1.md",
+        "docs/test-strategy-runbook.md",
+        "docs/v3-research-framework.md",
+        "docs/master-version-register.md",
+        "docs/market-context-source-fusion-v1.md"
+      ],
+      "pending_gate": "V3_EXTERNAL_SOURCE_FIRST_UNATTENDED_E2E_AND_KNOWN_AT_MATURE_CANDIDATE_OUTCOME_JOIN_THEN_EXPLICIT_INTEGRATION_REVIEW_DISPOSITION_OR_V4_SUCCESSOR_GATE"
     }
   ],
   "final_v2r3_review": {
