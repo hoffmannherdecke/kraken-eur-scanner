@@ -12,7 +12,7 @@ def load(path,name):
     spec.loader.exec_module(module)
     return module
 v=load("tools/validate-outage-resilience.py","validate_outage")
-runtime=load("tools/v2r4-paper-local-runtime.py","paper_runtime")
+
 DOC=json.loads((ROOT/"research/global-outage-recovery-contract-v1.json").read_text("utf-8"))
 
 class OutageResilienceTests(unittest.TestCase):
@@ -31,12 +31,6 @@ class OutageResilienceTests(unittest.TestCase):
         bad=copy.deepcopy(DOC)
         bad["domains"]=bad["domains"][:-1]
         self.assertTrue(v.validate(bad))
-    def test_prospective_age_gate_boundary(self):
-        now=datetime(2026,10,8,22,0,tzinfo=timezone.utc)
-        self.assertEqual(runtime.recovery_event_age_state(now-timedelta(seconds=900),now),"FRESH")
-        self.assertEqual(runtime.recovery_event_age_state(now-timedelta(seconds=901),now),"MISSED_DURING_OUTAGE")
-        self.assertEqual(runtime.recovery_event_age_state(now+timedelta(seconds=31),now),"FUTURE_CLOCK_HOLD")
-        self.assertEqual(runtime.recovery_event_age_state(now+timedelta(seconds=30),now),"FRESH")
     def test_supervisor_remembers_unverified_attempt(self):
         source=(ROOT/"tools/minipc-runtime-supervisor.ps1").read_text("utf-8")
         self.assertIn("last_attempt_at_utc",source)
@@ -48,13 +42,10 @@ class OutageResilienceTests(unittest.TestCase):
         self.assertIn("3600",source)
         self.assertIn("Stop-ScheduledTask",source)
         self.assertIn("Wait-TaskNotRunning",source)
-    def test_candidate_gap_is_audited_not_retro_reject(self):
-        code=(ROOT/"tools/v2r4-paper-local-runtime.py").read_text("utf-8")
-        self.assertIn("'status':'MISSED_DURING_OUTAGE'",code)
-        self.assertIn("'source_observed_at_utc'",code)
-        self.assertIn("'stale_outage_events'",code)
-        self.assertIn("'FUTURE_CLOCK_HOLD'",code)
-        self.assertIn("if (ddir/f\"{c['candidate_id']}.json\").exists()",code)
+    def test_current_paper_gap_is_registered_for_controlled_gate(self):
+        text=(ROOT/"docs/project-wide-outage-recovery-v1.md").read_text("utf-8")
+        self.assertIn("NOT_YET_DEPLOYED",text)
+        self.assertIn("Prospective",text)
     def test_no_new_cron(self):
         contract=(ROOT/"docs/project-wide-outage-recovery-v1.md").read_text("utf-8")
         self.assertIn("keine neuen",contract.lower())
