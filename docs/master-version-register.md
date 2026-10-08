@@ -4,6 +4,22 @@ Status: **KANONISCHE KOMPONENTEN-/VERSIONSÜBERSICHT**
 Stand: 2026-09-29  
 Zweck: Single Source of Truth für Strategie-, Paper-, Infrastruktur-, Datenpfad- und Integrations**historie**. Der aktuelle deklarierte Betriebs-/Control-Plane-Zustand liegt maschinenlesbar in `project-current-state.json`; bei einer aktuellen Statusfrage hat diese Datei Vorrang.
 
+## Projektweite resiliente Wiederaufnahme – Strom, Netz, GitHub, Kraken, Supabase und Folgesysteme (2026-10-08)
+
+Verbindlicher cross-version Vertrag: `docs/project-wide-outage-recovery-v1.md`,
+maschinell geprüfte 17-Domänen-/Recovery-Matrix:
+`research/global-outage-recovery-contract-v1.json`, Guard
+`tools/validate-outage-resilience.py`. Wiederherstellung nach
+`SOURCE_DOWN/LOCAL_DOWN→RECOVERING→RECONCILING→HEALTHY_RESTORED`
+oder `DEGRADED_GAP`; keine nachträglichen BUY/REJECT-Fakes,
+kein loses Event-/Ack-Replay, keine gekoppelten Watchdog-Ketten,
+keine zusätzlichen Work-Schedules. Repo-Vorbereitung für
+bounded MINI-PC Supervisor-Retry; echte Installation/End-to-End
+**NOCH OFFEN** und niemals als geschehen darstellen.
+V2R4 Frozen behält Live-Regeln; Prospektivitäts-Guard für neue
+Paper-Recovery-Version wartet auf eigenes Integration-Gate.
+Gilt dauerhaft für V3/V4+ und späteren Echtgeld-Preflight.
+
 ## Autonomes Projekt-Follow-through — erlaubte Umsetzung statt bloßer Meldungen (2026-10-08)
 
 Eine zusätzliche, **eng allowlistbasierte** Entwicklungs-

@@ -87,6 +87,19 @@ Historical/manual/validation workflows may remain in the repository for provenan
 
 Nothing in this governance file authorizes real-money trading, private order rights, leverage, automatic promotion or automatic strategy activation.
 
+## Projektweite Resilienz-/Recovery-Sicherheitsnorm (08.10.2026)
+
+`docs/project-wide-outage-recovery-v1.md` und
+`research/global-outage-recovery-contract-v1.json` gelten für
+bestehende und künftige Produktions-, Paper-, Shadow-, Forschungs-
+und spätere Echtgeld-Dienste. Ein einzelner GitHub-/Kraken-/
+Internet-/Supabase-/Mini-PC-Ausfall darf weder fremde Komponenten
+zum Stillstand bringen noch alte Kandidaten neu evaluieren,
+unvollständige Daten vortäuschen oder einen Restart-Sturm auslösen.
+Grenze: Recovery darf ursprüngliche Feed-/Freshness-/Freeze-/
+Order-/Release-Regeln nicht verändern. Vor lokaler Supervisor-
+Installation Parser- und physischen Gate-Safe-Smoke; Proof E2E offen.
+
 ## Autonomes Follow-through mit begrenzter eigenständiger Implementierung (2026-10-08)
 
 Der Nutzer hat ausdrücklich autorisiert, innerhalb **bestehender**

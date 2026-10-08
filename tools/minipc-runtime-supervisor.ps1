@@ -40,6 +40,27 @@ function Read-RestartHistory {
   return $map
 }
 
+# Failed verifications still count as recovery attempts; old history is compatible.
+function Read-AttemptHistory {
+  $map = @{}
+  if (-not (Test-Path $historyPath)) { return $map }
+  try {
+    $raw = Get-Content $historyPath -Raw | ConvertFrom-Json
+    if ($raw.tasks) {
+      foreach ($prop in $raw.tasks.PSObject.Properties) {
+        $item = $prop.Value
+        $count = 0
+        try { $count = [math]::Max(0, [int]$item.consecutive_failures) } catch {}
+        $map[$prop.Name] = @{
+          last_attempt_at_utc = Parse-Utc $item.last_attempt_at_utc
+          consecutive_failures = [math]::Min(5, $count)
+        }
+      }
+    }
+  } catch {}
+  return $map
+}
+
 function Write-JsonAtomic([string]$Path,[object]$Payload,[int]$Depth=10) {
   $tmp = $Path + ".tmp"
   [System.IO.File]::WriteAllText(
@@ -80,7 +101,27 @@ $rows = @()
 $restarted = @()
 $failed = @()
 $restartHistory = Read-RestartHistory
+$attemptHistory = Read-AttemptHistory
 $now = (Get-Date).ToUniversalTime()
+# Only the canonical Kraken canary proves that the primary upstream is fresh.
+$krakenHb = Read-Heartbeat (Join-Path $stateDir "kraken-canary-heartbeat.json")
+$krakenSourceHealthy = $false
+if ($krakenHb) {
+  $krakenChecked = Parse-Utc $krakenHb.checked_at_utc
+  if ($krakenChecked) {
+    $krakenSourceHealthy = (
+      [string]$krakenHb.status -in @("HEALTHY","CONNECTED") -and
+      ($now - $krakenChecked).TotalSeconds -ge -30 -and
+      ($now - $krakenChecked).TotalSeconds -le 60
+    )
+  }
+}
+$krakenDependents = @(
+  "CryptoMiniPC-KrakenUniverse", "CryptoMiniPC-V2R4WSShadow",
+  "CryptoMiniPC-V2R4ShadowOutcomes", "CryptoMiniPC-V2R4PaperCandidates",
+  "CryptoMiniPC-V2R4PaperWait", "CryptoMiniPC-V2R4PaperLifecycle",
+  "CryptoMiniPC-V3H3Shadow001"
+)
 $topError = $null
 $status = "UNKNOWN"
 
@@ -116,17 +157,30 @@ try {
     $schedulerRunning = ([string]$task.State -eq "Running")
     $needsRecovery = (-not $fresh) -or (-not $schedulerRunning)
 
-    $lastRestart = $null
-    if ($restartHistory.ContainsKey($spec.name)) {
-      $lastRestart = $restartHistory[$spec.name]
+    if (-not $attemptHistory.ContainsKey($spec.name)) {
+      $attemptHistory[$spec.name] = @{ last_attempt_at_utc=$null; consecutive_failures=0 }
     }
-    $restartAllowed = [bool]$ForceRecovery
-    if (-not $restartAllowed) {
-      $restartAllowed = (-not $lastRestart) -or (($now - $lastRestart).TotalMinutes -ge [double]$spec.restart_backoff_min)
+    $attempt = $attemptHistory[$spec.name]
+    if (-not $needsRecovery) {
+      # Only actual health clears the exponential retry penalty.
+      $attempt.consecutive_failures = 0
     }
+    $lastAttempt = $attempt.last_attempt_at_utc
+    $exp = [math]::Min(5, [int]$attempt.consecutive_failures)
+    $cooldownSeconds = [math]::Min(3600, [double]$spec.restart_backoff_min * 60 * [math]::Pow(2, $exp))
+    $restartAllowed = ([bool]$ForceRecovery -or (-not $lastAttempt) -or
+      (($now - $lastAttempt).TotalSeconds -ge $cooldownSeconds))
+    $upstreamMissing = ((-not $krakenSourceHealthy) -and $schedulerRunning -and
+      ($spec.name -in $krakenDependents))
 
     $action = "NONE"
-    if ($needsRecovery -and $restartAllowed) {
+    if ($needsRecovery -and $upstreamMissing -and (-not $ForceRecovery)) {
+      $action = "WAIT_FOR_UPSTREAM"
+    } elseif ($needsRecovery -and $restartAllowed) {
+      # Record every ATTEMPT, including failures and unverified restarts.
+      # Otherwise failed 20s health probes can trigger infinite restart loops.
+      $attempt.last_attempt_at_utc = $now
+      $attempt.consecutive_failures = [math]::Min(5, [int]$attempt.consecutive_failures + 1)
       try {
         Stop-ScheduledTask -TaskName $spec.name -ErrorAction SilentlyContinue
         $stopped = Wait-TaskNotRunning -TaskName $spec.name -TimeoutSeconds $StopWaitSeconds
@@ -192,6 +246,7 @@ try {
       if ($healthy) {
         $row.action = "RESTART_VERIFIED"
         $restartHistory[$row.task] = $now
+        $attemptHistory[$row.task].consecutive_failures = 0
       } else {
         $row.action = "RESTART_UNVERIFIED"
         if ($row.task -notin $failed) { $failed += $row.task }
@@ -214,12 +269,15 @@ $report = [pscustomobject]@{
   status=$status
   restarted=@($restarted)
   failed_restarts=@($failed)
+  kraken_upstream_healthy=$krakenSourceHealthy
   error=$topError
   tasks=@($rows)
   guardrails=[pscustomobject]@{
     monitored_tasks_only=$true
     restart_requires_task_stop_confirmation=$true
     restart_history_records_verified_recovery_only=$true
+    restart_attempt_history_persisted=$true
+    max_restart_cooldown_seconds=3600
     strategy_changes=$false
     evaluator_invoked=$false
     order_api=$false
@@ -231,8 +289,21 @@ Write-JsonAtomic $statePath $report 10
 $historyTasks = [ordered]@{}
 foreach ($key in ($restartHistory.Keys | Sort-Object)) {
   $value = $restartHistory[$key]
+  $attempt = $attemptHistory[$key]
   $historyTasks[$key] = [ordered]@{
     last_restart_at_utc=$(if ($value) { $value.ToString("o") } else { $null })
+    last_attempt_at_utc=$(if ($attempt -and $attempt.last_attempt_at_utc) { $attempt.last_attempt_at_utc.ToString("o") } else { $null })
+    consecutive_failures=$(if ($attempt) { [int]$attempt.consecutive_failures } else { 0 })
+  }
+}
+# Failed attempts can precede the very first verified recovery.
+foreach ($key in ($attemptHistory.Keys | Sort-Object)) {
+  if ($historyTasks.Contains($key)) { continue }
+  $attempt = $attemptHistory[$key]
+  $historyTasks[$key] = [ordered]@{
+    last_restart_at_utc=$null
+    last_attempt_at_utc=$(if ($attempt.last_attempt_at_utc) { $attempt.last_attempt_at_utc.ToString("o") } else { $null })
+    consecutive_failures=[int]$attempt.consecutive_failures
   }
 }
 $historyPayload = [pscustomobject]@{
