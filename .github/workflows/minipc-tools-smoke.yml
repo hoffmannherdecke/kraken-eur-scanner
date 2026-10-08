@@ -106,6 +106,7 @@ jobs:
             'tools/install-minipc-status-sync.ps1',
             'tools/uninstall-minipc-status-sync.ps1',
             'tools/minipc-v2r4-technical-rollover-preflight.ps1',
+            'tools/minipc-v2r4-technical-rollover-stage.ps1',
             'tools/minipc-runtime-supervisor.ps1',
             'tools/install-minipc-runtime-supervisor.ps1',
             'tools/minipc-runtime-supervisor-selfheal-smoke.ps1',
