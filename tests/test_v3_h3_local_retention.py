@@ -50,6 +50,22 @@ class H3LocalRetentionTests(unittest.TestCase):
             self.assertFalse((contexts / "c0.json").exists())
             self.assertFalse((contexts / "c1.json").exists())
 
+    def test_local_footprint_union_and_backpressure(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            evidence = root / "evidence"
+            contexts = root / "contexts"
+            evidence.mkdir()
+            contexts.mkdir()
+            (contexts / "c0.json").write_text("{}", encoding="utf-8")
+            (contexts / "c1.json").write_text("{}", encoding="utf-8")
+            (evidence / "c1.json").write_text("{}", encoding="utf-8")
+            (evidence / "c2.json").write_text("{}", encoding="utf-8")
+
+            self.assertEqual(M.local_candidate_ids(contexts, evidence), {"c0", "c1", "c2"})
+            self.assertFalse(M.local_retention_backpressure(contexts, evidence, 4))
+            self.assertTrue(M.local_retention_backpressure(contexts, evidence, 3))
+
     def test_never_deletes_unsynced_evidence(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
