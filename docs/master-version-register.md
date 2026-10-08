@@ -4,6 +4,29 @@ Status: **KANONISCHE KOMPONENTEN-/VERSIONSÜBERSICHT**
 Stand: 2026-09-29  
 Zweck: Single Source of Truth für Strategie-, Paper-, Infrastruktur-, Datenpfad- und Integrations**historie**. Der aktuelle deklarierte Betriebs-/Control-Plane-Zustand liegt maschinenlesbar in `project-current-state.json`; bei einer aktuellen Statusfrage hat diese Datei Vorrang.
 
+## Überwachungsarchitektur ohne Doppelwirkungen — Gesamt-Audit 2026-10-08
+
+Kanonische übergreifende **Monitor→Evidenz→Consumer→Gate→Disposition**-
+Architektur: `docs/unified-monitoring-learning-architecture-v1.md`;
+Maschinen-Ownership `research/monitoring-evidence-routing-v1.json`
+mit 26 Domänen, Fail-soft-/No-Buy-Veto-Beschränkungen,
+E2E-Ehrlichkeit und einem konkreten nächsten Evidenz-Gate
+je Monitor. Validierung in bereits bestehendem GitHub
+`project-control-plane-guard.yml` einschließlich negativer
+Regressionstests für doppelte Quellenautorität, H1-Reaktivierung,
+zusätzliche Buy-Vetos und automatische Work-/Release-Umgehung.
+
+**Work-Phase 1 bleibt billig und unverändert.** Nur bei unabhängig
+offenem Gate liest Phase 2 für die konkrete Erkenntnisfrage
+relevante, bereits prospektiv belegte Quell-/Markt-/H-/Outcome-Evidenz,
+dedupliziert vor ihrem known-at-Zeitpunkt, und schließt den
+Review mit einer zulässigen Konsequenz oder No-Action.
+Technische Health-/Kostenbefunde gehen ausschließlich in Ops.
+Keine zusätzlichen Work-Läufe, kein neuer Scheduler, keine
+Paper-/Shadow-/Entry-/Sizing-/Live-Änderung. Der erste
+unbeaufsichtigte 2h-Regime- und Source-Lerntransfer ist
+**weiterhin nicht E2E-verifiziert**.
+
 ## Quellen-Controlling → nachweisbarer Strategienutzen (2026-10-08)
 
 **Pflichtübergabe, keine Daten-Sackgasse:** `docs/market-source-autonomy-v1.md` §6 / `docs/test-strategy-runbook.md` §12.6 / `docs/v3-research-framework.md` Source-Alpha-Gate. Die bestehende tägliche Work-/Strategieanalyse liest dieses Masterregister im Phase-1-Gate; die neuen Quellenereignisse **dürfen dieses Gate nicht öffnen**. Nur bei unabhängig eröffnetem Phase 2 / einschlägigem V3- oder Nachfolger-Integrationsreview müssen relevante bereits bekanntzeitlich nachgewiesene `MARKET_CONTEXT_EVENT_V1` / `SOURCE_STEWARD_DECISION_V1` / `MARKET_REGIME_EPISODE_V1`-Informationen mit den reifen Kraken-/Paper-/Live-Outcomes verglichen und **verbindlich disponiert** werden: `NO_ACTION_WARRANTED`, `NOT_EVALUABLE` mit kleinstem nächsten Datengate, `PREPARE_ONE_CHANGE_TRIAL` als inaktiver Kandidat oder `REJECT_WITH_EVIDENCE`. Nicht nur Quellen sammeln und Quelle-Score erhöhen. Die bestehende Dedupe-/Ack-Spur verwenden; kein zweiter Work-Job, keine stille V2R4/H3/Live-Regeländerung, keine zusätzliche Kaufveto-Stufe. Dedizierter V3-Status im Ledger `v3_external_source_context_incremental_value`.

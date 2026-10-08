@@ -5,6 +5,10 @@ on:
     paths:
       - "project-current-state.json"
       - "docs/project-control-plane-governance.md"
+      - "docs/unified-monitoring-learning-architecture-v1.md"
+      - "research/monitoring-evidence-routing-v1.json"
+      - "tools/validate-monitoring-evidence-routing.py"
+      - "tests/test_monitoring_evidence_routing.py"
       - "docs/workflow-registry.json"
       - "docs/master-version-register.md"
       - "docs/strategy-version-map.md"
@@ -26,6 +30,10 @@ on:
     paths:
       - "project-current-state.json"
       - "docs/project-control-plane-governance.md"
+      - "docs/unified-monitoring-learning-architecture-v1.md"
+      - "research/monitoring-evidence-routing-v1.json"
+      - "tools/validate-monitoring-evidence-routing.py"
+      - "tests/test_monitoring_evidence_routing.py"
       - "docs/workflow-registry.json"
       - "docs/master-version-register.md"
       - "docs/strategy-version-map.md"
@@ -62,6 +70,10 @@ jobs:
         run: |
           python -m py_compile tools/project_milestone_controller.py
           python -m unittest discover -s tests -p 'test_project_milestone_controller.py'
+      - name: Validate unified monitor ownership and anti-conflict contract
+        run: |
+          python tools/validate-monitoring-evidence-routing.py
+          python -m unittest discover -s tests -p 'test_monitoring_evidence_routing.py'
       - name: Validate workflow registry
         run: python tools/validate-workflow-registry.py
       - name: Validate active H3 shadow candidate

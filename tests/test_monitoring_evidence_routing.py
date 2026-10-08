@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+"""Negative/positive invariants of the unified monitoring evidence contract."""
+import copy
+import importlib.util
+import json
+import unittest
+from pathlib import Path
+
+ROOT=Path(__file__).resolve().parents[1]
+spec=importlib.util.spec_from_file_location("monitor",ROOT/"tools/validate-monitoring-evidence-routing.py")
+mod=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mod)
+TOPO=json.loads((ROOT/"research/monitoring-evidence-routing-v1.json").read_text())
+STATE=json.loads((ROOT/"project-current-state.json").read_text())
+
+class ContractTests(unittest.TestCase):
+    def test_current_architecture_clean(self):
+        self.assertEqual([],mod.validate(TOPO,STATE))
+    def test_duplicate_fact_authority_fails(self):
+        j=copy.deepcopy(TOPO)
+        j["streams"][1]["fact_key"]=j["streams"][0]["fact_key"]
+        self.assertTrue(any("two authorities" in e for e in mod.validate(j,STATE)))
+    def test_optional_feed_must_fail_soft(self):
+        j=copy.deepcopy(TOPO)
+        next(s for s in j["streams"] if s["id"]=="global_market_crosscheck")["on_missing"]="BLOCK_BUY"
+        self.assertTrue(any("veto" in e for e in mod.validate(j,STATE)))
+    def test_rejected_h1_stays_rejected(self):
+        j=copy.deepcopy(TOPO)
+        next(s for s in j["streams"] if s["id"]=="h1_breadth_diagnostic")["authority"]="RESEARCH_ONLY"
+        self.assertTrue(any("H1 standalone" in e for e in mod.validate(j,STATE)))
+    def test_observation_cannot_open_work(self):
+        j=copy.deepcopy(TOPO)
+        j["work_gate_from_observation"]=True
+        self.assertTrue(any("work_gate" in e for e in mod.validate(j,STATE)))
+    def test_substantive_source_cannot_skip_release(self):
+        j=copy.deepcopy(TOPO)
+        next(s for s in j["streams"] if s["id"]=="news_event_context")["strategy_change_requires_release"]=False
+        self.assertTrue(any("bypasses release" in e for e in mod.validate(j,STATE)))
+    def test_no_second_active_shadow(self):
+        state=copy.deepcopy(STATE)
+        state["strategy_changing_shadow_wip"]["active"].append({"candidate_id":"V3-H6-SHADOW-002"})
+        self.assertTrue(any("simultaneous decision shadows" in e for e in mod.validate(TOPO,state)))
+
+if __name__=="__main__":
+    unittest.main()

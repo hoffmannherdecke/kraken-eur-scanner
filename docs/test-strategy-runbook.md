@@ -552,3 +552,43 @@ gesonderter Shadow/Paper-/Kosten- und Release-Gate sowie erforderliche
 Nutzerfreigabe unverzichtbar. Keine eigenmächtige Anpassung der
 aktiven V2R4-Strategie oder H3/H6-Sequenz; alte H1-Ablehnung bleibt
 gültig.
+
+### 12.7 Überwachungen dürfen sich nicht widersprechen (2026-10-08)
+
+Kanonische Domänen-Zuordnung und verbindliche Schließstrecke:
+`docs/unified-monitoring-learning-architecture-v1.md` /
+`research/monitoring-evidence-routing-v1.json`.
+
+**Jede sinnvolle Überwachung braucht einen adressierbaren
+Ergebnis-Consumer, aber nicht jede Überwachung muss Handelsregeln
+ändern:** Operations-Watchdogs → Auto-Heal/handlungsrelevante
+Eskalation/HEALTHY-Ack; Quellenqualitätsprüfung → KEEP/QUARANTINE/
+REPLACE/NOT_EVALUABLE; Markt-/News-/H-Komponenten → nur bereits
+unabhängig geöffnete Strategieanalyse → reife `known_at`-Outcomes →
+`NOT_EVALUABLE`/`NO_ACTION_WARRANTED`/
+`REJECT_WITH_EVIDENCE`/`PREPARE_ONE_CHANGE_TRIAL`; gültige
+inaktive Ein-Komponenten-V3-/Nachfolgerversion → separate Integrations-
+und Release-/Freigabeprüfungen. Materiale Belege dürfen im Review
+nicht folgenlos liegen bleiben. Kein neuer Task, Work-Gate, Scanner
+oder Push für diese Zusammenführung.
+
+**Dedup vor Bewertung:** Die gleiche Kraken-Bewegung darf über H1/
+Regime/CoinGecko/CMC/H6 nicht als mehrfach unabhängige Zustimmung
+zählen. Offizielles FOMC-Event = H5-Fakt; Redaktion/H11 liefern
+allenfalls separaten Kontext. H3-Orderbuch ≠ H9-Fillmodell.
+H8-Netzwerk-/H10-Traderaktivität mit getrennten Quellenzeiten;
+H7 darf sie später nur nach eigenem Label-/Kosten-/One-change-Gate
+kombinieren. Bereits verworfenes H1 nicht umbenannt reaktivieren.
+Keine neue harte BUY-/WAIT-/REJECT-Sperre wegen zusätzlicher
+optionaler Quellen oder deren Ausfall; Kraken-Execution-/Safety-
+Gates bleiben unverändert.
+
+**Release-Check:** Ein neuer Integrationskandidat muss
+Funktionswechselwirkungen, Quellenkonflikt-/Missing-Mode, gleiche
+Candidate-Clock, bewiesenen Netto-Effekt, vermiedene Verlusttrades,
+False-REJECT/Missed-Move und Trade-Konversionsverlust gemeinsam
+bewerten. Bei `NO_ACTION_WARRANTED` gilt die Überwachung
+ausdrücklich als **ausgewertet**, nicht als nicht eingesetzt.
+Bei E2E-Lücke `NOT_EVALUABLE` plus einen konkreten einmaligen
+Akzeptanznachweis im bisherigen Backlog erhalten; keine
+Scheinbestätigung aus einem aktivierten ChatGPT-Aufgabentext.

@@ -20,6 +20,39 @@ Every material activation, closure, rollback, baseline switch, promotion, strate
 
 A transition is incomplete if runtime changed but the current-state file still declares the predecessor state.
 
+## Monitoring/Evidence/Anwendung — eine kanonische Gesamtzuständigkeit (2026-10-08)
+
+Das vollständige, nach Überschneidungen geprüfte Routing ist
+`docs/unified-monitoring-learning-architecture-v1.md`, mit
+**26** eindeutig benannten Domänen-/Monitor-Ownership-Einträgen
+in `research/monitoring-evidence-routing-v1.json`.
+Die bestehende `project-control-plane-guard.yml` testet deren
+Autoritäten, wichtige Überlappungen und Fail-soft-Grenzen. Das ist
+*ein* Validierungsschritt im bestehenden CI, **kein neuer Watchdog,
+Work-Job oder Datensammel-Lauf**.
+
+Es gibt nur die folgenden Verantwortungsübergänge:
+- Kraken-Venue- und Execution-Fakten: vorhandene Scanner/Paper-Regeln.
+- Marktdaten/News/Hypothesen: nur point-in-time und über bereits
+  unabhängig geöffnete Strategie-Analyse-/Integrations-Gates zu
+  geprüfter `NOT_EVALUABLE`/`NO_ACTION_WARRANTED`/`REJECT`/
+  inaktiver One-change-Test-Disposition. Kein neues Order-/Buy-Veto.
+- Quellenqualität: autonomer Research-Steward, nicht Handelsentscheid.
+- Betriebsdaten: vorhandene Selbstheilung/Health-Eskalation bzw. ACK,
+  nicht künstliche Strategieoptimierung.
+- Meilensteincontroller: Review-Readiness/Quittung; Work nur bei
+  eigenen Gatebedingungen; Releases ausschließlich nach gesonderter
+  Freigabe, nie automatisch aus einer Quellensichtung.
+
+H1-Standalone bleibt gesperrt. 2h-Regime, Marktbreite, BTC-/ETH-
+Korrelation und H6 sind keine mehrfach zählbaren Bestätigungen;
+H5/News/H11 erzeugen keine parallelen Event-Vetos; H3 und H9
+haben unterschiedliche Imbalance-/Execution-Zuständigkeiten.
+Die Source-Radar-Aktivierung allein ist kein erfolgreicher E2E-Beleg.
+Komponentenstatus bleibt dynamisch in `project-current-state.json`
+und Runtime-Evidenz; die Routing-Matrix beansprucht keine aktuelle
+Live-Statusautorität.
+
 ## Strategy-changing Shadow WIP limit
 
 At most **one** Shadow/Paper experiment that can alter a strategy decision may be active at a time.

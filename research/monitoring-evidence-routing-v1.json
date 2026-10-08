@@ -1,0 +1,502 @@
+{
+  "schema_version": 1,
+  "kind": "MONITORING_EVIDENCE_ROUTING_V1",
+  "date": "2026-10-08",
+  "authority": "docs/unified-monitoring-learning-architecture-v1.md",
+  "current_status_authority": "project-current-state.json",
+  "source_registry": "research/source-registry.json",
+  "source_candidates": "research/market-source-candidates-v1.json",
+  "migration_ledger": "research/v3-migration-ledger.json",
+  "source_quality_scoring_is_trading_authority": false,
+  "optional_source_failures_can_block_buy": false,
+  "one_strategy_changing_shadow_max": 1,
+  "automatic_strategy_promotion": false,
+  "automatic_real_money_actions": false,
+  "work_gate_from_observation": false,
+  "requires_point_in_time_for_research": true,
+  "streams": [
+    {
+      "id": "kraken_tradability",
+      "role": "KRAKEN_EXECUTION_TRUTH",
+      "canonical_owner": "kraken_spot_assetpairs_public",
+      "consumer": "SCANNER_AND_PAPER",
+      "authority": "EXISTING_OPERATIONAL_HARD_GATE",
+      "evidence_status": "VERIFIED_HISTORICALLY",
+      "fact_key": "assetpair_online_status",
+      "overlaps": [],
+      "optional_research": false,
+      "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
+      "source_known_at_required": false,
+      "strategy_change_requires_release": false,
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "EXISTING_KRAKEN_ASSETPAIRS_TRADABILITY_CHECK"
+    },
+    {
+      "id": "kraken_eur_price",
+      "role": "KRAKEN_EXECUTION_TRUTH",
+      "canonical_owner": "kraken_spot_ws_public_rest_recheck",
+      "consumer": "SCANNER_AND_PAPER",
+      "authority": "EXISTING_OPERATIONAL_HARD_GATE",
+      "evidence_status": "VERIFIED_HISTORICALLY",
+      "fact_key": "kraken_spot_eur_market_price",
+      "overlaps": [
+        "global_market_crosscheck",
+        "market_regime"
+      ],
+      "optional_research": false,
+      "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
+      "source_known_at_required": false,
+      "strategy_change_requires_release": false,
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "EXISTING_FRESH_KRAKEN_EUR_RECHECK_AND_STALENESS_GUARD"
+    },
+    {
+      "id": "scanner_detection",
+      "role": "CANDIDATE_OBSERVATION",
+      "canonical_owner": "github_scanner_and_minipc_ws_shadow",
+      "consumer": "GATED_STRATEGY_REVIEW",
+      "authority": "EVIDENCE_ONLY",
+      "evidence_status": "VERIFIED_HISTORICALLY",
+      "fact_key": "candidate_discovery",
+      "overlaps": [
+        "realtime_timing",
+        "price_volume_h6"
+      ],
+      "optional_research": false,
+      "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
+      "source_known_at_required": false,
+      "strategy_change_requires_release": false,
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "EXISTING_CANDIDATE_INTAKE_AND_TIMING_OUTCOME_REVIEW"
+    },
+    {
+      "id": "paper_lifecycle",
+      "role": "OUTCOME_GROUND_TRUTH",
+      "canonical_owner": "v2r4_paper_local_supabase",
+      "consumer": "GATED_STRATEGY_REVIEW",
+      "authority": "EXISTING_FROZEN_STRATEGY",
+      "evidence_status": "VERIFIED_HISTORICALLY",
+      "fact_key": "paper_decision_and_mature_outcome",
+      "overlaps": [
+        "productivity_missed_moves"
+      ],
+      "optional_research": false,
+      "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
+      "source_known_at_required": false,
+      "strategy_change_requires_release": false,
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "EXISTING_V2R4_FROZEN_OUTCOME_MATURITY_AND_FINAL_REVIEW"
+    },
+    {
+      "id": "productivity_missed_moves",
+      "role": "OUTCOME_ANALYSIS",
+      "canonical_owner": "v2r4_wait_reject_and_mature_outcomes",
+      "consumer": "GATED_STRATEGY_REVIEW",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "EVIDENCE_ACCUMULATING",
+      "fact_key": "low_trade_false_reject_mfe_mae",
+      "overlaps": [
+        "paper_lifecycle",
+        "scanner_detection"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "V2R4_PRODUCTIVITY_GATE_MATURE_BUY_WAIT_REJECT_FALSE_NEGATIVE_REVIEW"
+    },
+    {
+      "id": "realtime_timing",
+      "role": "OPERATIONS_AND_DIAGNOSTICS",
+      "canonical_owner": "scanner_ws_altrady_timing_comparison",
+      "consumer": "GATED_STRATEGY_REVIEW",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "EVIDENCE_ACCUMULATING",
+      "fact_key": "discovery_alert_latency",
+      "overlaps": [
+        "scanner_detection"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "EXISTING_SAME_PAIR_SCAN_WS_ALTRADY_LATENCY_REVIEW"
+    },
+    {
+      "id": "market_regime",
+      "role": "MARKET_CONTEXT",
+      "canonical_owner": "kraken_closed_spot_eur_15m_observer",
+      "consumer": "GATED_STRATEGY_REVIEW",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "UNATTENDED_E2E_UNVERIFIED",
+      "fact_key": "market_phase_episode",
+      "overlaps": [
+        "h1_breadth_diagnostic",
+        "global_market_crosscheck",
+        "price_volume_h6"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "FIRST_UNATTENDED_KRAKEN_EUR_INITIAL_BASELINE_AND_PIT_OUTCOME_JOIN"
+    },
+    {
+      "id": "h1_breadth_diagnostic",
+      "role": "LEGACY_REJECTED_RESEARCH",
+      "canonical_owner": "v3_h1_rejected_standalone",
+      "consumer": "GATED_STRATEGY_REVIEW",
+      "authority": "REJECTED_STANDALONE_ONLY",
+      "evidence_status": "FIXED_REVIEW_COMPLETED",
+      "fact_key": "crosscrypto_breadth_leadlag",
+      "overlaps": [
+        "market_regime",
+        "price_volume_h6"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "CLOSED_REJECTED_STANDALONE_NO_REOPEN"
+    },
+    {
+      "id": "global_market_crosscheck",
+      "role": "MARKET_CONTEXT",
+      "canonical_owner": "coingecko_coinmarketcap_global",
+      "consumer": "GATED_STRATEGY_REVIEW",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "MANUAL_READ_ONLY_E2E_UNVERIFIED",
+      "fact_key": "usd_global_crypto_aggregate",
+      "overlaps": [
+        "market_regime",
+        "kraken_eur_price",
+        "derivatives_h2"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "FIRST_UNATTENDED_CG_CMC_READ_AND_STALENESS_SOURCE_ASOF"
+    },
+    {
+      "id": "news_event_context",
+      "role": "EXTERNAL_FACTS_CONTEXT",
+      "canonical_owner": "official_sources_plus_selected_editorial",
+      "consumer": "GATED_STRATEGY_REVIEW",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "UNATTENDED_E2E_UNVERIFIED",
+      "fact_key": "time_known_official_crypto_event",
+      "overlaps": [
+        "source_quality",
+        "macro_h5"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "FIRST_UNATTENDED_OFFICIAL_PRIMARY_EVENT_READ"
+    },
+    {
+      "id": "source_quality",
+      "role": "SOURCE_GOVERNANCE",
+      "canonical_owner": "market_source_stewardship_catalog",
+      "consumer": "SOURCE_STEWARD_REVIEW",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "UNATTENDED_E2E_UNVERIFIED",
+      "fact_key": "source_quality_usefulness",
+      "overlaps": [
+        "news_event_context"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "KEEP_QUARANTINE_OR_REPLACE",
+      "next_gate": "FIRST_UNATTENDED_SOURCE_REVIEW_AND_PROVEN_SOURCE_SWAP"
+    },
+    {
+      "id": "derivatives_h2",
+      "role": "V3_RESEARCH_COMPONENT",
+      "canonical_owner": "kraken_futures_binance_supplementary",
+      "consumer": "GATED_STRATEGY_REVIEW",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "PRECHECK_ONLY",
+      "fact_key": "funding_openinterest_basis",
+      "overlaps": [
+        "global_market_crosscheck"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "V3_H2_PREDECLARE_ONE_CHANGE_DERIVATIVES_STATE_REVIEW_AFTER_PRECHECK"
+    },
+    {
+      "id": "orderflow_h3",
+      "role": "V3_ACTIVE_ISOLATED_SHADOW",
+      "canonical_owner": "v3_h3_l2_depth_and_imbalance",
+      "consumer": "V3_FIXED_REVIEW",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "ISOLATED_SHADOW_DECLARED",
+      "fact_key": "l2_depth_imbalance",
+      "overlaps": [
+        "execution_h9"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H3_ACTIVE_FROZEN_SHADOW_FIXED_REVIEW"
+    },
+    {
+      "id": "stop_ttl_h4",
+      "role": "V3_RESEARCH_COMPONENT",
+      "canonical_owner": "v3_h4_mfe_mae_stop_research",
+      "consumer": "V3_ONE_CHANGE_GATE",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "DATA_NOT_MATURE",
+      "fact_key": "post_entry_stop_ttl",
+      "overlaps": [
+        "market_regime"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H4_MATURE_POST_ENTRY_MAE_MFE_AND_TRADES_BEFORE_TRIAL"
+    },
+    {
+      "id": "macro_h5",
+      "role": "V3_RESEARCH_COMPONENT",
+      "canonical_owner": "official_fomc_event_precheck",
+      "consumer": "V3_ONE_CHANGE_GATE",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "PRECHECK_ONLY",
+      "fact_key": "scheduled_macro_event_window",
+      "overlaps": [
+        "news_event_context",
+        "prediction_h11"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H5_FOMC_CALENDAR_PIT_ONE_CHANGE_EVENT_RISK_TRIAL"
+    },
+    {
+      "id": "price_volume_h6",
+      "role": "V3_RESEARCH_COMPONENT",
+      "canonical_owner": "v3_h6_price_volume_primitives",
+      "consumer": "V3_ONE_CHANGE_GATE",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "WAITS_FOR_H3_REVIEW",
+      "fact_key": "price_volume_confirmation",
+      "overlaps": [
+        "scanner_detection",
+        "market_regime",
+        "h1_breadth_diagnostic"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H6_WAIT_H3_FIXED_REVIEW_BEFORE_SEPARATE_ONE_CHANGE_SHADOW"
+    },
+    {
+      "id": "meta_h7",
+      "role": "V3_RESEARCH_COMPONENT",
+      "canonical_owner": "v3_h7_future_net_edge_meta_gate",
+      "consumer": "V3_ONE_CHANGE_GATE",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "LABELS_NOT_READY",
+      "fact_key": "secondary_take_no_take_estimate",
+      "overlaps": [
+        "h1_breadth_diagnostic",
+        "market_regime",
+        "derivatives_h2",
+        "macro_h5"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H7_FROZEN_LABEL_COST_SPLIT_AND_SUFFICIENT_CLEAN_LABELS"
+    },
+    {
+      "id": "onchain_h8",
+      "role": "V3_RESEARCH_COMPONENT",
+      "canonical_owner": "coinmetrics_known_at_state",
+      "consumer": "V3_ONE_CHANGE_GATE",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "PROSPECTIVE_PRECHECK_ONLY",
+      "fact_key": "onchain_eod_state",
+      "overlaps": [
+        "smartmoney_h10"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H8_FURTHER_KNOWN_AT_PROSPECTIVE_STATE_AND_OUTCOME_JOIN"
+    },
+    {
+      "id": "execution_h9",
+      "role": "V3_RESEARCH_COMPONENT",
+      "canonical_owner": "v3_h9_future_maker_taker_research",
+      "consumer": "V3_ONE_CHANGE_GATE",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "BLOCKED_ACCOUNT_FEE_AND_FILLS",
+      "fact_key": "maker_taker_fill_cost",
+      "overlaps": [
+        "orderflow_h3"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H9_FEES_ORDERBOOK_DELTA_PUBLIC_PRINTS_AND_QUEUE_CONTRACT"
+    },
+    {
+      "id": "smartmoney_h10",
+      "role": "V3_PASSIVE_SHADOW_CAPTURE",
+      "canonical_owner": "hyperliquid_frozen_wallet_cohort",
+      "consumer": "V3_ONE_CHANGE_GATE",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "CAPTURE_ONLY_FIRST_REVIEW_COMPLETE",
+      "fact_key": "independent_trader_activity",
+      "overlaps": [
+        "onchain_h8",
+        "prediction_h11"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H10_FIXED_WALLET_COHORT_CONTEXT_OUTCOME_JOIN"
+    },
+    {
+      "id": "prediction_h11",
+      "role": "V3_RESEARCH_COMPONENT",
+      "canonical_owner": "polymarket_public_event_state",
+      "consumer": "V3_ONE_CHANGE_GATE",
+      "authority": "RESEARCH_ONLY",
+      "evidence_status": "PRECHECK_ONLY",
+      "fact_key": "prediction_market_event_state",
+      "overlaps": [
+        "macro_h5",
+        "smartmoney_h10"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H11_PIT_EVENT_STATE_BEFORE_OUTCOME_TRIAL"
+    },
+    {
+      "id": "health_watchdog",
+      "role": "OPERATIONS",
+      "canonical_owner": "minipc_watchdog_github_deadman_process_health",
+      "consumer": "OPS_REMEDIATE_ESCALATE",
+      "authority": "OPERATIONS_ONLY",
+      "evidence_status": "VERIFIED_HISTORICALLY",
+      "fact_key": "runtime_health_and_freshness",
+      "overlaps": [
+        "storage_and_cost"
+      ],
+      "optional_research": false,
+      "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
+      "source_known_at_required": false,
+      "strategy_change_requires_release": false,
+      "evidence_outcome": "HEAL_OR_ESCALATE_OR_ACK",
+      "next_gate": "EXISTING_WATCHDOG_SELF_HEAL_HEALTH_OR_MANUAL_ESCALATION"
+    },
+    {
+      "id": "storage_and_cost",
+      "role": "OPERATIONS",
+      "canonical_owner": "retention_supabase_state_and_cost_control",
+      "consumer": "OPS_REMEDIATE_ESCALATE",
+      "authority": "OPERATIONS_ONLY",
+      "evidence_status": "PARTIALLY_VERIFIED",
+      "fact_key": "storage_retention_and_budget",
+      "overlaps": [
+        "health_watchdog"
+      ],
+      "optional_research": false,
+      "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
+      "source_known_at_required": false,
+      "strategy_change_requires_release": false,
+      "evidence_outcome": "HEAL_OR_ESCALATE_OR_ACK",
+      "next_gate": "EXISTING_BOUNDED_RETENTION_AND_COST_ACCOUNT_GATE"
+    },
+    {
+      "id": "milestone_controller",
+      "role": "CONTROL_PLANE",
+      "canonical_owner": "github_daily_milestone_controller",
+      "consumer": "REVIEW_READINESS_ONLY",
+      "authority": "CONTROL_PLANE_ONLY",
+      "evidence_status": "FIRST_SCHEDULED_DELIVERY_UNVERIFIED",
+      "fact_key": "strategy_gate_maturity",
+      "overlaps": [
+        "gated_strategy_analysis"
+      ],
+      "optional_research": false,
+      "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
+      "source_known_at_required": false,
+      "strategy_change_requires_release": false,
+      "evidence_outcome": "READINESS_RECEIPT_NOT_ACTIVATION",
+      "next_gate": "FIRST_SCHEDULED_GATE_NOTIFICATION_E2E_WITHOUT_AUTOSTART"
+    },
+    {
+      "id": "gated_strategy_analysis",
+      "role": "STRATEGY_LEARNING",
+      "canonical_owner": "existing_work_analysis_and_migration_ledger",
+      "consumer": "INACTIVE_TRIAL_OR_DISPOSITION",
+      "authority": "REVIEW_ONLY",
+      "evidence_status": "EXISTING_PROCESS_DECLARED",
+      "fact_key": "validated_learning_and_explicit_disposition",
+      "overlaps": [
+        "milestone_controller"
+      ],
+      "optional_research": true,
+      "on_missing": "UNKNOWN_NO_VETO",
+      "source_known_at_required": true,
+      "strategy_change_requires_release": true,
+      "evidence_outcome": "DISPOSITION_OR_SEPARATE_RELEASE",
+      "next_gate": "EXISTING_WORK_GATE_PHASE_2_INTEGRATION_DISPOSITION_AND_ACK"
+    },
+    {
+      "id": "delivery_notifications",
+      "role": "OPERATIONS",
+      "canonical_owner": "relevant_slack_push_critical_alert_router",
+      "consumer": "OPS_REMEDIATE_ESCALATE",
+      "authority": "OPERATIONS_ONLY",
+      "evidence_status": "VERIFIED_HISTORICALLY",
+      "fact_key": "actionable_delivery",
+      "overlaps": [
+        "health_watchdog"
+      ],
+      "optional_research": false,
+      "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
+      "source_known_at_required": false,
+      "strategy_change_requires_release": false,
+      "evidence_outcome": "HEAL_OR_ESCALATE_OR_ACK",
+      "next_gate": "EXISTING_CRITICAL_ACTIONABLE_PUSH_DELIVERY_GATE"
+    }
+  ]
+}
