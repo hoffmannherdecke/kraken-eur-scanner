@@ -5,6 +5,8 @@ name: V2R4 technical cloud rotation - disposable SQL gate
     paths:
       - 'supabase/v2r4-technical-paper-rotation-20261009.sql'
       - 'tests/sql/v2r4_technical_rotation_smoke.sql'
+      - 'supabase/functions/v2r4-technical-cutover/index.ts'
+      - 'supabase/config.toml'
       - '.github/workflows/v2r4-technical-cloud-rotation-smoke.yml'
   workflow_dispatch:
 
@@ -43,3 +45,8 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/v2r4_technical_rotation_smoke.sql
           echo TECHNICAL_ROTATION_SQL_DISPOSABLE_GATE_OK
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check new isolated Edge boundary (never deploy)
+        run: deno check supabase/functions/v2r4-technical-cutover/index.ts
