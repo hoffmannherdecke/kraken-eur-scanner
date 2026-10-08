@@ -776,6 +776,66 @@ The same principle continues into the later live phase: live observations accele
 creation/evaluation of inactive successors, but the active real-money version never
 self-retunes and live execution-safety/release gates remain independent hard requirements.
 
+### V3 decision candidate — Marktphasen-Kontext mit messbarem Zusatznutzen (2026-10-08)
+
+**Status: RESEARCH / PRECHECK — NICHT AKTIVE ENTSCHEIDUNGSLOGIK.**
+Der dauerhaft aktive `MARKET_REGIME_EPISODE_V1`-Lernradar aus
+`research/v3/market-phase-reversal-observation-v1.md` darf **spätestens
+im V3-Integrationsreview** als potentielles *zeitpunktbekanntes*
+Market-State-/Confirmation-Feature beurteilt werden. Das ist ein
+geplanter Test eines eigenständigen Forschungsansatzes, **keine**
+Reaktivierung der bereits abgelehnten H1-Standalone-Decision-Authority.
+Auch der anfängliche CoinGecko-`MARKET_REGIME_SEED_V1` ist nur
+historischer Kontext, kein zulässiges Kraken-EUR-Kandidatensignal.
+
+**Die konkrete Frage:** Liefert ein vor dem Kandidaten-Zeitpunkt
+prospektiv bestätigtes, hinreichend frisches `RISK_OFF` /
+`STABILIZING` / `RECOVERY_CONFIRMED` **zusätzlichen** netten Nutzen
+gegenüber der eingefrorenen V2R4-Baseline *und deren bereits
+vorhandenem BTC-/ETH-/Marktbreitenkontext*? Mögliches Einsatzgebiet:
+diagnostische Bewertung von Früh-/Reclaim-/Continuation-Kandidaten
+oder später ein **einzeln getesteter** Confirmation-/Risk-State-Layer.
+Ein pauschaler Risk-off-Stop kann den bestehenden Low-Trade-Engpass
+verschlimmern; Kandidaten- und Trade-Häufigkeit ist deshalb
+gleichberechtigtes Bewertungskriterium neben vermiedenen Fehltrades.
+
+**V3-Gate, in dieser Reihenfolge:**
+1. Zuerst den ersten echten prospektiven Kraken-EUR-Episodenmarker
+   sowie über mehrere voneinander unabhängige Marktphasen gereifte
+   Kandidaten-/Outcome-Daten nachweisen. Kein `SEED_V1` als Entry-Label,
+   kein rückwirkendes Umklassifizieren, kein Look-ahead. Zeitstempel,
+   Feed-Abdeckung und Phasen-Freshness am **Kandidatenzeitpunkt**
+   müssen valide sein; bei `UNKNOWN`/stale fehlt das Feature.
+   Die 2h-Radaruhr ist kein schneller Entry-Trigger.
+2. Ein **einziger eng abgegrenzter, vorab eingefrorener** Vergleich:
+   bestehende V2R4/V3-Entscheidung ohne neues Feature gegen
+   denselben Kandidatenstrom / dieselbe Uhr mit genau **einer**
+   zusätzlichen Market-State-Verwendung; keine simultane
+   H3-/H6-/Stop-/Sizing-Änderung. Bereits getestete H1-Varianten
+   nicht unter neuem Namen erneut durchsuchen. Vorher Sample,
+   Phasenvielfalt, Datenmaturität, Netto-Kosten, Trade-Frequenz,
+   Fehltrade-/Missed-Move-Grenzen und Abbruchkriterien festlegen.
+3. Erst bei echtem inkrementellem Vorteil nach Kosten und
+   prospektivem Holdout/Shadow darf ein inaktiver
+   Integrationskandidat vorbereitet werden. H3s aktiven
+   strategieändernden Shadow nicht unterbrechen; H6s bereits
+   vorgesehene Sequenz nicht heimlich verdrängen.
+4. **Spätestens vor V3-Promotion** einen ausdrücklichen Befund im
+   Migration-Ledger dokumentieren: `PROMOTE_CANDIDATE` nur nach
+   allen separaten Sicherheits-/Research-Gates, sonst
+   `NO_SUCCESSOR_CHANGE`, `REJECT_WITH_EVIDENCE` oder bei
+   sachlich fehlender Marktreife ein **begründetes**
+   `DEFER_TO_LATER_GENERATION` nach V4+. Ungeprüfte Daten
+   erzwingen keine V3-Handelsregel und dürfen den Fortschritt
+   einer ansonsten qualifizierten Strategie nicht endlos
+   blockieren.
+
+**Wichtig:** Die passive Beobachtung und Lernweitergabe bleibt
+in jeder Generation bestehen, selbst wenn die aktive V3-
+Entscheidungsanwendung abgelehnt oder verschoben wird. Keine
+automatische Schwellen-/Entry-/Stop-/Sizing-/Orderänderung und
+keine zusätzliche Work-/Scanner-/Sensor-Aufgabe für diesen Gate.
+
 ## Marktphasen-Episoden — passive Beobachtung / lernfähige Auswertung (2026-10-08)
 
 Vertrag: `research/v3/market-phase-reversal-observation-v1.md`. Der bestehende Marktphasen-Wächter darf ausschließlich kompakte, nachweisbare Phasenwechsel unter `MARKET_REGIME_EPISODE_V1` im bestehenden V3-Research-Issue #7 vermerken. Diese Ereignisse sind **Kontext**, keine Strategie- oder Orderautorität. Die bestehende V3-H1-Standalone-Ablehnung bleibt gültig. Bei einem ohnehin geöffneten Analyse-Gate sind Regime-Ereignisse zeitpunktgerecht mit reifen V2R4-Outcomes/Missed-Moves zu verknüpfen, auf inkrementellen Nutzen und Fehlerquellen zu prüfen und nur über die normalen Hypothesen-/Migrations-/Release-Gates weiterzuverarbeiten. Keine zusätzliche Work-Ausführung und keine laufende Regeländerung.
