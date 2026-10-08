@@ -52,6 +52,11 @@ Kanonische Detailquellen:
 - [x] Kontrollierte Aktivierung nach CI, PR #70/#71 und echtem read-only Supabase-Smoke abgeschlossen: GitHub Action Run #37761077162 = SUCCESS; drei Controller-Unit-Tests bestanden, Ergebnis V2R4:COLLECTING, H3:COLLECTING, H10:NEXT_CONTRACT_DUE, H6:WAIT_H3_REVIEW_NO_AUTO_START, alle Trade-/Strategieänderungsflags false. Scheduled Notifications bleiben für den ersten regulären Tageslauf offen; keine automatische Strategie-Promotion oder Echtgeldaktivierung.
 - [ ] Bei künftigen echten Meilensteinen festen Review, Evidenz-Übernahme, Folgeschritt und ggf. menschliches Release-Gate ausführen; dokumentierte Readiness ist nicht gleich automatische Strategieänderung.
 - [ ] Alt-Checkboxen aus historischen Kapiteln schrittweise bereinigen, ohne unbelegte technische Erledigung zu behaupten.
+- [x] **Grundsatzentscheidung 2026-10-08:** Auf Dauer soll das System nach fälligen Meilensteinen geeignete Entwicklungsarbeiten zunehmend selbständig entwerfen, programmieren und testen; dies gilt auch für V4+ und spätere Echtgeld-Nachfolgerentwicklung. Details und Freigabegrenzen verbindlich in `docs/project-control-plane-governance.md` festgehalten. **Heute wurde keine autonome Coding-Instanz installiert.**
+- [ ] **Phase 1 – Controller-Bewährung:** ersten echten erfolgreichen zeitgesteuerten Tageslauf belegen und bei einem tatsächlichen Meilenstein Zustellung/Dedup prüfen; vorhandenen GitHub-Run nutzen, keinen Zusatzpoller/Work-Run erzeugen.
+- [ ] **Phase 2 – enges Autonomie-Pilot-Gate:** genau eine klar umrissene, risikoarme wiederkehrende Entwicklungsaufgabe anhand von Nutzen, Kosten, Akzeptanztests und Berechtigungen auswählen; Pilot auf isoliertem Branch, nur geprüfte PRs und keine aktiven Strategieänderungen.
+- [ ] **Phase 3 – selektive Erweiterung:** erst nach erfolgreich bewerteten Pilot-Evidenzen weitere explizit erlaubte Arbeitsklassen versioniert übernehmen; kein automatisches Mergen von Strategiediffs, keine selbständigen Echtgeld-/Orderrechte oder Live-Aktivierungen.
+
 
 ---
 

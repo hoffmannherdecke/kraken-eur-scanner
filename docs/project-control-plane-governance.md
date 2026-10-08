@@ -97,3 +97,41 @@ Mini-PC task or recurring Work invocation is introduced.
   never a guessed pass.
 - Changes to this controller use branch -> minimal tests -> validated PR ->
   merge; never mid-series tuning or direct runtime-to-main writes.
+
+## Permanent decision: phased autonomous development (2026-10-08)
+
+The approved direction is to grow from **automatic readiness detection** toward
+**autonomous, bounded engineering execution** across V3, V4+ and later
+real-money successor research. This is a roadmap, **not** authorization to
+deploy an autonomous coding agent or modify active trading mechanics today.
+
+Sequence, without an arbitrary waiting period:
+
+1. **Prove the new controller:** observe at least one successful real scheduled
+   run, confirm milestone delivery/dedup where a legitimate event exists, and
+   verify fail-closed handling of missing/stale/conflicting evidence. Reuse
+   existing checks rather than adding a separate monitoring loop.
+2. **Select one narrow, repeatable pilot** from the canonical
+   `PROJECT_BACKLOG.md`, with a preregistered acceptance test, strict scope,
+   bounded costs and no access to exchange order credentials. Assess actual
+   engineering benefit before scaling to more task categories.
+3. **Isolated implementation:** future agent may draft code/tests/docs only on
+   an isolated branch, run the smallest relevant smoke, and open a reviewable
+   PR. No direct writes to `main`, self-granted rights, unbounded retry loops,
+   new secrets, live runtime mutation or autonomous PR merge by default.
+4. **Versioned, gate-based expansion:** after the pilot passes, admit only
+   explicitly allowlisted classes of low-risk, reproducible development
+   tasks. Unknown tasks, unsupported future H components or unclear evidence
+   go to a documented planning/review gate rather than speculative codegen.
+5. **Strategic and trading authority remains separate:** material
+   parameter/entry/exit/stop/sizing/universe changes require a distinct
+   version, valid frozen evidence, migration/holdout controls, CI, rollback
+   and the already documented human release gate. Real-money activation,
+   private order rights and elevated risk always need separate explicit
+   approval; neither successful CI nor autonomous coding implies permission.
+
+This principle is permanent and extends to future generations. Work is not
+the executor or polling substrate; use economical GitHub/MINI-PC/Supabase
+infrastructure only if/when a separately approved pilot design demonstrates
+a safe bounded implementation. Do not create another competing task list,
+scheduler or persistent service merely to express this roadmap.
