@@ -94,9 +94,17 @@ try {
       }else{$parseFailures++}
     }catch{$parseFailures++}
   }
-  $unique=@($ids | Sort-Object -Unique)
+  [string[]]$ordered=@($ids.ToArray())
+  [Array]::Sort($ordered,[StringComparer]::Ordinal)
+  $unique=[System.Collections.Generic.List[string]]::new()
+  foreach($item in $ordered){
+    if($unique.Count -eq 0 -or
+       -not [StringComparer]::Ordinal.Equals($unique[$unique.Count-1],$item)){
+      $unique.Add($item)
+    }
+  }
   $result.old_candidate_id_count=$unique.Count
-  $canonical=$unique -join "`n"
+  $canonical=$unique.ToArray() -join "`n"
   $sha=[Security.Cryptography.SHA256]::Create()
   try{$result.old_candidate_ids_sha256=([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($canonical)))).Replace('-','').ToLowerInvariant()}
   finally{$sha.Dispose()}
