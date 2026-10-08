@@ -51,6 +51,27 @@ jobs:
       - name: Validate optional source discovery catalog (NO live authority)
         run: python tools/validate-market-source-catalog.py
 
+      - name: Fail-closed fake unattended-source proof check
+        env:
+          RUNNER_TEMP: ${{ runner.temp }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d=json.loads(Path('research/market-source-candidates-v1.json').read_text())
+          d['candidates'][0]['automated_runtime_verified']=True
+          d['candidates'][0].pop('runtime_evidence_url',None)
+          d['candidates'][0].pop('runtime_verified_at_utc',None)
+          p=Path(os.environ['RUNNER_TEMP'])/'source-catalog-fake-e2e.json'
+          p.write_text(json.dumps(d))
+          PY
+          if python tools/validate-market-source-catalog.py --catalog "$RUNNER_TEMP/source-catalog-fake-e2e.json"; then
+            echo "ERROR: unverified automated source was accepted"
+            exit 1
+          else
+            echo "FAKE_SOURCE_E2E_FAIL_CLOSED PASS"
+          fi
+
       - name: Fail-closed duplicate storage smoke
         env:
           RUNNER_TEMP: ${{ runner.temp }}
