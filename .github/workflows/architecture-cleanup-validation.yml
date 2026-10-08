@@ -34,6 +34,7 @@ jobs:
           python tests/test_v3_h3_shadow_common.py
           python tests/test_v3_h3_shadow_e2e_report.py
           python tests/test_v3_h3_canonical_config_hash.py
+          python tests/test_v3_h3_local_retention.py
       - name: V2R3 freeze guard
         run: python tools/validate-v2r3-clean-series-freeze.py
       - name: Strategy lineage guard

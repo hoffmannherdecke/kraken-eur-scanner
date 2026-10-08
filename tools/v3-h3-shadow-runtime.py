@@ -98,6 +98,32 @@ def reason_codes(payload: dict[str, Any]) -> set[str]:
     return {str(x) for x in ((payload.get("decision") or {}).get("reason_codes") or [])}
 
 
+def prune_synced_local_pair_files(
+    evidence_dir: Path,
+    context_dir: Path,
+    synced_candidate_ids: set[str],
+    max_files: int,
+) -> list[str]:
+    """Delete only oldest cloud-synced local evidence/context pairs beyond cap."""
+    require(max_files >= 1, "local retention max must be >=1")
+    files = sorted(evidence_dir.glob("*.json"), key=lambda p: (p.stat().st_mtime, p.name))
+    excess = max(0, len(files) - max_files)
+    if excess == 0:
+        return []
+
+    pruned: list[str] = []
+    for evidence_path in files:
+        if len(pruned) >= excess:
+            break
+        cid = evidence_path.stem
+        if cid not in synced_candidate_ids:
+            continue
+        evidence_path.unlink(missing_ok=True)
+        (context_dir / f"{cid}.json").unlink(missing_ok=True)
+        pruned.append(cid)
+    return pruned
+
+
 class Runtime:
     def __init__(self, args: argparse.Namespace) -> None:
         self.args = args
@@ -109,6 +135,7 @@ class Runtime:
         self.state_dir = self.app_root / "state"
         self.heartbeat_path = self.trading / "State" / "v3-h3-shadow-001-heartbeat.json"
         self.status_path = self.state_dir / "status.json"
+        self.sync_state_path = self.state_dir / "cloud-sync-state.json"
         self.control_path = self.app_root / "h3-control.json"
         self.config_path = self.app_root / "v3-h3-shadow-001-config.json"
         self.api_key_file = args.api_key_file
@@ -130,6 +157,10 @@ class Runtime:
         self.min_dates = int(self.control["minimum_distinct_utc_dates"])
         self.min_capture_pct = float(self.control["minimum_capture_success_pct"])
         self.min_divergences = int(self.control["minimum_causal_divergences_for_non_low_impact"])
+        self.local_retention_max = int(self.control["local_retention_max_evidence_files"])
+        require(self.local_retention_max >= self.min_candidates, "local retention cap below H3 minimum gate")
+        self.synced_candidate_ids: set[str] = set()
+        self.last_local_prune_count = 0
 
         self.book_mod = load_module(self.app_root / "v3-h3-kraken-ws-book-reconciliation-smoke.py", "v3_h3_book_runtime")
         self.books: dict[str, Any] = {symbol: self.book_mod.Book(depth=10) for symbol in SUPPORTED_PAIRS.values()}
@@ -167,6 +198,35 @@ class Runtime:
 
         for d in (self.context_dir, self.evidence_dir, self.state_dir, self.heartbeat_path.parent):
             d.mkdir(parents=True, exist_ok=True)
+        if self.sync_state_path.exists():
+            try:
+                sync_state = read_json(self.sync_state_path)
+                self.synced_candidate_ids = {
+                    str(x) for x in (sync_state.get("synced_candidate_ids") or []) if str(x)
+                }
+            except Exception:
+                self.synced_candidate_ids = set()
+
+    def persist_sync_state(self) -> None:
+        atomic_json(self.sync_state_path, {
+            "schema_version": 1,
+            "kind": "V3_H3_SHADOW_CLOUD_SYNC_STATE_V1",
+            "updated_at_utc": utcnow(),
+            "synced_candidate_ids": sorted(self.synced_candidate_ids),
+            "local_retention_max_evidence_files": self.local_retention_max,
+            "last_local_prune_count": self.last_local_prune_count,
+        })
+
+    def prune_local_after_successful_sync(self) -> list[str]:
+        pruned = prune_synced_local_pair_files(
+            self.evidence_dir,
+            self.context_dir,
+            self.synced_candidate_ids,
+            self.local_retention_max,
+        )
+        self.last_local_prune_count = len(pruned)
+        self.persist_sync_state()
+        return pruned
 
     def books_ready(self) -> bool:
         return all(
@@ -215,6 +275,11 @@ class Runtime:
             "outcome_review_ready": False,
             "automatic_extension": False,
             "automatic_promotion": False,
+            "local_retention_max_evidence_files": self.local_retention_max,
+            "local_evidence_files": len(list(self.evidence_dir.glob("*.json"))),
+            "local_context_files": len(list(self.context_dir.glob("*.json"))),
+            "cloud_synced_candidate_ids": len(self.synced_candidate_ids),
+            "last_local_prune_count": self.last_local_prune_count,
             "orders": False,
             "real_money_actions": False,
         }
@@ -349,6 +414,8 @@ class Runtime:
                             continue
                         cid = str(c.get("candidate_id") or "")
                         if not cid:
+                            continue
+                        if cid in self.synced_candidate_ids and not (self.evidence_dir / f"{cid}.json").exists():
                             continue
                         target = self.context_dir / f"{cid}.json"
                         if target.exists():
@@ -648,14 +715,23 @@ class Runtime:
         while True:
             try:
                 evidence = []
-                for p in sorted(self.evidence_dir.glob("*.json"))[-100:]:
+                for p in sorted(self.evidence_dir.glob("*.json"), key=lambda x: (x.stat().st_mtime, x.name)):
+                    if p.stem in self.synced_candidate_ids:
+                        continue
                     try:
                         evidence.append(read_json(p))
                     except Exception:
                         continue
+                    if len(evidence) >= 100:
+                        break
                 status = self.write_status()
                 result = await asyncio.to_thread(self.relay_sync, evidence, status)
                 require(result.get("ok") is True, "H3 relay did not return ok")
+                for ev in evidence:
+                    cid = str(ev.get("candidate_id") or "")
+                    if cid:
+                        self.synced_candidate_ids.add(cid)
+                self.prune_local_after_successful_sync()
                 self.cloud_sync_status = "PASS"
                 self.cloud_sync_error = None
                 self.last_cloud_sync_utc = utcnow()
