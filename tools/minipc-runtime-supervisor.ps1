@@ -72,6 +72,7 @@ $specs = @(
   [pscustomobject]@{ name="CryptoMiniPC-V2R4PaperWait"; path=(Join-Path $stateDir "v2r4-paper-wait-runtime-heartbeat.json"); max_age=30.0; good=@("HEALTHY"); restart_backoff_min=2 },
   [pscustomobject]@{ name="CryptoMiniPC-V2R4PaperLifecycle"; path=(Join-Path $stateDir "v2r4-paper-lifecycle-heartbeat.json"); max_age=180.0; good=@("HEALTHY"); restart_backoff_min=5 },
   [pscustomobject]@{ name="CryptoMiniPC-V2R4PaperCloudSync"; path=(Join-Path $stateDir "v2r4-paper-cloud-sync-heartbeat.json"); max_age=180.0; good=@("HEALTHY"); restart_backoff_min=5 },
+  [pscustomobject]@{ name="CryptoMiniPC-V3H3Shadow001"; path=(Join-Path $stateDir "v3-h3-shadow-001-heartbeat.json"); max_age=30.0; good=@("HEALTHY"); restart_backoff_min=5 },
   [pscustomobject]@{ name="CryptoMiniPC-StatusSync"; path=(Join-Path $stateDir "minipc-status-sync-heartbeat.json"); max_age=900.0; good=@("HEALTHY"); restart_backoff_min=$MinRestartIntervalMinutes }
 )
 

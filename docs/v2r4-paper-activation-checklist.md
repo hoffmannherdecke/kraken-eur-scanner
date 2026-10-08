@@ -1,6 +1,10 @@
 # V2R4 Paper Activation Checklist
 
-Status: **PREPARED CHECKLIST / NOT AUTHORIZED / NO REAL-MONEY PATH**
+Status: **COMPLETED RELEASE RECORD / V2R4 PAPER ACTIVE / NO REAL-MONEY PATH**
+
+## Completion record — 2026-10-08
+
+All release gates were completed and the approved Paper successor was activated as `PAPER-V2R4-20261007T184255Z`. This checklist is now a historical release/rollback record, not a recurring gate. It must not be rerun merely because V2R4 accumulates new evidence. A new release gate is required only for a separately versioned successor or an explicit rollback/re-release. Echtgeld remains unauthorized.
 
 This checklist exists so the later V2R4 paper start is a bounded release operation rather than an improvised set of edits.
 
