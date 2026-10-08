@@ -220,6 +220,11 @@
       "active_control_surface": false
     },
     {
+      "workflow": "v2r4-technical-cloud-rotation-smoke.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
       "workflow": "v3-h1-breadth-precheck-guard.yml",
       "lifecycle": "RESEARCH_VALIDATION",
       "active_control_surface": false
