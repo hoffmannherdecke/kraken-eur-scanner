@@ -143,6 +143,19 @@ begin
     raise exception 'idempotency failed';
   end if;
 
+  -- Old candidate IDs cannot be reused to overwrite another series.
+  exception_seen := false;
+  begin
+    update public.paper_candidate_outcomes set series_id=new_sid
+    where candidate_id='fixture-1';
+  exception when others then exception_seen := true;
+  end;
+  if not exception_seen or
+     (select series_id from public.paper_candidate_outcomes where candidate_id='fixture-1')
+       <> 'PAPER-V2R4-20261007T184255Z' then
+    raise exception 'cross-series evidence overwrite accepted';
+  end if;
+
   -- Conflicting replay (same series, different config) is rejected.
   exception_seen := false;
   begin
