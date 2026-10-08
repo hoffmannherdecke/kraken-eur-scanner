@@ -114,8 +114,8 @@ Required output:
 ## 6. Priority hypotheses
 
 ### H1 — Cross-Crypto Lead/Lag + Breadth
-Status: `SHADOW`  
-Stage: `V3-H1-SHADOW-001_CLOSED_AT_PREREGISTERED_GATE_REVIEW_PENDING`  
+Status: `REJECTED`  
+Stage: `V3-H1-SHADOW-001_FIXED_REVIEW_COMPLETE_STANDALONE_AUTHORITY_REJECTED`  
 Priority: A
 
 Candidate features:
@@ -175,7 +175,7 @@ Kraken Spot EUR remains the execution/fill reference.
 
 ### H3 — Orderflow / Depth / Imbalance
 Status: `SHADOW`  
-Stage: `V3_H3_SHADOW_001_FROZEN_ACTIVE_PENDING_MINIPC_INSTALL`  
+Stage: `V3_H3_SHADOW_001_ACTIVE_COLLECTING`  
 Priority: A after Mini-PC/WebSocket layer
 
 Capture:
@@ -387,7 +387,7 @@ Non-fills/cancels must be retained as censored observations, not discarded.
 
 ### H10 — Smart-Money / Trader-Activity Layer
 Status: `SHADOW`  
-Stage: `PROSPECTIVE_CAPTURE_ACTIVE_FIRST_ANALYSIS_GATE_PENDING`  
+Stage: `PROSPECTIVE_CAPTURE_ACTIVE_FIRST_ANALYSIS_GATE_MATURE_REVIEW_DUE`  
 Priority: A/B
 
 Purpose:
@@ -445,7 +445,7 @@ Current source precheck:
 - active cloud bootstrap capture: `.github/workflows/v3-h10-smart-money-shadow-capture.yml` at :17/:47 each hour. It is intentionally a coarse bootstrap/fallback path; source fill timestamps remain exact, but GitHub scheduler timing must not be interpreted as 60-second observation latency;
 - storage is compact and server-side only: `v3_h10_capture_batches`, `v3_h10_wallet_states`, `v3_h10_fill_events`, `v3_h10_capture_errors`; MINI-PC receives no Supabase admin/service key;
 - anti-HFT aggregation is explicit: `v3_h10_wallet_asset_activity_30m` counts each wallet once per asset/window and `v3_h10_asset_consensus_30m` measures independent-wallet agreement, so hundreds of fills from one trader cannot masquerade as broad Smart-Money consensus;
-- first descriptive review is preregistered in `research/v3/h10-first-analysis-gate-v1.json`: minimum 72h, >=95% healthy capture, >=100 batches, >=100 primary wallet-asset windows and >=20 multi-wallet same-asset windows; no wallet/coin/threshold/horizon selection from seen Kraken outcomes;
+- first descriptive review is preregistered in `research/v3/h10-first-analysis-gate-v1.json`: minimum 72h, >=95% healthy capture, >=100 batches, >=100 primary wallet-asset windows and >=20 multi-wallet same-asset windows; this gate is now mature (2026-10-08), so the fixed evidence-only Kraken-EUR association review may proceed without wallet/coin/threshold/horizon selection from seen outcomes;
 - next gate: let the frozen cohort collect prospectively; after the analysis gate matures, join only point-in-time online Kraken Spot-EUR assets at fixed 15m/1h/3h/6h/24h horizons and compare primary cohort versus active controls. No active strategy change before that review.
 
 
@@ -568,8 +568,8 @@ Purpose:
 - avoid selecting a candidate before its frozen evidence review exists.
 
 Current practical focus:
-- H1 and H6: physical incremental executions are PASS; exact local report import + fixed effect-size review remain;
-- H3: two valid 1800s sessions are PASS; exactly one additional second-UTC-date session + fixed review remain;
+- H1 fixed shadow review is complete and standalone decision authority is rejected; features remain diagnostics only;
+- H3 one-change shadow is active on the MINI-PC against V2R4 and is collecting toward its frozen minimum gate; H6 remains sequenced after H3 review;
 - H5: one FOMC risk-gate variant is already preregistered but waits for the appropriate baseline freeze;
 - H2/H4/H7/H8/H9/H10/H11 are not mandatory blockers for the first shadow unless one is explicitly selected as the changed component.
 
