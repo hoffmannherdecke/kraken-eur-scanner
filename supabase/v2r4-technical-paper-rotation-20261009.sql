@@ -17,7 +17,7 @@ create table if not exists public.paper_technical_rotations (
   predecessor_last_outcome_updated_at timestamptz,
   successor_test_id text not null,
   recorded_at_utc timestamptz not null default now(),
-  constraint technical_rotation_not_same check (predecessor_series_id <> successor_series_id)
+  constraint technical_rotation_not_same check (predecessor_series_id IS DISTINCT FROM successor_series_id)
 );
 alter table public.paper_technical_rotations enable row level security;
 revoke all on public.paper_technical_rotations from public, anon, authenticated;
@@ -62,10 +62,10 @@ begin
   if to_regclass('public.paper_series_single_active_idx') is null then
     raise exception 'one-active-series unique index missing';
   end if;
-  if p_old_series_id <> 'PAPER-V2R4-20261007T184255Z'
-     or p_new_series_id !~ '^PAPER-V2R4-[0-9]{8}T[0-9]{6}Z$'
+  if p_old_series_id IS DISTINCT FROM 'PAPER-V2R4-20261007T184255Z'
+     or p_new_series_id is null or p_new_series_id !~ '^PAPER-V2R4-[0-9]{8}T[0-9]{6}Z$'
      or p_new_series_id = p_old_series_id
-     or p_new_test_id !~ '^PAPER-V2R4-TECH-[0-9]{8}$' then
+     or p_new_test_id is null or p_new_test_id !~ '^PAPER-V2R4-TECH-[0-9]{8}$' then
     raise exception 'unexpected technical rotation identity';
   end if;
   if p_cutover_at_utc is null
@@ -73,7 +73,7 @@ begin
      or p_cutover_at_utc < clock_timestamp() - interval '10 minutes' then
     raise exception 'cutover time outside bounded recent UTC window';
   end if;
-  if p_new_config is null or jsonb_typeof(p_new_config) <> 'object' then
+  if p_new_config is null or jsonb_typeof(p_new_config) IS DISTINCT FROM 'object' then
     raise exception 'new config absent or not an object';
   end if;
 
@@ -88,18 +88,18 @@ begin
   if found then
     select * into v_successor from public.paper_series
     where series_id=v_prior.successor_series_id;
-    if v_prior.successor_series_id <> p_new_series_id
-       or v_prior.successor_test_id <> p_new_test_id
-       or v_prior.cutover_at_utc <> p_cutover_at_utc
-       or v_prior.predecessor_release_repo_sha <> lower(p_expected_old_release_sha)
-       or v_prior.predecessor_outcomes <> p_expected_old_outcomes
-       or v_prior.predecessor_trades <> p_expected_old_trades
+    if v_prior.successor_series_id IS DISTINCT FROM p_new_series_id
+       or v_prior.successor_test_id IS DISTINCT FROM p_new_test_id
+       or v_prior.cutover_at_utc IS DISTINCT FROM p_cutover_at_utc
+       or v_prior.predecessor_release_repo_sha IS DISTINCT FROM lower(p_expected_old_release_sha)
+       or v_prior.predecessor_outcomes IS DISTINCT FROM p_expected_old_outcomes
+       or v_prior.predecessor_trades IS DISTINCT FROM p_expected_old_trades
        or v_prior.predecessor_last_outcome_updated_at
           is distinct from p_expected_old_last_updated_at
-       or v_old.status <> 'technical_closed'
+       or v_old.status IS DISTINCT FROM 'technical_closed'
        or v_successor.series_id is null
-       or v_successor.status <> 'active'
-       or v_successor.config <> p_new_config then
+       or v_successor.status IS DISTINCT FROM 'active'
+       or v_successor.config IS DISTINCT FROM p_new_config then
       raise exception 'rotation replay conflict';
     end if;
     return jsonb_build_object('ok',true,'idempotent',true,
@@ -108,12 +108,12 @@ begin
       'cutover_at_utc',p_cutover_at_utc);
   end if;
 
-  if v_old.status <> 'active'
-     or v_old.strategy_revision <> v_rev
-     or v_old.config->>'release_repo_sha' <> lower(p_expected_old_release_sha)
-     or lower(p_expected_old_release_sha) <> '3c6729a6c548d169f56a97f07f75892f37211636'
-     or v_old.config->>'paper_only' <> 'true'
-     or v_old.config->>'real_money_actions_enabled' <> 'false' then
+  if v_old.status IS DISTINCT FROM 'active'
+     or v_old.strategy_revision IS DISTINCT FROM v_rev
+     or v_old.config->>'release_repo_sha' IS DISTINCT FROM lower(p_expected_old_release_sha)
+     or lower(p_expected_old_release_sha) IS DISTINCT FROM '3c6729a6c548d169f56a97f07f75892f37211636'
+     or v_old.config->>'paper_only' IS DISTINCT FROM 'true'
+     or v_old.config->>'real_money_actions_enabled' IS DISTINCT FROM 'false' then
     raise exception 'predecessor not pinned and active';
   end if;
   if exists(select 1 from public.paper_series
@@ -139,33 +139,33 @@ begin
     from public.paper_candidate_outcomes where series_id=p_old_series_id;
   select count(*) into v_trades
     from public.paper_trade_results where series_id=p_old_series_id;
-  if v_outcomes <> p_expected_old_outcomes
-     or v_trades <> p_expected_old_trades
+  if v_outcomes IS DISTINCT FROM p_expected_old_outcomes
+     or v_trades IS DISTINCT FROM p_expected_old_trades
      or v_last_update is distinct from p_expected_old_last_updated_at then
     raise exception 'old evidence does not match final synced snapshot';
   end if;
 
   v_old_strategy := v_old.config->>'strategy_fingerprint_sha256';
   v_new_sha := lower(p_new_config->>'release_repo_sha');
-  if p_new_config->>'series_id' <> p_new_series_id
-     or p_new_config->>'test_id' <> p_new_test_id
-     or p_new_config->>'predecessor_series_id' <> p_old_series_id
-     or p_new_config->>'strategy_revision' <> v_rev
-     or p_new_config->>'series_started_at_utc' <> to_char(p_cutover_at_utc at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"')
-     or p_new_config->>'technical_change_id' <> 'V2R4_TECHNICAL_RECOVERY_20261009'
-     or p_new_config->>'technical_change_approved' <> 'true'
-     or p_new_config->>'enabled' <> 'true'
-     or p_new_config->>'paper_only' <> 'true'
-     or p_new_config->>'real_money_actions_enabled' <> 'false'
-     or p_new_config->>'automatic_activation_allowed' <> 'false'
-     or p_new_config->>'strategy_fingerprint_sha256' <> v_old_strategy
-     or p_new_config->>'scout_notional_eur' <> '50'
-     or p_new_config->>'stage2_notional_eur' <> '50'
-     or p_new_config->>'target_completed_paper_trades' <> '20'
-     or v_new_sha !~ '^[0-9a-f]{40}$'
-     or lower(p_new_config->>'runtime_bundle_fingerprint_sha256') !~ '^[0-9a-f]{64}$'
+  if p_new_config->>'series_id' IS DISTINCT FROM p_new_series_id
+     or p_new_config->>'test_id' IS DISTINCT FROM p_new_test_id
+     or p_new_config->>'predecessor_series_id' IS DISTINCT FROM p_old_series_id
+     or p_new_config->>'strategy_revision' IS DISTINCT FROM v_rev
+     or p_new_config->>'series_started_at_utc' IS DISTINCT FROM to_char(p_cutover_at_utc at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"')
+     or p_new_config->>'technical_change_id' IS DISTINCT FROM 'V2R4_TECHNICAL_RECOVERY_20261009'
+     or p_new_config->>'technical_change_approved' IS DISTINCT FROM 'true'
+     or p_new_config->>'enabled' IS DISTINCT FROM 'true'
+     or p_new_config->>'paper_only' IS DISTINCT FROM 'true'
+     or p_new_config->>'real_money_actions_enabled' IS DISTINCT FROM 'false'
+     or p_new_config->>'automatic_activation_allowed' IS DISTINCT FROM 'false'
+     or p_new_config->>'strategy_fingerprint_sha256' IS DISTINCT FROM v_old_strategy
+     or p_new_config->>'scout_notional_eur' IS DISTINCT FROM '50'
+     or p_new_config->>'stage2_notional_eur' IS DISTINCT FROM '50'
+     or p_new_config->>'target_completed_paper_trades' IS DISTINCT FROM '20'
+     or v_new_sha is null or v_new_sha !~ '^[0-9a-f]{40}$'
+     or p_new_config->>'runtime_bundle_fingerprint_sha256' is null or lower(p_new_config->>'runtime_bundle_fingerprint_sha256') !~ '^[0-9a-f]{64}$'
      or p_new_config->>'runtime_bundle_fingerprint_sha256' = v_old.config->>'runtime_bundle_fingerprint_sha256'
-     or (p_new_config - v_excluded_keys) <> (v_old.config - v_excluded_keys) then
+     or (p_new_config - v_excluded_keys) IS DISTINCT FROM (v_old.config - v_excluded_keys) then
     raise exception 'successor changed strategy, safety or provenance contract';
   end if;
 
