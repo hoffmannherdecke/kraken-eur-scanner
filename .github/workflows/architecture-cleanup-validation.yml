@@ -208,6 +208,19 @@ jobs:
           assert 'v3-h3-shadow-001-heartbeat.json' in watchdog
           assert 'CryptoMiniPC-V3H3Shadow001' in supervisor
           assert 'v3-h3-shadow-001-heartbeat.json' in supervisor
+          activation_sql=Path('supabase/views/v2r4_activation_readiness.sql').read_text()
+          review_sql=Path('supabase/views/v2r3_release_review_snapshot.sql').read_text()
+          timing_sql=Path('supabase/views/v3_timing_evidence_snapshot.sql').read_text()
+          reasons_sql=Path('supabase/views/paper_reason_family_rollup.sql').read_text()
+          relay_sql=Path('supabase/functions/v2r4-paper-evidence-relay/index.ts').read_text()
+          assert "PAPER-V2R3-CLEAN-20261001T0925Z" in activation_sql
+          assert "PAPER_RELEASE_ALREADY_ACTIVATED" in activation_sql
+          assert "from public.paper_series_completion_readiness" not in activation_sql.lower()
+          assert "from public.v2r4_activation_readiness" in review_sql.lower()
+          assert "predecessor_series_id" in timing_sql
+          assert "paper_reason_family_events" in reasons_sql and "paper_reason_family_rollup" in reasons_sql
+          assert "candidateUpdatedAt" in relay_sql
+          assert "updated_at:new Date(status.generated_at).toISOString()" in relay_sql
           framework=Path('docs/v3-research-framework.md').read_text()
           allowed={'NEW','PRECHECK','OFFLINE_TEST','SHADOW','KEEP_TESTING','PROMOTE_CANDIDATE','PROMOTED','REJECTED','DEFERRED'}
           import re
