@@ -1,0 +1,39 @@
+name: Autonomous project milestone control
+
+'on':
+  schedule:
+    - cron: '40 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: autonomous-project-milestones
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      GITHUB_TOKEN: ${{ github.token }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run bounded controller tests
+        run: |
+          python -m py_compile tools/project_milestone_controller.py
+          python -m unittest discover -s tests -p 'test_project_milestone_controller.py'
+          python tools/validate-project-current-state.py
+      - name: Inspect live evidence; publish only from scheduled run
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            python tools/project_milestone_controller.py --publish
+          else
+            python tools/project_milestone_controller.py
+          fi
