@@ -207,6 +207,44 @@ Für die weitere Auswertung ist die tatsächliche **Trade-Entstehung ein eigenes
 - Dieser Beobachtungspunkt ist **passive Governance**: keine zusätzliche Work-Ausführung, kein neuer
   Zeitplan, keine zusätzliche Hintergrundprüfung und keine höhere Systemlast.
 
+#### Frühsnapshot der aktiven V2R4-Serie — 2026-10-08 08:28 UTC
+
+Dieser Snapshot ist **Beobachtungsevidenz, keine Freigabe zur Regeländerung**. Die Serie bleibt eingefroren.
+
+- 214 Candidate-Outcomes waren verarbeitet.
+- 96 Kandidaten waren direkt `REJECT`.
+- 118 Kandidaten waren zunächst `WAIT`.
+- Zum Snapshot waren alle 118 WAIT-Pfade terminal `REJECT`; 102 davon liefen ohne deterministischen
+  Trigger-Match bis zum TTL-Ende aus (ca. 86 % der WAIT-Fälle).
+- 0 `BUY_SCOUT`, 0 Paper-Trades und 0 V2R4-Kaufalerts.
+- Die ersten vollständigen 24h-Follow-ups dieser Serie waren noch nicht ausreichend gereift; aus dem
+  Snapshot allein darf deshalb **nicht** geschlossen werden, dass die Gates bereits nachweislich zu streng sind.
+
+Für alle späteren V2R4-Produktivitätsreviews und die Migration in V3/V4+ bzw. spätere Echtgeld-Nachfolger
+muss dieser Befund ausdrücklich gegen folgende Ursachen getrennt geprüft werden:
+
+1. **echte Markt-/Setup-Ungeeignetheit** — REJECT/WAIT war korrekt;
+2. **WAIT-/Trigger-/TTL-Strenge** — valide Setups erreichen den definierten Trigger zu selten oder zu spät;
+3. **Eingangsdaten-/Kontextlücke** — z. B. fehlende bzw. nicht hinreichend frische OHLC-/ATR-,
+   Volumen- oder Struktur-/Stop-Evidenz verhindert eine belastbare frühe Freigabe;
+4. **Kostenhürde** — Gebühren/Spread/Slippage machen das verbleibende Potenzial tatsächlich unattraktiv;
+5. **Discovery-/Timingproblem** — der Scanner entdeckt den Kandidaten erst nach einem wesentlichen Teil des Moves.
+
+Pflichtmetriken für die spätere Bewertung:
+- Funnel `Candidate → WAIT → Trigger → Fresh Recheck → BUY_SCOUT → Paper-Trade`;
+- WAIT→REJECT-Quote sowie Anteil `TTL_EXPIRED_NO_TRIGGER`;
+- 15m/30m/1h/4h/12h/24h MFE/MAE nach Erkennung und nach Entscheidung;
+- Missed-Move-Quote der REJECT- und WAIT→REJECT-Fälle;
+- Datenvollständigkeit/-frische für OHLC, ATR/Struktur, Volumen und Kostenkontext;
+- normalisierte Ablehnungsgründe, damit semantisch gleiche Reason-Codes nicht als getrennte Ursachen gezählt werden.
+
+**Interpretationsregel:** Bleiben bei ausreichender Kandidatenmenge, Zeitdiversität und gereiften Follow-ups
+BUYs/Trades weiterhin praktisch aus und zeigen abgelehnte Fälle danach wiederholt handelbare Moves, ist dies
+ein belastbarer Hinweis auf zu restriktive oder datenbedingt unvollständige Entry-Gates. Zeigen die Follow-ups
+dagegen überwiegend geringe MFE bzw. ungünstige MAE/Kostenprofile, ist die geringe Trade-Frequenz eher
+korrekte Selektion. In beiden Fällen wird die laufende Serie nicht still getunt; Konsequenzen gehen versioniert
+in den Nachfolger.
+
 ---
 
 ### Permanente Shadow-WIP-Regel
