@@ -461,6 +461,19 @@
         "research/v3/h9-kraken-spot-public-fee-schedule-20261002.json"
       ],
       "pending_gate": "V3_H9_VERIFY_ACCOUNT_SPECIFIC_FEE_TIER_THEN_PREREGISTER_DEADLINE_CLEANUP_QUEUE_CONTRACTS"
+    },
+    {
+      "id": "persistent_market_regime_episode_learning",
+      "category": "research_evidence_governance",
+      "source_version": "V3 passive observation contract / all-successor governance",
+      "migration_status": "INHERIT_UNCHANGED",
+      "rationale": "Preserve only read-only, point-in-time market-regime episode collection and already-gated outcome analysis across every future Paper/Shadow and separately released live successor. This inherits a research capability, NOT a proven entry/exit edge or automatic trade authority. If no incremental net value is evidenced, document NO_ACTION_WARRANTED; any strategy rule derived from this remains a separately gated, inactive candidate.",
+      "evidence": [
+        "research/v3/market-phase-reversal-observation-v1.md",
+        "docs/test-strategy-runbook.md",
+        "docs/project-control-plane-governance.md"
+      ],
+      "pending_gate": null
     }
   ],
   "final_v2r3_review": {
