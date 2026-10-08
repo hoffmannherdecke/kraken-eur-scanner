@@ -152,6 +152,36 @@ try{
  $snapshot=Join-Path $backup 'old-paper-h3-state.zip'
  Compress-Archive -Path (Join-Path $snapshotInputs '*') -DestinationPath $snapshot -CompressionLevel Optimal
  Need ((Get-Item $snapshot).Length -gt 1000) 'Snapshot incomplete'
+ # Hash-validate every archived evidence/config/task file against its
+ # stopped original. A readable zip and a zip digest alone do not prove
+ # that all old decisions, positions and restart task definitions survived.
+ Add-Type -AssemblyName System.IO.Compression
+ Add-Type -AssemblyName System.IO.Compression.FileSystem
+ $archive=[IO.Compression.ZipFile]::OpenRead($snapshot)
+ try {
+   $allSource=@(Get-ChildItem -LiteralPath $snapshotInputs -Recurse -File)
+   $entries=@($archive.Entries|Where-Object{-not [string]::IsNullOrEmpty($_.Name)})
+   Need ($entries.Count -eq $allSource.Count) 'Archive omitted or duplicated original files'
+   $entryMap=@{}
+   foreach($e in $entries){
+     Need (-not $entryMap.ContainsKey($e.FullName)) "Duplicate zip entry: $($e.FullName)"
+     $entryMap[$e.FullName]=$e
+   }
+   $hash=[Security.Cryptography.SHA256]::Create()
+   try {
+     foreach($f in $allSource){
+       $rel=$f.FullName.Substring($snapshotInputs.Length).TrimStart([char]'\',[char]'/').Replace('\','/')
+       Need ($entryMap.ContainsKey($rel)) "Snapshot file missing: $rel"
+       $entry=$entryMap[$rel]
+       Need ($entry.Length -eq $f.Length) "Snapshot size differs: $rel"
+       $reader=$entry.Open()
+       try{$inArchive=([BitConverter]::ToString($hash.ComputeHash($reader))).Replace('-','').ToLowerInvariant()}
+       finally{$reader.Dispose()}
+       $onDisk=(Get-FileHash -LiteralPath $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+       Need ($inArchive -ceq $onDisk) "Snapshot byte mismatch: $rel"
+     }
+   }finally{$hash.Dispose()}
+ }finally{$archive.Dispose()}
  $backupSha=(Get-FileHash $snapshot -Algorithm SHA256).Hash.ToLowerInvariant()
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repo 'tools\minipc-runtime-supervisor.ps1') -TradingRoot $TradingRoot|Out-Null
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repo 'tools\minipc-watchdog.ps1') -TradingRoot $TradingRoot|Out-Null
