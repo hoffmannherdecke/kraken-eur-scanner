@@ -3,6 +3,7 @@ import importlib.util
 import json
 import tempfile
 import unittest
+import sys
 from argparse import Namespace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -10,6 +11,7 @@ from unittest.mock import patch
 from types import SimpleNamespace
 
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0,str(ROOT))
 spec=importlib.util.spec_from_file_location("outage_local_runtime",ROOT/"tools/v2r4-paper-local-runtime.py")
 runtime=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runtime)
