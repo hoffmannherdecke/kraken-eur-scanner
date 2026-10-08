@@ -206,5 +206,6 @@ try{
    }catch{$phase='RESTORE_FAILED_FAIL_CLOSED';$problem+=' | restore failed: '+$_.Exception.Message}
  }
  [pscustomobject]@{status='BLOCKED';phase=$phase;reason=$problem;blind_retry_allowed=$false;orders=$false;real_money_actions=$false}|ConvertTo-Json -Depth 6
+ if(-not $Execute){return}
  exit 2
 }
