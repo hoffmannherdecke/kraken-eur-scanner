@@ -471,7 +471,8 @@
       "evidence": [
         "research/v3/market-phase-reversal-observation-v1.md",
         "docs/test-strategy-runbook.md",
-        "docs/project-control-plane-governance.md"
+        "docs/project-control-plane-governance.md",
+        "docs/market-context-source-fusion-v1.md"
       ],
       "pending_gate": null
     },
@@ -485,7 +486,8 @@
         "docs/v3-research-framework.md",
         "research/v3/market-phase-reversal-observation-v1.md",
         "docs/test-strategy-runbook.md",
-        "PROJECT_BACKLOG.md"
+        "PROJECT_BACKLOG.md",
+        "docs/market-context-source-fusion-v1.md"
       ],
       "pending_gate": "V3_REGIME_KRAKEN_EUR_PROSPECTIVE_EPISODES_AND_MATURE_OUTCOMES_THEN_PREDECLARE_ONE_CHANGE_NET_COST_TRIAL_BEFORE_V3_INTEGRATION_REVIEW"
     }
