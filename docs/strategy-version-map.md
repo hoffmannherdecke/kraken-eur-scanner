@@ -2,8 +2,8 @@
 
 Status: **KANONISCHE STRATEGIE-ÜBERSICHT**  
 Stand: 2026-09-29  
-Aktive Strategie: `V2R3-2026-09-28`  
-Aktive Serie: `PAPER-V2R3-CLEAN-20261001T0925Z`
+Aktive Strategie: `V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION`  
+Aktive Serie: `PAPER-V2R4-20261007T184255Z`
 
 ## 1. Zweck
 
@@ -25,9 +25,9 @@ Bei Widersprüchen gilt:
 
 ## 2. Versionslandkarte
 
-### V2R3 — aktive, eingefrorene Kontroll-/Paper-Version
+### V2R3 — abgeschlossene, eingefrorene Kontroll-/Paper-Version
 
-**Status:** AKTIV / PAPER ONLY / eingefrorene Vergleichsbasis  
+**Status:** CLOSED_COMPLETE / PAPER ONLY / FINAL REVIEW COMPLETE / eingefrorene Vergleichsbasis  
 **Start der aktuell sauberen homogenen Serie:** 2026-10-01 09:25 UTC  
 **Series-ID:** `PAPER-V2R3-CLEAN-20261001T0925Z`  
 **V2R3 Freeze-Guard:** aktiv / CI Run #1 SUCCESS; Strategie-/Runtime-Fingerprints, Scanner-Paket, 10-Minuten-Takt und zentrale Scanner-Settings fail-closed eingefroren.  
@@ -133,10 +133,10 @@ Capture evidence included 324 clean Candidate-Outcomes, 64 complete 24h follow-u
 
 **Versioning rule:** V1 is an immutable interim evidence card. Do not overwrite it as the series matures. Materially changed evidence becomes V2 or a final-review disposition artifact. At final review every hypothesis must be classified `CONFIRM`, `CHANGE`, `ADD`, `REJECT` or `MORE_TESTING_REQUIRED`.
 
-## V2R4 — vorbereitete taktische Timing-/Trigger-Version
+## V2R4 — aktive taktische Timing-/Trigger-Paper-Version
 
-**Status:** PREPARED / NOT ACTIVE / PAPER ONLY  
-**Implementierung:** frühere Drafts #8/#9 superseded; technisches Modul-Evidenzmaterial bleibt als Historie verwertbar. Der vorbereitete, noch inaktive Machine-Contract liegt in `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json`; der spätere ausführbare Candidate wird daraus sauber auf dem bereinigten aktuellen `main` materialisiert und validiert.  
+**Status:** ACTIVE / APPROVED_PAPER / PAPER ONLY / FIRST SERIES FROZEN  
+**Implementierung:** frühere Drafts #8/#9 superseded. Der binding Machine-Contract `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json` wurde als Release-Freeze verwendet; seine `PREPARED_NOT_ACTIVE`-Kennzeichnung bleibt aus Fingerprint-/Provenance-Gründen unverändert historisch. Aktive immutable Paper-Serie: `PAPER-V2R4-20261007T184255Z`, 50+50 EUR, Supabase-primary, kein Echtgeld.  
 **Release-Readiness:** `docs/v2r4-release-readiness.md`  
 **V2R3→V2R4 Release-Diff:** `docs/v2r4-v2r3-release-diff.md`  
 **Zweck:** gezielt das in V2R3 erkannte WAIT-/Revalidation-Latenzproblem untersuchen.
@@ -357,7 +357,7 @@ Aber:
 
 Wenn künftig unklar ist, welche Version gemeint ist:
 
-- **„laufende Strategie / aktueller Paper-Test“ = V2R3**
+- **„laufende Strategie / aktueller Paper-Test“ = V2R4**
 - **„schnellere Mini-PC-/WAIT-/Trigger-Variante“ = V2R4**
 - **„neue Strategie aus Literatur, Backtests und Research“ = V3**
 
