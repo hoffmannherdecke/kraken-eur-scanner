@@ -11,6 +11,11 @@ on:
       - "tests/test_autonomous_implementation.py"
       - "docs/unified-monitoring-learning-architecture-v1.md"
       - "research/monitoring-evidence-routing-v1.json"
+      - "research/global-outage-recovery-contract-v1.json"
+      - "docs/project-wide-outage-recovery-v1.md"
+      - "tools/validate-outage-resilience.py"
+      - "tools/minipc-runtime-supervisor.ps1"
+      - "tests/test_outage_resilience.py"
       - "tools/validate-monitoring-evidence-routing.py"
       - "tests/test_monitoring_evidence_routing.py"
       - "docs/workflow-registry.json"
@@ -40,6 +45,11 @@ on:
       - "tests/test_autonomous_implementation.py"
       - "docs/unified-monitoring-learning-architecture-v1.md"
       - "research/monitoring-evidence-routing-v1.json"
+      - "research/global-outage-recovery-contract-v1.json"
+      - "docs/project-wide-outage-recovery-v1.md"
+      - "tools/validate-outage-resilience.py"
+      - "tools/minipc-runtime-supervisor.ps1"
+      - "tests/test_outage_resilience.py"
       - "tools/validate-monitoring-evidence-routing.py"
       - "tests/test_monitoring_evidence_routing.py"
       - "docs/workflow-registry.json"
@@ -82,6 +92,11 @@ jobs:
         run: |
           python tools/validate-monitoring-evidence-routing.py
           python -m unittest discover -s tests -p 'test_monitoring_evidence_routing.py'
+      - name: Validate project-wide outage guards and PowerShell syntax
+        run: |
+          python tools/validate-outage-resilience.py
+          python -m unittest discover -s tests -p 'test_outage_resilience.py'
+          pwsh -NoProfile -Command '$tokens=$null; $errs=$null; [System.Management.Automation.Language.Parser]::ParseFile("tools/minipc-runtime-supervisor.ps1",[ref]$tokens,[ref]$errs) | Out-Null; if ($errs.Count -gt 0) { $errs | Out-String | Write-Error; exit 1 }; Write-Output "SUPERVISOR_POWERSHELL_PARSE_PASS"'
       - name: Validate bounded autonomous implementation selector
         run: |
           python tools/select-autonomous-implementation.py
