@@ -25,6 +25,11 @@
       "active_control_surface": false
     },
     {
+      "workflow": "autonomous-project-milestones.yml",
+      "lifecycle": "ACTIVE_MAINTENANCE",
+      "active_control_surface": false
+    },
+    {
       "workflow": "backlog-issue-reconciliation.yml",
       "lifecycle": "ACTIVE_MAINTENANCE",
       "active_control_surface": false
