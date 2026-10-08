@@ -87,6 +87,34 @@ Historical/manual/validation workflows may remain in the repository for provenan
 
 Nothing in this governance file authorizes real-money trading, private order rights, leverage, automatic promotion or automatic strategy activation.
 
+## Autonomes Follow-through mit begrenzter eigenständiger Implementierung (2026-10-08)
+
+Der Nutzer hat ausdrücklich autorisiert, innerhalb **bestehender**
+Sicherheits-, Rechte-, Freeze- und Release-Gates sichere Projekt-
+Weiterentwicklungen ohne erneute Chat-Nachfrage vorzubereiten und
+umzusetzen. Kanonischer Vertrag `docs/autonomous-followthrough-governance-v1.md`.
+Ergänzend zu GitHub-Milestone-Readiness und bestehenden
+`docs/test-strategy-runbook.md`-Konsequenzregeln existiert nun
+`research/autonomous-implementation-queue-v1.json` (kleiner
+**allowlisted** Safe-Work-Katalog). Der pure Python-Selektor
+`tools/select-autonomous-implementation.py` prüft ausschließlich
+aus `project-current-state.json`, Quellbelegen und vorhandenen
+Repo-Dateien, ob z. B. der H10-PIT-Join-Contract fehlt oder ein
+genuine neuer Gate-Adapter programmiert werden muss.
+`READY_SAFE_WORK` ist ein kleiner, eigenständiger *Umsetzungsgrund*
+innerhalb der **bereits täglich geplanten** Work-Phase 1,
+kein schweres Open-Market-Analyse-Gate.
+
+Nur maximal zwei bereits genehmigte kleine Aufgaben / bestehenden
+Work-Lauf, maximal ein laufender Implementierungs-PR, nie
+Spontan-Live- oder Strategieänderung. Nach auswertbarem Ergebnis
+unbedingt echten CI/PR/Gate-Closed-Nachweis oder `BLOCKED`
+mit Dedupe im bestehenden Work-Ack. Derselbe blockierte
+Gate-Fingerprint darf nicht täglich den gleichen schweren
+Work-Aufwand auslösen. Keine neuen Work-/GitHub-Schedules,
+keine Repo-Secret- oder MINI-PC-Rechte. Vollständiger erster
+Work-E2E-Implementierungsnachweis noch offen.
+
 ## Autonomous milestone controller (2026-10-08)
 
 Workflow: `.github/workflows/autonomous-project-milestones.yml`; engine:

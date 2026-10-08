@@ -4,6 +4,31 @@ Status: **KANONISCHE KOMPONENTEN-/VERSIONSÜBERSICHT**
 Stand: 2026-09-29  
 Zweck: Single Source of Truth für Strategie-, Paper-, Infrastruktur-, Datenpfad- und Integrations**historie**. Der aktuelle deklarierte Betriebs-/Control-Plane-Zustand liegt maschinenlesbar in `project-current-state.json`; bei einer aktuellen Statusfrage hat diese Datei Vorrang.
 
+## Autonomes Projekt-Follow-through — erlaubte Umsetzung statt bloßer Meldungen (2026-10-08)
+
+Eine zusätzliche, **eng allowlistbasierte** Entwicklungs-
+Umsetzungsebene ist im bestehenden Work-Gate verankert:
+`docs/autonomous-followthrough-governance-v1.md` und
+`research/autonomous-implementation-queue-v1.json`,
+geprüft über `tools/select-autonomous-implementation.py`
+und **die bestehenden** Project-Control-Plane-/
+Milestone-GitHub-Actions. Beispiel H10-PIT-Join-Forschungsvertrag
+oder fehlender read-only Controller-Adapter; neuer Review-
+Befund → konkreter ungefährlicher Projektauftrag → Branch/PR/
+CI → Abschluss-Ack, ohne weitere Nutzerfrage, sofern
+kein bestehendes Freigabe-/Hardware-Gate betroffen ist.
+
+**Grenzen:** Maximal 2 fällige Safe-Work-Aufgaben je bestehendem
+täglichem Work-Termin, nur eine offene Implementierungs-PR;
+kein zusätzlicher Work-Run, kein autonomer Echtgeldeinstieg,
+kein automatischer Strategieswitch, keine zweiten Shadow-Experimente
+oder neue Berechtigungen. Spontane Wünsche müssen weiterhin
+im laufenden Gespräch persistiert werden, weil der Runner
+keinen allwissenden Zugriff auf jede vorherige Unterhaltung
+hat. Status: `ROUTE_PREPARED / WORK_E2E_PENDING`; die
+erfolgreichen GitHub-Sicherheitschecks sind noch kein
+Beweis für selbstständig programmierten späteren Safe-Task.
+
 ## Überwachungsarchitektur ohne Doppelwirkungen — Gesamt-Audit 2026-10-08
 
 Kanonische übergreifende **Monitor→Evidenz→Consumer→Gate→Disposition**-
