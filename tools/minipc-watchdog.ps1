@@ -306,6 +306,32 @@ foreach ($spec in $paperRuntimeSpecs) {
   }
 }
 
+# V3 H3 shadow is observational only: monitor it without making V2R4 trading safety depend on it.
+try {
+  $h3Task = Get-ScheduledTask -TaskName "CryptoMiniPC-V3H3Shadow001" -ErrorAction SilentlyContinue
+  if ($h3Task) {
+    $hb = Join-Path $TradingRoot "State\v3-h3-shadow-001-heartbeat.json"
+    if (-not (Test-Path $hb)) {
+      Add-Check "v3_h3_shadow" $false "task installed but heartbeat missing" "WARNING"
+    } else {
+      $h = Get-Content $hb -Raw | ConvertFrom-Json
+      $checked = [datetimeoffset]::Parse([string]$h.checked_at_utc)
+      $ageSec = [math]::Round(([datetimeoffset]::UtcNow - $checked).TotalSeconds,1)
+      $ok = (
+        $h.status -eq "HEALTHY" -and
+        $h.runtime_ready -eq $true -and
+        $ageSec -le 30 -and
+        [string]$h3Task.State -eq "Running"
+      )
+      Add-Check "v3_h3_shadow" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " task_state=" + $h3Task.State + " cloud_sync=" + $h.cloud_sync_status) "WARNING"
+    }
+  } else {
+    $checks["v3_h3_shadow"] = [ordered]@{ ok=$null; detail="H3 shadow task not installed" }
+  }
+} catch {
+  Add-Check "v3_h3_shadow" $false $_.Exception.Message "WARNING"
+}
+
 # Local bounded runtime supervisor is optional until installed.
 try {
   $supervisorTask = Get-ScheduledTask -TaskName "CryptoMiniPC-RuntimeSupervisor" -ErrorAction SilentlyContinue
