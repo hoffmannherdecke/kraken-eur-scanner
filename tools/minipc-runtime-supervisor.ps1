@@ -289,8 +289,21 @@ Write-JsonAtomic $statePath $report 10
 $historyTasks = [ordered]@{}
 foreach ($key in ($restartHistory.Keys | Sort-Object)) {
   $value = $restartHistory[$key]
+  $attempt = $attemptHistory[$key]
   $historyTasks[$key] = [ordered]@{
     last_restart_at_utc=$(if ($value) { $value.ToString("o") } else { $null })
+    last_attempt_at_utc=$(if ($attempt -and $attempt.last_attempt_at_utc) { $attempt.last_attempt_at_utc.ToString("o") } else { $null })
+    consecutive_failures=$(if ($attempt) { [int]$attempt.consecutive_failures } else { 0 })
+  }
+}
+# Failed attempts can precede the very first verified recovery.
+foreach ($key in ($attemptHistory.Keys | Sort-Object)) {
+  if ($historyTasks.Contains($key)) { continue }
+  $attempt = $attemptHistory[$key]
+  $historyTasks[$key] = [ordered]@{
+    last_restart_at_utc=$null
+    last_attempt_at_utc=$(if ($attempt.last_attempt_at_utc) { $attempt.last_attempt_at_utc.ToString("o") } else { $null })
+    consecutive_failures=[int]$attempt.consecutive_failures
   }
 }
 $historyPayload = [pscustomobject]@{
