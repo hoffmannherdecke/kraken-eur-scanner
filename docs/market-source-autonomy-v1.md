@@ -102,5 +102,5 @@ Wegen mehr Quellen **niemals** automatisch breitere Kaufveto-Ketten
 erzeugen. Handelsänderungen ausschließlich über bewährte
 Version-/Shadow-/Paper-/Freigabeprozesse.
 
-## 6. Erste Bestandsaufnahme (2026-10-08)
+## 7. Erste Bestandsaufnahme (2026-10-08)
 Öffentliche Web-Zugänglichkeit/Quelle bzw. aktuelle Berichte wurden für Teile des Katalogs geprüft; **kein** hier aufgeführtes Nachrichtenmedium ist dadurch bereits als autonomer API-/RSS-Feed in unserer Scanner-/Mini-PC-Runtime belegt. CoinDesk/The Block/Decrypt/Reuters und DefiLlama/CoinGlass sind **Pilot-Vorschläge**, kein Live-Schalten. [CoinDesk](https://www.coindesk.com/) trennt sichtbare redaktionelle Rubriken und sponsored content; [CoinMarketCal](https://coinmarketcal.com/) bietet Event-Kalender; [DefiLlama](https://defillama.com/) liefert DeFi- und Stablecoin-Aggregate. Bei Reddit warnt selbst r/CryptoCurrency vor Marktmanipulation und Scams. Blockworks/Messari erfordern wegen berichteter 2026-Geschäftsmodelländerungen einen neuen Angebotscheck. Kein bezahltes Abonnement oder verstecktes Scraping gestartet.
