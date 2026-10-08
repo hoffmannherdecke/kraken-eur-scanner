@@ -31,9 +31,12 @@ on:
       - "PROJECT_BACKLOG.md"
       - "research/v3/shadow-candidate-contract-v1.json"
       - "research/v3/shadow-candidates/**"
+      - "research/v3/integration-candidate-contract-v1.json"
+      - "research/v3/integration-candidates/**"
       - "tools/validate-project-current-state.py"
       - "tools/validate-workflow-registry.py"
       - "tools/validate-v3-shadow-candidate.py"
+      - "tools/validate-v3-integration-candidate.py"
       - ".github/workflows/**"
   workflow_dispatch:
 
