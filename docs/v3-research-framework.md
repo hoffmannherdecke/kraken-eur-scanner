@@ -387,7 +387,7 @@ Non-fills/cancels must be retained as censored observations, not discarded.
 
 ### H10 — Smart-Money / Trader-Activity Layer
 Status: `SHADOW`  
-Stage: `PROSPECTIVE_CAPTURE_ACTIVE_FIRST_ANALYSIS_GATE_MATURE_REVIEW_DUE`  
+Stage: `PROSPECTIVE_CAPTURE_ACTIVE_FIRST_REVIEW_COMPLETE_MORE_TESTING_REQUIRED`  
 Priority: A/B
 
 Purpose:
@@ -445,7 +445,7 @@ Current source precheck:
 - active cloud bootstrap capture: `.github/workflows/v3-h10-smart-money-shadow-capture.yml` at :17/:47 each hour. It is intentionally a coarse bootstrap/fallback path; source fill timestamps remain exact, but GitHub scheduler timing must not be interpreted as 60-second observation latency;
 - storage is compact and server-side only: `v3_h10_capture_batches`, `v3_h10_wallet_states`, `v3_h10_fill_events`, `v3_h10_capture_errors`; MINI-PC receives no Supabase admin/service key;
 - anti-HFT aggregation is explicit: `v3_h10_wallet_asset_activity_30m` counts each wallet once per asset/window and `v3_h10_asset_consensus_30m` measures independent-wallet agreement, so hundreds of fills from one trader cannot masquerade as broad Smart-Money consensus;
-- first descriptive review is preregistered in `research/v3/h10-first-analysis-gate-v1.json`: minimum 72h, >=95% healthy capture, >=100 batches, >=100 primary wallet-asset windows and >=20 multi-wallet same-asset windows; this gate is now mature (2026-10-08), so the fixed evidence-only Kraken-EUR association review may proceed without wallet/coin/threshold/horizon selection from seen outcomes;
+- first descriptive review is preregistered in `research/v3/h10-first-analysis-gate-v1.json`: minimum 72h, >=95% healthy capture, >=100 batches, >=100 primary wallet-asset windows and >=20 multi-wallet same-asset windows; this gate matured on 2026-10-08 and the first evidence-only review is complete (`research/v3/h10-first-analysis-review-20261008.json`). Result: MORE_TESTING_REQUIRED. Capture reliability is strong, but predictive scoring remains blocked until a dedicated point-in-time Kraken-EUR outcome/context join plus one frozen false-positive label are preregistered; no wallet/coin/threshold/horizon selection from seen outcomes;
 - next gate: let the frozen cohort collect prospectively; after the analysis gate matures, join only point-in-time online Kraken Spot-EUR assets at fixed 15m/1h/3h/6h/24h horizons and compare primary cohort versus active controls. No active strategy change before that review.
 
 
