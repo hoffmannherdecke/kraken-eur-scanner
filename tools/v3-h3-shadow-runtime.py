@@ -98,6 +98,12 @@ def reason_codes(payload: dict[str, Any]) -> set[str]:
     return {str(x) for x in ((payload.get("decision") or {}).get("reason_codes") or [])}
 
 
+def local_candidate_ids(context_dir: Path, evidence_dir: Path) -> set[str]:
+    return {p.stem for p in context_dir.glob("*.json")} | {
+        p.stem for p in evidence_dir.glob("*.json")
+    }
+
+
 def prune_synced_local_pair_files(
     evidence_dir: Path,
     context_dir: Path,
@@ -218,9 +224,7 @@ class Runtime:
         })
 
     def local_candidate_footprint(self) -> set[str]:
-        return {p.stem for p in self.context_dir.glob("*.json")} | {
-            p.stem for p in self.evidence_dir.glob("*.json")
-        }
+        return local_candidate_ids(self.context_dir, self.evidence_dir)
 
     def prune_local_after_successful_sync(self) -> list[str]:
         # Keep headroom below the hard 200-candidate ceiling so a healthy runtime
