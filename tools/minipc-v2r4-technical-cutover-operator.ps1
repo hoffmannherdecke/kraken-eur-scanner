@@ -89,6 +89,9 @@ try{
  Need ($old.series_id -eq $oldId -and $old.release_repo_sha -eq $oldSha -and $old.paper_only -eq $true -and $old.real_money_actions_enabled -eq $false) 'Old series drift or unsafe control'
  Need ($stage.strategy_fingerprint_sha256 -eq $old.strategy_fingerprint_sha256 -and [double]$old.scout_notional_eur -eq 50 -and [double]$old.stage2_notional_eur -eq 50) 'Strategy/sizing changed'
  foreach($n in $taskNames){$null=Get-ScheduledTask -TaskName $n -ErrorAction Stop}
+ $gateRaw=& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $repo 'tools\minipc-v2r4-technical-cutover-readiness.ps1') -TradingRoot $TradingRoot -SuccessorReleaseSha $sha
+ $gate=($gateRaw -join [Environment]::NewLine)|ConvertFrom-Json
+ Need ($gate.status -eq 'READ_ONLY_GATE_PASS_NOT_CUTOVER') 'Physical staged file hash or old baseline preflight blocked'
  $ready=Edge 'readiness'
  Need ($ready.ok -eq $true -and $ready.old_series_status -eq 'active' -and $ready.source_gate.ok -eq $true) 'Cloud readiness blocked, no tasks touched'
  $cloudStatus=Edge 'status'
@@ -127,6 +130,7 @@ try{
  New-Item -ItemType Directory -Force $snapshotInputs|Out-Null
  Copy-Item -LiteralPath $oldApp -Destination (Join-Path $snapshotInputs 'old-paper') -Recurse
  $stateCopies=Join-Path $snapshotInputs 'state';New-Item -ItemType Directory -Force $stateCopies|Out-Null
+ Copy-Item -LiteralPath (Join-Path $backup 'tasks') -Destination (Join-Path $snapshotInputs 'scheduled-task-xml') -Recurse
  foreach($pat in @('v2r4-paper-*.json','v3-h3-*.json')){
    Get-ChildItem $state -Filter $pat -File|ForEach-Object{Copy-Item $_.FullName (Join-Path $stateCopies $_.Name)}
  }
