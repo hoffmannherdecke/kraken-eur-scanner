@@ -105,6 +105,7 @@ jobs:
             'tools/uninstall-minipc-v2r4-shadow-cloud-sync.ps1',
             'tools/install-minipc-status-sync.ps1',
             'tools/uninstall-minipc-status-sync.ps1',
+            'tools/minipc-v2r4-technical-rollover-preflight.ps1',
             'tools/minipc-runtime-supervisor.ps1',
             'tools/install-minipc-runtime-supervisor.ps1',
             'tools/minipc-runtime-supervisor-selfheal-smoke.ps1',
@@ -149,6 +150,16 @@ jobs:
             Write-Host "PARSE_OK $file"
           }
 
+      - name: Technical rollover preflight fails closed without writing anything
+        shell: powershell
+        run: |
+          $root=Join-Path $env:RUNNER_TEMP 'absent-paper-rollover-fixture'
+          if(Test-Path $root){ throw 'fixture path already exists' }
+          $text = & ./tools/minipc-v2r4-technical-rollover-preflight.ps1 -TradingRoot $root
+          $result = ($text -join [Environment]::NewLine) | ConvertFrom-Json
+          if($result.status -ne 'PREFLIGHT_BLOCKED_NO_MUTATION'){ throw 'unsafe success without local controls' }
+          if(Test-Path $root){ throw 'preflight wrote files' }
+          Write-Host 'TECHNICAL_ROLLOVER_READ_ONLY_FAIL_CLOSED_PASS'
       - name: Compile real-Altrady release smoke helper
         run: python -m py_compile tools/v2r4-real-altrady-release-smoke.py
 
