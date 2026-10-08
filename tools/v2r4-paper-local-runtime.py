@@ -49,11 +49,11 @@ def candidate_id_for_event(event,eid):
     run_id=int(hashlib.sha256(eid.encode()).hexdigest()[:12],16)
     return f"{observed.strftime('%Y%m%d-%H%M%S')}-{event['pair'].replace('/','-')}-r{run_id}"
 
-def refresh_altname_cache(state):
+def refresh_altname_cache(state, force=False):
     last=state.get('altname_cache_at_utc')
     if last:
         try:
-            if (utcnow()-parse_utc(last)).total_seconds()<3600 and state.get('altname_cache') and state.get('altname_cache_schema_version')==2: return
+            if not force and (utcnow()-parse_utc(last)).total_seconds()<3600 and state.get('altname_cache') and state.get('altname_cache_schema_version')==2: return
         except Exception: pass
     rows=eur_pairs()
     aliases={}
@@ -104,7 +104,7 @@ def run_candidates(args):
     app=args.app_root; trading=args.trading_root; state_path=trading/'State/v2r4-paper-candidate-runtime-state.json'; hb_path=trading/'State/v2r4-paper-candidate-runtime-heartbeat.json'; events=trading/'State/v2r4-ws-shadow-events'; qdir=app/'handoff_queue'; ddir=app/'paper_decisions'; qdir.mkdir(parents=True,exist_ok=True); ddir.mkdir(parents=True,exist_ok=True)
     state=load_state(state_path); key=args.api_key_file.read_text('utf-8').strip() if args.api_key_file.exists() else ''
     while True:
-      counters={'events_seen':0,'watch_only':0,'reviewable':0,'evaluated':0,'failures':0,'missed_during_outage':0,'future_deferred':0,'reconciled_decisions':0}
+      counters={'events_seen':0,'watch_only':0,'reviewable':0,'evaluated':0,'failures':0,'missed_during_outage':0,'future_deferred':0,'reconciled_decisions':0,'symbol_pending':0,'symbol_refresh_errors':0}
       errors=[]
       try:
         control=load_json(app/'paper_runtime_control.json'); start=parse_utc(control['series_started_at_utc']); refresh_altname_cache(state)
@@ -141,14 +141,24 @@ def run_candidates(args):
             state['processed'][eid]={'status':'WATCH_ONLY','at_utc':iso(),'pair':e.get('pair'),'liquidity_class':liq}; counters['watch_only']+=1; continue
           counters['reviewable']+=1
           if not alt:
-            # Current Kraken AssetPairs does not list this symbol online.
-            # Never repeatedly retry the same impossible old event.
-            state['processed'][eid]={'status':'PAIR_NOT_ONLINE_OR_UNRESOLVED',
-              'at_utc':iso(),'pair':e.get('pair'),
-              'source_observed_at_utc':iso(obs)}
-            errors.append(f'{eid}:PAIR_NOT_IN_CURRENT_ONLINE_UNIVERSE')
-            counters['failures']+=1
-            continue
+            # New Kraken listings can arrive before our 60m REST cache expiry.
+            # Refresh at most once per 5 minutes, never on every loop/event.
+            last_retry=state.get('unresolved_alias_last_retry_at_utc')
+            retry_due=True
+            if last_retry:
+              try: retry_due=(utcnow()-parse_utc(last_retry)).total_seconds()>=300
+              except Exception: pass
+            if retry_due:
+              state['unresolved_alias_last_retry_at_utc']=iso()
+              try: refresh_altname_cache(state,force=True)
+              except Exception: counters['symbol_refresh_errors']+=1
+            reviewable,liq,alt,depth=classify_event(e,state)
+            if not alt:
+              # Retain this event as pending until it becomes >60m old;
+              # at that point MISSED_DURING_OUTAGE is archived, not traded.
+              # Do not produce fake REJECT or permanent pair blacklist.
+              counters['symbol_pending']+=1
+              continue
           c=build_candidate(e,alt,eid); c['scanner_market_context']['liquidity_class']=liq; c['scanner_market_context']['depth_1pct_eur']=depth
           cp=qdir/f"{c['candidate_id']}.json"
           if not cp.exists(): cp.write_text(json.dumps(c,indent=2,sort_keys=True)+'\n','utf-8')
@@ -163,7 +173,7 @@ def run_candidates(args):
         if len(state['processed'])>10000:
           keys=list(state['processed'].keys())[-10000:]; state['processed']={k:state['processed'][k] for k in keys}
         atomic_json(state_path,state)
-        hb={'schema_version':1,'kind':'V2R4_PAPER_CANDIDATE_RUNTIME_HEARTBEAT_V1','checked_at_utc':iso(),'status':'HEALTHY' if not errors and not counters['future_deferred'] else 'DEGRADED','series_id':control.get('series_id'),'counters':counters,'errors':errors[-10:],'paper_only':True,'order_api':False,'real_money_actions':False}
+        hb={'schema_version':1,'kind':'V2R4_PAPER_CANDIDATE_RUNTIME_HEARTBEAT_V1','checked_at_utc':iso(),'status':'HEALTHY' if not errors else 'DEGRADED','series_id':control.get('series_id'),'counters':counters,'errors':errors[-10:],'paper_only':True,'order_api':False,'real_money_actions':False}
         atomic_json(hb_path,hb)
       except Exception as exc:
         atomic_json(hb_path,{'schema_version':1,'kind':'V2R4_PAPER_CANDIDATE_RUNTIME_HEARTBEAT_V1','checked_at_utc':iso(),'status':'DEGRADED','detail':f'{type(exc).__name__}: {str(exc)[:250]}','paper_only':True,'order_api':False,'real_money_actions':False})
