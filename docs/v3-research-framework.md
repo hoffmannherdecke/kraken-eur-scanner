@@ -779,3 +779,17 @@ self-retunes and live execution-safety/release gates remain independent hard req
 ## Marktphasen-Episoden — passive Beobachtung / lernfähige Auswertung (2026-10-08)
 
 Vertrag: `research/v3/market-phase-reversal-observation-v1.md`. Der bestehende Marktphasen-Wächter darf ausschließlich kompakte, nachweisbare Phasenwechsel unter `MARKET_REGIME_EPISODE_V1` im bestehenden V3-Research-Issue #7 vermerken. Diese Ereignisse sind **Kontext**, keine Strategie- oder Orderautorität. Die bestehende V3-H1-Standalone-Ablehnung bleibt gültig. Bei einem ohnehin geöffneten Analyse-Gate sind Regime-Ereignisse zeitpunktgerecht mit reifen V2R4-Outcomes/Missed-Moves zu verknüpfen, auf inkrementellen Nutzen und Fehlerquellen zu prüfen und nur über die normalen Hypothesen-/Migrations-/Release-Gates weiterzuverarbeiten. Keine zusätzliche Work-Ausführung und keine laufende Regeländerung.
+
+### Permanente Marktphasen-Beobachtung über V3 hinaus (2026-10-08)
+
+Die bestehende `MARKET_REGIME_EPISODE_V1`-Beobachtung und ihre
+point-in-time-Auswertung aus
+`research/v3/market-phase-reversal-observation-v1.md` sind ein
+**generationenübergreifender Forschungsbaustein**: alle künftigen
+Marktbewegungen, V4+ und später — bei gesonderter Freigabe — Echtgeld-
+Nachfolger. Sie bleiben von aktivem Trading getrennt und werden im
+predecessor→successor-Migrationsledger nachvollziehbar übernommen,
+bewusst weiterentwickelt oder evidenzbasiert ersetzt. H1 bleibt als
+eigene Decision-Authority verworfen. Eine Marktphase ist ein
+Kontext-/Segmentierungsmerkmal, **kein automatisch aktivierbarer Filter**.
+Keine neuen Work-Läufe, Pushs oder Live-Rechte.
