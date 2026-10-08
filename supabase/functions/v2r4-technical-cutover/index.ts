@@ -116,6 +116,21 @@ Deno.serve(async(req:Request)=>{
       return send(200,{ok:true,action:"checkpoint",cloud,mutation:false});
     }catch{return send(503,{ok:false,error:"checkpoint_unavailable"});}
   }
+  if(body?.action==="status"){
+    const {data:series,error:se}=await admin.from("paper_series")
+      .select("series_id,status,strategy_revision,config")
+      .in("status",["active","technical_closed"]).limit(8);
+    const {data:rot,error:re}=await admin.from("paper_technical_rotations")
+      .select("predecessor_series_id,successor_series_id,cutover_at_utc")
+      .eq("predecessor_series_id",OLD).maybeSingle();
+    if(se||re)return send(409,{ok:false,error:"cutover_status_unavailable"});
+    const found=(series??[]).map((p:any)=>({series_id:p.series_id,
+      status:p.status,release_repo_sha:p.config?.release_repo_sha,
+      paper_only:p.config?.paper_only,
+      real_money_actions_enabled:p.config?.real_money_actions_enabled}));
+    return send(200,{ok:true,action:"status",mutation:false,
+      paper_series:found,rotation:rot??null});
+  }
   if(body?.action==="readiness"){
     const health=await sourceGate(admin);
     const {data:old}=await admin.from("paper_series")
