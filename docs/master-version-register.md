@@ -2,7 +2,7 @@
 
 Status: **KANONISCHE KOMPONENTEN-/VERSIONSÜBERSICHT**  
 Stand: 2026-09-29  
-Zweck: Single Source of Truth für Strategie, Paper, Infrastruktur, Datenpfade und Integrationen.
+Zweck: Single Source of Truth für Strategie-, Paper-, Infrastruktur-, Datenpfad- und Integrations**historie**. Der aktuelle deklarierte Betriebs-/Control-Plane-Zustand liegt maschinenlesbar in `project-current-state.json`; bei einer aktuellen Statusfrage hat diese Datei Vorrang.
 
 ## Statusentscheidung 2026-10-08 — V2R4 aktiv / V3 Shadow aktiv
 
@@ -13,6 +13,12 @@ V2R4 PAPER ist seit 2026-10-07 als eigene immutable Serie `PAPER-V2R4-20261007T1
 Finalreview der festen ersten 1.000 Fälle abgeschlossen: `HEALTHY`, 946 vollständige 24h-Follow-ups, 1 BUY_SCOUT/1 Trade. Kein zusätzlicher V2R4-Strategiediff; bounded WAIT/fresh recheck und öffentliche Kraken-AssetPairs decken die bestätigten Anforderungen ab. 50+50, 0,60%/Seite, Anti-Chase, Two-Stage und Exitstruktur werden unverändert vererbt. V2R4 bleibt bis zu separaten Technik-/Release-Gates **NOT ACTIVE**. Nachweise: `research/work-analysis/2026-10-07-v2r3-final-review.md`, `research/v2r3/strategy-adjustment-hypotheses-final-20261007.json`.
 
 ## Governance
+
+- **Current-State-Autorität:** `project-current-state.json` ist die einzige maschinenlesbare Quelle für den deklarierten aktuellen Strategie-/Shadow-/Control-Plane-Status. Statusduplikate in Backlog/Fachdokumenten sind nicht autoritativ.
+- **Shadow-WIP-Limit:** maximal ein strategieändernder Shadow gleichzeitig. Passive Observation/Capture-Tracks dürfen nur ohne Strategie-Kopplung parallel laufen.
+- **Baseline-Replay-Pflicht:** eine kausale Shadow-Divergenz zählt nur, wenn ein same-snapshot Baseline-Replay die offizielle Baseline-Entscheidung reproduziert.
+- **Integrations-Gate:** einzeln geprüfte Komponenten werden vor gemeinsamer Promotion noch einmal als separat versionierter Integrationskandidat getestet.
+- **Workflow-Control-Surface:** `docs/workflow-registry.json` klassifiziert jeden GitHub-Workflow; nur als `ACTIVE_RUNTIME` markierte Einträge gehören zur laufenden Runtime-Steuerungsfläche.
 
 - Kein relevanter Bestandteil wird nur über Chat-Erinnerung verwaltet.
 - Offene GitHub Issues dürfen keine zweite To-do-Liste bilden: `backlog-issue-reconciliation.yml` prüft automatisch, dass jeder offene Issue im kanonischen `PROJECT_BACKLOG.md` referenziert ist.
