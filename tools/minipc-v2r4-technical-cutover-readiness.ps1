@@ -1,11 +1,18 @@
 param(
-  [string]$TradingRoot = (Join-Path $env:USERPROFILE 'Trading')
+  [string]$TradingRoot = (Join-Path $env:USERPROFILE 'Trading'),
+  [string]$SuccessorReleaseSha = ''
 )
 # READ ONLY. No network requests, task changes, cloud mutation, archive or restart.
 # Do not mistake READY_TO_REVIEW for cutover/production approval.
 $ErrorActionPreference = 'Stop'
 $oldId='PAPER-V2R4-20261007T184255Z'
-$newSha='927e8c8d4455c28bb0cb230e86eb1d83bc09576f'
+$newSha=$SuccessorReleaseSha.ToLowerInvariant()
+# The 08.10 inert stage was preparation only. Never quietly use its older
+# source SHA after the final isolation/rotation release was reviewed.
+if($newSha -notmatch '^[0-9a-f]{40}$'){
+  Write-Output ('{"kind":"V2R4_TECHNICAL_CUTOVER_READINESS_V1","mode":"READ_ONLY","status":"READ_ONLY_GATE_BLOCKED","reason":"EXPLICIT_REVIEWED_SUCCESSOR_SHA_REQUIRED"}')
+  exit 2
+}
 $oldSha='3c6729a6c548d169f56a97f07f75892f37211636'
 $oldApp=Join-Path $TradingRoot 'Runtime\v2r4-paper-app'
 $stage=Join-Path $TradingRoot ('Runtime\v2r4-paper-stage-'+$newSha.Substring(0,12))
