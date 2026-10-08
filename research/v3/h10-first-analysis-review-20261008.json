@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H10_FIRST_PROSPECTIVE_ANALYSIS_REVIEW_V1",
+  "review_id": "V3-H10-FIRST-REVIEW-20261008",
+  "reviewed_at_utc": "2026-10-08T06:48:00Z",
+  "gate_id": "V3-H10-ANALYSIS-GATE-001",
+  "cohort_id": "V3-H10-COHORT-001",
+  "capture_id": "V3-H10-CAPTURE-001",
+  "classification": "MORE_TESTING_REQUIRED",
+  "strategy_effect": "NONE",
+  "automatic_promotion": false,
+  "real_money_actions": false,
+  "gate_snapshot": {
+    "elapsed_hours": 131.53,
+    "capture_batches": 199,
+    "wallet_attempts": 5174,
+    "successful_wallet_requests": 5172,
+    "errors": 2,
+    "capture_success_pct": 99.961,
+    "primary_wallet_asset_windows_30m": 376,
+    "primary_multi_wallet_same_asset_windows_30m": 21,
+    "gate_requirements_met": true
+  },
+  "capture_reliability": {
+    "status": "PASS",
+    "exact_fill_lag_scope": "retained 48h exact-fill diagnostic window",
+    "primary_source_to_first_seen_seconds": {
+      "p50": 786.59,
+      "p90": 1882,
+      "p99": 2666.23,
+      "max": 2686.33
+    },
+    "control_source_to_first_seen_seconds": {
+      "p50": 768.14,
+      "p90": 1671.32,
+      "p99": 2189.86,
+      "max": 2242.78
+    },
+    "interpretation": "The 30-minute GitHub bootstrap is reliable but coarse. It is suitable for lower-frequency prospective context, not a fast execution trigger."
+  },
+  "activity_comparison": {
+    "primary": {
+      "selected_wallets": 20,
+      "active_wallets": 17,
+      "wallet_asset_windows": 376,
+      "windows_per_selected_wallet": 18.8,
+      "fills": 4093,
+      "fills_per_selected_wallet": 204.65,
+      "assets": 41,
+      "asset_windows": 347,
+      "multi_wallet_asset_windows": 21,
+      "multi_wallet_asset_window_pct": 6.05
+    },
+    "control": {
+      "selected_wallets": 6,
+      "active_wallets": 5,
+      "wallet_asset_windows": 110,
+      "windows_per_selected_wallet": 18.33,
+      "fills": 392,
+      "fills_per_selected_wallet": 65.33,
+      "assets": 27,
+      "asset_windows": 108,
+      "multi_wallet_asset_windows": 2,
+      "multi_wallet_asset_window_pct": 1.85
+    },
+    "interpretation": "Primary and controls have similar active-window frequency per selected wallet, while primary wallets generate materially more fills and more multi-wallet same-asset clustering. This is descriptive cohort behavior, not evidence of predictive value."
+  },
+  "primary_multi_wallet_events": {
+    "total": 21,
+    "assets": 7,
+    "by_asset": {
+      "BTC": 9,
+      "HYPE": 3,
+      "LINK": 3,
+      "NEAR": 2,
+      "ZEC": 2,
+      "@107": 1,
+      "ENA": 1
+    },
+    "non_tie_majority_events": 13,
+    "majority_vs_net_notional_sign_conflicts": 2,
+    "conflict_pct_of_non_ties": 15.38,
+    "wallet_count_ties": 8,
+    "tie_pct": 38.1,
+    "ties_resolved_by_net_sign": 8,
+    "interpretation": "Consensus direction is not yet sufficiently canonical for outcome scoring: ties are common and independent-wallet majority can disagree with aggregate notional sign."
+  },
+  "kraken_context_availability": {
+    "simple_symbol_events": 20,
+    "non_simple_symbol_events": 1,
+    "non_simple_symbol": "@107",
+    "simple_event_assets_seen_as_kraken_eur_pairs_in_project_period": [
+      "BTC/XBT",
+      "ENA",
+      "HYPE",
+      "LINK",
+      "NEAR",
+      "ZEC"
+    ],
+    "point_in_time_online_mapping_proven_for_each_event": false,
+    "event_overlap_with_existing_paper_candidate_context_pm30m": 2,
+    "event_overlap_with_existing_paper_candidate_context_pm60m": 3,
+    "interpretation": "Existing V2R4 candidate context covers only a small minority of H10 events and cannot substitute for a dedicated point-in-time Kraken outcome/context join."
+  },
+  "preregistration_gap": {
+    "directional_kraken_mfe_mae_close_available_for_all_fixed_events": false,
+    "frozen_false_positive_label_materialized_before_outcome_query": false,
+    "point_in_time_kraken_pair_mapping_archived_per_event": false,
+    "contemporaneous_kraken_price_volume_orderflow_context_archived_per_event": false,
+    "consequence": "Do not compute confirmatory predictive value or false-positive rate post hoc. Freeze a dedicated Kraken outcome/context join contract first, then collect/evaluate prospectively."
+  },
+  "decision": {
+    "keep_capture_running": true,
+    "keep_h10_shadow_only": true,
+    "candidate_feature_authorized": false,
+    "threshold_search_authorized": false,
+    "wallet_reselection_authorized": false,
+    "coin_subset_selection_authorized": false,
+    "v2r4_change_authorized": false,
+    "active_v3_change_authorized": false,
+    "next_gate": "V3_H10_FREEZE_KRAKEN_OUTCOME_CONTEXT_JOIN_CONTRACT_THEN_PROSPECTIVE_FIXED_REVIEW"
+  }
+}
