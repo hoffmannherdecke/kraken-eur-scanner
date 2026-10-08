@@ -148,3 +148,23 @@ the executor or polling substrate; use economical GitHub/MINI-PC/Supabase
 infrastructure only if/when a separately approved pilot design demonstrates
 a safe bounded implementation. Do not create another competing task list,
 scheduler or persistent service merely to express this roadmap.
+
+## Permanent market-regime learning lineage — from 2026-10-08
+
+The existing passive market-regime observation and point-in-time episode
+analysis, `research/v3/market-phase-reversal-observation-v1.md`, is a
+**cross-generation research capability**, not a temporary response to the
+October 2026 sell-off. Preserve it for every successor paper/shadow strategy
+and, if real-money trading is separately released, for each live successor.
+Future migrations must explicitly disposition its continued use, validated
+replacement or evidence-based retirement using the regular lineage ledger;
+silently dropping the capability is not allowed.
+
+Do not confuse persistence of observation with proof of trading alpha:
+the episode markers have no authority over entries, exits, sizing, scans,
+promotions or live orders. Their only downstream effect is on an otherwise
+already-eligible, bounded evaluation (including later real-fill/cost
+evidence), using known-at timestamps and no hindsight leakage. No additional
+ChatGPT Work run, push, parallel strategy, raw market archive or independent
+control plane is created for this rule. Safety, candidate freezes,
+pre-registered tests and live-release gates remain in force.

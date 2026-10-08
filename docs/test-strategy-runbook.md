@@ -467,6 +467,29 @@ to their safety contracts; they are not strategy learning/tuning.
 The live phase therefore extends rather than ends the improvement loop. Each real-money version
 must leave a complete evidence and migration trail for its successor.
 
-### 12.4 Marktphasen-Episoden als Forschungs-Evidenz (2026-10-08)
+### 12.5 Marktphasen-Lernen dauerhaft über alle Generationen (ab 2026-10-08)
 
-Für jede **ohnehin ausgelöste** substantielle V2R4-/V3-Analyse ist bei vorhandenen `MARKET_REGIME_EPISODE_V1`-Belegen im bestehenden GitHub Issue #7 die zeitpunktgerechte Abgleichprüfung gemäß `research/v3/market-phase-reversal-observation-v1.md` Teil der Analyse→Konsequenz-Schleife: Regime zum tatsächlichen Entscheidungszeitpunkt, spätere Outcomes/Trade-Quote/Missed-Moves, Datenlücken und inkrementeller Nutzen gegenüber bereits erfassten Kraken-Regimefeatures. Bei fehlender Evidenz `NOT_EVALUABLE`, ohne relevanten Zusatznutzen `NO_ACTION_WARRANTED` dokumentieren. Keine rückwirkende Signalverbesserung, kein neuer Analyse-Termin/Work-Lauf, kein H1-Reaktivieren und keinerlei Änderungen am aktiven Paper/Shadow/Live-Gate.
+Der passive Forschungs-/Episodenvertrag
+`research/v3/market-phase-reversal-observation-v1.md` gilt für **jeden
+folgenden Marktzyklus und jede zukünftige Paper-, Shadow- und Echtgeldversion**,
+nicht nur für V2R4/V3. Jede neue Strategiegeneration muss ihn in ihrer
+predecessor→successor-Lineage explizit disponieren. Geerbt wird die
+Beobachtungs-/Analysefähigkeit, **nicht** ein ungeprüfter Handelsvorteil.
+
+Bei jeder **ohnehin ausgelösten** substanziellen Strategie-/Work-/Live-
+Nachfolgeanalyse die vorhandenen `MARKET_REGIME_EPISODE_V1`-Belege aus dem
+bestehenden V3-Research-Issue #7 (oder einem später offiziell migrierten,
+versionierten Provenance-Nachfolger) dedupliziert berücksichtigen:
+nur tatsächlich vor Entscheidung/Entry bekannte Phasen, spätere gereifte
+Paper-/Live-Outcomes inklusive echter Fill-Kosten, Trade-Häufigkeit,
+WAIT/REJECT, verpasste Chancen, Stop-/Risikoverhalten und potenziellem
+Mehrwert gegenüber den bereits erfassten Kraken-Kontexten. Provenienz und
+zeitliche Lücken offen ausweisen; `NOT_EVALUABLE` bei unzureichenden Daten,
+`NO_ACTION_WARRANTED` ohne belegbaren Mehrwert.
+
+Keine automatische neue Work-Analyse, keine Push-Nachricht, kein Raw-Marktarchiv
+oder zusätzlicher Scanner. Keine H1-Standalone-Reaktivierung. Nie aufgrund
+eines beobachteten Marktphasenwechsels aktive Entry-/Stop-/Sizing-/Scanner-
+oder Echtgeldregeln ändern. Erst versionierter inaktiver Nachfolger,
+prospektive Validierung, Kostenrechnung, Release-/Nutzerfreigabe; Live-
+Trading/Orderrechte bleiben davon getrennt.

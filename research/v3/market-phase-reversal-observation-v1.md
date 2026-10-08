@@ -1,9 +1,32 @@
 # V3 — Marktphasen-/Reversal-Beobachtung und Lernübergabe (v1)
 
-Status: **PASSIVE OBSERVATION / RESEARCH ONLY**  
+Status: **PERMANENT, GENERATIONSÜBERGREIFENDE PASSIVE OBSERVATION / RESEARCH ONLY**  
 Beschluss: 2026-10-08  
 Aktive Strategie-/Serienautorität: ausschließlich `project-current-state.json`  
 Forschungspfad: `docs/v3-research-framework.md`, bestehendes GitHub Issue #7.
+
+## Dauerhafte Gültigkeit über alle Strategieversionen und Marktzyklen
+
+Diese Fähigkeit ist **dauerhaft** und nicht auf den Abverkauf vom 2026-10-08,
+V2R4, V3 oder einen bestimmten Marktzyklus begrenzt. Sie gilt für alle
+zukünftigen Paper-, Shadow- und — nach separater Handelsfreigabe —
+Echtgeld-Strategiegenerationen (V4, V5, ...), solange sie nicht durch einen
+nachweislich validierten Nachfolger ausdrücklich ersetzt wird.
+
+Der Beobachter sucht in **jeder neuen Marktphase** nach wiederkehrenden
+wesentlichen Übergängen (erneutes Risk-off, Stabilisierung, bestätigte
+Erholung), nicht nur nach einem einmaligen Oktober-Reversal. Ohne belegten
+Phasenwechsel keine Meldung und kein Speicherereignis. Das bestehende
+Zustandsvokabular bleibt unverändert; weitere Regimeklassen benötigen einen
+separat versionierten, geprüften Vertrag. Die ursprüngliche Marktlage ist
+lediglich der Anlass, nicht die zeitliche Begrenzung.
+
+Jede Nachfolgerstrategie muss die *Beobachtungs- und Auswertungsfähigkeit*
+explizit im jeweiligen predecessor→successor-Migrationsledger disponieren.
+Die Vererbung dieses **Forschungspfads** bedeutet **nicht**, dass sein
+prognostischer Nutzen oder ein darauf basierender Entry-/Stop-/Sizing-Filter
+als validiert gilt. Forschungsergebnisse können auch keinen Mehrwert
+zeigen; dann `NO_ACTION_WARRANTED` statt einer erzwungenen Strategieänderung.
 
 ## Zweck und Abgrenzung
 
@@ -65,8 +88,9 @@ bleibt ein begrenzter Lesetest vor weiterer Freigabe notwendig.
 
 ## Verbindung zum realen Lernen (nur am vorhandenen Analyse-Gate)
 
-Bei einer ohnehin aufgrund von Kandidatenreife, Trade-Frequenz oder
-Forschungs-Meilensteinen geöffneten V2R4-/V3-Analyse:
+Bei einer ohnehin aufgrund von Kandidatenreife, Trade-Frequenz, Live-Review oder
+Forschungs-Meilensteinen geöffneten Analyse von V2R4, V3 oder jeder späteren Paper-,
+Shadow- und Echtgeld-/Nachfolgerstrategie:
 1. Markierte Events aus Issue #7 dedupliziert lesen. Nur Ereignisse
    berücksichtigen, die **vor** dem jeweiligen Kandidaten/Entry beobachtet
    und nachweislich bekannt waren (kein rückwirkendes Phasenlabel).
@@ -81,13 +105,18 @@ Forschungs-Meilensteinen geöffneten V2R4-/V3-Analyse:
    testbaren Kriterien eine V3-Research-Hypothese bzw. inaktiven
    Nachfolger-Vorschlag erzeugen; sonst `NO_ACTION_WARRANTED`.
 4. Unter `docs/test-strategy-runbook.md` §12 weiterverarbeiten und
-   in den permanenten Strategie-Linien-/Migrationspfad routen.
+   in den permanenten Strategie-Linien-/Migrationspfad routen,
+   einschließlich echter Live-Fills, Kosten, Risikoereignisse und verworfener
+   Chancen, sofern die Echtgeldphase überhaupt separat aktiviert wurde.
    Materiale Änderungen benötigen erst punktgenauen Offline-Test,
    ggf. prospektiven Shadow, Kostenanalyse, Release-Gate und Freigabe.
 
 ## Schutz-/Kostenregeln
 
-Keine neue Work-Analyse nur weil ein Phasenereignis vorliegt.
+Keine neue Work-Analyse nur weil ein Phasenereignis vorliegt. Langfristig
+kein eigener Worker, zusätzlicher Scanner oder periodischer Vollmarkt-Archivjob.
+Ein bestehender Beobachtungstask darf ressourcenschonend weiterlaufen; sein
+Ausfall muss alle produktiven Handels-/Paper-/Shadow-Abläufe unberührt lassen.
 Keine neue Paper-Serie, kein paralleler strategieändernder Shadow,
 keine H1-Rückaktivierung, keine Änderung laufender Scanner-/Entry-/
 Stop-/Sizing-/V2R4-/H3-Parameter. Keine Orders oder Echtgeldaktionen.
