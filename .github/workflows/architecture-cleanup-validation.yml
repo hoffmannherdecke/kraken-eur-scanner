@@ -202,6 +202,12 @@ jobs:
           assert 'enable row level security' in h3_schema.lower()
           assert 'revoke all on public.v3_h3_shadow_evidence from anon, authenticated' in h3_schema
           assert 'revoke all on public.v3_h3_shadow_status from anon, authenticated' in h3_schema
+          watchdog=Path('tools/minipc-watchdog.ps1').read_text()
+          supervisor=Path('tools/minipc-runtime-supervisor.ps1').read_text()
+          assert 'CryptoMiniPC-V3H3Shadow001' in watchdog
+          assert 'v3-h3-shadow-001-heartbeat.json' in watchdog
+          assert 'CryptoMiniPC-V3H3Shadow001' in supervisor
+          assert 'v3-h3-shadow-001-heartbeat.json' in supervisor
           framework=Path('docs/v3-research-framework.md').read_text()
           allowed={'NEW','PRECHECK','OFFLINE_TEST','SHADOW','KEEP_TESTING','PROMOTE_CANDIDATE','PROMOTED','REJECTED','DEFERRED'}
           import re
