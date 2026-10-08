@@ -4,6 +4,10 @@ Status: **KANONISCHE KOMPONENTEN-/VERSIONSÜBERSICHT**
 Stand: 2026-09-29  
 Zweck: Single Source of Truth für Strategie-, Paper-, Infrastruktur-, Datenpfad- und Integrations**historie**. Der aktuelle deklarierte Betriebs-/Control-Plane-Zustand liegt maschinenlesbar in `project-current-state.json`; bei einer aktuellen Statusfrage hat diese Datei Vorrang.
 
+## Marktphasen-Lernradar 2026-10-08 — passiv / NICHT handelswirksam
+
+Der außerhalb von ChatGPT Work laufende sparsame 2h-Kraken-Marktphasen-Wächter protokolliert **nur verifizierte Zustandswechsel** als `MARKET_REGIME_EPISODE_V1` im bereits bestehenden [V3-Research-Issue #7](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/7). Quelle/Provenienz/Vertrag: `research/v3/market-phase-reversal-observation-v1.md`. **Bei einer ohnehin fälligen substanziellen V2R4-/V3-Work-Analyse nach Phase-1-Gate** die Episode mit ihrer ursprünglichen `observed_at_utc` nur für zeitlich danach liegende Kandidaten/Outcomes einordnen und gemäß `docs/test-strategy-runbook.md` §12.4 disponieren; keine zusätzlichen Work-Läufe oder Routinechecks. Keine automatische Änderung von Filtern, Orders, H1, V2R4 oder H3; die H1-Standalone-Ablehnung bleibt gültig. Beobachtungsbefund ist nicht automatisch positiver Testbefund; bei fehlendem Zusatznutzen `NO_ACTION_WARRANTED`.
+
 ## Statusentscheidung 2026-10-08 — V2R4 aktiv / V3 Shadow aktiv
 
 V2R4 PAPER ist seit 2026-10-07 als eigene immutable Serie `PAPER-V2R4-20261007T184255Z` aktiv; Release-Status `APPROVED_PAPER`, 50+50 EUR, `paper_only=true`, keine Echtgeldaktionen und keine automatische Aktivierung. V2R3 `PAPER-V2R3-CLEAN-20261001T0925Z` ist `closed_complete` und sein Release-Gate bleibt als abgeschlossene Historie fest an diese Serie gebunden. V3-H1 wurde nach festem Review als eigenständige Decision-Authority verworfen; V3-H3-SHADOW-001 ist auf dem MINI-PC aktiv und sammelt isolierte Evidenz gegen V2R4. H10 hat sein preregistriertes erstes Sample-/Health-Gate erreicht und ist bereit für den festen ersten Review; weiterhin keine Strategie-Kopplung.
