@@ -53,3 +53,47 @@ Historical/manual/validation workflows may remain in the repository for provenan
 ## Safety boundary
 
 Nothing in this governance file authorizes real-money trading, private order rights, leverage, automatic promotion or automatic strategy activation.
+
+## Autonomous milestone controller (2026-10-08)
+
+Workflow: `.github/workflows/autonomous-project-milestones.yml`; engine:
+`tools/project_milestone_controller.py`. Runs once daily via GitHub Actions,
+independent of ChatGPT Work. Manual dispatch inspects only; scheduled runs may
+post *one* milestone receipt to the relevant existing GitHub issue and an
+optional Slack signal. No new issue/backlog, Supabase schema, timer service,
+Mini-PC task or recurring Work invocation is introduced.
+
+- Current declared strategy/shadow authority: `project-current-state.json`.
+  Live evidence authority: Supabase completion and H3 status views.
+- The controller requires exact strategy, series, baseline and fixed policy
+  matches, timely H3 evidence, immutable Paper rules and at most one active
+  strategy-changing Shadow. Missing or contradictory inputs fail closed.
+- V2R4 final review is surfaced only when the actual registered sample,
+  temporal-diversity and maturity gate is complete. A distinct early
+  **low-trade** review is raised once the series has >=72h, >=100 candidates,
+  >=30 completed 24h follow-ups and still 0 completed Paper trades.
+- H3 fixed review is surfaced only after its frozen sample/capture gate,
+  stop condition and follow-up readiness. H6 remains queued pending H3
+  review; never starts as a second strategy-changing Shadow.
+- H10 first review is already complete; its next concrete research milestone
+  is the preregistered point-in-time Kraken-EUR outcome/context join and
+  false-positive label contract. Observation/capture continues independently.
+- Each ready milestone carries a deterministic stable event key based on the
+  milestone and frozen candidate/series identity; prior bot receipts in
+  GitHub issue comments suppress duplicate notifications. These comments
+  are receipt/history only, not a second task authority.
+- Automatic work here is **evidence collection, eligibility checking,
+  classification, review readiness and escalation**. A ready review must
+  be conducted and its findings dispositioned under the existing
+  analysis-to-consequence rule. This gate controller is *not* a trading,
+  strategy-editing, PR-merging, shadow-starting or automatic release engine.
+  Autonomous engineering may follow validated, low-risk plans separately;
+  any material strategy promotion, new shadow activation, live/private
+  exchange rights and sizing changes still require the existing release gates.
+- The workflow has read-only repo contents and Supabase GET access. The
+  only write permission is existing GitHub issue comments; the optional
+  Slack notification is a one-way webhook. No secrets are emitted to
+  diagnostics. Any absence of live evidence produces a failed control check,
+  never a guessed pass.
+- Changes to this controller use branch -> minimal tests -> validated PR ->
+  merge; never mid-series tuning or direct runtime-to-main writes.

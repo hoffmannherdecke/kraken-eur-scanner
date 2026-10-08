@@ -1,15 +1,15 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
 Status: **KANONISCHER MASTER-BACKLOG**  
-Letzte Vollsicht: 2026-09-29  
-Aktive Vergleichsbasis: `V2R3-2026-09-28` / `PAPER-V2R3-CLEAN-20261001T0925Z`
+Letzte Vollsicht: 2026-10-08  
+Aktueller deklarierter Zustand: `project-current-state.json` (V2R4 PAPER aktiv, V2R3 abgeschlossen).
 
-## Materialstatus 2026-10-07 — V2R3-Finalreview abgeschlossen
+## Historischer Materialstand 2026-10-07 — V2R3-Finalreview abgeschlossen
 
 - Die feste 1.000er-Kohorte hat das Fast-Track-Abschlussgate bei gesunder Integrität erreicht; Finalreview und Hypothesen-Disposition sind abgeschlossen.
 - Kanonisch: `research/work-analysis/2026-10-07-v2r3-final-review.md` und `research/v2r3/strategy-adjustment-hypotheses-final-20261007.json`.
 - Kein neuer V2R4-Strategiediff: bounded WAIT/fresh recheck und AssetPairs werden wiederverwendet; Anti-Chase, 50+50, 0,60%/Seite, Two-Stage und Exitstruktur bleiben für die erste V2R4-Serie unverändert.
-- Offen: aktueller `main`-Candidate, aktuelle Shadow-Reife, gebündelter MINI-PC-Sync, physischer Smoke und explizites `APPROVED_PAPER`. V2R4 und Echtgeld bleiben inaktiv.
+- Diese damals offenen Schritte wurden am 2026-10-07 durch den V2R4-Paper-Release abgeschlossen. V2R4 ist inzwischen PAPER-aktiv; Echtgeld bleibt inaktiv. Den aktuellen Status bestimmt ausschließlich `project-current-state.json`.
 
 ## Zweck und Pflege-Regeln
 
@@ -45,9 +45,19 @@ Kanonische Detailquellen:
 - Deferred MINI-PC maintenance (Codex update): GitHub Issue #36
 - 2026-10-07 release/handoff checkpoint: GitHub Issue #38
 
+
+## Laufendes Projekt-Controlling — 2026-10-08
+
+- [x] Eigenständiger täglicher GitHub-Gate-Check für V2R4/Paper, H3 und nächste Research-Entscheidungen auf separatem, reviewbarem Branch vorbereitet: `tools/project_milestone_controller.py` und `.github/workflows/autonomous-project-milestones.yml`.
+- [ ] Kontrollierte Aktivierung nach CI, PR und Live-Smoke nachweisen; keine autonome Strategie-Promotion oder Echtgeldaktivierung.
+- [ ] Bei künftigen echten Meilensteinen festen Review, Evidenz-Übernahme, Folgeschritt und ggf. menschliches Release-Gate ausführen; dokumentierte Readiness ist nicht gleich automatische Strategieänderung.
+- [ ] Alt-Checkboxen aus historischen Kapiteln schrittweise bereinigen, ohne unbelegte technische Erledigung zu behaupten.
+
 ---
 
-## P0 — Laufende V2R3-Serie sauber beenden und auswerten
+## P0 — Historische V2R3-Abschlusscheckliste (bereits abgeschlossen)
+
+**Nicht mehr der aktive Arbeitsplan:** Das finale Review ist vom 2026-10-07 dokumentiert; ältere offene Checkboxen unten sind historische Analyse-Unterpunkte, nicht der Freigabestatus einer aktiven V2R3-Serie. Neue Maßnahmen gehören zu V2R4/V3 und dem jeweiligen Release-/Research-Gate.
 - [x] Runtime-Persistenzfehler 2026-10-01 erkannt und repariert: Follow-up-No-op-Churn + `status|grep -q` unter pipefail konnte reale Änderungen als „keine Änderungen“ behandeln; reale Logs zeigen wiederholte Evaluation derselben Kandidaten vor Commit. Vorgänger-Serie mit 712 Outcomes als `DIAGNOSTIC_COMPROMISED` eingefroren, saubere identische V2R3-Serie ab 09:25 UTC neu gestartet.
 - [x] Clean-Series-Persistenzproof bestanden: erster echter Post-Repair-Scannerlauf → 3 Kandidaten → 3 Entscheidungen im selben Runtime-Lauf committed; separater Repeat-Guard-Lauf selektierte danach `[]`, Follow-up änderte 0 Dateien, Process-Health HEALTHY mit 3/3 vollständiger Provenance und 0 Orphans.
 - [x] Auswertungsinfrastruktur für die spätere Abschlussanalyse vorbereitet, ohne V2R3 zu verändern: `public.v2r3_interim_horizon_summary` bündelt unreife 30/60/120/360m-/Post-Detection-Horizonte mit Interpretations-Guardrail; `public.v2r3_reason_family_events` / `public.v2r3_reason_family_rollup` normalisieren freie Reason-Codes nur post-hoc/deskriptiv. `public.v2r3_release_review_snapshot` bleibt der single-row Evidence-Pack; zusätzlich rendert `tools/render-v2r3-final-review.py` daraus erst bei `final_review_allowed=true` einen Markdown-Abschlussreview. Unreife Snapshots werden fail-closed als BLOCKED behandelt; Strategy-/V2R4-/Echtgeld-Automatik bleibt verboten. **V2R3 final review renderer guard Run #1 SUCCESS**. Keine dieser Ebenen darf vor dem Abschluss-Gate zum Tuning genutzt werden.
