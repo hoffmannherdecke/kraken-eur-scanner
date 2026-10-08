@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "kind": "SAFE_AUTONOMOUS_IMPLEMENTATION_QUEUE_V1",
+  "date": "2026-10-08",
+  "status_authority": "project-current-state.json",
+  "evidence_authority": "Supabase/mini-PC (read-only at actual review)",
+  "work_run_rule": "EXISTING_DAILY_WORK_ONLY_CHEAP_PRECHECK_THEN_MAX_TWO_EVIDENCED_SAFE_TASKS",
+  "source_of_truth": "PROJECT_BACKLOG.md",
+  "no_orphan_requirement": true,
+  "allowed_effects": [
+    "READ_ONLY_EVIDENCE_REVIEW",
+    "RESEARCH_ONLY_CONTRACT",
+    "VERSIONED_TESTS",
+    "DOCUMENTATION",
+    "NON_RUNTIME_PR"
+  ],
+  "forbidden_effects": [
+    "TRADE_OR_ORDER",
+    "PRIVILEGE_OR_SECRET_CHANGE",
+    "FROZEN_STRATEGY_CHANGE",
+    "RUNTIME_TRIGGER_OR_THRESHOLD_CHANGE",
+    "SHADOW_START_OR_PROMOTION",
+    "LIVE_RELEASE",
+    "DATA_DESTRUCTION",
+    "NEW_SCHEDULER"
+  ],
+  "max_safe_actions_per_open_work_run": 2,
+  "max_concurrent_implementation_branches": 1,
+  "tasks": [
+    {
+      "id": "H10_PROSPECTIVE_JOIN_CONTRACT",
+      "status": "APPROVED_SAFE_SCOPE",
+      "priority": 1,
+      "owner": "EXISTING_WORK_SAFE_IMPLEMENTATION",
+      "gate": "H10_FIRST_REVIEW_COMPLETE_AND_CONTRACT_ABSENT",
+      "source_ref": "PROJECT_BACKLOG.md#P7",
+      "evidence": [
+        "project-current-state.json",
+        "research/v3/h10-trader-cohort-selection-contract-v1.json"
+      ],
+      "target": "research/v3/h10-kraken-outcome-context-join-contract-v1.json",
+      "allowlist": [
+        "research/v3/h10-kraken-outcome-context-join-contract-v1.json",
+        "docs/v3-research-framework.md",
+        "PROJECT_BACKLOG.md",
+        "research/v3-migration-ledger.json",
+        "tests/**",
+        "tools/**"
+      ],
+      "action": "Create ONLY an inactive preregistered point-in-time Kraken-EUR outcome/context join + false-positive/cost/holdout contract for existing H10 cohort; use exact existing frozen H10 cohort and source semantics, tests and CI, no H10 trading or capture changes.",
+      "proof_of_completion": "New contract is merged to main and passes relevant CI; otherwise close with blocker/decision packet.",
+      "limits": "One bounded PR, no source/data subscriptions, no H10 promotion, no new shadow."
+    },
+    {
+      "id": "UNKNOWN_CONTROL_DECISION_ADAPTER",
+      "status": "APPROVED_SAFE_SCOPE",
+      "priority": 2,
+      "owner": "EXISTING_WORK_SAFE_IMPLEMENTATION",
+      "gate": "UNSUPPORTED_NEXT_CONTROL_DECISION",
+      "source_ref": "docs/project-control-plane-governance.md",
+      "evidence": [
+        "project-current-state.json",
+        "tools/project_milestone_controller.py"
+      ],
+      "target": "tools/project_milestone_controller.py",
+      "allowlist": [
+        "tools/project_milestone_controller.py",
+        "tests/test_project_milestone_controller.py",
+        "docs/project-control-plane-governance.md",
+        "PROJECT_BACKLOG.md"
+      ],
+      "action": "When a NEW canonical control decision is detected outside supported adapter IDs, research its exact already-gated evidence/authority, implement minimal READ-ONLY controller adapter and negative tests on isolated PR. Never silently assume required fields or auto-approve any release.",
+      "proof_of_completion": "Matching adapter safely evaluates missing/stale proof fail-closed, fixture test and CI green; otherwise mark decision packet needed.",
+      "limits": "No new workflow/schedule, no state editing, no notifications without ready milestone."
+    },
+    {
+      "id": "UNKNOWN_SHADOW_ADAPTER",
+      "status": "APPROVED_SAFE_SCOPE",
+      "priority": 3,
+      "owner": "EXISTING_WORK_SAFE_IMPLEMENTATION",
+      "gate": "UNKNOWN_ACTIVE_SHADOW_ADAPTER",
+      "source_ref": "docs/project-control-plane-governance.md",
+      "evidence": [
+        "project-current-state.json",
+        "research/v3/shadow-candidate-contract-v1.json"
+      ],
+      "target": "tools/project_milestone_controller.py",
+      "allowlist": [
+        "tools/project_milestone_controller.py",
+        "tests/test_project_milestone_controller.py",
+        "docs/project-control-plane-governance.md",
+        "PROJECT_BACKLOG.md"
+      ],
+      "action": "For legitimately approved and declared new active shadow, create read-only gate adapter with immutable baseline, event dedup and maturity checks; preserve single active shadow and make no strategy changes.",
+      "proof_of_completion": "CI proof for adapter and missing-evidence failure; otherwise approval blocker.",
+      "limits": "No new shadow start, promotion or runtime changes."
+    }
+  ]
+}
