@@ -138,7 +138,7 @@ try{
  Copy-Item -LiteralPath $oldApp -Destination (Join-Path $snapshotInputs 'old-paper') -Recurse
  $stateCopies=Join-Path $snapshotInputs 'state';New-Item -ItemType Directory -Force $stateCopies|Out-Null
  Copy-Item -LiteralPath (Join-Path $backup 'tasks') -Destination (Join-Path $snapshotInputs 'scheduled-task-xml') -Recurse
- foreach($pat in @('v2r4-paper-*.json','v3-h3-*.json')){
+ foreach($pat in @('v2r4-paper-*.json','v2r4-wait-*.json','v3-h3-*.json')){
    Get-ChildItem $state -Filter $pat -File|ForEach-Object{Copy-Item $_.FullName (Join-Path $stateCopies $_.Name)}
  }
  $h3App=Join-Path $TradingRoot 'Runtime\v3-h3-shadow-001'
