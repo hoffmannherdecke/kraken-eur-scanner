@@ -4,6 +4,12 @@ name: Autonomous project milestone control
   schedule:
     - cron: '40 6 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/project_milestone_controller.py'
+      - 'project-current-state.json'
+      - '.github/workflows/autonomous-project-milestones.yml'
 
 permissions:
   contents: read
