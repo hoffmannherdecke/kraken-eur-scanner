@@ -7,14 +7,16 @@ name: MINI-PC daily 10am status
     paths:
       - '.github/workflows/minipc-daily-status.yml'
   schedule:
-    - cron: '0 * * * *'
+    # 10:00 Europe/Berlin is 08:00 UTC in CEST and 09:00 UTC in CET.
+    # Trigger only both candidate UTC hours; the in-job local-hour gate keeps exactly one effective daily report.
+    - cron: '0 8,9 * * *'
 
 permissions:
   contents: read
 
 concurrency:
   group: minipc-daily-status
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   status:
@@ -55,8 +57,8 @@ jobs:
           now_utc=dt.datetime.now(dt.timezone.utc)
           now_local=now_utc.astimezone(berlin)
 
-          # GitHub cron is UTC-only. Run hourly and gate on the Berlin local hour,
-          # preserving 10:00 behavior across CET/CEST transitions.
+          # GitHub cron is UTC-only. Trigger only the two UTC hours that can map to
+          # 10:00 Europe/Berlin; this local-hour gate selects the correct one.
           if event_name=="schedule" and now_local.hour!=10:
               print(json.dumps({
                   "skipped":True,
