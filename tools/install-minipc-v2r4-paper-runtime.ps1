@@ -119,7 +119,9 @@ $runtimeFiles=@(
   'paper_position_tracker.py',
   'paper_followup.py',
   'tools\v2r4-paper-local-runtime.py',
-  'tools\v2r4-paper-cloud-sync.py'
+  'tools\v2r4-paper-cloud-sync.py',
+  'market_data\__init__.py',
+  'market_data\universe.py'
 )
 $runtimeFingerprint=Get-BundleFingerprint $repo $runtimeFiles
 $approvalPath=Join-Path $repo 'research\v2r4\release-evidence\v2r4-paper-approval-20261007.json'
@@ -137,6 +139,12 @@ Copy-Item (Join-Path $repo 'paper_evaluator\*') $evaluatorApp -Recurse -Force
 foreach($name in @('paper_context.py','paper_position_tracker.py','paper_followup.py')){ Copy-Item (Join-Path $repo $name) (Join-Path $app $name) -Force }
 Copy-Item (Join-Path $repo 'tools\v2r4-paper-local-runtime.py') (Join-Path $app 'v2r4-paper-local-runtime.py') -Force
 Copy-Item (Join-Path $repo 'tools\v2r4-paper-cloud-sync.py') (Join-Path $app 'v2r4-paper-cloud-sync.py') -Force
+# The isolated app needs the same canonical WS-v2 symbol normalization as the
+# Kraken universe feed; never reintroduce a private/static ticker whitelist.
+$marketDataApp=Join-Path $app 'market_data'
+New-Item -ItemType Directory -Force -Path $marketDataApp | Out-Null
+Copy-Item (Join-Path $repo 'market_data\__init__.py') (Join-Path $marketDataApp '__init__.py') -Force
+Copy-Item (Join-Path $repo 'market_data\universe.py') (Join-Path $marketDataApp 'universe.py') -Force
 Copy-Item $strategySpecSource (Join-Path $app 'paper_strategy_spec.json') -Force
 $appStrategyFingerprint=(Get-FileHash (Join-Path $app 'paper_strategy_spec.json') -Algorithm SHA256).Hash.ToLowerInvariant()
 if($appStrategyFingerprint -ne $strategyFingerprint){ throw 'Copied V2R4 strategy fingerprint mismatch.' }
@@ -169,7 +177,7 @@ if(Test-Path $controlPath){
 }
 
 Write-Host "3/8 Compile active runtime and protect local secrets for SYSTEM tasks..."
-& $python -m py_compile (Join-Path $app 'v2r4-paper-local-runtime.py') (Join-Path $app 'v2r4-paper-cloud-sync.py') (Join-Path $app 'paper_evaluator\evaluate.py') (Join-Path $app 'paper_evaluator\v2r4_wait_runtime.py') (Join-Path $app 'paper_evaluator\v2r4_local_recheck.py') (Join-Path $app 'paper_position_tracker.py') (Join-Path $app 'paper_followup.py')
+& $python -m py_compile (Join-Path $app 'v2r4-paper-local-runtime.py') (Join-Path $app 'v2r4-paper-cloud-sync.py') (Join-Path $app 'market_data\universe.py') (Join-Path $app 'paper_evaluator\evaluate.py') (Join-Path $app 'paper_evaluator\v2r4_wait_runtime.py') (Join-Path $app 'paper_evaluator\v2r4_local_recheck.py') (Join-Path $app 'paper_position_tracker.py') (Join-Path $app 'paper_followup.py')
 if($LASTEXITCODE -ne 0){ throw 'V2R4 runtime compile failed.' }
 icacls $apiKey /grant:r 'SYSTEM:(R)' /C | Out-Null
 icacls $relayToken /grant:r 'SYSTEM:(R)' /C | Out-Null

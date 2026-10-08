@@ -28,7 +28,13 @@ jobs:
             tools/validate-v3-migration-ledger.py \
             tools/validate-artifact-retention.py \
             tools/minipc-status-sync.py \
+            tools/v2r4-paper-local-runtime.py \
             tools/v2r4-shadow-cloud-sync.py
+      - name: Parse changed V2R4 Windows installer
+        run: |
+          pwsh -NoProfile -NonInteractive -Command '$tok=$null; $err=$null; [System.Management.Automation.Language.Parser]::ParseFile("tools/install-minipc-v2r4-paper-runtime.ps1",[ref]$tok,[ref]$err) | Out-Null; if ($err.Count -ne 0) { $err | Out-String | Write-Error; exit 1 }; Write-Output "PAPER_INSTALLER_PARSE_PASS"'
+      - name: V2R4 read-only symbol and outage reconciliation tests
+        run: python tests/test_v2r4_symbol_outage_recovery.py
       - name: V3 H3 shadow routing tests
         run: |
           python tests/test_v3_h3_shadow_common.py
