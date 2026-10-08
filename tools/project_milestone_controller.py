@@ -22,8 +22,9 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[1]
 UTC = dt.timezone.utc
 ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "PAPER_FINAL_REVIEW": 38,
-                 "PAPER_LOW_TRADES": 38, "H10_CONTRACT": 7}
-REQUIRED_DECISIONS = {"V3-H3-FIXED-REVIEW", "V2R4-PRODUCTIVITY-REVIEW"}
+                 "PAPER_LOW_TRADES": 38, "H10_CONTRACT": 7,
+                 "NEW_SHADOW_ADAPTER": 7, "NEW_CONTROL_DECISION": 7}
+SUPPORTED_DECISIONS = {"V3-H3-FIXED-REVIEW", "V2R4-PRODUCTIVITY-REVIEW"}
 
 
 def require(condition: bool, message: str) -> None:
@@ -48,8 +49,9 @@ def load_local_state(root: Path) -> dict:
     require(inv.get("one_strategy_changing_shadow_at_a_time") is True, "shadow WIP rule missing")
     shadows = (state.get("strategy_changing_shadow_wip") or {}).get("active") or []
     require(len(shadows) <= 1, "more than one strategy-changing shadow")
-    decision_ids = {x.get("id") for x in state.get("next_control_decisions") or []}
-    require(REQUIRED_DECISIONS <= decision_ids, "canonical decisions missing")
+    decisions = state.get("next_control_decisions") or []
+    ids = [x.get("id") for x in decisions]
+    require(len(ids) == len(set(ids)) and all(ids), "duplicate/invalid control decisions")
     return state
 
 
@@ -90,6 +92,13 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
     require(paper.get("completed_trades") is not None, "missing trade counts")
     notices = []
     statuses = []
+    for task in state.get("next_control_decisions") or []:
+        if task["id"] not in SUPPORTED_DECISIONS:
+            statuses.append("CONTROL:ADAPTER_REQUIRED:" + task["id"])
+            notices.append(event("NEW_CONTROL_DECISION", task["id"],
+                                 "Neue kanonische Projektentscheidung braucht ein "
+                                 "versioniertes Gate/Read-only-Adapter. Keine stille "
+                                 "Überspringung und keine ungeprüfte Aktivierung."))
     if paper.get("completion_ready") is True:
         require(paper.get("intake_should_stop") is True,
                 "completion gate contradicts intake state")
@@ -117,42 +126,48 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
     shadows = (state.get("strategy_changing_shadow_wip") or {}).get("active") or []
     if shadows:
         sh = shadows[0]
-        require(sh.get("candidate_id") == "V3-H3-SHADOW-001",
-                "unknown active shadow needs controller update")
-        require(h3.get("shadow_candidate_id") == sh["candidate_id"],
-                "H3 status candidate drift")
-        require(iso_time(h3["generated_at"]) >= now - dt.timedelta(hours=2),
-                "H3 evidence stale")
-        p = h3.get("payload") or {}
-        require(p.get("baseline_series_id") == series, "H3 baseline series drift")
-        require(p.get("baseline_strategy_revision") == active["strategy_revision"],
-                "H3 baseline revision drift")
-        for k in ("orders", "real_money_actions", "automatic_promotion",
-                  "automatic_extension"):
-            require(p.get(k) is False, "H3 safety invariant " + k)
-        if p.get("minimum_gate_met") is True:
-            dates = p.get("distinct_utc_dates") or []
-            require(int(p.get("eligible_matched_candidates") or 0) >= 20
-                    and len(set(dates)) >= 2
-                    and float(p.get("capture_success_pct") or 0) >= 95,
-                    "H3 claimed gate without preregistered sample/capture evidence")
-            require(p.get("intake_should_stop") is True,
-                    "H3 gate reached but no stop state")
-            if p.get("outcome_review_ready") is True:
-                statuses.append("H3:FIXED_REVIEW_READY")
-                divergences = int(p.get("causal_decision_divergences") or 0)
-                recommendation = ("INCONCLUSIVE_LOW_IMPACT"
-                                  if divergences < 3 else "FORMAL_REVIEW_REQUIRED")
-                notices.append(event("H3_FIXED_REVIEW",
-                                     sh["candidate_id"] + "|" + series,
-                                     "H3-Fixreview fällig: " + recommendation +
-                                     "; Baseline-Replay, Kosten, Follow-ups und "
-                                     "Preregistrierung überprüfen. H6 erst nach "
-                                     "abgeschlossenem H3-Review / separatem Gate."))
-            else:
-                statuses.append("H3:WAIT_FOLLOWUPS")
+        if sh.get("candidate_id") != "V3-H3-SHADOW-001":
+            statuses.append("SHADOW:ADAPTER_REQUIRED")
+            notices.append(event("NEW_SHADOW_ADAPTER", sh.get("candidate_id") or "UNKNOWN",
+                                 "Neue aktive Shadow-Version erkannt: separaten "
+                                 "Evidence-/Review-Adapter hinzufügen und die "
+                                 "Baseline-/Freeze-Gates prüfen. Keine Promotion."))
         else:
-            statuses.append("H3:COLLECTING")
+            require(h3 is not None, "H3 live evidence unavailable")
+            require(h3.get("shadow_candidate_id") == sh["candidate_id"],
+                    "H3 status candidate drift")
+            require(iso_time(h3["generated_at"]) >= now - dt.timedelta(hours=2),
+                    "H3 evidence stale")
+            p = h3.get("payload") or {}
+            require(p.get("baseline_series_id") == series, "H3 baseline series drift")
+            require(p.get("baseline_strategy_revision") == active["strategy_revision"],
+                    "H3 baseline revision drift")
+            for k in ("orders", "real_money_actions", "automatic_promotion",
+                      "automatic_extension"):
+                require(p.get(k) is False, "H3 safety invariant " + k)
+            if p.get("minimum_gate_met") is True:
+                dates = p.get("distinct_utc_dates") or []
+                require(int(p.get("eligible_matched_candidates") or 0) >= 20
+                        and len(set(dates)) >= 2
+                        and float(p.get("capture_success_pct") or 0) >= 95,
+                        "H3 claimed gate without preregistered sample/capture evidence")
+                require(p.get("intake_should_stop") is True,
+                        "H3 gate reached but no stop state")
+                if p.get("outcome_review_ready") is True:
+                    statuses.append("H3:FIXED_REVIEW_READY")
+                    divergences = int(p.get("causal_decision_divergences") or 0)
+                    recommendation = ("INCONCLUSIVE_LOW_IMPACT"
+                                      if divergences < 3 else "FORMAL_REVIEW_REQUIRED")
+                    notices.append(event("H3_FIXED_REVIEW",
+                                         sh["candidate_id"] + "|" + series,
+                                         "H3-Fixreview fällig: " + recommendation +
+                                         "; Baseline-Replay, Kosten, Follow-ups und "
+                                         "Preregistrierung überprüfen. H6 erst nach "
+                                         "abgeschlossenem H3-Review / separatem Gate."))
+                else:
+                    statuses.append("H3:WAIT_FOLLOWUPS")
+            else:
+                statuses.append("H3:COLLECTING")
     else:
         statuses.append("H3:NO_ACTIVE_SHADOW")
 
@@ -240,7 +255,10 @@ def main() -> int:
         key = os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
         require(bool(key), "missing Supabase evidence credential")
         paper = get_rows(base, key, "paper_series_completion_readiness")[0]
-        h3 = get_rows(base, key, "v3_h3_shadow_status")[0]
+        shadows = (state.get("strategy_changing_shadow_wip") or {}).get("active") or []
+        h3 = (get_rows(base, key, "v3_h3_shadow_status")[0]
+              if shadows and shadows[0].get("candidate_id") == "V3-H3-SHADOW-001"
+              else None)
         now = dt.datetime.now(UTC)
     result = evaluate(state, paper, h3, now, ROOT)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
