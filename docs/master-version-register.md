@@ -4,6 +4,10 @@ Status: **KANONISCHE KOMPONENTEN-/VERSIONSÜBERSICHT**
 Stand: 2026-09-29  
 Zweck: Single Source of Truth für Strategie-, Paper-, Infrastruktur-, Datenpfad- und Integrations**historie**. Der aktuelle deklarierte Betriebs-/Control-Plane-Zustand liegt maschinenlesbar in `project-current-state.json`; bei einer aktuellen Statusfrage hat diese Datei Vorrang.
 
+## Markt- und Nachrichtenquellen — Quellen-Symbiose 2026-10-08
+
+Kanonischer Vertrag: `docs/market-context-source-fusion-v1.md`; maschinenlesbare Quellenrollen in `research/source-registry.json`. Bereits bekannte CoinGecko-/CoinMarketCap-/Coinbase-, Kraken-/Binance-/Altrady-, Fed/SEC/CFTC/BLS/Makro-, Exchange/Token-Event- und H8/H10/H11-Quellen sind sauber nach **active/verified-on-demand/catalogued** getrennt. Bestehender 2h-Marktphasen-Task erhält kompakten Aggregat-/offiziellen Ereigniskontext; **manuelle Tool-Smokes beweisen noch keine automatische Datenzufuhr**. Kraken-EUR bleibt Handelsautorität; korrelierte oder widersprüchliche Kontexte erhalten keine eigene BUY-/REJECT-/Risk-off-Entscheidungshoheit. Keine neue Task/Work/Scanner/Push/Supabase-Rohdatenhaltung, kein Eingriff in V2R4/H3. Verbindlicher V3-Inkrementalwert-Test und generationsübergreifende Migration bleiben im bestehenden Ledger. Unbeaufsichtigter Source-E2E-Nachweis bleibt offen.
+
 ## Marktphasen-Lernradar 2026-10-08 — dauerhaft / passiv / NICHT handelswirksam
 
 Der bestehende, außerhalb von ChatGPT Work aktivierte 2h-Kraken-Marktphasen-Wächter ist als **permanente generationenübergreifende Forschungsfähigkeit** angelegt (V2R4, V3, V4+ und später gesondert freigegebene Echtgeld-Nachfolger). Er soll **nur belegte Zustandswechsel** als `MARKET_REGIME_EPISODE_V1` im [bestehenden V3-Research-Issue #7](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/7) protokollieren. Vertrag: `research/v3/market-phase-reversal-observation-v1.md`; die Provenienz-/Versionsvererbung ist im Migrationsledger dokumentiert. Ein aktiver Beobachtungsauftrag allein beweist **noch keinen erfolgreichen Lauf oder Ereignis-Write**.

@@ -231,6 +231,8 @@ Detailregeln bleiben in `docs/v3-research-framework.md` und Issue #7. Die Abgren
 
 ---
 
+- [ ] **Dauerhafte, schlanke Multi-Source-Kontextabdeckung E2E nachweisen:** `docs/market-context-source-fusion-v1.md` führt alle früher vereinbarten Markt-/Nachrichtenquellen und die ergänzten, **nicht automatisch aktiven** Quellen katalogisch zusammen. CoinGecko-Global/CMC-Global/CMC-Derivate/CMC-Makro Read-Smokes am 08.10. manuell bestanden; im bestehenden 2h-Marktphasen-Task ist erst ein **echter unbeaufsichtigter** Kraken-EUR+​CoinGecko/CMC-Cross-Read (Zeiten, Fehler-/Konfliktfall, erster INITIAL_BASELINE-Event) nachzuweisen. Behörden-/Makroereignisse nur 1×/Tag im kleinen definierten UTC-Fenster bzw. bei konkretem Anlass; offizielles Original vor Trigger-Konsequenz, kein Weltlagen-Vollwatch. Unverzichtbar: **keine neue Watch-Task/Work-Schleife**, keine negativen Quellenvetos, keine stillen Filter, keine H1-Reaktivierung. Bei fehlender App-Verfügbarkeit fail-soft; kleiner Read-Only Mini-PC-/bestehender Pfad nur nach separatem minimalem Source-Intake-/Smokegate. Restliche Coinbase/BLS/CFTC/Exchange/Unlock/Makro/Arkham/Nansen-Quellen jeweils nur nach echtem Zusatznutzen und Gate von katalogisiert zu aktiv fördern.
+
 ## P7 — Separater Smart-Money-/Trader-Sensor als Shadow-Forschungszweig
 
 Erst nach stabilem Kernsystem. Keine Schreibrechte auf Hauptqueue, keine Orders.

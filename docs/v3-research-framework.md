@@ -776,6 +776,10 @@ The same principle continues into the later live phase: live observations accele
 creation/evaluation of inactive successors, but the active real-money version never
 self-retunes and live execution-safety/release gates remain independent hard requirements.
 
+### Multiple markets/news/primary sources: context first, strategy later (2026-10-08)
+
+The permanent, scoped source/freshness/conﬂict/anti-overfilter contract is `docs/market-context-source-fusion-v1.md`; `research/source-registry.json` distinguishes manually verified CoinGecko/CMC reads, existing Kraken/Fed/SEC paths, and not-yet-integrated official CFTC/BLS/Coinbase/events/smart-money sources. All additional aggregate/news feeds are **CONTEXT_ONLY**; they cannot silently alter V2R4, H3, H6 order, entry/WAIT/REJECT, stops, H1-standalone rejection, or Work cadence. H10/H8/H11 preserve their own proof gates. V3 regime decision candidate must measure incremental value **beyond** existing market context using independent phase/time diversity, costs, trade conversion and missed-move controls; discordant/stale feeds never cast hard vetoes. Later live successors inherit this capability, not an unvalidated source-driven strategy mechanic.
+
 ### V3 decision candidate — Marktphasen-Kontext mit messbarem Zusatznutzen (2026-10-08)
 
 **Status: RESEARCH / PRECHECK — NICHT AKTIVE ENTSCHEIDUNGSLOGIK.**
