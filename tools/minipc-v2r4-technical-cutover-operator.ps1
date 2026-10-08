@@ -18,6 +18,7 @@ $marker=Join-Path $state 'v2r4-technical-cutover-maintenance.json'
 $complete=Join-Path $state 'v2r4-technical-cutover-completed.json'
 $lock=Join-Path $state 'v2r4-technical-cutover-operator-lock.json'
 $taskNames=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait','CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync','CryptoMiniPC-V3H3Shadow001')
+$supervisorName='CryptoMiniPC-RuntimeSupervisor'
 $phase='READ_ONLY'
 function Need([bool]$Ok,[string]$Message){if(-not $Ok){throw $Message}}
 function Atomic([string]$Path,[object]$Data){
@@ -43,12 +44,14 @@ function Stop-TaskBounded([string]$Name){
  Need ([string](Get-ScheduledTask -TaskName $Name).State -eq 'Disabled') "Could not disable $Name"
 }
 function Restore-Old([string]$Backup){
- foreach($n in $taskNames){
+ foreach($n in @($taskNames)+@($supervisorName)){
    $path=Join-Path $Backup ('tasks\'+$n+'.xml')
    Need (Test-Path $path) "Missing task backup: $n"
    Register-ScheduledTask -TaskName $n -Xml (Get-Content $path -Raw) -Force|Out-Null
  }
  foreach($n in $taskNames){Enable-ScheduledTask -TaskName $n|Out-Null;Start-ScheduledTask -TaskName $n}
+ Enable-ScheduledTask -TaskName $supervisorName|Out-Null
+ Start-ScheduledTask -TaskName $supervisorName
 }
 function Old-Ids{
  $ids=[System.Collections.Generic.List[string]]::new()
@@ -88,7 +91,7 @@ try{
  $old=Get-Content (Join-Path $oldApp 'paper_runtime_control.json') -Raw|ConvertFrom-Json
  Need ($old.series_id -eq $oldId -and $old.release_repo_sha -eq $oldSha -and $old.paper_only -eq $true -and $old.real_money_actions_enabled -eq $false) 'Old series drift or unsafe control'
  Need ($stage.strategy_fingerprint_sha256 -eq $old.strategy_fingerprint_sha256 -and [double]$old.scout_notional_eur -eq 50 -and [double]$old.stage2_notional_eur -eq 50) 'Strategy/sizing changed'
- foreach($n in $taskNames){$null=Get-ScheduledTask -TaskName $n -ErrorAction Stop}
+ foreach($n in @($taskNames)+@($supervisorName)){$null=Get-ScheduledTask -TaskName $n -ErrorAction Stop}
  $gateRaw=& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File (Join-Path $repo 'tools\minipc-v2r4-technical-cutover-readiness.ps1') -TradingRoot $TradingRoot -SuccessorReleaseSha $sha
  $gate=($gateRaw -join [Environment]::NewLine)|ConvertFrom-Json
  Need ($gate.status -eq 'READ_ONLY_GATE_PASS_NOT_CUTOVER') 'Physical staged file hash or old baseline preflight blocked'
@@ -111,11 +114,15 @@ try{
  Need (-not(Test-Path $backup)) 'Backup path already exists'
  New-Item -ItemType Directory -Force (Join-Path $backup 'tasks')|Out-Null
  Atomic $lock ([ordered]@{kind='V2R4_TECHNICAL_LOCK_V1';started_at=$started.ToString('o');orders=$false;sha=$sha})
- foreach($n in $taskNames){
+ foreach($n in @($taskNames)+@($supervisorName)){
    [IO.File]::WriteAllText((Join-Path $backup ('tasks\'+$n+'.xml')),(Export-ScheduledTask -TaskName $n),[Text.UTF8Encoding]::new($false))
  }
  $lease=[ordered]@{kind='V2R4_TECHNICAL_MAINTENANCE_V1';phase='ARMING';created_at_utc=$started.ToString('o');expires_at_utc=$started.AddMinutes(10).ToString('o');predecessor_series_id=$oldId;successor_repo_sha=$sha;task_names=@($taskNames);orders_enabled=$false}
  Atomic $marker $lease
+ # The running supervisor may otherwise race with the old tasks during
+ # quiescence. Stop its timer BEFORE stopping the old Paper and H3 tasks;
+ # its exact XML was captured above for bounded pre-commit recovery.
+ Stop-TaskBounded $supervisorName
  foreach($n in $taskNames){Stop-TaskBounded $n}
  $lease.phase='QUIESCED';Atomic $marker $lease
  $syncOutput=& $python (Join-Path $oldApp 'v2r4-paper-cloud-sync.py') --app-root $oldApp --trading-root $TradingRoot --once
@@ -196,6 +203,10 @@ try{
    @($post.paper_series|Where-Object{$_.status -eq 'active' -and $_.series_id -eq $newId}).Count -eq 1) 'Cloud successor not uniquely active'
  Need ((Get-ScheduledTask -TaskName 'CryptoMiniPC-V3H3Shadow001').State -eq 'Disabled') 'Old H3 did not remain disabled'
  Atomic $complete ([ordered]@{kind='V2R4_TECHNICAL_CUTOVER_COMPLETED_V1';completed_at_utc=[datetime]::UtcNow.ToString('o');predecessor_series_id=$oldId;successor_series_id=$newId;h3_001_retired=$true;orders=$false;real_money_actions=$false;snapshot_sha256=$backupSha;release_repo_sha=$sha})
+ # Only after the verified H3-001 retirement marker exists, restore the
+ # independent runtime supervisor. New code skips permanently retired H3.
+ Enable-ScheduledTask -TaskName $supervisorName|Out-Null
+ Start-ScheduledTask -TaskName $supervisorName
  Remove-Item $marker,$lock -Force
  [pscustomobject]@{status='CUTOVER_COMPLETED_PAPER_ONLY';successor_series_id=$newId;h3_001='FROZEN';orders=$false;real_money_actions=$false}|ConvertTo-Json
 }catch{
