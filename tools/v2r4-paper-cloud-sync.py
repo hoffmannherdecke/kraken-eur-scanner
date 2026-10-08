@@ -136,7 +136,7 @@ def dispatch_alerts_if_needed(root,control,candidates,trades,paper_state_dir=Non
 
 def run_once(args):
     hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'
-    state_path=(args.paper_state_dir or (args.trading_root/'State'))/'v2r4-paper-cloud-sync-state.json'
+    state_path=(getattr(args,'paper_state_dir',None) or (args.trading_root/'State'))/'v2r4-paper-cloud-sync-state.json'
     token=load_token(args.trading_root)
     result={'schema_version':1,'kind':'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1','checked_at_utc':iso(),'status':'UNKNOWN','paper_only':True,'order_api':False,'real_money_actions':False}
     if len(token)<24:
@@ -169,7 +169,7 @@ def run_once(args):
             state['sent']={k:sent[k] for k in keys}
             atomic_json(state_path,state)
 
-        alert_state=dispatch_alerts_if_needed(args.trading_root,control,candidates,trades,args.paper_state_dir)
+        alert_state=dispatch_alerts_if_needed(args.trading_root,control,candidates,trades,getattr(args,'paper_state_dir',None))
         result.update(
             status='HEALTHY',series_id=control['series_id'],candidates=len(candidates),trades=len(trades),
             pending_candidates=len(pending_candidates),pending_trades=len(pending_trades),
