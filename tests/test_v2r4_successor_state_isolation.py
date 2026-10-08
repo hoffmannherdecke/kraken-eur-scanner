@@ -24,6 +24,7 @@ class TechnicalSuccessorStateIsolation(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             new=Path(td)/"successor_state"
             with patch.object(sys,"argv",["prog","--mode","candidates",
+                                          "--app-root",str(Path(td)/"new-app"),
                                           "--paper-state-dir",str(new)]):
                 parsed=mod.parse_args()
                 self.assertEqual(new,parsed.paper_state_dir)
