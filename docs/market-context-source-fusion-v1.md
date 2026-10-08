@@ -3,6 +3,10 @@ Status: **PERSISTED SOURCE COVERAGE / CONNECTOR READ VERIFIED PARTIALLY / NO NEW
 Entscheidung: 2026-10-08. Rechtsgrundlage im Projekt: `docs/source-intake-policy.md`, `research/source-registry.json`, `docs/v3-research-framework.md`, `project-current-state.json`.
 Zweck: früh vereinbarte CoinGecko/CoinMarketCap/Coinbase/Binance/Kraken-, US-Behörden-/Makro-, Kryptoereignis-, Derivate-, On-Chain-, Smart-Money- und Eventmarkt-Quellen **dauerhaft im Forschungspfad und in geeigneten bestehenden Analysen** berücksichtigen, ohne die aktive Frozen-Series zu verändern. **Registriert** bedeutet weder automatisch laufend abgefragt noch produktiv integriert.
 
+## Autonome Qualitätsverwaltung (2026-10-08)
+
+Neue Medien, News-Aggregatoren, On-Chain-Sicherheitsinformationen und Community-Foren werden in `research/market-source-candidates-v1.json` **separat von den bereits autorisierten Runtime-Datenquellen** in `research/source-registry.json` geführt. Der dauerhafte autonome Auswahl-, Score-, Quarantäne-, Dedupe- und Austauschvertrag liegt in `docs/market-source-autonomy-v1.md`. Er nutzt denselben 2h-Radar und wöchentlich nur ein vorhandenes Beobachtungsfenster; weder einen zweiten Scanner noch neue Work-/GitHub-Schedule-Jobs. Quellen dürfen researchseitig selbstständig auf-/abgestuft werden, nicht als automatische Entry-/WAIT-/REJECT-Entscheidungsautorisierung. Erst echte E2E-Belege rechtfertigen eine Quelle als technisch regelmäßig aktiv zu bezeichnen.
+
 ## 1. Verifizierter Bestand statt Versprechen
 - **Primär und technisch aktiv:** Kraken Spot-EUR Public WS/REST/AssetPairs; Mini-PC/Scanner/Paper; ergänzend Kraken/Binance Futures, Altrady Eventtrigger. Kraken ist für EUR-Handelbarkeit, Kurs, Struktur, Stop/Limit und Orderkosten zuständig. Fallback muss dieselbe fachliche Autorität respektieren.
 - **Aktive, aber unabhängige V3-Forschung:** Hyperliquid H10 prospektiv read-only; H8 CoinMetrics zwei bekanntzeitliche Stichproben, kein freies Backfill-Signal; H11 Polymarket Vorcheck, nicht aktives Handelssignal. Das verworfene H1-Standalone-Gate bleibt verworfen. H3 läuft, H6 wartet; WIP-Regel bleibt.

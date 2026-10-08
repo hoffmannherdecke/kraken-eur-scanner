@@ -2,10 +2,21 @@ name: Source intake governance
 
 'on':
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'research/source-registry.json'
+      - 'research/market-source-candidates-v1.json'
+      - 'docs/market-source-autonomy-v1.md'
+      - 'tools/validate-market-source-catalog.py'
+      - '.github/workflows/source-intake-governance.yml'
   push:
     branches: [main]
     paths:
       - 'research/source-registry.json'
+      - 'research/market-source-candidates-v1.json'
+      - 'docs/market-source-autonomy-v1.md'
+      - 'tools/validate-market-source-catalog.py'
       - 'docs/source-intake-policy.md'
       - 'docs/storage-retention-policy.md'
       - 'tools/validate-source-registry.py'
@@ -32,10 +43,13 @@ jobs:
           python-version: '3.13'
 
       - name: Compile validator
-        run: python -m py_compile tools/validate-source-registry.py
+        run: python -m py_compile tools/validate-source-registry.py tools/validate-market-source-catalog.py
 
       - name: Validate canonical source registry
         run: python tools/validate-source-registry.py
+
+      - name: Validate optional source discovery catalog (NO live authority)
+        run: python tools/validate-market-source-catalog.py
 
       - name: Fail-closed duplicate storage smoke
         env:
