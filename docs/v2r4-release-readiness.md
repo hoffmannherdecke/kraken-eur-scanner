@@ -1,6 +1,10 @@
 # V2R4 Release Readiness
 
-Status: **PREPARED / NOT ACTIVE / PAPER ONLY**
+Status: **ACTIVATED / APPROVED_PAPER / PAPER ONLY / RELEASE CLOSED**
+
+## Post-activation closure — 2026-10-08
+
+The release sequence is complete. Active immutable series: `PAPER-V2R4-20261007T184255Z`; predecessor `PAPER-V2R3-CLEAN-20261001T0925Z` is `closed_complete`; release decision is `APPROVED_PAPER`; first-series sizing remains 50+50 EUR; real-money actions and automatic activation remain disabled. All earlier "NOT ACTIVE", blocker and pre-release counts below are retained as dated historical snapshots only and must never be used to reopen the completed V2R3→V2R4 release gate. The post-activation-safe Supabase control view returns `PAPER_RELEASE_ALREADY_ACTIVATED` while the approved successor is active.
 
 This document is the compact release-readiness control point for V2R4. It does not replace `docs/strategy-version-map.md`, the V2R3 completion gate, the Mini-PC runbook, the explicit behavior matrix in `docs/v2r4-v2r3-release-diff.md`, the sizing decision memo in `docs/v2r4-sizing-release-decision.md`, or the release/rollback sequence in `docs/v2r4-paper-activation-checklist.md`.
 
