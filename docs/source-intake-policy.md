@@ -9,6 +9,10 @@ A new external data source, app, connector, relay, market feed or research datas
 is not added merely because it is available. It must have a documented
 incremental role and an explicit overlap/storage/failure policy.
 
+## Multi-source observation does not authorize multi-source decision vetoes (2026-10-08)
+
+The permanent market-context source fusion contract is `docs/market-context-source-fusion-v1.md`. A source being registered, manually callable through a connected tool, or named in a scheduled task is **not** proof of unattended runtime coverage; only a dated E2E observation establishes this. Source categories and roles are separate: Kraken Spot-EUR venue/execution truth; CoinGecko/CoinMarketCap aggregate cross-check; official US release/event authorities; optional event/smart-money/on-chain research. Correlated feeds cannot vote twice. Auxiliary source failures and conflicts never reject a candidate. Extra sources cannot change active frozen strategy or Work cadence; a new decision-relevant feature requires its own one-change prospective gate, explicit trade-frequency/missed-move regression and release approval.
+
 ## Required before adoption
 
 Every source/app entry must state:
