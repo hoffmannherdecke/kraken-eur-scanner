@@ -1,0 +1,54 @@
+name: Project control-plane guard
+
+on:
+  pull_request:
+    paths:
+      - "project-current-state.json"
+      - "docs/project-control-plane-governance.md"
+      - "docs/workflow-registry.json"
+      - "docs/master-version-register.md"
+      - "docs/strategy-version-map.md"
+      - "docs/v3-research-framework.md"
+      - "PROJECT_BACKLOG.md"
+      - "research/v3/shadow-candidate-contract-v1.json"
+      - "research/v3/shadow-candidates/**"
+      - "tools/validate-project-current-state.py"
+      - "tools/validate-workflow-registry.py"
+      - "tools/validate-v3-shadow-candidate.py"
+      - ".github/workflows/**"
+  push:
+    branches: [main]
+    paths:
+      - "project-current-state.json"
+      - "docs/project-control-plane-governance.md"
+      - "docs/workflow-registry.json"
+      - "docs/master-version-register.md"
+      - "docs/strategy-version-map.md"
+      - "docs/v3-research-framework.md"
+      - "PROJECT_BACKLOG.md"
+      - "research/v3/shadow-candidate-contract-v1.json"
+      - "research/v3/shadow-candidates/**"
+      - "tools/validate-project-current-state.py"
+      - "tools/validate-workflow-registry.py"
+      - "tools/validate-v3-shadow-candidate.py"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: project-control-plane-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate current state
+        run: python tools/validate-project-current-state.py
+      - name: Validate workflow registry
+        run: python tools/validate-workflow-registry.py
+      - name: Validate active H3 shadow candidate
+        run: python tools/validate-v3-shadow-candidate.py research/v3/shadow-candidates/v3-h3-shadow-001.json
