@@ -1,0 +1,265 @@
+{
+  "schema_version": 1,
+  "kind": "GLOBAL_OUTAGE_RECONCILIATION_CONTRACT_V1",
+  "created_utc": "2026-10-08T21:00:00Z",
+  "authority": "docs/project-wide-outage-recovery-v1.md",
+  "declared_strategy": "project-current-state.json",
+  "active_release_unmodified": true,
+  "automatic_real_money_actions": false,
+  "automatic_strategy_promotion": false,
+  "automatic_scheduler_addition": false,
+  "missing_optional_inputs_can_reject_buy": false,
+  "failed_backfill_can_count_as_complete": false,
+  "old_snapshot_can_authorize_new_paper_buy": false,
+  "paper_only": true,
+  "hard_safety": [
+    "KEEP_KRAKEN_FRESHNESS",
+    "KEEP_SERIES_LOCK",
+    "KEEP_DUAL_SHADOW_EXCLUSION",
+    "KEEP_IDEMPOTENT_ACK",
+    "KEEP_EXACT_UTC_PROVENANCE"
+  ],
+  "states": [
+    "HEALTHY",
+    "SOURCE_DOWN",
+    "LOCAL_DOWN",
+    "RECOVERING",
+    "RECONCILING",
+    "DEGRADED_GAP",
+    "HEALTHY_RESTORED",
+    "ACTION_REQUIRED"
+  ],
+  "transitions": [
+    [
+      "HEALTHY",
+      "SOURCE_DOWN"
+    ],
+    [
+      "HEALTHY",
+      "LOCAL_DOWN"
+    ],
+    [
+      "SOURCE_DOWN",
+      "RECOVERING"
+    ],
+    [
+      "LOCAL_DOWN",
+      "RECOVERING"
+    ],
+    [
+      "RECOVERING",
+      "RECONCILING"
+    ],
+    [
+      "RECONCILING",
+      "HEALTHY_RESTORED"
+    ],
+    [
+      "RECONCILING",
+      "DEGRADED_GAP"
+    ],
+    [
+      "DEGRADED_GAP",
+      "HEALTHY_RESTORED"
+    ],
+    [
+      "RECOVERING",
+      "ACTION_REQUIRED"
+    ],
+    [
+      "RECONCILING",
+      "ACTION_REQUIRED"
+    ],
+    [
+      "ACTION_REQUIRED",
+      "RECOVERING"
+    ],
+    [
+      "HEALTHY_RESTORED",
+      "HEALTHY"
+    ],
+    [
+      "RECOVERING",
+      "SOURCE_DOWN"
+    ],
+    [
+      "RECOVERING",
+      "LOCAL_DOWN"
+    ]
+  ],
+  "max_auto_restart_per_task_per_hour": 4,
+  "max_restart_backoff_seconds": 3600,
+  "minimum_proof": "FRESH_PIT_INPUT_AND_IDEMPOTENT_OUTPUT_OR_EXPLICIT_GAP_ACK",
+  "domains": [
+    {
+      "id": "kraken_public",
+      "component": "KRAKEN_SPOT_EUR_QUOTES_AND_ASSETPAIRS",
+      "role": "LIVE_MARKET_FEED",
+      "recovery_path": "LOCAL_WS_RECONNECT",
+      "evidence": "PIT_SOURCE_GAP",
+      "on_gap": "NO_PRICE_BACKFILL_FROM_LAST",
+      "return_gate": "RECHECK_FRESH_BID_ASK_AND_PAIR",
+      "failure": "UPSTREAM_REST_API_OR_WS_DOWN"
+    },
+    {
+      "id": "mini_pc_power",
+      "component": "MINIPC_POWER_BOOT_TASKS",
+      "role": "HOST_PLATFORM",
+      "recovery_path": "WINDOWS_TASK_SCHEDULER_STARTUP",
+      "evidence": "LOCAL_HEARTBEAT_AND_RECOVERY_HISTORY",
+      "on_gap": "NO_STRATEGY_ACTION_ON_BOOT",
+      "return_gate": "RECONCILE_FILES_AND_OPEN_WAITS",
+      "failure": "POWER_OFF_OR_REBOOT"
+    },
+    {
+      "id": "home_internet",
+      "component": "MINIPC_LOCAL_OUTBOUND_NETWORK",
+      "role": "NETWORK_PLATFORM",
+      "recovery_path": "RECONNECT_WITH_BACKOFF",
+      "evidence": "LOCAL_PENDING_QUEUE",
+      "on_gap": "NO_SPIN_OR_ORDER_ON_DISCONNECT",
+      "return_gate": "FRESH_SOURCE_GATE_BEFORE_RESUMING",
+      "failure": "ISP_ROUTER_DNS_OR_VPN_LOSS"
+    },
+    {
+      "id": "github_public",
+      "component": "PUBLIC_SCANNER_ACTIONS",
+      "role": "CLOUD_SCHEDULE",
+      "recovery_path": "EXISTING_WORKFLOW_RETRY_ONLY",
+      "evidence": "GITHUB_RUN_ID_AND_TIMESTAMP",
+      "on_gap": "MISSED_SCAN_IS_NOT_REAL_TRADE",
+      "return_gate": "NEXT_FRESH_SCAN_AND_DEDUPE",
+      "failure": "GITHUB_ACTIONS_OUTAGE_OR_CRON_DELAY"
+    },
+    {
+      "id": "github_private",
+      "component": "PRIVATE_ACCOUNT_READONLY_BRIDGE",
+      "role": "OPTIONAL_ACCOUNT_SNAPSHOT",
+      "recovery_path": "EXISTING_2_PER_HOUR_REFRESH",
+      "evidence": "PRIVATE_1_DAY_ARTIFACT",
+      "on_gap": "NO_SNAPSHOT_BACKFILL_OR_EQUATE_TO_TRADING",
+      "return_gate": "NEW_VERIFIED_READONLY_SNAPSHOT",
+      "failure": "PRIVATE_MINUTES_OR_GITHUB_FAIL"
+    },
+    {
+      "id": "supabase",
+      "component": "SUPABASE_REST_AND_EDGE_SYNC",
+      "role": "DURABLE_OUTPUT_SINK",
+      "recovery_path": "EXISTING_LOCAL_CLOUD_SYNC",
+      "evidence": "LOCAL_UNSENT_QUEUE_AND_RECEIPT",
+      "on_gap": "DO_NOT_DROP_PENDING_ON_HTTP_ERROR",
+      "return_gate": "RESEND_WITH_SAME_EVENT_ID_AND_ACK",
+      "failure": "SUPABASE_OUTAGE_429_500_TIMEOUT"
+    },
+    {
+      "id": "kraken_ws_shadow",
+      "component": "V2R4_WS_SHADOW_EVENTS",
+      "role": "OBSERVATION_ONLY",
+      "recovery_path": "SOURCE_WS_RECONNECT",
+      "evidence": "EVENT_ID_AND_GAP_FLAGS",
+      "on_gap": "NO_SYNTHETIC_MFE_MAE",
+      "return_gate": "NEW_FRESH_TICKS_MATURE_PER_HORIZON",
+      "failure": "SOURCE_GAP_OR_PROCESS_RESTART"
+    },
+    {
+      "id": "paper_candidates",
+      "component": "V2R4_PAPER_CANDIDATE_EVALUATOR",
+      "role": "FROZEN_PAPER_DECISION_INPUT",
+      "recovery_path": "LOCAL_SERVICE_RECOVERY",
+      "evidence": "LOCAL_EVENT_ID_AND_DECISION_FILE",
+      "on_gap": "NO_LATE_RETROACTIVE_BUY_OR_REJECT",
+      "return_gate": "ONLY_FRESH_PROSPECTIVE_EVENT",
+      "failure": "API_EVAL_FAILURE_OR_OLD_BACKLOG"
+    },
+    {
+      "id": "paper_wait",
+      "component": "V2R4_WAIT_TRIGGER_ENGINE",
+      "role": "PAPER_TRIGGER_LIFECYCLE",
+      "recovery_path": "RELOAD_PERSISTED_TTL",
+      "evidence": "CANDIDATE_ID_AND_EXPIRES_AT",
+      "on_gap": "NO_EXPIRED_WAIT_TRIGGER_EXECUTION",
+      "return_gate": "RECONCILE_TTL_THEN_REVALIDATE_FRESH",
+      "failure": "CLOCK_JUMP_OR_PAPER_WAIT_RESTART"
+    },
+    {
+      "id": "paper_lifecycle",
+      "component": "V2R4_PAPER_LIFECYCLE",
+      "role": "PAPER_STATE",
+      "recovery_path": "EXISTING_RECHECK_RECONCILIATION",
+      "evidence": "CANONICAL_CANDIDATE_AND_SERIES_IDS",
+      "on_gap": "NO_DOUBLE_FILL_NO_REAL_ORDER",
+      "return_gate": "IDEMPOTENT_RESULT_CONFIRMATION",
+      "failure": "CRASH_DURING_RESULT_WRITE"
+    },
+    {
+      "id": "paper_followups",
+      "component": "V2R4_PAPER_FOLLOWUPS",
+      "role": "OUTCOME_EVIDENCE",
+      "recovery_path": "CURRENT_LOCAL_MATURE_FOLLOWUP",
+      "evidence": "PERSISTED_CANDIDATE_WITH_UTC_HORIZON",
+      "on_gap": "MISSING_WINDOW_NOT_COMPLETE",
+      "return_gate": "COVERAGE_GATE_WITH_MISSING_MARKER",
+      "failure": "UNAVAILABLE_KRAKEN_CANDLES"
+    },
+    {
+      "id": "shadow_h3",
+      "component": "V3_H3_ISOLATED_SHADOW",
+      "role": "SECONDARY_SHADOW_EVIDENCE",
+      "recovery_path": "LOCAL_TASK_RECOVERY",
+      "evidence": "BASELINE_SNAPSHOT_FINGERPRINT",
+      "on_gap": "NO_BASELINE_DIVERGENCE_IF_SOURCE_GAP",
+      "return_gate": "POINT_IN_TIME_BASELINE_REPLAY",
+      "failure": "LOCAL_L2_DEPTH_GAP"
+    },
+    {
+      "id": "research_h10",
+      "component": "H10_PUBLIC_WALLET_CAPTURE",
+      "role": "OPTIONAL_RESEARCH",
+      "recovery_path": "NEXT_SCHEDULED_CAPTURE",
+      "evidence": "BATCH_ID_AND_KNOWN_AT",
+      "on_gap": "NO_FAKE_MISSING_CAPTURE_NO_BUY_VETO",
+      "return_gate": "NEXT_FRESH_BATCH_AND_MATURITY",
+      "failure": "HYPERLIQUID_OR_PUBLIC_API_DOWN"
+    },
+    {
+      "id": "slack",
+      "component": "SLACK_NOTIFICATION_RELAY",
+      "role": "NOTIFICATION_ONLY",
+      "recovery_path": "EXISTING_IDEMPOTENT_RECEIPTS",
+      "evidence": "EVENT_KEY_AND_ACK",
+      "on_gap": "NO_DUPLICATE_PUSH_STORM",
+      "return_gate": "RESEND_ONLY_UNACKED_WHERE_SAFE",
+      "failure": "SLACK_WEBHOOK_DOWN"
+    },
+    {
+      "id": "work",
+      "component": "CHATGPT_WORK_AND_AUTONOMOUS_SAFE_IMPLEMENTATION",
+      "role": "CONTROL_PLANE",
+      "recovery_path": "NEXT_EXISTING_DAILY_GATE",
+      "evidence": "CURRENT_STATE_BACKLOG_AND_ATTEMPT_FINGERPRINT",
+      "on_gap": "NO_AUTOPROMOTION_ON_TIMEOUT",
+      "return_gate": "CONTINUE_AFTER_GATE_WITH_DEDUPE",
+      "failure": "WORK_CREDIT_OR_APP_UNAVAILABLE"
+    },
+    {
+      "id": "backup",
+      "component": "DAILY_LOCAL_BACKUP_AND_DISK",
+      "role": "RECOVERY_PROVENANCE",
+      "recovery_path": "EXISTING_DAILY_BACKUP",
+      "evidence": "CHECKSUM_AND_LAST_GOOD_SNAPSHOT",
+      "on_gap": "NO_OVERWRITE_LAST_GOOD_WITH_CORRUPT",
+      "return_gate": "VALIDATE_CHECKSUM_BEFORE_RESTORE",
+      "failure": "DISK_FULL_OR_BACKUP_MISSED"
+    },
+    {
+      "id": "secrets",
+      "component": "PRIVATE_CREDENTIAL_AND_AUTH",
+      "role": "SECURITY_DEPENDENCY",
+      "recovery_path": "EXISTING_CREDENTIAL_REPAIR_GATE",
+      "evidence": "SECRET_HYGIENE_AND_ACCESS_FAILURE",
+      "on_gap": "NEVER_FALLBACK_TO_PRIVILEGED_CREDENTIAL",
+      "return_gate": "STOP_AFFECTED_PRIVATE_ACTIONS_ONLY",
+      "failure": "KEY_REVOKED_OR_AUTH_401"
+    }
+  ]
+}
