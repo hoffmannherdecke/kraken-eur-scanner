@@ -104,6 +104,11 @@ def local_candidate_ids(context_dir: Path, evidence_dir: Path) -> set[str]:
     }
 
 
+def local_retention_backpressure(context_dir: Path, evidence_dir: Path, max_files: int) -> bool:
+    require(max_files >= 1, "local retention max must be >=1")
+    return len(local_candidate_ids(context_dir, evidence_dir)) >= max_files
+
+
 def prune_synced_local_pair_files(
     evidence_dir: Path,
     context_dir: Path,
@@ -265,7 +270,9 @@ class Runtime:
             and capture_pct >= self.min_capture_pct
         )
         local_footprint = self.local_candidate_footprint()
-        retention_backpressure = len(local_footprint) >= self.local_retention_max
+        retention_backpressure = local_retention_backpressure(
+            self.context_dir, self.evidence_dir, self.local_retention_max
+        )
         low_impact = gate_met and causal_div < self.min_divergences
         if low_impact:
             classification = "INCONCLUSIVE_LOW_IMPACT"
