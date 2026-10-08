@@ -48,8 +48,8 @@ Kanonische Detailquellen:
 
 ## Laufendes Projekt-Controlling — 2026-10-08
 
-- [x] Eigenständiger täglicher GitHub-Gate-Check für V2R4/Paper, H3 und nächste Research-Entscheidungen auf separatem, reviewbarem Branch vorbereitet: `tools/project_milestone_controller.py` und `.github/workflows/autonomous-project-milestones.yml`.
-- [ ] Kontrollierte Aktivierung nach CI, PR und Live-Smoke nachweisen; keine autonome Strategie-Promotion oder Echtgeldaktivierung.
+- [x] Eigenständiger täglicher GitHub-Gate-Check für Paper-Serien, H3 und nächste Research-Entscheidungen nach PR #70 auf `main` aktiviert: `tools/project_milestone_controller.py` und `.github/workflows/autonomous-project-milestones.yml`. Andere neue H-/Strategie-Adapter werden ausdrücklich erkannt und zur Umsetzung vorgemerkt.
+- [x] Kontrollierte Aktivierung nach CI, PR #70/#71 und echtem read-only Supabase-Smoke abgeschlossen: GitHub Action Run #37761077162 = SUCCESS; drei Controller-Unit-Tests bestanden, Ergebnis V2R4:COLLECTING, H3:COLLECTING, H10:NEXT_CONTRACT_DUE, H6:WAIT_H3_REVIEW_NO_AUTO_START, alle Trade-/Strategieänderungsflags false. Scheduled Notifications bleiben für den ersten regulären Tageslauf offen; keine automatische Strategie-Promotion oder Echtgeldaktivierung.
 - [ ] Bei künftigen echten Meilensteinen festen Review, Evidenz-Übernahme, Folgeschritt und ggf. menschliches Release-Gate ausführen; dokumentierte Readiness ist nicht gleich automatische Strategieänderung.
 - [ ] Alt-Checkboxen aus historischen Kapiteln schrittweise bereinigen, ohne unbelegte technische Erledigung zu behaupten.
 
