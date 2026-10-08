@@ -157,17 +157,30 @@ try {
     $schedulerRunning = ([string]$task.State -eq "Running")
     $needsRecovery = (-not $fresh) -or (-not $schedulerRunning)
 
-    $lastRestart = $null
-    if ($restartHistory.ContainsKey($spec.name)) {
-      $lastRestart = $restartHistory[$spec.name]
+    if (-not $attemptHistory.ContainsKey($spec.name)) {
+      $attemptHistory[$spec.name] = @{ last_attempt_at_utc=$null; consecutive_failures=0 }
     }
-    $restartAllowed = [bool]$ForceRecovery
-    if (-not $restartAllowed) {
-      $restartAllowed = (-not $lastRestart) -or (($now - $lastRestart).TotalMinutes -ge [double]$spec.restart_backoff_min)
+    $attempt = $attemptHistory[$spec.name]
+    if (-not $needsRecovery) {
+      # Only actual health clears the exponential retry penalty.
+      $attempt.consecutive_failures = 0
     }
+    $lastAttempt = $attempt.last_attempt_at_utc
+    $exp = [math]::Min(5, [int]$attempt.consecutive_failures)
+    $cooldownSeconds = [math]::Min(3600, [double]$spec.restart_backoff_min * 60 * [math]::Pow(2, $exp))
+    $restartAllowed = ([bool]$ForceRecovery -or (-not $lastAttempt) -or
+      (($now - $lastAttempt).TotalSeconds -ge $cooldownSeconds))
+    $upstreamMissing = ((-not $krakenSourceHealthy) -and $schedulerRunning -and
+      ($spec.name -in $krakenDependents))
 
     $action = "NONE"
-    if ($needsRecovery -and $restartAllowed) {
+    if ($needsRecovery -and $upstreamMissing -and (-not $ForceRecovery)) {
+      $action = "WAIT_FOR_UPSTREAM"
+    } elseif ($needsRecovery -and $restartAllowed) {
+      # Record every ATTEMPT, including failures and unverified restarts.
+      # Otherwise failed 20s health probes can trigger infinite restart loops.
+      $attempt.last_attempt_at_utc = $now
+      $attempt.consecutive_failures = [math]::Min(5, [int]$attempt.consecutive_failures + 1)
       try {
         Stop-ScheduledTask -TaskName $spec.name -ErrorAction SilentlyContinue
         $stopped = Wait-TaskNotRunning -TaskName $spec.name -TimeoutSeconds $StopWaitSeconds
@@ -233,6 +246,7 @@ try {
       if ($healthy) {
         $row.action = "RESTART_VERIFIED"
         $restartHistory[$row.task] = $now
+        $attemptHistory[$row.task].consecutive_failures = 0
       } else {
         $row.action = "RESTART_UNVERIFIED"
         if ($row.task -notin $failed) { $failed += $row.task }
@@ -255,12 +269,15 @@ $report = [pscustomobject]@{
   status=$status
   restarted=@($restarted)
   failed_restarts=@($failed)
+  kraken_upstream_healthy=$krakenSourceHealthy
   error=$topError
   tasks=@($rows)
   guardrails=[pscustomobject]@{
     monitored_tasks_only=$true
     restart_requires_task_stop_confirmation=$true
     restart_history_records_verified_recovery_only=$true
+    restart_attempt_history_persisted=$true
+    max_restart_cooldown_seconds=3600
     strategy_changes=$false
     evaluator_invoked=$false
     order_api=$false
