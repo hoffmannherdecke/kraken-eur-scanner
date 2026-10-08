@@ -474,6 +474,20 @@
         "docs/project-control-plane-governance.md"
       ],
       "pending_gate": null
+    },
+    {
+      "id": "v3_market_regime_decision_conditioning",
+      "category": "strategy_candidate_state_conditioning",
+      "source_version": "V3 new, separate conditional state research (market-phase observer; not H1 reactivation)",
+      "migration_status": "MORE_TESTING_REQUIRED",
+      "rationale": "Evaluate whether prior-known Kraken EUR regime episodes contribute reproducible net benefit for V3 candidate confirmation beyond existing baseline BTC/ETH/breadth context, with explicit trade-frequency/missed-move and downside controls. The fixed H1 standalone rejection remains in force. Not approved as a trade/entry/stop/risk filter. Mandatory V3 integration-review disposition; evidence-deficient research can be explicitly deferred to V4+ without silently losing the passive observer.",
+      "evidence": [
+        "docs/v3-research-framework.md",
+        "research/v3/market-phase-reversal-observation-v1.md",
+        "docs/test-strategy-runbook.md",
+        "PROJECT_BACKLOG.md"
+      ],
+      "pending_gate": "V3_REGIME_KRAKEN_EUR_PROSPECTIVE_EPISODES_AND_MATURE_OUTCOMES_THEN_PREDECLARE_ONE_CHANGE_NET_COST_TRIAL_BEFORE_V3_INTEGRATION_REVIEW"
     }
   ],
   "final_v2r3_review": {
