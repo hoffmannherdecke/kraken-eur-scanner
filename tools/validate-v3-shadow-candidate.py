@@ -63,12 +63,19 @@ def main()->int:
     if plan.get("shared_market_clock") is not True:
         errors.append("shared market clock must be true")
 
+    status=cand.get("status")
+    active_shadow_statuses={"FROZEN_FOR_SHADOW","SHADOW_RUNNING","SHADOW_COMPLETE","PROMOTION_REVIEW"}
+    if status in active_shadow_statuses:
+        if plan.get("baseline_replay_required_for_causal_divergence") is not True:
+            errors.append("same-snapshot baseline replay must be required for causal divergence")
+        if not str(plan.get("baseline_replay_stability_gate") or "").strip():
+            errors.append("baseline replay stability gate must be defined before shadow")
+
     promo=cand.get("promotion_gate") or {}
     if promo.get("automatic_promotion") is not False:
         errors.append("automatic promotion must be false")
 
-    status=cand.get("status")
-    if status in {"FROZEN_FOR_SHADOW","SHADOW_RUNNING","SHADOW_COMPLETE","PROMOTION_REVIEW"}:
+    if status in active_shadow_statuses:
         if str(plan.get("minimum_gate") or "").startswith("MUST_BE_DEFINED"):
             errors.append("minimum gate must be frozen before shadow")
         if str(plan.get("cost_model_reference") or "").startswith("MUST_BE_DEFINED"):
