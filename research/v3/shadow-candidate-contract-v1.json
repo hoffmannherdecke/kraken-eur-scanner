@@ -38,7 +38,8 @@
       "EXECUTION_MECHANIC"
     ],
     "infrastructure_only_changes_are_not_strategy_shadow_candidates": true,
-    "multi_component_bundle_requires_separate_candidates_first": true
+    "multi_component_bundle_requires_separate_candidates_first": true,
+    "multi_component_integration_contract": "research/v3/integration-candidate-contract-v1.json"
   },
   "evidence_rules": {
     "same_candidate_stream_preferred": true,
