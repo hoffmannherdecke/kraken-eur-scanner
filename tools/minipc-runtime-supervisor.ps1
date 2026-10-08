@@ -40,6 +40,27 @@ function Read-RestartHistory {
   return $map
 }
 
+# Failed verifications still count as recovery attempts; old history is compatible.
+function Read-AttemptHistory {
+  $map = @{}
+  if (-not (Test-Path $historyPath)) { return $map }
+  try {
+    $raw = Get-Content $historyPath -Raw | ConvertFrom-Json
+    if ($raw.tasks) {
+      foreach ($prop in $raw.tasks.PSObject.Properties) {
+        $item = $prop.Value
+        $count = 0
+        try { $count = [math]::Max(0, [int]$item.consecutive_failures) } catch {}
+        $map[$prop.Name] = @{
+          last_attempt_at_utc = Parse-Utc $item.last_attempt_at_utc
+          consecutive_failures = [math]::Min(5, $count)
+        }
+      }
+    }
+  } catch {}
+  return $map
+}
+
 function Write-JsonAtomic([string]$Path,[object]$Payload,[int]$Depth=10) {
   $tmp = $Path + ".tmp"
   [System.IO.File]::WriteAllText(
@@ -80,7 +101,27 @@ $rows = @()
 $restarted = @()
 $failed = @()
 $restartHistory = Read-RestartHistory
+$attemptHistory = Read-AttemptHistory
 $now = (Get-Date).ToUniversalTime()
+# Only the canonical Kraken canary proves that the primary upstream is fresh.
+$krakenHb = Read-Heartbeat (Join-Path $stateDir "kraken-canary-heartbeat.json")
+$krakenSourceHealthy = $false
+if ($krakenHb) {
+  $krakenChecked = Parse-Utc $krakenHb.checked_at_utc
+  if ($krakenChecked) {
+    $krakenSourceHealthy = (
+      [string]$krakenHb.status -in @("HEALTHY","CONNECTED") -and
+      ($now - $krakenChecked).TotalSeconds -ge -30 -and
+      ($now - $krakenChecked).TotalSeconds -le 60
+    )
+  }
+}
+$krakenDependents = @(
+  "CryptoMiniPC-KrakenUniverse", "CryptoMiniPC-V2R4WSShadow",
+  "CryptoMiniPC-V2R4ShadowOutcomes", "CryptoMiniPC-V2R4PaperCandidates",
+  "CryptoMiniPC-V2R4PaperWait", "CryptoMiniPC-V2R4PaperLifecycle",
+  "CryptoMiniPC-V3H3Shadow001"
+)
 $topError = $null
 $status = "UNKNOWN"
 
