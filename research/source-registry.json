@@ -296,6 +296,262 @@
       "persistence_mode": "compact_point_in_time_market_state_and_change_evidence_only_no_full_orderbook_archive",
       "duplicate_raw_storage_allowed": false,
       "access": "public_read_only_no_auth_no_wallet_no_order_rights"
+    },
+    {
+      "id": "coingecko_global_crosscheck",
+      "status": "CONNECTED_READ_VERIFIED_MANUAL__AUTOMATION_E2E_UNVERIFIED",
+      "class": "aggregated_crypto_market",
+      "unique_value": "Independent global crypto market-cap/24h-volume/BTC-dominance and large-cap cross-check; connected data tool read succeeded 2026-10-08.",
+      "authoritative_for": [
+        "coingecko_global_aggregate_at_capture"
+      ],
+      "not_authoritative_for": [
+        "kraken_spot_eur_entry_price",
+        "exact_intraday_kraken_regime",
+        "all_crypto_pairs_breadth_from_small_reference_basket",
+        "order_eligibility"
+      ],
+      "overlap_with": [
+        "coinmarketcap_global_crosscheck"
+      ],
+      "overlap_strategy": "Read alongside CoinMarketCap only to triangulate aggregate regime; methodology and source observation timestamp differ; no two-vote signal.",
+      "persistence_mode": "latest_value_or_material_source_disagreement_marker_only",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_or_connected_read_only_no_trade_rights"
+    },
+    {
+      "id": "coinmarketcap_global_crosscheck",
+      "status": "CONNECTED_READ_VERIFIED_MANUAL__AUTOMATION_E2E_UNVERIFIED",
+      "class": "aggregated_crypto_market",
+      "unique_value": "Independent global crypto capitalization/dominance, sentiment and optional altcoin-season gauge. Connected tool read succeeded 2026-10-08; its returned as-of timestamp must be respected.",
+      "authoritative_for": [
+        "coinmarketcap_global_aggregate_at_capture"
+      ],
+      "not_authoritative_for": [
+        "kraken_spot_eur_entry_price",
+        "source_independent_hard_trade_veto",
+        "confirmed_recovery_from_stale_aggregate"
+      ],
+      "overlap_with": [
+        "coingecko_global_crosscheck"
+      ],
+      "overlap_strategy": "A second context estimate, not a second independent truth or a vote for trade rejection; freshness and definitional mismatches cause UNKNOWN context.",
+      "persistence_mode": "latest_value_or_material_source_disagreement_marker_only",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_or_connected_read_only_no_trade_rights"
+    },
+    {
+      "id": "coinmarketcap_derivatives_crosscheck",
+      "status": "CONNECTED_READ_VERIFIED_MANUAL__RESEARCH_CONTEXT_ONLY",
+      "class": "aggregated_derivatives_market",
+      "unique_value": "Supplementary global funding/open-interest/liquidation imbalance view; connected read succeeded 2026-10-08, but reporting units and market aggregation must be checked before any decision use.",
+      "authoritative_for": [
+        "cmc_reported_aggregate_derivatives_context"
+      ],
+      "not_authoritative_for": [
+        "kraken_spot_eur_entry_price",
+        "kraken_native_funding_truth",
+        "forced_liquidation_or_risk_stop"
+      ],
+      "overlap_with": [
+        "kraken_futures_public",
+        "binance_futures_public"
+      ],
+      "overlap_strategy": "Only corroborates already registered Kraken/Binance derivatives and H2 research, not an independent trade rule; suspicious units = NOT_EVALUABLE.",
+      "persistence_mode": "no_raw_archive_context_when_material_only",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_or_connected_read_only_no_trade_rights"
+    },
+    {
+      "id": "coinmarketcap_macro_calendar_secondary",
+      "status": "CONNECTED_READ_VERIFIED_MANUAL__RESEARCH_CONTEXT_ONLY",
+      "class": "macro_calendar_secondary",
+      "unique_value": "Convenient secondary aggregation of upcoming economic calendar entries; connected tool read succeeded 2026-10-08, but third-party news snippets cannot override official Fed/BLS statements.",
+      "authoritative_for": [
+        "third_party_upcoming_event_hint"
+      ],
+      "not_authoritative_for": [
+        "actual_official_event_schedule",
+        "economic_actual_release",
+        "trade_signal"
+      ],
+      "overlap_with": [
+        "federal_reserve_fomc_calendar",
+        "us_bls_release_calendar"
+      ],
+      "overlap_strategy": "Only a discovery hint and link. Resolve date/release at official primary source before relying on time or facts.",
+      "persistence_mode": "event_id_date_link_only_when_official_verified",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_or_connected_read_only_no_trade_rights"
+    },
+    {
+      "id": "coinbase_public_spot_crosscheck",
+      "status": "REGISTERED_NOT_INTEGRATED__VALIDATION_REQUIRED",
+      "class": "exchange_cross_venue_context",
+      "unique_value": "Independent public Coinbase spot volume and spread/price plausibility cross-check for liquid Kraken EUR candidate contexts; previously requested, not proven as runtime feed.",
+      "authoritative_for": [
+        "coinbase_public_pair_market_context_if_verified"
+      ],
+      "not_authoritative_for": [
+        "kraken_spot_eur_entry_price",
+        "account_specific_kraken_tradability",
+        "automatic_trade_veto"
+      ],
+      "overlap_with": [
+        "kraken_spot_rest_public"
+      ],
+      "overlap_strategy": "On-demand only for liquid high-quality candidate or Kraken-data anomaly; never make missing Coinbase support a blocker.",
+      "persistence_mode": "selective_decision_provenance_only",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_or_connected_read_only_no_trade_rights"
+    },
+    {
+      "id": "official_cftc_regulatory_updates",
+      "status": "REGISTERED_OFFICIAL_PAGE_VERIFIED__RECURRING_READ_UNVERIFIED",
+      "class": "official_regulatory_news",
+      "unique_value": "CFTC digital-asset market rules, enforcement, derivatives oversight and material regulatory changes as primary-source risk/event context.",
+      "authoritative_for": [
+        "official_cftc_release_content_at_publication"
+      ],
+      "not_authoritative_for": [
+        "coin_price_direction",
+        "trade_signal",
+        "guaranteed_release_completeness"
+      ],
+      "overlap_with": [
+        "official_fed_sec_headlines"
+      ],
+      "overlap_strategy": "Complement existing official Fed/SEC context; skip routine unrelated administrative press releases.",
+      "persistence_mode": "material_dated_url_and_event_only",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_or_connected_read_only_no_trade_rights"
+    },
+    {
+      "id": "us_bls_release_calendar",
+      "status": "REGISTERED_OFFICIAL_SOURCE__RECURRING_READ_UNVERIFIED",
+      "class": "scheduled_macro_event_calendar",
+      "unique_value": "Official US BLS CPI, jobs, PPI and employment-release dates and published facts relevant to risk-asset event timing.",
+      "authoritative_for": [
+        "official_bls_release_time_and_reported_facts"
+      ],
+      "not_authoritative_for": [
+        "crypto_price_direction",
+        "third_party_surprise_estimate",
+        "trade_signal"
+      ],
+      "overlap_with": [
+        "federal_reserve_fomc_calendar",
+        "coinmarketcap_macro_calendar_secondary"
+      ],
+      "overlap_strategy": "Official BLS schedule/content overrides third-party macro calendar hints; check within scheduled event windows.",
+      "persistence_mode": "material_event_datetime_and_official_url_only",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_or_connected_read_only_no_trade_rights"
+    },
+    {
+      "id": "us_treasury_ofac_relevant_updates",
+      "status": "REGISTERED_CONDITIONAL__RECURRING_READ_UNVERIFIED",
+      "class": "official_regulatory_news",
+      "unique_value": "Official Treasury/OFAC crypto-related sanctions, stablecoin or financial-system measures only when directly relevant to tradability/custody/crypto conditions.",
+      "authoritative_for": [
+        "official_treasury_ofac_relevant_release"
+      ],
+      "not_authoritative_for": [
+        "universal_risk_off_class",
+        "spot_eur_execution_price",
+        "unverified_trade_veto"
+      ],
+      "overlap_with": [
+        "official_fed_sec_headlines",
+        "official_cftc_regulatory_updates"
+      ],
+      "overlap_strategy": "Material direct crypto relevance only; not a broad geopolitical or world-news monitor.",
+      "persistence_mode": "verified_date_url_event_only",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_or_connected_read_only_no_trade_rights"
+    },
+    {
+      "id": "official_exchange_token_notices",
+      "status": "REGISTERED_CONDITIONAL__NO_FEED_E2E",
+      "class": "exchange_project_event_context",
+      "unique_value": "Official Kraken and, when corroboration is useful, Coinbase exchange listing, delisting, outage and asset-operation notices as risk/tradability context.",
+      "authoritative_for": [
+        "verified_official_exchange_notice_for_named_venue"
+      ],
+      "not_authoritative_for": [
+        "account_specific_kraken_pair_status_without_assetpairs",
+        "price_direction",
+        "trade_signal"
+      ],
+      "overlap_with": [
+        "kraken_spot_assetpairs_public",
+        "coinbase_public_spot_crosscheck"
+      ],
+      "overlap_strategy": "Current online Kraken AssetPairs stays live tradability truth; exchange notices supplement upcoming status or operational incidents.",
+      "persistence_mode": "relevant_notice_identifier_time_url_only",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_or_connected_read_only_no_trade_rights"
+    },
+    {
+      "id": "token_unlock_event_calendars",
+      "status": "CATALOGUED_NOT_ACTIVE__SOURCE_VALUE_SMOKE_REQUIRED",
+      "class": "tokenomics_event_calendar",
+      "unique_value": "CoinMarketCal/Tokenomist/Messari and direct project sources can discover material token unlocks, emissions, forks and protocol events for candidate-specific review.",
+      "authoritative_for": [
+        "third_party_tokenomics_event_hint_if_verified"
+      ],
+      "not_authoritative_for": [
+        "unverified_future_supply_effect",
+        "spot_eur_price",
+        "automatic_buy_reject"
+      ],
+      "overlap_with": [],
+      "overlap_strategy": "Require primary project/exchange/tokenomics confirmation before high-stakes timing; no blanket unlock veto.",
+      "persistence_mode": "confirmed_candidate_event_url_time_only",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_or_connected_read_only_no_trade_rights"
+    },
+    {
+      "id": "macro_crossasset_context",
+      "status": "CATALOGUED_NOT_ACTIVE__SOURCE_VALUE_SMOKE_REQUIRED",
+      "class": "cross_asset_macro_state",
+      "unique_value": "USD index, US Treasury yield and Nasdaq/liquidity context previously proposed to contextualize crypto risk-on/risk-off; market clocks and correlation are variable.",
+      "authoritative_for": [
+        "crossasset_observation_if_timestampped"
+      ],
+      "not_authoritative_for": [
+        "crypto_direction_forecast",
+        "always_on_necessary_gate",
+        "kraken_eur_price"
+      ],
+      "overlap_with": [
+        "federal_reserve_fomc_calendar"
+      ],
+      "overlap_strategy": "Only use when a macro move materially explains regime or event exposure; no naive BTC-vs-USD level comparison.",
+      "persistence_mode": "selective_material_time_series_summary_only",
+      "duplicate_raw_storage_allowed": false,
+      "access": "public_or_connected_read_only_no_trade_rights"
+    },
+    {
+      "id": "smart_money_arkham_nansen_binance_public",
+      "status": "CATALOGUED_NOT_ACTIVE__SEPARATE_H10_ADMISSION_GATES",
+      "class": "wallet_trader_activity_optional",
+      "unique_value": "Arkham/Nansen/Binance public trader activity are optional later H10 confirmations when they add unique reproducible signals beyond current Hyperliquid capture.",
+      "authoritative_for": [
+        "candidate_wallet_trader_activity_only_after_separate_contract"
+      ],
+      "not_authoritative_for": [
+        "copy_trade_authority",
+        "profitability_without_prospective_evidence",
+        "kraken_eur_execution_price"
+      ],
+      "overlap_with": [
+        "hyperliquid_public_info"
+      ],
+      "overlap_strategy": "Use Hyperliquid H10 as existing lead; Arkham/Nansen subscriptions never automatically purchased; no new wallet, account or data rights.",
+      "persistence_mode": "none_until_separate_h10_gate",
+      "duplicate_raw_storage_allowed": false,
+      "access": "none_until_approved_public_read_only"
     }
   ]
 }
