@@ -775,3 +775,7 @@ more regime/event diversity; it must not be relaxed post-hoc because results are
 The same principle continues into the later live phase: live observations accelerate the
 creation/evaluation of inactive successors, but the active real-money version never
 self-retunes and live execution-safety/release gates remain independent hard requirements.
+
+## Marktphasen-Episoden — passive Beobachtung / lernfähige Auswertung (2026-10-08)
+
+Vertrag: `research/v3/market-phase-reversal-observation-v1.md`. Der bestehende Marktphasen-Wächter darf ausschließlich kompakte, nachweisbare Phasenwechsel unter `MARKET_REGIME_EPISODE_V1` im bestehenden V3-Research-Issue #7 vermerken. Diese Ereignisse sind **Kontext**, keine Strategie- oder Orderautorität. Die bestehende V3-H1-Standalone-Ablehnung bleibt gültig. Bei einem ohnehin geöffneten Analyse-Gate sind Regime-Ereignisse zeitpunktgerecht mit reifen V2R4-Outcomes/Missed-Moves zu verknüpfen, auf inkrementellen Nutzen und Fehlerquellen zu prüfen und nur über die normalen Hypothesen-/Migrations-/Release-Gates weiterzuverarbeiten. Keine zusätzliche Work-Ausführung und keine laufende Regeländerung.
