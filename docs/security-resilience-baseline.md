@@ -110,3 +110,18 @@ Physical/local verification completed successfully:
 - No credential rotation, firewall disablement, app installation, or reboot was performed by the audits.
 
 Paper/research-phase security and resilience audit status: **COMPLETE / PASS**.
+
+
+## 7. Supabase view hardening 2026-10-08
+
+The remaining H10 analytical views in the exposed `public` schema were normalized to `security_invoker=true`:
+
+- `v3_h10_asset_consensus_30m`
+- `v3_h10_asset_consensus_30m_history`
+- `v3_h10_current_position_consensus`
+- `v3_h10_wallet_asset_30m_history`
+- `v3_h10_wallet_asset_activity_30m`
+
+Verification after the change: `anon` SELECT = false, `authenticated` SELECT = false, `service_role` SELECT = true for all five views. The Supabase Security Advisor still reports only the intentional INFO-class `RLS enabled / no policy` notices for backend-only operational tables; no warning/error-class security finding was introduced.
+
+Canonical SQL record: `supabase/h10-view-security-invoker-20261008.sql`.

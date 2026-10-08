@@ -1,0 +1,323 @@
+{
+  "schema_version": 1,
+  "kind": "GITHUB_WORKFLOW_REGISTRY_V1",
+  "status": "ACTIVE_GOVERNANCE",
+  "rule": "Every .github/workflows/*.yml file must appear exactly once. active_control_surface=true is reserved for workflows that participate in ongoing runtime/orchestration, not one-time tests or historical evidence.",
+  "entries": [
+    {
+      "workflow": "action-push-relay.yml",
+      "lifecycle": "ACTIVE_RUNTIME",
+      "active_control_surface": true
+    },
+    {
+      "workflow": "altrady-transport-smoke.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "architecture-cleanup-validation.yml",
+      "lifecycle": "ACTIVE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "audit.yml",
+      "lifecycle": "ACTIVE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "backlog-issue-reconciliation.yml",
+      "lifecycle": "ACTIVE_MAINTENANCE",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "historical-data-preflight.yml",
+      "lifecycle": "ACTIVE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "minipc-cloud-health-watch.yml",
+      "lifecycle": "ACTIVE_RUNTIME",
+      "active_control_surface": true
+    },
+    {
+      "workflow": "minipc-daily-status.yml",
+      "lifecycle": "ACTIVE_RUNTIME",
+      "active_control_surface": true
+    },
+    {
+      "workflow": "minipc-dispatch-auth-smoke.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "minipc-external-drive-audit-guard.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "minipc-fat32-preservation-repair-guard.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "minipc-final-audit-guard.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "minipc-marketdata-smoke.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "minipc-ntfs-conversion-guard.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "minipc-ntfs-postverify-guard.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "minipc-tools-smoke.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "minipc-v2r4-preflight-smoke.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "minipc-v2r4-trigger-recheck-e2e.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "minipc-v2r4-wait-runtime-smoke.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "openai-cost-watch-guard.yml",
+      "lifecycle": "ACTIVE_MAINTENANCE",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "paper-artifact-cleanup.yml",
+      "lifecycle": "ACTIVE_MAINTENANCE",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "paper-capture-stop.yml",
+      "lifecycle": "ACTIVE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "paper-capture.yml",
+      "lifecycle": "ACTIVE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "paper-gate2-evidence.yml",
+      "lifecycle": "HISTORICAL_REFERENCE",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "paper-gate3-followup.yml",
+      "lifecycle": "HISTORICAL_REFERENCE",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "paper-series-completion-watch.yml",
+      "lifecycle": "ACTIVE_RUNTIME",
+      "active_control_surface": true
+    },
+    {
+      "workflow": "process-health.yml",
+      "lifecycle": "ACTIVE_RUNTIME",
+      "active_control_surface": true
+    },
+    {
+      "workflow": "project-control-plane-guard.yml",
+      "lifecycle": "ACTIVE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "scan.yml",
+      "lifecycle": "ACTIVE_RUNTIME",
+      "active_control_surface": true
+    },
+    {
+      "workflow": "scanner-maintenance-cleanup.yml",
+      "lifecycle": "ACTIVE_MAINTENANCE",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "scanner-startup-recovery.yml",
+      "lifecycle": "ACTIVE_RUNTIME",
+      "active_control_surface": true
+    },
+    {
+      "workflow": "shared-market-data-parity.yml",
+      "lifecycle": "ACTIVE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "source-intake-governance.yml",
+      "lifecycle": "ACTIVE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v2r3-clean-series-freeze-guard.yml",
+      "lifecycle": "HISTORICAL_REFERENCE",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v2r3-evidence-summary.yml",
+      "lifecycle": "HISTORICAL_REFERENCE",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v2r3-final-review-renderer-guard.yml",
+      "lifecycle": "HISTORICAL_REFERENCE",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v2r4-evaluator-live-smoke.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v2r4-local-recheck-live-smoke.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v2r4-model-contract-smoke.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v2r4-paper-alerts.yml",
+      "lifecycle": "ACTIVE_RUNTIME",
+      "active_control_surface": true
+    },
+    {
+      "workflow": "v2r4-pr-validation.yml",
+      "lifecycle": "ACTIVE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v2r4-release-contract-guard.yml",
+      "lifecycle": "ACTIVE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h1-breadth-precheck-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h1-h6-incremental-review.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h1-h6-report-import-helper-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h1-shadow-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h1-shadow-pilot.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h10-h11-public-source-precheck.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h10-smart-money-cohort-precheck.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h10-smart-money-shadow-capture.yml",
+      "lifecycle": "ACTIVE_RUNTIME",
+      "active_control_surface": true
+    },
+    {
+      "workflow": "v3-h11-polymarket-state-precheck.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h2-precheck-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h3-association-precheck-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h3-orderbook-precheck-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h3-shadow-prep-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h4-precheck-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h5-macro-event-precheck-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h6-price-volume-precheck-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h7-meta-readiness-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h8-onchain-precheck-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-h9-maker-taker-readiness-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-migration-ledger-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    },
+    {
+      "workflow": "v3-shadow-candidate-contract-guard.yml",
+      "lifecycle": "RESEARCH_VALIDATION",
+      "active_control_surface": false
+    }
+  ]
+}

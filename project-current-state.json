@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "kind": "PROJECT_CURRENT_STATE_V1",
+  "status": "ACTIVE_CONTROL_PLANE",
+  "as_of_utc": "2026-10-08T08:15:00Z",
+  "authority": {
+    "purpose": "Single machine-readable authority for current project/strategy/control-plane state.",
+    "precedence": [
+      "Live runtime evidence in Supabase/MINI-PC is authoritative for instantaneous health/evidence counts.",
+      "This file is authoritative for the declared current strategy/research/control-plane state.",
+      "docs/master-version-register.md is authoritative for version/history/component records.",
+      "PROJECT_BACKLOG.md is authoritative only for open work, never for current runtime status.",
+      "Research/framework documents define methodology and may retain dated historical text."
+    ],
+    "transition_rule": "Every material activation, closure, rollback, promotion, baseline switch or strategy-changing shadow start/stop must update this file in the same bounded release/change sequence."
+  },
+  "active_strategy": {
+    "strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+    "series_id": "PAPER-V2R4-20261007T184255Z",
+    "mode": "PAPER",
+    "release_status": "APPROVED_PAPER",
+    "frozen_series": true,
+    "sizing_eur": {
+      "scout": 50,
+      "stage2": 50
+    },
+    "automatic_activation_allowed": false,
+    "real_money_actions": false,
+    "mid_series_material_tuning_allowed": false
+  },
+  "predecessor": {
+    "strategy_revision": "V2R3-2026-09-28",
+    "series_id": "PAPER-V2R3-CLEAN-20261001T0925Z",
+    "status": "CLOSED_COMPLETE",
+    "final_review_complete": true,
+    "release_gate_final": true
+  },
+  "strategy_changing_shadow_wip": {
+    "max_concurrent": 1,
+    "active": [
+      {
+        "candidate_id": "V3-H3-SHADOW-001",
+        "candidate_file": "research/v3/shadow-candidates/v3-h3-shadow-001.json",
+        "baseline_strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+        "baseline_series_id": "PAPER-V2R4-20261007T184255Z",
+        "changed_component": "STATE_CONDITIONING",
+        "status": "SHADOW_RUNNING",
+        "strategy_coupling": "ISOLATED_SHADOW_ONLY",
+        "automatic_promotion": false
+      }
+    ],
+    "queued": [
+      {
+        "candidate_id": "V3-H6-NEXT",
+        "status": "WAIT_FOR_H3_FIXED_REVIEW",
+        "rule": "Do not activate as a second strategy-changing shadow while H3 is running."
+      }
+    ]
+  },
+  "observational_research_tracks": [
+    {
+      "id": "V3-H10-CAPTURE-001",
+      "hypothesis": "V3-H10",
+      "status": "PROSPECTIVE_CAPTURE_ACTIVE_FIRST_REVIEW_COMPLETE_MORE_TESTING_REQUIRED",
+      "strategy_coupling": "NONE",
+      "may_run_in_parallel_with_strategy_shadow": true,
+      "automatic_promotion": false
+    }
+  ],
+  "closed_or_rejected_tracks": [
+    {
+      "id": "V3-H1-SHADOW-001",
+      "status": "REJECTED_STANDALONE_DECISION_AUTHORITY",
+      "retained_role": "RESEARCH_DIAGNOSTIC_ONLY",
+      "may_be_silently_bundled": false
+    }
+  ],
+  "next_control_decisions": [
+    {
+      "id": "V3-H3-FIXED-REVIEW",
+      "trigger": "H3 preregistered minimum gate reached",
+      "action": "Perform fixed review; classify keep/reject/inconclusive. Do not auto-extend or tune."
+    },
+    {
+      "id": "V2R4-PRODUCTIVITY-REVIEW",
+      "trigger": "Preregistered V2R4 evidence/productivity gate or clear low-trade pathology review point",
+      "action": "Assess candidate-to-trade production and causes; low trade frequency is evidence, not justification for indefinite extension."
+    }
+  ],
+  "permanent_invariants": {
+    "one_strategy_changing_shadow_at_a_time": true,
+    "observational_tracks_may_run_in_parallel_only_without_strategy_coupling": true,
+    "same_snapshot_baseline_replay_required_for_causal_shadow_divergence": true,
+    "automatic_strategy_promotion": false,
+    "automatic_real_money_activation": false,
+    "completed_release_gates_do_not_reopen_from_ordinary_new_evidence": true,
+    "material_active_strategy_changes_require_new_version": true
+  },
+  "explicitly_not_authorized": [
+    "REAL_MONEY_TRADING",
+    "PRIVATE_KRAKEN_ORDER_RIGHTS",
+    "WITHDRAWAL_RIGHTS",
+    "LEVERAGE",
+    "AUTOMATIC_STRATEGY_PROMOTION",
+    "SECOND_CONCURRENT_STRATEGY_CHANGING_SHADOW"
+  ]
+}

@@ -187,7 +187,7 @@ jobs:
           assert h3_control['orders'] is False and h3_control['real_money_actions'] is False
           assert h3_control['automatic_promotion'] is False
           assert h3_control['baseline_series_id']=='PAPER-V2R4-20261007T184255Z'
-          assert h3_candidate['status']=='FROZEN_FOR_SHADOW'
+          assert h3_candidate['status'] in {'FROZEN_FOR_SHADOW','SHADOW_RUNNING','SHADOW_COMPLETE','PROMOTION_REVIEW'}
           assert hashlib.sha256(h3_config_path.read_bytes()).hexdigest()==h3_control['frozen_config_sha256']==h3_candidate['frozen_config_sha256']
           h3_runtime=Path('tools/v3-h3-shadow-runtime.py').read_text()
           assert 'private Kraken' not in h3_runtime

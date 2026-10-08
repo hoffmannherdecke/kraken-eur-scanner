@@ -48,7 +48,7 @@ jobs:
 
           actual=hashlib.sha256(cfg_path.read_bytes()).hexdigest()
           assert actual==cand['frozen_config_sha256'], (actual,cand['frozen_config_sha256'])
-          assert cand['status']=='FROZEN_FOR_SHADOW'
+          assert cand['status'] in {'FROZEN_FOR_SHADOW','SHADOW_RUNNING','SHADOW_COMPLETE','PROMOTION_REVIEW'}
           assert cand['baseline_series_id']=='PAPER-V2R4-20261007T184255Z'
           assert cand['baseline_strategy_revision']=='V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION'
           assert cand['candidate_strategy_revision']=='V3-H3-SHADOW-001'

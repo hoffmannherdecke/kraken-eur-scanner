@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "kind": "V3_INTEGRATION_CANDIDATE_CONTRACT_V1",
+  "status": "ACTIVE_GOVERNANCE",
+  "purpose": "Test interaction of two or more individually reviewed strategy components before combined promotion.",
+  "required_candidate_fields": [
+    "candidate_id",
+    "baseline_strategy_revision",
+    "baseline_series_id",
+    "candidate_strategy_revision",
+    "status",
+    "integrated_components",
+    "prerequisite_component_reviews",
+    "frozen_config_sha256",
+    "evidence_plan",
+    "promotion_gate",
+    "guardrails"
+  ],
+  "allowed_statuses": [
+    "DRAFT",
+    "FROZEN_FOR_SHADOW",
+    "SHADOW_RUNNING",
+    "SHADOW_COMPLETE",
+    "PROMOTION_REVIEW",
+    "REJECTED"
+  ],
+  "component_rules": {
+    "integrated_components_min_count": 2,
+    "each_component_must_have_completed_review": true,
+    "no_new_unreviewed_component_may_enter_bundle": true,
+    "one_change_component_contract_remains_required_for_standalone_component_trials": true
+  },
+  "evidence_rules": {
+    "same_candidate_stream": true,
+    "shared_market_clock": true,
+    "same_snapshot_baseline_replay_required_for_causal_divergence": true,
+    "parameters_frozen_before_shadow": true,
+    "predefined_minimum_gate": true,
+    "realistic_cost_model_reference_required": true,
+    "no_midrun_tuning": true
+  },
+  "parallelism_rules": {
+    "max_concurrent_strategy_changing_shadows": 1,
+    "integration_candidate_cannot_run_while_component_shadow_is_active": true
+  },
+  "promotion_rules": {
+    "automatic_promotion": false,
+    "prospective_net_value_after_costs_required": true,
+    "explicit_release_gate_required": true,
+    "real_money_activation_separate": true
+  }
+}

@@ -38,7 +38,8 @@
       "EXECUTION_MECHANIC"
     ],
     "infrastructure_only_changes_are_not_strategy_shadow_candidates": true,
-    "multi_component_bundle_requires_separate_candidates_first": true
+    "multi_component_bundle_requires_separate_candidates_first": true,
+    "multi_component_integration_contract": "research/v3/integration-candidate-contract-v1.json"
   },
   "evidence_rules": {
     "same_candidate_stream_preferred": true,
@@ -47,7 +48,9 @@
     "technical_failures_excluded_from_strategy_conclusions": true,
     "minimum_sample_or_time_gate_required": true,
     "realistic_cost_model_reference_required": true,
-    "no_midrun_tuning": true
+    "no_midrun_tuning": true,
+    "same_snapshot_baseline_replay_required_for_causal_divergence": true,
+    "baseline_replay_must_match_official_baseline_decision": true
   },
   "promotion_rules": {
     "automatic_promotion": false,
@@ -55,5 +58,10 @@
     "net_value_after_costs_required": true,
     "release_gate_required": true,
     "real_money_activation_separate": true
+  },
+  "parallelism_rules": {
+    "max_concurrent_strategy_changing_shadows": 1,
+    "observational_no_authority_tracks_may_run_in_parallel": true,
+    "second_strategy_changing_shadow_must_wait_for_active_shadow_fixed_review": true
   }
 }
