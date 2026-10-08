@@ -780,6 +780,37 @@ self-retunes and live execution-safety/release gates remain independent hard req
 
 Als eigenständige Research-Governance gilt `docs/market-source-autonomy-v1.md` (Kandidatenregister: `research/market-source-candidates-v1.json`), gekoppelt an `docs/market-context-source-fusion-v1.md` und **ohne Änderung am aktiven Paper-/H3-Evaluator**. Ein kleiner News-/Community-/On-Chain-Pool wird innerhalb der vorhandenen 2h-/einmal täglich und einmal wöchentlich eingegrenzten Analysefenster autonom nach echten, zeitlich bekannten Ereignissen bewertet und nur als Forschungskontext ausgetauscht. **Ein per Quelle starker Nachrichten-Score ist kein positives Netto-Alpha**. V3-Anwendung erfordert stets einen separaten One-change-Shadow, inklusive Trade-Häufigkeit, missed moves, Kosten, Datenabdeckung und bestehender H1-Ablehnung. Nicht aktive Quellen niemals als täglich geprüft behaupten.
 
+### V3-Source-Alpha-Gate: eigenständige Nachweisführung statt Quellenablage (2026-10-08)
+
+Die **Quellenqualität** und die **handelswirksame Inkrementalität** sind
+zwei getrennte Prüfgrößen. Im Quellen-Contract
+`docs/market-source-autonomy-v1.md` §6 und im Runbook §12.6
+ist für V3 und alle späteren Nachfolger zwingend festgelegt:
+Nach tatsächlich bekannten materiellen externen Meldungen /
+Marktphasen-Ereignissen darf die Forschung nicht mit `SOURCE_KEEP`
+enden, sondern muss spätestens beim nächsten **ohnehin geöffneten**
+einschlägigen Strategie-Integrations-/Analyse-Gate prüfen, ob
+eine kleine konkret benannte neue Mechanik gegenüber vorhandenem
+Kraken/BTC/ETH/Market-Breadth/News-Kontext **mehr Netto-Chancen**
+oder **weniger Fehltrades** liefert — ohne Kaufhäufigkeit/False-
+REJECT/Missed Moves unbemerkt zu verschlechtern. Nur gereifte
+Outcomes, echte Quelle-`known_at` und ein ONE-CHANGE Shadow auf
+identischer Candidate-Clock sind zulässig. Positive
+Quellengüte ist keine automatische Performance-Promotion.
+
+Der separate kanonische Ledger-Eintrag
+`v3_external_source_context_incremental_value` ist
+`MORE_TESTING_REQUIRED`, bis prospektive Source-E2E-Belege und
+bekanntzeitlich joinbare reife Fälle vorhanden sind. Beim V3-
+Integrationsreview muss der Befund ausdrücklich weitergereicht
+oder, bei positiver Evidenz, in einen vorregistrierten **inaktiven**
+Ein-Komponenten-Kandidaten übersetzt werden. Wenn noch keine
+kausale Evidenz vorliegt: `NOT_EVALUABLE` plus konkret kleinster
+Daten-/Gatebedarf, ohne künstliche V3-Verzögerung und mit expliziter
+V4+-Migration; bei keinem Zusatznutzen `NO_ACTION_WARRANTED`.
+Source-Info darf niemals H1 still reaktivieren oder die laufende
+H3-/H6-Testreihenfolge unterlaufen; Extra-Work nicht erlaubt.
+
 ### Multiple markets/news/primary sources: context first, strategy later (2026-10-08)
 
 The permanent, scoped source/freshness/conﬂict/anti-overfilter contract is `docs/market-context-source-fusion-v1.md`; `research/source-registry.json` distinguishes manually verified CoinGecko/CMC reads, existing Kraken/Fed/SEC paths, and not-yet-integrated official CFTC/BLS/Coinbase/events/smart-money sources. All additional aggregate/news feeds are **CONTEXT_ONLY**; they cannot silently alter V2R4, H3, H6 order, entry/WAIT/REJECT, stops, H1-standalone rejection, or Work cadence. H10/H8/H11 preserve their own proof gates. V3 regime decision candidate must measure incremental value **beyond** existing market context using independent phase/time diversity, costs, trade conversion and missed-move controls; discordant/stale feeds never cast hard vetoes. Later live successors inherit this capability, not an unvalidated source-driven strategy mechanic.
