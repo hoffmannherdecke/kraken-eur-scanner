@@ -13,6 +13,10 @@ incremental role and an explicit overlap/storage/failure policy.
 
 The permanent market-context source fusion contract is `docs/market-context-source-fusion-v1.md`. A source being registered, manually callable through a connected tool, or named in a scheduled task is **not** proof of unattended runtime coverage; only a dated E2E observation establishes this. Source categories and roles are separate: Kraken Spot-EUR venue/execution truth; CoinGecko/CoinMarketCap aggregate cross-check; official US release/event authorities; optional event/smart-money/on-chain research. Correlated feeds cannot vote twice. Auxiliary source failures and conflicts never reject a candidate. Extra sources cannot change active frozen strategy or Work cadence; a new decision-relevant feature requires its own one-change prospective gate, explicit trade-frequency/missed-move regression and release approval.
 
+## Autonomous public-source governance (2026-10-08)
+
+Approved autonomous source discovery, evidence-based quality scoring, quarantine, reversible retirement and research-only replacement are specified in `docs/market-source-autonomy-v1.md`, with candidate status in `research/market-source-candidates-v1.json`. No new live feed is implied by a catalog entry. Kraken/runtime price and execution sources retain the existing hard admission, E2E, permissions and release gates. Source-steward changes may improve research routing, but never revise frozen V2R4/H3/V3 strategy parameters, Work cadence, account rights or buy vetoes. Existing `Source intake governance` CI validates the catalog as well as this registry; not a new scheduler. Every material source state change must preserve known-at/provenance, preserve historical evidence, and remain reversible.
+
 ## Required before adoption
 
 Every source/app entry must state:
