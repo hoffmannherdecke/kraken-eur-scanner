@@ -15,6 +15,34 @@ async function credentialAuthorized(admin:any,supplied:string,relayId:string){
 async function authorized(admin:any,req:Request){
   return credentialAuthorized(admin,req.headers.get("X-Shadow-Evidence-Token")??"","v2r4-shadow-evidence-relay");
 }
+function latestIso(values:any[],fallback:string){
+  let bestMs=Number.NEGATIVE_INFINITY;
+  let best=fallback;
+  for(const value of values){
+    if(typeof value!=="string"||!value)continue;
+    const ms=new Date(value).getTime();
+    if(!Number.isNaN(ms)&&ms>bestMs){bestMs=ms;best=new Date(ms).toISOString();}
+  }
+  return best;
+}
+function candidateUpdatedAt(row:any){
+  return latestIso([
+    row?.evaluated_at,
+    row?.payload?.decision?.evaluated_at_utc,
+    row?.payload?.recheck?.recheck_completed_at_utc,
+    row?.payload?.recheck?.completed_at_utc,
+    row?.payload?.recheck?.revalidated_at_utc,
+    row?.payload?.followup?.updated_at_utc,
+    row?.payload?.followup?.opportunity_audit?.updated_at_utc,
+  ],String(row?.evaluated_at??new Date(0).toISOString()));
+}
+function tradeUpdatedAt(row:any){
+  const events=Array.isArray(row?.payload?.events)?row.payload.events:[];
+  return latestIso([
+    row?.opened_at,row?.closed_at,row?.payload?.updated_at_utc,
+    row?.payload?.exit?.closed_at_utc,...events.map((x:any)=>x?.at_utc),
+  ],String(row?.opened_at??new Date(0).toISOString()));
+}
 
 Deno.serve(async(req:Request)=>{
   if(req.method!=="POST")return response(405,{ok:false,error:"method_not_allowed"});
@@ -162,8 +190,16 @@ Deno.serve(async(req:Request)=>{
       if(row?.series_id!==seriesId||typeof row?.candidate_id!=="string"||row?.payload?.real_money_actions_enabled!==false)
         return response(400,{ok:false,error:"unsafe_trade_payload"});
     }
-    if(candidates.length){const {error}=await admin.from("paper_candidate_outcomes").upsert(candidates,{onConflict:"candidate_id"}); if(error)return response(500,{ok:false,error:"candidate_upsert_failed",detail:error.message});}
-    if(trades.length){const {error}=await admin.from("paper_trade_results").upsert(trades,{onConflict:"candidate_id"}); if(error)return response(500,{ok:false,error:"trade_upsert_failed",detail:error.message});}
+    if(candidates.length){
+      const rows=candidates.map((row:any)=>({...row,updated_at:candidateUpdatedAt(row)}));
+      const {error}=await admin.from("paper_candidate_outcomes").upsert(rows,{onConflict:"candidate_id"});
+      if(error)return response(500,{ok:false,error:"candidate_upsert_failed",detail:error.message});
+    }
+    if(trades.length){
+      const rows=trades.map((row:any)=>({...row,updated_at:tradeUpdatedAt(row)}));
+      const {error}=await admin.from("paper_trade_results").upsert(rows,{onConflict:"candidate_id"});
+      if(error)return response(500,{ok:false,error:"trade_upsert_failed",detail:error.message});
+    }
     return response(200,{ok:true,action:"sync",accepted_candidates:candidates.length,accepted_trades:trades.length,paper_only:true,real_money_actions:false});
   }
 
@@ -214,10 +250,18 @@ Deno.serve(async(req:Request)=>{
       return response(400,{ok:false,error:"unsafe_h3_status_payload"});
 
     if(evidence.length){
-      const {error}=await admin.from("v3_h3_shadow_evidence").upsert(evidence,{onConflict:"candidate_id"});
+      const rows=evidence.map((row:any)=>({
+        ...row,
+        updated_at:latestIso(
+          [row?.payload?.baseline_evaluated_at_utc,row?.candidate_event_time],
+          String(row?.candidate_event_time??new Date(0).toISOString()),
+        ),
+      }));
+      const {error}=await admin.from("v3_h3_shadow_evidence").upsert(rows,{onConflict:"candidate_id"});
       if(error)return response(500,{ok:false,error:"h3_evidence_upsert_failed",detail:error.message});
     }
-    const {error:stErr}=await admin.from("v3_h3_shadow_status").upsert(status,{onConflict:"shadow_candidate_id"});
+    const statusRow={...status,updated_at:new Date(status.generated_at).toISOString()};
+    const {error:stErr}=await admin.from("v3_h3_shadow_status").upsert(statusRow,{onConflict:"shadow_candidate_id"});
     if(stErr)return response(500,{ok:false,error:"h3_status_upsert_failed",detail:stErr.message});
     return response(200,{
       ok:true,action:"sync_h3_shadow",accepted_evidence:evidence.length,
