@@ -140,6 +140,11 @@
       "active_control_surface": true
     },
     {
+      "workflow": "project-control-plane-guard.yml",
+      "lifecycle": "ACTIVE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
       "workflow": "scan.yml",
       "lifecycle": "ACTIVE_RUNTIME",
       "active_control_surface": true
