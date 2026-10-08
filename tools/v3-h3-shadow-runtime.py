@@ -217,12 +217,20 @@ class Runtime:
             "last_local_prune_count": self.last_local_prune_count,
         })
 
+    def local_candidate_footprint(self) -> set[str]:
+        return {p.stem for p in self.context_dir.glob("*.json")} | {
+            p.stem for p in self.evidence_dir.glob("*.json")
+        }
+
     def prune_local_after_successful_sync(self) -> list[str]:
+        # Keep headroom below the hard 200-candidate ceiling so a healthy runtime
+        # does not oscillate at the cap. Supabase is the primary evidence store.
+        target = max(self.min_candidates, self.local_retention_max - 20)
         pruned = prune_synced_local_pair_files(
             self.evidence_dir,
             self.context_dir,
             self.synced_candidate_ids,
-            self.local_retention_max,
+            target,
         )
         self.last_local_prune_count = len(pruned)
         self.persist_sync_state()
@@ -252,7 +260,17 @@ class Runtime:
             and len(dates) >= self.min_dates
             and capture_pct >= self.min_capture_pct
         )
+        local_footprint = self.local_candidate_footprint()
+        retention_backpressure = len(local_footprint) >= self.local_retention_max
         low_impact = gate_met and causal_div < self.min_divergences
+        if low_impact:
+            classification = "INCONCLUSIVE_LOW_IMPACT"
+        elif gate_met:
+            classification = "MINIMUM_GATE_MET_REVIEW_REQUIRED"
+        elif retention_backpressure:
+            classification = "LOCAL_RETENTION_BACKPRESSURE"
+        else:
+            classification = "COLLECTING"
         return {
             "schema_version": 1,
             "kind": "V3_H3_SHADOW_PILOT_STATUS_V1",
@@ -268,9 +286,10 @@ class Runtime:
             "causal_decision_divergences": causal_div,
             "baseline_replay_unstable_records": replay_unstable,
             "minimum_gate_met": gate_met,
-            "intake_should_stop": gate_met,
+            "retention_backpressure": retention_backpressure,
+            "intake_should_stop": gate_met or retention_backpressure,
             "low_impact_if_gate_met": low_impact,
-            "classification": "INCONCLUSIVE_LOW_IMPACT" if low_impact else ("MINIMUM_GATE_MET_REVIEW_REQUIRED" if gate_met else "COLLECTING"),
+            "classification": classification,
             "fixed_followup_horizons_minutes": self.control["fixed_followup_horizons_minutes"],
             "outcome_review_ready": False,
             "automatic_extension": False,
@@ -278,6 +297,7 @@ class Runtime:
             "local_retention_max_evidence_files": self.local_retention_max,
             "local_evidence_files": len(list(self.evidence_dir.glob("*.json"))),
             "local_context_files": len(list(self.context_dir.glob("*.json"))),
+            "local_candidate_footprint": len(local_footprint),
             "cloud_synced_candidate_ids": len(self.synced_candidate_ids),
             "last_local_prune_count": self.last_local_prune_count,
             "orders": False,
