@@ -28,7 +28,8 @@
       "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
       "source_known_at_required": false,
       "strategy_change_requires_release": false,
-      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION"
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "EXISTING_KRAKEN_ASSETPAIRS_TRADABILITY_CHECK"
     },
     {
       "id": "kraken_eur_price",
@@ -46,7 +47,8 @@
       "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
       "source_known_at_required": false,
       "strategy_change_requires_release": false,
-      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION"
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "EXISTING_FRESH_KRAKEN_EUR_RECHECK_AND_STALENESS_GUARD"
     },
     {
       "id": "scanner_detection",
@@ -64,7 +66,8 @@
       "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
       "source_known_at_required": false,
       "strategy_change_requires_release": false,
-      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION"
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "EXISTING_CANDIDATE_INTAKE_AND_TIMING_OUTCOME_REVIEW"
     },
     {
       "id": "paper_lifecycle",
@@ -81,7 +84,8 @@
       "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
       "source_known_at_required": false,
       "strategy_change_requires_release": false,
-      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION"
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "EXISTING_V2R4_FROZEN_OUTCOME_MATURITY_AND_FINAL_REVIEW"
     },
     {
       "id": "productivity_missed_moves",
@@ -99,7 +103,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION"
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "V2R4_PRODUCTIVITY_GATE_MATURE_BUY_WAIT_REJECT_FALSE_NEGATIVE_REVIEW"
     },
     {
       "id": "realtime_timing",
@@ -116,7 +121,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION"
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "EXISTING_SAME_PAIR_SCAN_WS_ALTRADY_LATENCY_REVIEW"
     },
     {
       "id": "market_regime",
@@ -135,7 +141,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION"
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "FIRST_UNATTENDED_KRAKEN_EUR_INITIAL_BASELINE_AND_PIT_OUTCOME_JOIN"
     },
     {
       "id": "h1_breadth_diagnostic",
@@ -153,7 +160,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION"
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "CLOSED_REJECTED_STANDALONE_NO_REOPEN"
     },
     {
       "id": "global_market_crosscheck",
@@ -172,7 +180,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION"
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "FIRST_UNATTENDED_CG_CMC_READ_AND_STALENESS_SOURCE_ASOF"
     },
     {
       "id": "news_event_context",
@@ -190,7 +199,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION"
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "FIRST_UNATTENDED_OFFICIAL_PRIMARY_EVENT_READ"
     },
     {
       "id": "source_quality",
@@ -207,7 +217,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "KEEP_QUARANTINE_OR_REPLACE"
+      "evidence_outcome": "KEEP_QUARANTINE_OR_REPLACE",
+      "next_gate": "FIRST_UNATTENDED_SOURCE_REVIEW_AND_PROVEN_SOURCE_SWAP"
     },
     {
       "id": "derivatives_h2",
@@ -224,7 +235,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION"
+      "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
+      "next_gate": "V3_H2_PREDECLARE_ONE_CHANGE_DERIVATIVES_STATE_REVIEW_AFTER_PRECHECK"
     },
     {
       "id": "orderflow_h3",
@@ -241,7 +253,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION"
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H3_ACTIVE_FROZEN_SHADOW_FIXED_REVIEW"
     },
     {
       "id": "stop_ttl_h4",
@@ -258,7 +271,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION"
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H4_MATURE_POST_ENTRY_MAE_MFE_AND_TRADES_BEFORE_TRIAL"
     },
     {
       "id": "macro_h5",
@@ -276,7 +290,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION"
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H5_FOMC_CALENDAR_PIT_ONE_CHANGE_EVENT_RISK_TRIAL"
     },
     {
       "id": "price_volume_h6",
@@ -295,7 +310,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION"
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H6_WAIT_H3_FIXED_REVIEW_BEFORE_SEPARATE_ONE_CHANGE_SHADOW"
     },
     {
       "id": "meta_h7",
@@ -315,7 +331,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION"
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H7_FROZEN_LABEL_COST_SPLIT_AND_SUFFICIENT_CLEAN_LABELS"
     },
     {
       "id": "onchain_h8",
@@ -332,7 +349,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION"
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H8_FURTHER_KNOWN_AT_PROSPECTIVE_STATE_AND_OUTCOME_JOIN"
     },
     {
       "id": "execution_h9",
@@ -349,7 +367,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION"
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H9_FEES_ORDERBOOK_DELTA_PUBLIC_PRINTS_AND_QUEUE_CONTRACT"
     },
     {
       "id": "smartmoney_h10",
@@ -367,7 +386,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION"
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H10_FIXED_WALLET_COHORT_CONTEXT_OUTCOME_JOIN"
     },
     {
       "id": "prediction_h11",
@@ -385,7 +405,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION"
+      "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
+      "next_gate": "V3_H11_PIT_EVENT_STATE_BEFORE_OUTCOME_TRIAL"
     },
     {
       "id": "health_watchdog",
@@ -402,7 +423,8 @@
       "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
       "source_known_at_required": false,
       "strategy_change_requires_release": false,
-      "evidence_outcome": "HEAL_OR_ESCALATE_OR_ACK"
+      "evidence_outcome": "HEAL_OR_ESCALATE_OR_ACK",
+      "next_gate": "EXISTING_WATCHDOG_SELF_HEAL_HEALTH_OR_MANUAL_ESCALATION"
     },
     {
       "id": "storage_and_cost",
@@ -419,7 +441,8 @@
       "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
       "source_known_at_required": false,
       "strategy_change_requires_release": false,
-      "evidence_outcome": "HEAL_OR_ESCALATE_OR_ACK"
+      "evidence_outcome": "HEAL_OR_ESCALATE_OR_ACK",
+      "next_gate": "EXISTING_BOUNDED_RETENTION_AND_COST_ACCOUNT_GATE"
     },
     {
       "id": "milestone_controller",
@@ -436,7 +459,8 @@
       "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
       "source_known_at_required": false,
       "strategy_change_requires_release": false,
-      "evidence_outcome": "READINESS_RECEIPT_NOT_ACTIVATION"
+      "evidence_outcome": "READINESS_RECEIPT_NOT_ACTIVATION",
+      "next_gate": "FIRST_SCHEDULED_GATE_NOTIFICATION_E2E_WITHOUT_AUTOSTART"
     },
     {
       "id": "gated_strategy_analysis",
@@ -453,7 +477,8 @@
       "on_missing": "UNKNOWN_NO_VETO",
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
-      "evidence_outcome": "DISPOSITION_OR_SEPARATE_RELEASE"
+      "evidence_outcome": "DISPOSITION_OR_SEPARATE_RELEASE",
+      "next_gate": "EXISTING_WORK_GATE_PHASE_2_INTEGRATION_DISPOSITION_AND_ACK"
     },
     {
       "id": "delivery_notifications",
@@ -470,7 +495,8 @@
       "on_missing": "KEEP_EXISTING_SAFETY_OR_OPS_POLICY",
       "source_known_at_required": false,
       "strategy_change_requires_release": false,
-      "evidence_outcome": "HEAL_OR_ESCALATE_OR_ACK"
+      "evidence_outcome": "HEAL_OR_ESCALATE_OR_ACK",
+      "next_gate": "EXISTING_CRITICAL_ACTIONABLE_PUSH_DELIVERY_GATE"
     }
   ]
 }
