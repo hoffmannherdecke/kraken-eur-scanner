@@ -37,8 +37,18 @@ def check(path:Path)->list[str]:
         seen.add(sid)
         if x.get("stage") not in STAGES or x.get("role") not in ROLES:
             issues.append(f"{sid}: invalid stage/role")
-        if x.get("automated_runtime_verified") is not False:
-            issues.append(f"{sid}: runtime verification must be separately evidenced")
+        runtime_verified=x.get("automated_runtime_verified")
+        if type(runtime_verified) is not bool:
+            issues.append(f"{sid}: runtime_verified must be boolean")
+        if runtime_verified is True:
+            # A catalog record must not self-certify unattended operation.
+            e=str(x.get("runtime_evidence_url") or "")
+            when=str(x.get("runtime_verified_at_utc") or "")
+            ep=urlparse(e)
+            if ep.scheme!="https" or ep.netloc!="github.com" or "/hoffmannherdecke/kraken-eur-scanner/" not in ep.path or not when.endswith("Z"):
+                issues.append(f"{sid}: unattended runtime claim requires canonical GitHub proof URL and UTC time")
+            if x.get("stage") in {"ACCESS_CHECK_REQUIRED","DISCOVERY_ONLY","QUARANTINED","RETIRED_RESEARCH"}:
+                issues.append(f"{sid}: runtime claim contradicts research stage")
         if not x.get("name") or not x.get("notes") or not x.get("last_reviewed_date"):
             issues.append(f"{sid}: missing provenance")
         u=urlparse(x.get("url",""))
