@@ -505,6 +505,21 @@
         "docs/market-context-source-fusion-v1.md"
       ],
       "pending_gate": "V3_EXTERNAL_SOURCE_FIRST_UNATTENDED_E2E_AND_KNOWN_AT_MATURE_CANDIDATE_OUTCOME_JOIN_THEN_EXPLICIT_INTEGRATION_REVIEW_DISPOSITION_OR_V4_SUCCESSOR_GATE"
+    },
+    {
+      "id": "unified_monitoring_feedback_ownership",
+      "category": "permanent_project_governance",
+      "source_version": "Unified monitoring-to-evidence-to-action safety architecture 2026-10-08",
+      "migration_status": "INHERIT_UNCHANGED",
+      "rationale": "Keep exactly one responsible consumer and follow-through gate per important existing monitoring/research family in every successor: health to operational resolution, source quality to research routing, confirmed market/news evidence to already-gated mature outcome analysis, research components to separate one-change trials and integration releases. No double-counted correlated votes, optional news vetoes, H1 standalone return, parallel H3/H6, additional Work wakeups, or automatic strategy/live activation. Absence of first source-radar unattended E2E remains explicit and cannot be misrepresented as completed.",
+      "evidence": [
+        "docs/unified-monitoring-learning-architecture-v1.md",
+        "research/monitoring-evidence-routing-v1.json",
+        "docs/test-strategy-runbook.md",
+        "docs/project-control-plane-governance.md",
+        "docs/market-source-autonomy-v1.md"
+      ],
+      "pending_gate": null
     }
   ],
   "final_v2r3_review": {
