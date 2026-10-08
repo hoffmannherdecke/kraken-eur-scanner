@@ -776,6 +776,33 @@ The same principle continues into the later live phase: live observations accele
 creation/evaluation of inactive successors, but the active real-money version never
 self-retunes and live execution-safety/release gates remain independent hard requirements.
 
+### Zusammenführung H1–H11, Quellen, Regime und Betriebsmonitoring (2026-10-08)
+
+**Kanonischer anti-konfliktiver Zuständigkeitsplan:**
+`docs/unified-monitoring-learning-architecture-v1.md`
+und `research/monitoring-evidence-routing-v1.json`.
+Damit werden bereits vorhandene Funktionen verwendet, statt
+parallel gleichwertige neue Filter aufzubauen: H1 bleibt als
+Standalone verworfen; das 2h-Regime ist nur Kontext, H6 untersucht
+separat Price×Volume; H2 ist alleinige Derivate-State-Hypothese
+(CoinMarketCap/Binance nur Zusatzquellen); H5/FOMC und
+amtliche Meldungen/H11 werden nicht zu kumulierten Event-Vetos;
+H3-L2-Kontext und H9-Ausführungskosten unterscheiden sich;
+H8-Netzwerk von H10-Traderaktivität; H7-Meta ist noch
+nicht labelreif und kein Sammelcontainer für ungeprüfte Filter.
+
+Jede fachliche Monitorfamilie besitzt einen konkreten Consumer und
+ein Evidenz-/nächstes Entscheidungsgate. Relevante reife,
+**vorher bekannte** Befunde gehen bei ohnehin geöffnetem Gate
+in den kleinsten zulässigen Folgeschritt, nicht in weitere
+unbewertete Nebenlisten. Netto-Kosten, falsche Ablehnungen,
+Trade-Quote und verpasste Chancen sind bei jeder neuen aktiven
+V3-Kontextmechanik gemeinsame Erfolgsbedingungen. Mehr
+Korrelation darf niemals scheinbaren zusätzlichen Research-
+Beweis bilden. Bestehender H3-Shadow und H6-Sequenz unverändert.
+Keine Beobachtungsaufgabe eröffnet eigenständig Work oder
+gestattet automatische Strategie- oder Echtgeldaktivierung.
+
 ### Permanente Quellen-Auswahl nach belegtem Zusatznutzen (2026-10-08)
 
 Als eigenständige Research-Governance gilt `docs/market-source-autonomy-v1.md` (Kandidatenregister: `research/market-source-candidates-v1.json`), gekoppelt an `docs/market-context-source-fusion-v1.md` und **ohne Änderung am aktiven Paper-/H3-Evaluator**. Ein kleiner News-/Community-/On-Chain-Pool wird innerhalb der vorhandenen 2h-/einmal täglich und einmal wöchentlich eingegrenzten Analysefenster autonom nach echten, zeitlich bekannten Ereignissen bewertet und nur als Forschungskontext ausgetauscht. **Ein per Quelle starker Nachrichten-Score ist kein positives Netto-Alpha**. V3-Anwendung erfordert stets einen separaten One-change-Shadow, inklusive Trade-Häufigkeit, missed moves, Kosten, Datenabdeckung und bestehender H1-Ablehnung. Nicht aktive Quellen niemals als täglich geprüft behaupten.
