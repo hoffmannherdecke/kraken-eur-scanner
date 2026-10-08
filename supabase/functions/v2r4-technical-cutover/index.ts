@@ -6,7 +6,10 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const OLD="PAPER-V2R4-20261007T184255Z";
 const OLD_SHA="3c6729a6c548d169f56a97f07f75892f37211636";
-const STAGED_SHA="927e8c8d4455c28bb0cb230e86eb1d83bc09576f";
+// Release provenance is pinned at deployment, only AFTER the final successor
+// staging is rebuilt from the reviewed merged SHA. This is public metadata,
+// not an authentication token. Missing configuration fails closed.
+const EXPECTED_RELEASE_SHA=(Deno.env.get("V2R4_TECHNICAL_RELEASE_SHA")??"").toLowerCase();
 const CONFIRM="CUTOVER_V2R4_TECHNICAL_PAPER_ONLY";
 const REV="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION";
 const headers={"Content-Type":"application/json","Cache-Control":"no-store"};
@@ -133,7 +136,8 @@ Deno.serve(async(req:Request)=>{
      m.new_series_id!==config?.series_id||
      m.new_test_id!==config?.test_id||
      config?.strategy_revision!==REV||
-     config?.release_repo_sha!==STAGED_SHA||
+     !safeHex(EXPECTED_RELEASE_SHA,40)||
+     config?.release_repo_sha!==EXPECTED_RELEASE_SHA||
      !safeHex(config?.runtime_bundle_fingerprint_sha256,64)||
      !safeHex(config?.strategy_fingerprint_sha256,64)||
      config?.paper_only!==true||config?.real_money_actions_enabled!==false||
