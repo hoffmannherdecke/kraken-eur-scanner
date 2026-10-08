@@ -29,6 +29,8 @@ jobs:
             tools/validate-artifact-retention.py \
             tools/minipc-status-sync.py \
             tools/v2r4-shadow-cloud-sync.py
+      - name: V2R4 read-only symbol and outage reconciliation tests
+        run: python tests/test_v2r4_symbol_outage_recovery.py
       - name: V3 H3 shadow routing tests
         run: |
           python tests/test_v3_h3_shadow_common.py
