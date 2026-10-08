@@ -77,9 +77,9 @@ begin
      or p_cutover_at_utc < clock_timestamp() - interval '10 minutes' then
     raise exception 'cutover time outside bounded recent UTC window';
   end if;
-  if p_new_series_id is distinct from ('PAPER-V2R4-' || to_char(p_cutover_at_utc at time zone 'UTC','YYYYMMDD"T"HH24MISS"Z"'))
-     or p_new_test_id is distinct from ('PAPER-V2R4-TECH-' || to_char(p_cutover_at_utc at time zone 'UTC','YYYYMMDD'))
-     or p_cutover_at_utc <> date_trunc('second', p_cutover_at_utc) then
+  if p_new_series_id IS DISTINCT FROM ('PAPER-V2R4-' || to_char(p_cutover_at_utc at time zone 'UTC','YYYYMMDD"T"HH24MISS"Z"'))
+     or p_new_test_id IS DISTINCT FROM ('PAPER-V2R4-TECH-' || to_char(p_cutover_at_utc at time zone 'UTC','YYYYMMDD'))
+     or p_cutover_at_utc IS DISTINCT FROM date_trunc('second',p_cutover_at_utc) then
     raise exception 'successor identity does not match cutover UTC';
   end if;
   if p_new_config is null or jsonb_typeof(p_new_config) IS DISTINCT FROM 'object' then
@@ -117,8 +117,8 @@ begin
       'cutover_at_utc',p_cutover_at_utc);
   end if;
 
-  if v_old.status IS DISTINCT FROM 'active'
-     or p_expected_old_last_updated_at is null and p_expected_old_outcomes > 0
+  if (p_expected_old_last_updated_at is null and p_expected_old_outcomes > 0)
+     or v_old.status IS DISTINCT FROM 'active'
      or v_old.strategy_revision IS DISTINCT FROM v_rev
      or v_old.config->>'release_repo_sha' IS DISTINCT FROM lower(p_expected_old_release_sha)
      or lower(p_expected_old_release_sha) IS DISTINCT FROM '3c6729a6c548d169f56a97f07f75892f37211636'
@@ -156,7 +156,10 @@ begin
   end if;
 
   v_old_strategy := v_old.config->>'strategy_fingerprint_sha256';
-  if v_old_strategy is null or v_old_strategy !~ '^[0-9a-f]{64}
+  if v_old_strategy is null or v_old_strategy !~ '^[0-9a-f]{64}$'
+     or v_old.config->>'runtime_bundle_fingerprint_sha256' is null then
+    raise exception 'predecessor fingerprints missing';
+  end if;
   v_new_sha := lower(p_new_config->>'release_repo_sha');
   if p_new_config->>'series_id' IS DISTINCT FROM p_new_series_id
      or p_new_config->>'test_id' IS DISTINCT FROM p_new_test_id
@@ -177,69 +180,6 @@ begin
      or v_new_sha is null or v_new_sha !~ '^[0-9a-f]{40}$'
      or p_new_config->>'runtime_bundle_fingerprint_sha256' is null or lower(p_new_config->>'runtime_bundle_fingerprint_sha256') !~ '^[0-9a-f]{64}$'
      or p_new_config->>'runtime_bundle_fingerprint_sha256' IS NOT DISTINCT FROM v_old.config->>'runtime_bundle_fingerprint_sha256'
-     or (p_new_config - v_excluded_keys) IS DISTINCT FROM (v_old.config - v_excluded_keys) then
-    raise exception 'successor changed strategy, safety or provenance contract';
-  end if;
-
-  -- All mutations below commit or roll back as ONE SQL transaction.
-  update public.paper_series
-     set status='technical_closed',updated_at=clock_timestamp()
-   where series_id=p_old_series_id and status='active';
-  if not found then raise exception 'predecessor close race'; end if;
-
-  insert into public.paper_series(
-    series_id,test_id,strategy_revision,started_at,
-    target_completed_trades,status,config)
-  values(p_new_series_id,p_new_test_id,v_rev,p_cutover_at_utc,20,'active',p_new_config);
-
-  insert into public.paper_technical_rotations(
-    predecessor_series_id,successor_series_id,cutover_at_utc,
-    predecessor_release_repo_sha,successor_release_repo_sha,
-    predecessor_runtime_sha256,successor_runtime_sha256,
-    strategy_fingerprint_sha256,predecessor_outcomes,predecessor_trades,
-    predecessor_last_outcome_updated_at,successor_test_id)
-  values(p_old_series_id,p_new_series_id,p_cutover_at_utc,
-    lower(p_expected_old_release_sha),v_new_sha,
-    v_old.config->>'runtime_bundle_fingerprint_sha256',
-    p_new_config->>'runtime_bundle_fingerprint_sha256',
-    v_old_strategy,v_outcomes,v_trades,v_last_update,p_new_test_id);
-
-  return jsonb_build_object('ok',true,'idempotent',false,
-    'predecessor_series_id',p_old_series_id,
-    'successor_series_id',p_new_series_id,
-    'cutover_at_utc',p_cutover_at_utc,
-    'paper_only',true,'real_money_actions',false);
-end;
-$$;
-revoke all on function public.rotate_v2r4_technical_paper(
-  text,text,text,timestamptz,jsonb,text,bigint,bigint,timestamptz)
-  from public, anon, authenticated;
-grant execute on function public.rotate_v2r4_technical_paper(
-  text,text,text,timestamptz,jsonb,text,bigint,bigint,timestamptz)
-  to service_role;
-
-     or v_old.config->>'runtime_bundle_fingerprint_sha256' is null then
-    raise exception 'predecessor fingerprints missing';
-  end if;
-  v_new_sha := lower(p_new_config->>'release_repo_sha');
-  if p_new_config->>'series_id' IS DISTINCT FROM p_new_series_id
-     or p_new_config->>'test_id' IS DISTINCT FROM p_new_test_id
-     or p_new_config->>'predecessor_series_id' IS DISTINCT FROM p_old_series_id
-     or p_new_config->>'strategy_revision' IS DISTINCT FROM v_rev
-     or p_new_config->>'series_started_at_utc' IS DISTINCT FROM to_char(p_cutover_at_utc at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"')
-     or p_new_config->>'technical_change_id' IS DISTINCT FROM 'V2R4_TECHNICAL_RECOVERY_20261009'
-     or p_new_config->>'technical_change_approved' IS DISTINCT FROM 'true'
-     or p_new_config->>'enabled' IS DISTINCT FROM 'true'
-     or p_new_config->>'paper_only' IS DISTINCT FROM 'true'
-     or p_new_config->>'real_money_actions_enabled' IS DISTINCT FROM 'false'
-     or p_new_config->>'automatic_activation_allowed' IS DISTINCT FROM 'false'
-     or p_new_config->>'strategy_fingerprint_sha256' IS DISTINCT FROM v_old_strategy
-     or p_new_config->>'scout_notional_eur' IS DISTINCT FROM '50'
-     or p_new_config->>'stage2_notional_eur' IS DISTINCT FROM '50'
-     or p_new_config->>'target_completed_paper_trades' IS DISTINCT FROM '20'
-     or v_new_sha is null or v_new_sha !~ '^[0-9a-f]{40}$'
-     or p_new_config->>'runtime_bundle_fingerprint_sha256' is null or lower(p_new_config->>'runtime_bundle_fingerprint_sha256') !~ '^[0-9a-f]{64}$'
-     or p_new_config->>'runtime_bundle_fingerprint_sha256' = v_old.config->>'runtime_bundle_fingerprint_sha256'
      or (p_new_config - v_excluded_keys) IS DISTINCT FROM (v_old.config - v_excluded_keys) then
     raise exception 'successor changed strategy, safety or provenance contract';
   end if;
