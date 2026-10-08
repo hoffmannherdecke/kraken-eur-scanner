@@ -109,6 +109,19 @@ try {
     Copy-Item -LiteralPath (Join-Path $repo $rel) -Destination $dest -ErrorAction Stop
   }
   if(Test-Path (Join-Path $stagedApp 'paper_runtime_control.json')){ throw 'Staging must never include an active control' }
+  # Freeze every staged code/spec byte, not just the narrow runtime fingerprint.
+  # Extra paper_evaluator modules and paper_context are part of the executable
+  # surface and MUST be verified at the eventual physical release boundary.
+  $allStaged=@(Get-ChildItem -LiteralPath $stagedApp -Recurse -File |
+    Where-Object { $_.Name -ne 'technical-stage-manifest.json' } |
+    Sort-Object FullName)
+  $inventory=@()
+  foreach($file in $allStaged){
+    $relative=$file.FullName.Substring($stagedApp.Length).TrimStart([char]'\',[char]'/').Replace('\','/')
+    $inventory+=([ordered]@{relative_path=$relative;sha256=(Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()})
+  }
+  if($inventory.Count -lt $sourceFiles.Count){ throw 'Staged file inventory is incomplete' }
+  $plan.prepared_file_hashes=@($inventory)
   $plan.status='STAGED_INERT_NO_ACTIVATION'
   [IO.File]::WriteAllText($manifestPath,($plan | ConvertTo-Json -Depth 6)+[Environment]::NewLine,[Text.UTF8Encoding]::new($false))
 } catch {
