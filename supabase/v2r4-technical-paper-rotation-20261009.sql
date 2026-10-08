@@ -229,6 +229,18 @@ begin
     target_completed_trades,status,config)
   values(p_new_series_id,p_new_test_id,v_rev,p_cutover_at_utc,20,'active',p_new_config);
 
+  -- Stop H3-001's original-baseline trial in the same transaction. Its
+  -- immutable prospective evidence remains tied to the predecessor. No H3-002
+  -- is promoted or activated here.
+  update public.v3_h3_shadow_status
+    set payload = jsonb_set(payload,'{status}',to_jsonb('FROZEN_TECHNICAL_CUTOVER'::text),true)
+       || jsonb_build_object('technical_cutover_at_utc',p_cutover_at_utc,
+                             'baseline_immutable',true),
+        updated_at = clock_timestamp()
+    where shadow_candidate_id='V3-H3-SHADOW-001'
+      and payload->>'baseline_series_id'=p_old_series_id;
+  if not found then raise exception 'H3-001 baseline freeze failed'; end if;
+
   insert into public.paper_technical_rotations(
     predecessor_series_id,successor_series_id,cutover_at_utc,
     predecessor_release_repo_sha,successor_release_repo_sha,
