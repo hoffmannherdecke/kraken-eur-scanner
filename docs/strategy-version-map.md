@@ -185,6 +185,27 @@ V2R4 darf erst nach dem kanonischen Release-Gate als **separate Paper-Serie** st
 Es besteht weiterhin **keine starre Pflicht auf genau 20 Trades**; der alternative
 V2R3-Abschlussweg ist gleichwertig. V2R3 bleibt unverändert als Vergleichsbasis.
 
+
+### V2R4 Beobachtungsschwerpunkt — Trade-Entstehung (2026-10-08)
+
+Die erste V2R4-Paper-Serie bleibt **unverändert und eingefroren**; nach erst rund 14 Stunden Laufzeit
+besteht ausdrücklich **kein Anlass für eine Regeländerung**.
+
+Für die weitere Auswertung ist die tatsächliche **Trade-Entstehung ein eigenes Pflichtkriterium**:
+- BUY_SCOUT-/Trade-Frequenz wird neben REJECT/WAIT, Triggerlatenz, Missed Moves und Kostenwirkung
+  ausdrücklich bewertet.
+- Bleibt die Serie trotz ausreichender Candidate-Menge, Laufzeit, Marktphasen und gereifter Evidenz
+  bei keinem oder nur extrem wenigen Trades, ist dies ein **strategisches Ergebnis** und ein möglicher
+  Hinweis auf weiterhin zu restriktive Gates.
+- Das darf nicht durch spontane Lockerungen während der eingefrorenen Serie kaschiert werden; die
+  Ursache wird beim regulären Review aus REJECT/WAIT- und späterer Kursentwicklung abgeleitet und
+  erst in einer nachfolgenden versionierten Strategieänderung umgesetzt.
+- Ein Paperlauf wird **nicht künstlich verlängert**, nur um die gewünschte Trade-Anzahl zu erreichen.
+  Zu geringe Trade-Frequenz begrenzt den praktischen Nutzen der Strategie und muss deshalb selbst in
+  die Release-/Nachfolgerentscheidung einfließen.
+- Dieser Beobachtungspunkt ist **passive Governance**: keine zusätzliche Work-Ausführung, kein neuer
+  Zeitplan, keine zusätzliche Hintergrundprüfung und keine höhere Systemlast.
+
 ---
 
 ### V3 — bereits angelegter größerer Research-/Strategie-Nachfolger
