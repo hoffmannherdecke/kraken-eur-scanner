@@ -105,6 +105,19 @@ The approved direction is to grow from **automatic readiness detection** toward
 real-money successor research. This is a roadmap, **not** authorization to
 deploy an autonomous coding agent or modify active trading mechanics today.
 
+**Timing rule (confirmed 2026-10-08):** Dates such as 2026-10-09/10 are
+planning estimates, not deadlines, minimum waiting periods, or automatic
+approval triggers. Advance as soon as the applicable evidence/quality,
+safety, dependency, cost and release gates are verifiably satisfied; defer
+when they are not. Reassess when relevant new evidence arrives instead of
+restarting tests or waiting for the calendar. A successful first scheduled
+controller run is a technical input, not by itself approval to launch an
+autonomous coding agent. If a gate needs more evidence, keep collection
+bounded and the active V2R4/H3 contracts frozen; if a safety-critical gate
+fails, remain blocked. The controller does not currently launch autonomous
+engineering work by itself. No extra Work runs, schedules or notifications
+are authorized by this timing clarification.
+
 Sequence, without an arbitrary waiting period:
 
 1. **Prove the new controller:** observe at least one successful real scheduled
