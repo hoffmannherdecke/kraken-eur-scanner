@@ -170,6 +170,7 @@ try{
    @{k='technical_change_approved';v=$true}
  )){$cfg|Add-Member -NotePropertyName $v.k -NotePropertyValue $v.v -Force}
  $request=[ordered]@{old_series_id=$oldId;expected_old_release_sha=$oldSha;new_series_id=$newId;new_test_id=$newTest;cutover_at_utc=$cutTime;new_config=$cfg;expected_old_outcomes=[long]$cloud.cloud.candidate_count;expected_old_candidate_ids_sha256=$cloud.cloud.candidate_ids_sha256;expected_old_trades=[long]$cloud.cloud.trade_count;expected_old_last_updated_at=$cloud.cloud.last_outcome_updated_at;physical_proof=[ordered]@{old_paper_tasks_stopped=$true;h3_001_stopped=$true;last_old_sync_acknowledged=$true;snapshot_verified=$true;staged_app_still_inert=$true;orders_disabled=$true;snapshot_sha256=$backupSha;old_candidate_ids_sha256=$ids.sha;staged_manifest_sha256=(Get-FileHash $manifestPath -Algorithm SHA256).Hash.ToLowerInvariant();staged_code_bundle_sha256=$stage.proposed_runtime_bundle_fingerprint_sha256;strategy_fingerprint_sha256=$old.strategy_fingerprint_sha256}}
+ Need ([datetime]::UtcNow -lt ([datetime]$lease.expires_at_utc)) 'MAINTENANCE_LEASE_EXPIRED_BEFORE_RPC: no cloud mutation'
  $phase='CLOUD_OUTCOME_UNKNOWN'
  $commit=$null
  try{$commit=Edge 'cutover' $request -Commit}
@@ -217,6 +218,16 @@ try{
  [pscustomobject]@{status='CUTOVER_COMPLETED_PAPER_ONLY';successor_series_id=$newId;h3_001='FROZEN';orders=$false;real_money_actions=$false}|ConvertTo-Json
 }catch{
  $problem=$_.Exception.Message
+ if($phase -eq 'CLOUD_COMMITTED'){
+   # The SQL rotation has committed; never resurrect the predecessor.
+   # Stop any partially started successor when post-cutover verification fails.
+   foreach($n in $taskNames){
+     if($n -eq 'CryptoMiniPC-V3H3Shadow001'){continue}
+     Stop-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue
+     Disable-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue|Out-Null
+   }
+   $phase='POST_COMMIT_FAIL_CLOSED_SUCCESSOR_STOPPED'
+ }
  if($phase -eq 'PRE_COMMIT'){
    try{
      if($backup -and (Test-Path (Join-Path $backup 'tasks'))){
