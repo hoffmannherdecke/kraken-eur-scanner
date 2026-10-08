@@ -72,7 +72,7 @@ def validate(j:dict, state:dict)->list[str]:
         if not isinstance(s,dict): continue
         ident=str(s.get("id") or "")
         if not re.fullmatch(r"[a-z][a-z0-9_]*",ident):errs.append("bad stream id "+ident)
-        for field in ("role","canonical_owner","evidence_status","fact_key","evidence_outcome"):
+        for field in ("role","canonical_owner","evidence_status","fact_key","evidence_outcome","next_gate"):
             if not str(s.get(field) or "").strip():errs.append(ident+": missing "+field)
         if s.get("consumer") not in ALLOWED_CONSUMERS:errs.append(ident+": bad consumer")
         if s.get("authority") not in ALLOWED_AUTHORITIES:errs.append(ident+": bad authority")
