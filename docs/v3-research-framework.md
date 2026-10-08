@@ -2,7 +2,7 @@
 
 Status: ACTIVE RESEARCH  
 Created: 2026-09-28  
-Baseline: `V2R3-2026-09-28`  
+Current active Shadow baseline: `PAPER-V2R4-20261007T184255Z` / `V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION`  
 Primary research log: GitHub Issue #7 — V3 Research Track – Jansen evidence framework  
 Version relationship: `docs/strategy-version-map.md`
 
@@ -10,9 +10,9 @@ Version relationship: `docs/strategy-version-map.md`
 
 This document is the compact, versioned source of truth for the V3 development track. V3 includes research, validation, integration and eventual successor-strategy construction.
 
-It does **not** modify the active V2R3 paper strategy. New literature findings, historical analyses and paper-trade observations may create hypotheses and test candidates, but production rules must never change silently.
+It does **not** modify the currently active Paper baseline in place. New literature findings, historical analyses and paper-trade observations may create hypotheses and test candidates, but production rules must never change silently. Current active state is declared only in `project-current-state.json`.
 
-V2R3 remains the frozen comparison baseline for the current series. However, the eventual V3 successor will inherit the best validated V2/V2R4 knowledge as its starting baseline rather than being built from scratch.
+V2R3 remains an immutable historical comparison baseline. The active H3 Shadow is bound to the current V2R4 Paper baseline declared in `project-current-state.json`. The eventual V3 successor inherits the best validated V2/V2R4 knowledge rather than being built from scratch.
 
 ## 2. Status model
 
@@ -62,9 +62,12 @@ Each V3 hypothesis must have exactly one status:
 
 6. **Shadow / paper**
    - Same candidate stream and market clock as baseline.
-   - No effect on V2R3 decisions.
+   - No effect on the active baseline decisions.
    - Predefined minimum sample and promotion gates.
    - Technical failures are excluded from statistical strategy conclusions.
+   - A causal decision divergence counts only when a same-snapshot baseline replay reproduces the official baseline decision.
+   - At most one strategy-changing Shadow may run at once; passive no-authority observation tracks may run in parallel.
+   - After individual components are reviewed, retained components require a separately versioned integration candidate before combined promotion.
 
 7. **Promotion review**
    - Candidate must add robust **net** value after costs, or materially reduce risk without unacceptable loss of edge.
@@ -141,7 +144,7 @@ Current methodology precheck:
 - incremental `V3-H1-INCR-001` review completed with the sealed holdout untouched; no threshold/pair/transform winner was selected;
 - one-change pilot `V3-H1-SHADOW-001` then completed its preregistered gate: **200/200 PASS context records, 100% capture, 9 decision divergences**;
 - runtime control is now disabled with `closed_reason=PREREGISTERED_MINIMUM_GATE_MET_200_OF_200_PASS`;
-- next gate is the fixed project review of those 9 divergences before any H3 one-change shadow materialization; no auto-extension, tuning or promotion.
+- fixed review of the 9 divergences is complete; standalone H1 decision authority is rejected. H1 remains research diagnostics only and must not be silently bundled into a later candidate.
 
 ### H2 — Basis / Premium / Funding / OI State Layer
 Status: `PRECHECK`  
@@ -323,7 +326,7 @@ Current readiness control:
 - `research/v3/h7-meta-gate-readiness-v1.json`;
 - `public.v3_h7_meta_gate_readiness`;
 - training/model selection are explicitly false;
-- current live state is `WAITING_V2R3_FINAL_REVIEW`;
+- V2R3 final review is complete; H7 remains deferred because its label/cost/split contract is not frozen and sufficient clean V2R4-era labels are not yet available;
 - label definition is `NOT_FROZEN`;
 - no logistic/Lasso/tree trial may start before the label/cost/split contract is frozen after mature V2R3/V2R4 evidence;
 - H7 readiness guard: **SUCCESS**.
@@ -612,7 +615,7 @@ The detailed literature notes, source-specific caveats and chronology remain in 
 
 ## 12. Change-control boundary
 
-**V2R3 is not modified by this file.**
+**The currently active baseline is never modified in place by this file.**
 
 No hypothesis above may alter scanner thresholds, entry logic, stops, position sizing or execution behavior until it:
 1. passes the required offline evidence path,
@@ -633,9 +636,7 @@ V2R4 and V3 are separate but connected tracks.
   conditioning, stop/exit logic, sizing methodology and other major mechanics only after
   the full research pipeline.
 
-V2R4 may begin as a separate paper series once the Mini-PC base and one end-to-end
-paper-only smoke test are stable. It does not replace V3 and does not require V2R3 to
-artificially reach 20 completed trades first.
+V2R4 is now active as its own immutable Paper series. It does not replace V3. Future V3 Shadow candidates must bind explicitly to the active baseline declared in `project-current-state.json`, and completed predecessor gates are not reopened by ordinary new evidence.
 
 V2R4 results become V3 evidence, especially:
 - trigger and decision latency;
