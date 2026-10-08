@@ -469,6 +469,20 @@ must leave a complete evidence and migration trail for its successor.
 
 ### 12.5 Marktphasen-Lernen dauerhaft über alle Generationen (ab 2026-10-08)
 
+**Ausgangsfall 2026-10-08:** `MARKET_REGIME_SEED_V1` in Issue #7
+([kompakter Snapshot](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/7#issuecomment-6066250115))
+ist bereits persistiert und dient nur als dokumentierter, ab Erfassung
+bekannter Startpunkt für spätere Abverkaufs-/Stabilisierungs-/Erholungs-
+Analysen. Da seine Quelle CoinGecko/USD ist und keine geschlossene
+Kraken-EUR-Regime-Episode belegt, darf er **nicht** als
+`MARKET_REGIME_EPISODE_V1` für Entry- oder Outcome-Labels verwendet
+werden. Erst die prospektiv nach Kraken-EUR-Daten bestätigte Folgeepisode
+ist dafür zulässig. Seed, erste gültige Episode und möglicherweise
+dazwischen liegende Datenlücke getrennt ausweisen; kein rückwirkendes
+Markt-Timing, keine extra Work-Terminierung.
+
+
+
 Der passive Forschungs-/Episodenvertrag
 `research/v3/market-phase-reversal-observation-v1.md` gilt für **jeden
 folgenden Marktzyklus und jede zukünftige Paper-, Shadow- und Echtgeldversion**,
