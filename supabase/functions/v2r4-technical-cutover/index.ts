@@ -50,6 +50,33 @@ async function sourceGate(admin:any){
     return {ok:false,code:"repo_health_unavailable"};
   return {ok:true,code:"SOURCE_GATE_PASS"};
 }
+// Read-only digest of exact old-series candidate identities for the final
+// physical snapshot reconciliation. Fixed cap; never silently truncate.
+async function oldCloudCheckpoint(admin:any){
+  const rows:string[]=[];
+  for(let page=0;page<21;page++){
+    const {data,error}=await admin.from("paper_candidate_outcomes")
+      .select("candidate_id").eq("series_id",OLD).order("candidate_id",{ascending:true})
+      .range(page*500,page*500+499);
+    if(error)throw new Error("candidate_list_unavailable");
+    for(const entry of data??[])rows.push(String(entry.candidate_id));
+    if((data??[]).length<500)break;
+    if(page===20)throw new Error("candidate_cap_exceeded");
+  }
+  rows.sort(); // JS lexical / PowerShell Ordinal; stable byte-level digest.
+  const bytes=new TextEncoder().encode(rows.join("\n"));
+  const digest=await crypto.subtle.digest("SHA-256",bytes);
+  const sha=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
+  const {count,error:tradeErr}=await admin.from("paper_trade_results")
+    .select("candidate_id",{count:"exact",head:true}).eq("series_id",OLD);
+  if(tradeErr||count===null)throw new Error("trades_unavailable");
+  const {data:last,error:lastErr}=await admin.from("paper_candidate_outcomes")
+    .select("updated_at").eq("series_id",OLD).order("updated_at",{ascending:false}).limit(1);
+  if(lastErr)throw new Error("evidence_clock_unavailable");
+  return {old_series_id:OLD,candidate_count:rows.length,
+    candidate_ids_sha256:sha,trade_count:count,
+    last_outcome_updated_at:last?.[0]?.updated_at??null};
+}
 Deno.serve(async(req:Request)=>{
   if(req.method!=="POST")return send(405,{ok:false,error:"method_not_allowed"});
   if(Number(req.headers.get("content-length")??0)>16384)
@@ -65,6 +92,12 @@ Deno.serve(async(req:Request)=>{
     return send(401,{ok:false,error:"dual_authorization_failed"});
   let body:any;
   try { body=await req.json(); } catch { return send(400,{ok:false,error:"invalid_json"}); }
+  if(body?.action==="checkpoint"){
+    try{
+      const cloud=await oldCloudCheckpoint(admin);
+      return send(200,{ok:true,action:"checkpoint",cloud,mutation:false});
+    }catch{return send(503,{ok:false,error:"checkpoint_unavailable"});}
+  }
   if(body?.action==="readiness"){
     const health=await sourceGate(admin);
     const {data:old}=await admin.from("paper_series")
