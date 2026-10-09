@@ -29,6 +29,11 @@ on:
       - "research/v3/integration-candidates/**"
       - "tools/validate-project-current-state.py"
       - "research/strategy-learning-causal-gate-v1.json"
+      - "research/v3-migration-ledger.json"
+      - "research/v3/coin-entry-evidence-lineage-v1.json"
+      - "paper_evaluator/v3_extended_reentry_review_v1.py"
+      - "tools/validate-v3-entry-succession-lineage.py"
+      - "tests/test_v3_entry_successor_lineage.py"
       - "tools/strategy_successor_gate.py"
       - "tests/test_strategy_successor_gate.py"
       - "docs/test-strategy-runbook.md"
@@ -67,6 +72,11 @@ on:
       - "research/v3/integration-candidates/**"
       - "tools/validate-project-current-state.py"
       - "research/strategy-learning-causal-gate-v1.json"
+      - "research/v3-migration-ledger.json"
+      - "research/v3/coin-entry-evidence-lineage-v1.json"
+      - "paper_evaluator/v3_extended_reentry_review_v1.py"
+      - "tools/validate-v3-entry-succession-lineage.py"
+      - "tests/test_v3_entry_successor_lineage.py"
       - "tools/strategy_successor_gate.py"
       - "tests/test_strategy_successor_gate.py"
       - "docs/test-strategy-runbook.md"
@@ -96,6 +106,10 @@ jobs:
         run: |
           python -m py_compile tools/strategy_successor_gate.py
           python -m unittest discover -s tests -p 'test_strategy_successor_gate.py' -v
+      - name: Verify V3 second-leg learning remains in all future strategy gates
+        run: |
+          python tools/validate-v3-entry-succession-lineage.py
+          python -m unittest discover -s tests -p 'test_v3_entry_successor_lineage.py' -v
       - name: Validate autonomous milestone controller
         run: |
           python -m py_compile tools/project_milestone_controller.py
