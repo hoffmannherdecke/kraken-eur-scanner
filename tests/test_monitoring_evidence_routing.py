@@ -38,7 +38,10 @@ class ContractTests(unittest.TestCase):
         self.assertTrue(any("bypasses release" in e for e in mod.validate(j,STATE)))
     def test_no_second_active_shadow(self):
         state=copy.deepcopy(STATE)
-        state["strategy_changing_shadow_wip"]["active"].append({"candidate_id":"V3-H6-SHADOW-002"})
+        state["strategy_changing_shadow_wip"]["active"].extend([
+            {"candidate_id":"V3-H3-SHADOW-001"},
+            {"candidate_id":"V3-H6-SHADOW-002"},
+        ])
         self.assertTrue(any("simultaneous decision shadows" in e for e in mod.validate(TOPO,state)))
 
 if __name__=="__main__":
