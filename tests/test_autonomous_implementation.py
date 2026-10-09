@@ -36,6 +36,16 @@ class SafeAutonomyTests(unittest.TestCase):
               "gate_fingerprint":first["fingerprint"],"status":"BLOCKED"}}}
             after=selector.select(root,QUEUE,STATE,ack)
         self.assertFalse(after["safe_work_requested"])
+    def test_archived_h3_is_supported_without_phantom_adapter(self):
+        with tempfile.TemporaryDirectory() as p:
+            root=Path(p)
+            f=root/"research/v3/h10-kraken-outcome-context-join-contract-v1.json"
+            f.parent.mkdir(parents=True)
+            f.write_text("{}")
+            r=selector.select(root,QUEUE,STATE,{})
+        self.assertNotIn("UNKNOWN_CONTROL_DECISION_ADAPTER",[t["id"] for t in r["ready"]])
+        self.assertEqual(r["status"],"NO_SAFE_WORK")
+
     def test_unknown_next_decision_schedules_adapter(self):
         with tempfile.TemporaryDirectory() as p:
             state=copy.deepcopy(STATE)
