@@ -79,7 +79,16 @@ jobs:
             tests.test_v2r4_paper_activation_runtime \
             tests.test_successor_coin_entry_evidence_v1 \
             tests.test_v2r4_v3_entry_lineage_contract \
+            tests.test_v2r4_v3_entry_handoff_probe \
             -v
+
+      - name: One bounded live Kraken EUR coin-entry input smoke (research only)
+        if: steps.implementation.outputs.present == 'true'
+        run: |
+          # Exactly three public OHLC requests plus one public Ticker.
+          # No OpenAI API key, no BUY classification, no orders, no persistence.
+          python -m paper_evaluator.v3_entry_handoff_probe \
+            --pair XBT/EUR --altname XBTEUR --require-entry-input-ready
 
       - name: Harmless live Kraken WAIT watcher smoke
         if: steps.implementation.outputs.present == 'true'
