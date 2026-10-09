@@ -52,7 +52,7 @@ def validate_documents(
         errors.append("V3_SUCCESSOR_LINEAGE: existing safety/late-chase baseline must be inherited")
     if refinement.get("id") != "V3_EXTENDED_SECOND_LEG_ENTRY_REVIEW":
         errors.append("V3_SUCCESSOR_LINEAGE: EXTENDED second-leg finding silently lost")
-    if refinement.get("permanent_generation_inheritance") != "MANDATORY_EXPLICIT_DISPOSITION_AT_EVERY_SUCCESSOR_VERSION_V3_V4_PLUS_LIVE":
+    if refinement.get("permanent_generation_inheritance") != "MANDATORY_EXPLICIT_DISPOSITION_AT_EVERY_SUCCESSOR_VERSION_V3_V4_PLUS_LIVE_AFTER_SEPARATE_APPROVAL":
         errors.append("V3_SUCCESSOR_LINEAGE: finding not inherited by later generations")
     if not {"VERIFIED_INTEGRATE", "MORE_TESTING_REQUIRED", "DEFER_TO_LATER_GENERATION_WITH_OWNER_AND_GATE",
             "REJECT_WITH_EVIDENCE", "NO_SUCCESSOR_CHANGE_WITH_EVIDENCE"}.issubset(allowed):
