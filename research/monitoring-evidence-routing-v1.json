@@ -210,7 +210,7 @@
     },
     {
       "id": "source_quality",
-      "role": "SOURCE_GOVERNANCE",
+      "role": "ACTIVE_AUTONOMOUS_SOURCE_DISCOVERY_AND_STEWARDSHIP_GOVERNANCE",
       "canonical_owner": "market_source_stewardship_catalog",
       "consumer": "SOURCE_STEWARD_REVIEW",
       "authority": "RESEARCH_ONLY",
@@ -224,15 +224,15 @@
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
       "evidence_outcome": "KEEP_QUARANTINE_OR_REPLACE",
-      "next_gate": "FIRST_UNATTENDED_SOURCE_REVIEW_AND_PROVEN_SOURCE_SWAP",
+      "next_gate": "PROACTIVE_DISCOVERY_THEN_FIRST_UNATTENDED_PILOT_SCORE_AND_PROVEN_RESEARCH_SOURCE_LIFECYCLE",
       "activation_followthrough": {
-        "id": "SOURCE_STEWARD_RESEARCH_ROTATION_E2E_GATE_V1",
+        "id": "AUTONOMOUS_ACTIVE_SOURCE_MANAGEMENT_E2E_GATE_V1",
         "status": "OBSERVATION_TASK_ACTIVE_SOURCE_REVIEW_AND_REPLACE_E2E_UNVERIFIED",
         "stage_1": "VERIFY_UNATTENDED_PUBLIC_SOURCE_PILOT_IN_EXISTING_2H_RADAR_WITH_UTC_KNOWN_AT_PRIMARY_EVIDENCE_AND_FAILSOFT",
         "stage_2": "SCORE_AT_LEAST_5_INDEPENDENT_VERIFIED_RELEVANT_EVENTS_ACROSS_AT_LEAST_2_CAPTURE_WINDOWS_WITH_SOURCE_TYPE_MATCHED_BASELINE",
         "stage_3": "ONLY_EVIDENCE_BACKED_KEEP_QUARANTINE_OR_RESEARCH_ONLY_REVERSIBLE_REPLACE_VIA_EXISTING_BRANCH_PR_CI_ROLLBACK",
         "stage_4": "ROUTE_ONLY_PROVEN_INCREMENTAL_SOURCE_FACT_TO_EXISTING_V2R4_V3_V4_PLUS_ONE_CHANGE_ECONOMIC_STRATEGY_REVIEW",
-        "event_trigger": "FIRST_UNATTENDED_VALID_PILOT_OR_MATURE_SOURCE_SCORE_OR_VERIFIED_MATERIAL_FAILURE_OR_ALREADY_DUE_STRATEGY_REVIEW",
+        "event_trigger": "EXISTING_WEEKLY_DISCOVERY_WINDOW_OR_DETECTED_COVERAGE_GAP_OR_FIRST_UNATTENDED_PILOT_PROOF_OR_MATURE_SOURCE_SCORE_OR_VERIFIED_MATERIAL_FAILURE_OR_ALREADY_DUE_STRATEGY_REVIEW",
         "existing_observer": "Krypto Marktphasen- und Quellenradar, existing 2h task with Monday pilot steward window",
         "existing_strategy_work": "Krypto Paper – gezielte Analyse, existing daily 10:15 gate only when independently due",
         "source_catalog": "research/market-source-candidates-v1.json",
@@ -246,7 +246,28 @@
         "no_new_work_run": true,
         "no_trading_or_runtime_source_replacement": true,
         "no_automatic_strategy_rule_change": true,
-        "no_automatic_real_money_action": true
+        "no_automatic_real_money_action": true,
+        "mandate": "DISCOVER_EVALUATE_CLASSIFY_MAINTAIN_QUARANTINE_REPLACE_USE_PROVEN_RESEARCH_SOURCES_CONTINUOUSLY",
+        "stage_0": "PROACTIVELY_DISCOVER_NOT_YET_CATALOGUED_SOURCES_AND_CATEGORY_COVERAGE_GAPS_WITHIN_EXISTING_MONITOR_CADENCE",
+        "discovery_scope": "OFFICIAL_EXCHANGE_PROJECT_MACRO_EDITORIAL_ANALYTICS_ONCHAIN_DERIVATIVES_SOCIAL_EARLY_LEADS_WITH_VERIFIED_PRIMARY_PROVENANCE",
+        "discovery_window": "EXISTING_MON_08_10_UTC_RADAR_WINDOW_AND_MATERIAL_UNCOVERED_EVENTS_ONLY",
+        "discovery_selection": "AT_MOST_ONE_GENUINELY_NEW_PUBLIC_CANDIDATE_PER_WEEK_PLUS_REVIEW_AT_MOST_TWO_EXISTING_PILOTS_AND_TWO_CHALLENGERS_WITHOUT_MORE_NEWS_READS",
+        "active_management_actions": [
+          "DISCOVER_UNKNOWN_SOURCE",
+          "VERIFY_LEGAL_FREE_PUBLIC_ACCESS",
+          "VERIFY_UNATTENDED_TIMESTAMPED_DATA",
+          "ASSESS_PRIMARY_ACCURACY",
+          "COMPARE_INCREMENTAL_LEADTIME_AND_REDUNDANCY",
+          "ASSESS_COST_ACCESS_STABILITY",
+          "KEEP_OR_RESEARCH_PROMOTE",
+          "QUARANTINE_OR_RESEARCH_RETIRE",
+          "REPLACE_WITH_BETTER_CHALLENGER",
+          "PERIODICALLY_REVALIDATE",
+          "HAND_OFF_MATERIAL_FINDINGS_TO_EXISTING_STRATEGY_GATE"
+        ],
+        "active_management_not_limited_to_static_27_catalog": true,
+        "source_retirement_is_research_only_and_reversible": true,
+        "management_run_evidence_not_yet_proven": true
       }
     },
     {
