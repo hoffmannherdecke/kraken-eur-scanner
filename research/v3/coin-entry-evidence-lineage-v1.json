@@ -80,5 +80,21 @@
     "active_h6_changed": false,
     "live_orders": false,
     "automatic_strategy_promotion": false
+  },
+  "follow_on_late_chase_research": {
+    "existing_component_owner": "late_chase_protection",
+    "new_component_created": false,
+    "overlap_resolution": "EXTENDED_EXISTING_SETUP_REVIEW_ONLY_NOT_NEW_REVERSAL_SIGNAL",
+    "why": "20 of 27 retrospective 08-09 Oct relatively shallow-spread favorable 60-minute episodes carried existing EXTENDED setup lane, only two REVERSAL.",
+    "inactive_implementation": "paper_evaluator/v3_extended_reentry_review_v1.py",
+    "implementation_stage": "IMPLEMENTED_OFFLINE_NOT_PROSPECTIVELY_VALIDATED_NOT_ATTACHED",
+    "precondition_first": "V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE_AND_FROZEN_H3_REVIEW",
+    "separate_policy_second": "V3_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY_SINGLE_POLICY_CHANGE_GATE",
+    "success_definition": "Incremental genuine at-time valid BUY_SCOUT with stage2/stop and after-cost realized risk-path evidence, not merely model re-evaluation or retrospective MFE.",
+    "no_active_v2r4_import": true,
+    "no_new_shadow_running": true,
+    "no_independent_H6_vote": true,
+    "no_H4_stop_policy": true,
+    "no_automatic_buy_or_promotion": true
   }
 }
