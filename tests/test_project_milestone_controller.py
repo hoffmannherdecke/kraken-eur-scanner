@@ -8,6 +8,20 @@ controller = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(controller)
 
 class MilestoneTests(unittest.TestCase):
+    @staticmethod
+    def _historic_h3_fixture(state):
+        """Synthetic historical running-H3 branch for old contract regression only."""
+        active=state["active_strategy"]
+        state["strategy_changing_shadow_wip"]["active"]=[{
+            "candidate_id":"V3-H3-SHADOW-001",
+            "baseline_series_id":active["series_id"],
+            "baseline_strategy_revision":active["strategy_revision"],
+            "status":"SHADOW_RUNNING",
+            "automatic_promotion":False
+        }]
+        return state
+
+
     def test_canonical_state(self):
         state = controller.load_local_state(ROOT)
         self.assertFalse(state['active_strategy']['real_money_actions'])
@@ -23,6 +37,7 @@ class MilestoneTests(unittest.TestCase):
         import json
         state = controller.load_local_state(ROOT)
         active = state['active_strategy']
+        self._historic_h3_fixture(state)
         paper = dict(series_id=active['series_id'], strategy_revision=active['strategy_revision'],
                      fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
                      candidate_outcomes=239, completed_trades=0, complete_24h=0,
@@ -53,6 +68,7 @@ class MilestoneTests(unittest.TestCase):
         import datetime as dt
         state=controller.load_local_state(ROOT)
         active=state['active_strategy']
+        self._historic_h3_fixture(state)
         paper=dict(series_id=active['series_id'],strategy_revision=active['strategy_revision'],
                    fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
                    candidate_outcomes=1300,completed_trades=0,complete_24h=1300,
@@ -124,7 +140,7 @@ class MilestoneTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'unapproved technical series'):
             controller.evaluate(state,paper,h3(after),after,ROOT)
 
-    def test_72h_low_trade_gate_requires_mature_followups_not_fake_technical_pass(self):
+    def test_archived_predecessor_24h_followups_count_for_early_epoch_review(self):
         import datetime as dt
         state=controller.load_local_state(ROOT)
         a=state['active_strategy']
@@ -139,13 +155,18 @@ class MilestoneTests(unittest.TestCase):
                              orders=False,real_money_actions=False,automatic_extension=False,
                              automatic_promotion=False,minimum_gate_met=False))
         r=controller.evaluate(state,paper,h3,t,ROOT)
-        self.assertNotIn('V2R4:LOW_TRADE_REVIEW',r['statuses'])
+        self.assertIn('V2R4:LOW_TRADE_REVIEW',r['statuses'])
+        self.assertEqual(r['epoch_minimum_complete_24h'],260)
+        self.assertEqual(r['epoch_minimum_candidate_outcomes'],2011)
+        self.assertEqual(r['epoch_minimum_completed_trades'],0)
+        self.assertNotIn('V2R4:FINAL_REVIEW_READY',r['statuses'])
 
 
     def test_stale_h3_does_not_block_independent_v2r4_quality_gate(self):
         import datetime as dt
         state=controller.load_local_state(ROOT)
         a=state['active_strategy']
+        self._historic_h3_fixture(state)
         now=dt.datetime(2026,10,10,18,44,tzinfo=dt.timezone.utc)
         paper=dict(series_id=a['technical_rotation_runtime_last_verified']['series_id'],
                    strategy_revision=a['strategy_revision'],
@@ -173,6 +194,52 @@ class MilestoneTests(unittest.TestCase):
         h3['payload']['automatic_promotion']=True
         with self.assertRaisesRegex(ValueError,'H3 safety invariant'):
             controller.evaluate(state,paper,h3,now,ROOT)
+
+
+
+    def test_real_central_state_reports_archived_h3_with_zero_causal_data(self):
+        import datetime as dt
+        state=controller.load_local_state(ROOT)
+        a=state['active_strategy']
+        self.assertEqual(state['strategy_changing_shadow_wip']['active'],[])
+        paper=dict(series_id=a['technical_rotation_runtime_last_verified']['series_id'],
+                   strategy_revision=a['strategy_revision'],
+                   fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
+                   candidate_outcomes=175,completed_trades=0,complete_24h=0,
+                   series_age_days=.37,completion_ready=False,intake_should_stop=False)
+        now=dt.datetime(2026,10,9,19,55,tzinfo=dt.timezone.utc)
+        result=controller.evaluate(state,paper,None,now,ROOT)
+        self.assertIn('H3:ARCHIVED_INCOMPLETE_NO_FIXED_REVIEW',result['statuses'])
+        self.assertIn('H6:BLOCKED_H3_ARCHIVED_INCOMPLETE_NO_AUTO_START',result['statuses'])
+        self.assertNotIn('H3:FIXED_REVIEW_READY',result['statuses'])
+        self.assertNotIn('V2R4:LOW_TRADE_REVIEW',result['statuses'])
+        self.assertEqual(result['epoch_minimum_candidate_outcomes'],1186)
+        self.assertEqual(result['epoch_minimum_complete_24h'],260)
+        self.assertTrue(result['epoch_combines_verified_technical_segments'])
+        events=[x for x in result['events'] if x['kind']=='H3_ARCHIVED_INCOMPLETE_REVIEW']
+        self.assertEqual(len(events),1)
+        self.assertFalse(any(x['kind']=='H3_STALE_EVIDENCE' for x in result['events']))
+        self.assertFalse(result['orders'])
+        self.assertFalse(result['strategy_changed'])
+        self.assertFalse(result['real_money_actions'])
+
+    def test_archive_does_not_forge_H3_fixed_review_when_cloud_status_lies(self):
+        import datetime as dt
+        state=controller.load_local_state(ROOT)
+        a=state['active_strategy']
+        now=dt.datetime(2026,10,11,19,tzinfo=dt.timezone.utc)
+        paper=dict(series_id=a['technical_rotation_runtime_last_verified']['series_id'],
+                   strategy_revision=a['strategy_revision'],
+                   fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
+                   candidate_outcomes=180,completed_trades=0,complete_24h=0,
+                   series_age_days=2,completion_ready=False,intake_should_stop=False)
+        fake_h3={"shadow_candidate_id":"V3-H3-SHADOW-001",
+                  "generated_at":now.isoformat(),
+                  "payload":{"baseline_series_id":a['series_id'],
+                             "minimum_gate_met":True,"outcome_review_ready":True}}
+        result=controller.evaluate(state,paper,fake_h3,now,ROOT)
+        self.assertNotIn('H3:FIXED_REVIEW_READY',result['statuses'])
+        self.assertNotIn('H3_FIXED_REVIEW',[x['kind'] for x in result['events']])
 
 
 if __name__ == '__main__':
