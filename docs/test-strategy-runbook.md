@@ -160,6 +160,42 @@ Required separately and much later:
 - restart / network-loss / recovery proof for the **actual execution path**;
 - controlled E2E execution smoke before broader activation.
 
+**Pflichtübergabe Paper-Recovery → Echtgeld-Sicherheitsarchitektur (09.10.2026):** 
+Der erfolgreiche V2R4-Paper-Recovery-/Cutover-Nachweis vom 09.10.
+belegt **nicht**, dass ein späterer Kraken-Order-/Execution-Pfad bereits
+ausfallsicher ist. Vor dem **ersten und jedem späteren materiell geänderten**
+Echtgeld-Release ist das dauerhafte `LIVE_RESILIENCE_INHERITANCE_GATE`
+aus `PROJECT_BACKLOG.md` verpflichtend. Der konkrete Trigger ist eine
+bereits vorhandene Versions-/Release-Evidenz für `LIVE_PREPARATION`,
+`LIVE_RELEASE_REVIEW`, neue private Orderrechte oder einen realen
+Echtgeld-Execution-Kandidaten. Der tägliche bestehende Work-/Release-Gate-Lauf
+muss dann diese offene Aufgabe und [Issue #99](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99)
+lesen, alle Paper-/Recovery-Sicherheitsmechanismen **einzeln auf Anwendbarkeit
+für Orders, Positionen, Fills und Third-Party-Ausfälle** prüfen und die
+konkreten Lücken in einen gebundenen Nachfolger-Implementierungsplan überführen.
+
+**Autonom vorarbeitbar:** vorhandene Nachweise lesen, Gap-Matrix aktualisieren,
+einen isolierten inaktiven Live-Adapter samt Tests/PR vorbereiten und sichere
+Research-/Simulationskorrekturen innerhalb der bestehenden Freigaben
+durchführen. **Nicht autonom freigebbar:** Kraken-Orderrechte,
+Echtgeldtransaktionen, Live-Runtime-Aktivierung, zusätzliche privilegierte
+Secrets, Änderung aktiver Strategieparameter oder Umgehung eines
+Nutzer-/Sicherheitsgates. Die nachgewiesene Live-Anwendbarkeit umfasst
+mindestens Single-Writer-/Order-ID-Idempotenz, Start-/Neustartabgleich gegen
+aktuelle Kraken-Bestände und offene Orders, Fill-/Cancel-Rennen, Netzwerk-
+und Quota-Fail-Closed, Kill Switch/Circuit Breaker, irreversible
+Daten-/Zeitlücken, Watchdog-Restartgrenzen, Wiederherstellung nach
+Strom-/Internet-/Drittanbieter-Ausfall sowie Rollback und einen engen
+physischen Live-spezifischen E2E-Smoke ohne unkontrolliertes Geldrisiko.
+
+**Disposition vor Echtgeldfreigabe:** `LIVE_RESILIENCE_GATE_BLOCKED`
+mit exakt fehlenden Nachweisen oder `LIVE_RESILIENCE_GATE_EVIDENCE_COMPLETE`
+mit prüfbarer Live-Evidenz. Vollständige Evidenz ist **nie** automatische
+Echtgeldfreigabe: das gesonderte explizite Nutzer-/Live-Release-Gate bleibt
+zwingend. Wird die Live-Vorbereitung nicht eröffnet, bleibt dieser
+Folgepunkt zurückgestellt und darf den Paper-Betrieb nicht künstlich
+verlängern.
+
 These are not blockers for present V3 research/shadow work.
 
 ## 6. Deferred/data-maturity tests
