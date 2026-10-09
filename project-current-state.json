@@ -49,10 +49,34 @@
         "public.paper_series",
         "public.paper_candidate_outcomes (24h followup opportunity_audit)"
       ],
-      "h3_001_archive_ack": "ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND"
+      "h3_001_archive_ack": "ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND",
+      "legacy_snapshot_mirrors_latest_closed_segment": true
     },
     "original_strategy_epoch_started_at_utc": "2026-10-07T18:42:55Z",
-    "original_strategy_epoch_review_anchor": "V2R4_PAPER_STRATEGY_START_NOT_TECHNICAL_ROTATION"
+    "original_strategy_epoch_review_anchor": "V2R4_PAPER_STRATEGY_START_NOT_TECHNICAL_ROTATION",
+    "strategy_epoch_closed_segments": [
+      {
+        "series_id": "PAPER-V2R4-20261007T184255Z",
+        "status": "technical_closed",
+        "successor_series_id": "PAPER-V2R4-20261009T110135Z",
+        "cutover_at_utc": "2026-10-09T11:01:35Z",
+        "strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+        "strategy_fingerprint_sha256": "55c15f6c0735e524409594ece173ab30e4d84eecafefa18b57f8dc9c48cca32c",
+        "frozen_outcomes_at_cutover": 1011,
+        "frozen_completed_trades_at_cutover": 0,
+        "verified_complete_24h_at_cutover": 260,
+        "verified_eligible_24h_at_cutover": 260,
+        "immutable": true,
+        "followups_beyond_cutover": "CENSORED_NOT_0_LOSS",
+        "provenance": [
+          "public.paper_technical_rotations",
+          "public.paper_candidate_outcomes",
+          "public.paper_series"
+        ],
+        "observed_at_utc": "2026-10-09T19:50:40Z"
+      }
+    ],
+    "strategy_epoch_closed_segments_rule": "APPEND_ONLY_EACH_AUTHORIZED_TECHNICAL_ROTATION_SUM_DISJOINT_CLOSED_SEGMENTS_PLUS_ONE_LIVE_SEGMENT_NEVER_RESET_OR_DOUBLE_COUNT"
   },
   "predecessor": {
     "strategy_revision": "V2R3-2026-09-28",
