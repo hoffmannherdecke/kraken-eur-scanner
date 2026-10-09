@@ -34,6 +34,13 @@ create table public.v3_h3_shadow_status (
   payload jsonb not null,
   updated_at timestamptz not null default now()
 );
+create table public.v3_h3_shadow_evidence (
+  candidate_id text primary key,
+  shadow_candidate_id text not null,
+  baseline_series_id text not null,
+  payload jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
 
 insert into public.paper_series (
   series_id,test_id,strategy_revision,started_at,target_completed_trades,status,config
@@ -63,6 +70,8 @@ values ('fixture-1','PAPER-V2R4-20261007T184255Z'),
        ('fixture-2','PAPER-V2R4-20261007T184255Z');
 insert into public.v3_h3_shadow_status(shadow_candidate_id,payload)
 values ('V3-H3-SHADOW-001','{"baseline_series_id":"PAPER-V2R4-20261007T184255Z"}');
+insert into public.v3_h3_shadow_evidence(candidate_id,shadow_candidate_id,baseline_series_id)
+values ('h3-existing-before-rotation','V3-H3-SHADOW-001','PAPER-V2R4-20261007T184255Z');
 
 \ir ../../supabase/v2r4-technical-paper-rotation-20261009.sql
 
@@ -149,6 +158,30 @@ begin
      (select payload->>'status' from public.v3_h3_shadow_status
        where shadow_candidate_id='V3-H3-SHADOW-001') <> 'FROZEN_TECHNICAL_CUTOVER' then
     raise exception 'frozen H3 baseline was overwritten after cutover';
+  end if;
+
+  -- H3 sync is not a single transaction: a status guard alone can leave
+  -- a late evidence row accepted after H3-001 was frozen.
+  exception_seen := false;
+  begin
+    insert into public.v3_h3_shadow_evidence(candidate_id,shadow_candidate_id,baseline_series_id)
+    values ('h3-late-after-rotation','V3-H3-SHADOW-001','PAPER-V2R4-20261007T184255Z');
+  exception when others then exception_seen := true;
+  end;
+  if not exception_seen or
+     (select count(*) from public.v3_h3_shadow_evidence
+       where shadow_candidate_id='V3-H3-SHADOW-001') <> 1 then
+    raise exception 'late H3 evidence inserted after baseline freeze';
+  end if;
+
+  exception_seen := false;
+  begin
+    update public.v3_h3_shadow_evidence set updated_at=clock_timestamp()
+      where candidate_id='h3-existing-before-rotation';
+  exception when others then exception_seen := true;
+  end;
+  if not exception_seen then
+    raise exception 'frozen H3-001 evidence was edited';
   end if;
 
   -- Idempotent retry with identical manifest cannot insert or mutate more rows.

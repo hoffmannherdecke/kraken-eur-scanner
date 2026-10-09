@@ -49,6 +49,7 @@ class TechnicalCutoverMutualContract(unittest.TestCase):
         self.assertIn("if($saved.enabled -eq $true -and $saved.running -eq $true)", operator)
         self.assertIn("POST_COMMIT_FAIL_CLOSED_SUCCESSOR_STOPPED", operator)
         self.assertIn("CLOUD_OUTCOME_UNKNOWN", operator)
+        self.assertIn("$matches.Count -eq 1 -and $closed.Count -eq 1", operator)
         self.assertIn("Need-No-Old-Writers", operator)
         self.assertIn("Win32_Process", operator)
         self.assertIn("PRE_COMMIT_TASKS_UNTOUCHED", operator)
@@ -68,6 +69,8 @@ class TechnicalCutoverMutualContract(unittest.TestCase):
         self.assertIn("FROZEN_TECHNICAL_CUTOVER", sql)
         self.assertIn("guard_frozen_h3_001_status", sql)
         self.assertIn("v3_h3_001_frozen_status_guard", sql)
+        self.assertIn("guard_h3_001_evidence_after_close", sql)
+        self.assertIn("v3_h3_001_evidence_after_close_guard", sql)
         self.assertIn("h3_001_retired", operator)
 
 

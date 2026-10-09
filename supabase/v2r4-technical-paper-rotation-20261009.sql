@@ -59,6 +59,42 @@ create trigger v3_h3_001_frozen_status_guard
 before update on public.v3_h3_shadow_status
 for each row execute function public.guard_frozen_h3_001_status();
 
+-- The live H3 relay performs evidence UPSERT and status UPSERT in separate
+-- requests to PostgREST. A request authorized before the Paper rotation may
+-- reach evidence storage AFTER the predecessor has closed. Reject it here so
+-- the frozen H3-001 cohort cannot grow or change behind its archived status.
+-- This leaves all already accepted prospective rows unchanged.
+create or replace function public.guard_h3_001_evidence_after_close()
+returns trigger language plpgsql security invoker set search_path = ''
+as $h3_evidence$
+begin
+  if tg_op = 'UPDATE' and
+     (new.candidate_id is distinct from old.candidate_id
+      or new.shadow_candidate_id is distinct from old.shadow_candidate_id
+      or new.baseline_series_id is distinct from old.baseline_series_id) then
+    raise exception 'H3-001 evidence identity is immutable';
+  end if;
+  if new.shadow_candidate_id = 'V3-H3-SHADOW-001'
+     and exists (
+       select 1 from public.paper_series
+       where series_id = 'PAPER-V2R4-20261007T184255Z'
+         and status = 'technical_closed'
+     ) then
+    raise exception 'H3-001 evidence archive is frozen after technical cutover';
+  end if;
+  return new;
+end;
+$h3_evidence$;
+revoke all on function public.guard_h3_001_evidence_after_close()
+  from public, anon, authenticated;
+grant execute on function public.guard_h3_001_evidence_after_close()
+  to service_role;
+drop trigger if exists v3_h3_001_evidence_after_close_guard
+  on public.v3_h3_shadow_evidence;
+create trigger v3_h3_001_evidence_after_close_guard
+before insert or update on public.v3_h3_shadow_evidence
+for each row execute function public.guard_h3_001_evidence_after_close();
+
 create table if not exists public.paper_technical_rotations (
   predecessor_series_id text primary key references public.paper_series(series_id),
   successor_series_id text not null unique references public.paper_series(series_id),

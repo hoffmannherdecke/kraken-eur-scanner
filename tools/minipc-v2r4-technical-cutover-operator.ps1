@@ -294,7 +294,21 @@ try{
  catch{
    # Never retry the RPC. Inspect a read-only committed rotation instead.
    $seen=Edge 'status'
-   Need ($seen.ok -eq $true -and $seen.rotation -and $seen.rotation.successor_series_id -eq $newId) 'UNKNOWN_CLOUD_OUTCOME: leave tasks stopped; manual recovery needed'
+   # A matching rotation row alone is insufficient after an ambiguous
+   # network timeout. Confirm BOTH series statuses and the exact reviewed
+   # release metadata before allowing any successor writer to start.
+   $matches=@($seen.paper_series|Where-Object{
+     $_.series_id -eq $newId -and $_.status -eq 'active' -and
+     $_.release_repo_sha -eq $sha -and $_.paper_only -eq $true -and
+     $_.real_money_actions_enabled -eq $false
+   })
+   $closed=@($seen.paper_series|Where-Object{
+     $_.series_id -eq $oldId -and $_.status -eq 'technical_closed'
+   })
+   Need ($seen.ok -eq $true -and $seen.rotation -and
+     $seen.rotation.successor_series_id -eq $newId -and
+     $matches.Count -eq 1 -and $closed.Count -eq 1 -and
+     @($seen.paper_series|Where-Object{$_.status -eq 'active'}).Count -eq 1) 'UNKNOWN_CLOUD_OUTCOME: leave tasks stopped; manual recovery needed'
    $commit=[pscustomobject]@{ok=$true;successor_series_id=$newId}
  }
  Need ($commit.ok -eq $true -and $commit.successor_series_id -eq $newId) 'UNKNOWN_CLOUD_OUTCOME: no automatic rollback'
