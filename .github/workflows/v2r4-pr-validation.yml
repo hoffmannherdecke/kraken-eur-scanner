@@ -78,6 +78,7 @@ jobs:
             tests.test_v2r4_wait_runtime \
             tests.test_v2r4_paper_activation_runtime \
             tests.test_successor_coin_entry_evidence_v1 \
+            tests.test_v2r4_v3_entry_lineage_contract \
             -v
 
       - name: Harmless live Kraken WAIT watcher smoke
