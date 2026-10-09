@@ -14,6 +14,8 @@ name: V2R4 PR validation
       - 'paper_evaluator/v2r4_*.py'
       - 'research/v2r4/**'
       - 'tests/test_v2r4_*.py'
+      - 'paper_evaluator/successor_coin_entry_evidence_v1.py'
+      - 'tests/test_successor_coin_entry_evidence_v1.py'
       - '.github/workflows/v2r4-pr-validation.yml'
 
 permissions:
@@ -57,7 +59,8 @@ jobs:
             paper_evaluator/v2r4_precandidate_discovery.py \
             paper_evaluator/v2r4_precandidate_watcher.py \
             paper_evaluator/v2r4_ws_shadow_watcher.py \
-            paper_evaluator/v2r4_local_recheck.py
+            paper_evaluator/v2r4_local_recheck.py \
+            paper_evaluator/successor_coin_entry_evidence_v1.py
 
       - name: Run V2R4 unit tests
         if: steps.implementation.outputs.present == 'true'
@@ -74,6 +77,7 @@ jobs:
             tests.test_v2r4_local_recheck \
             tests.test_v2r4_wait_runtime \
             tests.test_v2r4_paper_activation_runtime \
+            tests.test_successor_coin_entry_evidence_v1 \
             -v
 
       - name: Harmless live Kraken WAIT watcher smoke
