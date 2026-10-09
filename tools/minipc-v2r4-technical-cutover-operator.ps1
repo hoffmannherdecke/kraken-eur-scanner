@@ -191,6 +191,7 @@ try{
  foreach($h in @(15,60,240,720,1440)){
    $complete=0
    foreach($f in $followups.Values){
+     if(-not $f.opportunity_audit -or -not $f.opportunity_audit.horizons){continue}
      $detail=$f.opportunity_audit.horizons.PSObject.Properties[[string]$h]
      if($detail -and $detail.Value.complete -eq $true){$complete++}
    }
