@@ -296,6 +296,23 @@ Do not copy a large CTREND implementation unless simple primitives first show in
 
 Current evidence: synthetic PIT price/volume primitives are green and `V3-H6-INCR-001` completed its fixed incremental review with the sealed holdout untouched. Incremental volume contribution beyond fixed price direction is small/near zero; partial-correlation signs are internally consistent by stratum, while simple True-vs-False effects are not uniformly sign-stable. No threshold/transform winner was selected. H6 stays third in the chosen H1 → H3 → H6 sequence and must not be promoted before the earlier stage reviews.
 
+### Gemeinsame Kraken-EUR-Entry-Evidenz — kein neues H-Signal
+
+Status: `INACTIVE_IMPLEMENTED_NOT_ATTACHED` (09.10.2026). Kanonische Zuordnung: `research/v3-migration-ledger.json` → `coin_specific_entry_evidence_provenance`. Verbindliche Schnittstellen-/Überschneidungsregeln: `research/v3/coin-entry-evidence-lineage-v1.json`; Umsetzung: `paper_evaluator/successor_coin_entry_evidence_v1.py`; Analyse: `research/v3/v3-coin-entry-evidence-v1.md`.
+
+Der V2R4-Evaluator benötigt zum defensiblen BUY_SCOUT unter anderem bestätigende geschlossene Coin-Kerzen, Volumen und eine strukturell vertretbare Stopbasis. In der aktiven V2R4-Kandidatenübergabe und `paper_context.build_context` fehlen eigene Coin-Closed-Bar-/Volume-/ATR-Felder; der bereits vorhandene BTC/ETH/SOL-OHLC-Regime-Kontext ersetzt dies nicht. Die V3-Datenversorgung behebt diese **Feature-Verfügbarkeitslücke** nur als inaktive, separat zu testende Vorbereitung – nicht als erwiesenen Prognosevorteil oder Freigabe für mehr BUYs.
+
+**Eindeutige Besitz- und Integrationsgrenzen:**
+- H6 besitzt allein die Prüfung, ob Kraken-EUR-Preis-/Volumenmuster einen *inkrementellen* Signalnutzen liefern. 1m/5m/15m Close/Volume im neuen Adapter sind nur der gemeinsame Evidenzursprung und dürfen nicht als zweites unabhängiges Volumensignal, H6-Override, zusätzliche Gewichtung oder heimlicher H6-Neustart gezählt werden. H6-Historik nutzt bereits normalisierte Kraken-EUR-15m-Kerzen; die neue Live-Herkunft muss zuerst damit auf Close-/Volume-/Zeitsemantik abgeglichen werden. Verschiedene Volume-Ratio-Definitionen bleiben ausdrücklich verschieden und werden nicht still gleichgesetzt.
+- H3 besitzt weiterhin Orderbuch-/Depth-/Imbalance-Kontext. Das neue OHLC-Paket enthält *keine* Orderbuchbestätigung und darf H3 weder ersetzen noch bestehende H3-Kandidaten, deren historische Baseline oder Freigabesequenz umbinden.
+- H4 besitzt Stop-/TTL-/Trailing-Varianten. ATR(14) und 8-Bar-Low sind nur **deskriptive** Risikohinweise, keine Stop-Setzung, kein neuer Stopparameter oder versteckte H4-Optimierung.
+- H7 besitzt später die TAKE/NO-TAKE-Entscheidungsmodellierung. Der Adapter liefert kein BUY-/WAIT-/REJECT-Votum; H7 bleibt bis zu eigenem Point-in-Time-Label-/Kosten-/Split-Gate gesperrt.
+- H1 bleibt als alleinige Entscheidungsautorität **abgelehnt**; der Adapter darf abgelehnte H1-Features nicht unbemerkt reaktivieren. V2R4 WAIT-/Recheck-, Kosten-, Sizing- und Anti-Chase-Gates bleiben unangetastet.
+
+**Eindeutiger Quellenpfad:** Die registrierte Quelle `kraken_spot_rest_public` / vorhandene Kraken-Market-Data-Kette bleibt autoritativ. Wenn eine für den Kandidaten zeitlich belegte, bereits vorhandene geschlossene Kraken-Bar-Snapshot-Quelle wiederverwendbar ist, sie bevorzugen – keine drei zusätzlichen permanenten REST-Poller für H6 und Entry parallel. Die manuelle Adapter-Funktion ist nur ein begrenzter Forschungspfad. Es entsteht kein zweites historisches OHLC-Archiv, keine Dauerablage aller Bars, kein zusätzlicher Mini-PC-Service und kein Work-/GitHub-Takt.
+
+**Gate-Reihenfolge:** zuerst bestehender V2R4-Produktivitätsreview (auch über technischen Serienwechsel hinweg); dann Input-Verfügbarkeit, bekannte Beobachtungs- und Abrufzeit, konkrete H6-Funktionsüberschneidungen und negative Kontrollen nachweisen; danach **eine** inaktive Datenzulieferungs-/Decision-Change-Hypothese mit reproduzierbarem Baseline-Replay und Kosten-/False-Positive-/MAE-Review prüfen. Ein *strategy-changing* Shadow darf nicht parallel zum bereits aktiven H3-Shadow starten. Release-, physisches Mini-PC-E2E- und Paper-only-Gate bleiben getrennt; nie automatische Promotion oder Echtgeldorders.
+
 ### H7 — Meta Gate: TAKE / NO-TAKE
 Status: `DEFERRED`  
 Stage: `LABELS_NOT_READY`  
