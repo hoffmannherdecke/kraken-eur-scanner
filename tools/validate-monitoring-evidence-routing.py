@@ -104,7 +104,7 @@ def validate(j:dict, state:dict)->list[str]:
     source = mapping.get("source_quality",{})
     gate = source.get("activation_followthrough") or {}
     required_gates = {
-        "id": "SOURCE_STEWARD_RESEARCH_ROTATION_E2E_GATE_V1",
+        "id": "AUTONOMOUS_ACTIVE_SOURCE_MANAGEMENT_E2E_GATE_V1",
         "status": "OBSERVATION_TASK_ACTIVE_SOURCE_REVIEW_AND_REPLACE_E2E_UNVERIFIED",
         "stage_1": "VERIFY_UNATTENDED_PUBLIC_SOURCE_PILOT_IN_EXISTING_2H_RADAR_WITH_UTC_KNOWN_AT_PRIMARY_EVIDENCE_AND_FAILSOFT",
         "stage_2": "SCORE_AT_LEAST_5_INDEPENDENT_VERIFIED_RELEVANT_EVENTS_ACROSS_AT_LEAST_2_CAPTURE_WINDOWS_WITH_SOURCE_TYPE_MATCHED_BASELINE",
@@ -113,6 +113,9 @@ def validate(j:dict, state:dict)->list[str]:
         "open_item": "PROJECT_BACKLOG.md: Autonomes Marktquellen-Controlling",
         "source_catalog": "research/market-source-candidates-v1.json",
         "source_registry": "research/source-registry.json",
+        "stage_0": "PROACTIVELY_DISCOVER_NOT_YET_CATALOGUED_SOURCES_AND_CATEGORY_COVERAGE_GAPS_WITHIN_EXISTING_MONITOR_CADENCE",
+        "discovery_window": "EXISTING_MON_08_10_UTC_RADAR_WINDOW_AND_MATERIAL_UNCOVERED_EVENTS_ONLY",
+        "discovery_selection": "AT_MOST_ONE_GENUINELY_NEW_PUBLIC_CANDIDATE_PER_WEEK_PLUS_REVIEW_AT_MOST_TWO_EXISTING_PILOTS_AND_TWO_CHALLENGERS_WITHOUT_MORE_NEWS_READS",
     }
     for key, expected in required_gates.items():
         if gate.get(key) != expected:
@@ -124,10 +127,23 @@ def validate(j:dict, state:dict)->list[str]:
         "no_automatic_strategy_rule_change": True,
         "no_automatic_real_money_action": True,
         "source_quality_not_equal_to_trade_profit": True,
+        "active_management_not_limited_to_static_27_catalog": True,
+        "source_retirement_is_research_only_and_reversible": True,
+        "management_run_evidence_not_yet_proven": True,
         "require_prospective_net_trade_impact_before_strategy_use": True,
     }.items():
         if gate.get(key) is not expected:
             errs.append("source quality activation cannot bypass safety: " + key)
+    required_management = [
+        "DISCOVER_UNKNOWN_SOURCE", "VERIFY_LEGAL_FREE_PUBLIC_ACCESS",
+        "VERIFY_UNATTENDED_TIMESTAMPED_DATA", "ASSESS_PRIMARY_ACCURACY",
+        "COMPARE_INCREMENTAL_LEADTIME_AND_REDUNDANCY", "ASSESS_COST_ACCESS_STABILITY",
+        "KEEP_OR_RESEARCH_PROMOTE", "QUARANTINE_OR_RESEARCH_RETIRE",
+        "REPLACE_WITH_BETTER_CHALLENGER", "PERIODICALLY_REVALIDATE",
+        "HAND_OFF_MATERIAL_FINDINGS_TO_EXISTING_STRATEGY_GATE",
+    ]
+    if gate.get("active_management_actions") != required_management:
+        errs.append("source stewardship must cover autonomous discovery, maintenance, disposal and learning")
     h3stream = mapping.get("orderflow_h3", {})
     if h3stream.get("evidence_status") != "H3_001_ARCHIVED_INCOMPLETE_0_PROSPECTIVE_CLOUD_ROWS":
         errs.append("monitor evidence registry claims stale active H3")
