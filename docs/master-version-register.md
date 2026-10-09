@@ -20,6 +20,26 @@ V2R4 Frozen behält Live-Regeln; Prospektivitäts-Guard für neue
 Paper-Recovery-Version wartet auf eigenes Integration-Gate.
 Gilt dauerhaft für V3/V4+ und späteren Echtgeld-Preflight.
 
+## Künftige Echtgeldfreigaben: Resilienz-Vererbung ist ein Release-Gate (2026-10-09)
+
+**Dauerhafte Pflicht, noch nicht live erfüllt:** Die technische V2R4-Paper-Recovery
+und die übergreifende 17-Domänen-Ausfallmatrix sind Vorarbeiten für **alle**
+künftigen Echtgeldausführungs-/Live-Strategien. Keine automatische Übertragung
+des bloßen Status `HEALTHY` oder `PAPER_RECOVERED` auf den echten Kraken-Orderpfad.
+Bei der ersten realen `LIVE_PREPARATION` / `LIVE_RELEASE_REVIEW` / privaten
+Orderrechte-Anforderung im aktuellen Projektzustand ist zwingend der offene
+Backlog-Punkt `LIVE_RESILIENCE_INHERITANCE_GATE` zu bearbeiten.
+Details/Nachweisliste: `docs/test-strategy-runbook.md`, Phase D;
+`docs/project-wide-outage-recovery-v1.md`, [Issue #99](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99).
+Die ohnehin vorhandene tägliche Work-Gate-Lesestrecke prüft dieses
+Masterregister und den kanonischen Backlog; bei fälligem Live-Gate folgt
+**selbstständige Vorbereitung** der inaktiven sicheren Implementierung,
+Evidence-/Test-PRs und der bekannten Lücken, nicht automatische Aktivierung.
+Unbelegte Live-Ausfallsicherheit ist `LIVE_RESILIENCE_GATE_BLOCKED`;
+erst `LIVE_RESILIENCE_GATE_EVIDENCE_COMPLETE` und **separate ausdrückliche
+Nutzerfreigabe** können einen echten Live-Release ermöglichen.
+Kein neuer Zeitplan oder Live-Schalter durch diese Eintragung.
+
 ## Autonomes Projekt-Follow-through — erlaubte Umsetzung statt bloßer Meldungen (2026-10-08)
 
 Eine zusätzliche, **eng allowlistbasierte** Entwicklungs-
