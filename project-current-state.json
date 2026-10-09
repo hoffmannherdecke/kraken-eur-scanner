@@ -2,12 +2,12 @@
   "schema_version": 1,
   "kind": "PROJECT_CURRENT_STATE_V1",
   "status": "ACTIVE_CONTROL_PLANE",
-  "as_of_utc": "2026-10-08T08:28:05Z",
+  "as_of_utc": "2026-10-09T17:39:26.511Z",
   "authority": {
     "purpose": "Single machine-readable authority for current project/strategy/control-plane state.",
     "precedence": [
       "Live runtime evidence in Supabase/MINI-PC is authoritative for instantaneous health/evidence counts.",
-      "This file is authoritative for the declared current strategy/research/control-plane state.",
+      "This file is authoritative for declared strategy/research freeze and shadow lineage; technical live series may rotate independently; the last-verified operational-series snapshot below is dated and never supersedes real-time Supabase/MINI-PC.",
       "docs/master-version-register.md is authoritative for version/history/component records.",
       "PROJECT_BACKLOG.md is authoritative only for open work, never for current runtime status.",
       "Research/framework documents define methodology and may retain dated historical text."
@@ -26,7 +26,19 @@
     },
     "automatic_activation_allowed": false,
     "real_money_actions": false,
-    "mid_series_material_tuning_allowed": false
+    "mid_series_material_tuning_allowed": false,
+    "series_id_semantics": "FROZEN_ORIGINAL_V2R4_STRATEGY_LINEAGE_ANCHOR_FOR_H3_NOT_REALTIME_OPERATIONAL_SERIES",
+    "technical_rotation_runtime_last_verified": {
+      "series_id": "PAPER-V2R4-20261009T110135Z",
+      "observed_at_utc": "2026-10-09T17:39:26.511Z",
+      "source": "Supabase public.paper_series joined with public.paper_technical_rotations plus minipc_status_current, read-only prior audit",
+      "relation": "TECHNICAL_ROTATION_SAME_STRATEGY_FINGERPRINT_NOT_STRATEGY_RELEASE",
+      "strategy_fingerprint_sha256": "55c15f6c0735e524409594ece173ab30e4d84eecafefa18b57f8dc9c48cca32c",
+      "original_strategy_epoch_series_id": "PAPER-V2R4-20261007T184255Z",
+      "status": "LAST_VERIFIED_SNAPSHOT_NOT_REALTIME_CURRENT",
+      "frozen_h3_baseline_changed": false,
+      "productivity_clock_reset": false
+    }
   },
   "predecessor": {
     "strategy_revision": "V2R3-2026-09-28",
