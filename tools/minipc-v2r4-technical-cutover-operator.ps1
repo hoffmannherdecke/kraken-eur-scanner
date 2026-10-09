@@ -226,7 +226,7 @@ try{
  Atomic (Join-Path $backup 'cutover-followup-censor-summary.json') $summary
  $snapshotInputs=Join-Path $backup 'snapshot-inputs'
  New-Item -ItemType Directory -Force $snapshotInputs|Out-Null
- Copy-Item -LiteralPath $oldApp -Destination (Join-Path $snapshotInputs 'old-paper') -Recurse
+ Copy-Item -LiteralPath $oldApp -Destination (Join-Path $snapshotInputs 'old-paper') -Recurse -Force
  $stateCopies=Join-Path $snapshotInputs 'state';New-Item -ItemType Directory -Force $stateCopies|Out-Null
  Copy-Item -LiteralPath (Join-Path $backup 'tasks') -Destination (Join-Path $snapshotInputs 'scheduled-task-xml') -Recurse
  Copy-Item -LiteralPath (Join-Path $backup 'original-task-states.json') -Destination (Join-Path $snapshotInputs 'original-task-states.json')
@@ -235,41 +235,19 @@ try{
    Get-ChildItem $state -Filter $pat -File|ForEach-Object{Copy-Item $_.FullName (Join-Path $stateCopies $_.Name)}
  }
  $h3App=Join-Path $TradingRoot 'Runtime\v3-h3-shadow-001'
- if(Test-Path $h3App){Copy-Item -LiteralPath $h3App -Destination (Join-Path $snapshotInputs 'h3-001') -Recurse}
+ if(Test-Path $h3App){Copy-Item -LiteralPath $h3App -Destination (Join-Path $snapshotInputs 'h3-001') -Recurse -Force}
  $snapshot=Join-Path $backup 'old-paper-h3-state.zip'
- Compress-Archive -Path (Join-Path $snapshotInputs '*') -DestinationPath $snapshot -CompressionLevel Optimal
- Need ((Get-Item $snapshot).Length -gt 1000) 'Snapshot incomplete'
- # Hash-validate every archived evidence/config/task file against its
- # stopped original. A readable zip and a zip digest alone do not prove
- # that all old decisions, positions and restart task definitions survived.
- Add-Type -AssemblyName System.IO.Compression
- Add-Type -AssemblyName System.IO.Compression.FileSystem
- $archive=[IO.Compression.ZipFile]::OpenRead($snapshot)
- try {
-   $allSource=@(Get-ChildItem -LiteralPath $snapshotInputs -Recurse -File)
-   $entries=@($archive.Entries|Where-Object{-not [string]::IsNullOrEmpty($_.Name)})
-   Need ($entries.Count -eq $allSource.Count) 'Archive omitted or duplicated original files'
-   $entryMap=@{}
-   foreach($e in $entries){
-     Need (-not $entryMap.ContainsKey($e.FullName)) "Duplicate zip entry: $($e.FullName)"
-     $entryMap[$e.FullName]=$e
-   }
-   $hash=[Security.Cryptography.SHA256]::Create()
-   try {
-     foreach($f in $allSource){
-       $rel=$f.FullName.Substring($snapshotInputs.Length).TrimStart([char]'\',[char]'/').Replace('\','/')
-       Need ($entryMap.ContainsKey($rel)) "Snapshot file missing: $rel"
-       $entry=$entryMap[$rel]
-       Need ($entry.Length -eq $f.Length) "Snapshot size differs: $rel"
-       $reader=$entry.Open()
-       try{$inArchive=([BitConverter]::ToString($hash.ComputeHash($reader))).Replace('-','').ToLowerInvariant()}
-       finally{$reader.Dispose()}
-       $onDisk=(Get-FileHash -LiteralPath $f.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-       Need ($inArchive -ceq $onDisk) "Snapshot byte mismatch: $rel"
-     }
-   }finally{$hash.Dispose()}
- }finally{$archive.Dispose()}
- $backupSha=(Get-FileHash $snapshot -Algorithm SHA256).Hash.ToLowerInvariant()
+ # Compress-Archive omits Hidden/System files (notably h3-control.json).
+ # The inclusive .NET builder independently hashes all files in the ZIP.
+ $archiveScript=Join-Path $repo 'tools\minipc-v2r4-verified-snapshot.ps1'
+ Need (Test-Path -LiteralPath $archiveScript) 'Verified ZIP builder missing from pinned release'
+ $archiveRaw=& powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $archiveScript -SourceDirectory $snapshotInputs -ArchivePath $snapshot
+ Need ($LASTEXITCODE -eq 0) 'Complete old Paper/H3 archive failed'
+ $verified=($archiveRaw|Select-Object -Last 1)|ConvertFrom-Json
+ Need ($verified.status -eq 'VERIFIED_ALL_SOURCE_FILES' -and
+   [long]$verified.file_count -gt 0 -and
+   [string]$verified.archive_sha256 -match '^[a-f0-9]{64}$') 'Snapshot ZIP not byte-verified'
+ $backupSha=$verified.archive_sha256
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repo 'tools\minipc-runtime-supervisor.ps1') -TradingRoot $TradingRoot|Out-Null
  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $repo 'tools\minipc-watchdog.ps1') -TradingRoot $TradingRoot|Out-Null
  & $python (Join-Path $repo 'tools\minipc-status-sync.py') --trading-root $TradingRoot --once|Out-Null

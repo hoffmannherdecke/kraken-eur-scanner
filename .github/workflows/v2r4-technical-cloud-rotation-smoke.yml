@@ -11,6 +11,8 @@ name: V2R4 technical cloud rotation - disposable SQL gate
       - 'tools/v2r4-paper-cloud-sync.py'
       - 'tests/test_v2r4_successor_state_isolation.py'
       - 'tests/test_v2r4_technical_cutover_contract.py'
+      - 'tools/minipc-v2r4-verified-snapshot.ps1'
+      - 'tools/minipc-v2r4-technical-cutover-operator.ps1'
       - '.github/workflows/v2r4-technical-cloud-rotation-smoke.yml'
   workflow_dispatch:
 
@@ -56,5 +58,33 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_v2r4_successor_state_isolation.py'
       - name: Verify mutual technical Cloud/MINI-PC cutover proof contract
         run: python -m unittest discover -s tests -p 'test_v2r4_technical_cutover_contract.py'
+      - name: Verify the real ZIP helper archives hidden H3 files (isolated fixture)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'technical-zip-hidden-fixture'
+          $source = Join-Path $root 'source'
+          $h3 = Join-Path $source 'h3-001'
+          New-Item -ItemType Directory -Force $h3 | Out-Null
+          Set-Content -LiteralPath (Join-Path $h3 'h3-control.json') -Value 'old baseline frozen, no orders'
+          Set-Content -LiteralPath (Join-Path $h3 '.hidden-control.json') -Value 'hidden test fixture'
+          Set-Content -LiteralPath (Join-Path $source 'manifest.json') -Value 'immutable first-series'
+          $zip = Join-Path $root 'old-paper-h3-state.zip'
+          $output = & pwsh -NoProfile -File tools/minipc-v2r4-verified-snapshot.ps1 -SourceDirectory $source -ArchivePath $zip
+          if ($LASTEXITCODE -ne 0) { throw 'Snapshot builder failed' }
+          $result = ($output | Select-Object -Last 1) | ConvertFrom-Json
+          if ($result.status -ne 'VERIFIED_ALL_SOURCE_FILES' -or $result.file_count -ne 3) {
+            throw 'Hidden file omitted or snapshot unverified'
+          }
+          Add-Type -AssemblyName System.IO.Compression
+          $archive = [IO.Compression.ZipFile]::OpenRead($zip)
+          try {
+            $names = @($archive.Entries | ForEach-Object { $_.FullName })
+            if ('h3-001/h3-control.json' -notin $names -or
+                'h3-001/.hidden-control.json' -notin $names) {
+              throw 'Frozen H3 control or hidden file missing from ZIP'
+            }
+          } finally { $archive.Dispose() }
+          Write-Host 'H3_HIDDEN_SNAPSHOT_VERIFIED'
       - name: Type-check new isolated Edge boundary (never deploy)
         run: deno check supabase/functions/v2r4-technical-cutover/index.ts
