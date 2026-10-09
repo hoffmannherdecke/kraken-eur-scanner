@@ -1,0 +1,37 @@
+# GitHub-Kapazitäts- und Kostenstrategie (dauerhafter Infrastrukturvertrag)
+
+**Beschluss:** 2026-10-09. **Status:** geplant/monitoren; keine produktive Migration, keine neuen Work-/GitHub-Schedules und keine neue GitHub-Organisation freigegeben.
+**Owner:** Operations / Architektur-Review. **Kanonische Aufgabe:** `PROJECT_BACKLOG.md`, P4, „CAPACITY_GROWTH_GATE“. **Laufzeit-Wahrheit:** GitHub-Billing-UI (privater accountweiter Verbrauch) und tatsächlich erfolgreicher Runtime-Nachweis; dieses Dokument ist nur die Entscheidungsmethodik.
+
+## Ziel und Priorität (gilt für V2R4, V3/V4+, spätere Echtgeldpfade und einen isolierten künftigen KI-Agenten)
+
+Systemwachstum darf nicht erst bei ausgeschöpften GitHub-Minuten, neuen Kosten oder ausgefallenen Jobs auffallen. Keine blinden Account-/Runner-Wechsel: funktionierende Paper-, Shadow-, Scanner- und Backup-Pfade schützen; Sicherheits- und Echtgeld-Freigaben bleiben separat. Ein eigener KI-Agent darf bestehende Strategien, Code, Daten und Runtime nur in ausdrücklich freigegebenen **read-only** Schnittstellen nutzen; eigene isolierte Entwicklung/Paper-Datenhaltung, nie stillschweigend schreibend in den bestehenden Betriebsstrang.
+
+## Belegbarer Ausgangspunkt, nicht mit einer Rechnung verwechseln
+
+- Private `kraken-readonly-bridge`, nach Fix 2026-10-08: Snapshot um :10/:40 (48 Jobs/Tag); separater Health-Watchdog alle 4 Stunden (6 Jobs/Tag) = **54 geplante private Jobs/Tag**. Vorher 144/Tag. Push-Trigger dieser beiden Jobs entfernt.
+- **Schätzung**: 54 × 30 = **1.620 abgerechnete Minuten pro 30 Tage**, **nur** falls jeder Job in einer gerundeten Linux-Minute bleibt. Das sind 81 % eines angenommenen 2.000-Minuten-Free-Kontingents; andere private Repositories, Market-Policy-Jobs, manuelle Runs, längere Jobs und Billing-Multiplikatoren kommen ggf. hinzu. Nicht als real gemessene Kontonutzung oder garantierte Reserve deklarieren.
+- Private `canonical-evaluator-runtime-v1` seit 2026-10-08 nur manuelle Diagnose; öffentliches `kraken-eur-scanner` separat. Die 2026-10-08 erstellte GitHub-**10-USD-Ausgabenobergrenze/Stop-Usage** bleibt harte Nutzer-Kostenkontrolle; diese Entscheidung ermächtigt keine Erhöhung, Zahlung oder Accountaktion.
+- Das aktuelle monatliche *Billing* ist nicht über die vorhandene ChatGPT-GitHub-Verbindung verfügbar. Für belastbare Minuten und Kosten die originale GitHub-`Billing & licensing > Actions`-Ansicht kontrollieren (Zeitraum/Plan, weitere Repositories, inkludierte versus bezahlte Minuten, Runner-Betriebssystem und Jobdauer), nicht aus Yaml-Schedules „ist-verbucht“ ableiten.
+- Originale Nachweise: private Bridge README „Actions resource and continuity contract (2026-10-08)“ / PR #2; `PROJECT_BACKLOG.md` P4 Quota-Vorfall 2026-10-08.
+
+## Reihenfolge bei wachsendem Bedarf
+
+1. **Bestehende Optimierung halten**: keine redundanten Cron-/Push-Jobs; bereits gebündelte Health- und Snapshot-Takte nicht ohne Messung wieder erhöhen. Keine Einsparung auf Kosten von Frische, Signalabdeckung, Failover oder Datenintegrität.
+2. **Auf dem bereits vorhandenen Mini-PC ausführen, was sachlich passt**: vor allem private regelmäßige Abfragen und begrenzte Datenverarbeitung, soweit sie mit sicheren Credentials, Supervisor, Restart-/Backoff, begrenztem Datenspeicher, Offline-/Stromausfall-Regeln und unabhängiger Cloud-Gegenkontrolle zuverlässig laufen. Self-hosted GitHub-Runner nur isoliert, berechtigungsminimal, nicht für ungeprüfte öffentliche PRs und nicht als neues Single Point of Failure; wo einfacher, lokale Windows-Tasks ohne GitHub-Runner. Ein Wechsel ist ein eigenes E2E-/Rollback-Gate, nicht automatisch durch diesen Plan freigegeben.
+3. **Später GitHub-Organisation für tatsächlich organisatorisch getrennte Entwicklung** evaluieren, besonders für unabhängigen KI-Agenten: Eigentum, Auth, Secrets, Zugriff, Abrechnung und GitHub-Nutzungsbedingungen prüfen. Keine reine Limit-Umgehung unterstellen; Free-Kontingent nicht ohne Terms-Prüfung als zugesichert aufsummieren. Erst bei echter agentenseitiger Projektfreigabe separate private Repositories planen.
+4. **Kostenpflichtigen Reservepuffer erwägen, falls nachgewiesen billiger/einfacher/sicherer** als Umbau: Freigabe durch Nutzer vor jeder Budgeterhöhung; die bereits konfigurierte 10-USD-Kostenbremse nie automatisch lockern.
+5. **Kein zweites persönliches Konto** nur als Kontingentumgehung. Ein Konto einer anderen Person ausschließlich bei deren echter eigenständiger Nutzung, kein Shared Login und keine verdeckte Auslagerung unter fremdem Namen.
+
+## Proaktive Kapazitäts-Gates (keine neuen Runtime-Jobs)
+
+**Fixe sparsame Planprüfung:** ungefähr zum 10. und 20. Kalendertag jedes Monats; zusätzlich **vor** neuem privaten Hochfrequenz-Workflow, Repo-/Strategieausbau, Self-Hosted-Runner, größerem KI-Agenten-Experiment, GitHub-Org-Umstellung, Kostenänderung oder wiederholter Quota-/Billing-Fehlermeldung. Für jeden Prüfpunkt eine kleine Übersicht: abgerechnete private Minuten und Kosten *aller privaten Repos* bis heute (nach Möglichkeit GitHub-Billing-UI), Nutzungsfenster und verbleibender Zeitraum, tatsächlich gemessene Jobdauer/Minutenverrechnung, sichere Verbrauchsprognose mit Unsicherheitsband, verbleibende freie Kapazität und bereits bestätigte 10-USD-Stop-Usage.
+
+- **PLANUNG / GELB**: Prognose für den Abrechnungsmonat **>=1.700 von 2.000 inkludierten Minuten (85 %)** oder ein konkret geplanter Ausbau würde diesen Bereich überschreiten. Kleinen Engpass- und Offload-Plan am bestehenden P4-Gate aufrufen, keine neuen Lasten bis er bewertet ist. Die 1.620-Minuten-Basis ohne Zusatzlast ist bereits nahe an GELB.
+- **AKTION / ROT**: Prognose **>=1.850 Minuten (92,5 %)**, verbleibende Freiminuten **<150** bei offenem Monatsrest, Quota-Fail vor Runnerstart, Budget-Stop oder private Frische-/Health-Ausfälle durch Kontingent. Sofort konkrete kleinste Abhilfe (Takt, lokaler isolierter Read-only-Pfad oder explizites Budget-Gate) mit Nutzerentscheidung dokumentieren; keine heimlichen Käufe, doppelten Konten, Retry-Stürme oder Strategy-Eingriffe.
+- **DATEN UNBEKANNT**: Keine erfundenen Verbrauchswerte. Der echte Billing-Screenshot/-Export ist dann eine konkrete benötigte Nutzerhandlung, sobald das bestehende beobachtete Wachstum oder der nächste Gate-Termin die Projektion ohne Istwert unsicher macht. Keine tägliche Erinnerungsschleife.
+- **Rechnung** (nur bei plausibler linearer Verteilung): `projected_minutes = actual_billable_minutes / elapsed_fraction_of_current_billing_cycle`, dazu feste/geplante Taktänderungen und plausible Jobdauer; keine irreführende Rechnung mit Kalendermonats- statt realem Rechnungszeitraum. Falls Abrechnungsfenster unklar: als unbekannt markieren.
+
+**Abschluss einer Kapazitätsmaßnahme:** gemessener Vorher-/Nachher-Verbrauch (mehrere natürliche Läufe), E2E Datenfrische + Read-only + Health, Backoff/Restore/Failover und keine erhöhte Signal-/Paper-Latenz; Rollback und Kostenbremse bestätigt. Status `CAPACITY_OK`, `CAPACITY_REVIEW_DUE` oder `CAPACITY_ACTION_REQUIRED` nur bei entsprechendem Beleg. Die strategische Paper-/Live-Freigabe wird davon nicht automatisch verändert.
+
+**Ressourcenschutz:** Ein vorhandenes Projekt-/Work-Gate oder eine separat genehmigte sehr seltene Erinnerung darf diesen Vertrag aufgreifen. Nicht noch einen GitHub-Actions-Poller, Supabase-Job, Agenten oder Work-Lauf dafür schaffen. Neue CI-/Scripts nur, wenn ein konkreter Engpass mit echten Billing-Daten deren Aufwand rechtfertigt.
