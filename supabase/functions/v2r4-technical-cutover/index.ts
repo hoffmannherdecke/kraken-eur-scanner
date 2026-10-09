@@ -58,10 +58,10 @@ async function sourceGate(admin:any,technicalQuiesce=false){
   // equivalent to the known DOGE/XDG normalization defect.
   const candidate=String(c.v2r4_paper_candidates?.detail??"");
   if(!technicalQuiesce && c.v2r4_paper_candidates?.ok!==true){
-    const ageMatch=candidate.match(/\\bage_sec=([0-9]+(?:\\.[0-9]+)?)/);
+    const ageMatch=candidate.match(/\bage_sec=([0-9]+(?:\.[0-9]+)?)/);
     const candidateAge=ageMatch?Number(ageMatch[1]):Infinity;
     if(!candidate.startsWith("status=DEGRADED ")||
-       !/\\btask_state=Running\\b/.test(candidate)||
+       !/\btask_state=Running\b/.test(candidate)||
        !Number.isFinite(candidateAge)||candidateAge<0||candidateAge>60){
       return {ok:false,code:"unexpected_paper_candidate_failure"};
     }
@@ -72,7 +72,7 @@ async function sourceGate(admin:any,technicalQuiesce=false){
     for(const name of ["v2r4_paper_candidates","v2r4_paper_wait",
       "v2r4_paper_lifecycle","v2r4_paper_cloud_sync","v3_h3_shadow"]){
       const detail=String(c[name]?.detail??"");
-      if(!/\\btask_state=Disabled\\b/.test(detail)){
+      if(!/\btask_state=Disabled\b/.test(detail)){
         return {ok:false,code:"old_task_not_quiesced",task:name};
       }
     }
@@ -91,7 +91,7 @@ async function sourceGate(admin:any,technicalQuiesce=false){
     (c.runtime_supervisor?.ok===false &&
       sup.startsWith("status=WARNING ") && /restarted=\s*$/.test(sup));
   if(!supervisedOk)return {ok:false,code:"supervisor_unstable"};
-  const supervisorAge=Number((sup.match(/\\bage_sec=([0-9]+(?:\\.[0-9]+)?)/)??[])[1]);
+  const supervisorAge=Number((sup.match(/\bage_sec=([0-9]+(?:\.[0-9]+)?)/)??[])[1]);
   if(!Number.isFinite(supervisorAge)||supervisorAge<0||supervisorAge>180)
     return {ok:false,code:"supervisor_heartbeat_stale"};
   const unexpected=Object.keys(c).filter(k=>c[k]?.ok===false&&!permitted.has(k));
