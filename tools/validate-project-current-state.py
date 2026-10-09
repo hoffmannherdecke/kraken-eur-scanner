@@ -36,6 +36,28 @@ def main()->int:
     if not active.get("series_id") or not active.get("strategy_revision"):
         errors.append("active strategy revision/series id required")
 
+    # Technical series rotations do not reactivate a new strategy or silently
+    # rebind a previously frozen H3 comparison cohort. Operational truth lives
+    # in Supabase/MINI-PC; only dated verification snapshots are stored here.
+    technical=active.get("technical_rotation_runtime_last_verified")
+    if technical is not None:
+        if active.get("series_id_semantics")!="FROZEN_ORIGINAL_V2R4_STRATEGY_LINEAGE_ANCHOR_FOR_H3_NOT_REALTIME_OPERATIONAL_SERIES":
+            errors.append("technical rotation snapshot requires explicit H3 lineage semantics")
+        if technical.get("status")!="LAST_VERIFIED_SNAPSHOT_NOT_REALTIME_CURRENT":
+            errors.append("dated technical runtime snapshot must not claim live authority")
+        if technical.get("original_strategy_epoch_series_id")!=active.get("series_id"):
+            errors.append("technical rotation original epoch anchor mismatch")
+        if technical.get("frozen_h3_baseline_changed") is not False or technical.get("productivity_clock_reset") is not False:
+            errors.append("technical rotation cannot rebind H3 or reset productivity clock")
+        if technical.get("relation")!="TECHNICAL_ROTATION_SAME_STRATEGY_FINGERPRINT_NOT_STRATEGY_RELEASE":
+            errors.append("technical rotation must not claim independent strategy release")
+        if technical.get("series_id")==active.get("series_id") or not technical.get("series_id"):
+            errors.append("technical rotation must be distinct from original release cohort")
+        if len(str(technical.get("strategy_fingerprint_sha256") or ""))!=64:
+            errors.append("technical rotation missing unchanged strategy fingerprint")
+        if not str(technical.get("observed_at_utc") or "").endswith("Z"):
+            errors.append("technical runtime verification must carry UTC observation time")
+
     predecessor=data.get("predecessor") or {}
     if predecessor.get("status")!="CLOSED_COMPLETE":
         errors.append("declared predecessor must be CLOSED_COMPLETE")
