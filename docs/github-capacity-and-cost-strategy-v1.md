@@ -27,6 +27,12 @@ Systemwachstum darf nicht erst bei ausgeschöpften GitHub-Minuten, neuen Kosten 
 
 **Abbruchkriterium / Minimalismus:** Falls ein sicherer lokaler Snapshot-Runner mehr neue Risiken/Komplexität als nachvollziehbaren Nutzen erzeugt, wird er nicht produktiv; stattdessen am bestehenden kostenbegrenzten Cloud-Modell festhalten. Keine weiteren privaten Hochfrequenzjobs, nur weil 32 GB RAM verfügbar sind.
 
+## Umsetzung in kurzen Blöcken und kleine optionale Diagnose-KI (Checkpoint 2026-10-09)
+
+**Kanonisches Schritt-für-Schritt-Runbook:** [`docs/minipc-support-block-plan-v1.md`](minipc-support-block-plan-v1.md). Block 1 läuft als **read-only Bestandsaufnahme**; keine operative Mini-PC-/GitHub-/Paper-/Shadow-Umstellung ist dadurch freigegeben. Die RAM-Erhöhung 16 → 32 GB darf später stattfinden, **ist keine Voraussetzung** für den Start der Planungs-/Inventurarbeiten und ist bis zur physischen Bestätigung nur eine Nutzerabsicht. Keine 6-Stunden-Sitzung erzwingen; von Block zu Block nur mit gesicherter Evidenz weitergehen.
+
+**Zwei KI-Ziele strikt auseinanderhalten:** (a) Der große eigenständige KI-Trading-/Coding-Agent bleibt weiterhin auf unbestimmte Zeit **zurückgestellt**. (b) Als **optionalen späteren** Betriebszusatz soll ein kleiner **Ollama + quantisiertes Qwen-Modell** als rein beratender KI-Systemdiagnostiker evaluiert werden, nachdem Offload/Stabilität erwiesen sind. Beispielnutzen: Neustart-Anomalien, wiederkehrende Fehlergruppen und ungewöhnliche Auslastungsänderungen aus vorher entpersonalisierten, ausdrücklich freigegebenen Mini-PC-Diagnoseauszügen erkennen und kurz erklären. Kein Trading-Signal, kein Zugriff auf Secrets oder sensible Accountdaten, keine autonome Aktion, kein permanent aktives Modell, keine weiteren Cron-/Work-/GitHub-Jobs, keine produktive Installation jetzt. Qualität, CPU-Reaktionszeit und RAM-Bedarf erst an der **konkreten** Modellversion unter echter Trading-Last prüfen; Modell-Dateigröße ist nicht RAM-Spitzenbedarf. Wenn kein klarer Nutzen gegenüber regelbasiertem Supervisor, **nicht installieren**.
+
 ## Belegbarer Ausgangspunkt, nicht mit einer Rechnung verwechseln
 
 - Private `kraken-readonly-bridge`, nach Fix 2026-10-08: Snapshot um :10/:40 (48 Jobs/Tag); separater Health-Watchdog alle 4 Stunden (6 Jobs/Tag) = **54 geplante private Jobs/Tag**. Vorher 144/Tag. Push-Trigger dieser beiden Jobs entfernt.
