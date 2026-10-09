@@ -46,7 +46,7 @@
       "input_decision_contract_proven": "FAIL_CANDIDATE_SPECIFIC_CLOSED_BAR_VOLUME_ATR_ABSENT",
       "trade_productivity_proven": "FAIL_NEAR_ZERO_BUY_CONVERSION",
       "strategy_causal_improvement_proven": "NOT_ESTABLISHED",
-      "next_active_action": "INACTIVE_ONE_CHANGE_E2E_CANDIDATE_INPUT_PROOF_THEN_PIT_PROSPECTIVE_BASELINE_COMPARISON"
+      "next_active_action": "AFTER_H3_FIXED_REVIEW_PROSPECTIVE_ENTRY_EVIDENCE_ONLY_ONE_CHANGE_COMPARE_THEN_SEPARATE_TRIGGER_POLICY_HYPOTHESIS_IF_NEEDED"
     },
     "unresolved_requirement_ids": [
       "ENTRY_CANDIDATE_SPECIFIC_PROVENANCE",
@@ -54,7 +54,83 @@
       "WAIT_FRESH_RECHECK_CONVERSION_OR_REASON",
       "CAUSAL_PROSPECTIVE_PRODUCTIVITY_AND_COST",
       "RELEASE_LINEAGE_CONTROL_PLANE"
-    ]
+    ],
+    "latest_diagnostic_snapshot": {
+      "status": "OBSERVED_CAUSAL_FUNNEL_NOT_PROVEN_NET_EDGE",
+      "as_of_utc": "2026-10-09T18:44:11Z",
+      "series_id": "PAPER-V2R4-20261009T110135Z",
+      "source": "Supabase public.paper_candidate_outcomes payload JSON; operator read-only physical proof 2026-10-09 ~20:44 Europe/Berlin. Data is a frozen research snapshot; live cohort can grow.",
+      "initial_unique": 168,
+      "initial_wait": 116,
+      "initial_reject": 52,
+      "initial_buy_scout": 0,
+      "coin_structured_entry_context_absent_initial": 168,
+      "initial_wait_plan": {
+        "total": 116,
+        "condition_logic": "ALL",
+        "exactly_two_conditions": 109,
+        "exactly_three_conditions": 7,
+        "require_both_closed_5m_close_and_closed_5m_volume": 110,
+        "closed_5m_volume_ratio_threshold_typical": 1.2,
+        "final_wait_expired_without_trigger": 93,
+        "final_actual_triggered_recheck_distinct_candidates": 22,
+        "no_final_recheck_yet": 1,
+        "mean_expired_ttl_minutes": 32.1,
+        "expired_median_price_threshold_pct_above_initial_last": 0.784,
+        "triggered_median_price_threshold_pct_above_initial_last": 0.577
+      },
+      "active_series_real_triggered_recheck_latest": {
+        "candidates": 22,
+        "reject": 19,
+        "wait": 3,
+        "buy_scout": 0
+      },
+      "active_series_local_recheck_events": {
+        "events": 124,
+        "unique_candidate_ids": 113,
+        "expiry_events": 91,
+        "true_model_recheck_events": 33,
+        "interpretation": "Different local event count/time than Supabase latest unique outcome; one candidate can emit multiple recheck events, and cloud mirrors latest canonical outcome; never mix denominators."
+      },
+      "post_trigger_reject_evidence_codes": {
+        "n_rejected": 19,
+        "any_stop_or_entry_plan": 15,
+        "any_late_chase_or_extension": 18,
+        "any_cost_or_remaining_move": 19,
+        "any_market_or_momentum": 14,
+        "caveat": "Reason-code regex family matches are nonexclusive descriptive cautions, NOT proof of independent causal veto."
+      },
+      "retrospective_followup_60min": {
+        "expired_no_trigger": {
+          "complete": 89,
+          "mfe_ge_3pct": 8,
+          "mfe_ge_5pct": 1
+        },
+        "actual_triggered_recheck": {
+          "complete": 19,
+          "mfe_ge_3pct": 8,
+          "mfe_ge_5pct": 4
+        },
+        "interpretation": "Measured from original decision and conditioned on later outcomes; selection-biased/correlated MFE, NOT live-entry performance, no validated net-fee profit; do not auto-loosen WAIT gates."
+      },
+      "verified_claims": [
+        "Strong prospectively defined ALL of 5m price recovery and closed-bar volume confirmation frequently expires before model recheck.",
+        "The low conversion is not only a pipeline failure: 22 triggered candidate rechecks occurred, but none produced BUY_SCOUT.",
+        "Candidate-specific proven per-coin closed-bar volume and ATR data were absent as a standard evaluator input for all 168 original decisions; a one-off real STRK/EUR model call with this info remained WAIT.",
+        "Expiry and actual model REJECT must never share a single apparent conversion denominator.",
+        "User-facing goal of economically viable quality Paper trades is unmet; do not claim solved or safe for real-money phase."
+      ],
+      "open_causality": [
+        "No persisted per-scan nonmatch metric history to prove why each ALL gate failed; avoid inventing which conjunct blocked.",
+        "Post-trigger NO_BUY could be legitimately insufficient edge or insufficient structural-stop evidence; cannot attribute solely to missing coin evidence without prospective paired risk/cost comparison."
+      ],
+      "prioritized_successor_one_change_hypothesis": "First isolate point-in-time candidate-specific closed Kraken OHLC, volume, 15m ATR/structural low source into research evaluator inputs, while leaving timing conditions/fees/stop/size unchanged. Measure incremental valid BUY with risk/cost, false buys and 24h followups before any separate H4 trigger/TTL relaxation; honor frozen H3 baseline and its fixed review.",
+      "status_for_successor_release": "NOT_PROVEN_NOT_PROMOTED",
+      "active_v2r4_change": false,
+      "active_h3_change": false,
+      "new_schedule": false,
+      "real_money_actions": false
+    }
   },
   "checks_before_any_successor_paper_release": [
     {
