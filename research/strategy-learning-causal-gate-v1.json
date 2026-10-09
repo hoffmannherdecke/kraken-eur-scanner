@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "kind": "STRATEGY_LEARNING_CAUSAL_COMPLETENESS_GATE_V1",
+  "status": "ACTIVE_GOVERNANCE_OPEN_FINDING",
+  "as_of_utc": "2026-10-09T18:00:00Z",
+  "scope": "V2R4_POSTMORTEM_V3_AND_EVERY_SUBSEQUENT_NEW_STRATEGY",
+  "policy": "No successor can be described as having fixed a predecessor failure merely because a related component was implemented or passed transport/unit tests. Require original failure mechanism, candidate-specific input evidence, consumer E2E, prospective opportunity/trade funnel and explicit release decision.",
+  "canonical_sources": [
+    "research/work-analysis/2026-10-07-v2r3-final-review.md",
+    "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+    "research/v2r4/paper_strategy_spec_v2r4_release_candidate.json",
+    "paper_evaluator/evaluate.py",
+    "paper_context.py",
+    "tools/v2r4-paper-local-runtime.py",
+    "research/v3/coin-entry-evidence-lineage-v1.json"
+  ],
+  "incident": {
+    "id": "V2R3_TO_V2R4_ZERO_BUY_RECURRING",
+    "classification": "UNRESOLVED_DECISION_PRODUCTIVITY_NOT_CLEARED_BY_V2R4_TIMING_ONLY",
+    "v2r3_clean": {
+      "cohort": 1000,
+      "initial_wait": 942,
+      "final_reject": 999,
+      "buy_scout": 1,
+      "paper_trades": 1
+    },
+    "v2r4_snapshot": {
+      "outcomes": 1163,
+      "initial_wait": 760,
+      "initial_reject": 403,
+      "buy_scout": 0,
+      "paper_trades": 0,
+      "source": "Supabase, 2026-10-09 ~17:15Z; two technical series, same strategy fingerprint",
+      "live_counts_can_advance": true
+    },
+    "known_causal_facts": [
+      "V2R3 near-zero conversion proven, but cause split among strategy selectivity, WAIT/lifecycle, incomplete feature evidence and true untradeability was not fully resolved.",
+      "V2R4 explicitly kept V2R3 major decision/filter roles and researched primarily earlier discovery and faster WAIT trigger/recheck. This was an intentionally limited timing comparison, NOT proven repair of low trade production.",
+      "Current candidate handoff includes percent returns/spread/turnover; paper_context supplies major BTC/ETH/SOL OHLC context but does not supply individual candidate's closed 1m/5m/15m candle/volume ratio/ATR/structural-stop features to the evaluator.",
+      "V2R3 HEALTHY refers to integrity and recording, NOT demonstrated sufficiency of all necessary trade decision inputs.",
+      "Missing coin evidence is a demonstrated wiring gap, NOT proven to be the sole or dominant causal reason for all REJECTs.",
+      "Subsequent MFE is not a directly tradeable profit; clusters by pair/time and adverse path/costs must be assessed."
+    ],
+    "failure_classification": {
+      "technical_transport_proven": "HEALTHY_IN_V2R3_V2R4_SNAPSHOTS",
+      "input_decision_contract_proven": "FAIL_CANDIDATE_SPECIFIC_CLOSED_BAR_VOLUME_ATR_ABSENT",
+      "trade_productivity_proven": "FAIL_NEAR_ZERO_BUY_CONVERSION",
+      "strategy_causal_improvement_proven": "NOT_ESTABLISHED",
+      "next_active_action": "INACTIVE_ONE_CHANGE_E2E_CANDIDATE_INPUT_PROOF_THEN_PIT_PROSPECTIVE_BASELINE_COMPARISON"
+    },
+    "unresolved_requirement_ids": [
+      "ENTRY_CANDIDATE_SPECIFIC_PROVENANCE",
+      "ENTRY_TO_DECISION_E2E_SUFFICIENCY",
+      "WAIT_FRESH_RECHECK_CONVERSION_OR_REASON",
+      "CAUSAL_PROSPECTIVE_PRODUCTIVITY_AND_COST",
+      "RELEASE_LINEAGE_CONTROL_PLANE"
+    ]
+  },
+  "checks_before_any_successor_paper_release": [
+    {
+      "id": "ENTRY_CANDIDATE_SPECIFIC_PROVENANCE",
+      "owner": "V3 coin_specific_entry_evidence_provenance",
+      "must_prove": "Closed per-candidate Kraken OHLC, volume context and sufficient structural risk features with true observed_at/known_at; missing is UNKNOWN, no future leakage; existing source reused.",
+      "test_type": "PHYSICAL_OR_PUBLIC_REAL_INPUT_PLUS_SMALL_NEGATIVE_MISSING_CASE",
+      "current_status": "BLOCKED_NOT_ACTIVE"
+    },
+    {
+      "id": "ENTRY_TO_DECISION_E2E_SUFFICIENCY",
+      "owner": "paper evaluator/strategy candidate",
+      "must_prove": "Actual scored candidate -> feature delivery -> full evaluator -> valid stop and stage2 plan under a controlled genuinely feasible setup, not only an isolated adapter unit test.",
+      "test_type": "ONE_BOUNDED_END_TO_END_REAL_PUBLIC_DATA_AND_DETERMINISTIC_CONTRACT",
+      "current_status": "BLOCKED_NOT_TESTED"
+    },
+    {
+      "id": "WAIT_FRESH_RECHECK_CONVERSION_OR_REASON",
+      "owner": "candidate WAIT lifecycle",
+      "must_prove": "Fresh WAIT inputs can be consumed, trigger and TTL behavior measured, and recurrent WAIT-to-REJECT reasons distinguished with no unjustified auto-buy.",
+      "test_type": "PROSPECTIVE_SAME_CANDIDATE_BASELINE_REPLAY",
+      "current_status": "BLOCKED_NOT_ESTABLISHED"
+    },
+    {
+      "id": "CAUSAL_PROSPECTIVE_PRODUCTIVITY_AND_COST",
+      "owner": "strategy owner H7 later, baseline-vs-successor",
+      "must_prove": "Incremental feasible BUY frequency or explicit evidenced rationale for no-buy; false positives, missed moves, costs incl 0.60% taker per side + spread/slippage, stop/MAE and data integrity compared by pair/time clustered cohort.",
+      "test_type": "PIT_PROSPECTIVE_COMPARISON_WITH_PREFROZEN_SAMPLE_AND_DECISION_CLOCK",
+      "current_status": "BLOCKED_NOT_TESTED"
+    },
+    {
+      "id": "RELEASE_LINEAGE_CONTROL_PLANE",
+      "owner": "release governance",
+      "must_prove": "All predecessor significant failures have measured verified/retained/deferred/rejected disposition, V2R4 technical rotation isn't treated as new strategy, fixed H3 baseline remains preserved, human release decision separate.",
+      "test_type": "MACHINE_GATE_PLUS_RELEASE_LEDGER_RECONCILIATION",
+      "current_status": "BLOCKED_NOT_COMPLETE"
+    }
+  ],
+  "source_vs_quality_semantics": {
+    "transport_status_not_equivalent_to_decision_input_sufficiency": true,
+    "unit_tests_not_equivalent_to_real_path_e2e": true,
+    "strategy_research_NOT_equivalent_to_validated_net_profits": true,
+    "zero_buy_with_sufficient_evidence_not_passed_as_success": true
+  },
+  "release_evidence_file": "research/successor-strategy-release-evidence-v1.json",
+  "required_release_evidence_ids": [
+    "ENTRY_CANDIDATE_SPECIFIC_PROVENANCE",
+    "ENTRY_TO_DECISION_E2E_SUFFICIENCY",
+    "WAIT_FRESH_RECHECK_CONVERSION_OR_REASON",
+    "CAUSAL_PROSPECTIVE_PRODUCTIVITY_AND_COST",
+    "RELEASE_LINEAGE_CONTROL_PLANE"
+  ],
+  "legacy_series_exception": {
+    "status": "HISTORICAL_ACTIVE_V2R4_NO_BACKDATED_GATE",
+    "allowed_active_strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+    "technical_rollover_does_not_reset_evidence": true
+  },
+  "runtime_guardrails": {
+    "active_v2r4_strategy_change": false,
+    "active_h3_shadow_change": false,
+    "mini_pc_task_change": false,
+    "new_schedule": false,
+    "real_money_actions": false,
+    "automatic_release": false,
+    "holdout_open": false
+  }
+}
