@@ -141,5 +141,39 @@ class MilestoneTests(unittest.TestCase):
         r=controller.evaluate(state,paper,h3,t,ROOT)
         self.assertNotIn('V2R4:LOW_TRADE_REVIEW',r['statuses'])
 
+
+    def test_stale_h3_does_not_block_independent_v2r4_quality_gate(self):
+        import datetime as dt
+        state=controller.load_local_state(ROOT)
+        a=state['active_strategy']
+        now=dt.datetime(2026,10,10,18,44,tzinfo=dt.timezone.utc)
+        paper=dict(series_id=a['technical_rotation_runtime_last_verified']['series_id'],
+                   strategy_revision=a['strategy_revision'],
+                   fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
+                   candidate_outcomes=250,completed_trades=0,complete_24h=150,
+                   series_age_days=1.35,completion_ready=False,intake_should_stop=False)
+        h3=dict(shadow_candidate_id='V3-H3-SHADOW-001',
+                generated_at='2026-10-09T11:00:03.459542+00:00',
+                payload=dict(baseline_series_id=a['series_id'],
+                             baseline_strategy_revision=a['strategy_revision'],
+                             orders=False,real_money_actions=False,automatic_extension=False,
+                             automatic_promotion=False,minimum_gate_met=True,
+                             eligible_matched_candidates=24,distinct_utc_dates=['2026-10-08','2026-10-09'],
+                             capture_success_pct=99,intake_should_stop=True,
+                             outcome_review_ready=True,causal_decision_divergences=20))
+        result=controller.evaluate(state,paper,h3,now,ROOT)
+        self.assertIn('H3:EVIDENCE_STALE_FIXED_REVIEW_BLOCKED',result['statuses'])
+        self.assertIn('V2R4:LOW_TRADE_REVIEW',result['statuses'])
+        keys=[x['kind'] for x in result['events']]
+        self.assertIn('PAPER_LOW_TRADES',keys)
+        self.assertIn('H3_STALE_EVIDENCE',keys)
+        self.assertNotIn('H3_FIXED_REVIEW',keys)
+        self.assertFalse(result['strategy_changed'])
+        self.assertFalse(result['real_money_actions'])
+        h3['payload']['automatic_promotion']=True
+        with self.assertRaisesRegex(ValueError,'H3 safety invariant'):
+            controller.evaluate(state,paper,h3,now,ROOT)
+
+
 if __name__ == '__main__':
     unittest.main()

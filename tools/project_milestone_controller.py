@@ -21,7 +21,7 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 UTC = dt.timezone.utc
-ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "PAPER_FINAL_REVIEW": 38,
+ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "H3_STALE_EVIDENCE": 7, "PAPER_FINAL_REVIEW": 38,
                  "PAPER_LOW_TRADES": 38, "H10_CONTRACT": 7,
                  "NEW_SHADOW_ADAPTER": 7, "NEW_CONTROL_DECISION": 7}
 SUPPORTED_DECISIONS = {"V3-H3-FIXED-REVIEW", "V2R4-PRODUCTIVITY-REVIEW",
@@ -184,8 +184,6 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
             require(h3 is not None, "H3 live evidence unavailable")
             require(h3.get("shadow_candidate_id") == sh["candidate_id"],
                     "H3 status candidate drift")
-            require(iso_time(h3["generated_at"]) >= now - dt.timedelta(hours=2),
-                    "H3 evidence stale")
             p = h3.get("payload") or {}
             require(p.get("baseline_series_id") == series, "H3 baseline series drift")
             require(p.get("baseline_strategy_revision") == active["strategy_revision"],
@@ -193,34 +191,47 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
             for k in ("orders", "real_money_actions", "automatic_promotion",
                       "automatic_extension"):
                 require(p.get(k) is False, "H3 safety invariant " + k)
-            if p.get("minimum_gate_met") is True:
-                dates = p.get("distinct_utc_dates") or []
-                require(int(p.get("eligible_matched_candidates") or 0) >= 20
-                        and len(set(dates)) >= 2
-                        and float(p.get("capture_success_pct") or 0) >= 95,
-                        "H3 claimed gate without preregistered sample/capture evidence")
-                require(p.get("intake_should_stop") is True,
-                        "H3 gate reached but no stop state")
-                if p.get("outcome_review_ready") is True:
-                    statuses.append("H3:FIXED_REVIEW_READY")
-                    divergences = int(p.get("causal_decision_divergences") or 0)
-                    recommendation = ("INCONCLUSIVE_LOW_IMPACT"
-                                      if divergences < 3 else "FORMAL_REVIEW_REQUIRED")
-                    notices.append(event("H3_FIXED_REVIEW",
-                                         sh["candidate_id"] + "|" + series,
-                                         "H3-Fixreview fällig: " + recommendation +
-                                         "; Baseline-Replay, Kosten, Follow-ups und "
-                                         "Preregistrierung überprüfen. H6 erst nach "
-                                         "abgeschlossenem H3-Review / separatem Gate. "
-                                         "Danach offenes EXTENDED-Zweite-Welle-Finding "
-                                         "verbindlich prüfen: zuerst Kraken-Coin-Daten "
-                                         "als einziger geänderter A-Input, danach "
-                                         "separate B-Neubewertung nur mit Kosten/Stop "
-                                         "und ohne automatische Promotion."))
-                else:
-                    statuses.append("H3:WAIT_FOLLOWUPS")
+            # Keep hard safety and baseline checks even when H3 is stale.
+            # Stale H3 cannot signal FIXED_REVIEW_READY, but MUST NOT prevent
+            # independent V2R4 economic productivity notices from completing.
+            if iso_time(h3["generated_at"]) < now - dt.timedelta(hours=2):
+                statuses.append("H3:EVIDENCE_STALE_FIXED_REVIEW_BLOCKED")
+                notices.append(event("H3_STALE_EVIDENCE",
+                                     sh["candidate_id"] + "|" + series,
+                                     "H3-Shadow-Status veraltet: keine H3-Fixreview "
+                                     "oder neue Strategie/zweiten Shadow freigeben. "
+                                     "Eigenen H3-Datenpfad separat prüfen; "
+                                     "V2R4-Trading-Produktivitätsreview bleibt "
+                                     "unabhängig davon fällig. Keine Live-Änderung."))
             else:
-                statuses.append("H3:COLLECTING")
+                if p.get("minimum_gate_met") is True:
+                    dates = p.get("distinct_utc_dates") or []
+                    require(int(p.get("eligible_matched_candidates") or 0) >= 20
+                            and len(set(dates)) >= 2
+                            and float(p.get("capture_success_pct") or 0) >= 95,
+                            "H3 claimed gate without preregistered sample/capture evidence")
+                    require(p.get("intake_should_stop") is True,
+                            "H3 gate reached but no stop state")
+                    if p.get("outcome_review_ready") is True:
+                        statuses.append("H3:FIXED_REVIEW_READY")
+                        divergences = int(p.get("causal_decision_divergences") or 0)
+                        recommendation = ("INCONCLUSIVE_LOW_IMPACT"
+                                          if divergences < 3 else "FORMAL_REVIEW_REQUIRED")
+                        notices.append(event("H3_FIXED_REVIEW",
+                                             sh["candidate_id"] + "|" + series,
+                                             "H3-Fixreview fällig: " + recommendation +
+                                             "; Baseline-Replay, Kosten, Follow-ups und "
+                                             "Preregistrierung überprüfen. H6 erst nach "
+                                             "abgeschlossenem H3-Review / separatem Gate. "
+                                             "Danach offenes EXTENDED-Zweite-Welle-Finding "
+                                             "verbindlich prüfen: zuerst Kraken-Coin-Daten "
+                                             "als einziger geänderter A-Input, danach "
+                                             "separate B-Neubewertung nur mit Kosten/Stop "
+                                             "und ohne automatische Promotion."))
+                    else:
+                        statuses.append("H3:WAIT_FOLLOWUPS")
+                else:
+                    statuses.append("H3:COLLECTING")
     else:
         statuses.append("H3:NO_ACTIVE_SHADOW")
 
