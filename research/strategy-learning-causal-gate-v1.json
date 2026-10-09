@@ -130,6 +130,28 @@
       "active_h3_change": false,
       "new_schedule": false,
       "real_money_actions": false
+    },
+    "retrospective_20261008_09_extended_reentry": {
+      "status": "RESEARCH_HYPOTHESIS_OPEN_NOT_PROVEN_TRADEABLE",
+      "evidence_ref": "research/v3/v3-coin-entry-evidence-v1.md",
+      "complete_60m_candidate_followups": 1070,
+      "screen_def": "original EUR spread<=0.5%, later MFE_60>=5%, later MAE_60>=-1.5%; ex-post only",
+      "screened_candidate_observations": 27,
+      "distinct_pairs": 11,
+      "distinct_pair_hours": 24,
+      "original_setup_lanes": {
+        "EXTENDED": 20,
+        "CONTINUITY": 3,
+        "IGNITION": 2,
+        "REVERSAL": 2
+      },
+      "initial_buy_scout": 0,
+      "best_next_action": "KEEP_V2R4_FROZEN_FIRST_EVIDENCE_INPUT_ONLY_NEXT_EXTENDED_SECOND_LEG_RECHECK_IN_SEPARATE_TRIAL",
+      "roadmap_owner": "research/v3-migration-ledger.json#late_chase_protection.successor_refinement",
+      "sibling_component_owner": "research/v3-migration-ledger.json#coin_specific_entry_evidence_provenance",
+      "caveat": "Historical outcome selection, same-pair/time correlation, execution path and after-cost return unproven. No historical bars may be falsely treated as decision-time known.",
+      "status_for_release": "NOT_CLEARED_WITHOUT_PROSPECTIVE_GAIN_AND_EXPLICIT_GATE",
+      "no_auto_strategy_change": true
     }
   },
   "checks_before_any_successor_paper_release": [
