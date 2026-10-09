@@ -43,6 +43,13 @@ class TechnicalCutoverMutualContract(unittest.TestCase):
         self.assertIn("paper_series_single_active_idx", sql)
         self.assertIn("predecessor_outcomes", sql)
 
+    def test_failed_precommit_restores_only_originally_running_tasks(self):
+        operator = source("tools/minipc-v2r4-technical-cutover-operator.ps1")
+        self.assertIn("original-task-states.json", operator)
+        self.assertIn("if($saved.enabled -eq $true -and $saved.running -eq $true)", operator)
+        self.assertIn("POST_COMMIT_FAIL_CLOSED_SUCCESSOR_STOPPED", operator)
+        self.assertIn("CLOUD_OUTCOME_UNKNOWN", operator)
+
     def test_h3_001_baseline_cannot_be_rebound(self):
         operator = source("tools/minipc-v2r4-technical-cutover-operator.ps1")
         sql = source("supabase/v2r4-technical-paper-rotation-20261009.sql")
