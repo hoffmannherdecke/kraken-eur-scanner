@@ -60,7 +60,9 @@ jobs:
             paper_evaluator/v2r4_precandidate_watcher.py \
             paper_evaluator/v2r4_ws_shadow_watcher.py \
             paper_evaluator/v2r4_local_recheck.py \
-            paper_evaluator/successor_coin_entry_evidence_v1.py
+            paper_evaluator/successor_coin_entry_evidence_v1.py \
+            paper_evaluator/v3_entry_handoff_probe.py \
+            paper_evaluator/v3_one_shot_model_compare.py
 
       - name: Run V2R4 unit tests
         if: steps.implementation.outputs.present == 'true'
@@ -80,6 +82,7 @@ jobs:
             tests.test_successor_coin_entry_evidence_v1 \
             tests.test_v2r4_v3_entry_lineage_contract \
             tests.test_v2r4_v3_entry_handoff_probe \
+            tests.test_v2r4_v3_one_shot_model_compare \
             -v
 
       - name: One bounded live Kraken EUR coin-entry input smoke (research only)
@@ -89,6 +92,17 @@ jobs:
           # No OpenAI API key, no BUY classification, no orders, no persistence.
           python -m paper_evaluator.v3_entry_handoff_probe \
             --pair XBT/EUR --altname XBTEUR --require-entry-input-ready
+
+      - name: Validate isolated Mini-PC one-shot launcher syntax
+        shell: pwsh
+        run: |
+          $tokens=$null; $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            "tools/run-minipc-v3-entry-model-compare.ps1",
+            [ref]$tokens,[ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) { throw ($errors | Out-String) }
+          Write-Output "V3_ONE_SHOT_LAUNCHER_PARSE_PASS"
 
       - name: Harmless live Kraken WAIT watcher smoke
         if: steps.implementation.outputs.present == 'true'
