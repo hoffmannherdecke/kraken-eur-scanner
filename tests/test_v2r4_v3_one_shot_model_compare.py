@@ -113,7 +113,7 @@ class V3OneShotModelCompareTests(unittest.TestCase):
             control={"enabled":True,"real_money_actions_enabled":False,
                      "strategy_revision":"V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
                      "paper_only":True,"release_repo_sha":"d8b35a8ec2e6"+"0"*28,
-                     "series_started_at_utc":dt(-1800),"series_id":"TEST-SERIES"}
+                     "series_started_at_utc":dt(-1800),"series_id":"PAPER-V2R4-TEST-SERIES"}
             (app/"paper_runtime_control.json").write_text(json.dumps(control))
             (app/"paper_strategy_spec.json").write_text(json.dumps(
                  {"entry":{"scout_notional_eur":50,"stage2_notional_eur":50}}))
@@ -134,7 +134,7 @@ class V3OneShotModelCompareTests(unittest.TestCase):
                  patch("paper_evaluator.v3_one_shot_model_compare.fetch_public_entry_evidence",return_value=evidence()), \
                  patch("paper_evaluator.v3_one_shot_model_compare.now_utc",return_value=dt(14)), \
                  patch("paper_evaluator.v3_one_shot_model_compare.evaluate.call_evaluator",side_effect=ai):
-                result=execute_one_shot(home,home,"TEST-SERIES")
+                result=execute_one_shot(home,home,"PAPER-V2R4-TEST-SERIES")
             self.assertEqual(result["model_calls"],2)
             self.assertNotIn("candidate_entry_evidence",inputs[0])
             self.assertIn("candidate_entry_evidence",inputs[1])
