@@ -161,12 +161,50 @@ try{
  Need ($cloud.ok -eq $true -and $cloud.cloud.old_series_id -eq $oldId) 'Cloud checkpoint missing'
  Need ([long]$ids.count -eq [long]$cloud.cloud.candidate_count -and $ids.sha -ceq $cloud.cloud.candidate_ids_sha256) 'Cloud/local candidate identity mismatch'
  Need ($null -ne $cloud.cloud.last_outcome_updated_at) 'No cloud timestamp'
+ # Provenance: old 6h/24h follow-up horizons that have not matured
+ # before this technical stop must NOT silently become 0% or a fake NO_TRADE.
+ # The frozen old app is snapshotted intact; a compact censorship summary
+ # records the boundary without rewriting any past decision or horizon.
+ $followupDir=Join-Path $oldApp 'paper_followups'
+ $summary=[ordered]@{
+   kind='PAPER_TECHNICAL_CUTOVER_CENSOR_V1'
+   predecessor_series_id=$oldId
+   recorded_at_utc=[datetime]::UtcNow.ToString('o')
+   total_candidates=[long]$ids.count
+   opportunity_horizons_minutes=@(15,60,240,720,1440)
+   completed_opportunity_horizons=[ordered]@{}
+   unmeasured_opportunity_horizons=[ordered]@{}
+   archive_source='immutable_old_app_snapshot'
+   outcome_imputation='FORBIDDEN'
+   decision_rewrite='FORBIDDEN'
+   future_followup_state='CENSORED_AT_TECHNICAL_CUTOVER_UNLESS_SEPARATELY_VERIFIED'
+ }
+ $followups=@{}
+ if(Test-Path $followupDir){
+   foreach($file in @(Get-ChildItem $followupDir -Filter '*.json' -File)){
+     $f=Get-Content $file.FullName -Raw|ConvertFrom-Json
+     if($f.series_id -eq $oldId -and $f.candidate_id){
+       $followups[[string]$f.candidate_id]=$f
+     }
+   }
+ }
+ foreach($h in @(15,60,240,720,1440)){
+   $complete=0
+   foreach($f in $followups.Values){
+     $detail=$f.opportunity_audit.horizons.PSObject.Properties[[string]$h]
+     if($detail -and $detail.Value.complete -eq $true){$complete++}
+   }
+   $summary.completed_opportunity_horizons[[string]$h]=$complete
+   $summary.unmeasured_opportunity_horizons[[string]$h]=[math]::Max(0,([long]$ids.count-$complete))
+ }
+ Atomic (Join-Path $backup 'cutover-followup-censor-summary.json') $summary
  $snapshotInputs=Join-Path $backup 'snapshot-inputs'
  New-Item -ItemType Directory -Force $snapshotInputs|Out-Null
  Copy-Item -LiteralPath $oldApp -Destination (Join-Path $snapshotInputs 'old-paper') -Recurse
  $stateCopies=Join-Path $snapshotInputs 'state';New-Item -ItemType Directory -Force $stateCopies|Out-Null
  Copy-Item -LiteralPath (Join-Path $backup 'tasks') -Destination (Join-Path $snapshotInputs 'scheduled-task-xml') -Recurse
  Copy-Item -LiteralPath (Join-Path $backup 'original-task-states.json') -Destination (Join-Path $snapshotInputs 'original-task-states.json')
+ Copy-Item -LiteralPath (Join-Path $backup 'cutover-followup-censor-summary.json') -Destination (Join-Path $snapshotInputs 'cutover-followup-censor-summary.json')
  foreach($pat in @('v2r4-paper-*.json','v2r4-wait-*.json','v3-h3-*.json')){
    Get-ChildItem $state -Filter $pat -File|ForEach-Object{Copy-Item $_.FullName (Join-Path $stateCopies $_.Name)}
  }
