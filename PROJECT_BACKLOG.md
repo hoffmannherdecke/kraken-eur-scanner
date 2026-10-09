@@ -323,6 +323,7 @@ Diese Punkte gehören nicht in die Trading-Laufzeit und dürfen den Kernaufbau n
 **V2R3 sauber messen → Mini-PC stabil → Watchdog/Recovery → Kraken/Altrady-Realtime → V2R4-Fast-Trigger Paper → schlanke Integrationen + Historik/Backtests → V3 Research/Shadow/Paper → Smart-Money-Forschung → Self-hosted/Trading-API zuletzt.**
 
 - [x] **V2R4 Paper-Aktivierung abgeschlossen:** aktive immutable Serie `PAPER-V2R4-20261007T184255Z`, `APPROVED_PAPER`, 50+50 EUR, kein Echtgeld und keine automatische Aktivierung. Der frühere `BLOCKED_V2R3_COMPLETION`-Text ist nur noch historische Release-Evidenz und darf nicht als aktueller Blocker verwendet werden.
+- [ ] **Recovery-Architektur, Issue #89:** V2R4-Paper bleibt auf der originalen aktiven Serie; der gezielte Alias-/Outage-Fix und der kontrollierte technische Paper-Versionswechsel sind vorbereitet, aber noch nicht produktiv freigegeben. Umsetzung und offene Mini-PC-/Cloud-/H3- und Follow-up-Gates ausschließlich über [Issue #89](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/89) sowie den inaktiven [Draft-PR #94](https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/94). Kein automatischer Cutover, keine Echtgeldorder, kein H3-Baseline-Rebind. Den Issue erst nach nachgewiesenem End-to-End-Abschluss schließen.
 ## Fast-Track execution block — 2026-10-03
 
 Status: **SUPERSEDED / HISTORICAL EXECUTION RECORD**  
