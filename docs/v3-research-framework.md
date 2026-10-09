@@ -591,7 +591,7 @@ Purpose:
 
 Current practical focus:
 - H1 fixed shadow review is complete and standalone decision authority is rejected; features remain diagnostics only;
-- H3 one-change shadow is active on the MINI-PC against V2R4 and is collecting toward its frozen minimum gate; H6 remains sequenced after H3 review;
+- H3-001 one-change shadow was physically archived on 2026-10-09 during the technical V2R4 rollover, with no prospective cloud shadow rows; its frozen old baseline remains intact and its fixed review is NOT completed. H6 remains queued and blocked until explicit H3 archive/inconclusive disposition and independent new-shadow approval;
 - H5: one FOMC risk-gate variant is already preregistered but waits for the appropriate baseline freeze;
 - H2/H4/H7/H8/H9/H10/H11 are not mandatory blockers for the first shadow unless one is explicitly selected as the changed component.
 
