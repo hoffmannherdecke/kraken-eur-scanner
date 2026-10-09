@@ -50,6 +50,9 @@ function Restore-Old([string]$Backup){
  $originalStateFile=Join-Path $Backup 'original-task-states.json'
  Need (Test-Path $originalStateFile) 'Original task state manifest missing; fail closed'
  $original=Get-Content $originalStateFile -Raw|ConvertFrom-Json
+ # Failed scheduled task stop can leave children alive. A blind restart
+ # would create a second writer on the immutable old PAPER series.
+ Need-No-Old-Writers
  foreach($n in @($taskNames)+@($supervisorName)){
    $path=Join-Path $Backup ('tasks\'+$n+'.xml')
    Need (Test-Path $path) "Missing task backup: $n"
@@ -79,6 +82,25 @@ function Old-Ids{
  try{$hex=([BitConverter]::ToString($s.ComputeHash([Text.Encoding]::UTF8.GetBytes(($ordered -join [char]10))))).Replace('-','').ToLowerInvariant()}
  finally{$s.Dispose()}
  [pscustomobject]@{count=$ordered.Length;sha=$hex}
+}
+function Old-Writer-Processes{
+ # Stopping a Windows scheduled task does not prove every nested evaluator or
+ # H3 child process has exited. A late writer can corrupt final ACK/snapshot.
+ $patterns=@([regex]::Escape($oldApp+'\\'),[regex]::Escape((Join-Path $TradingRoot 'Runtime\\v3-h3-shadow-001')+'\\'))
+ @(Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction Stop |
+   Where-Object {
+     $line=[string]$_.CommandLine
+     $line -and (($line -match $patterns[0]) -or ($line -match $patterns[1]))
+   } | Select-Object ProcessId,CommandLine)
+}
+function Need-No-Old-Writers([int]$TimeoutSeconds=20){
+ $deadline=(Get-Date).AddSeconds($TimeoutSeconds)
+ do{
+   $remaining=@(Old-Writer-Processes)
+   if($remaining.Count -eq 0){return}
+   Start-Sleep -Milliseconds 400
+ }while((Get-Date)-lt $deadline)
+ Need $false ("Old PAPER/H3 child process still alive; fail closed: "+(@($remaining|ForEach-Object{$_.ProcessId}) -join ','))
 }
 function New-Paper-Task([string]$Name,[string[]]$Args){
  $q=($Args|ForEach-Object{'"'+[string]$_+'"'}) -join ' '
@@ -152,6 +174,7 @@ try{
  # its exact XML was captured above for bounded pre-commit recovery.
  Stop-TaskBounded $supervisorName
  foreach($n in $taskNames){Stop-TaskBounded $n}
+ Need-No-Old-Writers
  $lease.phase='QUIESCED';Atomic $marker $lease
  $syncOutput=& $python (Join-Path $oldApp 'v2r4-paper-cloud-sync.py') --app-root $oldApp --trading-root $TradingRoot --once
  Need ($LASTEXITCODE -eq 0) 'Final old cloud sync failed'
