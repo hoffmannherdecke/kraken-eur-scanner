@@ -51,6 +51,34 @@ class ContractTests(unittest.TestCase):
         self.assertEqual(news["evidence_status"],"UNATTENDED_E2E_UNVERIFIED")
         self.assertEqual(steward["evidence_status"],"UNATTENDED_E2E_UNVERIFIED")
 
+    def test_source_autonomy_activation_waits_for_real_pilot_proof(self):
+        q=next(x for x in TOPO["streams"] if x["id"]=="source_quality")
+        gate=q["activation_followthrough"]
+        self.assertEqual(gate["status"],
+                         "OBSERVATION_TASK_ACTIVE_SOURCE_REVIEW_AND_REPLACE_E2E_UNVERIFIED")
+        self.assertIn("5_INDEPENDENT",gate["stage_2"])
+        self.assertIn("ONE_CHANGE_ECONOMIC",gate["stage_4"])
+        self.assertTrue(gate["no_new_work_run"])
+        self.assertTrue(gate["no_trading_or_runtime_source_replacement"])
+
+    def test_source_first_pilot_or_replacement_gate_cannot_be_dropped(self):
+        j=copy.deepcopy(TOPO)
+        next(x for x in j["streams"] if x["id"]=="source_quality").pop("activation_followthrough")
+        self.assertTrue(any("source quality activation handoff" in x
+                            for x in mod.validate(j,STATE)))
+
+    def test_source_quality_never_modifies_active_trading_authority(self):
+        j=copy.deepcopy(TOPO)
+        gate=next(x for x in j["streams"] if x["id"]=="source_quality")["activation_followthrough"]
+        gate["no_trading_or_runtime_source_replacement"]=False
+        self.assertTrue(any("source quality activation cannot bypass safety" in x
+                            for x in mod.validate(j,STATE)))
+
+    def test_h3_h6_source_context_is_not_obsolete_pre_cutover_status(self):
+        j=copy.deepcopy(TOPO)
+        next(x for x in j["streams"] if x["id"]=="orderflow_h3")["evidence_status"]="ISOLATED_SHADOW_DECLARED"
+        self.assertTrue(any("stale active H3" in x for x in mod.validate(j,STATE)))
+
     def test_no_second_active_shadow(self):
         state=copy.deepcopy(STATE)
         state["strategy_changing_shadow_wip"]["active"].extend([
