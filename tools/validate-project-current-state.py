@@ -149,7 +149,7 @@ def main()->int:
             errors.append("immutable cutover cohort/maturity snapshot missing or contradicted")
         if technical.get("h3_001_archive_ack")!="ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND":
             errors.append("cutover must preserve H3 archive acknowledgement")
-        queued=wip.get("queued") or []
+    queued=wip.get("queued") or []
     for item in queued:
         if item.get("candidate_id") in ids:
             errors.append(f"candidate cannot be active and queued: {item.get('candidate_id')}")
