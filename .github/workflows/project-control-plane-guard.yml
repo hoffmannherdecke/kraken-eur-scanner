@@ -28,6 +28,10 @@ on:
       - "research/v3/integration-candidate-contract-v1.json"
       - "research/v3/integration-candidates/**"
       - "tools/validate-project-current-state.py"
+      - "research/strategy-learning-causal-gate-v1.json"
+      - "tools/strategy_successor_gate.py"
+      - "tests/test_strategy_successor_gate.py"
+      - "docs/test-strategy-runbook.md"
       - "tools/project_milestone_controller.py"
       - "tests/test_project_milestone_controller.py"
       - "tools/validate-workflow-registry.py"
@@ -62,6 +66,10 @@ on:
       - "research/v3/integration-candidate-contract-v1.json"
       - "research/v3/integration-candidates/**"
       - "tools/validate-project-current-state.py"
+      - "research/strategy-learning-causal-gate-v1.json"
+      - "tools/strategy_successor_gate.py"
+      - "tests/test_strategy_successor_gate.py"
+      - "docs/test-strategy-runbook.md"
       - "tools/project_milestone_controller.py"
       - "tests/test_project_milestone_controller.py"
       - "tools/validate-workflow-registry.py"
@@ -84,6 +92,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate current state
         run: python tools/validate-project-current-state.py
+      - name: Enforce successor causal-learning and entry-productivity gate
+        run: |
+          python -m py_compile tools/strategy_successor_gate.py
+          python -m unittest discover -s tests -p 'test_strategy_successor_gate.py' -v
       - name: Validate autonomous milestone controller
         run: |
           python -m py_compile tools/project_milestone_controller.py
