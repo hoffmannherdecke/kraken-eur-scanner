@@ -28,6 +28,28 @@ Each V3 hypothesis must have exactly one status:
 - `REJECTED` — failed robustness, economic or operational requirements
 - `DEFERRED` — useful idea, but prerequisites/data/infrastructure are not ready
 
+## 2a. H1–H11 Managementkarte / verpflichtender Wiedervorlagepfad (Checkpoint 09.10.2026)
+
+**Zweck:** Keine einzelne H-Nummer geht in der V3/V4+/später separat freigegebenen Echtgeld-Entwicklung verloren; jeder Ansatz erhält einen nachprüfbaren nächsten *fachlichen* Entscheidungszeitpunkt. Dies ist eine datierte **Übersicht, kein zweiter aktueller Status-Speicher**: Für laufende Paper-/Shadow-Aktivität gilt ausschließlich `project-current-state.json` gegen MINI-PC/Supabase; für strategische Vererbung `research/v3-migration-ledger.json`; für offene Arbeiten `PROJECT_BACKLOG.md`; die Freigabe liegt im bestehenden Runbook/Successor-Gate. Alle Zustände bei der nächsten regulären Analyse erneut gegen diese Owner prüfen.
+
+| Idee | Stand am 09.10. | Nächste belastbare Entscheidung (kein neuer Zeitplan) |
+|---|---|---|
+| **H1** Cross-Crypto-Führung/Breadth | Als eigenständiger Entscheidungsträger **REJECTED** | Nur frühere Erkenntnisse als Kontrolle heranziehen; nicht heimlich reaktivieren |
+| **H2** Futures-Funding/Basis/OI | **PRECHECK** | Nur bei gezieltem Derivate-Mehrwert-/Point-in-Time-Gate weiterentwickeln |
+| **H3** Orderbuch/Kaufdruck | **ARCHIVED_INCOMPLETE**, Shadow-001 technisch gestoppt, 0 prospektive Vergleichsfälle | Beim *bestehenden* V2R4-Epochen-/H3-Archiv-Review ausdrücklich **RETIRE / DEFER mit Trigger / neuer H3-Shadow-Versuch** entscheiden. Ein Neustart ist fachlich plausibel, aber nur als **neue** separat freigegebene, prospektiv eingefrorene Ein-Änderungs-Version mit aktueller Baseline; kein stilles Wiederbeleben der alten H3-Serie |
+| **H4** Stop-/TTL-/Ausstiegsoptimierung | **PRECHECK**, Datenreife | Erst belastbare tatsächliche Fill-/Stop-/MAE-Pfade, danach ein eigener Risiko-Vergleich; ATR-Hinweise setzen keinen Stop |
+| **H5** Zins-/Makroterminrisiko | **PRECHECK** | Bekanntzeitliche Ereignisfenster gegen echte Handelsqualität testen, nicht automatisch mehr Veto-Filter |
+| **H6** Kurs×Volumen über mehrere Zeitfenster | **KEEP_TESTING**, geringer inkrementeller Effekt | Nur nach expliziter H3-Archiv-Disposition, V2R4-Wirtschaftlichkeitsprüfung und eigenem Shadow-Gate; nicht wegen `active=[]` automatisch starten, nicht doppeltes Volumensignal neben Coin-Evidence |
+| **H7** Net-Edge TAKE/NO-TAKE | **DEFERRED** | Erst genügend reale BUY-/Nicht-BUY-Labels und unverzerrte Gebühren-/Holdout-Pfade |
+| **H8** Blockchain-Netzwerkdaten | **PRECHECK** | Nur bei tatsächlichem Datenzeit-/Quellen-Nachweis und messbarer Zusatzinformation |
+| **H9** Maker-/Taker-Ausführungswahrscheinlichkeit | **DEFERRED** | Erst echte same-clock Book-/Trade-Fill-/Gebühren-/Queue-Evidenz |
+| **H10** Smart Money/Hyperliquid | Passiver **SHADOW/OBSERVATION**, keine Trading-Kopplung | Bereits vorbereiteten PIT-Kraken-Outcome-Join und reife 24h-Qualitätsauswertung abschließen; keinen automatischen Copy-Trade |
+| **H11** Polymarket-Ereigniskontext | **PRECHECK** | Nach prospektiven Zustandsänderungen Zusatznutzen prüfen; keine direkte Order-/Event-Veto-Autorität |
+
+**Reihenfolge ist keine starre Zahlenfolge:** Zuerst **wirtschaftlicher BUY-/Netto-/Risiko-Nachweis**, konkrete V2R4-Fehler und die isolierte Coin-Datenlieferung (A); spätere `EXTENDED`-Neubewertung (B) separat. Ein H3-Neuversuch ist beim Abschlussreview zu begründen und in die Ein-Shadow-Kapazität einzuordnen; H6 darf nicht automatisch vorgezogen werden. Mehr Kontext, längere Laufzeit oder grüne CI allein sind kein Trading-Erfolg. Bei H2/H4/H5/H7/H8/H9/H10/H11 genügen **ausdrückliches DEFER / REJECT / NEXT-GATE** mit Eigentümer und Nachweis; nicht alles gleichzeitig starten.
+
+**Automatischer Wiederaufgriff ohne zusätzliche Ressourcen:** Bereits existierender GitHub-Meilensteincontroller meldet das H3-Archiv sowie V2R4-Produktivitätsgate; `project-current-state.json#next_control_decisions[V3-H3-FIXED-REVIEW]` führt die Archiv-Disposition, `PROJECT_BACKLOG.md` P1 die wirtschaftliche Priorisierung und der bestehende tägliche, sparsame Work-Gate-Pfad liest diese Quellen. `research/v3-migration-ledger.json#orderflow_depth_imbalance` und `#price_volume_trend_primitives` führen die jeweilige technische Folgefreigabe. **Nicht behaupten**, dass ein H3-Neuversuch bereits geplant/gestartet, eine KI-Aufgabe erfolgreich ausgeführt oder wirtschaftlicher Vorteil nachgewiesen sei. Die bestehende CI prüft nur die Dokumentations-/Gate-Kohärenz; tatsächliche zukünftige Ausführung benötigt den regulären Lauf-/Freigabenachweis.
+
 ## 3. Research → Test → Promotion workflow
 
 1. **Research intake**
