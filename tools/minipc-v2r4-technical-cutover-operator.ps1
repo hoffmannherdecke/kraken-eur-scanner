@@ -144,6 +144,7 @@ try{
  Need ($admin.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) 'Admin PowerShell required'
  Need (Test-Path $python) 'Python venv missing'
  $phase='BACKUP_PREPARATION'
+ $taskStopStarted=$false
  $started=[datetime]::UtcNow
  $backup=Join-Path $TradingRoot ('Backups\v2r4-technical-'+$started.ToString('yyyyMMddTHHmmssZ'))
  Need (-not(Test-Path $backup)) 'Backup path already exists'
@@ -169,6 +170,7 @@ try{
  $phase='PRE_COMMIT'
  $lease=[ordered]@{kind='V2R4_TECHNICAL_MAINTENANCE_V1';phase='ARMING';created_at_utc=$started.ToString('o');expires_at_utc=$started.AddMinutes(10).ToString('o');predecessor_series_id=$oldId;successor_repo_sha=$sha;task_names=@($taskNames);orders_enabled=$false}
  Atomic $marker $lease
+ $taskStopStarted=$true
  # The running supervisor may otherwise race with the old tasks during
  # quiescence. Stop its timer BEFORE stopping the old Paper and H3 tasks;
  # its exact XML was captured above for bounded pre-commit recovery.
@@ -345,7 +347,14 @@ try{
  }
  if($phase -eq 'PRE_COMMIT'){
    try{
-     if($backup -and (Test-Path (Join-Path $backup 'tasks'))){
+     if(-not $taskStopStarted){
+       # No scheduled task was stopped or changed yet. Avoid needless
+       # re-register/restart of a healthy live predecessor.
+       Remove-Item $marker,$lock -Force -ErrorAction SilentlyContinue
+       $phase='PRE_COMMIT_TASKS_UNTOUCHED'
+     }elseif($backup -and (Test-Path (Join-Path $backup 'tasks'))){
+       # A partial task stop with a lingering child fails closed rather than
+       # starting a second writer. Full quiescence restores exact prior states.
        Restore-Old $backup
        Remove-Item $marker,$lock -Force -ErrorAction SilentlyContinue
        $phase='PRE_COMMIT_RESTORED'
