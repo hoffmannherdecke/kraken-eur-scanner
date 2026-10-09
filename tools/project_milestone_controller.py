@@ -84,13 +84,32 @@ def event(kind: str, anchor: str, detail: str) -> dict:
 def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -> dict:
     active = state["active_strategy"]
     series = active["series_id"]
-    require(paper.get("series_id") == series, "paper series drift")
+    # Supabase readiness follows the currently active technical series, while
+    # project-current-state holds the ORIGINAL frozen H3/strategy epoch lineage.
+    # Explicitly bind a verified technical successor; never silently accept a
+    # foreign/released strategy or reset the economic review clock on rotation.
+    live_series = paper.get("series_id")
+    technical = active.get("technical_rotation_runtime_last_verified") or {}
+    if live_series != series:
+        require(live_series == technical.get("series_id")
+                and technical.get("original_strategy_epoch_series_id") == series
+                and technical.get("relation") ==
+                    "TECHNICAL_ROTATION_SAME_STRATEGY_FINGERPRINT_NOT_STRATEGY_RELEASE"
+                and technical.get("frozen_h3_baseline_changed") is False
+                and technical.get("productivity_clock_reset") is False,
+                "unapproved technical series rotation / strategy epoch drift")
     require(paper.get("strategy_revision") == active["strategy_revision"],
             "paper revision drift")
     require(paper.get("fasttrack_policy_version") == "EVIDENCE_DIVERSITY_FASTTRACK_V2",
             "unknown paper completion policy")
     require(paper.get("candidate_outcomes") is not None, "missing paper outcomes")
     require(paper.get("completed_trades") is not None, "missing trade counts")
+    epoch_stamp = active.get("original_strategy_epoch_started_at_utc")
+    require(epoch_stamp == "2026-10-07T18:42:55Z",
+            "V2R4 original activation epoch missing or unexpectedly moved")
+    epoch_start = iso_time(epoch_stamp)
+    require(now >= epoch_start, "review clock before original strategy epoch")
+    strategy_epoch_age_days = (now - epoch_start).total_seconds() / 86400.0
     notices = []
     statuses = []
     for task in state.get("next_control_decisions") or []:
@@ -128,14 +147,23 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
                              "erst Coin-Evidence-A, dann getrennt Review-B."))
     else:
         statuses.append("V2R4:COLLECTING")
-        if (float(paper.get("series_age_days") or 0) >= 3
+        # The 72h clock belongs to the strategy epoch, NOT the current
+        # technical segment. Counts/24h maturity remain conservative: only
+        # the currently verified Supabase readiness row can satisfy them.
+        if (strategy_epoch_age_days >= 3
                 and int(paper["candidate_outcomes"]) >= 100
                 and int(paper.get("complete_24h") or 0) >= 30
                 and int(paper["completed_trades"]) == 0):
             statuses.append("V2R4:LOW_TRADE_REVIEW")
             notices.append(event("PAPER_LOW_TRADES", series,
-                                 "72h-Frühreview: >100 Kandidaten, >=30 vollständige "
-                                 "24h-Follow-ups und 0 Trades. Funnel, WAIT/TTL, "
+                                 "72h-STRATEGIEEPOCHEN-FRÜHREVIEW (Uhr ab 07.10. "
+                                 "20:42:55 MESZ; technische Serienrotation KEIN RESET): "
+                                 "aktuelle technische Teilserie >=100 Kandidaten, "
+                                 ">=30 reife 24h-Follow-ups, 0 abgeschlossene Trades "
+                                 "in dieser Teilserie. Ältere technische Segmente "
+                                 "im finalen Entscheid mit einbeziehen; kein "
+                                 "Gleichsetzen lokaler Zähler mit Epochensumme. "
+                                 "Funnel, WAIT/TTL, "
                                  "Missed-Moves, Kosten und Datenqualität analysieren. "
                                  "Aktive Serie unverändert lassen. "
                                  "Das V3-EXTENDED-Zweite-Welle-Finding mit "
@@ -213,6 +241,9 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
     if any(x.get("candidate_id") == "V3-H6-NEXT" for x in queued):
         statuses.append("H6:WAIT_H3_REVIEW_NO_AUTO_START")
     return {"kind": "PROJECT_MILESTONE_CONTROL_V1", "series_id": series,
+            "live_technical_series_id": live_series,
+            "strategy_epoch_started_at_utc": epoch_stamp,
+            "strategy_epoch_age_days": round(strategy_epoch_age_days, 4),
             "statuses": statuses, "events": notices,
             "strategy_changed": False, "orders": False,
             "real_money_actions": False}

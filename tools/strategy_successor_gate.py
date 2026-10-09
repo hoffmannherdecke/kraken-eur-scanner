@@ -49,6 +49,26 @@ def validate_learning_gate(root: Path = ROOT,
         errors.append("input sufficiency must be distinguished from transport health")
     if gate.get("source_vs_quality_semantics", {}).get("unit_tests_not_equivalent_to_real_path_e2e") is not True:
         errors.append("unit tests cannot substitute for decision-chain E2E")
+    priority = gate.get("outcome_first_priority_policy") or {}
+    if priority.get("id") != "OUTCOME_FIRST_ECONOMIC_STRATEGY_LEARNING_V1" or priority.get("status") != "ACTIVE_PERMANENT":
+        errors.append("economic strategy learning priority contract missing")
+    if priority.get("original_v2r4_strategy_epoch_start_utc") != "2026-10-07T18:42:55Z" or priority.get("original_v2r4_72h_review_due_utc") != "2026-10-10T18:42:55Z":
+        errors.append("wrong V2R4 original productivity clock; technical rollover may not reset")
+    if priority.get("technical_rotation_same_strategy_no_clock_reset") is not True:
+        errors.append("economic review clock may not reset on technical rotation")
+    for flag in ("no_new_work_schedule", "active_v2r4_change", "active_h3_change",
+                 "automatic_release", "real_money_actions"):
+        if priority.get(flag) is not False and flag != "no_new_work_schedule":
+            errors.append("outcome-first priority may not mutate live strategy/release: " + flag)
+        if flag == "no_new_work_schedule" and priority.get(flag) is not True:
+            errors.append("outcome-first priority must not add Work schedule")
+    precedence = priority.get("precedence") or []
+    if not isinstance(precedence, list) or len(precedence) < 5 or not any("TECHNICAL_RUNTIME_HEALTH" in str(x) for x in precedence):
+        errors.append("economic decision quality must outrank system health badges")
+    if len(priority.get("release_outcomes") or []) < 5:
+        errors.append("successor must measure actual BUY, net costs, risk and missed moves")
+    if "NO_BUY" not in str(priority.get("no_buy_disposition") or ""):
+        errors.append("zero BUY cohort must force a real strategy decision, not indefinite Paper extension")
     incident = gate.get("incident") or {}
     if incident.get("classification") != "UNRESOLVED_DECISION_PRODUCTIVITY_NOT_CLEARED_BY_V2R4_TIMING_ONLY":
         errors.append("recurring no-trade incident must not be silently declared resolved")

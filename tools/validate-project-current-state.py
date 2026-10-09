@@ -137,6 +137,14 @@ def main()->int:
     for key in required_true:
         if inv.get(key) is not True:
             errors.append(f"required invariant must be true: {key}")
+    if inv.get("economic_trade_learning_outweighs_operational_health") is not True:
+        errors.append("outcome-first economic learning priority must be permanent")
+    if inv.get("technical_rotation_never_resets_strategy_productivity_clock") is not True:
+        errors.append("technical series cannot reset original 72h strategy productivity review")
+    if active.get("original_strategy_epoch_started_at_utc") != "2026-10-07T18:42:55Z":
+        errors.append("original V2R4 strategy epoch timestamp cannot drift")
+    if active.get("original_strategy_epoch_review_anchor") != "V2R4_PAPER_STRATEGY_START_NOT_TECHNICAL_ROTATION":
+        errors.append("strategic review incorrectly anchored to technical runtime")
     if inv.get("automatic_strategy_promotion") is not False:
         errors.append("automatic_strategy_promotion must be false")
     if inv.get("automatic_real_money_activation") is not False:

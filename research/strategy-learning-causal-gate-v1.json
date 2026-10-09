@@ -4,7 +4,7 @@
   "status": "ACTIVE_GOVERNANCE_OPEN_FINDING",
   "as_of_utc": "2026-10-09T18:00:00Z",
   "scope": "V2R4_POSTMORTEM_V3_AND_EVERY_SUBSEQUENT_NEW_STRATEGY",
-  "policy": "No successor can be described as having fixed a predecessor failure merely because a related component was implemented or passed transport/unit tests. Require original failure mechanism, candidate-specific input evidence, consumer E2E, prospective opportunity/trade funnel and explicit release decision.",
+  "policy": "No successor can be described as having fixed a predecessor failure merely because a related component was implemented or passed transport/unit tests. Require original failure mechanism, candidate-specific input evidence, consumer E2E, prospective opportunity/trade funnel and explicit release decision. Outcome-first permanent priority: successful transport and IT uptime are not economic success; successor must demonstrate increased validated decision/trade quality or report unresolved/negative results and take a concrete bounded next decision.",
   "canonical_sources": [
     "research/work-analysis/2026-10-07-v2r3-final-review.md",
     "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
@@ -218,5 +218,38 @@
     "real_money_actions": false,
     "automatic_release": false,
     "holdout_open": false
+  },
+  "outcome_first_priority_policy": {
+    "id": "OUTCOME_FIRST_ECONOMIC_STRATEGY_LEARNING_V1",
+    "status": "ACTIVE_PERMANENT",
+    "precedence": [
+      "SAFETY_HARD_GATES_NO_REAL_MONEY_WITHOUT_EXPLICIT_RELEASE",
+      "MEASURE_ACTUAL_VIABLE_PAPER_BUY_CONVERSION_AND_NET_AFTER_COST_RISK_PATH",
+      "MEASURE_MISSED_AND_BAD_OPPORTUNITIES_MATCHED_BY_COIN_TIME_WITH_KNOWN_AT",
+      "REQUIRE_CONCRETE_PREDECESSOR_FAILURE_CLOSURE_AND_CAUSAL_SUCCESSOR_DELTA",
+      "TECHNICAL_RUNTIME_HEALTH_AND_UPTIME_ARE_PREREQUISITES_NOT_STRATEGY_SUCCESS"
+    ],
+    "no_buy_disposition": "WHEN_BOUNDED_MINIMUM_EVIDENCE_IS_MATURE_AND_NO_BUY_CONVERSION_REMAINS_PROVEN_DECLARE_ECONOMIC_PRODUCTIVITY_FAILURE_OR_INCONCLUSIVE_WITH_EXACT_CAUSE_GAPS; REQUIRE_EXPLICIT_CONTINUE_STOP_OR_SUCCESSOR_PLAN; DO_NOT_SILENTLY_RESET_ON_TECHNICAL_ROTATION_OR_EXTEND_INDEFINITELY",
+    "release_outcomes": [
+      "PIT_FEASIBLE_VALID_BUY_SCOUTS_AND_PAPER_TRADES",
+      "NET_FEES_SPREAD_SLIPPAGE_RISK_STOP_STAGE2_PNL_ON_COMPLETED_PAPER_PATHS",
+      "FALSE_BUYS_AVOIDED_AND_TRUE_EARLY_COIN_TIME_MISSES_MATCHED_TO_SAME_DECISION_CLOCK",
+      "ACTUAL_DECISION_LATENCY_AND_DATA_COMPLETENESS_VERSUS_PREDECESSOR",
+      "MATURE_24H_FOLLOWUPS_AND_DUPLICATE_SAFE_EPISODES",
+      "EXPLICIT_KEEP_REJECT_OR_VERSION_CHANGE_DECISION"
+    ],
+    "proof_limitations": "MFE_AFTER_EVENT_NOT_EXECUTABLE_TRADE; SINGLE_PROSPECTIVE_MODEL_DIFF_NOT_NET_EDGE; SHORT_OR_NO_BUY_SAMPLE_NOT_PERFORMANCE_SUCCESS; NEGATIVE_RESULT_IS_VALID_LEARNING_AND_MUST_CHANGE_NEXT_ACTION",
+    "original_v2r4_strategy_epoch_start_utc": "2026-10-07T18:42:55Z",
+    "original_v2r4_72h_review_due_utc": "2026-10-10T18:42:55Z",
+    "original_strategy_series_id": "PAPER-V2R4-20261007T184255Z",
+    "technical_rotation_same_strategy_no_clock_reset": true,
+    "canonical_owner": "research/strategy-learning-causal-gate-v1.json",
+    "trigger_owner": "project-current-state.json#next_control_decisions[V2R4-PRODUCTIVITY-REVIEW]",
+    "no_new_work_schedule": true,
+    "active_v2r4_change": false,
+    "active_h3_change": false,
+    "automatic_release": false,
+    "real_money_actions": false,
+    "applies_to": "V2R4_V3_V4_AND_ALL_FUTURE_PAPER_AND_SEPARATELY_AUTHORIZED_REAL_MONEY_STRATEGY_GENERATIONS"
   }
 }

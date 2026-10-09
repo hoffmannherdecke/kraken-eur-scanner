@@ -57,8 +57,8 @@ class MilestoneTests(unittest.TestCase):
                    fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
                    candidate_outcomes=1300,completed_trades=0,complete_24h=1300,
                    series_age_days=4,completion_ready=False,intake_should_stop=False)
-        now=dt.datetime(2026,10,9,19,0,tzinfo=dt.timezone.utc)
-        h3=dict(shadow_candidate_id='V3-H3-SHADOW-001',generated_at='2026-10-09T18:50:00Z',
+        now=dt.datetime(2026,10,10,19,0,tzinfo=dt.timezone.utc)
+        h3=dict(shadow_candidate_id='V3-H3-SHADOW-001',generated_at='2026-10-10T18:50:00Z',
                 payload=dict(baseline_series_id=active['series_id'],
                              baseline_strategy_revision=active['strategy_revision'],
                              orders=False,real_money_actions=False,
@@ -81,6 +81,65 @@ class MilestoneTests(unittest.TestCase):
         self.assertFalse(r['orders'])
         self.assertFalse(r['real_money_actions'])
 
+
+
+    def test_real_technical_rotation_does_not_restart_72h_strategy_productivity_clock(self):
+        import datetime as dt
+        state = controller.load_local_state(ROOT)
+        a = state['active_strategy']
+        technical = a['technical_rotation_runtime_last_verified']
+        assert technical['series_id'] == 'PAPER-V2R4-20261009T110135Z'
+        paper = dict(
+            series_id=technical['series_id'],
+            strategy_revision=a['strategy_revision'],
+            fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
+            candidate_outcomes=172,completed_trades=0,complete_24h=40,
+            series_age_days=.35,completion_ready=False,intake_should_stop=False)
+        def h3(at):
+            return dict(shadow_candidate_id='V3-H3-SHADOW-001',
+                        generated_at=at.isoformat(),
+                        payload=dict(baseline_series_id=a['series_id'],
+                                     baseline_strategy_revision=a['strategy_revision'],
+                                     orders=False,real_money_actions=False,
+                                     automatic_extension=False,automatic_promotion=False,
+                                     minimum_gate_met=False))
+        before=dt.datetime(2026,10,10,18,42,54,tzinfo=dt.timezone.utc)
+        after=dt.datetime(2026,10,10,18,42,56,tzinfo=dt.timezone.utc)
+        early=controller.evaluate(state,paper,h3(before),before,ROOT)
+        late=controller.evaluate(state,paper,h3(after),after,ROOT)
+        self.assertNotIn('V2R4:LOW_TRADE_REVIEW',early['statuses'])
+        self.assertIn('V2R4:LOW_TRADE_REVIEW',late['statuses'])
+        self.assertEqual(late['live_technical_series_id'],technical['series_id'])
+        self.assertEqual(late['series_id'],a['series_id'])
+        self.assertEqual(late['strategy_epoch_started_at_utc'],'2026-10-07T18:42:55Z')
+        notices=[x for x in late['events'] if x['kind']=='PAPER_LOW_TRADES']
+        self.assertEqual(len(notices),1)
+        self.assertIn('72h-STRATEGIEEPOCHEN',notices[0]['detail'])
+        self.assertIn('Coin-Evidence-Stufe A',notices[0]['detail'])
+        self.assertFalse(any(x['kind']=='NEW_CONTROL_DECISION' for x in late['events']))
+        self.assertFalse(late['strategy_changed'])
+        self.assertFalse(late['orders'])
+        self.assertFalse(late['real_money_actions'])
+        paper['series_id']='PAPER-V2R4-UNREVIEWED-20261010'
+        with self.assertRaisesRegex(ValueError,'unapproved technical series'):
+            controller.evaluate(state,paper,h3(after),after,ROOT)
+
+    def test_72h_low_trade_gate_requires_mature_followups_not_fake_technical_pass(self):
+        import datetime as dt
+        state=controller.load_local_state(ROOT)
+        a=state['active_strategy']
+        t=dt.datetime(2026,10,11,18,0,tzinfo=dt.timezone.utc)
+        paper=dict(series_id=a['technical_rotation_runtime_last_verified']['series_id'],
+                   strategy_revision=a['strategy_revision'],
+                   fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
+                   candidate_outcomes=1000,completed_trades=0,complete_24h=0,
+                   series_age_days=2,completion_ready=False,intake_should_stop=False)
+        h3=dict(shadow_candidate_id='V3-H3-SHADOW-001',generated_at=t.isoformat(),
+                payload=dict(baseline_series_id=a['series_id'],baseline_strategy_revision=a['strategy_revision'],
+                             orders=False,real_money_actions=False,automatic_extension=False,
+                             automatic_promotion=False,minimum_gate_met=False))
+        r=controller.evaluate(state,paper,h3,t,ROOT)
+        self.assertNotIn('V2R4:LOW_TRADE_REVIEW',r['statuses'])
 
 if __name__ == '__main__':
     unittest.main()
