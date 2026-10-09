@@ -153,7 +153,7 @@ def main()->int:
     if len(h6)!=1 or h6[0].get("status")!="WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION":
         errors.append("H6 must remain queued until explicit inconclusive H3 archive disposition")
     h3reviews=[x for x in (data.get("next_control_decisions") or [])
-               if x.get("id")=="V3-H3-FIXED-REVIEW"]
+               if x.get("id")=="V3-H3-ARCHIVE-DISPOSITION"]
     if len(h3reviews)!=1 or h3reviews[0].get("status")!="ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY":
         errors.append("H3 cannot pass fixed review after archive with 0 records")
 
