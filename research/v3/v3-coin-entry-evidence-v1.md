@@ -88,3 +88,34 @@ Top codes across all 168 original decisions, irrespective of outcome: `SPREAD_AC
 
 Next **single source-of-truth on-device cohort diagnostic**, prepared with no model/remote queries, writes or running-series mutation: `tools/v2r4-readonly-decision-funnel.py`. It reads only current technical-stage `paper_decisions` and `paper_rechecks`, enforces exact series/PAPER control, deduplicates candidate identity and each candidate's *latest* recheck, separates `V2R4_WAIT_EXPIRY_V1` from real `V2R4_LOCAL_TRIGGER_RECHECK_V1`, reports latest WAIT final states, overdue missing rechecks, outcome-specific top evidence codes, currently absent canonical per-coin structured evidence and repeated pair/6h episodes. This will distinguish WAIT TTL/no trigger versus fresh model/risk veto versus source/data limitation. No claims about counterfactual profitability, pair/time independence or strategy improvement before a prospective risk/cost follow-up; do not loosen buying criteria on aggregate reason-code frequency alone.
 
+
+## ROOT-CAUSE funnel cross-check: original V2R4 → WAIT → real model recheck, 2026-10-09 18:44 UTC
+
+**Direct cloud versus Mini-PC event reconciliation:** For frozen research sampling of `PAPER-V2R4-20261009T110135Z`, Supabase held 168 unique initial decisions (`116 WAIT, 52 REJECT, 0 BUY_SCOUT`). Original `paper_decisions` contained **no canonical structured candidate-specific closed OHLC/volume/15m ATR risk provenance in any of 168 evaluator contexts**. Each `WAIT` had deterministic `ALL` condition logic, 109 two-condition plans and 7 three-condition plans. **110 of 116** explicitly demanded both a fully closed 5m price and a fully closed 5m relative-volume threshold. The common 5m volume-ratio threshold was `1.2`; expired plans' price targets were a median **0.784% above original decision-time last**, triggered plans' median **0.577%**, mean TTL roughly **32 minutes**. Price/volume cross-condition availability is observed; what prevented each plan from matching is **not** separately recorded per polling cycle (nonmatch/missing metric telemetry not retained). A generic cloud status `HEALTHY` doesn't prove condition feasibility.
+
+**Distinct outcome funnel as of query:**
+
+| Cohort state (by unique candidate) | Cases |
+|---|---:|
+| Initial WAIT | 116 |
+| Latest outcome `V2R4_WAIT_EXPIRY_V1` (no complete trigger → **no new model decision**) | 93 |
+| Latest outcome `V2R4_LOCAL_TRIGGER_RECHECK_V1` | 22 |
+| Still without a terminal/current recheck record | 1 |
+| Among 22 real triggered rechecks, final `REJECT` | 19 |
+| Among 22 real triggered rechecks, final `WAIT` | 3 |
+| BUY_SCOUT | **0** |
+
+Separate local file snapshot showed 124 *recheck EVENTS* (91 `WAIT_EXPIRY` + 33 `LOCAL_TRIGGER_RECHECK`) but only 113 distinct recheck candidate identities. This is **not a contradiction**: the local folder includes chained/superseded events while Supabase `paper_candidate_outcomes.payload.recheck` holds the latest synced per-candidate outcome and may advance between snapshots. Do NOT report 110 local `REJECT` events as 110 failed model evaluations.
+
+**Reasons after actual triggers**: For 19 latest model `REJECT` outcomes, non-exclusive raw code-family flags included structural stop/stage2 plan 15, late chase/extension 18, cost/remaining potential 19, market/momentum 14. One case can hit several; reason-code labels are **not** individual causal proofs. The unchanged evaluator may still have valid risk-based reasons to abstain even after complete per-coin data is supplied.
+
+**Quality countercheck rather than mechanically loosening gates:** Among independently *complete* post-original-decision 60m follow-ups, later price MFE >=3% was observed in **8/89** of expired-WAIT cases versus **8/19** of actual-triggered cases (>=5%: **1/89** vs **4/19**). Episodes overlap by pair/time; follow-up horizons are measured from initial candidate, may include movement before a model could react; observed MFE is retrospective and **not directly tradeable positive after 0.60%/side taker fees + spread/slippage or stop/MAE**. This is at least consistent with the existing ALL trigger providing useful quality selection. Removing or relaxing it simply to raise BUY counts is **not supported** by these data.
+
+**Strategic design/gate**, exact owner `research/strategy-learning-causal-gate-v1.json.incident.latest_diagnostic_snapshot`:
+1. Keep V2R4, its H3-frozen lineage, H6 volume ownership and fee/stop/50+50 gates unchanged. No runtime change, extra scheduled job, new Work run or hidden auto-trade.
+2. First prospective one-change **candidate-specific entry data delivery** (fully closed 1m/5m/15m, volume and ATR/local low, point-in-time freshness); otherwise identical reference strategy and original WAIT filters. Prove at least one genuine viable BUY and net-fee/MAE path, measure missed quality opportunities, compare using the *same fresh candidate and decision clock* and clustered pair/time cohort. Previous STRK two-model `WAIT` input test proves interface, not economic gain.
+3. Only **if** post-data evaluation still blocks justified opportunities, study WAIT conditions in a **separate** H4/TTL controlled research hypothesis with measured real-trigger, missing-metric, no-trigger, and post-trigger conversion. Never combine a WAIT relaxation and new per-coin inputs in one supposed single-change test. Do not invent unlogged past trigger metrics.
+4. Respect fixed H3 one-strategy-changing-shadow gate and existing strategy-72h productivity review anchored to the original 2026-10-07 18:42 UTC first epoch, not the Oct-09 technical rotation. No paper/live promotion without separately verified evidence and user decision.
+
+**Bottom line:** Technical pipeline healthy, meaningful no-buy productivity failure persistent. Most WAITs end without a real second model evaluation; when a trigger occurs, evidence/edge/stop guardrails still cause no BUY. The added data interface is required for sufficiency but *not proven sufficient* for fixing this decision funnel.
+
