@@ -24,6 +24,14 @@ class TechnicalCutoverMutualContract(unittest.TestCase):
             self.assertRegex(operator, re.escape(key) + r"\s*=",
                              msg=f"missing physical proof field: {key}")
 
+    def test_edge_checks_expected_old_paper_state_and_actual_quiescence(self):
+        edge = source("supabase/functions/v2r4-technical-cutover/index.ts")
+        self.assertIn("unexpected_paper_candidate_failure", edge)
+        self.assertIn("old_task_not_quiesced", edge)
+        self.assertIn("task_state=Disabled", edge)
+        self.assertIn("task_state=Running", edge)
+        self.assertIn("supervisor_heartbeat_stale", edge)
+
     def test_frozen_inert_stage_has_complete_file_bytes_inventory(self):
         staging = source("tools/minipc-v2r4-technical-rollover-stage.ps1")
         readiness = source("tools/minipc-v2r4-technical-cutover-readiness.ps1")
