@@ -49,6 +49,10 @@ class TechnicalCutoverMutualContract(unittest.TestCase):
         self.assertIn("if($saved.enabled -eq $true -and $saved.running -eq $true)", operator)
         self.assertIn("POST_COMMIT_FAIL_CLOSED_SUCCESSOR_STOPPED", operator)
         self.assertIn("CLOUD_OUTCOME_UNKNOWN", operator)
+        self.assertIn("Need-No-Old-Writers", operator)
+        self.assertIn("Win32_Process", operator)
+        self.assertIn("PRE_COMMIT_TASKS_UNTOUCHED", operator)
+        self.assertIn("$taskStopStarted=$true", operator)
 
     def test_h3_001_baseline_cannot_be_rebound(self):
         operator = source("tools/minipc-v2r4-technical-cutover-operator.ps1")
