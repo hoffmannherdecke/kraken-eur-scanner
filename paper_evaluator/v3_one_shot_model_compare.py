@@ -86,9 +86,44 @@ def clean_decision(raw: dict, ticker: dict, external: dict, spec: dict) -> dict:
             "wait_conditions":len(d.get("watch_conditions") or [])}
 
 
-def execute_one_shot(trading_root:Path,code_root:Path) -> dict:
-    runtime=trading_root/"Runtime"/"v2r4-paper-app"
-    control=json.loads((runtime/"paper_runtime_control.json").read_text("utf-8"))
+def discover_active_paper_runtime(trading_root: Path, expected_series_id: str) -> tuple[Path, dict]:
+    """Select exactly one known, verified technical successor without old-series fallback.
+
+    The 2026-10-09 technical cutover intentionally preserved the old
+    Runtime/v2r4-paper-app. Active candidates live under
+    Runtime/v2r4-paper-stage-<release-sha-prefix>.
+    """
+    if not expected_series_id.startswith("PAPER-V2R4-"):
+        raise ValueError("explicit current V2R4 series id required")
+    runtime_root = trading_root / "Runtime"
+    matching = []
+    other_controls = []
+    for path in sorted(runtime_root.glob("v2r4-paper-stage-*")):
+        if not path.is_dir():
+            continue
+        control_path = path / "paper_runtime_control.json"
+        if not control_path.is_file():
+            continue  # an inert/staged predecessor is never selected
+        control = json.loads(control_path.read_text("utf-8"))
+        other_controls.append((path, control.get("series_id")))
+        if control.get("series_id") != expected_series_id:
+            continue
+        if control.get("paper_only") is not True:
+            raise ValueError("technical successor is not PAPER only")
+        if control.get("enabled") is not True or control.get("real_money_actions_enabled") is not False:
+            raise ValueError("technical successor disabled or real-money guard unsafe")
+        release_sha = str(control.get("release_repo_sha") or "").lower()
+        if len(release_sha) != 40 or path.name != "v2r4-paper-stage-" + release_sha[:12]:
+            raise ValueError("technical stage directory and frozen release SHA mismatch")
+        matching.append((path, control))
+    if len(matching) != 1 or len(other_controls) != 1:
+        raise ValueError("exactly one verified active technical successor required")
+    return matching[0]
+
+
+def execute_one_shot(trading_root:Path,code_root:Path,
+                     expected_series_id: str) -> dict:
+    runtime,control=discover_active_paper_runtime(trading_root,expected_series_id)
     spec=json.loads((runtime/"paper_strategy_spec.json").read_text("utf-8"))
     checked=freeze_runtime_provenance(runtime,code_root,control)
     selected=select_fresh_handoff(runtime/"handoff_queue",control)
@@ -124,6 +159,7 @@ def execute_one_shot(trading_root:Path,code_root:Path) -> dict:
       "status":"ISOLATED_MODEL_PAIR_COMPLETE_NOT_A_PROFITABILITY_RESULT",
       "candidate_id":c["candidate_id"],"pair":c["pair"],
       "source_series_id":control["series_id"],
+      "source_runtime_dir":runtime.name,
       "source_strategy_revision":control["strategy_revision"],
       "source_candidate_event_utc":c["event_time_utc"],
       "evidence_known_at_utc":entry["known_at_utc"],
@@ -148,9 +184,10 @@ def main() -> int:
     parser=argparse.ArgumentParser()
     parser.add_argument("--trading-root",type=Path,required=True)
     parser.add_argument("--code-root",type=Path,required=True)
+    parser.add_argument("--expected-series-id",required=True)
     args=parser.parse_args()
     try:
-        r=execute_one_shot(args.trading_root,args.code_root)
+        r=execute_one_shot(args.trading_root,args.code_root,args.expected_series_id)
     except Exception as e:
         # Exclude exception messages because they could carry source/secret data.
         r={"kind":"V3_ONE_SHOT_SAME_SNAPSHOT_MODEL_COMPARISON_V1",
