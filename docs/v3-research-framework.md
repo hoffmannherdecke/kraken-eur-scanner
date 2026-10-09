@@ -298,7 +298,8 @@ Current evidence: synthetic PIT price/volume primitives are green and `V3-H6-INC
 
 ### Gemeinsame Kraken-EUR-Entry-Evidenz — kein neues H-Signal
 
-Status: `INACTIVE_IMPLEMENTED_NOT_ATTACHED` (09.10.2026). Kanonische Zuordnung: `research/v3-migration-ledger.json` → `coin_specific_entry_evidence_provenance`. Verbindliche Schnittstellen-/Überschneidungsregeln: `research/v3/coin-entry-evidence-lineage-v1.json`; Umsetzung: `paper_evaluator/successor_coin_entry_evidence_v1.py`; Analyse: `research/v3/v3-coin-entry-evidence-v1.md`.
+Status: `PRECHECK`  
+Stage: `INACTIVE_IMPLEMENTED_NOT_ATTACHED` (09.10.2026). Kanonische Zuordnung: `research/v3-migration-ledger.json` → `coin_specific_entry_evidence_provenance`. Verbindliche Schnittstellen-/Überschneidungsregeln: `research/v3/coin-entry-evidence-lineage-v1.json`; Umsetzung: `paper_evaluator/successor_coin_entry_evidence_v1.py`; Analyse: `research/v3/v3-coin-entry-evidence-v1.md`.
 
 Der V2R4-Evaluator benötigt zum defensiblen BUY_SCOUT unter anderem bestätigende geschlossene Coin-Kerzen, Volumen und eine strukturell vertretbare Stopbasis. In der aktiven V2R4-Kandidatenübergabe und `paper_context.build_context` fehlen eigene Coin-Closed-Bar-/Volume-/ATR-Felder; der bereits vorhandene BTC/ETH/SOL-OHLC-Regime-Kontext ersetzt dies nicht. Die V3-Datenversorgung behebt diese **Feature-Verfügbarkeitslücke** nur als inaktive, separat zu testende Vorbereitung – nicht als erwiesenen Prognosevorteil oder Freigabe für mehr BUYs.
 
