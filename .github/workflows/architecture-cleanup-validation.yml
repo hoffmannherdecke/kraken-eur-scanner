@@ -106,6 +106,9 @@ jobs:
 
           print('SECURITY_RESILIENCE_BASELINE_PASS')
           PY
+      - name: H10 outcome/context contract guard
+        run: python tests/test_h10_outcome_context_join_contract.py
+
       - name: Completed H1 pilot guard
         run: |
           python - <<'PY'
