@@ -1,6 +1,6 @@
 # MINI-PC SUPPORT V1 — Umsetzungsblöcke und Wiederaufnahme (09.10.2026)
 
-**Status 09.10.2026:** Architektur/Blockplan; **Block 1 begonnen, physischer PC-Inventur-Output noch ausstehend**. Keine produktive GitHub-Migration, kein neuer Runner/Service, keine KI installiert. Autoritatives offenes Gate: `PROJECT_BACKLOG.md` P4 `MINIPC_SUPPORT_V1`; zugehöriger Vertrag: `docs/github-capacity-and-cost-strategy-v1.md`.
+**Status 09.10.2026, 15:45 MESZ:** Architektur/Blockplan; **Block 1 physische read-only Inventur PASS; Control-Plane-Abgleich bleibt offen**. Keine produktive GitHub-Migration, kein neuer Runner/Service, keine KI installiert. Autoritatives offenes Gate: `PROJECT_BACKLOG.md` P4 `MINIPC_SUPPORT_V1`; zugehöriger Vertrag: `docs/github-capacity-and-cost-strategy-v1.md`.
 
 ## Unveränderliche Ziele und Grenzen
 
@@ -16,11 +16,30 @@
 
 - [x] GitHub-Private-Bridge, aktuelle Read-only-Workflows, vorhandene Mini-PC-Supervisor- und Preflight-Skripte sowie bestehende Outage-/Kapazitätsverträge *lesen*; vorhandene große `minipc-local-core-gate.ps1`, `minipc-next-user-step.ps1`, `minipc-post-recovery-gate.ps1` nicht für bloße Kapazitätsprüfung aufrufen, weil sie auch Eingriffe/Schreibaktionen/Tests enthalten.
 - [x] Eigenes kurzes, read-only Mini-PC-Inventurskript zur Wiederverwendung in diesem Repo vorbereitet: `tools/minipc-support-readonly-inventory.ps1`. Keine Adminrechte, Netzaufrufe, Secret-Ausgabe, Task-Starts, Dateischreibvorgänge oder `git pull`.
-- [ ] Auf Mini-PC **nach Prüfung des lokalen Git-Status** einmal die aktuelle Repo-Version sicher auf Stand bringen, falls `main`, clean worktree und Fast-Forward möglich: `git -C "$HOME\Trading\Repos\kraken-eur-scanner" status --short --branch`, dann `git -C "$HOME\Trading\Repos\kraken-eur-scanner" pull --ff-only`. **Bei fremder Änderung/Fehler stoppen**, nicht Reset/Force. Kein Paper-App-Installer, kein Runtime-Fingerprint-Überschreiben.
-- [ ] Das Inventurskript einmalig aus normaler PowerShell auf Mini-PC starten: `& "$HOME\Trading\Repos\kraken-eur-scanner\tools\minipc-support-readonly-inventory.ps1"`. Ausgabe darf zur gemeinsamen Einordnung als Text oder Screenshot übermittelt werden. Sie enthält nur summarische Hardware-/Task-/Health-Metadaten; keine Secrets.
-- [ ] Kurz messen: real 16/32 GB, RAM frei, CPU-Snapshot und bei realem Scan-Intervall, C:/D:-Reserve, letzte Health-Frische, Task-Ergebnisse, vorhandener Runner ja/nein. Nicht von einem einzelnen CPU-Snapshot auf garantierte Dauerreserve schließen.
+- [x] Auf Mini-PC **nach Prüfung des lokalen Git-Status** einmal die aktuelle Repo-Version sicher auf Stand bringen, falls `main`, clean worktree und Fast-Forward möglich: `git -C "$HOME\Trading\Repos\kraken-eur-scanner" status --short --branch`, dann `git -C "$HOME\Trading\Repos\kraken-eur-scanner" pull --ff-only`. **Bei fremder Änderung/Fehler stoppen**, nicht Reset/Force. Kein Paper-App-Installer, kein Runtime-Fingerprint-Überschreiben.
+- [x] Das Inventurskript einmalig aus normaler PowerShell auf Mini-PC starten: `& "$HOME\Trading\Repos\kraken-eur-scanner\tools\minipc-support-readonly-inventory.ps1"`. Ausgabe darf zur gemeinsamen Einordnung als Text oder Screenshot übermittelt werden. Sie enthält nur summarische Hardware-/Task-/Health-Metadaten; keine Secrets.
+- [x] Kurz messen: real 16/32 GB, RAM frei, CPU-Snapshot und bei realem Scan-Intervall, C:/D:-Reserve, letzte Health-Frische, Task-Ergebnisse, vorhandener Runner ja/nein. Nicht von einem einzelnen CPU-Snapshot auf garantierte Dauerreserve schließen.
 - [ ] Bevor neue produktive Last hinzugefügt wird: **kanonische Statusdatei mit gegenwärtiger Cloud-Wahrheit abgleichen**. Im read-only Projektvergleich 09.10. 15:19 MESZ: Supabase `paper_series` hat `PAPER-V2R4-20261009T110135Z` als `active`, Vorgänger `PAPER-V2R4-20261007T184255Z` als `technical_closed`; H3-001 `FROZEN_TECHNICAL_CUTOVER`. Das ältere `project-current-state.json` verweist noch auf die Vorgängerserie/H3-001 als laufend. Zuerst nach neuerem Release-/H3-Nachfolgerbeleg schauen; nur evidenzbelegte Control-Plane-Korrektur über bestehenden Governancepfad, keine Strategie-/Serienmutation.
 - **Blockabschluss:** konkrete Runtime-Ressourcen- und Statusdaten, kein Eingriff in Paper-/Shadow-Runtime; Entscheidung `READY_FOR_BLOCK_2` oder `STOP_REASON` mit genau einer nächsten Handlung.
+
+### Tatsächlich geprüfter Mini-PC-Iststand — 09.10.2026, 15:45 MESZ
+
+**Physische Belege:** Nutzer-Screenshots des einmaligen `MINIPC_SUPPORT_READONLY_BASELINE_V1`-Laufs nach `git fetch` + erfolgreichem `git pull --ff-only origin main` auf zuvor lokal sauberem `main`. Erststart wurde von Windows-Skriptausführungsrichtlinie blockiert, darauffolgende einmalige Ausführung mit prozesslokalem `powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File ...` erfolgreich. **Keine permanente Windows-ExecutionPolicy-Veränderung, keine Git-Reset-/Force-Operation, kein Trading- oder Task-Neustart, kein Secret-Zugriff.**
+
+| Messung | Ergebnis |
+|---|---|
+| Windows | Windows 11 Pro |
+| RAM | 15,8 GB erkannt; 8,6 GB frei, 32 GB **noch nicht verbaut** |
+| CPU | 7 % Momentanauslastung; **keine Peak-/Lastzeit-Messung** |
+| C: | NTFS, 172,1 GB frei / 237,4 GB gesamt |
+| D: | NTFS, 305,4 GB frei / 465,8 GB gesamt |
+| lokaler Watchdog | `HEALTHY`, geprüft um 15:44:27 MESZ |
+| Windows-Aufgaben | 17 `CryptoMiniPC-*` gefunden; mehrere laufende Dauerjobs zeigen `last_result=267009` (Windows Task Scheduler SCHED_S_TASK_RUNNING; **kein Fehlerindikator**) |
+| V3 H3 001 | `CryptoMiniPC-V3H3Shadow001` derzeit `Disabled`; letzter Task-Ergebniscode `267014` (0x41306, vorheriger Task wurde beendet). Die deaktivierte Aufgabe ist konsistent mit dem separat bestätigten H3-001-Freeze nach technischer Paper-Rotation; Code allein beweist keinen normalen Abschluss. **Nicht selbsttätig reaktivieren** |
+| GitHub Runner | kein `actions.runner*`-Dienst gefunden; `existing_github_runner_services=0` |
+| Lesender Prüflauf | `read_only=true`, `changes_made=false` |
+
+**Entscheidung:** `BASELINE_PASS_WITH_CONTROL_PLANE_FOLLOWUP`. Die verfügbaren 8,6 GB RAM und niedrige einmalige CPU-Momentanauslastung erlauben **einen manuellen, kurzzeitigen, harmlosen Einzeljob ohne Secrets**, nicht den Nachweis dauerhafter CPU-/RAM-Headroom oder einer bereits betriebsfähigen Self-Hosted-Runner-/Failover-Lösung. Bei 16 GB RAM ist kein automatischer Stopp notwendig. Die Doku-/Control-Plane-Staleness nach Paper-Rotation bleibt als vor jeder produktiven Migration zu klärender Punkt bestehen. H3 001 bleibt gefroren.
 
 ### Block 2 — isolierter, harmloser lokaler Executor (circa 45–90 Minuten)
 
@@ -45,6 +64,6 @@
 
 ## Fortsetzen ohne wieder bei null zu starten
 
-Nächster Schritt nach diesem Commit: **Block 1** mit Inventurskript **einmalig** auf dem Mini-PC; anschließend nur Befund und einen konkreten nächsten Arbeitsschritt aufgreifen. Nie ganze Ketten erneut testen, nie unfertig voraussetzen, kein Agentenbetrieb. Rollen: Assistent bereitet sichere GitHub-Dokumentation/-CI und lesende Cloudprüfungen vor; Nutzer führt nur physische Mini-PC-Schritte aus, die ohne direkten Zugriff anders nicht möglich sind.
+Nächster Schritt nach diesem Checkpoint: **Block 1** Control-Plane-Abgleich auf Basis der bestehenden Supabase-/GitHub-Release-Evidenz abschließen; danach **Block 2**, zuerst die kleinste risikoarme Executor-/Artifact-Variante festlegen. Das Inventurskript **nicht erneut** ausführen, sofern kein konkreter neuer Befund oder RAM-Einbau dies verlangt. Nie ganze Ketten erneut testen, nie unfertig voraussetzen, kein Agentenbetrieb. Rollen: Assistent bereitet sichere GitHub-Dokumentation/-CI und lesende Cloudprüfungen vor; Nutzer führt nur physische Mini-PC-Schritte aus, die ohne direkten Zugriff anders nicht möglich sind.
 
 **Zeitbild:** Kein 6-Stunden-Dauerblock nötig. Die aktiven Arbeiten verteilen sich auf kurze Sitzungen; in Summe grob 4–6 Stunden, eventuell 6–8 bei echten Rückfall-/Windows-/Secret-Sicherheitsproblemen. Zwischen regulären E2E-Läufen kann Warte-/Beobachtungszeit liegen. Keine garantierte Endzeit.
