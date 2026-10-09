@@ -1,12 +1,13 @@
 param(
   [switch]$Execute,
+  [string]$ExpectedSeriesId = 'PAPER-V2R4-20261009T110135Z',
   [string]$TradingRoot = (Join-Path $env:USERPROFILE 'Trading')
 )
 # One-shot only. No change to active Mini-PC checkout, runtime,
 # Windows tasks, environment secrets, Paper state or cloud database.
 $ErrorActionPreference = 'Stop'
 $repo = Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
-$app = Join-Path $TradingRoot 'Runtime\v2r4-paper-app'
+$runtimeRoot = Join-Path $TradingRoot 'Runtime'
 $python = Join-Path $TradingRoot 'Runtime\kraken-eur-scanner-venv\Scripts\python.exe'
 $key = Join-Path $TradingRoot 'Secrets\openai-api-key.txt'
 $plan = [ordered]@{
@@ -17,7 +18,8 @@ $plan = [ordered]@{
   scheduled_tasks_change = $false
   orders = $false
   real_money_actions = $false
-  source = 'EXISTING_V2R4_FRESH_HANDOFF_ON_MINIPC'
+  source = 'ONLY_EXACT_PINNED_TECHNICAL_SUCCESSOR_NOT_ORIGINAL_FROZEN_APP'
+  expected_series_id = $ExpectedSeriesId
   model_calls_if_eligible = 2
   compare = 'same-snapshot baseline vs baseline-plus-closed-coin-bars'
   output = 'compact stdout only; temporary Git checkout removed'
@@ -25,6 +27,17 @@ $plan = [ordered]@{
 if (-not $Execute) {
   $plan | ConvertTo-Json -Depth 5
   exit 0
+}
+if ($ExpectedSeriesId -cne 'PAPER-V2R4-20261009T110135Z') {
+  throw 'BLOCKED_UNREVIEWED_SERIES_ID'
+}
+$activeRuntimeDirs = @(Get-ChildItem -LiteralPath $runtimeRoot -Directory -Filter 'v2r4-paper-stage-*' -ErrorAction SilentlyContinue |
+  Where-Object { Test-Path (Join-Path $_.FullName 'paper_runtime_control.json') })
+if ($activeRuntimeDirs.Count -ne 1) { throw 'BLOCKED_AMBIGUOUS_OR_MISSING_TECHNICAL_SUCCESSOR' }
+$app = $activeRuntimeDirs[0].FullName
+$c = Get-Content (Join-Path $app 'paper_runtime_control.json') -Raw | ConvertFrom-Json
+if ($c.series_id -cne $ExpectedSeriesId -or $c.paper_only -ne $true -or $c.real_money_actions_enabled -ne $false) {
+  throw 'BLOCKED_STAGE_SERIES_OR_PAPER_SAFETY_MISMATCH'
 }
 foreach ($required in @($repo,$app,$python,$key)) {
   if (-not (Test-Path -LiteralPath $required)) {
@@ -44,7 +57,7 @@ try {
   if (-not (Test-Path -LiteralPath $script)) { throw 'BLOCKED_MISSING_REVIEWED_PROBE_SCRIPT' }
   Push-Location $temp
   try {
-    & $python -m paper_evaluator.v3_one_shot_model_compare --trading-root $TradingRoot --code-root $temp
+    & $python -m paper_evaluator.v3_one_shot_model_compare --trading-root $TradingRoot --code-root $temp --expected-series-id $ExpectedSeriesId
     $code = $LASTEXITCODE
   }
   finally { Pop-Location }
