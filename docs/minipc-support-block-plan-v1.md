@@ -35,7 +35,7 @@
 | D: | NTFS, 305,4 GB frei / 465,8 GB gesamt |
 | lokaler Watchdog | `HEALTHY`, geprüft um 15:44:27 MESZ |
 | Windows-Aufgaben | 17 `CryptoMiniPC-*` gefunden; mehrere laufende Dauerjobs zeigen `last_result=267009` (Windows Task Scheduler SCHED_S_TASK_RUNNING; **kein Fehlerindikator**) |
-| V3 H3 001 | `CryptoMiniPC-V3H3Shadow001` `Disabled`, `267014`; konsistent mit bewusst gefrorenem H3-001 nach technischer Paper-Rotation, **nicht selbsttätig reaktivieren** |
+| V3 H3 001 | `CryptoMiniPC-V3H3Shadow001` derzeit `Disabled`; letzter Task-Ergebniscode `267014` (0x41306, vorheriger Task wurde beendet). Die deaktivierte Aufgabe ist konsistent mit dem separat bestätigten H3-001-Freeze nach technischer Paper-Rotation; Code allein beweist keinen normalen Abschluss. **Nicht selbsttätig reaktivieren** |
 | GitHub Runner | kein `actions.runner*`-Dienst gefunden; `existing_github_runner_services=0` |
 | Lesender Prüflauf | `read_only=true`, `changes_made=false` |
 
