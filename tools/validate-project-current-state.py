@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from strategy_successor_gate import validate_learning_gate
+from strategy_epoch_lineage import validate_epoch
 
 ROOT=Path(__file__).resolve().parents[1]
 STATE=ROOT/"project-current-state.json"
@@ -140,15 +141,10 @@ def main()->int:
             errors.append("H3 archive physical source/time missing")
     if any(x.get("candidate_id")=="V3-H3-SHADOW-001" for x in active_shadows):
         errors.append("archived H3 must not also be declared SHADOW_RUNNING")
-    if technical is not None:
-        if (technical.get("predecessor_series_status")!="technical_closed"
-                or technical.get("predecessor_outcomes_immutable_at_cutover")!=1011
-                or technical.get("predecessor_trades_immutable_at_cutover")!=0
-                or technical.get("predecessor_24h_complete_at_cutover")!=260
-                or technical.get("predecessor_24h_eligible_at_cutover")!=260):
-            errors.append("immutable cutover cohort/maturity snapshot missing or contradicted")
-        if technical.get("h3_001_archive_ack")!="ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND":
-            errors.append("cutover must preserve H3 archive acknowledgement")
+    # One schema protects both current-state validity and milestone fold.
+    errors.extend(validate_epoch(active))
+    if technical is not None and technical.get("h3_001_archive_ack") != "ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND":
+        errors.append("cutover must preserve H3 archive acknowledgement")
     queued=wip.get("queued") or []
     for item in queued:
         if item.get("candidate_id") in ids:
