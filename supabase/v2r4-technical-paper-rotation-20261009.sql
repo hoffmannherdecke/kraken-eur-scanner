@@ -33,6 +33,32 @@ create trigger paper_trade_series_immutable_guard
 before update on public.paper_trade_results
 for each row execute function public.guard_paper_evidence_series_immutability();
 
+-- Freeze H3-001 at the database boundary after the predecessor closes:
+-- a delayed authenticated H3 upsert must never reactivate the archived status.
+create or replace function public.guard_frozen_h3_001_status()
+returns trigger language plpgsql security invoker set search_path = ''
+as $h3$
+begin
+  if old.shadow_candidate_id = 'V3-H3-SHADOW-001'
+     and old.payload->>'status' = 'FROZEN_TECHNICAL_CUTOVER' then
+    raise exception 'frozen H3-001 baseline status is immutable';
+  end if;
+  if new.shadow_candidate_id is distinct from old.shadow_candidate_id then
+    raise exception 'H3 status identity is immutable';
+  end if;
+  return new;
+end;
+$h3$;
+revoke all on function public.guard_frozen_h3_001_status()
+  from public, anon, authenticated;
+grant execute on function public.guard_frozen_h3_001_status()
+  to service_role;
+drop trigger if exists v3_h3_001_frozen_status_guard
+  on public.v3_h3_shadow_status;
+create trigger v3_h3_001_frozen_status_guard
+before update on public.v3_h3_shadow_status
+for each row execute function public.guard_frozen_h3_001_status();
+
 create table if not exists public.paper_technical_rotations (
   predecessor_series_id text primary key references public.paper_series(series_id),
   successor_series_id text not null unique references public.paper_series(series_id),

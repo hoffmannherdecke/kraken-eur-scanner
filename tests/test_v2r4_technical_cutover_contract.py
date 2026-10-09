@@ -54,11 +54,20 @@ class TechnicalCutoverMutualContract(unittest.TestCase):
         self.assertIn("PRE_COMMIT_TASKS_UNTOUCHED", operator)
         self.assertIn("$taskStopStarted=$true", operator)
 
+    def test_successor_health_verifies_identity_and_task_actions(self):
+        operator = source("tools/minipc-v2r4-technical-cutover-operator.ps1")
+        self.assertIn("$hb.series_id -cne $newId", operator)
+        self.assertIn("Task action not pinned to successor app", operator)
+        self.assertIn("Successor scheduled task exited", operator)
+        self.assertIn("$hb.real_money_actions -ne $false", operator)
+
     def test_h3_001_baseline_cannot_be_rebound(self):
         operator = source("tools/minipc-v2r4-technical-cutover-operator.ps1")
         sql = source("supabase/v2r4-technical-paper-rotation-20261009.sql")
         self.assertIn("V3-H3-SHADOW-001", sql)
         self.assertIn("FROZEN_TECHNICAL_CUTOVER", sql)
+        self.assertIn("guard_frozen_h3_001_status", sql)
+        self.assertIn("v3_h3_001_frozen_status_guard", sql)
         self.assertIn("h3_001_retired", operator)
 
 

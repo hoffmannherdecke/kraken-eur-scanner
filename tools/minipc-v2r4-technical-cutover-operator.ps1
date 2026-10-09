@@ -317,11 +317,24 @@ try{
    Start-Sleep -Seconds 2;$healthy=$true
    foreach($name in $heartbeats){
      try{$hb=Get-Content (Join-Path $state $name) -Raw|ConvertFrom-Json
-       if($hb.status -ne 'HEALTHY' -or ([datetime]$hb.checked_at_utc).ToUniversalTime() -lt $utc){$healthy=$false}
+       if($hb.status -ne 'HEALTHY' -or ([datetime]$hb.checked_at_utc).ToUniversalTime() -lt $utc -or
+          $hb.paper_only -ne $true -or $hb.real_money_actions -ne $false -or $hb.order_api -ne $false){$healthy=$false}
+       # Never accept a stale predecessor's fresh-looking heartbeat as a
+       # completed successor, even if it has the right global filename.
+       if($name -in @('v2r4-paper-candidate-runtime-heartbeat.json','v2r4-paper-cloud-sync-heartbeat.json') -and
+          $hb.series_id -cne $newId){$healthy=$false}
      }catch{$healthy=$false}
    }
  }while(-not $healthy -and (Get-Date)-lt $deadline)
  Need $healthy 'SUCCESSOR_NOT_HEALTHY: cloud committed; old runtime remains frozen'
+ foreach($n in $taskNames){
+   if($n -eq 'CryptoMiniPC-V3H3Shadow001'){continue}
+   $task=Get-ScheduledTask -TaskName $n -ErrorAction Stop
+   Need ([string]$task.State -eq 'Running') "Successor scheduled task exited: $n"
+   $action=$task.Actions[0]
+   Need ([string]$action.Execute -ieq $python -and
+     ([string]$action.Arguments).IndexOf($app,[StringComparison]::OrdinalIgnoreCase) -ge 0) "Task action not pinned to successor app: $n"
+ }
  $post=Edge 'status'
  Need ($post.ok -eq $true -and $post.rotation.successor_series_id -eq $newId -and
    @($post.paper_series|Where-Object{$_.status -eq 'active' -and $_.series_id -eq $newId}).Count -eq 1) 'Cloud successor not uniquely active'

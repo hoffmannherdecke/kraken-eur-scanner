@@ -136,6 +136,21 @@ begin
     raise exception 'atomic rotate invariants failed';
   end if;
 
+  -- A delayed H3 cloud write must not unfreeze the immutable old baseline.
+  exception_seen := false;
+  begin
+    update public.v3_h3_shadow_status
+       set payload=payload || '{"status":"HEALTHY"}'::jsonb,
+           updated_at=clock_timestamp()
+     where shadow_candidate_id='V3-H3-SHADOW-001';
+  exception when others then exception_seen := true;
+  end;
+  if not exception_seen or
+     (select payload->>'status' from public.v3_h3_shadow_status
+       where shadow_candidate_id='V3-H3-SHADOW-001') <> 'FROZEN_TECHNICAL_CUTOVER' then
+    raise exception 'frozen H3 baseline was overwritten after cutover';
+  end if;
+
   -- Idempotent retry with identical manifest cannot insert or mutate more rows.
   rec := public.rotate_v2r4_technical_paper(
     'PAPER-V2R4-20261007T184255Z',new_sid,new_tid,stamp,cfg,
