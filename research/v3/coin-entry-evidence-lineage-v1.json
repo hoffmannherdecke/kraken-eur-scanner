@@ -25,7 +25,7 @@
       "family": "H6",
       "overlap": "closed price/volume features",
       "policy": "REUSE_AS_EVIDENCE_ONLY_NO_DUPLICATE_FEATURE_VOTE",
-      "constraint": "H6 incremental-volume value remains unproven; H6 fixed shadow after H3 review, no automatic activation or replacement by the adapter."
+      "constraint": "H6 incremental-volume value remains unproven; H6 separate shadow only after explicit H3-001 archival disposition, original V2R4 economic review and separate approval; no automatic activation or replacement by the adapter."
     },
     {
       "existing": "orderflow_depth_imbalance",
@@ -65,8 +65,8 @@
   ],
   "review_gates": [
     "V2R4_COHORT_NO_BUY_PRODUCTIVITY_REVIEW_UNCHANGED_STRATEGY_FINGERPRINT_ACROSS_TECHNICAL_ROTATION",
-    "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_FIXED_REVIEW",
-    "V3_H3_FIXED_REVIEW_BEFORE_ANY_NEW_STRATEGY_CHANGING_SHADOW",
+    "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
+    "V3_H3_001_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW_BEFORE_NEW_SHADOW",
     "SEPARATE_SUCCESSOR_PAPER_RELEASE_AND_PHYSICAL_MINIPC_E2E"
   ],
   "runtime_guardrails": {
@@ -88,7 +88,7 @@
     "why": "20 of 27 retrospective 08-09 Oct relatively shallow-spread favorable 60-minute episodes carried existing EXTENDED setup lane, only two REVERSAL.",
     "inactive_implementation": "paper_evaluator/v3_extended_reentry_review_v1.py",
     "implementation_stage": "IMPLEMENTED_OFFLINE_NOT_PROSPECTIVELY_VALIDATED_NOT_ATTACHED",
-    "precondition_first": "V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE_AND_FROZEN_H3_REVIEW",
+    "precondition_first": "V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
     "separate_policy_second": "V3_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY_SINGLE_POLICY_CHANGE_GATE",
     "success_definition": "Incremental genuine at-time valid BUY_SCOUT with stage2/stop and after-cost realized risk-path evidence, not merely model re-evaluation or retrospective MFE.",
     "no_active_v2r4_import": true,

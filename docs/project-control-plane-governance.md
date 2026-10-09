@@ -198,9 +198,7 @@ Mini-PC task or recurring Work invocation is introduced.
   temporal-diversity and maturity gate is complete. A distinct early
   **low-trade** review is raised once the series has >=72h, >=100 candidates,
   >=30 completed 24h follow-ups and still 0 completed Paper trades.
-- H3 fixed review is surfaced only after its frozen sample/capture gate,
-  stop condition and follow-up readiness. H6 remains queued pending H3
-  review; never starts as a second strategy-changing Shadow.
+- Historical H3 fixed review applies only to a separately authorized, prospective NEW H3 trial after its fresh capture and follow-ups. The archived H3-001 has zero cloud candidate evidence; its current decision is archive/inconclusive disposition, not a passed fixed review. H6 remains queued until both that disposition and the independent V2R4 economic review, plus separate user approval; no concurrent/automatic shadow.
 - H10 first review is already complete; its next concrete research milestone
   is the preregistered point-in-time Kraken-EUR outcome/context join and
   false-positive label contract. Observation/capture continues independently.

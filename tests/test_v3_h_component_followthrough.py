@@ -25,7 +25,7 @@ def check_followthrough(state, ledger, framework):
     q=[r for r in (state.get("strategy_changing_shadow_wip") or {}).get("queued",[])
        if r.get("candidate_id")=="V3-H6-NEXT"]
     reviews=[r for r in (state.get("next_control_decisions") or [])
-             if r.get("id")=="V3-H3-FIXED-REVIEW"]
+             if r.get("id")=="V3-H3-ARCHIVE-DISPOSITION"]
     if len(archived)!=1 or archived[0].get("status")!="ARCHIVED_INCOMPLETE_NOT_FIXED_REVIEWED":
         problems.append("H3 archive status missing")
     if live:
@@ -76,6 +76,19 @@ class HComponentContinuityTests(unittest.TestCase):
         state,ledger,framework=self.source()
         next(x for x in ledger["components"] if x["id"]=="orderflow_depth_imbalance")["rationale"]="H3 now collects"
         self.assertTrue(any("stale current capture" in x for x in check_followthrough(state,ledger,framework)))
+
+    def test_archived_h3_has_disposition_not_impossible_fixed_review(self):
+        state,ledger,framework=self.source()
+        self.assertEqual(check_followthrough(state,ledger,framework),[])
+        archive=[x for x in state["next_control_decisions"]
+                 if x.get("id") == "V3-H3-ARCHIVE-DISPOSITION"]
+        self.assertEqual(len(archive),1)
+        self.assertEqual(archive[0]["status"],"ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY")
+        self.assertFalse(any(x.get("id")=="V3-H3-FIXED-REVIEW"
+                             for x in state["next_control_decisions"]))
+        self.assertEqual(state["strategy_changing_shadow_wip"]["active"],[])
+        self.assertEqual(state["strategy_changing_shadow_wip"]["queued"][0]["status"],
+                         "WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION")
 
     def test_h6_ungated_promotion_is_rejected(self):
         state,ledger,framework=self.source()

@@ -16,6 +16,10 @@ STAGE_B = "V3_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY_SINGLE_POLICY_CHANGE_GATE"
 OWNER = "late_chase_protection"
 COMPANION = "coin_specific_entry_evidence_provenance"
 DECISION_ID = "V3-EXTENDED-SECOND-LEG-LEARNING-GATE"
+H3_ARCHIVE_GATE = "V3_H3_001_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW"
+H3_ARCHIVE_DECISION = "V3-H3-ARCHIVE-DISPOSITION"
+COIN_PROVENANCE_GATE = "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW"
+CAUSAL_NEXT_ACTION = "AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW_PROSPECTIVE_ENTRY_EVIDENCE_ONLY_ONE_CHANGE_COMPARE_THEN_SEPARATE_TRIGGER_POLICY_HYPOTHESIS_IF_NEEDED"
 
 
 def _load(root: Path, path: str) -> dict[str, Any]:
@@ -71,11 +75,11 @@ def validate_documents(
 
     stage_a = refinement.get("stage_A") or {}
     stage_b = refinement.get("stage_B") or {}
-    if stage_a.get("id") != STAGE_A or stage_a.get("depends_on") != "V3_H3_FIXED_REVIEW":
-        errors.append("V3_SUCCESSOR_LINEAGE: prospective input-only A must follow fixed H3 review")
+    if stage_a.get("id") != STAGE_A or stage_a.get("depends_on") != H3_ARCHIVE_GATE:
+        errors.append("V3_SUCCESSOR_LINEAGE: prospective input-only A must follow H3 archive disposition and V2R4 economic review")
     if stage_b.get("id") != STAGE_B or stage_b.get("depends_on") != STAGE_A:
         errors.append("V3_SUCCESSOR_LINEAGE: separate EXTENDED policy B must follow A")
-    if "V3_H3_FIXED_REVIEW -> " + STAGE_A + " -> " + STAGE_B not in str(refinement.get("gate_sequence","")):
+    if H3_ARCHIVE_GATE + " -> " + STAGE_A + " -> " + STAGE_B not in str(refinement.get("gate_sequence","")):
         errors.append("V3_SUCCESSOR_LINEAGE: trial sequence and explicit release not retained")
     for k in ("single_changed_input","result_required"):
         if not str(stage_a.get(k) or "").strip():
@@ -90,7 +94,17 @@ def validate_documents(
     if roadmap.get("no_reversal_lane_replacement") is not True:
         errors.append("V3_SUCCESSOR_LINEAGE: existing REVERSAL category silently replaced")
 
-    next_steps = [v for v in (state.get("next_control_decisions") or []) if isinstance(v, dict) and v.get("id")==DECISION_ID]
+    decisions = state.get("next_control_decisions") or []
+    archive = [v for v in decisions if isinstance(v, dict) and v.get("id") == H3_ARCHIVE_DECISION]
+    if (len(archive) != 1
+            or archive[0].get("status") != "ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY"
+            or any(v.get("id") == "V3-H3-FIXED-REVIEW" for v in decisions if isinstance(v, dict))):
+        errors.append("V3_SUCCESSOR_LINEAGE: archived H3 cannot retain obsolete fixed-review decision")
+    if coin.get("pending_gate") != COIN_PROVENANCE_GATE:
+        errors.append("V3_SUCCESSOR_LINEAGE: coin provenance must follow H3 archive and V2R4 economic review")
+    if ((learning_gate.get("incident") or {}).get("failure_classification") or {}).get("next_active_action") != CAUSAL_NEXT_ACTION:
+        errors.append("V3_SUCCESSOR_LINEAGE: causal next action still depends on impossible H3 fixed review")
+    next_steps = [v for v in decisions if isinstance(v, dict) and v.get("id")==DECISION_ID]
     if len(next_steps) != 1:
         errors.append("V3_SUCCESSOR_LINEAGE: control plane missing unique future review trigger")
     else:
@@ -116,8 +130,8 @@ def validate_documents(
     overlap = lineage.get("follow_on_late_chase_research") or {}
     if overlap.get("existing_component_owner") != OWNER or overlap.get("new_component_created") is not False:
         errors.append("V3_SUCCESSOR_LINEAGE: duplicate second-leg strategy signal")
-    if overlap.get("precondition_first") != "V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE_AND_FROZEN_H3_REVIEW":
-        errors.append("V3_SUCCESSOR_LINEAGE: H3-first A gate missing in research lineage")
+    if overlap.get("precondition_first") != "V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW":
+        errors.append("V3_SUCCESSOR_LINEAGE: H3 archive/V2R4 economic A gate missing in research lineage")
     if overlap.get("separate_policy_second") != STAGE_B:
         errors.append("V3_SUCCESSOR_LINEAGE: separate B review unreferenced")
     if overlap.get("no_automatic_buy_or_promotion") is not True:

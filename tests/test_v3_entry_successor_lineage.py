@@ -51,6 +51,17 @@ class PermanentExtendedLearningLineageTests(unittest.TestCase):
         self.assertTrue(any("prospective input-only A" in e for e in errs),errs)
         self.assertTrue(any("separate EXTENDED policy B" in e for e in errs),errs)
 
+    def test_old_h3_fixed_review_cannot_return_as_successor_gate(self):
+        ledger,state,gate,lineage=documents()
+        late=next(x for x in ledger["components"] if x["id"]=="late_chase_protection")
+        late["successor_refinement"]["stage_A"]["depends_on"]="V3_H3_FIXED_REVIEW"
+        archive=next(x for x in state["next_control_decisions"]
+                     if x.get("id")=="V3-H3-ARCHIVE-DISPOSITION")
+        archive["id"]="V3-H3-FIXED-REVIEW"
+        errs=MODULE.validate_documents(ledger,state,gate,lineage)
+        self.assertTrue(any("archive disposition" in e for e in errs),errs)
+        self.assertTrue(any("obsolete fixed-review" in e for e in errs),errs)
+
     def test_false_retroactive_approval_rejected(self):
         ledger, state, gate, lineage = documents()
         gate["incident"]["retrospective_20261008_09_extended_reentry"]["status_for_release"]="VERIFIED"

@@ -216,7 +216,7 @@
         "existing_research_contract": "research/v3/coin-entry-evidence-lineage-v1.json",
         "stage_A": {
           "id": "V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE",
-          "depends_on": "V3_H3_FIXED_REVIEW",
+          "depends_on": "V3_H3_001_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
           "single_changed_input": "candidate-specific closed 1m/5m/15m Kraken OHLC, volume ratios, 15m ATR/recent low as known at original decision; evaluator, WAIT and risk unchanged",
           "result_required": "valid BUY candidate and stop/stage2 after-cost/MAE/cost evidence; include valid misses and false buys"
         },
@@ -226,7 +226,7 @@
           "single_changed_policy": "existing EXTENDED second-leg fresh-model review eligibility only; no auto BUY; candidate known-at, price/volume confirmation, structure/cost checks",
           "result_required": "prove incremental viable BUY opportunities versus fixed Stage A by matched prospective same-clock comparison; no relaxed execution safeguards"
         },
-        "gate_sequence": "V3_H3_FIXED_REVIEW -> V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE -> V3_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY_SINGLE_POLICY_CHANGE_GATE -> V3_SEPARATE_EXPLICIT_PAPER_RELEASE",
+        "gate_sequence": "V3_H3_001_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW -> V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE -> V3_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY_SINGLE_POLICY_CHANGE_GATE -> V3_SEPARATE_EXPLICIT_PAPER_RELEASE",
         "candidate_cohort_source": "research/v3/v3-coin-entry-evidence-v1.md",
         "permanent_generation_inheritance": "MANDATORY_EXPLICIT_DISPOSITION_AT_EVERY_SUCCESSOR_VERSION_V3_V4_PLUS_LIVE_AFTER_SEPARATE_APPROVAL",
         "allowed_dispositions": [
@@ -331,7 +331,7 @@
       "recovery_followthrough": {
         "source_of_current_shadow_status": "project-current-state.json#strategy_changing_shadow_wip",
         "source_of_archive_evidence": "project-current-state.json#closed_or_rejected_tracks[V3-H3-SHADOW-001]",
-        "mandatory_review_owner": "project-current-state.json#next_control_decisions[V3-H3-FIXED-REVIEW]",
+        "mandatory_review_owner": "project-current-state.json#next_control_decisions[V3-H3-ARCHIVE-DISPOSITION]",
         "predecessor_economic_review": "project-current-state.json#next_control_decisions[V2R4-PRODUCTIVITY-REVIEW]",
         "historic_trial_status": "ARCHIVED_INCOMPLETE_NOT_FIXED_REVIEWED",
         "cloud_prospective_rows": 0,
@@ -473,7 +473,7 @@
         "research/source-registry.json",
         "docs/v3-research-framework.md"
       ],
-      "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_FIXED_REVIEW",
+      "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
       "dependencies": [
         "price_volume_trend_primitives",
         "orderflow_depth_imbalance",

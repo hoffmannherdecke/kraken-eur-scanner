@@ -136,7 +136,7 @@
   ],
   "next_control_decisions": [
     {
-      "id": "V3-H3-FIXED-REVIEW",
+      "id": "V3-H3-ARCHIVE-DISPOSITION",
       "trigger": "H3-001 archived by technical V2R4 cutover and cloud prospective cohort empty; immediate archival/inconclusive review due, NOT a matured fixed H3 review.",
       "action": "Read-only classify H3-001 as ARCHIVED_INCOMPLETE / INCONCLUSIVE_TECHNICAL_CENSORING with 0 Supabase candidate evidence. Preserve frozen pre-cutover baseline and old candidate/config/physical archive, never claim H3 fixed review PASS. Explicitly decide retire H3, defer, or separately prepare an entirely NEW one-change shadow with correct current baseline under normal approvals. Until decision, H6 stays WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION; no automatic shadow or trading strategy promotion.",
       "status": "ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY"
@@ -148,11 +148,11 @@
     },
     {
       "id": "V3-EXTENDED-SECOND-LEG-LEARNING-GATE",
-      "trigger": "Whenever V3-H3 fixed review is handled, V2R4 productivity review is concluded, V3 entry comparison opens or any V3/V4+/later live successor plan/release is prepared",
+      "trigger": "Whenever H3-001 archive/inconclusive disposition is handled, V2R4 productivity review is concluded, V3 entry comparison opens or any V3/V4+/later live successor plan/release is prepared",
       "action": "MANDATORY explicit disposition of 08-09 Oct 0-BUY EXTENDED second-leg finding in existing late_chase_protection ledger; first prospective coin-entry OHLC/volume/ATR input-only A with frozen evaluator/WAIT; separately evaluate EXTENDED re-review policy B only after A; count matched pair/time events, valid BUY/stop/stage2/cost/MAE/24h followups and false buys; preserve anti-chase/fees and no duplicates H6/H4/H7; block new release claim until disposition/evidence and explicit paper approval. No automatic strategy change or new Work/scheduler.",
       "canonical_owner": "research/v3-migration-ledger.json#late_chase_protection.successor_refinement",
       "evidence_anchor": "research/v3/v3-coin-entry-evidence-v1.md",
-      "status": "PENDING_H3_FIXED_REVIEW_AND_PROSPECTIVE_TRIAL_NOT_AUTOMATICALLY_ACTIVE",
+      "status": "PENDING_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW_NO_AUTO_START",
       "applies_through": "V3_V4_PLUS_AND_FUTURE_SEPARATELY_AUTHORIZED_REAL_MONEY_SUCCESSORS",
       "no_new_work_run": true,
       "no_active_strategy_change": true
