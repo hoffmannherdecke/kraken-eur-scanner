@@ -3,7 +3,9 @@
 Status: **KANONISCHE STRATEGIE-ÜBERSICHT**  
 Stand: 2026-09-29  
 Aktive Strategie: `V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION`  
-Aktive Serie: `PAPER-V2R4-20261007T184255Z`
+Strategie-Epochenursprung (technisch abgeschlossen): `PAPER-V2R4-20261007T184255Z`
+Operative aktive **technische** Serie seit 09.10. 11:01 UTC: `PAPER-V2R4-20261009T110135Z` (gleiches unverändertes Strategie-Fingerprint; aktueller Status stets `project-current-state.json`/Supabase).
+V3-H3-001: **09.10. physisch archiviert, 0 prospektive Cloud-H3-Evidenz, kein Fixed-Review-PASS**. H6 bis explizitem Archiv-/Folgegateverfahren gesperrt.
 Aktueller maschinenlesbarer Control-Plane-Status: `project-current-state.json` (bei aktuellen Statusfragen vorrangig; dieses Dokument bleibt Versions-/Strategiekarte).
 
 ## 1. Zweck
@@ -137,7 +139,7 @@ Capture evidence included 324 clean Candidate-Outcomes, 64 complete 24h follow-u
 ## V2R4 — aktive taktische Timing-/Trigger-Paper-Version
 
 **Status:** ACTIVE / APPROVED_PAPER / PAPER ONLY / FIRST SERIES FROZEN  
-**Implementierung:** frühere Drafts #8/#9 superseded. Der binding Machine-Contract `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json` wurde als Release-Freeze verwendet; seine `PREPARED_NOT_ACTIVE`-Kennzeichnung bleibt aus Fingerprint-/Provenance-Gründen unverändert historisch. Aktive immutable Paper-Serie: `PAPER-V2R4-20261007T184255Z`, 50+50 EUR, Supabase-primary, kein Echtgeld.  
+**Implementierung:** frühere Drafts #8/#9 superseded. Der binding Machine-Contract `research/v2r4/paper_strategy_spec_v2r4_release_candidate.json` wurde als Release-Freeze verwendet; seine `PREPARED_NOT_ACTIVE`-Kennzeichnung bleibt aus Fingerprint-/Provenance-Gründen unverändert historisch. Historische erste V2R4-Paper-Serie: `PAPER-V2R4-20261007T184255Z` wurde am 09.10. `technical_closed`; fortgesetzte operative Teilserie `PAPER-V2R4-20261009T110135Z` (gleicher eingefrorener V2R4-Strategiefingerprint), 50+50 EUR, Supabase-primary, kein Echtgeld.  
 **Release-Readiness:** `docs/v2r4-release-readiness.md`  
 **V2R3→V2R4 Release-Diff:** `docs/v2r4-v2r3-release-diff.md`  
 **Zweck:** gezielt das in V2R3 erkannte WAIT-/Revalidation-Latenzproblem untersuchen.

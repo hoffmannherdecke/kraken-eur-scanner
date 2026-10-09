@@ -231,7 +231,7 @@ jobs:
           assert "candidateUpdatedAt" in relay_sql
           assert "updated_at:new Date(status.generated_at).toISOString()" in relay_sql
           framework=Path('docs/v3-research-framework.md').read_text()
-          allowed={'NEW','PRECHECK','OFFLINE_TEST','SHADOW','KEEP_TESTING','PROMOTE_CANDIDATE','PROMOTED','REJECTED','DEFERRED'}
+          allowed={'NEW','PRECHECK','OFFLINE_TEST','SHADOW','KEEP_TESTING','PROMOTE_CANDIDATE','PROMOTED','REJECTED','DEFERRED','ARCHIVED_INCOMPLETE_NOT_FIXED_REVIEWED'}
           import re
           for value in re.findall(r'^Status: `([^`]+)`',framework,re.M):
               assert value in allowed, value

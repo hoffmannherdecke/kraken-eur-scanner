@@ -132,6 +132,15 @@ danach sind prospektive Episode→Outcome-Vergleiche zulässig.
 Details/fehlende Daten: `research/v3/market-phase-reversal-observation-v1.md`.
 Keine zusätzlichen Work-Läufe/Pushs.
 
+## AKTUELLER NACH-ROTATIONS-ABGLEICH — 09.10.2026 19:50 UTC
+
+Diese datierte Ergänzung ersetzt **nur aktuelle Zustandsbehauptungen** aus den historischen Abschnitten 07./08.10., nicht deren immutable damalige Beweise. Die einzige aktuelle deklarierte Autorität bleibt `project-current-state.json`, operative Wahrheit bleibt MINI-PC/Supabase.
+
+- V2R4 **dieselbe Strategie** `V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION`, Originalserie `PAPER-V2R4-20261007T184255Z` jetzt `technical_closed` (1.011 Kandidaten, 0 Trades, 260 vollständige bis zum Cutover fällige 24h-Verläufe); operative Nachfolgerserie `PAPER-V2R4-20261009T110135Z` weiterhin `active`. Strategie-Epoche 07.10. 18:42:55 UTC, kein Reset des 72h-Pflichtreviews.
+- `V3-H3-SHADOW-001` wurde **physisch archiviert und gestoppt**, ohne die eingefrorene alte H3-Basis auf die neue technische Serie umzuhängen (`ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND`, MINI-PC Health 19:49:26 UTC). Cloud-Status-H3 zuletzt 11:00 UTC, Cloud-Evidenz **0**. Kein Fixed-Review-PASS, keine H6-Promotion. Original-Kandidaten-/Config-/Aktivierungsbelege bleiben absichtlich historische `SHADOW_RUNNING`-Aufzeichnungen; die *aktuelle* Aktivitätsliste hat 0 strategieändernde Shadows.
+- V3-H10 und andere klar passive Forschungsstränge dürfen unabhängig read-only bleiben. Coin-Evidence und EXTENDED-Second-Leg-Review liegen nur in **inaktiven** separaten Tests; keine V2R4-Entry-/Stop-/Gebührenänderung. H6 wartet auf explizite H3-Archiv-/Folgeversuchsentscheidung, keine automatische Aktivierung.
+- Diese drei Befunde sind im bestehenden zentralen Projekt-State, vorhandenen Meilensteincontroller und Review-Governance verknüpft; Gesamtarchitektur: `docs/project-control-plane-governance.md#gesamtarchitektur-genau-ein-wirkungsweg-getrennte-verantwortlichkeiten-audit-09102026`. Ältere Zeilen unten sind Status der **damaligen** Entscheidung, nicht laufende Shadow-/Paper-Wahrheit.
+
 ## Statusentscheidung 2026-10-08 — V2R4 aktiv / V3 Shadow aktiv
 
 V2R4 PAPER ist seit 2026-10-07 als eigene immutable Serie `PAPER-V2R4-20261007T184255Z` aktiv; Release-Status `APPROVED_PAPER`, 50+50 EUR, `paper_only=true`, keine Echtgeldaktionen und keine automatische Aktivierung. V2R3 `PAPER-V2R3-CLEAN-20261001T0925Z` ist `closed_complete` und sein Release-Gate bleibt als abgeschlossene Historie fest an diese Serie gebunden. V3-H1 wurde nach festem Review als eigenständige Decision-Authority verworfen; V3-H3-SHADOW-001 ist auf dem MINI-PC aktiv und sammelt isolierte Evidenz gegen V2R4. H10 hat sein preregistriertes erstes Sample-/Health-Gate erreicht und ist bereit für den festen ersten Review; weiterhin keine Strategie-Kopplung.

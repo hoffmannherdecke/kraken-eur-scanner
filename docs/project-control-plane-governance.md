@@ -53,6 +53,35 @@ Komponentenstatus bleibt dynamisch in `project-current-state.json`
 und Runtime-Evidenz; die Routing-Matrix beansprucht keine aktuelle
 Live-Statusautorität.
 
+## Gesamtarchitektur: genau ein Wirkungsweg, getrennte Verantwortlichkeiten (Audit 09.10.2026)
+
+**Betriebskarte / aktuelle Autorität:** `project-current-state.json` ist die **deklarierte** aktive Strategie-/Shadow-/Freigabewahrheit, `public.paper_series` + `public.paper_technical_rotations` + MINI-PC-Heartbeat liefern **aktuelle** Betriebs-/Serien-Fakten, `research/v3-migration-ledger.json` hält die Strategievererbung, `docs/master-version-register.md` ist Historie, `PROJECT_BACKLOG.md` hält offene Arbeit. Git-Historienbelege und eingefrorene Kandidaten-JSON (etwa `v3-h3-shadow-001.json` mit historischem `SHADOW_RUNNING`) sind **keine** Runtime-Gesundheits- oder aktuelle Aktivitätsquelle.
+
+```text
+Kraken-EUR Spot + unabhängiger GitHub-Scanner + MINI-PC WS + Altrady-Wake-Hinweis
+  -> eindeutiger Kandidat (UTC/known-at, Source, Venue, Liveness, Dedupe)
+  -> genau EINE laufende, eingefrorene V2R4-Paper-Entscheidungslogik
+     -> BUY_SCOUT: 50+50 simuliert, echte Stop-/Stage-2-/Kosten-Evidenz
+     -> WAIT: alle eingefrorenen Kurs+Volumenbedingungen -> nur bei Match echter KI-Recheck
+     -> REJECT: Grund + späterer Kurs-/Risiko-Verlauf, niemals erfundener Trade
+  -> Mini-PC Lifecycle/Backup -> Supabase aktuelle Teilserie + historisch eingefrorene Teilserien
+  -> Strategie-Epochen-Review (ALLE technischen Teilserien; Trade-, MAE-/Kosten-/Chance-Funnel)
+  -> Forschungs-/Freigabegate: genau EIN aktiver strategieändernder Shadow
+     -> prospektiver Ein-Änderungs-Vergleich -> explizite Paper-Freigabe
+     -> gesondertes Sicherheits-/Nutzer-Gate vor JEGLICHER Echtgeldstrategie
+
+Parallel, OHNE Handelsautorität: H10/H11/Marktphasen/Quellen als Research-Evidenz.
+Außerhalb der Trading-Semantik: Watchdog, Cloud-Fallback, Slack, Backup, Actions-Kosten.
+```
+
+**Statusabgleich nach dem 09.10.-Cutover (belegte Momentaufnahme):**
+- Ursprünglicher V2R4-Strategiestart **07.10. 18:42:55 UTC**, 72h-Produktivitätsreview **10.10. 18:42:55 UTC**. Alte `PAPER-V2R4-20261007T184255Z` ist `technical_closed`, mit **1.011** Outcomes/**0** Trades und **260/260 fälligen vollständigen 24h-Follow-ups** bis zum Cutover. Technisch neue `PAPER-V2R4-20261009T110135Z` läuft mit **derselben Strategie-/Risikoregel** weiter. Die Gesamtbewertung darf die Zähler **nicht** nur auf die aktuelle Teilserie reduzieren. Erstes Strategie-Epochenreview ist ausdrücklich ein *früher Review*, **keine** automatische V2R4-Finalfreigabe.
+- Der physische Mini-PC-Health-Snapshot **09.10. 19:49:26 UTC** enthält `v3_h3_shadow=ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND`. Cloud-H3-Status wurde zuletzt **11:00:03 UTC** generiert, `public.v3_h3_shadow_evidence` enthält **0** Datensätze. Das ist ein nach dem Cutover **archivierter, nicht abgeschlossener** H3-Versuch; **kein** erreichter Fixed-Review-Meilenstein, keine Kausaldivergenz und keine H6-Freigabe. Historische Aktivierungsbelege bleiben unverändert, statt rückwirkend zu einem Erfolg umgeschrieben zu werden. H6 bleibt als nächster strategieändernder Versuch bis zur expliziten H3-Archivent­scheidung und eigenem Gate gesperrt.
+- V3 `coin_specific_entry_evidence_provenance` ist eine inaktive geteilte *Daten-Schnittstelle*. `late_chase_protection` enthält die davon **getrennte** spätere `EXTENDED`-Second-Leg-Hypothese. Kein doppelter H6-Volumenvote, kein neuer Reversal-Entscheider, kein automatischer BUY. Zuerst separater Daten-A-Test, danach nach H3-Reconciliation ggf. isolierter Policy-B-Test, beide mit echten Netto-/Stop-/BUY-Nachweisen.
+- Von den **66 registrierten** GitHub-Workflows sind derzeit **9** als `ACTIVE_RUNTIME`/laufende Kontrollfläche klassifiziert. Die übrigen sind historische, manuelle, Prüf- oder Research-Workflows und **keine 57 gleichzeitig laufenden Tradingstrategien**. Der detaillierte Owner-/Dedupe-Vertrag für 26 Forschungs-/Monitoringströme liegt bereits unter `docs/unified-monitoring-learning-architecture-v1.md`; **kein** zweiter Scheduler, kein doppeltes Ops-System.
+
+**Verbindliche Bereinigungsregel:** Beim nächsten *technischen* Cutover gehören die Shadow-Aktivitätsdisposition, Archiv-/Snapshotstatus, unveränderter Strategie-Fingerprint, alte/neue Supabase-Serien und die Epochen-Produktivitätsuhr **zur gleichen Abschlusssequenz**. Ein über `SHADOW_RUNNING` eingefrorener historischer Kandidatenvertrag darf niemals allein eine laufende Shadow-Instanz behaupten. Ein archivierter H3-Fall darf weder eine ständige `STALE`-Alarmflut erzeugen noch bei der automatischen H6-Freigabe als bestandener Fixed Review gelten. Die Runtime-Frozen-Artefakte dürfen nur in einer **separat genehmigten neuen Version** geändert werden.
+
 ## Strategy-changing Shadow WIP limit
 
 At most **one** Shadow/Paper experiment that can alter a strategy decision may be active at a time.

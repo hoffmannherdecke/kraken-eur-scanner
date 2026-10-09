@@ -50,7 +50,10 @@ class SafeAutonomyTests(unittest.TestCase):
         self.assertEqual(r["status"],"BLOCKED")
     def test_shadow_wip_fail_closed(self):
         state=copy.deepcopy(STATE)
-        state["strategy_changing_shadow_wip"]["active"].append({"candidate_id":"V3-H6-SHADOW"})
+        state["strategy_changing_shadow_wip"]["active"].extend([
+            {"candidate_id":"V3-H3-SHADOW"},
+            {"candidate_id":"V3-H6-SHADOW"},
+        ])
         with tempfile.TemporaryDirectory() as p:
             r=selector.select(Path(p),QUEUE,state,{})
         self.assertEqual(r["status"],"BLOCKED")

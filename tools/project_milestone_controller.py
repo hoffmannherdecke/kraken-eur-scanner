@@ -19,9 +19,15 @@ import sys
 import urllib.parse
 import urllib.request
 
+try:
+    from tools.strategy_epoch_lineage import summarize_epoch
+except ModuleNotFoundError:
+    from strategy_epoch_lineage import summarize_epoch
+
 ROOT = Path(__file__).resolve().parents[1]
 UTC = dt.timezone.utc
-ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "H3_STALE_EVIDENCE": 7, "PAPER_FINAL_REVIEW": 38,
+ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "H3_STALE_EVIDENCE": 7,
+                 "H3_ARCHIVED_INCOMPLETE_REVIEW": 7, "PAPER_FINAL_REVIEW": 38,
                  "PAPER_LOW_TRADES": 38, "H10_CONTRACT": 7,
                  "NEW_SHADOW_ADAPTER": 7, "NEW_CONTROL_DECISION": 7}
 SUPPORTED_DECISIONS = {"V3-H3-FIXED-REVIEW", "V2R4-PRODUCTIVITY-REVIEW",
@@ -110,6 +116,11 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
     epoch_start = iso_time(epoch_stamp)
     require(now >= epoch_start, "review clock before original strategy epoch")
     strategy_epoch_age_days = (now - epoch_start).total_seconds() / 86400.0
+    # Single shared economic/lineage contract also enforced by control plane.
+    aggregate=summarize_epoch(active,paper)
+    epoch_min_outcomes=int(aggregate["epoch_minimum_candidate_outcomes"])
+    epoch_min_trades=int(aggregate["epoch_minimum_completed_trades"])
+    epoch_min_mature24=int(aggregate["epoch_minimum_complete_24h"])
     notices = []
     statuses = []
     for task in state.get("next_control_decisions") or []:
@@ -147,22 +158,25 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
                              "erst Coin-Evidence-A, dann getrennt Review-B."))
     else:
         statuses.append("V2R4:COLLECTING")
-        # The 72h clock belongs to the strategy epoch, NOT the current
-        # technical segment. Counts/24h maturity remain conservative: only
-        # the currently verified Supabase readiness row can satisfy them.
+        # The append-only archive preserves *all* closed segments' verified
+        # mature evidence and the live segment's Supabase counters exactly once.
+        # No technical rotation resets the strategic productivity clock.
+        # This is an EARLY pathology review, never the 1000-outcome release gate.
         if (strategy_epoch_age_days >= 3
-                and int(paper["candidate_outcomes"]) >= 100
-                and int(paper.get("complete_24h") or 0) >= 30
-                and int(paper["completed_trades"]) == 0):
+                and epoch_min_outcomes >= 100
+                and epoch_min_mature24 >= 30
+                and epoch_min_trades == 0):
             statuses.append("V2R4:LOW_TRADE_REVIEW")
             notices.append(event("PAPER_LOW_TRADES", series,
                                  "72h-STRATEGIEEPOCHEN-FRÜHREVIEW (Uhr ab 07.10. "
                                  "20:42:55 MESZ; technische Serienrotation KEIN RESET): "
-                                 "aktuelle technische Teilserie >=100 Kandidaten, "
-                                 ">=30 reife 24h-Follow-ups, 0 abgeschlossene Trades "
-                                 "in dieser Teilserie. Ältere technische Segmente "
-                                 "im finalen Entscheid mit einbeziehen; kein "
-                                 "Gleichsetzen lokaler Zähler mit Epochensumme. "
+                                 "beide nachprüfbaren technischen Teilserien "
+                                 "gemeinsam betrachten: alte abgeschlossene Serie "
+                                 "1011 Outcomes, 260 vollständige 24h-Verläufe, "
+                                 "0 Trades; aktuelle Serie liefert weitere "
+                                 "tagesaktuelle Daten. Wirtschaftliche Null-BUY- "
+                                 "Konversion ist ein zwingender REVIEW, nicht "
+                                 "gleichbedeutend mit freigegebenem Abschluss. "
                                  "Funnel, WAIT/TTL, "
                                  "Missed-Moves, Kosten und Datenqualität analysieren. "
                                  "Aktive Serie unverändert lassen. "
@@ -233,7 +247,28 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
                 else:
                     statuses.append("H3:COLLECTING")
     else:
-        statuses.append("H3:NO_ACTIVE_SHADOW")
+        archived = [x for x in (state.get("closed_or_rejected_tracks") or [])
+                    if x.get("id") == "V3-H3-SHADOW-001"]
+        if archived:
+            require(len(archived)==1, "H3 archived more than once")
+            h3_archive=archived[0]
+            require(h3_archive.get("status")=="ARCHIVED_INCOMPLETE_NOT_FIXED_REVIEWED"
+                    and h3_archive.get("fixed_review_completed") is False
+                    and h3_archive.get("promotion_eligible") is False
+                    and h3_archive.get("cloud_causal_evidence_rows_at_review")==0
+                    and h3_archive.get("former_frozen_baseline_series_id")==series,
+                    "H3 archive incorrectly claims full evidence or a passed fixed review")
+            statuses.append("H3:ARCHIVED_INCOMPLETE_NO_FIXED_REVIEW")
+            notices.append(event("H3_ARCHIVED_INCOMPLETE_REVIEW",
+                                 h3_archive["id"]+"|"+series,
+                                 "H3-001 wurde beim technischen Cutover archiviert; "
+                                 "0 prospektive Cloud-Schattenbelege. Die alte "
+                                 "SHADOW_RUNNING-Angabe ist beendet. Kein H3-Fixed-"
+                                 "Review bestanden, H6 bleibt bis zur gesonderten "
+                                 "Archiv-/Kausalitätsentscheidung gesperrt. "
+                                 "V2R4-Handelsbewertung läuft weiter."))
+        else:
+            statuses.append("H3:NO_ACTIVE_SHADOW")
 
     h10 = next((x for x in state.get("observational_research_tracks") or []
                 if x.get("id") == "V3-H10-CAPTURE-001"), None)
@@ -249,10 +284,18 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
         else:
             statuses.append("H10:CONTRACT_PRESENT_REVIEW_NEEDED")
     queued = (state.get("strategy_changing_shadow_wip") or {}).get("queued") or []
-    if any(x.get("candidate_id") == "V3-H6-NEXT" for x in queued):
-        statuses.append("H6:WAIT_H3_REVIEW_NO_AUTO_START")
+    if any(x.get("candidate_id")=="V3-H6-NEXT" for x in queued):
+        if any(x.get("status")=="WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION"
+               for x in queued if x.get("candidate_id")=="V3-H6-NEXT"):
+            statuses.append("H6:BLOCKED_H3_ARCHIVED_INCOMPLETE_NO_AUTO_START")
+        else:
+            statuses.append("H6:WAIT_H3_REVIEW_NO_AUTO_START")
     return {"kind": "PROJECT_MILESTONE_CONTROL_V1", "series_id": series,
             "live_technical_series_id": live_series,
+            "epoch_minimum_candidate_outcomes": epoch_min_outcomes,
+            "epoch_minimum_completed_trades": epoch_min_trades,
+            "epoch_minimum_complete_24h": epoch_min_mature24,
+            "epoch_combines_verified_technical_segments": live_series!=series,
             "strategy_epoch_started_at_utc": epoch_stamp,
             "strategy_epoch_age_days": round(strategy_epoch_age_days, 4),
             "statuses": statuses, "events": notices,
