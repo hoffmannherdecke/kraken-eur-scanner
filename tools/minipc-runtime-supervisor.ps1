@@ -97,6 +97,65 @@ $specs = @(
   [pscustomobject]@{ name="CryptoMiniPC-StatusSync"; path=(Join-Path $stateDir "minipc-status-sync-heartbeat.json"); max_age=900.0; good=@("HEALTHY"); restart_backoff_min=$MinRestartIntervalMinutes }
 )
 
+# During an exact technical PAPER cutover never restart the frozen old
+# scheduled tasks. Malformed or expired markers fail closed rather than
+# silently resurrecting H3-001/PAPER-V2R4.
+$maintenanceTasks=@(
+  "CryptoMiniPC-V2R4PaperCandidates","CryptoMiniPC-V2R4PaperWait",
+  "CryptoMiniPC-V2R4PaperLifecycle","CryptoMiniPC-V2R4PaperCloudSync",
+  "CryptoMiniPC-V3H3Shadow001"
+)
+$maintenanceMode="NONE"
+$maintenanceExpires=$null
+$maintenanceFile=Join-Path $stateDir "v2r4-technical-cutover-maintenance.json"
+if(Test-Path -LiteralPath $maintenanceFile){
+  $maintenanceMode="INVALID_FAIL_CLOSED"
+  try {
+    $m=Get-Content -LiteralPath $maintenanceFile -Raw | ConvertFrom-Json
+    $expires=Parse-Utc $m.expires_at_utc
+    $created=Parse-Utc $m.created_at_utc
+    $old=Get-Content (Join-Path $TradingRoot "Runtime\v2r4-paper-app\paper_runtime_control.json") -Raw | ConvertFrom-Json
+    $got=@($m.task_names | Sort-Object)
+    $expected=@($maintenanceTasks | Sort-Object)
+    if($m.kind -eq "V2R4_TECHNICAL_MAINTENANCE_V1" -and
+       $m.phase -in @("ARMING","QUIESCED","CLOUD_COMMITTED") -and
+       $old.series_id -eq "PAPER-V2R4-20261007T184255Z" -and
+       $old.release_repo_sha -eq "3c6729a6c548d169f56a97f07f75892f37211636" -and
+       $m.predecessor_series_id -eq $old.series_id -and
+       [string]$m.successor_repo_sha -match '^[a-f0-9]{40}$' -and
+       $m.orders_enabled -eq $false -and
+       ($got -join '|') -ceq ($expected -join '|') -and
+       $created -and $expires -and
+       ($expires-$created).TotalMinutes -gt 0 -and
+       ($expires-$created).TotalMinutes -le 10 -and
+       ($created-(Get-Date).ToUniversalTime()).TotalSeconds -le 15){
+      $maintenanceExpires=$expires
+      $maintenanceMode=if((Get-Date).ToUniversalTime() -gt $expires){"EXPIRED_FAIL_CLOSED"}else{"ACTIVE"}
+    }
+  } catch { $maintenanceMode="INVALID_FAIL_CLOSED" }
+}
+
+# Post-cutover V3-H3-001 is permanently frozen on its ORIGINAL baseline.
+# A committed, fully verified local record only prevents restarting that
+# retired old H3 task; Kraken and successor Paper tasks remain supervised.
+$h3Retired=$false
+$retirementFile=Join-Path $stateDir "v2r4-technical-cutover-completed.json"
+if(Test-Path -LiteralPath $retirementFile){
+  try {
+    $retired=Get-Content -LiteralPath $retirementFile -Raw | ConvertFrom-Json
+    $h3=Get-ScheduledTask -TaskName "CryptoMiniPC-V3H3Shadow001" -ErrorAction SilentlyContinue
+    $h3Retired=(
+      $retired.kind -eq "V2R4_TECHNICAL_CUTOVER_COMPLETED_V1" -and
+      $retired.predecessor_series_id -eq "PAPER-V2R4-20261007T184255Z" -and
+      [string]$retired.successor_series_id -match '^PAPER-V2R4-[0-9]{8}T[0-9]{6}Z$' -and
+      $retired.h3_001_retired -eq $true -and
+      $retired.real_money_actions -eq $false -and
+      $retired.orders -eq $false -and
+      $h3 -and [string]$h3.State -eq "Disabled"
+    )
+  }catch{$h3Retired=$false}
+}
+
 $rows = @()
 $restarted = @()
 $failed = @()
@@ -127,6 +186,21 @@ $status = "UNKNOWN"
 
 try {
   foreach ($spec in $specs) {
+    if($h3Retired -and $spec.name -eq "CryptoMiniPC-V3H3Shadow001"){
+      $rows += [pscustomobject]@{
+        task=$spec.name; installed=$true; healthy_before=$null
+        action="ARCHIVED_BASELINE_NOT_RESTARTED"; before=$null; healthy_after=$null; after=$null
+      }
+      continue
+    }
+    if($maintenanceMode -ne "NONE" -and $spec.name -in $maintenanceTasks){
+      $rows += [pscustomobject]@{
+        task=$spec.name; installed=$true; healthy_before=$null
+        action=$(if($maintenanceMode -eq "ACTIVE"){"MAINTENANCE_SKIP"}else{"MAINTENANCE_FAIL_CLOSED"})
+        before=$null; healthy_after=$null; after=$null
+      }
+      continue
+    }
     $task = Get-ScheduledTask -TaskName $spec.name -ErrorAction SilentlyContinue
     if (-not $task) {
       $rows += [pscustomobject]@{
@@ -217,6 +291,7 @@ try {
 
   $allHealthy = $true
   foreach ($row in $rows) {
+    if($row.action -in @("MAINTENANCE_SKIP","MAINTENANCE_FAIL_CLOSED","ARCHIVED_BASELINE_NOT_RESTARTED")){ continue }
     if (-not $row.installed) { continue }
     $spec = $specs | Where-Object { $_.name -eq $row.task } | Select-Object -First 1
     $task = Get-ScheduledTask -TaskName $row.task -ErrorAction SilentlyContinue
@@ -256,7 +331,8 @@ try {
     if (-not $healthy) { $allHealthy = $false }
   }
 
-  $status = if ($failed.Count -gt 0) { "CRITICAL" } elseif ($allHealthy) { "HEALTHY" } else { "WARNING" }
+  $status = if($maintenanceMode -in @("INVALID_FAIL_CLOSED","EXPIRED_FAIL_CLOSED")){"CRITICAL"}
+    elseif ($failed.Count -gt 0) { "CRITICAL" } elseif ($allHealthy) { "HEALTHY" } else { "WARNING" }
 } catch {
   $status = "CRITICAL"
   $topError = $_.Exception.Message
@@ -269,6 +345,14 @@ $report = [pscustomobject]@{
   status=$status
   restarted=@($restarted)
   failed_restarts=@($failed)
+  h3_001_archived=$h3Retired
+  maintenance=[pscustomobject]@{
+    mode=$maintenanceMode
+    expires_at_utc=$(if($maintenanceExpires){$maintenanceExpires.ToString("o")}else{$null})
+    scoped_task_names=@($maintenanceTasks)
+    order_api=$false
+    real_money_actions=$false
+  }
   kraken_upstream_healthy=$krakenSourceHealthy
   error=$topError
   tasks=@($rows)

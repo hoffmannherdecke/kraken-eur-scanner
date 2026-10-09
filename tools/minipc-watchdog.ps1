@@ -310,6 +310,22 @@ foreach ($spec in $paperRuntimeSpecs) {
 try {
   $h3Task = Get-ScheduledTask -TaskName "CryptoMiniPC-V3H3Shadow001" -ErrorAction SilentlyContinue
   if ($h3Task) {
+    $retiredPath=Join-Path $TradingRoot 'State\v2r4-technical-cutover-completed.json'
+    $retiredOk=$false
+    if(Test-Path -LiteralPath $retiredPath){
+      try {
+        $r=Get-Content $retiredPath -Raw | ConvertFrom-Json
+        $retiredOk=($r.kind -eq 'V2R4_TECHNICAL_CUTOVER_COMPLETED_V1' -and
+          $r.predecessor_series_id -eq 'PAPER-V2R4-20261007T184255Z' -and
+          [string]$r.successor_series_id -match '^PAPER-V2R4-[0-9]{8}T[0-9]{6}Z$' -and
+          $r.h3_001_retired -eq $true -and
+          $r.real_money_actions -eq $false -and
+          [string]$h3Task.State -eq 'Disabled')
+      } catch { $retiredOk=$false }
+    }
+    if($retiredOk){
+      Add-Check 'v3_h3_shadow' $true 'ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND' 'WARNING'
+    } else {
     $hb = Join-Path $TradingRoot "State\v3-h3-shadow-001-heartbeat.json"
     if (-not (Test-Path $hb)) {
       Add-Check "v3_h3_shadow" $false "task installed but heartbeat missing" "WARNING"
@@ -324,6 +340,8 @@ try {
         [string]$h3Task.State -eq "Running"
       )
       Add-Check "v3_h3_shadow" $ok ("status=" + $h.status + " age_sec=" + $ageSec + " task_state=" + $h3Task.State + " cloud_sync=" + $h.cloud_sync_status) "WARNING"
+    }
+
     }
   } else {
     $checks["v3_h3_shadow"] = [ordered]@{ ok=$null; detail="H3 shadow task not installed" }

@@ -101,7 +101,7 @@ def classify_event(event,state):
     return False,liq or 'WATCH_ONLY',alt,None
 
 def run_candidates(args):
-    app=args.app_root; trading=args.trading_root; state_path=trading/'State/v2r4-paper-candidate-runtime-state.json'; hb_path=trading/'State/v2r4-paper-candidate-runtime-heartbeat.json'; events=trading/'State/v2r4-ws-shadow-events'; qdir=app/'handoff_queue'; ddir=app/'paper_decisions'; qdir.mkdir(parents=True,exist_ok=True); ddir.mkdir(parents=True,exist_ok=True)
+    app=args.app_root; trading=args.trading_root; state_path=(getattr(args,'paper_state_dir',None) or (trading/'State'))/'v2r4-paper-candidate-runtime-state.json'; hb_path=trading/'State/v2r4-paper-candidate-runtime-heartbeat.json'; events=trading/'State/v2r4-ws-shadow-events'; qdir=app/'handoff_queue'; ddir=app/'paper_decisions'; qdir.mkdir(parents=True,exist_ok=True); ddir.mkdir(parents=True,exist_ok=True)
     state=load_state(state_path); key=args.api_key_file.read_text('utf-8').strip() if args.api_key_file.exists() else ''
     while True:
       counters={'events_seen':0,'watch_only':0,'reviewable':0,'evaluated':0,'failures':0,'missed_during_outage':0,'future_deferred':0,'reconciled_decisions':0,'symbol_pending':0,'symbol_refresh_errors':0}
@@ -285,6 +285,6 @@ def run_lifecycle(args):
       time.sleep(args.interval_seconds)
 
 def parse_args():
-    ap=argparse.ArgumentParser(); ap.add_argument('--mode',choices=['candidates','lifecycle'],required=True); ap.add_argument('--app-root',type=Path,required=True); ap.add_argument('--trading-root',type=Path,default=Path.home()/'Trading'); ap.add_argument('--api-key-file',type=Path,default=Path.home()/'Trading/Secrets/openai-api-key.txt'); ap.add_argument('--interval-seconds',type=float,default=2.0); ap.add_argument('--once',action='store_true'); return ap.parse_args()
+    ap=argparse.ArgumentParser(); ap.add_argument('--mode',choices=['candidates','lifecycle'],required=True); ap.add_argument('--app-root',type=Path,required=True); ap.add_argument('--trading-root',type=Path,default=Path.home()/'Trading'); ap.add_argument('--api-key-file',type=Path,default=Path.home()/'Trading/Secrets/openai-api-key.txt'); ap.add_argument('--paper-state-dir',type=Path,default=None); ap.add_argument('--interval-seconds',type=float,default=2.0); ap.add_argument('--once',action='store_true'); return ap.parse_args()
 if __name__=='__main__':
     a=parse_args(); raise SystemExit(run_candidates(a) if a.mode=='candidates' else run_lifecycle(a))

@@ -11,3 +11,7 @@ verify_jwt = false
 
 [functions.v2r4-paper-evidence-relay]
 verify_jwt = false
+
+# Dedicated two-token authenticated technical PAPER release only.
+[functions.v2r4-technical-cutover]
+verify_jwt = false

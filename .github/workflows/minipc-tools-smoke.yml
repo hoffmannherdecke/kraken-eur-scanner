@@ -107,6 +107,8 @@ jobs:
             'tools/uninstall-minipc-status-sync.ps1',
             'tools/minipc-v2r4-technical-rollover-preflight.ps1',
             'tools/minipc-v2r4-technical-rollover-stage.ps1',
+            'tools/minipc-v2r4-technical-cutover-readiness.ps1',
+            'tools/minipc-v2r4-technical-cutover-operator.ps1',
             'tools/minipc-runtime-supervisor.ps1',
             'tools/install-minipc-runtime-supervisor.ps1',
             'tools/minipc-runtime-supervisor-selfheal-smoke.ps1',
@@ -161,6 +163,32 @@ jobs:
           if($result.status -ne 'PREFLIGHT_BLOCKED_NO_MUTATION'){ throw 'unsafe success without local controls' }
           if(Test-Path $root){ throw 'preflight wrote files' }
           Write-Host 'TECHNICAL_ROLLOVER_READ_ONLY_FAIL_CLOSED_PASS'
+      - name: Cutover operator requires reviewed SHA and never mutates on default path
+        shell: powershell
+        run: |
+          $root=Join-Path $env:RUNNER_TEMP 'nonexistent-cutover-operator-fixture'
+          if(Test-Path $root){ throw 'Unexpected fixture' }
+          $raw=& ./tools/minipc-v2r4-technical-cutover-operator.ps1 -TradingRoot $root
+          $result=($raw -join [Environment]::NewLine) | ConvertFrom-Json
+          if($result.status -ne 'BLOCKED' -or $result.phase -ne 'READ_ONLY' -or $result.orders -ne $false){
+            throw 'Cutover operator did not fail closed on missing SHA'
+          }
+          if(Test-Path $root){ throw 'Cutover operator created files in read-only mode' }
+          Write-Host 'CUTOVER_OPERATOR_READ_ONLY_FAIL_CLOSED_PASS'
+
+      - name: Technical cutover inventory is read-only and fails closed
+        shell: powershell
+        run: |
+          $root=Join-Path $env:RUNNER_TEMP 'absent-technical-readiness-fixture'
+          if(Test-Path $root){ throw 'fixture path already exists' }
+          $text = & ./tools/minipc-v2r4-technical-cutover-readiness.ps1 -TradingRoot $root
+          $result = ($text -join [Environment]::NewLine) | ConvertFrom-Json
+          if($result.status -ne 'READ_ONLY_GATE_BLOCKED' -or $result.mode -ne 'READ_ONLY'){
+            throw 'readiness script did not fail closed'
+          }
+          if(Test-Path $root){ throw 'read-only readiness created files' }
+          Write-Host 'TECHNICAL_CUTOVER_READ_ONLY_FAIL_CLOSED_PASS'
+
       - name: Compile real-Altrady release smoke helper
         run: python -m py_compile tools/v2r4-real-altrady-release-smoke.py
 

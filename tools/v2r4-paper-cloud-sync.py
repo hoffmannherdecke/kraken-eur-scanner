@@ -103,8 +103,8 @@ def actionable_keys(control,candidates,trades):
                 keys.add(f"{sid}|{row.get('candidate_id')}|{idx}|{typ}|{event.get('at_utc') or ''}")
     return keys
 
-def dispatch_alerts_if_needed(root,control,candidates,trades):
-    state_path=root/'State/v2r4-paper-alert-dispatch-state.json'
+def dispatch_alerts_if_needed(root,control,candidates,trades,paper_state_dir=None):
+    state_path=(paper_state_dir or (root/'State'))/'v2r4-paper-alert-dispatch-state.json'
     state=load_json(state_path) if state_path.exists() else {'schema_version':1,'dispatched':[]}
     dispatched=set(state.get('dispatched') or [])
     current=actionable_keys(control,candidates,trades)
@@ -136,7 +136,7 @@ def dispatch_alerts_if_needed(root,control,candidates,trades):
 
 def run_once(args):
     hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'
-    state_path=args.trading_root/'State/v2r4-paper-cloud-sync-state.json'
+    state_path=(getattr(args,'paper_state_dir',None) or (args.trading_root/'State'))/'v2r4-paper-cloud-sync-state.json'
     token=load_token(args.trading_root)
     result={'schema_version':1,'kind':'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1','checked_at_utc':iso(),'status':'UNKNOWN','paper_only':True,'order_api':False,'real_money_actions':False}
     if len(token)<24:
@@ -169,7 +169,7 @@ def run_once(args):
             state['sent']={k:sent[k] for k in keys}
             atomic_json(state_path,state)
 
-        alert_state=dispatch_alerts_if_needed(args.trading_root,control,candidates,trades)
+        alert_state=dispatch_alerts_if_needed(args.trading_root,control,candidates,trades,getattr(args,'paper_state_dir',None))
         result.update(
             status='HEALTHY',series_id=control['series_id'],candidates=len(candidates),trades=len(trades),
             pending_candidates=len(pending_candidates),pending_trades=len(pending_trades),
@@ -181,7 +181,7 @@ def run_once(args):
     atomic_json(hb,result); return result
 
 def parse_args():
-    ap=argparse.ArgumentParser(); ap.add_argument('--app-root',type=Path,required=True); ap.add_argument('--trading-root',type=Path,default=Path.home()/'Trading'); ap.add_argument('--endpoint',default=DEFAULT_ENDPOINT); ap.add_argument('--interval-seconds',type=int,default=60); ap.add_argument('--once',action='store_true'); return ap.parse_args()
+    ap=argparse.ArgumentParser(); ap.add_argument('--app-root',type=Path,required=True); ap.add_argument('--trading-root',type=Path,default=Path.home()/'Trading'); ap.add_argument('--endpoint',default=DEFAULT_ENDPOINT); ap.add_argument('--paper-state-dir',type=Path,default=None); ap.add_argument('--interval-seconds',type=int,default=60); ap.add_argument('--once',action='store_true'); return ap.parse_args()
 if __name__=='__main__':
     a=parse_args()
     while True:
