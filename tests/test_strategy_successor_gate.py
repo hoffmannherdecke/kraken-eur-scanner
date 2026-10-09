@@ -40,6 +40,28 @@ class SuccessorLearningGateTests(unittest.TestCase):
         self.assertTrue(any("no evidence any viable BUY_SCOUT" in x for x in errors))
         self.assertTrue(any("not verified in canonical gate" in x for x in errors))
 
+    def test_economic_strategy_success_priority_not_just_technical_health(self):
+        from unittest.mock import patch
+        priority = json.loads((ROOT/GATE_FILE).read_text("utf-8"))
+        self.assertEqual(priority["outcome_first_priority_policy"]["status"],"ACTIVE_PERMANENT")
+        self.assertEqual(priority["outcome_first_priority_policy"]["original_v2r4_72h_review_due_utc"],
+                         "2026-10-10T18:42:55Z")
+        self.assertEqual(validate_learning_gate(ROOT,
+          active_revision="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION"),[])
+        with tempfile.TemporaryDirectory() as d:
+            tmp=Path(d)/GATE_FILE
+            tmp.parent.mkdir(parents=True,exist_ok=True)
+            priority.pop("outcome_first_priority_policy")
+            tmp.write_text(json.dumps(priority),encoding="utf-8")
+            problems=validate_learning_gate(Path(d),active_revision="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION")
+            self.assertTrue(any("economic strategy learning priority contract missing" in s for s in problems))
+            priority["outcome_first_priority_policy"]={"id":"OUTCOME_FIRST_ECONOMIC_STRATEGY_LEARNING_V1",
+                                                       "status":"ACTIVE_PERMANENT",
+                                                       "original_v2r4_72h_review_due_utc":"2026-10-12T18:42:55Z"}
+            tmp.write_text(json.dumps(priority),encoding="utf-8")
+            problems=validate_learning_gate(Path(d),active_revision="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION")
+            self.assertTrue(any("productivity clock" in s for s in problems))
+
     def test_contract_can_close_only_with_individual_artifact_proofs(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)
