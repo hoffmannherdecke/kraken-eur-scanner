@@ -101,6 +101,38 @@ def validate(j:dict, state:dict)->list[str]:
     for pair in OVERLAP_CRITICAL:
         if not any(other in mapping.get(stream,{}).get("overlaps",[]) for stream in pair for other in pair if other!=stream):
             errs.append("missing critical duplication disclosure "+str(sorted(pair)))
+    source = mapping.get("source_quality",{})
+    gate = source.get("activation_followthrough") or {}
+    required_gates = {
+        "id": "SOURCE_STEWARD_RESEARCH_ROTATION_E2E_GATE_V1",
+        "status": "OBSERVATION_TASK_ACTIVE_SOURCE_REVIEW_AND_REPLACE_E2E_UNVERIFIED",
+        "stage_1": "VERIFY_UNATTENDED_PUBLIC_SOURCE_PILOT_IN_EXISTING_2H_RADAR_WITH_UTC_KNOWN_AT_PRIMARY_EVIDENCE_AND_FAILSOFT",
+        "stage_2": "SCORE_AT_LEAST_5_INDEPENDENT_VERIFIED_RELEVANT_EVENTS_ACROSS_AT_LEAST_2_CAPTURE_WINDOWS_WITH_SOURCE_TYPE_MATCHED_BASELINE",
+        "stage_3": "ONLY_EVIDENCE_BACKED_KEEP_QUARANTINE_OR_RESEARCH_ONLY_REVERSIBLE_REPLACE_VIA_EXISTING_BRANCH_PR_CI_ROLLBACK",
+        "stage_4": "ROUTE_ONLY_PROVEN_INCREMENTAL_SOURCE_FACT_TO_EXISTING_V2R4_V3_V4_PLUS_ONE_CHANGE_ECONOMIC_STRATEGY_REVIEW",
+        "open_item": "PROJECT_BACKLOG.md: Autonomes Marktquellen-Controlling",
+        "source_catalog": "research/market-source-candidates-v1.json",
+        "source_registry": "research/source-registry.json",
+    }
+    for key, expected in required_gates.items():
+        if gate.get(key) != expected:
+            errs.append("source quality activation handoff missing or drifted: " + key)
+    for key, expected in {
+        "no_new_schedule": True,
+        "no_new_work_run": True,
+        "no_trading_or_runtime_source_replacement": True,
+        "no_automatic_strategy_rule_change": True,
+        "no_automatic_real_money_action": True,
+        "source_quality_not_equal_to_trade_profit": True,
+        "require_prospective_net_trade_impact_before_strategy_use": True,
+    }.items():
+        if gate.get(key) is not expected:
+            errs.append("source quality activation cannot bypass safety: " + key)
+    h3stream = mapping.get("orderflow_h3", {})
+    if h3stream.get("evidence_status") != "H3_001_ARCHIVED_INCOMPLETE_0_PROSPECTIVE_CLOUD_ROWS":
+        errs.append("monitor evidence registry claims stale active H3")
+    if mapping.get("price_volume_h6", {}).get("evidence_status") != "BLOCKED_H3_001_ARCHIVE_DISPOSITION_PENDING":
+        errs.append("monitor evidence registry falsely promotes H6")
     h1=mapping.get("h1_breadth_diagnostic",{})
     if h1.get("authority")!="REJECTED_STANDALONE_ONLY":
         errs.append("H1 standalone has been improperly reactivated")
