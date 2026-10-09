@@ -16,6 +16,18 @@ Technical series cutover at 2026-10-09 11:01 UTC does NOT restart the strategy o
 
 Deterministic local tests (7): `python -m unittest tests.test_successor_coin_entry_evidence_v1 -v` — verified PASS in isolated local environment.
 
+## V3 canonical inheritance and duplicate-prevention (2026-10-09)
+
+This work is now **strategically routed into V3 research governance**, not wired into any current V3 decision runtime: `research/v3-migration-ledger.json` component `coin_specific_entry_evidence_provenance` and machine-checkable `research/v3/coin-entry-evidence-lineage-v1.json`; ownership details `docs/v3-research-framework.md`.
+
+**Reuse before rebuilding:** Historical H6 already computes 15m Kraken-EUR price and normalized volume features. The new adapter has a distinct narrow purpose: point-in-time compact 1m/5m/15m candidate-specific *closed* OHLC availability, descriptive volume/ATR/swing-low provenance. It is neither a second independent H6 prediction nor proof of H6's incremental alpha. Do not multiply same-bar information into two separate confirmation votes or mix different H6-vs-entry volume-ratio definitions. H6's review remains on its existing sequence after H3.
+
+**Independent neighboring responsibilities:** H3=order-book/depth/imbalance; H4=stop/trailing/TTL parameter changes (new ATR/low may be input only); H7=future trained TAKE/NO-TAKE (no automatic promotion); H1 standalone decision authority rejected; V2R4 WAIT/trigger and fee/anti-chase unchanged. One strategy-changing shadow at a time.
+
+**Runtime and storage:** Registered Kraken public Spot-EUR OHLC source and already existing market-data infrastructure should be reused whenever feasible, not replaced by a duplicate live collector; no new scheduled task, model inference, endless raw-bar retention, additional GitHub/Work cadence, real-money path or unreviewed Mini-PC deployment.
+
+**Important existing state discrepancy:** Live Supabase showed the 2026-10-09 technical V2R4 rotation to `PAPER-V2R4-20261009T110135Z`, whereas some static state/version documents still reference the former `PAPER-V2R4-20261007T184255Z`. Do not silently rebind frozen H3 cohorts; separately reconcile the declared control-plane metadata with the authorized technical rotation before materializing any new strategy-changing candidate. The unchanged V2R4 strategy fingerprint connects the two series for *descriptive productivity research* only.
+
 ## Existing next gate / decision rule
 
 1. At the existing V2R4 24h/72h/productivity review, use a small fixed, time-clustered positive and negative control cohort. Inspect each originally available decision input. Distinguish feature-delivery omission, legitimate risk veto, premature/late detection, WAIT expiry and data uncertainty. Do not claim the module fixes low BUY conversion before this validation.
