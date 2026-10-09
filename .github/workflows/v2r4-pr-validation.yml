@@ -63,6 +63,7 @@ jobs:
             paper_evaluator/successor_coin_entry_evidence_v1.py \
             paper_evaluator/v3_entry_handoff_probe.py \
             paper_evaluator/v3_one_shot_model_compare.py
+          python -m py_compile tools/v2r4-readonly-decision-funnel.py
 
       - name: Run V2R4 unit tests
         if: steps.implementation.outputs.present == 'true'
@@ -83,6 +84,7 @@ jobs:
             tests.test_v2r4_v3_entry_lineage_contract \
             tests.test_v2r4_v3_entry_handoff_probe \
             tests.test_v2r4_v3_one_shot_model_compare \
+            tests.test_v2r4_readonly_decision_funnel \
             -v
 
       - name: One bounded live Kraken EUR coin-entry input smoke (research only)
