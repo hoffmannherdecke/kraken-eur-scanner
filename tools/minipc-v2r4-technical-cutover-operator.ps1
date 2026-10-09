@@ -44,14 +44,27 @@ function Stop-TaskBounded([string]$Name){
  Need ([string](Get-ScheduledTask -TaskName $Name).State -eq 'Disabled') "Could not disable $Name"
 }
 function Restore-Old([string]$Backup){
+ # Restore the exact original task enabled/running state, not an invented
+ # all-enabled/all-running approximation. An already failed/Ready task should
+ # NOT silently be turned into a fresh active old-series writer.
+ $originalStateFile=Join-Path $Backup 'original-task-states.json'
+ Need (Test-Path $originalStateFile) 'Original task state manifest missing; fail closed'
+ $original=Get-Content $originalStateFile -Raw|ConvertFrom-Json
  foreach($n in @($taskNames)+@($supervisorName)){
    $path=Join-Path $Backup ('tasks\'+$n+'.xml')
    Need (Test-Path $path) "Missing task backup: $n"
+   $record=$original.PSObject.Properties[$n]
+   Need ($null -ne $record) "Missing saved state for $n"
    Register-ScheduledTask -TaskName $n -Xml (Get-Content $path -Raw) -Force|Out-Null
+   if($record.Value.enabled -eq $true){Enable-ScheduledTask -TaskName $n|Out-Null}
+   else{Disable-ScheduledTask -TaskName $n|Out-Null}
  }
- foreach($n in $taskNames){Enable-ScheduledTask -TaskName $n|Out-Null;Start-ScheduledTask -TaskName $n}
- Enable-ScheduledTask -TaskName $supervisorName|Out-Null
- Start-ScheduledTask -TaskName $supervisorName
+ foreach($n in @($taskNames)+@($supervisorName)){
+   $saved=$original.PSObject.Properties[$n].Value
+   if($saved.enabled -eq $true -and $saved.running -eq $true){
+     Start-ScheduledTask -TaskName $n
+   }
+ }
 }
 function Old-Ids{
  $ids=[System.Collections.Generic.List[string]]::new()
@@ -113,12 +126,21 @@ try{
  $backup=Join-Path $TradingRoot ('Backups\v2r4-technical-'+$started.ToString('yyyyMMddTHHmmssZ'))
  Need (-not(Test-Path $backup)) 'Backup path already exists'
  New-Item -ItemType Directory -Force (Join-Path $backup 'tasks')|Out-Null
+ $originalTaskStates=[ordered]@{}
  foreach($n in @($taskNames)+@($supervisorName)){
+   $t=Get-ScheduledTask -TaskName $n -ErrorAction Stop
+   $originalTaskStates[$n]=[ordered]@{
+     enabled=([bool]$t.Settings.Enabled)
+     running=([string]$t.State -eq 'Running')
+     state=[string]$t.State
+   }
    [IO.File]::WriteAllText((Join-Path $backup ('tasks\'+$n+'.xml')),(Export-ScheduledTask -TaskName $n),[Text.UTF8Encoding]::new($false))
  }
+ Atomic (Join-Path $backup 'original-task-states.json') $originalTaskStates
  foreach($n in @($taskNames)+@($supervisorName)){
    Need (Test-Path (Join-Path $backup ('tasks\'+$n+'.xml'))) "Task XML not safely exported: $n"
  }
+ Need (Test-Path (Join-Path $backup 'original-task-states.json')) 'Task state snapshot missing'
  # This is the first persisted mutation intended to affect recovery flow.
  # Before this point failed XML export leaves running services unchanged.
  Atomic $lock ([ordered]@{kind='V2R4_TECHNICAL_LOCK_V1';started_at=$started.ToString('o');orders=$false;sha=$sha})
@@ -144,6 +166,7 @@ try{
  Copy-Item -LiteralPath $oldApp -Destination (Join-Path $snapshotInputs 'old-paper') -Recurse
  $stateCopies=Join-Path $snapshotInputs 'state';New-Item -ItemType Directory -Force $stateCopies|Out-Null
  Copy-Item -LiteralPath (Join-Path $backup 'tasks') -Destination (Join-Path $snapshotInputs 'scheduled-task-xml') -Recurse
+ Copy-Item -LiteralPath (Join-Path $backup 'original-task-states.json') -Destination (Join-Path $snapshotInputs 'original-task-states.json')
  foreach($pat in @('v2r4-paper-*.json','v2r4-wait-*.json','v3-h3-*.json')){
    Get-ChildItem $state -Filter $pat -File|ForEach-Object{Copy-Item $_.FullName (Join-Path $stateCopies $_.Name)}
  }
