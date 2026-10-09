@@ -224,7 +224,30 @@
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
       "evidence_outcome": "KEEP_QUARANTINE_OR_REPLACE",
-      "next_gate": "FIRST_UNATTENDED_SOURCE_REVIEW_AND_PROVEN_SOURCE_SWAP"
+      "next_gate": "FIRST_UNATTENDED_SOURCE_REVIEW_AND_PROVEN_SOURCE_SWAP",
+      "activation_followthrough": {
+        "id": "SOURCE_STEWARD_RESEARCH_ROTATION_E2E_GATE_V1",
+        "status": "OBSERVATION_TASK_ACTIVE_SOURCE_REVIEW_AND_REPLACE_E2E_UNVERIFIED",
+        "stage_1": "VERIFY_UNATTENDED_PUBLIC_SOURCE_PILOT_IN_EXISTING_2H_RADAR_WITH_UTC_KNOWN_AT_PRIMARY_EVIDENCE_AND_FAILSOFT",
+        "stage_2": "SCORE_AT_LEAST_5_INDEPENDENT_VERIFIED_RELEVANT_EVENTS_ACROSS_AT_LEAST_2_CAPTURE_WINDOWS_WITH_SOURCE_TYPE_MATCHED_BASELINE",
+        "stage_3": "ONLY_EVIDENCE_BACKED_KEEP_QUARANTINE_OR_RESEARCH_ONLY_REVERSIBLE_REPLACE_VIA_EXISTING_BRANCH_PR_CI_ROLLBACK",
+        "stage_4": "ROUTE_ONLY_PROVEN_INCREMENTAL_SOURCE_FACT_TO_EXISTING_V2R4_V3_V4_PLUS_ONE_CHANGE_ECONOMIC_STRATEGY_REVIEW",
+        "event_trigger": "FIRST_UNATTENDED_VALID_PILOT_OR_MATURE_SOURCE_SCORE_OR_VERIFIED_MATERIAL_FAILURE_OR_ALREADY_DUE_STRATEGY_REVIEW",
+        "existing_observer": "Krypto Marktphasen- und Quellenradar, existing 2h task with Monday pilot steward window",
+        "existing_strategy_work": "Krypto Paper – gezielte Analyse, existing daily 10:15 gate only when independently due",
+        "source_catalog": "research/market-source-candidates-v1.json",
+        "source_registry": "research/source-registry.json",
+        "policy": "docs/market-source-autonomy-v1.md",
+        "open_item": "PROJECT_BACKLOG.md: Autonomes Marktquellen-Controlling",
+        "evidence_record": "Existing GitHub Issue #7, SOURCE_STEWARD_DECISION_V1; no new raw news table",
+        "source_quality_not_equal_to_trade_profit": true,
+        "require_prospective_net_trade_impact_before_strategy_use": true,
+        "no_new_schedule": true,
+        "no_new_work_run": true,
+        "no_trading_or_runtime_source_replacement": true,
+        "no_automatic_strategy_rule_change": true,
+        "no_automatic_real_money_action": true
+      }
     },
     {
       "id": "derivatives_h2",
@@ -246,11 +269,11 @@
     },
     {
       "id": "orderflow_h3",
-      "role": "V3_ACTIVE_ISOLATED_SHADOW",
+      "role": "V3_ARCHIVED_INCOMPLETE_SHADOW_HISTORICAL_RESEARCH",
       "canonical_owner": "v3_h3_l2_depth_and_imbalance",
       "consumer": "V3_FIXED_REVIEW",
       "authority": "RESEARCH_ONLY",
-      "evidence_status": "ISOLATED_SHADOW_DECLARED",
+      "evidence_status": "H3_001_ARCHIVED_INCOMPLETE_0_PROSPECTIVE_CLOUD_ROWS",
       "fact_key": "l2_depth_imbalance",
       "overlaps": [
         "execution_h9"
@@ -260,7 +283,8 @@
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
       "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
-      "next_gate": "V3_H3_ACTIVE_FROZEN_SHADOW_FIXED_REVIEW"
+      "next_gate": "V3_H3_001_ARCHIVE_DISPOSITION_THEN_OPTIONAL_NEW_H3_WITH_EXPLICIT_APPROVAL",
+      "status_authority": "project-current-state.json#closed_or_rejected_tracks[V3-H3-SHADOW-001]"
     },
     {
       "id": "stop_ttl_h4",
@@ -305,7 +329,7 @@
       "canonical_owner": "v3_h6_price_volume_primitives",
       "consumer": "V3_ONE_CHANGE_GATE",
       "authority": "RESEARCH_ONLY",
-      "evidence_status": "WAITS_FOR_H3_REVIEW",
+      "evidence_status": "BLOCKED_H3_001_ARCHIVE_DISPOSITION_PENDING",
       "fact_key": "price_volume_confirmation",
       "overlaps": [
         "scanner_detection",
@@ -317,7 +341,8 @@
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
       "evidence_outcome": "PRE_REGISTERED_ONE_CHANGE_GATE_OR_NO_ACTION",
-      "next_gate": "V3_H6_WAIT_H3_FIXED_REVIEW_BEFORE_SEPARATE_ONE_CHANGE_SHADOW"
+      "next_gate": "V3_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW_THEN_NEW_H6_SEPARATE_APPROVAL",
+      "status_authority": "research/v3-migration-ledger.json#price_volume_trend_primitives"
     },
     {
       "id": "meta_h7",
