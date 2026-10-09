@@ -24,7 +24,8 @@ UTC = dt.timezone.utc
 ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "PAPER_FINAL_REVIEW": 38,
                  "PAPER_LOW_TRADES": 38, "H10_CONTRACT": 7,
                  "NEW_SHADOW_ADAPTER": 7, "NEW_CONTROL_DECISION": 7}
-SUPPORTED_DECISIONS = {"V3-H3-FIXED-REVIEW", "V2R4-PRODUCTIVITY-REVIEW"}
+SUPPORTED_DECISIONS = {"V3-H3-FIXED-REVIEW", "V2R4-PRODUCTIVITY-REVIEW",
+                       "V3-EXTENDED-SECOND-LEG-LEARNING-GATE"}
 
 
 def require(condition: bool, message: str) -> None:
@@ -99,6 +100,18 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
                                  "Neue kanonische Projektentscheidung braucht ein "
                                  "versioniertes Gate/Read-only-Adapter. Keine stille "
                                  "Überspringung und keine ungeprüfte Aktivierung."))
+    # A known, governance-only V3 followup; no new active trial or schedule.
+    v3_next = next((task for task in state.get("next_control_decisions") or []
+                    if task.get("id") == "V3-EXTENDED-SECOND-LEG-LEARNING-GATE"), None)
+    if v3_next is not None:
+        require(
+            v3_next.get("canonical_owner") ==
+            "research/v3-migration-ledger.json#late_chase_protection.successor_refinement",
+            "V3 second-leg research decision must retain canonical migration owner")
+        require(v3_next.get("no_new_work_run") is True
+                and v3_next.get("no_active_strategy_change") is True,
+                "V3 second-leg finding cannot initiate Work or alter active paper")
+        statuses.append("V3:EXTENDED_SECOND_LEG_STAGED_FOR_NEXT_REVIEW_NO_AUTO_START")
     if paper.get("completion_ready") is True:
         require(paper.get("intake_should_stop") is True,
                 "completion gate contradicts intake state")
@@ -109,7 +122,10 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
         notices.append(event("PAPER_FINAL_REVIEW", series,
                              "Paper-Abschlussgate erreicht: finale Auswertung, "
                              "Erkenntnis-Migration und separate Release-Entscheidung vorbereiten. "
-                             "KEINE automatische Strategieaktivierung."))
+                             "KEINE automatische Strategieaktivierung. "
+                             "Offenes V3-EXTENDED-Zweite-Welle-0-BUY-Finding "
+                             "aus dem Migrationsledger zwingend disponieren: "
+                             "erst Coin-Evidence-A, dann getrennt Review-B."))
     else:
         statuses.append("V2R4:COLLECTING")
         if (float(paper.get("series_age_days") or 0) >= 3
@@ -121,7 +137,11 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
                                  "72h-Frühreview: >100 Kandidaten, >=30 vollständige "
                                  "24h-Follow-ups und 0 Trades. Funnel, WAIT/TTL, "
                                  "Missed-Moves, Kosten und Datenqualität analysieren. "
-                                 "Aktive Serie unverändert lassen."))
+                                 "Aktive Serie unverändert lassen. "
+                                 "Das V3-EXTENDED-Zweite-Welle-Finding mit "
+                                 "separater Coin-Evidence-Stufe A und späterer "
+                                 "Neubewertung-Stufe B im Review disponieren; "
+                                 "MFE im Rückblick ist kein Handelsgewinn."))
 
     shadows = (state.get("strategy_changing_shadow_wip") or {}).get("active") or []
     if shadows:
@@ -163,7 +183,12 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
                                          "H3-Fixreview fällig: " + recommendation +
                                          "; Baseline-Replay, Kosten, Follow-ups und "
                                          "Preregistrierung überprüfen. H6 erst nach "
-                                         "abgeschlossenem H3-Review / separatem Gate."))
+                                         "abgeschlossenem H3-Review / separatem Gate. "
+                                         "Danach offenes EXTENDED-Zweite-Welle-Finding "
+                                         "verbindlich prüfen: zuerst Kraken-Coin-Daten "
+                                         "als einziger geänderter A-Input, danach "
+                                         "separate B-Neubewertung nur mit Kosten/Stop "
+                                         "und ohne automatische Promotion."))
                 else:
                     statuses.append("H3:WAIT_FOLLOWUPS")
             else:
