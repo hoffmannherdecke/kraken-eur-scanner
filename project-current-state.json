@@ -38,7 +38,9 @@
       "status": "LAST_VERIFIED_SNAPSHOT_NOT_REALTIME_CURRENT",
       "frozen_h3_baseline_changed": false,
       "productivity_clock_reset": false
-    }
+    },
+    "original_strategy_epoch_started_at_utc": "2026-10-07T18:42:55Z",
+    "original_strategy_epoch_review_anchor": "V2R4_PAPER_STRATEGY_START_NOT_TECHNICAL_ROTATION"
   },
   "predecessor": {
     "strategy_revision": "V2R3-2026-09-28",
@@ -91,12 +93,12 @@
     {
       "id": "V3-H3-FIXED-REVIEW",
       "trigger": "H3 preregistered minimum gate reached",
-      "action": "Perform fixed review; classify keep/reject/inconclusive. Do not auto-extend or tune."
+      "action": "Perform fixed review; classify keep/reject/inconclusive. Do not auto-extend or tune. Apply priority hierarchy: strategy/trade learning > technical test volume; do not claim H3 signal or next successor solves no-BUY absent prospective entry/stop/net-cost evidence."
     },
     {
       "id": "V2R4-PRODUCTIVITY-REVIEW",
       "trigger": "Preregistered V2R4 evidence/productivity gate or clear low-trade pathology review point",
-      "action": "Assess candidate-to-trade production and root causes using the full funnel, WAIT->REJECT/TTL-expiry rates, mature MFE/MAE/missed-move evidence, and input-data freshness/completeness. Low trade frequency is evidence, not justification for indefinite extension or silent tuning."
+      "action": "TOP PRIORITY: Review genuine trading productivity at original V2R4 strategy-epoch age >=72h (2026-10-10T18:42:55Z), never from restarted technical-series clock. Outcome-first: net-after-cost quality and valid BUYs/filled Paper trades, risk/MAE, matched missed and bad opportunities, candidate->WAIT->true-trigger->real recheck->BUY conversion and exact unresolved inherited V2R3 findings. HEALTHY is only operational integrity. If sufficient outcomes/24h maturity and no buys, classify as ECONOMIC_NOT_DEMONSTRATED/STRATEGY_PATHOLOGY, make explicit continue/stop/successor decision, avoid indefinite zero-trade evidence accumulation. Maintain frozen V2R4/H3, no automatic strategy change, no new schedules."
     },
     {
       "id": "V3-EXTENDED-SECOND-LEG-LEARNING-GATE",
@@ -118,7 +120,9 @@
     "automatic_real_money_activation": false,
     "completed_release_gates_do_not_reopen_from_ordinary_new_evidence": true,
     "material_active_strategy_changes_require_new_version": true,
-    "material_no_buy_second_leg_findings_require_successor_disposition": true
+    "material_no_buy_second_leg_findings_require_successor_disposition": true,
+    "economic_trade_learning_outweighs_operational_health": true,
+    "technical_rotation_never_resets_strategy_productivity_clock": true
   },
   "explicitly_not_authorized": [
     "REAL_MONEY_TRADING",
