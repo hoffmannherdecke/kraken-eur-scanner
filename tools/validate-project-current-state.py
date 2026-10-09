@@ -115,10 +115,51 @@ def main()->int:
         if (cand.get("promotion_gate") or {}).get("automatic_promotion") is not False:
             errors.append(f"candidate automatic promotion must be false: {cid}")
 
-    queued=wip.get("queued") or []
+    # A frozen Git H3 candidate/config is historic activation provenance,
+    # never proof that its Mini-PC task is still running after the cutover.
+    archived=[x for x in (data.get("closed_or_rejected_tracks") or [])
+              if x.get("id")=="V3-H3-SHADOW-001"]
+    if len(archived)!=1:
+        errors.append("H3 physical archive requires one canonical archived track")
+    else:
+        h3=archived[0]
+        if h3.get("status")!="ARCHIVED_INCOMPLETE_NOT_FIXED_REVIEWED":
+            errors.append("H3 archive must remain explicitly not fixed reviewed")
+        if (h3.get("fixed_review_completed") is not False
+                or h3.get("promotion_eligible") is not False
+                or h3.get("automatic_reactivation") is not False
+                or h3.get("frozen_research_artifact_must_remain_unchanged") is not True):
+            errors.append("H3 archived/incomplete may not claim fixed review/promotion")
+        if h3.get("cloud_causal_evidence_rows_at_review")!=0:
+            errors.append("H3 archive must not invent prospective shadow records")
+        if h3.get("former_frozen_baseline_series_id")!=active.get("series_id"):
+            errors.append("H3 archive lineage must preserve the exact frozen original series")
+        if h3.get("physical_status")!="ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND":
+            errors.append("H3 archived Mini-PC state acknowledgement absent")
+        if not h3.get("physical_evidence_verified_at_utc"):
+            errors.append("H3 archive physical source/time missing")
+    if any(x.get("candidate_id")=="V3-H3-SHADOW-001" for x in active_shadows):
+        errors.append("archived H3 must not also be declared SHADOW_RUNNING")
+    if technical is not None:
+        if (technical.get("predecessor_series_status")!="technical_closed"
+                or technical.get("predecessor_outcomes_immutable_at_cutover")!=1011
+                or technical.get("predecessor_trades_immutable_at_cutover")!=0
+                or technical.get("predecessor_24h_complete_at_cutover")!=260
+                or technical.get("predecessor_24h_eligible_at_cutover")!=260):
+            errors.append("immutable cutover cohort/maturity snapshot missing or contradicted")
+        if technical.get("h3_001_archive_ack")!="ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND":
+            errors.append("cutover must preserve H3 archive acknowledgement")
+        queued=wip.get("queued") or []
     for item in queued:
         if item.get("candidate_id") in ids:
             errors.append(f"candidate cannot be active and queued: {item.get('candidate_id')}")
+    h6=[x for x in queued if x.get("candidate_id")=="V3-H6-NEXT"]
+    if len(h6)!=1 or h6[0].get("status")!="WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION":
+        errors.append("H6 must remain queued until explicit inconclusive H3 archive disposition")
+    h3reviews=[x for x in (data.get("next_control_decisions") or [])
+               if x.get("id")=="V3-H3-FIXED-REVIEW"]
+    if len(h3reviews)!=1 or h3reviews[0].get("status")!="ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY":
+        errors.append("H3 cannot pass fixed review after archive with 0 records")
 
     for track in data.get("observational_research_tracks") or []:
         if track.get("strategy_coupling")!="NONE":
@@ -145,6 +186,10 @@ def main()->int:
         errors.append("original V2R4 strategy epoch timestamp cannot drift")
     if active.get("original_strategy_epoch_review_anchor") != "V2R4_PAPER_STRATEGY_START_NOT_TECHNICAL_ROTATION":
         errors.append("strategic review incorrectly anchored to technical runtime")
+    for name in ("archived_shadows_must_not_be_declared_running",
+                 "technical_rollover_preserves_predecessor_economic_cohort"):
+        if inv.get(name) is not True:
+            errors.append("missing systemwide archive/cohort invariant "+name)
     if inv.get("automatic_strategy_promotion") is not False:
         errors.append("automatic_strategy_promotion must be false")
     if inv.get("automatic_real_money_activation") is not False:
