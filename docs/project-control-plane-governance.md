@@ -82,7 +82,9 @@ Außerhalb der Trading-Semantik: Watchdog, Cloud-Fallback, Slack, Backup, Action
 
 **Verbindliche Bereinigungsregel:** Beim nächsten *technischen* Cutover gehören die Shadow-Aktivitätsdisposition, Archiv-/Snapshotstatus, unveränderter Strategie-Fingerprint, alte/neue Supabase-Serien und die Epochen-Produktivitätsuhr **zur gleichen Abschlusssequenz**. Ein über `SHADOW_RUNNING` eingefrorener historischer Kandidatenvertrag darf niemals allein eine laufende Shadow-Instanz behaupten. Ein archivierter H3-Fall darf weder eine ständige `STALE`-Alarmflut erzeugen noch bei der automatischen H6-Freigabe als bestandener Fixed Review gelten. Die Runtime-Frozen-Artefakte dürfen nur in einer **separat genehmigten neuen Version** geändert werden.
 
-## Abgleich ausdrücklich gespeicherter Vereinbarungen / Wiederauffindbarkeit — 09.10.2026
+## Vereinbarungen-Audit 2026-10-09
+
+**Abgleich ausdrücklich gespeicherter Vereinbarungen / Wiederauffindbarkeit.**
 
 **Umfang und Sicherheitsgrenze:** Diese Querverweisliste ist ein **datiertes Audit der nachprüfbar wiedergefundenen Nutzervereinbarungen** (Sept./Okt. 2026) und *keine* zusätzliche oder konkurrierende Strategie-/Statusautorität. GitHub allein kann keine früheren Chatverläufe lesen oder die in ChatGPT separat konfigurierten Automations-Prompts validieren. Die beabsichtigte Wiederverwendung wird pro Punkt am tatsächlichen Einstieg gemessen: **gespeichert → rechtzeitig gelesen → Gate mit Evidenz → richtige Aktion/Ack**, niemals allein an einer Textdatei. Aktueller Stand stets `project-current-state.json`, historische Strategiefakten nur aus unveränderlicher Provenienz, Live-Status aus MINI-PC/Supabase.
 
