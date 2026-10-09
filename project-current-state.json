@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "PROJECT_CURRENT_STATE_V1",
   "status": "ACTIVE_CONTROL_PLANE",
-  "as_of_utc": "2026-10-09T17:39:26.511Z",
+  "as_of_utc": "2026-10-09T19:50:40Z",
   "authority": {
     "purpose": "Single machine-readable authority for current project/strategy/control-plane state.",
     "precedence": [
@@ -37,7 +37,19 @@
       "original_strategy_epoch_series_id": "PAPER-V2R4-20261007T184255Z",
       "status": "LAST_VERIFIED_SNAPSHOT_NOT_REALTIME_CURRENT",
       "frozen_h3_baseline_changed": false,
-      "productivity_clock_reset": false
+      "productivity_clock_reset": false,
+      "predecessor_series_status": "technical_closed",
+      "predecessor_outcomes_immutable_at_cutover": 1011,
+      "predecessor_trades_immutable_at_cutover": 0,
+      "predecessor_24h_complete_at_cutover": 260,
+      "predecessor_24h_eligible_at_cutover": 260,
+      "provenance_verified_utc": "2026-10-09T19:50:40Z",
+      "provenance_sources": [
+        "public.paper_technical_rotations",
+        "public.paper_series",
+        "public.paper_candidate_outcomes (24h followup opportunity_audit)"
+      ],
+      "h3_001_archive_ack": "ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND"
     },
     "original_strategy_epoch_started_at_utc": "2026-10-07T18:42:55Z",
     "original_strategy_epoch_review_anchor": "V2R4_PAPER_STRATEGY_START_NOT_TECHNICAL_ROTATION"
@@ -51,23 +63,12 @@
   },
   "strategy_changing_shadow_wip": {
     "max_concurrent": 1,
-    "active": [
-      {
-        "candidate_id": "V3-H3-SHADOW-001",
-        "candidate_file": "research/v3/shadow-candidates/v3-h3-shadow-001.json",
-        "baseline_strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
-        "baseline_series_id": "PAPER-V2R4-20261007T184255Z",
-        "changed_component": "STATE_CONDITIONING",
-        "status": "SHADOW_RUNNING",
-        "strategy_coupling": "ISOLATED_SHADOW_ONLY",
-        "automatic_promotion": false
-      }
-    ],
+    "active": [],
     "queued": [
       {
         "candidate_id": "V3-H6-NEXT",
-        "status": "WAIT_FOR_H3_FIXED_REVIEW",
-        "rule": "Do not activate as a second strategy-changing shadow while H3 is running."
+        "status": "WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION",
+        "rule": "H3 was physically archived during technical rotation with 0 cloud matched evidence; a fixed review cannot pass. H6 must stay inactive until an explicit H3 archive/inconclusive review, one-shadow release gate and user approval. No automatic next shadow."
       }
     ]
   },
@@ -87,13 +88,34 @@
       "status": "REJECTED_STANDALONE_DECISION_AUTHORITY",
       "retained_role": "RESEARCH_DIAGNOSTIC_ONLY",
       "may_be_silently_bundled": false
+    },
+    {
+      "id": "V3-H3-SHADOW-001",
+      "status": "ARCHIVED_INCOMPLETE_NOT_FIXED_REVIEWED",
+      "physical_status": "ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND",
+      "physical_evidence_verified_at_utc": "2026-10-09T19:49:26.671Z",
+      "physical_evidence_source": "Supabase public.minipc_status_current payload.checks.v3_h3_shadow (read-only MINI-PC heartbeat)",
+      "authoritative_cloud_evidence_table": "public.v3_h3_shadow_evidence",
+      "cloud_causal_evidence_rows_at_review": 0,
+      "cloud_status_last_generated_at_utc": "2026-10-09T11:00:03.459542Z",
+      "cutover_at_utc": "2026-10-09T11:01:35Z",
+      "archive_reason": "PHYSICAL_TECHNICAL_V2R4_ROTATION_DISABLED_H3_001_TO_PRESERVE_OLD_BASELINE",
+      "former_candidate_file": "research/v3/shadow-candidates/v3-h3-shadow-001.json",
+      "former_frozen_baseline_series_id": "PAPER-V2R4-20261007T184255Z",
+      "frozen_research_artifact_must_remain_unchanged": true,
+      "outcome": "INCONCLUSIVE_TECHNICAL_CENSORING_ZERO_PROSPECTIVE_EVIDENCE",
+      "fixed_review_completed": false,
+      "promotion_eligible": false,
+      "automatic_reactivation": false,
+      "fresh_shadow_requires_separate_version_preregistration_and_approval": true
     }
   ],
   "next_control_decisions": [
     {
       "id": "V3-H3-FIXED-REVIEW",
-      "trigger": "H3 preregistered minimum gate reached",
-      "action": "Perform fixed review; classify keep/reject/inconclusive. Do not auto-extend or tune. Apply priority hierarchy: strategy/trade learning > technical test volume; do not claim H3 signal or next successor solves no-BUY absent prospective entry/stop/net-cost evidence."
+      "trigger": "H3-001 archived by technical V2R4 cutover and cloud prospective cohort empty; immediate archival/inconclusive review due, NOT a matured fixed H3 review.",
+      "action": "Read-only classify H3-001 as ARCHIVED_INCOMPLETE / INCONCLUSIVE_TECHNICAL_CENSORING with 0 Supabase candidate evidence. Preserve frozen pre-cutover baseline and old candidate/config/physical archive, never claim H3 fixed review PASS. Explicitly decide retire H3, defer, or separately prepare an entirely NEW one-change shadow with correct current baseline under normal approvals. Until decision, H6 stays WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION; no automatic shadow or trading strategy promotion.",
+      "status": "ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY"
     },
     {
       "id": "V2R4-PRODUCTIVITY-REVIEW",
@@ -122,7 +144,9 @@
     "material_active_strategy_changes_require_new_version": true,
     "material_no_buy_second_leg_findings_require_successor_disposition": true,
     "economic_trade_learning_outweighs_operational_health": true,
-    "technical_rotation_never_resets_strategy_productivity_clock": true
+    "technical_rotation_never_resets_strategy_productivity_clock": true,
+    "archived_shadows_must_not_be_declared_running": true,
+    "technical_rollover_preserves_predecessor_economic_cohort": true
   },
   "explicitly_not_authorized": [
     "REAL_MONEY_TRADING",
