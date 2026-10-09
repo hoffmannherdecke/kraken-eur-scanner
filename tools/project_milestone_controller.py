@@ -19,6 +19,11 @@ import sys
 import urllib.parse
 import urllib.request
 
+try:
+    from tools.strategy_epoch_lineage import summarize_epoch
+except ModuleNotFoundError:
+    from strategy_epoch_lineage import summarize_epoch
+
 ROOT = Path(__file__).resolve().parents[1]
 UTC = dt.timezone.utc
 ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "H3_STALE_EVIDENCE": 7,
@@ -111,40 +116,11 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
     epoch_start = iso_time(epoch_stamp)
     require(now >= epoch_start, "review clock before original strategy epoch")
     strategy_epoch_age_days = (now - epoch_start).total_seconds() / 86400.0
-    # Canonical strategy EPOCH ledger: every physically closed technical
-    # segment has a frozen, unique cohort and explicit successor lineage.
-    # A future technical rotation APPENDS, never replaces older evidence.
-    closed=active.get("strategy_epoch_closed_segments") or []
-    require(isinstance(closed,list),"invalid strategy epoch segment ledger")
-    if live_series != series:
-        require(bool(closed),"epoch closed-segment ledger missing")
-        expected=series
-        for seg in closed:
-            require(seg.get("series_id")==expected and seg.get("status")=="technical_closed"
-                    and seg.get("immutable") is True
-                    and seg.get("strategy_revision")==active["strategy_revision"]
-                    and seg.get("strategy_fingerprint_sha256")==technical.get("strategy_fingerprint_sha256"),
-                    "technical epoch segment lineage/fingerprint mismatch")
-            n=int(seg.get("frozen_outcomes_at_cutover",-1))
-            t=int(seg.get("frozen_completed_trades_at_cutover",-1))
-            m=int(seg.get("verified_complete_24h_at_cutover",-1))
-            due=int(seg.get("verified_eligible_24h_at_cutover",-1))
-            require(n>0 and 0<=t<=n and 0<=m<=due<=n,
-                    "technical epoch segment outcome/maturity counts invalid")
-            expected=seg.get("successor_series_id")
-        require(expected==live_series,"closed segment chain does not end at current live series")
-        recent=closed[-1]
-        require(technical.get("legacy_snapshot_mirrors_latest_closed_segment") is True
-                and technical.get("predecessor_outcomes_immutable_at_cutover")==recent.get("frozen_outcomes_at_cutover")
-                and technical.get("predecessor_trades_immutable_at_cutover")==recent.get("frozen_completed_trades_at_cutover")
-                and technical.get("predecessor_24h_complete_at_cutover")==recent.get("verified_complete_24h_at_cutover"),
-                "dated latest-rotation snapshot contradicts canonical epoch segment ledger")
-    old_outcomes=sum(int(x["frozen_outcomes_at_cutover"]) for x in closed) if live_series!=series else 0
-    old_trades=sum(int(x["frozen_completed_trades_at_cutover"]) for x in closed) if live_series!=series else 0
-    old_mature=sum(int(x["verified_complete_24h_at_cutover"]) for x in closed) if live_series!=series else 0
-    epoch_min_outcomes=old_outcomes+int(paper["candidate_outcomes"])
-    epoch_min_trades=old_trades+int(paper["completed_trades"])
-    epoch_min_mature24=old_mature+int(paper.get("complete_24h") or 0)
+    # Single shared economic/lineage contract also enforced by control plane.
+    aggregate=summarize_epoch(active,paper)
+    epoch_min_outcomes=int(aggregate["epoch_minimum_candidate_outcomes"])
+    epoch_min_trades=int(aggregate["epoch_minimum_completed_trades"])
+    epoch_min_mature24=int(aggregate["epoch_minimum_complete_24h"])
     notices = []
     statuses = []
     for task in state.get("next_control_decisions") or []:
