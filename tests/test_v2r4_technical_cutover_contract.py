@@ -41,6 +41,17 @@ class TechnicalCutoverMutualContract(unittest.TestCase):
         self.assertIn("staged_code_hash_matches_manifest", readiness)
         self.assertIn("paper_runtime_control.json", staging)
 
+    def test_snapshot_includes_hidden_h3_files_and_verifies_bytes(self):
+        operator = source("tools/minipc-v2r4-technical-cutover-operator.ps1")
+        builder = source("tools/minipc-v2r4-verified-snapshot.ps1")
+        self.assertIn("minipc-v2r4-verified-snapshot.ps1", operator)
+        self.assertIn("VERIFIED_ALL_SOURCE_FILES", operator)
+        self.assertNotIn("Compress-Archive -Path", operator)
+        self.assertIn("Get-ChildItem -LiteralPath $root -Recurse -File -Force", builder)
+        self.assertIn("ZipFileExtensions]::CreateEntryFromFile", builder)
+        self.assertIn("Snapshot file missing:", builder)
+        self.assertIn("Snapshot contents differ:", builder)
+
     def test_one_active_and_fail_closed_after_commit(self):
         operator = source("tools/minipc-v2r4-technical-cutover-operator.ps1")
         sql = source("supabase/v2r4-technical-paper-rotation-20261009.sql")
