@@ -316,7 +316,7 @@
       "category": "state_signal",
       "source_version": "V3 hypothesis",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "WS reconciliation/state capture, physical MINI-PC smoke and the one-change V3-H3-SHADOW-001 activation are complete. H3 now collects raw point-in-time XBT/ETH/SOL depth context against active V2R4 with no threshold/transform/directional-sign search, no orders and no automatic promotion.",
+      "rationale": "V3-H3-ASSOC-002 descriptive capture and bounded physical L2/CRC, isolated candidate→baseline→H3 E2E passed; HOWEVER strategy-changing V3-H3-SHADOW-001 was physically archived during 2026-10-09 V2R4 technical rotation and yielded ZERO Supabase prospective shadow-candidate evidence. This is INCONCLUSIVE_TECHNICAL_CENSORING, NOT completed/failed economic fixed review, NOT still collecting, and NOT promotion evidence. Original baseline/config/artifacts stay immutable. A new H3 shadow is an option only after explicit archive disposition, original 72h V2R4 economic review and a separately preregistered, explicitly approved prospective one-change trial with correct current baseline; never silently resurrect the old trial.",
       "evidence": [
         "research/v3/h3-assoc-001-technical-failure-review-20261002.json",
         "research/v3/h3-prospective-state-association-trial-v2.json",
@@ -327,7 +327,20 @@
         "research/v3/h3-association-reports/v3-h3-association-002-20261003-095025.json",
         "research/v3/h3-assoc-002-fixed-review-20261003.json"
       ],
-      "pending_gate": "V3_H3_SHADOW_001_MINIMUM_GATE_AND_FIXED_REVIEW"
+      "pending_gate": "V3_H3_001_ARCHIVE_INCONCLUSIVE_DISPOSITION_THEN_OPTIONAL_NEW_H3_TRIAL_AFTER_V2R4_ECONOMIC_PRIORITY_REVIEW_AND_SEPARATE_APPROVAL",
+      "recovery_followthrough": {
+        "source_of_current_shadow_status": "project-current-state.json#strategy_changing_shadow_wip",
+        "source_of_archive_evidence": "project-current-state.json#closed_or_rejected_tracks[V3-H3-SHADOW-001]",
+        "mandatory_review_owner": "project-current-state.json#next_control_decisions[V3-H3-FIXED-REVIEW]",
+        "predecessor_economic_review": "project-current-state.json#next_control_decisions[V2R4-PRODUCTIVITY-REVIEW]",
+        "historic_trial_status": "ARCHIVED_INCOMPLETE_NOT_FIXED_REVIEWED",
+        "cloud_prospective_rows": 0,
+        "reactivation_of_historic_trial_forbidden": true,
+        "new_trial_requires_new_baseline": true,
+        "must_explicitly_choose": "RETRY_NEW_VERSION_WITH_ECONOMIC_RATIONALE_OR_DEFER_WITH_GATE_OR_REJECT_WITH_EVIDENCE",
+        "no_automatic_shadow_start": true,
+        "no_h6_promotion": true
+      }
     },
     {
       "id": "macro_event_risk_gate",
@@ -426,7 +439,7 @@
       "category": "signal_state",
       "source_version": "V3 H6 hypothesis",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Exact V3-H6-INCR-001 MINI-PC report and fixed review are complete with holdout sealed. Incremental volume contribution conditional on fixed price-direction strata is small/near zero. H6 remains sequenced after the active H3 one-change shadow fixed review; no threshold/transform search, winner selection or promotion is authorized. V3 candidate-specific closed OHLC/volume/ATR adapter belongs to a shared evidence-provenance path, not a new H6 signal; no double count, model vote or H6 threshold/promotion implied.",
+      "rationale": "V3-H6-INCR-001 MINI-PC physical trial and fixed incremental review were completed at sealed holdout; marginal volume contribution beyond fixed price direction was small/near zero, with no proven net trading advantage. It is NOT currently active and must not be auto-started merely because archived H3 leaves zero active strategy-changing shadows. Historic H3-001 was archived incomplete (0 prospective cloud events): first explicitly disposition that failed-to-measure experiment, separately settle original V2R4 72h low-BUY economic priority and require the normal one-change Shadow/paper/human release gates before considering any H6 follow-on. Candidate-specific 1m/5m/15m volume data source is owned by shared coin-entry provenance; it is NOT an independent H6 vote.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "research/v3/h1-h6-association-review-20261002.json",
@@ -436,7 +449,15 @@
         "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json",
         "research/v3/coin-entry-evidence-lineage-v1.json"
       ],
-      "pending_gate": "V3_H3_SHADOW_001_FIXED_REVIEW_BEFORE_H6_ONE_CHANGE_SHADOW"
+      "pending_gate": "V3_H3_001_INCONCLUSIVE_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW_THEN_SEPARATE_H6_ONE_CHANGE_SHADOW_APPROVAL",
+      "sequence_followthrough": {
+        "predecessor": "orderflow_depth_imbalance",
+        "requires_explicit_h3_archive_disposition": true,
+        "requires_v2r4_economic_review": true,
+        "standalone_incremental_net_edge": "NOT_PROVEN",
+        "no_auto_start": true,
+        "no_duplicate_volume_vote": true
+      }
     },
     {
       "id": "coin_specific_entry_evidence_provenance",

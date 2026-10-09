@@ -34,6 +34,7 @@ on:
       - "paper_evaluator/v3_extended_reentry_review_v1.py"
       - "tools/validate-v3-entry-succession-lineage.py"
       - "tests/test_v3_entry_successor_lineage.py"
+      - "tests/test_v3_h_component_followthrough.py"
       - "tools/strategy_successor_gate.py"
       - "tests/test_strategy_successor_gate.py"
       - "docs/test-strategy-runbook.md"
@@ -77,6 +78,7 @@ on:
       - "paper_evaluator/v3_extended_reentry_review_v1.py"
       - "tools/validate-v3-entry-succession-lineage.py"
       - "tests/test_v3_entry_successor_lineage.py"
+      - "tests/test_v3_h_component_followthrough.py"
       - "tools/strategy_successor_gate.py"
       - "tests/test_strategy_successor_gate.py"
       - "docs/test-strategy-runbook.md"
@@ -110,6 +112,9 @@ jobs:
         run: |
           python tools/validate-v3-entry-succession-lineage.py
           python -m unittest discover -s tests -p 'test_v3_entry_successor_lineage.py' -v
+      - name: Enforce H1–H11 status followthrough, H3 archive and H6 sequencing
+        run: |
+          python -m unittest discover -s tests -p 'test_v3_h_component_followthrough.py' -v
       - name: Validate autonomous milestone controller
         run: |
           python -m py_compile tools/project_milestone_controller.py
