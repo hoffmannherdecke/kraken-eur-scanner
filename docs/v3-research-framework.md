@@ -2,7 +2,7 @@
 
 Status: ACTIVE RESEARCH  
 Created: 2026-09-28  
-Current active Shadow baseline: `PAPER-V2R4-20261007T184255Z` / `V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION`  
+Historical H3 frozen comparison baseline (now physically archived): `PAPER-V2R4-20261007T184255Z` / `V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION`. No active strategy-changing H3 shadow since Oct-09 technical cutover; next H6 blocked pending explicit H3 incomplete-archive review.  
 Primary research log: GitHub Issue #7 — V3 Research Track – Jansen evidence framework  
 Version relationship: `docs/strategy-version-map.md`
 
@@ -12,7 +12,7 @@ This document is the compact, versioned source of truth for the V3 development t
 
 It does **not** modify the currently active Paper baseline in place. New literature findings, historical analyses and paper-trade observations may create hypotheses and test candidates, but production rules must never change silently. Current active state is declared only in `project-current-state.json`.
 
-V2R3 remains an immutable historical comparison baseline. The active H3 Shadow is bound to the current V2R4 Paper baseline declared in `project-current-state.json`. The eventual V3 successor inherits the best validated V2/V2R4 knowledge rather than being built from scratch.
+V2R3 remains an immutable historical comparison baseline. The historical H3 Shadow *was* bound to the original V2R4 Paper baseline and is now archived/inconclusive with zero prospective H3 cloud rows; do not rebind it to the operational successor series. The source of current active status is `project-current-state.json`. The eventual V3 successor inherits the best validated V2/V2R4 knowledge rather than being built from scratch.
 
 ## 2. Status model
 
@@ -177,8 +177,8 @@ No H2 performance trial, threshold sweep, pair/month selection or holdout access
 Kraken Spot EUR remains the execution/fill reference.
 
 ### H3 — Orderflow / Depth / Imbalance
-Status: `SHADOW`  
-Stage: `V3_H3_SHADOW_001_ACTIVE_COLLECTING`  
+Status: `ARCHIVED_INCOMPLETE_NOT_FIXED_REVIEWED` (since 09.10. technical cutover; historic Shadow-activation contract remains sealed)  
+Stage: `V3_H3_001_PHYSICALLY_ARCHIVED_ZERO_PROSPECTIVE_EVIDENCE`  
 Priority: A after Mini-PC/WebSocket layer
 
 Capture:
@@ -213,8 +213,8 @@ Current prospective association status:
 - fixed descriptive association review is PASS, but effects are symbol/feature/horizon-specific rather than a universal cross-symbol direction;
 - no threshold/transform/pair/horizon search, fill inference or automatic promotion occurred.
 
-Current shadow status:
-- `V3-H3-SHADOW-001` is frozen against active baseline `PAPER-V2R4-20261007T184255Z` / `V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION`;
+Historical Shadow preparation/activation evidence (not present-tense runtime):
+- `V3-H3-SHADOW-001` was frozen against original baseline `PAPER-V2R4-20261007T184255Z` / `V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION`;
 - physical Kraken L2 reconciliation PASS: **931 updates / 937 checksum PASS / 0 failures** with bounded reconnect/resubscribe;
 - isolated candidate -> baseline -> +H3 E2E PASS with V2R4 unchanged, no orders and no real-money path;
 - only XBT/EUR, ETH/EUR and SOL/EUR are eligible; all other pairs are baseline passthrough;
