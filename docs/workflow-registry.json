@@ -210,6 +210,11 @@
       "active_control_surface": true
     },
     {
+      "workflow": "v2r4-postcommit-task-recovery-windows.yml",
+      "lifecycle": "MANUAL_OR_CHANGE_VALIDATION",
+      "active_control_surface": false
+    },
+    {
       "workflow": "v2r4-pr-validation.yml",
       "lifecycle": "ACTIVE_VALIDATION",
       "active_control_surface": false
