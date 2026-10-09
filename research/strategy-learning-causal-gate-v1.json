@@ -152,6 +152,50 @@
       "caveat": "Historical outcome selection, same-pair/time correlation, execution path and after-cost return unproven. No historical bars may be falsely treated as decision-time known.",
       "status_for_release": "NOT_CLEARED_WITHOUT_PROSPECTIVE_GAIN_AND_EXPLICIT_GATE",
       "no_auto_strategy_change": true
+    },
+    "operational_reconciliation_oct_09": {
+      "review_kind": "FULL_SYSTEM_ARCHITECTURE_AND_ECONOMIC_STATUS_REVIEW",
+      "observed_at_utc": "2026-10-09T19:50:40Z",
+      "strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+      "strategy_epoch_started_at_utc": "2026-10-07T18:42:55Z",
+      "strategy_epoch_72h_due_at_utc": "2026-10-10T18:42:55Z",
+      "original_segment": {
+        "series_id": "PAPER-V2R4-20261007T184255Z",
+        "status": "technical_closed",
+        "outcomes": 1011,
+        "buys": 0,
+        "trades": 0,
+        "eligible_24h_at_cutover": 260,
+        "complete_24h_at_cutover": 260
+      },
+      "operational_segment": {
+        "series_id": "PAPER-V2R4-20261009T110135Z",
+        "status": "active",
+        "read_only_observed_outcomes": 175,
+        "buys": 0,
+        "trades": 0,
+        "complete_24h_yet_at_observation": 0
+      },
+      "total_observed_epoch_outcomes_at_snapshot": 1186,
+      "total_observed_buys": 0,
+      "h3": {
+        "id": "V3-H3-SHADOW-001",
+        "physical_status": "ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND",
+        "verified_health_at_utc": "2026-10-09T19:49:26.671Z",
+        "cloud_rows": 0,
+        "cloud_status_utc": "2026-10-09T11:00:03.459542Z",
+        "fixed_review_ready": false,
+        "auto_resume": false
+      },
+      "status": "ECONOMIC_NOT_PROVEN_TECHNICALLY_HEALTHY_H3_INCONCLUSIVE",
+      "systemic_fixes": [
+        "CANONICAL_ARCHIVED_SHADOW_VS_FROZEN_HISTORICAL_CANDIDATE_SEPARATION",
+        "APPEND_ONLY_TECHNICAL_SERIES_EPOCH_FOLD_FOR_ECONOMIC_REVIEW",
+        "ONE_SHARED_LINEAGE_VALIDATOR_FOR_CURRENT_STATE_AND_CONTROLLER",
+        "H6_REMAINS_BLOCKED_WHEN_H3_ARCHIVE_INCONCLUSIVE",
+        "ARCHITECTURE_OWNER_MAP_NO_NEW_WORK_OR_MONITORING_SCHEDULE"
+      ],
+      "remaining_open_question": "Whether isolated true candidate OHLC/volume/ATR input and separately gated EXTENDED re-review can increase valid after-cost BUYs; historical MFE is not evidence of profitability."
     }
   },
   "checks_before_any_successor_paper_release": [
