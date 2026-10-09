@@ -2,7 +2,7 @@
   "schema_version": 2,
   "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-08T06:48:00Z",
+  "updated_at_utc": "2026-10-09T17:42:02Z",
   "baseline_strategy": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
   "active_clean_series": "PAPER-V2R4-20261007T184255Z",
   "v2r4_status": "ACTIVE_PAPER_APPROVED",
@@ -384,16 +384,47 @@
       "category": "signal_state",
       "source_version": "V3 H6 hypothesis",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "Exact V3-H6-INCR-001 MINI-PC report and fixed review are complete with holdout sealed. Incremental volume contribution conditional on fixed price-direction strata is small/near zero. H6 remains sequenced after the active H3 one-change shadow fixed review; no threshold/transform search, winner selection or promotion is authorized.",
+      "rationale": "Exact V3-H6-INCR-001 MINI-PC report and fixed review are complete with holdout sealed. Incremental volume contribution conditional on fixed price-direction strata is small/near zero. H6 remains sequenced after the active H3 one-change shadow fixed review; no threshold/transform search, winner selection or promotion is authorized. V3 candidate-specific closed OHLC/volume/ATR adapter belongs to a shared evidence-provenance path, not a new H6 signal; no double count, model vote or H6 threshold/promotion implied.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "research/v3/h1-h6-association-review-20261002.json",
         "research/v3/h6-incremental-volume-contribution-trial-v1.json",
         "research/v3/h6-incremental-trial-ledger-record-v1.json",
         "research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json",
-        "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json"
+        "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json",
+        "research/v3/coin-entry-evidence-lineage-v1.json"
       ],
       "pending_gate": "V3_H3_SHADOW_001_FIXED_REVIEW_BEFORE_H6_ONE_CHANGE_SHADOW"
+    },
+    {
+      "id": "coin_specific_entry_evidence_provenance",
+      "category": "shared_candidate_entry_data_quality_not_independent_signal",
+      "source_version": "V2R4 missing-data analysis → inactive V3 successor adapter 2026-10-09",
+      "migration_status": "MORE_TESTING_REQUIRED",
+      "rationale": "V2R4 local handoff + paper_context supply price, spread and broad BTC/ETH/SOL regime but do not pass candidate-specific closed candles, volume ratios or ATR/swing risk evidence to the evaluator, while BUY_SCOUT requires confirmation and a defensible stop. The inactive successor adapter supplies descriptively valid point-in-time evidence only; H6 remains the sole owner of price/volume predictive testing and H4 the owner of stop-rule changes. Reuse existing Kraken source registry and closed-bar plumbing, never add a second autonomous poller or separate BUY vote; H3, H7 and H1 remain separately gated.",
+      "evidence": [
+        "paper_evaluator/successor_coin_entry_evidence_v1.py",
+        "tests/test_successor_coin_entry_evidence_v1.py",
+        "research/v3/v3-coin-entry-evidence-v1.md",
+        "research/v3/coin-entry-evidence-lineage-v1.json",
+        "research/source-registry.json",
+        "docs/v3-research-framework.md"
+      ],
+      "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_FIXED_REVIEW",
+      "dependencies": [
+        "price_volume_trend_primitives",
+        "orderflow_depth_imbalance",
+        "stop_trailing_ttl_exit_logic",
+        "meta_take_no_take"
+      ],
+      "strategy_coupling": "NONE_INACTIVE_NOT_ATTACHED",
+      "runtime_effects": {
+        "new_scheduler": false,
+        "active_v2r4_change": false,
+        "active_h3_change": false,
+        "automatic_release": false,
+        "real_money_actions": false
+      }
     },
     {
       "id": "simple_price_volume_primitives",

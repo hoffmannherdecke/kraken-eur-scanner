@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "kind": "V3_COIN_ENTRY_EVIDENCE_LINEAGE_V1",
+  "status": "INACTIVE_GOVERNANCE_ONLY",
+  "canonical_ledger_component": "coin_specific_entry_evidence_provenance",
+  "new_strategy_signal_component_created": false,
+  "implementation": "paper_evaluator/successor_coin_entry_evidence_v1.py",
+  "documentation": "research/v3/v3-coin-entry-evidence-v1.md",
+  "source_registry_authority": "kraken_spot_rest_public",
+  "source_authority": "Kraken Spot EUR",
+  "new_market_data_source_created": false,
+  "source_reuse_policy": "At future integration use already verified Kraken closed OHLC market-data pipeline/cache when feasible; adapter manual 1m/5m/15m reads are a bounded fallback, not a separate continuous poller.",
+  "features": {
+    "canonical_only": [
+      "closed_1m_5m_15m_bar_prices",
+      "closed_bar_volume_vs_prior_5",
+      "candidate_specific_atr14_15m",
+      "recent_8_closed_15m_low"
+    ],
+    "note": "Descriptive candidate entry evidence, not price forecast, stop policy or independent H6 vote."
+  },
+  "overlap_ownership": [
+    {
+      "existing": "price_volume_trend_primitives",
+      "family": "H6",
+      "overlap": "closed price/volume features",
+      "policy": "REUSE_AS_EVIDENCE_ONLY_NO_DUPLICATE_FEATURE_VOTE",
+      "constraint": "H6 incremental-volume value remains unproven; H6 fixed shadow after H3 review, no automatic activation or replacement by the adapter."
+    },
+    {
+      "existing": "orderflow_depth_imbalance",
+      "family": "H3",
+      "overlap": "liquidity/confirmation context",
+      "policy": "DISTINCT_INPUTS",
+      "constraint": "H3 orderbook/depth-only existing one-change Shadow unchanged and no baseline rebind."
+    },
+    {
+      "existing": "stop_trailing_ttl_exit_logic",
+      "family": "H4",
+      "overlap": "ATR/local-low descriptive risk features",
+      "policy": "INPUT_ONLY_NOT_STOP_RULE",
+      "constraint": "No stop, trailing, TTL or sizing recalibration until H4's own mature net-cost evidence and release gate."
+    },
+    {
+      "existing": "meta_take_no_take",
+      "family": "H7",
+      "overlap": "candidate decision quality",
+      "policy": "OPTIONAL_FUTURE_INPUT_NOT_META_MODEL",
+      "constraint": "H7 label/split/cost frozen contract and own training gate remain required."
+    },
+    {
+      "existing": "cross_crypto_lead_lag_breadth",
+      "family": "H1",
+      "overlap": "broad-market correlation",
+      "policy": "NO_INHERITANCE_OF_REJECTED_AUTHORITY",
+      "constraint": "Rejected standalone H1 must not silently re-enter combined decision logic."
+    },
+    {
+      "existing": "v2r4_event_driven_wait_wakeup",
+      "family": "V2R4",
+      "overlap": "WAIT confirmation",
+      "policy": "NO_DIRECT_TRIGGER_OR_RECHECK_CHANGE",
+      "constraint": "Inactive adapter is not attached to live WAIT evaluation/recheck or active V2R4."
+    }
+  ],
+  "review_gates": [
+    "V2R4_COHORT_NO_BUY_PRODUCTIVITY_REVIEW_UNCHANGED_STRATEGY_FINGERPRINT_ACROSS_TECHNICAL_ROTATION",
+    "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_FIXED_REVIEW",
+    "V3_H3_FIXED_REVIEW_BEFORE_ANY_NEW_STRATEGY_CHANGING_SHADOW",
+    "SEPARATE_SUCCESSOR_PAPER_RELEASE_AND_PHYSICAL_MINIPC_E2E"
+  ],
+  "runtime_guardrails": {
+    "new_scheduled_capture": false,
+    "additional_work_run": false,
+    "additional_github_workflow": false,
+    "duplicate_raw_archive": false,
+    "independent_trade_vote": false,
+    "active_v2r4_changed": false,
+    "active_h3_changed": false,
+    "active_h6_changed": false,
+    "live_orders": false,
+    "automatic_strategy_promotion": false
+  }
+}
