@@ -130,7 +130,7 @@
       "canonical_owner": "kraken_closed_spot_eur_15m_observer",
       "consumer": "GATED_STRATEGY_REVIEW",
       "authority": "RESEARCH_ONLY",
-      "evidence_status": "UNATTENDED_E2E_UNVERIFIED",
+      "evidence_status": "PIT_KRAKEN_EUR_EPISODES_CAPTURED_FIRST_E2E_RECORDED_20261008",
       "fact_key": "market_phase_episode",
       "overlaps": [
         "h1_breadth_diagnostic",
@@ -142,7 +142,13 @@
       "source_known_at_required": true,
       "strategy_change_requires_release": true,
       "evidence_outcome": "CONTEXT_TO_MATURE_OUTCOMES_OR_NO_ACTION",
-      "next_gate": "FIRST_UNATTENDED_KRAKEN_EUR_INITIAL_BASELINE_AND_PIT_OUTCOME_JOIN"
+      "next_gate": "PIT_24H_PAPER_OUTCOME_JOIN_AND_INCREMENTAL_NET_TRADE_VALUE_WHEN_STRATEGY_REVIEW_OPENS",
+      "evidence_refs": [
+        "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/7#issuecomment-6068682341",
+        "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/7#issuecomment-6074005556",
+        "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/7#issuecomment-6086314931"
+      ],
+      "evidence_scope": "Observed Kraken 15m closed bar basket/known-at market phase episode history, no proven strategy lift; separate news/source-steward first E2E still unverified"
     },
     {
       "id": "h1_breadth_diagnostic",
