@@ -2,7 +2,7 @@
   "schema_version": 2,
   "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-09T17:42:02Z",
+  "updated_at_utc": "2026-10-09T19:05:00Z",
   "baseline_strategy": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
   "active_clean_series": "PAPER-V2R4-20261007T184255Z",
   "v2r4_status": "ACTIVE_PAPER_APPROVED",
@@ -198,9 +198,51 @@
         "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md",
         "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json",
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
-        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+        "research/v3/v3-coin-entry-evidence-v1.md",
+        "research/v3/coin-entry-evidence-lineage-v1.json",
+        "paper_evaluator/v3_extended_reentry_review_v1.py",
+        "tests/test_v2r4_v3_extended_reentry_review.py"
       ],
-      "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS"
+      "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS",
+      "successor_refinement": {
+        "id": "V3_EXTENDED_SECOND_LEG_ENTRY_REVIEW",
+        "status": "INACTIVE_IMPLEMENTED_PROSPECTIVE_TEST_REQUIRED",
+        "retained_safety": "INHERIT_UNCHANGED: anti-chase, execution-cost, 50+50 two-stage, stop, expiry and no real-money guards remain fully in force",
+        "reason": "08-09 Oct completed 60m V2R4 candidate outcomes: 27 retrospectively shallow-drawdown +5% MFE candidates with original <=0.5% spread among 1070 mature samples / 24 pair-hours; 20/27 were labeled EXTENDED and 2/27 REVERSAL; no BUY. Outcome-selected MFE is not executable gain.",
+        "existing_component_only": true,
+        "not_a_new_reversal_or_h6_signal": true,
+        "inactive_research_code": "paper_evaluator/v3_extended_reentry_review_v1.py",
+        "existing_research_contract": "research/v3/coin-entry-evidence-lineage-v1.json",
+        "stage_A": {
+          "id": "V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE",
+          "depends_on": "V3_H3_FIXED_REVIEW",
+          "single_changed_input": "candidate-specific closed 1m/5m/15m Kraken OHLC, volume ratios, 15m ATR/recent low as known at original decision; evaluator, WAIT and risk unchanged",
+          "result_required": "valid BUY candidate and stop/stage2 after-cost/MAE/cost evidence; include valid misses and false buys"
+        },
+        "stage_B": {
+          "id": "V3_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY_SINGLE_POLICY_CHANGE_GATE",
+          "depends_on": "V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE",
+          "single_changed_policy": "existing EXTENDED second-leg fresh-model review eligibility only; no auto BUY; candidate known-at, price/volume confirmation, structure/cost checks",
+          "result_required": "prove incremental viable BUY opportunities versus fixed Stage A by matched prospective same-clock comparison; no relaxed execution safeguards"
+        },
+        "gate_sequence": "V3_H3_FIXED_REVIEW -> V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE -> V3_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY_SINGLE_POLICY_CHANGE_GATE -> V3_SEPARATE_EXPLICIT_PAPER_RELEASE",
+        "candidate_cohort_source": "research/v3/v3-coin-entry-evidence-v1.md",
+        "permanent_generation_inheritance": "MANDATORY_EXPLICIT_DISPOSITION_AT_EVERY_SUCCESSOR_VERSION_V3_V4_PLUS_LIVE_AFTER_SEPARATE_APPROVAL",
+        "allowed_dispositions": [
+          "VERIFIED_INTEGRATE",
+          "MORE_TESTING_REQUIRED",
+          "DEFER_TO_LATER_GENERATION_WITH_OWNER_AND_GATE",
+          "REJECT_WITH_EVIDENCE",
+          "NO_SUCCESSOR_CHANGE_WITH_EVIDENCE"
+        ],
+        "promotion_prohibited_without_evidence": true,
+        "active_v2r4_changed": false,
+        "active_h3_changed": false,
+        "real_money_actions": false,
+        "automatic_activation": false,
+        "additional_scheduler": false
+      }
     },
     {
       "id": "stop_trailing_ttl_exit_logic",
@@ -424,6 +466,14 @@
         "active_h3_change": false,
         "automatic_release": false,
         "real_money_actions": false
+      },
+      "successor_roadmap_link": {
+        "id": "V3_EXTENDED_SECOND_LEG_ENTRY_REVIEW",
+        "canonical_existing_component": "late_chase_protection",
+        "first_stage": "V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE",
+        "second_separate_stage": "V3_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY_SINGLE_POLICY_CHANGE_GATE",
+        "no_duplicate_component": true,
+        "no_reversal_lane_replacement": true
       }
     },
     {

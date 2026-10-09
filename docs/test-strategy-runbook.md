@@ -449,6 +449,22 @@ automatically as far as existing gates allow. Activation remains a separate expl
 
 **Geltungsbereich:** V2R4-Diagnose, V3, V4 und alle späteren Paper-/real-money-Nachfolger. Die Erfüllung eines Gating-Artefakts ist noch keine Garantie zukünftiger Gewinne; sie verhindert vielmehr, eine technisch grüne, aber wirtschaftlich ungeprüfte Reparatur fälschlich als erledigt freizugeben.
 
+### 12.2b Wiederkehrende EXTENDED-/Zweite-Aufwärtsbewegung-Prüfung — 09.10.2026
+
+**Pflichtfall:** Der V2R4-Abverkauf-/Erholungszeitraum 08.–09.10.2026 lieferte 1.070 vollständige 60-Minuten-Kandidaten-Follow-ups. 27 auffällige Ex-post-Bewegungen (historischer Spread <=0,5 %, später max. +5 % / zwischenzeitlicher Rückgang >=−1,5 %) verteilten sich auf 11 Coins und 24 Paar-Stunden. **20 von 27** wurden ursprünglich als `EXTENDED`, lediglich **2** als `REVERSAL` eingestuft; **0 BUY_SCOUT**. Dieser Filter beweist weder Handelbarkeit noch Nettogewinn: keine sichere intra-Minuten-Stop-/Fill-Reihenfolge, Depth-/Slippage-/Taker-Prüfung oder unabhängige Ereignisse. Die Daten sind **Diagnose und Entwicklungshypothese**, nicht bereits freigegebene Strategie.
+
+**Verbindliche Übergabe:** Einziges bestehendes Verantwortungsobjekt `research/v3-migration-ledger.json#late_chase_protection.successor_refinement`; Datenzulieferung bleibt bei `coin_specific_entry_evidence_provenance`, nicht bei einem neuen Reversal-/H6-Modul. Das inaktive `paper_evaluator/v3_extended_reentry_review_v1.py` darf aus der vorhandenen `EXTENDED`-Einstufung höchstens einen neuen Modell-Review-Vorschlag erzeugen, niemals BUY oder Paper-Order.
+
+**Automatisch zu berücksichtigende nächste Projekt-Gates**, ohne zusätzlichen Timer: bei der H3-Fixed-Review, jeder V2R4-Produktivitätsauswertung, jeder V3-Entry-Erprobung und **jedem** V3/V4+/später ausdrücklich autorisierten Echtgeld-Nachfolge-Review ist der offene Fall aus `project-current-state.json#next_control_decisions[V3-EXTENDED-SECOND-LEG-LEARNING-GATE]` und der Migrationsledger-Komponente aktiv zu lesen und explizit zu disponieren. Der bestehende GitHub Project-Control-Plane-Guard prüft diese Verknüpfung über `tools/validate-v3-entry-succession-lineage.py`, inklusive negativer Regressionstests. Wird sie gelöscht, dupliziert oder unbemerkt als „gelöst“ ausgegeben, schlägt der Guard fehl.
+
+**Genaue Reihenfolge, ohne vermischte Ursachen:**
+1. `V3_H3_FIXED_REVIEW` als bestehende Ein-Shadow-Bedingung respektieren; kein H3-Baseline-Rollover.
+2. `V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE`: Unveränderte Bewerter-/WAIT-/Fees-/Stop-/Stage2-Regeln, aber echte **vor der Entscheidung bekannte** Kraken 1/5/15m-Coin-OHLC, Volumen, ATR/Strukturtief im gleichen Snapshot; belastbare spätere Risiko-/Kosten-Follow-ups vergleichen.
+3. Erst unabhängig davon `V3_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY_SINGLE_POLICY_CHANGE_GATE`: mit identischen Daten/Risiken den vorhandenen EXTENDED-Fall auf erneute *frische* Bestätigung untersuchen. Ein zusätzlicher Modell-Review ist **noch kein Trade-Erfolg**. Keine gleichzeitige künstliche A+B-„Verbesserung“.
+4. Nur nach vollständiger Vorgängerfindings-Disposition, nachweislich sinnvollen prospektiven BUY- und Stop/Stage2-/Kosten-/MAE-Ergebnissen und separater expliziter Paper-Freigabe neue Strategie aktivieren; reale Orders bleiben nochmals separat gegatet.
+
+**Niemals** einfach nur mehr Trades durch weiche Filter, nachträglich bekanntes OHLC oder MFE-Rückschau erzeugen. Bestehender Anti-Chase-Schutz bleibt vererbt. Erkenntnis gilt generationsübergreifend, auch wenn Stufe A oder B `REJECT_WITH_EVIDENCE` ergibt – dann wird sie mit Beleg verworfen statt stillschweigend vergessen. Keine zusätzliche Work-/GitHub-Schedule, kein automatisches Umschalten und keine Änderung laufender V2R4/H3-Systeme.
+
 ### 12.3 Permanent strategy-lineage inheritance — all future versions
 
 The inheritance rule is **not limited to V2R3 → V2R4 or V2/V2R4 → V3**.
