@@ -1,0 +1,158 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H10_KRAKEN_OUTCOME_CONTEXT_JOIN_CONTRACT_V1",
+  "contract_id": "V3-H10-KRAKEN-OUTCOME-CONTEXT-JOIN-001",
+  "status": "FROZEN_PREREGISTERED_INACTIVE",
+  "frozen_at_utc": "2026-10-09T08:24:00Z",
+  "purpose": "Prospectively join the already frozen H10 trader-activity cohort to point-in-time Kraken Spot-EUR context and fixed after-cost outcomes without selecting wallets, assets, thresholds or horizons from observed outcomes.",
+  "authorities": {
+    "cohort": "research/v3/h10-trader-cohort-v1.json",
+    "cohort_selection": "research/v3/h10-trader-cohort-selection-contract-v1.json",
+    "first_review": "research/v3/h10-first-analysis-review-20261008.json",
+    "execution_market": "Kraken online Spot-EUR",
+    "current_strategy_effect": "NONE"
+  },
+  "fixed_input_population": {
+    "cohort_id": "V3-H10-COHORT-001",
+    "capture_id": "V3-H10-CAPTURE-001",
+    "primary_wallets": 20,
+    "active_controls": 6,
+    "wallet_reselection_allowed": false,
+    "manual_event_selection_allowed": false,
+    "event_source": "Frozen 30-minute independent-wallet asset activity/consensus produced by the existing H10 prospective capture.",
+    "eligibility": [
+      "event first persisted after frozen_at_utc",
+      "source timestamps and first_seen_at are present",
+      "asset has a point-in-time online Kraken Spot-EUR mapping at event known_at",
+      "entry quote is observed no earlier than known_at and no later than known_at plus 60 seconds",
+      "all required 24h horizons have matured before fixed review"
+    ],
+    "exclusions": [
+      "pre-contract events",
+      "post-outcome wallet or asset selection",
+      "non-simple or unmapped Hyperliquid symbols without contemporaneous archived Kraken mapping",
+      "stale or reconstructed entry quote",
+      "tracker-gap-affected outcome path",
+      "missing depth needed for the fixed 50 EUR cost simulation"
+    ]
+  },
+  "point_in_time_join": {
+    "event_time": "max(source_event_time, first_seen_at) as known_at_utc",
+    "stable_event_id": "sha256(contract_id|cohort_role|asset|window_start_utc|sorted_independent_wallet_ids|known_at_utc)",
+    "symbol_mapping": {
+      "authority": "Kraken AssetPairs snapshot archived at known_at_utc",
+      "aliases": {
+        "BTC": "XBT"
+      },
+      "future_mapping_forbidden": true,
+      "unresolved_symbol_disposition": "INELIGIBLE_UNMAPPED_AT_KNOWN_AT"
+    },
+    "entry_snapshot": {
+      "max_age_seconds": 60,
+      "required": [
+        "best_bid",
+        "best_ask",
+        "spread_pct",
+        "depth_10_bid_eur",
+        "depth_10_ask_eur",
+        "turnover_24h_eur",
+        "snapshot_observed_at"
+      ],
+      "selection": "first complete snapshot with observed_at >= known_at_utc; never nearest future snapshot outside max_age_seconds"
+    },
+    "outcome_horizons_minutes": [
+      15,
+      60,
+      180,
+      360,
+      1440
+    ],
+    "outcome_clock": "first complete Kraken observation at or after known_at_utc + horizon, with lag_seconds persisted; no backward fill and no future row at event evaluation time",
+    "missing_data_disposition": "NOT_EVALUABLE_DATA_GAP"
+  },
+  "fixed_direction_rule": {
+    "independent_wallet_vote": "Each frozen wallet contributes at most one LONG, SHORT or FLAT vote per asset/window.",
+    "non_tie": "LONG when long_wallets > short_wallets; SHORT when short_wallets > long_wallets.",
+    "tie": "Use sign of aggregate signed notional only when long_wallets == short_wallets and aggregate signed notional is non-zero.",
+    "unresolved_tie": "NO_DIRECTION_NOT_SCORED",
+    "majority_notional_conflict": "Keep independent-wallet majority as canonical direction; flag DIRECTION_NOTIONAL_CONFLICT and report as a separate stratum.",
+    "no_threshold_search": true
+  },
+  "cost_and_outcome_model": {
+    "hypothetical_not_order": true,
+    "notional_eur": 50,
+    "taker_fee_pct_per_fill": 0.6,
+    "round_trip_fee_pct": 1.2,
+    "entry_price": "VWAP through contemporaneous ask depth for LONG and bid depth for SHORT at 50 EUR",
+    "exit_price": "Opposite-side VWAP through contemporaneous depth at each horizon at the resulting base quantity",
+    "spread_and_depth_slippage": "Measured from the archived bid/ask/depth snapshots; never replaced with zero.",
+    "metrics": [
+      "direction_adjusted_return_pct_15m_60m_180m_360m_1440m",
+      "net_return_after_fees_spread_slippage_pct_by_horizon",
+      "direction_adjusted_mfe_mae_pct_15m_60m_180m_360m_1440m",
+      "lead_time_seconds",
+      "source_to_first_seen_seconds",
+      "mapping_and_snapshot_coverage"
+    ],
+    "no_fill_claim": true,
+    "no_entry_stop_stage2_or_sizing_change": true
+  },
+  "frozen_false_positive_label": {
+    "name": "H10_FALSE_POSITIVE_AFTER_COST_6H_V1",
+    "positive_opportunity": "direction-adjusted 6h MFE after fixed round-trip fees, contemporaneous spread and 50 EUR depth slippage is greater than 0%",
+    "false_positive": "eligible directional event whose direction-adjusted 6h MFE after fixed costs is less than or equal to 0%",
+    "unresolved": "NOT_EVALUABLE for missing/gap-affected inputs; never coerce to false",
+    "secondary_descriptive_only": [
+      "24h after-cost close direction",
+      "6h and 24h adverse excursion",
+      "majority/notional conflict",
+      "primary versus active-control cohort role"
+    ],
+    "threshold_search_allowed": false
+  },
+  "fixed_review_gate": {
+    "min_eligible_events_total": 50,
+    "min_primary_events": 40,
+    "min_control_events": 10,
+    "min_distinct_utc_dates": 3,
+    "all_events_require_complete_24h": true,
+    "capture_health_min_pct": 95,
+    "compare": [
+      "primary versus active controls",
+      "false-positive rate",
+      "after-cost net returns",
+      "MFE/MAE",
+      "coverage and missingness",
+      "direction-notional conflict stratum",
+      "asset concentration and one-wallet dependence"
+    ],
+    "decision_set": [
+      "REJECT_WITH_EVIDENCE",
+      "MORE_TESTING_REQUIRED",
+      "PROMOTE_CANDIDATE_FOR_SEPARATE_ONE_CHANGE_REVIEW"
+    ],
+    "automatic_extension": false,
+    "automatic_promotion": false
+  },
+  "holdout_and_search_controls": {
+    "freeze_before_outcome_query": true,
+    "no_wallet_asset_horizon_threshold_or_label_reselection": true,
+    "no_coin_subset_winner_selection": true,
+    "no_threshold_sweep": true,
+    "excluded_events_remain_logged_with_reason": true,
+    "repeated_asset_events_reported_both_event_weighted_and_asset_clustered": true
+  },
+  "safety": {
+    "read_only_sources": true,
+    "capture_change": false,
+    "scheduler_change": false,
+    "strategy_coupling": false,
+    "v2r4_change": false,
+    "h3_change": false,
+    "orders": false,
+    "copy_trading": false,
+    "real_money_actions": false,
+    "automatic_release": false
+  },
+  "next_gate": "COLLECT_ONLY_POST_FREEZE_ELIGIBLE_EVENTS_THEN_FIXED_REVIEW"
+}
