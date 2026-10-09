@@ -308,7 +308,7 @@
       "category": "state_context",
       "source_version": "V3 H10 prospective shadow",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "First preregistered H10 capture/sample gate is mature and the evidence-only review is complete. Capture reliability is strong (199 batches; 5172/5174 wallet requests; 99.961%), but the archive lacks a fully preregistered per-event Kraken-EUR outcome/context join, and the gate's false-positive label was not materialized before outcome inspection. Direction also needs one fixed tie/conflict rule. H10 remains shadow-only; no predictive-value claim or strategy coupling is authorized.",
+      "rationale": "The first H10 capture/sample gate is mature and the evidence-only review is complete. The missing point-in-time Kraken-EUR outcome/context and false-positive definitions are now frozen in an inactive preregistered contract. Predictive value remains unproven until the fixed post-freeze 50-event/24h review; H10 remains shadow-only with no strategy coupling.",
       "evidence": [
         "research/v3/h10-hyperliquid-readonly-precheck-v1.json",
         "research/v3/h10-h11-public-source-evidence-20261002.json",
@@ -318,9 +318,10 @@
         "public.v3_h10_capture_health",
         "docs/storage-retention-policy.md",
         "research/v3/h10-first-analysis-review-20261008.json",
-        "research/v3/h10-first-analysis-review-20261008.md"
+        "research/v3/h10-first-analysis-review-20261008.md",
+        "research/v3/h10-kraken-outcome-context-join-contract-v1.json"
       ],
-      "pending_gate": "V3_H10_FREEZE_KRAKEN_OUTCOME_CONTEXT_JOIN_CONTRACT_THEN_PROSPECTIVE_FIXED_REVIEW"
+      "pending_gate": "V3_H10_COLLECT_50_ELIGIBLE_POST_FREEZE_EVENTS_40_PRIMARY_10_CONTROL_3_UTC_DATES_COMPLETE_24H_THEN_FIXED_REVIEW"
     },
     {
       "id": "prediction_market_event_layer",
