@@ -86,7 +86,7 @@ function Old-Ids{
 function Old-Writer-Processes{
  # Stopping a Windows scheduled task does not prove every nested evaluator or
  # H3 child process has exited. A late writer can corrupt final ACK/snapshot.
- $patterns=@([regex]::Escape($oldApp+'\\'),[regex]::Escape((Join-Path $TradingRoot 'Runtime\\v3-h3-shadow-001')+'\\'))
+ $patterns=@([regex]::Escape($oldApp+'\'),[regex]::Escape((Join-Path $TradingRoot 'Runtime\v3-h3-shadow-001')+'\'))
  @(Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction Stop |
    Where-Object {
      $line=[string]$_.CommandLine
