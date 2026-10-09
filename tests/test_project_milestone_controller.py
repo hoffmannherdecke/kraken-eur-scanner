@@ -38,7 +38,7 @@ class MilestoneTests(unittest.TestCase):
         state = controller.load_local_state(ROOT)
         active = state['active_strategy']
         self._historic_h3_fixture(state)
-        paper = dict(series_id=active['series_id'], strategy_revision=active['strategy_revision'],
+        paper = dict(series_id=active['technical_rotation_runtime_last_verified']['series_id'], strategy_revision=active['strategy_revision'],
                      fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
                      candidate_outcomes=239, completed_trades=0, complete_24h=0,
                      series_age_days=.6, completion_ready=False, intake_should_stop=False)
@@ -69,7 +69,7 @@ class MilestoneTests(unittest.TestCase):
         state=controller.load_local_state(ROOT)
         active=state['active_strategy']
         self._historic_h3_fixture(state)
-        paper=dict(series_id=active['series_id'],strategy_revision=active['strategy_revision'],
+        paper=dict(series_id=active['technical_rotation_runtime_last_verified']['series_id'],strategy_revision=active['strategy_revision'],
                    fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
                    candidate_outcomes=1300,completed_trades=0,complete_24h=1300,
                    series_age_days=4,completion_ready=False,intake_should_stop=False)
@@ -240,6 +240,60 @@ class MilestoneTests(unittest.TestCase):
         result=controller.evaluate(state,paper,fake_h3,now,ROOT)
         self.assertNotIn('H3:FIXED_REVIEW_READY',result['statuses'])
         self.assertNotIn('H3_FIXED_REVIEW',[x['kind'] for x in result['events']])
+
+
+
+    def test_future_two_cutdown_rollovers_have_one_economic_epoch_without_double_count(self):
+        import copy
+        from tools.strategy_epoch_lineage import validate_epoch,summarize_epoch
+        state=controller.load_local_state(ROOT)
+        a=copy.deepcopy(state['active_strategy'])
+        current=a['technical_rotation_runtime_last_verified']['series_id']
+        next_id='PAPER-V2R4-20261012T110000Z'
+        fp=a['technical_rotation_runtime_last_verified']['strategy_fingerprint_sha256']
+        a['strategy_epoch_closed_segments'].append({
+            'series_id':current,'successor_series_id':next_id,
+            'status':'technical_closed','immutable':True,
+            'strategy_revision':a['strategy_revision'],
+            'strategy_fingerprint_sha256':fp,
+            'followups_beyond_cutover':'CENSORED_NOT_0_LOSS',
+            'cutover_at_utc':'2026-10-12T11:00:00Z',
+            'observed_at_utc':'2026-10-12T11:02:00Z',
+            'frozen_outcomes_at_cutover':500,
+            'frozen_completed_trades_at_cutover':0,
+            'verified_complete_24h_at_cutover':250,
+            'verified_eligible_24h_at_cutover':250,
+        })
+        snapshot=a['technical_rotation_runtime_last_verified']
+        snapshot['series_id']=next_id
+        snapshot['predecessor_outcomes_immutable_at_cutover']=500
+        snapshot['predecessor_trades_immutable_at_cutover']=0
+        snapshot['predecessor_24h_complete_at_cutover']=250
+        snapshot['predecessor_24h_eligible_at_cutover']=250
+        self.assertEqual(validate_epoch(a),[])
+        report=summarize_epoch(a,{
+            'series_id':next_id,'strategy_revision':a['strategy_revision'],
+            'candidate_outcomes':50,'completed_trades':0,'complete_24h':0})
+        self.assertEqual(report['technical_closed_segment_count'],2)
+        self.assertEqual(report['epoch_minimum_candidate_outcomes'],1561)
+        self.assertEqual(report['epoch_minimum_complete_24h'],510)
+        self.assertEqual(report['epoch_minimum_completed_trades'],0)
+        a['strategy_epoch_closed_segments'][1]['series_id']=a['series_id']
+        self.assertTrue(any('lineage' in x for x in validate_epoch(a)))
+        with self.assertRaises(ValueError):
+            summarize_epoch(a,{'series_id':next_id,'strategy_revision':a['strategy_revision'],
+                               'candidate_outcomes':50,'completed_trades':0,'complete_24h':0})
+
+    def test_closed_segment_missing_followups_cannot_fake_mature_24h(self):
+        import copy
+        from tools.strategy_epoch_lineage import validate_epoch
+        active=copy.deepcopy(controller.load_local_state(ROOT)['active_strategy'])
+        source=active['strategy_epoch_closed_segments'][0]
+        source['verified_complete_24h_at_cutover']=261
+        self.assertTrue(validate_epoch(active))
+        source['verified_complete_24h_at_cutover']=260
+        source['verified_eligible_24h_at_cutover']=259
+        self.assertTrue(any('maturity' in x for x in validate_epoch(active)))
 
 
 if __name__ == '__main__':
