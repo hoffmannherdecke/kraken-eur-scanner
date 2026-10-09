@@ -4,6 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from strategy_successor_gate import validate_learning_gate
+
 ROOT=Path(__file__).resolve().parents[1]
 STATE=ROOT/"project-current-state.json"
 
@@ -20,6 +22,9 @@ def main()->int:
         errors.append("current-state must be ACTIVE_CONTROL_PLANE")
 
     active=data.get("active_strategy") or {}
+    # Existing V2R4 keeps its frozen historical gate. Every successor strategy
+    # must prove real decision-input sufficiency and nonzero valid paper BUYs.
+    errors.extend(validate_learning_gate(ROOT, active_revision=active.get("strategy_revision")))
     if active.get("mode")!="PAPER":
         errors.append("active strategy must remain PAPER in the current phase")
     if active.get("real_money_actions") is not False:
