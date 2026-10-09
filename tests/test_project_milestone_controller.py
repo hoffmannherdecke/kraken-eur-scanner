@@ -57,8 +57,8 @@ class MilestoneTests(unittest.TestCase):
                    fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
                    candidate_outcomes=1300,completed_trades=0,complete_24h=1300,
                    series_age_days=4,completion_ready=False,intake_should_stop=False)
-        now=dt.datetime(2026,10,9,19,0,tzinfo=dt.timezone.utc)
-        h3=dict(shadow_candidate_id='V3-H3-SHADOW-001',generated_at='2026-10-09T18:50:00Z',
+        now=dt.datetime(2026,10,10,19,0,tzinfo=dt.timezone.utc)
+        h3=dict(shadow_candidate_id='V3-H3-SHADOW-001',generated_at='2026-10-10T18:50:00Z',
                 payload=dict(baseline_series_id=active['series_id'],
                              baseline_strategy_revision=active['strategy_revision'],
                              orders=False,real_money_actions=False,
