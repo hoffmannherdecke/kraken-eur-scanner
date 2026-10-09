@@ -56,6 +56,10 @@ class ContractTests(unittest.TestCase):
         gate=q["activation_followthrough"]
         self.assertEqual(gate["status"],
                          "OBSERVATION_TASK_ACTIVE_SOURCE_REVIEW_AND_REPLACE_E2E_UNVERIFIED")
+        self.assertEqual(gate["id"], "AUTONOMOUS_ACTIVE_SOURCE_MANAGEMENT_E2E_GATE_V1")
+        self.assertTrue(gate["active_management_not_limited_to_static_27_catalog"])
+        self.assertIn("DISCOVER_UNKNOWN_SOURCE", gate["active_management_actions"])
+        self.assertIn("REPLACE_WITH_BETTER_CHALLENGER", gate["active_management_actions"])
         self.assertIn("5_INDEPENDENT",gate["stage_2"])
         self.assertIn("ONE_CHANGE_ECONOMIC",gate["stage_4"])
         self.assertTrue(gate["no_new_work_run"])
@@ -65,6 +69,20 @@ class ContractTests(unittest.TestCase):
         j=copy.deepcopy(TOPO)
         next(x for x in j["streams"] if x["id"]=="source_quality").pop("activation_followthrough")
         self.assertTrue(any("source quality activation handoff" in x
+                            for x in mod.validate(j,STATE)))
+
+    def test_source_management_does_not_shrink_back_to_rotations(self):
+        j=copy.deepcopy(TOPO)
+        gate=next(x for x in j["streams"] if x["id"]=="source_quality")["activation_followthrough"]
+        gate["active_management_actions"].remove("DISCOVER_UNKNOWN_SOURCE")
+        self.assertTrue(any("source stewardship must cover autonomous discovery" in x
+                            for x in mod.validate(j,STATE)))
+
+    def test_static_27_source_whitelist_is_forbidden(self):
+        j=copy.deepcopy(TOPO)
+        gate=next(x for x in j["streams"] if x["id"]=="source_quality")["activation_followthrough"]
+        gate["active_management_not_limited_to_static_27_catalog"]=False
+        self.assertTrue(any("source quality activation cannot bypass safety" in x
                             for x in mod.validate(j,STATE)))
 
     def test_source_quality_never_modifies_active_trading_authority(self):
