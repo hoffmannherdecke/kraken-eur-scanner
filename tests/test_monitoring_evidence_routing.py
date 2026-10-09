@@ -36,6 +36,21 @@ class ContractTests(unittest.TestCase):
         j=copy.deepcopy(TOPO)
         next(s for s in j["streams"] if s["id"]=="news_event_context")["strategy_change_requires_release"]=False
         self.assertTrue(any("bypasses release" in e for e in mod.validate(j,STATE)))
+    def test_recorded_market_regime_is_research_evidence_not_live_trading_approval(self):
+        market=next(x for x in TOPO["streams"] if x["id"]=="market_regime")
+        self.assertEqual(market["evidence_status"],
+                         "PIT_KRAKEN_EUR_EPISODES_CAPTURED_FIRST_E2E_RECORDED_20261008")
+        self.assertEqual(market["authority"],"RESEARCH_ONLY")
+        self.assertEqual(market["on_missing"],"UNKNOWN_NO_VETO")
+        self.assertTrue(market["strategy_change_requires_release"])
+        self.assertGreaterEqual(len(market["evidence_refs"]),2)
+        self.assertIn("PIT_24H_PAPER_OUTCOME_JOIN",market["next_gate"])
+        self.assertIn("no proven strategy lift",market["evidence_scope"])
+        news=next(x for x in TOPO["streams"] if x["id"]=="news_event_context")
+        steward=next(x for x in TOPO["streams"] if x["id"]=="source_quality")
+        self.assertEqual(news["evidence_status"],"UNATTENDED_E2E_UNVERIFIED")
+        self.assertEqual(steward["evidence_status"],"UNATTENDED_E2E_UNVERIFIED")
+
     def test_no_second_active_shadow(self):
         state=copy.deepcopy(STATE)
         state["strategy_changing_shadow_wip"]["active"].extend([
