@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from paper_evaluator.v3_one_shot_model_compare import (
     select_fresh_handoff,freeze_runtime_provenance,clean_decision,execute_one_shot,
+    discover_active_paper_runtime,
 )
 from tests.test_v2r4_v3_entry_handoff_probe import evidence,dt,BASE
 
@@ -66,13 +67,52 @@ class V3OneShotModelCompareTests(unittest.TestCase):
         self.assertTrue(d["valid_stage2_above_ask"])
         self.assertNotIn("paper_entry",d)
 
+    def test_active_technical_stage_must_match_exact_series_and_release_hash(self):
+        with tempfile.TemporaryDirectory() as d:
+            home=Path(d)
+            legacy=home/"Runtime/v2r4-paper-app"
+            legacy.mkdir(parents=True)
+            (legacy/"paper_runtime_control.json").write_text('{"series_id":"OLD-FROZEN-DO-NOT-SELECT"}')
+            stage=home/"Runtime/v2r4-paper-stage-d8b35a8ec2e6"
+            stage.mkdir()
+            c={"series_id":"PAPER-V2R4-20261009T110135Z",
+               "paper_only":True,"enabled":True,"real_money_actions_enabled":False,
+               "release_repo_sha":"d8b35a8ec2e6"+"0"*28}
+            (stage/"paper_runtime_control.json").write_text(json.dumps(c))
+            path,pinned=discover_active_paper_runtime(home,"PAPER-V2R4-20261009T110135Z")
+            self.assertEqual(path,stage)
+            self.assertEqual(pinned["series_id"],c["series_id"])
+            with self.assertRaises(ValueError):
+                discover_active_paper_runtime(home,"PAPER-V2R4-20261007T184255Z")
+            c["release_repo_sha"]="0"*40
+            (stage/"paper_runtime_control.json").write_text(json.dumps(c))
+            with self.assertRaisesRegex(ValueError,"mismatch"):
+                discover_active_paper_runtime(home,"PAPER-V2R4-20261009T110135Z")
+
+    def test_stage_selection_rejects_multiple_active_stage_writers(self):
+        with tempfile.TemporaryDirectory() as d:
+            home=Path(d)
+            s1=home/"Runtime/v2r4-paper-stage-d8b35a8ec2e6"
+            s1.mkdir(parents=True)
+            (s1/"paper_runtime_control.json").write_text(json.dumps({
+                "series_id":"PAPER-V2R4-20261009T110135Z",
+                "enabled":True,"paper_only":True,
+                "real_money_actions_enabled":False,
+                "release_repo_sha":"d8b35a8ec2e6"+"0"*28}))
+            s2=home/"Runtime/v2r4-paper-stage-aaaaaaaaaaaa"
+            s2.mkdir()
+            (s2/"paper_runtime_control.json").write_text('{"series_id":"OTHER-ACTIVE"}')
+            with self.assertRaisesRegex(ValueError,"exactly one"):
+                discover_active_paper_runtime(home,"PAPER-V2R4-20261009T110135Z")
+
     def test_two_real_model_call_boundaries_offline_only(self):
         with tempfile.TemporaryDirectory() as d:
-            home=Path(d);app=home/"Runtime/v2r4-paper-app";app.mkdir(parents=True)
+            home=Path(d);app=home/"Runtime/v2r4-paper-stage-d8b35a8ec2e6";app.mkdir(parents=True)
             (home/"Secrets").mkdir()
             (home/"Secrets/openai-api-key.txt").write_text("MOCK_ONLY_NOT_A_REAL_TOKEN_12345")
             control={"enabled":True,"real_money_actions_enabled":False,
                      "strategy_revision":"V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+                     "paper_only":True,"release_repo_sha":"d8b35a8ec2e6"+"0"*28,
                      "series_started_at_utc":dt(-1800),"series_id":"TEST-SERIES"}
             (app/"paper_runtime_control.json").write_text(json.dumps(control))
             (app/"paper_strategy_spec.json").write_text(json.dumps(
@@ -94,7 +134,7 @@ class V3OneShotModelCompareTests(unittest.TestCase):
                  patch("paper_evaluator.v3_one_shot_model_compare.fetch_public_entry_evidence",return_value=evidence()), \
                  patch("paper_evaluator.v3_one_shot_model_compare.now_utc",return_value=dt(14)), \
                  patch("paper_evaluator.v3_one_shot_model_compare.evaluate.call_evaluator",side_effect=ai):
-                result=execute_one_shot(home,home)
+                result=execute_one_shot(home,home,"TEST-SERIES")
             self.assertEqual(result["model_calls"],2)
             self.assertNotIn("candidate_entry_evidence",inputs[0])
             self.assertIn("candidate_entry_evidence",inputs[1])
