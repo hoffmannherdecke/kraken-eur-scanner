@@ -1,0 +1,37 @@
+name: V2R4 postcommit Windows task argument smoke
+
+'on':
+  pull_request:
+    paths:
+      - 'tools/minipc-v2r4-postcommit-recover.ps1'
+      - '.github/workflows/v2r4-postcommit-task-recovery-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  postcommit-argument-smoke:
+    runs-on: windows-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Windows PowerShell 5.1 parses the helper and builds a nonempty task action
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $p='tools/minipc-v2r4-postcommit-recover.ps1'
+          $tokens=$null
+          $errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p),[ref]$tokens,[ref]$errors)|Out-Null
+          if($errors.Count -gt 0){throw (($errors|ForEach-Object{$_.Message})-join '; ')}
+          $output = & powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $p -SelfTest
+          if($LASTEXITCODE -ne 0){throw 'Self test failed'}
+          $result=($output|Select-Object -Last 1)|ConvertFrom-Json
+          if($result.status -ne 'SCHEDULED_TASK_ARGUMENTS_PASS' -or $result.mutation -ne $false){throw 'Task action argument assertion failed'}
+          $src=Get-Content -LiteralPath $p -Raw
+          foreach($must in @('POSTCOMMIT_RECOVERY_PLAN_PASS_NO_MUTATION','RECOVER_ALREADY_COMMITTED_PAPER_ONLY','technical-cutover','VerifyCloud','technical_closed','CLOUD_COMMITTED','h3_001_retired','StopSuccessor')){
+            if(-not $src.Contains($must)){throw "Missing recovery control: $must"}
+          }
+          if($src.Contains('action":"cutover"')){throw 'Mutation RPC reference prohibited in recovery helper'}
+          Write-Host 'POSTCOMMIT_WINDOWS_REPAIR_SMOKE_PASS'
