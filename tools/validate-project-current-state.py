@@ -150,12 +150,25 @@ def main()->int:
         if item.get("candidate_id") in ids:
             errors.append(f"candidate cannot be active and queued: {item.get('candidate_id')}")
     h6=[x for x in queued if x.get("candidate_id")=="V3-H6-NEXT"]
-    if len(h6)!=1 or h6[0].get("status")!="WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION":
-        errors.append("H6 must remain queued until explicit inconclusive H3 archive disposition")
+    h3_track=archived[0] if len(archived)==1 else {}
+    h3_disposition=h3_track.get("archive_disposition")
     h3reviews=[x for x in (data.get("next_control_decisions") or [])
                if x.get("id")=="V3-H3-ARCHIVE-DISPOSITION"]
-    if len(h3reviews)!=1 or h3reviews[0].get("status")!="ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY":
-        errors.append("H3 cannot pass fixed review after archive with 0 records")
+    if h3_disposition is None:
+        if len(h6)!=1 or h6[0].get("status")!="WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION":
+            errors.append("H6 must remain queued until explicit inconclusive H3 archive disposition")
+        if len(h3reviews)!=1 or h3reviews[0].get("status")!="ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY":
+            errors.append("H3 cannot pass fixed review after archive with 0 records")
+    else:
+        if h3_disposition not in {"DEFER_WITH_GATE","REJECT_WITH_EVIDENCE"}:
+            errors.append("unsupported H3 archive disposition")
+        report=ROOT/str(h3_track.get("archive_disposition_report") or "")
+        if not report.is_file() or not h3_track.get("archive_disposition_completed_at_utc"):
+            errors.append("completed H3 archive disposition requires timestamped report")
+        if h3reviews:
+            errors.append("completed H3 archive disposition must not remain an open control decision")
+        if len(h6)!=1 or h6[0].get("status")!="WAIT_FOR_V2R4_ECONOMIC_REVIEW_AND_SEPARATE_EXPLICIT_APPROVAL":
+            errors.append("H6 must remain blocked on V2R4 review and explicit approval after H3 disposition")
 
     for track in data.get("observational_research_tracks") or []:
         if track.get("strategy_coupling")!="NONE":
