@@ -144,7 +144,10 @@
     {
       "id": "V2R4-PRODUCTIVITY-REVIEW",
       "trigger": "Preregistered V2R4 evidence/productivity gate or clear low-trade pathology review point",
-      "action": "TOP PRIORITY: Review genuine trading productivity at original V2R4 strategy-epoch age >=72h (2026-10-10T18:42:55Z), never from restarted technical-series clock. Outcome-first: net-after-cost quality and valid BUYs/filled Paper trades, risk/MAE, matched missed and bad opportunities, candidate->WAIT->true-trigger->real recheck->BUY conversion and exact unresolved inherited V2R3 findings. HEALTHY is only operational integrity. If sufficient outcomes/24h maturity and no buys, classify as ECONOMIC_NOT_DEMONSTRATED/STRATEGY_PATHOLOGY, make explicit continue/stop/successor decision, avoid indefinite zero-trade evidence accumulation. Maintain frozen V2R4/H3, no automatic strategy change, no new schedules."
+      "action": "TOP PRIORITY: Review genuine trading productivity at original V2R4 strategy-epoch age >=72h (2026-10-10T18:42:55Z), never from restarted technical-series clock. Outcome-first: net-after-cost quality and valid BUYs/filled Paper trades, risk/MAE, matched missed and bad opportunities, candidate->WAIT->true-trigger->real recheck->BUY conversion and exact unresolved inherited V2R3 findings. HEALTHY is only operational integrity. If sufficient outcomes/24h maturity and no buys, classify as ECONOMIC_NOT_DEMONSTRATED/STRATEGY_PATHOLOGY, make explicit continue/stop/successor decision, avoid indefinite zero-trade evidence accumulation. Maintain frozen V2R4/H3, no automatic strategy change, no new schedules.",
+      "due_at_utc": "2026-10-10T18:42:55Z",
+      "followthrough_ack_key": "V2R4_72H_STRATEGY_EPOCH_20261010",
+      "followthrough_max_lag_hours": 24
     },
     {
       "id": "V3-EXTENDED-SECOND-LEG-LEARNING-GATE",
