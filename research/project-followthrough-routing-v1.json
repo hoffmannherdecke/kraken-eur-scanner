@@ -51,6 +51,11 @@
       "gate": "NEXT_ALREADY_NECESSARY_PHYSICAL_MINI_PC_GATE"
     },
     {
+      "id": "mini_pc_analytics_followthrough",
+      "owner": "docs/minipc-analytics-rollout-v1.md",
+      "gate": "IMMEDIATE_INACTIVE_SAFE_PREP_VIA_EXISTING_AUTONOMOUS_QUEUE_THEN_V2R4_72H_ACK_AND_EXPLICIT_H3_ARCHIVE_DISPOSITION_FOR_PHYSICAL_ONE_CHANGE_RESEARCH"
+    },
+    {
       "id": "strategy_inheritance_and_economic_quality",
       "owner": "research/v3-migration-ledger.json",
       "gate": "DUE_ECONOMIC_REVIEW_AND_ONE_CHANGE_SUCCESSOR_GATE"
