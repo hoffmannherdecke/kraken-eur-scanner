@@ -1432,6 +1432,13 @@
       "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/96",
       "completed_at_utc": "2026-10-09T08:30:00Z",
       "reason": "Inactive H10 PIT Kraken-EUR outcome/context, cost and false-positive contract merged with deterministic PR CI; no runtime or strategy effect."
+    },
+    "MINIPC_ANALYTICS_READONLY_PREP": {
+      "gate_fingerprint": "191504e22a3280b1aec5",
+      "status": "ACTIVE_PR",
+      "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/142",
+      "attempted_at_utc": "2026-10-10T08:24:14Z",
+      "reason": "Allowlisted inactive read-only reuse preflight prepared. Physical MINI-PC E2E remains pending until the V2R4 economic review and separate release gate."
     }
   }
 }
