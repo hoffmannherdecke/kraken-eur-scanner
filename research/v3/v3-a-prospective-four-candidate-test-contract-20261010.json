@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "V3_A_FOUR_CANDIDATE_INPUT_ONLY_MANUAL_PROSPECTIVE_RESEARCH_V1",
-  "status": "APPROVED_USER_BUDGET_PREP_ONLY_NOT_ACTIVATED",
+  "status": "PHYSICAL_ONE_SHOT_COMPLETED_NO_FURTHER_AUTO_USE",
   "user_authorization": "2026-10-10: at most eight LLM model calls for at most four fresh cases; no orders or live-rule modifications",
   "stage": "V3_A_COIN_ENTRY_PROVENANCE_ONLY",
   "source_series_id": "PAPER-V2R4-20261009T110135Z",
@@ -52,7 +52,33 @@
     "ci": "tests/test_v3_bounded_four_candidate_compare.py",
     "offline_ci_required": true,
     "manual_physical_start_required": true,
-    "api_key_path_reused_from_existing_one_shot": true
+    "api_key_path_reused_from_existing_one_shot": true,
+    "actual_physical_trial": {
+      "evidence": "USER_SUPPLIED_MINIPC_POWERSHELL_SCREENSHOT",
+      "result_report": "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
+      "cases_recorded": 4,
+      "complete_matched_comparisons": 2,
+      "model_http_requests_reserved": 4,
+      "budget_limit": 8,
+      "pairs_with_complete_comparison": [
+        "TIA/EUR",
+        "ATOM/EUR"
+      ],
+      "pairs_skipped_coin_attach": [
+        "BAT/EUR",
+        "USELESS/EUR"
+      ],
+      "all_completed_comparison_decisions": [
+        "WAIT",
+        "WAIT"
+      ],
+      "order_count": 0,
+      "profitability_evidence": "NONE",
+      "local_result_report_present": true,
+      "report_filename": "Trading/Research/v3-a-four-candidate-input-only-20261010.json",
+      "rerun_same_local_budget": "PROHIBITED",
+      "next_gate": "SEPARATELY_AUTHORIZED_FRESH_PROSPECTIVE_SCOPE_AFTER_SAFE_INPUT_ATTACH_REASON_DIAGNOSIS"
+    }
   },
   "next_owner": "PROJECT_BACKLOG.md#MINIPC_ANALYTICS_ROLLOUT_V1",
   "auto_promotion": false,
