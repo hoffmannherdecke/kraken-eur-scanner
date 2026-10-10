@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "STRATEGY_LEARNING_CAUSAL_COMPLETENESS_GATE_V1",
   "status": "ACTIVE_GOVERNANCE_OPEN_FINDING",
-  "as_of_utc": "2026-10-09T18:00:00Z",
+  "as_of_utc": "2026-10-10T20:05:05Z",
   "scope": "V2R4_POSTMORTEM_V3_AND_EVERY_SUBSEQUENT_NEW_STRATEGY",
   "policy": "No successor can be described as having fixed a predecessor failure merely because a related component was implemented or passed transport/unit tests. Require original failure mechanism, candidate-specific input evidence, consumer E2E, prospective opportunity/trade funnel and explicit release decision. Outcome-first permanent priority: successful transport and IT uptime are not economic success; successor must demonstrate increased validated decision/trade quality or report unresolved/negative results and take a concrete bounded next decision.",
   "canonical_sources": [
@@ -12,7 +12,8 @@
     "paper_evaluator/evaluate.py",
     "paper_context.py",
     "tools/v2r4-paper-local-runtime.py",
-    "research/v3/coin-entry-evidence-lineage-v1.json"
+    "research/v3/coin-entry-evidence-lineage-v1.json",
+    "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
   ],
   "incident": {
     "id": "V2R3_TO_V2R4_ZERO_BUY_RECURRING",
@@ -196,6 +197,35 @@
         "ARCHITECTURE_OWNER_MAP_NO_NEW_WORK_OR_MONITORING_SCHEDULE"
       ],
       "remaining_open_question": "Whether isolated true candidate OHLC/volume/ATR input and separately gated EXTENDED re-review can increase valid after-cost BUYs; historical MFE is not evidence of profitability."
+    },
+    "latest_v2r4_to_v3_handoff": {
+      "status": "READONLY_PIT_GATE_ECONOMIC_FAIL_NEXT_REAL_INPUT_E2E",
+      "cohort_first_decision_before_utc": "2026-10-10T20:00:00Z",
+      "observed_at_utc": "2026-10-10T20:05:05Z",
+      "predecessor_closed_candidates": 1011,
+      "technical_active_segment_candidates": 685,
+      "unique_candidates": 1696,
+      "initial_wait": 1096,
+      "initial_reject": 600,
+      "wait_expired_without_model": 956,
+      "actual_triggered_model_rechecks": 127,
+      "pending_wait": 13,
+      "buy_count": 0,
+      "paper_trades": 0,
+      "mature_24h": 436,
+      "mature_24h_mae_le_minus_5pct": 300,
+      "mature_24h_mfe_ge_plus_5pct": 178,
+      "both_tail_paths": 98,
+      "retrospective_low_mae_optimistic_proxies": 32,
+      "proxy_pair_hour_clusters": 24,
+      "structured_coin_entry_evidence_initial": 0,
+      "economic_net_edge": "NOT_DEMONSTRATED",
+      "causal_wiring_absent": "PROVEN",
+      "causal_explanation_all_zero_buys": "UNPROVEN",
+      "sequencing": "FIRST_V3_A_COIN_ENTRY_PROVENANCE_ONLY_THEN_SEPARATELY_V3_B_EXTENDED_RECHECK_POLICY_IF_NEEDED",
+      "no_runtime_impact": true,
+      "v3_release_ready": false,
+      "source_report": "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
     }
   },
   "checks_before_any_successor_paper_release": [

@@ -2,7 +2,7 @@
   "schema_version": 2,
   "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-10T08:15:00Z",
+  "updated_at_utc": "2026-10-10T20:05:05Z",
   "baseline_strategy": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
   "active_clean_series": "PAPER-V2R4-20261007T184255Z",
   "v2r4_status": "ACTIVE_PAPER_APPROVED",
@@ -167,9 +167,21 @@
         "docs/v2r4-release-readiness.md",
         "docs/v2r4-paper-activation-checklist.md",
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
-        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
       ],
-      "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE"
+      "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE",
+      "v2r4_to_v3_20261010_learning_handoff": {
+        "id": "TWO_STAGE_WAIT_BLOCK",
+        "evidence_summary": "1,096 WAIT; 956 TTL expiries without model; 127 actual trigger-to-model rechecks but zero BUY; 13 open",
+        "binding_successor_disposition": "Retain deterministic trigger/TTL in input-only V3 A; diagnose model BUY quality separately; policy adjustment only independent V3 B",
+        "next_gate": "V3_ENTRY_COIN_EVIDENCE_ONLY_PROSPECTIVE_SINGLE_CHANGE_GATE",
+        "source_report": "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+        "cohort_first_decision_before_utc": "2026-10-10T20:00:00Z",
+        "observed_at_utc": "2026-10-10T20:05:05Z",
+        "causal_net_edge_not_proven": true,
+        "no_auto_activation": true
+      }
     },
     {
       "id": "scout_confirmation_architecture",
@@ -202,7 +214,8 @@
         "research/v3/v3-coin-entry-evidence-v1.md",
         "research/v3/coin-entry-evidence-lineage-v1.json",
         "paper_evaluator/v3_extended_reentry_review_v1.py",
-        "tests/test_v2r4_v3_extended_reentry_review.py"
+        "tests/test_v2r4_v3_extended_reentry_review.py",
+        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
       ],
       "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS",
       "successor_refinement": {
@@ -241,7 +254,24 @@
         "active_h3_changed": false,
         "real_money_actions": false,
         "automatic_activation": false,
-        "additional_scheduler": false
+        "additional_scheduler": false,
+        "latest_economic_handoff": {
+          "status": "RETROSPECTIVE_DIAGNOSTIC_ONLY",
+          "report": "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+          "stage_A_before_stage_B": true,
+          "anti_chase_preserved": true
+        }
+      },
+      "v2r4_to_v3_20261010_learning_handoff": {
+        "id": "UP_AND_DOWN_EXTENDED_TAIL_RISK",
+        "evidence_summary": "861 EXTENDED; 270 matured 24h, 195 MAE<=-5% and 111 MFE>=5%; overall 436 matured, 300 MAE<=-5%, 178 MFE>=5%, 98 BOTH; only 32 optimistic opportunity proxies in 24 pair-hours",
+        "binding_successor_disposition": "Preserve anti-chase: no chasing based on hindsight or gross MFE. After V3 A compare, stage B may separately test fresh EXTENDED re-review eligibility under identical cost/stop safeguards",
+        "next_gate": "V3_A_INPUT_ONLY_BEFORE_B_EXTENDED_POLICY",
+        "source_report": "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+        "cohort_first_decision_before_utc": "2026-10-10T20:00:00Z",
+        "observed_at_utc": "2026-10-10T20:05:05Z",
+        "causal_net_edge_not_proven": true,
+        "no_auto_activation": true
       }
     },
     {
@@ -259,9 +289,21 @@
         "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md",
         "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json",
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
-        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
       ],
-      "future_research_gate": "POST_V2R4_MATERIAL_TRADE_SAMPLE"
+      "future_research_gate": "POST_V2R4_MATERIAL_TRADE_SAMPLE",
+      "v2r4_to_v3_20261010_learning_handoff": {
+        "id": "NO_VALID_FILLED_RISK_PATH",
+        "evidence_summary": "1696 decision candidates, 0 BUY, 0 paper fills; 0 priced initial structural stop or stage2; no executed stop/path ordering",
+        "binding_successor_disposition": "Keep stop and sizing unchanged in first V3 A; require defensible structural invalidation, euro risk, feasible stage2 and truly executable net result before promotion",
+        "next_gate": "ENTRY_TO_DECISION_E2E_SUFFICIENCY_THEN_NET_EDGE",
+        "source_report": "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+        "cohort_first_decision_before_utc": "2026-10-10T20:00:00Z",
+        "observed_at_utc": "2026-10-10T20:05:05Z",
+        "causal_net_edge_not_proven": true,
+        "no_auto_activation": true
+      }
     },
     {
       "id": "position_sizing_mapping",
@@ -288,9 +330,21 @@
         "docs/historical-backtest-preflight.md",
         "PROJECT_BACKLOG.md",
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
-        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
       ],
-      "future_research_gate": "TARGETED_MICROSTRUCTURE_COST_RESEARCH"
+      "future_research_gate": "TARGETED_MICROSTRUCTURE_COST_RESEARCH",
+      "v2r4_to_v3_20261010_learning_handoff": {
+        "id": "GROSS_PROXY_IS_NOT_NET_EDGE",
+        "evidence_summary": "0 paper trades therefore no realized net PnL. Taker fee assumption 0.60% each side (=1.20% roundtrip) before spread/slippage",
+        "binding_successor_disposition": "Preserve conservative cost gate and prevent the 32 post-hoc proxy cases from being counted as profitable trades",
+        "next_gate": "CAUSAL_PROSPECTIVE_PRODUCTIVITY_AND_COST",
+        "source_report": "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+        "cohort_first_decision_before_utc": "2026-10-10T20:00:00Z",
+        "observed_at_utc": "2026-10-10T20:05:05Z",
+        "causal_net_edge_not_proven": true,
+        "no_auto_activation": true
+      }
     },
     {
       "id": "binance_derivatives_state",
@@ -477,7 +531,8 @@
         "research/v3/v3-coin-entry-evidence-v1.md",
         "research/v3/coin-entry-evidence-lineage-v1.json",
         "research/source-registry.json",
-        "docs/v3-research-framework.md"
+        "docs/v3-research-framework.md",
+        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
       ],
       "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
       "dependencies": [
@@ -501,6 +556,17 @@
         "second_separate_stage": "V3_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY_SINGLE_POLICY_CHANGE_GATE",
         "no_duplicate_component": true,
         "no_reversal_lane_replacement": true
+      },
+      "v2r4_to_v3_20261010_learning_handoff": {
+        "id": "CANDIDATE_SPECIFIC_EVIDENCE_ABSENT",
+        "evidence_summary": "0/1696 initial evaluator decisions with structured candidate_entry_evidence, despite ticker and BTC/ETH/SOL regime context; 0 priced stop/stage2",
+        "binding_successor_disposition": "Supply PIT closed coin 1m/5m/15m candles, volume ratio, ATR and structural local low as one descriptive input; evaluator/WAIT/risk unchanged; missing input not proven sole cause of zero BUY",
+        "next_gate": "PHYSICAL_ONE_REAL_CANDIDATE_E2E_BEFORE_NEW_SHADOW",
+        "source_report": "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+        "cohort_first_decision_before_utc": "2026-10-10T20:00:00Z",
+        "observed_at_utc": "2026-10-10T20:05:05Z",
+        "causal_net_edge_not_proven": true,
+        "no_auto_activation": true
       }
     },
     {
