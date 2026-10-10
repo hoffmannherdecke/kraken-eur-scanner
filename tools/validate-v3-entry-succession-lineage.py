@@ -96,10 +96,23 @@ def validate_documents(
 
     decisions = state.get("next_control_decisions") or []
     archive = [v for v in decisions if isinstance(v, dict) and v.get("id") == H3_ARCHIVE_DECISION]
-    if (len(archive) != 1
-            or archive[0].get("status") != "ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY"
-            or any(v.get("id") == "V3-H3-FIXED-REVIEW" for v in decisions if isinstance(v, dict))):
-        errors.append("V3_SUCCESSOR_LINEAGE: archived H3 cannot retain obsolete fixed-review decision")
+    archived_tracks = [v for v in (state.get("closed_or_rejected_tracks") or [])
+                       if isinstance(v, dict) and v.get("id") == "V3-H3-SHADOW-001"]
+    h3_track = archived_tracks[0] if len(archived_tracks) == 1 else {}
+    disposition = h3_track.get("archive_disposition")
+    has_fixed_review = any(v.get("id") == "V3-H3-FIXED-REVIEW"
+                           for v in decisions if isinstance(v, dict))
+    if disposition is None:
+        if (len(archive) != 1
+                or archive[0].get("status") != "ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY"
+                or has_fixed_review):
+            errors.append("V3_SUCCESSOR_LINEAGE: archived H3 cannot retain obsolete fixed-review decision")
+    elif (disposition not in {"DEFER_WITH_GATE", "REJECT_WITH_EVIDENCE"}
+          or archive
+          or has_fixed_review
+          or h3_track.get("fixed_review_completed") is not False
+          or not str(h3_track.get("archive_disposition_report") or "").strip()):
+        errors.append("V3_SUCCESSOR_LINEAGE: closed H3 archive disposition is inconsistent")
     if coin.get("pending_gate") != COIN_PROVENANCE_GATE:
         errors.append("V3_SUCCESSOR_LINEAGE: coin provenance must follow H3 archive and V2R4 economic review")
     if ((learning_gate.get("incident") or {}).get("failure_classification") or {}).get("next_active_action") != CAUSAL_NEXT_ACTION:
