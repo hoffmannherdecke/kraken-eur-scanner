@@ -1,0 +1,24 @@
+# V3-A – 12 V2R4-Original-Handoffs am Mini-PC verifiziert; historischer V3-PIT-Input nicht belegt
+
+**Nachweis:** Nutzer-Screenshot vom lokalen Windows-PowerShell-Archivprüfer nach der BOM-Reparatur PR #153 (abgerufen von `origin/main`). Ergebnis wurde visuell abgelesen, keine ausgedachten automatischen Mini-PC-Logs. **Checkpoint-Kategorie:** `HANDOFF_AUDIT_COMPLETE_NOT_A_MODEL_REPLAY`.
+
+## Ergebnis des tatsächlich erfolgten physischen Prüflaufs
+
+- Alle 12 vorgesehenen Kandidaten/Originaldateien wurden einzeln als `ORIGINAL_HANDOFF_VALID` geprüft: STRK/EUR, WLD/EUR, OP/EUR, GRT/EUR, BAT/EUR, ORCA/EUR, W/EUR, ALGO/EUR, JUP/EUR, ADA/EUR, DRV/EUR, SYN/EUR.
+- Bei **12/12** ist `scanner=1` und `context=1`; keine fehlenden, ungültigen oder doppelt zugeordneten Originaldateien. Originalkennungen/Zeitstempel/Scanner-Marktkontext damit im Archiv sauber nachvollziehbar.
+- Für **0/12** wurde `coin_pit_claim` innerhalb der Handoff-JSON bestätigt. Der Prüfer meldet `historical_coin_pit_authoritatively_proven_count=0`, `other_local_candle_archives_checked=false`. **Das beweist nicht, dass überhaupt keine lokal gespeicherten historischen Bars existieren.** Es beweist, dass dieses Audit sie noch nicht nachweist.
+- `model_calls=0`, `secrets_read=false`, `orders=false`, `paper_state_changed=false`, `retrospective_outcomes_used_as_model_features=false`.
+- Frühere Supabase-Abfragen: H10-5m- und geschlossene H10-30m-Daten im Drei-Stunden-Fenster vor **allen 12** damaligen Entscheidungen fehlten. Zusätzliche aktuelle rein lesende Abfrage von `information_schema.tables/columns` fand im erreichbaren Datenbankschema **keine dedizierte OHLC-/Candle-/Preis-Archiv-Tabelle**. Dies ist keine umfassende Festplatten- oder Objektspeicherinventur.
+
+## Dateninterpretation und wirtschaftlicher Stop
+
+1. **Originale V2R4-Fachanalyse möglich, vollständiges historisches V3-A-Modellreplay weiterhin NICHT belegt.** Die zwölf Kandidaten eignen sich als feste 6 positive vs. 6 ungünstige Fallbeispiele nach Setup-Lane. Der spätere 24h-MFE/MAE darf nie als originalzeitliche Quelle in ein Modellprompt gelangen. Es gab dadurch **keine** zwölf zusätzlichen echten V3-KI-Modellbewertungen, keine neuen BUYs und keine geprüfte Nettoqualität.
+2. Die **Erfolgskriterien** für V3-A sind nun getrennt: *gespeicherter Original-Handoff* **PASS**, *zeitkorrekt verfügbarer historischer Coin-OHLC/Volumen/ATR-/H10-Kontext* **NICHT BELEGT**, *prospektiv erfolgreicher Nachfolger inkl. Stop, Stage2, Kosten und Paper-Fill* **OFFEN**.
+3. **Keine vierte gleiche Hand-off-Prüfschleife**: Diese Archivinventur ist abgeschlossen. Eine erneute lokale Prüfung ist nur sinnvoll, wenn ein **konkret benannter bestehender historischer Kerzenarchivpfad** vorliegt; dann einmalige Metadaten-/Zeitgrenzenprüfung ohne Replay oder Modellkosten. Nicht blind alle Laufwerke scannen oder das laufende V2R4 stören.
+4. **Primäre Entwicklung ab jetzt:** Mehrere **neue** Kandidaten zeitgleich mit einheitlichem Kraken-Spot-EUR-Ticker/Regime im unveränderten Baseline-Evaluator und genau einer V3-Erweiterung (`candidate_entry_evidence`, geschlossene 1m/5m/15m-Kerzen/Volumen/ATR/Strukturtief, `known_at <= Bewertungszeit`) in einer ausdrücklich begrenzten **read-only** Research-Kohorte vergleichen. Nicht unterstellen, der nachträgliche 6-Minuten-spätere ZRO-One-Shot sei originalzeitlicher ökonomischer Vorteil. Prospektive Ergebnisse über `BUY/WAIT/REJECT`, Eingangsvalidität, Stop/Stage2, Gebühren 0,60 % je Seite, Spread/Slippage und 6h/24h-Verlauf prüfen.
+5. **Kein unbegrenzter Modell-Batch aus dem laufenden Projekt heraus**: Vor Ausführung maximal zulässige Modellaufrufe und Laufzeit festlegen, Snapshot vor Modellcalls fixieren, Start/Stop und idempotente Behandlung erzwingen; keine neue Hintergrundschleife, Cron, Paper-Writer oder Cloud-Sync-Abhängigkeit. Kein automatischer H3-/H6-/H10-Strategieeinfluss; andere Quellen erst später einzeln mit verifizierter historischer/prospektiver Provenienz testen. Unverändert 50+50 EUR und Stop-/Anti-Chase-Risiko-Gates.
+6. **Wirtschaftliche Entscheidung**: Wenn auch mit verbesserter Coin-Evidence keine gültigen BUYs oder keine belastbare Nettoverbesserung entstehen, ist **das ein wirtschaftlicher negativer Befund**, kein Anlass zur automatischen Lockerung aller Filter. V3-Policy-B nur einzeln (WAIT *oder* EXTENDED), erst nach A-Dispositionsnachweis.
+
+**Kanonische Folgepfade:** `research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json`, `research/v3-migration-ledger.json#coin_specific_entry_evidence_provenance`, `research/strategy-learning-causal-gate-v1.json#v3_opportunity_first_research`, `docs/minipc-analytics-rollout-v1.md`, `PROJECT_BACKLOG.md#MINIPC_ANALYTICS_ROLLOUT_V1`. Dies ist kein neues Arbeitsprojekt und keine Modell-Freigabe.
+
+**Status:** `PHYSICAL_HANDOFF_INVENTORY_12_OF_12_PASS / HISTORICAL_FULL_FEATURE_REPLAY_NOT_VERIFIED / NEXT_PROSPECTIVE_READONLY_V3_A_COMPARISON_GATE / V2R4_RUNTIME_UNCHANGED`.

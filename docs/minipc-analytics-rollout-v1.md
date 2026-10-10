@@ -59,6 +59,12 @@ Dieser Retrospektivvergleich wurde ohne zusätzliche Modellkosten allein auf kan
 
 **Nur eine schmale nächste konkrete Prüfung:** Existieren die vollständigen Original-Handoffs und zur ursprünglichen Uhrzeit **bereits bekannten** 1m/5m/15m-Bars plus Quellen-Provenienz physisch lokal und eingefroren? Nur dann potenziell ein begrenztes, labelblindes historisches Kontrollreplay; andernfalls bei zukünftigen frischen Kandidaten **prospektive** Multi-Case-Evidenz im bestehenden Research-Gate sammeln, nach separater einmaliger Kosten-/Scope-Freigabe. Dies ist keine neue Shadow-/Paper-Runtime, nicht alle V3-H-Komponenten zugleich, keine neuen dauerhaften Jobs. **Der Ein-Fall-ZRO-E2E-PASS bleibt gültig; ökonomisches Gate weiterhin offen.**
 
+### Original-Handoff-Audit abgeschlossen (10.10.2026)
+
+PR #151 stellte einen lesenden 12-Kandidaten-PIT-Archivcheck bereit; PR #152 korrigierte lokale Namenssuche/Zählung; PR #153 behob den Windows-PowerShell-UTF8-BOM-Einlesefehler. **Der anschließende echte Mini-PC-Durchlauf war erfolgreich:** alle zwölf Originalkandidaten `ORIGINAL_HANDOFF_VALID`, alle zwölf Scanner- und Marktkontexte vorhanden, null fehlende/ungültige/doppelte. **0/12** historisch belegte `candidate_entry_evidence` im Handoff; lokale andere Kerzenarchive hat dieser Test ausdrücklich **nicht** durchsucht. Bericht: `research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md`. Das ist der **Abschluss der Handoff-Inventur**, kein V3-Modell- oder ökonomischer PASS.
+
+**Nicht weitere gleiche Hand-off-Prüfungen anfordern.** Bestehender V3-A-Fachpfad geht auf eine **prospektive** kleine frische Kraken-EUR-Kohorte: Vergleich pro Entscheidung auf demselben gültigen Snapshot (unveränderter Baseline-Evaluator/WAIT vs. alleinige zeitkorrekt geschlossene Coin-OHLC-/Volumen-/ATR-Ergänzung), kein rückwirkender Einsatz späterer Preis-/Quellendaten. Modellzahl/Token-/Laufzeitgrenze vor Ausführung definieren und freigeben, maximal **eine** Kandidatenbewertung je Paar/Zeitfenster; Ergebnisse isoliert mit Kosten-/Stop-/Stage2-Prüfung und späteren 6h/24h-Follow-ups beurteilen. Keine neue Daueraufgabe, kein zweiter Paper-Writer, kein Runtime-Moduswechsel, keine H3-/H6-/H10-Kauf-Stimme durch diese Dokumentation.
+
 ## 3. Minimaler technischer Eingriff
 
 ```text
