@@ -1435,10 +1435,12 @@
     },
     "MINIPC_ANALYTICS_READONLY_PREP": {
       "gate_fingerprint": "191504e22a3280b1aec5",
-      "status": "ACTIVE_PR",
+      "status": "COMPLETED",
       "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/142",
       "attempted_at_utc": "2026-10-10T08:24:14Z",
-      "reason": "Allowlisted inactive read-only reuse preflight prepared. Physical MINI-PC E2E remains pending until the V2R4 economic review and separate release gate."
+      "reason": "Allowlisted inactive read-only reuse preflight merged after CI. Existing one-shot funnel and entry-evidence components are reused; no new collector/wrapper/schedule/model execution. Physical MINI-PC E2E remains an explicitly separate post-V2R4 gate.",
+      "merge_commit_sha": "8a5bc653fc019934684c4b6e262ccd6d6ca8be7a",
+      "completed_at_utc": "2026-10-10T08:25:00Z"
     }
   }
 }
