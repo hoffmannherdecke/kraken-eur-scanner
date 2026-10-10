@@ -597,7 +597,8 @@
         "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
         "research/work-analysis/2026-10-10-v3-coin-entry-physical-zro-one-shot.md",
         "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
-        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md"
       ],
       "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
       "dependencies": [
@@ -638,7 +639,7 @@
         "status": "A_PHYSICAL_ONE_CANDIDATE_MODEL_INPUT_E2E_PASS_ECONOMIC_NOT_PROVEN",
         "one_change": "COIN_ENTRY_PIT_CLOSED_1M_5M_15M_VOLUME_ATR_LOCAL_LOW_ONLY",
         "unchanged": "SAME_MODEL_WAIT_TTL_COST_STOP_SIZE",
-        "physical_next": "ONE_REAL_CANDIDATE_MODEL_COMPARE_COMPLETE; NO_DUPLICATE_LOOP; NEXT_EXISTING_APPROVED_PROSPECTIVE_CAUSAL_EVIDENCE_AND_RISK_PATH_GATE",
+        "physical_next": "ARCHIVED_12_CANDIDATE_IDENTITY_PASSED_BUT_PIT_FEATURE_ABSENT; DEFINE_BOUNDED_PROSPECTIVE_MULTI_CANDIDATE_INPUT_ONLY_TEST_OVER_FRESH_CANDIDATES_WITH_RELEASE_AND_COST_GATE",
         "economic_approval": "NOT_PROVEN_ZERO_BUYS_ON_BOTH_ARMS",
         "owner": "research/strategy-learning-causal-gate-v1.json#v3_opportunity_first_research",
         "physical_one_shot_evidence": {
@@ -696,7 +697,31 @@
         "favorable": 6,
         "adverse_controls": 6,
         "next_gate": "VERIFY_ORIGINAL_HANDOFF_AND_PIT_FEATURES_ONLY_ONCE; OTHERWISE_PROSPECTIVE_SAME_TIME_ONE_CHANGE",
-        "physical_zro_one_shot_retained": true
+        "physical_zro_one_shot_retained": true,
+        "local_archive_audit": {
+          "source": "USER_SUPPLIED_MINIPC_POWERSHELL_SCREENSHOT_SUCCESS",
+          "research_report": "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
+          "checker": "tools/v3-a-archived-handoff-pit-audit.py",
+          "checker_pr": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/153",
+          "status": "VALID_HANDOFFS_12_OF_12_NO_HISTORICAL_COIN_PIT_IN_HANDOFF",
+          "cases": 12,
+          "validated_original_handoffs": 12,
+          "scanner_context_records": 12,
+          "market_context_records": 12,
+          "missing": 0,
+          "invalid": 0,
+          "duplicates": 0,
+          "candidate_entry_evidence_pit_claims": 0,
+          "external_historical_coin_bars_checked": false,
+          "current_supabase_ohlc_price_archive_tables_found": 0,
+          "h10_original_event_samples_found": 0,
+          "no_new_model_calls": true,
+          "no_orders": true,
+          "no_paper_state_changes": true,
+          "historical_full_v3_model_replay_eligible": false,
+          "candidate_count_prospective_not_set": "SEPARATE_BOUNDED_COST_AND_RELEASE_GATE",
+          "disposition": "STOP_REPEAT_HANDOFF_AUDITS_START_PROSPECTIVE_COIN_INPUT_ONLY_CAUSAL_COMPARISONS_WHEN_GATED"
+        }
       }
     },
     {
@@ -809,7 +834,8 @@
         "docs/master-version-register.md",
         "docs/market-context-source-fusion-v1.md",
         "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
-        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md"
       ],
       "pending_gate": "V3_EXTERNAL_SOURCE_FIRST_UNATTENDED_E2E_AND_KNOWN_AT_MATURE_CANDIDATE_OUTCOME_JOIN_THEN_EXPLICIT_INTEGRATION_REVIEW_DISPOSITION_OR_V4_SUCCESSOR_GATE",
       "retrospective_12_casepack_20261010": {
@@ -826,7 +852,12 @@
         "h1_shadow_source_period": "2026-10-03_TO_2026-10-05_NOT_SAME_DECISION_DATES",
         "h3_shadow_rows": 0,
         "source_manager_at_event_knowledge": "NOT_VERIFIED",
-        "policy": "NO_FUTURE_SOURCES_BACKFILLED_AS_KNOWN_AT_ORIGINAL_DECISION; RUN_AS_SOURCE_ABLATION_ONLY_AFTER_VERIFIABLE_PROVENANCE"
+        "policy": "NO_FUTURE_SOURCES_BACKFILLED_AS_KNOWN_AT_ORIGINAL_DECISION; RUN_AS_SOURCE_ABLATION_ONLY_AFTER_VERIFIABLE_PROVENANCE",
+        "latest_handoff_audit": {
+          "status": "12_HANDOFFS_VALID_NO_H10_HISTORICAL_SAMPLES_IN_PRIOR_3H",
+          "source_report": "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
+          "provenance_authority": "NO_RETROACTIVE_FEATURE_BACKFILL"
+        }
       }
     },
     {
