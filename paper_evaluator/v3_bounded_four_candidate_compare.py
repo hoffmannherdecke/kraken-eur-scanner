@@ -137,6 +137,10 @@ def run_batch(trading_root: Path, code_root: Path, expected_series: str,
         raise ValueError("WAIT_WINDOW_INVALID")
     if expected_series != EXPECTED_SERIES:
         raise ValueError("UNREVIEWED_SERIES_STOP")
+    # Idempotency takes priority even if the previously active Paper stage has
+    # since rotated: a duplicate user action must never reopen the cost budget.
+    if report.exists():
+        raise ValueError("EXISTING_REPORT_STOP_NO_REPEAT")
     runtime, control = discover_active_paper_runtime(trading_root, expected_series)
     ensure_safety(trading_root, expected_series, runtime, control, code_root)
     spec = json.loads((runtime / "paper_strategy_spec.json").read_text("utf-8"))
