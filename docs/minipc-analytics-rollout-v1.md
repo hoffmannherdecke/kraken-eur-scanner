@@ -1,6 +1,6 @@
 # MINI-PC Analytics Rollout V1 — schlanke Erweiterung des vorhandenen Krypto-Systems
 
-**Beschluss:** 2026-10-10. **Status:** `A_REVIEWED_B_PHYSICAL_E2E_PENDING` (Original-72h-Wirtschaftlichkeitsreview PR #144 / ACK echt; inaktiver B-Preflight PR #142 vorhanden, noch kein physischer B-E2E oder wirtschaftlicher V3-PASS); kein produktiver Task, Scanner, Runner, Shadow, Modell, API-Key oder Kaufpfad durch diesen Plan aktiviert. **Einziger Aufgabenowner:** `PROJECT_BACKLOG.md` unter `MINIPC_ANALYTICS_ROLLOUT_V1`; dies ist nur dessen technischer Ausführungsvertrag, kein zweiter Backlog.
+**Beschluss:** 2026-10-10. **Status:** `A_REVIEWED_B_INPUT_E2E_ONE_CANDIDATE_PASS_ECONOMIC_PENDING` (Original-72h-Wirtschaftlichkeitsreview PR #144 / ACK echt; inaktiver B-Preflight PR #142 vorhanden, noch kein physischer B-E2E oder wirtschaftlicher V3-PASS); kein produktiver Task, Scanner, Runner, Shadow, Modell, API-Key oder Kaufpfad durch diesen Plan aktiviert. **Einziger Aufgabenowner:** `PROJECT_BACKLOG.md` unter `MINIPC_ANALYTICS_ROLLOUT_V1`; dies ist nur dessen technischer Ausführungsvertrag, kein zweiter Backlog.
 
 ## 1. Ziel und vorläufige Entscheidung
 
@@ -44,6 +44,12 @@ Der Schritt `A_REVIEWED` ist eine belegte Analyse, **keine** Freigabe für V3 Pa
 **C — bei bestandenen separaten Gates:** maximal **ein** vorab freigegebener prospektiver V3-Shadow mit konkreter, vergleichbarer **BUY→Paper-Fill→Netto-/Stop-/Stage2**-Kette statt BUY-Kosmetik. Kosten mindestens 0,60 % Taker pro Seite **plus** tatsächlicher Spread/Slippage. Risiko- und Fehlsignal-Vergleich gegen eingefrorene V2R4-Baseline, clusterbereinigt nach Paar/Zeit. Keine willkürliche Kalendermindestdauer; ausreichende reife Ereignisse sind Pflicht und 0 Trades führt zu neuer ökonomischer Disposition.
 
 **D — neuer V3-Paper-Release erst separat:** volle fünf kausale Erfolgsnachweise und ausdrückliche Releasefreigabe; 50 € Scout + 50 € Stage2, Anti-Chase/Stop, ein aktiver Paper-Writer, niemals Echtgeld, keine automatische H3-/H6-Kopplung. V2R4-Intake Ende/Follow-up-Abschluss ist ein eigenständig kontrollierter physischer Lifecycle-Cutover, **kein** Effekt dieses PR. Keine neuen Cron-/GitHub-/Work-/Mini-PC-Dienste. **Status nach Beschluss: ausschließlich Research-Freigabe, V3-Laufstart/physischer E2E und wirtschaftliche Wirkung NICHT bestätigt.**
+
+### Tatsächlicher Mini-PC-E2E-Nachweis (10.10.2026, kein V3-Release)
+
+Der konkrete physische Test ist nun **einmal** erfolgt, im kanonischen Kurzbericht [ZRO/EUR: Original vs. isolierte Input-Only-Bewertungen](../research/work-analysis/2026-10-10-v3-coin-entry-physical-zro-one-shot.md). `-DiagnoseOnly` konnte TIA/EUR samt geschlossener 1/5/15m-Kerzen (`COMPLETE`), Hashes und 0 Modellaufrufen prüfen. Der separat ausgeführte `-Execute` nutzte **ZRO/EUR** und lieferte 2 echte Modellbewertungen: gleicher späterer Snapshot, Basis `WAIT/IGNITION` → mit Coin-Daten `WAIT/CONTINUITY`; keine validen Stops/Stage2/Netto-Kaufpläne, keine Paper-Position oder Orders. **Eingabe- und Modell-Handoff physisch gelungen, wirtschaftlicher A-PASS nicht gelungen.** Kein weiterer rein technischer Wiederholungs-Smoketest ohne neue konkret benannte Lücke.
+
+Die unveränderliche offizielle V2R4-Erstentscheidung zu diesem ZRO-Kandidaten war `REJECT/EXTENDED` um `20:42:21Z`; der neue Vergleich erfolgte erst um ca. `20:48:58Z`. Er demonstriert **nicht** rückwirkend die Entscheidung unter den damals verfügbaren Bars. Im nächsten **bereits vorhandenen** Gate benötigen wir zeitgerecht prospektiv bekannte Eingaben mit echt ausführbarem Stop, Kosten- und ggf. Fill/MAE-Pfad. B-Policy `WAIT` **oder** `EXTENDED` nicht automatisch aktivieren, H3/H6 gesperrt, V2R4 weiter unverändert bis kontrolliertem Cutover.
 
 ## 3. Minimaler technischer Eingriff
 
