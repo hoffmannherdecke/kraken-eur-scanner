@@ -33,6 +33,18 @@ Der Schritt `A_REVIEWED` ist eine belegte Analyse, **keine** Freigabe für V3 Pa
 
 **Kleinster nächster praktischer Schritt:** Den vorhandenen PREPARED_INACTIVE-Probevertrag `research/v3/minipc-analytics-readonly-reuse-preflight-v1.md` an **einem** realen aktuellen Kandidaten lesen/prüfen, danach isolierter gleicher Snapshot Baseline vs. nur Coin-Daten. Bei nicht bestandenem E2E kein neuer Scheduler, keine V3-Order-/Paper-Aktivierung, sondern genau den begrenzten Belegmangel melden. Keine Wiederholung bereits grüner synthetischer Tests.
 
+### V3 chancenorientiert, ohne höheres finanzielles Risiko (Beschluss 10.10.2026)
+
+**Feste Richtung:** Mehr *valide* BUY-/Paper-Fill-Chancen durch fehlende reale Coin-Entscheidungsdaten und später gezielte, getrennte Recheck-Chancen; **keine** blinde Schwellenlockerung, kein Chase und keine höhere Positionsgröße. Maschinenlesbarer, fail-closed Forschungs-/Releasevertrag: `research/strategy-learning-causal-gate-v1.json#v3_opportunity_first_research`; Eigentümer bleiben **die vier vorhandenen** Komponenten `coin_specific_entry_evidence_provenance`, `v2r4_event_driven_wait_wakeup`, `late_chase_protection`, `conservative_cost_model`. Die Erkenntnisse der echten 1.696-Kandidaten-Kohorte stehen unter `research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md`.
+
+**A — jetzt vorbereiten/gezielt physisch belegen:** Der bereits vorhandene inaktive Coin-Evidence-Adapter liefert bekannte-zur-Entscheidung geschlossene 1m/5m/15m-Kerzen, Volumenrelation, ATR/strukturbezogenes Tief *als einen einzigen neuen deskriptiven Input* an den **unveränderten** Evaluator auf demselben frischen Kandidaten. Der existierende One-shot-Vergleich ist nur nach bestätigtem Mini-PC-Pfad und dessen Kosten-/Modellaufruf-Gate auszuführen; keine Routine-Loop. Nachweis: valider PIT-Kandidatenclock/negativer Stale-Fall, gleiche Datenlage Baseline-vs-A, echte Entscheidung und ausführbarer Stop/Stage2/Kostenplan oder klarer Ablehnungsgrund. Keine Rückdatierung mit späteren 24h-Kursen.
+
+**B — danach nur bei objektivem A-Befund:** Auswahl **genau einer** Recheck-Policy-Hypothese pro Folgeversion: entweder WAIT-Expiry/erneute frische Prüfung *oder* EXTENDED-Second-Leg-Review; nicht gleichzeitig und nicht als pauschales BUY. Pre-register gleicher Kandidat/Uhrzeit, anwendbarer echter Kraken-Spot-EUR-Ticker, bekannte 5m-Price/Volume- und invalidierbare Risikostruktur; Anti-Chase, Gebühren und Stop bleiben bestehen. Ist A bereits unzureichend belegt, keinen B-Shadow starten; bei A=0 BUY die Ursache diagnostizieren, nicht heimlich alles gleichzeitig lockern.
+
+**C — bei bestandenen separaten Gates:** maximal **ein** vorab freigegebener prospektiver V3-Shadow mit konkreter, vergleichbarer **BUY→Paper-Fill→Netto-/Stop-/Stage2**-Kette statt BUY-Kosmetik. Kosten mindestens 0,60 % Taker pro Seite **plus** tatsächlicher Spread/Slippage. Risiko- und Fehlsignal-Vergleich gegen eingefrorene V2R4-Baseline, clusterbereinigt nach Paar/Zeit. Keine willkürliche Kalendermindestdauer; ausreichende reife Ereignisse sind Pflicht und 0 Trades führt zu neuer ökonomischer Disposition.
+
+**D — neuer V3-Paper-Release erst separat:** volle fünf kausale Erfolgsnachweise und ausdrückliche Releasefreigabe; 50 € Scout + 50 € Stage2, Anti-Chase/Stop, ein aktiver Paper-Writer, niemals Echtgeld, keine automatische H3-/H6-Kopplung. V2R4-Intake Ende/Follow-up-Abschluss ist ein eigenständig kontrollierter physischer Lifecycle-Cutover, **kein** Effekt dieses PR. Keine neuen Cron-/GitHub-/Work-/Mini-PC-Dienste. **Status nach Beschluss: ausschließlich Research-Freigabe, V3-Laufstart/physischer E2E und wirtschaftliche Wirkung NICHT bestätigt.**
+
 ## 3. Minimaler technischer Eingriff
 
 ```text

@@ -325,5 +325,68 @@
     "automatic_release": false,
     "real_money_actions": false,
     "applies_to": "V2R4_V3_V4_AND_ALL_FUTURE_PAPER_AND_SEPARATELY_AUTHORIZED_REAL_MONEY_STRATEGY_GENERATIONS"
+  },
+  "v3_opportunity_first_research": {
+    "id": "V3_OPPORTUNITY_FIRST_RISK_UNCHANGED_20261010",
+    "status": "APPROVED_RESEARCH_ONLY_NOT_RELEASED",
+    "intent": "INCREASE_CAUSALLY_VALID_EXECUTABLE_BUY_AND_PAPER_FILL_CONVERSION_NOT_RAW_BUY_COUNT",
+    "evidence_anchor": "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+    "single_change_order": [
+      "A_COIN_ENTRY_PROVENANCE_ONLY_BASELINE_EVALUATOR_AND_WAIT_UNCHANGED",
+      "B_ONE_SEPARATE_WAIT_OR_EXTENDED_RECHECK_POLICY_ONLY_AFTER_A_DISPOSITION",
+      "C_ONE_PROSPECTIVE_SHADOW_ONLY_AFTER_SEPARATE_RELEASE_APPROVAL",
+      "D_V3_PAPER_RELEASE_ONLY_AFTER_FULL_CAUSAL_GATE"
+    ],
+    "stage_A": {
+      "single_changed_input": "POINT_IN_TIME_CLOSED_COIN_OHLC_1M_5M_15M_VOLUME_ATR_LOCAL_LOW",
+      "reuse_existing_kraken_and_wait_data": true,
+      "baseline_evaluator_unchanged": true,
+      "wait_trigger_ttl_unchanged": true,
+      "cost_risk_stop_sizing_unchanged": true,
+      "physical_real_candidate_e2e_required": true,
+      "model_calls_only_via_existing_gated_one_shot": true,
+      "economic_pass_not_proven": true
+    },
+    "stage_B": {
+      "only_after_stage_A_result": true,
+      "select_one_policy_hypothesis_from_evidence": [
+        "EXISTING_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY",
+        "WAIT_EXPIRED_WITHOUT_TRIGGER_FRESH_REVIEW_ELIGIBILITY"
+      ],
+      "one_policy_change_at_a_time": true,
+      "no_auto_buy": true,
+      "no_blind_trigger_or_ttl_relaxation": true,
+      "independent_entry_stop_cost_review_required": true
+    },
+    "evidence_success": {
+      "must_measure": [
+        "VALID_BUY_SCOUT_TO_PAPER_FILL_CONVERSION",
+        "COST_NET_AFTER_0_60_PERCENT_TAKER_EACH_SIDE_SPREAD_SLIPPAGE",
+        "FALSE_BUYS_ADVERSE_MAE_STOP_STAGE2",
+        "MISSED_MOVES_VS_CORRECT_RISK_AVOIDANCE",
+        "PIT_FRESH_INPUTS_AND_PAIR_TIME_CLUSTERED_24H_FOLLOWUPS"
+      ],
+      "zero_buy_requires_disposition_not_indefinite_run": true,
+      "retrospective_mfe_not_profit": true,
+      "health_badge_not_economic_success": true
+    },
+    "fixed_guards": {
+      "scout_eur": 50,
+      "stage2_eur": 50,
+      "taker_fee_pct_per_side": 0.6,
+      "one_active_strategy_changing_shadow_max": 1,
+      "do_not_modify_frozen_v2r4": true,
+      "preserve_anti_chase": true,
+      "preserve_existing_stop_and_two_stage_risk": true,
+      "h3_h6_remain_separately_gated": true,
+      "new_scheduler": false,
+      "extra_work_run": false,
+      "automatic_shadow_start": false,
+      "automatic_paper_release": false,
+      "live_orders": false,
+      "real_money_actions": false
+    },
+    "next_owner": "PROJECT_BACKLOG.md#MINIPC_ANALYTICS_ROLLOUT_V1",
+    "activation_evidence": "NOT_YET_PROVEN"
   }
 }

@@ -181,6 +181,15 @@
         "observed_at_utc": "2026-10-10T20:05:05Z",
         "causal_net_edge_not_proven": true,
         "no_auto_activation": true
+      },
+      "v3_opportunity_first": {
+        "contract_id": "V3_OPPORTUNITY_FIRST_RISK_UNCHANGED_20261010",
+        "status": "B_POLICY_HYPOTHESIS_HOLD_UNTIL_A_DISPOSITION",
+        "candidate_policy": "WAIT_EXPIRY_OR_FRESH_RECHECK_ELIGIBILITY_SINGLE_CHANGE_ONLY",
+        "observed_baseline": "956_INITIAL_WAIT_EXPIRED_WITHOUT_MODEL_127_TRUE_RECHECK_ZERO_BUY",
+        "no_stale_replay": true,
+        "not_combined_with_extended_policy": true,
+        "owner": "research/strategy-learning-causal-gate-v1.json#v3_opportunity_first_research"
       }
     },
     {
@@ -260,6 +269,14 @@
           "report": "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
           "stage_A_before_stage_B": true,
           "anti_chase_preserved": true
+        },
+        "opportunity_first_20261010": {
+          "contract_id": "V3_OPPORTUNITY_FIRST_RISK_UNCHANGED_20261010",
+          "status": "B_POLICY_HYPOTHESIS_HOLD_UNTIL_A_DISPOSITION",
+          "candidate_policy": "EXTENDED_SECOND_LEG_FRESH_REVIEW_ONLY_NOT_CHASE_OR_AUTO_BUY",
+          "choose_only_one_of": "EXTENDED_OR_WAIT_POLICY_NOT_BOTH",
+          "preserve_anti_chase": true,
+          "owner": "research/strategy-learning-causal-gate-v1.json#v3_opportunity_first_research"
         }
       },
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -344,6 +361,14 @@
         "observed_at_utc": "2026-10-10T20:05:05Z",
         "causal_net_edge_not_proven": true,
         "no_auto_activation": true
+      },
+      "v3_opportunity_first": {
+        "contract_id": "V3_OPPORTUNITY_FIRST_RISK_UNCHANGED_20261010",
+        "status": "UNCHANGED_RISK_INHERITED",
+        "fees_each_side_pct": 0.6,
+        "gross_roundtrip_pct": 1.2,
+        "spread_slippage_stop_and_mae": "REQUIRED_BEFORE_VALID_BUY_OR_RELEASE",
+        "no_relaxed_fees": true
       }
     },
     {
@@ -567,6 +592,15 @@
         "observed_at_utc": "2026-10-10T20:05:05Z",
         "causal_net_edge_not_proven": true,
         "no_auto_activation": true
+      },
+      "v3_opportunity_first": {
+        "contract_id": "V3_OPPORTUNITY_FIRST_RISK_UNCHANGED_20261010",
+        "status": "A_PRIORITY_OFFLINE_PREPARED_PHYSICAL_E2E_PENDING",
+        "one_change": "COIN_ENTRY_PIT_CLOSED_1M_5M_15M_VOLUME_ATR_LOCAL_LOW_ONLY",
+        "unchanged": "SAME_MODEL_WAIT_TTL_COST_STOP_SIZE",
+        "physical_next": "ONE_FRESH_KRAKEN_EUR_CANDIDATE_SAME_SNAPSHOT_COMPARISON_IN_EXISTING_MANUAL_ONE_SHOT",
+        "economic_approval": "NOT_PROVEN",
+        "owner": "research/strategy-learning-causal-gate-v1.json#v3_opportunity_first_research"
       }
     },
     {

@@ -93,5 +93,42 @@ class SuccessorLearningGateTests(unittest.TestCase):
             proofs[0]["evidence_path"]="research/no-proof.json"
             self.assertTrue(any("artifact absent" in e for e in validate_learning_gate(root,"V3-PAPER-NEW",claim)))
 
+    def test_v3_opportunity_first_is_research_not_live_promotion(self):
+        doc=json.loads((ROOT/GATE_FILE).read_text("utf-8"))
+        v3=doc["v3_opportunity_first_research"]
+        self.assertEqual(v3["status"],"APPROVED_RESEARCH_ONLY_NOT_RELEASED")
+        self.assertTrue(v3["stage_A"]["wait_trigger_ttl_unchanged"])
+        self.assertEqual(v3["fixed_guards"]["taker_fee_pct_per_side"],0.6)
+        self.assertEqual(v3["fixed_guards"]["scout_eur"],50)
+        self.assertEqual(v3["fixed_guards"]["stage2_eur"],50)
+        self.assertFalse(v3["fixed_guards"]["automatic_paper_release"])
+        self.assertEqual(validate_learning_gate(ROOT,
+            active_revision="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION"),[])
+
+    def test_cannot_shortcut_v3_policy_sequence_or_silent_shadow_start(self):
+        source=json.loads((ROOT/GATE_FILE).read_text("utf-8"))
+        changes=[
+            (("single_change_order",),[], "V3 input A"),
+            (("stage_A","wait_trigger_ttl_unchanged"),False,"V3 A may change"),
+            (("stage_B","one_policy_change_at_a_time"),False,"V3 policy B"),
+            (("fixed_guards","automatic_shadow_start"),True,"V3 offensive entry"),
+            (("fixed_guards","taker_fee_pct_per_side"),0.0,"V3 offensive entry"),
+        ]
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            path=root/GATE_FILE
+            path.parent.mkdir(parents=True,exist_ok=True)
+            for keys,value,expected in changes:
+                copy_gate=copy.deepcopy(source)
+                target=copy_gate["v3_opportunity_first_research"]
+                for key in keys[:-1]:
+                    target=target[key]
+                target[keys[-1]]=value
+                path.write_text(json.dumps(copy_gate),encoding="utf-8")
+                errors=validate_learning_gate(root,
+                    active_revision="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION")
+                self.assertTrue(any(expected in x for x in errors),(keys,errors))
+
+
 if __name__=="__main__":
     unittest.main()
