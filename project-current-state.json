@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "PROJECT_CURRENT_STATE_V1",
   "status": "ACTIVE_CONTROL_PLANE",
-  "as_of_utc": "2026-10-10T08:18:00Z",
+  "as_of_utc": "2026-10-10T08:15:00Z",
   "authority": {
     "purpose": "Single machine-readable authority for current project/strategy/control-plane state.",
     "precedence": [
@@ -133,7 +133,7 @@
       "automatic_reactivation": false,
       "fresh_shadow_requires_separate_version_preregistration_and_approval": true,
       "archive_disposition": "DEFER_WITH_GATE",
-      "archive_disposition_completed_at_utc": "2026-10-10T08:18:00Z",
+      "archive_disposition_completed_at_utc": "2026-10-10T08:15:00Z",
       "archive_disposition_report": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
       "archive_disposition_rationale": "Zero prospective cloud evidence prevents an economic accept/reject conclusion. Preserve the hypothesis only as an inactive option for a separately versioned, preregistered one-change trial after the V2R4 productivity review and explicit approval; never reactivate or rebind H3-001."
     }
