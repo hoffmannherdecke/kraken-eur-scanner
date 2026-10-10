@@ -29,7 +29,7 @@ class V3BoundedFourCandidateTests(unittest.TestCase):
         spec = {
             "strategy_revision": batch.REVISION,
             "entry": {"scout_notional_eur": 50, "stage2_notional_eur": 50},
-            "fee": {"taker_pct_per_side": 0.6},
+            "fees": {"taker_pct_per_side": 0.6},
         }
         (stage/"paper_strategy_spec.json").write_text(json.dumps(spec))
         names = ["XBT", "ETH", "SOL", "ADA"]
@@ -176,6 +176,25 @@ class V3BoundedFourCandidateTests(unittest.TestCase):
             too_old = batch.eligible_handoffs(queue, t, control, set(), set(),
                                               t + timedelta(seconds=1100))
             self.assertEqual(too_old, [])
+
+    def test_frozen_production_spec_accepts_exact_fee_and_rejects_relaxation(self):
+        # Regression for the 2026-10-10 real Mini-PC block: the canonical
+        # spec uses "fees", never "fee". Test the committed production spec
+        # rather than a fabricated fixture alone.
+        production_spec = json.loads(
+            (Path(__file__).resolve().parents[1] /
+             "research/v2r4/paper_strategy_spec_v2r4_release_candidate.json")
+            .read_text("utf-8"))
+        batch.verify_frozen_strategy_spec(production_spec)
+        self.assertEqual(production_spec["fees"]["taker_pct_per_side"], 0.6)
+        for field, replacement in (
+                ("fees", {"taker_pct_per_side": 0.0}),
+                ("fees", {"taker_pct_per_side": 0.5}),
+                ("fees", {}),
+                ("entry", {"scout_notional_eur": 100, "stage2_notional_eur": 50})):
+            changed = {**production_spec, field: replacement}
+            with self.assertRaisesRegex(ValueError, "SIZING_FEE_OR_REVISION_DRIFT_STOP"):
+                batch.verify_frozen_strategy_spec(changed)
 
     def test_pinned_series_and_budget_window_cannot_be_overridden(self):
         with tempfile.TemporaryDirectory() as d:
