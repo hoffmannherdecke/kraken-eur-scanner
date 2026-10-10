@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "PROJECT_CURRENT_STATE_V1",
   "status": "ACTIVE_CONTROL_PLANE",
-  "as_of_utc": "2026-10-09T19:50:40Z",
+  "as_of_utc": "2026-10-10T08:18:00Z",
   "authority": {
     "purpose": "Single machine-readable authority for current project/strategy/control-plane state.",
     "precedence": [
@@ -91,8 +91,8 @@
     "queued": [
       {
         "candidate_id": "V3-H6-NEXT",
-        "status": "WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION",
-        "rule": "H3 was physically archived during technical rotation with 0 cloud matched evidence; a fixed review cannot pass. H6 must stay inactive until an explicit H3 archive/inconclusive review, one-shadow release gate and user approval. No automatic next shadow."
+        "status": "WAIT_FOR_V2R4_ECONOMIC_REVIEW_AND_SEPARATE_EXPLICIT_APPROVAL",
+        "rule": "H3-001 archive disposition is closed as DEFER_WITH_GATE with zero prospective cloud evidence. H6 remains inactive until the V2R4 productivity review, normal one-shadow release gate and separate explicit approval. No automatic next shadow."
       }
     ]
   },
@@ -131,16 +131,14 @@
       "fixed_review_completed": false,
       "promotion_eligible": false,
       "automatic_reactivation": false,
-      "fresh_shadow_requires_separate_version_preregistration_and_approval": true
+      "fresh_shadow_requires_separate_version_preregistration_and_approval": true,
+      "archive_disposition": "DEFER_WITH_GATE",
+      "archive_disposition_completed_at_utc": "2026-10-10T08:18:00Z",
+      "archive_disposition_report": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+      "archive_disposition_rationale": "Zero prospective cloud evidence prevents an economic accept/reject conclusion. Preserve the hypothesis only as an inactive option for a separately versioned, preregistered one-change trial after the V2R4 productivity review and explicit approval; never reactivate or rebind H3-001."
     }
   ],
   "next_control_decisions": [
-    {
-      "id": "V3-H3-ARCHIVE-DISPOSITION",
-      "trigger": "H3-001 archived by technical V2R4 cutover and cloud prospective cohort empty; immediate archival/inconclusive review due, NOT a matured fixed H3 review.",
-      "action": "Read-only classify H3-001 as ARCHIVED_INCOMPLETE / INCONCLUSIVE_TECHNICAL_CENSORING with 0 Supabase candidate evidence. Preserve frozen pre-cutover baseline and old candidate/config/physical archive, never claim H3 fixed review PASS. Explicitly decide retire H3, defer, or separately prepare an entirely NEW one-change shadow with correct current baseline under normal approvals. Until decision, H6 stays WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION; no automatic shadow or trading strategy promotion.",
-      "status": "ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY"
-    },
     {
       "id": "V2R4-PRODUCTIVITY-REVIEW",
       "trigger": "Preregistered V2R4 evidence/productivity gate or clear low-trade pathology review point",
@@ -151,11 +149,11 @@
     },
     {
       "id": "V3-EXTENDED-SECOND-LEG-LEARNING-GATE",
-      "trigger": "Whenever H3-001 archive/inconclusive disposition is handled, V2R4 productivity review is concluded, V3 entry comparison opens or any V3/V4+/later live successor plan/release is prepared",
+      "trigger": "H3-001 archive disposition is complete. Continue only when the V2R4 productivity review is concluded, a V3 entry comparison opens, or a V3/V4+/later live successor plan/release is prepared.",
       "action": "MANDATORY explicit disposition of 08-09 Oct 0-BUY EXTENDED second-leg finding in existing late_chase_protection ledger; first prospective coin-entry OHLC/volume/ATR input-only A with frozen evaluator/WAIT; separately evaluate EXTENDED re-review policy B only after A; count matched pair/time events, valid BUY/stop/stage2/cost/MAE/24h followups and false buys; preserve anti-chase/fees and no duplicates H6/H4/H7; block new release claim until disposition/evidence and explicit paper approval. No automatic strategy change or new Work/scheduler.",
       "canonical_owner": "research/v3-migration-ledger.json#late_chase_protection.successor_refinement",
       "evidence_anchor": "research/v3/v3-coin-entry-evidence-v1.md",
-      "status": "PENDING_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW_NO_AUTO_START",
+      "status": "PENDING_V2R4_ECONOMIC_REVIEW_NO_AUTO_START",
       "applies_through": "V3_V4_PLUS_AND_FUTURE_SEPARATELY_AUTHORIZED_REAL_MONEY_SUCCESSORS",
       "no_new_work_run": true,
       "no_active_strategy_change": true
