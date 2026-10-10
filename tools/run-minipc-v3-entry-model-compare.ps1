@@ -1,5 +1,6 @@
 param(
   [switch]$Execute,
+  [switch]$DiagnoseOnly,
   [string]$ExpectedSeriesId = 'PAPER-V2R4-20261009T110135Z',
   [string]$TradingRoot = (Join-Path $env:USERPROFILE 'Trading')
 )
@@ -24,7 +25,10 @@ $plan = [ordered]@{
   compare = 'same-snapshot baseline vs baseline-plus-closed-coin-bars'
   output = 'compact stdout only; temporary Git checkout removed'
 }
-if (-not $Execute) {
+if ($Execute -and $DiagnoseOnly) { throw 'BLOCKED_MUTUALLY_EXCLUSIVE_MODES' }
+$plan.diagnose_only = [bool]$DiagnoseOnly
+$plan.model_calls_if_eligible = if ($DiagnoseOnly) { 0 } else { 2 }
+if (-not $Execute -and -not $DiagnoseOnly) {
   $plan | ConvertTo-Json -Depth 5
   exit 0
 }
@@ -39,7 +43,8 @@ $c = Get-Content (Join-Path $app 'paper_runtime_control.json') -Raw | ConvertFro
 if ($c.series_id -cne $ExpectedSeriesId -or $c.paper_only -ne $true -or $c.real_money_actions_enabled -ne $false) {
   throw 'BLOCKED_STAGE_SERIES_OR_PAPER_SAFETY_MISMATCH'
 }
-foreach ($required in @($repo,$app,$python,$key)) {
+$requiredPaths = if ($DiagnoseOnly) { @($repo,$app,$python) } else { @($repo,$app,$python,$key) }
+foreach ($required in $requiredPaths) {
   if (-not (Test-Path -LiteralPath $required)) {
     throw ('BLOCKED_LOCAL_PREREQUISITE_NOT_AVAILABLE: ' + (Split-Path $required -Leaf))
   }
@@ -57,14 +62,20 @@ try {
   if (-not (Test-Path -LiteralPath $script)) { throw 'BLOCKED_MISSING_REVIEWED_PROBE_SCRIPT' }
   Push-Location $temp
   try {
-    & $python -m paper_evaluator.v3_one_shot_model_compare --trading-root $TradingRoot --code-root $temp --expected-series-id $ExpectedSeriesId
+    $parameters = @('-m','paper_evaluator.v3_one_shot_model_compare','--trading-root',$TradingRoot,'--code-root',$temp,'--expected-series-id',$ExpectedSeriesId)
+    if ($DiagnoseOnly) { $parameters += '--diagnose-only' }
+    & $python @parameters
     $code = $LASTEXITCODE
   }
   finally { Pop-Location }
   if ($code -ne 0) {
     throw ('V3_ONE_SHOT_BLOCKED_NO_PAPER_OR_ORDER_CHANGE: ' + $code)
   }
-  Write-Output '{"kind":"MINIPC_V3_ENTRY_MODEL_COMPARE_WRAPPER","status":"FINISHED_PAPER_UNCHANGED","orders":false,"real_money_actions":false}'
+  if ($DiagnoseOnly) {
+    Write-Output '{"kind":"MINIPC_V3_ENTRY_MODEL_COMPARE_WRAPPER","status":"PREFLIGHT_ONLY_NO_MODEL_CALLS","orders":false,"real_money_actions":false}'
+  } else {
+    Write-Output '{"kind":"MINIPC_V3_ENTRY_MODEL_COMPARE_WRAPPER","status":"FINISHED_PAPER_UNCHANGED","orders":false,"real_money_actions":false}'
+  }
 }
 finally {
   if ($worktreeCreated) {
