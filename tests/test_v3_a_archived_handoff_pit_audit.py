@@ -112,6 +112,59 @@ class OriginalHandoffPitAuditTests(unittest.TestCase):
             self.assertEqual(result["original_scanner_context_count"], 0)
 
 
+    def test_windows_powershell_utf8_bom_manifest_and_handoff(self):
+        # Windows PowerShell 5.1 'Set-Content -Encoding UTF8' writes an
+        # optional BOM. A prior local test was blocked before any case printed.
+        import contextlib
+        import io
+        import sys
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory() as root:
+            home = Path(root)
+            folder = home / "v2r4-paper-stage-test" / "handoff_queue"
+            folder.mkdir(parents=True)
+            manifest = home / "casepack.json"
+            manifest.write_bytes(b"\xef\xbb\xbf" + json.dumps(CASES).encode("utf-8"))
+            for case in CASES["cases"]:
+                candidate = original(case)
+                # Use real wrapped Mini-PC filenames and optional BOM in
+                # read-only historical input files.
+                (folder / ("original-" + candidate["candidate_id"] + ".json")).write_bytes(
+                    b"\xef\xbb\xbf" + json.dumps(candidate).encode("utf-8"))
+            output, errors = io.StringIO(), io.StringIO()
+            with patch.object(sys, "argv", [
+                        "v3-a-archived-handoff-pit-audit.py",
+                        "--casepack", str(manifest),
+                        "--runtime-root", str(home)]), \
+                 contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+                code = mod.main()
+            self.assertEqual(code, 0, errors.getvalue())
+            self.assertEqual(output.getvalue().count("ORIGINAL_HANDOFF_VALID"), 12)
+            self.assertIn('"valid_handoff_count": 12', output.getvalue())
+            self.assertIn('"model_calls": 0', output.getvalue())
+            self.assertEqual(errors.getvalue(), "")
+
+    def test_bad_casepack_reports_read_class_not_raw_data(self):
+        import contextlib
+        import io
+        import sys
+        from unittest.mock import patch
+
+        with tempfile.TemporaryDirectory() as root:
+            file = Path(root) / "casepack.json"
+            file.write_bytes(b"\xef\xbb\xbf" + b'{"candidate_id":"SECRET",broken}')
+            errors = io.StringIO()
+            with patch.object(sys, "argv", [
+                        "v3-a-archived-handoff-pit-audit.py",
+                        "--casepack", str(file),
+                        "--runtime-root", str(root)]), \
+                 contextlib.redirect_stderr(errors):
+                code = mod.main()
+            self.assertEqual(code, 2)
+            self.assertIn("BLOCKED_CASEPACK_READ_JSONDecodeError", errors.getvalue())
+            self.assertNotIn("SECRET", errors.getvalue())
+
     def test_unexpected_manifest_fails_closed(self):
         bad = dict(CASES, cases=CASES["cases"][:11])
         with self.assertRaises(ValueError):
