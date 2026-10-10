@@ -73,5 +73,34 @@
     "no_auto_activation": true,
     "no_unverified_chat_ingestion": true,
     "no_fake_completion": true
-  }
+  },
+  "required_stream_ids": [
+    "delivery_notifications",
+    "derivatives_h2",
+    "execution_h9",
+    "gated_strategy_analysis",
+    "global_market_crosscheck",
+    "h1_breadth_diagnostic",
+    "health_watchdog",
+    "kraken_eur_price",
+    "kraken_tradability",
+    "macro_h5",
+    "market_regime",
+    "meta_h7",
+    "milestone_controller",
+    "news_event_context",
+    "onchain_h8",
+    "orderflow_h3",
+    "paper_lifecycle",
+    "prediction_h11",
+    "price_volume_h6",
+    "productivity_missed_moves",
+    "realtime_timing",
+    "scanner_detection",
+    "smartmoney_h10",
+    "source_quality",
+    "stop_ttl_h4",
+    "storage_and_cost"
+  ],
+  "required_stream_rule": "ALL_PREVIOUSLY_REGISTERED_26_STREAMS_MUST_REMAIN_OR_BE_EXPLICITLY_VERSIONED; NEW_STREAMS_ROUTE_AUTOMATICALLY"
 }

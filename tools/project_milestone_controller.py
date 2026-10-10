@@ -125,15 +125,9 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
     statuses = []
     # Generic fail-safe: a duly reached control gate must have a documented
     # Work receipt, not merely a GitHub notice or a chat promise.
-    for decision_id, ack_key in unacknowledged_control_decisions(state, now, root):
+    for decision_id, note in due_followthrough_events(state, now, root):
         statuses.append("FOLLOWTHROUGH:ACK_OVERDUE:" + decision_id)
-        notices.append(event(
-            "CONTROL_FOLLOWTHROUGH_MISSED", ack_key,
-            "Autonomie-Übergabe überfällig: " + decision_id +
-            ". Trotz abgelaufenem Gate und Nachfrist fehlt ein belegter "
-            "Work-Abschluss/Entscheidungsbeleg. Bestehenden 10:15-Work-Pfad "
-            "gezielt reparieren oder konkreten Nutzer-Blocker melden; "
-            "kein zweiter Work-Lauf, keine automatische Strategieänderung."))
+        notices.append(note)
     for task in state.get("next_control_decisions") or []:
         if task["id"] not in SUPPORTED_DECISIONS:
             statuses.append("CONTROL:ADAPTER_REQUIRED:" + task["id"])
@@ -315,6 +309,18 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
 
 
 
+def due_followthrough_events(state: dict, now: dt.datetime, root: Path) -> list:
+    """Independent of Supabase liveness: overdue work receipts still escalate."""
+    return [(decision_id, event(
+        "CONTROL_FOLLOWTHROUGH_MISSED", ack_key,
+        "Autonomie-Übergabe überfällig: " + decision_id +
+        ". Trotz abgelaufenem Gate und Nachfrist fehlt ein belegter "
+        "Work-Abschluss/Entscheidungsbeleg. Bestehenden 10:15-Work-Pfad "
+        "gezielt reparieren oder konkreten Nutzer-Blocker melden; "
+        "kein zweiter Work-Lauf, keine automatische Strategieänderung."))
+        for decision_id, ack_key in unacknowledged_control_decisions(state, now, root)]
+
+
 def unacknowledged_control_decisions(state: dict, now: dt.datetime, root: Path) -> list:
     """Detect silent due-gate handoff failures without modifying any runtime."""
     path = root / "research/work-analysis-state.json"
@@ -344,9 +350,13 @@ def unacknowledged_control_decisions(state: dict, now: dt.datetime, root: Path) 
             completed = record.get("completed_at_utc")
             if (isinstance(report, str)
                     and re.fullmatch(r"research/work-analysis/[A-Za-z0-9_.-]+[.]md", report)
-                    and isinstance(completed, str) and iso_time(completed) >= due_time
-                    and (root / report).is_file()):
-                continue
+                    and isinstance(completed, str) and (root / report).is_file()):
+                try:
+                    completed_time = iso_time(completed)
+                    if due_time <= completed_time <= now:
+                        continue
+                except (ValueError, TypeError):
+                    pass  # Invalid evidence is missing evidence, not a controller crash.
         unacknowledged.append((decision["id"], ack_key))
     return unacknowledged
 
@@ -411,11 +421,32 @@ def main() -> int:
         base = os.environ.get("SUPABASE_URL", "")
         key = os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
         require(bool(key), "missing Supabase evidence credential")
-        paper = get_rows(base, key, "paper_series_completion_readiness")[0]
-        shadows = (state.get("strategy_changing_shadow_wip") or {}).get("active") or []
-        h3 = (get_rows(base, key, "v3_h3_shadow_status")[0]
-              if shadows and shadows[0].get("candidate_id") == "V3-H3-SHADOW-001"
-              else None)
+        try:
+            paper = get_rows(base, key, "paper_series_completion_readiness")[0]
+            shadows = (state.get("strategy_changing_shadow_wip") or {}).get("active") or []
+            h3 = (get_rows(base, key, "v3_h3_shadow_status")[0]
+                  if shadows and shadows[0].get("candidate_id") == "V3-H3-SHADOW-001"
+                  else None)
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            # Critical control-plane independence: Supabase downtime must not
+            # suppress an already-overdue, locally evidenced Work handoff.
+            # Never invent trading readiness or claim HEALTHY in degraded mode.
+            now = dt.datetime.now(UTC)
+            overdue = due_followthrough_events(state, now, ROOT)
+            print(json.dumps({"kind": "PROJECT_MILESTONE_CONTROL_DEGRADED_V1",
+                              "status": "SUPABASE_EVIDENCE_UNAVAILABLE",
+                              "overdue_followthrough_only": [decision for decision, _ in overdue],
+                              "strategy_changed": False, "orders": False,
+                              "real_money_actions": False}, sort_keys=True))
+            if args.publish:
+                token, repo = os.environ.get("GITHUB_TOKEN", ""), os.environ.get("GITHUB_REPOSITORY", "")
+                if overdue:
+                    require(bool(token), "missing GitHub token for overdue fallback")
+                for _, note in overdue:
+                    publish_once(repo, token, note, os.getenv("SLACK_WEBHOOK_URL", ""))
+            print("MILESTONE_CONTROL_BLOCKED Supabase read-only evidence unavailable: " +
+                  str(exc), file=sys.stderr)
+            return 2
         now = dt.datetime.now(UTC)
     result = evaluate(state, paper, h3, now, ROOT)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))

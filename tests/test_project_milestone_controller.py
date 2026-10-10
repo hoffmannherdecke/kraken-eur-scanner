@@ -332,3 +332,37 @@ class FollowthroughReceiptTests(unittest.TestCase):
             self.assertEqual(controller.unacknowledged_control_decisions(state, after, root), [])
             report.unlink()
             self.assertEqual(len(controller.unacknowledged_control_decisions(state, after, root)), 1)
+
+
+class FollowthroughAdversarialProofTests(unittest.TestCase):
+    def test_future_or_malformed_receipt_does_not_hide_overdue_gate(self):
+        import json
+        import tempfile
+        import datetime as dt
+        state = controller.load_local_state(ROOT)
+        at = dt.datetime(2026, 10, 12, 8, 0, tzinfo=dt.timezone.utc)
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            report=root/"research/work-analysis/v2r4-gate.md"
+            report.parent.mkdir(parents=True,exist_ok=True)
+            report.write_text("A real outcome report, not a future receipt",encoding="utf-8")
+            ack=root/"research/work-analysis-state.json"
+            for completed in ("2099-10-11T07:00:00Z","not-a-timestamp"):
+                ack.write_text(json.dumps({"acknowledgements":{"control_decision_reviews":{
+                    "V2R4_72H_STRATEGY_EPOCH_20261010":{
+                        "status":"DECISION_PACKET_READY",
+                        "completed_at_utc":completed,
+                        "report":"research/work-analysis/v2r4-gate.md"}}}}),encoding="utf-8")
+                self.assertEqual(
+                    [x[0] for x in controller.due_followthrough_events(state,at,root)],
+                    ["V2R4-PRODUCTIVITY-REVIEW"])
+
+    def test_followthrough_event_never_depends_on_supabase_view(self):
+        import datetime as dt
+        import tempfile
+        state=controller.load_local_state(ROOT)
+        with tempfile.TemporaryDirectory() as d:
+            events=controller.due_followthrough_events(
+                state,dt.datetime(2026,10,12,8,tzinfo=dt.timezone.utc),Path(d))
+            self.assertEqual(len(events),1)
+            self.assertEqual(events[0][1]["kind"],"CONTROL_FOLLOWTHROUGH_MISSED")

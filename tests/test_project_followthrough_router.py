@@ -58,6 +58,11 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
             ackfile.write_text(json.dumps(ack))
             result = route(root, late)
             self.assertIn("V2R4-PRODUCTIVITY-REVIEW", result["previously_acknowledged"])
+            ack["acknowledgements"]["control_decision_reviews"][
+                "V2R4_72H_STRATEGY_EPOCH_20261010"]["completed_at_utc"] = "2099-10-11T07:00:00Z"
+            ackfile.write_text(json.dumps(ack))
+            self.assertIn("V2R4-PRODUCTIVITY-REVIEW",
+                          [x["id"] for x in route(root, late)["ready_control_decisions"]])
             dst.unlink()
             self.assertIn("V2R4-PRODUCTIVITY-REVIEW",
                           [x["id"] for x in route(root, late)["ready_control_decisions"]])
@@ -74,6 +79,11 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
             routing_path = root / "research/monitoring-evidence-routing-v1.json"
             routing = json.loads(routing_path.read_text())
             routing["streams"] = routing["streams"][:2]
+            routing_path.write_text(json.dumps(routing))
+            with self.assertRaisesRegex(ValueError, "missing/duplicate monitoring route"):
+                route(root, dt.datetime.now(UTC))
+            routing = json.loads((ROOT / "research/monitoring-evidence-routing-v1.json").read_text())
+            routing["streams"][0]["id"] = "unregistered_replacement"
             routing_path.write_text(json.dumps(routing))
             with self.assertRaisesRegex(ValueError, "missing/duplicate monitoring route"):
                 route(root, dt.datetime.now(UTC))
