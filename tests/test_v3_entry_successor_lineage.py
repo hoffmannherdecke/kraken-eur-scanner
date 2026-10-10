@@ -61,7 +61,7 @@ class PermanentExtendedLearningLineageTests(unittest.TestCase):
         })
         errs=MODULE.validate_documents(ledger,state,gate,lineage)
         self.assertTrue(any("archive disposition" in e for e in errs),errs)
-        self.assertTrue(any("obsolete fixed-review" in e for e in errs),errs)
+        self.assertTrue(any("closed H3 archive disposition" in e for e in errs),errs)
 
     def test_false_retroactive_approval_rejected(self):
         ledger, state, gate, lineage = documents()
