@@ -75,6 +75,43 @@ class OriginalHandoffPitAuditTests(unittest.TestCase):
         self.assertFalse(found["historical_coin_pit_claim_in_handoff"])
         self.assertFalse(found["historical_coin_pit_authoritatively_proven"])
 
+    def test_wrapped_mini_pc_filenames_and_missing_cases_are_safe(self):
+        # Production files are not guaranteed to have exactly <candidate-id>.json.
+        # The earlier PowerShell check used *candidate-id*.json and found 12/12.
+        with tempfile.TemporaryDirectory() as root:
+            folder = Path(root) / "v2r4-paper-stage-test" / "handoff_queue"
+            folder.mkdir(parents=True)
+            for case in CASES["cases"][:5]:
+                c = original(case)
+                (folder / ("handoff-" + c["candidate_id"] + "-original.json")).write_text(
+                    json.dumps(c))
+            result = mod.audit(CASES, Path(root))
+            self.assertEqual(result["valid_handoff_count"], 5)
+            self.assertEqual(result["original_scanner_context_count"], 5)
+            self.assertEqual(result["missing_original_count"], 7)
+            self.assertEqual(result["invalid_original_count"], 0)
+            self.assertEqual(result["model_calls"], 0)
+            self.assertFalse(result["orders"])
+            self.assertFalse(result["paper_state_changed"])
+
+    def test_invalid_json_and_duplicate_copies_do_not_crash_audit(self):
+        with tempfile.TemporaryDirectory() as root:
+            folder = Path(root) / "v2r4-paper-stage-test" / "handoff_queue"
+            folder.mkdir(parents=True)
+            c0 = CASES["cases"][0]
+            (folder / (c0["candidate_id"] + ".json")).write_text("{broken")
+            c1 = CASES["cases"][1]
+            data = original(c1)
+            (folder / (c1["candidate_id"] + ".json")).write_text(json.dumps(data))
+            (folder / ("duplicate-" + c1["candidate_id"] + ".json")).write_text(
+                json.dumps(data))
+            result = mod.audit(CASES, Path(root))
+            self.assertEqual(result["invalid_original_count"], 1)
+            self.assertEqual(result["ambiguous_original_count"], 1)
+            self.assertEqual(result["missing_original_count"], 10)
+            self.assertEqual(result["original_scanner_context_count"], 0)
+
+
     def test_unexpected_manifest_fails_closed(self):
         bad = dict(CASES, cases=CASES["cases"][:11])
         with self.assertRaises(ValueError):
