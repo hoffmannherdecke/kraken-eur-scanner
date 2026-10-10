@@ -1,6 +1,6 @@
 # MINI-PC Analytics Rollout V1 — schlanke Erweiterung des vorhandenen Krypto-Systems
 
-**Beschluss:** 2026-10-10. **Status:** `PLAN_APPROVED_PREP_ONLY`; kein produktiver Task, Scanner, Runner, Shadow, Modell, API-Key oder Kaufpfad durch diesen Plan aktiviert. **Einziger Aufgabenowner:** `PROJECT_BACKLOG.md` unter `MINIPC_ANALYTICS_ROLLOUT_V1`; dies ist nur dessen technischer Ausführungsvertrag, kein zweiter Backlog.
+**Beschluss:** 2026-10-10. **Status:** `A_REVIEWED_B_PHYSICAL_E2E_PENDING` (Original-72h-Wirtschaftlichkeitsreview PR #144 / ACK echt; inaktiver B-Preflight PR #142 vorhanden, noch kein physischer B-E2E oder wirtschaftlicher V3-PASS); kein produktiver Task, Scanner, Runner, Shadow, Modell, API-Key oder Kaufpfad durch diesen Plan aktiviert. **Einziger Aufgabenowner:** `PROJECT_BACKLOG.md` unter `MINIPC_ANALYTICS_ROLLOUT_V1`; dies ist nur dessen technischer Ausführungsvertrag, kein zweiter Backlog.
 
 ## 1. Ziel und vorläufige Entscheidung
 
@@ -24,6 +24,14 @@ Den bestehenden Dell OptiPlex 5060 Micro als **ereignisgesteuerte, begrenzte Res
 | **D. Nur bei C-Erkenntnis: gezielte weitere Forschung** | Nach klarem `KEEP / REJECT / MORE_TESTING_REQUIRED` von C und neuer One-change-Präregistrierung | Erst vorhandenen **EXTENDED-Second-Leg**-Wiedereinstieg separat gegen gleiche Basis prüfen; WAIT/TTL-Veränderung nur als wiederum separates H4-Policy-Experiment. Danach ggf. H9-Execution/Slippage bei echten plausiblen Entries und gezielte historische EUR-Paar-/Regime-Replays mit vorhandenen Werkzeugen | Positive Netto-Edge **oder** begründetes Nicht-Weiterführen; historische Auswahl nicht als prospektiven Erfolg zählen; kein Bulk-Download und keine neue Shadow-Gleichzeitigkeit |
 
 **Ereignis- statt Kalenderplan:** B beginnt beim nächsten ohnehin offenen zulässigen Work-/Research-Gate nach dokumentiertem A/H3-Abschluss, nicht wegen bloßen Zeitablaufs. C und D erst mit echten Belegen; bei negativem Nutzen `NO_ACTION_WARRANTED` / `REJECT_WITH_EVIDENCE`, nicht künstlich hochskalieren. Geeignete sichere Code-Vorbereitung für B darf ohne weitere Rückfrage als kleiner Branch/PR mit Tests erfolgen, aber jede Aktivierung braucht separate technische und Nutzer-Freigabe.
+
+### Beschleunigungsentscheidung nach dem originalen V2R4-72h-Gate (10.10.2026)
+
+Die Original-V2R4-Epochenprüfung wurde nachweislich in [PR #144](https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/144) mit `DECISION_PACKET_READY` abgeschlossen: 1.677 Kandidaten, 424 vollständige 24h-Reviews, 0 Trades. Der Nutzer möchte **keine unbegrenzte Null-Trade-Verlängerung** und fragt nach sofortiger V3-Nutzung. Deshalb wird **B – das bestehende erste V3-A-Input-Only-E2E – bei nächster freigegebener physischer Arbeit priorisiert**; C (prospektiver Shadow) erst nach wirklichem B-PASS und eigener Freigabe, nicht als pauschaler H1–H11-Komplettstart.
+
+Der Schritt `A_REVIEWED` ist eine belegte Analyse, **keine** Freigabe für V3 Paper oder einen neuen Shadow. Das V2R4-New-Intake-Ende ist ebenfalls eine physische Runtime-/Lifecycle-Transition und darf nicht durch ein isoliertes Cloud-Statusfeld simuliert werden. Die vorhandenen Follow-ups, die historische Supabase-Provenienz und die original eingefrorene V2R4-Vergleichsentscheidung müssen beim gesonderten Cutover erhalten bleiben. Bis dahin bleibt V2R4 faktisch aktiv; kein verdeckter Stopp durch diesen Dokumentations-PR.
+
+**Kleinster nächster praktischer Schritt:** Den vorhandenen PREPARED_INACTIVE-Probevertrag `research/v3/minipc-analytics-readonly-reuse-preflight-v1.md` an **einem** realen aktuellen Kandidaten lesen/prüfen, danach isolierter gleicher Snapshot Baseline vs. nur Coin-Daten. Bei nicht bestandenem E2E kein neuer Scheduler, keine V3-Order-/Paper-Aktivierung, sondern genau den begrenzten Belegmangel melden. Keine Wiederholung bereits grüner synthetischer Tests.
 
 ## 3. Minimaler technischer Eingriff
 
