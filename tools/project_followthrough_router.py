@@ -36,7 +36,7 @@ def utc(value: str) -> dt.datetime:
     return stamp.astimezone(UTC)
 
 
-def valid_receipt(root: Path, reviews: dict, key: str, due: dt.datetime) -> bool:
+def valid_receipt(root: Path, reviews: dict, key: str, due: dt.datetime, now: dt.datetime) -> bool:
     receipt = reviews.get(key)
     if not isinstance(receipt, dict) or receipt.get("status") not in SAFE_STATUSES:
         return False
@@ -50,7 +50,7 @@ def valid_receipt(root: Path, reviews: dict, key: str, due: dt.datetime) -> bool
         completion = utc(completed)
     except (ValueError, TypeError):
         return False
-    return completion >= due and (root / report).is_file()
+    return due <= completion <= now and (root / report).is_file()
 
 
 def route(root: Path, now: dt.datetime) -> dict:
@@ -80,7 +80,11 @@ def route(root: Path, now: dt.datetime) -> dict:
             "current-state activation boundary changed")
     streams = routing.get("streams") or []
     stream_ids = [s.get("id") for s in streams]
-    require(len(streams) >= 26 and len(stream_ids) == len(set(stream_ids)),
+    required_stream_ids = manifest.get("required_stream_ids") or []
+    require(len(required_stream_ids) == len(set(required_stream_ids))
+            and len(required_stream_ids) >= 26
+            and set(required_stream_ids).issubset(set(stream_ids))
+            and len(stream_ids) == len(set(stream_ids)),
             "missing/duplicate monitoring route")
     for stream in streams:
         require(all(isinstance(stream.get(k), str) and stream[k]
@@ -116,7 +120,7 @@ def route(root: Path, now: dt.datetime) -> dict:
             due = utc(due_str)
             if now < due:
                 gated.append({"id": task_id, "gate": "WAIT_FOR_DUE_TIME", "due_at_utc": due_str})
-            elif valid_receipt(root, reviews, key, due):
+            elif valid_receipt(root, reviews, key, due, now):
                 closed.append(task_id)
             else:
                 ready.append({"id": task_id, "gate": "DUE_REVIEW",
