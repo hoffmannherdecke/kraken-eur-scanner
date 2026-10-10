@@ -264,14 +264,17 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
                     and h3_archive.get("former_frozen_baseline_series_id")==series,
                     "H3 archive incorrectly claims full evidence or a passed fixed review")
             statuses.append("H3:ARCHIVED_INCOMPLETE_NO_FIXED_REVIEW")
-            notices.append(event("H3_ARCHIVED_INCOMPLETE_REVIEW",
-                                 h3_archive["id"]+"|"+series,
-                                 "H3-001 wurde beim technischen Cutover archiviert; "
-                                 "0 prospektive Cloud-Schattenbelege. Die alte "
-                                 "SHADOW_RUNNING-Angabe ist beendet. Kein H3-Fixed-"
-                                 "Review bestanden, H6 bleibt bis zur gesonderten "
-                                 "Archiv-/Kausalitätsentscheidung gesperrt. "
-                                 "V2R4-Handelsbewertung läuft weiter."))
+            if h3_archive.get("archive_disposition")=="DEFER_WITH_GATE":
+                statuses.append("H3:ARCHIVE_DISPOSITION_DEFER_WITH_GATE")
+            else:
+                notices.append(event("H3_ARCHIVED_INCOMPLETE_REVIEW",
+                                     h3_archive["id"]+"|"+series,
+                                     "H3-001 wurde beim technischen Cutover archiviert; "
+                                     "0 prospektive Cloud-Schattenbelege. Die alte "
+                                     "SHADOW_RUNNING-Angabe ist beendet. Kein H3-Fixed-"
+                                     "Review bestanden, H6 bleibt bis zur gesonderten "
+                                     "Archiv-/Kausalitätsentscheidung gesperrt. "
+                                     "V2R4-Handelsbewertung läuft weiter."))
         else:
             statuses.append("H3:NO_ACTIVE_SHADOW")
 
@@ -293,6 +296,9 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
         if any(x.get("status")=="WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION"
                for x in queued if x.get("candidate_id")=="V3-H6-NEXT"):
             statuses.append("H6:BLOCKED_H3_ARCHIVED_INCOMPLETE_NO_AUTO_START")
+        elif any(x.get("status")=="WAIT_FOR_V2R4_ECONOMIC_REVIEW_AND_SEPARATE_EXPLICIT_APPROVAL"
+                 for x in queued if x.get("candidate_id")=="V3-H6-NEXT"):
+            statuses.append("H6:BLOCKED_V2R4_REVIEW_AND_EXPLICIT_APPROVAL_NO_AUTO_START")
         else:
             statuses.append("H6:WAIT_H3_REVIEW_NO_AUTO_START")
     return {"kind": "PROJECT_MILESTONE_CONTROL_V1", "series_id": series,
