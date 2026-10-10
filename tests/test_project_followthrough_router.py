@@ -17,7 +17,7 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
         result = route(ROOT, dt.datetime(2026, 10, 10, 8, 0, tzinfo=UTC))
         routing = json.loads((ROOT / "research/monitoring-evidence-routing-v1.json").read_text())
         self.assertEqual(result["stream_coverage_count"], len(routing["streams"]))
-        self.assertGreaterEqual(result["crosscut_coverage_count"], 8)
+        self.assertGreaterEqual(result["crosscut_coverage_count"], 9)
         self.assertIn("V3-H3-ARCHIVE-DISPOSITION",
                       [x["id"] for x in result["ready_control_decisions"]])
         self.assertIn("V2R4-PRODUCTIVITY-REVIEW",

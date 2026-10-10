@@ -94,6 +94,36 @@
       "action": "For legitimately approved and declared new active shadow, create read-only gate adapter with immutable baseline, event dedup and maturity checks; preserve single active shadow and make no strategy changes.",
       "proof_of_completion": "CI proof for adapter and missing-evidence failure; otherwise approval blocker.",
       "limits": "No new shadow start, promotion or runtime changes."
+    },
+    {
+      "id": "MINIPC_ANALYTICS_READONLY_PREP",
+      "status": "APPROVED_SAFE_SCOPE",
+      "priority": 2,
+      "owner": "EXISTING_WORK_SAFE_IMPLEMENTATION",
+      "gate": "APPROVED_MINIPC_ANALYTICS_PLAN_AND_MISSING_INACTIVE_REUSE_PREP",
+      "source_ref": "PROJECT_BACKLOG.md#MINIPC_ANALYTICS_ROLLOUT_V1",
+      "evidence": [
+        "PROJECT_BACKLOG.md",
+        "docs/minipc-analytics-rollout-v1.md",
+        "research/v3/coin-entry-evidence-lineage-v1.json",
+        "research/strategy-learning-causal-gate-v1.json",
+        "tools/v2r4-readonly-decision-funnel.py",
+        "paper_evaluator/successor_coin_entry_evidence_v1.py",
+        "tools/run-minipc-v3-entry-model-compare.ps1"
+      ],
+      "target": "research/v3/minipc-analytics-readonly-reuse-preflight-v1.md",
+      "allowlist": [
+        "research/v3/minipc-analytics-readonly-reuse-preflight-v1.md",
+        "docs/minipc-analytics-rollout-v1.md",
+        "research/v3/coin-entry-evidence-lineage-v1.json",
+        "PROJECT_BACKLOG.md",
+        "tools/**",
+        "paper_evaluator/**",
+        "tests/**"
+      ],
+      "action": "ONE bounded safe PR: audit existing mini-PC Kraken EUR coin-entry OHLC / WAIT handoff / readonly funnel / existing one-shot wrapper and identify the smallest NOT ALREADY IMPLEMENTED offline read-only setup for candidate-specific closed-bar/volume/ATR plus rejected-or-missed-move comparison. Reuse existing tools first. Create a concise evidence-based preflight in target with exact existing files, candidate-id/PIT/known_at & fee/spread/MAE verification, local one-shot command if already available, smallest missing safe wrapper/test if genuinely needed, real CI proof, physical E2E still pending, no double collector or Cron. Do not call OpenAI or Kraken private endpoints, start services or runner, touch production V2R4, H3/H6, supabase writes, secrets, trade or change thresholds.",
+      "proof_of_completion": "The narrow read-only preflight and any truly necessary tests/wrapper are merged to main after CI, with links and a clearly named physical/strategy evidence blocker or negative/no-change disposition; actual mini-PC execution remains UNVERIFIED until physical run.",
+      "limits": "One small review-driven safe PR, <=2 tasks per Work run, max one concurrent implementation branch; no mini-PC installation, Runner activation, source subscriptions, strategy changes, cloud cost or separate Work schedule. No automatic H3/H6/shadow/paper release."
     }
   ]
 }
