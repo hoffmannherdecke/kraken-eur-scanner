@@ -2,7 +2,7 @@
   "schema_version": 2,
   "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-10T08:18:00Z",
+  "updated_at_utc": "2026-10-10T08:15:00Z",
   "baseline_strategy": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
   "active_clean_series": "PAPER-V2R4-20261007T184255Z",
   "v2r4_status": "ACTIVE_PAPER_APPROVED",
@@ -342,7 +342,7 @@
         "no_automatic_shadow_start": true,
         "no_h6_promotion": true,
         "archive_disposition": "DEFER_WITH_GATE",
-        "archive_disposition_completed_at_utc": "2026-10-10T08:18:00Z",
+        "archive_disposition_completed_at_utc": "2026-10-10T08:15:00Z",
         "next_eligible_action": "AFTER_V2R4_ECONOMIC_REVIEW_OPTIONALLY_PROPOSE_NEW_VERSIONED_H3_ONE_CHANGE_TRIAL_FOR_EXPLICIT_APPROVAL"
       }
     },
