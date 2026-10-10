@@ -11,6 +11,9 @@ on:
       - "tests/test_autonomous_implementation.py"
       - "docs/unified-monitoring-learning-architecture-v1.md"
       - "research/monitoring-evidence-routing-v1.json"
+      - "research/project-followthrough-routing-v1.json"
+      - "tools/project_followthrough_router.py"
+      - "tests/test_project_followthrough_router.py"
       - "research/global-outage-recovery-contract-v1.json"
       - "docs/project-wide-outage-recovery-v1.md"
       - "tools/validate-outage-resilience.py"
@@ -55,6 +58,9 @@ on:
       - "tests/test_autonomous_implementation.py"
       - "docs/unified-monitoring-learning-architecture-v1.md"
       - "research/monitoring-evidence-routing-v1.json"
+      - "research/project-followthrough-routing-v1.json"
+      - "tools/project_followthrough_router.py"
+      - "tests/test_project_followthrough_router.py"
       - "research/global-outage-recovery-contract-v1.json"
       - "docs/project-wide-outage-recovery-v1.md"
       - "tools/validate-outage-resilience.py"
@@ -132,6 +138,10 @@ jobs:
         run: |
           python tools/select-autonomous-implementation.py
           python -m unittest discover -s tests -p 'test_autonomous_implementation.py'
+      - name: Validate project-wide followthrough router without extra schedules
+        run: |
+          python tools/project_followthrough_router.py
+          python -m unittest discover -s tests -p 'test_project_followthrough_router.py' -v
       - name: Validate workflow registry
         run: python tools/validate-workflow-registry.py
       - name: Validate active H3 shadow candidate
