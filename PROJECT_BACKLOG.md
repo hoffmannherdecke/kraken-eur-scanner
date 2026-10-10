@@ -4,6 +4,10 @@ Status: **KANONISCHER MASTER-BACKLOG**
 Letzte Vollsicht: 2026-10-08  
 Aktueller deklarierter Zustand: `project-current-state.json` (V2R4 PAPER aktiv, V2R3 abgeschlossen).
 
+## Projektweiter Follow-through — Live-Routing ab 10.10.2026
+
+Der bestehende 10:15-Work-Lauf hat **für alle 26+ fachlichen Monitoring-/Research-Ströme und acht Querschnittsbereiche** dieselbe Owner→Trigger→zulässige Folgehandlung→Evidenz→ACK-Übergabe zu beachten; kompakter maschinenlesbarer Eingang: `tools/project_followthrough_router.py`, Vertrag: `research/project-followthrough-routing-v1.json` und `docs/autonomous-followthrough-governance-v1.md` §6. Das ist **keine** neue Work-Aufgabe, kein zweiter Backlog und keine automatische Handelsfreigabe. Bei jedem tatsächlich fälligen Review zuerst sichere Arbeit eigenständig ausführen, Ergebnis im vorhandenen fachlichen Owner dokumentieren und mit tatsächlichem Bericht/ACK schließen. Wo kein objektives Fälligkeitsgate besteht, am zuständigen bestehenden Review-Gate mitlesen statt erfundene Fristen/Benachrichtigungen zu erzeugen. Der eingebundene E2E-Abschluss ist pro Fall weiterhin nachzuweisen.
+
 ## Offene Schwerpunktentscheidungen — Architekturabgleich 09.10.2026
 
 Die hier gelisteten nächsten Arbeiten **sind dieselben kanonischen** `project-current-state.json.next_control_decisions`, keine neuen autonomen Zeitpläne oder separaten Handelsstrategien.
