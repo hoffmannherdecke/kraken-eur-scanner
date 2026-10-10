@@ -69,6 +69,51 @@ def validate_learning_gate(root: Path = ROOT,
         errors.append("successor must measure actual BUY, net costs, risk and missed moves")
     if "NO_BUY" not in str(priority.get("no_buy_disposition") or ""):
         errors.append("zero BUY cohort must force a real strategy decision, not indefinite Paper extension")
+    # An opportunity-oriented V3 successor is a research objective, not a
+    # permission to loosen the existing live risk / Paper-release boundary.
+    v3 = gate.get("v3_opportunity_first_research") or {}
+    if v3.get("id") != "V3_OPPORTUNITY_FIRST_RISK_UNCHANGED_20261010" or v3.get("status") != "APPROVED_RESEARCH_ONLY_NOT_RELEASED":
+        errors.append("V3 opportunity-first research contract missing or falsely released")
+    required_sequence = [
+        "A_COIN_ENTRY_PROVENANCE_ONLY_BASELINE_EVALUATOR_AND_WAIT_UNCHANGED",
+        "B_ONE_SEPARATE_WAIT_OR_EXTENDED_RECHECK_POLICY_ONLY_AFTER_A_DISPOSITION",
+        "C_ONE_PROSPECTIVE_SHADOW_ONLY_AFTER_SEPARATE_RELEASE_APPROVAL",
+        "D_V3_PAPER_RELEASE_ONLY_AFTER_FULL_CAUSAL_GATE",
+    ]
+    if v3.get("single_change_order") != required_sequence:
+        errors.append("V3 input A must precede separate policy B and gated Shadow/Paper release")
+    first = v3.get("stage_A") or {}
+    if any(first.get(k) is not True for k in (
+            "reuse_existing_kraken_and_wait_data", "baseline_evaluator_unchanged",
+            "wait_trigger_ttl_unchanged", "cost_risk_stop_sizing_unchanged",
+            "physical_real_candidate_e2e_required")):
+        errors.append("V3 A may change only point-in-time candidate evidence, not evaluator/WAIT/risk")
+    second = v3.get("stage_B") or {}
+    if (second.get("only_after_stage_A_result") is not True
+            or second.get("one_policy_change_at_a_time") is not True
+            or second.get("no_auto_buy") is not True
+            or second.get("no_blind_trigger_or_ttl_relaxation") is not True
+            or set(second.get("select_one_policy_hypothesis_from_evidence") or ()) != {
+                "EXISTING_EXTENDED_SECOND_LEG_REVIEW_ELIGIBILITY",
+                "WAIT_EXPIRED_WITHOUT_TRIGGER_FRESH_REVIEW_ELIGIBILITY"}):
+        errors.append("V3 policy B may not mix WAIT and EXTENDED or bypass causal A review")
+    outcomes = v3.get("evidence_success") or {}
+    if (len(set(outcomes.get("must_measure") or [])) != 5
+            or outcomes.get("zero_buy_requires_disposition_not_indefinite_run") is not True
+            or outcomes.get("retrospective_mfe_not_profit") is not True):
+        errors.append("V3 must prove executable risk-adjusted trade quality, not raw BUY/MFE")
+    guard = v3.get("fixed_guards") or {}
+    if (guard.get("scout_eur") != 50 or guard.get("stage2_eur") != 50
+            or guard.get("taker_fee_pct_per_side") != 0.6
+            or guard.get("one_active_strategy_changing_shadow_max") != 1
+            or any(guard.get(k) is not True for k in (
+                "do_not_modify_frozen_v2r4", "preserve_anti_chase",
+                "preserve_existing_stop_and_two_stage_risk",
+                "h3_h6_remain_separately_gated"))
+            or any(guard.get(k) is not False for k in (
+                "new_scheduler", "extra_work_run", "automatic_shadow_start",
+                "automatic_paper_release", "live_orders", "real_money_actions"))):
+        errors.append("V3 offensive entry research cannot weaken risk, permissions or resources")
     incident = gate.get("incident") or {}
     if incident.get("classification") != "UNRESOLVED_DECISION_PRODUCTIVITY_NOT_CLEARED_BY_V2R4_TIMING_ONLY":
         errors.append("recurring no-trade incident must not be silently declared resolved")
