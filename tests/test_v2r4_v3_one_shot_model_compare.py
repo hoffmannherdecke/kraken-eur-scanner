@@ -82,12 +82,12 @@ class V3OneShotModelCompareTests(unittest.TestCase):
             (app/"paper_runtime_control.json").write_text(json.dumps(ctrl))
             (app/"paper_strategy_spec.json").write_text("{}")
             ticker={"ask":10,"bid":9.99,"last":10,"spread_pct":0.1}
-            with patch("paper_evaluator.v3_one_shot_model_compare.freeze_runtime_provenance",return_value={"evaluate.py":"test"}), \\
-                 patch("paper_evaluator.v3_one_shot_model_compare.select_fresh_handoff",return_value=(Path("mock.json"),candidate())), \\
-                 patch("paper_evaluator.v3_one_shot_model_compare.evaluate.kraken_ticker",return_value=ticker), \\
-                 patch("paper_evaluator.v3_one_shot_model_compare.build_context",return_value={"kraken_execution_ticker":ticker}), \\
-                 patch("paper_evaluator.v3_one_shot_model_compare.fetch_public_entry_evidence",return_value=evidence()), \\
-                 patch("paper_evaluator.v3_one_shot_model_compare.now_utc",return_value=dt(14)), \\
+            with patch("paper_evaluator.v3_one_shot_model_compare.freeze_runtime_provenance",return_value={"evaluate.py":"test"}), \
+                 patch("paper_evaluator.v3_one_shot_model_compare.select_fresh_handoff",return_value=(Path("mock.json"),candidate())), \
+                 patch("paper_evaluator.v3_one_shot_model_compare.evaluate.kraken_ticker",return_value=ticker), \
+                 patch("paper_evaluator.v3_one_shot_model_compare.build_context",return_value={"kraken_execution_ticker":ticker}), \
+                 patch("paper_evaluator.v3_one_shot_model_compare.fetch_public_entry_evidence",return_value=evidence()), \
+                 patch("paper_evaluator.v3_one_shot_model_compare.now_utc",return_value=dt(14)), \
                  patch("paper_evaluator.v3_one_shot_model_compare.evaluate.call_evaluator",side_effect=AssertionError("MODEL_MUST_NOT_BE_CALLED")):
                 result=execute_one_shot(home,home,"PAPER-V2R4-TEST-SERIES",diagnose_only=True)
             self.assertEqual(result["status"],"INPUT_READY_NO_MODEL_CALLS_NOT_A_STRATEGY_PASS")
