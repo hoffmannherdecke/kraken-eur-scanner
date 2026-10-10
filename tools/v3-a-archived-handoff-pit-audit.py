@@ -101,7 +101,7 @@ def audit(casepack: dict, runtime_root: Path) -> dict:
                 if not file.is_file():
                     continue
                 try:
-                    candidate = json.loads(file.read_text("utf-8"))
+                    candidate = json.loads(file.read_text("utf-8-sig"))
                     matched.append(verify_handoff(candidate, case, file.name))
                 except (OSError, UnicodeError, json.JSONDecodeError, ValueError, TypeError):
                     matched.append({"status": "INVALID_JSON"})
@@ -150,8 +150,14 @@ def main() -> int:
     parser.add_argument("--casepack", type=Path, required=True)
     parser.add_argument("--runtime-root", type=Path, required=True)
     args = parser.parse_args()
+    # Windows PowerShell 5.1 Set-Content -Encoding UTF8 emits a UTF-8 BOM.
+    # utf-8-sig accepts both BOM and plain UTF-8 without weakening schema checks.
     try:
-        manifest = json.loads(args.casepack.read_text("utf-8"))
+        manifest = json.loads(args.casepack.read_text("utf-8-sig"))
+    except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as exc:
+        print("BLOCKED_CASEPACK_READ_" + type(exc).__name__, file=sys.stderr)
+        return 2
+    try:
         result = audit(manifest, args.runtime_root)
         for case in result["cases"]:
             print(f"{case['pair']:<12} {case['status']:<28} "
@@ -159,8 +165,9 @@ def main() -> int:
                   f"context={int(bool(case.get('scanner_market_context_present')))} "
                   f"coin_pit_claim={int(bool(case.get('historical_coin_pit_claim_in_handoff')))}")
         print("SUMMARY " + json.dumps({k: v for k, v in result.items() if k != "cases"}, sort_keys=True))
-    except (OSError, UnicodeError, ValueError, TypeError, KeyError, json.JSONDecodeError):
-        print("BLOCKED_LOCAL_INPUT_OR_MANIFEST", file=sys.stderr)
+    except (OSError, UnicodeError, ValueError, TypeError, KeyError, json.JSONDecodeError) as exc:
+        # Expose only an error class; never leak historical candidate bodies.
+        print("BLOCKED_AUDIT_INPUT_OR_SCHEMA_" + type(exc).__name__, file=sys.stderr)
         return 2
     return 0
 
