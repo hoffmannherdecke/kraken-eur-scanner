@@ -11,6 +11,9 @@ name: Autonomous project milestone control
       - 'tools/select-autonomous-implementation.py'
       - 'research/autonomous-implementation-queue-v1.json'
       - 'project-current-state.json'
+      - 'research/project-followthrough-routing-v1.json'
+      - 'research/monitoring-evidence-routing-v1.json'
+      - 'tools/project_followthrough_router.py'
       - '.github/workflows/autonomous-project-milestones.yml'
 
 permissions:
@@ -40,6 +43,8 @@ jobs:
           python tools/validate-project-current-state.py
           python tools/select-autonomous-implementation.py
           python -m unittest discover -s tests -p 'test_autonomous_implementation.py'
+          python tools/project_followthrough_router.py
+          python -m unittest discover -s tests -p 'test_project_followthrough_router.py'
       - name: Inspect live evidence; publish only from scheduled run
         run: |
           if [ "${{ github.event_name }}" = "schedule" ]; then
