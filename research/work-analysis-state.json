@@ -15,7 +15,7 @@
     "blocker": "UNKNOWN, inconsistent completion, provenance/data blocker, or unresolved contradiction requiring multi-artifact diagnosis",
     "v2r4_v3": "a documented V2R4 or V3 readiness/research gate explicitly requires Work-level synthesis; mere data accumulation does not qualify"
   },
-  "last_substantive_analysis_at": "2026-10-10T08:18:00Z",
+  "last_substantive_analysis_at": "2026-10-10T08:15:00Z",
   "last_gate_reason": "V3_H3_ARCHIVE_DISPOSITION",
   "acknowledgements": {
     "v2r3_24h_candidate_ids": [
@@ -1148,7 +1148,7 @@
     ],
     "control_decision_reviews": {
       "V3_H3_001_ARCHIVE_DISPOSITION_20261010": {
-        "completed_at_utc": "2026-10-10T08:18:00Z",
+        "completed_at_utc": "2026-10-10T08:15:00Z",
         "control_decision_id": "V3-H3-ARCHIVE-DISPOSITION",
         "disposition": "DEFER_WITH_GATE",
         "report": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
@@ -1262,7 +1262,7 @@
       "disposition": "NO_ACTION_WARRANTED"
     },
     {
-      "analyzed_at": "2026-10-10T08:18:00Z",
+      "analyzed_at": "2026-10-10T08:15:00Z",
       "gate_reason": "V3_H3_ARCHIVE_DISPOSITION",
       "series_id": "V3-H3-SHADOW-001",
       "report": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
@@ -1293,7 +1293,7 @@
   },
   "last_consequence_processing": {
     "source_analysis": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
-    "processed_at_utc": "2026-10-10T08:18:00Z",
+    "processed_at_utc": "2026-10-10T08:15:00Z",
     "status": "PROCESSED",
     "downstream_artifacts": [
       "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
@@ -1307,7 +1307,7 @@
   },
   "consequence_processing": {
     "last_processed_analysis": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
-    "processed_at": "2026-10-10T08:18:00Z",
+    "processed_at": "2026-10-10T08:15:00Z",
     "artifacts_updated": [
       "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
       "project-current-state.json",
@@ -1401,7 +1401,7 @@
         "disposition": "NO_ACTION_WARRANTED"
       },
       {
-        "processed_at": "2026-10-10T08:18:00Z",
+        "processed_at": "2026-10-10T08:15:00Z",
         "source_analysis": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
         "classifications": {
           "strategy_filter": "NOT_EVALUABLE_ZERO_PROSPECTIVE_EVIDENCE",
