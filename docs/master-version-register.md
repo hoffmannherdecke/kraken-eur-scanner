@@ -20,6 +20,10 @@ Zweck: Single Source of Truth für Strategie-, Paper-, Infrastruktur-, Datenpfad
 
 **Wiederaufnahme nach Chatwechsel:** Zuerst diese Abschnittsübersicht und den jüngsten Block-3-Abschluss statt frühere Zwischenstände lesen. Das vorhandene Work-/Governance-System kann den Kontext bei seinen ohnehin stattfindenden Reviews nutzen; **die Dokumentation alleine erzeugt aber keine neue zeitgesteuerte Benachrichtigung oder Garantie automatischer Echtzeit-Auslösung**. Der Status des laufenden Trading-Systems ist davon getrennt und aus der Live-Evidenz/Control-Plane zu prüfen.
 
+## MINI-PC ANALYTICS ROLLOUT — gezielte wirtschaftliche Forschung (10.10.2026)
+
+**Neu genehmigter, noch nicht aktivierter Forschungs-Ausbaupfad:** [`docs/minipc-analytics-rollout-v1.md`](minipc-analytics-rollout-v1.md). Einziger aktiver Aufgabenowner ist `PROJECT_BACKLOG.md#MINIPC_ANALYTICS_ROLLOUT_V1`. Der bestehende V2R4-72h-Review und H3-001-Archiventscheid steuern die nächste Stufe; rein inaktive Vorbereitung darf früher, produktive Strategie/Shadow/Paper-Mutation nie automatisch erfolgen. Die vorhandenen Coin-Entry-/WAIT-/Replay-Werkzeuge werden wiederverwendet, kein neuer Scheduler, weiterer Scanner, aktivierter Runner, Secret-Transfer, Agent oder doppelter H3/H6-/H4-/H9-Sensor. Wirtschaftliche Netto-Trade-Evidenz statt IT-Health als Qualitätsgate. **Nicht verwechseln** mit abgeschlossenem GitHub-Offload-Block 3 (`STAY_CLOUD_HOSTED`).
+
 ## Projektweite resiliente Wiederaufnahme – Strom, Netz, GitHub, Kraken, Supabase und Folgesysteme (2026-10-08)
 
 Verbindlicher cross-version Vertrag: `docs/project-wide-outage-recovery-v1.md`,
