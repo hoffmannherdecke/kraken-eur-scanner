@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 UTC = dt.timezone.utc
 ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "H3_STALE_EVIDENCE": 7,
                  "H3_ARCHIVED_INCOMPLETE_REVIEW": 7, "PAPER_FINAL_REVIEW": 38,
-                 "PAPER_LOW_TRADES": 38, "H10_CONTRACT": 7,
+                 "PAPER_LOW_TRADES": 38, "CONTROL_FOLLOWTHROUGH_MISSED": 38, "H10_CONTRACT": 7,
                  "NEW_SHADOW_ADAPTER": 7, "NEW_CONTROL_DECISION": 7}
 SUPPORTED_DECISIONS = {"V3-H3-ARCHIVE-DISPOSITION", "V2R4-PRODUCTIVITY-REVIEW",
                        "V3-EXTENDED-SECOND-LEG-LEARNING-GATE"}
@@ -123,6 +123,17 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
     epoch_min_mature24=int(aggregate["epoch_minimum_complete_24h"])
     notices = []
     statuses = []
+    # Generic fail-safe: a duly reached control gate must have a documented
+    # Work receipt, not merely a GitHub notice or a chat promise.
+    for decision_id, ack_key in unacknowledged_control_decisions(state, now, root):
+        statuses.append("FOLLOWTHROUGH:ACK_OVERDUE:" + decision_id)
+        notices.append(event(
+            "CONTROL_FOLLOWTHROUGH_MISSED", ack_key,
+            "Autonomie-Übergabe überfällig: " + decision_id +
+            ". Trotz abgelaufenem Gate und Nachfrist fehlt ein belegter "
+            "Work-Abschluss/Entscheidungsbeleg. Bestehenden 10:15-Work-Pfad "
+            "gezielt reparieren oder konkreten Nutzer-Blocker melden; "
+            "kein zweiter Work-Lauf, keine automatische Strategieänderung."))
     for task in state.get("next_control_decisions") or []:
         if task["id"] not in SUPPORTED_DECISIONS:
             statuses.append("CONTROL:ADAPTER_REQUIRED:" + task["id"])
@@ -302,6 +313,42 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
             "strategy_changed": False, "orders": False,
             "real_money_actions": False}
 
+
+
+def unacknowledged_control_decisions(state: dict, now: dt.datetime, root: Path) -> list:
+    """Detect silent due-gate handoff failures without modifying any runtime."""
+    path = root / "research/work-analysis-state.json"
+    try:
+        work = json.loads(path.read_text("utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        work = {}
+    reviews = ((work.get("acknowledgements") or {}).get("control_decision_reviews") or {})
+    unacknowledged = []
+    for decision in state.get("next_control_decisions") or []:
+        due = decision.get("due_at_utc")
+        ack_key = decision.get("followthrough_ack_key")
+        lag = decision.get("followthrough_max_lag_hours")
+        if due is None and ack_key is None and lag is None:
+            continue
+        require(isinstance(due, str) and isinstance(ack_key, str)
+                and re.fullmatch(r"[A-Za-z0-9_.-]{5,120}", ack_key) is not None
+                and type(lag) is int and 1 <= lag <= 168,
+                "invalid followthrough contract")
+        due_time = iso_time(due)
+        if now < due_time + dt.timedelta(hours=lag):
+            continue
+        record = reviews.get(ack_key)
+        if isinstance(record, dict) and record.get("status") in {
+                "COMPLETED", "DECISION_PACKET_READY", "BLOCKED_WITH_ACTION"}:
+            report = record.get("report")
+            completed = record.get("completed_at_utc")
+            if (isinstance(report, str)
+                    and re.fullmatch(r"research/work-analysis/[A-Za-z0-9_.-]+[.]md", report)
+                    and isinstance(completed, str) and iso_time(completed) >= due_time
+                    and (root / report).is_file()):
+                continue
+        unacknowledged.append((decision["id"], ack_key))
+    return unacknowledged
 
 def gh_request(url: str, token: str, method: str = "GET", payload=None):
     body = json.dumps(payload).encode("utf-8") if payload is not None else None
