@@ -84,3 +84,38 @@ gleich wirtschaftlicher Trading-Erfolg. Der bestehende tägliche
 Work-Lauf ist der Ausführungsowner; GitHub kontrolliert nur Liveness.
 Neue Gesprächsinhalte können nur automatisch verwertet werden, wenn
 sie bei einer autorisierten Ausführung tatsächlich persistiert wurden.
+
+## 6. Projektweite Ausführung, nicht nur V2R4 (10.10.2026)
+
+**Live in vorhandener Steuerung, keine zusätzliche Daueraufgabe:** 
+`research/project-followthrough-routing-v1.json` bindet alle jeweils aktuell registrierten Ströme aus
+`research/monitoring-evidence-routing-v1.json` sowie die querschnittlichen Bereiche Architektur,
+Wissens-/Backlog-Übergabe, Resilienz, Kosten, physische MINI-PC-Gates, Strategie-Vererbung, Security
+und Zustellung an ihre **bereits bestehenden** Owner/Trigger. Neue Ströme dürfen nicht ohne
+Owner, nächstes Gate und sichere Übergabe als unbeaufsichtigt gelten. Die bestehenden CI-Gates
+prüfen die dynamische Vollständigkeit, ohne einen neuen Scheduler oder Monitor zu starten.
+
+`tools/project_followthrough_router.py` ist ein **read-only Phase-1-Einstieg**
+für den bereits eingerichteten täglichen 10:15-Work-Lauf; der bestehende GitHub-Meilensteinlauf
+kann dieselbe Route billig prüfen. Der Router erzeugt einen nachweisbaren Due-Entscheidungsplan aus
+`project-current-state.json#next_control_decisions`, beurteilt vorhandene AKTUELLE ACKs und
+verhindert falsche Abschlüsse ohne tatsächlich vorhandenen Bericht. Er setzt **keine**
+Strategie-/Runtime-Änderung um, startet keine neue Task und nimmt keine Freigabe vor.
+Für andere offene Punkte dient weiterhin `PROJECT_BACKLOG.md` als einziger Aufgabenbestand;
+die 26+ Source/Monitoring-Strecken sind **Zuständigkeiten**, keine 26 neuen täglichen Prüfjobs.
+Ein objektiv fälliges Gate soll bei der nächsten ohnehin stattfindenden Work-Runde vorgezogen werden.
+Der 72h-V2R4-Gate erhält zusätzlich den vorhandenen einmaligen 20:43-Check, kein Dauerscheduler.
+
+**Pflicht bei jeder neuen substanziellen Erkenntnis im tatsächlich autorisierten Chat/Work:**
+Kanonischen Auftrag mit Owner/Trigger/zulässiger Aktion/Evidenz-/Abschlussbeleg im bestehenden Backlog,
+Current-State-Gate oder Fachledger ablegen; beim nächsten bestehenden Work-Einstieg selbständig
+weiterführen; Ergebnis wirklich ACKen bzw. Blocker und notwendige Nutzeraktion explizit dokumentieren.
+Nur echte menschliche Release-Gates melden, keine routinemäßigen Info-Pushs.
+GitHub kann **nicht** ohne gesonderte Integration alle privaten Gespräche automatisch auslesen,
+unstrukturierte Alt-Backlog-Checkboxen eindeutig einem Fälligkeitszeitpunkt zuordnen oder
+fremde Dienste am fehlenden Berechtigungs-Gate vorbei bedienen.
+
+**E2E-Grenze:** Ein CI-grüner Router beweist globale Routing-Abdeckung,
+nicht autonome Umsetzung jedes zukünftigen Fachschritts. Echte E2E-Erfolge erfordern jeweils
+den belegten Work-/PR-/Merge-/ACK-/Gegenkontrollpfad. Erst danach darf dieser Arbeitszweig
+als tatsächlich autonom erledigt gelten. Keine stillen H3/H6-Freigaben, kein Echtgeld.
