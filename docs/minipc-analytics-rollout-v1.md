@@ -51,6 +51,14 @@ Der konkrete physische Test ist nun **einmal** erfolgt, im kanonischen Kurzberic
 
 Die unveränderliche offizielle V2R4-Erstentscheidung zu diesem ZRO-Kandidaten war `REJECT/EXTENDED` um `20:42:21Z`; der neue Vergleich erfolgte erst um ca. `20:48:58Z`. Er demonstriert **nicht** rückwirkend die Entscheidung unter den damals verfügbaren Bars. Im nächsten **bereits vorhandenen** Gate benötigen wir zeitgerecht prospektiv bekannte Eingaben mit echt ausführbarem Stop, Kosten- und ggf. Fill/MAE-Pfad. B-Policy `WAIT` **oder** `EXTENDED` nicht automatisch aktivieren, H3/H6 gesperrt, V2R4 weiter unverändert bis kontrolliertem Cutover.
 
+### Nachfolgende Zwölfer-Fallstudie vor zusätzlichen KI-Aufrufen (10.10.2026)
+
+Nach dem erfolgreichen echten ZRO-Input-One-Shot (2 Modelle, 0 BUY) wurde die nächste Nutzerfrage nach weiteren **V2R4-Topkandidaten** als `research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json` in **sechs outcome-positiven und sechs adverse Fällen mit identischer Setup-Lane-Verteilung** eingefroren. Dazugehörige fachliche Beurteilung und genaue Datenlücken: `research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md`.
+
+Dieser Retrospektivvergleich wurde ohne zusätzliche Modellkosten allein auf kanonischen V2R4-Initialentscheidungen und 24h-Follow-ups erstellt. **Keinesfalls** die rückblickend selektierten +47% etc. in die damalige Modellbewertung geben. Der Ursprungskontext enthält keine nachgewiesene historisch geschlossene Coin-Entry-PIT-Evidence; H10 liefert bei **keinem** der zwölf Kandidaten im Drei-Stunden-Fenster vor Originalentscheidung ein abgeschlossenes 30m-/5m-Quellensample. Frühere H1-Historie und H3-Archiv sind keine neuen V3-Stimmen zu diesen Fällen. Deshalb besteht aktuell **keine Basis**, rückwirkend einen exakten kompletten V3-LLM-Durchlauf zu behaupten.
+
+**Nur eine schmale nächste konkrete Prüfung:** Existieren die vollständigen Original-Handoffs und zur ursprünglichen Uhrzeit **bereits bekannten** 1m/5m/15m-Bars plus Quellen-Provenienz physisch lokal und eingefroren? Nur dann potenziell ein begrenztes, labelblindes historisches Kontrollreplay; andernfalls bei zukünftigen frischen Kandidaten **prospektive** Multi-Case-Evidenz im bestehenden Research-Gate sammeln, nach separater einmaliger Kosten-/Scope-Freigabe. Dies ist keine neue Shadow-/Paper-Runtime, nicht alle V3-H-Komponenten zugleich, keine neuen dauerhaften Jobs. **Der Ein-Fall-ZRO-E2E-PASS bleibt gültig; ökonomisches Gate weiterhin offen.**
+
 ## 3. Minimaler technischer Eingriff
 
 ```text
