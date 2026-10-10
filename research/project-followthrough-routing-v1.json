@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "kind": "PROJECT_WIDE_FOLLOWTHROUGH_ROUTING_V1",
+  "purpose": "Every project facet has one evidence/owner route; only objective due decisions are executable Work triggers. No new clock, market scan, trade or automatic release.",
+  "stream_coverage": "ALL_MONITORING_EVIDENCE_ROUTING_STREAMS_DYNAMIC",
+  "stream_source": "research/monitoring-evidence-routing-v1.json",
+  "canonical_decision_source": "project-current-state.json#next_control_decisions",
+  "open_work_source": "PROJECT_BACKLOG.md",
+  "evidence_ack_source": "research/work-analysis-state.json#acknowledgements.control_decision_reviews",
+  "executor": "EXISTING_DAILY_1015_WORK_ONCE_PER_GATE",
+  "watcher": "EXISTING_AUTONOMOUS_PROJECT_MILESTONE_CONTROLLER",
+  "auto_work_scope": [
+    "READ_ONLY",
+    "DOCUMENTATION",
+    "INACTIVE_RESEARCH_CONTRACT",
+    "SAFE_PR_WITH_GREEN_CI"
+  ],
+  "user_release_required": [
+    "ACTIVE_STRATEGY_OR_EXECUTION",
+    "PAPER_OR_SHADOW_ACTIVATION",
+    "H3_H6_PROMOTION",
+    "KRAKEN_ORDER_PERMISSION_OR_REAL_MONEY",
+    "SECRETS_OR_NEW_PRIVILEGES",
+    "PAID_SERVICE_OR_BUDGET",
+    "IRREVERSIBLE_CHANGE"
+  ],
+  "extra_project_areas": [
+    {
+      "id": "architecture_dependencies",
+      "owner": "docs/project-control-plane-governance.md",
+      "gate": "EXISTING_ARCHITECTURE_GUARD_AND_SAFE_WORK_CI"
+    },
+    {
+      "id": "backlog_conversation_intake",
+      "owner": "PROJECT_BACKLOG.md",
+      "gate": "SAME_AUTHORIZED_CHAT_OR_WORK_TRANSACTION_PERSIST_THEN_ACK"
+    },
+    {
+      "id": "outage_resilience_and_recovery",
+      "owner": "docs/project-wide-outage-recovery-v1.md",
+      "gate": "EXISTING_FAILURE_EVENT_OR_LIVE_RESILIENCE_INHERITANCE_GATE"
+    },
+    {
+      "id": "github_quota_and_cost",
+      "owner": "docs/github-capacity-and-cost-strategy-v1.md",
+      "gate": "EXISTING_CAPACITY_GROWTH_GATE_ONLY"
+    },
+    {
+      "id": "mini_pc_deployment",
+      "owner": "PROJECT_BACKLOG.md",
+      "gate": "NEXT_ALREADY_NECESSARY_PHYSICAL_MINI_PC_GATE"
+    },
+    {
+      "id": "strategy_inheritance_and_economic_quality",
+      "owner": "research/v3-migration-ledger.json",
+      "gate": "DUE_ECONOMIC_REVIEW_AND_ONE_CHANGE_SUCCESSOR_GATE"
+    },
+    {
+      "id": "security_permissions_and_rls",
+      "owner": "PROJECT_BACKLOG.md",
+      "gate": "EXISTING_SECURITY_REVIEW_AND_RELEASE_APPROVAL"
+    },
+    {
+      "id": "notifications_and_user_decisions",
+      "owner": "docs/autonomous-followthrough-governance-v1.md",
+      "gate": "ONLY_MATERIAL_USER_ACTION_OR_RELEASE_DECISION"
+    }
+  ],
+  "safety": {
+    "no_new_scheduler": true,
+    "no_runtime_mutation": true,
+    "no_trade_or_orders": true,
+    "no_auto_activation": true,
+    "no_unverified_chat_ingestion": true,
+    "no_fake_completion": true
+  }
+}
