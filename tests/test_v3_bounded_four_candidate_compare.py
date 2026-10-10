@@ -37,7 +37,7 @@ class V3BoundedFourCandidateTests(unittest.TestCase):
             coin = "XBT" if duplicate_pair else names[i]
             pair = coin + "/EUR"
             tag = coin + "-EUR"
-            event = t + timedelta(seconds=i)
+            event = t + timedelta(seconds=10)
             run_id = 100 + i
             event_ts = int(event.timestamp())
             candidate = {
@@ -172,7 +172,7 @@ class V3BoundedFourCandidateTests(unittest.TestCase):
                                                 t + timedelta(seconds=20))
             self.assertEqual(selection, [])
             future = batch.eligible_handoffs(queue, t, control, set(), set(), t)
-            self.assertEqual(len(future), 1)
+            self.assertEqual(len(future), 0)
             too_old = batch.eligible_handoffs(queue, t, control, set(), set(),
                                               t + timedelta(seconds=1100))
             self.assertEqual(too_old, [])
