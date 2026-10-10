@@ -6,8 +6,8 @@ import unittest
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
-H3_GATE="V3_H3_001_ARCHIVE_INCONCLUSIVE_DISPOSITION_THEN_OPTIONAL_NEW_H3_TRIAL_AFTER_V2R4_ECONOMIC_PRIORITY_REVIEW_AND_SEPARATE_APPROVAL"
-H6_GATE="V3_H3_001_INCONCLUSIVE_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW_THEN_SEPARATE_H6_ONE_CHANGE_SHADOW_APPROVAL"
+H3_GATE="V2R4_72H_ECONOMIC_REVIEW_THEN_OPTIONAL_SEPARATELY_APPROVED_NEW_H3_VERSION"
+H6_GATE="V2R4_72H_ECONOMIC_REVIEW_THEN_SEPARATE_H6_ONE_CHANGE_SHADOW_APPROVAL"
 
 
 def check_followthrough(state, ledger, framework):
@@ -30,8 +30,9 @@ def check_followthrough(state, ledger, framework):
         problems.append("H3 archive status missing")
     if live:
         problems.append("Archived H3 falsely marked active")
-    if len(reviews)!=1 or reviews[0].get("status")!="ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY":
-        problems.append("H3 archive disposition no longer linked to project review")
+    disposition=archived[0].get("archive_disposition") if len(archived)==1 else None
+    if disposition!="DEFER_WITH_GATE" or reviews:
+        problems.append("H3 archive disposition closure missing or still open")
     if h3.get("pending_gate")!=H3_GATE:
         problems.append("H3 next prospective one-change test/approval gate lost")
     h3info=h3.get("recovery_followthrough") or {}
@@ -39,17 +40,19 @@ def check_followthrough(state, ledger, framework):
             or h3info.get("cloud_prospective_rows")!=0
             or h3info.get("reactivation_of_historic_trial_forbidden") is not True
             or h3info.get("new_trial_requires_new_baseline") is not True
+            or h3info.get("archive_disposition")!="DEFER_WITH_GATE"
             or h3info.get("no_automatic_shadow_start") is not True):
         problems.append("H3 inconclusive evidence or no-reactivation safeguards lost")
     if "now collects" in h3.get("rationale","").lower():
         problems.append("H3 ledger still claims stale current capture")
-    if len(q)!=1 or q[0].get("status")!="WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION":
-        problems.append("H6 may not start without H3 archival disposition")
+    if len(q)!=1 or q[0].get("status")!="WAIT_FOR_V2R4_ECONOMIC_REVIEW_AND_SEPARATE_EXPLICIT_APPROVAL":
+        problems.append("H6 may not start before V2R4 review and explicit approval")
     if h6.get("pending_gate")!=H6_GATE:
         problems.append("H6 sequencing/economic-release gate lost")
     h6info=h6.get("sequence_followthrough") or {}
     if (h6info.get("predecessor")!="orderflow_depth_imbalance"
-            or h6info.get("requires_explicit_h3_archive_disposition") is not True
+            or h6info.get("requires_explicit_h3_archive_disposition") is not False
+            or h6info.get("h3_archive_disposition")!="COMPLETED_DEFER_WITH_GATE"
             or h6info.get("requires_v2r4_economic_review") is not True
             or h6info.get("no_auto_start") is not True
             or h6info.get("no_duplicate_volume_vote") is not True):
@@ -82,13 +85,15 @@ class HComponentContinuityTests(unittest.TestCase):
         self.assertEqual(check_followthrough(state,ledger,framework),[])
         archive=[x for x in state["next_control_decisions"]
                  if x.get("id") == "V3-H3-ARCHIVE-DISPOSITION"]
-        self.assertEqual(len(archive),1)
-        self.assertEqual(archive[0]["status"],"ARCHIVE_REVIEW_DUE_NOT_FIXED_REVIEW_READY")
+        self.assertEqual(archive,[])
+        closed=next(x for x in state["closed_or_rejected_tracks"]
+                    if x.get("id")=="V3-H3-SHADOW-001")
+        self.assertEqual(closed["archive_disposition"],"DEFER_WITH_GATE")
         self.assertFalse(any(x.get("id")=="V3-H3-FIXED-REVIEW"
                              for x in state["next_control_decisions"]))
         self.assertEqual(state["strategy_changing_shadow_wip"]["active"],[])
         self.assertEqual(state["strategy_changing_shadow_wip"]["queued"][0]["status"],
-                         "WAIT_FOR_H3_ARCHIVED_INCOMPLETE_EXPLICIT_DISPOSITION")
+                         "WAIT_FOR_V2R4_ECONOMIC_REVIEW_AND_SEPARATE_EXPLICIT_APPROVAL")
 
     def test_h6_ungated_promotion_is_rejected(self):
         state,ledger,framework=self.source()
