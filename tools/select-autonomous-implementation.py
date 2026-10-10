@@ -17,6 +17,7 @@ ID_TO_GATE={
  "H10_PROSPECTIVE_JOIN_CONTRACT":"H10_FIRST_REVIEW_COMPLETE_AND_CONTRACT_ABSENT",
  "UNKNOWN_CONTROL_DECISION_ADAPTER":"UNSUPPORTED_NEXT_CONTROL_DECISION",
  "UNKNOWN_SHADOW_ADAPTER":"UNKNOWN_ACTIVE_SHADOW_ADAPTER",
+ "MINIPC_ANALYTICS_READONLY_PREP":"APPROVED_MINIPC_ANALYTICS_PLAN_AND_MISSING_INACTIVE_REUSE_PREP",
 }
 EFFECTS={"READ_ONLY_EVIDENCE_REVIEW","RESEARCH_ONLY_CONTRACT","VERSIONED_TESTS","DOCUMENTATION","NON_RUNTIME_PR"}
 FORBIDDEN={"TRADE_OR_ORDER","PRIVILEGE_OR_SECRET_CHANGE","FROZEN_STRATEGY_CHANGE",
@@ -70,6 +71,16 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
         open_work.append("UNKNOWN_CONTROL_DECISION_ADAPTER")
     if any(x.get("candidate_id")!="V3-H3-SHADOW-001" for x in shadows):
         open_work.append("UNKNOWN_SHADOW_ADAPTER")
+    # Pre-authorized Mini-PC work is a SINGLE, NON-RUNTIME research-prep task.
+    # Existing 10:15 Work consumes this deterministic gate; the plan alone is not execution.
+    mini_plan=root/"docs/minipc-analytics-rollout-v1.md"
+    mini_backlog=root/"PROJECT_BACKLOG.md"
+    mini_target=root/"research/v3/minipc-analytics-readonly-reuse-preflight-v1.md"
+    mini_plan_ready=(mini_plan.is_file() and mini_backlog.is_file()
+        and "PLAN_APPROVED_PREP_ONLY" in mini_plan.read_text(encoding="utf-8")
+        and "MINIPC_ANALYTICS_ROLLOUT_V1" in mini_backlog.read_text(encoding="utf-8"))
+    if mini_plan_ready and not mini_target.exists():
+        open_work.append("MINIPC_ANALYTICS_READONLY_PREP")
     digest=hashlib.sha256(json.dumps({
         "strategy_revision":(state.get("active_strategy") or {}).get("strategy_revision"),
         "series_id":(state.get("active_strategy") or {}).get("series_id"),
@@ -77,6 +88,8 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
         "next_control_decisions":next_ids,
         "h10_review_status":h10.get("status") if h10 else None,
         "h10_contract_present":(root/"research/v3/h10-kraken-outcome-context-join-contract-v1.json").exists(),
+        "mini_plan_ready":mini_plan_ready,
+        "mini_preflight_present":mini_target.exists(),
         "open_work":open_work
     },sort_keys=True).encode()).hexdigest()[:20]
     attempts=((ack or {}).get("autonomy_task_attempts") or {})
