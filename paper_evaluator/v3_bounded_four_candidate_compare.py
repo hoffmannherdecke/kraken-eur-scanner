@@ -130,6 +130,17 @@ def ensure_safety(trading_root: Path, expected_series: str,
     freeze_runtime_provenance(runtime, code_root, control)
 
 
+def verify_frozen_strategy_spec(spec: dict) -> None:
+    """Use the canonical V2R4 'fees' structure, without relaxing any limits."""
+    entry = spec.get("entry", {})
+    fees = spec.get("fees", {})
+    if (spec.get("strategy_revision") != REVISION
+            or entry.get("scout_notional_eur") != 50
+            or entry.get("stage2_notional_eur") != 50
+            or fees.get("taker_pct_per_side") != 0.6):
+        raise ValueError("SIZING_FEE_OR_REVISION_DRIFT_STOP")
+
+
 def run_batch(trading_root: Path, code_root: Path, expected_series: str,
               report: Path, wait_minutes: int = 60, *,
               sleep_fn=time.sleep, now_fn=lambda: datetime.now(timezone.utc)) -> dict:
@@ -144,12 +155,7 @@ def run_batch(trading_root: Path, code_root: Path, expected_series: str,
     runtime, control = discover_active_paper_runtime(trading_root, expected_series)
     ensure_safety(trading_root, expected_series, runtime, control, code_root)
     spec = json.loads((runtime / "paper_strategy_spec.json").read_text("utf-8"))
-    entry = spec.get("entry", {})
-    if (spec.get("strategy_revision") != REVISION
-            or entry.get("scout_notional_eur") != 50
-            or entry.get("stage2_notional_eur") != 50
-            or spec.get("fee", {}).get("taker_pct_per_side") != 0.6):
-        raise ValueError("SIZING_FEE_OR_REVISION_DRIFT_STOP")
+    verify_frozen_strategy_spec(spec)
     started = now_fn()
     journal = new_journal(report, control, started, wait_minutes)
     deadline = started + timedelta(minutes=wait_minutes)
