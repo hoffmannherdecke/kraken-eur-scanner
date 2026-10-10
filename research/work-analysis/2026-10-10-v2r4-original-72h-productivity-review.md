@@ -1,0 +1,9 @@
+# V2R4 Original-72h-Gate – 10.10.2026
+
+**DECISION_PACKET_READY / ECONOMIC_NOT_DEMONSTRATED.** Fällig 10.10. 18:42:55 UTC, Epoche ab 07.10. 18:42:55 UTC. Technischer Cutover 09.10. 11:01:35 UTC setzt Uhr nicht zurück. Vorher kein ACK/Originalbericht. Quellen: `project-current-state.json`, `PROJECT_BACKLOG.md`, `research/work-analysis-state.json`, `docs/autonomous-followthrough-governance-v1.md`, `docs/test-strategy-runbook.md`, `research/v3-migration-ledger.json`; Supabase read-only `paper_series`, `paper_technical_rotations`, `paper_candidate_outcomes`, `paper_trade_results`, `paper_series_completion_readiness`, `minipc_status_current`. Details: `research/work-analysis/2026-10-10-v2r4-original-72h-evidence.md`.
+
+Disjunkte Serien, identische Strategie: `PAPER-V2R4-20261007T184255Z` technical_closed: 1011 Outcomes, 260 vollständige 24h, 0 Trades; `PAPER-V2R4-20261009T110135Z` active: 666 Outcomes, 164/167 fällige 24h, 0 Trades. **1677 eindeutige Kandidaten, 96 Paare, 424 gereifte 24h, 0 Paper-Fills.** Drei fällige Audits fehlen; Vorgänger nach Cutover zensiert. Mini-PC HEALTHY nur Betriebsnachweis.
+
+Funnel: 591 initial REJECT, 1086 WAIT, 0 BUY. 946 WAIT→TTL ohne Trigger/KI; 127 echte Trigger→Modell-Recheck (125 REJECT, 2 WAIT), 13 weitere offen. Final 1662 REJECT, 15 WAIT, 0 BUY. **87,1 % WAIT→Expiry, 11,7 % WAIT→KI, 0 % Recheck→BUY.** 1073 Recheck-Datensätze sind keine 1073 KI-Aufrufe.
+
+**STOP:** keine ökonomische Promotion. **CONTINUE:** gefrorene Paper-Runtime bis separatem Stoppgate unverändert. **SUCCESSOR A:** vorhandene Coin-OHLC-/Volumen-/ATR-Provenienz als einen PIT-Input bei gleichem Evaluator/WAIT/Fees/Risk vergleichen; EXTENDED-Reentry erst separat als B. Bestehender 10:15-Work-Owner: ACK statt Doppelreview, kleine Paar-/Zeit-Kontrollkohorte, nur notwendige read-only Mini-PC-Probe; neuer One-change-Shadow nur nach expliziter Freigabe. H3 archiviert, H6 blockiert. Keine Runtime-/Echtgeldänderung oder neuen Jobs.
