@@ -14,6 +14,9 @@ name: V2R4 PR validation
       - 'paper_evaluator/v2r4_*.py'
       - 'research/v2r4/**'
       - 'tests/test_v2r4_*.py'
+      - 'paper_evaluator/v3_bounded_four_candidate_compare.py'
+      - 'tests/test_v3_bounded_four_candidate_compare.py'
+      - 'tools/run-minipc-v3-a-four-candidate-compare.ps1'
       - 'paper_evaluator/successor_coin_entry_evidence_v1.py'
       - 'tests/test_successor_coin_entry_evidence_v1.py'
       - '.github/workflows/v2r4-pr-validation.yml'
@@ -62,7 +65,8 @@ jobs:
             paper_evaluator/v2r4_local_recheck.py \
             paper_evaluator/successor_coin_entry_evidence_v1.py \
             paper_evaluator/v3_entry_handoff_probe.py \
-            paper_evaluator/v3_one_shot_model_compare.py
+            paper_evaluator/v3_one_shot_model_compare.py \
+            paper_evaluator/v3_bounded_four_candidate_compare.py
           python -m py_compile tools/v2r4-readonly-decision-funnel.py
           python -m py_compile paper_evaluator/v3_extended_reentry_review_v1.py
 
@@ -85,6 +89,7 @@ jobs:
             tests.test_v2r4_v3_entry_lineage_contract \
             tests.test_v2r4_v3_entry_handoff_probe \
             tests.test_v2r4_v3_one_shot_model_compare \
+            tests.test_v3_bounded_four_candidate_compare \
             tests.test_v2r4_readonly_decision_funnel \
             tests.test_v2r4_v3_extended_reentry_review \
             -v
@@ -107,6 +112,12 @@ jobs:
           ) | Out-Null
           if ($errors.Count -gt 0) { throw ($errors | Out-String) }
           Write-Output "V3_ONE_SHOT_LAUNCHER_PARSE_PASS"
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            "tools/run-minipc-v3-a-four-candidate-compare.ps1",
+            [ref]$tokens,[ref]$errors
+          ) | Out-Null
+          if ($errors.Count -gt 0) { throw ($errors | Out-String) }
+          Write-Output "V3_FOUR_CASE_BATCH_LAUNCHER_PARSE_PASS"
 
       - name: Harmless live Kraken WAIT watcher smoke
         if: steps.implementation.outputs.present == 'true'

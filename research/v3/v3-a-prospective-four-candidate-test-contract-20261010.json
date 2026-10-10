@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "kind": "V3_A_FOUR_CANDIDATE_INPUT_ONLY_MANUAL_PROSPECTIVE_RESEARCH_V1",
+  "status": "APPROVED_USER_BUDGET_PREP_ONLY_NOT_ACTIVATED",
+  "user_authorization": "2026-10-10: at most eight LLM model calls for at most four fresh cases; no orders or live-rule modifications",
+  "stage": "V3_A_COIN_ENTRY_PROVENANCE_ONLY",
+  "source_series_id": "PAPER-V2R4-20261009T110135Z",
+  "mode": "ONE_FOREGROUND_MINIPC_RUN_AT_MOST_60_MINUTES",
+  "candidate_policy": {
+    "new_events_only_after_start": true,
+    "max_candidates": 4,
+    "unique_spot_eur_pair_only": true,
+    "age_at_selection_seconds_max": 900,
+    "known_at_model_snapshot_only": true,
+    "first_decision_event_replay_claim": false,
+    "pre_existing_cases_reused": false
+  },
+  "budget": {
+    "max_actual_model_http_post_attempts_including_internal_retries": 8,
+    "max_http_post_attempts_per_candidate": 2,
+    "model_exception_fail_stop": true,
+    "idempotent_report_path": "Trading/Research/v3-a-four-candidate-input-only-20261010.json",
+    "no_auto_restart": true
+  },
+  "comparator": {
+    "frozen_evaluator_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+    "both_arms_same_candidate_ticker_public_context": true,
+    "only_changed_input": "PIT closed Coin-OHLC 1m/5m/15m / volume ratio / ATR14 / local low",
+    "wait_policy_unchanged": true,
+    "anti_chase_risk_unchanged": true,
+    "scout_eur": 50,
+    "stage2_eur": 50,
+    "taker_per_side_pct": 0.6,
+    "additional_spread_slippage_must_be_evaluated": true
+  },
+  "evidence": {
+    "purpose": "compare new input decision quality, not claim profitability",
+    "read_only_paper": true,
+    "no_shadow": true,
+    "no_order_writer": true,
+    "no_gh_cron": true,
+    "no_extra_work_run": true,
+    "no_h3_h6_h10_buy_vote": true,
+    "followups_matured_required_for_economics": true,
+    "matched_12_case_retrospective_panel_is_hypothesis_only": true,
+    "zero_buy_requires_disposition": true,
+    "mandatory_report": "source candidate IDs, model request budget, baseline vs successor, stop and stage2 validity, reasons, known-at and snapshot, 6h/24h followups if available"
+  },
+  "execution": {
+    "python": "paper_evaluator/v3_bounded_four_candidate_compare.py",
+    "powershell": "tools/run-minipc-v3-a-four-candidate-compare.ps1",
+    "ci": "tests/test_v3_bounded_four_candidate_compare.py",
+    "offline_ci_required": true,
+    "manual_physical_start_required": true,
+    "api_key_path_reused_from_existing_one_shot": true
+  },
+  "next_owner": "PROJECT_BACKLOG.md#MINIPC_ANALYTICS_ROLLOUT_V1",
+  "auto_promotion": false,
+  "real_money_actions": false
+}
