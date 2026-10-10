@@ -170,7 +170,8 @@
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
         "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
         "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
-        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md"
       ],
       "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -205,6 +206,14 @@
         "do_not_change_active_strategy": true,
         "pairs_show": "WAIT_TTL_EXPIRIES_AND_ACTUAL_TRIGGERED_RECHECKS_OCCURRED_IN_BOTH_OPPORTUNITY_AND_ADVERSE_OUTCOMES",
         "stage_B_wait_policy": "HOLD_UNTIL_PIT_A_ECONOMIC_DISPOSITION_NOT_A_GENERAL_TTL_RELAXATION"
+      },
+      "no_buy_decision_policy_audit_20261011": {
+        "status": "HARD_TWO_STAGE_CONVERSION_BOTTLENECK_EVIDENCED",
+        "audit": "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
+        "former_finding": "ORIGINAL_72H_946_WAIT_TTL_NO_TRUE_MODEL_RECHECK_AND_127_RECHECKS_ZERO_BUY",
+        "first_policy_priority": "SEPARATE_EXTENDED_FRESH_REVIEW_PREPARATION_OFFLINE",
+        "next_policy_hypothesis": "WAIT_EXPIRED_FRESH_RECHECK_ELIGIBILITY_DIFFERENT_EXPERIMENT_NOT_SIMULTANEOUS",
+        "no_repeated_generic_no_buy_audit": true
       }
     },
     {
@@ -241,7 +250,8 @@
         "tests/test_v2r4_v3_extended_reentry_review.py",
         "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
         "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
-        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md"
       ],
       "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS",
       "successor_refinement": {
@@ -326,6 +336,24 @@
           "ALGO/EUR"
         ],
         "policy": "NO_BLANKET_EXTENDED_BUY; SECOND_LEG_REVIEW_HYPOTHESIS_ONLY_AFTER_STAGE_A_PROSPECTIVE_EVIDENCE"
+      },
+      "no_buy_decision_policy_audit_20261011": {
+        "status": "PRIOR_FINDINGS_ALREADY_EVIDENCED_PREPARE_ONE_INACTIVE_POLICY_CANDIDATE",
+        "audit": "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
+        "prior_hypotheses": [
+          "V2R3-ADJ-HYP-HYP02-CONTINUATION_SECOND_LEG",
+          "V2R3-ADJ-HYP-HYP04-EXTENDED_REBUILD",
+          "V2R3-ADJ-HYP-HYP05_BAD_ENTRY_NOW_VS_DEAD_SETUP"
+        ],
+        "single_material_change": "EXTENDED_CONFIRMED_SECOND_LEG_FRESH_REVIEW_ELIGIBILITY_ONLY",
+        "reuse_existing_code": "paper_evaluator/v3_extended_reentry_review_v1.py",
+        "not_an_automatic_buy": true,
+        "preserves_stop_stage2_taker_0_60_each_side_and_50_plus_50": true,
+        "no_runtime_change": true,
+        "no_new_shadow_or_paper_activation": true,
+        "exclude_simultaneous_wait_ttl_change": true,
+        "next_gate": "STRICT_NEW_VERSIONED_OFFLINE_DRAFT_THEN_SEPARATE_RESEARCH_AND_SHADOW_APPROVAL",
+        "no_repeated_generic_no_buy_audit": true
       }
     },
     {
@@ -598,7 +626,8 @@
         "research/work-analysis/2026-10-10-v3-coin-entry-physical-zro-one-shot.md",
         "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
         "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
-        "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md"
+        "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
+        "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md"
       ],
       "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
       "dependencies": [
@@ -722,6 +751,13 @@
           "candidate_count_prospective_not_set": "SEPARATE_BOUNDED_COST_AND_RELEASE_GATE",
           "disposition": "STOP_REPEAT_HANDOFF_AUDITS_START_PROSPECTIVE_COIN_INPUT_ONLY_CAUSAL_COMPARISONS_WHEN_GATED"
         }
+      },
+      "no_buy_decision_policy_audit_20261011": {
+        "status": "INPUT_DELIVERY_PHYSICAL_E2E_PROVEN_PARTIALLY_ZERO_BUY_NOT_PROVEN_FIXED",
+        "audit": "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
+        "current_original_paper_source": "0_OF_1731_WITH_CANDIDATE_ENTRY_EVIDENCE",
+        "continuation": "RESEARCH_INPUT_KNOWN_AT_AND_SAFE_VALIDATOR_CATEGORIES; DO_NOT_BLOCK_SUCCESSOR_OFFLINE_POLICY_DRAFT",
+        "raw_four_case_journal_status": "PROSPECTIVE_TWO_MATCHED_WAIT_TO_WAIT_TWO_COIN_ATTACH_SKIPS_NO_NEW_AUTHORIZATION"
       }
     },
     {
