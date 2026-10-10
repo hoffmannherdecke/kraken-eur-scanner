@@ -170,7 +170,8 @@
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
         "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
         "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
-        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md"
       ],
       "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -205,6 +206,14 @@
         "do_not_change_active_strategy": true,
         "pairs_show": "WAIT_TTL_EXPIRIES_AND_ACTUAL_TRIGGERED_RECHECKS_OCCURRED_IN_BOTH_OPPORTUNITY_AND_ADVERSE_OUTCOMES",
         "stage_B_wait_policy": "HOLD_UNTIL_PIT_A_ECONOMIC_DISPOSITION_NOT_A_GENERAL_TTL_RELAXATION"
+      },
+      "v3_a_four_case_result_20261011": {
+        "report": "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
+        "baseline_wait": 2,
+        "successor_wait": 2,
+        "change_of_wait_to_buy": 0,
+        "meaning": "NO_REASON_TO_AUTO_RELAX_WAIT_OR_TTL",
+        "status": "B_POLICY_HOLD_UNTIL_CAUSAL_ECONOMIC_A_DISPOSITION"
       }
     },
     {
@@ -385,7 +394,8 @@
         "PROJECT_BACKLOG.md",
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
-        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
+        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md"
       ],
       "future_research_gate": "TARGETED_MICROSTRUCTURE_COST_RESEARCH",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -406,6 +416,15 @@
         "gross_roundtrip_pct": 1.2,
         "spread_slippage_stop_and_mae": "REQUIRED_BEFORE_VALID_BUY_OR_RELEASE",
         "no_relaxed_fees": true
+      },
+      "v3_a_four_case_result_20261011": {
+        "report": "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
+        "transactions_created": 0,
+        "valid_stop_priced_in_successor": 0,
+        "net_after_cost_pnl_proven": false,
+        "fee_side_pct_unchanged": 0.6,
+        "sizing_scout_eur": 50,
+        "sizing_stage2_eur": 50
       }
     },
     {
@@ -598,7 +617,8 @@
         "research/work-analysis/2026-10-10-v3-coin-entry-physical-zro-one-shot.md",
         "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
         "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
-        "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md"
+        "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
+        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md"
       ],
       "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
       "dependencies": [
@@ -636,11 +656,11 @@
       },
       "v3_opportunity_first": {
         "contract_id": "V3_OPPORTUNITY_FIRST_RISK_UNCHANGED_20261010",
-        "status": "A_PHYSICAL_ONE_CANDIDATE_MODEL_INPUT_E2E_PASS_ECONOMIC_NOT_PROVEN",
+        "status": "A_PHYSICAL_INPUT_RESEARCH_TWO_VALID_COMPARISONS_ZERO_BUY_TWO_ATTACH_SKIPS_ECONOMIC_NOT_PROVEN",
         "one_change": "COIN_ENTRY_PIT_CLOSED_1M_5M_15M_VOLUME_ATR_LOCAL_LOW_ONLY",
         "unchanged": "SAME_MODEL_WAIT_TTL_COST_STOP_SIZE",
-        "physical_next": "ARCHIVED_12_CANDIDATE_IDENTITY_PASSED_BUT_PIT_FEATURE_ABSENT; DEFINE_BOUNDED_PROSPECTIVE_MULTI_CANDIDATE_INPUT_ONLY_TEST_OVER_FRESH_CANDIDATES_WITH_RELEASE_AND_COST_GATE",
-        "economic_approval": "NOT_PROVEN_ZERO_BUYS_ON_BOTH_ARMS",
+        "physical_next": "DO_NOT_REPEAT_SAME_BATCH; DISPOSE_PROVENANCE_ATTACH_FAILURE_SUBREASON_SAFELY_BEFORE_NEW_PROSPECTIVE_SCOPE; MAINTAIN_SEPARATE_POLICY_B_GATE",
+        "economic_approval": "NOT_PROVEN_TWO_OF_FOUR_COMPLETE_BOTH_WAIT",
         "owner": "research/strategy-learning-causal-gate-v1.json#v3_opportunity_first_research",
         "physical_one_shot_evidence": {
           "kind": "PHYSICAL_USER_SCREENSHOT_PLUS_SUPABASE_ORIGINAL_CANDIDATE_READONLY_MATCH",
@@ -722,6 +742,62 @@
           "candidate_count_prospective_not_set": "SEPARATE_BOUNDED_COST_AND_RELEASE_GATE",
           "disposition": "STOP_REPEAT_HANDOFF_AUDITS_START_PROSPECTIVE_COIN_INPUT_ONLY_CAUSAL_COMPARISONS_WHEN_GATED"
         }
+      },
+      "v3_four_case_physical_learning_20261011": {
+        "kind": "V3_A_MANUAL_FOUR_CASE_PHYSICAL_RESULTS_V1",
+        "status": "COMPLETED_TWO_MATCHED_MODEL_PAIRS_TWO_COIN_ATTACH_SKIPS",
+        "report": "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
+        "source": "USER_SUPPLIED_MINIPC_RESEARCH_JOURNAL_POWER_SHELL_SCREENSHOT",
+        "local_research_journal": "Trading/Research/v3-a-four-candidate-input-only-20261010.json",
+        "max_model_http_attempts_authorized": 8,
+        "actual_model_http_requests_reserved": 4,
+        "four_cases_recorded": true,
+        "two_valid_matched_model_comparisons": true,
+        "two_skipped_coin_attach_before_models": true,
+        "decisions": [
+          {
+            "pair": "TIA/EUR",
+            "baseline": "WAIT",
+            "baseline_lane": "EXTENDED",
+            "with_coin": "WAIT",
+            "with_coin_lane": "CONTINUITY",
+            "reason_delta": "15M_VOLUME_SOFT_AND_NEAR_TERM_WEAKNESS",
+            "v3_structural_stop_proven": false
+          },
+          {
+            "pair": "ATOM/EUR",
+            "baseline": "WAIT",
+            "baseline_lane": "IGNITION",
+            "with_coin": "WAIT",
+            "with_coin_lane": "IGNITION",
+            "reason_delta": "SHORT_TERM_VOLUME_WEAK_MOMENTUM_CONFLICT_COST_HURDLE",
+            "v3_structural_stop_proven": false
+          },
+          {
+            "pair": "BAT/EUR",
+            "status": "SKIPPED_INPUT_UNAVAILABLE",
+            "phase": "COIN_ATTACH",
+            "exception_type": "ValueError",
+            "subreason": "UNKNOWN_NOT_LOGGED",
+            "model_http_requests": 0
+          },
+          {
+            "pair": "USELESS/EUR",
+            "status": "SKIPPED_INPUT_UNAVAILABLE",
+            "phase": "COIN_ATTACH",
+            "exception_type": "ValueError",
+            "subreason": "UNKNOWN_NOT_LOGGED",
+            "model_http_requests": 0
+          }
+        ],
+        "buy_comparisons": 0,
+        "paper_fills": 0,
+        "economic_edge_proven": false,
+        "no_reuse_of_existing_journal_or_remaining_budget": true,
+        "next_disposition": "NO_REPEAT_BATCH; EVIDENCE_QUALITY_GATE_FOR_PIT_ATTACH_DIAGNOSTICS_BEFORE_NEW_SEPARATELY_AUTHORIZED_RESEARCH_OR_POLICY_B",
+        "no_auto_promotion": true,
+        "no_live_or_paper_change": true,
+        "exact_candidate_ids_and_known_at_require_original_local_json": true
       }
     },
     {
