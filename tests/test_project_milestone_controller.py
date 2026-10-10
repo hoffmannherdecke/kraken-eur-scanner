@@ -207,17 +207,17 @@ class MilestoneTests(unittest.TestCase):
                    fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
                    candidate_outcomes=175,completed_trades=0,complete_24h=0,
                    series_age_days=.37,completion_ready=False,intake_should_stop=False)
-        now=dt.datetime(2026,10,9,19,55,tzinfo=dt.timezone.utc)
+        now=dt.datetime(2026,10,10,8,20,tzinfo=dt.timezone.utc)
         result=controller.evaluate(state,paper,None,now,ROOT)
         self.assertIn('H3:ARCHIVED_INCOMPLETE_NO_FIXED_REVIEW',result['statuses'])
-        self.assertIn('H6:BLOCKED_H3_ARCHIVED_INCOMPLETE_NO_AUTO_START',result['statuses'])
+        self.assertIn('H6:BLOCKED_V2R4_REVIEW_AND_EXPLICIT_APPROVAL_NO_AUTO_START',result['statuses'])
         self.assertNotIn('H3:FIXED_REVIEW_READY',result['statuses'])
         self.assertNotIn('V2R4:LOW_TRADE_REVIEW',result['statuses'])
         self.assertEqual(result['epoch_minimum_candidate_outcomes'],1186)
         self.assertEqual(result['epoch_minimum_complete_24h'],260)
         self.assertTrue(result['epoch_combines_verified_technical_segments'])
         events=[x for x in result['events'] if x['kind']=='H3_ARCHIVED_INCOMPLETE_REVIEW']
-        self.assertEqual(len(events),1)
+        self.assertEqual(events,[])
         self.assertFalse(any(x['kind']=='H3_STALE_EVIDENCE' for x in result['events']))
         self.assertFalse(result['orders'])
         self.assertFalse(result['strategy_changed'])
