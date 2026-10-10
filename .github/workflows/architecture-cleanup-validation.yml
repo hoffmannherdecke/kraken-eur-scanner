@@ -30,6 +30,10 @@ jobs:
             tools/minipc-status-sync.py \
             tools/v2r4-paper-local-runtime.py \
             tools/v2r4-shadow-cloud-sync.py
+      - name: V3 archived handoff PIT read-only tests
+        run: |
+          python -m py_compile tools/v3-a-archived-handoff-pit-audit.py
+          python -m unittest tests.test_v3_a_archived_handoff_pit_audit -v
       - name: Parse changed V2R4 Windows installer
         run: |
           pwsh -NoProfile -NonInteractive -Command '$tok=$null; $err=$null; [System.Management.Automation.Language.Parser]::ParseFile("tools/install-minipc-v2r4-paper-runtime.ps1",[ref]$tok,[ref]$err) | Out-Null; if ($err.Count -ne 0) { $err | Out-String | Write-Error; exit 1 }; Write-Output "PAPER_INSTALLER_PARSE_PASS"'
