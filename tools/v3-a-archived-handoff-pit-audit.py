@@ -28,7 +28,9 @@ def verify_handoff(row: dict, expected: dict, filename: str) -> dict:
     pair = expected["pair"]
     if not isinstance(row, dict) or row.get("candidate_id") != cid or row.get("pair") != pair:
         return {"status": "IDENTITY_MISMATCH"}
-    if Path(filename).stem != cid or row.get("action") != "REVIEW_ONLY_NOT_ORDER":
+    # The Mini-PC stores handoffs with wrappers/prefixes in the filename.
+    # Trust the validated canonical identity in the JSON, never a filename-only hit.
+    if cid not in Path(filename).stem or row.get("action") != "REVIEW_ONLY_NOT_ORDER":
         return {"status": "IDENTITY_MISMATCH"}
     try:
         event = clock(row["event_time_utc"])
@@ -91,9 +93,13 @@ def audit(casepack: dict, runtime_root: Path) -> dict:
     for case in cases:
         cid = case["candidate_id"]
         matched = []
+        # Match the filename convention actually used on the Mini-PC, identical
+        # to the previously successful read-only presence check. A filename
+        # hit alone proves nothing; verify_handoff checks the JSON identity.
         for folder in dirs:
-            file = folder / (cid + ".json")
-            if file.is_file():
+            for file in sorted(folder.glob("*" + cid + "*.json")):
+                if not file.is_file():
+                    continue
                 try:
                     candidate = json.loads(file.read_text("utf-8"))
                     matched.append(verify_handoff(candidate, case, file.name))
@@ -108,8 +114,11 @@ def audit(casepack: dict, runtime_root: Path) -> dict:
         results.append({"pair": case["pair"], "candidate_id": cid, **result})
 
     statuses = Counter(x["status"] for x in results)
-    complete = sum(x.get("scanner_candidate_present") and x.get("scanner_market_context_present")
-                   for x in results)
+    # An absent/corrupt identity lacks those fields. Never sum None or fail
+    # the entire bounded audit because one historical handoff is missing.
+    complete = sum(1 for x in results if
+                   x.get("scanner_candidate_present") is True
+                   and x.get("scanner_market_context_present") is True)
     claims = sum(x.get("historical_coin_pit_claim_in_handoff", False) for x in results)
     return {
         "kind": "V3_A_HISTORICAL_HANDOFF_READONLY_PIT_AUDIT_V1",
@@ -117,6 +126,12 @@ def audit(casepack: dict, runtime_root: Path) -> dict:
         "cases": results,
         "case_count": len(results),
         "valid_handoff_count": statuses["ORIGINAL_HANDOFF_VALID"],
+        "missing_original_count": statuses["MISSING_ORIGINAL"],
+        "ambiguous_original_count": statuses["AMBIGUOUS_MULTIPLE_COPIES"],
+        "invalid_original_count": sum(v for k, v in statuses.items()
+                                      if k not in ("ORIGINAL_HANDOFF_VALID",
+                                                   "MISSING_ORIGINAL",
+                                                   "AMBIGUOUS_MULTIPLE_COPIES")),
         "original_scanner_context_count": complete,
         "coin_pit_claims_inside_handoff": claims,
         "historical_coin_pit_authoritatively_proven_count": 0,
