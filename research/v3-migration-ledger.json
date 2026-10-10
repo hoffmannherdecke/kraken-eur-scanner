@@ -2,7 +2,7 @@
   "schema_version": 2,
   "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-09T19:05:00Z",
+  "updated_at_utc": "2026-10-10T08:15:00Z",
   "baseline_strategy": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
   "active_clean_series": "PAPER-V2R4-20261007T184255Z",
   "v2r4_status": "ACTIVE_PAPER_APPROVED",
@@ -316,7 +316,7 @@
       "category": "state_signal",
       "source_version": "V3 hypothesis",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "V3-H3-ASSOC-002 descriptive capture and bounded physical L2/CRC, isolated candidate→baseline→H3 E2E passed; HOWEVER strategy-changing V3-H3-SHADOW-001 was physically archived during 2026-10-09 V2R4 technical rotation and yielded ZERO Supabase prospective shadow-candidate evidence. This is INCONCLUSIVE_TECHNICAL_CENSORING, NOT completed/failed economic fixed review, NOT still collecting, and NOT promotion evidence. Original baseline/config/artifacts stay immutable. A new H3 shadow is an option only after explicit archive disposition, original 72h V2R4 economic review and a separately preregistered, explicitly approved prospective one-change trial with correct current baseline; never silently resurrect the old trial.",
+      "rationale": "V3-H3-ASSOC-002 descriptive capture and bounded physical L2/CRC plus isolated candidate→baseline→H3 E2E passed; however V3-H3-SHADOW-001 was physically archived during the 2026-10-09 V2R4 technical rotation and produced zero Supabase prospective shadow-candidate evidence. The 2026-10-10 archive disposition is DEFER_WITH_GATE: no economic accept/reject conclusion, no reactivation of H3-001, and no promotion evidence. A future H3 trial, if justified after V2R4 economic review, must be a new version with the current baseline, preregistration and explicit approval.",
       "evidence": [
         "research/v3/h3-assoc-001-technical-failure-review-20261002.json",
         "research/v3/h3-prospective-state-association-trial-v2.json",
@@ -325,21 +325,25 @@
         "research/v3/h3-assoc-002-valid-session-002-20261002.json",
         "research/v3/h3-assoc-002-valid-session-003-20261003.json",
         "research/v3/h3-association-reports/v3-h3-association-002-20261003-095025.json",
-        "research/v3/h3-assoc-002-fixed-review-20261003.json"
+        "research/v3/h3-assoc-002-fixed-review-20261003.json",
+        "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md"
       ],
-      "pending_gate": "V3_H3_001_ARCHIVE_INCONCLUSIVE_DISPOSITION_THEN_OPTIONAL_NEW_H3_TRIAL_AFTER_V2R4_ECONOMIC_PRIORITY_REVIEW_AND_SEPARATE_APPROVAL",
+      "pending_gate": "V2R4_72H_ECONOMIC_REVIEW_THEN_OPTIONAL_SEPARATELY_APPROVED_NEW_H3_VERSION",
       "recovery_followthrough": {
         "source_of_current_shadow_status": "project-current-state.json#strategy_changing_shadow_wip",
         "source_of_archive_evidence": "project-current-state.json#closed_or_rejected_tracks[V3-H3-SHADOW-001]",
-        "mandatory_review_owner": "project-current-state.json#next_control_decisions[V3-H3-ARCHIVE-DISPOSITION]",
+        "mandatory_review_owner": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
         "predecessor_economic_review": "project-current-state.json#next_control_decisions[V2R4-PRODUCTIVITY-REVIEW]",
         "historic_trial_status": "ARCHIVED_INCOMPLETE_NOT_FIXED_REVIEWED",
         "cloud_prospective_rows": 0,
         "reactivation_of_historic_trial_forbidden": true,
         "new_trial_requires_new_baseline": true,
-        "must_explicitly_choose": "RETRY_NEW_VERSION_WITH_ECONOMIC_RATIONALE_OR_DEFER_WITH_GATE_OR_REJECT_WITH_EVIDENCE",
+        "must_explicitly_choose": "COMPLETED_DEFER_WITH_GATE",
         "no_automatic_shadow_start": true,
-        "no_h6_promotion": true
+        "no_h6_promotion": true,
+        "archive_disposition": "DEFER_WITH_GATE",
+        "archive_disposition_completed_at_utc": "2026-10-10T08:15:00Z",
+        "next_eligible_action": "AFTER_V2R4_ECONOMIC_REVIEW_OPTIONALLY_PROPOSE_NEW_VERSIONED_H3_ONE_CHANGE_TRIAL_FOR_EXPLICIT_APPROVAL"
       }
     },
     {
@@ -439,7 +443,7 @@
       "category": "signal_state",
       "source_version": "V3 H6 hypothesis",
       "migration_status": "MORE_TESTING_REQUIRED",
-      "rationale": "V3-H6-INCR-001 MINI-PC physical trial and fixed incremental review were completed at sealed holdout; marginal volume contribution beyond fixed price direction was small/near zero, with no proven net trading advantage. It is NOT currently active and must not be auto-started merely because archived H3 leaves zero active strategy-changing shadows. Historic H3-001 was archived incomplete (0 prospective cloud events): first explicitly disposition that failed-to-measure experiment, separately settle original V2R4 72h low-BUY economic priority and require the normal one-change Shadow/paper/human release gates before considering any H6 follow-on. Candidate-specific 1m/5m/15m volume data source is owned by shared coin-entry provenance; it is NOT an independent H6 vote.",
+      "rationale": "V3-H6-INCR-001 MINI-PC physical trial and fixed incremental review were completed at sealed holdout; marginal volume contribution beyond fixed price direction was small/near zero, with no proven net trading advantage. H3-001 archival disposition is complete as DEFER_WITH_GATE, but H6 is not active and cannot auto-start. It remains blocked on the original V2R4 72h economic review, the normal one-change shadow gate and separate explicit approval. Candidate-specific 1m/5m/15m volume is shared provenance, not an independent H6 vote.",
       "evidence": [
         "research/v3/h6-price-volume-trend-precheck-v1.json",
         "research/v3/h1-h6-association-review-20261002.json",
@@ -447,16 +451,18 @@
         "research/v3/h6-incremental-trial-ledger-record-v1.json",
         "research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json",
         "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json",
-        "research/v3/coin-entry-evidence-lineage-v1.json"
+        "research/v3/coin-entry-evidence-lineage-v1.json",
+        "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md"
       ],
-      "pending_gate": "V3_H3_001_INCONCLUSIVE_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW_THEN_SEPARATE_H6_ONE_CHANGE_SHADOW_APPROVAL",
+      "pending_gate": "V2R4_72H_ECONOMIC_REVIEW_THEN_SEPARATE_H6_ONE_CHANGE_SHADOW_APPROVAL",
       "sequence_followthrough": {
         "predecessor": "orderflow_depth_imbalance",
-        "requires_explicit_h3_archive_disposition": true,
+        "requires_explicit_h3_archive_disposition": false,
         "requires_v2r4_economic_review": true,
         "standalone_incremental_net_edge": "NOT_PROVEN",
         "no_auto_start": true,
-        "no_duplicate_volume_vote": true
+        "no_duplicate_volume_vote": true,
+        "h3_archive_disposition": "COMPLETED_DEFER_WITH_GATE"
       }
     },
     {

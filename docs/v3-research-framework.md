@@ -960,3 +960,8 @@ bewusst weiterentwickelt oder evidenzbasiert ersetzt. H1 bleibt als
 eigene Decision-Authority verworfen. Eine Marktphase ist ein
 Kontext-/Segmentierungsmerkmal, **kein automatisch aktivierbarer Filter**.
 Keine neuen Work-Läufe, Pushs oder Live-Rechte.
+
+
+## H3-001 archive disposition — 2026-10-10
+
+H3-001 is closed as **DEFER_WITH_GATE**. The archived trial produced zero prospective rows in `public.v3_h3_shadow_evidence`; therefore its economic effect is **NOT_EVALUABLE**, not PASS or FAIL. The historical candidate, baseline and physical archive remain immutable and may not be rebound or reactivated. Any future H3 test requires a new version, the then-current baseline, preregistration, the completed V2R4 economic review and separate explicit approval. H6 remains inactive pending that V2R4 review and its own one-change approval. Canonical review: `research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md`.

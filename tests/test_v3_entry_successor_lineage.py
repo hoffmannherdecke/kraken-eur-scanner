@@ -55,12 +55,13 @@ class PermanentExtendedLearningLineageTests(unittest.TestCase):
         ledger,state,gate,lineage=documents()
         late=next(x for x in ledger["components"] if x["id"]=="late_chase_protection")
         late["successor_refinement"]["stage_A"]["depends_on"]="V3_H3_FIXED_REVIEW"
-        archive=next(x for x in state["next_control_decisions"]
-                     if x.get("id")=="V3-H3-ARCHIVE-DISPOSITION")
-        archive["id"]="V3-H3-FIXED-REVIEW"
+        state["next_control_decisions"].append({
+            "id": "V3-H3-FIXED-REVIEW",
+            "status": "READY",
+        })
         errs=MODULE.validate_documents(ledger,state,gate,lineage)
         self.assertTrue(any("archive disposition" in e for e in errs),errs)
-        self.assertTrue(any("obsolete fixed-review" in e for e in errs),errs)
+        self.assertTrue(any("closed H3 archive disposition" in e for e in errs),errs)
 
     def test_false_retroactive_approval_rejected(self):
         ledger, state, gate, lineage = documents()

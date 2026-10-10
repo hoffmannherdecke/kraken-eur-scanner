@@ -15,8 +15,8 @@
     "blocker": "UNKNOWN, inconsistent completion, provenance/data blocker, or unresolved contradiction requiring multi-artifact diagnosis",
     "v2r4_v3": "a documented V2R4 or V3 readiness/research gate explicitly requires Work-level synthesis; mere data accumulation does not qualify"
   },
-  "last_substantive_analysis_at": "2026-10-08T08:22:00Z",
-  "last_gate_reason": "A_POST_CLOSEOUT",
+  "last_substantive_analysis_at": "2026-10-10T08:15:00Z",
+  "last_gate_reason": "V3_H3_ARCHIVE_DISPOSITION",
   "acknowledgements": {
     "v2r3_24h_candidate_ids": [
       "20261001-093331-NIGHT-EUR-r36843059078",
@@ -1145,7 +1145,25 @@
         "evidence_generated_at": "2026-10-08T08:22:00Z",
         "scope": "POST_CLOSEOUT_TAIL_NO_FINAL_REVIEW_REOPEN"
       }
-    ]
+    ],
+    "control_decision_reviews": {
+      "V3_H3_001_ARCHIVE_DISPOSITION_20261010": {
+        "completed_at_utc": "2026-10-10T08:15:00Z",
+        "control_decision_id": "V3-H3-ARCHIVE-DISPOSITION",
+        "disposition": "DEFER_WITH_GATE",
+        "report": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+        "evidence": [
+          "project-current-state.json#closed_or_rejected_tracks[V3-H3-SHADOW-001]",
+          "public.v3_h3_shadow_evidence (0 rows, read-only verification 2026-10-10)",
+          "public.minipc_status_current (ARCHIVED_001_FROZEN_ORIGINAL_BASELINE_NO_REBIND, read-only verification 2026-10-10)",
+          "research/v3-migration-ledger.json#orderflow_depth_imbalance"
+        ],
+        "economic_fixed_review_completed": false,
+        "automatic_reactivation": false,
+        "user_decision_required": false,
+        "next_gate": "V2R4_72H_STRATEGY_EPOCH_20261010"
+      }
+    }
   },
   "safeguards": {
     "no_strategy_mutation": true,
@@ -1242,6 +1260,15 @@
       "report": "research/work-analysis/2026-10-08-v2r3-post-closeout-remaining-59.md",
       "final_review_reopened": false,
       "disposition": "NO_ACTION_WARRANTED"
+    },
+    {
+      "analyzed_at": "2026-10-10T08:15:00Z",
+      "gate_reason": "V3_H3_ARCHIVE_DISPOSITION",
+      "series_id": "V3-H3-SHADOW-001",
+      "report": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+      "disposition": "DEFER_WITH_GATE",
+      "prospective_cloud_rows": 0,
+      "economic_fixed_review_completed": false
     }
   ],
   "post_analysis_policy": {
@@ -1265,25 +1292,33 @@
     ]
   },
   "last_consequence_processing": {
-    "source_analysis": "research/work-analysis/2026-10-08-v2r3-post-closeout-remaining-59.md",
-    "processed_at_utc": "2026-10-08T08:22:00Z",
+    "source_analysis": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+    "processed_at_utc": "2026-10-10T08:15:00Z",
     "status": "PROCESSED",
     "downstream_artifacts": [
-      "research/work-analysis/2026-10-08-v2r3-post-closeout-remaining-59.md",
+      "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+      "project-current-state.json",
+      "PROJECT_BACKLOG.md",
+      "research/v3-migration-ledger.json",
+      "docs/v3-research-framework.md",
       "research/work-analysis-state.json"
     ],
-    "note": "Remaining 59 mature V2R3 cases did not contradict the closed final review. No successor change warranted."
+    "note": "Closed the overdue archival control decision without strategy activation. H3-001 remains immutable and economically inconclusive; H6 and any new H3 trial remain gated."
   },
   "consequence_processing": {
-    "last_processed_analysis": "research/work-analysis/2026-10-08-v2r3-post-closeout-remaining-59.md",
-    "processed_at": "2026-10-08T08:22:00Z",
+    "last_processed_analysis": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+    "processed_at": "2026-10-10T08:15:00Z",
     "artifacts_updated": [
-      "research/work-analysis/2026-10-08-v2r3-post-closeout-remaining-59.md",
+      "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+      "project-current-state.json",
+      "PROJECT_BACKLOG.md",
+      "research/v3-migration-ledger.json",
+      "docs/v3-research-framework.md",
       "research/work-analysis-state.json"
     ],
     "gated_change_required": false,
     "user_decision_required": false,
-    "disposition": "NO_ACTION_WARRANTED",
+    "disposition": "DEFER_WITH_GATE",
     "history": [
       {
         "processed_at": "2026-10-05T08:31:00Z",
@@ -1364,6 +1399,29 @@
         "gated_change_required": false,
         "user_decision_required": false,
         "disposition": "NO_ACTION_WARRANTED"
+      },
+      {
+        "processed_at": "2026-10-10T08:15:00Z",
+        "source_analysis": "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+        "classifications": {
+          "strategy_filter": "NOT_EVALUABLE_ZERO_PROSPECTIVE_EVIDENCE",
+          "timing_runtime": "TECHNICAL_CENSORING_ARCHIVE_CONFIRMED",
+          "data_provenance": "ZERO_CLOUD_ROWS_PHYSICAL_ARCHIVE_CONFIRMED",
+          "cost_execution": "NOT_EVALUABLE",
+          "temporal_regime": "NOT_EVALUABLE"
+        },
+        "artifacts_updated": [
+          "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+          "project-current-state.json",
+          "PROJECT_BACKLOG.md",
+          "research/v3-migration-ledger.json",
+          "docs/v3-research-framework.md",
+          "research/work-analysis-state.json"
+        ],
+        "duplicate_implementation_created": false,
+        "gated_change_required": false,
+        "user_decision_required": false,
+        "disposition": "DEFER_WITH_GATE"
       }
     ]
   },
