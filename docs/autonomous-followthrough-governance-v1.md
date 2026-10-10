@@ -32,3 +32,55 @@ Klar trennen:
 `DISCOVERED→USER_RELEASE_DECISION_PACKET→AUTHORIZED_CHANGE`.
 
 **Kein Ghost-Executor:** Ein Repo-Vertrag oder eingeplanter Task beweist keine autonome Bearbeitung. Erst ein echter Work-Lauf mit selektiertem sicheren Gate und einem fertig gemergten PR/CI-Nachweis belegt, dass die neue Umsetzungsstrecke tatsächlich funktioniert. Der **erste unbeaufsichtigte** Safe-Work-E2E-Run ist gesondert nachzuweisen; bis dahin Status *IMPLEMENTATION_ROUTE_PREPARED / E2E_PENDING*.
+
+
+## 5. Verbindliche Gate→Ausführung→ACK-Nachkontrolle (10.10.2026)
+
+**Fehlerfall:** Ein in Gesprächen zugesagter Meilenstein kann bereits in
+`next_control_decisions` stehen, trotzdem erst dann beachtet werden, wenn
+der Nutzer danach fragt. Eine Erinnerung, eine Issue-Meldung und eine
+ordnungsgemäß gestartete Automations-Runde sind **keine erledigte Arbeit**.
+
+Für jeden neuen materiellen Folgepunkt ist im selben Arbeitsvorgang der
+eine bestehende kanonische Owner festzulegen, inklusive `trigger/due_at_utc`,
+konkreter eigenständig erlaubter Folgehandlung, eventueller technischer
+Abhängigkeiten, nachvollziehbarem Abschlussbeleg und eskalationsfähigem
+Nutzer-Gate. Das bestehende tägliche Work (10:15 Europe/Berlin) **zieht
+fällige Punkte aktiv** aus dem Current State und Backlog; eine fällige
+Entscheidung wartet nicht auf ein neues Chat-Kommando. Ein bekanntes
+Gate darf an die nächste reguläre Ausführung gebunden sein; versprochene
+punktgenaue Starts sind nur dann korrekt, wenn ein entsprechend
+tatsächlich installierter Auslöser existiert.
+
+Für ausdrücklich zeitgebundene, folgenkritische Entscheidungen kann
+`next_control_decisions` optional
+`due_at_utc`, `followthrough_ack_key`, `followthrough_max_lag_hours`
+tragen. Der **bestehende** `autonomous-project-milestones.yml`-Controller
+prüft ohne neue Work-Ausführung, ob nach Ablauf der Nachfrist ein
+nachprüfbares ACK fehlt. ACK liegt zentral in
+`research/work-analysis-state.json#acknowledgements.control_decision_reviews`,
+Schlüssel `followthrough_ack_key`; erlaubte Felder
+`status: COMPLETED | DECISION_PACKET_READY | BLOCKED_WITH_ACTION`,
+`completed_at_utc` (nicht vor `due_at_utc`),
+`report` (wirklich vorhandener `research/work-analysis/*.md`-Bericht).
+Das ACK wird **erst nach tatsächlicher Analyse/Übergabe** geschrieben;
+eine Absichtserklärung gilt nicht. Fehlt es nach Nachfrist, entsteht
+dedupliziert `CONTROL_FOLLOWTHROUGH_MISSED` in bestehendem Issue #38
+und dem bisherigen Slack-Alarmweg, damit stille Hand-off-Verluste
+sichtbar werden. Die Nachfrist ist ein Kontrollmechanismus, keine
+künstliche Verlängerung der wirtschaftlichen Strategieprüfung.
+
+**Entscheidungshierarchie:** autonom lesen → im genehmigten reversiblen
+Scope erledigen → Nachweis/Ack schreiben → wenn gesonderte Strategie-,
+Runtime-, Rechte-, Budget- oder Echtgeldfreigabe nötig ist, einen einzigen
+konkreten Entscheidungsvorschlag mit Risiko und Rückweg vorlegen.
+Blockiert ein Punkt, andere unabhängige Safe-Work-Punkte weiterführen;
+kein mehrfaches Anfragen ohne neue Evidenz. Neue Work-/GitHub-/Mini-PC-
+Schleifen und unkontrollierte Strategieaktivierungen bleiben verboten.
+
+**Präzedenz:** Current-State ist nur deklarierte Strategie-Wahrheit,
+Mini-PC/Supabase für Echtlauf/Evidenz; Controller-Receipt ist nicht
+gleich wirtschaftlicher Trading-Erfolg. Der bestehende tägliche
+Work-Lauf ist der Ausführungsowner; GitHub kontrolliert nur Liveness.
+Neue Gesprächsinhalte können nur automatisch verwertet werden, wenn
+sie bei einer autorisierten Ausführung tatsächlich persistiert wurden.

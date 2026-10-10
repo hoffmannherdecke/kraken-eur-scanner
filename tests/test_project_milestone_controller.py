@@ -298,3 +298,37 @@ class MilestoneTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class FollowthroughReceiptTests(unittest.TestCase):
+    def test_due_gate_without_receipt_is_not_silently_forgotten(self):
+        import datetime as dt
+        import tempfile
+        state = controller.load_local_state(ROOT)
+        at = dt.datetime(2026, 10, 12, 8, 0, tzinfo=dt.timezone.utc)
+        with tempfile.TemporaryDirectory() as d:
+            overdue = controller.unacknowledged_control_decisions(state, at, Path(d))
+            self.assertIn(("V2R4-PRODUCTIVITY-REVIEW",
+                           "V2R4_72H_STRATEGY_EPOCH_20261010"), overdue)
+
+    def test_real_report_receipt_closes_handoff_and_early_gate_is_quiet(self):
+        import datetime as dt
+        import tempfile
+        import json
+        state = controller.load_local_state(ROOT)
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            early = dt.datetime(2026, 10, 10, 18, 43, tzinfo=dt.timezone.utc)
+            self.assertEqual(controller.unacknowledged_control_decisions(state, early, root), [])
+            report = root / "research/work-analysis/v2r4-72h-review.md"
+            report.parent.mkdir(parents=True)
+            report.write_text("review evidence", encoding="utf-8")
+            ack = root / "research/work-analysis-state.json"
+            ack.write_text(json.dumps({"acknowledgements":{"control_decision_reviews":{
+                "V2R4_72H_STRATEGY_EPOCH_20261010":{
+                    "status":"DECISION_PACKET_READY",
+                    "completed_at_utc":"2026-10-11T08:15:00Z",
+                    "report":"research/work-analysis/v2r4-72h-review.md"}}}}), encoding="utf-8")
+            after = dt.datetime(2026, 10, 12, 8, 0, tzinfo=dt.timezone.utc)
+            self.assertEqual(controller.unacknowledged_control_decisions(state, after, root), [])
+            report.unlink()
+            self.assertEqual(len(controller.unacknowledged_control_decisions(state, after, root)), 1)
