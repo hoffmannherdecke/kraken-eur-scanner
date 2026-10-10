@@ -46,6 +46,35 @@ class SafeAutonomyTests(unittest.TestCase):
         self.assertNotIn("UNKNOWN_CONTROL_DECISION_ADAPTER",[t["id"] for t in r["ready"]])
         self.assertEqual(r["status"],"NO_SAFE_WORK")
 
+    def test_minipc_plan_autonomous_preparation_is_ready_only_when_authorized(self):
+        with tempfile.TemporaryDirectory() as p:
+            root=Path(p)
+            (root/"docs").mkdir()
+            (root/"docs/minipc-analytics-rollout-v1.md").write_text(
+                "MINI-PC PLAN_APPROVED_PREP_ONLY",encoding="utf-8")
+            initial=selector.select(root,QUEUE,STATE,{})
+            self.assertNotIn("MINIPC_ANALYTICS_READONLY_PREP",
+                [x["id"] for x in initial["ready"]])
+            (root/"PROJECT_BACKLOG.md").write_text(
+                "MINIPC_ANALYTICS_ROLLOUT_V1",encoding="utf-8")
+            ready=selector.select(root,QUEUE,STATE,{})
+            self.assertIn("MINIPC_ANALYTICS_READONLY_PREP",
+                [x["id"] for x in ready["ready"]])
+            self.assertFalse(ready["strategy_changed"])
+            self.assertFalse(ready["orders"])
+            fingerprint=ready["fingerprint"]
+            ack={"autonomy_task_attempts":{"MINIPC_ANALYTICS_READONLY_PREP":{
+                "gate_fingerprint":fingerprint,"status":"ACTIVE_PR"}}}
+            suppressed=selector.select(root,QUEUE,STATE,ack)
+            self.assertNotIn("MINIPC_ANALYTICS_READONLY_PREP",
+                [x["id"] for x in suppressed["ready"]])
+            target=root/"research/v3/minipc-analytics-readonly-reuse-preflight-v1.md"
+            target.parent.mkdir(parents=True)
+            target.write_text("gated research review",encoding="utf-8")
+            done=selector.select(root,QUEUE,STATE,{})
+            self.assertNotIn("MINIPC_ANALYTICS_READONLY_PREP",
+                [x["id"] for x in done["ready"]])
+
     def test_unknown_next_decision_schedules_adapter(self):
         with tempfile.TemporaryDirectory() as p:
             state=copy.deepcopy(STATE)
