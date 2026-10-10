@@ -18,8 +18,12 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
         routing = json.loads((ROOT / "research/monitoring-evidence-routing-v1.json").read_text())
         self.assertEqual(result["stream_coverage_count"], len(routing["streams"]))
         self.assertGreaterEqual(result["crosscut_coverage_count"], 9)
-        self.assertIn("V3-H3-ARCHIVE-DISPOSITION",
-                      [x["id"] for x in result["ready_control_decisions"]])
+        self.assertNotIn("V3-H3-ARCHIVE-DISPOSITION",
+                         [x["id"] for x in result["ready_control_decisions"]])
+        state = json.loads((ROOT / "project-current-state.json").read_text())
+        h3 = next(x for x in state["closed_or_rejected_tracks"]
+                  if x.get("id") == "V3-H3-SHADOW-001")
+        self.assertEqual(h3.get("archive_disposition"), "DEFER_WITH_GATE")
         self.assertIn("V2R4-PRODUCTIVITY-REVIEW",
                       [x["id"] for x in result["gated_control_decisions"]])
         self.assertFalse(result["may_change_strategy"])
