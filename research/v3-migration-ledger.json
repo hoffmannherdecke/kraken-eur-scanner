@@ -2,7 +2,7 @@
   "schema_version": 2,
   "kind": "PREDECESSOR_SUCCESSOR_MIGRATION_LEDGER_V2",
   "status": "ACTIVE_LIVING_LEDGER",
-  "updated_at_utc": "2026-10-10T20:50:00Z",
+  "updated_at_utc": "2026-10-10T21:07:15Z",
   "baseline_strategy": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
   "active_clean_series": "PAPER-V2R4-20261007T184255Z",
   "v2r4_status": "ACTIVE_PAPER_APPROVED",
@@ -168,7 +168,9 @@
         "docs/v2r4-paper-activation-checklist.md",
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
-        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
+        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+        "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
       ],
       "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -190,6 +192,19 @@
         "no_stale_replay": true,
         "not_combined_with_extended_policy": true,
         "owner": "research/strategy-learning-causal-gate-v1.json#v3_opportunity_first_research"
+      },
+      "retrospective_12_casepack_20261010": {
+        "kind": "V3_RETROSPECTIVE_12_CASE_MATCHED_OPPORTUNITY_AND_ADVERSE_CONTROL_V1",
+        "status": "CASE_SELECTION_AND_CAUSAL_ASSESSMENT_COMPLETE_HISTORIC_V3_MODEL_REPLAYS_NOT_RUN",
+        "casepack": "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "report": "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "observed_at_utc": "2026-10-10T21:07:15Z",
+        "cohort_outcome_selected": true,
+        "retrospective_buy_or_economic_edge_proven": false,
+        "new_model_calls": 0,
+        "do_not_change_active_strategy": true,
+        "pairs_show": "WAIT_TTL_EXPIRIES_AND_ACTUAL_TRIGGERED_RECHECKS_OCCURRED_IN_BOTH_OPPORTUNITY_AND_ADVERSE_OUTCOMES",
+        "stage_B_wait_policy": "HOLD_UNTIL_PIT_A_ECONOMIC_DISPOSITION_NOT_A_GENERAL_TTL_RELAXATION"
       }
     },
     {
@@ -224,7 +239,9 @@
         "research/v3/coin-entry-evidence-lineage-v1.json",
         "paper_evaluator/v3_extended_reentry_review_v1.py",
         "tests/test_v2r4_v3_extended_reentry_review.py",
-        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
+        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+        "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
       ],
       "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS",
       "successor_refinement": {
@@ -289,6 +306,26 @@
         "observed_at_utc": "2026-10-10T20:05:05Z",
         "causal_net_edge_not_proven": true,
         "no_auto_activation": true
+      },
+      "retrospective_12_casepack_20261010": {
+        "kind": "V3_RETROSPECTIVE_12_CASE_MATCHED_OPPORTUNITY_AND_ADVERSE_CONTROL_V1",
+        "status": "CASE_SELECTION_AND_CAUSAL_ASSESSMENT_COMPLETE_HISTORIC_V3_MODEL_REPLAYS_NOT_RUN",
+        "casepack": "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "report": "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "observed_at_utc": "2026-10-10T21:07:15Z",
+        "cohort_outcome_selected": true,
+        "retrospective_buy_or_economic_edge_proven": false,
+        "new_model_calls": 0,
+        "do_not_change_active_strategy": true,
+        "extended_positive": [
+          "BAT/EUR",
+          "W/EUR"
+        ],
+        "extended_adverse": [
+          "ORCA/EUR",
+          "ALGO/EUR"
+        ],
+        "policy": "NO_BLANKET_EXTENDED_BUY; SECOND_LEG_REVIEW_HYPOTHESIS_ONLY_AFTER_STAGE_A_PROSPECTIVE_EVIDENCE"
       }
     },
     {
@@ -558,7 +595,9 @@
         "research/source-registry.json",
         "docs/v3-research-framework.md",
         "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
-        "research/work-analysis/2026-10-10-v3-coin-entry-physical-zro-one-shot.md"
+        "research/work-analysis/2026-10-10-v3-coin-entry-physical-zro-one-shot.md",
+        "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
       ],
       "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
       "dependencies": [
@@ -636,6 +675,28 @@
           "active_v2r4_unchanged": true,
           "followthrough": "REQUIRE_EVENT_CLOCK_ALIGNED_PROSPECTIVE_EVIDENCE_BEFORE_ANY_POLICY_B_OR_PAPER"
         }
+      },
+      "retrospective_12_casepack_20261010": {
+        "kind": "V3_RETROSPECTIVE_12_CASE_MATCHED_OPPORTUNITY_AND_ADVERSE_CONTROL_V1",
+        "status": "CASE_SELECTION_AND_CAUSAL_ASSESSMENT_COMPLETE_HISTORIC_V3_MODEL_REPLAYS_NOT_RUN",
+        "casepack": "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "report": "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "observed_at_utc": "2026-10-10T21:07:15Z",
+        "cohort_outcome_selected": true,
+        "retrospective_buy_or_economic_edge_proven": false,
+        "new_model_calls": 0,
+        "do_not_change_active_strategy": true,
+        "stage_A_input_status": "ORIGINAL_TIME_CLOSED_COIN_1M_5M_15M_VOLUME_ATR_NOT_VERIFIED; NO_HISTORICAL_REPLAY_OR_BACKFILL",
+        "paired_strata": {
+          "CONTINUITY": 2,
+          "EXTENDED": 2,
+          "IGNITION": 1,
+          "NONE": 1
+        },
+        "favorable": 6,
+        "adverse_controls": 6,
+        "next_gate": "VERIFY_ORIGINAL_HANDOFF_AND_PIT_FEATURES_ONLY_ONCE; OTHERWISE_PROSPECTIVE_SAME_TIME_ONE_CHANGE",
+        "physical_zro_one_shot_retained": true
       }
     },
     {
@@ -746,9 +807,27 @@
         "docs/test-strategy-runbook.md",
         "docs/v3-research-framework.md",
         "docs/master-version-register.md",
-        "docs/market-context-source-fusion-v1.md"
+        "docs/market-context-source-fusion-v1.md",
+        "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
       ],
-      "pending_gate": "V3_EXTERNAL_SOURCE_FIRST_UNATTENDED_E2E_AND_KNOWN_AT_MATURE_CANDIDATE_OUTCOME_JOIN_THEN_EXPLICIT_INTEGRATION_REVIEW_DISPOSITION_OR_V4_SUCCESSOR_GATE"
+      "pending_gate": "V3_EXTERNAL_SOURCE_FIRST_UNATTENDED_E2E_AND_KNOWN_AT_MATURE_CANDIDATE_OUTCOME_JOIN_THEN_EXPLICIT_INTEGRATION_REVIEW_DISPOSITION_OR_V4_SUCCESSOR_GATE",
+      "retrospective_12_casepack_20261010": {
+        "kind": "V3_RETROSPECTIVE_12_CASE_MATCHED_OPPORTUNITY_AND_ADVERSE_CONTROL_V1",
+        "status": "CASE_SELECTION_AND_CAUSAL_ASSESSMENT_COMPLETE_HISTORIC_V3_MODEL_REPLAYS_NOT_RUN",
+        "casepack": "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "report": "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "observed_at_utc": "2026-10-10T21:07:15Z",
+        "cohort_outcome_selected": true,
+        "retrospective_buy_or_economic_edge_proven": false,
+        "new_model_calls": 0,
+        "do_not_change_active_strategy": true,
+        "h10_closed_30m_or_5m_records_prior_3h": "0_OF_12",
+        "h1_shadow_source_period": "2026-10-03_TO_2026-10-05_NOT_SAME_DECISION_DATES",
+        "h3_shadow_rows": 0,
+        "source_manager_at_event_knowledge": "NOT_VERIFIED",
+        "policy": "NO_FUTURE_SOURCES_BACKFILLED_AS_KNOWN_AT_ORIGINAL_DECISION; RUN_AS_SOURCE_ABLATION_ONLY_AFTER_VERIFIABLE_PROVENANCE"
+      }
     },
     {
       "id": "unified_monitoring_feedback_ownership",
