@@ -61,7 +61,8 @@ class V3EntryLineageContractTests(unittest.TestCase):
         runner=(ROOT/"tools/v2r4-paper-local-runtime.py").read_text("utf-8")
         self.assertNotIn("successor_coin_entry_evidence_v1", evaluator)
         self.assertNotIn("successor_coin_entry_evidence_v1", runner)
-        self.assertIn("V3_H3_FIXED_REVIEW_BEFORE_ANY_NEW_STRATEGY_CHANGING_SHADOW",self.contract["review_gates"])
+        self.assertIn("V3_H3_001_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW_BEFORE_NEW_SHADOW",self.contract["review_gates"])
+        self.assertNotIn("V3_H3_FIXED_REVIEW_BEFORE_ANY_NEW_STRATEGY_CHANGING_SHADOW",self.contract["review_gates"])
         self.assertTrue(any("PROSPECTIVE" in x for x in self.contract["review_gates"]))
 
 

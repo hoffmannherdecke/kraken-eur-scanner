@@ -67,6 +67,46 @@ class V3OneShotModelCompareTests(unittest.TestCase):
         self.assertTrue(d["valid_stage2_above_ask"])
         self.assertNotIn("paper_entry",d)
 
+    def test_readonly_diagnostic_stops_before_secrets_and_models(self):
+        # A genuine research candidate+public-input preparation is allowed.
+        # No key file exists, and any model call is a hard test failure.
+        with tempfile.TemporaryDirectory() as d:
+            home=Path(d)
+            app=home/"Runtime/v2r4-paper-stage-d8b35a8ec2e6"
+            app.mkdir(parents=True)
+            ctrl={"enabled":True,"paper_only":True,"real_money_actions_enabled":False,
+                  "strategy_revision":"V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+                  "series_id":"PAPER-V2R4-TEST-SERIES",
+                  "series_started_at_utc":dt(-1800),
+                  "release_repo_sha":"d8b35a8ec2e6"+"0"*28}
+            (app/"paper_runtime_control.json").write_text(json.dumps(ctrl))
+            (app/"paper_strategy_spec.json").write_text("{}")
+            ticker={"ask":10,"bid":9.99,"last":10,"spread_pct":0.1}
+            with patch("paper_evaluator.v3_one_shot_model_compare.freeze_runtime_provenance",return_value={"evaluate.py":"test"}), \
+                 patch("paper_evaluator.v3_one_shot_model_compare.select_fresh_handoff",return_value=(Path("mock.json"),candidate())), \
+                 patch("paper_evaluator.v3_one_shot_model_compare.evaluate.kraken_ticker",return_value=ticker), \
+                 patch("paper_evaluator.v3_one_shot_model_compare.build_context",return_value={"kraken_execution_ticker":ticker}), \
+                 patch("paper_evaluator.v3_one_shot_model_compare.fetch_public_entry_evidence",return_value=evidence()), \
+                 patch("paper_evaluator.v3_one_shot_model_compare.now_utc",return_value=dt(14)), \
+                 patch("paper_evaluator.v3_one_shot_model_compare.evaluate.call_evaluator",side_effect=AssertionError("MODEL_MUST_NOT_BE_CALLED")):
+                result=execute_one_shot(home,home,"PAPER-V2R4-TEST-SERIES",diagnose_only=True)
+            self.assertEqual(result["status"],"INPUT_READY_NO_MODEL_CALLS_NOT_A_STRATEGY_PASS")
+            self.assertEqual(result["model_calls"],0)
+            self.assertFalse(result["secret_read"])
+            self.assertFalse(result["orders"])
+            self.assertFalse(result["active_v2r4_changed"])
+
+    def test_safe_failure_stage_does_not_expose_raw_exception(self):
+        from paper_evaluator.v3_one_shot_model_compare import checked, PreflightStageError
+        def failed():
+            raise ValueError("candidate entry evidence incomplete; secret=DO_NOT_PRINT")
+        with self.assertRaises(PreflightStageError) as failure:
+            checked("COIN_INPUT_ATTACH",failed)
+        self.assertEqual(failure.exception.phase,"COIN_INPUT_ATTACH")
+        self.assertEqual(failure.exception.safe_reason,"COIN_BARS_INCOMPLETE_OR_STALE")
+        self.assertNotIn("DO_NOT_PRINT",str(failure.exception))
+
+
     def test_active_technical_stage_must_match_exact_series_and_release_hash(self):
         with tempfile.TemporaryDirectory() as d:
             home=Path(d)
