@@ -1162,6 +1162,22 @@
         "automatic_reactivation": false,
         "user_decision_required": false,
         "next_gate": "V2R4_72H_STRATEGY_EPOCH_20261010"
+      },
+      "V2R4_72H_STRATEGY_EPOCH_20261010": {
+        "status": "DECISION_PACKET_READY",
+        "control_decision_id": "V2R4-PRODUCTIVITY-REVIEW",
+        "completed_at_utc": "2026-10-10T18:52:50.470Z",
+        "report": "research/work-analysis/2026-10-10-v2r4-original-72h-productivity-review.md",
+        "evidence": [
+          "research/work-analysis/2026-10-10-v2r4-original-72h-evidence.md",
+          "public.paper_candidate_outcomes",
+          "public.paper_technical_rotations",
+          "public.paper_series_completion_readiness"
+        ],
+        "disposition": "ECONOMIC_NOT_DEMONSTRATED_STOP_PROMOTION_CONTINUE_FROZEN_EVIDENCE_SUCCESSOR_A_ONLY",
+        "automatic_activation": false,
+        "real_money_actions": false,
+        "followthrough_owner": "research/v3-migration-ledger.json#late_chase_protection.successor_refinement.stage_A"
       }
     }
   },
