@@ -462,10 +462,11 @@
         "research/v3/v3-buy-gate-flexibility-prereg-20261011.json",
         "research/v3/v3-paper-experimental-ab-contract-20261011.json",
         "docs/v3-context-fusion-research-v1.md",
-        "docs/market-source-autonomy-v1.md"
+        "docs/market-source-autonomy-v1.md",
+        "research/v3/v3-p3-ab-five-approval-20261011.json"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PREPARE_ONE_BOUND_PROSPECTIVE_SAME_CLOCK_STANDARD_VS_P2_VS_P3_EXPERIMENT_FULL_ASSESSMENT_COST_AND_6H24H_SHADOW_GATE_WITH_NO_MODEL_CALLS_UNTIL_NEW_APPROVAL; TRACK_REAL_SOURCE_STEWARD_PILOT_E2E_IN_EXISTING_2H_OWNER",
+      "next_concrete_action": "AFTER_NEW_OFFLINE_CI_PASS_PERFORM_ONE_MANUAL_BOUNDED_MINIPC_P3_STANDARD_VS_EXPERIMENT_RESEARCH_5_QUALIFIED_HTTP10_6H; NO_AUTOSTART; THEN_CONSERVATIVE_6H24H_PATHWISE_OUTCOMES_AND_SEPARATE_PAPER_RELEASE_DECISION",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -482,7 +483,29 @@
       "v2r4_remains_only_active_paper": true,
       "v3_paper_active": false,
       "no_real_money": true,
-      "no_new_scheduler": true
+      "no_new_scheduler": true,
+      "bounded_p3_standard_experimental_test": {
+        "approval_status": "USER_APPROVED_2026_10_11_ONCE_NOT_YET_EXECUTED",
+        "approval_contract": "research/v3/v3-p3-ab-five-approval-20261011.json",
+        "runner": "paper_evaluator/v3_p3_ab_five_bounded_research.py",
+        "minipc_manual_handoff": "tools/run-minipc-v3-p3-ab-five.ps1",
+        "qualifying_setups_max": 5,
+        "model_http_attempts_including_retries_max": 10,
+        "observation_minutes_max": 360,
+        "current_execution_state": "CODE_PREPARED_AWAIT_CI_AND_PHYSICAL_MINIPC_MANUAL_EXECUTION",
+        "initial_6h_24h_outcomes": "NOT_YET_OBSERVED",
+        "strategy": "V3_P3_CONTINUITY_STANDARD_GE_1_2_VS_EXP_ONE_CHANGE_GE_1_0_LT_1_2",
+        "permissions_not_granted": [
+          "ANY_UNBOUNDED_MODEL_CALLS",
+          "V3_PAPER_WRITER",
+          "REAL_MONEY",
+          "V2R4_TUNING",
+          "ADDITIONAL_SHADOW",
+          "AUTOMATIC_RETRY",
+          "NEW_SCHEDULE"
+        ],
+        "no_previous_trial_budget_reuse": true
+      }
     }
   }
 }
