@@ -21,7 +21,8 @@ from paper_evaluator.v3_bounded_four_candidate_compare import (
     BudgetExhausted, checkpoint, discover_active_paper_runtime,
     freeze_runtime_provenance, safe_token, verify_frozen_strategy_spec)
 from paper_evaluator.v3_entry_handoff_probe import attach_to_future_evaluator, utc
-from paper_evaluator.v3_second_leg_policy_candidate_v1 import propose_second_leg_review
+from paper_evaluator.v3_second_leg_policy_candidate_v1 import (
+    propose_second_leg_review, MIN_BASE_BARS, CLOSED_BAR_SECONDS)
 from paper_evaluator.successor_coin_entry_evidence_v1 import fetch_public_entry_evidence
 from paper_context import build_context
 
@@ -31,6 +32,8 @@ MAX_MODEL_HTTP_ATTEMPTS = 10
 MAX_PER_CASE = 2
 MAX_WAIT_MINUTES = 90
 MAX_SECOND_LEG_AGE_SECONDS = 4 * 3600
+MIN_SECOND_LEG_AGE_SECONDS = (MIN_BASE_BARS + 1) * CLOSED_BAR_SECONDS
+RECHECK_AT_MOST_ONCE_PER_CLOSED_15M_SECONDS = CLOSED_BAR_SECONDS
 ELIGIBLE = "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
 USER_APPROVAL = "APPROVE V3-B SHADOW-5 / HTTP-10"
 AUTHORITY_FILE = "research/v3/v3-b-shadow5-approval-20261011.json"
@@ -114,6 +117,38 @@ def select_original_extended(decisions: Path, queue: Path, control: dict,
     return sorted(result, key=lambda p: (p[0]["event_time_utc"], p[0]["candidate_id"]))
 
 
+
+def select_due_second_leg(cohort: list[tuple[dict, dict]], existing: list[dict],
+                          now: datetime) -> tuple[dict, dict, dict | None] | None:
+    """At most 5 original cases; revisit SAME cases only after a new closed 15m.
+
+    A not-yet-matured original candidate costs no case-slot and no model
+    budget. A temporary non-reclaim/volume setup is NOT permanently discarded
+    on its first sample. The same cohort is sampled at most once per 15 minutes;
+    after 4h the original exits and can never re-enter this finite trial.
+    """
+    by_id={case["source_candidate_id"]:case for case in existing}
+    for candidate, original in cohort:
+        cid=candidate["candidate_id"]
+        age=(now-utc(candidate["event_time_utc"])).total_seconds()
+        if not MIN_SECOND_LEG_AGE_SECONDS <= age <= MAX_SECOND_LEG_AGE_SECONDS:
+            continue
+        found=by_id.get(safe_token(cid))
+        if found is None:
+            if len(existing) >= MAX_CASES:
+                continue
+            return candidate, original, None
+        if found["status"] in (
+            "MATCHED_RESEARCH_COMPLETE_NOT_PAPER_BUY",
+            "STOP_BUDGET_CAP", "STOPPED_UNVERIFIED_MODEL_OR_INPUT"):
+            continue
+        last=found.get("last_eligibility_checked_at_utc")
+        if last is not None and (now-utc(last)).total_seconds() < RECHECK_AT_MOST_ONCE_PER_CLOSED_15M_SECONDS:
+            continue
+        return candidate,original,found
+    return None
+
+
 def closed_15m_history(altname: str, observed: datetime) -> list[dict]:
     qs = urllib.parse.urlencode({"pair":altname, "interval":15})
     response = evaluate.http_json(
@@ -170,34 +205,37 @@ def main_run(trading_root: Path, code_root: Path, report: Path, wait_minutes: in
     journal = journal_start(report, control["series_id"],initial,wait_minutes)
     original_http = evaluate.http_json
     previous_model_key = os.environ.get("OPENAI_API_KEY")
-    seen:set[str] = set()
     deadline = initial + timedelta(minutes=wait_minutes)
     try:
-        while len(journal["cases"]) < MAX_CASES and now_fn() <= deadline:
+        while (journal["completed_matched_reviews"] < MAX_CASES
+               and now_fn() <= deadline):
             runtime_now,control_now = discover_active_paper_runtime(trading_root,EXPECTED_SERIES)
             if runtime_now != runtime or control_now != control:
                 raise ValueError("ACTIVE_PAPER_IDENTITY_CHANGED_STOP")
             freeze_runtime_provenance(runtime,code_root,control)
+            observed_now = now_fn()
             cohort = select_original_extended(runtime/"paper_decisions",
-                runtime/"handoff_queue",control,now_fn(),seen)
-            if not cohort:
+                runtime/"handoff_queue",control,observed_now,set())
+            selected = select_due_second_leg(cohort,journal["cases"],observed_now)
+            if selected is None:
                 remaining = (deadline-now_fn()).total_seconds()
                 if remaining <= 0:
                     break
                 sleep_fn(min(60,remaining))
                 continue
-            candidate, historical = cohort[0]
+            candidate, historical, case = selected
             cid = candidate["candidate_id"]
-            seen.add(cid)
-            case = {"source_candidate_id":safe_token(cid),
-                    "pair":safe_token(candidate["pair"]),
-                    "original_decision":historical["decision"]["decision"],
-                    "original_lane":historical["decision"]["setup_lane"],
-                    "original_event_at_utc":candidate["event_time_utc"],
-                    "model_http_attempts_reserved":0,
-                    "status":"INPUT_PENDING"}
-            journal["cases"].append(case)
-            checkpoint(report,journal)
+            if case is None:
+                case = {"source_candidate_id":safe_token(cid),
+                        "pair":safe_token(candidate["pair"]),
+                        "original_decision":historical["decision"]["decision"],
+                        "original_lane":historical["decision"]["setup_lane"],
+                        "original_event_at_utc":candidate["event_time_utc"],
+                        "model_http_attempts_reserved":0,
+                        "eligibility_checks":0,
+                        "status":"INPUT_PENDING"}
+                journal["cases"].append(case)
+                checkpoint(report,journal)
             phase = "PUBLIC_COIN_SECOND_LEG"
             try:
                 ticker = evaluate.kraken_ticker(candidate["altname"])
@@ -210,7 +248,9 @@ def main_run(trading_root: Path, code_root: Path, report: Path, wait_minutes: in
                 case["second_leg_eligibility_status"]=hint["status"]
                 case["new_coin_known_at_utc"]=coin.get("known_at_utc")
                 case["review_decision_clock_utc"]=clock
-                case["status"]="ELIGIBILITY_CHECKED_NO_BUY"
+                case["last_eligibility_checked_at_utc"]=clock
+                case["eligibility_checks"] += 1
+                case["status"]="ELIGIBILITY_PENDING_NEXT_CLOSED_BAR_NO_BUY"
                 checkpoint(report,journal)
                 if hint["status"] != ELIGIBLE or hint.get("request_model_recheck_only") is not True:
                     continue
@@ -273,6 +313,8 @@ def main_run(trading_root: Path, code_root: Path, report: Path, wait_minutes: in
             journal["status"]="WINDOW_ELAPSED_OR_FIVE_ORIGINAL_CASES_REVIEWED"
         if journal["status"]=="RUNNING":
             journal["status"]="WINDOW_ELAPSED_OR_FIVE_ORIGINAL_CASES_REVIEWED"
+        if journal["status"]=="WINDOW_ELAPSED_OR_FIVE_ORIGINAL_CASES_REVIEWED" and journal["completed_matched_reviews"] == 0:
+            journal["status"]="COMPLETED_NO_ELIGIBLE_SECOND_LEG_MODEL_EVIDENCE"
     except Exception as exc:
         journal["status"]="STOPPED_PRECONDITION_NO_AUTO_RETRY"
         journal["failure_type"]=type(exc).__name__
@@ -305,7 +347,8 @@ def main() -> int:
             "cases":len(result.get("cases",[])), "report":str(args.report),
             "orders":0,"paper_changed":False},sort_keys=True),flush=True)
         return 0 if result["status"] in ("READY_READ_ONLY_NO_MODEL_CALL",
-            "WINDOW_ELAPSED_OR_FIVE_ORIGINAL_CASES_REVIEWED") else 2
+            "WINDOW_ELAPSED_OR_FIVE_ORIGINAL_CASES_REVIEWED",
+            "COMPLETED_NO_ELIGIBLE_SECOND_LEG_MODEL_EVIDENCE") else 2
     except (OSError,ValueError,TypeError,KeyError):
         print("V3_B_SHADOW5_BLOCKED_BEFORE_MODEL_OR_ALREADY_RECORDED",flush=True)
         return 2

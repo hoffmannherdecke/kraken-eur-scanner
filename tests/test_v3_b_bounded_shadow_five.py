@@ -137,7 +137,7 @@ class ApprovedV3BShadowTests(unittest.TestCase):
                 result=mod.main_run(root,PROJECT,report,0,now_fn=lambda:t)
             self.assertEqual(result["completed_matched_reviews"],0)
             self.assertEqual(result["model_http_attempts_reserved"],0)
-            self.assertEqual(result["cases"][0]["status"],"ELIGIBILITY_CHECKED_NO_BUY")
+            self.assertEqual(result["cases"][0]["status"],"ELIGIBILITY_PENDING_NEXT_CLOSED_BAR_NO_BUY")
 
     def test_retries_cannot_exceed_2_requests_per_candidate(self):
         with tempfile.TemporaryDirectory() as d:
@@ -177,6 +177,57 @@ class ApprovedV3BShadowTests(unittest.TestCase):
             row["series_id"]="PAPER-V2R4-FOREIGN"
             rowpath.write_text(json.dumps(row))
             self.assertEqual(mod.select_original_extended(decisions,queue,ctrl,t,set()),[])
+
+
+    def test_not_yet_mature_original_does_not_consume_one_of_five_slots(self):
+        with tempfile.TemporaryDirectory() as d:
+            root,stage,ctrl,t=self.fixture(d,n=1)
+            cohort=mod.select_original_extended(stage/"paper_decisions",stage/"handoff_queue",
+                                                ctrl,t-timedelta(minutes=72),set())
+            # Candidate is only 13m old; 1-3h closed base cannot exist.
+            self.assertEqual(mod.select_due_second_leg(cohort,[],t-timedelta(minutes=72)),None)
+            report=root/"budget.json"
+            with ExitStack() as s:
+                for x in self.mocks(stage,ctrl,t): s.enter_context(x)
+                s.enter_context(patch.object(mod,"select_original_extended",return_value=cohort))
+                result=mod.main_run(root,PROJECT,report,0,now_fn=lambda:t-timedelta(minutes=72))
+            self.assertEqual(len(result["cases"]),0)
+            self.assertEqual(result["model_http_attempts_reserved"],0)
+            self.assertEqual(result["status"],"COMPLETED_NO_ELIGIBLE_SECOND_LEG_MODEL_EVIDENCE")
+
+    def test_same_original_candidate_rechecked_only_after_new_closed_15m_bar(self):
+        with tempfile.TemporaryDirectory() as d:
+            root,stage,ctrl,t=self.fixture(d,n=1)
+            cohort=mod.select_original_extended(stage/"paper_decisions",
+                                                stage/"handoff_queue",ctrl,t,set())
+            candidate,original,fresh=mod.select_due_second_leg(cohort,[],t)
+            self.assertIsNone(fresh)
+            cid=candidate["candidate_id"]
+            sample={"source_candidate_id":cid, "status":"ELIGIBILITY_PENDING_NEXT_CLOSED_BAR_NO_BUY",
+                    "last_eligibility_checked_at_utc":t.isoformat(),
+                    "eligibility_checks":1}
+            self.assertIsNone(mod.select_due_second_leg(cohort,[sample],t+timedelta(minutes=5)))
+            chosen=mod.select_due_second_leg(cohort,[sample],t+timedelta(minutes=15))
+            self.assertEqual(chosen[0]["candidate_id"],cid)
+            self.assertIs(chosen[2],sample)
+            sample["status"]="MATCHED_RESEARCH_COMPLETE_NOT_PAPER_BUY"
+            self.assertIsNone(mod.select_due_second_leg(cohort,[sample],t+timedelta(minutes=15)))
+            sample["status"]="ELIGIBILITY_PENDING_NEXT_CLOSED_BAR_NO_BUY"
+            self.assertIsNone(mod.select_due_second_leg(cohort,[sample],t+timedelta(hours=4)))
+
+    def test_five_slot_capacity_is_still_frozen_during_ineligible_rechecks(self):
+        with tempfile.TemporaryDirectory() as d:
+            root,stage,ctrl,t=self.fixture(d,n=5)
+            cohort=mod.select_original_extended(stage/"paper_decisions",
+                                                stage/"handoff_queue",ctrl,t,set())
+            five=[{"source_candidate_id":c["candidate_id"],"status":"ELIGIBILITY_PENDING_NEXT_CLOSED_BAR_NO_BUY",
+                    "last_eligibility_checked_at_utc":t.isoformat(),"eligibility_checks":1}
+                  for c,_ in cohort]
+            self.assertEqual(len(five),5)
+            self.assertIsNone(mod.select_due_second_leg(cohort,five,t+timedelta(minutes=2)))
+            chosen=mod.select_due_second_leg(cohort,five,t+timedelta(minutes=15))
+            self.assertIsNotNone(chosen)
+            self.assertEqual(chosen[0]["candidate_id"],five[0]["source_candidate_id"])
 
 
 if __name__=="__main__":
