@@ -387,6 +387,35 @@
       "real_money_actions": false
     },
     "next_owner": "PROJECT_BACKLOG.md#MINIPC_ANALYTICS_ROLLOUT_V1",
-    "activation_evidence": "NOT_YET_PROVEN"
+    "activation_evidence": "NOT_YET_PROVEN",
+    "historical_twelve_case_disposition_20261011": {
+      "status": "CLOSED_HISTORICAL_LEARNING_NO_NEW_HISTORICAL_MODEL_REPLAY",
+      "known_originals": 12,
+      "original_handoff_identity_pass": 12,
+      "historical_original_full_closed_coin_pit_proven": 0,
+      "original_six_favorable_six_adverse_outcome_conditioned": true,
+      "actual_economic_valid_buy_paths": 0,
+      "machine_gate": "paper_evaluator/v3_a_historical_learning_closure_v1.py",
+      "existing_casepack": "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+      "existing_report": "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+      "adopt_now_v3_inactive": [
+        "PURE_V3_FULL_P4_DETERMINISTIC_WAIT_GRAMMAR_VALIDATION",
+        "REUSE_EXISTING_CLOSED_COIN_PIT_ATR_LOW_HANDOFF",
+        "REUSE_EXISTING_P3_FAIL_REASON_AND_RESPONSE_CLOCK_DIAGNOSTICS"
+      ],
+      "do_not_adopt": [
+        "RETRO_OUTCOME_TO_PROSPECTIVE_MODEL_CONTEXT",
+        "BLANKET_WAIT_TO_BUY",
+        "BLANKET_EXTENDED_BUY",
+        "LOWER_FEES_OR_IGNORE_STOP",
+        "PREMATURE_V3_PAPER_RELEASE"
+      ],
+      "prospective_gate": "SAME_KNOWN_AT_CLOCK_TRUE_MODEL_P0_INPUT_THEN_ONE_CHANGE_P3_ONLY_AFTER_SPECIFIC_RUNTIME_BUDGET_APPROVAL",
+      "approval_consumed_old_pr186": true,
+      "active_v2r4_modified": false,
+      "shadow_or_paper_executed_by_this_work": false,
+      "new_model_calls": 0,
+      "real_money_actions": false
+    }
   }
 }
