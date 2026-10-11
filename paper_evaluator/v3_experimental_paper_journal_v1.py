@@ -116,6 +116,8 @@ def make_receipt(*,series_id:str,revision:str,candidate_id:str,pair:str,
     if phase in OUTCOME_PHASES and result=="MATURE_COMPLETE":
         if (k-t).total_seconds()<OUTCOME_PHASES[phase]*3600:
             raise ValueError("6h/24h/72h followup is not yet mature")
+    if data is None:
+        data = {}
     if not isinstance(data,dict) or not set(data).issubset(DATA_FIELDS):
         raise ValueError("only canonical non-secret telemetry fields allowed")
     _validate_tree(data)
