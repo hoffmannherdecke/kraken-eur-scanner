@@ -33,6 +33,10 @@
   "scopes": {
     "strategy": [
       {
+        "path": "research/v3/v3-b-shadow5-approval-20261011.json",
+        "role": "LATEST_EXPLICIT_CROSS_CHAT_V3B_SHADOW5_10_HTTP_USER_APPROVAL_INHERIT_DO_NOT_REASK_OR_PROMOTE"
+      },
+      {
         "path": "docs/strategy-version-map.md",
         "role": "VERSION_SCOPE_AND_INHERITANCE"
       },
@@ -92,6 +96,10 @@
       }
     ],
     "operations": [
+      {
+        "path": "research/v3/v3-b-shadow5-approval-20261011.json",
+        "role": "LATEST_EXPLICIT_CROSS_CHAT_V3B_SHADOW5_10_HTTP_USER_APPROVAL_INHERIT_DO_NOT_REASK_OR_PROMOTE"
+      },
       {
         "path": "docs/project-wide-outage-recovery-v1.md",
         "role": "RESILIENCE_AND_RECOVERY"
