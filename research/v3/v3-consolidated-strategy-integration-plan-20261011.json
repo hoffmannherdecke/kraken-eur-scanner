@@ -1032,7 +1032,9 @@
       "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
       "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
       "paper_evaluator/v3_experimental_paper_journal_v1.py",
-      "paper_evaluator/v3_full_entry_decision_candidate_v1.py"
+      "paper_evaluator/v3_full_entry_decision_candidate_v1.py",
+      "paper_evaluator/v3_experimental_paper_family_router_v1.py",
+      "paper_evaluator/v3_experimental_paper_pathwise_economics_v1.py"
     ],
     "documentation": "research/work-analysis/2026-10-11-v3-multiversion-paper-actionable-closure.md",
     "execution_gate": "tools/v3_experimental_paper_technical_gate.py",
@@ -1042,6 +1044,8 @@
     "ci_tests_are_not_physical_e2e": true,
     "strategy_arms_cannot_be_claimed_causal_winners_until_followups": true,
     "separate_h3_h6_gates_intact": true,
-    "next": "REAL_PROSPECTIVE_V3_MODEL_INPUT_P4_JOURNAL_FOLLOWUPS_SINGLE_WRITER_DRYRUN_AND_CAS_BEFORE_PHYSICAL_V2R4_TO_V3"
+    "next": "REAL_PROSPECTIVE_V3_MODEL_INPUT_P4_JOURNAL_FOLLOWUPS_SINGLE_WRITER_DRYRUN_AND_CAS_BEFORE_PHYSICAL_V2R4_TO_V3",
+    "pathwise_economics_status": "PURE_CONSERVATIVE_1M_STOP_FIRST_FEE_STAGE2_ENGINE_CI_ONLY",
+    "real_kraken_closed_1m_path_cloud_paper_writer_connected": false
   }
 }
