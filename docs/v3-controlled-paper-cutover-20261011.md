@@ -1,4 +1,4 @@
-# Kontrollierter Paper-Stratenwechsel V2R4 → V3 (Nutzerauftrag 11.10.2026)
+# Kontrollierter Paper-Strategiewechsel V2R4 → V3 (Nutzerauftrag 11.10.2026)
 
 Status: **V3-PAPER-ZIEL AUSDRÜCKLICH BEAUFTRAGT / ECHTE AKTIVIERUNG WEITERHIN GESPERRT**. Verbindlicher Übergabeindex **innerhalb** der bestehenden V3-P1-Owner-/Control-Plane, kein neuer Cron, keine Shadow-Instanz, kein zweites Paper-Ledger.
 
@@ -28,7 +28,7 @@ Status: **V3-PAPER-ZIEL AUSDRÜCKLICH BEAUFTRAGT / ECHTE AKTIVIERUNG WEITERHIN G
 
 ## 3. Weitere bislang leicht vergessene Übergaben
 
-- Die laufenden Scanner-Trigger, Kranken-EUR Pair-Status, Slack `SCANNER_CANDIDATE_V1 REVIEW_ONLY_NOT_ORDER`, Supabase-RLS/Service-Token, Self-Hosted Runner, MINI-PC Watchdog/Supervisor, 04:00 Backups, WireGuard, Backup/Rollback, Throttles, 45min Dublettenschutz und separate Monitor-/Statusüberwachung sind **Komponenten der Infrastruktur**, nicht eine neue Strategie-Version. Sie sollen erhalten bleiben und nur notwendige versionsgebundene Endpunkte/Serien-IDs nach physischer Probe wechseln. Keine weiteren Berechtigungen/Secrets voraussetzen.
+- Die laufenden Scanner-Trigger, Kraken-EUR Pair-Status, Slack `SCANNER_CANDIDATE_V1 REVIEW_ONLY_NOT_ORDER`, Supabase-RLS/Service-Token, Self-Hosted Runner, MINI-PC Watchdog/Supervisor, 04:00 Backups, WireGuard, Backup/Rollback, Throttles, 45min Dublettenschutz und separate Monitor-/Statusüberwachung sind **Komponenten der Infrastruktur**, nicht eine neue Strategie-Version. Sie sollen erhalten bleiben und nur notwendige versionsgebundene Endpunkte/Serien-IDs nach physischer Probe wechseln. Keine weiteren Berechtigungen/Secrets voraussetzen.
 - Die künftig separate vollautonome **KI-Shadow-Architektur** bleibt fremd und unabhängig; keine Änderung der ursprünglichen V2R4/V3-Originale aus diesem Konzept.
 - Quellen-H10/Smart Money, H11/Polymarket, P5 Quellensteward und Marktregime laufen als Forschungs-/Beobachterpfade weiter, sind **keine neuen BUY-Vetos**. H1 bleibt verworfen, H3-001 archiviert und H6 nicht automatisch aktiv. Keine H-Mehrfachaktivierung als „V3 komplett“.
 - **Zeit:** Fasttrack gilt ohne künstliche Mindestdauer, wenn unabhängige, risiko-/netto- und Followup-reife Evidenz fertig ist; fehlende unabhängige Belege sind keine Erlaubnis zur Zahlenschönung. Vergleich derselben V2R4-Fingerprint über die 2 technischen V2R4-Teilserien; ihre 72h Uhr wird nicht neu gestartet.
