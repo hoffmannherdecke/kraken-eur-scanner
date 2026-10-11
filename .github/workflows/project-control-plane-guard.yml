@@ -79,6 +79,8 @@ on:
       - "tests/test_v3_entry_successor_lineage.py"
       - "tests/test_v3_h_component_followthrough.py"
       - "tools/strategy_successor_gate.py"
+      - "tools/v3_experimental_paper_technical_gate.py"
+      - "tests/test_v3_experimental_paper_technical_gate.py"
       - "tests/test_strategy_successor_gate.py"
       - "docs/test-strategy-runbook.md"
       - "tools/project_milestone_controller.py"
@@ -170,6 +172,8 @@ on:
       - "tests/test_v3_entry_successor_lineage.py"
       - "tests/test_v3_h_component_followthrough.py"
       - "tools/strategy_successor_gate.py"
+      - "tools/v3_experimental_paper_technical_gate.py"
+      - "tests/test_v3_experimental_paper_technical_gate.py"
       - "tests/test_strategy_successor_gate.py"
       - "docs/test-strategy-runbook.md"
       - "tools/project_milestone_controller.py"
@@ -248,6 +252,10 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_v3_buy_gate_flexibility_prereg.py' -v
       - name: Validate current state
         run: python tools/validate-project-current-state.py
+      - name: Validate strict technical-only experimental Paper release without invented profits
+        run: |
+          python -m py_compile tools/v3_experimental_paper_technical_gate.py
+          python -m unittest discover -s tests -p 'test_v3_experimental_paper_technical_gate.py' -v
       - name: Enforce successor causal-learning and entry-productivity gate
         run: |
           python -m py_compile tools/strategy_successor_gate.py

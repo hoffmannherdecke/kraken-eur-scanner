@@ -10,6 +10,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+# This gate is imported both as tools.strategy_successor_gate (unit tests)
+# and as strategy_successor_gate (direct validator scripts from tools/).
+if __package__:
+    from tools.v3_experimental_paper_technical_gate import validate_experimental_paper_packet
+else:
+    from v3_experimental_paper_technical_gate import validate_experimental_paper_packet
 
 ROOT = Path(__file__).resolve().parents[1]
 GATE_FILE = "research/strategy-learning-causal-gate-v1.json"
@@ -137,6 +143,14 @@ def validate_learning_gate(root: Path = ROOT,
             release_evidence = _read(root / path)
         except (OSError, ValueError, json.JSONDecodeError, TypeError) as exc:
             return errors + ["NEW_STRATEGY_BLOCKED: missing/invalid real decision-chain release evidence: " + type(exc).__name__]
+    # The optional EXPERIMENTAL PAPER path deliberately does NOT require a
+    # profitable BUY before Paper testing. It DOES require physical technical
+    # proof, immutable cohort/journals, explicitly bounded model cost, one
+    # writer, verified rollback and a separate economic promotion gate.
+    # No V3 runtime starts here; unchanged normal successor rules below.
+    if release_evidence.get("paper_phase") == "EXPERIMENTAL_PAPER_ONLY":
+        return errors + validate_experimental_paper_packet(root, active_revision,
+                                                           release_evidence)
     if release_evidence.get("kind") != "SUCCESSOR_STRATEGY_CAUSAL_RELEASE_EVIDENCE_V1":
         errors.append("NEW_STRATEGY_BLOCKED: wrong successor evidence kind")
     if release_evidence.get("strategy_revision") != active_revision:
