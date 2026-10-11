@@ -284,7 +284,8 @@
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
         "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
         "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
-        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "paper_evaluator/v3_a_historical_learning_closure_v1.py"
       ],
       "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS",
       "successor_refinement": {
@@ -419,6 +420,23 @@
         "one_strategy_changing_shadow_limit": 1,
         "active_v2r4_change": false,
         "auto_promotion": false
+      },
+      "historical_12_case_closure_20261011": {
+        "source_casepack": "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "decision_report": "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "pure_machine_closure": "paper_evaluator/v3_a_historical_learning_closure_v1.py",
+        "physical_handoff_audit": "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
+        "matched_cases": 12,
+        "known_good_handoffs": 12,
+        "historically_proven_full_coin_pit_at_t0": 0,
+        "verified_economic_buy_paths": 0,
+        "model_replays_executed": 0,
+        "case_selection_hindsight_conditioned": true,
+        "active_v2r4_changed": false,
+        "real_money_actions": false,
+        "status": "NO_BLANKET_WAIT_TO_BUY_NO_BLANKET_EXTENDED_TO_BUY",
+        "decision": "HOLD_RISK_RULES_UNCHANGED_UNTIL_ONE_CHANGE_REAL_PIT_ECONOMIC_TRIAL",
+        "causal_attribution_from_hindsight_not_allowed": true
       }
     },
     {
@@ -482,7 +500,9 @@
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
         "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
         "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
-        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "paper_evaluator/v3_a_historical_learning_closure_v1.py"
       ],
       "future_research_gate": "TARGETED_MICROSTRUCTURE_COST_RESEARCH",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -531,6 +551,25 @@
         "one_strategy_changing_shadow_limit": 1,
         "active_v2r4_change": false,
         "auto_promotion": false
+      },
+      "historical_12_case_closure_20261011": {
+        "source_casepack": "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "decision_report": "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "pure_machine_closure": "paper_evaluator/v3_a_historical_learning_closure_v1.py",
+        "physical_handoff_audit": "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
+        "matched_cases": 12,
+        "known_good_handoffs": 12,
+        "historically_proven_full_coin_pit_at_t0": 0,
+        "verified_economic_buy_paths": 0,
+        "model_replays_executed": 0,
+        "case_selection_hindsight_conditioned": true,
+        "active_v2r4_changed": false,
+        "real_money_actions": false,
+        "status": "INHERIT_IDENTICAL_FEES_SPREAD_SLIPPAGE_STOP_STAGE2_CLOSED_DIAGNOSIS",
+        "fee_pct_each_side": 0.6,
+        "scout_eur": 50,
+        "stage2_eur": 50,
+        "unproven_economic_release": true
       }
     },
     {
@@ -764,7 +803,8 @@
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
         "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
         "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
-        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "paper_evaluator/v3_a_historical_learning_closure_v1.py"
       ],
       "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
       "dependencies": [
@@ -971,6 +1011,25 @@
         "one_strategy_changing_shadow_limit": 1,
         "active_v2r4_change": false,
         "auto_promotion": false
+      },
+      "historical_12_case_closure_20261011": {
+        "source_casepack": "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "decision_report": "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "pure_machine_closure": "paper_evaluator/v3_a_historical_learning_closure_v1.py",
+        "physical_handoff_audit": "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
+        "matched_cases": 12,
+        "known_good_handoffs": 12,
+        "historically_proven_full_coin_pit_at_t0": 0,
+        "verified_economic_buy_paths": 0,
+        "model_replays_executed": 0,
+        "case_selection_hindsight_conditioned": true,
+        "active_v2r4_changed": false,
+        "real_money_actions": false,
+        "status": "CLOSED_HISTORICAL_SOURCE_AUDIT_ADOPT_V3_COIN_PIT_INPUT_PRIORITY_NO_ECONOMIC_RELEASE",
+        "engineering_adoption": "REUSE_EXISTING_INACTIVE_KRAKEN_CLOSED_COIN_OHLC_VOLUME_ATR_LOCAL_LOW_HANDOFF_AS_FUTURE_MODEL_DECISION_CONTEXT",
+        "physical_market_to_full_model_buy_path_verified": false,
+        "dependency": "PROSPECTIVE_TRUE_P0_FULL_MODEL_CONSUMER_PIT_AND_RISK_EVIDENCE",
+        "no_more_generic_handoff_audits": true
       }
     },
     {
