@@ -225,8 +225,14 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
                 and epoch_min_outcomes >= 100
                 and epoch_min_mature24 >= 30
                 and epoch_min_trades == 0):
-            statuses.append("V2R4:LOW_TRADE_REVIEW")
-            notices.append(event("PAPER_LOW_TRADES", series,
+            if control_review_acknowledged(
+                    state, "V2R4-PRODUCTIVITY-REVIEW", now, root):
+                # A true 0-BUY problem remains, but the reviewed same cohort
+                # must not generate another GitHub comment/email.
+                statuses.append("V2R4:LOW_TRADE_REVIEW_ACKNOWLEDGED_NO_REPEAT")
+            else:
+                statuses.append("V2R4:LOW_TRADE_REVIEW")
+                notices.append(event("PAPER_LOW_TRADES", series,
                                  "72h-STRATEGIEEPOCHEN-FRÜHREVIEW (Uhr ab 07.10. "
                                  "20:42:55 MESZ; technische Serienrotation KEIN RESET): "
                                  "beide nachprüfbaren technischen Teilserien "
@@ -367,6 +373,40 @@ def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -
             "strategy_changed": False, "orders": False,
             "real_money_actions": False}
 
+
+
+def control_review_acknowledged(state: dict, decision_id: str,
+                                now: dt.datetime, root: Path) -> bool:
+    """A real dated Work receipt closes this *review*, never the Paper series.
+
+    A completed economic 72h review must not create a new GitHub comment/email
+    at the next schedule; 0-BUY remains an economic status and successor blocker.
+    Unlike the overdue check, this receipt check works within the 24h grace.
+    """
+    task = next((d for d in state.get("next_control_decisions") or []
+                 if d.get("id") == decision_id), None)
+    if task is None:
+        return False
+    due, ack_key = task.get("due_at_utc"), task.get("followthrough_ack_key")
+    if not isinstance(due, str) or not isinstance(ack_key, str):
+        return False
+    try:
+        due_time = iso_time(due)
+        raw = json.loads((root / "research/work-analysis-state.json").read_text("utf-8"))
+        receipt = (((raw.get("acknowledgements") or {}).get("control_decision_reviews")
+                    or {}).get(ack_key) or {})
+        if not isinstance(receipt, dict) or receipt.get("status") not in {
+                "COMPLETED", "DECISION_PACKET_READY"}:
+            return False
+        report, stamp = receipt.get("report"), receipt.get("completed_at_utc")
+        if not isinstance(report, str) or not re.fullmatch(
+                r"research/work-analysis/[A-Za-z0-9_.-]+[.]md", report):
+            return False
+        if not isinstance(stamp, str) or not (root / report).is_file():
+            return False
+        return due_time <= iso_time(stamp) <= now
+    except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
+        return False
 
 
 def due_followthrough_events(state: dict, now: dt.datetime, root: Path) -> list:
