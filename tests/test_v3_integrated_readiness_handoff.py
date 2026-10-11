@@ -30,7 +30,7 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         self.assertFalse(h["real_cost_validated_buy_verified"])
         self.assertFalse(h["new_model_shadow_or_paper_trial_authorized"])
         self.assertFalse(h["v3_paper_active"])
-        self.assertFalse(h["no_new_scheduler"] is False)
+        self.assertTrue(h["no_new_scheduler"])
         self.assertTrue(h["v2r4_remains_only_active_paper"])
         self.assertEqual(t["sequence"][1]["status"],
                          "V3B_SECOND_SHADOW5_CLOSED_NO_ELIGIBLE_AND_NO_ECONOMIC_PROOF")
@@ -53,7 +53,7 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         self.assertIn("P2",p["immediate_action"]["next"])
         self.assertNotIn("PR #159 pure review eligibility",p["immediate_action"]["next"])
         r=p["reconciliation_20261011"]
-        self.assertIn("NOT_PROVEN",r["status"])
+        self.assertIn("UNPROVEN",r["status"])
         self.assertIn("UNVERIFIED",r["source_steward_actual_e2e"])
         self.assertIn("21",r["context_real_evidence"])
         reg=data("research/v3/v3-paper-experimental-ab-contract-20261011.json")
