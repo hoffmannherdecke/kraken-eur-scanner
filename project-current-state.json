@@ -464,10 +464,11 @@
         "docs/v3-context-fusion-research-v1.md",
         "docs/market-source-autonomy-v1.md",
         "research/v3/v3-p3-ab-five-approval-20261011.json",
-        "research/work-analysis/2026-10-11-v3-p3-ab-five-physical-result-screen-ack.md"
+        "research/work-analysis/2026-10-11-v3-p3-ab-five-physical-result-screen-ack.md",
+        "research/work-analysis/2026-10-11-v3-tradeability-backward-causality-diagnosis.md"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_NEXT_VERSION_P0_P3_P4_P8_OFFLINE_DIAGNOSTIC_CONTRACT_CI_REVIEW_AND_FUTURE_CAUSAL_AB_TEST_DESIGN; PHYSICAL_WIRING_MODEL_SHADOW_PAPER_RUN_NOT_AUTHORIZED; V2R4_ONLY_ACTIVE",
+      "next_concrete_action": "PROSPECTIVE_P0_TRUE_FULL_MODEL_COIN_ATR_STOP_PIT_WIRING_AND_P3_CONFIRMATION_TO_EXTENDED_ONE_CHANGE_CAUSAL_ASSESSMENT_PREP_OFFLINE; P4_REAL_FEES_STOP_STAGE2_PATHWISE_METRICS; NO_NEW_MODEL_SHADOW_OR_PAPER_TEST_BEFORE_EXPLICIT_SEPARATE_APPROVAL; V2R4_ONLY_ACTIVE",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -557,6 +558,47 @@
           "new_orders_or_paper_writers": false,
           "ci_evidence": "PR_189_THREE_EXISTING_PROJECT_CHECKS_PASSED_OFFLINE_BEFORE_STATUS_REFRESH"
         }
+      },
+      "tradeability_backwards_causality_20261011": {
+        "status": "READ_ONLY_ANALYSIS_VERIFIED_FUTURE_ONE_CHANGE_CAUSAL_COMPARISON_REQUIRED",
+        "source": "research/work-analysis/2026-10-11-v3-tradeability-backward-causality-diagnosis.md",
+        "sources": [
+          "Supabase public.paper_candidate_outcomes read-only 2026-10-11",
+          "existing GitHub V2R4 model and V3 P0/P2/P3/P4 pure contracts",
+          "five uploaded V3 model WAIT receipts and matched V2R4 60m followups"
+        ],
+        "v2r4_dynamic_snapshot_initial_decisions": 2102,
+        "v2r4_initial_wait": 1321,
+        "v2r4_initial_reject": 781,
+        "v2r4_initial_buy": 0,
+        "actual_v2r4_trigger_rechecks": 164,
+        "trigger_rechecks_as_extended": 153,
+        "trigger_rechecks_buy": 0,
+        "original_model_coin_1m5m15m_context_entries": 0,
+        "original_model_nonnull_structural_stop_prices": 0,
+        "v3_real_full_wait": 5,
+        "v3_real_buy": 0,
+        "v3_experimental_incremental_review": 0,
+        "v3_four_mature_60m_initial_scanner_ask_mfe_pct": [
+          0.263,
+          0.345,
+          0.901,
+          0.881
+        ],
+        "v3_fifth_60m_incomplete_at_snapshot": true,
+        "mature_24h_original_candidate_paths": 921,
+        "continuity_24h_median_close_pct": 0.202,
+        "extended_24h_median_close_pct": -1.882,
+        "future_priority_order": [
+          "P0_PROVE_TRUE_COIN_ATR_STOP_TO_FULL_MODEL_CONSUMER",
+          "P3_MEASURE_TRIGGER_CONFIRMATION_VS_EXTENDED_TIMING_COLLISION_WITH_ONE_CHANGE_AB_TEST",
+          "P4_CONSERVATIVE_FEES_SPREAD_SLIPPAGE_STOP_STAGE2_6H24H_PATHWISE_NET_ECONOMICS",
+          "P3_EXP_VOLUME_ONLY_SEPARATE_LATER_AB_TEST_NO_MIXED_INTERVENTION"
+        ],
+        "confidence": "STRONG_ZERO_BUY_AND_EVIDENCE_MISSING; PLAUSIBLE_NOT_CAUSAL_CONFIRMED_CONFIRMATION_CATCH22; 60M_MFE_BASED_ON_ORIGINAL_SCANNER_NOT_V3_MODEL_ASK",
+        "no_new_model_budget_granted": true,
+        "no_shadow_or_paper_activation": true,
+        "no_v2r4_runtime_strategy_modification": true
       }
     }
   }

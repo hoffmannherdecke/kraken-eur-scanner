@@ -90,6 +90,33 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         self.assertIn("ORIGINAL-JSON GEPRÜFT",backlog)
         self.assertIn("V2R4 bleibt allein aktiv",backlog)
 
+    def test_zero_buy_tradeability_analysis_preserves_causal_and_release_boundaries(self):
+        state=data("project-current-state.json")
+        h=state["pending_strategy_transition"]["current_handoff_action"]
+        a=h["tradeability_backwards_causality_20261011"]
+        self.assertEqual(a["v2r4_dynamic_snapshot_initial_decisions"],2102)
+        self.assertEqual(a["v2r4_initial_wait"],1321)
+        self.assertEqual(a["v2r4_initial_reject"],781)
+        self.assertEqual(a["v2r4_initial_buy"],0)
+        self.assertEqual(a["actual_v2r4_trigger_rechecks"],164)
+        self.assertEqual(a["trigger_rechecks_as_extended"],153)
+        self.assertEqual(a["trigger_rechecks_buy"],0)
+        self.assertEqual(a["original_model_coin_1m5m15m_context_entries"],0)
+        self.assertEqual(a["original_model_nonnull_structural_stop_prices"],0)
+        self.assertEqual(a["v3_real_full_wait"],5)
+        self.assertEqual(a["v3_real_buy"],0)
+        self.assertTrue(a["no_new_model_budget_granted"])
+        self.assertTrue(a["no_v2r4_runtime_strategy_modification"])
+        self.assertTrue(a["no_shadow_or_paper_activation"])
+        self.assertFalse(h["new_model_shadow_or_paper_trial_authorized"])
+        self.assertFalse(h["v3_paper_active"])
+        self.assertFalse(h["real_cost_validated_buy_verified"])
+        report=(ROOT/a["source"]).read_text("utf-8")
+        for x in ("153/164", "2.102", "0,202 %", "-1,882 %", "kein"):
+            self.assertIn(x, report)
+        self.assertIn(a["source"], (ROOT/"PROJECT_BACKLOG.md").read_text("utf-8"))
+        self.assertIn("PROSPECTIVE",h["next_concrete_action"])
+
     def test_optional_source_management_never_promoted_as_buy_gate(self):
         r=validate_optional_context(ROOT)
         self.assertEqual(r["status"],
