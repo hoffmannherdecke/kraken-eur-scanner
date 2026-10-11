@@ -118,9 +118,22 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
         else:
             coin,quote,meta=acquire(candidate)
         evidence_status=coin.get("status","UNKNOWN")
-        receipt("SOURCE_INPUT","PASS" if evidence_status=="COMPLETE" else "UNKNOWN",
-            {"source_status":evidence_status,
-             "input_known_at_utc":coin.get("known_at_utc")})
+        frames=coin.get("frames") or {}
+        src={"source_status":evidence_status,
+             "input_known_at_utc":coin.get("known_at_utc"),
+             "ask_eur":quote.get("ask"),"bid_eur":quote.get("bid"),
+             "spread_pct":quote.get("spread_pct"),
+             "kraken_online_spot_eur":meta.get("status")=="online",
+             "source_pair_metadata_status":meta.get("status")}
+        for label,key in (("1m","1"),("5m","5"),("15m","15")):
+            v=frames.get(key) or {}
+            src["frame_status_"+label]=v.get("status")
+            src["frame_closed_end_"+label]=v.get("last_closed_bar_end_utc")
+            src["frame_close_"+label+"_eur"]=v.get("closed_close_eur")
+            src["frame_volume_ratio_"+label]=v.get("volume_ratio_prior_5")
+        src["atr14_15m_eur"]=(frames.get("15") or {}).get("atr14_eur")
+        src["structural_low_15m_eur"]=(frames.get("15") or {}).get("recent_8bar_low_eur")
+        receipt("SOURCE_INPUT","PASS" if evidence_status=="COMPLETE" else "UNKNOWN",src)
     except Exception as exc:
         receipt("SOURCE_INPUT","ERROR",
                 {"phase_failure_class":type(exc).__name__,
@@ -134,6 +147,12 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             "PASS" if eligibility["status"]==ELIGIBLE else "SKIP",
             {"review_status":eligibility["status"],"review_family":"FIRST_SCANNER_EARLY_REVIEW",
              "review_checks":eligibility.get("checks") or {},
+             "optional_context_states":{k:v["state"] for k,v in context["sources"].items()},
+             "market_phase_evidence":context["sources"]["market_phase_radar"],
+             "smart_money_evidence":context["sources"]["smart_money_h10"],
+             "polymarket_evidence":context["sources"]["polymarket_h11"],
+             "news_sentiment_evidence":context["sources"]["news_sentiment"],
+             "source_management_evidence":context["sources"]["source_stewardship"],
              "phase_failure_stage":eligibility.get("validation_stage")})
     if eligibility["status"]!=ELIGIBLE:
         return {"status":"NO_ELIGIBLE_INITIAL_V3_MODEL_REVIEW",
