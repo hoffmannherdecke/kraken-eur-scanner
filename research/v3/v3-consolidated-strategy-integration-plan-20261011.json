@@ -1009,5 +1009,39 @@
         "next_gate": "No new background tasks; material past cross-chat decisions present in canonical source, due gate Owner+CI/ACK vs chat prompter"
       }
     ]
+  },
+  "experimental_paper_all_day_learning_20261011": {
+    "status": "FULL_MULTI_LESSON_EXPERIMENT_CODE_INACTIVE_P0_TO_P8_RUNTIME_NOT_VERIFIED",
+    "source": "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+    "policy_families": [
+      "INITIAL_FRESH_DIRECT_MODEL",
+      "EARLY_CONTINUITY_5M",
+      "STANDARD_CONTINUITY_15M",
+      "WAIT_EXPIRED_INDEPENDENT",
+      "EXTENDED_NEW_BASE",
+      "CONTINUITY_VOLUME_BAND_SEPARATE"
+    ],
+    "paper_economic_proof_required_before_experiment": false,
+    "technical_journal_at_every_stage_required": true,
+    "all_family_raw_and_normalized_reasons_required": true,
+    "include_scanner_to_model_skips": true,
+    "include_genuine_market_at_time_payload_and_model_response_clocks": true,
+    "include_6h24h_stop_first_fills_costs_and_censoring": true,
+    "confidence": "PROBABLE_CAUSAL_PATTERNS_NOT_ECONOMIC_ALPHA_PROVEN",
+    "source_code": [
+      "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+      "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
+      "paper_evaluator/v3_experimental_paper_journal_v1.py",
+      "paper_evaluator/v3_full_entry_decision_candidate_v1.py"
+    ],
+    "documentation": "research/work-analysis/2026-10-11-v3-multiversion-paper-actionable-closure.md",
+    "execution_gate": "tools/v3_experimental_paper_technical_gate.py",
+    "real_model_http_budget_authorized": false,
+    "live_mini_pc_writer_modified": false,
+    "active_series_changed": false,
+    "ci_tests_are_not_physical_e2e": true,
+    "strategy_arms_cannot_be_claimed_causal_winners_until_followups": true,
+    "separate_h3_h6_gates_intact": true,
+    "next": "REAL_PROSPECTIVE_V3_MODEL_INPUT_P4_JOURNAL_FOLLOWUPS_SINGLE_WRITER_DRYRUN_AND_CAS_BEFORE_PHYSICAL_V2R4_TO_V3"
   }
 }
