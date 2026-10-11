@@ -26,6 +26,7 @@ def receipt_args():
         "model_request_at_utc": "2026-10-11T10:00:14Z",
         "model_response_at_utc": "2026-10-11T10:00:17Z",
         "p4_completed_at_utc": "2026-10-11T10:00:18Z",
+        "model_response_id": "resp_test12345678",
         "model_decision": "WAIT",
         "p4_result": {
             "kind": "V3_B_INACTIVE_FULL_ENTRY_DECISION_V1",
@@ -50,7 +51,7 @@ class V3P3FutureDiagnosticsOfflineTests(unittest.TestCase):
         self.assertEqual(out["status"], "STANDARD_REVIEW_ONLY")
         self.assertEqual(out["failed_standard_hard_check_names"],[])
         self.assertTrue(out["standard_hard_checks_present"])
-        self.assertEqual(out["model_http_attempts"],0)
+        self.assertEqual(out["helper_model_calls"],0)
         self.assertFalse(out["new_model_permission"])
 
     def test_one_change_extra_is_separate_review_not_buy(self):
@@ -125,6 +126,8 @@ class V3P3FutureDiagnosticsOfflineTests(unittest.TestCase):
             {"entry_known_at_utc":"2026-10-11T09:50:00Z"},
             {"eligibility_at_utc":"2026-10-11T10:00:12"},
             {"model_response_at_utc":None},
+            {"model_response_id":"fake_resp_with_secret"},
+            {"model_response_id":""},
         ]
         for change in changes:
             args=receipt_args();args.update(change)
