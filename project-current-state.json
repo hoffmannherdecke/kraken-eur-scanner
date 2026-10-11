@@ -792,7 +792,11 @@
         "live_old_v2r4_intake_changed": false,
         "new_http_cost_spent": 0,
         "old_pr186_budget_reused": false,
-        "human_experimental_paper_goal_approved": true
+        "human_experimental_paper_goal_approved": true,
+        "family_dedup": "paper_evaluator/v3_experimental_paper_family_router_v1.py",
+        "pathwise_conservative_costs": "paper_evaluator/v3_experimental_paper_pathwise_economics_v1.py",
+        "economic_1m_CI_only_not_live": true,
+        "source_1m_real_followups_cloud_bound": false
       }
     }
   }
