@@ -273,10 +273,10 @@
         "owner": "research/strategy-learning-causal-gate-v1.json",
         "requires": "Existing source adapter and any distinct model quota; one approved shadow, equal candidate/market clock, mature 6h/24h net/MAE/false-buy",
         "authorization": "EXPLICIT_USER_APPROVED_20261011_V3B_SHADOW5_HTTP10_ONLY; V3 Paper and economic release still separately gated",
-        "status": "V3B_SHADOW5_ORIGINAL_FIRST_TRIAL_COMPLETE_NO_ECONOMIC_MODEL_PROOF",
+        "status": "V3B_SECOND_SHADOW5_CLOSED_NO_ELIGIBLE_AND_NO_ECONOMIC_PROOF",
         "approval_contract": "research/v3/v3-b-shadow5-approval-20261011.json",
         "execution_script": "tools/run-minipc-v3-b-shadow5.ps1",
-        "execution_state": "REAL_5_CASES_ZERO_MODEL_AND_CASE_CODES_ARCHIVED; V3B_INACTIVE_TIMING_AND_DIAGNOSTICS_PREPARED_ONLY",
+        "execution_state": "SECOND_SHADOW5_5_ORIGINALS_0_MODEL_MATCHED_0_HTTP_CLOSED; REQUIRED_PIT_AND_SEVEN_GATE_DIAGNOSTIC_READ_ONLY_PENDING; V3_RELEASE_BLOCKED",
         "authorized_caps": {
           "max_candidates": 5,
           "max_model_http_attempts_including_retries": 10,
@@ -334,7 +334,7 @@
         "second_trial": {
           "kind": "V3_B_SECOND_ONE_SHOT_APPROVED_PENDING_PHYSICAL_V1",
           "authorization": "research/v3/v3-b-shadow5-approval-20261011-run2.json",
-          "status": "SECOND_TRIAL_USER_APPROVED_PENDING_CI_AND_MANUAL_MINIPC_RUN",
+          "status": "SECOND_TRIAL_PHYSICAL_COMPLETED_NO_ELIGIBLE_MODEL_REVIEW",
           "limits": {
             "max_distinct_original_candidates": 5,
             "max_model_http_attempts_including_retries": 10,
@@ -350,8 +350,26 @@
           "real_money": false,
           "no_auto_retry": true,
           "no_new_scheduler": true,
-          "mini_pc_ack": false,
-          "economic_edge_proven": false
+          "mini_pc_ack": true,
+          "economic_edge_proven": false,
+          "model_economic_assessment": "NO_PROSPECTIVE_FULL_MODEL_OR_COST_EVIDENCE",
+          "outcome": {
+            "kind": "USER_SUPPLIED_MINIPC_POWERSHELL_SCREENSHOT_V1",
+            "observed_on_local_date": "2026-10-11",
+            "report": "%USERPROFILE%/Trading/Research/v3-b-shadow5-http10-20261011-run2.json",
+            "diagnose_original_candidates": 17,
+            "run_original_cases": 5,
+            "completed_matched_reviews": 0,
+            "model_http_attempts_reserved": 0,
+            "orders": 0,
+            "paper_changed": false,
+            "runner_status": "COMPLETED_NO_ELIGIBLE_SECOND_LEG_MODEL_EVIDENCE",
+            "reason_code_per_case": "AWAIT_SINGLE_READ_ONLY_LOCAL_JSON_PROJECTION",
+            "independent_model_buy_proof": false,
+            "first_report_immutable": true,
+            "third_trial_authorized": false,
+            "receipt_document": "research/work-analysis/2026-10-11-v3b-shadow5-second-physical-5-0-0.md"
+          }
         }
       },
       {
@@ -382,18 +400,18 @@
     "do_not_claim_success_before": "REAL_MINIPC_DISABLE_OLD_AND_ENABLE_NEW_ACK_PLUS_SUPABASE_SINGLE_ACTIVE_V3_WITH_FIRST_PROSPECTIVE_DECISION",
     "no_artificial_minimum_wait": true,
     "current_handoff_action": {
-      "kind": "V3B_SHADOW5_SECOND_MANUAL_ONE_SHOT_GATED",
-      "status": "SECOND_EXPLICIT_APPROVAL_RECORDED_AWAITING_MERGED_CI_THEN_PHYSICAL_START",
-      "new_approval_receipt": "research/v3/v3-b-shadow5-approval-20261011-run2.json",
-      "run_command": "tools/run-minipc-v3-b-shadow5.ps1 -Trial SECOND -Execute -WaitMinutes 90",
-      "new_report": "%USERPROFILE%/Trading/Research/v3-b-shadow5-http10-20261011-run2.json",
-      "original_trial_status": "CLOSED_WITH_FIVE_ORIGINAL_NO_MODEL_EVIDENCE",
-      "original_trial_immutable": true,
-      "no_additional_user_strategy_approval_required": true,
-      "old_v2r4_active_until_release": true,
-      "no_new_scheduler": true,
+      "kind": "V3B_SECOND_SHADOW5_REAL_EVIDENCE_TRIAGE",
+      "status": "SECOND_FINITE_TRIAL_CLOSED_REASONS_NOT_YET_INSPECTED",
+      "source": "research/work-analysis/2026-10-11-v3b-shadow5-second-physical-5-0-0.md",
+      "local_report": "%USERPROFILE%/Trading/Research/v3-b-shadow5-http10-20261011-run2.json",
+      "next_concrete_action": "ONE_READ_ONLY_LOCAL_PROJECTION_OF_SEVEN_GATE_TRUE_FALSE_AND_REQUIRED_PIT_FRAME_STATUSES",
+      "already_authorized": true,
+      "third_trial_authorized": false,
+      "no_model_calls": true,
+      "no_repeat_test": true,
+      "v2r4_remains_only_active_paper": true,
       "v3_paper_active": false,
-      "manual_mini_pc_ack_required": true
+      "no_new_scheduler": true
     }
   }
 }
