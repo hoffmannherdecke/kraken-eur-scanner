@@ -1,0 +1,38 @@
+{
+  "kind": "V3_B_USER_APPROVAL_RECEIPT_V1",
+  "status": "USER_APPROVED_BOUNDED_MANUAL_SHADOW_ONLY",
+  "approved_on_local_date": "2026-10-11",
+  "approval_label": "APPROVE V3-B SHADOW-5 / HTTP-10",
+  "approval_source": "User explicit statement in another conversation on 2026-10-11 at approx 10:32 Europe/Berlin, retrieved and applied under context-before-action; do not repeat authorization request.",
+  "max_distinct_candidates": 5,
+  "max_model_http_attempts_including_retries": 10,
+  "max_model_http_attempts_per_case_including_retries": 2,
+  "no_orders": true,
+  "no_v3_paper_cutover": true,
+  "no_auto_extension": true,
+  "no_second_concurrent_strategy_changing_shadow": true,
+  "frozen_v2r4_must_remain_active": true,
+  "manual_one_shot_only": true,
+  "accepted_effects": [
+    "ISOLATED_MINIPC_RESEARCH_MODEL_CALLS_WITH_HARD_BUDGET",
+    "LOCAL_RESEARCH_ONLY_APPROVAL_RECEIPT",
+    "SAME_CLOCK_MATCHED_V2R4_BASELINE_V3B_POLICY_HINT",
+    "NO_ORDER_NO_PAPER_WRITER"
+  ],
+  "excluded_effects": [
+    "NEW_WINDOWS_SCHEDULE",
+    "NEW_GITHUB_WORKFLOW",
+    "DATABASE_PAPER_SERIES_ACTIVATION",
+    "RUNTIME_RECONFIGURATION",
+    "AUTOMATIC_MODEL_BUDGET_EXTENSION",
+    "H3_H6_ACTIVATION",
+    "REAL_MONEY"
+  ],
+  "owner": "PROJECT_BACKLOG.md P1 V2R4→V3 and existing 10:15 Work",
+  "execution_script": "tools/run-minipc-v3-b-shadow5.ps1",
+  "model_script": "paper_evaluator/v3_b_bounded_shadow_five.py",
+  "report": "%USERPROFILE%/Trading/Research/v3-b-shadow5-http10-20261011.json",
+  "next_required_action": "One existing MINI-PC physical execution ONLY AFTER merged CI and read-only preflight; a user at the MINI-PC is available and should receive one exact PowerShell command and expected last line, never new approval request.",
+  "completion_gate": "Real local JSON summary with 0<=model attempts<=10, 0<=candidate cases<=5, matched pair/time model outcomes, no Paper writes/real-money/orders. No BUY/ROI or release inferred from trial alone.",
+  "no_new_chat_task": true
+}
