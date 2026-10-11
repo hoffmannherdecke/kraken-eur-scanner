@@ -174,6 +174,27 @@ class WaitFreshReviewTests(unittest.TestCase):
                                             slippage_pct_each_side=.08)
         self.assertEqual(stopped["status"],"FAIL_CLOSED_NONEXECUTABLE_BUY_AS_REJECT")
 
+    def test_p2_full_validator_denies_missing_or_forged_market_checks(self):
+        hint=run()
+        xs=list(full_fixture())
+        xs[1]["candidate_id"]=hint["source_candidate_id"]
+        xs[5]["candidate_id"]=hint["source_candidate_id"]
+        xs[5]["decision_at_utc"]=dt(13)
+        for invalid in (
+            lambda h:h.pop("checks"),
+            lambda h:h["checks"].pop("fresh_eur_spread_guard"),
+            lambda h:h["checks"].update(fresh_eur_spread_guard=False),
+            lambda h:h["checks"].update(extra_untrusted_check=True),
+        ):
+            suspect=copy.deepcopy(hint)
+            invalid(suspect)
+            result=validate_full_entry_decision(suspect,*xs[1:],
+                                                decision_at_utc=dt(13),
+                                                slippage_pct_each_side=.08)
+            self.assertEqual(result["status"],"NO_FULL_REVIEW_ELIGIBILITY")
+            self.assertEqual(result["decision"],"UNKNOWN")
+            self.assertFalse(result["orders"])
+
     def test_live_v2r4_never_imports_inactive_p2_or_full_entry(self):
         root=Path(__file__).resolve().parents[1]
         for file in ("paper_evaluator/evaluate.py","paper_evaluator/v2r4_local_recheck.py",
