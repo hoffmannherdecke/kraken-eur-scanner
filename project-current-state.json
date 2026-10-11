@@ -463,10 +463,11 @@
         "research/v3/v3-paper-experimental-ab-contract-20261011.json",
         "docs/v3-context-fusion-research-v1.md",
         "docs/market-source-autonomy-v1.md",
-        "research/v3/v3-p3-ab-five-approval-20261011.json"
+        "research/v3/v3-p3-ab-five-approval-20261011.json",
+        "research/work-analysis/2026-10-11-v3-p3-ab-five-physical-result-screen-ack.md"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "AFTER_NEW_OFFLINE_CI_PASS_PERFORM_ONE_MANUAL_BOUNDED_PROSPECTIVE_MINIPC_P3_STANDARD_VS_EXPERIMENT_RESEARCH_5_QUALIFIED_HTTP10_6H; NO_AUTOSTART; THEN_CONSERVATIVE_6H24H_PATHWISE_OUTCOMES_AND_SEPARATE_PAPER_RELEASE_DECISION",
+      "next_concrete_action": "READ_ONLY_REVIEW_FINISHED_PROSPECTIVE_P3_AB_LOCAL_JSON_AND_CAUSAL_REJECTION_FUNDAMENTALS_NO_NEW_MODEL_OR_SHADOW_RUN_WITHOUT_NEW_APPROVAL; KEEP_V2R4_ONLY_ACTIVE_PAPER_AND_EXPLICIT_V3_RELEASE_BLOCKED",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -485,15 +486,15 @@
       "no_real_money": true,
       "no_new_scheduler": true,
       "bounded_p3_standard_experimental_test": {
-        "approval_status": "USER_APPROVED_2026_10_11_ONCE_NOT_YET_EXECUTED",
+        "approval_status": "APPROVAL_CONSUMED_SINGLE_RUN_FINISHED_2026_10_11",
         "approval_contract": "research/v3/v3-p3-ab-five-approval-20261011.json",
         "runner": "paper_evaluator/v3_p3_ab_five_bounded_research.py",
         "minipc_manual_handoff": "tools/run-minipc-v3-p3-ab-five.ps1",
         "qualifying_setups_max": 5,
         "model_http_attempts_including_retries_max": 10,
         "observation_minutes_max": 360,
-        "current_execution_state": "CODE_PREPARED_AWAIT_CI_AND_PHYSICAL_MINIPC_MANUAL_EXECUTION",
-        "initial_6h_24h_outcomes": "NOT_YET_OBSERVED",
+        "current_execution_state": "PHYSICAL_MINIPC_FINISHED_SCREENSHOT_ACK_JSON_NOT_YET_INGESTED",
+        "initial_6h_24h_outcomes": "UNVERIFIED_ZERO_BUY_NO_VALIDATED_TRADE_PATH",
         "strategy": "V3_P3_CONTINUITY_STANDARD_GE_1_2_VS_EXP_ONE_CHANGE_GE_1_0_LT_1_2",
         "permissions_not_granted": [
           "ANY_UNBOUNDED_MODEL_CALLS",
@@ -504,7 +505,20 @@
           "AUTOMATIC_RETRY",
           "NEW_SCHEDULE"
         ],
-        "no_previous_trial_budget_reuse": true
+        "no_previous_trial_budget_reuse": true,
+        "qualifying_setups_observed": 5,
+        "model_http_attempts_reserved_observed": 5,
+        "original_candidates_observed": 38,
+        "other_nonreview_observed": 30,
+        "invalid_input_observed": 3,
+        "standard_eligible_model_reviews_observed": 5,
+        "experimental_incremental_reviews_observed": 0,
+        "full_model_wait_validated_observed": 5,
+        "full_model_buy_observed": 0,
+        "local_report_file": "v3-p3-ab-five-http10-6h-20261011.json",
+        "evidence_source": "research/work-analysis/2026-10-11-v3-p3-ab-five-physical-result-screen-ack.md",
+        "evidence_quality": "SCREENSHOT_ACK_ONLY_AWAIT_LOCAL_JSON",
+        "no_relaunch_and_no_automatic_model_budget_reset": true
       }
     }
   }
