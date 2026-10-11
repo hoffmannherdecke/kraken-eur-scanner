@@ -59,6 +59,65 @@ class ContextBeforeActionTests(unittest.TestCase):
         self.assertIn("smartmoney_h10", {x["stream_id"] for x in fusion["source_lanes"]})
         self.assertIn("prediction_h11", {x["stream_id"] for x in fusion["source_lanes"]})
 
+    def test_all_17_paper_phase_insights_and_original_sources_in_v3_packet(self):
+        learning = build(ROOT, "strategy")["strategy_learning_routes"]["paper_phase_learning"]
+        self.assertEqual(learning["coverage_count"], 17)
+        self.assertEqual(len(learning["findings"]), 17)
+        self.assertEqual(len(learning["original_final_v2r3_strategic_dispositions"]), 12)
+        self.assertEqual(learning["technical_only_exclusions"],
+                         ["HYP-06", "REVALIDATION_DELAY"])
+        self.assertTrue(learning["does_not_change_runtime_or_strategic_rules"])
+        self.assertTrue(learning["does_not_claim_validated_net_positive_trades"])
+        ids = {x["id"] for x in learning["findings"]}
+        for required in (
+            "V2R3_CONTINUITY_INITIAL_SMALL_SAMPLE_OPTIMISM",
+            "V2R3_LATE_MATURING_LOSERS_NOT_SILENTLY_DROPPED",
+            "V2R4_MATCHED_GOOD_AND_BAD_SETUP_FAMILIES",
+            "V2R4_HIGH_UPSIDE_COINCIDES_WITH_BIG_DRAWDOWN",
+        ):
+            self.assertIn(required, ids)
+        for x in learning["findings"]:
+            self.assertTrue(x["source_paths"])
+            self.assertTrue(x["v3_package_ids"])
+            self.assertTrue(x["matrix_lesson_ids"])
+
+    def test_missing_paper_finding_or_evidence_is_not_silently_lost(self):
+        file = "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
+        def drop(j):
+            j["paper_phase_learning_crosswalk"]["findings"] = [
+                x for x in j["paper_phase_learning_crosswalk"]["findings"]
+                if x["id"] != "V2R4_MATCHED_GOOD_AND_BAD_SETUP_FAMILIES"]
+        with patch("tools.context_before_action.read_json",
+                   side_effect=self._mutate_v3_source(file, drop)):
+            with self.assertRaisesRegex(ContextGateError, "Paper learning ID lost"):
+                v3_decision_inheritance(ROOT)
+        def bogus(j):
+            j["paper_phase_learning_crosswalk"]["findings"][0][
+                "source_paths"] = ["research/work-analysis/not-real-report.md"]
+        with patch("tools.context_before_action.read_json",
+                   side_effect=self._mutate_v3_source(file, bogus)):
+            with self.assertRaisesRegex(ContextGateError, "original Paper source unavailable"):
+                v3_decision_inheritance(ROOT)
+
+    def test_paper_learning_cannot_be_detached_from_19_original_lessons(self):
+        file = "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
+        def bogus(j):
+            j["paper_phase_learning_crosswalk"]["findings"][0][
+                "matrix_lesson_ids"] = ["NEW_UNAPPROVED_BUY_RULE"]
+        with patch("tools.context_before_action.read_json",
+                   side_effect=self._mutate_v3_source(file, bogus)):
+            with self.assertRaisesRegex(ContextGateError, "unlinked to existing V3 owner"):
+                v3_decision_inheritance(ROOT)
+
+    def test_technical_only_v2r3_findings_cannot_pose_as_paper_strategy(self):
+        file = "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
+        def bogus(j):
+            j["paper_phase_learning_crosswalk"]["excluded_nontrading_final_disposition_ids"] = []
+        with patch("tools.context_before_action.read_json",
+                   side_effect=self._mutate_v3_source(file, bogus)):
+            with self.assertRaisesRegex(ContextGateError, "technical-only exclusion missing"):
+                v3_decision_inheritance(ROOT)
+
     def _mutate_v3_source(self, filename, mutate):
         original = copy.deepcopy(original_read_json(ROOT / filename))
         mutate(original)

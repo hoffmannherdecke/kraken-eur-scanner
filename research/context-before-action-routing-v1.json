@@ -45,6 +45,26 @@
         "role": "RECONCILED_PRIOR_USER_AGREEMENTS_AND_ORDER"
       },
       {
+        "path": "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+        "role": "FINAL_CLEAN_V2R3_STRATEGIC_DISPOSITIONS_NOT_RUNTIME"
+      },
+      {
+        "path": "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "role": "ORIGINAL_V2R3_PAPER_TRADE_COST_ANTI_CHASE_SCORE_EPISODES"
+      },
+      {
+        "path": "research/work-analysis/2026-10-08-v2r3-post-closeout-remaining-59.md",
+        "role": "ORIGINAL_V2R3_LATE_MATURE_LOSSES_NOT_SURVIVOR_BIAS"
+      },
+      {
+        "path": "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+        "role": "ORIGINAL_V2R4_PAPER_24H_MAE_MFE_AND_RECHECK_VS_BUY"
+      },
+      {
+        "path": "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "role": "ORIGINAL_V2R4_FAVORABLE_AND_ADVERSE_LANE_CONTROLS_OUTCOME_SELECTED"
+      },
+      {
         "path": "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
         "role": "ORIGINAL_19_NO_BUY_DECISION_LESSONS_AND_EXPLICIT_DISPOSITIONS"
       },
@@ -101,6 +121,26 @@
       {
         "path": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
         "role": "EARLIER_APPROVALS_AND_CONFLICT_RESOLUTIONS"
+      },
+      {
+        "path": "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+        "role": "FINAL_CLEAN_V2R3_STRATEGIC_DISPOSITIONS_NOT_RUNTIME"
+      },
+      {
+        "path": "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "role": "ORIGINAL_V2R3_PAPER_TRADE_COST_ANTI_CHASE_SCORE_EPISODES"
+      },
+      {
+        "path": "research/work-analysis/2026-10-08-v2r3-post-closeout-remaining-59.md",
+        "role": "ORIGINAL_V2R3_LATE_MATURE_LOSSES_NOT_SURVIVOR_BIAS"
+      },
+      {
+        "path": "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+        "role": "ORIGINAL_V2R4_PAPER_24H_MAE_MFE_AND_RECHECK_VS_BUY"
+      },
+      {
+        "path": "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "role": "ORIGINAL_V2R4_FAVORABLE_AND_ADVERSE_LANE_CONTROLS_OUTCOME_SELECTED"
       },
       {
         "path": "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
