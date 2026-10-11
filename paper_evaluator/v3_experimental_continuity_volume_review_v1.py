@@ -29,6 +29,16 @@ KIND = "V3_EXP_INACTIVE_CONTINUITY_ONE_CHANGE_VOLUME_REVIEW_V1"
 ELIGIBLE = "EXPERIMENTAL_CONTINUITY_VOLUME_SUPPORTS_NEW_FULL_REVIEW_ONLY"
 EXPERIMENTAL_FLOOR = 1.0
 UNCHANGED_VOLUME_CHECK = "unchanged_closed_5m_volume_floor"
+EXPECTED_STANDARD_CHECKS = frozenset({
+    "closed_new_15m_continuation_above_base",
+    "prior_15m_base_not_excessive",
+    "no_new_excessive_extension",
+    "closed_5m_price_continuation",
+    "unchanged_closed_5m_volume_floor",
+    "fresh_eur_spread_guard",
+    "fresh_ask_not_chase",
+    "only_structural_reference_below_ask",
+})
 
 
 def propose_experimental_continuity_review(
@@ -88,7 +98,7 @@ def propose_experimental_continuity_review(
         return result("NO_SAFE_STANDARD_PRICE_VOLUME_PROVENANCE")
 
     checks = baseline.get("checks")
-    if (not isinstance(checks, dict) or UNCHANGED_VOLUME_CHECK not in checks
+    if (not isinstance(checks, dict) or set(checks) != EXPECTED_STANDARD_CHECKS
             or any(type(v) is not bool for v in checks.values())
             or checks[UNCHANGED_VOLUME_CHECK] is not False
             or any(v is not True for k, v in checks.items()
