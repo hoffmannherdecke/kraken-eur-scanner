@@ -3,6 +3,7 @@ import copy
 import importlib.util
 import io
 import json
+import sys
 from contextlib import redirect_stdout
 from pathlib import Path
 from unittest import TestCase
@@ -15,6 +16,9 @@ VALIDATOR = ROOT / "tools/validate-project-current-state.py"
 
 
 def run_validator(state):
+    tool_dir = str(ROOT / "tools")
+    if tool_dir not in sys.path:
+        sys.path.insert(0, tool_dir)
     spec = importlib.util.spec_from_file_location("v3_transition_state_validator", VALIDATOR)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
