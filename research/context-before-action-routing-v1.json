@@ -45,6 +45,10 @@
         "role": "LATEST_INACTIVE_CROSS_VERSION_V2_V2R3_V2R4_V3_ONE_CHANGE_RULE_FLEXIBILITY_PREREG_NO_LIVE_STRATEGY_CHANGE"
       },
       {
+        "path": "research/v3/v3-paper-experimental-ab-contract-20261011.json",
+        "role": "USER_APPROVED_BOLDER_PAPER_EXPERIMENTAL_INACTIVE_AB_ONLY_VOLUME_1_0_VS_1_2_ONE_CHANGE_TECH_FAIL_CLOSED_NO_MODEL_OR_PAPER_ACTIVATION"
+      },
+      {
         "path": "docs/strategy-version-map.md",
         "role": "VERSION_SCOPE_AND_INHERITANCE"
       },
@@ -126,6 +130,10 @@
       }
     ],
     "research": [
+      {
+        "path": "research/v3/v3-paper-experimental-ab-contract-20261011.json",
+        "role": "USER_APPROVED_BOLDER_PAPER_EXPERIMENTAL_INACTIVE_AB_ONLY_VOLUME_1_0_VS_1_2_ONE_CHANGE_TECH_FAIL_CLOSED_NO_MODEL_OR_PAPER_ACTIVATION"
+      },
       {
         "path": "research/v3/v3-buy-gate-flexibility-prereg-20261011.json",
         "role": "LATEST_INACTIVE_CROSS_VERSION_V2_V2R3_V2R4_V3_ONE_CHANGE_RULE_FLEXIBILITY_PREREG_NO_LIVE_STRATEGY_CHANGE"
