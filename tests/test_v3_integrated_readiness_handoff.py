@@ -55,7 +55,7 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         r=p["reconciliation_20261011"]
         self.assertIn("UNPROVEN",r["status"])
         self.assertIn("UNVERIFIED",r["source_steward_actual_e2e"])
-        self.assertIn("21",r["context_real_evidence"])
+        self.assertIn("MARKET_REGIME_EPISODE_V1",r["context_real_evidence"])
         reg=data("research/v3/v3-paper-experimental-ab-contract-20261011.json")
         self.assertIn("NOT_AUTHORIZED",reg["status"])
         self.assertIn("explicit",reg["prospective_measurement_once_separately_approved"]["approval_and_budget"].lower())
