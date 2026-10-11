@@ -92,7 +92,7 @@ def guarded_http(journal: dict, report: Path, case: dict, real_http):
     return call
 
 
-def verified_spot_metadata(altname: str, pair: str, ticker: dict, observed_at: str) -> dict:
+def verified_spot_metadata(altname: str, pair: str, ticker: dict) -> dict:
     """Do not mint 'online Spot EUR' from a suffix or cached status flag."""
     query = urllib.parse.urlencode({"pair": altname})
     data = evaluate.http_json(
@@ -111,10 +111,10 @@ def verified_spot_metadata(altname: str, pair: str, ticker: dict, observed_at: s
     ask = float(ticker["ask"])
     if (not all(math.isfinite(x) for x in (ordermin, costmin, ask))
             or min(ordermin, ask) <= 0 or costmin < 0
-            or any(50.0 < costmin or 50.0 / ask < ordermin for _ in (0, 1))):
+            or 50.0 < costmin or 50.0 / ask < ordermin):
         raise ValueError("KRAKEN_50_EUR_ORDER_MINIMUM_NOT_PASSED")
     return {"pair": pair, "status": "online", "spot": True, "quote": "EUR",
-            "minimum_order_passed": True, "observed_at_utc": observed_at}
+            "minimum_order_passed": True, "observed_at_utc": now_utc().isoformat()}
 
 
 def select_fresh_continuity(runtime: Path, control: dict, started: datetime,
@@ -188,7 +188,7 @@ def run_one(trading_root: Path, code_root: Path, *, minutes: int = MAX_MINUTES,
     original_http = evaluate.http_json
     previous_key = os.environ.get("OPENAI_API_KEY")
     visited: set[str] = set()
-    used_pair_bucket: set[tuple[str, int]] = set()
+    used_pair_clock: dict[str, datetime] = {}
     deadline = start + timedelta(minutes=minutes)
     try:
         while now_fn() <= deadline and j["qualified_setups"] < MAX_SETUPS:
@@ -205,6 +205,15 @@ def run_one(trading_root: Path, code_root: Path, *, minutes: int = MAX_MINUTES,
                 continue
             candidate, baseline_decision = origins[0]
             cid, pair = candidate["candidate_id"], candidate["pair"]
+            # Wait until a genuinely NEW 15m bar closes after this candidate.
+            # Do not mark a still-open candidate as permanently visited.
+            last_15m_end = int(now_fn().timestamp()) // 900 * 900
+            if utc(candidate["event_time_utc"]).timestamp() >= last_15m_end:
+                remain = (deadline - now_fn()).total_seconds()
+                if remain <= 0:
+                    break
+                sleep_fn(min(SLEEP_SECONDS, remain))
+                continue
             visited.add(cid)
             j["diagnostics"]["observed_origins"] += 1
             try:
@@ -219,8 +228,7 @@ def run_one(trading_root: Path, code_root: Path, *, minutes: int = MAX_MINUTES,
                 current["observed_at_utc"] = now_fn().isoformat()
                 model_context = attach_to_future_evaluator(
                     candidate, context, coin, current["observed_at_utc"])
-                meta = verified_spot_metadata(candidate["altname"], pair, current,
-                                              now_fn().isoformat())
+                meta = verified_spot_metadata(candidate["altname"], pair, current)
                 same_clock = now_fn().isoformat()
                 standard = propose_continuity_fresh_review(
                     candidate, baseline_decision, coin, current, bars,
@@ -238,10 +246,10 @@ def run_one(trading_root: Path, code_root: Path, *, minutes: int = MAX_MINUTES,
                 j["diagnostics"]["no_review"] += 1
                 checkpoint(report, j)
                 continue
-            bucket = (pair, int(utc(same_clock).timestamp()) // (6 * 3600))
-            if bucket in used_pair_bucket:
+            previous_clock = used_pair_clock.get(pair)
+            if previous_clock and 0 <= (utc(same_clock) - previous_clock).total_seconds() < 6 * 3600:
                 continue
-            used_pair_bucket.add(bucket)
+            used_pair_clock[pair] = utc(same_clock)
             if (now_fn() - utc(coin["known_at_utc"])).total_seconds() > 120:
                 j["diagnostics"]["invalid_input"] += 1
                 checkpoint(report, j)
