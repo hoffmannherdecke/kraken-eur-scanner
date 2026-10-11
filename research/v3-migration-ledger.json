@@ -174,7 +174,8 @@
         "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
         "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
-        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md"
+        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
       ],
       "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -231,6 +232,17 @@
         "change_of_wait_to_buy": 0,
         "meaning": "NO_REASON_TO_AUTO_RELAX_WAIT_OR_TTL",
         "status": "B_POLICY_HOLD_UNTIL_CAUSAL_ECONOMIC_A_DISPOSITION"
+      },
+      "consolidated_strategy_plan_20261011": {
+        "source": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "packages": [
+          "P2_WAIT_EXPIRED_FRESH_RECHECK"
+        ],
+        "priority": "SEPARATE_AFTER_B_REVIEW",
+        "disposition": "ACTIVE_V2R4_MECHANIC_INHERITED_V3_POLICY_ALTERNATIVE_NOT_SILENTLY_ENABLED",
+        "one_strategy_changing_shadow_limit": 1,
+        "active_v2r4_change": false,
+        "auto_promotion": false
       }
     },
     {
@@ -271,7 +283,8 @@
         "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
         "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
-        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md"
+        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
       ],
       "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS",
       "successor_refinement": {
@@ -395,6 +408,17 @@
             "Shared market data parity guard SUCCESS"
           ]
         }
+      },
+      "consolidated_strategy_plan_20261011": {
+        "source": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "packages": [
+          "P1_V3_B_REAL_SECOND_LEG_ENTRY"
+        ],
+        "priority": "IMMEDIATE_AFTER_CORE_PIT",
+        "disposition": "SECOND_LEG_OFFLINE_CODE_CI_PASS_BUT_NOT_FULL_MODEL_OR_ECONOMIC_PROOF",
+        "one_strategy_changing_shadow_limit": 1,
+        "active_v2r4_change": false,
+        "auto_promotion": false
       }
     },
     {
@@ -457,7 +481,8 @@
         "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
         "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
-        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md"
+        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
       ],
       "future_research_gate": "TARGETED_MICROSTRUCTURE_COST_RESEARCH",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -495,6 +520,17 @@
         "fee_side_pct_unchanged": 0.6,
         "sizing_scout_eur": 50,
         "sizing_stage2_eur": 50
+      },
+      "consolidated_strategy_plan_20261011": {
+        "source": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "packages": [
+          "P4_RISK_AND_EXECUTION_NOT_A_SHORTCUT"
+        ],
+        "priority": "NON_NEGOTIABLE_IN_EVERY_PROSPECTIVE_GATE",
+        "disposition": "INHERIT_50_PLUS_50_AND_0_60_PERCENT_PER_SIDE",
+        "one_strategy_changing_shadow_limit": 1,
+        "active_v2r4_change": false,
+        "auto_promotion": false
       }
     },
     {
@@ -531,7 +567,8 @@
         "research/v3/h3-assoc-002-valid-session-003-20261003.json",
         "research/v3/h3-association-reports/v3-h3-association-002-20261003-095025.json",
         "research/v3/h3-assoc-002-fixed-review-20261003.json",
-        "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md"
+        "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
       ],
       "pending_gate": "V2R4_72H_ECONOMIC_REVIEW_THEN_OPTIONAL_SEPARATELY_APPROVED_NEW_H3_VERSION",
       "recovery_followthrough": {
@@ -549,6 +586,17 @@
         "archive_disposition": "DEFER_WITH_GATE",
         "archive_disposition_completed_at_utc": "2026-10-10T08:15:00Z",
         "next_eligible_action": "AFTER_V2R4_ECONOMIC_REVIEW_OPTIONALLY_PROPOSE_NEW_VERSIONED_H3_ONE_CHANGE_TRIAL_FOR_EXPLICIT_APPROVAL"
+      },
+      "consolidated_strategy_plan_20261011": {
+        "source": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "packages": [
+          "P7_ONE_CHANGE_H_COMPONENTS"
+        ],
+        "priority": "DEFERRED_NEW_SHADOW_EXPLICIT_GATE",
+        "disposition": "H3_DEFER_WITH_GATE_ARCHIVED_OLD_TRIAL",
+        "one_strategy_changing_shadow_limit": 1,
+        "active_v2r4_change": false,
+        "auto_promotion": false
       }
     },
     {
@@ -583,9 +631,21 @@
         "docs/storage-retention-policy.md",
         "research/v3/h10-first-analysis-review-20261008.json",
         "research/v3/h10-first-analysis-review-20261008.md",
-        "research/v3/h10-kraken-outcome-context-join-contract-v1.json"
+        "research/v3/h10-kraken-outcome-context-join-contract-v1.json",
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
       ],
-      "pending_gate": "V3_H10_COLLECT_50_ELIGIBLE_POST_FREEZE_EVENTS_40_PRIMARY_10_CONTROL_3_UTC_DATES_COMPLETE_24H_THEN_FIXED_REVIEW"
+      "pending_gate": "V3_H10_COLLECT_50_ELIGIBLE_POST_FREEZE_EVENTS_40_PRIMARY_10_CONTROL_3_UTC_DATES_COMPLETE_24H_THEN_FIXED_REVIEW",
+      "consolidated_strategy_plan_20261011": {
+        "source": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "packages": [
+          "P7_ONE_CHANGE_H_COMPONENTS"
+        ],
+        "priority": "PIT_OUTCOME_JOIN_PENDING",
+        "disposition": "H10_PASSIVE_NO_COPY_TRADING",
+        "one_strategy_changing_shadow_limit": 1,
+        "active_v2r4_change": false,
+        "auto_promotion": false
+      }
     },
     {
       "id": "prediction_market_event_layer",
@@ -657,7 +717,8 @@
         "research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json",
         "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json",
         "research/v3/coin-entry-evidence-lineage-v1.json",
-        "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md"
+        "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
       ],
       "pending_gate": "V2R4_72H_ECONOMIC_REVIEW_THEN_SEPARATE_H6_ONE_CHANGE_SHADOW_APPROVAL",
       "sequence_followthrough": {
@@ -668,6 +729,17 @@
         "no_auto_start": true,
         "no_duplicate_volume_vote": true,
         "h3_archive_disposition": "COMPLETED_DEFER_WITH_GATE"
+      },
+      "consolidated_strategy_plan_20261011": {
+        "source": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "packages": [
+          "P7_ONE_CHANGE_H_COMPONENTS"
+        ],
+        "priority": "ONLY_SEPARATE_INCREMENTAL_TEST_AFTER_H3_DISPOSITION",
+        "disposition": "H6_NO_COMBINED_VOTE",
+        "one_strategy_changing_shadow_limit": 1,
+        "active_v2r4_change": false,
+        "auto_promotion": false
       }
     },
     {
@@ -691,7 +763,8 @@
         "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
         "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
-        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md"
+        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
       ],
       "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
       "dependencies": [
@@ -887,6 +960,17 @@
         "no_auto_promotion": true,
         "no_live_or_paper_change": true,
         "exact_candidate_ids_and_known_at_require_original_local_json": true
+      },
+      "consolidated_strategy_plan_20261011": {
+        "source": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "packages": [
+          "P0_LINEAGE_AND_DATA_READINESS"
+        ],
+        "priority": "ONLY_BLOCKING_REQUIRED_INPUT_QUALITY",
+        "disposition": "PARTIAL_PHYSICAL_PASS_2_OF_4_PROSPECTIVE_MODEL_PAIRS_2_ATTACH_SKIPS",
+        "one_strategy_changing_shadow_limit": 1,
+        "active_v2r4_change": false,
+        "auto_promotion": false
       }
     },
     {
@@ -914,9 +998,21 @@
         "supabase/views/v3_h7_meta_gate_readiness.sql",
         "docs/v3-research-framework.md",
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
-        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
       ],
-      "pending_gate": "V3_H7_FREEZE_POINT_IN_TIME_LABEL_COST_SPLIT_CONTRACT_BEFORE_ANY_TRAINING"
+      "pending_gate": "V3_H7_FREEZE_POINT_IN_TIME_LABEL_COST_SPLIT_CONTRACT_BEFORE_ANY_TRAINING",
+      "consolidated_strategy_plan_20261011": {
+        "source": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "packages": [
+          "P7_ONE_CHANGE_H_COMPONENTS"
+        ],
+        "priority": "MATURED_COST_LABELS_REQUIRED",
+        "disposition": "H7_MODEL_TRAINING_DEFERRED",
+        "one_strategy_changing_shadow_limit": 1,
+        "active_v2r4_change": false,
+        "auto_promotion": false
+      }
     },
     {
       "id": "onchain_state",
@@ -967,9 +1063,21 @@
         "research/v3/market-phase-reversal-observation-v1.md",
         "docs/test-strategy-runbook.md",
         "docs/project-control-plane-governance.md",
-        "docs/market-context-source-fusion-v1.md"
+        "docs/market-context-source-fusion-v1.md",
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
       ],
-      "pending_gate": null
+      "pending_gate": null,
+      "consolidated_strategy_plan_20261011": {
+        "source": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "packages": [
+          "P6_PROSPECTIVE_REGIME_LEARNING"
+        ],
+        "priority": "PARALLEL_PASSIVE",
+        "disposition": "PERMANENT_OBSERVATION_NO_ENTRY_AUTHORITY",
+        "one_strategy_changing_shadow_limit": 1,
+        "active_v2r4_change": false,
+        "auto_promotion": false
+      }
     },
     {
       "id": "v3_market_regime_decision_conditioning",
@@ -1000,7 +1108,8 @@
         "docs/market-context-source-fusion-v1.md",
         "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
         "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
-        "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md"
+        "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
       ],
       "pending_gate": "V3_EXTERNAL_SOURCE_FIRST_UNATTENDED_E2E_AND_KNOWN_AT_MATURE_CANDIDATE_OUTCOME_JOIN_THEN_EXPLICIT_INTEGRATION_REVIEW_DISPOSITION_OR_V4_SUCCESSOR_GATE",
       "retrospective_12_casepack_20261010": {
@@ -1023,6 +1132,17 @@
           "source_report": "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
           "provenance_authority": "NO_RETROACTIVE_FEATURE_BACKFILL"
         }
+      },
+      "consolidated_strategy_plan_20261011": {
+        "source": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "packages": [
+          "P5_CONTEXT_AND_ACTIVE_SOURCE_MANAGEMENT"
+        ],
+        "priority": "PASSIVE_EXISTING_2H_SOURCE_MANAGEMENT",
+        "disposition": "RESEARCH_SOURCING_AUTONOMY_NOT_AUTO_TRADE_AUTHORITY",
+        "one_strategy_changing_shadow_limit": 1,
+        "active_v2r4_change": false,
+        "auto_promotion": false
       }
     },
     {
