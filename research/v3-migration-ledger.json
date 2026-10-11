@@ -173,7 +173,8 @@
         "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
         "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
-        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json"
+        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
+        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md"
       ],
       "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -222,6 +223,14 @@
         "new_review_after_old_expiry_is_not_v2r4_ttl_change": true,
         "future_wait_ttl_policy": "SEPARATE_B2_LATER_NOT_SIMULTANEOUS",
         "no_automatic_recheck_model_calls": true
+      },
+      "v3_a_four_case_result_20261011": {
+        "report": "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
+        "baseline_wait": 2,
+        "successor_wait": 2,
+        "change_of_wait_to_buy": 0,
+        "meaning": "NO_REASON_TO_AUTO_RELAX_WAIT_OR_TTL",
+        "status": "B_POLICY_HOLD_UNTIL_CAUSAL_ECONOMIC_A_DISPOSITION"
       }
     },
     {
@@ -261,7 +270,8 @@
         "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
         "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
-        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json"
+        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
+        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md"
       ],
       "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS",
       "successor_refinement": {
@@ -366,7 +376,7 @@
         "no_repeated_generic_no_buy_audit": true
       },
       "v3_b_policy_20261011": {
-        "status": "INACTIVE_OFFLINE_IMPLEMENTED_CI_PENDING_UNTIL_SUCCESS",
+        "status": "INACTIVE_OFFLINE_IMPLEMENTED_CI_VERIFIED_PR159_MERGED_NO_RELEASE",
         "change": "ONE_ENTRY_TIMING_POLICY_ONLY_NEW_1_3H_SECOND_LEG_RECLAIM_AFTER_HISTORICAL_EXTENDED",
         "implementation": "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
         "governance": "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
@@ -374,7 +384,17 @@
         "model_calls": false,
         "new_shadow": false,
         "auto_buy": false,
-        "next_gate": "CI_NEGATIVES_PASS_THEN_SEPARATE_EXPLICIT_USER_PROSPECTIVE_SHADOW_REVIEW"
+        "next_gate": "CI_NEGATIVES_PASS_THEN_SEPARATE_EXPLICIT_USER_PROSPECTIVE_SHADOW_REVIEW",
+        "ci_results": {
+          "pr": 159,
+          "merge_commit_sha": "d60ed0b2ec06502e4ea8f3397ffe785287b44859",
+          "checks": [
+            "V2R4 PR validation SUCCESS",
+            "Architecture cleanup validation SUCCESS",
+            "Project control-plane guard SUCCESS",
+            "Shared market data parity guard SUCCESS"
+          ]
+        }
       }
     },
     {
@@ -436,7 +456,8 @@
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
         "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
-        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json"
+        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
+        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md"
       ],
       "future_research_gate": "TARGETED_MICROSTRUCTURE_COST_RESEARCH",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -465,6 +486,15 @@
         "stop_and_stage2_hard_gates": true,
         "slippage_spread_net_proof_required": true,
         "research_review_not_buy": true
+      },
+      "v3_a_four_case_result_20261011": {
+        "report": "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
+        "transactions_created": 0,
+        "valid_stop_priced_in_successor": 0,
+        "net_after_cost_pnl_proven": false,
+        "fee_side_pct_unchanged": 0.6,
+        "sizing_scout_eur": 50,
+        "sizing_stage2_eur": 50
       }
     },
     {
@@ -660,7 +690,8 @@
         "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
         "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
-        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json"
+        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
+        "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md"
       ],
       "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
       "dependencies": [
@@ -800,6 +831,62 @@
         "missing_core": "UNKNOWN_NOT_MISLABELED_REJECT",
         "optional_sources": "NEUTRAL_IF_MISSING",
         "original_four_case_run_budget_reuse": false
+      },
+      "v3_four_case_physical_learning_20261011": {
+        "kind": "V3_A_MANUAL_FOUR_CASE_PHYSICAL_RESULTS_V1",
+        "status": "COMPLETED_TWO_MATCHED_MODEL_PAIRS_TWO_COIN_ATTACH_SKIPS",
+        "report": "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
+        "source": "USER_SUPPLIED_MINIPC_RESEARCH_JOURNAL_POWER_SHELL_SCREENSHOT",
+        "local_research_journal": "Trading/Research/v3-a-four-candidate-input-only-20261010.json",
+        "max_model_http_attempts_authorized": 8,
+        "actual_model_http_requests_reserved": 4,
+        "four_cases_recorded": true,
+        "two_valid_matched_model_comparisons": true,
+        "two_skipped_coin_attach_before_models": true,
+        "decisions": [
+          {
+            "pair": "TIA/EUR",
+            "baseline": "WAIT",
+            "baseline_lane": "EXTENDED",
+            "with_coin": "WAIT",
+            "with_coin_lane": "CONTINUITY",
+            "reason_delta": "15M_VOLUME_SOFT_AND_NEAR_TERM_WEAKNESS",
+            "v3_structural_stop_proven": false
+          },
+          {
+            "pair": "ATOM/EUR",
+            "baseline": "WAIT",
+            "baseline_lane": "IGNITION",
+            "with_coin": "WAIT",
+            "with_coin_lane": "IGNITION",
+            "reason_delta": "SHORT_TERM_VOLUME_WEAK_MOMENTUM_CONFLICT_COST_HURDLE",
+            "v3_structural_stop_proven": false
+          },
+          {
+            "pair": "BAT/EUR",
+            "status": "SKIPPED_INPUT_UNAVAILABLE",
+            "phase": "COIN_ATTACH",
+            "exception_type": "ValueError",
+            "subreason": "UNKNOWN_NOT_LOGGED",
+            "model_http_requests": 0
+          },
+          {
+            "pair": "USELESS/EUR",
+            "status": "SKIPPED_INPUT_UNAVAILABLE",
+            "phase": "COIN_ATTACH",
+            "exception_type": "ValueError",
+            "subreason": "UNKNOWN_NOT_LOGGED",
+            "model_http_requests": 0
+          }
+        ],
+        "buy_comparisons": 0,
+        "paper_fills": 0,
+        "economic_edge_proven": false,
+        "no_reuse_of_existing_journal_or_remaining_budget": true,
+        "next_disposition": "NO_REPEAT_BATCH; EVIDENCE_QUALITY_GATE_FOR_PIT_ATTACH_DIAGNOSTICS_BEFORE_NEW_SEPARATELY_AUTHORIZED_RESEARCH_OR_POLICY_B",
+        "no_auto_promotion": true,
+        "no_live_or_paper_change": true,
+        "exact_candidate_ids_and_known_at_require_original_local_json": true
       }
     },
     {
