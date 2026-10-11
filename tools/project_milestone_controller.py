@@ -87,8 +87,62 @@ def event(kind: str, anchor: str, detail: str) -> dict:
             "issue": ISSUE_BY_KIND[kind], "detail": detail}
 
 
+def evaluate_verified_v3_paper(state: dict, paper: dict, now: dt.datetime, root: Path) -> dict:
+    """Version-aware successor milestone readout; no V2R4-era false alarms.
+
+    The series must have been physically proven active *before* state switches.
+    Never use a PR merge, a read-only V3 draft or a missing cloud view as proof.
+    """
+    active = state["active_strategy"]
+    revision = active["strategy_revision"]
+    transition = state.get("pending_strategy_transition") or {}
+    require(revision.startswith("V3-") and
+            transition.get("kind") == "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1" and
+            transition.get("status") == "V3_PAPER_ACTIVE_VERIFIED",
+            "V3 milestone controller cannot infer activation from plans")
+    ack = transition.get("verified_cutover_evidence") or {}
+    require(ack.get("mini_pc_and_single_active_supabase_series_ack") is True,
+            "V3 milestone controller needs physical/cloud single-writer ACK")
+    series = active.get("series_id")
+    require(series and paper.get("series_id") == series,
+            "V3 paper status from wrong/stale active series")
+    require(paper.get("strategy_revision") == revision,
+            "V3 paper strategy revision drift")
+    require(paper.get("candidate_outcomes") is not None
+            and paper.get("completed_trades") is not None,
+            "V3 paper readiness missing trade/candidate evidence")
+    require(paper.get("fasttrack_policy_version") == "EVIDENCE_DIVERSITY_FASTTRACK_V2",
+            "V3 paper evidence-diversity gate must remain valid")
+    statuses = ["V3:PAPER_ACTIVE_CLOUD_VERIFIED",
+                "V2R4:RETIRED_NEW_INTAKE_FOLLOWUPS_RETAINED"]
+    notices = []
+    for decision_id, note in due_followthrough_events(state, now, root):
+        statuses.append("FOLLOWTHROUGH:ACK_OVERDUE:" + decision_id)
+        notices.append(note)
+    if paper.get("completion_ready") is True:
+        require(paper.get("intake_should_stop") is True and
+                paper.get("temporal_diversity_ready") is True and
+                paper.get("qualifying_maturity_ready") is True,
+                "V3 paper completion gate bypasses diversity/mature outcomes")
+        statuses.append("V3:PAPER_COMPLETION_READY")
+        notices.append(event("PAPER_FINAL_REVIEW", series,
+            "V3-Paper-Serie hat das belegte Abschlussgate erreicht: "
+            "vollständige wirtschaftliche Auswertung und separate Strategie-"
+            "Entscheidung nötig; alte V2R4-24h-Followups unverändert bewahren; "
+            "kein H3/H6- oder Echtgeld-Autostart."))
+    else:
+        statuses.append("V3:PAPER_COLLECTING")
+    return {"kind": "PROJECT_MILESTONE_CONTROL_V1",
+            "series_id": series, "live_technical_series_id": series,
+            "statuses": statuses, "events": notices,
+            "strategy_changed": False, "orders": False,
+            "real_money_actions": False}
+
+
 def evaluate(state: dict, paper: dict, h3: dict, now: dt.datetime, root: Path) -> dict:
     active = state["active_strategy"]
+    if str(active.get("strategy_revision") or "").startswith("V3-"):
+        return evaluate_verified_v3_paper(state, paper, now, root)
     series = active["series_id"]
     # Supabase readiness follows the currently active technical series, while
     # project-current-state holds the ORIGINAL frozen H3/strategy epoch lineage.
