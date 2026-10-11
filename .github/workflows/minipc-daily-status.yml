@@ -148,9 +148,13 @@ jobs:
               )
               completed_outcomes=len(completed_rows or [])
           else:
-              shadow_events=None
-              completed_outcomes=None
-              active_outcomes=None
+              # Existing minipc_daily_status legacy metric columns are NOT NULL.
+              # Do not mislabel their required neutral 0 values as V3 signals;
+              # the new active Paper candidate/trade counters live in the
+              # versioned payload and the human-readable series_metrics.
+              shadow_events=0
+              completed_outcomes=0
+              active_outcomes=0
 
           since=(now_utc-dt.timedelta(hours=24)).isoformat().replace("+00:00","Z")
           _,scanner_rows=request(
