@@ -11,6 +11,7 @@ from paper_evaluator.v3_experimental_paper_initial_review_v1 import (
     KIND as INITIAL_KIND, ELIGIBLE as INITIAL_ELIGIBLE,
 )
 from paper_evaluator.v3_entry_handoff_probe import attach_to_future_evaluator,utc
+from paper_evaluator.v3_paper_context_bridge_v1 import (KIND as CONTEXT_KIND, fuse_existing_sources)
 
 KIND="V3_EXPERIMENTAL_PAPER_FULL_MODEL_PROMPT_V1"
 
@@ -51,6 +52,15 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
                "future_close","outcome24h","future_result"}
     if forbidden.intersection(candidate):
         raise ValueError("hindsight candidate field cannot enter true model")
+    # Accept verified bounded source facts, not merely a boolean availability.
+    # Real per-source known_at cannot be after the actual model input clock.
+    if optional_context and optional_context.get("kind")==CONTEXT_KIND:
+        context=fuse_existing_sources(optional_context.get("raw_snapshots",{}),
+                                      decision_at_utc=decision_at_utc)
+        sources={key:{"available":value["state"]=="AVAILABLE_PIT_CONTEXT_ONLY"}
+                 for key,value in context["sources"].items()}
+    else:
+        context=fuse_existing_sources({},decision_at_utc=decision_at_utc)
     data={
         "strategy":"V3-EXPERIMENTAL-PAPER-ONLY-NO-REAL-ORDERS",
         "candidate":{"candidate_id":candidate["candidate_id"],
@@ -68,6 +78,7 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
                                        "observed_at_utc")},
         "candidate_entry_evidence":attached["candidate_entry_evidence"],
         "optional_source_availability_context_only":sources,
+        "actual_optional_context_with_source_clock":context,
         "scout_eur":50,"stage2_eur":50,"taker_fee_pct_each_side":0.6,
     }
     intro="""PAPER RESEARCH EVALUATOR, V3-EXPERIMENTAL, NEVER REAL MONEY OR ORDERS.
