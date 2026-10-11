@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "kind": "V3_B_ONE_CHANGE_SECOND_LEG_NEW_FULL_REVIEW_ELIGIBILITY_CANDIDATE_V1",
+  "status": "INACTIVE_RESEARCH_CODE_PREPARED_NO_SHADOW_NO_RELEASE",
+  "origin": "2026-10-11 user instructed implementation of all prior findings as a V3 roadmap while avoiding repeat analysis",
+  "previous_evidence": [
+    "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
+    "research/work-analysis/2026-10-10-v2r4-original-72h-productivity-review.md",
+    "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+    "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"
+  ],
+  "baseline": {
+    "strategy_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+    "last_confirmed_technical_series": "PAPER-V2R4-20261009T110135Z",
+    "must_stay_frozen": true
+  },
+  "candidate_id": "V3_B_20261011_SECOND_LEG_FULL_REVIEW_ELIGIBILITY_ONLY",
+  "exact_one_policy_difference": {
+    "component_class": "ENTRY_TIMING",
+    "type": "FRESH_FULL_REVIEW_ELIGIBILITY_ONLY",
+    "previous": "Original EXTENDED WAIT/REJECT has no independent 1-3h later second-leg rebuild review route",
+    "candidate": "If 1-3h of independently observed contiguous 15m closed consolidation follows original EXTENDED, a new timely valid OHLC/vol/ATR/ask snapshot has closed candle price reclaim and no-chase cost/liquidity checks, propose a separate later FULL evaluator review, not direct BUY"
+  },
+  "preregistered_research_parameters": {
+    "base_bars_15m_min": 4,
+    "base_bars_15m_max": 12,
+    "first_trial_preferred_fixed_window": 4,
+    "post_alert_max_age_hours": 4,
+    "snapshot_age_seconds_max": 120,
+    "volume_ratio_floor_from_existing_v2r4": 1.2,
+    "max_base_width_atr": 3,
+    "max_reclaim_extension_atr": 0.75,
+    "max_spread_pct": 0.5,
+    "parameter_sweep_prohibited_without_separate_trial_id": true
+  },
+  "comparison_design": {
+    "baseline_frozen_v2r4": true,
+    "new_input_provenance_required": true,
+    "prior_candidate_historical_not_fresh": true,
+    "same_pair_and_decision_clock": true,
+    "one_new_policy_component_only": true,
+    "deduplicate_pair_event_rechecks": true,
+    "control_arm_no_new_reentry_review": true,
+    "allow_full_recheck_only_after_separate_approval": true,
+    "no_auto_buy": true,
+    "never_treat_recheck_as_fill": true,
+    "keep_original_one_shot_budget_closed": true
+  },
+  "invariants": {
+    "fees_taker_pct_each_side": 0.6,
+    "scout_eur": 50,
+    "stage2_eur": 50,
+    "stop_below_ask_required": true,
+    "stage2_confirmation_above_ask_required": true,
+    "spread_slippage_in_net_required": true,
+    "anti_chase": true,
+    "current_kraken_public_online_spot_eur_hard_gate": true,
+    "missing_optional_sources_neutral": true,
+    "missing_required_entry_structure_unknown": true,
+    "h1_standalone_rejected": true,
+    "h3_archived": true,
+    "h6_separate_gate": true,
+    "h10_observation_only": true,
+    "new_scheduler": false,
+    "model_calls": false,
+    "new_shadow": false,
+    "orders": false,
+    "real_money_actions": false,
+    "auto_activation": false
+  },
+  "controls": {
+    "code": "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
+    "existing_parent_module": "paper_evaluator/v3_extended_reentry_review_v1.py",
+    "tests": "tests/test_v3_second_leg_policy_candidate_v1.py",
+    "source": "paper_evaluator/v3_entry_handoff_probe.py",
+    "owner": "research/v3-migration-ledger.json#late_chase_protection",
+    "ci": ".github/workflows/v2r4-pr-validation.yml"
+  },
+  "promotion_not_permitted_until": [
+    "Reconcile outstanding four-case research PR #157 or record its deliberate no-merge disposition",
+    "Complete offline tests and invariant review of true 1–3h closed-bar base/reclaim without hindsight",
+    "Pre-register strict prospective cohort, cost model, 6h/24h outcomes, pair-time clustering, negatives, and timeout budget",
+    "Obtain separate explicit user release permission for one prospective strategy-changing Shadow; not an implicit permission to spend model API calls",
+    "Prove real end-to-end Kraken EUR BUY+stop+stage2 feasibility and net edge after fees/slippage",
+    "Run separate full strategy integration gate; no H3/H6/H10 bundled or midtest tuning"
+  ],
+  "next_action": "OFFLINE_ACCEPTANCE_ONLY_THEN_SEPARATE_USER_AUTHORIZED_SHADOW_RESEARCH_PROSPECTIVE_GATES",
+  "economic_effect": "UNPROVEN",
+  "active_paper_change": false
+}
