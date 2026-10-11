@@ -73,7 +73,7 @@ class MilestoneTests(unittest.TestCase):
                    fasttrack_policy_version='EVIDENCE_DIVERSITY_FASTTRACK_V2',
                    candidate_outcomes=1300,completed_trades=0,complete_24h=1300,
                    series_age_days=4,completion_ready=False,intake_should_stop=False)
-        now=dt.datetime(2026,10,10,19,0,tzinfo=dt.timezone.utc)
+        now=dt.datetime(2026,10,10,18,51,tzinfo=dt.timezone.utc)
         h3=dict(shadow_candidate_id='V3-H3-SHADOW-001',generated_at='2026-10-10T18:50:00Z',
                 payload=dict(baseline_series_id=active['series_id'],
                              baseline_strategy_revision=active['strategy_revision'],
@@ -155,7 +155,8 @@ class MilestoneTests(unittest.TestCase):
                              orders=False,real_money_actions=False,automatic_extension=False,
                              automatic_promotion=False,minimum_gate_met=False))
         r=controller.evaluate(state,paper,h3,t,ROOT)
-        self.assertIn('V2R4:LOW_TRADE_REVIEW',r['statuses'])
+        self.assertIn('V2R4:LOW_TRADE_REVIEW_ACKNOWLEDGED_NO_REPEAT',r['statuses'])
+        self.assertFalse(any(x['kind']=='PAPER_LOW_TRADES' for x in r['events']))
         self.assertEqual(r['epoch_minimum_complete_24h'],260)
         self.assertEqual(r['epoch_minimum_candidate_outcomes'],2011)
         self.assertEqual(r['epoch_minimum_completed_trades'],0)
@@ -422,4 +423,72 @@ class V3HandoverMilestoneTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"bypasses diversity"):
             controller.evaluate(state,paper,None,
                                 dt.datetime(2026,10,15,9,tzinfo=dt.timezone.utc),ROOT)
+
+
+
+class RepeatedV2R4EmailRegressionTests(unittest.TestCase):
+    def _paper(self, state):
+        active = state["active_strategy"]
+        return dict(series_id=active["technical_rotation_runtime_last_verified"]["series_id"],
+                    strategy_revision=active["strategy_revision"],
+                    fasttrack_policy_version="EVIDENCE_DIVERSITY_FASTTRACK_V2",
+                    candidate_outcomes=823, completed_trades=0, complete_24h=469,
+                    series_age_days=2, completion_ready=False, intake_should_stop=False)
+
+    def test_actual_completed_72h_review_is_not_sent_again_to_github_email(self):
+        import datetime as dt
+        state=controller.load_local_state(ROOT)
+        t=dt.datetime(2026,10,11,6,56,34,tzinfo=dt.timezone.utc)
+        result=controller.evaluate(state,self._paper(state),None,t,ROOT)
+        self.assertEqual(result["statuses"].count("V2R4:LOW_TRADE_REVIEW_ACKNOWLEDGED_NO_REPEAT"),1)
+        self.assertFalse(any(x["kind"]=="PAPER_LOW_TRADES" for x in result["events"]))
+        self.assertIn("H3:ARCHIVE_DISPOSITION_DEFER_WITH_GATE",result["statuses"])
+        self.assertFalse(result["strategy_changed"])
+        self.assertFalse(result["orders"])
+
+    def test_no_suppression_for_missing_future_or_forged_receipt(self):
+        import datetime as dt
+        import tempfile, json
+        state=controller.load_local_state(ROOT)
+        t=dt.datetime(2026,10,11,6,56,34,tzinfo=dt.timezone.utc)
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            report=root/"research/work-analysis/v2r4-review.md"
+            report.parent.mkdir(parents=True)
+            report.write_text("case evidence",encoding="utf-8")
+            work=root/"research/work-analysis-state.json"
+            for status,date,path in (
+                ("DECISION_PACKET_READY","2099-10-11T06:00:00Z",str(report.relative_to(root))),
+                ("BLOCKED_WITH_ACTION","2026-10-10T18:52:50Z",str(report.relative_to(root))),
+                ("DECISION_PACKET_READY","2026-10-10T18:52:50Z","research/work-analysis/nonexistent.md"),
+                ("DECISION_PACKET_READY","2026-10-10T18:40:00Z",str(report.relative_to(root))),
+            ):
+                work.write_text(json.dumps({"acknowledgements":{"control_decision_reviews":{
+                    "V2R4_72H_STRATEGY_EPOCH_20261010":{
+                        "status":status,"completed_at_utc":date,"report":path}}}}),encoding="utf-8")
+                self.assertFalse(controller.control_review_acknowledged(
+                    state,"V2R4-PRODUCTIVITY-REVIEW",t,root))
+                result=controller.evaluate(state,self._paper(state),None,t,root)
+                self.assertEqual(sum(x["kind"]=="PAPER_LOW_TRADES" for x in result["events"]),1)
+            work.write_text(json.dumps({"acknowledgements":{"control_decision_reviews":{
+                "V2R4_72H_STRATEGY_EPOCH_20261010":{
+                    "status":"DECISION_PACKET_READY",
+                    "completed_at_utc":"2026-10-10T18:52:50Z",
+                    "report":str(report.relative_to(root))}}}}),encoding="utf-8")
+            self.assertTrue(controller.control_review_acknowledged(
+                state,"V2R4-PRODUCTIVITY-REVIEW",t,root))
+            done=controller.evaluate(state,self._paper(state),None,t,root)
+            self.assertFalse(any(x["kind"]=="PAPER_LOW_TRADES" for x in done["events"]))
+
+    def test_pre_72h_review_early_gate_still_works(self):
+        import datetime as dt
+        state=controller.load_local_state(ROOT)
+        before=dt.datetime(2026,10,10,18,42,54,tzinfo=dt.timezone.utc)
+        after=dt.datetime(2026,10,10,18,42,56,tzinfo=dt.timezone.utc)
+        p=self._paper(state)
+        early=controller.evaluate(state,p,None,before,ROOT)
+        due=controller.evaluate(state,p,None,after,ROOT)
+        self.assertFalse(any(x["kind"]=="PAPER_LOW_TRADES" for x in early["events"]))
+        self.assertEqual(sum(x["kind"]=="PAPER_LOW_TRADES" for x in due["events"]),1)
+
 
