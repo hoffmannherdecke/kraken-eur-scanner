@@ -18,6 +18,10 @@ on:
       - "research/market-source-candidates-v1.json"
       - "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"
       - "research/v3/v3-buy-gate-flexibility-prereg-20261011.json"
+      - "paper_evaluator/v3_wait_fresh_review_candidate_v1.py"
+      - "tests/test_v3_wait_fresh_review_candidate_v1.py"
+      - "paper_evaluator/v3_full_entry_decision_candidate_v1.py"
+      - "research/v3/v3-b-full-entry-decision-contract-20261011.json"
       - "tests/test_v3_buy_gate_flexibility_prereg.py"
       - "tools/context_before_action.py"
       - "tests/test_context_before_action.py"
@@ -92,6 +96,10 @@ on:
       - "research/market-source-candidates-v1.json"
       - "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"
       - "research/v3/v3-buy-gate-flexibility-prereg-20261011.json"
+      - "paper_evaluator/v3_wait_fresh_review_candidate_v1.py"
+      - "tests/test_v3_wait_fresh_review_candidate_v1.py"
+      - "paper_evaluator/v3_full_entry_decision_candidate_v1.py"
+      - "research/v3/v3-b-full-entry-decision-contract-20261011.json"
       - "tests/test_v3_buy_gate_flexibility_prereg.py"
       - "tools/context_before_action.py"
       - "tests/test_context_before_action.py"
@@ -188,6 +196,11 @@ jobs:
           python -m py_compile paper_evaluator/v3_b_bounded_shadow_five.py
           python -m unittest discover -s tests -p 'test_v3_b_bounded_shadow_five.py' -v
           pwsh -NoProfile -Command '$tokens=$null; $errs=$null; [System.Management.Automation.Language.Parser]::ParseFile("tools/run-minipc-v3-b-shadow5.ps1",[ref]$tokens,[ref]$errs) | Out-Null; if ($errs.Count -gt 0) { $errs | Out-String | Write-Error; exit 1 }; Write-Output "V3B_SHADOW5_POWERSHELL_PARSE_PASS"'
+      - name: Validate inactive P2 post-WAIT fresh-review and common V3 economic safety
+        run: |
+          python -m unittest discover -s tests -p 'test_v3_wait_fresh_review_candidate_v1.py' -v
+          python -m unittest discover -s tests -p 'test_v3_full_entry_decision_candidate_v1.py' -v
+          python -m unittest discover -s tests -p 'test_v3_second_leg_policy_candidate_v1.py' -v
       - name: Guard cross-version one-change V3 BUY flexibility against premature activation
         run: python -m unittest discover -s tests -p 'test_v3_buy_gate_flexibility_prereg.py' -v
       - name: Validate current state
