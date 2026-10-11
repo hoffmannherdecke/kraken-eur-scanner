@@ -468,10 +468,11 @@
         "research/work-analysis/2026-10-11-v3-tradeability-backward-causality-diagnosis.md",
         "research/work-analysis/2026-10-11-v2r4-crash-rebound-historical-event-review.md",
         "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
-        "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md"
+        "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md",
+        "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_V3_EXPERIMENTAL_PAPER_TECHNICAL_WRITER_JOURNAL_FOLLOWUP_CLOUD_SINGLE_WRITER_DRY_RUN_PROOFS_REQUIRED; NO_PROFITABLE_BUY_PREREQUISITE_FOR_EXPERIMENTAL_PAPER_BUT_NO_PHYSICAL_ACTIVATION_WITHOUT_E2E; V2R4_ONLY_ACTIVE",
+      "next_concrete_action": "PROSPECTIVE_V3_EXPERIMENTAL_INITIAL_FULL_MODEL_AND_ALL_FAMILY_JOURNAL_LOCAL_CLOUD_SINGLE_WRITER_ACTUAL_MINIPC_TECHNICAL_E2E_PROOFS; REUSE_SAME_KRAKEN_SOURCE_FOLLOWUPS_BEFORE_SAFE_PHYSICAL_CUTOVER; EXPLICIT_BOUNDED_MODEL_SPEND_APPROVAL; KEEP_V2R4_ACTIVE_UNTIL_STOP_ACK; NEVER_CLAIM_V3_PAPER_ACTIVE_FROM_GITHUB_CI",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -756,6 +757,46 @@
         "user_paper_intent_approved": true,
         "fixed_numeric_new_model_cost_authorized": false,
         "no_new_runtime_or_model_calls": true
+      },
+      "v3_all_day_lessons_experimental_paper_20261011": {
+        "status": "ALL_DAY_BUY_FUNNEL_LESSONS_COMBINED_IN_INACTIVE_V3_PAPER_CODE_RUNTIME_RELEASE_STILL_BLOCKED",
+        "source": "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+        "decision_basis": [
+          "V2R3_1005_OUTCOMES_1_BUY_LOSS_MINUS_3_092",
+          "V2R4_0_BUYS_72H_REVIEW_PLUS_11OCT_420_238WAIT_182REJECT",
+          "WAIT_EXPIRY_WITHOUT_RECHECK",
+          "38_OF_40_11OCT_RECHECKS_CLASSIFIED_EXTENDED",
+          "0_OF_420_INIT_MODEL_RECORDS_HAS_COIN_1_5_15_ATR_INPUT",
+          "OCT8_9_CRASH_RECOVERY_MISSED_UPSIDE_AND_ADVERSE_CONTROLS",
+          "12_HISTORICAL_PAIR_MATCHED_NO_BUY_AND_CENSORING_AUDIT",
+          "V3_5_REAL_P3_MODEL_WAIT_RECEIPTS_0_BUY_AND_MISSING_HTTP_REASONS"
+        ],
+        "experiment_revision": "V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001",
+        "new_initial_model_path": "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+        "new_full_model_prompt": "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
+        "shared_p4_modified": "paper_evaluator/v3_full_entry_decision_candidate_v1.py",
+        "new_immutable_journal": "paper_evaluator/v3_experimental_paper_journal_v1.py",
+        "existed_already": [
+          "P1_FRESH_EXTENDED_SECOND_LEG",
+          "P2_WAIT_EXPIRED_FRESH_RECHECK",
+          "P3_CONTINUITY_FRESH_15M",
+          "P3_CONTINUITY_FRESH_5M",
+          "P3_SEPARATE_1_0_TO_1_2_VOLUME_EXPERIMENT"
+        ],
+        "intentional_risk_choice": "MORE_EARLY_FULL_MODEL_REVIEWS_NOT_SCORE_ONLY_AUTO_BUY",
+        "test_status": "CI_OFFLINE_CONTRACT_TESTS_REQUIRED_EXPLICIT_NOT_LIVE",
+        "physical_model_to_p4_input_verified": false,
+        "physical_journal_and_6h24h_followup_verified": false,
+        "physical_paper_writer_verified": false,
+        "live_cutover_performed": false,
+        "live_old_v2r4_intake_changed": false,
+        "new_http_cost_spent": 0,
+        "old_pr186_budget_reused": false,
+        "human_experimental_paper_goal_approved": true,
+        "family_dedup": "paper_evaluator/v3_experimental_paper_family_router_v1.py",
+        "pathwise_conservative_costs": "paper_evaluator/v3_experimental_paper_pathwise_economics_v1.py",
+        "economic_1m_CI_only_not_live": true,
+        "source_1m_real_followups_cloud_bound": false
       }
     }
   }

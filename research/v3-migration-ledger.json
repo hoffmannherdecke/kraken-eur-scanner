@@ -135,9 +135,22 @@
         "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md",
         "research/v2r3/strategy-adjustment-hypotheses-v4-20261006.json",
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
-        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
+        "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+        "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+        "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+        "paper_evaluator/v3_experimental_paper_journal_v1.py"
       ],
-      "pending_gate": "V2R4_PROSPECTIVE_COMPARISON_AND_V3_H7_LABEL_CONTRACT"
+      "pending_gate": "V2R4_PROSPECTIVE_COMPARISON_AND_V3_H7_LABEL_CONTRACT",
+      "v3_experimental_all_day_20261011": {
+        "status": "IMPLEMENTED_INACTIVE_NEXT_PHYSICAL_PAPER_E2E",
+        "bundle": "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+        "initial_review": "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+        "fresh_model_prompt": "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
+        "append_only_telemetry": "paper_evaluator/v3_experimental_paper_journal_v1.py",
+        "target": "MULTI_FAMILY_EXPERIMENT_PAPER_ONLY_SEPARATE_FAMILY_CAUSAL_ATTRIBUTION",
+        "old_live_v2r4_unchanged": true,
+        "technical_e2e_not_yet_proven": true
+      }
     },
     {
       "id": "wait_one_shot_revalidation",
@@ -175,7 +188,10 @@
         "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
         "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
         "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
-        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
+        "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+        "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+        "paper_evaluator/v3_experimental_paper_journal_v1.py"
       ],
       "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -243,6 +259,16 @@
         "one_strategy_changing_shadow_limit": 1,
         "active_v2r4_change": false,
         "auto_promotion": false
+      },
+      "v3_experimental_all_day_20261011": {
+        "status": "IMPLEMENTED_INACTIVE_NEXT_PHYSICAL_PAPER_E2E",
+        "bundle": "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+        "initial_review": "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+        "fresh_model_prompt": "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
+        "append_only_telemetry": "paper_evaluator/v3_experimental_paper_journal_v1.py",
+        "target": "MULTI_FAMILY_EXPERIMENT_PAPER_ONLY_SEPARATE_FAMILY_CAUSAL_ATTRIBUTION",
+        "old_live_v2r4_unchanged": true,
+        "technical_e2e_not_yet_proven": true
       }
     },
     {
@@ -287,7 +313,10 @@
         "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
         "paper_evaluator/v3_a_historical_learning_closure_v1.py",
         "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md",
-        "paper_evaluator/v3_p3_early_5m_continuity_research_v1.py"
+        "paper_evaluator/v3_p3_early_5m_continuity_research_v1.py",
+        "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+        "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+        "paper_evaluator/v3_experimental_paper_journal_v1.py"
       ],
       "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS",
       "successor_refinement": {
@@ -451,6 +480,16 @@
         "valid_buy_outcome_proven": false,
         "model_or_shadow_run_started": false,
         "v2r4_runtime_changed": false
+      },
+      "v3_experimental_all_day_20261011": {
+        "status": "IMPLEMENTED_INACTIVE_NEXT_PHYSICAL_PAPER_E2E",
+        "bundle": "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+        "initial_review": "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+        "fresh_model_prompt": "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
+        "append_only_telemetry": "paper_evaluator/v3_experimental_paper_journal_v1.py",
+        "target": "MULTI_FAMILY_EXPERIMENT_PAPER_ONLY_SEPARATE_FAMILY_CAUSAL_ATTRIBUTION",
+        "old_live_v2r4_unchanged": true,
+        "technical_e2e_not_yet_proven": true
       }
     },
     {
@@ -818,7 +857,10 @@
         "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
         "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
         "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
-        "paper_evaluator/v3_a_historical_learning_closure_v1.py"
+        "paper_evaluator/v3_a_historical_learning_closure_v1.py",
+        "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+        "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+        "paper_evaluator/v3_experimental_paper_journal_v1.py"
       ],
       "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
       "dependencies": [
@@ -1044,6 +1086,16 @@
         "physical_market_to_full_model_buy_path_verified": false,
         "dependency": "PROSPECTIVE_TRUE_P0_FULL_MODEL_CONSUMER_PIT_AND_RISK_EVIDENCE",
         "no_more_generic_handoff_audits": true
+      },
+      "v3_experimental_all_day_20261011": {
+        "status": "IMPLEMENTED_INACTIVE_NEXT_PHYSICAL_PAPER_E2E",
+        "bundle": "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+        "initial_review": "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+        "fresh_model_prompt": "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
+        "append_only_telemetry": "paper_evaluator/v3_experimental_paper_journal_v1.py",
+        "target": "MULTI_FAMILY_EXPERIMENT_PAPER_ONLY_SEPARATE_FAMILY_CAUSAL_ATTRIBUTION",
+        "old_live_v2r4_unchanged": true,
+        "technical_e2e_not_yet_proven": true
       }
     },
     {

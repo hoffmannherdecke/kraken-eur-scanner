@@ -206,6 +206,36 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         self.assertIn("PROSPECTIVE",h["next_concrete_action"])
         self.assertIn(d["source"],(ROOT/"PROJECT_BACKLOG.md").read_text("utf-8"))
 
+    def test_all_day_v3_experiment_has_real_code_but_never_fake_runtime(self):
+        b=data("research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json")
+        self.assertEqual(b["strategy_revision"],
+                         "V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001")
+        self.assertEqual(len(b["entry_priority"]),6)
+        self.assertTrue(all(x["paper_policy_selected"] for x in b["entry_priority"]))
+        self.assertTrue(all(x["runtime_enabled"] is False for x in b["entry_priority"]))
+        self.assertTrue(b["concurrency_requirements"]["dedupe_across_all_six_policy_families"])
+        self.assertTrue(b["experiment_evaluation"]["missing_24h_is_censored_not_zero"])
+        self.assertTrue(b["current_verified_state"]["pure_1m_stop_first_fee_stage2_pathwise_tests_present"])
+        self.assertFalse(b["current_verified_state"]["physical_closed_1m_coin_path_to_cost_validator_verified"])
+        self.assertFalse(b["current_verified_state"]["journal_automatically_connected_to_real_paper_writer"])
+        self.assertFalse(b["current_verified_state"]["v3_paper_active"])
+        self.assertTrue(b["release_requirements"]["physical_technical_proofs_required"])
+        t=data("project-current-state.json")["pending_strategy_transition"]
+        self.assertEqual(t["status"],"BLOCKED_RELEASE_EVIDENCE_NOT_V3_RUNNING")
+        h=t["current_handoff_action"]
+        self.assertFalse(h["v3_paper_active"])
+        self.assertTrue(h["v2r4_remains_only_active_paper"])
+        self.assertFalse(h["v3_all_day_lessons_experimental_paper_20261011"]["physical_paper_writer_verified"])
+        self.assertIn("PROSPECTIVE",h["next_concrete_action"])
+        for x in ("v3_experimental_paper_initial_review_v1.py",
+                  "v3_experimental_paper_model_prompt_v1.py",
+                  "v3_experimental_paper_journal_v1.py",
+                  "v3_experimental_paper_family_router_v1.py",
+                  "v3_experimental_paper_pathwise_economics_v1.py"):
+            self.assertTrue((ROOT/"paper_evaluator"/x).is_file())
+        self.assertIn("V3 Experimental Paper",
+                      (ROOT/"PROJECT_BACKLOG.md").read_text("utf-8"))
+
     def test_optional_source_management_never_promoted_as_buy_gate(self):
         r=validate_optional_context(ROOT)
         self.assertEqual(r["status"],
