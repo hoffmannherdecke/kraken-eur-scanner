@@ -19,7 +19,11 @@
   "decision_boundary": {
     "eligibility_alone_is_never_a_decision": true,
     "full_assessment_required": true,
-    "allowed_decisions": ["BUY_SCOUT", "WAIT", "REJECT"],
+    "allowed_decisions": [
+      "BUY_SCOUT",
+      "WAIT",
+      "REJECT"
+    ],
     "missing_required_pit_or_execution_evidence": "UNKNOWN",
     "explicit_non_executable_buy": "FAIL_CLOSED_REJECT",
     "optional_context_absence": "NEUTRAL",
@@ -41,7 +45,10 @@
     "cost_adjusted_positive_edge_required": true,
     "stop_below_current_ask_required": true,
     "stage2_above_current_ask_required": true,
-    "stage2_ttl_minutes_range": [1, 60],
+    "stage2_ttl_minutes_range": [
+      1,
+      60
+    ],
     "anti_chase_pass_required": true,
     "real_money_actions": false
   },
@@ -68,5 +75,22 @@
     "release_gate": "Five real VERIFIED_PIT_E2E_PASS artifacts, at least one cost/risk-valid BUY, matched V2R4 control, 6h/24h outcomes, fingerprints, explicit shadow/model-budget gates and physical Mini-PC readiness remain mandatory.",
     "canonical_followthrough_owner": "PROJECT_BACKLOG.md#P1/MINIPC_ANALYTICS_ROLLOUT_V1 and research/strategy-learning-causal-gate-v1.json"
   },
-  "next_gate": "CI_PASS_THEN_MARK_SAFE_OFFLINE_V3_B_FULL_EVALUATOR_INTEGRATION_IMPLEMENTED_INACTIVE; PROSPECTIVE_MODEL_SHADOW_REMAINS_SEPARATELY_GATED"
+  "next_gate": "CI_PASS_THEN_MARK_SAFE_OFFLINE_V3_B_FULL_EVALUATOR_INTEGRATION_IMPLEMENTED_INACTIVE; PROSPECTIVE_MODEL_SHADOW_REMAINS_SEPARATELY_GATED",
+  "shared_inactive_review_family_reuse": {
+    "source": "paper_evaluator/v3_wait_fresh_review_candidate_v1.py",
+    "status": "P2_INACTIVE_OFFLINE_RISK_VALIDATION_NOT_MODEL_OR_BUY_PROOF",
+    "separate_review_family": {
+      "kind": "V3_P2_INACTIVE_WAIT_FRESH_REVIEW_ELIGIBILITY_V1",
+      "eligibility_status": "WAIT_FRESH_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY",
+      "prior_expiry": "V2R4_WAIT_EXPIRY_V1",
+      "new_15m_close_must_follow_expiry": true,
+      "coin_known_at_identity_required": true
+    },
+    "shared_model_and_risk_contract": "paper_evaluator/v3_full_entry_decision_candidate_v1.py",
+    "same_0_6_pct_per_side_cost_and_50_plus_50_and_stop_and_stage2": true,
+    "existing_second_leg_tests_preserved": true,
+    "not_an_authority_to_spend_model_calls": true,
+    "no_shadow_or_paper_or_orders": true,
+    "requires_separate_one_change_prospective_release": true
+  }
 }
