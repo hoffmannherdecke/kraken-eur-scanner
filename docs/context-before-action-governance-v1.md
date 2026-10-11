@@ -36,6 +36,20 @@ Vor einem V3-B-/H3-/H6-/V3-Paper-Schritt gehören **mindestens** die ursprüngli
 
 **Wirtschaftlicher Prüfpunkt:** Mehr valide Netto-Trades bei begrenztem Risiko und realen Followups statt nur neue Dateien, größere Kandidatenzahlen oder grünes IT-Health.
 
+## C2. V3-Gesamtstrategie PR #161 ↔ Kontext vor Aktion PR #162/#163 — verbindliche Vererbung (11.10.2026)
+
+Die verifizierte Zusammenführung nutzt **ausschließlich** bestehende fachliche Quellen. `research/v3/v3-consolidated-strategy-integration-plan-20261011.json` bleibt der kanonische P0–P9-**Ablaufindex** und `research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json` der kanonische Owner der **19 historischen No-BUY-Lehren**. Das bisherige V3-Migrationsledger enthält weiterhin die einzeln zuständigen fachlichen Komponenten; niemand erzeugt eine zweite Strategieversion oder To-do-Liste.
+
+Beim `--scope strategy` und `--scope research` führt der **bestehende** Kontextprüfer nach PR #161 jetzt neben H1–H11 und P0–P9 auch die **originalen 19 Finding-IDs mit Quelle/Ursache, Disposition, Umsetzungsfolge und Testphase** sowie alle acht begründeten historischen Widerspruchsauflösungen auf. Hinzu kommen Original-`immediate_action` und `global_gates`. Die neue Versions-/Vollständigkeitsprüfung schützt **insbesondere** gegen:
+
+- stilles Weglassen eines historischen Finding-IDs (z. B. `WAIT_TTL_NEVER_RECHECK` oder `COIN_ATTACH_2_OF_4`);
+- Verlust eines P0–P9-Pakets, H1–H11-Status oder einer von acht explizit geklärten Konfliktentscheidungen;
+- unbemerkte Abweichung der PR-161-Basisschutzgrenzen (50+50 € Paper, 0,60 % Taker je Seite, One-change, identischer Baseline-Replay, keine H3/H6-Autoaktivierung, keine echten Orders).
+
+Damit ein korrigierter Plan **auch künftig getestet wird**, ist der bereits bestehende `project-control-plane-guard.yml` bei Änderungen an beiden V3-Dateien auszulösen. Neue Bestandteile sind nur bei den tatsächlich bestehenden fachlichen Ownern aufzunehmen, nicht an drei Stellen separat fortzuschreiben. Künftige genehmigte Änderungen sind als neuer, nachvollziehbarer Nachfolger zu versionieren; die acht historischen Konflikte und 19 Ursprungsentscheidungen bleiben als **Historie** erhalten, nicht als ewige unveränderliche aktuelle Strategieparameter.
+
+**Wichtig:** Das Verfahren beweist strukturelle Vollständigkeit und liefert den tatsächlichen Originalinhalt. Es kann nicht aus sich heraus garantieren, dass ein späterer KI-Bearbeiter jede Begründung semantisch richtig gewichtet. Das muss im folgenden tatsächlichen V3-Entwicklungs-/Release-Schritt separat und nachweisbar geschehen. Der eigentliche fachliche nächste Schritt ist weiterhin das einzelne, inaktive und risikogebundene V3-B-Second-Leg-Vollreview-Vergleichsgate, **kein** zusätzlicher Rundumschlag über bereits abgeschlossene Null-BUY-Audits. Keine automatische Nutzung des verbliebenen Einmal-HTTP-Budgets.
+
 ## D. Andere gemeinsame Projekte
 
 Das **Verfahren** ist allgemein wiederverwendbar, die **Krypto-Dateien** sind es nicht. Für jedes andere Projekt sind im bereits bestehenden Projektverzeichnis dessen eigene (i) aktuelle Zustandsautorität, (ii) Nutzerbeschlüsse, (iii) Task-Owner, (iv) Evidenz und (v) Abschlussbestätigungen zu benennen. Keine zweite globale „Wissensdatenbank“ als Ersatz; bei fehlenden Quellen klar und frühzeitig sagen, was nicht rekonstruierbar ist. Persönliche ChatGPT-Erinnerung und frühere Chats dürfen helfen, dürfen aber nicht als vollständiges, synchronisiertes Archiv behandelt werden.
