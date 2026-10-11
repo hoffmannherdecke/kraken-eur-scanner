@@ -117,6 +117,104 @@ V3_CONFLICT_KEYS = frozenset((
 ))
 
 
+
+# Permanent IDs of observed and historically reviewed Paper strategy-learning
+# themes, not a second policy version and not additional BUY filters.
+PAPER_PHASE_LEARNING_IDS = frozenset((
+    "V2_EARLY_DECISION_QUALITY_NOT_PERF_PROOF",
+    "V2R3_TRADE_N1_DOES_NOT_CALIBRATE_RISK",
+    "V2R3_LOW_CONVERSION_IS_DECISION_SELECTIVITY",
+    "V2R3_WAIT_WATCH_NOT_IDEA_DEATH",
+    "V2R3_CONTINUITY_INITIAL_SMALL_SAMPLE_OPTIMISM",
+    "V2R3_RESISTANCE_CONFIRMATION_NOT_GLOBAL_LOOSENING",
+    "V2R3_ALREADY_RUN_HAS_ADVERSE_PATH",
+    "V2R3_SCANNER_SCORE_IS_NOT_PROFIT_RANK",
+    "V2R3_RETRIGGERS_NOT_INDEPENDENT_WINNERS",
+    "V2R3_MARKET_TIME_COHORTS_DIVERGE",
+    "V2R3_LATE_MATURING_LOSERS_NOT_SILENTLY_DROPPED",
+    "V2R4_TRIGGER_AND_MODEL_DECISION_SEPARATE",
+    "V2R4_HIGH_UPSIDE_COINCIDES_WITH_BIG_DRAWDOWN",
+    "V2R4_RETRO_PROXY_IS_NOT_REAL_MISSED_PROFIT",
+    "V2R4_MATCHED_GOOD_AND_BAD_SETUP_FAMILIES",
+    "V2R4_EXTENDED_REENTRY_VERSUS_BLANKET_PERMISSION",
+    "V2R4_ORIGINAL_SETUP_TYPES_REQUIRE_DIFFERENT_CONTROL_CASES",
+))
+
+
+def paper_phase_strategy_inheritance(root: Path, plan: dict, matrix: dict) -> dict:
+    """Check 2026 V2/V2R3/V2R4 original Paper findings *by lineage*.
+
+    Explicitly excludes technical-only incidents from PAPER-STRATEGY coverage.
+    Structural checks cannot prove numerical correctness or successful trading.
+    """
+    x = plan.get("paper_phase_learning_crosswalk") or {}
+    require(x.get("kind") == "V3_PREDECESSOR_PAPER_STRATEGIC_LEARNING_CROSSWALK_V1"
+            and x.get("excludes_technical_diagnostics") is True
+            and x.get("auto_activation") is False
+            and x.get("model_calls_executed") == 0,
+            "no separate technical-free Paper-learning inheritance contract")
+    rows = x.get("findings") or []
+    ids = [row.get("id") for row in rows if isinstance(row, dict)]
+    require(len(ids) == len(rows) == len(set(ids)) and
+            PAPER_PHASE_LEARNING_IDS.issubset(set(ids)),
+            "original V2/V2R3/V2R4 Paper learning ID lost or duplicated")
+    packages = {item["id"] for item in plan["package_order"]}
+    lessons = {item["id"] for item in matrix["lessons"]}
+    allowed_classes = {
+        "QUALITATIVE_DECISION_ONLY", "PROSPECTIVE_CLEAN_PAPER",
+        "PROSPECTIVE_PAPER_ZERO_BUY", "RETROSPECTIVE_OUTCOME_SELECTED_HYPOTHESIS",
+    }
+    project = root.resolve()
+    for row in rows:
+        require(row.get("evidence_class") in allowed_classes,
+                "unknown Paper evidence status: " + str(row.get("id")))
+        for field in ("observed_finding", "strategic_disposition", "next_evidence_gate"):
+            require(isinstance(row.get(field), str) and len(row[field].strip()) >= 20,
+                    "Paper finding lacks cause/disposition/next gate: " + str(row.get("id")))
+        for field, known in (("v3_package_ids", packages),
+                             ("matrix_lesson_ids", lessons)):
+            values = row.get(field) or []
+            require(isinstance(values, list) and bool(values)
+                    and len(values) == len(set(values)) and set(values).issubset(known),
+                    "Paper learning unlinked to existing V3 owner: " + str(row.get("id")))
+        sources = row.get("source_paths") or []
+        require(isinstance(sources, list) and bool(sources) and
+                len(sources) == len(set(sources)),
+                "Paper finding has no original evidence sources: " + str(row.get("id")))
+        for source in sources:
+            require(isinstance(source, str) and source
+                    and not source.startswith("/") and ".." not in Path(source).parts
+                    and (root / source).resolve().is_relative_to(project)
+                    and (root / source).is_file(),
+                    "original Paper source unavailable: " + str(source))
+    final = read_json(root / "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json")
+    require(final.get("kind") == "V2R3_FINAL_HYPOTHESIS_DISPOSITIONS_V1"
+            and final.get("status") == "FINAL_REVIEW_COMPLETE_NOT_ACTIVE",
+            "final clean V2R3 paper dispositions not available")
+    actual = {item.get("id") for item in final.get("dispositions", [])}
+    strategic = set(x.get("v2r3_final_strategy_disposition_ids") or [])
+    excluded = set(x.get("excluded_nontrading_final_disposition_ids") or [])
+    require(bool(strategic) and not strategic.intersection(excluded)
+            and strategic.union(excluded) == actual and
+            excluded == {"HYP-06", "REVALIDATION_DELAY"},
+            "V2R3 final strategy lesson or technical-only exclusion missing")
+    return {
+        "status": "ALL_HISTORICAL_PAPER_LEARNING_THEMES_ROUTED_NOT_ECONOMIC_PROOF",
+        "coverage_count": len(rows),
+        "original_final_v2r3_strategic_dispositions": sorted(strategic),
+        "technical_only_exclusions": sorted(excluded),
+        "findings": [
+            {k: row[k] for k in
+             ("id", "evidence_class", "source_paths", "observed_finding",
+              "strategic_disposition", "v3_package_ids",
+              "matrix_lesson_ids", "next_evidence_gate")}
+            for row in rows
+        ],
+        "does_not_change_runtime_or_strategic_rules": True,
+        "does_not_claim_validated_net_positive_trades": True,
+    }
+
+
 def v3_decision_inheritance(root: Path) -> dict:
     """Cross-validate PR #161 and the original 19-lesson implementation matrix.
 
@@ -204,6 +302,7 @@ def v3_decision_inheritance(root: Path) -> dict:
             {k: x[k] for k in ("id", "finding", "disposition", "implementation", "stage")}
             for x in items
         ],
+        "paper_phase_learning": paper_phase_strategy_inheritance(root, plan, matrix),
         "historical_conflict_resolutions": [
             {"key": x["key"], "resolution": x["resolution"]} for x in conflicts
         ],
