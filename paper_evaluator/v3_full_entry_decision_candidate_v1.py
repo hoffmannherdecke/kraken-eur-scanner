@@ -198,12 +198,19 @@ def validate_full_entry_decision(
         frames = entry_evidence.get("frames")
         if not isinstance(frames, dict) or set(frames) != {"1", "5", "15"}:
             raise ValueError("1m/5m/15m frames required")
+        observed_at = _utc(entry_evidence["observed_at_utc"])
         for key in ("1", "5", "15"):
             frame = frames[key]
             if frame.get("status") != "VALID" or frame.get("interval_min") != int(key):
                 raise ValueError("invalid closed frame")
             _positive(frame.get("closed_close_eur"))
             _nonnegative(frame.get("volume_ratio_prior_5"))
+            # Status=VALID is not authority to replay an old or future bar.
+            # Match the strict source-adapter/handoff 1.5-interval freshness.
+            bar_end = _utc(frame["last_closed_bar_end_utc"])
+            age_seconds = (observed_at - bar_end).total_seconds()
+            if not 0 <= age_seconds <= int(key) * 90:
+                raise ValueError("stale or future closed frame")
         _positive(frames["15"].get("atr14_eur"))
         _positive(frames["15"].get("recent_8bar_low_eur"))
 
@@ -234,7 +241,7 @@ def validate_full_entry_decision(
         observed_at = _utc(entry_evidence["observed_at_utc"])
         ticker_at = _utc(fresh_ticker["observed_at_utc"])
         metadata_at = _utc(pair_metadata["observed_at_utc"])
-        if not observed_at <= known_at <= ticker_at <= decision_at:
+        if not observed_at <= known_at <= ticker_at <= decision_at or metadata_at > decision_at:
             raise ValueError("forward-known or reversed PIT clock")
         if max((decision_at-known_at).total_seconds(), (decision_at-ticker_at).total_seconds(),
                (decision_at-metadata_at).total_seconds()) > SOURCE_MAX_AGE_SECONDS:
