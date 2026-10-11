@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "kind": "V3_B_INACTIVE_FULL_ENTRY_DECISION_CONTRACT_V1",
+  "status": "IMPLEMENTED_INACTIVE_OFFLINE_ACCEPTANCE_PENDING_CI_NO_SHADOW_NO_RELEASE",
+  "strategy_revision": "V3-B-INACTIVE-FULL-ENTRY-CANDIDATE-V1",
+  "purpose": "Close the safe-code gap between second-leg review eligibility and one complete, point-in-time, cost/risk validated V3-B decision path without activating a model, shadow, paper writer or runtime.",
+  "change_class": "ENTRY_TIMING_ONLY_FULL_DECISION_VALIDATION",
+  "baseline": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+  "implementation": {
+    "code": "paper_evaluator/v3_full_entry_decision_candidate_v1.py",
+    "tests": "tests/test_v3_full_entry_decision_candidate_v1.py",
+    "eligibility_source": "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
+    "entry_evidence_source": "paper_evaluator/successor_coin_entry_evidence_v1.py",
+    "active_v2r4_imports_this_module": false,
+    "model_calls": false,
+    "network_calls": false,
+    "storage_writes": false
+  },
+  "decision_boundary": {
+    "eligibility_alone_is_never_a_decision": true,
+    "full_assessment_required": true,
+    "allowed_decisions": ["BUY_SCOUT", "WAIT", "REJECT"],
+    "missing_required_pit_or_execution_evidence": "UNKNOWN",
+    "explicit_non_executable_buy": "FAIL_CLOSED_REJECT",
+    "optional_context_absence": "NEUTRAL",
+    "new_numeric_strategy_thresholds": false
+  },
+  "required_point_in_time_inputs": [
+    "canonical candidate_id and Kraken EUR pair",
+    "eligible independently rebuilt 1-3h second-leg review",
+    "complete fresh 1m/5m/15m closed OHLC, volume, ATR and structure evidence",
+    "fresh Kraken bid/ask/spread",
+    "fresh Kraken online Spot-EUR pair metadata and public minimum-order pass",
+    "same candidate, pair and decision clock across assessment and evidence"
+  ],
+  "inherited_frozen_guards": {
+    "scout_eur": 50,
+    "stage2_eur": 50,
+    "taker_fee_pct_each_side": 0.6,
+    "spread_and_explicit_slippage_in_net_cost": true,
+    "cost_adjusted_positive_edge_required": true,
+    "stop_below_current_ask_required": true,
+    "stage2_above_current_ask_required": true,
+    "stage2_ttl_minutes_range": [1, 60],
+    "anti_chase_pass_required": true,
+    "real_money_actions": false
+  },
+  "offline_acceptance": {
+    "positive_mock_buy_contract": true,
+    "eligibility_without_assessment_is_unknown": true,
+    "pit_pair_and_clock_mismatch_is_unknown": true,
+    "missing_closed_frame_is_unknown_not_reject": true,
+    "invalid_stop_stage2_antichase_or_net_edge_fails_closed": true,
+    "explicit_wait_and_reject_preserved": true,
+    "optional_sources_not_hidden_veto": true,
+    "economic_edge_proven": false,
+    "release_evidence": false
+  },
+  "context_before_action_receipt": {
+    "change_intent": "Implement the missing inactive V3-B full entry decision and execution-risk validation boundary required by the approved V2R4-to-V3 paper transition.",
+    "planned_action": "Add one pure offline validator, negative/positive unit tests and this frozen contract; do not touch V2R4 runtime, model, shadow, scheduler or Mini-PC.",
+    "superseded_or_rejected_alternatives": [
+      "Treat second-leg eligibility as BUY",
+      "Repeat the prior eight-HTTP model batch",
+      "Invent a new minimum RR or edge threshold",
+      "Activate a V3 shadow or paper writer from CI"
+    ],
+    "release_gate": "Five real VERIFIED_PIT_E2E_PASS artifacts, at least one cost/risk-valid BUY, matched V2R4 control, 6h/24h outcomes, fingerprints, explicit shadow/model-budget gates and physical Mini-PC readiness remain mandatory.",
+    "canonical_followthrough_owner": "PROJECT_BACKLOG.md#P1/MINIPC_ANALYTICS_ROLLOUT_V1 and research/strategy-learning-causal-gate-v1.json"
+  },
+  "next_gate": "CI_PASS_THEN_MARK_SAFE_OFFLINE_V3_B_FULL_EVALUATOR_INTEGRATION_IMPLEMENTED_INACTIVE; PROSPECTIVE_MODEL_SHADOW_REMAINS_SEPARATELY_GATED"
+}
