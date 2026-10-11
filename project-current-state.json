@@ -205,5 +205,88 @@
       ],
       "successor_carry_forward": "Applies to V2R4 review, V3/V4+ inheritance and later live-learning successor reviews."
     }
+  },
+  "pending_strategy_transition": {
+    "kind": "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1",
+    "requested_on": "2026-10-11",
+    "user_decision": "APPROVED_GOAL_V3_PAPER_REPLACES_V2R4_NO_REAL_MONEY",
+    "status": "BLOCKED_RELEASE_EVIDENCE_NOT_V3_RUNNING",
+    "transition_priority": "TOP_STRATEGY_WORK_AFTER_STABLE_PAPER_AND_EVIDENCE_PRESERVATION",
+    "strategy_owner": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+    "release_gate": "research/strategy-learning-causal-gate-v1.json",
+    "readiness_owner": "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
+    "execution_runbook": "docs/v3-controlled-paper-cutover-20261011.md",
+    "current_runtime_authority": "Supabase public.paper_series + MINI-PC physical verified snapshot; this request alone cannot change running machine",
+    "last_observed_supabase_read_only": {
+      "observed_at_utc": "2026-10-11T07:39:09Z",
+      "active_operational_series_id": "PAPER-V2R4-20261009T110135Z",
+      "active_operational_revision": "V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+      "active_series_count": 1,
+      "v2r4_disjoint_outcome_counts": [
+        1011,
+        823
+      ],
+      "v2r4_completed_paper_trades": 0,
+      "minipc_last_heartbeat_at_utc": "2026-10-11T07:34:26.461Z",
+      "minipc_last_reported_status": "HEALTHY",
+      "snapshot_not_current_runtime_truth": true
+    },
+    "safety": {
+      "paper_only": true,
+      "real_money_actions": false,
+      "new_model_budget_approved": false,
+      "max_strategy_changing_shadows": 1,
+      "v2r4_runtime_still_active_until_physical_ack": true,
+      "v2r4_silent_db_only_status_edit_forbidden": true,
+      "v3_release_requires_complete_prospective_evidence": true,
+      "v3_cannot_be_declared_active_by_repo_merge": true,
+      "holdovers_followups_and_existing_paper_ledger_preserved": true,
+      "no_new_schedulers": true,
+      "h3_h6_remain_inactive": true
+    },
+    "sequence": [
+      {
+        "order": 0,
+        "step": "SAFE_OFFLINE_V3_B_FULL_EVALUATOR_INTEGRATION",
+        "owner": "PROJECT_BACKLOG.md P1 / MINIPC_ANALYTICS_ROLLOUT_V1",
+        "requires": "PIT Kraken EUR coin input, independently executable full BUY/STOP/STAGE2 decision path and negative tests; current V3-B is only full-review eligibility",
+        "authorization": "SAFE_CODE_DOC_TEST_ONLY",
+        "status": "PENDING"
+      },
+      {
+        "order": 1,
+        "step": "CONTROLLED_PROSPECTIVE_MATCHED_SHADOW_PROOF",
+        "owner": "research/strategy-learning-causal-gate-v1.json",
+        "requires": "Existing source adapter and any distinct model quota; one approved shadow, equal candidate/market clock, mature 6h/24h net/MAE/false-buy",
+        "authorization": "SEPARATE_SHADOW_AND_MODEL_BUDGET_RELEASE_GATES_APPLY",
+        "status": "BLOCKED"
+      },
+      {
+        "order": 2,
+        "step": "COMPLETE_SUCCESSOR_PAPER_RELEASE",
+        "owner": "tools/strategy_successor_gate.py",
+        "requires": "Five verified PIT E2E release proofs + valid BUY with stop/stage2/fees, code/strategy fingerprint, independent paper approval; CI and physical smoke",
+        "authorization": "USER_V3_PAPER_GOAL_APPROVED_BUT_NO_GATE_OVERRIDE",
+        "status": "BLOCKED"
+      },
+      {
+        "order": 3,
+        "step": "PHYSICAL_SINGLE_WRITER_ATOMIC_CUTOVER",
+        "owner": "docs/v3-controlled-paper-cutover-20261011.md",
+        "requires": "Mini-PC verified snapshot/backup, disable old intake with ACK; old open positions/followups continue in old ledger; start V3 one new series with V3 runtime config; verify cloud/runtime writer and rollback",
+        "authorization": "REQUIRES_PHYSICAL_RUNTIME_EVIDENCE",
+        "status": "BLOCKED"
+      },
+      {
+        "order": 4,
+        "step": "POST_CUTOVER_WORK_NOTIFICATIONS_AND_PROOF",
+        "owner": "PROJECT_BACKLOG.md P1 / existing 10:15 Work",
+        "requires": "Supabase one active V3 paper series, no new V2R4 outcomes after cutoff, dated readout for old followups and V3 first fresh decision, health/Slack monitor routing verified, update active_strategy and ack only when actual",
+        "authorization": "VERIFIED_RELEASE_ONLY",
+        "status": "BLOCKED"
+      }
+    ],
+    "do_not_claim_success_before": "REAL_MINIPC_DISABLE_OLD_AND_ENABLE_NEW_ACK_PLUS_SUPABASE_SINGLE_ACTIVE_V3_WITH_FIRST_PROSPECTIVE_DECISION",
+    "no_artificial_minimum_wait": true
   }
 }
