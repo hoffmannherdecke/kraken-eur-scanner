@@ -273,10 +273,10 @@
         "owner": "research/strategy-learning-causal-gate-v1.json",
         "requires": "Existing source adapter and any distinct model quota; one approved shadow, equal candidate/market clock, mature 6h/24h net/MAE/false-buy",
         "authorization": "EXPLICIT_USER_APPROVED_20261011_V3B_SHADOW5_HTTP10_ONLY; V3 Paper and economic release still separately gated",
-        "status": "V3B_SHADOW5_INITIAL_ONE_SHOT_FINISHED_5_CASES_NO_MODEL_EVIDENCE",
+        "status": "V3B_SHADOW5_ORIGINAL_FIRST_TRIAL_COMPLETE_NO_ECONOMIC_MODEL_PROOF",
         "approval_contract": "research/v3/v3-b-shadow5-approval-20261011.json",
         "execution_script": "tools/run-minipc-v3-b-shadow5.ps1",
-        "execution_state": "REAL_MINIPC_SCREENSHOT_20261011: FIVE_ORIGINALS_ZERO_MODEL_HTTP_ZERO_MATCHED_REVIEWS; JOURNAL_LOCAL_ONLY; NO_AUTHORIZED_AUTO_RETRY",
+        "execution_state": "REAL_5_CASES_ZERO_MODEL_AND_CASE_CODES_ARCHIVED; V3B_INACTIVE_TIMING_AND_DIAGNOSTICS_PREPARED_ONLY",
         "authorized_caps": {
           "max_candidates": 5,
           "max_model_http_attempts_including_retries": 10,
@@ -294,10 +294,42 @@
           "orders": 0,
           "paper_changed": false,
           "local_report_path": "%USERPROFILE%/Trading/Research/v3-b-shadow5-http10-20261011.json",
-          "per_candidate_reason_status": "NOT_YET_RETRIEVED",
+          "per_candidate_reason_status": "READ_ONLY_SCREENSHOT_RETRIEVED_20261011_4x_SECOND_LEG_NOT_CONFIRMED_1x_UNKNOWN_REQUIRED_PIT",
           "economic_evidence": "NONE",
           "next_step": "READ_ONLY_LOCAL_CASE_REASON_SUMMARY",
-          "auto_retry_authorized": false
+          "auto_retry_authorized": false,
+          "anonymous_cohort_counts": {
+            "original_cases": 5,
+            "distinct_pairs": 4,
+            "not_confirmed": 4,
+            "unknown_required_pit": 1,
+            "model_http_attempts": 0,
+            "matched_full_reviews": 0
+          },
+          "original_pair_codes": [
+            {
+              "pair": "INJ/EUR",
+              "status": "SECOND_LEG_CONDITIONS_NOT_CONFIRMED"
+            },
+            {
+              "pair": "BAT/EUR",
+              "status": "SECOND_LEG_CONDITIONS_NOT_CONFIRMED"
+            },
+            {
+              "pair": "BAT/EUR",
+              "status": "SECOND_LEG_CONDITIONS_NOT_CONFIRMED"
+            },
+            {
+              "pair": "TIA/EUR",
+              "status": "UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE"
+            },
+            {
+              "pair": "AERO/EUR",
+              "status": "SECOND_LEG_CONDITIONS_NOT_CONFIRMED"
+            }
+          ],
+          "reason_report": "research/work-analysis/2026-10-11-v3b-shadow5-first-physical-result-reasons.md",
+          "subcheck_identifiability": "NOT_RECORDED_BY_ORIGINAL_RUNTIME; CANNOT_RECONSTRUCT"
         }
       },
       {
@@ -328,14 +360,16 @@
     "do_not_claim_success_before": "REAL_MINIPC_DISABLE_OLD_AND_ENABLE_NEW_ACK_PLUS_SUPABASE_SINGLE_ACTIVE_V3_WITH_FIRST_PROSPECTIVE_DECISION",
     "no_artificial_minimum_wait": true,
     "current_handoff_action": {
-      "kind": "V3B_SHADOW5_INITIAL_EVIDENCE_REASON_READOUT",
-      "status": "INITIAL_ONE_SHOT_COMPLETE_NEEDS_FIVE_LOCAL_REASON_CODES",
-      "source_approval": "research/v3/v3-b-shadow5-approval-20261011.json",
-      "command_owner": "READ_ONLY_POWERSHELL_SELECT_FROM_EXISTING_JOURNAL",
-      "no_new_approval_required_for_readonly": true,
-      "no_auto_repeat_execution": true,
+      "kind": "V3B_SHADOW5_CAUSAL_DISPOSITION_NEXT_GATED_TRIAL",
+      "status": "EVIDENCE_TRIAGED_FIRST_TRIAL_CLOSED_WAIT_EXPLICIT_NEW_BOUNDED_TRIAL_IF_WARRANTED",
+      "original_report": "research/work-analysis/2026-10-11-v3b-shadow5-first-physical-result-reasons.md",
+      "next_action": "DECIDE_IF_A_NEW_75M_PLUS_RECHECK_ONE_SHOT_IS_JUSTIFIED",
+      "current_trial_restart_permitted": false,
+      "original_trial_journal_immutable": true,
+      "user_reapproval_if_new_cases_or_new_research_experiment": true,
       "no_v2r4_shutdown": true,
-      "next_decision": "AUDIT_REASONS_THEN_EXPLICITLY_DECIDE_IF_A_SECOND_BOUNDED_COHORT_IS_NEEDED"
+      "no_real_money": true,
+      "no_new_scheduler": true
     }
   }
 }
