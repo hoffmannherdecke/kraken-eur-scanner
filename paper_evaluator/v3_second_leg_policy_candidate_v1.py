@@ -9,9 +9,8 @@ model, writes storage, modifies V2R4 or prices a tradable stop.
 """
 from __future__ import annotations
 
-import copy
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from paper_evaluator.v3_entry_handoff_probe import attach_to_future_evaluator, utc
@@ -114,14 +113,14 @@ def propose_second_leg_review(
             return _outcome("MISSING_CLOSED_CONSOLIDATION_HISTORY", **common)
         seq = closed_15m_bars[-(base_bars + 1):]
         ticks = [_bar_start(b) for b in seq]
-        if any(ticks[i] - ticks[i - 1] != __import__("datetime").timedelta(seconds=CLOSED_BAR_SECONDS) for i in range(1, len(ticks))):
+        if any(ticks[i] - ticks[i - 1] != timedelta(seconds=CLOSED_BAR_SECONDS) for i in range(1, len(ticks))):
             return _outcome("NONCONTIGUOUS_BASE_HISTORY", **common)
         if ticks[0] < first:
             return _outcome("BASE_PRECEDES_ORIGINAL_SETUP", **common)
-        if ticks[-1] + __import__("datetime").timedelta(seconds=CLOSED_BAR_SECONDS) > observed:
+        if ticks[-1] + timedelta(seconds=CLOSED_BAR_SECONDS) > observed:
             return _outcome("FUTURE_OR_OPEN_BREAKOUT_BAR", **common)
         f15 = new_coin_evidence["frames"]["15"]
-        if utc(f15["last_closed_bar_end_utc"]) != ticks[-1] + __import__("datetime").timedelta(seconds=CLOSED_BAR_SECONDS):
+        if utc(f15["last_closed_bar_end_utc"]) != ticks[-1] + timedelta(seconds=CLOSED_BAR_SECONDS):
             return _outcome("CANDLE_EVIDENCE_CLOCK_MISMATCH", **common)
         for bar in seq:
             high = _finite_positive(bar.get("high"))
