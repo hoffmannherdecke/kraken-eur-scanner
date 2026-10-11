@@ -1,0 +1,126 @@
+{
+  "kind": "V3_PAPER_ACTIVE_CONTEXT_AND_MINIPC_RELEASE_GATES_V1",
+  "strategy_revision": "V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001",
+  "status": "INTEGRATION_CODE_STAGED_NO_PHYSICAL_RUNTIME_ACTIVATION",
+  "selected_entry_families": 6,
+  "market_context_safety": {
+    "optional_data_never_hard_veto": true,
+    "only_verified_known_at_before_decision": true,
+    "never_use_future_outcomes_in_prompt": true,
+    "execution_price_authority": "KRAKEN_ONLINE_SPOT_EUR_ONLY",
+    "no_automatic_alpha_promotion": true
+  },
+  "features": [
+    {
+      "id": "MARKTPHASEN_LERNRADAR",
+      "owner": "EXISTING_2H_MARKET_REGIME_AUTOMATION",
+      "entry": "market_phase_radar",
+      "current": "EXISTING_RADAR_ACTIVE_CONTEXT_BRIDGE_CODE_READY",
+      "requires": "ACTUAL_MARKET_REGIME_EPISODE_V1_TO_MINIPC_PIT_SNAPSHOT_ACK",
+      "paper_consumption_verified": false
+    },
+    {
+      "id": "AUTONOMES_AKTIVES_QUELLENMANAGEMENT",
+      "owner": "EXISTING_2H_SOURCE_STEWARD_AUTOMATION",
+      "entry": "source_stewardship",
+      "current": "SOURCE_SCORING_WORKFLOW_ACTIVE_UNATTENDED_SOURCE_SWAP_E2E_NOT_PROVEN",
+      "requires": "REAL_KEEP_QUARANTINE_REPLACE_DECISION_AND_CANONICAL_REGISTRY_PIT_ACK",
+      "paper_consumption_verified": false
+    },
+    {
+      "id": "MARKTSTIMMUNG_NACHRICHTENANALYSE",
+      "owner": "EXISTING_H5_MACRO_OFFICIAL_HEADLINE_RESEARCH",
+      "entry": "news_sentiment",
+      "current": "PIT_BRIDGE_CODE_READY_OLD_CONTEXT_SOURCES_EXIST",
+      "requires": "ACTUAL_PROSPECTIVE_VERIFIED_NON_RAW_NEWS_SENTIMENT_SNAPSHOT_AND_PAPER_PROMPT_ACK",
+      "paper_consumption_verified": false
+    },
+    {
+      "id": "FRUEHERE_INTELLIGENTERE_EINSTIEGE",
+      "owner": "EXISTING_P0_P1_P2_P3_P4",
+      "entry": "FIRST_SCANNER_EARLY_REVIEW",
+      "current": "NEW_V3_MODEL_PROMPT_AND_ALL_SIX_FAMILY_OFFLINE_CI",
+      "requires": "REAL_MODEL_RESPONSE_AT_KNOWN_CLOCK_PLUS_SAFE_P4_PAPER_WRITE",
+      "paper_consumption_verified": false
+    },
+    {
+      "id": "DYNAMISCHE_MARKTBEWEGUNGSERKENNUNG",
+      "owner": "EXISTING_KRAKEN_MINIPC_WS_SENSOR",
+      "entry": "dynamic_move_radar",
+      "current": "OLD_KRAKEN_SCANNER_AND_MINIPC_WS_EVENTS_EXIST",
+      "requires": "NEW_V3_INTAKE_AND_LATENCY_SUBMITTED_AT_TRUE_CLOCK",
+      "paper_consumption_verified": false
+    },
+    {
+      "id": "AUTOMATISCHES_LERNEN_VERPASSTER_CHANCEN",
+      "owner": "EXISTING_P8_MISSED_MOVE_REVIEW",
+      "entry": "missed_opportunity_learning",
+      "current": "NO_BUY_6H24H_MFE_MAE_AND_MINIPC_DIAGNOSTICS_PURE_CODE_READY",
+      "requires": "RELIABLE_SELECTED_REAL_1M_CAPTURE_AND_IMMUTABLE_NO_BUY_MATURE_ACK",
+      "paper_consumption_verified": false
+    },
+    {
+      "id": "WIRTSCHAFTLICHE_STRATEGIEOPTIMIERUNG",
+      "owner": "EXISTING_P8_CAUSAL_LEARNING_GATE",
+      "entry": "economic_learning",
+      "current": "NET_STOP_FIRST_FEE_STAGE2_PATH_ESTIMATOR_PURE_CI",
+      "requires": "REAL_PAPER_FILL_AND_STOP_PATH_NO_BUY_CONTROLS_COHORT_VERDICT",
+      "paper_consumption_verified": false
+    },
+    {
+      "id": "MINIPC_ZUSATZANALYSE_LAG_RECHECK_FAILURE",
+      "owner": "EXISTING_MINIPC_RUNTIME_SUPERVISOR",
+      "entry": "minipc_reliability",
+      "current": "LIGHTWEIGHT_LOCAL_JOURNAL_CONVERSION_DELAY_GAP_ANALYZER_CODE_READY",
+      "requires": "PHYSICAL_HOST_ONE_SHOT_AND_EXISTING_WATCHDOG_ACK_NO_EXTRA_GITHUB_LOAD",
+      "paper_consumption_verified": false
+    },
+    {
+      "id": "SMART_MONEY_H10",
+      "owner": "EXISTING_H10_HYPERLIQUID_COHORT_CAPTURE",
+      "entry": "smart_money_h10",
+      "current": "CLOUD_CAPTURE_EXISTING_MARKET_LINK_NOT_PROMOTED",
+      "requires": "PROSPECTIVE_ASSET_PAIR_PIT_KRAKEN_MATCH_AND_ACTUAL_CONTEXT_PROMPT_ACK",
+      "paper_consumption_verified": false,
+      "hard_buy_gate": false
+    },
+    {
+      "id": "POLYMARKET_H11",
+      "owner": "EXISTING_H11_READONLY_PUBLIC_CAPTURE",
+      "entry": "polymarket_h11",
+      "current": "PUBLIC_PRECHECK_AND_BOUNDED_STATE_SNAPSHOTS_NOT_PROVEN_REAL_COIN_DIRECTION",
+      "requires": "REAL_FRESH_PROBABILITY_EVENT_CHANGE_AND_RELEVANCE_PIT_ACK_NOT_AUTO_COIN_DIRECTION",
+      "paper_consumption_verified": false,
+      "hard_buy_gate": false
+    }
+  ],
+  "implementation_files": [
+    "paper_evaluator/v3_paper_context_bridge_v1.py",
+    "paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+    "paper_evaluator/v3_paper_minipc_closed_1m_capture_v1.py",
+    "paper_evaluator/v3_paper_minipc_followup_v1.py",
+    "paper_evaluator/v3_paper_missed_opportunity_followup_v1.py",
+    "paper_evaluator/v3_paper_minipc_learning_health_v1.py",
+    "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py",
+    "supabase/v3-paper-event-receipts-append-only-20261011.sql",
+    "supabase/functions/v3-paper-evidence-relay/index.ts"
+  ],
+  "cutover_prerequisites": [
+    "REAL_MINIPC_PHYSICAL_PIT_MODEL_AND_P4_ACK",
+    "MODEL_API_ONE_SHOT_NEW_USER_FIXED_BUDGET_APPROVAL",
+    "LOCAL_AND_CLOUD_ALL_PHASES_APPEND_ONLY_WITH_REVISION_ACK",
+    "TRUE_CONTIGUOUS_6H24H_SELECTED_PATH_RELIABILITY",
+    "ACTUAL_WATCH_WAIT_AND_6H24H_OLD_SERIES_CONTINUITY",
+    "CURRENT_V2R4_STOP_FENCE_PROVEN",
+    "SINGLE_V3_NEW_WRITER_CLOUD_CAS_PROVEN",
+    "WORK_GITHUB_SLACK_DYNAMIC_AFTER_REAL_V3_ACTIVE_ACK"
+  ],
+  "current_truth": {
+    "v2r3_closed_complete": true,
+    "v2r4_last_verified_single_active": true,
+    "v3_paper_active": false,
+    "github_merged_is_not_physical_release": true
+  },
+  "no_new_schedules": true,
+  "no_real_money": true
+}

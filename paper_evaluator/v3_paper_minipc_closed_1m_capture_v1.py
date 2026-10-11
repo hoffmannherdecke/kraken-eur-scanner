@@ -1,0 +1,101 @@
+"""Read-only selective Kraken Spot EUR 1m capture reuse for V3 Paper followups.
+
+Each invocation does ONE PUBLIC OHLC GET for a TRACKED candidate and persists
+only closed 1m bars in a compact, append-only snapshot. Not a new scanner, not
+a full market archive, not a scheduler. V2R4 and H3/H6 unchanged.
+"""
+from __future__ import annotations
+import hashlib,json,os,urllib.parse,urllib.request
+from datetime import datetime,timezone,timedelta
+from pathlib import Path
+from typing import Any
+
+def timestamp(x:str)->datetime:
+    d=datetime.fromisoformat(x.replace("Z","+00:00"))
+    if d.tzinfo is None:raise ValueError("timezone-aware clock required")
+    return d.astimezone(timezone.utc)
+def now()->datetime:return datetime.now(timezone.utc)
+def capture_public_1m(*,pair:str,altname:str,outdir:Path,
+                      loader=None,clock=now)->dict[str,Any]:
+    if not pair.endswith("/EUR") or not altname.isalnum():
+        raise ValueError("current confirmed Kraken EUR altname required")
+    if not outdir.is_dir() or outdir.is_symlink():
+        raise ValueError("host-created local capture directory required")
+    if loader is None:
+        def loader(symbol):
+            query=urllib.parse.urlencode({"pair":symbol,"interval":1})
+            request=urllib.request.Request("https://api.kraken.com/0/public/OHLC?"+query,
+                        headers={"User-Agent":"v3-mini-pc-followup-spot-readonly/1"})
+            with urllib.request.urlopen(request,timeout=9) as response:
+                return json.loads(response.read(1_000_000).decode("utf-8"))
+    started=clock()
+    resp=loader(altname)
+    received=clock()
+    result=resp.get("result") if isinstance(resp,dict) and not resp.get("error") else None
+    if not isinstance(result,dict):
+        raise ValueError("Kraken Spot EUR 1m source unavailable")
+    entries=[v for k,v in result.items() if k!="last"]
+    if len(entries)!=1 or not isinstance(entries[0],list):
+        raise ValueError("ambiguous Kraken 1m array")
+    rows=[]
+    for raw in entries[0]:
+        if not isinstance(raw,list) or len(raw)<7:raise ValueError("invalid 1m OHLC")
+        at=datetime.fromtimestamp(int(raw[0]),timezone.utc)
+        if at+timedelta(minutes=1)>started:continue
+        op,hi,lo,close=(float(raw[k]) for k in (1,2,3,4))
+        if not 0<lo<=min(op,close)<=max(op,close)<=hi:
+            raise ValueError("malformed real Kraken OHLC")
+        rows.append({"start_at_utc":at.isoformat(),"open":op,"high":hi,
+                     "low":lo,"close":close})
+    if not rows:
+        raise ValueError("no genuinely closed Kraken Spot EUR minute data")
+    rows.sort(key=lambda x:x["start_at_utc"])
+    if len({x["start_at_utc"] for x in rows})!=len(rows):
+        raise ValueError("duplicate 1m source times")
+    report={"kind":"KRAKEN_CLOSED_1M_PATH_SNAPSHOT_V1",
+            "source":"KRAKEN_SPOT_EUR_PUBLIC","pair":pair,"altname":altname,
+            "observed_at_utc":started.isoformat(),
+            "captured_at_utc":received.isoformat(),
+            "closed_bars":rows,"orders":False,"real_money_actions":False}
+    data=(json.dumps(report,separators=(",",":"),sort_keys=True)+"\n").encode()
+    digest=hashlib.sha256(data).hexdigest()
+    p=outdir/(digest+".json")
+    try:
+        with p.open("xb") as f:
+            f.write(data);f.flush();os.fsync(f.fileno())
+    except FileExistsError:
+        if p.read_bytes()!=data:raise ValueError("capture digest collision")
+    return {"status":"CLOSED_KRAKEN_1M_SNAPSHOT_SAVED",
+            "count":len(rows),"sha256":digest,"file":str(p),
+            "observed_at_utc":started.isoformat(),"captured_at_utc":received.isoformat()}
+
+def assemble(*,snapshots:Path,pair:str,entry_at_utc:str,
+             observed_at_utc:str)->dict[str,Any]:
+    if not snapshots.is_dir():raise ValueError("capture folder missing")
+    # No historical backfill from next day's OHLC may masquerade as
+    # actually archived capture: only witnessed snapshots count.
+    entry=timestamp(entry_at_utc);now_at=timestamp(observed_at_utc)
+    all_rows={}
+    for p in snapshots.glob("*.json"):
+        raw=p.read_bytes()
+        if hashlib.sha256(raw).hexdigest()!=p.stem:raise ValueError("corrupt capture SHA")
+        snap=json.loads(raw)
+        if snap.get("kind")!="KRAKEN_CLOSED_1M_PATH_SNAPSHOT_V1" or snap.get("pair")!=pair:
+            continue
+        observed=timestamp(snap["observed_at_utc"])
+        captured=timestamp(snap["captured_at_utc"])
+        if observed>captured or captured>now_at:continue
+        for b in snap["closed_bars"]:
+            at=timestamp(b["start_at_utc"])
+            if at+timedelta(minutes=1)>observed:raise ValueError("open candle found in capture")
+            if at<entry:continue
+            key=at.isoformat()
+            if key in all_rows and all_rows[key]!=b:
+                raise ValueError("different captured prices for same closed 1m")
+            all_rows[key]=b
+    return {"kind":"KRAKEN_CLOSED_1M_PATH_CAPTURE_V1",
+            "source":"KRAKEN_SPOT_EUR_PUBLIC","pair":pair,
+            "captured_at_utc":observed_at_utc,
+            "closed_bars":[all_rows[k] for k in sorted(all_rows)],
+            "source_snapshots_with_conflicts":False,
+            "no_future_backfill":True}

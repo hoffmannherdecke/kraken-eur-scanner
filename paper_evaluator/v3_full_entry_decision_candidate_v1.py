@@ -252,8 +252,11 @@ def validate_full_entry_decision(
             actual_volume = _nonnegative(frames["5"]["volume_ratio_prior_5"])
             if not math.isclose(original_volume,actual_volume,rel_tol=1e-6,abs_tol=1e-6):
                 raise ValueError("model input 5m volume differs from initial source")
-            if _utc(review_eligibility["decision_at_utc"])!=decision_at:
-                raise ValueError("initial full-review clock differs from source")
+            # Model inference consumes real elapsed time. The source was
+            # frozen at review request; response may be later, but not stale.
+            requested_at=_utc(review_eligibility["decision_at_utc"])
+            if not 0 <= (decision_at-requested_at).total_seconds() <= SOURCE_MAX_AGE_SECONDS:
+                raise ValueError("model response after stale initial review or before request")
         if review_status == WAIT_FRESH_ELIGIBLE_STATUS:
             expired = _utc(review_eligibility["expired_at_utc"])
             reclaimed_at = _utc(review_eligibility["fresh_post_expiry_15m_close"])

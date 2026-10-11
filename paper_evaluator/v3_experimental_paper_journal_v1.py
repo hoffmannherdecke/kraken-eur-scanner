@@ -62,6 +62,8 @@ DATA_FIELDS=frozenset({
     "followup_source","censor_reason","predecessor_series_id",
     "original_strategy_epoch_id","strategy_fingerprint_sha256",
     "market_regime_known_at","pair_six_hour_episode",
+    "optional_context_states","market_phase_evidence","smart_money_evidence",
+    "polymarket_evidence","news_sentiment_evidence","source_management_evidence",
 })
 CODE=re.compile(r"^[A-Z][A-Z0-9_]{1,90}$")
 HEX=re.compile(r"^[0-9a-f]{64}$")
