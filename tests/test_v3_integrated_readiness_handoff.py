@@ -60,6 +60,36 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         self.assertIn("NOT_AUTHORIZED",reg["status"])
         self.assertIn("explicit",reg["prospective_measurement_once_separately_approved"]["approval_and_budget"].lower())
 
+    def test_finished_user_uploaded_original_p3_report_is_distinguished_from_economic_proof(self):
+        h=data("project-current-state.json")["pending_strategy_transition"]["current_handoff_action"]
+        p=h["bounded_p3_standard_experimental_test"]
+        self.assertEqual(p["approval_status"],"APPROVAL_CONSUMED_SINGLE_RUN_FINISHED_2026_10_11")
+        self.assertEqual(p["evidence_quality"],"VERIFIED_UPLOADED_JSON_NOT_INDEPENDENT_API_ATTESTATION")
+        self.assertEqual(p["uploaded_json_bytes"],4730)
+        self.assertEqual(p["uploaded_json_sha256"],
+            "6a0fe8aeda0aab083d957edc27f85e190419a99588a936f1cde18568abbfc485")
+        self.assertEqual(p["five_verified_coins"],
+            ["EIGEN/EUR","XLM/EUR","RENDER/EUR","CC/EUR","MON/EUR"])
+        self.assertEqual(p["verified_model_wait_and_p4_wait_count"],5)
+        self.assertEqual(p["experimental_incremental_reviews_observed"],0)
+        self.assertEqual(p["verified_5m_volume_weak_reason_code_count"],0)
+        self.assertTrue(p["metadata_fail_count_not_incremented_in_runner"])
+        self.assertTrue(p["true_model_response_at_and_wait_ttl_watch_not_persisted"])
+        self.assertTrue(p["no_relaunch_and_no_automatic_model_budget_reset"])
+        self.assertFalse(p["real_cost_validated_buy_proven"])
+        self.assertFalse(p["incremental_ab_delta_tested"])
+        self.assertFalse(h["full_model_consumer_e2e_verified"])
+        self.assertFalse(h["real_cost_validated_buy_verified"])
+        self.assertFalse(h["v3_paper_active"])
+        self.assertFalse(h["new_model_shadow_or_paper_trial_authorized"])
+        audit=(ROOT/"research/work-analysis/2026-10-11-v3-p3-ab-five-physical-result-screen-ack.md").read_text("utf-8")
+        self.assertIn(p["uploaded_json_sha256"],audit)
+        self.assertIn("kein einziges `5M_VOLUME_WEAK`",audit)
+        self.assertIn("nicht hochgezählt",audit)
+        backlog=(ROOT/"PROJECT_BACKLOG.md").read_text("utf-8")
+        self.assertIn("ORIGINAL-JSON GEPRÜFT",backlog)
+        self.assertIn("V2R4 bleibt allein aktiv",backlog)
+
     def test_optional_source_management_never_promoted_as_buy_gate(self):
         r=validate_optional_context(ROOT)
         self.assertEqual(r["status"],

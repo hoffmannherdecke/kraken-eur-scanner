@@ -467,7 +467,7 @@
         "research/work-analysis/2026-10-11-v3-p3-ab-five-physical-result-screen-ack.md"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "READ_ONLY_REVIEW_FINISHED_PROSPECTIVE_P3_AB_LOCAL_JSON_AND_CAUSAL_REJECTION_FUNDAMENTALS_NO_NEW_MODEL_OR_SHADOW_RUN_WITHOUT_NEW_APPROVAL; KEEP_V2R4_ONLY_ACTIVE_PAPER_AND_EXPLICIT_V3_RELEASE_BLOCKED",
+      "next_concrete_action": "PROSPECTIVE_NEXT_VERSION_P0_P3_P4_P8_PREPARE_OFFLINE_TELEMETRY_FOR_30_NO_REVIEW_3_INVALID_INPUT_AND_SEPARATE_MODEL_RESPONSE_P4_WAIT_TTL_WATCH_CAUSAL_A_B_EVIDENCE_NO_NEW_MODEL_SHADOW_OR_PAPER_APPROVAL; V2R4_ONLY_ACTIVE_PAPER",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -493,7 +493,7 @@
         "qualifying_setups_max": 5,
         "model_http_attempts_including_retries_max": 10,
         "observation_minutes_max": 360,
-        "current_execution_state": "PHYSICAL_MINIPC_FINISHED_SCREENSHOT_ACK_JSON_NOT_YET_INGESTED",
+        "current_execution_state": "PHYSICAL_MINIPC_FINISHED_USER_UPLOADED_JSON_PARSED_AND_HASHED_NO_ACTIVE_TEST",
         "initial_6h_24h_outcomes": "UNVERIFIED_ZERO_BUY_NO_VALIDATED_TRADE_PATH",
         "strategy": "V3_P3_CONTINUITY_STANDARD_GE_1_2_VS_EXP_ONE_CHANGE_GE_1_0_LT_1_2",
         "permissions_not_granted": [
@@ -517,8 +517,28 @@
         "full_model_buy_observed": 0,
         "local_report_file": "v3-p3-ab-five-http10-6h-20261011.json",
         "evidence_source": "research/work-analysis/2026-10-11-v3-p3-ab-five-physical-result-screen-ack.md",
-        "evidence_quality": "SCREENSHOT_ACK_ONLY_AWAIT_LOCAL_JSON",
-        "no_relaunch_and_no_automatic_model_budget_reset": true
+        "evidence_quality": "VERIFIED_UPLOADED_JSON_NOT_INDEPENDENT_API_ATTESTATION",
+        "no_relaunch_and_no_automatic_model_budget_reset": true,
+        "uploaded_json_bytes": 4730,
+        "uploaded_json_sha256": "6a0fe8aeda0aab083d957edc27f85e190419a99588a936f1cde18568abbfc485",
+        "five_verified_coins": [
+          "EIGEN/EUR",
+          "XLM/EUR",
+          "RENDER/EUR",
+          "CC/EUR",
+          "MON/EUR"
+        ],
+        "verified_model_wait_and_p4_wait_count": 5,
+        "verified_5m_volume_weak_reason_code_count": 0,
+        "verified_1m_volume_weak_reason_code_count": 2,
+        "verified_15m_weak_or_below_baseline_reason_code_count": 2,
+        "original_missing_review_details_not_recoverable": true,
+        "invalid_input_causes_not_recorded": true,
+        "metadata_fail_count_not_incremented_in_runner": true,
+        "true_model_response_at_and_wait_ttl_watch_not_persisted": true,
+        "real_cost_validated_buy_proven": false,
+        "incremental_ab_delta_tested": false,
+        "physical_test_permission_exhausted": true
       }
     }
   }
