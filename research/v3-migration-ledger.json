@@ -376,7 +376,7 @@
         "no_repeated_generic_no_buy_audit": true
       },
       "v3_b_policy_20261011": {
-        "status": "INACTIVE_OFFLINE_IMPLEMENTED_CI_PENDING_UNTIL_SUCCESS",
+        "status": "INACTIVE_OFFLINE_IMPLEMENTED_CI_VERIFIED_PR159_MERGED_NO_RELEASE",
         "change": "ONE_ENTRY_TIMING_POLICY_ONLY_NEW_1_3H_SECOND_LEG_RECLAIM_AFTER_HISTORICAL_EXTENDED",
         "implementation": "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
         "governance": "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
@@ -384,7 +384,17 @@
         "model_calls": false,
         "new_shadow": false,
         "auto_buy": false,
-        "next_gate": "CI_NEGATIVES_PASS_THEN_SEPARATE_EXPLICIT_USER_PROSPECTIVE_SHADOW_REVIEW"
+        "next_gate": "CI_NEGATIVES_PASS_THEN_SEPARATE_EXPLICIT_USER_PROSPECTIVE_SHADOW_REVIEW",
+        "ci_results": {
+          "pr": 159,
+          "merge_commit_sha": "d60ed0b2ec06502e4ea8f3397ffe785287b44859",
+          "checks": [
+            "V2R4 PR validation SUCCESS",
+            "Architecture cleanup validation SUCCESS",
+            "Project control-plane guard SUCCESS",
+            "Shared market data parity guard SUCCESS"
+          ]
+        }
       }
     },
     {
