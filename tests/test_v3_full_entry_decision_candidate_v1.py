@@ -101,6 +101,26 @@ class V3FullEntryDecisionCandidateTests(unittest.TestCase):
         self.assertEqual(run(lambda x:x[5].update(decision="REJECT"))["status"],
                          "FULL_REJECT_VALIDATED_OFFLINE")
 
+    def test_full_wait_contract_rejects_unmonitorable_or_invalid_watch_conditions(self):
+        def case(value):
+            return run(lambda x:x[5].update(decision="WAIT", ttl_minutes=30,
+                                              watch_conditions=value))
+        good=[{"metric":"closed_5m_volume_ratio_5","op":">=","value":1.2}]
+        self.assertEqual(case(good)["status"],"FULL_WAIT_VALIDATED_OFFLINE")
+        bad=[
+            [], [{"metric":"fake_model_name","op":">=","value":1}],
+            [{"metric":"ask_eur","op":"EVAL","value":10}],
+            [{"metric":"ask_eur","op":">","value":"nan"}],
+            [{"metric":"ask_eur","op":">","value":True}],
+            [{"metric":"closed_5m_volume_ratio_5","op":">","value":-1}],
+            [{"metric":"ask_eur","op":">","value":10,"secret":"hidden"}],
+            [None], good*7,
+        ]
+        for conds in bad:
+            with self.subTest(conds=conds):
+                self.assertEqual(case(conds)["status"],"UNKNOWN_INVALID_WAIT_CONTRACT")
+                self.assertEqual(case(conds)["decision"],"UNKNOWN")
+
     def test_optional_sources_are_not_a_hidden_veto(self):
         base=run()
         changed=run(lambda x:x[2].update(optional_sources={"news":None,"h10":"MISSING"}))
