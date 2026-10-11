@@ -251,7 +251,19 @@
         "owner": "PROJECT_BACKLOG.md P1 / MINIPC_ANALYTICS_ROLLOUT_V1",
         "requires": "PIT Kraken EUR coin input, independently executable full BUY/STOP/STAGE2 decision path and negative tests; current V3-B is only full-review eligibility",
         "authorization": "SAFE_CODE_DOC_TEST_ONLY",
-        "status": "PENDING"
+        "status": "COMPLETED_INACTIVE_OFFLINE_CI_PASS",
+        "completed_at_utc": "2026-10-11T08:23:56Z",
+        "evidence": {
+          "pull_request": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/170",
+          "merge_commit_sha": "0c17077eb52022f850cd204eea3070c76f9eb87a",
+          "contract": "research/v3/v3-b-full-entry-decision-contract-20261011.json",
+          "ci_runs": [
+            38124617051,
+            38124617120,
+            38124617038
+          ],
+          "limitations": "Positive mock proves contract reachability only; no model call, prospective shadow, economic edge, paper writer or runtime cutover."
+        }
       },
       {
         "order": 1,
@@ -259,7 +271,7 @@
         "owner": "research/strategy-learning-causal-gate-v1.json",
         "requires": "Existing source adapter and any distinct model quota; one approved shadow, equal candidate/market clock, mature 6h/24h net/MAE/false-buy",
         "authorization": "SEPARATE_SHADOW_AND_MODEL_BUDGET_RELEASE_GATES_APPLY",
-        "status": "BLOCKED"
+        "status": "BLOCKED_SEPARATE_SHADOW_AND_MODEL_BUDGET_RELEASE_DECISION"
       },
       {
         "order": 2,
