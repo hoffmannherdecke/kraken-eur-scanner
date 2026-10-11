@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "kind": "V3_NO_BUY_LESSONS_IMPLEMENTATION_MATRIX_V1",
+  "status": "IMPLEMENTATION_INACTIVE_RESEARCH_ONLY_NO_ECONOMIC_PROOF",
+  "intent": "Apply ALL prior supported findings and user-approved directions to V3 without reactivating disproven hypotheses or waiving established risk gates.",
+  "source_audit": "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
+  "historical_source": "Aktien-und-Krypto-Strategie-V2-Arbeitsstand-2026-09-24.md (user Library; 21/24 Sep audit section 33.1)",
+  "source_hypotheses": "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+  "current_control": "research/strategy-learning-causal-gate-v1.json",
+  "owner": "research/v3-migration-ledger.json#components/late_chase_protection",
+  "implementation": "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
+  "test": "tests/test_v3_second_leg_policy_candidate_v1.py",
+  "changed_policy_components_exactly": [
+    "ENTRY_TIMING"
+  ],
+  "no_activation": true,
+  "no_buys_authorized": true,
+  "no_real_money": true,
+  "lessons": [
+    {
+      "id": "NULL_BUY_ECONOMIC",
+      "finding": "0/1731 V2R4 initial BUY, 0 paper trades, not a scanner uptime result",
+      "disposition": "ESTABLISHED_UNRESOLVED",
+      "implementation": "economic hard gate; no claimed success without cost-net prospectively proven actual fills",
+      "stage": "B_TO_C_EVIDENCE"
+    },
+    {
+      "id": "EXTENDED_LATE_CHASE",
+      "finding": "after 1-3h new base, old 7/30d move must not permanently kill a genuinely new opportunity",
+      "disposition": "INACTIVE_REVIEW_POLICY_IMPLEMENTED",
+      "implementation": "fresh separately known-at bar series after initial EXTENDED; require price reclaim/new base, not chase",
+      "stage": "B"
+    },
+    {
+      "id": "SECOND_LEG",
+      "finding": "second impulse/pullback rebuild under new risk plan",
+      "disposition": "INACTIVE_REVIEW_POLICY_IMPLEMENTED_NOT_TRADE_PROVEN",
+      "implementation": "new time-stamped 1-3h contiguous consolidation and last closed 15m reclaim; preserves full independent evaluator gate",
+      "stage": "B"
+    },
+    {
+      "id": "BAD_NOW_NOT_DEAD",
+      "finding": "temporarily uneconomic entry should be distinguished from dead setup",
+      "disposition": "INACTIVE_REVIEW_POLICY_IMPLEMENTED",
+      "implementation": "original EXTENDED REJECT/WAIT acts as historical anchor; later genuinely new observed reclaim may authorize separately approved fresh full recheck",
+      "stage": "B"
+    },
+    {
+      "id": "BREAKOUT_RESISTANCE",
+      "finding": "resistance caution should not permanently end truly watchable re-entry",
+      "disposition": "PARTIAL_B_AND_LATER_EVALUATOR",
+      "implementation": "reclaim must close above prior base high; structural confirmation not assumed merely from last price",
+      "stage": "B"
+    },
+    {
+      "id": "WAIT_TTL_NEVER_RECHECK",
+      "finding": "946 of 1086 initial WAIT reached expiry without real recheck; 127 true rechecks 0 BUY",
+      "disposition": "MECHANIC_INHERITED_V2R4_ECONOMIC_NOT_FIXED",
+      "implementation": "do not change active WAIT or TTL in B; separately queue bounded expiry recheck eligibility hypothesis; no combined change",
+      "stage": "B2_SEPARATE"
+    },
+    {
+      "id": "OVERSTRICT_ENTRY_MODEL",
+      "finding": "single frozen BUY selector accepts no valid buys despite better scanner",
+      "disposition": "DECISION_CHANGE_DRAFT_IMPLEMENTED_ECONOMIC_NOT_PROVEN",
+      "implementation": "one distinct eligibility path to a full fresh model review; never count review as buy or fill",
+      "stage": "B"
+    },
+    {
+      "id": "COIN_ENTRY_FEATURE_GAP",
+      "finding": "0/1731 actual initial evaluator candidates had structured PIT 1m/5m/15m, volume, ATR & local low input",
+      "disposition": "INPUT_ADAPTER_PREPARED_PHYSICAL_PARTIAL",
+      "implementation": "reuses strict existing coin evidence handoff for later new snapshot; mandatory source freshness; source gaps flagged UNKNOWN",
+      "stage": "A_INHERITED"
+    },
+    {
+      "id": "COIN_ATTACH_2_OF_4",
+      "finding": "BAT/USELESS validation skipped before a model; technical errors are not REJECTs",
+      "disposition": "KNOWN_UNDIAGNOSED_LIVE_CASES",
+      "implementation": "fail closed when required core evidence absent; log safe category in future separate trials, no replay of spent batch",
+      "stage": "A_QUALITY"
+    },
+    {
+      "id": "OPTIONAL_SOURCE_NEUTRAL",
+      "finding": "missing optional news/smart money/derivatives must not be hidden hard veto",
+      "disposition": "RESEARCH_POLICY_IMPLEMENTED_OPTIONAL",
+      "implementation": "optional sources are strictly contextual, not required for review eligibility; don't invent missing data",
+      "stage": "B"
+    },
+    {
+      "id": "SOFT_FACTORS_COMPENSATE",
+      "finding": "all-or-nothing soft checklist not desired",
+      "disposition": "CONTINUE_FOR_FULL_MODEL_LATER",
+      "implementation": "only objective proof of new reclaim and core execution/risk fields can block research eligibility; additional discretionary soft factors remain contextual for later full evaluator; no unapproved quantitative score",
+      "stage": "B_TO_C"
+    },
+    {
+      "id": "TRADABILITY_KRAKEN_LIVE",
+      "finding": "no static pair blacklist/false account-private blocking",
+      "disposition": "INHERITED_V2R4_REQUIRE_LIVE_RECHECK",
+      "implementation": "pair EUR and core ticker validated; full future evaluator must independently check current Kraken public online Spot-EUR and order minimums",
+      "stage": "C"
+    },
+    {
+      "id": "FEES_AND_EXECUTION",
+      "finding": "single V2R3 stopped trade -3.09% net; gross missed MFE != positive edge",
+      "disposition": "HARD_GUARD_INHERITED",
+      "implementation": "0.6% taker each side, fresh ask/spread and slippage remain in full BUY evaluation; review cannot generate order or optimistic fill",
+      "stage": "B_TO_C"
+    },
+    {
+      "id": "STOP_STAGE2",
+      "finding": "valid stop below ask and stage2 trigger above ask required",
+      "disposition": "HARD_GUARD_INHERITED",
+      "implementation": "base low is descriptive stop-reference only, never stops/positions/orders; full evaluator must price a valid risk plan",
+      "stage": "B_TO_C"
+    },
+    {
+      "id": "SCANNER_SCORE",
+      "finding": "score association with MFE and close is near zero",
+      "disposition": "OVERRIDE_REJECTED",
+      "implementation": "score has no automatic permission to buy or size",
+      "stage": "ALL"
+    },
+    {
+      "id": "CHRONOLOGY_MFE_MAE",
+      "finding": "MFE highs may overlap losses and pair-cluster episodes",
+      "disposition": "MEASUREMENT_REQUIRED",
+      "implementation": "preregistered PIT only, entry-fill-stop Stage2 costs and time-ordered MAE/MFE, pair/time clustered 6h/24h followup for later shadow",
+      "stage": "C"
+    },
+    {
+      "id": "REGIME_HETEROGENEITY",
+      "finding": "performance differs by regime/day",
+      "disposition": "FUTURE_STRATIFICATION",
+      "implementation": "stratify economic evidence before selecting winner, no new time filter created",
+      "stage": "C"
+    },
+    {
+      "id": "SOURCES_H2_H11",
+      "finding": "active source evaluation and V3 H2-H11 need empirical readiness",
+      "disposition": "SEPARATELY_GATED_FOR_COMBINED_V3",
+      "implementation": "no automatic simultaneous H3/H6 or H10 buy vote; reuse sources based on known-at and measurable incremental value; never blindly bundle all",
+      "stage": "LATER_INTEGRATION"
+    },
+    {
+      "id": "ACTIVATION_SAFE",
+      "finding": "frozen V2R4, single writer, <=1 strategy shadow, no real orders",
+      "disposition": "UNCHANGED_INHERITED_HARD_GATE",
+      "implementation": "offline pure no-I/O/no-model candidate, separate explicit gate before any new shadow or paper, no live orders",
+      "stage": "ALL"
+    }
+  ],
+  "next_decision": "Once code/CI PASS and original learning PR #157 is reconciled, select the ONE inactive B policy candidate for independently authorized, bounded prospective evidence collection; no auto start or live changes.",
+  "status_legend": [
+    "INACTIVE_REVIEW_POLICY_IMPLEMENTED",
+    "HARD_GUARD_INHERITED",
+    "ESTABLISHED_UNRESOLVED",
+    "FUTURE_STRATIFICATION",
+    "SEPARATELY_GATED_FOR_COMBINED_V3",
+    "KNOWN_UNDIAGNOSED_LIVE_CASES"
+  ]
+}

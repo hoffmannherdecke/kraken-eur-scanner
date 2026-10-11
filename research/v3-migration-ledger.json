@@ -171,7 +171,9 @@
         "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
         "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
         "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
-        "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md"
+        "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
+        "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
+        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json"
       ],
       "pending_gate": "V2R4_PROSPECTIVE_PAPER_EVIDENCE",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -214,6 +216,12 @@
         "first_policy_priority": "SEPARATE_EXTENDED_FRESH_REVIEW_PREPARATION_OFFLINE",
         "next_policy_hypothesis": "WAIT_EXPIRED_FRESH_RECHECK_ELIGIBILITY_DIFFERENT_EXPERIMENT_NOT_SIMULTANEOUS",
         "no_repeated_generic_no_buy_audit": true
+      },
+      "v3_b_policy_20261011": {
+        "status": "FROZEN_V2R4_UNCHANGED_ONE_SEPARATE_V3_B_ENTRY_TIMING_CANDIDATE",
+        "new_review_after_old_expiry_is_not_v2r4_ttl_change": true,
+        "future_wait_ttl_policy": "SEPARATE_B2_LATER_NOT_SIMULTANEOUS",
+        "no_automatic_recheck_model_calls": true
       }
     },
     {
@@ -251,7 +259,9 @@
         "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
         "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
         "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
-        "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md"
+        "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
+        "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
+        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json"
       ],
       "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS",
       "successor_refinement": {
@@ -354,6 +364,17 @@
         "exclude_simultaneous_wait_ttl_change": true,
         "next_gate": "STRICT_NEW_VERSIONED_OFFLINE_DRAFT_THEN_SEPARATE_RESEARCH_AND_SHADOW_APPROVAL",
         "no_repeated_generic_no_buy_audit": true
+      },
+      "v3_b_policy_20261011": {
+        "status": "INACTIVE_OFFLINE_IMPLEMENTED_CI_PENDING_UNTIL_SUCCESS",
+        "change": "ONE_ENTRY_TIMING_POLICY_ONLY_NEW_1_3H_SECOND_LEG_RECLAIM_AFTER_HISTORICAL_EXTENDED",
+        "implementation": "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
+        "governance": "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
+        "authorization": "USER_20261011_ALL_VALIDATED_FINDINGS_IN_V3_RESEARCH",
+        "model_calls": false,
+        "new_shadow": false,
+        "auto_buy": false,
+        "next_gate": "CI_NEGATIVES_PASS_THEN_SEPARATE_EXPLICIT_USER_PROSPECTIVE_SHADOW_REVIEW"
       }
     },
     {
@@ -413,7 +434,9 @@
         "PROJECT_BACKLOG.md",
         "research/work-analysis/2026-10-07-v2r3-final-review.md",
         "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
-        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
+        "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+        "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
+        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json"
       ],
       "future_research_gate": "TARGETED_MICROSTRUCTURE_COST_RESEARCH",
       "v2r4_to_v3_20261010_learning_handoff": {
@@ -434,6 +457,14 @@
         "gross_roundtrip_pct": 1.2,
         "spread_slippage_stop_and_mae": "REQUIRED_BEFORE_VALID_BUY_OR_RELEASE",
         "no_relaxed_fees": true
+      },
+      "v3_b_policy_20261011": {
+        "status": "INHERIT_IDENTICAL_GUARDS",
+        "fee_taker_each_side_pct": 0.6,
+        "sizing": "50+50 EUR",
+        "stop_and_stage2_hard_gates": true,
+        "slippage_spread_net_proof_required": true,
+        "research_review_not_buy": true
       }
     },
     {
@@ -627,7 +658,9 @@
         "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
         "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
         "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
-        "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md"
+        "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
+        "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
+        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json"
       ],
       "pending_gate": "V3_ENTRY_EVIDENCE_POINT_IN_TIME_FEATURE_REUSE_DEDUP_AND_SINGLE_CHANGE_PROSPECTIVE_COMPARE_AFTER_H3_ARCHIVE_DISPOSITION_AND_V2R4_ECONOMIC_REVIEW",
       "dependencies": [
@@ -758,6 +791,15 @@
         "current_original_paper_source": "0_OF_1731_WITH_CANDIDATE_ENTRY_EVIDENCE",
         "continuation": "RESEARCH_INPUT_KNOWN_AT_AND_SAFE_VALIDATOR_CATEGORIES; DO_NOT_BLOCK_SUCCESSOR_OFFLINE_POLICY_DRAFT",
         "raw_four_case_journal_status": "PROSPECTIVE_TWO_MATCHED_WAIT_TO_WAIT_TWO_COIN_ATTACH_SKIPS_NO_NEW_AUTHORIZATION"
+      },
+      "v3_b_policy_20261011": {
+        "status": "INACTIVE_PIT_HANDOFF_REUSED_NOT_ACTIVE",
+        "dependent_policy": "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
+        "frozen_baseline_still_missing_structured_coin_evidence": true,
+        "requirement": "FRESH_CLOSED_KRAKEN_EUR_1M_5M_15M_OHLC_VOLUME_ATR_AND_HISTORICAL_CLOSED_15M_BASE_AFTER_ORIGINAL_EXTENDED",
+        "missing_core": "UNKNOWN_NOT_MISLABELED_REJECT",
+        "optional_sources": "NEUTRAL_IF_MISSING",
+        "original_four_case_run_budget_reuse": false
       }
     },
     {
