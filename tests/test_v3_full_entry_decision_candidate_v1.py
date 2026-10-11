@@ -67,6 +67,9 @@ class V3FullEntryDecisionCandidateTests(unittest.TestCase):
             lambda x:x[2].update(pair="ETH/EUR"),
             lambda x:x[3].update(observed_at_utc=dt(20)),
             lambda x:x[4].update(status="cancel_only"),
+            lambda x:x[4].update(observed_at_utc=dt(20)),  # future AssetPairs authority
+            lambda x:x[2]["frames"]["1"].update(last_closed_bar_end_utc=dt(-200)),  # stale even if VALID
+            lambda x:x[2]["frames"]["15"].update(last_closed_bar_end_utc=dt(50)),  # future bar
             lambda x:x[5].update(candidate_id="OTHER"),
         ):
             result=run(change)
