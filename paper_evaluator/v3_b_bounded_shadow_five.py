@@ -238,6 +238,8 @@ def compact_gate_evidence(hint: dict, coin: dict, closed_bars: list[dict]) -> di
     )
     result = {
         "second_leg_status": str(hint.get("status") or "UNKNOWN")[:90],
+        # Only bounded enum from the candidate policy, never exception text.
+        "validation_stage": hint.get("validation_stage"),
         "checks": {k: checks.get(k) if type(checks.get(k)) is bool else None
                    for k in known_checks},
         "observed_at_utc": coin.get("observed_at_utc"),
