@@ -471,7 +471,7 @@
         "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "V3_EARLY5M_INACTIVE_POLICY_CI_AND_PROSPECTIVE_ACTUAL_P0_FULL_MODEL_PLUS_DIAGNOSTIC_JOURNAL_WRITER_INTEGRATION; CONTROLLED_V2R4_TO_V3_PAPER_ONLY_AFTER_REAL_E2E_BUY_6H24H_FOLLOWUP_AND_MINIPC_CLOUD_SINGLE_WRITER_STOP_START_ACK; V2R4_OPERATIVE_ONLY_NOT_V2R3",
+      "next_concrete_action": "PROSPECTIVE_V3_EXPERIMENTAL_PAPER_TECHNICAL_WRITER_JOURNAL_FOLLOWUP_CLOUD_SINGLE_WRITER_DRY_RUN_PROOFS_REQUIRED; NO_PROFITABLE_BUY_PREREQUISITE_FOR_EXPERIMENTAL_PAPER_BUT_NO_PHYSICAL_ACTIVATION_WITHOUT_E2E; V2R4_ONLY_ACTIVE",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -740,6 +740,22 @@
         "existing_gate": "docs/v3-controlled-paper-cutover-20261011.md",
         "no_live_change_or_cutover_executed": true,
         "user_paper_target_approval_retained": true
+      },
+      "experimental_paper_technical_release_separation_20261011": {
+        "status": "INACTIVE_EXPERIMENTAL_PAPER_RELEASE_ROUTE_IMPLEMENTED_NOT_TECHNICALLY_ELIGIBLE",
+        "proof_validator": "tools/v3_experimental_paper_technical_gate.py",
+        "parent_guard": "tools/strategy_successor_gate.py",
+        "required_named_physical_or_cloud_proof_count": 6,
+        "real_e2e_release_proofs_recorded": 0,
+        "economic_positive_buy_required_before_initial_experimental_paper": false,
+        "economic_promotion_still_separate": true,
+        "actual_v3_paper_writer_installed_verified": false,
+        "actual_pit_model_p4_persistent_followups_verified": false,
+        "physical_single_writer_cutover_ack_obtained": false,
+        "actual_v3_paper_active": false,
+        "user_paper_intent_approved": true,
+        "fixed_numeric_new_model_cost_authorized": false,
+        "no_new_runtime_or_model_calls": true
       }
     }
   }
