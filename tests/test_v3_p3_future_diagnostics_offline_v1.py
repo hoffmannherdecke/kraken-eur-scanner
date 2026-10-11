@@ -75,7 +75,7 @@ class V3P3FutureDiagnosticsOfflineTests(unittest.TestCase):
         broken=copy.deepcopy(s);broken["checks"]=None
         with self.assertRaises(ValueError):
             review_diagnostic(broken,e)
-        s,e,_=compare(1.1)
+        s,e,_=compare(0.5)
         s["checks"]=None
         result=review_diagnostic(s,e)
         self.assertIsNone(result["failed_standard_hard_check_names"])
