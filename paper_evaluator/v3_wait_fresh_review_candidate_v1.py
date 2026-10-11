@@ -95,10 +95,12 @@ def propose_wait_fresh_review(
         return out("OUT_OF_SCOPE_ORIGINAL_NOT_WAIT")
     if not isinstance(candidate_id, str) or not candidate_id or not isinstance(pair, str) or not pair.endswith("/EUR"):
         return out("MISSING_CANONICAL_ORIGINAL_EUR_ID")
-    if (completed_expiry.get("kind") != EXPIRY_KIND or
+    old_outcome=completed_expiry.get("decision")
+    if (not isinstance(old_outcome, dict) or
+            completed_expiry.get("kind") != EXPIRY_KIND or
             completed_expiry.get("candidate_id") != candidate_id or
             completed_expiry.get("pair") != pair or
-            (completed_expiry.get("decision") or {}).get("decision") != "REJECT"):
+            old_outcome.get("decision") != "REJECT"):
         return out("EXPIRY_NOT_PROVEN_OR_ID_MISMATCH")
 
     stage = "ORIGINAL_EXPIRY_AND_NEW_PIT_CLOCK"
@@ -184,6 +186,9 @@ def propose_wait_fresh_review(
             expired_at_utc=expiry_time.isoformat(),
             fresh_bar_closed_after_expiry=True,
             fresh_post_expiry_15m_close=end.isoformat(),
+            # Consumer deduplicates this immutable source+closed-bar key; this
+            # offline policy intentionally has no durable state or scheduler.
+            snapshot_recheck_key=f"{candidate_id}|{end.isoformat()}",
             new_snapshot_observed_at_utc=new_coin_evidence["observed_at_utc"],
             new_snapshot_known_at_utc=new_coin_evidence["known_at_utc"],
             fee_plus_spread_pct_before_slippage=round(1.2+spread,4),
