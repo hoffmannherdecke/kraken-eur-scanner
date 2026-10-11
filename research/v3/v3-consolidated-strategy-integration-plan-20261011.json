@@ -1,0 +1,351 @@
+{
+  "schema_version": 1,
+  "kind": "V3_STRATEGY_INHERITANCE_AND_EXECUTION_PLAN_V1",
+  "date": "2026-10-11",
+  "status": "APPROVED_PROJECT_DIRECTION_RECONCILED_IMPLEMENTATION_GATED_NO_NEW_RUNTIME_OR_MODEL_AUTHORIZATION",
+  "purpose": "One operational ordering/verification index for all relevant mid-September–October user-approved V3 trading improvements; replaces repeated generic no-BUY audits, not existing canonical component owners.",
+  "precedence": {
+    "runtime_now": "project-current-state.json read with current Supabase/MINI-PC observations; dated records are snapshots, never real-time status",
+    "strategy_history": "docs/master-version-register.md and docs/strategy-version-map.md",
+    "frozen_strategy": "research/v2r4/paper_strategy_spec_v2r4_release_candidate.json",
+    "component_status": "research/v3-migration-ledger.json",
+    "hypothesis_and_research": "docs/v3-research-framework.md",
+    "source_management": "docs/market-source-autonomy-v1.md and docs/market-context-source-fusion-v1.md",
+    "risk_and_release": "research/strategy-learning-causal-gate-v1.json; research/v3/shadow-candidate-contract-v1.json; docs/test-strategy-runbook.md",
+    "user_work_owner": "PROJECT_BACKLOG.md#P1",
+    "economic_truth": "matured real candidate/fill/fee/stop outcomes; scanner/CI uptime != profit",
+    "scope": "Crypto Kraken online Spot-EUR V2R3/V2R4→V3. Does not silently change ETF/stocks or the completely separate conceptual autonomous AI-trading project."
+  },
+  "evidence_inventory": [
+    {
+      "id": "EARLY_POLICY_SEPT21_24",
+      "evidence": "User Library Aktien-und-Krypto-Strategie-V2-Arbeitsstand-2026-09-24.md sections 1–8, 33.1–33.5",
+      "status": "HISTORICAL_USER_DESIGN_INTENT_OVERRIDDEN_WHERE_LATER_FROZEN_RULES_DIFFER",
+      "inherited": [
+        "no optional source veto",
+        "no all-or-nothing soft-factor checklist",
+        "later 1–3h fresh base may reset an old 7d/30d extension",
+        "market-regime conditioned",
+        "early quality not forced trades",
+        "new EUR execution truth",
+        "staged entry and stop"
+      ],
+      "excluded": [
+        "historical dynamic real capital sizing 300–600 EUR",
+        "older scan schedules and old blacklists",
+        "older library automation status as current"
+      ]
+    },
+    {
+      "id": "V2R3_SEPT_OCT_FINAL",
+      "evidence": "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json; research/work-analysis/2026-10-07-v2r3-final-review.md",
+      "status": "HYP01_HYP06_FINAL",
+      "facts": [
+        "1 BUY_SCOUT in 1000",
+        "median WAIT lag 348sec, p90 1203sec",
+        "291 >=+5% observed candidate MFE collapse to 174 pair/6h episodes",
+        "single MON/EUR stopped scout net -3.09%; too few trades to calibrate risk",
+        "no score-based BUY override"
+      ]
+    },
+    {
+      "id": "V2R4_ORIGINAL_72H",
+      "evidence": "research/work-analysis/2026-10-10-v2r4-original-72h-productivity-review.md; research/work-analysis/2026-10-10-v2r4-original-72h-evidence.md",
+      "status": "ECONOMIC_NOT_DEMONSTRATED",
+      "facts": [
+        "1677 candidates/0 BUY at fixed original 72h epoch",
+        "946 WAIT TTL without true model recheck; 127 model rechecks 0 BUY",
+        "structural coin-evidence missing in initial model inputs",
+        "MFE high alone does not establish entry fill net edge"
+      ]
+    },
+    {
+      "id": "V3_A_PHYSICAL",
+      "evidence": "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md; research/v3/v3-a-prospective-four-candidate-test-contract-20261010.json",
+      "status": "PHYSICAL_INPUT_ONLY_TWO_MATCHED_COMPARISONS_BOTH_WAIT_TWO_ATTACH_SKIPS",
+      "facts": [
+        "TIA and ATOM WAIT→WAIT with clearer near-term volume/momentum/cost reasoning",
+        "BAT and USELESS unclassified at COIN_ATTACH ValueError",
+        "4/8 original model HTTP attempts reserved; the one-time report is closed",
+        "not a different BUY policy and not a net-profitable successor"
+      ]
+    },
+    {
+      "id": "V3_B_INACTIVE_REAL_CODE",
+      "evidence": "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json; paper_evaluator/v3_second_leg_policy_candidate_v1.py; tests/test_v3_second_leg_policy_candidate_v1.py; PR #159",
+      "status": "OFFLINE_CI_PASS_NO_MODEL_NO_SHADOW_NO_BUY",
+      "facts": [
+        "new closed 1-3h base/reclaim after historical EXTENDED is evaluated on fresh known-at snapshot",
+        "only unprivileged request for separate full review, not actual model decision/entry",
+        "risk/fee/stop/stage2 rules inherited unchanged"
+      ]
+    },
+    {
+      "id": "V3_H1_H11",
+      "evidence": "docs/v3-research-framework.md#2a; research/v3/h1-shadow-001-fixed-review-20261007.json; research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md; research/v3/h10-first-analysis-review-20261008.json",
+      "status": "PARTIALLY_COMPLETED_OR_DEFERRED_NO_DEFAULT_BUNDLE"
+    },
+    {
+      "id": "MARKET_SOURCES_AND_LEARNING",
+      "evidence": "docs/market-source-autonomy-v1.md; docs/market-context-source-fusion-v1.md; docs/unified-monitoring-learning-architecture-v1.md; research/v3/market-phase-reversal-observation-v1.md",
+      "status": "RESEARCH_AUTONOMY_GRANTED_NOT_TRADING_AUTHORITY"
+    },
+    {
+      "id": "NON_REPEAT_AND_FASTTRACK",
+      "evidence": "docs/test-strategy-runbook.md; docs/fasttrack-evidence-diversity-policy.md; docs/project-control-plane-governance.md",
+      "status": "PERMANENT_PROCESS_GATES"
+    }
+  ],
+  "definitions": {
+    "technical_candidate": "New V3 code/CI may be PASS while economic strategy utility remains UNKNOWN.",
+    "suitable_setup": "Prospective same-clock Kraken EUR tradable market and time-stamped valid setup, with any required stop/stage2 execution facts known at decision time.",
+    "buy": "BUY_SCOUT only after full independent risk and fee check plus valid stop below ask and stage2 confirmation above ask; no fabricated BUY on missing core evidence.",
+    "trade": "Only executed Paper/Shadow fill tracked with actual assumptions, 6h/24h path and realized model costs; an MFE proxy or model suggestion is not a trade.",
+    "strategy_success": "MORE VALID NET-POSITIVE PUBLISHED COMPARABLE TRADE OPPORTUNITIES AFTER COSTS, with bounded risk and no rise in false positives/stop-outs, not raw BUY count.",
+    "unknown": "Optional data absent is neutral/context unavailable; required source/price/risk proof unavailable is UNKNOWN/NO_EXECUTION and counted as input failure, not bearish strategy rejection.",
+    "research_stages": [
+      "EVIDENCED",
+      "INHERITED_AS_GUARD",
+      "IMPLEMENTED_INACTIVE",
+      "PROSPECTIVE_TEST_PENDING",
+      "REVIEWED_KEEP",
+      "REVIEWED_REJECT",
+      "DEFERRED_WITH_TRIGGER",
+      "ROLLED_INTO_RELEASE"
+    ]
+  },
+  "package_order": [
+    {
+      "order": 0,
+      "id": "P0_LINEAGE_AND_DATA_READINESS",
+      "priority": "P0",
+      "status": "PARTIAL_PHYSICAL_PASS_REMAINING_INPUT_GAP",
+      "change_class": "EVIDENCE_DELIVERY_ONLY",
+      "owner": "research/v3-migration-ledger.json#coin_specific_entry_evidence_provenance",
+      "sources": [
+        "paper_evaluator/v3_entry_handoff_probe.py",
+        "paper_evaluator/successor_coin_entry_evidence_v1.py",
+        "research/v3/v3-a-prospective-four-candidate-test-contract-20261010.json"
+      ],
+      "work": "Use proven source→evaluator input adapter in isolated offline successor; safe categorical (not raw-secret) COIN_ATTACH error accounting; retain candidate/PIT timestamps and compare baseline only when same-snapshot official replay matching is proven. Allow missing optional H/news/onchain fields neutrally, but never generate a trade without genuine core risk data.",
+      "exit": "Independent in-contract 1m/5m/15m closed OHLC/volume/ATR/structure/ask data are provenance-valid; technical skips reported separately; no repeated four-case API batch; no new resource or model calls without explicit budget.",
+      "risk": "Don't confuse 0/1731 historical V2R4 input with a 2026-10-11 input-ready active runtime."
+    },
+    {
+      "order": 1,
+      "id": "P1_V3_B_REAL_SECOND_LEG_ENTRY",
+      "priority": "HIGHEST_ECONOMIC",
+      "status": "IMPLEMENTED_INACTIVE_NOT_FULL_MODEL_OR_ECONOMIC_PROOF",
+      "change_class": "ENTRY_TIMING_ONLY",
+      "owner": "research/v3-migration-ledger.json#late_chase_protection",
+      "sources": [
+        "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
+        "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
+        "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"
+      ],
+      "work": "Finish *independent* same-snapshot full V2R4-vs-B strategy decision comparison in separately gated research: old EXTENDED WAIT/REJECT is historical; a fresh closed 1–3h base/pullback + reclaim and known-at Kraken EUR data may request a single NEW full evaluator review using exact frozen cost/stop/stage2/anti-chase. Measure usable BUY conversion, valid stops, correct REJECT, net expectancy and later drawdown, not just eligibility. The new policy must actually reach a different decision pathway; don't merely feed the old prompt more data.",
+      "exit": "One reproducible frozen B configuration, positive/negative synthetic tests, prospective matched decisions, observed valid entry/stop/stage2 proposals, actual Paper economic followups; reject if no net edge, not prolong on calendar alone.",
+      "not_authorized": "Current code is only review eligibility, no automatic model calls/BUY. Any prospective strategy-changing shadow or additional model budget still needs separate approval."
+    },
+    {
+      "order": 2,
+      "id": "P2_WAIT_EXPIRED_FRESH_RECHECK",
+      "priority": "NEXT_ONLY_IF_B_DISPOSITION",
+      "status": "DOCUMENTED_ONLY",
+      "change_class": "WAIT_TTL_REVALIDATION",
+      "owner": "research/v3-migration-ledger.json#v2r4_event_driven_wait_wakeup",
+      "work": "Separate successor B2 hypothesis: WAIT with temporary unfavorable price may regain confirmed trigger on a later fresh event; distinguish still watchable from dead setup and re-evaluate exactly once on verified new market input. Keep blocked risk factors; prevent 30–60min TTL nuisance, duplicate rechecks, live orders. Do NOT combine this parameter/TTL change with B second-leg test.",
+      "exit": "Funnel WAIT→watchable→fresh trigger→full model recheck→valid BUY proposal with precision and costs; bounded de-duped number of rechecks, stop when economic gate fails."
+    },
+    {
+      "order": 3,
+      "id": "P3_OTHER_ENTRY_SETUP_FAMILIES",
+      "priority": "EVIDENCE_TRIGGERED",
+      "status": "DEFINED_RESEARCH_NEXT_NOT_RELEASE",
+      "change_class": "SINGLE_ENTRY_SETUP_AT_A_TIME",
+      "owner": "research/v3-migration-ledger.json#v2r3_candidate_scoring_and_filters",
+      "work": "Independently test only if B/B2 show a gap: IGNITION (early impulse vs already-run), CONTINUITY (trend pause/resumption), resistance BREAKOUT/reclaim with a closed structure, REVERSAL only with convincing confirmation and market/regime safeguards. Keep long-context 7d/30d non-veto, 1–3h refreshed setups, flexible 2–4 relevant soft factors rather than an aggregate 'all must pass' gate. Ranking scores are never a direct entry or sizing override.",
+      "exit": "One versioned causal comparison per setup class against same-market-clock baseline; positive and adverse controls, rejections and false BUYs; no simultaneous sweeping of thresholds."
+    },
+    {
+      "order": 4,
+      "id": "P4_RISK_AND_EXECUTION_NOT_A_SHORTCUT",
+      "priority": "REQUIRED_IN_ALL_BUY_TESTS",
+      "status": "HARD_GUARDS_INHERITED_SEPARATE_OPTIMIZATION_DEFERRED",
+      "change_class": "EXECUTION_CONTROL_UNCHANGED",
+      "owner": "research/v3-migration-ledger.json#conservative_cost_model",
+      "work": "Preserve Kraken *online* public Spot-EUR pair metadata, min order, fresh bid/ask and spread. Full risk plan: stop below ask anchored to real structure/ATR, stage2 confirmation strictly above ask with TTL, scout 50 EUR + stage2 50 EUR, no adding losing trades, no lowering stops, no leverage or order rights. Fee 0.60% taker PER SIDE (1.2% roundtrip) plus spread+slippage and conservative fill/path assumptions. H4/H9/trailing and larger sizing only after enough actual mature paths and separate version release.",
+      "exit": "Positive economic evidence after realistic costs and risk-adjusted drawdown; no false-looking profitable 'missed-move' replay using future MAE/MFE as prompt features."
+    },
+    {
+      "order": 5,
+      "id": "P5_CONTEXT_AND_ACTIVE_SOURCE_MANAGEMENT",
+      "priority": "PARALLEL_NO_TRADE_AUTHORITY",
+      "status": "RESEARCH_WORKFLOW_AUTHORIZED_ACTUAL_AUTONOMOUS_SOURCE_SWAP_NOT_YET_PROVEN",
+      "owner": "docs/market-source-autonomy-v1.md",
+      "work": "Use existing 2h source radar and current source registry/candidates for independent search, source reliability scoring, retention/quarantine/reversible source change, and timestamp/provenance. Primary Kraken EUR order/execution truth; other exchanges, derivative, onchain, Smart Money, news, official macro, prediction odds are supplemental independent sensors. Deduplicate correlated repeated signals; missing optional source neutral, no automatic multi-veto. First prove actual unattended source-management E2E and source alpha at a later bounded source-only gate. Do not create jobs, scrape secrets, buy feeds, grant trading authority or increase Work cost.",
+      "exit": "Each source has provenance, unique incremental role, known-at, failure mode, overlap class, KEEP/QUARANTINE/REPLACE/DEFER decision, and where warranted ONE source feature change research trail, not an automated new BUY rule."
+    },
+    {
+      "order": 6,
+      "id": "P6_PROSPECTIVE_REGIME_LEARNING",
+      "priority": "PARALLEL_PASSIVE",
+      "status": "OBSERVATION_INHERITED_DECISION_BENEFIT_NOT_PROVEN",
+      "owner": "research/v3/market-phase-reversal-observation-v1.md",
+      "work": "Permanently observe only real known-at regime phase transitions Risk-off→stabilization→recovery/Risk-on, retain one compact event per transition and outcome join with matched candidates/negative controls. Use as context and stratification; never H1-like standalone veto or hindsight-adjusted threshold. Inherit ability in V4+ and separately authorized live successors.",
+      "exit": "Measurable incremental prospective strategy benefit OR NO_ACTION_WARRANTED, without separate Work run/Push/route."
+    },
+    {
+      "order": 7,
+      "id": "P7_ONE_CHANGE_H_COMPONENTS",
+      "priority": "SELECTIVE_AFTER_CORE_BUY_POLICY",
+      "status": "SOME_REVIEWED_MOST_NOT_PROMOTABLE",
+      "change_class": "ONE_INDEPENDENT_HYPOTHESIS_PER_SHADOW",
+      "owner": "docs/v3-research-framework.md#2a",
+      "work": "Only once entry B economic quality is knowable, separately assess potentially useful H2 derivatives; archived H3 fresh new-depth trial after separate disposition and new full approval; H6 additional price×volume not duplicate coin volume; H4 stop/TTL later; H5 event risk; H8 onchain; H9 execution fill; H10 Smart Money continuation after known-at Kraken outcome join (observation not copy trade); H11 prediction-market state. H7 TAKE/NO-TAKE meta model only after mature good/negative net labels. H1 standalone decision authority rejected (200/200 pilot, bad divergences) and must not silently reenter. Each KEEP/REJECT/DEFER tied to its own last report, do not wait for all H layers before core B.",
+      "exit": "Incremental OOS value and risk controls under cost model and same-clock candidate stream. A source count or association is not performance."
+    },
+    {
+      "order": 8,
+      "id": "P8_COMBINED_MATURE_V3",
+      "priority": "AFTER_STANDALONE_ECONOMIC_EVIDENCE",
+      "status": "NOT_READY",
+      "owner": "research/v3/integration-candidate-contract-v1.json",
+      "work": "Freeze ONE distinct integrated V3 config of only retained individually evidenced components, compare to current frozen V2R4 on matched prospective same-snapshot candidate stream, including interactions and bad trades. One strategy-changing Shadow at a time. No untested H-layer bundle, no UI-dressed 'full V3' claims.",
+      "exit": "Independent integrated CI, real prospective net-after-cost/risk/reversal/false-buy superiority or honest INCONCLUSIVE/REJECT; reviewed safety, rollout, rollback, explicit user Paper release; real money later separate."
+    },
+    {
+      "order": 9,
+      "id": "P9_AUTONOMOUS_FOLLOWTHROUGH_WITHOUT_BLOAT",
+      "priority": "PERMANENT_GOVERNANCE",
+      "status": "EXISTING_CONTROL_PLANE_NOT_NEW_AUTOMATION",
+      "owner": "PROJECT_BACKLOG.md#P1 and research/project-followthrough-routing-v1.json",
+      "work": "Existing daily 10:15 Work route + existing GitHub/Supabase/Mini-PC & 2h source monitoring read the single canonical V3 owner; automatically prepare only allowed inactive offline/code/docs/tests and PRs; every learned observation is triaged as implement/test/reject/defer with evidence. Never silently change active frozen runtime, create extra schedulers/work runs, reorder or lose handoff, reopen passed gates or promise background actions. Avoid physical Mini-PC work unless it uniquely closes a real gate; prompts outside GitHub must be separately actually updated before claiming they will run.",
+      "exit": "For each promised agreement there is an existing owner, concrete next permitted task and evidence/ACK on main; blocked requires explicit concise request to user."
+    }
+  ],
+  "h_components": [
+    {
+      "id": "H1",
+      "status": "REJECTED_STANDALONE",
+      "role": "cross-crypto lead/breadth only optional retrospective research diagnostic",
+      "rule": "No silent bundle"
+    },
+    {
+      "id": "H2",
+      "status": "PRECHECK_ONLY",
+      "role": "funding/OI/basis as cross-market context; PIT value test"
+    },
+    {
+      "id": "H3",
+      "status": "DEFER_WITH_GATE_ARCHIVED_INCOMPLETE",
+      "role": "fresh-orderbook depth/imbalance only after new prereg and one-shadow approval, no historical restart"
+    },
+    {
+      "id": "H4",
+      "status": "PRECHECK",
+      "role": "later stop/TTL/trailing/exit quality, labels/fills maturity required"
+    },
+    {
+      "id": "H5",
+      "status": "PRECHECK",
+      "role": "official CPI/FOMC macro timing not duplicated news veto"
+    },
+    {
+      "id": "H6",
+      "status": "KEEP_TESTING_NOT_ENABLED",
+      "role": "incremental price×volume confirmation after H3 disposition, independent of coin volume"
+    },
+    {
+      "id": "H7",
+      "status": "DEFERRED",
+      "role": "cost-net TAKE/NO-TAKE after mature labels; no meta gate now"
+    },
+    {
+      "id": "H8",
+      "status": "PRECHECK",
+      "role": "on-chain network data PIT known-at, not H10 trader flow"
+    },
+    {
+      "id": "H9",
+      "status": "DEFERRED",
+      "role": "maker/taker/fill/spread vs H3 depth distinct"
+    },
+    {
+      "id": "H10",
+      "status": "PASSIVE_OBSERVATION_NO_COPIED_TRADES",
+      "role": "Hyperliquid/Arkham/Nansen trader activity; prospective Kraken EUR outcome join unproven"
+    },
+    {
+      "id": "H11",
+      "status": "PRECHECK",
+      "role": "Polymarket event probability, no direct events veto"
+    }
+  ],
+  "global_gates": {
+    "single_change_before_integration": true,
+    "max_concurrent_strategy_changing_shadows": 1,
+    "one_preregistered_minimum_sample_or_diversity_with_mature_6h_24h_followups": true,
+    "no_fixed_calendar_wait_after_evidence_ready": true,
+    "early_24h_technical_review_not_promotion": true,
+    "early_72h_economic_productivity_review_not_fake_pass": true,
+    "holdout_never_tuned": true,
+    "same_candidate_pair_event_market_clock_and_baseline_replay_required": true,
+    "missing_core_data_fail_closed_and_report_unknown": true,
+    "avoiding_false_buy_and_actual_loss_outweigh_raw_trade_count": true,
+    "entry_cost_model_frozen_taker_each_side_pct": 0.6,
+    "scout_and_stage2_eur": [
+      50,
+      50
+    ],
+    "orders": false,
+    "real_money_actions": false,
+    "automatic_strategy_promotion": false,
+    "user_approval_needed_for_new_strategy_changing_shadow_or_new_model_budget": true,
+    "paper_and_real_money_releases_separate_explicit": true,
+    "no_new_h3_or_h6_auto_enable": true,
+    "no_additional_work_or_scheduler": true,
+    "no_repeated_old_one_time_8_call_batch": true
+  },
+  "consistency_findings": [
+    {
+      "key": "OLD_LIBRARY_VS_2026_OCT_RISK",
+      "resolution": "Preserve historical flexible decision/anti-veto design; 50+50/0.6%/stop-staged trade is later authoritative frozen Paper, old sizing tiers are history."
+    },
+    {
+      "key": "H1_H2_H3_SEQUENCE_NOT_SAME",
+      "resolution": "Explicit 03 Oct naming correction means H1→H3→H6 chosen order, H2 is separate; Oct 7–10 evidence supersedes pre-archive plans. H1 rejected, H3 archived/deferred, H6 not auto running."
+    },
+    {
+      "key": "SOURCE_REGISTERED_VS_ACTIVE",
+      "resolution": "Source registration or successful web fetch cannot claim continuous unattended E2E or strategy alpha; source-management autonomy is approved research only."
+    },
+    {
+      "key": "INPUT_ONLY_VS_NEW_POLICY",
+      "resolution": "ZRO/TIA/ATOM input-only changed context but WAIT remained; 11 Oct PR #159 introduces review eligibility, NOT model policy/entry economic proof."
+    },
+    {
+      "key": "LEGACY_PR157_SUPERSEDED",
+      "resolution": "PR #160 merged and preserved four-case evidence; PR #157 deliberately closed unmerged to protect V3-B findings."
+    },
+    {
+      "key": "ECONOMIC_FREEZE_VS_PARALLEL_RESEARCH",
+      "resolution": "V2R4 Paper stays untouched, but isolated successor offline development does not need to wait idly for a freeze to end."
+    },
+    {
+      "key": "SMART_MONEY_VS_H8",
+      "resolution": "H10 trader activity is not H8 network adoption; no copy trading."
+    },
+    {
+      "key": "REAL_TRADING_VS_SEPARATE_AUTONOMOUS_AI_PROJECT",
+      "resolution": "Standalone conceptual autonomous AI crypto research project is isolated, existing V2R4/V3 read-only if independently launched; do not merge architectures or storage."
+    }
+  ],
+  "immediate_action": {
+    "next": "Translate PR #159 pure review eligibility into one same-clock bounded B full-evaluator offline integration contract with model-call budget 0 until separately approved; identify and safely categorize required 15m-base historical data gap. Freeze exactly one subsequent new candidate after a mock/no-secret smoke and risk-plan negative controls.",
+    "avoid": "No additional broad no-BUY report; do not activate V3, H3, H6, or spend model API quota without distinct approval.",
+    "handoff_owner": "PROJECT_BACKLOG.md P1; research/v3-migration-ledger.json#late_chase_protection; docs/v3-research-framework.md",
+    "autonomy": "Prepare code/tests/docs and existing PR/CI evidence autonomously within safe scope, ask only for necessary physical/credential/economic release gates."
+  },
+  "state_assertion": "This is a durable decision routing plan and status classification, not a measured full V3 trading performance or proof of current runtime health."
+}
