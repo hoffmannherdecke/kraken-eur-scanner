@@ -117,7 +117,9 @@
     "diagnostics": "paper_evaluator/v3_p3_future_diagnostics_offline_v1.py",
     "economic_outcome": "P8_EXISTING_FOLLOWUP_PIPELINE_MUST_BE_PHYSICALLY_BOUND",
     "release": "tools/v3_experimental_paper_technical_gate.py",
-    "cutover": "docs/v3-controlled-paper-cutover-20261011.md"
+    "cutover": "docs/v3-controlled-paper-cutover-20261011.md",
+    "family_dedup": "paper_evaluator/v3_experimental_paper_family_router_v1.py",
+    "economic_outcome_pure": "paper_evaluator/v3_experimental_paper_pathwise_economics_v1.py"
   },
   "required_per_candidate_journal": [
     "SCANNER_CAPTURE",
@@ -144,7 +146,8 @@
     "stop_first_when_path_ambiguous": true,
     "missing_24h_is_censored_not_zero": true,
     "five_candidate_quiet_window_not_success_or_failed_alpha": true,
-    "minimum_calendar_wait_required": false
+    "minimum_calendar_wait_required": false,
+    "net_pathwise_minute_bar_economics_implemented_offline": true
   },
   "current_verified_state": {
     "github_unit_ci_only": true,
@@ -156,7 +159,10 @@
     "work_and_github_active_v3_rebind_done": false,
     "multi_family_runtime_dispatcher_verified": false,
     "journal_automatically_connected_to_real_paper_writer": false,
-    "prospective_real_response_to_p4_verified": false
+    "prospective_real_response_to_p4_verified": false,
+    "pure_1m_stop_first_fee_stage2_pathwise_tests_present": true,
+    "physical_closed_1m_coin_path_to_cost_validator_verified": false,
+    "real_orderbook_fill_or_slippage_proven": false
   },
   "release_requirements": {
     "economic_profitability_before_experiment_required": false,
