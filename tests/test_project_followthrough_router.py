@@ -5,8 +5,9 @@ from pathlib import Path
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from tools.project_followthrough_router import route
+from tools.project_followthrough_router import route, read_json as original_read_json
 
 ROOT = Path(__file__).resolve().parents[1]
 UTC = dt.timezone.utc
@@ -29,6 +30,21 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
         self.assertFalse(result["may_change_strategy"])
         self.assertFalse(result["may_execute_orders"])
         self.assertFalse(result["may_schedule_new_runs"])
+        context = result["context_before_material_work"]
+        self.assertTrue(context["required"])
+        self.assertTrue(context["must_read_original_relevant_sources"])
+        self.assertTrue(context["receipt_does_not_grant_release"])
+        self.assertEqual(context["command"], "tools/context_before_action.py")
+
+    def test_missing_context_handoff_blocks_substantive_work(self):
+        manifest_path = "research/project-followthrough-routing-v1.json"
+        original = json.loads((ROOT / manifest_path).read_text(encoding="utf-8"))
+        original.pop("context_preflight")
+        def replaced(root, name):
+            return original if name == manifest_path else original_read_json(root, name)
+        with patch("tools.project_followthrough_router.read_json", side_effect=replaced):
+            with self.assertRaisesRegex(ValueError, "context before material action"):
+                route(ROOT, dt.datetime(2026, 10, 11, 8, 0, tzinfo=UTC))
 
     def test_due_gate_needs_real_report_and_receipt(self):
         with tempfile.TemporaryDirectory() as tmp:
