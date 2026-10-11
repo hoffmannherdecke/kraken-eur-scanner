@@ -12,8 +12,12 @@ writes no state, starts no shadow and has no order authority.
 from __future__ import annotations
 
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Any
+from paper_evaluator.v3_p3_early_5m_continuity_research_v1 import (
+    KIND as EARLY_5M_KIND, ELIGIBLE as EARLY_5M_ELIGIBLE_STATUS,
+    CHECKS as EARLY_5M_CHECKS,
+)
 from paper_evaluator.v2r4_trigger_contract import ALLOWED_METRICS, ALLOWED_OPS
 
 ELIGIBLE_STATUS = "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
@@ -133,7 +137,7 @@ def validate_full_entry_decision(
         "eligibility_is_not_buy": True,
     }
     review_status = review_eligibility.get("status")
-    if (review_status not in {ELIGIBLE_STATUS, WAIT_FRESH_ELIGIBLE_STATUS, CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS}
+    if (review_status not in {ELIGIBLE_STATUS, WAIT_FRESH_ELIGIBLE_STATUS, CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS, EARLY_5M_ELIGIBLE_STATUS}
             or review_eligibility.get("request_model_recheck_only") is not True):
         return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
     if review_status == WAIT_FRESH_ELIGIBLE_STATUS:
@@ -148,6 +152,13 @@ def validate_full_entry_decision(
                 or review_eligibility.get("original_candidate_fresh") is not True
                 or review_eligibility.get("new_closed_15m_bar_after_candidate") is not True
                 or review_eligibility.get("baseline_v2r4_decision_unchanged") is not True):
+            return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
+    if review_status == EARLY_5M_ELIGIBLE_STATUS:
+        if (review_eligibility.get("kind") != EARLY_5M_KIND
+                or review_eligibility.get("original_candidate_fresh") is not True
+                or review_eligibility.get("new_closed_5m_bar_after_candidate") is not True
+                or review_eligibility.get("baseline_v2r4_decision_unchanged") is not True
+                or review_eligibility.get("same_clock_comparison_required") is not True):
             return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
     if review_status == EXPERIMENTAL_ELIGIBLE_STATUS:
         # Only an OFFLINE one-change preview, NEVER a model-call permit.
@@ -175,8 +186,9 @@ def validate_full_entry_decision(
     # The preconditions of an independent P2/P3 review are provenance-bound.
     # A claim of eligibility without the original eight positive market
     # checks must not validate even a synthetically otherwise plausible BUY.
-    if review_status in {WAIT_FRESH_ELIGIBLE_STATUS, CONTINUITY_ELIGIBLE_STATUS}:
+    if review_status in {WAIT_FRESH_ELIGIBLE_STATUS, CONTINUITY_ELIGIBLE_STATUS, EARLY_5M_ELIGIBLE_STATUS}:
         expected = (P2_STANDARD_CHECKS if review_status == WAIT_FRESH_ELIGIBLE_STATUS
+                    else EARLY_5M_CHECKS if review_status == EARLY_5M_ELIGIBLE_STATUS
                     else P3_STANDARD_CHECKS)
         checks = review_eligibility.get("checks")
         if (not isinstance(checks, dict) or set(checks) != expected
@@ -223,12 +235,23 @@ def validate_full_entry_decision(
                 raise ValueError("P2 bar not proven after WAIT expiry")
             if review_eligibility.get("new_snapshot_known_at_utc") != entry_evidence.get("known_at_utc"):
                 raise ValueError("P2 review/evidence clock mismatch")
-        if review_status in {CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS}:
+        if review_status in {CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS, EARLY_5M_ELIGIBLE_STATUS}:
             fresh_bar_end = _utc(review_eligibility["fresh_close_at_utc"])
             if not fresh_bar_end <= decision_at:
                 raise ValueError("P3 fresh closed bar must predate assessment")
             if review_eligibility.get("new_snapshot_known_at_utc") != entry_evidence.get("known_at_utc"):
                 raise ValueError("P3 review/evidence clock mismatch")
+            if review_status == EARLY_5M_ELIGIBLE_STATUS:
+                base_end = _utc(review_eligibility["prior_closed_15m_base_end_at_utc"])
+                detected_at = _utc(candidate["event_time_utc"])
+                closed5 = _utc(frames["5"]["last_closed_bar_end_utc"])
+                closed15 = _utc(frames["15"]["last_closed_bar_end_utc"])
+                if (closed15 != base_end or not base_end <= detected_at < closed5
+                        or closed5 != fresh_bar_end
+                        or closed5 > base_end + timedelta(minutes=15)):
+                    raise ValueError("early 5m has no original-time closed 15m base")
+                if _nonnegative(frames["5"]["volume_ratio_prior_5"]) < 1.2:
+                    raise ValueError("early review volume differs from actual PIT")
             if review_status == EXPERIMENTAL_ELIGIBLE_STATUS:
                 ratio = _nonnegative(frames["5"]["volume_ratio_prior_5"])
                 if not 1.0 <= ratio < 1.2:
@@ -280,7 +303,7 @@ def validate_full_entry_decision(
         # CONTINUITY experiments have ONE prescribed setup type. A full
         # evaluator's REVERSAL/EXTENDED/IGNITION classification cannot be
         # smuggled into that different, single-change review family.
-        if review_status in {CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS}:
+        if review_status in {CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS, EARLY_5M_ELIGIBLE_STATUS}:
             if lane != "CONTINUITY":
                 raise ValueError("P3 full-model setup lane differs from proven source eligibility")
         if not isinstance(full_assessment.get("reason_codes"), list):

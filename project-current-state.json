@@ -467,10 +467,11 @@
         "research/work-analysis/2026-10-11-v3-p3-ab-five-physical-result-screen-ack.md",
         "research/work-analysis/2026-10-11-v3-tradeability-backward-causality-diagnosis.md",
         "research/work-analysis/2026-10-11-v2r4-crash-rebound-historical-event-review.md",
-        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+        "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "HISTORICAL_12_CASE_DIAGNOSTIC_ADOPT_HOLD_REJECT_DECISION_CLOSED; OFFLINE_V3_P4_WAIT_VALIDATION_FIXED; PROSPECTIVE_NEXT_P0_FULL_MODEL_COIN_PIT_CONSUMER_PROOF_THEN_SINGLE_CHANGE_P3_EARLY_VS_STANDARD_ONLY_AFTER_SEPARATE_NUMERIC_HTTP_CAPS; FULL_6H24H_NET_COST_STOP_STAGE2_OR_EXPLICIT_NEGATIVE_DISPOSITION; V2R4_ONLY_ACTIVE_NO_NEW_MODEL_CALLS",
+      "next_concrete_action": "V3_EARLY5M_INACTIVE_POLICY_CI_AND_PROSPECTIVE_ACTUAL_P0_FULL_MODEL_PLUS_DIAGNOSTIC_JOURNAL_WRITER_INTEGRATION; CONTROLLED_V2R4_TO_V3_PAPER_ONLY_AFTER_REAL_E2E_BUY_6H24H_FOLLOWUP_AND_MINIPC_CLOUD_SINGLE_WRITER_STOP_START_ACK; V2R4_OPERATIVE_ONLY_NOT_V2R3",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -688,6 +689,57 @@
         "successor_v3_paper_release_allowed": false,
         "owner": "research/v3-migration-ledger.json#coin_specific_entry_evidence_provenance / late_chase_protection / conservative_cost_model",
         "next_gate": "PROSPECTIVE_SOURCE_COMPLETE_P0_FULL_MODEL_CONSUMER_THEN_ONE_CHANGE_P3_CAUSAL_BUY_NET_COST_6H24H_MATURITY_OR_EXPLICIT_NEGATIVE_DISPOSITION"
+      },
+      "v2r4_today_20261011_candidate_diagnosis": {
+        "source": "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md",
+        "source_timezone": "Europe/Berlin",
+        "sample_at_utc": "2026-10-11T19:47:23Z",
+        "active_operational_series_id": "PAPER-V2R4-20261009T110135Z",
+        "initial_candidates": 420,
+        "initial_wait": 238,
+        "initial_reject": 182,
+        "initial_buy": 0,
+        "real_triggered_rechecks": 40,
+        "rechecks_reclassified_extended": 38,
+        "expired_waits": 189,
+        "initial_decisions_with_coin_entry_evidence": 0,
+        "initial_decisions_with_structural_stop": 0,
+        "version_note": "V2R3_CLOSED_COMPLETE_V2R4_SINGLE_ACTIVE",
+        "causal_trade_conversion_improvement_proven": false
+      },
+      "v3_early_5m_paper_research_20261011": {
+        "status": "NEW_EARLY_CLOSED_5M_REVIEW_IMPLEMENTED_INACTIVE_OFFLINE_NO_RUNTIME_WRITER",
+        "policy": "ONE_CHANGE_REQUIRE_FRESH_POST_SIGNAL_CLOSED_5M_INSTEAD_OF_NEW_POST_SIGNAL_CLOSED_15M",
+        "module": "paper_evaluator/v3_p3_early_5m_continuity_research_v1.py",
+        "p4_contract": "paper_evaluator/v3_full_entry_decision_candidate_v1.py",
+        "tests": "tests/test_v3_p3_early_5m_continuity_research_v1.py",
+        "same_closed_15m_prior_base_required": true,
+        "same_5m_relative_volume_floor": 1.2,
+        "full_model_decision_required": true,
+        "positive_cost_adjusted_entry_stop_stage2_required": true,
+        "active_v2r4_changed": false,
+        "new_real_model_http_attempts": 0,
+        "no_paper_writer_or_shadow_started": true,
+        "no_economic_alpha_or_live_PIT_proven": true
+      },
+      "user_requested_v3_paper_cutover_20261011": {
+        "intent": "USER_AUTHORIZED_CONTROLLED_V2R4_TO_V3_PAPER_NOT_REAL_MONEY",
+        "status": "RELEASE_BLOCKED_MISSING_TRUE_V3_PAPER_WRITER_PIT_ECONOMICS_FOLLOWUP_CUTOVER_ACK",
+        "active_series": "PAPER-V2R4-20261009T110135Z",
+        "predecessor_v2r3": "CLOSED_COMPLETE",
+        "not_a_sql_only_cutover": true,
+        "missing_verified_gates": [
+          "PHYSICAL_V3_FULL_MODEL_PIT_AND_P4_AT_REAL_DECISION_CLOCK",
+          "MODEL_VALIDATED_BUY_STOP_STAGE2_FEES",
+          "V3_PAPER_WRITER_SINGLE_OWNER_AND_IMMUTABLE_VERSION",
+          "V3_PERSISTENT_DIAGNOSTIC_PHASE_ERROR_AND_WAIT_LEDGER",
+          "24H_FOLLOWUP_PRESERVATION_CROSS_TECHNICAL_ROTATION",
+          "CLOUD_SINGLE_ACTIVE_V3_READINESS_AND_MINIPC_STOP_START_ACK",
+          "WORK_AND_GITHUB_ACTUAL_RELEASE_REBIND_ONLY_AFTER_ACK"
+        ],
+        "existing_gate": "docs/v3-controlled-paper-cutover-20261011.md",
+        "no_live_change_or_cutover_executed": true,
+        "user_paper_target_approval_retained": true
       }
     }
   }

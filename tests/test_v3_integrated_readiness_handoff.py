@@ -177,6 +177,35 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         self.assertIn("12er-Lernauftrag ABGESCHLOSSEN",backlog)
         self.assertIn("UNKNOWN_INVALID_WAIT_CONTRACT",backlog)
 
+    def test_active_v2r4_and_early_p3_hypothesis_never_falsely_report_v3_paper_active(self):
+        j=data("project-current-state.json")
+        h=j["pending_strategy_transition"]["current_handoff_action"]
+        d=h["v2r4_today_20261011_candidate_diagnosis"]
+        x=h["v3_early_5m_paper_research_20261011"]
+        cut=h["user_requested_v3_paper_cutover_20261011"]
+        self.assertEqual(d["active_operational_series_id"],"PAPER-V2R4-20261009T110135Z")
+        self.assertEqual(d["initial_candidates"],420)
+        self.assertEqual(d["initial_wait"],238)
+        self.assertEqual(d["initial_reject"],182)
+        self.assertEqual(d["initial_buy"],0)
+        self.assertEqual(d["real_triggered_rechecks"],40)
+        self.assertEqual(d["rechecks_reclassified_extended"],38)
+        self.assertEqual(d["initial_decisions_with_coin_entry_evidence"],0)
+        self.assertEqual(d["initial_decisions_with_structural_stop"],0)
+        self.assertEqual(x["same_5m_relative_volume_floor"],1.2)
+        self.assertFalse(x["active_v2r4_changed"])
+        self.assertTrue(x["no_paper_writer_or_shadow_started"])
+        self.assertEqual(x["new_real_model_http_attempts"],0)
+        self.assertTrue(cut["no_live_change_or_cutover_executed"])
+        self.assertTrue(cut["user_paper_target_approval_retained"])
+        self.assertEqual(cut["active_series"],d["active_operational_series_id"])
+        self.assertIn("MODEL_VALIDATED_BUY_STOP_STAGE2_FEES",cut["missing_verified_gates"])
+        self.assertIn("24H_FOLLOWUP_PRESERVATION_CROSS_TECHNICAL_ROTATION",cut["missing_verified_gates"])
+        self.assertFalse(h["v3_paper_active"])
+        self.assertTrue(h["v2r4_remains_only_active_paper"])
+        self.assertIn("PROSPECTIVE",h["next_concrete_action"])
+        self.assertIn(d["source"],(ROOT/"PROJECT_BACKLOG.md").read_text("utf-8"))
+
     def test_optional_source_management_never_promoted_as_buy_gate(self):
         r=validate_optional_context(ROOT)
         self.assertEqual(r["status"],
