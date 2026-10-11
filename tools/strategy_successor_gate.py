@@ -10,7 +10,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
-from tools.v3_experimental_paper_technical_gate import validate_experimental_paper_packet
+# This gate is imported both as tools.strategy_successor_gate (unit tests)
+# and as strategy_successor_gate (direct validator scripts from tools/).
+if __package__:
+    from tools.v3_experimental_paper_technical_gate import validate_experimental_paper_packet
+else:
+    from v3_experimental_paper_technical_gate import validate_experimental_paper_packet
 
 ROOT = Path(__file__).resolve().parents[1]
 GATE_FILE = "research/strategy-learning-causal-gate-v1.json"
