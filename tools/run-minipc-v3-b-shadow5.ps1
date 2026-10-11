@@ -2,6 +2,7 @@ param(
   [switch]$Execute,
   [switch]$DiagnoseOnly,
   [int]$WaitMinutes = 90,
+  [ValidateSet('FIRST','SECOND')][string]$Trial = 'FIRST',
   [string]$TradingRoot = (Join-Path $env:USERPROFILE 'Trading')
 )
 # One manual research handoff ONLY. Does not install, start or stop Windows
@@ -10,13 +11,19 @@ $ErrorActionPreference = 'Stop'
 $repo = Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
 $python = Join-Path $TradingRoot 'Runtime\kraken-eur-scanner-venv\Scripts\python.exe'
 $research = Join-Path $TradingRoot 'Research'
-$report = Join-Path $research 'v3-b-shadow5-http10-20261011.json'
+$originalReport = Join-Path $research 'v3-b-shadow5-http10-20261011.json'
+$report = if ($Trial -eq 'SECOND') {
+  Join-Path $research 'v3-b-shadow5-http10-20261011-run2.json'
+} else { $originalReport }
 if ($Execute -and $DiagnoseOnly) { throw 'BLOCKED_EXCLUSIVE_RUN_MODE' }
 if ($WaitMinutes -lt 0 -or $WaitMinutes -gt 90) { throw 'BLOCKED_UNAPPROVED_WAIT_WINDOW' }
 $plan = [ordered]@{
   kind = 'V3_B_SHADOW5_MINIPC_MANUAL_HANDOFF_V1'
+  trial_id = $Trial
   status = 'PLAN_ONLY'
-  user_approval_already_exists = 'APPROVE V3-B SHADOW-5 / HTTP-10'
+  user_approval_already_exists = if ($Trial -eq 'SECOND') {
+    'APPROVE V3-B SHADOW-5 SECOND / HTTP-10'
+  } else { 'APPROVE V3-B SHADOW-5 / HTTP-10' }
   limit_candidates = 5
   absolute_model_http_attempts_including_retries = 10
   live_v2r4_changed = $false
@@ -51,7 +58,9 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'BLOCKED_DETACHED_WORKTREE_NO_RUNTIME_CHANGE' }
   $attached = $true
   $probe = Join-Path $temp 'paper_evaluator\v3_b_bounded_shadow_five.py'
-  $receipt = Join-Path $temp 'research\v3\v3-b-shadow5-approval-20261011.json'
+  $receipt = if ($Trial -eq 'SECOND') {
+    Join-Path $temp 'research\v3\v3-b-shadow5-approval-20261011-run2.json'
+  } else { Join-Path $temp 'research\v3\v3-b-shadow5-approval-20261011.json' }
   if (-not (Test-Path -LiteralPath $probe) -or -not (Test-Path -LiteralPath $receipt)) {
     throw 'BLOCKED_APPROVED_V3B_SHADOW5_CODE_OR_RECEIPT_MISSING'
   }
@@ -59,7 +68,8 @@ try {
   try {
     $argsForModel = @('-m','paper_evaluator.v3_b_bounded_shadow_five',
       '--trading-root',$TradingRoot,'--code-root',$temp,
-      '--report',$report,'--wait-minutes',"$WaitMinutes")
+      '--report',$report,'--wait-minutes',"$WaitMinutes",
+      '--trial-id',$Trial)
     if ($DiagnoseOnly) { $argsForModel += '--diagnose-only' }
     & $python @argsForModel
     $ret = $LASTEXITCODE
