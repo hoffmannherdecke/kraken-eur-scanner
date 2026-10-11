@@ -109,7 +109,7 @@
       "changes_only": "SOFT_CONTEXT_NON_FATAL_ON_EVIDENCE_PROVEN_CONTINUITY",
       "rule": "First establish whether optional macro/news/source negatives are actually independent hard veto in model. Only then compare one context-only variant with all core closed-bar volume/tradability/risk/fee conditions still strict. No direct eligibility BUY.",
       "evidence": "V2R4 CONTINUITY 183 mature, p50 MAE -3.36%, close -0.23% vs EXTENDED 476 mature p50 MAE -6.01%, close -2.20%",
-      "status": "EVIDENCE_TRIAGED_SOFT_ONLY_HARD_VETO_NOT_PROVEN__P3_NEXT_INACTIVE_ONE_CHANGE",
+      "status": "EARLY_CONTINUITY_FRESH_REVIEW_INACTIVE_OFFLINE_IMPLEMENTED_SOFT_CONTEXT_NOT_LOOSENED",
       "pretrial_evidence": {
         "source": "read-only Supabase public.paper_candidate_outcomes, both V2R4 technical segments, evaluated by 2026-10-11, 434 initial CONTINUITY candidates",
         "initial_wait": 426,
@@ -119,7 +119,17 @@
         "soft_keyword_without_recorded_core_keyword": 0,
         "note": "Regex detects mention only, including potentially POSITIVE codes and multi-reason synonyms; soft-coded absence of an isolated veto is not proof of absence. No causal attribution from reason_codes; don't promote a soft-factor override as beneficial without a true same-clock matched individual-veto test."
       },
-      "next_concrete_action": "In separate future safe offline PR, scope exactly one early-CONTINUITY fresh closed-bar review-eligibility variant and compare vs current V2R4 trigger/BUY on same market clock; do NOT relabel all macro/regime cautions as optional, do NOT touch hard price-volume/stop/risk gates, and do NOT combine P3 with completed P2 in its causal test."
+      "next_concrete_action": "In separate future safe offline PR, scope exactly one early-CONTINUITY fresh closed-bar review-eligibility variant and compare vs current V2R4 trigger/BUY on same market clock; do NOT relabel all macro/regime cautions as optional, do NOT touch hard price-volume/stop/risk gates, and do NOT combine P3 with completed P2 in its causal test.",
+      "implementation": {
+        "code": "paper_evaluator/v3_continuity_fresh_review_candidate_v1.py",
+        "tests": "tests/test_v3_continuity_fresh_review_candidate_v1.py",
+        "shared_full_risk_validator": "paper_evaluator/v3_full_entry_decision_candidate_v1.py",
+        "separate_from_P1_second_leg": true,
+        "separate_from_P2_wait_expiry": true,
+        "soft_factor_override": false,
+        "model_calls": 0,
+        "paper_writer_started": false
+      }
     },
     {
       "id": "P3_EXTENDED_GENUINE_NEW_BASE_REVIEW_ONLY_V1",
@@ -157,7 +167,7 @@
     "Pass current 5 VERIFIED_PIT_E2E_PASS, actual economic validation and explicit single-writer paper release"
   ],
   "approval_boundary": "USER_APPROVED_RESEARCH_EVALUATION_AND_SAFE_PREPARATION_ONLY; STRATEGY/SHADOW/MODEL_BUDGET/PAPER_ACTIVATION_REQUIRE_SEPARATE_GATES",
-  "next_safely_executable_action": "P2 implemented inactive, CI passed PR #179. P3 CONTINUITY only a separate individually evidenced implementation next, not an assumed solo soft-veto fix; no live model/Shadow/Paper/fee or anti-chase relax.",
+  "next_safely_executable_action": "P1/P2/P3 early CONTINUITY separately coded INACTIVE. Next verify all CI and conduct source-specific same-clock prospective full model comparison ONLY after distinct explicit model/shadow budget authorization; no other P3 family/automatic paper promotion.",
   "no_new_automation": true,
   "no_activation": true,
   "no_buy_authority": true
