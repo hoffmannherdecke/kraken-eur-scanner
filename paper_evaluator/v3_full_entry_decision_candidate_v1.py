@@ -14,6 +14,7 @@ from __future__ import annotations
 import math
 from datetime import datetime, timezone
 from typing import Any
+from paper_evaluator.v2r4_trigger_contract import ALLOWED_METRICS, ALLOWED_OPS
 
 ELIGIBLE_STATUS = "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
 # One risk/stop/stage2 validator shared across separately tested review families.
@@ -293,8 +294,22 @@ def validate_full_entry_decision(
     if decision == "WAIT":
         ttl = full_assessment.get("ttl_minutes")
         watch = full_assessment.get("watch_conditions")
-        if type(ttl) is not int or not 1 <= ttl <= 60 or not isinstance(watch, list) or not watch:
+        if type(ttl) is not int or not 1 <= ttl <= 60 or not isinstance(watch, list) or not 1 <= len(watch) <= 6:
             return _result("UNKNOWN_INVALID_WAIT_CONTRACT", **common)
+        # Reuse the already-established deterministic V2R4 WAIT grammar.
+        # Full V3-P4 review must not certify an unmonitorable WATCH/TTL as valid.
+        for condition in watch:
+            if not isinstance(condition, dict) or set(condition) != {"metric", "op", "value"}:
+                return _result("UNKNOWN_INVALID_WAIT_CONTRACT", **common)
+            if condition["metric"] not in ALLOWED_METRICS or condition["op"] not in ALLOWED_OPS:
+                return _result("UNKNOWN_INVALID_WAIT_CONTRACT", **common)
+            try:
+                _nonnegative(condition["value"]) if condition["metric"] in {
+                    "spread_pct", "closed_1m_volume_ratio_5", "closed_5m_volume_ratio_5",
+                    "closed_15m_volume_ratio_4"
+                } else _positive(condition["value"])
+            except (ValueError, TypeError, OverflowError):
+                return _result("UNKNOWN_INVALID_WAIT_CONTRACT", **common)
         return _result("FULL_WAIT_VALIDATED_OFFLINE", decision="WAIT", **common,
                        setup_lane=lane, ttl_minutes=ttl, watch_conditions=watch,
                        reason_codes=full_assessment["reason_codes"][:8])
