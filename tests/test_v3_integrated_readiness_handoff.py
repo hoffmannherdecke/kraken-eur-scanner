@@ -117,6 +117,39 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         self.assertIn(a["source"], (ROOT/"PROJECT_BACKLOG.md").read_text("utf-8"))
         self.assertIn("PROSPECTIVE",h["next_concrete_action"])
 
+    def test_crash_rebound_archive_history_and_751_censored_horizons_not_converted_to_trades(self):
+        j=data("project-current-state.json")
+        h=j["pending_strategy_transition"]["current_handoff_action"]
+        x=h["crash_rebound_historical_stress_review_20261011"]
+        self.assertEqual(x["v2r3_clean"]["fully_mature_24h"],1005)
+        self.assertEqual(x["v2r3_clean"]["completed_paper_trades"],1)
+        self.assertEqual(x["v2r4_thursday"]["candidates"],554)
+        self.assertEqual(x["v2r4_thursday"]["complete24"],214)
+        self.assertEqual(x["v2r4_friday"]["candidates"],623)
+        self.assertEqual(x["v2r4_friday"]["complete24"],212)
+        self.assertEqual(x["v2r4_friday"]["mfe24_ge_plus12"],71)
+        self.assertEqual(x["v2r4_friday"]["distinct_pairs_with_mfe24_plus12"],9)
+        self.assertEqual(x["v2r4_technical_closed_followups"]["missing24"],751)
+        self.assertEqual(x["v2r4_technical_closed_followups"]["of_which_complete12"],358)
+        self.assertEqual(x["v2r4_technical_closed_followups"]["missing12_and_24"],393)
+        self.assertEqual(x["v2r4_technical_closed_followups"]["cause_label"],
+                         "HORIZON_CENSORED_ACROSS_FROZEN_TECHNICAL_ROTATION_NOT_LOSS_NOT_ZERO_RETURN")
+        self.assertTrue(x["v2r4_technical_closed_followups"]["immutable_paper_segment_must_not_be_overwritten"])
+        self.assertFalse(x["v2r4_technical_closed_followups"]["historical_recovery_verified"])
+        self.assertFalse(x["numeric_new_model_http_cost_setup_caps_yet_fixed"])
+        self.assertTrue(x["no_model_expenditure_or_physical_trial_started"])
+        self.assertTrue(x["no_v2r4_or_paper_writer_change"])
+        self.assertTrue(x["no_new_scheduler"])
+        self.assertFalse(h["new_model_shadow_or_paper_trial_authorized"])
+        self.assertFalse(h["v3_paper_active"])
+        self.assertTrue(h["v2r4_remains_only_active_paper"])
+        audit=(ROOT/x["primary_source"]).read_text("utf-8")
+        self.assertIn("**751 Kandidaten ohne 24h-Horizont**",audit)
+        self.assertIn("1005",audit.replace(".",""))
+        backlog=(ROOT/"PROJECT_BACKLOG.md").read_text("utf-8")
+        self.assertIn(x["primary_source"],backlog)
+        self.assertIn("CENSORED_NOT_0_LOSS",backlog)
+
     def test_optional_source_management_never_promoted_as_buy_gate(self):
         r=validate_optional_context(ROOT)
         self.assertEqual(r["status"],

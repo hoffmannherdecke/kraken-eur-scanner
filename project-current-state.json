@@ -465,10 +465,11 @@
         "docs/market-source-autonomy-v1.md",
         "research/v3/v3-p3-ab-five-approval-20261011.json",
         "research/work-analysis/2026-10-11-v3-p3-ab-five-physical-result-screen-ack.md",
-        "research/work-analysis/2026-10-11-v3-tradeability-backward-causality-diagnosis.md"
+        "research/work-analysis/2026-10-11-v3-tradeability-backward-causality-diagnosis.md",
+        "research/work-analysis/2026-10-11-v2r4-crash-rebound-historical-event-review.md"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_P0_TRUE_FULL_MODEL_COIN_ATR_STOP_PIT_WIRING_AND_P3_CONFIRMATION_TO_EXTENDED_ONE_CHANGE_CAUSAL_ASSESSMENT_PREP_OFFLINE; P4_REAL_FEES_STOP_STAGE2_PATHWISE_METRICS; NO_NEW_MODEL_SHADOW_OR_PAPER_TEST_BEFORE_EXPLICIT_SEPARATE_APPROVAL; V2R4_ONLY_ACTIVE",
+      "next_concrete_action": "HISTORICAL_20261008_10_CRASH_REBOUND_EVENT_REVIEW_COMPLETED; READONLY_VALIDATE_751_FOLLOWUP_CENSORING_AND_HISTORICAL_CANDLE_PROVENANCE_IN_EXISTING_P0_P3_P4_OWNER; DESIGN_PROSPECTIVE_REGIME_BALANCED_SAME_CLOCK_TEST_WITH_EXPLICIT_NUMERIC_MODEL_CAPS_BEFORE_PHYSICAL_LAUNCH; V2R4_ONLY_ACTIVE_PAPER_NO_NEW_MODEL_SPEND_OR_SHADOW_STARTED",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -599,6 +600,66 @@
         "no_new_model_budget_granted": true,
         "no_shadow_or_paper_activation": true,
         "no_v2r4_runtime_strategy_modification": true
+      },
+      "crash_rebound_historical_stress_review_20261011": {
+        "status": "READ_ONLY_HISTORICAL_REGIME_CONDITIONAL_EVIDENCE_REVIEW_COMPLETE_CENSORED_FOLLOWUP_GAP_OPEN",
+        "primary_source": "research/work-analysis/2026-10-11-v2r4-crash-rebound-historical-event-review.md",
+        "time_zone": "Europe/Berlin",
+        "event_local_days": [
+          "2026-10-08_CRASH",
+          "2026-10-09_REBOUND",
+          "2026-10-10_CONTINUATION"
+        ],
+        "v2r3_clean": {
+          "fully_mature_24h": 1005,
+          "completed_paper_trades": 1,
+          "net_return_pct": -3.092,
+          "net_pnl_eur": -1.546
+        },
+        "v2r4_thursday": {
+          "candidates": 554,
+          "complete24": 214,
+          "complete12": 554,
+          "mae24_le_minus10": 158,
+          "mfe24_ge_plus12": 25,
+          "buys": 0
+        },
+        "v2r4_friday": {
+          "candidates": 623,
+          "complete24": 212,
+          "complete12": 230,
+          "mae24_le_minus10": 21,
+          "mfe24_ge_plus12": 71,
+          "distinct_pairs_with_mfe24_plus12": 9,
+          "buys": 0,
+          "model_reason_missing_stop_candle_neg_mentions": 396,
+          "model_reason_chase_mentions": 342,
+          "model_reason_fee_cost_edge_mentions": 530
+        },
+        "v2r4_technical_closed_followups": {
+          "missing24": 751,
+          "of_which_complete12": 358,
+          "missing12_and_24": 393,
+          "cutover_at_utc": "2026-10-09T11:01:35Z",
+          "cause_label": "HORIZON_CENSORED_ACROSS_FROZEN_TECHNICAL_ROTATION_NOT_LOSS_NOT_ZERO_RETURN",
+          "historical_recovery_verified": false,
+          "immutable_paper_segment_must_not_be_overwritten": true
+        },
+        "shadow_context_6h_obs_oct08": 1183,
+        "shadow_context_6h_obs_oct09": 2236,
+        "shadow_same_candidate_as_paper_cohort_not_proven": true,
+        "all_24h_mfe_are_ex_post_not_realized_fills": true,
+        "next_priority": [
+          "IDENTIFY_VALID_RESEARCH_ONLY_KRAKEN_CANDLE_ARCHIVE_PROVENANCE_FOR_751_CENSORED_HORIZONS",
+          "PRESERVE_FOLLOWUP_CONTINUITY_ON_FUTURE_TECHNICAL_ROTATIONS_WITHOUT_REWRITING_FROZEN_PAPER_SERIES",
+          "P0_ACTUAL_FULL_MODEL_COIN_ATR_STOP_POINT_IN_TIME_CONSUMER",
+          "REGIME_AWARE_EARLY_CONTINUITY_VS_STANDARD_CAUSAL_6H_24H_NET_TEST"
+        ],
+        "user_approved_next_bounded_research_objective": true,
+        "numeric_new_model_http_cost_setup_caps_yet_fixed": false,
+        "no_model_expenditure_or_physical_trial_started": true,
+        "no_v2r4_or_paper_writer_change": true,
+        "no_new_scheduler": true
       }
     }
   }
