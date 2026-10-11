@@ -1,39 +1,50 @@
-# V3 P3 Standard/Experimental – erster autorisierter physischer Modelltest (11.10.2026)
+# V3 P3 Standard/Experimental – abgeschlossener Originalreport, 11.10.2026
 
-## Quelle und Belegstatus
+## Nachweis und genaue Grenze
 
-- Quelle: vom Nutzer am 11.10.2026 gegen **19:49 MESZ** im Chat bereitgestelltes Foto der **abgeschlossenen Mini-PC-PowerShell**, nicht der JSON-Report selbst. **SCREENSHOT_ACK_ONLY**: das lokale JSON wurde noch nicht technisch eingelesen; Zahlen und alle `WAIT`-Fälle sind anhand der sichtbaren Console-JSON-Zeilen abgelesen.
-- Eingesetzter einmaliger Test: **PR #186**, `V3_P3_AB_FIVE_HTTP10_6H_RESEARCH_V1`. Original-Hardcap **5 qualifizierte Setups**, **10 HTTP inklusive Retries**, **360 Minuten maximal**, keine Echtgeldorder, keine V3-Paper-Aktivierung.
-- Physischer lokaler Report laut Bild: `C:\Users\ADMIN\Trading\Research\v3-p3-ab-five-http10-6h-20261011.json` (nur lokaler Pfad, keine erfolgte Übernahme in GitHub).
-- Abschlusssignal: `V3_P3_AB_FINITE_RESEARCH_RESULT_RECORDED_NO_PAPER_CHANGE`; `status=FINISHED_FIVE_QUALIFIED_OR_SIX_HOUR_WINDOW`; PowerShell-Prompt ist zurückgekehrt. Der Lauf **ist abgeschlossen**, nicht länger aktiv und **darf nicht wiederholt** werden; durch fünf qualifizierte Setups beendet, kein Beweis für eine voll gelaufene sechsstündige Beobachtungsdauer.
+**Neuer Belegstatus: USER_UPLOADED_ORIGINAL_JSON_PARSED_AND_HASHED.** Das lokale Testende war bereits zuvor durch das PowerShell-Foto um ca. 19:49 MESZ bestätigt (PR #187). Die anschließend im Chat hochgeladene, tatsächlich mit einem JSON-Parser vollständig gelesene Datei `v3-p3-ab-five-http10-6h-20261011.json` ist **4.730 Bytes** groß und besitzt den **SHA-256 `6a0fe8aeda0aab083d957edc27f85e190419a99588a936f1cde18568abbfc485`**. Dateipfad am Mini-PC laut Foto: `C:\Users\ADMIN\Trading\Research\v3-p3-ab-five-http10-6h-20261011.json`. Der Hash belegt den analysierten Upload, **nicht** eine unabhängige API-/Kraken-/Windows-Attestation. Die Originaldatei liegt als Nutzeranhang im Chat, ihre Rohinhalte wurden **nicht** in GitHub committed. Screenshot ist jetzt nur die ergänzende physische Abschlussbestätigung.
 
-## Tatsächlich sichtbares Ergebnis (kein wirtschaftlicher Edge-Nachweis)
+Freigabe/Technik: PR #186, `V3_P3_AB_FIVE_HTTP10_6H_RESEARCH_V1`, **einmalig** maximal fünf qualifizierte Original-CONTINUITY-Setups, 10 Modell-HTTP-Versuche inklusive Retries, 360 Minuten Fenster; ursprüngliche V2R4-Paper-Serie ist ausschließlich lesender Bezug. `started_at_utc=2026-10-11T13:38:27.308286+00:00`, letzte gespeicherte Fallentscheidung `2026-10-11T17:45:53.984321+00:00`; Endzustand `FINISHED_FIVE_QUALIFIED_OR_SIX_HOUR_WINDOW`. Erreicht wurde **das Fünferlimit**; nicht behaupten, volle sechs Stunden seien verstrichen. Freigabe ist mit dem ausgeführten einmaligen Prozess **verbraucht**; keine Freigabeübertragung aus fünf unbenutzten potenziellen HTTP-Versuchen.
 
-| Merkmal | Screenshot |
-|---|---:|
-| Qualifizierte P3-CONTINUITY-Eintritte für Modellreview | **5** |
-| Echtes Modell-HTTP-Budget verbraucht | **5 / 10** |
-| Voll-Modell-WAIT nach normalisiertem P4-Validator | **5** |
-| Voll-Modell-BUY_SCOUT | **0** |
-| Experimental-Inkrementalberechtigung unter Volumen 1.0–<1.2 | **0 / 5** |
-| Standardarm unter Volumen ≥1.2 | **5 / 5** |
-| Ursprungskandidaten in Diagnose | **38** |
-| Ohne Reviewberechtigung | **30** |
-| Fehlende/ungültige PIT-Eingaben | **3** |
-| Spot-EUR-Paarmetadatenfehler | **0** |
-| Virtuelle oder echte Orders | **0** |
-| 6h-/24h-Netto-Follow-ups verifiziert | **NEIN** |
+## Dateigeprüfter Abschluss
 
-Alle fünf angezeigten Cases weisen `eligible_arm=STANDARD` auf. `experimental_status=BASELINE_ALREADY_ELIGIBLE_NOT_INCREMENTAL`, also **keine einzige isolierte Experimental-Extra-Berechtigung**. `full_model_decision=WAIT` und `validated_decision=WAIT` mit `FULL_WAIT_VALIDATED_OFFLINE` für fünf Modell-Reviews; diese belegen einen realen Modell-WAIT-Pfad, **keine echte positive BUY→Stop/Stage2→Netto-Chain**.
+| Kriterium | Wert im Originalreport |
+| --- | ---: |
+| Qualifizierte Fälle / OpenAI-HTTP-Versuche reserviert | **5 / 5** |
+| Standard-P3 eligible / Experimental nur incremental eligible | **5 / 0** |
+| Originale Modellentscheidungen `WAIT` / `BUY_SCOUT` / `REJECT` | **5 / 0 / 0** |
+| Full-P4-Status `FULL_WAIT_VALIDATED_OFFLINE` | **5** |
+| `observed_origins` / `no_review` / `invalid_input` | **38 / 30 / 3** |
+| `metadata_fail` im JSON | **0 (nicht zuverlässig gezählt, siehe unten)** |
+| `orders` / `paper_changed` / `paper_writer_started` | **0 / false / false** |
+| `economic_edge_proven` / `actual_6h_24h_net_outcomes_verified` | **false / false** |
 
-Im Bild ersichtliche Model-Reason-Codes wiederholen u.a. **COST_EDGE_UNCONFIRMED**, **5M_VOLUME_WEAK**, **FEES_REQUIRE_ROOM_TO_RUN** und **PERSISTENT_6H_CONTEXT**. Keine kausale Zuschreibung, bevor das Original-JSON und die tatsächliche Herkunft dieser Attribute ohne Lookahead ausgewertet werden.
+Alle fünf Fälle gehören zur bisherigen technischen Paper-Serie `PAPER-V2R4-20261009T110135Z` als Ausgangskohorte und tragen `eligible_arm=STANDARD`, `experimental_status=BASELINE_ALREADY_ELIGIBLE_NOT_INCREMENTAL`, `model_setup_lane=CONTINUITY` sowie eine echte Modell-`response_id`. Das belegt **fünf modellbasierte WAIT-Verträge** im Forschungsweg, keine tatsächlichen Transaktionen, keinen positiven Buy-/Stop-/Stage2-E2E und keine matched Experimental-Alpha-Messung.
 
-## Kanonische Disposition und unmittelbare erlaubte Folgearbeit
+## Fünf Fälle und eindeutige Deutung der vorhandenen Reason-Codes
 
-1. `CLOSED_SCREENSHOT_ACK`, **Freigabe verbraucht und kein Auto-Retry**, nicht erneut den alten V3B- oder diesen P3-Runner nutzen. Auch die ungenutzten fünf möglichen HTTP-Versuche sind **kein übertragbares neues Budget**.
-2. **Einzige nächste aussagekräftige Aktion:** den *existierenden* lokalen Report `v3-p3-ab-five-http10-6h-20261011.json` **read-only** einsehen oder vom Nutzer hochladen lassen, um alle fünf P4-/Model-Reasons, 30 strukturelle Non-Reviews, 3 Datenfehler sowie exakte Zeit-/Candidate-Provenienz zu prüfen, ohne neue Modellaufrufe. Dabei mögliche Spannungen zwischen strukturell bestandenem 5m-Volumengate und Begründungen `5M_VOLUME_WEAK` explizit untersuchen; noch keine voreilige Regeländerung ableiten.
-3. Der erste echte wirtschaftliche **gepaarte Standard-vs-incremental-Experimental-Vergleich** ist weiterhin **NICHT belegt**; es gab **0** Experimental-Inkrementalfälle und 0 BUY. Ein einzelner zusätzlicher Shadow/Modelversuch oder neue Volumengrenze braucht neues Evidenz-/Freigabegate, nicht automatisch aus diesem Report.
-4. **V2R4 ist einzige aktive Paper-Strategie**, physischer Single-Writer und bisherige Followups bleiben unverändert; P1/P2/H3/H6 inaktiv; keine Echtgeldausführung.
-5. Dieser Befund wird unter **dem bestehenden** V3 P0/P3/P4/P8 Owner, `PROJECT_BACKLOG.md` und dem regulären 10:15-Followthrough berücksichtigt. **Kein** neuer Scheduler, keine eigenständige Erinnerung und kein zweites Backlog.
+| Originalcoin | Echter Modellentscheid | Charakteristische Codes (nicht vollständig) |
+| --- | --- | --- |
+| EIGEN/EUR | WAIT | `MICROSTRUCTURE_DEPTH_LIMITED`, `RECENT_ADVANCE_RAISES_CHASE_RISK`, `1M_VOLUME_WEAK`, `REMAINING_MOVE_UNCONFIRMED`, `FEES_REQUIRE_ROOM_TO_RUN` |
+| XLM/EUR | WAIT | `5M_VOLUME_ELEVATED`, `15M_VOLUME_WEAK`, `COST_EDGE_UNCONFIRMED` |
+| RENDER/EUR | WAIT | `EXTENDED_AFTER_RECENT_RUN`, `15M_VOLUME_BELOW_BASELINE`, `NET_EDGE_UNCONFIRMED` |
+| CC/EUR | WAIT | `PERSISTENT_6H_CONTEXT`, `SHORT_TERM_WEAKNESS`, `FOLLOW_THROUGH_UNCONFIRMED`, `FEE_HURDLE_REQUIRES_MORE_ROOM` |
+| MON/EUR | WAIT | `5M_VOLUME_ELEVATED`, `1H_MOMENTUM_SOFT`, `1M_VOLUME_WEAK`, `COST_EDGE_UNCONFIRMED` |
 
-**Evidenzgrenze:** Das Foto dokumentiert den tatsächlichen physischen Abschluss und aggregierte Case-Angaben. Bevor maschinelle oder wirtschaftliche Detailanalysen als `VERIFIED_JSON` markiert werden, muss die echte lokale Reportdatei gelesen werden. Mock-/CI-Fälle aus #186 dürfen nicht als echtes P&L zählen.
+**Befund zur vermuteten Inkonsistenz:** Der File-Parser findet unter den fünf Fällen **kein einziges `5M_VOLUME_WEAK`**. Tatsächlich waren die positiven Hard-Checks der Standard-Eligibility auf der **geschlossenen 5m-Volumenrelation ≥1,2**. Schwaches **1m-** oder **15m-Volumen** ist damit logisch vereinbar; XLM und MON nennen ausdrücklich `5M_VOLUME_ELEVATED`. Es ist **kein technischer Widerspruch** zwischen 5m-Gate und den im Report gespeicherten anderen Zeitraumurteilen nachgewiesen. Ob die Einzelurteile empirisch berechtigt oder zu konservativ sind, erfordert die PIT-Originalbars und die vollständige zeitgleich an das Modell gelieferte Kontext-/Preisstruktur; die Reportdatei enthält weder Zahlenreihen noch komplette Modellantworten.
+
+**Begrenzte wirtschaftliche Interpretation:** Mehrere Modelle geben schwache Trendfolge, Chase-Risiko, nicht ausreichend belegte Restbewegung und die mindestens **1,20 % Taker-Fees round-trip plus Spread und Slippage** als Gründe für WAIT an. Kein verifizierter kostenbereinigter Nettoertrag, kein Fill, keine Gewinn-/False-BUY-Rate. Mehr Modell-WAITs sind **kein** beweisbarer Erfolg oder Scheitern eines gelockerten Volumengates; mangels Experimental-Inkrementalfall wurde das isolierte A/B-Delta **nicht getestet**.
+
+## Evidenzgrenzen im bestehenden Runner (technisch anhand Repo-Code geprüft, keine weiteren Eingriffe)
+
+1. `no_review=30` ist ein reiner Zähler ohne Einzelfall-ID/konkrete gescheiterte Standard-/Experimental-Checks. **Nicht** behaupten, diese 30 seien durch dieselbe technische oder fachliche Regel gesperrt; deshalb keine Gate-Anpassung aus der Zahl.
+2. `invalid_input=3` entsteht aus einem breiten `except Exception` vor der Modellberechtigung, ohne Provenienz von Stage/Fehlertyp; die **konkreten drei Ursachen sind nicht rekonstruierbar**. `metadata_fail` wird im aktuellen Runner zwar mit 0 initialisiert, aber **nicht hochgezählt**: `metadata_fail=0` ist **kein belastbarer AssetPairs-Fehlerfrei-Nachweis**.
+3. Die in den Fällen gespeicherte `decision_at_utc` bezeichnet die **vor dem HTTP** bestimmte Review-/Eligibility-Uhrzeit. Der P4-Validator erhält intern eine spätere `received_at`-Uhrzeit, doch diese finale Bewertungszeit, der genaue WAIT-TTL und die modellierten deterministischen `watch_conditions` werden **nicht** dauerhaft pro Fall gespeichert. Die vollständige zeitliche Modell-PIT-Nachprüfbarkeit bleibt deshalb begrenzt. Case `known_at_utc` und `decision_at_utc` differieren im Upload um ca. **0,18–0,22 Sekunden**; das ist **keine** dokumentierte HTTP-Latenz.
+4. Die fünf Cases haben eine ursprüngliche Candidate-Age zur gespeicherten Eligibility von **182 bis 871 Sekunden**, Quelle nur Reportzeiten. Das weist **nicht** den gesamten Kraken→Model→P4→6/24h-Economics-Weg bis zum Nettoergebnis nach.
+5. Verfügbare `reason_codes` sind begrenzt auf die vom Runner persistierten bis zu **acht Codes**. Sie sind Begründungslabels, keine unabhängigen beweisenden Preis-/Volumenmessungen. `FULL_WAIT_VALIDATED_OFFLINE` validiert einen realen Modell-Output gegen P4, aber erzeugt **keinen** simulierten Orderpfad.
+
+## Verbindlicher Folgeschritt – kein weiterer physischer Modelllauf autorisiert
+
+**P0/P3/P4/P8 Owner, vorhandenem 10:15-Work-/Projektcontrolling zugeordnet:** Ergebnis als `VERIFIED_UPLOADED_JSON` markieren und **ohne weitere Tests, Modelle oder Orders** die nun bekannte Evidenzlücke priorisieren. Für eine *zukünftige* separat freizugebende Runde vorab festlegen: (a) Standard- und Experimental-Eligibility einschließlich scheiternder Gate-Namen je Kandidat (minimal aggregiert), (b) getrennte Phasenfehler bei frischer Coin-PIT / Kraken AssetPairs / 15m-Historie, (c) getrennte Eligibility- und P4-Response-Timestamps sowie gültige `WAIT`-TTL und deterministische Watch-Conditions ohne Geheimnisse, (d) echter optionaler virtueller BUY-Outcome-Pfad inklusive konservativer Kosten und späteren 6h-/24h-Followups. **Diese Verbesserung ist ein Backlog-/Entwicklungsbefund, keine Freigabe eines neuen Runs.** Keine Nachträgliche Rekonstruktion von fehlenden Preisen behaupten, keine Modell-HTTP-Versuche, keine V2R4-/Mini-PC-/Cloud-/Scheduler-/Echtgeld-Mutation.
+
+**V2R4 bleibt einzige aktive Paper-Strategie.** Keine V3-Paper-Freigabe und kein Experiment nach diesem abgeschlossenen Fünferlauf. Der vorherige Screenshot-Status `SCREENSHOT_ACK_ONLY` und seine Aufforderung, die Datei erst hochzuladen, sind durch diesen tatsächlich gelesenen Originalupload **überholt**.
