@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v4
       - name: Check active paper-series completion gate
         env:
           SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
@@ -62,11 +63,14 @@ jobs:
                   raw=resp.read().decode("utf-8","replace")
                   return resp.status,(json.loads(raw) if raw else None)
 
+          # Read the actual active writer first. Never use rows[0] from a
+          # readiness view after a V2R4→V3 cutover (stale/duplicate source).
+          from tools.paper_series_transition_guard import (
+              select_current_readiness, paper_completion_message_label)
+          _,active=req("GET","/rest/v1/paper_series?status=eq.active&select=series_id,strategy_revision,status")
           _,rows=req("GET","/rest/v1/paper_series_completion_readiness?select=*")
-          if not rows:
-              raise SystemExit("No active paper-series completion readiness row")
-
-          s=rows[0]
+          s=select_current_readiness(active,rows)
+          label=paper_completion_message_label(s)
           sid=s["series_id"]
           encoded=urllib.parse.quote(sid,safe="")
           _,watch=req(
@@ -175,7 +179,7 @@ jobs:
 
           if should_notify:
               slack(
-                  f"<@{uid}> V2R3-Paper-Abschlussgate ist bereit: "
+                  f"<@{uid}> {label}-Abschlussgate für {sid} ist bereit: "
                   f"State={s['gate_state']}, Trades={s['completed_trades']}, "
                   f"Candidate-Outcomes={s['candidate_outcomes']}, "
                   f"24h-Coverage={s['coverage_24h_pct']}%, "
