@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "kind": "V3_BUY_GATE_FLEXIBILITY_PREREG_V1",
+  "date": "2026-10-11",
+  "status": "PRE_REGISTERED_INACTIVE_RESEARCH_ONLY_NO_STRATEGY_OR_PAPER_CHANGE",
+  "owner": "PROJECT_BACKLOG.md#V3 P2/P3 existing owner; P1 predecessor learning",
+  "primary_evidence": "research/work-analysis/2026-10-11-cross-version-no-buy-gate-flexibility.md",
+  "prior_independent_source": "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
+  "baseline_snapshot": {
+    "as_of": "2026-10-11T11:25:52Z",
+    "source": "read-only Supabase public.paper_candidate_outcomes two V2R4 identical strategy revision technical series",
+    "series": [
+      "PAPER-V2R4-20261007T184255Z",
+      "PAPER-V2R4-20261009T110135Z"
+    ],
+    "unique_candidate_rows": 1864,
+    "initial_wait": 1189,
+    "initial_reject": 675,
+    "initial_buy": 0,
+    "final_buy": 0,
+    "wait_ttl_expiry": 1038,
+    "true_trigger_rechecks": 141,
+    "pending_or_other_initial_wait": 10,
+    "fully_mature_24h": 803,
+    "mature_24h_mfe_at_least_5pct": 337,
+    "mature_24h_mae_at_most_negative_5pct": 412,
+    "mature_24h_med_close_pct": -1.746,
+    "trigger_mature_n": 69,
+    "trigger_mature_mfe_median_pct": 7.862,
+    "trigger_mature_mae_median_pct": -3.379,
+    "trigger_mature_endclose_median_pct": 0.877,
+    "trigger_mature_pair_sixhour_episodes": 53,
+    "expired_mature_n": 429,
+    "expired_mature_mfe_median_pct": 3.191,
+    "expired_mature_mae_median_pct": -4.731,
+    "expired_mature_endclose_median_pct": -1.206,
+    "expired_mature_pair_sixhour_episodes": 265,
+    "valid_trade_fills": 0,
+    "disclaimer": "MFE/MAE and 24h close measured from original candidate ask, not from later entry, not tradable; incomplete followups censored; episodes clustered, and triggered cohort selection-confounded"
+  },
+  "root_causes": [
+    {
+      "id": "R1_WAIT_EXPIRES_BEFORE_TRUE_RECHECK",
+      "evidence": "1038 of 1189 initial WAIT -> TTL expiry without trigger, 141 true rechecks; older V2R3 TTL lag p50 348 seconds.",
+      "confidence": "HIGH_AS_FUNNEL_NOT_PROFIT_CAUSE"
+    },
+    {
+      "id": "R2_FULL_BUY_SELECTOR_REJECTS_TRUE_TRIGGERS",
+      "evidence": "0 BUY in 141 true triggered V2R4 model rechecks; V2R3 final 1/1000 BUY and that one net -3.0924pct.",
+      "confidence": "HIGH_FUNNEL_UNRESOLVED_INDIVIDUAL_VETO"
+    },
+    {
+      "id": "R3_COIN_STOP_STRUCTURAL_DECISION_INPUT_ABSENT",
+      "evidence": "Prior frozen 1731-V2R4 initial candidate snapshot 0 structured coin 1m/5m/15m ATR features in actual evaluator; V3-A input-only 2 matched still WAIT.",
+      "confidence": "HIGH_WIRING_ABSENT_NOT_PROVEN_SOLE_ZERO_BUY_CAUSE"
+    },
+    {
+      "id": "R4_ANTI_CHASE_AND_REMAINING_MOVE",
+      "evidence": "V2R4 803 mature cases EXTENDED n=476, p50 MAE -6.01pct and close -2.20pct; do not blindly remove.",
+      "confidence": "HIGH_HISTORICAL_RISK_LOW_CAUSAL_ATTRIBUTION_TO_SINGLE_GATE"
+    },
+    {
+      "id": "R5_VOLUME_RECLAIM_FRESHNESS",
+      "evidence": "Second physical V3B 5-case TIA/ARB lacked 15m breakout/volume/fresh 5m continuation; EIGEN/BAT/AERO UNKNOWN with valid frame statuses; 0 Full Reviews.",
+      "confidence": "HIGH_OBSERVATIONS_CAUSAL_UNKNOWN_FOR_THREE"
+    },
+    {
+      "id": "R6_FEES_STOPS_STAGE2",
+      "evidence": "Kraken roundtrip taker 1.2pct pre spread/slippage; valid Stop<Ask/Stage2>Ask contract; missing labels can never be waived.",
+      "confidence": "HARD_RISK_GUARD_NOT_ELIGIBLE_FOR_RELAXATION"
+    }
+  ],
+  "variants": [
+    {
+      "id": "P2_WAIT_FRESH_REVIEW_ONLY_V1",
+      "priority": 1,
+      "changes_only": "POST_EXPIRY_FRESH_REVIEW_ELIGIBILITY",
+      "original_v2r4_wait_expiry_remains_recorded": true,
+      "rule": "Permit a new complete model review only after a distinct, later, PIT-proven EUR closed-bar base and volume/price recovery independently arises; old expired WAIT not reused as entry and no blanket TTL extension.",
+      "keep_unchanged": [
+        "V2R4 live WAIT",
+        "Model BUY gate",
+        "fee",
+        "stop",
+        "stage2",
+        "online Spot-EUR",
+        "spread",
+        "cost",
+        "anti-chase",
+        "score no buy"
+      ],
+      "success_not_implied_by_more_reviews": true,
+      "status": "RECOMMENDED_NEXT_INACTIVE_OFFLINE_ONE_CHANGE_CANDIDATE"
+    },
+    {
+      "id": "P3_CONTINUITY_FRESH_SOFT_CONTEXT_V1",
+      "priority": 2,
+      "changes_only": "SOFT_CONTEXT_NON_FATAL_ON_EVIDENCE_PROVEN_CONTINUITY",
+      "rule": "First establish whether optional macro/news/source negatives are actually independent hard veto in model. Only then compare one context-only variant with all core closed-bar volume/tradability/risk/fee conditions still strict. No direct eligibility BUY.",
+      "evidence": "V2R4 CONTINUITY 183 mature, p50 MAE -3.36%, close -0.23% vs EXTENDED 476 mature p50 MAE -6.01%, close -2.20%",
+      "status": "PRE_REGISTERED_LATER_SEPARATE_COHORT"
+    },
+    {
+      "id": "P3_EXTENDED_GENUINE_NEW_BASE_REVIEW_ONLY_V1",
+      "priority": 3,
+      "changes_only": "GENUINELY_NEW_BASE_RESETS_PRIOR_MOVE_CONTEXT_NOT_CHASE_POLICY",
+      "rule": "Treat a properly timed and newly known 1–3h structure as a separate opportunity but never loosen current anti-chase after a merely continued rally. V3B 2x5 real samples yielded 0 eligible model reviews.",
+      "status": "DEFERRED_NO_AUTOMATIC_THIRD_SHADOW"
+    }
+  ],
+  "nonnegotiable_guards": {
+    "kraken_online_spot_eur_only": true,
+    "taker_fee_each_side_pct": 0.6,
+    "fees_plus_spread_slippage_costs": true,
+    "scout_eur": 50,
+    "stage2_eur": 50,
+    "valid_stop_below_fresh_ask": true,
+    "stage2_above_fresh_ask": true,
+    "liquidity_and_minimums": true,
+    "missing_required_PIT_fail_closed": true,
+    "optional_sources_non_veto": true,
+    "no_score_only_buy": true,
+    "no_new_v3_paper_writer": true,
+    "no_real_money": true,
+    "no_live_v2r4_change": true,
+    "no_new_shadow_or_model_budget": true,
+    "no_extra_jobs": true
+  },
+  "causal_evidence_needed": [
+    "Same candidate/pair and genuinely contemporaneous new decision clock vs unchanged V2R4 baseline",
+    "At-time closed Kraken 1/5/15m OHLC and volume, ATR structural risk provenance",
+    "Separately count new full-model reviews, valid BUY_SCOUT, filled Paper entries, invalid stops/Stage2, false BUYs",
+    "Fees >= 1.2% roundtrip plus spread/slippage and real residual opportunity at new entry",
+    "6h/24h time-ordered MFE MAE stop and stage2 before favorable peak, not optimistic ex-post MFE",
+    "Deduplicate pair/6h and stratify regime/day, adequate independent controls",
+    "Pass current 5 VERIFIED_PIT_E2E_PASS, actual economic validation and explicit single-writer paper release"
+  ],
+  "approval_boundary": "USER_APPROVED_RESEARCH_EVALUATION_AND_SAFE_PREPARATION_ONLY; STRATEGY/SHADOW/MODEL_BUDGET/PAPER_ACTIVATION_REQUIRE_SEPARATE_GATES",
+  "next_safely_executable_action": "Draft and unit-test precisely variant P2_WAIT_FRESH_REVIEW_ONLY_V1 as pure inactive deterministic policy using existing PIT adapters, strict no-output BUY rules, then STOP before any actual model/minipc/shadow runs.",
+  "no_new_automation": true,
+  "no_activation": true,
+  "no_buy_authority": true
+}

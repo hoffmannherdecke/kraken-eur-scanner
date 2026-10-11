@@ -17,6 +17,8 @@ on:
       - "research/source-registry.json"
       - "research/market-source-candidates-v1.json"
       - "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"
+      - "research/v3/v3-buy-gate-flexibility-prereg-20261011.json"
+      - "tests/test_v3_buy_gate_flexibility_prereg.py"
       - "tools/context_before_action.py"
       - "tests/test_context_before_action.py"
       - "docs/autonomous-followthrough-governance-v1.md"
@@ -89,6 +91,8 @@ on:
       - "research/source-registry.json"
       - "research/market-source-candidates-v1.json"
       - "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"
+      - "research/v3/v3-buy-gate-flexibility-prereg-20261011.json"
+      - "tests/test_v3_buy_gate_flexibility_prereg.py"
       - "tools/context_before_action.py"
       - "tests/test_context_before_action.py"
       - "docs/autonomous-followthrough-governance-v1.md"
@@ -184,6 +188,8 @@ jobs:
           python -m py_compile paper_evaluator/v3_b_bounded_shadow_five.py
           python -m unittest discover -s tests -p 'test_v3_b_bounded_shadow_five.py' -v
           pwsh -NoProfile -Command '$tokens=$null; $errs=$null; [System.Management.Automation.Language.Parser]::ParseFile("tools/run-minipc-v3-b-shadow5.ps1",[ref]$tokens,[ref]$errs) | Out-Null; if ($errs.Count -gt 0) { $errs | Out-String | Write-Error; exit 1 }; Write-Output "V3B_SHADOW5_POWERSHELL_PARSE_PASS"'
+      - name: Guard cross-version one-change V3 BUY flexibility against premature activation
+        run: python -m unittest discover -s tests -p 'test_v3_buy_gate_flexibility_prereg.py' -v
       - name: Validate current state
         run: python tools/validate-project-current-state.py
       - name: Enforce successor causal-learning and entry-productivity gate
