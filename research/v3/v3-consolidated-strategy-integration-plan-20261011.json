@@ -798,6 +798,24 @@
       }
     ],
     "global_interpretation": "Every row references original observed paper evidence and EXISTING PR161/19-lesson authority. Evidence classes forbid misrepresenting tiny early samples, selected hindsight cases or MFE proxies as measured net trade edge. Technical failures and routine runtime work deliberately excluded; hard cost/stop safety remains inherited. Neither this crosswalk nor PR161/PR165 changes executable rules. A real future V3 strategy release needs separately validated prospective economic benefit.",
-    "requires_future_fach_review": true
+    "requires_future_fach_review": true,
+    "v2r3_final_strategy_disposition_ids": [
+      "HYP-01",
+      "HYP-02",
+      "HYP-03",
+      "HYP-04",
+      "HYP-05",
+      "LOW_TRADE_FREQUENCY",
+      "REJECT_LATER_MFE",
+      "RETRIGGER_EPISODE_DEPENDENCE",
+      "TEMPORAL_REGIME_HETEROGENEITY",
+      "WAIT_TO_REJECT_SELECTIVITY",
+      "SCANNER_SCORE_MONOTONICITY",
+      "TRADE_SAMPLE_LIMIT"
+    ],
+    "excluded_nontrading_final_disposition_ids": [
+      "HYP-06",
+      "REVALIDATION_DELAY"
+    ]
   }
 }
