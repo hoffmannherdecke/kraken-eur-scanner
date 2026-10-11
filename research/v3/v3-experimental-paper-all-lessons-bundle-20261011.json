@@ -8,7 +8,6 @@
   "entry_priority": [
     {
       "id": "FIRST_SCANNER_EARLY_REVIEW",
-      "enabled": true,
       "module": "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
       "model_prompt": "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
       "supported_lanes": [
@@ -17,29 +16,35 @@
         "REVERSAL",
         "EXTENDED"
       ],
-      "rule": "Immediate real full-model assessment with complete timely Kraken Spot EUR 1m5m15m/ATR/structure and executable ask/stop planning; no post-signal WAIT or fixed volume 1.2 barrier; all core risk guards remain."
+      "rule": "Immediate real full-model assessment with complete timely Kraken Spot EUR 1m5m15m/ATR/structure and executable ask/stop planning; no post-signal WAIT or fixed volume 1.2 barrier; all core risk guards remain.",
+      "paper_policy_selected": true,
+      "runtime_enabled": false,
+      "evidence_state": "PURE_CODE_OR_OFFLINE_TEST_ONLY_NOT_PHYSICAL_PAPER_WRITER"
     },
     {
       "id": "CONTINUITY_FRESH_5M",
-      "enabled": true,
       "module": "paper_evaluator/v3_p3_early_5m_continuity_research_v1.py",
       "supported_lanes": [
         "CONTINUITY"
       ],
-      "rule": "Distinct new closed 5m after detection, prior finished 15m base, unchanged 1.2 volume, full independent model/P4. No same-snapshot duplicate."
+      "rule": "Distinct new closed 5m after detection, prior finished 15m base, unchanged 1.2 volume, full independent model/P4. No same-snapshot duplicate.",
+      "paper_policy_selected": true,
+      "runtime_enabled": false,
+      "evidence_state": "PURE_CODE_OR_OFFLINE_TEST_ONLY_NOT_PHYSICAL_PAPER_WRITER"
     },
     {
       "id": "P3_CONTINUITY_15M_STANDARD",
-      "enabled": true,
       "module": "paper_evaluator/v3_continuity_fresh_review_candidate_v1.py",
       "supported_lanes": [
         "CONTINUITY"
       ],
-      "rule": "New completed 15m confirmation after original signal; preserve for independent timing contrast."
+      "rule": "New completed 15m confirmation after original signal; preserve for independent timing contrast.",
+      "paper_policy_selected": true,
+      "runtime_enabled": false,
+      "evidence_state": "PURE_CODE_OR_OFFLINE_TEST_ONLY_NOT_PHYSICAL_PAPER_WRITER"
     },
     {
       "id": "WAIT_EXPIRED_FRESH_REENTRY",
-      "enabled": true,
       "module": "paper_evaluator/v3_wait_fresh_review_candidate_v1.py",
       "supported_lanes": [
         "CONTINUITY",
@@ -47,25 +52,32 @@
         "REVERSAL",
         "EXTENDED"
       ],
-      "rule": "Old WAIT and TTL immutable, new later closed bar is independent setup; never extend old watch silently."
+      "rule": "Old WAIT and TTL immutable, new later closed bar is independent setup; never extend old watch silently.",
+      "paper_policy_selected": true,
+      "runtime_enabled": false,
+      "evidence_state": "PURE_CODE_OR_OFFLINE_TEST_ONLY_NOT_PHYSICAL_PAPER_WRITER"
     },
     {
       "id": "EXTENDED_GENUINE_NEW_BASE",
-      "enabled": true,
       "module": "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
       "supported_lanes": [
         "EXTENDED"
       ],
-      "rule": "Fresh 1-3h closed consolidation plus reclaim; old high returns not permanent veto; no parabolic chase."
+      "rule": "Fresh 1-3h closed consolidation plus reclaim; old high returns not permanent veto; no parabolic chase.",
+      "paper_policy_selected": true,
+      "runtime_enabled": false,
+      "evidence_state": "PURE_CODE_OR_OFFLINE_TEST_ONLY_NOT_PHYSICAL_PAPER_WRITER"
     },
     {
       "id": "CONTINUITY_VOLUME_RESEARCH_ONLY",
-      "enabled": true,
       "module": "paper_evaluator/v3_experimental_continuity_volume_review_v1.py",
       "supported_lanes": [
         "CONTINUITY"
       ],
-      "rule": "Separate floor 1.0..1.2 when all OTHER eight P3 checks pass; not blanket volume loosen; attribute separately."
+      "rule": "Separate floor 1.0..1.2 when all OTHER eight P3 checks pass; not blanket volume loosen; attribute separately.",
+      "paper_policy_selected": true,
+      "runtime_enabled": false,
+      "evidence_state": "PURE_CODE_OR_OFFLINE_TEST_ONLY_NOT_PHYSICAL_PAPER_WRITER"
     }
   ],
   "intentional_policy_differences_from_frozen_v2r4": [
@@ -141,7 +153,10 @@
     "minipc_single_writer_cloud_cas_physical_dryrun": false,
     "v3_paper_active": false,
     "v2r4_remains_active_until_cutover_ack": true,
-    "work_and_github_active_v3_rebind_done": false
+    "work_and_github_active_v3_rebind_done": false,
+    "multi_family_runtime_dispatcher_verified": false,
+    "journal_automatically_connected_to_real_paper_writer": false,
+    "prospective_real_response_to_p4_verified": false
   },
   "release_requirements": {
     "economic_profitability_before_experiment_required": false,
@@ -159,5 +174,16 @@
     "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md",
     "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
     "docs/v3-controlled-paper-cutover-20261011.md"
-  ]
+  ],
+  "concurrency_requirements": {
+    "one_candidate_pair_closed_market_clock_only_one_model_request": true,
+    "dedupe_across_all_six_policy_families": true,
+    "first_eligible_family_wins_at_same_clock": true,
+    "record_all_alternative_eligible_and_failed_families_for_offline_attribution": true,
+    "do_not_reuse_old_wait_expiry_as_new_order": true,
+    "no_implicit_retry_when_model_or_source_fails": true,
+    "no_model_api_budget_without_new_limit": true,
+    "one_active_cloud_paper_series": true,
+    "old_followups_preserved_across_cutover": true
+  }
 }
