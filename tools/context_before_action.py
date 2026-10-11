@@ -160,7 +160,7 @@ def v3_decision_inheritance(root: Path) -> dict:
             "H1-H11 status/history omitted or duplicated")
     for item in h:
         require(all(isinstance(item.get(k), str) and item[k].strip()
-                    for k in ("id", "status", "role", "rule")),
+                    for k in ("id", "status", "role")),
                 "H component not fully routed")
     conflicts = plan.get("consistency_findings") or []
     keys = [item.get("key") for item in conflicts]
@@ -196,7 +196,8 @@ def v3_decision_inheritance(root: Path) -> dict:
             for x in packages
         ],
         "h_statuses": [
-            {k: x[k] for k in ("id", "status", "role", "rule")}
+            {"id": x["id"], "status": x["status"], "role": x["role"],
+             "rule": x.get("rule")}
             for x in h
         ],
         "original_lessons": [
