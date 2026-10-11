@@ -6,9 +6,11 @@ param(
  [string]$ApprovalJson=''
 )
 $ErrorActionPreference='Stop'
-if ((@($PrepareOnly,$RealKrakenCanary,$OneApprovedModelCall | Where-Object { $_ }).Count) -gt 1) {
- throw 'Only one mode per invocation'
-}
+$modeCount=0
+if($PrepareOnly){$modeCount++}
+if($RealKrakenCanary){$modeCount++}
+if($OneApprovedModelCall){$modeCount++}
+if($modeCount -gt 1){throw 'Only one mode per invocation'}
 $repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
 $venv=Join-Path $TradingRoot 'Runtime\kraken-eur-scanner-venv\Scripts\python.exe'
 $root=Join-Path $TradingRoot 'Research\V3Paper'
