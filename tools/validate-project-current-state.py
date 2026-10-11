@@ -59,6 +59,53 @@ def main()->int:
         if not str(technical.get("observed_at_utc") or "").endswith("Z"):
             errors.append("technical runtime verification must carry UTC observation time")
 
+    # 11 Oct V3-Paper objective: request does not authorize bypassing V3 causal
+    # release evidence or silently switching the MINI-PC's V2R4 writer.
+    transition=data.get("pending_strategy_transition")
+    if transition is not None:
+        if transition.get("kind")!="CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1":
+            errors.append("unexpected V3 paper transition contract")
+        if transition.get("user_decision")!="APPROVED_GOAL_V3_PAPER_REPLACES_V2R4_NO_REAL_MONEY":
+            errors.append("V3 paper objective must not be treated as live-money permission")
+        allowed={"BLOCKED_RELEASE_EVIDENCE_NOT_V3_RUNNING",
+                 "V3_RELEASE_READY_PHYSICAL_CUTOVER_PENDING",
+                 "V3_PAPER_ACTIVE_VERIFIED"}
+        if transition.get("status") not in allowed:
+            errors.append("unknown transition status")
+        saf=transition.get("safety") or {}
+        for flag in ("paper_only","v3_release_requires_complete_prospective_evidence",
+                     "v3_cannot_be_declared_active_by_repo_merge",
+                     "holdovers_followups_and_existing_paper_ledger_preserved",
+                     "no_new_schedulers","h3_h6_remain_inactive"):
+            if saf.get(flag) is not True:
+                errors.append("V3 transition safety invariant missing: "+flag)
+        for flag in ("real_money_actions",):
+            if saf.get(flag) is not False:
+                errors.append("V3 transition must never authorize real money")
+        if saf.get("max_strategy_changing_shadows") != 1:
+            errors.append("V3 transition may not start concurrent shadows")
+        if transition.get("execution_runbook")!="docs/v3-controlled-paper-cutover-20261011.md":
+            errors.append("V3 physical cutover runbook missing")
+        if transition.get("status")=="BLOCKED_RELEASE_EVIDENCE_NOT_V3_RUNNING":
+            if not active.get("strategy_revision","").startswith("V2R4-") or \
+               transition.get("safety",{}).get("v2r4_runtime_still_active_until_physical_ack") is not True:
+                errors.append("V3 Paper must not replace V2R4 active state before release/physical ACK")
+        if transition.get("status")=="V3_PAPER_ACTIVE_VERIFIED":
+            if not active.get("strategy_revision","").startswith("V3-"):
+                errors.append("V3 Paper active claim without matching strategy revision")
+            if not (transition.get("verified_cutover_evidence") or {}).get("mini_pc_and_single_active_supabase_series_ack"):
+                errors.append("V3 Paper active claim without real physical/cloud ACK")
+        observed=transition.get("last_observed_supabase_read_only") or {}
+        if observed.get("snapshot_not_current_runtime_truth") is not True:
+            errors.append("dated Supabase V2R4 evidence must not become current-state claim")
+        sequence=transition.get("sequence") or []
+        if [x.get("order") for x in sequence]!=list(range(5)):
+            errors.append("V3 transition phase/order missing or duplicated")
+        if not all(isinstance(x.get("owner"),str) and x.get("owner") and
+                   isinstance(x.get("requires"),str) and len(x.get("requires"))>20
+                   for x in sequence):
+            errors.append("V3 cutover lacks owned/evidenced transitions")
+
     predecessor=data.get("predecessor") or {}
     if predecessor.get("status")!="CLOSED_COMPLETE":
         errors.append("declared predecessor must be CLOSED_COMPLETE")
