@@ -292,7 +292,9 @@ class SecondOneShotAuthorizationRegressionTests(unittest.TestCase):
         prior={"kind":"V3_B_MANUAL_SHADOW5_HTTP10_V1","status":status,
                "model_http_attempts_reserved":calls,
                "completed_matched_reviews":0,
-               "cases":[{"status":"ELIGIBILITY_CHECKED_NO_BUY"} for _ in range(cases)],
+               "cases":[{"status":"ELIGIBILITY_CHECKED_NO_BUY",
+                          "source_candidate_id":f"FIRST-ORIGINAL-{i}"}
+                        for i in range(cases)],
                "orders":0,"active_v2r4_changed":False,"v3_paper_writer_started":False}
         path.write_text(json.dumps(prior),encoding="utf-8")
         return path
@@ -352,6 +354,45 @@ class SecondOneShotAuthorizationRegressionTests(unittest.TestCase):
             self.assertNotEqual(report.read_bytes(),before)
             with self.assertRaisesRegex(ValueError,"EXISTING_REPORT_NO_RETRY"):
                 mod.main_run(root,PROJECT,report,0,trial_id="SECOND",now_fn=lambda:t)
+
+    def test_second_excludes_all_first_trial_original_candidate_ids(self):
+        setup=ApprovedV3BShadowTests()
+        with tempfile.TemporaryDirectory() as folder:
+            root,stage,ctrl,t=setup.fixture(folder,n=5)
+            candidates=mod.select_original_extended(stage/"paper_decisions",
+                stage/"handoff_queue",ctrl,t,set())
+            self.assertEqual(len(candidates),5)
+            first=self.first_report(root)
+            data=json.loads(first.read_text())
+            for old_case,(candidate,_) in zip(data["cases"],candidates):
+                old_case["source_candidate_id"]=candidate["candidate_id"]
+            first.write_text(json.dumps(data))
+            excluded=mod.verify_first_trial_closed(root)
+            self.assertEqual(len(excluded),5)
+            self.assertEqual(mod.select_original_extended(stage/"paper_decisions",
+                stage/"handoff_queue",ctrl,t,excluded),[])
+            report=root/"Research"/mod.SECOND_REPORT_NAME
+            with ExitStack() as stack:
+                for patcher in setup.mocks(stage,ctrl,t):
+                    stack.enter_context(patcher)
+                output=mod.main_run(root,PROJECT,report,0,trial_id="SECOND",
+                                    diagnose_only=True,now_fn=lambda:t)
+            self.assertEqual(output["original_extended_candidate_count"],0)
+            self.assertFalse(report.exists())
+
+    def test_missing_unique_first_ids_blocks_second_not_recycles(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            first=self.first_report(root)
+            original=json.loads(first.read_text())
+            original["cases"][4].pop("source_candidate_id")
+            first.write_text(json.dumps(original))
+            with self.assertRaisesRegex(ValueError,"MISSING_SOURCE_IDS"):
+                mod.verify_first_trial_closed(root)
+            original["cases"][4]["source_candidate_id"]=original["cases"][0]["source_candidate_id"]
+            first.write_text(json.dumps(original))
+            with self.assertRaisesRegex(ValueError,"DUPLICATE_OR_UNKNOWN"):
+                mod.verify_first_trial_closed(root)
 
     def test_second_wrong_path_cannot_alias_first_report(self):
         with tempfile.TemporaryDirectory() as folder:
