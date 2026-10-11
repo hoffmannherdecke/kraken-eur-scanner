@@ -48,6 +48,10 @@ on:
       - "docs/v3-controlled-paper-cutover-20261011.md"
       - "tests/test_v3_paper_transition_contract.py"
       - "research/strategy-learning-causal-gate-v1.json"
+      - "tests/test_v3_b_bounded_shadow_five.py"
+      - "tools/run-minipc-v3-b-shadow5.ps1"
+      - "paper_evaluator/v3_b_bounded_shadow_five.py"
+      - "research/v3/v3-b-shadow5-approval-20261011.json"
       - "research/v3-migration-ledger.json"
       - "research/v3/coin-entry-evidence-lineage-v1.json"
       - "paper_evaluator/v3_extended_reentry_review_v1.py"
@@ -115,6 +119,10 @@ on:
       - "docs/v3-controlled-paper-cutover-20261011.md"
       - "tests/test_v3_paper_transition_contract.py"
       - "research/strategy-learning-causal-gate-v1.json"
+      - "tests/test_v3_b_bounded_shadow_five.py"
+      - "tools/run-minipc-v3-b-shadow5.ps1"
+      - "paper_evaluator/v3_b_bounded_shadow_five.py"
+      - "research/v3/v3-b-shadow5-approval-20261011.json"
       - "research/v3-migration-ledger.json"
       - "research/v3/coin-entry-evidence-lineage-v1.json"
       - "paper_evaluator/v3_extended_reentry_review_v1.py"
@@ -169,6 +177,11 @@ jobs:
         run: |
           python -m py_compile tools/paper_series_transition_guard.py tools/project_milestone_controller.py
           python -m unittest discover -s tests -p 'test_paper_series_transition_guard.py' -v
+      - name: Validate cross-chat V3-B user-approved five-candidate ten-HTTP research cap and MINI-PC wrapper
+        run: |
+          python -m py_compile paper_evaluator/v3_b_bounded_shadow_five.py
+          python -m unittest discover -s tests -p 'test_v3_b_bounded_shadow_five.py' -v
+          pwsh -NoProfile -Command '$tokens=$null; $errs=$null; [System.Management.Automation.Language.Parser]::ParseFile("tools/run-minipc-v3-b-shadow5.ps1",[ref]$tokens,[ref]$errs) | Out-Null; if ($errs.Count -gt 0) { $errs | Out-String | Write-Error; exit 1 }; Write-Output "V3B_SHADOW5_POWERSHELL_PARSE_PASS"'
       - name: Validate current state
         run: python tools/validate-project-current-state.py
       - name: Enforce successor causal-learning and entry-productivity gate
