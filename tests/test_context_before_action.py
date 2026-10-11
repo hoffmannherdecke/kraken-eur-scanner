@@ -81,6 +81,53 @@ class ContextBeforeActionTests(unittest.TestCase):
             self.assertTrue(x["v3_package_ids"])
             self.assertTrue(x["matrix_lesson_ids"])
 
+    def test_all_20_old_cross_chat_promises_reach_v3_and_minipc_sources(self):
+        packet = build(ROOT,"strategy")
+        c = packet["strategy_learning_routes"]["prior_cross_chat_commitments"]
+        self.assertEqual(c["coverage_count"],20)
+        self.assertTrue(c["routed_not_all_operational"])
+        self.assertTrue(c["no_new_scheduler_or_second_strategy"])
+        ids={x["id"] for x in c["commitments"]}
+        for required in (
+            "MINIPC_ENTRY_PIT_OHLC","MINIPC_MISSED_MOVE_FUNNEL",
+            "MINIPC_EXECUTION_COST_RESEARCH","MINIPC_BOUNDED_LOCAL_REPLAY",
+            "MINIPC_OUTAGE_DELAY_DIAGNOSTICS","MINIPC_CAPACITY_GITHUB_OFFLOAD",
+            "MINIPC_RAM_UPGRADE_GATE","MINIPC_OPTIONAL_AI_DIAGNOSTICS",
+            "SEPARATE_AUTONOMOUS_AI_TRADING_PROJECT",
+            "FULL_DYNAMIC_KRAKEN_SPOT_EUR",
+            "MARKET_PHASES_AND_SENTIMENT","SOURCE_MANAGER_AUTONOMOUS_ACTIVE",
+            "H2_H5_H8_H10_H11_OPTIONAL_CONTEXT",
+            "H1_H3_H6_SHADOW_DISPOSITION",
+            "JANSEN_HISTORICAL_WALKFORWARD_TRIAL_LEDGER",
+            "RESILIENCE_AND_FUTURE_REAL_MONEY_INHERITANCE",
+            "CONTINUOUS_PROJECT_AUTONOMY_AND_CONTEXT",
+        ):
+            self.assertIn(required,ids)
+        for item in c["commitments"]:
+            self.assertTrue((ROOT/item["source_path"]).is_file())
+            self.assertTrue(item["next_gate"])
+        for scope in ("strategy","research","architecture","operations"):
+            sources={x["path"] for x in build(ROOT,scope)["source_index"]}
+            self.assertIn("docs/minipc-analytics-rollout-v1.md",sources)
+            self.assertIn("docs/minipc-support-block-plan-v1.md",sources)
+
+    def test_past_mini_pc_commitment_cannot_be_silently_dropped(self):
+        path="research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
+        def delete(j):
+            j["prior_cross_chat_commitments"]["commitments"]=[
+                x for x in j["prior_cross_chat_commitments"]["commitments"]
+                if x["id"]!="MINIPC_ENTRY_PIT_OHLC"]
+        with patch("tools.context_before_action.read_json",
+                   side_effect=self._mutate_v3_source(path,delete)):
+            with self.assertRaisesRegex(ContextGateError,"cross-chat/Mini-PC user commitment"):
+                v3_decision_inheritance(ROOT)
+        def flip(j):
+            j["prior_cross_chat_commitments"]["no_new_runner"]=False
+        with patch("tools.context_before_action.read_json",
+                   side_effect=self._mutate_v3_source(path,flip)):
+            with self.assertRaisesRegex(ContextGateError,"cross-chat work changed authority"):
+                v3_decision_inheritance(ROOT)
+
     def test_missing_paper_finding_or_evidence_is_not_silently_lost(self):
         file = "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
         def drop(j):

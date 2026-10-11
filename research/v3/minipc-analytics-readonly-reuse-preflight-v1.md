@@ -1,6 +1,6 @@
 # MINI-PC analytics read-only reuse preflight v1
 
-Status: **PREPARED_INACTIVE — PHYSICAL E2E UNVERIFIED**  
+Historischer Status **zum Erstellen dieses reinen Read-only-Preflights mit PR #142:** **PREPARED_INACTIVE — PHYSICAL E2E UNVERIFIED**. **Späterer Ist-Nachtrag (10.10.):** Physische TIA-Diagnose und ZRO/EUR-Eingabe→zwei Modellreviews waren EINMAL erfolgreich (`docs/minipc-analytics-rollout-v1.md`, `research/work-analysis/2026-10-10-v3-coin-entry-physical-zro-one-shot.md`), aber 0 BUY und kein ökonomischer E2E-PASS. Keine alten Smoke-/Handoff-Gates wiederholen; neuer prospektiver kostenbegrenzter Snapshot nur mit eigenem Budget-/Shadow-Gate.  
 Gate fingerprint: `191504e22a3280b1aec5`  
 Scope: approved preparation only; no runtime, scheduler, strategy, database or trading mutation.
 

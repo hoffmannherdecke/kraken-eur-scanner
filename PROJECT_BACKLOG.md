@@ -1,4 +1,13 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
+## V3 – frühere Absprachen einschließlich Mini-PC wiederfinden (11.10.2026)
+
+**Status und Originalquellen:** Im vorhandenen V3-Gesamtplan sind jetzt 20 wesentliche frühere Sep–Okt-Beschlüsse mit bestehenden P0–P9-Eigentümern, Ursprungsdateien und jeweils nächstem Evidenzgate erfasst (`prior_cross_chat_commitments`). Der vorhandene Kontext-vor-Aktion-Prüfer sichert diese gegen unbeabsichtigtes Löschen und liest die beiden ursprünglichen Mini-PC-Fachpläne künftig in allen vier Kontextbereichen. Dies ist keine zweite Aufgabenliste und keine Freigabe, inaktive Komponenten zu aktivieren.
+
+**Mini-PC:** Coin-OHLC/Volumen/ATR, WAIT-/REJECT-Lernanalyse, realistische Spread-/Stop-/Slippage-Kosten, winzige gültige EUR-Historik-Replays und Recovery-Ereignisse sind bereits in P0/P2/P4/P8/P9 eingeordnet. PR #142/#143 und der echte ZRO-Modellinput-Test sind abgeschlossen; wirtschaftliche Verbesserung ist nicht belegt. Private GitHub-Offload-Blöcke 1–3 sind beurteilt, Cloudbetrieb beibehalten, lokaler Runner bleibt deaktiviert. Kein 32-GB-RAM-Upgrade als Voraussetzung, kein zusätzlicher Collector, kein KI-Agent und kein zweiter Paper-Writer. Der nächste physische Schritt ist ein neuer begrenzter prospektiver Modell-/Nettovergleich nur nach separater Freigabe; alte Smoke-Tests nicht erneut anfordern.
+
+**Weitere vererbte Themen:** Vollständiges Kraken-EUR-Universe, historische V2–V2R4-Lektionen, P1/P2/P3/Experimental-Einstiege, gemeinsame Sicherheitsgates, Jansen Walk-forward, H1–H11, Marktregime, H10/H11, Makro/Onchain, Quellen-Management, Ausfallschutz und spätere Echtgeld-Sicherheit bleiben im bisherigen P0–P9-Owner. Das automatische Quellenmanagement wartet weiterhin auf den ersten echten Quellenreview-/CI-/ACK-Nachweis. Der tägliche 10:15-Work-Lauf und die vorhandene GitHub-Steuerung greifen diese Punkte bei Fälligkeit ohne erneuten Nutzer-Stichwort-Prompt auf.
+
+
 
 ## V3 – konsolidierter Arbeitsstand und nächster ECHTER Beweis (11.10.2026)
 

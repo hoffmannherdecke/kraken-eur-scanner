@@ -141,6 +141,64 @@ PAPER_PHASE_LEARNING_IDS = frozenset((
 ))
 
 
+
+# Binding *cross-chat* infrastructure, research and Mini-PC commitments.
+# Do not create a parallel development queue; protect the existing P0-P9 owners.
+CROSS_CHAT_COMMITMENT_IDS = frozenset((
+    "MINIPC_ENTRY_PIT_OHLC", "MINIPC_MISSED_MOVE_FUNNEL",
+    "MINIPC_EXECUTION_COST_RESEARCH", "MINIPC_BOUNDED_LOCAL_REPLAY",
+    "MINIPC_OUTAGE_DELAY_DIAGNOSTICS", "MINIPC_CAPACITY_GITHUB_OFFLOAD",
+    "MINIPC_RAM_UPGRADE_GATE", "MINIPC_OPTIONAL_AI_DIAGNOSTICS",
+    "SEPARATE_AUTONOMOUS_AI_TRADING_PROJECT", "FULL_DYNAMIC_KRAKEN_SPOT_EUR",
+    "V2_HISTORY_AND_PAPER_LEARNING", "ENTRY_P1_P2_P3_EXPERIMENT_ONE_MODEL",
+    "MARKET_PHASES_AND_SENTIMENT", "SOURCE_MANAGER_AUTONOMOUS_ACTIVE",
+    "H2_H5_H8_H10_H11_OPTIONAL_CONTEXT", "H1_H3_H6_SHADOW_DISPOSITION",
+    "H4_H7_H9_EXECUTION_META", "JANSEN_HISTORICAL_WALKFORWARD_TRIAL_LEDGER",
+    "RESILIENCE_AND_FUTURE_REAL_MONEY_INHERITANCE",
+    "CONTINUOUS_PROJECT_AUTONOMY_AND_CONTEXT",
+))
+
+
+def cross_chat_commitment_inheritance(root: Path, plan: dict,
+                                      package_ids: set[str]) -> dict:
+    """Prove major earlier user decisions remain routed, not executed."""
+    x = plan.get("prior_cross_chat_commitments") or {}
+    require(x.get("kind") == "V3_CROSS_CHAT_COMMITMENT_INHERITANCE_V1"
+            and x.get("status") == "SOURCE_ROUTED_AND_EVIDENCE_GATED_NOT_ALL_LIVE",
+            "cross-chat Mini-PC/V3 inheritance contract lost")
+    for flag in ("no_new_task_queue", "no_new_scheduler", "no_new_runner",
+                 "no_model_calls", "no_paper_activation", "no_real_money"):
+        require(x.get(flag) is True, "cross-chat work changed authority: " + flag)
+    require(x.get("owner") == "PROJECT_BACKLOG.md plus existing research/project-followthrough-routing-v1.json"
+            and x.get("routing") == MAP,
+            "cross-chat project owner/routing drift")
+    rows = x.get("commitments") or []
+    ids = [row.get("id") for row in rows if isinstance(row, dict)]
+    require(len(ids) == len(rows) == len(set(ids))
+            and CROSS_CHAT_COMMITMENT_IDS.issubset(set(ids)),
+            "cross-chat/Mini-PC user commitment missing or duplicated")
+    for row in rows:
+        require(row.get("package_id") in package_ids
+                and all(isinstance(row.get(key), str) and row[key].strip()
+                        for key in ("source_path", "status", "next_gate")),
+                "cross-chat commitment without actionable existing P0-P9 owner")
+        path = row["source_path"]
+        require(".." not in Path(path).parts and not Path(path).is_absolute()
+                and (root / path).resolve().is_relative_to(root.resolve())
+                and (root / path).is_file(),
+                "cross-chat original source missing: " + path)
+    require(any(row["id"] == "MINIPC_ENTRY_PIT_OHLC"
+                and row["source_path"] == x.get("required_minipc_dependency")
+                for row in rows),
+            "Mini-PC analytics original strategy link lost")
+    return {
+        "kind": x["kind"], "coverage_count": len(rows),
+        "commitments": rows,
+        "routed_not_all_operational": True,
+        "no_new_scheduler_or_second_strategy": True,
+    }
+
+
 def paper_phase_strategy_inheritance(root: Path, plan: dict, matrix: dict) -> dict:
     """Check 2026 V2/V2R3/V2R4 original Paper findings *by lineage*.
 
@@ -305,6 +363,7 @@ def v3_decision_inheritance(root: Path) -> dict:
             for x in items
         ],
         "paper_phase_learning": paper_phase_strategy_inheritance(root, plan, matrix),
+        "prior_cross_chat_commitments": cross_chat_commitment_inheritance(root, plan, set(package_ids)),
         "historical_conflict_resolutions": [
             {"key": x["key"], "resolution": x["resolution"]} for x in conflicts
         ],
