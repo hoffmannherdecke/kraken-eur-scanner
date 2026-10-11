@@ -540,7 +540,7 @@
         "incremental_ab_delta_tested": false,
         "physical_test_permission_exhausted": true,
         "future_diagnostic_telemetry": {
-          "status": "INACTIVE_OFFLINE_CONTRACT_IMPLEMENTED_CI_PENDING_NOT_PHYSICALLY_WIRED",
+          "status": "INACTIVE_OFFLINE_CONTRACT_CI_PASS_NOT_PHYSICALLY_WIRED",
           "module": "paper_evaluator/v3_p3_future_diagnostics_offline_v1.py",
           "tests": "tests/test_v3_p3_future_diagnostics_offline_v1.py",
           "owner": "V3 P0/P3/P4/P8 existing release/economic gate",
@@ -554,7 +554,8 @@
           "physically_proven": false,
           "wired_to_any_runtime": false,
           "new_model_or_shadow_authorized": false,
-          "new_orders_or_paper_writers": false
+          "new_orders_or_paper_writers": false,
+          "ci_evidence": "PR_189_THREE_EXISTING_PROJECT_CHECKS_PASSED_OFFLINE_BEFORE_STATUS_REFRESH"
         }
       }
     }
