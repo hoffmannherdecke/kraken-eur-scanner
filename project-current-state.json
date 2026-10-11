@@ -469,10 +469,11 @@
         "research/work-analysis/2026-10-11-v2r4-crash-rebound-historical-event-review.md",
         "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
         "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md",
-        "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json"
+        "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+        "research/v3/v3-paper-active-context-and-minipc-release-gates-20261011.json"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_V3_EXPERIMENTAL_INITIAL_FULL_MODEL_AND_ALL_FAMILY_JOURNAL_LOCAL_CLOUD_SINGLE_WRITER_ACTUAL_MINIPC_TECHNICAL_E2E_PROOFS; REUSE_SAME_KRAKEN_SOURCE_FOLLOWUPS_BEFORE_SAFE_PHYSICAL_CUTOVER; EXPLICIT_BOUNDED_MODEL_SPEND_APPROVAL; KEEP_V2R4_ACTIVE_UNTIL_STOP_ACK; NEVER_CLAIM_V3_PAPER_ACTIVE_FROM_GITHUB_CI",
+      "next_concrete_action": "PROSPECTIVE_IMPLEMENTED_V3_CANARY_PHYSICAL_MINIPC_KRAKEN_MODEL_P4_JOURNAL_SOURCE_H10_H11_CLOUD_ACK_E2E_THEN_DEPLOY_APPEND_ONLY_V3_RELAY_AND_SINGLE_WRITER_RUNTIME_AFTER_FRESH_FIXED_API_COST_APPROVAL; DO_NOT_STOP_V2R4_OR_CLAIM_V3_ACTIVE_BEFORE_MINIPC_STOP_ACK_CLOUD_CAS",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -797,6 +798,35 @@
         "pathwise_conservative_costs": "paper_evaluator/v3_experimental_paper_pathwise_economics_v1.py",
         "economic_1m_CI_only_not_live": true,
         "source_1m_real_followups_cloud_bound": false
+      },
+      "v3_paper_runtime_stage_20261011": {
+        "status": "KRANKEN_MODEL_P4_JOURNAL_CLOUD_FOLLOWUP_CODE_CREATED_PHYSICAL_AND_CLOUD_E2E_NOT_YET_VERIFIED",
+        "paper_target_approved": true,
+        "github_pr": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/196",
+        "feature_gates": "research/v3/v3-paper-active-context-and-minipc-release-gates-20261011.json",
+        "minipc_manual_stage": "tools/run-minipc-v3-paper-stage.ps1",
+        "real_kraken_coin_1m5m15m_initial_evidence": "paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+        "real_new_model_prompt_not_old_v2r4": "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
+        "real_model_http_required_new_explicit_one_time_cap": true,
+        "model_timestamp_false_rejection_fixed_in_p4": true,
+        "all_phases_immutable_journal": "paper_evaluator/v3_experimental_paper_journal_v1.py",
+        "actual_1m_candle_capture": "paper_evaluator/v3_paper_minipc_closed_1m_capture_v1.py",
+        "candidate_missed_moves_6h24h": "paper_evaluator/v3_paper_missed_opportunity_followup_v1.py",
+        "paper_cost_6h24h": "paper_evaluator/v3_paper_minipc_followup_v1.py",
+        "local_lag_and_missed_move_analytics": "paper_evaluator/v3_paper_minipc_learning_health_v1.py",
+        "cloud_separate_edge": "supabase/functions/v3-paper-evidence-relay/index.ts",
+        "cloud_separate_schema": "supabase/v3-paper-event-receipts-append-only-20261011.sql",
+        "cloud_relay_secret_provisioned": false,
+        "cloud_schema_applied_verified": false,
+        "edge_deployed_verified": false,
+        "source_steward_news_marketphase_h10_h11_real_snapshot_to_live_prompt_verified": false,
+        "automatic_source_replacement_unattended_e2e_verified": false,
+        "v3_paper_writer_single_process_continuous_verified": false,
+        "old_v2r4_intake_stopped": false,
+        "v3_cloud_active_series": false,
+        "new_model_http_attempts_this_work": 0,
+        "paper_exchange_orders": false,
+        "real_money_actions": false
       }
     }
   }
