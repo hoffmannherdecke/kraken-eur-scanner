@@ -366,3 +366,60 @@ class FollowthroughAdversarialProofTests(unittest.TestCase):
                 state,dt.datetime(2026,10,12,8,tzinfo=dt.timezone.utc),Path(d))
             self.assertEqual(len(events),1)
             self.assertEqual(events[0][1]["kind"],"CONTROL_FOLLOWTHROUGH_MISSED")
+
+class V3HandoverMilestoneTests(unittest.TestCase):
+    @staticmethod
+    def _new_v3_state():
+        import copy
+        state=copy.deepcopy(controller.load_local_state(ROOT))
+        state["active_strategy"]["strategy_revision"]="V3-PAPER-RELEASE"
+        state["active_strategy"]["series_id"]="PAPER-V3-NEW"
+        transition=state["pending_strategy_transition"]
+        transition["status"]="V3_PAPER_ACTIVE_VERIFIED"
+        transition["verified_cutover_evidence"]={
+            "mini_pc_and_single_active_supabase_series_ack":True}
+        return state
+
+    @staticmethod
+    def _new_v3_paper():
+        return dict(series_id="PAPER-V3-NEW",strategy_revision="V3-PAPER-RELEASE",
+                    fasttrack_policy_version="EVIDENCE_DIVERSITY_FASTTRACK_V2",
+                    candidate_outcomes=100,completed_trades=2,complete_24h=90,
+                    completion_ready=False,intake_should_stop=False)
+
+    def test_v3_requires_real_cutover_ack_and_matching_cloud_series(self):
+        import datetime as dt
+        state=self._new_v3_state()
+        paper=self._new_v3_paper()
+        now=dt.datetime(2026,10,15,9,tzinfo=dt.timezone.utc)
+        good=controller.evaluate(state,paper,None,now,ROOT)
+        self.assertIn("V3:PAPER_COLLECTING",good["statuses"])
+        self.assertNotIn("V2R4:LOW_TRADE_REVIEW",good["statuses"])
+        self.assertEqual(good["events"],[])
+        state["pending_strategy_transition"]["verified_cutover_evidence"]={}
+        with self.assertRaisesRegex(ValueError,"physical/cloud single-writer ACK"):
+            controller.evaluate(state,paper,None,now,ROOT)
+        state["pending_strategy_transition"]["verified_cutover_evidence"]={
+            "mini_pc_and_single_active_supabase_series_ack":True}
+        paper["series_id"]="PAPER-V2R4-OLD"
+        with self.assertRaisesRegex(ValueError,"wrong/stale active"):
+            controller.evaluate(state,paper,None,now,ROOT)
+
+    def test_v3_completion_gives_only_v3_notice_after_maturity(self):
+        import datetime as dt
+        state=self._new_v3_state()
+        paper=self._new_v3_paper()
+        paper.update(completion_ready=True,intake_should_stop=True,
+                     temporal_diversity_ready=True,qualifying_maturity_ready=True)
+        result=controller.evaluate(state,paper,None,
+                                   dt.datetime(2026,10,15,9,tzinfo=dt.timezone.utc),ROOT)
+        self.assertIn("V3:PAPER_COMPLETION_READY",result["statuses"])
+        events=[x for x in result["events"] if x["kind"]=="PAPER_FINAL_REVIEW"]
+        self.assertEqual(len(events),1)
+        self.assertIn("V3-Paper-Serie",events[0]["detail"])
+        self.assertFalse(any("V2R4:LOW_TRADE_REVIEW" in x for x in result["statuses"]))
+        paper["qualifying_maturity_ready"]=False
+        with self.assertRaisesRegex(ValueError,"bypasses diversity"):
+            controller.evaluate(state,paper,None,
+                                dt.datetime(2026,10,15,9,tzinfo=dt.timezone.utc),ROOT)
+

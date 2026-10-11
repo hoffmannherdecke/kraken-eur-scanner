@@ -23,6 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v4
       - name: Render actual end-to-end status
         env:
           SUPABASE_URL: https://nlgzjmqgwueojlyqmoru.supabase.co
@@ -125,17 +126,35 @@ jobs:
           active_outcomes=int(extract(r"active=([0-9]+)",outcomes_detail,"0"))
           supervisor_status=extract(r"status=([A-Z_]+)",supervisor_detail,"?")
 
-          _,shadow_count_rows=request(
+          # Never present historical V2R4 metrics as live V3 Paper telemetry.
+          from tools.paper_series_transition_guard import select_current_readiness
+          _,active_series_rows=request(
               "GET",
-              "/rest/v1/v2r4_shadow_evidence?select=event_id"
+              "/rest/v1/paper_series?status=eq.active&select=series_id,strategy_revision,status"
           )
-          shadow_events=len(shadow_count_rows or [])
-
-          _,completed_rows=request(
-              "GET",
-              "/rest/v1/v2r4_shadow_evidence?select=event_id&outcome_payload=not.is.null"
-          )
-          completed_outcomes=len(completed_rows or [])
+          _,readiness_rows=request("GET","/rest/v1/paper_series_completion_readiness?select=*")
+          current_paper=select_current_readiness(active_series_rows,readiness_rows)
+          current_revision=current_paper["strategy_revision"]
+          current_series_id=current_paper["series_id"]
+          legacy_v2r4=current_revision.startswith("V2R4-")
+          if legacy_v2r4:
+              _,shadow_count_rows=request(
+                  "GET", "/rest/v1/v2r4_shadow_evidence?select=event_id"
+              )
+              shadow_events=len(shadow_count_rows or [])
+              _,completed_rows=request(
+                  "GET",
+                  "/rest/v1/v2r4_shadow_evidence?select=event_id&outcome_payload=not.is.null"
+              )
+              completed_outcomes=len(completed_rows or [])
+          else:
+              # Existing minipc_daily_status legacy metric columns are NOT NULL.
+              # Do not mislabel their required neutral 0 values as V3 signals;
+              # the new active Paper candidate/trade counters live in the
+              # versioned payload and the human-readable series_metrics.
+              shadow_events=0
+              completed_outcomes=0
+              active_outcomes=0
 
           since=(now_utc-dt.timedelta(hours=24)).isoformat().replace("+00:00","Z")
           _,scanner_rows=request(
@@ -155,12 +174,18 @@ jobs:
           }.get(health_state,"⚠️")
 
           issue_text="none" if not issue_codes else ",".join(issue_codes[:5])
+          if legacy_v2r4:
+              series_metrics=(f"V2R4 Shadow-Quelle {shadow_source_age}s | "
+                              f"Events {shadow_events}, Outcomes {completed_outcomes}, aktiv {active_outcomes}")
+          else:
+              series_metrics=(f"V3 Paper {current_paper['candidate_outcomes']} Kandidaten, "
+                              f"{current_paper.get('completed_trades')} Trades | "
+                              "V2R4-Shadow historisch, nicht aktiv")
           message=(
               f"{icon} MINI-PC 10:00: {health_state} | "
               f"Status {age_min:.1f}m alt | Kraken {observed_pairs}/{pairs} ({coverage}%) | "
-              f"Shadow-Quelle {shadow_source_age}s | Supervisor {supervisor_status} | "
-              f"Shadow-Events {shadow_events}, Outcomes {completed_outcomes}, aktiv {active_outcomes} | "
-              f"Scanner 24h {scanner_24h} | Issues {issue_text}"
+              f"Serie {current_series_id} | Supervisor {supervisor_status} | "
+              f"{series_metrics} | Scanner 24h {scanner_24h} | Issues {issue_text}"
           )
 
           should_mention=health_state not in {"OK","WAITING_NO_DATA"}
@@ -184,6 +209,9 @@ jobs:
                   "shadow":shadow_detail,
                   "outcomes":outcomes_detail,
                   "supervisor":supervisor_detail,
+                  "active_series_id":current_series_id,
+                  "active_strategy_revision":current_revision,
+                  "legacy_v2r4_shadow_applicable":legacy_v2r4,
                   "dry_run":dry_run,
               },
               "updated_at":now_utc.isoformat(),
