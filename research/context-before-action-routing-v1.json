@@ -91,6 +91,26 @@
       {
         "path": "docs/test-strategy-runbook.md",
         "role": "FASTTRACK_ONE_CHANGE_RELEASE_RULES"
+      },
+      {
+        "path": "docs/minipc-analytics-rollout-v1.md",
+        "role": "ORIGINAL_OCT10_MINIPC_ANALYTICS_DATA_AND_PAPER_ECONOMIC_ONE_CANDIDATE_E2E_NOT_LIVE"
+      },
+      {
+        "path": "docs/minipc-support-block-plan-v1.md",
+        "role": "ORIGINAL_OCT09_MINIPC_GITHUB_RUNNER_CLOSED_STAY_CLOUD_CAPACITY_GATE"
+      },
+      {
+        "path": "docs/market-source-autonomy-v1.md",
+        "role": "OLD_USER_AUTONOMOUS_SOURCE_DISCOVERY_P5_NOT_SOURCE_ROTATION"
+      },
+      {
+        "path": "docs/project-wide-outage-recovery-v1.md",
+        "role": "PROJECT_WIDE_FAIL_CLOSED_DOWNTIME_RECOVERY_INHERITED_IN_V3"
+      },
+      {
+        "path": "research/project-followthrough-routing-v1.json",
+        "role": "ALREADY_EXISTING_ONE_GITHUB_1015_WORK_OWNER_AND_GATES"
       }
     ],
     "architecture": [
@@ -105,6 +125,14 @@
       {
         "path": "docs/autonomous-followthrough-governance-v1.md",
         "role": "SAFE_WORK_AND_APPROVAL_BOUNDARIES"
+      },
+      {
+        "path": "docs/minipc-analytics-rollout-v1.md",
+        "role": "MINIPC_SINGLE_EXISTING_RESEARCH_OWNER_AND_NO_SECOND_DAEMON"
+      },
+      {
+        "path": "docs/minipc-support-block-plan-v1.md",
+        "role": "MINIPC_CLOUD_RUNNER_FALLBACK_SECURITY_AND_RESOURCE_BOUNDARY"
       }
     ],
     "operations": [
@@ -127,6 +155,14 @@
       {
         "path": "docs/autonomous-followthrough-governance-v1.md",
         "role": "EXECUTOR_GATES_AND_NO_GHOST_SUCCESS"
+      },
+      {
+        "path": "docs/minipc-analytics-rollout-v1.md",
+        "role": "MINIPC_RESOURCE_SAFE_READONLY_ANALYTICS_WITH_REAL_PIT_GATE"
+      },
+      {
+        "path": "docs/minipc-support-block-plan-v1.md",
+        "role": "MINIPC_GITHUB_RUNNER_STOPPED_DISABLED_OFFLOAD_CLOSED_UNTIL_CAPACITY_GATE"
       }
     ],
     "research": [
@@ -177,6 +213,14 @@
       {
         "path": "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
         "role": "ORIGINAL_19_NO_BUY_DECISION_LESSONS_AND_EXPLICIT_DISPOSITIONS"
+      },
+      {
+        "path": "docs/minipc-analytics-rollout-v1.md",
+        "role": "MINIPC_ENTRY_PIT_WAIT_MISSED_MOVE_HISTORIC_REPLAY_PERMITTED_GATE_AND_REAL_ZRO_PHYSICAL_OUTPUT"
+      },
+      {
+        "path": "docs/minipc-support-block-plan-v1.md",
+        "role": "NO_PERMANENT_MINIPC_RUNNER_OR_LOCAL_AI_WITHOUT_NEW_GATE"
       }
     ]
   },
