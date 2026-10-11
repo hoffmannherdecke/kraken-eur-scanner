@@ -33,8 +33,12 @@
   "scopes": {
     "strategy": [
       {
+        "path": "research/v3/v3-b-shadow5-approval-20261011-run2.json",
+        "role": "NEW_EXPLICIT_USER_APPROVAL_SECOND_SEPARATE_V3B_SHADOW5_HTTP10_90M_ONLY; FIRST_TRIAL_CLOSED_NO_AUTO_RETRY"
+      },
+      {
         "path": "research/v3/v3-b-shadow5-approval-20261011.json",
-        "role": "LATEST_EXPLICIT_CROSS_CHAT_V3B_SHADOW5_10_HTTP_USER_APPROVAL_INHERIT_DO_NOT_REASK_OR_PROMOTE"
+        "role": "PREVIOUS_FIRST_V3B_SHADOW5_APPROVAL_EXHAUSTED_CLOSED_HISTORICAL_ONLY_NO_NEW_TRIAL"
       },
       {
         "path": "docs/strategy-version-map.md",
@@ -97,8 +101,12 @@
     ],
     "operations": [
       {
+        "path": "research/v3/v3-b-shadow5-approval-20261011-run2.json",
+        "role": "NEW_EXPLICIT_USER_APPROVAL_SECOND_SEPARATE_V3B_SHADOW5_HTTP10_90M_ONLY; FIRST_TRIAL_CLOSED_NO_AUTO_RETRY"
+      },
+      {
         "path": "research/v3/v3-b-shadow5-approval-20261011.json",
-        "role": "LATEST_EXPLICIT_CROSS_CHAT_V3B_SHADOW5_10_HTTP_USER_APPROVAL_INHERIT_DO_NOT_REASK_OR_PROMOTE"
+        "role": "PREVIOUS_FIRST_V3B_SHADOW5_APPROVAL_EXHAUSTED_CLOSED_HISTORICAL_ONLY_NO_NEW_TRIAL"
       },
       {
         "path": "docs/project-wide-outage-recovery-v1.md",

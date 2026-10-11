@@ -1,0 +1,50 @@
+{
+  "kind": "V3_B_USER_APPROVAL_RECEIPT_V1",
+  "status": "USER_APPROVED_BOUNDED_MANUAL_SHADOW_ONLY",
+  "approved_on_local_date": "2026-10-11",
+  "approval_label": "APPROVE V3-B SHADOW-5 SECOND / HTTP-10",
+  "approval_source": "User explicitly answered 'Ja, gebe ich frei!' to assistant's second one-shot proposal: at most five candidates, ten model HTTP attempts including retries, 90 minutes; first trial finished and immutable.",
+  "trial_id": "SECOND",
+  "new_cohort": true,
+  "predecessor_trial_id": "FIRST",
+  "predecessor_report": "%USERPROFILE%/Trading/Research/v3-b-shadow5-http10-20261011.json",
+  "max_distinct_candidates": 5,
+  "max_model_http_attempts_including_retries": 10,
+  "max_model_http_attempts_per_case_including_retries": 2,
+  "max_wait_minutes": 90,
+  "manual_one_shot_only": true,
+  "no_orders": true,
+  "no_v3_paper_cutover": true,
+  "no_auto_extension": true,
+  "no_second_concurrent_strategy_changing_shadow": true,
+  "frozen_v2r4_must_remain_active": true,
+  "immutable_previous_report": true,
+  "report": "%USERPROFILE%/Trading/Research/v3-b-shadow5-http10-20261011-run2.json",
+  "execution_script": "tools/run-minipc-v3-b-shadow5.ps1 -Trial SECOND -Execute -WaitMinutes 90",
+  "owner": "project-current-state.json#pending_strategy_transition.sequence[1]; existing daily 10:15 Work",
+  "invariants": [
+    "PR173 75 minute minimum maturity and same-candidate 15 minute rechecks required",
+    "PR174 boolean and required PIT frame statuses recorded",
+    "max five distinct original V2R4 EXTENDED entries; max ten real OpenAI model HTTP attempts including retries",
+    "paper stage always read-only, no scheduled second shadow and no extra model budget",
+    "trial SECOND cannot reuse first report or perform any V3 Paper promotion"
+  ],
+  "stop_conditions": [
+    "missing or conflicting existing first trial record",
+    "missing expected frozen active V2R4 runtime",
+    "unexpected series/strategy fingerprints",
+    "missing required closed-bar PIT",
+    "model budget reached",
+    "local trial-2 budget journal already exists"
+  ],
+  "authorization_scope": "ONE NEW MANUAL FINITE V3-B SHADOW CASE STUDY ONLY",
+  "not_authorized": [
+    "Third trial",
+    "Extended HTTP budget",
+    "V3 Paper switch",
+    "Live orders",
+    "Other H activations",
+    "New schedules or secrets"
+  ],
+  "next_action": "Once PR merged and green, read-only diagnose and execute one manual finite trial at existing Mini-PC; record physical result and candidate-level gate evidence to original P1 owner."
+}
