@@ -123,6 +123,32 @@ class ContinuityFreshResearchOnlyTests(unittest.TestCase):
                                             slippage_pct_each_side=.08)
         self.assertEqual(failed["status"],"FAIL_CLOSED_NONEXECUTABLE_BUY_AS_REJECT")
 
+    def test_p3_full_validator_requires_eight_checks_and_matching_continuity_lane(self):
+        hint=run()
+        xs=list(full_fixture())
+        xs[1]["candidate_id"]=hint["source_candidate_id"]
+        xs[5]["candidate_id"]=hint["source_candidate_id"]
+        xs[5]["decision_at_utc"]=dt(13)
+        for corrupt in (
+            lambda h:h.pop("checks"),
+            lambda h:h["checks"].pop("fresh_eur_spread_guard"),
+            lambda h:h["checks"].update(fresh_ask_not_chase=False),
+            lambda h:h["checks"].update(fake_extra_gate=True),
+        ):
+            suspect=copy.deepcopy(hint)
+            corrupt(suspect)
+            result=validate_full_entry_decision(suspect,*xs[1:],
+                                                decision_at_utc=dt(13),slippage_pct_each_side=.08)
+            self.assertEqual(result["status"],"NO_FULL_REVIEW_ELIGIBILITY")
+            self.assertNotEqual(result["decision"],"BUY_SCOUT")
+        for lane in ("REVERSAL","IGNITION","EXTENDED","NONE"):
+            case=copy.deepcopy(xs)
+            case[5]["setup_lane"]=lane
+            result=validate_full_entry_decision(hint,*case[1:],
+                                                decision_at_utc=dt(13),slippage_pct_each_side=.08)
+            self.assertEqual(result["status"],"UNKNOWN_REQUIRED_PIT_OR_EXECUTION_EVIDENCE")
+            self.assertFalse(result["orders"])
+
     def test_live_v2r4_does_not_import_p3_or_full_model_contract(self):
         root=Path(__file__).resolve().parents[1]
         for path in ("paper_evaluator/evaluate.py","paper_evaluator/v2r4_local_recheck.py",
