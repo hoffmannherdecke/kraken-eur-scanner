@@ -1,12 +1,14 @@
 """Negative and positive regression tests for source-first context preflight."""
+import copy
 import json
 from pathlib import Path
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from tools.context_before_action import (
-    ROOT, ContextGateError, build, routed_sources, verify_receipt,
+    ROOT, ContextGateError, build, routed_sources, verify_receipt, v3_decision_inheritance, read_json as original_read_json,
 )
 
 
@@ -32,6 +34,67 @@ class ContextBeforeActionTests(unittest.TestCase):
             item["path"] for item in packet["source_index"]})
         self.assertIn("research/v3-migration-ledger.json", {
             item["path"] for item in packet["source_index"]})
+
+    def test_pr161_all_19_lessons_p0_p9_h1_h11_and_eight_conflicts_in_packet(self):
+        packet = build(ROOT, "strategy")
+        scope = packet["strategy_learning_routes"]
+        self.assertEqual(len(scope["original_lessons"]), 19)
+        self.assertEqual(len(scope["historical_conflict_resolutions"]), 8)
+        self.assertEqual([x["order"] for x in scope["prioritized_packages"]],
+                         list(range(10)))
+        self.assertEqual({x["id"] for x in scope["h_statuses"]},
+                         {f"H{x}" for x in range(1, 12)})
+        self.assertIn("WAIT_TTL_NEVER_RECHECK",
+                      {x["id"] for x in scope["original_lessons"]})
+        self.assertEqual(scope["safety_gates"]["orders"], False)
+        self.assertTrue(scope["not_a_runtime_or_economic_success_assertion"])
+        for target in ("research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+                       "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"):
+            self.assertIn(target, {x["path"] for x in packet["source_index"]})
+        self.assertIn("next", scope["next_action"])
+
+    def _mutate_v3_source(self, filename, mutate):
+        original = copy.deepcopy(original_read_json(ROOT / filename))
+        mutate(original)
+        def substitute(path):
+            return original if path.name == filename.split("/")[-1] else original_read_json(path)
+        return substitute
+
+    def test_deleted_historical_lesson_is_detected(self):
+        file = "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"
+        def removal(j):
+            j["lessons"] = [x for x in j["lessons"] if x["id"] != "WAIT_TTL_NEVER_RECHECK"]
+        with patch("tools.context_before_action.read_json",
+                   side_effect=self._mutate_v3_source(file, removal)):
+            with self.assertRaisesRegex(ContextGateError, "19 V3 findings"):
+                v3_decision_inheritance(ROOT)
+
+    def test_missing_package_or_h_component_is_detected(self):
+        file = "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
+        for key, item, expected in (("package_order", "P1_V3_B_REAL_SECOND_LEG_ENTRY", "P0-P9"),
+                                    ("h_components", "H3", "H1-H11"),
+                                    ("consistency_findings", "INPUT_ONLY_VS_NEW_POLICY",
+                                     "eight explicit")):
+            def remove(j):
+                j[key] = [x for x in j[key] if x.get("id", x.get("key")) != item]
+            with self.subTest(key=key):
+                with patch("tools.context_before_action.read_json",
+                           side_effect=self._mutate_v3_source(file, remove)):
+                    with self.assertRaisesRegex(ContextGateError, expected):
+                        v3_decision_inheritance(ROOT)
+
+    def test_unapproved_trading_or_parallel_shadow_is_detected(self):
+        file = "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
+        for key, value, pattern in (("orders", True, "trading authority"),
+                                    ("max_concurrent_strategy_changing_shadows", 2,
+                                     "parallel strategy")):
+            def unsafe(j):
+                j["global_gates"][key] = value
+            with self.subTest(key=key):
+                with patch("tools.context_before_action.read_json",
+                           side_effect=self._mutate_v3_source(file, unsafe)):
+                    with self.assertRaisesRegex(ContextGateError, pattern):
+                        v3_decision_inheritance(ROOT)
 
     def test_missing_source_fails_closed(self):
         with tempfile.TemporaryDirectory() as d:
