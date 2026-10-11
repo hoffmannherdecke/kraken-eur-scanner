@@ -151,11 +151,17 @@
       "order": 2,
       "id": "P2_WAIT_EXPIRED_FRESH_RECHECK",
       "priority": "NEXT_ONLY_IF_B_DISPOSITION",
-      "status": "DOCUMENTED_ONLY",
+      "status": "INACTIVE_OFFLINE_ELIGIBILITY_AND_SHARED_RISK_CONTRACT_PREP_NO_MODEL_NO_PAPER_PROOF",
       "change_class": "WAIT_TTL_REVALIDATION",
       "owner": "research/v3-migration-ledger.json#v2r4_event_driven_wait_wakeup",
-      "work": "Separate successor B2 hypothesis: WAIT with temporary unfavorable price may regain confirmed trigger on a later fresh event; distinguish still watchable from dead setup and re-evaluate exactly once on verified new market input. Keep blocked risk factors; prevent 30–60min TTL nuisance, duplicate rechecks, live orders. Do NOT combine this parameter/TTL change with B second-leg test.",
-      "exit": "Funnel WAIT→watchable→fresh trigger→full model recheck→valid BUY proposal with precision and costs; bounded de-duped number of rechecks, stop when economic gate fails."
+      "work": "Implement only the after-expiry later-independent closed EUR price/volume structure eligibility lane. Preserve original WAIT and expiry as final. Pure offline P2 requires real expiry ID/UTC and strictly later fresh PIT closed 15m reclaim+5m volume at existing floor; a single review eligibility flag is NEVER BUY. Reuse shared P4 full-model cost/stop/stage2 validator with distinct status/kind/known_at checks, no new evaluator, watcher, scheduler or automatic model calls. P3 to be tested separately after P2 safety CI. Keep full version-specific rollout, 5 real E2E evidence and economics not proven.",
+      "exit": "Offline positive/negative test, shared P4 risk contract and fail-closed malformed/future/stale source; existing V2R4 not imported/changed. Prospective matched P2 model review or paper performance is NOT yet evidenced and requires distinct authorization; do not declare P2 strategy successful.",
+      "sources": [
+        "paper_evaluator/v3_wait_fresh_review_candidate_v1.py",
+        "tests/test_v3_wait_fresh_review_candidate_v1.py",
+        "research/v3/v3-buy-gate-flexibility-prereg-20261011.json",
+        "paper_evaluator/v3_full_entry_decision_candidate_v1.py"
+      ]
     },
     {
       "order": 3,
