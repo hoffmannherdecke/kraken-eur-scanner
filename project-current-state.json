@@ -364,11 +364,64 @@
             "orders": 0,
             "paper_changed": false,
             "runner_status": "COMPLETED_NO_ELIGIBLE_SECOND_LEG_MODEL_EVIDENCE",
-            "reason_code_per_case": "AWAIT_SINGLE_READ_ONLY_LOCAL_JSON_PROJECTION",
+            "reason_code_per_case": "READ_ONLY_USER_SCREENSHOT_RECEIVED_FIVE_GATE_DETAILS",
             "independent_model_buy_proof": false,
             "first_report_immutable": true,
             "third_trial_authorized": false,
-            "receipt_document": "research/work-analysis/2026-10-11-v3b-shadow5-second-physical-5-0-0.md"
+            "receipt_document": "research/work-analysis/2026-10-11-v3b-shadow5-second-physical-5-0-0.md",
+            "reason_report": "research/work-analysis/2026-10-11-v3b-shadow5-second-gate-triage.md",
+            "cases": [
+              {
+                "pair": "EIGEN/EUR",
+                "status": "UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE",
+                "eligibility_checks": 4,
+                "closed_15m_bars": 21,
+                "one_five_fifteen_minute_frames": "ALL_VALID",
+                "seven_gate_checks": "ALL_NULL_UNDERLYING_UNKNOWN_UNPROVEN"
+              },
+              {
+                "pair": "BAT/EUR",
+                "status": "UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE",
+                "eligibility_checks": 4,
+                "closed_15m_bars": 21,
+                "one_five_fifteen_minute_frames": "ALL_VALID",
+                "seven_gate_checks": "ALL_NULL_UNDERLYING_UNKNOWN_UNPROVEN"
+              },
+              {
+                "pair": "TIA/EUR",
+                "status": "SECOND_LEG_CONDITIONS_NOT_CONFIRMED",
+                "eligibility_checks": 5,
+                "closed_15m_bars": 21,
+                "one_five_fifteen_minute_frames": "ALL_VALID",
+                "false_checks": [
+                  "closed_reclaim_above_prior_base_high",
+                  "existing_v2r4_volume_confirmed",
+                  "fresh_five_minute_continuation"
+                ]
+              },
+              {
+                "pair": "ARB/EUR",
+                "status": "SECOND_LEG_CONDITIONS_NOT_CONFIRMED",
+                "eligibility_checks": 5,
+                "closed_15m_bars": 21,
+                "one_five_fifteen_minute_frames": "ALL_VALID",
+                "false_checks": [
+                  "closed_reclaim_above_prior_base_high",
+                  "existing_v2r4_volume_confirmed",
+                  "fresh_five_minute_continuation"
+                ]
+              },
+              {
+                "pair": "AERO/EUR",
+                "status": "UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE",
+                "eligibility_checks": 6,
+                "closed_15m_bars": 21,
+                "one_five_fifteen_minute_frames": "ALL_VALID",
+                "seven_gate_checks": "ALL_NULL_UNDERLYING_UNKNOWN_UNPROVEN"
+              }
+            ],
+            "per_case_input_failure_causes": "UNKNOWN_SOURCE_STAGE_NOT_RECORDED_BY_FINISHED_RUN; DO_NOT CLAIM PROVEN ZERO_VOLUME_IN_HISTORICAL",
+            "safely_reproducible_program_defect": "VALID_COIN_5M_ZERO_RELATIVE_VOLUME_0_0_WAS_FALSE_UNKNOWN_FIXED_IN_INACTIVE_POLICY_PR"
           }
         }
       },
@@ -400,12 +453,13 @@
     "do_not_claim_success_before": "REAL_MINIPC_DISABLE_OLD_AND_ENABLE_NEW_ACK_PLUS_SUPABASE_SINGLE_ACTIVE_V3_WITH_FIRST_PROSPECTIVE_DECISION",
     "no_artificial_minimum_wait": true,
     "current_handoff_action": {
-      "kind": "V3B_SECOND_SHADOW5_REAL_EVIDENCE_TRIAGE",
-      "status": "SECOND_FINITE_TRIAL_CLOSED_REASONS_NOT_YET_INSPECTED",
-      "source": "research/work-analysis/2026-10-11-v3b-shadow5-second-physical-5-0-0.md",
-      "local_report": "%USERPROFILE%/Trading/Research/v3-b-shadow5-http10-20261011-run2.json",
-      "next_concrete_action": "ONE_READ_ONLY_LOCAL_PROJECTION_OF_SEVEN_GATE_TRUE_FALSE_AND_REQUIRED_PIT_FRAME_STATUSES",
-      "already_authorized": true,
+      "kind": "V3B_SECOND_SHADOW5_PIT_AND_GATE_EVIDENCE_DISPOSITION",
+      "status": "SECOND_RESULT_AND_CASE_REASONS_ARCHIVED_SAFE_INACTIVE_ZERO_VOLUME_CLASSIFICATION_FIX_CI_PENDING",
+      "source": "research/work-analysis/2026-10-11-v3b-shadow5-second-gate-triage.md",
+      "next_owner": "PROJECT_BACKLOG.md P1/P2/P3/P4",
+      "next_concrete_action": "OFFLINE_SAFE_FIX_FIVE_MIN_RATIO_ZERO_AND_STAGE_CATEGORIES_THEN_PROGRESS_V3_P2_P3_INDEPENDENT_ENTRY_RESEARCH_WITHOUT_NEW_SHADOW",
+      "all_user_physical_readouts_finished": true,
+      "no_new_user_action_for_same_run": true,
       "third_trial_authorized": false,
       "no_model_calls": true,
       "no_repeat_test": true,
