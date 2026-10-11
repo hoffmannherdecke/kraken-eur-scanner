@@ -230,5 +230,46 @@ class ApprovedV3BShadowTests(unittest.TestCase):
             self.assertEqual(chosen[0]["candidate_id"],five[0]["source_candidate_id"])
 
 
+    def test_eligibility_reason_diagnostics_are_bounded_boolean_and_not_raw_kraken(self):
+        coin={"status":"COMPLETE","observed_at_utc":"2026-10-11T10:15:00Z",
+              "known_at_utc":"2026-10-11T10:15:07Z",
+              "frames":{
+                  "1":{"status":"VALID","closed_close_eur":100},
+                  "5":{"status":"VALID","volume_ratio_status":"VALID",
+                       "closed_close_eur":101},
+                  "15":{"status":"VALID","atr_status":"VALID","atr14_eur":2,
+                        "closed_close_eur":102},
+              }}
+        hint={"status":"SECOND_LEG_CONDITIONS_NOT_CONFIRMED",
+              "checks":{"base_1_to_3h_rebuilt":True,
+                        "closed_reclaim_above_prior_base_high":False,
+                        "liquid_eur_spread":True,
+                        "accidental_raw_private_key":"UNTRUSTED_NOT_STORED"}}
+        data=mod.compact_gate_evidence(hint,coin,[{"start_utc":"2026-10-11T10:00:00Z",
+                                                  "close":102,"high":103}])
+        self.assertIs(data["checks"]["closed_reclaim_above_prior_base_high"],False)
+        self.assertIsNone(data["checks"]["existing_v2r4_volume_confirmed"])
+        self.assertEqual(data["required_coin_frames"]["15"]["atr_status"],"VALID")
+        self.assertEqual(data["closed_15m_bar_count"],1)
+        self.assertEqual(data["latest_closed_15m_start_utc"],"2026-10-11T10:00:00Z")
+        serialized=json.dumps(data)
+        self.assertNotIn("UNTRUSTED_NOT_STORED",serialized)
+        self.assertNotIn("accidental_raw_private_key",serialized)
+        self.assertNotIn("atr14_eur",serialized)
+        self.assertNotIn("closed_close_eur",serialized)
+
+    def test_missing_pit_remains_unknown_with_source_status_not_market_reject(self):
+        coin={"status":"PARTIAL_OR_MISSING","frames":{
+                "1":{"status":"STALE","reason":"LAST_CLOSED_BAR_TOO_OLD"},
+                "5":{"status":"INCOMPLETE","reason":"INSUFFICIENT_CONTIGUOUS_BARS"},
+                "15":{"status":"MISSING","reason":"NO_CLOSED_BARS"}}}
+        hint={"status":"UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE"}
+        data=mod.compact_gate_evidence(hint,coin,[])
+        self.assertEqual(data["second_leg_status"],"UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE")
+        self.assertIsNone(data["checks"]["closed_reclaim_above_prior_base_high"])
+        self.assertEqual(data["required_coin_frames"]["15"]["reason"],"NO_CLOSED_BARS")
+        self.assertIsNone(data["latest_closed_15m_start_utc"])
+
+
 if __name__=="__main__":
     unittest.main()
