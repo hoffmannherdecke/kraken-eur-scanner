@@ -102,7 +102,7 @@ def review_diagnostic(standard: dict[str, Any], experimental: dict[str, Any]) ->
         "standard_status": s, "experimental_status": e,
         "standard_hard_checks_present": known_checks,
         "failed_standard_hard_check_names": failed,
-        "model_http_attempts": 0, "new_model_permission": False,
+        "helper_model_calls": 0, "new_model_permission": False,
         "no_automatic_buy": True, "paper_changed": False,
     }
 
@@ -117,7 +117,7 @@ def phase_failure(phase: str, exc: Exception) -> dict[str, Any]:
         "phase": phase if phase in PHASES else "UNCLASSIFIED_PHASE",
         "exception_type": name if name in ALLOWED_ERRORS else "OtherError",
         "assetpairs_phase_failed": phase == "KRAKEN_ONLINE_SPOT_EUR_ASSETPAIRS",
-        "model_http_attempts": 0, "new_model_permission": False,
+        "helper_model_calls": 0, "new_model_permission": False,
         "no_automatic_buy": True, "paper_changed": False,
     }
 
@@ -131,10 +131,14 @@ def full_review_receipt(
     model_request_at_utc: str,
     model_response_at_utc: str,
     p4_completed_at_utc: str,
+    model_response_id: str,
     model_decision: str,
     p4_result: dict[str, Any],
 ) -> dict[str, Any]:
     """Sanitised *future* model/P4 lineage. Does not reconstruct October data."""
+    if (not isinstance(model_response_id, str)
+            or not re.fullmatch(r"resp_[A-Za-z0-9_-]{8,96}", model_response_id)):
+        raise ValueError("model response identity missing")
     if not isinstance(p4_result, dict):
         raise ValueError("verified P4 result required")
     if (model_decision not in VALID_P4
@@ -143,7 +147,9 @@ def full_review_receipt(
             or p4_result.get("decision") != model_decision
             or p4_result.get("orders") is not False
             or p4_result.get("real_money_actions") is not False
-            or p4_result.get("paper_writer_started") is not False):
+            or p4_result.get("paper_writer_started") is not False
+            or p4_result.get("release_evidence") is not False
+            or p4_result.get("economic_edge_proven") is not False):
         raise ValueError("unverified or unsafe P4 lineage")
     k = _clock(entry_known_at_utc)
     t = _clock(execution_ticker_at_utc)
@@ -163,8 +169,10 @@ def full_review_receipt(
             p4-a).total_seconds() > STAMP_MAX_AGE_SECONDS:
         raise ValueError("stale full-model consumer input")
     result = {
-        "kind": KIND, "status": "VALIDATED_MODEL_RECEIPT_NOT_EXECUTED_TRADE",
+        "kind": KIND, "status": "MODEL_P4_TELEMETRY_CONTRACT_ONLY_NOT_API_ATTESTED",
         "eligibility_at_utc": _stamp(e),
+        "model_response_id": model_response_id,
+        "api_or_market_evidence_independently_verified": False,
         "model_request_at_utc": _stamp(req),
         "model_response_at_utc": _stamp(resp),
         "p4_completed_at_utc": _stamp(p4),
@@ -172,7 +180,7 @@ def full_review_receipt(
         "p4_status": p4_result["status"], "validated_decision": model_decision,
         "wait_ttl_minutes": None, "wait_expires_at_utc": None,
         "watch_conditions": [],
-        "model_http_attempts": 0, "new_model_permission": False,
+        "helper_model_calls": 0, "new_model_permission": False,
         "paper_changed": False, "paper_writer_started": False,
         "orders": 0, "economic_edge_proven": False, "actual_pnl_eur": None,
     }
