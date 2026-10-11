@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "kind": "V3_EXPERIMENTAL_PAPER_ALL_LESSONS_POLICY_BUNDLE_V1",
+  "strategy_revision": "V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001",
+  "status": "CODE_READY_INACTIVE_RUNTIME_NOT_ACTIVATED",
+  "user_authorization": "USER_APPROVED_PAPER_STRATEGY_HYPOTHESIS_IMPLEMENTATION_AND_CONTROLLED_PAPER_CUTOVER",
+  "scope": "ONLY_EXPERIMENTAL_PAPER_NOT_REAL_MONEY",
+  "entry_priority": [
+    {
+      "id": "FIRST_SCANNER_EARLY_REVIEW",
+      "enabled": true,
+      "module": "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+      "model_prompt": "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
+      "supported_lanes": [
+        "IGNITION",
+        "CONTINUITY",
+        "REVERSAL",
+        "EXTENDED"
+      ],
+      "rule": "Immediate real full-model assessment with complete timely Kraken Spot EUR 1m5m15m/ATR/structure and executable ask/stop planning; no post-signal WAIT or fixed volume 1.2 barrier; all core risk guards remain."
+    },
+    {
+      "id": "CONTINUITY_FRESH_5M",
+      "enabled": true,
+      "module": "paper_evaluator/v3_p3_early_5m_continuity_research_v1.py",
+      "supported_lanes": [
+        "CONTINUITY"
+      ],
+      "rule": "Distinct new closed 5m after detection, prior finished 15m base, unchanged 1.2 volume, full independent model/P4. No same-snapshot duplicate."
+    },
+    {
+      "id": "P3_CONTINUITY_15M_STANDARD",
+      "enabled": true,
+      "module": "paper_evaluator/v3_continuity_fresh_review_candidate_v1.py",
+      "supported_lanes": [
+        "CONTINUITY"
+      ],
+      "rule": "New completed 15m confirmation after original signal; preserve for independent timing contrast."
+    },
+    {
+      "id": "WAIT_EXPIRED_FRESH_REENTRY",
+      "enabled": true,
+      "module": "paper_evaluator/v3_wait_fresh_review_candidate_v1.py",
+      "supported_lanes": [
+        "CONTINUITY",
+        "IGNITION",
+        "REVERSAL",
+        "EXTENDED"
+      ],
+      "rule": "Old WAIT and TTL immutable, new later closed bar is independent setup; never extend old watch silently."
+    },
+    {
+      "id": "EXTENDED_GENUINE_NEW_BASE",
+      "enabled": true,
+      "module": "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
+      "supported_lanes": [
+        "EXTENDED"
+      ],
+      "rule": "Fresh 1-3h closed consolidation plus reclaim; old high returns not permanent veto; no parabolic chase."
+    },
+    {
+      "id": "CONTINUITY_VOLUME_RESEARCH_ONLY",
+      "enabled": true,
+      "module": "paper_evaluator/v3_experimental_continuity_volume_review_v1.py",
+      "supported_lanes": [
+        "CONTINUITY"
+      ],
+      "rule": "Separate floor 1.0..1.2 when all OTHER eight P3 checks pass; not blanket volume loosen; attribute separately."
+    }
+  ],
+  "intentional_policy_differences_from_frozen_v2r4": [
+    "FRESH_CANDIDATE_FULL_MODEL_CAN_BE_IMMEDIATE",
+    "NO_NEED_TO_WAIT_FOR_POST_SCANNER_15M_CLOSE",
+    "SCANNER_SCORE_NOT_A_BUY_GATE",
+    "INITIAL_VOLUME_1_2_NOT_UNIVERSAL_HARD_VETO",
+    "MAJOR_RISK_REGIME_NEGATIVE_NOT_AUTO_BLACKLIST",
+    "OPTIONAL_SOURCE_NEWS_H10_H11_H3_H6_UNAVAILABLE_NOT_HARD_VETO",
+    "FRESH_GENUINE_NEW_BASE_RESETS_OLD_EXTENDED_TERMINAL_REJECT",
+    "EXPIRED_WAIT_CAN_START_DISTINCT_LATER_REVIEW",
+    "EARLY5M_INSTEAD_OF_15M_POST_SIGNAL_CONTINUITY",
+    "FAIL_SAFE_REASONS_INPUT_UNKNOWN_NOT_ECONOMIC_REJECT"
+  ],
+  "hard_gates": {
+    "kraken_online_spot_eur": true,
+    "ask_bid_spread_source_known_at": true,
+    "closed_coin_1m5m15m_atr_structural_low_before_decision": true,
+    "spot_market_minimums": true,
+    "full_independent_model_buy_decision": true,
+    "shared_p4_stop_below_ask": true,
+    "shared_p4_stage2_above_ask": true,
+    "fee_taker_pct_each_side": 0.6,
+    "spread_slippage": true,
+    "scout_eur": 50,
+    "stage2_eur": 50,
+    "no_real_orders": true,
+    "no_real_money": true,
+    "no_outcome_leak": true,
+    "no_model_budget_reuse": true
+  },
+  "canonical_modules": {
+    "paper_full_validator": "paper_evaluator/v3_full_entry_decision_candidate_v1.py",
+    "source": "paper_evaluator/successor_coin_entry_evidence_v1.py",
+    "entry_handoff": "paper_evaluator/v3_entry_handoff_probe.py",
+    "journal": "paper_evaluator/v3_experimental_paper_journal_v1.py",
+    "diagnostics": "paper_evaluator/v3_p3_future_diagnostics_offline_v1.py",
+    "economic_outcome": "P8_EXISTING_FOLLOWUP_PIPELINE_MUST_BE_PHYSICALLY_BOUND",
+    "release": "tools/v3_experimental_paper_technical_gate.py",
+    "cutover": "docs/v3-controlled-paper-cutover-20261011.md"
+  },
+  "required_per_candidate_journal": [
+    "SCANNER_CAPTURE",
+    "SOURCE_INPUT",
+    "FULL_REVIEW_ELIGIBILITY",
+    "MODEL_REQUEST_OR_SKIP",
+    "MODEL_RESPONSE_OR_ERROR",
+    "RAW_AND_NORMALIZED_REASONS",
+    "P4_VALIDATION",
+    "WAIT_WATCH_EXPIRY_TRIGGER_FRESH_REVIEW",
+    "PAPER_FILL_OR_EXPLICIT_NO_BUY",
+    "PAPER_EXIT_STOP_STAGE2_FEE",
+    "FOLLOWUP_6H",
+    "FOLLOWUP_24H",
+    "TECHNICAL_ROTATION_CENSORING_AND_PREDECESSOR_CONTINUITY"
+  ],
+  "experiment_evaluation": {
+    "unknown_and_skipped_count_separately": true,
+    "soft_reason_mentions_not_causal_veto": true,
+    "separate_family_attribution": true,
+    "pair_six_hour_dedupe": true,
+    "market_regime_diverse_for_economics": true,
+    "mfe_mae_not_realized_pnl": true,
+    "stop_first_when_path_ambiguous": true,
+    "missing_24h_is_censored_not_zero": true,
+    "five_candidate_quiet_window_not_success_or_failed_alpha": true,
+    "minimum_calendar_wait_required": false
+  },
+  "current_verified_state": {
+    "github_unit_ci_only": true,
+    "actual_live_full_model_consumer_e2e": false,
+    "real_6h24h_paper_path_ledger": false,
+    "minipc_single_writer_cloud_cas_physical_dryrun": false,
+    "v3_paper_active": false,
+    "v2r4_remains_active_until_cutover_ack": true,
+    "work_and_github_active_v3_rebind_done": false
+  },
+  "release_requirements": {
+    "economic_profitability_before_experiment_required": false,
+    "physical_technical_proofs_required": true,
+    "explicit_cost_cap_required": true,
+    "one_active_paper_series_only": true,
+    "v2r4_intake_stops_only_at_approved_physical_cutover": true,
+    "no_auto_paper_activation": true
+  },
+  "source_attribution": [
+    "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
+    "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
+    "research/v3/v3-buy-gate-flexibility-prereg-20261011.json",
+    "research/work-analysis/2026-10-11-v2r4-crash-rebound-historical-event-review.md",
+    "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md",
+    "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+    "docs/v3-controlled-paper-cutover-20261011.md"
+  ]
+}
