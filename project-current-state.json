@@ -471,7 +471,7 @@
         "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "V3_EARLY5M_INACTIVE_POLICY_CI_AND_EXISTING_V3_FULL_MODEL_JOURNAL_WRITER_INTEGRATION; PHYSICAL_SINGLE_WRITER_CUTOVER_ONLY_AFTER_P0_MODEL_P4_REAL_BUY_PIT_AND_6H24H_FOLLOWUP_EVIDENCE; V2R4_OPERATIVE_ONLY_NOT_V2R3; NO_V3_PAPER_ACTIVE_CLAIM",
+      "next_concrete_action": "V3_EARLY5M_INACTIVE_POLICY_CI_AND_PROSPECTIVE_ACTUAL_P0_FULL_MODEL_PLUS_DIAGNOSTIC_JOURNAL_WRITER_INTEGRATION; CONTROLLED_V2R4_TO_V3_PAPER_ONLY_AFTER_REAL_E2E_BUY_6H24H_FOLLOWUP_AND_MINIPC_CLOUD_SINGLE_WRITER_STOP_START_ACK; V2R4_OPERATIVE_ONLY_NOT_V2R3",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
