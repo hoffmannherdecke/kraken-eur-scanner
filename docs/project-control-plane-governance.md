@@ -1,5 +1,9 @@
 # Project Control-Plane Governance
 
+## Kontext vor Aktion — Retrieval- und Verwendungs-Gate (11.10.2026)
+
+**Neuer verbindlicher Arbeitsprozess, ohne neue Statusautorität:** `docs/context-before-action-governance-v1.md` und das maschinenlesbare *Routing*, nicht ein neuer fachlicher Owner, in `research/context-before-action-routing-v1.json`. Der nur lesende, on-demand `tools/context_before_action.py --scope <strategy|architecture|operations|research>` liefert zuständige Quellenfingerprints, deklarierten Zustand, historische Entscheidungen aus V3 und bestehende Review-ACK-Reconciliation. Relevante Originalabschnitte müssen danach **inhaltlich** gelesen, Widersprüche nach obiger Autorität gelöst, frühere Nutzerbeschlüsse fachlich disponiert und sichere Ergebnisse beim *bisherigen* Owner umgesetzt werden. Optional prüfbare, quellenvollständige, zeitgebundene `CONTEXT_REVIEW_RECEIPT_V1`-Quittung für materielle Änderung. Der existierende `project-control-plane-guard.yml` führt Negativtests (fehlende Quellen, stale/verkürzte Receipts) aus. Ein Hash oder strukturell gültiger Receipt beweist **nicht** das Verständnis des Bearbeiters oder eine reale Runtime-/Work-Aktion. Bestehende Automations-Prompts außerhalb GitHub sind separat zu prüfen; weder unbekannte Chats noch Live-Supabase werden automatisch importiert. Kein neuer Scheduler, KI-Agent, Backlog, Strategie-/Shadow-/Echtgeld-Gate.
+
 Status: **CANONICAL / ACTIVE**
 
 ## Purpose
