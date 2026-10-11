@@ -271,5 +271,97 @@ class ApprovedV3BShadowTests(unittest.TestCase):
         self.assertIsNone(data["latest_closed_15m_start_utc"])
 
 
+class SecondOneShotAuthorizationRegressionTests(unittest.TestCase):
+    def test_user_second_consent_is_narrow_and_distinct_from_first(self):
+        first=mod.verified_authorization(PROJECT,"FIRST")
+        second=mod.verified_authorization(PROJECT,"SECOND")
+        self.assertNotEqual(first["approval_label"],second["approval_label"])
+        self.assertEqual(second["trial_id"],"SECOND")
+        self.assertEqual(second["max_distinct_candidates"],5)
+        self.assertEqual(second["max_model_http_attempts_including_retries"],10)
+        self.assertEqual(second["max_wait_minutes"],90)
+        self.assertTrue(second["immutable_previous_report"])
+        with self.assertRaisesRegex(ValueError,"UNKNOWN_OR_UNAPPROVED"):
+            mod.verified_authorization(PROJECT,"THIRD")
+
+    def first_report(self,root, *, status="WINDOW_ELAPSED_OR_FIVE_ORIGINAL_CASES_REVIEWED",
+                     calls=0, cases=5):
+        research=root/"Research"
+        research.mkdir(exist_ok=True)
+        path=research/mod.FIRST_REPORT_NAME
+        prior={"kind":"V3_B_MANUAL_SHADOW5_HTTP10_V1","status":status,
+               "model_http_attempts_reserved":calls,
+               "completed_matched_reviews":0,
+               "cases":[{"status":"ELIGIBILITY_CHECKED_NO_BUY"} for _ in range(cases)],
+               "orders":0,"active_v2r4_changed":False,"v3_paper_writer_started":False}
+        path.write_text(json.dumps(prior),encoding="utf-8")
+        return path
+
+    def test_second_is_blocked_if_first_trial_not_closed_or_changed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            with self.assertRaisesRegex(ValueError,"FIRST_V3B"):
+                mod.verify_first_trial_closed(root)
+            first=self.first_report(root,status="RUNNING")
+            with self.assertRaisesRegex(ValueError,"NOT_CLOSED"):
+                mod.verify_first_trial_closed(root)
+            prior=json.loads(first.read_text())
+            prior["status"]="WINDOW_ELAPSED_OR_FIVE_ORIGINAL_CASES_REVIEWED"
+            prior["model_http_attempts_reserved"]=3
+            first.write_text(json.dumps(prior))
+            with self.assertRaisesRegex(ValueError,"NOT_CLOSED"):
+                mod.verify_first_trial_closed(root)
+            prior["model_http_attempts_reserved"]=0
+            first.write_text(json.dumps(prior))
+            mod.verify_first_trial_closed(root)
+
+    def test_second_live_diagnose_zero_budget_does_not_touch_old_journal(self):
+        setup=ApprovedV3BShadowTests()
+        with tempfile.TemporaryDirectory() as folder:
+            root,stage,ctrl,t=setup.fixture(folder,n=1)
+            first=self.first_report(root)
+            before=first.read_bytes()
+            report=root/"Research"/mod.SECOND_REPORT_NAME
+            with ExitStack() as stack:
+                for scope in setup.mocks(stage,ctrl,t):
+                    stack.enter_context(scope)
+                result=mod.main_run(root,PROJECT,report,0,trial_id="SECOND",
+                                    diagnose_only=True,now_fn=lambda:t)
+            self.assertEqual(result["model_http_attempts_reserved"],0)
+            self.assertFalse(report.exists())
+            self.assertEqual(first.read_bytes(),before)
+
+    def test_second_one_shot_zero_model_never_reuses_old_journal(self):
+        setup=ApprovedV3BShadowTests()
+        with tempfile.TemporaryDirectory() as folder:
+            root,stage,ctrl,t=setup.fixture(folder,n=1)
+            first=self.first_report(root)
+            before=first.read_bytes()
+            report=root/"Research"/mod.SECOND_REPORT_NAME
+            with ExitStack() as stack:
+                for scope in setup.mocks(stage,ctrl,t):
+                    stack.enter_context(scope)
+                stack.enter_context(patch.object(mod,"propose_second_leg_review",return_value={
+                    "status":"SECOND_LEG_CONDITIONS_NOT_CONFIRMED",
+                    "request_model_recheck_only":False}))
+                result=mod.main_run(root,PROJECT,report,0,trial_id="SECOND",now_fn=lambda:t)
+            self.assertEqual(result["trial_id"],"SECOND")
+            self.assertEqual(result["model_http_attempts_reserved"],0)
+            self.assertEqual(result["status"],"COMPLETED_NO_ELIGIBLE_SECOND_LEG_MODEL_EVIDENCE")
+            self.assertEqual(first.read_bytes(),before)
+            self.assertNotEqual(report.read_bytes(),before)
+            with self.assertRaisesRegex(ValueError,"EXISTING_REPORT_NO_RETRY"):
+                mod.main_run(root,PROJECT,report,0,trial_id="SECOND",now_fn=lambda:t)
+
+    def test_second_wrong_path_cannot_alias_first_report(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            self.first_report(root)
+            with self.assertRaisesRegex(ValueError,"WRONG_REPORT_NAME"):
+                mod.main_run(root,PROJECT,root/"Research"/mod.FIRST_REPORT_NAME,0,
+                             trial_id="SECOND",diagnose_only=True)
+
+
+
 if __name__=="__main__":
     unittest.main()
