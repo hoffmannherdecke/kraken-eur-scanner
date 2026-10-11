@@ -1,5 +1,9 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
+## P1 / Kontext-vor-Aktion – Rückholung und fachlicher Lerntransfer (11.10.2026)
+
+**Nutzerpriorität für alle gemeinsamen Arbeitsbereiche:** dokumentierte Entscheidungen müssen beim späteren Entscheiden und Implementieren **nachweisbar wieder abgerufen, abgeglichen und benutzt** werden, nicht nur archiviert. **Einziger fachlicher Governance-Owner:** `docs/project-control-plane-governance.md#kontext-vor-aktion--retrieval--und-verwendungs-gate-11102026`; Umsetzungspfad `docs/context-before-action-governance-v1.md`, bestehende `research/project-followthrough-routing-v1.json` / bestehende Work- und CI-Gates. Zunächst realisiert: read-only Preflight `tools/context_before_action.py`, Source-Routingindex `research/context-before-action-routing-v1.json`, negative CI-Tests und verifizierbare Kontextreview-Quittungen **ohne** Runtime-/Strategieänderung. **Offener echter E2E-Beweis:** Ein späterer echter relevanter V3-/Architektur-PR muss den passenden aktuellen Kontext tatsächlich abrufen, frühere Befunde und Widersprüche auflösen, vorhandene Fach-Owner aktualisieren und mit strukturell prüfbarer Quittung + Tests/ACK enden; ein grüner Routingtest ist noch kein Nachweis semantischer Wissensnutzung. Externe ChatGPT Work-/Tasks-Anweisungen auf dieses Verfahren ausrichten und nächsten echten Lauf getrennt bestätigen; nicht einfach behaupten, der Repo-Vertrag steuere alle Chat-Instanzen. Keine weitere Datenbank, Doppel-Backlog, neuer Cron, Scope-/Freigabeerweiterung.
+
 Status: **KANONISCHER MASTER-BACKLOG**  
 Letzte Vollsicht: 2026-10-08  
 Aktueller deklarierter Zustand: `project-current-state.json` (V2R4 PAPER aktiv, V2R3 abgeschlossen).

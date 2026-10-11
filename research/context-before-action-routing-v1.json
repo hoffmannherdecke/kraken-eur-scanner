@@ -1,0 +1,117 @@
+{
+  "schema_version": 1,
+  "kind": "CONTEXT_BEFORE_ACTION_ROUTING_V1",
+  "purpose": "Read-only, point-in-time source lookup before substantial project decisions; no duplicate current-state or work ownership.",
+  "status_authority": "project-current-state.json",
+  "live_evidence_authority": "Supabase/MINI-PC (requires a separate actual live read; GitHub snapshot is never live verification)",
+  "task_authority": "PROJECT_BACKLOG.md",
+  "no_new_scheduler": true,
+  "no_runtime_mutation": true,
+  "no_trading_authority": true,
+  "common": [
+    {
+      "path": "project-current-state.json",
+      "role": "DECLARED_CURRENT_STATE_NOT_LIVE"
+    },
+    {
+      "path": "docs/project-control-plane-governance.md",
+      "role": "SOURCE_PRECEDENCE_AND_DECISION_RULES"
+    },
+    {
+      "path": "PROJECT_BACKLOG.md",
+      "role": "ONE_OPEN_WORK_OWNER"
+    },
+    {
+      "path": "docs/master-version-register.md",
+      "role": "DATED_HISTORY_NOT_LIVE"
+    },
+    {
+      "path": "research/work-analysis-state.json",
+      "role": "CONTROL_DECISION_ACK_EVIDENCE"
+    }
+  ],
+  "scopes": {
+    "strategy": [
+      {
+        "path": "docs/strategy-version-map.md",
+        "role": "VERSION_SCOPE_AND_INHERITANCE"
+      },
+      {
+        "path": "research/v3-migration-ledger.json",
+        "role": "COMPONENT_DISPOSITIONS_AND_SUCCESSOR_LEARNING"
+      },
+      {
+        "path": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "role": "RECONCILED_PRIOR_USER_AGREEMENTS_AND_ORDER"
+      },
+      {
+        "path": "research/strategy-learning-causal-gate-v1.json",
+        "role": "ECONOMIC_CAUSAL_PROOF_AND_USER_RELEASE"
+      },
+      {
+        "path": "docs/test-strategy-runbook.md",
+        "role": "FASTTRACK_ONE_CHANGE_RELEASE_RULES"
+      }
+    ],
+    "architecture": [
+      {
+        "path": "docs/unified-monitoring-learning-architecture-v1.md",
+        "role": "NO_DUPLICATE_COMPONENTS_AND_EVIDENCE_CONSUMERS"
+      },
+      {
+        "path": "research/project-followthrough-routing-v1.json",
+        "role": "TRIGGER_OWNER_ACTION_ACK"
+      },
+      {
+        "path": "docs/autonomous-followthrough-governance-v1.md",
+        "role": "SAFE_WORK_AND_APPROVAL_BOUNDARIES"
+      }
+    ],
+    "operations": [
+      {
+        "path": "docs/project-wide-outage-recovery-v1.md",
+        "role": "RESILIENCE_AND_RECOVERY"
+      },
+      {
+        "path": "docs/github-capacity-and-cost-strategy-v1.md",
+        "role": "RUNNER_COST_AND_QUOTAS"
+      },
+      {
+        "path": "docs/autonomous-followthrough-governance-v1.md",
+        "role": "EXECUTOR_GATES_AND_NO_GHOST_SUCCESS"
+      }
+    ],
+    "research": [
+      {
+        "path": "docs/v3-research-framework.md",
+        "role": "RESEARCH_STATUSES_AND_EVIDENCE"
+      },
+      {
+        "path": "docs/market-source-autonomy-v1.md",
+        "role": "SOURCE_STEWARD_NOT_TRADING_AUTHORITY"
+      },
+      {
+        "path": "research/v3-migration-ledger.json",
+        "role": "INHERITED_EXPERIMENT_DISPOSITIONS"
+      },
+      {
+        "path": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "role": "EARLIER_APPROVALS_AND_CONFLICT_RESOLUTIONS"
+      }
+    ]
+  },
+  "receipt_statuses": [
+    "APPLIED",
+    "NOT_APPLICABLE_WITH_REASON",
+    "CONFLICT_RESOLVED_WITH_PROOF"
+  ],
+  "receipt_required_fields": [
+    "change_intent",
+    "planned_action",
+    "superseded_or_rejected_alternatives",
+    "release_gate",
+    "canonical_followthrough_owner"
+  ],
+  "explicit_boundary": "A preflight/source fingerprint proves file access and provenance, not that an AI understood the contents. A validated receipt is an auditable human/agent assertion, not autonomous authorization.",
+  "portability": "Use docs/context-before-action-governance-v1.md as template for other independent projects; never transfer these crypto authorities by implication."
+}

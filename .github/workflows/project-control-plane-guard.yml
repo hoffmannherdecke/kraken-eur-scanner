@@ -5,6 +5,10 @@ on:
     paths:
       - "project-current-state.json"
       - "docs/project-control-plane-governance.md"
+      - "docs/context-before-action-governance-v1.md"
+      - "research/context-before-action-routing-v1.json"
+      - "tools/context_before_action.py"
+      - "tests/test_context_before_action.py"
       - "docs/autonomous-followthrough-governance-v1.md"
       - "research/autonomous-implementation-queue-v1.json"
       - "tools/select-autonomous-implementation.py"
@@ -52,6 +56,10 @@ on:
     paths:
       - "project-current-state.json"
       - "docs/project-control-plane-governance.md"
+      - "docs/context-before-action-governance-v1.md"
+      - "research/context-before-action-routing-v1.json"
+      - "tools/context_before_action.py"
+      - "tests/test_context_before_action.py"
       - "docs/autonomous-followthrough-governance-v1.md"
       - "research/autonomous-implementation-queue-v1.json"
       - "tools/select-autonomous-implementation.py"
@@ -108,6 +116,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate on-demand context routing and loss-of-context regression tests
+        run: |
+          python -m py_compile tools/context_before_action.py
+          python tools/context_before_action.py --scope strategy > /dev/null
+          python tools/context_before_action.py --scope architecture > /dev/null
+          python tools/context_before_action.py --scope operations > /dev/null
+          python tools/context_before_action.py --scope research > /dev/null
+          python -m unittest discover -s tests -p 'test_context_before_action.py' -v
       - name: Validate current state
         run: python tools/validate-project-current-state.py
       - name: Enforce successor causal-learning and entry-productivity gate
