@@ -21,6 +21,18 @@ WAIT_FRESH_ELIGIBLE_STATUS = "WAIT_FRESH_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY
 WAIT_FRESH_ELIGIBLE_KIND = "V3_P2_INACTIVE_WAIT_FRESH_REVIEW_ELIGIBILITY_V1"
 CONTINUITY_ELIGIBLE_STATUS = "CONTINUITY_FRESH_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
 CONTINUITY_ELIGIBLE_KIND = "V3_P3_INACTIVE_CONTINUITY_FRESH_REVIEW_ELIGIBILITY_V1"
+EXPERIMENTAL_ELIGIBLE_STATUS = "EXPERIMENTAL_CONTINUITY_VOLUME_SUPPORTS_NEW_FULL_REVIEW_ONLY"
+EXPERIMENTAL_ELIGIBLE_KIND = "V3_EXP_INACTIVE_CONTINUITY_ONE_CHANGE_VOLUME_REVIEW_V1"
+EXPERIMENTAL_STANDARD_CHECKS = frozenset({
+    "closed_new_15m_continuation_above_base",
+    "prior_15m_base_not_excessive",
+    "no_new_excessive_extension",
+    "closed_5m_price_continuation",
+    "unchanged_closed_5m_volume_floor",
+    "fresh_eur_spread_guard",
+    "fresh_ask_not_chase",
+    "only_structural_reference_below_ask",
+})
 SOURCE_MAX_AGE_SECONDS = 120
 FEE_PCT_EACH_SIDE = 0.6
 SCOUT_EUR = 50
@@ -100,7 +112,7 @@ def validate_full_entry_decision(
         "eligibility_is_not_buy": True,
     }
     review_status = review_eligibility.get("status")
-    if (review_status not in {ELIGIBLE_STATUS, WAIT_FRESH_ELIGIBLE_STATUS, CONTINUITY_ELIGIBLE_STATUS}
+    if (review_status not in {ELIGIBLE_STATUS, WAIT_FRESH_ELIGIBLE_STATUS, CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS}
             or review_eligibility.get("request_model_recheck_only") is not True):
         return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
     if review_status == WAIT_FRESH_ELIGIBLE_STATUS:
@@ -115,6 +127,29 @@ def validate_full_entry_decision(
                 or review_eligibility.get("original_candidate_fresh") is not True
                 or review_eligibility.get("new_closed_15m_bar_after_candidate") is not True
                 or review_eligibility.get("baseline_v2r4_decision_unchanged") is not True):
+            return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
+    if review_status == EXPERIMENTAL_ELIGIBLE_STATUS:
+        # Only an OFFLINE one-change preview, NEVER a model-call permit.
+        # The standard P3 arm must have rejected solely on the 1.2 volume
+        # floor while all price/PIT/risk checks stayed true.
+        checks = review_eligibility.get("standard_unmodified_checks")
+        if (review_eligibility.get("kind") != EXPERIMENTAL_ELIGIBLE_KIND
+                or review_eligibility.get("standard_review_kind") != CONTINUITY_ELIGIBLE_KIND
+                or review_eligibility.get("standard_review_status") != "CONTINUITY_EARLY_CONFIRMATION_NOT_PROVEN"
+                or review_eligibility.get("standard_review_permission") is not False
+                or review_eligibility.get("standard_volume_floor") != 1.2
+                or review_eligibility.get("experimental_volume_floor") != 1.0
+                or review_eligibility.get("old_standard_all_other_checks_passed") is not True
+                or review_eligibility.get("old_standard_volume_check_failed") is not True
+                or review_eligibility.get("same_clock_baseline") is not True
+                or review_eligibility.get("original_candidate_fresh") is not True
+                or review_eligibility.get("new_closed_15m_bar_after_candidate") is not True
+                or not isinstance(checks, dict)
+                or set(checks) != EXPERIMENTAL_STANDARD_CHECKS
+                or checks.get("unchanged_closed_5m_volume_floor") is not False
+                or any(type(v) is not bool or v is not True
+                       for k, v in checks.items()
+                       if k != "unchanged_closed_5m_volume_floor")):
             return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
     if full_assessment is None:
         return _result("UNKNOWN_FULL_ASSESSMENT_NOT_PRODUCED", **common)
@@ -150,12 +185,21 @@ def validate_full_entry_decision(
                 raise ValueError("P2 bar not proven after WAIT expiry")
             if review_eligibility.get("new_snapshot_known_at_utc") != entry_evidence.get("known_at_utc"):
                 raise ValueError("P2 review/evidence clock mismatch")
-        if review_status == CONTINUITY_ELIGIBLE_STATUS:
+        if review_status in {CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS}:
             fresh_bar_end = _utc(review_eligibility["fresh_close_at_utc"])
             if not fresh_bar_end <= decision_at:
                 raise ValueError("P3 fresh closed bar must predate assessment")
             if review_eligibility.get("new_snapshot_known_at_utc") != entry_evidence.get("known_at_utc"):
                 raise ValueError("P3 review/evidence clock mismatch")
+            if review_status == EXPERIMENTAL_ELIGIBLE_STATUS:
+                ratio = _nonnegative(frames["5"]["volume_ratio_prior_5"])
+                if not 1.0 <= ratio < 1.2:
+                    raise ValueError("experimental 5m volume not in frozen one-change interval")
+                observed_ratio = _nonnegative(review_eligibility["observed_relative_volume_ratio"])
+                if not math.isclose(observed_ratio,ratio,rel_tol=1e-6,abs_tol=1e-6):
+                    raise ValueError("experimental review volume differs from actual PIT input")
+                if _utc(frames["15"]["last_closed_bar_end_utc"]) != fresh_bar_end:
+                    raise ValueError("experimental 15m close timestamp mismatch")
         known_at = _utc(entry_evidence["known_at_utc"])
         observed_at = _utc(entry_evidence["observed_at_utc"])
         ticker_at = _utc(fresh_ticker["observed_at_utc"])

@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "kind": "V3_PAPER_EXPERIMENTAL_SINGLE_CHANGE_AB_CONTRACT_V1",
+  "date": "2026-10-11",
+  "status": "IMPLEMENTED_OFFLINE_REVIEW_CANDIDATE_NOT_AUTHORIZED_TO_RUN_MODEL_OR_ACTIVATE_PAPER",
+  "owner": "PROJECT_BACKLOG.md V3 P3→P4 economic experiment; same existing 10:15 Work/milestone route",
+  "user_preference": "Technical failure modes must be isolated, measured and fail-closed; in experimental Paper, deliberate strategic risk-taking can be wider within unchanged execution safety.",
+  "question": "Does permitting an otherwise completely confirmed early CONTINUITY setup with legitimate 5m volume ratio 1.0–<1.2 enable additional actually tradeable, positive net Paper outcomes versus the frozen >=1.2 Standard policy?",
+  "rationale": "Two V3-B 5-case trials produced no Full Assessment and V2R4 1864 candidates no BUY; volume confirmation may be too strict for otherwise healthy entry structure, but V2R4 24h paths show downside. This is a falsifiable single-rule paper-only hypothesis; not a conclusion that volume caused the historical 0 BUY.",
+  "arms": [
+    {
+      "id": "STANDARD",
+      "decision_logic": "Unmodified V3 P3 early CONTINUITY review: all closed 15m base/reclaim, fresh 5m continuation, min volume ratio >=1.2, spread, anti-chase, live Spot EUR PIT, structural stop reference; separate real Full-Model BUY needed.",
+      "volume_review_floor": 1.2,
+      "source": "paper_evaluator/v3_continuity_fresh_review_candidate_v1.py"
+    },
+    {
+      "id": "EXPERIMENTAL",
+      "decision_logic": "Same candidate, timestamp, same PIT/candles/ticker/full entry model contract. Only after all seven other Standard hard checks PASS, permit review eligibility with independently VALID closed 5m volume ratio 1.0 <= volume <1.2; neither force BUY nor lower any other safety limit.",
+      "volume_review_floor": 1,
+      "exclusive_band_upper": 1.2,
+      "source": "paper_evaluator/v3_experimental_continuity_volume_review_v1.py"
+    }
+  ],
+  "common_execution_validator": "paper_evaluator/v3_full_entry_decision_candidate_v1.py",
+  "frozen_shared_guards": {
+    "kraken_online_spot_eur": true,
+    "primary_data_pit_must_pass": true,
+    "no_missing_required_candles": true,
+    "no_stale_bid_ask": true,
+    "spread_and_liquidity_strict": true,
+    "closed_15m_price_breakout": true,
+    "closed_5m_price_continuation": true,
+    "new_5m_volume_ratio_must_be_at_least_1": true,
+    "no_anti_chase_or_price_extension_override": true,
+    "structural_stop_below_entry_ask": true,
+    "stage2_above_ask_with_ttl": true,
+    "position_size_scout_eur": 50,
+    "position_size_stage2_eur": 50,
+    "taker_each_side_pct": 0.6,
+    "slippage_and_spread_accounted": true,
+    "positive_net_expected_move_in_full_model": true,
+    "model_decision_not_generated_from_eligibility": true,
+    "no_real_orders": true,
+    "no_live_paper_writer": true,
+    "no_standalone_shadow_or_cron": true,
+    "no_change_active_v2r4": true,
+    "h3_h6_remain_inactive": true
+  },
+  "technical_robustness": {
+    "no_http_or_model_calls_in_current_variant": true,
+    "no_file_or_cloud_writes_from_evaluator": true,
+    "single_strict_PIT_clock": true,
+    "missing_invalid_or_future_source_returns_no_review": true,
+    "unexpected_exception_must_not_place_order": true,
+    "canonical_candidate_and_new_closed_bar_dedupe": true,
+    "negative_unknown_counts_reported_separately_from_market_reject": true,
+    "no_live_environment_regression_from_research": true,
+    "original_supabase_lineage_read_only": true,
+    "no_second_production_paper_writer": true,
+    "fairness_no_hindsight_or_outcome_based_case_selection": true
+  },
+  "prospective_measurement_once_separately_approved": {
+    "sampling": "Pre-registered bounded recent independent real original CONTINUITY candidates at common observation timestamp; not selected by subsequent 24h MFE",
+    "compare": "Paired same candidate and clock Standard vs Experimental; experimental produces at most one extra full-evaluator research request if permission and budget separately granted. Never count mock outputs.",
+    "approval_and_budget": "Separate explicit named approval for max cases, max model HTTP incl retries, observation window and cost. No approval from this code/PR.",
+    "record": [
+      "At-time input completeness and technical errors",
+      "Separate observed review eligibility for each arm",
+      "Real independent full-model normalized BUY/WAIT/REJECT for each valid arm",
+      "Risk-valid executable BUY only, actual fill simulatable after independent model",
+      "Fees 0.6pct each side + spread + slippage, actual source price vs theoretical peak",
+      "Stop and Stage2 intrabar ordering ambiguity conservatively resolved",
+      "Netto trade outcome after 6h and 24h, stop-out and false positive, MFE/MAE never used as realised profit",
+      "Clustering pair/6h and multiple UTC dates, same regime controls",
+      "Difference in marginal BUYs, net P&L, cost and false positive rate"
+    ],
+    "release": "No activation until matched real model, >=5 verified PIT E2E, 6h/24h net economic outcomes, joint paper-controller safeguards and explicit strategy/release authorisation."
+  },
+  "existing_paths": [
+    "research/v3/v3-buy-gate-flexibility-prereg-20261011.json",
+    "research/work-analysis/2026-10-11-cross-version-no-buy-gate-flexibility.md",
+    "research/work-analysis/2026-10-11-v3b-shadow5-second-gate-triage.md"
+  ],
+  "non_goals": [
+    "No blanket turn WAIT or REJECT into BUY",
+    "No relaxing paper writer fail closed",
+    "No strategy rule changes on active V2R4",
+    "No automatic second Paper run or mini-PC work",
+    "No new Work loop/scheduler",
+    "No unlimited research model quota",
+    "No claims that a positive mocked assessment is profitable"
+  ],
+  "next_step": "Finish negative CI guards and preserve versioned inactive research in same P3/P4 owner. Subsequent actual prospective matched Paper-shadow requires fresh explicit bounded model/mini-PC permission."
+}
