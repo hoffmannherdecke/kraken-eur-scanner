@@ -152,7 +152,7 @@ class SecondLegPolicyCandidateTests(unittest.TestCase):
         for val in (None,float("nan"),-0.1):
             r=run(lambda x:x[2]["frames"]["5"].update(volume_ratio_prior_5=val))
             self.assertEqual(r["status"],"UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE")
-            self.assertEqual(r.get("validation_stage"),"CLOSED_COIN_PRICE_ATR_AND_VOLUME")
+            self.assertEqual(r.get("validation_stage"),"CORE_PIT_SOURCE")
             self.assertFalse(r["request_model_recheck_only"])
 
     def test_unknown_result_has_safe_stage_not_sensitive_error_detail(self):
