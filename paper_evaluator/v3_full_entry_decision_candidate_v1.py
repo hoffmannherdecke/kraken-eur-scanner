@@ -19,6 +19,10 @@ from paper_evaluator.v3_p3_early_5m_continuity_research_v1 import (
     CHECKS as EARLY_5M_CHECKS,
 )
 from paper_evaluator.v2r4_trigger_contract import ALLOWED_METRICS, ALLOWED_OPS
+from paper_evaluator.v3_experimental_paper_initial_review_v1 import (
+    KIND as INITIAL_REVIEW_KIND, ELIGIBLE as INITIAL_REVIEW_ELIGIBLE,
+    CHECKS as INITIAL_REVIEW_CHECKS, MAX_AGE as INITIAL_MAX_AGE,
+)
 
 ELIGIBLE_STATUS = "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
 # One risk/stop/stage2 validator shared across separately tested review families.
@@ -137,9 +141,21 @@ def validate_full_entry_decision(
         "eligibility_is_not_buy": True,
     }
     review_status = review_eligibility.get("status")
-    if (review_status not in {ELIGIBLE_STATUS, WAIT_FRESH_ELIGIBLE_STATUS, CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS, EARLY_5M_ELIGIBLE_STATUS}
+    if (review_status not in {ELIGIBLE_STATUS, WAIT_FRESH_ELIGIBLE_STATUS, CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS, EARLY_5M_ELIGIBLE_STATUS, INITIAL_REVIEW_ELIGIBLE}
             or review_eligibility.get("request_model_recheck_only") is not True):
         return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
+    if review_status == INITIAL_REVIEW_ELIGIBLE:
+        # Experimental initial full review must come from the canonical PIT
+        # adapter, not a scanner score or an arbitrary "buy" boolean.
+        if (review_eligibility.get("kind") != INITIAL_REVIEW_KIND
+                or review_eligibility.get("original_candidate_fresh") is not True
+                or review_eligibility.get("exact_full_model_consumer_required") is not True
+                or review_eligibility.get("new_snapshot_known_at_utc") != entry_evidence.get("known_at_utc")):
+            return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
+        checks = review_eligibility.get("checks")
+        if (not isinstance(checks,dict) or set(checks)!=INITIAL_REVIEW_CHECKS
+                or any(v is not True for v in checks.values())):
+            return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
     if review_status == WAIT_FRESH_ELIGIBLE_STATUS:
         # An arbitrary review=True cannot bypass an actual post-expiry proof.
         if (review_eligibility.get("kind") != WAIT_FRESH_ELIGIBLE_KIND
@@ -228,6 +244,16 @@ def validate_full_entry_decision(
         _positive(frames["15"].get("recent_8bar_low_eur"))
 
         decision_at = _utc(decision_at_utc)
+        if review_status == INITIAL_REVIEW_ELIGIBLE:
+            original_at = _utc(candidate["event_time_utc"])
+            if not 0 <= (decision_at-original_at).total_seconds() <= INITIAL_MAX_AGE:
+                raise ValueError("initial V3 candidate no longer fresh")
+            original_volume = _nonnegative(review_eligibility["source_5m_volume_ratio"])
+            actual_volume = _nonnegative(frames["5"]["volume_ratio_prior_5"])
+            if not math.isclose(original_volume,actual_volume,rel_tol=1e-6,abs_tol=1e-6):
+                raise ValueError("model input 5m volume differs from initial source")
+            if _utc(review_eligibility["decision_at_utc"])!=decision_at:
+                raise ValueError("initial full-review clock differs from source")
         if review_status == WAIT_FRESH_ELIGIBLE_STATUS:
             expired = _utc(review_eligibility["expired_at_utc"])
             reclaimed_at = _utc(review_eligibility["fresh_post_expiry_15m_close"])
