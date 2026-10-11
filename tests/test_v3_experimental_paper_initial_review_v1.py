@@ -77,6 +77,20 @@ class ExperimentalInitialV3PaperTests(unittest.TestCase):
                      stop_eur=10.5)
         self.assertEqual(p4(h,xs,model)["status"],"FAIL_CLOSED_NONEXECUTABLE_BUY_AS_REJECT")
 
+    def test_real_model_response_clock_later_than_source_request_not_auto_reject(self):
+        xs=fixture();hint=ticket(xs)
+        model=full_fixture()[-1]
+        model.update(candidate_id=xs[0]["candidate_id"],
+                     decision_at_utc=dt(50),setup_lane="IGNITION")
+        validated=validate_full_entry_decision(
+            hint,*xs[:2],xs[2],xs[3],model,
+            decision_at_utc=dt(50),slippage_pct_each_side=.08)
+        self.assertEqual(validated["decision"],"BUY_SCOUT")
+        late_model=dict(model,decision_at_utc=dt(150))
+        self.assertNotEqual(validate_full_entry_decision(
+            hint,*xs[:2],xs[2],xs[3],late_model,
+            decision_at_utc=dt(150),slippage_pct_each_side=.08)["decision"],"BUY_SCOUT")
+
     def test_missing_required_kraken_source_fails_closed_not_false_market_reject(self):
         mutations=[
             lambda x:x[0].update(event_time_utc=dt(30)),
