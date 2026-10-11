@@ -167,11 +167,17 @@
       "order": 3,
       "id": "P3_OTHER_ENTRY_SETUP_FAMILIES",
       "priority": "EVIDENCE_TRIGGERED",
-      "status": "DEFINED_RESEARCH_NEXT_NOT_RELEASE",
+      "status": "P3_FIRST_CONTINUITY_SOFT_ONLY_VETO_NOT_PROVEN_NEXT_SEPARATE_OFFLINE_ENTRY_REVIEW",
       "change_class": "SINGLE_ENTRY_SETUP_AT_A_TIME",
       "owner": "research/v3-migration-ledger.json#v2r3_candidate_scoring_and_filters",
-      "work": "Independently test only if B/B2 show a gap: IGNITION (early impulse vs already-run), CONTINUITY (trend pause/resumption), resistance BREAKOUT/reclaim with a closed structure, REVERSAL only with convincing confirmation and market/regime safeguards. Keep long-context 7d/30d non-veto, 1–3h refreshed setups, flexible 2–4 relevant soft factors rather than an aggregate 'all must pass' gate. Ranking scores are never a direct entry or sizing override.",
-      "exit": "One versioned causal comparison per setup class against same-market-clock baseline; positive and adverse controls, rejections and false BUYs; no simultaneous sweeping of thresholds."
+      "work": "After independently PASSed INACTIVE P2 PR#179, P3 starts with CONTINUITY first, not simultaneous EXTENDED/IGNITION/REVERSAL. Latest 434 initial CONTINUITY V2R4 cases (426 WAIT, 8 REJECT) show 100 descriptive macro/regime/news-code mentions BUT every one also has some core execution/structure/cost text code; no demonstrated independent soft-only hard veto. Do NOT remove soft-market cautions globally. First isolate a single fresh closed-bar CONTINUITY entry-review condition with true source known_at and independent matched V2R4 same-clock comparison, never a model or automatic BUY. Reuse existing full economic risk validator and fee/stop/stage2 contract; soft context stays context unless a separately causally established veto is proven. After one P3 trial consider other setup families only with distinct owner/evidence.",
+      "exit": "One versioned causal comparison per setup class against same-market-clock baseline; positive and adverse controls, rejections and false BUYs; no simultaneous sweeping of thresholds.",
+      "sources": [
+        "research/v3/v3-buy-gate-flexibility-prereg-20261011.json",
+        "research/work-analysis/2026-10-11-cross-version-no-buy-gate-flexibility.md",
+        "paper_evaluator/v3_full_entry_decision_candidate_v1.py",
+        "paper_evaluator/v3_wait_fresh_review_candidate_v1.py"
+      ]
     },
     {
       "order": 4,
