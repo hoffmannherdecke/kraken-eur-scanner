@@ -242,7 +242,9 @@
       "v3_cannot_be_declared_active_by_repo_merge": true,
       "holdovers_followups_and_existing_paper_ledger_preserved": true,
       "no_new_schedulers": true,
-      "h3_h6_remain_inactive": true
+      "h3_h6_remain_inactive": true,
+      "bounded_v3b_shadow5_approval_not_general_shadow_promotion": true,
+      "only_one_manual_shadow5_case_study_no_daemon": true
     },
     "sequence": [
       {
@@ -270,8 +272,18 @@
         "step": "CONTROLLED_PROSPECTIVE_MATCHED_SHADOW_PROOF",
         "owner": "research/strategy-learning-causal-gate-v1.json",
         "requires": "Existing source adapter and any distinct model quota; one approved shadow, equal candidate/market clock, mature 6h/24h net/MAE/false-buy",
-        "authorization": "SEPARATE_SHADOW_AND_MODEL_BUDGET_RELEASE_GATES_APPLY",
-        "status": "BLOCKED_SEPARATE_SHADOW_AND_MODEL_BUDGET_RELEASE_DECISION"
+        "authorization": "EXPLICIT_USER_APPROVED_20261011_V3B_SHADOW5_HTTP10_ONLY; V3 Paper and economic release still separately gated",
+        "status": "USER_APPROVED_BOUNDED_V3B_SHADOW5_HTTP10_PHYSICAL_EXECUTION_PENDING",
+        "approval_contract": "research/v3/v3-b-shadow5-approval-20261011.json",
+        "execution_script": "tools/run-minipc-v3-b-shadow5.ps1",
+        "execution_state": "VERSIONED_INACTIVE_CODE_EXISTS; REAL_MINIPC_PREFLIGHT_AND_ONE_SHOT_ACK_PENDING",
+        "authorized_caps": {
+          "max_candidates": 5,
+          "max_model_http_attempts_including_retries": 10,
+          "orders": false,
+          "paper_cutover": false,
+          "auto_extension": false
+        }
       },
       {
         "order": 2,
@@ -299,6 +311,16 @@
       }
     ],
     "do_not_claim_success_before": "REAL_MINIPC_DISABLE_OLD_AND_ENABLE_NEW_ACK_PLUS_SUPABASE_SINGLE_ACTIVE_V3_WITH_FIRST_PROSPECTIVE_DECISION",
-    "no_artificial_minimum_wait": true
+    "no_artificial_minimum_wait": true,
+    "current_handoff_action": {
+      "kind": "V3_B_SHADOW5_PHYSICAL_ONE_SHOT_HANDOFF_V1",
+      "status": "MINIPC_PREFLIGHT_REQUIRED_AFTER_GREEN_MERGED_CI",
+      "source_approval": "research/v3/v3-b-shadow5-approval-20261011.json",
+      "command_owner": "tools/run-minipc-v3-b-shadow5.ps1",
+      "expected_final_ack": "V3_B_SHADOW5_SUMMARY or V3_B_SHADOW5_BLOCKED_BEFORE_MODEL_OR_ALREADY_RECORDED + local immutable research journal",
+      "no_new_approval_required": true,
+      "no_new_scheduler": true,
+      "no_v2r4_shutdown": true
+    }
   }
 }
