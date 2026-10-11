@@ -170,6 +170,47 @@ def closed_15m_history(altname: str, observed: datetime) -> list[dict]:
     return bars
 
 
+
+def compact_gate_evidence(hint: dict, coin: dict, closed_bars: list[dict]) -> dict:
+    """Keep enough pre-model reasons to triage UNKNOWN, without raw market/API data.
+
+    A boolean-only, bounded diagnostic snapshot; no prompts, identities, keys,
+    ticker values, raw Kraken candles or future outcome labels are persisted.
+    """
+    checks = hint.get("checks") or {}
+    if not isinstance(checks, dict):
+        checks = {}
+    known_checks = (
+        "base_1_to_3h_rebuilt",
+        "closed_reclaim_above_prior_base_high",
+        "reclaim_not_late_chase",
+        "fresh_five_minute_continuation",
+        "existing_v2r4_volume_confirmed",
+        "liquid_eur_spread",
+        "fresh_ask_not_far_past_reclaim",
+    )
+    result = {
+        "second_leg_status": str(hint.get("status") or "UNKNOWN")[:90],
+        "checks": {k: checks.get(k) if type(checks.get(k)) is bool else None
+                   for k in known_checks},
+        "observed_at_utc": coin.get("observed_at_utc"),
+        "known_at_utc": coin.get("known_at_utc"),
+        "coin_evidence_status": coin.get("status"),
+        "closed_15m_bar_count": len(closed_bars),
+        "latest_closed_15m_start_utc":
+            closed_bars[-1].get("start_utc") if closed_bars else None,
+    }
+    frames = coin.get("frames") or {}
+    result["required_coin_frames"] = {
+        k: {"status": v.get("status"), "reason": v.get("reason"),
+            "atr_status": v.get("atr_status") if k == "15" else None,
+            "volume_ratio_status": v.get("volume_ratio_status") if k == "5" else None}
+        for k in ("1", "5", "15")
+        for v in [frames.get(k) if isinstance(frames.get(k), dict) else {}]
+    }
+    return result
+
+
 def model_http_gate(journal: dict, report: Path, case: dict, http):
     def guarded(url, method="GET", headers=None, body=None, timeout=30):
         if url.startswith("https://api.openai.com/"):
@@ -246,6 +287,7 @@ def main_run(trading_root: Path, code_root: Path, report: Path, wait_minutes: in
                 hint = propose_second_leg_review(
                     candidate,historical["decision"],coin,ticker,bars,decision_at_utc=clock)
                 case["second_leg_eligibility_status"]=hint["status"]
+                case["eligibility_gate_evidence"]=compact_gate_evidence(hint,coin,bars)
                 case["new_coin_known_at_utc"]=coin.get("known_at_utc")
                 case["review_decision_clock_utc"]=clock
                 case["last_eligibility_checked_at_utc"]=clock
