@@ -1,6 +1,6 @@
 # MINI-PC Analytics Rollout V1 — schlanke Erweiterung des vorhandenen Krypto-Systems
 
-**Beschluss:** 2026-10-10. **Status:** `A_REVIEWED_B_INPUT_E2E_ONE_CANDIDATE_PASS_ECONOMIC_PENDING` (Original-72h-Wirtschaftlichkeitsreview PR #144 / ACK echt; inaktiver B-Preflight PR #142 vorhanden, noch kein physischer B-E2E oder wirtschaftlicher V3-PASS); kein produktiver Task, Scanner, Runner, Shadow, Modell, API-Key oder Kaufpfad durch diesen Plan aktiviert. **Einziger Aufgabenowner:** `PROJECT_BACKLOG.md` unter `MINIPC_ANALYTICS_ROLLOUT_V1`; dies ist nur dessen technischer Ausführungsvertrag, kein zweiter Backlog.
+**Beschluss:** 2026-10-10. **Status:** `A_REVIEWED_B_INPUT_E2E_ONE_CANDIDATE_PASS_ECONOMIC_PENDING` (Original-72h-Wirtschaftlichkeitsreview PR #144 / ACK echt; inaktiver B-Preflight PR #142 und PR #143 ACK vorhanden; **physischer** B-Eingabe→Modell-One-Shot am 10.10. ZRO/EUR **E2E-INPUT-PASS** mit zwei echten Modellaufrufen, aber WAIT/WAIT und **kein** vollständiger BUY-/Stop-/Stage2-/Netto-/PAPER-PASS; 12 alte Handoffs ohne originalzeitlich archivierte Coin-PIT; keine weiteren alten Mini-PC-Smoke-Wiederholungen); kein produktiver Task, Scanner, Runner, Shadow, Modell, API-Key oder Kaufpfad durch diesen Plan aktiviert. **Einziger Aufgabenowner:** `PROJECT_BACKLOG.md` unter `MINIPC_ANALYTICS_ROLLOUT_V1`; dies ist nur dessen technischer Ausführungsvertrag, kein zweiter Backlog.
 
 ## 1. Ziel und vorläufige Entscheidung
 
