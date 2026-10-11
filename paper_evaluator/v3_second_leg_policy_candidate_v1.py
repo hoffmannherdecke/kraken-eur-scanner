@@ -97,6 +97,7 @@ def propose_second_leg_review(
     if not original_candidate.get("candidate_id"):
         return _outcome("MISSING_CANONICAL_ORIGINAL_ID", **common)
 
+    validation_stage = "CORE_PIT_SOURCE"
     try:
         first = utc(original_candidate["event_time_utc"])
         decision = utc(decision_at_utc)
@@ -109,6 +110,7 @@ def propose_second_leg_review(
             {"pair": original_candidate["pair"]}, {}, new_coin_evidence,
             decision_at_utc, max_evidence_age_seconds=SOURCE_MAX_AGE_SECONDS,
         )
+        validation_stage = "CLOSED_BASE_HISTORY"
         if not isinstance(closed_15m_bars, list) or len(closed_15m_bars) < base_bars + 1:
             return _outcome("MISSING_CLOSED_CONSOLIDATION_HISTORY", **common)
         seq = closed_15m_bars[-(base_bars + 1):]
@@ -135,14 +137,24 @@ def propose_second_leg_review(
         breakout_close = float(seq[-1]["close"])
         if not math.isclose(float(f15["closed_close_eur"]), breakout_close, rel_tol=1e-9):
             return _outcome("CANDLE_EVIDENCE_PRICE_MISMATCH", **common)
+        validation_stage = "CLOSED_COIN_PRICE_ATR_AND_VOLUME"
         atr = _finite_positive(f15["atr14_eur"])
         last_5m = _finite_positive(new_coin_evidence["frames"]["5"]["closed_close_eur"])
-        volume_ratio = _finite_positive(new_coin_evidence["frames"]["5"]["volume_ratio_prior_5"])
+        # Canonical Kraken OHLC volume_ratio_prior_5 may legitimately be 0.0
+        # while the 5m source frame is VALID. Zero is a CONFIRMED failed
+        # volume floor, not missing PIT evidence; it must NOT become UNKNOWN.
+        volume_raw = new_coin_evidence["frames"]["5"].get("volume_ratio_prior_5")
+        if (isinstance(volume_raw, bool) or not isinstance(volume_raw, (float, int))
+                or not math.isfinite(volume_raw) or volume_raw < 0):
+            raise ValueError("missing/nonfinite/negative required five minute volume ratio")
+        volume_ratio = float(volume_raw)
+        validation_stage = "FRESH_EUR_TICKER"
         ask = _finite_positive(fresh_ticker["ask"])
         bid = _finite_positive(fresh_ticker["bid"])
         if ask < bid:
             return _outcome("INVALID_INVERTED_EUR_TICKER", **common)
         spread = (ask-bid) / ((ask+bid)/2) * 100
+        validation_stage = "STRUCTURE_GATE_VALUES"
         # The *only* policy delta being proposed is fresh full-review eligibility
         # after a new closed-price reclaim. Existing risk/entry votes are unchanged.
         checks = {
@@ -158,6 +170,7 @@ def propose_second_leg_review(
             return _outcome("SECOND_LEG_CONDITIONS_NOT_CONFIRMED", **common,
                             checks=checks, base_15m_bars=base_bars,
                             fee_plus_spread_pct_before_slippage=round(1.2+spread,4))
+        validation_stage = "STRUCTURAL_STOP_REFERENCE"
         stop_reference = min(base_low, float(f15["recent_8bar_low_eur"]))
         if stop_reference >= ask or stop_reference <= 0:
             return _outcome("NO_VALID_STRUCTURAL_RISK_REFERENCE", **common, checks=checks)
@@ -186,4 +199,5 @@ def propose_second_leg_review(
     except (ValueError, TypeError, KeyError, OverflowError, OSError):
         # Optional source absence is neutral. Missing *required execution/risk*
         # data yields UNKNOWN; never fabricate a BUY nor mark a valid REJECT.
-        return _outcome("UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE", **common)
+        return _outcome("UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE", **common,
+                        validation_stage=validation_stage)

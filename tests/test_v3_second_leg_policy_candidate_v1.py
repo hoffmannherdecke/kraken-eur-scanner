@@ -132,6 +132,36 @@ class SecondLegPolicyCandidateTests(unittest.TestCase):
         r=run(lambda x:x[3].update(bid=10.10))
         self.assertFalse(r["checks"]["liquid_eur_spread"])
 
+    def test_valid_5m_zero_volume_ratio_is_negative_not_missing_pit(self):
+        # OHLC canonical frame may be VALID with legitimate last volume=0;
+        # the original _finite_positive(0) turned it into unexplained UNKNOWN
+        # despite all required 1/5/15m candle statuses being VALID.
+        def zero_valid_5m(xs):
+            xs[2]["frames"]["5"]["status"]="VALID"
+            xs[2]["frames"]["5"]["volume_ratio_prior_5"]=0.0
+            xs[2]["frames"]["5"]["volume_ratio_status"]="VALID"
+        r=run(zero_valid_5m)
+        self.assertEqual(r["status"],"SECOND_LEG_CONDITIONS_NOT_CONFIRMED")
+        self.assertIs(r["checks"]["existing_v2r4_volume_confirmed"],False)
+        self.assertFalse(r["request_model_recheck_only"])
+        self.assertEqual(r["decision"],"NO_DECISION_AUTHORITY")
+        self.assertFalse(r["paper_trade"])
+        self.assertFalse(r["orders"])
+
+    def test_missing_or_invalid_5m_ratio_still_unknown_without_buy(self):
+        for val in (None,float("nan"),-0.1):
+            r=run(lambda x:x[2]["frames"]["5"].update(volume_ratio_prior_5=val))
+            self.assertEqual(r["status"],"UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE")
+            self.assertEqual(r.get("validation_stage"),"CORE_PIT_SOURCE")
+            self.assertFalse(r["request_model_recheck_only"])
+
+    def test_unknown_result_has_safe_stage_not_sensitive_error_detail(self):
+        r=run(lambda x:x[2].update(status="PARTIAL_OR_MISSING"))
+        self.assertEqual(r["status"],"UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE")
+        self.assertEqual(r["validation_stage"],"CORE_PIT_SOURCE")
+        self.assertNotIn("raw_error",r)
+        self.assertNotIn("exception",r)
+
     def test_invalid_core_stop_context_and_missing_source_are_unknown(self):
         self.assertEqual(run(lambda x:x[2]["frames"]["15"].update(atr14_eur=None))["status"],
                          "UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE")
