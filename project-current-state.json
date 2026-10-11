@@ -330,6 +330,28 @@
           ],
           "reason_report": "research/work-analysis/2026-10-11-v3b-shadow5-first-physical-result-reasons.md",
           "subcheck_identifiability": "NOT_RECORDED_BY_ORIGINAL_RUNTIME; CANNOT_RECONSTRUCT"
+        },
+        "second_trial": {
+          "kind": "V3_B_SECOND_ONE_SHOT_APPROVED_PENDING_PHYSICAL_V1",
+          "authorization": "research/v3/v3-b-shadow5-approval-20261011-run2.json",
+          "status": "SECOND_TRIAL_USER_APPROVED_PENDING_CI_AND_MANUAL_MINIPC_RUN",
+          "limits": {
+            "max_distinct_original_candidates": 5,
+            "max_model_http_attempts_including_retries": 10,
+            "max_minutes": 90
+          },
+          "script": "tools/run-minipc-v3-b-shadow5.ps1",
+          "script_arguments": "-Trial SECOND -Execute -WaitMinutes 90",
+          "report": "%USERPROFILE%/Trading/Research/v3-b-shadow5-http10-20261011-run2.json",
+          "first_trial_report_must_remain_immutable": true,
+          "old_trial_id": "FIRST",
+          "cutover": false,
+          "paper_changes": false,
+          "real_money": false,
+          "no_auto_retry": true,
+          "no_new_scheduler": true,
+          "mini_pc_ack": false,
+          "economic_edge_proven": false
         }
       },
       {
@@ -360,16 +382,18 @@
     "do_not_claim_success_before": "REAL_MINIPC_DISABLE_OLD_AND_ENABLE_NEW_ACK_PLUS_SUPABASE_SINGLE_ACTIVE_V3_WITH_FIRST_PROSPECTIVE_DECISION",
     "no_artificial_minimum_wait": true,
     "current_handoff_action": {
-      "kind": "V3B_SHADOW5_CAUSAL_DISPOSITION_NEXT_GATED_TRIAL",
-      "status": "EVIDENCE_TRIAGED_FIRST_TRIAL_CLOSED_WAIT_EXPLICIT_NEW_BOUNDED_TRIAL_IF_WARRANTED",
-      "original_report": "research/work-analysis/2026-10-11-v3b-shadow5-first-physical-result-reasons.md",
-      "next_action": "DECIDE_IF_A_NEW_75M_PLUS_RECHECK_ONE_SHOT_IS_JUSTIFIED",
-      "current_trial_restart_permitted": false,
-      "original_trial_journal_immutable": true,
-      "user_reapproval_if_new_cases_or_new_research_experiment": true,
-      "no_v2r4_shutdown": true,
-      "no_real_money": true,
-      "no_new_scheduler": true
+      "kind": "V3B_SHADOW5_SECOND_MANUAL_ONE_SHOT_GATED",
+      "status": "SECOND_EXPLICIT_APPROVAL_RECORDED_AWAITING_MERGED_CI_THEN_PHYSICAL_START",
+      "new_approval_receipt": "research/v3/v3-b-shadow5-approval-20261011-run2.json",
+      "run_command": "tools/run-minipc-v3-b-shadow5.ps1 -Trial SECOND -Execute -WaitMinutes 90",
+      "new_report": "%USERPROFILE%/Trading/Research/v3-b-shadow5-http10-20261011-run2.json",
+      "original_trial_status": "CLOSED_WITH_FIVE_ORIGINAL_NO_MODEL_EVIDENCE",
+      "original_trial_immutable": true,
+      "no_additional_user_strategy_approval_required": true,
+      "old_v2r4_active_until_release": true,
+      "no_new_scheduler": true,
+      "v3_paper_active": false,
+      "manual_mini_pc_ack_required": true
     }
   }
 }
