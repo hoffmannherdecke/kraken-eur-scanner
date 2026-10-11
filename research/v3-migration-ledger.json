@@ -285,7 +285,9 @@
         "research/v3/v3-b-second-leg-entry-policy-candidate-20261011.json",
         "research/work-analysis/2026-10-11-v3-a-prospective-four-case-model-findings.md",
         "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
-        "paper_evaluator/v3_a_historical_learning_closure_v1.py"
+        "paper_evaluator/v3_a_historical_learning_closure_v1.py",
+        "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md",
+        "paper_evaluator/v3_p3_early_5m_continuity_research_v1.py"
       ],
       "future_research_gate": "V3_SEPARATE_PULLBACK_REBUILD_HYPOTHESIS",
       "successor_refinement": {
@@ -437,6 +439,18 @@
         "status": "NO_BLANKET_WAIT_TO_BUY_NO_BLANKET_EXTENDED_TO_BUY",
         "decision": "HOLD_RISK_RULES_UNCHANGED_UNTIL_ONE_CHANGE_REAL_PIT_ECONOMIC_TRIAL",
         "causal_attribution_from_hindsight_not_allowed": true
+      },
+      "v3_early_5m_one_change_20261011": {
+        "status": "IMPLEMENTED_INACTIVE_PAPER_RESEARCH_NO_FULL_MODEL_ECONOMIC_PROOF",
+        "evidence": "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md",
+        "implementation": "paper_evaluator/v3_p3_early_5m_continuity_research_v1.py",
+        "shared_p4_contract": "paper_evaluator/v3_full_entry_decision_candidate_v1.py",
+        "single_change": "ONE_FRESH_CLOSED_5M_COIN_CONFIRMATION_AFTER_CANDIDATE_WITH_PREEXISTING_15M_CLOSED_BASE_INSTEAD_OF_POST_CANDIDATE_NEW_15M_CLOSE",
+        "standard_5m_relative_volume_floor": 1.2,
+        "anti_chase_spread_stop_fee_stage2_inherited": true,
+        "valid_buy_outcome_proven": false,
+        "model_or_shadow_run_started": false,
+        "v2r4_runtime_changed": false
       }
     },
     {
