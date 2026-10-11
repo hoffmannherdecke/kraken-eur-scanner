@@ -19,6 +19,8 @@ ELIGIBLE_STATUS = "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
 # One risk/stop/stage2 validator shared across separately tested review families.
 WAIT_FRESH_ELIGIBLE_STATUS = "WAIT_FRESH_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
 WAIT_FRESH_ELIGIBLE_KIND = "V3_P2_INACTIVE_WAIT_FRESH_REVIEW_ELIGIBILITY_V1"
+CONTINUITY_ELIGIBLE_STATUS = "CONTINUITY_FRESH_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
+CONTINUITY_ELIGIBLE_KIND = "V3_P3_INACTIVE_CONTINUITY_FRESH_REVIEW_ELIGIBILITY_V1"
 SOURCE_MAX_AGE_SECONDS = 120
 FEE_PCT_EACH_SIDE = 0.6
 SCOUT_EUR = 50
@@ -98,7 +100,7 @@ def validate_full_entry_decision(
         "eligibility_is_not_buy": True,
     }
     review_status = review_eligibility.get("status")
-    if (review_status not in {ELIGIBLE_STATUS, WAIT_FRESH_ELIGIBLE_STATUS}
+    if (review_status not in {ELIGIBLE_STATUS, WAIT_FRESH_ELIGIBLE_STATUS, CONTINUITY_ELIGIBLE_STATUS}
             or review_eligibility.get("request_model_recheck_only") is not True):
         return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
     if review_status == WAIT_FRESH_ELIGIBLE_STATUS:
@@ -107,6 +109,12 @@ def validate_full_entry_decision(
                 or review_eligibility.get("prior_wait_recheck_kind") != "V2R4_WAIT_EXPIRY_V1"
                 or review_eligibility.get("fresh_bar_closed_after_expiry") is not True
                 or review_eligibility.get("original_wait_and_expiry_immutable") is not True):
+            return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
+    if review_status == CONTINUITY_ELIGIBLE_STATUS:
+        if (review_eligibility.get("kind") != CONTINUITY_ELIGIBLE_KIND
+                or review_eligibility.get("original_candidate_fresh") is not True
+                or review_eligibility.get("new_closed_15m_bar_after_candidate") is not True
+                or review_eligibility.get("baseline_v2r4_decision_unchanged") is not True):
             return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
     if full_assessment is None:
         return _result("UNKNOWN_FULL_ASSESSMENT_NOT_PRODUCED", **common)
@@ -142,6 +150,12 @@ def validate_full_entry_decision(
                 raise ValueError("P2 bar not proven after WAIT expiry")
             if review_eligibility.get("new_snapshot_known_at_utc") != entry_evidence.get("known_at_utc"):
                 raise ValueError("P2 review/evidence clock mismatch")
+        if review_status == CONTINUITY_ELIGIBLE_STATUS:
+            fresh_bar_end = _utc(review_eligibility["fresh_close_at_utc"])
+            if not fresh_bar_end <= decision_at:
+                raise ValueError("P3 fresh closed bar must predate assessment")
+            if review_eligibility.get("new_snapshot_known_at_utc") != entry_evidence.get("known_at_utc"):
+                raise ValueError("P3 review/evidence clock mismatch")
         known_at = _utc(entry_evidence["known_at_utc"])
         observed_at = _utc(entry_evidence["observed_at_utc"])
         ticker_at = _utc(fresh_ticker["observed_at_utc"])
