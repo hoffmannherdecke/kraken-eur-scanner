@@ -74,6 +74,17 @@ def route(root: Path, now: dt.datetime) -> dict:
         require(safe.get(flag) is True, "unsafe policy: " + flag)
     require(set(manifest.get("user_release_required") or []) == RELEASE_DENY,
             "release boundaries differ")
+    context = manifest.get("context_preflight") or {}
+    require(context.get("kind") == "CONTEXT_BEFORE_ACTION_HANDOFF_V1"
+            and context.get("command") == "tools/context_before_action.py"
+            and context.get("routing") == "research/context-before-action-routing-v1.json"
+            and context.get("scopes") == ["strategy", "architecture", "operations", "research"]
+            and context.get("activation") ==
+                "ONLY_BEFORE_MATERIAL_REVIEW_OR_ALLOWED_SAFE_IMPLEMENTATION"
+            and context.get("no_substitute_for_actual_source_reading") is True
+            and context.get("receipt_not_authorization") is True
+            and context.get("no_new_work_run") is True,
+            "context before material action handoff missing/unsafe")
     require(state.get("kind") == "PROJECT_CURRENT_STATE_V1"
             and state.get("active_strategy", {}).get("real_money_actions") is False
             and state.get("active_strategy", {}).get("automatic_activation_allowed") is False,
@@ -143,6 +154,16 @@ def route(root: Path, now: dt.datetime) -> dict:
         "previously_acknowledged": closed,
         "backlog_owner": "PROJECT_BACKLOG.md",
         "safe_work_selector": "tools/select-autonomous-implementation.py",
+        "context_before_material_work": {
+            "required": True,
+            "when": "ONLY_ACTUALLY_DUE_MATERIAL_REVIEW_OR_READY_SAFE_WORK",
+            "command": "tools/context_before_action.py",
+            "routing": "research/context-before-action-routing-v1.json",
+            "scopes": context["scopes"],
+            "must_read_original_relevant_sources": True,
+            "receipt_does_not_grant_release": True,
+            "required_not_evidence_of_execution": True
+        },
         "executor": "EXISTING_DAILY_1015_WORK_ONCE_PER_GATE",
         "may_change_strategy": False, "may_execute_orders": False,
         "may_start_shadow_or_live": False, "may_schedule_new_runs": False,
