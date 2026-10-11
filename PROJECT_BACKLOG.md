@@ -8,6 +8,7 @@
 **Weitere vererbte Themen:** Vollständiges Kraken-EUR-Universe, historische V2–V2R4-Lektionen, P1/P2/P3/Experimental-Einstiege, gemeinsame Sicherheitsgates, Jansen Walk-forward, H1–H11, Marktregime, H10/H11, Makro/Onchain, Quellen-Management, Ausfallschutz und spätere Echtgeld-Sicherheit bleiben im bisherigen P0–P9-Owner. Das automatische Quellenmanagement wartet weiterhin auf den ersten echten Quellenreview-/CI-/ACK-Nachweis. Der tägliche 10:15-Work-Lauf und die vorhandene GitHub-Steuerung greifen diese Punkte bei Fälligkeit ohne erneuten Nutzer-Stichwort-Prompt auf.
 
 
+**P0/P4 punktuelle PIT-Sicherheitslücke (PR #185):** Der vorhandene inaktive V3-Full-Entry-Vertrag prüft jetzt zusätzlich, dass Kraken-Spot-EUR-Paarmetadaten niemals aus der Zukunft des Entscheidungszeitpunkts stammen und `VALID`-1m/5m/15m-Frames tatsächlich frische, geschlossene Bars tragen (maximal 1,5 Intervalle bis zur Beobachtung). Fehlbelege bleiben UNKNOWN statt BUY; drei neue negative Regressionen in der bestehenden CI. Reine technische Härtung, **kein** wirtschaftlicher E2E-Nachweis und kein neues Paper-/Shadow-/Modellbudget. Der kanonische Folgeauftrag bleibt **genau ein separat freizugebender prospektiver P0→P3/P4 Modell-/Standard-vs-Experimental-Nettovergleich**, keine Wiederholung historischer V3-B-Fenster.
 
 ## V3 – konsolidierter Arbeitsstand und nächster ECHTER Beweis (11.10.2026)
 
