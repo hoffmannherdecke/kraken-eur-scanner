@@ -19,6 +19,10 @@ on:
       - "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"
       - "research/v3/v3-buy-gate-flexibility-prereg-20261011.json"
       - "research/v3/v3-paper-experimental-ab-contract-20261011.json"
+      - "research/v3/v3-p3-ab-five-approval-20261011.json"
+      - "paper_evaluator/v3_p3_ab_five_bounded_research.py"
+      - "tests/test_v3_p3_ab_five_bounded_research.py"
+      - "tools/run-minipc-v3-p3-ab-five.ps1"
       - "tests/test_v3_integrated_readiness_handoff.py"
       - "paper_evaluator/v3_experimental_continuity_volume_review_v1.py"
       - "tests/test_v3_experimental_continuity_volume_review_v1.py"
@@ -104,6 +108,10 @@ on:
       - "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"
       - "research/v3/v3-buy-gate-flexibility-prereg-20261011.json"
       - "research/v3/v3-paper-experimental-ab-contract-20261011.json"
+      - "research/v3/v3-p3-ab-five-approval-20261011.json"
+      - "paper_evaluator/v3_p3_ab_five_bounded_research.py"
+      - "tests/test_v3_p3_ab_five_bounded_research.py"
+      - "tools/run-minipc-v3-p3-ab-five.ps1"
       - "tests/test_v3_integrated_readiness_handoff.py"
       - "paper_evaluator/v3_experimental_continuity_volume_review_v1.py"
       - "tests/test_v3_experimental_continuity_volume_review_v1.py"
@@ -214,6 +222,11 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_v3_experimental_continuity_volume_review_v1.py' -v
           python -m unittest discover -s tests -p 'test_v3_paper_experimental_ab_contract.py' -v
+      - name: Validate user-approved finite V3 P3 A/B 5-setup HTTP10 6h Mini-PC research
+        run: |
+          python -m py_compile paper_evaluator/v3_p3_ab_five_bounded_research.py
+          python -m unittest discover -s tests -p 'test_v3_p3_ab_five_bounded_research.py' -v
+          pwsh -NoProfile -Command '$tokens=$null; $errs=$null; [System.Management.Automation.Language.Parser]::ParseFile("tools/run-minipc-v3-p3-ab-five.ps1",[ref]$tokens,[ref]$errs) | Out-Null; if ($errs.Count -gt 0) { $errs | Out-String | Write-Error; exit 1 }; Write-Output "V3_P3_AB_POWERSHELL_PARSE_PASS"'
       - name: Guard V3 integrated next actions, source research status and shared model eligibility lineage
         run: python -m unittest discover -s tests -p 'test_v3_integrated_readiness_handoff.py' -v
       - name: Validate inactive P3 fresh CONTINUITY and shared fee/stop model gates
