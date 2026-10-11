@@ -37,26 +37,64 @@ RECHECK_AT_MOST_ONCE_PER_CLOSED_15M_SECONDS = CLOSED_BAR_SECONDS
 ELIGIBLE = "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
 USER_APPROVAL = "APPROVE V3-B SHADOW-5 / HTTP-10"
 AUTHORITY_FILE = "research/v3/v3-b-shadow5-approval-20261011.json"
+SECOND_USER_APPROVAL = "APPROVE V3-B SHADOW-5 SECOND / HTTP-10"
+SECOND_AUTHORITY_FILE = "research/v3/v3-b-shadow5-approval-20261011-run2.json"
+FIRST_REPORT_NAME = "v3-b-shadow5-http10-20261011.json"
+SECOND_REPORT_NAME = "v3-b-shadow5-http10-20261011-run2.json"
 
 
-def verified_authorization(root: Path) -> dict:
-    auth = json.loads((root / AUTHORITY_FILE).read_text("utf-8"))
+def verified_authorization(root: Path, trial_id: str = "FIRST") -> dict:
+    if trial_id not in ("FIRST", "SECOND"):
+        raise ValueError("V3_B_UNKNOWN_OR_UNAPPROVED_TRIAL")
+    path, label = (AUTHORITY_FILE, USER_APPROVAL) if trial_id == "FIRST" else (
+        SECOND_AUTHORITY_FILE, SECOND_USER_APPROVAL)
+    auth = json.loads((root / path).read_text("utf-8"))
     if (auth.get("status") != "USER_APPROVED_BOUNDED_MANUAL_SHADOW_ONLY"
-            or auth.get("approval_label") != USER_APPROVAL
+            or auth.get("approval_label") != label
             or auth.get("max_distinct_candidates") != MAX_CASES
             or auth.get("max_model_http_attempts_including_retries") != MAX_MODEL_HTTP_ATTEMPTS
+            or auth.get("max_model_http_attempts_per_case_including_retries") != MAX_PER_CASE
             or auth.get("no_orders") is not True
             or auth.get("no_v3_paper_cutover") is not True
-            or auth.get("no_auto_extension") is not True):
+            or auth.get("no_auto_extension") is not True
+            or auth.get("manual_one_shot_only") is not True
+            or auth.get("no_second_concurrent_strategy_changing_shadow") is not True):
         raise ValueError("V3_B_SHADOW5_AUTHORITY_MISMATCH")
+    if trial_id == "SECOND" and (
+            auth.get("trial_id") != "SECOND"
+            or auth.get("predecessor_trial_id") != "FIRST"
+            or auth.get("max_wait_minutes") != MAX_WAIT_MINUTES
+            or auth.get("immutable_previous_report") is not True
+            or auth.get("new_cohort") is not True):
+        raise ValueError("V3_B_SECOND_TRIAL_AUTHORITY_MISMATCH")
     return auth
 
 
-def journal_start(report: Path, series: str, now: datetime, wait_minutes: int) -> dict:
+def verify_first_trial_closed(trading_root: Path) -> None:
+    original_report = trading_root / "Research" / FIRST_REPORT_NAME
+    try:
+        first = json.loads(original_report.read_text("utf-8"))
+    except (OSError, ValueError, TypeError):
+        raise ValueError("FIRST_V3B_SHADOW5_REPORT_NOT_VERIFIABLE")
+    if (first.get("kind") != "V3_B_MANUAL_SHADOW5_HTTP10_V1"
+            or first.get("status") not in (
+                "WINDOW_ELAPSED_OR_FIVE_ORIGINAL_CASES_REVIEWED",
+                "COMPLETED_NO_ELIGIBLE_SECOND_LEG_MODEL_EVIDENCE")
+            or first.get("model_http_attempts_reserved") != 0
+            or first.get("completed_matched_reviews") != 0
+            or len(first.get("cases") or []) != MAX_CASES
+            or first.get("orders") != 0
+            or first.get("active_v2r4_changed") is not False
+            or first.get("v3_paper_writer_started") is not False):
+        raise ValueError("FIRST_V3B_SHADOW5_REPORT_NOT_CLOSED_OR_UNEXPECTED")
+
+
+def journal_start(report: Path, series: str, now: datetime, wait_minutes: int, *, trial_id: str = "FIRST") -> dict:
     data = {
         "kind": "V3_B_MANUAL_SHADOW5_HTTP10_V1",
+        "trial_id": trial_id,
         "status": "RUNNING",
-        "approval": USER_APPROVAL,
+        "approval": USER_APPROVAL if trial_id == "FIRST" else SECOND_USER_APPROVAL,
         "active_v2r4_series": series,
         "started_at_utc": now.isoformat(),
         "wait_minutes": wait_minutes,
@@ -225,11 +263,16 @@ def model_http_gate(journal: dict, report: Path, case: dict, http):
 
 
 def main_run(trading_root: Path, code_root: Path, report: Path, wait_minutes: int,
-             *, diagnose_only: bool = False, now_fn=lambda: datetime.now(timezone.utc),
+             *, diagnose_only: bool = False, trial_id: str = "FIRST",
+             now_fn=lambda: datetime.now(timezone.utc),
              sleep_fn=time.sleep) -> dict:
     if not type(wait_minutes) is int or not 0 <= wait_minutes <= MAX_WAIT_MINUTES:
         raise ValueError("UNAPPROVED_WAIT_WINDOW")
-    verified_authorization(code_root)
+    verified_authorization(code_root, trial_id)
+    if trial_id == "SECOND":
+        if report.name != SECOND_REPORT_NAME:
+            raise ValueError("SECOND_TRIAL_WRONG_REPORT_NAME")
+        verify_first_trial_closed(trading_root)
     if report.exists() and not diagnose_only:
         raise ValueError("EXISTING_REPORT_NO_RETRY")
     runtime, control = discover_active_paper_runtime(trading_root, EXPECTED_SERIES)
@@ -243,7 +286,7 @@ def main_run(trading_root: Path, code_root: Path, report: Path, wait_minutes: in
                 "original_extended_candidate_count":len(items),
                 "note":"0 eligible is not an error; 1-3h live consolidation still required",
                 "model_http_attempts_reserved":0,"orders":0,"paper_changed":False}
-    journal = journal_start(report, control["series_id"],initial,wait_minutes)
+    journal = journal_start(report, control["series_id"],initial,wait_minutes,trial_id=trial_id)
     original_http = evaluate.http_json
     previous_model_key = os.environ.get("OPENAI_API_KEY")
     deadline = initial + timedelta(minutes=wait_minutes)
@@ -377,12 +420,13 @@ def main() -> int:
     ap.add_argument("--report",type=Path,required=True)
     ap.add_argument("--wait-minutes",type=int,default=90)
     ap.add_argument("--diagnose-only",action="store_true")
+    ap.add_argument("--trial-id",choices=("FIRST", "SECOND"),default="FIRST")
     args=ap.parse_args()
     try:
         result=main_run(args.trading_root,args.code_root,args.report,args.wait_minutes,
-                        diagnose_only=args.diagnose_only)
+                        diagnose_only=args.diagnose_only,trial_id=args.trial_id)
         print("V3_B_SHADOW5_SUMMARY "+json.dumps({
-            "kind":result["kind"],"status":result["status"],
+            "kind":result["kind"],"trial_id":args.trial_id,"status":result["status"],
             "model_http_attempts_reserved":result.get("model_http_attempts_reserved",0),
             "completed_matched_reviews":result.get("completed_matched_reviews",0),
             "original_extended_candidate_count":result.get("original_extended_candidate_count"),
