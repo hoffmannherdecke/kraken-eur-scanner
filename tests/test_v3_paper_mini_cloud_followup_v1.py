@@ -7,7 +7,7 @@ from pathlib import Path
 from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import capture_public_1m,assemble
 from paper_evaluator.v3_paper_minipc_followup_v1 import record_horizon
 from paper_evaluator.v3_paper_minipc_one_candidate_v1 import one_candidate,REVISION
-from tools.v3_paper_cloud_receipt_sync import sync_once
+from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import sync_once
 from tests.test_v3_paper_minipc_one_candidate_v1 import (
     fixture, fake_acquire, fake_model, valid_approval,SID
 )
