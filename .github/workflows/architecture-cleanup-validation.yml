@@ -30,6 +30,9 @@ jobs:
             tools/minipc-status-sync.py \
             tools/v2r4-paper-local-runtime.py \
             tools/v2r4-shadow-cloud-sync.py
+      - name: V3-B inactive full entry contract tests
+        run: python -m unittest tests.test_v3_full_entry_decision_candidate_v1 -v
+
       - name: V3 archived handoff PIT read-only tests
         run: |
           python -m py_compile tools/v3-a-archived-handoff-pit-audit.py
