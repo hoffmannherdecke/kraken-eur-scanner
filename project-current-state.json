@@ -276,7 +276,7 @@
         "status": "USER_APPROVED_BOUNDED_V3B_SHADOW5_HTTP10_PHYSICAL_EXECUTION_PENDING",
         "approval_contract": "research/v3/v3-b-shadow5-approval-20261011.json",
         "execution_script": "tools/run-minipc-v3-b-shadow5.ps1",
-        "execution_state": "CODE_STAGED_PENDING_CI_AND_PHYSICAL_MINIPC_ACK",
+        "execution_state": "VERSIONED_INACTIVE_CODE_EXISTS; REAL_MINIPC_PREFLIGHT_AND_ONE_SHOT_ACK_PENDING",
         "authorized_caps": {
           "max_candidates": 5,
           "max_model_http_attempts_including_retries": 10,
@@ -314,7 +314,7 @@
     "no_artificial_minimum_wait": true,
     "current_handoff_action": {
       "kind": "V3_B_SHADOW5_PHYSICAL_ONE_SHOT_HANDOFF_V1",
-      "status": "WAIT_MERGED_CI_THEN_USER_MINIPC_STEP",
+      "status": "MINIPC_PREFLIGHT_REQUIRED_AFTER_GREEN_MERGED_CI",
       "source_approval": "research/v3/v3-b-shadow5-approval-20261011.json",
       "command_owner": "tools/run-minipc-v3-b-shadow5.ps1",
       "expected_final_ack": "V3_B_SHADOW5_SUMMARY or V3_B_SHADOW5_BLOCKED_BEFORE_MODEL_OR_ALREADY_RECORDED + local immutable research journal",
