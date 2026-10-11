@@ -32,8 +32,8 @@ jobs:
             tools/v2r4-shadow-cloud-sync.py
       - name: V3 experimental PAPER initial BUY opportunity and immutable diagnostic journal
         run: |
-          python -m py_compile paper_evaluator/v3_experimental_paper_initial_review_v1.py paper_evaluator/v3_experimental_paper_model_prompt_v1.py paper_evaluator/v3_experimental_paper_journal_v1.py
-          python -m unittest tests.test_v3_experimental_paper_initial_review_v1 tests.test_v3_experimental_paper_journal_v1 -v
+          python -m py_compile paper_evaluator/v3_experimental_paper_initial_review_v1.py paper_evaluator/v3_experimental_paper_model_prompt_v1.py paper_evaluator/v3_experimental_paper_journal_v1.py paper_evaluator/v3_experimental_paper_family_router_v1.py
+          python -m unittest tests.test_v3_experimental_paper_initial_review_v1 tests.test_v3_experimental_paper_journal_v1 tests.test_v3_experimental_paper_family_router_v1 -v
       - name: V3 early closed-5m paper-research hypothesis into shared P4 contract
         run: |
           python -m py_compile paper_evaluator/v3_p3_early_5m_continuity_research_v1.py
