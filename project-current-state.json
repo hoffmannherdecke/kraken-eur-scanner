@@ -466,10 +466,11 @@
         "research/v3/v3-p3-ab-five-approval-20261011.json",
         "research/work-analysis/2026-10-11-v3-p3-ab-five-physical-result-screen-ack.md",
         "research/work-analysis/2026-10-11-v3-tradeability-backward-causality-diagnosis.md",
-        "research/work-analysis/2026-10-11-v2r4-crash-rebound-historical-event-review.md"
+        "research/work-analysis/2026-10-11-v2r4-crash-rebound-historical-event-review.md",
+        "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "HISTORICAL_20261008_10_CRASH_REBOUND_EVENT_REVIEW_COMPLETED; READONLY_VALIDATE_751_FOLLOWUP_CENSORING_AND_HISTORICAL_CANDLE_PROVENANCE_IN_EXISTING_P0_P3_P4_OWNER; DESIGN_PROSPECTIVE_REGIME_BALANCED_SAME_CLOCK_TEST_WITH_EXPLICIT_NUMERIC_MODEL_CAPS_BEFORE_PHYSICAL_LAUNCH; V2R4_ONLY_ACTIVE_PAPER_NO_NEW_MODEL_SPEND_OR_SHADOW_STARTED",
+      "next_concrete_action": "HISTORICAL_12_CASE_AUDIT_AND_DIAGNOSTIC_V3_ADOPT_HOLD_DECISION_CLOSED; OFFLINE_P4_WAIT_GRAMMAR_FIXED; NEXT_VERIFY_INACTIVE_V3_P0_REAL_FULL_MODEL_CONSUMER_INPUT_AND_RETAIN_6H24H_CAUSAL_RESULTS_ONLY_WHEN_FIXED_NUMERIC_MODEL_SHADOW_SCOPE_APPROVED; V2R4_ONLY_ACTIVE_NO_NEW_MODEL_CALLS",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -660,6 +661,33 @@
         "no_model_expenditure_or_physical_trial_started": true,
         "no_v2r4_or_paper_writer_change": true,
         "no_new_scheduler": true
+      },
+      "historical_12_case_learning_closure_20261011": {
+        "kind": "V3_A_12_CASE_CLOSED_LEARNING_DISPOSITION_V1",
+        "status": "HISTORICAL_DIAGNOSTIC_CLOSED_PROSPECTIVE_NET_BUY_EDGE_NOT_PROVEN",
+        "casepack": "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json",
+        "physical_audit": "research/work-analysis/2026-10-10-v3-12-handoff-local-audit-final.md",
+        "decision_memo": "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md#4-verbindlicher-abschluss-der-historischen-zwölf-fälle--v3-versionsentscheidung-11102026",
+        "machine_gate": "paper_evaluator/v3_a_historical_learning_closure_v1.py",
+        "source_decisions": 12,
+        "independent_original_handoffs_pass": 12,
+        "historic_coin_pit_at_first_model_time_proven": 0,
+        "favorable_outcome_selected": 6,
+        "adverse_outcome_selected": 6,
+        "setup_lane_matched": true,
+        "v3_stage_a_adopt": "REUSE_EXISTING_COIN_INPUT_HANDOFF_IN_INACTIVE_V3_VERIFY_REAL_MODEL_P4_RESPONSE_PIT",
+        "v3_p4_wait_gate_fix": "WAIT_TRIGGER_METRIC_OP_VALUE_TTL_STRICT_VALIDATOR_OFFLINE_REGRESSION",
+        "v3_timing_policy": "HOLD_BETWEEN_STANDARD_AND_FRESH_EARLY_REVIEW_UNTIL_CAUSAL_PAPER_ECONOMICS",
+        "model_calls_for_historical_replay": 0,
+        "realized_net_trades_from_historical_panel": 0,
+        "economic_edge_proven": false,
+        "anti_chase_or_fee_rule_relaxed": false,
+        "past_shadow_trial_budget_reused": false,
+        "model_or_shadow_started": false,
+        "active_v2r4_changed": false,
+        "successor_v3_paper_release_allowed": false,
+        "owner": "research/v3-migration-ledger.json#coin_specific_entry_evidence_provenance / late_chase_protection / conservative_cost_model",
+        "next_gate": "PROSPECTIVE_SOURCE_COMPLETE_P0_FULL_MODEL_CONSUMER_THEN_ONE_CHANGE_P3_CAUSAL_BUY_NET_COST_6H24H_MATURITY_OR_EXPLICIT_NEGATIVE_DISPOSITION"
       }
     }
   }
