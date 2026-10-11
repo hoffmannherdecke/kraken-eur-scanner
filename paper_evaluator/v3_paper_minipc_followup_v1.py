@@ -59,6 +59,14 @@ def record_horizon(*,journal:Path,series_id:str,candidate_id:str,
         return {"status":"HORIZON_NOT_MATURE_NO_PREMATURE_FINAL",
                 "horizon_hours":horizon_hours}
     mature=status=="MATURE_ESTIMATED_PAPER_NET_NOT_VERIFIED_FILL"
+    # Allow normal source recovery time before final CENSORED: a temporary
+    # missing scan cannot become an irreversible data-loss verdict.
+    from datetime import timedelta
+    deadline=clock(fill["known_at_utc"])+timedelta(hours=horizon_hours,minutes=60)
+    if not mature and clock(now_at)<deadline:
+        return {"status":"FOLLOWUP_DATA_GAP_PENDING_BOUNDED_RECOVERY",
+                "horizon_hours":horizon_hours,
+                "source_status":status}
     outcome_data={
         "followup_source":"KRAKEN_CLOSED_1M_PATH_CAPTURE_V1",
         "path_contiguous_1m_verified":mature,
