@@ -181,7 +181,10 @@ def main_run(trading_root: Path, code_root: Path, report: Path, wait_minutes: in
             cohort = select_original_extended(runtime/"paper_decisions",
                 runtime/"handoff_queue",control,now_fn(),seen)
             if not cohort:
-                sleep_fn(min(60,max(0,(deadline-now_fn()).total_seconds())))
+                remaining = (deadline-now_fn()).total_seconds()
+                if remaining <= 0:
+                    break
+                sleep_fn(min(60,remaining))
                 continue
             candidate, historical = cohort[0]
             cid = candidate["candidate_id"]
