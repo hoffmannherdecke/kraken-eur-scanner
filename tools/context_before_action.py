@@ -97,6 +97,126 @@ def review_receipts(root: Path, state: dict) -> list[dict]:
     return result
 
 
+
+# Immutable PR #161 history anchors: new generations may ADD items, but must not
+# silently forget the 11 H components, ten rollout packages or 19 source lessons.
+V3_LESSON_IDS = frozenset((
+    "NULL_BUY_ECONOMIC", "EXTENDED_LATE_CHASE", "SECOND_LEG",
+    "BAD_NOW_NOT_DEAD", "BREAKOUT_RESISTANCE", "WAIT_TTL_NEVER_RECHECK",
+    "OVERSTRICT_ENTRY_MODEL", "COIN_ENTRY_FEATURE_GAP", "COIN_ATTACH_2_OF_4",
+    "OPTIONAL_SOURCE_NEUTRAL", "SOFT_FACTORS_COMPENSATE",
+    "TRADABILITY_KRAKEN_LIVE", "FEES_AND_EXECUTION", "STOP_STAGE2",
+    "SCANNER_SCORE", "CHRONOLOGY_MFE_MAE", "REGIME_HETEROGENEITY",
+    "SOURCES_H2_H11", "ACTIVATION_SAFE",
+))
+V3_CONFLICT_KEYS = frozenset((
+    "OLD_LIBRARY_VS_2026_OCT_RISK", "H1_H2_H3_SEQUENCE_NOT_SAME",
+    "SOURCE_REGISTERED_VS_ACTIVE", "INPUT_ONLY_VS_NEW_POLICY",
+    "LEGACY_PR157_SUPERSEDED", "ECONOMIC_FREEZE_VS_PARALLEL_RESEARCH",
+    "SMART_MONEY_VS_H8", "REAL_TRADING_VS_SEPARATE_AUTONOMOUS_AI_PROJECT",
+))
+
+
+def v3_decision_inheritance(root: Path) -> dict:
+    """Cross-validate PR #161 and the original 19-lesson implementation matrix.
+
+    This proves structural coverage and supplies the actual reasons, not that a
+    future agent has read/understood every source. It preserves historical IDs
+    while permitting later status transitions and new research hypotheses.
+    """
+    plan = read_json(root / "research/v3/v3-consolidated-strategy-integration-plan-20261011.json")
+    matrix = read_json(root / "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json")
+    require(plan.get("kind") == "V3_STRATEGY_INHERITANCE_AND_EXECUTION_PLAN_V1",
+            "V3 PR161 consolidated plan missing or changed")
+    require(matrix.get("kind") == "V3_NO_BUY_LESSONS_IMPLEMENTATION_MATRIX_V1",
+            "V3 19-lesson source changed")
+    require(all(matrix.get(flag) is True for flag in
+                ("no_activation", "no_buys_authorized", "no_real_money")),
+            "V3 source unexpectedly authorizes trading")
+    items = matrix.get("lessons") or []
+    ids = [item.get("id") for item in items]
+    require(len(ids) == len(set(ids)) and V3_LESSON_IDS.issubset(set(ids)),
+            "original 19 V3 findings incomplete/duplicated")
+    for item in items:
+        require(all(isinstance(item.get(k), str) and item[k].strip()
+                    for k in ("id", "finding", "disposition", "implementation", "stage")),
+                "finding has no original cause/disposition/next action")
+    packages = plan.get("package_order") or []
+    orders = [item.get("order") for item in packages]
+    package_ids = [item.get("id") for item in packages]
+    require(len(package_ids) == len(set(package_ids)) and
+            len(orders) == len(set(orders)) and
+            {f"P{x}" for x in range(10)}.issubset(
+                {x.split("_", 1)[0] for x in package_ids if isinstance(x, str)}),
+            "V3 P0-P9 implementation order missing/duplicated")
+    for item in packages:
+        require(all(isinstance(item.get(k), str) and item[k].strip()
+                    for k in ("id", "status", "owner", "work", "exit")),
+                "V3 work package lacks status/owner/action/exit")
+    h = plan.get("h_components") or []
+    hids = [item.get("id") for item in h]
+    require(len(hids) == len(set(hids)) and
+            {f"H{x}" for x in range(1, 12)}.issubset(set(hids)),
+            "H1-H11 status/history omitted or duplicated")
+    for item in h:
+        require(all(isinstance(item.get(k), str) and item[k].strip()
+                    for k in ("id", "status", "role")),
+                "H component not fully routed")
+    conflicts = plan.get("consistency_findings") or []
+    keys = [item.get("key") for item in conflicts]
+    require(len(keys) == len(set(keys)) and V3_CONFLICT_KEYS.issubset(set(keys)),
+            "eight explicit PR161 contradiction resolutions incomplete")
+    for item in conflicts:
+        require(isinstance(item.get("resolution"), str) and
+                len(item["resolution"].strip()) >= 20,
+                "historical user-decision conflict lacks resolution")
+    guard = plan.get("global_gates") or {}
+    for flag in ("single_change_before_integration", "same_candidate_pair_event_market_clock_and_baseline_replay_required",
+                 "missing_core_data_fail_closed_and_report_unknown",
+                 "user_approval_needed_for_new_strategy_changing_shadow_or_new_model_budget",
+                 "paper_and_real_money_releases_separate_explicit",
+                 "no_new_h3_or_h6_auto_enable", "no_additional_work_or_scheduler"):
+        require(guard.get(flag) is True, "V3 safety/learning invariant absent: " + flag)
+    for flag in ("orders", "real_money_actions", "automatic_strategy_promotion"):
+        require(guard.get(flag) is False, "V3 automatic trading authority drift: " + flag)
+    require(guard.get("max_concurrent_strategy_changing_shadows") == 1,
+            "V3 parallel strategy changing shadows")
+    require(guard.get("entry_cost_model_frozen_taker_each_side_pct") == 0.6 and
+            guard.get("scout_and_stage2_eur") == [50, 50],
+            "original V3 paper cost/sizing agreement changed")
+    next_action = plan.get("immediate_action") or {}
+    require(all(isinstance(next_action.get(k), str) and next_action[k].strip()
+                for k in ("next", "avoid", "handoff_owner", "autonomy")),
+            "no actionable V3 handoff or forbidden-change boundary")
+    return {
+        "baseline": "MERGED_PR161_ORIGINAL_USER_AGREEMENTS",
+        "learning_status": "HISTORICAL_COVERAGE_VERIFIED_NOT_TRADING_OUTCOME",
+        "prioritized_packages": [
+            {k: x[k] for k in ("id", "order", "priority", "status", "owner")}
+            for x in packages
+        ],
+        "h_statuses": [
+            {"id": x["id"], "status": x["status"], "role": x["role"],
+             "rule": x.get("rule")}
+            for x in h
+        ],
+        "original_lessons": [
+            {k: x[k] for k in ("id", "finding", "disposition", "implementation", "stage")}
+            for x in items
+        ],
+        "historical_conflict_resolutions": [
+            {"key": x["key"], "resolution": x["resolution"]} for x in conflicts
+        ],
+        "evidence": [
+            {"id": x.get("id"), "status": x.get("status")}
+            for x in plan.get("evidence_inventory", [])
+        ],
+        "next_action": next_action,
+        "safety_gates": guard,
+        "not_a_runtime_or_economic_success_assertion": True,
+    }
+
+
 def build(root: Path, scope: str) -> dict:
     config, entries = routed_sources(root, scope)
     index = []
@@ -141,19 +261,11 @@ def build(root: Path, scope: str) -> dict:
         "required_next_step": "Read relevant source sections, reconcile prior user decisions and blockers; attach a truthful scoped receipt before a material change.",
     }
     if scope in ("strategy", "research"):
-        plan = read_json(root / "research/v3/v3-consolidated-strategy-integration-plan-20261011.json")
-        require(plan.get("kind") == "V3_STRATEGY_INHERITANCE_AND_EXECUTION_PLAN_V1",
-                "V3 strategy plan contract drift")
-        payload["strategy_learning_routes"] = {
-            "evidence": [{"id": x.get("id"), "status": x.get("status")}
-                         for x in plan.get("evidence_inventory", [])],
-            "prioritized_packages": [{"id": x.get("id"), "order": x.get("order"),
-                                       "status": x.get("status"), "owner": x.get("owner")}
-                                      for x in plan.get("package_order", [])],
-            "h_statuses": [{"id": x.get("id"), "status": x.get("status")}
-                           for x in plan.get("h_components", [])],
-            "scope_warning": "Not a new release. Read full migration ledger and current evidence before proposing change.",
-        }
+        payload["strategy_learning_routes"] = v3_decision_inheritance(root)
+        payload["strategy_learning_routes"]["scope_warning"] = (
+            "Original PR161 historical context; resolve future changes against "
+            "current canonical ledger and live evidence, never release automatically."
+        )
     fingerprint_input = {
         "scope": scope,
         "sources": [(x["path"], x["sha256"]) for x in index],
