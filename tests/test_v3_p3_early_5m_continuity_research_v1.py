@@ -19,7 +19,7 @@ def fixture():
     t["observed_at_utc"]=dt(8)
     e["frames"]["15"]["last_closed_bar_end_utc"]=dt(-900)
     e["frames"]["15"]["closed_close_eur"]=10.09
-    bars=bars[-3:-1]
+    bars=bars[-4:-1]  # Same three closed 15m bars supplied to both arms
     return c,b,e,t,bars
 
 
