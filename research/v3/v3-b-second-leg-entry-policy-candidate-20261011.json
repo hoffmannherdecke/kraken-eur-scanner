@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "kind": "V3_B_ONE_CHANGE_SECOND_LEG_NEW_FULL_REVIEW_ELIGIBILITY_CANDIDATE_V1",
-  "status": "INACTIVE_RESEARCH_CODE_PREPARED_NO_SHADOW_NO_RELEASE",
+  "status": "INACTIVE_RESEARCH_FULL_DECISION_CONTRACT_PREPARED_PENDING_CI_NO_SHADOW_NO_RELEASE",
   "origin": "2026-10-11 user instructed implementation of all prior findings as a V3 roadmap while avoiding repeat analysis",
   "previous_evidence": [
     "research/work-analysis/2026-10-11-no-buy-decision-logic-consolidated-root-cause-audit.md",
@@ -74,7 +74,10 @@
     "tests": "tests/test_v3_second_leg_policy_candidate_v1.py",
     "source": "paper_evaluator/v3_entry_handoff_probe.py",
     "owner": "research/v3-migration-ledger.json#late_chase_protection",
-    "ci": ".github/workflows/v2r4-pr-validation.yml"
+    "ci": ".github/workflows/v2r4-pr-validation.yml",
+    "full_decision_code": "paper_evaluator/v3_full_entry_decision_candidate_v1.py",
+    "full_decision_tests": "tests/test_v3_full_entry_decision_candidate_v1.py",
+    "full_decision_contract": "research/v3/v3-b-full-entry-decision-contract-20261011.json"
   },
   "promotion_not_permitted_until": [
     "Reconcile outstanding four-case research PR #157 or record its deliberate no-merge disposition",
@@ -84,7 +87,7 @@
     "Prove real end-to-end Kraken EUR BUY+stop+stage2 feasibility and net edge after fees/slippage",
     "Run separate full strategy integration gate; no H3/H6/H10 bundled or midtest tuning"
   ],
-  "next_action": "OFFLINE_ACCEPTANCE_ONLY_THEN_SEPARATE_USER_AUTHORIZED_SHADOW_RESEARCH_PROSPECTIVE_GATES",
+  "next_action": "OFFLINE_CI_ACCEPTANCE_THEN_PROSPECTIVE_MODEL_SHADOW_AND_RELEASE_GATES_REMAIN_SEPARATE",
   "economic_effect": "UNPROVEN",
   "active_paper_change": false
 }
