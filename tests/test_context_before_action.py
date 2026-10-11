@@ -52,6 +52,12 @@ class ContextBeforeActionTests(unittest.TestCase):
                        "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"):
             self.assertIn(target, {x["path"] for x in packet["source_index"]})
         self.assertIn("next", scope["next_action"])
+        fusion = scope["optional_context_fusion"]
+        self.assertTrue(fusion["optional_data_neutral"])
+        self.assertTrue(fusion["not_a_trading_authorization"])
+        self.assertEqual(len(fusion["source_lanes"]), 9)
+        self.assertIn("smartmoney_h10", {x["stream_id"] for x in fusion["source_lanes"]})
+        self.assertIn("prediction_h11", {x["stream_id"] for x in fusion["source_lanes"]})
 
     def _mutate_v3_source(self, filename, mutate):
         original = copy.deepcopy(original_read_json(ROOT / filename))

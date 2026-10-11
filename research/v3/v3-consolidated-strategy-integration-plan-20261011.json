@@ -347,5 +347,121 @@
     "handoff_owner": "PROJECT_BACKLOG.md P1; research/v3-migration-ledger.json#late_chase_protection; docs/v3-research-framework.md",
     "autonomy": "Prepare code/tests/docs and existing PR/CI evidence autonomously within safe scope, ask only for necessary physical/credential/economic release gates."
   },
-  "state_assertion": "This is a durable decision routing plan and status classification, not a measured full V3 trading performance or proof of current runtime health."
+  "state_assertion": "This is a durable decision routing plan and status classification, not a measured full V3 trading performance or proof of current runtime health.",
+  "optional_context_fusion": {
+    "kind": "V3_OPTIONAL_KNOWN_AT_CONTEXT_FUSION_V1",
+    "status": "PASSIVE_RESEARCH_INTEGRATION_PREP_NO_STRATEGY_RELEASE",
+    "authority": "Existing 26 monitoring streams, source registry, migration ledger and PR161 package ownership; no second stream registry.",
+    "use_when": "EXISTING_DUE_V3_RESEARCH_OR_SUCCESSOR_DECISION_ONLY",
+    "input_contract": "docs/v3-context-fusion-research-v1.md",
+    "preflight": "tools/v3_context_fusion_preflight.py",
+    "optional_missing_is_neutral": true,
+    "no_signal_votes_or_optional_buy_vetos": true,
+    "no_auto_order_buy_wait_reject_or_sizing": true,
+    "no_new_capture_or_scheduler": true,
+    "no_new_paid_source_or_model_calls": true,
+    "dynamic_status_authority": "research/monitoring-evidence-routing-v1.json and research/v3-migration-ledger.json, with live status only from actual runtime",
+    "lanes": [
+      {
+        "stream_id": "market_regime",
+        "group": "KRAKEN_PHASE",
+        "use": "PIT_PHASE_STRATIFICATION",
+        "mapping": "GLOBAL_RESEARCH",
+        "gate": "PROSPECTIVE_MATURE_KRAKEN_EUR_OUTCOME_JOIN",
+        "owner": "research/v3/market-phase-reversal-observation-v1.md"
+      },
+      {
+        "stream_id": "global_market_crosscheck",
+        "group": "GLOBAL_AGGREGATE",
+        "use": "INDEPENDENT_GLOBAL_BREADTH_SANITY_CONTEXT",
+        "mapping": "GLOBAL_RESEARCH",
+        "gate": "FIRST_UNATTENDED_CAPTURE_AND_SOURCE_AS_OF_STALENESS_PROOF",
+        "owner": "docs/market-context-source-fusion-v1.md"
+      },
+      {
+        "stream_id": "news_event_context",
+        "group": "VERIFIED_EVENTS",
+        "use": "PRIMARY_CONFIRMED_FACTS_NOT_TRADE_VETO",
+        "mapping": "EVENT_PREREGISTERED",
+        "gate": "FIRST_UNATTENDED_PRIMARY_FACT_CAPTURE_AND_EVENT_ASSOCIATION",
+        "owner": "docs/market-context-source-fusion-v1.md"
+      },
+      {
+        "stream_id": "source_quality",
+        "group": "SOURCE_STEWARDSHIP",
+        "use": "AUTONOMOUS_DISCOVER_ASSESS_QUARANTINE_REPLACE_RESEARCH_ONLY",
+        "mapping": "NOT_A_CANDIDATE_FEATURE",
+        "gate": "FIRST_REAL_UNATTENDED_E2E_THEN_INCREMENTAL_VALUE",
+        "owner": "docs/market-source-autonomy-v1.md"
+      },
+      {
+        "stream_id": "derivatives_h2",
+        "group": "DERIVATIVES_FUNDING_OI",
+        "use": "FUNDING_OI_CONTEXT_NO_MARKET_VETO",
+        "mapping": "PAIR_KRAKEN_PIT",
+        "gate": "SEPARATE_H2_PROSPECTIVE_ONE_CHANGE_AFTER_PRECHECK",
+        "owner": "research/v3/h2-prospective-derivatives-association-dataset-contract-v1.json"
+      },
+      {
+        "stream_id": "macro_h5",
+        "group": "VERIFIED_EVENTS",
+        "use": "OFFICIAL_MACRO_EVENT_CLOCK_CONTEXT",
+        "mapping": "EVENT_PREREGISTERED",
+        "gate": "H5_FROZEN_BASELINE_ONE_CHANGE_ONLY",
+        "owner": "research/v3/h5-fomc-risk-variant-prereg-v1.json"
+      },
+      {
+        "stream_id": "onchain_h8",
+        "group": "ONCHAIN_ADOPTION",
+        "use": "NETWORK_ADOPTION_NOT_SMART_MONEY",
+        "mapping": "PAIR_KRAKEN_PIT",
+        "gate": "H8_ADDITIONAL_PROSPECTIVE_KNOWN_AT_CAPTURES_AND_ASSOCIATION",
+        "owner": "research/v3/h8-prospective-onchain-state-contract-v1.json"
+      },
+      {
+        "stream_id": "smartmoney_h10",
+        "group": "TRADER_ACTIVITY",
+        "use": "FROZEN_HYPERLIQUID_WALLET_COHORT_CONTEXT_NOT_COPY_TRADE",
+        "mapping": "PAIR_KRAKEN_PIT",
+        "gate": "H10_FIXED_50_EVENT_24H_OUTCOME_JOIN_WITH_CONTROLS",
+        "owner": "research/v3/h10-kraken-outcome-context-join-contract-v1.json"
+      },
+      {
+        "stream_id": "prediction_h11",
+        "group": "PREDICTION_EVENT_ODDS",
+        "use": "PUBLIC_EVENT_STATE_NOT_CRYPTO_DIRECTION_OR_SURPRISE",
+        "mapping": "EVENT_PREREGISTERED",
+        "gate": "H11_NEW_LONGER_HORIZON_RELEVANCE_CONTRACT_BEFORE_KRAKEN_JOIN",
+        "owner": "research/v3/h11-polymarket-prospective-state-contract-v1.json"
+      }
+    ],
+    "evidence_requirements": [
+      "Source event UTC and first seen/captured UTC; known_at must be >= all these timestamps and <= frozen candidate decision UTC",
+      "Kraken online EUR pair mapping contemporaneously evidenced for asset-specific sources, never future alias or price",
+      "Event-to-asset mapping fixed before observing the associated Kraken price response",
+      "Cross-source overlap/correlation family deduplicated; positive source quality is not alpha",
+      "Missing/unavailable/late optional evidence is neutral or NOT_EVALUABLE, not REJECT",
+      "Association must compare matched baseline at same event/candidate/market clock with negative controls and mature net-after-cost outcomes",
+      "Any strategy-effective new feature requires isolated preregistered one-change and separate model budget/shadow/Paper release approval"
+    ],
+    "rollout_order": [
+      "NOW_REUSE_EXISTING_H10_CAPTURE_MARKET_PHASE_OBSERVER_AND_TWO_HOUR_SOURCE_STEWARD_WITHOUT_NEW_JOBS",
+      "NEXT_H10_POST_FREEZE_KRAKEN_PIT_50_EVENTS_THREE_UTC_DATES_24H_CONTROL_REVIEW_IF_EVIDENCE_MATURE",
+      "NEXT_H11_PREREGISTER_NEW_EVENT_RELEVANCE_LONGER_HORIZON_OBSERVATION_BEFORE_ANY_KRAKEN_ASSOCIATION",
+      "NEXT_PROVE_SOURCE_STEWARD_UNATTENDED_REPLACEMENT_AND_GLOBAL_READ_ASOF_IN_EXISTING_CADENCE",
+      "AFTER_CORE_V3_B_FULL_REVIEW_DECISION_TEST_ONE_OPTIONAL_H_INDEPENDENTLY_ONLY_IF_INCREMENTAL_VALUE",
+      "ONLY_AFTER_SEPARATE_USER_RELEASE_INTEGRATE_VERIFIED_COMPONENTS_IN_ONE_MATURE_SHADOW_PAPER_V3"
+    ],
+    "restrictions": {
+      "v2r4_frozen": true,
+      "h3_archived_no_auto_restart": true,
+      "h6_inactive": true,
+      "h1_standalone_rejected": true,
+      "polymarket_not_direct_entry_signal": true,
+      "hyperliquid_no_copied_trades": true,
+      "source_research_changes_do_not_mutate_runtime": true,
+      "one_strategy_changing_shadow_max": 1,
+      "real_money_actions": false
+    }
+  }
 }

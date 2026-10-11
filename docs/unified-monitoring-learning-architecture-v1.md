@@ -1,6 +1,6 @@
 # Gesamtarchitektur-Audit: Überwachung, Evidenz und kontrollierte Strategieanwendung (v1)
 
-Auditstand: 2026-10-08. **Verbindlicher Architektur-/Research-Vertrag, kein neuer Runtime-Mechanismus.**
+Ursprünglicher Auditstand: 2026-10-08; Statusabgleich zu H3: 2026-10-11. **Verbindlicher Architektur-/Research-Vertrag, kein neuer Runtime-Mechanismus.**
 Maschinenlesbare Verantwortungsmatrix: `research/monitoring-evidence-routing-v1.json`.
 Quellen- und Qualitätsrollen: `research/source-registry.json`,
 `research/market-source-candidates-v1.json`,
@@ -19,7 +19,7 @@ historische Zustände enthalten und sind hierfür nicht autoritativ.
 | Derivate / OI / Funding / Squeeze | Kraken Futures/Binance, H2 | CMC globale Derivate | **H2** ist alleiniger späterer mechanischer Research-Owner. CMC vergleicht aggregierte Risikoindikatoren nur mit Zeit-/Einheitenabgleich, nicht als zusätzlicher H2-Gate |
 | FOMC / CPI / Regulierung / News | FOMC-H5 und offizieller Fed-/SEC-Kontext | Redaktionelle Medien / CFTC/BLS/Treasury / Macro-Newsradar | **Originalbehörde** ist für Termin/Fakt autoritativ; Nachrichten sind Hinweise. **H5** besitzt allein die mögliche spätere *Event-Risk-Strategiemechanik* (noch Precheck). Kein automatischer Risk-Off-Kaufblock aus News und zusätzlich H5 |
 | Eventwahrscheinlichkeiten | H5 offizielle Makrotermine | H11 Polymarket | H11 prognostische Marktmeinung = isolierte Forschung; das *tatsächliche* behördliche Ereignis bleibt offizieller Fakt. Kein H11↔H5-Doppelveto |
-| Orderbuch, Spread, Liquidität | aktive **H3**-Shadow-/Kraken-L2-Auswertung | H9 Maker/Taker-Fill-Modell; V2R4-Kosten | **H3** prüft allein Orderbuch-/Imbalance-Zusatznutzen. **H9** ist ein davon getrennter späterer Fill-/Execution-Cost-Test, keine wiederholte Depth-Entscheidung. Bestehende Kraken-Kosten-/Tradability-Gates unverändert |
+| Orderbuch, Spread, Liquidität | historische, seit 09.10.2026 **archivierte H3-001**-Shadow-/Kraken-L2-Auswertung (kein aktiver H3-Shadow) | H9 Maker/Taker-Fill-Modell; V2R4-Kosten | **H3** prüft allein Orderbuch-/Imbalance-Zusatznutzen. **H9** ist ein davon getrennter späterer Fill-/Execution-Cost-Test, keine wiederholte Depth-Entscheidung. Bestehende Kraken-Kosten-/Tradability-Gates unverändert |
 | On-Chain / Smart Money | H8 CoinMetrics EOD | H10 Hyperliquid / Arkham / Nansen | **H8 = Netzwerknutzung/EOD**; **H10 = Händler-/Walletaktivität**. Unterschiedliche Zeiten, Coverage und Fehlermuster; Korrelation oder gleiche Token-Bewegung nicht doppelt zählen |
 | Meta-Entscheidung / Filter | V2R4 WAIT/REJECT, früher H1-Entscheider | H7 TAKE/NO-TAKE + eventuelle Quellen-/Regimefilter | **H7** nur nach eigenem Label-/Kosten-/Holdout-Gate. Alle H-Signale sind Inputs, **nicht unabhängig kumulierbare Veto-Regeln**. Kein Modelltraining auf einer bereits nach Resultat selektierten Pilotquelle |
 | Quellenbewertung | Source-Steward Medien-, Foren- und Fact-Score | Marktphasen-/V3-Strategie-Lernreview | **Source-Steward = Quellengüte**, **gated Work-/V3-Review = tatsächlicher Netto-Trade-Nutzen**. Source KEEP darf niemals automatisch Strategie PROMOTE bedeuten |

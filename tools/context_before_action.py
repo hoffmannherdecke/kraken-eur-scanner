@@ -213,6 +213,16 @@ def v3_decision_inheritance(root: Path) -> dict:
         ],
         "next_action": next_action,
         "safety_gates": guard,
+        "optional_context_fusion": {
+            "status": (plan.get("optional_context_fusion") or {}).get("status"),
+            "source_lanes": [
+                {"stream_id": x.get("stream_id"), "group": x.get("group"),
+                 "research_gate": x.get("gate"), "owner": x.get("owner")}
+                for x in (plan.get("optional_context_fusion") or {}).get("lanes", [])
+            ],
+            "optional_data_neutral": (plan.get("optional_context_fusion") or {}).get("optional_missing_is_neutral"),
+            "not_a_trading_authorization": True,
+        },
         "not_a_runtime_or_economic_success_assertion": True,
     }
 
