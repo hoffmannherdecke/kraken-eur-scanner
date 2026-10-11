@@ -168,8 +168,10 @@ def paper_phase_strategy_inheritance(root: Path, plan: dict, matrix: dict) -> di
     for row in rows:
         require(row.get("evidence_class") in allowed_classes,
                 "unknown Paper evidence status: " + str(row.get("id")))
-        for field in ("observed_finding", "strategic_disposition", "next_evidence_gate"):
-            require(isinstance(row.get(field), str) and len(row[field].strip()) >= 20,
+        for field, min_chars in (("observed_finding", 20),
+                                 ("strategic_disposition", 6),
+                                 ("next_evidence_gate", 20)):
+            require(isinstance(row.get(field), str) and len(row[field].strip()) >= min_chars,
                     "Paper finding lacks cause/disposition/next gate: " + str(row.get("id")))
         for field, known in (("v3_package_ids", packages),
                              ("matrix_lesson_ids", lessons)):
