@@ -95,6 +95,10 @@ def propose_early_5m_continuity_review(
         f15=entry_evidence["frames"]["15"]
         if utc(f15["last_closed_bar_end_utc"]) != ends:
             return result("15M_BASE_AND_KRAKEN_FRAME_CLOCK_MISMATCH")
+        if not math.isclose(float(base_bars[-1]["close"]),
+                            _finite_positive(f15["closed_close_eur"]),
+                            rel_tol=1e-9, abs_tol=1e-10):
+            return result("15M_BASE_CLOSE_PRICE_AND_PIT_MISMATCH")
         for bar in base_bars:
             lo=_finite_positive(bar["low"]);hi=_finite_positive(bar["high"])
             op=_finite_positive(bar["open"]);cl=_finite_positive(bar["close"])
