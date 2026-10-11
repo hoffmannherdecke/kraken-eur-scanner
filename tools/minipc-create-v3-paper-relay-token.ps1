@@ -34,13 +34,13 @@ if(Test-Path -LiteralPath $path){
     $acl.SetAccessRuleProtection($true,$false)
     $identities=@(
       ([System.Security.Principal.WindowsIdentity]::GetCurrent().User),
-      (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-18')),
-      (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-32-544'))
+      ([System.Security.Principal.SecurityIdentifier]::new('S-1-5-18')),
+      ([System.Security.Principal.SecurityIdentifier]::new('S-1-5-32-544'))
     )
     foreach($id in $identities){
-      $rule=New-Object System.Security.AccessControl.FileSystemAccessRule(
-        $id,'FullControl','Allow'
-      )
+      $rule=[System.Security.AccessControl.FileSystemAccessRule]::new(
+        $id,[System.Security.AccessControl.FileSystemRights]::FullControl,
+        [System.Security.AccessControl.AccessControlType]::Allow)
       $acl.AddAccessRule($rule)
     }
     [System.IO.File]::SetAccessControl($path,$acl)
