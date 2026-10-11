@@ -85,6 +85,19 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
     if not isinstance(cid,str) or not cid:
         raise ValueError("real canonical candidate required")
     stamp=candidate["event_time_utc"]
+    if not local_receipts.is_dir() or local_receipts.is_symlink():
+        raise ValueError("independent V3 Paper journal directory must already exist")
+    # Original case identity is immutable: restarting cannot replace an
+    # existing first-seen record or silently repeat a spent model request.
+    for old in local_receipts.glob("*.json"):
+        try:
+            row=read(old)
+        except (OSError,ValueError):
+            raise ValueError("corrupt immutable V3 journal; human recovery required")
+        if (row.get("series_id")==series_id
+                and row.get("candidate_id")==cid):
+            return {"status":"V3_CANDIDATE_ALREADY_JOURNALED_NO_REPROCESS",
+                    "paper_only":True,"model_called":False}
     def receipt(phase:str,status:str,info:dict|None=None)->None:
         event=make_receipt(series_id=series_id,revision=REVISION,
             candidate_id=cid,pair=candidate["pair"],event_time_utc=stamp,
@@ -194,7 +207,20 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
          "ask_eur":quote["ask"],"validated_stop_eur":validated.get("stop_eur"),
          "validated_stage2_eur":validated.get("stage2_trigger_eur"),
          "total_cost_pct":validated.get("total_round_trip_cost_pct")})
+    if validated["decision"]=="WAIT":
+        receipt("WAIT_WATCH","WAIT",{
+            "raw_wait_ttl_minutes":model.get("ttl_minutes"),
+            "raw_watch_conditions":model.get("watch_conditions")})
     if validated["decision"]=="BUY_SCOUT":
+        receipt("PAPER_FILL","PAPER_FILLED",{
+            "paper_entry_ask_eur":validated["execution_ask_eur"],
+            "paper_entry_qty":round(50/validated["execution_ask_eur"],10),
+            "paper_entry_fee_eur":round(50*0.006,6),
+            "validated_stop_eur":validated["stop_eur"],
+            "validated_stage2_eur":validated["stage2_trigger_eur"],
+            "stage2_ttl_minutes":validated["stage2_ttl_minutes"],
+            "total_cost_pct":validated["total_round_trip_cost_pct"],
+            "source_status":"ASSUMED_VIRTUAL_PAPER_ASK_NOT_REAL_EXCHANGE_FILL"})
         for h in (6,24,72):
             receipt(f"FOLLOWUP_{h}H","PENDING",{"followup_source":"KRAKEN_1M_PENDING"})
     return {"status":"V3_CANARY_MODEL_P4_RECORDED_NO_PAPER_ACTIVATION",
