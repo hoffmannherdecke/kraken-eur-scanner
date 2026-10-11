@@ -107,5 +107,20 @@
     "stop_ttl_h4",
     "storage_and_cost"
   ],
-  "required_stream_rule": "ALL_PREVIOUSLY_REGISTERED_26_STREAMS_MUST_REMAIN_OR_BE_EXPLICITLY_VERSIONED; NEW_STREAMS_ROUTE_AUTOMATICALLY"
+  "required_stream_rule": "ALL_PREVIOUSLY_REGISTERED_26_STREAMS_MUST_REMAIN_OR_BE_EXPLICITLY_VERSIONED; NEW_STREAMS_ROUTE_AUTOMATICALLY",
+  "context_preflight": {
+    "kind": "CONTEXT_BEFORE_ACTION_HANDOFF_V1",
+    "command": "tools/context_before_action.py",
+    "routing": "research/context-before-action-routing-v1.json",
+    "scopes": [
+      "strategy",
+      "architecture",
+      "operations",
+      "research"
+    ],
+    "activation": "ONLY_BEFORE_MATERIAL_REVIEW_OR_ALLOWED_SAFE_IMPLEMENTATION",
+    "no_substitute_for_actual_source_reading": true,
+    "receipt_not_authorization": true,
+    "no_new_work_run": true
+  }
 }
