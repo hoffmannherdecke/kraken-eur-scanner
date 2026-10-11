@@ -30,6 +30,8 @@ Die **71 Rebound-Höchstwerte ≥+12%** am Freitag stammen aus 212 reifen Fälle
 | OP/EUR | WAIT / CONTINUITY | **+11,738%** | +18,011% / −1,075% | schwacher Markt-Proxy, `atr_structure_unavailable`, unbestätigtes Gebührenrestpotenzial |
 | MINA/EUR | WAIT / CONTINUITY | **+10,127%** | +21,519% / −3,094% | fehlende frische Kerzenbestätigung, späte Einstiegsgefahr |
 
+**Zusätzliche quantitative Diagnose des Freitag-09.10.-Funnels:** Unter den 623 ursprünglichen `reason_codes`-Arrays enthalten **396** mindestens einen negativen Ausdruck zu fehlenden STOP-/ATR-/CANDLE-Daten, **342** ein LATE/CHASE/EXTENDED-Label, **530** ein FEE/COST/EDGE/REMAINING_MOVE-Label (jeweils breite, **überlappende Heuristiken**: kein eindeutiger individueller Kausalveto-Nachweis, positive Erwähnungen bei breiter Cost-/Chase-Suche möglich). Am Donnerstag 08.10. waren es 323/554 mit negativen Stop-/ATR-/Candle-Begriffen. Solche Häufungen begründen einen Test der tatsächlich fehlenden Markt-/Stop-Daten und des Zeitpunkts der Kaufentscheidung, aber keine zwangsläufig richtige Lockerung dieser Kriterien.
+
 **Faktisch belegter Fehler-/Lernpunkt:** Unser Scanner fand die Kandidaten in der wirklichen Aufwärtsphase, aber das aktive Modell verweigerte aus teils fehlender Input-/Stop-Struktur und teils legitimer später Chase-/Kosten-/Liquiditätsgefahr den Trade. BAT/DRV kamen nicht einmal in den V2R4-WAIT-Pfad, OP/WLD/MINA liefen nach dem ursprünglichen WAIT in `V2R4_WAIT_EXPIRY_V1` statt BUY. Aus nachträglich starkem Schlusskurs folgt **keine** nachträglich ausführbare Kaufanweisung; einzelne Paare können unterwegs erheblich ausgeschlagen haben, Kosten und Stop-First bleiben zwingend.
 
 ## Nachgewiesene bedeutende Erhaltungslücke am technischen Serienwechsel 09.10.
