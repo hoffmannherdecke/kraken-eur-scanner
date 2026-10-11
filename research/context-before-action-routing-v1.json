@@ -41,6 +41,10 @@
         "role": "PREVIOUS_FIRST_V3B_SHADOW5_APPROVAL_EXHAUSTED_CLOSED_HISTORICAL_ONLY_NO_NEW_TRIAL"
       },
       {
+        "path": "research/v3/v3-buy-gate-flexibility-prereg-20261011.json",
+        "role": "LATEST_INACTIVE_CROSS_VERSION_V2_V2R3_V2R4_V3_ONE_CHANGE_RULE_FLEXIBILITY_PREREG_NO_LIVE_STRATEGY_CHANGE"
+      },
+      {
         "path": "docs/strategy-version-map.md",
         "role": "VERSION_SCOPE_AND_INHERITANCE"
       },
@@ -122,6 +126,10 @@
       }
     ],
     "research": [
+      {
+        "path": "research/v3/v3-buy-gate-flexibility-prereg-20261011.json",
+        "role": "LATEST_INACTIVE_CROSS_VERSION_V2_V2R3_V2R4_V3_ONE_CHANGE_RULE_FLEXIBILITY_PREREG_NO_LIVE_STRATEGY_CHANGE"
+      },
       {
         "path": "docs/v3-research-framework.md",
         "role": "RESEARCH_STATUSES_AND_EVIDENCE"
