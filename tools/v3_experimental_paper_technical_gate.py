@@ -14,7 +14,7 @@ PROOFS=frozenset({
     "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E",
     "V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT",
     "V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE",
-    "V3_SINGLE_WRITER_FENCE_CLOUD_ACTIVE_SERIES_CAS",
+    "V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN",
     "V3_MINIPC_SUPERVISOR_STOP_START_ROLLBACK",
     "V3_GITHUB_WORK_ALERT_DYNAMIC_SERIES_ROUTING",
 })
@@ -71,8 +71,13 @@ def validate_experimental_paper_packet(root: Path, revision: str,
         block("later economic promotion gate missing")
     if packet.get("fixed_api_cost_limit_user_authorized") is not True:
         block("new fixed-cost budget authorization missing")
-    if packet.get("physical_single_writer_cutover_ack_obtained") is not True:
-        block("physical/cloud single-writer cutover ACK missing")
+    # Pre-cutover requirement is a physically verified dry run, not a
+    # POST-cutover ACK (requiring post ACK to authorize cutover is circular).
+    # Post-cutover ACK is checked later by the existing cloud+Mini-PC monitors.
+    if packet.get("physical_single_writer_cutover_dry_run_passed") is not True:
+        block("physical single-writer transition dry run missing")
+    if packet.get("physical_single_writer_cutover_ack_obtained") is True:
+        block("release packet falsely claims post-cutover ACK before activation")
     rows=packet.get("experimental_paper_technical_proofs")
     if not isinstance(rows,list) or len(rows)!=len(PROOFS) or any(not isinstance(x,dict) for x in rows):
         block("six actual technical evidence rows required")
