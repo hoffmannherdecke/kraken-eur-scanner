@@ -100,7 +100,7 @@ class SecondLegPolicyCandidateTests(unittest.TestCase):
 
     def test_old_base_cannot_be_recreated_from_future_knowledge(self):
         self.assertEqual(run(at=dt(-30))["status"],
-                         "UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE")
+                         "OUTSIDE_FRESH_SECOND_LEG_OBSERVATION_WINDOW")
         self.assertEqual(run(lambda x:x[4][-1].update(start_utc=BASE+900))["status"],
                          "NONCONTIGUOUS_BASE_HISTORY")
         self.assertEqual(run(lambda x:x[2].update(known_at_utc=dt(80)))["status"],
@@ -141,6 +141,23 @@ class SecondLegPolicyCandidateTests(unittest.TestCase):
                          "UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE")
         self.assertEqual(run(lambda x:x[2].update(pair="ETH/EUR"))["status"],
                          "UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE")
+
+    def test_three_hour_base_uses_twelve_closed_bars_without_changing_risk(self):
+        def provide_3h(xs):
+            # Prefix 8 earlier closed bars so 12 are consolidation, last is
+            # the same timestamped reclaim. Original extended alert precedes it.
+            old = xs[4]
+            prefix=[]
+            for i in range(8):
+                v=dict(old[0])
+                v["start_utc"] = BASE - 13*900 + i*900
+                prefix.append(v)
+            xs[4][:] = prefix+old
+            xs[0]["event_time_utc"] = dt(-13*900)
+        r=run(provide_3h,base_bars=12)
+        self.assertEqual(r["status"],"SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY")
+        self.assertEqual(r["base_15m_bars"],12)
+        self.assertFalse(r["auto_buy"])
 
     def test_unapproved_variants_cannot_hide_strategy_optimization(self):
         self.assertEqual(run(base_bars=3)["status"],"INVALID_RESEARCH_BASE_WINDOW")
