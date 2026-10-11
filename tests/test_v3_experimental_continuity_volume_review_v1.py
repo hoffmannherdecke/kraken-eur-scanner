@@ -129,6 +129,10 @@ class V3ExperimentalOneChangeTests(unittest.TestCase):
         for change in (
             lambda x:x[0].update(kind="UNREGISTERED"),
             lambda x:x[0].update(standard_review_status="CONTINUITY_ELIGIBLE"),
+            lambda x:x[0].update(standard_review_kind="FORGED_OTHER_KIND"),
+            lambda x:x[0].update(experimental_volume_floor=0.5),
+            lambda x:x[0].update(observed_relative_volume_ratio=1.15),
+            lambda x:x[0]["standard_unmodified_checks"].pop("fresh_eur_spread_guard"),
             lambda x:x[0].update(old_standard_volume_check_failed=False),
             lambda x:x[0]["standard_unmodified_checks"].update(fresh_eur_spread_guard=False),
             lambda x:x[0].update(new_snapshot_known_at_utc=dt(30)),
