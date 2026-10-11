@@ -463,5 +463,341 @@
       "one_strategy_changing_shadow_max": 1,
       "real_money_actions": false
     }
+  },
+  "paper_phase_learning_crosswalk": {
+    "kind": "V3_PREDECESSOR_PAPER_STRATEGIC_LEARNING_CROSSWALK_V1",
+    "status": "ORIGINAL_PAPER_HISTORY_RECONCILED_FUTURE_ECONOMIC_APPLICATION_NOT_PROVEN",
+    "purpose": "A stable pointer/checklist INSIDE existing PR161 strategy owner, not a second decision matrix, scheduler, task queue, runtime authority, or new objective.",
+    "evidence_priority": "Prospective clean paper final review > later matured independent 24h tails > other clean interim batch > retrospective outcomes explicitly labelled as selected hypotheses > V2 single-case historical decisions. No runtime/transport errors as trading claims.",
+    "excludes_technical_diagnostics": true,
+    "prior_stand_alone_strategy_evaluation_is_not_new_release": true,
+    "model_calls_executed": 0,
+    "auto_activation": false,
+    "mandatory_reference_authorities": [
+      "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+      "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
+      "research/v3-migration-ledger.json"
+    ],
+    "findings": [
+      {
+        "id": "V2_EARLY_DECISION_QUALITY_NOT_PERF_PROOF",
+        "evidence_class": "QUALITATIVE_DECISION_ONLY",
+        "source_paths": [
+          "paper_decisions/20260927-200326-ZRO-EUR-r36346282764.json",
+          "paper_decisions/20260927-220325-FET-EUR-r36353615105.json",
+          "paper_decisions/20260928-162932-LINK-EUR-r36451205492.json"
+        ],
+        "observed_finding": "ZRO and LINK decisions required breakout/base/retest confirmation, FET was rejected at resistance and after fee hurdle; individual V2 verdicts contain no mature matched outcomes and do not prove the missed move was tradable.",
+        "strategic_disposition": "KEEP_RESEARCH_ONLY",
+        "v3_package_ids": [
+          "P3_OTHER_ENTRY_SETUP_FAMILIES"
+        ],
+        "matrix_lesson_ids": [
+          "BREAKOUT_RESISTANCE",
+          "FEES_AND_EXECUTION"
+        ],
+        "next_evidence_gate": "Prospective eligible early CONTINUITY vs correctly avoided resistance cases, with complete stop/spread/net outcomes."
+      },
+      {
+        "id": "V2R3_TRADE_N1_DOES_NOT_CALIBRATE_RISK",
+        "evidence_class": "PROSPECTIVE_CLEAN_PAPER",
+        "source_paths": [
+          "research/work-analysis/2026-10-07-v2r3-final-review.md",
+          "research/work-analysis/2026-10-04-v2r3-mature-24h-batch-001.md"
+        ],
+        "observed_finding": "Exactly one MON/EUR scout from the 1000 final cohort; stopped after about 29m at -1.5462 EUR/-3.0924% net including 0.5943 EUR modeled fees. No stage2 fills and no statistically valid stop, sizing, trailing, take-profit or win-rate inference.",
+        "strategic_disposition": "KEEP_HARD_GUARDS_DEFER_CALIBRATION",
+        "v3_package_ids": [
+          "P4_RISK_AND_EXECUTION_NOT_A_SHORTCUT"
+        ],
+        "matrix_lesson_ids": [
+          "FEES_AND_EXECUTION",
+          "STOP_STAGE2"
+        ],
+        "next_evidence_gate": "Tune stops/Stage2/trailing/sizing only on sufficient separate mature realized Paper paths."
+      },
+      {
+        "id": "V2R3_LOW_CONVERSION_IS_DECISION_SELECTIVITY",
+        "evidence_class": "PROSPECTIVE_CLEAN_PAPER",
+        "source_paths": [
+          "research/work-analysis/2026-10-07-v2r3-final-review.md",
+          "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
+        ],
+        "observed_finding": "Frozen first 1000 clean paper decisions produced 1 BUY_SCOUT, 999 REJECT, 942 initial WAIT. More alerts or a high scanner rank alone cannot establish a safe entry.",
+        "strategic_disposition": "TEST_ONE_CHANGE",
+        "v3_package_ids": [
+          "P1_V3_B_REAL_SECOND_LEG_ENTRY",
+          "P2_WAIT_EXPIRED_FRESH_RECHECK"
+        ],
+        "matrix_lesson_ids": [
+          "OVERSTRICT_ENTRY_MODEL",
+          "NULL_BUY_ECONOMIC"
+        ],
+        "next_evidence_gate": "Valid independent same-clock BUY/stop/Stage2/fill after cost, also false-buy rate."
+      },
+      {
+        "id": "V2R3_WAIT_WATCH_NOT_IDEA_DEATH",
+        "evidence_class": "PROSPECTIVE_CLEAN_PAPER",
+        "source_paths": [
+          "research/work-analysis/2026-10-07-v2r3-final-review.md",
+          "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
+        ],
+        "observed_finding": "Among mature paths 891 WAIT became REJECT versus 1 WAIT→BUY; later movement alone cannot prescribe a BUY. Separate temporarily unattractive entry from irrevocably bad setup.",
+        "strategic_disposition": "TEST_ONE_CHANGE",
+        "v3_package_ids": [
+          "P2_WAIT_EXPIRED_FRESH_RECHECK"
+        ],
+        "matrix_lesson_ids": [
+          "BAD_NOW_NOT_DEAD",
+          "WAIT_TTL_NEVER_RECHECK"
+        ],
+        "next_evidence_gate": "Fresh watchable-event recheck with non-buy control, cost feasibility and bounded retries, not auto-buy."
+      },
+      {
+        "id": "V2R3_CONTINUITY_INITIAL_SMALL_SAMPLE_OPTIMISM",
+        "evidence_class": "PROSPECTIVE_CLEAN_PAPER",
+        "source_paths": [
+          "research/v2r3/strategy-adjustment-hypotheses-v1.json",
+          "research/work-analysis/2026-10-04-v2r3-mature-24h-batch-001.md",
+          "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
+        ],
+        "observed_finding": "The early CONTINUITY sample n=16 had p50 MFE24 +5.8645% and p50 MAE24 -1.546%; next mature batch showed n=119 p50 MFE +2.579% and MAE -3.165%. Early apparent second-leg advantage weakened with larger sample; do not select winners from an optimistic first slice.",
+        "strategic_disposition": "TEST_BUT_NO_PROVEN_EDGE",
+        "v3_package_ids": [
+          "P3_OTHER_ENTRY_SETUP_FAMILIES",
+          "P1_V3_B_REAL_SECOND_LEG_ENTRY"
+        ],
+        "matrix_lesson_ids": [
+          "SECOND_LEG",
+          "CHRONOLOGY_MFE_MAE"
+        ],
+        "next_evidence_gate": "Pre-register sample/diversity/holdout and stratify CONTINUITY vs IGNITION/EXTENDED before picking a setup."
+      },
+      {
+        "id": "V2R3_RESISTANCE_CONFIRMATION_NOT_GLOBAL_LOOSENING",
+        "evidence_class": "PROSPECTIVE_CLEAN_PAPER",
+        "source_paths": [
+          "research/v2r3/strategy-adjustment-hypotheses-v1.json",
+          "research/work-analysis/2026-10-04-v2r3-mature-24h-batch-001.md",
+          "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json"
+        ],
+        "observed_finding": "56 early resistance/breakout caution cases showed p50 later MFE24 +6.163%, but later n=310 yielded +3.632% with -3.520% MAE. Global resistance removal is not supported.",
+        "strategic_disposition": "TEST_WATCHABLE_RECLAIM",
+        "v3_package_ids": [
+          "P3_OTHER_ENTRY_SETUP_FAMILIES"
+        ],
+        "matrix_lesson_ids": [
+          "BREAKOUT_RESISTANCE"
+        ],
+        "next_evidence_gate": "Separate fresh closed breakout/reclaim from false breakout with actual stop/net execution."
+      },
+      {
+        "id": "V2R3_ALREADY_RUN_HAS_ADVERSE_PATH",
+        "evidence_class": "PROSPECTIVE_CLEAN_PAPER",
+        "source_paths": [
+          "research/work-analysis/2026-10-07-v2r3-final-review.md",
+          "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
+          "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md"
+        ],
+        "observed_finding": "Already-run final REJECTs had p50 MFE +3.821% versus +2.899% otherwise, but p50 MAE -4.133% versus -2.260% and median close -1.311% versus -0.077%. Raw upside does not warrant chase.",
+        "strategic_disposition": "KEEP_ANTI_CHASE_TEST_NEW_BASE",
+        "v3_package_ids": [
+          "P1_V3_B_REAL_SECOND_LEG_ENTRY",
+          "P4_RISK_AND_EXECUTION_NOT_A_SHORTCUT"
+        ],
+        "matrix_lesson_ids": [
+          "EXTENDED_LATE_CHASE",
+          "SECOND_LEG"
+        ],
+        "next_evidence_gate": "Fresh 1–3h base and closed reclaim, prepriced stop and fee-adjusted remaining move; adverse controls."
+      },
+      {
+        "id": "V2R3_SCANNER_SCORE_IS_NOT_PROFIT_RANK",
+        "evidence_class": "PROSPECTIVE_CLEAN_PAPER",
+        "source_paths": [
+          "research/work-analysis/2026-10-07-v2r3-final-review.md"
+        ],
+        "observed_finding": "Final score correlation with 24h MFE was -0.024 and with 24h close -0.035; high score did not empirically outrank lower scores in net trade quality.",
+        "strategic_disposition": "REJECT_SCORE_DIRECT_BUY_OR_SIZE",
+        "v3_package_ids": [
+          "P3_OTHER_ENTRY_SETUP_FAMILIES"
+        ],
+        "matrix_lesson_ids": [
+          "SCANNER_SCORE"
+        ],
+        "next_evidence_gate": "Recalibrate a score only in separate prospective OOS cost-net comparison, no rank-triggered buys."
+      },
+      {
+        "id": "V2R3_RETRIGGERS_NOT_INDEPENDENT_WINNERS",
+        "evidence_class": "PROSPECTIVE_CLEAN_PAPER",
+        "source_paths": [
+          "research/work-analysis/2026-10-07-v2r3-final-review.md",
+          "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md"
+        ],
+        "observed_finding": "291 observations with 24h MFE>=5% reduce to 174 pair/6h market episodes, 103 >=10% observations to 65 pair/6h episodes; one FET/NIGHT move can produce many repeated alerts.",
+        "strategic_disposition": "MEASUREMENT_INVARIANT",
+        "v3_package_ids": [
+          "P8_COMBINED_MATURE_V3"
+        ],
+        "matrix_lesson_ids": [
+          "CHRONOLOGY_MFE_MAE"
+        ],
+        "next_evidence_gate": "Always show candidate counts beside deduplicated pair/UTC-window episodes and clustered uncertainty."
+      },
+      {
+        "id": "V2R3_MARKET_TIME_COHORTS_DIVERGE",
+        "evidence_class": "PROSPECTIVE_CLEAN_PAPER",
+        "source_paths": [
+          "research/work-analysis/2026-10-07-v2r3-final-review.md",
+          "research/work-analysis/2026-10-05-v2r3-mature-24h-batch-002.md",
+          "research/work-analysis/2026-10-06-v2r3-mature-24h-batch-003.md"
+        ],
+        "observed_finding": "At 24h p50 final close varies by observation date from +0.946% to -3.791%; 05 Oct batch +0.835% median was below 1.2% roundtrip taker hurdle even before spread/slippage.",
+        "strategic_disposition": "STRATIFY_NOT_TIME_VETO",
+        "v3_package_ids": [
+          "P6_PROSPECTIVE_REGIME_LEARNING"
+        ],
+        "matrix_lesson_ids": [
+          "REGIME_HETEROGENEITY",
+          "FEES_AND_EXECUTION"
+        ],
+        "next_evidence_gate": "Same-clock matched regime/UTC-day cohorts with negative controls, no retroactively chosen trading hours."
+      },
+      {
+        "id": "V2R3_LATE_MATURING_LOSERS_NOT_SILENTLY_DROPPED",
+        "evidence_class": "PROSPECTIVE_CLEAN_PAPER",
+        "source_paths": [
+          "research/work-analysis/2026-10-08-v2r3-post-closeout-remaining-59.md",
+          "research/work-analysis/2026-10-07-v2r3-final-review.md"
+        ],
+        "observed_finding": "59 later-matured final REJECT cases had p50 MAE24 -6.313% and close24 -4.570%, with only 6 reaching >=5% MFE and none >=10%. Excluding late losers would inflate opportunity quality.",
+        "strategic_disposition": "INHERIT_AS_DOWNSIDE_CONTROL",
+        "v3_package_ids": [
+          "P4_RISK_AND_EXECUTION_NOT_A_SHORTCUT",
+          "P8_COMBINED_MATURE_V3"
+        ],
+        "matrix_lesson_ids": [
+          "CHRONOLOGY_MFE_MAE",
+          "EXTENDED_LATE_CHASE"
+        ],
+        "next_evidence_gate": "All predeclared 24h followups and late tails retained with missing/censored labels; no survivorship bias."
+      },
+      {
+        "id": "V2R4_TRIGGER_AND_MODEL_DECISION_SEPARATE",
+        "evidence_class": "PROSPECTIVE_PAPER_ZERO_BUY",
+        "source_paths": [
+          "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+          "research/work-analysis/2026-10-10-v2r4-original-72h-evidence.md"
+        ],
+        "observed_finding": "Original V2R4 72h 1677 candidates, 0 BUY/0 fills. 127 genuine trigger→model rechecks ended 125 REJECT/2 WAIT, while 946 WAIT expired untriggered. A faster event path by itself did not produce a viable buy.",
+        "strategic_disposition": "TEST_SEPARATE_CONVERSION_LINKS",
+        "v3_package_ids": [
+          "P1_V3_B_REAL_SECOND_LEG_ENTRY",
+          "P2_WAIT_EXPIRED_FRESH_RECHECK"
+        ],
+        "matrix_lesson_ids": [
+          "OVERSTRICT_ENTRY_MODEL",
+          "WAIT_TTL_NEVER_RECHECK"
+        ],
+        "next_evidence_gate": "Measured WAIT→trigger→valid full model decision→risk-feasible BUY→Paper fill funnel, separate policy from timing."
+      },
+      {
+        "id": "V2R4_HIGH_UPSIDE_COINCIDES_WITH_BIG_DRAWDOWN",
+        "evidence_class": "PROSPECTIVE_PAPER_ZERO_BUY",
+        "source_paths": [
+          "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md"
+        ],
+        "observed_finding": "At 1696 initial V2R4 candidates, 436 complete 24h paths, 178 MFE>=5%, 300 MAE<=-5% and 98 paths with BOTH extremes; 861 EXTENDED setups and 195/270 mature EXTENDED MAE<=-5%. Late buy liberalization risks severe false buys.",
+        "strategic_disposition": "KEEP_PATH_AWARE_DOWNSIDE",
+        "v3_package_ids": [
+          "P1_V3_B_REAL_SECOND_LEG_ENTRY",
+          "P4_RISK_AND_EXECUTION_NOT_A_SHORTCUT"
+        ],
+        "matrix_lesson_ids": [
+          "EXTENDED_LATE_CHASE",
+          "CHRONOLOGY_MFE_MAE"
+        ],
+        "next_evidence_gate": "Event-time price path with known-at entry, stop-first vs high-first ordering, spread/slippage, invalidations."
+      },
+      {
+        "id": "V2R4_RETRO_PROXY_IS_NOT_REAL_MISSED_PROFIT",
+        "evidence_class": "PROSPECTIVE_PAPER_ZERO_BUY",
+        "source_paths": [
+          "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+          "research/work-analysis/2026-10-10-v2r4-original-72h-evidence.md"
+        ],
+        "observed_finding": "Only 32 optimistic proxies/24 pair-hours among 436 mature cases satisfy MFE>=5%, MAE>=-3%, close>1.2% and spread<=0.5%; proxy ignores entry time, stop sequence, Stage2, slippage and exit. Must never be counted as 32 lost profits.",
+        "strategic_disposition": "MEASUREMENT_ONLY_NO_ENTRY_CLAIM",
+        "v3_package_ids": [
+          "P1_V3_B_REAL_SECOND_LEG_ENTRY",
+          "P8_COMBINED_MATURE_V3"
+        ],
+        "matrix_lesson_ids": [
+          "CHRONOLOGY_MFE_MAE",
+          "FEES_AND_EXECUTION"
+        ],
+        "next_evidence_gate": "Decision-time entry-to-fill-to-stop/stage2-to-exit and actual risk/net return verified prospectively."
+      },
+      {
+        "id": "V2R4_MATCHED_GOOD_AND_BAD_SETUP_FAMILIES",
+        "evidence_class": "RETROSPECTIVE_OUTCOME_SELECTED_HYPOTHESIS",
+        "source_paths": [
+          "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+          "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json"
+        ],
+        "observed_finding": "Six outcome-selected favorable cases matched to six adverse controls by lane: CONTINUITY STRK/WLD and OP/GRT; EXTENDED BAT/ORCA and W/ALGO; IGNITION JUP/ADA; NONE DRV/SYN. STRK +47.37% MFE vs WLD -14.04% MAE illustrates discrimination question, not evidence that future labels were known at entry.",
+        "strategic_disposition": "TEST_POSITIVE_AND_ADVERSE_CONTROLS_ONLY",
+        "v3_package_ids": [
+          "P0_LINEAGE_AND_DATA_READINESS",
+          "P3_OTHER_ENTRY_SETUP_FAMILIES"
+        ],
+        "matrix_lesson_ids": [
+          "SECOND_LEG",
+          "OVERSTRICT_ENTRY_MODEL",
+          "CHRONOLOGY_MFE_MAE"
+        ],
+        "next_evidence_gate": "Use sealed future labels; real prospective first-time coin candles+ATR+vol to separate good and bad under same setup lane."
+      },
+      {
+        "id": "V2R4_EXTENDED_REENTRY_VERSUS_BLANKET_PERMISSION",
+        "evidence_class": "PROSPECTIVE_PAPER_ZERO_BUY",
+        "source_paths": [
+          "research/work-analysis/2026-10-10-v2r4-to-v3-economic-learning-handoff.md",
+          "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md"
+        ],
+        "observed_finding": "Some rejected EXTENDED candidates (BAT/W) later rallied while ORCA/ALGO sharply fell. Prior 7d/30d extension must not forever kill an independent fresh setup, but historic label itself cannot authorize an immediate market buy.",
+        "strategic_disposition": "TEST_SECOND_LEG_SEPARATELY",
+        "v3_package_ids": [
+          "P1_V3_B_REAL_SECOND_LEG_ENTRY"
+        ],
+        "matrix_lesson_ids": [
+          "EXTENDED_LATE_CHASE",
+          "BAD_NOW_NOT_DEAD",
+          "SECOND_LEG"
+        ],
+        "next_evidence_gate": "New observed contiguous closed 15m consolidation/reclaim with unchanged anti-chase and full net-risk evaluator."
+      },
+      {
+        "id": "V2R4_ORIGINAL_SETUP_TYPES_REQUIRE_DIFFERENT_CONTROL_CASES",
+        "evidence_class": "RETROSPECTIVE_OUTCOME_SELECTED_HYPOTHESIS",
+        "source_paths": [
+          "research/work-analysis/2026-10-10-v3-a-12-case-matched-retrospective-review.md",
+          "research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json"
+        ],
+        "observed_finding": "CONTINUITY, EXTENDED, IGNITION and unclassified NONE can each include later upside and large downside; early volume/momentum confirmation and a later confirmed second leg are different hypotheses. Do not hardwire a winner from six handpicked success cases.",
+        "strategic_disposition": "TEST_ONLY_IF_CORE_B_LEAVES_GAP",
+        "v3_package_ids": [
+          "P3_OTHER_ENTRY_SETUP_FAMILIES"
+        ],
+        "matrix_lesson_ids": [
+          "SOFT_FACTORS_COMPENSATE",
+          "BREAKOUT_RESISTANCE",
+          "SECOND_LEG"
+        ],
+        "next_evidence_gate": "Pre-register one lane at a time, compare natural false-breakouts/early impulse samples with adverse controls."
+      }
+    ],
+    "global_interpretation": "Every row references original observed paper evidence and EXISTING PR161/19-lesson authority. Evidence classes forbid misrepresenting tiny early samples, selected hindsight cases or MFE proxies as measured net trade edge. Technical failures and routine runtime work deliberately excluded; hard cost/stop safety remains inherited. Neither this crosswalk nor PR161/PR165 changes executable rules. A real future V3 strategy release needs separately validated prospective economic benefit.",
+    "requires_future_fach_review": true
   }
 }
