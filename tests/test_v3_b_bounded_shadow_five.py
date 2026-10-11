@@ -263,8 +263,10 @@ class ApprovedV3BShadowTests(unittest.TestCase):
                 "1":{"status":"STALE","reason":"LAST_CLOSED_BAR_TOO_OLD"},
                 "5":{"status":"INCOMPLETE","reason":"INSUFFICIENT_CONTIGUOUS_BARS"},
                 "15":{"status":"MISSING","reason":"NO_CLOSED_BARS"}}}
-        hint={"status":"UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE"}
+        hint={"status":"UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE",
+              "validation_stage":"CORE_PIT_SOURCE"}
         data=mod.compact_gate_evidence(hint,coin,[])
+        self.assertEqual(data["validation_stage"],"CORE_PIT_SOURCE")
         self.assertEqual(data["second_leg_status"],"UNKNOWN_REQUIRED_PIT_OR_STRUCTURE_EVIDENCE")
         self.assertIsNone(data["checks"]["closed_reclaim_above_prior_base_high"])
         self.assertEqual(data["required_coin_frames"]["15"]["reason"],"NO_CLOSED_BARS")
