@@ -150,6 +150,33 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         self.assertIn(x["primary_source"],backlog)
         self.assertIn("CENSORED_NOT_0_LOSS",backlog)
 
+    def test_twelve_historical_cases_closed_as_learning_not_fake_trade_release(self):
+        j=data("project-current-state.json")
+        h=j["pending_strategy_transition"]["current_handoff_action"]
+        d=h["historical_12_case_learning_closure_20261011"]
+        self.assertEqual(d["source_decisions"],12)
+        self.assertEqual(d["independent_original_handoffs_pass"],12)
+        self.assertEqual(d["historic_coin_pit_at_first_model_time_proven"],0)
+        self.assertEqual(d["favorable_outcome_selected"],6)
+        self.assertEqual(d["adverse_outcome_selected"],6)
+        self.assertFalse(d["economic_edge_proven"])
+        self.assertFalse(d["successor_v3_paper_release_allowed"])
+        self.assertFalse(d["model_or_shadow_started"])
+        self.assertFalse(d["anti_chase_or_fee_rule_relaxed"])
+        self.assertEqual(d["model_calls_for_historical_replay"],0)
+        self.assertIn("WAIT_TRIGGER",d["v3_p4_wait_gate_fix"])
+        self.assertFalse(h["new_model_shadow_or_paper_trial_authorized"])
+        self.assertTrue(h["v2r4_remains_only_active_paper"])
+        g=data("research/strategy-learning-causal-gate-v1.json")
+        x=g["v3_opportunity_first_research"]["historical_twelve_case_disposition_20261011"]
+        self.assertEqual(x["known_originals"],12)
+        self.assertEqual(x["historical_original_full_closed_coin_pit_proven"],0)
+        self.assertFalse(x["shadow_or_paper_executed_by_this_work"])
+        self.assertFalse(x["active_v2r4_modified"])
+        backlog=(ROOT/"PROJECT_BACKLOG.md").read_text("utf-8")
+        self.assertIn("12er-Lernauftrag ABGESCHLOSSEN",backlog)
+        self.assertIn("UNKNOWN_INVALID_WAIT_CONTRACT",backlog)
+
     def test_optional_source_management_never_promoted_as_buy_gate(self):
         r=validate_optional_context(ROOT)
         self.assertEqual(r["status"],
