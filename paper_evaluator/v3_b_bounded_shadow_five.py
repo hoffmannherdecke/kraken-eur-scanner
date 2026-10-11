@@ -70,7 +70,7 @@ def verified_authorization(root: Path, trial_id: str = "FIRST") -> dict:
     return auth
 
 
-def verify_first_trial_closed(trading_root: Path) -> None:
+def verify_first_trial_closed(trading_root: Path) -> set[str]:
     original_report = trading_root / "Research" / FIRST_REPORT_NAME
     try:
         first = json.loads(original_report.read_text("utf-8"))
@@ -87,6 +87,15 @@ def verify_first_trial_closed(trading_root: Path) -> None:
             or first.get("active_v2r4_changed") is not False
             or first.get("v3_paper_writer_started") is not False):
         raise ValueError("FIRST_V3B_SHADOW5_REPORT_NOT_CLOSED_OR_UNEXPECTED")
+    try:
+        old_ids = [x["source_candidate_id"] for x in first["cases"]]
+    except (KeyError, TypeError):
+        raise ValueError("FIRST_V3B_SHADOW5_MISSING_SOURCE_IDS")
+    if (len(old_ids) != MAX_CASES or
+            any(not isinstance(cid, str) or not cid for cid in old_ids) or
+            len(set(old_ids)) != MAX_CASES):
+        raise ValueError("FIRST_V3B_SHADOW5_DUPLICATE_OR_UNKNOWN_SOURCE_IDS")
+    return set(old_ids)
 
 
 def journal_start(report: Path, series: str, now: datetime, wait_minutes: int, *, trial_id: str = "FIRST") -> dict:
@@ -269,10 +278,11 @@ def main_run(trading_root: Path, code_root: Path, report: Path, wait_minutes: in
     if not type(wait_minutes) is int or not 0 <= wait_minutes <= MAX_WAIT_MINUTES:
         raise ValueError("UNAPPROVED_WAIT_WINDOW")
     verified_authorization(code_root, trial_id)
+    used_first_origins: set[str] = set()
     if trial_id == "SECOND":
         if report.name != SECOND_REPORT_NAME:
             raise ValueError("SECOND_TRIAL_WRONG_REPORT_NAME")
-        verify_first_trial_closed(trading_root)
+        used_first_origins = verify_first_trial_closed(trading_root)
     if report.exists() and not diagnose_only:
         raise ValueError("EXISTING_REPORT_NO_RETRY")
     runtime, control = discover_active_paper_runtime(trading_root, EXPECTED_SERIES)
@@ -281,7 +291,7 @@ def main_run(trading_root: Path, code_root: Path, report: Path, wait_minutes: in
     initial = now_fn()
     if diagnose_only:
         items = select_original_extended(runtime/"paper_decisions", runtime/"handoff_queue",
-                                         control,initial,set())
+                                         control,initial,used_first_origins)
         return {"kind":"V3_B_SHADOW5_PREFLIGHT_V1","status":"READY_READ_ONLY_NO_MODEL_CALL",
                 "original_extended_candidate_count":len(items),
                 "note":"0 eligible is not an error; 1-3h live consolidation still required",
@@ -299,7 +309,7 @@ def main_run(trading_root: Path, code_root: Path, report: Path, wait_minutes: in
             freeze_runtime_provenance(runtime,code_root,control)
             observed_now = now_fn()
             cohort = select_original_extended(runtime/"paper_decisions",
-                runtime/"handoff_queue",control,observed_now,set())
+                runtime/"handoff_queue",control,observed_now,used_first_origins)
             selected = select_due_second_leg(cohort,journal["cases"],observed_now)
             if selected is None:
                 remaining = (deadline-now_fn()).total_seconds()
