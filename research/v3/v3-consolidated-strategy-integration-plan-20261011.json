@@ -852,5 +852,162 @@
     ],
     "next_evidence_gate": "One bounded real prospective full-model A/B + cost and 6h/24h route; without new model/shadow budget no test execution. Existing Monday 2h source-steward to furnish actual Source Review E2E and registered original evidence; do not infer success from running schedule.",
     "operational_single_writer": "V2R4 only active PAPER confirmed Supabase read-only 2026-10-11; no live V3."
+  },
+  "prior_cross_chat_commitments": {
+    "kind": "V3_CROSS_CHAT_COMMITMENT_INHERITANCE_V1",
+    "as_of_date": "2026-10-11",
+    "scope": "Historical cross-chat commitments Sep–Oct, especially 09–10 Oct MINI-PC and V3; complementary to 19 strategy lessons, 17 paper learnings, P0–P9/H1–H11. Not a claim of complete automated retrieval of every unindexed conversation.",
+    "status": "SOURCE_ROUTED_AND_EVIDENCE_GATED_NOT_ALL_LIVE",
+    "required_minipc_dependency": "docs/minipc-analytics-rollout-v1.md",
+    "routing": "research/context-before-action-routing-v1.json",
+    "owner": "PROJECT_BACKLOG.md plus existing research/project-followthrough-routing-v1.json",
+    "no_new_task_queue": true,
+    "no_new_scheduler": true,
+    "no_new_runner": true,
+    "no_model_calls": true,
+    "no_paper_activation": true,
+    "no_real_money": true,
+    "commitments": [
+      {
+        "id": "MINIPC_ENTRY_PIT_OHLC",
+        "package_id": "P0_LINEAGE_AND_DATA_READINESS",
+        "source_path": "docs/minipc-analytics-rollout-v1.md",
+        "status": "ONE_REAL_ZRO_INPUT_MODEL_HANDOFF_PASS_BUT_ZERO_VALID_BUY",
+        "next_gate": "Prospective same-clock full V3 model/fee/stop/stage2 PIT E2E; no repeat historic ZRO smoke"
+      },
+      {
+        "id": "MINIPC_MISSED_MOVE_FUNNEL",
+        "package_id": "P2_WAIT_EXPIRED_FRESH_RECHECK",
+        "source_path": "research/v3/minipc-analytics-readonly-reuse-preflight-v1.md",
+        "status": "EXISTING_READONLY_FUNNEL_AND_24H_ANALYTICS",
+        "next_gate": "Reuse dedup WAIT expiry vs real trigger model rechecks; only independent new closed PIT may re-review"
+      },
+      {
+        "id": "MINIPC_EXECUTION_COST_RESEARCH",
+        "package_id": "P4_RISK_AND_EXECUTION_NOT_A_SHORTCUT",
+        "source_path": "docs/minipc-analytics-rollout-v1.md",
+        "status": "RESEARCH_OWNER_H9_PENDING_REAL_FILLS",
+        "next_gate": "Real plausible fresh entry first; then same ask/spread/slippage/market depth/50+50 cost path; no extra orderbook worker"
+      },
+      {
+        "id": "MINIPC_BOUNDED_LOCAL_REPLAY",
+        "package_id": "P8_COMBINED_MATURE_V3",
+        "source_path": "docs/minipc-analytics-rollout-v1.md",
+        "status": "EXISTING_REPLAY_REUSE_DEFERRED_WITH_NO_HISTORIC_COIN_PIT",
+        "next_gate": "No 12-case lookahead, tiny label-blind valid EUR samples if at-time features exist, otherwise prospective"
+      },
+      {
+        "id": "MINIPC_OUTAGE_DELAY_DIAGNOSTICS",
+        "package_id": "P9_AUTONOMOUS_FOLLOWTHROUGH_WITHOUT_BLOAT",
+        "source_path": "docs/project-wide-outage-recovery-v1.md",
+        "status": "EXISTING_SUPERVISOR_WATCHDOG_RECOVERY_INHERITED",
+        "next_gate": "On real outage or next successor cutover verify idempotent queues, stable ACK, no stale trade, two health/output probes"
+      },
+      {
+        "id": "MINIPC_CAPACITY_GITHUB_OFFLOAD",
+        "package_id": "P9_AUTONOMOUS_FOLLOWTHROUGH_WITHOUT_BLOAT",
+        "source_path": "docs/minipc-support-block-plan-v1.md",
+        "status": "BLOCK3_CLOSED_STAY_CLOUD_HOSTED_RUNNER_STOPPED_DISABLED",
+        "next_gate": "Only reopened at documented private GitHub quota/cost/outage gate; retain true independent cloud fallback"
+      },
+      {
+        "id": "MINIPC_RAM_UPGRADE_GATE",
+        "package_id": "P9_AUTONOMOUS_FOLLOWTHROUGH_WITHOUT_BLOAT",
+        "source_path": "docs/minipc-support-block-plan-v1.md",
+        "status": "16GB_BASELINE_PASS_32GB_NOT_VERIFIED_NOT_PREREQUISITE",
+        "next_gate": "Measure actual peaks and capacity before more load; RAM purchase/install neither proof nor gate substitute"
+      },
+      {
+        "id": "MINIPC_OPTIONAL_AI_DIAGNOSTICS",
+        "package_id": "P9_AUTONOMOUS_FOLLOWTHROUGH_WITHOUT_BLOAT",
+        "source_path": "docs/minipc-support-block-plan-v1.md",
+        "status": "DEFERRED_SEPARATE_USER_GATE",
+        "next_gate": "Optional local log advisor only after stability/resource evidence; no restarts/secrets/write/trading permissions"
+      },
+      {
+        "id": "SEPARATE_AUTONOMOUS_AI_TRADING_PROJECT",
+        "package_id": "P9_AUTONOMOUS_FOLLOWTHROUGH_WITHOUT_BLOAT",
+        "source_path": "docs/strategy-version-map.md",
+        "status": "CONCEPTUAL_SEPARATE_ISOLATED_PROJECT_ONLY",
+        "next_gate": "Read-only interface to main project later, own data/dev/trials; do not mix into V3 or grant strategy rights"
+      },
+      {
+        "id": "FULL_DYNAMIC_KRAKEN_SPOT_EUR",
+        "package_id": "P0_LINEAGE_AND_DATA_READINESS",
+        "source_path": "research/v3-migration-ledger.json",
+        "status": "INHERIT_EXISTING_PUBLIC_ASSETPAIRS_TRUTH",
+        "next_gate": "Use current online trading pairs and minimums; never fixed static tradability whitelist or USD proxy as execution"
+      },
+      {
+        "id": "V2_HISTORY_AND_PAPER_LEARNING",
+        "package_id": "P0_LINEAGE_AND_DATA_READINESS",
+        "source_path": "research/work-analysis/2026-10-11-cross-version-no-buy-gate-flexibility.md",
+        "status": "V2_V2R3_V2R4_LEARNING_CROSSWALK_INHERITED",
+        "next_gate": "Actual one-change prospective valid economic evidence, not historical MFE as profit"
+      },
+      {
+        "id": "ENTRY_P1_P2_P3_EXPERIMENT_ONE_MODEL",
+        "package_id": "P3_OTHER_ENTRY_SETUP_FAMILIES",
+        "source_path": "research/v3/v3-paper-experimental-ab-contract-20261011.json",
+        "status": "OFFLINE_CODE_ONLY_SHARED_MODEL_CONTRACT",
+        "next_gate": "V3 P1 Second Leg, P2 post-expiry, P3 continuity and 1.0/1.2 experimental must produce real independently validated reviews, no double model/writer"
+      },
+      {
+        "id": "MARKET_PHASES_AND_SENTIMENT",
+        "package_id": "P6_PROSPECTIVE_REGIME_LEARNING",
+        "source_path": "research/v3/market-phase-reversal-observation-v1.md",
+        "status": "KR_EUR_KNOWN_AT_REGIME_EPISODES_CAPTURED_NO_ECONOMIC_EDGE",
+        "next_gate": "Passively join future same-clock mature outcomes; choose KEEP/DEFER/REJECT/ACTIVATE only after one-change value"
+      },
+      {
+        "id": "SOURCE_MANAGER_AUTONOMOUS_ACTIVE",
+        "package_id": "P5_CONTEXT_AND_ACTIVE_SOURCE_MANAGEMENT",
+        "source_path": "docs/market-source-autonomy-v1.md",
+        "status": "EXISTING_2H_RADAR_UNATTENDED_FULL_STEWARD_E2E_UNVERIFIED",
+        "next_gate": "Existing scheduled weekly source discovery and evidence-based KEEP/QUARANTINE/REPLACE research only; prove full original PR/CI/ACK"
+      },
+      {
+        "id": "H2_H5_H8_H10_H11_OPTIONAL_CONTEXT",
+        "package_id": "P7_ONE_CHANGE_H_COMPONENTS",
+        "source_path": "docs/v3-context-fusion-research-v1.md",
+        "status": "PASSIVE_KNOWN_AT_PRECHECK_OR_CAPTURE_NOT_BUY_AUTHORITY",
+        "next_gate": "H10 40+10 independent outcome join, H11 relevant event mapping, H2 derivatives H5 official macro H8 onchain only if incremental economic effect"
+      },
+      {
+        "id": "H1_H3_H6_SHADOW_DISPOSITION",
+        "package_id": "P7_ONE_CHANGE_H_COMPONENTS",
+        "source_path": "research/v3-migration-ledger.json",
+        "status": "H1_STANDALONE_REJECTED_H3_ARCHIVED_H6_NOT_ENABLED",
+        "next_gate": "Never reactivate H3/H6 automatically; preserve evidence and next separately authorised one-change"
+      },
+      {
+        "id": "H4_H7_H9_EXECUTION_META",
+        "package_id": "P7_ONE_CHANGE_H_COMPONENTS",
+        "source_path": "research/v3-migration-ledger.json",
+        "status": "DEFERRED_TO_MATURE_GOOD_AND_BAD_BUY_FILLS",
+        "next_gate": "Stop/trailing TTL/fill maker taker/TAKE-NO-TAKE only after true matured pathwise costs and labels; not duplicate P4"
+      },
+      {
+        "id": "JANSEN_HISTORICAL_WALKFORWARD_TRIAL_LEDGER",
+        "package_id": "P8_COMBINED_MATURE_V3",
+        "source_path": "docs/v3-research-framework.md",
+        "status": "METHODOLOGY_CONTRACT_INHERITED_NOT_ALPHA",
+        "next_gate": "Chronological walkforward, purging/embargo, trial count/search accountability, holdout and regime diversity when samples permit"
+      },
+      {
+        "id": "RESILIENCE_AND_FUTURE_REAL_MONEY_INHERITANCE",
+        "package_id": "P9_AUTONOMOUS_FOLLOWTHROUGH_WITHOUT_BLOAT",
+        "source_path": "docs/project-wide-outage-recovery-v1.md",
+        "status": "TECHNICAL_FAILURE_IS_NOT_MARKET_REJECTION_PAPER_AND_REAL_RELEASE_SEPARATE",
+        "next_gate": "Fail closed/no phantom fills, restore only with evidence, later separately install tested safety in real-money flow"
+      },
+      {
+        "id": "CONTINUOUS_PROJECT_AUTONOMY_AND_CONTEXT",
+        "package_id": "P9_AUTONOMOUS_FOLLOWTHROUGH_WITHOUT_BLOAT",
+        "source_path": "research/project-followthrough-routing-v1.json",
+        "status": "ONE_EXISTING_1015_WORK_AND_GITHUB_MILESTONE_OWNER",
+        "next_gate": "No new background tasks; material past cross-chat decisions present in canonical source, due gate Owner+CI/ACK vs chat prompter"
+      }
+    ]
   }
 }
