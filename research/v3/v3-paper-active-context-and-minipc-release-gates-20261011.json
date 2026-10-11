@@ -122,5 +122,27 @@
     "github_merged_is_not_physical_release": true
   },
   "no_new_schedules": true,
-  "no_real_money": true
+  "no_real_money": true,
+  "cloud_deployment_20261011": {
+    "status": "PROD_SCHEMA_RLS_AND_DEDICATED_EDGE_V1_VERIFIED_NO_TOKEN_NO_WRITES",
+    "schema": "public.v3_paper_event_receipts",
+    "schema_row_count": 0,
+    "service_role_can_select": true,
+    "service_role_can_insert": true,
+    "service_role_can_update": false,
+    "service_role_can_delete": false,
+    "service_role_can_truncate": false,
+    "anon_authenticated_grants": [],
+    "edge_slug": "v3-paper-evidence-relay",
+    "edge_version": 1,
+    "edge_deployment_status": "ACTIVE",
+    "verify_jwt": false,
+    "custom_sha256_token_auth": true,
+    "credential_registered": false,
+    "shared_v2r4_token_reuse": false,
+    "real_host_cloud_ack": false,
+    "v2r4_active_only": true,
+    "real_money_actions": false,
+    "next_manual_host_step": "tools/minipc-create-v3-paper-relay-token.ps1 -Execute"
+  }
 }

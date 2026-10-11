@@ -236,6 +236,34 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         self.assertIn("V3 Experimental Paper",
                       (ROOT/"PROJECT_BACKLOG.md").read_text("utf-8"))
 
+    def test_v3_cloud_deployed_is_not_fake_model_or_paper_release(self):
+        x=data("research/v3/v3-paper-active-context-and-minipc-release-gates-20261011.json")
+        d=x["cloud_deployment_20261011"]
+        self.assertTrue(d["service_role_can_select"])
+        self.assertTrue(d["service_role_can_insert"])
+        self.assertFalse(d["service_role_can_update"])
+        self.assertFalse(d["service_role_can_delete"])
+        self.assertFalse(d["service_role_can_truncate"])
+        self.assertFalse(d["credential_registered"])
+        self.assertFalse(d["real_host_cloud_ack"])
+        self.assertFalse(d["shared_v2r4_token_reuse"])
+        self.assertTrue(d["v2r4_active_only"])
+        self.assertFalse(d["real_money_actions"])
+        j=data("project-current-state.json")
+        h=j["pending_strategy_transition"]["current_handoff_action"]
+        self.assertFalse(h["v3_paper_active"])
+        self.assertTrue(h["v2r4_remains_only_active_paper"])
+        state=h["v3_paper_runtime_stage_20261011"]
+        self.assertTrue(state["cloud_schema_applied_verified"])
+        self.assertTrue(state["edge_deployed_verified"])
+        self.assertFalse(state["cloud_relay_secret_provisioned"])
+        self.assertFalse(state["v3_paper_writer_single_process_continuous_verified"])
+        sql=(ROOT/"supabase/v3-paper-receipt-strict-service-privileges-20261011.sql").read_text("utf-8")
+        self.assertIn("REVOKE UPDATE, DELETE, TRUNCATE",sql)
+        wrapper=(ROOT/"tools/minipc-create-v3-paper-relay-token.ps1").read_text("utf-8")
+        self.assertIn("sha256_for_cloud_registration",wrapper)
+        self.assertIn("secret_itself_not_displayed=$true",wrapper)
+
     def test_optional_source_management_never_promoted_as_buy_gate(self):
         r=validate_optional_context(ROOT)
         self.assertEqual(r["status"],
