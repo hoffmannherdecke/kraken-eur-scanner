@@ -21,6 +21,8 @@ on:
       - "research/v3/v3-paper-experimental-ab-contract-20261011.json"
       - "research/v3/v3-p3-ab-five-approval-20261011.json"
       - "paper_evaluator/v3_p3_ab_five_bounded_research.py"
+      - "paper_evaluator/v3_p3_future_diagnostics_offline_v1.py"
+      - "tests/test_v3_p3_future_diagnostics_offline_v1.py"
       - "tests/test_v3_p3_ab_five_bounded_research.py"
       - "tools/run-minipc-v3-p3-ab-five.ps1"
       - "tests/test_v3_integrated_readiness_handoff.py"
@@ -110,6 +112,8 @@ on:
       - "research/v3/v3-paper-experimental-ab-contract-20261011.json"
       - "research/v3/v3-p3-ab-five-approval-20261011.json"
       - "paper_evaluator/v3_p3_ab_five_bounded_research.py"
+      - "paper_evaluator/v3_p3_future_diagnostics_offline_v1.py"
+      - "tests/test_v3_p3_future_diagnostics_offline_v1.py"
       - "tests/test_v3_p3_ab_five_bounded_research.py"
       - "tools/run-minipc-v3-p3-ab-five.ps1"
       - "tests/test_v3_integrated_readiness_handoff.py"
@@ -227,6 +231,10 @@ jobs:
           python -m py_compile paper_evaluator/v3_p3_ab_five_bounded_research.py
           python -m unittest discover -s tests -p 'test_v3_p3_ab_five_bounded_research.py' -v
           pwsh -NoProfile -Command '$tokens=$null; $errs=$null; [System.Management.Automation.Language.Parser]::ParseFile("tools/run-minipc-v3-p3-ab-five.ps1",[ref]$tokens,[ref]$errs) | Out-Null; if ($errs.Count -gt 0) { $errs | Out-String | Write-Error; exit 1 }; Write-Output "V3_P3_AB_POWERSHELL_PARSE_PASS"'
+      - name: Validate inactive V3 P3 future observability without model or runtime execution
+        run: |
+          python -m py_compile paper_evaluator/v3_p3_future_diagnostics_offline_v1.py
+          python -m unittest discover -s tests -p 'test_v3_p3_future_diagnostics_offline_v1.py' -v
       - name: Guard V3 integrated next actions, source research status and shared model eligibility lineage
         run: python -m unittest discover -s tests -p 'test_v3_integrated_readiness_handoff.py' -v
       - name: Validate inactive P3 fresh CONTINUITY and shared fee/stop model gates

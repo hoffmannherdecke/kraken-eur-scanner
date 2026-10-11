@@ -467,7 +467,7 @@
         "research/work-analysis/2026-10-11-v3-p3-ab-five-physical-result-screen-ack.md"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_NEXT_VERSION_P0_P3_P4_P8_PREPARE_OFFLINE_TELEMETRY_FOR_30_NO_REVIEW_3_INVALID_INPUT_AND_SEPARATE_MODEL_RESPONSE_P4_WAIT_TTL_WATCH_CAUSAL_A_B_EVIDENCE_NO_NEW_MODEL_SHADOW_OR_PAPER_APPROVAL; V2R4_ONLY_ACTIVE_PAPER",
+      "next_concrete_action": "PROSPECTIVE_NEXT_VERSION_P0_P3_P4_P8_OFFLINE_DIAGNOSTIC_CONTRACT_CI_REVIEW_AND_FUTURE_CAUSAL_AB_TEST_DESIGN; PHYSICAL_WIRING_MODEL_SHADOW_PAPER_RUN_NOT_AUTHORIZED; V2R4_ONLY_ACTIVE",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -538,7 +538,25 @@
         "true_model_response_at_and_wait_ttl_watch_not_persisted": true,
         "real_cost_validated_buy_proven": false,
         "incremental_ab_delta_tested": false,
-        "physical_test_permission_exhausted": true
+        "physical_test_permission_exhausted": true,
+        "future_diagnostic_telemetry": {
+          "status": "INACTIVE_OFFLINE_CONTRACT_CI_PASS_NOT_PHYSICALLY_WIRED",
+          "module": "paper_evaluator/v3_p3_future_diagnostics_offline_v1.py",
+          "tests": "tests/test_v3_p3_future_diagnostics_offline_v1.py",
+          "owner": "V3 P0/P3/P4/P8 existing release/economic gate",
+          "diagnostics": [
+            "eight_boolean_P3_checks_and_both_review_statuses",
+            "separate_public_kraken_vs_assetpairs_vs_coin_PIT_phase_error_classes",
+            "eligibility_request_response_P4_PIT_timestamps",
+            "validated_WAIT_TTL_and_allowed_deterministic_watch_conditions"
+          ],
+          "no_reconstruction_of_20261011_30_no_review_or_3_invalid": true,
+          "physically_proven": false,
+          "wired_to_any_runtime": false,
+          "new_model_or_shadow_authorized": false,
+          "new_orders_or_paper_writers": false,
+          "ci_evidence": "PR_189_THREE_EXISTING_PROJECT_CHECKS_PASSED_OFFLINE_BEFORE_STATUS_REFRESH"
+        }
       }
     }
   }
