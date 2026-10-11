@@ -354,10 +354,10 @@
     }
   ],
   "immediate_action": {
-    "next": "Translate PR #159 pure review eligibility into one same-clock bounded B full-evaluator offline integration contract with model-call budget 0 until separately approved; identify and safely categorize required 15m-base historical data gap. Freeze exactly one subsequent new candidate after a mock/no-secret smoke and risk-plan negative controls.",
-    "avoid": "No additional broad no-BUY report; do not activate V3, H3, H6, or spend model API quota without distinct approval.",
-    "handoff_owner": "PROJECT_BACKLOG.md P1; research/v3-migration-ledger.json#late_chase_protection; docs/v3-research-framework.md",
-    "autonomy": "Prepare code/tests/docs and existing PR/CI evidence autonomously within safe scope, ask only for necessary physical/credential/economic release gates."
+    "next": "P0 verify a single authentic closed 1/5/15m Kraken-EUR coin+ATR+bid/ask+pair metadata snapshot reaches actual full V3-model consumer at the same decision clock, then prospective bounded same-snapshot/one-change Standard P2 and P3/Experimental decision and economic followup after explicit separate model/shadow approval. Existing P1 Second Leg 2x5 samples are completed 0 full reviews; no repeated old test. Passive P5/market-regime source work continues within existing 2h task; first unattended source-management discovery-to-reviewed-source-decision cycle is still not proven.",
+    "avoid": "Do not repeat first/second V3-B 5-case tests, 72h V2R4 review, already merged P2/P3/Experimental code; no broad audit loops, blanket BUY loosening, false profit claims, second paper writer, H3/H6 promotion, new schedules or unauthorized model fees.",
+    "handoff_owner": "PROJECT_BACKLOG.md P0-P9; project-current-state.json#pending_strategy_transition.current_handoff_action; existing 10:15 Work and existing 2h source steward",
+    "autonomy": "Within permitted safe inactivated docs/tests and bounded GitHub PR keep owner/status/evidence aligned. Before actual model/shadow or physical MINI-PC cutover require a single concrete user approval with known upper budget and authorisation."
   },
   "state_assertion": "This is a durable decision routing plan and status classification, not a measured full V3 trading performance or proof of current runtime health.",
   "optional_context_fusion": {
@@ -829,5 +829,28 @@
       "HYP-06",
       "REVALIDATION_DELAY"
     ]
+  },
+  "reconciliation_20261011": {
+    "kind": "V3_INTEGRATED_TECHNICAL_VS_ECONOMIC_READINESS_V1",
+    "status": "INACTIVE_CI_PREP_COMPLETE_PROSPECTIVE_BUY_AND_SOURCE_AUTONOMY_UNPROVEN",
+    "merges": [
+      "#165 optional context H2/H5/H8/H10/H11/P5/P6 passive",
+      "#166 17 historic paper phase crosswalk",
+      "#176 #177 second physical 5/0/0 no-model completed and valid-zero-volume defect fixed",
+      "#179 P2 new WAIT after expiry",
+      "#181 P3 early CONTINUITY",
+      "#182 P3 experimental volume review 1.0 vs Standard 1.2"
+    ],
+    "context_real_evidence": "Existing 2h source/market regime task has emitted real MARKET_REGIME_EPISODE_V1 Kraken EUR known-at records in GitHub research issue #7, latest inspected 2026-10-11T10:38:59Z. These are passive research regime episodes, not an adaptive V3 buy veto, not proven alpha.",
+    "source_steward_actual_e2e": "UNATTENDED_SOURCE_DISCOVER_SCORE_PR_CI_RESEARCH_REPLACE_ACK_UNVERIFIED",
+    "partial_markets": [
+      "Global CoinGecko/CMC research context only",
+      "H10 Hyperliquid passive real capture, valid Kraken outcome join pending",
+      "H11 Polymarket two captures but no relevant-event PIT outcome association",
+      "H2 derivatives/H5 macro/H8 onchain limited prechecks",
+      "H1 standalone rejected; H3 archive; H6 not enabled"
+    ],
+    "next_evidence_gate": "One bounded real prospective full-model A/B + cost and 6h/24h route; without new model/shadow budget no test execution. Existing Monday 2h source-steward to furnish actual Source Review E2E and registered original evidence; do not infer success from running schedule.",
+    "operational_single_writer": "V2R4 only active PAPER confirmed Supabase read-only 2026-10-11; no live V3."
   }
 }

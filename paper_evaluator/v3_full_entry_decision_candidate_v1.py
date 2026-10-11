@@ -23,6 +23,26 @@ CONTINUITY_ELIGIBLE_STATUS = "CONTINUITY_FRESH_STRUCTURE_SUPPORTS_NEW_FULL_REVIE
 CONTINUITY_ELIGIBLE_KIND = "V3_P3_INACTIVE_CONTINUITY_FRESH_REVIEW_ELIGIBILITY_V1"
 EXPERIMENTAL_ELIGIBLE_STATUS = "EXPERIMENTAL_CONTINUITY_VOLUME_SUPPORTS_NEW_FULL_REVIEW_ONLY"
 EXPERIMENTAL_ELIGIBLE_KIND = "V3_EXP_INACTIVE_CONTINUITY_ONE_CHANGE_VOLUME_REVIEW_V1"
+P2_STANDARD_CHECKS = frozenset({
+    "closed_post_expiry_reclaim",
+    "closed_reference_base_not_excessive",
+    "not_late_chasing_fresh_reclaim",
+    "closed_5m_price_confirmation",
+    "unchanged_v2r4_closed_5m_volume_confirmation",
+    "fresh_eur_spread_guard",
+    "current_ask_not_chasing_reclaim",
+    "valid_structural_stop_reference_only",
+})
+P3_STANDARD_CHECKS = frozenset({
+    "closed_new_15m_continuation_above_base",
+    "prior_15m_base_not_excessive",
+    "no_new_excessive_extension",
+    "closed_5m_price_continuation",
+    "unchanged_closed_5m_volume_floor",
+    "fresh_eur_spread_guard",
+    "fresh_ask_not_chase",
+    "only_structural_reference_below_ask",
+})
 EXPERIMENTAL_STANDARD_CHECKS = frozenset({
     "closed_new_15m_continuation_above_base",
     "prior_15m_base_not_excessive",
@@ -151,6 +171,16 @@ def validate_full_entry_decision(
                        for k, v in checks.items()
                        if k != "unchanged_closed_5m_volume_floor")):
             return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
+    # The preconditions of an independent P2/P3 review are provenance-bound.
+    # A claim of eligibility without the original eight positive market
+    # checks must not validate even a synthetically otherwise plausible BUY.
+    if review_status in {WAIT_FRESH_ELIGIBLE_STATUS, CONTINUITY_ELIGIBLE_STATUS}:
+        expected = (P2_STANDARD_CHECKS if review_status == WAIT_FRESH_ELIGIBLE_STATUS
+                    else P3_STANDARD_CHECKS)
+        checks = review_eligibility.get("checks")
+        if (not isinstance(checks, dict) or set(checks) != expected
+                or any(value is not True for value in checks.values())):
+            return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
     if full_assessment is None:
         return _result("UNKNOWN_FULL_ASSESSMENT_NOT_PRODUCED", **common)
 
@@ -238,6 +268,13 @@ def validate_full_entry_decision(
         lane = full_assessment.get("setup_lane")
         if decision not in ALLOWED_DECISIONS or lane not in ALLOWED_SETUP_LANES:
             raise ValueError("invalid full assessment decision")
+        # Unlike the older P1 Second-Leg re-review, both early P3
+        # CONTINUITY experiments have ONE prescribed setup type. A full
+        # evaluator's REVERSAL/EXTENDED/IGNITION classification cannot be
+        # smuggled into that different, single-change review family.
+        if review_status in {CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS}:
+            if lane != "CONTINUITY":
+                raise ValueError("P3 full-model setup lane differs from proven source eligibility")
         if not isinstance(full_assessment.get("reason_codes"), list):
             raise ValueError("reason codes required")
     except (KeyError, TypeError, ValueError, OverflowError):

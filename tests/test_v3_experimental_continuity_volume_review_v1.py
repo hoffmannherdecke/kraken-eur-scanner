@@ -147,6 +147,22 @@ class V3ExperimentalOneChangeTests(unittest.TestCase):
                                            slippage_pct_each_side=.08)
             self.assertNotEqual(r["decision"],"BUY_SCOUT")
 
+    def test_experimental_full_assessment_cannot_switch_setup_family(self):
+        _,hint,_=compare(1.1)
+        payload=list(full_fixture())
+        payload[0]=hint
+        payload[1]["candidate_id"]=hint["source_candidate_id"]
+        payload[5]["candidate_id"]=hint["source_candidate_id"]
+        payload[5]["decision_at_utc"]=dt(13)
+        payload[2]["frames"]["5"]["volume_ratio_prior_5"]=1.1
+        for lane in ("IGNITION","REVERSAL","EXTENDED","NONE"):
+            case=copy.deepcopy(payload)
+            case[5]["setup_lane"]=lane
+            r=validate_full_entry_decision(*case,decision_at_utc=dt(13),
+                                           slippage_pct_each_side=.08)
+            self.assertNotEqual(r["decision"],"BUY_SCOUT")
+            self.assertFalse(r["orders"])
+
     def test_no_active_v2r4_module_imports_experimental_preview(self):
         repo=Path(__file__).resolve().parents[1]
         for path in ("paper_evaluator/evaluate.py",

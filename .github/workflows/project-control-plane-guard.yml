@@ -19,6 +19,7 @@ on:
       - "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"
       - "research/v3/v3-buy-gate-flexibility-prereg-20261011.json"
       - "research/v3/v3-paper-experimental-ab-contract-20261011.json"
+      - "tests/test_v3_integrated_readiness_handoff.py"
       - "paper_evaluator/v3_experimental_continuity_volume_review_v1.py"
       - "tests/test_v3_experimental_continuity_volume_review_v1.py"
       - "tests/test_v3_paper_experimental_ab_contract.py"
@@ -103,6 +104,7 @@ on:
       - "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json"
       - "research/v3/v3-buy-gate-flexibility-prereg-20261011.json"
       - "research/v3/v3-paper-experimental-ab-contract-20261011.json"
+      - "tests/test_v3_integrated_readiness_handoff.py"
       - "paper_evaluator/v3_experimental_continuity_volume_review_v1.py"
       - "tests/test_v3_experimental_continuity_volume_review_v1.py"
       - "tests/test_v3_paper_experimental_ab_contract.py"
@@ -212,6 +214,8 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_v3_experimental_continuity_volume_review_v1.py' -v
           python -m unittest discover -s tests -p 'test_v3_paper_experimental_ab_contract.py' -v
+      - name: Guard V3 integrated next actions, source research status and shared model eligibility lineage
+        run: python -m unittest discover -s tests -p 'test_v3_integrated_readiness_handoff.py' -v
       - name: Validate inactive P3 fresh CONTINUITY and shared fee/stop model gates
         run: python -m unittest discover -s tests -p 'test_v3_continuity_fresh_review_candidate_v1.py' -v
       - name: Validate inactive P2 post-WAIT fresh-review and common V3 economic safety
