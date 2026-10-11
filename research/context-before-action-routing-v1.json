@@ -45,6 +45,10 @@
         "role": "RECONCILED_PRIOR_USER_AGREEMENTS_AND_ORDER"
       },
       {
+        "path": "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
+        "role": "ORIGINAL_19_NO_BUY_DECISION_LESSONS_AND_EXPLICIT_DISPOSITIONS"
+      },
+      {
         "path": "research/strategy-learning-causal-gate-v1.json",
         "role": "ECONOMIC_CAUSAL_PROOF_AND_USER_RELEASE"
       },
@@ -97,6 +101,10 @@
       {
         "path": "research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
         "role": "EARLIER_APPROVALS_AND_CONFLICT_RESOLUTIONS"
+      },
+      {
+        "path": "research/v3/v3-buy-decision-lessons-implementation-matrix-20261011.json",
+        "role": "ORIGINAL_19_NO_BUY_DECISION_LESSONS_AND_EXPLICIT_DISPOSITIONS"
       }
     ]
   },
