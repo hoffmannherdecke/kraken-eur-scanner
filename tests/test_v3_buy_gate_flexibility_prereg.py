@@ -35,8 +35,8 @@ class V3RuleFlexibilityResearchGuards(unittest.TestCase):
         e=self.e
         self.assertEqual(e["status"],
                          "PRE_REGISTERED_INACTIVE_RESEARCH_ONLY_NO_STRATEGY_OR_PAPER_CHANGE")
-        self.assertFalse(e["no_activation"])
-        self.assertFalse(e["no_buy_authority"])
+        self.assertTrue(e["no_activation"])
+        self.assertTrue(e["no_buy_authority"])
         self.assertTrue(e["no_new_automation"])
         vs=e["variants"]
         self.assertEqual([x["priority"] for x in vs],[1,2,3])
