@@ -37,7 +37,7 @@ jobs:
         run: |
           python -m py_compile paper_evaluator/v3_a_historical_learning_closure_v1.py
           python -m unittest tests.test_v3_a_historical_learning_closure_v1 -v
-          python -m paper_evaluator.v3_a_historical_learning_closure_v1             --casepack research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json > /tmp/v3_a_closure.json
+          python -m paper_evaluator.v3_a_historical_learning_closure_v1 --casepack research/v3/v3-a-retro-12-case-matched-no-buy-20261010.json > /tmp/v3_a_closure.json
           python -c "import json; d=json.load(open('/tmp/v3_a_closure.json')); assert d['status']=='HISTORICAL_DIAGNOSTIC_LEARNING_CLOSED_ECONOMIC_RELEASE_NOT_PROVEN'; assert d['verified_economic_buy_paths']==0; assert d['model_calls']==0; assert d['orders']==False"
       - name: V3 archived handoff PIT read-only tests
         run: |
