@@ -119,7 +119,7 @@ def build_selected_window_receipt(*, cohort: dict, batch_rows: list[dict],
            "FROZEN_COHORT_SIZE_CHANGED")
 
     batches = {}
-    complete_coverage = False
+    successful_intervals = []
     for batch in batch_rows:
         ident = batch.get("batch_id")
         insist(isinstance(ident, str) and ident and ident not in batches,
@@ -130,12 +130,22 @@ def build_selected_window_receipt(*, cohort: dict, batch_rows: list[dict],
         observed, created = utc(batch.get("observed_at")), utc(batch.get("created_at"))
         insist(observed <= created <= asof, "BATCH_NOT_AVAILABLE_AT_EVALUATION")
         batches[ident] = (batch, observed, created)
-        # One complete 45m API interval must contain this exact 30m window.
-        if (observed - LOOKBACK <= start and observed >= end
-                and batch.get("wallet_count") == 26
+        # The existing 17/47 cron 45m reads overlap: two healthy reads can
+        # cover a complete 30m source window without either doing so alone.
+        if (batch.get("wallet_count") == 26
                 and batch.get("success_count") == 26 and batch.get("error_count") == 0):
-            complete_coverage = True
-    insist(complete_coverage, "NO_FULL_WINDOW_SUCCESSFUL_CAPTURE_COVERAGE")
+            left, right = max(start, observed - LOOKBACK), min(end, observed)
+            if left < right:
+                successful_intervals.append((left, right, ident))
+    cursor = start
+    proof_batches = []
+    for left, right, ident in sorted(successful_intervals):
+        if left > cursor:
+            break
+        if right > cursor:
+            cursor = right
+            proof_batches.append(ident)
+    insist(cursor >= end, "NO_FULL_WINDOW_SUCCESSFUL_CAPTURE_COVERAGE")
 
     originals = {}
     exposure = defaultdict(lambda: Decimal("0"))
@@ -205,12 +215,7 @@ def build_selected_window_receipt(*, cohort: dict, batch_rows: list[dict],
             positive >= 3 and negative == 0 and total_quote >= POSITIVE_RAW_NOTIONAL),
         "source_event_count": len(originals),
         "original_events": [originals[k] for k in sorted(originals)],
-        "complete_window_capture_batch_ids": sorted([
-            bid for bid, (b, ob, _) in batches.items()
-            if (ob - LOOKBACK <= start and ob >= end and
-                b.get("wallet_count") == b.get("success_count") == 26
-                and b.get("error_count") == 0)
-        ]),
+        "complete_window_capture_batch_ids": sorted(proof_batches),
         "point_in_time_scope": "DB_ORIGINALS_AT_EXPLICIT_ASOF_NOT_CLOUD_ACK",
         "beneficial_owner_independence_verified": False,
         "self_dealing_excluded": False,
