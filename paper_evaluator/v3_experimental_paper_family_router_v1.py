@@ -12,6 +12,9 @@ from typing import Any
 
 KIND="V3_EXPERIMENTAL_PAPER_FAMILY_SELECTION_V1"
 PRIORITY=(
+    ("SOURCE_CATALYST_INDEPENDENT",
+     "V3_EXPERIMENTAL_PAPER_INITIAL_FRESH_FULL_REVIEW_V1",
+     "INITIAL_FRESH_PIT_READY_FOR_FULL_V3_MODEL_ONLY"),
     ("FIRST_SCANNER_EARLY_REVIEW",
      "V3_EXPERIMENTAL_PAPER_INITIAL_FRESH_FULL_REVIEW_V1",
      "INITIAL_FRESH_PIT_READY_FOR_FULL_V3_MODEL_ONLY"),
@@ -59,7 +62,7 @@ def select_one_full_review(*,series_id:str,candidate_id:str,pair:str,
             (not isinstance(prior_reserved_review_keys,set)
              or any(not isinstance(x,str) for x in prior_reserved_review_keys))):
         return res("UNKNOWN_DEDUPLICATION_STATE")
-    key=hashlib.sha256("|".join((series_id,candidate_id,pair,known_at_utc)).encode()).hexdigest()
+    key=hashlib.sha256("|".join((series_id,pair,known_at_utc)).encode()).hexdigest()
     if key in (prior_reserved_review_keys or set()):
         return res("ALREADY_RESERVED_MODEL_REVIEW_IDEMPOTENT",
                    dedup_review_key=key)
@@ -78,6 +81,12 @@ def select_one_full_review(*,series_id:str,candidate_id:str,pair:str,
                       "failed_checks":sorted(k for k,v in
                           (h.get("checks") or {}).items() if v is False)}
         if status==expected_status:
+            if family=="SOURCE_CATALYST_INDEPENDENT" and (
+                    h.get("source_catalyst_qualified") is not True
+                    or not isinstance(h.get("source_catalyst_event_id"),str)
+                    or not h["source_catalyst_event_id"]):
+                return res("UNKNOWN_UNVERIFIED_SOURCE_ORIGIN_TICKET",
+                           failed_family=family)
             if h.get("request_model_recheck_only") is not True:
                 return res("UNKNOWN_REVIEW_TICKET_INCONSISTENT",failed_family=family)
             if h.get("new_snapshot_known_at_utc")!=known_at_utc:
