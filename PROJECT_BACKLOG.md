@@ -1,5 +1,8 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
+## 12.10.2026 – H10 Original-PIT TTL-Kante korrigiert (Offline-Guard)
+Der bestehende H10-Collector löscht Roh-Fills nach individuellem `fill_time` (48h). Für vollständige 30-Minuten-Fenster muss daher die späteste erlaubte Auswertung auf `window_start + 48h - 5min` begrenzt werden, nicht auf `window_end + 48h - 5min`. Prospektiver Fail-closed-Test für bereits teilweise abgelaufene Fenster ergänzt; **weder 48h-Retention noch laufender Collector geändert**. Keine historischen PIT5-Fills oder 788 alten Batch-Verweise rückwirkend legitimieren.
+
 ## 12.10.2026 – H10 48h-Originalbeweise: erste echte Offline-Implementierung ohne zweite Runtime
 
 **Ausführung:** Rein lokaler/purer H10-Originalquittungs-Generator `tools/v3_h10_selected_original_receipt_v1.py` + `research/v3/h10-selected-original-receipt-contract-v1.json` + 14 Fallgruppen in `tests/test_v3_h10_selected_original_receipt_v1.py`, angebunden an den **existierenden** `Architecture cleanup validation`-PR-Check. KEINE Änderung an `tools/v3-h10-activity-capture.py` oder dessen Cron, keine Mini-PC-/V2R4-/V3-Canary-Änderung, keine Supabase-Tabelle angelegt, keine Schlüssel/Modell-/Order-Berechtigung.

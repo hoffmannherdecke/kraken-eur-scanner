@@ -99,7 +99,9 @@ def build_selected_window_receipt(*, cohort: dict, batch_rows: list[dict],
     insist(start.minute in (0, 30) and start.second == 0 and start.microsecond == 0,
            "UNALIGNED_30M_WINDOW")
     insist(asof >= end, "OPEN_WINDOW_LOOKAHEAD")
-    insist(asof <= end + RAW_TTL - dt.timedelta(minutes=5),
+    # Retention deletes each fill by its own fill_time. Guard from the
+    # earliest possible fill in the 30m window, never its closing boundary.
+    insist(asof <= start + RAW_TTL - dt.timedelta(minutes=5),
            "ORIGINAL_FILL_TTL_EXPIRED")
     insist(isinstance(batch_rows, list) and isinstance(fill_rows, list),
            "COMPLETE_SOURCE_ROWS_REQUIRED")

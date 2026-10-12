@@ -40,7 +40,8 @@
     "require_record_before_raw_expiry": true,
     "unproven_or_expired_window": "NO_RECEIPT",
     "receipt_timestamp_in_offline_builder_not_real_cloud_receipt": true,
-    "live_cloud_received_at_required_after_future_deploy": true
+    "live_cloud_received_at_required_after_future_deploy": true,
+    "raw_expiry_conservative_cutoff": "30M_WINDOW_START_UTC_PLUS_48H_MINUS_5M_NO_FALSE_VALIDITY_WHEN_EARLIEST_FILLS_EXPIRED"
   },
   "payload": {
     "per_fill": [
