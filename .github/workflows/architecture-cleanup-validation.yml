@@ -38,6 +38,10 @@ jobs:
         run: |
           python -m py_compile paper_evaluator/v3_paper_intake_receipt_stage_v1.py
           python -m unittest tests.test_v3_paper_intake_receipt_stage_v1 -v
+      - name: V3 per-owner source producer packet signer with real owner-auth stage (offline/no secrets)
+        run: |
+          python -m py_compile paper_evaluator/v3_paper_source_owner_hmac_v1.py
+          python -m unittest tests.test_v3_paper_owner_producer_hmac_boundary_v1 -v
       - name: V3 H5 H10 H11 signed source original second immutable proof receipt (offline/no spend)
         run: |
           python -m py_compile paper_evaluator/v3_paper_signed_source_journal_stage_v1.py
