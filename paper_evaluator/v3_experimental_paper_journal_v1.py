@@ -65,6 +65,9 @@ DATA_FIELDS=frozenset({
     "candidate_origin","positive_source_name","positive_source_event_id",
     "positive_source_status","positive_source_reason","positive_source_owner",
     "positive_coin_impact_mechanism","independent_source_entry",
+    "wait_recheck_at_utc","watch_closed_5m_end_utc","watch_evaluated_conditions",
+    "watch_conditions_met","watch_snapshot_values","watch_valid_snapshot_count",
+    "watch_did_not_prove_no_trigger",
     "optional_context_states","market_phase_evidence","smart_money_evidence",
     "polymarket_evidence","news_sentiment_evidence","source_management_evidence",
 })
