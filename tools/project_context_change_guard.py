@@ -129,8 +129,8 @@ def verify_architecture_integrity(root: Path, paths: list[str], receipt: dict) -
 
     def checked_ids(field: str, allowed: set[str]) -> list[str]:
         ids = impact.get(field)
-        require(isinstance(ids, list) and len(ids) == len(set(ids))
-                and all(isinstance(x, str) and x in allowed for x in ids),
+        require(isinstance(ids, list) and all(isinstance(x, str) for x in ids)
+                and len(ids) == len(set(ids)) and all(x in allowed for x in ids),
                 "unknown, duplicate or missing architecture reference: " + field)
         return ids
 
@@ -146,8 +146,8 @@ def verify_architecture_integrity(root: Path, paths: list[str], receipt: dict) -
             "registered overlapping components omitted from architecture review")
     expected_consumers = {streams[key]["consumer"] for key in stream_ids}
     consumers = impact.get("affected_consumer_roles")
-    require(isinstance(consumers, list) and len(consumers) == len(set(consumers))
-            and set(consumers) == expected_consumers,
+    require(isinstance(consumers, list) and all(isinstance(x, str) for x in consumers)
+            and len(consumers) == len(set(consumers)) and set(consumers) == expected_consumers,
             "registered downstream consumers omitted from architecture review")
     require(impact.get("runtime_change_authorized") is False,
             "architecture review cannot grant active runtime or trading release")
