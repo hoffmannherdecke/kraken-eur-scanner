@@ -47,13 +47,42 @@ try{
  try{
   $result=@(& $scriptPath -TradingRoot $TradingRoot -Execute -MaxCandidates 2 2>&1)
   $details=($result|Out-String).Trim()
-  if($details -match 'NO_EXACT_ORIGINAL_HANDOFF|NO_ORIGINAL_V3_CANARY_CANDIDATE'){
-   $status='NO_VERIFIED_ORIGINALS'
-  }elseif($details -match 'V3 Paper observation cycle finished; NO MODEL, NO PAPER ACTIVATION, V2R4 unchanged'){
-   $status='HEALTHY'
-  }else{
-   throw 'No complete cloud ACK / observer completion marker'
+  # The child uses Write-Host for human narration, which is NOT a reliable
+  # success signal when hosted under a scheduled SYSTEM PowerShell task.
+  # Instead require every actual Python-produced tick and Cloud JSON ACK.
+  $structured=@()
+  foreach($line in $result){
+   if(([string]$line).TrimStart().StartsWith('{')){
+    try{$structured+=([string]$line|ConvertFrom-Json -ErrorAction Stop)}
+    catch{throw 'Malformed structured V3 public Kraken/Cloud acknowledgement'}
+   }
   }
+  $ticks=@($structured|Where-Object{$_.kind -eq 'V3_PAPER_EXISTING_SUPERVISOR_SELECTIVE_TICK_V1'})
+  $acks=@($structured|Where-Object{$_.status -in @('V3_RECEIPTS_CLOUD_ACK_VERIFIED','NO_UNSYNCED_V3_RECEIPTS')})
+  if($ticks.Count -lt 1 -or $ticks.Count -gt 2 -or $acks.Count -ne 1){
+   throw 'Missing exact original V3 tick or final Cloud sync structured result'
+  }
+  foreach($tick in $ticks){
+   if($tick.series_id -ne 'PAPER-V3-CANARY-20261011' -or
+      $tick.source_capture -ne 'CLOSED_KRAKEN_1M_SNAPSHOT_SAVED' -or
+      $tick.model_called -ne $false -or $tick.model_attempts -ne 0 -or
+      $tick.paper_only -ne $true -or $tick.orders -ne $false -or
+      $tick.v2r4_changed -ne $false -or $tick.new_schedules -ne 0){
+    throw 'Unsafe or incomplete V3 Kraken observational tick'
+   }
+  }
+  $ack=$acks[0]
+  if($ack.paper_only -ne $true -or
+     (($ack.status -eq 'NO_UNSYNCED_V3_RECEIPTS') -and $ack.count -ne 0) -or
+     (($ack.status -eq 'V3_RECEIPTS_CLOUD_ACK_VERIFIED') -and
+      ($ack.count -lt 1 -or $ack.orders -ne $false))){
+   throw 'V3 Cloud ACK contradicts original immutable journal sync'
+  }
+  $status=if($ack.status -eq 'NO_UNSYNCED_V3_RECEIPTS'){
+   'HEALTHY_NO_NEW_CLOUD_EVENTS'
+  }else{'HEALTHY_CLOUD_ACK'}
+  $details=('structured_ticks='+$ticks.Count+' cloud='+$ack.status+
+             ' count='+$ack.count+'; '+$details)
  }catch{
   $status='ERROR'
   $details=("EXCEPTION: "+$_.Exception.Message+[Environment]::NewLine+$details)
