@@ -38,3 +38,19 @@ order by last_activity_time;
 ```
 
 **Evidenz-Gate:** Unter den vorhandenen bestehenden Work-/Milestone-Controllern nur echte `first_seen`-Originalbelege und Self-Dealing-Lücken nachverfolgen. H10-Rohfilter → Original-PIT-Audit → echter überprüfter Source-Event → externe Owner-Key-/HMAC-Kontrolle → ein einziger künftiger V3-Writer mit Cloud-ACK → getrennte Paper-/Modellfreigabe. Nicht alle Schritte als „bereits erledigt“ markieren.
+
+## 12. Oktober 2026: Original-PIT-Audit nach PR237
+
+**Methode:** Unveränderte vorhandene Supabase-Tabellen/Views nur mit `SELECT` befragt; bestehende H10-Owner-Topologie und inzwischen gemergtes Anti-Flickenteppich-PR237 berücksichtigt. Keine neue H10-Runtime/Quelleninstanz installiert. Rohereignisse wurden zu den fünf exakten Coin-/PRIMARY-/UTC-Fenstern aus diesem Bericht zugeordnet, danach über `v3_h10_wallet_asset_5m` als unabhängiges Aggregat gegengeprüft.
+
+| Fenster (UTC 08.10.) | verschiedene aggregierte Wallet-Adressen | 5m-Aggregat-Fill-Zählungen | originale Fill-Zeilen in `v3_h10_fill_events` | Ergebnis |
+| --- | ---: | ---: | ---: | --- |
+| BTC 03:00 | 3 | 12 | 0 | Original-PIT nicht nachweisbar |
+| BTC 04:00 | 3 | 16 | 0 | Original-PIT nicht nachweisbar |
+| BTC 13:30 | 3 | 29 | 0 | Original-PIT nicht nachweisbar |
+| ZEC 15:00 | 3 | 16 | 0 | Original-PIT nicht nachweisbar |
+| BTC 15:30 | 3 | 27 | 0 | Original-PIT nicht nachweisbar |
+
+**Herkunft:** Die View `v3_h10_asset_consensus_30m_history` aggregiert die View `v3_h10_wallet_asset_30m_history`, deren Quelle die verbleibenden 5-Minuten-Wallet-Aggregate sind. Die beobachteten 3 Adressen sind Adress-Disjunktheit, **kein** belegter unabhängiger wirtschaftlicher Inhaber und keine Gegenseiten-/Self-Dealing-Attestation. Auch die 12/16/29/16/27 sind Aggregat-Zählungen, keine Original-Event-IDs. In der aktuellen Rohereignistabelle standen 1.523 jüngere Fills, frühester `fill_time` 10.10.2026 14:04:14.883 UTC und `first_seen_at` 10.10.2026 14:26:03.822 UTC; folglich kein Original-`event_id` oder `first_seen_batch_id` zu den fünf 08.10.-Fenstern verfügbar. Die 48 erhaltenen 08.10.-Capture-Batches erfassten im Tagesfeld zusammen 1.970 `fill_events_seen`, **nicht notwendigerweise eindeutige** Fills; daraus lässt sich eine Original-Event-zu-Batch-Zuordnung nicht wiederherstellen. H10 weiter laufend: 403 Batches insgesamt bei der Prüfung, 48 in den vorangegangenen 24 Stunden.
+
+**Disposition/weiterer Gate:** `H10_PIT5_ORIGINAL_PROOF_MISSING`. Kein prospektives damaliges `known_at` aus Fill-Zeit oder aggregiertem Bucket ableiten, kein historisches Signieren, keine FIVE_BUY-, PnL- oder Renditebehauptung. Nicht behaupten, dass eine bestimmte TTL/Retention-Funktion bewiesen ist: Andere Originalarchive oder Workflow-Artefakte wurden hier noch nicht als vollständige Rohdatenquelle überprüft. Der vorhandene H10-Owner soll beim nächsten bereits bestehenden Evidenz-Owner-Gate zuerst **nur lesend** prüfen, ob zeitgenössische, immutable Originalbelege für die fünf Fälle anderswo existieren; wenn nicht, die fünf als ausschließlich retrospektiven Kontext abschließen und **zukünftige** Quellenevents im bisherigen Owner-Prozess erst mit echtem `first_seen`/Batch-/Sender-/Unabhängigkeitsbeleg autorisieren. BTC/ZEC-EUR-Pair-P0, echter Self-Dealing-Ausschluss, Original-Owner-HMAC, aktuelles Coin-Signal, Modellbudget, Cloud-ACK und Paper-/6h24h-Outcome sind eigenständige nachgelagerte Gates. Keine aktive V3-Ausführung, kein neuer Poller, keine Änderung am V2R4 oder an neun SHA-gepinnten 28h-Watcher-Dateien bis 13.10.2026 14:00:12 MESZ.
