@@ -40,7 +40,7 @@ jobs:
           python -m unittest tests.test_v3_paper_intake_receipt_stage_v1 -v
       - name: V3 existing H5-H10-H11 real provenance to common Paper one-writer preflight (pure/no spend)
         run: |
-          python -m py_compile paper_evaluator/v3_paper_existing_owner_source_bridge_v1.py paper_evaluator/v3_paper_single_writer_preflight_v1.py
+          python -m py_compile paper_evaluator/v3_paper_source_owner_hmac_v1.py paper_evaluator/v3_paper_existing_owner_source_bridge_v1.py paper_evaluator/v3_paper_single_writer_preflight_v1.py
           python -m unittest tests.test_v3_paper_existing_source_owner_to_single_writer_seam_v1 -v
       - name: V3 shared scanner plus genuine positive H5 H10 H11 candidate intake without model authority
         run: |

@@ -27,7 +27,8 @@ def plan_writer_preflight(*,scanner_events:list[dict[str,Any]],
         journal_receipts:list[dict[str,Any]],
         known_pairs:dict[str,dict[str,Any]],
         market_observations:dict[str,dict[str,Any]],
-        series_id:str,decision_at_utc:str,max_reviews:int=3)->dict[str,Any]:
+        series_id:str,decision_at_utc:str,max_reviews:int=3,
+        trusted_owner_hmac_keys:dict[str,dict[str,bytes]]|None=None)->dict[str,Any]:
     if not isinstance(market_observations,dict):
         raise ValueError("bounded exact Kraken market observation mapping required")
     source=join_owner_sources(
@@ -35,7 +36,8 @@ def plan_writer_preflight(*,scanner_events:list[dict[str,Any]],
         h5_macro_calendar=h5_macro_calendar,
         owner_event_packets=owner_event_packets,
         authenticated_owner_ids=authenticated_owner_ids,
-        decision_at_utc=decision_at_utc)
+        decision_at_utc=decision_at_utc,
+        trusted_owner_hmac_keys=trusted_owner_hmac_keys)
     intake=plan_intake(
         scanner_events=scanner_events,
         source_events=source["owner_source_events"],

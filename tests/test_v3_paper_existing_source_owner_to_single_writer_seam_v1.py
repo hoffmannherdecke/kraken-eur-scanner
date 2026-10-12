@@ -1,6 +1,9 @@
 """Exact existing H10/H11/H5 research → verified source → V3 future writer seam."""
 from __future__ import annotations
-import copy,unittest
+import copy,unittest,hmac,hashlib
+from paper_evaluator.v3_paper_source_owner_hmac_v1 import (
+    KIND as OWNER_AUTH_KIND,canonical_owner_message,
+)
 from paper_evaluator.v3_paper_existing_owner_source_bridge_v1 import (
     join_owner_sources,fingerprint,
 )
@@ -19,6 +22,11 @@ OWNER={
     "smart_money_h10":["H10_CAPTURE_OWNER"],
     "polymarket_h11":["H11_CAPTURE_OWNER"]
 }
+KEYS={
+    "news_sentiment":{"OFFICIAL_US_CURATOR":b"N"*32},
+    "smart_money_h10":{"H10_CAPTURE_OWNER":b"H"*32},
+    "polymarket_h11":{"H11_CAPTURE_OWNER":b"P"*32}
+}
 H10={"status":"H10_PIT_CONTEXT_ONLY","sources":{
     "smart_money_h10":{
         "pair":"XBT/EUR","source_verified":True,
@@ -30,26 +38,35 @@ H11={"kind":"V3_H11_POLYMARKET_PROSPECTIVE_STATE_CAPTURE_V1",
 H5={"kind":"V3_H5_MACRO_EVENT_WINDOW_PIT_SMOKE_V1",
     "events":[{"event_family":"CPI","known_at_utc":dt(3)}]}
 def event(name,snapshot,move=None):
-    return {"source_name":name,"pair":"XBT/EUR",
+    packet={"source_name":name,"pair":"XBT/EUR",
             "altname":"XBTEUR","snapshot":snapshot,
             "market_move":move,
             "owner_integrity":{
                 "authenticated_owner_id":snapshot["source_owner"],
                 "authentication_checked_by_trusted_caller":True,
                 "canonical_payload_sha256":fingerprint(snapshot),
+                "proof_version":OWNER_AUTH_KIND,
+                "signed_at_utc":dt(12)
             }}
-def bridge(events=(),h10=H10,h11=H11,h5=H5,owners=OWNER):
+    packet["owner_integrity"]["owner_hmac_sha256"]=hmac.new(
+        KEYS[name][snapshot["source_owner"]],
+        canonical_owner_message(packet),hashlib.sha256).hexdigest()
+    return packet
+
+def bridge(events=(),h10=H10,h11=H11,h5=H5,owners=OWNER,keys=KEYS):
     return join_owner_sources(
         h10_context=h10,h11_market_capture=h11,
         h5_macro_calendar=h5,owner_event_packets=list(events),
-        authenticated_owner_ids=owners,decision_at_utc=dt(12))
+        authenticated_owner_ids=owners,decision_at_utc=dt(12),
+        trusted_owner_hmac_keys=keys)
 def preflight(scanners=(),owner_events=(),observations=None):
     return plan_writer_preflight(
         scanner_events=list(scanners),owner_event_packets=list(owner_events),
         h10_context=H10,h11_market_capture=H11,h5_macro_calendar=H5,
         authenticated_owner_ids=OWNER,journal_receipts=[],known_pairs=PAIR,
         market_observations=observations if observations is not None else {},
-        series_id=SID,decision_at_utc=dt(12))
+        series_id=SID,decision_at_utc=dt(12),
+        trusted_owner_hmac_keys=KEYS)
 def xbt_real_pit_fixture():
     c,e,t,m=fixture()
     return {"XBT/EUR":{"ticker":t,"entry_evidence":e,"pair_metadata":m}}
@@ -105,6 +122,43 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
             bridge(owners={"news_sentiment":["OFFICIAL_US_CURATOR"]})
         with self.assertRaises(ValueError):
             bridge(events=[original]*61)
+
+    def test_sha256_and_caller_trust_boolean_cannot_authenticate_any_source(self):
+        trusted=event("news_sentiment",official())
+        for packet in (
+            dict(trusted,owner_integrity={
+                "authenticated_owner_id":"OFFICIAL_US_CURATOR",
+                "authentication_checked_by_trusted_caller":True,
+                "canonical_payload_sha256":fingerprint(official())
+            }),
+            dict(trusted,owner_integrity={
+                **trusted["owner_integrity"],"owner_hmac_sha256":"0"*64}),
+            dict(trusted,source_name="smart_money_h10")
+        ):
+            with self.subTest(packet=packet):
+                result=bridge([packet])
+                self.assertEqual(result["owner_source_events"],[])
+                self.assertEqual(sum(result["source_event_rejections"].values()),1)
+        without_keys=bridge([trusted],keys=None)
+        self.assertEqual(without_keys["owner_source_events"],[])
+        self.assertFalse(without_keys["model_http_authorized"])
+        self.assertFalse(without_keys["orders"])
+
+    def test_exact_content_signature_prevents_cross_coin_or_event_mutations(self):
+        packet=event("polymarket_h11",poly(),movement())
+        tampered=[
+            dict(packet,pair="ETH/EUR"),
+            dict(packet,altname="ETHEUR"),
+            dict(packet,market_move=dict(movement(),movement_phase="BREAKOUT_INITIATION")),
+            dict(packet,snapshot=dict(packet["snapshot"],confirmed_net_buy_usd=123)),
+        ]
+        for change in tampered:
+            with self.subTest(change=change):
+                result=bridge([change])
+                self.assertEqual(result["owner_source_events"],[])
+        accepted=bridge([packet])
+        self.assertEqual(len(accepted["owner_source_events"]),1)
+        self.assertFalse(accepted["physical_source_key_provisioning_or_owner_live_event_proven"])
 
     def test_complete_shared_v3_scanner_and_official_market_PIT_gate_but_no_spend(self):
         obs=xbt_real_pit_fixture()

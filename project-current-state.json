@@ -250,7 +250,14 @@
       "post_28h_72h_no_artificial_wait": true,
       "post_28h_no_new_schedule": true,
       "post_28h_runtime_and_release_gates_open": true,
-      "physical_e2e_status": "REAL_ONE_SHOT_CANARY_PASS_NOT_CONTINUOUS_WRITER"
+      "physical_e2e_status": "REAL_ONE_SHOT_CANARY_PASS_NOT_CONTINUOUS_WRITER",
+      "source_owner_cryptographic_gate": "HMAC_SHA256_PER_SOURCE_PER_OWNER_PACKET_SIGNATURE_REQUIRED_NO_BOOLEAN_OR_SHA_OWNER_AUTHORITY",
+      "source_owner_auth_module": "paper_evaluator/v3_paper_source_owner_hmac_v1.py",
+      "source_owner_auth_policy": "docs/v3-source-owner-hmac-auth-boundary-20261012.md",
+      "source_owner_secrets_provisioned_on_real_minipc": false,
+      "source_owner_real_signed_events_received": false,
+      "source_owner_signatures_not_automatic_buy_or_model_budget": true,
+      "source_owner_hmac_implementation_status": "PURE_CODE_READY_TESTED_PENDING_PHYSICAL_OWNER_SENDER_SIGNATURES"
     },
     "kind": "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1",
     "requested_on": "2026-10-11",

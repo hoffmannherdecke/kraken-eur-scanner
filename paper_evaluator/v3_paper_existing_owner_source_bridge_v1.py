@@ -21,6 +21,9 @@ from typing import Any
 from paper_evaluator.v3_paper_positive_source_entry_v1 import (
     STREAMS,assess_positive_source,ELIGIBLE,
 )
+from paper_evaluator.v3_paper_source_owner_hmac_v1 import (
+    validate_keyring,verify_owner_packet,
+)
 
 KIND="V3_EXISTING_SOURCE_OWNER_PROOF_BRIDGE_V1"
 def fingerprint(snapshot:dict[str,Any])->str:
@@ -33,13 +36,17 @@ def join_owner_sources(*,h10_context:dict[str,Any]|None,
                        h5_macro_calendar:dict[str,Any]|None,
                        owner_event_packets:list[dict[str,Any]],
                        authenticated_owner_ids:dict[str,list[str]],
-                       decision_at_utc:str)->dict[str,Any]:
+                       decision_at_utc:str,
+                       trusted_owner_hmac_keys:dict[str,dict[str,bytes]]|None=None)->dict[str,Any]:
     """Future owner must authenticate sender OUTSIDE this pure code."""
     if (not isinstance(owner_event_packets,list) or len(owner_event_packets)>60
             or not isinstance(authenticated_owner_ids,dict)
             or set(authenticated_owner_ids)!=set(STREAMS)
             or any(not isinstance(v,list) or len(v)>20 for v in authenticated_owner_ids.values())):
         raise ValueError("bounded authenticated-source-owner bridge contract required")
+    # Legacy input allowlist is not source authentication: only a MAC under
+    # externally-provisioned per-owner key can reach a positive source path.
+    keyring=validate_keyring(trusted_owner_hmac_keys)
     diagnostics={}
     if h10_context is None:
         diagnostics["smart_money_h10"]="NOT_AVAILABLE"
@@ -89,6 +96,10 @@ def join_owner_sources(*,h10_context:dict[str,Any]|None,
             fail("BAD_SOURCE_PAYLOAD");continue
         if proof.get("canonical_payload_sha256")!=valid_digest:
             fail("SOURCE_EVENT_CONTENT_DIGEST_MISMATCH");continue
+        authentication=verify_owner_packet(
+            packet=packet,trusted_keys=keyring,decision_at_utc=decision_at_utc)
+        if authentication!="VERIFIED_OWNER_HMAC_PACKET_ONLY":
+            fail(authentication);continue
         result=assess_positive_source(
             pair=pair,source_name=name,snapshot=snap,
             decision_at_utc=decision_at_utc,
@@ -106,6 +117,8 @@ def join_owner_sources(*,h10_context:dict[str,Any]|None,
         "raw_source_dispositions":diagnostics,
         "source_event_rejections":denied,
         "owner_authentication_external_not_proven_by_hash":True,
+        "owner_hmac_signature_required_for_positive_events":True,
+        "physical_source_key_provisioning_or_owner_live_event_proven":False,
         "source_eligibility_not_a_model_budget":True,
         "model_http_authorized":False,"model_calls":0,
         "paper_writer_active":False,"orders":False,"real_money_actions":False,
