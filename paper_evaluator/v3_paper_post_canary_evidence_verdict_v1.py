@@ -133,6 +133,8 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
     valid_model_responses=0
     p4_valid_buy=0
     mature_paper_net_count=0
+    next_due=[]
+    overdue_recovery_exhausted=Counter()
     for cid,rows in sorted(watch.items()):
         # Audit-only synthetic invalid inputs have no coin identity or P&L.
         audit=cid.startswith("V3-INPUT-REJECT-")
@@ -154,6 +156,8 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
         valid_model_responses+=int(model_good)
         p4_valid_buy+=int(model_good and p4_good)
         by_h={}
+        due_clock={}
+        recovery_clock={}
         for h in HORIZONS:
             phase=f"FOLLOWUP_{h}H"
             finals=[r for r in rows if r["phase"]==phase
@@ -161,6 +165,8 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
             if len(finals)>1:
                 raise ValueError("contradictory final followup for one horizon")
             due=clock(first["event_time_utc"])+timedelta(hours=h)
+            due_clock[str(h)]=due.isoformat()
+            recovery_clock[str(h)]=(due+timedelta(minutes=60)).isoformat()
             if finals:
                 outcome=finals[0]
                 if clock(outcome["known_at_utc"])<due:
@@ -184,15 +190,20 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
                     label="censored"
             elif at<due:
                 label="not_yet_due"
+                next_due.append((due,first["pair"],cid,h))
             else:
                 label="due_missing_or_pending"
+                if at>=due+timedelta(minutes=60):
+                    overdue_recovery_exhausted[str(h)]+=1
             buckets[str(h)][label]+=1
             by_h[str(h)]=label
         cases.append({"candidate_id":cid,"pair":first["pair"],
                       "original_at_utc":first["event_time_utc"],
                       "model_response_verified":model_good,
                       "p4_buy_contract_after_model":bool(model_good and p4_good),
-                      "horizons":by_h})
+                      "horizons":by_h,
+                      "followup_due_at_utc":due_clock,
+                      "recovery_until_utc":recovery_clock})
     window_elapsed=at>=end
     watcher_status=("AWAIT_FIXED_DEADLINE" if not window_elapsed else
                     "ENDED_TIME_ONLY_PHYSICAL_STOP_NOT_VERIFIED"
@@ -220,6 +231,13 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
         "watcher_mature_virtual_fee_adjusted_paper_net_count":mature_paper_net_count,
         "watcher_24h_mature_cases":complete_24,
         "watcher_24h_due_missing_cases":missing_24,
+        "watcher_due_missing_past_60m_recovery":dict(overdue_recovery_exhausted),
+        "watcher_next_unmatured_horizon":(
+            {"due_at_utc":min(next_due)[0].isoformat(),
+             "pair":min(next_due)[1],
+             "candidate_id":min(next_due)[2],
+             "hours":min(next_due)[3]}
+            if next_due else None),
         "only_v2r4_active_as_reported":original_still_only_active,
         "transport_one_shot_proven_not_continuous_writer":smoke_structural,
         "economics_not_proven_by_no_buy_mfe":True,
