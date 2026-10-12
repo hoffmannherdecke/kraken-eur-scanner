@@ -178,6 +178,17 @@ class SelectedOriginalSourceReceiptTests(unittest.TestCase):
         with self.assertRaisesRegex(OriginalEvidenceBlocked,"REPLAY_CONTENT_CONFLICT_KEEP_ORIGINAL"):
             compare_replay(previous, changed)
 
+    def test_tampered_payload_cannot_use_old_content_digest(self):
+        earlier = build()
+        tampered = copy.deepcopy(earlier)
+        tampered["payload"]["original_events"][0]["price_quote"] = "999999"
+        with self.assertRaisesRegex(OriginalEvidenceBlocked,"REPLAY_DIGEST_NOT_CANONICAL"):
+            compare_replay(earlier, tampered)
+        tampered = copy.deepcopy(earlier)
+        tampered["candidate_id"] = "0" * 64
+        with self.assertRaisesRegex(OriginalEvidenceBlocked,"REPLAY_DIGEST_NOT_CANONICAL"):
+            compare_replay(earlier, tampered)
+
     def test_alignment_cohort_role_and_missing_batch(self):
         self.reject("UNALIGNED_30M_WINDOW",window_start_utc="2026-10-12T12:15:00Z")
         self.reject("OPEN_WINDOW_LOOKAHEAD",evaluated_at_utc="2026-10-12T12:15:00Z")
