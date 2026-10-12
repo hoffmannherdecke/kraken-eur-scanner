@@ -473,7 +473,7 @@
         "research/v3/v3-paper-active-context-and-minipc-release-gates-20261011.json"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_PHYSICAL_V3_28H_SYSTEM_TASK_HEALTHY_2026_10_12T08_15Z_WITH_TWO_REAL_45_BAR_SOURCES_CLOUD_EMPTY_ACK_0_MODEL_0_ORDERS; NEXT_TRACK_EXISTING_TASK_TO_DUE_6H24H_CENSORED_OR_COMPLETE_FOLLOWUP_CLOUD_RECEIPTS_AND_NO_AUTO_V3_ACTIVE; V2R4_LAST_VERIFIED_SOLE_PAPER",
+      "next_concrete_action": "PROSPECTIVE_V3_SHARED_SCANNER_H5_H10_H11_EVENT_INTAKE_OFFLINE_ROUTER_PREPARED_NO_MODEL_SPEND; PRIORITY_KEEP_EXISTING_28H_HOST_OBSERVER_PINNED_UNCHANGED_TO_2026_10_13T12Z_AND_VERIFY_FOLLOWUPS; THEN_WIRE_REAL_ORIGINAL_SOURCE_OWNERS_AND_SINGLE_V3_PAPER_WRITER_AFTER_NEW_MODEL_BUDGET_AND_V2R4_STOP_CAS",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -1008,6 +1008,29 @@
         "task_window_reset": false,
         "current_paper_series_independently_rechecked_this_turn": false,
         "runtime_continues_only_until_original_expiry": true
+      },
+      "v3_shared_future_intake_router_20261012": {
+        "status": "PURE_OFFLINE_ROUTING_CODE_IN_REVIEW_NOT_EXECUTED_ON_MINIPC_NOT_PAPER_ACTIVE",
+        "proposed_module": "paper_evaluator/v3_paper_shared_candidate_intake_plan_v1.py",
+        "two_real_input_owners": [
+          "FROZEN_V2R4_ORIGINAL_SCANNER_HANDOFF_READ_ONLY",
+          "H5_H10_H11_VERIFIED_POSITIVE_SOURCE_ORIGINAL_EVENT"
+        ],
+        "scanner_and_source_equal_priority_for_full_risk_model_p4": true,
+        "positive_source_can_originate_before_scanner": true,
+        "source_verification": "EXISTING_V3_SOURCE_CATALYST_QUALIFIER_ONLY_NO_SYNTHETIC_PROOFS",
+        "no_optional_source_veto_on_scanner": true,
+        "within_original_event_known_at_seconds": 600,
+        "same_pair_coalesce_seconds": 300,
+        "max_reviews_per_tick": 3,
+        "overflow_disposition": "CAPACITY_DEFERRED_NOT_NEGATIVE_MARKET_DECISION",
+        "must_reverify_fresh_kraken_spot_pair_at_full_p4": true,
+        "no_user_model_budget_authorized": true,
+        "v3_on_host_physically_wired": false,
+        "no_current_v3_paper_activation": true,
+        "new_tasks_created": 0,
+        "no_orders": true,
+        "v2r4_unchanged": true
       }
     }
   }
