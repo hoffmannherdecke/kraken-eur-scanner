@@ -8,13 +8,12 @@ from __future__ import annotations
 import argparse,json,os,urllib.request
 from pathlib import Path
 from typing import Any
+from paper_evaluator.v3_paper_context_bridge_v1 import STREAMS as MODEL_CONTEXT_STREAMS
 
 ENDPOINT="https://nlgzjmqgwueojlyqmoru.supabase.co/functions/v1/v3-paper-h10-context-read"
-ALLOWED_CONTEXT_KEYS={
-    "market_phase_radar","source_stewardship","news_sentiment",
-    "dynamic_move_radar","missed_opportunity_learning","economic_learning",
-    "minipc_reliability","smart_money_h10","polymarket_h11",
-}
+# One existing owner for all optional V3 lanes. PR251 extended this same bridge
+# with H2/H5/H8/global-market; H10 disk replay must not reject those owners.
+ALLOWED_CONTEXT_KEYS=frozenset(MODEL_CONTEXT_STREAMS)
 
 def fetch_h10(*,pair:str,token:str,post=None)->dict[str,Any]:
     if not isinstance(pair,str) or not pair.endswith("/EUR") or len(pair)>18:

@@ -213,5 +213,45 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
         self.assertTrue(out["optional_failure_never_hard_veto"])
         self.assertFalse(out["sources"]["polymarket_h11"]["hard_veto"])
 
+
+    def test_pr251_optional_context_reaches_actual_worker_pre_model_receipt(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); journal=root/"journal"; budgets=root/"budgets"
+            journal.mkdir(); budgets.mkdir()
+            cand=fixture()[0]
+            generic={"source_verified":True,"source_owner":"EXISTING_OWNER_TEST",
+                     "source_id":"offline-pit-fixture",
+                     "observed_at_utc":dt(3),"known_at_utc":dt(5)}
+            context={
+                "derivatives_h2":dict(generic,pair="XBT/EUR",funding_rate_pct=0.02),
+                "macro_h5":dict(generic,event_id="calendar-no-catalyst"),
+                "onchain_h8":dict(generic,pair="XBT/EUR",chain="bitcoin"),
+                "global_market_crosscheck":dict(generic,btc_state="STABILIZING"),
+                "smart_money_h10":dict(generic,pair="ETH/EUR",
+                                      consensus_direction="LONG"),
+            }
+            result=one_candidate(candidate=cand,series_id=SID,
+                local_receipts=journal,model_reservations=budgets,
+                existing_context=context,acquire=fake_acquire,
+                clock=lambda:dt(12),allow_model=False)
+            self.assertEqual(result["status"],
+                "V3_PAPER_REAL_KRAKEN_PIT_PREFLIGHT_PASS_MODEL_NOT_CALLED")
+            self.assertFalse(list(budgets.glob("*.json")))
+            rows=[json.loads(p.read_text("utf-8")) for p in journal.glob("*.json")]
+            self.assertEqual(len(rows),4)
+            reviewed=next(x["data"] for x in rows
+                         if x["phase"]=="FULL_REVIEW_ELIGIBILITY")
+            for key in ("derivatives_h2","macro_h5","onchain_h8",
+                        "global_market_crosscheck"):
+                self.assertEqual(reviewed["optional_context_states"][key],
+                                 "AVAILABLE_PIT_CONTEXT_ONLY")
+            self.assertNotIn("derivatives_h2_evidence",reviewed)
+            self.assertEqual(reviewed["smart_money_evidence"]["state"],
+                             "NOT_ASSOCIABLE_OTHER_PAIR")
+            self.assertNotIn("values",reviewed["smart_money_evidence"])
+            self.assertEqual(reviewed["optional_context_states"]["smart_money_h10"],
+                             "NOT_ASSOCIABLE_OTHER_PAIR")
+            self.assertFalse(any(r["phase"]=="MODEL_RESPONSE" for r in rows))
+
 if __name__=="__main__":
     unittest.main()

@@ -249,7 +249,8 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                  "phase_failure_stage":"KRAKEN_COIN_TICKER_ASSETPAIRS"})
         return {"status":"UNKNOWN_SOURCE_INPUT_FAILED","paper_only":True}
     requested_at=clock()
-    context=fuse_existing_sources(existing_context or {},decision_at_utc=requested_at)
+    context=fuse_existing_sources(existing_context or {},decision_at_utc=requested_at,
+                                  pair=candidate["pair"])
     eligibility=propose_initial_full_review(candidate,coin,quote,meta,
                                              decision_at_utc=requested_at)
     if positive_source and positive_source["status"]==POSITIVE_SOURCE_ELIGIBLE:
@@ -272,6 +273,9 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
              "polymarket_evidence":context["sources"]["polymarket_h11"],
              "news_sentiment_evidence":context["sources"]["news_sentiment"],
              "source_management_evidence":context["sources"]["source_stewardship"],
+             # Four PR251 streams are already included in the existing
+             # optional_context_states journal field. No SHA-pinned journal
+             # schema changes; source values enter only the P-I-T model prompt.
              "phase_failure_stage":eligibility.get("validation_stage")})
     if eligibility["status"]!=ELIGIBLE:
         return {"status":"NO_ELIGIBLE_INITIAL_V3_MODEL_REVIEW",
