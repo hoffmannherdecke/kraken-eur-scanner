@@ -5,7 +5,7 @@ No activation endpoint, no orders, no V2R4 runtime modifications, no schedule.
 Only push bytes already durably journalled on the isolated V3 host directory.
 """
 from __future__ import annotations
-import argparse,hashlib,json,os,urllib.request,urllib.error
+import argparse,hashlib,json,os,urllib.request,urllib.error,uuid
 from pathlib import Path
 from typing import Any
 
@@ -64,10 +64,17 @@ def sync_once(*,journal:Path,series_id:str,ack_file:Path,token:str,
             or response.get("series_id")!=series_id):
         raise ValueError("no exact cloud V3 journal acknowledgement")
     state["acked"]=sorted(acked|{r["event_id"] for r in out})
-    tmp=ack_file.with_suffix(".tmp")
-    with tmp.open("x",encoding="utf-8") as f:
-        json.dump(state,f,sort_keys=True);f.flush();os.fsync(f.fileno())
-    os.replace(tmp,ack_file)
+    # A crash after a successful Cloud POST must NOT let one abandoned
+    # fixed-name .tmp file block every future 5-minute synchronization.
+    # Unique sibling temp + atomic replacement also preserves the older ACK
+    # until the new bytes are durable; the actual cloud write is idempotent.
+    tmp=ack_file.with_name(ack_file.name+"."+uuid.uuid4().hex+".tmp")
+    try:
+        with tmp.open("x",encoding="utf-8") as f:
+            json.dump(state,f,sort_keys=True);f.flush();os.fsync(f.fileno())
+        os.replace(tmp,ack_file)
+    finally:
+        tmp.unlink(missing_ok=True)
     return {"status":"V3_RECEIPTS_CLOUD_ACK_VERIFIED","count":len(out),
             "total_acked":len(state["acked"]),"paper_only":True,"orders":False}
 
