@@ -187,5 +187,21 @@
     "model_p4_cloud_ack_verified": false,
     "v3_paper_active": false,
     "v2r4_sole_active": true
+  },
+  "h10_live_cloud_20261012": {
+    "source_table": "public.v3_h10_asset_consensus_30m",
+    "edge": "v3-paper-h10-context-read",
+    "edge_version": 1,
+    "edge_status": "ACTIVE",
+    "deployment_verified": true,
+    "safe_header_token_same_existing_v3_relay": true,
+    "source_coin_original_time_verified_in_code": true,
+    "owner_no_new_research_capture": true,
+    "on_demand_minipc_client": "paper_evaluator/v3_paper_h10_context_read_v1.py",
+    "paid_v3_model_receives_h10_on_fresh_candidate": "CODE_READY_PHYSICAL_MINIPC_ACK_UNVERIFIED",
+    "h10_active_context_consumer_physically_verified": false,
+    "positive_three_independent_wallet_entry_from_live_h10_verified": false,
+    "v2r4_unchanged": true,
+    "real_money_actions": false
   }
 }
