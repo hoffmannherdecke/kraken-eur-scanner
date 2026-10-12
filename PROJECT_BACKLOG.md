@@ -1,5 +1,13 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
+
+## 12.10.2026 – V2R4 gesamtwirtschaftlicher Snapshot: fälliger Review statt weiterer Null-BUY-Sammlung
+
+Read-only 16:22:28 UTC über beide TECHNISCHEN V2R4-Abschnitte, eine Strategieepoche: **2.562 Outcomes / 102 Paare, 1.608 initial WAIT, 1.590 WAIT→REJECT, 1.393 WAIT-Expiry-Kind, 201 lokaler Trigger-Recheck-Kind, 0 BUY, 0 Paper-Trades**. 1.221 echte 24h-Maturity-Pfade; 589 MFE≥+5%, 534 MAE≤−5%, 191 beide – NIE zu umsetzbarem Gewinn umdeuten. Kein strukturiertes Coin-EUR-Entry-Evidence- oder Stop-EUR-Feld beim V2R4-Modell-Erstentscheid (0/2.562 im geprüften Feld). Bestehende frühere 72h-Review-/Lernübergabe **nicht duplizieren**; alle Details als Nachtrag im vorhandenen 11.10.-Work-Bericht.
+
+Owner bleibt next_control_decisions.V2R4-PRODUCTIVITY-REVIEW plus bestehender 10:15-Work-/Milestone-Prozess. Alternative Supabase-Readiness und intake_should_stop=true bedeuten nur FÄLLIGE FACHENTSCHEIDUNG, nicht physischen Stop. Kein Work-Abschluss-ACK erfunden, keine neuen Scheduler. V3 nur kausal anhand originaler Coin-EUR-PIT→Full-Model→Stop/Stage2→Kosten→6h/24h gegen unveränderte V2R4-Baseline weiterentwickeln. Vor 13.10. 14:00:12 MESZ keine fingierte V3-Canary-Abnahme. Aktive V2R4 und Single-Writer/Folgebelege unverändert.
+
+
 ## 12.10.2026 – H10 Originalquittung: Nachverfolgung im bestehenden Meilensteincontroller
 
 Der bereits vorhandene `autonomous-project-milestones.yml`-Workflow läuft einmal täglich und besitzt Github-Issue-/Slack-Dublettenschutz. Seine bisherige H10-Prüfung überwachte **nicht** `v3_h10_selected_source_receipts`, obwohl PR #246 die Quittungstabelle und den einzigen GitHub-H10-Writer produktiv eingebaut hat. Deshalb wird im **bestehenden** `tools/project_milestone_controller.py` eine kleine, serverseitig autorisierte `GET limit=1`-Prüfung der ersten echten Originalquittung aufgenommen. Fehlende Quittung bleibt `H10:ORIGINAL_SOURCE_RECEIPT_PENDING`; bei einem gespeicherten Beleg werden kanonisches SHA-256, deterministische Fensteridentität, ≥3 unterschiedliche Wallet-Adressen, Nicht-Handelsstatus und serverseitige Frist geprüft. Bei Erfolg nur ein deduplizierter Forschungs-Review-Marker in bestehendem Issue #7 / vorhandenem Slack-Pfad, **keine** Autorisierung eines V3-BUY, keine Strategie- oder Paper-Änderung. Fehlerhafte Quelle bleibt gesonderte Sicherheitsprüfung, bei optionalem API-Ausfall werden laufende V2R4-Meilensteine nicht blockiert. Keine neue Automation, keine zweiten Quellaufrufe, keine zusätzliche Quittungstabelle oder geänderte H10-Sammelkadenz. Evidenz bleibt `REAL_ACK_PENDING` bis tatsächlicher Zeile in Supabase und Originalquellenprüfung; Tests via bereits vorhandener Milestone-CI.
