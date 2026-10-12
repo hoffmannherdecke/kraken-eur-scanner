@@ -21,7 +21,7 @@ from paper_evaluator.v3_p3_ab_five_bounded_research import verified_spot_metadat
 from paper_evaluator.v3_experimental_paper_initial_review_v1 import propose_initial_full_review,ELIGIBLE
 from paper_evaluator.v3_experimental_paper_model_prompt_v1 import build_v3_paper_full_model_prompt
 from paper_evaluator.v3_full_entry_decision_candidate_v1 import validate_full_entry_decision
-from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt,store_receipt_explicitly
+from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt,store_receipt_explicitly,clock as receipt_clock
 from paper_evaluator.v3_paper_context_bridge_v1 import fuse_existing_sources
 from paper_evaluator.v3_paper_positive_source_entry_v1 import (
     ELIGIBLE as POSITIVE_SOURCE_ELIGIBLE,
@@ -102,6 +102,7 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                   local_receipts:Path,model_reservations:Path,
                   approval:dict|None=None,model_key:str|None=None,
                   existing_context:dict|None=None,allow_model:bool=False,
+                  admit_staged_scanner_no_model:bool=False,
                   acquire:Callable[[dict],tuple[dict,dict,dict]]|None=None,
                   model_client:Callable[[str,str],tuple[dict,dict]]|None=None,
                   clock:Callable[[],str]=now)->dict:
@@ -113,29 +114,69 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
     stamp=candidate["event_time_utc"]
     if not local_receipts.is_dir() or local_receipts.is_symlink():
         raise ValueError("independent V3 Paper journal directory must already exist")
-    # Original case identity is immutable: restarting cannot replace an
-    # existing first-seen record or silently repeat a spent model request.
+    # The PR216/217 *original intake* journal precedes physical Kraken P0.
+    # Previously any original receipt blocked this worker forever. Only an
+    # explicit NO MODEL scanner continuation may consume that first audit.
+    if admit_staged_scanner_no_model and (
+            allow_model or approval is not None or model_key is not None
+            or candidate.get("entry_origin")!="SCANNER"):
+        raise ValueError("staged continuation forbids model HTTP and source-owner promotion")
+    prior=[]
     for old in local_receipts.glob("*.json"):
         try:
             row=read(old)
         except (OSError,ValueError):
             raise ValueError("corrupt immutable V3 journal; human recovery required")
-        if (row.get("series_id")==series_id
-                and row.get("candidate_id")==cid):
-            return {"status":"V3_CANDIDATE_ALREADY_JOURNALED_NO_REPROCESS",
-                    "paper_only":True,"model_called":False}
+        if row.get("series_id")==series_id and row.get("candidate_id")==cid:
+            prior.append(row)
+    if admit_staged_scanner_no_model:
+        if any(row.get("pair")!=candidate["pair"]
+               or row.get("event_time_utc")!=stamp
+               or row.get("revision")!=REVISION for row in prior):
+            raise ValueError("staged original candidate identity conflicts with immutable evidence")
+        by_phase={row.get("phase"):row for row in prior}
+        exact_staged=(len(prior)==2 and
+            set(by_phase)=={"SCANNER_CAPTURE","FULL_REVIEW_ELIGIBILITY"} and
+            all(row.get("event_key")=="FIRST" for row in prior) and
+            by_phase["SCANNER_CAPTURE"].get("result")=="SEEN" and
+            by_phase["SCANNER_CAPTURE"].get("data",{}).get("candidate_origin")=="SCANNER" and
+            by_phase["SCANNER_CAPTURE"].get("data",{}).get("source_status")==
+                "ORIGINAL_SELECTED_FOR_PRE_MODEL_REVIEW_ONLY" and
+            by_phase["FULL_REVIEW_ELIGIBILITY"].get("result") in ("PASS","UNKNOWN"))
+        if not exact_staged:
+            return {"status":"NO_UNIQUE_UNPROCESSED_STAGED_SCANNER_NO_RECHECK",
+                    "paper_only":True,"model_called":False,"orders":False}
+        current=receipt_clock(clock())
+        age=(current-receipt_clock(stamp)).total_seconds()
+        if not 0<=age<=600:
+            # No backdating an expired missed opportunity into a live review.
+            expired=make_receipt(series_id=series_id,revision=REVISION,
+                candidate_id=cid,pair=candidate["pair"],event_time_utc=stamp,
+                known_at_utc=current.isoformat(),phase="SOURCE_INPUT",
+                result="UNKNOWN",event_key="FRESHRECHECK",
+                data={"phase_failure_stage":"STAGED_ORIGINAL_10M_WINDOW_EXPIRED",
+                      "source_status":"ORIGINAL_TOO_OLD_FOR_LIVE_REVIEW"})
+            store_receipt_explicitly(local_receipts,expired)
+            return {"status":"STAGED_ORIGINAL_EXPIRED_JOURNALED_NO_KRAKEN_NO_MODEL",
+                    "paper_only":True,"model_called":False,"orders":False}
+    elif prior:
+        return {"status":"V3_CANDIDATE_ALREADY_JOURNALED_NO_REPROCESS",
+                "paper_only":True,"model_called":False}
     def receipt(phase:str,status:str,info:dict|None=None)->None:
         event=make_receipt(series_id=series_id,revision=REVISION,
             candidate_id=cid,pair=candidate["pair"],event_time_utc=stamp,
             known_at_utc=clock(),phase=phase,result=status,
-            data=info or {})
+            data=info or {},
+            event_key="FRESHRECHECK" if admit_staged_scanner_no_model else "FIRST")
         store_receipt_explicitly(local_receipts,event)
-    # Write SCANNER_CAPTURE before any market API. No candidate silently drops.
-    receipt("SCANNER_CAPTURE","SEEN",{
-        "candidate_origin":candidate.get("entry_origin","SCANNER"),
-        "positive_source_name":candidate.get("positive_source_name"),
-        "positive_source_event_id":candidate.get("positive_source_event_id")
-    })
+    # The original capture is already fsynced in the staged path. Never
+    # overwrite its immutable FIRST event with a second incompatible payload.
+    if not admit_staged_scanner_no_model:
+        receipt("SCANNER_CAPTURE","SEEN",{
+            "candidate_origin":candidate.get("entry_origin","SCANNER"),
+            "positive_source_name":candidate.get("positive_source_name"),
+            "positive_source_event_id":candidate.get("positive_source_event_id")
+        })
     positive_source=None
     if candidate.get("entry_origin")=="VERIFIED_POSITIVE_SOURCE_CATALYST":
         name=candidate.get("positive_source_name")
@@ -356,6 +397,7 @@ def main()->int:
     p.add_argument("--budget-directory",type=Path,required=True)
     p.add_argument("--optional-sources",type=Path)
     p.add_argument("--approved-one-model-call",type=Path)
+    p.add_argument("--admit-staged-scanner-no-model",action="store_true")
     p.add_argument("--model-key-file",type=Path)
     a=p.parse_args()
     sources=read(a.optional_sources) if a.optional_sources else {}
@@ -364,7 +406,8 @@ def main()->int:
     res=one_candidate(candidate=read(a.candidate),series_id=a.series,
                       local_receipts=a.journal,model_reservations=a.budget_directory,
                       approval=approval,model_key=key,existing_context=sources,
-                      allow_model=bool(a.approved_one_model_call))
+                      allow_model=bool(a.approved_one_model_call),
+                      admit_staged_scanner_no_model=a.admit_staged_scanner_no_model)
     print(json.dumps(res,sort_keys=True))
     return 0 if not res["status"].startswith("MODEL_FAILED") else 1
 

@@ -8,6 +8,7 @@ from paper_evaluator.v3_paper_minipc_one_candidate_v1 import (
     MAX_PROMPT_UTF8_BYTES,MAX_OUTPUT_TOKENS,MAX_ESTIMATED_COST_USD,
 )
 from paper_evaluator.v3_paper_context_bridge_v1 import fuse_existing_sources
+from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt,store_receipt_explicitly
 from tests.test_v3_experimental_paper_initial_review_v1 import fixture
 from tests.test_v3_full_entry_decision_candidate_v1 import fixture as full_fixture
 from tests.test_v2r4_v3_entry_handoff_probe import dt
@@ -34,6 +35,24 @@ def fake_model(prompt,_):
                       decision_at_utc=dt(12),setup_lane="IGNITION")
     return self_model,{"response_id":"test-model-response","model":"test-no-HTTP"}
 
+def stage_scanner_original(journal,candidate):
+    """Exactly the two immutable FIRST receipts from the separate intake stage."""
+    root={
+        "series_id":SID,"revision":REVISION,
+        "candidate_id":candidate["candidate_id"],"pair":candidate["pair"],
+        "event_time_utc":candidate["event_time_utc"],
+        "known_at_utc":dt(12),"event_key":"FIRST",
+    }
+    store_receipt_explicitly(journal,make_receipt(
+        **root,phase="SCANNER_CAPTURE",result="SEEN",
+        data={"candidate_origin":"SCANNER",
+              "source_status":"ORIGINAL_SELECTED_FOR_PRE_MODEL_REVIEW_ONLY",
+              "raw_reason_codes":[]}))
+    store_receipt_explicitly(journal,make_receipt(
+        **root,phase="FULL_REVIEW_ELIGIBILITY",result="PASS",
+        data={"candidate_origin":"SCANNER",
+              "review_status":"INITIAL_FRESH_PIT_READY_FOR_FULL_V3_MODEL_ONLY"}))
+
 class V3MiniPCOneCandidateTests(unittest.TestCase):
     def test_source_only_public_preflight_records_three_phases_and_no_http(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -51,6 +70,73 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
                             acquire=fake_acquire,clock=lambda:dt(12))
             self.assertEqual(again["status"],"V3_CANDIDATE_ALREADY_JOURNALED_NO_REPROCESS")
             self.assertEqual(len(list(journal.glob("*.json"))),4)
+
+    def test_explicit_staged_scanner_real_pit_recheck_only_once_without_model(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);journal=root/"journal";budgets=root/"budgets"
+            journal.mkdir();budgets.mkdir()
+            cand=dict(fixture()[0],entry_origin="SCANNER")
+            stage_scanner_original(journal,cand)
+            result=one_candidate(candidate=cand,series_id=SID,
+                local_receipts=journal,model_reservations=budgets,
+                acquire=fake_acquire,clock=lambda:dt(12),
+                admit_staged_scanner_no_model=True)
+            self.assertEqual(result["status"],
+                             "V3_PAPER_REAL_KRAKEN_PIT_PREFLIGHT_PASS_MODEL_NOT_CALLED")
+            rows=[json.loads(p.read_text("utf-8")) for p in journal.glob("*.json")]
+            self.assertEqual(len(rows),5)
+            self.assertEqual(len([r for r in rows if r["phase"]=="SCANNER_CAPTURE"]),1)
+            p0=[r for r in rows if r["phase"]=="FULL_REVIEW_ELIGIBILITY"]
+            self.assertEqual({r["event_key"] for r in p0},{"FIRST","FRESHRECHECK"})
+            self.assertEqual({r["phase"] for r in rows if r["event_key"]=="FRESHRECHECK"},
+                             {"SOURCE_INPUT","FULL_REVIEW_ELIGIBILITY","MODEL_REQUEST"})
+            self.assertFalse(list(budgets.glob("*.json")))
+            called=[]
+            def fail_if_called(_):
+                called.append(True)
+                raise AssertionError("duplicate public Kraken should be blocked")
+            again=one_candidate(candidate=cand,series_id=SID,
+                local_receipts=journal,model_reservations=budgets,
+                acquire=fail_if_called,clock=lambda:dt(12),
+                admit_staged_scanner_no_model=True)
+            self.assertEqual(again["status"],"NO_UNIQUE_UNPROCESSED_STAGED_SCANNER_NO_RECHECK")
+            self.assertFalse(called)
+            self.assertEqual(len(list(journal.glob("*.json"))),5)
+
+    def test_staged_no_model_fence_invalid_source_and_old_clock(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);journal=root/"journal";budgets=root/"budgets"
+            journal.mkdir();budgets.mkdir()
+            cand=dict(fixture()[0],entry_origin="SCANNER")
+            stage_scanner_original(journal,cand)
+            for kwargs in (
+                {"allow_model":True},
+                {"approval":valid_approval()},
+                {"model_key":"NON_REAL_STUB_KEY_DO_NOT_CALL"},
+            ):
+                with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
+                    one_candidate(candidate=cand,series_id=SID,
+                        local_receipts=journal,model_reservations=budgets,
+                        admit_staged_scanner_no_model=True,
+                        acquire=fake_acquire,clock=lambda:dt(12),**kwargs)
+            with self.assertRaises(ValueError):
+                one_candidate(candidate=dict(cand,entry_origin="VERIFIED_POSITIVE_SOURCE_CATALYST"),
+                    series_id=SID,local_receipts=journal,model_reservations=budgets,
+                    admit_staged_scanner_no_model=True,
+                    acquire=fake_acquire,clock=lambda:dt(12))
+            self.assertEqual(len(list(journal.glob("*.json"))),2)
+            expired=one_candidate(candidate=cand,series_id=SID,
+                local_receipts=journal,model_reservations=budgets,
+                admit_staged_scanner_no_model=True,
+                acquire=lambda _: (_ for _ in ()).throw(AssertionError("no Kraken")),
+                clock=lambda:dt(800))
+            self.assertEqual(expired["status"],
+                             "STAGED_ORIGINAL_EXPIRED_JOURNALED_NO_KRAKEN_NO_MODEL")
+            rows=[json.loads(p.read_text()) for p in journal.glob("*.json")]
+            expiry=next(r for r in rows if r["phase"]=="SOURCE_INPUT")
+            self.assertEqual(expiry["result"],"UNKNOWN")
+            self.assertNotIn("position_net_pnl_eur",expiry["data"])
+            self.assertFalse(list(budgets.glob("*.json")))
 
     def test_real_model_path_with_explicit_injected_stub_uses_full_p4_and_journal(self):
         with tempfile.TemporaryDirectory() as tmp:
