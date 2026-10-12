@@ -91,7 +91,12 @@
     "proposed_server_hash_verification": true,
     "proposed_insert_excludes_server_received_at": true,
     "proposed_fail_on_existing_schema": true,
-    "proposed_live_schema_applied": false
+    "proposed_live_schema_applied": false,
+    "offline_owner_insert_readback_module": "tools/v3_h10_selected_original_cloud_protocol_v1.py",
+    "offline_owner_insert_readback_tests": "tests/test_v3_h10_selected_original_cloud_protocol_v1.py",
+    "offline_readback_is_not_real_cloud_ack": true,
+    "requires_postgres_returned_server_received_at": true,
+    "no_current_api_transport_or_writer": true
   },
   "gates": {
     "offline_tests_required": true,
