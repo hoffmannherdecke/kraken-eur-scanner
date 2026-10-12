@@ -30,6 +30,10 @@ jobs:
             tools/minipc-status-sync.py \
             tools/v2r4-paper-local-runtime.py \
             tools/v2r4-shadow-cloud-sync.py
+      - name: V3 existing live H10 Cloud on-demand PIT context and no false source BUY
+        run: |
+          python -m py_compile paper_evaluator/v3_paper_h10_context_read_v1.py
+          python -m unittest tests.test_v3_paper_h10_live_context_read_v1 -v
       - name: V3 positively actionable official/H10/H11 source-originated Paper BUY review
         run: |
           python -m py_compile paper_evaluator/v3_paper_positive_source_entry_v1.py tools/v3-paper-positive-source-candidate.py
