@@ -296,3 +296,12 @@ evidence), using known-at timestamps and no hindsight leakage. No additional
 ChatGPT Work run, push, parallel strategy, raw market archive or independent
 control plane is created for this rule. Safety, candidate freezes,
 pre-registered tests and live-release gates remain in force.
+
+
+## Pflicht zur Gesamtarchitektur statt isolierter Anbauten (12.10.2026)
+
+**Nutzerziel:** Keine Flickenteppich-Architektur aus kleinen GitHub-/Cloud-/Mini-PC-/Work-Flicken, auch wenn jedes einzelne PR für sich technisch grün ist. Neue Arbeit beginnt beim vorhandenen Original-Owner und der bereits aktiven/vorbereiteten Gesamtkette. Technische Neuerstellung ist **letztes Mittel**, nicht Standardantwort auf eine bislang unbekannte Datei oder einen vermeintlich fehlenden Windows-Task.
+
+Der **bestehende** PR-Guard `tools/project_context_change_guard.py` verlangt daher eine maschinenprüfbare `architecture_integrity`-Sektion im unveränderten zentralen `PROJECT_CONTEXT_REVIEW_V1`-Format. Die einzigen maßgeblichen Verzeichnisse sind `research/monitoring-evidence-routing-v1.json` (funktionale Ströme/Overlap/Consumer) und `research/project-followthrough-routing-v1.json` (Querschnitts-Owner/Gates), die derselbe `context_before_action.py` bereits projekweit erschließt. Das Gate kontrolliert gültige IDs, die **vollständige** Menge der registrierten Überschneidungen aller als betroffen deklarierten Ströme und die deren deklarierten nachgelagerten Konsumenten. Zusätzlich fordert es Aussagen zu Reuse vs. Ersatz/Neuanlage, durchgehender Daten-/Steuerungskette, Schnittstellen und Ausfallmodi, Mehrkomplexität/Kosten und Regression/Rollback/echtem ACK. Dokumentation kann keine Codeänderung als `DOCUMENT_ONLY` kaschieren. Keine Änderung an den vorhandenen Zeitplänen; keine neue Datenbank und kein zweiter Architekturmanager.
+
+**Ehrliche Reichweite:** Ein Bearbeiter muss die tatsächlich betroffenen IDs korrekt angeben und die fachlichen Abhängigkeiten wirklich prüfen. CI kann nur vorhandene Registry-Referenzen und angegebene Beziehungen vergleichen, weder unausgesprochene Abhängigkeiten entdecken noch die Wahrheit von Freitext sicher beweisen. Die Ausführung durch ChatGPT Work/neue Chats und notwendiger Branch-Required-Check-Schutz bleiben gesonderte E2E-Gates. Bei ungeklärten Konflikten statt neuem Parallelbaustein `BLOCKED/NEEDS_ARCHITECTURE_REVIEW` zum bestehenden Owner, kein fiktiver Erfolg. V2R4, V3-28h-Kanari und Handels-/API-/Rechte-Gates bleiben unberührt.
