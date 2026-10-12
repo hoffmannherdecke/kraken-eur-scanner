@@ -118,6 +118,31 @@ class SelectedOriginalSourceReceiptTests(unittest.TestCase):
         b["created_at"] = "2026-10-12T12:50:08Z"
         self.reject("BATCH_NOT_AVAILABLE_AT_EVALUATION",batch_rows=[b])
 
+    def test_two_healthy_overlapping_cron_reads_cover_full_window(self):
+        earlier = copy.deepcopy(BATCH)
+        earlier["observed_at"] = "2026-10-12T12:17:00Z"
+        earlier["created_at"] = "2026-10-12T12:17:08Z"
+        later = copy.deepcopy(BATCH)
+        later["batch_id"] = "h10-second"
+        later["observed_at"] = "2026-10-12T12:47:00Z"
+        later["created_at"] = "2026-10-12T12:47:08Z"
+        p = build(batch_rows=[later, earlier], evaluated_at_utc="2026-10-12T12:48:00Z")
+        self.assertEqual(p["status"], "SELECTED_INACTIVE_OFFLINE_NOT_PERSISTED")
+        self.assertEqual(p["payload"]["complete_window_capture_batch_ids"],
+                         ["h10-original", "h10-second"])
+
+    def test_healthy_capture_interval_gap_is_blocked(self):
+        earlier = copy.deepcopy(BATCH)
+        earlier["observed_at"] = "2026-10-12T12:14:00Z"
+        earlier["created_at"] = "2026-10-12T12:14:08Z"
+        later = copy.deepcopy(BATCH)
+        later["batch_id"] = "h10-second"
+        later["observed_at"] = "2026-10-12T13:00:00Z"
+        later["created_at"] = "2026-10-12T13:00:08Z"
+        self.reject("NO_FULL_WINDOW_SUCCESSFUL_CAPTURE_COVERAGE",
+                    batch_rows=[later, earlier],
+                    evaluated_at_utc="2026-10-12T13:01:00Z")
+
     def test_no_false_historical_replay_when_raw_expired(self):
         self.reject("ORIGINAL_FILL_TTL_EXPIRED",
                     evaluated_at_utc="2026-10-15T13:00:00Z")
