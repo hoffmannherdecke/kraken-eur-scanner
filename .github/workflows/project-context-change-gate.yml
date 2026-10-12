@@ -1,0 +1,23 @@
+name: Project-wide context before material PR
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+permissions:
+  contents: read
+concurrency:
+  group: project-context-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  source-and-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+      - name: Mandatory current project sources and honest author review (all PR paths)
+        run: |
+          python -m unittest tests.test_project_context_change_guard -v
+          python tools/project_context_change_guard.py --base HEAD^1 --head HEAD --template
+          python tools/project_context_change_guard.py --base HEAD^1 --head HEAD --event "$GITHUB_EVENT_PATH"
