@@ -1,6 +1,6 @@
--- INACTIVE / REVIEW ONLY: DO NOT RUN AGAINST LIVE SUPABASE WITHOUT
--- SEPARATE EXPLICIT USER APPROVAL FOR SCHEMA + ROLE PERMISSIONS + H10 OWNER RUNTIME.
--- Not a live migration. No schedule, source worker, signer, trade or cloud writer.
+-- EXPLICIT USER AUTHORIZATION 2026-10-12: H10 schema, role grants and
+-- original H10 owner integration only. APPLY ONCE after preflight and CI;
+-- no new schedule, source worker, signer, model, trade or Paper writer.
 -- Single owner: existing GitHub H10 capture -> this SAME Supabase project.
 -- Existing pgcrypto.digest(bytea,text) in extensions schema checked read-only.
 -- Create-only intentionally fails on any existing relation/trigger/function.
@@ -23,7 +23,8 @@ CREATE TABLE public.v3_h10_selected_source_receipts (
     CONSTRAINT h10_selected_window_clock CHECK
         (evaluated_at_utc >= window_start_utc + interval '30 minutes'
          AND evaluated_at_utc <= window_start_utc + interval '47 hours 55 minutes'
-         AND evaluated_at_utc <= received_at_utc + interval '5 seconds'),
+         AND evaluated_at_utc <= received_at_utc + interval '5 seconds'
+         AND received_at_utc <= window_start_utc + interval '47 hours 55 minutes'),
     CONSTRAINT h10_selected_original_payload_size CHECK
         (octet_length(original_payload_canonical) <= 65536),
     CONSTRAINT h10_selected_original_canonical_sha CHECK
@@ -97,16 +98,16 @@ BEGIN
 END;
 $body$;
 REVOKE ALL ON FUNCTION public.v3_h10_refuse_mutating_source_receipt()
-  FROM PUBLIC, anon, authenticated;
+  FROM PUBLIC, anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.v3_h10_refuse_mutating_source_receipt()
   TO service_role;
 CREATE TRIGGER v3_h10_selected_source_receipt_immutable_guard
 BEFORE UPDATE OR DELETE ON public.v3_h10_selected_source_receipts
 FOR EACH ROW EXECUTE FUNCTION public.v3_h10_refuse_mutating_source_receipt();
 
--- Live release gate, NOT performed by this review branch:
--- (1) Obtain distinct schema + permission authorization, snapshot current
---     GitHub H10 run/branch and approved database state; apply one migration.
+-- Live acceptance gates (verify after authorised deployment):
+-- (1) User separately approved original schema and runtime 2026-10-12;
+--     retain the preflight+review and migration record before first live INSERT.
 -- (2) Verify RLS and effective privileges for anon/auth/service_role,
 --     especially no INSERT permission on received_at_utc.
 -- (3) From the SAME existing H10 source owner, validate actual complete
