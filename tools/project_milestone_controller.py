@@ -140,7 +140,7 @@ def first_h10_source_receipt_review(base: str, key: str) -> tuple[str, dict | No
         "und per kanonischem SHA, Zeitfenster und Wallet-Adressen vorgeprüft. "
         "Echter Erstfall muss fachlich (Originalbatch, unabhängige Wallets, "
         "Self-Dealing, Quelle und P0) geprüft werden. Kein BUY, keine Aktivierung. "
-        "Quittung: "+str(row["candidate_id"])[:16]))
+        "Quittung: "+str(row["candidate_id"])[:16])
 
 
 def event(kind: str, anchor: str, detail: str) -> dict:
