@@ -12,6 +12,7 @@ coin-related Polymarket event may independently reach FULL_REVIEW; missing
 optional signals never veto already-qualified Scanner handoffs.
 """
 from __future__ import annotations
+import hashlib,re
 from datetime import datetime,timezone
 from typing import Any
 from paper_evaluator.v3_paper_positive_source_entry_v1 import (
@@ -23,6 +24,45 @@ SCANNER_KIND="CANONICAL_CANDIDATE_HANDOFF_V1"
 JOURNAL_KIND="V3_EXPERIMENTAL_PAPER_CANDIDATE_EVENT_V1"
 FRESH_SECONDS=600
 COALESCE_SECONDS=300
+AUDIT_KIND="V3_ROUTER_REJECTED_ORIGINAL_AUDIT_V1"
+_SAFE_ID=re.compile(r"^[A-Za-z0-9_.:-]{1,150}$")
+_SAFE_PAIR=re.compile(r"^[A-Z0-9]{2,20}/EUR$")
+_SAFE_SOURCE=re.compile(r"^[A-Za-z0-9_.:-]{1,150}$")
+
+def _router_rejection_audit(raw:Any,*,origin:str,index:int,
+                            reason:str,decision_at_utc:str)->dict[str,Any]:
+    """Only fixed allowlisted metadata, never raw source payloads or secrets.
+
+    Untrusted/noncanonical inputs receive a deterministic audit identity, NOT
+    a candidate identity. They cannot enter the model/BUY or economic funnel.
+    """
+    original=raw if isinstance(raw,dict) else {}
+    snapshot=original.get("snapshot")
+    snap=snapshot if isinstance(snapshot,dict) else {}
+    def safe(value:Any,pattern:re.Pattern[str])->str|None:
+        return value if isinstance(value,str) and pattern.fullmatch(value) else None
+    candidate_id=safe(original.get("candidate_id"),_SAFE_ID)
+    pair=safe(original.get("pair"),_SAFE_PAIR)
+    source_event_id=safe(snap.get("event_id"),_SAFE_SOURCE)
+    untrusted_clock=original.get("event_time_utc")
+    if untrusted_clock is None:
+        untrusted_clock=snap.get("known_at_utc")
+    clock_text=None
+    if isinstance(untrusted_clock,str) and len(untrusted_clock)<=64:
+        try: clock_text=utc(untrusted_clock).isoformat()
+        except (ValueError,TypeError,OverflowError,AttributeError): pass
+    if type(index) is not int or index<0:
+        raise ValueError("invalid original input ordinal")
+    audit_seed="|".join((origin,str(index),reason,decision_at_utc))
+    audit_id="V3-INPUT-REJECT-"+hashlib.sha256(audit_seed.encode()).hexdigest()[:32]
+    return {"kind":AUDIT_KIND,"audit_id":audit_id,
+            "input_stream":origin,"input_index":index,"reason":reason,
+            "original_candidate_id_if_safe":candidate_id,
+            "original_pair_if_safe":pair,
+            "original_event_time_if_parseable":clock_text,
+            "original_source_event_id_if_safe":source_event_id,
+            "original_untrusted_and_not_tradeable":True}
+
 
 def _pair_meta(pair:str,altname:str,known_pairs:dict[str,Any])->bool:
     if (not isinstance(pair,str) or not pair.endswith("/EUR")
@@ -61,60 +101,65 @@ def plan_intake(*,scanner_events:list[dict],source_events:list[dict],
         if old!=(pair,event_time):raise ValueError("conflicting immutable V3 candidate ID")
     reasons:dict[str,int]={}
     rejected=[]
+    rejected_originals=[]
     eligible=[]
     same_identity={}
-    def exclude(reason:str,origin:str):
+    def exclude(reason:str,origin:str,raw:Any=None,index:int|None=None):
         reasons[reason]=reasons.get(reason,0)+1
         rejected.append({"origin":origin,"reason":reason})
-    def add(candidate:dict[str,Any],origin:str):
+        if index is not None:
+            rejected_originals.append(_router_rejection_audit(
+                raw,origin=origin,index=index,reason=reason,
+                decision_at_utc=at.isoformat()))
+    def add(candidate:dict[str,Any],origin:str,raw:Any,index:int):
         cid,pair,altname=(candidate.get(k) for k in ("candidate_id","pair","altname"))
         if not all(isinstance(x,str) and x for x in (cid,pair,altname)):
-            exclude("MISSING_ORIGINAL_CANDIDATE_IDENTITY",origin);return
+            exclude("MISSING_ORIGINAL_CANDIDATE_IDENTITY",origin,raw,index);return
         if not _pair_meta(pair,altname,known_pairs):
-            exclude("PAIR_NOT_VERIFIED_AS_SPOT_EUR_METADATA_RECHECK_REQUIRED",origin);return
+            exclude("PAIR_NOT_VERIFIED_AS_SPOT_EUR_METADATA_RECHECK_REQUIRED",origin,raw,index);return
         try:
             original=utc(candidate["event_time_utc"])
         except (ValueError,TypeError,KeyError,OverflowError,AttributeError):
-            exclude("UNKNOWN_ORIGINAL_EVENT_CLOCK",origin);return
+            exclude("UNKNOWN_ORIGINAL_EVENT_CLOCK",origin,raw,index);return
         age=(at-original).total_seconds()
         if age<0:
-            exclude("FUTURE_EVENT_NOT_YET_KNOWN",origin);return
+            exclude("FUTURE_EVENT_NOT_YET_KNOWN",origin,raw,index);return
         if age>FRESH_SECONDS:
-            exclude("EXPIRED_ORIGINAL_10M_WINDOW",origin);return
+            exclude("EXPIRED_ORIGINAL_10M_WINDOW",origin,raw,index);return
         known=same_identity.get(cid)
         if known is not None:
             if known!=(pair,original.isoformat()):
                 raise ValueError("two different events claim same candidate ID")
-            exclude("EXACT_CANDIDATE_DUPLICATE_IN_INPUT",origin);return
+            exclude("EXACT_CANDIDATE_DUPLICATE_IN_INPUT",origin,raw,index);return
         same_identity[cid]=(pair,original.isoformat())
         if cid in seen:
             if seen[cid][0]!=pair or utc(seen[cid][1])!=original:
                 raise ValueError("immutable candidate ID conflict with Cloud/journal")
-            exclude("ALREADY_JOURNALED_NO_REPEAT_NO_SPEND",origin);return
+            exclude("ALREADY_JOURNALED_NO_REPEAT_NO_SPEND",origin,raw,index);return
         eligible.append({"candidate":dict(candidate),
                          "origin":origin,"at":original})
 
-    for row in scanner_events:
+    for idx,row in enumerate(scanner_events):
         if (not isinstance(row,dict)
                 or row.get("kind")!=SCANNER_KIND
                 or row.get("action")!="REVIEW_ONLY_NOT_ORDER"
                 or row.get("entry_origin") not in (None,"SCANNER")):
-            exclude("SCANNER_EVENT_NOT_AUTHORIZED_REVIEW_ONLY", "SCANNER")
+            exclude("SCANNER_EVENT_NOT_AUTHORIZED_REVIEW_ONLY", "SCANNER",row,idx)
             continue
         # Nothing in this ingress logic is a liquidity/volume BUY VETO.
-        add(dict(row,entry_origin="SCANNER"),"SCANNER")
+        add(dict(row,entry_origin="SCANNER"),"SCANNER",row,idx)
 
-    for row in source_events:
+    for idx,row in enumerate(source_events):
         if not isinstance(row,dict):
-            exclude("SOURCE_ENVELOPE_INVALID","SOURCE_CATALYST")
+            exclude("SOURCE_ENVELOPE_INVALID","SOURCE_CATALYST",row,idx)
             continue
         name,pair,altname=(row.get(k) for k in ("source_name","pair","altname"))
         if name not in STREAMS or not _pair_meta(pair,altname,known_pairs):
-            exclude("SOURCE_NOT_VERIFIED_PAIR_MAPPING","SOURCE_CATALYST")
+            exclude("SOURCE_NOT_VERIFIED_PAIR_MAPPING","SOURCE_CATALYST",row,idx)
             continue
         snapshot=row.get("snapshot")
         if not isinstance(snapshot,dict):
-            exclude("SOURCE_SNAPSHOT_ABSENT","SOURCE_CATALYST")
+            exclude("SOURCE_SNAPSHOT_ABSENT","SOURCE_CATALYST",row,idx)
             continue
         try:
             candidate=make_source_candidate(
@@ -123,9 +168,9 @@ def plan_intake(*,scanner_events:list[dict],source_events:list[dict],
                 market_move=row.get("market_move"))
         except (ValueError,TypeError,KeyError,OverflowError,AttributeError):
             exclude("SOURCE_CATALYST_NOT_INDEPENDENTLY_VERIFIED",
-                    "SOURCE_CATALYST")
+                    "SOURCE_CATALYST",row,idx)
             continue
-        add(candidate,"SOURCE_CATALYST")
+        add(candidate,"SOURCE_CATALYST",row,idx)
     # Verified positive catalyst is prioritized over an otherwise same-coin
     # scanner notification within five minutes, not misrepresented as a BUY.
     eligible.sort(key=lambda e:(0 if e["origin"]=="SOURCE_CATALYST" else 1,
@@ -160,6 +205,8 @@ def plan_intake(*,scanner_events:list[dict],source_events:list[dict],
             # recheck the original 10-minute clock before spending a model.
             "capacity_deferred_originals":capacity_deferred,
             "same_pair_coalesced_originals":coalesced_originals,
+            "rejected_originals":rejected_originals,
+            "rejected_originals_audit_only_no_model_authority":True,
             "overflow_requires_durable_owner_queue_before_runtime":bool(capacity_deferred),
             "all_rejected_and_deferred_originals_not_yet_journaled":True,
             "counts":{"scanner_input":len(scanner_events),
