@@ -84,7 +84,7 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
         # A deletion-only PR previously disappeared under --diff-filter=ACMR.
         with patch("tools.project_context_change_guard.subprocess.run") as call:
             call.return_value.returncode = 0
-            call.return_value.stdout = "docs/removed-component.md\\n"
+            call.return_value.stdout = "docs/removed-component.md\n"
             self.assertEqual(git_paths(ROOT, "HEAD^1", "HEAD"),
                              ["docs/removed-component.md"])
             self.assertIn("--diff-filter=ACMRD", call.call_args.args[0])
