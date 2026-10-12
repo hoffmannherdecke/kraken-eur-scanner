@@ -1147,7 +1147,26 @@
         "original_task_expiry_preserved": "2026-10-13T12:00:12.2795431Z",
         "task_window_reset": false,
         "current_paper_series_independently_rechecked_this_turn": false,
-        "runtime_continues_only_until_original_expiry": true
+        "runtime_continues_only_until_original_expiry": true,
+        "cloud_6h_predeadline_source_audit": {
+          "observed_at_utc": "2026-10-12T16:28:51.513831Z",
+          "evidence": "Supabase public.v3_paper_event_receipts read-only",
+          "canary_series": "PAPER-V3-CANARY-20261011",
+          "canary_candidates": [
+            "EIGEN/EUR",
+            "ZRO/EUR"
+          ],
+          "canary_receipts": 14,
+          "six_hour_censor_reason_both": "CENSORED_NO_CONTIGUOUS_CLOSED_KRAKEN_1M_PATH",
+          "six_hour_complete_path": false,
+          "no_trade_pnl_must_not_be_zero": true,
+          "writer_smoke_series": "PAPER-V3-CANARY-WRITER-SMOKE-20261012",
+          "separate_smoke_receipts": 5,
+          "twentyfour_hour_not_due_at_snapshot": true,
+          "observer_deadline_utc": "2026-10-13T12:00:12.2795431Z",
+          "physical_task_stop_ack": "NOT_YET_PROVEN",
+          "no_runtime_or_model_change": true
+        }
       },
       "v3_shared_future_intake_router_20261012": {
         "status": "PURE_OFFLINE_ROUTING_CODE_IN_REVIEW_NOT_EXECUTED_ON_MINIPC_NOT_PAPER_ACTIVE",

@@ -80,3 +80,10 @@ Das ausgegebene JSON ist **ein Urteil über beobachtete Evidenz**, kein freigebe
 4. **Freigabe:** Nie aus einem grünen Report die aktive Paper-Serie, Runtime, Strategie, Berechtigungen oder Modellkosten selbst umstellen; die bestehenden fünf Kausal-/Release-Gates und echte Mini-PC-ACKs sind verbindlich.
 
 **Nächste Aktion:** Die bestehende Projektsteuerung nutzt diesen Report beim nächsten *tatsächlich nach dem Ablauf* möglichen Kontrolllauf. Vor dem Stichtag sind Code, Negativtests, Provenienzschema und Reviewer-Entscheidungsfelder bereits fertig; die realen zukünftigen 24h-Beobachtungen dürfen nicht heute erfunden werden.
+
+## V3-28h-Canary – realer Zwischenbefund 12.10.2026 um 16:28:51 UTC
+
+Read-only in Supabase: echte `PAPER-V3-CANARY-20261011`-Kohorte hat **14** Originalquittungen zu EIGEN/EUR und ZRO/EUR. Beide `FOLLOWUP_6H` sind **CENSORED**, mit gespeichertem Grund `CENSORED_NO_CONTIGUOUS_CLOSED_KRAKEN_1M_PATH`, `path_contiguous_1m_verified=false` und ausdrücklich `NO_BUY_OPPORTUNITY_LABEL_NOT_EXECUTABLE_TRADED_PNL`. Quellenzeit EIGEN **12:30:15 UTC**, ZRO **13:45:15 UTC**. Diese Quelle beweist **weder** handelbaren 6h-Gewinn **noch** 0-EUR-Rendite. Die separate `PAPER-V3-CANARY-WRITER-SMOKE-20261012`-Kohorte enthält **5** RENDER/EUR-Originalquittungen und ersetzt den unvollständigen 6h-Kurspfad NICHT.
+
+24h EIGEN fällig 13.10. **05:25:50 UTC**, ZRO **06:42:19 UTC**, beide bei diesem Snapshot noch nicht fällig. Fixes Original-28h-Ende **13.10. 12:00:12.2795431 UTC / 14:00:12 MESZ**, weder verlängern noch vorher als abgeschlossen bewerten. Das anschließende bestehende 10:15-Work-/Milestone-Gate muss echte individuelle 24h-Receipts, 6h-Censorgründe und die physische Windows-Task-Stopquittung samt neun SHA-256-Pins separat prüfen. Fehlen/Censoring ≠ 0-Rendite. Keine Task-, Mini-PC-, Paper-, V2R4-, H10-, Model-HTTP- oder Schedule-Änderung durch diese Dokumentation.
+
