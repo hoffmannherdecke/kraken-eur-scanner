@@ -70,8 +70,11 @@ def capture_public_1m(*,pair:str,altname:str,outdir:Path,
             "observed_at_utc":started.isoformat(),"captured_at_utc":received.isoformat()}
 
 def assemble(*,snapshots:Path,pair:str,entry_at_utc:str,
-             observed_at_utc:str)->dict[str,Any]:
-    if not snapshots.is_dir():raise ValueError("capture folder missing")
+             observed_at_utc:str,max_live_capture_lag_minutes:int=15)->dict[str,Any]:
+    if not snapshots.is_dir() or snapshots.is_symlink():
+        raise ValueError("capture folder missing or symlink")
+    if type(max_live_capture_lag_minutes) is not int or not 1<=max_live_capture_lag_minutes<=60:
+        raise ValueError("bounded live-capture delay required")
     # No historical backfill from next day's OHLC may masquerade as
     # actually archived capture: only witnessed snapshots count.
     entry=timestamp(entry_at_utc);now_at=timestamp(observed_at_utc)
@@ -89,6 +92,10 @@ def assemble(*,snapshots:Path,pair:str,entry_at_utc:str,
             at=timestamp(b["start_at_utc"])
             if at+timedelta(minutes=1)>observed:raise ValueError("open candle found in capture")
             if at<entry:continue
+            # Archive provenance: downloading older OHLC now is NOT proof
+            # that a live Paper collector witnessed it when it happened.
+            if captured-(at+timedelta(minutes=1))>timedelta(minutes=max_live_capture_lag_minutes):
+                continue
             key=at.isoformat()
             if key in all_rows and all_rows[key]!=b:
                 raise ValueError("different captured prices for same closed 1m")
@@ -98,4 +105,6 @@ def assemble(*,snapshots:Path,pair:str,entry_at_utc:str,
             "captured_at_utc":observed_at_utc,
             "closed_bars":[all_rows[k] for k in sorted(all_rows)],
             "source_snapshots_with_conflicts":False,
-            "no_future_backfill":True}
+            "no_future_backfill":True,
+            "max_original_snapshot_lag_minutes":max_live_capture_lag_minutes,
+            "historical_late_backfill_excluded":True}
