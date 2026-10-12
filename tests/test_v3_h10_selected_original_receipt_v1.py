@@ -143,6 +143,13 @@ class SelectedOriginalSourceReceiptTests(unittest.TestCase):
                     batch_rows=[later, earlier],
                     evaluated_at_utc="2026-10-12T13:01:00Z")
 
+    def test_earliest_possible_fill_expiration_fails_closed(self):
+        # The old end+48h calculation permitted 30 minutes of missing raw fills.
+        self.reject("ORIGINAL_FILL_TTL_EXPIRED",
+                    evaluated_at_utc="2026-10-14T11:55:00.000001Z")
+        late = build(evaluated_at_utc="2026-10-14T11:55:00Z")
+        self.assertEqual(late["status"], "SELECTED_INACTIVE_OFFLINE_NOT_PERSISTED")
+
     def test_no_false_historical_replay_when_raw_expired(self):
         self.reject("ORIGINAL_FILL_TTL_EXPIRED",
                     evaluated_at_utc="2026-10-15T13:00:00Z")
