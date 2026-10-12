@@ -200,8 +200,8 @@ class ExperimentalInitialV3PaperTests(unittest.TestCase):
                                   consensus_direction="LONG",independent_wallet_count=4),
             "polymarket_h11":dict(basic,pair="XBT/EUR",
                                  known_at_utc=dt(30),event_id="FUTURE_NOT_ALLOWED"),
-            "market_phase_radar":dict(basic,known_at_utc=dt(-1000),
-                                      observed_at_utc=dt(-1001),regime="RISK_OFF"),
+            "market_phase_radar":dict(basic,known_at_utc=dt(-20000),
+                                      observed_at_utc=dt(-20001),regime="RISK_OFF"),
             "news_sentiment":dict(basic,pair="ETH/EUR",
                                   headline_digest="WRONG_PAIR_NEWS"),
         }
