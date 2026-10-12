@@ -12,6 +12,9 @@ from paper_evaluator.v3_experimental_paper_initial_review_v1 import (
 )
 from paper_evaluator.v3_entry_handoff_probe import attach_to_future_evaluator,utc
 from paper_evaluator.v3_paper_context_bridge_v1 import (KIND as CONTEXT_KIND, fuse_existing_sources)
+from paper_evaluator.v3_paper_positive_source_entry_v1 import (
+    ELIGIBLE as POSITIVE_ELIGIBLE, assess_positive_source, make_source_candidate,
+)
 
 KIND="V3_EXPERIMENTAL_PAPER_FULL_MODEL_PROMPT_V1"
 
@@ -61,6 +64,37 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
                  for key,value in context["sources"].items()}
     else:
         context=fuse_existing_sources({},decision_at_utc=decision_at_utc)
+    positive_trigger=None
+    if candidate.get("entry_origin")=="VERIFIED_POSITIVE_SOURCE_CATALYST":
+        if not optional_context or optional_context.get("kind")!=CONTEXT_KIND:
+            raise ValueError("positive entry cannot be prompt-only or unverified")
+        provided=optional_context.get("raw_snapshots") or {}
+        name=candidate.get("positive_source_name")
+        snap=provided.get(name)
+        proof=assess_positive_source(
+            pair=candidate["pair"],source_name=name,snapshot=snap,
+            decision_at_utc=decision_at_utc,
+            market_move=provided.get("dynamic_move_radar"))
+        if proof["status"]!=POSITIVE_ELIGIBLE:
+            raise ValueError("unverified positive source event")
+        expected=make_source_candidate(
+            pair=candidate["pair"],kraken_altname=candidate["altname"],
+            source_name=name,snapshot=snap,decision_at_utc=decision_at_utc,
+            market_move=provided.get("dynamic_move_radar"))
+        if (expected["candidate_id"]!=candidate["candidate_id"]
+                or expected["event_time_utc"]!=candidate["event_time_utc"]
+                or expected["positive_source_event_id"]!=candidate.get("positive_source_event_id")):
+            raise ValueError("positive source event/candidate identity mismatch")
+        positive_trigger={
+            "status":proof["status"],"reason":proof["positive_reason"],
+            "source_name":name,"source_event_id":proof["source_event_id"],
+            "source_owner":proof["source_owner"],"source_id":proof["source_id"],
+            "observed_at_utc":proof["source_observed_at_utc"],
+            "known_at_utc":proof["source_known_at_utc"],
+            "coin_impact_mechanism":proof["impact_mechanism"],
+            "independent_from_scanner":True,
+            "source_is_not_buy_authority":True,
+        }
     data={
         "strategy":"V3-EXPERIMENTAL-PAPER-ONLY-NO-REAL-ORDERS",
         "candidate":{"candidate_id":candidate["candidate_id"],
@@ -77,6 +111,7 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
                                       ("pair","status","spot","quote","minimum_order_passed",
                                        "observed_at_utc")},
         "candidate_entry_evidence":attached["candidate_entry_evidence"],
+        "positive_source_trigger_for_independent_paper_entry":positive_trigger,
         "optional_source_availability_context_only":sources,
         "actual_optional_context_with_source_clock":context,
         "scout_eur":50,"stage2_eur":50,"taker_fee_pct_each_side":0.6,
@@ -85,6 +120,22 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
 Return ONE JSON decision only, no markdown; no signals from future outcomes.
 This is a NEW independent V3 decision policy, NOT the V2R3/V2R4 old
 conservative model prompt. Scanner ranking is a sensor, never a BUY vote.
+
+A second, INDEPENDENT SOURCE-CATALYST ENTRY PATH exists: when the verified
+positive_source_trigger_for_independent_paper_entry is non-null, treat it as
+a genuine candidate genesis and an actionable POSITIVE input, not mere
+sentiment decoration. A verified official government decision directly
+benefiting this coin, multiple independently confirmed net buys, or a
+directly coin-beneficial Polymarket event confirmed by same-pair early price
+movement may justify a 50 EUR initial SCOUT even BEFORE a technical breakout
+or conventional volume surge, IF Kraken execution, stop and fee-adjusted
+expected remaining opportunity are independently defensible. This evidence
+may increase confidence and change a WAIT/REJECT to BUY_SCOUT when warranted,
+but never accept vague news, generic mood, unrelated probability markets or
+unverified wallet claims as a causal coin catalyst. No source is a direct
+buy instruction; explain SOURCE_CATALYST in reason_codes when decisive.
+Missing optional sources must not block an otherwise legitimate technical
+opportunity. Never infer a coin-specific causal link from a headline alone.
 
 Evaluate a fresh first-stage 50 EUR SCOUT RIGHT NOW if the closed real Kraken
 1m/5m/15m structure, relative price/volume, fresh ask/spread and structural
