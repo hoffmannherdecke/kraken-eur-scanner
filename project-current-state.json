@@ -266,7 +266,11 @@
       "source_owner_signed_receipt_stage_status": "OFFLINE_INACTIVE_SECOND_IMMUTABLE_SOURCE_INPUT_OWNERAUTH_PASS_ONLY_AFTER_FRESH_MAC_REVERIFICATION_AND_ORIGINAL_FIRST_UNKNOWN_RECEIPT",
       "source_owner_signed_receipt_not_authority_for_buy_model_or_paper": true,
       "source_owner_signed_receipt_live_minipc_verified": false,
-      "source_owner_signed_receipt_exact_cloud_ack_verified": false
+      "source_owner_signed_receipt_exact_cloud_ack_verified": false,
+      "source_owner_qualified_packet_signer": "paper_evaluator/v3_paper_source_owner_hmac_v1.py::sign_qualified_owner_event_explicitly",
+      "source_owner_qualified_packet_signer_status": "PURE_OFFLINE_CODE_ONLY_NONE_OF_H5_H10_H11_EXISTING_CONTEXT_FEEDS_MAY_BE_SIGNED_AS_POSITIVE_LIVE_EVENTS",
+      "source_owner_qualified_packet_signer_live_emission_proven": false,
+      "source_owner_qualified_packet_signer_secret_provisioned": false
     },
     "kind": "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1",
     "requested_on": "2026-10-11",
