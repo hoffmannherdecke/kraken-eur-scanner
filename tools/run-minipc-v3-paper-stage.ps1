@@ -61,13 +61,25 @@ $queue=Join-Path $oldApps[0].FullName 'handoff_queue'
 if(-not (Test-Path $queue)){throw 'Original handoff queue does not exist'}
 $recent=@(Get-ChildItem $queue -Filter '*.json' -File |
  Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 40)
+# A prior source-only canary permanently journals its original identity.
+# Never silently reuse that candidate for an expensive model attempt.
+$seenCandidates=@{}
+foreach($receiptFile in @(Get-ChildItem (Join-Path $root 'journal') -Filter '*.json' -File)){
+ try{
+  $receipt=Get-Content $receiptFile.FullName -Raw | ConvertFrom-Json
+  if($receipt.series_id -eq $series -and $receipt.candidate_id){
+   $seenCandidates[[string]$receipt.candidate_id]=$true
+  }
+ }catch{ throw 'Corrupt immutable V3 candidate journal: fail closed before API' }
+}
 $candidate=$null
 foreach($file in $recent){
  try{
   $c=Get-Content $file.FullName -Raw | ConvertFrom-Json
   $age=((Get-Date).ToUniversalTime()-([datetime]$c.event_time_utc).ToUniversalTime()).TotalSeconds
   if($c.kind -eq 'CANONICAL_CANDIDATE_HANDOFF_V1' -and
-     $age -ge 0 -and $age -le 600 -and $c.pair.EndsWith('/EUR')){
+     $age -ge 0 -and $age -le 600 -and $c.pair.EndsWith('/EUR') -and
+     $c.candidate_id -and (-not $seenCandidates.ContainsKey([string]$c.candidate_id))){
    $candidate=$file;break
   }
  }catch{}
