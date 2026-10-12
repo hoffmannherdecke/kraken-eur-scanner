@@ -44,6 +44,17 @@ def plan_writer_preflight(*,scanner_events:list[dict[str,Any]],
         known_pairs=known_pairs,journal_receipts=journal_receipts,
         series_id=series_id,decision_at_utc=decision_at_utc,
         max_reviews=max_reviews)
+    # Source-owner packets denied BEFORE the shared router are original
+    # inputs too. Preserve their identities safely in the SAME immutable
+    # research journal, never silently collapse them to aggregate counts.
+    owner_rejects=source["source_event_rejected_originals"]
+    if sum(source["source_event_rejections"].values())!=len(owner_rejects):
+        raise ValueError("owner rejection individual audit accounting mismatch")
+    counts=dict(intake["counts"])
+    counts["suppressed_or_deferred"]+=len(owner_rejects)
+    reasons=dict(intake["dispositions"])
+    for key,num in source["source_event_rejections"].items():
+        reasons[key]=reasons.get(key,0)+num
     decisions=[]
     for c in intake["candidates"]:
         snap=market_observations.get(c["pair"])
@@ -83,11 +94,12 @@ def plan_writer_preflight(*,scanner_events:list[dict[str,Any]],
                  else "NO_COMPLETE_PIT_MODEL_REVIEW_ELIGIBILITY",
         "source_provenance":source,
         "ingress":{"status":intake["status"],
-                   "counts":intake["counts"],
-                   "dispositions":intake["dispositions"],
+                   "counts":counts,
+                   "dispositions":reasons,
+                   "owner_pre_router_rejection_count":len(owner_rejects),
                    "capacity_deferred_originals":intake["capacity_deferred_originals"],
                    "same_pair_coalesced_originals":intake["same_pair_coalesced_originals"],
-                   "rejected_originals":intake["rejected_originals"],
+                   "rejected_originals":intake["rejected_originals"]+owner_rejects,
                    "rejected_originals_audit_only_no_model_authority":True,
                    "overflow_requires_durable_owner_queue_before_runtime":intake["overflow_requires_durable_owner_queue_before_runtime"],
                    "rejected_originals_not_yet_journaled":True},
