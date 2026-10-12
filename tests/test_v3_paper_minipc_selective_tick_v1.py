@@ -70,7 +70,7 @@ class HostTickTests(unittest.TestCase):
                  ticker=lambda *_: (_ for _ in ()).throw(AssertionError("not ticker")))
             self.assertEqual(out["wait"]["status"],
                 "WAIT_EXPIRED_UNKNOWN_WITH_UNPROVEN_MISSED_OPPORTUNITY")
-            self.assertEqual(out["prospective_1m_bars"],15)
+            self.assertEqual(out["prospective_1m_bars"],16)
             self.assertFalse(any(json.loads(p.read_text())["phase"]=="PAPER_FILL"
                                  for p in j.glob("*.json")))
 
@@ -97,12 +97,21 @@ class HostTickTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);cap=root/"c";cap.mkdir()
             at=datetime(2026,10,13,8,0,0,tzinfo=timezone.utc)
-            snapshot=tick_capture(at)(pair="ZRO/EUR",altname="ZROEUR",outdir=cap)
-            self.assertEqual(snapshot["count"],16)
+            base=at.replace(second=0,microsecond=0)-timedelta(minutes=16)
+            def loader(_):
+                timestamps=[at-timedelta(hours=19)]+[
+                    base+timedelta(minutes=i) for i in range(16)]
+                candles=[[int(x.timestamp()),"2.09","2.12","2.08","2.10",
+                          "2.10","10.0",2] for x in timestamps]
+                return {"error":[],"result":{"ZROEUR":candles,"last":1}}
+            snapshot=capture_public_1m(pair="ZRO/EUR",altname="ZROEUR",
+                           outdir=cap,loader=loader,clock=lambda:at)
+            self.assertEqual(snapshot["count"],17)
             joined=assemble(snapshots=cap,pair="ZRO/EUR",
                 entry_at_utc=t(at-timedelta(hours=20)),
                 observed_at_utc=t(at))
-            self.assertEqual(len(joined["closed_bars"]),15)
+            # 19h-old bar was fetched NOW, not captured live 19h ago.
+            self.assertEqual(len(joined["closed_bars"]),16)
             self.assertTrue(joined["historical_late_backfill_excluded"])
 
 if __name__=="__main__":unittest.main()
