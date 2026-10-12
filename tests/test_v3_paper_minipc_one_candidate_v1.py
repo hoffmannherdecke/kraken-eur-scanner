@@ -4,7 +4,8 @@ import tempfile
 import unittest
 from pathlib import Path
 from paper_evaluator.v3_paper_minipc_one_candidate_v1 import (
-    one_candidate,REVISION,reserve_before_http,
+    one_candidate,REVISION,reserve_before_http,APPROVED_MODEL,
+    MAX_PROMPT_UTF8_BYTES,MAX_OUTPUT_TOKENS,MAX_ESTIMATED_COST_USD,
 )
 from paper_evaluator.v3_paper_context_bridge_v1 import fuse_existing_sources
 from tests.test_v3_experimental_paper_initial_review_v1 import fixture
@@ -18,7 +19,12 @@ def valid_approval():
             "strategy_revision":REVISION,"series_id":SID,"paper_only":True,
             "real_money_actions":False,"max_model_http_attempts_including_retries":1,
             "max_candidates":1,"explicit_user_new_budget_approval":True,
-            "consumed_pr186_budget":False,"expires_at_utc":"2099-01-01T00:00:00Z",
+            "consumed_pr186_budget":False,
+            "model":APPROVED_MODEL,
+            "max_input_utf8_bytes":MAX_PROMPT_UTF8_BYTES,
+            "max_output_tokens":MAX_OUTPUT_TOKENS,
+            "estimated_usd_ceiling":MAX_ESTIMATED_COST_USD,
+            "expires_at_utc":"2099-01-01T00:00:00Z",
             "unique_approval_id":"PAPER-CANARY-FIXTURE-NOT-REAL"}
 
 def fake_acquire(_):return tuple(fixture()[1:])
@@ -80,6 +86,24 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
             wrong=dict(approval,max_model_http_attempts_including_retries=100)
             with self.assertRaises(ValueError):
                 reserve_before_http(root,wrong,SID,"B",dt(13))
+
+    def test_one_call_cannot_be_upgraded_in_model_tokens_or_cost(self):
+        approval=valid_approval()
+        with tempfile.TemporaryDirectory() as td:
+            p=Path(td)
+            for mutate in (
+                {"model":"gpt-6-astra"},
+                {"max_input_utf8_bytes":500000},
+                {"max_output_tokens":20000},
+                {"estimated_usd_ceiling":5.0},
+                {"max_model_http_attempts_including_retries":2},
+                {"consumed_pr186_budget":True},
+            ):
+                with self.subTest(mutate=mutate):
+                    wrong=dict(approval,**mutate)
+                    with self.assertRaises(ValueError):
+                        reserve_before_http(p,wrong,SID,"COIN",dt(12))
+            self.assertFalse(list(p.glob("*.reserved.json")))
 
     def test_market_phase_smart_money_polymarket_are_known_at_or_missing_soft_context(self):
         yes={"source_verified":True,"source_owner":"H10_EXISTING",

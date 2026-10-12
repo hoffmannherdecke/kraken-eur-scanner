@@ -31,6 +31,17 @@ from paper_evaluator.v3_paper_positive_source_entry_v1 import (
 REVISION="V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001"
 MODEL_URL="https://api.openai.com/v1/responses"
 MAX_ONE_SHOT_HTTP=1
+APPROVED_MODEL="gpt-5.6-terra"
+MAX_PROMPT_UTF8_BYTES=25000
+MAX_OUTPUT_TOKENS=3000
+MAX_ESTIMATED_COST_USD=0.15
+# Official standard non-cached pricing, not an account-level charge stop.
+# Even 1 UTF-8 byte per input token + 10% premium remains under $0.15.
+PRICE_INPUT_PER_MILLION_USD=2.00
+PRICE_OUTPUT_PER_MILLION_USD=12.00
+MAX_ESTIMATED_USD=((MAX_PROMPT_UTF8_BYTES*PRICE_INPUT_PER_MILLION_USD+
+                    MAX_OUTPUT_TOKENS*PRICE_OUTPUT_PER_MILLION_USD)/1_000_000)*1.10
+assert MAX_ESTIMATED_USD<MAX_ESTIMATED_COST_USD
 
 def now()->str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00","Z")
@@ -49,9 +60,17 @@ def preflight_budget(approval:dict,series_id:str)->None:
             or approval.get("max_model_http_attempts_including_retries")!=1
             or approval.get("max_candidates")!=1
             or approval.get("explicit_user_new_budget_approval") is not True
-            or approval.get("consumed_pr186_budget") is not False):
+            or approval.get("consumed_pr186_budget") is not False
+            or approval.get("model")!=APPROVED_MODEL
+            or approval.get("max_input_utf8_bytes")!=MAX_PROMPT_UTF8_BYTES
+            or approval.get("max_output_tokens")!=MAX_OUTPUT_TOKENS
+            or approval.get("estimated_usd_ceiling")!=MAX_ESTIMATED_COST_USD):
         raise ValueError("NEW_USER_APPROVED_FIXED_BUDGET_NOT_PRESENT")
-    if approval.get("expires_at_utc") is None or now()>=approval["expires_at_utc"]:
+    try:
+        expiry=datetime.fromisoformat(approval["expires_at_utc"].replace("Z","+00:00"))
+        if expiry.tzinfo is None or expiry <= datetime.now(timezone.utc):
+            raise ValueError("expired or naive approval")
+    except (KeyError,ValueError,TypeError,AttributeError):
         raise ValueError("EXPIRED_ONE_SHOT_API_BUDGET")
 
 def reserve_before_http(d:Path,approval:dict,series_id:str,candidate_id:str,known_at:str)->Path:
@@ -70,6 +89,9 @@ def reserve_before_http(d:Path,approval:dict,series_id:str,candidate_id:str,know
           "candidate_id":candidate_id,"known_at_utc":known_at,
           "reserved_at_utc":now(),"maximum":1,
           "may_have_spent":True,"no_automatic_retry":True,
+          "model":APPROVED_MODEL,"max_input_utf8_bytes":MAX_PROMPT_UTF8_BYTES,
+          "max_output_tokens":MAX_OUTPUT_TOKENS,
+          "estimated_usd_ceiling":MAX_ESTIMATED_COST_USD,
           "real_money_actions":False}
     fd=os.open(path,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600)
     with os.fdopen(fd,"w",encoding="utf-8") as out:
@@ -227,6 +249,15 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
         ticker=quote,pair_metadata=meta,decision_at_utc=requested_at,
         optional_context={"kind":"V3_PAPER_EXISTING_RESEARCH_CONTEXT_BRIDGE_V1",
                           "raw_snapshots":existing_context or {}})
+    # Price bound must be checked BEFORE irreversible one-time API reservation.
+    # Input size is an intentionally pessimistic proxy for token upper bound,
+    # not a real-time billing estimate; no tools, retries, or batch jobs.
+    prompt_bytes=len(prompt.encode("utf-8"))
+    if prompt_bytes>MAX_PROMPT_UTF8_BYTES:
+        receipt("MODEL_REQUEST","UNKNOWN",{
+            "phase_failure_stage":"PROMPT_TOO_LARGE_NO_API_SPEND"})
+        return {"status":"MODEL_PROMPT_SIZE_GATE_NO_SPEND","paper_only":True,
+                "model_called":False}
     try:
         reservation=reserve_before_http(model_reservations,approval,series_id,cid,
                                         coin["known_at_utc"])
@@ -245,8 +276,16 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                 {"Authorization":"Bearer "+model_key,
                  "Content-Type":"application/json",
                  "User-Agent":"v3-paper-prospective-canary/1"},
-                json.dumps({"model":os.environ.get("OPENAI_MODEL","gpt-6-luna"),
-                            "input":prompt,"max_output_tokens":1700}).encode(),70)
+                json.dumps({
+                    "model":APPROVED_MODEL,
+                    "input":prompt,
+                    "max_output_tokens":MAX_OUTPUT_TOKENS,
+                    "reasoning":{"effort":"low"},
+                    "text":{"format":{"type":"json_object"}},
+                    "store":False,
+                }).encode(),70)
+            if result.get("status")!="completed":
+                raise ValueError("one-shot API response incomplete")
             raw=evaluate.parse_json_text(evaluate.extract_text(result))
             metadata={"response_id":result.get("id"),"model":result.get("model")}
         else:

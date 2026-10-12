@@ -1,0 +1,21 @@
+{
+  "kind": "V3_MINIPC_SINGLE_CANDIDATE_MODEL_HTTP_USER_APPROVAL_V1",
+  "strategy_revision": "V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001",
+  "series_id": "PAPER-V3-CANARY-20261011",
+  "paper_only": true,
+  "real_money_actions": false,
+  "max_model_http_attempts_including_retries": 1,
+  "max_candidates": 1,
+  "explicit_user_new_budget_approval": true,
+  "consumed_pr186_budget": false,
+  "model": "gpt-5.6-terra",
+  "max_input_utf8_bytes": 25000,
+  "max_output_tokens": 3000,
+  "estimated_usd_ceiling": 0.15,
+  "expires_at_utc": "2026-10-15T00:00:00Z",
+  "unique_approval_id": "V3PAPER-20261012-USER-APPROVED-ONE-HTTP-01",
+  "user_scope": "Exactly one model API request, no retry, read-only Kraken Spot EUR, isolated V3 CANARY no V2R4 runtime action and no real-money trade",
+  "actual_http_executed": false,
+  "api_key_in_repo": false,
+  "price_ceiling_basis": "Conservative input/output limits and GPT-5.6 Terra current USD token prices, not a provider billing hard stop."
+}
