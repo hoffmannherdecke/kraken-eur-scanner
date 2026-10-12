@@ -128,6 +128,45 @@ class V3SharedIngressTests(unittest.TestCase):
                    [origin("news_sentiment",official())],as_of=dt(500))
         self.assertEqual(later["counts"]["selected"],2)
 
+    def test_every_router_rejection_has_bounded_original_audit_without_secrets(self):
+        bad_action=scanner(cid="invalid-approval",action="ORDER")
+        old=scanner(cid="old1",event=dt(-650))
+        future=scanner(cid="future1",event=dt(99))
+        invalid=scanner(cid="messed-up",event="not-a-clock")
+        raw_secret={"kind":"BAD","candidate_id":"TOKEN SECRET DO NOT COPY",
+                    "pair":"BAD","auth_secret":"never-echo"}
+        r=plan(scanners=[bad_action,old,future,invalid,raw_secret],
+               sources=[origin("smart_money_h10",
+                               dict(money(),onchain_fills_confirmed=False))])
+        self.assertEqual(len(r["rejected_originals"]),6)
+        self.assertEqual(r["counts"]["selected"],0)
+        self.assertEqual(
+            {x["reason"] for x in r["rejected_originals"]},
+            {"SCANNER_EVENT_NOT_AUTHORIZED_REVIEW_ONLY",
+             "EXPIRED_ORIGINAL_10M_WINDOW","FUTURE_EVENT_NOT_YET_KNOWN",
+             "UNKNOWN_ORIGINAL_EVENT_CLOCK",
+             "SOURCE_CATALYST_NOT_INDEPENDENTLY_VERIFIED"})
+        self.assertEqual(r["rejected_originals"][0]["input_index"],0)
+        self.assertEqual(r["rejected_originals"][1]["original_candidate_id_if_safe"],"old1")
+        self.assertEqual(r["rejected_originals"][2]["original_event_time_if_parseable"],dt(99).replace("Z","+00:00"))
+        from json import dumps
+        serialized=dumps(r["rejected_originals"])
+        self.assertNotIn("never-echo",serialized)
+        self.assertNotIn("TOKEN SECRET",serialized)
+        self.assertNotIn("confirmed_net_buy_usd",serialized)
+        self.assertTrue(all(x["original_untrusted_and_not_tradeable"]
+                            for x in r["rejected_originals"]))
+        self.assertFalse(r["model_http_authorized"])
+
+    def test_rejection_audit_original_ids_replay_deterministic_no_buy(self):
+        invalid=scanner(cid="wrong-action",action="ORDER")
+        a=plan(scanners=[invalid])
+        b=plan(scanners=[invalid])
+        self.assertEqual(a["rejected_originals"],b["rejected_originals"])
+        self.assertEqual(len({x["audit_id"] for x in a["rejected_originals"]}),1)
+        self.assertFalse(a["orders"])
+        self.assertTrue(a["all_rejected_and_deferred_originals_not_yet_journaled"])
+
     def test_no_past_approval_and_forged_payload_cannot_buy(self):
         fake=dict(official(),official_primary_url="https://www.treasury.gov.evil.example/a")
         r=plan(sources=[origin("news_sentiment",fake)])
