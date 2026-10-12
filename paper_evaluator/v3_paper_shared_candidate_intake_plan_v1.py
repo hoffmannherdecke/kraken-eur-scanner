@@ -131,15 +131,22 @@ def plan_intake(*,scanner_events:list[dict],source_events:list[dict],
     eligible.sort(key=lambda e:(0 if e["origin"]=="SOURCE_CATALYST" else 1,
                                 e["at"],e["candidate"]["candidate_id"]))
     selected=[]
+    capacity_deferred=[]
+    coalesced_originals=[]
     near_pairs:dict[str,datetime]={}
     for entry in eligible:
         pair=entry["candidate"]["pair"]
         if pair in near_pairs and abs((near_pairs[pair]-entry["at"]).total_seconds())<=COALESCE_SECONDS:
+            # Preserve full original identifier and why this was merged with
+            # a prioritized same-coin review. Later economic attribution must
+            # see BOTH raw events, never claim both were independently modeled.
+            coalesced_originals.append(entry["candidate"])
             exclude("SAME_PAIR_CONCURRENT_REVIEW_COALESCED_NOT_LOST","ROUTER")
             continue
         if len(selected)>=max_reviews:
             # These remain eligible next tick while the original source clock
             # is fresh; no silent model spending, and overflow is disclosed.
+            capacity_deferred.append(entry["candidate"])
             exclude("CAPACITY_DEFERRED_NOT_A_NEGATIVE_MARKET_DECISION","ROUTER")
             continue
         selected.append(entry["candidate"])
@@ -148,6 +155,13 @@ def plan_intake(*,scanner_events:list[dict],source_events:list[dict],
             "status":"CANDIDATES_READY_FOR_KRAKEN_AND_MODEL_P4_REVIEW_ONLY"
                      if selected else "NO_FRESH_UNJOURNALED_INPUT",
             "candidates":selected,
+            # This is returned original evidence ONLY, not a durable queue.
+            # A future single owner must persist the deferral journal and
+            # recheck the original 10-minute clock before spending a model.
+            "capacity_deferred_originals":capacity_deferred,
+            "same_pair_coalesced_originals":coalesced_originals,
+            "overflow_requires_durable_owner_queue_before_runtime":bool(capacity_deferred),
+            "all_rejected_and_deferred_originals_not_yet_journaled":True,
             "counts":{"scanner_input":len(scanner_events),
                       "source_input":len(source_events),
                       "selected":len(selected),

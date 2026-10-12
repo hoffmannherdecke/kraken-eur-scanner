@@ -108,6 +108,12 @@ class V3SharedIngressTests(unittest.TestCase):
         r=plan(scanners=xs,limit=1,known=mappings)
         self.assertEqual(r["counts"]["selected"],1)
         self.assertEqual(r["dispositions"]["CAPACITY_DEFERRED_NOT_A_NEGATIVE_MARKET_DECISION"],4)
+        self.assertEqual(len(r["capacity_deferred_originals"]),4)
+        self.assertEqual({c["candidate_id"] for c in r["capacity_deferred_originals"]},
+                         {"N1","N2","N3","N4"})
+        self.assertTrue(r["overflow_requires_durable_owner_queue_before_runtime"])
+        self.assertTrue(r["all_rejected_and_deferred_originals_not_yet_journaled"])
+        self.assertFalse(r["model_http_authorized"])
 
     def test_same_coin_nearby_source_dominates_scanner_but_later_independent_is_not_silenced(self):
         scan=scanner(cid="x",pair="XBT/EUR",event=dt(7))
@@ -115,6 +121,9 @@ class V3SharedIngressTests(unittest.TestCase):
         self.assertEqual(near["counts"]["selected"],1)
         self.assertEqual(near["candidates"][0]["entry_origin"],"VERIFIED_POSITIVE_SOURCE_CATALYST")
         self.assertEqual(near["dispositions"]["SAME_PAIR_CONCURRENT_REVIEW_COALESCED_NOT_LOST"],1)
+        self.assertEqual(len(near["same_pair_coalesced_originals"]),1)
+        self.assertEqual(near["same_pair_coalesced_originals"][0]["candidate_id"],"x")
+        self.assertEqual(near["same_pair_coalesced_originals"][0]["event_time_utc"],dt(7))
         later=plan([scanner(cid="x",pair="XBT/EUR",event=dt(480))],
                    [origin("news_sentiment",official())],as_of=dt(500))
         self.assertEqual(later["counts"]["selected"],2)
