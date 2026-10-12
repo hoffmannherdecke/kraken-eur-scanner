@@ -160,6 +160,53 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
         self.assertEqual(len(accepted["owner_source_events"]),1)
         self.assertFalse(accepted["physical_source_key_provisioning_or_owner_live_event_proven"])
 
+    def test_denied_owner_originals_are_individually_auditable_and_never_tradeable(self):
+        import json,tempfile
+        from pathlib import Path
+        from paper_evaluator.v3_paper_intake_receipt_stage_v1 import (
+            prepare_receipts,stage_receipts_explicitly,
+        )
+        good=event("news_sentiment",official())
+        wrong=dict(good,snapshot=dict(good["snapshot"],
+                                     raw_api_token="SECRET_SHOULD_NEVER_BE_PERSISTED"))
+        forged=dict(good,owner_integrity={
+            "authenticated_owner_id":"OFFICIAL_US_CURATOR",
+            "authentication_checked_by_trusted_caller":True,
+            "canonical_payload_sha256":fingerprint(good["snapshot"])
+        })
+        planning=preflight(owner_events=[wrong,forged])
+        source=planning["source_provenance"]
+        self.assertEqual(source["owner_source_events"],[])
+        self.assertEqual(len(source["source_event_rejected_originals"]),2)
+        self.assertEqual(planning["ingress"]["counts"]["selected"],0)
+        self.assertEqual(planning["ingress"]["counts"]["suppressed_or_deferred"],2)
+        self.assertEqual(len(planning["ingress"]["rejected_originals"]),2)
+        self.assertEqual(len({a["audit_id"] for a in
+                              planning["ingress"]["rejected_originals"]}),2)
+        self.assertTrue(all(a["input_stream"]=="SOURCE_OWNER" for a in
+                            planning["ingress"]["rejected_originals"]))
+        with tempfile.TemporaryDirectory() as tmp:
+            journal=Path(tmp)
+            one=stage_receipts_explicitly(
+                preflight=planning,journal_directory=journal)
+            self.assertEqual(one["written"],2)
+            self.assertEqual(one["originals_with_receipt"],0)
+            self.assertEqual(one["owner_pre_router_rejection_audit_receipts"],2)
+            self.assertEqual(one["router_rejection_audit_receipts"],2)
+            self.assertFalse(one["cloud_ack_verified"])
+            self.assertFalse(one["model_http_authorized"])
+            rows=[json.loads(p.read_text("utf-8")) for p in journal.glob("*.json")]
+            self.assertEqual(len(rows),2)
+            self.assertTrue(all(x["phase"]=="SOURCE_INPUT" and
+                                x["pair"]=="UNMAPPED/EUR" and
+                                x["result"]=="UNKNOWN" and
+                                x["event_key"]=="ROUTERREJECT" for x in rows))
+            self.assertNotIn("SECRET_SHOULD_NEVER_BE_PERSISTED",
+                             json.dumps(rows))
+            again=stage_receipts_explicitly(
+                preflight=planning,journal_directory=journal)
+            self.assertEqual(again["identical_replays"],2)
+
     def test_complete_shared_v3_scanner_and_official_market_PIT_gate_but_no_spend(self):
         obs=xbt_real_pit_fixture()
         result=preflight(
