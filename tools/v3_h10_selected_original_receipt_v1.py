@@ -240,9 +240,24 @@ def build_selected_window_receipt(*, cohort: dict, batch_rows: list[dict],
 
 
 def compare_replay(existing: dict, candidate: dict) -> str:
-    """Offline duplicate check. Never overwrite original receipt on collision."""
-    insist(existing.get("candidate_id") == candidate.get("candidate_id"),
+    """Validate both canonical digests before an offline idempotent no-write comparison."""
+    for receipt in (existing, candidate):
+        insist(isinstance(receipt, dict)
+               and receipt.get("status") == "SELECTED_INACTIVE_OFFLINE_NOT_PERSISTED",
+               "REPLAY_NOT_A_SELECTED_CANDIDATE")
+        payload = receipt.get("payload")
+        insist(isinstance(payload, dict) and payload.get("kind")
+               == "V3_H10_SELECTED_ORIGINAL_SOURCE_RECEIPT_CANDIDATE_V1",
+               "REPLAY_INVALID_PAYLOAD")
+        identity = {
+            "cohort_id": payload.get("cohort_id"), "role": payload.get("cohort_role"),
+            "coin": payload.get("coin"), "window_start_utc": payload.get("window_start_utc")
+        }
+        insist(receipt.get("candidate_id") == digest(identity)
+               and receipt.get("content_sha256") == digest(payload),
+               "REPLAY_DIGEST_NOT_CANONICAL")
+    insist(existing["candidate_id"] == candidate["candidate_id"],
            "REPLAY_IDENTITY_MISMATCH")
-    insist(existing.get("content_sha256") == candidate.get("content_sha256"),
+    insist(existing["content_sha256"] == candidate["content_sha256"],
            "REPLAY_CONTENT_CONFLICT_KEEP_ORIGINAL")
     return "IDENTICAL_REPLAY_NO_WRITE"
