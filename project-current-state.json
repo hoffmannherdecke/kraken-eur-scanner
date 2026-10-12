@@ -225,7 +225,11 @@
       "after_28h_auto_extension": false,
       "v2r4_unchanged": true,
       "model_http_authorized": false,
-      "paper_cutover_authorized": false
+      "paper_cutover_authorized": false,
+      "physical_diagnostic_script": "tools/check-minipc-v3-physical-writer-readiness.ps1",
+      "physical_diagnostic_policy": "READ_ONLY_NO_REPO_UPDATE_NO_SCHEDULER_OR_V2R4_CHANGE_NO_MODEL_NO_CLOUD",
+      "physical_snapshot_status": "AWAITING_REAL_MINIPC_OUTPUT_NOT_YET_EXECUTED",
+      "next_safe_action": "Run the one-shot, read-only physical readiness script on Mini-PC; inspect pinned observer hash, source owner, queue and journal BEFORE any new write or git pull; then prepare single bounded write in isolated V3 research workspace only if safe."
     },
     "kind": "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1",
     "requested_on": "2026-10-11",
