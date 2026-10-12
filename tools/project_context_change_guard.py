@@ -14,7 +14,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-try:\n    from tools.context_before_action import build, ContextGateError\nexcept ModuleNotFoundError:  # running as python tools/project_context_change_guard.py\n    from context_before_action import build, ContextGateError
+try:
+    from tools.context_before_action import build, ContextGateError
+except ModuleNotFoundError:  # CLI invocation
+    from context_before_action import build, ContextGateError
 
 ROOT = Path(__file__).resolve().parents[1]
 START = "<!-- PROJECT_CONTEXT_REVIEW_V1"
