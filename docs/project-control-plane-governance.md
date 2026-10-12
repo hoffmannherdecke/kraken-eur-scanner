@@ -296,3 +296,8 @@ evidence), using known-at timestamps and no hindsight leakage. No additional
 ChatGPT Work run, push, parallel strategy, raw market archive or independent
 control plane is created for this rule. Safety, candidate freezes,
 pre-registered tests and live-release gates remain in force.
+
+
+## Projektweiter verpflichtender Kontext-Review — 12.10.2026
+
+Der **bestehende** `tools/context_before_action.py` ist die einzige kanonische Quellenroute. `AGENTS.md` ist der Einstieg für jeden Agenten, einschließlich neuer Chats **nach aktivem Abruf**, und `docs/project-cross-session-handoff-v1.md` beschreibt die organisatorischen Grenzen. `tools/project_context_change_guard.py` plus ereignisgesteuerter PR-Workflow prüfen bei jedem GitHub-PR alle vom Diff betroffenen Scopes samt Fingerprints und erklärter früherer Entscheidungen, bestehender technischer Owner, Freigaben und ACK-Pflichten. Die CI validiert Struktur und Quellversion, kein verstecktes semantisches KI-Verständnis. **Ohne nachweislich als required aktivierte Branch-Protection ist das Gate noch umgehbar; ohne beobachteten echten Work-Lauf gilt der Chat-/Work-E2E nicht als abgeschlossen.** Unbekannte fremde private Chats sind per GitHub nicht automatisch lesbar und bedürfen aktiver kanonischer Persistenz. Kein Handel, keine neue GitHub-/Work-Zeitplanung.
