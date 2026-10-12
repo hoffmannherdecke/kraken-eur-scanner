@@ -81,6 +81,10 @@ def _frame(rows: list[Any], interval: int, as_of: datetime) -> dict[str, Any]:
                 "last_closed_bar_end_utc": _iso(datetime.fromtimestamp(last["start_utc"] + interval * 60, timezone.utc))}
     prev_vols = [r["volume"] for r in candles[-6:-1]]
     avg_prior = sum(prev_vols) / len(prev_vols)
+    # V3 P4 permits 15m volume_ratio_4 (four prior CLOSED candles).
+    # Never substitute the existing five-bar ratio; that changes the thesis.
+    four_prior_volumes = [r["volume"] for r in candles[-5:-1]]
+    avg_prior_four = sum(four_prior_volumes)/len(four_prior_volumes)
     out: dict[str, Any] = {
         "status": "VALID", "interval_min": interval,
         "last_closed_bar_end_utc": _iso(datetime.fromtimestamp(last["start_utc"] + interval * 60, timezone.utc)),
@@ -89,6 +93,7 @@ def _frame(rows: list[Any], interval: int, as_of: datetime) -> dict[str, Any]:
         "closed_low_eur": round(last["low"], 10),
         "closed_volume_base": round(last["volume"], 10),
         "volume_ratio_prior_5": round(last["volume"] / avg_prior, 5) if avg_prior > 0 else None,
+        "volume_ratio_prior_4": round(last["volume"] / avg_prior_four, 5) if avg_prior_four>0 else None,
         "volume_ratio_status": "VALID" if avg_prior > 0 else "MISSING_ZERO_BASELINE",
     }
     if interval == 15:
