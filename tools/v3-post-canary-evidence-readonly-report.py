@@ -10,6 +10,11 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
+
+# Exact repository root is required when invoked via `python tools/...`,
+# not a guessed user PYTHONPATH or a network/package installation.
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 
 from paper_evaluator.v3_paper_post_canary_evidence_verdict_v1 import verdict
 
