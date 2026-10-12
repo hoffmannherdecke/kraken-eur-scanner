@@ -1,5 +1,6 @@
 """V3 exploratory PAPER initial entry is earlier than WAIT/15m, but never auto-BUY."""
 import copy
+import json
 import unittest
 from pathlib import Path
 
@@ -149,6 +150,77 @@ class ExperimentalInitialV3PaperTests(unittest.TestCase):
             build_v3_paper_full_model_prompt(
                 candidate=bad,eligibility=h,entry_evidence=e,ticker=t,
                 pair_metadata=m,decision_at_utc=dt(12))
+
+
+    def test_five_approved_v3_information_roles_reach_actual_full_model_prompt(self):
+        xs=fixture();c,e,t,m=xs
+        clock=dt(12)
+        basic={"source_verified":True,"source_owner":"OFFLINE_TEST_OWNER",
+               "source_id":"TEST_SOURCE_NOT_LIVE",
+               "observed_at_utc":dt(3),"known_at_utc":dt(5)}
+        snapshots={
+            "smart_money_h10":dict(basic,pair="XBT/EUR",
+                                  consensus_direction="LONG",independent_wallet_count=1),
+            "polymarket_h11":dict(basic,pair="XBT/EUR",
+                                 event_id="TEST_ONLY_EVENT",yes_midpoint=0.52,
+                                 observed_probability_delta=0.01),
+            "market_phase_radar":dict(basic,regime="RECOVERY",confidence="LOW"),
+            "news_sentiment":dict(basic,pair="XBT/EUR",
+                                  headline_digest="TEST_ONLY_UNVERIFIED_NEWS",
+                                  sentiment="POSITIVE",official_confirmation=False),
+            "source_stewardship":dict(basic,health="PILOT_RESEARCH_ONLY",
+                                     source_quality_summary="NOT_ALPHA_PROVEN"),
+        }
+        actual=build_v3_paper_full_model_prompt(
+            candidate=c,eligibility=ticket(xs),entry_evidence=e,
+            ticker=t,pair_metadata=m,decision_at_utc=clock,
+            optional_context={"kind":"V3_PAPER_EXISTING_RESEARCH_CONTEXT_BRIDGE_V1",
+                              "raw_snapshots":snapshots})
+        self.assertIn("V3 START-OF-PAPER OPTIONAL SOURCE APPLICATION",actual)
+        self.assertIn("When ANY optional source materially changes",actual)
+        content=json.loads(actual.split("VERIFIED DECISION INPUT:\\n",1)[1])
+        context=content["actual_optional_context_with_source_clock"]["sources"]
+        for name in snapshots:
+            self.assertEqual(context[name]["state"],"AVAILABLE_PIT_CONTEXT_ONLY")
+            self.assertFalse(context[name]["hard_veto"])
+        self.assertEqual(context["market_phase_radar"]["values"]["regime"],"RECOVERY")
+        self.assertEqual(context["smart_money_h10"]["values"]["independent_wallet_count"],1)
+        self.assertIsNone(content["positive_source_trigger_for_independent_paper_entry"])
+        self.assertNotIn("BUY_SCOUT",content["optional_source_availability_context_only"])
+        self.assertEqual(content["scout_eur"],50)
+        self.assertEqual(content["stage2_eur"],50)
+
+    def test_unusable_source_not_smuggled_into_v3_launch_prompt(self):
+        xs=fixture();c,e,t,m=xs
+        basic={"source_verified":True,"source_owner":"OFFLINE_TEST_OWNER",
+               "source_id":"TEST_SOURCE_NOT_LIVE",
+               "observed_at_utc":dt(3),"known_at_utc":dt(5)}
+        snapshots={
+            "smart_money_h10":dict(basic,pair="ETH/EUR",
+                                  consensus_direction="LONG",independent_wallet_count=4),
+            "polymarket_h11":dict(basic,pair="XBT/EUR",
+                                 known_at_utc=dt(30),event_id="FUTURE_NOT_ALLOWED"),
+            "market_phase_radar":dict(basic,known_at_utc=dt(-1000),
+                                      observed_at_utc=dt(-1001),regime="RISK_OFF"),
+            "news_sentiment":dict(basic,pair="ETH/EUR",
+                                  headline_digest="WRONG_PAIR_NEWS"),
+        }
+        actual=build_v3_paper_full_model_prompt(
+            candidate=c,eligibility=ticket(xs),entry_evidence=e,
+            ticker=t,pair_metadata=m,decision_at_utc=dt(12),
+            optional_context={"kind":"V3_PAPER_EXISTING_RESEARCH_CONTEXT_BRIDGE_V1",
+                              "raw_snapshots":snapshots})
+        content=json.loads(actual.split("VERIFIED DECISION INPUT:\\n",1)[1])
+        context=content["actual_optional_context_with_source_clock"]["sources"]
+        self.assertEqual(context["smart_money_h10"]["state"],"NOT_ASSOCIABLE_OTHER_PAIR")
+        self.assertEqual(context["polymarket_h11"]["state"],
+                         "INVALID_FUTURE_OR_REVERSED_CLOCK")
+        self.assertEqual(context["market_phase_radar"]["state"],"STALE_OPTIONAL")
+        self.assertEqual(context["news_sentiment"]["state"],"NOT_ASSOCIABLE_OTHER_PAIR")
+        for key in snapshots:
+            self.assertNotIn("values",context[key])
+            self.assertFalse(context[key]["hard_veto"])
+        self.assertIsNone(content["positive_source_trigger_for_independent_paper_entry"])
 
     def test_old_v2r4_owner_is_not_wired_to_v3(self):
         root=Path(__file__).resolve().parents[1]
