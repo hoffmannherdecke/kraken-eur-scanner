@@ -93,6 +93,21 @@ class HostTickTests(unittest.TestCase):
             self.assertEqual(finish_wait(journal=j,series_id=SID,candidate_id=CID,
                     now_at_utc=t(at))["status"],"WAIT_EXPIRY_ALREADY_FINAL")
 
+    def test_15m_volume_ratio_four_previous_is_not_five_previous(self):
+        from paper_evaluator.successor_coin_entry_evidence_v1 import _frame
+        as_of=datetime(2026,10,12,6,46,tzinfo=timezone.utc)
+        base=datetime(2026,10,12,4,15,tzinfo=timezone.utc)
+        volumes=[100.0,1.0,2.0,3.0,4.0,10.0,20.0,14.0,3.0,8.0]
+        # The final candle is 06:30-06:45: already closed at 06:46.
+        bars=[[int((base+timedelta(minutes=15*i)).timestamp()),
+               "2.0","2.1","1.9","2.02","2.02",str(vol),2]
+              for i,vol in enumerate(volumes)]
+        frame=_frame(bars,15,as_of)
+        self.assertEqual(frame["status"],"VALID")
+        prior_four=sum(volumes[-5:-1])/4
+        self.assertAlmostEqual(frame["volume_ratio_prior_4"],volumes[-1]/prior_four,places=5)
+        self.assertNotEqual(frame["volume_ratio_prior_4"],frame["volume_ratio_prior_5"])
+
     def test_old_ohlc_backfill_22h_later_must_not_be_called_live_evidence(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);cap=root/"c";cap.mkdir()
