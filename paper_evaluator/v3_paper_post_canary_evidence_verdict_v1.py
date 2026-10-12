@@ -19,8 +19,9 @@ import re
 from typing import Any
 
 from paper_evaluator.v3_experimental_paper_journal_v1 import (
-    clock, KIND as RECEIPT_KIND, PHASES, OUTCOME_PHASES,
+    clock, KIND as RECEIPT_KIND, PHASES, OUTCOME_PHASES, RESULTS,
 )
+from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import REVISION
 
 KIND="V3_POST_28H_CANARY_EVIDENCE_VERDICT_READONLY_V1"
 WATCH="PAPER-V3-CANARY-20261011"
@@ -70,6 +71,7 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
                 or payload.get("kind")!=RECEIPT_KIND
                 or payload.get("real_money_actions") is not False
                 or payload.get("orders") is not False
+                or payload.get("revision")!=REVISION
                 or not isinstance(event_id,str) or not HEX.fullmatch(event_id)
                 or not isinstance(content_digest,str) or not HEX.fullmatch(content_digest)):
             raise ValueError("unverified cloud receipt envelope")
@@ -83,7 +85,8 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
         event_key=payload.get("event_key")
         if (not isinstance(cid,str) or not 1<=len(cid)<=150
                 or not isinstance(pair,str) or not pair.endswith("/EUR")
-                or phase not in PHASES or not isinstance(event_key,str)
+                or phase not in PHASES or result not in RESULTS
+                or not isinstance(event_key,str)
                 or not re.fullmatch(r"[A-Z][A-Z0-9_]{1,90}",event_key)
                 or not isinstance(payload.get("data"),dict)):
             raise ValueError("invalid immutable candidate identity or event")
