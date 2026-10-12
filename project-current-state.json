@@ -473,7 +473,7 @@
         "research/v3/v3-paper-active-context-and-minipc-release-gates-20261011.json"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_REAL_ZRO_P4_WAIT_CLOUD_ACK_VERIFIED_ONE_MODEL_HTTP_BUDGET_CONSUMED; NEXT_SINGLE_WRITER_WAIT_WATCH_6H24H_NO_RETRY_SOURCE_PIT; V2R4_REMAINS_ONLY_ACTIVE",
+      "next_concrete_action": "PROSPECTIVE_PR205_WAIT_WATCH_AND_SELECTIVE_1M_6H24H72H_OBSERVER_CI_PASS; NEXT_ONE_READONLY_MINIPC_PHYSICAL_CANARY_OBSERVER_AND_REAL_CLOUD_ACK_NO_MODEL_CALL, THEN_EXISTING_SUPERVISOR_REUSE_AND_SINGLE_V3_PAPER_WRITER_CAS; V2R4_SOLE_ACTIVE",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -911,6 +911,26 @@
         "h11_coin_probability_change_delivery_verified": false,
         "new_git_work_schedules": 0,
         "real_money_actions": false
+      },
+      "wait_paper_followup_observer_20261012": {
+        "status": "IMPLEMENTED_MERGED_3_CI_PASS_PHYSICAL_MINIPC_ONE_SHOT_ACK_NOT_YET_RUN",
+        "source_pr": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/205",
+        "merge_sha": "322c98279f37b60cacc9510920884ca3feb696f5",
+        "module_wait": "paper_evaluator/v3_paper_wait_observer_v1.py",
+        "module_selected_tick": "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+        "manual_host_command": "tools/run-minipc-v3-existing-canary-observation.ps1 -Execute",
+        "original_zro_wait_ttl_expired_without_runtime_monitor": true,
+        "unknown_expired_not_false_negative": true,
+        "original_model_budget_consumed": true,
+        "source_prospective_max_1m_capture_lag_minutes": 15,
+        "true_6h_24h_72h_buy_and_no_buy_outcome_modules_wired": true,
+        "real_new_cloud_wait_expiry_or_followup_ack_verified": false,
+        "runs_continuously_under_existing_windows_supervisor": false,
+        "new_schedulers_created": 0,
+        "private_model_requests_from_observer": 0,
+        "real_money_actions": false,
+        "v3_paper_active": false,
+        "old_v2r4_intake_stopped": false
       }
     }
   }
