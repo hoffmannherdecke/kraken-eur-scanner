@@ -118,7 +118,7 @@ def observe_wait(*,journal:Path,series_id:str,candidate_id:str,
             "watch_closed_5m_end_utc":snapshot["closed_5m_end_utc"],
             "watch_evaluated_conditions":len(checks),
             "watch_conditions_met":matched,
-            "watch_snapshot_values":{k:round(float(v),8) for k,v in values.items() if k in FIELDS},
+            "watch_snapshot_values":{k:round(float(v),8) for k,v in values.items() if k in FIELDS and type(v) in (int,float) and math.isfinite(v)},
             "source_status":"PROSPECTIVELY_OBSERVED_NO_TRADE_AUTHORITY",
             "phase_failure_stage":"MODEL_BUDGET_EXHAUSTED_NO_AUTO_REVIEW" if matched
                                   else "WAIT_CONDITIONS_NOT_YET_ALL_MET",
