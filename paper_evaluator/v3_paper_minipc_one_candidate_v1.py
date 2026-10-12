@@ -189,6 +189,9 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
     context=fuse_existing_sources(existing_context or {},decision_at_utc=requested_at)
     eligibility=propose_initial_full_review(candidate,coin,quote,meta,
                                              decision_at_utc=requested_at)
+    if positive_source and positive_source["status"]==POSITIVE_SOURCE_ELIGIBLE:
+        eligibility["source_catalyst_qualified"]=True
+        eligibility["source_catalyst_event_id"]=positive_source["source_event_id"]
     receipt("FULL_REVIEW_ELIGIBILITY",
             "PASS" if eligibility["status"]==ELIGIBLE else "SKIP",
             {"review_status":eligibility["status"],"review_family":(
