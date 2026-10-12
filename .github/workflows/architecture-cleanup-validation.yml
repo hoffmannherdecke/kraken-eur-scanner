@@ -43,7 +43,8 @@ jobs:
         run: |
           foreach ($path in @(
             'tools/install-minipc-v3-bounded-canary-observer.ps1',
-            'tools/minipc-v3-bounded-canary-observer-task.ps1'
+            'tools/minipc-v3-bounded-canary-observer-task.ps1',
+            'tools/repair-minipc-v3-observer-28h-health-signal.ps1'
           )) {
             $tokens=$null; $errors=$null
             [System.Management.Automation.Language.Parser]::ParseFile(
