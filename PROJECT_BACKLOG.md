@@ -1,5 +1,14 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
+## 12.10.2026 – Anti-Flickenteppich: projektweite Integritätsprüfung vor Änderungen
+
+**Nutzerauftrag gilt für ALLE Facetten:** Nicht nur vorhandene Dateien wiederfinden, sondern langfristig eine **einheitliche Architektur** erhalten. Jeder künftige Code-/Konfigurations-/Strategie-/Cloud-/Mini-PC-/Source-/GitHub-/Work-PR soll über den vorhandenen gemeinsamen Context-Guard seinen alten Owner, direkt registrierte Überschneidungen und nachgelagerte Consumers, Reuse/Ersatz/Neuanlageentscheidung, End-to-End-Eingriff, Failure/Dedupe, Komplexität/Kosten sowie Test/Rollback/ACK begründen. Kein zusätzlicher Manager, Datenbank, Lauf oder Writer; alle Freigabegrenzen bleiben.
+
+**Safe PR-Gate:** Bereits vorhandener `tools/project_context_change_guard.py` und seine Tests werden um `architecture_integrity` erweitert. Struktur- und Referenzintegrität wird in Hauptrepo und vorhandenen Satelliten-PRs beim bestehenden Check geprüft. Unterlassene deklarierte `overlaps`/Consumer werden abgewiesen, neue Owner ohne bestehenden Bereichspfad ebenso. Das beweist **nicht** automatisch die fachliche Wahrheit der vom Autor angegebenen Komponenten und ist kein Runtime-Release.
+
+**Echter Abschluss (Owner: bestehende GitHub-PR-CI + 10:15-Work):** Negativtests und produktive PR-CI in allen drei vorhandenen Repositories, danach mindestens ein materieller Änderungsfall, in dem nachweislich eine doppelte Implementierung vermieden oder bewusst eine bestehende Komponente ersetzt wurde, inklusive tatsächlichem Test/ACK. Branch-Protection als Required Check und chatübergreifende automatische Anwendung bleiben bereits offene gesonderte Gates. Keinen falschen `ARCHITECTURE_E2E_PASS`-Status aus einem bloß gemergten Vertrag ableiten.
+
+
 ## 12.10.2026 – Projektweiter Komponenten-Wiederfindungsindex / gezielte Deployment-Nachweise
 
 **Nutzerbeobachtung:** Beim V3-H10-Stand wurde zunächst auf dem Mini-PC nach H5/H10/H11-Windows-Tasks gesucht, obwohl der bestehende GitHub-/Supabase-H10-Owner und die Original-Implementierung bereits dokumentiert waren. **Symptom der gesamten Projektarchitektur**, nicht nur ein V3-Fall: Der frühere allgemeine Quellen- und CI-Manager gab keine sofort nutzbare vollständige Komponente→Owner→Consumer→Abhängigkeiten→Gate-Zuordnung zurück; Registrierungs-Owner und nachgewiesener physischer Ausführungsort waren auseinanderzuhalten.

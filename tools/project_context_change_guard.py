@@ -86,6 +86,80 @@ def meaningful(value: object) -> bool:
             and not re.search(r"\b(?:REPLACE|TODO|TBD|PLACEHOLDER)\b", value, flags=re.I))
 
 
+
+ARCHITECTURE_CHANGE_MODES = (
+    "REUSE", "EXTEND", "REPLACE", "RETIRE", "NEW_OWNER", "DOCUMENT_ONLY"
+)
+ARCHITECTURE_REVIEW_FIELDS = (
+    "original_component_and_owner",
+    "systemwide_integration_path",
+    "reuse_or_retirement_decision",
+    "compatibility_and_failure_effects",
+    "complexity_cost_and_maintenance",
+    "validation_rollback_and_ack",
+)
+
+
+def verify_architecture_integrity(root: Path, paths: list[str], receipt: dict) -> dict:
+    """Require an explicit whole-system impact and a *complete* existing overlap review.
+
+    Existing canonical monitoring and followthrough registries remain the sole
+    ownership sources. The audit is a structured assertion, not semantic proof.
+    """
+    impact = receipt.get("architecture_integrity")
+    require(isinstance(impact, dict), "missing project-wide architecture integrity review")
+    mode = impact.get("change_mode")
+    require(mode in ARCHITECTURE_CHANGE_MODES, "unknown architecture change mode")
+    if mode == "DOCUMENT_ONLY":
+        require(all(path.lower().endswith(".md") for path in paths),
+                "code, configuration and state changes cannot claim DOCUMENT_ONLY")
+    for name in ARCHITECTURE_REVIEW_FIELDS:
+        require(meaningful(impact.get(name)),
+                "architecture review must explain " + name)
+
+    stream_registry = json.loads(
+        (root / "research/monitoring-evidence-routing-v1.json").read_text(encoding="utf-8"))
+    area_registry = json.loads(
+        (root / "research/project-followthrough-routing-v1.json").read_text(encoding="utf-8"))
+    require(stream_registry.get("kind") == "MONITORING_EVIDENCE_ROUTING_V1"
+            and area_registry.get("kind") == "PROJECT_WIDE_FOLLOWTHROUGH_ROUTING_V1",
+            "canonical component ownership sources missing")
+    streams = {x["id"]: x for x in stream_registry["streams"]}
+    areas = {x["id"]: x for x in area_registry["extra_project_areas"]}
+
+    def checked_ids(field: str, allowed: set[str]) -> list[str]:
+        ids = impact.get(field)
+        require(isinstance(ids, list) and all(isinstance(x, str) for x in ids)
+                and len(ids) == len(set(ids)) and all(x in allowed for x in ids),
+                "unknown, duplicate or missing architecture reference: " + field)
+        return ids
+
+    stream_ids = checked_ids("affected_stream_ids", set(streams))
+    area_ids = checked_ids("affected_area_ids", set(areas))
+    require(stream_ids or area_ids, "architecture review must identify an existing project owner")
+    require(not (mode == "NEW_OWNER" and not area_ids),
+            "new component needs an existing crosscut integration and approval owner")
+    expected_overlaps = {overlap for key in stream_ids
+                         for overlap in streams[key].get("overlaps", [])}
+    reported = checked_ids("reviewed_overlap_ids", set(streams))
+    require(set(reported) == expected_overlaps,
+            "registered overlapping components omitted from architecture review")
+    expected_consumers = {streams[key]["consumer"] for key in stream_ids}
+    consumers = impact.get("affected_consumer_roles")
+    require(isinstance(consumers, list) and all(isinstance(x, str) for x in consumers)
+            and len(consumers) == len(set(consumers)) and set(consumers) == expected_consumers,
+            "registered downstream consumers omitted from architecture review")
+    require(impact.get("runtime_change_authorized") is False,
+            "architecture review cannot grant active runtime or trading release")
+    return {
+        "impact_mode": mode,
+        "reviewed_stream_count": len(stream_ids),
+        "reviewed_area_count": len(area_ids),
+        "overlap_count": len(reported),
+        "registered_consumer_count": len(consumers),
+        "semantic_impact_proven": False,
+    }
+
 def check(root: Path, paths: list[str], receipt: dict) -> dict:
     scopes = classify(paths)
     require(bool(paths), "no changed paths; review must not silently pass")
@@ -114,8 +188,10 @@ def check(root: Path, paths: list[str], receipt: dict) -> dict:
         require(item.get("source_fingerprint") == packet["fingerprint"],
                 scope + " fingerprint stale; rerun context_before_action.py on PR HEAD")
         counts[scope] = len(packet["source_index"])
+    architecture = verify_architecture_integrity(root, paths, receipt)
     return {
         "kind": "PROJECT_CONTEXT_CHANGE_VERIFICATION_V1",
+        "architecture_integrity": architecture,
         "status": "RECEIPT_AND_SOURCE_ROUTING_VERIFIED_NOT_SEMANTIC_OR_RUNTIME_PROOF",
         "scopes": sorted(scopes),
         "source_counts": counts,
@@ -130,6 +206,15 @@ def template(root: Path, paths: list[str]) -> dict:
     """Convenient scaffold only. Placeholders MUST be replaced with real review."""
     return {
         "kind": "PROJECT_CONTEXT_REVIEW_V1",
+        "architecture_integrity": {
+            "change_mode": "REPLACE",
+            "affected_stream_ids": [],
+            "affected_area_ids": [],
+            "reviewed_overlap_ids": [],
+            "affected_consumer_roles": [],
+            "runtime_change_authorized": False,
+            **{field: "REPLACE with evidenced cross-component integration analysis" for field in ARCHITECTURE_REVIEW_FIELDS},
+        },
         **{field: "REPLACE with concrete actual review, evidence and owner before PR" for field in FIELDS},
         "scope_reviews": [{
             "scope": scope,
