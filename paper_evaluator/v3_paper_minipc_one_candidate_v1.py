@@ -23,6 +23,10 @@ from paper_evaluator.v3_experimental_paper_model_prompt_v1 import build_v3_paper
 from paper_evaluator.v3_full_entry_decision_candidate_v1 import validate_full_entry_decision
 from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt,store_receipt_explicitly
 from paper_evaluator.v3_paper_context_bridge_v1 import fuse_existing_sources
+from paper_evaluator.v3_paper_positive_source_entry_v1 import (
+    ELIGIBLE as POSITIVE_SOURCE_ELIGIBLE,
+    assess_positive_source, make_source_candidate,
+)
 
 REVISION="V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001"
 MODEL_URL="https://api.openai.com/v1/responses"
@@ -105,7 +109,49 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             data=info or {})
         store_receipt_explicitly(local_receipts,event)
     # Write SCANNER_CAPTURE before any market API. No candidate silently drops.
-    receipt("SCANNER_CAPTURE","SEEN")
+    receipt("SCANNER_CAPTURE","SEEN",{
+        "candidate_origin":candidate.get("entry_origin","SCANNER"),
+        "positive_source_name":candidate.get("positive_source_name"),
+        "positive_source_event_id":candidate.get("positive_source_event_id")
+    })
+    positive_source=None
+    if candidate.get("entry_origin")=="VERIFIED_POSITIVE_SOURCE_CATALYST":
+        name=candidate.get("positive_source_name")
+        sources=existing_context or {}
+        snap=sources.get(name)
+        positive_source=assess_positive_source(
+            pair=candidate["pair"],source_name=name,snapshot=snap,
+            decision_at_utc=clock(),market_move=sources.get("dynamic_move_radar"))
+        if positive_source["status"]==POSITIVE_SOURCE_ELIGIBLE:
+            try:
+                canonical=make_source_candidate(
+                    pair=candidate["pair"],kraken_altname=candidate["altname"],
+                    source_name=name,snapshot=snap,decision_at_utc=clock(),
+                    market_move=sources.get("dynamic_move_radar"))
+                if any(canonical[k]!=candidate.get(k) for k in
+                       ("candidate_id","event_time_utc","positive_source_event_id")):
+                    raise ValueError("forged catalyst event identity")
+            except (ValueError,KeyError,TypeError):
+                positive_source={**positive_source,"status":"INVALID_SOURCE_CANDIDATE_IDENTITY"}
+        ppass=positive_source["status"]==POSITIVE_SOURCE_ELIGIBLE
+        receipt("SOURCE_CATALYST","PASS" if ppass else "SKIP",{
+            "positive_source_name":name,
+            "positive_source_event_id":candidate.get("positive_source_event_id"),
+            "positive_source_status":positive_source["status"],
+            "positive_source_reason":positive_source.get("positive_reason"),
+            "positive_source_owner":positive_source.get("source_owner"),
+            "positive_coin_impact_mechanism":positive_source.get("impact_mechanism"),
+            "independent_source_entry":True,
+        })
+        if not ppass:
+            return {"status":"SOURCE_CATALYST_NOT_VERIFIED_NO_MODEL",
+                    "source_reason":positive_source["status"],
+                    "model_called":False,"paper_only":True}
+    elif candidate.get("entry_origin") not in (None,"SCANNER"):
+        receipt("SOURCE_CATALYST","SKIP",
+                {"positive_source_status":"UNSUPPORTED_CANDIDATE_ORIGIN"})
+        return {"status":"UNSUPPORTED_ORIGIN_NO_MODEL",
+                "model_called":False,"paper_only":True}
     try:
         if acquire is None:
             altname=candidate["altname"]
@@ -143,9 +189,19 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
     context=fuse_existing_sources(existing_context or {},decision_at_utc=requested_at)
     eligibility=propose_initial_full_review(candidate,coin,quote,meta,
                                              decision_at_utc=requested_at)
+    if positive_source and positive_source["status"]==POSITIVE_SOURCE_ELIGIBLE:
+        eligibility["source_catalyst_qualified"]=True
+        eligibility["source_catalyst_event_id"]=positive_source["source_event_id"]
     receipt("FULL_REVIEW_ELIGIBILITY",
             "PASS" if eligibility["status"]==ELIGIBLE else "SKIP",
-            {"review_status":eligibility["status"],"review_family":"FIRST_SCANNER_EARLY_REVIEW",
+            {"review_status":eligibility["status"],"review_family":(
+                 "SOURCE_CATALYST_INDEPENDENT" if positive_source else
+                 "FIRST_SCANNER_EARLY_REVIEW"),
+             "candidate_origin":candidate.get("entry_origin","SCANNER"),
+             "positive_source_name":candidate.get("positive_source_name"),
+             "positive_source_event_id":candidate.get("positive_source_event_id"),
+             "positive_source_status":positive_source["status"] if positive_source else None,
+             "positive_source_reason":positive_source.get("positive_reason") if positive_source else None,
              "review_checks":eligibility.get("checks") or {},
              "optional_context_states":{k:v["state"] for k,v in context["sources"].items()},
              "market_phase_evidence":context["sources"]["market_phase_radar"],
@@ -222,6 +278,10 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
         ("WAIT" if validated["decision"]=="WAIT" else "REJECT" if
          validated["decision"]=="REJECT" else "UNKNOWN"),
         {"p4_status":validated["status"],"p4_decision":validated["decision"],
+         "candidate_origin":candidate.get("entry_origin","SCANNER"),
+         "positive_source_name":candidate.get("positive_source_name"),
+         "positive_source_event_id":candidate.get("positive_source_event_id"),
+         "positive_source_status":positive_source["status"] if positive_source else None,
          "raw_reason_codes":[str(c)[:90] for c in (raw.get("reason_codes") or [])[:8]],
          "ask_eur":quote["ask"],"validated_stop_eur":validated.get("stop_eur"),
          "validated_stage2_eur":validated.get("stage2_trigger_eur"),

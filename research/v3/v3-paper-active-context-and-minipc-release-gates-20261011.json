@@ -2,7 +2,7 @@
   "kind": "V3_PAPER_ACTIVE_CONTEXT_AND_MINIPC_RELEASE_GATES_V1",
   "strategy_revision": "V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001",
   "status": "INTEGRATION_CODE_STAGED_NO_PHYSICAL_RUNTIME_ACTIVATION",
-  "selected_entry_families": 6,
+  "selected_entry_families": 7,
   "market_context_safety": {
     "optional_data_never_hard_veto": true,
     "only_verified_known_at_before_decision": true,
@@ -156,5 +156,18 @@
     "source_smart_money_connected": false,
     "source_polymarket_connected": false,
     "v3_receipt_count_readback": 4
+  },
+  "positive_source_trigger_paper": {
+    "status": "SOURCE_TO_REAL_V3_PAPER_MODEL_CANARY_CODE_INTEGRATED_NEEDS_REAL_SOURCE_EVENT_ACK",
+    "news": "SOURCE_VERIFIED_DIRECT_GOVERNMENT_BENEFICIARY_ONLY",
+    "smart_money": "INDEPENDENT_ONCHAIN_NET_BUY_FILLS_ONLY",
+    "polymarket": "DIRECT_COIN_EVENT_PLUS_VERIFIED_SAME_PAIR_DYNAMIC_MOVE_ONLY",
+    "economic_positive_hypothesis": true,
+    "source_only_auto_buy": false,
+    "full_model_p4_required": true,
+    "host_live_source_delivery_verified": false,
+    "real_paid_model_response_verified": false,
+    "source_missing_never_negative_veto": true,
+    "active_v3_paper": false
   }
 }

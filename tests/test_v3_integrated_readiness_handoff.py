@@ -210,7 +210,9 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         b=data("research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json")
         self.assertEqual(b["strategy_revision"],
                          "V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001")
-        self.assertEqual(len(b["entry_priority"]),6)
+        self.assertEqual(len(b["entry_priority"]),7)
+        self.assertEqual(b["entry_priority"][0]["id"],"SOURCE_CATALYST_INDEPENDENT")
+        self.assertFalse(b["entry_priority"][0]["runtime_enabled"])
         self.assertTrue(all(x["paper_policy_selected"] for x in b["entry_priority"]))
         self.assertTrue(all(x["runtime_enabled"] is False for x in b["entry_priority"]))
         self.assertTrue(b["concurrency_requirements"]["dedupe_across_all_six_policy_families"])

@@ -1,4 +1,4 @@
-"""Only one model review per candidate/PIT across all six V3 Paper families."""
+"""Only one model review per pair/PIT across all seven V3 Paper entry families."""
 import unittest
 
 from paper_evaluator.v3_experimental_paper_family_router_v1 import (
@@ -14,7 +14,9 @@ def hint(family,status=None,eligible=True):
             "new_snapshot_known_at_utc":"2026-10-11T20:00:00Z",
             "request_model_recheck_only":eligible,
             "decision":"NO_DECISION_AUTHORITY","orders":False,
-            "real_money_actions":False,"checks":{"valid":True}}
+            "real_money_actions":False,"checks":{"valid":True},
+            "source_catalyst_qualified":True if family=="SOURCE_CATALYST_INDEPENDENT" else None,
+            "source_catalyst_event_id":"test-source-event" if family=="SOURCE_CATALYST_INDEPENDENT" else None}
 
 
 def route(hints,seen=None):
@@ -25,12 +27,12 @@ def route(hints,seen=None):
 
 
 class FamilyRouterTests(unittest.TestCase):
-    def test_six_families_only_one_selection_and_no_actual_model_right(self):
+    def test_seven_families_only_one_selection_and_no_actual_model_right(self):
         hs={x[0]:hint(x[0]) for x in PRIORITY}
         r=route(hs)
-        self.assertEqual(r["selected_family"],"FIRST_SCANNER_EARLY_REVIEW")
-        self.assertEqual(len(r["also_eligible_not_requested"]),5)
-        self.assertEqual(len(r["family_statuses"]),6)
+        self.assertEqual(r["selected_family"],"SOURCE_CATALYST_INDEPENDENT")
+        self.assertEqual(len(r["also_eligible_not_requested"]),6)
+        self.assertEqual(len(r["family_statuses"]),7)
         self.assertFalse(r["approval_to_call_model"])
         self.assertFalse(r["reserve_model_call_here"])
         self.assertTrue(r["must_atomically_reserve_before_actual_http"])
@@ -42,6 +44,23 @@ class FamilyRouterTests(unittest.TestCase):
             route(hs,{r["dedup_review_key"]})["status"],
             "ALREADY_RESERVED_MODEL_REVIEW_IDEMPOTENT",
         )
+
+    def test_source_ticket_needs_explicit_prior_positive_source_validation(self):
+        h=hint("SOURCE_CATALYST_INDEPENDENT")
+        h["source_catalyst_qualified"]=False
+        r=route({"SOURCE_CATALYST_INDEPENDENT":h})
+        self.assertEqual(r["status"],"UNKNOWN_UNVERIFIED_SOURCE_ORIGIN_TICKET")
+        self.assertFalse(r["approval_to_call_model"])
+
+    def test_same_pair_snapshot_deduplicated_even_if_source_and_scanner_ids_differ(self):
+        scanner=hint("FIRST_SCANNER_EARLY_REVIEW")
+        first=route({"FIRST_SCANNER_EARLY_REVIEW":scanner})
+        other=select_one_full_review(
+            series_id="PAPER-V3-TEST",candidate_id="OTHER-CANDIDATE",
+            pair="BAT/EUR",known_at_utc="2026-10-11T20:00:00Z",
+            hints={"FIRST_SCANNER_EARLY_REVIEW":scanner},
+            prior_reserved_review_keys={first["dedup_review_key"]})
+        self.assertEqual(other["status"],"ALREADY_RESERVED_MODEL_REVIEW_IDEMPOTENT")
 
     def test_later_review_when_initial_not_allowed(self):
         hs={
