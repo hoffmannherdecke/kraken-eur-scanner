@@ -95,8 +95,17 @@ class V3SharedIngressTests(unittest.TestCase):
         self.assertIn("PAIR_NOT_VERIFIED_AS_SPOT_EUR_METADATA_RECHECK_REQUIRED",r["dispositions"])
 
     def test_bounded_limit_discloses_backlog_no_invisible_drop(self):
-        xs=[scanner(cid="N"+str(i),pair="ETH/EUR",event=dt(3+i)) for i in range(5)]
-        r=plan(scanners=xs,limit=1)
+        names=("ETH","XBT","ZRO","AVAX","FET")
+        mappings=dict(PAIR)
+        for name in names:
+            pair=name+"/EUR"
+            mappings[pair]={"pair":pair,"altname":name+"EUR",
+                            "quote":"EUR","status":"online","spot":True}
+        xs=[{"kind":"CANONICAL_CANDIDATE_HANDOFF_V1","candidate_id":"N"+str(i),
+             "pair":name+"/EUR","altname":name+"EUR",
+             "event_time_utc":dt(3+i),"action":"REVIEW_ONLY_NOT_ORDER"}
+            for i,name in enumerate(names)]
+        r=plan(scanners=xs,limit=1,known=mappings)
         self.assertEqual(r["counts"]["selected"],1)
         self.assertEqual(r["dispositions"]["CAPACITY_DEFERRED_NOT_A_NEGATIVE_MARKET_DECISION"],4)
 
