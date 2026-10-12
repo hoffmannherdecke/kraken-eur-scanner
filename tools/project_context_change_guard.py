@@ -161,9 +161,14 @@ def main() -> int:
     parser.add_argument("--head", default="HEAD")
     parser.add_argument("--event", type=Path)
     parser.add_argument("--template", action="store_true")
+    parser.add_argument("--fingerprints", action="store_true")
     args = parser.parse_args()
     try:
         paths = git_paths(args.root, args.base, args.head)
+        if args.fingerprints:
+            print(json.dumps({scope: build(args.root, scope)["fingerprint"]
+                              for scope in sorted(classify(paths))}, sort_keys=True))
+            return 0
         if args.template:
             print(START)
             print(json.dumps(template(args.root, paths), ensure_ascii=False, indent=2))
