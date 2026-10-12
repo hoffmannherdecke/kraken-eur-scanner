@@ -1,0 +1,33 @@
+{
+  "kind": "V3_REAL_SCANNER_MINIPC_SUPABASE_RECEIPT_EVIDENCE_V1",
+  "checked_at_utc": "2026-10-12T10:33:29Z",
+  "scope": "ONE_SHOT_CANARY_NOT_PRODUCTION_WRITER",
+  "series_id": "PAPER-V3-CANARY-WRITER-SMOKE-20261012",
+  "candidate_id": "20261012-103240-RENDER-EUR-r2405499019105",
+  "pair": "RENDER/EUR",
+  "scanner_origin": "EXISTING_V2R4_HANDOFF_READ_ONLY",
+  "physical_result": "ONE_REAL_ORIGINAL_STAGED_AND_KRAKEN_REVIEWED_CANARY_ONLY",
+  "supabase_independent_readback": {
+    "exact_receipts": 5,
+    "unique_event_ids": 5,
+    "unique_candidate_ids": 1,
+    "original_staged_first_receipts": 2,
+    "stages": [
+      "SCANNER_CAPTURE:SEEN:FIRST",
+      "FULL_REVIEW_ELIGIBILITY:UNKNOWN:FIRST",
+      "SOURCE_INPUT:PASS:FRESHRECHECK",
+      "FULL_REVIEW_ELIGIBILITY:PASS:FRESHRECHECK",
+      "MODEL_REQUEST:SKIP:FRESHRECHECK"
+    ],
+    "p0_passed_checks": 8,
+    "p0_total_checks": 8
+  },
+  "prior_separate_28h_canary_receipts": 12,
+  "active_paper_series": "PAPER-V2R4-20261009T110135Z",
+  "model_http_calls": 0,
+  "orders": false,
+  "production_v3_writer_active": false,
+  "h5_h10_h11_owner_auth_proven": false,
+  "fee_adjusted_economic_outcomes_proven": false,
+  "followup": "NEXT_EXISTING_10_15_WORK_OR_CONTROLLER_MILESTONE; NO EXTRA SCHEDULER; DO NOT REPEAT ONE_SHOT; AWAIT REAL MATURE FOLLOWUPS; ONLY USER_APPROVED FUTURE MODEL SPEND"
+}
