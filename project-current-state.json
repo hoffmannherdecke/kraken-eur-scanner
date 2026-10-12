@@ -473,7 +473,7 @@
         "research/v3/v3-paper-active-context-and-minipc-release-gates-20261011.json"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_V3_CLOUD_SCHEMA_RLS_EDGE_V1_VERIFIED; MINI_PC_CREATE_NEW_ISOLATED_RELAY_TOKEN_SHA256_THEN_REGISTER_NEW_INTERNAL_RELAY_CREDENTIAL_AND_PHYSICAL_PUBLIC_KRAKEN_V3_ONE_CANDIDATE_CANARY_JOURNAL_TO_CLOUD_ACK; SEPARATELY_BUDGETED_MODEL_HTTP_AND_HOST_SINGLE_WRITER_FENCE_BEFORE_ANY_V2R4_CUTOVER",
+      "next_concrete_action": "PROSPECTIVE_CLOUD_MINIPC_V3_EIGEN_EUR_4_RECEIPTS_CONFIRMED; NEXT_ENABLE_ACTUAL_ALL_ENTRY_FAMILY_SINGLE_WRITER_PAPER_AND_PROPER_MODEL_HTTP_BUDGET_GATE; ATTACH_OPTIONAL_MARKET_REGIME_NEWS_H10_H11_REAL_PIT; V2R4_REMAINS_ACTIVE_NO_HIDDEN_MODEL_COST",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -816,7 +816,7 @@
         "local_lag_and_missed_move_analytics": "paper_evaluator/v3_paper_minipc_learning_health_v1.py",
         "cloud_separate_edge": "supabase/functions/v3-paper-evidence-relay/index.ts",
         "cloud_separate_schema": "supabase/v3-paper-event-receipts-append-only-20261011.sql",
-        "cloud_relay_secret_provisioned": false,
+        "cloud_relay_secret_provisioned": true,
         "cloud_schema_applied_verified": true,
         "edge_deployed_verified": true,
         "source_steward_news_marketphase_h10_h11_real_snapshot_to_live_prompt_verified": false,
@@ -833,9 +833,19 @@
         "edge_deployed_version": 1,
         "edge_custom_token_auth_required": true,
         "cloud_credential_sha_only_minipc_provisioning": "tools/minipc-create-v3-paper-relay-token.ps1",
-        "live_minipc_to_cloud_first_receipt_ack_verified": false,
+        "live_minipc_to_cloud_first_receipt_ack_verified": true,
         "cloud_paper_active_v3": false,
-        "active_v2r4_series_left_unchanged": true
+        "active_v2r4_series_left_unchanged": true,
+        "cloud_relay_token_registered_from_minipc_sha256": true,
+        "cloud_credential_registered_verified": true,
+        "live_first_canary_source": "KRAKEN_SPOT_EUR_PUBLIC",
+        "live_first_canary_pair": "EIGEN/EUR",
+        "live_first_canary_receipts": 4,
+        "live_first_canary_eligibility_pass": true,
+        "live_first_canary_paid_model_calls": 0,
+        "optional_context_sources_physically_connected": false,
+        "physical_v3_paper_writer_running": false,
+        "physical_v3_6h24h_followups_running": false
       }
     }
   }
