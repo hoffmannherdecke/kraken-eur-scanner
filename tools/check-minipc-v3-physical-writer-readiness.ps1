@@ -127,7 +127,8 @@ $canarySafe=($null -ne $plan -and
               $plan.kind -eq 'V3_LOCAL_READONLY_CANARY_28H_PLAN_V1' -and
               $plan.v2r4_unchanged -eq $true -and
               $plan.model_http_calls_authorized -eq 0 -and
-              $plan.orders -eq $false -and $pinMismatches.Count -eq 0)
+              $plan.orders -eq $false -and $pinChecked -ge 8 -and
+              $pinMismatches.Count -eq 0 -and $taskState -ne 'NOT_FOUND')
 $ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $canarySafe)
 [ordered]@{
  kind='V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1'
