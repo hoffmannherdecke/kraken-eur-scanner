@@ -28,7 +28,7 @@ class BoundedCanaryTaskPolicyTests(unittest.TestCase):
             "if(Get-ScheduledTask -TaskName $taskName",
             "pinned_file_hashes",
             "[System.IO.FileMode]::CreateNew",
-            "Exactly one old",
+            "if($oldApps.Count -ne 1)",
         ):
             with self.subTest(required=required):
                 self.assertIn(required,install)
