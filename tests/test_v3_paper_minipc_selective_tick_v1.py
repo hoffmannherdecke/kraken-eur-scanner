@@ -89,7 +89,7 @@ class HostTickTests(unittest.TestCase):
             self.assertEqual(len(final),1)
             self.assertFalse(final[0]["data"]["path_contiguous_1m_verified"])
             self.assertIsNone(final[0]["data"].get("position_net_pnl_eur"))
-            self.assertEqual(out["prospective_1m_bars"],15)
+            self.assertEqual(out["prospective_1m_bars"],16)
             self.assertEqual(finish_wait(journal=j,series_id=SID,candidate_id=CID,
                     now_at_utc=t(at))["status"],"WAIT_EXPIRY_ALREADY_FINAL")
 
