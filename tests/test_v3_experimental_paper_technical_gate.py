@@ -123,7 +123,7 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
         self.assertIn("B: Wirtschaftliche Nachfolger-Promotion",text)
         self.assertIn("KEINE Vorbedingung für den ersten `EXPERIMENTAL_PAPER_ONLY`-Start",text)
         self.assertIn("sechs **echte**",text)
-        self.assertIn("kein profitabler Vorabkauf",text)
+        self.assertIn("ein profitabler Vorabkauf ist dabei nicht gefordert",text)
         self.assertNotIn("erst **nach** A+B",text)
 
     def test_current_runtime_does_not_depend_on_experimental_gate(self):
