@@ -241,10 +241,11 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
             self.assertEqual(len(rows),4)
             reviewed=next(x["data"] for x in rows
                          if x["phase"]=="FULL_REVIEW_ELIGIBILITY")
-            for key in ("derivatives_h2_evidence","macro_h5_evidence",
-                        "onchain_h8_evidence","global_market_evidence"):
-                self.assertEqual(reviewed[key]["state"],"AVAILABLE_PIT_CONTEXT_ONLY")
-                self.assertFalse(reviewed[key]["hard_veto"])
+            for key in ("derivatives_h2","macro_h5","onchain_h8",
+                        "global_market_crosscheck"):
+                self.assertEqual(reviewed["optional_context_states"][key],
+                                 "AVAILABLE_PIT_CONTEXT_ONLY")
+            self.assertNotIn("derivatives_h2_evidence",reviewed)
             self.assertEqual(reviewed["smart_money_evidence"]["state"],
                              "NOT_ASSOCIABLE_OTHER_PAIR")
             self.assertNotIn("values",reviewed["smart_money_evidence"])
