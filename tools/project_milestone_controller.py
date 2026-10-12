@@ -29,7 +29,9 @@ UTC = dt.timezone.utc
 ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "H3_STALE_EVIDENCE": 7,
                  "H3_ARCHIVED_INCOMPLETE_REVIEW": 7, "PAPER_FINAL_REVIEW": 38,
                  "PAPER_LOW_TRADES": 38, "CONTROL_FOLLOWTHROUGH_MISSED": 38, "H10_CONTRACT": 7,
-                 "NEW_SHADOW_ADAPTER": 7, "NEW_CONTROL_DECISION": 7}
+                 "NEW_SHADOW_ADAPTER": 7, "NEW_CONTROL_DECISION": 7,
+                 "H10_FIRST_SOURCE_RECEIPT_REVIEW": 7,
+                 "H10_SOURCE_RECEIPT_INTEGRITY": 7}
 SUPPORTED_DECISIONS = {"V3-H3-ARCHIVE-DISPOSITION", "V2R4-PRODUCTIVITY-REVIEW",
                        "V3-EXTENDED-SECOND-LEG-LEARNING-GATE"}
 
@@ -77,6 +79,68 @@ def get_rows(base: str, key: str, view: str) -> list:
         rows = json.load(response)
     require(isinstance(rows, list) and len(rows) == 1, view + " must return exactly one row")
     return rows
+
+
+def first_h10_source_receipt_review(base: str, key: str) -> tuple[str, dict | None]:
+    """Single SELECT in existing milestone run; a stored source row is NOT a BUY."""
+    require(re.fullmatch(r"https://[a-z0-9-]+[.]supabase[.]co", base.rstrip("/"))
+            is not None, "unapproved H10 evidence host")
+    fields=("candidate_id,cohort_id,cohort_role,coin,window_start_utc,"
+            "content_sha256,original_payload_canonical,received_at_utc")
+    query=urllib.parse.urlencode({"select":fields,
+                                   "order":"received_at_utc.asc","limit":"1"})
+    url=base.rstrip("/")+"/rest/v1/v3_h10_selected_source_receipts?"+query
+    headers={"apikey":key, "Accept":"application/json",
+             "User-Agent":"project-milestone-controller/1"}
+    if not key.startswith("sb_secret_"):
+        headers["Authorization"]="Bearer "+key
+    with urllib.request.urlopen(urllib.request.Request(url,headers=headers),
+                                timeout=15) as response:
+        rows=json.load(response)
+    require(isinstance(rows,list) and len(rows)<=1,"invalid H10 selected source query")
+    if not rows:
+        return "H10:ORIGINAL_SOURCE_RECEIPT_PENDING",None
+
+    row=rows[0]
+    require(isinstance(row,dict),"invalid H10 receipt")
+    raw=row.get("original_payload_canonical")
+    require(isinstance(raw,str) and len(raw.encode("utf-8"))<=65536,
+            "invalid H10 canonical bytes")
+    payload=json.loads(raw)
+    canonical=json.dumps(payload,sort_keys=True,ensure_ascii=True,
+                         separators=(",",":"),allow_nan=False)
+    require(canonical==raw and
+            hashlib.sha256(raw.encode("utf-8")).hexdigest()==row.get("content_sha256"),
+            "H10 receipt content not canonical or digest mismatch")
+    identity={"cohort_id":row.get("cohort_id"),"role":row.get("cohort_role"),
+              "coin":row.get("coin"),"window_start_utc":payload.get("window_start_utc")}
+    identity_sha=hashlib.sha256(json.dumps(identity,sort_keys=True,
+                    ensure_ascii=True,separators=(",",":")).encode("utf-8")).hexdigest()
+    require(identity_sha==row.get("candidate_id"),"invalid H10 receipt identity")
+    require(payload.get("cohort_id")==row.get("cohort_id") and
+            payload.get("cohort_role")==row.get("cohort_role") and
+            payload.get("coin")==row.get("coin"),"unbound H10 source row")
+    require(iso_time(row["window_start_utc"])==
+            iso_time(payload["window_start_utc"]),"H10 source window mismatch")
+    require(payload.get("orders") is False and
+            payload.get("no_buy_authority") is True,"H10 receipt trading flag")
+    events=payload.get("original_events") or []
+    require(3<=len(events)<=128 and
+            len({e["wallet_address"] for e in events})>=3,
+            "H10 stored proof lacks distinct wallets")
+    start=iso_time(row["window_start_utc"])
+    received=iso_time(row["received_at_utc"])
+    require(start+dt.timedelta(minutes=30)<=received<=
+            start+dt.timedelta(hours=47,minutes=55),
+            "H10 receipt server time invalid")
+    return "H10:FIRST_STORED_SOURCE_RECEIPT_REVIEW_DUE",event(
+        "H10_FIRST_SOURCE_RECEIPT_REVIEW",
+        "H10-FIRST-STORED-ORIGINAL-RECEIPT",
+        "Erster selektiver H10-Originalquellbeleg wurde in Supabase gefunden "
+        "und per kanonischem SHA, Zeitfenster und Wallet-Adressen vorgeprüft. "
+        "Echter Erstfall muss fachlich (Originalbatch, unabhängige Wallets, "
+        "Self-Dealing, Quelle und P0) geprüft werden. Kein BUY, keine Aktivierung. "
+        "Quittung: "+str(row["candidate_id"])[:16])
 
 
 def event(kind: str, anchor: str, detail: str) -> dict:
@@ -549,6 +613,28 @@ def main() -> int:
             return 2
         now = dt.datetime.now(UTC)
     result = evaluate(state, paper, h3, now, ROOT)
+    # Reuse the EXISTING scheduled controller for the first qualified H10
+    # source receipt. Optional source failure never blocks Paper control.
+    if not args.fixture:
+        proof = ((state.get("pending_strategy_transition") or {})
+                 .get("v3_original_intake_e2e_gate") or {})
+        if proof.get("h10_pit_receipt_schema_applied") is True:
+            try:
+                status, milestone = first_h10_source_receipt_review(base,key)
+                result["statuses"].append(status)
+                if milestone:
+                    result["events"].append(milestone)
+            except (OSError,ValueError,KeyError,TypeError) as exc:
+                result["statuses"].append("H10:SOURCE_RECEIPT_CHECK_NEEDS_REVIEW")
+                # Single deduplicated integrity review, never source BUY.
+                if not isinstance(exc,OSError):
+                    result["events"].append(event(
+                        "H10_SOURCE_RECEIPT_INTEGRITY",
+                        "H10-ORIGINAL-RECEIPT-INTEGRITY",
+                        "H10-Quittungs-Integritätsprüfung meldet fehlgeschlagene "
+                        "Validierung. Separat prüfen; keine Quelle aktivieren."))
+                print("H10_SOURCE_RECEIPT_REVIEW_REQUIRED "+type(exc).__name__,
+                      file=sys.stderr)
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     summary = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary:

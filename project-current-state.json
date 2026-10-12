@@ -338,7 +338,10 @@
       "h10_pit_receipt_source_evidence_validation": "2026-10-12T15:58UTC_23_CLOSED_FILL_WINDOWS_NONE_WITH_3_DISTINCT_ADDRESSES_MAX1;113_POST_PR240_ORIGINAL_FILLS_0_BAD_FIRST_BATCH_LINKS",
       "h10_pit_receipt_live_table": "public.v3_h10_selected_source_receipts",
       "h10_pit_receipt_existing_owner_live_run": "38274002642",
-      "h10_pit_receipt_last_verified_utc": "2026-10-12T15:58:05Z"
+      "h10_pit_receipt_last_verified_utc": "2026-10-12T15:58:05Z",
+      "h10_pit_receipt_followthrough_controller": "EXISTING_AUTONOMOUS_PROJECT_MILESTONE_CONTROLLER_READ_ONLY_FIRST_REAL_RECEIPT_QUERY_SOURCE_ACK_REVIEW_NO_NEW_SCHEDULE",
+      "h10_pit_receipt_followthrough_event": "FIRST_RECEIPT_PRESENT_VALID_DIGEST_ID_AND_SERVER_TIMESTAMP -> ONE_GITHUB_ISSUE_7_RESEARCH_REVIEW_NOT_TRADE_PERMISSION",
+      "h10_pit_receipt_followthrough_state": "CODE_PENDING_CI_NO_NEW_RUNTIME"
     },
     "kind": "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1",
     "requested_on": "2026-10-11",
