@@ -318,6 +318,7 @@
       "h10_pit_receipt_offline_contract": "research/v3/h10-selected-original-receipt-contract-v1.json",
       "h10_pit_receipt_offline_tests": "tests/test_v3_h10_selected_original_receipt_v1.py",
       "h10_pit_receipt_population": "ALL_FULL_COVERAGE_30M_WINDOWS_WITH_AT_LEAST_3_DISTINCT_FROZEN_WALLETS_PRIMARY_AND_CONTROL_INCLUDING_NONPOSITIVE_CONTROLS_MAX_128_EVENTS_AND_64K_PAYLOAD",
+      "h10_pit_receipt_ttl_safety": "EARLIEST_30M_WINDOW_START_PLUS_48H_MINUS_5M_FIX_OFFLINE_ONLY_NO_RUNTIME_CHANGE",
       "h10_pit_receipt_inactive_sql": "supabase/v3-h10-selected-original-source-receipts-inactive.sql",
       "h10_pit_receipt_cloud_protocol": "tools/v3_h10_selected_original_cloud_protocol_v1.py",
       "h10_pit_receipt_offline_storage_tests": "tests/test_v3_h10_source_receipt_storage_draft_v1.py + tests/test_v3_h10_selected_original_cloud_protocol_v1.py",
