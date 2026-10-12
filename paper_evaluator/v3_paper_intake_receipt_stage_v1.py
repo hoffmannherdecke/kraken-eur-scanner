@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+from collections import Counter
+import re
 
 from paper_evaluator.v3_experimental_paper_journal_v1 import (
     make_receipt, store_receipt_explicitly,
@@ -20,6 +22,8 @@ from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import REVISION
 KIND = "V3_FUTURE_SINGLE_PAPER_WRITER_PRE_FLIGHT_PLAN_V1"
 ORIGIN_SCANNER = "SCANNER"
 ORIGIN_SOURCE = "VERIFIED_POSITIVE_SOURCE_CATALYST"
+AUDIT_KIND = "V3_ROUTER_REJECTED_ORIGINAL_AUDIT_V1"
+AUDIT_ID = re.compile(r"^V3-INPUT-REJECT-[0-9a-f]{32}$")
 REASONS = {
     "SELECTED": "ORIGINAL_SELECTED_FOR_PRE_MODEL_REVIEW_ONLY",
     "DEFERRED": "CAPACITY_DEFERRED_NOT_A_NEGATIVE_MARKET_DECISION",
@@ -44,10 +48,12 @@ def prepare_receipts(preflight: dict[str, Any]) -> tuple[list[dict[str, Any]], i
     selected = preflight.get("selected_candidates")
     deferred = ingress.get("capacity_deferred_originals")
     coalesced = ingress.get("same_pair_coalesced_originals")
+    rejected_originals = ingress.get("rejected_originals")
     reviews = preflight.get("review_preflights")
-    if not all(isinstance(x, list) for x in (selected, deferred, coalesced, reviews)):
-        raise ValueError("complete original intake lists required")
-    if sum(map(len, (selected, deferred, coalesced))) > 2000:
+    if not all(isinstance(x, list) for x in
+               (selected, deferred, coalesced, rejected_originals, reviews)):
+        raise ValueError("complete original intake and rejected audit lists required")
+    if sum(map(len, (selected, deferred, coalesced, rejected_originals))) > 4000:
         raise ValueError("too many original events in one bounded stage")
     counts = ingress.get("counts")
     reasons = ingress.get("dispositions")
@@ -63,6 +69,20 @@ def prepare_receipts(preflight: dict[str, Any]) -> tuple[list[dict[str, Any]], i
         raise ValueError("invalid rejection counts")
     if sum(reasons.values()) != counts.get("suppressed_or_deferred"):
         raise ValueError("unaccounted rejected/deferred originals")
+    expected_rejected = Counter(reasons)
+    for key, present in ((REASONS["DEFERRED"], len(deferred)),
+                         (REASONS["COALESCED"], len(coalesced))):
+        if present:
+            expected_rejected[key] -= present
+            if expected_rejected[key] == 0:
+                del expected_rejected[key]
+    observed_rejected = Counter()
+    for audit in rejected_originals:
+        if not isinstance(audit, dict) or audit.get("kind") != AUDIT_KIND:
+            raise ValueError("rejected original audit envelope missing")
+        observed_rejected[audit.get("reason")] += 1
+    if observed_rejected != expected_rejected:
+        raise ValueError("missing or conflicting individually identified router rejections")
 
     by_candidate: dict[str, dict[str, Any]] = {}
     result: list[dict[str, Any]] = []
@@ -124,12 +144,47 @@ def prepare_receipts(preflight: dict[str, Any]) -> tuple[list[dict[str, Any]], i
                   "candidate_origin": ORIGIN_SCANNER},
             event_key="FIRST"
         ))
-    # Other rejected/malformed originals are still only reason-counted in
-    # PR215; do not claim lossless audit until that owner gap is fixed.
-    unattributed = sum(reasons.values()) - len(deferred) - len(coalesced)
-    if unattributed < 0:
-        raise ValueError("contradictory candidate dispositions")
-    return result, unattributed
+    # Rejected inputs can have a nonexistent/bogus source ID, pair or clock.
+    # These AUDIT identities are never market candidates, are never eligible
+    # for paper/model decisions and can never be used to assert missed PnL.
+    audit_seen = set()
+    for audit in rejected_originals:
+        synthetic = audit.get("audit_id")
+        stream = audit.get("input_stream")
+        ordinal = audit.get("input_index")
+        reason = audit.get("reason")
+        if (not isinstance(synthetic, str) or not AUDIT_ID.fullmatch(synthetic)
+                or synthetic in audit_seen or stream not in ("SCANNER", "SOURCE_CATALYST")
+                or type(ordinal) is not int or not 0 <= ordinal < 2000
+                or not isinstance(reason, str) or not reason.isupper()
+                or audit.get("original_untrusted_and_not_tradeable") is not True):
+            raise ValueError("invalid untrusted original rejection audit identity")
+        audit_seen.add(synthetic)
+        def limited(key:str,limit:int=150)->str|None:
+            value=audit.get(key)
+            return value if isinstance(value,str) and 0<len(value)<=limit else None
+        original_pair=limited("original_pair_if_safe",32)
+        original_clock=limited("original_event_time_if_parseable",64)
+        original_cid=limited("original_candidate_id_if_safe")
+        original_source=limited("original_source_event_id_if_safe")
+        result.append(make_receipt(
+            series_id=series,revision=REVISION,candidate_id=synthetic,
+            pair="UNMAPPED/EUR",event_time_utc=at,known_at_utc=at,
+            phase="SCANNER_CAPTURE" if stream=="SCANNER" else "SOURCE_INPUT",
+            result="UNKNOWN",event_key="ROUTERREJECT",
+            data={"source_phase":"ROUTER_REJECTION_AUDIT_NOT_TRADEABLE",
+                  "source_status":"INPUT_REJECTED_NO_MODEL_AUTHORITY",
+                  "source_pair_metadata_status":"AUDIT_SENTINEL_NEVER_KRAKEN_PAIR",
+                  "phase_failure_stage":reason,
+                  "raw_reason_codes":[reason],
+                  "review_checks":{"input_index":ordinal,"input_stream":stream,
+                       "original_candidate_id_if_safe":original_cid,
+                       "original_pair_if_safe":original_pair,
+                       "original_event_time_if_parseable":original_clock,
+                       "original_source_event_id_if_safe":original_source,
+                       "original_clock_may_be_stale_or_future":True}}
+        ))
+    return result, 0
 
 
 def stage_receipts_explicitly(*, preflight: dict[str, Any],
@@ -146,6 +201,10 @@ def stage_receipts_explicitly(*, preflight: dict[str, Any],
         "identical_replays": states.count("IDEMPOTENT_IDENTICAL"),
         "originals_with_receipt": sum(
             1 for row in receipts if row["phase"] in ("SCANNER_CAPTURE", "SOURCE_INPUT")
+            and not row["candidate_id"].startswith("V3-INPUT-REJECT-")
+        ),
+        "router_rejection_audit_receipts": sum(
+            1 for row in receipts if row["event_key"] == "ROUTERREJECT"
         ),
         "unattributed_router_rejections": not_attributed,
         "all_original_decisions_durable": False,
