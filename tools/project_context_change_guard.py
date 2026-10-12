@@ -154,13 +154,15 @@ def git_paths(root: Path, base: str, head: str) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=ROOT)
+    parser.add_argument("--diff-root", type=Path, default=None,
+                        help="Checkout whose HEAD diff is inspected; defaults to --root. Satellite repos use this while canonical source routing remains in --root.")
     parser.add_argument("--base", default="HEAD^1")
     parser.add_argument("--head", default="HEAD")
     parser.add_argument("--event", type=Path)
     parser.add_argument("--template", action="store_true")
     args = parser.parse_args()
     try:
-        paths = git_paths(args.root, args.base, args.head)
+        paths = git_paths(args.diff_root or args.root, args.base, args.head)
         if args.template:
             print(START)
             print(json.dumps(template(args.root, paths), ensure_ascii=False, indent=2))
