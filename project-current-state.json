@@ -473,7 +473,7 @@
         "research/v3/v3-paper-active-context-and-minipc-release-gates-20261011.json"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_V3_SEVEN_FAMILY_POSITIVE_NEWS_H10_H11_REVIEW_CODE_CI; NEXT_REAL_VERIFIED_SOURCE_OWNER_EVENT_TO_MINIPC_CANDIDATE_MODEL_P4_AND_ECONOMIC_JOURNAL_ACK_WITH_SEPARATE_FIXED_COST_CAP; V2R4_UNTIL_PHYSICAL_SINGLE_WRITER_CUTOVER",
+      "next_concrete_action": "PHYSICAL_MINIPC_ONE_SHOT_NEW_FRESH_CANDIDATE_V3_REAL_MODEL_HTTP_AT_MOST_ONE_AFTER_USER_APPROVED_CONSERVATIVE_0_15_USD_CEILING; VERIFY_P4_JOURNAL_TO_SUPABASE_ACK; THEN_REAL_SOURCE_OWNER_H10_H11_PIT_PAPER_WRITER_AND_V2R4_STOP_CAS_GATES",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -861,6 +861,27 @@
         "real_source_owner_host_delivery_proven": false,
         "model_http_attempts_this_change": 0,
         "v2r4_runtime_unchanged": true
+      },
+      "one_model_prospective_canary_20261012": {
+        "status": "NEW_SINGLE_MODEL_API_ATTEMPT_APPROVED_BY_USER_AND_BOUNDED_IN_CODE_NOT_PHYSICALLY_RUN",
+        "approval_file": "research/v3/v3-paper-approved-one-model-http-20261012.json",
+        "runner": "tools/run-minipc-v3-one-approved-model.ps1",
+        "model": "gpt-5.6-terra",
+        "max_http_attempts_including_retries": 1,
+        "max_prompt_utf8_bytes": 25000,
+        "max_output_tokens": 3000,
+        "conservative_estimated_usd_ceiling": 0.15,
+        "model_price_is_not_provider_billing_stop": true,
+        "approval_expires_at_utc": "2026-10-15T00:00:00Z",
+        "user_express_authorization_for_one_call": true,
+        "api_secret_path_on_existing_minipc": "Trading/Secrets/openai-api-key.txt",
+        "model_http_call_executed": false,
+        "cloud_model_response_ack_verified": false,
+        "old_pr186_budget_reused": false,
+        "source_only_EIGEN_cloud_4_receipts_proven": true,
+        "v2r4_stays_only_active": true,
+        "v3_paper_writer_active": false,
+        "orders": false
       }
     }
   }
