@@ -120,7 +120,13 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
         smoke_structural=(len(only)==5 and actual==SMOKE_STAGES
                           and isinstance(checks,dict) and len(checks)==8
                           and smoke_p0_checks==8
-                          and only[0]["candidate_id"]==next(iter(smoke)))
+                          and all(r["pair"]=="RENDER/EUR" for r in only)
+                          and any(r["phase"]=="SOURCE_INPUT"
+                              and r["data"].get("source_status")=="COMPLETE"
+                              for r in only)
+                          and any(r["phase"]=="MODEL_REQUEST"
+                              and r["data"].get("source_status")=="PREFLIGHT_NO_MODEL"
+                              for r in only))
     buckets={str(h):{"not_yet_due":0,"due_missing_or_pending":0,
                      "mature_complete":0,"censored":0} for h in HORIZONS}
     cases=[]
