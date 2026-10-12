@@ -324,7 +324,15 @@
       "h10_pit_receipt_offline_storage_tests": "tests/test_v3_h10_source_receipt_storage_draft_v1.py + tests/test_v3_h10_selected_original_cloud_protocol_v1.py",
       "h10_pit_receipt_schema_applied": false,
       "h10_pit_receipt_real_cloud_ack_proven": false,
-      "h10_pit_receipt_external_permission_release_required": true
+      "h10_pit_receipt_external_permission_release_required": true,
+      "h10_pit_receipt_release_authorization": "USER_EXPLICIT_20261012_SCHEMA_GRANTS_AND_EXISTING_H10_COLLECTOR_RUNTIME_ONLY_EXCLUDES_BUY_MODEL_PAPER_V2R4_CANARY",
+      "h10_pit_receipt_release_branch": "feat/v3-h10-original-receipt-live-owner-20261012",
+      "h10_pit_receipt_archive_owner": "EXISTING_GITHUB_V3_H10_SMART_MONEY_SHADOW_CAPTURE_WORKFLOW_ONLY_NO_NEW_CRON",
+      "h10_pit_receipt_prospective_cutoff": "2026-10-12T13:30:00Z",
+      "h10_pit_receipt_source_archive_transport": "tools/v3_h10_source_owner_archive_v1.py",
+      "h10_pit_receipt_release_phase": "IMPLEMENTED_CODE_NOT_YET_VERIFIED_OR_DEPLOYED_PENDING_CI",
+      "h10_pit_receipt_paper_authority": false,
+      "h10_pit_receipt_first_live_ack": "NOT_YET_OBSERVED_DO_NOT_CLAIM"
     },
     "kind": "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1",
     "requested_on": "2026-10-11",

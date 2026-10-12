@@ -40,11 +40,12 @@ class H10SourceReceiptStorageDraftTests(unittest.TestCase):
         self.assertIn("RAISE EXCEPTION",sql)
         self.assertIn("SECURITY INVOKER SET search_path = ''",sql)
         self.assertIn("CONSTRAINT h10_selected_original_nontrade",sql)
+        self.assertIn("received_at_utc <= window_start_utc",sql)
 
     def test_no_hidden_deploy_or_keys(self):
         import json
         sql=DDL.read_text(encoding="utf-8")
-        self.assertTrue(sql.lstrip().startswith("-- INACTIVE / REVIEW ONLY"))
+        self.assertTrue(sql.lstrip().startswith("-- EXPLICIT USER AUTHORIZATION"))
         for forbidden in ("SUPABASE_SECRET_KEY=", "SUPABASE_SERVICE_ROLE_KEY=",
                           "ALTER TABLE public.v3_h10_fill_events",
                           "DROP TABLE", "DROP TRIGGER", "CREATE POLICY",
