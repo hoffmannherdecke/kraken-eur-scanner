@@ -13,6 +13,56 @@ from tools.context_before_action import (
 
 
 class ContextBeforeActionTests(unittest.TestCase):
+
+    def test_projectwide_ownership_is_not_limited_to_v3_or_runtime_guessing(self):
+        required = json.loads(
+            (ROOT / "research/project-followthrough-routing-v1.json").read_text()
+        )["required_stream_ids"]
+        for scope in ("strategy", "architecture", "operations", "research"):
+            with self.subTest(scope=scope):
+                packet = build(ROOT, scope)
+                index = packet["project_component_owners"]
+                self.assertEqual(index["kind"], "PROJECT_COMPONENT_OWNER_HANDOFF_V1")
+                self.assertGreaterEqual(index["functional_stream_count"], 26)
+                self.assertGreaterEqual(index["crosscut_project_area_count"], 9)
+                components = {c["id"]: c for c in index["components"]}
+                self.assertTrue(set(required).issubset(components))
+                self.assertIn("mini_pc_deployment", components)
+                self.assertIn("github_quota_and_cost", components)
+                self.assertIn("security_permissions_and_rls", components)
+                self.assertIn("source_quality", components)
+                for c in components.values():
+                    self.assertTrue(c["canonical_owner"])
+                    self.assertTrue(c["next_gate"])
+                    self.assertEqual(
+                        c["actual_runtime_location"],
+                        "REQUIRES_ORIGINAL_DEPLOYMENT_EVIDENCE")
+                source_paths = {x["path"] for x in packet["source_index"]}
+                self.assertIn("research/monitoring-evidence-routing-v1.json",
+                              source_paths)
+                self.assertIn("research/project-followthrough-routing-v1.json",
+                              source_paths)
+                self.assertFalse(packet["declared_status"]["live_runtime_independently_checked"])
+        self.assertIn(
+            "docs/v3-real-source-owner-topology-20261012.md",
+            {x["path"] for x in build(ROOT, "operations")["source_index"]})
+
+    def test_component_owner_missing_is_not_assumed_healthy_or_locally_installed(self):
+        from tools.context_before_action import project_component_owner_handoff
+        routing_path = ROOT / "research/monitoring-evidence-routing-v1.json"
+        j = json.loads(routing_path.read_text())
+        j["streams"] = [x for x in j["streams"] if x["id"] != "smartmoney_h10"]
+        original_read = original_read_json
+
+        def omit_h10(path):
+            if Path(path).resolve() == routing_path.resolve():
+                return j
+            return original_read(path)
+
+        with patch("tools.context_before_action.read_json", side_effect=omit_h10):
+            with self.assertRaisesRegex(ContextGateError, "stream owner coverage lost"):
+                project_component_owner_handoff(ROOT)
+
     def test_every_scope_retrieves_versioned_canonical_sources(self):
         for scope in ("strategy", "architecture", "operations", "research"):
             with self.subTest(scope=scope):
