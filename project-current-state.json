@@ -473,7 +473,7 @@
         "research/v3/v3-paper-active-context-and-minipc-release-gates-20261011.json"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_PHYSICAL_MINIPC_SINGLE_MODEL_1_HTTP_APPROVED_AND_H10_READ_SOURCE_CONTEXT_ACK; THEN_REAL_H5_H11_SOURCE_CATALYST_EVENT_OWNER_DELIVERY_AND_V3_SINGLE_WRITER_6H24H_CLOUD_STOP_CAS",
+      "next_concrete_action": "PROSPECTIVE_REAL_ZRO_P4_WAIT_CLOUD_ACK_VERIFIED_ONE_MODEL_HTTP_BUDGET_CONSUMED; NEXT_SINGLE_WRITER_WAIT_WATCH_6H24H_NO_RETRY_SOURCE_PIT; V2R4_REMAINS_ONLY_ACTIVE",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -863,7 +863,7 @@
         "v2r4_runtime_unchanged": true
       },
       "one_model_prospective_canary_20261012": {
-        "status": "NEW_SINGLE_MODEL_API_ATTEMPT_APPROVED_BY_USER_AND_BOUNDED_IN_CODE_NOT_PHYSICALLY_RUN",
+        "status": "REAL_ONE_MODEL_HTTP_USED_ZRO_P4_WAIT_CLOUD_CONFIRMED",
         "approval_file": "research/v3/v3-paper-approved-one-model-http-20261012.json",
         "runner": "tools/run-minipc-v3-one-approved-model.ps1",
         "model": "gpt-5.6-terra",
@@ -875,13 +875,23 @@
         "approval_expires_at_utc": "2026-10-15T00:00:00Z",
         "user_express_authorization_for_one_call": true,
         "api_secret_path_on_existing_minipc": "Trading/Secrets/openai-api-key.txt",
-        "model_http_call_executed": false,
-        "cloud_model_response_ack_verified": false,
+        "model_http_call_executed": true,
+        "cloud_model_response_ack_verified": true,
         "old_pr186_budget_reused": false,
         "source_only_EIGEN_cloud_4_receipts_proven": true,
         "v2r4_stays_only_active": true,
         "v3_paper_writer_active": false,
-        "orders": false
+        "orders": false,
+        "remaining_model_http_authority": 0,
+        "model_http_attempts_reserved": 1,
+        "pair": "ZRO/EUR",
+        "p4_decision": "WAIT",
+        "p4_status": "FULL_WAIT_VALIDATED_OFFLINE",
+        "wait_ttl_minutes": 30,
+        "canary_receipts_total": 11,
+        "zro_receipts": 7,
+        "h10_source_available": false,
+        "wait_watch_runtime_automated_verified": false
       },
       "h10_actual_live_cloud_context_20261012": {
         "status": "ACTUAL_DEDICATED_H10_CONTEXT_EDGE_V1_DEPLOYED_ACTIVE_PHYSICAL_MINIPC_READ_NOT_YET_PROVEN",
