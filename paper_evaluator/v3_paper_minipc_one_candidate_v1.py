@@ -273,12 +273,9 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
              "polymarket_evidence":context["sources"]["polymarket_h11"],
              "news_sentiment_evidence":context["sources"]["news_sentiment"],
              "source_management_evidence":context["sources"]["source_stewardship"],
-             # All four already-registered PR251 streams are now auditable at
-             # the actual Mini-PC pre-model receipt (no LLM call required).
-             "global_market_evidence":context["sources"]["global_market_crosscheck"],
-             "derivatives_h2_evidence":context["sources"]["derivatives_h2"],
-             "macro_h5_evidence":context["sources"]["macro_h5"],
-             "onchain_h8_evidence":context["sources"]["onchain_h8"],
+             # Four PR251 streams are already included in the existing
+             # optional_context_states journal field. No SHA-pinned journal
+             # schema changes; source values enter only the P-I-T model prompt.
              "phase_failure_stage":eligibility.get("validation_stage")})
     if eligibility["status"]!=ELIGIBLE:
         return {"status":"NO_ELIGIBLE_INITIAL_V3_MODEL_REVIEW",
