@@ -81,7 +81,7 @@ class V3OwnerProducerTests(unittest.TestCase):
         for changes in (
             {"secret":b"short"},
             {"secret":"not-a-bytes-key"},
-            {"owner":"UNAUTHORIZED_SOURCE_OWNER"},
+            {"owner":"UNAUTHORIZED_SOURCE_OWNER","secret":b"N"*32},
             {"pair":"ETH/EUR"},
             {"altname":"X/BTEUR"},
             {"at":dt(-100)},
