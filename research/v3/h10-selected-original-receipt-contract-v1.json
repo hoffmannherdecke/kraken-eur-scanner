@@ -40,7 +40,8 @@
     "require_record_before_raw_expiry": true,
     "unproven_or_expired_window": "NO_RECEIPT",
     "receipt_timestamp_in_offline_builder_not_real_cloud_receipt": true,
-    "live_cloud_received_at_required_after_future_deploy": true
+    "live_cloud_received_at_required_after_future_deploy": true,
+    "raw_expiry_conservative_cutoff": "30M_WINDOW_START_UTC_PLUS_48H_MINUS_5M_NO_FALSE_VALIDITY_WHEN_EARLIEST_FILLS_EXPIRED"
   },
   "payload": {
     "per_fill": [
@@ -96,7 +97,9 @@
     "offline_owner_insert_readback_tests": "tests/test_v3_h10_selected_original_cloud_protocol_v1.py",
     "offline_readback_is_not_real_cloud_ack": true,
     "requires_postgres_returned_server_received_at": true,
-    "no_current_api_transport_or_writer": true
+    "no_current_api_transport_or_writer": true,
+    "storage_protocol_security_review": "SHA256_EXACT_CANONICAL_PAYLOAD_DB_CHECK_AND_ROLE_COIN_UTC_WINDOW_TTL_BINDING_NO_RECEIVED_AT_INSERT_PRIVILEGE",
+    "code_only_merge_is_not_schema_or_runtime_deployment": true
   },
   "gates": {
     "offline_tests_required": true,
