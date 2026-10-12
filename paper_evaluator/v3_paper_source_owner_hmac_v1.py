@@ -12,13 +12,14 @@ HMAC authenticates the packet holder, NOT truth of reported market claims.
 from __future__ import annotations
 
 from datetime import timedelta
+from copy import deepcopy
 import hashlib
 import hmac
 import json
 import re
 from typing import Any
 
-from paper_evaluator.v3_paper_positive_source_entry_v1 import STREAMS,utc
+from paper_evaluator.v3_paper_positive_source_entry_v1 import STREAMS,utc,assess_positive_source,ELIGIBLE
 
 KIND="V3_POSITIVE_OWNER_HMAC_BOUNDARY_V1"
 DOMAIN=b"kraken-eur-scanner/V3-PAPER/positive-owner/v1\x00"
@@ -128,3 +129,57 @@ def verify_owner_packet(*,packet:dict[str,Any],
         return "VERIFIED_OWNER_HMAC_PACKET_ONLY"
     except (ValueError,TypeError,KeyError,OverflowError,AttributeError):
         return "INVALID_OWNER_PROVENANCE_ENVELOPE"
+
+
+def sign_qualified_owner_event_explicitly(*,source_name:str,pair:str,
+        kraken_altname:str,snapshot:dict[str,Any],
+        signed_at_utc:str,owner_id:str,owner_hmac_key:bytes,
+        market_move:dict[str,Any]|None=None)->dict[str,Any]:
+    """Pure source-OWNER outbound packet, requires caller-held preprovisioned key.
+
+    Never derive a positive H5/H10/H11 event from raw context/books/calendar.
+    Never create, load, store or return owner secret bytes; HMAC generation is
+    not physical source authentication or proof the event occurred in reality.
+    """
+    if (source_name not in STREAMS
+            or not isinstance(owner_id,str) or not ID.fullmatch(owner_id)
+            or type(owner_hmac_key) is not bytes
+            or not 32<=len(owner_hmac_key)<=128
+            or not isinstance(snapshot,dict)
+            or snapshot.get("source_owner")!=owner_id):
+        raise ValueError("preprovisioned exact qualified source owner is required")
+    # Honest source labels are checked before any MAC. This prevents accidentally
+    # turning existing H10 context, H11 top-five raw books, or H5 macro calendar
+    # into standalone BUY-review signals by merely adding a signature.
+    qualified=assess_positive_source(
+        pair=pair,source_name=source_name,snapshot=snapshot,
+        decision_at_utc=signed_at_utc,market_move=market_move)
+    if qualified["status"]!=ELIGIBLE:
+        raise ValueError("raw source context is not a verified positive catalyst")
+    original=deepcopy(snapshot)
+    move=deepcopy(market_move)
+    digest=hashlib.sha256(json.dumps(
+        original,sort_keys=True,separators=(",",":"),ensure_ascii=False,
+        allow_nan=False).encode("utf-8")).hexdigest()
+    packet={
+        "source_name":source_name,"pair":pair,
+        "altname":kraken_altname,"snapshot":original,
+        "market_move":move,
+        "owner_integrity":{
+            "proof_version":KIND,
+            "authenticated_owner_id":owner_id,
+            "authentication_checked_by_trusted_caller":True,
+            "canonical_payload_sha256":digest,
+            "signed_at_utc":signed_at_utc,
+        },
+    }
+    mac=hmac.new(owner_hmac_key,canonical_owner_message(packet),
+                 hashlib.sha256).hexdigest()
+    packet["owner_integrity"]["owner_hmac_sha256"]=mac
+    verification=verify_owner_packet(
+        packet=packet,
+        trusted_keys={source_name:{owner_id:owner_hmac_key}},
+        decision_at_utc=signed_at_utc)
+    if verification!="VERIFIED_OWNER_HMAC_PACKET_ONLY":
+        raise ValueError("own signed source packet fails verifier contract")
+    return packet
