@@ -265,6 +265,13 @@ class V3IntegratedReadinessHandoffTests(unittest.TestCase):
         self.assertTrue(budget["model_http_call_executed"])
         self.assertEqual(budget["remaining_model_http_authority"],0)
         self.assertEqual(budget["p4_decision"],"WAIT")
+        watch=h["wait_paper_followup_observer_20261012"]
+        self.assertEqual(watch["source_prospective_max_1m_capture_lag_minutes"],15)
+        self.assertFalse(watch["runs_continuously_under_existing_windows_supervisor"])
+        self.assertFalse(watch["real_new_cloud_wait_expiry_or_followup_ack_verified"])
+        self.assertTrue(watch["original_model_budget_consumed"])
+        self.assertFalse(watch["v3_paper_active"])
+        self.assertTrue(watch["unknown_expired_not_false_negative"])
         self.assertFalse(budget["v3_paper_writer_active"])
         self.assertFalse(budget["old_pr186_budget_reused"])
         self.assertEqual(d["first_host_pair"],"EIGEN/EUR")
