@@ -473,7 +473,7 @@
         "research/v3/v3-paper-active-context-and-minipc-release-gates-20261011.json"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_PHYSICAL_MINIPC_ONE_SHOT_NEW_FRESH_CANDIDATE_V3_REAL_MODEL_HTTP_AT_MOST_ONE_AFTER_USER_APPROVED_CONSERVATIVE_0_15_USD_CEILING; VERIFY_P4_JOURNAL_TO_SUPABASE_ACK; THEN_REAL_SOURCE_OWNER_H10_H11_PIT_PAPER_WRITER_AND_V2R4_STOP_CAS_GATES",
+      "next_concrete_action": "PROSPECTIVE_PHYSICAL_MINIPC_SINGLE_MODEL_1_HTTP_APPROVED_AND_H10_READ_SOURCE_CONTEXT_ACK; THEN_REAL_H5_H11_SOURCE_CATALYST_EVENT_OWNER_DELIVERY_AND_V3_SINGLE_WRITER_6H24H_CLOUD_STOP_CAS",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -882,6 +882,25 @@
         "v2r4_stays_only_active": true,
         "v3_paper_writer_active": false,
         "orders": false
+      },
+      "h10_actual_live_cloud_context_20261012": {
+        "status": "ACTUAL_DEDICATED_H10_CONTEXT_EDGE_V1_DEPLOYED_ACTIVE_PHYSICAL_MINIPC_READ_NOT_YET_PROVEN",
+        "from_existing_h10_capture": "public.v3_h10_asset_consensus_30m",
+        "real_cloud_function": "v3-paper-h10-context-read",
+        "physical_minipc_client": "paper_evaluator/v3_paper_h10_context_read_v1.py",
+        "consumer": "tools/run-minipc-v3-paper-stage.ps1",
+        "auth": "EXISTING_MINIPC_V3_RELAY_SHA256_SECRET_REUSED_NO_ADMIN_KEY_ON_MINIPC",
+        "freshness_max_seconds": 1800,
+        "pair_authority": "EXACT_KRAKEN_SPOT_EUR_AND_H10_MATCH",
+        "public_source_research_read_only": true,
+        "source_can_trigger_order_directly": false,
+        "single_wallet_weak_signal_does_not_assert_3_independent_buyers": true,
+        "cloud_deployed_verified": true,
+        "host_e2e_live_h10_snapshot_ack_verified": false,
+        "news_h5_live_delivery_verified": false,
+        "h11_coin_probability_change_delivery_verified": false,
+        "new_git_work_schedules": 0,
+        "real_money_actions": false
       }
     }
   }
