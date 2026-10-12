@@ -15,8 +15,16 @@ from paper_evaluator.v3_experimental_paper_journal_v1 import (
 )
 from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
 
-FIELDS={"closed_5m_close_eur","closed_5m_volume_ratio_5","ask_eur"}
-OPS={">":lambda a,b:a>b,">=":lambda a,b:a>=b,"<=":lambda a,b:a<=b}
+FIELDS={
+    "last_eur","bid_eur","ask_eur","spread_pct",
+    "closed_1m_close_eur","closed_1m_volume_ratio_5",
+    "closed_5m_close_eur","closed_5m_volume_ratio_5",
+    "closed_15m_close_eur","closed_15m_volume_ratio_4",
+}
+NONNEGATIVE={"spread_pct","closed_1m_volume_ratio_5",
+             "closed_5m_volume_ratio_5","closed_15m_volume_ratio_4"}
+OPS={">":lambda a,b:a>b,">=":lambda a,b:a>=b,
+     "<":lambda a,b:a<b,"<=":lambda a,b:a<=b}
 
 def candidate_receipts(journal:Path,series_id:str,candidate_id:str)->list[dict]:
     if not journal.is_dir() or journal.is_symlink():
@@ -87,7 +95,8 @@ def observe_wait(*,journal:Path,series_id:str,candidate_id:str,
         for condition in watch["data"]["raw_watch_conditions"]:
             metric=condition["metric"]
             v=values.get(metric)
-            if type(v) not in (int,float) or not math.isfinite(v) or v<=0:
+            if (type(v) not in (int,float) or not math.isfinite(v)
+                    or (v<0 if metric in NONNEGATIVE else v<=0)):
                 return {"status":"WAIT_SOURCE_METRIC_UNKNOWN","authorized_buy":False}
             checks.append(OPS[condition["op"]](v,condition["value"]))
         if any(r["phase"]=="WAIT_RECHECK" and
@@ -109,7 +118,7 @@ def observe_wait(*,journal:Path,series_id:str,candidate_id:str,
             "watch_closed_5m_end_utc":snapshot["closed_5m_end_utc"],
             "watch_evaluated_conditions":len(checks),
             "watch_conditions_met":matched,
-            "watch_snapshot_values":{k:round(float(v),8) for k,v in values.items() if k in FIELDS},
+            "watch_snapshot_values":{k:round(float(v),8) for k,v in values.items() if k in FIELDS and type(v) in (int,float) and math.isfinite(v)},
             "source_status":"PROSPECTIVELY_OBSERVED_NO_TRADE_AUTHORITY",
             "phase_failure_stage":"MODEL_BUDGET_EXHAUSTED_NO_AUTO_REVIEW" if matched
                                   else "WAIT_CONDITIONS_NOT_YET_ALL_MET",

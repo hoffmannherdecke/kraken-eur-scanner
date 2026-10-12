@@ -11,7 +11,7 @@ CID="20261012-064219-ZRO-EUR-r168479886848322"
 START=datetime(2026,10,12,6,42,19,tzinfo=timezone.utc)
 DECISION=datetime(2026,10,12,6,44,49,tzinfo=timezone.utc)
 def t(x):return x.isoformat()
-def seed(j:Path):
+def seed(j:Path,conditions=None):
     rows=[
         ("SCANNER_CAPTURE","SEEN",START,{}),
         ("MODEL_RESPONSE","PASS",DECISION,{"model_response_at_utc":t(DECISION),
@@ -20,7 +20,7 @@ def seed(j:Path):
                "p4_decision":"WAIT"}),
         ("WAIT_WATCH","WAIT",DECISION+timedelta(seconds=2),{
             "raw_wait_ttl_minutes":30,
-            "raw_watch_conditions":[
+            "raw_watch_conditions":conditions if conditions is not None else [
                 {"metric":"closed_5m_close_eur","op":">","value":2.111},
                 {"metric":"closed_5m_volume_ratio_5","op":">=","value":1.2},
                 {"metric":"ask_eur","op":"<=","value":2.12},
@@ -90,6 +90,31 @@ class WaitTests(unittest.TestCase):
                     snapshot=altered,now_at_utc=t(now))
                 self.assertFalse(result["authorized_buy"])
             self.assertFalse(any(r["phase"]=="PAPER_FILL" for r in logs(j)))
+
+    def test_full_wait_grammar_with_less_than_spread_and_true_zero_volume(self):
+        conditions=[
+            {"metric":"last_eur","op":">","value":2.09},
+            {"metric":"bid_eur","op":">=","value":2.0},
+            {"metric":"spread_pct","op":"<","value":1.0},
+            {"metric":"closed_1m_volume_ratio_5","op":">=","value":0.0},
+            {"metric":"closed_15m_volume_ratio_4","op":"<=","value":0.5},
+            {"metric":"closed_5m_close_eur","op":">","value":2.111},
+        ]
+        with tempfile.TemporaryDirectory() as td:
+            j=Path(td);seed(j,conditions=conditions)
+            now=datetime(2026,10,12,6,50,7,tzinfo=timezone.utc)
+            observation=snap(now)
+            observation["values"].update({
+                "last_eur":2.10,"bid_eur":2.09,"spread_pct":0.0,
+                "closed_1m_volume_ratio_5":0.0,
+                "closed_15m_volume_ratio_4":0.4,
+            })
+            result=observe_wait(journal=j,series_id=SID,candidate_id=CID,
+                                snapshot=observation,now_at_utc=t(now))
+            self.assertEqual(result["status"],"WAIT_CONDITIONS_MATCHED_REQUIRES_NEW_MODEL_P4_AUTH")
+            self.assertEqual(result["condition_count"],6)
+            self.assertFalse(result["authorized_buy"])
+            self.assertEqual(result["model_calls"],0)
 
     def test_zro_window_without_real_time_captures_expires_unknown(self):
         with tempfile.TemporaryDirectory() as td:
