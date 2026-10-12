@@ -89,6 +89,27 @@ if($null -eq $candidate){
  $payload | ConvertTo-Json -Depth 8
  exit 0
 }
+# Attach only real, original-source H10 evidence for this exact candidate.
+# Never create a second H10 scanner/schedule. A source failure cannot veto
+# the pre-existing technical model route.
+$ctxDir=Join-Path $root 'context'
+New-Item -ItemType Directory -Force -Path $ctxDir | Out-Null
+$sourceFile=Join-Path $ctxDir 'latest-verified-sources.json'
+$relaySecret=Join-Path $TradingRoot 'Secrets\v3-paper-relay-token.txt'
+if(Test-Path -LiteralPath $relaySecret -PathType Leaf){
+ try{
+  Push-Location $repo
+  try{
+   $sourceArgs=@('-m','paper_evaluator.v3_paper_h10_context_read_v1',
+    '--pair',[string]$c.pair,
+    '--relay-secret-file',$relaySecret,
+    '--output-context',$sourceFile,
+    '--execute-live-read')
+   & $venv @sourceArgs
+   if($LASTEXITCODE -ne 0){Write-Warning 'H10 Cloud source read unavailable; optional only'}
+  }finally{Pop-Location}
+ }catch{Write-Warning 'Optional H10 source unavailable; technical V3 path remains'}
+}
 Push-Location $repo
 try{
  $arg=@('-m','paper_evaluator.v3_paper_minipc_one_candidate_v1',
@@ -106,7 +127,7 @@ try{
  }
  # Optional PIT source dossier is read-only and never required.
  # The source bridge itself rechecks observed_at <= known_at <= decision.
- $sourceFile=Join-Path $root 'context\latest-verified-sources.json'
+
  if(Test-Path -LiteralPath $sourceFile -PathType Leaf){
   $arg+=@('--optional-sources',$sourceFile)
  }
