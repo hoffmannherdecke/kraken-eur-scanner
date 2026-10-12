@@ -239,6 +239,7 @@
       "one_shot_verified_original_pair": "RENDER/EUR",
       "one_shot_p0_eight_checks_passed": true,
       "post_28h_evidence_verdict_code": "paper_evaluator/v3_paper_post_canary_evidence_verdict_v1.py",
+      "post_28h_evidence_review_runbook": "docs/v3-28h-canary-evidence-review-20261013.md",
       "post_28h_evidence_verdict_status": "INACTIVE_READONLY_VERDICT_CI_REVIEW_NOT_YET_REAL_POST_DEADLINE_EVIDENCE",
       "post_28h_cloud_cohorts_separate": true,
       "post_28h_no_buy_6h24h72h_requires_individually_timestamped_receipts": true,
