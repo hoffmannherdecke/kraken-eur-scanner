@@ -245,5 +245,19 @@
     "ongoing_v3_active_writer_verified": false,
     "separate_automated_source_origin_intake_verified": false,
     "cloud_active_series_fresh_readback_this_turn": false
+  },
+  "v3_shared_source_and_scanner_intake_20261012": {
+    "status": "PURE_V3_CANDIDATE_INGRESS_PLANNER_OFFLINE_REVIEW",
+    "code": "paper_evaluator/v3_paper_shared_candidate_intake_plan_v1.py",
+    "direct_positive_source_candidates_supported": true,
+    "fast_original_scanner_candidates_supported": true,
+    "no_known_source_does_not_block_scanner": true,
+    "exact_known_at_not_retrocausal": true,
+    "exact_online_kraken_spot_eur_pair_metadata_required": true,
+    "fresh_metadata_and_full_model_P4_still_required": true,
+    "no_model_or_order_or_cloud_writes": true,
+    "real_mini_pc_or_cloud_intake_ack": false,
+    "physical_active_paper_writer": false,
+    "old_28h_task_not_modified": true
   }
 }

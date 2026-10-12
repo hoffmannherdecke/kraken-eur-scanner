@@ -1,0 +1,161 @@
+"""Pure shared V3 PAPER ingress plan: original Scanner + verified positive sources.
+
+This is the MISSING bounded router for the FUTURE single V3 Paper writer.
+It only SELECTS original events known at the decision clock. It cannot use
+OpenAI, schedule processes, create local receipts, write to Cloud, make PAPER
+fills or modify the sole active V2R4 series. Every review still needs fresh
+Kraken Spot-EUR metadata, real coin 1m/5m/15m, model spend authorization,
+a complete model response and the common P4/fee/stop/Stage2 validation.
+
+Positive official news, verified independent Smart Money or a directly
+coin-related Polymarket event may independently reach FULL_REVIEW; missing
+optional signals never veto already-qualified Scanner handoffs.
+"""
+from __future__ import annotations
+from datetime import datetime,timezone
+from typing import Any
+from paper_evaluator.v3_paper_positive_source_entry_v1 import (
+    STREAMS,make_source_candidate,utc,
+)
+
+KIND="V3_SHARED_PAPER_CANDIDATE_INTAKE_PLAN_V1"
+SCANNER_KIND="CANONICAL_CANDIDATE_HANDOFF_V1"
+JOURNAL_KIND="V3_EXPERIMENTAL_PAPER_CANDIDATE_EVENT_V1"
+FRESH_SECONDS=600
+COALESCE_SECONDS=300
+
+def _pair_meta(pair:str,altname:str,known_pairs:dict[str,Any])->bool:
+    if (not isinstance(pair,str) or not pair.endswith("/EUR")
+            or type(altname) is not str or not altname.isalnum()
+            or not isinstance(known_pairs,dict)):
+        return False
+    meta=known_pairs.get(pair)
+    return (isinstance(meta,dict) and meta.get("pair")==pair
+            and meta.get("altname")==altname
+            and meta.get("status")=="online"
+            and meta.get("spot") is True and meta.get("quote")=="EUR")
+
+def plan_intake(*,scanner_events:list[dict],source_events:list[dict],
+                known_pairs:dict[str,dict],journal_receipts:list[dict],
+                series_id:str,decision_at_utc:str,
+                max_reviews:int=3)->dict[str,Any]:
+    """No filesystem or HTTP side effects. Defer (not drop) overflow."""
+    if (not isinstance(series_id,str) or not series_id.startswith("PAPER-V3-")
+            or not all(isinstance(x,list) for x in
+                       (scanner_events,source_events,journal_receipts))
+            or type(max_reviews) is not int or not 1<=max_reviews<=5
+            or len(scanner_events)>2000 or len(source_events)>2000
+            or len(journal_receipts)>50000):
+        raise ValueError("bounded isolated V3 paper planner input required")
+    at=utc(decision_at_utc)
+    if at.year<2026:raise ValueError("invalid decision clock")
+    seen:dict[str,tuple[str,str]]={}
+    for row in journal_receipts:
+        if not isinstance(row,dict) or row.get("kind")!=JOURNAL_KIND:
+            raise ValueError("unverified immutable journal input")
+        if row.get("series_id")!=series_id:continue
+        cid,pair,event_time=row.get("candidate_id"),row.get("pair"),row.get("event_time_utc")
+        if not isinstance(cid,str) or not isinstance(pair,str) or not isinstance(event_time,str):
+            raise ValueError("invalid existing original V3 journal identity")
+        old=seen.setdefault(cid,(pair,event_time))
+        if old!=(pair,event_time):raise ValueError("conflicting immutable V3 candidate ID")
+    reasons:dict[str,int]={}
+    rejected=[]
+    eligible=[]
+    same_identity={}
+    def exclude(reason:str,origin:str):
+        reasons[reason]=reasons.get(reason,0)+1
+        rejected.append({"origin":origin,"reason":reason})
+    def add(candidate:dict[str,Any],origin:str):
+        cid,pair,altname=(candidate.get(k) for k in ("candidate_id","pair","altname"))
+        if not all(isinstance(x,str) and x for x in (cid,pair,altname)):
+            exclude("MISSING_ORIGINAL_CANDIDATE_IDENTITY",origin);return
+        if not _pair_meta(pair,altname,known_pairs):
+            exclude("PAIR_NOT_VERIFIED_AS_SPOT_EUR_METADATA_RECHECK_REQUIRED",origin);return
+        try:
+            original=utc(candidate["event_time_utc"])
+        except (ValueError,TypeError,KeyError,OverflowError,AttributeError):
+            exclude("UNKNOWN_ORIGINAL_EVENT_CLOCK",origin);return
+        age=(at-original).total_seconds()
+        if age<0:
+            exclude("FUTURE_EVENT_NOT_YET_KNOWN",origin);return
+        if age>FRESH_SECONDS:
+            exclude("EXPIRED_ORIGINAL_10M_WINDOW",origin);return
+        known=same_identity.get(cid)
+        if known is not None:
+            if known!=(pair,original.isoformat()):
+                raise ValueError("two different events claim same candidate ID")
+            exclude("EXACT_CANDIDATE_DUPLICATE_IN_INPUT",origin);return
+        same_identity[cid]=(pair,original.isoformat())
+        if cid in seen:
+            if seen[cid][0]!=pair or utc(seen[cid][1])!=original:
+                raise ValueError("immutable candidate ID conflict with Cloud/journal")
+            exclude("ALREADY_JOURNALED_NO_REPEAT_NO_SPEND",origin);return
+        eligible.append({"candidate":dict(candidate),
+                         "origin":origin,"at":original})
+
+    for row in scanner_events:
+        if (not isinstance(row,dict)
+                or row.get("kind")!=SCANNER_KIND
+                or row.get("action")!="REVIEW_ONLY_NOT_ORDER"
+                or row.get("entry_origin") not in (None,"SCANNER")):
+            exclude("SCANNER_EVENT_NOT_AUTHORIZED_REVIEW_ONLY", "SCANNER")
+            continue
+        # Nothing in this ingress logic is a liquidity/volume BUY VETO.
+        add(dict(row,entry_origin="SCANNER"),"SCANNER")
+
+    for row in source_events:
+        if not isinstance(row,dict):
+            exclude("SOURCE_ENVELOPE_INVALID","SOURCE_CATALYST")
+            continue
+        name,pair,altname=(row.get(k) for k in ("source_name","pair","altname"))
+        if name not in STREAMS or not _pair_meta(pair,altname,known_pairs):
+            exclude("SOURCE_NOT_VERIFIED_PAIR_MAPPING","SOURCE_CATALYST")
+            continue
+        snapshot=row.get("snapshot")
+        if not isinstance(snapshot,dict):
+            exclude("SOURCE_SNAPSHOT_ABSENT","SOURCE_CATALYST")
+            continue
+        try:
+            candidate=make_source_candidate(
+                pair=pair,kraken_altname=altname,source_name=name,
+                snapshot=snapshot,decision_at_utc=decision_at_utc,
+                market_move=row.get("market_move"))
+        except (ValueError,TypeError,KeyError,OverflowError,AttributeError):
+            exclude("SOURCE_CATALYST_NOT_INDEPENDENTLY_VERIFIED",
+                    "SOURCE_CATALYST")
+            continue
+        add(candidate,"SOURCE_CATALYST")
+    # Verified positive catalyst is prioritized over an otherwise same-coin
+    # scanner notification within five minutes, not misrepresented as a BUY.
+    eligible.sort(key=lambda e:(0 if e["origin"]=="SOURCE_CATALYST" else 1,
+                                e["at"],e["candidate"]["candidate_id"]))
+    selected=[]
+    near_pairs:dict[str,datetime]={}
+    for entry in eligible:
+        pair=entry["candidate"]["pair"]
+        if pair in near_pairs and abs((near_pairs[pair]-entry["at"]).total_seconds())<=COALESCE_SECONDS:
+            exclude("SAME_PAIR_CONCURRENT_REVIEW_COALESCED_NOT_LOST","ROUTER")
+            continue
+        if len(selected)>=max_reviews:
+            # These remain eligible next tick while the original source clock
+            # is fresh; no silent model spending, and overflow is disclosed.
+            exclude("CAPACITY_DEFERRED_NOT_A_NEGATIVE_MARKET_DECISION","ROUTER")
+            continue
+        selected.append(entry["candidate"])
+        near_pairs[pair]=entry["at"]
+    return {"kind":KIND,"series_id":series_id,"decision_at_utc":at.isoformat(),
+            "status":"CANDIDATES_READY_FOR_KRAKEN_AND_MODEL_P4_REVIEW_ONLY"
+                     if selected else "NO_FRESH_UNJOURNALED_INPUT",
+            "candidates":selected,
+            "counts":{"scanner_input":len(scanner_events),
+                      "source_input":len(source_events),
+                      "selected":len(selected),
+                      "suppressed_or_deferred":sum(reasons.values())},
+            "dispositions":reasons,
+            "candidate_level_reasons":rejected,
+            "requires_fresh_spot_pair_metadata_recheck":True,
+            "requires_full_v3_model_and_p4":True,
+            "model_http_authorized":False,"model_calls":0,"orders":False,
+            "paper_writer_active":False,"v2r4_unchanged":True,
+            "new_scheduler":False,"real_money_actions":False}
