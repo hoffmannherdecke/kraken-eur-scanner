@@ -14,7 +14,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from context_before_action import build, ContextGateError
+try:\n    from tools.context_before_action import build, ContextGateError\nexcept ModuleNotFoundError:  # running as python tools/project_context_change_guard.py\n    from context_before_action import build, ContextGateError
 
 ROOT = Path(__file__).resolve().parents[1]
 START = "<!-- PROJECT_CONTEXT_REVIEW_V1"
@@ -48,7 +48,7 @@ def classify(paths: list[str]) -> set[str]:
             continue
         assigned = set()
         if (low.startswith(("paper_evaluator/", "research/v2", "research/v3", "strategy/"))
-                or any(x in low for x in ("strategy", "paper_", "scanner", "trade", "entry", "buy_", "sell_", "shadow"))):
+                or any(x in low for x in ("strategy", "paper_", "scanner", "scan", "trade", "entry", "buy_", "sell_", "shadow"))):
             assigned.add("strategy")
         if (low.startswith(("tools/", ".github/", "tests/", "supabase/", "docs/"))
                 or low.endswith((".py", ".ps1", ".sh", ".sql", ".yml", ".yaml", ".toml"))):
