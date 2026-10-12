@@ -1,5 +1,12 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
+## 12.10.2026 – V3-Paper-Start: fünf Quellenrollen unmittelbar zum Kernrelease, keine weiteren Shadow-Wochen
+
+**Neuer konkreter Nutzerbeschluss, ab sofort verbindlich im bestehenden V3-Cutover-Owner:** V3 PAPER möglichst 13.10. abends oder 14.10., falls echte A/B/C-Freigabegates erfüllt. **H10 Smart Money, H11 Polymarket, Marktphasen-Radar, offizielle Nachrichten und eigenständiges aktives Quellenmanagement** sollen dann so zeitnah wie technisch vertretbar *tatsächlich genutzt* werden, nicht auf unbestimmte V4-Forschung verschoben. Die aktuelle Strategie erbt die fünf als **PIT-validierte optionale Informationsrollen**, ohne pauschale BUY-Vetos oder künstlich weitere Testwochen. Quellen mit gesichertem positiven coin-kausalem Ereignis dürfen nach **dem bereits existierenden** H10/H11/News-Source-Catalyst-, HMAC-/Kraken-/P4-Gate einen eigenen Paper-Kandidaten begründen; fehlende oder nicht-authentifizierte Quellen sind neutral, kein Fake-BUY. Der vorhandene 2h-Source-Steward erforscht, qualifiziert, quarantiniert und ersetzt im **Research** autonom, keine heimliche aktive Runtime-Quelle.
+
+**Umsetzung:** Bestehenden Full-Model-Prompt in `paper_evaluator/v3_experimental_paper_model_prompt_v1.py` um ausdrückliche kausale Rollen je H10/H11/Regime/News/Steward und verpflichtende Begründung material verwendeter Fakten ergänzen; echte Prompt-Input-Regression mit fünf positiven *Test-Fixtures* und falschem Paar/future/stale in `tests/test_v3_experimental_paper_initial_review_v1.py`, keine neuen Dienste/Quellen/Modell-HTTP. Vollständiger operativer Akzeptanzpfad, einziger Owner und bereits vorhandene Gate-Grenzen: `docs/v3-controlled-paper-cutover-20261011.md#6` plus `docs/market-source-autonomy-v1.md`. Verantwortlich bleibt V3 P0/P1 Release-Cutover A/B/C und 10:15-/2h-Source-Radar; H11 Ereignis→Coin und H10 Erstbeleg sowie unbeaufsichtigter autonomer Source-Swap bleiben gesonderte nachzuweisende **Quellen**-Lücken, nicht pauschales V3-Paper-Startverbot. Keine V2R4-/28h-Kanari-/Supabase-/Mini-PC-Runtime-Änderung. Umsetzungscode mit GitHub-PR/CI prüfen; erstmaliger LIVE-Verbrauch in Original-Mini-PC-Journal/Modell und autonomes Source-Owner-ACK vor `DONE` gesondert nachweisen.
+
+
 
 ## 12.10.2026 – V2R4 gesamtwirtschaftlicher Snapshot: fälliger Review statt weiterer Null-BUY-Sammlung
 
