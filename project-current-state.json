@@ -261,7 +261,12 @@
       "source_owner_pre_router_rejected_originals": "EACH_DENIED_H5_H10_H11_PACKET_HAS_SANITIZED_IMMUTABLE_OWNER_INPUT_AUDIT_NOT_TRADEABLE",
       "source_owner_pre_router_rejections_verified_in_real_cloud": false,
       "source_owner_rejected_originals_code": "paper_evaluator/v3_paper_existing_owner_source_bridge_v1.py + paper_evaluator/v3_paper_intake_receipt_stage_v1.py",
-      "source_owner_rejected_originals_deployment_state": "OFFLINE_TEST_ONLY_PENDING_REAL_OWNER_SENDER_AND_REAL_MINIPC_CLOUD_ACK"
+      "source_owner_rejected_originals_deployment_state": "OFFLINE_TEST_ONLY_PENDING_REAL_OWNER_SENDER_AND_REAL_MINIPC_CLOUD_ACK",
+      "source_owner_signed_receipt_stage_module": "paper_evaluator/v3_paper_signed_source_journal_stage_v1.py",
+      "source_owner_signed_receipt_stage_status": "OFFLINE_INACTIVE_SECOND_IMMUTABLE_SOURCE_INPUT_OWNERAUTH_PASS_ONLY_AFTER_FRESH_MAC_REVERIFICATION_AND_ORIGINAL_FIRST_UNKNOWN_RECEIPT",
+      "source_owner_signed_receipt_not_authority_for_buy_model_or_paper": true,
+      "source_owner_signed_receipt_live_minipc_verified": false,
+      "source_owner_signed_receipt_exact_cloud_ack_verified": false
     },
     "kind": "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1",
     "requested_on": "2026-10-11",
