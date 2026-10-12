@@ -34,6 +34,7 @@ def sample():
         "ingress": {
             "capacity_deferred_originals": [c("B", 2)],
             "same_pair_coalesced_originals": [c("C", 3)],
+            "rejected_originals": [],
             "counts": {"selected": 1, "suppressed_or_deferred": 2},
             "dispositions": {
                 "CAPACITY_DEFERRED_NOT_A_NEGATIVE_MARKET_DECISION": 1,
@@ -95,14 +96,58 @@ class IntakeReceiptStageTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 prepare_receipts(x)
 
-    def test_unknown_rejections_explicitly_not_economic_coverage(self):
+
+    def test_rejections_are_individually_audited_with_no_fake_coin_or_profit(self):
         x = sample()
         x["ingress"]["counts"]["suppressed_or_deferred"] = 3
         x["ingress"]["dispositions"]["UNKNOWN_ORIGINAL_EVENT_CLOCK"] = 1
+        audit = {
+            "kind":"V3_ROUTER_REJECTED_ORIGINAL_AUDIT_V1",
+            "audit_id":"V3-INPUT-REJECT-" + "a"*32,
+            "input_stream":"SCANNER","input_index":2,
+            "reason":"UNKNOWN_ORIGINAL_EVENT_CLOCK",
+            "original_candidate_id_if_safe":"bad-time",
+            "original_pair_if_safe":"XBT/EUR",
+            "original_event_time_if_parseable":None,
+            "original_source_event_id_if_safe":None,
+            "original_untrusted_and_not_tradeable":True,
+        }
+        x["ingress"]["rejected_originals"] = [audit]
         with tempfile.TemporaryDirectory() as p:
-            answer = stage_receipts_explicitly(preflight=x, journal_directory=Path(p))
-            self.assertEqual(answer["unattributed_router_rejections"], 1)
-            self.assertFalse(answer["all_original_decisions_durable"])
+            root=Path(p)
+            first=stage_receipts_explicitly(preflight=x,journal_directory=root)
+            self.assertEqual(first["router_rejection_audit_receipts"],1)
+            self.assertEqual(first["unattributed_router_rejections"],0)
+            self.assertFalse(first["all_original_decisions_durable"])
+            rows=[json.loads(p.read_text()) for p in root.glob("*.json")]
+            only=next(r for r in rows if r["event_key"]=="ROUTERREJECT")
+            self.assertEqual(only["candidate_id"],audit["audit_id"])
+            self.assertEqual(only["pair"],"UNMAPPED/EUR")
+            self.assertEqual(only["result"],"UNKNOWN")
+            self.assertEqual(only["data"]["review_checks"]["original_candidate_id_if_safe"],"bad-time")
+            self.assertIsNone(only["data"].get("position_net_pnl_eur"))
+            self.assertEqual(first["written"],5)
+            self.assertEqual(stage_receipts_explicitly(preflight=x,journal_directory=root)["identical_replays"],5)
+
+    def test_missing_or_tampered_rejected_originals_fail_closed(self):
+        x=sample()
+        x["ingress"]["counts"]["suppressed_or_deferred"]=3
+        x["ingress"]["dispositions"]["UNKNOWN_ORIGINAL_EVENT_CLOCK"]=1
+        with self.assertRaises(ValueError):
+            prepare_receipts(x)
+        x["ingress"]["rejected_originals"]=[{
+            "kind":"V3_ROUTER_REJECTED_ORIGINAL_AUDIT_V1",
+            "audit_id":"V3-INPUT-REJECT-"+"f"*32,
+            "input_stream":"SCANNER","input_index":1,
+            "reason":"FUTURE_EVENT_NOT_YET_KNOWN",
+            "original_untrusted_and_not_tradeable":True,
+        }]
+        with self.assertRaises(ValueError):
+            prepare_receipts(x)
+        x["ingress"]["rejected_originals"][0]["reason"]="UNKNOWN_ORIGINAL_EVENT_CLOCK"
+        x["ingress"]["rejected_originals"][0]["audit_id"]="bad"
+        with self.assertRaises(ValueError):
+            prepare_receipts(x)
 
     def test_never_create_runtime_directory_and_conflicts_refuse_overwrite(self):
         with tempfile.TemporaryDirectory() as p:
