@@ -1,7 +1,7 @@
 """Actual H10 Cloud PIT read path: exact pair, no forged positive multi-buy."""
 import json,tempfile,unittest
 from pathlib import Path
-from paper_evaluator.v3_paper_h10_context_read_v1 import fetch_h10,merge_context_file
+from paper_evaluator.v3_paper_h10_context_read_v1 import fetch_h10,merge_context_file,ALLOWED_CONTEXT_KEYS
 from paper_evaluator.v3_paper_context_bridge_v1 import fuse_existing_sources
 from paper_evaluator.v3_paper_positive_source_entry_v1 import (
     assess_positive_source,ELIGIBLE,
@@ -74,5 +74,52 @@ class V3H10LiveReadTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 fetch_h10(pair="ZEC/EUR",token="known-secret-value-min-24-chars",
                           post=lambda *_,response=response:response)
+
+
+    def test_pr251_four_owner_lanes_survive_actual_h10_merge(self):
+        self.assertTrue({"derivatives_h2","macro_h5","onchain_h8",
+                         "global_market_crosscheck"}.issubset(ALLOWED_CONTEXT_KEYS))
+        with tempfile.TemporaryDirectory() as temp:
+            f=Path(temp)/"context.json"
+            val={"source_verified":True,"source_owner":"EXISTING_RESEARCH",
+                 "source_id":"offline-owner",
+                 "observed_at_utc":dt(2),"known_at_utc":dt(3)}
+            f.write_text(json.dumps({
+                "derivatives_h2":dict(val,pair="ZEC/EUR",funding_rate_pct=0.01),
+                "macro_h5":dict(val,event_id="official-calendar-precheck"),
+                "onchain_h8":dict(val,pair="ZEC/EUR",chain="Zcash"),
+                "global_market_crosscheck":dict(val,btc_state="STABILIZING"),
+                "polymarket_h11":dict(val,pair="ETH/EUR",event_id="other-coin"),
+            }),"utf-8")
+            merged=merge_context_file(path=f,pair="ZEC/EUR",
+                live={"sources":{"smart_money_h10":source()}})
+            self.assertTrue(merged["h10_available"])
+            old=json.loads(f.read_text("utf-8"))
+            self.assertNotIn("polymarket_h11",old)
+            model=fuse_existing_sources(old,decision_at_utc=dt(5),pair="ZEC/EUR")
+            for name in ("derivatives_h2","macro_h5","onchain_h8",
+                         "global_market_crosscheck","smart_money_h10"):
+                self.assertEqual(model["sources"][name]["state"],
+                                 "AVAILABLE_PIT_CONTEXT_ONLY")
+                self.assertFalse(model["sources"][name]["hard_veto"])
+
+    def test_actual_zro_h10_control_timestamps_do_not_backfill_v3_canary(self):
+        # Source fields/time reproduced from read-only Supabase audit on
+        # 12 Oct 2026: ZRO CONTROL 03:00 UTC, 5 fills / one wallet;
+        # first_seen 03:31:56.197728Z, source batch 03:31:54.848107Z.
+        # Source verified flag here is a TEST STUB, not an Edge owner ACK.
+        prior={"pair":"ZRO/EUR","source_verified":True,
+               "source_owner":"TEST_STUB_NOT_OWNER_AUTH",
+               "source_id":"actual-sql-history-reference",
+               "observed_at_utc":"2026-10-12T03:31:56.197728Z",
+               "known_at_utc":"2026-10-12T03:31:56.197728Z",
+               "independent_wallet_count":1,"consensus_direction":"LONG"}
+        row=fuse_existing_sources(
+            {"smart_money_h10":prior},
+            decision_at_utc="2026-10-12T06:44:49.753633Z",
+            pair="ZRO/EUR")["sources"]["smart_money_h10"]
+        self.assertEqual(row["state"],"STALE_OPTIONAL")
+        self.assertFalse(row["hard_veto"])
+        self.assertNotIn("values",row)
 
 if __name__=="__main__":unittest.main()
