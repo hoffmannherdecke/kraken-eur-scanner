@@ -30,6 +30,21 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
                       "change_and_evidence", "existing_owner", "approval_boundary",
                       "followthrough_and_ack", "remaining_unknowns"):
             x[field] = "Checked the original project decision and actual component before changing this."
+        x["architecture_integrity"] = {
+            "change_mode": "EXTEND",
+            "affected_stream_ids": ["scanner_detection", "realtime_timing"],
+            "affected_area_ids": ["architecture_dependencies"],
+            "reviewed_overlap_ids": ["realtime_timing", "price_volume_h6",
+                                     "scanner_detection"],
+            "affected_consumer_roles": ["GATED_STRATEGY_REVIEW"],
+            "runtime_change_authorized": False,
+            "original_component_and_owner": "The existing scanner and timing owners are the original accountable implementation locations.",
+            "systemwide_integration_path": "Upstream existing scanner events flow downstream to the gated review without a second capture mechanism.",
+            "reuse_or_retirement_decision": "Extend the present reviewer rather than inventing another running project manager or redundant registry.",
+            "compatibility_and_failure_effects": "Existing scanner and timing interfaces remain stable while missing live evidence stays explicitly unverified.",
+            "complexity_cost_and_maintenance": "One local reviewer extension has no new scheduler, persistent database, model budget or runtime overhead.",
+            "validation_rollback_and_ack": "Existing CI negative tests and the original Work review gate are reused with reversible Git changes.",
+        }
         for item in x["scope_reviews"]:
             item["decision_applied"] = "Checked previous approvals and kept them unchanged for this review."
             item["existing_implementation"] = "The existing owner and source were reused, not duplicated here."
@@ -43,6 +58,59 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
         self.assertEqual(set(report["scopes"]), classify(paths))
         self.assertFalse(report["runtime_or_trading_authorized"])
         self.assertFalse(report["model_understanding_proven"])
+
+
+    def test_architecture_integrity_rejects_hidden_overlaps(self):
+        paths = ["paper_evaluator/review.py"]
+        good = self.good(paths)
+        good["architecture_integrity"]["reviewed_overlap_ids"].pop()
+        with self.assertRaisesRegex(ChangeGateError, "overlapping components omitted"):
+            check(ROOT, paths, good)
+
+    def test_architecture_integrity_rejects_fake_owner_or_downstream(self):
+        paths = ["tools/new-source.py"]
+        good = self.good(paths)
+        good["architecture_integrity"]["affected_stream_ids"] = ["invented_poller"]
+        with self.assertRaisesRegex(ChangeGateError, "architecture reference"):
+            check(ROOT, paths, good)
+        good = self.good(paths)
+        good["architecture_integrity"]["affected_consumer_roles"] = []
+        with self.assertRaisesRegex(ChangeGateError, "downstream consumers"):
+            check(ROOT, paths, good)
+
+    def test_architecture_integrity_no_doc_only_for_code_or_config(self):
+        for path in ["tools/new-manager.py", "project-current-state.json",
+                     ".github/workflows/new.yml"]:
+            good = self.good([path])
+            good["architecture_integrity"]["change_mode"] = "DOCUMENT_ONLY"
+            with self.subTest(path=path):
+                with self.assertRaisesRegex(ChangeGateError, "cannot claim DOCUMENT_ONLY"):
+                    check(ROOT, [path], good)
+
+    def test_architecture_integrity_no_implicit_runtime_approval(self):
+        paths = ["paper_evaluator/new-worker.py"]
+        good = self.good(paths)
+        good["architecture_integrity"]["runtime_change_authorized"] = True
+        with self.assertRaisesRegex(ChangeGateError, "cannot grant active runtime"):
+            check(ROOT, paths, good)
+
+    def test_architecture_integrity_rejects_missing_analysis(self):
+        paths = ["tools/patch.py"]
+        good = self.good(paths)
+        good.pop("architecture_integrity")
+        with self.assertRaisesRegex(ChangeGateError, "missing project-wide architecture"):
+            check(ROOT, paths, good)
+        good = self.good(paths)
+        good["architecture_integrity"]["reuse_or_retirement_decision"] = "NOT CHECKED"
+        with self.assertRaisesRegex(ChangeGateError, "reuse_or_retirement_decision"):
+            check(ROOT, paths, good)
+
+    def test_architecture_integrity_accepts_document_only_with_original_owner(self):
+        paths = ["docs/architecture-review.md"]
+        good = self.good(paths)
+        good["architecture_integrity"]["change_mode"] = "DOCUMENT_ONLY"
+        self.assertEqual(check(ROOT, paths, good)["architecture_integrity"]["impact_mode"],
+                         "DOCUMENT_ONLY")
 
     def test_no_receipt_no_change_authority(self):
         with self.assertRaisesRegex(ChangeGateError, "wrong receipt kind"):
