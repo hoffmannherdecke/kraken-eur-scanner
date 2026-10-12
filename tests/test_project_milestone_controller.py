@@ -7,6 +7,65 @@ spec = importlib.util.spec_from_file_location('controller', ROOT / 'tools/projec
 controller = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(controller)
 
+class H10OriginalReceiptMilestoneTests(unittest.TestCase):
+    """Read-only first-receipt review on the existing milestone cadence."""
+
+    @staticmethod
+    def _response(rows):
+        import json
+        class Response:
+            def __enter__(self): return self
+            def __exit__(self,*args): return None
+            def read(self): return json.dumps(rows).encode("utf-8")
+        return Response()
+
+    def test_no_source_receipt_is_pending_without_notification(self):
+        from unittest.mock import patch
+        with patch.object(controller.urllib.request,"urlopen",
+                          return_value=self._response([])) as urlopen:
+            status,note=controller.first_h10_source_receipt_review(
+                "https://example.supabase.co","fake-legacy-server-key")
+        self.assertEqual(status,"H10:ORIGINAL_SOURCE_RECEIPT_PENDING")
+        self.assertIsNone(note)
+        req=urlopen.call_args.args[0]
+        self.assertIn("limit=1",req.full_url)
+        self.assertEqual(req.get_method(),"GET")
+
+    def test_actual_valid_source_receipt_is_one_deduped_review_not_buy(self):
+        from unittest.mock import patch
+        from tests.test_v3_h10_selected_original_receipt_v1 import build
+        from tools.v3_h10_selected_original_cloud_protocol_v1 import prepare_source_only_insert
+        candidate=build()
+        stored=prepare_source_only_insert(candidate)
+        stored["received_at_utc"]="2026-10-12T12:36:01Z"
+        with patch.object(controller.urllib.request,"urlopen",
+                          return_value=self._response([stored])):
+            status,note=controller.first_h10_source_receipt_review(
+                "https://example.supabase.co","fake")
+        self.assertEqual(status,"H10:FIRST_STORED_SOURCE_RECEIPT_REVIEW_DUE")
+        self.assertEqual(note["kind"],"H10_FIRST_SOURCE_RECEIPT_REVIEW")
+        self.assertIn("Kein BUY",note["detail"])
+        self.assertEqual(note["event_key"],
+            controller.event("H10_FIRST_SOURCE_RECEIPT_REVIEW",
+                             "H10-FIRST-STORED-ORIGINAL-RECEIPT","another")["event_key"])
+
+    def test_digest_or_source_identity_mismatch_fails_closed(self):
+        from unittest.mock import patch
+        from tests.test_v3_h10_selected_original_receipt_v1 import build
+        from tools.v3_h10_selected_original_cloud_protocol_v1 import prepare_source_only_insert
+        stored=prepare_source_only_insert(build())
+        stored["received_at_utc"]="2026-10-12T12:36:01Z"
+        for field,value in [("content_sha256","0"*64),("candidate_id","0"*64),
+                            ("received_at_utc","2026-10-15T12:36:01Z")]:
+            bad=dict(stored)
+            bad[field]=value
+            with self.subTest(field=field):
+                with patch.object(controller.urllib.request,"urlopen",
+                                  return_value=self._response([bad])):
+                    with self.assertRaises(ValueError):
+                        controller.first_h10_source_receipt_review(
+                            "https://example.supabase.co","fake")
+
 class MilestoneTests(unittest.TestCase):
     @staticmethod
     def _historic_h3_fixture(state):
