@@ -99,7 +99,15 @@
     "requires_postgres_returned_server_received_at": true,
     "no_current_api_transport_or_writer": true,
     "storage_protocol_security_review": "SHA256_EXACT_CANONICAL_PAYLOAD_DB_CHECK_AND_ROLE_COIN_UTC_WINDOW_TTL_BINDING_NO_RECEIVED_AT_INSERT_PRIVILEGE",
-    "code_only_merge_is_not_schema_or_runtime_deployment": true
+    "code_only_merge_is_not_schema_or_runtime_deployment": true,
+    "current_release_gate": "SCHEMA_AND_ROLE_RIGHTS_PLUS_EXISTING_H10_COLLECTOR_AUTHORIZED_20261012_PENDING_ACTUAL_MIGRATION_AND_TRUE_ACK",
+    "existing_collector_archive_module": "tools/v3_h10_source_owner_archive_v1.py",
+    "existing_collector_archive_tests": "tests/test_v3_h10_source_owner_archive_v1.py",
+    "live_no_backfill_before": "2026-10-12T13:30:00Z",
+    "single_owner_current_job_only": true,
+    "full_population_get_pagination_limit": 5000,
+    "selected_window_retry_count": 2,
+    "server_receipt_must_precede_earliest_fill_ttl": true
   },
   "gates": {
     "offline_tests_required": true,
