@@ -145,7 +145,11 @@
       "action": "TOP PRIORITY: Review genuine trading productivity at original V2R4 strategy-epoch age >=72h (2026-10-10T18:42:55Z), never from restarted technical-series clock. Outcome-first: net-after-cost quality and valid BUYs/filled Paper trades, risk/MAE, matched missed and bad opportunities, candidate->WAIT->true-trigger->real recheck->BUY conversion and exact unresolved inherited V2R3 findings. HEALTHY is only operational integrity. If sufficient outcomes/24h maturity and no buys, classify as ECONOMIC_NOT_DEMONSTRATED/STRATEGY_PATHOLOGY, make explicit continue/stop/successor decision, avoid indefinite zero-trade evidence accumulation. Maintain frozen V2R4/H3, no automatic strategy change, no new schedules.",
       "due_at_utc": "2026-10-10T18:42:55Z",
       "followthrough_ack_key": "V2R4_72H_STRATEGY_EPOCH_20261010",
-      "followthrough_max_lag_hours": 24
+      "followthrough_max_lag_hours": 24,
+      "latest_readonly_snapshot_utc": "2026-10-12T16:22:28.244339Z",
+      "latest_economic_disposition": "ECONOMIC_NOT_DEMONSTRATED_2562_OUTCOMES_0_BUY_0_TRADES__PRIORITIZE_ALREADY_PREPARED_V3_COIN_PIT_CAUSAL_COMPARISON",
+      "existing_work_ack_not_verified": true,
+      "physical_runtime_cutover_not_authorized_by_review": true
     },
     {
       "id": "V3-EXTENDED-SECOND-LEG-LEARNING-GATE",
@@ -1188,6 +1192,43 @@
         "v2r4_unchanged": true,
         "actual_buy_created": false
       }
+    },
+    "v2r4_economic_review_20261012": {
+      "kind": "V2R4_STRATEGY_EPOCH_READONLY_FUNNEL_CHECKPOINT_V1",
+      "snapshot_at_utc": "2026-10-12T16:22:28.244339Z",
+      "source": "Supabase paper_candidate_outcomes + paper_trade_results + paper_series_completion_readiness + paper_model_invocation_events; read-only one-snapshot SELECT",
+      "epoch_segments": [
+        "PAPER-V2R4-20261007T184255Z",
+        "PAPER-V2R4-20261009T110135Z"
+      ],
+      "outcomes": 2562,
+      "distinct_pairs": 102,
+      "documented_initial_wait": 1608,
+      "documented_initial_reject": 952,
+      "missing_initial": 2,
+      "wait_to_reject": 1590,
+      "wait_expiry_kind": 1393,
+      "local_trigger_recheck_kind": 201,
+      "wait_pending_classification": 18,
+      "currently_wait": 17,
+      "currently_reject": 2545,
+      "mature24": 1221,
+      "mfe24_at_least_5pct": 589,
+      "mae24_at_most_minus_5pct": 534,
+      "both_24h_extremes": 191,
+      "structured_coin_entry_evidence_first_decision": 0,
+      "model_stop_field_first_decision": 0,
+      "buy": 0,
+      "paper_trade_results": 0,
+      "model_revalidation_events": 0,
+      "verdict": "ECONOMIC_NOT_DEMONSTRATED; retrospective MFE is not realizable net-PnL; local trigger recheck kind is not itself an independently logged model revalidation API call",
+      "no_duplicate_review": "PREVIOUS_V2R4_72H_AND_ECONOMIC_HANDOFF_ALREADY_DONE; THIS_ONLY_REFRESHES_SNAPSHOT",
+      "linked_existing_review": "research/work-analysis/2026-10-11-v2r4-daily-zero-buy-v3-early-paper-readiness.md",
+      "decision": "ALTERNATIVE_READY_AND_INTAKE_SHOULD_STOP_IS_A_REVIEW_GATE_NOT_PHYSICAL_RUNTIME_ACK",
+      "next_step": "ALREADY_PREPARED_V3_PROSPECTIVE_SAME_CLOCK_KRAKEN_EUR_PIT_FULL_MODEL_STOP_STAGE2_COST_AND_MATURE_6H_24H_VS_FROZEN_V2R4; PHYSICAL_CUTOVER_ONLY_AFTER_SEPARATE_GATES",
+      "canary_deadline_utc": "2026-10-13T12:00:12.2795431Z",
+      "work_final_ack": "NOT_CLAIMED",
+      "runtime_change_authorized": false
     }
   }
 }
