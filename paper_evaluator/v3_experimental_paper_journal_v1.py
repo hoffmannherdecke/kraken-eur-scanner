@@ -21,7 +21,7 @@ from typing import Any
 
 KIND="V3_EXPERIMENTAL_PAPER_CANDIDATE_EVENT_V1"
 PHASES=frozenset({
-    "SCANNER_CAPTURE","SOURCE_INPUT","FULL_REVIEW_ELIGIBILITY","MODEL_REQUEST",
+    "SCANNER_CAPTURE","SOURCE_CATALYST","SOURCE_INPUT","FULL_REVIEW_ELIGIBILITY","MODEL_REQUEST",
     "MODEL_RESPONSE","MODEL_ERROR","P4_VALIDATION","WAIT_WATCH","WAIT_EXPIRY",
     "WAIT_RECHECK","FRESH_SECOND_LEG","PAPER_FILL","PAPER_EXIT",
     "FOLLOWUP_6H","FOLLOWUP_24H","FOLLOWUP_72H","SERIES_ROTATION",
@@ -62,6 +62,9 @@ DATA_FIELDS=frozenset({
     "followup_source","censor_reason","predecessor_series_id",
     "original_strategy_epoch_id","strategy_fingerprint_sha256",
     "market_regime_known_at","pair_six_hour_episode",
+    "candidate_origin","positive_source_name","positive_source_event_id",
+    "positive_source_status","positive_source_reason","positive_source_owner",
+    "positive_coin_impact_mechanism","independent_source_entry",
     "optional_context_states","market_phase_evidence","smart_money_evidence",
     "polymarket_evidence","news_sentiment_evidence","source_management_evidence",
 })
