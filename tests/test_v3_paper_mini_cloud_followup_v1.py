@@ -76,6 +76,32 @@ class MiniPcAndCloudTests(unittest.TestCase):
                 ack_file=ack_file,token="TEST_ONLY_SECRET_LONG_ENOUGH_NOT_REAL",post=post)["count"],0)
             self.assertEqual(len(called),1)
 
+    def test_crash_abandoned_legacy_temp_does_not_block_subsequent_cloud_ack(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);j=root/"journal";b=root/"budgets";j.mkdir();b.mkdir()
+            one_candidate(candidate=fixture()[0],series_id=SID,
+                local_receipts=j,model_reservations=b,acquire=fake_acquire,
+                clock=lambda:dt(12))
+            ack=root/"cloud_ack.json"
+            stale=root/"cloud_ack.tmp"
+            stale.write_text("incomplete previous crash",encoding="utf-8")
+            sent=[]
+            def post(url,token,payload):
+                sent.append(payload)
+                return {"ok":True,"accepted_receipts":len(payload["receipts"]),
+                        "series_id":SID}
+            out=sync_once(journal=j,series_id=SID,ack_file=ack,
+                token="TEST_ONLY_SECRET_LONG_ENOUGH_NOT_REAL",post=post)
+            self.assertEqual(out["status"],"V3_RECEIPTS_CLOUD_ACK_VERIFIED")
+            self.assertTrue(ack.exists())
+            self.assertEqual(stale.read_text(encoding="utf-8"),
+                             "incomplete previous crash")
+            again=sync_once(journal=j,series_id=SID,ack_file=ack,
+                token="TEST_ONLY_SECRET_LONG_ENOUGH_NOT_REAL",post=post)
+            self.assertEqual(again["count"],0)
+            self.assertEqual(len(sent),1)
+            self.assertEqual(len(list(root.glob("cloud_ack.json.*.tmp"))),0)
+
     def test_cloud_failure_keeps_all_receipts_retryable(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);j=root/"journal";b=root/"budgets";j.mkdir();b.mkdir()
