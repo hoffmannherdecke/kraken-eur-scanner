@@ -473,7 +473,7 @@
         "research/v3/v3-paper-active-context-and-minipc-release-gates-20261011.json"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PROSPECTIVE_FIRST_TWO_V3_SOURCE_CANARY_KRAKEN_TICKS_AND_ZRO_WAIT_EXPIRY_UNKNOWN_CLOUD_ACK_VERIFIED_12_RECEIPTS; NEXT_EXPLICIT_USER_HOST_V3_ONLY_BOUNDED_28H_5M_OBSERVATION_TASK_INSTALL_AFTER_CI_THEN_REAL_HEARTBEAT_AND_CLOUD_MATURE_6H24H_ACK; V2R4_SOLE_ACTIVE_UNTIL_CONTROLLED_SINGLE_WRITER_CUTOVER",
+      "next_concrete_action": "PROSPECTIVE_EXISTING_V3_28H_SYSTEM_TASK_REAL_KRAKEN_PROOF_BUT_FALSE_ERROR_ON_WRITE_HOST_COMPLETION; PR_REPAIR_VALIDATE_MACHINE_JSON_NO_UNSYNCED_ACK_AND_EXACT_ONE_PIN_SHA_IN_PLACE_PRESERVE_2026_10_13T12_00_12Z_EXPIRY; V2R4_STILL_ONLY_ACTIVE",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
@@ -952,7 +952,7 @@
         "real_multi_tick_prospective_live_1m_capture_verified": false
       },
       "v3_bounded_live_observer_28h_20261012": {
-        "status": "INSTALLER_AND_RUNNER_WRITTEN_PENDING_GITHUB_CI_AND_EXPLICIT_PHYSICAL_HOST_INSTALLATION",
+        "status": "PHYSICAL_EXISTING_SYSTEM_TASK_INSTALLED_FIRST_KRAKEN_TICKS_EXECUTED_HEALTH_FALSE_ERROR_CLOUD_NO_UNSYNCED",
         "installer": "tools/install-minipc-v3-bounded-canary-observer.ps1",
         "runner": "tools/minipc-v3-bounded-canary-observer-task.ps1",
         "local_windows_task": "CryptoMiniPC-V3CanaryObservation28h",
@@ -967,7 +967,25 @@
         "host_task_installed_verified": false,
         "first_5m_heartbeat_verified": false,
         "real_6h24h_mature_economic_cloud_outcomes_verified": false,
-        "existing_work_or_github_schedules_created": 0
+        "existing_work_or_github_schedules_created": 0,
+        "first_task_heartbeat_at_utc": "2026-10-12T08:00:14.2002009Z",
+        "existing_task_expires_at_utc": "2026-10-13T12:00:12.2795431Z",
+        "first_task_heartbeat": "ERROR",
+        "root_cause": "RUNNER_EXPECTED_NON_PIPELINE_WRITE_HOST_MARKER_INSTEAD_OF_REAL_TICK_JSON_AND_NO_UNSYNCED_CLOUD_STATUS",
+        "first_two_tracked_pairs": [
+          "ZRO/EUR",
+          "EIGEN/EUR"
+        ],
+        "real_1m_kraken_capture_per_pair_verified": true,
+        "no_new_cloud_events_awaiting_sync": true,
+        "model_http_attempts_from_task": 0,
+        "orders": false,
+        "v2r4_unchanged": true,
+        "task_installed_verified": true,
+        "task_healthy_verified": false,
+        "fix_code": "tools/minipc-v3-bounded-canary-observer-task.ps1",
+        "controlled_same_task_pin_migration": "tools/repair-minipc-v3-observer-28h-health-signal.ps1",
+        "original_task_deadline_must_not_be_extended": true
       }
     }
   }
