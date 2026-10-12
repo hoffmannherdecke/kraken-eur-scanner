@@ -30,6 +30,10 @@ jobs:
             tools/minipc-status-sync.py \
             tools/v2r4-paper-local-runtime.py \
             tools/v2r4-shadow-cloud-sync.py
+      - name: Existing H10 source capture first-seen immutability (offline, no network)
+        run: |
+          python -m py_compile tools/v3-h10-activity-capture.py
+          python tools/v3-h10-activity-capture.py --self-test
       - name: V3 existing live H10 Cloud on-demand PIT context and no false source BUY
         run: |
           python -m py_compile paper_evaluator/v3_paper_h10_context_read_v1.py
