@@ -169,5 +169,23 @@
     "real_paid_model_response_verified": false,
     "source_missing_never_negative_veto": true,
     "active_v3_paper": false
+  },
+  "one_model_call_20261012": {
+    "status": "USER_AUTHORIZED_SINGLE_CALL_IMPLEMENTED_CI_PASS_NOT_YET_SPENT",
+    "one_http_including_retries": 1,
+    "approved_grant": "research/v3/v3-paper-approved-one-model-http-20261012.json",
+    "physical_script": "tools/run-minipc-v3-one-approved-model.ps1",
+    "estimated_usd_ceiling": 0.15,
+    "model": "gpt-5.6-terra",
+    "input_max_utf8_bytes": 25000,
+    "output_max_tokens": 3000,
+    "no_automatic_retry": true,
+    "irreversible_local_reservation_before_http": true,
+    "existing_minipc_key_reused_without_copy": true,
+    "script_deployed_on_host_verified": false,
+    "model_called": false,
+    "model_p4_cloud_ack_verified": false,
+    "v3_paper_active": false,
+    "v2r4_sole_active": true
   }
 }
