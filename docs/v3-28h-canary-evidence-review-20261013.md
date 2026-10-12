@@ -32,6 +32,17 @@ where status = 'active';
 
 **Ergebnisfelder:** zwei getrennte Kohorten; tatsächliche Event-ID-/Zeit-/Paarprüfung; für jede Originalkandidaten-ID `6h`, `24h`, `72h` = `not_yet_due`, `due_missing_or_pending`, `censored` oder `mature_complete`. 72h ist eine separate Nachbeobachtung, **keine neue pauschale Pflichtwartezeit** für den 28h-Abschluss. MFE von `NO_BUY` ist keine ausführbare Netto-Rendite; Preisweg mit Lücken ist nicht `0 EUR`. Die separate technisch erfolgreiche RENDER/EUR-5-Beleg-Kohorte ist kein Ersatz für den laufenden Writer.
 
+## Echte Fälligkeiten aus den aktuellen V3-Cloud-Originalen (12.10.2026)
+
+Diese Zeiten stammen aus den *tatsächlichen* unveränderlichen `SCANNER_CAPTURE.event_time_utc`-Quittungen, nicht aus dem Zeitpunkt, zu dem dieser Bericht geschrieben wurde. Vor Fälligkeit sind fehlende Followups **normal**; danach bleibt die kontrollierte 60-Minuten-Datenrekonvaleszenz getrennt von tatsächlicher Censor-Klassifikation.
+
+| Echter Originalkandidat | Ursprungszeit (MESZ) | 6h fällig (MESZ) | 24h fällig (MESZ) |
+| --- | --- | --- | --- |
+| EIGEN/EUR | 12.10. 07:25:50.737 | **12.10. 13:25:50.737** | **13.10. 07:25:50.737** |
+| ZRO/EUR | 12.10. 08:42:19.706 | **12.10. 14:42:19.706** | **13.10. 08:42:19.706** |
+
+Die bestehende `verdict()`-Auswertung gibt dazu jetzt je Fall `followup_due_at_utc`, `recovery_until_utc`, `watcher_next_unmatured_horizon` und `watcher_due_missing_past_60m_recovery` aus. **Achtung:** Dies sind erwartete Termine, keine bestätigten Ergebnisse; ein späterer Dateneingang darf niemals eine rückwirkend beobachtete Stunde vortäuschen. Solange der reale 28h-Watcher unberührt weiterläuft, kann die Source-Capture normal fortgesetzt werden. Unmittelbar nach Ablauf der Endzeit bleiben 72h-Beobachtungen als separate offene oder zensierte Folgearbeit kenntlich; sie verhindern nicht den 28h-Testabschluss.
+
 ## Danach: konkrete Entscheidung ohne verdeckte Freigabe
 
 1. **Technik:** Original-Pins, eindeutige V2R4-Owner-Quelle, echter Task-Stop, Cloud ACKs, unveränderliche Einzel-Quittungen und 6/24h-Abdeckung. Lücken exakt benennen.
