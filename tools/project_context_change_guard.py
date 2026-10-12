@@ -82,13 +82,13 @@ def read_pr_review(body: str) -> dict:
 
 
 def meaningful(value: object) -> bool:
-    return isinstance(value, str) and len(value.strip().split()) >= MIN_WORDS
+    return (isinstance(value, str) and len(value.strip().split()) >= MIN_WORDS
+            and not re.search(r"\b(?:REPLACE|TODO|TBD|PLACEHOLDER)\b", value, flags=re.I))
 
 
 def check(root: Path, paths: list[str], receipt: dict) -> dict:
     scopes = classify(paths)
-    if not paths:
-        return {"status": "NO_CHANGES", "scopes": []}
+    require(bool(paths), "no changed paths; review must not silently pass")
     require(receipt.get("kind") == "PROJECT_CONTEXT_REVIEW_V1", "wrong receipt kind")
     for field in FIELDS:
         require(meaningful(receipt.get(field)), "missing meaningful review: " + field)
@@ -145,7 +145,7 @@ def template(root: Path, paths: list[str]) -> dict:
 
 
 def git_paths(root: Path, base: str, head: str) -> list[str]:
-    proc = subprocess.run(["git", "diff", "--name-only", "--diff-filter=ACMR",
+    proc = subprocess.run(["git", "diff", "--name-only", "--diff-filter=ACMRD",
                            base, head], cwd=root, capture_output=True, text=True, check=False)
     require(proc.returncode == 0, "cannot determine PR changed files; fail closed")
     return sorted(set(proc.stdout.splitlines()))
