@@ -233,7 +233,12 @@
       "physical_diagnostic_verified_on_actual_host": true,
       "one_shot_smoke_module": "paper_evaluator/v3_paper_minipc_single_writer_smoke_v1.py",
       "one_shot_smoke_scope": "ONE_REAL_FRESH_10M_V2R4_SCANNER_ORIGINAL_OWN_ISOLATED_PAPER_V3_CANARY_SERIES_PUBLIC_KRAKEN_ONLY_OPTIONAL_REAL_CLOUD_ACK_ZERO_MODEL_NO_ACTIVE_SERIES_CUTOVER",
-      "one_shot_smoke_runtime_proven": false
+      "one_shot_smoke_runtime_proven": true,
+      "one_shot_verified_receipt_record": "research/v3/v3-render-physical-scanner-cloud-ack-evidence-20261012.json",
+      "one_shot_verified_cloud_count": 5,
+      "one_shot_verified_original_pair": "RENDER/EUR",
+      "one_shot_p0_eight_checks_passed": true,
+      "physical_e2e_status": "REAL_ONE_SHOT_CANARY_PASS_NOT_CONTINUOUS_WRITER"
     },
     "kind": "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1",
     "requested_on": "2026-10-11",
