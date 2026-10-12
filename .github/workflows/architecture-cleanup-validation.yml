@@ -67,6 +67,10 @@ jobs:
           }
           Write-Host 'V3 28H WINDOWS CANARY SCRIPTS PARSE PASS'
           python -m unittest tests.test_v3_bounded_canary_task_policy_v1 -v
+      - name: V3 actual post-28h Supabase snapshot read-only one-shot report CLI
+        run: |
+          python -m py_compile tools/v3-post-canary-evidence-readonly-report.py
+          python -m unittest tests.test_v3_post_canary_readonly_report_cli_v1 -v
       - name: V3 after-28h retrospective-free cloud receipt evidence verdict (pure/no activation)
         run: |
           python -m py_compile paper_evaluator/v3_paper_post_canary_evidence_verdict_v1.py

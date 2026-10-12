@@ -43,6 +43,35 @@ Diese Zeiten stammen aus den *tatsächlichen* unveränderlichen `SCANNER_CAPTURE
 
 Die bestehende `verdict()`-Auswertung gibt dazu jetzt je Fall `followup_due_at_utc`, `recovery_until_utc`, `watcher_next_unmatured_horizon` und `watcher_due_missing_past_60m_recovery` aus. **Achtung:** Dies sind erwartete Termine, keine bestätigten Ergebnisse; ein späterer Dateneingang darf niemals eine rückwirkend beobachtete Stunde vortäuschen. Solange der reale 28h-Watcher unberührt weiterläuft, kann die Source-Capture normal fortgesetzt werden. Unmittelbar nach Ablauf der Endzeit bleiben 72h-Beobachtungen als separate offene oder zensierte Folgearbeit kenntlich; sie verhindern nicht den 28h-Testabschluss.
 
+## Direkt nutzbarer einmaliger Berichtsbefehl (vorbereitet, ohne Task)
+
+Die reine Python-Funktion aus PR222/223 ist zusätzlich durch `tools/v3-post-canary-evidence-readonly-report.py` per JSON-Eingabe aufrufbar, damit die **bestehende** Work-/GitHub-Projektsteuerung einen vollständigen, nachvollziehbaren Bericht erstellen kann, statt technische Quittungen als wirtschaftliche Erfolge zu interpretieren. **Keine neue Automatisierung:** Der Befehl selbst holt keine Daten, nimmt keinen Datenbankzugriff vor, schreibt keine Dateien, nimmt keine Modellaufrufe vor und aktiviert keine Strategie.
+
+Das JSON-Dokument muss einen **unabhängig live aus Supabase gelesenen** Datensatz enthalten, nicht vorher aggregierte oder nachträglich manipulierte Daten:
+
+```json
+{
+  "kind": "V3_READONLY_SUPABASE_RECEIPTS_FOR_VERDICT_V1",
+  "mode": "READ_ONLY_NO_ACTIVATION",
+  "cloud_source_verified_by_caller": true,
+  "new_model_budget": false,
+  "as_of_utc": "2026-10-13T12:05:00Z",
+  "active_paper_series": ["PAPER-V2R4-20261009T110135Z"],
+  "physical_observer_end_ack": false,
+  "cloud_rows": []
+}
+```
+
+**Wichtig:** Dieses Objekt ist nur ein Schema-Beispiel; die `cloud_rows` müssen aus obiger echten SQL-Abfrage stammen, die aktive Serie neu abgefragt und `as_of_utc` auf den wirklichen Prüfzeitpunkt gesetzt werden. `physical_observer_end_ack` darf nur `true` sein, wenn der tatsächliche Mini-PC-Aufgabenabschluss separat geprüft wurde. Kein unabhängiger Authentizitätsbeweis entsteht durch bloßes `cloud_source_verified_by_caller=true`.
+
+Mit einem vom vorhandenen Owner bereitgestellten JSON auf Standard-Eingabe:
+
+```bash
+python tools/v3-post-canary-evidence-readonly-report.py < actual-readonly-supabase-snapshot.json
+```
+
+Das ausgegebene JSON ist **ein Urteil über beobachtete Evidenz**, kein freigebender Release-Token. Existierende Work-10:15- oder Milestone-Controller müssen die Daten selbst über ihre vorhandenen berechtigten Quellen holen und dürfen das Skript nur ausdrücklich und einmalig aufrufen. Der 10:15-Lauf VOR 14 Uhr darf keinen finalen Abschluss behaupten.
+
 ## Danach: konkrete Entscheidung ohne verdeckte Freigabe
 
 1. **Technik:** Original-Pins, eindeutige V2R4-Owner-Quelle, echter Task-Stop, Cloud ACKs, unveränderliche Einzel-Quittungen und 6/24h-Abdeckung. Lücken exakt benennen.
