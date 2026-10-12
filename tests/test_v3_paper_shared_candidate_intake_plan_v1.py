@@ -106,8 +106,8 @@ class V3SharedIngressTests(unittest.TestCase):
         self.assertEqual(near["counts"]["selected"],1)
         self.assertEqual(near["candidates"][0]["entry_origin"],"VERIFIED_POSITIVE_SOURCE_CATALYST")
         self.assertEqual(near["dispositions"]["SAME_PAIR_CONCURRENT_REVIEW_COALESCED_NOT_LOST"],1)
-        later=plan([scanner(cid="x",pair="XBT/EUR",event=dt(9))],
-                   [origin("news_sentiment",official())])
+        later=plan([scanner(cid="x",pair="XBT/EUR",event=dt(480))],
+                   [origin("news_sentiment",official())],as_of=dt(500))
         self.assertEqual(later["counts"]["selected"],2)
 
     def test_no_past_approval_and_forged_payload_cannot_buy(self):
