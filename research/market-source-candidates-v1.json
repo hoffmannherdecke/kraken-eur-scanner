@@ -19,10 +19,11 @@
       "automated_runtime_verified": true,
       "needs_primary_confirmation": true,
       "last_reviewed_date": "2026-10-12",
-      "unattended_e2e_verified_at_utc": "2026-10-12T08:38:00Z",
       "unattended_e2e_evidence_url": "https://www.coindesk.com/markets/2026/10/12/bitcoin-shrugs-off-etf-outflows-to-trade-above-usd84-000-as-oil-falls",
       "unattended_e2e_scope": "SCHEDULED_PUBLIC_READ_ONLY_SOURCE_SMOKE_NO_RUNTIME_OR_TRADING_AUTHORITY",
-      "quality_status": "NOT_EVALUABLE_LT_5_EVENTS_2_WINDOWS"
+      "quality_status": "NOT_EVALUABLE_LT_5_EVENTS_2_WINDOWS",
+      "runtime_verified_at_utc": "2026-10-12T08:38:00Z",
+      "runtime_evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/213"
     },
     {
       "id": "theblock",
@@ -59,11 +60,12 @@
       "automated_runtime_verified": true,
       "needs_primary_confirmation": false,
       "last_reviewed_date": "2026-10-12",
-      "unattended_e2e_verified_at_utc": "2026-10-12T08:38:00Z",
       "unattended_e2e_evidence_url": "https://www.reuters.com/world/us-commodities-regulator-proposes-new-federal-crypto-oversight-rules-2026-10-05/",
       "primary_confirmation_url": "https://www.cftc.gov/PressRoom/PressReleases/9307-26",
       "unattended_e2e_scope": "SCHEDULED_PUBLIC_READ_ONLY_SOURCE_SMOKE_NO_RUNTIME_OR_TRADING_AUTHORITY",
-      "quality_status": "NOT_EVALUABLE_LT_5_EVENTS_2_WINDOWS"
+      "quality_status": "NOT_EVALUABLE_LT_5_EVENTS_2_WINDOWS",
+      "runtime_verified_at_utc": "2026-10-12T08:38:00Z",
+      "runtime_evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/213"
     },
     {
       "id": "cryptoslate",
