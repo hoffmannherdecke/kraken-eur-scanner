@@ -257,7 +257,11 @@
       "source_owner_secrets_provisioned_on_real_minipc": false,
       "source_owner_real_signed_events_received": false,
       "source_owner_signatures_not_automatic_buy_or_model_budget": true,
-      "source_owner_hmac_implementation_status": "PURE_CODE_READY_TESTED_PENDING_PHYSICAL_OWNER_SENDER_SIGNATURES"
+      "source_owner_hmac_implementation_status": "PURE_CODE_READY_TESTED_PENDING_PHYSICAL_OWNER_SENDER_SIGNATURES",
+      "source_owner_pre_router_rejected_originals": "EACH_DENIED_H5_H10_H11_PACKET_HAS_SANITIZED_IMMUTABLE_OWNER_INPUT_AUDIT_NOT_TRADEABLE",
+      "source_owner_pre_router_rejections_verified_in_real_cloud": false,
+      "source_owner_rejected_originals_code": "paper_evaluator/v3_paper_existing_owner_source_bridge_v1.py + paper_evaluator/v3_paper_intake_receipt_stage_v1.py",
+      "source_owner_rejected_originals_deployment_state": "OFFLINE_TEST_ONLY_PENDING_REAL_OWNER_SENDER_AND_REAL_MINIPC_CLOUD_ACK"
     },
     "kind": "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1",
     "requested_on": "2026-10-11",

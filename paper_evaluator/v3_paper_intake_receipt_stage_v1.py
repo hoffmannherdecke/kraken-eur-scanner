@@ -154,7 +154,7 @@ def prepare_receipts(preflight: dict[str, Any]) -> tuple[list[dict[str, Any]], i
         ordinal = audit.get("input_index")
         reason = audit.get("reason")
         if (not isinstance(synthetic, str) or not AUDIT_ID.fullmatch(synthetic)
-                or synthetic in audit_seen or stream not in ("SCANNER", "SOURCE_CATALYST")
+                or synthetic in audit_seen or stream not in ("SCANNER", "SOURCE_CATALYST", "SOURCE_OWNER")
                 or type(ordinal) is not int or not 0 <= ordinal < 2000
                 or not isinstance(reason, str) or not reason.isupper()
                 or audit.get("original_untrusted_and_not_tradeable") is not True):
@@ -205,6 +205,11 @@ def stage_receipts_explicitly(*, preflight: dict[str, Any],
         ),
         "router_rejection_audit_receipts": sum(
             1 for row in receipts if row["event_key"] == "ROUTERREJECT"
+        ),
+        "owner_pre_router_rejection_audit_receipts": sum(
+            1 for row in receipts
+            if row["event_key"] == "ROUTERREJECT"
+            and row["data"].get("review_checks",{}).get("input_stream")=="SOURCE_OWNER"
         ),
         "unattributed_router_rejections": not_attributed,
         "all_original_decisions_durable": False,
