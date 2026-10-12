@@ -1,11 +1,12 @@
 """Deterministic project-wide source handoff regression; no network or runtime."""
 import copy
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 from tools.context_before_action import build
 from tools.project_context_change_guard import (
-    ROOT, ChangeGateError, classify, check, template, read_pr_review, START, END,
+    ROOT, ChangeGateError, classify, check, git_paths, template, read_pr_review, START, END,
 )
 
 
@@ -78,6 +79,29 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
         good["scope_reviews"].append(copy.deepcopy(good["scope_reviews"][0]))
         with self.assertRaisesRegex(ChangeGateError, "scope reviews"):
             check(ROOT, paths, good)
+
+    def test_deletion_only_change_requires_actual_review(self):
+        # A deletion-only PR previously disappeared under --diff-filter=ACMR.
+        with patch("tools.project_context_change_guard.subprocess.run") as call:
+            call.return_value.returncode = 0
+            call.return_value.stdout = "docs/removed-component.md\\n"
+            self.assertEqual(git_paths(ROOT, "HEAD^1", "HEAD"),
+                             ["docs/removed-component.md"])
+            self.assertIn("--diff-filter=ACMRD", call.call_args.args[0])
+        with self.assertRaisesRegex(ChangeGateError, "no changed paths"):
+            check(ROOT, [], self.good(["AGENTS.md"]))
+
+    def test_unedited_review_template_is_not_a_valid_ack(self):
+        paths = ["tools/project_context_change_guard.py"]
+        draft = template(ROOT, paths)
+        with self.assertRaisesRegex(ChangeGateError, "prior_decisions"):
+            check(ROOT, paths, draft)
+        reviewed = self.good(paths)
+        reviewed["scope_reviews"][0]["decision_applied"] = (
+            "REPLACE with previous decisions instead of reading anything"
+        )
+        with self.assertRaisesRegex(ChangeGateError, "decision_applied"):
+            check(ROOT, paths, reviewed)
 
     def test_pr_body_must_contain_exactly_one_json(self):
         import json
