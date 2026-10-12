@@ -1,5 +1,13 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
+## 12.10.2026 – Projektweiter Komponenten-Wiederfindungsindex / gezielte Deployment-Nachweise
+
+**Nutzerbeobachtung:** Beim V3-H10-Stand wurde zunächst auf dem Mini-PC nach H5/H10/H11-Windows-Tasks gesucht, obwohl der bestehende GitHub-/Supabase-H10-Owner und die Original-Implementierung bereits dokumentiert waren. **Symptom der gesamten Projektarchitektur**, nicht nur ein V3-Fall: Der frühere allgemeine Quellen- und CI-Manager gab keine sofort nutzbare vollständige Komponente→Owner→Consumer→Abhängigkeiten→Gate-Zuordnung zurück; Registrierungs-Owner und nachgewiesener physischer Ausführungsort waren auseinanderzuhalten.
+
+**Eng begrenzte sichere Abhilfe:** Den bestehenden `context_before_action.py`-Preflight mit direkt aus beiden einzigen Registern abgeleiteter `project_component_owners`-Übersicht über 26 Funktionsströme und neun Querschnittsbereiche für **jeden** Scope erweitern; keine zweite Eigentümerdatenbank. Fehlende Owners/Streams fail-closed. Der vorhandene echte Ausführungsbeleg `docs/v3-real-source-owner-topology-20261012.md` wird referenziert, nicht vervielfältigt. Der fachliche Owner ist nicht ohne separat belegte Runtime-Prüfung der tatsächliche Windows-/GitHub-/Cloud-Prozess. Keine neuen Tasks, APIs, Scheduler, Handelsrechte oder V2R4-/V3-Produktivänderungen.
+
+**Offener E2E-Abschluss (Owner: bestehende 10:15 Work + Project Control):** Der nächste relevante materielle fachübergreifende Work-/Chat-Schritt muss **vor erneuter Implementierungssuche** nachweisbar die passende registrierte Komponente und ihre originale technische Quelle heranziehen, die tatsächliche Deployment-Evidenz getrennt lesen und nur begründete Restfragen gezielt prüfen. Erst danach `COMPONENT_LOCATOR_E2E_PASS`; bis dahin `STRUCTURAL_ROUTING_ONLY`. Bestehende Required-Branch-Protection-/unbekannte-Chat-Import-Gates offen; nicht als vollständig autonome chatübergreifende Verständnissicherung deklarieren.
+
 ## 12.10.2026 — Projektweite Kontext-vor-Aktion-Kette: CI in allen drei Repositories PASS, die zwei echten Restgates bleiben offen
 
 **Ausdrücklicher Nutzerauftrag (10.–12.10.):** Der projektweite Manager muss historische Nutzerentscheidungen, vorhandene Implementierungen, Abhängigkeiten, aktive/gesperrte Strategie- und Runtime-Zustände und offene Folgearbeit VOR jeder wesentlichen Arbeit in V2/V2R3/V2R4/V3/V4+, Scanner, H1–H11, Mini-PC, GitHub, Supabase, Slack, Kraken, Quellen, Research, Kosten, Sicherheit, Recovery und Automationen anwenden. Der Nutzer hat das schon vorher klar verlangt; die frühe Implementierung/Abschlussformulierung war unvollständig, kein Nutzer-Formulierungsfehler.
