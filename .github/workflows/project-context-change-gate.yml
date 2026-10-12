@@ -20,4 +20,5 @@ jobs:
         run: |
           python -m unittest tests.test_project_context_change_guard -v
           python tools/project_context_change_guard.py --base HEAD^1 --head HEAD --template
+          python tools/project_context_change_guard.py --fingerprints --base HEAD^1 --head HEAD
           python tools/project_context_change_guard.py --base HEAD^1 --head HEAD --event "$GITHUB_EVENT_PATH"
