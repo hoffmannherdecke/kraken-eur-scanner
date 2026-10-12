@@ -87,6 +87,45 @@ class After28hVerdictTests(unittest.TestCase):
         self.assertFalse(r["automatic_model_api_authorized"])
         self.assertEqual(r["new_schedules"],0)
 
+    def test_exact_due_clocks_and_recovery_do_not_fake_late_trades(self):
+        x=run(at="2026-10-12T10:53:00Z")
+        first=x["watcher_cases"][0]
+        self.assertEqual(first["followup_due_at_utc"]["6"],
+                         "2026-10-12T11:27:31+00:00")
+        self.assertEqual(first["followup_due_at_utc"]["24"],
+                         "2026-10-13T05:27:31+00:00")
+        self.assertEqual(first["recovery_until_utc"]["6"],
+                         "2026-10-12T12:27:31+00:00")
+        self.assertEqual(x["watcher_next_unmatured_horizon"]["hours"],6)
+        self.assertEqual(x["watcher_followup_coverage"]["6"]["not_yet_due"],1)
+        self.assertEqual(x["watcher_due_missing_past_60m_recovery"],{})
+        pending=run(at="2026-10-12T11:30:00Z")
+        self.assertEqual(pending["watcher_followup_coverage"]["6"]["due_missing_or_pending"],1)
+        self.assertEqual(pending["watcher_due_missing_past_60m_recovery"],{})
+        overdue=run(at="2026-10-12T12:28:00Z")
+        self.assertEqual(overdue["watcher_due_missing_past_60m_recovery"]["6"],1)
+        self.assertEqual(overdue["watcher_mature_virtual_fee_adjusted_paper_net_count"],0)
+        self.assertFalse(overdue["strategy_v3_auto_activation_authorized"])
+
+    def test_original_cloud_timestamps_20261012_are_prospectively_due_not_now(self):
+        eigen="2026-10-12T05:25:50.736889Z"
+        zro="2026-10-12T06:42:19.705999Z"
+        rows=smoke()+[
+            event(WATCH,"SCANNER_CAPTURE","SEEN",
+                  cid="EIGEN-REAL-001",pair="EIGEN/EUR",event_time=eigen,known=eigen),
+            event(WATCH,"SCANNER_CAPTURE","SEEN",
+                  cid="ZRO-REAL-001",pair="ZRO/EUR",event_time=zro,known=zro)]
+        r=run(rows=rows,at="2026-10-12T10:53:00Z")
+        self.assertEqual(r["watcher_followup_coverage"]["6"]["not_yet_due"],2)
+        self.assertEqual(r["watcher_followup_coverage"]["24"]["not_yet_due"],2)
+        self.assertEqual(r["watcher_next_unmatured_horizon"]["pair"],"EIGEN/EUR")
+        self.assertEqual(r["watcher_next_unmatured_horizon"]["due_at_utc"],
+                         "2026-10-12T11:25:50.736889+00:00")
+        due={a["pair"]:a["followup_due_at_utc"] for a in r["watcher_cases"]}
+        self.assertEqual(due["ZRO/EUR"]["24"],
+                         "2026-10-13T06:42:19.705999+00:00")
+        self.assertIn("BLOCKED",r["release"])
+
     def test_after_deadline_without_physical_stop_or_24h_is_not_pass(self):
         r=run(at="2026-10-13T12:01:00Z")
         self.assertEqual(r["observation_window"],
