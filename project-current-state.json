@@ -140,21 +140,6 @@
   ],
   "next_control_decisions": [
     {
-      "id": "V3_REAL_SINGLE_WRITER_ORIGINAL_INTAKE_E2E_GATE_20261012",
-      "trigger": "PR215 preserves overflow/coalesced original IDs but physical owner-runtime journal/Cloud ACK still not shown",
-      "action": "One actual Mini-PC V3 writer: authenticate source owners, store every original scanner and source decision including unselected and rejected with explicit identity/reason, sync immutable receipts with exact ACK, mature genuine 6h/24h missed-opportunity results. Fail-closed on stale PIT, duplicate, source-owner proof and model budget. Do not add another scanner, daemon, or paper writer.",
-      "owner": "FUTURE_MINIPC_V3_SINGLE_PAPER_WRITER",
-      "evidence_gate": "PHYSICAL_ORIGINAL_OWNER_AUTH_PLUS_LOCAL_RECEIPTS_CLOUD_ACK_AND_MATURE_ECONOMIC_FOLLOWUPS_AFTER_EXISTING_28H_CANARY",
-      "trigger_policy": "EXISTING_10_15_WORK_AND_MILESTONE_CONTROLLER_EVENT_BASED_NO_EXTRA_CLOCK_OR_TASK",
-      "status": "INACTIVE_LOCAL_INTAKE_RECEIPT_STAGE_PREPARED_PHYSICAL_OWNER_CLOUD_MATURITY_GATES_OPEN",
-      "evidence_anchor": "paper_evaluator/v3_paper_intake_receipt_stage_v1.py",
-      "authorization": "SAFE_CODE_AND_TEST_ONLY",
-      "after_28h_auto_extension": false,
-      "v2r4_unchanged": true,
-      "model_http_authorized": false,
-      "paper_cutover_authorized": false
-    },
-    {
       "id": "V2R4-PRODUCTIVITY-REVIEW",
       "trigger": "Preregistered V2R4 evidence/productivity gate or clear low-trade pathology review point",
       "action": "TOP PRIORITY: Review genuine trading productivity at original V2R4 strategy-epoch age >=72h (2026-10-10T18:42:55Z), never from restarted technical-series clock. Outcome-first: net-after-cost quality and valid BUYs/filled Paper trades, risk/MAE, matched missed and bad opportunities, candidate->WAIT->true-trigger->real recheck->BUY conversion and exact unresolved inherited V2R3 findings. HEALTHY is only operational integrity. If sufficient outcomes/24h maturity and no buys, classify as ECONOMIC_NOT_DEMONSTRATED/STRATEGY_PATHOLOGY, make explicit continue/stop/successor decision, avoid indefinite zero-trade evidence accumulation. Maintain frozen V2R4/H3, no automatic strategy change, no new schedules.",
@@ -222,6 +207,21 @@
     }
   },
   "pending_strategy_transition": {
+    "v3_original_intake_e2e_gate": {
+      "id": "V3_REAL_SINGLE_WRITER_ORIGINAL_INTAKE_E2E_GATE_20261012",
+      "trigger": "PR215 preserves overflow/coalesced original IDs but physical owner-runtime journal/Cloud ACK still not shown",
+      "action": "One actual Mini-PC V3 writer: authenticate source owners, store every original scanner and source decision including unselected and rejected with explicit identity/reason, sync immutable receipts with exact ACK, mature genuine 6h/24h missed-opportunity results. Fail-closed on stale PIT, duplicate, source-owner proof and model budget. Do not add another scanner, daemon, or paper writer.",
+      "owner": "FUTURE_MINIPC_V3_SINGLE_PAPER_WRITER",
+      "evidence_gate": "PHYSICAL_ORIGINAL_OWNER_AUTH_PLUS_LOCAL_RECEIPTS_CLOUD_ACK_AND_MATURE_ECONOMIC_FOLLOWUPS_AFTER_EXISTING_28H_CANARY",
+      "trigger_policy": "EXISTING_10_15_WORK_AND_MILESTONE_CONTROLLER_EVENT_BASED_NO_EXTRA_CLOCK_OR_TASK",
+      "status": "INACTIVE_LOCAL_INTAKE_RECEIPT_STAGE_PREPARED_PHYSICAL_OWNER_CLOUD_MATURITY_GATES_OPEN",
+      "evidence_anchor": "paper_evaluator/v3_paper_intake_receipt_stage_v1.py",
+      "authorization": "SAFE_CODE_AND_TEST_ONLY",
+      "after_28h_auto_extension": false,
+      "v2r4_unchanged": true,
+      "model_http_authorized": false,
+      "paper_cutover_authorized": false
+    },
     "kind": "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1",
     "requested_on": "2026-10-11",
     "user_decision": "APPROVED_GOAL_V3_PAPER_REPLACES_V2R4_NO_REAL_MONEY",
