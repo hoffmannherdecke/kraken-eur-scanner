@@ -30,6 +30,10 @@ jobs:
             tools/minipc-status-sync.py \
             tools/v2r4-paper-local-runtime.py \
             tools/v2r4-shadow-cloud-sync.py
+      - name: H10 selected original source research receipt purely offline, no DB or network
+        run: |
+          python -m py_compile tools/v3_h10_selected_original_receipt_v1.py
+          python -m unittest tests.test_v3_h10_selected_original_receipt_v1 -v
       - name: Existing H10 source capture first-seen immutability (offline, no network)
         run: |
           python -m py_compile tools/v3-h10-activity-capture.py

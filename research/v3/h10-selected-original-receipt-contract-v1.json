@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "kind": "V3_H10_SELECTED_ORIGINAL_SOURCE_RECEIPT_CONTRACT_V1",
+  "status": "INACTIVE_OFFLINE_BUILDER_ONLY_NOT_CLOUD_PERSISTED",
+  "source_owner": "EXISTING_H10_GITHUB_BOOTSTRAP_30M_SUPABASE",
+  "original_repo_module": "tools/v3-h10-activity-capture.py",
+  "offline_builder": "tools/v3_h10_selected_original_receipt_v1.py",
+  "offline_tests": "tests/test_v3_h10_selected_original_receipt_v1.py",
+  "source_tables": [
+    "public.v3_h10_fill_events",
+    "public.v3_h10_capture_batches"
+  ],
+  "frozen_population": "research/v3/h10-trader-cohort-v1.json",
+  "existing_economic_prereg": "research/v3/h10-kraken-outcome-context-join-contract-v1.json",
+  "selection": {
+    "role_separate": [
+      "PRIMARY",
+      "CONTROL"
+    ],
+    "fixed_window_minutes": 30,
+    "include_all_windows_with_distinct_addresses_at_least": 3,
+    "include_directionally_negative_neutral_or_mixed": true,
+    "previous_pr230_positive_filter": "DESCRIPTIVE_LABEL_ONLY_NO_RESEARCH_SELECTION",
+    "manual_event_selection": false,
+    "reselection_by_future_outcome": false,
+    "source_lookback_minutes": 45,
+    "max_events_per_window": 128,
+    "max_candidate_bytes": 65536,
+    "if_exceeds_cap": "BLOCK_AND_REPORT_NOT_SILENT_TRUNCATION",
+    "require_contiguous_26_of_26_successful_45m_capture_intervals_covering_entire_30m_window": true,
+    "capture_window_union_rationale": "EXISTING_17_47_CRON_45M_LOOKBACK_USUALLY_REQUIRES_TWO_OVERLAPPING_SUCCESSFUL_BATCHES_ONE_BATCH_ONLY_WOULD_FALSE_REJECT"
+  },
+  "pit": {
+    "clock": "UTC_SOURCE_FILL_AND_DB_FIRST_SEEN_AND_ORIGINAL_BATCH_TIMESTAMPS",
+    "no_future_rows": true,
+    "window_must_be_closed": true,
+    "source_first_seen_batch_must_precede_first_seen_at": true,
+    "database_first_seen_never_reconstructed_from_fill_time": true,
+    "raw_retention_hours": 48,
+    "require_record_before_raw_expiry": true,
+    "unproven_or_expired_window": "NO_RECEIPT",
+    "receipt_timestamp_in_offline_builder_not_real_cloud_receipt": true,
+    "live_cloud_received_at_required_after_future_deploy": true
+  },
+  "payload": {
+    "per_fill": [
+      "event_id",
+      "wallet_address",
+      "source_tx_hash",
+      "source_oid",
+      "source_tid",
+      "direction",
+      "side",
+      "source_fill_at_utc",
+      "database_first_seen_at_utc",
+      "original_batch_id",
+      "batch_observed_at_utc",
+      "batch_created_at_utc",
+      "price_quote",
+      "size_base",
+      "signed_quote_notional"
+    ],
+    "hashed_deterministically": true,
+    "signature_is_not_authentication": true,
+    "source_authenticated": false,
+    "self_dealing_excluded": false,
+    "beneficial_owner_independence_proven": false,
+    "kraken_spot_eur_proven": false,
+    "paper_or_buy_authority": false
+  },
+  "future_storage": {
+    "location": "SAME_EXISTING_SUPABASE_PROJECT_H10_SOURCE_OWNER",
+    "type": "MINIMAL_H10_SPECIFIC_APPEND_ONLY_PROOF_RELATION_SEPARATE_FROM_V3_PAPER_RECEIPTS",
+    "schema_applied": false,
+    "write_connected": false,
+    "exact_cloud_ack_evidenced": false,
+    "insert_only_no_update_delete": true,
+    "rls_enabled": true,
+    "revoke_anon_and_authenticated": true,
+    "service_role_only_after_SEPARATE_RUNTIME_SCHEMA_PERMISSION_GATE": true,
+    "duplicate_id_same_digest_idempotent_no_rewrite": true,
+    "duplicate_id_different_digest_fail_closed": true,
+    "avoid_full_raw_market_archive": true,
+    "retention_and_cost_review_before_live": true,
+    "postgrest_new_table_grant_must_be_explicit": true
+  },
+  "gates": {
+    "offline_tests_required": true,
+    "live_table_and_secret_approval_required": true,
+    "live_source_row_completeness_evidence_required": true,
+    "source_auth_hmac_separate": true,
+    "btc_zec_kraken_eur_p0_separate": true,
+    "model_budget_separate": true,
+    "source_to_buy_not_automatic": true,
+    "shadow_paper_or_real_money_automatic": false,
+    "no_second_collector": true,
+    "no_new_scheduler": true,
+    "no_v2r4_change": true,
+    "no_pinned_28h_canary_change": true
+  },
+  "known_problems": [
+    "20261008_FIVE_RETRO_HISTORICAL_WINDOWS_HAVE_EXPIRED_RAW_ORIGINALS",
+    "PR239_788_OLD_WRONG_BATCH_REFERENCES_NOT_BACKFILLED",
+    "PR240_FIRST_REAL_CAPTURE_PASS_BUT_DUPLICATE_REPLAY_PROOF_STILL_OPEN"
+  ]
+}
