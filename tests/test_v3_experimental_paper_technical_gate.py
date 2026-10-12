@@ -114,6 +114,18 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                     validate_experimental_paper_packet(root,"V3-PAPER-EXPERIMENTAL-001",d),
                     m)
 
+    def test_canonical_cutover_runbook_does_not_delay_first_paper_until_profit(self):
+        # The release gate already distinguishes experimentation from promotion.
+        # Keep the *operational* host runbook aligned so an old A+B sentence
+        # cannot become an artificial second 28h/72h Shadow requirement.
+        text=(ROOT/"docs/v3-controlled-paper-cutover-20261011.md").read_text("utf-8")
+        self.assertIn("## 2. Reihenfolge der physischen Mini-PC-Übernahme, erst **nach** A + technischem",text)
+        self.assertIn("B: Wirtschaftliche Nachfolger-Promotion",text)
+        self.assertIn("KEINE Vorbedingung für den ersten `EXPERIMENTAL_PAPER_ONLY`-Start",text)
+        self.assertIn("sechs **echte**",text)
+        self.assertIn("ein profitabler Vorabkauf ist dabei nicht gefordert",text)
+        self.assertNotIn("erst **nach** A+B",text)
+
     def test_current_runtime_does_not_depend_on_experimental_gate(self):
         for f in ("paper_evaluator/evaluate.py",
                   "paper_evaluator/v2r4_local_recheck.py",
