@@ -259,5 +259,21 @@
     "real_mini_pc_or_cloud_intake_ack": false,
     "physical_active_paper_writer": false,
     "old_28h_task_not_modified": true
+  },
+  "source_owner_provenance_paper_writer_bridge_20261012": {
+    "status": "CODE_RESEARCH_READY_PHYSICAL_SOURCE_AND_WRITER_GATES_OPEN",
+    "modules": [
+      "paper_evaluator/v3_paper_existing_owner_source_bridge_v1.py",
+      "paper_evaluator/v3_paper_single_writer_preflight_v1.py"
+    ],
+    "existing_h10_deployed_edge_not_positive_trade_proof": true,
+    "existing_h11_market_capture_not_coin_prob_delta": true,
+    "existing_h5_calendar_not_coin_regulatory_news": true,
+    "authenticated_source_owner_external_boundary_not_yet_proven": true,
+    "pure_single_writer_kraken_PIT_review_only": true,
+    "model_budget_consumed_and_not_auto_renewed": true,
+    "no_runtime_paper_activation": true,
+    "no_order_ability": true,
+    "unchanged_existing_28h_observation": true
   }
 }
