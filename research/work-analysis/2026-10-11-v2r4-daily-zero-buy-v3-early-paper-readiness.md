@@ -32,3 +32,23 @@ Die **Nutzerfreigabe für einen kontrollierten V2R4→V3-Paper-Wechsel** liegt v
 
 **Resultat dieses PR:** Eine zusätzliche chancenorientierte, trotzdem kontrollierte **inaktive V3-P3-Early-5m-Option** ist implementiert; Tages-Ursachen und unbehobene Telemetrie-/Cutover-Lücken sind offen ausgewiesen. **Kein physischer Cutover ausgelöst, kein neuer Modell-HTTP, keine Supabase-Datenmutation, keine echte Paper-Order, kein Work-Schedule hinzuerfunden.** Der nächste echte Schritt ist die Herstellung und Verifikation des Full-Consumer→Paper-Writer samt Followup-/Cloud-Gates; nicht ein weiterer beliebiger 5er Sonntags-Marktcheck. Paper soll ausdrücklich ausprobiert werden, aber **nicht mit falschem Übergabe-/Ertragsnachweis**.
 
+
+## Nachtrag 12.10.2026, 16:22:28 UTC – aktuelles, einheitliches V2R4-Abschlussbild
+
+**Dieser Nachtrag ist KEIN zweiter 72h-Review.** Das wirtschaftliche Original-Review und die Lernübergabe vom 10.10. bleiben maßgeblich; hier ist nur die mit einer einzigen read-only Supabase-Abfrage erneut erhobene vollständige V2R4-Strategieepoche (zwei technische Abschnitte, kein Strategie-Reset) abgebildet. Werte entwickeln sich bis zum physischen Intake-Stopp weiter.
+
+| Aktueller V2R4-Nachweis | Wert |
+| --- | ---: |
+| Kandidaten-Outcomes / EUR-Paare | 2.562 / 102 |
+| Initial protokollierte WAIT / REJECT / unbekannt | 1.608 / 952 / 2 |
+| WAIT→REJECT / WAIT-Expiry-Kind / lokaler Trigger-Recheck-Kind | 1.590 / 1.393 / 201 |
+| Noch WAIT_PENDING im Followup / aktuelle WAIT-Entscheidungen | 18 / 17 |
+| Vollständig gereifte 24h-Opportunity-Pfade | 1.221 |
+| 24h-MFE mindestens +5% / MAE höchstens −5% / beide Extreme | 589 / 534 / 191 |
+| Erstentscheid mit strukturiertem Coin-PIT-Entry-Evidence-Feld / Stop-EUR-Feld | 0 / 0 |
+| BUY / Paper-Trade-Ergebnisse | 0 / 0 |
+
+Die WAIT-Expiry-, lokale Recheck- und Pfad-Kategorien **nicht blind als disjunkte BUY-Entscheidungen addieren**. Model Invocation Events melden keinen REVALIDATION-Phase-Eintrag, obwohl 201 Ereignisse ein lokales Trigger-Recheck-Kennzeichen tragen: unterschiedliche Telemetrieebenen, kein Beweis für 201 Modell-HTTP-Aufrufe und kein Beweis für keine lokalen Rechecks. Retrospektive 24h-MFE sind **keine** realisierten Gewinne; 191 Pfade hatten sowohl +5%-Hoch als auch −5%-Tief, bei unbekannter Reihenfolge, Stop-Realisierung und Slippage.
+
+**Verbindliche wirtschaftliche Disposition:** V2R4-Wirtschaftlichkeit nicht nachgewiesen, weitere bloße Null-BUY-Sammlung nicht als Fortschritt zählen. Das im aktiven Supabase-Segment erreichte alternative Abschlussgate (completion_ready und intake_should_stop) legitimiert **keinen** automatischen Stopp, keinen V3-Paper-Cutover und keine Auszahlung. Der bestehende 10:15-Work- und Milestone-Owner sowie der bereits vorbereitete V3-PIT-Full-Model-/Stop-/Stage2-/Kostenvergleich bleiben zuständig. Nur echte geschlossene Kraken-EUR-1m/5m/15m-Frames mit Known-at, gleicher Pair-/Zeitpunkt-Baseline, Gebühren 0,60% je Seite, Spread/Slippage, Stop-vor-Ziel und späterem 6h-/24h-Outcomepfad zählen. H10/H3/H6 keine automatische BUY-Stimme. Der SHA-gepinnte V3-28h-Watcher endet erst am 13.10.2026 um 14:00:12 MESZ; kein vorzeitiger Abschluss. V2R4 aktive Runtime und Followups bleiben unverändert, Work-ACK nicht erfunden.
+
