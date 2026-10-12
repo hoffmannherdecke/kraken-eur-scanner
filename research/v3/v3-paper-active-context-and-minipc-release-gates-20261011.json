@@ -203,5 +203,23 @@
     "positive_three_independent_wallet_entry_from_live_h10_verified": false,
     "v2r4_unchanged": true,
     "real_money_actions": false
+  },
+  "wait_and_economic_observer_20261012": {
+    "status": "REAL_WAIT_5M_CAUSAL_TTL_AND_6H24H72H_CODE_IN_MAIN_CI_GREEN_MINIPC_RUNTIME_ACK_MISSING",
+    "wait_observer": "paper_evaluator/v3_paper_wait_observer_v1.py",
+    "selected_capture_and_followup": "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+    "original_ttl_observed_zro": false,
+    "original_ttl_expired_unknown_not_inferred_no_buy": true,
+    "only_closed_5m_within_true_wait_window": true,
+    "real_Kraken_1m_capture_lag_max_minutes": 15,
+    "buy_hard_risk_gates_unchanged": true,
+    "no_buy_after_event_opportunity_not_fake_pnl": true,
+    "manual_host_smoke": "tools/run-minipc-v3-existing-canary-observation.ps1 -Execute",
+    "existing_supervisor_runtime_invocation_ack": false,
+    "new_cloud_wait_expiry_ack": false,
+    "new_6h24h_maturity_ack": false,
+    "allowed_new_paid_model_calls": 0,
+    "v2r4_active_only": true,
+    "v3_active": false
   }
 }
