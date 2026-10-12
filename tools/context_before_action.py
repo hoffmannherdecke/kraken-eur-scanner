@@ -387,6 +387,77 @@ def v3_decision_inheritance(root: Path) -> dict:
     }
 
 
+
+
+def project_component_owner_handoff(root: Path) -> dict:
+    """Return every EXISTING registered project owner; not a runtime discovery claim.
+
+    The monitoring registry owns functional streams and the already existing
+    followthrough registry owns cross-cutting project areas. Never invent a
+    physical deployment site from a Python module or a dated GitHub document.
+    """
+    streams_source = read_json(root / "research/monitoring-evidence-routing-v1.json")
+    followthrough = read_json(root / "research/project-followthrough-routing-v1.json")
+    require(streams_source.get("kind") == "MONITORING_EVIDENCE_ROUTING_V1",
+            "missing canonical project stream register")
+    require(followthrough.get("kind") == "PROJECT_WIDE_FOLLOWTHROUGH_ROUTING_V1",
+            "missing canonical crosscut owner register")
+    streams = streams_source.get("streams") or []
+    areas = followthrough.get("extra_project_areas") or []
+    stream_ids = [x.get("id") for x in streams]
+    area_ids = [x.get("id") for x in areas]
+    required = set(followthrough.get("required_stream_ids") or [])
+    require(len(streams) == len(set(stream_ids))
+            and required.issubset(set(stream_ids)) and len(required) >= 26,
+            "stream owner coverage lost")
+    require(len(areas) >= 9 and len(areas) == len(set(area_ids)),
+            "crosscut owner coverage lost")
+    results = []
+    for item in streams:
+        require(all(isinstance(item.get(field), str) and item[field].strip()
+                    for field in ("id", "canonical_owner", "consumer", "next_gate")),
+                "stream has no canonical owner or successor")
+        results.append({
+            "id": item["id"],
+            "owner_type": "EXISTING_FUNCTIONAL_STREAM",
+            "canonical_owner": item["canonical_owner"],
+            "consumer": item["consumer"],
+            "next_gate": item["next_gate"],
+            "recorded_evidence_status": item.get("evidence_status"),
+            "overlapping_domains": item.get("overlaps", []),
+            "actual_runtime_location": "REQUIRES_ORIGINAL_DEPLOYMENT_EVIDENCE",
+            "historical_status_is_not_live_proof": True,
+        })
+    for item in areas:
+        require(all(isinstance(item.get(field), str) and item[field].strip()
+                    for field in ("id", "owner", "gate"))
+                and (root / item["owner"]).is_file(),
+                "crosscut owner original evidence missing")
+        results.append({
+            "id": item["id"],
+            "owner_type": "EXISTING_CROSSCUT_PROJECT_AREA",
+            "canonical_owner": item["owner"],
+            "consumer": "PROJECT_FOLLOWTHROUGH",
+            "next_gate": item["gate"],
+            "actual_runtime_location": "REQUIRES_ORIGINAL_DEPLOYMENT_EVIDENCE",
+            "historical_status_is_not_live_proof": True,
+        })
+    return {
+        "kind": "PROJECT_COMPONENT_OWNER_HANDOFF_V1",
+        "status": "DECLARED_OWNERS_AND_GATES_NOT_INDEPENDENT_LIVE_DEPLOYMENT_PROOF",
+        "functional_stream_count": len(streams),
+        "crosscut_project_area_count": len(areas),
+        "components": results,
+        "runtime_owner_proof_rule": (
+            "Before changing or installing anything, open the exact recorded "
+            "technical source/deployment evidence, reconcile dated GitHub "
+            "revisions with actual Mini-PC/GitHub/Supabase/Work execution, "
+            "and only then perform the smallest TARGETED read-only validation. "
+            "Never infer a Windows task merely from an H-component ID."
+        ),
+        "no_new_database_or_work_or_scheduler": True,
+    }
+
 def build(root: Path, scope: str) -> dict:
     config, entries = routed_sources(root, scope)
     index = []
@@ -421,6 +492,7 @@ def build(root: Path, scope: str) -> dict:
         "source_index": index,
         "declared_status": declared,
         "control_decision_ack_reconciliation": review_receipts(root, state),
+        "project_component_owners": project_component_owner_handoff(root),
         "limitations": [
             "Source hashes attest presence/version, not reading, semantic understanding or correctness.",
             "GitHub current-state is declared/datable, not independent live Supabase/MINI-PC evidence.",
