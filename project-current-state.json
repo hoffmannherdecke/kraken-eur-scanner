@@ -473,7 +473,7 @@
         "research/v3/v3-paper-active-context-and-minipc-release-gates-20261011.json"
       ],
       "next_owner": "PROJECT_BACKLOG.md V3 P0/P1/P2/P3/P4/P5/P6/P8 within existing 10:15 Work + 2h source steward",
-      "next_concrete_action": "PHYSICAL_MINIPC_ONE_SHOT_NEW_FRESH_CANDIDATE_V3_REAL_MODEL_HTTP_AT_MOST_ONE_AFTER_USER_APPROVED_CONSERVATIVE_0_15_USD_CEILING; VERIFY_P4_JOURNAL_TO_SUPABASE_ACK; THEN_REAL_SOURCE_OWNER_H10_H11_PIT_PAPER_WRITER_AND_V2R4_STOP_CAS_GATES",
+      "next_concrete_action": "PROSPECTIVE_PHYSICAL_MINIPC_ONE_SHOT_NEW_FRESH_CANDIDATE_V3_REAL_MODEL_HTTP_AT_MOST_ONE_AFTER_USER_APPROVED_CONSERVATIVE_0_15_USD_CEILING; VERIFY_P4_JOURNAL_TO_SUPABASE_ACK; THEN_REAL_SOURCE_OWNER_H10_H11_PIT_PAPER_WRITER_AND_V2R4_STOP_CAS_GATES",
       "all_prior_second_leg_user_actions_closed": true,
       "never_retry_first_or_second_shadow5_without_new_separate_approval": true,
       "technical_fix_zero_volume_and_stage_diagnostics_merged": true,
