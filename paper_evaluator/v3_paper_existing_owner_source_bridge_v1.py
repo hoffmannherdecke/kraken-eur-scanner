@@ -24,6 +24,9 @@ from paper_evaluator.v3_paper_positive_source_entry_v1 import (
 from paper_evaluator.v3_paper_source_owner_hmac_v1 import (
     validate_keyring,verify_owner_packet,
 )
+from paper_evaluator.v3_paper_shared_candidate_intake_plan_v1 import (
+    _router_rejection_audit,
+)
 
 KIND="V3_EXISTING_SOURCE_OWNER_PROOF_BRIDGE_V1"
 def fingerprint(snapshot:dict[str,Any])->str:
@@ -73,9 +76,13 @@ def join_owner_sources(*,h10_context:dict[str,Any]|None,
     else:
         diagnostics["news_sentiment"]="H5_MACRO_CALENDAR_NOT_VERIFIED_OFFICIAL_COIN_NEWS"
     accepted=[];denied={}
-    for packet in owner_event_packets:
+    denied_originals=[]
+    for input_index,packet in enumerate(owner_event_packets):
         def fail(key:str):
             denied[key]=denied.get(key,0)+1
+            denied_originals.append(_router_rejection_audit(
+                packet,origin="SOURCE_OWNER",index=input_index,
+                reason=key,decision_at_utc=decision_at_utc))
         if not isinstance(packet,dict):
             fail("UNVERIFIED_OWNER_PACKET");continue
         name,pair,altname,snap,proof=(packet.get(k) for k in
@@ -116,6 +123,8 @@ def join_owner_sources(*,h10_context:dict[str,Any]|None,
         "owner_source_events":accepted,
         "raw_source_dispositions":diagnostics,
         "source_event_rejections":denied,
+        "source_event_rejected_originals":denied_originals,
+        "rejected_originals_are_audit_only_not_source_trade_candidates":True,
         "owner_authentication_external_not_proven_by_hash":True,
         "owner_hmac_signature_required_for_positive_events":True,
         "physical_source_key_provisioning_or_owner_live_event_proven":False,
