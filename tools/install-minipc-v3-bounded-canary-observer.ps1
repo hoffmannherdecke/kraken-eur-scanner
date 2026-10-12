@@ -117,7 +117,7 @@ $arguments=@(
 ) -join ' '
 $action=New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments
 $trigger=New-ScheduledTaskTrigger -Once -At $start -RepetitionInterval (New-TimeSpan -Minutes 5) -RepetitionDuration (New-TimeSpan -Hours 28)
-$settings=New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -RestartCount 0 -ExecutionTimeLimit (New-TimeSpan -Minutes 4)
+$settings=New-ScheduledTaskSettingsSet -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit (New-TimeSpan -Minutes 4)
 Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -User 'SYSTEM' -RunLevel Highest -ErrorAction Stop | Out-Null
 $installed=Get-ScheduledTask -TaskName $taskName -ErrorAction Stop
 if(-not $installed){throw 'Windows Task Scheduler did not verify the new V3-only task'}
