@@ -147,5 +147,80 @@ class V3ContextFusionTests(unittest.TestCase):
                 validate(ROOT)
 
 
+
+from paper_evaluator.v3_paper_context_bridge_v1 import (
+    fuse_existing_sources, STREAMS as MODEL_CONTEXT_STREAMS,
+)
+
+
+class V3ExistingModelContextIntegrationTests(unittest.TestCase):
+    """Offline regression for the already used V3 full-model context seam."""
+
+    def setUp(self):
+        self.when = "2026-10-12T18:00:00Z"
+
+    def fact(self, **values):
+        return {
+            "known_at_utc": "2026-10-12T17:35:00Z",
+            "observed_at_utc": "2026-10-12T17:34:00Z",
+            "source_verified": True,
+            "source_owner": "EXISTING_RESEARCH_OWNER",
+            "source_id": "offline-test-source",
+            **values,
+        }
+
+    def test_existing_full_model_bridge_receives_four_missing_research_lanes(self):
+        self.assertTrue({"global_market_crosscheck", "derivatives_h2",
+                         "macro_h5", "onchain_h8"}.issubset(MODEL_CONTEXT_STREAMS))
+        inputs = {
+            "global_market_crosscheck": self.fact(btc_state="RISK_OFF"),
+            "derivatives_h2": self.fact(pair="XBT/EUR", funding_rate_pct=0.1),
+            "macro_h5": self.fact(event_id="official-calendar-test"),
+            "onchain_h8": self.fact(pair="XBT/EUR", chain="bitcoin"),
+            "smart_money_h10": self.fact(pair="XBT/EUR", independent_wallet_count=3),
+            "polymarket_h11": self.fact(pair="XBT/EUR", event_id="event-test"),
+        }
+        out = fuse_existing_sources(inputs, decision_at_utc=self.when, pair="XBT/EUR")
+        for key in inputs:
+            with self.subTest(key=key):
+                self.assertEqual(out["sources"][key]["state"], "AVAILABLE_PIT_CONTEXT_ONLY")
+                self.assertFalse(out["sources"][key]["hard_veto"])
+        self.assertTrue(out["optional_failure_never_hard_veto"])
+
+    def test_wrong_pair_is_neutral_and_cannot_bleed_into_candidate(self):
+        for key in ("derivatives_h2", "onchain_h8", "smart_money_h10",
+                    "polymarket_h11", "news_sentiment"):
+            with self.subTest(key=key):
+                inp = {key: self.fact(pair="ETH/EUR", consensus_direction="BULLISH")}
+                row = fuse_existing_sources(inp, decision_at_utc=self.when,
+                                            pair="XBT/EUR")["sources"][key]
+                self.assertEqual(row["state"], "NOT_ASSOCIABLE_OTHER_PAIR")
+                self.assertFalse(row["hard_veto"])
+                self.assertNotIn("values", row)
+
+    def test_future_or_stale_provenance_never_becomes_model_fact(self):
+        cases = [
+            (self.fact(pair="XBT/EUR", first_seen_at_utc="2026-10-12T19:00:00Z"),
+             "INVALID_FUTURE_OR_REVERSED_CLOCK"),
+            (self.fact(pair="XBT/EUR", known_at_utc="2026-10-12T19:00:00Z"),
+             "INVALID_FUTURE_OR_REVERSED_CLOCK"),
+            (self.fact(pair="XBT/EUR", known_at_utc="2026-10-12T15:00:00Z",
+                       observed_at_utc="2026-10-12T14:00:00Z"), "STALE_OPTIONAL"),
+        ]
+        for inp, expected in cases:
+            with self.subTest(expected=expected):
+                row = fuse_existing_sources(
+                    {"derivatives_h2": inp}, decision_at_utc=self.when,
+                    pair="XBT/EUR")["sources"]["derivatives_h2"]
+                self.assertEqual(row["state"], expected)
+                self.assertFalse(row["hard_veto"])
+
+    def test_missing_context_is_neutral_and_never_promotes_new_strategy(self):
+        out = fuse_existing_sources({}, decision_at_utc=self.when, pair="XBT/EUR")
+        self.assertTrue(all(item["state"] == "NOT_AVAILABLE" and
+                            item["hard_veto"] is False
+                            for item in out["sources"].values()))
+        self.assertTrue(out["provenance_guards"]["no_auto_strategy_promotion"])
+
 if __name__ == "__main__":
     unittest.main()

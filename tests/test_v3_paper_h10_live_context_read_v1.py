@@ -37,7 +37,7 @@ class V3H10LiveReadTests(unittest.TestCase):
             x=merge_context_file(path=f,pair="ZEC/EUR",live=raw)
             self.assertTrue(x["h10_available"])
             payload=json.loads(f.read_text("utf-8"))
-            c=fuse_existing_sources(payload,decision_at_utc=dt(5))
+            c=fuse_existing_sources(payload,decision_at_utc=dt(5),pair="ZEC/EUR")
             self.assertEqual(c["sources"]["smart_money_h10"]["state"],
                              "AVAILABLE_PIT_CONTEXT_ONLY")
             self.assertEqual(c["sources"]["market_phase_radar"]["state"],

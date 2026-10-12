@@ -20,7 +20,14 @@ STREAMS={
  "minipc_reliability":(600,("scanner_delay_seconds","cloud_lag_seconds","data_capture_health","local_recheck_health")),
  "smart_money_h10":(3600,("pair","event_id","cohort_id","consensus_direction","independent_wallet_count","source_fill_seen_at_utc","confirmed_net_buy_usd","onchain_fills_confirmed","not_self_dealing_checked","coin_relevance_verified","impact_mechanism")),
  "polymarket_h11":(7200,("pair","event_id","market_id","question","yes_midpoint","observed_probability_delta","market_liquidity_usd","market_resolved","direct_positive_outcome_for_pair","coin_relevance_verified","impact_mechanism")),
+ # Reuse the existing research owners as optional P-I-T facts, not extra votes.
+ "global_market_crosscheck":(3600,("btc_state","eth_state","market_breadth","cross_market_dispersion")),
+ "derivatives_h2":(3600,("pair","funding_rate_pct","open_interest_delta_pct","basis_pct","funding_venue","basis_venue")),
+ "macro_h5":(21600,("event_id","event_type","event_time_utc","official_publication_at_utc","official_confirmation")),
+ "onchain_h8":(21600,("pair","chain","netflow_direction","active_addresses_change_pct","observed_interval_minutes")),
 }
+# A different coin must never inherit optional coin-specific context.
+PAIR_STREAMS={"news_sentiment","smart_money_h10","polymarket_h11","derivatives_h2","onchain_h8"}
 def stamp(x:str)->datetime:
     d=datetime.fromisoformat(x.replace("Z","+00:00"))
     if d.tzinfo is None:raise ValueError("naive context clock")
@@ -33,7 +40,8 @@ def clean(x:Any):
     if isinstance(x,dict) and len(x)<=12 and all(isinstance(k,str) and len(k)<=40 for k in x):
         return {k:clean(v) for k,v in x.items()}
     raise ValueError("invalid optional context value")
-def fuse_existing_sources(snapshots:dict[str,Any],*,decision_at_utc:str)->dict[str,Any]:
+def fuse_existing_sources(snapshots:dict[str,Any],*,decision_at_utc:str,
+                          pair:str|None=None)->dict[str,Any]:
     """One self-contained versioned context, unavailable sources NEVER veto BUY."""
     decision=stamp(decision_at_utc)
     items={}
@@ -48,8 +56,14 @@ def fuse_existing_sources(snapshots:dict[str,Any],*,decision_at_utc:str)->dict[s
                 observed=stamp(row["observed_at_utc"])
                 if not observed<=known<=decision:
                     out["state"]="INVALID_FUTURE_OR_REVERSED_CLOCK"
+                elif any(stamp(row[key])>known for key in
+                         ("first_seen_at_utc","retrieved_at_utc","source_event_at_utc")
+                         if key in row):
+                    out["state"]="INVALID_FUTURE_OR_REVERSED_CLOCK"
                 elif (decision-known).total_seconds()>max_age:
                     out["state"]="STALE_OPTIONAL"
+                elif name in PAIR_STREAMS and (pair is None or row.get("pair")!=pair):
+                    out["state"]="NOT_ASSOCIABLE_OTHER_PAIR"
                 elif row.get("source_verified") is not True:
                     out["state"]="UNVERIFIED_OPTIONAL"
                 else:

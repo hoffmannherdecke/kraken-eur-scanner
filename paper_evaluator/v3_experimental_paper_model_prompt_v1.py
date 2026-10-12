@@ -59,11 +59,13 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
     # Real per-source known_at cannot be after the actual model input clock.
     if optional_context and optional_context.get("kind")==CONTEXT_KIND:
         context=fuse_existing_sources(optional_context.get("raw_snapshots",{}),
-                                      decision_at_utc=decision_at_utc)
+                                      decision_at_utc=decision_at_utc,
+                                      pair=candidate["pair"])
         sources={key:{"available":value["state"]=="AVAILABLE_PIT_CONTEXT_ONLY"}
                  for key,value in context["sources"].items()}
     else:
-        context=fuse_existing_sources({},decision_at_utc=decision_at_utc)
+        context=fuse_existing_sources({},decision_at_utc=decision_at_utc,
+                                      pair=candidate["pair"])
     positive_trigger=None
     if candidate.get("entry_origin")=="VERIFIED_POSITIVE_SOURCE_CATALYST":
         if not optional_context or optional_context.get("kind")!=CONTEXT_KIND:
