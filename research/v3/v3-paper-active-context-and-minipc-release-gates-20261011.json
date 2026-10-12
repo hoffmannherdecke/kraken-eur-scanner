@@ -124,7 +124,7 @@
   "no_new_schedules": true,
   "no_real_money": true,
   "cloud_deployment_20261011": {
-    "status": "PROD_SCHEMA_RLS_AND_DEDICATED_EDGE_V1_VERIFIED_NO_TOKEN_NO_WRITES",
+    "status": "PROD_SCHEMA_EDGE_TOKEN_AND_FIRST_PHYSICAL_MINIPC_CLOUD_ACK_CONFIRMED",
     "schema": "public.v3_paper_event_receipts",
     "schema_row_count": 0,
     "service_role_can_select": true,
@@ -138,11 +138,23 @@
     "edge_deployment_status": "ACTIVE",
     "verify_jwt": false,
     "custom_sha256_token_auth": true,
-    "credential_registered": false,
+    "credential_registered": true,
     "shared_v2r4_token_reuse": false,
-    "real_host_cloud_ack": false,
+    "real_host_cloud_ack": true,
     "v2r4_active_only": true,
     "real_money_actions": false,
-    "next_manual_host_step": "tools/minipc-create-v3-paper-relay-token.ps1 -Execute"
+    "next_manual_host_step": "MODEL_BUDGET_DECISION_ONLY_AFTER_P4_REAL_HTTP_AND_WATCH_RUNTIME_FIXES",
+    "first_host_receipts": 4,
+    "first_host_pair": "EIGEN/EUR",
+    "first_host_canary_series": "PAPER-V3-CANARY-20261011",
+    "first_host_source_status": "COMPLETE",
+    "first_host_early_eligibility_status": "PASS",
+    "first_host_model_called": false,
+    "first_host_research_only": true,
+    "source_market_phase_connected": false,
+    "source_news_connected": false,
+    "source_smart_money_connected": false,
+    "source_polymarket_connected": false,
+    "v3_receipt_count_readback": 4
   }
 }
