@@ -76,16 +76,26 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                 # Real closed source is requested only while the window is live.
                 coin=fetch(altname,pair)
                 q=ticker(altname)
-                frame=(coin.get("frames") or {}).get("5") or {}
+                frames=coin.get("frames") or {}
+                frame=frames.get("5") or {}
+                frame1=frames.get("1") or {}
+                frame15=frames.get("15") or {}
                 now_at=clock_now()
                 evidence={
                     "pair":pair,"observed_at_utc":coin.get("observed_at_utc"),
                     "known_at_utc":now_at,
                     "closed_5m_end_utc":frame.get("last_closed_bar_end_utc"),
                     "values":{
+                        "last_eur":q.get("last"),
+                        "bid_eur":q.get("bid"),
+                        "ask_eur":q.get("ask"),
+                        "spread_pct":q.get("spread_pct"),
+                        "closed_1m_close_eur":frame1.get("closed_close_eur"),
+                        "closed_1m_volume_ratio_5":frame1.get("volume_ratio_prior_5"),
                         "closed_5m_close_eur":frame.get("closed_close_eur"),
                         "closed_5m_volume_ratio_5":frame.get("volume_ratio_prior_5"),
-                        "ask_eur":q.get("ask"),
+                        "closed_15m_close_eur":frame15.get("closed_close_eur"),
+                        "closed_15m_volume_ratio_4":frame15.get("volume_ratio_prior_4"),
                     },
                 }
                 if frame.get("status")!="VALID" or coin.get("pair")!=pair:
