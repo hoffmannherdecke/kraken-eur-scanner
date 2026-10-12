@@ -104,6 +104,12 @@ try{
   $arg+=@('--approved-one-model-call',$ApprovalJson,
           '--model-key-file',$secret)
  }
+ # Optional PIT source dossier is read-only and never required.
+ # The source bridge itself rechecks observed_at <= known_at <= decision.
+ $sourceFile=Join-Path $root 'context\latest-verified-sources.json'
+ if(Test-Path -LiteralPath $sourceFile -PathType Leaf){
+  $arg+=@('--optional-sources',$sourceFile)
+ }
  & $venv @arg
  if($LASTEXITCODE -ne 0){throw 'V3 canary returned failure'}
 }finally{Pop-Location}
