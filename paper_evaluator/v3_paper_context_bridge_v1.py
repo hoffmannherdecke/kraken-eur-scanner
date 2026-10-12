@@ -13,13 +13,13 @@ KIND="V3_PAPER_EXISTING_RESEARCH_CONTEXT_BRIDGE_V1"
 STREAMS={
  "market_phase_radar":(10800,("regime","confidence","breadth","reversal_observed")),
  "source_stewardship":(86400,("catalog_version","health","replaced_sources","source_quality_summary")),
- "news_sentiment":(21600,("sentiment","news_category","headline_digest","official_confirmation")),
- "dynamic_move_radar":(1800,("movement_phase","breadth","velocity_band","rotation_group")),
+ "news_sentiment":(21600,("pair","event_id","sentiment","news_category","headline_digest","official_confirmation","official_primary_url","direct_pair_beneficiary","impact_mechanism","coin_relevance_verified")),
+ "dynamic_move_radar":(1800,("pair","movement_phase","breadth","velocity_band","rotation_group")),
  "missed_opportunity_learning":(86400,("learning_rule_id","historical_cohort_status","unresolved_data_gaps")),
  "economic_learning":(86400,("current_experiment","mature_6h_count","mature_24h_count","economic_verdict")),
  "minipc_reliability":(600,("scanner_delay_seconds","cloud_lag_seconds","data_capture_health","local_recheck_health")),
- "smart_money_h10":(3600,("cohort_id","consensus_direction","independent_wallet_count","source_fill_seen_at_utc")),
- "polymarket_h11":(7200,("market_id","question","yes_midpoint","observed_probability_delta")),
+ "smart_money_h10":(3600,("pair","event_id","cohort_id","consensus_direction","independent_wallet_count","source_fill_seen_at_utc","confirmed_net_buy_usd","onchain_fills_confirmed","not_self_dealing_checked","coin_relevance_verified","impact_mechanism")),
+ "polymarket_h11":(7200,("pair","event_id","market_id","question","yes_midpoint","observed_probability_delta","market_liquidity_usd","market_resolved","direct_positive_outcome_for_pair","coin_relevance_verified","impact_mechanism")),
 }
 def stamp(x:str)->datetime:
     d=datetime.fromisoformat(x.replace("Z","+00:00"))
@@ -57,7 +57,7 @@ def fuse_existing_sources(snapshots:dict[str,Any],*,decision_at_utc:str)->dict[s
                     # Polymarket markets are often unrelated to the coin; no
                     # automatic directional signal/consensus for Kraken.
                     if name=="polymarket_h11":
-                        vals["not_a_crypto_direction_signal"]=True
+                        vals["not_a_crypto_direction_signal_without_validated_direct_coin_link"]=True
                     if name=="smart_money_h10":
                         vals["not_copy_trading"]=True
                     out={"state":"AVAILABLE_PIT_CONTEXT_ONLY",
