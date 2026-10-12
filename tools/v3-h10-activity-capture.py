@@ -233,6 +233,20 @@ def capture(max_wallets=None,dry_run=False,path="GITHUB_BOOTSTRAP_30M"):
             )
         http_post_rows("v3_h10_capture_errors",errors)
         retention_maintenance(now)
+        # Same original GitHub H10 job/credential. No second scheduler or
+        # historical backfill; only full frozen-cohort production captures.
+        if path=="GITHUB_BOOTSTRAP_30M" and max_wallets is None:
+            import sys
+            if str(ROOT) not in sys.path:
+                sys.path.insert(0,str(ROOT))
+            from tools.v3_h10_source_owner_archive_v1 import archive_selected_recent_windows
+            h=_server_headers()
+            h.pop("Prefer",None)
+            h.pop("Content-Type",None)
+            archive_result=archive_selected_recent_windows(
+                base=os.environ["SUPABASE_URL"],headers=h,cohort=cohort,
+                observed_now=dt.datetime.now(dt.timezone.utc))
+            result["selected_original_receipts"]=archive_result
     return result
 
 def self_test():
