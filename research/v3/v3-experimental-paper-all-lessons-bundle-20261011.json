@@ -7,6 +7,23 @@
   "scope": "ONLY_EXPERIMENTAL_PAPER_NOT_REAL_MONEY",
   "entry_priority": [
     {
+      "id": "SOURCE_CATALYST_INDEPENDENT",
+      "module": "paper_evaluator/v3_paper_positive_source_entry_v1.py",
+      "candidate_generator": "tools/v3-paper-positive-source-candidate.py",
+      "consumer": "paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+      "supported_lanes": [
+        "IGNITION",
+        "CONTINUITY",
+        "REVERSAL",
+        "EXTENDED",
+        "NONE"
+      ],
+      "rule": "Verified positive direct coin source generates independent review candidate; full real model and shared P4 stop-cost-stage2 guard required",
+      "paper_policy_selected": true,
+      "runtime_enabled": false,
+      "source_owner_to_minipc_verified": false
+    },
+    {
       "id": "FIRST_SCANNER_EARLY_REVIEW",
       "module": "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
       "model_prompt": "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
@@ -90,7 +107,8 @@
     "FRESH_GENUINE_NEW_BASE_RESETS_OLD_EXTENDED_TERMINAL_REJECT",
     "EXPIRED_WAIT_CAN_START_DISTINCT_LATER_REVIEW",
     "EARLY5M_INSTEAD_OF_15M_POST_SIGNAL_CONTINUITY",
-    "FAIL_SAFE_REASONS_INPUT_UNKNOWN_NOT_ECONOMIC_REJECT"
+    "FAIL_SAFE_REASONS_INPUT_UNKNOWN_NOT_ECONOMIC_REJECT",
+    "COIN_SPECIFIC_VERIFIED_POSITIVE_SOURCE_CAN_ORIGINATE_FULL_MODEL_REVIEW_WITHOUT_PRIOR_TECHNICAL_SIGNAL"
   ],
   "hard_gates": {
     "kraken_online_spot_eur": true,
@@ -119,7 +137,9 @@
     "release": "tools/v3_experimental_paper_technical_gate.py",
     "cutover": "docs/v3-controlled-paper-cutover-20261011.md",
     "family_dedup": "paper_evaluator/v3_experimental_paper_family_router_v1.py",
-    "economic_outcome_pure": "paper_evaluator/v3_experimental_paper_pathwise_economics_v1.py"
+    "economic_outcome_pure": "paper_evaluator/v3_experimental_paper_pathwise_economics_v1.py",
+    "positive_source_entry": "paper_evaluator/v3_paper_positive_source_entry_v1.py",
+    "source_candidate_generation": "tools/v3-paper-positive-source-candidate.py"
   },
   "required_per_candidate_journal": [
     "SCANNER_CAPTURE",
@@ -162,7 +182,9 @@
     "prospective_real_response_to_p4_verified": false,
     "pure_1m_stop_first_fee_stage2_pathwise_tests_present": true,
     "physical_closed_1m_coin_path_to_cost_validator_verified": false,
-    "real_orderbook_fill_or_slippage_proven": false
+    "real_orderbook_fill_or_slippage_proven": false,
+    "source_positive_review_code_integrated": true,
+    "source_owner_runtime_delivery_verified": false
   },
   "release_requirements": {
     "economic_profitability_before_experiment_required": false,
