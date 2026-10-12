@@ -228,8 +228,12 @@
       "paper_cutover_authorized": false,
       "physical_diagnostic_script": "tools/check-minipc-v3-physical-writer-readiness.ps1",
       "physical_diagnostic_policy": "READ_ONLY_NO_REPO_UPDATE_NO_SCHEDULER_OR_V2R4_CHANGE_NO_MODEL_NO_CLOUD",
-      "physical_snapshot_status": "AWAITING_REAL_MINIPC_OUTPUT_NOT_YET_EXECUTED",
-      "next_safe_action": "Run the one-shot, read-only physical readiness script on Mini-PC; inspect pinned observer hash, source owner, queue and journal BEFORE any new write or git pull; then prepare single bounded write in isolated V3 research workspace only if safe."
+      "physical_snapshot_status": "USER_PHYSICAL_READONLY_OUTPUT_20261012T101643Z_PASS_ONE_V2R4_100_SAMPLED_ONE_FRESH_PINNED_9_OF_9_LOCAL_RECEIPTS_12_LOCAL_ACKS_12_NO_WRITER_STARTED",
+      "next_safe_action": "After GitHub CI and careful no-pinned-file Git FF, ask user to run one physical Mini-PC one-shot smoke. On no fresh candidate: NO WRITES, no automatic retry. On success require exact local receipt and Cloud ACK, and record screenshot + Supabase read-only receipt check. Keep 28h pinned task untouched.",
+      "physical_diagnostic_verified_on_actual_host": true,
+      "one_shot_smoke_module": "paper_evaluator/v3_paper_minipc_single_writer_smoke_v1.py",
+      "one_shot_smoke_scope": "ONE_REAL_FRESH_10M_V2R4_SCANNER_ORIGINAL_OWN_ISOLATED_PAPER_V3_CANARY_SERIES_PUBLIC_KRAKEN_ONLY_OPTIONAL_REAL_CLOUD_ACK_ZERO_MODEL_NO_ACTIVE_SERIES_CUTOVER",
+      "one_shot_smoke_runtime_proven": false
     },
     "kind": "CONTROLLED_V2R4_TO_V3_PAPER_TRANSITION_INTENT_V1",
     "requested_on": "2026-10-11",
