@@ -67,6 +67,10 @@ jobs:
           }
           Write-Host 'V3 28H WINDOWS CANARY SCRIPTS PARSE PASS'
           python -m unittest tests.test_v3_bounded_canary_task_policy_v1 -v
+      - name: V3 physical single-writer one-shot scanner intake Kraken review and exact cloud-ACK gate
+        run: |
+          python -m py_compile paper_evaluator/v3_paper_minipc_single_writer_smoke_v1.py
+          python -m unittest tests.test_v3_paper_minipc_single_writer_smoke_v1 -v
       - name: V3 physical Mini-PC writer readiness script is read-only and cannot touch pinned observer
         run: |
           python -m unittest tests.test_v3_minipc_physical_readonly_preflight_policy_v1 -v
