@@ -193,6 +193,7 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
 
     def test_market_phase_smart_money_polymarket_are_known_at_or_missing_soft_context(self):
         yes={"source_verified":True,"source_owner":"H10_EXISTING",
+             "pair":"XBT/EUR",
              "source_id":"SOURCE-EVIDENCE-1",
              "observed_at_utc":dt(3),"known_at_utc":dt(5),
              "consensus_direction":"LONG","independent_wallet_count":3,
@@ -202,7 +203,7 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
             "polymarket_h11":dict(yes,known_at_utc=dt(50)),
             "market_phase_radar":dict(yes,regime="RECOVERY",breadth="MIXED"),
             "news_sentiment":dict(yes,headline_digest="Official statement")
-        },decision_at_utc=dt(12))
+        },decision_at_utc=dt(12),pair="XBT/EUR")
         self.assertEqual(out["sources"]["smart_money_h10"]["state"],
                          "AVAILABLE_PIT_CONTEXT_ONLY")
         self.assertNotIn("secret",out["sources"]["smart_money_h10"]["values"])
