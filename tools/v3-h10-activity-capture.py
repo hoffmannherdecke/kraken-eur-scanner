@@ -48,7 +48,9 @@ def event_id(address,f):
     ])
     return hashlib.sha256(s.encode()).hexdigest()
 
-def _server_headers(upsert=False):
+def _server_headers(upsert=False, preserve_original=False):
+    if preserve_original and not upsert:
+        raise ValueError('original preservation requires event-id conflict insert')
     key=(os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
     if not key:
         raise RuntimeError("Supabase server credential missing")
@@ -56,10 +58,14 @@ def _server_headers(upsert=False):
         "apikey":key,
         "Authorization":"Bearer "+key,
         "Content-Type":"application/json",
-        "Prefer":"resolution=merge-duplicates,return=minimal" if upsert else "return=minimal"
+        "Prefer":("resolution=ignore-duplicates,handling=strict,return=minimal"
+                  if preserve_original else "resolution=merge-duplicates,return=minimal"
+                  if upsert else "return=minimal")
     }
 
-def http_post_rows(table,rows,conflict=None):
+def http_post_rows(table,rows,conflict=None,preserve_original=False):
+    if preserve_original and (table!="v3_h10_fill_events" or conflict!="event_id"):
+        raise ValueError("original preservation is only allowed on H10 event_id inserts")
     if not rows:
         return
     base=os.environ["SUPABASE_URL"].rstrip("/")+"/rest/v1/"+table
@@ -70,7 +76,7 @@ def http_post_rows(table,rows,conflict=None):
     req=urllib.request.Request(
         url,
         data=json.dumps(rows,separators=(",",":")).encode(),
-        headers=_server_headers(upsert=bool(conflict)),
+        headers=_server_headers(upsert=bool(conflict),preserve_original=preserve_original),
         method="POST"
     )
     with urllib.request.urlopen(req,timeout=45) as r:
@@ -216,7 +222,10 @@ def capture(max_wallets=None,dry_run=False,path="GITHUB_BOOTSTRAP_30M"):
         http_post_rows("v3_h10_capture_batches",batch)
         http_post_rows("v3_h10_wallet_states",states)
         for i in range(0,len(fills),200):
-            http_post_rows("v3_h10_fill_events",fills[i:i+200],conflict="event_id")
+            # A fill can recur in overlapping 45m reads every 30m.
+            # Keep the first-seen batch immutable on duplicate event_id.
+            http_post_rows("v3_h10_fill_events",fills[i:i+200],
+                           conflict="event_id",preserve_original=True)
         for i in range(0,len(aggregates),200):
             http_post_rows(
                 "v3_h10_wallet_asset_5m",aggregates[i:i+200],
@@ -251,7 +260,32 @@ def self_test():
     assert agg[0]["fill_count"]==2
     assert abs(agg[0]["gross_fill_notional_quote"]-300.0)<1e-9
     assert abs(agg[0]["net_exposure_change_quote"]-100.0)<1e-9
-    print("V3_H10_CAPTURE_SELF_TEST PASS compact-5m/retention")
+    # Offline HTTP contract test: no network, DB mutation or real credentials.
+    from unittest import mock
+    with mock.patch.dict(os.environ, {"SUPABASE_URL":"https://example.invalid",
+                                   "SUPABASE_SECRET_KEY":"unit-test-only"}):
+        with mock.patch("urllib.request.urlopen") as opened:
+            opened.return_value.__enter__.return_value.status=201
+            http_post_rows("v3_h10_fill_events",[
+                {"event_id":"same-source-fill","first_seen_batch_id":"original-batch"}
+            ],conflict="event_id",preserve_original=True)
+            req=opened.call_args.args[0]
+            assert req.get_method()=="POST"
+            assert "on_conflict=event_id" in req.full_url
+            assert req.get_header("Prefer")=="resolution=ignore-duplicates,handling=strict,return=minimal"
+            assert b"original-batch" in req.data
+            http_post_rows("v3_h10_wallet_asset_5m",[{"cohort_id":"c"}],
+                           conflict="cohort_id,address,coin,bucket_start")
+            other=opened.call_args.args[0]
+            assert other.get_header("Prefer")=="resolution=merge-duplicates,return=minimal"
+            try:
+                http_post_rows("v3_h10_wallet_asset_5m",[{"cohort_id":"c"}],
+                               conflict="cohort_id",preserve_original=True)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("event-only preservation gate bypassed")
+    print("V3_H10_CAPTURE_SELF_TEST PASS compact-5m/retention/first_seen_original_immutable")
 
 def main():
     ap=argparse.ArgumentParser()
