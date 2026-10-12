@@ -38,3 +38,10 @@ Der bestehende 28h-CANARY (festes Ende 13.10.2026 14:00:12 MESZ), V2R4-Paper, H1
 5. Unbekannte zukünftige Chats bleiben Plattformgrenze; nur wirklich gespeicherte Nutzerentscheidungen gelten als automatisch auffindbar. Keine behauptete passive Hintergrundüberwachung über Chats.
 
 Dieses Verfahren gilt fachlich umfassend, kann aber weder KI-Semantik noch unbekannte private Chats technisch garantieren.
+
+## Technische Rollout-Nachweise (12.10.2026)
+
+- Hauptrepo PR #231, #232: `Project-wide context before material PR / source-and-review`, alle Scope-Sources gegen vorhandenes `tools/context_before_action.py`; der erste fehlende/stale Receipt ist tatsächlich rot geworden, nach Korrektur grün.
+- Private `hoffmannherdecke/kraken-readonly-bridge`, PR #12, und `hoffmannherdecke/canonical-evaluator-runtime-v1`, PR #4: eigener `AGENTS.md` und bewusst minimale PR-only-Workflow-Datei. Beide lesen dasselbe öffentliche kanonische Hauptrepo (kein lokaler Quell-Duplikatbestand) und prüfen die eigenen veränderten Dateien mit dem dortigen Context-Guard; beide Prüfungen wurden tatsächlich erfolgreich ausgeführt. Bewahrt unterschiedliche technische/operative Owner, aber eine historische Projekt-Wahrheit.
+- Externe bestehende 10:15-Work- und 2h-Research-/Quellenmanager-Automationsprompts wurden am 12.10. aktualisiert, ohne neue Aufgaben oder Zeitpläne.
+- **NICHT E2E-fertig:** Required-Branch-Checks mangels GitHub-Integration-Berechtigung noch nicht bestätigt; tatsächlicher zukünftiger Work-Lauf-/materieller PR-Followthrough noch nicht unabhängig abgenommen; unbekannte ChatGPT-Unterhaltungen weiterhin nicht automatisch importierbar. Weiter offen im einzigen `PROJECT_BACKLOG.md`, nicht als abgeschlossen melden.

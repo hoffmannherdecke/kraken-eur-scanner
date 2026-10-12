@@ -12,3 +12,6 @@
 8. **Nachlauf**: Source → Entscheidung → konkreter Owner/Backlog → belegter Test/CI → erforderliche physische/Cloud-ACKs → ggf. explizite Nutzerfreigabe → tatsächlicher Abschluss. Fehlt einer davon, Status `OPEN`/`BLOCKED`, nicht `DONE`.
 
 Detaillierter Vertrag: `docs/project-cross-session-handoff-v1.md`. Vorhandene fachliche Autoritäten und Sicherheitsgates haben Vorrang. Diese Datei ist eine Agenten-Arbeitsanweisung, keine garantierte ChatGPT-Systemeinspeisung.
+
+## Repoübergreifende Durchsetzung
+Die vorhandene private Kraken-Read-only-Bridge und der separate private Paper-Evaluator verwenden jetzt ebenfalls einen eigenen `AGENTS.md`-Einstieg und denselben read-only kanonischen GitHub-PR-Kontextprüfer. Kein paralleler Projektstand: das Hauptrepo besitzt Entscheidungen/Backlog, die Satelliten ihre jeweiligen Runtime-Owner. Auch dort nur PR-Merge nach grünem Context-Gate. Das tatsächliche GitHub-Required-Check-/Branchschutz-Gate und ein unabhängiger späterer Work-E2E-Nachweis sind ausdrücklich noch offen (siehe `PROJECT_BACKLOG.md`).
