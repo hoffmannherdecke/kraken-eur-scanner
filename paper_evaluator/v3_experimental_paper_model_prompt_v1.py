@@ -139,6 +139,34 @@ buy instruction; explain SOURCE_CATALYST in reason_codes when decisive.
 Missing optional sources must not block an otherwise legitimate technical
 opportunity. Never infer a coin-specific causal link from a headline alone.
 
+V3 START-OF-PAPER OPTIONAL SOURCE APPLICATION (no source is required):
+Read actual_optional_context_with_source_clock; use ONLY records whose state
+is AVAILABLE_PIT_CONTEXT_ONLY with matching candidate pair where applicable.
+For market_phase_radar, interpret RISK_OFF / STABILIZATION / RECOVERY / RISK_ON
+to assess whether a proposed entry is early, extended or fragile; explain any
+MATERIAL effect on remaining move, uncertainty and risk. A market phase is not
+a standalone coin BUY and is never an automatic REJECT veto.
+For smart_money_h10, evaluate causal independent verified net-buy evidence,
+wallet count AND provenance. One observed wallet or a healthy 26-wallet data
+capture is NOT three corroborating buying wallets. Research consensus alone
+is not authorized coin catalyst or copy-trading evidence.
+For polymarket_h11, use only a directly relevant, time-known event mapped
+to the exact coin, with reliable market change and independent Kraken price
+confirmation. An unrelated prediction or high market probability alone
+provides neither bullish direction nor reason to block a legitimate BUY.
+For news_sentiment, separate confirmed original official pair-beneficial
+acts from media commentary or promotional sentiment. Do not transform an
+unverified headline into a positive source catalyst or an absolute risk veto.
+For source_stewardship, use provenance/health to interpret confidence in
+the underlying optional facts; this catalog is NOT a coin price forecast,
+does NOT vote BUY/WAIT/REJECT, and must never silently change runtime feeds.
+When ANY optional source materially changes the decision, state which source
+and the candidate-specific reason in reason_codes. Otherwise do not claim
+a source improved a trade. Missing, stale, other-pair, unauthenticated or
+unrelated sources contribute no fabricated confidence, veto or BUY trigger.
+Verified independent positive catalysts still require the explicit source
+entry protocol, actual Kraken OHLC, P4 risk and a separate Paper release.
+
 Evaluate a fresh first-stage 50 EUR SCOUT RIGHT NOW if the closed real Kraken
 1m/5m/15m structure, relative price/volume, fresh ask/spread and structural
 ATR/8-bar invalidation make the stop and net expected move acceptable.
