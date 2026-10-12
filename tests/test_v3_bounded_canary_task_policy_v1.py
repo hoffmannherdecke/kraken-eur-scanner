@@ -50,7 +50,14 @@ class BoundedCanaryTaskPolicyTests(unittest.TestCase):
             "Get-FileHash -LiteralPath $file -Algorithm SHA256",
             "-Execute -MaxCandidates 2",
             "v3-canary-observer-28h-heartbeat.json",
-            "V3 Paper observation cycle finished; NO MODEL, NO PAPER ACTIVATION, V2R4 unchanged",
+            "V3_PAPER_EXISTING_SUPERVISOR_SELECTIVE_TICK_V1",
+            "CLOSED_KRAKEN_1M_SNAPSHOT_SAVED",
+            "V3_RECEIPTS_CLOUD_ACK_VERIFIED",
+            "NO_UNSYNCED_V3_RECEIPTS",
+            "HEALTHY_NO_NEW_CLOUD_EVENTS",
+            "HEALTHY_CLOUD_ACK",
+            "model_attempts -ne 0",
+            "new_schedules -ne 0",
         ):
             with self.subTest(required=required):
                 self.assertIn(required,run)
@@ -60,5 +67,32 @@ class BoundedCanaryTaskPolicyTests(unittest.TestCase):
                           "v3_paper_active=$true"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden,run)
+
+    def test_repair_is_single_pinned_file_migration_not_reinstall_or_extension(self):
+        repair=(ROOT/"tools"/"repair-minipc-v3-observer-28h-health-signal.ps1").read_text("utf-8")
+        for required in (
+            "if(-not $Execute)", "Get-ScheduledTask -TaskName $taskName",
+            "$heartbeat.status -ne 'ERROR'",
+            "No complete cloud ACK / observer completion marker",
+            "NO_UNSYNCED_V3_RECEIPTS",
+            "pinned_file_hashes",
+            "$relative -ne $targetRelative",
+            "Another protected program changed: NO AUTOMATIC REPIN",
+            "RUN_V3_CANARY_READONLY_28H",
+            "[System.IO.FileMode]::CreateNew",
+            "unchanged_expires_at_utc=$manifest.until_utc",
+            "duration_extended=$false",
+            "Start-ScheduledTask -TaskName $taskName",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required,repair)
+        for forbidden in (
+            "Register-ScheduledTask", "Unregister-ScheduledTask",
+            "Stop-ScheduledTask", "New-ScheduledTaskTrigger",
+            "model_http_calls_authorized=1",
+            "Invoke-RestMethod", "OPENAI_API_KEY"
+        ):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden,repair)
 
 if __name__=="__main__":unittest.main()
