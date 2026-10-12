@@ -18,6 +18,8 @@ $oldSeries='PAPER-V2R4-20261009T110135Z'
 $taskName='CryptoMiniPC-V3CanaryObservation28h'
 
 $repoPresent=Test-Path -LiteralPath $repo -PathType Container
+$existingExperimentalGateModule=Join-Path $repo 'tools\v3_experimental_paper_technical_gate.py'
+$existingExperimentalGatePresent=(Test-Path -LiteralPath $existingExperimentalGateModule -PathType Leaf)
 $modules=@(
  'paper_evaluator\v3_paper_shared_candidate_intake_plan_v1.py',
  'paper_evaluator\v3_paper_existing_owner_source_bridge_v1.py',
@@ -146,6 +148,13 @@ $ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $can
  canary_task_state=$taskState
  canary_deadline_utc=if($null -ne $plan){$plan.until_utc}else{$null}
  canary_manifest_valid_and_pinned=$canarySafe
+ experimental_paper_gate_module_present=$existingExperimentalGatePresent
+ experimental_paper_requires_prior_profitable_buy=$false
+ experimental_paper_requires_six_real_technical_proofs=$true
+ experimental_paper_technical_proofs_verified_by_this_local_readonly_check=0
+ experimental_paper_release_authorized_by_this_check=$false
+ experimental_paper_governance_source='tools/v3_experimental_paper_technical_gate.py'
+ experimental_paper_next_gate='SIX_REAL_HOST_OR_CLOUD_E2E_ARTIFACTS_FIXED_API_CAP_SINGLE_WRITER_DRYRUN_EXPLICIT_RELEASE'
  canary_pinned_files_checked=$pinChecked
  canary_pinned_mismatch_count=$pinMismatches.Count
  last_canary_heartbeat_status=if($null -ne $heartbeat){$heartbeat.status}else{'MISSING'}
