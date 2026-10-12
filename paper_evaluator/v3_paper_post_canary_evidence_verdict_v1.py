@@ -48,7 +48,7 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
     """
     at=clock(as_of_utc)
     end=clock(observer_deadline_utc)
-    if end.year!=2026 or not end>clock("2026-10-12T00:00:00Z"):
+    if end!=clock("2026-10-13T12:00:12.2795431Z"):
         raise ValueError("invalid original bounded observation deadline")
     if type(physical_observer_end_ack) is not bool:
         raise ValueError("physical watcher end acknowledgement must be explicit")
