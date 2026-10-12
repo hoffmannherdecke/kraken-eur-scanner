@@ -82,7 +82,11 @@
     "duplicate_id_different_digest_fail_closed": true,
     "avoid_full_raw_market_archive": true,
     "retention_and_cost_review_before_live": true,
-    "postgrest_new_table_grant_must_be_explicit": true
+    "postgrest_new_table_grant_must_be_explicit": true,
+    "proposed_inactive_sql_path": "supabase/v3-h10-selected-original-source-receipts-inactive.sql",
+    "proposed_inactive_sql_tests": "tests/test_v3_h10_source_receipt_storage_draft_v1.py",
+    "explicit_user_schema_permission_gate_remains_open": true,
+    "new_service_key_on_minipc": false
   },
   "gates": {
     "offline_tests_required": true,
