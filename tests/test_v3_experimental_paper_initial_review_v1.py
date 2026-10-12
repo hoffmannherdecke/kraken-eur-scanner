@@ -178,7 +178,7 @@ class ExperimentalInitialV3PaperTests(unittest.TestCase):
                               "raw_snapshots":snapshots})
         self.assertIn("V3 START-OF-PAPER OPTIONAL SOURCE APPLICATION",actual)
         self.assertIn("When ANY optional source materially changes",actual)
-        content=json.loads(actual.split("VERIFIED DECISION INPUT:\\n",1)[1])
+        content=json.loads(actual.split("VERIFIED DECISION INPUT:\n",1)[1])
         context=content["actual_optional_context_with_source_clock"]["sources"]
         for name in snapshots:
             self.assertEqual(context[name]["state"],"AVAILABLE_PIT_CONTEXT_ONLY")
@@ -210,7 +210,7 @@ class ExperimentalInitialV3PaperTests(unittest.TestCase):
             ticker=t,pair_metadata=m,decision_at_utc=dt(12),
             optional_context={"kind":"V3_PAPER_EXISTING_RESEARCH_CONTEXT_BRIDGE_V1",
                               "raw_snapshots":snapshots})
-        content=json.loads(actual.split("VERIFIED DECISION INPUT:\\n",1)[1])
+        content=json.loads(actual.split("VERIFIED DECISION INPUT:\n",1)[1])
         context=content["actual_optional_context_with_source_clock"]["sources"]
         self.assertEqual(context["smart_money_h10"]["state"],"NOT_ASSOCIABLE_OTHER_PAIR")
         self.assertEqual(context["polymarket_h11"]["state"],
