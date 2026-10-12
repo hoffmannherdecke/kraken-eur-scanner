@@ -23,11 +23,12 @@
     "previous_pr230_positive_filter": "DESCRIPTIVE_LABEL_ONLY_NO_RESEARCH_SELECTION",
     "manual_event_selection": false,
     "reselection_by_future_outcome": false,
-    "require_full_26_wallet_complete_covering_capture": true,
     "source_lookback_minutes": 45,
     "max_events_per_window": 128,
     "max_candidate_bytes": 65536,
-    "if_exceeds_cap": "BLOCK_AND_REPORT_NOT_SILENT_TRUNCATION"
+    "if_exceeds_cap": "BLOCK_AND_REPORT_NOT_SILENT_TRUNCATION",
+    "require_contiguous_26_of_26_successful_45m_capture_intervals_covering_entire_30m_window": true,
+    "capture_window_union_rationale": "EXISTING_17_47_CRON_45M_LOOKBACK_USUALLY_REQUIRES_TWO_OVERLAPPING_SUCCESSFUL_BATCHES_ONE_BATCH_ONLY_WOULD_FALSE_REJECT"
   },
   "pit": {
     "clock": "UTC_SOURCE_FILL_AND_DB_FIRST_SEEN_AND_ORIGINAL_BATCH_TIMESTAMPS",
