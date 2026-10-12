@@ -28,6 +28,14 @@
     {
       "path": "research/work-analysis-state.json",
       "role": "CONTROL_DECISION_ACK_EVIDENCE"
+    },
+    {
+      "path": "research/project-followthrough-routing-v1.json",
+      "role": "CROSSCUT_CURRENT_OWNER_AND_NEXT_GATE_FOR_EVERY_PROJECT_FACET"
+    },
+    {
+      "path": "research/monitoring-evidence-routing-v1.json",
+      "role": "ALL_26_FUNCTIONAL_STREAM_OWNER_CONSUMER_DEPENDENCY_NEXT_GATE"
     }
   ],
   "scopes": {
@@ -107,20 +115,12 @@
       {
         "path": "docs/project-wide-outage-recovery-v1.md",
         "role": "PROJECT_WIDE_FAIL_CLOSED_DOWNTIME_RECOVERY_INHERITED_IN_V3"
-      },
-      {
-        "path": "research/project-followthrough-routing-v1.json",
-        "role": "ALREADY_EXISTING_ONE_GITHUB_1015_WORK_OWNER_AND_GATES"
       }
     ],
     "architecture": [
       {
         "path": "docs/unified-monitoring-learning-architecture-v1.md",
         "role": "NO_DUPLICATE_COMPONENTS_AND_EVIDENCE_CONSUMERS"
-      },
-      {
-        "path": "research/project-followthrough-routing-v1.json",
-        "role": "TRIGGER_OWNER_ACTION_ACK"
       },
       {
         "path": "docs/autonomous-followthrough-governance-v1.md",
@@ -133,6 +133,10 @@
       {
         "path": "docs/minipc-support-block-plan-v1.md",
         "role": "MINIPC_CLOUD_RUNNER_FALLBACK_SECURITY_AND_RESOURCE_BOUNDARY"
+      },
+      {
+        "path": "docs/v3-real-source-owner-topology-20261012.md",
+        "role": "DATED_REAL_DEPLOYMENT_EVIDENCE_FOR_V3_SOURCE_COMPONENTS_NOT_A_LIVE_HEALTH_OR_AUTHORITY"
       }
     ],
     "operations": [
@@ -163,6 +167,10 @@
       {
         "path": "docs/minipc-support-block-plan-v1.md",
         "role": "MINIPC_GITHUB_RUNNER_STOPPED_DISABLED_OFFLOAD_CLOSED_UNTIL_CAPACITY_GATE"
+      },
+      {
+        "path": "docs/v3-real-source-owner-topology-20261012.md",
+        "role": "DATED_REAL_DEPLOYMENT_EVIDENCE_FOR_V3_SOURCE_COMPONENTS_NOT_A_LIVE_HEALTH_OR_AUTHORITY"
       }
     ],
     "research": [
@@ -237,5 +245,16 @@
     "canonical_followthrough_owner"
   ],
   "explicit_boundary": "A preflight/source fingerprint proves file access and provenance, not that an AI understood the contents. A validated receipt is an auditable human/agent assertion, not autonomous authorization.",
-  "portability": "Use docs/context-before-action-governance-v1.md as template for other independent projects; never transfer these crypto authorities by implication."
+  "portability": "Use docs/context-before-action-governance-v1.md as template for other independent projects; never transfer these crypto authorities by implication.",
+  "component_owner_handoff": {
+    "kind": "PROJECT_COMPONENT_OWNER_HANDOFF_V1",
+    "source_registry": "research/monitoring-evidence-routing-v1.json",
+    "crosscut_owners": "research/project-followthrough-routing-v1.json",
+    "registered_owners_are_not_runtime_locations": true,
+    "original_deployment_evidence_first": true,
+    "new_component_requires_owner_and_release_gate": true,
+    "scope": "ALL_PROJECT_FACETS_NOT_JUST_V3",
+    "no_new_database": true,
+    "no_new_scheduler": true
+  }
 }
