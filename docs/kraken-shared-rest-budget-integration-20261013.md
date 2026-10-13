@@ -12,12 +12,42 @@ table, login, or private Kraken/Trading endpoint is introduced.
 | `tools/minipc-kraken-universe-feed.py` | AssetPairs refresh; WebSocket ticker feed untouched | operational universe (at most 1.5s admission wait) | GitHub code only, original task must be inventoried before enrollment |
 | `paper_evaluator/v2r4_precandidate_watcher.py` | batched Ticker, conditional Depth, AssetPairs | discovery (at most 1.5s admission wait) | GitHub code only; task owner existence must be proven before enrollment |
 | `market_data/rest.py` used by `paper_capture/market.py` | REST OHLC/Ticker context | research/fresh context (at most 1.5s admission wait) | GitHub code only; hosted GitHub runner is a **different IP** and must not assume MINI-PC enrollment |
+| `paper_evaluator/evaluate.py` (active V2R4 Paper Candidates subprocess) | fresh Kraken Spot Ticker | paper evaluator: max 1.5s admission, no stale execution data | **Source-only PR follow-up**; its model API requests remain outside the budget; pinned live PAPER runtime unchanged |
+| `paper_evaluator/revalidate.py` (active Paper Lifecycle subprocess) | fresh Ticker + closed OHLC via `evaluate.http_json` | same evaluator budget, **no second limiter** | **Source-only PR follow-up**; pinned live PAPER runtime unchanged |
+| `paper_context.py` reached by evaluator/revalidator | Kraken Spot OHLC + AssetPairs | shared budget max 1.5s; optional context on failure stays UNAVAILABLE, never fabricated | **Source-only PR follow-up**; Kraken Futures, Binance and RSS are not gated; pinned live PAPER runtime unchanged |
 | WS-only canary / WS-Shadow / scanner WebSocket | WebSocket | **not a REST consumer** | no change |
 
 Additional scripts using direct Kraken REST, on/off-host deployments, and third
 party clients must be separately inventoried. Until **all enabled consumers of
 the MINI-PC outbound IP** use the same path, this is a PARTIAL rather than
 complete shared rate budget.
+
+### 13 October Paper sub-process follow-through (source only, not a host ACK)
+
+The actual SYSTEM Task Scheduler inventory and pinned PAPER staging confirmed that
+`v2r4-paper-local-runtime.py` imports the precandidate watcher but **launches**
+`paper_evaluator/evaluate.py` and `paper_evaluator/revalidate.py` as distinct
+subprocesses. These are genuine Kraken Spot REST users: evaluate fetches Ticker;
+revalidate reuses evaluate's `http_json` for Ticker/OHLC; both reach
+`paper_context.build_context` which fetches Kraken Spot OHLC and AssetPairs.
+Their old source was not covered by the original PR292 hooks. This narrow
+follow-up adds admission **only at the two existing network boundaries**:
+evaluate.http_json and paper_context._json. It does not intercept generic
+urllib traffic, and does not change model calls, ticker freshness, pair
+tradability policy, rate thresholds, decisions, sizing, tasks, or Paper writers.
+
+`KRAKEN_PUBLIC_BUDGET_DIR` remains OFF until a **separate** Windows SYSTEM
+two-process/ACL/real-module-path check and a guarded physical rollout. The
+current pinned PAPER stage has *no* shared module; it must not be updated by
+global git pull. Furthermore, the active evaluator's
+`runtime_code_fingerprint()` includes evaluate.py, revalidate.py and
+paper_context.py; any source change changes this fingerprint. Preserve exact
+original sha/backup, original task XML, active-series identity and rollback;
+do not replace live evaluator/revalidation modules until source fingerprint,
+lifecycle and cloud evidence gates permit it. Any unresolved direct REST call
+site on the same egress IP must remain an explicit limitation, not a
+claim of complete host-wide coverage. `revalidate.py` needs no duplicate
+reservation because it imports evaluate.http_json directly.
 
 ## Semantics and resource bounds
 
