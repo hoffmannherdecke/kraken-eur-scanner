@@ -20,7 +20,7 @@ PROOFS=frozenset({
     "V3_MINIPC_SUPERVISOR_STOP_START_ROLLBACK",
     "V3_GITHUB_WORK_ALERT_DYNAMIC_SERIES_ROUTING",
 })
-SHA=re.compile(r"[0-9a-f]{64}\\Z")
+SHA=re.compile(r"[0-9a-f]{64}\Z")
 
 # Actual external evidence cannot be authenticated by a local hash alone.
 # This offline schema guard rejects dummy files and forces each approval
@@ -39,7 +39,7 @@ PROOF_ORIGINS={
         frozenset({"GITHUB","WORK"}),
 }
 PROOF_KIND="V3_PAPER_TECHNICAL_E2E_READBACK_V1"
-ORIGINAL_ID=re.compile(r"[A-Za-z0-9_.:/-]{8,160}\\Z")
+ORIGINAL_ID=re.compile(r"[A-Za-z0-9_.:/-]{8,160}\Z")
 
 
 def _evidence_content_error(name:str,data:bytes)->str|None:
