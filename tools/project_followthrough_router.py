@@ -262,12 +262,14 @@ def project_implementation_commitments(root: Path, state: dict, ack: dict,
             "safe_work":ob["safe_work"],
             "completion_is_documentary_not_independent_runtime_proof":audited})
     open_tasks=[s for s in states if not s["completion_is_documentary_not_independent_runtime_proof"]]
+    # Return ALL ready obligations. The existing Work selector still executes
+    # no more than two per run; truncating here indefinitely starves later work.
     safe=sorted((s for s in open_tasks if s["state"]=="READY_SAFE_IMPLEMENTATION"),
                 key=lambda x:(x["priority"],x["id"]))
     return {"kind":cfg["kind"],"status":"OPEN_GATED_OR_SAFE_WORK" if open_tasks
             else "DOCUMENTARY_ACKS_RECORDED_LIVE_VALIDATION_STILL_REQUIRED",
             "registered_count":len(states),"open_count":len(open_tasks),
-            "items":states,"ready_safe_actions":safe[:2],
+            "items":states,"ready_safe_actions":safe,
             "ready_release_reviews":[x for x in open_tasks if
                          x["state"]=="READY_REVIEW_RELEASE_GATED"],
             "no_auto_paper_release":True,"no_auto_trades":True}

@@ -155,6 +155,33 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
                 project_implementation_commitments(root,state,{},now)
 
 
+    def test_wait_incident_surfaces_automatically_after_canary_and_cannot_fake_close(self):
+        from tools.project_followthrough_router import project_implementation_commitments
+        state=json.loads((ROOT/"project-current-state.json").read_text())
+        ident="V2R4_WAIT_INCIDENT_PHYSICAL_FOLLOWTHROUGH"
+        pre=dt.datetime(2026,10,13,11,59,59,tzinfo=UTC)
+        post=dt.datetime(2026,10,13,12,0,13,tzinfo=UTC)
+        before=project_implementation_commitments(ROOT,state,{},pre)
+        row=next(x for x in before["items"] if x["id"]==ident)
+        self.assertEqual(row["state"],"WAIT_FOR_EVIDENCE_GATE")
+        due=project_implementation_commitments(ROOT,state,{},post)
+        row=next(x for x in due["items"] if x["id"]==ident)
+        self.assertEqual(row["state"],"READY_SAFE_IMPLEMENTATION")
+        self.assertIn(ident,[x["id"] for x in due["ready_safe_actions"]])
+        self.assertTrue(row["requires_user_release"])
+        self.assertGreater(len(due["ready_safe_actions"]),2)
+        fake={"acknowledgements":{"project_implementation_commitments":{
+            ident:{"status":"INDEPENDENT_EVIDENCE_REVIEWED",
+                   "completed_at_utc":"2026-10-13T12:00:13Z",
+                   "report":"research/work-analysis/not-a-physical-proof.md",
+                   "evidence_sha256":"0"*64,
+                   "source_original_ref":"MINIPC-ACTIVE-SHA-BEFORE-AFTER",
+                   "consumer_original_ref":"CLOUD-CONSUMER-READBACK",
+                   "independent_live_readback_confirmed":True}
+        }}}
+        still_open=project_implementation_commitments(ROOT,state,fake,post)
+        self.assertIn(ident,[x["id"] for x in still_open["ready_safe_actions"]])
+
     def test_every_legacy_open_checkbox_is_visible_until_evidenced_disposition(self):
         from tools.project_followthrough_router import historical_backlog_reconciliation
         now=dt.datetime(2026,10,13,6,tzinfo=UTC)
