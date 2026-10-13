@@ -54,6 +54,9 @@ class MiniPcAndCloudTests(unittest.TestCase):
                      for i in range(360)]
             cap={"kind":"KRAKEN_CLOSED_1M_PATH_CAPTURE_V1",
                  "source":"KRAKEN_SPOT_EUR_PUBLIC","pair":"XBT/EUR",
+                 "no_future_backfill":True,"historical_late_backfill_excluded":True,
+                 "source_snapshots_with_conflicts":False,
+                 "max_original_snapshot_lag_minutes":15,
                  "captured_at_utc":(first+timedelta(minutes=362)).isoformat(),
                  "closed_bars":minutes}
             out=record_horizon(journal=j,series_id=SID,
@@ -75,6 +78,30 @@ class MiniPcAndCloudTests(unittest.TestCase):
             self.assertEqual(sync_once(journal=j,series_id=SID,
                 ack_file=ack_file,token="TEST_ONLY_SECRET_LONG_ENOUGH_NOT_REAL",post=post)["count"],0)
             self.assertEqual(len(called),1)
+
+    def test_unverified_assembled_path_cannot_create_buy_followup(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);j=root/"journal";b=root/"budgets";j.mkdir();b.mkdir()
+            one_candidate(candidate=fixture()[0],series_id=SID,
+                local_receipts=j,model_reservations=b,approval=valid_approval(),
+                model_key="NON_REAL_TEST_KEY_SUPPLIED_TO_STUB",
+                acquire=fake_acquire,model_client=fake_model,
+                clock=lambda:dt(12),allow_model=True)
+            original_files={p.name for p in j.glob("*.json")}
+            from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import timestamp
+            at=timestamp(dt(12))+timedelta(hours=7)
+            fake={"kind":"KRAKEN_CLOSED_1M_PATH_CAPTURE_V1",
+                  "source":"KRAKEN_SPOT_EUR_PUBLIC","pair":"XBT/EUR",
+                  "captured_at_utc":at.isoformat(),"closed_bars":[]}
+            for extra in ({},{"no_future_backfill":True,
+                              "historical_late_backfill_excluded":True,
+                              "source_snapshots_with_conflicts":False,
+                              "max_original_snapshot_lag_minutes":60}):
+                with self.assertRaisesRegex(ValueError,"prospective|witness"):
+                    record_horizon(journal=j,series_id=SID,
+                        candidate_id=fixture()[0]["candidate_id"],
+                        captured_1m={**fake,**extra},horizon_hours=6)
+            self.assertEqual({p.name for p in j.glob("*.json")},original_files)
 
     def test_crash_abandoned_legacy_temp_does_not_block_subsequent_cloud_ack(self):
         with tempfile.TemporaryDirectory() as td:

@@ -10,6 +10,7 @@ import argparse,hashlib,json
 from pathlib import Path
 from typing import Any
 from paper_evaluator.v3_experimental_paper_pathwise_economics_v1 import estimate_closed_1m_paper_path
+from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import require_prospective_assembled_path
 from paper_evaluator.v3_experimental_paper_journal_v1 import (
     make_receipt,store_receipt_explicitly,clock,
 )
@@ -38,6 +39,7 @@ def record_horizon(*,journal:Path,series_id:str,candidate_id:str,
         raise ValueError("no prospective capture time")
     if fill is None:
         raise ValueError("no economic buy; use separate no-BUY opportunity observer")
+    require_prospective_assembled_path(assembled=captured_1m,pair=fill["pair"])
     f=fill["data"]
     if (captured_1m.get("kind")!="KRAKEN_CLOSED_1M_PATH_CAPTURE_V1"
             or captured_1m.get("pair")!=fill["pair"]

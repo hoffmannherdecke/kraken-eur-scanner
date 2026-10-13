@@ -13,6 +13,7 @@ from paper_evaluator.v3_experimental_paper_journal_v1 import (
     make_receipt,store_receipt_explicitly,clock,
 )
 from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
+from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import require_prospective_assembled_path
 
 def followup_no_buy(*,journal:Path,series_id:str,candidate_id:str,
                     captured_1m:dict[str,Any],hours:int)->dict:
@@ -29,6 +30,7 @@ def followup_no_buy(*,journal:Path,series_id:str,candidate_id:str,
     phase=f"FOLLOWUP_{hours}H"
     if any(x["phase"]==phase and x["result"] in ("CENSORED","MATURE_COMPLETE") for x in rows):
         return {"status":"NO_BUY_FOLLOWUP_ALREADY_FINAL","hours":hours}
+    require_prospective_assembled_path(assembled=captured_1m,pair=first["pair"])
     start=clock(first["event_time_utc"])
     observed=clock(captured_1m["captured_at_utc"])
     due=start+timedelta(hours=hours)

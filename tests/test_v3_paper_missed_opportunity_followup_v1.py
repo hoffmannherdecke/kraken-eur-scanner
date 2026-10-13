@@ -27,6 +27,9 @@ class NoBuyFollowupTests(unittest.TestCase):
                              "low":price-0.03,"close":price})
             captured={"kind":"KRAKEN_CLOSED_1M_PATH_CAPTURE_V1",
                       "source":"KRAKEN_SPOT_EUR_PUBLIC","pair":"XBT/EUR",
+                      "no_future_backfill":True,"historical_late_backfill_excluded":True,
+                      "source_snapshots_with_conflicts":False,
+                      "max_original_snapshot_lag_minutes":15,
                       "captured_at_utc":(first+timedelta(minutes=361)).isoformat(),
                       "closed_bars":bars}
             outcome=followup_no_buy(journal=journal,series_id=SID,
@@ -43,6 +46,28 @@ class NoBuyFollowupTests(unittest.TestCase):
                     candidate_id=c["candidate_id"],captured_1m=captured,hours=6)["status"],
                 "NO_BUY_FOLLOWUP_ALREADY_FINAL")
 
+    def test_direct_fake_closed_1m_path_fails_before_followup_journal(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);j=root/"journal";b=root/"budgets";j.mkdir();b.mkdir()
+            c=fixture()[0]
+            one_candidate(candidate=c,series_id=SID,
+                          local_receipts=j,model_reservations=b,
+                          acquire=fake_acquire,clock=lambda:dt(12))
+            old_files={p.name for p in j.glob("*.json")}
+            at=timestamp(c["event_time_utc"])+timedelta(hours=7)
+            fake={"kind":"KRAKEN_CLOSED_1M_PATH_CAPTURE_V1",
+                  "source":"KRAKEN_SPOT_EUR_PUBLIC","pair":"XBT/EUR",
+                  "captured_at_utc":at.isoformat(),"closed_bars":[]}
+            for extra in ({},{"no_future_backfill":True,
+                              "historical_late_backfill_excluded":True,
+                              "source_snapshots_with_conflicts":False,
+                              "max_original_snapshot_lag_minutes":60}):
+                with self.assertRaisesRegex(ValueError,"prospective|witness"):
+                    followup_no_buy(journal=j,series_id=SID,
+                        candidate_id=c["candidate_id"],
+                        captured_1m={**fake,**extra},hours=6)
+            self.assertEqual({p.name for p in j.glob("*.json")},old_files)
+
     def test_gap_is_not_0_return_and_recovery_is_bounded(self):
         with tempfile.TemporaryDirectory() as temp:
             r=Path(temp);journal=r/"journal";b=r/"budgets";journal.mkdir();b.mkdir()
@@ -53,6 +78,9 @@ class NoBuyFollowupTests(unittest.TestCase):
             observed=timestamp(c["event_time_utc"])+timedelta(hours=6,minutes=10)
             cap={"kind":"KRAKEN_CLOSED_1M_PATH_CAPTURE_V1","source":"KRAKEN_SPOT_EUR_PUBLIC",
                  "pair":"XBT/EUR","captured_at_utc":observed.isoformat(),
+                 "no_future_backfill":True,"historical_late_backfill_excluded":True,
+                 "source_snapshots_with_conflicts":False,
+                 "max_original_snapshot_lag_minutes":15,
                  "closed_bars":[]}
             self.assertEqual(followup_no_buy(journal=journal,series_id=SID,
                     candidate_id=c["candidate_id"],captured_1m=cap,hours=6)["status"],
