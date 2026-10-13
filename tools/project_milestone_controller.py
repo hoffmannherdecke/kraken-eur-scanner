@@ -21,8 +21,10 @@ import urllib.request
 
 try:
     from tools.strategy_epoch_lineage import summarize_epoch
+    from tools.project_followthrough_router import v3_five_source_followthrough
 except ModuleNotFoundError:
     from strategy_epoch_lineage import summarize_epoch
+    from project_followthrough_router import v3_five_source_followthrough
 
 ROOT = Path(__file__).resolve().parents[1]
 UTC = dt.timezone.utc
@@ -31,7 +33,8 @@ ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "H3_STALE_EVIDENCE": 7,
                  "PAPER_LOW_TRADES": 38, "CONTROL_FOLLOWTHROUGH_MISSED": 38, "H10_CONTRACT": 7,
                  "NEW_SHADOW_ADAPTER": 7, "NEW_CONTROL_DECISION": 7,
                  "H10_FIRST_SOURCE_RECEIPT_REVIEW": 7,
-                 "H10_SOURCE_RECEIPT_INTEGRITY": 7}
+                 "H10_SOURCE_RECEIPT_INTEGRITY": 7,
+                 "V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH_DUE": 7}
 SUPPORTED_DECISIONS = {"V3-H3-ARCHIVE-DISPOSITION", "V2R4-PRODUCTIVITY-REVIEW",
                        "V3-EXTENDED-SECOND-LEG-LEARNING-GATE"}
 
@@ -183,6 +186,29 @@ def evaluate_verified_v3_paper(state: dict, paper: dict, now: dt.datetime, root:
     for decision_id, note in due_followthrough_events(state, now, root):
         statuses.append("FOLLOWTHROUGH:ACK_OVERDUE:" + decision_id)
         notices.append(note)
+    # Reuse the sole daily milestone watcher: remind Work only after
+    # an authentically verified V3 Paper cutover, never just a merged PR.
+    try:
+        work_ack=json.loads((root/"research/work-analysis-state.json").read_text("utf-8"))
+        source_route=v3_five_source_followthrough(root,state,work_ack,now)
+    except (OSError,ValueError,TypeError) as exc:
+        source_route={"status":"SOURCE_FOLLOWTHROUGH_OWNER_OR_ACK_UNAVAILABLE",
+                      "open_roles":[]}
+    if source_route["status"]=="SOURCE_WORK_OPEN":
+        statuses.append("V3:POST_CUTOVER_OPTIONAL_SOURCE_E2E_OPEN")
+        notices.append(event("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH_DUE",
+                             series,
+            "V3 PAPER ist physisch/cloudseitig bestätigt, aber die fünf "
+            "optional-quellenbezogenen End-to-End-ACKs sind weiter offen: "
+            +", ".join(source_route["open_roles"])+
+            ". Vorhandenes tägliches 10:15-Work wählt maximal zwei sichere "
+            "Arbeiten aus, führt konkrete Quellen-/Modell-/Quittungs-Prüfungen "
+            "mit PR/CI aus; nicht durch GitHub-Notiz als fertig markieren. "
+            "Kein neuer Watcher und keine automatische BUY-/Runtime-Freigabe."))
+    elif source_route["status"]!="FIVE_SOURCE_DOCUMENTARY_ACKS_RECORDED_LIVE_RECHECK_STILL_REQUIRED":
+        statuses.append("V3:POST_CUTOVER_SOURCE_FOLLOWTHROUGH_REVIEW_REQUIRED")
+    else:
+        statuses.append("V3:POST_CUTOVER_FIVE_SOURCE_ACK_RECORDED_INDEPENDENT_REVIEW_REMAINS")
     if paper.get("completion_ready") is True:
         require(paper.get("intake_should_stop") is True and
                 paper.get("temporal_diversity_ready") is True and
