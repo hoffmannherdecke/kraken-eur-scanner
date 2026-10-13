@@ -29,6 +29,10 @@ def fixture(root:Path)->dict:
                     "expected_predecessor_series_id":"PAPER-V2R4-20261009T110135Z",
                     "proposed_successor_series_id":"PAPER-V3-EXPERIMENTAL-TEST-001",
                     "dry_run_only":True,
+                    "expected_old_repo_sha":"d8b35a8ec2e6f392f219b1c36cad95f3ad629b64",
+                    "proposed_v3_repo_sha":"c"*40,
+                    "proposed_v3_bundle_sha256":"a"*64,
+                    "proposed_v3_strategy_sha256":"b"*64,
                 })
                 if origin=="MINIPC_PHYSICAL":
                     record.update({
@@ -208,6 +212,10 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                 ("v2r4_only_rotation_not_invoked",False),
                 ("active_paper_series_changed",True),
                 ("single_active_unique_index_present",False),
+                ("expected_old_repo_sha","0"*40),
+                ("proposed_v3_repo_sha","e"*40),
+                ("proposed_v3_bundle_sha256","f"*64),
+                ("proposed_v3_strategy_sha256","e"*64),
                 ("stale_predecessor_cas_rejected_tested",False),
                 ("postcommit_no_predecessor_restart_tested",False),
                 ("phase","CLOUD_COMMITTED"),
@@ -229,6 +237,36 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                         "cross-origin CAS mismatch must block even after rehash")
             path.write_text(json.dumps(valid,sort_keys=True))
             row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
+
+    def test_cas_same_wrong_bundle_cannot_bypass_outer_release_hash(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            row=next(r for r in packet["experimental_paper_technical_proofs"]
+                     if r["id"]=="V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN")
+            file=root/row["evidence_path"]
+            original=json.loads(file.read_text(encoding="utf-8"))
+            for key,bad in (
+                    ("proposed_v3_bundle_sha256","e"*64),
+                    ("proposed_v3_strategy_sha256","f"*64),
+                    ("proposed_v3_repo_sha","bad"),
+                    ("expected_old_repo_sha",None)):
+                with self.subTest(key=key):
+                    modified=copy.deepcopy(original)
+                    for item in modified["source_originals"]:
+                        item["original_record"][key]=bad
+                        raw=json.dumps(item["original_record"],sort_keys=True,
+                                       separators=(",",":")).encode()
+                        item["original_sha256"]=hashlib.sha256(raw).hexdigest()
+                    file.write_text(json.dumps(modified,sort_keys=True))
+                    row["sha256"]=hashlib.sha256(file.read_bytes()).hexdigest()
+                    self.assertTrue(validate_experimental_paper_packet(
+                        root,"V3-PAPER-EXPERIMENTAL-001",packet),
+                        "two matching but unapproved release fingerprints must fail")
+            file.write_text(json.dumps(original,sort_keys=True))
+            row["sha256"]=hashlib.sha256(file.read_bytes()).hexdigest()
             self.assertEqual(validate_experimental_paper_packet(
                 root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
 
