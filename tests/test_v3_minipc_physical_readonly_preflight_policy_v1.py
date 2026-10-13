@@ -34,6 +34,27 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             "canary_manifest_valid_and_pinned=$canarySafe",
         ):
             self.assertIn(marker,s)
+    def test_physical_task_evidence_never_mislabels_config_as_single_writer_proof(self):
+        s=SCRIPT.read_text(encoding="utf-8")
+        for marker in (
+            "CryptoMiniPC-V2R4PaperCandidates",
+            "CryptoMiniPC-V2R4PaperWait",
+            "CryptoMiniPC-V2R4PaperLifecycle",
+            "CryptoMiniPC-V2R4PaperCloudSync",
+            "Get-ScheduledTaskInfo",
+            "active_v2r4_host_runtime_count_is_config_files_not_processes=$true",
+            "physical_v2r4_paper_task_readback=$v2r4PaperTasks",
+            "physical_single_writer_cutover_dry_run_passed=$false",
+            "physical_v2r4_intake_stop_ack_proven=$false",
+            "physical_v3_writer_start_ack_proven=$false",
+            "cloud_expected_predecessor_cas_verified=$false",
+            "physical_task_name_scan_cannot_prove_absence_of_other_writers=$true",
+        ):
+            self.assertIn(marker,s)
+        # No read-only Windows task query can return a physical or CAS
+        # release token; this script only inventories original evidence.
+        self.assertNotIn("physical_single_writer_cutover_dry_run_passed=$true",s)
+
     def test_script_has_no_secret_exfiltration_or_unbounded_scan(self):
         s=SCRIPT.read_text(encoding="utf-8")
         self.assertNotIn("Get-Content -LiteralPath $secret",s)
