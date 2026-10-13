@@ -506,6 +506,24 @@ class V3HandoverMilestoneTests(unittest.TestCase):
 
 
 
+class V2R4WaitPhysicalFollowthroughTests(unittest.TestCase):
+    def test_new_incident_notice_is_not_premature_or_lost_behind_work_slots(self):
+        import datetime as dt
+        state=controller.load_local_state(ROOT)
+        prior=dt.datetime(2026,10,13,11,59,59,tzinfo=dt.timezone.utc)
+        later=dt.datetime(2026,10,13,12,0,13,tzinfo=dt.timezone.utc)
+        _,early=controller.registered_commitment_milestone(state,prior,ROOT)
+        self.assertFalse(any(x["kind"]=="V2R4_WAIT_INCIDENT_FOLLOWTHROUGH_DUE"
+                             for x in early))
+        statuses,events=controller.registered_commitment_milestone(state,later,ROOT)
+        relevant=[x for x in events if x["kind"]=="V2R4_WAIT_INCIDENT_FOLLOWTHROUGH_DUE"]
+        self.assertEqual(len(relevant),1)
+        self.assertEqual(relevant[0]["issue"],99)
+        self.assertIn("PROJECT:V2R4_WAIT_PHYSICAL_FOLLOWTHROUGH_OPEN",statuses)
+        self.assertIn("Mini-PC",relevant[0]["detail"])
+        self.assertNotIn("automatisch deployen",relevant[0]["detail"])
+
+
 class RepeatedV2R4EmailRegressionTests(unittest.TestCase):
     def _paper(self, state):
         active = state["active_strategy"]
