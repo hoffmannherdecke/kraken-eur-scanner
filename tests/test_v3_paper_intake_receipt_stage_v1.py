@@ -64,6 +64,42 @@ class IntakeReceiptStageTests(unittest.TestCase):
             self.assertEqual(repeat["identical_replays"], 4)
             self.assertEqual(len(list(folder.glob("*.json"))), 4)
 
+    def test_real_deferred_scanner_original_can_stage_separate_once_only_review(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            first=sample()
+            stage_receipts_explicitly(preflight=first,journal_directory=root)
+            other=sample()
+            original=other["ingress"]["capacity_deferred_originals"][0]
+            other["selected_candidates"]=[dict(original,deferred_recheck=True)]
+            other["review_preflights"]=[{
+                "candidate_id":"B","pair":"XBT/EUR",
+                "status":"RECHECK_ELIGIBLE","eligible_for_full_model_review":True,
+                "model_review_authorized":False,
+            }]
+            other["at_utc"]="2026-10-12T10:06:00Z"
+            other["ingress"]["capacity_deferred_originals"]=[]
+            other["ingress"]["same_pair_coalesced_originals"]=[]
+            other["ingress"]["counts"]={"selected":1,"suppressed_or_deferred":0}
+            other["ingress"]["dispositions"]={}
+            outcome=stage_receipts_explicitly(preflight=other,journal_directory=root)
+            self.assertEqual(outcome["written"],2)
+            rows=[json.loads(p.read_text()) for p in root.glob("*.json")]
+            b_rows=[r for r in rows if r["candidate_id"]=="B"]
+            self.assertEqual(len(b_rows),3)
+            self.assertEqual({(r["phase"],r["event_key"],r["result"])
+                 for r in b_rows},{("SCANNER_CAPTURE","FIRST","SKIP"),
+                                   ("SCANNER_CAPTURE","DEFERREDRECHECK","SEEN"),
+                                   ("FULL_REVIEW_ELIGIBILITY","DEFERREDRECHECK","PASS")})
+            repeated=stage_receipts_explicitly(
+                preflight=other,journal_directory=root)
+            self.assertEqual(repeated["written"],0)
+            self.assertEqual(repeated["identical_replays"],2)
+            with tempfile.TemporaryDirectory() as missing:
+                with self.assertRaisesRegex(ValueError,"capacity-deferred original"):
+                    stage_receipts_explicitly(
+                        preflight=other,journal_directory=Path(missing))
+
     def test_source_catalyst_never_promoted_by_untrusted_input_flag(self):
         x = sample()
         x["selected_candidates"][0]["entry_origin"] = (
