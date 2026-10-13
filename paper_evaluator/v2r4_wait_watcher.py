@@ -65,9 +65,9 @@ def http_json(url: str, timeout: int = 10) -> dict:
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         if exc.code == 429:
-            report_public_rate_limit(http_status=429)
+            report_public_rate_limit(url, http_status=429)
         raise
-    report_public_rate_limit(payload)
+    report_public_rate_limit(url, payload)
     return payload
 
 
