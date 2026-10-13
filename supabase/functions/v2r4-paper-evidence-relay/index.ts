@@ -260,12 +260,21 @@ Deno.serve(async(req:Request)=>{
             return response(409,{ok:false,error:"old_followup_identity_changed"});
         }
       }
-      const stamp=safeUtcMs(follow.updated_at_utc),oldStamp=safeUtcMs(prior.updated_at);
+      // Cloud updated_at can be later than the ORIGINAL followup clock:
+      // V2R4 recheck/decision and relay ACK activity also update that row.
+      // Compare events to events, not the event clock to the Cloud row clock.
+      // Keep updated_at only as an optimistic concurrency CAS version.
+      const stamp=safeUtcMs(follow.updated_at_utc);
+      const oldFollowStamp=(prior.followup==null?NaN:
+        safeUtcMs(prior.followup.updated_at_utc));
+      const cloudStamp=safeUtcMs(prior.updated_at);
       if(!Number.isFinite(stamp)||stamp>Date.now()+120000||
-         !Number.isFinite(oldStamp)||stamp<oldStamp)
+         !Number.isFinite(cloudStamp)||
+         (prior.followup!=null&&!Number.isFinite(oldFollowStamp))||
+         (Number.isFinite(oldFollowStamp)&&stamp<oldFollowStamp))
         return response(409,{ok:false,error:"old_followup_time_regression"});
       const nextPayload={...prior.payload,recheck,followup:follow};
-      if(stamp===oldStamp){
+      if(Number.isFinite(oldFollowStamp)&&stamp===oldFollowStamp){
         if(row.decision===prior.decision&&
            canonicalJson(prior.followup)===canonicalJson(follow)&&
            canonicalJson(prior.payload?.recheck??null)===canonicalJson(recheck)){
@@ -273,9 +282,12 @@ Deno.serve(async(req:Request)=>{
         }
         return response(409,{ok:false,error:"old_followup_same_timestamp_conflict"});
       }
+      // A later Cloud row version is valid: never move updated_at
+      // backwards to an event timestamp that was captured earlier.
+      const nextCloudStamp=Math.max(Date.now(),cloudStamp+1,stamp);
       const {data:updated,error:updateErr}=await admin.from("paper_candidate_outcomes")
         .update({decision:row.decision,followup:follow,payload:nextPayload,
-                 updated_at:new Date(stamp).toISOString()})
+                 updated_at:new Date(nextCloudStamp).toISOString()})
         .eq("candidate_id",cid).eq("series_id",sid)
         .eq("updated_at",prior.updated_at).select("candidate_id");
       if(updateErr||!Array.isArray(updated)||updated.length!==1)
@@ -313,14 +325,24 @@ Deno.serve(async(req:Request)=>{
         return response(409,{ok:false,error:"immutable_old_closed_trade_conflict"});
       }
       const oldUpdated=safeUtcMs(prior.updated_at);
-      if(!Number.isFinite(oldUpdated)||closed<oldUpdated)
+      // The historic Cloud row may have an ACK clock later than the
+      // original trade's economic EXIT timestamp. Never require exit
+      // time >= Cloud ACK time; protect economic chronology instead.
+      const oldEvents=Array.isArray(prior.payload?.events)?
+        prior.payload.events:[];
+      if(!Number.isFinite(oldUpdated)||
+         oldEvents.some((ev:any)=>{
+           const eventStamp=safeUtcMs(ev?.at_utc);
+           return !Number.isFinite(eventStamp)||eventStamp>closed;
+         }))
         return response(409,{ok:false,error:"old_trade_exit_timestamp_regression"});
       const nextPayload={...prior.payload,status:"CLOSED",
                          events:row.payload.events,exit:row.payload.exit};
+      const nextTradeCloudStamp=Math.max(Date.now(),oldUpdated+1,closed);
       const {data:updated,error:updateErr}=await admin.from("paper_trade_results")
         .update({status:"CLOSED",closed_at:new Date(closed).toISOString(),
                  net_pnl_eur:row.net_pnl_eur,net_return_pct:row.net_return_pct,
-                 payload:nextPayload,updated_at:new Date(closed).toISOString()})
+                 payload:nextPayload,updated_at:new Date(nextTradeCloudStamp).toISOString()})
         .eq("candidate_id",cid).eq("series_id",sid)
         .eq("updated_at",prior.updated_at).select("candidate_id");
       if(updateErr||!Array.isArray(updated)||updated.length!==1)

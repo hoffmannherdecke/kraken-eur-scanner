@@ -78,6 +78,36 @@ class ClosedOriginalV2R4RelayInactiveContract(unittest.TestCase):
         ):
             with self.subTest(text=text):self.assertIn(text,self.closed)
 
+    def test_historical_followup_timestamp_not_compared_to_later_cloud_ack_clock(self):
+        # In real V2R4 originals the Cloud row was often rewritten after
+        # the original followup time. Compare original event clocks only.
+        for marker in (
+            "safeUtcMs(follow.updated_at_utc)",
+            "safeUtcMs(prior.followup.updated_at_utc)",
+            "stamp<oldFollowStamp",
+            "stamp===oldFollowStamp",
+            "canonicalJson(prior.followup)===canonicalJson(follow)",
+            "Math.max(Date.now(),cloudStamp+1,stamp)",
+            '.eq("updated_at",prior.updated_at)',
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker,self.closed)
+        self.assertNotIn("stamp<oldStamp",self.closed)
+        self.assertNotIn("updated_at:new Date(stamp).toISOString()",self.closed)
+
+    def test_historical_trade_exit_checks_economic_events_not_ack_timestamp(self):
+        for marker in (
+            "safeUtcMs(prior.updated_at)",
+            "prior.payload?.events",
+            "eventStamp>closed",
+            "Math.max(Date.now(),oldUpdated+1,closed)",
+            '.eq("updated_at",prior.updated_at)',
+        ):
+            with self.subTest(marker=marker):
+                self.assertIn(marker,self.closed)
+        self.assertNotIn("closed<oldUpdated",self.closed)
+        self.assertNotIn("updated_at:new Date(closed).toISOString()",self.closed)
+
     def test_terminal_open_trade_only_cannot_create_new_entry(self):
         for text in (
             'row?.status!=="CLOSED"',
