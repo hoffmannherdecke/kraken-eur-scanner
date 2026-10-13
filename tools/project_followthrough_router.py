@@ -152,6 +152,126 @@ def v3_five_source_followthrough(root: Path, state: dict, ack: dict,
             "ack_is_documentary_not_independent_cloud_authentication":True}
 
 
+
+# Registered *accepted* future work shares this EXISTING ownership manifest.
+# Coverage of 26 streams is NOT proof that a concrete user commitment will run.
+def project_implementation_commitments(root: Path, state: dict, ack: dict,
+                                       now: dt.datetime) -> dict:
+    manifest=read_json(root,"research/project-followthrough-routing-v1.json")
+    cfg=manifest.get("project_wide_implementation_commitments") or {}
+    require(cfg.get("kind")=="PROJECT_WIDE_IMPLEMENTATION_COMMITMENTS_V1"
+            and cfg.get("intake_authority")=="PROJECT_BACKLOG.md"
+            and cfg.get("work_executor")=="EXISTING_DAILY_1015_WORK_ONCE_PER_GATE"
+            and cfg.get("milestone_watcher")==
+                "EXISTING_AUTONOMOUS_PROJECT_MILESTONE_CONTROLLER"
+            and cfg.get("max_safe_actions_per_run")==2,
+            "missing canonical implementation commitment followthrough")
+    for k in ("no_new_scheduler","no_auto_release",
+              "acknowledgement_never_proves_physical_cloud_truth"):
+        require(cfg.get(k) is True,"unsafe commitment control: "+k)
+    routing=read_json(root,"research/monitoring-evidence-routing-v1.json")
+    known={r.get("id") for r in routing.get("streams",[])}
+    backlog=(root/"PROJECT_BACKLOG.md").read_text(encoding="utf-8")
+    obligations=cfg.get("obligations")
+    require(isinstance(obligations,list) and obligations,
+            "no declared future commitment catalogue")
+    ids=[o.get("id") for o in obligations]
+    require(len(ids)==len(set(ids)) and all(isinstance(x,str) for x in ids),
+            "duplicate/unregistered future commitment")
+    t=state.get("pending_strategy_transition") or {}
+    a=state.get("active_strategy") or {}
+    physical=(str(a.get("strategy_revision") or "").startswith("V3-")
+              and str(a.get("series_id") or "").startswith("PAPER-V3-")
+              and t.get("status")=="V3_PAPER_ACTIVE_VERIFIED"
+              and (t.get("verified_cutover_evidence") or {}).get(
+                  "mini_pc_and_single_active_supabase_series_ack") is True)
+    records=((ack.get("acknowledgements") or {})
+             .get("project_implementation_commitments") or {})
+    require(isinstance(records,dict),"invalid implementation evidence state")
+    states=[]
+    for ob in obligations:
+        ident=ob["id"]
+        require(ob.get("stream_id") in known and
+                isinstance(ob.get("backlog_marker"),str) and
+                ob["backlog_marker"] in backlog and
+                isinstance(ob.get("owner"),str) and ob["owner"] and
+                isinstance(ob.get("allowed_action"),str) and
+                len(ob["allowed_action"])>=30 and
+                isinstance(ob.get("completion_gate"),str) and
+                len(ob["completion_gate"])>=30 and
+                type(ob.get("priority")) is int and 0<=ob["priority"]<=5 and
+                type(ob.get("safe_work")) is bool and
+                type(ob.get("requires_user_release")) is bool,
+                "future commitment missing original owner/gate/backlog backlink: "+ident)
+        trigger=ob.get("trigger")
+        require(trigger in ("IMMEDIATE","AFTER_CANARY_CLOCK","AFTER_V3_PAPER",
+                            "AFTER_REAL_PAPER_TRADES"),
+                "unknown commitment trigger "+ident)
+        if trigger=="IMMEDIATE": ready=True; block=None
+        elif trigger=="AFTER_CANARY_CLOCK":
+            ready=now>=utc("2026-10-13T12:00:12Z")
+            block=None if ready else "WAIT_ACTUAL_28H_DEADLINE_NO_PREMATURE_PASS"
+        elif trigger=="AFTER_V3_PAPER":
+            ready=physical
+            block=None if ready else "WAIT_VERIFIED_PHYSICAL_V3_PAPER"
+        else:
+            ready=False
+            block="WAIT_GENUINE_V3_PAPER_FILL_AND_MATURE_OUTCOME"
+        item=records.get(ident)
+        audited=False
+        if isinstance(item,dict):
+            report=item.get("report")
+            proof=item.get("evidence_sha256")
+            when=item.get("completed_at_utc")
+            src=item.get("source_original_ref")
+            consumer=item.get("consumer_original_ref")
+            if (item.get("status")=="INDEPENDENT_EVIDENCE_REVIEWED"
+                and isinstance(report,str) and
+                re.fullmatch(r"research/work-analysis/[A-Za-z0-9_.-]+[.]md",report)
+                and isinstance(proof,str) and re.fullmatch(r"[a-f0-9]{64}",proof)
+                and isinstance(when,str) and isinstance(src,str)
+                and isinstance(consumer,str) and src!=consumer
+                and len(src)>10 and len(consumer)>10
+                and item.get("independent_live_readback_confirmed") is True):
+                if ident.startswith("V3_") or ident.startswith("MINIPC_"):
+                    if not physical and trigger=="AFTER_V3_PAPER":
+                        audited=False
+                    elif trigger=="AFTER_V3_PAPER":
+                        audited=(item.get("series_id")==a.get("series_id") and
+                                 item.get("strategy_revision")==a.get("strategy_revision"))
+                    else: audited=True
+                else: audited=True
+                try:
+                    p=root/report
+                    audited=(audited and p.is_file()
+                       and utc(when)<=now and
+                       hashlib.sha256(p.read_bytes()).hexdigest()==proof)
+                except (OSError,TypeError,ValueError):
+                    audited=False
+        state_name=("DOCUMENTARY_ACK_RECORDED_VERIFY_PHYSICAL_INDEPENDENTLY" if audited
+                    else "READY_SAFE_IMPLEMENTATION" if ready and ob["safe_work"]
+                    else "READY_REVIEW_RELEASE_GATED" if ready
+                    else "WAIT_FOR_EVIDENCE_GATE")
+        states.append({"id":ident,"stream_id":ob["stream_id"],
+            "owner":ob["owner"],"trigger":trigger,
+            "state":state_name,"blocker":block,
+            "priority":ob["priority"],
+            "allowed_action":ob["allowed_action"],
+            "completion_gate":ob["completion_gate"],
+            "requires_user_release":ob["requires_user_release"],
+            "safe_work":ob["safe_work"],
+            "completion_is_documentary_not_independent_runtime_proof":audited})
+    open_tasks=[s for s in states if not s["completion_is_documentary_not_independent_runtime_proof"]]
+    safe=sorted((s for s in open_tasks if s["state"]=="READY_SAFE_IMPLEMENTATION"),
+                key=lambda x:(x["priority"],x["id"]))
+    return {"kind":cfg["kind"],"status":"OPEN_GATED_OR_SAFE_WORK" if open_tasks
+            else "DOCUMENTARY_ACKS_RECORDED_LIVE_VALIDATION_STILL_REQUIRED",
+            "registered_count":len(states),"open_count":len(open_tasks),
+            "items":states,"ready_safe_actions":safe[:2],
+            "ready_release_reviews":[x for x in open_tasks if
+                         x["state"]=="READY_REVIEW_RELEASE_GATED"],
+            "no_auto_paper_release":True,"no_auto_trades":True}
+
 def route(root: Path, now: dt.datetime) -> dict:
     manifest = read_json(root, "research/project-followthrough-routing-v1.json")
     routing = read_json(root, "research/monitoring-evidence-routing-v1.json")
@@ -243,8 +363,10 @@ def route(root: Path, now: dt.datetime) -> dict:
         else:
             gated.append({"id": task_id, "gate": "CHECK_DECLARED_TRIGGER_NO_AUTO_START"})
     source_followthrough=v3_five_source_followthrough(root,state,ack,now)
+    generic_commitments=project_implementation_commitments(root,state,ack,now)
     return {
         "v3_paper_five_source_followthrough":source_followthrough,
+        "project_implementation_commitments":generic_commitments,
         "kind": "PROJECT_WIDE_WORK_HANDOFF_V1",
         "status": "REVIEW_DUE" if ready else "NO_DUE_CONTROL_GATE",
         "stream_coverage_count": len(streams),
