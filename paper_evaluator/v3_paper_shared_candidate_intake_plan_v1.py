@@ -90,6 +90,7 @@ def plan_intake(*,scanner_events:list[dict],source_events:list[dict],
     at=utc(decision_at_utc)
     if at.year<2026:raise ValueError("invalid decision clock")
     seen:dict[str,tuple[str,str]]={}
+    prior_rows:dict[str,list[dict[str,Any]]]={}
     for row in journal_receipts:
         if not isinstance(row,dict) or row.get("kind")!=JOURNAL_KIND:
             raise ValueError("unverified immutable journal input")
@@ -99,6 +100,7 @@ def plan_intake(*,scanner_events:list[dict],source_events:list[dict],
             raise ValueError("invalid existing original V3 journal identity")
         old=seen.setdefault(cid,(pair,event_time))
         if old!=(pair,event_time):raise ValueError("conflicting immutable V3 candidate ID")
+        prior_rows.setdefault(cid,[]).append(row)
     reasons:dict[str,int]={}
     rejected=[]
     rejected_originals=[]
@@ -135,7 +137,21 @@ def plan_intake(*,scanner_events:list[dict],source_events:list[dict],
         if cid in seen:
             if seen[cid][0]!=pair or utc(seen[cid][1])!=original:
                 raise ValueError("immutable candidate ID conflict with Cloud/journal")
-            exclude("ALREADY_JOURNALED_NO_REPEAT_NO_SPEND",origin,raw,index);return
+            old_rows=prior_rows[cid]
+            # The ONLY resumable receipt is one original SCANNER event that
+            # was capacity-deferred (not rejected by the entry model). No
+            # already processed, source-auth, or historically expired replay.
+            deferred=(origin=="SCANNER" and len(old_rows)==1 and
+                old_rows[0].get("phase")=="SCANNER_CAPTURE" and
+                old_rows[0].get("event_key")=="FIRST" and
+                old_rows[0].get("result")=="SKIP" and
+                isinstance(old_rows[0].get("data"),dict) and
+                old_rows[0]["data"].get("candidate_origin")=="SCANNER" and
+                old_rows[0]["data"].get("source_status")==
+                "CAPACITY_DEFERRED_NOT_A_NEGATIVE_MARKET_DECISION")
+            if not deferred:
+                exclude("ALREADY_JOURNALED_NO_REPEAT_NO_SPEND",origin,raw,index);return
+            candidate=dict(candidate,deferred_recheck=True)
         eligible.append({"candidate":dict(candidate),
                          "origin":origin,"at":original})
 
