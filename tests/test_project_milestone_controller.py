@@ -1,3 +1,22 @@
+
+class GeneralFutureImplementationMilestoneTests(unittest.TestCase):
+    def test_project_wide_future_work_is_flagged_without_new_schedule(self):
+        import datetime as dt
+        state=controller.load_local_state(ROOT)
+        before=dt.datetime(2026,10,13,5,35,tzinfo=dt.timezone.utc)
+        statuses,events=controller.registered_commitment_milestone(state,before,ROOT)
+        self.assertTrue(any(s.startswith("PROJECT:REGISTERED_IMPLEMENTATION_OPEN:")
+                            for s in statuses))
+        self.assertEqual(len(events),1)
+        self.assertEqual(events[0]["issue"],7)
+        self.assertIn("V3_EXPERIMENTAL_PAPER_SIX_PROOFS",events[0]["detail"])
+        self.assertNotIn("V3_CANARY_28H_PHYSICAL_CLOSURE",events[0]["detail"])
+        self.assertNotIn("automatische Paper-Freigabe",events[0]["detail"])
+        after=dt.datetime(2026,10,13,12,1,tzinfo=dt.timezone.utc)
+        statuses2,events2=controller.registered_commitment_milestone(state,after,ROOT)
+        self.assertIn("V3_CANARY_28H_PHYSICAL_CLOSURE",events2[0]["detail"])
+        self.assertNotEqual(events[0]["event_key"],events2[0]["event_key"])
+
 import importlib.util
 from pathlib import Path
 import unittest
