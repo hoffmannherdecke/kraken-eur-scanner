@@ -74,6 +74,48 @@ class V3TransitionContractTests(TestCase):
             self.assertNotEqual(exit_code, 0)
             self.assertTrue(any(flag in x for x in out["errors"]))
 
+    def test_v3_cas_recovery_is_never_an_automatic_retry_or_rollback(self):
+        from tools.paper_series_transition_guard import assess_v3_cutover_recovery as check
+        old="PAPER-V2R4-20261009T110135Z"
+        new="PAPER-V3-EXPERIMENTAL-20261013"
+        oldrows=[{"series_id":old,"status":"active"}]
+        newrows=[{"series_id":new,"status":"active"}]
+        scenarios=[
+            ("CLOUD_COMMIT_NOT_ATTEMPTED",oldrows,{},
+             "PRECOMMIT_DRYRUN_ONLY_NO_CLOUD_MUTATION"),
+            ("CLOUD_REJECTED_BEFORE_COMMIT",oldrows,{},
+             "PRECOMMIT_RESTORE_REQUIRES_ORIGINAL_TASK_ACK"),
+            ("CLOUD_COMMIT_OUTCOME_UNKNOWN",oldrows,{},
+             "CLOUD_AMBIGUOUS_QUARANTINE_BOTH_WRITERS"),
+            ("CLOUD_COMMIT_OUTCOME_UNKNOWN",newrows,{},
+             "CLOUD_AMBIGUOUS_QUARANTINE_BOTH_WRITERS"),
+            ("CLOUD_COMMITTED",oldrows,{},
+             "POSTCOMMIT_CLOUD_MISMATCH_QUARANTINE"),
+            ("CLOUD_COMMITTED",newrows,{},
+             "POSTCOMMIT_OLD_WRITER_FENCE_UNVERIFIED"),
+            ("CLOUD_COMMITTED",newrows,{
+                "old_writer_fenced":True,"old_followups_preserved":True,
+                "supervisor_old_intake_rearm_blocked":True},
+             "POSTCOMMIT_KEEP_OLD_FENCED_STOP_NEW_FOR_REVIEW"),
+            ("CLOUD_COMMITTED",newrows,{
+                "old_writer_fenced":True,"old_followups_preserved":True,
+                "supervisor_old_intake_rearm_blocked":True,
+                "successor_writer_healthy":True},
+             "POSTCOMMIT_SOURCE_ACK_STILL_REQUIRED"),
+            ("CLOUD_COMMITTED",oldrows+[{"series_id":new,"status":"active"}],{},
+             "BLOCKED_UNVERIFIED_CUTOVER_SNAPSHOT"),
+        ]
+        for phase,rows,flags,expected in scenarios:
+            with self.subTest(phase=phase,expected=expected):
+                verdict=check(phase=phase,active_series=rows,
+                    expected_old=old,proposed_new=new,**flags)
+                self.assertEqual(verdict["disposition"],expected)
+                self.assertFalse(verdict["auto_restart_predecessor"])
+                self.assertFalse(verdict["auto_start_successor"])
+                self.assertFalse(verdict["auto_retry_cloud_cas"])
+                self.assertFalse(verdict["mutation_authorized"])
+                self.assertTrue(verdict["independent_current_host_cloud_ack_required"])
+
     def test_no_silent_extra_works_or_duplicate_shadow(self):
         j = copy.deepcopy(self.base)
         j["pending_strategy_transition"]["safety"]["max_strategy_changing_shadows"] = 2
