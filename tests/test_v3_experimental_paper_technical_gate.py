@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from tools.v3_experimental_paper_technical_gate import (
-    PROOFS, validate_experimental_paper_packet,
+    PROOFS, PROOF_KIND, PROOF_ORIGINS, validate_experimental_paper_packet,
 )
 from tools.strategy_successor_gate import ROOT, GATE_FILE, validate_learning_gate
 
@@ -17,7 +17,20 @@ def fixture(root:Path)->dict:
     for key in sorted(PROOFS):
         dest=root/"research"/("proof-"+key.lower()+".json")
         dest.parent.mkdir(parents=True,exist_ok=True)
-        dest.write_text(json.dumps({"real_e2e_fixture_only":True}),encoding="utf-8")
+        originals=[]
+        # Synthetic unit envelope exercises the *structure* of a proof;
+        # never represent this helper as a true Mini-PC/Cloud E2E success.
+        for origin in sorted(PROOF_ORIGINS[key]):
+            oid=f"test-contract/{origin}/{key}"
+            record={"source_id":oid,"observed_at_utc":"2026-10-13T09:30:00Z",
+                    "source_status":"ACK_READBACK_AVAILABLE"}
+            canonical=json.dumps(record,sort_keys=True,separators=(",",":")).encode()
+            originals.append({"origin":origin,"original_id":oid,
+                 "original_record":record,
+                 "original_sha256":hashlib.sha256(canonical).hexdigest()})
+        dest.write_text(json.dumps({"kind":PROOF_KIND,"proof_id":key,
+                          "source_originals":originals},sort_keys=True),
+                        encoding="utf-8")
         items.append({"id":key,"status":"VERIFIED_PHYSICAL_OR_CLOUD_E2E",
                       "evidence_path":str(dest.relative_to(root)),
                       "sha256":hashlib.sha256(dest.read_bytes()).hexdigest()})
@@ -113,6 +126,56 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                 self.assertTrue(
                     validate_experimental_paper_packet(root,"V3-PAPER-EXPERIMENTAL-001",d),
                     m)
+
+    def test_six_dummy_hash_correct_files_never_count_as_physical_e2e(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            evidence=fixture(root)
+            for row in evidence["experimental_paper_technical_proofs"]:
+                target=root/row["evidence_path"]
+                target.write_text(json.dumps({"real_e2e_fixture_only":True}))
+                row["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
+            self.assertTrue(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",evidence))
+
+    def test_original_content_tampering_and_missing_cloud_role_fail_closed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            base=fixture(root)
+            row=next(x for x in base["experimental_paper_technical_proofs"]
+                     if x["id"]=="V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN")
+            target=root/row["evidence_path"]
+            for modifier in (
+                lambda proof: proof["source_originals"][0]
+                    ["original_record"].update(source_status="FORGED"),
+                lambda proof: proof.update(source_originals=[
+                    x for x in proof["source_originals"]
+                    if x["origin"]!="SUPABASE_CLOUD"]),
+                lambda proof: proof.update(proof_id="WRONG_PROOF_ID"),
+            ):
+                proof=json.loads(target.read_text("utf-8"))
+                modifier(proof)
+                target.write_text(json.dumps(proof,sort_keys=True))
+                row["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
+                self.assertTrue(validate_experimental_paper_packet(
+                    root,"V3-PAPER-EXPERIMENTAL-001",base))
+                target.write_text(json.dumps({
+                    "kind":PROOF_KIND,"proof_id":row["id"],
+                    "source_originals":[{
+                      "origin":origin,
+                      "original_id":f"test-contract/{origin}/{row['id']}",
+                      "original_record":{
+                        "source_id":f"test-contract/{origin}/{row['id']}",
+                        "observed_at_utc":"2026-10-13T09:30:00Z",
+                        "source_status":"ACK_READBACK_AVAILABLE"},
+                      "original_sha256":hashlib.sha256(json.dumps({
+                        "source_id":f"test-contract/{origin}/{row['id']}",
+                        "observed_at_utc":"2026-10-13T09:30:00Z",
+                        "source_status":"ACK_READBACK_AVAILABLE"},
+                        sort_keys=True,separators=(",",":")).encode()).hexdigest()
+                    } for origin in sorted(PROOF_ORIGINS[row["id"]])]
+                },sort_keys=True))
+                row["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
 
     def test_canonical_cutover_runbook_does_not_delay_first_paper_until_profit(self):
         # The release gate already distinguishes experimentation from promotion.

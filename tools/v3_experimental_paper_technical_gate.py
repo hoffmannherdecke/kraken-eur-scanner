@@ -6,7 +6,9 @@ correctness ARE prerequisites. No effects, network, orders or strategy changes.
 """
 from __future__ import annotations
 import hashlib
+import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +21,78 @@ PROOFS=frozenset({
     "V3_GITHUB_WORK_ALERT_DYNAMIC_SERIES_ROUTING",
 })
 SHA=re.compile(r"[0-9a-f]{64}\Z")
+
+# Actual external evidence cannot be authenticated by a local hash alone.
+# This offline schema guard rejects dummy files and forces each approval
+# proof to contain original source readbacks that the separate release owner
+# must independently compare to Mini-PC/Cloud/GitHub/Work.
+PROOF_ORIGINS={
+    "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E":frozenset({"MINIPC_PHYSICAL"}),
+    "V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT":frozenset({"MINIPC_PHYSICAL"}),
+    "V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE":
+        frozenset({"MINIPC_PHYSICAL","SUPABASE_CLOUD"}),
+    "V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN":
+        frozenset({"MINIPC_PHYSICAL","SUPABASE_CLOUD"}),
+    "V3_MINIPC_SUPERVISOR_STOP_START_ROLLBACK":
+        frozenset({"MINIPC_PHYSICAL"}),
+    "V3_GITHUB_WORK_ALERT_DYNAMIC_SERIES_ROUTING":
+        frozenset({"GITHUB","WORK"}),
+}
+PROOF_KIND="V3_PAPER_TECHNICAL_E2E_READBACK_V1"
+ORIGINAL_ID=re.compile(r"[A-Za-z0-9_.:/-]{8,160}\Z")
+
+
+def _evidence_content_error(name:str,data:bytes)->str|None:
+    """Schema/integrity only. Independent live provenance remains mandatory."""
+    if len(data)>65536:
+        return name+" oversized original E2E proof"
+    try:
+        proof=json.loads(data)
+    except (ValueError,UnicodeError):
+        return name+" E2E proof is not JSON"
+    if (not isinstance(proof,dict) or proof.get("kind")!=PROOF_KIND
+            or proof.get("proof_id")!=name or proof.get("fixture_only") is True
+            or proof.get("real_e2e_fixture_only") is True):
+        return name+" not a proof-specific real readback envelope"
+    sources=proof.get("source_originals")
+    required=PROOF_ORIGINS[name]
+    if not isinstance(sources,list) or not 1<=len(sources)<=12:
+        return name+" original external readbacks absent"
+    present=set()
+    for item in sources:
+        if not isinstance(item,dict):
+            return name+" original readback record invalid"
+        origin,identity,payload,digest=(item.get(x) for x in
+            ("origin","original_id","original_record","original_sha256"))
+        if origin not in {"MINIPC_PHYSICAL","SUPABASE_CLOUD","GITHUB","WORK","SLACK"}:
+            return name+" unrecognized independent proof source"
+        if not isinstance(identity,str) or not ORIGINAL_ID.fullmatch(identity):
+            return name+" missing original external receipt ID"
+        if not isinstance(digest,str) or not SHA.fullmatch(digest):
+            return name+" invalid original readback checksum"
+        if not isinstance(payload,dict) or len(payload)<3:
+            return name+" empty or implausible external original record"
+        if (payload.get("fixture_only") is True
+                or payload.get("real_e2e_fixture_only") is True
+                or payload.get("source_id")!=identity):
+            return name+" test fixture or mismatched original readback"
+        stamp=payload.get("observed_at_utc")
+        try:
+            seen=datetime.fromisoformat(stamp.replace("Z","+00:00"))
+            if seen.tzinfo is None or seen.utcoffset() is None:
+                raise ValueError("timestamp missing timezone")
+            original=json.dumps(payload,sort_keys=True,separators=(",",":"),
+                                allow_nan=False).encode("utf-8")
+        except (AttributeError,ValueError,TypeError,UnicodeError,OverflowError):
+            return name+" original readback timestamp/content invalid"
+        if hashlib.sha256(original).hexdigest()!=digest:
+            return name+" original readback content SHA mismatch"
+        present.add(origin)
+    if not required.issubset(present):
+        return name+" missing required independent Mini-PC/Cloud/Work source role"
+    # These checks cannot prove who supplied the JSON. The external owner
+    # still must perform fresh independent comparisons before release.
+    return None
 
 
 def validate_experimental_paper_packet(root: Path, revision: str,
@@ -98,10 +172,20 @@ def validate_experimental_paper_packet(root: Path, revision: str,
             block(name+" invalid path")
             continue
         try:
-            data=(root/path).read_bytes()
-        except OSError:
-            block(name+" evidence file not present")
+            target=(root/path)
+            research=(root/"research").resolve(strict=True)
+            resolved=target.resolve(strict=True)
+            if (target.is_symlink() or not resolved.is_relative_to(research)
+                    or not target.is_file()):
+                raise ValueError("evidence path escapes guarded research")
+            data=target.read_bytes()
+        except (OSError,ValueError):
+            block(name+" evidence file absent or unsafe path")
             continue
         if not isinstance(digest,str) or not SHA.fullmatch(digest) or hashlib.sha256(data).hexdigest()!=digest:
             block(name+" evidence SHA mismatch")
+            continue
+        content_error=_evidence_content_error(name,data)
+        if content_error:
+            block(content_error)
     return errors
