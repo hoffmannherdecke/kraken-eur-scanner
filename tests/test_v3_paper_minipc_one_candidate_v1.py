@@ -103,6 +103,44 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
             self.assertFalse(called)
             self.assertEqual(len(list(journal.glob("*.json"))),5)
 
+    def test_previously_deferred_original_no_model_source_recheck_is_once_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);journal=root/"journal";budgets=root/"budgets"
+            journal.mkdir();budgets.mkdir()
+            cand=dict(fixture()[0],entry_origin="SCANNER",deferred_recheck=True)
+            first=dict(series_id=SID,revision=REVISION,
+                candidate_id=cand["candidate_id"],pair=cand["pair"],
+                event_time_utc=cand["event_time_utc"],known_at_utc=dt(12))
+            for phase,key,result,status in (
+                ("SCANNER_CAPTURE","FIRST","SKIP",
+                 "CAPACITY_DEFERRED_NOT_A_NEGATIVE_MARKET_DECISION"),
+                ("SCANNER_CAPTURE","DEFERREDRECHECK","SEEN",
+                 "ORIGINAL_SELECTED_FOR_PRE_MODEL_REVIEW_ONLY"),
+                ("FULL_REVIEW_ELIGIBILITY","DEFERREDRECHECK","PASS",
+                 "INITIAL_FRESH_PIT_READY_FOR_FULL_V3_MODEL_ONLY"),
+            ):
+                payload={"candidate_origin":"SCANNER"}
+                payload.update({"review_status":status} if phase=="FULL_REVIEW_ELIGIBILITY"
+                               else {"source_status":status})
+                r=make_receipt(**first,phase=phase,result=result,
+                               data=payload,event_key=key)
+                store_receipt_explicitly(journal,r)
+            outcome=one_candidate(candidate=cand,series_id=SID,
+                local_receipts=journal,model_reservations=budgets,
+                acquire=fake_acquire,clock=lambda:dt(12),
+                admit_staged_scanner_no_model=True)
+            self.assertEqual(outcome["status"],
+                "V3_PAPER_REAL_KRAKEN_PIT_PREFLIGHT_PASS_MODEL_NOT_CALLED")
+            self.assertEqual(len(list(journal.glob("*.json"))),6)
+            again=one_candidate(candidate=cand,series_id=SID,
+                local_receipts=journal,model_reservations=budgets,
+                acquire=lambda _: (_ for _ in ()).throw(
+                    AssertionError("no second network recheck")),
+                clock=lambda:dt(12),admit_staged_scanner_no_model=True)
+            self.assertEqual(again["status"],
+                "NO_UNIQUE_UNPROCESSED_STAGED_SCANNER_NO_RECHECK")
+            self.assertFalse(list(budgets.glob("*.json")))
+
     def test_staged_no_model_fence_invalid_source_and_old_clock(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);journal=root/"journal";budgets=root/"budgets"
