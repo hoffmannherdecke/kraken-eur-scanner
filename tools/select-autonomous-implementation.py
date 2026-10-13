@@ -10,9 +10,9 @@ import hashlib
 import json
 from pathlib import Path
 try:
-    from tools.project_followthrough_router import v3_five_source_followthrough
+    from tools.project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments
 except ModuleNotFoundError:
-    from project_followthrough_router import v3_five_source_followthrough
+    from project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments
 import datetime as dt
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -24,6 +24,7 @@ ID_TO_GATE={
  "UNKNOWN_SHADOW_ADAPTER":"UNKNOWN_ACTIVE_SHADOW_ADAPTER",
  "MINIPC_ANALYTICS_READONLY_PREP":"APPROVED_MINIPC_ANALYTICS_PLAN_AND_MISSING_INACTIVE_REUSE_PREP",
  "V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH":"REAL_V3_PAPER_ACTIVE_AND_POST_CUTOVER_SOURCE_E2E_WORK_OPEN",
+ "PROJECT_WIDE_COMMITMENT_SAFE_WORK":"REGISTERED_PROJECT_COMMITMENT_WITH_SAFE_EVIDENCE_GATE_READY",
 }
 EFFECTS={"READ_ONLY_EVIDENCE_REVIEW","RESEARCH_ONLY_CONTRACT","VERSIONED_TESTS","DOCUMENTATION","NON_RUNTIME_PR"}
 FORBIDDEN={"TRADE_OR_ORDER","PRIVILEGE_OR_SECRET_CHANGE","FROZEN_STRATEGY_CHANGE",
@@ -102,9 +103,21 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
             root,state,ack or {},dt.datetime.now(dt.timezone.utc))
         if source_gate["status"]=="SOURCE_WORK_OPEN":
             open_work.append("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH")
+    # All accepted future commitments are checked via ONE existing
+    # routing manifest; safe work is dynamically selected, not an ID-specific
+    # hotfix that leaves the next user commitment invisible.
+    # Generic commitment manifest is repo-owned, not inferred from temp test
+    # fixtures or an alternate untrusted root with no canonical routing.
+    registry_root=root if (root/"research/project-followthrough-routing-v1.json").is_file() else ROOT
+    registered=project_implementation_commitments(
+        registry_root,state,ack or {},dt.datetime.now(dt.timezone.utc))
+    available=registered["ready_safe_actions"]
+    if available:
+        open_work.append("PROJECT_WIDE_COMMITMENT_SAFE_WORK")
     digest=hashlib.sha256(json.dumps({
         "v3_source_followthrough":source_gate["open_roles"],
         "v3_source_status":source_gate["status"],
+        "commitment_ready_ids":[x["id"] for x in available],
         "strategy_revision":(state.get("active_strategy") or {}).get("strategy_revision"),
         "series_id":(state.get("active_strategy") or {}).get("series_id"),
         "shadow":[x.get("candidate_id") for x in shadows],
