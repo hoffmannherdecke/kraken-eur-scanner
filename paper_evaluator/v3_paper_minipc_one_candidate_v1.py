@@ -57,13 +57,20 @@ def preflight_budget(approval:dict,series_id:str)->None:
             or approval.get("series_id")!=series_id
             or approval.get("paper_only") is not True
             or approval.get("real_money_actions") is not False
+            or type(approval.get("max_model_http_attempts_including_retries")) is not int
             or approval.get("max_model_http_attempts_including_retries")!=1
+            or type(approval.get("max_candidates")) is not int
             or approval.get("max_candidates")!=1
+            or not isinstance(approval.get("unique_approval_id"),str)
+            or not 16<=len(approval["unique_approval_id"])<=128
             or approval.get("explicit_user_new_budget_approval") is not True
             or approval.get("consumed_pr186_budget") is not False
             or approval.get("model")!=APPROVED_MODEL
+            or type(approval.get("max_input_utf8_bytes")) is not int
             or approval.get("max_input_utf8_bytes")!=MAX_PROMPT_UTF8_BYTES
+            or type(approval.get("max_output_tokens")) is not int
             or approval.get("max_output_tokens")!=MAX_OUTPUT_TOKENS
+            or type(approval.get("estimated_usd_ceiling")) not in (int,float)
             or approval.get("estimated_usd_ceiling")!=MAX_ESTIMATED_COST_USD):
         raise ValueError("NEW_USER_APPROVED_FIXED_BUDGET_NOT_PRESENT")
     try:
