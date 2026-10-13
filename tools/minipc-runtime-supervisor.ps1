@@ -82,6 +82,23 @@ function Wait-TaskNotRunning([string]$TaskName,[int]$TimeoutSeconds) {
   return $false
 }
 
+# A live WAIT owner can be source-limited without being process-dead.
+# Suppress only an otherwise fresh, actively running, rate-only WAIT restart.
+# A mixed source/recheck error, stale heartbeat or stopped task still recovers.
+function Test-WaitRateOnly([object]$Heartbeat,[object]$AgeSeconds,[double]$MaxAgeSeconds,[bool]$TaskRunning) {
+  if(-not $Heartbeat -or -not $TaskRunning -or $null -eq $AgeSeconds){ return $false }
+  if([string]$Heartbeat.status -ne "DEGRADED"){ return $false }
+  $age=[double]$AgeSeconds
+  if($age -lt -30 -or $age -gt $MaxAgeSeconds){ return $false }
+  if(-not $Heartbeat.error_classes -or -not $Heartbeat.counters){ return $false }
+  $classes=@($Heartbeat.error_classes.PSObject.Properties)
+  if($classes.Count -ne 1 -or $classes[0].Name -ne "KRAKEN_RATE_LIMIT"){ return $false }
+  if([int]$classes[0].Value -lt 1){ return $false }
+  if([int]$Heartbeat.counters.fresh_recheck_failures -ne 0){ return $false }
+  if([int]$Heartbeat.counters.data_unavailable_checks -lt 1){ return $false }
+  return $true
+}
+
 $specs = @(
   [pscustomobject]@{ name="CryptoMiniPC-KrakenCanary"; path=(Join-Path $stateDir "kraken-canary-heartbeat.json"); max_age=60.0; good=@("HEALTHY","CONNECTED"); restart_backoff_min=$MinRestartIntervalMinutes },
   [pscustomobject]@{ name="CryptoMiniPC-KrakenUniverse"; path=(Join-Path $stateDir "kraken-eur-universe-heartbeat.json"); max_age=90.0; good=@("HEALTHY","CONNECTED"); restart_backoff_min=$MinRestartIntervalMinutes },
@@ -229,7 +246,13 @@ try {
     }
 
     $schedulerRunning = ([string]$task.State -eq "Running")
-    $needsRecovery = (-not $fresh) -or (-not $schedulerRunning)
+    $rateOnlyWaiting = $false
+    if($spec.name -eq "CryptoMiniPC-V2R4PaperWait"){
+      $rateOnlyWaiting = Test-WaitRateOnly -Heartbeat $hb -AgeSeconds $age -MaxAgeSeconds $spec.max_age -TaskRunning $schedulerRunning
+    }
+    # Keep the real health WARNING visible, but do NOT restart a live process
+    # merely for a source-level rate-limit. Backoff is done by the source owner.
+    $needsRecovery = ((-not $fresh) -and (-not $rateOnlyWaiting)) -or (-not $schedulerRunning)
 
     if (-not $attemptHistory.ContainsKey($spec.name)) {
       $attemptHistory[$spec.name] = @{ last_attempt_at_utc=$null; consecutive_failures=0 }
@@ -247,7 +270,7 @@ try {
     $upstreamMissing = ((-not $krakenSourceHealthy) -and $schedulerRunning -and
       ($spec.name -in $krakenDependents))
 
-    $action = "NONE"
+    $action = $(if($rateOnlyWaiting){"KRAKEN_RATE_LIMIT_WAIT"}else{"NONE"})
     if ($needsRecovery -and $upstreamMissing -and (-not $ForceRecovery)) {
       $action = "WAIT_FOR_UPSTREAM"
     } elseif ($needsRecovery -and $restartAllowed) {
