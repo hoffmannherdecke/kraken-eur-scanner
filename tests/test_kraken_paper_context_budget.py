@@ -36,7 +36,7 @@ class PaperSpotRestBudgetTests(unittest.TestCase):
         self.addCleanup(env.stop)
 
     def test_evaluator_ticker_denied_before_network(self):
-        self.assertTrue(budget.reserve_public_request(TICKER))
+        self.assertTrue(budget.report_public_rate_limit(TICKER, http_status=429))
         with patch.object(evaluate.urllib.request, "urlopen") as network:
             with self.assertRaises(budget.KrakenPublicBudgetDeferred):
                 evaluate.kraken_ticker("XBTEUR")
@@ -47,28 +47,28 @@ class PaperSpotRestBudgetTests(unittest.TestCase):
         with patch.dict(sys.modules, {"evaluate": evaluate}):
             revalidate = importlib.import_module("paper_evaluator.revalidate")
         self.assertIs(revalidate.http_json, evaluate.http_json)
-        self.assertTrue(budget.reserve_public_request(OHLC))
+        self.assertTrue(budget.report_public_rate_limit(OHLC, http_status=429))
         with patch.object(evaluate.urllib.request, "urlopen") as network:
             with self.assertRaises(budget.KrakenPublicBudgetDeferred):
                 revalidate.ohlc15("XBTEUR")
         network.assert_not_called()
 
     def test_context_ohlc_denied_before_network(self):
-        self.assertTrue(budget.reserve_public_request(OHLC))
+        self.assertTrue(budget.report_public_rate_limit(OHLC, http_status=429))
         with patch.object(paper_context.urllib.request, "urlopen") as network:
             with self.assertRaises(budget.KrakenPublicBudgetDeferred):
                 paper_context._kraken_ohlc("XBTEUR")
         network.assert_not_called()
 
     def test_evaluator_ticker_blocks_context_assetpairs_same_ip_scope(self):
-        self.assertTrue(budget.reserve_public_request(TICKER))
+        self.assertTrue(budget.report_public_rate_limit(TICKER, http_status=429))
         with patch.object(paper_context.urllib.request, "urlopen") as network:
             with self.assertRaises(budget.KrakenPublicBudgetDeferred):
                 paper_context._json(ASSETPAIRS)
         network.assert_not_called()
 
     def test_context_assetpairs_denial_remains_unavailable_not_fabricated(self):
-        self.assertTrue(budget.reserve_public_request(TICKER))
+        self.assertTrue(budget.report_public_rate_limit(TICKER, http_status=429))
         with patch.object(paper_context.urllib.request, "urlopen") as network:
             meta = paper_context.kraken_pair_metadata("XBTEUR")
         network.assert_not_called()
@@ -102,7 +102,7 @@ class PaperSpotRestBudgetTests(unittest.TestCase):
             budget.reserve_public_request(OHLC)
 
     def test_non_kraken_and_model_calls_never_consume_budget(self):
-        self.assertTrue(budget.reserve_public_request(TICKER))
+        self.assertTrue(budget.report_public_rate_limit(TICKER, http_status=429))
         response = b'{"ok":true}'
         futures = "https://futures.kraken.com/derivatives/api/v3/tickers"
         binance = "https://fapi.binance.com/fapi/v1/openInterest"
@@ -119,7 +119,7 @@ class PaperSpotRestBudgetTests(unittest.TestCase):
             budget.reserve_public_request(TICKER)
 
     def test_rss_path_remains_outside_kraken_budget(self):
-        self.assertTrue(budget.reserve_public_request(TICKER))
+        self.assertTrue(budget.report_public_rate_limit(TICKER, http_status=429))
         with patch.object(paper_context.urllib.request, "urlopen",
                           return_value=io.BytesIO(b"<rss/>")):
             self.assertEqual(paper_context._text("https://www.sec.gov/feed"), "<rss/>")
