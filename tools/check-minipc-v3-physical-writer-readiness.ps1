@@ -90,6 +90,43 @@ try{
  $task=Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
  if($null -ne $task){$taskState=[string]$task.State}
 }catch{$taskState='UNAVAILABLE_TO_READ'}
+# The old host runtime configuration directory is NOT a physical
+# Windows-task/sole-writer proof. Read only the four exact existing V2R4
+# task identities; never infer a running Paper writer from JSON controls.
+$v2r4PaperTasks=@()
+foreach($name in @(
+ 'CryptoMiniPC-V2R4PaperCandidates',
+ 'CryptoMiniPC-V2R4PaperWait',
+ 'CryptoMiniPC-V2R4PaperLifecycle',
+ 'CryptoMiniPC-V2R4PaperCloudSync'
+)){
+ $record=[ordered]@{
+   task_name=$name
+   state='NOT_FOUND'
+   last_run_utc=$null
+   last_task_result=$null
+   evidence='READ_ONLY_WINDOWS_TASK_NOT_ACTIVE_WRITER_FENCE_PROOF'
+ }
+ try{
+   $oldTask=Get-ScheduledTask -TaskName $name -ErrorAction Stop
+   $record.state=[string]$oldTask.State
+   $oldInfo=$oldTask | Get-ScheduledTaskInfo -ErrorAction Stop
+   $record.last_run_utc=$oldInfo.LastRunTime.ToUniversalTime().ToString('o')
+   $record.last_task_result=[int]$oldInfo.LastTaskResult
+ }catch{
+   $record.evidence='NOT_FOUND_OR_TASK_INFO_UNAVAILABLE_NOT_PROVEN'
+ }
+ $v2r4PaperTasks+=@([pscustomobject]$record)
+}
+# Task-name matching is a conservative discovery hint only, not a proof that
+# an unrecognized V3 writer cannot exist under a different task name.
+$v3PaperTaskNames=@()
+try{
+ $v3PaperTaskNames=@(Get-ScheduledTask -TaskName 'CryptoMiniPC-V3*' -ErrorAction Stop |
+   Where-Object { $_.TaskName -ne $taskName -and
+     $_.TaskName -match '(Paper|Writer)' } |
+   Select-Object -First 20 -ExpandProperty TaskName)
+}catch{}
 $pinChecked=0
 $pinMismatches=@()
 if($null -ne $plan){
@@ -140,6 +177,15 @@ $ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $can
  required_v3_modules_present=($missingModules.Count -eq 0)
  missing_v3_modules=@($missingModules)
  active_v2r4_host_runtime_count=$oldApps.Count
+ active_v2r4_host_runtime_count_is_config_files_not_processes=$true
+ physical_v2r4_paper_task_readback=$v2r4PaperTasks
+ physical_v3_named_paper_task_hints=@($v3PaperTaskNames)
+ physical_task_name_scan_cannot_prove_absence_of_other_writers=$true
+ pre_cutover_expected_predecessor_series_id=$oldSeries
+ physical_v2r4_intake_stop_ack_proven=$false
+ physical_single_writer_cutover_dry_run_passed=$false
+ cloud_expected_predecessor_cas_verified=$false
+ physical_v3_writer_start_ack_proven=$false
  v2r4_runtime_readonly_authority_valid=$sourceSafe
  original_handoff_queue_readable=$queueHealthy
  original_handoff_files_sampled=$handoffCount
