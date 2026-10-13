@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import io
 import multiprocessing
 import os
 import tempfile
@@ -100,6 +101,26 @@ class PublicKrakenBudgetTests(unittest.TestCase):
         path.write_text(json.dumps({"last_claim_at": time.time() - 5,
                                     "cooldown_until": 0.0}), encoding="utf-8")
         self.assertTrue(gate.reserve_public_request(URL))
+
+    def test_wait_http_path_reserves_slot_before_opening_network(self):
+        from paper_evaluator import v2r4_wait_watcher as watcher
+
+        gate.reserve_public_request(URL)
+        with patch.object(watcher.urllib.request, "urlopen") as network:
+            with self.assertRaises(gate.KrakenPublicBudgetDeferred):
+                watcher.http_json(URL)
+        network.assert_not_called()
+
+    def test_wait_rest_limit_sets_shared_cooldown(self):
+        from paper_evaluator import v2r4_wait_watcher as watcher
+
+        response = io.BytesIO(b'{"error":["EGeneral:Too many requests"],"result":{}}')
+        with patch.object(watcher.urllib.request, "urlopen", return_value=response) as network:
+            data = watcher.http_json(OHLC)
+            self.assertEqual(data["error"], ["EGeneral:Too many requests"])
+            network.assert_called_once()
+        with self.assertRaises(gate.KrakenPublicBudgetDeferred):
+            gate.reserve_public_request(URL)
 
     def test_relative_enrollment_path_is_forbidden(self):
         with patch.dict(os.environ, {"KRAKEN_PUBLIC_BUDGET_DIR": "State/relative"}):
