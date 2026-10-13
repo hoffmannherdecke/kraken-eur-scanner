@@ -51,7 +51,9 @@ PROOF_KIND="V3_PAPER_TECHNICAL_E2E_READBACK_V1"
 ORIGINAL_ID=re.compile(r"[A-Za-z0-9_.:/-]{8,160}\Z")
 
 
-def _evidence_content_error(name:str,data:bytes)->str|None:
+def _evidence_content_error(
+        name:str,data:bytes,*,expected_code_sha:object,
+        expected_strategy_sha:object)->str|None:
     """Schema/integrity only. Independent live provenance remains mandatory."""
     if len(data)>65536:
         return name+" oversized original E2E proof"
@@ -120,6 +122,24 @@ def _evidence_content_error(name:str,data:bytes)->str|None:
                 or cloud.get("expected_predecessor_series_id")!=predecessor
                 or cloud.get("proposed_successor_series_id")!=successor):
             return name+" physical and cloud expected predecessor/successor mismatch"
+        # Both original sources must refer not just to the same Paper IDs
+        # but also to the same immutable old/new release and bundled strategy.
+        # The V3 bundle and strategy must match the OUTER independently
+        # reviewed technical release packet; a coincidentally correct
+        # self-hash of a different bundle is insufficient.
+        fingerprints=(
+            ("expected_old_repo_sha",40,None),
+            ("proposed_v3_repo_sha",40,None),
+            ("proposed_v3_bundle_sha256",64,expected_code_sha),
+            ("proposed_v3_strategy_sha256",64,expected_strategy_sha),
+        )
+        for key,length,expected in fingerprints:
+            original=host.get(key)
+            if (not isinstance(original,str)
+                    or not re.fullmatch(r"[0-9a-f]{"+str(length)+r"}",original)
+                    or cloud.get(key)!=original
+                    or expected is not None and original!=expected):
+                return name+" host/cloud or outer-packet release fingerprint mismatch"
         if (host.get("physical_writer_fence_dry_run_passed") is not True
                 or host.get("new_v3_writer_started") is not False
                 or host.get("v2r4_live_strategy_modified") is not False
@@ -242,7 +262,9 @@ def validate_experimental_paper_packet(root: Path, revision: str,
         if not isinstance(digest,str) or not SHA.fullmatch(digest) or hashlib.sha256(data).hexdigest()!=digest:
             block(name+" evidence SHA mismatch")
             continue
-        content_error=_evidence_content_error(name,data)
+        content_error=_evidence_content_error(
+            name,data,expected_code_sha=packet.get("code_fingerprint_sha256"),
+            expected_strategy_sha=packet.get("strategy_fingerprint_sha256"))
         if content_error:
             block(content_error)
     return errors
