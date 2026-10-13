@@ -12,6 +12,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 from collections import Counter
+import hashlib
+import json
 import re
 
 from paper_evaluator.v3_experimental_paper_journal_v1 import (
@@ -97,8 +99,16 @@ def prepare_receipts(preflight: dict[str, Any]) -> tuple[list[dict[str, Any]], i
                 raise ValueError("original identity missing, duplicated or conflicting")
             if origin not in (ORIGIN_SCANNER, ORIGIN_SOURCE):
                 raise ValueError("untrusted candidate entry origin")
+            if candidate.get("deferred_recheck") not in (None,False,True):
+                raise ValueError("invalid original deferred recheck marker")
+            if candidate.get("deferred_recheck") is True and origin!=ORIGIN_SCANNER:
+                raise ValueError("only original Scanner capacity deferral may retry")
             by_candidate[cid] = candidate
             source_unverified = origin == ORIGIN_SOURCE
+            if group=="DEFERRED" and candidate.get("deferred_recheck") is True:
+                # The FIRST/SKIP historical original already exists.
+                # Another cycle must not overwrite it with a later known_at.
+                continue
             phase = "SOURCE_INPUT" if source_unverified else "SCANNER_CAPTURE"
             reason = REASONS[group]
             data = {
@@ -115,7 +125,11 @@ def prepare_receipts(preflight: dict[str, Any]) -> tuple[list[dict[str, Any]], i
                 known_at_utc=at, phase=phase,
                 result=("UNKNOWN" if source_unverified else
                         "SEEN" if group == "SELECTED" else "SKIP"),
-                data=data, event_key="FIRST"
+                data=data, event_key=("DEFERREDRECHECK"
+                      if group=="SELECTED" and candidate.get("deferred_recheck") is True
+                      else "DEFERREDCOALESCED"
+                      if group=="COALESCED" and candidate.get("deferred_recheck") is True
+                      else "FIRST")
             ))
 
     # A source-positive pure plan is NOT a physically authenticated runtime.
@@ -142,7 +156,8 @@ def prepare_receipts(preflight: dict[str, Any]) -> tuple[list[dict[str, Any]], i
                      else "UNKNOWN",
             data={"review_status": status,
                   "candidate_origin": ORIGIN_SCANNER},
-            event_key="FIRST"
+            event_key=("DEFERREDRECHECK"
+                       if candidate.get("deferred_recheck") is True else "FIRST")
         ))
     # Rejected inputs can have a nonexistent/bogus source ID, pair or clock.
     # These AUDIT identities are never market candidates, are never eligible
@@ -191,6 +206,30 @@ def stage_receipts_explicitly(*, preflight: dict[str, Any],
                               journal_directory: Path) -> dict[str, Any]:
     """Writes ONLY into a caller-created isolated directory; never syncs Cloud."""
     receipts, not_attributed = prepare_receipts(preflight)
+    # A forged DEFERREDRECHECK flag must never create new usable scanner
+    # evidence unless the exact original immutable capacity-SKIP exists.
+    for candidate in preflight.get("selected_candidates",[]):
+        if candidate.get("deferred_recheck") is not True:
+            continue
+        original_key="|".join((preflight["series_id"],candidate["candidate_id"],
+                               "SCANNER_CAPTURE","FIRST"))
+        original_path=journal_directory/( hashlib.sha256(
+            original_key.encode("utf-8")).hexdigest()+".json")
+        try:
+            original=json.loads(original_path.read_text("utf-8"))
+        except (OSError,ValueError):
+            raise ValueError("capacity-deferred original FIRST receipt missing")
+        if (original.get("candidate_id")!=candidate["candidate_id"]
+                or original.get("series_id")!=preflight["series_id"]
+                or original.get("pair")!=candidate.get("pair")
+                or original.get("event_time_utc")!=candidate.get("event_time_utc")
+                or original.get("phase")!="SCANNER_CAPTURE"
+                or original.get("event_key")!="FIRST"
+                or original.get("result")!="SKIP"
+                or original.get("data",{}).get("candidate_origin")!="SCANNER"
+                or original.get("data",{}).get("source_status")!=
+                "CAPACITY_DEFERRED_NOT_A_NEGATIVE_MARKET_DECISION"):
+            raise ValueError("unverified historical capacity-deferred source")
     states = []
     for row in receipts:
         status, _ = store_receipt_explicitly(journal_directory, row)
