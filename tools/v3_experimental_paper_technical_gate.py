@@ -11,7 +11,15 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from tools.paper_series_transition_guard import assess_v3_cutover_recovery
+# Repository unit tests import through tools.*, while the canonical project
+# state validator runs tools/strategy_successor_gate.py as a direct script.
+# Both invocation contexts must consume the SAME original transition guard.
+try:
+    from tools.paper_series_transition_guard import assess_v3_cutover_recovery
+except ModuleNotFoundError as exc:
+    if exc.name != "tools":
+        raise
+    from paper_series_transition_guard import assess_v3_cutover_recovery
 
 PROOFS=frozenset({
     "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E",
