@@ -24,6 +24,25 @@ def fixture(root:Path)->dict:
             oid=f"test-contract/{origin}/{key}"
             record={"source_id":oid,"observed_at_utc":"2026-10-13T09:30:00Z",
                     "source_status":"ACK_READBACK_AVAILABLE"}
+            if key=="V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN":
+                record.update({
+                    "expected_predecessor_series_id":"PAPER-V2R4-20261009T110135Z",
+                    "proposed_successor_series_id":"PAPER-V3-EXPERIMENTAL-TEST-001",
+                    "dry_run_only":True,
+                })
+                if origin=="MINIPC_PHYSICAL":
+                    record.update({
+                        "physical_writer_fence_dry_run_passed":True,
+                        "new_v3_writer_started":False,
+                        "v2r4_live_strategy_modified":False,
+                    })
+                if origin=="SUPABASE_CLOUD":
+                    record.update({
+                        "single_active_unique_index_present":True,
+                        "expected_predecessor_cas_dry_run_passed":True,
+                        "v2r4_only_rotation_not_invoked":True,
+                        "active_paper_series_changed":False,
+                    })
             canonical=json.dumps(record,sort_keys=True,separators=(",",":")).encode()
             originals.append({"origin":origin,"original_id":oid,
                  "original_record":record,
@@ -145,6 +164,7 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
             row=next(x for x in base["experimental_paper_technical_proofs"]
                      if x["id"]=="V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN")
             target=root/row["evidence_path"]
+            valid_proof=json.loads(target.read_text("utf-8"))
             for modifier in (
                 lambda proof: proof["source_originals"][0]
                     ["original_record"].update(source_status="FORGED"),
@@ -159,23 +179,42 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                 row["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
                 self.assertTrue(validate_experimental_paper_packet(
                     root,"V3-PAPER-EXPERIMENTAL-001",base))
-                target.write_text(json.dumps({
-                    "kind":PROOF_KIND,"proof_id":row["id"],
-                    "source_originals":[{
-                      "origin":origin,
-                      "original_id":f"test-contract/{origin}/{row['id']}",
-                      "original_record":{
-                        "source_id":f"test-contract/{origin}/{row['id']}",
-                        "observed_at_utc":"2026-10-13T09:30:00Z",
-                        "source_status":"ACK_READBACK_AVAILABLE"},
-                      "original_sha256":hashlib.sha256(json.dumps({
-                        "source_id":f"test-contract/{origin}/{row['id']}",
-                        "observed_at_utc":"2026-10-13T09:30:00Z",
-                        "source_status":"ACK_READBACK_AVAILABLE"},
-                        sort_keys=True,separators=(",",":")).encode()).hexdigest()
-                    } for origin in sorted(PROOF_ORIGINS[row["id"]])]
-                },sort_keys=True))
+                target.write_text(json.dumps(valid_proof,sort_keys=True))
                 row["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
+
+    def test_cas_dryrun_requires_same_original_predecessor_on_host_and_cloud(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            row=next(x for x in packet["experimental_paper_technical_proofs"]
+                     if x["id"]=="V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN")
+            path=root/row["evidence_path"]
+            valid=json.loads(path.read_text("utf-8"))
+            for field,bad in (
+                ("expected_predecessor_series_id","PAPER-V2R4-20261007T184255Z"),
+                ("proposed_successor_series_id","PAPER-V3-CONFLICT-0001"),
+                ("expected_predecessor_cas_dry_run_passed",False),
+                ("v2r4_only_rotation_not_invoked",False),
+                ("active_paper_series_changed",True),
+                ("single_active_unique_index_present",False),
+            ):
+                with self.subTest(field=field):
+                    proof=copy.deepcopy(valid)
+                    cloud=next(x for x in proof["source_originals"]
+                               if x["origin"]=="SUPABASE_CLOUD")
+                    cloud["original_record"][field]=bad
+                    raw=json.dumps(cloud["original_record"],
+                                   sort_keys=True,separators=(",",":")).encode()
+                    cloud["original_sha256"]=hashlib.sha256(raw).hexdigest()
+                    path.write_text(json.dumps(proof,sort_keys=True))
+                    row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+                    self.assertTrue(validate_experimental_paper_packet(
+                        root,"V3-PAPER-EXPERIMENTAL-001",packet),
+                        "cross-origin CAS mismatch must block even after rehash")
+            path.write_text(json.dumps(valid,sort_keys=True))
+            row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
 
     def test_canonical_cutover_runbook_does_not_delay_first_paper_until_profit(self):
         # The release gate already distinguishes experimentation from promotion.
