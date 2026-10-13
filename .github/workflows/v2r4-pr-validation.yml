@@ -15,6 +15,8 @@ name: V2R4 PR validation
       - 'research/v2r4/**'
       - 'tests/test_v2r4_*.py'
       - 'tests/test_kraken_public_budget.py'
+      - 'tools/minipc-runtime-supervisor.ps1'
+      - 'tests/test_minipc_supervisor_rate_only.ps1'
       - 'market_data/kraken_public_budget.py'
       - 'market_data/rest.py'
       - 'tools/minipc-kraken-universe-feed.py'
@@ -137,6 +139,12 @@ jobs:
           ) | Out-Null
           if ($errors.Count -gt 0) { throw ($errors | Out-String) }
           Write-Output "V3_FOUR_CASE_BATCH_LAUNCHER_PARSE_PASS"
+
+      - name: Offline Supervisor source-rate-only policy tests
+        if: steps.implementation.outputs.present == 'true'
+        shell: pwsh
+        run: |
+          ./tests/test_minipc_supervisor_rate_only.ps1
 
       - name: Harmless live Kraken WAIT watcher smoke
         if: steps.implementation.outputs.present == 'true'
