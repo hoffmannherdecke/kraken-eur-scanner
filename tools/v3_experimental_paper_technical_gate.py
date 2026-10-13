@@ -59,6 +59,7 @@ def _evidence_content_error(name:str,data:bytes)->str|None:
     if not isinstance(sources,list) or not 1<=len(sources)<=12:
         return name+" original external readbacks absent"
     present=set()
+    by_origin={}
     for item in sources:
         if not isinstance(item,dict):
             return name+" original readback record invalid"
@@ -88,8 +89,38 @@ def _evidence_content_error(name:str,data:bytes)->str|None:
         if hashlib.sha256(original).hexdigest()!=digest:
             return name+" original readback content SHA mismatch"
         present.add(origin)
+        if origin in by_origin:
+            return name+" duplicated external readback source role"
+        by_origin[origin]=payload
     if not required.issubset(present):
         return name+" missing required independent Mini-PC/Cloud/Work source role"
+    # A genuine single-writer dry run is NOT two arbitrary healthy readbacks.
+    # It must bind one actual active V2R4 predecessor to the same proposed V3
+    # successor on both independently checked physical and Cloud originals.
+    # This is a content gate; provenance and CAS atomicity remain separate
+    # physically verified obligations for the authorized release owner.
+    if name=="V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN":
+        host=by_origin["MINIPC_PHYSICAL"]
+        cloud=by_origin["SUPABASE_CLOUD"]
+        predecessor=host.get("expected_predecessor_series_id")
+        successor=host.get("proposed_successor_series_id")
+        if (not isinstance(predecessor,str)
+                or not re.fullmatch(r"PAPER-V2R4-[0-9]{8}T[0-9]{6}Z",predecessor)
+                or not isinstance(successor,str)
+                or not re.fullmatch(r"PAPER-V3-[A-Za-z0-9-]{8,96}",successor)
+                or cloud.get("expected_predecessor_series_id")!=predecessor
+                or cloud.get("proposed_successor_series_id")!=successor):
+            return name+" physical and cloud expected predecessor/successor mismatch"
+        if (host.get("physical_writer_fence_dry_run_passed") is not True
+                or host.get("new_v3_writer_started") is not False
+                or host.get("v2r4_live_strategy_modified") is not False
+                or cloud.get("single_active_unique_index_present") is not True
+                or cloud.get("expected_predecessor_cas_dry_run_passed") is not True
+                or cloud.get("v2r4_only_rotation_not_invoked") is not True
+                or cloud.get("active_paper_series_changed") is not False
+                or any(payload.get("dry_run_only") is not True
+                       for payload in (host,cloud))):
+            return name+" false physical fence or cloud CAS dry-run assertion"
     # These checks cannot prove who supplied the JSON. The external owner
     # still must perform fresh independent comparisons before release.
     return None
