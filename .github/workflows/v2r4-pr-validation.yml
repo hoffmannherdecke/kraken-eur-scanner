@@ -27,6 +27,12 @@ name: V2R4 PR validation
 permissions:
   contents: read
 
+# Cancel superseded runs for the same PR only. Keep manual repair/validation
+# dispatches independent, and never skip the final PR-head checks.
+concurrency:
+  group: v2r4-pr-validation-${{ github.event.pull_request.number || github.event.inputs.ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   validate:
     runs-on: ubuntu-latest

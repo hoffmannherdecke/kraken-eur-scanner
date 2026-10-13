@@ -93,3 +93,45 @@ Git is source/release control, not the primary runtime database.
 - V2R4 and later Paper/Shadow runtimes must persist event/outcome state in Supabase and/or bounded local state, not by creating a commit for every observation;
 - GitHub may retain compact release snapshots, checksums, contracts and manifests;
 - no cleanup may remove the currently active series or the only copy of evidence.
+
+## Verified capacity baseline and low-cost escalation — 2026-10-13
+
+**Actual read-only check (2026-10-13 ca. 05:16 UTC; snapshot, not live forever):**
+Supabase `pg_database_size(current_database())` = **133,409,939 bytes** (about
+127 MiB). Largest `pg_total_relation_size` results (including indexes and
+TOAST) were `paper_candidate_outcomes` about **48 MiB**,
+`v2r4_shadow_evidence` **40 MiB**, `v3_h10_wallet_states` **11 MiB**,
+and `scanner_detection_evidence` **10 MiB**. The latest MINI-PC
+`minipc_status_current.payload.checks.disk_space` showed
+**C: 171 GB free / 237.4 GB**; backup status referenced a fresh 04:00 ZIP.
+These observations do **not** establish D: free space, future growth or
+that every local cleanup task actually ran.
+
+**Implementation uses the existing capacity owner and Work cadence, no new
+sensor, DB table, workflow or schedule.** On 2026-10-13 the **already enabled**
+`GitHub- und Speicher-Kapazitätsfrühwarnung` task was updated, preserving
+its existing monthly 10th/20th schedule: cheap read-only size and MINI-PC
+heartbeat comparison, only if available, against the above dated baseline
+and latest previously verified snapshot. Warning/review candidate when
+database growth exceeds **50 MiB within 10 days** or **25% between comparable
+snapshots**, or C: free space falls below **25 GB** or **15%**.
+This is a review threshold, **not** permission to delete, alter retention,
+execute VACUUM FULL or change physical task settings. Missing evidence is
+`NOT_VERIFIED`, not a healthy status. The existing
+`storage_and_cost` stream and `github_quota_and_cost` crosscut own
+assessment and any actual cleanup/rights decision; only actionable new
+problems are escalated to the existing 10:15 project owner/Backlog.
+
+**Work-cost reduction already applied:** The same existing 2h market-regime/
+source-steward Work task performs an inexpensive event/ACK delta check
+first, and avoids broad repeated research or GitHub changes when the
+material fingerprint is unchanged. It retains the 2h cadence and source
+quality/market/strategy rules. The existing 10:15 project manager remains
+the sole substantive cross-project followthrough. Work execution savings
+must be measured later rather than claimed solely from prompt changes.
+
+**GitHub CI de-duplication:** A same-PR superseded validation may be cancelled
+by the existing `v2r4-pr-validation.yml` concurrency control (manual
+dispatches stay independent), without removing the final/head safety tests
+or reducing scanner/prod health monitoring. GitHub Actions run count alone
+does not equal billable minutes; no cost-saving percentage is claimed.
