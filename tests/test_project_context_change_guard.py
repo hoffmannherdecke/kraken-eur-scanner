@@ -30,6 +30,12 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
                       "change_and_evidence", "existing_owner", "approval_boundary",
                       "followthrough_and_ack", "remaining_unknowns"):
             x[field] = "Checked the original project decision and actual component before changing this."
+        x["commitment_intake"]={
+            "disposition":"REGISTERED_OR_REUSED",
+            "commitment_ids":["V3_EXPERIMENTAL_PAPER_SIX_PROOFS"],
+            "rationale":"The existing V3 Paper cutover six proof obligation remains open even after this code review.",
+            "next_owner_and_gate":"The existing Paper release owner validates six original physical and Cloud proofs.",
+            "no_claim_of_execution_without_evidence":True}
         x["architecture_integrity"] = {
             "change_mode": "EXTEND",
             "affected_stream_ids": ["scanner_detection", "realtime_timing"],
@@ -50,6 +56,30 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
             item["existing_implementation"] = "The existing owner and source were reused, not duplicated here."
             item["conflicts_and_gates"] = "Any remaining runtime and financial permissions stay separately gated."
         return x
+
+
+    def test_future_followthrough_must_be_registered_or_explicitly_disposed(self):
+        paths=["tools/source-inspector.py"]
+        base=self.good(paths)
+        for bad in (
+          lambda x: x.pop("commitment_intake"),
+          lambda x: x["commitment_intake"].update(commitment_ids=["FUTURE_INVISIBLE_999"]),
+          lambda x: x["commitment_intake"].update(
+              disposition="NO_NEW_FOLLOWUP",commitment_ids=["V3_EXPERIMENTAL_PAPER_SIX_PROOFS"]),
+          lambda x: x["commitment_intake"].update(
+              no_claim_of_execution_without_evidence=False),
+        ):
+            candidate=copy.deepcopy(base)
+            bad(candidate)
+            with self.assertRaises(ChangeGateError):
+                check(ROOT,paths,candidate)
+        claimed=copy.deepcopy(base)
+        claimed["commitment_intake"].update(
+            disposition="NO_NEW_FOLLOWUP",commitment_ids=[],
+            rationale="This isolated regression merely confirms the existing receipt validator without scheduling new work.",
+            next_owner_and_gate="The original project guard remains the sole owner and requires existing green CI evidence.")
+        self.assertEqual(check(ROOT,paths,claimed)["commitment_intake_disposition"],
+                         "NO_NEW_FOLLOWUP")
 
     def test_valid_review_scoped_sources_not_runtime_proof(self):
         paths = ["paper_evaluator/v3_paper_x.py", "tools/minipc-check.ps1",
