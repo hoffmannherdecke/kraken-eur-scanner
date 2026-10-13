@@ -224,6 +224,8 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
     original_still_only_active=active_paper_series==[ORIGINAL_ACTIVE]
     missing_24=buckets["24"]["due_missing_or_pending"]
     complete_24=buckets["24"]["mature_complete"]
+    censored_24=buckets["24"]["censored"]
+    pending_24=buckets["24"]["not_yet_due"]
     return {
         "kind":KIND,"as_of_utc":at.isoformat(),
         "original_window_end_utc":end.isoformat(),
@@ -243,6 +245,8 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
         "watcher_mature_virtual_fee_adjusted_paper_net_count":mature_paper_net_count,
         "watcher_24h_mature_cases":complete_24,
         "watcher_24h_due_missing_cases":missing_24,
+        "watcher_24h_censored_cases":censored_24,
+        "watcher_24h_not_yet_due_cases":pending_24,
         "watcher_due_missing_past_60m_recovery":dict(overdue_recovery_exhausted),
         "watcher_next_unmatured_horizon":(
             {"due_at_utc":min(next_due)[0].isoformat(),
@@ -259,7 +263,11 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
         "new_schedules":0,
         "next_research_disposition":(
             "WAIT_FOR_ORIGINAL_FIXED_OBSERVATION_END_NO_EXTENSION" if not window_elapsed
-            else "REVIEW_MISSING_OR_CENSORED_24H_DATA_NO_FALSE_PNL" if missing_24
+            else "REVIEW_MISSING_OR_CENSORED_24H_DATA_NO_FALSE_PNL"
+                 if missing_24 or censored_24
+            else "REVIEW_24H_PENDING_NO_ARTIFICIAL_CANARY_EXTENSION" if pending_24
+            else "REVIEW_NO_MATURE_24H_RESULTS_NO_ECONOMIC_CLAIM"
+                 if not complete_24
             else "REVIEW_FEE_ADJUSTED_DECISION_QUALITY_WITH_EXISTING_CONTROL_PLANE"
         ),
         "release": "BLOCKED_NEW_V3_PAPER_REQUIRES_SEPARATE_CAUSAL_STRATEGY_AND_RUNTIME_GATES",
