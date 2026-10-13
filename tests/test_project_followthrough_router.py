@@ -169,7 +169,8 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
             root = Path(tmp)
             for path in ("research/project-followthrough-routing-v1.json",
                          "research/monitoring-evidence-routing-v1.json",
-                         "project-current-state.json", "research/work-analysis-state.json"):
+                         "project-current-state.json", "research/work-analysis-state.json",
+                         "PROJECT_BACKLOG.md"):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(ROOT / path, target)
@@ -210,7 +211,8 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
             root = Path(tmp)
             for path in ("research/project-followthrough-routing-v1.json",
                          "research/monitoring-evidence-routing-v1.json",
-                         "project-current-state.json", "research/work-analysis-state.json"):
+                         "project-current-state.json", "research/work-analysis-state.json",
+                         "PROJECT_BACKLOG.md"):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(ROOT / path, target)
