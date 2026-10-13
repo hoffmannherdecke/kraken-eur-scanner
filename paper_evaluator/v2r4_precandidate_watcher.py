@@ -15,9 +15,17 @@ import json
 import time
 import urllib.parse
 import urllib.request
+import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+import sys
+
+# Direct-script and package execution both use the original Kraken source owner.
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from market_data.kraken_public_budget import reserve_public_request, report_public_rate_limit
 
 try:
     from .v2r4_precandidate_discovery import (
@@ -55,8 +63,15 @@ def http_json(path: str, params: dict[str, Any] | None = None, timeout: int = 20
     query = urllib.parse.urlencode(params or {})
     url = "https://api.kraken.com" + path + (("?" + query) if query else "")
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+    reserve_public_request(url, max_wait_seconds=1.5)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        if exc.code == 429:
+            report_public_rate_limit(http_status=429)
+        raise
+    report_public_rate_limit(payload)
     if payload.get("error"):
         raise RuntimeError(f"Kraken public error {path}: {payload['error']}")
     return payload.get("result", {})
