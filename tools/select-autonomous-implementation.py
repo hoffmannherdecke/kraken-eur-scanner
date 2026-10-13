@@ -106,12 +106,13 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
     # All accepted future commitments are checked via ONE existing
     # routing manifest; safe work is dynamically selected, not an ID-specific
     # hotfix that leaves the next user commitment invisible.
-    # Generic commitment manifest is repo-owned, not inferred from temp test
-    # fixtures or an alternate untrusted root with no canonical routing.
-    registry_root=root if (root/"research/project-followthrough-routing-v1.json").is_file() else ROOT
-    registered=project_implementation_commitments(
-        registry_root,state,ack or {},dt.datetime.now(dt.timezone.utc))
-    available=registered["ready_safe_actions"]
+    # Only the real canonical root (or explicit full fixture) can request
+    # these tasks. Minimal unrelated offline selector fixtures stay isolated.
+    available=[]
+    if (root/"research/project-followthrough-routing-v1.json").is_file():
+        registered=project_implementation_commitments(
+            root,state,ack or {},dt.datetime.now(dt.timezone.utc))
+        available=registered["ready_safe_actions"]
     if available:
         open_work.append("PROJECT_WIDE_COMMITMENT_SAFE_WORK")
     digest=hashlib.sha256(json.dumps({
