@@ -11,6 +11,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from tools.paper_series_transition_guard import assess_v3_cutover_recovery
 
 PROOFS=frozenset({
     "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E",
@@ -121,6 +122,23 @@ def _evidence_content_error(name:str,data:bytes)->str|None:
                 or any(payload.get("dry_run_only") is not True
                        for payload in (host,cloud))):
             return name+" false physical fence or cloud CAS dry-run assertion"
+        # Test both sides of the rollback boundary. The concrete source
+        # receipts still require independent validation outside this parser.
+        if (host.get("precommit_original_backup_verified") is not True
+                or host.get("precommit_restore_only_before_cloud_commit_tested") is not True
+                or host.get("old_followups_retained_on_original_series_tested") is not True
+                or host.get("old_supervisor_intake_rearm_fence_tested") is not True
+                or cloud.get("stale_predecessor_cas_rejected_tested") is not True
+                or cloud.get("ambiguous_cloud_outcome_quarantines_both_tested") is not True
+                or cloud.get("postcommit_no_predecessor_restart_tested") is not True
+                or cloud.get("phase")!="CLOUD_COMMIT_NOT_ATTEMPTED"):
+            return name+" V3 pre/post-CAS rollback safety not witnessed"
+        active=cloud.get("active_paper_series")
+        recovery=assess_v3_cutover_recovery(
+            phase=cloud["phase"],active_series=active,
+            expected_old=predecessor,proposed_new=successor)
+        if recovery["disposition"]!="PRECOMMIT_DRYRUN_ONLY_NO_CLOUD_MUTATION":
+            return name+" invalid real pre-CAS active-series readback"
     # These checks cannot prove who supplied the JSON. The external owner
     # still must perform fresh independent comparisons before release.
     return None
