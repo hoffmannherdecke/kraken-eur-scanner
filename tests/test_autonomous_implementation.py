@@ -43,6 +43,16 @@ class SafeAutonomyTests(unittest.TestCase):
             self.assertNotIn("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH",
                              [x["id"] for x in blocked["ready"]])
 
+
+    def test_project_safe_obligations_are_selected_without_new_per_id_adapter(self):
+        r=selector.select(ROOT,QUEUE,STATE,{})
+        self.assertEqual(r["status"],"READY_SAFE_WORK")
+        self.assertIn("PROJECT_WIDE_COMMITMENT_SAFE_WORK",
+                      [x["id"] for x in r["ready"]])
+        self.assertLessEqual(len(r["ready"]),2)
+        self.assertFalse(r["strategy_changed"])
+        self.assertFalse(r["real_money_actions"])
+
     def test_safe_h10_contract_due_and_readonly(self):
         with tempfile.TemporaryDirectory() as p:
             r=selector.select(Path(p),QUEUE,STATE,{})
