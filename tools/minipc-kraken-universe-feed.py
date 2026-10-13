@@ -15,6 +15,7 @@ import hashlib
 import json
 import time
 import urllib.request
+import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,7 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from market_data.universe import online_eur_universe, ticker_record
+from market_data.kraken_public_budget import reserve_public_request, report_public_rate_limit
 
 WS_URL = "wss://ws.kraken.com/v2"
 UA = "kraken-eur-minipc-universe/1.0-public-only"
@@ -52,8 +54,15 @@ def public_json(url: str, timeout: int = 20) -> dict[str, Any]:
         url,
         headers={"User-Agent": UA, "Accept": "application/json"},
     )
-    with urllib.request.urlopen(req, timeout=timeout) as response:
-        payload = json.loads(response.read().decode("utf-8"))
+    reserve_public_request(url, max_wait_seconds=1.5)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        if exc.code == 429:
+            report_public_rate_limit(http_status=429)
+        raise
+    report_public_rate_limit(payload)
     if payload.get("error"):
         raise RuntimeError("Kraken public REST error: " + ";".join(payload["error"]))
     result = payload.get("result")
