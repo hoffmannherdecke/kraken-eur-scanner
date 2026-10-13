@@ -1179,6 +1179,65 @@
         "real_money_actions": false,
         "followthrough_owner": "research/v3-migration-ledger.json#late_chase_protection.successor_refinement.stage_A"
       }
+    },
+    "project_implementation_commitments": {
+      "V3_EXPERIMENTAL_PAPER_SIX_PROOFS": {
+        "status": "OPEN_REGISTERED",
+        "reviewed_at_utc": "2026-10-13T08:19:49Z",
+        "canonical_owner": "project-current-state.json#pending_strategy_transition",
+        "report": "research/work-analysis/2026-10-13-v3-six-proof-and-backlog-original-review.md",
+        "report_sha256": "20c11737d38dbf0882ca5d159a5aa9f986cc627af4aa184e44a3457e9a5946fb",
+        "verified_physical_or_cloud_e2e_release_rows": 0,
+        "required_release_rows": 6,
+        "blocker": "FIXED_28H_WINDOW_NOT_ENDED_AND_DEDICATED_PHYSICAL_CLOUD_PROOF_ARTIFACTS_ABSENT",
+        "next_gate": "AFTER_2026-10-13T12:00:12.2795431Z_READONLY_HOST_CLOUD_REVIEW_THEN_SEPARATE_BUDGET_RELEASE_GATE",
+        "automatic_activation": false,
+        "real_money_actions": false
+      }
+    },
+    "historical_backlog_dispositions": {
+      "PROJECT_BACKLOG@c589eea9225193397e9ca5dc719f13f44b221afa:L548": {
+        "status": "COMPLETED_VERIFIED",
+        "completed_at_utc": "2026-10-13T08:19:49Z",
+        "source_snapshot_blob": "c589eea9225193397e9ca5dc719f13f44b221afa",
+        "owner": "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "next_objective_gate": "NONE_HISTORICAL_V2R3_CLOSED_DO_NOT_REACTIVATE",
+        "report": "research/work-analysis/2026-10-13-v3-six-proof-and-backlog-original-review.md",
+        "report_sha256": "20c11737d38dbf0882ca5d159a5aa9f986cc627af4aa184e44a3457e9a5946fb",
+        "original_id": "L548",
+        "evidence": [
+          "research/work-analysis/2026-10-07-v2r3-final-review.md",
+          "docs/master-version-register.md#Strategie / Paper"
+        ]
+      },
+      "PROJECT_BACKLOG@c589eea9225193397e9ca5dc719f13f44b221afa:L550": {
+        "status": "COMPLETED_VERIFIED",
+        "completed_at_utc": "2026-10-13T08:19:49Z",
+        "source_snapshot_blob": "c589eea9225193397e9ca5dc719f13f44b221afa",
+        "owner": "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "next_objective_gate": "NONE_HISTORICAL_V2R3_CLOSED_DO_NOT_REACTIVATE",
+        "report": "research/work-analysis/2026-10-13-v3-six-proof-and-backlog-original-review.md",
+        "report_sha256": "20c11737d38dbf0882ca5d159a5aa9f986cc627af4aa184e44a3457e9a5946fb",
+        "original_id": "L550",
+        "evidence": [
+          "research/work-analysis/2026-10-07-v2r3-final-review.md#Decision and trade frequency",
+          "research/work-analysis/2026-10-07-v2r3-final-review.md#Mature 24h REJECT evidence"
+        ]
+      },
+      "PROJECT_BACKLOG@c589eea9225193397e9ca5dc719f13f44b221afa:L551": {
+        "status": "COMPLETED_VERIFIED",
+        "completed_at_utc": "2026-10-13T08:19:49Z",
+        "source_snapshot_blob": "c589eea9225193397e9ca5dc719f13f44b221afa",
+        "owner": "research/work-analysis/2026-10-07-v2r3-final-review.md",
+        "next_objective_gate": "NONE_HISTORICAL_V2R3_CLOSED_DO_NOT_REACTIVATE",
+        "report": "research/work-analysis/2026-10-13-v3-six-proof-and-backlog-original-review.md",
+        "report_sha256": "20c11737d38dbf0882ca5d159a5aa9f986cc627af4aa184e44a3457e9a5946fb",
+        "original_id": "L551",
+        "evidence": [
+          "research/work-analysis/2026-10-07-v2r3-final-review.md#Mature 24h REJECT evidence",
+          "research/work-analysis/2026-10-07-v2r3-final-review.md#Final V2R3 conclusion"
+        ]
+      }
     }
   },
   "safeguards": {
