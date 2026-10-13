@@ -4,16 +4,31 @@
 All sources are public/read-only. Failures are represented as unavailable; nothing is invented.
 """
 from __future__ import annotations
-import json, time, urllib.parse, urllib.request, xml.etree.ElementTree as ET
+import json, time, urllib.parse, urllib.request, urllib.error, xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from market_data.kraken_public_budget import reserve_public_request, report_public_rate_limit
 
 UA="kraken-paper-context/2.0"
 
 def _json(url, timeout=12):
+    # Kraken Spot public REST only; futures, Binance, and RSS remain untouched.
+    parts=urllib.parse.urlsplit(url)
+    spot_public=(parts.scheme=="https" and parts.hostname=="api.kraken.com"
+                 and parts.path.startswith("/0/public/"))
     req=urllib.request.Request(url,headers={"User-Agent":UA,"Accept":"application/json"})
-    with urllib.request.urlopen(req,timeout=timeout) as r:
-        return json.loads(r.read().decode())
+    if spot_public:
+        reserve_public_request(url,max_wait_seconds=1.5)
+    try:
+        with urllib.request.urlopen(req,timeout=timeout) as r:
+            payload=json.loads(r.read().decode())
+    except urllib.error.HTTPError as exc:
+        if spot_public and exc.code==429:
+            report_public_rate_limit(url,http_status=429)
+        raise
+    if spot_public:
+        report_public_rate_limit(url,payload)
+    return payload
 
 def _text(url, timeout=12, user_agent=UA):
     req=urllib.request.Request(url,headers={"User-Agent":user_agent,"Accept":"application/rss+xml,application/xml,text/xml,*/*"})
