@@ -272,6 +272,64 @@ def project_implementation_commitments(root: Path, state: dict, ack: dict,
                          x["state"]=="READY_REVIEW_RELEASE_GATED"],
             "no_auto_paper_release":True,"no_auto_trades":True}
 
+
+def historical_backlog_reconciliation(root:Path,ack:dict,now:dt.datetime)->dict:
+    """All unchecked historic notes remain visible until independently disposed."""
+    config=read_json(root,"research/project-followthrough-routing-v1.json").get(
+        "historical_backlog_reconciliation") or {}
+    require(config.get("kind")=="EXISTING_BACKLOG_UNDISPOSED_HISTORICAL_COMMITMENTS_V1"
+            and config.get("owner")=="EXISTING_DAILY_1015_WORK_ONCE_PER_GATE"
+            and config.get("source")=="PROJECT_BACKLOG.md"
+            and config.get("max_review_rows_per_run")==3,
+            "missing canonical historical backlog reconciliation owner")
+    for flag in ("do_not_silently_assume_old_checkbox_is_current_task",
+                 "no_new_schedule","no_auto_release","no_auto_cleanup",
+                 "no_runtime_truth_from_backlog"):
+        require(config.get(flag) is True,"unsafe historic backlog handling "+flag)
+    ledger=((ack.get("acknowledgements") or {})
+            .get("historical_backlog_dispositions") or {})
+    require(isinstance(ledger,dict),"historic backlog ACK malformed")
+    pending=[];disposed=[]
+    lines=(root/"PROJECT_BACKLOG.md").read_text(encoding="utf-8").splitlines()
+    for number,line in enumerate(lines,1):
+        if not re.match(r"^\s*[-*] \[ \] ",line):
+            continue
+        wording=line.strip()
+        token="BACKLOG-"+hashlib.sha256(wording.encode("utf-8")).hexdigest()[:20]
+        item=ledger.get(token)
+        evidenced=False
+        if isinstance(item,dict):
+            proof=item.get("evidence_sha256"); report=item.get("report")
+            status=item.get("disposition")
+            valid=(status in ("OPEN_REGISTERED","DEFERRED_WITH_GATE",
+                              "SUPERSEDED_WITH_CANONICAL_OWNER","COMPLETED_VERIFIED")
+                   and isinstance(item.get("owner"),str) and len(item["owner"])>5
+                   and isinstance(item.get("next_gate"),str) and len(item["next_gate"])>8
+                   and isinstance(proof,str) and re.fullmatch(r"[a-f0-9]{64}",proof)
+                   and isinstance(report,str) and
+                   re.fullmatch(r"research/work-analysis/[A-Za-z0-9_.-]+[.]md",report))
+            if valid:
+                try:
+                    path=root/report
+                    evidenced=(path.is_file()
+                         and hashlib.sha256(path.read_bytes()).hexdigest()==proof
+                         and utc(item["reviewed_at_utc"])<=now)
+                except (OSError,KeyError,ValueError,TypeError): pass
+        (disposed if evidenced else pending).append({
+            "id":token,"line":number,
+            "priority":"V3_REVIEW_FIRST" if "V3" in wording.upper() else
+                       "OLDER_OR_CROSS_PROJECT_RECONCILIATION",
+            "excerpt":wording[:220]})
+    priority=sorted(pending,key=lambda x:(
+        x["priority"]!="V3_REVIEW_FIRST",x["line"]))
+    return {"kind":config["kind"],"open_checkboxes_total":len(disposed)+len(pending),
+            "dispositions_provenance_reviewed":len(disposed),
+            "still_unclassified":len(pending),
+            "next_review":priority[:config["max_review_rows_per_run"]],
+            "legacy_open_box_not_a_live_task_without_review":True,
+            "no_auto_changes":True}
+
+
 def route(root: Path, now: dt.datetime) -> dict:
     manifest = read_json(root, "research/project-followthrough-routing-v1.json")
     routing = read_json(root, "research/monitoring-evidence-routing-v1.json")
@@ -364,9 +422,11 @@ def route(root: Path, now: dt.datetime) -> dict:
             gated.append({"id": task_id, "gate": "CHECK_DECLARED_TRIGGER_NO_AUTO_START"})
     source_followthrough=v3_five_source_followthrough(root,state,ack,now)
     generic_commitments=project_implementation_commitments(root,state,ack,now)
+    legacy_backlog=historical_backlog_reconciliation(root,ack,now)
     return {
         "v3_paper_five_source_followthrough":source_followthrough,
         "project_implementation_commitments":generic_commitments,
+        "historical_backlog_reconciliation":legacy_backlog,
         "kind": "PROJECT_WIDE_WORK_HANDOFF_V1",
         "status": "REVIEW_DUE" if ready else "NO_DUE_CONTROL_GATE",
         "stream_coverage_count": len(streams),
