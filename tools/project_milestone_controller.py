@@ -609,8 +609,8 @@ def registered_commitment_milestone(state:dict,now:dt.datetime,root:Path)->tuple
     notices=[]
     if waiting or safe:
         # Fixed anchor for each materially distinct list of ready items.
-        anchor="|".join(sorted(x["id"] for x in waiting+safe))
-        require(len(anchor)<180,"too many grouped obligation IDs")
+        membership="|".join(sorted(x["id"] for x in waiting+safe))
+        anchor="COMMITMENT-GROUP-"+hashlib.sha256(membership.encode("utf-8")).hexdigest()[:24]
         details=", ".join(x["id"] for x in waiting+safe)
         notices.append(event("PROJECT_IMPLEMENTATION_COMMITMENT_REVIEW",
                              anchor,
