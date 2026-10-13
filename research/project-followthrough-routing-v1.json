@@ -189,8 +189,8 @@
         "trigger": "IMMEDIATE",
         "priority": 0,
         "safe_work": true,
-        "allowed_action": "Read-only audit of six ORIGINAL independent actual host/cloud V3-Paper technical proof artifacts and exact model/P4/Writer/CAS/FOLLOWUP/Supervisor blockers; PR/CI safe fixes only, no model API or physical release",
-        "completion_gate": "Six original, hash-pinned physical/cloud proofs and separately bounded model budget, authorisation, exclusive writer dryrun plus actual new active V3 series ACK",
+        "allowed_action": "Read-only audit of six ORIGINAL independent actual host/cloud V3-Paper technical proofs and model/P4/Writer/CAS/Supervisor gates; verify old V2R4 closed-series WAIT/STOP/6h24h72h Cloud updates, existing open-trade exit continuity and explicit no-new-V2R4-intake ACK before any V3 CAS; PR/CI safe fixes only, no model API or physical release",
+        "completion_gate": "Six original hash-pinned physical/cloud proofs, exact old closed-series 6h24h72h followup and open trade-exit real Cloud ACK with new V2R4 intake blocked, bounded user model budget/authorisation, exclusive writer dryrun and actual new active V3 series ACK",
         "requires_user_release": true
       },
       {
