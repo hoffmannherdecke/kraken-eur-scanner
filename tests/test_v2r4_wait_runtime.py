@@ -300,6 +300,15 @@ class V2R4WaitRuntimeTests(unittest.TestCase):
                 RuntimeError("Kraken OHLC error: ['EAPI:Rate limit exceeded']")),
             "KRAKEN_RATE_LIMIT",
         )
+        # Original MINI-PC API response on 2026-10-13: 15m OHLC
+        # EGeneral:Too many requests, not EAPI:Rate limit exceeded.
+        for endpoint in ("ticker", "OHLC"):
+            with self.subTest(endpoint=endpoint):
+                self.assertEqual(
+                    runtime.classify_public_data_error(
+                        RuntimeError(f"Kraken {endpoint} error: ['EGeneral:Too many requests']")),
+                    "KRAKEN_RATE_LIMIT",
+                )
         self.assertEqual(
             runtime.classify_public_data_error(
                 RuntimeError("Kraken ticker error: ['EQuery:Unknown asset pair']")),
