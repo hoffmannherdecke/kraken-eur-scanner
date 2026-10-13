@@ -12,6 +12,7 @@ but is NOT an artificial prerequisite for reviewing a completed 28h window.
 from __future__ import annotations
 
 from collections import Counter
+import json
 from datetime import timedelta
 from hashlib import sha256
 from math import isfinite
@@ -75,6 +76,17 @@ def verdict(*,cloud_rows:list[dict[str,Any]],as_of_utc:str,
                 or not isinstance(event_id,str) or not HEX.fullmatch(event_id)
                 or not isinstance(content_digest,str) or not HEX.fullmatch(content_digest)):
             raise ValueError("unverified cloud receipt envelope")
+        # The local O_EXCL journal hashes canonical sorted JSON + one newline.
+        # A digest merely shaped like SHA-256 is not a payload-integrity
+        # check. Compare against the exact original local serialization so
+        # mutated JSONB data cannot appear to be verified Cloud evidence.
+        try:
+            canonical=(json.dumps(payload,sort_keys=True,separators=(",",":"),
+                                  allow_nan=False)+"\n").encode("utf-8")
+        except (TypeError,ValueError) as exc:
+            raise ValueError("noncanonical V3 cloud receipt payload") from exc
+        if sha256(canonical).hexdigest()!=content_digest:
+            raise ValueError("tampered V3 cloud receipt content digest")
         series=payload.get("series_id")
         if series not in grouped or envelope.get("series_id")!=series:
             raise ValueError("unexpected/mismatched V3 study series")
