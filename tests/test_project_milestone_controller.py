@@ -1,3 +1,11 @@
+import importlib.util
+from pathlib import Path
+import unittest
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location('controller', ROOT / 'tools/project_milestone_controller.py')
+controller = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(controller)
 
 class GeneralFutureImplementationMilestoneTests(unittest.TestCase):
     def test_project_wide_future_work_is_flagged_without_new_schedule(self):
@@ -16,15 +24,6 @@ class GeneralFutureImplementationMilestoneTests(unittest.TestCase):
         statuses2,events2=controller.registered_commitment_milestone(state,after,ROOT)
         self.assertIn("V3_CANARY_28H_PHYSICAL_CLOSURE",events2[0]["detail"])
         self.assertNotEqual(events[0]["event_key"],events2[0]["event_key"])
-
-import importlib.util
-from pathlib import Path
-import unittest
-
-ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location('controller', ROOT / 'tools/project_milestone_controller.py')
-controller = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(controller)
 
 class H10OriginalReceiptMilestoneTests(unittest.TestCase):
     """Read-only first-receipt review on the existing milestone cadence."""
