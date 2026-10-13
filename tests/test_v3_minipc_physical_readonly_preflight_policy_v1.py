@@ -55,6 +55,26 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         # release token; this script only inventories original evidence.
         self.assertNotIn("physical_single_writer_cutover_dry_run_passed=$true",s)
 
+    def test_fixed_28h_task_end_requires_real_schedule_and_cannot_claim_release(self):
+        s=SCRIPT.read_text(encoding="utf-8")
+        for marker in (
+            "Get-ScheduledTaskInfo",
+            "[System.Xml.XmlConvert]::ToTimeSpan",
+            "[timespan]::FromHours(28)",
+            "$taskActionMatchesPinnedObserver",
+            "$taskState -in @('Ready','Disabled')",
+            "$pinChecked -eq 9",
+            "$pinMismatches.Count -eq 0",
+            "canary_original_schedule_readback_status=$taskScheduleReadbackStatus",
+            "canary_scheduler_end_candidate_for_independent_review=$canarySchedulerEndCandidate",
+            "canary_physical_observer_end_ack_from_this_single_readback=$false",
+            "canary_after_deadline_requires_independent_host_cloud_ack=$true",
+        ):
+            self.assertIn(marker,s)
+        self.assertNotIn("canary_physical_observer_end_ack_from_this_single_readback=$true",s)
+        self.assertNotIn("Start-ScheduledTask", "\n".join(
+            line for line in s.splitlines() if not line.lstrip().startswith("#")))
+
     def test_script_has_no_secret_exfiltration_or_unbounded_scan(self):
         s=SCRIPT.read_text(encoding="utf-8")
         self.assertNotIn("Get-Content -LiteralPath $secret",s)
