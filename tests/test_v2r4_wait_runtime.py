@@ -294,6 +294,55 @@ class V2R4WaitRuntimeTests(unittest.TestCase):
             row = next(iter(persisted["handled"].values()))
             self.assertEqual(row["status"], "FRESH_PAPER_RECHECK_FAILED")
 
+    def test_public_error_classifier_records_kraken_rate_limit_without_raw_text(self):
+        self.assertEqual(
+            runtime.classify_public_data_error(
+                RuntimeError("Kraken OHLC error: ['EAPI:Rate limit exceeded']")),
+            "KRAKEN_RATE_LIMIT",
+        )
+        self.assertEqual(
+            runtime.classify_public_data_error(
+                RuntimeError("Kraken ticker error: ['EQuery:Unknown asset pair']")),
+            "KRAKEN_UNKNOWN_PAIR",
+        )
+        self.assertEqual(
+            runtime.classify_public_data_error(
+                RuntimeError("sensitive-unexpected-payload")),
+            "OTHER_RuntimeError",
+        )
+
+    def test_data_error_has_bounded_class_counts_and_never_matches(self):
+        now = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            dirs = [root / name for name in ("decisions", "rechecks", "candidates", "receipts")]
+            for d in dirs:
+                d.mkdir()
+            p = plan(now, candidate_id="C1")
+            (dirs[0] / "decision.json").write_text(
+                json.dumps({"v2r4_trigger_plan": p}), "utf-8")
+            with patch.object(
+                runtime, "market_metrics",
+                side_effect=RuntimeError("Kraken OHLC error: ['EAPI:Rate limit exceeded']"),
+            ):
+                out = runtime.run_cycle(
+                    decision_dir=dirs[0], recheck_dir=dirs[1],
+                    candidate_dir=dirs[2], receipt_dir=dirs[3],
+                    state_path=root / "state.json",
+                    heartbeat_path=root / "heartbeat.json",
+                    altrady_log=root / "altrady.jsonl",
+                    spec_path=None, control_path=None, api_key_file=None,
+                    fallback_seconds=10, execute_recheck=False,
+                    now=now + timedelta(seconds=5),
+                )
+            self.assertEqual(out["status"], "DEGRADED")
+            self.assertEqual(out["counters"]["data_unavailable_checks"], 1)
+            self.assertEqual(out["error_classes"], {"KRAKEN_RATE_LIMIT": 1})
+            self.assertEqual(out["counters"]["condition_matches"], 0)
+            self.assertEqual(out["counters"]["receipts_written"], 0)
+            self.assertEqual(list(dirs[3].glob("*.json")), [])
+            self.assertNotIn("EAPI:", json.dumps(out))
+
     def test_long_running_receipt_only_mode_is_not_an_allowed_main_configuration(self):
         # The safety rule is represented in CLI main; core cycle remains testable.
         # Assert the documented action is never an order action.

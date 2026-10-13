@@ -232,6 +232,31 @@ def due_for_fallback(
     return age >= fallback_seconds
 
 
+def classify_public_data_error(exc: Exception) -> str:
+    """Bounded, non-sensitive diagnosis; never serialize raw HTTP/API text.
+
+    This classifies already-raised exceptions only; it makes no extra network
+    calls, changes no Kraken error handling, and cannot authorize a trigger.
+    """
+    from urllib.error import HTTPError, URLError
+
+    if isinstance(exc, HTTPError):
+        return "KRAKEN_HTTP_429" if exc.code == 429 else "KRAKEN_HTTP_OTHER"
+    if isinstance(exc, (URLError, TimeoutError)):
+        return "KRAKEN_TRANSPORT_UNAVAILABLE"
+    if isinstance(exc, RuntimeError):
+        message = str(exc).lower()
+        if message.startswith(("kraken ticker error:", "kraken ohlc error:")):
+            if "rate limit" in message or "throttl" in message:
+                return "KRAKEN_RATE_LIMIT"
+            if "unknown asset pair" in message:
+                return "KRAKEN_UNKNOWN_PAIR"
+            if "unavailable" in message or "maintenance" in message:
+                return "KRAKEN_SERVICE_UNAVAILABLE"
+            return "KRAKEN_API_OTHER"
+    return "OTHER_" + type(exc).__name__[:40]
+
+
 def run_cycle(
     *,
     decision_dir: Path,
@@ -268,7 +293,9 @@ def run_cycle(
         "fresh_rechecks": 0,
         "fresh_recheck_failures": 0,
         "altrady_records_seen": hint_records,
+        "data_unavailable_checks": 0,
     }
+    error_classes: dict[str, int] = {}
     errors: list[str] = []
 
     for plan, source_path in plans:
@@ -304,8 +331,13 @@ def run_cycle(
             metrics = market_metrics(plan["altname"])
             result = evaluate_plan(plan, metrics, now=now)
         except Exception as exc:
+            # Keep every failure fail-closed; retain bounded class counts for
+            # the full cycle even when the last-20 candidate list is truncated.
+            reason = classify_public_data_error(exc)
+            counters["data_unavailable_checks"] += 1
+            error_classes[reason] = error_classes.get(reason, 0) + 1
             errors.append(
-                f"{plan.get('candidate_id')}:DATA_UNAVAILABLE:{type(exc).__name__}"
+                f"{plan.get('candidate_id')}:DATA_UNAVAILABLE:{reason}"
             )
             continue
 
@@ -379,6 +411,7 @@ def run_cycle(
         "real_money_actions": False,
         "execute_recheck": execute_recheck,
         "counters": counters,
+        "error_classes": dict(sorted(error_classes.items())),
         "errors": errors[-20:],
     }
     atomic_json(heartbeat_path, heartbeat)
