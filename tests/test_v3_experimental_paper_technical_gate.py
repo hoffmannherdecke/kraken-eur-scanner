@@ -35,6 +35,10 @@ def fixture(root:Path)->dict:
                         "physical_writer_fence_dry_run_passed":True,
                         "new_v3_writer_started":False,
                         "v2r4_live_strategy_modified":False,
+                        "precommit_original_backup_verified":True,
+                        "precommit_restore_only_before_cloud_commit_tested":True,
+                        "old_followups_retained_on_original_series_tested":True,
+                        "old_supervisor_intake_rearm_fence_tested":True,
                     })
                 if origin=="SUPABASE_CLOUD":
                     record.update({
@@ -42,6 +46,13 @@ def fixture(root:Path)->dict:
                         "expected_predecessor_cas_dry_run_passed":True,
                         "v2r4_only_rotation_not_invoked":True,
                         "active_paper_series_changed":False,
+                        "phase":"CLOUD_COMMIT_NOT_ATTEMPTED",
+                        "active_paper_series":[{
+                            "series_id":"PAPER-V2R4-20261009T110135Z",
+                            "status":"active"}],
+                        "stale_predecessor_cas_rejected_tested":True,
+                        "ambiguous_cloud_outcome_quarantines_both_tested":True,
+                        "postcommit_no_predecessor_restart_tested":True,
                     })
             canonical=json.dumps(record,sort_keys=True,separators=(",",":")).encode()
             originals.append({"origin":origin,"original_id":oid,
@@ -197,6 +208,11 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                 ("v2r4_only_rotation_not_invoked",False),
                 ("active_paper_series_changed",True),
                 ("single_active_unique_index_present",False),
+                ("stale_predecessor_cas_rejected_tested",False),
+                ("postcommit_no_predecessor_restart_tested",False),
+                ("phase","CLOUD_COMMITTED"),
+                ("active_paper_series",[
+                    {"series_id":"PAPER-V3-EXPERIMENTAL-TEST-001","status":"active"}]),
             ):
                 with self.subTest(field=field):
                     proof=copy.deepcopy(valid)
