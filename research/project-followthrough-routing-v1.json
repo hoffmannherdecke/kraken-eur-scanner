@@ -303,5 +303,17 @@
         "requires_user_release": false
       }
     ]
+  },
+  "historical_backlog_reconciliation": {
+    "kind": "EXISTING_BACKLOG_UNDISPOSED_HISTORICAL_COMMITMENTS_V1",
+    "owner": "EXISTING_DAILY_1015_WORK_ONCE_PER_GATE",
+    "source": "PROJECT_BACKLOG.md",
+    "ack_source": "research/work-analysis-state.json#acknowledgements.historical_backlog_dispositions",
+    "max_review_rows_per_run": 3,
+    "do_not_silently_assume_old_checkbox_is_current_task": true,
+    "no_new_schedule": true,
+    "no_auto_release": true,
+    "no_auto_cleanup": true,
+    "no_runtime_truth_from_backlog": true
   }
 }
