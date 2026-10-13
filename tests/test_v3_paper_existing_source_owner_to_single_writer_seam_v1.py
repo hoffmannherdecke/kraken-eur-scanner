@@ -230,6 +230,45 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
         self.assertFalse(result["v2r4_changed"])
         self.assertEqual(result["new_schedules"],0)
 
+    def test_first_1m_enrollment_deadline_protects_original_clock_not_trade_claim(self):
+        result=preflight(scanners=[
+            scanner("late-scanner","ETH/EUR",dt(9)),
+            scanner("early-scanner","ZRO/EUR",dt(3))])
+        rows=result["prospective_first_1m_capture_enrollment"]
+        self.assertEqual(len(rows),2)
+        self.assertEqual([x["candidate_id"] for x in rows],
+                         ["early-scanner","late-scanner"])
+        self.assertTrue(all(x["ingress_disposition"]==
+                            "SELECTED_FOR_MODEL_REVIEW" for x in rows))
+        self.assertTrue(all(x["new_capture_window_still_open_as_of_preflight"]
+                            for x in rows))
+        self.assertFalse(any(x["first_bar_physically_witnessed_by_this_preflight"]
+                             for x in rows))
+        self.assertTrue(result["capture_enrollment_is_deadline_plan_not_live_proof"])
+        self.assertEqual(result["model_calls"],0)
+        self.assertFalse(result["paper_writer_active"])
+        self.assertFalse(result["model_http_authorized"])
+        from paper_evaluator.v3_paper_positive_source_entry_v1 import utc
+        from datetime import timedelta
+        for x in rows:
+            original=utc(x["original_at_utc"])
+            first=utc(x["first_expected_closed_1m_start_utc"])
+            deadline=utc(x["latest_first_bar_live_witness_utc"])
+            self.assertLessEqual(original,first)
+            self.assertEqual(deadline,first+timedelta(minutes=16))
+        # No re-prioritization of the actual V3 model decisions.
+        self.assertEqual([x["candidate_id"] for x in result["selected_candidates"]],
+                         ["early-scanner","late-scanner"])
+
+    def test_capture_preflight_never_writes_source_provenance_or_a_buy(self):
+        result=preflight(scanners=[scanner("sc-only","XBT/EUR",dt(9))],
+                         observations=xbt_real_pit_fixture())
+        self.assertEqual(len(result["prospective_first_1m_capture_enrollment"]),1)
+        self.assertFalse(result["prospective_first_1m_capture_enrollment"][0]
+                         ["first_bar_physically_witnessed_by_this_preflight"])
+        self.assertFalse(result["cloud_active_series_changed"])
+        self.assertFalse(result["paper_buy_authorized"])
+
     def test_unqualified_sources_must_not_block_scanner_and_low_volume_is_no_auto_veto(self):
         fake=dict(money(),not_self_dealing_checked=False)
         obs=xbt_real_pit_fixture()
