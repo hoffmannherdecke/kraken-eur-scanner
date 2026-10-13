@@ -325,14 +325,24 @@ Deno.serve(async(req:Request)=>{
         return response(409,{ok:false,error:"immutable_old_closed_trade_conflict"});
       }
       const oldUpdated=safeUtcMs(prior.updated_at);
-      if(!Number.isFinite(oldUpdated)||closed<oldUpdated)
+      // The historic Cloud row may have an ACK clock later than the
+      // original trade's economic EXIT timestamp. Never require exit
+      // time >= Cloud ACK time; protect economic chronology instead.
+      const oldEvents=Array.isArray(prior.payload?.events)?
+        prior.payload.events:[];
+      if(!Number.isFinite(oldUpdated)||
+         oldEvents.some((ev:any)=>{
+           const eventStamp=safeUtcMs(ev?.at_utc);
+           return !Number.isFinite(eventStamp)||eventStamp>closed;
+         }))
         return response(409,{ok:false,error:"old_trade_exit_timestamp_regression"});
       const nextPayload={...prior.payload,status:"CLOSED",
                          events:row.payload.events,exit:row.payload.exit};
+      const nextTradeCloudStamp=Math.max(Date.now(),oldUpdated+1,closed);
       const {data:updated,error:updateErr}=await admin.from("paper_trade_results")
         .update({status:"CLOSED",closed_at:new Date(closed).toISOString(),
                  net_pnl_eur:row.net_pnl_eur,net_return_pct:row.net_return_pct,
-                 payload:nextPayload,updated_at:new Date(closed).toISOString()})
+                 payload:nextPayload,updated_at:new Date(nextTradeCloudStamp).toISOString()})
         .eq("candidate_id",cid).eq("series_id",sid)
         .eq("updated_at",prior.updated_at).select("candidate_id");
       if(updateErr||!Array.isArray(updated)||updated.length!==1)
