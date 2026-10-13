@@ -89,10 +89,19 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
         open_work.append("MINIPC_ANALYTICS_READONLY_PREP")
     # Existing 10:15 Work alone executes bounded safe implementation;
     # physical Cloud-verified V3 release is mandatory before followthrough.
-    source_gate=v3_five_source_followthrough(
-        root,state,ack or {},dt.datetime.now(dt.timezone.utc))
-    if source_gate["status"]=="SOURCE_WORK_OPEN":
-        open_work.append("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH")
+    source_gate={"status":"WAIT_FOR_REAL_V3_PAPER_CUTOVER","open_roles":[]}
+    # No manifest read/cost for ordinary V2R4 or offline research fixtures.
+    # The existing Work route validates the five-role contract itself.
+    transition=state.get("pending_strategy_transition") or {}
+    active=state.get("active_strategy") or {}
+    if (str(active.get("strategy_revision") or "").startswith("V3-")
+            and transition.get("status")=="V3_PAPER_ACTIVE_VERIFIED"
+            and (transition.get("verified_cutover_evidence") or {}).get(
+                "mini_pc_and_single_active_supabase_series_ack") is True):
+        source_gate=v3_five_source_followthrough(
+            root,state,ack or {},dt.datetime.now(dt.timezone.utc))
+        if source_gate["status"]=="SOURCE_WORK_OPEN":
+            open_work.append("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH")
     digest=hashlib.sha256(json.dumps({
         "v3_source_followthrough":source_gate["open_roles"],
         "v3_source_status":source_gate["status"],
