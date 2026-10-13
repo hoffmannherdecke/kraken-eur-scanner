@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import time
+from collections import OrderedDict
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -21,6 +22,15 @@ except ImportError:  # direct script execution
     from v2r4_trigger_contract import evaluate_plan, validate_plan
 
 UA = "kraken-v2r4-wait-watcher/0.1-paper-only"
+
+# Only successful, CLOSED candles are reused within their UTC candle bucket.
+# No disk persistence, no cross-process or cross-interval sharing, and no
+# ticker reuse: every WAIT decision still fetches a fresh public Kraken ticker.
+# The bounded in-memory cache is intentionally process-local; a separate host
+# request-budget gate is required for all competing MINI-PC consumers.
+_CLOSED_OHLC_CACHE_MAX = 256
+_CLOSED_OHLC_CACHE = OrderedDict()
+
 
 
 def utcnow() -> datetime:
@@ -59,13 +69,37 @@ def ticker(altname: str) -> dict[str, float]:
 
 
 def closed_ohlc(altname: str, interval: int) -> list[list]:
+    # Kraken's final row is the still-running candle; closed rows cannot
+    # normally change until the next UTC interval boundary. Reuse strictly
+    # within that bucket, never across boundaries or after an API error.
+    # All endpoint requests that do occur retain their original semantics.
+    if interval not in (1, 5, 15):
+        raise ValueError("unsupported WAIT OHLC interval")
+    bucket = int(time.time() // (interval * 60))
+    key = (altname, interval)
+    prior = _CLOSED_OHLC_CACHE.get(key)
+    if prior is not None and prior[0] == bucket:
+        _CLOSED_OHLC_CACHE.move_to_end(key)
+        return [list(row) for row in prior[1]]
+
+    # Explicitly clear an expired record before attempting a new fetch.
+    # If Kraken throttles or is unavailable, NEVER fall back to stale data.
+    _CLOSED_OHLC_CACHE.pop(key, None)
     query = urllib.parse.urlencode({"pair": altname, "interval": interval})
     payload = http_json("https://api.kraken.com/0/public/OHLC?" + query)
     if payload.get("error"):
         raise RuntimeError("Kraken OHLC error: " + repr(payload["error"]))
     rows = next(v for k, v in payload["result"].items() if k != "last")
-    # Kraken's final row is the current, not-yet-closed candle.
-    return rows[:-1] if len(rows) > 1 else []
+    # Do not cache absence of a closed candle: a late Kraken candle might
+    # appear during the same bucket, and its absence must not become evidence.
+    closed = rows[:-1] if len(rows) > 1 else []
+    if closed:
+        _CLOSED_OHLC_CACHE[key] = (
+            bucket, tuple(tuple(row) for row in closed)
+        )
+        while len(_CLOSED_OHLC_CACHE) > _CLOSED_OHLC_CACHE_MAX:
+            _CLOSED_OHLC_CACHE.popitem(last=False)
+    return [list(row) for row in closed]
 
 
 def volume_ratio(rows: list[list], lookback: int) -> float | None:
