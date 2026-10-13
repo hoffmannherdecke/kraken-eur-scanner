@@ -86,6 +86,79 @@ def changed_rows(rows,prefix,sent):
         out.append(row); marks[key]=h
     return out,marks
 
+def closed_original_readonly_preview(control,candidates,trades,*,old_series_id,
+                                     future_v3_series_id,old_release_sha,
+                                     cutover_at_utc):
+    """Construct ONLY an in-memory preview for the existing old Cloud relay.
+
+    Never submit requests, reserve orders, send alerts or touch state. This
+    is NOT a physical/Cloud authorization; the original owner must
+    independently prove series/fence/credential/Cloud original existence.
+    """
+    import re
+    def clock(value):
+        if not isinstance(value,str) or not value:
+            raise ValueError('missing original UTC timestamp')
+        return datetime.fromisoformat(value.replace('Z','+00:00')).astimezone(timezone.utc)
+    if (not isinstance(control,dict)
+            or not re.fullmatch(r'PAPER-V2R4-[0-9]{8}T[0-9]{6}Z',old_series_id)
+            or not re.fullmatch(r'PAPER-V3-[0-9]{8}T[0-9]{6}Z',future_v3_series_id)
+            or not re.fullmatch(r'[0-9a-f]{40}',old_release_sha)
+            or control.get('series_id')!=old_series_id
+            or control.get('strategy_revision')!='V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION'
+            or control.get('paper_only') is not True
+            or control.get('real_money_actions_enabled') is not False):
+        raise ValueError('closed original preview has wrong pinned paper identity')
+    cutoff=clock(cutover_at_utc)
+    old_candidates=[]
+    old_trades=[]
+    for row in candidates:
+        if not isinstance(row,dict) or row.get('series_id')!=old_series_id:
+            continue
+        fup=row.get('followup')
+        decision=(row.get('payload') or {}).get('decision') or {}
+        if (not isinstance(fup,dict) or fup.get('kind')!='PAPER_FOLLOWUP_V2'
+                or fup.get('series_id')!=old_series_id
+                or fup.get('candidate_id')!=row.get('candidate_id')
+                or fup.get('pair')!=row.get('pair')
+                or decision.get('real_money_actions_enabled') is not False
+                or clock(row.get('evaluated_at'))>=cutoff):
+            continue
+        clock(fup.get('updated_at_utc'))
+        old_candidates.append(row)
+    for row in trades:
+        if not isinstance(row,dict) or row.get('series_id')!=old_series_id:
+            continue
+        opened=clock(row.get('opened_at'))
+        if (row.get('status')!='CLOSED'
+                or opened>=cutoff
+                or (row.get('payload') or {}).get('real_money_actions_enabled') is not False
+                or not (row.get('payload') or {}).get('exit')):
+            continue
+        if clock(row.get('closed_at'))<opened:
+            raise ValueError('closed original exit precedes its entry')
+        old_trades.append(row)
+    meta={'action':'sync_closed_original_followups',
+          'series_id':old_series_id,
+          'strategy_revision':control['strategy_revision'],
+          'expected_old_release_sha':old_release_sha,
+          'expected_active_v3_series_id':future_v3_series_id}
+    batches=[{**meta,'candidates':chunk,'trades':[]}
+             for chunk in _chunks(old_candidates,20)]
+    batches += [{**meta,'candidates':[],'trades':chunk}
+                for chunk in _chunks(old_trades,20)]
+    return {'kind':'CLOSED_ORIGINAL_RELAY_PREVIEW_NO_NETWORK_V1',
+            'status':'REVIEW_ONLY_NOT_ACTIVATED',
+            'candidate_followup_count':len(old_candidates),
+            'old_terminal_trade_count':len(old_trades),
+            'bounded_batches':len(batches),
+            'physical_old_writer_fence_verified':False,
+            'cloud_preexisting_originals_verified':False,
+            'edge_credential_proof_verified':False,
+            'cloud_updated':False,
+            'batches':batches}
+
+
 def actionable_keys(control,candidates,trades):
     sid=control['series_id']; keys=set()
     for row in candidates:
@@ -181,9 +254,20 @@ def run_once(args):
     atomic_json(hb,result); return result
 
 def parse_args():
-    ap=argparse.ArgumentParser(); ap.add_argument('--app-root',type=Path,required=True); ap.add_argument('--trading-root',type=Path,default=Path.home()/'Trading'); ap.add_argument('--endpoint',default=DEFAULT_ENDPOINT); ap.add_argument('--paper-state-dir',type=Path,default=None); ap.add_argument('--interval-seconds',type=int,default=60); ap.add_argument('--once',action='store_true'); return ap.parse_args()
+    ap=argparse.ArgumentParser(); ap.add_argument('--app-root',type=Path,required=True); ap.add_argument('--trading-root',type=Path,default=Path.home()/'Trading'); ap.add_argument('--endpoint',default=DEFAULT_ENDPOINT); ap.add_argument('--paper-state-dir',type=Path,default=None); ap.add_argument('--interval-seconds',type=int,default=60); ap.add_argument('--once',action='store_true'); ap.add_argument('--preview-closed-original',action='store_true'); ap.add_argument('--preview-old-series-id',default=''); ap.add_argument('--preview-new-v3-series-id',default=''); ap.add_argument('--preview-old-release-sha',default=''); ap.add_argument('--preview-cutover-at-utc',default=''); return ap.parse_args()
 if __name__=='__main__':
     a=parse_args()
+    if a.preview_closed_original:
+        # Never read a credential or make a network request in preview.
+        control,candidates,trades=collect(a.app_root)
+        preview=closed_original_readonly_preview(
+            control,candidates,trades,old_series_id=a.preview_old_series_id,
+            future_v3_series_id=a.preview_new_v3_series_id,
+            old_release_sha=a.preview_old_release_sha,
+            cutover_at_utc=a.preview_cutover_at_utc)
+        print(json.dumps({k:v for k,v in preview.items() if k!='batches'},
+                         sort_keys=True),flush=True)
+        raise SystemExit(0)
     while True:
         r=run_once(a); print(json.dumps(r,sort_keys=True),flush=True)
         if a.once: raise SystemExit(0 if r['status']=='HEALTHY' else 2)
