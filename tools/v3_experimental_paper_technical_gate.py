@@ -155,10 +155,14 @@ def _evidence_content_error(
         if (host.get("precommit_original_backup_verified") is not True
                 or host.get("precommit_restore_only_before_cloud_commit_tested") is not True
                 or host.get("old_followups_retained_on_original_series_tested") is not True
+                or host.get("old_followup_owner_running_after_cutover_tested") is not True
                 or host.get("old_supervisor_intake_rearm_fence_tested") is not True
                 or cloud.get("stale_predecessor_cas_rejected_tested") is not True
                 or cloud.get("ambiguous_cloud_outcome_quarantines_both_tested") is not True
                 or cloud.get("postcommit_no_predecessor_restart_tested") is not True
+                or cloud.get("closed_old_series_followup_update_accepted_tested") is not True
+                or cloud.get("closed_old_series_trade_exit_update_accepted_tested") is not True
+                or cloud.get("closed_old_series_new_intake_rejected_tested") is not True
                 or cloud.get("phase")!="CLOUD_COMMIT_NOT_ATTEMPTED"):
             return name+" V3 pre/post-CAS rollback safety not witnessed"
         active=cloud.get("active_paper_series")
