@@ -183,6 +183,31 @@
       "action": "Select only the highest priority registered OPEN safe Work task from existing generic project implementation router. Perform actual bounded read-only review and a small PR/CI with explicit source+consumer evidence or mark gate/owner blocker. No Paper activation or new schedule.",
       "proof_of_completion": "Matched canonical commitment ACK with existing physical/source original identifiers + independent readback + report digest, or explicitly blocked review packet. Code-only CI is not a physical completion.",
       "limits": "Existing 10:15 Work only, max 2 safe actions per run and 1 implementation PR, no source or Paper writer activation, no OpenAI API spend and no automatic trading."
+    },
+    {
+      "id": "HISTORICAL_BACKLOG_RECONCILIATION",
+      "status": "APPROVED_SAFE_SCOPE",
+      "priority": 2,
+      "owner": "EXISTING_WORK_SAFE_IMPLEMENTATION",
+      "gate": "HISTORIC_UNDISPOSED_CHECKBOX_REQUIRES_REAL_OWNER_AND_GATE",
+      "source_ref": "PROJECT_BACKLOG.md#historic-open-checkboxes",
+      "evidence": [
+        "PROJECT_BACKLOG.md",
+        "research/project-followthrough-routing-v1.json",
+        "research/work-analysis-state.json"
+      ],
+      "target": "tools/project_followthrough_router.py",
+      "allowlist": [
+        "PROJECT_BACKLOG.md",
+        "research/project-followthrough-routing-v1.json",
+        "research/work-analysis/**",
+        "docs/**",
+        "tests/**",
+        "tools/**"
+      ],
+      "action": "Review at most three oldest still-unclassified checked-off historical backlog entries from existing router, V3 first. Compare original current state / GitHub/Cloud/source and classify exact existing owner/open task, superseded, deferred with explicit trigger, or truly completed with real original evidence, update existing Work ACK with report and digest. Do NOT run obsolete V2R3 or authorize trading.",
+      "proof_of_completion": "At most three immutable original checkbox IDs each have SHA-backed dated Work disposition with named canonical owner and next evidence gate; no false completion from old checkboxes alone.",
+      "limits": "Once per existing 10:15 Work only, one safe bounded research disposition per item, no new schedule or trade/strategy source changes."
     }
   ]
 }
