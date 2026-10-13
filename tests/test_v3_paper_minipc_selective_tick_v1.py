@@ -93,6 +93,52 @@ class HostTickTests(unittest.TestCase):
             self.assertEqual(finish_wait(journal=j,series_id=SID,candidate_id=CID,
                     now_at_utc=t(at))["status"],"WAIT_EXPIRY_ALREADY_FINAL")
 
+    def test_live_capture_keeps_only_supported_prospective_archive_window(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            at=datetime(2026,10,13,8,0,0,tzinfo=timezone.utc)
+            cap=Path(tmp)
+            base=at-timedelta(minutes=75)
+            def loader(_):
+                candles=[]
+                for n in range(75):
+                    t0=base+timedelta(minutes=n)
+                    candles.append([int(t0.timestamp()),"2.09","2.12",
+                                    "2.08","2.10","2.10","10",2])
+                return {"error":[],"result":{"ZROEUR":candles,"last":1}}
+            result=capture_public_1m(pair="ZRO/EUR",altname="ZROEUR",
+                                      outdir=cap,loader=loader,clock=lambda:at)
+            self.assertEqual(result["count"],61)
+            self.assertEqual(result["historical_closed_rows_not_archived"],14)
+            # Same API snapshot is an immutable replay, not another payload.
+            again=capture_public_1m(pair="ZRO/EUR",altname="ZROEUR",
+                                     outdir=cap,loader=loader,clock=lambda:at)
+            self.assertEqual(result["sha256"],again["sha256"])
+            self.assertEqual(len(list(cap.glob("*.json"))),1)
+            disk=json.loads(Path(result["file"]).read_text("utf-8"))
+            self.assertEqual(len(disk["closed_bars"]),61)
+            joined=assemble(snapshots=cap,pair="ZRO/EUR",
+                entry_at_utc=t(at-timedelta(hours=2)),observed_at_utc=t(at),
+                max_live_capture_lag_minutes=60)
+            self.assertEqual(len(joined["closed_bars"]),61)
+            strict=assemble(snapshots=cap,pair="ZRO/EUR",
+                entry_at_utc=t(at-timedelta(hours=2)),observed_at_utc=t(at))
+            self.assertEqual(len(strict["closed_bars"]),16)
+            self.assertFalse(any(b["start_at_utc"]==
+                t(base) for b in disk["closed_bars"]))
+
+    def test_stale_only_ohlc_is_not_healthy_source_capture(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            at=datetime(2026,10,13,8,0,0,tzinfo=timezone.utc)
+            def loader(_):
+                old=at-timedelta(hours=2)
+                return {"error":[],"result":{"ZROEUR":[
+                    [int(old.timestamp()),"2.09","2.12","2.08",
+                     "2.10","2.10","10",2]],"last":1}}
+            with self.assertRaisesRegex(ValueError,"no recently witnessed"):
+                capture_public_1m(pair="ZRO/EUR",altname="ZROEUR",
+                                  outdir=Path(tmp),loader=loader,clock=lambda:at)
+            self.assertEqual(list(Path(tmp).glob("*.json")),[])
+
     def test_15m_volume_ratio_four_previous_is_not_five_previous(self):
         from paper_evaluator.successor_coin_entry_evidence_v1 import _frame
         as_of=datetime(2026,10,12,6,46,tzinfo=timezone.utc)
@@ -121,7 +167,8 @@ class HostTickTests(unittest.TestCase):
                 return {"error":[],"result":{"ZROEUR":candles,"last":1}}
             snapshot=capture_public_1m(pair="ZRO/EUR",altname="ZROEUR",
                            outdir=cap,loader=loader,clock=lambda:at)
-            self.assertEqual(snapshot["count"],17)
+            self.assertEqual(snapshot["count"],16)
+            self.assertEqual(snapshot["historical_closed_rows_not_archived"],1)
             joined=assemble(snapshots=cap,pair="ZRO/EUR",
                 entry_at_utc=t(at-timedelta(hours=20)),
                 observed_at_utc=t(at))

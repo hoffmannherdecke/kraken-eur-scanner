@@ -52,6 +52,18 @@ def capture_public_1m(*,pair:str,altname:str,outdir:Path,
     rows.sort(key=lambda x:x["start_at_utc"])
     if len({x["start_at_utc"] for x in rows})!=len(rows):
         raise ValueError("duplicate 1m source times")
+    # Kraken can return hundreds of historical candles on EVERY 5-minute
+    # observation. They were not observed prospectively and would later be
+    # rejected by assemble() (maximum supported live lag is 60 minutes).
+    # Keep only candles within that exact provenance ceiling: no additional
+    # request, no lossy compression of eligible bars, and no unbounded
+    # duplicate raw OHLC archives for the future one-writer Paper path.
+    returned_closed_count=len(rows)
+    rows=[bar for bar in rows
+          if received-(timestamp(bar["start_at_utc"])+timedelta(minutes=1))
+          <=timedelta(minutes=60)]
+    if not rows:
+        raise ValueError("no recently witnessed closed Kraken Spot EUR 1m bars")
     report={"kind":"KRAKEN_CLOSED_1M_PATH_SNAPSHOT_V1",
             "source":"KRAKEN_SPOT_EUR_PUBLIC","pair":pair,"altname":altname,
             "observed_at_utc":started.isoformat(),
@@ -66,7 +78,9 @@ def capture_public_1m(*,pair:str,altname:str,outdir:Path,
     except FileExistsError:
         if p.read_bytes()!=data:raise ValueError("capture digest collision")
     return {"status":"CLOSED_KRAKEN_1M_SNAPSHOT_SAVED",
-            "count":len(rows),"sha256":digest,"file":str(p),
+            "count":len(rows),
+            "historical_closed_rows_not_archived":returned_closed_count-len(rows),
+            "sha256":digest,"file":str(p),
             "observed_at_utc":started.isoformat(),"captured_at_utc":received.isoformat()}
 
 def assemble(*,snapshots:Path,pair:str,entry_at_utc:str,
