@@ -35,7 +35,8 @@ ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "H3_STALE_EVIDENCE": 7,
                  "H10_FIRST_SOURCE_RECEIPT_REVIEW": 7,
                  "H10_SOURCE_RECEIPT_INTEGRITY": 7,
                  "V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH_DUE": 7,
-                 "PROJECT_IMPLEMENTATION_COMMITMENT_REVIEW": 7}
+                 "PROJECT_IMPLEMENTATION_COMMITMENT_REVIEW": 7,
+                 "V2R4_WAIT_INCIDENT_FOLLOWTHROUGH_DUE": 99}
 SUPPORTED_DECISIONS = {"V3-H3-ARCHIVE-DISPOSITION", "V2R4-PRODUCTIVITY-REVIEW",
                        "V3-EXTENDED-SECOND-LEG-LEARNING-GATE"}
 
@@ -620,6 +621,23 @@ def registered_commitment_milestone(state:dict,now:dt.datetime,root:Path)->tuple
             "nicht ausführbare Release-/Budget-Entscheidungen sichtbar OFFEN. "
             "Nicht als erledigt zählen ohne Original-/Consumer-Beleg; "
             "keine automatischen Paper-/H3-/H6-/Echtgeld-Änderungen."))
+    # Distinct immutable incident owner: alert the ORIGINAL #99 thread once
+    # after the protected Canary clock, even when V3 work has filled both
+    # daily implementation slots. This reminder is NOT an executor.
+    incident_id="V2R4_WAIT_INCIDENT_PHYSICAL_FOLLOWTHROUGH"
+    incident=next((x for x in report["items"] if x["id"]==incident_id),None)
+    if incident and incident["state"] in (
+            "READY_SAFE_IMPLEMENTATION","READY_REVIEW_RELEASE_GATED"):
+        statuses.append("PROJECT:V2R4_WAIT_PHYSICAL_FOLLOWTHROUGH_OPEN")
+        notices.append(event("V2R4_WAIT_INCIDENT_FOLLOWTHROUGH_DUE",
+                             incident_id,
+            "Offener V2R4-WAIT-Incident Issue #99 nach tatsächlicher "
+            "28h-Canary-Frist: PR259/260 sind nur GitHub-Code, die aktive "
+            "isolierte Mini-PC-Stage noch nicht installiert. Bestehendes "
+            "10:15-Work prüft Original-Stage-SHA, Kraken-Quellfehler, "
+            "Rollback/Single-Writer und echten Supervisor/Lifecycle/Cloud-"
+            "Consumer-ACK. Keine neue Runtime ohne getrennte Benutzerfreigabe, "
+            "kein bloßes CI/Heartbeat/Work-ACK als physischer Abschluss."))
     return statuses,notices
 
 
