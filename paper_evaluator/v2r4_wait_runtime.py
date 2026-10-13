@@ -294,9 +294,15 @@ def run_cycle(
         "fresh_recheck_failures": 0,
         "altrady_records_seen": hint_records,
         "data_unavailable_checks": 0,
+        "unique_pair_source_fetches": 0,
+        "same_cycle_pair_reuses": 0,
     }
     error_classes: dict[str, int] = {}
     errors: list[str] = []
+    # One source snapshot per Kraken REST altname within this one bounded
+    # cycle only. All plans share the same decision clock for this cycle.
+    # Never carry data/errors into the next cycle or outside paper WAIT.
+    pair_snapshot_cache: dict[str, dict[str, float | None] | Exception] = {}
 
     for plan, source_path in plans:
         key = plan_key(plan)
@@ -328,7 +334,22 @@ def run_cycle(
         try:
             # Critical safety property: even an Altrady wake-up always fetches
             # fresh Kraken public metrics and evaluates the persisted plan.
-            metrics = market_metrics(plan["altname"])
+            altname = plan["altname"]
+            if altname not in pair_snapshot_cache:
+                # Fetch once for each distinct altname. Cache errors within
+                # the cycle as fail-closed errors; do not retry a throttled
+                # pair repeatedly just because several WAIT plans refer to it.
+                try:
+                    pair_snapshot_cache[altname] = market_metrics(altname)
+                except Exception as source_error:
+                    pair_snapshot_cache[altname] = source_error
+                counters["unique_pair_source_fetches"] += 1
+            else:
+                counters["same_cycle_pair_reuses"] += 1
+            cached = pair_snapshot_cache[altname]
+            if isinstance(cached, Exception):
+                raise cached
+            metrics = cached
             result = evaluate_plan(plan, metrics, now=now)
         except Exception as exc:
             # Keep every failure fail-closed; retain bounded class counts for
