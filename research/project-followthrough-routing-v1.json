@@ -301,6 +301,20 @@
         "allowed_action": "Verify actual minimal Mini-PC read-only analytics reuse after Paper start, avoiding storage or background scan bloat",
         "completion_gate": "Actual physical read-only value/overhead/rollback evidence and no new long-running service",
         "requires_user_release": false
+      },
+      {
+        "id": "V2R4_WAIT_INCIDENT_PHYSICAL_FOLLOWTHROUGH",
+        "stream_id": "health_watchdog",
+        "backlog_marker": "V2R4_WAIT_INCIDENT_PHYSICAL_FOLLOWTHROUGH",
+        "owner": "EXISTING_MINIPC_V2R4_WAIT_INCIDENT_ISSUE_99_AND_DAILY_1015_WORK",
+        "trigger": "AFTER_CANARY_CLOCK",
+        "priority": 1,
+        "safe_work": true,
+        "allowed_action": "After original 28h Canary end, read exact active Windows WAIT Stage SHA, original error class and real Supervisor/Lifecycle/Cloud status, prepare only isolated rollback-safe preflight, never install or restart automatically",
+        "completion_gate": "Independent actual physical WAIT-only deployment with old/new SHA backup plus fresh original Kraken error classification and supervisor/lifecycle/Cloud consumer ACK and explicit user release gate; code merge, healthy transient heartbeat, or Work report alone do not close",
+        "requires_user_release": true,
+        "incident_issue": 99,
+        "physical_runtime_evidence_required": true
       }
     ]
   },
