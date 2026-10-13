@@ -86,10 +86,46 @@ if(Test-Path -LiteralPath $heartbeatPath -PathType Leaf){
  try{$heartbeat=Get-Content -LiteralPath $heartbeatPath -Raw|ConvertFrom-Json}catch{}
 }
 $taskState='NOT_FOUND'
+$taskLastRunUtc=$null
+$taskLastResult=$null
+$taskFirstTriggerUtc=$null
+$taskFinalTriggerUtc=$null
+$taskActionMatchesPinnedObserver=$false
+$taskScheduleReadbackStatus='NOT_VERIFIED'
 try{
  $task=Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
- if($null -ne $task){$taskState=[string]$task.State}
-}catch{$taskState='UNAVAILABLE_TO_READ'}
+ if($null -ne $task){
+  $taskState=[string]$task.State
+  # Require exactly one original 28h Windows scheduled-task action/trigger.
+  if(@($task.Actions).Count -eq 1 -and @($task.Triggers).Count -eq 1){
+   $arguments=[string]$task.Actions[0].Arguments
+   $runner=Join-Path $repo 'tools\minipc-v3-bounded-canary-observer-task.ps1'
+   $taskActionMatchesPinnedObserver=(
+     ([string]$task.Actions[0].Execute -match '(^|[\\/])powershell\.exe$') -and
+     $arguments.Contains($runner) -and
+     $arguments.Contains('-UntilUtc') -and
+     $null -ne $plan -and $arguments.Contains([string]$plan.until_utc)
+   )
+   $first=[datetime]::Parse([string]$task.Triggers[0].StartBoundary).ToUniversalTime()
+   $durationText=[string]$task.Triggers[0].Repetition.Duration
+   $duration=[System.Xml.XmlConvert]::ToTimeSpan($durationText)
+   if($duration -ne [timespan]::FromHours(28)){throw 'Unexpected Canary repetition duration'}
+   $taskFirstTriggerUtc=$first.ToString('o')
+   $taskFinalTriggerUtc=$first.Add($duration).ToString('o')
+   $taskScheduleReadbackStatus='ONE_ORIGINAL_28H_TRIGGER_READ'
+  }else{
+   $taskScheduleReadbackStatus='MISSING_OR_MULTIPLE_SCHEDULE_ACTIONS_OR_TRIGGERS'
+  }
+  $taskInfo=$task|Get-ScheduledTaskInfo -ErrorAction Stop
+  if($taskInfo.LastRunTime -gt [datetime]::MinValue){
+   $taskLastRunUtc=$taskInfo.LastRunTime.ToUniversalTime().ToString('o')
+  }
+  $taskLastResult=[int]$taskInfo.LastTaskResult
+ }
+}catch{
+ $taskScheduleReadbackStatus='SCHEDULE_OR_ACTION_NOT_READABLE_NO_STOP_CLAIM'
+}
+
 # The old host runtime configuration directory is NOT a physical
 # Windows-task/sole-writer proof. Read only the four exact existing V2R4
 # task identities; never infer a running Paper writer from JSON controls.
@@ -149,6 +185,24 @@ if($null -ne $plan){
   if($hash -ine $expected){$pinMismatches+=@($rel)}
  }
 }
+# A wall-clock expiry is not a physical STOP acknowledgement. This
+# diagnostic permits independent human review of the original task only.
+$canarySchedulerEndCandidate=$false
+if($null -ne $plan -and $taskFinalTriggerUtc){
+ try{
+  $deadline=[datetime]::Parse([string]$plan.until_utc).ToUniversalTime()
+  $actualEnd=[datetime]::Parse($taskFinalTriggerUtc).ToUniversalTime()
+  $lastRun=if($taskLastRunUtc){[datetime]::Parse($taskLastRunUtc).ToUniversalTime()}else{$null}
+  $canarySchedulerEndCandidate=(
+    $now -ge $deadline -and $taskState -in @('Ready','Disabled') -and
+    $taskScheduleReadbackStatus -eq 'ONE_ORIGINAL_28H_TRIGGER_READ' -and
+    $taskActionMatchesPinnedObserver -and
+    [math]::Abs(($actualEnd-$deadline).TotalSeconds) -le 120 -and
+    $null -ne $lastRun -and $lastRun -le $deadline -and
+    $pinChecked -eq 9 -and $pinMismatches.Count -eq 0
+  )
+ }catch{$canarySchedulerEndCandidate=$false}
+}
 $journalCount=0
 if(Test-Path -LiteralPath $journal -PathType Container){
  $journalCount=@(Get-ChildItem -LiteralPath $journal -Filter '*.json' -File).Count
@@ -166,7 +220,7 @@ $canarySafe=($null -ne $plan -and
               $plan.kind -eq 'V3_LOCAL_READONLY_CANARY_28H_PLAN_V1' -and
               $plan.v2r4_unchanged -eq $true -and
               $plan.model_http_calls_authorized -eq 0 -and
-              $plan.orders -eq $false -and $pinChecked -ge 8 -and
+              $plan.orders -eq $false -and $pinChecked -eq 9 -and
               $pinMismatches.Count -eq 0 -and $taskState -ne 'NOT_FOUND')
 $ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $canarySafe)
 [ordered]@{
@@ -193,6 +247,15 @@ $ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $can
  latest_valid_original_age_seconds=$latestAgeSec
  canary_task_state=$taskState
  canary_deadline_utc=if($null -ne $plan){$plan.until_utc}else{$null}
+ canary_original_task_last_run_utc=$taskLastRunUtc
+ canary_original_task_last_result=$taskLastResult
+ canary_original_trigger_start_utc=$taskFirstTriggerUtc
+ canary_original_trigger_end_utc=$taskFinalTriggerUtc
+ canary_original_action_matches_manifest=$taskActionMatchesPinnedObserver
+ canary_original_schedule_readback_status=$taskScheduleReadbackStatus
+ canary_scheduler_end_candidate_for_independent_review=$canarySchedulerEndCandidate
+ canary_physical_observer_end_ack_from_this_single_readback=$false
+ canary_after_deadline_requires_independent_host_cloud_ack=$true
  canary_manifest_valid_and_pinned=$canarySafe
  experimental_paper_gate_module_present=$existingExperimentalGatePresent
  experimental_paper_requires_prior_profitable_buy=$false
