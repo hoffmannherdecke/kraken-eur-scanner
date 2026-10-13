@@ -109,7 +109,9 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
     # Only the real canonical root (or explicit full fixture) can request
     # these tasks. Minimal unrelated offline selector fixtures stay isolated.
     available=[]
-    if (root/"research/project-followthrough-routing-v1.json").is_file():
+    if all((root/p).is_file() for p in (
+        "research/project-followthrough-routing-v1.json",
+        "research/monitoring-evidence-routing-v1.json","PROJECT_BACKLOG.md")):
         registered=project_implementation_commitments(
             root,state,ack or {},dt.datetime.now(dt.timezone.utc))
         available=registered["ready_safe_actions"]
