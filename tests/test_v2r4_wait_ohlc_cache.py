@@ -17,12 +17,14 @@ def fake_kraken_response(url):
         }
     if "/OHLC?" in url:
         interval = int(parse_qs(urlparse(url).query)["interval"][0])
+        seconds = interval * 60
+        bucket = int(watcher.time.time() // seconds)
         return {
             "error": [],
             "result": {
                 "XTZEUR": [
-                    [1000, "1", "2", "1", str(100 + interval), "0", "10"],
-                    [2000, "1", "2", "1", str(200 + interval), "0", "11"],
+                    [(bucket - 1) * seconds, "1", "2", "1", str(100 + interval), "0", "10"],
+                    [bucket * seconds, "1", "2", "1", str(200 + interval), "0", "11"],
                 ],
                 "last": 2000,
             },
@@ -87,6 +89,47 @@ class ClosedOhlcReuseTests(unittest.TestCase):
             recovered = watcher.closed_ohlc("XTZEUR", 15)
         self.assertEqual(first, recovered)
         self.assertEqual(api.call_count, 3)
+
+    def test_delayed_new_candle_is_not_pinned_for_whole_interval(self):
+        now = 900010
+        seconds = 15 * 60
+        bucket = now // seconds
+        # A cold Kraken response still carries the preceding (now closed)
+        # bar as its last/current row, before the new live candle appears.
+        stale = {
+            "error": [],
+            "result": {
+                "XTZEUR": [
+                    [(bucket - 2) * seconds, 1, 2, 1, 98, 0, 10],
+                    [(bucket - 1) * seconds, 1, 2, 1, 99, 0, 11],
+                ],
+                "last": 0,
+            },
+        }
+        with patch.object(watcher.time, "time", return_value=now), patch.object(
+            watcher, "http_json", side_effect=[
+                stale,
+                fake_kraken_response("https://api.kraken.com/0/public/OHLC?pair=XTZEUR&interval=15"),
+            ]
+        ) as api:
+            old_rows = watcher.closed_ohlc("XTZEUR", 15)
+            self.assertEqual(len(watcher._CLOSED_OHLC_CACHE), 0)
+            new_rows = watcher.closed_ohlc("XTZEUR", 15)
+            self.assertNotEqual(old_rows[-1][0], new_rows[-1][0])
+            self.assertEqual(api.call_count, 2)
+            watcher.closed_ohlc("XTZEUR", 15)
+            self.assertEqual(api.call_count, 2)
+
+    def test_network_response_crossing_utc_boundary_is_not_cached(self):
+        with patch.object(watcher.time, "time", return_value=900010) as clock:
+            def delayed_response(url):
+                clock.return_value = 900910
+                return fake_kraken_response(url)
+            with patch.object(watcher, "http_json", side_effect=delayed_response) as api:
+                watcher.closed_ohlc("XTZEUR", 15)
+                self.assertEqual(len(watcher._CLOSED_OHLC_CACHE), 0)
+                watcher.closed_ohlc("XTZEUR", 15)
+                self.assertEqual(api.call_count, 2)
 
     def test_missing_closed_candles_are_never_cached(self):
         empty = {"error": [], "result": {"XTZEUR": [[2000, 0, 0, 0, 0, 0, 0]], "last": 2000}}
