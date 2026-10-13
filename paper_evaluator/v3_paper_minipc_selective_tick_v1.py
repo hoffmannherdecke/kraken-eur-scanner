@@ -16,7 +16,7 @@ from typing import Any,Callable
 from paper_evaluator import evaluate
 from paper_evaluator.successor_coin_entry_evidence_v1 import fetch_public_entry_evidence
 from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
-    capture_public_1m,assemble,
+    capture_public_1m,assemble,early_path_coverage,
 )
 from paper_evaluator.v3_paper_minipc_followup_v1 import record_horizon
 from paper_evaluator.v3_paper_missed_opportunity_followup_v1 import followup_no_buy
@@ -111,6 +111,12 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
         entry_at_utc=origin["event_time_utc"],observed_at_utc=clock_now(),
         max_live_capture_lag_minutes=15)
     results["prospective_1m_bars"]=len(capture_path["closed_bars"])
+    # Zero extra Kraken requests, receipts, or tasks: signal a missing
+    # first minute while the event is still fresh instead of pretending
+    # a later historic OHLC download was a live witnessed source path.
+    results["early_1m_coverage"]=early_path_coverage(
+        assembled=capture_path,entry_at_utc=origin["event_time_utc"],
+        observed_at_utc=capture_path["captured_at_utc"])
     results["horizons"]={}
     buys=any(r["phase"]=="PAPER_FILL" and r["result"]=="PAPER_FILLED" for r in rows)
     for hrs in (6,24,72):
