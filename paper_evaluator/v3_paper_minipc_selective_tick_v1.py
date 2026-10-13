@@ -54,6 +54,18 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
              "paper_only":True,"model_called":False,"model_attempts":0,
              "orders":False,"real_money_actions":False,
              "v2r4_changed":False,"new_schedules":0}
+    # No endless data accumulation after ALL three original followup
+    # horizons have individually durable final outcomes. PENDING does not
+    # count as final; the original six/24/72h facts remain immutable.
+    finals={r["phase"] for r in rows
+            if r["phase"] in ("FOLLOWUP_6H","FOLLOWUP_24H","FOLLOWUP_72H")
+            and r["result"] in ("MATURE_COMPLETE","CENSORED")}
+    if finals=={"FOLLOWUP_6H","FOLLOWUP_24H","FOLLOWUP_72H"}:
+        results["status"]="ALL_FOLLOWUP_HORIZONS_FINAL_NO_NEW_PUBLIC_KRAKEN_REQUEST"
+        results["source_capture"]="SKIPPED_COMPLETE_IMMUTABLE_6H24H72H"
+        results["prospective_1m_bars"]=0
+        results["horizons"]={}
+        return results
     # The existing Kraken rate-limited client is called ONCE for this
     # tracked candidate, not a second scanner of all 500+ assets.
     snapshot=capture(pair=pair,altname=altname,outdir=capture_dir)
