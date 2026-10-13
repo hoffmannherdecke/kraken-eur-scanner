@@ -16,6 +16,14 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
+import sys
+
+# Direct file execution uses paper_evaluator/ as sys.path[0], not the repo
+# root. Include the existing repo root so the original market_data module
+# works in both CI and standalone scheduled-task modes.
+_ROOT = Path(__file__).resolve().parents[1]
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
 
 try:
     from .v2r4_trigger_contract import evaluate_plan, validate_plan
