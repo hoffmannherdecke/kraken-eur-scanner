@@ -112,6 +112,7 @@ def closed_original_readonly_preview(control,candidates,trades,*,old_series_id,
     cutoff=clock(cutover_at_utc)
     old_candidates=[]
     old_trades=[]
+    pending_unstamped=0
     for row in candidates:
         if not isinstance(row,dict) or row.get('series_id')!=old_series_id:
             continue
@@ -124,6 +125,15 @@ def closed_original_readonly_preview(control,candidates,trades,*,old_series_id,
                 or decision.get('real_money_actions_enabled') is not False
                 or clock(row.get('evaluated_at'))>=cutoff):
             continue
+        if not fup.get('updated_at_utc'):
+            # Original prospective followup is still waiting for real 1m
+            # horizon evidence: do NOT turn missing time into mature PnL
+            # or abort all other valid historical candidates.
+            horizons=fup.get('horizons')
+            if horizons is None or horizons=={}:
+                pending_unstamped+=1
+                continue
+            raise ValueError('unstamped nonempty original horizons need source review')
         clock(fup.get('updated_at_utc'))
         old_candidates.append(row)
     for row in trades:
@@ -150,6 +160,7 @@ def closed_original_readonly_preview(control,candidates,trades,*,old_series_id,
     return {'kind':'CLOSED_ORIGINAL_RELAY_PREVIEW_NO_NETWORK_V1',
             'status':'REVIEW_ONLY_NOT_ACTIVATED',
             'candidate_followup_count':len(old_candidates),
+            'pending_unstamped_followups_not_promoted':pending_unstamped,
             'old_terminal_trade_count':len(old_trades),
             'bounded_batches':len(batches),
             'physical_old_writer_fence_verified':False,
