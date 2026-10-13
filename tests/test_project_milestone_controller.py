@@ -455,7 +455,10 @@ class V3HandoverMilestoneTests(unittest.TestCase):
         good=controller.evaluate(state,paper,None,now,ROOT)
         self.assertIn("V3:PAPER_COLLECTING",good["statuses"])
         self.assertNotIn("V2R4:LOW_TRADE_REVIEW",good["statuses"])
-        self.assertEqual(good["events"],[])
+        kinds=[e["kind"] for e in good["events"]]
+        self.assertIn("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH_DUE",kinds)
+        self.assertIn("V3:POST_CUTOVER_OPTIONAL_SOURCE_E2E_OPEN",good["statuses"])
+        self.assertNotIn("V2R4:LOW_TRADE_REVIEW",good["statuses"])
         state["pending_strategy_transition"]["verified_cutover_evidence"]={}
         with self.assertRaisesRegex(ValueError,"physical/cloud single-writer ACK"):
             controller.evaluate(state,paper,None,now,ROOT)

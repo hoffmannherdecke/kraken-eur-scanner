@@ -36,6 +36,72 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
         self.assertTrue(context["receipt_does_not_grant_release"])
         self.assertEqual(context["command"], "tools/context_before_action.py")
 
+    def test_v3_five_source_after_cutover_is_real_work_not_a_claim(self):
+        from tools.project_followthrough_router import v3_five_source_followthrough
+        state=json.loads((ROOT/"project-current-state.json").read_text("utf-8"))
+        now=dt.datetime(2026,10,14,9,tzinfo=UTC)
+        before=v3_five_source_followthrough(ROOT,state,{},now)
+        self.assertEqual(before["status"],"WAIT_FOR_REAL_V3_PAPER_CUTOVER")
+        self.assertEqual(len(before["open_roles"]),5)
+        self.assertEqual(before["next_safe_actions"],[])
+        state=copy.deepcopy(state)
+        state["active_strategy"]["strategy_revision"]="V3-EXPERIMENTAL-PAPER-001"
+        state["active_strategy"]["series_id"]="PAPER-V3-EXPERIMENTAL-001"
+        state["pending_strategy_transition"]["status"]="V3_PAPER_ACTIVE_VERIFIED"
+        state["pending_strategy_transition"]["verified_cutover_evidence"]={
+            "mini_pc_and_single_active_supabase_series_ack":True}
+        due=v3_five_source_followthrough(ROOT,state,{},now)
+        self.assertEqual(due["status"],"SOURCE_WORK_OPEN")
+        self.assertEqual(len(due["open_roles"]),5)
+        self.assertEqual(len(due["next_safe_actions"]),2)
+        self.assertTrue(due["no_paper_start_block"])
+        self.assertFalse(due["runtime_changed"])
+        self.assertFalse(due["acknowledged_roles"])
+        state["pending_strategy_transition"]["verified_cutover_evidence"]={}
+        self.assertEqual(v3_five_source_followthrough(ROOT,state,{},now)["status"],
+                         "WAIT_FOR_REAL_V3_PAPER_CUTOVER")
+
+    def test_source_ack_cannot_be_closed_by_boolean_or_missing_report(self):
+        from tools.project_followthrough_router import v3_five_source_followthrough
+        import hashlib
+        state=copy.deepcopy(json.loads((ROOT/"project-current-state.json").read_text()))
+        state["active_strategy"]["strategy_revision"]="V3-RELEASE-NEW"
+        state["active_strategy"]["series_id"]="PAPER-V3-NEW"
+        state["pending_strategy_transition"]["status"]="V3_PAPER_ACTIVE_VERIFIED"
+        state["pending_strategy_transition"]["verified_cutover_evidence"]={
+            "mini_pc_and_single_active_supabase_series_ack":True}
+        now=dt.datetime(2026,10,15,9,tzinfo=UTC)
+        with tempfile.TemporaryDirectory() as td:
+            base=Path(td)
+            p=base/"research/project-followthrough-routing-v1.json"
+            p.parent.mkdir(parents=True)
+            shutil.copy(ROOT/"research/project-followthrough-routing-v1.json",p)
+            report=base/"research/work-analysis/real-source-readback.md"
+            report.parent.mkdir(parents=True)
+            report.write_text("One V3 source / consumer evidence review",encoding="utf-8")
+            item={
+              "status":"OWNER_TO_V3_CONSUMER_E2E_REVIEWED",
+              "strategy_revision":"V3-RELEASE-NEW","series_id":"PAPER-V3-NEW",
+              "report":"research/work-analysis/real-source-readback.md",
+              "evidence_sha256":hashlib.sha256(report.read_bytes()).hexdigest(),
+              "source_original_ref":"SOURCE-IMMUTABLE-20261015",
+              "consumer_original_ref":"V3-MODEL-IMMUTABLE-20261015",
+              "verified_at_utc":"2026-10-15T08:00:00Z",
+              "independent_owner_consumer_readback":True}
+            ledger={"acknowledgements":{"v3_paper_source_e2e":{
+                     "smart_money_h10":dict(item)}}}
+            result=v3_five_source_followthrough(base,state,ledger,now)
+            self.assertEqual(result["acknowledged_roles"],["smart_money_h10"])
+            self.assertEqual(len(result["open_roles"]),4)
+            accepted=ledger["acknowledgements"]["v3_paper_source_e2e"]["smart_money_h10"]
+            accepted["evidence_sha256"]="0"*64
+            result=v3_five_source_followthrough(base,state,ledger,now)
+            self.assertEqual(len(result["open_roles"]),5)
+            accepted["evidence_sha256"]=hashlib.sha256(report.read_bytes()).hexdigest()
+            accepted["source_original_ref"]="V3-MODEL-IMMUTABLE-20261015"
+            result=v3_five_source_followthrough(base,state,ledger,now)
+            self.assertEqual(len(result["open_roles"]),5)
+
     def test_missing_context_handoff_blocks_substantive_work(self):
         manifest_path = "research/project-followthrough-routing-v1.json"
         original = json.loads((ROOT / manifest_path).read_text(encoding="utf-8"))

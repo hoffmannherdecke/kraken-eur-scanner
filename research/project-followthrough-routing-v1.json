@@ -122,5 +122,52 @@
     "no_substitute_for_actual_source_reading": true,
     "receipt_not_authorization": true,
     "no_new_work_run": true
+  },
+  "v3_paper_five_source_followthrough": {
+    "kind": "V3_PAPER_FIVE_OPTIONAL_SOURCE_POST_CUTOVER_FOLLOWTHROUGH_V1",
+    "trigger": "ONLY_AFTER_V3_PAPER_ACTIVE_VERIFIED_WITH_PHYSICAL_SINGLE_WRITER_CLOUD_ACK",
+    "owner": "EXISTING_DAILY_1015_WORK_ONCE_PER_GATE",
+    "watcher": "EXISTING_AUTONOMOUS_PROJECT_MILESTONE_CONTROLLER",
+    "evidence_ack_path": "research/work-analysis-state.json#acknowledgements.v3_paper_source_e2e",
+    "action_budget_per_work_run": 2,
+    "scope": "RESEARCH_ONLY_AND_EXISTING_INACTIVE_MODEL_INPUT_SAFE_PR",
+    "source_roles": [
+      {
+        "id": "smart_money_h10",
+        "stream_id": "smartmoney_h10",
+        "owner": "EXISTING_GITHUB_H10_SOURCE_OWNER",
+        "acceptance": "Original wallet source/known-at evidence -> exact EUR pair -> actual Mini-PC V3 model input and P4 reason/neutrality readback, never count a capture-health heartbeat as validated catalyst"
+      },
+      {
+        "id": "polymarket_h11",
+        "stream_id": "prediction_h11",
+        "owner": "EXISTING_POLYMARKET_H11_RESEARCH_OWNER",
+        "acceptance": "Real mapped event->coin known-at original -> actual V3 model consumer; unrelated/stale odds neutral; independent Kraken correlation before positive source candidate"
+      },
+      {
+        "id": "market_phase_radar",
+        "stream_id": "market_regime",
+        "owner": "EXISTING_2H_MARKET_PHASE_RADAR",
+        "acceptance": "Prospective Kraken EUR regime change first seen -> V3 full-model candidate-time context -> causal reason if used, no hard veto"
+      },
+      {
+        "id": "news_sentiment",
+        "stream_id": "news_event_context",
+        "owner": "EXISTING_2H_SOURCE_AND_NEWS_OWNER",
+        "acceptance": "Real primary original official coin event known-at -> V3 model input; unverified editorial claims only neutral/research context"
+      },
+      {
+        "id": "source_stewardship",
+        "stream_id": "source_quality",
+        "owner": "EXISTING_2H_AUTONOMOUS_SOURCE_STEWARD",
+        "acceptance": "Unattended discovery+quality review+reversible research-only keep/quarantine/replacement PR CI and actual downstream research/V3 consumer ACK"
+      }
+    ],
+    "fail_open_optional_context": true,
+    "does_not_block_v3_paper_start": true,
+    "no_new_scheduler": true,
+    "no_source_runtime_replacement": true,
+    "no_orders_or_paper_promotion": true,
+    "no_claim_of_execution_from_queued_work": true
   }
 }
