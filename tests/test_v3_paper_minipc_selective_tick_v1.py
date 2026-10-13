@@ -109,6 +109,11 @@ class HostTickTests(unittest.TestCase):
                                       outdir=cap,loader=loader,clock=lambda:at)
             self.assertEqual(result["count"],61)
             self.assertEqual(result["historical_closed_rows_not_archived"],14)
+            # Same API snapshot is an immutable replay, not another payload.
+            again=capture_public_1m(pair="ZRO/EUR",altname="ZROEUR",
+                                     outdir=cap,loader=loader,clock=lambda:at)
+            self.assertEqual(result["sha256"],again["sha256"])
+            self.assertEqual(len(list(cap.glob("*.json"))),1)
             disk=json.loads(Path(result["file"]).read_text("utf-8"))
             self.assertEqual(len(disk["closed_bars"]),61)
             joined=assemble(snapshots=cap,pair="ZRO/EUR",
