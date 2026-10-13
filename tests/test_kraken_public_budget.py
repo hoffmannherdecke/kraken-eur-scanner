@@ -50,7 +50,7 @@ class PublicKrakenBudgetTests(unittest.TestCase):
     def test_first_claim_admitted_second_immediately_deferred(self):
         self.assertTrue(gate.reserve_public_request(URL))
         with self.assertRaises(gate.KrakenPublicBudgetDeferred):
-            gate.reserve_public_request(OHLC, max_wait_seconds=0)
+            gate.reserve_public_request("https://api.kraken.com/0/public/Ticker?pair=AAVEEUR", max_wait_seconds=0)
         data = json.loads((Path(self.temp.name) / "budget-state.json").read_text())
         self.assertGreater(data["last_claim_at"]["IP"], 0)
 
