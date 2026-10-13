@@ -90,10 +90,25 @@ def closed_ohlc(altname: str, interval: int) -> list[list]:
     if payload.get("error"):
         raise RuntimeError("Kraken OHLC error: " + repr(payload["error"]))
     rows = next(v for k, v in payload["result"].items() if k != "last")
-    # Do not cache absence of a closed candle: a late Kraken candle might
-    # appear during the same bucket, and its absence must not become evidence.
+    # Kraken can publish a just-closed candle with a delay or have no trade
+    # in the newly opened bucket. In those cases NEVER pin an older bar for
+    # the entire new interval. Reuse only if both latest bar timestamps prove
+    # that Kraken has supplied this bucket's live row and the immediately
+    # preceding, genuinely closed row. If a request crosses a UTC boundary,
+    # force another lookup on the next WAIT cycle instead of caching it.
     closed = rows[:-1] if len(rows) > 1 else []
-    if closed:
+    boundary_after_fetch = int(time.time() // (interval * 60))
+    cacheable = False
+    if closed and boundary_after_fetch == bucket:
+        try:
+            seconds = interval * 60
+            cacheable = (
+                int(float(closed[-1][0])) == (bucket - 1) * seconds
+                and int(float(rows[-1][0])) == bucket * seconds
+            )
+        except (ValueError, TypeError, IndexError):
+            cacheable = False
+    if cacheable:
         _CLOSED_OHLC_CACHE[key] = (
             bucket, tuple(tuple(row) for row in closed)
         )
