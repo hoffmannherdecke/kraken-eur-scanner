@@ -5,7 +5,7 @@ from pathlib import Path
 from paper_evaluator.v3_paper_minipc_selective_tick_v1 import tick_once
 from paper_evaluator.v3_paper_wait_observer_v1 import finish_wait
 from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
-    capture_public_1m,assemble,
+    capture_public_1m,assemble,early_path_coverage,
 )
 from tests.test_v3_paper_wait_observer_v1 import seed,SID,CID,START,DECISION,t
 
@@ -138,6 +138,56 @@ class HostTickTests(unittest.TestCase):
                 capture_public_1m(pair="ZRO/EUR",altname="ZROEUR",
                                   outdir=Path(tmp),loader=loader,clock=lambda:at)
             self.assertEqual(list(Path(tmp).glob("*.json")),[])
+
+
+    def test_early_coverage_identifies_first_missing_minute_before_horizon(self):
+        start=datetime(2026,10,13,7,45,30,tzinfo=timezone.utc)
+        at=start+timedelta(minutes=25)
+        rows=[{"start_at_utc":t(start.replace(second=0)+timedelta(minutes=i)),
+               "open":2.0,"high":2.1,"low":1.9,"close":2.0}
+              for i in range(1,25) if i!=2]
+        assembled={"kind":"KRAKEN_CLOSED_1M_PATH_CAPTURE_V1",
+                   "source":"KRAKEN_SPOT_EUR_PUBLIC","no_future_backfill":True,
+                   "closed_bars":rows}
+        result=early_path_coverage(assembled=assembled,entry_at_utc=t(start),
+                                   observed_at_utc=t(at))
+        self.assertEqual(result["status"],"SOURCE_1M_GAP_PAST_PROVENANCE_LIMIT")
+        self.assertEqual(result["first_missing_start_utc"],
+                         t(start.replace(second=0)+timedelta(minutes=2)))
+        self.assertEqual(result["contiguous_prefix_minutes"],1)
+        self.assertTrue(result["gap_past_15m_provenance_limit"])
+        self.assertFalse(result["retroactive_market_labels_authorized"])
+        # Later authentic 1m timestamps cannot be used to invent this
+        # missing original first-period minute retroactively.
+        self.assertEqual(result["model_http_calls"],0)
+
+    def test_early_coverage_contiguous_and_future_excluded(self):
+        start=datetime(2026,10,13,7,45,30,tzinfo=timezone.utc)
+        at=datetime(2026,10,13,7,54,0,tzinfo=timezone.utc)
+        base=start.replace(second=0)+timedelta(minutes=1)
+        rows=[{"start_at_utc":t(base+timedelta(minutes=i)),
+               "open":2.0,"high":2.1,"low":1.9,"close":2.0}
+              for i in range(6)]
+        assembled={"kind":"KRAKEN_CLOSED_1M_PATH_CAPTURE_V1",
+                   "source":"KRAKEN_SPOT_EUR_PUBLIC","no_future_backfill":True,
+                   "closed_bars":rows}
+        good=early_path_coverage(assembled=assembled,entry_at_utc=t(start),
+                                 observed_at_utc=t(at))
+        self.assertEqual(good["status"],
+                         "CONTIGUOUS_PROSPECTIVE_1M_AS_OF_STABLE_CUTOFF")
+        self.assertEqual(good["expected_stable_minutes"],6)
+        self.assertEqual(good["missing_stable_minutes"],0)
+        self.assertEqual(good["contiguous_prefix_minutes"],6)
+        right_after=early_path_coverage(assembled={**assembled,"closed_bars":[]},
+            entry_at_utc=t(start),observed_at_utc=t(start+timedelta(seconds=10)))
+        self.assertEqual(right_after["status"],"WAIT_FIRST_STABLE_MINUTE")
+        recent=early_path_coverage(assembled={**assembled,"closed_bars":[]},
+            entry_at_utc=t(start),observed_at_utc=t(start+timedelta(minutes=8)))
+        self.assertEqual(recent["status"],"SOURCE_1M_RECENT_GAP_MONITOR")
+        self.assertFalse(recent["gap_past_15m_provenance_limit"])
+        with self.assertRaisesRegex(ValueError,"verified prospective"):
+            early_path_coverage(assembled={"closed_bars":rows},
+                entry_at_utc=t(start),observed_at_utc=t(at))
 
     def test_15m_volume_ratio_four_previous_is_not_five_previous(self):
         from paper_evaluator.successor_coin_entry_evidence_v1 import _frame
