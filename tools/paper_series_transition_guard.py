@@ -68,6 +68,12 @@ def assess_v3_cutover_recovery(
         "independent_current_host_cloud_ack_required": True,
         "disposition": "BLOCKED_UNVERIFIED_CUTOVER_SNAPSHOT",
     }
+    # If the Cloud commit result is unknown, absent, unreachable, corrupt
+    # or contradictory active-series rows must ALL lead to the same hard
+    # quarantine. Never degrade UNKNOWN into a generic recoverable precommit.
+    if phase == "CLOUD_COMMIT_OUTCOME_UNKNOWN":
+        result["disposition"] = "CLOUD_AMBIGUOUS_QUARANTINE_BOTH_WRITERS"
+        return result
     if (not isinstance(expected_old, str)
             or not expected_old.startswith("PAPER-V2R4-")
             or not isinstance(proposed_new, str)
@@ -79,9 +85,6 @@ def assess_v3_cutover_recovery(
             or active_series[0].get("status") != "active"):
         return result
     current = active_series[0].get("series_id")
-    if phase == "CLOUD_COMMIT_OUTCOME_UNKNOWN":
-        result["disposition"] = "CLOUD_AMBIGUOUS_QUARANTINE_BOTH_WRITERS"
-        return result
     if phase == "CLOUD_COMMIT_NOT_ATTEMPTED":
         if current == expected_old and not old_writer_fenced:
             result["disposition"] = "PRECOMMIT_DRYRUN_ONLY_NO_CLOUD_MUTATION"
