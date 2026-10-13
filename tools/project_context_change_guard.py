@@ -189,9 +189,33 @@ def check(root: Path, paths: list[str], receipt: dict) -> dict:
                 scope + " fingerprint stale; rerun context_before_action.py on PR HEAD")
         counts[scope] = len(packet["source_index"])
     architecture = verify_architecture_integrity(root, paths, receipt)
+    commitment_intake = receipt.get("commitment_intake")
+    require(isinstance(commitment_intake,dict),
+            "missing future-work disposition for material PR")
+    disposition=commitment_intake.get("disposition")
+    require(disposition in ("NO_NEW_FOLLOWUP","REGISTERED_OR_REUSED"),
+            "unknown future-work intake disposition")
+    require(meaningful(commitment_intake.get("rationale")),
+            "future-work intake needs concrete reasoning and evidence boundary")
+    require(meaningful(commitment_intake.get("next_owner_and_gate")),
+            "future-work intake must identify original next owner and gate")
+    ids=commitment_intake.get("commitment_ids")
+    require(isinstance(ids,list) and len(ids)==len(set(ids)),
+            "missing/duplicate future-work commitment IDs")
+    registered=json.loads(
+        (root/"research/project-followthrough-routing-v1.json").read_text(
+            encoding="utf-8")).get("project_wide_implementation_commitments") or {}
+    known={x.get("id") for x in registered.get("obligations") or []}
+    require((not ids if disposition=="NO_NEW_FOLLOWUP" else
+             bool(ids) and all(x in known for x in ids)),
+            "unregistered future-work commitment: PR must register or reuse exact existing owner")
+    require(commitment_intake.get("no_claim_of_execution_without_evidence") is True,
+            "PR/intake cannot assert downstream source or physical execution")
     return {
         "kind": "PROJECT_CONTEXT_CHANGE_VERIFICATION_V1",
         "architecture_integrity": architecture,
+        "commitment_intake_disposition": disposition,
+        "registered_commitment_ids": ids,
         "status": "RECEIPT_AND_SOURCE_ROUTING_VERIFIED_NOT_SEMANTIC_OR_RUNTIME_PROOF",
         "scopes": sorted(scopes),
         "source_counts": counts,
@@ -206,6 +230,11 @@ def template(root: Path, paths: list[str]) -> dict:
     """Convenient scaffold only. Placeholders MUST be replaced with real review."""
     return {
         "kind": "PROJECT_CONTEXT_REVIEW_V1",
+        "commitment_intake": {"disposition":"REGISTERED_OR_REUSED",
+            "commitment_ids":[],
+            "rationale":"REPLACE with actual newly accepted commitments or explain why none arise",
+            "next_owner_and_gate":"REPLACE with actual existing owner and further evidence review gate",
+            "no_claim_of_execution_without_evidence":True},
         "architecture_integrity": {
             "change_mode": "REPLACE",
             "affected_stream_ids": [],
