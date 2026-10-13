@@ -59,13 +59,13 @@ def bridge(events=(),h10=H10,h11=H11,h5=H5,owners=OWNER,keys=KEYS):
         h5_macro_calendar=h5,owner_event_packets=list(events),
         authenticated_owner_ids=owners,decision_at_utc=dt(12),
         trusted_owner_hmac_keys=keys)
-def preflight(scanners=(),owner_events=(),observations=None):
+def preflight(scanners=(),owner_events=(),observations=None,limit=3):
     return plan_writer_preflight(
         scanner_events=list(scanners),owner_event_packets=list(owner_events),
         h10_context=H10,h11_market_capture=H11,h5_macro_calendar=H5,
         authenticated_owner_ids=OWNER,journal_receipts=[],known_pairs=PAIR,
         market_observations=observations if observations is not None else {},
-        series_id=SID,decision_at_utc=dt(12),
+        series_id=SID,decision_at_utc=dt(12),max_reviews=limit,
         trusted_owner_hmac_keys=KEYS)
 def xbt_real_pit_fixture():
     c,e,t,m=fixture()
@@ -259,6 +259,24 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
         # No re-prioritization of the actual V3 model decisions.
         self.assertEqual([x["candidate_id"] for x in result["selected_candidates"]],
                          ["early-scanner","late-scanner"])
+
+    def test_capacity_deferral_source_witness_deadline_not_invisibly_lost(self):
+        r=preflight(scanners=[
+            scanner("sc-first","ETH/EUR",dt(8)),
+            scanner("sc-deferred","XBT/EUR",dt(9))],
+            limit=1)
+        self.assertEqual(len(r["selected_candidates"]),1)
+        self.assertEqual(len(r["ingress"]["capacity_deferred_originals"]),1)
+        self.assertTrue(r["capacity_deferred_origins_need_durable_same_owner_retry"])
+        byid={x["candidate_id"]:x for x in
+              r["prospective_first_1m_capture_enrollment"]}
+        self.assertEqual(set(byid),{"sc-first","sc-deferred"})
+        self.assertEqual(byid["sc-deferred"]["ingress_disposition"],
+                         "CAPACITY_DEFERRED_NEEDS_OWNER_RETRY")
+        self.assertFalse(byid["sc-deferred"]
+                         ["first_bar_physically_witnessed_by_this_preflight"])
+        self.assertFalse(r["paper_writer_active"])
+        self.assertFalse(r["model_http_authorized"])
 
     def test_capture_preflight_never_writes_source_provenance_or_a_buy(self):
         result=preflight(scanners=[scanner("sc-only","XBT/EUR",dt(9))],
