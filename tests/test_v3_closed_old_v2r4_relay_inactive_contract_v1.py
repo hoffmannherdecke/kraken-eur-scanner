@@ -1,0 +1,98 @@
+"""Release-only static contract for existing V2R4 Edge relay closed-original lane.
+
+No actual Edge deployment, Cloud modification or live old trade event here.
+The physical single-writer owner must independently prove genuine host/Cloud
+closed-series followup+trade ACK before the V3 Paper CAS release.
+"""
+import re
+import unittest
+from pathlib import Path
+
+ROOT=Path(__file__).resolve().parents[1]
+EDGE=ROOT/"supabase/functions/v2r4-paper-evidence-relay/index.ts"
+
+
+class ClosedOriginalV2R4RelayInactiveContract(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.script=EDGE.read_text(encoding="utf-8")
+        cls.old_begin=cls.script.index('if(action==="sync_closed_original_followups")')
+        cls.old_end=cls.script.index('if(action==="sync")',cls.old_begin)
+        cls.closed=cls.script[cls.old_begin:cls.old_end]
+        cls.active=cls.script[cls.old_end:]
+
+    def test_original_active_v2r4_sync_still_active_only(self):
+        self.assertIn('if(action==="sync"){',self.active)
+        self.assertIn('series.status!=="active"',self.active)
+        self.assertIn('admin.from("paper_candidate_outcomes").upsert',self.active)
+        self.assertIn('admin.from("paper_trade_results").upsert',self.active)
+        self.assertNotIn('sync_closed_original_followups',self.active)
+
+    def test_closed_series_requires_two_existing_credentials_and_live_v3(self):
+        for need in (
+            'X-MiniPC-Status-Token',
+            'credentialAuthorized(admin,statusToken,"minipc-status-relay")',
+            'oldSeries?.status!=="strategy_cutover_closed"',
+            'oldSeries?.config?.release_repo_sha!==expectedSha',
+            'activeRows.length!==1',
+            'startsWith("PAPER-V3-")',
+            'startsWith("V3-")',
+            'candidates.length>20',
+            'trades.length>20',
+        ):
+            with self.subTest(need=need):self.assertIn(need,self.closed)
+        # First authentication (X-Shadow-Evidence-Token) already occurs
+        # before the entire action dispatch, reused from original relay.
+        self.assertLess(self.script.index('if(!(await authorized(admin,req)))'),
+                        self.old_begin)
+
+    def test_closed_path_cannot_insert_new_original_candidates_or_trades(self):
+        self.assertNotRegex(self.closed,r'(?i)\.upsert\(')
+        self.assertNotRegex(self.closed,r'(?i)\.insert\(')
+        self.assertNotIn('.delete(',self.closed)
+        self.assertNotIn('action:"activate"',self.closed)
+        for name in (
+            'closed_original_candidate_not_preexisting',
+            'closed_original_trade_not_preexisting',
+            'new_old_series_entry_disallowed',
+            'paper_candidate_outcomes',
+            'paper_trade_results',
+            '.eq("candidate_id",cid).eq("series_id",sid)',
+            '.eq("updated_at",prior.updated_at)',
+            'closed_followup_optimistic_cas_conflict',
+            'closed_trade_optimistic_cas_conflict',
+        ):
+            with self.subTest(name=name):self.assertIn(name,self.closed)
+
+    def test_closed_path_retains_original_identity_and_completed_horizons(self):
+        for text in (
+            'canonicalJson(prior.payload?.decision)',
+            'canonicalJson(row.payload?.decision)',
+            'safeUtcMs(prior.evaluated_at)',
+            'safeUtcMs(row.evaluated_at)',
+            'old_completed_horizon_immutable',
+            'old_followup_identity_changed',
+            'old_followup_time_regression',
+            'old_followup_same_timestamp_conflict',
+            'new_v2r4_intake_allowed:false',
+        ):
+            with self.subTest(text=text):self.assertIn(text,self.closed)
+
+    def test_terminal_open_trade_only_cannot_create_new_entry(self):
+        for text in (
+            'row?.status!=="CLOSED"',
+            'safeUtcMs(prior.opened_at)!==safeUtcMs(row.opened_at)',
+            'canonicalJson(prior.payload?.entry??null)',
+            'canonicalJson(row.payload?.entry??null)',
+            'row?.payload?.real_money_actions_enabled!==false',
+            'prior.status==="CLOSED"',
+            'immutable_old_closed_trade_conflict',
+            'row.payload.exit',
+            'net_pnl_eur',
+            'net_return_pct',
+        ):
+            with self.subTest(text=text):self.assertIn(text,self.closed)
+        self.assertNotRegex(self.closed,r'(?i)register.*scheduledtask')
+
+
+if __name__=="__main__":unittest.main()

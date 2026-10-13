@@ -44,6 +44,20 @@ function tradeUpdatedAt(row:any){
   ],String(row?.opened_at??new Date(0).toISOString()));
 }
 
+
+// Stable comparison is needed because jsonb storage may reorder object keys.
+// This is for original identity preservation, NOT for signed source evidence.
+function canonicalJson(v:any):string{
+  if(v===null||typeof v!=="object")return JSON.stringify(v);
+  if(Array.isArray(v))return "["+v.map(canonicalJson).join(",")+"]";
+  return "{"+Object.keys(v).sort()
+    .map(k=>JSON.stringify(k)+":"+canonicalJson(v[k])).join(",")+"}";
+}
+function safeUtcMs(v:unknown):number{
+  if(typeof v!=="string"||!v)return NaN;
+  const n=new Date(v).getTime();
+  return Number.isFinite(n)?n:NaN;
+}
 Deno.serve(async(req:Request)=>{
   if(req.method!=="POST")return response(405,{ok:false,error:"method_not_allowed"});
   const url=Deno.env.get("SUPABASE_URL")??""; const key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
@@ -167,6 +181,156 @@ Deno.serve(async(req:Request)=>{
       release_repo_sha:releaseRepoSha,strategy_fingerprint_sha256:strategyFingerprint,
       runtime_bundle_fingerprint_sha256:runtimeFingerprint,paper_only:true,real_money_actions:false
     });
+  }
+
+  // INACTIVE NEW ACTION until explicitly reviewed Edge deployment AFTER
+  // original 28h physical Canary stop and safe V3 single-writer cutover.
+  // Critically: the existing action=sync for ACTIVE V2R4 is unchanged.
+  // This restricted action can NEVER create a new old-series candidate/trade.
+  if(action==="sync_closed_original_followups"){
+    const statusToken=req.headers.get("X-MiniPC-Status-Token")??"";
+    if(!(await credentialAuthorized(admin,statusToken,"minipc-status-relay")))
+      return response(401,{ok:false,error:"closed_original_second_factor_unauthorized"});
+    const sid=String(body?.series_id??"");
+    const revision=String(body?.strategy_revision??"");
+    const expectedSha=String(body?.expected_old_release_sha??"");
+    const candidates=body?.candidates, trades=body?.trades;
+    if(!/^PAPER-V2R4-\d{8}T\d{6}Z$/.test(sid)||
+       revision!=="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION"||
+       !/^[0-9a-f]{40}$/.test(expectedSha))
+      return response(400,{ok:false,error:"invalid_closed_original_series_identity"});
+    if(!Array.isArray(candidates)||candidates.length>20||
+       !Array.isArray(trades)||trades.length>20||
+       (!candidates.length&&!trades.length))
+      return response(400,{ok:false,error:"invalid_closed_original_bounded_batch"});
+
+    const {data:oldSeries,error:oldErr}=await admin.from("paper_series")
+      .select("series_id,status,strategy_revision,config")
+      .eq("series_id",sid).maybeSingle();
+    if(oldErr||oldSeries?.status!=="strategy_cutover_closed"||
+       oldSeries?.strategy_revision!==revision||
+       oldSeries?.config?.release_repo_sha!==expectedSha)
+      return response(409,{ok:false,error:"original_series_not_released_for_closed_followups"});
+
+    const {data:activeRows,error:activeErr}=await admin.from("paper_series")
+      .select("series_id,status,strategy_revision")
+      .eq("status","active").limit(2);
+    if(activeErr||!Array.isArray(activeRows)||activeRows.length!==1||
+       !String(activeRows[0]?.series_id??"").startsWith("PAPER-V3-")||
+       !String(activeRows[0]?.strategy_revision??"").startsWith("V3-"))
+      return response(409,{ok:false,error:"unique_active_v3_successor_not_verified"});
+
+    let acceptedCandidates=0,acceptedTrades=0,identical=0;
+    for(const row of candidates){
+      const cid=row?.candidate_id;
+      const follow=row?.followup;
+      if(typeof cid!=="string"||!cid||row?.series_id!==sid||
+         !follow||typeof follow!=="object"||Array.isArray(follow)||
+         follow.kind!=="PAPER_FOLLOWUP_V2"||
+         follow.series_id!==sid||follow.candidate_id!==cid||
+         follow.pair!==row.pair||
+         canonicalJson(row?.payload?.followup)!==canonicalJson(follow)||
+         row?.payload?.decision?.real_money_actions_enabled!==false)
+        return response(400,{ok:false,error:"unsafe_closed_original_followup"});
+      const {data:prior,error:priorErr}=await admin.from("paper_candidate_outcomes")
+        .select("candidate_id,series_id,pair,decision,evaluated_at,followup,payload,updated_at")
+        .eq("candidate_id",cid).eq("series_id",sid).maybeSingle();
+      if(priorErr||!prior||prior.pair!==row.pair||
+         safeUtcMs(prior.evaluated_at)!==safeUtcMs(row.evaluated_at)||
+         canonicalJson(prior.payload?.decision)!==
+           canonicalJson(row.payload?.decision))
+        return response(409,{ok:false,error:"closed_original_candidate_not_preexisting"});
+      // New old-series BUY/Stage2 is forbidden after the successor is ACTIVE.
+      const recheck=row.payload?.recheck??null;
+      if(row.decision!==prior.decision&&!(
+           prior.decision==="WAIT"&&row.decision==="REJECT"&&
+           recheck&&recheck.paper_only===true&&
+           recheck.real_money_actions_enabled===false&&
+           recheck.order_api===false))
+        return response(409,{ok:false,error:"new_old_series_entry_disallowed"});
+      if(prior.followup){
+        for(const [period,oldH] of Object.entries(prior.followup.horizons??{})){
+          if((oldH as any)?.complete===true&&
+             canonicalJson((follow.horizons??{})[period])!==canonicalJson(oldH))
+            return response(409,{ok:false,error:"old_completed_horizon_immutable"});
+        }
+        for(const attr of ["kind","series_id","candidate_id","pair",
+                           "baseline_ask_eur","evaluated_at_utc","schema_version"]){
+          if(canonicalJson(prior.followup[attr])!==canonicalJson(follow[attr]))
+            return response(409,{ok:false,error:"old_followup_identity_changed"});
+        }
+      }
+      const stamp=safeUtcMs(follow.updated_at_utc),oldStamp=safeUtcMs(prior.updated_at);
+      if(!Number.isFinite(stamp)||stamp>Date.now()+120000||
+         !Number.isFinite(oldStamp)||stamp<oldStamp)
+        return response(409,{ok:false,error:"old_followup_time_regression"});
+      const nextPayload={...prior.payload,recheck,followup:follow};
+      if(stamp===oldStamp){
+        if(row.decision===prior.decision&&
+           canonicalJson(prior.followup)===canonicalJson(follow)&&
+           canonicalJson(prior.payload?.recheck??null)===canonicalJson(recheck)){
+          identical++;continue;
+        }
+        return response(409,{ok:false,error:"old_followup_same_timestamp_conflict"});
+      }
+      const {data:updated,error:updateErr}=await admin.from("paper_candidate_outcomes")
+        .update({decision:row.decision,followup:follow,payload:nextPayload,
+                 updated_at:new Date(stamp).toISOString()})
+        .eq("candidate_id",cid).eq("series_id",sid)
+        .eq("updated_at",prior.updated_at).select("candidate_id");
+      if(updateErr||!Array.isArray(updated)||updated.length!==1)
+        return response(409,{ok:false,error:"closed_followup_optimistic_cas_conflict"});
+      acceptedCandidates++;
+    }
+
+    // Open old Paper trades may be CLOSED, never created or newly entered.
+    for(const row of trades){
+      const cid=row?.candidate_id;
+      if(typeof cid!=="string"||!cid||row?.series_id!==sid||
+         row?.status!=="CLOSED"||
+         row?.payload?.real_money_actions_enabled!==false||
+         !row?.payload?.exit)
+        return response(400,{ok:false,error:"unsafe_closed_original_trade_exit"});
+      const {data:prior,error:priorErr}=await admin.from("paper_trade_results")
+        .select("candidate_id,series_id,pair,status,opened_at,closed_at,payload,updated_at")
+        .eq("candidate_id",cid).eq("series_id",sid).maybeSingle();
+      if(priorErr||!prior||prior.pair!==row.pair||
+         safeUtcMs(prior.opened_at)!==safeUtcMs(row.opened_at)||
+         canonicalJson(prior.payload?.entry??null)!==
+           canonicalJson(row.payload?.entry??null))
+        return response(409,{ok:false,error:"closed_original_trade_not_preexisting"});
+      const closed=safeUtcMs(row.closed_at),opened=safeUtcMs(prior.opened_at);
+      if(!Number.isFinite(closed)||!Number.isFinite(opened)||
+         closed<opened||closed>Date.now()+120000||
+         !Number.isFinite(row.net_pnl_eur)||
+         !Number.isFinite(row.net_return_pct))
+        return response(409,{ok:false,error:"invalid_closed_original_exit_facts"});
+      if(prior.status==="CLOSED"){
+        if(safeUtcMs(prior.closed_at)===closed&&
+           canonicalJson(prior.payload?.exit)===canonicalJson(row.payload.exit)){
+          identical++;continue;
+        }
+        return response(409,{ok:false,error:"immutable_old_closed_trade_conflict"});
+      }
+      const oldUpdated=safeUtcMs(prior.updated_at);
+      if(!Number.isFinite(oldUpdated)||closed<oldUpdated)
+        return response(409,{ok:false,error:"old_trade_exit_timestamp_regression"});
+      const nextPayload={...prior.payload,status:"CLOSED",
+                         events:row.payload.events,exit:row.payload.exit};
+      const {data:updated,error:updateErr}=await admin.from("paper_trade_results")
+        .update({status:"CLOSED",closed_at:new Date(closed).toISOString(),
+                 net_pnl_eur:row.net_pnl_eur,net_return_pct:row.net_return_pct,
+                 payload:nextPayload,updated_at:new Date(closed).toISOString()})
+        .eq("candidate_id",cid).eq("series_id",sid)
+        .eq("updated_at",prior.updated_at).select("candidate_id");
+      if(updateErr||!Array.isArray(updated)||updated.length!==1)
+        return response(409,{ok:false,error:"closed_trade_optimistic_cas_conflict"});
+      acceptedTrades++;
+    }
+    return response(200,{ok:true,action:"sync_closed_original_followups",
+      accepted_candidates:acceptedCandidates,accepted_trades:acceptedTrades,
+      unchanged_replays:identical,paper_only:true,real_money_actions:false,
+      new_v2r4_intake_allowed:false});
   }
 
   if(action==="sync"){
