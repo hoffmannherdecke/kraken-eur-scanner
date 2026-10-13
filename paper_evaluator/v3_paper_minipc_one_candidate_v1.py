@@ -103,6 +103,7 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                   approval:dict|None=None,model_key:str|None=None,
                   existing_context:dict|None=None,allow_model:bool=False,
                   admit_staged_scanner_no_model:bool=False,
+                  admit_staged_scanner_one_approved_model:bool=False,
                   acquire:Callable[[dict],tuple[dict,dict,dict]]|None=None,
                   model_client:Callable[[str,str],tuple[dict,dict]]|None=None,
                   clock:Callable[[],str]=now)->dict:
@@ -114,13 +115,26 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
     stamp=candidate["event_time_utc"]
     if not local_receipts.is_dir() or local_receipts.is_symlink():
         raise ValueError("independent V3 Paper journal directory must already exist")
-    # The PR216/217 *original intake* journal precedes physical Kraken P0.
-    # Previously any original receipt blocked this worker forever. Only an
-    # explicit NO MODEL scanner continuation may consume that first audit.
+    # The original intake journal precedes physical Kraken P0. The existing
+    # zero-model continuation remains distinct from an explicitly authorized
+    # ONE MODEL continuation; both require the same immutable staged Scanner
+    # receipts and may never substitute an owner-source identity.
+    if admit_staged_scanner_no_model and admit_staged_scanner_one_approved_model:
+        raise ValueError("two staged V3 continuation modes cannot be combined")
+    staged=admit_staged_scanner_no_model or admit_staged_scanner_one_approved_model
     if admit_staged_scanner_no_model and (
             allow_model or approval is not None or model_key is not None
             or candidate.get("entry_origin")!="SCANNER"):
-        raise ValueError("staged continuation forbids model HTTP and source-owner promotion")
+        raise ValueError("staged no-model continuation forbids HTTP and owner promotion")
+    if admit_staged_scanner_one_approved_model:
+        if (not allow_model or not isinstance(model_key,str)
+                or len(model_key)<20 or not isinstance(approval,dict)
+                or candidate.get("entry_origin")!="SCANNER"):
+            raise ValueError("staged model continuation requires explicit unique budget and Scanner")
+        # Before even reading source, verify the existing exact one-shot
+        # human/budget contract. Actual spend is separately reserved with
+        # O_EXCL immediately before a single authorized model HTTP attempt.
+        preflight_budget(approval,series_id)
     prior=[]
     for old in local_receipts.glob("*.json"):
         try:
@@ -129,7 +143,7 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             raise ValueError("corrupt immutable V3 journal; human recovery required")
         if row.get("series_id")==series_id and row.get("candidate_id")==cid:
             prior.append(row)
-    if admit_staged_scanner_no_model:
+    if staged:
         if any(row.get("pair")!=candidate["pair"]
                or row.get("event_time_utc")!=stamp
                or row.get("revision")!=REVISION for row in prior):
@@ -176,11 +190,11 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             candidate_id=cid,pair=candidate["pair"],event_time_utc=stamp,
             known_at_utc=clock(),phase=phase,result=status,
             data=info or {},
-            event_key="FRESHRECHECK" if admit_staged_scanner_no_model else "FIRST")
+            event_key="FRESHRECHECK" if staged else "FIRST")
         store_receipt_explicitly(local_receipts,event)
     # The original capture is already fsynced in the staged path. Never
     # overwrite its immutable FIRST event with a second incompatible payload.
-    if not admit_staged_scanner_no_model:
+    if not staged:
         receipt("SCANNER_CAPTURE","SEEN",{
             "candidate_origin":candidate.get("entry_origin","SCANNER"),
             "positive_source_name":candidate.get("positive_source_name"),
@@ -411,6 +425,7 @@ def main()->int:
     p.add_argument("--optional-sources",type=Path)
     p.add_argument("--approved-one-model-call",type=Path)
     p.add_argument("--admit-staged-scanner-no-model",action="store_true")
+    p.add_argument("--admit-staged-scanner-one-approved-model",action="store_true")
     p.add_argument("--model-key-file",type=Path)
     a=p.parse_args()
     sources=read(a.optional_sources) if a.optional_sources else {}
@@ -420,7 +435,9 @@ def main()->int:
                       local_receipts=a.journal,model_reservations=a.budget_directory,
                       approval=approval,model_key=key,existing_context=sources,
                       allow_model=bool(a.approved_one_model_call),
-                      admit_staged_scanner_no_model=a.admit_staged_scanner_no_model)
+                      admit_staged_scanner_no_model=a.admit_staged_scanner_no_model,
+                      admit_staged_scanner_one_approved_model=
+                          a.admit_staged_scanner_one_approved_model)
     print(json.dumps(res,sort_keys=True))
     return 0 if not res["status"].startswith("MODEL_FAILED") else 1
 
