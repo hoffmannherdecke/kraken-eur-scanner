@@ -343,6 +343,75 @@ class V2R4WaitRuntimeTests(unittest.TestCase):
             self.assertEqual(list(dirs[3].glob("*.json")), [])
             self.assertNotIn("EAPI:", json.dumps(out))
 
+    def test_two_same_pair_plans_share_one_public_snapshot_with_separate_decisions(self):
+        now = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            paths = [root / x for x in ("decisions", "rechecks", "candidates", "receipts")]
+            for p in paths:
+                p.mkdir()
+            for cid in ("C1", "C2"):
+                (paths[0] / (cid + ".json")).write_text(
+                    json.dumps({"v2r4_trigger_plan": plan(now, candidate_id=cid, value=100)}),
+                    "utf-8",
+                )
+            common = dict(
+                decision_dir=paths[0], recheck_dir=paths[1],
+                candidate_dir=paths[2], receipt_dir=paths[3],
+                state_path=root / "state.json", heartbeat_path=root / "heartbeat.json",
+                altrady_log=root / "altrady.jsonl",
+                spec_path=None, control_path=None, api_key_file=None,
+                fallback_seconds=10, execute_recheck=False,
+            )
+            with patch.object(
+                runtime, "market_metrics", return_value={"last_eur": 90.0}
+            ) as source:
+                out1 = runtime.run_cycle(**common, now=now + timedelta(seconds=5))
+                out2 = runtime.run_cycle(**common, now=now + timedelta(seconds=20))
+            self.assertEqual(source.call_count, 2)  # one per cycle, not per plan
+            self.assertEqual(out1["counters"]["fallback_checks"], 2)
+            self.assertEqual(out1["counters"]["unique_pair_source_fetches"], 1)
+            self.assertEqual(out1["counters"]["same_cycle_pair_reuses"], 1)
+            self.assertEqual(out2["counters"]["unique_pair_source_fetches"], 1)
+            self.assertEqual(out1["status"], "HEALTHY")
+            self.assertEqual(out1["counters"]["condition_matches"], 0)
+            self.assertEqual(list(paths[3].glob("*.json")), [])
+
+    def test_same_pair_source_error_is_not_masked_by_cycle_deduplication(self):
+        now = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            paths = [root / x for x in ("decisions", "rechecks", "candidates", "receipts")]
+            for p in paths:
+                p.mkdir()
+            for cid in ("C1", "C2"):
+                (paths[0] / (cid + ".json")).write_text(
+                    json.dumps({"v2r4_trigger_plan": plan(now, candidate_id=cid)}),
+                    "utf-8",
+                )
+            with patch.object(
+                runtime, "market_metrics",
+                side_effect=RuntimeError("Kraken OHLC error: ['EAPI:Rate limit exceeded']"),
+            ) as source:
+                out = runtime.run_cycle(
+                    decision_dir=paths[0], recheck_dir=paths[1],
+                    candidate_dir=paths[2], receipt_dir=paths[3],
+                    state_path=root / "state.json",
+                    heartbeat_path=root / "heartbeat.json",
+                    altrady_log=root / "altrady.jsonl",
+                    spec_path=None, control_path=None, api_key_file=None,
+                    fallback_seconds=10, execute_recheck=False,
+                    now=now + timedelta(seconds=5),
+                )
+            self.assertEqual(source.call_count, 1)
+            self.assertEqual(out["status"], "DEGRADED")
+            self.assertEqual(out["counters"]["unique_pair_source_fetches"], 1)
+            self.assertEqual(out["counters"]["same_cycle_pair_reuses"], 1)
+            self.assertEqual(out["counters"]["data_unavailable_checks"], 2)
+            self.assertEqual(out["error_classes"], {"KRAKEN_RATE_LIMIT": 2})
+            self.assertEqual(out["counters"]["receipts_written"], 0)
+            self.assertEqual(list(paths[3].glob("*.json")), [])
+
     def test_long_running_receipt_only_mode_is_not_an_allowed_main_configuration(self):
         # The safety rule is represented in CLI main; core cycle remains testable.
         # Assert the documented action is never an order action.
