@@ -93,11 +93,12 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
             result=v3_five_source_followthrough(base,state,ledger,now)
             self.assertEqual(result["acknowledged_roles"],["smart_money_h10"])
             self.assertEqual(len(result["open_roles"]),4)
-            item["evidence_sha256"]="0"*64
+            accepted=ledger["acknowledgements"]["v3_paper_source_e2e"]["smart_money_h10"]
+            accepted["evidence_sha256"]="0"*64
             result=v3_five_source_followthrough(base,state,ledger,now)
             self.assertEqual(len(result["open_roles"]),5)
-            item["evidence_sha256"]=hashlib.sha256(report.read_bytes()).hexdigest()
-            item["source_original_ref"]="V3-MODEL-IMMUTABLE-20261015"
+            accepted["evidence_sha256"]=hashlib.sha256(report.read_bytes()).hexdigest()
+            accepted["source_original_ref"]="V3-MODEL-IMMUTABLE-20261015"
             result=v3_five_source_followthrough(base,state,ledger,now)
             self.assertEqual(len(result["open_roles"]),5)
 
