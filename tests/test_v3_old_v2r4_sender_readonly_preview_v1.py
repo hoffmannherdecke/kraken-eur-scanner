@@ -57,6 +57,7 @@ class ClosedOriginalSenderPreview(unittest.TestCase):
         plan=self.plan(control,[candidate],[trade])
         self.assertEqual(plan["status"],"REVIEW_ONLY_NOT_ACTIVATED")
         self.assertEqual(plan["candidate_followup_count"],1)
+        self.assertEqual(plan["pending_unstamped_followups_not_promoted"],0)
         self.assertEqual(plan["old_terminal_trade_count"],1)
         self.assertEqual(plan["bounded_batches"],2)
         self.assertTrue(all(len(x["candidates"])<=20 and len(x["trades"])<=20
@@ -84,6 +85,28 @@ class ClosedOriginalSenderPreview(unittest.TestCase):
         plan=self.plan(control,[fresh,candidate],[new_trade,trade])
         self.assertEqual(plan["candidate_followup_count"],1)
         self.assertEqual(plan["old_terminal_trade_count"],0)
+
+    def test_pending_unstamped_old_followup_does_not_poison_entire_preview(self):
+        control,candidate,trade=original()
+        waiting=copy.deepcopy(candidate)
+        waiting["candidate_id"]="O-WAIT-PENDING"
+        waiting["decision"]="WAIT"
+        waiting["followup"]["candidate_id"]="O-WAIT-PENDING"
+        waiting["followup"].pop("updated_at_utc")
+        waiting["followup"]["horizons"]={}
+        waiting["payload"]["followup"]=waiting["followup"]
+        plan=self.plan(control,[candidate,waiting],[trade])
+        self.assertEqual(plan["candidate_followup_count"],1)
+        self.assertEqual(plan["pending_unstamped_followups_not_promoted"],1)
+        self.assertEqual(plan["old_terminal_trade_count"],1)
+        for batch in plan["batches"]:
+            self.assertTrue(all(x["candidate_id"]!="O-WAIT-PENDING"
+                                for x in batch["candidates"]))
+        # Nonempty time-window evidence with missing original event time
+        # is contradictory, not a reason to invent a timestamp.
+        waiting["followup"]["horizons"]={"60":{"complete":True}}
+        with self.assertRaisesRegex(ValueError,"unstamped nonempty"):
+            self.plan(control,[candidate,waiting],[trade])
 
     def test_wrong_old_runtime_or_future_id_fails_closed(self):
         control,candidate,trade=original()
