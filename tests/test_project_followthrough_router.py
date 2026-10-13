@@ -154,6 +154,24 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,"backlog backlink"):
                 project_implementation_commitments(root,state,{},now)
 
+
+    def test_every_legacy_open_checkbox_is_visible_until_evidenced_disposition(self):
+        from tools.project_followthrough_router import historical_backlog_reconciliation
+        now=dt.datetime(2026,10,13,6,tzinfo=UTC)
+        out=historical_backlog_reconciliation(ROOT,{},now)
+        self.assertGreaterEqual(out["open_checkboxes_total"],80)
+        self.assertEqual(out["still_unclassified"],out["open_checkboxes_total"])
+        self.assertEqual(len(out["next_review"]),3)
+        self.assertTrue(out["legacy_open_box_not_a_live_task_without_review"])
+        fake={"acknowledgements":{"historical_backlog_dispositions":{
+            out["next_review"][0]["id"]:{
+                "disposition":"COMPLETED_VERIFIED","owner":"FAKE_OWNER",
+                "next_gate":"FAKE_RELEASE_GATES","evidence_sha256":"0"*64,
+                "report":"research/work-analysis/absent.md",
+                "reviewed_at_utc":"2026-10-13T05:00:00Z"}}}}
+        after=historical_backlog_reconciliation(ROOT,fake,now)
+        self.assertEqual(after["still_unclassified"],out["open_checkboxes_total"])
+
     def test_missing_context_handoff_blocks_substantive_work(self):
         manifest_path = "research/project-followthrough-routing-v1.json"
         original = json.loads((ROOT / manifest_path).read_text(encoding="utf-8"))
