@@ -8,6 +8,8 @@ from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
     capture_public_1m,assemble,early_path_coverage,
 )
 from tests.test_v3_paper_wait_observer_v1 import seed,SID,CID,START,DECISION,t
+from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt,store_receipt_explicitly
+from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import REVISION
 
 def candidate():
     return {"kind":"CANONICAL_CANDIDATE_HANDOFF_V1",
@@ -188,6 +190,63 @@ class HostTickTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"verified prospective"):
             early_path_coverage(assembled={"closed_bars":rows},
                 entry_at_utc=t(start),observed_at_utc=t(at))
+
+    def test_all_final_6h24h72h_horizons_stop_new_kraken_poll(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);j=root/"j";cap=root/"capture";j.mkdir();cap.mkdir()
+            seed(j)
+            for hours in (6,24,72):
+                row=make_receipt(
+                    series_id=SID,revision=REVISION,candidate_id=CID,
+                    pair="ZRO/EUR",event_time_utc=t(START),
+                    known_at_utc=t(START+timedelta(hours=hours,minutes=65)),
+                    phase=f"FOLLOWUP_{hours}H",result="CENSORED",
+                    data={"censor_reason":"ACTUAL_PROSPECTIVE_1M_GAP"},
+                    event_key=f"FINAL{hours}H")
+                store_receipt_explicitly(j,row)
+            old_files={p.name for p in j.glob("*.json")}
+            calls=[]
+            def forbid(*args,**kwargs):
+                calls.append(True)
+                raise AssertionError("no more Kraken source request after all final")
+            out=tick_once(candidate=candidate(),series_id=SID,journal=j,
+                capture_dir=cap,
+                clock_now=lambda:t(START+timedelta(hours=73)),
+                capture=forbid,fetch=forbid,ticker=forbid)
+            self.assertEqual(out["status"],
+                "ALL_FOLLOWUP_HORIZONS_FINAL_NO_NEW_PUBLIC_KRAKEN_REQUEST")
+            self.assertEqual(out["source_capture"],
+                             "SKIPPED_COMPLETE_IMMUTABLE_6H24H72H")
+            self.assertEqual(calls,[])
+            self.assertEqual({p.name for p in j.glob("*.json")},old_files)
+            self.assertEqual(list(cap.glob("*.json")),[])
+            self.assertEqual(out["new_schedules"],0)
+            self.assertFalse(out["model_called"])
+            self.assertFalse(out["v2r4_changed"])
+
+    def test_partial_final_horizons_do_not_silently_end_24h_followup(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);j=root/"j";cap=root/"capture";j.mkdir();cap.mkdir()
+            seed(j)
+            row=make_receipt(
+                series_id=SID,revision=REVISION,candidate_id=CID,
+                pair="ZRO/EUR",event_time_utc=t(START),
+                known_at_utc=t(START+timedelta(hours=6,minutes=65)),
+                phase="FOLLOWUP_6H",result="CENSORED",
+                data={"censor_reason":"TRUE_1M_GAP"},event_key="FINAL6H")
+            store_receipt_explicitly(j,row)
+            calls=[]
+            def observe(*,pair,altname,outdir):
+                calls.append(pair)
+                return tick_capture(START+timedelta(hours=8))(
+                    pair=pair,altname=altname,outdir=outdir)
+            out=tick_once(candidate=candidate(),series_id=SID,journal=j,
+                capture_dir=cap,
+                clock_now=lambda:t(START+timedelta(hours=8)),
+                capture=observe)
+            self.assertEqual(calls,["ZRO/EUR"])
+            self.assertEqual(out["source_capture"],"CLOSED_KRAKEN_1M_SNAPSHOT_SAVED")
+            self.assertNotIn("ALL_FOLLOWUP_HORIZONS_FINAL",out.get("status",""))
 
     def test_15m_volume_ratio_four_previous_is_not_five_previous(self):
         from paper_evaluator.successor_coin_entry_evidence_v1 import _frame
