@@ -23,9 +23,9 @@ def kraken_public(path, params=None):
             payload = json.loads(response.read().decode())
     except urllib.error.HTTPError as exc:
         if exc.code == 429:
-            report_public_rate_limit(http_status=429)
+            report_public_rate_limit(url, http_status=429)
         raise
-    report_public_rate_limit(payload)
+    report_public_rate_limit(url, payload)
     if payload.get('error'):
         raise RuntimeError(';'.join(payload['error']))
     return payload.get('result', {})
