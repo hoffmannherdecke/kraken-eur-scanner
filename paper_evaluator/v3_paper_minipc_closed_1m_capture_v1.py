@@ -122,3 +122,74 @@ def assemble(*,snapshots:Path,pair:str,entry_at_utc:str,
             "no_future_backfill":True,
             "max_original_snapshot_lag_minutes":max_live_capture_lag_minutes,
             "historical_late_backfill_excluded":True}
+
+def early_path_coverage(*,assembled:dict[str,Any],entry_at_utc:str,
+                        observed_at_utc:str)->dict[str,Any]:
+    """Pure early-warning check on ALREADY captured, trustworthy 1m snapshots.
+
+    This is not an OHLC backfill or another source poll. Detect genuine gaps
+    before a 6/24h final receipt irreversibly becomes CENSORED. The 2-minute
+    stable clock margin excludes the newest exchange candle. An old missing
+    minute is not repaired using an OHLC response fetched after the fact.
+    """
+    if (not isinstance(assembled,dict)
+            or assembled.get("kind")!="KRAKEN_CLOSED_1M_PATH_CAPTURE_V1"
+            or assembled.get("source")!="KRAKEN_SPOT_EUR_PUBLIC"
+            or assembled.get("no_future_backfill") is not True):
+        raise ValueError("verified prospective assembled 1m path required")
+    bars=assembled.get("closed_bars")
+    if not isinstance(bars,list) or len(bars)>5000:
+        raise ValueError("bounded closed 1m evidence required")
+    at=timestamp(observed_at_utc)
+    entry=timestamp(entry_at_utc)
+    if at<entry:
+        raise ValueError("source observation cannot predate candidate")
+    first=entry.replace(second=0,microsecond=0)
+    if first<entry:
+        first+=timedelta(minutes=1)
+    last_stable=(at-timedelta(minutes=2)).replace(second=0,microsecond=0)-timedelta(minutes=1)
+    # A single candidate is tracked for at most the already supported 72h.
+    last_stable=min(last_stable,first+timedelta(minutes=72*60-1))
+    start_times=set()
+    for bar in bars:
+        if not isinstance(bar,dict):
+            raise ValueError("invalid prospective minute evidence")
+        t=timestamp(bar["start_at_utc"])
+        if t in start_times or t.second or t.microsecond:
+            raise ValueError("duplicate or non-minute 1m evidence")
+        start_times.add(t)
+    missing=0
+    first_missing=None
+    old_gap=False
+    contiguous_prefix=0
+    prefix_active=True
+    cursor=first
+    while cursor<=last_stable:
+        if cursor in start_times:
+            if prefix_active:
+                contiguous_prefix+=1
+        else:
+            missing+=1
+            if first_missing is None:
+                first_missing=cursor
+            prefix_active=False
+            if at-(cursor+timedelta(minutes=1))>timedelta(minutes=15):
+                old_gap=True
+        cursor+=timedelta(minutes=1)
+    expected=max(0,int((last_stable-first).total_seconds()//60)+1)
+    status=("WAIT_FIRST_STABLE_MINUTE" if expected==0
+            else "SOURCE_1M_GAP_PAST_PROVENANCE_LIMIT" if old_gap
+            else "SOURCE_1M_RECENT_GAP_MONITOR" if missing
+            else "CONTIGUOUS_PROSPECTIVE_1M_AS_OF_STABLE_CUTOFF")
+    return {
+        "kind":"V3_EARLY_1M_PROSPECTIVE_COVERAGE_READONLY_V1",
+        "status":status,
+        "first_expected_start_utc":first.isoformat(),
+        "first_missing_start_utc":first_missing.isoformat() if first_missing else None,
+        "expected_stable_minutes":expected,
+        "missing_stable_minutes":missing,
+        "contiguous_prefix_minutes":contiguous_prefix,
+        "gap_past_15m_provenance_limit":old_gap,
+        "retroactive_market_labels_authorized":False,
+        "model_http_calls":0,"new_schedules":0,"orders":False,
+    }
