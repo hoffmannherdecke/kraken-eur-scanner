@@ -69,9 +69,9 @@ def http_json(path: str, params: dict[str, Any] | None = None, timeout: int = 20
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         if exc.code == 429:
-            report_public_rate_limit(http_status=429)
+            report_public_rate_limit(url, http_status=429)
         raise
-    report_public_rate_limit(payload)
+    report_public_rate_limit(url, payload)
     if payload.get("error"):
         raise RuntimeError(f"Kraken public error {path}: {payload['error']}")
     return payload.get("result", {})
