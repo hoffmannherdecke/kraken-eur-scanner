@@ -3,7 +3,10 @@ import json
 import time
 import urllib.parse
 import urllib.request
+import urllib.error
 from datetime import datetime, timezone
+
+from market_data.kraken_public_budget import reserve_public_request, report_public_rate_limit
 
 
 def utc():
@@ -14,8 +17,15 @@ def kraken_public(path, params=None):
     query = urllib.parse.urlencode(params or {})
     url = 'https://api.kraken.com' + path + (('?' + query) if query else '')
     req = urllib.request.Request(url, headers={'User-Agent': 'kraken-eur-market-observer/2.0'})
-    with urllib.request.urlopen(req, timeout=20) as response:
-        payload = json.loads(response.read().decode())
+    reserve_public_request(url, max_wait_seconds=1.5)
+    try:
+        with urllib.request.urlopen(req, timeout=20) as response:
+            payload = json.loads(response.read().decode())
+    except urllib.error.HTTPError as exc:
+        if exc.code == 429:
+            report_public_rate_limit(url, http_status=429)
+        raise
+    report_public_rate_limit(url, payload)
     if payload.get('error'):
         raise RuntimeError(';'.join(payload['error']))
     return payload.get('result', {})
