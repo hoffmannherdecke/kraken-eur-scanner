@@ -42,6 +42,7 @@ def fixture(root:Path)->dict:
                         "precommit_original_backup_verified":True,
                         "precommit_restore_only_before_cloud_commit_tested":True,
                         "old_followups_retained_on_original_series_tested":True,
+                        "old_followup_owner_running_after_cutover_tested":True,
                         "old_supervisor_intake_rearm_fence_tested":True,
                     })
                 if origin=="SUPABASE_CLOUD":
@@ -57,6 +58,9 @@ def fixture(root:Path)->dict:
                         "stale_predecessor_cas_rejected_tested":True,
                         "ambiguous_cloud_outcome_quarantines_both_tested":True,
                         "postcommit_no_predecessor_restart_tested":True,
+                        "closed_old_series_followup_update_accepted_tested":True,
+                        "closed_old_series_trade_exit_update_accepted_tested":True,
+                        "closed_old_series_new_intake_rejected_tested":True,
                     })
             canonical=json.dumps(record,sort_keys=True,separators=(",",":")).encode()
             originals.append({"origin":origin,"original_id":oid,
@@ -218,6 +222,9 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                 ("proposed_v3_strategy_sha256","e"*64),
                 ("stale_predecessor_cas_rejected_tested",False),
                 ("postcommit_no_predecessor_restart_tested",False),
+                ("closed_old_series_followup_update_accepted_tested",False),
+                ("closed_old_series_trade_exit_update_accepted_tested",False),
+                ("closed_old_series_new_intake_rejected_tested",False),
                 ("phase","CLOUD_COMMITTED"),
                 ("active_paper_series",[
                     {"series_id":"PAPER-V3-EXPERIMENTAL-TEST-001","status":"active"}]),
@@ -235,6 +242,30 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                     self.assertTrue(validate_experimental_paper_packet(
                         root,"V3-PAPER-EXPERIMENTAL-001",packet),
                         "cross-origin CAS mismatch must block even after rehash")
+            path.write_text(json.dumps(valid,sort_keys=True))
+            row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
+
+    def test_cas_mini_pc_old_followup_owner_missing_blocks_before_release(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            row=next(x for x in packet["experimental_paper_technical_proofs"]
+                     if x["id"]=="V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN")
+            path=root/row["evidence_path"]
+            valid=json.loads(path.read_text("utf-8"))
+            changed=copy.deepcopy(valid)
+            host=next(x for x in changed["source_originals"]
+                      if x["origin"]=="MINIPC_PHYSICAL")
+            host["original_record"]["old_followup_owner_running_after_cutover_tested"]=False
+            raw=json.dumps(host["original_record"],sort_keys=True,
+                           separators=(",",":")).encode()
+            host["original_sha256"]=hashlib.sha256(raw).hexdigest()
+            path.write_text(json.dumps(changed,sort_keys=True))
+            row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+            self.assertTrue(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet))
             path.write_text(json.dumps(valid,sort_keys=True))
             row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
             self.assertEqual(validate_experimental_paper_packet(
