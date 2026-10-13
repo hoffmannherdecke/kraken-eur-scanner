@@ -159,7 +159,11 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
         from tools.project_followthrough_router import historical_backlog_reconciliation
         now=dt.datetime(2026,10,13,6,tzinfo=UTC)
         out=historical_backlog_reconciliation(ROOT,{},now)
-        current_open=sum(1 for line in\n                         (ROOT/"PROJECT_BACKLOG.md").read_text(encoding="utf-8").splitlines()\n                         if line.lstrip().startswith("- [ ]"))
+        current_open=sum(
+            1 for line in
+            (ROOT/"PROJECT_BACKLOG.md").read_text(encoding="utf-8").splitlines()
+            if line.lstrip().startswith("- [ ]")
+        )
         self.assertEqual(out["open_checkboxes_total"],current_open)
         self.assertGreater(current_open,0)
         self.assertEqual(out["still_unclassified"],out["open_checkboxes_total"])
