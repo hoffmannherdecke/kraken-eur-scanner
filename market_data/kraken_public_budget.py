@@ -10,11 +10,12 @@ Requests never fall back to stale market data on budget denial.
 from __future__ import annotations
 
 import errno
+import hashlib
 import json
 import os
 import time
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, parse_qs
 
 
 class KrakenPublicBudgetDeferred(RuntimeError):
@@ -41,10 +42,21 @@ def configured_root() -> Path | None:
     return root
 
 
-def _validate_public_url(url: str) -> None:
+def _scope(url: str) -> str:
     p = urlsplit(url)
     if p.scheme != "https" or p.hostname != "api.kraken.com" or not p.path.startswith("/0/public/"):
         raise KrakenPublicBudgetUnsafe("Kraken public budget called for a nonpublic URL")
+    # Kraken Spot: OHLC and Trades use a per-IP/per-pair limit; all other
+    # public REST endpoints share one IP limit. Avoid over-serializing
+    # unrelated OHLC pairs or starving time-critical ticker lookups.
+    endpoint = p.path.rsplit("/", 1)[-1]
+    if endpoint in ("OHLC", "Trades"):
+        pair = parse_qs(p.query).get("pair", [""])[0].strip().upper()
+        if not pair or len(pair) > 128:
+            raise KrakenPublicBudgetUnsafe("pair required for Kraken OHLC/Trades budget")
+        digest = hashlib.sha256(pair.encode("utf-8")).hexdigest()[:24]
+        return "PAIR:" + digest
+    return "IP"
 
 
 def _try_lock(handle) -> bool:
@@ -88,23 +100,32 @@ def _lock_file(root: Path):
     return handle
 
 
-def _state(root: Path) -> dict[str, float]:
+def _state(root: Path) -> dict:
     path = root / _STATE_NAME
     if not path.exists():
-        return {"last_claim_at": 0.0, "cooldown_until": 0.0}
+        return {"schema_version": 1, "last_claim_at": {}, "cooldown_until": {}}
     try:
         data = json.loads(path.read_text("utf-8"))
-        if (not isinstance(data, dict) or
-            not isinstance(data.get("last_claim_at"), (int, float)) or
-            not isinstance(data.get("cooldown_until"), (int, float)) or
-            data["last_claim_at"] < 0 or data["cooldown_until"] < 0):
+        if (not isinstance(data, dict) or data.get("schema_version") != 1 or
+            any(not isinstance(data.get(k), dict) for k in ("last_claim_at", "cooldown_until")) or
+            any(not isinstance(v, (int, float)) or v < 0 or v > time.time() + 3600
+                for k in ("last_claim_at", "cooldown_until")
+                for v in data[k].values())):
             raise ValueError("invalid counters")
         return data
     except (OSError, ValueError, TypeError) as exc:
         raise KrakenPublicBudgetUnsafe("Kraken public budget state invalid") from exc
 
 
-def _save(root: Path, data: dict[str, float]) -> None:
+def _save(root: Path, data: dict) -> None:
+    # Keep bounded state and avoid per-request log growth. Old pair-scoped
+    # entries can be removed after they can no longer influence rate safety.
+    now = time.time()
+    for key in ("last_claim_at", "cooldown_until"):
+        data[key] = {k: v for k, v in data[key].items()
+                     if v >= now - 3600 or k == "IP"}
+        if len(data[key]) > 4096:
+            raise KrakenPublicBudgetUnsafe("Kraken public budget too many active pair scopes")
     # A process-unique temp name prevents a failed writer from clobbering
     # another process's file. Exclusive byte lock remains held during replace.
     path = root / _STATE_NAME
@@ -126,7 +147,7 @@ def reserve_public_request(url: str, *, max_wait_seconds: float = 0.0) -> bool:
     root = configured_root()
     if root is None:
         return False
-    _validate_public_url(url)
+    bucket = _scope(url)
     if not 0 <= max_wait_seconds <= 3:
         raise ValueError("max_wait_seconds must be between 0 and 3")
     end = time.monotonic() + max_wait_seconds
@@ -144,11 +165,11 @@ def reserve_public_request(url: str, *, max_wait_seconds: float = 0.0) -> bool:
                     # No claim if wall clock moves backwards; never use a
                     # fabricated counter reset to bypass the rate gate.
                     next_time = max(
-                        state["last_claim_at"] + MIN_INTERVAL_SECONDS,
-                        state["cooldown_until"],
+                        state["last_claim_at"].get(bucket, 0.0) + MIN_INTERVAL_SECONDS,
+                        state["cooldown_until"].get(bucket, 0.0),
                     )
                     if now >= next_time:
-                        state["last_claim_at"] = now
+                        state["last_claim_at"][bucket] = now
                         _save(root, state)
                         return True
                     delay = next_time - now
@@ -161,7 +182,7 @@ def reserve_public_request(url: str, *, max_wait_seconds: float = 0.0) -> bool:
         raise KrakenPublicBudgetUnsafe("Kraken public budget filesystem inaccessible") from exc
 
 
-def report_public_rate_limit(payload: dict | None = None, *, http_status: int | None = None) -> bool:
+def report_public_rate_limit(url: str, payload: dict | None = None, *, http_status: int | None = None) -> bool:
     """Register real Kraken HTTP 429 or EGeneral/Rate limit errors.
 
     Does not perform a request. No effect on valid responses or when OFF.
@@ -169,6 +190,7 @@ def report_public_rate_limit(payload: dict | None = None, *, http_status: int | 
     root = configured_root()
     if root is None:
         return False
+    bucket = _scope(url)
     errors = payload.get("error", []) if isinstance(payload, dict) else []
     error_text = " ".join(map(str, errors)).lower()
     limited = http_status == 429 or any(
@@ -187,8 +209,9 @@ def report_public_rate_limit(payload: dict | None = None, *, http_status: int | 
                 time.sleep(0.025)
             try:
                 state = _state(root)
-                state["cooldown_until"] = max(
-                    state["cooldown_until"], time.time() + RATE_LIMIT_COOLDOWN_SECONDS
+                state["cooldown_until"][bucket] = max(
+                    state["cooldown_until"].get(bucket, 0.0),
+                    time.time() + RATE_LIMIT_COOLDOWN_SECONDS
                 )
                 _save(root, state)
             finally:
