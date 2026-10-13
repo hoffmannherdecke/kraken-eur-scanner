@@ -70,7 +70,7 @@ def fixture(root:Path)->dict:
                           "source_originals":originals},sort_keys=True),
                         encoding="utf-8")
         items.append({"id":key,"status":"VERIFIED_PHYSICAL_OR_CLOUD_E2E",
-                      "evidence_path":str(dest.relative_to(root)),
+                      "evidence_path":dest.relative_to(root).as_posix(),
                       "sha256":hashlib.sha256(dest.read_bytes()).hexdigest()})
     return {"kind":"SUCCESSOR_STRATEGY_CAUSAL_RELEASE_EVIDENCE_V1",
             "strategy_revision":"V3-PAPER-EXPERIMENTAL-001",
@@ -164,6 +164,26 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                 self.assertTrue(
                     validate_experimental_paper_packet(root,"V3-PAPER-EXPERIMENTAL-001",d),
                     m)
+
+    def test_evidence_fixture_paths_are_posix_and_backslashes_stay_rejected(self):
+        # Release proof paths are canonical repository-relative POSIX paths.
+        # pathlib stringification produces backslashes on Windows, causing
+        # false invalid-path failures in otherwise valid synthetic fixtures.
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            paths=[item["evidence_path"]
+                   for item in packet["experimental_paper_technical_proofs"]]
+            self.assertEqual(len(paths),len(PROOFS))
+            self.assertTrue(all(p.startswith("research/") and "\\\\" not in p
+                                for p in paths))
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
+            bad=copy.deepcopy(packet)
+            bad["experimental_paper_technical_proofs"][0]["evidence_path"]=(
+                paths[0].replace("/", "\\\\"))
+            self.assertTrue(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",bad))
 
     def test_six_dummy_hash_correct_files_never_count_as_physical_e2e(self):
         with tempfile.TemporaryDirectory() as folder:
