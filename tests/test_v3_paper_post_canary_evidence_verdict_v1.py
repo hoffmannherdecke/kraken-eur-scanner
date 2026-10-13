@@ -176,11 +176,34 @@ class After28hVerdictTests(unittest.TestCase):
         self.assertEqual(r["watcher_followup_coverage"]["24"]["censored"],1)
         self.assertEqual(r["watcher_24h_mature_cases"],0)
         self.assertEqual(r["watcher_mature_virtual_fee_adjusted_paper_net_count"],0)
+        self.assertEqual(r["watcher_24h_censored_cases"],1)
+        self.assertEqual(r["watcher_24h_not_yet_due_cases"],0)
+        self.assertEqual(r["next_research_disposition"],
+                         "REVIEW_MISSING_OR_CENSORED_24H_DATA_NO_FALSE_PNL")
         early=event(WATCH,"FOLLOWUP_24H","CENSORED",
                     known="2026-10-12T12:00:00Z",key="NOBUY24H",
                     data={"censor_reason":"FAKE"})
         with self.assertRaisesRegex(ValueError,"premature"):
             run(watch()+smoke()+[early])
+
+    def test_late_genuine_original_is_pending_not_fake_24h_completion(self):
+        rows=smoke()+[event(WATCH,"SCANNER_CAPTURE","SEEN",
+                            cid="LATE-REAL-001",pair="EIGEN/EUR",
+                            event_time="2026-10-13T09:00:00Z",
+                            known="2026-10-13T09:00:00Z")]
+        r=run(rows=rows,at="2026-10-13T12:04:00Z",host_ack=True)
+        self.assertEqual(r["watcher_24h_not_yet_due_cases"],1)
+        self.assertEqual(r["next_research_disposition"],
+                         "REVIEW_24H_PENDING_NO_ARTIFICIAL_CANARY_EXTENSION")
+        self.assertEqual(r["watcher_24h_mature_cases"],0)
+        self.assertFalse(r["strategy_v3_auto_activation_authorized"])
+
+    def test_no_originals_is_not_fee_adjusted_trade_evidence(self):
+        r=run(rows=smoke(),at="2026-10-13T12:04:00Z",host_ack=True)
+        self.assertEqual(r["watcher_24h_mature_cases"],0)
+        self.assertEqual(r["next_research_disposition"],
+                         "REVIEW_NO_MATURE_24H_RESULTS_NO_ECONOMIC_CLAIM")
+        self.assertFalse(r["strategy_v3_auto_activation_authorized"])
 
     def test_cloud_receipt_event_ids_unique_and_original_metadata_consistent(self):
         x=watch()+smoke()
