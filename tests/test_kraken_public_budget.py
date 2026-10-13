@@ -44,7 +44,7 @@ class PublicKrakenBudgetTests(unittest.TestCase):
     def test_without_opt_in_does_not_create_any_state(self):
         with patch.dict(os.environ, {"KRAKEN_PUBLIC_BUDGET_DIR": ""}):
             self.assertFalse(gate.reserve_public_request(URL))
-            self.assertFalse(gate.report_public_rate_limit({"error": ["EGeneral:Too many requests"]}))
+            self.assertFalse(gate.report_public_rate_limit(URL, {"error": ["EGeneral:Too many requests"]}))
         self.assertEqual(list(Path(self.temp.name).iterdir()), [])
 
     def test_first_claim_admitted_second_immediately_deferred(self):
@@ -52,7 +52,7 @@ class PublicKrakenBudgetTests(unittest.TestCase):
         with self.assertRaises(gate.KrakenPublicBudgetDeferred):
             gate.reserve_public_request(OHLC, max_wait_seconds=0)
         data = json.loads((Path(self.temp.name) / "budget-state.json").read_text())
-        self.assertGreater(data["last_claim_at"], 0)
+        self.assertGreater(data["last_claim_at"]["IP"], 0)
 
     def test_shared_between_distinct_processes(self):
         ctx = multiprocessing.get_context("spawn")
@@ -73,13 +73,13 @@ class PublicKrakenBudgetTests(unittest.TestCase):
 
     def test_rate_limit_sets_bounded_host_wide_cooldown(self):
         self.assertTrue(gate.reserve_public_request(URL))
-        self.assertTrue(gate.report_public_rate_limit({"error": ["EGeneral:Too many requests"]}))
+        self.assertTrue(gate.report_public_rate_limit(URL, {"error": ["EGeneral:Too many requests"]}))
         current = json.loads((Path(self.temp.name) / "budget-state.json").read_text())
-        self.assertLessEqual(current["cooldown_until"] - time.time(), 21)
-        self.assertGreater(current["cooldown_until"] - time.time(), 17)
+        self.assertLessEqual(current["cooldown_until"]["IP"] - time.time(), 21)
+        self.assertGreater(current["cooldown_until"]["IP"] - time.time(), 17)
         with self.assertRaises(gate.KrakenPublicBudgetDeferred):
             gate.reserve_public_request(URL)
-        self.assertFalse(gate.report_public_rate_limit({"error": []}))
+        self.assertFalse(gate.report_public_rate_limit(URL, {"error": []}))
 
     def test_invalid_state_refuses_request_no_reset(self):
         path = Path(self.temp.name) / "budget-state.json"
@@ -89,9 +89,28 @@ class PublicKrakenBudgetTests(unittest.TestCase):
         self.assertEqual(path.read_text("utf-8"), "{not-json")
 
     def test_http_429_is_cooldown_even_without_kraken_error_body(self):
-        self.assertTrue(gate.report_public_rate_limit(http_status=429))
+        self.assertTrue(gate.report_public_rate_limit(URL, http_status=429))
         with self.assertRaises(gate.KrakenPublicBudgetDeferred):
             gate.reserve_public_request(URL)
+
+    def test_ohlc_pair_scopes_do_not_block_other_pairs_or_ticker(self):
+        self.assertTrue(gate.reserve_public_request(OHLC))
+        # Kraken OHLC and Trades are per IP+pair, not the REST-wide IP bucket.
+        self.assertTrue(gate.reserve_public_request(
+            "https://api.kraken.com/0/public/OHLC?pair=AAVEEUR&interval=15"
+        ))
+        self.assertTrue(gate.reserve_public_request(URL))
+        with self.assertRaises(gate.KrakenPublicBudgetDeferred):
+            gate.reserve_public_request("https://api.kraken.com/0/public/OHLC?pair=XTZEUR&interval=1")
+
+    def test_ohlc_throttle_only_cools_down_affected_pair(self):
+        gate.report_public_rate_limit(OHLC, {"error": ["EGeneral:Too many requests"]})
+        with self.assertRaises(gate.KrakenPublicBudgetDeferred):
+            gate.reserve_public_request(OHLC)
+        self.assertTrue(gate.reserve_public_request(
+            "https://api.kraken.com/0/public/OHLC?pair=AVAXEUR&interval=15"
+        ))
+        self.assertTrue(gate.reserve_public_request(URL))
 
     def test_nonpublic_url_fails_closed_when_enrolled(self):
         for url in ("http://api.kraken.com/0/public/Ticker", "https://api.kraken.com/0/private/Balance", "https://example.net/0/public/Ticker"):
@@ -108,8 +127,8 @@ class PublicKrakenBudgetTests(unittest.TestCase):
 
     def test_expired_slot_can_be_reclaimed_without_network_call(self):
         path = Path(self.temp.name) / "budget-state.json"
-        path.write_text(json.dumps({"last_claim_at": time.time() - 5,
-                                    "cooldown_until": 0.0}), encoding="utf-8")
+        path.write_text(json.dumps({"schema_version": 1, "last_claim_at": {"IP": time.time() - 5},
+                                    "cooldown_until": {}}), encoding="utf-8")
         self.assertTrue(gate.reserve_public_request(URL))
 
     def test_wait_http_path_reserves_slot_before_opening_network(self):
