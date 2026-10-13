@@ -60,9 +60,9 @@ def public_json(url: str, timeout: int = 20) -> dict[str, Any]:
             payload = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         if exc.code == 429:
-            report_public_rate_limit(http_status=429)
+            report_public_rate_limit(url, http_status=429)
         raise
-    report_public_rate_limit(payload)
+    report_public_rate_limit(url, payload)
     if payload.get("error"):
         raise RuntimeError("Kraken public REST error: " + ";".join(payload["error"]))
     result = payload.get("result")
