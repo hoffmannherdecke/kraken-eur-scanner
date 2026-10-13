@@ -72,6 +72,90 @@ def xbt_real_pit_fixture():
     return {"XBT/EUR":{"ticker":t,"entry_evidence":e,"pair_metadata":m}}
 
 class ExistingSourceOwnerBridgeTests(unittest.TestCase):
+    def test_full_staged_scanner_model_p4_and_cloud_ack_single_integrated_path(self):
+        """Only injected fake-model and fake Cloud; no real paid/physical proof."""
+        import json,tempfile
+        from pathlib import Path
+        from paper_evaluator.v3_paper_intake_receipt_stage_v1 import stage_receipts_explicitly
+        from paper_evaluator.v3_paper_minipc_one_candidate_v1 import one_candidate
+        from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import sync_once
+        from tests.test_v3_paper_minipc_one_candidate_v1 import (
+            valid_approval,fake_acquire,fake_model,
+        )
+        plan=preflight(scanners=[
+            scanner("V3-INITIAL-EUR-1","XBT/EUR",dt(9))],
+            observations=xbt_real_pit_fixture())
+        self.assertEqual(len(plan["selected_candidates"]),1)
+        self.assertEqual(plan["selected_candidates"][0]["entry_origin"],"SCANNER")
+        self.assertTrue(plan["review_preflights"][0]
+                        ["eligible_for_full_model_review"])
+        self.assertFalse(plan["model_http_authorized"])
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);journal=root/"journal";budget=root/"budget"
+            journal.mkdir();budget.mkdir()
+            staged=stage_receipts_explicitly(
+                preflight=plan,journal_directory=journal)
+            self.assertEqual(staged["written"],2)
+            original={p.name:p.read_bytes() for p in journal.glob("*.json")}
+            approval=dict(valid_approval(),series_id=SID)
+            attempts=[]
+            def fake_once(prompt,key):
+                attempts.append((prompt,key))
+                return fake_model(prompt,key)
+            modeled=one_candidate(candidate=plan["selected_candidates"][0],
+                series_id=SID,local_receipts=journal,model_reservations=budget,
+                approval=approval,model_key="NON_REAL_TEST_KEY_SUPPLIED_TO_STUB",
+                acquire=fake_acquire,model_client=fake_once,
+                clock=lambda:dt(12),allow_model=True,
+                admit_staged_scanner_one_approved_model=True)
+            self.assertEqual(modeled["status"],
+                             "V3_CANARY_MODEL_P4_RECORDED_NO_PAPER_ACTIVATION")
+            self.assertEqual(modeled["p4_decision"],"BUY_SCOUT")
+            self.assertEqual(len(attempts),1)
+            self.assertEqual(len(list(budget.glob("*.reserved.json"))),1)
+            self.assertEqual({p.name:p.read_bytes() for p in journal.glob("*.json")
+                              if p.name in original},original)
+            rows=[json.loads(p.read_text("utf-8")) for p in journal.glob("*.json")]
+            self.assertEqual({r["event_key"] for r in rows
+                              if r["phase"]=="MODEL_REQUEST"},{"FRESHRECHECK"})
+            self.assertEqual(len([r for r in rows
+                                 if r["phase"]=="SCANNER_CAPTURE"]),1)
+            self.assertTrue(any(r["phase"]=="P4_VALIDATION"
+                                and r["result"]=="BUY_SCOUT" for r in rows))
+            self.assertEqual({r["phase"] for r in rows if r["result"]=="PENDING"},
+                {"FOLLOWUP_6H","FOLLOWUP_24H","FOLLOWUP_72H"})
+            calls=[]
+            def fake_cloud(url,token,payload):
+                calls.append(payload)
+                return {"ok":True,"accepted_receipts":len(payload["receipts"]),
+                        "series_id":SID}
+            ack=root/"ack.json"
+            cloud=sync_once(journal=journal,series_id=SID,ack_file=ack,
+                token="SYNTHETIC_TEST_ONLY_V3_RELAY_TOKEN_NO_NETWORK",
+                post=fake_cloud)
+            self.assertEqual(cloud["status"],"V3_RECEIPTS_CLOUD_ACK_VERIFIED")
+            self.assertEqual(len(calls),1)
+            self.assertEqual(cloud["count"],len(rows))
+            no_retry=sync_once(journal=journal,series_id=SID,ack_file=ack,
+                token="SYNTHETIC_TEST_ONLY_V3_RELAY_TOKEN_NO_NETWORK",
+                post=lambda *_: (_ for _ in ()).throw(
+                    AssertionError("no duplicate cloud originals")))
+            self.assertEqual(no_retry["count"],0)
+            repeated=one_candidate(candidate=plan["selected_candidates"][0],
+                series_id=SID,local_receipts=journal,model_reservations=budget,
+                approval=approval,model_key="NON_REAL_TEST_KEY_SUPPLIED_TO_STUB",
+                acquire=lambda *_: (_ for _ in ()).throw(
+                    AssertionError("second Kraken read forbidden")),
+                model_client=lambda *_: (_ for _ in ()).throw(
+                    AssertionError("second paid model forbidden")),
+                clock=lambda:dt(12),allow_model=True,
+                admit_staged_scanner_one_approved_model=True)
+            self.assertEqual(repeated["status"],
+                             "NO_UNIQUE_UNPROCESSED_STAGED_SCANNER_NO_RECHECK")
+            self.assertEqual(len(attempts),1)
+            self.assertFalse(plan["paper_writer_active"])
+            self.assertFalse(plan["cloud_active_series_changed"])
+
     def test_real_current_h10_edge_h11_raw_h5_macro_not_auto_positive_signal(self):
         result=bridge()
         self.assertEqual(result["owner_source_events"],[])
