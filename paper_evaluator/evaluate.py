@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """Paper-only candidate evaluator. No private Kraken API and no order path."""
 from __future__ import annotations
-import argparse, hashlib, json, os, sys, time, urllib.request, urllib.parse
+import argparse, hashlib, json, os, sys, time, urllib.request, urllib.error, urllib.parse
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from paper_context import build_context
+from market_data.kraken_public_budget import reserve_public_request, report_public_rate_limit
 try:
     from .v2r4_trigger_contract import ALLOWED_METRICS, ALLOWED_OPS
     from .v2r4_trigger_plan import build_wait_trigger_plan
@@ -175,9 +176,24 @@ def apply_public_tradability_gate(d,current,external,spec):
     return out
 
 def http_json(url, method="GET", headers=None, body=None, timeout=30):
+    # Only Kraken SPOT public REST shares the MINI-PC request budget.
+    # OpenAI model calls and non-Kraken hosts must never consume a slot.
+    parts=urllib.parse.urlsplit(url)
+    spot_public=(parts.scheme=="https" and parts.hostname=="api.kraken.com"
+                 and parts.path.startswith("/0/public/"))
     req=urllib.request.Request(url,data=body,method=method,headers=headers or {})
-    with urllib.request.urlopen(req,timeout=timeout) as r:
-        return json.loads(r.read().decode())
+    if spot_public:
+        reserve_public_request(url,max_wait_seconds=1.5)
+    try:
+        with urllib.request.urlopen(req,timeout=timeout) as r:
+            payload=json.loads(r.read().decode())
+    except urllib.error.HTTPError as exc:
+        if spot_public and exc.code==429:
+            report_public_rate_limit(url,http_status=429)
+        raise
+    if spot_public:
+        report_public_rate_limit(url,payload)
+    return payload
 
 def kraken_ticker(altname):
     q=urllib.parse.urlencode({"pair":altname})
