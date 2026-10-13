@@ -149,7 +149,9 @@ class PublicKrakenBudgetTests(unittest.TestCase):
             self.assertEqual(data["error"], ["EGeneral:Too many requests"])
             network.assert_called_once()
         with self.assertRaises(gate.KrakenPublicBudgetDeferred):
-            gate.reserve_public_request(URL)
+            gate.reserve_public_request(OHLC)
+        # OHLC/Trades are pair scoped; a Ticker request uses the IP scope.
+        self.assertTrue(gate.reserve_public_request(URL))
 
     def test_relative_enrollment_path_is_forbidden(self):
         with patch.dict(os.environ, {"KRAKEN_PUBLIC_BUDGET_DIR": "State/relative"}):
