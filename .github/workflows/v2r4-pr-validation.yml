@@ -10,6 +10,8 @@ name: V2R4 PR validation
   pull_request:
     paths:
       - 'paper_evaluator/evaluate.py'
+      - 'paper_context.py'
+      - 'tests/test_kraken_paper_context_budget.py'
       - 'paper_evaluator/revalidate.py'
       - 'paper_evaluator/v2r4_*.py'
       - 'research/v2r4/**'
@@ -69,6 +71,7 @@ jobs:
         run: |
           python -m py_compile \
             paper_evaluator/evaluate.py \
+            paper_context.py \
             paper_evaluator/revalidate.py \
             paper_evaluator/v2r4_trigger_contract.py \
             paper_evaluator/v2r4_trigger_plan.py \
@@ -103,6 +106,7 @@ jobs:
             tests.test_v2r4_evaluator_contract \
             tests.test_v2r4_local_recheck \
             tests.test_kraken_public_budget \
+            tests.test_kraken_paper_context_budget \
             tests.test_v2r4_wait_runtime \
             tests.test_v2r4_paper_activation_runtime \
             tests.test_successor_coin_entry_evidence_v1 \
