@@ -247,7 +247,7 @@ def classify_public_data_error(exc: Exception) -> str:
     if isinstance(exc, RuntimeError):
         message = str(exc).lower()
         if message.startswith(("kraken ticker error:", "kraken ohlc error:")):
-            if "rate limit" in message or "throttl" in message:
+            if any(term in message for term in ("rate limit", "throttl", "too many requests")):
                 return "KRAKEN_RATE_LIMIT"
             if "unknown asset pair" in message:
                 return "KRAKEN_UNKNOWN_PAIR"
