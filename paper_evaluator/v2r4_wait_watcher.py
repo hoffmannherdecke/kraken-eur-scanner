@@ -13,6 +13,7 @@ import time
 from collections import OrderedDict
 import urllib.parse
 import urllib.request
+import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -20,6 +21,18 @@ try:
     from .v2r4_trigger_contract import evaluate_plan, validate_plan
 except ImportError:  # direct script execution
     from v2r4_trigger_contract import evaluate_plan, validate_plan
+
+# Source budget is explicitly enabled per MINI-PC task. The isolated
+# WAIT launcher can load the same pinned module beside its source overlay;
+# never bypass an enabled budget silently if the module is absent.
+try:
+    from market_data.kraken_public_budget import (
+        reserve_public_request, report_public_rate_limit
+    )
+except ImportError:
+    from kraken_public_budget import (
+        reserve_public_request, report_public_rate_limit
+    )
 
 UA = "kraken-v2r4-wait-watcher/0.1-paper-only"
 
@@ -46,8 +59,16 @@ def http_json(url: str, timeout: int = 10) -> dict:
         url,
         headers={"User-Agent": UA, "Accept": "application/json"},
     )
-    with urllib.request.urlopen(req, timeout=timeout) as response:
-        return json.loads(response.read().decode("utf-8"))
+    reserve_public_request(url, max_wait_seconds=0.0)  # WAIT may defer; never send unbudgeted
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        if exc.code == 429:
+            report_public_rate_limit(http_status=429)
+        raise
+    report_public_rate_limit(payload)
+    return payload
 
 
 def ticker(altname: str) -> dict[str, float]:
