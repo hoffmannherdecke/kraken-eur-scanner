@@ -18,8 +18,12 @@ URL = "https://api.kraken.com/0/public/Ticker?pair=XTZEUR"
 OHLC = "https://api.kraken.com/0/public/OHLC?pair=XTZEUR&interval=15"
 
 
-def _worker(root: str, send):
+def _worker(root: str, send, ready, start):
     os.environ["KRAKEN_PUBLIC_BUDGET_DIR"] = root
+    ready.put(True)
+    if not start.wait(6):
+        send.put("UNEXPECTED")
+        return
     try:
         gate.reserve_public_request(URL)
         send.put("ADMITTED")
@@ -51,11 +55,17 @@ class PublicKrakenBudgetTests(unittest.TestCase):
         self.assertGreater(data["last_claim_at"], 0)
 
     def test_shared_between_distinct_processes(self):
-        q = multiprocessing.get_context("spawn").Queue()
-        a = multiprocessing.get_context("spawn").Process(target=_worker, args=(self.temp.name, q))
-        b = multiprocessing.get_context("spawn").Process(target=_worker, args=(self.temp.name, q))
+        ctx = multiprocessing.get_context("spawn")
+        q = ctx.Queue()
+        ready = ctx.Queue()
+        start = ctx.Event()
+        a = ctx.Process(target=_worker, args=(self.temp.name, q, ready, start))
+        b = ctx.Process(target=_worker, args=(self.temp.name, q, ready, start))
         a.start()
         b.start()
+        ready.get(timeout=6)
+        ready.get(timeout=6)
+        start.set()
         a.join(timeout=8)
         b.join(timeout=8)
         self.assertEqual((a.exitcode, b.exitcode), (0, 0))
