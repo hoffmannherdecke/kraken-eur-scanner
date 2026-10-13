@@ -7,6 +7,8 @@ from tests.test_v3_paper_positive_source_entry_v1 import (
     official,money,poly,movement,
 )
 from tests.test_v2r4_v3_entry_handoff_probe import dt
+from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt
+from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import REVISION
 
 SID="PAPER-V3-CANARY-20261011"
 PAIR={"XBT/EUR":{"pair":"XBT/EUR","altname":"XBTEUR","quote":"EUR","status":"online","spot":True},
@@ -76,6 +78,41 @@ class V3SharedIngressTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             plan([scanner()],journal=[dict(receipt,pair="ETH/EUR"),
                 dict(receipt,pair="XBT/EUR")])
+
+    def test_only_fresh_exact_capacity_deferred_scanner_can_reenter(self):
+        old=make_receipt(
+            series_id=SID,revision=REVISION,candidate_id="deferred-one",
+            pair="ETH/EUR",event_time_utc=dt(9),known_at_utc=dt(12),
+            phase="SCANNER_CAPTURE",result="SKIP",
+            data={"candidate_origin":"SCANNER",
+                  "source_status":"CAPACITY_DEFERRED_NOT_A_NEGATIVE_MARKET_DECISION"},
+            event_key="FIRST")
+        r=plan([scanner("deferred-one","ETH/EUR",dt(9))],journal=[old])
+        self.assertEqual(r["counts"]["selected"],1)
+        self.assertTrue(r["candidates"][0]["deferred_recheck"])
+        self.assertFalse(r["model_http_authorized"])
+        duplicate=make_receipt(
+            series_id=SID,revision=REVISION,candidate_id="deferred-one",
+            pair="ETH/EUR",event_time_utc=dt(9),known_at_utc=dt(12),
+            phase="SCANNER_CAPTURE",result="SEEN",
+            data={"candidate_origin":"SCANNER",
+                  "source_status":"ORIGINAL_SELECTED_FOR_PRE_MODEL_REVIEW_ONLY"},
+            event_key="DEFERREDRECHECK")
+        blocked=plan([scanner("deferred-one","ETH/EUR",dt(9))],
+                     journal=[old,duplicate])
+        self.assertEqual(blocked["counts"]["selected"],0)
+        self.assertIn("ALREADY_JOURNALED_NO_REPEAT_NO_SPEND",
+                      blocked["dispositions"])
+        bad=make_receipt(
+            series_id=SID,revision=REVISION,candidate_id="not-capacity",
+            pair="ETH/EUR",event_time_utc=dt(9),known_at_utc=dt(12),
+            phase="SCANNER_CAPTURE",result="SKIP",
+            data={"candidate_origin":"SCANNER",
+                  "source_status":"SOURCE_REJECTED"},
+            event_key="FIRST")
+        invalid=plan([scanner("not-capacity","ETH/EUR",dt(9))],journal=[bad])
+        self.assertEqual(invalid["counts"]["selected"],0)
+        self.assertFalse(invalid["model_http_authorized"])
 
     def test_stale_future_wrong_quote_hardblock_and_no_technical_vol_veto(self):
         old=scanner(cid="old",event=dt(-650))

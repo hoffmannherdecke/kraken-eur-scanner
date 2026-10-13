@@ -134,15 +134,24 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                or row.get("event_time_utc")!=stamp
                or row.get("revision")!=REVISION for row in prior):
             raise ValueError("staged original candidate identity conflicts with immutable evidence")
-        by_phase={row.get("phase"):row for row in prior}
-        exact_staged=(len(prior)==2 and
-            set(by_phase)=={"SCANNER_CAPTURE","FULL_REVIEW_ELIGIBILITY"} and
-            all(row.get("event_key")=="FIRST" for row in prior) and
-            by_phase["SCANNER_CAPTURE"].get("result")=="SEEN" and
-            by_phase["SCANNER_CAPTURE"].get("data",{}).get("candidate_origin")=="SCANNER" and
-            by_phase["SCANNER_CAPTURE"].get("data",{}).get("source_status")==
-                "ORIGINAL_SELECTED_FOR_PRE_MODEL_REVIEW_ONLY" and
-            by_phase["FULL_REVIEW_ELIGIBILITY"].get("result") in ("PASS","UNKNOWN"))
+        by_event={(row.get("phase"),row.get("event_key")):row for row in prior}
+        recheck=candidate.get("deferred_recheck") is True
+        wanted_key="DEFERREDRECHECK" if recheck else "FIRST"
+        scanner=by_event.get(("SCANNER_CAPTURE",wanted_key),{})
+        review=by_event.get(("FULL_REVIEW_ELIGIBILITY",wanted_key),{})
+        regular=(len(prior)==2 and not recheck and len(by_event)==2)
+        deferred_original=by_event.get(("SCANNER_CAPTURE","FIRST"),{})
+        retry=(recheck and len(prior)==3 and len(by_event)==3
+               and deferred_original.get("result")=="SKIP"
+               and deferred_original.get("data",{}).get("candidate_origin")=="SCANNER"
+               and deferred_original.get("data",{}).get("source_status")==
+               "CAPACITY_DEFERRED_NOT_A_NEGATIVE_MARKET_DECISION")
+        exact_staged=((regular or retry)
+            and scanner.get("result")=="SEEN"
+            and scanner.get("data",{}).get("candidate_origin")=="SCANNER"
+            and scanner.get("data",{}).get("source_status")==
+                "ORIGINAL_SELECTED_FOR_PRE_MODEL_REVIEW_ONLY"
+            and review.get("result") in ("PASS","UNKNOWN"))
         if not exact_staged:
             return {"status":"NO_UNIQUE_UNPROCESSED_STAGED_SCANNER_NO_RECHECK",
                     "paper_only":True,"model_called":False,"orders":False}
