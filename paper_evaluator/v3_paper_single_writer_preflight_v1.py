@@ -9,8 +9,10 @@ The actual single writer must separately hold a user-approved budget, call
 the real Kraken consumer/model/P4 and journal before cloud sync.
 """
 from __future__ import annotations
+from datetime import timedelta
 from typing import Any
 from paper_evaluator.v3_paper_existing_owner_source_bridge_v1 import join_owner_sources
+from paper_evaluator.v3_paper_positive_source_entry_v1 import utc
 from paper_evaluator.v3_paper_shared_candidate_intake_plan_v1 import plan_intake
 from paper_evaluator.v3_experimental_paper_initial_review_v1 import (
     propose_initial_full_review, ELIGIBLE,
@@ -55,6 +57,37 @@ def plan_writer_preflight(*,scanner_events:list[dict[str,Any]],
     reasons=dict(intake["dispositions"])
     for key,num in source["source_event_rejections"].items():
         reasons[key]=reasons.get(key,0)+num
+    # Prospective path enrollment must begin promptly with the ORIGINAL
+    # candidate clock; a healthy future 5m observer is not evidence that the
+    # first post-event closed minute was actually witnessed within 15 min.
+    # This is a pure deadline plan for the SAME eventual single writer.
+    at=utc(decision_at_utc)
+    capture_enrollment=[]
+    for status,rows in (
+            ("SELECTED_FOR_MODEL_REVIEW",intake["candidates"]),
+            ("CAPACITY_DEFERRED_NEEDS_OWNER_RETRY",intake["capacity_deferred_originals"])):
+        for item in rows:
+            original=utc(item["event_time_utc"])
+            first=original.replace(second=0,microsecond=0)
+            if first<original:
+                first+=timedelta(minutes=1)
+            first_close=first+timedelta(minutes=1)
+            last_witness=first_close+timedelta(minutes=15)
+            capture_enrollment.append({
+                "candidate_id":item["candidate_id"],"pair":item["pair"],
+                "ingress_disposition":status,
+                "original_at_utc":original.isoformat(),
+                "first_expected_closed_1m_start_utc":first.isoformat(),
+                "latest_first_bar_live_witness_utc":last_witness.isoformat(),
+                "new_capture_window_still_open_as_of_preflight":at<=last_witness,
+                "first_bar_physically_witnessed_by_this_preflight":False,
+                "new_kraken_requests":0,
+            })
+    # Urgency is for data preservation only. Keep the authorized intake/model
+    # ranking intact; an early SOURCE monitor is never an independent BUY.
+    capture_enrollment.sort(
+        key=lambda r:(r["latest_first_bar_live_witness_utc"],
+                      r["candidate_id"]))
     decisions=[]
     for c in intake["candidates"]:
         snap=market_observations.get(c["pair"])
@@ -104,6 +137,10 @@ def plan_writer_preflight(*,scanner_events:list[dict[str,Any]],
                    "overflow_requires_durable_owner_queue_before_runtime":intake["overflow_requires_durable_owner_queue_before_runtime"],
                    "rejected_originals_not_yet_journaled":True},
         "selected_candidates":intake["candidates"],
+        "prospective_first_1m_capture_enrollment":capture_enrollment,
+        "capture_enrollment_is_deadline_plan_not_live_proof":True,
+        "capacity_deferred_origins_need_durable_same_owner_retry":bool(
+            intake["capacity_deferred_originals"]),
         "review_preflights":decisions,
         "real_consumer_requires_separate_actual_kraken_and_p4_recheck":True,
         "independently_authenticated_source_owner_runtime_proven":False,
