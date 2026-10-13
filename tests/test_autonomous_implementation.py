@@ -13,6 +13,36 @@ QUEUE=json.loads((ROOT/"research/autonomous-implementation-queue-v1.json").read_
 STATE=json.loads((ROOT/"project-current-state.json").read_text())
 
 class SafeAutonomyTests(unittest.TestCase):
+    def test_post_v3_source_adoption_is_safe_real_work_only_after_verified_cutover(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            src=ROOT/"research/project-followthrough-routing-v1.json"
+            dst=root/"research/project-followthrough-routing-v1.json"
+            dst.parent.mkdir(parents=True,exist_ok=True)
+            dst.write_bytes(src.read_bytes())
+            state=copy.deepcopy(STATE)
+            before=selector.select(root,QUEUE,state,{})
+            self.assertNotIn("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH",
+                             [x["id"] for x in before["ready"]])
+            state["active_strategy"]["strategy_revision"]="V3-PAPER-RELEASE"
+            state["active_strategy"]["series_id"]="PAPER-V3-NEW"
+            state["pending_strategy_transition"]["status"]="V3_PAPER_ACTIVE_VERIFIED"
+            state["pending_strategy_transition"]["verified_cutover_evidence"]={
+                "mini_pc_and_single_active_supabase_series_ack":True}
+            after=selector.select(root,QUEUE,state,{})
+            self.assertIn("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH",
+                           [x["id"] for x in after["ready"]])
+            job=next(x for x in after["ready"]
+                     if x["id"]=="V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH")
+            self.assertIn("POST_CUTOVER_SOURCE_E2E",job["gate"])
+            self.assertFalse(after["strategy_changed"])
+            self.assertFalse(after["real_money_actions"])
+            self.assertLessEqual(len(after["ready"]),2)
+            state["pending_strategy_transition"]["verified_cutover_evidence"]={}
+            blocked=selector.select(root,QUEUE,state,{})
+            self.assertNotIn("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH",
+                             [x["id"] for x in blocked["ready"]])
+
     def test_safe_h10_contract_due_and_readonly(self):
         with tempfile.TemporaryDirectory() as p:
             r=selector.select(Path(p),QUEUE,STATE,{})
