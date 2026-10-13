@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -51,6 +52,104 @@ def valid_receipt(root: Path, reviews: dict, key: str, due: dt.datetime, now: dt
     except (ValueError, TypeError):
         return False
     return due <= completion <= now and (root / report).is_file()
+
+
+# The daily existing Work route is the executor handoff, not itself an executor.
+# Documentary ACKs need original owner+consumer references; these are not a
+# substitute for an independent Supabase/physical Mini-PC readback.
+SOURCE_ACK = "OWNER_TO_V3_CONSUMER_E2E_REVIEWED"
+STEWARD_ACK = "UNATTENDED_RESEARCH_STEWARD_E2E_REVIEWED"
+
+
+def v3_five_source_followthrough(root: Path, state: dict, ack: dict,
+                                now: dt.datetime) -> dict:
+    manifest=read_json(root, "research/project-followthrough-routing-v1.json")
+    plan=manifest.get("v3_paper_five_source_followthrough") or {}
+    require(plan.get("kind") ==
+            "V3_PAPER_FIVE_OPTIONAL_SOURCE_POST_CUTOVER_FOLLOWTHROUGH_V1"
+            and plan.get("owner") == "EXISTING_DAILY_1015_WORK_ONCE_PER_GATE"
+            and plan.get("watcher") ==
+                "EXISTING_AUTONOMOUS_PROJECT_MILESTONE_CONTROLLER"
+            and plan.get("trigger") ==
+                "ONLY_AFTER_V3_PAPER_ACTIVE_VERIFIED_WITH_PHYSICAL_SINGLE_WRITER_CLOUD_ACK"
+            and plan.get("action_budget_per_work_run") == 2,
+            "missing original five-source Work followthrough contract")
+    for key in ("fail_open_optional_context","does_not_block_v3_paper_start",
+                "no_new_scheduler","no_source_runtime_replacement",
+                "no_orders_or_paper_promotion","no_claim_of_execution_from_queued_work"):
+        require(plan.get(key) is True, "five-source safety invariant missing: "+key)
+    roles=plan.get("source_roles") or []
+    keys=("smart_money_h10","polymarket_h11","market_phase_radar",
+          "news_sentiment","source_stewardship")
+    expected_streams=("smartmoney_h10","prediction_h11","market_regime",
+                      "news_event_context","source_quality")
+    require(len(roles)==len(keys)
+            and tuple(r.get("id") for r in roles)==keys
+            and tuple(r.get("stream_id") for r in roles)==expected_streams
+            and all(r.get("owner") and r.get("acceptance") for r in roles),
+            "five-source role/stream mapping inconsistent")
+    transition=state.get("pending_strategy_transition") or {}
+    active=state.get("active_strategy") or {}
+    revision=active.get("strategy_revision")
+    series=active.get("series_id")
+    activated=(isinstance(revision,str) and revision.startswith("V3-")
+               and isinstance(series,str) and series.startswith("PAPER-V3-")
+               and transition.get("status")=="V3_PAPER_ACTIVE_VERIFIED"
+               and (transition.get("verified_cutover_evidence") or {}).get(
+                   "mini_pc_and_single_active_supabase_series_ack") is True)
+    if not activated:
+        return {"kind":plan["kind"],"status":"WAIT_FOR_REAL_V3_PAPER_CUTOVER",
+                "open_roles":[r["id"] for r in roles],
+                "next_safe_actions":[],"acknowledged_roles":[],
+                "no_paper_start_block":True,"runtime_changed":False}
+    records=((ack.get("acknowledgements") or {})
+             .get("v3_paper_source_e2e") or {})
+    require(isinstance(records,dict),"invalid source acknowledgement ledger")
+    open_roles,accepted=[],[]
+    for role in roles:
+        item=records.get(role["id"])
+        ok=False
+        if isinstance(item,dict):
+            report=item.get("report")
+            verified=item.get("verified_at_utc")
+            digest=item.get("evidence_sha256")
+            src=item.get("source_original_ref")
+            consumer=item.get("consumer_original_ref")
+            expected=STEWARD_ACK if role["id"]=="source_stewardship" else SOURCE_ACK
+            if (item.get("status")==expected
+                    and item.get("series_id")==series
+                    and item.get("strategy_revision")==revision
+                    and isinstance(report,str)
+                    and re.fullmatch(r"research/work-analysis/[A-Za-z0-9_.-]+[.]md",report)
+                    and isinstance(digest,str)
+                    and re.fullmatch(r"[0-9a-f]{64}",digest)
+                    and isinstance(src,str) and len(src)>10
+                    and isinstance(consumer,str) and len(consumer)>10
+                    and src!=consumer
+                    and item.get("independent_owner_consumer_readback") is True
+                    and isinstance(verified,str)):
+                try:
+                    stamped=utc(verified)
+                    path=root/report
+                    if (stamped<=now and path.is_file()
+                            and hashlib.sha256(path.read_bytes()).hexdigest()==digest):
+                        ok=True
+                except (ValueError,OSError,TypeError):
+                    pass
+        (accepted if ok else open_roles).append(role["id"])
+    return {"kind":plan["kind"],
+            "status":"SOURCE_WORK_OPEN" if open_roles else
+                     "FIVE_SOURCE_DOCUMENTARY_ACKS_RECORDED_LIVE_RECHECK_STILL_REQUIRED",
+            "open_roles":open_roles,"acknowledged_roles":accepted,
+            "next_safe_actions":[{"id":r["id"],"canonical_owner":r["owner"],
+                                  "existing_stream":r["stream_id"],
+                                  "evidence_gate":r["acceptance"],
+                                  "executor":plan["owner"],
+                                  "permission":"SAFE_RESEARCH_PR_OR_READONLY_ONLY"}
+                                 for r in roles if r["id"] in open_roles][:
+                                     plan["action_budget_per_work_run"]],
+            "no_paper_start_block":True,"runtime_changed":False,
+            "ack_is_documentary_not_independent_cloud_authentication":True}
 
 
 def route(root: Path, now: dt.datetime) -> dict:
@@ -143,7 +242,9 @@ def route(root: Path, now: dt.datetime) -> dict:
                           "release": "SEPARATE_USER_APPROVAL_FOR_MATERIAL_CHANGE"})
         else:
             gated.append({"id": task_id, "gate": "CHECK_DECLARED_TRIGGER_NO_AUTO_START"})
+    source_followthrough=v3_five_source_followthrough(root,state,ack,now)
     return {
+        "v3_paper_five_source_followthrough":source_followthrough,
         "kind": "PROJECT_WIDE_WORK_HANDOFF_V1",
         "status": "REVIEW_DUE" if ready else "NO_DUE_CONTROL_GATE",
         "stream_coverage_count": len(streams),
