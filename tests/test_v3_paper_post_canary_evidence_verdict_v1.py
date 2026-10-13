@@ -190,6 +190,14 @@ class After28hVerdictTests(unittest.TestCase):
         bad[0]["event_id"]="0"*64
         with self.assertRaisesRegex(ValueError,"tampered"):
             run(bad)
+        wrong_digest=json.loads(json.dumps(x))
+        wrong_digest[0]["content_sha256"]="0"*64
+        with self.assertRaisesRegex(ValueError,"content digest"):
+            run(wrong_digest)
+        altered_result=json.loads(json.dumps(x))
+        altered_result[0]["payload"]["data"]["injected"]="false-trade-proof"
+        with self.assertRaisesRegex(ValueError,"content digest"):
+            run(altered_result)
         mixed=json.loads(json.dumps(x))
         mixed[0]["payload"]["pair"]="ETH/EUR"
         with self.assertRaises(ValueError):
