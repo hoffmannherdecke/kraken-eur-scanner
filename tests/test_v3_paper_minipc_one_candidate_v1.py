@@ -141,6 +141,80 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
                 "NO_UNIQUE_UNPROCESSED_STAGED_SCANNER_NO_RECHECK")
             self.assertFalse(list(budgets.glob("*.json")))
 
+    def test_staged_original_approved_one_model_call_preserves_first_receipts(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);journal=root/"journal";budgets=root/"budgets"
+            journal.mkdir();budgets.mkdir()
+            candidate=dict(fixture()[0],entry_origin="SCANNER")
+            stage_scanner_original(journal,candidate)
+            frozen={p.name:p.read_bytes() for p in journal.glob("*.json")}
+            calls=[]
+            def one_stub(prompt,key):
+                calls.append((prompt,key))
+                return fake_model(prompt,key)
+            result=one_candidate(candidate=candidate,series_id=SID,
+                local_receipts=journal,model_reservations=budgets,
+                approval=valid_approval(),model_key="NON_REAL_TEST_KEY_SUPPLIED_TO_STUB",
+                acquire=fake_acquire,model_client=one_stub,clock=lambda:dt(12),
+                allow_model=True,admit_staged_scanner_one_approved_model=True)
+            self.assertEqual(result["status"],
+                             "V3_CANARY_MODEL_P4_RECORDED_NO_PAPER_ACTIVATION")
+            self.assertEqual(result["p4_decision"],"BUY_SCOUT")
+            self.assertEqual(len(calls),1)
+            self.assertEqual(len(list(budgets.glob("*.reserved.json"))),1)
+            self.assertEqual({p.name:p.read_bytes() for p in journal.glob("*.json")
+                              if p.name in frozen},frozen)
+            rows=[json.loads(p.read_text("utf-8")) for p in journal.glob("*.json")]
+            self.assertEqual(len([r for r in rows if r["phase"]=="SCANNER_CAPTURE"]),1)
+            self.assertEqual({r["event_key"] for r in rows
+                              if r["phase"]=="MODEL_REQUEST"},{"FRESHRECHECK"})
+            self.assertIn(("P4_VALIDATION","BUY_SCOUT"),
+                          {(r["phase"],r["result"]) for r in rows})
+            self.assertIn(("FOLLOWUP_24H","PENDING"),
+                          {(r["phase"],r["result"]) for r in rows})
+            replay=one_candidate(candidate=candidate,series_id=SID,
+                local_receipts=journal,model_reservations=budgets,
+                approval=valid_approval(),model_key="NON_REAL_TEST_KEY_SUPPLIED_TO_STUB",
+                acquire=lambda _: (_ for _ in ()).throw(
+                    AssertionError("source replay forbidden")),
+                model_client=lambda *_: (_ for _ in ()).throw(
+                    AssertionError("second model forbidden")),
+                clock=lambda:dt(12),allow_model=True,
+                admit_staged_scanner_one_approved_model=True)
+            self.assertEqual(replay["status"],
+                             "NO_UNIQUE_UNPROCESSED_STAGED_SCANNER_NO_RECHECK")
+            self.assertEqual(len(list(budgets.glob("*.reserved.json"))),1)
+            self.assertEqual(len(calls),1)
+
+    def test_staged_approved_model_fails_before_any_write_without_new_budget(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);journal=root/"journal";budgets=root/"budgets"
+            journal.mkdir();budgets.mkdir()
+            candidate=dict(fixture()[0],entry_origin="SCANNER")
+            stage_scanner_original(journal,candidate)
+            originals={p.name:p.read_bytes() for p in journal.glob("*.json")}
+            for kwargs in (
+                {"allow_model":True,"approval":valid_approval(),"model_key":None},
+                {"allow_model":False,"approval":valid_approval(),
+                 "model_key":"NON_REAL_TEST_KEY_SUPPLIED_TO_STUB"},
+                {"allow_model":True,"approval":dict(valid_approval(),
+                    max_model_http_attempts_including_retries=2),
+                 "model_key":"NON_REAL_TEST_KEY_SUPPLIED_TO_STUB"},
+                {"allow_model":True,"approval":valid_approval(),
+                 "model_key":"NON_REAL_TEST_KEY_SUPPLIED_TO_STUB",
+                 "admit_staged_scanner_no_model":True},
+            ):
+                with self.subTest(kwargs=kwargs),self.assertRaises(ValueError):
+                    one_candidate(candidate=candidate,series_id=SID,
+                        local_receipts=journal,model_reservations=budgets,
+                        acquire=lambda _: (_ for _ in ()).throw(
+                            AssertionError("invalid budget must stop before Kraken")),
+                        clock=lambda:dt(12),
+                        admit_staged_scanner_one_approved_model=True,**kwargs)
+            self.assertEqual({p.name:p.read_bytes() for p in journal.glob("*.json")},
+                             originals)
+            self.assertFalse(list(budgets.glob("*.reserved.json")))
+
     def test_staged_no_model_fence_invalid_source_and_old_clock(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);journal=root/"journal";budgets=root/"budgets"
