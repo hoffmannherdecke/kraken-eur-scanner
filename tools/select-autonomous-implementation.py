@@ -115,7 +115,29 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
         registered=project_implementation_commitments(
             root,state,ack or {},dt.datetime.now(dt.timezone.utc))
         available=registered["ready_safe_actions"]
-    if available:
+    attempts=((ack or {}).get("autonomy_task_attempts") or {})
+    selected_obligation=None
+    selected_attempt_key=None
+    selected_gate_fp=None
+    for item in available:
+        # Distinct Work attempt identity per original registered obligation:
+        # a blocked V3 evidence gate cannot starve unrelated safe obligations.
+        key="PROJECT_WIDE_COMMITMENT_SAFE_WORK:"+item["id"]
+        fp=hashlib.sha256(json.dumps({
+            "obligation":item["id"],
+            "trigger":item["trigger"],
+            "strategy":(state.get("active_strategy") or {}).get("strategy_revision"),
+            "series":(state.get("active_strategy") or {}).get("series_id"),
+            "state":item["state"]},sort_keys=True).encode()).hexdigest()[:20]
+        previous=attempts.get(key)
+        if not (isinstance(previous,dict)
+                and previous.get("gate_fingerprint")==fp
+                and previous.get("status") in ("BLOCKED","ACTIVE_PR","COMPLETED")):
+            selected_obligation=item
+            selected_attempt_key=key
+            selected_gate_fp=fp
+            break
+    if selected_obligation:
         open_work.append("PROJECT_WIDE_COMMITMENT_SAFE_WORK")
     digest=hashlib.sha256(json.dumps({
         "v3_source_followthrough":source_gate["open_roles"],
@@ -144,7 +166,13 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
     ready=[{"id":x["id"],"action":x["action"],"target":x["target"],
             "gate":x["gate"],"evidence":x["evidence"],"allowlist":x["allowlist"],
             "source_ref":x["source_ref"],"proof_of_completion":x["proof_of_completion"],
-            "gate_fingerprint":digest} for x in ready[:queue["max_safe_actions_per_open_work_run"]]]
+            "gate_fingerprint":selected_gate_fp if x["id"]==
+                    "PROJECT_WIDE_COMMITMENT_SAFE_WORK" else digest,
+            "attempt_key":selected_attempt_key if x["id"]==
+                    "PROJECT_WIDE_COMMITMENT_SAFE_WORK" else x["id"],
+            "registered_obligation":selected_obligation if x["id"]==
+                    "PROJECT_WIDE_COMMITMENT_SAFE_WORK" else None}
+            for x in ready[:queue["max_safe_actions_per_open_work_run"]]]
     return {"kind":"AUTONOMOUS_IMPLEMENTATION_GATE_V1","status":"READY_SAFE_WORK" if ready else "NO_SAFE_WORK",
             "fingerprint":digest,"open_work_count":len(open_work),"ready":ready,
             "suppressed_prior_attempts":blocked_attempts,"safe_work_requested":bool(ready),
