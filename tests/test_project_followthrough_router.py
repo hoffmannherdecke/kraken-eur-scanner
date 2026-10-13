@@ -102,6 +102,76 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
             result=v3_five_source_followthrough(base,state,ledger,now)
             self.assertEqual(len(result["open_roles"]),5)
 
+
+    def test_26_streams_are_not_mistaken_for_actual_commitment_execution(self):
+        from tools.project_followthrough_router import project_implementation_commitments
+        state=json.loads((ROOT/"project-current-state.json").read_text())
+        now=dt.datetime(2026,10,13,5,35,tzinfo=UTC)
+        out=project_implementation_commitments(ROOT,state,{},now)
+        self.assertGreaterEqual(out["registered_count"],10)
+        self.assertEqual(out["open_count"],out["registered_count"])
+        self.assertFalse(out["no_auto_paper_release"] is False)
+        self.assertIn("V3_EXPERIMENTAL_PAPER_SIX_PROOFS",
+                      [r["id"] for r in out["ready_safe_actions"]])
+        self.assertIn("V3_H3_ORDERBOOK_REEXAMINATION",
+                      [r["id"] for r in out["items"]])
+        self.assertEqual(next(x for x in out["items"]
+                   if x["id"]=="V3_H3_ORDERBOOK_REEXAMINATION")["state"],
+                         "WAIT_FOR_EVIDENCE_GATE")
+        self.assertEqual(next(x for x in out["items"]
+                   if x["id"]=="V3_CANARY_28H_PHYSICAL_CLOSURE")["state"],
+                         "WAIT_FOR_EVIDENCE_GATE")
+
+    def test_commitment_registry_refuses_missing_backlog_and_fake_ack(self):
+        from tools.project_followthrough_router import project_implementation_commitments
+        state=json.loads((ROOT/"project-current-state.json").read_text())
+        now=dt.datetime(2026,10,13,12,5,tzinfo=UTC)
+        out=project_implementation_commitments(ROOT,state,{},now)
+        self.assertIn("V3_CANARY_28H_PHYSICAL_CLOSURE",
+                       [x["id"] for x in out["ready_safe_actions"]])
+        spoof={"acknowledgements":{"project_implementation_commitments":{
+          "V3_CANARY_28H_PHYSICAL_CLOSURE":{"status":"INDEPENDENT_EVIDENCE_REVIEWED",
+             "completed_at_utc":"2026-10-13T12:01:00Z",
+             "report":"research/work-analysis/nonexistent-evidence.md",
+             "evidence_sha256":"0"*64,
+             "source_original_ref":"PHYSICAL-ORIGINAL-ACK",
+             "consumer_original_ref":"INDEPENDENT-REVIEW-ACK",
+             "independent_live_readback_confirmed":True}}}}
+        after=project_implementation_commitments(ROOT,state,spoof,now)
+        self.assertEqual(after["open_count"],after["registered_count"])
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            for path in ("research/project-followthrough-routing-v1.json",
+                         "research/monitoring-evidence-routing-v1.json","PROJECT_BACKLOG.md"):
+                target=root/path
+                target.parent.mkdir(parents=True,exist_ok=True)
+                shutil.copy(ROOT/path,target)
+            registry=root/"research/project-followthrough-routing-v1.json"
+            content=json.loads(registry.read_text())
+            content["project_wide_implementation_commitments"]["obligations"][0][
+                "backlog_marker"]="NOT_A_REAL_COMMITMENT"
+            registry.write_text(json.dumps(content))
+            with self.assertRaisesRegex(ValueError,"backlog backlink"):
+                project_implementation_commitments(root,state,{},now)
+
+
+    def test_every_legacy_open_checkbox_is_visible_until_evidenced_disposition(self):
+        from tools.project_followthrough_router import historical_backlog_reconciliation
+        now=dt.datetime(2026,10,13,6,tzinfo=UTC)
+        out=historical_backlog_reconciliation(ROOT,{},now)
+        self.assertGreaterEqual(out["open_checkboxes_total"],80)
+        self.assertEqual(out["still_unclassified"],out["open_checkboxes_total"])
+        self.assertEqual(len(out["next_review"]),3)
+        self.assertTrue(out["legacy_open_box_not_a_live_task_without_review"])
+        fake={"acknowledgements":{"historical_backlog_dispositions":{
+            out["next_review"][0]["id"]:{
+                "disposition":"COMPLETED_VERIFIED","owner":"FAKE_OWNER",
+                "next_gate":"FAKE_RELEASE_GATES","evidence_sha256":"0"*64,
+                "report":"research/work-analysis/absent.md",
+                "reviewed_at_utc":"2026-10-13T05:00:00Z"}}}}
+        after=historical_backlog_reconciliation(ROOT,fake,now)
+        self.assertEqual(after["still_unclassified"],out["open_checkboxes_total"])
+
     def test_missing_context_handoff_blocks_substantive_work(self):
         manifest_path = "research/project-followthrough-routing-v1.json"
         original = json.loads((ROOT / manifest_path).read_text(encoding="utf-8"))
@@ -117,7 +187,8 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
             root = Path(tmp)
             for path in ("research/project-followthrough-routing-v1.json",
                          "research/monitoring-evidence-routing-v1.json",
-                         "project-current-state.json", "research/work-analysis-state.json"):
+                         "project-current-state.json", "research/work-analysis-state.json",
+                         "PROJECT_BACKLOG.md"):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(ROOT / path, target)
@@ -158,7 +229,8 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
             root = Path(tmp)
             for path in ("research/project-followthrough-routing-v1.json",
                          "research/monitoring-evidence-routing-v1.json",
-                         "project-current-state.json", "research/work-analysis-state.json"):
+                         "project-current-state.json", "research/work-analysis-state.json",
+                         "PROJECT_BACKLOG.md"):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(ROOT / path, target)

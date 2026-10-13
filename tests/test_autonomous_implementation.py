@@ -43,6 +43,25 @@ class SafeAutonomyTests(unittest.TestCase):
             self.assertNotIn("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH",
                              [x["id"] for x in blocked["ready"]])
 
+
+    def test_project_safe_obligations_are_selected_without_new_per_id_adapter(self):
+        r=selector.select(ROOT,QUEUE,STATE,{})
+        self.assertEqual(r["status"],"READY_SAFE_WORK")
+        self.assertIn("PROJECT_WIDE_COMMITMENT_SAFE_WORK",
+                      [x["id"] for x in r["ready"]])
+        self.assertLessEqual(len(r["ready"]),2)
+        self.assertFalse(r["strategy_changed"])
+        self.assertFalse(r["real_money_actions"])
+
+
+    def test_real_root_queues_bounded_legacy_backlog_review_not_runtime(self):
+        r=selector.select(ROOT,QUEUE,STATE,{})
+        self.assertTrue(any(t["id"]=="HISTORICAL_BACKLOG_RECONCILIATION"
+                            for t in r["ready"]) or
+                        r["open_work_count"]>=2)
+        self.assertFalse(r["real_money_actions"])
+        self.assertLessEqual(len(r["ready"]),2)
+
     def test_safe_h10_contract_due_and_readonly(self):
         with tempfile.TemporaryDirectory() as p:
             r=selector.select(Path(p),QUEUE,STATE,{})

@@ -21,10 +21,10 @@ import urllib.request
 
 try:
     from tools.strategy_epoch_lineage import summarize_epoch
-    from tools.project_followthrough_router import v3_five_source_followthrough
+    from tools.project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments
 except ModuleNotFoundError:
     from strategy_epoch_lineage import summarize_epoch
-    from project_followthrough_router import v3_five_source_followthrough
+    from project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments
 
 ROOT = Path(__file__).resolve().parents[1]
 UTC = dt.timezone.utc
@@ -34,7 +34,8 @@ ISSUE_BY_KIND = {"H3_FIXED_REVIEW": 7, "H3_STALE_EVIDENCE": 7,
                  "NEW_SHADOW_ADAPTER": 7, "NEW_CONTROL_DECISION": 7,
                  "H10_FIRST_SOURCE_RECEIPT_REVIEW": 7,
                  "H10_SOURCE_RECEIPT_INTEGRITY": 7,
-                 "V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH_DUE": 7}
+                 "V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH_DUE": 7,
+                 "PROJECT_IMPLEMENTATION_COMMITMENT_REVIEW": 7}
 SUPPORTED_DECISIONS = {"V3-H3-ARCHIVE-DISPOSITION", "V2R4-PRODUCTIVITY-REVIEW",
                        "V3-EXTENDED-SECOND-LEG-LEARNING-GATE"}
 
@@ -594,6 +595,34 @@ def publish_once(repo: str, token: str, note: dict, slack: str) -> str:
     return "CREATED"
 
 
+
+def registered_commitment_milestone(state:dict,now:dt.datetime,root:Path)->tuple[list[str],list[dict]]:
+    """One bounded evidence-only grouped notice; Work stays the sole executor."""
+    ack_path=root/"research/work-analysis-state.json"
+    ack=json.loads(ack_path.read_text("utf-8")) if ack_path.is_file() else {}
+    report=project_implementation_commitments(root,state,ack,now)
+    waiting=report["ready_release_reviews"]
+    safe=report["ready_safe_actions"]
+    statuses=["PROJECT:REGISTERED_IMPLEMENTATION_OPEN:"+str(report["open_count"])]
+    if waiting:
+        statuses.append("PROJECT:IMPLEMENTATION_REVIEW_REQUIRES_USER_GATE")
+    notices=[]
+    if waiting or safe:
+        # Fixed anchor for each materially distinct list of ready items.
+        membership="|".join(sorted(x["id"] for x in waiting+safe))
+        anchor="COMMITMENT-GROUP-"+hashlib.sha256(membership.encode("utf-8")).hexdigest()[:24]
+        details=", ".join(x["id"] for x in waiting+safe)
+        notices.append(event("PROJECT_IMPLEMENTATION_COMMITMENT_REVIEW",
+                             anchor,
+            "Projektweiter Umsetzungsgate fällig: "+details+
+            ". Bestehender 10:15-Work-Owner prüft das reale Quellen-/Host-Gate, "
+            "führt höchstens zwei reversible sichere Arbeiten aus und hält "
+            "nicht ausführbare Release-/Budget-Entscheidungen sichtbar OFFEN. "
+            "Nicht als erledigt zählen ohne Original-/Consumer-Beleg; "
+            "keine automatischen Paper-/H3-/H6-/Echtgeld-Änderungen."))
+    return statuses,notices
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fixture", type=Path,
@@ -639,6 +668,11 @@ def main() -> int:
             return 2
         now = dt.datetime.now(UTC)
     result = evaluate(state, paper, h3, now, ROOT)
+    # General commitments use the same existing daily GitHub watcher.
+    # It only reports/alerts and never mutates strategy or source systems.
+    extra_status,extra_events=registered_commitment_milestone(state,now,ROOT)
+    result["statuses"].extend(extra_status)
+    result["events"].extend(extra_events)
     # Reuse the EXISTING scheduled controller for the first qualified H10
     # source receipt. Optional source failure never blocks Paper control.
     if not args.fixture:

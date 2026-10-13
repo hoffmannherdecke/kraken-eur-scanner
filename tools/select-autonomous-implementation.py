@@ -10,9 +10,9 @@ import hashlib
 import json
 from pathlib import Path
 try:
-    from tools.project_followthrough_router import v3_five_source_followthrough
+    from tools.project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments, historical_backlog_reconciliation
 except ModuleNotFoundError:
-    from project_followthrough_router import v3_five_source_followthrough
+    from project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments, historical_backlog_reconciliation
 import datetime as dt
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -24,6 +24,8 @@ ID_TO_GATE={
  "UNKNOWN_SHADOW_ADAPTER":"UNKNOWN_ACTIVE_SHADOW_ADAPTER",
  "MINIPC_ANALYTICS_READONLY_PREP":"APPROVED_MINIPC_ANALYTICS_PLAN_AND_MISSING_INACTIVE_REUSE_PREP",
  "V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH":"REAL_V3_PAPER_ACTIVE_AND_POST_CUTOVER_SOURCE_E2E_WORK_OPEN",
+ "PROJECT_WIDE_COMMITMENT_SAFE_WORK":"REGISTERED_PROJECT_COMMITMENT_WITH_SAFE_EVIDENCE_GATE_READY",
+ "HISTORICAL_BACKLOG_RECONCILIATION":"HISTORIC_UNDISPOSED_CHECKBOX_REQUIRES_REAL_OWNER_AND_GATE",
 }
 EFFECTS={"READ_ONLY_EVIDENCE_REVIEW","RESEARCH_ONLY_CONTRACT","VERSIONED_TESTS","DOCUMENTATION","NON_RUNTIME_PR"}
 FORBIDDEN={"TRADE_OR_ORDER","PRIVILEGE_OR_SECRET_CHANGE","FROZEN_STRATEGY_CHANGE",
@@ -102,9 +104,54 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
             root,state,ack or {},dt.datetime.now(dt.timezone.utc))
         if source_gate["status"]=="SOURCE_WORK_OPEN":
             open_work.append("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH")
+    # All accepted future commitments are checked via ONE existing
+    # routing manifest; safe work is dynamically selected, not an ID-specific
+    # hotfix that leaves the next user commitment invisible.
+    # Only the real canonical root (or explicit full fixture) can request
+    # these tasks. Minimal unrelated offline selector fixtures stay isolated.
+    available=[]
+    if all((root/p).is_file() for p in (
+        "research/project-followthrough-routing-v1.json",
+        "research/monitoring-evidence-routing-v1.json","PROJECT_BACKLOG.md")):
+        registered=project_implementation_commitments(
+            root,state,ack or {},dt.datetime.now(dt.timezone.utc))
+        available=registered["ready_safe_actions"]
+    attempts=((ack or {}).get("autonomy_task_attempts") or {})
+    selected_obligation=None
+    selected_attempt_key=None
+    selected_gate_fp=None
+    for item in available:
+        # Distinct Work attempt identity per original registered obligation:
+        # a blocked V3 evidence gate cannot starve unrelated safe obligations.
+        key="PROJECT_WIDE_COMMITMENT_SAFE_WORK:"+item["id"]
+        fp=hashlib.sha256(json.dumps({
+            "obligation":item["id"],
+            "trigger":item["trigger"],
+            "strategy":(state.get("active_strategy") or {}).get("strategy_revision"),
+            "series":(state.get("active_strategy") or {}).get("series_id"),
+            "state":item["state"]},sort_keys=True).encode()).hexdigest()[:20]
+        previous=attempts.get(key)
+        if not (isinstance(previous,dict)
+                and previous.get("gate_fingerprint")==fp
+                and previous.get("status") in ("BLOCKED","ACTIVE_PR","COMPLETED")):
+            selected_obligation=item
+            selected_attempt_key=key
+            selected_gate_fp=fp
+            break
+    if selected_obligation:
+        open_work.append("PROJECT_WIDE_COMMITMENT_SAFE_WORK")
+    legacy_next=[]
+    if (root/"research/project-followthrough-routing-v1.json").is_file() and (root/"PROJECT_BACKLOG.md").is_file():
+        legacy=historical_backlog_reconciliation(
+            root,ack or {},dt.datetime.now(dt.timezone.utc))
+        legacy_next=legacy["next_review"]
+        if legacy_next:
+            open_work.append("HISTORICAL_BACKLOG_RECONCILIATION")
     digest=hashlib.sha256(json.dumps({
         "v3_source_followthrough":source_gate["open_roles"],
         "v3_source_status":source_gate["status"],
+        "commitment_ready_ids":[x["id"] for x in available],
+        "legacy_next_ids":[x["id"] for x in legacy_next],
         "strategy_revision":(state.get("active_strategy") or {}).get("strategy_revision"),
         "series_id":(state.get("active_strategy") or {}).get("series_id"),
         "shadow":[x.get("candidate_id") for x in shadows],
@@ -128,7 +175,15 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
     ready=[{"id":x["id"],"action":x["action"],"target":x["target"],
             "gate":x["gate"],"evidence":x["evidence"],"allowlist":x["allowlist"],
             "source_ref":x["source_ref"],"proof_of_completion":x["proof_of_completion"],
-            "gate_fingerprint":digest} for x in ready[:queue["max_safe_actions_per_open_work_run"]]]
+            "gate_fingerprint":selected_gate_fp if x["id"]==
+                    "PROJECT_WIDE_COMMITMENT_SAFE_WORK" else digest,
+            "attempt_key":selected_attempt_key if x["id"]==
+                    "PROJECT_WIDE_COMMITMENT_SAFE_WORK" else x["id"],
+            "registered_obligation":selected_obligation if x["id"]==
+                    "PROJECT_WIDE_COMMITMENT_SAFE_WORK" else None,
+            "legacy_backlog_review":legacy_next if x["id"]==
+                    "HISTORICAL_BACKLOG_RECONCILIATION" else []}
+            for x in ready[:queue["max_safe_actions_per_open_work_run"]]]
     return {"kind":"AUTONOMOUS_IMPLEMENTATION_GATE_V1","status":"READY_SAFE_WORK" if ready else "NO_SAFE_WORK",
             "fingerprint":digest,"open_work_count":len(open_work),"ready":ready,
             "suppressed_prior_attempts":blocked_attempts,"safe_work_requested":bool(ready),

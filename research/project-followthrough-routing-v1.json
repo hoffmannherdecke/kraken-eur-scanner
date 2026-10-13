@@ -169,5 +169,151 @@
     "no_source_runtime_replacement": true,
     "no_orders_or_paper_promotion": true,
     "no_claim_of_execution_from_queued_work": true
+  },
+  "project_wide_implementation_commitments": {
+    "kind": "PROJECT_WIDE_IMPLEMENTATION_COMMITMENTS_V1",
+    "intake_authority": "PROJECT_BACKLOG.md",
+    "work_executor": "EXISTING_DAILY_1015_WORK_ONCE_PER_GATE",
+    "milestone_watcher": "EXISTING_AUTONOMOUS_PROJECT_MILESTONE_CONTROLLER",
+    "evidence_authority": "research/work-analysis-state.json#acknowledgements.project_implementation_commitments",
+    "max_safe_actions_per_run": 2,
+    "no_new_scheduler": true,
+    "no_auto_release": true,
+    "acknowledgement_never_proves_physical_cloud_truth": true,
+    "obligations": [
+      {
+        "id": "V3_EXPERIMENTAL_PAPER_SIX_PROOFS",
+        "stream_id": "paper_lifecycle",
+        "backlog_marker": "V3 experimentelles Paper-Cutover-Gate",
+        "owner": "EXISTING_V3_CONTROLLED_PAPER_CUTOVER_OWNER",
+        "trigger": "IMMEDIATE",
+        "priority": 0,
+        "safe_work": true,
+        "allowed_action": "Read-only audit of six ORIGINAL independent actual host/cloud V3-Paper technical proof artifacts and exact model/P4/Writer/CAS/FOLLOWUP/Supervisor blockers; PR/CI safe fixes only, no model API or physical release",
+        "completion_gate": "Six original, hash-pinned physical/cloud proofs and separately bounded model budget, authorisation, exclusive writer dryrun plus actual new active V3 series ACK",
+        "requires_user_release": true
+      },
+      {
+        "id": "V3_CANARY_28H_PHYSICAL_CLOSURE",
+        "stream_id": "paper_lifecycle",
+        "backlog_marker": "V3 experimentelles Paper-Cutover-Gate",
+        "owner": "EXISTING_V3_CANARY_ORIGINAL_EVIDENCE_OWNER",
+        "trigger": "AFTER_CANARY_CLOCK",
+        "priority": 0,
+        "safe_work": true,
+        "allowed_action": "Read-only final 28h observer review after actual deadline; original task-stop and nine SHA pins, genuine 24h followups/censoring; no changes to active V2R4",
+        "completion_gate": "Physical observer actual stop plus source/24h audit and no unproved economic PASS",
+        "requires_user_release": false
+      },
+      {
+        "id": "V3_FIVE_OPTIONAL_SOURCE_REAL_USE",
+        "stream_id": "source_quality",
+        "backlog_marker": "V3-Paper-Start: fünf Quellenrollen",
+        "owner": "EXISTING_V3_FIVE_SOURCE_WORK_FOLLOWTHROUGH_OWNER",
+        "trigger": "AFTER_V3_PAPER",
+        "priority": 1,
+        "safe_work": false,
+        "existing_safe_task": "V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH",
+        "allowed_action": "Reuse already wired per-source H10 H11 marketphase news autonomous steward same-clock original-to-V3 consumer owner; no new collector",
+        "completion_gate": "Five individually confirmed original source-to-V3-consumer ACKs; autonomous source research cycle original to model consumed; no model role assumed solely from prompt",
+        "requires_user_release": false
+      },
+      {
+        "id": "V3_PAPER_NET_ECONOMIC_REVIEW",
+        "stream_id": "gated_strategy_analysis",
+        "backlog_marker": "V3 experimentelles Paper-Cutover-Gate",
+        "owner": "EXISTING_V3_PAPER_ECONOMIC_ONE_CHANGE_OWNER",
+        "trigger": "AFTER_V3_PAPER",
+        "priority": 2,
+        "safe_work": false,
+        "allowed_action": "Review true trade/missed opportunity economics from existing V3 paper with 0.6 percent each-side costs and valid known-at outcomes; no threshold changes",
+        "completion_gate": "Verified real V3 Paper trades 6h/24h outcomes or honest NOT_EVALUABLE until actual maturity; user gate before strategy promotion",
+        "requires_user_release": true
+      },
+      {
+        "id": "V3_H3_ORDERBOOK_REEXAMINATION",
+        "stream_id": "orderflow_h3",
+        "backlog_marker": "H3",
+        "owner": "EXISTING_H3_NEW_VERSION_GATE",
+        "trigger": "AFTER_V3_PAPER",
+        "priority": 3,
+        "safe_work": false,
+        "allowed_action": "Re-evaluate archived incomplete H3 against real V3 Paper and request a separate bounded new-version research gate if evidence warrants",
+        "completion_gate": "Separate H3 archival disposition and explicit approved versioned one-change trial or reasoned NO_ACTION; never silently restart H3-001",
+        "requires_user_release": true
+      },
+      {
+        "id": "V3_H6_VOLUME_CONFIRMATION",
+        "stream_id": "price_volume_h6",
+        "backlog_marker": "H6",
+        "owner": "EXISTING_H6_ECONOMIC_ONE_CHANGE_GATE",
+        "trigger": "AFTER_V3_PAPER",
+        "priority": 3,
+        "safe_work": false,
+        "allowed_action": "Assess preserved H6 incremental findings after V3 productivity evidence and H3 gate; new separately approved versioned research only",
+        "completion_gate": "H6 explicit outcome-backed go/defer/no-action decision and separately authorized shadow if chosen",
+        "requires_user_release": true
+      },
+      {
+        "id": "V3_H2_DERIVATIVES_REAL_CONTEXT",
+        "stream_id": "derivatives_h2",
+        "backlog_marker": "H2",
+        "owner": "EXISTING_H2_DERIVATIVES_RESEARCH_OWNER",
+        "trigger": "AFTER_V3_PAPER",
+        "priority": 2,
+        "safe_work": true,
+        "allowed_action": "Read-only true original Kraken/Binance funding/OI basis known-at through existing V3 context consumer; do not change BUY rules",
+        "completion_gate": "Timestamped derivative original vs same-clock real V3 consumer receipt; actual PIT and pair verified with neutral fallback",
+        "requires_user_release": false
+      },
+      {
+        "id": "V3_H8_ONCHAIN_REAL_CONTEXT",
+        "stream_id": "onchain_h8",
+        "backlog_marker": "H8",
+        "owner": "EXISTING_H8_ONCHAIN_RESEARCH_OWNER",
+        "trigger": "AFTER_V3_PAPER",
+        "priority": 2,
+        "safe_work": true,
+        "allowed_action": "Read-only real onchain network original as-of to existing V3 consumer, no retroactive backfill or new vendor",
+        "completion_gate": "Timestamped actual on-chain original + V3 consumer/neutrality ACK; no fabricated exchange flow",
+        "requires_user_release": false
+      },
+      {
+        "id": "V3_H4_H7_H9_EXITS_AND_EXECUTION",
+        "stream_id": "stop_ttl_h4",
+        "backlog_marker": "H4 regimeabhängige Stop-/TTL-Logik",
+        "owner": "EXISTING_V3_RISK_EXECUTION_RESEARCH_OWNER",
+        "trigger": "AFTER_REAL_PAPER_TRADES",
+        "priority": 3,
+        "safe_work": false,
+        "allowed_action": "Review H4 stop/TTL, H7 net edge, H9 execution likelihood on real filled V3 paper lifecycle, fees, MAE and exits",
+        "completion_gate": "Sufficient real paper fill/stop/PnL original for separately approved one-change revision or explicit evidence-based deferral",
+        "requires_user_release": true
+      },
+      {
+        "id": "MINIPC_ANALYTICS_ACTUAL_REUSE",
+        "stream_id": "productivity_missed_moves",
+        "backlog_marker": "MINIPC_ANALYTICS_ROLLOUT_V1",
+        "owner": "EXISTING_MINIPC_ANALYTICS_ROLLOUT_OWNER",
+        "trigger": "AFTER_V3_PAPER",
+        "priority": 3,
+        "safe_work": true,
+        "allowed_action": "Verify actual minimal Mini-PC read-only analytics reuse after Paper start, avoiding storage or background scan bloat",
+        "completion_gate": "Actual physical read-only value/overhead/rollback evidence and no new long-running service",
+        "requires_user_release": false
+      }
+    ]
+  },
+  "historical_backlog_reconciliation": {
+    "kind": "EXISTING_BACKLOG_UNDISPOSED_HISTORICAL_COMMITMENTS_V1",
+    "owner": "EXISTING_DAILY_1015_WORK_ONCE_PER_GATE",
+    "source": "PROJECT_BACKLOG.md",
+    "ack_source": "research/work-analysis-state.json#acknowledgements.historical_backlog_dispositions",
+    "max_review_rows_per_run": 3,
+    "do_not_silently_assume_old_checkbox_is_current_task": true,
+    "no_new_schedule": true,
+    "no_auto_release": true,
+    "no_auto_cleanup": true,
+    "no_runtime_truth_from_backlog": true
   }
 }
