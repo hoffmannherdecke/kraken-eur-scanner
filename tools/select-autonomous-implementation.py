@@ -9,6 +9,11 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+try:
+    from tools.project_followthrough_router import v3_five_source_followthrough
+except ModuleNotFoundError:
+    from project_followthrough_router import v3_five_source_followthrough
+import datetime as dt
 
 ROOT=Path(__file__).resolve().parents[1]
 SUPPORTED_CONTROL={"V3-H3-ARCHIVE-DISPOSITION","V2R4-PRODUCTIVITY-REVIEW",
@@ -18,6 +23,7 @@ ID_TO_GATE={
  "UNKNOWN_CONTROL_DECISION_ADAPTER":"UNSUPPORTED_NEXT_CONTROL_DECISION",
  "UNKNOWN_SHADOW_ADAPTER":"UNKNOWN_ACTIVE_SHADOW_ADAPTER",
  "MINIPC_ANALYTICS_READONLY_PREP":"APPROVED_MINIPC_ANALYTICS_PLAN_AND_MISSING_INACTIVE_REUSE_PREP",
+ "V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH":"REAL_V3_PAPER_ACTIVE_AND_POST_CUTOVER_SOURCE_E2E_WORK_OPEN",
 }
 EFFECTS={"READ_ONLY_EVIDENCE_REVIEW","RESEARCH_ONLY_CONTRACT","VERSIONED_TESTS","DOCUMENTATION","NON_RUNTIME_PR"}
 FORBIDDEN={"TRADE_OR_ORDER","PRIVILEGE_OR_SECRET_CHANGE","FROZEN_STRATEGY_CHANGE",
@@ -81,7 +87,15 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
         and "MINIPC_ANALYTICS_ROLLOUT_V1" in mini_backlog.read_text(encoding="utf-8"))
     if mini_plan_ready and not mini_target.exists():
         open_work.append("MINIPC_ANALYTICS_READONLY_PREP")
+    # Existing 10:15 Work alone executes bounded safe implementation;
+    # physical Cloud-verified V3 release is mandatory before followthrough.
+    source_gate=v3_five_source_followthrough(
+        root,state,ack or {},dt.datetime.now(dt.timezone.utc))
+    if source_gate["status"]=="SOURCE_WORK_OPEN":
+        open_work.append("V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH")
     digest=hashlib.sha256(json.dumps({
+        "v3_source_followthrough":source_gate["open_roles"],
+        "v3_source_status":source_gate["status"],
         "strategy_revision":(state.get("active_strategy") or {}).get("strategy_revision"),
         "series_id":(state.get("active_strategy") or {}).get("series_id"),
         "shadow":[x.get("candidate_id") for x in shadows],
