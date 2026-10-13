@@ -123,6 +123,43 @@ def assemble(*,snapshots:Path,pair:str,entry_at_utc:str,
             "max_original_snapshot_lag_minutes":max_live_capture_lag_minutes,
             "historical_late_backfill_excluded":True}
 
+
+def require_prospective_assembled_path(*,assembled:dict[str,Any],pair:str)->None:
+    """Structural provenance gate for already assembled public Kraken 1m data.
+
+    This is NOT independent host/Cloud authentication. Actual exchange 1m
+    snapshots must already have been verified by assemble(): per-file SHA
+    against original persisted bytes, observed/closed clock, original live
+    witness lag and immutable duplicate-price rejection. Requiring all of
+    its exact status flags prevents callers from directly feeding arbitrary
+    timestamp-matching historical OHLC into a mature Paper followup.
+    """
+    if (not isinstance(assembled,dict)
+            or assembled.get("kind")!="KRAKEN_CLOSED_1M_PATH_CAPTURE_V1"
+            or assembled.get("source")!="KRAKEN_SPOT_EUR_PUBLIC"
+            or assembled.get("pair")!=pair
+            or assembled.get("no_future_backfill") is not True
+            or assembled.get("historical_late_backfill_excluded") is not True
+            or assembled.get("source_snapshots_with_conflicts") is not False):
+        raise ValueError("verified prospective assembled Kraken 1m capture required")
+    lag=assembled.get("max_original_snapshot_lag_minutes")
+    if type(lag) is not int or not 1<=lag<=15:
+        raise ValueError("strict 15-minute original source witness lag required")
+    bars=assembled.get("closed_bars")
+    if not isinstance(bars,list) or len(bars)>5000:
+        raise ValueError("bounded verified 1m bars required")
+    captured=timestamp(assembled["captured_at_utc"])
+    previous=None
+    for row in bars:
+        if not isinstance(row,dict) or "start_at_utc" not in row:
+            raise ValueError("invalid closed minute source row")
+        moment=timestamp(row["start_at_utc"])
+        if (moment.second!=0 or moment.microsecond!=0
+                or moment+timedelta(minutes=1)>captured
+                or (previous is not None and moment<=previous)):
+            raise ValueError("open duplicate or unordered minute evidence")
+        previous=moment
+
 def early_path_coverage(*,assembled:dict[str,Any],entry_at_utc:str,
                         observed_at_utc:str)->dict[str,Any]:
     """Pure early-warning check on ALREADY captured, trustworthy 1m snapshots.
