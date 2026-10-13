@@ -281,7 +281,7 @@
       {
         "id": "V3_H4_H7_H9_EXITS_AND_EXECUTION",
         "stream_id": "stop_ttl_h4",
-        "backlog_marker": "Stops/Ausstiege",
+        "backlog_marker": "H4 regimeabhängige Stop-/TTL-Logik",
         "owner": "EXISTING_V3_RISK_EXECUTION_RESEARCH_OWNER",
         "trigger": "AFTER_REAL_PAPER_TRADES",
         "priority": 3,
