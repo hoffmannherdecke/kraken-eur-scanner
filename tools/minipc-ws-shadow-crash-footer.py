@@ -45,8 +45,7 @@ NEW_MAIN = r'''if __name__ == "__main__":
             ).encode("utf-8", errors="replace")
 
             # Keep the newest 48 KiB only; crash logging must not grow forever.
-            _ws_prior = _ws_log.read_bytes()[-(48 * 1024 - len(_ws_record)):] \\
-                if _ws_log.exists() else b""
+            _ws_prior = _ws_log.read_bytes()[-(48 * 1024 - len(_ws_record)):] if _ws_log.exists() else b""
             _ws_tmp = _ws_log.with_suffix(".crash.tmp")
             _ws_tmp.write_bytes((_ws_prior + _ws_record)[-(48 * 1024):])
             _ws_tmp.replace(_ws_log)
