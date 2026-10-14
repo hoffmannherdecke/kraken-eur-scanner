@@ -277,6 +277,71 @@ def dispatch_alerts_if_needed(root,control,candidates,trades,paper_state_dir=Non
     atomic_json(state_path,state)
     return {'status':'DISPATCHED','new_actionable':len(pending)}
 
+def run_closed_aftercare_once(args):
+    """Same original Task/owner, but never use active sync after V3 CAS."""
+    hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'
+    result={'schema_version':1,'kind':'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1',
+            'checked_at_utc':iso(),'status':'UNKNOWN',
+            'mode':'CLOSED_ORIGINAL_AFTERCARE','paper_only':True,
+            'order_api':False,'real_money_actions':False}
+    try:
+        control,candidates,trades=collect(args.app_root)
+        old,new,release_sha,cutoff_iso=closed_aftercare_authority(args.trading_root,control)
+        cutoff=datetime.fromisoformat(cutoff_iso.replace('Z','+00:00'))
+        # A running old intake writer after CAS is a release-blocking defect.
+        for row in candidates:
+            when=datetime.fromisoformat(row['evaluated_at'].replace('Z','+00:00'))
+            if when>=cutoff: raise ValueError('new old-series candidate after V3 cutoff')
+        for row in trades:
+            when=datetime.fromisoformat(row['opened_at'].replace('Z','+00:00'))
+            if when>=cutoff: raise ValueError('new old-series paper entry after V3 cutoff')
+        preview=closed_original_readonly_preview(
+            control,candidates,trades,old_series_id=old,future_v3_series_id=new,
+            old_release_sha=release_sha,cutover_at_utc=cutoff_iso)
+        # Never send on a mere preview or during ARMED/QUIESCED.
+        token=load_token(args.trading_root)
+        status_file=args.trading_root/'Secrets/minipc-status-token.txt'
+        second=status_file.read_text('utf-8').strip() if status_file.is_file() else ''
+        if len(token)<24 or len(second)<24:
+            raise RuntimeError('closed-original dual credentials unavailable')
+        state_dir=getattr(args,'paper_state_dir',None) or args.trading_root/'State'
+        active_sent=load_sync_state(state_dir/'v2r4-paper-cloud-sync-state.json')['sent']
+        aftercare_path=state_dir/'v2r4-paper-closed-aftercare-state.json'
+        aftercare=load_sync_state(aftercare_path)
+        accepted=0
+        unchanged=0
+        batches=0
+        for packet,marks in closed_aftercare_batches(
+                preview,active_sent,aftercare['sent']):
+            if batches>=10: break  # at most 200 historical records per cycle
+            ack=post(args.endpoint,token,packet,second_token=second)
+            count=len(packet['candidates'])+len(packet['trades'])
+            applied=int(ack.get('accepted_candidates',-1))+int(ack.get('accepted_trades',-1))
+            identical=int(ack.get('unchanged_replays',-1))
+            if (ack.get('action')!='sync_closed_original_followups'
+                    or ack.get('paper_only') is not True
+                    or ack.get('real_money_actions') is not False
+                    or ack.get('new_v2r4_intake_allowed') is not False
+                    or applied<0 or identical<0 or applied+identical!=count):
+                raise RuntimeError('closed-original cloud ACK incomplete or unsafe')
+            # Crash before this commit is safe: old Edge retries are idempotent.
+            aftercare['sent'].update(marks)
+            atomic_json(aftercare_path,aftercare)
+            batches+=1
+            accepted+=applied
+            unchanged+=identical
+        result.update(status='HEALTHY',series_id=old,successor_series_id=new,
+                      accepted_original_updates=accepted,
+                      unchanged_replays=unchanged,batches=batches,
+                      pending_unstamped_followups=preview['pending_unstamped_followups_not_promoted'],
+                      detail='original aftercare synced; separate live CAS proof required')
+    except Exception as exc:
+        result.update(status='DEGRADED',
+                      detail=f'{type(exc).__name__}: {str(exc)[:200]}')
+    atomic_json(hb,result)
+    return result
+
+
 def run_once(args):
     hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'
     state_path=(getattr(args,'paper_state_dir',None) or (args.trading_root/'State'))/'v2r4-paper-cloud-sync-state.json'
