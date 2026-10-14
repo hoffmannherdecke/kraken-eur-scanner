@@ -95,3 +95,74 @@ $valid.proposed_v3_bundle_sha256='bad'
 ExpectFence 'INVALID_FAIL_CLOSED' $true $valid 'release bundle pin required'
 Write-Output 'SUPERVISOR_V3_PAPER_INTAKE_PURE_POLICY_11_CASES_PASS'
 
+# Execute ONLY the pure old-native baseline function from the existing V3
+# READ-ONLY readiness script. No Windows task querying/changes in CI.
+$physical=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/check-minipc-v3-physical-writer-readiness.ps1'
+$ptok=$null; $perr=$null
+$past=[System.Management.Automation.Language.Parser]::ParseFile($physical,[ref]$ptok,[ref]$perr)
+if($perr.Count -ne 0){ throw ($perr | Out-String) }
+$native=@($past.FindAll({
+  param($a)
+  $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+  $a.Name -eq 'Test-V3OldIntakeNativeBaseline'
+},$true))
+if($native.Count -ne 1){throw 'Expected exactly one native baseline pure policy function'}
+. ([Scriptblock]::Create($native[0].Extent.Text))
+
+# Before any host use, reject executable task writers or HTTP on this
+# read-only evidence path. Get-ScheduledTask and Export-ScheduledTask are safe.
+$commands=@($past.FindAll({
+  param($a) $a -is [System.Management.Automation.Language.CommandAst]
+},$true) | ForEach-Object {$_.GetCommandName()})
+foreach($unsafe in @('Stop-ScheduledTask','Start-ScheduledTask','Disable-ScheduledTask',
+                    'Enable-ScheduledTask','Register-ScheduledTask','Unregister-ScheduledTask',
+                    'Set-ScheduledTask','Set-Content','Out-File','Invoke-RestMethod',
+                    'Invoke-WebRequest','Remove-Item','Copy-Item','Move-Item')){
+  if($commands -contains $unsafe){throw "Unsafe native read-only preflight command: $unsafe"}
+}
+
+function NativeFixture([string]$Name) {
+  $script=if($Name -eq 'CryptoMiniPC-V2R4PaperWait'){'wait_launcher.py'}else{'v2r4-paper-local-runtime.py'}
+  return [pscustomobject]@{
+    task_name=$Name; state='Running'; principal_is_system=$true
+    action_count=1; documented_script_basename_hint_matches=$true
+    action_script_basename=$script
+    trigger_count=1; only_boot_trigger=$true
+    restart_count=3; restart_interval='PT1M'; multiple_instances='IgnoreNew'
+    native_scheduler_xml_status='READ'; heartbeat_fresh_for_role=$true
+  }
+}
+function CheckNative([bool]$Expected,[object]$Record,[string]$Label) {
+  $actual=Test-V3OldIntakeNativeBaseline -Record $Record
+  if($actual -ne $Expected){throw "NATIVE_BASELINE_POLICY_FAIL $Label expected=$Expected actual=$actual"}
+}
+$c=NativeFixture 'CryptoMiniPC-V2R4PaperCandidates'
+$w=NativeFixture 'CryptoMiniPC-V2R4PaperWait'
+CheckNative $true $c 'candidate original running BootTrigger 3/PT1M'
+CheckNative $true $w 'WAIT original running BootTrigger 3/PT1M'
+CheckNative $false $null 'missing original evidence'
+$x=NativeFixture 'CryptoMiniPC-V2R4PaperCandidates'; $x.trigger_count=2
+CheckNative $false $x 'extra boot or interval trigger'
+$x=NativeFixture 'CryptoMiniPC-V2R4PaperWait'; $x.only_boot_trigger=$false
+CheckNative $false $x 'not native boot-only'
+$x=NativeFixture 'CryptoMiniPC-V2R4PaperCandidates'; $x.restart_count=2
+CheckNative $false $x 'noncanonical restart count'
+$x=NativeFixture 'CryptoMiniPC-V2R4PaperWait'; $x.restart_interval='PT5M'
+CheckNative $false $x 'noncanonical restart interval'
+$x=NativeFixture 'CryptoMiniPC-V2R4PaperCandidates'; $x.multiple_instances='Parallel'
+CheckNative $false $x 'duplicate native instances'
+$x=NativeFixture 'CryptoMiniPC-V2R4PaperWait'; $x.action_count=2
+CheckNative $false $x 'unexpected second task action'
+$x=NativeFixture 'CryptoMiniPC-V2R4PaperWait'; $x.action_script_basename='v2r4_wait_runtime.py'
+CheckNative $false $x 'incorrect old WAIT launcher'
+$x=NativeFixture 'CryptoMiniPC-V2R4PaperCandidates'; $x.principal_is_system=$false
+CheckNative $false $x 'wrong native SYSTEM owner'
+$x=NativeFixture 'CryptoMiniPC-V2R4PaperWait'; $x.heartbeat_fresh_for_role=$false
+CheckNative $false $x 'stale original heartbeat'
+$x=NativeFixture 'CryptoMiniPC-V2R4PaperWait'; $x.native_scheduler_xml_status='UNREADABLE'
+CheckNative $false $x 'unreadable native XML'
+$x=NativeFixture 'CryptoMiniPC-V2R4PaperLifecycle'
+CheckNative $false $x 'cannot count old followup task as intake'
+Write-Output 'V3_NATIVE_OLD_INTAKE_READONLY_BASELINE_14_CASES_PASS'
+
+
