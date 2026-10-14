@@ -17,9 +17,9 @@ current = (ROOT / "paper_evaluator/v2r4_ws_shadow_watcher.py").read_bytes()
 
 def create_pre_fix():
     text = current.decode("utf-8")
-    for before, after in reversed(builder.HUNKS):
+    for hunk_id, (before, after) in reversed(list(enumerate(builder.HUNKS))):
         if text.count(after) != 1:
-            raise ValueError("production main no longer matches PR298 source hunks")
+            raise ValueError(f"production main does not match PR298 hunk {hunk_id}, occurrences={text.count(after)}")
         text = text.replace(after, before)
     return text.encode("utf-8")
 
