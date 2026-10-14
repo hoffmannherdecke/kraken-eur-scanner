@@ -211,6 +211,24 @@ def closed_aftercare_authority(root,control):
     return old,new,sha,cutoff.isoformat().replace('+00:00','Z')
 
 
+def closed_aftercare_batches(preview,active_sent,aftercare_sent):
+    """Bounded, retryable packets; never replay unchanged cloud-ACKed rows."""
+    for batch in preview['batches']:
+        result={k:v for k,v in batch.items() if k not in ('candidates','trades')}
+        result.update(candidates=[],trades=[])
+        marks={}
+        for field,prefix in (('candidates','candidate'),('trades','trade')):
+            for row in batch[field]:
+                key=f"{prefix}:{row['candidate_id']}"
+                value=row_hash(row)
+                if aftercare_sent.get(key)==value or active_sent.get(key)==value:
+                    continue
+                result[field].append(row)
+                marks[key]=value
+        if marks:
+            yield result,marks
+
+
 def actionable_keys(control,candidates,trades):
     sid=control['series_id']; keys=set()
     for row in candidates:
