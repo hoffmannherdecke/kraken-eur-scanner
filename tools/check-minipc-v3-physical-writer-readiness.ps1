@@ -129,18 +129,40 @@ try{
 # The old host runtime configuration directory is NOT a physical
 # Windows-task/sole-writer proof. Read only the four exact existing V2R4
 # task identities; never infer a running Paper writer from JSON controls.
+# Only extend the already-existing read-only V3 preflight. Never inspect or
+# print raw Task arguments: they may contain bearer tokens or API keys.
+# Role/script basename and action hash are DISCOVERY, not pinned-module/sole-writer proof.
 $v2r4PaperTasks=@()
+$v2r4OriginalRole=@{
+ 'CryptoMiniPC-V2R4PaperCandidates'=@{script='v2r4-paper-local-runtime.py'; heartbeat='v2r4-paper-candidate-runtime-heartbeat.json'; max_age=60}
+ 'CryptoMiniPC-V2R4PaperWait'=@{script='wait_launcher.py'; heartbeat='v2r4-paper-wait-runtime-heartbeat.json'; max_age=30}
+ 'CryptoMiniPC-V2R4PaperLifecycle'=@{script='v2r4-paper-local-runtime.py'; heartbeat='v2r4-paper-lifecycle-heartbeat.json'; max_age=180}
+ 'CryptoMiniPC-V2R4PaperCloudSync'=@{script='v2r4-paper-cloud-sync.py'; heartbeat='v2r4-paper-cloud-sync-heartbeat.json'; max_age=180}
+}
 foreach($name in @(
  'CryptoMiniPC-V2R4PaperCandidates',
  'CryptoMiniPC-V2R4PaperWait',
  'CryptoMiniPC-V2R4PaperLifecycle',
  'CryptoMiniPC-V2R4PaperCloudSync'
 )){
+ $role=$v2r4OriginalRole[$name]
  $record=[ordered]@{
    task_name=$name
    state='NOT_FOUND'
    last_run_utc=$null
    last_task_result=$null
+   action_count=$null
+   action_executable_basename=$null
+   action_script_basename='UNREAD'
+   action_sha256=$null
+   documented_script_basename_hint_matches=$false
+   principal_is_system=$false
+   restart_count=$null
+   restart_interval=$null
+   multiple_instances=$null
+   heartbeat_status='UNREAD'
+   heartbeat_age_seconds=$null
+   heartbeat_fresh_for_role=$false
    evidence='READ_ONLY_WINDOWS_TASK_NOT_ACTIVE_WRITER_FENCE_PROOF'
  }
  try{
@@ -149,6 +171,49 @@ foreach($name in @(
    $oldInfo=$oldTask | Get-ScheduledTaskInfo -ErrorAction Stop
    $record.last_run_utc=$oldInfo.LastRunTime.ToUniversalTime().ToString('o')
    $record.last_task_result=[int]$oldInfo.LastTaskResult
+   $record.principal_is_system=([string]$oldTask.Principal.UserId -in @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18'))
+   $record.restart_count=[int]$oldTask.Settings.RestartCount
+   $record.restart_interval=[string]$oldTask.Settings.RestartInterval
+   $record.multiple_instances=[string]$oldTask.Settings.MultipleInstances
+   $actions=@($oldTask.Actions)
+   $record.action_count=$actions.Count
+   if($actions.Count -eq 1){
+     $action=$actions[0]
+     $record.action_executable_basename=[System.IO.Path]::GetFileName([string]$action.Execute)
+     $argsText=[string]$action.Arguments
+     # The actual 13/14 October PR291 WAIT Task uses wait_launcher.py,
+     # not the older 07 October direct v2r4_wait_runtime.py installer.
+     $scriptTokens=[regex]::Matches($argsText,'(?i)(?:wait_launcher|v2r4_wait_runtime|v2r4-paper-local-runtime|v2r4-paper-cloud-sync)\.py')
+     if($scriptTokens.Count -eq 1){
+       $record.action_script_basename=$scriptTokens[0].Value.ToLowerInvariant()
+       $record.documented_script_basename_hint_matches=($record.action_script_basename -ceq [string]$role.script)
+     }else{$record.action_script_basename='UNRESOLVED_OR_AMBIGUOUS'}
+     # SHA256 of a fixed three-field action tuple; secret values never emitted.
+     $actionTuple=@([string]$action.Execute,$argsText,[string]$action.WorkingDirectory) -join '|'
+     $sha=[System.Security.Cryptography.SHA256]::Create()
+     try{
+       $bytes=[System.Text.Encoding]::UTF8.GetBytes($actionTuple)
+       $record.action_sha256=([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()
+     }finally{$sha.Dispose()}
+   }
+   # Read only the already-existing Supervisor heartbeat file, not secrets
+   # or process command lines; status/age is not PID or source-module identity.
+   $hbPath=Join-Path $state [string]$role.heartbeat
+   if(Test-Path -LiteralPath $hbPath -PathType Leaf){
+     try{
+       $hb=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json
+       $record.heartbeat_status=[string]$hb.status
+       $checked=[datetime]::Parse([string]$hb.checked_at_utc).ToUniversalTime()
+       $age=[math]::Round(($now-$checked).TotalSeconds,1)
+       $record.heartbeat_age_seconds=$age
+       $record.heartbeat_fresh_for_role=(
+         $record.state -eq 'Running' -and
+         $record.heartbeat_status -eq 'HEALTHY' -and
+         $age -ge -30 -and $age -le [double]$role.max_age
+       )
+     }catch{$record.heartbeat_status='UNREADABLE_OR_INVALID'}
+   }else{$record.heartbeat_status='MISSING'}
+   $record.evidence='PARTIAL_TASK_ACTION_AND_HEARTBEAT_READBACK_NOT_LIVE_SOURCE_OR_REARM_PROOF'
  }catch{
    $record.evidence='NOT_FOUND_OR_TASK_INFO_UNAVAILABLE_NOT_PROVEN'
  }
@@ -233,6 +298,10 @@ $ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $can
  active_v2r4_host_runtime_count=$oldApps.Count
  active_v2r4_host_runtime_count_is_config_files_not_processes=$true
  physical_v2r4_paper_task_readback=$v2r4PaperTasks
+ physical_task_action_sha256_has_no_raw_arguments=$true
+ physical_pr291_wait_launcher_basename_only_not_loaded_module_sha_proof=$true
+ physical_supervisor_and_windows_rearm_fence_proven=$false
+ physical_closed_old_series_followup_exit_relay_proven=$false
  physical_v3_named_paper_task_hints=@($v3PaperTaskNames)
  physical_task_name_scan_cannot_prove_absence_of_other_writers=$true
  pre_cutover_expected_predecessor_series_id=$oldSeries
