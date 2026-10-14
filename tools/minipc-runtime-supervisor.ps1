@@ -180,7 +180,8 @@ if(Test-Path -LiteralPath $maintenanceFile){
 # V3 marker MUST NOT be installed during normal V2R4 Paper operation.
 $v3IntakeTasks=@("CryptoMiniPC-V2R4PaperCandidates","CryptoMiniPC-V2R4PaperWait")
 $v3FenceFile=Join-Path $stateDir "v3-experimental-paper-old-intake-fence.json"
-$v3FencePresent=Test-Path -LiteralPath $v3FenceFile -PathType Leaf
+$v3FencePresent=Test-Path -LiteralPath $v3FenceFile
+# Even an unexpected DIRECTORY at this marker path fails closed on read.
 $v3FenceReceipt=$null
 if($v3FencePresent){
   try{$v3FenceReceipt=Get-Content -LiteralPath $v3FenceFile -Raw | ConvertFrom-Json}
