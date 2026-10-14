@@ -12,7 +12,7 @@ from pathlib import Path
 
 OLD_MAIN = 'if __name__ == "__main__":\n    raise SystemExit(main())\n'
 
-NEW_MAIN = '''if __name__ == "__main__":
+NEW_MAIN = r'''if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except BaseException as _ws_error:
@@ -40,8 +40,8 @@ NEW_MAIN = '''if __name__ == "__main__":
                 )
             )
             _ws_record = (
-                ("\\\\n=== WS-SHADOW PYTHON EXIT " + _ws_when + " ===\\\\n")
-                + _ws_trace[-16000:] + "\\\\n"
+                ("\n=== WS-SHADOW PYTHON EXIT " + _ws_when + " ===\n")
+                + _ws_trace[-16000:] + "\n"
             ).encode("utf-8", errors="replace")
 
             # Keep the newest 48 KiB only; crash logging must not grow forever.
