@@ -13,7 +13,7 @@ def load(name, filename):
 
 builder = load("last_eur_fix_builder", ROOT / "tools/minipc-ws-shadow-last-eur-fix-builder.py")
 footer = load("crash_footer", ROOT / "tools/minipc-ws-shadow-crash-footer.py")
-current = (ROOT / "paper_evaluator/v2r4_ws_shadow_watcher.py").read_bytes()
+current = (ROOT / "paper_evaluator/v2r4_ws_shadow_watcher.py").read_bytes().replace(b"\r\n", b"\n")
 
 def create_pre_fix():
     text = current.decode("utf-8")
