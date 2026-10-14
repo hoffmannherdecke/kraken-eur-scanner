@@ -145,8 +145,8 @@ try {
   if ((Task $supervisorName).State -ne 'Disabled') { throw 'Supervisor nicht sicher deaktiviert' }
 
   Stop-ScheduledTask -TaskName $targetName -ErrorAction Stop
-  Wait-NotRunning $targetName 30
   $cloudStopped = $true
+  Wait-NotRunning $targetName 30
   Assert-NoCloudWorker
 
   # No state rollback or deletion! Preserve current sent ACKs and late results.
@@ -164,12 +164,17 @@ try {
   $gateError = $_.Exception.Message
   Write-Host "PR295_CUTOVER_ERROR $gateError"
   try {
-    if ($changedSource) {
+    # A file-replace may complete before a post-write SHA/IO exception.
+    # Detect that case from disk instead of trusting only the local flag.
+    $onDisk = Sha $sourcePath
+    if ($changedSource -or $onDisk -eq $newHash) {
       $current = Task $targetName
       if ($current.State -eq 'Running') { Stop-ScheduledTask -TaskName $targetName -ErrorAction Stop }
       Wait-NotRunning $targetName 30
       Assert-NoCloudWorker
       Atomic-Swap $backupSource $oldHash (Join-Path $BackupDir 'pr295-failed-new-source.py')
+    } elseif ($onDisk -ne $oldHash) {
+      throw 'Unbekannter Quellhash, automatisches Überschreiben untersagt'
     }
     if ($cloudStopped) {
       if ((Task $targetName).State -ne 'Running') {
