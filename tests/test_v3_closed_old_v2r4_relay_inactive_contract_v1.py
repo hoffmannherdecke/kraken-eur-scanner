@@ -46,6 +46,22 @@ class ClosedOriginalV2R4RelayInactiveContract(unittest.TestCase):
         self.assertLess(self.script.index('if(!(await authorized(admin,req)))'),
                         self.old_begin)
 
+    def test_closed_path_pins_exact_v3_successor_and_old_predecessor(self):
+        # A generic active V3 series is insufficient: old-series aftercare
+        # must be routed only to the exact CAS successor submitted by host.
+        for need in (
+            'const expectedV3Sid=String(body?.expected_active_v3_series_id??"")',
+            '!/^PAPER-V3-\\d{8}T\\d{6}Z$/.test(expectedV3Sid)',
+            '.select("series_id,status,strategy_revision,config")',
+            'activeRows[0]?.series_id!==expectedV3Sid',
+            'activeRows[0]?.config?.predecessor_series_id!==sid',
+            'oldSeries?.status!=="strategy_cutover_closed"',
+        ):
+            with self.subTest(need=need):self.assertIn(need,self.closed)
+        self.assertNotIn(
+            '!String(activeRows[0]?.series_id??"").startsWith("PAPER-V3-")',
+            self.closed)
+
     def test_closed_path_cannot_insert_new_original_candidates_or_trades(self):
         self.assertNotRegex(self.closed,r'(?i)\.upsert\(')
         self.assertNotRegex(self.closed,r'(?i)\.insert\(')
