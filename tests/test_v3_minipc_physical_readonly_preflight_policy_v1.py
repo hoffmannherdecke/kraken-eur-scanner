@@ -85,5 +85,38 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("ConvertTo-Json -Depth 8",s)
         self.assertIn("new_cloud_sync_performed=$false",s)
 
+    def test_four_real_tasks_expose_only_bounded_readonly_owner_evidence(self):
+        s=SCRIPT.read_text(encoding="utf-8")
+        # No new Task, process, secret, Cloud or runtime mutation pathways.
+        for marker in (
+            "'CryptoMiniPC-V2R4PaperCandidates'=@{script='v2r4-paper-local-runtime.py'",
+            "'CryptoMiniPC-V2R4PaperWait'=@{script='wait_launcher.py'",
+            "'CryptoMiniPC-V2R4PaperLifecycle'=@{script='v2r4-paper-local-runtime.py'",
+            "'CryptoMiniPC-V2R4PaperCloudSync'=@{script='v2r4-paper-cloud-sync.py'",
+            "action_count=$null",
+            "$actions=@($oldTask.Actions)",
+            "if($actions.Count -eq 1)",
+            "documented_script_basename_hint_matches=$false",
+            "$scriptTokens.Count -eq 1",
+            "$oldTask.Principal.UserId",
+            "$oldTask.Settings.RestartCount",
+            "$oldTask.Settings.RestartInterval",
+            "$oldTask.Settings.MultipleInstances",
+            "$record.action_sha256=",
+            "$role.heartbeat",
+            "$role.max_age",
+            "$age -ge -30",
+            "physical_task_action_sha256_has_no_raw_arguments=$true",
+            "physical_pr291_wait_launcher_basename_only_not_loaded_module_sha_proof=$true",
+            "physical_supervisor_and_windows_rearm_fence_proven=$false",
+            "physical_closed_old_series_followup_exit_relay_proven=$false",
+        ):
+            self.assertIn(marker,s)
+        # SHA256 summarizes the command; raw args are not included in output.
+        self.assertNotRegex(s,r"(?m)^\s*(?:args|arguments|raw_task_arguments)\s*=")
+        self.assertNotIn("physical_supervisor_and_windows_rearm_fence_proven=$true",s)
+        self.assertNotIn("physical_closed_old_series_followup_exit_relay_proven=$true",s)
+        self.assertIn("evidence='PARTIAL_TASK_ACTION_AND_HEARTBEAT_READBACK_NOT_LIVE_SOURCE_OR_REARM_PROOF'",s)
+
 if __name__=="__main__":
     unittest.main()
