@@ -13,8 +13,12 @@ def atomic_json(path,payload):
 def load_token(root):
     p=root/'Secrets/shadow-evidence-token.txt'
     return p.read_text('utf-8').strip() if p.exists() else os.environ.get('SHADOW_EVIDENCE_TOKEN','').strip()
-def post(endpoint,token,payload):
-    req=urllib.request.Request(endpoint,data=json.dumps(payload,separators=(',',':')).encode(),method='POST',headers={'Content-Type':'application/json','User-Agent':'minipc-v2r4-paper-cloud-sync/1.0','X-Shadow-Evidence-Token':token})
+def post(endpoint,token,payload,*,second_token=None):
+    headers={'Content-Type':'application/json','User-Agent':'minipc-v2r4-paper-cloud-sync/1.0','X-Shadow-Evidence-Token':token}
+    if second_token is not None:
+        if len(second_token)<24: raise RuntimeError('Closed aftercare requires second credential')
+        headers['X-MiniPC-Status-Token']=second_token
+    req=urllib.request.Request(endpoint,data=json.dumps(payload,separators=(',',':')).encode(),method='POST',headers=headers)
     try:
         with urllib.request.urlopen(req,timeout=30) as r:
             body=json.loads(r.read().decode())
