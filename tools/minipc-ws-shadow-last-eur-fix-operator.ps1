@@ -40,7 +40,7 @@ $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
   throw 'Administrator PowerShell required'
 }
-Write-Host "WS_SHADOW_CRASH_CAPTURE_PREFLIGHT_PASS original=$currentSha task=$($task.State)"
+Write-Host "WS_SHADOW_LAST_EUR_PREFLIGHT_PASS original=$currentSha task=$($task.State)"
 if (-not $Apply) {
   Write-Host 'WS_SHADOW_FIX_READ_ONLY_NO_ACTION'
   return
@@ -80,7 +80,7 @@ $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $backu
 $candidate = Join-Path $backup 'fixed-watcher.py'
 & $python -B $PatcherPath --source $src --output $candidate --original-sha256 $expectedOldSha
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $candidate)) {
-  throw 'Pinned source instrumentation builder failed'
+  throw 'Pinned source last-price fix builder failed'
 }
 $alteredSha = (Get-FileHash -LiteralPath $candidate -Algorithm SHA256).Hash
 if ($alteredSha -eq $expectedOldSha) { throw 'Source patch produced identical code unexpectedly' }
@@ -90,14 +90,14 @@ if (-not (Select-String -LiteralPath $src -Pattern $originalFooter -SimpleMatch 
   throw 'Installed PR297 crash footer must remain preserved'
 }
 & $python -m py_compile $candidate
-if ($LASTEXITCODE -ne 0) { throw 'Diagnostic source syntax failed' }
+if ($LASTEXITCODE -ne 0) { throw 'Fixed source syntax failed' }
 if ((Get-FileHash -LiteralPath $src -Algorithm SHA256).Hash -ne $expectedOldSha) {
   throw 'Pinned source changed since backup; refusing swap'
 }
 
 # Atomic replacement at the ORIGINAL path, preserving the current task action.
 # Existing running Python processes retain their already-imported code;
-# crash capture starts with the next NATURAL scheduled launch, no forced restart.
+# source fix starts with the next NATURAL scheduled launch, no forced restart.
 $swap = $src + '.last-eur-fix-once.tmp'
 if (Test-Path -LiteralPath $swap) { throw 'Unexpected pre-existing swap file' }
 Copy-Item -LiteralPath $candidate -Destination $swap -ErrorAction Stop
@@ -119,7 +119,7 @@ try {
       ([string]$newTask.Actions[0].Arguments).IndexOf($src,[StringComparison]::OrdinalIgnoreCase) -lt 0) {
     throw 'Task action changed during swap'
   }
-  Write-Host "WS_SHADOW_CRASH_CAPTURE_INSTALLED new_sha256=$alteredSha"
+  Write-Host "WS_SHADOW_LAST_EUR_FIX_INSTALLED new_sha256=$alteredSha"
   Write-Host "BACKUP_DIRECTORY=$backup"
   Write-Host 'ORIGINAL_TASK_ACTION_UNCHANGED; NO_FORCED_RESTART'
   Write-Host 'AWAIT_NATURAL_SYSTEM_RESTART_AND_CONFIRM_HEALTHY_CYCLES'
@@ -140,7 +140,7 @@ try {
         Write-Host 'WS_SHADOW_LAST_EUR_CRITICAL_MANUAL_RECOVERY_REQUIRED'
       }
     } catch {
-      Write-Host "WS_SHADOW_CRITICAL_MANUAL_RECOVERY_REQUIRED $($_.Exception.Message)"
+      Write-Host "WS_SHADOW_LAST_EUR_CRITICAL_MANUAL_RECOVERY_REQUIRED $($_.Exception.Message)"
     }
   }
   throw $first
