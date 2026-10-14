@@ -92,6 +92,15 @@ def load_state(path: Path) -> dict[str, Any]:
         return {"schema_version": 1, "sent": {}}
 
 
+def file_signature(path: Path) -> list[int] | None:
+    """Cheap Windows/Unix file identity; changing outcomes are always rechecked."""
+    try:
+        stat = path.stat()
+    except FileNotFoundError:
+        return None
+    return [stat.st_mtime_ns, stat.st_size]
+
+
 def collect_records(
     root: Path,
     state: dict[str, Any],
@@ -110,20 +119,55 @@ def collect_records(
     records: list[dict[str, Any]] = []
     marks: dict[str, dict[str, Any]] = {}
     sent = state.get("sent", {})
+    if not isinstance(sent, dict):
+        sent = {}
+    previous_index = state.get("event_file_index", {})
+    if not isinstance(previous_index, dict):
+        previous_index = {}
+    next_index: dict[str, dict[str, Any]] = {}
 
+    # The event filename is stable, but event_id depends on the JSON payload.
+    # Keep only stat metadata and event ID in the EXISTING atomic sync state.
+    # Unacknowledged records never qualify for the fast path; an outcome file
+    # appearing or changing always invalidates it. This is not an upload ACK.
     for path in sorted(event_dir.glob("*.json")):
+        signature = file_signature(path)
+        if signature is None:
+            continue
+        cached = previous_index.get(path.name)
+        if (
+            isinstance(cached, dict)
+            and cached.get("event_sig") == signature
+            and isinstance(cached.get("event_id"), str)
+            and bool(cached["event_id"])
+        ):
+            eid = cached["event_id"]
+            outcome_sig = file_signature(outcome_dir / f"{eid}.json")
+            previous = sent.get(eid, {})
+            if (
+                isinstance(previous, dict)
+                and previous.get("event_sent") is True
+                and previous.get("outcome_status") == cached.get("outcome_status")
+                and cached.get("outcome_sig") == outcome_sig
+            ):
+                next_index[path.name] = cached
+                continue
+
         try:
             event = load_json(path)
         except Exception:
+            # Retry partially written/unreadable evidence next cycle.
             continue
         if event.get("kind") != "V2R4_WS_SHADOW_DISCOVERY":
             continue
 
         eid = event_id(event)
         outcome_path = outcome_dir / f"{eid}.json"
+        outcome_sig = file_signature(outcome_path)
         outcome = None
         outcome_status = None
-        if outcome_path.exists():
+        can_cache = True
+        if outcome_sig is not None:
             try:
                 outcome = load_json(outcome_path)
                 if outcome.get("kind") == "V2R4_WS_SHADOW_OUTCOME_V1":
@@ -132,10 +176,20 @@ def collect_records(
                     outcome = None
             except Exception:
                 outcome = None
+                can_cache = False
 
-        previous = sent.get(eid, {}) if isinstance(sent, dict) else {}
+        previous = sent.get(eid, {})
+        if not isinstance(previous, dict):
+            previous = {}
         need_event = not bool(previous.get("event_sent"))
         need_outcome = outcome is not None and previous.get("outcome_status") != outcome_status
+        if can_cache:
+            next_index[path.name] = {
+                "event_sig": signature,
+                "event_id": eid,
+                "outcome_sig": outcome_sig,
+                "outcome_status": outcome_status,
+            }
         if not need_event and not need_outcome:
             continue
 
@@ -156,8 +210,10 @@ def collect_records(
             "outcome_status": outcome_status,
         }
 
+    # Prune deleted/rotated local event names; no second DB or cache writer.
+    # This index is only a scan accelerator. The sent map alone is the ACK.
+    state["event_file_index"] = next_index
     return records, marks
-
 
 def run_once(args: argparse.Namespace) -> dict[str, Any]:
     root = args.trading_root
@@ -165,9 +221,11 @@ def run_once(args: argparse.Namespace) -> dict[str, Any]:
     heartbeat_path = root / "State" / "v2r4-shadow-cloud-sync-heartbeat.json"
     state = load_state(state_path)
     token = load_token(root)
+    cycle_started = time.monotonic()
 
     result: dict[str, Any] = {
         "kind": "V2R4_SHADOW_CLOUD_SYNC_HEARTBEAT_V1",
+        "cycle_started_at_utc": utc_now(),
         "checked_at_utc": utc_now(),
         "status": "UNKNOWN",
         "pending_records": 0,
@@ -182,41 +240,52 @@ def run_once(args: argparse.Namespace) -> dict[str, Any]:
     if len(token) < 24:
         result["status"] = "DEGRADED"
         result["detail"] = "shadow-evidence token missing/too short"
-        atomic_json(heartbeat_path, result)
-        return result
+    else:
+        prior_index = state.get("event_file_index")
+        try:
+            records, marks = collect_records(root, state)
+            result["pending_records"] = len(records)
 
-    try:
-        records, marks = collect_records(root, state)
-        result["pending_records"] = len(records)
+            for start in range(0, len(records), BATCH_SIZE):
+                batch = records[start : start + BATCH_SIZE]
+                response = post_batch(args.endpoint, token, batch)
+                accepted = int(response.get("accepted", 0))
+                if accepted != len(batch):
+                    raise RuntimeError(
+                        f"relay accepted {accepted}/{len(batch)} records"
+                    )
+                result["uploaded_records"] += accepted
+                result["batches"] += 1
+                for record in batch:
+                    eid = str(record["event_id"])
+                    state["sent"][eid] = marks[eid]
+                atomic_json(state_path, state)
 
-        for start in range(0, len(records), BATCH_SIZE):
-            batch = records[start : start + BATCH_SIZE]
-            response = post_batch(args.endpoint, token, batch)
-            accepted = int(response.get("accepted", 0))
-            if accepted != len(batch):
-                raise RuntimeError(
-                    f"relay accepted {accepted}/{len(batch)} records"
-                )
-            result["uploaded_records"] += accepted
-            result["batches"] += 1
-            for record in batch:
-                eid = str(record["event_id"])
-                state["sent"][eid] = marks[eid]
-            atomic_json(state_path, state)
+            result["status"] = "HEALTHY"
+            result["detail"] = (
+                "archive relay reachable; no pending changes"
+                if not records
+                else f"uploaded {result['uploaded_records']} evidence records"
+            )
+        except Exception as exc:
+            result["status"] = "DEGRADED"
+            result["detail"] = f"{type(exc).__name__}: {str(exc)[:260]}"
 
-        result["status"] = "HEALTHY"
-        result["detail"] = (
-            "archive relay reachable; no pending changes"
-            if not records
-            else f"uploaded {result['uploaded_records']} evidence records"
-        )
-    except Exception as exc:
-        result["status"] = "DEGRADED"
-        result["detail"] = f"{type(exc).__name__}: {str(exc)[:260]}"
+        # Persist a new/changed index even on an offline/no-upload cycle.
+        # A failed relay is safe: its sent ACK remains unchanged, so its
+        # entry is re-read/retried rather than skipped next time.
+        if state.get("event_file_index") != prior_index:
+            try:
+                atomic_json(state_path, state)
+            except Exception as exc:
+                result["status"] = "DEGRADED"
+                result["detail"] = f"{type(exc).__name__}: {str(exc)[:260]}"
 
+    # Do not stamp the BEGINNING of a long scan as a fresh END heartbeat.
+    result["cycle_duration_seconds"] = round(time.monotonic() - cycle_started, 3)
+    result["checked_at_utc"] = utc_now()
     atomic_json(heartbeat_path, result)
     return result
-
 
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser()
