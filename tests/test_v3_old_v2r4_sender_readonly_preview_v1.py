@@ -232,6 +232,15 @@ class ClosedOriginalSenderOfflineCutover(unittest.TestCase):
                                 for c in post.call_args_list))
             self.assertFalse((args.trading_root/'State/v2r4-paper-closed-aftercare-state.json').exists())
 
+    def test_conflicting_old_maintenance_marker_blocks_cloud(self):
+        with tempfile.TemporaryDirectory() as d:
+            args=self.fixture(Path(d))
+            (args.trading_root/'State/v2r4-technical-cutover-maintenance.json').write_text('{}')
+            with patch.object(MOD,'post') as post:
+                result=MOD.run_once(args)
+            self.assertEqual(result['status'],'DEGRADED')
+            post.assert_not_called()
+
     def test_arming_marker_blocks_any_sync_or_network(self):
         with tempfile.TemporaryDirectory() as d:
             args=self.fixture(Path(d),phase='ARMED')
