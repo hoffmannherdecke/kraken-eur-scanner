@@ -101,6 +101,7 @@ jobs:
             tests.test_v2r4_precandidate_discovery \
             tests.test_v2r4_precandidate_watcher \
             tests.test_v2r4_ws_shadow_watcher \
+            tests.test_v2r4_ws_shadow_file_access \
             tests.test_v2r4_tradability_policy \
             tests.test_v2r4_evaluator_watch_conditions \
             tests.test_v2r4_evaluator_contract \
