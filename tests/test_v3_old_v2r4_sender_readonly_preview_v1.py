@@ -273,6 +273,21 @@ class ClosedOriginalSenderOfflineCutover(unittest.TestCase):
             self.assertEqual(recovered['status'],'HEALTHY')
             self.assertEqual(recovered['accepted_original_updates'],2)
 
+    def test_closed_mode_refuses_late_old_wait_recheck(self):
+        with tempfile.TemporaryDirectory() as d:
+            args=self.fixture(Path(d))
+            rechecks=args.app_root/'paper_rechecks'
+            rechecks.mkdir()
+            rechecks.joinpath('late.json').write_text(json.dumps({
+                'series_id':OLD,'candidate_id':'O-C1',
+                'recheck_completed_at_utc':'2026-10-13T12:20:00Z',
+                'paper_only':True,'real_money_actions_enabled':False,
+                'decision':{'decision':'REJECT'}}))
+            with patch.object(MOD,'post') as post:
+                result=MOD.run_once(args)
+            self.assertEqual(result['status'],'DEGRADED')
+            post.assert_not_called()
+
     def test_aftercare_rejects_new_old_intake_and_unsafe_control(self):
         with tempfile.TemporaryDirectory() as d:
             args=self.fixture(Path(d))
