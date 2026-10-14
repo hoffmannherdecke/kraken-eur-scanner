@@ -152,6 +152,31 @@ function Test-V3OldIntakeNativeBaseline([object]$Record) {
   )
 }
 
+# Pure role validation. These PIDs are only a snapshot, never a stop-list.
+function Get-V3OldPaperMode([string]$Arguments) {
+  $matches=[regex]::Matches($Arguments,'(?i)(?:^|\s)["'']?--mode["'']?\s+["'']?(candidates|lifecycle)["'']?(?=\s|$)')
+  if($matches.Count -ne 1){return 'UNRESOLVED'}
+  return $matches[0].Groups[1].Value.ToLowerInvariant()
+}
+function Test-V3OriginalPaperModeLineage([object[]]$Rows,[string]$CandidatesTaskMode,[string]$LifecycleTaskMode) {
+  if($CandidatesTaskMode -cne 'candidates' -or $LifecycleTaskMode -cne 'lifecycle'){return $false}
+  if(@($Rows).Count -ne 4){return $false}
+  $pids=@($Rows | ForEach-Object { [int]$_.PID })
+  if(@($pids | Select-Object -Unique).Count -ne 4 -or @($pids | Where-Object {$_ -le 0}).Count -ne 0){return $false}
+  foreach($mode in @('candidates','lifecycle')){
+    $pair=@($Rows | Where-Object { [string]$_.Mode -ceq $mode })
+    if($pair.Count -ne 2 -or @($pair | Where-Object { $_.OriginalStage -ne $true }).Count -ne 0){return $false}
+    # Require exactly one parent->child pair within each mode, not any
+    # hard-coded PID. Ambiguity must fail closed.
+    $child=@($pair | Where-Object { [int]$_.ParentPID -eq [int]$pair[0].PID -or [int]$_.ParentPID -eq [int]$pair[1].PID })
+    if($child.Count -ne 1){return $false}
+    $root=@($pair | Where-Object { [int]$_.PID -ne [int]$child[0].PID })
+    if($root.Count -ne 1 -or [int]$child[0].ParentPID -ne [int]$root[0].PID){return $false}
+    if([int]$root[0].ParentPID -le 0 -or @($pids | Where-Object {$_ -eq [int]$root[0].ParentPID}).Count -gt 0){return $false}
+  }
+  return $true
+}
+
 # The old host runtime configuration directory is NOT a physical
 # Windows-task/sole-writer proof. Read only the four exact existing V2R4
 # task identities; never infer a running Paper writer from JSON controls.
@@ -181,6 +206,7 @@ foreach($name in @(
    action_executable_basename=$null
    action_script_basename='UNREAD'
    action_sha256=$null
+   paper_task_mode='UNREAD'
    documented_script_basename_hint_matches=$false
    principal_is_system=$false
    restart_count=$null
@@ -219,6 +245,9 @@ foreach($name in @(
      $action=$actions[0]
      $record.action_executable_basename=[System.IO.Path]::GetFileName([string]$action.Execute)
      $argsText=[string]$action.Arguments
+     if($name -in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperLifecycle')){
+       $record.paper_task_mode=Get-V3OldPaperMode -Arguments $argsText
+     }
      # The actual 13/14 October PR291 WAIT Task uses wait_launcher.py,
      # not the older 07 October direct v2r4_wait_runtime.py installer.
      $scriptTokens=[regex]::Matches($argsText,'(?i)(?:wait_launcher|v2r4_wait_runtime|v2r4-paper-local-runtime|v2r4-paper-cloud-sync)\.py')
@@ -261,6 +290,33 @@ foreach($name in @(
 $nativeOldIntake=@($v2r4PaperTasks | Where-Object { $_.task_name -in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait') })
 $nativePrecutoverBaselinePass=($nativeOldIntake.Count -eq 2 -and
   @($nativeOldIntake | Where-Object { -not $_.native_precutover_baseline_pass }).Count -eq 0)
+# Classify only existing original local Python source/mode. NEVER output the
+# raw task arguments or Win32_Process CommandLine: they can include secrets.
+# These are temporary role identities; a future stop operator MUST re-read.
+$paperModeRows=@()
+try{
+  $procs=@(Get-CimInstance Win32_Process -Filter "Name LIKE 'python%.exe'" -ErrorAction Stop)
+  foreach($proc in $procs){
+    $command=[string]$proc.CommandLine
+    if($command -notmatch '(?i)v2r4-paper-local-runtime\.py'){continue}
+    $paperModeRows+=@([pscustomobject]@{
+      mode=(Get-V3OldPaperMode -Arguments $command)
+      pid=[int]$proc.ProcessId
+      parentpid=[int]$proc.ParentProcessId
+      original_stage=$command.Contains((Join-Path $runtime 'v2r4-paper-stage-d8b35a8ec2e6'))
+    })
+  }
+}catch{
+  # Missing process visibility is explicitly not a pass.
+  $paperModeRows=@()
+}
+$modeCandidates=@($v2r4PaperTasks | Where-Object { $_.task_name -eq 'CryptoMiniPC-V2R4PaperCandidates' })
+$modeLifecycle=@($v2r4PaperTasks | Where-Object { $_.task_name -eq 'CryptoMiniPC-V2R4PaperLifecycle' })
+$modeRows=@($paperModeRows | ForEach-Object {
+  [pscustomobject]@{Mode=$_.mode;PID=$_.pid;ParentPID=$_.parentpid;OriginalStage=$_.original_stage}
+})
+$nativeOldModeLineagePass=($modeCandidates.Count -eq 1 -and $modeLifecycle.Count -eq 1 -and
+  (Test-V3OriginalPaperModeLineage -Rows $modeRows -CandidatesTaskMode $modeCandidates[0].paper_task_mode -LifecycleTaskMode $modeLifecycle[0].paper_task_mode))
 # Task-name matching is a conservative discovery hint only, not a proof that
 # an unrecognized V3 writer cannot exist under a different task name.
 $v3PaperTaskNames=@()
@@ -342,6 +398,9 @@ $ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $can
  physical_v2r4_paper_task_readback=$v2r4PaperTasks
  native_old_intake_precutover_readonly_baseline_pass=$nativePrecutoverBaselinePass
  native_old_intake_baseline_does_not_prove_postcutover_rearm_fence=$true
+ native_old_paper_mode_lineage_precutover_readonly_pass=$nativeOldModeLineagePass
+ native_old_paper_mode_lineage_snapshot_only_no_stop_authority=$true
+ native_old_paper_mode_rows=@($paperModeRows)
  physical_task_action_sha256_has_no_raw_arguments=$true
  physical_pr291_wait_launcher_basename_only_not_loaded_module_sha_proof=$true
  physical_supervisor_and_windows_rearm_fence_proven=$false
