@@ -126,6 +126,32 @@ try{
  $taskScheduleReadbackStatus='SCHEDULE_OR_ACTION_NOT_READABLE_NO_STOP_CLAIM'
 }
 
+# Interpret existing native Task records only: pre-cutover baseline, not a stop proof.
+# This policy MUST remain pure so CI can execute it without Windows/Cloud side effects.
+function Test-V3OldIntakeNativeBaseline([object]$Record) {
+  if($null -eq $Record){ return $false }
+  $scripts=@{
+    'CryptoMiniPC-V2R4PaperCandidates'='v2r4-paper-local-runtime.py'
+    'CryptoMiniPC-V2R4PaperWait'='wait_launcher.py'
+  }
+  $name=[string]$Record.task_name
+  if(-not $scripts.ContainsKey($name)){ return $false }
+  return (
+    [string]$Record.state -eq 'Running' -and
+    $Record.principal_is_system -eq $true -and
+    [int]$Record.action_count -eq 1 -and
+    $Record.documented_script_basename_hint_matches -eq $true -and
+    [string]$Record.action_script_basename -ceq [string]$scripts[$name] -and
+    [int]$Record.trigger_count -eq 1 -and
+    $Record.only_boot_trigger -eq $true -and
+    [int]$Record.restart_count -eq 3 -and
+    [string]$Record.restart_interval -ceq 'PT1M' -and
+    [string]$Record.multiple_instances -ceq 'IgnoreNew' -and
+    [string]$Record.native_scheduler_xml_status -ceq 'READ' -and
+    $Record.heartbeat_fresh_for_role -eq $true
+  )
+}
+
 # The old host runtime configuration directory is NOT a physical
 # Windows-task/sole-writer proof. Read only the four exact existing V2R4
 # task identities; never infer a running Paper writer from JSON controls.
@@ -160,6 +186,10 @@ foreach($name in @(
    restart_count=$null
    restart_interval=$null
    multiple_instances=$null
+   trigger_count=$null
+   only_boot_trigger=$false
+   native_scheduler_xml_status='UNREAD'
+   native_precutover_baseline_pass=$false
    heartbeat_status='UNREAD'
    heartbeat_age_seconds=$null
    heartbeat_fresh_for_role=$false
@@ -175,6 +205,14 @@ foreach($name in @(
    $record.restart_count=[int]$oldTask.Settings.RestartCount
    $record.restart_interval=[string]$oldTask.Settings.RestartInterval
    $record.multiple_instances=[string]$oldTask.Settings.MultipleInstances
+   # Existing Windows Scheduler XML is observed, never edited or printed.
+   try{
+     $nativeXml=[xml](Export-ScheduledTask -TaskName $name -ErrorAction Stop)
+     $triggers=@($nativeXml.SelectNodes('/*[local-name()="Task"]/*[local-name()="Triggers"]/*'))
+     $record.trigger_count=$triggers.Count
+     $record.only_boot_trigger=($triggers.Count -eq 1 -and $triggers[0].LocalName -eq 'BootTrigger')
+     $record.native_scheduler_xml_status='READ'
+   }catch{$record.native_scheduler_xml_status='UNREADABLE'}
    $actions=@($oldTask.Actions)
    $record.action_count=$actions.Count
    if($actions.Count -eq 1){
@@ -213,12 +251,16 @@ foreach($name in @(
        )
      }catch{$record.heartbeat_status='UNREADABLE_OR_INVALID'}
    }else{$record.heartbeat_status='MISSING'}
+   $record.native_precutover_baseline_pass=Test-V3OldIntakeNativeBaseline -Record ([pscustomobject]$record)
    $record.evidence='PARTIAL_TASK_ACTION_AND_HEARTBEAT_READBACK_NOT_LIVE_SOURCE_OR_REARM_PROOF'
  }catch{
    $record.evidence='NOT_FOUND_OR_TASK_INFO_UNAVAILABLE_NOT_PROVEN'
  }
  $v2r4PaperTasks+=@([pscustomobject]$record)
 }
+$nativeOldIntake=@($v2r4PaperTasks | Where-Object { $_.task_name -in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait') })
+$nativePrecutoverBaselinePass=($nativeOldIntake.Count -eq 2 -and
+  @($nativeOldIntake | Where-Object { -not $_.native_precutover_baseline_pass }).Count -eq 0)
 # Task-name matching is a conservative discovery hint only, not a proof that
 # an unrecognized V3 writer cannot exist under a different task name.
 $v3PaperTaskNames=@()
@@ -298,6 +340,8 @@ $ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $can
  active_v2r4_host_runtime_count=$oldApps.Count
  active_v2r4_host_runtime_count_is_config_files_not_processes=$true
  physical_v2r4_paper_task_readback=$v2r4PaperTasks
+ native_old_intake_precutover_readonly_baseline_pass=$nativePrecutoverBaselinePass
+ native_old_intake_baseline_does_not_prove_postcutover_rearm_fence=$true
  physical_task_action_sha256_has_no_raw_arguments=$true
  physical_pr291_wait_launcher_basename_only_not_loaded_module_sha_proof=$true
  physical_supervisor_and_windows_rearm_fence_proven=$false
