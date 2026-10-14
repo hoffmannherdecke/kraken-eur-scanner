@@ -198,7 +198,7 @@ foreach($name in @(
    }
    # Read only the already-existing Supervisor heartbeat file, not secrets
    # or process command lines; status/age is not PID or source-module identity.
-   $hbPath=Join-Path $state [string]$role.heartbeat
+   $hbPath=Join-Path $state ([string]$role.heartbeat)
    if(Test-Path -LiteralPath $hbPath -PathType Leaf){
      try{
        $hb=Get-Content -LiteralPath $hbPath -Raw | ConvertFrom-Json
