@@ -127,7 +127,10 @@ def load_state(path: Path) -> dict[str, Any]:
         }
     try:
         state = load_json(path)
-    except Exception:
+    except OSError:
+        # A protected/locked state file must NEVER be treated as a fresh state.
+        raise
+    except (ValueError, UnicodeError):
         return load_state(Path("__missing__"))
     if int(state.get("schema_version", 0)) != STATE_SCHEMA:
         return load_state(Path("__missing__"))
