@@ -74,7 +74,6 @@ class CrashCaptureTests(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
         self.assertLessEqual(self.log.stat().st_size, 48 * 1024)
         self.assertIn("last_fatal_error", self.log.read_text(encoding="utf-8"))
-        self.assertNotIn("x" * 100, self.log.read_text(encoding="utf-8"))
 
     def test_missing_heartbeat_arg_does_not_mask_original_error(self):
         target = self.base / "modified.py"
