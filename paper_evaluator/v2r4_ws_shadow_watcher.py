@@ -71,11 +71,28 @@ def parse_utc(value: Any) -> datetime:
     return dt.astimezone(timezone.utc)
 
 
+# Windows may briefly refuse a read or atomic replacement while another
+# process has a file handle open. Retry ONLY PermissionError, for at most
+# 0.5 seconds. Persistent ACL failures still propagate to the crash logger.
+WINDOWS_ACCESS_RETRY_DELAYS = (0.04, 0.08, 0.14, 0.24)
+
+
+def retry_windows_file_access(operation):
+    for delay in (*WINDOWS_ACCESS_RETRY_DELAYS, None):
+        try:
+            return operation()
+        except PermissionError:
+            if delay is None:
+                raise
+            time.sleep(delay)
+
+
 def atomic_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(json.dumps(payload, separators=(",", ":"), sort_keys=True) + "\n", "utf-8")
-    tmp.replace(path)
+    serialized = json.dumps(payload, separators=(",", ":"), sort_keys=True) + "\n"
+    retry_windows_file_access(lambda: tmp.write_text(serialized, "utf-8"))
+    retry_windows_file_access(lambda: tmp.replace(path))
 
 
 def append_jsonl(path: Path, payload: dict[str, Any], max_bytes: int = 20 * 1024 * 1024) -> None:
@@ -89,7 +106,8 @@ def append_jsonl(path: Path, payload: dict[str, Any], max_bytes: int = 20 * 1024
 
 
 def load_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text("utf-8"))
+    # Keep parse errors visible; only brief OS-level access denial is retried.
+    return json.loads(retry_windows_file_access(lambda: path.read_text("utf-8")))
 
 
 def load_state(path: Path) -> dict[str, Any]:
