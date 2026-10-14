@@ -180,6 +180,8 @@ def closed_aftercare_authority(root,control):
     """
     import re
     path=root/'State/v3-experimental-paper-old-intake-fence.json'
+    if (root/'State/v2r4-technical-cutover-maintenance.json').exists():
+        raise ValueError('conflicting original technical maintenance marker')
     marker=load_json(path)
     expected=['CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait']
     old='PAPER-V2R4-20261009T110135Z'
