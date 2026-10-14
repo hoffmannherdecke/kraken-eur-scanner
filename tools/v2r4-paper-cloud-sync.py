@@ -343,6 +343,10 @@ def run_closed_aftercare_once(args):
 
 
 def run_once(args):
+    # No extra task or parameter switch: same CloudSync owner changes lanes
+    # only when the separately authorized PR309 cutover marker exists.
+    if (args.trading_root/'State/v3-experimental-paper-old-intake-fence.json').exists():
+        return run_closed_aftercare_once(args)
     hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'
     state_path=(getattr(args,'paper_state_dir',None) or (args.trading_root/'State'))/'v2r4-paper-cloud-sync-state.json'
     token=load_token(args.trading_root)
