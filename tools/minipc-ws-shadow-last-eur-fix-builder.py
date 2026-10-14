@@ -12,7 +12,7 @@ HUNKS = [
   '    stale_pairs = 0\n    changed_pairs = 0\n    invalid_price_pairs = 0\n    triggered_pairs = 0\n'),
  ('        changed_pairs += 1\n\n        market = normalize_market(raw)\n        current_price = float(market["last_eur"])\n',
   '        # Kraken WS ticker may legitimately arrive before a last-trade price.\n'
-  "        # Never substitute bid/ask/VWAP as a trade price or consume this pair's\\n"
+  "        # Never substitute bid/ask/VWAP as a trade price or consume this pair's\n"
   '        # timestamp. A later valid update must still be processed normally.\n'
   '        try:\n'
   '            market = normalize_market(raw)\n'
