@@ -144,8 +144,8 @@ try {
   $supervisorDisabled = $true
   if ((Task $supervisorName).State -ne 'Disabled') { throw 'Supervisor nicht sicher deaktiviert' }
 
-  Stop-ScheduledTask -TaskName $targetName -ErrorAction Stop
   $cloudStopped = $true
+  Stop-ScheduledTask -TaskName $targetName -ErrorAction Stop
   Wait-NotRunning $targetName 30
   Assert-NoCloudWorker
 
