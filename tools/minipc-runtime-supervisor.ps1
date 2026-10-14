@@ -99,6 +99,30 @@ function Test-WaitRateOnly([object]$Heartbeat,[object]$AgeSeconds,[double]$MaxAg
   return $true
 }
 
+# V3 scoped policy, inside existing Supervisor; absent marker = unchanged.
+# A local marker is not a physical stop or Cloud CAS/release receipt.
+function Test-V3PaperIntakeFence([bool]$Present,[object]$Marker) {
+  if(-not $Present){ return "NONE" }
+  if($null -eq $Marker){ return "INVALID_FAIL_CLOSED" }
+  $expected=@("CryptoMiniPC-V2R4PaperCandidates","CryptoMiniPC-V2R4PaperWait")
+  $got=@($Marker.task_names | Sort-Object)
+  if($Marker.kind -ne "V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1" -or
+     $Marker.phase -notin @("ARMED","QUIESCED","CLOUD_COMMITTED") -or
+     $Marker.predecessor_series_id -ne "PAPER-V2R4-20261009T110135Z" -or
+     [string]$Marker.proposed_successor_series_id -notmatch '^PAPER-V3-[A-Za-z0-9-]{8,96}$' -or
+     [string]$Marker.proposed_v3_repo_sha -notmatch '^[a-f0-9]{40}$' -or
+     [string]$Marker.proposed_v3_bundle_sha256 -notmatch '^[a-f0-9]{64}$' -or
+     [string]$Marker.proposed_v3_strategy_sha256 -notmatch '^[a-f0-9]{64}$' -or
+     $Marker.paper_only -ne $true -or
+     $Marker.orders_enabled -ne $false -or
+     $Marker.real_money_actions -ne $false -or
+     $Marker.persistent_until_explicit_owner_release -ne $true -or
+     ($got -join '|') -cne ($expected -join '|')) {
+    return "INVALID_FAIL_CLOSED"
+  }
+  return [string]$Marker.phase
+}
+
 $specs = @(
   [pscustomobject]@{ name="CryptoMiniPC-KrakenCanary"; path=(Join-Path $stateDir "kraken-canary-heartbeat.json"); max_age=60.0; good=@("HEALTHY","CONNECTED"); restart_backoff_min=$MinRestartIntervalMinutes },
   [pscustomobject]@{ name="CryptoMiniPC-KrakenUniverse"; path=(Join-Path $stateDir "kraken-eur-universe-heartbeat.json"); max_age=90.0; good=@("HEALTHY","CONNECTED"); restart_backoff_min=$MinRestartIntervalMinutes },
@@ -150,6 +174,22 @@ if(Test-Path -LiteralPath $maintenanceFile){
       $maintenanceMode=if((Get-Date).ToUniversalTime() -gt $expires){"EXPIRED_FAIL_CLOSED"}else{"ACTIVE"}
     }
   } catch { $maintenanceMode="INVALID_FAIL_CLOSED" }
+}
+
+# Older maintenance marker is bound to 07 Oct, not this 09 Oct predecessor.
+# V3 marker MUST NOT be installed during normal V2R4 Paper operation.
+$v3IntakeTasks=@("CryptoMiniPC-V2R4PaperCandidates","CryptoMiniPC-V2R4PaperWait")
+$v3FenceFile=Join-Path $stateDir "v3-experimental-paper-old-intake-fence.json"
+$v3FencePresent=Test-Path -LiteralPath $v3FenceFile
+# Even an unexpected DIRECTORY at this marker path fails closed on read.
+$v3FenceReceipt=$null
+if($v3FencePresent){
+  try{$v3FenceReceipt=Get-Content -LiteralPath $v3FenceFile -Raw | ConvertFrom-Json}
+  catch{$v3FenceReceipt=$null}
+}
+$v3FenceMode=Test-V3PaperIntakeFence -Present $v3FencePresent -Marker $v3FenceReceipt
+if($v3FenceMode -ne "NONE" -and $maintenanceMode -ne "NONE"){
+  $v3FenceMode="INVALID_FAIL_CLOSED"
 }
 
 # Post-cutover V3-H3-001 is permanently frozen on its ORIGINAL baseline.
@@ -215,6 +255,24 @@ try {
         task=$spec.name; installed=$true; healthy_before=$null
         action=$(if($maintenanceMode -eq "ACTIVE"){"MAINTENANCE_SKIP"}else{"MAINTENANCE_FAIL_CLOSED"})
         before=$null; healthy_after=$null; after=$null
+      }
+      continue
+    }
+    if($v3FenceMode -ne "NONE" -and $spec.name -in $v3IntakeTasks){
+      # Supervisor-only skip: Windows recovery, PID stop and aftercare
+      # all require separate independent physical evidence.
+      $guardedTask=Get-ScheduledTask -TaskName $spec.name -ErrorAction SilentlyContinue
+      $guardedState=if($guardedTask){[string]$guardedTask.State}else{"MISSING"}
+      $requiresDisabled=($v3FenceMode -in @("QUIESCED","CLOUD_COMMITTED"))
+      $violation=$requiresDisabled -and $guardedState -ne "Disabled"
+      $rows += [pscustomobject]@{
+        task=$spec.name; installed=($null -ne $guardedTask)
+        healthy_before=$null
+        action=$(if($v3FenceMode -eq "INVALID_FAIL_CLOSED"){"V3_FENCE_INVALID_FAIL_CLOSED"}
+          elseif($violation){"V3_FENCE_VIOLATION_WINDOWS_TASK_NOT_DISABLED"}
+          else{"V3_INTAKE_SUPERVISOR_REARM_BLOCKED"})
+        before=[pscustomobject]@{scheduler_state=$guardedState}
+        healthy_after=$null; after=$null
       }
       continue
     }
@@ -314,7 +372,7 @@ try {
 
   $allHealthy = $true
   foreach ($row in $rows) {
-    if($row.action -in @("MAINTENANCE_SKIP","MAINTENANCE_FAIL_CLOSED","ARCHIVED_BASELINE_NOT_RESTARTED")){ continue }
+    if($row.action -in @("MAINTENANCE_SKIP","MAINTENANCE_FAIL_CLOSED","ARCHIVED_BASELINE_NOT_RESTARTED","V3_FENCE_INVALID_FAIL_CLOSED","V3_FENCE_VIOLATION_WINDOWS_TASK_NOT_DISABLED","V3_INTAKE_SUPERVISOR_REARM_BLOCKED")){ continue }
     if (-not $row.installed) { continue }
     $spec = $specs | Where-Object { $_.name -eq $row.task } | Select-Object -First 1
     $task = Get-ScheduledTask -TaskName $row.task -ErrorAction SilentlyContinue
@@ -354,7 +412,10 @@ try {
     if (-not $healthy) { $allHealthy = $false }
   }
 
-  $status = if($maintenanceMode -in @("INVALID_FAIL_CLOSED","EXPIRED_FAIL_CLOSED")){"CRITICAL"}
+  $v3FenceViolation=@($rows | Where-Object { $_.action -eq "V3_FENCE_VIOLATION_WINDOWS_TASK_NOT_DISABLED" }).Count -gt 0
+  $status = if($v3FenceMode -eq "INVALID_FAIL_CLOSED" -or $v3FenceViolation){"CRITICAL"}
+    elseif($maintenanceMode -in @("INVALID_FAIL_CLOSED","EXPIRED_FAIL_CLOSED")){"CRITICAL"}
+    elseif($v3FenceMode -ne "NONE"){"WARNING"}
     elseif ($failed.Count -gt 0) { "CRITICAL" } elseif ($allHealthy) { "HEALTHY" } else { "WARNING" }
 } catch {
   $status = "CRITICAL"
@@ -375,6 +436,16 @@ $report = [pscustomobject]@{
     scoped_task_names=@($maintenanceTasks)
     order_api=$false
     real_money_actions=$false
+  }
+  v3_paper_old_intake_fence=[pscustomobject]@{
+    mode=$v3FenceMode
+    marker_present=$v3FencePresent
+    protected_supervisor_task_names=@($v3IntakeTasks)
+    old_aftercare_tasks_remain_in_supervisor_scope=$true
+    windows_scheduler_rearm_fence_proven=$false
+    physical_stop_process_tree_ack_proven=$false
+    historical_followup_exit_cloud_ack_proven=$false
+    v3_cloud_cas_or_release_authorized=$false
   }
   kraken_upstream_healthy=$krakenSourceHealthy
   error=$topError

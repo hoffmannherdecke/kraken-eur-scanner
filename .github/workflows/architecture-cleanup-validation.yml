@@ -97,6 +97,10 @@ jobs:
           }
           Write-Host 'V3 28H WINDOWS CANARY SCRIPTS PARSE PASS'
           python -m unittest tests.test_v3_bounded_canary_task_policy_v1 -v
+      - name: V3 scoped Supervisor old Paper intake fence (pure policy, no Windows tasks)
+        shell: pwsh
+        run: |
+          ./tests/test_minipc_supervisor_rate_only.ps1
       - name: V3 actual post-28h Supabase snapshot read-only one-shot report CLI
         run: |
           python -m py_compile tools/v3-post-canary-evidence-readonly-report.py
