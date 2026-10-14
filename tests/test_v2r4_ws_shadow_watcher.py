@@ -141,6 +141,63 @@ class V2R4WSShadowWatcherTests(unittest.TestCase):
         self.assertEqual(heartbeat["stale_pairs"], 1)
         self.assertEqual(heartbeat["changed_pairs"], 0)
 
+    def test_missing_last_eur_is_skipped_without_crashing_or_emitting(self):
+        now = datetime(2026, 10, 1, 6, 0, tzinfo=timezone.utc)
+        state = base_state(now)
+        snap = snapshot(now)
+        snap["pairs"]["TEST/EUR"]["last_eur"] = None
+        state, events, hb = run(snap, state, now)
+        self.assertEqual(events, [])
+        self.assertEqual(hb["status"], "HEALTHY")
+        self.assertEqual(hb["invalid_price_pairs"], 1)
+        self.assertEqual(hb["changed_pairs"], 0)
+        self.assertEqual(state["counters"]["events_emitted"], 0)
+        self.assertIsNone(state["pairs"]["TEST/EUR"]["last_pair_received_at_utc"])
+
+    def test_one_missing_last_does_not_block_valid_pair(self):
+        now = datetime(2026, 10, 1, 6, 0, tzinfo=timezone.utc)
+        state = base_state(now)
+        snap = snapshot(now)
+        invalid = dict(snap["pairs"]["TEST/EUR"])
+        invalid["last_eur"] = None
+        snap["pairs"]["BAD/EUR"] = invalid
+        state, events, hb = run(snap, state, now)
+        self.assertEqual(hb["invalid_price_pairs"], 1)
+        self.assertEqual(hb["changed_pairs"], 1)
+        self.assertEqual([event["pair"] for event in events], ["TEST/EUR"])
+        self.assertFalse(any(event["pair"] == "BAD/EUR" for event in events))
+        self.assertEqual(state["counters"]["events_emitted"], 1)
+
+    def test_later_valid_price_recovers_same_pair_without_replay(self):
+        now = datetime(2026, 10, 1, 6, 0, tzinfo=timezone.utc)
+        state = base_state(now)
+        bad = snapshot(now)
+        bad["pairs"]["TEST/EUR"]["last_eur"] = 0
+        state, events1, hb1 = run(bad, state, now)
+        self.assertEqual(events1, [])
+        self.assertEqual(hb1["invalid_price_pairs"], 1)
+        later = now + timedelta(seconds=2)
+        good = snapshot(later, price=102.0)
+        state, events2, hb2 = run(good, state, later)
+        self.assertEqual(hb2["invalid_price_pairs"], 0)
+        self.assertEqual(len(events2), 1)
+        self.assertEqual(events2[0]["last_eur"], 102.0)
+        self.assertEqual(state["pairs"]["TEST/EUR"]["last_pair_received_at_utc"], iso(later))
+
+    def test_nonfinite_last_is_never_used_for_market_returns(self):
+        now = datetime(2026, 10, 1, 6, 0, tzinfo=timezone.utc)
+        for invalid in ("NaN", "inf", "-inf", -1, "bad", None):
+            with self.subTest(last_eur=invalid):
+                snap = snapshot(now)
+                snap["pairs"]["TEST/EUR"]["last_eur"] = invalid
+                state, events, hb = run(snap, base_state(now), now)
+                self.assertEqual(events, [])
+                self.assertEqual(hb["invalid_price_pairs"], 1)
+                self.assertEqual(state["pairs"]["TEST/EUR"]["samples"], [
+                    [int((now - timedelta(minutes=10)).timestamp()), 100.0]
+                ])
+
+
 
 if __name__ == "__main__":
     unittest.main()
