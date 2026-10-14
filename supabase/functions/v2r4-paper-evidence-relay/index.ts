@@ -194,10 +194,12 @@ Deno.serve(async(req:Request)=>{
     const sid=String(body?.series_id??"");
     const revision=String(body?.strategy_revision??"");
     const expectedSha=String(body?.expected_old_release_sha??"");
+    const expectedV3Sid=String(body?.expected_active_v3_series_id??"");
     const candidates=body?.candidates, trades=body?.trades;
     if(!/^PAPER-V2R4-\d{8}T\d{6}Z$/.test(sid)||
        revision!=="V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION"||
-       !/^[0-9a-f]{40}$/.test(expectedSha))
+       !/^[0-9a-f]{40}$/.test(expectedSha)||
+       !/^PAPER-V3-\d{8}T\d{6}Z$/.test(expectedV3Sid))
       return response(400,{ok:false,error:"invalid_closed_original_series_identity"});
     if(!Array.isArray(candidates)||candidates.length>20||
        !Array.isArray(trades)||trades.length>20||
@@ -213,10 +215,11 @@ Deno.serve(async(req:Request)=>{
       return response(409,{ok:false,error:"original_series_not_released_for_closed_followups"});
 
     const {data:activeRows,error:activeErr}=await admin.from("paper_series")
-      .select("series_id,status,strategy_revision")
+      .select("series_id,status,strategy_revision,config")
       .eq("status","active").limit(2);
     if(activeErr||!Array.isArray(activeRows)||activeRows.length!==1||
-       !String(activeRows[0]?.series_id??"").startsWith("PAPER-V3-")||
+       activeRows[0]?.series_id!==expectedV3Sid||
+       activeRows[0]?.config?.predecessor_series_id!==sid||
        !String(activeRows[0]?.strategy_revision??"").startsWith("V3-"))
       return response(409,{ok:false,error:"unique_active_v3_successor_not_verified"});
 
