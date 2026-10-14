@@ -76,8 +76,9 @@ jobs:
         shell: powershell
         run: |
           python -m py_compile .\tools\minipc-altrady-poller.py .\tools\minipc-altrady-live-alert-proof.py .\tools\minipc-altrady-e2e-smoke.py .\tools\minipc-kraken-universe-feed.py .\tools\v2r4-ws-shadow-evidence.py .\tools\v2r4-ws-shadow-outcome-tracker.py .\tools\v2r4-shadow-cloud-sync.py .\tools\minipc-status-sync.py .\tools\minipc-github-cadence-guard.py .\tools\paper-runtime-reconciliation-audit.py .\tools\v2r4-paper-local-runtime.py .\tools\v2r4-paper-cloud-sync.py .\tools\v2r4-paper-alerts.py .\tools\v3-h3-shadow-runtime.py .\tools\v3_h3_shadow_common.py .\tools\v3-h3-kraken-ws-book-reconciliation-smoke.py
-          python -m py_compile tools/minipc-ws-shadow-crash-footer.py tests/test_minipc_ws_shadow_crash_capture.py
-          python -m unittest tests.test_minipc_ws_shadow_crash_capture -v
+          python -m py_compile tools/minipc-ws-shadow-crash-footer.py tools/minipc-ws-shadow-last-eur-fix-builder.py tests/test_minipc_ws_shadow_crash_capture.py tests/test_minipc_ws_shadow_last_eur_fix_builder.py
+          python -m unittest tests.test_minipc_ws_shadow_crash_capture tests.test_minipc_ws_shadow_last_eur_fix_builder -v
+          if ($LASTEXITCODE -ne 0) { throw 'WS_SHADOW_FIX_REGRESSIONS_FAILED' }
           python .\tools\minipc-github-cadence-guard.py --self-test
           Write-Host 'PYTHON_TRANSPORT_PARSE_OK'
 
@@ -113,6 +114,7 @@ jobs:
             'tools/minipc-v2r4-technical-cutover-operator.ps1',
             'tools/minipc-v2r4-shadow-cloud-sync-pr295-cutover.ps1',
             'tools/minipc-ws-shadow-crash-capture-operator.ps1',
+            'tools/minipc-ws-shadow-last-eur-fix-operator.ps1',
             'tools/minipc-runtime-supervisor.ps1',
             'tools/install-minipc-runtime-supervisor.ps1',
             'tools/minipc-runtime-supervisor-selfheal-smoke.ps1',
@@ -173,6 +175,21 @@ jobs:
           }
           if(-not $caught -or (Test-Path $root)){ throw 'Unverified host could mutate' }
           Write-Host 'WS_SHADOW_CAPTURE_NO_HOST_NO_MUTATION_PASS'
+
+      - name: WS Shadow fixed-price rollout refuses missing source
+        shell: powershell
+        run: |
+          $root=Join-Path $env:RUNNER_TEMP 'ws-shadow-absent-price-fix-fixture'
+          if(Test-Path $root){throw 'Fixture unexpectedly present'}
+          $caught=$false
+          try {
+            & ./tools/minipc-ws-shadow-last-eur-fix-operator.ps1 -TradingRoot $root -PatcherPath ./tools/minipc-ws-shadow-last-eur-fix-builder.py -Apply
+          } catch {
+            if($_.Exception.Message -notlike '*Get-ScheduledTask*' -and $_.Exception.Message -notlike '*Cannot find*' -and $_.Exception.Message -notlike '*No MSFT_ScheduledTask*') {throw}
+            $caught=$true
+          }
+          if(-not $caught -or (Test-Path $root)){throw 'Unverified host mutated'}
+          Write-Host 'WS_SHADOW_FIX_NO_HOST_NO_MUTATION_PASS'
 
       - name: Technical rollover preflight fails closed without writing anything
         shell: powershell
