@@ -260,6 +260,22 @@ class ClosedOriginalSenderOfflineCutover(unittest.TestCase):
             state=json.loads((args.trading_root/'State/v2r4-paper-closed-aftercare-state.json').read_text())
             self.assertEqual(len(state['sent']),2)
 
+    def test_pre_cutover_active_ack_deduplicates_closed_replays(self):
+        with tempfile.TemporaryDirectory() as d:
+            args=self.fixture(Path(d))
+            _,candidates,trades=MOD.collect(args.app_root)
+            already={}
+            for prefix,rows in (('candidate',candidates),('trade',trades)):
+                for row in rows:
+                    already[f"{prefix}:{row['candidate_id']}"]=MOD.row_hash(row)
+            state=args.trading_root/'State/v2r4-paper-cloud-sync-state.json'
+            state.write_text(json.dumps({'schema_version':1,'sent':already}))
+            with patch.object(MOD,'post') as post:
+                result=MOD.run_once(args)
+            self.assertEqual(result['status'],'HEALTHY')
+            self.assertEqual(result['batches'],0)
+            post.assert_not_called()
+
     def test_cloud_failure_never_advances_cursor(self):
         with tempfile.TemporaryDirectory() as d:
             args=self.fixture(Path(d))
