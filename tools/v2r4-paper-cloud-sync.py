@@ -174,6 +174,43 @@ def closed_original_readonly_preview(control,candidates,trades,*,old_series_id,
             'batches':batches}
 
 
+def closed_aftercare_authority(root,control):
+    """Fail closed on a PR309 marker until original CAS is committed.
+    This is only a local prerequisite. The Edge must independently verify CAS.
+    """
+    import re
+    path=root/'State/v3-experimental-paper-old-intake-fence.json'
+    marker=load_json(path)
+    expected=['CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait']
+    old='PAPER-V2R4-20261009T110135Z'
+    new=marker.get('proposed_successor_series_id')
+    sha=control.get('release_repo_sha')
+    if (marker.get('kind')!='V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1'
+            or marker.get('phase')!='CLOUD_COMMITTED'
+            or marker.get('predecessor_series_id')!=old
+            or not isinstance(new,str)
+            or not re.fullmatch(r'PAPER-V3-[0-9]{8}T[0-9]{6}Z',new)
+            or not isinstance(sha,str)
+            or not re.fullmatch(r'[0-9a-f]{40}',sha)
+            or not re.fullmatch(r'[0-9a-f]{40}',str(marker.get('proposed_v3_repo_sha','')))
+            or not re.fullmatch(r'[0-9a-f]{64}',str(marker.get('proposed_v3_bundle_sha256','')))
+            or not re.fullmatch(r'[0-9a-f]{64}',str(marker.get('proposed_v3_strategy_sha256','')))
+            or sorted(marker.get('task_names') or [])!=expected
+            or marker.get('paper_only') is not True
+            or marker.get('orders_enabled') is not False
+            or marker.get('real_money_actions') is not False
+            or marker.get('persistent_until_explicit_owner_release') is not True
+            or control.get('series_id')!=old
+            or control.get('strategy_revision')!='V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION'
+            or control.get('paper_only') is not True
+            or control.get('real_money_actions_enabled') is not False):
+        raise ValueError('closed-original source identity or committed fence unverified')
+    cutoff=datetime.strptime(new.removeprefix('PAPER-V3-'),'%Y%m%dT%H%M%SZ').replace(tzinfo=timezone.utc)
+    if cutoff>datetime.now(timezone.utc):
+        raise ValueError('V3 successor cutover time in future')
+    return old,new,sha,cutoff.isoformat().replace('+00:00','Z')
+
+
 def actionable_keys(control,candidates,trades):
     sid=control['series_id']; keys=set()
     for row in candidates:
