@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import bisect
 import json
+import math
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -170,7 +171,7 @@ def normalize_market(row: dict[str, Any]) -> dict[str, float | None]:
     last = _num(row.get("last_eur"))
     spread = _num(row.get("spread_pct"))
     turnover = _num(row.get("turnover24_est_eur"))
-    if last is None or last <= 0:
+    if last is None or not math.isfinite(last) or last <= 0:
         raise ValueError("missing positive last_eur")
     if spread is None and bid and ask and ask >= bid:
         mid = (bid + ask) / 2.0
@@ -259,6 +260,7 @@ def process_snapshot(
     now_ts = int(now.timestamp())
     stale_pairs = 0
     changed_pairs = 0
+    invalid_price_pairs = 0
     triggered_pairs = 0
 
     for pair, raw in pair_rows.items():
@@ -287,9 +289,17 @@ def process_snapshot(
         received_key = iso(received)
         if pair_state.get("last_pair_received_at_utc") == received_key:
             continue
+        # Kraken WS ticker may legitimately arrive before a last-trade price.
+        # Never substitute bid/ask/VWAP as a trade price or consume this pair's
+        # timestamp. A later valid update must still be processed normally.
+        try:
+            market = normalize_market(raw)
+        except ValueError as exc:
+            if str(exc) != "missing positive last_eur":
+                raise
+            invalid_price_pairs += 1
+            continue
         changed_pairs += 1
-
-        market = normalize_market(raw)
         current_price = float(market["last_eur"])
         returns = compute_returns(pair_state.get("samples", []), now_ts, current_price)
         add_sample(pair_state, now_ts, current_price, sample_seconds)
@@ -362,6 +372,7 @@ def process_snapshot(
         "snapshot_observed_pair_count": int(snapshot.get("observed_pair_count") or len(pair_rows)),
         "changed_pairs": changed_pairs,
         "stale_pairs": stale_pairs,
+        "invalid_price_pairs": invalid_price_pairs,
         "triggered_pairs": triggered_pairs,
         "events_emitted_cycle": len(events),
         "gap_suppressed": gap_suppressed,
