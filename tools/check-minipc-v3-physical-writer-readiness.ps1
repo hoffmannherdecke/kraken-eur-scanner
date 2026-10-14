@@ -295,7 +295,7 @@ $nativePrecutoverBaselinePass=($nativeOldIntake.Count -eq 2 -and
 # These are temporary role identities; a future stop operator MUST re-read.
 $paperModeRows=@()
 try{
-  $procs=@(Get-CimInstance Win32_Process -Filter "Name='python.exe' OR Name='pythonw.exe'" -ErrorAction Stop)
+  $procs=@(Get-CimInstance Win32_Process -Filter "Name LIKE 'python%.exe'" -ErrorAction Stop)
   foreach($proc in $procs){
     $command=[string]$proc.CommandLine
     if($command -notmatch '(?i)v2r4-paper-local-runtime\.py'){continue}
