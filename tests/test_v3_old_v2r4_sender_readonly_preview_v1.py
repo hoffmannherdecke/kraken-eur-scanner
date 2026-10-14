@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
 SCRIPT=ROOT/"tools/v2r4-paper-cloud-sync.py"
@@ -160,6 +161,178 @@ class ClosedOriginalSenderPreview(unittest.TestCase):
             self.assertEqual(out["old_terminal_trade_count"],1)
             self.assertNotIn("batches",out)
             self.assertFalse((root/"uncreated").exists())
+
+
+
+class ClosedOriginalSenderOfflineCutover(unittest.TestCase):
+    def fixture(self,root,phase='CLOUD_COMMITTED'):
+        control,candidate,trade=original()
+        control['release_repo_sha']=SHA
+        app=root/'app'
+        for name in ('paper_decisions','paper_followups','paper_positions'):
+            (app/name).mkdir(parents=True)
+        (app/'paper_runtime_control.json').write_text(json.dumps(control))
+        (app/'paper_decisions'/'candidate.json').write_text(
+            json.dumps(candidate['payload']['decision']))
+        (app/'paper_followups'/'follow.json').write_text(
+            json.dumps(candidate['followup']))
+        (app/'paper_positions'/'trade.json').write_text(json.dumps({
+            'candidate_id':trade['candidate_id'],'series_id':OLD,
+            'pair':'ETH/EUR','status':'CLOSED',
+            'opened_at_utc':trade['opened_at'],
+            'exit':{'closed_at_utc':trade['closed_at'],
+                    'net_pnl_eur':trade['net_pnl_eur'],
+                    'net_return_pct':trade['net_return_pct']},
+            'real_money_actions_enabled':False}))
+        (root/'Secrets').mkdir()
+        (root/'Secrets/shadow-evidence-token.txt').write_text('a'*32)
+        (root/'Secrets/minipc-status-token.txt').write_text('b'*32)
+        if phase is not None:
+            (root/'State').mkdir(exist_ok=True)
+            marker={'kind':'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1',
+                    'phase':phase,'predecessor_series_id':OLD,
+                    'proposed_successor_series_id':V3,
+                    'proposed_v3_repo_sha':SHA,
+                    'proposed_v3_bundle_sha256':'a'*64,
+                    'proposed_v3_strategy_sha256':'b'*64,
+                    'paper_only':True,'orders_enabled':False,
+                    'real_money_actions':False,
+                    'persistent_until_explicit_owner_release':True,
+                    'task_names':['CryptoMiniPC-V2R4PaperCandidates',
+                                  'CryptoMiniPC-V2R4PaperWait']}
+            (root/'State/v3-experimental-paper-old-intake-fence.json').write_text(
+                json.dumps(marker))
+        return type('Args',(),{'trading_root':root,'app_root':app,
+                              'paper_state_dir':None,'endpoint':'http://127.0.0.1:9/no-network'})()
+
+    @staticmethod
+    def original_ack(endpoint,token,packet,**kwargs):
+        if packet['action']=='sync':
+            return {'ok':True,'action':'sync',
+                    'accepted_candidates':len(packet['candidates']),
+                    'accepted_trades':len(packet['trades'])}
+        assert len(token)>=24 and len(kwargs.get('second_token') or '')>=24
+        return {'ok':True,'action':'sync_closed_original_followups',
+                'accepted_candidates':len(packet['candidates']),
+                'accepted_trades':len(packet['trades']),
+                'unchanged_replays':0,'paper_only':True,
+                'real_money_actions':False,'new_v2r4_intake_allowed':False}
+
+    def test_no_marker_keeps_existing_active_sender(self):
+        with tempfile.TemporaryDirectory() as d:
+            args=self.fixture(Path(d),phase=None)
+            with patch.object(MOD,'post',side_effect=self.original_ack) as post, \
+                 patch.object(MOD,'dispatch_alerts_if_needed',
+                              return_value={'status':'NONE_PENDING'}):
+                result=MOD.run_once(args)
+            self.assertEqual(result['status'],'HEALTHY')
+            self.assertNotIn('mode',result)
+            self.assertTrue(post.called)
+            self.assertTrue(all(c.args[2]['action']=='sync'
+                                for c in post.call_args_list))
+            self.assertFalse((args.trading_root/'State/v2r4-paper-closed-aftercare-state.json').exists())
+
+    def test_conflicting_old_maintenance_marker_blocks_cloud(self):
+        with tempfile.TemporaryDirectory() as d:
+            args=self.fixture(Path(d))
+            (args.trading_root/'State/v2r4-technical-cutover-maintenance.json').write_text('{}')
+            with patch.object(MOD,'post') as post:
+                result=MOD.run_once(args)
+            self.assertEqual(result['status'],'DEGRADED')
+            post.assert_not_called()
+
+    def test_arming_marker_blocks_any_sync_or_network(self):
+        with tempfile.TemporaryDirectory() as d:
+            args=self.fixture(Path(d),phase='ARMED')
+            with patch.object(MOD,'post') as post:
+                result=MOD.run_once(args)
+            self.assertEqual(result['status'],'DEGRADED')
+            self.assertEqual(result['mode'],'CLOSED_ORIGINAL_AFTERCARE')
+            post.assert_not_called()
+
+    def test_committed_marker_sends_only_originals_and_replays_none(self):
+        with tempfile.TemporaryDirectory() as d:
+            args=self.fixture(Path(d))
+            with patch.object(MOD,'post',side_effect=self.original_ack) as post:
+                first=MOD.run_once(args)
+                second=MOD.run_once(args)
+            self.assertEqual(first['status'],'HEALTHY')
+            self.assertEqual(first['accepted_original_updates'],2)
+            self.assertEqual(first['batches'],2)
+            self.assertEqual(second['status'],'HEALTHY')
+            self.assertEqual(second['batches'],0)
+            self.assertEqual(post.call_count,2)
+            self.assertTrue(all(c.args[2]['action']=='sync_closed_original_followups'
+                                for c in post.call_args_list))
+            self.assertTrue(all(c.args[2]['expected_active_v3_series_id']==V3
+                                for c in post.call_args_list))
+            state=json.loads((args.trading_root/'State/v2r4-paper-closed-aftercare-state.json').read_text())
+            self.assertEqual(len(state['sent']),2)
+
+    def test_pre_cutover_active_ack_deduplicates_closed_replays(self):
+        with tempfile.TemporaryDirectory() as d:
+            args=self.fixture(Path(d))
+            _,candidates,trades=MOD.collect(args.app_root)
+            already={}
+            for prefix,rows in (('candidate',candidates),('trade',trades)):
+                for row in rows:
+                    already[f"{prefix}:{row['candidate_id']}"]=MOD.row_hash(row)
+            state=args.trading_root/'State/v2r4-paper-cloud-sync-state.json'
+            state.write_text(json.dumps({'schema_version':1,'sent':already}))
+            with patch.object(MOD,'post') as post:
+                result=MOD.run_once(args)
+            self.assertEqual(result['status'],'HEALTHY')
+            self.assertEqual(result['batches'],0)
+            post.assert_not_called()
+
+    def test_cloud_failure_never_advances_cursor(self):
+        with tempfile.TemporaryDirectory() as d:
+            args=self.fixture(Path(d))
+            cursor=args.trading_root/'State/v2r4-paper-closed-aftercare-state.json'
+            with patch.object(MOD,'post',side_effect=RuntimeError('offline failure')):
+                failed=MOD.run_once(args)
+            self.assertEqual(failed['status'],'DEGRADED')
+            self.assertFalse(cursor.exists())
+            with patch.object(MOD,'post',side_effect=self.original_ack):
+                recovered=MOD.run_once(args)
+            self.assertEqual(recovered['status'],'HEALTHY')
+            self.assertEqual(recovered['accepted_original_updates'],2)
+
+    def test_closed_mode_refuses_late_old_wait_recheck(self):
+        with tempfile.TemporaryDirectory() as d:
+            args=self.fixture(Path(d))
+            rechecks=args.app_root/'paper_rechecks'
+            rechecks.mkdir()
+            rechecks.joinpath('late.json').write_text(json.dumps({
+                'series_id':OLD,'candidate_id':'O-C1',
+                'recheck_completed_at_utc':'2026-10-13T12:20:00Z',
+                'paper_only':True,'real_money_actions_enabled':False,
+                'decision':{'decision':'REJECT'}}))
+            with patch.object(MOD,'post') as post:
+                result=MOD.run_once(args)
+            self.assertEqual(result['status'],'DEGRADED')
+            post.assert_not_called()
+
+    def test_aftercare_rejects_new_old_intake_and_unsafe_control(self):
+        with tempfile.TemporaryDirectory() as d:
+            args=self.fixture(Path(d))
+            p=args.app_root/'paper_runtime_control.json'
+            bad=json.loads(p.read_text());bad['real_money_actions_enabled']=True
+            p.write_text(json.dumps(bad))
+            with patch.object(MOD,'post') as post:
+                out=MOD.run_once(args)
+            self.assertEqual(out['status'],'DEGRADED')
+            post.assert_not_called()
+            bad['real_money_actions_enabled']=False
+            p.write_text(json.dumps(bad))
+            decision_path=args.app_root/'paper_decisions'/'candidate.json'
+            decision=json.loads(decision_path.read_text())
+            decision['evaluated_at_utc']='2026-10-13T12:01:00Z'
+            decision_path.write_text(json.dumps(decision))
+            with patch.object(MOD,'post') as post:
+                late=MOD.run_once(args)
+            self.assertEqual(late['status'],'DEGRADED')
+            post.assert_not_called()
 
 
 if __name__=="__main__":

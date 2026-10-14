@@ -13,8 +13,12 @@ def atomic_json(path,payload):
 def load_token(root):
     p=root/'Secrets/shadow-evidence-token.txt'
     return p.read_text('utf-8').strip() if p.exists() else os.environ.get('SHADOW_EVIDENCE_TOKEN','').strip()
-def post(endpoint,token,payload):
-    req=urllib.request.Request(endpoint,data=json.dumps(payload,separators=(',',':')).encode(),method='POST',headers={'Content-Type':'application/json','User-Agent':'minipc-v2r4-paper-cloud-sync/1.0','X-Shadow-Evidence-Token':token})
+def post(endpoint,token,payload,*,second_token=None):
+    headers={'Content-Type':'application/json','User-Agent':'minipc-v2r4-paper-cloud-sync/1.0','X-Shadow-Evidence-Token':token}
+    if second_token is not None:
+        if len(second_token)<24: raise RuntimeError('Closed aftercare requires second credential')
+        headers['X-MiniPC-Status-Token']=second_token
+    req=urllib.request.Request(endpoint,data=json.dumps(payload,separators=(',',':')).encode(),method='POST',headers=headers)
     try:
         with urllib.request.urlopen(req,timeout=30) as r:
             body=json.loads(r.read().decode())
@@ -170,6 +174,63 @@ def closed_original_readonly_preview(control,candidates,trades,*,old_series_id,
             'batches':batches}
 
 
+def closed_aftercare_authority(root,control):
+    """Fail closed on a PR309 marker until original CAS is committed.
+    This is only a local prerequisite. The Edge must independently verify CAS.
+    """
+    import re
+    path=root/'State/v3-experimental-paper-old-intake-fence.json'
+    if (root/'State/v2r4-technical-cutover-maintenance.json').exists():
+        raise ValueError('conflicting original technical maintenance marker')
+    marker=load_json(path)
+    expected=['CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait']
+    old='PAPER-V2R4-20261009T110135Z'
+    new=marker.get('proposed_successor_series_id')
+    sha=control.get('release_repo_sha')
+    if (marker.get('kind')!='V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1'
+            or marker.get('phase')!='CLOUD_COMMITTED'
+            or marker.get('predecessor_series_id')!=old
+            or not isinstance(new,str)
+            or not re.fullmatch(r'PAPER-V3-[0-9]{8}T[0-9]{6}Z',new)
+            or not isinstance(sha,str)
+            or not re.fullmatch(r'[0-9a-f]{40}',sha)
+            or not re.fullmatch(r'[0-9a-f]{40}',str(marker.get('proposed_v3_repo_sha','')))
+            or not re.fullmatch(r'[0-9a-f]{64}',str(marker.get('proposed_v3_bundle_sha256','')))
+            or not re.fullmatch(r'[0-9a-f]{64}',str(marker.get('proposed_v3_strategy_sha256','')))
+            or sorted(marker.get('task_names') or [])!=expected
+            or marker.get('paper_only') is not True
+            or marker.get('orders_enabled') is not False
+            or marker.get('real_money_actions') is not False
+            or marker.get('persistent_until_explicit_owner_release') is not True
+            or control.get('series_id')!=old
+            or control.get('strategy_revision')!='V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION'
+            or control.get('paper_only') is not True
+            or control.get('real_money_actions_enabled') is not False):
+        raise ValueError('closed-original source identity or committed fence unverified')
+    cutoff=datetime.strptime(new.removeprefix('PAPER-V3-'),'%Y%m%dT%H%M%SZ').replace(tzinfo=timezone.utc)
+    if cutoff>datetime.now(timezone.utc):
+        raise ValueError('V3 successor cutover time in future')
+    return old,new,sha,cutoff.isoformat().replace('+00:00','Z')
+
+
+def closed_aftercare_batches(preview,active_sent,aftercare_sent):
+    """Bounded, retryable packets; never replay unchanged cloud-ACKed rows."""
+    for batch in preview['batches']:
+        result={k:v for k,v in batch.items() if k not in ('candidates','trades')}
+        result.update(candidates=[],trades=[])
+        marks={}
+        for field,prefix in (('candidates','candidate'),('trades','trade')):
+            for row in batch[field]:
+                key=f"{prefix}:{row['candidate_id']}"
+                value=row_hash(row)
+                if aftercare_sent.get(key)==value or active_sent.get(key)==value:
+                    continue
+                result[field].append(row)
+                marks[key]=value
+        if marks:
+            yield result,marks
+
+
 def actionable_keys(control,candidates,trades):
     sid=control['series_id']; keys=set()
     for row in candidates:
@@ -218,7 +279,81 @@ def dispatch_alerts_if_needed(root,control,candidates,trades,paper_state_dir=Non
     atomic_json(state_path,state)
     return {'status':'DISPATCHED','new_actionable':len(pending)}
 
+def run_closed_aftercare_once(args):
+    """Same original Task/owner, but never use active sync after V3 CAS."""
+    hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'
+    result={'schema_version':1,'kind':'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1',
+            'checked_at_utc':iso(),'status':'UNKNOWN',
+            'mode':'CLOSED_ORIGINAL_AFTERCARE','paper_only':True,
+            'order_api':False,'real_money_actions':False}
+    try:
+        control,candidates,trades=collect(args.app_root)
+        old,new,release_sha,cutoff_iso=closed_aftercare_authority(args.trading_root,control)
+        cutoff=datetime.fromisoformat(cutoff_iso.replace('Z','+00:00'))
+        # A running old intake writer after CAS is a release-blocking defect.
+        for row in candidates:
+            when=datetime.fromisoformat(row['evaluated_at'].replace('Z','+00:00'))
+            if when>=cutoff: raise ValueError('new old-series candidate after V3 cutoff')
+            recheck=(row.get('payload') or {}).get('recheck') or {}
+            for field in ('recheck_completed_at_utc','completed_at_utc','revalidated_at_utc'):
+                event=recheck.get(field)
+                if event and datetime.fromisoformat(event.replace('Z','+00:00'))>=cutoff:
+                    raise ValueError('old WAIT recheck after V3 cutoff')
+        for row in trades:
+            when=datetime.fromisoformat(row['opened_at'].replace('Z','+00:00'))
+            if when>=cutoff: raise ValueError('new old-series paper entry after V3 cutoff')
+        preview=closed_original_readonly_preview(
+            control,candidates,trades,old_series_id=old,future_v3_series_id=new,
+            old_release_sha=release_sha,cutover_at_utc=cutoff_iso)
+        # Never send on a mere preview or during ARMED/QUIESCED.
+        token=load_token(args.trading_root)
+        status_file=args.trading_root/'Secrets/minipc-status-token.txt'
+        second=status_file.read_text('utf-8').strip() if status_file.is_file() else ''
+        if len(token)<24 or len(second)<24:
+            raise RuntimeError('closed-original dual credentials unavailable')
+        state_dir=getattr(args,'paper_state_dir',None) or args.trading_root/'State'
+        active_sent=load_sync_state(state_dir/'v2r4-paper-cloud-sync-state.json')['sent']
+        aftercare_path=state_dir/'v2r4-paper-closed-aftercare-state.json'
+        aftercare=load_sync_state(aftercare_path)
+        accepted=0
+        unchanged=0
+        batches=0
+        for packet,marks in closed_aftercare_batches(
+                preview,active_sent,aftercare['sent']):
+            if batches>=10: break  # at most 200 historical records per cycle
+            ack=post(args.endpoint,token,packet,second_token=second)
+            count=len(packet['candidates'])+len(packet['trades'])
+            applied=int(ack.get('accepted_candidates',-1))+int(ack.get('accepted_trades',-1))
+            identical=int(ack.get('unchanged_replays',-1))
+            if (ack.get('action')!='sync_closed_original_followups'
+                    or ack.get('paper_only') is not True
+                    or ack.get('real_money_actions') is not False
+                    or ack.get('new_v2r4_intake_allowed') is not False
+                    or applied<0 or identical<0 or applied+identical!=count):
+                raise RuntimeError('closed-original cloud ACK incomplete or unsafe')
+            # Crash before this commit is safe: old Edge retries are idempotent.
+            aftercare['sent'].update(marks)
+            atomic_json(aftercare_path,aftercare)
+            batches+=1
+            accepted+=applied
+            unchanged+=identical
+        result.update(status='HEALTHY',series_id=old,successor_series_id=new,
+                      accepted_original_updates=accepted,
+                      unchanged_replays=unchanged,batches=batches,
+                      pending_unstamped_followups=preview['pending_unstamped_followups_not_promoted'],
+                      detail='original aftercare synced; separate live CAS proof required')
+    except Exception as exc:
+        result.update(status='DEGRADED',
+                      detail=f'{type(exc).__name__}: {str(exc)[:200]}')
+    atomic_json(hb,result)
+    return result
+
+
 def run_once(args):
+    # No extra task or parameter switch: same CloudSync owner changes lanes
+    # only when the separately authorized PR309 cutover marker exists.
+    if (args.trading_root/'State/v3-experimental-paper-old-intake-fence.json').exists():
+        return run_closed_aftercare_once(args)
     hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'
     state_path=(getattr(args,'paper_state_dir',None) or (args.trading_root/'State'))/'v2r4-paper-cloud-sync-state.json'
     token=load_token(args.trading_root)
