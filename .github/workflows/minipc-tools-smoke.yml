@@ -109,6 +109,7 @@ jobs:
             'tools/minipc-v2r4-technical-rollover-stage.ps1',
             'tools/minipc-v2r4-technical-cutover-readiness.ps1',
             'tools/minipc-v2r4-technical-cutover-operator.ps1',
+            'tools/minipc-v2r4-shadow-cloud-sync-pr295-cutover.ps1',
             'tools/minipc-runtime-supervisor.ps1',
             'tools/install-minipc-runtime-supervisor.ps1',
             'tools/minipc-runtime-supervisor-selfheal-smoke.ps1',
