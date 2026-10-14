@@ -35,7 +35,7 @@ class ClosedOriginalV2R4RelayInactiveContract(unittest.TestCase):
             'oldSeries?.status!=="strategy_cutover_closed"',
             'oldSeries?.config?.release_repo_sha!==expectedSha',
             'activeRows.length!==1',
-            'startsWith("PAPER-V3-")',
+            'activeRows[0]?.series_id!==expectedV3Sid',
             'startsWith("V3-")',
             'candidates.length>20',
             'trades.length>20',
