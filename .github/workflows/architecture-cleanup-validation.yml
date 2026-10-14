@@ -30,6 +30,10 @@ jobs:
             tools/minipc-status-sync.py \
             tools/v2r4-paper-local-runtime.py \
             tools/v2r4-shadow-cloud-sync.py
+      - name: V2R4 Shadow Cloud Sync incremental archive regression (no network)
+        run: |
+          python -m py_compile tools/v2r4-shadow-cloud-sync.py tests/test_v2r4_shadow_cloud_sync_incremental.py
+          python -m unittest tests.test_v2r4_shadow_cloud_sync_incremental -v
       - name: H10 same scheduled collector bounded source evidence archival (mock network)
         run: |
           python -m py_compile tools/v3_h10_source_owner_archive_v1.py tools/v3-h10-activity-capture.py
