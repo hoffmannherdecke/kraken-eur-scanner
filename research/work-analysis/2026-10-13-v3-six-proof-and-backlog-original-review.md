@@ -120,3 +120,36 @@ Die 24h-Quittung EIGEN wurde am **13.10. 06:30:16 UTC** und ZRO am **13.10. 07:4
 **Nächste bestehende Aufgabe:** Den physischen Endkandidaten unter dem vorhandenen V3-P0/P1-Owner gegen die **unveränderten Cloud-Einzelquittungen** einordnen und die sechs realen technischen Proof-Zeilen als `VERIFIED_PHYSICAL_OR_CLOUD_E2E` ausschließlich je eigenem unabhängigen Artefakt/Fingerprint vergeben. Priorität: originaler EIGEN/ZRO-Journal-/Cloud-/Censor-Nachweis; Single-Writer-CAS-Dry-run; V2R4 Writer-Fence; eingeschränkte Model-API-Kosten; Stop/Stage2/Fee/WAIT; Work/Alert-Consumer. Weiterhin **0/6 formal freigegebene Release-Beweiszeilen** nach dem derzeitigen Artefaktstand – bereits erfüllte Vorleistungen ausdrücklich nicht wiederholen.
 
 **Disposition:** `V3_28H_ORIGINAL_TASK_SCHEDULE_END_CANDIDATE_PASS`; `V3_28H_DEDICATED_INDEPENDENT_END_ACK_OPEN`; `V3_WRITER_RELEASE_NOT_AUTHORIZED`. Keine neue Runtime, keine Änderung der neun Hash-Pins und kein zweiter 28h-Test. Der ursprüngliche V2R4-Paper-Writer bleibt aktiv und Echtgeld bleibt aus.
+
+---
+
+## 14.10.2026 — Originale Cloud-/Mini-PC-Dateien, 16/16 kryptografisch identisch
+
+**Zwei unabhängige Originalquellen:** (a) echte lesende Supabase-SQL-Abfrage der unveränderlichen Canary-Einzelzeilen `public.v3_paper_event_receipts`, gefiltert auf `series_id='PAPER-V3-CANARY-20261011'`, (b) Nutzerfoto der Administrator-PowerShell auf dem Mini-PC, welche nur das bestehende `Trading/Research/V3Paper/cloud-ack.json` und die exakt zugeordneten 16 `journal/<event_id>.json`-Dateien eingelesen hat. Kein Cloud-/lokaler Inhalt wurde geändert.
+
+Für **beide** Quellen wurde derselbe eindeutige Serien-Fingerabdruck gebildet:
+
+1. Die 16 verschiedenen 64-stelligen `event_id` lexikografisch sortieren (ASCII-/C-Reihenfolge).
+2. Pro ID eine Zeile mit `event_id + '|' + lowercase SHA256(raw JSON bytes)` erzeugen. Cloudseitig entspricht der Inhaltshash dem Feld `content_sha256`; lokal ist es `Get-FileHash -Algorithm SHA256` über die existierende Original-Journaldatei `<event_id>.json`.
+3. Zeilen mit genau einem LF (`0x0A`) verbinden, **kein** angehängtes Newline, UTF-8 kodieren, abschließend SHA256 bilden. Keine dynamischen Markt- oder Metadaten hinzufügen.
+
+**Authentifizierter Cloud-Check:** Count=16, distinct `event_id`=16, Aggregat-SHA256 `b2f8a0c145e52ab1690bca2b43d75eb1077ee981543d6f0a165d4f76318b58d4`. Berechnet mit:
+
+```sql
+select count(*) as receipt_count,
+       count(distinct event_id) as distinct_ids,
+       encode(sha256(convert_to(
+          string_agg(event_id || '|' || content_sha256, E'\n'
+                     order by event_id collate "C"), 'UTF8')),'hex')
+          as identity_content_sha256
+from public.v3_paper_event_receipts
+where series_id='PAPER-V3-CANARY-20261011';
+```
+
+**Unabhängiger Original-Mini-PC-Nachweis:** `CloudACKs=16`, `JournalDateien=16`, Original-SHA256 aus exakt den zu 16 ACK-IDs gehörigen Dateien identisch mit obigem Wert, PowerShell-Ergebnis `V3_CANARY_ORIGINAL_16_CLOUD_BYTES_MATCH`. Lokale zusätzliche Daten-/Quelldateien wurden weder verarbeitet noch kopiert.
+
+**Disposition:** `V3_28H_CANARY_16_IMMUTABLE_ORIGINAL_LOCAL_CLOUD_CONTENT_HASH_MATCH_PASS` für das Byte-/Identitäts-Matching dieser fixierten EIGEN/ZRO-Canary-Kohorte. Dies ist ein **echter, nachprüfbarer Teilbeleg** für `V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE`; **nicht** die vollständige Proof-Zeile `VERIFIED_PHYSICAL_OR_CLOUD_E2E`, solange Originalfehler-/Reason-/Followup-Felder und vorgeschriebene E2E-Hüllen der sechs Release-Proofs nicht je separat authentifiziert und freigegeben wurden.
+
+Die bereits vorhandenen 6h-/24h-Originalverläufe bleiben fachlich `CENSORED_NO_CONTIGUOUS_CLOSED_KRAKEN_1M_PATH`, keine wirtschaftliche Nullrendite; die fünf separaten RENDER-One-shot-Belege bleiben ausgeschlossen. Die Original-28h-Windows-Task-Abnahme ist nach PR303 zeitlich/technisch ein positiver **Endkandidat**, aber eine gesonderte unabhängige Ende-ACK bleibt offen. Keine zusätzliche 28h-Testphase; **keine** Veränderung an neun SHA-256-Pins, Original-V2R4-Paper-Writer, Cloud-CAS, Kraken REST-Budget, Modellausgaben oder Echtgeldfreigabe.
+
+**Owner/Folgeschritt:** Bereits vorhandenes V3-P0/P1-Six-Proof-Gate und 10:15-Work-/Milestone-Controller. Aus diesen echten Belegen eine vollständige `V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE`-Quittung nur mit passenden originalen Reason/Error/Future-/Censor-Records einschließlich Fingerprint bilden; separat alle weiteren Proofs durch den bestehenden Owner prüfen. Keine neuen Watcher, Scheduler, Tabellen oder Aufgabenregistrierung.
