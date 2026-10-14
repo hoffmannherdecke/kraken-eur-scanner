@@ -292,6 +292,11 @@ def run_closed_aftercare_once(args):
         for row in candidates:
             when=datetime.fromisoformat(row['evaluated_at'].replace('Z','+00:00'))
             if when>=cutoff: raise ValueError('new old-series candidate after V3 cutoff')
+            recheck=(row.get('payload') or {}).get('recheck') or {}
+            for field in ('recheck_completed_at_utc','completed_at_utc','revalidated_at_utc'):
+                event=recheck.get(field)
+                if event and datetime.fromisoformat(event.replace('Z','+00:00'))>=cutoff:
+                    raise ValueError('old WAIT recheck after V3 cutoff')
         for row in trades:
             when=datetime.fromisoformat(row['opened_at'].replace('Z','+00:00'))
             if when>=cutoff: raise ValueError('new old-series paper entry after V3 cutoff')
