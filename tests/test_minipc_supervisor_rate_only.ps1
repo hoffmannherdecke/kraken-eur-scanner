@@ -166,3 +166,55 @@ CheckNative $false $x 'cannot count old followup task as intake'
 Write-Output 'V3_NATIVE_OLD_INTAKE_READONLY_BASELINE_14_CASES_PASS'
 
 
+
+# Pure original mode and process-lineage guards, NEVER run the full Mini-PC
+# script in CI, and never invoke Win32_Process/Task controls from tests.
+foreach($name in @('Get-V3OldPaperMode','Test-V3OriginalPaperModeLineage')){
+  $match=@($past.FindAll({
+    param($a)
+    $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+    $a.Name -eq $name
+  },$true))
+  if($match.Count -ne 1){throw "Missing unique pure role policy $name"}
+  . ([Scriptblock]::Create($match[0].Extent.Text))
+}
+function ProcessFixture {
+  @(
+    [pscustomobject]@{Mode='candidates';PID=100;ParentPID=10;OriginalStage=$true}
+    [pscustomobject]@{Mode='candidates';PID=101;ParentPID=100;OriginalStage=$true}
+    [pscustomobject]@{Mode='lifecycle';PID=200;ParentPID=10;OriginalStage=$true}
+    [pscustomobject]@{Mode='lifecycle';PID=201;ParentPID=200;OriginalStage=$true}
+  )
+}
+function ExpectLineage([bool]$Expected,[object[]]$Rows,[string]$Candidate='candidates',[string]$Lifecycle='lifecycle',[string]$Label=''){
+  $got=Test-V3OriginalPaperModeLineage -Rows $Rows -CandidatesTaskMode $Candidate -LifecycleTaskMode $Lifecycle
+  if($got -ne $Expected){throw "MODE_LINEAGE_FAIL $Label expected=$Expected actual=$got"}
+}
+if((Get-V3OldPaperMode '--mode candidates --interval-seconds 2') -cne 'candidates'){throw 'Cannot parse candidate task'}
+if((Get-V3OldPaperMode '--mode "lifecycle" --interval-seconds 60') -cne 'lifecycle'){throw 'Cannot parse original lifecycle task'}
+if((Get-V3OldPaperMode '--mode candidates --mode lifecycle') -cne 'UNRESOLVED'){throw 'Conflicting mode must fail'}
+if((Get-V3OldPaperMode '--mode buy') -cne 'UNRESOLVED'){throw 'Unknown mode must fail'}
+if((Get-V3OldPaperMode '') -cne 'UNRESOLVED'){throw 'Empty mode must fail'}
+ExpectLineage $true @(ProcessFixture) -Label 'exact two role-isolated parent-child trees'
+ExpectLineage $false @(ProcessFixture) 'lifecycle' 'candidates' 'task roles reversed'
+$p=@(ProcessFixture);$p[3].Mode='candidates'
+ExpectLineage $false $p -Label 'three candidates one lifecycle'
+$p=@(ProcessFixture);$p[3].ParentPID=100
+ExpectLineage $false $p -Label 'cross-linked lifecycle to candidates'
+$p=@(ProcessFixture);$p[3].OriginalStage=$false
+ExpectLineage $false $p -Label 'foreign runtime lifecycle child'
+$p=@(ProcessFixture);$p[0].PID=0
+ExpectLineage $false $p -Label 'zero candidate PID'
+$p=@(ProcessFixture);$p[3].PID=101
+ExpectLineage $false $p -Label 'duplicated PID'
+$p=@(ProcessFixture);$p[1].ParentPID=10
+ExpectLineage $false $p -Label 'both candidates appear root'
+$p=@(ProcessFixture);$p[0].ParentPID=101
+ExpectLineage $false $p -Label 'cyclic candidate family'
+$p=@(ProcessFixture);$p[2].ParentPID=101
+ExpectLineage $false $p -Label 'lifecycle root parent is old candidate'
+$p=@(ProcessFixture);$p+=@([pscustomobject]@{Mode='candidates';PID=102;ParentPID=100;OriginalStage=$true})
+ExpectLineage $false $p -Label 'extra child or second writer'
+$p=@(ProcessFixture);$p=$p[0..2]
+ExpectLineage $false $p -Label 'missing lifecycle child'
+Write-Output 'V3_ORIGINAL_PAPER_MODE_LINEAGE_PURE_17_CASES_PASS'
