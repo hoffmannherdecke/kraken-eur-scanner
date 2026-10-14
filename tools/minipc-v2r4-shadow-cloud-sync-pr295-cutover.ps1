@@ -42,6 +42,20 @@ function Assert-NoCloudWorker {
     })
   if ($running.Count -ne 0) { throw "Python CloudSync Originalprozess weiterhin aktiv ($($running.Count))" }
 }
+function Wait-NoSupervisorProcess {
+  $until=(Get-Date).AddSeconds(35)
+  do {
+    $running=@(Get-CimInstance Win32_Process -ErrorAction Stop |
+      Where-Object {
+        $_.Name -in @('powershell.exe','pwsh.exe') -and
+        $null -ne $_.CommandLine -and
+        $_.CommandLine.IndexOf('minipc-runtime-supervisor.ps1',[StringComparison]::OrdinalIgnoreCase) -ge 0
+      })
+    if($running.Count -eq 0){ return }
+    Start-Sleep -Milliseconds 500
+  } while((Get-Date) -lt $until)
+  throw 'Ein bereits laufender Supervisor-Prozess ist noch aktiv; Austausch verboten'
+}
 function Atomic-Swap([string]$from,[string]$expected,[string]$previousBackup) {
   $swap = $sourcePath + '.pr295-once.tmp'
   if (Test-Path -LiteralPath $swap) { throw "Vorhandene Swap-Datei: $swap" }
@@ -126,6 +140,10 @@ if (-not $Apply) {
   return
 }
 
+# Exclusive, one-shot guard. A stale lock after crash deliberately blocks retry.
+$lockPath=Join-Path $BackupDir '.pr295-cutover.lock'
+if(Test-Path -LiteralPath $lockPath){ throw 'PR295 Cutover-Lock besteht bereits; Zustand manuell pruefen' }
+$lock=[System.IO.File]::Open($lockPath,[System.IO.FileMode]::CreateNew,[System.IO.FileAccess]::ReadWrite,[System.IO.FileShare]::None)
 $supervisorDisabled = $false
 $cloudStopped = $false
 $changedSource = $false
@@ -143,6 +161,7 @@ try {
   Disable-ScheduledTask -TaskName $supervisorName -ErrorAction Stop | Out-Null
   $supervisorDisabled = $true
   if ((Task $supervisorName).State -ne 'Disabled') { throw 'Supervisor nicht sicher deaktiviert' }
+  Wait-NoSupervisorProcess
 
   $cloudStopped = $true
   Stop-ScheduledTask -TaskName $targetName -ErrorAction Stop
@@ -197,6 +216,8 @@ try {
       $completed = $false
     }
   }
+  $lock.Dispose()
+  Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
 }
 if (-not $completed) {
   throw "PR295_CUTOVER_NOT_ACCEPTED error=$gateError rollback_started=$rollbackOk"
