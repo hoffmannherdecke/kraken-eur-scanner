@@ -87,3 +87,36 @@ Die 24h-Quittung EIGEN wurde am **13.10. 06:30:16 UTC** und ZRO am **13.10. 07:4
 5. **Separate Operationsarbeit:** Gemeinsames Kraken-Public-REST-Budget PR292/PR294 bleibt nach dokumentiertem Stand physisch **nicht enrolled**; zuerst bestehendes SYSTEM-Owner-/Fingerprint-/Rollback-Gate. Die erfolgreiche PR299–301 WS-Shadow-Reparatur ist kein REST-Budget-ACK und keine V3-Freigabe.
 
 **Disposition:** `V3_POST28H_CLOUD_6H24H_CENSORING_READ_ONLY_REVIEWED`; `V3_PHYSICAL_END_ACK_PENDING`; `V3_EXPERIMENTAL_PAPER_RELEASE_BLOCKED_6_INDEPENDENT_PROOFS`; `V2R4_ECONOMIC_NOT_DEMONSTRATED_3453_OUTCOMES_0_BUY_0_TRADE`. Fachlicher Owner bleibt das bestehende V3-P0/P1-Cutover-Gate mit täglichem 10:15-Work und Projekt-Meilensteincontroller – **kein neuer Owner, Task oder Termin**. Echtgeld aus, 50+50 EUR V2R4 Paper unverändert.
+
+---
+
+## Physischer Original-Task-Nachtrag 14.10.2026, Nachmittag MESZ
+
+**Quellentyp:** Originaler **read-only** `Get-ScheduledTask` / `Get-ScheduledTaskInfo`-Readback aus der Administrator-PowerShell am Mini-PC (Nutzerfoto). Abgleich mit vorangehender lokaler `check-minipc-v3-physical-writer-readiness.ps1`-Ausgabe und festem originalem Plan; keine Änderung am Host, den neun gepinnten Dateien oder der V3-Release-Freigabe.
+
+| Tatsächlicher Originalwert | Mini-PC-Readback |
+| --- | --- |
+| Originale Windows-Task-Identität | `CryptoMiniPC-V3CanaryObservation28h` |
+| Task-State / Last-Result | `Ready` / `0` |
+| LastRun (lokal) | `2026-10-13 13:55:13 +02:00` = `11:55:13Z` |
+| NextRunTime | Leer – kein zukünftiger Lauf eingetragen |
+| Exakte Zahl Aktionen/Trigger | `1 / 1` |
+| Aktion entspricht ursprünglichem Observer | `True` |
+| Action-Argumente enthalten `plan.until_utc` | `True` |
+| Original-Triggerstart | `2026-10-12T10:00:12+02:00` = `08:00:12Z` |
+| Original-Trigger-Repetition.Duration | `P1DT4H` = **28 Stunden** |
+| Computed trigger end in UTC | `2026-10-13T12:00:12Z` |
+| Unveränderte Manifest-Deadline | `2026-10-13T12:00:12.2795431Z` |
+| Abweichung Triggerend/Manifest | ca. **0,28 Sekunden** |
+| Letzter Lauf vor geplantem Ende | ca. **4m59s**, LastTaskResult `0` |
+| Lokaler Checker enthält die neuen Task-Ausgabefelder? | `False` – ältere lokale read-only Version |
+| Vorherige originale Pins/Journaling/ACK | **9/9** Hashes ohne Abweichung; **16** lokale Journal-Quittungen und **16** lokale Cloud-ACKs |
+| Vorherige aktive V2R4-Host-Runtime-Konfigurationen | **1**; dies ist kein eigenständiger Writer-Prozess-Fence-Beweis |
+
+**Ursache der vorherigen `null`-Felder:** Der lokale Readiness-Checker ist älter als das aktuelle GitHub-Skript. Die vorher verwendete `Select-Object`-Ausgabe legte nicht vorhandene Eigenschaftsnamen als `null` an; dies war **kein Hinweis auf einen kaputten Original-Task**.
+
+**Gates:** Die Original-Scheduler-/Manifestbedingungen erfüllen inhaltlich den bestehenden **`canary_scheduler_end_candidate_for_independent_review=true`**-Ausdruck: Task `Ready`, letzte Ausführung erfolgreich vor Termin, kein nächster Trigger, exakt eine passende Aktion/ein passender Trigger und 28h-Ende innerhalb 120s Deadline sowie 9 unveränderte SHA-Pins. Eine nochmalige 28h-Beobachtung ist dadurch nicht angezeigt. Die gesonderte **`canary_physical_observer_end_ack_from_this_single_readback`**-Autorisierung bleibt ausdrücklich **`false`**: Eine spätere, unabhängige Ende-ACK-Provenienz ist nicht allein durch diesen Screenshot materialisiert; der Aufgabenplan ist nicht mit sechs eigenständigen V3-Release-Belegen gleichzusetzen.
+
+**Nächste bestehende Aufgabe:** Den physischen Endkandidaten unter dem vorhandenen V3-P0/P1-Owner gegen die **unveränderten Cloud-Einzelquittungen** einordnen und die sechs realen technischen Proof-Zeilen als `VERIFIED_PHYSICAL_OR_CLOUD_E2E` ausschließlich je eigenem unabhängigen Artefakt/Fingerprint vergeben. Priorität: originaler EIGEN/ZRO-Journal-/Cloud-/Censor-Nachweis; Single-Writer-CAS-Dry-run; V2R4 Writer-Fence; eingeschränkte Model-API-Kosten; Stop/Stage2/Fee/WAIT; Work/Alert-Consumer. Weiterhin **0/6 formal freigegebene Release-Beweiszeilen** nach dem derzeitigen Artefaktstand – bereits erfüllte Vorleistungen ausdrücklich nicht wiederholen.
+
+**Disposition:** `V3_28H_ORIGINAL_TASK_SCHEDULE_END_CANDIDATE_PASS`; `V3_28H_DEDICATED_INDEPENDENT_END_ACK_OPEN`; `V3_WRITER_RELEASE_NOT_AUTHORIZED`. Keine neue Runtime, keine Änderung der neun Hash-Pins und kein zweiter 28h-Test. Der ursprüngliche V2R4-Paper-Writer bleibt aktiv und Echtgeld bleibt aus.
