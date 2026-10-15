@@ -377,5 +377,72 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
                              "NOT_ASSOCIABLE_OTHER_PAIR")
             self.assertFalse(any(r["phase"]=="MODEL_RESPONSE" for r in rows))
 
+class V3ManualCliIdentityFenceTests(unittest.TestCase):
+    """No network, model, budget, journal or task effects during source validation."""
+
+    @staticmethod
+    def canonical_scanner(*, action="REVIEW_ONLY_NOT_ORDER", origin=None):
+        from datetime import datetime, timezone
+        at="2026-10-15T09:30:00Z"
+        ts=int(datetime.fromisoformat(at.replace("Z","+00:00")).timestamp())
+        candidate={
+            "kind":"CANONICAL_CANDIDATE_HANDOFF_V1",
+            "candidate_id":"20261015-093000-DASH-EUR-r42",
+            "queue_id":f"42:DASH-EUR:{ts}",
+            "source_scanner_run_id":42,"event_time_utc":at,
+            "event_ts":ts,"pair":"DASH/EUR","altname":"DASHEUR",
+            "action":action,"scanner_candidate":{},
+            "scanner_market_context":{},
+        }
+        if origin is not None:
+            candidate["entry_origin"]=origin
+        return candidate
+
+    def invoke_cli(self, candidate, *, filename=None, expected_error=None):
+        from unittest.mock import patch
+        from paper_evaluator.v3_paper_minipc_one_candidate_v1 import main
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);journal=root/"journal";budget=root/"budgets"
+            journal.mkdir();budget.mkdir()
+            file=root/(filename or candidate["candidate_id"]+".json")
+            file.write_text(json.dumps(candidate),encoding="utf-8")
+            argv=["v3_paper_minipc_one_candidate_v1.py","--candidate",str(file),
+                  "--series",SID,"--journal",str(journal),
+                  "--budget-directory",str(budget)]
+            with patch("sys.argv",argv),patch(
+                "paper_evaluator.v3_paper_minipc_one_candidate_v1.one_candidate",
+                return_value={"status":"CLI_IDENTITY_TEST_NO_MODEL","orders":False}
+            ) as worker:
+                if expected_error:
+                    with self.assertRaisesRegex(ValueError,expected_error):
+                        main()
+                    worker.assert_not_called()
+                else:
+                    self.assertEqual(main(),0)
+                    worker.assert_called_once()
+                    self.assertFalse(worker.call_args.kwargs["allow_model"])
+            self.assertEqual(list(journal.iterdir()),[])
+            self.assertEqual(list(budget.iterdir()),[])
+
+    def test_original_scanner_identity_bound_to_filename_and_queue(self):
+        self.invoke_cli(self.canonical_scanner())
+        self.invoke_cli(self.canonical_scanner(),filename="forged.json",
+                        expected_error="candidate identity mismatch")
+        fake=self.canonical_scanner();fake["queue_id"]="not-original"
+        self.invoke_cli(fake,expected_error="queue identity mismatch")
+
+    def test_unauthorized_order_packet_never_reaches_model_worker(self):
+        self.invoke_cli(self.canonical_scanner(action="BUY"),
+                        expected_error="unsafe candidate action")
+        fake=self.canonical_scanner();fake["kind"]="UNVERIFIED_CANDIDATE"
+        self.invoke_cli(fake,expected_error="V3_CLI_ORIGINAL_SCANNER_HANDOFF_REQUIRED")
+
+    def test_positive_source_label_without_hmac_cannot_use_model_cli(self):
+        self.invoke_cli(self.canonical_scanner(
+            origin="VERIFIED_POSITIVE_SOURCE_CATALYST"),
+            expected_error="V3_CLI_SOURCE_OWNER_AUTH_NOT_PROVEN_NO_MODEL")
+        self.invoke_cli(self.canonical_scanner(origin="UNKNOWN_BYPASS"),
+            expected_error="V3_CLI_SOURCE_OWNER_AUTH_NOT_PROVEN_NO_MODEL")
+
 if __name__=="__main__":
     unittest.main()
