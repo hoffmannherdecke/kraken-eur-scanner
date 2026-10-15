@@ -2,6 +2,8 @@ param(
   [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
   [switch]$ForceRecovery,
   [switch]$WaitSourceProgressOptIn,
+  [string]$WaitSourceLauncherPath = '',
+  [string]$WaitSourceLauncherSha256 = '',
   [int]$MinRestartIntervalMinutes = 10,
   [int]$StopWaitSeconds = 15,
   [int]$PostRestartVerifySeconds = 20
@@ -139,32 +141,36 @@ function Test-WaitSourceProgress([object]$Progress,[object]$Heartbeat,[datetime]
   return $true
 }
 
-# Read-only OS identity check: the PID inside JSON is never trusted by itself.
-# An opted-in WAIT child must be Python from the frozen isolated Paper stage.
-# Opt-in PR291 isolated WAIT owner: never use the historical Paper app as a
-# proxy for the active Windows WAIT Task. Only an exact original Task-action
-# launcher + SHA and same live child cmdline may authorize an activity fence.
-# Read-only: no task reconfiguration, no start/stop and no network.
-function Test-WaitSourceWorkerOnHost([object]$Progress,[string]$TradingRoot) {
+# The pinned immutable WAIT launcher comes from THIS supervisor release
+# invocation. Never infer a new trusted launcher from untrusted progress JSON,
+# nor assume the old PR291 immutable stage must be edited in place.
+# Missing pin => fail closed to the existing heartbeat/restart policy.
+function Test-WaitSourceWorkerOnHost([object]$Progress,[string]$TradingRoot,
+                                      [string]$PinnedLauncherPath,
+                                      [string]$PinnedLauncherSha256) {
   if(-not $Progress -or
-     [string]$Progress.worker_pid -notmatch '^[1-9][0-9]{0,8}$'){return $false}
+     [string]$Progress.worker_pid -notmatch '^[1-9][0-9]{0,8}$' -or
+     $PinnedLauncherSha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
+     [string]::IsNullOrWhiteSpace($PinnedLauncherPath)){return $false}
   try {
-    $launcher=Join-Path $TradingRoot 'Staging\v2r4-wait-pr291-isolated\wait_launcher.py'
+    if(-not [IO.Path]::IsPathRooted($PinnedLauncherPath)){return $false}
+    $launcher=[IO.Path]::GetFullPath($PinnedLauncherPath)
+    $stageRoot=[IO.Path]::GetFullPath((Join-Path $TradingRoot 'Staging')).Replace('\','/').TrimEnd('/')+'/'
     $launcherNorm=$launcher.Replace('\','/')
-    $expectedHash='C5E43D62976BDF2079A3A0402E57658ABA8A33D427B0CF0D56737565B84DD51D'
+    $relative=$launcherNorm.Substring($stageRoot.Length)
+    if(-not $launcherNorm.StartsWith($stageRoot,[StringComparison]::OrdinalIgnoreCase) -or
+       $relative -notmatch '(?i)^v2r4-wait-[a-z0-9-]+/wait_launcher\.py$'){return $false}
     $task=Get-ScheduledTask -TaskName 'CryptoMiniPC-V2R4PaperWait' -ErrorAction Stop
     if(-not $task -or [string]$task.State -ne 'Running' -or
        @($task.Actions).Count -ne 1){return $false}
     $action=$task.Actions[0]
     if([string]$action.Execute -notmatch '(?i)(?:^|[\\/])pythonw?\.exe$'){return $false}
-    # Compare the exact first quoted Task-script argument, not substring
-    # matches against other arguments (which can contain private paths).
     $quoted=@([regex]::Matches([string]$action.Arguments,'"([^"]+)"'))
     if($quoted.Count -lt 1 -or
        $quoted[0].Groups[1].Value.Replace('\','/') -ine $launcherNorm){return $false}
     if(-not (Test-Path -LiteralPath $launcher -PathType Leaf)){return $false}
     if([string](Get-FileHash -LiteralPath $launcher -Algorithm SHA256 -ErrorAction Stop).Hash -ine
-       $expectedHash){return $false}
+       $PinnedLauncherSha256){return $false}
     $id=[int]$Progress.worker_pid
     $found=@(Get-CimInstance -ClassName Win32_Process -Filter "ProcessId = $id" -ErrorAction Stop)
     if($found.Count -ne 1){return $false}
@@ -391,7 +397,7 @@ try {
     if($spec.name -eq "CryptoMiniPC-V2R4PaperWait" -and $WaitSourceProgressOptIn -and
        (-not $fresh) -and $schedulerRunning){
       $progress = Read-Heartbeat (Join-Path $stateDir "v2r4-paper-wait-source-progress.json")
-      $workerVerified = Test-WaitSourceWorkerOnHost -Progress $progress -TradingRoot $TradingRoot
+      $workerVerified = Test-WaitSourceWorkerOnHost -Progress $progress -TradingRoot $TradingRoot -PinnedLauncherPath $WaitSourceLauncherPath -PinnedLauncherSha256 $WaitSourceLauncherSha256
       $sourceProgressActive = Test-WaitSourceProgress -Progress $progress -Heartbeat $hb -ObservedUtc $now -TaskRunning $schedulerRunning -VerifiedWorker $workerVerified
     }
     if($spec.name -eq "CryptoMiniPC-V2R4PaperWait"){
@@ -549,6 +555,7 @@ $report = [pscustomobject]@{
     restart_attempt_history_persisted=$true
     max_restart_cooldown_seconds=3600
     wait_source_progress_opt_in=[bool]$WaitSourceProgressOptIn
+    wait_source_launcher_pin_present=([bool]$WaitSourceLauncherPath -and [bool]$WaitSourceLauncherSha256)
     wait_source_progress_never_healthy=$true
     strategy_changes=$false
     evaluator_invoked=$false
