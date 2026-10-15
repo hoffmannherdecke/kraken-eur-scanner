@@ -88,6 +88,66 @@ class V2R4WaitRuntimeTests(unittest.TestCase):
             self.assertEqual(result["cycle_started_at_utc"], z(at))
             self.assertEqual(result["counters"]["data_unavailable_checks"], 1)
 
+    def test_opt_in_source_progress_requires_completed_source_response(self):
+        import os
+        at = datetime(2026, 10, 15, 15, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            dirs = [root / n for n in ('decisions', 'rechecks', 'candidates', 'receipts')]
+            for d in dirs: d.mkdir()
+            (dirs[0] / 'plan.json').write_text(
+                json.dumps({'v2r4_trigger_plan': plan(at, value=100.0)}), 'utf-8'
+            )
+            progress = root / 'source-progress.json'
+            def completed_source(altname, *, on_source_progress=None):
+                self.assertEqual(altname, 'XBTEUR')
+                self.assertIsNotNone(on_source_progress)
+                on_source_progress()
+                on_source_progress()
+                return {'last_eur': 90.0}
+            with patch.object(runtime, 'market_metrics', side_effect=completed_source) as fetch:
+                result = runtime.run_cycle(
+                    decision_dir=dirs[0], recheck_dir=dirs[1],
+                    candidate_dir=dirs[2], receipt_dir=dirs[3],
+                    state_path=root / 'state.json', heartbeat_path=root / 'heartbeat.json',
+                    altrady_log=root / 'altrady.jsonl',
+                    spec_path=None, control_path=None, api_key_file=None,
+                    fallback_seconds=10, execute_recheck=False,
+                    now=at + timedelta(seconds=5), source_progress_path=progress,
+                )
+            self.assertEqual(fetch.call_count, 1)
+            row = json.loads(progress.read_text('utf-8'))
+            self.assertEqual(row['kind'], 'V2R4_WAIT_SOURCE_PROGRESS_V1')
+            self.assertEqual(row['status'], 'IN_PROGRESS_NOT_HEALTHY')
+            self.assertEqual(row['successful_source_steps'], 2)
+            self.assertEqual(row['worker_pid'], os.getpid())
+            self.assertTrue(row['paper_only'])
+            self.assertFalse(row['order_api'])
+            self.assertEqual(result['status'], 'HEALTHY')
+            self.assertEqual(list(dirs[3].iterdir()), [])
+
+    def test_no_completed_source_cannot_emit_progress_pulse(self):
+        at = datetime(2026, 10, 15, 15, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            dirs = [root / n for n in ('decisions', 'rechecks', 'candidates', 'receipts')]
+            for d in dirs: d.mkdir()
+            (dirs[0] / 'plan.json').write_text(
+                json.dumps({'v2r4_trigger_plan': plan(at, value=100.0)}), 'utf-8'
+            )
+            progress = root / 'source-progress.json'
+            with patch.object(runtime, 'market_metrics', side_effect=RuntimeError('offline error')):
+                result = runtime.run_cycle(
+                    decision_dir=dirs[0], recheck_dir=dirs[1],
+                    candidate_dir=dirs[2], receipt_dir=dirs[3],
+                    state_path=root / 'state.json', heartbeat_path=root / 'heartbeat.json',
+                    altrady_log=root / 'altrady.jsonl',
+                    spec_path=None, control_path=None, api_key_file=None,
+                    fallback_seconds=10, execute_recheck=False,
+                    now=at + timedelta(seconds=5), source_progress_path=progress,
+                )
+            self.assertEqual(result['status'], 'DEGRADED')
+            self.assertFalse(progress.exists())
     def test_legacy_kraken_symbol_matches_same_pair_hint(self):
         now = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
         p = plan(now)
