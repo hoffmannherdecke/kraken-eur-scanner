@@ -54,6 +54,7 @@ def assess_v3_experimental_source_inventory(root:Path)->dict[str,Any]:
     strategy_hash=None
     inventory_hash=None
     revision=None
+    outstanding_live_gates=[]
     try:
         root=root.resolve(strict=True)
         bundle=root/BUNDLE_SOURCE
@@ -68,6 +69,14 @@ def assess_v3_experimental_source_inventory(root:Path)->dict[str,Any]:
             raise ValueError("bundle is not an object")
         revision=v.get("strategy_revision")
         strategy_hash=hashlib.sha256(raw).hexdigest()
+        state=v.get("current_verified_state")
+        if isinstance(state,dict):
+            # Read original, explicit FALSE fields as outstanding, never infer
+            # that a missing or TRUE field is a completed host receipt.
+            outstanding_live_gates=sorted(
+                key for key,val in state.items()
+                if isinstance(key,str) and val is False
+            )
         if (v.get("kind")!="V3_EXPERIMENTAL_PAPER_ALL_LESSONS_POLICY_BUNDLE_V1"
                 or not isinstance(revision,str)
                 or not re.fullmatch(r"V3-[A-Za-z0-9_.-]{8,95}",revision)):
@@ -134,6 +143,7 @@ def assess_v3_experimental_source_inventory(root:Path)->dict[str,Any]:
         "source_inventory_complete":not errors and inventory_hash is not None,
         "source_inventory_errors":sorted(set(errors)),
         "source_files_count":len(file_hashes),
+        "original_bundle_unproven_live_gate_names":outstanding_live_gates,
         "candidate_strategy_bundle_source_sha256":strategy_hash,
         "candidate_source_inventory_sha256":inventory_hash,
         "candidate_digests_not_release_fingerprints":True,
