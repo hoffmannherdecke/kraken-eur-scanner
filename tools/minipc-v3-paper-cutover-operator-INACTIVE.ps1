@@ -170,6 +170,83 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
  }
 }
 
+
+# Exact adapter for the *actual* 15-Oct host backup-manifest.json SCHEMA.
+# This validates values only, not the physical existence of a backup directory,
+# file SHA, Windows Task state, privileged ACL, machine identity or provenance.
+# Critically it MUST NOT upcast this V1 host readback to PR316's simulated,
+# more demanding V3_OLD_INTAKE_BACKUP_PROPOSAL_V1 task_records contract.
+function Get-V3NativeIntakeBackupReadbackGap([object]$Readback) {
+ $errors=@()
+ $expected=@{
+  'CryptoMiniPC-V2R4PaperCandidates'='Candidates.task.xml'
+  'CryptoMiniPC-V2R4PaperWait'='WAIT.task.xml'
+ }
+ if($null -eq $Readback){
+  $errors+=@('MISSING_READBACK')
+ } else {
+  if([string]$Readback.kind -cne 'V3_OLD_INTAKE_NATIVE_BACKUP_READBACK_V1'){
+   $errors+=@('WRONG_NATIVE_KIND')
+  }
+  if([string]$Readback.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z'){
+   $errors+=@('WRONG_PREDECESSOR')
+  }
+  if($Readback.task_or_process_changes -ne $false -or
+     $Readback.cloud_changes -ne $false -or
+     $Readback.actual_stop_or_rollback_tested -ne $false){
+   $errors+=@('UNEXPECTED_MUTATION_OR_RESTORE_CLAIM')
+  }
+  $time=[datetimeoffset]::MinValue
+  $timestamp=[string]$Readback.captured_at_utc
+  if($timestamp -cnotmatch '(Z|\+00:00)$' -or
+     -not([datetimeoffset]::TryParse($timestamp,[ref]$time))){
+   $errors+=@('INVALID_UTC_CAPTURE_TIME')
+  }
+  $tasks=@($Readback.tasks)
+  if($tasks.Count -ne 2){
+   $errors+=@('WRONG_COUNT')
+  } else {
+   $names=@($tasks | ForEach-Object {[string]$_.task_name})
+   if(-not(Test-V3ScopedIntakeTaskSet -Names $names)){
+    $errors+=@('WRONG_TASK_SCOPE')
+   }
+   foreach($task in $tasks){
+    $name=[string]$task.task_name
+    if(-not $expected.ContainsKey($name)){continue}
+    if([string]$task.backup_file -cne $expected[$name]){
+     $errors+=@('UNEXPECTED_BACKUP_FILENAME')
+    }
+    if([string]$task.task_path -cne '\'){
+     $errors+=@('UNEXPECTED_TASK_PATH')
+    }
+    if([string]$task.original_state -cne 'Running'){
+     $errors+=@('NONRUNNING_OR_UNKNOWN_ORIGINAL_STATE')
+    }
+    if([string]$task.xml_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+       [string]$task.action_sha256 -cnotmatch '^[a-f0-9]{64}$'){
+     $errors+=@('INVALID_CAPTURED_HASH')
+    }
+   }
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_NATIVE_BACKUP_READBACK_SCHEMA_GAP_OFFLINE_V1'
+  native_host_manifest_schema_only_pass=($errors.Count -eq 0)
+  schema_errors=@($errors)
+  schema_is_not_physical_provenance=$true
+  host_backup_physical_readback_independently_verified_here=$false
+  full_task_xml_contents_and_disk_sha_recheck_needed=$true
+  original_native_principal_boot_restart_settings_recheck_needed=$true
+  original_runtime_stage_source_sha_needed=$true
+  exact_live_task_action_xml_and_process_tree_recheck_needed=$true
+  actual_restore_dryrun_completed=$false
+  can_upcast_native_host_manifest_to_recovery_proposal=$false
+  automatic_intake_task_action_authorized=$false
+  v3_paper_release_authorized=$false
+  full_v3_release_proofs_credited=0
+ }
+}
+
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
