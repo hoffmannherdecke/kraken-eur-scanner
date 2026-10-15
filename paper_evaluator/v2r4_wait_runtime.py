@@ -272,6 +272,7 @@ def run_cycle(
     fallback_seconds: float,
     execute_recheck: bool,
     now: datetime | None = None,
+    source_progress_path: Path | None = None,
 ) -> dict[str, Any]:
     # The decision PIT clock is fixed for the entire cycle; do not reuse it
     # as the health heartbeat's actual completion timestamp.
@@ -307,6 +308,24 @@ def run_cycle(
     # Never carry data/errors into the next cycle or outside paper WAIT.
     pair_snapshot_cache: dict[str, dict[str, float | None] | Exception] = {}
 
+    # Opt-in progress evidence only from completed public Kraken responses.
+    # Never pretend an in-progress cycle completed HEALTHY.
+    source_progress_steps = 0
+    def record_source_progress() -> None:
+        nonlocal source_progress_steps
+        source_progress_steps += 1
+        if source_progress_path is None:
+            return
+        atomic_json(source_progress_path, {
+            "kind": "V2R4_WAIT_SOURCE_PROGRESS_V1",
+            "status": "IN_PROGRESS_NOT_HEALTHY",
+            "cycle_started_at_utc": iso(now),
+            "last_source_progress_at_utc": iso(utcnow()),
+            "successful_source_steps": source_progress_steps,
+            "worker_pid": os.getpid(),
+            "paper_only": True,
+            "order_api": False,
+        })
     for plan, source_path in plans:
         key = plan_key(plan)
         handled = state["handled"].get(key)
@@ -343,7 +362,12 @@ def run_cycle(
                 # the cycle as fail-closed errors; do not retry a throttled
                 # pair repeatedly just because several WAIT plans refer to it.
                 try:
-                    pair_snapshot_cache[altname] = market_metrics(altname)
+                    if source_progress_path is None:
+                        pair_snapshot_cache[altname] = market_metrics(altname)
+                    else:
+                        pair_snapshot_cache[altname] = market_metrics(
+                            altname, on_source_progress=record_source_progress
+                        )
                 except Exception as source_error:
                     pair_snapshot_cache[altname] = source_error
                 counters["unique_pair_source_fetches"] += 1
@@ -462,6 +486,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--spec", type=Path)
     ap.add_argument("--control", type=Path)
     ap.add_argument("--api-key-file", type=Path, default=home / "Secrets" / "openai-api-key.txt")
+    ap.add_argument("--source-progress-file", type=Path, default=None)
     ap.add_argument("--fallback-seconds", type=float, default=10.0)
     ap.add_argument("--loop-seconds", type=float, default=1.0)
     ap.add_argument("--execute-recheck", action="store_true")
@@ -499,6 +524,7 @@ def main() -> int:
             api_key_file=args.api_key_file,
             fallback_seconds=args.fallback_seconds,
             execute_recheck=args.execute_recheck,
+            source_progress_path=args.source_progress_file,
         )
         print(json.dumps(result, sort_keys=True), flush=True)
         if args.once:
