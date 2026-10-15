@@ -68,10 +68,7 @@ function TaskXmlWithArguments([string]$Xml,[string]$Arguments) {
   $settings=$d.SelectSingleNode('/t:Task/t:Settings',$ns)
   Need ($null -ne $settings) 'Task Settings XML missing'
   $enabled=$settings.SelectSingleNode('t:Enabled',$ns)
-  if(-not $enabled){
-    $enabled=$d.CreateElement('Enabled',$d.DocumentElement.NamespaceURI)
-    [void]$settings.AppendChild($enabled)
-  }
+  Need ($null -ne $enabled) 'Original task XML missing Enabled field; refusing schema mutation'
   $enabled.InnerText='false'
   return $d.OuterXml
 }
@@ -117,6 +114,7 @@ $oldSupervisor=$matchS.Groups[1].Value
 if(-not $oldSupervisor){$oldSupervisor=$matchS.Groups[2].Value}
 Need ((Sha $oldSupervisor) -ieq $oldSupervisorHash) 'Original Supervisor source SHA drift'
 Need ($actS -notmatch '(?i)WaitSourceProgressOptIn|WaitSourceLauncherPath|WaitSourceLauncherSha256') 'Supervisor source-progress already enabled'
+Need (-not (Test-Path -LiteralPath $progress)) 'Unexpected preexisting source progress file; refusing replay'
 Need ((Count-LauncherProcesses $oldLauncher) -ge 1) 'Original WAIT process not physically identified'
 Need ((Count-LauncherProcesses $newLauncher) -eq 0) 'PR326 launcher already active unexpectedly'
 $work=Join-Path $TradingRoot 'Staging\pr326-code-79dad178f3cd'
@@ -140,7 +138,7 @@ if(-not $Execute){
   exit 0
 }
 Need ($Confirm -ceq 'APPROVED_PR326_PAPER_ONLY_CUTOVER') 'Exact protected cutover confirmation argument missing'
-$admin=[Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+$admin=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 Need ($admin.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) 'Admin Windows token required'
 $backupDir=Join-Path 'D:\Krypto-Sicherungen' ('PR326-CUTOVER-'+(Get-Date -Format 'yyyyMMdd-HHmmss'))
 Need (-not (Test-Path -LiteralPath $backupDir)) 'Backup destination collision'
@@ -170,7 +168,6 @@ try {
   $deadline=(Get-Date).AddSeconds(30)
   while((Count-LauncherProcesses $oldLauncher) -gt 0 -and (Get-Date) -lt $deadline){Start-Sleep -Milliseconds 500}
   Require-NoWaitProcess
-  Need (-not (Test-Path -LiteralPath $progress)) 'Unexpected preexisting source progress file; refusing replay'
   Register-InactiveTask $waitName $newWaitXml
   Register-InactiveTask $supName $newSupXml
   Need ([string](Get-OneTask $waitName).Actions[0].Arguments -ceq $newWaitArgs) 'WAIT action readback mismatch'
