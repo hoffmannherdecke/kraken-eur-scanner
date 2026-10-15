@@ -30,6 +30,64 @@ def plan(now, *, candidate_id="C1", value=1.0):
 
 
 class V2R4WaitRuntimeTests(unittest.TestCase):
+    def test_cycle_start_does_not_masquerade_as_health_completion(self):
+        # Real Mini-PC incident: cycle-start stamp preceded file write by
+        # 111s. Even a 30s Supervisor threshold must see completion time.
+        at = datetime(2026, 10, 15, 15, 0, tzinfo=timezone.utc)
+        done = at + timedelta(seconds=111)
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            for name in ("decisions", "rechecks", "candidates", "receipts"):
+                (base / name).mkdir()
+            with patch.object(runtime, "utcnow", return_value=done):
+                result = runtime.run_cycle(
+                    decision_dir=base / "decisions",
+                    recheck_dir=base / "rechecks",
+                    candidate_dir=base / "candidates",
+                    receipt_dir=base / "receipts",
+                    state_path=base / "state.json",
+                    heartbeat_path=base / "heartbeat.json",
+                    altrady_log=base / "altrady.jsonl",
+                    spec_path=None, control_path=None, api_key_file=None,
+                    fallback_seconds=10, execute_recheck=False, now=at,
+                )
+            disk = json.loads((base / "heartbeat.json").read_text("utf-8"))
+            self.assertEqual(result["checked_at_utc"], z(done))
+            self.assertEqual(disk["checked_at_utc"], z(done))
+            self.assertEqual(disk["cycle_started_at_utc"], z(at))
+            self.assertGreaterEqual(disk["cycle_duration_seconds"], 0)
+            self.assertEqual(result["status"], "HEALTHY")
+            self.assertEqual(result["counters"]["unique_pair_source_fetches"], 0)
+
+    def test_degraded_cycle_still_uses_real_completion_timestamp(self):
+        at = datetime(2026, 10, 15, 15, 0, tzinfo=timezone.utc)
+        done = at + timedelta(seconds=125)
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            for name in ("decisions", "rechecks", "candidates", "receipts"):
+                (base / name).mkdir()
+            (base / "decisions" / "d.json").write_text(
+                json.dumps({"v2r4_trigger_plan": plan(at)}), "utf-8"
+            )
+            with patch.object(runtime, "utcnow", return_value=done), patch.object(
+                runtime, "market_metrics", side_effect=RuntimeError("Kraken unavailable")
+            ):
+                result = runtime.run_cycle(
+                    decision_dir=base / "decisions",
+                    recheck_dir=base / "rechecks",
+                    candidate_dir=base / "candidates",
+                    receipt_dir=base / "receipts",
+                    state_path=base / "state.json",
+                    heartbeat_path=base / "heartbeat.json",
+                    altrady_log=base / "altrady.jsonl",
+                    spec_path=None, control_path=None, api_key_file=None,
+                    fallback_seconds=10, execute_recheck=False, now=at,
+                )
+            self.assertEqual(result["status"], "DEGRADED")
+            self.assertEqual(result["checked_at_utc"], z(done))
+            self.assertEqual(result["cycle_started_at_utc"], z(at))
+            self.assertEqual(result["counters"]["data_unavailable_checks"], 1)
+
     def test_legacy_kraken_symbol_matches_same_pair_hint(self):
         now = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
         p = plan(now)
