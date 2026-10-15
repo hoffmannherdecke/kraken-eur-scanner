@@ -2,7 +2,7 @@
 
 **Scope:** existing GitHub V3 P0/P1, issue #99 and daily 10:15 Work; no new service, scheduler, daemon, Cloud function, DB, project manager or runtime writer. Source review only until separately authorized.
 
-The source `tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1` is a **one-shot read-only operator preparation diagnostic**. On GitHub it is inert. If later separately installed with a pinned SHA and backup, its default mode reads the existing `tools/check-minipc-v3-physical-writer-readiness.ps1` original host preflight. `-Execute` ALWAYS throws. Neither this operator nor PR313 has yet been deployed on the original host. The offline CI invokes only its pure readiness function and rejects mutation commands in this inactive operator.
+The source `tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1` is a **one-shot read-only operator preparation diagnostic**. On GitHub it is inert. If later separately installed with a pinned SHA and backup, its default mode reads the existing `tools/check-minipc-v3-physical-writer-readiness.ps1` original host preflight. `-Execute` ALWAYS throws. PR313 original READ-ONLY preflight was separately installed and physically PASS-verified on 15 October, including a verified backup. The INACTIVE operator remains GitHub-only and was never installed or executed on the original host. The offline CI invokes only its pure readiness function and rejects mutation commands in this inactive operator.
 
 ## Nonnegotiable future execution contract (NOT implemented in this PR)
 
@@ -16,3 +16,8 @@ The source `tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1` is a **one-shot
 **Output truth:** `pre_cutover_discovery_pass=true` is, at most, a fresh local READ-ONLY inventory predicate. It never means dry-run passed, tasks quiescent, native no-rearm proven, CAS deployed or V3 Paper released.
 
 **Next:** implement gated physical operator transaction/rollback in a subsequent review after independent source and failure-mode analysis; run pure negative tests before any real Mini-PC intervention.
+## 15 October 2026 — original WAIT evidence and complete-descendants policy
+
+Genuine Admin PowerShell showed Candidates, WAIT, Lifecycle and CloudSync tasks Running; WAIT one matching `wait_launcher.py` action, exactly 2 matched Python processes in original Stage, parent→child `13796 → 15516` and `WAIT_TREE_PASS=True`. These PIDs are a transient pre-cutover snapshot, not stop authority. The two-Python filter did **not** enumerate all process types or unrecognized children.
+
+The **existing one-shot inactive operator** now also takes a single read-only `Win32_Process` inventory of all process edges and checks whether the two recognized original-stage WAIT Python processes form an isolated root→child family **without any additional child edge**, including non-Python children. A missing or inconsistent snapshot fails closed. The 14 pure regression cases live in the pre-existing CI test. No credentials or full CommandLine appear in output. The new `wait_closed_descendants_readonly_snapshot_pass` is still **only a read-only ephemeral finding**, not actual PID/Task stop, source hash pin, reboot-no-rearm, rollback, Cloud CAS, 1/6 release proof or authority for any mutation. The INACTIVE `-Execute` option still always throws. Before real cutover repeat all live identity/descendant checks with separately authorized source deployment.
