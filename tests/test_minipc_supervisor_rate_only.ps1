@@ -112,6 +112,53 @@ foreach($required in @('[switch]$WaitSourceProgressOptIn',
 }
 Write-Output 'SUPERVISOR_WAIT_SOURCE_PROGRESS_OPT_IN_STATIC_GUARD_PASS'
 
+# Fake only the per-PID CIM query. Real Win32_Process is never accessed here.
+$hostFn=@($ast.FindAll({
+ param($a)
+ $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $a.Name -eq 'Test-WaitSourceWorkerOnHost'
+},$true))
+if($hostFn.Count -ne 1){throw 'Expected one WAIT OS PID verification function'}
+. ([Scriptblock]::Create($hostFn[0].Extent.Text))
+function Get-CimInstance {
+ param([string]$ClassName,[string]$Filter,[object]$ErrorAction)
+ if($ClassName -cne 'Win32_Process' -or $Filter -cne 'ProcessId = 3001'){
+  throw 'Blocked unexpected actual process query'
+ }
+ return $script:fakeProcess
+}
+$fakeRoot=Join-Path $PSScriptRoot 'SyntheticNoDiskTrading'
+$fakeStage=Join-Path $fakeRoot 'Runtime\v2r4-paper-app'
+function ValidFakeWorker {
+ [pscustomobject]@{
+  Name='python.exe'
+  CommandLine=('python.exe "' + (Join-Path $fakeStage 'wait_launcher.py') + '"')
+  CreationDate=[datetime]'2026-10-15T17:59:50Z'
+ }
+}
+$script:fakeProcess=ValidFakeWorker
+if(-not (Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot)){
+ throw 'Valid synthetic original WAIT child was not recognized'
+}
+$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.Name='other.exe'
+if(Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot){
+ throw 'Foreign executable accepted'
+}
+$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.CommandLine='python.exe foreign.py'
+if(Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot){
+ throw 'Foreign script accepted'
+}
+$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.CreationDate=[datetime]'2026-10-15T18:02:00Z'
+if(Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot){
+ throw 'Recycled PID born after cycle accepted'
+}
+$script:fakeProcess=$null
+if(Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot){
+ throw 'Missing PID accepted'
+}
+Write-Output 'SUPERVISOR_WAIT_SOURCE_WORKER_MOCK_5_CASES_PASS'
+
+
 # Pure V3 supervisor intake fence regression; NEVER execute the Supervisor.
 $guard=@($ast.FindAll({
   param($a)
