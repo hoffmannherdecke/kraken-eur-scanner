@@ -1099,7 +1099,7 @@ foreach($token in @(
  'POST_CUTOVER_WAIT_CYCLES',
  'PR326_ROLLBACK=OLD_TASKS_RESTORED',
  'MANUAL_INTERVENTION_REQUIRED_NO_BLIND_RESTART',
- 'Original task XML missing Enabled field',
+ "if(`$null -eq `$enabled){",
  'Unexpected preexisting source progress file'
 )){
   if(-not $pr326Text.Contains($token)){throw "PR326_PROTECTED_OPERATOR_CONTRACT_MISSING $token"}
@@ -1119,3 +1119,69 @@ if($pr326Text.IndexOf('Unexpected preexisting source progress file') -gt
   throw 'PR326_PROGRESS_REPLAY_CHECK_AFTER_MUTATION'
 }
 Write-Output 'PR326_PROTECTED_OPERATOR_STATIC_FENCE_PASS'
+
+
+# Native TaskScheduler XML omits optional Settings/Enabled (default=true).
+# Invoke ONLY the pure XML-transformation function extracted from operator AST.
+# No ScheduledTasks registration, process, network, file modifications.
+$pr326XmlFuncs=@($pr326Ast.FindAll({
+  param($node)
+  $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+  $node.Name -eq 'TaskXmlWithArguments'
+},$true))
+if($pr326XmlFuncs.Count -ne 1){throw 'PR326_TASK_XML_FUNCTION_NOT_UNIQUE'}
+. ([Scriptblock]::Create($pr326XmlFuncs[0].Extent.Text))
+function Need([bool]$Condition,[string]$Reason) {
+  if(-not $Condition){throw $Reason}
+}
+$nativeTaskXml=@'
+<Task xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task" version="1.4">
+ <RegistrationInfo><URI>\CryptoMiniPC-Test</URI></RegistrationInfo>
+ <Triggers><BootTrigger><Enabled>true</Enabled></BootTrigger></Triggers>
+ <Principals><Principal id="Author"><UserId>S-1-5-18</UserId></Principal></Principals>
+ <Settings>
+  <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+  <StartWhenAvailable>true</StartWhenAvailable>
+  <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+ </Settings>
+ <Actions Context="Author">
+  <Exec>
+   <Command>python.exe</Command>
+   <Arguments>"C:\Original\wait_launcher.py" --execute-recheck</Arguments>
+  </Exec>
+ </Actions>
+</Task>
+'@
+$originalNativeXml=$nativeTaskXml
+$replacementArguments='"C:\Isolated\wait_launcher.py" --execute-recheck --source-progress-file "C:\Isolated\progress.json"'
+function Check-TaskXmlCandidate([string]$Value,[string]$Label) {
+  [xml]$z=$Value
+  $ns2=New-Object Xml.XmlNamespaceManager($z.NameTable)
+  $ns2.AddNamespace('t',$z.DocumentElement.NamespaceURI)
+  $settings=$z.SelectSingleNode('/t:Task/t:Settings',$ns2)
+  $state=$settings.SelectSingleNode('t:Enabled',$ns2)
+  if(-not $state -or $state.InnerText -ne 'false'){throw "PR326_XML_NOT_DISABLED $Label"}
+  $exec=$z.SelectSingleNode('/t:Task/t:Actions/t:Exec',$ns2)
+  if($exec.SelectSingleNode('t:Arguments',$ns2).InnerText -cne $replacementArguments){
+    throw "PR326_XML_ARGUMENTS_WRONG $Label"
+  }
+  if($settings.SelectSingleNode('t:ExecutionTimeLimit',$ns2).InnerText -ne 'PT0S' -or
+     $settings.SelectSingleNode('t:MultipleInstancesPolicy',$ns2).InnerText -ne 'IgnoreNew' -or
+     $z.SelectSingleNode('/t:Task/t:Principals/t:Principal/t:UserId',$ns2).InnerText -ne 'S-1-5-18' -or
+     $z.SelectSingleNode('/t:Task/t:Triggers/t:BootTrigger/t:Enabled',$ns2).InnerText -ne 'true'){
+    throw "PR326_XML_ORIGINAL_POLICY_DRIFT $Label"
+  }
+  if(@($settings.SelectNodes('t:Enabled',$ns2)).Count -ne 1){throw "PR326_XML_DUPLICATE_ENABLED $Label"}
+}
+$nativeDisabled=TaskXmlWithArguments -Xml $nativeTaskXml -Arguments $replacementArguments
+Check-TaskXmlCandidate $nativeDisabled 'missing optional Enabled'
+if($nativeTaskXml -cne $originalNativeXml){throw 'PR326_ORIGINAL_XML_MUTATED_IN_MEMORY'}
+$withEnabled=$nativeTaskXml.Replace('<ExecutionTimeLimit>', '<Enabled>true</Enabled><ExecutionTimeLimit>')
+$existingDisabled=TaskXmlWithArguments -Xml $withEnabled -Arguments $replacementArguments
+Check-TaskXmlCandidate $existingDisabled 'already present Enabled'
+$withoutArguments=$nativeTaskXml.Replace('<Arguments>"C:\Original\wait_launcher.py" --execute-recheck</Arguments>','')
+$missingArgsFailed=$false
+try{$null=TaskXmlWithArguments -Xml $withoutArguments -Arguments $replacementArguments}
+catch{$missingArgsFailed=([string]$_.Exception.Message -match 'Original task XML missing Arguments')}
+if(-not $missingArgsFailed){throw 'PR326_MISSING_ARGUMENTS_DID_NOT_FAIL_CLOSED'}
+Write-Output 'PR326_NATIVE_OPTIONAL_ENABLED_XML_3_CASES_PASS'
