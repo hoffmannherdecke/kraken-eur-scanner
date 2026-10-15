@@ -141,26 +141,41 @@ function Test-WaitSourceProgress([object]$Progress,[object]$Heartbeat,[datetime]
 
 # Read-only OS identity check: the PID inside JSON is never trusted by itself.
 # An opted-in WAIT child must be Python from the frozen isolated Paper stage.
+# Opt-in PR291 isolated WAIT owner: never use the historical Paper app as a
+# proxy for the active Windows WAIT Task. Only an exact original Task-action
+# launcher + SHA and same live child cmdline may authorize an activity fence.
+# Read-only: no task reconfiguration, no start/stop and no network.
 function Test-WaitSourceWorkerOnHost([object]$Progress,[string]$TradingRoot) {
   if(-not $Progress -or
      [string]$Progress.worker_pid -notmatch '^[1-9][0-9]{0,8}$'){return $false}
   try {
+    $launcher=Join-Path $TradingRoot 'Staging\v2r4-wait-pr291-isolated\wait_launcher.py'
+    $launcherNorm=$launcher.Replace('\','/')
+    $expectedHash='C5E43D62976BDF2079A3A0402E57658ABA8A33D427B0CF0D56737565B84DD51D'
+    $task=Get-ScheduledTask -TaskName 'CryptoMiniPC-V2R4PaperWait' -ErrorAction Stop
+    if(-not $task -or [string]$task.State -ne 'Running' -or
+       @($task.Actions).Count -ne 1){return $false}
+    $action=$task.Actions[0]
+    if([string]$action.Execute -notmatch '(?i)(?:^|[\\/])pythonw?\.exe$'){return $false}
+    # Compare the exact first quoted Task-script argument, not substring
+    # matches against other arguments (which can contain private paths).
+    $quoted=@([regex]::Matches([string]$action.Arguments,'"([^"]+)"'))
+    if($quoted.Count -lt 1 -or
+       $quoted[0].Groups[1].Value.Replace('\','/') -ine $launcherNorm){return $false}
+    if(-not (Test-Path -LiteralPath $launcher -PathType Leaf)){return $false}
+    if([string](Get-FileHash -LiteralPath $launcher -Algorithm SHA256 -ErrorAction Stop).Hash -ine
+       $expectedHash){return $false}
     $id=[int]$Progress.worker_pid
     $found=@(Get-CimInstance -ClassName Win32_Process -Filter "ProcessId = $id" -ErrorAction Stop)
     if($found.Count -ne 1){return $false}
     $process=$found[0]
-    $command=[string]$process.CommandLine
-    $stage=Join-Path $TradingRoot 'Runtime\v2r4-paper-app'
-    # Normalize Windows/Linux separators for the same pure mock-driven
-    # policy regression; the actual host is still Windows and read-only.
-    $stagePrefix=($stage.Replace('\','/')).TrimEnd('/') + '/'
-    $normalizedCommand=$command.Replace('\','/')
+    $command=([string]$process.CommandLine).Replace('\','/')
+    $needle='(?i)(?:^|["''\s])'+[regex]::Escape($launcherNorm)+'(?=$|["''\s])'
     $born=([datetime]$process.CreationDate).ToUniversalTime()
     $started=([datetime]$Progress.cycle_started_at_utc).ToUniversalTime()
     return (
       [string]$process.Name -match '^pythonw?\.exe$' -and
-      $normalizedCommand.IndexOf($stagePrefix,[System.StringComparison]::OrdinalIgnoreCase) -ge 0 -and
-      $command -match '(?i)(?:wait_launcher\.py|v2r4_wait_runtime(?:\.py)?)' -and
+      $command -match $needle -and
       $born -le $started -and $born -le (Get-Date).ToUniversalTime()
     )
   } catch { return $false }
