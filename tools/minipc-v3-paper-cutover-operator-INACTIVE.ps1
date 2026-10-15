@@ -125,6 +125,8 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
     [string]$Receipt.kind -cne 'V3_CUTOVER_RECOVERY_SIMULATION_V1' -or
     [string]$Receipt.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
     -not(Test-V3ScopedIntakeTaskSet -Names @($Receipt.task_names)) -or
+    $null -eq $Receipt.cloud_cas_invoked -or
+    $null -eq $Receipt.v3_writer_started -or
     $Receipt.paper_only -ne $true -or
     $Receipt.real_money_actions -ne $false){
    $resolution='BLOCK_INVALID_SCOPE_OR_RECEIPT'
@@ -143,6 +145,7 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
   } elseif($phase -notin @('ARMED','QUIESCED')){
    $resolution='HOLD_UNKNOWN_PHASE'
   } elseif($phase -eq 'QUIESCED' -and
+      (Test-V3ScopedOriginalBackupContract -Manifest $Receipt.backup_manifest) -and
       $Receipt.backup_contract_verified -eq $true -and
       $Receipt.native_intake_tasks_disabled_ack -eq $true -and
       $Receipt.original_intake_processes_absent_ack -eq $true -and
