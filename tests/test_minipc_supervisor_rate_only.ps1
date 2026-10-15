@@ -1078,3 +1078,44 @@ foreach($k in @('pre_cas_physical_order_preview=@(',
  if(-not $opText.Contains($k)){throw "V3_ORDER_CONTRACT_MISSING $k"}
 }
 Write-Output 'V3_SINGLE_WRITER_PHYSICAL_FENCE_PURE_33_CASES_PASS'
+
+# PR326 protected two-task operator: AST-only / source-contract tests.
+# Never source/execute the operator in CI (it can mutate Windows tasks).
+$pr326Operator=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/minipc-pr326-protected-cutover.ps1'
+$pr326Tokens=$null;$pr326Errors=$null
+$pr326Ast=[System.Management.Automation.Language.Parser]::ParseFile(
+  $pr326Operator,[ref]$pr326Tokens,[ref]$pr326Errors)
+if(@($pr326Errors).Count -ne 0){throw 'PR326_CUTOVER_OPERATOR_SYNTAX_INVALID'}
+$pr326Text=Get-Content -LiteralPath $pr326Operator -Raw -ErrorAction Stop
+foreach($token in @(
+ 'PR326_RELEASE_PREFLIGHT=PASS',
+ 'PR326_EXECUTION=NOT_REQUESTED_READ_ONLY',
+ 'APPROVED_PR326_PAPER_ONLY_CUTOVER',
+ 'ProtectedData',
+ 'DataProtectionScope]::CurrentUser',
+ 'Old WAIT launcher PID still alive',
+ 'New WAIT launcher PID still alive',
+ 'Register-InactiveTask',
+ 'POST_CUTOVER_WAIT_CYCLES',
+ 'PR326_ROLLBACK=OLD_TASKS_RESTORED',
+ 'MANUAL_INTERVENTION_REQUIRED_NO_BLIND_RESTART',
+ 'Original task XML missing Enabled field',
+ 'Unexpected preexisting source progress file'
+)){
+  if(-not $pr326Text.Contains($token)){throw "PR326_PROTECTED_OPERATOR_CONTRACT_MISSING $token"}
+}
+$disableSup=$pr326Text.IndexOf('Disable-ScheduledTask -TaskName $supName -ErrorAction Stop')
+$disableWait=$pr326Text.IndexOf('Disable-ScheduledTask -TaskName $waitName -ErrorAction Stop')
+$stopWait=$pr326Text.IndexOf('Stop-ScheduledTask -TaskName $waitName -ErrorAction SilentlyContinue')
+$startWait=$pr326Text.IndexOf('Start-ScheduledTask -TaskName $waitName -ErrorAction Stop')
+$startSup=$pr326Text.IndexOf('Start-ScheduledTask -TaskName $supName -ErrorAction Stop')
+if($disableSup -lt 0 -or $disableWait -le $disableSup -or
+   $stopWait -le $disableWait -or $startWait -le $stopWait -or
+   $startSup -le $startWait){
+  throw 'PR326_PROTECTED_OPERATOR_SHUTDOWN_START_ORDER_INVALID'
+}
+if($pr326Text.IndexOf('Unexpected preexisting source progress file') -gt
+   $pr326Text.IndexOf('$enteredMutation=$true')){
+  throw 'PR326_PROGRESS_REPLAY_CHECK_AFTER_MUTATION'
+}
+Write-Output 'PR326_PROTECTED_OPERATOR_STATIC_FENCE_PASS'
