@@ -92,6 +92,58 @@ function Require-NoWaitProcess {
   Need ((Count-LauncherProcesses $oldLauncher) -eq 0) 'Old WAIT launcher PID still alive; do not create competing writer'
   Need ((Count-LauncherProcesses $newLauncher) -eq 0) 'New WAIT launcher PID still alive; do not create competing writer'
 }
+# The original TaskScheduler LastRunTime is exposed at seconds precision,
+# while a PowerShell start marker has sub-second precision. Use a monotonic
+# before/after task readback and an exact post-launch supervisor JSON timestamp.
+# This is a pure policy, no task controls or network effects.
+function Test-Pr326SupervisorReceipt(
+    [object]$BeforeInfo,[object]$AfterInfo,[object]$BeforeReport,
+    [object]$AfterReport,[datetime]$RequestedStart,[string]$WaitTaskName) {
+  if(-not $BeforeInfo -or -not $AfterInfo -or -not $AfterReport){return $false}
+  try {
+    $last=([datetime]$AfterInfo.LastRunTime).ToUniversalTime()
+    $prior=([datetime]$BeforeInfo.LastRunTime).ToUniversalTime()
+    $completed=([datetime]$AfterReport.checked_at_utc).ToUniversalTime()
+    $originalReportTime=[datetime]::MinValue
+    if($BeforeReport -and $BeforeReport.checked_at_utc){
+      $originalReportTime=([datetime]$BeforeReport.checked_at_utc).ToUniversalTime()
+    }
+    if($last -le $prior -or $last -lt $RequestedStart.AddSeconds(-2) -or
+       [int]$AfterInfo.LastTaskResult -ne 0 -or
+       $completed -lt $RequestedStart -or $completed -le $originalReportTime){
+      return $false
+    }
+    if([string]$AfterReport.status -eq 'CRITICAL' -or
+       $AfterReport.error -or
+       $AfterReport.guardrails.wait_source_progress_opt_in -ne $true -or
+       $AfterReport.guardrails.wait_source_launcher_pin_present -ne $true -or
+       $AfterReport.guardrails.wait_source_progress_never_healthy -ne $true -or
+       @($AfterReport.restarted) -contains $WaitTaskName -or
+       @($AfterReport.failed_restarts) -contains $WaitTaskName){return $false}
+    return $true
+  }catch{return $false}
+}
+# Previous failed rollout can leave a truthful but no-longer-live progress
+# file. Verify its provenance before enabling a new writer. In default mode
+# this is READ ONLY; during protected maintenance it is copied with SHA proof
+# to the new local backup, then removed only with both tasks quiesced.
+function Assert-StaleProgressCandidate([string]$Path,[string]$NewLauncher) {
+  if(-not(Test-Path -LiteralPath $Path)){return $false}
+  $item=Get-Item -LiteralPath $Path -ErrorAction Stop
+  Need (-not $item.PSIsContainer -and
+    -not ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -and
+    $item.Length -gt 10 -and $item.Length -le 32768) 'Unsafe existing progress artifact'
+  Need ((Count-LauncherProcesses $NewLauncher) -eq 0) 'New PR326 source still active: refuse old marker archive'
+  $p=Get-Content -LiteralPath $Path -Raw -ErrorAction Stop | ConvertFrom-Json
+  Need ($p.kind -ceq 'V2R4_WAIT_SOURCE_PROGRESS_V1' -and
+        $p.status -ceq 'IN_PROGRESS_NOT_HEALTHY' -and
+        $p.paper_only -eq $true -and $p.order_api -eq $false -and
+        [int]$p.successful_source_steps -ge 1) 'Stale progress provenance invalid'
+  $created=([datetime]$p.cycle_started_at_utc).ToUniversalTime()
+  Need ($created -le [datetime]::UtcNow.AddMinutes(-2) -and
+        $created -ge [datetime]::UtcNow.AddDays(-3)) 'Existing progress marker too new or invalid'
+  return $true
+}
 $wait=Get-OneTask $waitName
 $sup=Get-OneTask $supName
 Need ([string]$wait.State -eq 'Running') 'WAIT not running at preflight'
@@ -117,7 +169,7 @@ $oldSupervisor=$matchS.Groups[1].Value
 if(-not $oldSupervisor){$oldSupervisor=$matchS.Groups[2].Value}
 Need ((Sha $oldSupervisor) -ieq $oldSupervisorHash) 'Original Supervisor source SHA drift'
 Need ($actS -notmatch '(?i)WaitSourceProgressOptIn|WaitSourceLauncherPath|WaitSourceLauncherSha256') 'Supervisor source-progress already enabled'
-Need (-not (Test-Path -LiteralPath $progress)) 'Unexpected preexisting source progress file; refusing replay'
+$hasStaleProgress=Assert-StaleProgressCandidate -Path $progress -NewLauncher $newLauncher
 Need ((Count-LauncherProcesses $oldLauncher) -ge 1) 'Original WAIT process not physically identified'
 Need ((Count-LauncherProcesses $newLauncher) -eq 0) 'PR326 launcher already active unexpectedly'
 $work=Join-Path $TradingRoot 'Staging\pr326-code-79dad178f3cd'
@@ -172,6 +224,16 @@ try {
   $deadline=(Get-Date).AddSeconds(30)
   while((Count-LauncherProcesses $oldLauncher) -gt 0 -and (Get-Date) -lt $deadline){Start-Sleep -Milliseconds 500}
   Require-NoWaitProcess
+  if($hasStaleProgress){
+    $archived=Join-Path $backupDir 'stale-wait-source-progress.json'
+    Need (-not(Test-Path -LiteralPath $archived)) 'Stale progress archival collision'
+    $oldProgressHash=Sha $progress
+    Copy-Item -LiteralPath $progress -Destination $archived -ErrorAction Stop
+    Need ((Sha $archived) -ieq $oldProgressHash) 'Stale progress archive integrity mismatch'
+    Remove-Item -LiteralPath $progress -ErrorAction Stop
+    Need (-not(Test-Path -LiteralPath $progress)) 'Stale progress marker still present'
+    'PR326_STALE_PROGRESS_ARCHIVED=PASS'
+  }
   Register-InactiveTask $waitName $newWaitXml
   Register-InactiveTask $supName $newSupXml
   Need ([string](Get-OneTask $waitName).Actions[0].Arguments -ceq $newWaitArgs) 'WAIT action readback mismatch'
@@ -200,28 +262,42 @@ try {
   $p=Get-Content -LiteralPath $progress -Raw -ErrorAction Stop|ConvertFrom-Json
   Need ($p.kind -ceq 'V2R4_WAIT_SOURCE_PROGRESS_V1' -and $p.status -ceq 'IN_PROGRESS_NOT_HEALTHY' -and [int]$p.successful_source_steps -ge 1) 'No genuine source progress observed'
   Enable-ScheduledTask -TaskName $supName -ErrorAction Stop|Out-Null
+  $beforeSupervisor=Get-ScheduledTaskInfo -TaskName $supName -ErrorAction Stop
+  $reportPath=Join-Path $TradingRoot 'State\minipc-runtime-supervisor.json'
+  $beforeSupervisorReport=$null
+  if(Test-Path -LiteralPath $reportPath -PathType Leaf){
+    try{$beforeSupervisorReport=Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json}catch{}
+  }
   $supervisorStart=[datetime]::UtcNow
   Start-ScheduledTask -TaskName $supName -ErrorAction Stop
   $supervisorAck=$false
-  $ackDeadline=(Get-Date).AddSeconds(75)
+  $ackDeadline=(Get-Date).AddSeconds(90)
+  $ackReason='NO_FRESH_RECEIPT'
   do {
     Start-Sleep -Seconds 2
     $si=Get-ScheduledTaskInfo -TaskName $supName -ErrorAction Stop
-    if($si.LastRunTime.ToUniversalTime() -lt $supervisorStart -or $si.LastTaskResult -ne 0){continue}
-    $reportPath=Join-Path $TradingRoot 'State\minipc-runtime-supervisor.json'
-    if(-not(Test-Path -LiteralPath $reportPath -PathType Leaf)){continue}
-    try {
-      $sr=Get-Content -LiteralPath $reportPath -Raw|ConvertFrom-Json
-      $supervisorAck=(
-        ([datetime]$sr.checked_at_utc).ToUniversalTime() -ge $supervisorStart -and
-        $sr.guardrails.wait_source_progress_opt_in -eq $true -and
-        $sr.guardrails.wait_source_launcher_pin_present -eq $true -and
-        @($sr.restarted) -notcontains $waitName -and
-        @($sr.failed_restarts) -notcontains $waitName
-      )
-    } catch {$supervisorAck=$false}
+    $candidate=$null
+    if(Test-Path -LiteralPath $reportPath -PathType Leaf){
+      try {$candidate=Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json}
+      catch {$ackReason='SUPERVISOR_REPORT_UNREADABLE'}
+    }
+    if(-not $candidate){continue}
+    if($candidate.guardrails.wait_source_progress_opt_in -ne $true -or
+       $candidate.guardrails.wait_source_launcher_pin_present -ne $true){
+      $ackReason='POSTRUN_GUARDRAILS_NOT_OPTED_IN'
+    } elseif(@($candidate.restarted) -contains $waitName -or
+             @($candidate.failed_restarts) -contains $waitName){
+      $ackReason='WAIT_RECOVERY_ATTEMPTED'
+    } elseif($candidate.error -or [string]$candidate.status -eq 'CRITICAL'){
+      $ackReason='SUPERVISOR_ERROR'
+    } elseif($si.LastTaskResult -ne 0){
+      $ackReason='SCHEDULER_TASK_NOT_SUCCESSFULLY_COMPLETED'
+    }else{
+      $ackReason='NO_NEW_COMPLETED_TASK_AND_REPORT_PAIR'
+    }
+    $supervisorAck=Test-Pr326SupervisorReceipt -BeforeInfo $beforeSupervisor -AfterInfo $si -BeforeReport $beforeSupervisorReport -AfterReport $candidate -RequestedStart $supervisorStart -WaitTaskName $waitName
   } while(-not $supervisorAck -and (Get-Date) -lt $ackDeadline)
-  Need $supervisorAck 'Original SYSTEM Supervisor post-change ACK missing or WAIT rearm occurred'
+  Need $supervisorAck ('PR326_SUPERVISOR_ACK_BLOCKED_'+$ackReason)
   Need ((Get-OneTask $waitName).State -eq 'Running') 'WAIT not running after supervised start'
   Need ((Get-OneTask $supName).State -ne 'Disabled') 'Supervisor unexpectedly disabled'
   Need ((Count-LauncherProcesses $oldLauncher) -eq 0) 'Original WAIT launcher came back'
