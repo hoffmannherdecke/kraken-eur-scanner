@@ -8,6 +8,7 @@ from pathlib import Path
 
 from tools.v3_experimental_paper_technical_gate import (
     PROOFS, PROOF_KIND, PROOF_ORIGINS, validate_experimental_paper_packet,
+    assess_v3_experimental_source_inventory, BUNDLE_SOURCE, REQUIRED_SOURCE_ANCHORS,
 )
 from tools.strategy_successor_gate import ROOT, GATE_FILE, validate_learning_gate
 
@@ -339,6 +340,137 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                   "tools/v2r4-paper-local-runtime.py"):
             s=(ROOT/f).read_text("utf-8")
             self.assertNotIn("v3_experimental_paper_technical_gate",s)
+
+
+class V3ExistingReleaseSourceInventoryTests(unittest.TestCase):
+    """Read-only source facts must never be promoted into live Paper authority."""
+
+    def _sample(self,root:Path)->dict:
+        source={
+            "kind":"V3_EXPERIMENTAL_PAPER_ALL_LESSONS_POLICY_BUNDLE_V1",
+            "strategy_revision":"V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001",
+            "status":"CODE_READY_INACTIVE_RUNTIME_NOT_ACTIVATED",
+            "scope":"ONLY_EXPERIMENTAL_PAPER_NOT_REAL_MONEY",
+            "canonical_modules":{
+                "k"+str(i):path for i,path in
+                enumerate(sorted(REQUIRED_SOURCE_ANCHORS))
+            },
+            "entry_priority":[{
+                "module":"paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+                "runtime_enabled":False
+            } for _ in range(6)],
+        }
+        target=root/BUNDLE_SOURCE
+        target.parent.mkdir(parents=True,exist_ok=True)
+        target.write_text(json.dumps(source,sort_keys=True),encoding="utf-8")
+        for rel in REQUIRED_SOURCE_ANCHORS:
+            dest=root/rel
+            dest.parent.mkdir(parents=True,exist_ok=True)
+            dest.write_text("# synthetic offline source\n",encoding="utf-8")
+        return source
+
+    def _assess(self,root:Path):
+        result=assess_v3_experimental_source_inventory(root)
+        self.assertFalse(result["paper_release_authorized"])
+        self.assertFalse(result["physical_runtime_loaded_or_started_here"])
+        self.assertFalse(result["real_model_e2e_authenticated_here"])
+        self.assertFalse(result["model_api_budget_approved_here"])
+        self.assertFalse(result["cloud_successor_cas_or_writer_started_here"])
+        self.assertFalse(result["original_writer_stop_rollback_proven_here"])
+        self.assertFalse(result["full_transitive_dependency_closure_proven"])
+        self.assertTrue(result["candidate_digests_not_release_fingerprints"])
+        self.assertEqual(result["authentic_technical_e2e_proofs_credited"],0)
+        return result
+
+    def test_actual_canonical_bundle_has_source_inventory_but_not_release(self):
+        r=self._assess(ROOT)
+        self.assertTrue(r["source_inventory_complete"],r["source_inventory_errors"])
+        self.assertGreaterEqual(r["source_files_count"],18)
+        self.assertEqual(len(r["candidate_source_inventory_sha256"]),64)
+        self.assertEqual(len(r["candidate_strategy_bundle_source_sha256"]),64)
+
+    def test_inventory_is_stable_and_hash_changes_with_true_source_bytes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            self._sample(root)
+            before=self._assess(root)
+            repeat=self._assess(root)
+            self.assertEqual(before,repeat)
+            self.assertTrue(before["source_inventory_complete"])
+            self.assertEqual(before["source_files_count"],len(REQUIRED_SOURCE_ANCHORS))
+            file=root/"paper_evaluator/v3_paper_minipc_one_candidate_v1.py"
+            file.write_text("# changed synthetic source\n",encoding="utf-8")
+            after=self._assess(root)
+            self.assertTrue(after["source_inventory_complete"])
+            self.assertNotEqual(before["candidate_source_inventory_sha256"],
+                                after["candidate_source_inventory_sha256"])
+            self.assertEqual(before["candidate_strategy_bundle_source_sha256"],
+                             after["candidate_strategy_bundle_source_sha256"])
+
+    def test_mutated_bundle_strategy_identity_does_not_change_code_by_itself(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            v=self._sample(root)
+            before=self._assess(root)
+            v["strategy_revision"]="V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-002"
+            (root/BUNDLE_SOURCE).write_text(json.dumps(v),encoding="utf-8")
+            after=self._assess(root)
+            self.assertNotEqual(before["candidate_strategy_bundle_source_sha256"],
+                                after["candidate_strategy_bundle_source_sha256"])
+            self.assertNotEqual(before["candidate_source_inventory_sha256"],
+                                after["candidate_source_inventory_sha256"])
+
+    def test_missing_module_rejects_not_fake_released(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);self._sample(root)
+            (root/"paper_evaluator/v3_experimental_paper_journal_v1.py").unlink()
+            r=self._assess(root)
+            self.assertFalse(r["source_inventory_complete"])
+            self.assertIsNone(r["candidate_source_inventory_sha256"])
+            self.assertIn("V3_MISSING_OR_UNSAFE_REFERENCED_SOURCE",r["source_inventory_errors"])
+
+    def test_malicious_reference_and_false_activation_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);v=self._sample(root)
+            v["entry_priority"][0]["module"]="../credentials.py"
+            v["entry_priority"][1]["runtime_enabled"]=True
+            (root/BUNDLE_SOURCE).write_text(json.dumps(v),encoding="utf-8")
+            r=self._assess(root)
+            self.assertFalse(r["source_inventory_complete"])
+            self.assertIn("V3_UNSAFE_SOURCE_PATH",r["source_inventory_errors"])
+            self.assertIn("V3_SOURCE_MISTAKENLY_RUNTIME_ENABLED",r["source_inventory_errors"])
+
+    def test_missing_bundle_and_fake_ready_status_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);v=self._sample(root)
+            bundle=root/BUNDLE_SOURCE
+            bundle.unlink()
+            r=self._assess(root)
+            self.assertFalse(r["source_inventory_complete"])
+            self.assertIn("V3_SOURCE_BUNDLE_UNAVAILABLE_OR_INVALID",
+                          r["source_inventory_errors"])
+            v["status"]="READY_FOR_V3_REAL_MONEY"
+            bundle.write_text(json.dumps(v),encoding="utf-8")
+            r=self._assess(root)
+            self.assertFalse(r["source_inventory_complete"])
+            self.assertIn("V3_BUNDLE_NOT_INACTIVE_PAPER_ONLY",
+                          r["source_inventory_errors"])
+
+    def test_symlinked_source_rejected_if_supported(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);self._sample(root)
+            dest=root/"paper_evaluator/v3_experimental_paper_journal_v1.py"
+            dest.unlink()
+            target=root/"external.py"
+            target.write_text("# should be rejected\n",encoding="utf-8")
+            try:
+                dest.symlink_to(target)
+            except (OSError,NotImplementedError):
+                self.skipTest("symlink creation unsupported")
+            r=self._assess(root)
+            self.assertFalse(r["source_inventory_complete"])
+            self.assertIn("V3_MISSING_OR_UNSAFE_REFERENCED_SOURCE",
+                          r["source_inventory_errors"])
 
 
 if __name__=="__main__":
