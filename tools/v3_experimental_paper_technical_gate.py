@@ -21,6 +21,130 @@ except ModuleNotFoundError as exc:
         raise
     from paper_series_transition_guard import assess_v3_cutover_recovery
 
+
+# Source inventory for the existing V3 experimental PAPER release gate.
+# This is NOT a release packet, runnable successor, signed build or proof.
+# It only computes repeatable digests of source bytes already in this repo,
+# so a later independently reviewed paper release can identify exact input.
+# Never treat these candidate digests as approved runtime fingerprints.
+BUNDLE_SOURCE="research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json"
+REQUIRED_SOURCE_ANCHORS=frozenset({
+    "paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+    "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
+    "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+    "paper_evaluator/v3_experimental_paper_journal_v1.py",
+    "paper_evaluator/v3_experimental_paper_family_router_v1.py",
+    "tools/v3_experimental_paper_technical_gate.py",
+})
+SOURCE_PATTERN=re.compile(
+    r"(?:paper_evaluator|tools)/(?:[a-z0-9][a-z0-9_-]*/)*[a-z0-9][a-z0-9_-]*\.py\Z"
+)
+
+
+def assess_v3_experimental_source_inventory(root:Path)->dict[str,Any]:
+    """Pure local read-only V3 source identity: never a live release ACK.
+
+    Dynamic module references come from the existing source of truth bundle.
+    Includes exact source bytes and errors on missing, unsafe or drifting files.
+    No file writes, network, API, model, task, process, DB or activation.
+    """
+    errors:list[str]=[]
+    paths:list[str]=[]
+    file_hashes:list[list[str]]=[]
+    strategy_hash=None
+    inventory_hash=None
+    revision=None
+    try:
+        root=root.resolve(strict=True)
+        bundle=root/BUNDLE_SOURCE
+        if (bundle.is_symlink() or not bundle.is_file()
+                or not bundle.resolve(strict=True).is_relative_to(root)):
+            raise ValueError("bundle outside source root")
+        raw=bundle.read_bytes()
+        if len(raw)>128*1024:
+            raise ValueError("oversize bundle")
+        v=json.loads(raw)
+        if not isinstance(v,dict):
+            raise ValueError("bundle is not an object")
+        revision=v.get("strategy_revision")
+        strategy_hash=hashlib.sha256(raw).hexdigest()
+        if (v.get("kind")!="V3_EXPERIMENTAL_PAPER_ALL_LESSONS_POLICY_BUNDLE_V1"
+                or not isinstance(revision,str)
+                or not re.fullmatch(r"V3-[A-Za-z0-9_.-]{8,95}",revision)):
+            errors.append("V3_SOURCE_BUNDLE_KIND_OR_REVISION_INVALID")
+        if (v.get("status")!="CODE_READY_INACTIVE_RUNTIME_NOT_ACTIVATED"
+                or v.get("scope")!="ONLY_EXPERIMENTAL_PAPER_NOT_REAL_MONEY"):
+            errors.append("V3_BUNDLE_NOT_INACTIVE_PAPER_ONLY")
+        rows=v.get("entry_priority")
+        modules=v.get("canonical_modules")
+        if (not isinstance(rows,list) or len(rows)<6
+                or not isinstance(modules,dict) or len(modules)<7):
+            errors.append("V3_SOURCE_REFERENCES_INCOMPLETE")
+        else:
+            source_refs=set(REQUIRED_SOURCE_ANCHORS)
+            for item in modules.values():
+                if isinstance(item,str) and item.endswith(".py"):
+                    source_refs.add(item)
+            for item in rows:
+                if not isinstance(item,dict):
+                    errors.append("V3_INVALID_ENTRY_POLICY_ROW")
+                    continue
+                if item.get("runtime_enabled") is not False:
+                    errors.append("V3_SOURCE_MISTAKENLY_RUNTIME_ENABLED")
+                for key in ("module","consumer","candidate_generator","model_prompt"):
+                    item_path=item.get(key)
+                    if isinstance(item_path,str) and item_path.endswith(".py"):
+                        source_refs.add(item_path)
+            paths=sorted(source_refs)
+            if len(paths)<len(REQUIRED_SOURCE_ANCHORS) or len(paths)>64:
+                errors.append("V3_UNEXPECTED_SOURCE_SET_SIZE")
+            for rel in paths:
+                if len(rel)>180 or not SOURCE_PATTERN.fullmatch(rel):
+                    errors.append("V3_UNSAFE_SOURCE_PATH")
+                    continue
+                path=root/rel
+                try:
+                    if (path.is_symlink() or not path.is_file()
+                            or not path.resolve(strict=True).is_relative_to(root)):
+                        raise ValueError("source path unsafe")
+                    content=path.read_bytes()
+                    if not content or len(content)>512*1024:
+                        raise ValueError("empty/oversize source")
+                    file_hashes.append([rel,hashlib.sha256(content).hexdigest()])
+                except (OSError,ValueError):
+                    errors.append("V3_MISSING_OR_UNSAFE_REFERENCED_SOURCE")
+            if len(file_hashes)!=len(paths):
+                errors.append("V3_SOURCE_HASH_SET_INCOMPLETE")
+            if not errors:
+                payload=json.dumps({
+                    "kind":"V3_EXPERIMENTAL_PAPER_SOURCE_INVENTORY_CANDIDATE_V1",
+                    "revision":revision,"strategy_bundle_sha256":strategy_hash,
+                    "files":file_hashes,
+                },sort_keys=True,separators=(",",":"),ensure_ascii=True).encode("utf-8")
+                inventory_hash=hashlib.sha256(payload).hexdigest()
+    except (OSError,ValueError,TypeError,UnicodeError,json.JSONDecodeError):
+        errors.append("V3_SOURCE_BUNDLE_UNAVAILABLE_OR_INVALID")
+    # Physical release requirements are ALWAYS separate from these digests.
+    return {
+        "kind":"V3_EXPERIMENTAL_PAPER_SOURCE_INVENTORY_READONLY_V1",
+        "strategy_revision":revision,
+        "source_inventory_complete":not errors and inventory_hash is not None,
+        "source_inventory_errors":sorted(set(errors)),
+        "source_files_count":len(file_hashes),
+        "candidate_strategy_bundle_source_sha256":strategy_hash,
+        "candidate_source_inventory_sha256":inventory_hash,
+        "candidate_digests_not_release_fingerprints":True,
+        "full_transitive_dependency_closure_proven":False,
+        "physical_runtime_loaded_or_started_here":False,
+        "real_model_e2e_authenticated_here":False,
+        "model_api_budget_approved_here":False,
+        "cloud_successor_cas_or_writer_started_here":False,
+        "original_writer_stop_rollback_proven_here":False,
+        "paper_release_authorized":False,
+        "authentic_technical_e2e_proofs_credited":0,
+    }
+
+
 PROOFS=frozenset({
     "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E",
     "V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT",
