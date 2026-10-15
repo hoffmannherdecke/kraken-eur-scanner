@@ -273,7 +273,10 @@ def run_cycle(
     execute_recheck: bool,
     now: datetime | None = None,
 ) -> dict[str, Any]:
+    # The decision PIT clock is fixed for the entire cycle; do not reuse it
+    # as the health heartbeat's actual completion timestamp.
     now = (now or utcnow()).astimezone(timezone.utc)
+    cycle_monotonic_start = time.monotonic()
     state = load_state(state_path)
     new_offset, hints, hint_records = read_altrady_hints(
         altrady_log,
@@ -419,10 +422,17 @@ def run_cycle(
     atomic_json(state_path, state)
 
     status = "HEALTHY" if not errors else "DEGRADED"
+    # Existing Supervisor max age is 30s. A cycle processing dozens of
+    # Kraken pairs must not publish its START as the timestamp of a freshly
+    # completed heartbeat. This fixes timestamp honesty, NOT long-cycle
+    # workload/restarts; physical rollout needs separate progress and load gates.
+    completed_at = utcnow()
     heartbeat = {
         "schema_version": 1,
         "kind": "V2R4_WAIT_RUNTIME_HEARTBEAT_V1",
-        "checked_at_utc": iso(now),
+        "checked_at_utc": iso(completed_at),
+        "cycle_started_at_utc": iso(now),
+        "cycle_duration_seconds": round(max(0.0, time.monotonic() - cycle_monotonic_start), 3),
         "status": status,
         "paper_only": True,
         "strategy_action": "FRESH_PAPER_RECHECK_ONLY",
