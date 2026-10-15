@@ -112,51 +112,97 @@ foreach($required in @('[switch]$WaitSourceProgressOptIn',
 }
 Write-Output 'SUPERVISOR_WAIT_SOURCE_PROGRESS_OPT_IN_STATIC_GUARD_PASS'
 
-# Fake only the per-PID CIM query. Real Win32_Process is never accessed here.
+# Mock the original PR291 Task/SYSTEM worker and launcher fingerprint:
+# no actual CIM, Scheduler, HTTP, file hash or machine task mutations.
 $hostFn=@($ast.FindAll({
  param($a)
  $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
  $a.Name -eq 'Test-WaitSourceWorkerOnHost'
 },$true))
-if($hostFn.Count -ne 1){throw 'Expected one WAIT OS PID verification function'}
+if($hostFn.Count -ne 1){throw 'Expected one WAIT original-host PID verifier'}
 . ([Scriptblock]::Create($hostFn[0].Extent.Text))
-function Get-CimInstance {
- param([string]$ClassName,[string]$Filter,[object]$ErrorAction)
- if($ClassName -cne 'Win32_Process' -or $Filter -cne 'ProcessId = 3001'){
-  throw 'Blocked unexpected actual process query'
- }
- return $script:fakeProcess
-}
 $fakeRoot=Join-Path $PSScriptRoot 'SyntheticNoDiskTrading'
-$fakeStage=Join-Path $fakeRoot 'Runtime\v2r4-paper-app'
+$fakeLauncher=Join-Path $fakeRoot 'Staging\v2r4-wait-pr291-isolated\wait_launcher.py'
+$script:fakeHash='C5E43D62976BDF2079A3A0402E57658ABA8A33D427B0CF0D56737565B84DD51D'
+$script:fakeExists=$true
+function ValidFakeTask {
+ [pscustomobject]@{
+   State='Running'
+   Actions=@([pscustomobject]@{
+     Execute='C:\Trading\Runtime\venv\Scripts\python.exe'
+     Arguments=('"'+$fakeLauncher+'" --execute-recheck')
+   })
+ }
+}
 function ValidFakeWorker {
  [pscustomobject]@{
   Name='python.exe'
-  CommandLine=('python.exe "' + (Join-Path $fakeStage 'wait_launcher.py') + '"')
+  CommandLine=('python.exe "' + $fakeLauncher + '"')
   CreationDate=[datetime]'2026-10-15T17:59:50Z'
  }
 }
+$script:fakeTask=ValidFakeTask
 $script:fakeProcess=ValidFakeWorker
-if(-not (Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot)){
- throw 'Valid synthetic original WAIT child was not recognized'
+function Get-ScheduledTask {
+ param([string]$TaskName,[object]$ErrorAction)
+ if($TaskName -cne 'CryptoMiniPC-V2R4PaperWait'){throw 'Unexpected Task lookup'}
+ return $script:fakeTask
 }
-$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.Name='other.exe'
-if(Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot){
- throw 'Foreign executable accepted'
+function Test-Path {
+ param([string]$LiteralPath,[string]$PathType)
+ if($LiteralPath.Replace('\','/') -ine $fakeLauncher.Replace('\','/')){throw 'Unexpected test file path'}
+ return $script:fakeExists
 }
+function Get-FileHash {
+ param([string]$LiteralPath,[string]$Algorithm,[object]$ErrorAction)
+ if($LiteralPath.Replace('\','/') -ine $fakeLauncher.Replace('\','/') -or
+    $Algorithm -cne 'SHA256'){throw 'Unexpected file hash request'}
+ return [pscustomobject]@{Hash=$script:fakeHash}
+}
+function Get-CimInstance {
+ param([string]$ClassName,[string]$Filter,[object]$ErrorAction)
+ if($ClassName -cne 'Win32_Process' -or $Filter -cne 'ProcessId = 3001'){
+  throw 'Unexpected CIM process query'
+ }
+ return $script:fakeProcess
+}
+function ExpectHost([bool]$Expected,[string]$Case){
+ $actual=Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot
+ if($actual -ne $Expected){throw "ORIGINAL_WAIT_OWNER_POLICY_FAIL $Case expected=$Expected got=$actual"}
+}
+ExpectHost $true 'physical PR291 launcher exact file owner/child'
+$script:fakeTask=ValidFakeTask;$script:fakeTask.State='Ready'
+ExpectHost $false 'Task not running'
+$script:fakeTask=ValidFakeTask;$script:fakeTask.Actions=@()
+ExpectHost $false 'Task has no action'
+$script:fakeTask=ValidFakeTask;$script:fakeTask.Actions[0].Arguments='"C:\Old\wait_launcher.py"'
+ExpectHost $false 'wrong Task launcher path'
+$script:fakeTask=ValidFakeTask;$script:fakeTask.Actions[0].Execute='cmd.exe'
+ExpectHost $false 'wrong Task executable'
+$script:fakeTask=ValidFakeTask;$script:fakeHash='a' * 64
+ExpectHost $false 'launcher hash changed'
+$script:fakeHash='C5E43D62976BDF2079A3A0402E57658ABA8A33D427B0CF0D56737565B84DD51D'
+$script:fakeExists=$false
+ExpectHost $false 'launcher missing'
+$script:fakeExists=$true
 $script:fakeProcess=ValidFakeWorker;$script:fakeProcess.CommandLine='python.exe foreign.py'
-if(Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot){
- throw 'Foreign script accepted'
-}
+ExpectHost $false 'wrong process script'
+$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.CommandLine += '.fake'
+ExpectHost $false 'script prefix spoof'
+$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.Name='foreign.exe'
+ExpectHost $false 'foreign process executable'
 $script:fakeProcess=ValidFakeWorker;$script:fakeProcess.CreationDate=[datetime]'2026-10-15T18:02:00Z'
-if(Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot){
- throw 'Recycled PID born after cycle accepted'
-}
+ExpectHost $false 'recycled PID created after cycle'
 $script:fakeProcess=$null
-if(Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot){
- throw 'Missing PID accepted'
-}
-Write-Output 'SUPERVISOR_WAIT_SOURCE_WORKER_MOCK_5_CASES_PASS'
+ExpectHost $false 'process absent'
+$script:fakeTask=ValidFakeTask;$script:fakeProcess=ValidFakeWorker
+Write-Output 'SUPERVISOR_PR291_WAIT_WORKER_MOCK_12_CASES_PASS'
+
+# Restore native builtins so downstream policy tests stay independent.
+Remove-Item Function:\Get-ScheduledTask -ErrorAction SilentlyContinue
+Remove-Item Function:\Test-Path -ErrorAction SilentlyContinue
+Remove-Item Function:\Get-FileHash -ErrorAction SilentlyContinue
+Remove-Item Function:\Get-CimInstance -ErrorAction SilentlyContinue
 
 
 # Pure V3 supervisor intake fence regression; NEVER execute the Supervisor.
