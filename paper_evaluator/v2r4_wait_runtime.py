@@ -316,16 +316,22 @@ def run_cycle(
         source_progress_steps += 1
         if source_progress_path is None:
             return
-        atomic_json(source_progress_path, {
-            "kind": "V2R4_WAIT_SOURCE_PROGRESS_V1",
-            "status": "IN_PROGRESS_NOT_HEALTHY",
-            "cycle_started_at_utc": iso(now),
-            "last_source_progress_at_utc": iso(utcnow()),
-            "successful_source_steps": source_progress_steps,
-            "worker_pid": os.getpid(),
-            "paper_only": True,
-            "order_api": False,
-        })
+        # Progress is optional OBSERVABILITY, not Kraken data or a decision
+        # input. Disk/ACL failure must not turn a valid market response into
+        # DEGRADED or fabricate successful progress on disk.
+        try:
+            atomic_json(source_progress_path, {
+                "kind": "V2R4_WAIT_SOURCE_PROGRESS_V1",
+                "status": "IN_PROGRESS_NOT_HEALTHY",
+                "cycle_started_at_utc": iso(now),
+                "last_source_progress_at_utc": iso(utcnow()),
+                "successful_source_steps": source_progress_steps,
+                "worker_pid": os.getpid(),
+                "paper_only": True,
+                "order_api": False,
+            })
+        except OSError:
+            pass
     for plan, source_path in plans:
         key = plan_key(plan)
         handled = state["handled"].get(key)
