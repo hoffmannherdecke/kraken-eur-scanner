@@ -65,7 +65,13 @@ function TaskXmlWithArguments([string]$Xml,[string]$Arguments) {
   $settings=$d.SelectSingleNode('/t:Task/t:Settings',$ns)
   Need ($null -ne $settings) 'Task Settings XML missing'
   $enabled=$settings.SelectSingleNode('t:Enabled',$ns)
-  Need ($null -ne $enabled) 'Original task XML missing Enabled field; refusing schema mutation'
+  # Task Scheduler settingsType permits optional Enabled (schema default=true).
+  # Insert only into the in-memory candidate XML; originals stay untouched.
+  # settingsType uses xs:all, so child ordering is not constrained.
+  if($null -eq $enabled){
+    $enabled=$d.CreateElement('Enabled',$d.DocumentElement.NamespaceURI)
+    [void]$settings.AppendChild($enabled)
+  }
   $enabled.InnerText='false'
   return $d.OuterXml
 }
