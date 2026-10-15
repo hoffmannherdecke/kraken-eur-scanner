@@ -247,6 +247,127 @@ function Get-V3NativeIntakeBackupReadbackGap([object]$Readback) {
  }
 }
 
+
+# Pure in-memory restoration PREVIEW of exact two original scheduled Tasks.
+# Accept values collected by an independently authorized read-only host probe.
+# Never registers, starts, disables, repairs or overwrites an actual Task.
+# Even a PASS is not a true TaskScheduler import/restore or physical provenance.
+function Test-V3NativeOriginalTaskRestorePreview([object]$Readback,[object[]]$Rows) {
+ $errors=@()
+ $shape=Get-V3NativeIntakeBackupReadbackGap -Readback $Readback
+ if($shape.native_host_manifest_schema_only_pass -ne $true){
+  $errors+=@('INVALID_ORIGINAL_MANIFEST')
+ }
+ $items=@($Rows)
+ if($items.Count -ne 2){
+  $errors+=@('NOT_EXACTLY_TWO_READONLY_ROWS')
+ }else{
+  $names=@($items | ForEach-Object {[string]$_.task_name})
+  if(-not(Test-V3ScopedIntakeTaskSet -Names $names)){
+   $errors+=@('INVALID_PREVIEW_TASK_SCOPE')
+  }
+ }
+ if($errors.Count -eq 0){
+  foreach($entry in @($Readback.tasks)){
+   $n=[string]$entry.task_name
+   $matches=@($items | Where-Object {[string]$_.task_name -ceq $n})
+   if($matches.Count -ne 1){
+    $errors+=@('MISSING_OR_DUPLICATE_ORIGINAL_TASK')
+    continue
+   }
+   $row=$matches[0]
+   $saved=[string]$row.backup_xml_text
+   $current=[string]$row.current_task_xml_text
+   if([string]$row.backup_file_sha256 -cne [string]$entry.xml_sha256){
+    $errors+=@('BACKUP_FILE_HASH_MISMATCH')
+   }
+   if($saved.Length -eq 0 -or $saved -cne $current){
+    $errors+=@('BACKUP_XML_NOT_EQUAL_ORIGINAL')
+    continue
+   }
+   if($row.current_task_running -ne $true -or
+      $row.native_task_enabled -ne $true){
+    $errors+=@('ORIGINAL_TASK_NOT_ENABLED_RUNNING')
+   }
+   try{
+    $xml=[System.Xml.XmlDocument]::new()
+    $xml.XmlResolver=$null
+    $xml.LoadXml($saved)
+    if($xml.DocumentElement.LocalName -cne 'Task'){
+     $errors+=@('WRONG_TASK_XML_ROOT')
+     continue
+    }
+    $user=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Principals"]/*[local-name()="Principal"]/*[local-name()="UserId"]')
+    if($null -eq $user -or
+       [string]$user.InnerText -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18')){
+     $errors+=@('NON_SYSTEM_ORIGINAL_TASK')
+    }
+    $triggers=@($xml.SelectNodes('/*[local-name()="Task"]/*[local-name()="Triggers"]/*'))
+    if($triggers.Count -ne 1 -or $triggers[0].LocalName -cne 'BootTrigger'){
+     $errors+=@('ORIGINAL_BOOT_TRIGGER_CHANGED')
+    }
+    $restart=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="RestartOnFailure"]')
+    $countNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="RestartOnFailure"]/*[local-name()="Count"]')
+    $interval=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="RestartOnFailure"]/*[local-name()="Interval"]')
+    $multiple=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="MultipleInstancesPolicy"]')
+    if($null -eq $restart -or $null -eq $countNode -or $null -eq $interval -or $null -eq $multiple -or
+       [string]$countNode.InnerText -cne '3' -or
+       [string]$interval.InnerText -cne 'PT1M' -or
+       [string]$multiple.InnerText -cne 'IgnoreNew'){
+     $errors+=@('ORIGINAL_RESTART_POLICY_CHANGED')
+    }
+    $actions=@($xml.SelectNodes('/*[local-name()="Task"]/*[local-name()="Actions"]/*'))
+    if($actions.Count -ne 1 -or $actions[0].LocalName -cne 'Exec'){
+     $errors+=@('ORIGINAL_ACTION_SCOPE_CHANGED')
+     continue
+    }
+    $cmdNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Actions"]/*[local-name()="Exec"]/*[local-name()="Command"]')
+    $argsNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Actions"]/*[local-name()="Exec"]/*[local-name()="Arguments"]')
+    $workingNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Actions"]/*[local-name()="Exec"]/*[local-name()="WorkingDirectory"]')
+    if($null -eq $cmdNode -or [string]::IsNullOrWhiteSpace([string]$cmdNode.InnerText)){
+     $errors+=@('ORIGINAL_ACTION_EXEC_MISSING')
+     continue
+    }
+    $argsValue=''
+    $workingValue=''
+    if($null -ne $argsNode){$argsValue=[string]$argsNode.InnerText}
+    if($null -ne $workingNode){$workingValue=[string]$workingNode.InnerText}
+    $expectedScript=if($n -ceq 'CryptoMiniPC-V2R4PaperCandidates'){'v2r4-paper-local-runtime.py'}else{'wait_launcher.py'}
+    if($argsValue -notmatch [regex]::Escape($expectedScript)){
+     $errors+=@('ORIGINAL_ACTION_NOT_BOUND_TO_EXPECTED_SCRIPT')
+    }
+    $actionText=@([string]$cmdNode.InnerText,$argsValue,$workingValue) -join ([string][char]10)
+    $sha=[Security.Cryptography.SHA256]::Create()
+    try{
+     $hash=([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($actionText)))).Replace('-','').ToLowerInvariant()
+    }finally{$sha.Dispose()}
+    # Exact original 15-Oct native-backup newline-delimited serialization.
+    # PR313 uses a different pipe-delimited hash: do not compare against it.
+    if($hash -cne [string]$entry.action_sha256){
+     $errors+=@('ORIGINAL_BACKUP_ACTION_HASH_MISMATCH')
+    }
+   }catch{
+    $errors+=@('UNPARSABLE_ORIGINAL_TASK_XML')
+   }
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_ORIGINAL_TASK_RESTORE_PREVIEW_OFFLINE_ONLY_V1'
+  preview_structure_only_pass=($errors.Count -eq 0)
+  preview_errors=@($errors | Select-Object -Unique)
+  full_host_source_and_task_identity_proven_here=$false
+  original_host_backup_acl_proven_here=$false
+  original_host_disk_bytes_proven_here=$false
+  protected_lifecycle_cloudsync_runtime_proven_here=$false
+  task_scheduler_import_or_restore_invoked=$false
+  task_process_marker_cloud_writes=0
+  actual_restore_test_passed=$false
+  native_no_rearm_stop_ack_passed=$false
+  v3_release_authorized=$false
+  technical_release_proofs_credited=0
+ }
+}
+
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
