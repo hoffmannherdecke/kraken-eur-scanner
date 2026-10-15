@@ -811,7 +811,9 @@ ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'native Disabled task
 $x.both_native_tasks_disabled_readback=$true
 ReviewFence 'REVIEW_BOUNDED_OLD_INTAKE_STOP_AND_FRESH_PROCESS_READBACK' $x 'restored all independent no-rearm and disabled evidence'
 $x.windows_and_supervisor_no_rearm_readback=$false
-ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'Windows restart could rearm'
+ReviewFence 'REVIEW_BOUNDED_OLD_INTAKE_STOP_AND_FRESH_PROCESS_READBACK' $x 'legacy combined false irrelevant when both independent owners agree'
+$x.native_windows_disable_and_no_rearm_readback=$false
+ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'Windows restart could rearm without original native receipt'
 $x=V3FenceFixture;$x.phase='STOP_RECORDED';$x.fence_marker_phase='ARMED'
 foreach($r in $x.intake_task_states){$r.state='Disabled'}
 $x.windows_and_supervisor_no_rearm_readback=$true;$x.old_intake_process_count=0
@@ -859,4 +861,4 @@ foreach($k in @('pre_cas_physical_order_preview=@(',
  "if(`$Execute){")){
  if(-not $opText.Contains($k)){throw "V3_ORDER_CONTRACT_MISSING $k"}
 }
-Write-Output 'V3_SINGLE_WRITER_PHYSICAL_FENCE_PURE_32_CASES_PASS'
+Write-Output 'V3_SINGLE_WRITER_PHYSICAL_FENCE_PURE_33_CASES_PASS'
