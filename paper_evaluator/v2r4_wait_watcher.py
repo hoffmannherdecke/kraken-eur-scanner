@@ -77,15 +77,12 @@ def http_json(url: str, timeout: int = 10, *, on_source_progress: Callable[[], N
             report_public_rate_limit(url, http_status=429)
         raise
     report_public_rate_limit(url, payload)
-    # Real completed Kraken response: not a synthetic health pulse.
-    if on_source_progress is not None:
-        on_source_progress()
     return payload
 
 
 def ticker(altname: str, *, on_source_progress: Callable[[], None] | None = None) -> dict[str, float]:
     query = urllib.parse.urlencode({"pair": altname})
-    payload = http_json("https://api.kraken.com/0/public/Ticker?" + query, on_source_progress=on_source_progress)
+    payload = http_json("https://api.kraken.com/0/public/Ticker?" + query)
     if payload.get("error"):
         raise RuntimeError("Kraken ticker error: " + repr(payload["error"]))
     row = next(iter(payload["result"].values()))
@@ -93,12 +90,16 @@ def ticker(altname: str, *, on_source_progress: Callable[[], None] | None = None
     ask = float(row["a"][0])
     last = float(row["c"][0])
     mid = (ask + bid) / 2.0
-    return {
+    result = {
         "bid_eur": bid,
         "ask_eur": ask,
         "last_eur": last,
         "spread_pct": 100.0 * (ask - bid) / mid if mid else 999.0,
     }
+    # Only parsed valid source data advance progress, never Kraken API errors.
+    if on_source_progress is not None:
+        on_source_progress()
+    return result
 
 
 def closed_ohlc(altname: str, interval: int, *, on_source_progress: Callable[[], None] | None = None) -> list[list]:
@@ -119,7 +120,7 @@ def closed_ohlc(altname: str, interval: int, *, on_source_progress: Callable[[],
     # If Kraken throttles or is unavailable, NEVER fall back to stale data.
     _CLOSED_OHLC_CACHE.pop(key, None)
     query = urllib.parse.urlencode({"pair": altname, "interval": interval})
-    payload = http_json("https://api.kraken.com/0/public/OHLC?" + query, on_source_progress=on_source_progress)
+    payload = http_json("https://api.kraken.com/0/public/OHLC?" + query)
     if payload.get("error"):
         raise RuntimeError("Kraken OHLC error: " + repr(payload["error"]))
     rows = next(v for k, v in payload["result"].items() if k != "last")
@@ -147,7 +148,10 @@ def closed_ohlc(altname: str, interval: int, *, on_source_progress: Callable[[],
         )
         while len(_CLOSED_OHLC_CACHE) > _CLOSED_OHLC_CACHE_MAX:
             _CLOSED_OHLC_CACHE.popitem(last=False)
-    return [list(row) for row in closed]
+    result = [list(row) for row in closed]
+    if on_source_progress is not None:
+        on_source_progress()
+    return result
 
 
 def volume_ratio(rows: list[list], lookback: int) -> float | None:
