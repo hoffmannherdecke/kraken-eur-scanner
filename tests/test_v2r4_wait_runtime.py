@@ -148,6 +148,24 @@ class V2R4WaitRuntimeTests(unittest.TestCase):
                 )
             self.assertEqual(result['status'], 'DEGRADED')
             self.assertFalse(progress.exists())
+    def test_kraken_error_payload_never_counts_as_positive_source_progress(self):
+        from paper_evaluator import v2r4_wait_watcher as watcher
+        signals = []
+        with patch.object(watcher, 'http_json', return_value={'error':['EGeneral:Too many requests']}):
+            with self.assertRaisesRegex(RuntimeError, 'Kraken ticker error'):
+                watcher.ticker('XBTEUR', on_source_progress=lambda: signals.append('ticker'))
+            with self.assertRaisesRegex(RuntimeError, 'Kraken OHLC error'):
+                watcher.closed_ohlc('XBTEUR', 1, on_source_progress=lambda: signals.append('ohlc'))
+        self.assertEqual(signals, [])
+
+    def test_parsed_ticker_response_counts_exactly_one_real_progress_step(self):
+        from paper_evaluator import v2r4_wait_watcher as watcher
+        signals = []
+        fake={'error':[], 'result':{'XXBTZEUR':{'a':['102'], 'b':['100'], 'c':['101']}}}
+        with patch.object(watcher, 'http_json', return_value=fake):
+            row = watcher.ticker('XBTEUR', on_source_progress=lambda: signals.append('ticker'))
+        self.assertEqual(row['last_eur'], 101.0)
+        self.assertEqual(signals,['ticker'])
     def test_legacy_kraken_symbol_matches_same_pair_hint(self):
         now = datetime(2026, 10, 1, 12, 0, tzinfo=timezone.utc)
         p = plan(now)
