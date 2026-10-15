@@ -41,7 +41,6 @@ function Test-V3CutoverPreparationPolicy([object]$Report,[bool]$FenceMarkerPrese
  return $true
 }
 
-
 # Pure closed-descendants guard. A two-Python-process match alone cannot show
 # whether a WAIT root has an unexpected non-Python or deeper child process.
 # Snapshot only: NEVER convert these PIDs into a stop list.
@@ -101,40 +100,7 @@ $waitTask=@($report.physical_v2r4_paper_task_readback |
  Where-Object { $_.task_name -ceq 'CryptoMiniPC-V2R4PaperWait' })
 $waitActionObserved=($waitTask.Count -eq 1 -and
  $waitTask[0].action_script_basename -ceq 'wait_launcher.py' -and
- [string]$waitTask[0].action_sha256 -match '^[a-f0-9]{64}
-[ordered]@{
- kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
- phase='READ_ONLY'
- checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
- pre_cutover_discovery_pass=$ready
- candidate_wait_only_future_quiesce_scope=@(
-  'CryptoMiniPC-V2R4PaperCandidates',
-  'CryptoMiniPC-V2R4PaperWait'
- )
- must_preserve_original_tasks=@(
-  'CryptoMiniPC-V2R4PaperLifecycle',
-  'CryptoMiniPC-V2R4PaperCloudSync'
- )
- original_role_lineage_snapshot_only=$true
- v3_host_source_deployment_independently_required=$true
- original_wait_tree_and_full_task_source_pins_separate_gate=$true
- wait_full_process_inventory_readable=$waitSnapshotReadable
- wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
- wait_closed_descendants_snapshot_only_no_stop_authority=$true
- wait_seen_python_family_count=@($waitProcessRows).Count
- wait_unrecognized_descendant_failure_is_fail_closed=$true
- windows_native_disable_stop_and_no_rearm_proven=$false
- physically_quiescent_old_intake_processes_proven=$false
- historical_followup_and_exit_cloud_ack_proven=$false
- cloud_single_active_cas_proven=$false
- rollback_precommit_only_unimplemented=$true
- unknown_cloud_commit_forbids_old_writer_rearm=$true
- v3_paper_technical_e2e_proofs_accepted=0
- v3_live_release_authorized=$false
- task_process_marker_cloud_writes=0
- do_not_use_old_v2r4_technical_cutover_operator=$true
-} | ConvertTo-Json -Depth 7
-)
+ [string]$waitTask[0].action_sha256 -match '^[a-f0-9]{64}$')
 $allProcessEdges=@()
 $waitProcessRows=@()
 $waitSnapshotReadable=$false
@@ -145,35 +111,7 @@ try {
  })
  $oldStage=Join-Path $TradingRoot 'Runtime\v2r4-paper-stage-d8b35a8ec2e6'
  foreach($p in $allProcesses){
-  if([string]$p.Name -notmatch '(?i)^pythonw?\.exe
-[ordered]@{
- kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
- phase='READ_ONLY'
- checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
- pre_cutover_discovery_pass=$ready
- candidate_wait_only_future_quiesce_scope=@(
-  'CryptoMiniPC-V2R4PaperCandidates',
-  'CryptoMiniPC-V2R4PaperWait'
- )
- must_preserve_original_tasks=@(
-  'CryptoMiniPC-V2R4PaperLifecycle',
-  'CryptoMiniPC-V2R4PaperCloudSync'
- )
- original_role_lineage_snapshot_only=$true
- v3_host_source_deployment_independently_required=$true
- original_wait_tree_and_full_task_source_pins_separate_gate=$true
- windows_native_disable_stop_and_no_rearm_proven=$false
- physically_quiescent_old_intake_processes_proven=$false
- historical_followup_and_exit_cloud_ack_proven=$false
- cloud_single_active_cas_proven=$false
- rollback_precommit_only_unimplemented=$true
- unknown_cloud_commit_forbids_old_writer_rearm=$true
- v3_paper_technical_e2e_proofs_accepted=0
- v3_live_release_authorized=$false
- task_process_marker_cloud_writes=0
- do_not_use_old_v2r4_technical_cutover_operator=$true
-} | ConvertTo-Json -Depth 7
-){continue}
+  if([string]$p.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
   $cmd=[string]$p.CommandLine
   if($cmd -notmatch '(?i)(?:wait_launcher|v2r4_wait_runtime)\.py'){continue}
   $waitProcessRows+=@([pscustomobject]@{
@@ -206,6 +144,11 @@ $completeWaitSnapshot=($waitSnapshotReadable -and
  original_role_lineage_snapshot_only=$true
  v3_host_source_deployment_independently_required=$true
  original_wait_tree_and_full_task_source_pins_separate_gate=$true
+ wait_full_process_inventory_readable=$waitSnapshotReadable
+ wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
+ wait_closed_descendants_snapshot_only_no_stop_authority=$true
+ wait_seen_python_family_count=@($waitProcessRows).Count
+ wait_unrecognized_descendant_failure_is_fail_closed=$true
  windows_native_disable_stop_and_no_rearm_proven=$false
  physically_quiescent_old_intake_processes_proven=$false
  historical_followup_and_exit_cloud_ack_proven=$false
