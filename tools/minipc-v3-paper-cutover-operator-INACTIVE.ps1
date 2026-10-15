@@ -53,7 +53,8 @@ function Test-V3WaitCompleteReadOnlyFamily(
 ) {
  if(-not $WaitActionObserved){return $false}
  $wait=@($WaitRows)
- $all=@($AllProcesses)
+ # Windows ProcessId 0 is the kernel Idle pseudo-process, never a WAIT descendant.
+ $all=@($AllProcesses | Where-Object {[int]$_.PID -ne 0})
  if($wait.Count -ne 2 -or $all.Count -lt 2){return $false}
  $ids=@($wait | ForEach-Object {[int]$_.PID})
  if(@($ids | Where-Object {$_ -le 0}).Count -ne 0 -or
