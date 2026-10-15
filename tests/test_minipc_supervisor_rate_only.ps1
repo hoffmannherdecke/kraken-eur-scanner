@@ -756,9 +756,12 @@ $x=V3FenceFixture;$x.cas_invoked=$true;$x.cas_outcome='NOT_COMMITTED';$x.phase='
 ReviewFence 'HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION' $x 'negative reply no rearm'
 $x=V3FenceFixture;$x.cas_invoked=$true;$x.cas_outcome='COMMITTED';$x.phase='CLOUD_COMMITTED'
 foreach($r in $x.intake_task_states){$r.state='Disabled'}
+$x.fence_marker_phase='CLOUD_COMMITTED'
 ReviewFence 'HOLD_POSTCOMMIT_OLD_INTAKE_FENCED_KEEP_AFTERCARE' $x 'old writer permanently off'
+$x.fence_marker_phase='ARMED'
+ReviewFence 'HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION' $x 'mismatched postcommit marker still no rearm'
 $x=V3FenceFixture;$x.cas_invoked=$null
 ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'ambiguous CAS input'
 $x=V3FenceFixture;$x.phase='UNRECOGNIZED'
 ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'untrusted phase'
-Write-Output 'V3_SINGLE_WRITER_PHYSICAL_FENCE_PURE_24_CASES_PASS'
+Write-Output 'V3_SINGLE_WRITER_PHYSICAL_FENCE_PURE_26_CASES_PASS'
