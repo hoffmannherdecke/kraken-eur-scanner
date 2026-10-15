@@ -187,7 +187,7 @@ ExpectHost $false 'launcher missing'
 $script:fakeExists=$true
 $script:fakeProcess=ValidFakeWorker;$script:fakeProcess.CommandLine='python.exe foreign.py'
 ExpectHost $false 'wrong process script'
-$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.CommandLine += '.fake'
+$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.CommandLine=('python.exe "' + $fakeLauncher + '.fake"')
 ExpectHost $false 'script prefix spoof'
 $script:fakeProcess=ValidFakeWorker;$script:fakeProcess.Name='foreign.exe'
 ExpectHost $false 'foreign process executable'
