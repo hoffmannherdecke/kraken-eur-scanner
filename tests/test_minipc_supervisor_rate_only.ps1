@@ -656,3 +656,112 @@ ExpectRestorePreview $false $x 'incomplete restore preview input'
 $x=NativeRestoreFixture;$x.Manifest.tasks[0].action_sha256='f' * 64
 ExpectRestorePreview $false $x 'newline serialized original Action fingerprint changed'
 Write-Output 'V3_IN_MEMORY_ORIGINAL_RESTORE_PREVIEW_ONLY_16_CASES_PASS'
+
+
+# PR319: pure physical fence choreography review, NEVER executes native actions.
+$stageFn=@($oa.FindAll({
+ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $a.Name -eq 'Get-V3SingleWriterFenceDryRunPlan'
+},$true))
+if($stageFn.Count -ne 1){throw 'Exactly one V3 physical-fence dryrun planner required'}
+. ([Scriptblock]::Create($stageFn[0].Extent.Text))
+function V3FenceFixture {
+ [pscustomobject]@{
+  kind='V3_SINGLE_WRITER_FENCE_DRYRUN_SIMULATION_V1'
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  paper_only=$true;real_money_actions=$false
+  intake_task_names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+  protected_task_names=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')
+  protected_tasks_running=$true
+  source_pins_verified=$true;mode_lineage_fresh=$true
+  wait_all_descendants_verified=$true;original_cloud_only_readback=$true
+  v3_writer_running=$false;backup_readback_verified=$true
+  backup_proposal=(V3BackupFixture)
+  intake_task_states=@(
+   [pscustomobject]@{task_name='CryptoMiniPC-V2R4PaperCandidates';state='Running'},
+   [pscustomobject]@{task_name='CryptoMiniPC-V2R4PaperWait';state='Running'}
+  )
+  phase='DISCOVERY';fence_marker_phase='ABSENT'
+  cas_invoked=$false;cas_outcome='NOT_INVOKED'
+  windows_and_supervisor_no_rearm_readback=$false
+  old_intake_process_count=4
+  authentic_technical_e2e_proofs=0
+  model_budget_separately_approved=$false
+ }
+}
+function ReviewFence([string]$Expected,[object]$Fixture,[string]$Label){
+ $r=Get-V3SingleWriterFenceDryRunPlan -Receipt $Fixture
+ if([string]$r.simulated_next_review -cne $Expected){
+  throw "V3_FENCE_SIMULATION_FAIL $Label expected=$Expected got=$($r.simulated_next_review) reasons=$(@($r.input_errors)-join ',')"
+ }
+ foreach($property in @('native_task_disable_or_stop_permitted',
+  'process_kill_permitted','marker_write_permitted',
+  'automatic_old_intake_rearm_permitted','cloud_cas_invoke_permitted',
+  'model_spend_or_real_money_permitted','physical_quiescence_verified_here')){
+  if($r.$property -ne $false){throw "V3_FENCE_UNAUTHORIZED_ACTION $Label $property"}
+ }
+ if($r.proof_is_synthetic_not_live -ne $true -or
+   [int]$r.full_e2e_release_proofs_credited -ne 0){
+  throw "V3_FENCE_FALSE_LIVE_EVIDENCE $Label"
+ }
+}
+ReviewFence 'REVIEW_ARM_FENCE_SEPARATE_PHYSICAL_APPROVAL' (V3FenceFixture) 'source pinned discovery only'
+$x=V3FenceFixture;$x.fence_marker_phase='ARMED'
+ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'unexplained marker'
+$x=V3FenceFixture;$x.phase='ARMED';$x.fence_marker_phase='ARMED'
+ReviewFence 'REVIEW_DISABLE_ONLY_CANDIDATES_AND_WAIT' $x 'physical stop not actually allowed'
+$x=V3FenceFixture;$x.phase='ARMED';$x.fence_marker_phase='ARMED';$x.protected_tasks_running=$false
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'protected aftercare down'
+$x=V3FenceFixture;$x.intake_task_names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperLifecycle')
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'protected Task mistakenly in scope'
+$x=V3FenceFixture;$x.protected_task_names=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperWait')
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'protected role list incomplete'
+$x=V3FenceFixture;$x.backup_proposal.task_records[0].xml_sha256='bad'
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'unverified TaskXML backup'
+$x=V3FenceFixture;$x.source_pins_verified=$false
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'untrusted original source pin'
+$x=V3FenceFixture;$x.mode_lineage_fresh=$false
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'stale PID lineage'
+$x=V3FenceFixture;$x.wait_all_descendants_verified=$false
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'unrecognized WAIT grandchild'
+$x=V3FenceFixture;$x.original_cloud_only_readback=$false
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'Cloud still ambiguous'
+$x=V3FenceFixture;$x.v3_writer_running=$true
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'duplicate potential V3 Writer'
+$x=V3FenceFixture;$x.intake_task_states[1].task_name='CryptoMiniPC-V2R4PaperLifecycle'
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'Task rows mismatched'
+$x=V3FenceFixture;$x.phase='TASKS_DISABLED';$x.fence_marker_phase='ARMED'
+foreach($r in $x.intake_task_states){$r.state='Disabled'}
+$x.windows_and_supervisor_no_rearm_readback=$true
+ReviewFence 'REVIEW_BOUNDED_OLD_INTAKE_STOP_AND_FRESH_PROCESS_READBACK' $x 'disabled original intake only'
+$x.windows_and_supervisor_no_rearm_readback=$false
+ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'Windows restart could rearm'
+$x=V3FenceFixture;$x.phase='STOP_RECORDED';$x.fence_marker_phase='ARMED'
+foreach($r in $x.intake_task_states){$r.state='Disabled'}
+$x.windows_and_supervisor_no_rearm_readback=$true;$x.old_intake_process_count=0
+ReviewFence 'REVIEW_QUIESCED_FENCE_WITH_ORIGINAL_AFTERCARE' $x 'synthetic empty intact family'
+$x.old_intake_process_count=1
+ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'one original intake still alive'
+$x=V3FenceFixture;$x.phase='QUIESCED';$x.fence_marker_phase='QUIESCED'
+foreach($r in $x.intake_task_states){$r.state='Disabled'}
+$x.windows_and_supervisor_no_rearm_readback=$true;$x.old_intake_process_count=0
+ReviewFence 'HOLD_SIX_E2E_AND_BUDGET_APPROVAL' $x 'no fabricated 6 technical proofs'
+$x.authentic_technical_e2e_proofs=6
+ReviewFence 'HOLD_SIX_E2E_AND_BUDGET_APPROVAL' $x 'no model budget approval'
+$x.model_budget_separately_approved=$true
+ReviewFence 'REVIEW_SEPARATE_CLOUD_CAS_APPROVAL_NO_EXECUTION' $x 'synthetic all six and budget still no authority'
+$x=V3FenceFixture;$x.cas_invoked=$true;$x.cas_outcome='UNKNOWN';$x.phase='CAS_INVOKED'
+ReviewFence 'HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION' $x 'unknown CAS no auto-rearm'
+$x=V3FenceFixture;$x.cas_invoked=$true;$x.cas_outcome='NOT_COMMITTED';$x.phase='CAS_INVOKED'
+ReviewFence 'HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION' $x 'negative reply no rearm'
+$x=V3FenceFixture;$x.cas_invoked=$true;$x.cas_outcome='COMMITTED';$x.phase='CLOUD_COMMITTED'
+foreach($r in $x.intake_task_states){$r.state='Disabled'}
+$x.fence_marker_phase='CLOUD_COMMITTED'
+ReviewFence 'HOLD_POSTCOMMIT_OLD_INTAKE_FENCED_KEEP_AFTERCARE' $x 'old writer permanently off'
+$x.fence_marker_phase='ARMED'
+ReviewFence 'HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION' $x 'mismatched postcommit marker still no rearm'
+$x=V3FenceFixture;$x.cas_invoked=$null
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'ambiguous CAS input'
+$x=V3FenceFixture;$x.phase='UNRECOGNIZED'
+ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'untrusted phase'
+Write-Output 'V3_SINGLE_WRITER_PHYSICAL_FENCE_PURE_26_CASES_PASS'
