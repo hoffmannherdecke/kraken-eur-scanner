@@ -389,7 +389,7 @@ $x=SignedConsoleFixture;$x.Wait[1].ParentPID=10;$x.All[2].ParentPID=10
 ExpectV3Wait $false $x -Label 'lost WAIT parent child relationship rejected'
 # Code-level contract: trusted bit can ONLY be assigned after native path,
 # Microsoft Authenticode, original creation-order and fresh PID re-read.
-$operatorText=Get-Content -LiteralPath $operatorPath -Raw -ErrorAction Stop
+$operatorText=Get-Content -LiteralPath $operator -Raw -ErrorAction Stop
 foreach($requiredCheck in @('System32\conhost.exe',
  'Get-AuthenticodeSignature','O=Microsoft Corporation',
  '$fresh[0].CreationDate -eq $candidate.CreationDate',
