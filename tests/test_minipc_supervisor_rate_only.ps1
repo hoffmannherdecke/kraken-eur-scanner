@@ -1100,7 +1100,7 @@ foreach($token in @(
  'PR326_ROLLBACK=OLD_TASKS_RESTORED',
  'MANUAL_INTERVENTION_REQUIRED_NO_BLIND_RESTART',
  "if(`$null -eq `$enabled){",
- 'Unexpected preexisting source progress file'
+ 'Assert-StaleProgressCandidate'
 )){
   if(-not $pr326Text.Contains($token)){throw "PR326_PROTECTED_OPERATOR_CONTRACT_MISSING $token"}
 }
@@ -1114,9 +1114,11 @@ if($disableSup -lt 0 -or $disableWait -le $disableSup -or
    $startSup -le $startWait){
   throw 'PR326_PROTECTED_OPERATOR_SHUTDOWN_START_ORDER_INVALID'
 }
-if($pr326Text.IndexOf('Unexpected preexisting source progress file') -gt
-   $pr326Text.IndexOf('$enteredMutation=$true')){
-  throw 'PR326_PROGRESS_REPLAY_CHECK_AFTER_MUTATION'
+if($pr326Text.IndexOf('$hasStaleProgress=Assert-StaleProgressCandidate') -lt 0 -or
+   $pr326Text.IndexOf('$hasStaleProgress=Assert-StaleProgressCandidate') -gt
+   $pr326Text.IndexOf('$enteredMutation=$true') -or
+   $pr326Text.IndexOf('PR326_STALE_PROGRESS_ARCHIVED=PASS') -lt 0){
+  throw 'PR326_PROGRESS_STALE_ARCHIVE_GUARD_MISSING_OR_AFTER_MUTATION'
 }
 Write-Output 'PR326_PROTECTED_OPERATOR_STATIC_FENCE_PASS'
 
@@ -1185,3 +1187,60 @@ try{$null=TaskXmlWithArguments -Xml $withoutArguments -Arguments $replacementArg
 catch{$missingArgsFailed=([string]$_.Exception.Message -match 'Original task XML missing Arguments')}
 if(-not $missingArgsFailed){throw 'PR326_MISSING_ARGUMENTS_DID_NOT_FAIL_CLOSED'}
 Write-Output 'PR326_NATIVE_OPTIONAL_ENABLED_XML_3_CASES_PASS'
+
+# PR326 originalhost 2026-10-16 00:07:25.066: Scheduler LastRunTime
+# rounds to whole seconds, while manual request is fractional. A queued
+# overlapping request (322) is not a failed completed original instance.
+$ackFn=@($pr326Ast.FindAll({
+  param($node)
+  $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+  $node.Name -eq 'Test-Pr326SupervisorReceipt'
+},$true))
+if($ackFn.Count -ne 1){throw 'PR326_ACK_RECEIPT_FUNCTION_NOT_UNIQUE'}
+. ([Scriptblock]::Create($ackFn[0].Extent.Text))
+$requested=[datetime]'2026-10-16T00:07:25.066Z'
+$prior=[pscustomobject]@{LastRunTime=[datetime]'2026-10-16T00:07:25Z';LastTaskResult=267009}
+$finished=[pscustomobject]@{LastRunTime=[datetime]'2026-10-16T00:07:25Z';LastTaskResult=0}
+$previousReport=[pscustomobject]@{checked_at_utc='2026-10-16T00:06:27Z'}
+function Pr326Receipt {
+  [pscustomobject]@{
+    checked_at_utc='2026-10-16T00:07:45.193Z'
+    status='HEALTHY'
+    error=$null
+    restarted=@()
+    failed_restarts=@()
+    guardrails=[pscustomobject]@{
+      wait_source_progress_opt_in=$true
+      wait_source_launcher_pin_present=$true
+      wait_source_progress_never_healthy=$true
+    }
+  }
+}
+function CheckAck([bool]$Expected,[object]$AfterInfo,[object]$AfterReport,[string]$Label) {
+  $got=Test-Pr326SupervisorReceipt -BeforeInfo $prior -AfterInfo $AfterInfo -BeforeReport $previousReport -AfterReport $AfterReport -RequestedStart $requested -WaitTaskName 'CryptoMiniPC-V2R4PaperWait'
+  if($got -ne $Expected){throw "PR326_ACK_REGRESSION_FAIL $Label actual=$got expected=$Expected"}
+}
+CheckAck $true $finished (Pr326Receipt) 'rounding & queued duplicate launch with completed opt-in report'
+$x=Pr326Receipt;$x.checked_at_utc='2026-10-16T00:07:24.999Z'
+CheckAck $false $finished $x 'report predates requested start'
+$x=Pr326Receipt;$x.guardrails.wait_source_progress_opt_in=$false
+CheckAck $false $finished $x 'old supervisor source did not opt in'
+$x=Pr326Receipt;$x.guardrails.wait_source_launcher_pin_present=$false
+CheckAck $false $finished $x 'missing fingerprint'
+$x=Pr326Receipt;$x.guardrails.wait_source_progress_never_healthy=$false
+CheckAck $false $finished $x 'source progress mislabeled as final healthy'
+$x=Pr326Receipt;$x.restarted=@('CryptoMiniPC-V2R4PaperWait')
+CheckAck $false $finished $x 'supervisor restarted WAIT'
+$x=Pr326Receipt;$x.failed_restarts=@('CryptoMiniPC-V2R4PaperWait')
+CheckAck $false $finished $x 'supervisor attempted WAIT recovery unsuccessfully'
+$x=Pr326Receipt;$x.error='FAIL_CLOSED'
+CheckAck $false $finished $x 'error report'
+$x=Pr326Receipt;$x.status='CRITICAL'
+CheckAck $false $finished $x 'critical supervisor report'
+$unfinished=[pscustomobject]@{LastRunTime=$finished.LastRunTime;LastTaskResult=267009}
+CheckAck $false $unfinished (Pr326Receipt) 'unfinished TaskScheduler result'
+$stale=[pscustomobject]@{LastRunTime=[datetime]'2026-10-16T00:07:22Z';LastTaskResult=0}
+CheckAck $false $stale (Pr326Receipt) 'prior TaskScheduler execution not fresh'
+$x=Pr326Receipt;$x.checked_at_utc='2026-10-16T00:06:27Z'
+CheckAck $false $finished $x 'no fresh report'
+Write-Output 'PR326_SUPERVISOR_SAME_SECOND_ACK_PURE_12_CASES_PASS'
