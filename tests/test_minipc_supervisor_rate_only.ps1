@@ -290,3 +290,58 @@ CheckV3Op $false $x -Label 'not a pre-cutover snapshot'
 $x=V3OpFixture;$x.native_old_intake_precutover_readonly_baseline_pass=$false
 CheckV3Op $false $x -Label 'Windows startup baseline unknown'
 Write-Output 'V3_SCOPED_OPERATOR_INACTIVE_PURE_11_CASES_PASS'
+
+
+# Pure complete WAIT root/child and unknown-child guard, source extracted only.
+$waitPolicyFn=@($oa.FindAll({
+ param($a)
+ $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $a.Name -eq 'Test-V3WaitCompleteReadOnlyFamily'
+},$true))
+if($waitPolicyFn.Count -ne 1){throw 'Expected one pure WAIT descendants guard'}
+. ([Scriptblock]::Create($waitPolicyFn[0].Extent.Text))
+function WaitFixture {
+ [pscustomobject]@{
+  Wait=@(
+   [pscustomobject]@{PID=100;ParentPID=10;OriginalStage=$true},
+   [pscustomobject]@{PID=101;ParentPID=100;OriginalStage=$true}
+  )
+  All=@(
+   [pscustomobject]@{PID=10;ParentPID=1},
+   [pscustomobject]@{PID=100;ParentPID=10},
+   [pscustomobject]@{PID=101;ParentPID=100},
+   [pscustomobject]@{PID=200;ParentPID=10},
+   [pscustomobject]@{PID=201;ParentPID=200}
+  )
+  Protected=@(200,201)
+ }
+}
+function ExpectV3Wait([bool]$Expected,[object]$Data,[bool]$Action=$true,[string]$Label=''){
+ $got=Test-V3WaitCompleteReadOnlyFamily -WaitRows $Data.Wait -AllProcesses $Data.All -WaitActionObserved $Action -ProtectedRolePids $Data.Protected
+ if($got -ne $Expected){throw "V3_WAIT_DESCENDANTS_FAIL $Label expected=$Expected actual=$got"}
+}
+ExpectV3Wait $true (WaitFixture) -Label 'two exact WAIT descendants, unrelated sibling allowed'
+ExpectV3Wait $false (WaitFixture) $false -Label 'untrusted WAIT action'
+$x=WaitFixture;$x.Wait[1].OriginalStage=$false
+ExpectV3Wait $false $x -Label 'wrong runtime stage'
+$x=WaitFixture;$x.Wait[0].ParentPID=101;$x.All[1].ParentPID=101
+ExpectV3Wait $false $x -Label 'cyclic parent tree'
+$x=WaitFixture;$x.Wait[1].ParentPID=10;$x.All[2].ParentPID=10
+ExpectV3Wait $false $x -Label 'two roots without child'
+$x=WaitFixture;$x.Wait[1].ParentPID=200;$x.All[2].ParentPID=200
+ExpectV3Wait $false $x -Label 'child of protected Lifecycle'
+$x=WaitFixture;$x.All+=@([pscustomobject]@{PID=102;ParentPID=101})
+ExpectV3Wait $false $x -Label 'hidden nonpython grandchild'
+$x=WaitFixture;$x.All+=@([pscustomobject]@{PID=102;ParentPID=100})
+ExpectV3Wait $false $x -Label 'unrecognized sibling child'
+$x=WaitFixture;$x.All[2].ParentPID=10
+ExpectV3Wait $false $x -Label 'different live parent than WAIT receipt'
+$x=WaitFixture;$x.All=$x.All[0..3]
+ExpectV3Wait $false $x -Label 'missing child in full-process snapshot'
+$x=WaitFixture;$x.Wait+=@([pscustomobject]@{PID=102;ParentPID=100;OriginalStage=$true})
+ExpectV3Wait $false $x -Label 'extra matching python'
+$x=WaitFixture;$x.All[4].PID=101
+ExpectV3Wait $false $x -Label 'duplicate full-process PID'
+$x=WaitFixture;$x.Protected=@(101,200)
+ExpectV3Wait $false $x -Label 'protected process overlaps WAIT'
+Write-Output 'V3_WAIT_COMPLETE_READONLY_FAMILY_PURE_13_CASES_PASS'
