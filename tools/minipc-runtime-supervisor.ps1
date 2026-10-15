@@ -151,12 +151,15 @@ function Test-WaitSourceWorkerOnHost([object]$Progress,[string]$TradingRoot) {
     $process=$found[0]
     $command=[string]$process.CommandLine
     $stage=Join-Path $TradingRoot 'Runtime\v2r4-paper-app'
-    $stagePrefix=$stage.TrimEnd('\') + '\'
+    # Normalize Windows/Linux separators for the same pure mock-driven
+    # policy regression; the actual host is still Windows and read-only.
+    $stagePrefix=($stage.Replace('\','/')).TrimEnd('/') + '/'
+    $normalizedCommand=$command.Replace('\','/')
     $born=([datetime]$process.CreationDate).ToUniversalTime()
     $started=([datetime]$Progress.cycle_started_at_utc).ToUniversalTime()
     return (
       [string]$process.Name -match '^pythonw?\.exe$' -and
-      $command.IndexOf($stagePrefix,[System.StringComparison]::OrdinalIgnoreCase) -ge 0 -and
+      $normalizedCommand.IndexOf($stagePrefix,[System.StringComparison]::OrdinalIgnoreCase) -ge 0 -and
       $command -match '(?i)(?:wait_launcher\.py|v2r4_wait_runtime(?:\.py)?)' -and
       $born -le $started -and $born -le (Get-Date).ToUniversalTime()
     )
