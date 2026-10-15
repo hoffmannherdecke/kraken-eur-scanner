@@ -74,10 +74,23 @@ function Test-V3WaitCompleteReadOnlyFamily(
  if($root.Count -ne 1 -or [int]$root[0].ParentPID -le 0 -or
     [int]$root[0].ParentPID -in $ids -or
     [int]$child.ParentPID -ne [int]$root[0].PID){return $false}
- # Reject any edge pointing into the WAIT family except its verified child.
- # This covers Windows process types beyond Python and deeper descendants.
- foreach($p in $all){
-   if([int]$p.ParentPID -in $ids -and [int]$p.PID -ne [int]$child.PID){return $false}
+ # Reject unknown children by default. The sole exception is ONE console
+ # host attested by an independent, live System32/Microsoft signature check.
+ # The check must remain scoped to the verified WAIT ROOT (not a child/other role).
+ $extras=@($all | Where-Object {
+  [int]$_.ParentPID -in $ids -and [int]$_.PID -ne [int]$child.PID
+ })
+ if($extras.Count -gt 1){return $false}
+ if($extras.Count -eq 1){
+  $con=$extras[0]
+  if([int]$con.PID -le 0 -or
+     [string]$con.Name -ine 'conhost.exe' -or
+     [int]$con.ParentPID -ne [int]$root[0].PID -or
+     $con.TrustedConsoleHost -ne $true -or
+     [int]$con.PID -in @($ProtectedRolePids)){return $false}
+  if(@($all | Where-Object {[int]$_.ParentPID -eq [int]$con.PID}).Count -gt 0){
+   return $false
+  }
  }
  return $true
 }
@@ -494,7 +507,12 @@ $waitSnapshotReadable=$false
 try {
  $allProcesses=@(Get-CimInstance Win32_Process -ErrorAction Stop)
  $allProcessEdges=@($allProcesses | ForEach-Object {
-  [pscustomobject]@{PID=[int]$_.ProcessId;ParentPID=[int]$_.ParentProcessId}
+  [pscustomobject]@{
+   PID=[int]$_.ProcessId
+   ParentPID=[int]$_.ParentProcessId
+   Name=[string]$_.Name
+   TrustedConsoleHost=$false
+  }
  })
  $oldStage=Join-Path $TradingRoot 'Runtime\v2r4-paper-stage-d8b35a8ec2e6'
  foreach($p in $allProcesses){
@@ -506,6 +524,59 @@ try {
    ParentPID=[int]$p.ParentProcessId
    OriginalStage=$cmd.Contains($oldStage)
   })
+ }
+ # Never trust the image name alone. One optional extra conhost.exe is
+ # attested from the SAME Win32 snapshot, then checked for PID-reuse drift.
+ # Raw command lines and signer certificate details are not emitted.
+ $waitIds=@($waitProcessRows | ForEach-Object {[int]$_.PID})
+ $waitKids=@($waitProcessRows | Where-Object {[int]$_.ParentPID -in $waitIds})
+ if($waitProcessRows.Count -eq 2 -and $waitKids.Count -eq 1){
+  $waitRoot=@($waitProcessRows | Where-Object {
+   [int]$_.PID -ne [int]$waitKids[0].PID
+  })
+  if($waitRoot.Count -eq 1){
+   $extras=@($allProcesses | Where-Object {
+    [int]$_.ParentProcessId -in $waitIds -and
+    [int]$_.ProcessId -ne [int]$waitKids[0].PID
+   })
+   if($extras.Count -eq 1){
+    $candidate=$extras[0]
+    $rootNative=@($allProcesses | Where-Object {
+     [int]$_.ProcessId -eq [int]$waitRoot[0].PID
+    })
+    $expectedConsole=Join-Path $env:WINDIR 'System32\conhost.exe'
+    if($rootNative.Count -eq 1 -and
+       [int]$candidate.ParentProcessId -eq [int]$waitRoot[0].PID -and
+       [string]$candidate.Name -ieq 'conhost.exe' -and
+       [string]$candidate.ExecutablePath -ieq $expectedConsole -and
+       $null -ne $candidate.CreationDate -and
+       $null -ne $rootNative[0].CreationDate -and
+       $candidate.CreationDate -ge $rootNative[0].CreationDate -and
+       @($allProcesses | Where-Object {
+        [int]$_.ParentProcessId -eq [int]$candidate.ProcessId
+       }).Count -eq 0){
+     $sig=Get-AuthenticodeSignature -LiteralPath $expectedConsole -ErrorAction Stop
+     $subject=[string]$sig.SignerCertificate.Subject
+     if($sig.Status -eq 'Valid' -and
+        $null -ne $sig.SignerCertificate -and
+        $subject -match '(?:^|,)\s*O=Microsoft Corporation(?:,|$)'){
+      $fresh=@(Get-CimInstance Win32_Process -Filter (
+       'ProcessId=' + [int]$candidate.ProcessId
+      ) -ErrorAction Stop)
+      if($fresh.Count -eq 1 -and
+         [int]$fresh[0].ParentProcessId -eq [int]$candidate.ParentProcessId -and
+         [string]$fresh[0].Name -ieq 'conhost.exe' -and
+         [string]$fresh[0].ExecutablePath -ieq $expectedConsole -and
+         $fresh[0].CreationDate -eq $candidate.CreationDate){
+       $trusted=@($allProcessEdges | Where-Object {
+        [int]$_.PID -eq [int]$candidate.ProcessId
+       })
+       if($trusted.Count -eq 1){$trusted[0].TrustedConsoleHost=$true}
+      }
+     }
+    }
+   }
+  }
  }
  $waitSnapshotReadable=$true
 }catch{
@@ -536,6 +607,8 @@ $completeWaitSnapshot=($waitSnapshotReadable -and
  wait_closed_descendants_snapshot_only_no_stop_authority=$true
  wait_seen_python_family_count=@($waitProcessRows).Count
  wait_unrecognized_descendant_failure_is_fail_closed=$true
+ wait_signed_system32_consolehost_exception_scoped=$true
+ wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true
  windows_native_disable_stop_and_no_rearm_proven=$false
  physically_quiescent_old_intake_processes_proven=$false
  historical_followup_and_exit_cloud_ack_proven=$false
