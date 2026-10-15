@@ -16,6 +16,7 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 import sys
 
 # Direct file execution uses paper_evaluator/ as sys.path[0], not the repo
@@ -62,7 +63,7 @@ def iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def http_json(url: str, timeout: int = 10) -> dict:
+def http_json(url: str, timeout: int = 10, *, on_source_progress: Callable[[], None] | None = None) -> dict:
     req = urllib.request.Request(
         url,
         headers={"User-Agent": UA, "Accept": "application/json"},
@@ -76,12 +77,15 @@ def http_json(url: str, timeout: int = 10) -> dict:
             report_public_rate_limit(url, http_status=429)
         raise
     report_public_rate_limit(url, payload)
+    # Real completed Kraken response: not a synthetic health pulse.
+    if on_source_progress is not None:
+        on_source_progress()
     return payload
 
 
-def ticker(altname: str) -> dict[str, float]:
+def ticker(altname: str, *, on_source_progress: Callable[[], None] | None = None) -> dict[str, float]:
     query = urllib.parse.urlencode({"pair": altname})
-    payload = http_json("https://api.kraken.com/0/public/Ticker?" + query)
+    payload = http_json("https://api.kraken.com/0/public/Ticker?" + query, on_source_progress=on_source_progress)
     if payload.get("error"):
         raise RuntimeError("Kraken ticker error: " + repr(payload["error"]))
     row = next(iter(payload["result"].values()))
@@ -97,7 +101,7 @@ def ticker(altname: str) -> dict[str, float]:
     }
 
 
-def closed_ohlc(altname: str, interval: int) -> list[list]:
+def closed_ohlc(altname: str, interval: int, *, on_source_progress: Callable[[], None] | None = None) -> list[list]:
     # Kraken's final row is the still-running candle; closed rows cannot
     # normally change until the next UTC interval boundary. Reuse strictly
     # within that bucket, never across boundaries or after an API error.
@@ -115,7 +119,7 @@ def closed_ohlc(altname: str, interval: int) -> list[list]:
     # If Kraken throttles or is unavailable, NEVER fall back to stale data.
     _CLOSED_OHLC_CACHE.pop(key, None)
     query = urllib.parse.urlencode({"pair": altname, "interval": interval})
-    payload = http_json("https://api.kraken.com/0/public/OHLC?" + query)
+    payload = http_json("https://api.kraken.com/0/public/OHLC?" + query, on_source_progress=on_source_progress)
     if payload.get("error"):
         raise RuntimeError("Kraken OHLC error: " + repr(payload["error"]))
     rows = next(v for k, v in payload["result"].items() if k != "last")
@@ -157,15 +161,15 @@ def volume_ratio(rows: list[list], lookback: int) -> float | None:
     return current / baseline
 
 
-def market_metrics(altname: str) -> dict[str, float | None]:
+def market_metrics(altname: str, *, on_source_progress: Callable[[], None] | None = None) -> dict[str, float | None]:
     out: dict[str, float | None] = {}
-    out.update(ticker(altname))
+    out.update(ticker(altname, on_source_progress=on_source_progress))
     for interval, suffix, lookback in (
         (1, "1m", 5),
         (5, "5m", 5),
         (15, "15m", 4),
     ):
-        rows = closed_ohlc(altname, interval)
+        rows = closed_ohlc(altname, interval, on_source_progress=on_source_progress)
         out[f"closed_{suffix}_close_eur"] = float(rows[-1][4]) if rows else None
         out[f"closed_{suffix}_volume_ratio_{lookback}"] = volume_ratio(rows, lookback)
     return out
