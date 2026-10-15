@@ -737,7 +737,12 @@ function V3FenceFixture {
   )
   phase='DISCOVERY';fence_marker_phase='ABSENT'
   cas_invoked=$false;cas_outcome='NOT_INVOKED'
+  # Legacy combined bool remains intentionally untrusted.
   windows_and_supervisor_no_rearm_readback=$false
+  native_windows_disable_and_no_rearm_readback=$false
+  supervisor_intake_restart_suppressed_readback=$false
+  supervisor_reported_fence_mode='NONE'
+  both_native_tasks_disabled_readback=$false
   old_intake_process_count=4
   authentic_technical_e2e_proofs=0
   model_budget_separately_approved=$false
@@ -787,19 +792,47 @@ ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'Task rows mismatched'
 $x=V3FenceFixture;$x.phase='TASKS_DISABLED';$x.fence_marker_phase='ARMED'
 foreach($r in $x.intake_task_states){$r.state='Disabled'}
 $x.windows_and_supervisor_no_rearm_readback=$true
+$x.native_windows_disable_and_no_rearm_readback=$true
+$x.supervisor_intake_restart_suppressed_readback=$true
+$x.supervisor_reported_fence_mode='ARMED'
+$x.both_native_tasks_disabled_readback=$true
 ReviewFence 'REVIEW_BOUNDED_OLD_INTAKE_STOP_AND_FRESH_PROCESS_READBACK' $x 'disabled original intake only'
+$x.native_windows_disable_and_no_rearm_readback=$false
+ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'combined true must not stand in for native no-rearm'
+$x.native_windows_disable_and_no_rearm_readback=$true
+$x.supervisor_intake_restart_suppressed_readback=$false
+ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'combined true must not stand in for Supervisor no-rearm'
+$x.supervisor_intake_restart_suppressed_readback=$true
+$x.supervisor_reported_fence_mode='QUIESCED'
+ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'Supervisor marker cannot report QUIESCED during ARMED'
+$x.supervisor_reported_fence_mode='ARMED'
+$x.both_native_tasks_disabled_readback=$false
+ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'native Disabled tasks need independent acknowledgement'
+$x.both_native_tasks_disabled_readback=$true
+ReviewFence 'REVIEW_BOUNDED_OLD_INTAKE_STOP_AND_FRESH_PROCESS_READBACK' $x 'restored all independent no-rearm and disabled evidence'
 $x.windows_and_supervisor_no_rearm_readback=$false
 ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'Windows restart could rearm'
 $x=V3FenceFixture;$x.phase='STOP_RECORDED';$x.fence_marker_phase='ARMED'
 foreach($r in $x.intake_task_states){$r.state='Disabled'}
 $x.windows_and_supervisor_no_rearm_readback=$true;$x.old_intake_process_count=0
+$x.native_windows_disable_and_no_rearm_readback=$true
+$x.supervisor_intake_restart_suppressed_readback=$true
+$x.supervisor_reported_fence_mode='ARMED'
+$x.both_native_tasks_disabled_readback=$true
 ReviewFence 'REVIEW_QUIESCED_FENCE_WITH_ORIGINAL_AFTERCARE' $x 'synthetic empty intact family'
 $x.old_intake_process_count=1
 ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'one original intake still alive'
 $x=V3FenceFixture;$x.phase='QUIESCED';$x.fence_marker_phase='QUIESCED'
 foreach($r in $x.intake_task_states){$r.state='Disabled'}
 $x.windows_and_supervisor_no_rearm_readback=$true;$x.old_intake_process_count=0
+$x.native_windows_disable_and_no_rearm_readback=$true
+$x.supervisor_intake_restart_suppressed_readback=$true
+$x.supervisor_reported_fence_mode='QUIESCED'
+$x.both_native_tasks_disabled_readback=$true
 ReviewFence 'HOLD_SIX_E2E_AND_BUDGET_APPROVAL' $x 'no fabricated 6 technical proofs'
+$x.supervisor_reported_fence_mode='ARMED'
+ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'QUIESCED marker needs independent Supervisor QUIESCED receipt'
+$x.supervisor_reported_fence_mode='QUIESCED'
 $x.authentic_technical_e2e_proofs=6
 ReviewFence 'HOLD_SIX_E2E_AND_BUDGET_APPROVAL' $x 'no model budget approval'
 $x.model_budget_separately_approved=$true
@@ -818,4 +851,12 @@ $x=V3FenceFixture;$x.cas_invoked=$null
 ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'ambiguous CAS input'
 $x=V3FenceFixture;$x.phase='UNRECOGNIZED'
 ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'untrusted phase'
-Write-Output 'V3_SINGLE_WRITER_PHYSICAL_FENCE_PURE_26_CASES_PASS'
+# Guard the static preview against executable Task mutations.
+$opText=Get-Content -LiteralPath $operator -Raw -ErrorAction Stop
+foreach($k in @('pre_cas_physical_order_preview=@(',
+ 'native_and_supervisor_independent_no_rearm_required=$true',
+ 'step_implementation_present=$false',
+ "if(`$Execute){")){
+ if(-not $opText.Contains($k)){throw "V3_ORDER_CONTRACT_MISSING $k"}
+}
+Write-Output 'V3_SINGLE_WRITER_PHYSICAL_FENCE_PURE_32_CASES_PASS'
