@@ -432,6 +432,19 @@ function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
    $allRunning=(@($states | Where-Object {$_ -cne 'Running'}).Count -eq 0)
    $allDisabled=(@($states | Where-Object {$_ -cne 'Disabled'}).Count -eq 0)
    $marker=[string]$Receipt.fence_marker_phase
+   # Two independent no-rearm owners; a single combined boolean or phase name
+   # cannot prove that native Windows AND the existing Supervisor are fenced.
+   # Only original physical readbacks may establish these in a future permit.
+   $separateNoRearm=(
+    $Receipt.native_windows_disable_and_no_rearm_readback -eq $true -and
+    $Receipt.supervisor_intake_restart_suppressed_readback -eq $true -and
+    [string]$Receipt.supervisor_reported_fence_mode -ceq $marker
+   )
+   # An ARMED marker is deliberately not a substitute for native task disable.
+   $taskDisableAck=(
+    $Receipt.both_native_tasks_disabled_readback -eq $true -and
+    $allDisabled
+   )
    if($casWasInvoked -or $casOutcome -ne 'NOT_INVOKED' -or $phase -in @('CAS_INVOKED','CLOUD_COMMITTED')){
     # An attempted CAS crosses the irrevocable *automatic rearm* boundary.
     if($phase -eq 'CLOUD_COMMITTED' -and $marker -eq 'CLOUD_COMMITTED' -and $casOutcome -eq 'COMMITTED' -and $allDisabled){
@@ -443,15 +456,15 @@ function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
     $decision='REVIEW_ARM_FENCE_SEPARATE_PHYSICAL_APPROVAL'
    }elseif($phase -eq 'ARMED' -and $marker -eq 'ARMED' -and $allRunning){
     $decision='REVIEW_DISABLE_ONLY_CANDIDATES_AND_WAIT'
-   }elseif($phase -eq 'TASKS_DISABLED' -and $marker -eq 'ARMED' -and $allDisabled -and
-      $Receipt.windows_and_supervisor_no_rearm_readback -eq $true){
+   }elseif($phase -eq 'TASKS_DISABLED' -and $marker -eq 'ARMED' -and $taskDisableAck -and
+      $separateNoRearm){
     $decision='REVIEW_BOUNDED_OLD_INTAKE_STOP_AND_FRESH_PROCESS_READBACK'
-   }elseif($phase -eq 'STOP_RECORDED' -and $marker -eq 'ARMED' -and $allDisabled -and
-      $Receipt.windows_and_supervisor_no_rearm_readback -eq $true -and
+   }elseif($phase -eq 'STOP_RECORDED' -and $marker -eq 'ARMED' -and $taskDisableAck -and
+      $separateNoRearm -and
       $Receipt.old_intake_process_count -is [int] -and [int]$Receipt.old_intake_process_count -eq 0){
     $decision='REVIEW_QUIESCED_FENCE_WITH_ORIGINAL_AFTERCARE'
-   }elseif($phase -eq 'QUIESCED' -and $marker -eq 'QUIESCED' -and $allDisabled -and
-      $Receipt.windows_and_supervisor_no_rearm_readback -eq $true -and
+   }elseif($phase -eq 'QUIESCED' -and $marker -eq 'QUIESCED' -and $taskDisableAck -and
+      $separateNoRearm -and
       $Receipt.old_intake_process_count -is [int] -and [int]$Receipt.old_intake_process_count -eq 0){
     if([int]$Receipt.authentic_technical_e2e_proofs -eq 6 -and
        $Receipt.model_budget_separately_approved -eq $true){
@@ -470,6 +483,21 @@ function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
   input_errors=@($errors)
   intended_scope_only=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
   protected_tasks_must_keep_running=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')
+  # Fixed, inert sequencing contract for a later separately authorized owner.
+  # Strings below are labels, not scripts or runtime execution privileges.
+  pre_cas_physical_order_preview=@(
+   'READBACK_ORIGINAL_BACKUP_TASK_XML_AND_CURRENT_SOURCE_PINS',
+   'PROPOSE_ATOMIC_ARMED_MARKER_AND_CONFIRM_SUPERVISOR_ACK',
+   'DISABLE_ONLY_ORIGINAL_CANDIDATES_AND_WAIT',
+   'READBACK_BOTH_WINDOWS_TASKS_DISABLED_AND_NO_REARM',
+   'STOP_ONLY_ORIGINAL_CANDIDATES_AND_WAIT_TASK_OWNERS',
+   'READBACK_ZERO_INTAKE_PROCESSES_AND_PROTECTED_AFTERCARE',
+   'RECORD_AND_READBACK_ATOMIC_QUIESCED_MARKER',
+   'HOLD_FOR_SEPARATELY_APPROVED_CLOUD_CAS'
+  )
+  rollback_boundary_if_any_cas_invoked='NO_AUTOMATIC_OLD_INTAKE_REARM_AND_MANUAL_CLOUD_RECONCILIATION'
+  native_and_supervisor_independent_no_rearm_required=$true
+  step_implementation_present=$false
   proof_is_synthetic_not_live=$true
   native_task_disable_or_stop_permitted=$false
   process_kill_permitted=$false
