@@ -467,3 +467,87 @@ CheckRecovery 'BLOCK_INVALID_SCOPE_OR_RECEIPT' $x 'stale technical predecessor'
 $x=V3RecoveryFixture;$x.cloud_cas_outcome='SOMETHING_ELSE'
 CheckRecovery 'HOLD_INVALID_CLOUD_OUTCOME' $x 'unrecognized Cloud result'
 Write-Output 'V3_SCOPED_CUTOVER_PURE_BACKUP_RECOVERY_29_CASES_PASS'
+
+
+# Native ORIGINAL host backup-manifest readback schema is intentionally
+# DIFFERENT from PR316 simulated proposal. Extract PURE adapter; no host I/O.
+$gapFns=@($oa.FindAll({
+ param($a)
+ $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $a.Name -eq 'Get-V3NativeIntakeBackupReadbackGap'
+},$true))
+if($gapFns.Count -ne 1){throw 'Expected one pure original backup gap adapter'}
+. ([Scriptblock]::Create($gapFns[0].Extent.Text))
+
+function NativeBackupReadbackFixture {
+ [pscustomobject]@{
+  kind='V3_OLD_INTAKE_NATIVE_BACKUP_READBACK_V1'
+  captured_at_utc='2026-10-15T05:31:39.0000000Z'
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  task_or_process_changes=$false; cloud_changes=$false
+  actual_stop_or_rollback_tested=$false
+  tasks=@(
+   [pscustomobject]@{
+    task_name='CryptoMiniPC-V2R4PaperCandidates'
+    task_path='\';original_state='Running'
+    backup_file='Candidates.task.xml'
+    xml_sha256=('a' * 64);action_sha256=('b' * 64)
+   },
+   [pscustomobject]@{
+    task_name='CryptoMiniPC-V2R4PaperWait'
+    task_path='\';original_state='Running'
+    backup_file='WAIT.task.xml'
+    xml_sha256=('c' * 64);action_sha256=('d' * 64)
+   }
+  )
+ }
+}
+function VerifyNativeBackupGap([bool]$Expected,[object]$Fixture,[string]$Label){
+ $r=Get-V3NativeIntakeBackupReadbackGap -Readback $Fixture
+ if($r.native_host_manifest_schema_only_pass -ne $Expected){
+  throw "V3_NATIVE_BACKUP_SCHEMA_FAIL $Label wanted=$Expected got=$($r.native_host_manifest_schema_only_pass) reasons=$(@($r.schema_errors)-join ',')"
+ }
+ if($r.can_upcast_native_host_manifest_to_recovery_proposal -ne $false -or
+    $r.host_backup_physical_readback_independently_verified_here -ne $false -or
+    $r.original_native_principal_boot_restart_settings_recheck_needed -ne $true -or
+    $r.original_runtime_stage_source_sha_needed -ne $true -or
+    $r.actual_restore_dryrun_completed -ne $false -or
+    $r.automatic_intake_task_action_authorized -ne $false -or
+    $r.v3_paper_release_authorized -ne $false -or
+    [int]$r.full_v3_release_proofs_credited -ne 0){
+   throw "V3_NATIVE_BACKUP_SCHEMA_FALSE_PHYSICAL_AUTHORITY $Label"
+ }
+}
+VerifyNativeBackupGap $true (NativeBackupReadbackFixture) 'exact genuine host manifest schema only'
+VerifyNativeBackupGap $false $null 'missing host manifest'
+$x=NativeBackupReadbackFixture;$x.kind='V3_OLD_INTAKE_BACKUP_PROPOSAL_V1'
+VerifyNativeBackupGap $false $x 'not a PR316 synthetic proposed backup'
+$x=NativeBackupReadbackFixture;$x.predecessor_series_id='PAPER-V2R4-20261007T184255Z'
+VerifyNativeBackupGap $false $x 'wrong technical predecessor'
+$x=NativeBackupReadbackFixture;$x.tasks[0].task_name='CryptoMiniPC-V2R4PaperLifecycle'
+VerifyNativeBackupGap $false $x 'protected Lifecycle entry'
+$x=NativeBackupReadbackFixture;$x.tasks[1].task_name='CryptoMiniPC-V2R4PaperCandidates'
+VerifyNativeBackupGap $false $x 'duplicate original task name'
+$x=NativeBackupReadbackFixture;$x.tasks[1].backup_file='..\..\secrets.txt'
+VerifyNativeBackupGap $false $x 'path traversal backed file'
+$x=NativeBackupReadbackFixture;$x.tasks[0].xml_sha256='not-a-sha'
+VerifyNativeBackupGap $false $x 'missing XML sha256'
+$x=NativeBackupReadbackFixture;$x.tasks[1].action_sha256='bad'
+VerifyNativeBackupGap $false $x 'missing original Action sha256'
+$x=NativeBackupReadbackFixture;$x.tasks[1].task_path='\Other\'
+VerifyNativeBackupGap $false $x 'noncanonical TaskPath'
+$x=NativeBackupReadbackFixture;$x.tasks[0].original_state='Disabled'
+VerifyNativeBackupGap $false $x 'not original Running'
+$x=NativeBackupReadbackFixture;$x.tasks=$x.tasks[0..0]
+VerifyNativeBackupGap $false $x 'missing second original Task'
+$x=NativeBackupReadbackFixture;$x.task_or_process_changes=$true
+VerifyNativeBackupGap $false $x 'unpermitted physical Task mutation claimed'
+$x=NativeBackupReadbackFixture;$x.actual_stop_or_rollback_tested=$true
+VerifyNativeBackupGap $false $x 'unearned physical restore claim'
+$x=NativeBackupReadbackFixture;$x.cloud_changes=$true
+VerifyNativeBackupGap $false $x 'unpermitted Cloud mutation claimed'
+$x=NativeBackupReadbackFixture;$x.captured_at_utc='2026-10-15T07:31:39'
+VerifyNativeBackupGap $false $x 'UTC timezone absent'
+$x=NativeBackupReadbackFixture;$x.captured_at_utc='someday'
+VerifyNativeBackupGap $false $x 'invalid timestamp'
+Write-Output 'V3_ORIGINAL_NATIVE_BACKUP_SCHEMA_ONLY_GAP_17_CASES_PASS'
