@@ -565,7 +565,7 @@ if($previewFn.Count -ne 1){throw 'Unique original restore preview policy require
 
 function MockOriginalTaskXml([string]$Script,[string]$Principal='S-1-5-18',
  [string]$Trigger='BootTrigger',[string]$Restart='PT1M',[string]$Instances='IgnoreNew'){
- $arguments=if($Script -eq 'v2r4-paper-local-runtime.py'){'--mode candidates v2r4-paper-local-runtime.py'}else{'wait_launcher.py'}
+ $arguments=if($Script -eq 'v2r4-paper-local-runtime.py'){'--mode candidates v2r4-paper-local-runtime.py'}else{$Script}
  return @"
 <Task>
  <Triggers><$Trigger><Enabled>true</Enabled></$Trigger></Triggers>
