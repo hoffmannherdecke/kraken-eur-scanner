@@ -232,7 +232,10 @@ if(-not (Test-Path -LiteralPath $stageTool -PathType Leaf)){throw 'Missing exist
 $parseTokens=$null
 $parseErrors=$null
 [void][System.Management.Automation.Language.Parser]::ParseFile($stageTool,[ref]$parseTokens,[ref]$parseErrors)
-if(@($parseErrors).Count -gt 0){throw 'PR326_OFFLINE_STAGE_POWERSHELL_PARSE_FAILED'}
+if(@($parseErrors).Count -gt 0){
+  foreach($syntaxError in $parseErrors){ Write-Output ('PR326_STAGE_PARSE: '+[string]$syntaxError) }
+  throw 'PR326_OFFLINE_STAGE_POWERSHELL_PARSE_FAILED'
+}
 $stageSource=Get-Content -LiteralPath $stageTool -Raw
 foreach($required in @('ExpectedSourceSha','INACTIVE_OFFLINE_STAGE_ONLY',
   'PR326_INACTIVE_WAIT_STAGE_V1','original_pr291_unchanged',
