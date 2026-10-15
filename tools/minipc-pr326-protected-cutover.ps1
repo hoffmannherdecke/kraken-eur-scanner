@@ -197,12 +197,33 @@ try {
   $p=Get-Content -LiteralPath $progress -Raw -ErrorAction Stop|ConvertFrom-Json
   Need ($p.kind -ceq 'V2R4_WAIT_SOURCE_PROGRESS_V1' -and $p.status -ceq 'IN_PROGRESS_NOT_HEALTHY' -and [int]$p.successful_source_steps -ge 1) 'No genuine source progress observed'
   Enable-ScheduledTask -TaskName $supName -ErrorAction Stop|Out-Null
+  $supervisorStart=[datetime]::UtcNow
   Start-ScheduledTask -TaskName $supName -ErrorAction Stop
-  Start-Sleep -Seconds 5
+  $supervisorAck=$false
+  $ackDeadline=(Get-Date).AddSeconds(75)
+  do {
+    Start-Sleep -Seconds 2
+    $si=Get-ScheduledTaskInfo -TaskName $supName -ErrorAction Stop
+    if($si.LastRunTime.ToUniversalTime() -lt $supervisorStart -or $si.LastTaskResult -ne 0){continue}
+    $reportPath=Join-Path $TradingRoot 'State\minipc-runtime-supervisor.json'
+    if(-not(Test-Path -LiteralPath $reportPath -PathType Leaf)){continue}
+    try {
+      $sr=Get-Content -LiteralPath $reportPath -Raw|ConvertFrom-Json
+      $supervisorAck=(
+        ([datetime]$sr.checked_at_utc).ToUniversalTime() -ge $supervisorStart -and
+        $sr.guardrails.wait_source_progress_opt_in -eq $true -and
+        $sr.guardrails.wait_source_launcher_pin_present -eq $true -and
+        @($sr.restarted) -notcontains $waitName -and
+        @($sr.failed_restarts) -notcontains $waitName
+      )
+    } catch {$supervisorAck=$false}
+  } while(-not $supervisorAck -and (Get-Date) -lt $ackDeadline)
+  Need $supervisorAck 'Original SYSTEM Supervisor post-change ACK missing or WAIT rearm occurred'
   Need ((Get-OneTask $waitName).State -eq 'Running') 'WAIT not running after supervised start'
   Need ((Get-OneTask $supName).State -ne 'Disabled') 'Supervisor unexpectedly disabled'
   Need ((Count-LauncherProcesses $oldLauncher) -eq 0) 'Original WAIT launcher came back'
-  "PR326_CUTOVER=PHYSICAL_PASS_PENDING_INDEPENDENT_CLOUD_ACK"
+  "PR326_CUTOVER=LOCAL_PHYSICAL_PASS_PENDING_INDEPENDENT_CLOUD_ACK"
+  "SUPERVISOR_SYSTEM_ACK=PASS"
   "BACKUP_PATH=$backupDir"
   "POST_CUTOVER_WAIT_CYCLES=$($observed.Count)"
   "WAIT_SOURCE_PROGRESS_STEPS=$($p.successful_source_steps)"
