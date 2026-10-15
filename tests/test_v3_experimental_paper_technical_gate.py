@@ -440,6 +440,16 @@ class V3ExistingReleaseSourceInventoryTests(unittest.TestCase):
             self.assertIn("V3_UNSAFE_SOURCE_PATH",r["source_inventory_errors"])
             self.assertIn("V3_SOURCE_MISTAKENLY_RUNTIME_ENABLED",r["source_inventory_errors"])
 
+    def test_missing_entry_module_reference_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp);v=self._sample(root)
+            v["entry_priority"][0]["module"]=None
+            (root/BUNDLE_SOURCE).write_text(json.dumps(v),encoding="utf-8")
+            r=self._assess(root)
+            self.assertFalse(r["source_inventory_complete"])
+            self.assertIn("V3_INVALID_ENTRY_MODULE_REFERENCE",
+                          r["source_inventory_errors"])
+
     def test_missing_bundle_and_fake_ready_status_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp);v=self._sample(root)
