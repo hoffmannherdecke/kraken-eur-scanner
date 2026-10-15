@@ -138,7 +138,8 @@ if(-not $Execute){
   exit 0
 }
 Need ($Confirm -ceq 'APPROVED_PR326_PAPER_ONLY_CUTOVER') 'Exact protected cutover confirmation argument missing'
-$admin=New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+$currentIdentity=[Security.Principal.WindowsIdentity]::GetCurrent()
+$admin=New-Object -TypeName Security.Principal.WindowsPrincipal -ArgumentList $currentIdentity
 Need ($admin.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) 'Admin Windows token required'
 $backupDir=Join-Path 'D:\Krypto-Sicherungen' ('PR326-CUTOVER-'+(Get-Date -Format 'yyyyMMdd-HHmmss'))
 Need (-not (Test-Path -LiteralPath $backupDir)) 'Backup destination collision'
