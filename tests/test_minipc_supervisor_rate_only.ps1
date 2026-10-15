@@ -112,7 +112,7 @@ foreach($required in @('[switch]$WaitSourceProgressOptIn',
 }
 Write-Output 'SUPERVISOR_WAIT_SOURCE_PROGRESS_OPT_IN_STATIC_GUARD_PASS'
 
-# Mock the original PR291 Task/SYSTEM worker and launcher fingerprint:
+# Mock pinned immutable PR291 or successor Task/SYSTEM worker and launcher fingerprint:
 # no actual CIM, Scheduler, HTTP, file hash or machine task mutations.
 $hostFn=@($ast.FindAll({
  param($a)
@@ -124,6 +124,7 @@ if($hostFn.Count -ne 1){throw 'Expected one WAIT original-host PID verifier'}
 $fakeRoot=Join-Path $PSScriptRoot 'SyntheticNoDiskTrading'
 $fakeLauncher=Join-Path $fakeRoot 'Staging\v2r4-wait-pr291-isolated\wait_launcher.py'
 $script:fakeHash='C5E43D62976BDF2079A3A0402E57658ABA8A33D427B0CF0D56737565B84DD51D'
+$script:fakeExpectedHash=$script:fakeHash
 $script:fakeExists=$true
 function ValidFakeTask {
  [pscustomobject]@{
@@ -166,8 +167,9 @@ function Get-CimInstance {
  }
  return $script:fakeProcess
 }
-function ExpectHost([bool]$Expected,[string]$Case){
- $actual=Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot
+function ExpectHost([bool]$Expected,[string]$Case,[string]$OverridePath=''){
+ $p=if($OverridePath){$OverridePath}else{$fakeLauncher}
+ $actual=Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot -PinnedLauncherPath $p -PinnedLauncherSha256 $script:fakeExpectedHash
  if($actual -ne $Expected){throw "ORIGINAL_WAIT_OWNER_POLICY_FAIL $Case expected=$Expected got=$actual"}
 }
 ExpectHost $true 'physical PR291 launcher exact file owner/child'
@@ -197,6 +199,24 @@ $script:fakeProcess=$null
 ExpectHost $false 'process absent'
 $script:fakeTask=ValidFakeTask;$script:fakeProcess=ValidFakeWorker
 Write-Output 'SUPERVISOR_PR291_WAIT_WORKER_MOCK_12_CASES_PASS'
+
+# The Supervisor opt-in is deliberately tied to release pins, not a hardcoded
+# original PR291 path. Test successor version rollover without host mutation.
+$script:fakeExpectedHash=''
+ExpectHost $false 'missing required supervisor pinned hash'
+$script:fakeExpectedHash='f' * 64
+ExpectHost $false 'mismatched supplied immutable release hash'
+$script:fakeExpectedHash=$script:fakeHash
+ExpectHost $false 'outside Trading Staging root' '/tmp/untrusted/wait_launcher.py'
+$oldFakeLauncher=$fakeLauncher
+$fakeLauncher=Join-Path $fakeRoot 'Staging\v2r4-wait-pr326-isolated-2318b2417d61\wait_launcher.py'
+$script:fakeTask=ValidFakeTask
+$script:fakeProcess=ValidFakeWorker
+ExpectHost $true 'pinned immutable PR326 successor release path accepted'
+$fakeLauncher=$oldFakeLauncher
+$script:fakeTask=ValidFakeTask
+$script:fakeProcess=ValidFakeWorker
+Write-Output 'SUPERVISOR_VERSIONED_WAIT_LAUNCHER_MOCK_4_CASES_PASS'
 
 # Restore native builtins so downstream policy tests stay independent.
 Remove-Item Function:\Get-ScheduledTask -ErrorAction SilentlyContinue
