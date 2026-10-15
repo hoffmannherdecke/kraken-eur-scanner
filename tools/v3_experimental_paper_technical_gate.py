@@ -89,6 +89,9 @@ def assess_v3_experimental_source_inventory(root:Path)->dict[str,Any]:
                 if not isinstance(item,dict):
                     errors.append("V3_INVALID_ENTRY_POLICY_ROW")
                     continue
+                if (not isinstance(item.get("module"),str)
+                        or not item["module"].endswith(".py")):
+                    errors.append("V3_INVALID_ENTRY_MODULE_REFERENCE")
                 if item.get("runtime_enabled") is not False:
                     errors.append("V3_SOURCE_MISTAKENLY_RUNTIME_ENABLED")
                 for key in ("module","consumer","candidate_generator","model_prompt"):
