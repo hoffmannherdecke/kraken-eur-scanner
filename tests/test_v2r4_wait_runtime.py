@@ -148,6 +148,46 @@ class V2R4WaitRuntimeTests(unittest.TestCase):
                 )
             self.assertEqual(result['status'], 'DEGRADED')
             self.assertFalse(progress.exists())
+    def test_optional_progress_disk_failure_does_not_corrupt_kraken_outcome(self):
+        at = datetime(2026, 10, 15, 15, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            dirs = [root / n for n in ("decisions", "rechecks", "candidates", "receipts")]
+            for d in dirs:
+                d.mkdir()
+            (dirs[0] / "plan.json").write_text(
+                json.dumps({"v2r4_trigger_plan": plan(at, value=100.0)}), "utf-8"
+            )
+            progress = root / "source-progress.json"
+            original_write = runtime.atomic_json
+
+            def deny_progress_write(path, payload):
+                if path == progress:
+                    raise PermissionError("progress telemetry denied")
+                return original_write(path, payload)
+
+            def valid_source(altname, *, on_source_progress=None):
+                self.assertEqual(altname, "XBTEUR")
+                on_source_progress()
+                return {"last_eur": 90.0}
+
+            with patch.object(runtime, "atomic_json", side_effect=deny_progress_write):
+                with patch.object(runtime, "market_metrics", side_effect=valid_source):
+                    result = runtime.run_cycle(
+                        decision_dir=dirs[0], recheck_dir=dirs[1],
+                        candidate_dir=dirs[2], receipt_dir=dirs[3],
+                        state_path=root / "state.json", heartbeat_path=root / "heartbeat.json",
+                        altrady_log=root / "altrady.jsonl",
+                        spec_path=None, control_path=None, api_key_file=None,
+                        fallback_seconds=10, execute_recheck=False,
+                        now=at + timedelta(seconds=5), source_progress_path=progress,
+                    )
+            self.assertEqual(result["status"], "HEALTHY")
+            self.assertEqual(result["counters"]["data_unavailable_checks"], 0)
+            self.assertFalse(progress.exists())
+            self.assertTrue((root / "heartbeat.json").exists())
+            self.assertFalse(list(dirs[3].iterdir()))
+
     def test_kraken_error_payload_never_counts_as_positive_source_progress(self):
         from paper_evaluator import v2r4_wait_watcher as watcher
         signals = []
