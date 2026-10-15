@@ -321,6 +321,8 @@ function ExpectV3Wait([bool]$Expected,[object]$Data,[bool]$Action=$true,[string]
  if($got -ne $Expected){throw "V3_WAIT_DESCENDANTS_FAIL $Label expected=$Expected actual=$got"}
 }
 ExpectV3Wait $true (WaitFixture) -Label 'two exact WAIT descendants, unrelated sibling allowed'
+$x=WaitFixture;$x.All+=@([pscustomobject]@{PID=0;ParentPID=0})
+ExpectV3Wait $true $x -Label 'Windows kernel idle PID zero is not a child'
 ExpectV3Wait $false (WaitFixture) $false -Label 'untrusted WAIT action'
 $x=WaitFixture;$x.Wait[1].OriginalStage=$false
 ExpectV3Wait $false $x -Label 'wrong runtime stage'
@@ -344,4 +346,4 @@ $x=WaitFixture;$x.All[4].PID=101
 ExpectV3Wait $false $x -Label 'duplicate full-process PID'
 $x=WaitFixture;$x.Protected=@(101,200)
 ExpectV3Wait $false $x -Label 'protected process overlaps WAIT'
-Write-Output 'V3_WAIT_COMPLETE_READONLY_FAMILY_PURE_13_CASES_PASS'
+Write-Output 'V3_WAIT_COMPLETE_READONLY_FAMILY_PURE_14_CASES_PASS'
