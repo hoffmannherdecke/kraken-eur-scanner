@@ -354,7 +354,7 @@ class V3ExistingReleaseSourceInventoryTests(unittest.TestCase):
             "canonical_modules":{
                 "k"+str(i):path for i,path in
                 enumerate(sorted(REQUIRED_SOURCE_ANCHORS))
-            },
+            } | {"extra_module":"paper_evaluator/v3_paper_minipc_one_candidate_v1.py"},
             "entry_priority":[{
                 "module":"paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
                 "runtime_enabled":False
