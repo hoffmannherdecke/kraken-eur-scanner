@@ -368,6 +368,107 @@ function Test-V3NativeOriginalTaskRestorePreview([object]$Readback,[object[]]$Ro
  }
 }
 
+
+# Pure physical-fence choreography preview: NEVER issues commands or authorizes
+# Task/PID/marker/CAS changes. Receipt values below are SYNTHETIC UNTRUSTED
+# inputs; actual Windows/CLOUD receipts and separate permits are mandatory.
+function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
+ $decision='BLOCK_MISSING_OR_INVALID_RECEIPT'
+ $errors=@()
+ if($null -eq $Receipt){
+  $errors+=@('MISSING_INPUT')
+ }else{
+  if([string]$Receipt.kind -cne 'V3_SINGLE_WRITER_FENCE_DRYRUN_SIMULATION_V1' -or
+     [string]$Receipt.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+     $Receipt.paper_only -ne $true -or $Receipt.real_money_actions -ne $false -or
+     -not(Test-V3ScopedIntakeTaskSet -Names @($Receipt.intake_task_names))){
+   $errors+=@('INVALID_PREDECESSOR_OR_TASK_SCOPE')
+  }
+  $preserved=@($Receipt.protected_task_names)
+  $required=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync' | Sort-Object)
+  if($preserved.Count -ne 2 -or
+     (@($preserved | Sort-Object) -join '|') -cne ($required -join '|') -or
+     $Receipt.protected_tasks_running -ne $true){
+   $errors+=@('PROTECTED_FOLLOWUP_ROLES_NOT_RUNNING')
+  }
+  if($Receipt.source_pins_verified -ne $true -or
+     $Receipt.mode_lineage_fresh -ne $true -or
+     $Receipt.wait_all_descendants_verified -ne $true -or
+     $Receipt.original_cloud_only_readback -ne $true -or
+     $Receipt.v3_writer_running -ne $false){
+   $errors+=@('ORIGINAL_SOURCE_LINEAGE_OR_CLOUD_UNTRUSTED')
+  }
+  if($Receipt.backup_readback_verified -ne $true -or
+     -not(Test-V3ScopedOriginalBackupContract -Manifest $Receipt.backup_proposal)){
+   $errors+=@('BACKUP_CONTRACT_OR_ORIGINAL_READBACK_MISSING')
+  }
+  $taskRows=@($Receipt.intake_task_states)
+  if($taskRows.Count -ne 2 -or
+     -not(Test-V3ScopedIntakeTaskSet -Names @($taskRows | ForEach-Object {[string]$_.task_name}))){
+   $errors+=@('WRONG_NATIVE_INTAKE_TASK_ROWS')
+  }
+  $phase=[string]$Receipt.phase
+  $casOutcome=[string]$Receipt.cas_outcome
+  $casWasInvoked=($Receipt.cas_invoked -eq $true)
+  if($null -eq $Receipt.cas_invoked -or
+     $casOutcome -notin @('NOT_INVOKED','UNKNOWN','COMMITTED','NOT_COMMITTED')){
+   $errors+=@('AMBIGUOUS_CAS_OBSERVATION')
+  }
+  if($errors.Count -eq 0){
+   $states=@($taskRows | ForEach-Object {[string]$_.state})
+   $allRunning=(@($states | Where-Object {$_ -cne 'Running'}).Count -eq 0)
+   $allDisabled=(@($states | Where-Object {$_ -cne 'Disabled'}).Count -eq 0)
+   $marker=[string]$Receipt.fence_marker_phase
+   if($casWasInvoked -or $casOutcome -ne 'NOT_INVOKED' -or $phase -in @('CAS_INVOKED','CLOUD_COMMITTED')){
+    # An attempted CAS crosses the irrevocable *automatic rearm* boundary.
+    if($phase -eq 'CLOUD_COMMITTED' -and $casOutcome -eq 'COMMITTED' -and $allDisabled){
+     $decision='HOLD_POSTCOMMIT_OLD_INTAKE_FENCED_KEEP_AFTERCARE'
+    }else{
+     $decision='HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION'
+    }
+   }elseif($phase -eq 'DISCOVERY' -and $marker -eq 'ABSENT' -and $allRunning){
+    $decision='REVIEW_ARM_FENCE_SEPARATE_PHYSICAL_APPROVAL'
+   }elseif($phase -eq 'ARMED' -and $marker -eq 'ARMED' -and $allRunning){
+    $decision='REVIEW_DISABLE_ONLY_CANDIDATES_AND_WAIT'
+   }elseif($phase -eq 'TASKS_DISABLED' -and $marker -eq 'ARMED' -and $allDisabled -and
+      $Receipt.windows_and_supervisor_no_rearm_readback -eq $true){
+    $decision='REVIEW_BOUNDED_OLD_INTAKE_STOP_AND_FRESH_PROCESS_READBACK'
+   }elseif($phase -eq 'STOP_RECORDED' -and $marker -eq 'ARMED' -and $allDisabled -and
+      $Receipt.windows_and_supervisor_no_rearm_readback -eq $true -and
+      $Receipt.old_intake_process_count -is [int] -and [int]$Receipt.old_intake_process_count -eq 0){
+    $decision='REVIEW_QUIESCED_FENCE_WITH_ORIGINAL_AFTERCARE'
+   }elseif($phase -eq 'QUIESCED' -and $marker -eq 'QUIESCED' -and $allDisabled -and
+      $Receipt.windows_and_supervisor_no_rearm_readback -eq $true -and
+      $Receipt.old_intake_process_count -is [int] -and [int]$Receipt.old_intake_process_count -eq 0){
+    if([int]$Receipt.authentic_technical_e2e_proofs -eq 6 -and
+       $Receipt.model_budget_separately_approved -eq $true){
+     $decision='REVIEW_SEPARATE_CLOUD_CAS_APPROVAL_NO_EXECUTION'
+    }else{
+     $decision='HOLD_SIX_E2E_AND_BUDGET_APPROVAL'
+    }
+   }else{
+    $decision='HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM'
+   }
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_FENCE_DRYRUN_DISPOSITION_OFFLINE_ONLY_V1'
+  simulated_next_review=$decision
+  input_errors=@($errors)
+  intended_scope_only=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+  protected_tasks_must_keep_running=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')
+  proof_is_synthetic_not_live=$true
+  native_task_disable_or_stop_permitted=$false
+  process_kill_permitted=$false
+  marker_write_permitted=$false
+  automatic_old_intake_rearm_permitted=$false
+  cloud_cas_invoke_permitted=$false
+  model_spend_or_real_money_permitted=$false
+  physical_quiescence_verified_here=$false
+  full_e2e_release_proofs_credited=0
+ }
+}
+
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
