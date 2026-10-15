@@ -551,3 +551,108 @@ VerifyNativeBackupGap $false $x 'UTC timezone absent'
 $x=NativeBackupReadbackFixture;$x.captured_at_utc='someday'
 VerifyNativeBackupGap $false $x 'invalid timestamp'
 Write-Output 'V3_ORIGINAL_NATIVE_BACKUP_SCHEMA_ONLY_GAP_17_CASES_PASS'
+
+
+# PR318: purely in-memory restore PREVIEW from original native manifest + two
+# exact synthetic Task XML strings; no Task registration, no host Task/PID/API.
+$previewFn=@($oa.FindAll({
+ param($a)
+ $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $a.Name -eq 'Test-V3NativeOriginalTaskRestorePreview'
+},$true))
+if($previewFn.Count -ne 1){throw 'Unique original restore preview policy required'}
+. ([Scriptblock]::Create($previewFn[0].Extent.Text))
+
+function MockOriginalTaskXml([string]$Script,[string]$Principal='S-1-5-18',
+ [string]$Trigger='BootTrigger',[string]$Restart='PT1M',[string]$Instances='IgnoreNew'){
+ $arguments=if($Script -eq 'v2r4-paper-local-runtime.py'){'--mode candidates v2r4-paper-local-runtime.py'}else{$Script}
+ return @"
+<Task>
+ <Triggers><$Trigger><Enabled>true</Enabled></$Trigger></Triggers>
+ <Principals><Principal><UserId>$Principal</UserId></Principal></Principals>
+ <Settings>
+  <RestartOnFailure><Interval>$Restart</Interval><Count>3</Count></RestartOnFailure>
+  <MultipleInstancesPolicy>$Instances</MultipleInstancesPolicy>
+ </Settings>
+ <Actions><Exec><Command>C:\Python\python.exe</Command><Arguments>$arguments</Arguments><WorkingDirectory>C:\Users\ADMIN\Trading</WorkingDirectory></Exec></Actions>
+</Task>
+"@
+}
+function NativeRestoreFixture {
+ $manifest=NativeBackupReadbackFixture
+ $scripts=@('v2r4-paper-local-runtime.py','wait_launcher.py')
+ $rows=@()
+ for($i=0;$i -lt 2;$i++){
+  $x=MockOriginalTaskXml $scripts[$i]
+  $argsValue=if($i -eq 0){'--mode candidates v2r4-paper-local-runtime.py'}else{'wait_launcher.py'}
+  $tuple=@('C:\Python\python.exe',$argsValue,'C:\Users\ADMIN\Trading') -join ([string][char]10)
+  $sha=[Security.Cryptography.SHA256]::Create()
+  try{
+   $actualHash=([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($tuple)))).Replace('-','').ToLowerInvariant()
+  }finally{$sha.Dispose()}
+  $manifest.tasks[$i].action_sha256=$actualHash
+  $rows+=@([pscustomobject]@{
+   task_name=$manifest.tasks[$i].task_name
+   backup_xml_text=$x
+   current_task_xml_text=$x
+   backup_file_sha256=$manifest.tasks[$i].xml_sha256
+   current_task_running=$true
+   native_task_enabled=$true
+  })
+ }
+ [pscustomobject]@{Manifest=$manifest; Rows=$rows}
+}
+function ExpectRestorePreview([bool]$Expected,[object]$Fixture,[string]$Label){
+ $r=Test-V3NativeOriginalTaskRestorePreview -Readback $Fixture.Manifest -Rows $Fixture.Rows
+ if($r.preview_structure_only_pass -ne $Expected){
+  throw "V3_RESTORE_PREVIEW_FAIL $Label wanted=$Expected got=$($r.preview_structure_only_pass) reason=$(@($r.preview_errors)-join ',')"
+ }
+ if($r.actual_restore_test_passed -ne $false -or
+    $r.task_scheduler_import_or_restore_invoked -ne $false -or
+    $r.original_host_backup_acl_proven_here -ne $false -or
+    $r.full_host_source_and_task_identity_proven_here -ne $false -or
+    $r.protected_lifecycle_cloudsync_runtime_proven_here -ne $false -or
+    $r.native_no_rearm_stop_ack_passed -ne $false -or
+    $r.v3_release_authorized -ne $false -or
+    [int]$r.technical_release_proofs_credited -ne 0 -or
+    [int]$r.task_process_marker_cloud_writes -ne 0){
+  throw "V3_RESTORE_PREVIEW_FALSE_AUTHORITY $Label"
+ }
+}
+ExpectRestorePreview $true (NativeRestoreFixture) 'simulated exact two backup XML and action serializations'
+$x=NativeRestoreFixture;$x.Rows[0].backup_file_sha256='0' * 64
+ExpectRestorePreview $false $x 'backup bytes digest mismatch'
+$x=NativeRestoreFixture;$x.Rows[1].current_task_xml_text='changed'
+ExpectRestorePreview $false $x 'current XML no longer matches saved source'
+$x=NativeRestoreFixture;$x.Rows[0].current_task_running=$false
+ExpectRestorePreview $false $x 'original Task not Running'
+$x=NativeRestoreFixture;$x.Rows[1].native_task_enabled=$false
+ExpectRestorePreview $false $x 'original Task not Enabled'
+$x=NativeRestoreFixture;$x.Rows[0].backup_xml_text=(MockOriginalTaskXml 'v2r4-paper-local-runtime.py' 'USER')
+$x.Rows[0].current_task_xml_text=$x.Rows[0].backup_xml_text
+ExpectRestorePreview $false $x 'original nonSYSTEM principal'
+$x=NativeRestoreFixture;$x.Rows[0].backup_xml_text=(MockOriginalTaskXml 'v2r4-paper-local-runtime.py' 'S-1-5-18' 'LogonTrigger')
+$x.Rows[0].current_task_xml_text=$x.Rows[0].backup_xml_text
+ExpectRestorePreview $false $x 'unexpected Logon instead of BootTrigger'
+$x=NativeRestoreFixture;$x.Rows[0].backup_xml_text=(MockOriginalTaskXml 'v2r4-paper-local-runtime.py' 'S-1-5-18' 'BootTrigger' 'PT5M')
+$x.Rows[0].current_task_xml_text=$x.Rows[0].backup_xml_text
+ExpectRestorePreview $false $x 'incorrect restart interval'
+$x=NativeRestoreFixture;$x.Rows[1].backup_xml_text=(MockOriginalTaskXml 'wait_launcher.py' 'S-1-5-18' 'BootTrigger' 'PT1M' 'Parallel')
+$x.Rows[1].current_task_xml_text=$x.Rows[1].backup_xml_text
+ExpectRestorePreview $false $x 'unexpected multiple instance policy'
+$x=NativeRestoreFixture;$x.Rows[1].backup_xml_text=(MockOriginalTaskXml 'unexpected_launcher.py')
+$x.Rows[1].current_task_xml_text=$x.Rows[1].backup_xml_text
+ExpectRestorePreview $false $x 'wrong exact WAIT action'
+$x=NativeRestoreFixture;$x.Rows[0].backup_xml_text='<not-task />';$x.Rows[0].current_task_xml_text='<not-task />'
+ExpectRestorePreview $false $x 'wrong root XML'
+$x=NativeRestoreFixture;$x.Rows[0].backup_xml_text='<Task><broken></Task>';$x.Rows[0].current_task_xml_text=$x.Rows[0].backup_xml_text
+ExpectRestorePreview $false $x 'unparseable XML'
+$x=NativeRestoreFixture;$x.Manifest.predecessor_series_id='PAPER-V2R4-20261007T184255Z'
+ExpectRestorePreview $false $x 'wrong original predecessor'
+$x=NativeRestoreFixture;$x.Rows[1].task_name='CryptoMiniPC-V2R4PaperLifecycle'
+ExpectRestorePreview $false $x 'protected Lifecycle in restoration preview'
+$x=NativeRestoreFixture;$x.Rows=@($x.Rows[0])
+ExpectRestorePreview $false $x 'incomplete restore preview input'
+$x=NativeRestoreFixture;$x.Manifest.tasks[0].action_sha256='f' * 64
+ExpectRestorePreview $false $x 'newline serialized original Action fingerprint changed'
+Write-Output 'V3_IN_MEMORY_ORIGINAL_RESTORE_PREVIEW_ONLY_16_CASES_PASS'
