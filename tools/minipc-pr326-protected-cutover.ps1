@@ -60,10 +60,7 @@ function TaskXmlWithArguments([string]$Xml,[string]$Arguments) {
   $exec=@($d.SelectNodes('/t:Task/t:Actions/t:Exec',$ns))
   Need ($exec.Count -eq 1) 'Missing/duplicate task Exec XML node'
   $arg=$exec[0].SelectSingleNode('t:Arguments',$ns)
-  if(-not $arg){
-    $arg=$d.CreateElement('Arguments',$d.DocumentElement.NamespaceURI)
-    [void]$exec[0].AppendChild($arg)
-  }
+  Need ($null -ne $arg) 'Original task XML missing Arguments field; refusing schema mutation'
   $arg.InnerText=$Arguments
   $settings=$d.SelectSingleNode('/t:Task/t:Settings',$ns)
   Need ($null -ne $settings) 'Task Settings XML missing'
