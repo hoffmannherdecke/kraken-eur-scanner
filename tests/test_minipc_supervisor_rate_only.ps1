@@ -218,3 +218,75 @@ ExpectLineage $false $p -Label 'extra child or second writer'
 $p=@(ProcessFixture);$p=$p[0..2]
 ExpectLineage $false $p -Label 'missing lifecycle child'
 Write-Output 'V3_ORIGINAL_PAPER_MODE_LINEAGE_PURE_17_CASES_PASS'
+
+
+# V3 new scoped operator is source preparation ONLY. Extract the PURE policy;
+# never execute its host branch in CI, and statically ban mutation commands.
+$operator=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1'
+$ot=$null;$oe=$null
+$oa=[System.Management.Automation.Language.Parser]::ParseFile($operator,[ref]$ot,[ref]$oe)
+if($oe.Count -ne 0){throw ($oe | Out-String)}
+$cmd=@($oa.FindAll({
+ param($a) $a -is [System.Management.Automation.Language.CommandAst]
+},$true) | ForEach-Object {$_.GetCommandName()})
+foreach($unsafe in @('Stop-Process','Start-Process','Stop-ScheduledTask','Disable-ScheduledTask',
+ 'Enable-ScheduledTask','Start-ScheduledTask','Register-ScheduledTask','Unregister-ScheduledTask',
+ 'Set-ScheduledTask','Set-Content','Out-File','Add-Content','Copy-Item','Move-Item',
+ 'Remove-Item','New-Item','Invoke-RestMethod','Invoke-WebRequest','Invoke-Sqlcmd')){
+ if($cmd -contains $unsafe){throw "INACTIVE_OPERATOR_MUTATION_FORBIDDEN $unsafe"}
+}
+$f=@($oa.FindAll({
+ param($a)
+ $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $a.Name -eq 'Test-V3CutoverPreparationPolicy'
+},$true))
+if($f.Count -ne 1){throw 'Expected exactly one inactive pure V3 operator policy'}
+. ([Scriptblock]::Create($f[0].Extent.Text))
+function V3OpFixture {
+ $ns=@(
+   @('CryptoMiniPC-V2R4PaperCandidates','v2r4-paper-local-runtime.py'),
+   @('CryptoMiniPC-V2R4PaperWait','wait_launcher.py'),
+   @('CryptoMiniPC-V2R4PaperLifecycle','v2r4-paper-local-runtime.py'),
+   @('CryptoMiniPC-V2R4PaperCloudSync','v2r4-paper-cloud-sync.py')
+ )
+ $tasks=@(foreach($pair in $ns){
+  [pscustomobject]@{
+   task_name=$pair[0];action_script_basename=$pair[1];state='Running'
+   action_count=1;documented_script_basename_hint_matches=$true
+   principal_is_system=$true;heartbeat_fresh_for_role=$true
+  }
+ })
+ [pscustomobject]@{
+  kind='V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1'
+  pre_cutover_expected_predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  native_old_intake_precutover_readonly_baseline_pass=$true
+  native_old_paper_mode_lineage_precutover_readonly_pass=$true
+  native_old_paper_mode_lineage_snapshot_only_no_stop_authority=$true
+  new_v3_writer_started=$false;v2r4_changed=$false
+  physical_v2r4_paper_task_readback=$tasks
+ }
+}
+function CheckV3Op([bool]$Expected,[object]$Report,[bool]$Marker=$false,[bool]$Maintenance=$false,[string]$Label=''){
+ $actual=Test-V3CutoverPreparationPolicy -Report $Report -FenceMarkerPresent $Marker -MaintenanceMarkerPresent $Maintenance
+ if($actual -ne $Expected){throw "V3_OP_INACTIVE_FAIL $Label expected=$Expected actual=$actual"}
+}
+CheckV3Op $true (V3OpFixture) -Label 'exact intact four original roles only'
+CheckV3Op $false (V3OpFixture) $true -Label 'marker already present'
+CheckV3Op $false (V3OpFixture) $false $true -Label 'conflicting old technical maintenance'
+$x=V3OpFixture;$x.native_old_paper_mode_lineage_precutover_readonly_pass=$false
+CheckV3Op $false $x -Label 'missing exact candidate/lifecycle lineage'
+$x=V3OpFixture;$x.physical_v2r4_paper_task_readback[2].state='Disabled'
+CheckV3Op $false $x -Label 'original lifecycle not running'
+$x=V3OpFixture;$x.physical_v2r4_paper_task_readback[3].heartbeat_fresh_for_role=$false
+CheckV3Op $false $x -Label 'cloudsync stale'
+$x=V3OpFixture;$x.physical_v2r4_paper_task_readback[0].action_script_basename='wait_launcher.py'
+CheckV3Op $false $x -Label 'candidate switched to wait script'
+$x=V3OpFixture;$x.physical_v2r4_paper_task_readback[1].task_name='CryptoMiniPC-V2R4PaperCandidates'
+CheckV3Op $false $x -Label 'duplicate original task'
+$x=V3OpFixture;$x.pre_cutover_expected_predecessor_series_id='PAPER-V2R4-20261007T184255Z'
+CheckV3Op $false $x -Label 'stale predecessor'
+$x=V3OpFixture;$x.new_v3_writer_started=$true
+CheckV3Op $false $x -Label 'not a pre-cutover snapshot'
+$x=V3OpFixture;$x.native_old_intake_precutover_readonly_baseline_pass=$false
+CheckV3Op $false $x -Label 'Windows startup baseline unknown'
+Write-Output 'V3_SCOPED_OPERATOR_INACTIVE_PURE_11_CASES_PASS'
