@@ -42,6 +42,76 @@ Check $false (Make-Hb 'HEALTHY' @{}) 3 $true 'healthy'
 Check $false $null 3 $true 'null heartbeat'
 Write-Output 'SUPERVISOR_SOURCE_RATE_POLICY_10_CASES_PASS'
 
+
+# Only the extracted pure function is executed; never run the Windows
+# Supervisor, Kraken, the task scheduler or local disk mutation in CI.
+$progressFn=@($ast.FindAll({
+  param($a)
+  $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+  $a.Name -eq 'Test-WaitSourceProgress'
+},$true))
+if($progressFn.Count -ne 1){throw 'Expected one pure WAIT source-progress policy'}
+. ([Scriptblock]::Create($progressFn[0].Extent.Text))
+function ProgressFixture {
+  [pscustomobject]@{
+    kind='V2R4_WAIT_SOURCE_PROGRESS_V1';status='IN_PROGRESS_NOT_HEALTHY'
+    cycle_started_at_utc='2026-10-15T18:00:10Z'
+    last_source_progress_at_utc='2026-10-15T18:01:30Z'
+    successful_source_steps=2;worker_pid=3001;paper_only=$true;order_api=$false
+  }
+}
+function HbFixture([string]$At='2026-10-15T17:59:59Z',[string]$Status='HEALTHY') {
+  [pscustomobject]@{checked_at_utc=$At;status=$Status}
+}
+$observed=[datetime]'2026-10-15T18:01:45Z'
+function CheckProgress([bool]$Expected,[object]$Progress,[object]$Heartbeat,
+                       [bool]$Running=$true,[bool]$Verified=$true,[string]$Label='') {
+  $actual=Test-WaitSourceProgress -Progress $Progress -Heartbeat $Heartbeat -ObservedUtc $observed -TaskRunning $Running -VerifiedWorker $Verified
+  if($actual -ne $Expected){throw "WAIT_PROGRESS_POLICY_FAIL $Label expected=$Expected got=$actual"}
+}
+CheckProgress $true (ProgressFixture) (HbFixture) -Label 'recent source replies from verified live child'
+CheckProgress $false $null (HbFixture) -Label 'no progress evidence'
+CheckProgress $false (ProgressFixture) $null -Label 'missing completion context'
+CheckProgress $false (ProgressFixture) (HbFixture) $false -Label 'stopped scheduler'
+CheckProgress $false (ProgressFixture) (HbFixture) $true $false -Label 'unverified PID'
+$p=ProgressFixture;$p.kind='FAKE'
+CheckProgress $false $p (HbFixture) -Label 'wrong schema'
+$p=ProgressFixture;$p.status='HEALTHY'
+CheckProgress $false $p (HbFixture) -Label 'never treat progress as healthy'
+$p=ProgressFixture;$p.successful_source_steps=0
+CheckProgress $false $p (HbFixture) -Label 'no successful source reads'
+$p=ProgressFixture;$p.worker_pid=-1
+CheckProgress $false $p (HbFixture) -Label 'invalid worker PID'
+$p=ProgressFixture;$p.order_api=$true
+CheckProgress $false $p (HbFixture) -Label 'orders not authorized'
+$p=ProgressFixture;$p.paper_only=$false
+CheckProgress $false $p (HbFixture) -Label 'non-paper source'
+$p=ProgressFixture;$p.last_source_progress_at_utc='2026-10-15T17:59:30Z'
+CheckProgress $false $p (HbFixture '2026-10-15T17:59:00Z') -Label 'stale progress means real stall'
+$p=ProgressFixture;$p.last_source_progress_at_utc='2026-10-15T18:01:51Z'
+CheckProgress $false $p (HbFixture) -Label 'future progress denied'
+$p=ProgressFixture;$p.cycle_started_at_utc='2026-10-15T17:50:00Z'
+CheckProgress $false $p (HbFixture '2026-10-15T17:49:00Z') -Label 'unbounded cycle denied'
+$p=ProgressFixture;$p.cycle_started_at_utc='2026-10-15T18:01:40Z'
+CheckProgress $false $p (HbFixture) -Label 'source before start denied'
+CheckProgress $false (ProgressFixture) (HbFixture '2026-10-15T18:01:31Z') -Label 'newer healthy completion wins'
+CheckProgress $false (ProgressFixture) (HbFixture '2026-10-15T18:01:00Z' 'DEGRADED') -Label 'newer degraded completion wins'
+$p=ProgressFixture;$p.last_source_progress_at_utc='2026-10-15T18:01:30'
+CheckProgress $false $p (HbFixture) -Label 'timezone required'
+$p=ProgressFixture;$p.cycle_started_at_utc='2026-10-15T18:02:00Z'
+CheckProgress $false $p (HbFixture) -Label 'future cycle start denied'
+Write-Output 'SUPERVISOR_WAIT_SOURCE_PROGRESS_PURE_19_CASES_PASS'
+
+# Static architecture proof, never invoke the live host check.
+$progressCode=Get-Content -LiteralPath $path -Raw
+foreach($required in @('[switch]$WaitSourceProgressOptIn',
+ 'WAIT_SOURCE_ACTIVE_NOT_HEALTHY', 'ACTIVE_NOT_HEALTHY',
+ 'Get-CimInstance -ClassName Win32_Process', 'Test-WaitSourceWorkerOnHost',
+ 'v2r4-paper-wait-source-progress.json')){
+ if(-not $progressCode.Contains($required)){throw "WAIT_PROGRESS_SOURCE_GUARD_MISSING $required"}
+}
+Write-Output 'SUPERVISOR_WAIT_SOURCE_PROGRESS_OPT_IN_STATIC_GUARD_PASS'
+
 # Pure V3 supervisor intake fence regression; NEVER execute the Supervisor.
 $guard=@($ast.FindAll({
   param($a)
