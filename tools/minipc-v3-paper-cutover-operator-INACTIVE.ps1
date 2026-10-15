@@ -82,6 +82,91 @@ function Test-V3WaitCompleteReadOnlyFamily(
  return $true
 }
 
+# Pure V3 single-writer contract: ONLY original intake Tasks may ever be changed.
+# No host operations; return boolean for offline negative tests.
+function Test-V3ScopedIntakeTaskSet([object[]]$Names) {
+ $expected=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait' | Sort-Object)
+ $got=@($Names | ForEach-Object {[string]$_} | Sort-Object)
+ return ($got.Count -eq 2 -and ($got -join '|') -ceq ($expected -join '|'))
+}
+
+# Backup manifest is a PROPOSED contract. These strings/booleans are not
+# evidence that files were written or that a real physical backup exists.
+function Test-V3ScopedOriginalBackupContract([object]$Manifest) {
+ if($null -eq $Manifest -or
+    [string]$Manifest.kind -cne 'V3_OLD_INTAKE_BACKUP_PROPOSAL_V1' -or
+    [string]$Manifest.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    [string]$Manifest.old_stage_release_sha -cnotmatch '^[a-f0-9]{40}$' -or
+    $Manifest.paper_only -ne $true -or
+    $Manifest.real_money_actions -ne $false){return $false}
+ $entries=@($Manifest.task_records)
+ if(-not(Test-V3ScopedIntakeTaskSet -Names @($entries | ForEach-Object {$_.task_name}))){return $false}
+ foreach($entry in $entries){
+  if([string]$entry.xml_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$entry.action_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     $entry.original_enabled -ne $true -or
+     $entry.original_running -ne $true -or
+     $entry.original_principal_system -ne $true -or
+     $entry.one_original_boot_trigger -ne $true -or
+     [int]$entry.restart_count -ne 3 -or
+     [string]$entry.restart_interval -cne 'PT1M' -or
+     [string]$entry.multiple_instances -cne 'IgnoreNew'){return $false}
+ }
+ return $true
+}
+
+# A pure decision matrix. NEVER restore an old writer after ANY CAS invocation,
+# including timeout, no response or an apparently negative outcome: operator
+# MUST fence and reconcile actual independent Cloud readback by hand.
+# No decision returned here grants permission to execute a Windows mutation.
+function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
+ $resolution='HOLD_FENCE_MANUAL_RECONCILIATION'
+ if($null -eq $Receipt -or
+    [string]$Receipt.kind -cne 'V3_CUTOVER_RECOVERY_SIMULATION_V1' -or
+    [string]$Receipt.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    -not(Test-V3ScopedIntakeTaskSet -Names @($Receipt.task_names)) -or
+    $Receipt.paper_only -ne $true -or
+    $Receipt.real_money_actions -ne $false){
+   $resolution='BLOCK_INVALID_SCOPE_OR_RECEIPT'
+ } else {
+  $phase=[string]$Receipt.phase
+  $outcome=[string]$Receipt.cloud_cas_outcome
+  $invoked=($Receipt.cloud_cas_invoked -eq $true)
+  if($outcome -notin @('NOT_INVOKED','UNKNOWN','NOT_COMMITTED','COMMITTED')){
+   $resolution='HOLD_INVALID_CLOUD_OUTCOME'
+  } elseif($outcome -eq 'COMMITTED' -or $phase -eq 'CLOUD_COMMITTED'){
+   $resolution='HOLD_POSTCOMMIT_OLD_INTAKE_PERMANENTLY_FENCED'
+  } elseif($invoked -or $outcome -ne 'NOT_INVOKED' -or $phase -eq 'CAS_INVOKED'){
+   $resolution='HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION'
+  } elseif($phase -eq 'PRE_CUTOVER'){
+   $resolution='NO_ACTION_PRESERVE_ACTIVE_V2R4'
+  } elseif($phase -notin @('ARMED','QUIESCED')){
+   $resolution='HOLD_UNKNOWN_PHASE'
+  } elseif($phase -eq 'QUIESCED' -and
+      $Receipt.backup_contract_verified -eq $true -and
+      $Receipt.native_intake_tasks_disabled_ack -eq $true -and
+      $Receipt.original_intake_processes_absent_ack -eq $true -and
+      $Receipt.windows_supervisor_no_rearm_ack -eq $true -and
+      $Receipt.protected_lifecycle_cloudsync_running_ack -eq $true -and
+      $Receipt.old_cloud_single_active_readback -eq $true -and
+      $Receipt.new_v3_series_absent_readback -eq $true -and
+      $Receipt.v3_writer_started -eq $false){
+   $resolution='PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE'
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_CUTOVER_RECOVERY_OFFLINE_DISPOSITION_V1'
+  disposition=$resolution
+  automatic_task_action_authorized=$false
+  automatic_old_writer_rearm_allowed=$false
+  operator_stop_disable_implemented=$false
+  host_rollback_implemented=$false
+  cloud_cas_executed=$false
+  v3_release_authorized=$false
+  full_v3_e2e_proofs_credited=0
+ }
+}
+
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
@@ -153,6 +238,10 @@ $completeWaitSnapshot=($waitSnapshotReadable -and
  physically_quiescent_old_intake_processes_proven=$false
  historical_followup_and_exit_cloud_ack_proven=$false
  cloud_single_active_cas_proven=$false
+ backup_manifest_contract_policy_only=$true
+ cutover_recovery_decision_matrix_policy_only=$true
+ real_task_xml_backup_not_yet_executed=$true
+ exact_task_stop_disable_and_native_no_rearm_unimplemented=$true
  rollback_precommit_only_unimplemented=$true
  unknown_cloud_commit_forbids_old_writer_rearm=$true
  v3_paper_technical_e2e_proofs_accepted=0
