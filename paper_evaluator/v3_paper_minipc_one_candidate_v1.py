@@ -435,10 +435,21 @@ def main()->int:
     p.add_argument("--admit-staged-scanner-one-approved-model",action="store_true")
     p.add_argument("--model-key-file",type=Path)
     a=p.parse_args()
+    # The manual CLI may consume ONLY an original, filename-bound V2R4 Scanner
+    # handoff. The future H5/H10/H11 positive-source route must first verify
+    # its signed owner packet and immutable OWNERAUTH receipt in the single
+    # writer. A caller-controlled origin label or optional context JSON does
+    # not authenticate a source and must never unlock a paid model call here.
+    candidate=read(a.candidate)
+    if candidate.get("entry_origin") not in (None,"SCANNER"):
+        raise ValueError("V3_CLI_SOURCE_OWNER_AUTH_NOT_PROVEN_NO_MODEL")
+    if candidate.get("kind")!="CANONICAL_CANDIDATE_HANDOFF_V1":
+        raise ValueError("V3_CLI_ORIGINAL_SCANNER_HANDOFF_REQUIRED")
+    evaluate.validate_candidate(candidate,a.candidate)
     sources=read(a.optional_sources) if a.optional_sources else {}
     approval=read(a.approved_one_model_call) if a.approved_one_model_call else None
     key=a.model_key_file.read_text("utf-8").strip() if a.model_key_file else None
-    res=one_candidate(candidate=read(a.candidate),series_id=a.series,
+    res=one_candidate(candidate=candidate,series_id=a.series,
                       local_receipts=a.journal,model_reservations=a.budget_directory,
                       approval=approval,model_key=key,existing_context=sources,
                       allow_model=bool(a.approved_one_model_call),
