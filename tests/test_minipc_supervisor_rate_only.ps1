@@ -225,6 +225,31 @@ Remove-Item Function:\Get-FileHash -ErrorAction SilentlyContinue
 Remove-Item Function:\Get-CimInstance -ErrorAction SilentlyContinue
 
 
+# PR326 offline stage packager is never run in CI: enforce its parse and
+# non-production scope with static read-only assertions.
+$stageTool=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/stage-minipc-pr326-wait-offline.ps1'
+if(-not (Test-Path -LiteralPath $stageTool -PathType Leaf)){throw 'Missing existing PR326 offline stage tool'}
+$parseTokens=$null
+$parseErrors=$null
+[void][System.Management.Automation.Language.Parser]::ParseFile($stageTool,[ref]$parseTokens,[ref]$parseErrors)
+if(@($parseErrors).Count -gt 0){throw 'PR326_OFFLINE_STAGE_POWERSHELL_PARSE_FAILED'}
+$stageSource=Get-Content -LiteralPath $stageTool -Raw
+foreach($required in @('ExpectedSourceSha','INACTIVE_OFFLINE_STAGE_ONLY',
+  'PR326_INACTIVE_WAIT_STAGE_V1','original_pr291_unchanged',
+  'market_data\kraken_public_budget.py','PYTHON_COMPILE=PASS',
+  'WINDOWS_TASKS_UNCHANGED=True')){
+  if(-not $stageSource.Contains($required)){throw "PR326_OFFLINE_STAGE_GUARD_MISSING $required"}
+}
+foreach($forbidden in @('Start-ScheduledTask','Stop-ScheduledTask',
+  'Register-ScheduledTask','Set-ScheduledTask','git pull',
+  'Invoke-WebRequest','Invoke-RestMethod','api.kraken.com')){
+  if($stageSource.IndexOf($forbidden,[StringComparison]::OrdinalIgnoreCase) -ge 0){
+    throw "PR326_OFFLINE_STAGE_FORBIDDEN_CALL $forbidden"
+  }
+}
+Write-Output 'PR326_PINNED_OFFLINE_STAGE_STATIC_GUARDS_PASS'
+
+
 # Pure V3 supervisor intake fence regression; NEVER execute the Supervisor.
 $guard=@($ast.FindAll({
   param($a)
