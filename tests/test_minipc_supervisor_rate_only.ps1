@@ -338,7 +338,7 @@ $x=WaitFixture;$x.All+=@([pscustomobject]@{PID=102;ParentPID=100})
 ExpectV3Wait $false $x -Label 'unrecognized sibling child'
 $x=WaitFixture;$x.All[2].ParentPID=10
 ExpectV3Wait $false $x -Label 'different live parent than WAIT receipt'
-$x=WaitFixture;$x.All=$x.All[0..3]
+$x=WaitFixture;$x.All=@($x.All | Where-Object { [int]$_.PID -ne 101 })
 ExpectV3Wait $false $x -Label 'missing child in full-process snapshot'
 $x=WaitFixture;$x.Wait+=@([pscustomobject]@{PID=102;ParentPID=100;OriginalStage=$true})
 ExpectV3Wait $false $x -Label 'extra matching python'
