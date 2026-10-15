@@ -348,6 +348,60 @@ $x=WaitFixture;$x.Protected=@(101,200)
 ExpectV3Wait $false $x -Label 'protected process overlaps WAIT'
 Write-Output 'V3_WAIT_COMPLETE_READONLY_FAMILY_PURE_14_CASES_PASS'
 
+# Host-identified signed System32 conhost: EXACTLY one optional direct child
+# of verified WAIT_ROOT, validated by the actual source attestation, no children.
+# Synthetic flags in these pure cases DO NOT count as signed host receipts.
+function SignedConsoleFixture {
+ $x=WaitFixture
+ $x.All+=@([pscustomobject]@{
+  PID=102;ParentPID=100;Name='conhost.exe';TrustedConsoleHost=$true
+ })
+ return $x
+}
+ExpectV3Wait $true (SignedConsoleFixture) -Label 'one attested console host at exact WAIT_ROOT'
+$x=SignedConsoleFixture;$x.All[5].TrustedConsoleHost=$false
+ExpectV3Wait $false $x -Label 'unattested console host rejected'
+$x=SignedConsoleFixture;$x.All[5].Name='consolehost.exe'
+ExpectV3Wait $false $x -Label 'similar looking executable rejected'
+$x=SignedConsoleFixture;$x.All[5].Name='conhost.exe.bak'
+ExpectV3Wait $false $x -Label 'renamed executable rejected'
+$x=SignedConsoleFixture;$x.All[5].ParentPID=101
+ExpectV3Wait $false $x -Label 'conhost child of WAIT_CHILD rejected'
+$x=SignedConsoleFixture;$x.All+=@([pscustomobject]@{
+ PID=103;ParentPID=102;Name='helper.exe';TrustedConsoleHost=$false
+})
+ExpectV3Wait $false $x -Label 'console host with helper child rejected'
+$x=SignedConsoleFixture;$x.All+=@([pscustomobject]@{
+ PID=103;ParentPID=100;Name='conhost.exe';TrustedConsoleHost=$true
+})
+ExpectV3Wait $false $x -Label 'multiple trusted console hosts rejected'
+$x=SignedConsoleFixture;$x.All+=@([pscustomobject]@{
+ PID=103;ParentPID=100;Name='python.exe';TrustedConsoleHost=$false
+})
+ExpectV3Wait $false $x -Label 'new separate Python writer rejected'
+$x=SignedConsoleFixture;$x.All[5].PID=101
+ExpectV3Wait $false $x -Label 'duplicate native PID with expected WAIT child rejected'
+$x=SignedConsoleFixture;$x.Protected=@(102,200,201)
+ExpectV3Wait $false $x -Label 'protected role PID overlap with conhost rejected'
+$x=SignedConsoleFixture;$x.Wait[0].OriginalStage=$false
+ExpectV3Wait $false $x -Label 'lost original runtime stage rejected'
+$x=SignedConsoleFixture;$x.Wait[1].ParentPID=10;$x.All[2].ParentPID=10
+ExpectV3Wait $false $x -Label 'lost WAIT parent child relationship rejected'
+# Code-level contract: trusted bit can ONLY be assigned after native path,
+# Microsoft Authenticode, original creation-order and fresh PID re-read.
+$operatorText=Get-Content -LiteralPath $operator -Raw -ErrorAction Stop
+foreach($requiredCheck in @('System32\conhost.exe',
+ 'Get-AuthenticodeSignature','O=Microsoft Corporation',
+ '$fresh[0].CreationDate -eq $candidate.CreationDate',
+ '$trusted[0].TrustedConsoleHost=$true',
+ 'wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true')){
+ if(-not $operatorText.Contains($requiredCheck)){
+  throw "V3_CONHOST_TRUST_SOURCE_CHECK_MISSING $requiredCheck"
+ }
+}
+Write-Output 'V3_SIGNED_CONHOST_EXACT_SCOPE_PURE_12_CASES_PASS'
+
+
 
 # V3 offline transaction-contract simulation. Run extracted PURE policies only.
 # Never execute the inactive operator, host commands, Task or Cloud changes.
