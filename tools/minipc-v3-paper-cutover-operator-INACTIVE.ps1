@@ -421,7 +421,7 @@ function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
    $marker=[string]$Receipt.fence_marker_phase
    if($casWasInvoked -or $casOutcome -ne 'NOT_INVOKED' -or $phase -in @('CAS_INVOKED','CLOUD_COMMITTED')){
     # An attempted CAS crosses the irrevocable *automatic rearm* boundary.
-    if($phase -eq 'CLOUD_COMMITTED' -and $casOutcome -eq 'COMMITTED' -and $allDisabled){
+    if($phase -eq 'CLOUD_COMMITTED' -and $marker -eq 'CLOUD_COMMITTED' -and $casOutcome -eq 'COMMITTED' -and $allDisabled){
      $decision='HOLD_POSTCOMMIT_OLD_INTAKE_FENCED_KEEP_AFTERCARE'
     }else{
      $decision='HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION'
