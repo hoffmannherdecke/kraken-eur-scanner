@@ -237,6 +237,8 @@ $stageSource=Get-Content -LiteralPath $stageTool -Raw
 foreach($required in @('ExpectedSourceSha','INACTIVE_OFFLINE_STAGE_ONLY',
   'PR326_INACTIVE_WAIT_STAGE_V1','original_pr291_unchanged',
   'market_data\kraken_public_budget.py','PYTHON_COMPILE=PASS',
+  'Backup manifest SHA mismatch','Original SHA256 is not 64 characters',
+  'Backup contents differ from saved manifest',
   'WINDOWS_TASKS_UNCHANGED=True')){
   if(-not $stageSource.Contains($required)){throw "PR326_OFFLINE_STAGE_GUARD_MISSING $required"}
 }
@@ -246,6 +248,9 @@ foreach($forbidden in @('Start-ScheduledTask','Stop-ScheduledTask',
   if($stageSource.IndexOf($forbidden,[StringComparison]::OrdinalIgnoreCase) -ge 0){
     throw "PR326_OFFLINE_STAGE_FORBIDDEN_CALL $forbidden"
   }
+}
+if($stageSource.Contains("'v2r4_wait_runtime.py'='554E6CAF5E097D1684AB1F7557733CECFB4BCE6AF0A5BF88DBD106BF9BBA40'")){
+  throw 'PR326_OFFLINE_STAGE_62_DIGIT_SHA_REGRESSION'
 }
 Write-Output 'PR326_PINNED_OFFLINE_STAGE_STATIC_GUARDS_PASS'
 
