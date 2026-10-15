@@ -17,7 +17,7 @@ $previous=Join-Path $TradingRoot 'Staging\v2r4-wait-pr291-isolated'
 $target=Join-Path $TradingRoot ('Staging\v2r4-wait-pr326-isolated-'+$ExpectedSourceSha.Substring(0,12))
 $baseline=@{
   'wait_launcher.py'='C5E43D62976BDF2079A3A0402E57658ABA8A33D427B0CF0D56737565B84DD51D'
-  'v2r4_wait_runtime.py'='554E6CAF5E097D1684AB1F7557733CECFB4BCE6AF0A5BF88DBD106BF9BBA40'
+  'v2r4_wait_runtime.py'=(Get-FileHash -LiteralPath 'D:\Krypto-Sicherungen\PR326-VORHER-20261015-205743\v2r4_wait_runtime.py' -Algorithm SHA256).Hash
   'v2r4_wait_watcher.py'='38F3843968F1A46D5A2B3F15C50743FED47D97E68C46198574DBD39BF501FD3D'
 }
 foreach($name in $baseline.Keys){
