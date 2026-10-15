@@ -385,7 +385,7 @@ function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
    $errors+=@('INVALID_PREDECESSOR_OR_TASK_SCOPE')
   }
   $preserved=@($Receipt.protected_task_names)
-  $required=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync' | Sort-Object)
+  $required=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync') | Sort-Object
   if($preserved.Count -ne 2 -or
      (@($preserved | Sort-Object) -join '|') -cne ($required -join '|') -or
      $Receipt.protected_tasks_running -ne $true){
