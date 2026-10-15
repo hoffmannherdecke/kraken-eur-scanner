@@ -93,8 +93,10 @@ function Require-NoWaitProcess {
   Need ((Count-LauncherProcesses $newLauncher) -eq 0) 'New WAIT launcher PID still alive; do not create competing writer'
 }
 # The original TaskScheduler LastRunTime is exposed at seconds precision,
-# while a PowerShell start marker has sub-second precision. Use a monotonic
-# before/after task readback and an exact post-launch supervisor JSON timestamp.
+# while a PowerShell start marker has sub-second precision. A periodic run
+# can start within the same second BEFORE manual Start-ScheduledTask and cause
+# a duplicate-start 322. Accept a matching completed report after request,
+# even when the rounded LastRunTime equals its prestart readback.
 # This is a pure policy, no task controls or network effects.
 function Test-Pr326SupervisorReceipt(
     [object]$BeforeInfo,[object]$AfterInfo,[object]$BeforeReport,
@@ -108,7 +110,7 @@ function Test-Pr326SupervisorReceipt(
     if($BeforeReport -and $BeforeReport.checked_at_utc){
       $originalReportTime=([datetime]$BeforeReport.checked_at_utc).ToUniversalTime()
     }
-    if($last -le $prior -or $last -lt $RequestedStart.AddSeconds(-2) -or
+    if($last -lt $prior -or $last -lt $RequestedStart.AddSeconds(-2) -or
        [int]$AfterInfo.LastTaskResult -ne 0 -or
        $completed -lt $RequestedStart -or $completed -le $originalReportTime){
       return $false
