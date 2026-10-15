@@ -347,3 +347,123 @@ ExpectV3Wait $false $x -Label 'duplicate full-process PID'
 $x=WaitFixture;$x.Protected=@(101,200)
 ExpectV3Wait $false $x -Label 'protected process overlaps WAIT'
 Write-Output 'V3_WAIT_COMPLETE_READONLY_FAMILY_PURE_14_CASES_PASS'
+
+
+# V3 offline transaction-contract simulation. Run extracted PURE policies only.
+# Never execute the inactive operator, host commands, Task or Cloud changes.
+foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Resolve-V3ScopedCutoverRecovery')){
+ $fn=@($oa.FindAll({
+  param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+  $a.Name -eq $name
+ },$true))
+ if($fn.Count -ne 1){throw "Missing unique pure V3 recovery policy $name"}
+ . ([Scriptblock]::Create($fn[0].Extent.Text))
+}
+function V3BackupFixture {
+ [pscustomobject]@{
+  kind='V3_OLD_INTAKE_BACKUP_PROPOSAL_V1'
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  old_stage_release_sha=('a' * 40)
+  paper_only=$true;real_money_actions=$false
+  task_records=@(
+   [pscustomobject]@{task_name='CryptoMiniPC-V2R4PaperCandidates'
+    xml_sha256=('b' * 64);action_sha256=('c' * 64)
+    original_enabled=$true;original_running=$true;original_principal_system=$true
+    one_original_boot_trigger=$true;restart_count=3;restart_interval='PT1M'
+    multiple_instances='IgnoreNew'},
+   [pscustomobject]@{task_name='CryptoMiniPC-V2R4PaperWait'
+    xml_sha256=('d' * 64);action_sha256=('e' * 64)
+    original_enabled=$true;original_running=$true;original_principal_system=$true
+    one_original_boot_trigger=$true;restart_count=3;restart_interval='PT1M'
+    multiple_instances='IgnoreNew'}
+  )
+ }
+}
+function V3RecoveryFixture {
+ [pscustomobject]@{
+  kind='V3_CUTOVER_RECOVERY_SIMULATION_V1'
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  task_names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+  phase='QUIESCED'
+  paper_only=$true;real_money_actions=$false
+  cloud_cas_invoked=$false;cloud_cas_outcome='NOT_INVOKED'
+  backup_contract_verified=$true;backup_manifest=(V3BackupFixture)
+  native_intake_tasks_disabled_ack=$true
+  original_intake_processes_absent_ack=$true
+  windows_supervisor_no_rearm_ack=$true
+  protected_lifecycle_cloudsync_running_ack=$true
+  old_cloud_single_active_readback=$true
+  new_v3_series_absent_readback=$true
+  v3_writer_started=$false
+ }
+}
+function CheckBackup([bool]$Expected,[object]$Fixture,[string]$Label){
+ $actual=Test-V3ScopedOriginalBackupContract -Manifest $Fixture
+ if($actual -ne $Expected){throw "V3_BACKUP_CONTRACT_FAIL $Label expected=$Expected actual=$actual"}
+}
+function CheckRecovery([string]$Expected,[object]$Fixture,[string]$Label){
+ $output=Resolve-V3ScopedCutoverRecovery -Receipt $Fixture
+ if([string]$output.disposition -cne $Expected){throw "V3_RECOVERY_FAIL $Label wanted=$Expected got=$($output.disposition)"}
+ if($output.automatic_task_action_authorized -ne $false -or
+    $output.automatic_old_writer_rearm_allowed -ne $false -or
+    $output.operator_stop_disable_implemented -ne $false -or
+    $output.host_rollback_implemented -ne $false -or
+    $output.cloud_cas_executed -ne $false -or
+    $output.v3_release_authorized -ne $false -or
+    [int]$output.full_v3_e2e_proofs_credited -ne 0){
+  throw "V3_RECOVERY_POLICY_FALSE_RUNTIME_AUTHORITY $Label"
+ }
+}
+if(-not(Test-V3ScopedIntakeTaskSet @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait'))){throw 'Exact two-task scope rejected'}
+if(Test-V3ScopedIntakeTaskSet @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperLifecycle')){throw 'Protected Lifecycle falsely accepted'}
+if(Test-V3ScopedIntakeTaskSet @('CryptoMiniPC-V2R4PaperWait','CryptoMiniPC-V2R4PaperWait')){throw 'Duplicate WAIT scope accepted'}
+if(Test-V3ScopedIntakeTaskSet @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait','CryptoMiniPC-V2R4PaperCloudSync')){throw 'Extra CloudSync scope accepted'}
+CheckBackup $true (V3BackupFixture) 'exact two original backup proposals'
+$x=V3BackupFixture;$x.task_records[0].xml_sha256='bad'
+CheckBackup $false $x 'missing native XML hash'
+$x=V3BackupFixture;$x.task_records[1].task_name='CryptoMiniPC-V2R4PaperLifecycle'
+CheckBackup $false $x 'protected role in backup scope'
+$x=V3BackupFixture;$x.task_records[0].original_enabled=$false
+CheckBackup $false $x 'incorrect prior enabled state'
+$x=V3BackupFixture;$x.task_records[1].restart_count=4
+CheckBackup $false $x 'wrong native boot restart policy'
+$x=V3BackupFixture;$x.old_stage_release_sha='bad'
+CheckBackup $false $x 'old stage source pin missing'
+CheckRecovery 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE' (V3RecoveryFixture) 'qualified simulation, no actual rollback'
+$x=V3RecoveryFixture;$x.phase='PRE_CUTOVER'
+CheckRecovery 'NO_ACTION_PRESERVE_ACTIVE_V2R4' $x 'no intervention yet'
+$x=V3RecoveryFixture;$x.phase='ARMED'
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'no rollback until verified quiescence'
+$x=V3RecoveryFixture;$x.cloud_cas_invoked=$true;$x.cloud_cas_outcome='UNKNOWN'
+CheckRecovery 'HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION' $x 'uncertain Cloud commit'
+$x=V3RecoveryFixture;$x.cloud_cas_invoked=$true;$x.cloud_cas_outcome='NOT_COMMITTED'
+CheckRecovery 'HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION' $x 'negative outcome cannot authorize auto-rearm'
+$x=V3RecoveryFixture;$x.cloud_cas_outcome='COMMITTED';$x.phase='CLOUD_COMMITTED'
+CheckRecovery 'HOLD_POSTCOMMIT_OLD_INTAKE_PERMANENTLY_FENCED' $x 'postcommit old writer stays disabled'
+$x=V3RecoveryFixture;$x.backup_contract_verified=$false
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'no validated physical backup receipt'
+$x=V3RecoveryFixture;$x.backup_manifest.task_records[0].action_sha256='bad'
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'bad backup manifest pin'
+$x=V3RecoveryFixture;$x.native_intake_tasks_disabled_ack=$false
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'Windows boot rearm still possible'
+$x=V3RecoveryFixture;$x.windows_supervisor_no_rearm_ack=$false
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'Supervisor no-rearm not proven'
+$x=V3RecoveryFixture;$x.original_intake_processes_absent_ack=$false
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'remaining old writer child'
+$x=V3RecoveryFixture;$x.protected_lifecycle_cloudsync_running_ack=$false
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'protected aftercare offline'
+$x=V3RecoveryFixture;$x.old_cloud_single_active_readback=$false
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'old Cloud authority not established'
+$x=V3RecoveryFixture;$x.new_v3_series_absent_readback=$false
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'possible duplicate Cloud writer'
+$x=V3RecoveryFixture;$x.v3_writer_started=$true
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'successor potentially running'
+$x=V3RecoveryFixture;$x.cloud_cas_invoked=$null
+CheckRecovery 'BLOCK_INVALID_SCOPE_OR_RECEIPT' $x 'missing explicit CAS attempted flag'
+$x=V3RecoveryFixture;$x.task_names+=@('CryptoMiniPC-V2R4PaperLifecycle')
+CheckRecovery 'BLOCK_INVALID_SCOPE_OR_RECEIPT' $x 'scope tries stopping protected aftercare'
+$x=V3RecoveryFixture;$x.predecessor_series_id='PAPER-V2R4-20261007T184255Z'
+CheckRecovery 'BLOCK_INVALID_SCOPE_OR_RECEIPT' $x 'stale technical predecessor'
+$x=V3RecoveryFixture;$x.cloud_cas_outcome='SOMETHING_ELSE'
+CheckRecovery 'HOLD_INVALID_CLOUD_OUTCOME' $x 'unrecognized Cloud result'
+Write-Output 'V3_SCOPED_CUTOVER_PURE_BACKUP_RECOVERY_29_CASES_PASS'
