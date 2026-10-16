@@ -642,4 +642,110 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
             self.assertFalse(waiting["tick_called"])
             self.assertFalse(waiting["paper_writer_active"])
 
+
+    def test_canary_restart_uncertain_reserved_model_is_quarantined(self):
+        import tempfile
+        from pathlib import Path
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            plan_canary_resume,resume_canary_tick_once,
+        )
+        from paper_evaluator.v3_paper_intake_receipt_stage_v1 import stage_receipts_explicitly
+        from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt,store_receipt_explicitly
+        from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import REVISION
+        original=scanner("restart-ambiguous","XBT/EUR",dt(9))
+        plan=preflight(scanners=[original])
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);j=root/"journal";budget=root/"budgets";cap=root/"capture"
+            for d in (j,budget,cap):d.mkdir()
+            stage_receipts_explicitly(preflight=plan,journal_directory=j)
+            initial=plan_canary_resume(candidate=plan["selected_candidates"][0],
+                series_id=SID,journal=j,model_reservations=budget,
+                ack_file=root/"cloud-ack.json")
+            self.assertEqual(initial["status"],
+                             "MODEL_NOT_FINAL_NO_AUTOMATIC_SPEND_OR_FOLLOWUP")
+            req=make_receipt(series_id=SID,revision=REVISION,
+                candidate_id=original["candidate_id"],pair=original["pair"],
+                event_time_utc=original["event_time_utc"],known_at_utc=dt(12),
+                phase="MODEL_REQUEST",result="PASS",event_key="FRESHRECHECK",
+                data={"model_http_attempts_reserved":1})
+            store_receipt_explicitly(j,req)
+            guard=plan_canary_resume(candidate=plan["selected_candidates"][0],
+                series_id=SID,journal=j,model_reservations=budget,
+                ack_file=root/"cloud-ack.json")
+            self.assertEqual(guard["status"],"MODEL_MAY_HAVE_SPENT_NO_RETRY_QUARANTINE")
+            self.assertFalse(guard["can_tick"])
+            out=resume_canary_tick_once(candidate=plan["selected_candidates"][0],
+                series_id=SID,journal=j,capture_dir=cap,model_reservations=budget,
+                ack_file=root/"cloud-ack.json",
+                capture=lambda **kw:self.fail("no source on uncertain HTTP"),
+                fetch=lambda *_:self.fail("no Kraken recheck"),
+                ticker=lambda *_:self.fail("no ticker"))
+            self.assertFalse(out["tick_called"])
+            self.assertEqual(out["source_capture_calls"],0)
+            self.assertEqual(out["model_http_calls"],0)
+            self.assertEqual(len(list(cap.glob("*.json"))),0)
+
+    def test_canary_recovery_wait_from_immutable_complete_model_single_owner(self):
+        import tempfile
+        from pathlib import Path
+        from datetime import datetime
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            plan_canary_resume,resume_canary_tick_once,
+        )
+        from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import capture_public_1m
+        from paper_evaluator.v3_paper_intake_receipt_stage_v1 import stage_receipts_explicitly
+        from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt,store_receipt_explicitly
+        from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import REVISION
+        original=scanner("restart-wait","XBT/EUR",dt(9))
+        plan=preflight(scanners=[original])
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);j=root/"j";budget=root/"b";cap=root/"c"
+            for d in (j,budget,cap):d.mkdir()
+            stage_receipts_explicitly(preflight=plan,journal_directory=j)
+            budget.joinpath("known.reserved.json").write_text(__import__("json").dumps({
+                "kind":"V3_PAPER_MODEL_HTTP_RESERVED_BEFORE_NETWORK_V1",
+                "series_id":SID,"candidate_id":original["candidate_id"],
+                "no_automatic_retry":True}),encoding="utf-8")
+            for phase,result,data in (
+                ("MODEL_REQUEST","PASS",{"model_http_attempts_reserved":1}),
+                ("MODEL_RESPONSE","PASS",{"raw_model_decision":"WAIT",
+                                          "model_response_at_utc":dt(12)}),
+                ("P4_VALIDATION","WAIT",{"p4_decision":"WAIT","p4_status":"FULL_WAIT_VALIDATED_OFFLINE"}),
+                ("WAIT_WATCH","WAIT",{"raw_wait_ttl_minutes":1,
+                                     "raw_watch_conditions":[
+                                         {"metric":"ask_eur","op":">=","value":1.0}]}),
+            ):
+                event=make_receipt(series_id=SID,revision=REVISION,
+                    candidate_id=original["candidate_id"],pair=original["pair"],
+                    event_time_utc=original["event_time_utc"],known_at_utc=dt(12),
+                    phase=phase,result=result,event_key="FRESHRECHECK",data=data)
+                store_receipt_explicitly(j,event)
+            safe=plan_canary_resume(candidate=plan["selected_candidates"][0],
+                series_id=SID,journal=j,model_reservations=budget,
+                ack_file=root/"ack.json")
+            self.assertTrue(safe["can_tick"])
+            captured=[]
+            def original_source(*,pair,altname,outdir):
+                captured.append(pair)
+                at=datetime.fromisoformat(dt(150))
+                moment=int(at.timestamp())-60
+                def load(_):
+                    return {"error":[],"result":{altname:[
+                        [moment,"2.0","2.1","1.9","2.0","2.0","10",2]],"last":1}}
+                return capture_public_1m(pair=pair,altname=altname,
+                    outdir=outdir,loader=load,clock=lambda:at)
+            result=resume_canary_tick_once(
+                candidate=plan["selected_candidates"][0],
+                series_id=SID,journal=j,capture_dir=cap,
+                model_reservations=budget,ack_file=root/"ack.json",
+                clock_now=lambda:dt(150),capture=original_source,
+                fetch=lambda *_:self.fail("expired WAIT needs no Kraken extra"),
+                ticker=lambda *_:self.fail("no real ticker"))
+            self.assertTrue(result["tick_called"])
+            self.assertEqual(captured,["XBT/EUR"])
+            self.assertEqual(result["model_http_calls"],0)
+            self.assertFalse(result["cloud_ack_verified"])
+            self.assertFalse(result["paper_writer_active"])
+            self.assertTrue(any("lock" in x.name for x in j.iterdir()))
+
 if __name__=="__main__":unittest.main()
