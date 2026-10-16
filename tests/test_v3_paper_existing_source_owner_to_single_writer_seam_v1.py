@@ -728,7 +728,7 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
             def original_source(*,pair,altname,outdir):
                 captured.append(pair)
                 at=datetime.fromisoformat(dt(150))
-                moment=int(at.timestamp())-60
+                moment=int(at.replace(second=0,microsecond=0).timestamp())-60
                 def load(_):
                     return {"error":[],"result":{altname:[
                         [moment,"2.0","2.1","1.9","2.0","2.0","10",2]],"last":1}}
