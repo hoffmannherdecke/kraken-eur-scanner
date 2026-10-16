@@ -38,8 +38,27 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
         errs.append("invalid queue kind/version")
     if queue.get("status_authority")!="project-current-state.json" or queue.get("no_orphan_requirement") is not True:
         errs.append("wrong autonomy/control-plane authority")
-    if queue.get("max_safe_actions_per_open_work_run")!=2 or queue.get("max_concurrent_implementation_branches")!=1:
-        errs.append("unsafe work limits")
+    if (queue.get("max_concurrent_active_work_packages")!=2
+            or queue.get("max_concurrent_implementation_branches")!=1
+            or queue.get("work_run_rule")!=
+            "EXISTING_DAILY_WORK_ONLY_CHEAP_PRECHECK_MAX_TWO_ACTIVE_EVIDENCED_REFILL"):
+        errs.append("unsafe concurrent work limits")
+    # Existing Work owns the start/finish receipts; this selector never
+    # creates tasks or PRs. A started package occupies a slot until an
+    # evidenced completion or exact foreign/approval gate releases it.
+    attempts=(ack or {}).get("autonomy_task_attempts",{})
+    if not isinstance(attempts,dict):
+        errs.append("invalid work attempt ledger")
+        attempts={}
+    active_work_packages=sorted(
+        key for key,receipt in attempts.items()
+        if isinstance(key,str) and isinstance(receipt,dict)
+        and receipt.get("status") in ("IN_PROGRESS","ACTIVE_PR"))
+    active_pr_count=sum(
+        isinstance(receipt,dict) and receipt.get("status")=="ACTIVE_PR"
+        for receipt in attempts.values())
+    if len(active_work_packages)>2 or active_pr_count>1:
+        errs.append("overcommitted active work / implementation PR")
     if set(queue.get("allowed_effects") or [])!=EFFECTS or set(queue.get("forbidden_effects") or [])!=FORBIDDEN:
         errs.append("safe authority scope drift")
     if state.get("kind")!="PROJECT_CURRENT_STATE_V1" or (state.get("active_strategy") or {}).get("real_money_actions") is not False:
@@ -162,7 +181,6 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
         "mini_preflight_present":mini_target.exists(),
         "open_work":open_work
     },sort_keys=True).encode()).hexdigest()[:20]
-    attempts=((ack or {}).get("autonomy_task_attempts") or {})
     ready=[]
     blocked_attempts=[]
     for tid in open_work:
@@ -172,6 +190,14 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
             continue
         ready.append(next(x for x in tasks if x["id"]==tid))
     ready.sort(key=lambda x:(x["priority"],x["id"]))
+    # Return no more than the free *concurrent* slots. Work must re-run
+    # this cheap selector after each real ACK in the SAME allowed 10:15 run;
+    # no fixed two-per-run truncation or automatic infinite loop exists here.
+    free_slots=max(0,queue["max_concurrent_active_work_packages"]-
+                   len(active_work_packages))
+    waiting_due=[{"id":x["id"],"gate":x["gate"],"source_ref":x["source_ref"],
+                  "wait_reason":"ACTIVE_PACKAGE_CAPACITY"}
+                 for x in ready[free_slots:]]
     ready=[{"id":x["id"],"action":x["action"],"target":x["target"],
             "gate":x["gate"],"evidence":x["evidence"],"allowlist":x["allowlist"],
             "source_ref":x["source_ref"],"proof_of_completion":x["proof_of_completion"],
@@ -183,9 +209,23 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
                     "PROJECT_WIDE_COMMITMENT_SAFE_WORK" else None,
             "legacy_backlog_review":legacy_next if x["id"]==
                     "HISTORICAL_BACKLOG_RECONCILIATION" else []}
-            for x in ready[:queue["max_safe_actions_per_open_work_run"]]]
+            for x in ready[:free_slots]]
     return {"kind":"AUTONOMOUS_IMPLEMENTATION_GATE_V1","status":"READY_SAFE_WORK" if ready else "NO_SAFE_WORK",
             "fingerprint":digest,"open_work_count":len(open_work),"ready":ready,
+            "active_work_package_count":len(active_work_packages),
+            "active_work_package_ids":active_work_packages,
+            "active_implementation_pr_count":active_pr_count,
+            "max_concurrent_active_work_packages":2,
+            "max_concurrent_implementation_branches":1,
+            "waiting_due":waiting_due,
+            "waiting_registered_obligations":[
+                {"id":x["id"],"owner":x["owner"],"trigger":x["trigger"],
+                 "state":x["state"],"priority":x["priority"]}
+                for x in available if not selected_obligation or
+                x["id"]!=selected_obligation["id"]],
+            "refill_after_evidenced_ack_same_run":True,
+            "work_must_enforce_existing_time_cost_budget":True,
+            "external_github_pr_count_must_be_verified_by_work":True,
             "suppressed_prior_attempts":blocked_attempts,"safe_work_requested":bool(ready),
             "strategy_changed":False,"orders":False,"real_money_actions":False}
 

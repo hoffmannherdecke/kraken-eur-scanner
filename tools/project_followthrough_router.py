@@ -164,7 +164,7 @@ def project_implementation_commitments(root: Path, state: dict, ack: dict,
             and cfg.get("work_executor")=="EXISTING_DAILY_1015_WORK_ONCE_PER_GATE"
             and cfg.get("milestone_watcher")==
                 "EXISTING_AUTONOMOUS_PROJECT_MILESTONE_CONTROLLER"
-            and cfg.get("max_safe_actions_per_run")==2,
+            and cfg.get("max_concurrent_active_work_packages")==2,
             "missing canonical implementation commitment followthrough")
     for k in ("no_new_scheduler","no_auto_release",
               "acknowledgement_never_proves_physical_cloud_truth"):
@@ -262,8 +262,9 @@ def project_implementation_commitments(root: Path, state: dict, ack: dict,
             "safe_work":ob["safe_work"],
             "completion_is_documentary_not_independent_runtime_proof":audited})
     open_tasks=[s for s in states if not s["completion_is_documentary_not_independent_runtime_proof"]]
-    # Return ALL ready obligations. The existing Work selector still executes
-    # no more than two per run; truncating here indefinitely starves later work.
+    # Return ALL ready obligations. The existing Work selector reserves at most
+    # two CONCURRENT active packages, then refills on a genuine receipt in the
+    # same bounded 10:15 run. Never silently truncate due owners here.
     safe=sorted((s for s in open_tasks if s["state"]=="READY_SAFE_IMPLEMENTATION"),
                 key=lambda x:(x["priority"],x["id"]))
     return {"kind":cfg["kind"],"status":"OPEN_GATED_OR_SAFE_WORK" if open_tasks
