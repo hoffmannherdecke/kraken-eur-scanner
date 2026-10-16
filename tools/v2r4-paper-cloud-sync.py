@@ -349,15 +349,77 @@ def run_closed_aftercare_once(args):
     return result
 
 
+def original_cloud_sync_fence_lane(root):
+    """Classify a real, locally validated single-writer fence without Cloud writes.
+
+    ARMED/QUIESCED means original V2R4 is STILL Cloud-active before CAS:
+    continue normal historical original-relay sync. CLOSED aftercare is legal
+    ONLY after explicit CLOUD_COMMITTED; its Edge endpoint independently
+    verifies the real committed predecessor/successor before any writes.
+    Invalid, truncated or conflicting marker MUST NOT silently fall back to
+    active relay, nor force a premature closed-aftercare downgrade.
+    """
+    import re
+    marker_file=root/'State/v3-experimental-paper-old-intake-fence.json'
+    if not marker_file.exists():
+        return 'ACTIVE_ORIGINAL', None
+    if (root/'State/v2r4-technical-cutover-maintenance.json').exists():
+        raise ValueError('conflicting V2R4 technical maintenance marker')
+    marker=load_json(marker_file)
+    if not isinstance(marker,dict):
+        raise ValueError('V3 fence marker must be a JSON object')
+    phase=marker.get('phase')
+    allowed=('ARMED','QUIESCED','CLOUD_COMMITTED')
+    task_names=marker.get('task_names')
+    if (marker.get('kind')!='V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1'
+        or phase not in allowed
+        or marker.get('predecessor_series_id')!='PAPER-V2R4-20261009T110135Z'
+        or not isinstance(task_names,list)
+        or len(task_names)!=2
+        or sorted(task_names)!=[
+            'CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait'
+        ]
+        or not isinstance(marker.get('proposed_successor_series_id'),str)
+        or not re.fullmatch(r'PAPER-V3-[A-Za-z0-9-]{8,96}',marker['proposed_successor_series_id'])
+        or not isinstance(marker.get('proposed_v3_repo_sha'),str)
+        or not re.fullmatch(r'[a-f0-9]{40}',marker['proposed_v3_repo_sha'])
+        or not isinstance(marker.get('proposed_v3_bundle_sha256'),str)
+        or not re.fullmatch(r'[a-f0-9]{64}',marker['proposed_v3_bundle_sha256'])
+        or not isinstance(marker.get('proposed_v3_strategy_sha256'),str)
+        or not re.fullmatch(r'[a-f0-9]{64}',marker['proposed_v3_strategy_sha256'])
+        or marker.get('paper_only') is not True
+        or marker.get('orders_enabled') is not False
+        or marker.get('real_money_actions') is not False
+        or marker.get('persistent_until_explicit_owner_release') is not True):
+        raise ValueError('V3 paper fence marker invalid or not scoped to original intake')
+    if phase=='CLOUD_COMMITTED':
+        return 'CLOSED_ORIGINAL_AFTERCARE', phase
+    return 'PRECOMMIT_ORIGINAL', phase
+
+
 def run_once(args):
-    # No extra task or parameter switch: same CloudSync owner changes lanes
-    # only when the separately authorized PR309 cutover marker exists.
-    if (args.trading_root/'State/v3-experimental-paper-old-intake-fence.json').exists():
+    # A real, scoped ARMED/QUIESCED marker does NOT mean the CAS committed.
+    # Preserve original CloudSync until a separately verified Cloud commit.
+    # Unsafe markers refuse any relay activity (including the normal one).
+    hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'
+    try:
+        lane,fence_phase=original_cloud_sync_fence_lane(args.trading_root)
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
+        result={'schema_version':1,
+                'kind':'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1',
+                'checked_at_utc':iso(),'status':'DEGRADED',
+                'paper_only':True,'order_api':False,'real_money_actions':False,
+                'detail':'V3_FENCE_INVALID_FAIL_CLOSED: '+type(exc).__name__}
+        atomic_json(hb,result)
+        return result
+    if lane=='CLOSED_ORIGINAL_AFTERCARE':
         return run_closed_aftercare_once(args)
     hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'
     state_path=(getattr(args,'paper_state_dir',None) or (args.trading_root/'State'))/'v2r4-paper-cloud-sync-state.json'
     token=load_token(args.trading_root)
     result={'schema_version':1,'kind':'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1','checked_at_utc':iso(),'status':'UNKNOWN','paper_only':True,'order_api':False,'real_money_actions':False}
+    result['v3_fence_cloud_sync_lane']=lane
+    result['v3_fence_precommit_phase']=fence_phase
     if len(token)<24:
         result.update(status='DEGRADED',detail='archive token missing/too short'); atomic_json(hb,result); return result
     try:
