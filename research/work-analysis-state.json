@@ -1587,6 +1587,36 @@
       "reason": "Post-deadline physical task-end and independent 16/16 host-cloud identity were reviewed; four due followups remain correctly CENSORED, not economic zero. This closes only the bounded canary obligation and grants no V3 release.",
       "attempted_at_utc": "2026-10-15T08:14:51Z",
       "completed_at_utc": "2026-10-15T08:14:51Z"
+    },
+    "V2R4_WAIT_INCIDENT_PHYSICAL_FOLLOWTHROUGH": {
+      "gate_fingerprint": "pr326-c9557d8fd0408c3c3407a1f3e54363a625b93362-merge-f395686f567a6d16a927ef3d48da1e546fd6e15b",
+      "status": "COMPLETED",
+      "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6208982221",
+      "merge_commit_sha": "f395686f567a6d16a927ef3d48da1e546fd6e15b",
+      "completed_at_utc": "2026-10-16T08:10:00Z",
+      "reason": "Protected V2R4 WAIT/SYSTEM Supervisor cutover, physical backup/readback, two real WAIT final cycles, 24 Kraken source-progress steps, single active V2R4 Cloud readback, merge and main guard evidence are independently recorded. No second cutover or V3 activation.",
+      "report": "research/work-analysis/2026-10-16-pr326-and-work-queue-followthrough.md",
+      "report_sha256": "fdedc6aaf9a784bfc39f0646f50c1bf7d0965779905efb12ffa64df0188f4eb0"
+    },
+    "WORK_QUEUE_CONCURRENCY_POLICY_20261016": {
+      "gate_fingerprint": "two-concurrent-packages-one-pr-evidenced-same-run-refill-v1",
+      "status": "COMPLETED",
+      "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/327",
+      "merge_commit_sha": "15e333891b9a45d51904b52f7c355e051717d2a6",
+      "completed_at_utc": "2026-10-16T05:44:36Z",
+      "reason": "Canonical queue/router/selector policy now enforces two concurrent packages, one implementation PR and ACK-based bounded same-run refill; no runtime or strategy effect.",
+      "report": "research/work-analysis/2026-10-16-pr326-and-work-queue-followthrough.md",
+      "report_sha256": "fdedc6aaf9a784bfc39f0646f50c1bf7d0965779905efb12ffa64df0188f4eb0"
+    },
+    "V3_SPLIT_VINTAGE_RECOVERY_SCHEMA_PREP": {
+      "gate_fingerprint": "pr329-split-vintage-recovery-schema-bc64119044770797f308cc958ab8d11a8e3845e7",
+      "status": "COMPLETED",
+      "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/329",
+      "merge_commit_sha": "bc64119044770797f308cc958ab8d11a8e3845e7",
+      "completed_at_utc": "2026-10-16T08:15:45Z",
+      "reason": "Inactive source/CI preparation completed. Physical no-rearm, single-writer, Cloud CAS/recovery and V3 release remain unproven and separately gated.",
+      "report": "research/work-analysis/2026-10-16-pr326-and-work-queue-followthrough.md",
+      "report_sha256": "fdedc6aaf9a784bfc39f0646f50c1bf7d0965779905efb12ffa64df0188f4eb0"
     }
   }
 }
