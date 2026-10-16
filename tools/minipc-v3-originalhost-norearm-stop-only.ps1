@@ -243,7 +243,9 @@ function ProtectedMarkerWrite([object]$Payload,[bool]$Replace) {
   if($Replace) {
     $current=Get-Content -LiteralPath $fence -Raw|ConvertFrom-Json
     Need ($current.drill_token -eq $drillId -and $current.phase -eq 'ARMED') 'Marker ownership/phase changed'
-    [IO.File]::Replace($temp,$fence,$null,$true)
+    $backup=$fence+'.'+$drillId+'.armed.bak'
+    Need (-not (Test-Path -LiteralPath $backup)) 'Original stop marker backup already exists'
+    [IO.File]::Replace($temp,$fence,$backup,$true)
   } else {
     Need (-not (Test-Path -LiteralPath $fence)) 'Fence unexpectedly appeared'
     [IO.File]::Move($temp,$fence)
