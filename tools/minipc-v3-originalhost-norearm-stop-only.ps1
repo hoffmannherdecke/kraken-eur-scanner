@@ -145,7 +145,38 @@ function ResolveOriginalIntakePids([object[]]$All,[object[]]$Actions,[string[]]$
     }).Count -gt 0
     $hit -and ([int]$p.ProcessId -notin $covered)
   })
-  Need ($unknown.Count -eq 0) 'Unclassified original intake-script process; fail closed'
+  if($unknown.Count -gt 0){
+    # Diagnostic evidence from the SAME immutable CIM snapshot as the guard.
+    # Never print raw command lines (may contain arguments or credentials).
+    Write-Warning ('V3_UNCLASSIFIED_TOTAL='+$unknown.Count)
+    foreach($p in @($unknown|Sort-Object ProcessId|Select-Object -First 8)){
+      $pidNumber=[int]$p.ProcessId
+      $parentId=[int]$p.ParentProcessId
+      $parentName='NOT_IN_SNAPSHOT'
+      if($processById.ContainsKey($parentId)){
+        $parentName=[string]$processById[$parentId].Name
+      }
+      $line=([string]$p.CommandLine).Replace('\','/')
+      $roleMatches=@($Actions|Where-Object {
+        $line.IndexOf(([string]$_.arguments).Replace('\','/'),
+          [StringComparison]::OrdinalIgnoreCase) -ge 0
+      }|ForEach-Object {[string]$_.name})
+      $sourceSlots=@()
+      for($i=0;$i -lt $Paths.Count;$i++){
+        if($line.IndexOf($Paths[$i].Replace('\','/'),
+          [StringComparison]::OrdinalIgnoreCase) -ge 0){
+          $sourceSlots+=@([string]$i)
+        }
+      }
+      Write-Warning ('V3_UNCLASSIFIED_PID={0} PPID={1} NAME={2} PARENT={3} START={4} SOURCE_INDEX={5} ROLE_MATCHES={6}' -f
+        $pidNumber,$parentId,[string]$p.Name,$parentName,
+        [string]$p.CreationDate,($sourceSlots -join ','),($roleMatches -join ','))
+    }
+  }
+  $idsForError=@($unknown|Sort-Object ProcessId|Select-Object -First 8|
+    ForEach-Object {[int]$_.ProcessId})
+  Need ($unknown.Count -eq 0) ('Unclassified original intake-script process; fail closed; total='+
+    $unknown.Count+' pids='+($idsForError -join ','))
   return @($targetIds|Sort-Object -Unique)
 }
 function MatchingPids([string[]]$Paths,[bool]$RequireRoots=$false) {

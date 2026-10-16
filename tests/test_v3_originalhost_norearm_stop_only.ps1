@@ -248,6 +248,54 @@ foreach($fileSource in @($src,$restore)){
    throw 'Scoped fail-closed role validation missing'
  }
 }
+# The fail-closed unknown-process exception must contain PID evidence
+# from the same snapshot, while stdout/stderr must not expose command lines.
+$secretCanary='SECRET_ARGUMENT_DO_NOT_LOG_9b3f'
+$probe=@($processes+(RoleProcess 401 1 ('"C:\Trading\shared.py" --unknown '+$secretCanary)))
+$blocked=$false
+$reason=''
+try {
+ $null=ResolveOriginalIntakePids $probe $actions $paths $true -WarningAction SilentlyContinue
+} catch {
+ $blocked=$true
+ $reason=[string]$_.Exception.Message
+}
+if(-not $blocked -or $reason -notmatch 'pids=401' -or
+   $reason.Contains($secretCanary)){
+ throw 'Unknown PID must fail closed and report only sanitized same-snapshot evidence'
+}
+foreach($fileSource in @($src,$restore)){
+ foreach($needed in @(
+   'V3_UNCLASSIFIED_TOTAL=',
+   'V3_UNCLASSIFIED_PID=',
+   'ROLE_MATCHES=',
+   'START={4}',
+   'pids='
+ )){
+  if(-not $fileSource.Contains($needed)){
+   throw ('Same-snapshot originalhost unknown process diagnostic missing: '+$needed)
+  }
+ }
+}
+# A diagnostic invocation with -Execute AND an intentionally wrong -Confirm
+# must never arm a marker or change TaskScheduler state. The exact
+# confirmation Need is before GuardedMarker and every mutation.
+$confirmNeed='Need ($Confirm -ceq ''V3-TWO-INTAKE-STOP-ONLY'')'
+$confirmPos=$src.IndexOf($confirmNeed,[StringComparison]::Ordinal)
+$markerPos=$src.IndexOf('$payload=GuardedMarker ''ARMED'' $drillId',
+  [StringComparison]::Ordinal)
+$writePos=$src.IndexOf('ProtectedMarkerWrite $payload $false',
+  [StringComparison]::Ordinal)
+$disablePos=$src.IndexOf('Disable-ScheduledTask -TaskName $name',
+  [StringComparison]::Ordinal)
+if($confirmPos -lt 0 -or $markerPos -le $confirmPos -or
+   $writePos -le $markerPos -or $disablePos -le $markerPos){
+ throw 'Invalid confirmation must block BEFORE any fence or native Task mutation'
+}
+Write-Output 'V3_INVALID_CONFIRM_NO_MARKER_SAME_EXECUTE_PREFLIGHT_PASS'
+
+Write-Output 'V3_ORIGINALHOST_UNKNOWN_PID_SAME_SNAPSHOT_SANITIZED_EVIDENCE_PASS'
+
 Write-Output 'V3_ORIGINALHOST_INTAKE_LIFECYCLE_EXACT_ROLE_PURE_REGRESSION_PASS'
 
 Write-Output 'V3_PHYSICAL_ORIGINALHOST_MANUAL_CLOUD_GATED_RESTORE_PURE_6_CASES_PASS'
