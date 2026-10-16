@@ -259,3 +259,141 @@ def stage_receipts_explicitly(*, preflight: dict[str, Any],
         "paper_writer_active": False,
         "v2r4_unchanged": True,
     }
+
+
+def stage_and_witness_first_minute(*, preflight: dict[str, Any],
+                                   journal_directory: Path,
+                                   capture_directory: Path,
+                                   observed_at_utc: str,
+                                   capture=None) -> dict[str, Any]:
+    """Existing-owner V3 source seam, not a writer, scheduler or release.
+
+    Stage the immutable intake FIRST, then witness the initial closed minute
+    prospectively for bounded original scanner inputs. The caller must supply
+    an explicit source capture callback; there is deliberately no default
+    Kraken HTTP, model call, Paper activation, cloud POST or background work.
+
+    A later live owner must authenticate itself and its actual Kraken source
+    independently. In particular, a locally computed first-bar match is NOT
+    a physical originalhost/Cloud technical-release proof.
+    """
+    from datetime import timedelta
+    from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
+        assemble, timestamp,
+    )
+
+    if not callable(capture):
+        raise ValueError("explicit source-owned capture callback required")
+    if (not journal_directory.is_dir() or journal_directory.is_symlink()
+            or not capture_directory.is_dir() or capture_directory.is_symlink()
+            or journal_directory.resolve() == capture_directory.resolve()):
+        raise ValueError("separate existing real V3 journal and capture roots required")
+    at = timestamp(observed_at_utc)
+    if at < timestamp(preflight["at_utc"]):
+        raise ValueError("witness clock cannot predate canonical preflight")
+    originals = {
+        c["candidate_id"]: c
+        for group in (preflight["selected_candidates"],
+                      preflight["ingress"]["capacity_deferred_originals"])
+        for c in group
+    }
+    enrollment = preflight.get("prospective_first_1m_capture_enrollment")
+    if (not isinstance(enrollment, list) or len(enrollment) != len(originals)
+            or len(enrollment) > 8
+            or {x.get("candidate_id") for x in enrollment} != set(originals)):
+        raise ValueError("canonical bounded source enrollment must be complete")
+
+    # Validate the complete enrollment, INCLUDING deadlines, before the
+    # first immutable write. A malformed caller plan is never partly staged.
+    for item in enrollment:
+        cid = item["candidate_id"]
+        candidate = originals[cid]
+        first = timestamp(item["first_expected_closed_1m_start_utc"])
+        if (item.get("pair") != candidate["pair"]
+                or item.get("original_at_utc") != timestamp(
+                    candidate["event_time_utc"]).isoformat()
+                or first < timestamp(candidate["event_time_utc"])
+                or first - timestamp(candidate["event_time_utc"]) > timedelta(minutes=1)
+                or timestamp(item["latest_first_bar_live_witness_utc"])
+                    != first + timedelta(minutes=16)):
+            raise ValueError("original first-minute identity/deadline mismatch")
+
+    # Durable immutable intake comes before a public-source side effect.
+    staged = stage_receipts_explicitly(
+        preflight=preflight, journal_directory=journal_directory)
+    outcomes = []
+    calls = 0
+    for item in enrollment:
+        cid = item["candidate_id"]
+        original = originals[cid]
+        if (item.get("pair") != original["pair"]
+                or item.get("original_at_utc") != timestamp(
+                    original["event_time_utc"]).isoformat()):
+            raise ValueError("original candidate identity/clock disagrees with witness plan")
+        first = timestamp(item["first_expected_closed_1m_start_utc"])
+        close = first + timedelta(minutes=1)
+        deadline = timestamp(item["latest_first_bar_live_witness_utc"])
+        if deadline != close + timedelta(minutes=15):
+            raise ValueError("first source witness deadline contract mismatch")
+        row = {"candidate_id": cid, "pair": original["pair"],
+               "first_expected_utc": first.isoformat(),
+               "last_live_witness_utc": deadline.isoformat(),
+               "first_bar_physically_authenticated": False,
+               "paper_buy_authorized": False, "model_http_authorized": False}
+        # A research-positive event needs an independently authenticated
+        # live source-owner path, NOT its caller-supplied entry_origin label.
+        if original.get("entry_origin") != "SCANNER":
+            row["status"] = "SOURCE_OWNER_RUNTIME_AUTH_NOT_PROVEN_NO_CAPTURE"
+        elif at < close:
+            row["status"] = "WAIT_FOR_FIRST_CLOSED_MINUTE_NO_CAPTURE"
+        elif at > deadline:
+            row["status"] = "FIRST_WITNESS_WINDOW_EXPIRED_NO_BACKFILL"
+        else:
+            if (not isinstance(original.get("altname"), str)
+                    or not original["altname"].isalnum()):
+                raise ValueError("confirmed original Kraken altname required")
+            def first_present() -> bool:
+                checked = assemble(
+                    snapshots=capture_directory, pair=original["pair"],
+                    entry_at_utc=original["event_time_utc"],
+                    observed_at_utc=observed_at_utc,
+                    max_live_capture_lag_minutes=15)
+                return bool(checked["closed_bars"]) and timestamp(
+                    checked["closed_bars"][0]["start_at_utc"]) == first
+
+            if first_present():
+                row["status"] = "FIRST_MINUTE_ALREADY_ARCHIVED_NO_DUPLICATE_GET"
+                row["prospective_first_bar_verified"] = True
+            else:
+                # Exactly one explicit public source action per selected original.
+                # It may fail; the original receipts remain durable for retry.
+                calls += 1
+                result = capture(pair=original["pair"],
+                                 altname=original["altname"],
+                                 outdir=capture_directory)
+                if (not isinstance(result, dict)
+                        or result.get("status") != "CLOSED_KRAKEN_1M_SNAPSHOT_SAVED"):
+                    raise ValueError("no original source capture ACK")
+                p = Path(result["file"])
+                if (p.parent.resolve() != capture_directory.resolve()
+                        or p.stem != result.get("sha256")):
+                    raise ValueError("source capture not content-addressed under owner root")
+                # Existing assembler enforces original SHA, closed exchange
+                # clock, <=15m witness lag and no conflicting price copies.
+                witnessed = first_present()
+                row["prospective_first_bar_verified"] = witnessed
+                row["status"] = (
+                    "FIRST_CLOSED_MINUTE_WITNESSED_RESEARCH_ONLY"
+                    if witnessed else "FIRST_MINUTE_MISSING_NO_ECONOMIC_CLAIM")
+        outcomes.append(row)
+    return {
+        "kind": "V3_SAME_OWNER_FIRST_MINUTE_ENROLLMENT_V1",
+        "series_id": preflight["series_id"], "staged": staged,
+        "enrollment": outcomes, "source_capture_calls": calls,
+        "model_http_calls": 0, "model_http_authorized": False,
+        "cloud_ack_verified": False, "paper_writer_active": False,
+        "real_money_actions": False, "orders": False,
+        "v2r4_changed": False, "new_schedules": 0,
+        "source_owner_runtime_authenticated": False,
+        "full_physical_paper_release_proof": False,
+    }
