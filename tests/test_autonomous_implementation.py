@@ -193,6 +193,12 @@ class SafeAutonomyTests(unittest.TestCase):
             r=selector.select(root,QUEUE,STATE,{"autonomy_task_attempts":attempts})
             self.assertEqual(r["status"],"BLOCKED")
             self.assertIn("overcommitted active work / implementation PR",r["errors"])
+            two_prs={"ACTIVE_A":{"status":"ACTIVE_PR"},
+                     "ACTIVE_B":{"status":"ACTIVE_PR"}}
+            self.assertEqual(selector.select(root,QUEUE,STATE,
+                {"autonomy_task_attempts":two_prs})["status"],"BLOCKED")
+            self.assertEqual(selector.select(root,QUEUE,STATE,
+                {"autonomy_task_attempts":[]})["status"],"BLOCKED")
             unsafe=copy.deepcopy(QUEUE)
             unsafe.pop("max_concurrent_active_work_packages")
             unsafe["max_safe_actions_per_open_work_run"]=2
