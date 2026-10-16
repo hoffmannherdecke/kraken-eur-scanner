@@ -247,15 +247,223 @@ def run_one_shot(*, trading_root: Path, repository: Path,
     }
 
 
+
+
+# NEW independent explicit Oct-16 user approval: the Oct-12 28h smoke
+# intentionally remains expired/unchanged. NOT a permanent Paper writer.
+_APPROVED_CANARY="PAPER-V3-CANARY-ONESHOT-20261016"
+_APPROVED_ROOT="one-user-approved-model-20261016"
+_FROZEN_V2R4_SHA="b37f87211c24fffce5bf37cd3359826c4c2bb893"
+
+
+def _pinned_git_head(repo:Path)->str:
+    import subprocess
+    return subprocess.check_output(
+        ["git","-C",str(repo),"rev-parse","HEAD"],
+        timeout=8,text=True,stderr=subprocess.DEVNULL).strip()
+
+
+def run_approved_live_canary(*,trading_root:Path,repository:Path,
+        expected_stage_sha:str,
+        pair_loader:Callable=_public_pairs,
+        capture:Callable|None=None,
+        acquire:Callable|None=None,
+        model_client:Callable|None=None,
+        cloud_post:Callable|None=None,
+        worker:Callable=one_candidate,
+        git_head:Callable=_pinned_git_head,
+        clock:Callable[[],datetime]=now)->dict[str,Any]:
+    """One EXPLICITLY user-approved real CANARY, not an old smoke restart.
+
+    Exactly one candidate, one irrevocable local approval and at most one
+    HTTP model reservation, never another after crash/timeout. It requires
+    current source PIN, old V2R4 HEAD PIN, live Kraken metadata, original
+    staged intake and first closed minute before any model spend. Cloud
+    uses the existing CANARY-only relay, never the Paper CAS or order API.
+    """
+    from datetime import timedelta
+    import uuid
+    from paper_evaluator.v3_paper_minipc_one_candidate_v1 import (
+        APPROVED_MODEL,MAX_ESTIMATED_COST_USD,MAX_OUTPUT_TOKENS,
+        MAX_PROMPT_UTF8_BYTES,
+    )
+    from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+        _one_canary_owner,_first_enrolled_canary_tick_once_unlocked,
+    )
+    from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import capture_public_1m
+
+    root=Path(trading_root)
+    repo=Path(repository)
+    frozen=root/"Repos"/"kraken-eur-scanner"
+    v3stage=root/"V3Stage"
+    if (not re.fullmatch(r"[0-9a-f]{40}",expected_stage_sha)
+            or not root.is_dir() or root.is_symlink()
+            or not repo.is_dir() or repo.is_symlink()
+            or not frozen.is_dir() or frozen.is_symlink()
+            or not v3stage.is_dir() or v3stage.is_symlink()
+            or repo.resolve().parent!=v3stage.resolve()
+            or repo.resolve()==frozen.resolve()
+            or git_head(repo)!=expected_stage_sha
+            or git_head(frozen)!=_FROZEN_V2R4_SHA):
+        raise ValueError("ISOLATED_V3_AND_FROZEN_V2R4_SHA_PIN_REQUIRED")
+    model_path=root/"Secrets"/"openai-api-key.txt"
+    relay_path=root/"Secrets"/"v3-paper-relay-token.txt"
+    if any(not p.is_file() or p.is_symlink() or p.stat().st_size>2048
+           for p in (model_path,relay_path)):
+        raise ValueError("required existing private local credentials missing")
+    key=model_path.read_text("utf-8-sig").strip()
+    token=relay_path.read_text("utf-8-sig").strip()
+    if (not key.startswith("sk-") or len(key)<25 or re.search(r"\s",key)
+            or not 24<=len(token)<=512 or re.search(r"\s",token)):
+        raise ValueError("private model or relay credential format invalid")
+    # Always use the ORIGINAL V2R4 runtime's source queue read-only.
+    source_queue=_source_queue(root)
+    first_check=clock().astimezone(timezone.utc)
+    candidate=_fresh_original(source_queue,first_check)
+    if candidate is None:
+        return {"status":"NO_FRESH_ORIGINAL_NO_MODEL_OR_CLOUD",
+                "model_http_attempts":0,"cloud_receipts_accepted":0,
+                "orders":False,"v2r4_changed":False}
+    age=(first_check-utc(candidate["event_time_utc"])).total_seconds()
+    # First post-entry candle must already be closed; leave time for a
+    # live source witness, Kraken P-I-T and the budget reservation.
+    if not 120<=age<=420:
+        return {"status":"ORIGINAL_OUTSIDE_SAFE_FIRST_MINUTE_WINDOW_NO_SPEND",
+                "candidate_pair":candidate["pair"],"model_http_attempts":0,
+                "orders":False,"v2r4_changed":False}
+    pair=candidate["pair"]
+    pairs=pair_loader()  # public Spot EUR AssetPairs, not stale local whitelist
+    matches=[p for p in pairs
+             if p.get("symbol")==pair
+             and p.get("altname")==candidate["altname"]
+             and p.get("status")=="online"]
+    if len(matches)!=1:
+        return {"status":"ORIGINAL_KRAKEN_PAIR_NOT_LIVE_SPOT_EUR_NO_SPEND",
+                "model_http_attempts":0,"orders":False,"v2r4_changed":False}
+    at=clock().astimezone(timezone.utc)
+    age=(at-utc(candidate["event_time_utc"])).total_seconds()
+    if not 120<=age<=480 or git_head(frozen)!=_FROZEN_V2R4_SHA:
+        return {"status":"CANDIDATE_EXPIRED_DURING_SOURCE_PREFLIGHT_NO_SPEND",
+                "model_http_attempts":0,"orders":False,"v2r4_changed":False}
+    parent=root/"Research"/"V3Paper"
+    if not parent.is_dir() or parent.is_symlink():
+        raise ValueError("existing isolated V3 research parent required")
+    isolated=parent/_APPROVED_ROOT
+    if isolated.exists() or isolated.is_symlink():
+        raise ValueError("ONE_APPROVED_20261016_CANARY_ALREADY_RESERVED_NO_RETRY")
+    # Atomic directory reservation BEFORE even the first public Kraken 1m
+    # call. No reuse if the model times out, PowerShell crashes or Cloud fails.
+    isolated.mkdir(mode=0o700)
+    journal=isolated/"journal"
+    budget=isolated/"budgets"
+    captured=isolated/"capture"
+    for p in (journal,budget,captured):p.mkdir(mode=0o700)
+    approval={
+        "kind":"V3_MINIPC_SINGLE_CANDIDATE_MODEL_HTTP_USER_APPROVAL_V1",
+        "strategy_revision":REVISION,"series_id":_APPROVED_CANARY,
+        "paper_only":True,"real_money_actions":False,
+        "max_model_http_attempts_including_retries":1,
+        "max_candidates":1,"explicit_user_new_budget_approval":True,
+        "consumed_pr186_budget":False,"model":APPROVED_MODEL,
+        "max_input_utf8_bytes":MAX_PROMPT_UTF8_BYTES,
+        "max_output_tokens":MAX_OUTPUT_TOKENS,
+        "estimated_usd_ceiling":MAX_ESTIMATED_COST_USD,
+        "expires_at_utc":(datetime.now(timezone.utc)+timedelta(minutes=12)).isoformat(),
+        "unique_approval_id":"V3PAPER-20261016-"+uuid.uuid4().hex,
+        "actual_http_executed":False,
+        "user_scope":"Exactly one previously approved <=0.15 USD estimated CANARY model HTTP, no retry, no orders, CANARY Cloud evidence only."
+    }
+    with (isolated/"one-shot-approval.json").open("x",encoding="utf-8") as fp:
+        json.dump(approval,fp,sort_keys=True)
+        fp.flush();os.fsync(fp.fileno())
+    from paper_evaluator.v3_paper_minipc_selective_tick_v1 import utc_now
+    preflight=plan_writer_preflight(
+        scanner_events=[candidate],owner_event_packets=[],
+        h10_context=None,h11_market_capture=None,h5_macro_calendar=None,
+        authenticated_owner_ids={name:[] for name in STREAMS},
+        journal_receipts=[],
+        known_pairs={pair:{"pair":pair,"altname":candidate["altname"],
+                           "status":"online","spot":True,"quote":"EUR"}},
+        market_observations={},series_id=_APPROVED_CANARY,
+        decision_at_utc=at.isoformat(),max_reviews=1)
+    if (len(preflight["selected_candidates"])!=1
+            or preflight["selected_candidates"][0]["candidate_id"]
+               !=candidate["candidate_id"]
+            or preflight["model_http_authorized"] is not False):
+        raise ValueError("not one original Scanner preflight candidate")
+    # The same native Windows process lock protects initial source, model
+    # and existing Cloud ACK. No nested second lock or concurrent first GET.
+    with _one_canary_owner(journal):
+        initial=_first_enrolled_canary_tick_once_unlocked(
+            preflight=preflight,
+            candidate=preflight["selected_candidates"][0],
+            series_id=_APPROVED_CANARY,journal=journal,capture_dir=captured,
+            clock_now=lambda:clock().astimezone(timezone.utc).isoformat(),
+            capture=capture or capture_public_1m,
+            fetch=lambda *_: (_ for _ in ()).throw(
+                ValueError("no pre-P4 5m WATCH allowed")),
+            ticker=lambda *_: (_ for _ in ()).throw(
+                ValueError("no pre-P4 ticker WATCH allowed")))
+        witness=initial["source_enrollment"]
+        if (not initial["tick_called"]
+                or not witness.get("prospective_first_bar_verified")
+                or not initial["observation"].get("source_closed_1m_count",0)):
+            return {"status":"FIRST_KRAKEN_MINUTE_NOT_WITNESSED_NO_MODEL",
+                    "first_source_status":witness["status"],
+                    "series_id":_APPROVED_CANARY,
+                    "model_http_attempts":0,"cloud_receipts_accepted":0,
+                    "orders":False,"v2r4_changed":False}
+        result=worker(
+            candidate=preflight["selected_candidates"][0],
+            series_id=_APPROVED_CANARY,
+            local_receipts=journal,model_reservations=budget,
+            approval=approval,model_key=key,existing_context=None,
+            allow_model=True,admit_staged_scanner_one_approved_model=True,
+            acquire=acquire,model_client=model_client,
+            clock=lambda:clock().astimezone(timezone.utc).isoformat())
+        if result.get("status")!="V3_CANARY_MODEL_P4_RECORDED_NO_PAPER_ACTIVATION":
+            return {"status":"MODEL_OR_P4_NOT_COMPLETED_LOCAL_EVIDENCE_ONLY",
+                    "worker_status":result.get("status"),
+                    "model_http_attempts":len(list(budget.glob("*.reserved.json"))),
+                    "cloud_receipts_accepted":0,
+                    "series_id":_APPROVED_CANARY,
+                    "orders":False,"v2r4_changed":False}
+        cloud=sync_once(
+            journal=journal,series_id=_APPROVED_CANARY,
+            ack_file=isolated/"cloud-ack.json",token=token,post=cloud_post)
+        return {"status":"APPROVED_CANARY_MODEL_P4_CLOUD_ACK",
+                "series_id":_APPROVED_CANARY,
+                "candidate_id":candidate["candidate_id"],
+                "pair":pair,
+                "first_closed_1m_verified":True,
+                "model_http_attempts":len(list(budget.glob("*.reserved.json"))),
+                "model_decision":result.get("p4_decision"),
+                "cloud_status":cloud["status"],
+                "cloud_receipts_accepted":cloud.get("count",0),
+                "paper_writer_active":False,
+                "real_money_actions":False,"orders":False,
+                "v2r4_changed":False,"new_schedules":0,
+                "full_physical_paper_release_proof":False}
+
+
 def main() -> int:
     cli = argparse.ArgumentParser()
     cli.add_argument("--trading-root", type=Path, required=True)
     cli.add_argument("--execute-once", action="store_true")
     cli.add_argument("--cloud-ack", action="store_true")
+    cli.add_argument("--execute-approved-canary",action="store_true")
+    cli.add_argument("--expected-stage-sha",default="")
     a = cli.parse_args()
     repo = Path(__file__).resolve().parents[1]
-    result = run_one_shot(trading_root=a.trading_root, repository=repo,
-                          execute=a.execute_once, cloud_ack=a.cloud_ack)
+    if a.execute_approved_canary:
+        if a.execute_once or a.cloud_ack:
+            raise ValueError("old 28h smoke and new approval are distinct modes")
+        result=run_approved_live_canary(
+            trading_root=a.trading_root,repository=repo,
+            expected_stage_sha=a.expected_stage_sha)
+    else:
+        result = run_one_shot(trading_root=a.trading_root, repository=repo,
+                              execute=a.execute_once, cloud_ack=a.cloud_ack)
     print(json.dumps(result, sort_keys=True))
     return 0
 
