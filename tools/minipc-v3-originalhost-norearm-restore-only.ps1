@@ -93,6 +93,34 @@ Need ($supervisor.status -eq 'WARNING' -and
 $sourcePaths=@()
 foreach($name in $names){$sourcePaths+=@(ScriptFromTask (ReadNative $name 'Disabled'))}
 Need (@(FamilyPids $sourcePaths).Count -eq 0) 'Original intake process still running'
+# Restoration must match the distinct intact 15-Oct Candidates and post-PR326
+# 16-Oct WAIT original native Task action/arguments, not merely Task names.
+$origFolders=@(Get-ChildItem -LiteralPath (Join-Path $root 'Backups') -Directory|
+  Where-Object {$_.Name -like 'V3-Intake-Original-20261015-073139-*'})
+$waitFolders=@(Get-ChildItem -LiteralPath (Join-Path $root 'Backups') -Directory|
+  Where-Object {$_.Name -like 'V3-WAIT-PR326-Current-20261016-*'})
+Need ($origFolders.Count -eq 1 -and $waitFolders.Count -eq 1) 'Original backup vintage ambiguously located'
+$prior=Get-Content (Join-Path $origFolders[0].FullName 'backup-manifest.json') -Raw |ConvertFrom-Json
+$post=Get-Content (Join-Path $waitFolders[0].FullName 'backup-manifest.json') -Raw |ConvertFrom-Json
+$expectedCandidates=@($prior.tasks|Where-Object {$_.task_name -eq $names[0]})
+Need ($expectedCandidates.Count -eq 1) 'Original Candidates backup manifest invalid'
+$proofs=@(
+ [pscustomobject]@{name=$names[0];path=(Join-Path $origFolders[0].FullName 'Candidates.task.xml');sha=$expectedCandidates[0].xml_sha256},
+ [pscustomobject]@{name=$names[1];path=(Join-Path $waitFolders[0].FullName 'WAIT.task.xml');sha=$post.xml_sha256}
+)
+foreach($proof in $proofs){
+ Need ((Get-FileHash -LiteralPath $proof.path -Algorithm SHA256).Hash -eq [string]$proof.sha) 'Native rollback file SHA drift'
+ [xml]$old=Get-Content -LiteralPath $proof.path -Raw
+ $ns=[Xml.XmlNamespaceManager]::new($old.NameTable)
+ $ns.AddNamespace('t',$old.DocumentElement.NamespaceURI)
+ $cmd=$old.SelectSingleNode('/t:Task/t:Actions/t:Exec/t:Command',$ns)
+ $arguments=$old.SelectSingleNode('/t:Task/t:Actions/t:Exec/t:Arguments',$ns)
+ Need ($null -ne $cmd -and $null -ne $arguments) 'Native backup executable/action absent'
+ $live=Get-ScheduledTask -TaskName $proof.name
+ Need (@($live.Actions).Count -eq 1 -and
+       [string]$live.Actions[0].Execute -ceq [string]$cmd.InnerText -and
+       [string]$live.Actions[0].Arguments -ceq [string]$arguments.InnerText) 'Protected original native Task action changed'
+}
 foreach($name in @('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')){
  Need ([string](Get-ScheduledTask -TaskName $name).State -eq 'Running') 'Protected aftercare task unhealthy'
 }
