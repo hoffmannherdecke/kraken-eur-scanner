@@ -280,5 +280,19 @@ class ProjectFollowthroughRoutingTests(unittest.TestCase):
                 route(root, dt.datetime.now(UTC))
 
 
+
+    def test_implementation_commitments_legacy_per_run_cap_is_rejected(self):
+        from tools.project_followthrough_router import project_implementation_commitments
+        old=json.loads((ROOT/"research/project-followthrough-routing-v1.json").read_text())
+        cfg=old["project_wide_implementation_commitments"]
+        cfg.pop("max_concurrent_active_work_packages")
+        cfg["max_safe_actions_per_run"]=2
+        def spoofed(root,name):
+            return old if name=="research/project-followthrough-routing-v1.json" else original_read_json(root,name)
+        state=json.loads((ROOT/"project-current-state.json").read_text())
+        with patch("tools.project_followthrough_router.read_json",side_effect=spoofed):
+            with self.assertRaisesRegex(ValueError,"canonical implementation commitment"):
+                project_implementation_commitments(ROOT,state,{},dt.datetime.now(UTC))
+
 if __name__ == "__main__":
     unittest.main()
