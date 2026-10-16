@@ -277,6 +277,23 @@ foreach($fileSource in @($src,$restore)){
   }
  }
 }
+# A diagnostic invocation with -Execute AND an intentionally wrong -Confirm
+# must never arm a marker or change TaskScheduler state. The exact
+# confirmation Need is before GuardedMarker and every mutation.
+$confirmNeed='Need ($Confirm -ceq ''V3-TWO-INTAKE-STOP-ONLY'')'
+$confirmPos=$src.IndexOf($confirmNeed,[StringComparison]::Ordinal)
+$markerPos=$src.IndexOf('$payload=GuardedMarker ''ARMED'' $drillId',
+  [StringComparison]::Ordinal)
+$writePos=$src.IndexOf('ProtectedMarkerWrite $payload $false',
+  [StringComparison]::Ordinal)
+$disablePos=$src.IndexOf('Disable-ScheduledTask -TaskName $name',
+  [StringComparison]::Ordinal)
+if($confirmPos -lt 0 -or $markerPos -le $confirmPos -or
+   $writePos -le $markerPos -or $disablePos -le $markerPos){
+ throw 'Invalid confirmation must block BEFORE any fence or native Task mutation'
+}
+Write-Output 'V3_INVALID_CONFIRM_NO_MARKER_SAME_EXECUTE_PREFLIGHT_PASS'
+
 Write-Output 'V3_ORIGINALHOST_UNKNOWN_PID_SAME_SNAPSHOT_SANITIZED_EVIDENCE_PASS'
 
 Write-Output 'V3_ORIGINALHOST_INTAKE_LIFECYCLE_EXACT_ROLE_PURE_REGRESSION_PASS'
