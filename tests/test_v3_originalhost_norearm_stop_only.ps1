@@ -152,4 +152,65 @@ foreach($setting in @('predecessor_series_id','drill_only','phase','task_names',
  try{$null=NewMarker $fixture 'ARMED'}catch{$refused=$true}
  if(-not $refused){throw "Unsafe restore marker variant accepted: $setting"}
 }
+
+# Pure role-identity regression; no task scheduler or process access.
+# Physical witness 16 Oct: Candidates and Lifecycle share a script yet have
+# different Task argument signatures. Lifecycle must never count as intake.
+$stopRole=@($ast.FindAll({
+ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+ $node.Name -eq 'ResolveOriginalIntakePids'
+},$true))
+$restoreRole=@($rast.FindAll({
+ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+ $node.Name -eq 'ResolveOriginalIntakePids'
+},$true))
+if($stopRole.Count -ne 1 -or $restoreRole.Count -ne 1 -or
+  $stopRole[0].Extent.Text -cne $restoreRole[0].Extent.Text){
+ throw 'Stop/restore role attribution must be identical'
+}
+. ([Scriptblock]::Create($stopRole[0].Extent.Text))
+$actions=@(
+ [pscustomobject]@{name='CryptoMiniPC-V2R4PaperCandidates';arguments='"C:\Trading\shared.py" --role candidates'},
+ [pscustomobject]@{name='CryptoMiniPC-V2R4PaperWait';arguments='"C:\Trading\wait.py" --role wait'},
+ [pscustomobject]@{name='CryptoMiniPC-V2R4PaperLifecycle';arguments='"C:\Trading\shared.py" --role lifecycle'}
+)
+$paths=@('C:\Trading\shared.py','C:\Trading\wait.py')
+function RoleProcess([int]$Id,[int]$Parent,[string]$Line){
+ [pscustomobject]@{ProcessId=$Id;ParentProcessId=$Parent;Name='python.exe';CommandLine=('python.exe '+$Line)}
+}
+$processes=@(
+ (RoleProcess 101 1 '"C:\Trading\shared.py" --role candidates'),
+ (RoleProcess 102 101 '"C:\Trading\shared.py" --worker'),
+ (RoleProcess 201 1 '"C:\Trading\wait.py" --role wait'),
+ (RoleProcess 202 201 '"C:\Trading\wait.py" --child'),
+ (RoleProcess 301 1 '"C:\Trading\shared.py" --role lifecycle'),
+ (RoleProcess 302 301 '"C:\Trading\shared.py" --child')
+)
+$chosen=@(ResolveOriginalIntakePids $processes $actions $paths $true)
+if(($chosen -join ',') -cne '101,102,201,202'){throw 'Lifecycle incorrectly included in intake tree'}
+$without=@(ResolveOriginalIntakePids $processes $actions $paths $false)
+if(($without -join ',') -cne ($chosen -join ',')){throw 'Post-stop family differs from preflight'}
+$after=@($processes|Where-Object {$_.ProcessId -in @(301,302)})
+if(@(ResolveOriginalIntakePids $after $actions $paths $false).Count -ne 0){
+ throw 'Lifecycle-only post-stop check must report no intake processes'
+}
+foreach($invalid in @(
+ @($processes + (RoleProcess 401 1 '"C:\Trading\shared.py" --old-candidates')),
+ @($processes + (RoleProcess 401 1 '"C:\Trading\shared.py" --role candidates')),
+ @($processes|Where-Object {$_.ProcessId -ne 301}),
+ @($processes + (RoleProcess 401 101 '"C:\Trading\shared.py" --role lifecycle'))
+)){
+ $blocked=$false
+ try{$null=ResolveOriginalIntakePids $invalid $actions $paths $true}catch{$blocked=$true}
+ if(-not $blocked){throw 'Unknown/duplicate/missing task owner was not rejected'}
+}
+foreach($fileSource in @($src,$restore)){
+ if($fileSource -notmatch 'ResolveOriginalIntakePids' -or
+    $fileSource -notmatch 'Unclassified original intake-script process' -or
+    $fileSource -notmatch 'Intake/Lifecycle process trees overlap'){
+   throw 'Scoped fail-closed role validation missing'
+ }
+}
+Write-Output 'V3_ORIGINALHOST_INTAKE_LIFECYCLE_EXACT_ROLE_PURE_REGRESSION_PASS'
+
 Write-Output 'V3_PHYSICAL_ORIGINALHOST_MANUAL_CLOUD_GATED_RESTORE_PURE_6_CASES_PASS'
