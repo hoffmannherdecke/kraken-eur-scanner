@@ -670,6 +670,76 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
             self.assertFalse(any("FOLLOWUP" in p.read_text("utf-8")
                 for p in journal.glob("*.json")))
 
+    def test_first_cycle_and_recovery_share_native_os_owner_fence(self):
+        """A second first owner AND a recovery owner are denied during capture."""
+        import tempfile
+        from datetime import datetime
+        from pathlib import Path
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            first_enrolled_canary_tick_once,resume_canary_tick_once,
+        )
+        from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
+            capture_public_1m,
+        )
+        candidate=scanner("only-first-owner","XBT/EUR",dt(9))
+        plan=preflight(scanners=[candidate])
+        first=plan["prospective_first_1m_capture_enrollment"][0][
+            "first_expected_closed_1m_start_utc"]
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);j=root/"j";cap=root/"cap";budget=root/"budgets"
+            for d in (j,cap,budget):d.mkdir()
+            calls=[]
+            def source(*,pair,altname,outdir):
+                calls.append(pair)
+                with self.assertRaisesRegex(
+                        ValueError,"ANOTHER_CANARY_OWNER_RUNNING_FAIL_CLOSED"):
+                    first_enrolled_canary_tick_once(
+                        preflight=plan,candidate=plan["selected_candidates"][0],
+                        series_id=SID,journal=j,capture_dir=cap,
+                        clock_now=lambda:dt(130),
+                        capture=lambda **kw:self.fail("second Kraken source GET"))
+                with self.assertRaisesRegex(
+                        ValueError,"ANOTHER_CANARY_OWNER_RUNNING_FAIL_CLOSED"):
+                    resume_canary_tick_once(
+                        candidate=plan["selected_candidates"][0],
+                        series_id=SID,journal=j,capture_dir=cap,
+                        model_reservations=budget,ack_file=root/"ack.json",
+                        clock_now=lambda:dt(130),
+                        capture=lambda **kw:self.fail("restart source collision"),
+                        fetch=lambda *_:self.fail("restart market collision"),
+                        ticker=lambda *_:self.fail("restart ticker collision"))
+                def loader(_):
+                    return {"error":[],"result":{altname:[
+                        [int(datetime.fromisoformat(first).timestamp()),
+                         "2.0","2.1","1.9","2.0","2.0","10",2]
+                    ],"last":1}}
+                return capture_public_1m(
+                    pair=pair,altname=altname,outdir=outdir,
+                    loader=loader,
+                    clock=lambda:datetime.fromisoformat(dt(130)))
+            observed=first_enrolled_canary_tick_once(
+                preflight=plan,candidate=plan["selected_candidates"][0],
+                series_id=SID,journal=j,capture_dir=cap,
+                clock_now=lambda:dt(130),capture=source,
+                fetch=lambda *_:self.fail("no WAIT 5m fetch"),
+                ticker=lambda *_:self.fail("no ticker"))
+            self.assertEqual(calls,["XBT/EUR"])
+            self.assertTrue(observed["tick_called"])
+            self.assertEqual(observed["source_capture_calls"],1)
+            self.assertFalse(observed["paper_writer_active"])
+            self.assertEqual(len(list(j.glob("*.json"))),2)
+            self.assertEqual(len(list(cap.glob("*.json"))),1)
+            # Lock releases, and a safe serial replay uses SHA archive.
+            again=first_enrolled_canary_tick_once(
+                preflight=plan,candidate=plan["selected_candidates"][0],
+                series_id=SID,journal=j,capture_dir=cap,
+                clock_now=lambda:dt(130),
+                capture=lambda **kw:self.fail("no extra source after lock release"),
+                fetch=lambda *_:self.fail("no extra 5m"),
+                ticker=lambda *_:self.fail("no extra ticker"))
+            self.assertEqual(again["source_capture_calls"],0)
+            self.assertEqual(len(calls),1)
+
     def test_first_source_owner_tick_never_activates_actual_paper_or_stale(self):
         import tempfile
         from pathlib import Path

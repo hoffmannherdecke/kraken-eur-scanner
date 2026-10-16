@@ -13,6 +13,8 @@ import argparse,json
 from datetime import datetime,timedelta,timezone
 from pathlib import Path
 from typing import Any,Callable
+from contextlib import contextmanager
+import os
 from paper_evaluator import evaluate
 from paper_evaluator.successor_coin_entry_evidence_v1 import fetch_public_entry_evidence
 from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
@@ -146,7 +148,68 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
 
 
 
+@contextmanager
+def _one_canary_owner(journal:Path):
+    if not journal.is_dir() or journal.is_symlink():
+        raise ValueError("existing isolated CANARY journal required")
+    lock_path=journal/".v3-existing-owner-cycle.lock"
+    if lock_path.is_symlink():
+        raise ValueError("owner lock must not be a symlink")
+    fd=os.open(lock_path,os.O_CREAT|os.O_RDWR,0o600)
+    locked=False
+    try:
+        if os.fstat(fd).st_size==0:
+            os.write(fd,b"\0")
+        os.lseek(fd,0,os.SEEK_SET)
+        try:
+            if os.name=="nt":
+                import msvcrt
+                msvcrt.locking(fd,msvcrt.LK_NBLCK,1)
+            elif os.name=="posix":
+                import fcntl
+                fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+            else:
+                raise ValueError("unsupported Mini-PC OS owner fence")
+            locked=True
+        except (OSError,BlockingIOError) as exc:
+            raise ValueError("ANOTHER_CANARY_OWNER_RUNNING_FAIL_CLOSED") from exc
+        yield
+    finally:
+        if locked:
+            os.lseek(fd,0,os.SEEK_SET)
+            if os.name=="nt":
+                msvcrt.locking(fd,msvcrt.LK_UNLCK,1)
+            else:
+                fcntl.flock(fd,fcntl.LOCK_UN)
+        os.close(fd)
+
 def first_enrolled_canary_tick_once(*, preflight:dict[str,Any],
+                                    candidate:dict[str,Any],series_id:str,
+                                    journal:Path,capture_dir:Path,
+                                    clock_now:Callable[[],str],
+                                    capture:Callable,
+                                    fetch:Callable=fetch_public_entry_evidence,
+                                    ticker:Callable=evaluate.kraken_ticker)->dict[str,Any]:
+    """Serialize original intake + Kraken first witness + first tick.
+
+    Use the SAME OS-native lock as CANARY restart/Cloud reconciliation;
+    no second owner, parallel first fetch or duplicate immutable stage.
+    This remains CANARY-only and is not a Paper release or Task.
+    """
+    if (not isinstance(series_id,str)
+            or not series_id.startswith("PAPER-V3-CANARY-")
+            or not isinstance(preflight,dict)
+            or preflight.get("series_id")!=series_id
+            or not callable(capture) or not callable(clock_now)):
+        raise ValueError("isolated CANARY first-cycle owner only")
+    with _one_canary_owner(journal):
+        return _first_enrolled_canary_tick_once_unlocked(
+            preflight=preflight,candidate=candidate,series_id=series_id,
+            journal=journal,capture_dir=capture_dir,clock_now=clock_now,
+            capture=capture,fetch=fetch,ticker=ticker)
+
+
+def _first_enrolled_canary_tick_once_unlocked(*, preflight:dict[str,Any],
                                     candidate:dict[str,Any], series_id:str,
                                     journal:Path, capture_dir:Path,
                                     clock_now:Callable[[],str],
@@ -361,8 +424,6 @@ def resume_canary_tick_once(*,candidate:dict[str,Any],series_id:str,
     OS process lock releases on crash; persistent immutable receipts and
     model reservation remain authoritative for the next attempt.
     """
-    import os
-    from contextlib import contextmanager
     from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import sync_once
 
     if (cloud_post is None) != (relay_token is None):
@@ -374,42 +435,7 @@ def resume_canary_tick_once(*,candidate:dict[str,Any],series_id:str,
     if cloud_sync_only and cloud_post is None:
         raise ValueError("Cloud-only recovery requires explicit injected transport")
 
-    @contextmanager
-    def one_owner():
-        if not journal.is_dir() or journal.is_symlink():
-            raise ValueError("existing isolated CANARY journal required")
-        lock_path=journal/".v3-existing-owner-cycle.lock"
-        if lock_path.is_symlink():
-            raise ValueError("owner lock must not be a symlink")
-        fd=os.open(lock_path,os.O_CREAT|os.O_RDWR,0o600)
-        locked=False
-        try:
-            if os.fstat(fd).st_size==0:
-                os.write(fd,b"\0")
-            os.lseek(fd,0,os.SEEK_SET)
-            try:
-                if os.name=="nt":
-                    import msvcrt
-                    msvcrt.locking(fd,msvcrt.LK_NBLCK,1)
-                elif os.name=="posix":
-                    import fcntl
-                    fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
-                else:
-                    raise ValueError("unsupported Mini-PC OS owner fence")
-                locked=True
-            except (OSError,BlockingIOError) as exc:
-                raise ValueError("ANOTHER_CANARY_OWNER_RUNNING_FAIL_CLOSED") from exc
-            yield
-        finally:
-            if locked:
-                os.lseek(fd,0,os.SEEK_SET)
-                if os.name=="nt":
-                    msvcrt.locking(fd,msvcrt.LK_UNLCK,1)
-                else:
-                    fcntl.flock(fd,fcntl.LOCK_UN)
-            os.close(fd)
-
-    with one_owner():
+    with _one_canary_owner(journal):
         disposition=plan_canary_resume(
             candidate=candidate,series_id=series_id,journal=journal,
             model_reservations=model_reservations,ack_file=ack_file)
