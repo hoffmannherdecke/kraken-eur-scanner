@@ -727,6 +727,19 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
             captured=[]
             def original_source(*,pair,altname,outdir):
                 captured.append(pair)
+                # The outer OS owner lock is held during this callback.
+                # A second attempted invocation must fail BEFORE its
+                # duplicate public source callback can be reached.
+                with self.assertRaisesRegex(
+                        ValueError,"ANOTHER_CANARY_OWNER_RUNNING_FAIL_CLOSED"):
+                    resume_canary_tick_once(
+                        candidate=plan["selected_candidates"][0],
+                        series_id=SID,journal=j,capture_dir=cap,
+                        model_reservations=budget,ack_file=root/"ack.json",
+                        clock_now=lambda:dt(150),
+                        capture=lambda **kw:self.fail("concurrent source GET"),
+                        fetch=lambda *_:self.fail("concurrent source refresh"),
+                        ticker=lambda *_:self.fail("concurrent ticker"))
                 at=datetime.fromisoformat(dt(150))
                 moment=int(at.replace(second=0,microsecond=0).timestamp())-60
                 def load(_):
