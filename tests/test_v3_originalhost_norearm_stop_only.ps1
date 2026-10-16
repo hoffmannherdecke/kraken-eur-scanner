@@ -186,6 +186,28 @@ $processes=@(
  (RoleProcess 301 1 '"C:\Trading\shared.py" --role lifecycle'),
  (RoleProcess 302 301 '"C:\Trading\shared.py" --child')
 )
+# A real unfiltered Windows Win32_Process snapshot includes Idle PID 0 and
+# System PID 4. It must not be mistaken for an invalid Trading process.
+$nativeSystem=@(
+ [pscustomobject]@{ProcessId=0;ParentProcessId=0;Name='System Idle Process';CommandLine=$null},
+ [pscustomobject]@{ProcessId=4;ParentProcessId=0;Name='System';CommandLine=$null}
+)
+$nativeSnapshot=@($nativeSystem+$processes)
+$systemScoped=@(ResolveOriginalIntakePids $nativeSnapshot $actions $paths $true)
+if(($systemScoped -join ',') -cne '101,102,201,202'){
+ throw 'Windows native system PID 0/4 must not block valid original intake'
+}
+foreach($invalidSystemSnapshot in @(
+ @($nativeSnapshot + (RoleProcess 0 1 '"C:\Trading\shared.py" --role candidates')),
+ @($nativeSnapshot + (RoleProcess -1 1 '"C:\Trading\shared.py" --role candidates')),
+ @($processes + (RoleProcess 0 1 '"C:\Trading\shared.py" --role candidates'))
+)){
+ $rejected=$false
+ try{$null=ResolveOriginalIntakePids $invalidSystemSnapshot $actions $paths $true}
+ catch{$rejected=$true}
+ if(-not $rejected){throw 'Invalid or duplicate PID0/trading identity was accepted'}
+}
+
 $chosen=@(ResolveOriginalIntakePids $processes $actions $paths $true)
 if(($chosen -join ',') -cne '101,102,201,202'){throw 'Lifecycle incorrectly included in intake tree'}
 
