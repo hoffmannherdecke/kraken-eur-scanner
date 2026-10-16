@@ -638,7 +638,8 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
             # which begins at BASE+60s.
             def loader(_):
                 return {"error":[],"result":{altname:[
-                    [BASE,"2.0","2.1","1.9","2.0","2.0","10",2]
+                    [int(datetime.fromisoformat(dt(0)).timestamp()),
+                     "2.0","2.1","1.9","2.0","2.0","10",2]
                 ],"last":1}}
             return capture_public_1m(
                 pair=pair,altname=altname,outdir=outdir,
