@@ -246,8 +246,10 @@ class ClosedOriginalSenderOfflineCutover(unittest.TestCase):
             args=self.fixture(Path(d),phase='ARMED')
             with patch.object(MOD,'post') as post:
                 result=MOD.run_once(args)
-            self.assertEqual(result['status'],'DEGRADED')
-            self.assertEqual(result['mode'],'CLOSED_ORIGINAL_AFTERCARE')
+            self.assertEqual(result['status'],'HEALTHY')
+            self.assertEqual(result['mode'],'V3_PRECOMMIT_NO_NETWORK_HOLD')
+            self.assertTrue(result['cloud_sync_intentionally_paused'])
+            self.assertFalse(result['cloud_updated'])
             post.assert_not_called()
 
     def test_committed_marker_sends_only_originals_and_replays_none(self):
