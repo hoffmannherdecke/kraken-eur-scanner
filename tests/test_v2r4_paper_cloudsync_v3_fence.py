@@ -81,22 +81,25 @@ class OriginalCloudSyncV3PrecommitTests(unittest.TestCase):
         self.assertEqual(len(self.posts),1)
         self.assertEqual(self.posts[0]["action"],"sync")
 
-    def test_armed_and_quiesced_keep_old_series_sync_until_real_cas(self):
+    def test_armed_and_quiesced_hold_relay_without_http_until_real_cas(self):
         for phase in ("ARMED","QUIESCED"):
             with self.subTest(phase=phase):
-                with tempfile.TemporaryDirectory() as d:
-                    # Fresh state ensures one synthetic batch for each phase.
-                    self.args.paper_state_dir=Path(d)
-                    self.put(fence(phase))
-                    self.posts.clear()
-                    result=self.run_synthetic_old_sync()
-                    self.assertEqual(result["status"],"HEALTHY")
-                    self.assertEqual(result["v3_fence_cloud_sync_lane"],"PRECOMMIT_ORIGINAL")
-                    self.assertEqual(result["v3_fence_precommit_phase"],phase)
-                    self.assertEqual(len(self.posts),1)
-                    self.assertEqual(self.posts[0]["action"],"sync")
-                    self.assertEqual(self.posts[0]["series_id"],
-                                     "PAPER-V2R4-20261009T110135Z")
+                self.put(fence(phase))
+                self.posts.clear()
+                with mock.patch.object(module,"post",side_effect=AssertionError(
+                         "precommit must not contact cloud")), \
+                     mock.patch.object(module,"collect",side_effect=AssertionError(
+                         "precommit must not collect pending old rows")):
+                    result=module.run_once(self.args)
+                self.assertEqual(result["status"],"HEALTHY")
+                self.assertEqual(result["mode"],"V3_PRECOMMIT_NO_NETWORK_HOLD")
+                self.assertEqual(result["v3_fence_cloud_sync_lane"],"PRECOMMIT_ORIGINAL")
+                self.assertEqual(result["v3_fence_precommit_phase"],phase)
+                self.assertTrue(result["cloud_sync_intentionally_paused"])
+                self.assertTrue(result["pending_originals_preserved"])
+                self.assertFalse(result["cloud_updated"])
+                self.assertEqual(len(self.posts),0)
+                self.assertFalse((self.root/"State/v2r4-paper-closed-aftercare-state.json").exists())
 
     def test_committed_switches_to_existing_aftercare_only(self):
         self.put(fence("CLOUD_COMMITTED"))
