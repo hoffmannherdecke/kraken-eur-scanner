@@ -179,25 +179,25 @@ bleiben unverändert und dürfen nicht als neue Testaufträge verstanden werden.
 **Bereits tatsächlich vorhanden, nicht nochmals installieren oder wiederholen:**
 
 - Der **laufende** originale Mini-PC-Scheduled-Task
-  \`CryptoMiniPC-V2R4PaperCloudSync\` verwendet den geschützten
-  \`Trading\Staging\PR332-CloudSync-20261016-113256-d5c85c73\v2r4-paper-cloud-sync.py\`
+  `CryptoMiniPC-V2R4PaperCloudSync` verwendet den geschützten
+  `Trading\Staging\PR332-CloudSync-20261016-113256-d5c85c73\v2r4-paper-cloud-sync.py`
   mit vom Originalhost abgelesenem **SHA256**
-  \`7B3635E4A052D9CA4295DD64184D4BF8B8BC5BB4AD16DF1000D866D59473A3550\`.
+  `7B3635E4A052D9CA4295DD64184D4BF8B8BC5BB4AD16DF1000D866D59473A3550`.
   Das stimmt mit dem bereits bestätigten PR332-Mini-PC-Installationsmanifest
   überein. **Nicht** aus dem alten, bewusst eingefrorenen produktiven Git
-  \`b37f872...\` ableiten, welche CloudSync-Quelldatei effektiv läuft.
-  Die neue Fassung enthält \`original_cloud_sync_fence_lane\`,
-  \`run_closed_aftercare_once\` und den fail-closed-Wechsel erst bei
-  \`CLOUD_COMMITTED\`. Der gesonderte Shadow CloudSync läuft weiterhin.
-- Supabase **tatsächlich veröffentlicht**: \`v2r4-paper-evidence-relay\`
+  `b37f872...` ableiten, welche CloudSync-Quelldatei effektiv läuft.
+  Die neue Fassung enthält `original_cloud_sync_fence_lane`,
+  `run_closed_aftercare_once` und den fail-closed-Wechsel erst bei
+  `CLOUD_COMMITTED`. Der gesonderte Shadow CloudSync läuft weiterhin.
+- Supabase **tatsächlich veröffentlicht**: `v2r4-paper-evidence-relay`
   **ACTIVE Version 9**, einschließlich
-  \`sync_closed_original_followups\` mit zweiter Authentifizierung,
+  `sync_closed_original_followups` mit zweiter Authentifizierung,
   alter Originalserien-Identität und der Sperre gegen neue V2R4-Kandidaten.
-  Abgerufene Edge-\`index.ts\`-Bytes sind **identisch** mit aktuellem GitHub
-  (\`28.446\` Zeichen). Kein erneutes Edge-Deployment ohne neuen Befund.
-- Ebenfalls bereits **ACTIVE**: \`v3-paper-evidence-relay\` **Version 1**.
+  Abgerufene Edge-`index.ts`-Bytes sind **identisch** mit aktuellem GitHub
+  (`28.446` Zeichen). Kein erneutes Edge-Deployment ohne neuen Befund.
+- Ebenfalls bereits **ACTIVE**: `v3-paper-evidence-relay` **Version 1**.
   Dessen echter Edge-Source-Stand ist ebenfalls byteidentisch mit GitHub
-  (\`6.053\` Zeichen), kann CANARY-Receipts annehmen und verweigert
+  (`6.053` Zeichen), kann CANARY-Receipts annehmen und verweigert
   Nicht-CANARY-Receipts bei nicht aktiver passender V3-Paper-Serie.
 - Die bestehende EIGEN/ZRO-28h-Beobachtung ist abgeschlossen:
   672 von 672 originale lokale JSON-Snapshots waren bei der lesenden
@@ -210,19 +210,19 @@ bleiben unverändert und dürfen nicht als neue Testaufträge verstanden werden.
   Modellentscheid und P4 ergaben WAIT. Nicht erneut kostenpflichtig ausführen,
   sofern kein eigenständiger neuer Freigabenachweis nachweislich fehlt.
 - PR344–348 wurden source-only zusammengeführt; deren finale GitHub-main-
-  Source-Version ist \`41e088023657ff92a010387e81a07cc8ba4a1156\`.
-  Ein separates Mini-PC-\`V3Stage\source-41e08802\` wurde real geprüft:
+  Source-Version ist `41e088023657ff92a010387e81a07cc8ba4a1156`.
+  Ein separates Mini-PC-`V3Stage\source-41e08802` wurde real geprüft:
   **31/31** zielgerichtete Windows-Offline-Tests PASS, Worktree CLEAN,
   produktiver V2R4-HEAD unverändert. Diese Tests beweisen **nicht** einen
   realen Prozessabsturz, einen live bezahlten neuen Modellaufruf oder
   einen aktivierten V3-Paper-Writer.
 
 **Unabhängige Supabase-Abfrage 16.10.2026, 18:04 UTC:** genau eine aktive
-\`PAPER-V2R4-20261009T110135Z\`; **keine** \`PAPER-V3-...\`-Serienzeile;
+`PAPER-V2R4-20261009T110135Z`; **keine** `PAPER-V3-...`-Serienzeile;
 bestehender Unique-Active-Index vorhanden;
-\`rotate_v2r4_to_v3_experimental_paper\` **nicht installiert**.
+`rotate_v2r4_to_v3_experimental_paper` **nicht installiert**.
 Der jüngste hochgeladene Mini-PC-Snapshot hatte CloudSync und Supervisor
-\`HEALTHY\`. Nur eine zeitgebundene Statusaufnahme, keine Dauer-Garantie.
+`HEALTHY`. Nur eine zeitgebundene Statusaufnahme, keine Dauer-Garantie.
 
 **Verbindlicher aktueller Restauftrag am EINEN vorhandenen V3-P0/P1-
 Release-Owner (Issue #99 / bestehender 10:15-Work-Kontrollpfad):**
