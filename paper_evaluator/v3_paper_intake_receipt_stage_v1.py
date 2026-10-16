@@ -303,6 +303,21 @@ def stage_and_witness_first_minute(*, preflight: dict[str, Any],
             or {x.get("candidate_id") for x in enrollment} != set(originals)):
         raise ValueError("canonical bounded source enrollment must be complete")
 
+    # Validate the complete enrollment, INCLUDING deadlines, before the
+    # first immutable write. A malformed caller plan is never partly staged.
+    for item in enrollment:
+        cid = item["candidate_id"]
+        candidate = originals[cid]
+        first = timestamp(item["first_expected_closed_1m_start_utc"])
+        if (item.get("pair") != candidate["pair"]
+                or item.get("original_at_utc") != timestamp(
+                    candidate["event_time_utc"]).isoformat()
+                or first < timestamp(candidate["event_time_utc"])
+                or first - timestamp(candidate["event_time_utc"]) > timedelta(minutes=1)
+                or timestamp(item["latest_first_bar_live_witness_utc"])
+                    != first + timedelta(minutes=16)):
+            raise ValueError("original first-minute identity/deadline mismatch")
+
     # Durable immutable intake comes before a public-source side effect.
     staged = stage_receipts_explicitly(
         preflight=preflight, journal_directory=journal_directory)
