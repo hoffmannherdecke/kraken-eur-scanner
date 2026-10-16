@@ -26,7 +26,7 @@ $tasksModified=$false
 
 function Need([bool]$Valid,[string]$Why) { if(-not $Valid){throw $Why} }
 function Test-ScopedTwo([string[]]$TaskNames) {
-  $expected=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait'|Sort-Object)
+  $expected=@(@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')|Sort-Object)
   $actual=@($TaskNames|Sort-Object)
   return ($actual.Count -eq 2 -and ($actual -join '|') -ceq ($expected -join '|'))
 }
@@ -159,8 +159,6 @@ Need (Test-ScopedTwo $names) 'Task scope is not exact Candidates+WAIT'
 Need (-not (Test-Path -LiteralPath $fence) -and
       -not (Test-Path -LiteralPath $legacy)) 'Existing conflicting protection marker'
 Need ((Hash $cloudStage) -eq $cloudSha) 'PR332 effective source SHA mismatch'
-Need ((Hash (Join-Path $root 'Runtime\minipc-runtime-supervisor.ps1')) -eq $supervisorSha -or
-      (Get-Content $supPath -Raw).Contains('MINIPC_RUNTIME_SUPERVISOR_V1')) 'Supervisor current source requires independent task action pin'
 # Do not rely on the previous boolean as source identity: check the effective
 # Task action independently against a pinned executable script before execute.
 $supervisorTask=Get-ScheduledTask -TaskName 'CryptoMiniPC-RuntimeSupervisor' -ErrorAction Stop
@@ -232,7 +230,7 @@ try {
   ProtectedMarkerWrite $payload $true
   $since=[datetime]::UtcNow.AddSeconds(-3)
   Need (WaitSupervisorAndCloud 'QUIESCED' $since 180 $true) 'Two supervisor QUIESCED cycles not independently confirmed'
-  Need (@($MatchingPids $actionPaths).Count -eq 0) 'Intake process resurfaced'
+  Need (@(MatchingPids $actionPaths).Count -eq 0) 'Intake process resurfaced'
   Need (@($names|Where-Object {[string](Get-ScheduledTask -TaskName $_).State -eq 'Disabled'}).Count -eq 2) 'Intake windows Task rearmed'
   Write-Output 'V3_PHYSICAL_NATIVE_NO_REARM=PASS'
   Write-Output 'V3_STOPPED_INTAKE=2_OF_2'
