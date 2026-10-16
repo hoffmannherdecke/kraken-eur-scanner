@@ -16,6 +16,8 @@ name: V2R4 PR validation
       - 'paper_evaluator/v2r4_*.py'
       - 'research/v2r4/**'
       - 'tests/test_v2r4_*.py'
+      - 'tools/v2r4-paper-cloud-sync.py'
+      - 'tests/test_v2r4_paper_cloudsync_v3_fence.py'
       - 'tests/test_kraken_public_budget.py'
       - 'tools/minipc-runtime-supervisor.ps1'
       - 'tests/test_minipc_supervisor_rate_only.ps1'
@@ -110,6 +112,7 @@ jobs:
             tests.test_kraken_paper_context_budget \
             tests.test_v2r4_wait_runtime \
             tests.test_v2r4_paper_activation_runtime \
+            tests.test_v2r4_paper_cloudsync_v3_fence \
             tests.test_successor_coin_entry_evidence_v1 \
             tests.test_v2r4_v3_entry_lineage_contract \
             tests.test_v2r4_v3_entry_handoff_probe \
