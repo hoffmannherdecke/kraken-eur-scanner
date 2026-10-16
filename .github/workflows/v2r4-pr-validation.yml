@@ -21,6 +21,8 @@ name: V2R4 PR validation
       - 'tests/test_kraken_public_budget.py'
       - 'tools/minipc-runtime-supervisor.ps1'
       - 'tests/test_minipc_supervisor_rate_only.ps1'
+      - 'tools/minipc-pr332-cloudsync-protected-switch.ps1'
+      - 'tests/test_pr332_cloudsync_originalhost_one_shot.ps1'
       - 'market_data/kraken_public_budget.py'
       - 'market_data/rest.py'
       - 'tools/minipc-kraken-universe-feed.py'
@@ -153,6 +155,7 @@ jobs:
         shell: pwsh
         run: |
           ./tests/test_minipc_supervisor_rate_only.ps1
+          ./tests/test_pr332_cloudsync_originalhost_one_shot.ps1
 
       - name: Harmless live Kraken WAIT watcher smoke
         if: steps.implementation.outputs.present == 'true'
