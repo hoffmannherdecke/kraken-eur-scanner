@@ -296,6 +296,29 @@ Write-Output 'V3_INVALID_CONFIRM_NO_MARKER_SAME_EXECUTE_PREFLIGHT_PASS'
 
 Write-Output 'V3_ORIGINALHOST_UNKNOWN_PID_SAME_SNAPSHOT_SANITIZED_EVIDENCE_PASS'
 
+# A PowerShell administrative process may reference the protected script
+# path without being the executable Python intake task itself.
+$admin=@(
+ [pscustomobject]@{ProcessId=15108;ParentProcessId=1688;Name='powershell.exe';CommandLine='powershell.exe -File C:\Trading\wait.py'},
+ [pscustomobject]@{ProcessId=15110;ParentProcessId=1688;Name='pwsh.exe';CommandLine='pwsh.exe -Command "inspect C:\Trading\shared.py"'}
+)
+$adminCase=@($processes+$admin)
+$rootsWithAdmin=@(ResolveOriginalIntakePids $adminCase $actions $paths $true)
+if(($rootsWithAdmin -join ',') -cne '101,102,201,202'){
+ throw 'Benign admin PowerShell script reference misclassified'
+}
+$unknownPython=@($adminCase + (RoleProcess 15109 1688 '"C:\Trading\wait.py" --unowned'))
+$blocked=$false
+try{ $null=ResolveOriginalIntakePids $unknownPython $actions $paths $true -WarningAction SilentlyContinue }
+catch{ $blocked=([string]$_.Exception.Message -match 'pids=15109') }
+if(-not $blocked){throw 'Actual unknown Python must remain fail closed'}
+$unknownCmd=@($adminCase + [pscustomobject]@{ProcessId=15111;ParentProcessId=1688;Name='cmd.exe';CommandLine='cmd.exe /c C:\Trading\wait.py'})
+$blocked=$false
+try{ $null=ResolveOriginalIntakePids $unknownCmd $actions $paths $true -WarningAction SilentlyContinue }
+catch{ $blocked=([string]$_.Exception.Message -match 'pids=15111') }
+if(-not $blocked){throw 'Unknown non-PowerShell wrapper must remain blocked'}
+Write-Output 'V3_ADMIN_SHELL_PATH_REFERENCE_PURE_TEST_PASS'
+
 Write-Output 'V3_ORIGINALHOST_INTAKE_LIFECYCLE_EXACT_ROLE_PURE_REGRESSION_PASS'
 
 if($restore.Contains('[IO.File]::Replace($temp,$fence,$null,$true)') -or

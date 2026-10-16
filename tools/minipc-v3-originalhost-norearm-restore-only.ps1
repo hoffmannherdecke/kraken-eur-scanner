@@ -144,7 +144,8 @@ function ResolveOriginalIntakePids([object[]]$All,[object[]]$Actions,[string[]]$
     $hit=@($Paths|Where-Object {
       $line.IndexOf($_.Replace('\','/'),[StringComparison]::OrdinalIgnoreCase) -ge 0
     }).Count -gt 0
-    $hit -and ([int]$p.ProcessId -notin $covered)
+    $hit -and ([int]$p.ProcessId -notin $covered) -and
+      [string]$p.Name -notmatch '(?i)^(?:powershell|pwsh)\.exe$'
   })
   if($unknown.Count -gt 0){
     # Diagnostic evidence from the SAME immutable CIM snapshot as the guard.
