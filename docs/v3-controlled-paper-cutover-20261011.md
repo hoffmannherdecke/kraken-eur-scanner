@@ -168,3 +168,89 @@ Das kanonische Strategiebündel `research/v3/v3-experimental-paper-all-lessons-b
 **Explizite Grenze:** Die Quell-Kandidatenprüfsummen aus dem GitHub-Stand sind nicht die noch separat zu prüfenden `proposed_v3_repo_sha`, `proposed_v3_bundle_sha256` und `proposed_v3_strategy_sha256` eines authentischen V3-Releasepakets. Niemals alte V2R4-Hashes oder CI-Fixture-Werte als V3-Nachfolger-Identität ausgeben. Eine neue V3 Cloud Paper-Serie existiert noch nicht. Das endgültige versionierte V3-Paper-Release muss unabhängig die Runtime-/Live-Full-Model/P4- und Kostenketten, begrenzte neue Modell-HTTP-Budgetfreigabe, sechs echte externe E2E-Belege, originale Kandidaten/WAIT-Fence-/Rollback-Vorabprüfung, 6h/24h-Nachlauf, CAS-Dryrun und denselben Source-Commit belegen. Kein Windows Stop/Task-, Cloud-, Budget- oder Echtgeld-Eingriff durch diese source-only-Funktion.
 
 Owner bleibt die bestehende V3-P0/P1-/Issue-#99-/10:15-Work-Kontrollschiene, keine zweite Versionsregistratur und keine zusätzliche Automatisierung. Nächste wertvolle Arbeit: die realen einzelnen technischen V3-E2E-Beweispfade am vorhandenen Mini-PC/journal- und Cloud-Owner binden; sobald sie authentisch erfolgreich sind, diese hier ermittelten Quellinputs im EINEN kanonischen echten Releasepaket nach Originalhost-ACK fixieren und den bereits genehmigten reversiblen PRE-CAS-STOP/Rollback-Versuch ausführen.
+
+
+## 16.10.2026 – verbindlicher Realstand nach PR348 (physisch/cloud read-only, kein Paper-Cutover)
+
+Dieser **zeitlich neuere** Originalbefund ersetzt ausschließlich veraltete
+Annahmen in den obigen datierten Arbeitsschritten. Ältere Test-/Freigabebelege
+bleiben unverändert und dürfen nicht als neue Testaufträge verstanden werden.
+
+**Bereits tatsächlich vorhanden, nicht nochmals installieren oder wiederholen:**
+
+- Der **laufende** originale Mini-PC-Scheduled-Task
+  `CryptoMiniPC-V2R4PaperCloudSync` verwendet den geschützten
+  `Trading\Staging\PR332-CloudSync-20261016-113256-d5c85c73\v2r4-paper-cloud-sync.py`
+  mit vom Originalhost abgelesenem **SHA256**
+  `7B3635E4A052D9CA4295DD64184D4BF8B8BC5BB4AD16DF1000D866D59473A3550`.
+  Das stimmt mit dem bereits bestätigten PR332-Mini-PC-Installationsmanifest
+  überein. **Nicht** aus dem alten, bewusst eingefrorenen produktiven Git
+  `b37f872...` ableiten, welche CloudSync-Quelldatei effektiv läuft.
+  Die neue Fassung enthält `original_cloud_sync_fence_lane`,
+  `run_closed_aftercare_once` und den fail-closed-Wechsel erst bei
+  `CLOUD_COMMITTED`. Der gesonderte Shadow CloudSync läuft weiterhin.
+- Supabase **tatsächlich veröffentlicht**: `v2r4-paper-evidence-relay`
+  **ACTIVE Version 9**, einschließlich
+  `sync_closed_original_followups` mit zweiter Authentifizierung,
+  alter Originalserien-Identität und der Sperre gegen neue V2R4-Kandidaten.
+  Abgerufene Edge-`index.ts`-Bytes sind **identisch** mit aktuellem GitHub
+  (`28.446` Zeichen). Kein erneutes Edge-Deployment ohne neuen Befund.
+- Ebenfalls bereits **ACTIVE**: `v3-paper-evidence-relay` **Version 1**.
+  Dessen echter Edge-Source-Stand ist ebenfalls byteidentisch mit GitHub
+  (`6.053` Zeichen), kann CANARY-Receipts annehmen und verweigert
+  Nicht-CANARY-Receipts bei nicht aktiver passender V3-Paper-Serie.
+- Die bestehende EIGEN/ZRO-28h-Beobachtung ist abgeschlossen:
+  672 von 672 originale lokale JSON-Snapshots waren bei der lesenden
+  Host-Prüfung fehler- und konfliktfrei; pro Paar 1705 rechtzeitig bezeugte
+  individuelle 1m-Kerzen, längster zusammenhängender Abschnitt 1690 Minuten.
+  Dies ist **keine** gültige rückwirkende 6h-/24h-Entry-Abdeckung für alte
+  vor Beobachtungsstart gefällte Modellentscheidungen.
+- Echte historische V3-CANARY-Journale: 21 von 21 Originalhost↔Cloud
+  Inhalts-/Semantiknachweise bereits abgeschlossen; früherer echter ZRO-API-
+  Modellentscheid und P4 ergaben WAIT. Nicht erneut kostenpflichtig ausführen,
+  sofern kein eigenständiger neuer Freigabenachweis nachweislich fehlt.
+- PR344–348 wurden source-only zusammengeführt; deren finale GitHub-main-
+  Source-Version ist `41e088023657ff92a010387e81a07cc8ba4a1156`.
+  Ein separates Mini-PC-`V3Stage\source-41e08802` wurde real geprüft:
+  **31/31** zielgerichtete Windows-Offline-Tests PASS, Worktree CLEAN,
+  produktiver V2R4-HEAD unverändert. Diese Tests beweisen **nicht** einen
+  realen Prozessabsturz, einen live bezahlten neuen Modellaufruf oder
+  einen aktivierten V3-Paper-Writer.
+
+**Unabhängige Supabase-Abfrage 16.10.2026, 18:04 UTC:** genau eine aktive
+`PAPER-V2R4-20261009T110135Z`; **keine** `PAPER-V3-...`-Serienzeile;
+bestehender Unique-Active-Index vorhanden;
+`rotate_v2r4_to_v3_experimental_paper` **nicht installiert**.
+Der jüngste hochgeladene Mini-PC-Snapshot hatte CloudSync und Supervisor
+`HEALTHY`. Nur eine zeitgebundene Statusaufnahme, keine Dauer-Garantie.
+
+**Verbindlicher aktueller Restauftrag am EINEN vorhandenen V3-P0/P1-
+Release-Owner (Issue #99 / bestehender 10:15-Work-Kontrollpfad):**
+
+1. Nicht den bisherigen 28h-Beobachter, keinen alten CANARY-Smoke und
+   keinen zweiten Scheduler aktivieren. Den bereits entwickelten EINEN
+   Kandidat→geschlossene Kraken-1m-Quelle→vollständige Modell/P4-Entscheidung→
+   Paper-Journal→6h/24h/72h→Cloud-ACK-Strang zu einem **releasegebundenen
+   tatsächlichen V3-PAPER-Writer** mit eigener Serien-/Owner-Identität
+   integrieren. Die heutigen CANARY-only-Codefunktionen nicht bloß durch
+   Entfernen einer Namenssperre zu Live-PAPER deklarieren; echte Laufzeit-
+   Eingabe-/Budget-/No-Rearm-/Single-Writer-Grenzen müssen belegt sein.
+2. Fehlende **Originale** gegen die exakt **sechs bereits vorhandenen**
+   technischen Freigaben prüfen; Mini-PC/Cloud/GitHub/Work-Quellrollen,
+   Release-Pins und frische aktive Cloud-Serie festhalten. Den alten
+   Protected-CloudSync und das bereits deployte Relay unverändert
+   **wiederverwenden**, den echten geschlossenen V2R4-Alt-Followup-/Exit-
+   Nachweis vor Freigabe der Rotation gesondert erbringen.
+3. Die noch **nicht** installierte V3-Cloud-CAS-Funktion / physische
+   Task-Owner-Änderung / echter neuer kostenpflichtiger Modell-Aufruf /
+   V3-Paper-Cutover erfordern weiterhin ihre jeweils gesonderte ausdrückliche
+   Freigabe. Keine Cloud-Serienrotation oder produktiven Task-Mutationen
+   allein aus einer CI-/Dokumentations-Freigabe.
+4. Paper startet erst mit **freigegebenem echten Original-Releasepaket**,
+   Paper-only 50+50 EUR und nachgewiesenem Alt-Followup-Schutz. Echtgeld
+   ist ausdrücklich nicht Gegenstand dieses Schritts.
+
+**Kein neuer Projektmanager, keine siebte Freigabe, keine zusätzlichen
+Abwartewochen und keine Wiederholung der bereits erledigten 21/21-, 28h-,
+31/31-, PR326-/PR332-/PR341–348-Prüfungen.** Diese Ergänzung ist nur
+Dokumentations-/Kontext-Konsolidierung, keine Runtime-/Cloud-Änderung.
