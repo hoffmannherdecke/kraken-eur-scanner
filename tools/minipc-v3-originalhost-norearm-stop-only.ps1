@@ -64,25 +64,84 @@ function PythonActionScript([object]$Task) {
   Need (Test-Path -LiteralPath $script -PathType Leaf) 'Python action source missing'
   return $script
 }
-function MatchingPids([string[]]$Paths) {
-  $all=@(Get-CimInstance Win32_Process -ErrorAction Stop)
-  $roots=@($all|Where-Object {
-    $line=[string]$_.CommandLine
-    @($Paths|Where-Object {
-      $q=($_.Replace('\','/'))
-      $normalized=$line.Replace('\','/')
-      $normalized.IndexOf($q,[StringComparison]::OrdinalIgnoreCase) -ge 0
-    }).Count -gt 0
-  })
-  $ids=@($roots|ForEach-Object {[int]$_.ProcessId})
-  # Follow descendants recursively even when a child has a different script.
+function ResolveOriginalIntakePids([object[]]$All,[object[]]$Actions,[string[]]$Paths,[bool]$RequireRoots) {
+  # A shared Python script is NOT a unique task identity. Compare the full
+  # native Task arguments, then follow only verified process descendants.
+  Need ($Actions.Count -eq 3 -and $Paths.Count -eq 2) 'Process role scope invalid'
+  $roleRoots=@{}
+  $allRoots=@()
+  foreach($item in $Actions){
+    $signature=([string]$item.arguments).Replace('\','/')
+    Need ($signature.Length -ge 10) ('Missing Task argument identity: '+$item.name)
+    $matched=@($All|Where-Object {
+      $line=([string]$_.CommandLine).Replace('\','/')
+      [string]$_.Name -match '(?i)^pythonw?\.exe$' -and
+      $line.IndexOf($signature,[StringComparison]::OrdinalIgnoreCase) -ge 0
+    })
+    Need ($matched.Count -le 1) ('Duplicate running task owners: '+$item.name)
+    if($RequireRoots -or $item.name -eq 'CryptoMiniPC-V2R4PaperLifecycle'){
+      Need ($matched.Count -eq 1) ('Missing exact running task owner: '+$item.name)
+    }
+    $roleRoots[$item.name]=@($matched|ForEach-Object {[int]$_.ProcessId})
+    $allRoots+=@($roleRoots[$item.name])
+  }
+  Need (@($allRoots|Sort-Object -Unique).Count -eq $allRoots.Count) 'Process claimed by multiple roles'
+  $targetRoots=@($roleRoots['CryptoMiniPC-V2R4PaperCandidates']+
+    $roleRoots['CryptoMiniPC-V2R4PaperWait'])
+  $lifecycleRoots=@($roleRoots['CryptoMiniPC-V2R4PaperLifecycle'])
+  $targetIds=@($targetRoots|Sort-Object -Unique)
+  $lifecycleIds=@($lifecycleRoots|Sort-Object -Unique)
   do {
-    $before=$ids.Count
-    $children=@($all|Where-Object {$_.ParentProcessId -in $ids})
-    $ids=@($ids+@($children|ForEach-Object {[int]$_.ProcessId})|Sort-Object -Unique)
-  }while($ids.Count -ne $before)
-  return @($ids|Sort-Object -Unique)
+    $before=$targetIds.Count
+    $targetIds=@($targetIds + @($All|Where-Object {
+      $_.ParentProcessId -in $targetIds
+    }|ForEach-Object {[int]$_.ProcessId})|Sort-Object -Unique)
+  }while($targetIds.Count -ne $before)
+  do {
+    $before=$lifecycleIds.Count
+    $lifecycleIds=@($lifecycleIds + @($All|Where-Object {
+      $_.ParentProcessId -in $lifecycleIds
+    }|ForEach-Object {[int]$_.ProcessId})|Sort-Object -Unique)
+  }while($lifecycleIds.Count -ne $before)
+  Need (@($targetIds|Where-Object {$_ -in $lifecycleIds}).Count -eq 0) 'Intake/Lifecycle process trees overlap'
+  $covered=@($targetIds+$lifecycleIds|Sort-Object -Unique)
+  $unknown=@($All|Where-Object {
+    $p=$_
+    $line=([string]$p.CommandLine).Replace('\','/')
+    $hit=@($Paths|Where-Object {
+      $line.IndexOf($_.Replace('\','/'),[StringComparison]::OrdinalIgnoreCase) -ge 0
+    }).Count -gt 0
+    $hit -and ([int]$p.ProcessId -notin $covered)
+  })
+  Need ($unknown.Count -eq 0) 'Unclassified original intake-script process; fail closed'
+  return @($targetIds|Sort-Object -Unique)
 }
+function MatchingPids([string[]]$Paths,[bool]$RequireRoots=$false) {
+  $scopes=@()
+  foreach($role in @(
+    'CryptoMiniPC-V2R4PaperCandidates',
+    'CryptoMiniPC-V2R4PaperWait',
+    'CryptoMiniPC-V2R4PaperLifecycle'
+  )){
+    $task=Get-ScheduledTask -TaskName $role -ErrorAction Stop
+    Need ($task.TaskPath -eq '\' -and @($task.Actions).Count -eq 1 -and
+      [string]$task.Principal.UserId -in @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -and
+      [string]$task.Settings.MultipleInstances -eq 'IgnoreNew' -and
+      [string]$task.Actions[0].Execute -match '(?i)(?:^|[\\/])pythonw?\.exe$') ('Process owner Task identity drift: '+$role)
+    if($role -eq 'CryptoMiniPC-V2R4PaperLifecycle'){
+      Need ([string]$task.State -eq 'Running') 'Lifecycle aftercare not running'
+    }
+    $scopes+=@([pscustomobject]@{name=$role;arguments=[string]$task.Actions[0].Arguments})
+  }
+  for($i=0;$i -lt 2;$i++){
+    $a=([string]$scopes[$i].arguments).Replace('\','/')
+    Need ($a.IndexOf($Paths[$i].Replace('\','/'),[StringComparison]::OrdinalIgnoreCase) -ge 0) 'Intake native action/source mismatch'
+  }
+  Need ([string]$scopes[0].arguments -ine [string]$scopes[2].arguments) 'Candidates/Lifecycle native actions ambiguous'
+  $all=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+  return @(ResolveOriginalIntakePids $all $scopes $Paths $RequireRoots)
+}
+
 function GuardedMarker([string]$Phase,[string]$Owner) {
   $head=(git -C $review rev-parse HEAD)
   Need ($LASTEXITCODE -eq 0 -and [string]$head -match '^[a-f0-9]{40}$') 'Original V3 source HEAD unknown'
@@ -204,7 +263,7 @@ foreach($map in $maps){
   $actionPaths+=@(PythonActionScript $task)
 }
 Need (@($actionPaths|Sort-Object -Unique).Count -eq 2) 'Two distinct original intake action scripts required'
-$startingPids=@(MatchingPids $actionPaths)
+$startingPids=@(MatchingPids $actionPaths $true)
 Need ($startingPids.Count -ge 2 -and $startingPids.Count -le 8) 'Original running process family ambiguous'
 Write-Output 'V3_NATIVE_STOP_PREFLIGHT=PASS'
 Write-Output ('V3_NATIVE_ORIGINAL_SOURCE_PIDS='+($startingPids -join ','))
