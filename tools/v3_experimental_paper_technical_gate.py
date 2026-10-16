@@ -242,6 +242,29 @@ def _evidence_content_error(
         by_origin[origin]=payload
     if not required.issubset(present):
         return name+" missing required independent Mini-PC/Cloud/Work source role"
+    # Extend the EXISTING sixth technical proof, not a new release stage.
+    # A healthy task status alone is not a bounded recovery receipt.
+    # Independent validation of the physical source remains mandatory.
+    if name=="V3_MINIPC_SUPERVISOR_STOP_START_ROLLBACK":
+        host=by_origin["MINIPC_PHYSICAL"]
+        required_recovery_checks=(
+            "original_task_identity_and_source_pins_verified",
+            "stop_only_candidates_wait_lifecycle_continues",
+            "unknown_python_worker_blocks_unclassified",
+            "admin_shell_path_reference_not_worker",
+            "interrupted_marker_transition_preserves_armed_backup",
+            "atomic_marker_repair_has_verified_backup",
+            "partial_restore_keeps_fence_until_actual_worker_ack",
+            "both_original_worker_heartbeats_advance_after_restart",
+            "supervisor_healthy_after_marker_removed",
+            "cloudsync_returns_active_original_no_network_hold_cleared",
+            "no_v3_cas_or_real_money_actions",
+        )
+        if (any(host.get(key) is not True for key in required_recovery_checks)
+                or host.get("final_fence_state")!="ABSENT"
+                or host.get("restore_boundary")!="PRECOMMIT_ORIGINAL_ONLY"
+                or host.get("recovery_ack_kind")!="REAL_MINIPC_POST_RESTORE_READBACK"):
+            return name+" physical restart/recovery evidence incomplete"
     # A genuine single-writer dry run is NOT two arbitrary healthy readbacks.
     # It must bind one actual active V2R4 predecessor to the same proposed V3
     # successor on both independently checked physical and Cloud originals.

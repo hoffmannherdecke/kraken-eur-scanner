@@ -63,6 +63,23 @@ def fixture(root:Path)->dict:
                         "closed_old_series_trade_exit_update_accepted_tested":True,
                         "closed_old_series_new_intake_rejected_tested":True,
                     })
+            if key=="V3_MINIPC_SUPERVISOR_STOP_START_ROLLBACK" and origin=="MINIPC_PHYSICAL":
+                record.update({
+                    "original_task_identity_and_source_pins_verified":True,
+                    "stop_only_candidates_wait_lifecycle_continues":True,
+                    "unknown_python_worker_blocks_unclassified":True,
+                    "admin_shell_path_reference_not_worker":True,
+                    "interrupted_marker_transition_preserves_armed_backup":True,
+                    "atomic_marker_repair_has_verified_backup":True,
+                    "partial_restore_keeps_fence_until_actual_worker_ack":True,
+                    "both_original_worker_heartbeats_advance_after_restart":True,
+                    "supervisor_healthy_after_marker_removed":True,
+                    "cloudsync_returns_active_original_no_network_hold_cleared":True,
+                    "no_v3_cas_or_real_money_actions":True,
+                    "final_fence_state":"ABSENT",
+                    "restore_boundary":"PRECOMMIT_ORIGINAL_ONLY",
+                    "recovery_ack_kind":"REAL_MINIPC_POST_RESTORE_READBACK",
+                })
             canonical=json.dumps(record,sort_keys=True,separators=(",",":")).encode()
             originals.append({"origin":origin,"original_id":oid,
                  "original_record":record,
@@ -221,6 +238,44 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                     root,"V3-PAPER-EXPERIMENTAL-001",base))
                 target.write_text(json.dumps(valid_proof,sort_keys=True))
                 row["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
+
+    def test_v3_existing_recovery_proof_requires_failure_and_return_acks(self):
+        # Synthetic contract-only fixture; a rehashed claim is not a live
+        # receipt. The external owner must separately validate source truth.
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            row=next(x for x in packet["experimental_paper_technical_proofs"]
+                     if x["id"]=="V3_MINIPC_SUPERVISOR_STOP_START_ROLLBACK")
+            target=root/row["evidence_path"]
+            original=json.loads(target.read_text("utf-8"))
+            host=original["source_originals"][0]["original_record"]
+            bool_fields=[k for k,v in host.items() if v is True]
+            cases=[(k,False) for k in bool_fields]
+            cases += [(k,None) for k in bool_fields]
+            cases += [
+                ("final_fence_state","ARMED"),
+                ("final_fence_state",None),
+                ("restore_boundary","POSTCOMMIT"),
+                ("recovery_ack_kind","SOURCE_ONLY_CI"),
+            ]
+            for key,bad in cases:
+                with self.subTest(field=key,bad=bad):
+                    changed=copy.deepcopy(original)
+                    payload=changed["source_originals"][0]["original_record"]
+                    payload[key]=bad
+                    raw=json.dumps(payload,sort_keys=True,
+                                   separators=(",",":")).encode()
+                    changed["source_originals"][0]["original_sha256"]=hashlib.sha256(raw).hexdigest()
+                    target.write_text(json.dumps(changed,sort_keys=True))
+                    row["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
+                    self.assertTrue(validate_experimental_paper_packet(
+                        root,"V3-PAPER-EXPERIMENTAL-001",packet),
+                        "Unverified physical recovery must block even after rehash")
+            target.write_text(json.dumps(original,sort_keys=True))
+            row["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
 
     def test_cas_dryrun_requires_same_original_predecessor_on_host_and_cloud(self):
         with tempfile.TemporaryDirectory() as folder:
