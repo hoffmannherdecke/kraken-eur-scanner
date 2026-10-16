@@ -5,6 +5,9 @@ name: V2R4 technical cloud rotation - disposable SQL gate
     paths:
       - 'supabase/v2r4-technical-paper-rotation-20261009.sql'
       - 'tests/sql/v2r4_technical_rotation_smoke.sql'
+      - 'supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql'
+      - 'tests/sql/v3_experimental_paper_atomic_cas_smoke.sql'
+      - 'tests/test_v3_experimental_atomic_cas_inactive_contract_v1.py'
       - 'supabase/functions/v2r4-technical-cutover/index.ts'
       - 'supabase/config.toml'
       - 'tools/v2r4-paper-local-runtime.py'
@@ -51,6 +54,12 @@ jobs:
           set -euo pipefail
           psql -X -v ON_ERROR_STOP=1 -f tests/sql/v2r4_technical_rotation_smoke.sql
           echo TECHNICAL_ROTATION_SQL_DISPOSABLE_GATE_OK
+      - name: V3 experimental Paper CAS actual Postgres rollback and fail-closed, disposable only
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f tests/sql/v3_experimental_paper_atomic_cas_smoke.sql
+          echo V3_CAS_DISPOSABLE_DB_GATE_OK
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
