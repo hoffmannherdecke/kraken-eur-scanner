@@ -118,5 +118,17 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertNotIn("physical_closed_old_series_followup_exit_relay_proven=$true",s)
         self.assertIn("evidence='PARTIAL_TASK_ACTION_AND_HEARTBEAT_READBACK_NOT_LIVE_SOURCE_OR_REARM_PROOF'",s)
 
+
+    def test_v3_inactive_cutover_reads_current_pr326_wait_stage_only(self):
+        script=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        self.assertIn("Staging\\v2r4-wait-pr326-isolated-c660ebb87a39",script)
+        self.assertNotIn("Runtime\\v2r4-paper-stage-d8b35a8ec2e6",script)
+        self.assertIn("OriginalStage=$cmd.Contains($oldStage)",script)
+        self.assertIn("wait_closed_descendants_snapshot_only_no_stop_authority=$true",script)
+        self.assertIn("v3_live_release_authorized=$false",script)
+        self.assertIn("if($Execute){",script)
+        self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",script)
+
+
 if __name__=="__main__":
     unittest.main()
