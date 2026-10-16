@@ -59,6 +59,25 @@ if(@($ast.FindAll({
  param($i) $i -is [Management.Automation.Language.CommandAst] -and
  $i.GetCommandName() -in @('Disable-ScheduledTask','Stop-ScheduledTask')
 },$true)).Count -ne 2){throw 'Unexpected number of stop/disable verbs'}
+# Regression for originalhost 16-Oct failed preflight: a 63-character
+# transcribed SHA256 can NEVER match a real 64-character digest.
+# Read complete SHA from previously protected PR332 backup manifest instead.
+if($src.Contains('$cloudSha=')){throw 'Unsafe handwritten PR332 cloud SHA still hard-coded'}
+foreach($needed in @(
+  'PR332-CloudSync-Vorher-20261016-113256-d5c85c73\manifest.json',
+  'PR332_CLOUDSYNC_PROTECTED_STAGE_V1',
+  'new_source_sha256',
+  "^[A-Fa-f0-9]{64}$",
+  'new_git_blob_sha1',
+  'b97a45d589f6813b28fe94f62fd37e94e764d054',
+  'Stop-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue'
+)){
+ if(-not $src.Contains($needed)){throw "Protected PR332 manifest/no-survivor source check missing: $needed"}
+}
+if($src.Contains("if([string](Get-ScheduledTask -TaskName $name).State -eq 'Running')")){
+ throw 'May not skip Stop-ScheduledTask after disabling a still-running worker'
+}
+Write-Output 'V3_PR334_FULL_PR332_MANIFEST_HASH_PREVIEW_REGRESSION_PASS'
 Write-Output 'V3_PHYSICAL_ORIGINALHOST_NO_REARM_STOP_ONLY_PURE_11_SCOPES_PASS'
 
 $restorePath=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/minipc-v3-originalhost-norearm-restore-only.ps1'

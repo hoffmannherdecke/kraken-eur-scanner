@@ -18,7 +18,7 @@ $supPath=Join-Path $root 'State\minipc-runtime-supervisor.json'
 $cloudPath=Join-Path $root 'State\v2r4-paper-cloud-sync-heartbeat.json'
 $review=Join-Path $root 'Research\V3-SourceReview-20261015'
 $cloudStage=Join-Path $root 'Staging\PR332-CloudSync-20261016-113256-d5c85c73\v2r4-paper-cloud-sync.py'
-$cloudSha='7B3635E4A052D9CA4295DD64184D4BF8B8C5BB4AD16DF100DB86D59473A3550'
+$cloudManifestPath=Join-Path $root 'Backups\PR332-CloudSync-Vorher-20261016-113256-d5c85c73\manifest.json'
 $supervisorSha='9B148DB733ED61B9DA673E0E3BB9D319D336CE37FEFF9790D34BEF36B4680EF5'
 $drillId=[guid]::NewGuid().ToString('N')
 $markerWritten=$false
@@ -158,7 +158,14 @@ Need ($root -ieq 'C:\Users\ADMIN\Trading') 'Unexpected original TradingRoot'
 Need (Test-ScopedTwo $names) 'Task scope is not exact Candidates+WAIT'
 Need (-not (Test-Path -LiteralPath $fence) -and
       -not (Test-Path -LiteralPath $legacy)) 'Existing conflicting protection marker'
-Need ((Hash $cloudStage) -eq $cloudSha) 'PR332 effective source SHA mismatch'
+$cloudManifest=Get-Content -LiteralPath $cloudManifestPath -Raw -ErrorAction Stop|ConvertFrom-Json
+Need ($cloudManifest.kind -ceq 'PR332_CLOUDSYNC_PROTECTED_STAGE_V1' -and
+  $cloudManifest.task_name -ceq 'CryptoMiniPC-V2R4PaperCloudSync' -and
+  [string]$cloudManifest.new_source -ieq $cloudStage -and
+  [string]$cloudManifest.new_git_commit -ceq 'b97a45d589f6813b28fe94f62fd37e94e764d054' -and
+  [string]$cloudManifest.new_git_blob_sha1 -ceq '63eca1cbc596819c36796f0a97155513002dd0ed' -and
+  [string]$cloudManifest.new_source_sha256 -cmatch '^[A-Fa-f0-9]{64}$') 'Protected PR332 manifest identity/hash invalid'
+Need ((Hash $cloudStage) -ieq [string]$cloudManifest.new_source_sha256) 'PR332 effective source SHA mismatch'
 # Do not rely on the previous boolean as source identity: check the effective
 # Task action independently against a pinned executable script before execute.
 $supervisorTask=Get-ScheduledTask -TaskName 'CryptoMiniPC-RuntimeSupervisor' -ErrorAction Stop
@@ -213,10 +220,10 @@ try {
   Need (WaitSupervisorAndCloud 'ARMED' $since 150 $false) 'ARMED supervisor/cloud independent receipt not observed'
   # Only two original SYSTEM intake tasks may be modified, in this order.
   foreach($name in $names){ Disable-ScheduledTask -TaskName $name -ErrorAction Stop|Out-Null; $tasksModified=$true }
+  # A disabled Task may still own a live Python worker. Request stop always,
+  # then confirm zero original worker descendants before going QUIESCED.
   foreach($name in $names){
-    if([string](Get-ScheduledTask -TaskName $name).State -eq 'Running'){
-      Stop-ScheduledTask -TaskName $name -ErrorAction Stop
-    }
+    Stop-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue
   }
   $deadline=(Get-Date).AddSeconds(60)
   do{
