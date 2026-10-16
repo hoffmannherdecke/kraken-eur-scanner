@@ -42,6 +42,222 @@ Check $false (Make-Hb 'HEALTHY' @{}) 3 $true 'healthy'
 Check $false $null 3 $true 'null heartbeat'
 Write-Output 'SUPERVISOR_SOURCE_RATE_POLICY_10_CASES_PASS'
 
+
+# Only the extracted pure function is executed; never run the Windows
+# Supervisor, Kraken, the task scheduler or local disk mutation in CI.
+$progressFn=@($ast.FindAll({
+  param($a)
+  $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+  $a.Name -eq 'Test-WaitSourceProgress'
+},$true))
+if($progressFn.Count -ne 1){throw 'Expected one pure WAIT source-progress policy'}
+. ([Scriptblock]::Create($progressFn[0].Extent.Text))
+function ProgressFixture {
+  [pscustomobject]@{
+    kind='V2R4_WAIT_SOURCE_PROGRESS_V1';status='IN_PROGRESS_NOT_HEALTHY'
+    cycle_started_at_utc='2026-10-15T18:00:10Z'
+    last_source_progress_at_utc='2026-10-15T18:01:30Z'
+    successful_source_steps=2;worker_pid=3001;paper_only=$true;order_api=$false
+  }
+}
+function HbFixture([string]$At='2026-10-15T17:59:59Z',[string]$Status='HEALTHY') {
+  [pscustomobject]@{checked_at_utc=$At;status=$Status}
+}
+$observed=[datetime]'2026-10-15T18:01:45Z'
+function CheckProgress([bool]$Expected,[object]$Progress,[object]$Heartbeat,
+                       [bool]$Running=$true,[bool]$Verified=$true,[string]$Label='') {
+  $actual=Test-WaitSourceProgress -Progress $Progress -Heartbeat $Heartbeat -ObservedUtc $observed -TaskRunning $Running -VerifiedWorker $Verified
+  if($actual -ne $Expected){throw "WAIT_PROGRESS_POLICY_FAIL $Label expected=$Expected got=$actual"}
+}
+CheckProgress $true (ProgressFixture) (HbFixture) -Label 'recent source replies from verified live child'
+CheckProgress $false $null (HbFixture) -Label 'no progress evidence'
+CheckProgress $false (ProgressFixture) $null -Label 'missing completion context'
+CheckProgress $false (ProgressFixture) (HbFixture) $false -Label 'stopped scheduler'
+CheckProgress $false (ProgressFixture) (HbFixture) $true $false -Label 'unverified PID'
+$p=ProgressFixture;$p.kind='FAKE'
+CheckProgress $false $p (HbFixture) -Label 'wrong schema'
+$p=ProgressFixture;$p.status='HEALTHY'
+CheckProgress $false $p (HbFixture) -Label 'never treat progress as healthy'
+$p=ProgressFixture;$p.successful_source_steps=0
+CheckProgress $false $p (HbFixture) -Label 'no successful source reads'
+$p=ProgressFixture;$p.worker_pid=-1
+CheckProgress $false $p (HbFixture) -Label 'invalid worker PID'
+$p=ProgressFixture;$p.order_api=$true
+CheckProgress $false $p (HbFixture) -Label 'orders not authorized'
+$p=ProgressFixture;$p.paper_only=$false
+CheckProgress $false $p (HbFixture) -Label 'non-paper source'
+$p=ProgressFixture;$p.last_source_progress_at_utc='2026-10-15T17:59:30Z'
+CheckProgress $false $p (HbFixture '2026-10-15T17:59:00Z') -Label 'stale progress means real stall'
+$p=ProgressFixture;$p.last_source_progress_at_utc='2026-10-15T18:01:51Z'
+CheckProgress $false $p (HbFixture) -Label 'future progress denied'
+$p=ProgressFixture;$p.cycle_started_at_utc='2026-10-15T17:50:00Z'
+CheckProgress $false $p (HbFixture '2026-10-15T17:49:00Z') -Label 'unbounded cycle denied'
+$p=ProgressFixture;$p.cycle_started_at_utc='2026-10-15T18:01:40Z'
+CheckProgress $false $p (HbFixture) -Label 'source before start denied'
+CheckProgress $false (ProgressFixture) (HbFixture '2026-10-15T18:01:31Z') -Label 'newer healthy completion wins'
+CheckProgress $false (ProgressFixture) (HbFixture '2026-10-15T18:01:00Z' 'DEGRADED') -Label 'newer degraded completion wins'
+$p=ProgressFixture;$p.last_source_progress_at_utc='2026-10-15T18:01:30'
+CheckProgress $false $p (HbFixture) -Label 'timezone required'
+$p=ProgressFixture;$p.cycle_started_at_utc='2026-10-15T18:02:00Z'
+CheckProgress $false $p (HbFixture) -Label 'future cycle start denied'
+Write-Output 'SUPERVISOR_WAIT_SOURCE_PROGRESS_PURE_19_CASES_PASS'
+
+# Static architecture proof, never invoke the live host check.
+$progressCode=Get-Content -LiteralPath $path -Raw
+foreach($required in @('[switch]$WaitSourceProgressOptIn',
+ 'WAIT_SOURCE_ACTIVE_NOT_HEALTHY', 'ACTIVE_NOT_HEALTHY',
+ 'Get-CimInstance -ClassName Win32_Process', 'Test-WaitSourceWorkerOnHost',
+ 'v2r4-paper-wait-source-progress.json')){
+ if(-not $progressCode.Contains($required)){throw "WAIT_PROGRESS_SOURCE_GUARD_MISSING $required"}
+}
+Write-Output 'SUPERVISOR_WAIT_SOURCE_PROGRESS_OPT_IN_STATIC_GUARD_PASS'
+
+# Mock pinned immutable PR291 or successor Task/SYSTEM worker and launcher fingerprint:
+# no actual CIM, Scheduler, HTTP, file hash or machine task mutations.
+$hostFn=@($ast.FindAll({
+ param($a)
+ $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $a.Name -eq 'Test-WaitSourceWorkerOnHost'
+},$true))
+if($hostFn.Count -ne 1){throw 'Expected one WAIT original-host PID verifier'}
+. ([Scriptblock]::Create($hostFn[0].Extent.Text))
+$fakeRoot=Join-Path $PSScriptRoot 'SyntheticNoDiskTrading'
+$fakeLauncher=Join-Path $fakeRoot 'Staging\v2r4-wait-pr291-isolated\wait_launcher.py'
+$script:fakeHash='C5E43D62976BDF2079A3A0402E57658ABA8A33D427B0CF0D56737565B84DD51D'
+$script:fakeExpectedHash=$script:fakeHash
+$script:fakeExists=$true
+function ValidFakeTask {
+ [pscustomobject]@{
+   State='Running'
+   Actions=@([pscustomobject]@{
+     Execute='C:\Trading\Runtime\venv\Scripts\python.exe'
+     Arguments=('"'+$fakeLauncher+'" --execute-recheck')
+   })
+ }
+}
+function ValidFakeWorker {
+ [pscustomobject]@{
+  Name='python.exe'
+  CommandLine=('python.exe "' + $fakeLauncher + '"')
+  CreationDate=[datetime]'2026-10-15T17:59:50Z'
+ }
+}
+$script:fakeTask=ValidFakeTask
+$script:fakeProcess=ValidFakeWorker
+function Get-ScheduledTask {
+ param([string]$TaskName,[object]$ErrorAction)
+ if($TaskName -cne 'CryptoMiniPC-V2R4PaperWait'){throw 'Unexpected Task lookup'}
+ return $script:fakeTask
+}
+function Test-Path {
+ param([string]$LiteralPath,[string]$PathType)
+ if($LiteralPath.Replace('\','/') -ine $fakeLauncher.Replace('\','/')){throw 'Unexpected test file path'}
+ return $script:fakeExists
+}
+function Get-FileHash {
+ param([string]$LiteralPath,[string]$Algorithm,[object]$ErrorAction)
+ if($LiteralPath.Replace('\','/') -ine $fakeLauncher.Replace('\','/') -or
+    $Algorithm -cne 'SHA256'){throw 'Unexpected file hash request'}
+ return [pscustomobject]@{Hash=$script:fakeHash}
+}
+function Get-CimInstance {
+ param([string]$ClassName,[string]$Filter,[object]$ErrorAction)
+ if($ClassName -cne 'Win32_Process' -or $Filter -cne 'ProcessId = 3001'){
+  throw 'Unexpected CIM process query'
+ }
+ return $script:fakeProcess
+}
+function ExpectHost([bool]$Expected,[string]$Case,[string]$OverridePath=''){
+ $p=if($OverridePath){$OverridePath}else{$fakeLauncher}
+ $actual=Test-WaitSourceWorkerOnHost -Progress (ProgressFixture) -TradingRoot $fakeRoot -PinnedLauncherPath $p -PinnedLauncherSha256 $script:fakeExpectedHash
+ if($actual -ne $Expected){throw "ORIGINAL_WAIT_OWNER_POLICY_FAIL $Case expected=$Expected got=$actual"}
+}
+ExpectHost $true 'physical PR291 launcher exact file owner/child'
+$script:fakeTask=ValidFakeTask;$script:fakeTask.State='Ready'
+ExpectHost $false 'Task not running'
+$script:fakeTask=ValidFakeTask;$script:fakeTask.Actions=@()
+ExpectHost $false 'Task has no action'
+$script:fakeTask=ValidFakeTask;$script:fakeTask.Actions[0].Arguments='"C:\Old\wait_launcher.py"'
+ExpectHost $false 'wrong Task launcher path'
+$script:fakeTask=ValidFakeTask;$script:fakeTask.Actions[0].Execute='cmd.exe'
+ExpectHost $false 'wrong Task executable'
+$script:fakeTask=ValidFakeTask;$script:fakeHash='a' * 64
+ExpectHost $false 'launcher hash changed'
+$script:fakeHash='C5E43D62976BDF2079A3A0402E57658ABA8A33D427B0CF0D56737565B84DD51D'
+$script:fakeExists=$false
+ExpectHost $false 'launcher missing'
+$script:fakeExists=$true
+$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.CommandLine='python.exe foreign.py'
+ExpectHost $false 'wrong process script'
+$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.CommandLine=('python.exe "' + $fakeLauncher + '.fake"')
+ExpectHost $false 'script prefix spoof'
+$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.Name='foreign.exe'
+ExpectHost $false 'foreign process executable'
+$script:fakeProcess=ValidFakeWorker;$script:fakeProcess.CreationDate=[datetime]'2026-10-15T18:02:00Z'
+ExpectHost $false 'recycled PID created after cycle'
+$script:fakeProcess=$null
+ExpectHost $false 'process absent'
+$script:fakeTask=ValidFakeTask;$script:fakeProcess=ValidFakeWorker
+Write-Output 'SUPERVISOR_PR291_WAIT_WORKER_MOCK_12_CASES_PASS'
+
+# The Supervisor opt-in is deliberately tied to release pins, not a hardcoded
+# original PR291 path. Test successor version rollover without host mutation.
+$script:fakeExpectedHash=''
+ExpectHost $false 'missing required supervisor pinned hash'
+$script:fakeExpectedHash='f' * 64
+ExpectHost $false 'mismatched supplied immutable release hash'
+$script:fakeExpectedHash=$script:fakeHash
+ExpectHost $false 'outside Trading Staging root' '/tmp/untrusted/wait_launcher.py'
+$oldFakeLauncher=$fakeLauncher
+$fakeLauncher=Join-Path $fakeRoot 'Staging\v2r4-wait-pr326-isolated-2318b2417d61\wait_launcher.py'
+$script:fakeTask=ValidFakeTask
+$script:fakeProcess=ValidFakeWorker
+ExpectHost $true 'pinned immutable PR326 successor release path accepted'
+$fakeLauncher=$oldFakeLauncher
+$script:fakeTask=ValidFakeTask
+$script:fakeProcess=ValidFakeWorker
+Write-Output 'SUPERVISOR_VERSIONED_WAIT_LAUNCHER_MOCK_4_CASES_PASS'
+
+# Restore native builtins so downstream policy tests stay independent.
+Remove-Item Function:\Get-ScheduledTask -ErrorAction SilentlyContinue
+Remove-Item Function:\Test-Path -ErrorAction SilentlyContinue
+Remove-Item Function:\Get-FileHash -ErrorAction SilentlyContinue
+Remove-Item Function:\Get-CimInstance -ErrorAction SilentlyContinue
+
+
+# PR326 offline stage packager is never run in CI: enforce its parse and
+# non-production scope with static read-only assertions.
+$stageTool=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/stage-minipc-pr326-wait-offline.ps1'
+if(-not (Test-Path -LiteralPath $stageTool -PathType Leaf)){throw 'Missing existing PR326 offline stage tool'}
+$parseTokens=$null
+$parseErrors=$null
+[void][System.Management.Automation.Language.Parser]::ParseFile($stageTool,[ref]$parseTokens,[ref]$parseErrors)
+if(@($parseErrors).Count -gt 0){
+  foreach($syntaxError in $parseErrors){ Write-Output ('PR326_STAGE_PARSE: '+[string]$syntaxError) }
+  throw 'PR326_OFFLINE_STAGE_POWERSHELL_PARSE_FAILED'
+}
+$stageSource=Get-Content -LiteralPath $stageTool -Raw
+foreach($required in @('ExpectedSourceSha','INACTIVE_OFFLINE_STAGE_ONLY',
+  'PR326_INACTIVE_WAIT_STAGE_V1','original_pr291_unchanged',
+  'market_data\kraken_public_budget.py','PYTHON_COMPILE=PASS',
+  'Backup manifest SHA mismatch','Original SHA256 is not 64 characters',
+  'Backup contents differ from saved manifest',
+  'WINDOWS_TASKS_UNCHANGED=True')){
+  if(-not $stageSource.Contains($required)){throw "PR326_OFFLINE_STAGE_GUARD_MISSING $required"}
+}
+foreach($forbidden in @('Start-ScheduledTask','Stop-ScheduledTask',
+  'Register-ScheduledTask','Set-ScheduledTask','git pull',
+  'Invoke-WebRequest','Invoke-RestMethod','api.kraken.com')){
+  if($stageSource.IndexOf($forbidden,[StringComparison]::OrdinalIgnoreCase) -ge 0){
+    throw "PR326_OFFLINE_STAGE_FORBIDDEN_CALL $forbidden"
+  }
+}
+if($stageSource.Contains("'v2r4_wait_runtime.py'='554E6CAF5E097D1684AB1F7557733CECFB4BCE6AF0A5BF88DBD106BF9BBA40'")){
+  throw 'PR326_OFFLINE_STAGE_62_DIGIT_SHA_REGRESSION'
+}
+Write-Output 'PR326_PINNED_OFFLINE_STAGE_STATIC_GUARDS_PASS'
+
+
 # Pure V3 supervisor intake fence regression; NEVER execute the Supervisor.
 $guard=@($ast.FindAll({
   param($a)
@@ -862,3 +1078,169 @@ foreach($k in @('pre_cas_physical_order_preview=@(',
  if(-not $opText.Contains($k)){throw "V3_ORDER_CONTRACT_MISSING $k"}
 }
 Write-Output 'V3_SINGLE_WRITER_PHYSICAL_FENCE_PURE_33_CASES_PASS'
+
+# PR326 protected two-task operator: AST-only / source-contract tests.
+# Never source/execute the operator in CI (it can mutate Windows tasks).
+$pr326Operator=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/minipc-pr326-protected-cutover.ps1'
+$pr326Tokens=$null;$pr326Errors=$null
+$pr326Ast=[System.Management.Automation.Language.Parser]::ParseFile(
+  $pr326Operator,[ref]$pr326Tokens,[ref]$pr326Errors)
+if(@($pr326Errors).Count -ne 0){throw 'PR326_CUTOVER_OPERATOR_SYNTAX_INVALID'}
+$pr326Text=Get-Content -LiteralPath $pr326Operator -Raw -ErrorAction Stop
+foreach($token in @(
+ 'PR326_RELEASE_PREFLIGHT=PASS',
+ 'PR326_EXECUTION=NOT_REQUESTED_READ_ONLY',
+ 'APPROVED_PR326_PAPER_ONLY_CUTOVER',
+ 'ProtectedData',
+ 'DataProtectionScope]::CurrentUser',
+ 'Old WAIT launcher PID still alive',
+ 'New WAIT launcher PID still alive',
+ 'Register-InactiveTask',
+ 'POST_CUTOVER_WAIT_CYCLES',
+ 'PR326_ROLLBACK=OLD_TASKS_RESTORED',
+ 'MANUAL_INTERVENTION_REQUIRED_NO_BLIND_RESTART',
+ "if(`$null -eq `$enabled){",
+ 'Assert-StaleProgressCandidate'
+)){
+  if(-not $pr326Text.Contains($token)){throw "PR326_PROTECTED_OPERATOR_CONTRACT_MISSING $token"}
+}
+$disableSup=$pr326Text.IndexOf('Disable-ScheduledTask -TaskName $supName -ErrorAction Stop')
+$disableWait=$pr326Text.IndexOf('Disable-ScheduledTask -TaskName $waitName -ErrorAction Stop')
+$stopWait=$pr326Text.IndexOf('Stop-ScheduledTask -TaskName $waitName -ErrorAction SilentlyContinue')
+$startWait=$pr326Text.IndexOf('Start-ScheduledTask -TaskName $waitName -ErrorAction Stop')
+$startSup=$pr326Text.IndexOf('Start-ScheduledTask -TaskName $supName -ErrorAction Stop')
+if($disableSup -lt 0 -or $disableWait -le $disableSup -or
+   $stopWait -le $disableWait -or $startWait -le $stopWait -or
+   $startSup -le $startWait){
+  throw 'PR326_PROTECTED_OPERATOR_SHUTDOWN_START_ORDER_INVALID'
+}
+if($pr326Text.IndexOf('$hasStaleProgress=Assert-StaleProgressCandidate') -lt 0 -or
+   $pr326Text.IndexOf('$hasStaleProgress=Assert-StaleProgressCandidate') -gt
+   $pr326Text.IndexOf('$enteredMutation=$true') -or
+   $pr326Text.IndexOf('PR326_STALE_PROGRESS_ARCHIVED=PASS') -lt 0){
+  throw 'PR326_PROGRESS_STALE_ARCHIVE_GUARD_MISSING_OR_AFTER_MUTATION'
+}
+Write-Output 'PR326_PROTECTED_OPERATOR_STATIC_FENCE_PASS'
+
+
+# Native TaskScheduler XML omits optional Settings/Enabled (default=true).
+# Invoke ONLY the pure XML-transformation function extracted from operator AST.
+# No ScheduledTasks registration, process, network, file modifications.
+$pr326XmlFuncs=@($pr326Ast.FindAll({
+  param($node)
+  $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+  $node.Name -eq 'TaskXmlWithArguments'
+},$true))
+if($pr326XmlFuncs.Count -ne 1){throw 'PR326_TASK_XML_FUNCTION_NOT_UNIQUE'}
+. ([Scriptblock]::Create($pr326XmlFuncs[0].Extent.Text))
+function Need([bool]$Condition,[string]$Reason) {
+  if(-not $Condition){throw $Reason}
+}
+$nativeTaskXml=@'
+<Task xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task" version="1.4">
+ <RegistrationInfo><URI>\CryptoMiniPC-Test</URI></RegistrationInfo>
+ <Triggers><BootTrigger><Enabled>true</Enabled></BootTrigger></Triggers>
+ <Principals><Principal id="Author"><UserId>S-1-5-18</UserId></Principal></Principals>
+ <Settings>
+  <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+  <StartWhenAvailable>true</StartWhenAvailable>
+  <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+ </Settings>
+ <Actions Context="Author">
+  <Exec>
+   <Command>python.exe</Command>
+   <Arguments>"C:\Original\wait_launcher.py" --execute-recheck</Arguments>
+  </Exec>
+ </Actions>
+</Task>
+'@
+$originalNativeXml=$nativeTaskXml
+$replacementArguments='"C:\Isolated\wait_launcher.py" --execute-recheck --source-progress-file "C:\Isolated\progress.json"'
+function Check-TaskXmlCandidate([string]$Value,[string]$Label) {
+  [xml]$z=$Value
+  $ns2=New-Object Xml.XmlNamespaceManager($z.NameTable)
+  $ns2.AddNamespace('t',$z.DocumentElement.NamespaceURI)
+  $settings=$z.SelectSingleNode('/t:Task/t:Settings',$ns2)
+  $state=$settings.SelectSingleNode('t:Enabled',$ns2)
+  if(-not $state -or $state.InnerText -ne 'false'){throw "PR326_XML_NOT_DISABLED $Label"}
+  $exec=$z.SelectSingleNode('/t:Task/t:Actions/t:Exec',$ns2)
+  if($exec.SelectSingleNode('t:Arguments',$ns2).InnerText -cne $replacementArguments){
+    throw "PR326_XML_ARGUMENTS_WRONG $Label"
+  }
+  if($settings.SelectSingleNode('t:ExecutionTimeLimit',$ns2).InnerText -ne 'PT0S' -or
+     $settings.SelectSingleNode('t:MultipleInstancesPolicy',$ns2).InnerText -ne 'IgnoreNew' -or
+     $z.SelectSingleNode('/t:Task/t:Principals/t:Principal/t:UserId',$ns2).InnerText -ne 'S-1-5-18' -or
+     $z.SelectSingleNode('/t:Task/t:Triggers/t:BootTrigger/t:Enabled',$ns2).InnerText -ne 'true'){
+    throw "PR326_XML_ORIGINAL_POLICY_DRIFT $Label"
+  }
+  if(@($settings.SelectNodes('t:Enabled',$ns2)).Count -ne 1){throw "PR326_XML_DUPLICATE_ENABLED $Label"}
+}
+$nativeDisabled=TaskXmlWithArguments -Xml $nativeTaskXml -Arguments $replacementArguments
+Check-TaskXmlCandidate $nativeDisabled 'missing optional Enabled'
+if($nativeTaskXml -cne $originalNativeXml){throw 'PR326_ORIGINAL_XML_MUTATED_IN_MEMORY'}
+$withEnabled=$nativeTaskXml.Replace('<ExecutionTimeLimit>', '<Enabled>true</Enabled><ExecutionTimeLimit>')
+$existingDisabled=TaskXmlWithArguments -Xml $withEnabled -Arguments $replacementArguments
+Check-TaskXmlCandidate $existingDisabled 'already present Enabled'
+$withoutArguments=$nativeTaskXml.Replace('<Arguments>"C:\Original\wait_launcher.py" --execute-recheck</Arguments>','')
+$missingArgsFailed=$false
+try{$null=TaskXmlWithArguments -Xml $withoutArguments -Arguments $replacementArguments}
+catch{$missingArgsFailed=([string]$_.Exception.Message -match 'Original task XML missing Arguments')}
+if(-not $missingArgsFailed){throw 'PR326_MISSING_ARGUMENTS_DID_NOT_FAIL_CLOSED'}
+Write-Output 'PR326_NATIVE_OPTIONAL_ENABLED_XML_3_CASES_PASS'
+
+# PR326 originalhost 2026-10-16 00:07:25.066: Scheduler LastRunTime
+# rounds to whole seconds, while manual request is fractional. A queued
+# overlapping request (322) is not a failed completed original instance.
+$ackFn=@($pr326Ast.FindAll({
+  param($node)
+  $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+  $node.Name -eq 'Test-Pr326SupervisorReceipt'
+},$true))
+if($ackFn.Count -ne 1){throw 'PR326_ACK_RECEIPT_FUNCTION_NOT_UNIQUE'}
+. ([Scriptblock]::Create($ackFn[0].Extent.Text))
+$requested=[datetime]'2026-10-16T00:07:25.066Z'
+$prior=[pscustomobject]@{LastRunTime=[datetime]'2026-10-16T00:07:25Z';LastTaskResult=267009}
+$finished=[pscustomobject]@{LastRunTime=[datetime]'2026-10-16T00:07:25Z';LastTaskResult=0}
+$previousReport=[pscustomobject]@{checked_at_utc='2026-10-16T00:06:27Z'}
+function Pr326Receipt {
+  [pscustomobject]@{
+    checked_at_utc='2026-10-16T00:07:45.193Z'
+    status='HEALTHY'
+    error=$null
+    restarted=@()
+    failed_restarts=@()
+    guardrails=[pscustomobject]@{
+      wait_source_progress_opt_in=$true
+      wait_source_launcher_pin_present=$true
+      wait_source_progress_never_healthy=$true
+    }
+  }
+}
+function CheckAck([bool]$Expected,[object]$AfterInfo,[object]$AfterReport,[string]$Label) {
+  $got=Test-Pr326SupervisorReceipt -BeforeInfo $prior -AfterInfo $AfterInfo -BeforeReport $previousReport -AfterReport $AfterReport -RequestedStart $requested -WaitTaskName 'CryptoMiniPC-V2R4PaperWait'
+  if($got -ne $Expected){throw "PR326_ACK_REGRESSION_FAIL $Label actual=$got expected=$Expected"}
+}
+CheckAck $true $finished (Pr326Receipt) 'rounding & queued duplicate launch with completed opt-in report'
+$x=Pr326Receipt;$x.checked_at_utc='2026-10-16T00:07:24.999Z'
+CheckAck $false $finished $x 'report predates requested start'
+$x=Pr326Receipt;$x.guardrails.wait_source_progress_opt_in=$false
+CheckAck $false $finished $x 'old supervisor source did not opt in'
+$x=Pr326Receipt;$x.guardrails.wait_source_launcher_pin_present=$false
+CheckAck $false $finished $x 'missing fingerprint'
+$x=Pr326Receipt;$x.guardrails.wait_source_progress_never_healthy=$false
+CheckAck $false $finished $x 'source progress mislabeled as final healthy'
+$x=Pr326Receipt;$x.restarted=@('CryptoMiniPC-V2R4PaperWait')
+CheckAck $false $finished $x 'supervisor restarted WAIT'
+$x=Pr326Receipt;$x.failed_restarts=@('CryptoMiniPC-V2R4PaperWait')
+CheckAck $false $finished $x 'supervisor attempted WAIT recovery unsuccessfully'
+$x=Pr326Receipt;$x.error='FAIL_CLOSED'
+CheckAck $false $finished $x 'error report'
+$x=Pr326Receipt;$x.status='CRITICAL'
+CheckAck $false $finished $x 'critical supervisor report'
+$unfinished=[pscustomobject]@{LastRunTime=$finished.LastRunTime;LastTaskResult=267009}
+CheckAck $false $unfinished (Pr326Receipt) 'unfinished TaskScheduler result'
+$stale=[pscustomobject]@{LastRunTime=[datetime]'2026-10-16T00:07:22Z';LastTaskResult=0}
+CheckAck $false $stale (Pr326Receipt) 'prior TaskScheduler execution not fresh'
+$x=Pr326Receipt;$x.checked_at_utc='2026-10-16T00:06:27Z'
+CheckAck $false $finished $x 'no fresh report'
+Write-Output 'PR326_SUPERVISOR_SAME_SECOND_ACK_PURE_12_CASES_PASS'

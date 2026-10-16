@@ -16,6 +16,7 @@ import urllib.request
 import urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Callable
 import sys
 
 # Direct file execution uses paper_evaluator/ as sys.path[0], not the repo
@@ -62,7 +63,7 @@ def iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def http_json(url: str, timeout: int = 10) -> dict:
+def http_json(url: str, timeout: int = 10, *, on_source_progress: Callable[[], None] | None = None) -> dict:
     req = urllib.request.Request(
         url,
         headers={"User-Agent": UA, "Accept": "application/json"},
@@ -79,7 +80,7 @@ def http_json(url: str, timeout: int = 10) -> dict:
     return payload
 
 
-def ticker(altname: str) -> dict[str, float]:
+def ticker(altname: str, *, on_source_progress: Callable[[], None] | None = None) -> dict[str, float]:
     query = urllib.parse.urlencode({"pair": altname})
     payload = http_json("https://api.kraken.com/0/public/Ticker?" + query)
     if payload.get("error"):
@@ -89,15 +90,19 @@ def ticker(altname: str) -> dict[str, float]:
     ask = float(row["a"][0])
     last = float(row["c"][0])
     mid = (ask + bid) / 2.0
-    return {
+    result = {
         "bid_eur": bid,
         "ask_eur": ask,
         "last_eur": last,
         "spread_pct": 100.0 * (ask - bid) / mid if mid else 999.0,
     }
+    # Only parsed valid source data advance progress, never Kraken API errors.
+    if on_source_progress is not None:
+        on_source_progress()
+    return result
 
 
-def closed_ohlc(altname: str, interval: int) -> list[list]:
+def closed_ohlc(altname: str, interval: int, *, on_source_progress: Callable[[], None] | None = None) -> list[list]:
     # Kraken's final row is the still-running candle; closed rows cannot
     # normally change until the next UTC interval boundary. Reuse strictly
     # within that bucket, never across boundaries or after an API error.
@@ -143,7 +148,10 @@ def closed_ohlc(altname: str, interval: int) -> list[list]:
         )
         while len(_CLOSED_OHLC_CACHE) > _CLOSED_OHLC_CACHE_MAX:
             _CLOSED_OHLC_CACHE.popitem(last=False)
-    return [list(row) for row in closed]
+    result = [list(row) for row in closed]
+    if on_source_progress is not None:
+        on_source_progress()
+    return result
 
 
 def volume_ratio(rows: list[list], lookback: int) -> float | None:
@@ -157,15 +165,15 @@ def volume_ratio(rows: list[list], lookback: int) -> float | None:
     return current / baseline
 
 
-def market_metrics(altname: str) -> dict[str, float | None]:
+def market_metrics(altname: str, *, on_source_progress: Callable[[], None] | None = None) -> dict[str, float | None]:
     out: dict[str, float | None] = {}
-    out.update(ticker(altname))
+    out.update(ticker(altname, on_source_progress=on_source_progress))
     for interval, suffix, lookback in (
         (1, "1m", 5),
         (5, "5m", 5),
         (15, "15m", 4),
     ):
-        rows = closed_ohlc(altname, interval)
+        rows = closed_ohlc(altname, interval, on_source_progress=on_source_progress)
         out[f"closed_{suffix}_close_eur"] = float(rows[-1][4]) if rows else None
         out[f"closed_{suffix}_volume_ratio_{lookback}"] = volume_ratio(rows, lookback)
     return out

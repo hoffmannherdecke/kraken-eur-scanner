@@ -1,6 +1,9 @@
 param(
   [string]$TradingRoot = (Join-Path $env:USERPROFILE "Trading"),
   [switch]$ForceRecovery,
+  [switch]$WaitSourceProgressOptIn,
+  [string]$WaitSourceLauncherPath = '',
+  [string]$WaitSourceLauncherSha256 = '',
   [int]$MinRestartIntervalMinutes = 10,
   [int]$StopWaitSeconds = 15,
   [int]$PostRestartVerifySeconds = 20
@@ -97,6 +100,91 @@ function Test-WaitRateOnly([object]$Heartbeat,[object]$AgeSeconds,[double]$MaxAg
   if([int]$Heartbeat.counters.fresh_recheck_failures -ne 0){ return $false }
   if([int]$Heartbeat.counters.data_unavailable_checks -lt 1){ return $false }
   return $true
+}
+
+
+# Pure opt-in WAIT source-progress policy. A genuine source response is NOT
+# proof that the whole WAIT evaluation has completed. A newer final heartbeat
+# always outranks an old in-progress marker. Worker identity is caller-verified.
+function Test-WaitSourceProgress([object]$Progress,[object]$Heartbeat,[datetime]$ObservedUtc,
+                                [bool]$TaskRunning,[bool]$VerifiedWorker,
+                                [double]$MaxProgressAgeSeconds=90.0) {
+  if(-not $Progress -or -not $Heartbeat -or -not $TaskRunning -or -not $VerifiedWorker){
+    return $false
+  }
+  if([string]$Progress.kind -cne "V2R4_WAIT_SOURCE_PROGRESS_V1" -or
+     [string]$Progress.status -cne "IN_PROGRESS_NOT_HEALTHY" -or
+     $Progress.paper_only -ne $true -or $Progress.order_api -ne $false -or
+     [string]$Progress.successful_source_steps -notmatch '^[1-9][0-9]{0,7}$' -or
+     [string]$Progress.worker_pid -notmatch '^[1-9][0-9]{0,8}$' -or
+     [string]$Heartbeat.status -notin @("HEALTHY","DEGRADED")){
+    return $false
+  }
+  foreach($value in @($Progress.cycle_started_at_utc,
+                      $Progress.last_source_progress_at_utc,
+                      $Heartbeat.checked_at_utc)){
+    if([string]$value -notmatch 'Z$'){return $false}
+  }
+  try {
+    $start=([datetime]$Progress.cycle_started_at_utc).ToUniversalTime()
+    $last=([datetime]$Progress.last_source_progress_at_utc).ToUniversalTime()
+    $completed=([datetime]$Heartbeat.checked_at_utc).ToUniversalTime()
+  } catch { return $false }
+  $now=$ObservedUtc.ToUniversalTime()
+  $age=($now-$last).TotalSeconds
+  if($age -lt -5 -or $age -gt $MaxProgressAgeSeconds -or
+     $last -lt $start -or ($now-$start).TotalSeconds -gt 600 -or
+     ($now-$start).TotalSeconds -lt -5 -or
+     $last -le $completed -or $start -le $completed){
+    return $false
+  }
+  return $true
+}
+
+# The pinned immutable WAIT launcher comes from THIS supervisor release
+# invocation. Never infer a new trusted launcher from untrusted progress JSON,
+# nor assume the old PR291 immutable stage must be edited in place.
+# Missing pin => fail closed to the existing heartbeat/restart policy.
+function Test-WaitSourceWorkerOnHost([object]$Progress,[string]$TradingRoot,
+                                      [string]$PinnedLauncherPath,
+                                      [string]$PinnedLauncherSha256) {
+  if(-not $Progress -or
+     [string]$Progress.worker_pid -notmatch '^[1-9][0-9]{0,8}$' -or
+     $PinnedLauncherSha256 -notmatch '^[A-Fa-f0-9]{64}$' -or
+     [string]::IsNullOrWhiteSpace($PinnedLauncherPath)){return $false}
+  try {
+    if(-not [IO.Path]::IsPathRooted($PinnedLauncherPath)){return $false}
+    $launcher=[IO.Path]::GetFullPath($PinnedLauncherPath)
+    $stageRoot=[IO.Path]::GetFullPath((Join-Path $TradingRoot 'Staging')).Replace('\','/').TrimEnd('/')+'/'
+    $launcherNorm=$launcher.Replace('\','/')
+    $relative=$launcherNorm.Substring($stageRoot.Length)
+    if(-not $launcherNorm.StartsWith($stageRoot,[StringComparison]::OrdinalIgnoreCase) -or
+       $relative -notmatch '(?i)^v2r4-wait-[a-z0-9-]+/wait_launcher\.py$'){return $false}
+    $task=Get-ScheduledTask -TaskName 'CryptoMiniPC-V2R4PaperWait' -ErrorAction Stop
+    if(-not $task -or [string]$task.State -ne 'Running' -or
+       @($task.Actions).Count -ne 1){return $false}
+    $action=$task.Actions[0]
+    if([string]$action.Execute -notmatch '(?i)(?:^|[\\/])pythonw?\.exe$'){return $false}
+    $quoted=@([regex]::Matches([string]$action.Arguments,'"([^"]+)"'))
+    if($quoted.Count -lt 1 -or
+       $quoted[0].Groups[1].Value.Replace('\','/') -ine $launcherNorm){return $false}
+    if(-not (Test-Path -LiteralPath $launcher -PathType Leaf)){return $false}
+    if([string](Get-FileHash -LiteralPath $launcher -Algorithm SHA256 -ErrorAction Stop).Hash -ine
+       $PinnedLauncherSha256){return $false}
+    $id=[int]$Progress.worker_pid
+    $found=@(Get-CimInstance -ClassName Win32_Process -Filter "ProcessId = $id" -ErrorAction Stop)
+    if($found.Count -ne 1){return $false}
+    $process=$found[0]
+    $command=([string]$process.CommandLine).Replace('\','/')
+    $needle='(?i)(?:^|["''\s])'+[regex]::Escape($launcherNorm)+'(?=$|["''\s])'
+    $born=([datetime]$process.CreationDate).ToUniversalTime()
+    $started=([datetime]$Progress.cycle_started_at_utc).ToUniversalTime()
+    return (
+      [string]$process.Name -match '^pythonw?\.exe$' -and
+      $command -match $needle -and
+      $born -le $started -and $born -le (Get-Date).ToUniversalTime()
+    )
+  } catch { return $false }
 }
 
 # V3 scoped policy, inside existing Supervisor; absent marker = unchanged.
@@ -305,19 +393,27 @@ try {
 
     $schedulerRunning = ([string]$task.State -eq "Running")
     $rateOnlyWaiting = $false
+    $sourceProgressActive = $false
+    if($spec.name -eq "CryptoMiniPC-V2R4PaperWait" -and $WaitSourceProgressOptIn -and
+       (-not $fresh) -and $schedulerRunning){
+      $progress = Read-Heartbeat (Join-Path $stateDir "v2r4-paper-wait-source-progress.json")
+      $workerVerified = Test-WaitSourceWorkerOnHost -Progress $progress -TradingRoot $TradingRoot -PinnedLauncherPath $WaitSourceLauncherPath -PinnedLauncherSha256 $WaitSourceLauncherSha256
+      $sourceProgressActive = Test-WaitSourceProgress -Progress $progress -Heartbeat $hb -ObservedUtc $now -TaskRunning $schedulerRunning -VerifiedWorker $workerVerified
+    }
     if($spec.name -eq "CryptoMiniPC-V2R4PaperWait"){
       $rateOnlyWaiting = Test-WaitRateOnly -Heartbeat $hb -AgeSeconds $age -MaxAgeSeconds $spec.max_age -TaskRunning $schedulerRunning
     }
     # Keep the real health WARNING visible, but do NOT restart a live process
     # merely for a source-level rate-limit. Backoff is done by the source owner.
-    $needsRecovery = ((-not $fresh) -and (-not $rateOnlyWaiting)) -or (-not $schedulerRunning)
+    $needsRecovery = ((-not $fresh) -and (-not $rateOnlyWaiting) -and
+                      (-not $sourceProgressActive)) -or (-not $schedulerRunning)
 
     if (-not $attemptHistory.ContainsKey($spec.name)) {
       $attemptHistory[$spec.name] = @{ last_attempt_at_utc=$null; consecutive_failures=0 }
     }
     $attempt = $attemptHistory[$spec.name]
-    if (-not $needsRecovery) {
-      # Only actual health clears the exponential retry penalty.
+    if (-not $needsRecovery -and -not $sourceProgressActive) {
+      # Genuine in-progress source activity must not clear restart failures.
       $attempt.consecutive_failures = 0
     }
     $lastAttempt = $attempt.last_attempt_at_utc
@@ -328,7 +424,8 @@ try {
     $upstreamMissing = ((-not $krakenSourceHealthy) -and $schedulerRunning -and
       ($spec.name -in $krakenDependents))
 
-    $action = $(if($rateOnlyWaiting){"KRAKEN_RATE_LIMIT_WAIT"}else{"NONE"})
+    $action = $(if($sourceProgressActive){"WAIT_SOURCE_ACTIVE_NOT_HEALTHY"}
+      elseif($rateOnlyWaiting){"KRAKEN_RATE_LIMIT_WAIT"}else{"NONE"})
     if ($needsRecovery -and $upstreamMissing -and (-not $ForceRecovery)) {
       $action = "WAIT_FOR_UPSTREAM"
     } elseif ($needsRecovery -and $restartAllowed) {
@@ -364,6 +461,7 @@ try {
         last_task_result=[int64]$info.LastTaskResult
         heartbeat_status=$hbStatus
         heartbeat_age_sec=$age
+        source_progress_state=$(if($sourceProgressActive){"ACTIVE_NOT_HEALTHY"}else{$null})
       }
     }
   }
@@ -456,6 +554,9 @@ $report = [pscustomobject]@{
     restart_history_records_verified_recovery_only=$true
     restart_attempt_history_persisted=$true
     max_restart_cooldown_seconds=3600
+    wait_source_progress_opt_in=[bool]$WaitSourceProgressOptIn
+    wait_source_launcher_pin_present=([bool]$WaitSourceLauncherPath -and [bool]$WaitSourceLauncherSha256)
+    wait_source_progress_never_healthy=$true
     strategy_changes=$false
     evaluator_invoked=$false
     order_api=$false
