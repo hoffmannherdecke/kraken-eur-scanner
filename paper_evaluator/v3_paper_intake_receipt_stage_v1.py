@@ -352,16 +352,16 @@ def stage_and_witness_first_minute(*, preflight: dict[str, Any],
             if (not isinstance(original.get("altname"), str)
                     or not original["altname"].isalnum()):
                 raise ValueError("confirmed original Kraken altname required")
-            def first_present() -> bool:
+            def first_present(as_of_utc: str) -> bool:
                 checked = assemble(
                     snapshots=capture_directory, pair=original["pair"],
                     entry_at_utc=original["event_time_utc"],
-                    observed_at_utc=observed_at_utc,
+                    observed_at_utc=as_of_utc,
                     max_live_capture_lag_minutes=15)
                 return bool(checked["closed_bars"]) and timestamp(
                     checked["closed_bars"][0]["start_at_utc"]) == first
 
-            if first_present():
+            if first_present(observed_at_utc):
                 row["status"] = "FIRST_MINUTE_ALREADY_ARCHIVED_NO_DUPLICATE_GET"
                 row["prospective_first_bar_verified"] = True
             else:
@@ -378,13 +378,27 @@ def stage_and_witness_first_minute(*, preflight: dict[str, Any],
                 if (p.parent.resolve() != capture_directory.resolve()
                         or p.stem != result.get("sha256")):
                     raise ValueError("source capture not content-addressed under owner root")
-                # Existing assembler enforces original SHA, closed exchange
-                # clock, <=15m witness lag and no conflicting price copies.
-                witnessed = first_present()
-                row["prospective_first_bar_verified"] = witnessed
-                row["status"] = (
-                    "FIRST_CLOSED_MINUTE_WITNESSED_RESEARCH_ONLY"
-                    if witnessed else "FIRST_MINUTE_MISSING_NO_ECONOMIC_CLAIM")
+                # A real Kraken GET finishes AFTER the admission clock. The
+                # persisted response's own original captured_at clock (not
+                # the earlier caller/preflight time) governs provenance.
+                started = timestamp(result["observed_at_utc"])
+                captured = timestamp(result["captured_at_utc"])
+                if not at <= started <= captured:
+                    raise ValueError("source capture clock moved backwards or was forged")
+                if not p.is_file() or p.is_symlink():
+                    raise ValueError("original content-addressed snapshot missing")
+                row["source_captured_at_utc"] = captured.isoformat()
+                if captured > deadline:
+                    row["prospective_first_bar_verified"] = False
+                    row["status"] = "FIRST_WITNESS_EXPIRED_DURING_FETCH_NO_LIVE_PROOF"
+                else:
+                    # Existing assembler enforces original SHA, closed
+                    # exchange clock, <=15m witness lag and conflict guards.
+                    witnessed = first_present(captured.isoformat())
+                    row["prospective_first_bar_verified"] = witnessed
+                    row["status"] = (
+                        "FIRST_CLOSED_MINUTE_WITNESSED_RESEARCH_ONLY"
+                        if witnessed else "FIRST_MINUTE_MISSING_NO_ECONOMIC_CLAIM")
         outcomes.append(row)
     return {
         "kind": "V3_SAME_OWNER_FIRST_MINUTE_ENROLLMENT_V1",
