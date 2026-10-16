@@ -24,6 +24,7 @@ name: V2R4 PR validation
       - 'tools/minipc-pr332-cloudsync-protected-switch.ps1'
       - 'tests/test_pr332_cloudsync_originalhost_one_shot.ps1'
       - 'tools/minipc-v3-originalhost-norearm-stop-only.ps1'
+      - 'tools/minipc-v3-originalhost-norearm-restore-only.ps1'
       - 'tests/test_v3_originalhost_norearm_stop_only.ps1'
       - 'market_data/kraken_public_budget.py'
       - 'market_data/rest.py'
