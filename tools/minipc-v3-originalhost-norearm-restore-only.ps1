@@ -69,6 +69,12 @@ function ResolveOriginalIntakePids([object[]]$All,[object[]]$Actions,[string[]]$
   Need ($Actions.Count -eq 3 -and $Paths.Count -eq 2) 'Process role scope invalid'
   $roleRoots=@{}
   $allRoots=@()
+  $processById=@{}
+  foreach($proc in $All){
+    $id=[int]$proc.ProcessId
+    Need ($id -gt 0 -and -not $processById.ContainsKey($id)) 'Duplicate/invalid process snapshot PID'
+    $processById[$id]=$proc
+  }
   foreach($item in $Actions){
     $signature=([string]$item.arguments).Replace('\','/')
     Need ($signature.Length -ge 10) ('Missing Task argument identity: '+$item.name)
@@ -77,11 +83,31 @@ function ResolveOriginalIntakePids([object[]]$All,[object[]]$Actions,[string[]]$
       [string]$_.Name -match '(?i)^pythonw?\.exe$' -and
       $line.IndexOf($signature,[StringComparison]::OrdinalIgnoreCase) -ge 0
     })
-    Need ($matched.Count -le 1) ('Duplicate running task owners: '+$item.name)
-    if($RequireRoots -or $item.name -eq 'CryptoMiniPC-V2R4PaperLifecycle'){
-      Need ($matched.Count -eq 1) ('Missing exact running task owner: '+$item.name)
+    # Matching command lines can include Python children of the same native
+    # task. Only an independent ancestry root is a Task owner. Never accept
+    # two unrelated roots, nor silently fold an orphan into another owner.
+    $matchingIds=@($matched|ForEach-Object {[int]$_.ProcessId})
+    $owners=@()
+    foreach($candidate in $matched){
+      $ancestor=[int]$candidate.ParentProcessId
+      $visited=@{}
+      $hasMatchingAncestor=$false
+      while($ancestor -gt 0 -and $processById.ContainsKey($ancestor)){
+        Need (-not $visited.ContainsKey($ancestor)) 'Cyclic Windows process ancestry'
+        $visited[$ancestor]=$true
+        if($ancestor -in $matchingIds){
+          $hasMatchingAncestor=$true
+          break
+        }
+        $ancestor=[int]$processById[$ancestor].ParentProcessId
+      }
+      if(-not $hasMatchingAncestor){$owners+=@($candidate)}
     }
-    $roleRoots[$item.name]=@($matched|ForEach-Object {[int]$_.ProcessId})
+    Need ($owners.Count -le 1) ('Duplicate independent task owners: '+$item.name)
+    if($RequireRoots -or $item.name -eq 'CryptoMiniPC-V2R4PaperLifecycle'){
+      Need ($owners.Count -eq 1) ('Missing exact running task owner: '+$item.name)
+    }
+    $roleRoots[$item.name]=@($owners|ForEach-Object {[int]$_.ProcessId})
     $allRoots+=@($roleRoots[$item.name])
   }
   Need (@($allRoots|Sort-Object -Unique).Count -eq $allRoots.Count) 'Process claimed by multiple roles'

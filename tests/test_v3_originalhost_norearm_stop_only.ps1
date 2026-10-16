@@ -180,7 +180,7 @@ function RoleProcess([int]$Id,[int]$Parent,[string]$Line){
 }
 $processes=@(
  (RoleProcess 101 1 '"C:\Trading\shared.py" --role candidates'),
- (RoleProcess 102 101 '"C:\Trading\shared.py" --worker'),
+ (RoleProcess 102 101 '"C:\Trading\shared.py" --role candidates'),
  (RoleProcess 201 1 '"C:\Trading\wait.py" --role wait'),
  (RoleProcess 202 201 '"C:\Trading\wait.py" --child'),
  (RoleProcess 301 1 '"C:\Trading\shared.py" --role lifecycle'),
@@ -188,6 +188,21 @@ $processes=@(
 )
 $chosen=@(ResolveOriginalIntakePids $processes $actions $paths $true)
 if(($chosen -join ',') -cne '101,102,201,202'){throw 'Lifecycle incorrectly included in intake tree'}
+
+# Same full Task arguments in a descendant are a single owner, even with
+# an intermediary console host. Distinct disconnected roots still block.
+$withIntermediate=@(
+ (RoleProcess 101 1 '"C:\Trading\shared.py" --role candidates'),
+ ([pscustomobject]@{ProcessId=103;ParentProcessId=101;Name='conhost.exe';CommandLine='conhost.exe'}),
+ (RoleProcess 102 103 '"C:\Trading\shared.py" --role candidates'),
+ (RoleProcess 201 1 '"C:\Trading\wait.py" --role wait'),
+ (RoleProcess 301 1 '"C:\Trading\shared.py" --role lifecycle')
+)
+$descendants=@(ResolveOriginalIntakePids $withIntermediate $actions $paths $true)
+if(($descendants -join ',') -cne '101,102,103,201'){
+ throw 'Descendant with same arguments must not become a second task owner'
+}
+
 $without=@(ResolveOriginalIntakePids $processes $actions $paths $false)
 if(($without -join ',') -cne ($chosen -join ',')){throw 'Post-stop family differs from preflight'}
 $after=@($processes|Where-Object {$_.ProcessId -in @(301,302)})
