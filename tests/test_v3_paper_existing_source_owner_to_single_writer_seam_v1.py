@@ -386,4 +386,110 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
         self.assertTrue(result["review_preflights"][0]["eligible_for_full_model_review"])
         self.assertFalse(result["model_http_authorized"])
 
+
+    def test_first_minute_owner_handoff_is_durable_and_source_idempotent(self):
+        """New glue uses actual existing capture/assembler; no paid model or Cloud."""
+        import tempfile
+        from datetime import datetime, timezone
+        from pathlib import Path
+        from paper_evaluator.v3_paper_intake_receipt_stage_v1 import (
+            stage_and_witness_first_minute,
+        )
+        from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
+            capture_public_1m,
+        )
+        plan=preflight(scanners=[scanner("live-first","XBT/EUR",dt(9))])
+        called=[]
+        first=plan["prospective_first_1m_capture_enrollment"][0][
+            "first_expected_closed_1m_start_utc"]
+        minute=datetime.fromisoformat(first).timestamp()
+        at=dt(130)
+        def source(*,pair,altname,outdir):
+            called.append(pair)
+            def loader(_):
+                return {"error":[],"result":{altname:[
+                    [int(minute),"2.0","2.1","1.9","2.0","2.0","10",2],
+                ],"last":1}}
+            return capture_public_1m(
+                pair=pair,altname=altname,outdir=outdir,
+                loader=loader,
+                clock=lambda:datetime.fromisoformat(at))
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp); journal=root/"journal"; capture=root/"capture"
+            journal.mkdir();capture.mkdir()
+            out=stage_and_witness_first_minute(
+                preflight=plan,journal_directory=journal,
+                capture_directory=capture,observed_at_utc=at,capture=source)
+            self.assertEqual(out["source_capture_calls"],1)
+            self.assertEqual(called,["XBT/EUR"])
+            self.assertEqual(out["staged"]["written"],2)
+            self.assertEqual(out["enrollment"][0]["status"],
+                             "FIRST_CLOSED_MINUTE_WITNESSED_RESEARCH_ONLY")
+            self.assertFalse(out["paper_writer_active"])
+            self.assertFalse(out["source_owner_runtime_authenticated"])
+            self.assertEqual(out["model_http_calls"],0)
+            again=stage_and_witness_first_minute(
+                preflight=plan,journal_directory=journal,
+                capture_directory=capture,observed_at_utc=at,
+                capture=lambda **kw: self.fail("duplicate public Kraken GET"))
+            self.assertEqual(again["source_capture_calls"],0)
+            self.assertEqual(again["staged"]["identical_replays"],2)
+            self.assertEqual(again["enrollment"][0]["status"],
+                             "FIRST_MINUTE_ALREADY_ARCHIVED_NO_DUPLICATE_GET")
+            self.assertEqual(len(list(capture.glob("*.json"))),1)
+
+    def test_first_minute_wait_expired_and_source_auth_never_poll(self):
+        import tempfile
+        from pathlib import Path
+        from paper_evaluator.v3_paper_intake_receipt_stage_v1 import (
+            stage_and_witness_first_minute,
+        )
+        from tests.test_v3_paper_positive_source_entry_v1 import official
+        source_plan=preflight(owner_events=[event("news_sentiment",official())])
+        for plan,at,expected in (
+            (preflight(scanners=[scanner("early","XBT/EUR",dt(9))]),
+             dt(12),"WAIT_FOR_FIRST_CLOSED_MINUTE_NO_CAPTURE"),
+            (preflight(scanners=[scanner("expired","XBT/EUR",dt(9))]),
+             dt(1400),"FIRST_WITNESS_WINDOW_EXPIRED_NO_BACKFILL"),
+            (source_plan,dt(130),"SOURCE_OWNER_RUNTIME_AUTH_NOT_PROVEN_NO_CAPTURE"),
+        ):
+            with self.subTest(expected=expected),tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp); journal=root/"journal";capture=root/"capture"
+                journal.mkdir();capture.mkdir()
+                result=stage_and_witness_first_minute(
+                    preflight=plan,journal_directory=journal,
+                    capture_directory=capture,observed_at_utc=at,
+                    capture=lambda **kw: self.fail("unpermitted source call"))
+                self.assertEqual(result["source_capture_calls"],0)
+                self.assertEqual(result["enrollment"][0]["status"],expected)
+                self.assertFalse(result["model_http_authorized"])
+                self.assertFalse(result["cloud_ack_verified"])
+
+    def test_missing_or_tampered_enrollment_rejected_before_journal_write(self):
+        import tempfile
+        from pathlib import Path
+        from paper_evaluator.v3_paper_intake_receipt_stage_v1 import (
+            stage_and_witness_first_minute,
+        )
+        plan=preflight(scanners=[scanner("identity","XBT/EUR",dt(9))])
+        for mutate in ("no_callback","incomplete","wrong_clock"):
+            with self.subTest(mutate=mutate),tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp); j=root/"journal"; cap=root/"capture"
+                j.mkdir();cap.mkdir()
+                forged=copy.deepcopy(plan)
+                cb=lambda **kw:self.fail("unapproved source capture")
+                if mutate=="no_callback":
+                    cb=None
+                elif mutate=="incomplete":
+                    forged["prospective_first_1m_capture_enrollment"]=[]
+                else:
+                    forged["prospective_first_1m_capture_enrollment"][0][
+                        "latest_first_bar_live_witness_utc"]=dt(999)
+                with self.assertRaises(ValueError):
+                    stage_and_witness_first_minute(
+                        preflight=forged,journal_directory=j,
+                        capture_directory=cap,observed_at_utc=dt(130),
+                        capture=cb)
+                self.assertEqual(len(list(j.glob("*.json"))),0)
+
 if __name__=="__main__":unittest.main()
