@@ -760,5 +760,37 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
             self.assertFalse(result["cloud_ack_verified"])
             self.assertFalse(result["paper_writer_active"])
             self.assertTrue(any("lock" in x.name for x in j.iterdir()))
+            # Power/provider interruption after durable journal write but
+            # BEFORE Cloud acknowledgement: send only archived bytes under
+            # the very same single-owner OS fence, never poll Kraken.
+            sent=[]
+            def relay(url,token,payload):
+                sent.append(payload)
+                return {"ok":True,"series_id":SID,
+                        "accepted_receipts":len(payload["receipts"])}
+            token="CANARY_SYNTHETIC_SOURCE_ONLY_TOKEN_NOT_A_REAL_SECRET"
+            only=resume_canary_tick_once(
+                candidate=plan["selected_candidates"][0],series_id=SID,
+                journal=j,capture_dir=cap,model_reservations=budget,
+                ack_file=root/"ack.json",clock_now=lambda:dt(150),
+                capture=lambda **kw:self.fail("Cloud-only must not poll Kraken"),
+                fetch=lambda *_:self.fail("Cloud-only must not fetch frames"),
+                ticker=lambda *_:self.fail("Cloud-only must not fetch ticker"),
+                relay_token=token,cloud_post=relay,cloud_sync_only=True)
+            self.assertFalse(only["tick_called"])
+            self.assertEqual(only["source_capture_calls"],0)
+            self.assertTrue(only["cloud_post_accepted"])
+            self.assertFalse(only["full_physical_cloud_release_proof"])
+            self.assertEqual(len(sent),1)
+            again=resume_canary_tick_once(
+                candidate=plan["selected_candidates"][0],series_id=SID,
+                journal=j,capture_dir=cap,model_reservations=budget,
+                ack_file=root/"ack.json",clock_now=lambda:dt(150),
+                capture=lambda **kw:self.fail("no Kraken after ACK"),
+                relay_token=token,cloud_sync_only=True,
+                cloud_post=lambda *_:self.fail("no second logical Cloud POST"))
+            self.assertEqual(again["cloud_receipts_accepted"],0)
+            self.assertFalse(again["cloud_post_accepted"])
+            self.assertEqual(len(sent),1)
 
 if __name__=="__main__":unittest.main()

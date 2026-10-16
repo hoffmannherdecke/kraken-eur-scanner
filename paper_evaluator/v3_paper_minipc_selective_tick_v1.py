@@ -343,8 +343,15 @@ def resume_canary_tick_once(*,candidate:dict[str,Any],series_id:str,
                             clock_now:Callable[[],str]=utc_now,
                             capture:Callable=capture_public_1m,
                             fetch:Callable=fetch_public_entry_evidence,
-                            ticker:Callable=evaluate.kraken_ticker)->dict[str,Any]:
-    """Single process-locked restart of EXISTING CANARY tick, no model/Cloud.
+                            ticker:Callable=evaluate.kraken_ticker,
+                            relay_token:str|None=None,
+                            cloud_post:Callable|None=None,
+                            cloud_sync_only:bool=False)->dict[str,Any]:
+    """Single process-locked CANARY restart with optional injected Cloud ACK.
+
+    The caller MUST inject a Cloud transport explicitly. There is NO default
+    Supabase network request from this research-only helper; an uncertain
+    Cloud result is never treated as a physical release proof.
 
     Never evict a live or suspicious lock or restart the old Paper runtime.
     OS process lock releases on crash; persistent immutable receipts and
@@ -352,6 +359,16 @@ def resume_canary_tick_once(*,candidate:dict[str,Any],series_id:str,
     """
     import os
     from contextlib import contextmanager
+    from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import sync_once
+
+    if (cloud_post is None) != (relay_token is None):
+        raise ValueError("Cloud source-only callback/token must be explicitly paired")
+    if cloud_post is not None and (
+            not callable(cloud_post) or not isinstance(relay_token,str)
+            or len(relay_token)<24):
+        raise ValueError("explicit source-only Cloud transport/token required")
+    if cloud_sync_only and cloud_post is None:
+        raise ValueError("Cloud-only recovery requires explicit injected transport")
 
     @contextmanager
     def one_owner():
@@ -392,6 +409,28 @@ def resume_canary_tick_once(*,candidate:dict[str,Any],series_id:str,
         disposition=plan_canary_resume(
             candidate=candidate,series_id=series_id,journal=journal,
             model_reservations=model_reservations,ack_file=ack_file)
+        # Cloud-only replay is useful after source/P4/followup journal
+        # durability but before ACK. Never refetch Kraken or the model.
+        # If every horizon is final, the final original receipts may still
+        # be pending Cloud ACK. Ambiguous model/P4 states remain quarantined.
+        if cloud_sync_only:
+            if (not disposition["can_tick"] and disposition["status"]!=
+                    "ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE"):
+                return dict(disposition,tick_called=False,
+                            cloud_post_accepted=False,
+                            source_capture_calls=0)
+            cloud=sync_once(journal=journal,series_id=series_id,
+                            ack_file=ack_file,token=relay_token,
+                            post=cloud_post)
+            return dict(disposition,
+                        status="CANARY_CLOUD_ONLY_RECONCILED_NO_SOURCE_OR_MODEL",
+                        tick_called=False,source_capture_calls=0,
+                        cloud_status=cloud["status"],
+                        cloud_post_accepted=(cloud["status"]==
+                                             "V3_RECEIPTS_CLOUD_ACK_VERIFIED"),
+                        cloud_receipts_accepted=cloud["count"],
+                        cloud_ack_verified=False,
+                        full_physical_cloud_release_proof=False)
         if not disposition["can_tick"]:
             return dict(disposition,tick_called=False,
                         source_capture_calls=0)
@@ -399,9 +438,17 @@ def resume_canary_tick_once(*,candidate:dict[str,Any],series_id:str,
                        journal=journal,capture_dir=capture_dir,
                        clock_now=clock_now,capture=capture,
                        fetch=fetch,ticker=ticker)
+        cloud=(sync_once(journal=journal,series_id=series_id,
+                         ack_file=ack_file,token=relay_token,post=cloud_post)
+               if cloud_post is not None else None)
         return dict(disposition,status="SAFE_CANARY_FOLLOWUP_TICK_EXECUTED",
                     tick_called=True,tick=tick,
-                    cloud_ack_verified=False,model_http_calls=0)
+                    cloud_status=cloud["status"] if cloud else "NOT_REQUESTED",
+                    cloud_post_accepted=bool(cloud and cloud["status"]==
+                                           "V3_RECEIPTS_CLOUD_ACK_VERIFIED"),
+                    cloud_receipts_accepted=cloud["count"] if cloud else 0,
+                    cloud_ack_verified=False,full_physical_cloud_release_proof=False,
+                    model_http_calls=0)
 
 def main()->int:
     p=argparse.ArgumentParser()
