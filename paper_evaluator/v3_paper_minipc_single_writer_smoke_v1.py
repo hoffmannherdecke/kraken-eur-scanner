@@ -428,6 +428,28 @@ def run_approved_live_canary(*,trading_root:Path,repository:Path,
                     "cloud_receipts_accepted":0,
                     "series_id":_APPROVED_CANARY,
                     "orders":False,"v2r4_changed":False}
+        # A caller's 'success' flag never substitutes the actual immutable
+        # model, P4 and at-most-one HTTP reservation evidence.
+        originals=[_json(p,max_bytes=16000) for p in journal.glob("*.json")]
+        phases=lambda name:[r for r in originals if r.get("phase")==name
+                             and r.get("candidate_id")==candidate["candidate_id"]
+                             and r.get("series_id")==_APPROVED_CANARY]
+        reservations=list(budget.glob("*.reserved.json"))
+        if (len(reservations)!=1
+                or len(phases("MODEL_REQUEST"))!=1
+                or phases("MODEL_REQUEST")[0].get("result")!="PASS"
+                or len(phases("MODEL_RESPONSE"))!=1
+                or phases("MODEL_RESPONSE")[0].get("result")!="PASS"
+                or len(phases("P4_VALIDATION"))!=1):
+            return {"status":"MODEL_P4_OR_BUDGET_PROOF_MISSING_NO_CLOUD",
+                    "model_http_attempts":len(reservations),
+                    "cloud_receipts_accepted":0,
+                    "orders":False,"v2r4_changed":False}
+        reservation=_json(reservations[0],max_bytes=4096)
+        if (reservation.get("unique_approval_id")!=approval["unique_approval_id"]
+                or reservation.get("candidate_id")!=candidate["candidate_id"]
+                or reservation.get("no_automatic_retry") is not True):
+            raise ValueError("nonmatching model reserve, Cloud refused")
         cloud=sync_once(
             journal=journal,series_id=_APPROVED_CANARY,
             ack_file=isolated/"cloud-ack.json",token=token,post=cloud_post)
