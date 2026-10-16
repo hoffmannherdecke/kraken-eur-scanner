@@ -304,6 +304,14 @@ if($restore.Contains('[IO.File]::Replace($temp,$fence,$null,$true)') -or
    -not $restore.Contains("Need (-not (Test-Path -LiteralPath "+'$backup'+")")){
  throw 'Restore marker replacement must use a fresh concrete backup path'
 }
+if($src.Contains('[IO.File]::Replace($temp,$fence,$null,$true)') -or
+   -not $src.Contains('[IO.File]::Replace($temp,$fence,$backup,$true)') -or
+   -not $src.Contains("'.armed.bak'") -or
+   -not $src.Contains("Need (-not (Test-Path -LiteralPath "+'$backup'+")")){
+ throw 'Stop marker replacement must use fresh concrete backup path'
+}
+Write-Output 'V3_STOP_ATOMIC_MARKER_BACKUP_PATH_SOURCE_PASS'
+
 Write-Output 'V3_RESTORE_ATOMIC_MARKER_BACKUP_PATH_SOURCE_PASS'
 
 Write-Output 'V3_PHYSICAL_ORIGINALHOST_MANUAL_CLOUD_GATED_RESTORE_PURE_6_CASES_PASS'
