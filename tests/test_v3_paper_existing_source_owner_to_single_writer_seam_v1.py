@@ -492,4 +492,48 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
                         capture=cb)
                 self.assertEqual(len(list(j.glob("*.json"))),0)
 
+
+    def test_real_network_elapsed_time_uses_original_capture_clock_not_start_clock(self):
+        """No false negative for a real GET that returns seconds later."""
+        import tempfile
+        from datetime import datetime
+        from pathlib import Path
+        from paper_evaluator.v3_paper_intake_receipt_stage_v1 import (
+            stage_and_witness_first_minute,
+        )
+        from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
+            capture_public_1m,
+        )
+        plan=preflight(scanners=[scanner("elapsed","XBT/EUR",dt(9))])
+        first=plan["prospective_first_1m_capture_enrollment"][0][
+            "first_expected_closed_1m_start_utc"]
+        minute=int(datetime.fromisoformat(first).timestamp())
+        for started,ended,expected in (
+            (dt(130),dt(135),"FIRST_CLOSED_MINUTE_WITNESSED_RESEARCH_ONLY"),
+            (dt(1000),dt(1040),"FIRST_WITNESS_EXPIRED_DURING_FETCH_NO_LIVE_PROOF"),
+        ):
+            with self.subTest(started=started),tempfile.TemporaryDirectory() as tmp:
+                root=Path(tmp); j=root/"j"; cap=root/"cap"
+                j.mkdir();cap.mkdir()
+                ticks=iter((datetime.fromisoformat(started),
+                            datetime.fromisoformat(ended)))
+                def source(*,pair,altname,outdir):
+                    def loader(_):
+                        return {"error":[],"result":{altname:[
+                            [minute,"2.0","2.1","1.9","2.0","2.0","10",2],
+                        ],"last":1}}
+                    return capture_public_1m(
+                        pair=pair,altname=altname,outdir=outdir,
+                        loader=loader,clock=lambda:next(ticks))
+                r=stage_and_witness_first_minute(
+                    preflight=plan,journal_directory=j,
+                    capture_directory=cap,observed_at_utc=started,
+                    capture=source)
+                self.assertEqual(r["source_capture_calls"],1)
+                self.assertEqual(r["enrollment"][0]["status"],expected)
+                self.assertEqual(r["enrollment"][0]["prospective_first_bar_verified"],
+                                 started==dt(130))
+                self.assertFalse(r["paper_writer_active"])
+                self.assertFalse(r["cloud_ack_verified"])
+
 if __name__=="__main__":unittest.main()
