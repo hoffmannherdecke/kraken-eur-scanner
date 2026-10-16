@@ -73,7 +73,13 @@ function ResolveOriginalIntakePids([object[]]$All,[object[]]$Actions,[string[]]$
   $processById=@{}
   foreach($proc in $All){
     $id=[int]$proc.ProcessId
-    Need ($id -gt 0 -and -not $processById.ContainsKey($id)) 'Duplicate/invalid process snapshot PID'
+    # Native Windows Win32_Process includes reserved Idle PID 0.
+    # Permit it as snapshot metadata, never as a Python trading worker.
+    Need ($id -ge 0 -and -not $processById.ContainsKey($id)) 'Duplicate/invalid process snapshot PID'
+    if($id -eq 0){
+      Need ([string]::IsNullOrWhiteSpace([string]$proc.CommandLine) -and
+        [string]$proc.Name -notmatch '(?i)^pythonw?\.exe$') 'Invalid PID0 process identity'
+    }
     $processById[$id]=$proc
   }
   foreach($item in $Actions){
