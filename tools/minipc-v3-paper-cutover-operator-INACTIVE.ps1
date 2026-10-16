@@ -542,7 +542,7 @@ try {
    TrustedConsoleHost=$false
   }
  })
- $oldStage=Join-Path $TradingRoot 'Runtime\v2r4-paper-stage-d8b35a8ec2e6'
+ $oldStage=Join-Path $TradingRoot 'Staging\v2r4-wait-pr326-isolated-c660ebb87a39'
  foreach($p in $allProcesses){
   if([string]$p.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
   $cmd=[string]$p.CommandLine
