@@ -176,7 +176,7 @@
     "work_executor": "EXISTING_DAILY_1015_WORK_ONCE_PER_GATE",
     "milestone_watcher": "EXISTING_AUTONOMOUS_PROJECT_MILESTONE_CONTROLLER",
     "evidence_authority": "research/work-analysis-state.json#acknowledgements.project_implementation_commitments",
-    "max_safe_actions_per_run": 2,
+    "max_concurrent_active_work_packages": 2,
     "no_new_scheduler": true,
     "no_auto_release": true,
     "acknowledgement_never_proves_physical_cloud_truth": true,
