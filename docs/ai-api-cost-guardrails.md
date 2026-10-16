@@ -1,5 +1,13 @@
 # AI / API Cost Guardrails
 
+## Budget monitoring correction 2026-10-16 — no extra scheduled Work usage
+
+The separate daily ChatGPT task `Krypto API Budgethinweis`, briefly created to watch the two newly authorized 5-USD development-API envelopes, was **disabled before its first run** after the user identified unnecessary Work/ChatGPT usage. Do **not** re-enable it or add any new budget polling task, GitHub cron, model-API request, background agent or paid Admin-key cost watcher for this purpose.
+
+Use **transaction-local, event-driven accounting only**: whenever an already authorized engineering action actually prepares/commits an API model request, verify its unique invocation and bound, conservatively reserve/bill against one of `DEV_API_TRANCHE_1/2`, and immediately record provider charge (if proven) versus maximum reservation (if not) in existing Issue #353. The executing chat/Work owner must alert the user **once in that same actual execution** when the second distinct envelope is used/reserved; the mere docs/issue update is not a verified background push or delivery acknowledgment. If notification cannot be delivered, disclose `NOTIFICATION_DELIVERY_UNVERIFIED` and surface it through the already existing authorized Work/next-user-interaction mechanism rather than initiating a new poller. Third envelope remains prohibited without explicit new authorization.
+
+Checkpoint: `DEV_API_TRANCHE_1=AUTHORIZED_NOT_USED`, `DEV_API_TRANCHE_2=AUTHORIZED_NOT_USED`, **no spend/reservation under this new permission**, and no verified API prepaid balance. The 10:15 existing project Work routine remains the only scheduled central followthrough; do not add budget-specific routine work, unless a distinct already due material Work gate actually includes a spent-envelope event. Existing account-level native prepaid controls and model usage guards remain authoritative.
+
 ## Development-handoff delegation and one-time limited API budget (user decision 2026-10-16)
 
 **Canonical work item:** `PROJECT_BACKLOG.md#ENTWICKLUNGSLOOP_AUTOMATION_20261016` and [Issue #353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353). This is the user's express standing authorization to reduce frequent approval prompts for safely reversible engineering tasks, PR/CI/test/doc changes and read-only evidence-based process improvement. It does **not** waive separate live/runtime/host service, Paper-release, real-money, secret/rights, irreversible or other high-risk action gates. Explicit previous single-use V3-model approvals remain exactly single-use, and no production model is automatically switched on.
