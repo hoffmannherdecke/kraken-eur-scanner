@@ -353,7 +353,7 @@ def original_cloud_sync_fence_lane(root):
     """Classify a real, locally validated single-writer fence without Cloud writes.
 
     ARMED/QUIESCED means original V2R4 is STILL Cloud-active before CAS:
-    continue normal historical original-relay sync. CLOSED aftercare is legal
+    pause outbound relay without discarding original state. CLOSED aftercare is legal
     ONLY after explicit CLOUD_COMMITTED; its Edge endpoint independently
     verifies the real committed predecessor/successor before any writes.
     Invalid, truncated or conflicting marker MUST NOT silently fall back to
@@ -398,8 +398,8 @@ def original_cloud_sync_fence_lane(root):
 
 
 def run_once(args):
-    # A real, scoped ARMED/QUIESCED marker does NOT mean the CAS committed.
-    # Preserve original CloudSync until a separately verified Cloud commit.
+    # A real, scoped ARMED/QUIESCED marker does NOT mean CAS committed.
+    # Keep the original CloudSync task healthy but pause network transfers.
     # Unsafe markers refuse any relay activity (including the normal one).
     hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'
     try:
@@ -414,6 +414,21 @@ def run_once(args):
         return result
     if lane=='CLOSED_ORIGINAL_AFTERCARE':
         return run_closed_aftercare_once(args)
+    if lane=='PRECOMMIT_ORIGINAL':
+        # Preserve original state and all pending followups without an active
+        # or closed Cloud relay request while the physical intake is fenced.
+        # This is intentionally healthy PAUSED, not a completed sync ACK.
+        result={'schema_version':1,'kind':'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1',
+                'checked_at_utc':iso(),'status':'HEALTHY',
+                'mode':'V3_PRECOMMIT_NO_NETWORK_HOLD',
+                'v3_fence_cloud_sync_lane':lane,
+                'v3_fence_precommit_phase':fence_phase,
+                'cloud_sync_intentionally_paused':True,
+                'cloud_updated':False,'pending_originals_preserved':True,
+                'paper_only':True,'order_api':False,'real_money_actions':False,
+                'detail':'precommit scoped V3 intake fence; zero Cloud requests'}
+        atomic_json(hb,result)
+        return result
     hb=args.trading_root/'State/v2r4-paper-cloud-sync-heartbeat.json'
     state_path=(getattr(args,'paper_state_dir',None) or (args.trading_root/'State'))/'v2r4-paper-cloud-sync-state.json'
     token=load_token(args.trading_root)
