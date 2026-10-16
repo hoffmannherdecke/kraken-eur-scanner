@@ -291,8 +291,8 @@ function Get-V3SplitVintageNativeBackupCompositionGap([object]$Old,[object]$Curr
   $newAt=[datetimeoffset]::MinValue
   if($null -eq $Old -or
      [string]$CurrentWait.captured_at_utc -cnotmatch '(Z|\+00:00)$' -or
-     -not [datetimeoffset]::TryParse([string]$Old.captured_at_utc,[ref]$oldAt) -or
-     -not [datetimeoffset]::TryParse([string]$CurrentWait.captured_at_utc,[ref]$newAt) -or
+     -not([datetimeoffset]::TryParse([string]$Old.captured_at_utc,[ref]$oldAt)) -or
+     -not([datetimeoffset]::TryParse([string]$CurrentWait.captured_at_utc,[ref]$newAt)) -or
      $newAt -le $oldAt){
    $errors+=@('POST_PR326_WAIT_CAPTURE_NOT_AFTER_OLD')
   }
