@@ -261,6 +261,855 @@ function Get-V3NativeIntakeBackupReadbackGap([object]$Readback) {
 }
 
 
+# Compose two HISTORICALLY DIFFERENT native originals as a schema-only
+# recovery-source plan. The 15-Oct Candidates Task action is still current,
+# but WAIT was legitimately changed on 16-Oct by the PR326 protected launcher.
+# Never silently restore WAIT from the older two-Task backup. This function
+# does not read files or Windows Tasks and cannot authenticate the screenshots.
+function Get-V3SplitVintageNativeBackupCompositionGap([object]$Old,[object]$CurrentWait) {
+ $errors=@()
+ $oldShape=Get-V3NativeIntakeBackupReadbackGap -Readback $Old
+ if($oldShape.native_host_manifest_schema_only_pass -ne $true){
+  $errors+=@('OLD_NATIVE_MANIFEST_NOT_VALID')
+ }
+ if($null -eq $CurrentWait){
+  $errors+=@('CURRENT_WAIT_MANIFEST_MISSING')
+ }else{
+  if([string]$CurrentWait.kind -cne 'V3_WAIT_PR326_POSTCUTOVER_NATIVE_BACKUP_V1' -or
+     [string]$CurrentWait.task_name -cne 'CryptoMiniPC-V2R4PaperWait' -or
+     [string]$CurrentWait.backup_file -cne 'WAIT.task.xml' -or
+     [string]$CurrentWait.original_task_state -cne 'Running' -or
+     $CurrentWait.actual_restore_tested -ne $false -or
+     $CurrentWait.runtime_modified -ne $false){
+   $errors+=@('POST_PR326_WAIT_IDENTITY_OR_SAFETY_INVALID')
+  }
+  if([string]$CurrentWait.xml_sha256 -cnotmatch '^[a-f0-9]{64}
+# Accept values collected by an independently authorized read-only host probe.
+# Never registers, starts, disables, repairs or overwrites an actual Task.
+# Even a PASS is not a true TaskScheduler import/restore or physical provenance.
+function Test-V3NativeOriginalTaskRestorePreview([object]$Readback,[object[]]$Rows) {
+ $errors=@()
+ $shape=Get-V3NativeIntakeBackupReadbackGap -Readback $Readback
+ if($shape.native_host_manifest_schema_only_pass -ne $true){
+  $errors+=@('INVALID_ORIGINAL_MANIFEST')
+ }
+ $items=@($Rows)
+ if($items.Count -ne 2){
+  $errors+=@('NOT_EXACTLY_TWO_READONLY_ROWS')
+ }else{
+  $names=@($items | ForEach-Object {[string]$_.task_name})
+  if(-not(Test-V3ScopedIntakeTaskSet -Names $names)){
+   $errors+=@('INVALID_PREVIEW_TASK_SCOPE')
+  }
+ }
+ if($errors.Count -eq 0){
+  foreach($entry in @($Readback.tasks)){
+   $n=[string]$entry.task_name
+   $matches=@($items | Where-Object {[string]$_.task_name -ceq $n})
+   if($matches.Count -ne 1){
+    $errors+=@('MISSING_OR_DUPLICATE_ORIGINAL_TASK')
+    continue
+   }
+   $row=$matches[0]
+   $saved=[string]$row.backup_xml_text
+   $current=[string]$row.current_task_xml_text
+   if([string]$row.backup_file_sha256 -cne [string]$entry.xml_sha256){
+    $errors+=@('BACKUP_FILE_HASH_MISMATCH')
+   }
+   if($saved.Length -eq 0 -or $saved -cne $current){
+    $errors+=@('BACKUP_XML_NOT_EQUAL_ORIGINAL')
+    continue
+   }
+   if($row.current_task_running -ne $true -or
+      $row.native_task_enabled -ne $true){
+    $errors+=@('ORIGINAL_TASK_NOT_ENABLED_RUNNING')
+   }
+   try{
+    $xml=[System.Xml.XmlDocument]::new()
+    $xml.XmlResolver=$null
+    $xml.LoadXml($saved)
+    if($xml.DocumentElement.LocalName -cne 'Task'){
+     $errors+=@('WRONG_TASK_XML_ROOT')
+     continue
+    }
+    $user=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Principals"]/*[local-name()="Principal"]/*[local-name()="UserId"]')
+    if($null -eq $user -or
+       [string]$user.InnerText -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18')){
+     $errors+=@('NON_SYSTEM_ORIGINAL_TASK')
+    }
+    $triggers=@($xml.SelectNodes('/*[local-name()="Task"]/*[local-name()="Triggers"]/*'))
+    if($triggers.Count -ne 1 -or $triggers[0].LocalName -cne 'BootTrigger'){
+     $errors+=@('ORIGINAL_BOOT_TRIGGER_CHANGED')
+    }
+    $restart=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="RestartOnFailure"]')
+    $countNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="RestartOnFailure"]/*[local-name()="Count"]')
+    $interval=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="RestartOnFailure"]/*[local-name()="Interval"]')
+    $multiple=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="MultipleInstancesPolicy"]')
+    if($null -eq $restart -or $null -eq $countNode -or $null -eq $interval -or $null -eq $multiple -or
+       [string]$countNode.InnerText -cne '3' -or
+       [string]$interval.InnerText -cne 'PT1M' -or
+       [string]$multiple.InnerText -cne 'IgnoreNew'){
+     $errors+=@('ORIGINAL_RESTART_POLICY_CHANGED')
+    }
+    $actions=@($xml.SelectNodes('/*[local-name()="Task"]/*[local-name()="Actions"]/*'))
+    if($actions.Count -ne 1 -or $actions[0].LocalName -cne 'Exec'){
+     $errors+=@('ORIGINAL_ACTION_SCOPE_CHANGED')
+     continue
+    }
+    $cmdNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Actions"]/*[local-name()="Exec"]/*[local-name()="Command"]')
+    $argsNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Actions"]/*[local-name()="Exec"]/*[local-name()="Arguments"]')
+    $workingNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Actions"]/*[local-name()="Exec"]/*[local-name()="WorkingDirectory"]')
+    if($null -eq $cmdNode -or [string]::IsNullOrWhiteSpace([string]$cmdNode.InnerText)){
+     $errors+=@('ORIGINAL_ACTION_EXEC_MISSING')
+     continue
+    }
+    $argsValue=''
+    $workingValue=''
+    if($null -ne $argsNode){$argsValue=[string]$argsNode.InnerText}
+    if($null -ne $workingNode){$workingValue=[string]$workingNode.InnerText}
+    $expectedScript=if($n -ceq 'CryptoMiniPC-V2R4PaperCandidates'){'v2r4-paper-local-runtime.py'}else{'wait_launcher.py'}
+    if($argsValue -notmatch [regex]::Escape($expectedScript)){
+     $errors+=@('ORIGINAL_ACTION_NOT_BOUND_TO_EXPECTED_SCRIPT')
+    }
+    $actionText=@([string]$cmdNode.InnerText,$argsValue,$workingValue) -join ([string][char]10)
+    $sha=[Security.Cryptography.SHA256]::Create()
+    try{
+     $hash=([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($actionText)))).Replace('-','').ToLowerInvariant()
+    }finally{$sha.Dispose()}
+    # Exact original 15-Oct native-backup newline-delimited serialization.
+    # PR313 uses a different pipe-delimited hash: do not compare against it.
+    if($hash -cne [string]$entry.action_sha256){
+     $errors+=@('ORIGINAL_BACKUP_ACTION_HASH_MISMATCH')
+    }
+   }catch{
+    $errors+=@('UNPARSABLE_ORIGINAL_TASK_XML')
+   }
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_ORIGINAL_TASK_RESTORE_PREVIEW_OFFLINE_ONLY_V1'
+  preview_structure_only_pass=($errors.Count -eq 0)
+  preview_errors=@($errors | Select-Object -Unique)
+  full_host_source_and_task_identity_proven_here=$false
+  original_host_backup_acl_proven_here=$false
+  original_host_disk_bytes_proven_here=$false
+  protected_lifecycle_cloudsync_runtime_proven_here=$false
+  task_scheduler_import_or_restore_invoked=$false
+  task_process_marker_cloud_writes=0
+  actual_restore_test_passed=$false
+  native_no_rearm_stop_ack_passed=$false
+  v3_release_authorized=$false
+  technical_release_proofs_credited=0
+ }
+}
+
+
+# Pure physical-fence choreography preview: NEVER issues commands or authorizes
+# Task/PID/marker/CAS changes. Receipt values below are SYNTHETIC UNTRUSTED
+# inputs; actual Windows/CLOUD receipts and separate permits are mandatory.
+function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
+ $decision='BLOCK_MISSING_OR_INVALID_RECEIPT'
+ $errors=@()
+ if($null -eq $Receipt){
+  $errors+=@('MISSING_INPUT')
+ }else{
+  if([string]$Receipt.kind -cne 'V3_SINGLE_WRITER_FENCE_DRYRUN_SIMULATION_V1' -or
+     [string]$Receipt.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+     $Receipt.paper_only -ne $true -or $Receipt.real_money_actions -ne $false -or
+     -not(Test-V3ScopedIntakeTaskSet -Names @($Receipt.intake_task_names))){
+   $errors+=@('INVALID_PREDECESSOR_OR_TASK_SCOPE')
+  }
+  $preserved=@($Receipt.protected_task_names)
+  $required=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync') | Sort-Object
+  if($preserved.Count -ne 2 -or
+     (@($preserved | Sort-Object) -join '|') -cne ($required -join '|') -or
+     $Receipt.protected_tasks_running -ne $true){
+   $errors+=@('PROTECTED_FOLLOWUP_ROLES_NOT_RUNNING')
+  }
+  if($Receipt.source_pins_verified -ne $true -or
+     $Receipt.mode_lineage_fresh -ne $true -or
+     $Receipt.wait_all_descendants_verified -ne $true -or
+     $Receipt.original_cloud_only_readback -ne $true -or
+     $Receipt.v3_writer_running -ne $false){
+   $errors+=@('ORIGINAL_SOURCE_LINEAGE_OR_CLOUD_UNTRUSTED')
+  }
+  if($Receipt.backup_readback_verified -ne $true -or
+     -not(Test-V3ScopedOriginalBackupContract -Manifest $Receipt.backup_proposal)){
+   $errors+=@('BACKUP_CONTRACT_OR_ORIGINAL_READBACK_MISSING')
+  }
+  $taskRows=@($Receipt.intake_task_states)
+  if($taskRows.Count -ne 2 -or
+     -not(Test-V3ScopedIntakeTaskSet -Names @($taskRows | ForEach-Object {[string]$_.task_name}))){
+   $errors+=@('WRONG_NATIVE_INTAKE_TASK_ROWS')
+  }
+  $phase=[string]$Receipt.phase
+  $casOutcome=[string]$Receipt.cas_outcome
+  $casWasInvoked=($Receipt.cas_invoked -eq $true)
+  if($null -eq $Receipt.cas_invoked -or
+     $casOutcome -notin @('NOT_INVOKED','UNKNOWN','COMMITTED','NOT_COMMITTED')){
+   $errors+=@('AMBIGUOUS_CAS_OBSERVATION')
+  }
+  if($errors.Count -eq 0){
+   $states=@($taskRows | ForEach-Object {[string]$_.state})
+   $allRunning=(@($states | Where-Object {$_ -cne 'Running'}).Count -eq 0)
+   $allDisabled=(@($states | Where-Object {$_ -cne 'Disabled'}).Count -eq 0)
+   $marker=[string]$Receipt.fence_marker_phase
+   # Two independent no-rearm owners; a single combined boolean or phase name
+   # cannot prove that native Windows AND the existing Supervisor are fenced.
+   # Only original physical readbacks may establish these in a future permit.
+   $separateNoRearm=(
+    $Receipt.native_windows_disable_and_no_rearm_readback -eq $true -and
+    $Receipt.supervisor_intake_restart_suppressed_readback -eq $true -and
+    [string]$Receipt.supervisor_reported_fence_mode -ceq $marker
+   )
+   # An ARMED marker is deliberately not a substitute for native task disable.
+   $taskDisableAck=(
+    $Receipt.both_native_tasks_disabled_readback -eq $true -and
+    $allDisabled
+   )
+   if($casWasInvoked -or $casOutcome -ne 'NOT_INVOKED' -or $phase -in @('CAS_INVOKED','CLOUD_COMMITTED')){
+    # An attempted CAS crosses the irrevocable *automatic rearm* boundary.
+    if($phase -eq 'CLOUD_COMMITTED' -and $marker -eq 'CLOUD_COMMITTED' -and $casOutcome -eq 'COMMITTED' -and $allDisabled){
+     $decision='HOLD_POSTCOMMIT_OLD_INTAKE_FENCED_KEEP_AFTERCARE'
+    }else{
+     $decision='HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION'
+    }
+   }elseif($phase -eq 'DISCOVERY' -and $marker -eq 'ABSENT' -and $allRunning){
+    $decision='REVIEW_ARM_FENCE_SEPARATE_PHYSICAL_APPROVAL'
+   }elseif($phase -eq 'ARMED' -and $marker -eq 'ARMED' -and $allRunning){
+    $decision='REVIEW_DISABLE_ONLY_CANDIDATES_AND_WAIT'
+   }elseif($phase -eq 'TASKS_DISABLED' -and $marker -eq 'ARMED' -and $taskDisableAck -and
+      $separateNoRearm){
+    $decision='REVIEW_BOUNDED_OLD_INTAKE_STOP_AND_FRESH_PROCESS_READBACK'
+   }elseif($phase -eq 'STOP_RECORDED' -and $marker -eq 'ARMED' -and $taskDisableAck -and
+      $separateNoRearm -and
+      $Receipt.old_intake_process_count -is [int] -and [int]$Receipt.old_intake_process_count -eq 0){
+    $decision='REVIEW_QUIESCED_FENCE_WITH_ORIGINAL_AFTERCARE'
+   }elseif($phase -eq 'QUIESCED' -and $marker -eq 'QUIESCED' -and $taskDisableAck -and
+      $separateNoRearm -and
+      $Receipt.old_intake_process_count -is [int] -and [int]$Receipt.old_intake_process_count -eq 0){
+    if([int]$Receipt.authentic_technical_e2e_proofs -eq 6 -and
+       $Receipt.model_budget_separately_approved -eq $true){
+     $decision='REVIEW_SEPARATE_CLOUD_CAS_APPROVAL_NO_EXECUTION'
+    }else{
+     $decision='HOLD_SIX_E2E_AND_BUDGET_APPROVAL'
+    }
+   }else{
+    $decision='HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM'
+   }
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_FENCE_DRYRUN_DISPOSITION_OFFLINE_ONLY_V1'
+  simulated_next_review=$decision
+  input_errors=@($errors)
+  intended_scope_only=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+  protected_tasks_must_keep_running=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')
+  # Fixed, inert sequencing contract for a later separately authorized owner.
+  # Strings below are labels, not scripts or runtime execution privileges.
+  pre_cas_physical_order_preview=@(
+   'READBACK_ORIGINAL_BACKUP_TASK_XML_AND_CURRENT_SOURCE_PINS',
+   'PROPOSE_ATOMIC_ARMED_MARKER_AND_CONFIRM_SUPERVISOR_ACK',
+   'DISABLE_ONLY_ORIGINAL_CANDIDATES_AND_WAIT',
+   'READBACK_BOTH_WINDOWS_TASKS_DISABLED_AND_NO_REARM',
+   'STOP_ONLY_ORIGINAL_CANDIDATES_AND_WAIT_TASK_OWNERS',
+   'READBACK_ZERO_INTAKE_PROCESSES_AND_PROTECTED_AFTERCARE',
+   'RECORD_AND_READBACK_ATOMIC_QUIESCED_MARKER',
+   'HOLD_FOR_SEPARATELY_APPROVED_CLOUD_CAS'
+  )
+  rollback_boundary_if_any_cas_invoked='NO_AUTOMATIC_OLD_INTAKE_REARM_AND_MANUAL_CLOUD_RECONCILIATION'
+  native_and_supervisor_independent_no_rearm_required=$true
+  step_implementation_present=$false
+  proof_is_synthetic_not_live=$true
+  native_task_disable_or_stop_permitted=$false
+  process_kill_permitted=$false
+  marker_write_permitted=$false
+  automatic_old_intake_rearm_permitted=$false
+  cloud_cas_invoke_permitted=$false
+  model_spend_or_real_money_permitted=$false
+  physical_quiescence_verified_here=$false
+  full_e2e_release_proofs_credited=0
+ }
+}
+
+if($Execute){
+ throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
+}
+$repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
+$physical=Join-Path $repo 'tools\check-minipc-v3-physical-writer-readiness.ps1'
+$marker=Join-Path $TradingRoot 'State\v3-experimental-paper-old-intake-fence.json'
+$oldMaintenance=Join-Path $TradingRoot 'State\v2r4-technical-cutover-maintenance.json'
+if(-not(Test-Path -LiteralPath $physical -PathType Leaf)){
+ throw 'V3_READONLY_PREFLIGHT_SOURCE_MISSING: PR313 original-host source pin must be separately installed and verified.'
+}
+$report=& $physical -TradingRoot $TradingRoot | ConvertFrom-Json
+$present=Test-Path -LiteralPath $marker
+$oldPresent=Test-Path -LiteralPath $oldMaintenance
+$ready=Test-V3CutoverPreparationPolicy -Report $report -FenceMarkerPresent $present -MaintenanceMarkerPresent $oldPresent
+$waitTask=@($report.physical_v2r4_paper_task_readback |
+ Where-Object { $_.task_name -ceq 'CryptoMiniPC-V2R4PaperWait' })
+$waitActionObserved=($waitTask.Count -eq 1 -and
+ $waitTask[0].action_script_basename -ceq 'wait_launcher.py' -and
+ [string]$waitTask[0].action_sha256 -match '^[a-f0-9]{64}$')
+$allProcessEdges=@()
+$waitProcessRows=@()
+$waitSnapshotReadable=$false
+try {
+ $allProcesses=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+ $allProcessEdges=@($allProcesses | ForEach-Object {
+  [pscustomobject]@{
+   PID=[int]$_.ProcessId
+   ParentPID=[int]$_.ParentProcessId
+   Name=[string]$_.Name
+   TrustedConsoleHost=$false
+  }
+ })
+ $oldStage=Join-Path $TradingRoot 'Staging\v2r4-wait-pr326-isolated-c660ebb87a39'
+ foreach($p in $allProcesses){
+  if([string]$p.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
+  $cmd=[string]$p.CommandLine
+  if($cmd -notmatch '(?i)(?:wait_launcher|v2r4_wait_runtime)\.py'){continue}
+  $waitProcessRows+=@([pscustomobject]@{
+   PID=[int]$p.ProcessId
+   ParentPID=[int]$p.ParentProcessId
+   OriginalStage=$cmd.Contains($oldStage)
+  })
+ }
+ # Never trust the image name alone. One optional extra conhost.exe is
+ # attested from the SAME Win32 snapshot, then checked for PID-reuse drift.
+ # Raw command lines and signer certificate details are not emitted.
+ $waitIds=@($waitProcessRows | ForEach-Object {[int]$_.PID})
+ $waitKids=@($waitProcessRows | Where-Object {[int]$_.ParentPID -in $waitIds})
+ if($waitProcessRows.Count -eq 2 -and $waitKids.Count -eq 1){
+  $waitRoot=@($waitProcessRows | Where-Object {
+   [int]$_.PID -ne [int]$waitKids[0].PID
+  })
+  if($waitRoot.Count -eq 1){
+   $extras=@($allProcesses | Where-Object {
+    [int]$_.ParentProcessId -in $waitIds -and
+    [int]$_.ProcessId -ne [int]$waitKids[0].PID
+   })
+   if($extras.Count -eq 1){
+    $candidate=$extras[0]
+    $rootNative=@($allProcesses | Where-Object {
+     [int]$_.ProcessId -eq [int]$waitRoot[0].PID
+    })
+    $expectedConsole=Join-Path $env:WINDIR 'System32\conhost.exe'
+    if($rootNative.Count -eq 1 -and
+       [int]$candidate.ParentProcessId -eq [int]$waitRoot[0].PID -and
+       [string]$candidate.Name -ieq 'conhost.exe' -and
+       [string]$candidate.ExecutablePath -ieq $expectedConsole -and
+       $null -ne $candidate.CreationDate -and
+       $null -ne $rootNative[0].CreationDate -and
+       $candidate.CreationDate -ge $rootNative[0].CreationDate -and
+       @($allProcesses | Where-Object {
+        [int]$_.ParentProcessId -eq [int]$candidate.ProcessId
+       }).Count -eq 0){
+     $sig=Get-AuthenticodeSignature -LiteralPath $expectedConsole -ErrorAction Stop
+     $subject=[string]$sig.SignerCertificate.Subject
+     if($sig.Status -eq 'Valid' -and
+        $null -ne $sig.SignerCertificate -and
+        $subject -match '(?:^|,)\s*O=Microsoft Corporation(?:,|$)'){
+      $fresh=@(Get-CimInstance Win32_Process -Filter (
+       'ProcessId=' + [int]$candidate.ProcessId
+      ) -ErrorAction Stop)
+      if($fresh.Count -eq 1 -and
+         [int]$fresh[0].ParentProcessId -eq [int]$candidate.ParentProcessId -and
+         [string]$fresh[0].Name -ieq 'conhost.exe' -and
+         [string]$fresh[0].ExecutablePath -ieq $expectedConsole -and
+         $fresh[0].CreationDate -eq $candidate.CreationDate){
+       $trusted=@($allProcessEdges | Where-Object {
+        [int]$_.PID -eq [int]$candidate.ProcessId
+       })
+       if($trusted.Count -eq 1){$trusted[0].TrustedConsoleHost=$true}
+      }
+     }
+    }
+   }
+  }
+ }
+ $waitSnapshotReadable=$true
+}catch{
+ $waitProcessRows=@()
+ $allProcessEdges=@()
+}
+$protected=@($report.native_old_paper_mode_rows | ForEach-Object {[int]$_.pid})
+$completeWaitSnapshot=($waitSnapshotReadable -and
+ (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
+[ordered]@{
+ kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
+ phase='READ_ONLY'
+ checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
+ pre_cutover_discovery_pass=$ready
+ candidate_wait_only_future_quiesce_scope=@(
+  'CryptoMiniPC-V2R4PaperCandidates',
+  'CryptoMiniPC-V2R4PaperWait'
+ )
+ must_preserve_original_tasks=@(
+  'CryptoMiniPC-V2R4PaperLifecycle',
+  'CryptoMiniPC-V2R4PaperCloudSync'
+ )
+ original_role_lineage_snapshot_only=$true
+ v3_host_source_deployment_independently_required=$true
+ original_wait_tree_and_full_task_source_pins_separate_gate=$true
+ wait_full_process_inventory_readable=$waitSnapshotReadable
+ wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
+ wait_closed_descendants_snapshot_only_no_stop_authority=$true
+ wait_seen_python_family_count=@($waitProcessRows).Count
+ wait_unrecognized_descendant_failure_is_fail_closed=$true
+ wait_signed_system32_consolehost_exception_scoped=$true
+ wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true
+ windows_native_disable_stop_and_no_rearm_proven=$false
+ physically_quiescent_old_intake_processes_proven=$false
+ historical_followup_and_exit_cloud_ack_proven=$false
+ cloud_single_active_cas_proven=$false
+ backup_manifest_contract_policy_only=$true
+ cutover_recovery_decision_matrix_policy_only=$true
+ real_task_xml_backup_not_yet_executed=$true
+ exact_task_stop_disable_and_native_no_rearm_unimplemented=$true
+ rollback_precommit_only_unimplemented=$true
+ unknown_cloud_commit_forbids_old_writer_rearm=$true
+ v3_paper_technical_e2e_proofs_accepted=0
+ v3_live_release_authorized=$false
+ task_process_marker_cloud_writes=0
+ do_not_use_old_v2r4_technical_cutover_operator=$true
+} | ConvertTo-Json -Depth 7
+ -or
+     [string]$CurrentWait.launcher_sha256 -cne
+      'c5e43d62976bdf2079a3a0402e57658aba8a33d427b0cf0d56737565b84dd51d'){
+   $errors+=@('POST_PR326_WAIT_SHA_OR_LAUNCHER_PIN_INVALID')
+  }
+  $oldAt=[datetimeoffset]::MinValue
+  $newAt=[datetimeoffset]::MinValue
+  if($null -eq $Old -or
+     [string]$CurrentWait.captured_at_utc -cnotmatch '(Z|\+00:00)
+# Accept values collected by an independently authorized read-only host probe.
+# Never registers, starts, disables, repairs or overwrites an actual Task.
+# Even a PASS is not a true TaskScheduler import/restore or physical provenance.
+function Test-V3NativeOriginalTaskRestorePreview([object]$Readback,[object[]]$Rows) {
+ $errors=@()
+ $shape=Get-V3NativeIntakeBackupReadbackGap -Readback $Readback
+ if($shape.native_host_manifest_schema_only_pass -ne $true){
+  $errors+=@('INVALID_ORIGINAL_MANIFEST')
+ }
+ $items=@($Rows)
+ if($items.Count -ne 2){
+  $errors+=@('NOT_EXACTLY_TWO_READONLY_ROWS')
+ }else{
+  $names=@($items | ForEach-Object {[string]$_.task_name})
+  if(-not(Test-V3ScopedIntakeTaskSet -Names $names)){
+   $errors+=@('INVALID_PREVIEW_TASK_SCOPE')
+  }
+ }
+ if($errors.Count -eq 0){
+  foreach($entry in @($Readback.tasks)){
+   $n=[string]$entry.task_name
+   $matches=@($items | Where-Object {[string]$_.task_name -ceq $n})
+   if($matches.Count -ne 1){
+    $errors+=@('MISSING_OR_DUPLICATE_ORIGINAL_TASK')
+    continue
+   }
+   $row=$matches[0]
+   $saved=[string]$row.backup_xml_text
+   $current=[string]$row.current_task_xml_text
+   if([string]$row.backup_file_sha256 -cne [string]$entry.xml_sha256){
+    $errors+=@('BACKUP_FILE_HASH_MISMATCH')
+   }
+   if($saved.Length -eq 0 -or $saved -cne $current){
+    $errors+=@('BACKUP_XML_NOT_EQUAL_ORIGINAL')
+    continue
+   }
+   if($row.current_task_running -ne $true -or
+      $row.native_task_enabled -ne $true){
+    $errors+=@('ORIGINAL_TASK_NOT_ENABLED_RUNNING')
+   }
+   try{
+    $xml=[System.Xml.XmlDocument]::new()
+    $xml.XmlResolver=$null
+    $xml.LoadXml($saved)
+    if($xml.DocumentElement.LocalName -cne 'Task'){
+     $errors+=@('WRONG_TASK_XML_ROOT')
+     continue
+    }
+    $user=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Principals"]/*[local-name()="Principal"]/*[local-name()="UserId"]')
+    if($null -eq $user -or
+       [string]$user.InnerText -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18')){
+     $errors+=@('NON_SYSTEM_ORIGINAL_TASK')
+    }
+    $triggers=@($xml.SelectNodes('/*[local-name()="Task"]/*[local-name()="Triggers"]/*'))
+    if($triggers.Count -ne 1 -or $triggers[0].LocalName -cne 'BootTrigger'){
+     $errors+=@('ORIGINAL_BOOT_TRIGGER_CHANGED')
+    }
+    $restart=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="RestartOnFailure"]')
+    $countNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="RestartOnFailure"]/*[local-name()="Count"]')
+    $interval=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="RestartOnFailure"]/*[local-name()="Interval"]')
+    $multiple=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="MultipleInstancesPolicy"]')
+    if($null -eq $restart -or $null -eq $countNode -or $null -eq $interval -or $null -eq $multiple -or
+       [string]$countNode.InnerText -cne '3' -or
+       [string]$interval.InnerText -cne 'PT1M' -or
+       [string]$multiple.InnerText -cne 'IgnoreNew'){
+     $errors+=@('ORIGINAL_RESTART_POLICY_CHANGED')
+    }
+    $actions=@($xml.SelectNodes('/*[local-name()="Task"]/*[local-name()="Actions"]/*'))
+    if($actions.Count -ne 1 -or $actions[0].LocalName -cne 'Exec'){
+     $errors+=@('ORIGINAL_ACTION_SCOPE_CHANGED')
+     continue
+    }
+    $cmdNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Actions"]/*[local-name()="Exec"]/*[local-name()="Command"]')
+    $argsNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Actions"]/*[local-name()="Exec"]/*[local-name()="Arguments"]')
+    $workingNode=$xml.SelectSingleNode('/*[local-name()="Task"]/*[local-name()="Actions"]/*[local-name()="Exec"]/*[local-name()="WorkingDirectory"]')
+    if($null -eq $cmdNode -or [string]::IsNullOrWhiteSpace([string]$cmdNode.InnerText)){
+     $errors+=@('ORIGINAL_ACTION_EXEC_MISSING')
+     continue
+    }
+    $argsValue=''
+    $workingValue=''
+    if($null -ne $argsNode){$argsValue=[string]$argsNode.InnerText}
+    if($null -ne $workingNode){$workingValue=[string]$workingNode.InnerText}
+    $expectedScript=if($n -ceq 'CryptoMiniPC-V2R4PaperCandidates'){'v2r4-paper-local-runtime.py'}else{'wait_launcher.py'}
+    if($argsValue -notmatch [regex]::Escape($expectedScript)){
+     $errors+=@('ORIGINAL_ACTION_NOT_BOUND_TO_EXPECTED_SCRIPT')
+    }
+    $actionText=@([string]$cmdNode.InnerText,$argsValue,$workingValue) -join ([string][char]10)
+    $sha=[Security.Cryptography.SHA256]::Create()
+    try{
+     $hash=([BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($actionText)))).Replace('-','').ToLowerInvariant()
+    }finally{$sha.Dispose()}
+    # Exact original 15-Oct native-backup newline-delimited serialization.
+    # PR313 uses a different pipe-delimited hash: do not compare against it.
+    if($hash -cne [string]$entry.action_sha256){
+     $errors+=@('ORIGINAL_BACKUP_ACTION_HASH_MISMATCH')
+    }
+   }catch{
+    $errors+=@('UNPARSABLE_ORIGINAL_TASK_XML')
+   }
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_ORIGINAL_TASK_RESTORE_PREVIEW_OFFLINE_ONLY_V1'
+  preview_structure_only_pass=($errors.Count -eq 0)
+  preview_errors=@($errors | Select-Object -Unique)
+  full_host_source_and_task_identity_proven_here=$false
+  original_host_backup_acl_proven_here=$false
+  original_host_disk_bytes_proven_here=$false
+  protected_lifecycle_cloudsync_runtime_proven_here=$false
+  task_scheduler_import_or_restore_invoked=$false
+  task_process_marker_cloud_writes=0
+  actual_restore_test_passed=$false
+  native_no_rearm_stop_ack_passed=$false
+  v3_release_authorized=$false
+  technical_release_proofs_credited=0
+ }
+}
+
+
+# Pure physical-fence choreography preview: NEVER issues commands or authorizes
+# Task/PID/marker/CAS changes. Receipt values below are SYNTHETIC UNTRUSTED
+# inputs; actual Windows/CLOUD receipts and separate permits are mandatory.
+function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
+ $decision='BLOCK_MISSING_OR_INVALID_RECEIPT'
+ $errors=@()
+ if($null -eq $Receipt){
+  $errors+=@('MISSING_INPUT')
+ }else{
+  if([string]$Receipt.kind -cne 'V3_SINGLE_WRITER_FENCE_DRYRUN_SIMULATION_V1' -or
+     [string]$Receipt.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+     $Receipt.paper_only -ne $true -or $Receipt.real_money_actions -ne $false -or
+     -not(Test-V3ScopedIntakeTaskSet -Names @($Receipt.intake_task_names))){
+   $errors+=@('INVALID_PREDECESSOR_OR_TASK_SCOPE')
+  }
+  $preserved=@($Receipt.protected_task_names)
+  $required=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync') | Sort-Object
+  if($preserved.Count -ne 2 -or
+     (@($preserved | Sort-Object) -join '|') -cne ($required -join '|') -or
+     $Receipt.protected_tasks_running -ne $true){
+   $errors+=@('PROTECTED_FOLLOWUP_ROLES_NOT_RUNNING')
+  }
+  if($Receipt.source_pins_verified -ne $true -or
+     $Receipt.mode_lineage_fresh -ne $true -or
+     $Receipt.wait_all_descendants_verified -ne $true -or
+     $Receipt.original_cloud_only_readback -ne $true -or
+     $Receipt.v3_writer_running -ne $false){
+   $errors+=@('ORIGINAL_SOURCE_LINEAGE_OR_CLOUD_UNTRUSTED')
+  }
+  if($Receipt.backup_readback_verified -ne $true -or
+     -not(Test-V3ScopedOriginalBackupContract -Manifest $Receipt.backup_proposal)){
+   $errors+=@('BACKUP_CONTRACT_OR_ORIGINAL_READBACK_MISSING')
+  }
+  $taskRows=@($Receipt.intake_task_states)
+  if($taskRows.Count -ne 2 -or
+     -not(Test-V3ScopedIntakeTaskSet -Names @($taskRows | ForEach-Object {[string]$_.task_name}))){
+   $errors+=@('WRONG_NATIVE_INTAKE_TASK_ROWS')
+  }
+  $phase=[string]$Receipt.phase
+  $casOutcome=[string]$Receipt.cas_outcome
+  $casWasInvoked=($Receipt.cas_invoked -eq $true)
+  if($null -eq $Receipt.cas_invoked -or
+     $casOutcome -notin @('NOT_INVOKED','UNKNOWN','COMMITTED','NOT_COMMITTED')){
+   $errors+=@('AMBIGUOUS_CAS_OBSERVATION')
+  }
+  if($errors.Count -eq 0){
+   $states=@($taskRows | ForEach-Object {[string]$_.state})
+   $allRunning=(@($states | Where-Object {$_ -cne 'Running'}).Count -eq 0)
+   $allDisabled=(@($states | Where-Object {$_ -cne 'Disabled'}).Count -eq 0)
+   $marker=[string]$Receipt.fence_marker_phase
+   # Two independent no-rearm owners; a single combined boolean or phase name
+   # cannot prove that native Windows AND the existing Supervisor are fenced.
+   # Only original physical readbacks may establish these in a future permit.
+   $separateNoRearm=(
+    $Receipt.native_windows_disable_and_no_rearm_readback -eq $true -and
+    $Receipt.supervisor_intake_restart_suppressed_readback -eq $true -and
+    [string]$Receipt.supervisor_reported_fence_mode -ceq $marker
+   )
+   # An ARMED marker is deliberately not a substitute for native task disable.
+   $taskDisableAck=(
+    $Receipt.both_native_tasks_disabled_readback -eq $true -and
+    $allDisabled
+   )
+   if($casWasInvoked -or $casOutcome -ne 'NOT_INVOKED' -or $phase -in @('CAS_INVOKED','CLOUD_COMMITTED')){
+    # An attempted CAS crosses the irrevocable *automatic rearm* boundary.
+    if($phase -eq 'CLOUD_COMMITTED' -and $marker -eq 'CLOUD_COMMITTED' -and $casOutcome -eq 'COMMITTED' -and $allDisabled){
+     $decision='HOLD_POSTCOMMIT_OLD_INTAKE_FENCED_KEEP_AFTERCARE'
+    }else{
+     $decision='HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION'
+    }
+   }elseif($phase -eq 'DISCOVERY' -and $marker -eq 'ABSENT' -and $allRunning){
+    $decision='REVIEW_ARM_FENCE_SEPARATE_PHYSICAL_APPROVAL'
+   }elseif($phase -eq 'ARMED' -and $marker -eq 'ARMED' -and $allRunning){
+    $decision='REVIEW_DISABLE_ONLY_CANDIDATES_AND_WAIT'
+   }elseif($phase -eq 'TASKS_DISABLED' -and $marker -eq 'ARMED' -and $taskDisableAck -and
+      $separateNoRearm){
+    $decision='REVIEW_BOUNDED_OLD_INTAKE_STOP_AND_FRESH_PROCESS_READBACK'
+   }elseif($phase -eq 'STOP_RECORDED' -and $marker -eq 'ARMED' -and $taskDisableAck -and
+      $separateNoRearm -and
+      $Receipt.old_intake_process_count -is [int] -and [int]$Receipt.old_intake_process_count -eq 0){
+    $decision='REVIEW_QUIESCED_FENCE_WITH_ORIGINAL_AFTERCARE'
+   }elseif($phase -eq 'QUIESCED' -and $marker -eq 'QUIESCED' -and $taskDisableAck -and
+      $separateNoRearm -and
+      $Receipt.old_intake_process_count -is [int] -and [int]$Receipt.old_intake_process_count -eq 0){
+    if([int]$Receipt.authentic_technical_e2e_proofs -eq 6 -and
+       $Receipt.model_budget_separately_approved -eq $true){
+     $decision='REVIEW_SEPARATE_CLOUD_CAS_APPROVAL_NO_EXECUTION'
+    }else{
+     $decision='HOLD_SIX_E2E_AND_BUDGET_APPROVAL'
+    }
+   }else{
+    $decision='HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM'
+   }
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_FENCE_DRYRUN_DISPOSITION_OFFLINE_ONLY_V1'
+  simulated_next_review=$decision
+  input_errors=@($errors)
+  intended_scope_only=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+  protected_tasks_must_keep_running=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')
+  # Fixed, inert sequencing contract for a later separately authorized owner.
+  # Strings below are labels, not scripts or runtime execution privileges.
+  pre_cas_physical_order_preview=@(
+   'READBACK_ORIGINAL_BACKUP_TASK_XML_AND_CURRENT_SOURCE_PINS',
+   'PROPOSE_ATOMIC_ARMED_MARKER_AND_CONFIRM_SUPERVISOR_ACK',
+   'DISABLE_ONLY_ORIGINAL_CANDIDATES_AND_WAIT',
+   'READBACK_BOTH_WINDOWS_TASKS_DISABLED_AND_NO_REARM',
+   'STOP_ONLY_ORIGINAL_CANDIDATES_AND_WAIT_TASK_OWNERS',
+   'READBACK_ZERO_INTAKE_PROCESSES_AND_PROTECTED_AFTERCARE',
+   'RECORD_AND_READBACK_ATOMIC_QUIESCED_MARKER',
+   'HOLD_FOR_SEPARATELY_APPROVED_CLOUD_CAS'
+  )
+  rollback_boundary_if_any_cas_invoked='NO_AUTOMATIC_OLD_INTAKE_REARM_AND_MANUAL_CLOUD_RECONCILIATION'
+  native_and_supervisor_independent_no_rearm_required=$true
+  step_implementation_present=$false
+  proof_is_synthetic_not_live=$true
+  native_task_disable_or_stop_permitted=$false
+  process_kill_permitted=$false
+  marker_write_permitted=$false
+  automatic_old_intake_rearm_permitted=$false
+  cloud_cas_invoke_permitted=$false
+  model_spend_or_real_money_permitted=$false
+  physical_quiescence_verified_here=$false
+  full_e2e_release_proofs_credited=0
+ }
+}
+
+if($Execute){
+ throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
+}
+$repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
+$physical=Join-Path $repo 'tools\check-minipc-v3-physical-writer-readiness.ps1'
+$marker=Join-Path $TradingRoot 'State\v3-experimental-paper-old-intake-fence.json'
+$oldMaintenance=Join-Path $TradingRoot 'State\v2r4-technical-cutover-maintenance.json'
+if(-not(Test-Path -LiteralPath $physical -PathType Leaf)){
+ throw 'V3_READONLY_PREFLIGHT_SOURCE_MISSING: PR313 original-host source pin must be separately installed and verified.'
+}
+$report=& $physical -TradingRoot $TradingRoot | ConvertFrom-Json
+$present=Test-Path -LiteralPath $marker
+$oldPresent=Test-Path -LiteralPath $oldMaintenance
+$ready=Test-V3CutoverPreparationPolicy -Report $report -FenceMarkerPresent $present -MaintenanceMarkerPresent $oldPresent
+$waitTask=@($report.physical_v2r4_paper_task_readback |
+ Where-Object { $_.task_name -ceq 'CryptoMiniPC-V2R4PaperWait' })
+$waitActionObserved=($waitTask.Count -eq 1 -and
+ $waitTask[0].action_script_basename -ceq 'wait_launcher.py' -and
+ [string]$waitTask[0].action_sha256 -match '^[a-f0-9]{64}$')
+$allProcessEdges=@()
+$waitProcessRows=@()
+$waitSnapshotReadable=$false
+try {
+ $allProcesses=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+ $allProcessEdges=@($allProcesses | ForEach-Object {
+  [pscustomobject]@{
+   PID=[int]$_.ProcessId
+   ParentPID=[int]$_.ParentProcessId
+   Name=[string]$_.Name
+   TrustedConsoleHost=$false
+  }
+ })
+ $oldStage=Join-Path $TradingRoot 'Staging\v2r4-wait-pr326-isolated-c660ebb87a39'
+ foreach($p in $allProcesses){
+  if([string]$p.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
+  $cmd=[string]$p.CommandLine
+  if($cmd -notmatch '(?i)(?:wait_launcher|v2r4_wait_runtime)\.py'){continue}
+  $waitProcessRows+=@([pscustomobject]@{
+   PID=[int]$p.ProcessId
+   ParentPID=[int]$p.ParentProcessId
+   OriginalStage=$cmd.Contains($oldStage)
+  })
+ }
+ # Never trust the image name alone. One optional extra conhost.exe is
+ # attested from the SAME Win32 snapshot, then checked for PID-reuse drift.
+ # Raw command lines and signer certificate details are not emitted.
+ $waitIds=@($waitProcessRows | ForEach-Object {[int]$_.PID})
+ $waitKids=@($waitProcessRows | Where-Object {[int]$_.ParentPID -in $waitIds})
+ if($waitProcessRows.Count -eq 2 -and $waitKids.Count -eq 1){
+  $waitRoot=@($waitProcessRows | Where-Object {
+   [int]$_.PID -ne [int]$waitKids[0].PID
+  })
+  if($waitRoot.Count -eq 1){
+   $extras=@($allProcesses | Where-Object {
+    [int]$_.ParentProcessId -in $waitIds -and
+    [int]$_.ProcessId -ne [int]$waitKids[0].PID
+   })
+   if($extras.Count -eq 1){
+    $candidate=$extras[0]
+    $rootNative=@($allProcesses | Where-Object {
+     [int]$_.ProcessId -eq [int]$waitRoot[0].PID
+    })
+    $expectedConsole=Join-Path $env:WINDIR 'System32\conhost.exe'
+    if($rootNative.Count -eq 1 -and
+       [int]$candidate.ParentProcessId -eq [int]$waitRoot[0].PID -and
+       [string]$candidate.Name -ieq 'conhost.exe' -and
+       [string]$candidate.ExecutablePath -ieq $expectedConsole -and
+       $null -ne $candidate.CreationDate -and
+       $null -ne $rootNative[0].CreationDate -and
+       $candidate.CreationDate -ge $rootNative[0].CreationDate -and
+       @($allProcesses | Where-Object {
+        [int]$_.ParentProcessId -eq [int]$candidate.ProcessId
+       }).Count -eq 0){
+     $sig=Get-AuthenticodeSignature -LiteralPath $expectedConsole -ErrorAction Stop
+     $subject=[string]$sig.SignerCertificate.Subject
+     if($sig.Status -eq 'Valid' -and
+        $null -ne $sig.SignerCertificate -and
+        $subject -match '(?:^|,)\s*O=Microsoft Corporation(?:,|$)'){
+      $fresh=@(Get-CimInstance Win32_Process -Filter (
+       'ProcessId=' + [int]$candidate.ProcessId
+      ) -ErrorAction Stop)
+      if($fresh.Count -eq 1 -and
+         [int]$fresh[0].ParentProcessId -eq [int]$candidate.ParentProcessId -and
+         [string]$fresh[0].Name -ieq 'conhost.exe' -and
+         [string]$fresh[0].ExecutablePath -ieq $expectedConsole -and
+         $fresh[0].CreationDate -eq $candidate.CreationDate){
+       $trusted=@($allProcessEdges | Where-Object {
+        [int]$_.PID -eq [int]$candidate.ProcessId
+       })
+       if($trusted.Count -eq 1){$trusted[0].TrustedConsoleHost=$true}
+      }
+     }
+    }
+   }
+  }
+ }
+ $waitSnapshotReadable=$true
+}catch{
+ $waitProcessRows=@()
+ $allProcessEdges=@()
+}
+$protected=@($report.native_old_paper_mode_rows | ForEach-Object {[int]$_.pid})
+$completeWaitSnapshot=($waitSnapshotReadable -and
+ (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
+[ordered]@{
+ kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
+ phase='READ_ONLY'
+ checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
+ pre_cutover_discovery_pass=$ready
+ candidate_wait_only_future_quiesce_scope=@(
+  'CryptoMiniPC-V2R4PaperCandidates',
+  'CryptoMiniPC-V2R4PaperWait'
+ )
+ must_preserve_original_tasks=@(
+  'CryptoMiniPC-V2R4PaperLifecycle',
+  'CryptoMiniPC-V2R4PaperCloudSync'
+ )
+ original_role_lineage_snapshot_only=$true
+ v3_host_source_deployment_independently_required=$true
+ original_wait_tree_and_full_task_source_pins_separate_gate=$true
+ wait_full_process_inventory_readable=$waitSnapshotReadable
+ wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
+ wait_closed_descendants_snapshot_only_no_stop_authority=$true
+ wait_seen_python_family_count=@($waitProcessRows).Count
+ wait_unrecognized_descendant_failure_is_fail_closed=$true
+ wait_signed_system32_consolehost_exception_scoped=$true
+ wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true
+ windows_native_disable_stop_and_no_rearm_proven=$false
+ physically_quiescent_old_intake_processes_proven=$false
+ historical_followup_and_exit_cloud_ack_proven=$false
+ cloud_single_active_cas_proven=$false
+ backup_manifest_contract_policy_only=$true
+ cutover_recovery_decision_matrix_policy_only=$true
+ real_task_xml_backup_not_yet_executed=$true
+ exact_task_stop_disable_and_native_no_rearm_unimplemented=$true
+ rollback_precommit_only_unimplemented=$true
+ unknown_cloud_commit_forbids_old_writer_rearm=$true
+ v3_paper_technical_e2e_proofs_accepted=0
+ v3_live_release_authorized=$false
+ task_process_marker_cloud_writes=0
+ do_not_use_old_v2r4_technical_cutover_operator=$true
+} | ConvertTo-Json -Depth 7
+ -or
+     -not [datetimeoffset]::TryParse([string]$Old.captured_at_utc,[ref]$oldAt) -or
+     -not [datetimeoffset]::TryParse([string]$CurrentWait.captured_at_utc,[ref]$newAt) -or
+     $newAt -le $oldAt){
+   $errors+=@('POST_PR326_WAIT_CAPTURE_NOT_AFTER_OLD')
+  }
+ }
+ if($oldShape.native_host_manifest_schema_only_pass -eq $true -and $null -ne $CurrentWait){
+  $oldWait=@($Old.tasks | Where-Object {
+   [string]$_.task_name -ceq 'CryptoMiniPC-V2R4PaperWait'
+  })
+  if($oldWait.Count -ne 1 -or
+     [string]$oldWait[0].xml_sha256 -ceq [string]$CurrentWait.xml_sha256){
+   $errors+=@('POST_PR326_WAIT_NOT_DISTINCT_FROM_OBSOLETE_BACKUP')
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_SPLIT_VINTAGE_ORIGINAL_TASK_BACKUP_SCHEMA_ONLY_V1'
+  backup_composition_schema_only_pass=($errors.Count -eq 0)
+  schema_errors=@($errors | Select-Object -Unique)
+  candidates_backup_vintage='15_OCT_ORIGINAL'
+  wait_backup_vintage='16_OCT_POST_PR326'
+  old_wait_xml_must_never_be_restored_from_historical_pair=$true
+  exact_original_host_current_task_xml_sha_acl_and_launcher_need_independent_readback=$true
+  cloud_predecessor_and_supervisor_fence_still_separate_gates=$true
+  physical_task_scheduler_restore_executed=$false
+  old_intake_tasks_disabled_or_stopped=$false
+  task_process_marker_cloud_writes=0
+  live_backup_proven_here=$false
+  rollback_ready_or_authorized=$false
+  physical_no_rearm_tested=$false
+  v3_release_authorized=$false
+  authentic_release_proofs_credited=0
+ }
+}
+
+
 # Pure in-memory restoration PREVIEW of exact two original scheduled Tasks.
 # Accept values collected by an independently authorized read-only host probe.
 # Never registers, starts, disables, repairs or overwrites an actual Task.
