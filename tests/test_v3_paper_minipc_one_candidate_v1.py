@@ -79,17 +79,26 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
             journal.mkdir();budget.mkdir()
             candidate=dict(fixture()[0],entry_origin="SCANNER")
             stage_scanner_original(journal,candidate)
+            # Let genuine public evidence and eligibility succeed at the
+            # original clock, then simulate a slow prompt construction
+            # finishing after the 10-minute original is no longer fresh.
+            from unittest.mock import patch
+            from paper_evaluator import v3_paper_minipc_one_candidate_v1 as module
             current=[dt(12)]
-            def slower_public(_):
+            original_prompt=module.build_v3_paper_full_model_prompt
+            def slow_prompt(**kwargs):
+                prompt=original_prompt(**kwargs)
                 current[0]=dt(900)
-                return fake_acquire(candidate)
-            result=one_candidate(
-                candidate=candidate,series_id=SID,
-                local_receipts=journal,model_reservations=budget,
-                approval=valid_approval(),model_key="sk-CI-NO-REAL-KEY-123456789012",
-                clock=lambda:current[0],acquire=slower_public,
-                model_client=lambda *_:self.fail("no model after original expires"),
-                allow_model=True,admit_staged_scanner_one_approved_model=True)
+                return prompt
+            with patch.object(module,"build_v3_paper_full_model_prompt",
+                              side_effect=slow_prompt):
+                result=one_candidate(
+                    candidate=candidate,series_id=SID,
+                    local_receipts=journal,model_reservations=budget,
+                    approval=valid_approval(),model_key="sk-CI-NO-REAL-KEY-123456789012",
+                    clock=lambda:current[0],acquire=fake_acquire,
+                    model_client=lambda *_:self.fail("no model after original expires"),
+                    allow_model=True,admit_staged_scanner_one_approved_model=True)
             self.assertEqual(result["status"],
                 "ORIGINAL_EXPIRED_BEFORE_MODEL_HTTP_NO_SPEND")
             self.assertFalse(list(budget.glob("*.reserved.json")))
