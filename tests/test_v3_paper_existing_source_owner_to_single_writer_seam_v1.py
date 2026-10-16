@@ -617,6 +617,59 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
             self.assertEqual(len(list(budget.glob("*.reserved.json"))),1)
             self.assertFalse(one["paper_writer_active"])
 
+    def test_missing_first_minute_stages_source_but_never_fakes_selective_tick(self):
+        """A returned old Kraken bar is not a witnessed original entry bar."""
+        import tempfile
+        from datetime import datetime
+        from pathlib import Path
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            first_enrolled_canary_tick_once,
+        )
+        from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
+            capture_public_1m,
+        )
+        candidate=scanner("missing-first-minute","XBT/EUR",dt(9))
+        plan=preflight(scanners=[candidate])
+        api=[]
+        def source(*,pair,altname,outdir):
+            api.append(pair)
+            # BASE is the previous fully closed bar, preceding original
+            # candidate at BASE+9s. It must not count as entry minute
+            # which begins at BASE+60s.
+            def loader(_):
+                return {"error":[],"result":{altname:[
+                    [int(datetime.fromisoformat(dt(0)).timestamp()),
+                     "2.0","2.1","1.9","2.0","2.0","10",2]
+                ],"last":1}}
+            return capture_public_1m(
+                pair=pair,altname=altname,outdir=outdir,
+                loader=loader,
+                clock=lambda:datetime.fromisoformat(dt(130)))
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);journal=root/"j";captures=root/"cap"
+            journal.mkdir();captures.mkdir()
+            result=first_enrolled_canary_tick_once(
+                preflight=plan,candidate=plan["selected_candidates"][0],
+                series_id=SID,journal=journal,capture_dir=captures,
+                clock_now=lambda:dt(130),capture=source,
+                fetch=lambda *_:self.fail("must not fetch 5m data"),
+                ticker=lambda *_:self.fail("must not fetch a quote"))
+            self.assertEqual(api,["XBT/EUR"])
+            self.assertEqual(result["source_capture_calls"],1)
+            self.assertEqual(result["source_enrollment"]["status"],
+                "FIRST_MINUTE_MISSING_NO_ECONOMIC_CLAIM")
+            self.assertFalse(result["source_enrollment"][
+                "prospective_first_bar_verified"])
+            self.assertFalse(result["tick_called"])
+            self.assertEqual(result["status"],
+                "SOURCE_FIRST_MINUTE_NOT_READY_NO_OBSERVATION")
+            self.assertFalse(result["paper_writer_active"])
+            self.assertFalse(result["cloud_ack_verified"])
+            self.assertEqual(len(list(journal.glob("*.json"))),2)
+            self.assertEqual(len(list(captures.glob("*.json"))),1)
+            self.assertFalse(any("FOLLOWUP" in p.read_text("utf-8")
+                for p in journal.glob("*.json")))
+
     def test_first_source_owner_tick_never_activates_actual_paper_or_stale(self):
         import tempfile
         from pathlib import Path

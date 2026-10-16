@@ -182,9 +182,13 @@ def first_enrolled_canary_tick_once(*, preflight:dict[str,Any],
     if len(stage["enrollment"])!=1:
         raise ValueError("one source enrollment receipt required")
     witness=stage["enrollment"][0]
+    # Only a genuinely witnessed ORIGINAL first closed minute may drive the
+    # source-reuse observation. If Kraken returned other (earlier) closed
+    # bars, the collector correctly records a missing first minute; treating
+    # that missing response as an invented successful capture in tick_once
+    # would conceal the source gap and permit unearned 6/24h conclusions.
     good=("FIRST_CLOSED_MINUTE_WITNESSED_RESEARCH_ONLY",
-          "FIRST_MINUTE_ALREADY_ARCHIVED_NO_DUPLICATE_GET",
-          "FIRST_MINUTE_MISSING_NO_ECONOMIC_CLAIM")
+          "FIRST_MINUTE_ALREADY_ARCHIVED_NO_DUPLICATE_GET")
     out={"kind":"V3_EXISTING_CANARY_SINGLE_OWNER_FIRST_TICK_V1",
          "series_id":series_id,"candidate_id":candidate["candidate_id"],
          "source_enrollment":witness,
