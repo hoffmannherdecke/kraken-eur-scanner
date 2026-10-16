@@ -152,5 +152,51 @@ class SafeAutonomyTests(unittest.TestCase):
             r=selector.select(Path(p),QUEUE,state,{})
         self.assertEqual(r["status"],"BLOCKED")
 
+
+    def test_two_concurrent_packages_refill_only_after_documented_ack(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            (root/"docs").mkdir()
+            (root/"docs/minipc-analytics-rollout-v1.md").write_text(
+                "PLAN_APPROVED_PREP_ONLY",encoding="utf-8")
+            (root/"PROJECT_BACKLOG.md").write_text(
+                "MINIPC_ANALYTICS_ROLLOUT_V1",encoding="utf-8")
+            state=copy.deepcopy(STATE)
+            state["next_control_decisions"].append({"id":"NEW_CONTROL_GATE"})
+            initial=selector.select(root,QUEUE,state,{})
+            self.assertEqual(len(initial["ready"]),2)
+            self.assertEqual(initial["active_work_package_count"],0)
+            self.assertIn("UNKNOWN_CONTROL_DECISION_ADAPTER",
+                [x["id"] for x in initial["waiting_due"]])
+            first,second=[x["id"] for x in initial["ready"]]
+            attempts={
+                first:{"gate_fingerprint":initial["fingerprint"],"status":"IN_PROGRESS"},
+                second:{"gate_fingerprint":initial["fingerprint"],"status":"ACTIVE_PR"}}
+            full=selector.select(root,QUEUE,state,{"autonomy_task_attempts":attempts})
+            self.assertFalse(full["ready"])
+            self.assertEqual(full["active_work_package_count"],2)
+            self.assertEqual(full["active_implementation_pr_count"],1)
+            self.assertIn("UNKNOWN_CONTROL_DECISION_ADAPTER",
+                [x["id"] for x in full["waiting_due"]])
+            attempts[first]["status"]="COMPLETED"
+            refilled=selector.select(root,QUEUE,state,{"autonomy_task_attempts":attempts})
+            self.assertEqual(refilled["active_work_package_count"],1)
+            self.assertEqual([x["id"] for x in refilled["ready"]],
+                             ["UNKNOWN_CONTROL_DECISION_ADAPTER"])
+            self.assertTrue(refilled["refill_after_evidenced_ack_same_run"])
+            self.assertTrue(refilled["external_github_pr_count_must_be_verified_by_work"])
+
+    def test_overcommitted_ledger_and_legacy_run_cap_fail_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            attempts={"ACTIVE_"+str(i):{"status":"IN_PROGRESS"} for i in range(3)}
+            r=selector.select(root,QUEUE,STATE,{"autonomy_task_attempts":attempts})
+            self.assertEqual(r["status"],"BLOCKED")
+            self.assertIn("overcommitted active work / implementation PR",r["errors"])
+            unsafe=copy.deepcopy(QUEUE)
+            unsafe.pop("max_concurrent_active_work_packages")
+            unsafe["max_safe_actions_per_open_work_run"]=2
+            self.assertEqual(selector.select(root,unsafe,STATE,{})["status"],"BLOCKED")
+
 if __name__=="__main__":
     unittest.main()
