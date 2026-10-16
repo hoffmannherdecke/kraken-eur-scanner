@@ -46,7 +46,7 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
     # Existing Work owns the start/finish receipts; this selector never
     # creates tasks or PRs. A started package occupies a slot until an
     # evidenced completion or exact foreign/approval gate releases it.
-    attempts=((ack or {}).get("autonomy_task_attempts") or {})
+    attempts=(ack or {}).get("autonomy_task_attempts",{})
     if not isinstance(attempts,dict):
         errs.append("invalid work attempt ledger")
         attempts={}
@@ -224,7 +224,7 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
                 for x in available if not selected_obligation or
                 x["id"]!=selected_obligation["id"]],
             "refill_after_evidenced_ack_same_run":True,
-            "time_cost_budget_enforced_by_existing_work":True,
+            "work_must_enforce_existing_time_cost_budget":True,
             "external_github_pr_count_must_be_verified_by_work":True,
             "suppressed_prior_attempts":blocked_attempts,"safe_work_requested":bool(ready),
             "strategy_changed":False,"orders":False,"real_money_actions":False}
