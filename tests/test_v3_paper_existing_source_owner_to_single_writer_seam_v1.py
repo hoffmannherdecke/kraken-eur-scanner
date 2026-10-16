@@ -536,4 +536,110 @@ class ExistingSourceOwnerBridgeTests(unittest.TestCase):
                 self.assertFalse(r["paper_writer_active"])
                 self.assertFalse(r["cloud_ack_verified"])
 
+
+    def test_canary_single_owner_first_source_to_model_p4_tick_cloud(self):
+        """Existing real components linked without a second Kraken GET or paid model."""
+        import tempfile,json
+        from pathlib import Path
+        from datetime import datetime
+        from paper_evaluator.v3_paper_intake_receipt_stage_v1 import stage_receipts_explicitly
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            first_enrolled_canary_tick_once,
+        )
+        from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import capture_public_1m
+        from paper_evaluator.v3_paper_minipc_one_candidate_v1 import one_candidate
+        from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import sync_once
+        from tests.test_v3_paper_minipc_one_candidate_v1 import (
+            valid_approval,fake_acquire,fake_model,
+        )
+        candidate=scanner("V3-INITIAL-EUR-1","XBT/EUR",dt(9))
+        plan=preflight(scanners=[candidate],observations=xbt_real_pit_fixture())
+        moment=dt(130)
+        first=plan["prospective_first_1m_capture_enrollment"][0][
+            "first_expected_closed_1m_start_utc"]
+        calls=[]
+        def source(*,pair,altname,outdir):
+            calls.append(pair)
+            def loader(_):
+                return {"error":[],"result":{altname:[
+                    [int(datetime.fromisoformat(first).timestamp()),
+                     "2.0","2.1","1.9","2.0","2.0","10",2]
+                ],"last":1}}
+            return capture_public_1m(pair=pair,altname=altname,
+                outdir=outdir,loader=loader,
+                clock=lambda:datetime.fromisoformat(moment))
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);j=root/"journal";cap=root/"cap";budget=root/"budgets"
+            for d in (j,cap,budget):d.mkdir()
+            self.assertEqual(stage_receipts_explicitly(
+                preflight=plan,journal_directory=j)["written"],2)
+            m=one_candidate(candidate=plan["selected_candidates"][0],
+                series_id=SID,local_receipts=j,model_reservations=budget,
+                approval=dict(valid_approval(),series_id=SID),
+                model_key="NON_REAL_TEST_KEY_SUPPLIED_TO_STUB",
+                acquire=fake_acquire,model_client=fake_model,
+                clock=lambda:dt(12),allow_model=True,
+                admit_staged_scanner_one_approved_model=True)
+            self.assertEqual(m["p4_decision"],"BUY_SCOUT")
+            one=first_enrolled_canary_tick_once(
+                preflight=plan,candidate=plan["selected_candidates"][0],
+                series_id=SID,journal=j,capture_dir=cap,
+                clock_now=lambda:moment,capture=source,
+                fetch=lambda *_: self.fail("BUY is not WAIT source"),
+                ticker=lambda *_:self.fail("no new ticker for BUY"))
+            self.assertEqual(one["source_capture_calls"],1)
+            self.assertEqual(one["observation"]["source_closed_1m_count"],1)
+            self.assertEqual(calls,["XBT/EUR"])
+            self.assertTrue(one["tick_called"])
+            self.assertEqual(one["model_http_calls"],0)
+            ack=root/"ack.json"
+            pushed=[]
+            def post(url,token,payload):
+                pushed.append(payload)
+                return {"ok":True,"series_id":SID,
+                        "accepted_receipts":len(payload["receipts"])}
+            a=sync_once(journal=j,series_id=SID,ack_file=ack,
+                token="SYNTHETIC_TEST_ONLY_V3_RELAY_TOKEN_NO_NETWORK",post=post)
+            self.assertEqual(a["status"],"V3_RECEIPTS_CLOUD_ACK_VERIFIED")
+            another=first_enrolled_canary_tick_once(
+                preflight=plan,candidate=plan["selected_candidates"][0],
+                series_id=SID,journal=j,capture_dir=cap,
+                clock_now=lambda:moment,
+                capture=lambda **kw:self.fail("duplicate Kraken GET"),
+                fetch=lambda *_:self.fail("no 2nd refresh"),
+                ticker=lambda *_:self.fail("no 2nd ticker"))
+            self.assertEqual(another["source_capture_calls"],0)
+            self.assertTrue(another["tick_called"])
+            self.assertEqual(sync_once(journal=j,series_id=SID,ack_file=ack,
+                token="SYNTHETIC_TEST_ONLY_V3_RELAY_TOKEN_NO_NETWORK",
+                post=lambda *_:self.fail("duplicate Cloud POST"))["count"],0)
+            self.assertEqual(len(pushed),1)
+            self.assertEqual(len(list(budget.glob("*.reserved.json"))),1)
+            self.assertFalse(one["paper_writer_active"])
+
+    def test_first_source_owner_tick_never_activates_actual_paper_or_stale(self):
+        import tempfile
+        from pathlib import Path
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            first_enrolled_canary_tick_once,
+        )
+        plan=preflight(scanners=[scanner("ineligible","XBT/EUR",dt(9))])
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);j=root/"j";cap=root/"cap";j.mkdir();cap.mkdir()
+            def fail(*args,**kwargs):
+                self.fail("unapproved Kraken request")
+            with self.assertRaises(ValueError):
+                first_enrolled_canary_tick_once(
+                    preflight=plan,candidate=plan["selected_candidates"][0],
+                    series_id="PAPER-V3-LIVE-UNRELEASED",journal=j,capture_dir=cap,
+                    clock_now=lambda:dt(130),capture=fail)
+            self.assertEqual(len(list(j.glob("*.json"))),0)
+            waiting=first_enrolled_canary_tick_once(
+                preflight=plan,candidate=plan["selected_candidates"][0],
+                series_id=SID,journal=j,capture_dir=cap,
+                clock_now=lambda:dt(12),capture=fail)
+            self.assertEqual(waiting["source_capture_calls"],0)
+            self.assertFalse(waiting["tick_called"])
+            self.assertFalse(waiting["paper_writer_active"])
+
 if __name__=="__main__":unittest.main()
