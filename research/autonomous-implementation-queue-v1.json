@@ -4,7 +4,7 @@
   "date": "2026-10-08",
   "status_authority": "project-current-state.json",
   "evidence_authority": "Supabase/mini-PC (read-only at actual review)",
-  "work_run_rule": "EXISTING_DAILY_WORK_ONLY_CHEAP_PRECHECK_THEN_MAX_TWO_EVIDENCED_SAFE_TASKS",
+  "work_run_rule": "EXISTING_DAILY_WORK_ONLY_CHEAP_PRECHECK_MAX_TWO_ACTIVE_EVIDENCED_REFILL",
   "source_of_truth": "PROJECT_BACKLOG.md",
   "no_orphan_requirement": true,
   "allowed_effects": [
@@ -24,7 +24,7 @@
     "DATA_DESTRUCTION",
     "NEW_SCHEDULER"
   ],
-  "max_safe_actions_per_open_work_run": 2,
+  "max_concurrent_active_work_packages": 2,
   "max_concurrent_implementation_branches": 1,
   "tasks": [
     {
