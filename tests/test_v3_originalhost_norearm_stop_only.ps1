@@ -332,7 +332,11 @@ try{
 }
 if(-not $reject){throw 'Unknown non-PowerShell script wrapper must stay blocked'}
 foreach($fileSource in @($src,$restore)){
- if(-not $fileSource.Contains("[string]"+'$p.Name'+ " -notmatch '(?i)^(?:powershell|pwsh)\.exe
+ if($fileSource -notmatch 'powershell\|pwsh'){
+  throw 'Originalhost stop and restore must both scope administrative path references'
+ }
+}
+Write-Output 'V3_ADMIN_SHELL_PATH_REFERENCE_REGRESSION_PASS'
 
 if($restore.Contains('[IO.File]::Replace($temp,$fence,$null,$true)') -or
    -not $restore.Contains('[IO.File]::Replace($temp,$fence,$backup,$true)') -or
