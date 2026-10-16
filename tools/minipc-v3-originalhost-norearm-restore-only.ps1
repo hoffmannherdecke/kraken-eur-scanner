@@ -47,7 +47,9 @@ function AtomicMarkerChange([object]$Current){
      [Text.UTF8Encoding]::new($false))
   $acl=Get-Acl -LiteralPath $fence
   Set-Acl -LiteralPath $temp -AclObject $acl
-  [IO.File]::Replace($temp,$fence,$null,$true)
+  $backup=$fence+'.'+$Current.drill_token+'.quiesced.bak'
+  Need (-not (Test-Path -LiteralPath $backup)) 'Original restore marker backup already exists'
+  [IO.File]::Replace($temp,$fence,$backup,$true)
 }
 function ScriptFromTask([object]$Task){
   Need (@($Task.Actions).Count -eq 1 -and [string]$Task.TaskPath -eq '\') 'Not exactly one native root Task action'
