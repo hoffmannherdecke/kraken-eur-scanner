@@ -144,6 +144,78 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
         results["horizons"][f"{hrs}h"]=a["status"]
     return results
 
+
+
+def first_enrolled_canary_tick_once(*, preflight:dict[str,Any],
+                                    candidate:dict[str,Any], series_id:str,
+                                    journal:Path, capture_dir:Path,
+                                    clock_now:Callable[[],str],
+                                    capture:Callable,
+                                    fetch:Callable=fetch_public_entry_evidence,
+                                    ticker:Callable=evaluate.kraken_ticker)->dict[str,Any]:
+    """One existing-owner research intake→witness→observation handoff.
+
+    This is NOT a new service, scheduler, model executor, writer or V3
+    Paper release. The ONLY eligible series is the existing CANARY namespace;
+    an actual V3 PAPER series remains blocked until independent cutover.
+    Original immutable intake precedes any public source request. If the
+    first minute is witnessed, the existing tick must reuse that SAME source
+    instead of fetching Kraken a second time within this one owner cycle.
+    """
+    from paper_evaluator.v3_paper_intake_receipt_stage_v1 import (
+        stage_and_witness_first_minute,
+    )
+    if (not series_id.startswith("PAPER-V3-CANARY-")
+            or preflight.get("series_id") != series_id
+            or not callable(capture) or not callable(clock_now)):
+        raise ValueError("isolated original CANARY source owner only")
+    selected=preflight.get("selected_candidates")
+    if (not isinstance(selected,list) or len(selected)!=1
+            or not isinstance(candidate,dict) or selected[0]!=candidate
+            or candidate.get("entry_origin")!="SCANNER"):
+        raise ValueError("exact one original scanner candidate required")
+    observed_at_utc=clock_now()
+    stage=stage_and_witness_first_minute(
+        preflight=preflight,journal_directory=journal,
+        capture_directory=capture_dir,observed_at_utc=observed_at_utc,
+        capture=capture)
+    if len(stage["enrollment"])!=1:
+        raise ValueError("one source enrollment receipt required")
+    witness=stage["enrollment"][0]
+    good=("FIRST_CLOSED_MINUTE_WITNESSED_RESEARCH_ONLY",
+          "FIRST_MINUTE_ALREADY_ARCHIVED_NO_DUPLICATE_GET",
+          "FIRST_MINUTE_MISSING_NO_ECONOMIC_CLAIM")
+    out={"kind":"V3_EXISTING_CANARY_SINGLE_OWNER_FIRST_TICK_V1",
+         "series_id":series_id,"candidate_id":candidate["candidate_id"],
+         "source_enrollment":witness,
+         "source_capture_calls":stage["source_capture_calls"],
+         "paper_writer_active":False,"model_http_calls":0,
+         "cloud_ack_verified":False,"new_schedules":0,
+         "v2r4_changed":False,"orders":False,
+         "real_money_actions":False}
+    if witness["status"] not in good:
+        out["status"]="SOURCE_FIRST_MINUTE_NOT_READY_NO_OBSERVATION"
+        out["tick_called"]=False
+        return out
+    # Existing owner has already authenticated the closed Kraken first-bar
+    # via original capture SHA and prospective assemble. Reuse the persisted
+    # snapshot within THIS invocation; future ordinary ticks still poll
+    # once each to grow the 6/24/72h path prospectively.
+    def already_captured(*,pair:str,altname:str,outdir:Path)->dict[str,Any]:
+        if (pair!=candidate["pair"] or altname!=candidate["altname"]
+                or outdir.resolve()!=capture_dir.resolve()):
+            raise ValueError("source owner identity mismatch after capture")
+        return {"status":"CLOSED_KRAKEN_1M_SNAPSHOT_SAVED",
+                "count":1}
+    observation=tick_once(
+        candidate=candidate,series_id=series_id,journal=journal,
+        capture_dir=capture_dir,clock_now=clock_now,
+        capture=already_captured,fetch=fetch,ticker=ticker)
+    out["tick_called"]=True
+    out["status"]="SAME_OWNER_FIRST_SOURCE_AND_FOLLOWUP_TICK_NO_SECOND_GET"
+    out["observation"]=observation
+    return out
+
 def main()->int:
     p=argparse.ArgumentParser()
     p.add_argument("--original-candidate-file",type=Path,required=True)
