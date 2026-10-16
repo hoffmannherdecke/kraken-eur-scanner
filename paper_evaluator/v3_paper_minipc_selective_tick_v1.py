@@ -216,6 +216,193 @@ def first_enrolled_canary_tick_once(*, preflight:dict[str,Any],
     out["observation"]=observation
     return out
 
+
+
+def plan_canary_resume(*,candidate:dict[str,Any],series_id:str,
+                       journal:Path,model_reservations:Path,
+                       ack_file:Path)->dict[str,Any]:
+    """Read-only journal/reservation/ACK restart gate, never a model replay.
+
+    An HTTP reservation may have spent money even with no model response.
+    The response/P4 must be durably journalled before any selective source
+    continuation. Do not infer a successful P4 from a partial model response.
+    """
+    import hashlib
+    from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import REVISION
+
+    if (not isinstance(series_id,str)
+            or not series_id.startswith("PAPER-V3-CANARY-")
+            or not isinstance(candidate,dict)
+            or not isinstance(candidate.get("candidate_id"),str)
+            or not isinstance(candidate.get("pair"),str)
+            or not candidate["pair"].endswith("/EUR")
+            or not isinstance(candidate.get("altname"),str)
+            or not candidate["altname"].isalnum()):
+        raise ValueError("CANARY-only original Scanner source required")
+    roots=(journal,model_reservations,ack_file.parent)
+    if any(not p.is_dir() or p.is_symlink() for p in roots):
+        raise ValueError("existing independent owner roots required")
+    if ack_file.is_symlink():
+        raise ValueError("ACK identity cannot be symlink")
+    if ack_file.exists():
+        state=json.loads(ack_file.read_text("utf-8"))
+        if (not isinstance(state,dict)
+                or state.get("series_id")!=series_id
+                or state.get("revision")!=REVISION
+                or not isinstance(state.get("acked"),list)):
+            raise ValueError("foreign or invalid cloud ACK identity")
+    rows=[]
+    for p in journal.glob("*.json"):
+        if p.is_symlink() or p.stat().st_size>16000:
+            raise ValueError("unverified immutable receipt path")
+        row=json.loads(p.read_text("utf-8"))
+        if (row.get("series_id"),row.get("candidate_id"))!=(
+                series_id,candidate["candidate_id"]):
+            continue
+        if (row.get("revision")!=REVISION
+                or row.get("kind")!="V3_EXPERIMENTAL_PAPER_CANDIDATE_EVENT_V1"
+                or row.get("orders") is not False
+                or row.get("real_money_actions") is not False
+                or row.get("pair")!=candidate["pair"]
+                or clock(row["event_time_utc"])!=clock(candidate["event_time_utc"])):
+            raise ValueError("foreign/altered candidate original")
+        eid=hashlib.sha256("|".join(str(row[x]) for x in
+            ("series_id","candidate_id","phase","event_key")).encode()).hexdigest()
+        if p.stem!=eid:
+            raise ValueError("local journal filename is not canonical")
+        rows.append(row)
+    # A reservation without a journalled result is ambiguous after a crash.
+    reserved=[]
+    for p in model_reservations.glob("*.reserved.json"):
+        if p.is_symlink() or p.stat().st_size>4096:
+            raise ValueError("invalid model reservation")
+        item=json.loads(p.read_text("utf-8"))
+        if (item.get("series_id"),item.get("candidate_id"))==(
+                series_id,candidate["candidate_id"]):
+            if (item.get("kind")!="V3_PAPER_MODEL_HTTP_RESERVED_BEFORE_NETWORK_V1"
+                    or item.get("no_automatic_retry") is not True):
+                raise ValueError("model reservation provenance conflict")
+            reserved.append(item)
+    result={"kind":"V3_EXISTING_CANARY_RESTART_DISPOSITION_V1",
+            "series_id":series_id,"candidate_id":candidate["candidate_id"],
+            "paper_writer_active":False,"model_http_authorized":False,
+            "model_http_calls":0,"orders":False,"real_money_actions":False,
+            "cloud_ack_verified":False,"can_tick":False,"new_schedules":0}
+    def block(status:str)->dict[str,Any]:
+        return dict(result,status=status)
+    if not rows:
+        return block("NO_IMMUTABLE_ORIGINAL_NO_AUTOMATIC_RESTART")
+    entries={(r["phase"],r["event_key"]) for r in rows}
+    if len(entries)!=len(rows):
+        raise ValueError("duplicate event identities")
+    origins=[r for r in rows if r["phase"]=="SCANNER_CAPTURE"
+             and r["result"]=="SEEN"
+             and r["data"].get("candidate_origin")=="SCANNER"]
+    if len(origins)!=1 or origins[0]["event_key"]!="FIRST":
+        return block("ORIGINAL_SCANNER_NOT_EXACT_NO_AUTOMATIC_RESTART")
+    phases=lambda name:[r for r in rows if r["phase"]==name]
+    requests=phases("MODEL_REQUEST")
+    responses=phases("MODEL_RESPONSE")
+    p4s=phases("P4_VALIDATION")
+    errors=phases("MODEL_ERROR")
+    if (len(requests)>1 or len(responses)>1 or len(p4s)>1
+            or len(errors)>1 or len(reserved)>1):
+        return block("CONFLICTING_MODEL_HISTORY_QUARANTINE")
+    if errors or (reserved and not responses) or (
+            requests and requests[0]["result"]=="PASS" and not responses):
+        return block("MODEL_MAY_HAVE_SPENT_NO_RETRY_QUARANTINE")
+    if responses and not p4s:
+        return block("MODEL_RESPONSE_WITHOUT_FINAL_P4_QUARANTINE")
+    if not p4s:
+        return block("MODEL_NOT_FINAL_NO_AUTOMATIC_SPEND_OR_FOLLOWUP")
+    p4=p4s[0]
+    if (not requests or requests[0]["result"]!="PASS"
+            or not responses or responses[0]["result"]!="PASS"
+            or not reserved):
+        return block("UNVERIFIED_MODEL_P4_PROVENANCE_QUARANTINE")
+    if p4["result"]=="WAIT" and not any(r["phase"]=="WAIT_WATCH"
+                                            and r["result"]=="WAIT" for r in rows):
+        return block("WAIT_WITHOUT_WATCH_CONTRACT_QUARANTINE")
+    if p4["result"]=="BUY_SCOUT" and not any(
+            r["phase"]=="PAPER_FILL" and r["result"]=="PAPER_FILLED" for r in rows):
+        return block("BUY_WITHOUT_DURABLE_PAPER_FILL_QUARANTINE")
+    if p4["result"] not in ("WAIT","REJECT","BUY_SCOUT","UNKNOWN"):
+        return block("UNKNOWN_P4_RESULT_QUARANTINE")
+    finals={r["phase"] for r in rows if r["phase"] in (
+        "FOLLOWUP_6H","FOLLOWUP_24H","FOLLOWUP_72H")
+        and r["result"] in ("MATURE_COMPLETE","CENSORED")}
+    if len(finals)==3:
+        return block("ALL_FOLLOWUPS_FINAL_NO_NEW_SOURCE")
+    return dict(result,status="FOLLOWUP_ONLY_SAFE_FOR_EXISTING_CANARY_TICK",
+                can_tick=True)
+
+
+def resume_canary_tick_once(*,candidate:dict[str,Any],series_id:str,
+                            journal:Path,capture_dir:Path,
+                            model_reservations:Path,ack_file:Path,
+                            clock_now:Callable[[],str]=utc_now,
+                            capture:Callable=capture_public_1m,
+                            fetch:Callable=fetch_public_entry_evidence,
+                            ticker:Callable=evaluate.kraken_ticker)->dict[str,Any]:
+    """Single process-locked restart of EXISTING CANARY tick, no model/Cloud.
+
+    Never evict a live or suspicious lock or restart the old Paper runtime.
+    OS process lock releases on crash; persistent immutable receipts and
+    model reservation remain authoritative for the next attempt.
+    """
+    import os
+    from contextlib import contextmanager
+
+    @contextmanager
+    def one_owner():
+        if not journal.is_dir() or journal.is_symlink():
+            raise ValueError("existing isolated CANARY journal required")
+        lock_path=journal/".v3-existing-owner-cycle.lock"
+        if lock_path.is_symlink():
+            raise ValueError("owner lock must not be a symlink")
+        fd=os.open(lock_path,os.O_CREAT|os.O_RDWR,0o600)
+        locked=False
+        try:
+            if os.fstat(fd).st_size==0:
+                os.write(fd,b"\0")
+            os.lseek(fd,0,os.SEEK_SET)
+            try:
+                if os.name=="nt":
+                    import msvcrt
+                    msvcrt.locking(fd,msvcrt.LK_NBLCK,1)
+                elif os.name=="posix":
+                    import fcntl
+                    fcntl.flock(fd,fcntl.LOCK_EX|fcntl.LOCK_NB)
+                else:
+                    raise ValueError("unsupported Mini-PC OS owner fence")
+                locked=True
+            except (OSError,BlockingIOError) as exc:
+                raise ValueError("ANOTHER_CANARY_OWNER_RUNNING_FAIL_CLOSED") from exc
+            yield
+        finally:
+            if locked:
+                os.lseek(fd,0,os.SEEK_SET)
+                if os.name=="nt":
+                    msvcrt.locking(fd,msvcrt.LK_UNLCK,1)
+                else:
+                    fcntl.flock(fd,fcntl.LOCK_UN)
+            os.close(fd)
+
+    with one_owner():
+        disposition=plan_canary_resume(
+            candidate=candidate,series_id=series_id,journal=journal,
+            model_reservations=model_reservations,ack_file=ack_file)
+        if not disposition["can_tick"]:
+            return dict(disposition,tick_called=False,
+                        source_capture_calls=0)
+        tick=tick_once(candidate=candidate,series_id=series_id,
+                       journal=journal,capture_dir=capture_dir,
+                       clock_now=clock_now,capture=capture,
+                       fetch=fetch,ticker=ticker)
+        return dict(disposition,status="SAFE_CANARY_FOLLOWUP_TICK_EXECUTED",
+                    tick_called=True,tick=tick,
+                    cloud_ack_verified=False,model_http_calls=0)
+
 def main()->int:
     p=argparse.ArgumentParser()
     p.add_argument("--original-candidate-file",type=Path,required=True)
