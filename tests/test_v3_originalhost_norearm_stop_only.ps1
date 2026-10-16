@@ -77,6 +77,15 @@ foreach($needed in @(
 if($src.Contains("if([string](Get-ScheduledTask -TaskName $name).State -eq 'Running')")){
  throw 'May not skip Stop-ScheduledTask after disabling a still-running worker'
 }
+# Evidence-based originalhost supervisor source pin, not a guessed GitHub blob.
+# 16 Oct physical Task action SHA is recorded as 64 hex with ...D34BFE36...
+$supervisorPin='9B148DB733ED61B9DA673E0E3BB9D319D336CE37FEFF9790D34BFE36B4680EF5'
+$wrongSupervisorPin='9B148DB733ED61B9DA673E0E3BB9D319D336CE37FEFF9790D34BEF36B4680EF5'
+if($supervisorPin.Length -ne 64 -or -not $src.Contains($supervisorPin) -or
+   $src.Contains($wrongSupervisorPin) -or $supervisorPin -eq $wrongSupervisorPin){
+ throw 'Originalhost Supervisor SHA identity pin drift or transposition regression'
+}
+Write-Output 'V3_ORIGINALHOST_SUPERVISOR_64HEX_PIN_REGRESSION_PASS'
 Write-Output 'V3_PR334_FULL_PR332_MANIFEST_HASH_PREVIEW_REGRESSION_PASS'
 Write-Output 'V3_PHYSICAL_ORIGINALHOST_NO_REARM_STOP_ONLY_PURE_11_SCOPES_PASS'
 
