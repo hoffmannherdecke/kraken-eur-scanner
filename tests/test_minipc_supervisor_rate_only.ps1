@@ -822,6 +822,79 @@ $x=NativeBackupReadbackFixture;$x.captured_at_utc='someday'
 VerifyNativeBackupGap $false $x 'invalid timestamp'
 Write-Output 'V3_ORIGINAL_NATIVE_BACKUP_SCHEMA_ONLY_GAP_17_CASES_PASS'
 
+# PR326: the 15-Oct two-Task backup cannot restore the 16-Oct protected
+# WAIT action. Validate only the composition of two real manifest SCHEMAS:
+# preserve historical Candidates plus post-PR326 current WAIT. Never run host.
+$splitFn=@($oa.FindAll({
+ param($a)
+ $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $a.Name -eq 'Get-V3SplitVintageNativeBackupCompositionGap'
+},$true))
+if($splitFn.Count -ne 1){throw 'V3 split-vintage backup policy not unique'}
+. ([Scriptblock]::Create($splitFn[0].Extent.Text))
+
+function PR326CurrentWaitFixture {
+ [pscustomobject]@{
+  kind='V3_WAIT_PR326_POSTCUTOVER_NATIVE_BACKUP_V1'
+  captured_at_utc='2026-10-16T07:15:12Z'
+  task_name='CryptoMiniPC-V2R4PaperWait'
+  backup_file='WAIT.task.xml'
+  xml_sha256=('e' * 64)
+  launcher_sha256='c5e43d62976bdf2079a3a0402e57658aba8a33d427b0cf0d56737565b84dd51d'
+  original_task_state='Running'
+  actual_restore_tested=$false
+  runtime_modified=$false
+ }
+}
+function CheckSplitVintage([bool]$Expected,[object]$Old,[object]$New,[string]$Label) {
+ $got=Get-V3SplitVintageNativeBackupCompositionGap -Old $Old -CurrentWait $New
+ if($got.backup_composition_schema_only_pass -ne $Expected){
+  throw "V3_SPLIT_VINTAGE_FAIL $Label expected=$Expected actual=$($got.backup_composition_schema_only_pass) errors=$(@($got.schema_errors) -join ',')"
+ }
+ if($got.rollback_ready_or_authorized -ne $false -or
+    $got.live_backup_proven_here -ne $false -or
+    $got.physical_task_scheduler_restore_executed -ne $false -or
+    $got.old_intake_tasks_disabled_or_stopped -ne $false -or
+    $got.physical_no_rearm_tested -ne $false -or
+    $got.task_process_marker_cloud_writes -ne 0 -or
+    $got.v3_release_authorized -ne $false -or
+    $got.old_wait_xml_must_never_be_restored_from_historical_pair -ne $true -or
+    $got.independent_current_task_sha_acl_launcher_and_source_pin_readbacks_required -ne $true -or
+    $got.authentic_release_proofs_credited -ne 0) {
+  throw "V3_SPLIT_VINTAGE_FALSE_RELEASE_AUTHORITY $Label"
+ }
+}
+CheckSplitVintage $true (NativeBackupReadbackFixture) (PR326CurrentWaitFixture) 'split intact vintages'
+CheckSplitVintage $false $null (PR326CurrentWaitFixture) 'missing old pair'
+CheckSplitVintage $false (NativeBackupReadbackFixture) $null 'missing new WAIT'
+$x=PR326CurrentWaitFixture;$x.kind='V3_OLD_INTAKE_NATIVE_BACKUP_READBACK_V1'
+CheckSplitVintage $false (NativeBackupReadbackFixture) $x 'old schema substituted as post-PR326'
+$x=PR326CurrentWaitFixture;$x.task_name='CryptoMiniPC-V2R4PaperLifecycle'
+CheckSplitVintage $false (NativeBackupReadbackFixture) $x 'protected role substitution'
+$x=PR326CurrentWaitFixture;$x.backup_file='Candidates.task.xml'
+CheckSplitVintage $false (NativeBackupReadbackFixture) $x 'wrong saved native XML'
+$x=PR326CurrentWaitFixture;$x.xml_sha256='bad'
+CheckSplitVintage $false (NativeBackupReadbackFixture) $x 'bad WAIT sha'
+$x=PR326CurrentWaitFixture;$x.launcher_sha256=('b' * 64)
+CheckSplitVintage $false (NativeBackupReadbackFixture) $x 'retired or tampered WAIT launcher pin'
+$x=PR326CurrentWaitFixture;$x.original_task_state='Disabled'
+CheckSplitVintage $false (NativeBackupReadbackFixture) $x 'nonrunning WAIT'
+$x=PR326CurrentWaitFixture;$x.actual_restore_tested=$true
+CheckSplitVintage $false (NativeBackupReadbackFixture) $x 'fake restore ACK'
+$x=PR326CurrentWaitFixture;$x.runtime_modified=$true
+CheckSplitVintage $false (NativeBackupReadbackFixture) $x 'unauthorized runtime change claim'
+$x=PR326CurrentWaitFixture;$x.captured_at_utc='2026-10-15T05:31:39Z'
+CheckSplitVintage $false (NativeBackupReadbackFixture) $x 'not strictly newer than original'
+$x=PR326CurrentWaitFixture;$x.captured_at_utc='not-utc'
+CheckSplitVintage $false (NativeBackupReadbackFixture) $x 'invalid timestamp'
+$x=PR326CurrentWaitFixture;$x.xml_sha256=('c' * 64)
+CheckSplitVintage $false (NativeBackupReadbackFixture) $x 'obsolete 15-Oct WAIT restore not allowed'
+$x=NativeBackupReadbackFixture;$x.tasks[0].task_name='CryptoMiniPC-V2R4PaperCloudSync'
+CheckSplitVintage $false $x (PR326CurrentWaitFixture) 'protected CloudSync cannot be a backup source'
+Write-Output 'V3_SPLIT_VINTAGE_PR326_NATIVE_BACKUP_15_PURE_CASES_PASS'
+
+
+
 
 # PR318: purely in-memory restore PREVIEW from original native manifest + two
 # exact synthetic Task XML strings; no Task registration, no host Task/PID/API.

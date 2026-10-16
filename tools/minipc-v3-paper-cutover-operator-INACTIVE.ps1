@@ -261,6 +261,72 @@ function Get-V3NativeIntakeBackupReadbackGap([object]$Readback) {
 }
 
 
+# Exact-schema split vintage check only: Candidates still uses the 15-Oct
+# original native Task backup, WAIT was genuinely changed to PR326 on 16-Oct.
+# Never silently restore the pre-PR326 WAIT action from the older pair.
+# No filesystem, TaskScheduler, token, marker or Cloud access in this helper.
+function Get-V3SplitVintageNativeBackupCompositionGap([object]$Old,[object]$CurrentWait) {
+ $errors=@()
+ $oldShape=Get-V3NativeIntakeBackupReadbackGap -Readback $Old
+ if($oldShape.native_host_manifest_schema_only_pass -ne $true){
+  $errors+=@('OLD_NATIVE_MANIFEST_NOT_VALID')
+ }
+ if($null -eq $CurrentWait){
+  $errors+=@('CURRENT_WAIT_MANIFEST_MISSING')
+ }else{
+  if([string]$CurrentWait.kind -cne 'V3_WAIT_PR326_POSTCUTOVER_NATIVE_BACKUP_V1' -or
+     [string]$CurrentWait.task_name -cne 'CryptoMiniPC-V2R4PaperWait' -or
+     [string]$CurrentWait.backup_file -cne 'WAIT.task.xml' -or
+     [string]$CurrentWait.original_task_state -cne 'Running' -or
+     $CurrentWait.actual_restore_tested -ne $false -or
+     $CurrentWait.runtime_modified -ne $false){
+   $errors+=@('POST_PR326_WAIT_IDENTITY_OR_SAFETY_INVALID')
+  }
+  if([string]$CurrentWait.xml_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$CurrentWait.launcher_sha256 -cne
+        'c5e43d62976bdf2079a3a0402e57658aba8a33d427b0cf0d56737565b84dd51d'){
+   $errors+=@('POST_PR326_WAIT_SHA_OR_LAUNCHER_PIN_INVALID')
+  }
+  $oldAt=[datetimeoffset]::MinValue
+  $newAt=[datetimeoffset]::MinValue
+  if($null -eq $Old -or
+     [string]$CurrentWait.captured_at_utc -cnotmatch '(Z|\+00:00)$' -or
+     -not([datetimeoffset]::TryParse([string]$Old.captured_at_utc,[ref]$oldAt)) -or
+     -not([datetimeoffset]::TryParse([string]$CurrentWait.captured_at_utc,[ref]$newAt)) -or
+     $newAt -le $oldAt){
+   $errors+=@('POST_PR326_WAIT_CAPTURE_NOT_AFTER_OLD')
+  }
+ }
+ if($oldShape.native_host_manifest_schema_only_pass -eq $true -and $null -ne $CurrentWait){
+  $olderWait=@($Old.tasks | Where-Object {
+   [string]$_.task_name -ceq 'CryptoMiniPC-V2R4PaperWait'
+  })
+  if($olderWait.Count -ne 1 -or
+     [string]$olderWait[0].xml_sha256 -ceq [string]$CurrentWait.xml_sha256){
+   $errors+=@('POST_PR326_WAIT_NOT_DISTINCT_FROM_OBSOLETE_BACKUP')
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_SPLIT_VINTAGE_ORIGINAL_TASK_BACKUP_SCHEMA_ONLY_V1'
+  backup_composition_schema_only_pass=($errors.Count -eq 0)
+  schema_errors=@($errors | Select-Object -Unique)
+  candidates_backup_vintage='15_OCT_ORIGINAL'
+  wait_backup_vintage='16_OCT_POST_PR326'
+  old_wait_xml_must_never_be_restored_from_historical_pair=$true
+  independent_current_task_sha_acl_launcher_and_source_pin_readbacks_required=$true
+  protected_aftercare_supervisor_and_cloud_cas_remain_separate_gates=$true
+  physical_task_scheduler_restore_executed=$false
+  old_intake_tasks_disabled_or_stopped=$false
+  task_process_marker_cloud_writes=0
+  live_backup_proven_here=$false
+  rollback_ready_or_authorized=$false
+  physical_no_rearm_tested=$false
+  v3_release_authorized=$false
+  authentic_release_proofs_credited=0
+ }
+}
+
+
 # Pure in-memory restoration PREVIEW of exact two original scheduled Tasks.
 # Accept values collected by an independently authorized read-only host probe.
 # Never registers, starts, disables, repairs or overwrites an actual Task.
