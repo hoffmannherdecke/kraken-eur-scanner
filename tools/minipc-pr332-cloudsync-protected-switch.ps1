@@ -162,8 +162,10 @@ foreach($protected in @('CryptoMiniPC-V2R4PaperCandidates',
 FreshSupervisor
 $candidateXml=Get-Pr332TaskXml $oldXml $oldSource $newSource
 Write-Output 'PR332_CLOUDSYNC_ORIGINALHOST_PREFLIGHT=PASS'
-Write-Output 'PR332_CLOUDSYNC_TASK_PREVIEW_ONLY=True'
-if(-not $Execute){return}
+if(-not $Execute){
+  Write-Output 'PR332_CLOUDSYNC_TASK_PREVIEW_ONLY=True'
+  return
+}
 Require ($Confirm -ceq 'PR332-CLOUDSYNC-ONLY') 'Execute requires exact operator confirmation'
 Require (-not (Test-Path -LiteralPath (Join-Path $backupDir 'switch-attempted.json'))) 'This one-shot operator was already attempted'
 [IO.File]::WriteAllText((Join-Path $backupDir 'switch-attempted.json'),
@@ -172,7 +174,9 @@ Require (-not (Test-Path -LiteralPath (Join-Path $backupDir 'switch-attempted.js
 $attempted=$true
 try{
   Disable-ScheduledTask -TaskName $name -ErrorAction Stop|Out-Null
-  Stop-ScheduledTask -TaskName $name -ErrorAction Stop
+  if([string](Get-ScheduledTask -TaskName $name).State -eq 'Running'){
+    Stop-ScheduledTask -TaskName $name -ErrorAction Stop
+  }
   Require (WaitNoOldOrNew 35) 'Old CloudSync process family remained after scheduler stop: do not start a second'
   Register-ScheduledTask -TaskName $name -Xml $candidateXml -Force -ErrorAction Stop|Out-Null
   $t=Task
