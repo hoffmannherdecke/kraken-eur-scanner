@@ -333,6 +333,16 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             "phase_failure_stage":"PROMPT_TOO_LARGE_NO_API_SPEND"})
         return {"status":"MODEL_PROMPT_SIZE_GATE_NO_SPEND","paper_only":True,
                 "model_called":False}
+    # An original that was fresh BEFORE slow public Kraken input acquisition
+    # can expire by the time we are about to reserve a paid model attempt.
+    # Recheck the real original event clock at the irreversible spend boundary.
+    if staged:
+        age_at_spend=(receipt_clock(clock())-receipt_clock(stamp)).total_seconds()
+        if not 0<=age_at_spend<=600:
+            receipt("MODEL_REQUEST","UNKNOWN",{
+                "phase_failure_stage":"ORIGINAL_EXPIRED_AFTER_KRAKEN_NO_API_SPEND"})
+            return {"status":"ORIGINAL_EXPIRED_BEFORE_MODEL_HTTP_NO_SPEND",
+                    "paper_only":True,"model_called":False,"orders":False}
     try:
         reservation=reserve_before_http(model_reservations,approval,series_id,cid,
                                         coin["known_at_utc"])

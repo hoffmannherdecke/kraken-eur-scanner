@@ -71,6 +71,42 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
             self.assertEqual(again["status"],"V3_CANDIDATE_ALREADY_JOURNALED_NO_REPROCESS")
             self.assertEqual(len(list(journal.glob("*.json"))),4)
 
+    def test_real_staged_original_can_expire_during_kraken_before_api_reservation(self):
+        import tempfile
+        from pathlib import Path
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td); journal=root/"journal";budget=root/"budget"
+            journal.mkdir();budget.mkdir()
+            candidate=dict(fixture()[0],entry_origin="SCANNER")
+            stage_scanner_original(journal,candidate)
+            # Let genuine public evidence and eligibility succeed at the
+            # original clock, then simulate a slow prompt construction
+            # finishing after the 10-minute original is no longer fresh.
+            from unittest.mock import patch
+            from paper_evaluator import v3_paper_minipc_one_candidate_v1 as module
+            current=[dt(12)]
+            original_prompt=module.build_v3_paper_full_model_prompt
+            def slow_prompt(**kwargs):
+                prompt=original_prompt(**kwargs)
+                current[0]=dt(900)
+                return prompt
+            with patch.object(module,"build_v3_paper_full_model_prompt",
+                              side_effect=slow_prompt):
+                result=one_candidate(
+                    candidate=candidate,series_id=SID,
+                    local_receipts=journal,model_reservations=budget,
+                    approval=valid_approval(),model_key="sk-CI-NO-REAL-KEY-123456789012",
+                    clock=lambda:current[0],acquire=fake_acquire,
+                    model_client=lambda *_:self.fail("no model after original expires"),
+                    allow_model=True,admit_staged_scanner_one_approved_model=True)
+            self.assertEqual(result["status"],
+                "ORIGINAL_EXPIRED_BEFORE_MODEL_HTTP_NO_SPEND")
+            self.assertFalse(list(budget.glob("*.reserved.json")))
+            rows=[json.loads(p.read_text("utf-8")) for p in journal.glob("*.json")]
+            self.assertTrue(any(r["phase"]=="MODEL_REQUEST"
+                and r["data"].get("phase_failure_stage")==
+                    "ORIGINAL_EXPIRED_AFTER_KRAKEN_NO_API_SPEND" for r in rows))
+
     def test_explicit_staged_scanner_real_pit_recheck_only_once_without_model(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);journal=root/"journal";budgets=root/"budgets"

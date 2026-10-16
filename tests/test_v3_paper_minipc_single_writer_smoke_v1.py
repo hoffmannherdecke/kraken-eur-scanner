@@ -171,5 +171,128 @@ class SingleWriterPhysicalSmokeTests(unittest.TestCase):
             self.assertFalse((research/"writer-smoke-20261012").exists())
 
 
+
+    def test_current_approved_one_shot_joins_genuine_first_bar_budget_p4_cloud(self):
+        """Synthetic I/O: the real orchestration modules and lock, no API."""
+        from paper_evaluator.v3_paper_minipc_single_writer_smoke_v1 import (
+            run_approved_live_canary,_APPROVED_ROOT,_APPROVED_CANARY,
+            _FROZEN_V2R4_SHA,
+        )
+        from paper_evaluator.v3_paper_minipc_one_candidate_v1 import reserve_before_http,REVISION
+        from paper_evaluator.v3_experimental_paper_journal_v1 import (
+            make_receipt,store_receipt_explicitly,
+        )
+        from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import capture_public_1m
+        pin="f"*40
+        with tempfile.TemporaryDirectory() as td:
+            root,prod,research,candidate=physical_root(td,candidate_age=150)
+            stage=root/"V3Stage"/"source-current"
+            stage.mkdir(parents=True)
+            (root/"Secrets"/"openai-api-key.txt").write_text(
+                "sk-ci-SYNTHETIC-NO-REAL-KEY-1234567890","utf-8")
+            first=datetime.fromisoformat(candidate["event_time_utc"].replace("Z","+00:00"))
+            first=first.replace(second=0,microsecond=0)+timedelta(minutes=1)
+            calls=[]
+            def original(*,pair,altname,outdir):
+                calls.append(("kraken",pair))
+                def loader(_):
+                    return {"error":[],"result":{altname:[
+                        [int(first.timestamp()),"2","2.1","1.9","2","2","10",2],
+                    ],"last":1}}
+                return capture_public_1m(
+                    pair=pair,altname=altname,outdir=outdir,
+                    loader=loader,clock=lambda:MOMENT)
+            def paid_stub(**kw):
+                self.assertTrue(kw["allow_model"])
+                self.assertTrue(kw["admit_staged_scanner_one_approved_model"])
+                calls.append(("model",kw["candidate"]["candidate_id"]))
+                reserve_before_http(
+                    kw["model_reservations"],kw["approval"],
+                    kw["series_id"],kw["candidate"]["candidate_id"],
+                    iso(MOMENT))
+                for phase,result,data in (
+                    ("MODEL_REQUEST","PASS",{"model_http_attempts_reserved":1}),
+                    ("MODEL_RESPONSE","PASS",{"raw_model_decision":"WAIT",
+                                               "model_response_at_utc":iso(MOMENT)}),
+                    ("P4_VALIDATION","WAIT",{"p4_decision":"WAIT",
+                                              "p4_status":"VALIDATED_SYNTHETIC"}),
+                ):
+                    receipt=make_receipt(
+                        series_id=kw["series_id"],revision=REVISION,
+                        candidate_id=kw["candidate"]["candidate_id"],
+                        pair=kw["candidate"]["pair"],
+                        event_time_utc=kw["candidate"]["event_time_utc"],
+                        known_at_utc=iso(MOMENT),phase=phase,
+                        result=result,event_key="FRESHRECHECK",data=data)
+                    store_receipt_explicitly(kw["local_receipts"],receipt)
+                return {"status":"V3_CANARY_MODEL_P4_RECORDED_NO_PAPER_ACTIVATION",
+                        "p4_decision":"WAIT"}
+            def cloud(url,token,payload):
+                self.assertEqual(payload["series_id"],_APPROVED_CANARY)
+                self.assertTrue(5<=len(payload["receipts"])<=15)
+                calls.append(("cloud",len(payload["receipts"])))
+                return {"ok":True,"series_id":_APPROVED_CANARY,
+                        "accepted_receipts":len(payload["receipts"])}
+            def git_head(p):
+                return _FROZEN_V2R4_SHA if p==prod else pin
+            out=run_approved_live_canary(
+                trading_root=root,repository=stage,expected_stage_sha=pin,
+                pair_loader=fake_pairs,capture=original,
+                worker=paid_stub,cloud_post=cloud,
+                git_head=git_head,clock=lambda:MOMENT)
+            self.assertEqual(out["status"],"APPROVED_CANARY_MODEL_P4_CLOUD_ACK")
+            self.assertEqual([x[0] for x in calls],
+                             ["kraken","model","cloud"])
+            self.assertEqual(out["model_http_attempts"],1)
+            self.assertGreaterEqual(out["cloud_receipts_accepted"],5)
+            self.assertEqual(out["model_decision"],"WAIT")
+            self.assertFalse(out["paper_writer_active"])
+            self.assertFalse(out["v2r4_changed"])
+            self.assertFalse(out["full_physical_paper_release_proof"])
+            self.assertTrue((research/_APPROVED_ROOT/"cloud-ack.json").is_file())
+            self.assertEqual(len(list((research/_APPROVED_ROOT/"budgets").glob(
+                "*.reserved.json"))),1)
+            with self.assertRaisesRegex(ValueError,"ALREADY_RESERVED_NO_RETRY"):
+                run_approved_live_canary(
+                    trading_root=root,repository=stage,expected_stage_sha=pin,
+                    pair_loader=fake_pairs,capture=lambda **kw:self.fail("GET twice"),
+                    worker=lambda **kw:self.fail("model twice"),
+                    cloud_post=lambda *a:self.fail("POST twice"),
+                    git_head=git_head,clock=lambda:MOMENT)
+
+    def test_current_approved_no_key_or_stale_original_stops_before_network_write(self):
+        from paper_evaluator.v3_paper_minipc_single_writer_smoke_v1 import (
+            run_approved_live_canary,_APPROVED_ROOT,_FROZEN_V2R4_SHA,
+        )
+        pin="f"*40
+        for stale,key_ok in ((False,False),(True,True)):
+            with self.subTest(stale=stale,key_ok=key_ok),tempfile.TemporaryDirectory() as td:
+                root,prod,research,_=physical_root(
+                    td,candidate_age=650 if stale else 150)
+                stage=root/"V3Stage"/"source-current"
+                stage.mkdir(parents=True)
+                if key_ok:
+                    (root/"Secrets"/"openai-api-key.txt").write_text(
+                        "sk-ci-SYNTHETIC-NO-REAL-KEY-1234567890","utf-8")
+                def git_head(p):
+                    return _FROZEN_V2R4_SHA if p==prod else pin
+                if not key_ok:
+                    with self.assertRaisesRegex(ValueError,"private local credentials"):
+                        run_approved_live_canary(
+                            trading_root=root,repository=stage,
+                            expected_stage_sha=pin,
+                            pair_loader=lambda:self.fail("No metadata GET"),
+                            git_head=git_head,clock=lambda:MOMENT)
+                else:
+                    x=run_approved_live_canary(
+                        trading_root=root,repository=stage,
+                        expected_stage_sha=pin,
+                        pair_loader=lambda:self.fail("No metadata GET"),
+                        git_head=git_head,clock=lambda:MOMENT)
+                    self.assertEqual(x["model_http_attempts"],0)
+                    self.assertEqual(x["status"],
+                                     "NO_FRESH_ORIGINAL_NO_MODEL_OR_CLOUD")
+                self.assertFalse((research/_APPROVED_ROOT).exists())
+
 if __name__ == "__main__":
     unittest.main()
