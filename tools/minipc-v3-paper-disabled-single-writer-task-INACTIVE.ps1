@@ -119,7 +119,7 @@ Require ($seen.Count -eq 66 -and
  $seen.ContainsKey('paper_context.py')) 'native owner or context missing'
 $protected=@(OriginalIntakeReadOnly)
 Require ($protected.Count -eq 4) 'original V2R4 Task baseline incomplete'
-Require (NativeTaskState -ceq 'ABSENT') 'V3 Task already exists; never overwrite it'
+Require ((NativeTaskState) -ceq 'ABSENT') 'V3 Task already exists; never overwrite it'
 $python=(Get-Command python.exe -CommandType Application -ErrorAction Stop).Source
 Require (Test-Path -LiteralPath $python -PathType Leaf) 'Python executable missing'
 Require (-not [bool]((Get-Item -LiteralPath $python -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) 'Python executable link'
