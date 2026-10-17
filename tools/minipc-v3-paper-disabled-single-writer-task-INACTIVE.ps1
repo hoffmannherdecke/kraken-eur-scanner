@@ -27,7 +27,7 @@ function Require([bool]$Accept,[string]$Reason){
  if(-not $Accept){throw ('V3_DISABLED_TASK_STAGE_BLOCKED: '+$Reason)}
 }
 function Sha([string]$Path) {
- Require (Test-Path -LiteralPath $Path -PathType Leaf) 'stage file missing'
+ Require ((Test-Path -LiteralPath $Path -PathType Leaf)) 'stage file missing'
  $item=Get-Item -LiteralPath $Path -Force -ErrorAction Stop
  Require (-not [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) 'stage file is a link'
  return ([string](Get-FileHash -LiteralPath $Path -Algorithm SHA256 -ErrorAction Stop).Hash).ToLowerInvariant()
@@ -58,7 +58,7 @@ $trading=[IO.Path]::GetFullPath($TradingRoot).TrimEnd('\')
 $source=[IO.Path]::GetFullPath($SourceRepo).TrimEnd('\')
 Require ($trading -ieq 'C:\Users\ADMIN\Trading') 'unexpected protected Trading path'
 Require (-not (Under $source $trading)) 'separate trusted source checkout must be outside Trading'
-Require (Test-Path -LiteralPath $source -PathType Container) 'original source checkout missing'
+Require ((Test-Path -LiteralPath $source -PathType Container)) 'original source checkout missing'
 Require (-not [bool]((Get-Item -LiteralPath $source -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) 'source checkout link not allowed'
 $gitRoot=(& git -C $source rev-parse --show-toplevel 2>$null)
 Require ($LASTEXITCODE -eq 0 -and $gitRoot -and
@@ -68,7 +68,7 @@ Require ($LASTEXITCODE -eq 0 -and $dirty.Count -eq 0) 'independent checkout modi
 $known=(& git -C $source cat-file -t $stageSha 2>$null)
 Require ($LASTEXITCODE -eq 0 -and ([string]$known).Trim() -ceq 'commit') 'reviewed Git source object missing'
 $stage=Join-Path $trading ('Staging\V3Paper-INACTIVE-'+$stageSha.Substring(0,12))
-Require (Test-Path -LiteralPath $stage -PathType Container) 'original physically staged V3 source missing'
+Require ((Test-Path -LiteralPath $stage -PathType Container)) 'original physically staged V3 source missing'
 Require (-not [bool]((Get-Item -LiteralPath $stage -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) 'stage root link'
 $manifestPath=Join-Path $stage 'v3-paper-inactive-source-manifest.json'
 $manifest=Get-Content -LiteralPath $manifestPath -Raw -ErrorAction Stop|ConvertFrom-Json
@@ -96,7 +96,7 @@ foreach($entry in @($manifest.source_manifest)){
  Require ($rel -cin $allow -and -not $seen.ContainsKey($rel)) 'stage has untrusted or duplicate file'
  $seen[$rel]=$true
  $item=Join-Path $stage ($rel.Replace('/','\'))
- Require (Under $item $stage) 'stage traversal'
+ Require ((Under $item $stage)) 'stage traversal'
  $parent=Split-Path $item -Parent
  # A nested subdirectory symlink can escape the isolated stage even if the
  # final file and immediate parent look normal; reject every ancestor.
@@ -120,8 +120,14 @@ Require ($seen.Count -eq 66 -and
 $protected=@(OriginalIntakeReadOnly)
 Require ($protected.Count -eq 4) 'original V2R4 Task baseline incomplete'
 Require ((NativeTaskState) -ceq 'ABSENT') 'V3 Task already exists; never overwrite it'
-$python=(Get-Command python.exe -CommandType Application -ErrorAction Stop).Source
-Require (Test-Path -LiteralPath $python -PathType Leaf) 'Python executable missing'
+# Get-Command can enumerate several python.exe executables on Windows.
+# Choose the first resolver match deterministically; NEVER treat .Source as
+# an array (which would pass several Test-Path booleans into Require [bool]).
+$pythonCommand=Get-Command -Name python.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1
+Require ($null -ne $pythonCommand) 'Python command not found'
+$python=[string]$pythonCommand.Source
+Require (-not [string]::IsNullOrWhiteSpace($python) -and [IO.Path]::IsPathRooted($python)) 'Python application path ambiguous'
+Require ((Test-Path -LiteralPath $python -PathType Leaf)) 'Python executable missing'
 Require (-not [bool]((Get-Item -LiteralPath $python -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) 'Python executable link'
 # Exactly the existing *inactive* Python CLI. No external config, API/model,
 # Cloud token, trading runtime, automatic paper series or source PIN changes.
