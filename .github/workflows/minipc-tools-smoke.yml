@@ -246,8 +246,8 @@ jobs:
             if($src.Contains($command)){throw "CPU baseline observer contains prohibited mutation: $command"}
           }
           if(-not $src.Contains("ISSUE353_V2R4_CPU_ORIGINALHOST_BASELINE_V1") -or
-             -not $src.Contains("production_release_authorized=$false") -or
-             -not $src.Contains("disk_writes=$false")){
+             -not $src.Contains('production_release_authorized=$false') -or
+             -not $src.Contains('disk_writes=$false')){
             throw 'CPU baseline observer lacks read-only evidence flag'
           }
           $missing=Join-Path $env:RUNNER_TEMP 'MISSING-ISSUE353-TRADING-ROOT'
