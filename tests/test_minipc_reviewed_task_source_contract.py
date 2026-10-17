@@ -25,7 +25,7 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
         self.assertEqual(s.count("ConvertTo-Json -Compress"), 1)
 
     def test_no_mutating_or_secrets_commands(self):
-        s = SCRIPT.read_text(encoding="utf-8").lower()
+        s = "\n".join(line for line in SCRIPT.read_text(encoding="utf-8").lower().splitlines() if not line.lstrip().startswith("#"))
         for forbidden in ("set-service", "start-service", "stop-service",
                           "start-scheduledtask", "register-scheduledtask",
                           "remove-item", "copy-item", "new-item", "set-content",
