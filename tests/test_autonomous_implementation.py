@@ -244,7 +244,7 @@ class SafeAutonomyTests(unittest.TestCase):
         self.assertTrue(selector.verified_completed_work_receipt(ROOT,record))
         result=selector.select(ROOT,QUEUE,STATE,ack)
         self.assertNotEqual(result["status"],"BLOCKED")
-        self.assertNotIn(key,[x.get("registered_obligation",{}).get("id")
+        self.assertNotIn(key,[(x.get("registered_obligation") or {}).get("id")
                               for x in result["ready"]])
         completed=next(x for x in result["reconciled_completed_original_work"]
                        if x["id"]==key)
