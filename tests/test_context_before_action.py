@@ -67,6 +67,25 @@ class ContextBeforeActionTests(unittest.TestCase):
         self.assertFalse(operations["has_runtime_side_effects"])
         self.assertIn("c2ff676196a08d89dbe2584144c70555149d49ca", (ROOT / release_doc).read_text("utf-8"))
 
+    def test_v3_joint_cpu_golive_handoff_uses_same_release_owner(self):
+        """V3 cutover must inherit CPU changes via same original source-index and owners."""
+        import hashlib
+        v3_path = "docs/v3-controlled-paper-cutover-20261011.md"
+        cpu_path = "docs/v2r4-cpu-cache-versioned-technical-release-20261017.md"
+        for scope in ("operations", "architecture"):
+            with self.subTest(scope=scope):
+                packet = build(ROOT, scope)
+                index = {x["path"]: x["sha256"] for x in packet["source_index"]}
+                for path in (v3_path, cpu_path):
+                    self.assertIn(path, index)
+                    self.assertEqual(index[path], hashlib.sha256((ROOT/path).read_bytes()).hexdigest())
+                self.assertFalse(packet["declared_status"]["live_runtime_independently_checked"])
+                self.assertFalse(packet["has_runtime_side_effects"])
+        sop = (ROOT / v3_path).read_text("utf-8")
+        self.assertIn("gemeinsamer Releasevorgang", sop)
+        self.assertIn("PR326 WAIT", sop)
+        self.assertIn("keine siebte Freigabe", sop.lower())
+
     def test_existing_operational_readback_route_is_available_for_all_scopes(self):
         """Every V3/ops/arch context can now locate the original existing reader."""
         import hashlib
