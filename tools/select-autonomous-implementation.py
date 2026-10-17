@@ -171,7 +171,24 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
     selected_obligation=None
     selected_attempt_key=None
     selected_gate_fp=None
+    completed_original_work=[]
     for item in available:
+        # A completed original Work package is NOT the same as an independently
+        # closed physical or release gate. Preserve it as externally gated
+        # rather than reassigning the identical source-review package.
+        original=attempts.get(item["id"])
+        if isinstance(original,dict) and original.get("status")=="COMPLETED":
+            if verified_completed_work_receipt(root,original):
+                completed_original_work.append({
+                    "id":item["id"],"owner":item["owner"],
+                    "state":"WORK_PACKAGE_COMPLETED_EXTERNAL_GATE_STILL_OPEN",
+                    "report":original["report"],
+                    "report_sha256":original["report_sha256"],
+                    "priority":item["priority"],
+                    "no_physical_or_trading_release_claim":True,
+                })
+                continue
+            errs.append("unverified completion receipt "+item["id"])
         # Distinct Work attempt identity per original registered obligation:
         # a blocked V3 evidence gate cannot starve unrelated safe obligations.
         key="PROJECT_WIDE_COMMITMENT_SAFE_WORK:"+item["id"]
@@ -270,8 +287,11 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
             "waiting_registered_obligations":[
                 {"id":x["id"],"owner":x["owner"],"trigger":x["trigger"],
                  "state":x["state"],"priority":x["priority"]}
-                for x in available if not selected_obligation or
-                x["id"]!=selected_obligation["id"]],
+                for x in available if (not selected_obligation or
+                x["id"]!=selected_obligation["id"]) and
+                x["id"] not in {y["id"] for y in completed_original_work}
+                ] + completed_original_work,
+            "reconciled_completed_original_work":completed_original_work,
             "refill_after_evidenced_ack_same_run":True,
             "work_must_enforce_existing_time_cost_budget":True,
             "external_github_pr_count_must_be_verified_by_work":True,
