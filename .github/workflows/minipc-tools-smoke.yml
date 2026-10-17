@@ -118,6 +118,7 @@ jobs:
             'tools/uninstall-minipc-status-sync.ps1',
             'tools/minipc-v2r4-technical-rollover-preflight.ps1',
             'tools/minipc-v2r4-technical-rollover-stage.ps1',
+            'tools/minipc-v2r4-cpu-cache-inert-stage.ps1',
             'tools/minipc-v2r4-technical-cutover-readiness.ps1',
             'tools/minipc-v2r4-technical-cutover-operator.ps1',
             'tools/minipc-v2r4-shadow-cloud-sync-pr295-cutover.ps1',
@@ -167,6 +168,30 @@ jobs:
             }
             Write-Host "PARSE_OK $file"
           }
+
+      - name: CPU cache inert staging fail-closed contract (no host/keys)
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $src=Get-Content 'tools/minipc-v2r4-cpu-cache-inert-stage.ps1' -Raw
+          foreach($forbidden in @('Stop-ScheduledTask','Start-ScheduledTask','Register-ScheduledTask','Unregister-ScheduledTask','Set-ScheduledTask','Invoke-WebRequest','Invoke-RestMethod','Remove-Item','git pull','git reset','git stash')) {
+            if($src.Contains($forbidden)) { throw "Unexpected host/network mutation command: $forbidden" }
+          }
+          foreach($required in @('c8f37da865314ac91d36c786b66d107aad4a28d1','C84533E1042C9D89','8371CAB2D7D18F96','INERT_CPU_CACHE_STAGE_ONLY','READ_ONLY_PREFLIGHT_PASS_NOT_STAGED','STAGED_INERT_NOT_EXECUTED')) {
+            if(-not $src.Contains($required)) { throw "Inert staging gate missing: $required" }
+          }
+          $nonexistent=Join-Path $env:RUNNER_TEMP 'CPU-CACHE-NONEXISTENT-SOURCE'
+          $target=Join-Path $env:RUNNER_TEMP 'Staging\v2r4-cache-inert-c8f37da86531'
+          if(Test-Path -LiteralPath $nonexistent){throw 'Fixture collision: source'}
+          if(Test-Path -LiteralPath $target){throw 'Fixture collision: target'}
+          $failedClosed=$false
+          try {
+            & ./tools/minipc-v2r4-cpu-cache-inert-stage.ps1 -SourceRoot $nonexistent -TradingRoot $env:RUNNER_TEMP -Stage -Confirm 'INERT_CPU_CACHE_STAGE_ONLY' | Out-Null
+          } catch {
+            $failedClosed=([string]$_.Exception.Message).Contains('Independent source missing')
+          }
+          if(-not $failedClosed -or (Test-Path -LiteralPath $target)){throw 'Inert staging missing-source safety test failed'}
+          Write-Output 'CPU_CACHE_INERT_NO_HOST_MUTATION_PASS'
 
       - name: WS Shadow crash capture requires the pinned original host
         shell: powershell
