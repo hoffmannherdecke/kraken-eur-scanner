@@ -46,6 +46,52 @@ class OutageResilienceTests(unittest.TestCase):
         text=(ROOT/"docs/project-wide-outage-recovery-v1.md").read_text("utf-8")
         self.assertIn("NOT_YET_DEPLOYED",text)
         self.assertIn("Prospective",text)
+    def test_native_task_last_result_readback_is_observational_and_whitelisted(self):
+        src=(ROOT/"tools/minipc-watchdog.ps1").read_text("utf-8")
+        function=src.split("function Add-NativeTaskReadback {",1)[1].split(
+            "# Disk: warn below 20 GB",1)[0]
+        self.assertIn("Get-ScheduledTaskInfo -TaskName",function)
+        self.assertIn("267009",function)  # Windows 0x41301 = running, not failure
+        self.assertIn("RUNNING_CODE_AND_STATE_MATCH",function)
+        self.assertIn("RUNNING_CODE_STATE_MISMATCH",function)
+        self.assertIn("ZERO_RESULT_NOT_RUNTIME_PROOF",function)
+        self.assertIn("OTHER_RESULT_REVIEW_REQUIRED",function)
+        self.assertIn("UNAVAILABLE",function)
+        self.assertNotIn("Start-ScheduledTask",function)
+        self.assertNotIn("Stop-ScheduledTask",function)
+        self.assertNotIn("Register-ScheduledTask",function)
+        self.assertNotIn("Get-ScheduledTaskAction",function)
+        self.assertNotIn("Get-FileHash",function)
+        for key in (
+            "v2r4_paper_candidates", "v2r4_paper_wait",
+            "v2r4_paper_lifecycle", "v2r4_paper_cloud_sync",
+        ):
+            self.assertIn('check="'+key+'"',src)
+        self.assertIn('Add-NativeTaskReadback -Key $spec.check -Task $task',src)
+        for key in ("minipc_status_sync", "v3_canary_observation_28h"):
+            self.assertIn('Add-NativeTaskReadback -Key "'+key+'"',src)
+        self.assertIn('native_task_readback = [ordered]@{',src)
+        self.assertIn('no_runtime_or_release_authority = $true',src)
+        self.assertLess(src.index('native_task_readback = [ordered]@{'),
+                        src.index('issues = $issues'))
+        self.assertNotIn('task_path =',function)
+        self.assertNotIn('task_action =',function)
+        self.assertNotIn('arguments =',function)
+
+    def test_native_task_readback_cannot_change_existing_health_decisions(self):
+        src=(ROOT/"tools/minipc-watchdog.ps1").read_text("utf-8")
+        function=src.split("function Add-NativeTaskReadback {",1)[1].split(
+            "# Disk: warn below 20 GB",1)[0]
+        for unsafe in ("Add-Check", "$issues.Add", "$status =", "$healthState =",
+                       "Start-Process", "Restart-", "Invoke-WebRequest", "Invoke-RestMethod"):
+            self.assertNotIn(unsafe,function)
+        self.assertIn('Get-ScheduledTaskInfo',function)
+        self.assertIn('try {',function)
+        self.assertIn('} catch {',function)
+        self.assertIn('# Native scheduler metadata is optional',function)
+        self.assertIn('native_task_readback = [ordered]@{',src)
+        self.assertIn('# V3 Canary 28h is observational only',src)
+
     def test_no_new_cron(self):
         contract=(ROOT/"docs/project-wide-outage-recovery-v1.md").read_text("utf-8")
         self.assertIn("keine neuen",contract.lower())
