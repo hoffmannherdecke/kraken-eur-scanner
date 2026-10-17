@@ -54,6 +54,50 @@ Deno.serve(async(req:Request)=>{
       return respond(413,{ok:false,error:"oversized"});
     body=await req.json();
   }catch{return respond(400,{ok:false,error:"invalid_json"});}
+  // Read-only, same existing relay + SHA256 credential. No extra Edge
+  // deployment, SQL mutation, writer authority or activation endpoint.
+  // Only strict CAS-named non-CANARY V3 Paper series; NEVER a trial.
+  if(body?.action==="read_active_paper_series"){
+    const sid=body.series_id;
+    if(typeof sid!=="string"||
+       !/^PAPER-V3-[0-9]{8}T[0-9]{6}Z$/.test(sid)||
+       Object.keys(body).length!==2)
+      return respond(400,{ok:false,error:"invalid_exact_paper_readback_request"});
+    const {data:series,error}=await db.from("paper_series")
+      .select("status,strategy_revision,config")
+      .eq("series_id",sid).maybeSingle();
+    if(error||series?.status!=="active"||
+       series?.strategy_revision!=="V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001")
+      return respond(409,{ok:false,error:"real_v3_paper_series_not_active"});
+    const raw=series.config;
+    if(!raw||typeof raw!=="object"||Array.isArray(raw))
+      return respond(409,{ok:false,error:"invalid_active_paper_release_config"});
+    // Never return arbitrary config values, credentials or private signals.
+    const allowed=[
+      "series_id","strategy_revision","release_repo_sha",
+      "runtime_bundle_fingerprint_sha256","strategy_fingerprint_sha256",
+      "paper_only","real_money_actions_enabled","automatic_activation_allowed",
+      "physical_v2r4_writer_fence_verified",
+      "supervisor_old_intake_rearm_blocked","old_followup_owner_preserved",
+      "independent_six_e2e_proofs_verified"
+    ];
+    const config:Record<string,unknown>={};
+    for(const field of allowed)config[field]=raw[field]??null;
+    if(config.series_id!==sid||
+       config.strategy_revision!==series.strategy_revision||
+       config.paper_only!==true||
+       config.real_money_actions_enabled!==false||
+       config.automatic_activation_allowed!==false)
+      return respond(409,{ok:false,error:"active_paper_release_flags_inconsistent"});
+    return respond(200,{
+      ok:true,kind:"V3_PAPER_ACTIVE_SERIES_READONLY_V1",
+      series_id:sid,status:"active",
+      strategy_revision:series.strategy_revision,
+      observed_at_utc:new Date().toISOString(),
+      config,read_only:true,orders:false,real_money_actions:false,
+      cloud_cas_performed:false,physical_release_proofs_credited:0
+    });
+  }
   if(body?.action!=="sync_paper_receipts")
     return respond(400,{ok:false,error:"sync_only_no_activation"});
   const sid=String(body.series_id??"");
