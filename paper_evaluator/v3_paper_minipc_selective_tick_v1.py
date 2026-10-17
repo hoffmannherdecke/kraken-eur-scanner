@@ -29,6 +29,9 @@ from paper_evaluator.v3_paper_wait_observer_v1 import (
     candidate_receipts,observe_wait,finish_wait,
 )
 from paper_evaluator.v3_experimental_paper_journal_v1 import clock
+from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import (
+    sync_once, _RELEASED_CLOUD_SYNC_NATIVE_OWNER,
+)
 
 def utc_now()->str:
     return datetime.now(timezone.utc).isoformat()
@@ -351,6 +354,56 @@ def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
             capture_dir=capture_dir,clock_now=clock_now,capture=capture,
             fetch=fetch,ticker=ticker,
             _released_tick_capability=_RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK)
+
+
+
+def released_paper_cloud_ack_once(*,series_id:str,journal:Path,ack_file:Path,
+        token:str,expected_repo_sha:str,expected_bundle_sha256:str,
+        expected_strategy_sha256:str,
+        read_active_series:Callable[[str],dict[str,Any]],
+        clock_now:Callable[[],str]=utc_now,
+        cloud_post:Callable|None=None)->dict[str,Any]:
+    """One released non-CANARY V3 Paper journal ACK through ONE native owner.
+
+    This joins the original first-model and followup writer to the existing
+    append-only Supabase relay, WITHOUT a new service/Task/monitor/schedule.
+    The original caller must independently attest Windows Task/PID identity,
+    native no-rearm old V2R4 intake, model budget and six physical/cloud
+    release proofs. A faked Cloud callback cannot establish any of them.
+    GitHub/CI invokes this only with stubbed Cloud transport, never live.
+    """
+    if (not isinstance(series_id,str)
+            or re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id) is None
+            or not isinstance(token,str) or not 24<=len(token)<=512
+            or not isinstance(journal,Path) or not journal.is_dir()
+            or journal.is_symlink()
+            or not isinstance(ack_file,Path)
+            or ack_file.is_symlink() or ack_file.parent.is_symlink()
+            or not ack_file.parent.is_dir()
+            or ack_file.parent.resolve()==journal.resolve()):
+        raise ValueError("isolated native V3 Paper journal/ACK and relay credential required")
+    # The SAME native lock as released Scanner/P4 and 6/24/72h followup,
+    # including while authenticating Cloud and writing the Cloud ACK.
+    with _one_canary_owner(journal):
+        _require_released_paper_cloud(
+            series_id=series_id,expected_repo_sha=expected_repo_sha,
+            expected_bundle_sha256=expected_bundle_sha256,
+            expected_strategy_sha256=expected_strategy_sha256,
+            read_active_series=read_active_series,clock_now=clock_now)
+        outcome=sync_once(
+            journal=journal,series_id=series_id,ack_file=ack_file,
+            token=token,post=cloud_post,
+            _released_cloud_sync_capability=_RELEASED_CLOUD_SYNC_NATIVE_OWNER)
+        return dict(outcome,
+                    series_id=series_id,
+                    cloud_cas_performed=False,
+                    original_v2r4_changed=False,
+                    paper_writer_active=False,
+                    model_http_calls=0,
+                    orders=False,real_money_actions=False,
+                    technical_release_proofs_credited=0)
+
+
 
 
 @contextmanager
