@@ -121,6 +121,7 @@ jobs:
             'tools/minipc-v2r4-cpu-cache-inert-stage.ps1',
             'tools/minipc-v2r4-cpu-cache-release-readiness.ps1',
             'tools/minipc-v2r4-cpu-cache-rollback-readiness.ps1',
+            'tools/minipc-v2r4-cpu-originalhost-baseline.ps1',
             'tools/minipc-v2r4-technical-cutover-readiness.ps1',
             'tools/minipc-v2r4-technical-cutover-operator.ps1',
             'tools/minipc-v2r4-shadow-cloud-sync-pr295-cutover.ps1',
@@ -225,6 +226,41 @@ jobs:
             throw 'CPU source-only release gate absent-host fail-closed test failed'
           }
           Write-Output 'CPU_CACHE_READ_ONLY_RELEASE_GATE_NEGATIVE_PASS'
+
+      - name: CPU originalhost performance baseline is read-only and bounded
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $p='tools/minipc-v2r4-cpu-originalhost-baseline.ps1'
+          $src=Get-Content -LiteralPath $p -Raw
+          $tok=$null; $err=$null
+          [void][Management.Automation.Language.Parser]::ParseFile((Resolve-Path $p),[ref]$tok,[ref]$err)
+          if(@($err).Count -ne 0){throw 'CPU baseline has invalid PowerShell syntax'}
+          foreach($command in @(
+            'Stop-ScheduledTask','Start-ScheduledTask','Disable-ScheduledTask',
+            'Enable-ScheduledTask','Set-ScheduledTask','Register-ScheduledTask',
+            'Stop-Process','Start-Process','Copy-Item','Remove-Item','Move-Item',
+            'New-Item','Set-Content','Add-Content','Out-File','Invoke-WebRequest',
+            'Invoke-RestMethod','Export-ScheduledTask','Set-Item'
+          )) {
+            if($src.Contains($command)){throw "CPU baseline observer contains prohibited mutation: $command"}
+          }
+          if(-not $src.Contains("ISSUE353_V2R4_CPU_ORIGINALHOST_BASELINE_V1") -or
+             -not $src.Contains("production_release_authorized=$false") -or
+             -not $src.Contains("disk_writes=$false")){
+            throw 'CPU baseline observer lacks read-only evidence flag'
+          }
+          $missing=Join-Path $env:RUNNER_TEMP 'MISSING-ISSUE353-TRADING-ROOT'
+          if(Test-Path -LiteralPath $missing){throw 'Unexpected dummy root'}
+          $blocked=$false
+          try { & ./$p -TradingRoot $missing -DurationSeconds 15 -IntervalSeconds 5 | Out-Null }
+          catch {$blocked=([string]$_ -like '*CPU_SAMPLE_TRADING_ROOT_NOT_PRESENT*')}
+          if(-not $blocked){throw 'CPU baseline did not reject absent originalhost'}
+          $blocked=$false
+          try { & ./$p -TradingRoot $missing -DurationSeconds 2 -IntervalSeconds 1 | Out-Null }
+          catch {$blocked=([string]$_ -like '*CPU_SAMPLE_INVALID_BOUNDED_WINDOW*')}
+          if(-not $blocked){throw 'CPU baseline accepted invalid sampling interval'}
+          Write-Output 'CPU_BASELINE_SOURCE_ONLY_AST_AND_NO_HOST_NEGATIVE_PASS'
 
       - name: CPU rollback backup-only gate rejects absent host and never mutates tasks
         shell: powershell
