@@ -158,7 +158,7 @@ _RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK=object()
 
 
 def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
-        journal:Path,capture_dir:Path,
+        journal:Path,capture_dir:Path,model_reservations:Path,ack_file:Path,
         expected_repo_sha:str,expected_bundle_sha256:str,
         expected_strategy_sha256:str,
         read_active_series:Callable[[str],dict[str,Any]],
@@ -174,8 +174,9 @@ def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
     authentic. A supplied callback alone cannot prove these facts. No CLI,
     daemon, scheduler, model, orders, Cloud POST or CAS is created here.
 
-    Only previously immutable-journalled candidates are eligible. Any missing
-    proof stops BEFORE a new public Kraken request or local journal change.
+    Only previously immutable-journalled candidates with an actual MODEL/P4 and
+    one valid O_EXCL HTTP reservation are eligible. Missing/ambiguous results
+    stay on HOLD before any public Kraken request or journal mutation.
     """
     if (not isinstance(series_id,str)
             or re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id) is None
@@ -215,6 +216,18 @@ def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
                 or config.get("old_followup_owner_preserved") is not True
                 or config.get("independent_six_e2e_proofs_verified") is not True):
             raise ValueError("non-CANARY Paper release source mismatch or stale")
+        # Reuse the ORIGINAL strict restart/HTTP reservation + P4 + immutable
+        # Cloud-ACK identity planner. No P4 after crash => NO source GET and
+        # never classify a pending model as a final NO_BUY at 6h/24h/72h.
+        resume=plan_canary_resume(
+            candidate=candidate,series_id=series_id,journal=journal,
+            model_reservations=model_reservations,ack_file=ack_file,
+            _released_planner_capability=_RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK)
+        if resume.get("can_tick") is not True:
+            return dict(resume,status="NONCANARY_FOLLOWUP_HOLD_"+resume["status"],
+                        tick_called=False,source_capture_calls=0,
+                        paper_writer_active=False,model_http_calls=0,
+                        orders=False,real_money_actions=False)
         # Owner lock stays held THROUGH public source capture, journal and
         # outcome maturation. No concurrent second V3 followup can race.
         return tick_once(
@@ -363,7 +376,8 @@ def _first_enrolled_canary_tick_once_unlocked(*, preflight:dict[str,Any],
 
 def plan_canary_resume(*,candidate:dict[str,Any],series_id:str,
                        journal:Path,model_reservations:Path,
-                       ack_file:Path)->dict[str,Any]:
+                       ack_file:Path,
+                       _released_planner_capability:object=None)->dict[str,Any]:
     """Read-only journal/reservation/ACK restart gate, never a model replay.
 
     An HTTP reservation may have spent money even with no model response.
@@ -373,8 +387,11 @@ def plan_canary_resume(*,candidate:dict[str,Any],series_id:str,
     import hashlib
     from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import REVISION
 
-    if (not isinstance(series_id,str)
-            or not series_id.startswith("PAPER-V3-CANARY-")
+    is_canary=(isinstance(series_id,str) and series_id.startswith("PAPER-V3-CANARY-"))
+    is_released=(isinstance(series_id,str)
+                 and re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id)
+                 and _released_planner_capability is _RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK)
+    if (not (is_canary or is_released)
             or not isinstance(candidate,dict)
             or not isinstance(candidate.get("candidate_id"),str)
             or not isinstance(candidate.get("pair"),str)
