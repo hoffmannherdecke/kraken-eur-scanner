@@ -209,6 +209,99 @@ def _require_released_paper_cloud(*,series_id:str,
 
 
 
+def released_paper_first_scanner_model_once(*,preflight:dict[str,Any],
+        candidate:dict[str,Any],series_id:str,journal:Path,
+        capture_dir:Path,model_reservations:Path,
+        expected_repo_sha:str,expected_bundle_sha256:str,
+        expected_strategy_sha256:str,
+        read_active_series:Callable[[str],dict[str,Any]],
+        approval:dict[str,Any],model_key:str,
+        clock_now:Callable[[],str]=utc_now,
+        capture:Callable=capture_public_1m,
+        acquire:Callable|None=None,model_client:Callable|None=None,
+        existing_context:dict[str,Any]|None=None)->dict[str,Any]:
+    """First *released* Scanner -> immutable PIT -> model/P4, one OS owner.
+
+    Caller must independently establish the genuine mini-PC service identity
+    and externally authorized model spend; CI-injected callbacks are NOT six
+    physical E2E receipts or Cloud credentials. No Task, relay, CAS or orders.
+    No automatic retry: any initial journal evidence blocks a repeated call.
+    H5/H10/H11 independent positive-source entries require their separate
+    signed OWNERAUTH path, not a forged Scanner label.
+    """
+    from paper_evaluator.v3_paper_intake_receipt_stage_v1 import (
+        stage_and_witness_first_minute,
+    )
+    if (not isinstance(preflight,dict) or not isinstance(candidate,dict)
+            or preflight.get("series_id")!=series_id
+            or not isinstance(preflight.get("selected_candidates"),list)
+            or preflight["selected_candidates"]!=[candidate]
+            or candidate.get("entry_origin")!="SCANNER"
+            or candidate.get("kind")!="CANONICAL_CANDIDATE_HANDOFF_V1"
+            or candidate.get("action")!="REVIEW_ONLY_NOT_ORDER"
+            or candidate.get("deferred_recheck") is True
+            or not isinstance(preflight.get("ingress"),dict)
+            or preflight["ingress"].get("capacity_deferred_originals")!=[]
+            or len(preflight.get("prospective_first_1m_capture_enrollment",[]))!=1
+            or len(preflight.get("review_preflights",[]))!=1
+            or preflight["review_preflights"][0].get("candidate_id")!=candidate.get("candidate_id")
+            or preflight["review_preflights"][0].get("eligible_for_full_model_review") is not True
+            or preflight.get("paper_writer_active") is not False
+            or preflight.get("model_http_authorized") is not False
+            or not isinstance(model_key,str) or len(model_key)<20):
+        raise ValueError("exact one original Scanner/PIT model candidate and permit required")
+    # Budget must be genuinely new, individual, unexpired and <= exact fixed
+    # spend cap. Reject BEFORE source/journal writes, not after network work.
+    preflight_budget(approval,series_id)
+    if (not journal.is_dir() or journal.is_symlink()
+            or not capture_dir.is_dir() or capture_dir.is_symlink()
+            or not model_reservations.is_dir() or model_reservations.is_symlink()
+            or len({journal.resolve(),capture_dir.resolve(),
+                    model_reservations.resolve()})!=3):
+        raise ValueError("separate preexisting V3 source/journal/reservation roots required")
+    with _one_canary_owner(journal):
+        _require_released_paper_cloud(
+            series_id=series_id,expected_repo_sha=expected_repo_sha,
+            expected_bundle_sha256=expected_bundle_sha256,
+            expected_strategy_sha256=expected_strategy_sha256,
+            read_active_series=read_active_series,clock_now=clock_now)
+        if candidate_receipts(journal,series_id,candidate["candidate_id"]):
+            return {"status":"FIRST_SCANNER_ALREADY_JOURNALED_NO_MODEL_RETRY",
+                    "model_http_calls":0,"orders":False,
+                    "paper_writer_active":False}
+        enrollment=stage_and_witness_first_minute(
+            preflight=preflight,journal_directory=journal,
+            capture_directory=capture_dir,observed_at_utc=clock_now(),
+            capture=capture)
+        source=enrollment["enrollment"][0]
+        # A not-yet-closed first minute is not a negative market finding.
+        # Fresh original 1/5/15m P0 is separately re-acquired by one_candidate.
+        result=one_candidate(
+            candidate=candidate,series_id=series_id,
+            local_receipts=journal,model_reservations=model_reservations,
+            approval=approval,model_key=model_key,
+            allow_model=True,admit_staged_scanner_one_approved_model=True,
+            acquire=acquire,model_client=model_client,clock=clock_now,
+            existing_context=existing_context,
+            _released_model_capability=_RELEASED_MODEL_NATIVE_OWNER)
+        return {
+            "status":("FIRST_SCANNER_MODEL_P4_DURABLE_WAIT_FOR_FOLLOWUP"
+                      if result.get("p4_decision") in
+                         ("BUY_SCOUT","WAIT","REJECT","UNKNOWN")
+                      else "FIRST_SCANNER_MODEL_OR_SOURCE_INCOMPLETE_HOLD"),
+            "series_id":series_id,
+            "candidate_id":candidate["candidate_id"],
+            "model_result":result,
+            "first_minute_witness_status":source["status"],
+            "source_capture_calls":enrollment["source_capture_calls"],
+            "model_http_attempts_reserved":result.get(
+                "model_http_attempts_reserved",0),
+            "cloud_ack_verified":False,"paper_writer_active":False,
+            "orders":False,"real_money_actions":False,
+            "new_schedules":0,"v2r4_changed":False,
+        }
+
+
 def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
         journal:Path,capture_dir:Path,model_reservations:Path,ack_file:Path,
         expected_repo_sha:str,expected_bundle_sha256:str,
