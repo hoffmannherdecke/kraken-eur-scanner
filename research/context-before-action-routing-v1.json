@@ -157,6 +157,10 @@
       {
         "path": "docs/v2r4-cpu-cache-versioned-technical-release-20261017.md",
         "role": "VERSIONED_CPU_SOURCE_ADOPTION_FROZEN_OCT09_PAPER_PR326_AFTERCARE_AND_NO_UNPROVEN_HOST_GAIN"
+      },
+      {
+        "path": "docs/v3-controlled-paper-cutover-20261011.md",
+        "role": "V3_SINGLE_WRITER_VERSIONED_CPU_CO_RELEASE_NOT_A_NEW_OWNER_OR_LIVE_APPROVAL"
       }
     ],
     "operations": [
@@ -203,6 +207,10 @@
       {
         "path": "paper_evaluator/v2r4_wait_runtime.py",
         "role": "ORIGINAL_PR326_WAIT_PR360_BOUNDED_CACHE_SOURCE_ONLY_ORIGINAL_LIVE_WAITER_PINNED"
+      },
+      {
+        "path": "docs/v3-controlled-paper-cutover-20261011.md",
+        "role": "SAME_V3_GO_LIVE_OWNER_CPU_AND_ALT_WAIT_FOLLOWUP_ADOPTION_PRIOR_APPROVAL_SIX_GATES_NO_SEVENTH"
       }
     ],
     "research": [
