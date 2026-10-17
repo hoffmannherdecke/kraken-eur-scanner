@@ -47,6 +47,51 @@ class ContextBeforeActionTests(unittest.TestCase):
             "docs/v3-real-source-owner-topology-20261012.md",
             {x["path"] for x in build(ROOT, "operations")["source_index"]})
 
+    def test_interactive_chat_goal_is_in_every_actual_context_packet(self):
+        """Ordinary chat continuation is delivered directly; no Work-only source pointer."""
+        import hashlib
+
+        canonical = ROOT / "AGENTS.md"
+        actual_hash = hashlib.sha256(canonical.read_bytes()).hexdigest()
+        heading = "## Dialog-Arbeitsmodus: vereinbartes Ziel statt einzelner Arbeitsblock"
+        for scope in ("strategy", "architecture", "operations", "research"):
+            with self.subTest(scope=scope):
+                packet = build(ROOT, scope)
+                index = {row["path"]: row["sha256"] for row in packet["source_index"]}
+                self.assertEqual(index["AGENTS.md"], actual_hash)
+                x = packet["interactive_chat_goal"]
+                self.assertEqual(x["kind"], "INTERACTIVE_CHAT_GOAL_CONTINUATION_HANDOFF_V1")
+                self.assertEqual(x["canonical_source"], "AGENTS.md")
+                self.assertEqual(x["source_sha256"], actual_hash)
+                self.assertIn(heading, x["instruction_from_original"])
+                self.assertIn("vereinbarte, tatsächlich prüfbare Zielzustand", x["instruction_from_original"])
+                self.assertIn("ohne neue Nutzerantwort weiterarbeiten", x["instruction_from_original"])
+                self.assertTrue(x["progress_note_is_not_a_stop"])
+                self.assertTrue(x["finish_at_verified_goal_or_real_blocker"])
+                self.assertTrue(x["new_chat_must_actively_load_context"])
+                self.assertFalse(x["automatic_new_chat_bootstrap_guaranteed"])
+                self.assertTrue(x["no_new_scheduler_or_execution_authority"])
+                self.assertFalse(packet["has_runtime_side_effects"])
+                self.assertFalse(packet["has_network_access"])
+
+    def test_missing_or_incomplete_canonical_interactive_chat_rule_fails_closed(self):
+        """A missing or weakened original section cannot appear as a successful handoff."""
+        from tools.context_before_action import interactive_chat_goal_handoff
+        source_index = [{"path": "AGENTS.md", "sha256": "example"}]
+        original_reader = Path.read_text
+
+        def altered_read(file, *args, **kwargs):
+            text = original_reader(file, *args, **kwargs)
+            if Path(file).name == "AGENTS.md":
+                return text.replace("ohne neue Nutzerantwort weiterarbeiten", "await a new user message")
+            return text
+
+        with patch.object(Path, "read_text", autospec=True, side_effect=altered_read):
+            with self.assertRaisesRegex(ContextGateError, "interactive chat rule incomplete"):
+                interactive_chat_goal_handoff(ROOT, source_index)
+        with self.assertRaisesRegex(ContextGateError, "interactive chat rule not indexed"):
+            interactive_chat_goal_handoff(ROOT, [])
+
     def test_projectwide_reviewed_minipc_runner_is_routed_in_every_context_scope(self):
         """Same already-tested low-privilege capability must be visible without a second manager."""
         registry = json.loads((ROOT / "research/context-before-action-routing-v1.json").read_text())
