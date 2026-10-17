@@ -17,6 +17,19 @@ jobs:
           python-version: '3.13'
       - name: Restricted generic Mini-PC task source contract (offline, no host run)
         run: python -m unittest tests.test_minipc_reviewed_task_source_contract -v
+      - name: Local pinned Mini-PC runner guard source safety (offline)
+        run: python -m unittest tests.test_minipc_runner_local_guard_contract -v
+      - name: Parse Mini-PC local runner guard PowerShell (source only)
+        shell: pwsh
+        run: |
+          foreach ($p in @('tools/minipc_runner_guard/pre_job.ps1', 'tools/minipc_runner_guard/install_guard.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($p,[ref]$tokens,[ref]$errors)
+            if (@($errors).Count -ne 0) {
+              throw "Invalid PowerShell in $p"
+            }
+          }
       - name: Compile changed Python
         run: |
           python -m py_compile \
