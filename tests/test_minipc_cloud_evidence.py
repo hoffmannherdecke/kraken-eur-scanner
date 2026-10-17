@@ -464,19 +464,25 @@ class MiniPCDailyExactCountContract(unittest.TestCase):
     """Prevent the previously real Supabase 1000-row response truncation."""
 
     def test_original_real_bigger_than_1000_totals_are_not_capped(self):
-        self.assertEqual(parse_postgrest_exact_count("0-0/24460"), 24460)
-        self.assertEqual(parse_postgrest_exact_count("0-0/24014"), 24014)
-        self.assertEqual(parse_postgrest_exact_count("0-0/1001"), 1001)
-        self.assertEqual(parse_postgrest_exact_count("0-0/1"), 1)
+        # PostgREST can use a header-only */N or a 0-M/N page range.
+        # Only the denominator is the exact total; M is NOT the count.
+        for header, expected in (
+            ("0-0/24460", 24460), ("*/24460", 24460),
+            ("0-999/24460", 24460), ("0-0/24014", 24014),
+            ("*/24014", 24014), ("0-999/24014", 24014),
+            ("0-0/1001", 1001), ("0-0/1", 1),
+        ):
+            with self.subTest(header=header):
+                self.assertEqual(parse_postgrest_exact_count(header), expected)
 
     def test_genuine_empty_result_has_explicit_zero(self):
         self.assertEqual(parse_postgrest_exact_count("*/0"), 0)
         self.assertEqual(parse_postgrest_exact_count(" */0 "), 0)
 
-    def test_unverifiable_or_partial_count_never_silently_becomes_zero(self):
+    def test_unverifiable_or_invalid_range_never_silently_becomes_zero(self):
         for value in (
-            None, "", "*/", "*/100", "0-0/*", "0-0/0", "0-999/24460",
-            "1-1/24014", "0-1/24014", "0-0/-1", "0-0/1.2",
+            None, "", "*/", "0-0/*", "0-0/0", "0-1000/1000",
+            "1-1/24014", "0-24014/24014", "0-0/-1", "0-0/1.2",
             "0-0/abc", "0-0/1\nContent-Type: secret",
             1000, {}, "0-0/9223372036854775808",
         ):
