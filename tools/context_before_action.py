@@ -664,7 +664,7 @@ def interactive_chat_goal_handoff(root: Path, source_index: list[dict]) -> dict:
     required = (
         "normale interaktive Chat-Arbeit",
         "vereinbarte, tatsächlich prüfbare Zielzustand",
-        "im selben laufenden Antwort-/Tool-Durchgang",
+        "selben laufenden Antwort-/Tool-Durchgang",
         "ohne neue Nutzerantwort weiterarbeiten",
         "Eine abschließende Antwort erst",
         "Eine finale Chat-Antwort startet keine heimliche asynchrone Weiterarbeit",
