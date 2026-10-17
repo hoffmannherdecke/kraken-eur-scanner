@@ -260,7 +260,27 @@ jobs:
           try { & ./$p -TradingRoot $missing -DurationSeconds 2 -IntervalSeconds 1 | Out-Null }
           catch {$blocked=([string]$_ -like '*CPU_SAMPLE_INVALID_BOUNDED_WINDOW*')}
           if(-not $blocked){throw 'CPU baseline accepted invalid sampling interval'}
-          Write-Output 'CPU_BASELINE_SOURCE_ONLY_AST_AND_NO_HOST_NEGATIVE_PASS'
+          # Positive laboratory run on GitHub-hosted Windows, never originalhost:
+          # bounded 15s and zero production tasks/Cloud/credentials.
+          $syntheticRoot=Join-Path $env:RUNNER_TEMP 'ISSUE353-EMPTY-LAB-TRADING'
+          if(Test-Path -LiteralPath $syntheticRoot){throw 'CPU lab fixture unexpectedly exists'}
+          New-Item -ItemType Directory -Path $syntheticRoot -ErrorAction Stop | Out-Null
+          try {
+            $raw=(& ./$p -TradingRoot $syntheticRoot -DurationSeconds 15 -IntervalSeconds 5)
+            $sample=($raw -join "`n") | ConvertFrom-Json
+            if($sample.kind -ne 'ISSUE353_V2R4_CPU_ORIGINALHOST_BASELINE_V1' -or
+               $sample.status -ne 'READ_ONLY_PERFORMANCE_OBSERVATION_NOT_RELEASE_ACK' -or
+               $sample.intervals -ne 3 -or
+               $sample.paper_runtime_changed -ne $false -or
+               $sample.cloud_mutations -ne $false -or
+               $sample.production_release_authorized -ne $false -or
+               $sample.disk_writes -ne $false){
+              throw 'CPU baseline Windows synthetic sample contract mismatch'
+            }
+          } finally {
+            Remove-Item -LiteralPath $syntheticRoot -Force -Recurse -ErrorAction SilentlyContinue
+          }
+          Write-Output 'CPU_BASELINE_SOURCE_ONLY_AST_AND_NO_HOST_NEGATIVE_AND_SYNTHETIC_PASS'
 
       - name: CPU rollback backup-only gate rejects absent host and never mutates tasks
         shell: powershell
