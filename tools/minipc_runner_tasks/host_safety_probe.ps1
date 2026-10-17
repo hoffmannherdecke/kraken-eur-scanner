@@ -32,7 +32,7 @@ if ($ram -lt 0 -or $disk -lt 0) {
     admin_role = $false
     free_ram_gib = $ram
     c_free_gib = $disk
-    trading_or_cloud_action = 'NONE'
+    project_action = 'NONE'
     local_filesystem_writes = $false
     secrets_used = $false
 } | ConvertTo-Json -Compress
