@@ -98,7 +98,13 @@ foreach($entry in @($manifest.source_manifest)){
  $item=Join-Path $stage ($rel.Replace('/','\'))
  Require (Under $item $stage) 'stage traversal'
  $parent=Split-Path $item -Parent
- Require (-not [bool]((Get-Item -LiteralPath $parent -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) 'linked stage directory'
+ # A nested subdirectory symlink can escape the isolated stage even if the
+ # final file and immediate parent look normal; reject every ancestor.
+ while(Under $parent $stage){
+   $node=Get-Item -LiteralPath $parent -Force -ErrorAction Stop
+   Require (-not [bool]($node.Attributes -band [IO.FileAttributes]::ReparsePoint)) 'linked stage ancestor'
+   $parent=Split-Path $parent -Parent
+ }
  $digest=Sha $item
  Require ($digest -ceq [string]$entry.sha256) ('stage SHA256 drift: '+$rel)
  # Git blob verification independently binds EACH staged byte to the reviewed
