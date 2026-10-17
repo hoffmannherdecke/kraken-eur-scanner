@@ -82,6 +82,18 @@ class ContextBeforeActionTests(unittest.TestCase):
                 packet = build(ROOT, scope)
                 source_paths = {x["path"] for x in packet["source_index"]}
                 self.assertIn(doc, source_paths)
+                handoff = packet["operational_evidence_handoff"]["projectwide_reviewed_runner"]
+                self.assertEqual(handoff["owner_issue"], 353)
+                self.assertEqual(handoff["private_runner_issue"], 13)
+                self.assertEqual(handoff["canonical_runbook"], doc)
+                self.assertEqual(handoff["manual_one_off_task_result"], 0)
+                self.assertTrue(handoff["windows_schedule_enabled_at_original_user_photo"])
+                self.assertEqual(
+                    handoff["status"],
+                    "HOST_SCHEDULER_ENABLED_ACK_FIRST_NATURAL_RUN_PENDING",
+                )
+                self.assertFalse(handoff["live_host_status_independently_verified_by_this_packet"])
+                self.assertTrue(handoff["no_arbitrary_shell_or_trading_authority"])
                 component = next(
                     x for x in packet["project_component_owners"]["components"]
                     if x["id"] == "mini_pc_deployment"

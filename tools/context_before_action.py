@@ -546,6 +546,32 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
     scan_path = scan_fixed["source_workflow_file"]
     require(scan_path in sources and len(sources[scan_path]["sha256"]) == 64,
             "original scanner workflow source not fingerprinted")
+    runner = contract.get("projectwide_reviewed_runner")
+    require(isinstance(runner, dict)
+            and runner.get("kind") == "PROJECTWIDE_REVIEWED_MINIPC_RUNNER_HANDOFF_V1",
+            "projectwide existing reviewed runner handoff missing")
+    runbook = "docs/minipc-runner-bounded-windows-v1.md"
+    require(runner.get("canonical_runbook") == runbook
+            and runbook in sources
+            and len(sources[runbook]["sha256"]) == 64,
+            "reviewed runner source not present in every context packet")
+    require(runner.get("github_issue") == 353
+            and runner.get("private_issue") == 13
+            and runner.get("private_repository") ==
+                "hoffmannherdecke/kraken-readonly-bridge"
+            and runner.get("windows_task_name") ==
+                "CryptoSupport - Bounded Runner Window",
+            "original reviewed runner ownership drift")
+    require(runner.get("windows_task_schedule_enabled_host_confirmed") is True
+            and runner.get("first_unattended_periodic_window_e2e") ==
+                "PENDING_ORIGINAL_HOST_READBACK"
+            and runner.get("no_unreviewed_powershell_or_elevated_host_access") is True
+            and runner.get("no_trading_paper_cloud_order_or_budget_authority") is True
+            and runner.get("no_paid_github_upgrade") is True
+            and runner.get("no_new_project_manager_or_schedule") is True
+            and runner.get("new_chat_auto_import_guaranteed") is False,
+            "reviewed runner safety and evidence boundary drift")
+
     return {
         "kind": contract["kind"],
         "status": "SOURCE_ROUTES_REGISTERED_LIVE_DATA_NOT_QUERIED",
@@ -568,6 +594,30 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
         },
         "github_original_watch_workflow_id":
             contract["github_original_watch_workflow_id"],
+        "projectwide_reviewed_runner": {
+            "kind": runner["kind"],
+            "status": "HOST_SCHEDULER_ENABLED_ACK_FIRST_NATURAL_RUN_PENDING",
+            "canonical_runbook": runbook,
+            "source_fingerprint": sources[runbook]["sha256"],
+            "owner_issue": runner["github_issue"],
+            "private_runner_issue": runner["private_issue"],
+            "private_runner_repository": runner["private_repository"],
+            "private_approved_workflow_file": runner["private_approved_workflow_file"],
+            "private_approved_workflow_sha": runner["private_approved_workflow_sha"],
+            "task_source": runner["public_reviewed_task_dir"],
+            "request_format": runner["request_format"],
+            "windows_task_name": runner["windows_task_name"],
+            "windows_schedule_enabled_at_original_user_photo":
+                runner["windows_task_schedule_enabled_host_confirmed"],
+            "manual_one_off_task_result":
+                runner["manual_one_off_e2e"]["last_task_result"],
+            "first_unattended_periodic_window_e2e":
+                runner["first_unattended_periodic_window_e2e"],
+            "live_host_status_independently_verified_by_this_packet": False,
+            "no_arbitrary_shell_or_trading_authority": True,
+            "no_paid_github_upgrade": True,
+            "new_chat_auto_import_guaranteed": False,
+        },
         "scanner_artifact_handoff": {
             "kind": scan["kind"],
             "status": "SOURCE_ROUTE_ONLY_ACTUAL_RUN_ARTIFACT_NOT_FETCHED",
