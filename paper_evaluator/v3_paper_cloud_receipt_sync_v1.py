@@ -11,6 +11,10 @@ from typing import Any
 
 ENDPOINT="https://nlgzjmqgwueojlyqmoru.supabase.co/functions/v1/v3-paper-evidence-relay"
 REVISION="V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001"
+# Identity-only accidental-misuse fence: the original native OS owner
+# (in selective_tick) must explicitly grant post-CAS non-CANARY receipt sync.
+# Not a physical authentication secret or independent release authorization.
+_RELEASED_CLOUD_SYNC_NATIVE_OWNER=object()
 
 def batch(journal:Path,series_id:str,acked:set[str],limit:int=30)->list[dict[str,Any]]:
     rows=[]
@@ -83,10 +87,17 @@ def read_active_paper_series(*,series_id:str,token:str,
 
 
 def sync_once(*,journal:Path,series_id:str,ack_file:Path,token:str,
-              relay_url:str=ENDPOINT,
-              post=None)->dict[str,Any]:
+              relay_url:str=ENDPOINT,post=None,
+              _released_cloud_sync_capability:object=None)->dict[str,Any]:
     if not series_id.startswith("PAPER-V3-") or len(token)<24:
         raise ValueError("V3 identity or relay token missing")
+    # A real non-CANARY Paper series must never be able to post its original
+    # receipts through the CANARY-only CLI or a parallel worker. The caller
+    # must hold the original native OS lock AND verify fresh active Cloud
+    # series + release SHA pins before invoking the existing sync_once.
+    if (re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id)
+            and _released_cloud_sync_capability is not _RELEASED_CLOUD_SYNC_NATIVE_OWNER):
+        raise ValueError("released V3 Paper Cloud sync requires locked active-series owner")
     if ack_file.exists():
         state=json.loads(ack_file.read_text("utf-8"))
         if state.get("series_id")!=series_id or state.get("revision")!=REVISION:
