@@ -17,8 +17,8 @@ $series='PAPER-V2R4-20261009T110135Z'
 $bundle='604d5d460f17c4548b2d69db8ceb2f5368e702a6d51860ce8916e2e7fbba5b30'
 $strategy='55c15f6c0735e524409594ece173ab30e4d84eecafefa18b57f8dc9c48cca32c'
 $files=[ordered]@{
-  'candidate\v2r4-paper-local-runtime.py'='8D62BD0B73F197DCE0EBF2C8398023E46A63800D2063BD30FD2CD60355BC7C6C'
-  'wait\v2r4_wait_runtime.py'='880A0BEADC7F777A96BBDD6AA7B05627FCFE16DDCFC1C5E20AFD88C5C4867713'
+  'candidate\v2r4-paper-local-runtime.py'=''
+  'wait\v2r4_wait_runtime.py'=''
   'wait\wait_launcher.py'='C5E43D62976BDF2079A3A0402E57658ABA8A33D427B0CF0D56737565B84DD51D'
   'wait\v2r4_wait_watcher.py'='9EEE3F9CA8E669AD8DA690DA7A2C53E781EE618594783D08A50FCD5623F670BD'
 }
@@ -66,6 +66,11 @@ try {
   Need ($LASTEXITCODE -eq 0 -and $head.Count -eq 1 -and $head[0].Trim() -ceq $pin) 'EXACT_SOURCE_PIN'
   $changed=@(& git -C $source status --porcelain --untracked-files=normal 2>$null | Where-Object { $_ })
   Need ($LASTEXITCODE -eq 0 -and $changed.Count -eq 0) 'SOURCE_CLEAN'
+  # The inert stage copied bytes from this exact clean pinned Windows worktree.
+  # Compare the staged manifest to those bytes, never hand-transcribed SHA256.
+  $files['candidate\v2r4-paper-local-runtime.py']=SHA (Join-Path $source 'tools\v2r4-paper-local-runtime.py')
+  $files['wait\v2r4_wait_runtime.py']=SHA (Join-Path $source 'paper_evaluator\v2r4_wait_runtime.py')
+  Need ($files['candidate\v2r4-paper-local-runtime.py'].Length -eq 64 -and $files['wait\v2r4_wait_runtime.py'].Length -eq 64) 'SOURCE_CACHE_SHA_READABLE'
   Need ((SHA (Join-Path $app 'v2r4-paper-local-runtime.py')) -ceq '8371CAB2D7D18F9651E604DBAB88768F77B2DFF5EB88565122858F6428DC50D0') 'ORIGINAL_CANDIDATE_SHA'
   Need ((SHA (Join-Path $wait 'v2r4_wait_runtime.py')) -ceq 'C84533E1042C9D89D6F6EDC31DD22DE6DD3AB3B7AAE2B202EF344495A72BA6A2') 'ORIGINAL_WAIT_SHA'
   Need ((SHA (Join-Path $wait 'wait_launcher.py')) -ceq $files['wait\wait_launcher.py']) 'ORIGINAL_LAUNCHER_SHA'

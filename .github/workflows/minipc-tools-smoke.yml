@@ -206,6 +206,14 @@ jobs:
           foreach($forbidden in @('Stop-ScheduledTask','Start-ScheduledTask','Register-ScheduledTask','Unregister-ScheduledTask','Set-ScheduledTask','Copy-Item','Move-Item','Remove-Item','New-Item','Set-Content','Out-File','Invoke-RestMethod','Invoke-WebRequest','Start-Process','git pull','git reset')) {
             if($src.Contains($forbidden)){throw "CPU source-only gate must not contain mutation command: $forbidden"}
           }
+          # Avoid manually transcribed cache SHA values: frozen PR360 source bytes
+          # can be normalized differently by git on Windows; stage copied local bytes.
+          if(-not $src.Contains('SOURCE_CACHE_SHA_READABLE')){ throw 'Missing source-check evidence gate' }
+          $sourceHashReads=[regex]::Matches($src,[regex]::Escape('=SHA (Join-Path $source')).Count
+          if($sourceHashReads -ne 2){ throw 'Expected two exact PR360 source-hash reads' }
+          if($src.Contains("'candidate\\v2r4-paper-local-runtime.py'='8D62BD0B") -or $src.Contains("'wait\\v2r4_wait_runtime.py'='880A0BEA")){
+            throw 'CPU manifest checker reverted to hand-transcribed source hashes'
+          }
           foreach($required in @('PAPER-V2R4-20261009T110135Z','c8f37da865314ac91d36c786b66d107aad4a28d1','d8b35a8ec2e6f392f219b1c36cad95f3ad629b64','READ_ONLY_GATE_BLOCKED','READ_ONLY_SOURCE_GATE_PASS_MANUAL_RELEASE_BLOCKED','604d5d460f17c4548b2d69db8ceb2f5368e702a6d51860ce8916e2e7fbba5b30')) {
             if(-not $src.Contains($required)){throw "CPU gate missing source pin: $required"}
           }
