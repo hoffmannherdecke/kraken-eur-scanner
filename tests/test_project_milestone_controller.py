@@ -18,6 +18,9 @@ class GeneralFutureImplementationMilestoneTests(unittest.TestCase):
         self.assertEqual(len(events),1)
         self.assertEqual(events[0]["issue"],7)
         self.assertIn("V3_EXPERIMENTAL_PAPER_SIX_PROOFS",events[0]["detail"])
+        self.assertIn("höchstens zwei reversible sichere Arbeitspakete gleichzeitig",events[0]["detail"])
+        self.assertIn("nach belegtem Abschluss",events[0]["detail"])
+        self.assertNotIn("höchstens zwei reversible sichere Arbeiten aus",events[0]["detail"])
         self.assertNotIn("V3_CANARY_28H_PHYSICAL_CLOSURE",events[0]["detail"])
         self.assertNotIn("automatische Paper-Freigabe",events[0]["detail"])
         after=dt.datetime(2026,10,13,12,1,tzinfo=dt.timezone.utc)
@@ -521,6 +524,9 @@ class V2R4WaitPhysicalFollowthroughTests(unittest.TestCase):
         self.assertEqual(relevant[0]["issue"],99)
         self.assertIn("PROJECT:V2R4_WAIT_PHYSICAL_FOLLOWTHROUGH_OPEN",statuses)
         self.assertIn("Mini-PC",relevant[0]["detail"])
+        self.assertIn("Original-PR326-Work-ACK",relevant[0]["detail"])
+        self.assertIn("nicht erneut vergeben",relevant[0]["detail"])
+        self.assertNotIn("noch nicht installiert",relevant[0]["detail"])
         self.assertNotIn("automatisch deployen",relevant[0]["detail"])
 
 
