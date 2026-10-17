@@ -64,7 +64,7 @@ class ContextBeforeActionTests(unittest.TestCase):
         self.assertEqual(arch_index[release_doc], op_index[release_doc])
         self.assertFalse(operations["declared_status"]["live_runtime_independently_checked"])
         self.assertFalse(architecture["declared_status"]["live_runtime_independently_checked"])
-        self.assertFalse(operations["automatic_activation_allowed"] if "automatic_activation_allowed" in operations else False)
+        self.assertFalse(operations["has_runtime_side_effects"])
         self.assertIn("c2ff676196a08d89dbe2584144c70555149d49ca", (ROOT / release_doc).read_text("utf-8"))
 
     def test_existing_operational_readback_route_is_available_for_all_scopes(self):
