@@ -169,15 +169,15 @@ def _require_released_paper_cloud(*,series_id:str,
     A self-reported Cloud config is not independent physical proof of a
     Windows fence, signed six E2E proofs or actual deployment.
     """
-        if (not isinstance(series_id,str)
-                or re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id) is None
-                or not all(isinstance(x,str) and re.fullmatch(pattern,x)
-                           for x,pattern in (
-                               (expected_repo_sha,r"[0-9a-f]{40}"),
-                               (expected_bundle_sha256,r"[0-9a-f]{64}"),
-                               (expected_strategy_sha256,r"[0-9a-f]{64}")))
-                or not callable(read_active_series)):
-            raise ValueError("exact release-pinned non-CANARY Paper identity required")
+    if (not isinstance(series_id,str)
+            or re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id) is None
+            or not all(isinstance(x,str) and re.fullmatch(pattern,x)
+                       for x,pattern in (
+                           (expected_repo_sha,r"[0-9a-f]{40}"),
+                           (expected_bundle_sha256,r"[0-9a-f]{64}"),
+                           (expected_strategy_sha256,r"[0-9a-f]{64}")))
+            or not callable(read_active_series)):
+        raise ValueError("exact release-pinned non-CANARY Paper identity required")
 
     original=read_active_series(series_id)
     if not isinstance(original,dict):
