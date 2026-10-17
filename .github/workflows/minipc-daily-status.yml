@@ -82,6 +82,21 @@ jobs:
                   raw=resp.read().decode("utf-8","replace")
                   return resp.status, json.loads(raw) if raw else None
 
+          from tools.minipc_cloud_evidence import parse_postgrest_exact_count
+
+          def request_count(path):
+              # One exact, header-only count; do not silently truncate to
+              # Supabase/PostgREST's default 1000 data-row response limit.
+              req=urllib.request.Request(
+                  url+path,method="HEAD",headers={
+                      **headers,"Prefer":"count=exact","Range":"0-0"
+                  }
+              )
+              with urllib.request.urlopen(req,timeout=20) as resp:
+                  return parse_postgrest_exact_count(
+                      resp.headers.get("Content-Range")
+                  )
+
           _,rows=request(
               "GET",
               "/rest/v1/minipc_status_current?select=node_id,observed_at,status,payload&order=observed_at.desc&limit=1"
@@ -142,15 +157,12 @@ jobs:
           current_series_id=current_paper["series_id"]
           legacy_v2r4=current_revision.startswith("V2R4-")
           if legacy_v2r4:
-              _,shadow_count_rows=request(
-                  "GET", "/rest/v1/v2r4_shadow_evidence?select=event_id"
+              shadow_events=request_count(
+                  "/rest/v1/v2r4_shadow_evidence?select=event_id"
               )
-              shadow_events=len(shadow_count_rows or [])
-              _,completed_rows=request(
-                  "GET",
+              completed_outcomes=request_count(
                   "/rest/v1/v2r4_shadow_evidence?select=event_id&outcome_payload=not.is.null"
               )
-              completed_outcomes=len(completed_rows or [])
           else:
               # Existing minipc_daily_status legacy metric columns are NOT NULL.
               # Do not mislabel their required neutral 0 values as V3 signals;
@@ -161,11 +173,9 @@ jobs:
               active_outcomes=0
 
           since=(now_utc-dt.timedelta(hours=24)).isoformat().replace("+00:00","Z")
-          _,scanner_rows=request(
-              "GET",
+          scanner_24h=request_count(
               "/rest/v1/scanner_detection_evidence?select=handoff_id&detected_at=gte."+urllib.parse.quote(since,safe=":-TZ+")
           )
-          scanner_24h=len(scanner_rows or [])
 
           icon={
               "OK":"✅",
