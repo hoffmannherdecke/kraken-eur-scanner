@@ -47,6 +47,79 @@ class ContextBeforeActionTests(unittest.TestCase):
             "docs/v3-real-source-owner-topology-20261012.md",
             {x["path"] for x in build(ROOT, "operations")["source_index"]})
 
+    def test_existing_operational_readback_route_is_available_for_all_scopes(self):
+        """Every V3/ops/arch context can now locate the original existing reader."""
+        import hashlib
+        expected_paths = {
+            "tools/minipc_cloud_evidence.py",
+            "tools/minipc-watchdog.ps1",
+            ".github/workflows/minipc-daily-status.yml",
+        }
+        for scope in ("strategy", "architecture", "operations", "research"):
+            with self.subTest(scope=scope):
+                packet = build(ROOT, scope)
+                x = packet["operational_evidence_handoff"]
+                self.assertEqual(x["kind"], "EXISTING_OPERATIONAL_EVIDENCE_HANDOFF_V1")
+                self.assertEqual(x["status"], "SOURCE_ROUTES_REGISTERED_LIVE_DATA_NOT_QUERIED")
+                self.assertEqual(set(x["source_paths"]), expected_paths)
+                index = {v["path"]: v["sha256"] for v in packet["source_index"]}
+                self.assertTrue(expected_paths.issubset(index))
+                for path in expected_paths:
+                    self.assertEqual(index[path], hashlib.sha256((ROOT / path).read_bytes()).hexdigest())
+                    self.assertEqual(x["source_fingerprints"][path], index[path])
+                self.assertEqual(x["original_cloud_sources"]["current"],
+                                 "public.minipc_status_current")
+                self.assertEqual(x["original_cloud_sources"]["alert"],
+                                 "public.minipc_status_alert_state")
+                self.assertEqual(x["original_cloud_sources"]["daily"],
+                                 "public.minipc_daily_status")
+                self.assertEqual(x["existing_fields"]["native_task_readback"],
+                                 "payload.native_task_readback")
+                self.assertEqual(x["existing_fields"]["daily_metric_provenance"],
+                                 "payload.metric_provenance")
+                self.assertEqual(x["github_original_watch_workflow_id"], 371909131)
+                self.assertEqual(x["issue_number"], 353)
+                for name in (
+                    "live_windows_deployment_independently_verified",
+                    "host_health_independently_verified",
+                    "v3_model_decision_or_trade_verified",
+                    "daily_scheduled_delivery_verified",
+                    "slack_device_push_ack_verified",
+                    "has_network_access",
+                ):
+                    self.assertIs(x[name], False)
+                self.assertTrue(x["no_new_scheduler_or_status_authority"])
+                self.assertTrue(x["no_trading_or_release_authority"])
+                self.assertFalse(packet["has_network_access"])
+
+    def test_original_operational_readback_wrong_source_fails_closed(self):
+        route_path = ROOT / "research/context-before-action-routing-v1.json"
+        original = original_read_json
+        config = original(route_path)
+
+        for change in (
+            {"node_id": "SOME_OTHER_PC"},
+            {"cloud_current_table": "public.random_fake_status"},
+            {"github_original_watch_workflow_id": 12345},
+            {"no_live_cloud_query_in_context_packet": False},
+            {"no_paper_or_real_money_release": False},
+            {"source_files": ["tools/minipc_cloud_evidence.py"]},
+        ):
+            tampered = copy.deepcopy(config)
+            tampered["existing_operational_evidence_handoff"].update(change)
+
+            def read_modified(path):
+                if Path(path).resolve() == route_path.resolve():
+                    return tampered
+                return original(path)
+
+            with self.subTest(change=change), patch(
+                "tools.context_before_action.read_json", side_effect=read_modified
+            ):
+                with self.assertRaisesRegex(ContextGateError,
+                                            "original MINI-PC"):
+                    build(ROOT, "strategy")
+
     def test_component_owner_missing_is_not_assumed_healthy_or_locally_installed(self):
         from tools.context_before_action import project_component_owner_handoff
         routing_path = ROOT / "research/monitoring-evidence-routing-v1.json"
