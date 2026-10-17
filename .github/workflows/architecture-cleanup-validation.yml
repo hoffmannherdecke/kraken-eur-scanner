@@ -99,6 +99,7 @@ jobs:
           }
           Write-Host 'V3 28H WINDOWS CANARY SCRIPTS PARSE PASS'
           ./tests/test_v3_paper_inactive_stage.ps1
+          ./tests/test_v3_paper_native_disabled_task_stage.ps1
           python -m unittest tests.test_v3_bounded_canary_task_policy_v1 -v
       - name: V3 original aftercare successor-identity and sender-preview offline contract
         run: |
