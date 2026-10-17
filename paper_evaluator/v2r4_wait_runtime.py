@@ -109,9 +109,11 @@ class _ReadOnlyWaitPlanCache:
     Expiry, handled state and fresh Kraken prices are still checked each cycle.
     The cache is empty after any process restart.
     """
-    def __init__(self, limit: int = 16384):
+    def __init__(self, limit: int = 16384, byte_budget: int = 64 * 1024 * 1024):
         self.limit = limit
-        self.entries: OrderedDict[Path, tuple[tuple[int, ...], tuple[str, dict[str, Any]] | None]] = OrderedDict()
+        self.byte_budget = byte_budget
+        self.bytes_cached = 0
+        self.entries: OrderedDict[Path, tuple[tuple[int, ...], tuple[str, dict[str, Any]] | None, int]] = OrderedDict()
 
     @staticmethod
     def _stamp(st: os.stat_result) -> tuple[int, ...]:
@@ -124,7 +126,9 @@ class _ReadOnlyWaitPlanCache:
         if previous is not None and previous[0] == stamp:
             self.entries.move_to_end(path)
             return previous[1]
-        self.entries.pop(path, None)
+        removed = self.entries.pop(path, None)
+        if removed is not None:
+            self.bytes_cached -= removed[2]
         record = read_json(path)
         plan = extract_plan(record)
         result = None
@@ -137,10 +141,12 @@ class _ReadOnlyWaitPlanCache:
             raise OSError("WAIT source changed during read")
         # Negative (non-plan) records are safe to cache as well. Invalid
         # records are deliberately not cached; correction is retried.
-        if before.st_size <= 131072:
-            self.entries[path] = (stamp, result)
-            if len(self.entries) > self.limit:
-                self.entries.popitem(last=False)
+        if before.st_size <= 131072 and before.st_size <= self.byte_budget:
+            self.entries[path] = (stamp, result, before.st_size)
+            self.bytes_cached += before.st_size
+            while len(self.entries) > self.limit or self.bytes_cached > self.byte_budget:
+                _, evicted = self.entries.popitem(last=False)
+                self.bytes_cached -= evicted[2]
         return result
 
 
