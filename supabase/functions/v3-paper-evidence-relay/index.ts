@@ -63,7 +63,10 @@ Deno.serve(async(req:Request)=>{
       revision!=="V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001"||
       !Array.isArray(rows)||!rows.length||rows.length>30)
     return respond(400,{ok:false,error:"invalid_v3_paper_batch"});
-  if(!sid.includes("CANARY")){
+  // Only the exact isolated CANARY namespace may bypass the active Paper-series check.
+  // An arbitrary non-CANARY series containing the word CANARY is NOT a trial.
+  const canarySeries=/^PAPER-V3-CANARY-[A-Za-z0-9_-]+$/.test(sid);
+  if(!canarySeries){
     const {data:active,error}=await db.from("paper_series")
       .select("status,strategy_revision").eq("series_id",sid).maybeSingle();
     if(error||active?.status!=="active"||active?.strategy_revision!==revision)
