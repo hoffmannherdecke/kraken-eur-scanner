@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from datetime import datetime,timezone
 from pathlib import Path
 from typing import Any,Callable
@@ -29,6 +30,9 @@ from paper_evaluator.v3_paper_positive_source_entry_v1 import (
 )
 
 REVISION="V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001"
+# Internal accidental-misuse barrier, NOT authority or a credential. Only
+# one OS-locked, Cloud-pinned caller may use a post-CAS production series.
+_RELEASED_MODEL_NATIVE_OWNER=object()
 MODEL_URL="https://api.openai.com/v1/responses"
 MAX_ONE_SHOT_HTTP=1
 APPROVED_MODEL="gpt-5.6-terra"
@@ -113,9 +117,13 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                   admit_staged_scanner_one_approved_model:bool=False,
                   acquire:Callable[[dict],tuple[dict,dict,dict]]|None=None,
                   model_client:Callable[[str,str],tuple[dict,dict]]|None=None,
-                  clock:Callable[[],str]=now)->dict:
+                  clock:Callable[[],str]=now,
+                  _released_model_capability:object=None)->dict:
     if not series_id.startswith("PAPER-V3-") or candidate.get("pair","").endswith("/EUR") is False:
         raise ValueError("isolated V3 EUR PAPER series only")
+    if (re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id)
+            and _released_model_capability is not _RELEASED_MODEL_NATIVE_OWNER):
+        raise ValueError("post-CAS non-CANARY model requires original OS owner and active Cloud release check")
     cid=candidate.get("candidate_id")
     if not isinstance(cid,str) or not cid:
         raise ValueError("real canonical candidate required")
