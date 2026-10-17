@@ -91,6 +91,10 @@ jobs:
               raise SystemExit(0)
 
           row=rows[0]
+          # Stage-2 only: reuse the original read-only evidence classifier.
+          # Keep the existing daily Slack message, schedule and health policy intact.
+          from tools.minipc_cloud_evidence import classify_minipc_daily_diagnostics
+          native_diagnostics=classify_minipc_daily_diagnostics(row,now=now_utc)
           payload=row.get("payload") or {}
           observed=dt.datetime.fromisoformat(row["observed_at"].replace("Z","+00:00"))
           age_min=max(0.0,(now_utc-observed).total_seconds()/60.0)
@@ -212,6 +216,7 @@ jobs:
                   "active_series_id":current_series_id,
                   "active_strategy_revision":current_revision,
                   "legacy_v2r4_shadow_applicable":legacy_v2r4,
+                  "native_task_diagnostics":native_diagnostics,
                   "dry_run":dry_run,
               },
               "updated_at":now_utc.isoformat(),
