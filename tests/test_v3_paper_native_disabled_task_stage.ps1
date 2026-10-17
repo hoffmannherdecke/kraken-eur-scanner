@@ -102,7 +102,7 @@ function Get-ScheduledTask {
 $state=NativeTaskState
 if($state -cne 'ABSENT'){throw 'Absent task fake readback failed'}
 Require ((NativeTaskState) -ceq 'ABSENT') 'Expected absent V3 task'
-$guardOccurrences=@([regex]::Matches($src,[regex]::Escape("Require ((NativeTaskState) -ceq 'ABSENT')")))
+$guardOccurrences=[regex]::Matches($src,[regex]::Escape("Require ((NativeTaskState) -ceq 'ABSENT')"))
 if($guardOccurrences.Count -ne 2){
  throw 'Both preview and pre-register native Task guards must invoke function before comparing'
 }
