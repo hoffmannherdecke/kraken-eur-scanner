@@ -16,6 +16,8 @@ name: V2R4 PR validation
       - 'paper_evaluator/v2r4_*.py'
       - 'research/v2r4/**'
       - 'tests/test_v2r4_*.py'
+      - 'tools/v2r4_cpu_versioned_release_contract.py'
+      - 'docs/v2r4-cpu-cache-versioned-technical-release-20261017.md'
       - 'tools/v2r4-paper-cloud-sync.py'
       - 'tests/test_v2r4_paper_cloudsync_v3_fence.py'
       - 'tests/test_kraken_public_budget.py'
@@ -97,6 +99,7 @@ jobs:
             paper_evaluator/v3_bounded_four_candidate_compare.py \
             paper_evaluator/v3_second_leg_policy_candidate_v1.py
           python -m py_compile tools/v2r4-readonly-decision-funnel.py
+          python -m py_compile tools/v2r4_cpu_versioned_release_contract.py
           python -m py_compile paper_evaluator/v3_extended_reentry_review_v1.py
 
       - name: Run V2R4 unit tests
@@ -118,6 +121,7 @@ jobs:
             tests.test_v2r4_wait_runtime \
             tests.test_v2r4_paper_activation_runtime \
             tests.test_v2r4_cache_scale \
+            tests.test_v2r4_cpu_versioned_release_contract \
             tests.test_v2r4_paper_cloudsync_v3_fence \
             tests.test_successor_coin_entry_evidence_v1 \
             tests.test_v2r4_v3_entry_lineage_contract \
