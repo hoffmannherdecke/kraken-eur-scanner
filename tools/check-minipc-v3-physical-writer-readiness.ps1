@@ -30,6 +30,37 @@ $modules=@(
 $missingModules=@($modules|Where-Object{
  -not(Test-Path -LiteralPath (Join-Path $repo $_) -PathType Leaf)
 })
+# Originalhost SHA256 inventory of existing V3 Paper source only.
+# No secrets, Task actions, Cloud access, model calls or approval.
+$v3ReleaseSourcePaths=@(
+ 'paper_evaluator\v3_paper_shared_candidate_intake_plan_v1.py',
+ 'paper_evaluator\v3_paper_existing_owner_source_bridge_v1.py',
+ 'paper_evaluator\v3_paper_intake_receipt_stage_v1.py',
+ 'paper_evaluator\v3_paper_signed_source_journal_stage_v1.py',
+ 'paper_evaluator\v3_paper_minipc_one_candidate_v1.py',
+ 'paper_evaluator\v3_paper_minipc_selective_tick_v1.py',
+ 'paper_evaluator\v3_paper_minipc_closed_1m_capture_v1.py',
+ 'paper_evaluator\v3_paper_wait_observer_v1.py',
+ 'paper_evaluator\v3_paper_minipc_followup_v1.py',
+ 'paper_evaluator\v3_paper_cloud_receipt_sync_v1.py',
+ 'tools\minipc-runtime-supervisor.ps1',
+ 'supabase\functions\v3-paper-evidence-relay\index.ts'
+)
+$v3ReleaseSourceHashes=@(
+ foreach($relative in $v3ReleaseSourcePaths){
+  $file=Join-Path $repo $relative
+  $digest=$null
+  if(Test-Path -LiteralPath $file -PathType Leaf){
+   try{$digest=([string](Get-FileHash -LiteralPath $file -Algorithm SHA256 -ErrorAction Stop).Hash).ToLowerInvariant()}
+   catch{$digest=$null}
+  }
+  if($digest -notmatch '^[0-9a-f]{64}$'){$digest=$null}
+  [pscustomobject]@{relative_path=$relative.Replace('\','/');sha256=$digest;readable=($null -ne $digest)}
+ }
+)
+$v3ReleaseSourceHashComplete=(@($v3ReleaseSourceHashes|Where-Object{
+ $_.readable -ne $true
+}).Count -eq 0 -and $v3ReleaseSourceHashes.Count -eq $v3ReleaseSourcePaths.Count)
 $oldApps=@()
 if(Test-Path -LiteralPath $runtime -PathType Container){
  foreach($app in @(Get-ChildItem -LiteralPath $runtime -Directory -ErrorAction Stop)){
@@ -392,6 +423,11 @@ $ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $can
  result=if($ready){'LOCAL_INPUT_PATH_READABLE_NO_WRITER_ACTIVATED'}else{'BLOCKED_READONLY_DIAGNOSTIC'}
  repo_exists=$repoPresent
  required_v3_modules_present=($missingModules.Count -eq 0)
+ future_v3_release_source_fingerprint_inventory=@($v3ReleaseSourceHashes)
+ future_v3_release_source_files_all_readable=$v3ReleaseSourceHashComplete
+ future_v3_release_source_hashes_compared_to_approved_release=$false
+ future_v3_paper_writer_installed_by_this_check=$false
+ future_v3_paper_single_writer_proven_by_this_check=$false
  missing_v3_modules=@($missingModules)
  active_v2r4_host_runtime_count=$oldApps.Count
  active_v2r4_host_runtime_count_is_config_files_not_processes=$true

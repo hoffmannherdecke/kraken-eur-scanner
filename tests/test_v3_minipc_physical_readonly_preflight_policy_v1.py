@@ -130,5 +130,43 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",script)
 
 
+    def test_future_paper_release_sources_are_explicitly_hashed_without_claiming_pins(self):
+        s=SCRIPT.read_text(encoding="utf-8")
+        required=(
+            "v3_paper_shared_candidate_intake_plan_v1.py",
+            "v3_paper_existing_owner_source_bridge_v1.py",
+            "v3_paper_intake_receipt_stage_v1.py",
+            "v3_paper_signed_source_journal_stage_v1.py",
+            "v3_paper_minipc_one_candidate_v1.py",
+            "v3_paper_minipc_selective_tick_v1.py",
+            "v3_paper_minipc_closed_1m_capture_v1.py",
+            "v3_paper_wait_observer_v1.py",
+            "v3_paper_minipc_followup_v1.py",
+            "v3_paper_cloud_receipt_sync_v1.py",
+            "minipc-runtime-supervisor.ps1",
+            "v3-paper-evidence-relay",
+        )
+        for name in required:
+            self.assertIn(name,s)
+        self.assertIn("$v3ReleaseSourcePaths=@(",s)
+        self.assertIn("Get-FileHash -LiteralPath $file -Algorithm SHA256",s)
+        self.assertIn("future_v3_release_source_fingerprint_inventory=@($v3ReleaseSourceHashes)",s)
+        self.assertIn("future_v3_release_source_files_all_readable=$v3ReleaseSourceHashComplete",s)
+        self.assertIn("future_v3_release_source_hashes_compared_to_approved_release=$false",s)
+        self.assertIn("future_v3_paper_writer_installed_by_this_check=$false",s)
+        self.assertIn("future_v3_paper_single_writer_proven_by_this_check=$false",s)
+
+    def test_bounded_next_writer_hash_inventory_never_touches_secrets_or_live_release(self):
+        s=SCRIPT.read_text(encoding="utf-8")
+        chunk=s.split("$v3ReleaseSourcePaths=@(",1)[1].split("\n)",1)[0]
+        # Exactly twelve source files; none in Secrets/State or private runtime.
+        self.assertEqual(chunk.count(".py'")+chunk.count(".ps1'")+chunk.count(".ts'"),12)
+        for forbidden in ("Secrets", ".env", "Runtime", "State",
+                          "paper_runtime_control.json","service_role"):
+            self.assertNotIn(forbidden,chunk)
+        self.assertNotIn("future_v3_release_source_hashes_compared_to_approved_release=$true",s)
+        self.assertNotIn("future_v3_paper_writer_installed_by_this_check=$true",s)
+
+
 if __name__=="__main__":
     unittest.main()
