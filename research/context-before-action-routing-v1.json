@@ -48,6 +48,10 @@
     {
       "path": ".github/workflows/minipc-daily-status.yml",
       "role": "EXISTING_DAILY_REPORT_AND_NON_SCHEDULED_DRYRUN_CONSUMER"
+    },
+    {
+      "path": ".github/workflows/scan.yml",
+      "role": "ORIGINAL_KRAKEN_EUR_SCANNER_SCHEDULED_CHAT_HANDOFF_ARTIFACT_SOURCE_NOT_BUY_OR_CLOUD_SYNC_ACK"
     }
   ],
   "scopes": {
@@ -295,6 +299,33 @@
     "no_live_cloud_query_in_context_packet": true,
     "no_slack_delivery_ack_in_context_packet": true,
     "no_paper_or_real_money_release": true,
-    "no_new_scheduler_or_status_authority": true
+    "no_new_scheduler_or_status_authority": true,
+    "scanner_handoff": {
+      "kind": "ORIGINAL_SCANNER_ARTIFACT_READBACK_ROUTE_V1",
+      "source_workflow_file": ".github/workflows/scan.yml",
+      "github_workflow_id_source": "GITHUB_API_ACTUAL_WORKFLOW_RUN_MATCH_REQUIRED",
+      "latest_run_source": "EXISTING_GITHUB_ACTIONS_SCHEDULED_RUNS_NOT_GITHUB_SOURCE_FILE_DATE",
+      "artifact_name_template": "chat-handoff-{run_id}-{run_attempt}",
+      "artifact_payload_file": "candidates.jsonl",
+      "artifact_retention_days": 7,
+      "jsonl_schema_version": 1,
+      "expected_event_kinds": [
+        "scan_run_meta",
+        "review_candidate_message",
+        "candidate_snapshot",
+        "market_context",
+        "market_breadth"
+      ],
+      "review_action": "REVIEW_ONLY_NOT_ORDER",
+      "read_via_original_artifact_download": true,
+      "run_id_and_attempt_must_match_actual_run": true,
+      "expires_after_retention": true,
+      "no_implicit_delivery_to_scanner_detection_cloud": true,
+      "no_implicit_v2r4_v3_model_consumption": true,
+      "no_live_market_quote_or_trade_proof": true,
+      "no_live_github_api_call_in_context_packet": true,
+      "no_work_or_new_scheduler": true,
+      "no_orders_or_strategy_release": true
+    }
   }
 }
