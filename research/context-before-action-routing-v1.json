@@ -36,6 +36,18 @@
     {
       "path": "research/monitoring-evidence-routing-v1.json",
       "role": "ALL_26_FUNCTIONAL_STREAM_OWNER_CONSUMER_DEPENDENCY_NEXT_GATE"
+    },
+    {
+      "path": "tools/minipc_cloud_evidence.py",
+      "role": "ORIGINAL_PURE_MINIPC_CLOUD_CLASSIFIERS_NO_NETWORK_OR_LIVE_ACK"
+    },
+    {
+      "path": "tools/minipc-watchdog.ps1",
+      "role": "ORIGINAL_WATCHDOG_SOURCE_REQUIRES_INDEPENDENT_WINDOWS_HOST_DEPLOYMENT_VERIFICATION"
+    },
+    {
+      "path": ".github/workflows/minipc-daily-status.yml",
+      "role": "EXISTING_DAILY_REPORT_AND_NON_SCHEDULED_DRYRUN_CONSUMER"
     }
   ],
   "scopes": {
@@ -256,5 +268,33 @@
     "scope": "ALL_PROJECT_FACETS_NOT_JUST_V3",
     "no_new_database": true,
     "no_new_scheduler": true
+  },
+  "existing_operational_evidence_handoff": {
+    "kind": "EXISTING_OPERATIONAL_EVIDENCE_HANDOFF_V1",
+    "purpose": "On-demand source route for the existing Stage2 MINI-PC GitHub and Supabase evidence; never another live status authority or data collector.",
+    "owner": "PROJECT_BACKLOG.md#ENTWICKLUNGSLOOP_AUTOMATION_20261016",
+    "issue_number": 353,
+    "source_files": [
+      "tools/minipc_cloud_evidence.py",
+      "tools/minipc-watchdog.ps1",
+      ".github/workflows/minipc-daily-status.yml"
+    ],
+    "node_id": "MINI-PC",
+    "cloud_current_table": "public.minipc_status_current",
+    "cloud_alert_table": "public.minipc_status_alert_state",
+    "cloud_daily_table": "public.minipc_daily_status",
+    "native_task_key": "payload.native_task_readback",
+    "daily_native_diagnostics_key": "payload.native_task_diagnostics",
+    "daily_metric_provenance_key": "payload.metric_provenance",
+    "github_original_watch_workflow_id": 371909131,
+    "scope": "READ_ONLY_OPERATIONS_DIAGNOSTICS_NOT_TRADING_OR_V3_MODEL_PROOF",
+    "fresh_original_evidence_required": true,
+    "reconcile_live_source_timestamps": true,
+    "original_windows_deployment_separately_required": true,
+    "github_schedule_best_effort": true,
+    "no_live_cloud_query_in_context_packet": true,
+    "no_slack_delivery_ack_in_context_packet": true,
+    "no_paper_or_real_money_release": true,
+    "no_new_scheduler_or_status_authority": true
   }
 }
