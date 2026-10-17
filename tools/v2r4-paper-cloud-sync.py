@@ -120,6 +120,16 @@ def closed_original_readonly_preview(control,candidates,trades,*,old_series_id,
     for row in candidates:
         if not isinstance(row,dict) or row.get('series_id')!=old_series_id:
             continue
+        # The original CLOSED aftercare runtime rejects old WAIT rechecks at or
+        # after the V3 cutover. Its READ-ONLY preview must report the same
+        # release blocker instead of silently presenting a usable old followup.
+        # Historical pre-cutover rechecks remain valid, as do genuinely later
+        # 6h/24h followup observations for the original Paper series.
+        recheck=(row.get('payload') or {}).get('recheck') or {}
+        for field in ('recheck_completed_at_utc','completed_at_utc','revalidated_at_utc'):
+            event=recheck.get(field) if isinstance(recheck,dict) else None
+            if event and clock(event)>=cutoff:
+                raise ValueError('old WAIT recheck after V3 cutoff')
         fup=row.get('followup')
         decision=(row.get('payload') or {}).get('decision') or {}
         if (not isinstance(fup,dict) or fup.get('kind')!='PAPER_FOLLOWUP_V2'
