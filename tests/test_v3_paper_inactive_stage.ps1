@@ -87,9 +87,16 @@ try {
   $stored=Get-Content -LiteralPath $saved -Raw | ConvertFrom-Json
   if($stored.source_git_sha -cne $head -or
      $stored.tracked_code_files -ne $result.tracked_code_files){throw 'Stage manifest source pin mismatch'}
+  $importRoot=@($stored.source_manifest | Where-Object {
+    $_.relative_path -ceq 'paper_context.py'
+  })
+  if($importRoot.Count -ne 1){
+    throw 'V3_IMPORT_GRAPH_INCOMPLETE: original paper_context.py absent'
+  }
   foreach($file in @($stored.source_manifest)){
     $relative=[string]$file.relative_path
     if($relative -notmatch '^(paper_evaluator|market_data)/[a-zA-Z0-9_]+\.py$' -and
+       $relative -cne 'paper_context.py' -and
        $relative -cne 'research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json' -and
        $relative -cne 'supabase/functions/v3-paper-evidence-relay/index.ts' -and
        $relative -cne 'tools/minipc-runtime-supervisor.ps1' -and

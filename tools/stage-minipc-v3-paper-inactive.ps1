@@ -50,16 +50,19 @@ Need ($LASTEXITCODE -eq 0 -and $uncommitted.Count -eq 0) 'independent source che
 # secrets, logs, user state, new daemon or Task definitions are imported.
 $bundle='research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json'
 $relay='supabase/functions/v3-paper-evidence-relay/index.ts'
+# The existing evaluator and V3 model path import build_context here.
+# Root module must be pinned alongside its paper_evaluator package.
+$coreSupport='paper_context.py'
 $operatorSource=@(
  'tools/minipc-runtime-supervisor.ps1',
  'tools/check-minipc-v3-physical-writer-readiness.ps1',
  'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1'
 )
-$tracked=@(& git -C $source ls-files --cached -- paper_evaluator market_data $bundle $relay $operatorSource 2>$null)
+$tracked=@(& git -C $source ls-files --cached -- paper_evaluator market_data $coreSupport $bundle $relay $operatorSource 2>$null)
 Need ($LASTEXITCODE -eq 0) 'tracked source inventory unavailable'
 $selected=@($tracked | Where-Object {
   $_ -cmatch '^(paper_evaluator|market_data)/[A-Za-z0-9_]+\.py$' -or
-  $_ -ceq $bundle -or $_ -ceq $relay -or $_ -cin $operatorSource
+  $_ -ceq $coreSupport -or $_ -ceq $bundle -or $_ -ceq $relay -or $_ -cin $operatorSource
 } | Sort-Object -Unique)
 $must=@(
  'paper_evaluator/v3_paper_minipc_one_candidate_v1.py',
@@ -71,7 +74,7 @@ $must=@(
  'paper_evaluator/v3_paper_signed_source_journal_stage_v1.py',
  'paper_evaluator/v3_paper_single_writer_preflight_v1.py',
  'market_data/__init__.py',
- $bundle,$relay
+ $coreSupport,$bundle,$relay
 ) + $operatorSource
 foreach($required in $must){Need ($selected -ccontains $required) 'required tracked V3 dependency absent'}
 Need ($selected.Count -ge 20 -and $selected.Count -le 350) 'source allowlist count outside bounded range'
