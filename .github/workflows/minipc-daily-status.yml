@@ -6,6 +6,9 @@ name: MINI-PC daily 10am status
     branches: [main]
     paths:
       - '.github/workflows/minipc-daily-status.yml'
+      # Whenever shared evidence parser changes, rerun the ORIGINAL daily
+      # report path in safe dry-run mode: no DB upsert and no Slack post.
+      - 'tools/minipc_cloud_evidence.py'
   schedule:
     # 10:00 Europe/Berlin is 08:00 UTC in CEST and 09:00 UTC in CET.
     # Trigger only both candidate UTC hours; the in-job local-hour gate keeps exactly one effective daily report.
