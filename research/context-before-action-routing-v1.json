@@ -153,6 +153,10 @@
       {
         "path": "docs/v3-real-source-owner-topology-20261012.md",
         "role": "DATED_REAL_DEPLOYMENT_EVIDENCE_FOR_V3_SOURCE_COMPONENTS_NOT_A_LIVE_HEALTH_OR_AUTHORITY"
+      },
+      {
+        "path": "docs/v2r4-cpu-cache-versioned-technical-release-20261017.md",
+        "role": "VERSIONED_CPU_SOURCE_ADOPTION_FROZEN_OCT09_PAPER_PR326_AFTERCARE_AND_NO_UNPROVEN_HOST_GAIN"
       }
     ],
     "operations": [
@@ -187,6 +191,18 @@
       {
         "path": "docs/v3-real-source-owner-topology-20261012.md",
         "role": "DATED_REAL_DEPLOYMENT_EVIDENCE_FOR_V3_SOURCE_COMPONENTS_NOT_A_LIVE_HEALTH_OR_AUTHORITY"
+      },
+      {
+        "path": "docs/v2r4-cpu-cache-versioned-technical-release-20261017.md",
+        "role": "CPU_MILESTONE_READBACK_NEXT_ONLY_VERSIONED_HOST_GATE_NOT_LIVE_ACTIVATION"
+      },
+      {
+        "path": "tools/v2r4-paper-local-runtime.py",
+        "role": "ORIGINAL_V2R4_CANDIDATES_PR360_PR382_BOUNDED_CACHE_SOURCE_ONLY_LIVE_OCT09_NOT_UPDATED"
+      },
+      {
+        "path": "paper_evaluator/v2r4_wait_runtime.py",
+        "role": "ORIGINAL_PR326_WAIT_PR360_BOUNDED_CACHE_SOURCE_ONLY_ORIGINAL_LIVE_WAITER_PINNED"
       }
     ],
     "research": [

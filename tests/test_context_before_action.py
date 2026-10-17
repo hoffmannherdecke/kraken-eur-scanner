@@ -47,6 +47,26 @@ class ContextBeforeActionTests(unittest.TestCase):
             "docs/v3-real-source-owner-topology-20261012.md",
             {x["path"] for x in build(ROOT, "operations")["source_index"]})
 
+    def test_cpu_milestones_are_in_existing_architecture_and_operations_preflight(self):
+        """Apply merged source milestones via the original context index, not a new manager."""
+        import hashlib
+        release_doc = "docs/v2r4-cpu-cache-versioned-technical-release-20261017.md"
+        candidate = "tools/v2r4-paper-local-runtime.py"
+        wait = "paper_evaluator/v2r4_wait_runtime.py"
+        operations = build(ROOT, "operations")
+        architecture = build(ROOT, "architecture")
+        op_index = {item["path"]: item["sha256"] for item in operations["source_index"]}
+        arch_index = {item["path"]: item["sha256"] for item in architecture["source_index"]}
+        for path in (release_doc, candidate, wait):
+            self.assertIn(path, op_index)
+            self.assertEqual(op_index[path], hashlib.sha256((ROOT / path).read_bytes()).hexdigest())
+        self.assertIn(release_doc, arch_index)
+        self.assertEqual(arch_index[release_doc], op_index[release_doc])
+        self.assertFalse(operations["declared_status"]["live_runtime_independently_checked"])
+        self.assertFalse(architecture["declared_status"]["live_runtime_independently_checked"])
+        self.assertFalse(operations["has_runtime_side_effects"])
+        self.assertIn("c2ff676196a08d89dbe2584144c70555149d49ca", (ROOT / release_doc).read_text("utf-8"))
+
     def test_existing_operational_readback_route_is_available_for_all_scopes(self):
         """Every V3/ops/arch context can now locate the original existing reader."""
         import hashlib
