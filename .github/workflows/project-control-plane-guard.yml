@@ -92,6 +92,7 @@ on:
       - "tools/validate-workflow-registry.py"
       - "tools/validate-v3-shadow-candidate.py"
       - "tools/validate-v3-integration-candidate.py"
+      - "tests/test_minipc_cloud_health_watch_contract.py"
       - ".github/workflows/**"
   push:
     branches: [main]
@@ -185,6 +186,7 @@ on:
       - "tools/validate-workflow-registry.py"
       - "tools/validate-v3-shadow-candidate.py"
       - "tools/validate-v3-integration-candidate.py"
+      - "tests/test_minipc_cloud_health_watch_contract.py"
       - ".github/workflows/**"
   workflow_dispatch:
 
@@ -288,6 +290,10 @@ jobs:
         run: |
           python tools/project_followthrough_router.py
           python -m unittest discover -s tests -p 'test_project_followthrough_router.py' -v
+      - name: Offline MINI-PC cloud alert watcher classification regression (no network)
+        run: |
+          python -m py_compile tests/test_minipc_cloud_health_watch_contract.py
+          python -m unittest discover -s tests -p 'test_minipc_cloud_health_watch_contract.py' -v
       - name: Validate workflow registry
         run: python tools/validate-workflow-registry.py
       - name: Validate active H3 shadow candidate
