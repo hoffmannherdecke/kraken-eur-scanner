@@ -16,7 +16,9 @@ from typing import Any,Callable
 from contextlib import contextmanager
 import os
 from paper_evaluator import evaluate
-from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
+from paper_evaluator.v3_paper_minipc_one_candidate_v1 import (
+    REVISION,one_candidate,preflight_budget,_RELEASED_MODEL_NATIVE_OWNER,
+)
 from paper_evaluator.successor_coin_entry_evidence_v1 import fetch_public_entry_evidence
 from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
     capture_public_1m,assemble,early_path_coverage,
@@ -157,6 +159,56 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
 _RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK=object()
 
 
+def _require_released_paper_cloud(*,series_id:str,
+        expected_repo_sha:str,expected_bundle_sha256:str,
+        expected_strategy_sha256:str,
+        read_active_series:Callable[[str],dict[str,Any]],
+        clock_now:Callable[[],str])->None:
+    """Shared source-only precondition; CALL ONLY from one native owner lock.
+
+    A self-reported Cloud config is not independent physical proof of a
+    Windows fence, signed six E2E proofs or actual deployment.
+    """
+        if (not isinstance(series_id,str)
+                or re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id) is None
+                or not all(isinstance(x,str) and re.fullmatch(pattern,x)
+                           for x,pattern in (
+                               (expected_repo_sha,r"[0-9a-f]{40}"),
+                               (expected_bundle_sha256,r"[0-9a-f]{64}"),
+                               (expected_strategy_sha256,r"[0-9a-f]{64}")))
+                or not callable(read_active_series)):
+            raise ValueError("exact release-pinned non-CANARY Paper identity required")
+
+    original=read_active_series(series_id)
+    if not isinstance(original,dict):
+        raise ValueError("independent live Paper-series readback absent")
+    try:
+        observed=clock(original["observed_at_utc"])
+        now=clock(clock_now())
+        config=original["config"]
+    except (KeyError,ValueError,TypeError,AttributeError) as exc:
+        raise ValueError("invalid active Paper-series source/clock") from exc
+    if (observed>now or (now-observed).total_seconds()>90
+            or not isinstance(config,dict)
+            or original.get("series_id")!=series_id
+            or original.get("status")!="active"
+            or original.get("strategy_revision")!=REVISION
+            or config.get("series_id")!=series_id
+            or config.get("strategy_revision")!=REVISION
+            or config.get("release_repo_sha")!=expected_repo_sha
+            or config.get("runtime_bundle_fingerprint_sha256")!=expected_bundle_sha256
+            or config.get("strategy_fingerprint_sha256")!=expected_strategy_sha256
+            or config.get("paper_only") is not True
+            or config.get("real_money_actions_enabled") is not False
+            or config.get("automatic_activation_allowed") is not False
+            or config.get("physical_v2r4_writer_fence_verified") is not True
+            or config.get("supervisor_old_intake_rearm_blocked") is not True
+            or config.get("old_followup_owner_preserved") is not True
+            or config.get("independent_six_e2e_proofs_verified") is not True):
+        raise ValueError("non-CANARY Paper release source mismatch or stale")
+
+
+
 def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
         journal:Path,capture_dir:Path,model_reservations:Path,ack_file:Path,
         expected_repo_sha:str,expected_bundle_sha256:str,
@@ -178,44 +230,13 @@ def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
     one valid O_EXCL HTTP reservation are eligible. Missing/ambiguous results
     stay on HOLD before any public Kraken request or journal mutation.
     """
-    if (not isinstance(series_id,str)
-            or re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id) is None
-            or not all(isinstance(x,str) and re.fullmatch(pattern,x)
-                       for x,pattern in (
-                           (expected_repo_sha,r"[0-9a-f]{40}"),
-                           (expected_bundle_sha256,r"[0-9a-f]{64}"),
-                           (expected_strategy_sha256,r"[0-9a-f]{64}")))
-            or not callable(read_active_series)):
-        raise ValueError("exact release-pinned non-CANARY Paper identity required")
     # Never permit a non-CANARY tick from the unguarded standalone CLI.
     with _one_canary_owner(journal):
-        original=read_active_series(series_id)
-        if not isinstance(original,dict):
-            raise ValueError("independent live Paper-series readback absent")
-        try:
-            observed=clock(original["observed_at_utc"])
-            now=clock(clock_now())
-            config=original["config"]
-        except (KeyError,ValueError,TypeError,AttributeError) as exc:
-            raise ValueError("invalid active Paper-series source/clock") from exc
-        if (observed>now or (now-observed).total_seconds()>90
-                or not isinstance(config,dict)
-                or original.get("series_id")!=series_id
-                or original.get("status")!="active"
-                or original.get("strategy_revision")!=REVISION
-                or config.get("series_id")!=series_id
-                or config.get("strategy_revision")!=REVISION
-                or config.get("release_repo_sha")!=expected_repo_sha
-                or config.get("runtime_bundle_fingerprint_sha256")!=expected_bundle_sha256
-                or config.get("strategy_fingerprint_sha256")!=expected_strategy_sha256
-                or config.get("paper_only") is not True
-                or config.get("real_money_actions_enabled") is not False
-                or config.get("automatic_activation_allowed") is not False
-                or config.get("physical_v2r4_writer_fence_verified") is not True
-                or config.get("supervisor_old_intake_rearm_blocked") is not True
-                or config.get("old_followup_owner_preserved") is not True
-                or config.get("independent_six_e2e_proofs_verified") is not True):
-            raise ValueError("non-CANARY Paper release source mismatch or stale")
+        _require_released_paper_cloud(
+            series_id=series_id,expected_repo_sha=expected_repo_sha,
+            expected_bundle_sha256=expected_bundle_sha256,
+            expected_strategy_sha256=expected_strategy_sha256,
+            read_active_series=read_active_series,clock_now=clock_now)
         # Reuse the ORIGINAL strict restart/HTTP reservation + P4 + immutable
         # Cloud-ACK identity planner. No P4 after crash => NO source GET and
         # never classify a pending model as a final NO_BUY at 6h/24h/72h.
