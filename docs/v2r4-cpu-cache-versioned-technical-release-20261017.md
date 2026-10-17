@@ -20,6 +20,17 @@ Ziel ist ein eigenständiger **technischer Nachfolger innerhalb V2R4** mit **neu
 
 Die existierende `v2r4-technical-cutover` Edge-Funktion und `tools/minipc-v2r4-technical-cutover-operator.ps1` sind auf die **Serie vom 07.10.** gepinnt. Sie dürfen **nicht** für die Serie vom 09.10. als bereits funktionsfähige Release-Methode gelten. Die vorhandene Oct07-Supervisor-Maintenance-Datei ebenfalls nicht verwenden. Ein getrennt reviewtes neues Cloud-CAS-/Supervisor-Fence-/Altserien-Nachpflege-Verfahren ist nötig, bevor man produktive Tasks anfasst. Auch ein neues `v3-experimental-paper-old-intake-fence` darf nicht als CPU-Wartungsersatz verwendet werden.
 
+## Neu bestätigte Cloud- und Folgeprozess-Abhängigkeiten
+
+Direkte Quelle `supabase/functions/v2r4-paper-evidence-relay/index.ts`:
+- `action=sync` synchronisiert nur eine wirklich **aktive** V2R4-Serie, nicht alte offene Nachpflege unter `technical_closed`.
+- Der besondere Pfad `closed_original_*` verlangt derzeit explizit einen **aktiven V3-Nachfolger** (Release-Identity `PAPER-V3-...`). Er ist **kein** Nachweis dafür, dass ein *weiterer V2R4*-technischer Nachfolger alte WAIT-/Stop-/Follow-up-Ergebnisse aktualisieren könnte.
+- `tools/v2r4-paper-cloud-sync.py` übernimmt diesen Spezialpfad bislang nur bei explizitem V3-Marker. Ohne technische Erweiterung würden `technical_closed`-V2R4-Nachpflege und laufende neue V2R4-Kandidaten gegeneinander laufen.
+- Die historische `paper_technical_rotations` enthält bereits den Übergang vom **07.10. zum 09.10.**. Die bisherige Cloud-Rotationsfunktion und der lokale Operator sind auf diesen alten Vorgänger festgelegt.
+- `tools/project_milestone_controller.py` sowie der Cloud-Paper-Completion-Reader dürfen nicht unbeabsichtigt historische V2R4-Perioden als neue Strategie-Fortschritte, nicht gereifte 6h/24h-Ergebnisse als geschlossen oder den neuen technischen Teilabschnitt als V3 behandeln.
+
+**Verpflichtende zusätzliche V2R4-zu-V2R4-Gates** (kein Programmcode-/Cloud-Nachweis aus einem booleschen Testfixture): (1) eigener schreibberechtigter, aber streng altseriengebundener Nachpflege-/Idempotenzpfad, (2) keine neue alte Kandidatenaufnahme, (3) eindeutiger alten Serie zugeordneter Follow-up-Owner und passende Exit-/Recheck-Receipts, (4) getrennte neue Nachfolgerserie mit genau einem neuen Kandidatenschreiber, (5) nachweislich dynamisches Milestone-/Alert-Routing, (6) zwei unabhängige frische Cloud-ACKs nach echter Übernahme. Die Offline-Tests simulieren nur diese Bedingungen und halten `production_release_authorized=false`.
+
 ## Isolierte technische Release-Reihenfolge
 
 1. **Stand prüfen:** Exakte aktuell aktive Serie in lokaler Runtime + Cloud; Einzelschreiber, drei Task-Modi und Supervisor; alte PR326-Originale; erneut nur bei neuem eigentlichen Release-Termin. Vorhandene physisch bestätigte PR369/374-Gates und sechs Windows-Cache-Tests **nicht grundlos wiederholen**.

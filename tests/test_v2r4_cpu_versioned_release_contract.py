@@ -35,6 +35,8 @@ def manifest():
         "series_rotation_endpoint": "new-cpu-versioned-review-pending",
         "new_endpoint_fenced_inactive": True,
         "old_followups_preserved": True,
+        "v2r4_to_v2r4_aftercare_contract_reviewed": True,
+        "new_series_routing_and_milestones_reviewed": True,
     }
 
 
@@ -74,6 +76,7 @@ def events():
             "old_closed_technically": True,
             "exactly_one_new_active_series": True,
             "old_followups_mutable_with_old_id": True,
+            "v2r4_successor_aftercare_relay_ack": True,
             "old_intake_fenced": True,
             "new_runtime_bundle_fingerprint_verified": True,
             "cas_endpoint": "VERSIONED_CPU_ONLY_NEW_REVIEWED",
@@ -84,6 +87,7 @@ def events():
             "new_wait_single_writer": True,
             "new_lifecycle_single_writer": True,
             "original_followup_owner_retained": True,
+            "old_followup_recheck_receipts_route_to_old_series": True,
             "no_old_candidate_intake": True,
             "no_real_money_actions": True,
             "task_args_pinned_new_bundle": True,
@@ -155,6 +159,26 @@ class VersionedCpuReleaseContractTests(unittest.TestCase):
                 p = manifest()
                 p[key] = value
                 self.assert_blocked(assess_manifest(p))
+
+    def test_aftercare_must_be_specific_to_v2r4_successor(self):
+        for key, reason in (
+            ("v2r4_to_v2r4_aftercare_contract_reviewed",
+             "V2R4_SUCCESSOR_OLD_AFTERCARE_NOT_PROVEN"),
+            ("new_series_routing_and_milestones_reviewed",
+             "SUCCESSOR_METRICS_ROUTING_NOT_PROVEN"),
+        ):
+            with self.subTest(key=key):
+                p = manifest()
+                p[key] = False
+                self.assert_blocked(assess_manifest(p), reason)
+
+    def test_aftercare_relay_and_old_receipt_ownership_post_cas(self):
+        t = events()
+        t[3]["v2r4_successor_aftercare_relay_ack"] = False
+        self.assert_blocked(assess_trace(t), "PHASE_EVIDENCE_INCOMPLETE")
+        t = events()
+        t[4]["old_followup_recheck_receipts_route_to_old_series"] = False
+        self.assert_blocked(assess_trace(t), "PHASE_EVIDENCE_INCOMPLETE")
 
     def test_no_reuse_of_oct07_or_v3_transaction(self):
         for endpoint in ("v2r4-technical-cutover", "v3-experimental-paper-cutover"):
