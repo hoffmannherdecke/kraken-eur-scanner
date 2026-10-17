@@ -513,6 +513,7 @@ class MiniPCDailyExactCountContract(unittest.TestCase):
         ):
             self.assertIn(table, script)
         self.assertIn("cron: '0 8,9 * * *'", script)
+        self.assertIn("      - 'tools/minipc_cloud_evidence.py'", script)
         self.assertIn('dry_run=event_name!="schedule"', script)
         self.assertIn('if dry_run:\n              raise SystemExit(0)', script)
         self.assertEqual(script.count("Slack response:"), 1)
