@@ -112,3 +112,75 @@ def classify_minipc_evidence(
             return finish("FIELD_NOT_VERIFIED")
 
     return finish("HEALTHY_REPORTED")
+
+
+# The original GitHub MINI-PC cloud watch is scheduled for every 15 minutes,
+# but GitHub Actions scheduling is best-effort, not an execution guarantee.
+# Two missed nominal ticks merit an on-demand diagnostic, not a new pager.
+ALERT_EXPECTED_CADENCE_SECONDS = 15 * 60
+ALERT_DELAYED_SECONDS = 30 * 60
+ALERT_STALE_SECONDS = 45 * 60
+
+def classify_minipc_alert_freshness(
+    alert_row: Mapping[str, Any] | None,
+    *,
+    now: datetime,
+) -> dict[str, Any]:
+    """Read-only freshness of the *existing* alert-state upsert.
+
+    This is evidence only of the most recent state-row write; never a GitHub
+    run-success, Slack delivery, recovery ACK or MINI-PC process proof.
+    It must never trigger a workflow or modify an alert/heartbeat table.
+    """
+    if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("now must be a timezone-aware datetime")
+
+    result: dict[str, Any] = {
+        "kind": "MINIPC_ALERT_UPSERT_FRESHNESS_V1",
+        "node_id": NODE_ID,
+        "alert_upsert_state": "UNKNOWN_MISSING",
+        "age_seconds": None,
+        "nominal_cadence_seconds": ALERT_EXPECTED_CADENCE_SECONDS,
+        "last_alert_condition": "UNKNOWN",
+        "github_run_verified": False,
+        "slack_delivery_verified": False,
+        "recovery_verified": False,
+        "host_reported_healthy": False,
+        "writes_performed": False,
+    }
+
+    def finish(code: str) -> dict[str, Any]:
+        result["alert_upsert_state"] = code
+        return result
+
+    if not isinstance(alert_row, Mapping):
+        return finish("UNKNOWN_MISSING")
+    if alert_row.get("node_id") != NODE_ID:
+        return finish("INVALID_NODE")
+
+    raw = alert_row.get("updated_at")
+    if not isinstance(raw, str) or not raw.strip():
+        return finish("INVALID_TIMESTAMP")
+    try:
+        stamp = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if stamp.tzinfo is None or stamp.utcoffset() is None:
+            return finish("INVALID_TIMESTAMP")
+    except ValueError:
+        return finish("INVALID_TIMESTAMP")
+
+    age = (now.astimezone(timezone.utc) - stamp.astimezone(timezone.utc)).total_seconds()
+    result["age_seconds"] = round(age)
+    # The presence of a timestamp from the future is not a successful run.
+    if age < -MAX_FUTURE_SECONDS:
+        return finish("INVALID_FUTURE")
+
+    last_condition = alert_row.get("last_condition")
+    if last_condition not in ("OK", "CRITICAL", "STALE"):
+        return finish("UNKNOWN_CONDITION")
+    result["last_alert_condition"] = last_condition
+
+    if age > ALERT_STALE_SECONDS:
+        return finish("STALE")
+    if age > ALERT_DELAYED_SECONDS:
+        return finish("DELAYED")
+    return finish("RECENT")
