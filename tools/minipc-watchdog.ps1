@@ -22,6 +22,43 @@ function Add-Check {
   }
 }
 
+# Read-only Windows Task Scheduler observations; diagnostic only.
+# Never promote a task return code to strategy/release health or restart a task.
+# No actions, task arguments, paths, secrets, usernames, or PIDs are exported.
+$nativeTaskReadback = [ordered]@{}
+function Add-NativeTaskReadback {
+  param([string]$Key, $Task)
+
+  $entry = [ordered]@{
+    task_state = "NOT_INSTALLED"
+    last_result_code = $null
+    last_result_meaning = "UNAVAILABLE"
+  }
+  if ($null -ne $Task) {
+    $entry.task_state = [string]$Task.State
+    try {
+      $taskInfo = Get-ScheduledTaskInfo -TaskName ([string]$Task.TaskName) -TaskPath ([string]$Task.TaskPath) -ErrorAction Stop
+      if ($null -ne $taskInfo -and $null -ne $taskInfo.LastTaskResult) {
+        $value = [long]$taskInfo.LastTaskResult
+        $entry.last_result_code = $value
+        if ($value -eq 0) {
+          $entry.last_result_meaning = "ZERO_RESULT_NOT_RUNTIME_PROOF"
+        } elseif ($value -eq 267009) {
+          # 0x41301 means "currently running", not "task failed".
+          $entry.last_result_meaning = "TASK_RUNNING_CODE_NOT_FAILURE"
+        } else {
+          $entry.last_result_meaning = "OTHER_RESULT_REVIEW_REQUIRED"
+        }
+      }
+    } catch {
+      # Native scheduler metadata is optional: never break the watchdog
+      # or change an existing Paper/V3 health decision if this read fails.
+      $entry.last_result_meaning = "UNAVAILABLE"
+    }
+  }
+  $nativeTaskReadback[$Key] = $entry
+}
+
 # Disk: warn below 20 GB, critical below 10 GB.
 try {
   $drive = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
@@ -283,6 +320,7 @@ $paperRuntimeSpecs = @(
 foreach ($spec in $paperRuntimeSpecs) {
   try {
     $task = Get-ScheduledTask -TaskName $spec.task -ErrorAction SilentlyContinue
+    Add-NativeTaskReadback -Key $spec.check -Task $task
     if ($task) {
       $hb = Join-Path $TradingRoot ("State\" + $spec.hb)
       if (-not (Test-Path $hb)) {
@@ -302,6 +340,7 @@ foreach ($spec in $paperRuntimeSpecs) {
       $checks[$spec.check] = [ordered]@{ ok=$null; detail="V2R4 Paper task not installed yet" }
     }
   } catch {
+    Add-NativeTaskReadback -Key $spec.check -Task $null
     Add-Check $spec.check $false $_.Exception.Message "WARNING"
   }
 }
@@ -378,6 +417,7 @@ try {
 # MINI-PC remote status sync is optional until installed.
 try {
   $statusTask = Get-ScheduledTask -TaskName "CryptoMiniPC-StatusSync" -ErrorAction SilentlyContinue
+  Add-NativeTaskReadback -Key "minipc_status_sync" -Task $statusTask
   if ($statusTask) {
     $hb = Join-Path $TradingRoot "State\minipc-status-sync-heartbeat.json"
     if (-not (Test-Path $hb)) {
@@ -397,7 +437,17 @@ try {
     $checks["minipc_status_sync"] = [ordered]@{ ok=$null; detail="remote status sync not installed yet" }
   }
 } catch {
+  Add-NativeTaskReadback -Key "minipc_status_sync" -Task $null
   Add-Check "minipc_status_sync" $false $_.Exception.Message "WARNING"
+}
+
+# V3 Canary 28h is observational only: do not change its active task or
+# make the frozen V2R4 Paper health depend on the Canary task.
+try {
+  $v3CanaryTask = Get-ScheduledTask -TaskName "CryptoMiniPC-V3CanaryObservation28h" -ErrorAction SilentlyContinue
+  Add-NativeTaskReadback -Key "v3_canary_observation_28h" -Task $v3CanaryTask
+} catch {
+  Add-NativeTaskReadback -Key "v3_canary_observation_28h" -Task $null
 }
 
 # Local GitHub scanner-cadence recovery guard is optional until installed.
@@ -540,6 +590,11 @@ $report = [ordered]@{
   health_state = $healthState
   state_reason_codes = @($stateReasonCodes)
   checks = $checks
+  native_task_readback = [ordered]@{
+    kind = "MINIPC_NATIVE_TASK_READBACK_V1"
+    observations = $nativeTaskReadback
+    no_runtime_or_release_authority = $true
+  }
   issues = $issues
   guardrails = [ordered]@{
     configuration_changes = $false
