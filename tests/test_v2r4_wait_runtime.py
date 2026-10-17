@@ -30,6 +30,65 @@ def plan(now, *, candidate_id="C1", value=1.0):
 
 
 class V2R4WaitRuntimeTests(unittest.TestCase):
+    def test_cached_discovery_preserves_originals_and_invalidates_changes(self):
+        # No market/API/model requests: only old/new/invalid original JSON.
+        at = datetime(2026, 10, 17, 7, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            decisions, rechecks = root / "decisions", root / "rechecks"
+            decisions.mkdir()
+            rechecks.mkdir()
+            p = decisions / "initial.json"
+            p.write_text(json.dumps({"v2r4_trigger_plan": plan(at)}), "utf-8")
+            other = decisions / "no-plan.json"
+            other.write_text(json.dumps({"decision": "REJECT"}), "utf-8")
+            cache = runtime._ReadOnlyWaitPlanCache(limit=8)
+            with patch.object(runtime, "read_json", wraps=runtime.read_json) as reader:
+                first = runtime.discover_plans(decisions, rechecks, now=at, file_cache=cache)
+                self.assertEqual(reader.call_count, 2)
+                self.assertEqual(first, runtime.discover_plans(decisions, rechecks, now=at))
+                reader.reset_mock()
+                second = runtime.discover_plans(decisions, rechecks, now=at, file_cache=cache)
+                self.assertEqual(second, first)
+                reader.assert_not_called()
+                # Changed file must replace a previously valid plan, even if
+                # the new content has a different expiry or ID.
+                p.write_text(json.dumps({"v2r4_trigger_plan": plan(at, candidate_id="CHANGED-LONG")}), "utf-8")
+                updated = runtime.discover_plans(decisions, rechecks, now=at, file_cache=cache)
+                self.assertEqual(updated[0][0]["candidate_id"], "CHANGED-LONG")
+                self.assertEqual(reader.call_count, 1)
+                # Deletion must remove a previously cached valid plan.
+                p.unlink()
+                self.assertEqual(runtime.discover_plans(decisions, rechecks, now=at, file_cache=cache), [])
+                # A corrected invalid file must be discovered, not pinned bad.
+                other.write_text("{", "utf-8")
+                self.assertEqual(runtime.discover_plans(decisions, rechecks, now=at, file_cache=cache), [])
+                other.write_text(json.dumps({"v2r4_trigger_plan": plan(at, candidate_id="RECOVERED")}), "utf-8")
+                self.assertEqual(runtime.discover_plans(decisions, rechecks, now=at, file_cache=cache)[0][0]["candidate_id"], "RECOVERED")
+            # A fresh worker cache starts without any stale memory.
+            self.assertEqual(runtime.discover_plans(decisions, rechecks, now=at, file_cache=runtime._ReadOnlyWaitPlanCache())[0][0]["candidate_id"], "RECOVERED")
+
+    def test_cached_discovery_keeps_latest_recheck_precedence_and_ttl(self):
+        at = datetime(2026, 10, 17, 7, 0, tzinfo=timezone.utc)
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            d, r = base / "decisions", base / "rechecks"
+            d.mkdir()
+            r.mkdir()
+            old = plan(at, candidate_id="SAME")
+            new = dict(old)
+            # Same logical plan key, but recheck path takes precedence.
+            (d / "first.json").write_text(json.dumps({"v2r4_trigger_plan": old}), "utf-8")
+            (r / "second.json").write_text(json.dumps({"v2r4_trigger_plan": new}), "utf-8")
+            cache = runtime._ReadOnlyWaitPlanCache()
+            original = runtime.discover_plans(d, r, now=at)
+            cached = runtime.discover_plans(d, r, now=at, file_cache=cache)
+            self.assertEqual(cached, original)
+            self.assertEqual(cached[0][1], r / "second.json")
+            # Expired plans must remain returned for terminal TTL accounting.
+            late = at + timedelta(days=1)
+            self.assertEqual(runtime.discover_plans(d, r, now=late, file_cache=cache), original)
+
     def test_cycle_start_does_not_masquerade_as_health_completion(self):
         # Real Mini-PC incident: cycle-start stamp preceded file write by
         # 111s. Even a 30s Supervisor threshold must see completion time.
