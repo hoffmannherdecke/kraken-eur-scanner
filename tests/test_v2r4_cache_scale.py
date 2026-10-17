@@ -47,6 +47,48 @@ class V2R4CacheScaleOffline(unittest.TestCase):
             self.assertLessEqual(cache.bytes_cached,cache.byte_budget)
             print(f"OFFLINE_CANDIDATE: 16907 records; uncached={baseline_sec:.3f}s; warm_cache={second_sec:.3f}s; repeat_decodes=0")
 
+    def test_candidate_warm_identity_and_source_revision_parity(self):
+        mod = candidates()
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td)/"event.json"
+            event = {
+                "kind": "V2R4_WS_SHADOW_DISCOVERY",
+                "pair": "BTC/EUR",
+                "observed_at_utc": "2026-10-17T07:00:00Z",
+                "source_pair_received_at_utc": "2026-10-17T07:00:01Z",
+                "last_eur": 101,
+            }
+            path.write_text(json.dumps(event), "utf-8")
+            cache = mod._UnchangedEventCache()
+            with patch.object(mod, "parse_utc", wraps=mod.parse_utc) as clock, \
+                 patch.object(mod, "event_id", wraps=mod.event_id) as digest:
+                first_record, first_identity = cache.read_prepared(path)
+                self.assertEqual(first_record, event)
+                self.assertEqual(first_identity[1], mod.event_id(event))
+                digest.reset_mock()
+                clock.reset_mock()
+                for _ in range(5):
+                    self.assertEqual(cache.read_prepared(path), (event, first_identity))
+                    self.assertEqual(cache.read(path), event)
+                clock.assert_not_called()
+                digest.assert_not_called()
+                # A corrected file MUST be reconsidered, never suppressed as "seen".
+                event["last_eur"] = 10102
+                event["observed_at_utc"] = "2026-10-17T07:00:02Z"
+                path.write_text(json.dumps(event), "utf-8")
+                corrected_record, corrected_identity = cache.read_prepared(path)
+                self.assertEqual(corrected_record, event)
+                self.assertNotEqual(corrected_identity, first_identity)
+                self.assertEqual(clock.call_count, 1)
+                self.assertEqual(digest.call_count, 1)
+                # Corrupt-to-corrected timestamps are retried after source revision.
+                event["observed_at_utc"] = "bad-date"
+                path.write_text(json.dumps(event), "utf-8")
+                self.assertEqual(cache.read_prepared(path)[1], (None, None))
+                event["observed_at_utc"] = "2026-10-17T07:00:04Z"
+                path.write_text(json.dumps(event), "utf-8")
+                self.assertEqual(cache.read_prepared(path)[1][1], mod.event_id(event))
+
     def test_wait_4767_four_active_second_sweep_decodes_zero(self):
         at=datetime(2026,10,17,7,0,tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as td:
