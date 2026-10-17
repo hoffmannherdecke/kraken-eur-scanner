@@ -47,6 +47,50 @@ class ContextBeforeActionTests(unittest.TestCase):
             "docs/v3-real-source-owner-topology-20261012.md",
             {x["path"] for x in build(ROOT, "operations")["source_index"]})
 
+    def test_projectwide_reviewed_minipc_runner_is_routed_in_every_context_scope(self):
+        """Same already-tested low-privilege capability must be visible without a second manager."""
+        registry = json.loads((ROOT / "research/context-before-action-routing-v1.json").read_text())
+        routing = registry["existing_operational_evidence_handoff"]["projectwide_reviewed_runner"]
+        doc = "docs/minipc-runner-bounded-windows-v1.md"
+        self.assertEqual(routing["canonical_runbook"], doc)
+        self.assertEqual(routing["github_issue"], 353)
+        self.assertEqual(routing["private_issue"], 13)
+        self.assertEqual(routing["windows_task_name"], "CryptoSupport - Bounded Runner Window")
+        self.assertTrue(routing["windows_task_schedule_enabled_host_confirmed"])
+        self.assertTrue(routing["manual_one_off_e2e"]["passed"])
+        self.assertEqual(routing["manual_one_off_e2e"]["last_task_result"], 0)
+        self.assertEqual(
+            routing["first_unattended_periodic_window_e2e"],
+            "PENDING_ORIGINAL_HOST_READBACK",
+        )
+        self.assertFalse(routing["new_chat_auto_import_guaranteed"])
+        self.assertTrue(routing["no_unreviewed_powershell_or_elevated_host_access"])
+        self.assertTrue(routing["no_new_project_manager_or_schedule"])
+        extra = json.loads(
+            (ROOT / "research/project-followthrough-routing-v1.json").read_text()
+        )["extra_project_areas"]
+        deployment = next(x for x in extra if x["id"] == "mini_pc_deployment")
+        self.assertEqual(deployment["owner"], "PROJECT_BACKLOG.md")
+        self.assertEqual(deployment["execution_capability_source"], doc)
+        self.assertIn("UNATTENDED_WINDOW_STILL_PENDING", deployment["gate"])
+        self.assertEqual(
+            set(routing["all_project_scopes"]),
+            {"strategy", "architecture", "operations", "research"},
+        )
+        for scope in routing["all_project_scopes"]:
+            with self.subTest(scope=scope):
+                packet = build(ROOT, scope)
+                source_paths = {x["path"] for x in packet["source_index"]}
+                self.assertIn(doc, source_paths)
+                component = next(
+                    x for x in packet["project_component_owners"]["components"]
+                    if x["id"] == "mini_pc_deployment"
+                )
+                self.assertEqual(component["canonical_owner"], "PROJECT_BACKLOG.md")
+                self.assertEqual(
+                    packet["declared_status"]["live_runtime_independently_checked"], False
+                )
+
     def test_cpu_milestones_are_in_existing_architecture_and_operations_preflight(self):
         """Apply merged source milestones via the original context index, not a new manager."""
         import hashlib
