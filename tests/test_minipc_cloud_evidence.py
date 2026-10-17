@@ -7,7 +7,7 @@ import unittest
 from tools.minipc_cloud_evidence import (
     DAILY_NATIVE_TASKS, DAILY_REQUIRED_CHECKS,
     classify_minipc_evidence, classify_minipc_alert_freshness,
-    classify_minipc_daily_diagnostics,
+    classify_minipc_daily_diagnostics, classify_minipc_github_watch_runs,
 )
 
 NOW = datetime(2026, 10, 17, 9, 0, tzinfo=timezone.utc)
@@ -335,6 +335,127 @@ class MiniPCDailyReadbackHandoffContract(unittest.TestCase):
         self.assertIn('if dry_run:\n              raise SystemExit(0)', original)
         self.assertEqual(original.count('"/rest/v1/minipc_status_current?'), 1)
         self.assertEqual(original.count('"POST",\n              "/rest/v1/minipc_daily_status'), 1)
+
+
+
+class MiniPCOriginalGithubRunCadenceContract(unittest.TestCase):
+    """Only already-read original GitHub Actions schedule metadata, no APIs."""
+
+    WATCH_ID = 371909131
+
+    @staticmethod
+    def scheduled_run(age_seconds: int, run_id: int = 1068):
+        return {
+            "workflow_id": MiniPCOriginalGithubRunCadenceContract.WATCH_ID,
+            "event": "schedule",
+            "id": run_id,
+            "created_at": (NOW - timedelta(seconds=age_seconds)).isoformat(),
+            "status": "completed",
+            "conclusion": "success",
+            "html_url": "PRIVATE_NEVER_EXPORT",
+            "actor": {"token": "SECRET_DO_NOT_COPY"},
+        }
+
+    def classify(self, rows, expected):
+        answer = classify_minipc_github_watch_runs(
+            {"workflow_runs": rows}, now=NOW,
+        )
+        self.assertEqual(answer["run_evidence_state"], expected)
+        for key in (
+            "all_expected_triggers_verified",
+            "schedule_delay_or_drop_cause_verified",
+            "job_logs_verified",
+            "alert_upsert_ack_verified",
+            "slack_delivery_verified",
+            "host_reported_healthy",
+            "writes_performed",
+        ):
+            self.assertIs(answer[key], False)
+        self.assertNotIn("PRIVATE_NEVER_EXPORT", repr(answer))
+        self.assertNotIn("SECRET_DO_NOT_COPY", repr(answer))
+        return answer
+
+    def test_realistic_39_minute_gap_not_automatically_github_outage(self):
+        rows = [
+            self.scheduled_run(300, 1068),
+            self.scheduled_run(300 + 2373, 1067),
+        ]
+        out = self.classify(rows, "RECENT_SUCCESS_WITH_RECORDED_GAP")
+        self.assertEqual(out["observed_inter_run_gap_seconds"], 2373)
+        self.assertEqual(out["matched_schedule_run_count_in_sample"], 2)
+        self.assertEqual(out["latest_run_id"], 1068)
+        self.assertEqual(out["nominal_cadence_seconds"], 900)
+
+    def test_regular_two_runs(self):
+        self.classify([
+            self.scheduled_run(60, 11),
+            self.scheduled_run(960, 10),
+        ], "RECENT_SUCCESS")
+
+    def test_best_effort_delay_vs_stale_distinct(self):
+        self.classify([self.scheduled_run(1800)], "RECENT_SUCCESS")
+        self.classify([self.scheduled_run(1801)], "LAST_RECORDED_RUN_DELAYED")
+        self.classify([self.scheduled_run(2700)], "LAST_RECORDED_RUN_DELAYED")
+        self.classify([self.scheduled_run(2701)], "LAST_RECORDED_RUN_STALE")
+
+    def test_actual_failure_not_hidden_by_older_success(self):
+        latest = self.scheduled_run(100, 100)
+        latest["conclusion"] = "failure"
+        self.classify([self.scheduled_run(1000, 99), latest],
+                      "LATEST_RUN_NOT_SUCCESSFUL")
+
+    def test_pending_run_not_claimed_success(self):
+        x = self.scheduled_run(40)
+        x["status"] = "in_progress"
+        x["conclusion"] = None
+        self.classify([x], "LATEST_RUN_NOT_COMPLETED")
+
+    def test_ignores_different_workflow_and_manual_dispatches(self):
+        other = self.scheduled_run(3, 200)
+        other["workflow_id"] = 99999
+        manual = self.scheduled_run(5, 201)
+        manual["event"] = "workflow_dispatch"
+        out = self.classify(
+            [other, manual, self.scheduled_run(120, 202)],
+            "RECENT_SUCCESS",
+        )
+        self.assertEqual(out["matched_schedule_run_count_in_sample"], 1)
+
+    def test_no_matching_runs_is_not_failed_run(self):
+        self.classify([], "NO_WATCH_SCHEDULE_RUNS_IN_SAMPLE")
+        self.assertEqual(classify_minipc_github_watch_runs(None, now=NOW)[
+            "run_evidence_state"], "UNKNOWN_MISSING")
+        self.assertEqual(classify_minipc_github_watch_runs({
+            "workflow_runs": "not an array"}, now=NOW)[
+            "run_evidence_state"], "UNKNOWN_RUN_COLLECTION")
+
+    def test_future_timestamp_fails_closed(self):
+        self.classify([self.scheduled_run(-130)], "INVALID_FUTURE")
+
+    def test_invalid_or_duplicate_metadata_fails_closed(self):
+        duplicate = self.scheduled_run(60, 55)
+        self.classify([duplicate, self.scheduled_run(200, 55)],
+                      "INVALID_RUN_METADATA")
+        for raw in ("not-a-time", "2026-10-17T09:00:00", None):
+            row = self.scheduled_run(60)
+            row["created_at"] = raw
+            with self.subTest(raw=raw):
+                self.classify([row], "INVALID_RUN_METADATA")
+        invalid = self.scheduled_run(60)
+        invalid["status"] = "UNKNOWN"
+        self.classify([invalid], "INVALID_RUN_METADATA")
+
+    def test_results_are_order_insensitive_and_no_job_ack(self):
+        old = self.scheduled_run(1200, 1)
+        new = self.scheduled_run(100, 2)
+        out = self.classify([old, new], "RECENT_SUCCESS")
+        self.assertEqual(out["latest_run_id"], 2)
+        self.assertEqual(out["observed_inter_run_gap_seconds"], 1100)
+
+    def test_untrusted_response_cannot_expand_github_scope(self):
+        row = self.scheduled_run(10)
+        row["workflow_id"] = 999
+        self.classify([row], "NO_WATCH_SCHEDULE_RUNS_IN_SAMPLE")
 
 
 

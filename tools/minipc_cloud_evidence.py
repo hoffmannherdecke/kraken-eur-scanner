@@ -313,3 +313,110 @@ def classify_minipc_daily_diagnostics(
     else:
         result["native_task_readback_state"] = "COMPLETE_REPORTED"
     return result
+
+
+# Optional GitHub Actions run-list readback. This is NOT an independent
+# scheduler or a missed-trigger detector: GitHub scheduled cron is best-effort.
+# A small sampled run list can establish recorded run gaps, not their cause.
+GITHUB_MINIPC_CLOUD_WATCH_WORKFLOW_ID = 371909131
+GITHUB_WATCH_NOMINAL_SECONDS = 15 * 60
+GITHUB_WATCH_DELAYED_SECONDS = 30 * 60
+GITHUB_WATCH_STALE_SECONDS = 45 * 60
+
+
+def classify_minipc_github_watch_runs(
+    api_response: Mapping[str, Any] | None,
+    *,
+    now: datetime,
+) -> dict[str, Any]:
+    """Read ONLY already-fetched original GitHub Actions run-list metadata.
+
+    This complements, but does not supersede, the existing actual Supabase
+    original host report and alert upsert freshness classifiers. Never fetch,
+    write, schedule, alert, suppress, retry or infer why cron didn't trigger.
+    """
+    if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("now must be timezone-aware")
+    result: dict[str, Any] = {
+        "kind": "MINIPC_GITHUB_WATCH_RUN_CADENCE_V1",
+        "workflow_id": GITHUB_MINIPC_CLOUD_WATCH_WORKFLOW_ID,
+        "run_evidence_state": "UNKNOWN_MISSING",
+        "latest_run_id": None,
+        "latest_run_age_seconds": None,
+        "observed_inter_run_gap_seconds": None,
+        "nominal_cadence_seconds": GITHUB_WATCH_NOMINAL_SECONDS,
+        "matched_schedule_run_count_in_sample": 0,
+        "all_expected_triggers_verified": False,
+        "schedule_delay_or_drop_cause_verified": False,
+        "job_logs_verified": False,
+        "alert_upsert_ack_verified": False,
+        "slack_delivery_verified": False,
+        "host_reported_healthy": False,
+        "writes_performed": False,
+    }
+
+    def finish(state: str) -> dict[str, Any]:
+        result["run_evidence_state"] = state
+        return result
+
+    if not isinstance(api_response, Mapping):
+        return finish("UNKNOWN_MISSING")
+    runs = api_response.get("workflow_runs")
+    if not isinstance(runs, list) or len(runs) > 1000:
+        return finish("UNKNOWN_RUN_COLLECTION")
+    matches: list[tuple[datetime, int, str, str | None]] = []
+    ids: set[int] = set()
+    for item in runs:
+        if not isinstance(item, Mapping):
+            return finish("INVALID_RUN_METADATA")
+        # Other repository workflows and manual dispatches are not evidence of
+        # the actual Cloud Watch schedule; they must never fill its cadence.
+        if item.get("workflow_id") != GITHUB_MINIPC_CLOUD_WATCH_WORKFLOW_ID:
+            continue
+        if item.get("event") != "schedule":
+            continue
+        raw_time = item.get("created_at")
+        raw_id = item.get("id")
+        status = item.get("status")
+        conclusion = item.get("conclusion")
+        if (type(raw_id) is not int or raw_id < 1 or raw_id in ids or
+                not isinstance(raw_time, str) or "T" not in raw_time or
+                status not in ("completed", "queued", "in_progress", "waiting") or
+                (conclusion is not None and conclusion not in (
+                    "success", "failure", "cancelled", "timed_out",
+                    "skipped", "neutral", "action_required", "stale"))):
+            return finish("INVALID_RUN_METADATA")
+        try:
+            created_at = datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+        except ValueError:
+            return finish("INVALID_RUN_METADATA")
+        if created_at.tzinfo is None or created_at.utcoffset() is None:
+            return finish("INVALID_RUN_METADATA")
+        ids.add(raw_id)
+        matches.append((created_at.astimezone(timezone.utc), raw_id, status, conclusion))
+
+    result["matched_schedule_run_count_in_sample"] = len(matches)
+    if not matches:
+        return finish("NO_WATCH_SCHEDULE_RUNS_IN_SAMPLE")
+    matches.sort(reverse=True)
+    newest_time, newest_id, newest_status, newest_conclusion = matches[0]
+    result["latest_run_id"] = newest_id
+    delta = (now.astimezone(timezone.utc) - newest_time).total_seconds()
+    result["latest_run_age_seconds"] = round(delta)
+    if len(matches) >= 2:
+        gap = (newest_time - matches[1][0]).total_seconds()
+        result["observed_inter_run_gap_seconds"] = round(gap)
+    if delta < -MAX_FUTURE_SECONDS:
+        return finish("INVALID_FUTURE")
+    if newest_status != "completed":
+        return finish("LATEST_RUN_NOT_COMPLETED")
+    if newest_conclusion != "success":
+        return finish("LATEST_RUN_NOT_SUCCESSFUL")
+    if delta > GITHUB_WATCH_STALE_SECONDS:
+        return finish("LAST_RECORDED_RUN_STALE")
+    if delta > GITHUB_WATCH_DELAYED_SECONDS:
+        return finish("LAST_RECORDED_RUN_DELAYED")
+    if (result["observed_inter_run_gap_seconds"] is not None
+            and result["observed_inter_run_gap_seconds"] > GITHUB_WATCH_DELAYED_SECONDS):
+        return finish("RECENT_SUCCESS_WITH_RECORDED_GAP")
+    return finish("RECENT_SUCCESS")
