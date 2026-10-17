@@ -64,8 +64,10 @@ class OutageResilienceTests(unittest.TestCase):
         for key in (
             "v2r4_paper_candidates", "v2r4_paper_wait",
             "v2r4_paper_lifecycle", "v2r4_paper_cloud_sync",
-            "minipc_status_sync", "v3_canary_observation_28h",
         ):
+            self.assertIn('check="'+key+'"',src)
+        self.assertIn('Add-NativeTaskReadback -Key $spec.check -Task $task',src)
+        for key in ("minipc_status_sync", "v3_canary_observation_28h"):
             self.assertIn('Add-NativeTaskReadback -Key "'+key+'"',src)
         self.assertIn('native_task_readback = [ordered]@{',src)
         self.assertIn('no_runtime_or_release_authority = $true',src)
