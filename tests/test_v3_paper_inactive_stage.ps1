@@ -93,6 +93,10 @@ try {
   if($importRoot.Count -ne 1){
     throw 'V3_IMPORT_GRAPH_INCOMPLETE: original paper_context.py absent'
   }
+  $launchers=@($stored.source_manifest | Where-Object {
+    $_.relative_path -ceq 'paper_evaluator/v3_paper_minipc_native_launcher_v1.py'
+  })
+  if($launchers.Count -ne 1){throw 'V3_ORIGINAL_SINGLE_OWNER_LAUNCHER_NOT_PINNED'}
   foreach($file in @($stored.source_manifest)){
     $relative=[string]$file.relative_path
     if($relative -notmatch '^(paper_evaluator|market_data)/[a-zA-Z0-9_]+\.py$' -and

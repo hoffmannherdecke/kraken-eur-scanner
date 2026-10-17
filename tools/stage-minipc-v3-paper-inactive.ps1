@@ -73,6 +73,7 @@ $must=@(
  'paper_evaluator/v3_paper_intake_receipt_stage_v1.py',
  'paper_evaluator/v3_paper_signed_source_journal_stage_v1.py',
  'paper_evaluator/v3_paper_single_writer_preflight_v1.py',
+ 'paper_evaluator/v3_paper_minipc_native_launcher_v1.py',
  'market_data/__init__.py',
  $coreSupport,$bundle,$relay
 ) + $operatorSource
