@@ -52,7 +52,8 @@ class OutageResilienceTests(unittest.TestCase):
             "# Disk: warn below 20 GB",1)[0]
         self.assertIn("Get-ScheduledTaskInfo -TaskName",function)
         self.assertIn("267009",function)  # Windows 0x41301 = running, not failure
-        self.assertIn("TASK_RUNNING_CODE_NOT_FAILURE",function)
+        self.assertIn("RUNNING_CODE_AND_STATE_MATCH",function)
+        self.assertIn("RUNNING_CODE_STATE_MISMATCH",function)
         self.assertIn("ZERO_RESULT_NOT_RUNTIME_PROOF",function)
         self.assertIn("OTHER_RESULT_REVIEW_REQUIRED",function)
         self.assertIn("UNAVAILABLE",function)
