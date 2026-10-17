@@ -38,8 +38,7 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
               ticker:Callable=evaluate.kraken_ticker,
               _released_tick_capability:object=None)->dict[str,Any]:
     if not series_id.startswith("PAPER-V3-CANARY-"):
-        if (not isinstance(_released_tick_capability,_ReleasedTickCapability)
-                or _released_tick_capability.series_id!=series_id):
+        if _released_tick_capability is not _RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK:
             raise ValueError("non-CANARY V3 tick requires locked external active Paper readback")
     if not isinstance(candidate,dict):
         raise ValueError("original candidate object missing")
@@ -152,13 +151,10 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
 
 
 
-# Private per-invocation capability: only the existing native OS owner lock may
-# construct it after an injected *fresh independently sourced* Cloud readback.
-# This is NOT a source of Paper-release authority; physical owner identity,
-# model budgets, CAS and the six E2E receipts remain external release gates.
-class _ReleasedTickCapability:
-    def __init__(self,series_id:str):
-        self.series_id=series_id
+# Identity-only accidental misuse fence, not an authentication secret.
+# Only the existing post-CAS wrapper supplies this private sentinel while it
+# owns the OS-native lock. Physical/Cloud release authority is EXTERNAL.
+_RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK=object()
 
 
 def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
@@ -225,7 +221,7 @@ def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
             candidate=candidate,series_id=series_id,journal=journal,
             capture_dir=capture_dir,clock_now=clock_now,capture=capture,
             fetch=fetch,ticker=ticker,
-            _released_tick_capability=_ReleasedTickCapability(series_id))
+            _released_tick_capability=_RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK)
 
 
 @contextmanager
