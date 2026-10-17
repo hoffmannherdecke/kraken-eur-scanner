@@ -648,6 +648,44 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
     }
 
 
+def interactive_chat_goal_handoff(root: Path, source_index: list[dict]) -> dict:
+    """Carry the *original* AGENTS.md chat goal rule in every context packet.
+
+    Keep the policy in its existing canonical file, not a second competing
+    conversation manager or a copy of the rule in JSON config.
+    """
+    path = "AGENTS.md"
+    source = next((item for item in source_index if item["path"] == path), None)
+    require(source is not None, "canonical interactive chat rule not indexed")
+    text = (root / path).read_text(encoding="utf-8")
+    heading = "## Dialog-Arbeitsmodus: vereinbartes Ziel statt einzelner Arbeitsblock"
+    require(text.count(heading) == 1, "canonical interactive chat rule missing or duplicated")
+    section = text.split(heading, 1)[1].split("\n## ", 1)[0].strip()
+    required = (
+        "normale interaktive Chat-Arbeit",
+        "vereinbarte, tatsächlich prüfbare Zielzustand",
+        "selben laufenden Antwort-/Tool-Durchgang",
+        "ohne neue Nutzerantwort weiterarbeiten",
+        "Eine abschließende Antwort erst",
+        "Eine finale Chat-Antwort startet keine heimliche asynchrone Weiterarbeit",
+        "Freigaben unverändert",
+    )
+    require(all(term in section for term in required),
+            "canonical interactive chat rule incomplete")
+    return {
+        "kind": "INTERACTIVE_CHAT_GOAL_CONTINUATION_HANDOFF_V1",
+        "canonical_source": path,
+        "source_sha256": source["sha256"],
+        "applies_to": "ALL_PROJECT_SCOPES_NORMAL_CHATS_NOT_ONLY_WORK",
+        "instruction_from_original": heading + "\n\n" + section,
+        "progress_note_is_not_a_stop": True,
+        "finish_at_verified_goal_or_real_blocker": True,
+        "new_chat_must_actively_load_context": True,
+        "automatic_new_chat_bootstrap_guaranteed": False,
+        "no_new_scheduler_or_execution_authority": True,
+    }
+
+
 def build(root: Path, scope: str) -> dict:
     config, entries = routed_sources(root, scope)
     index = []
@@ -683,6 +721,7 @@ def build(root: Path, scope: str) -> dict:
         "declared_status": declared,
         "control_decision_ack_reconciliation": review_receipts(root, state),
         "project_component_owners": project_component_owner_handoff(root),
+        "interactive_chat_goal": interactive_chat_goal_handoff(root, index),
         "operational_evidence_handoff": existing_operational_evidence_handoff(config, index),
         "limitations": [
             "Source hashes attest presence/version, not reading, semantic understanding or correctness.",

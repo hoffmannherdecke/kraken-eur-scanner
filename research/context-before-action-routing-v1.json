@@ -10,6 +10,10 @@
   "no_trading_authority": true,
   "common": [
     {
+      "path": "AGENTS.md",
+      "role": "CANONICAL_CHAT_GOAL_CONTINUATION_AND_CROSS_SESSION_AGENT_INSTRUCTIONS; NOT_AUTOMATIC_CHAT_BOOTSTRAP"
+    },
+    {
       "path": "project-current-state.json",
       "role": "DECLARED_CURRENT_STATE_NOT_LIVE"
     },
