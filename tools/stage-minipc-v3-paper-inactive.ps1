@@ -57,7 +57,6 @@ $selected=@($tracked | Where-Object {
   $_ -ceq $bundle -or $_ -ceq $relay
 } | Sort-Object -Unique)
 $must=@(
- 'paper_evaluator/__init__.py',
  'paper_evaluator/v3_paper_minipc_one_candidate_v1.py',
  'paper_evaluator/v3_paper_minipc_selective_tick_v1.py',
  'paper_evaluator/v3_paper_cloud_receipt_sync_v1.py',
