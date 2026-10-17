@@ -44,8 +44,13 @@ function Add-NativeTaskReadback {
         if ($value -eq 0) {
           $entry.last_result_meaning = "ZERO_RESULT_NOT_RUNTIME_PROOF"
         } elseif ($value -eq 267009) {
-          # 0x41301 means "currently running", not "task failed".
-          $entry.last_result_meaning = "TASK_RUNNING_CODE_NOT_FAILURE"
+          # 0x41301 means "task is running", not automatically "task failed".
+          # A mismatch with its independently observed Task.State remains unknown.
+          if ([string]$Task.State -eq "Running") {
+            $entry.last_result_meaning = "RUNNING_CODE_AND_STATE_MATCH"
+          } else {
+            $entry.last_result_meaning = "RUNNING_CODE_STATE_MISMATCH"
+          }
         } else {
           $entry.last_result_meaning = "OTHER_RESULT_REVIEW_REQUIRED"
         }
