@@ -323,6 +323,7 @@ def run_cycle(
     execute_recheck: bool,
     now: datetime | None = None,
     source_progress_path: Path | None = None,
+    file_cache: _ReadOnlyWaitPlanCache | None = None,
 ) -> dict[str, Any]:
     # The decision PIT clock is fixed for the entire cycle; do not reuse it
     # as the health heartbeat's actual completion timestamp.
@@ -335,7 +336,7 @@ def run_cycle(
     )
     state["altrady_log_offset"] = new_offset
 
-    plans = discover_plans(decision_dir, recheck_dir, now=now)
+    plans = discover_plans(decision_dir, recheck_dir, now=now, file_cache=file_cache)
     counters = {
         "plans_discovered": len(plans),
         "active_plans": 0,
@@ -566,6 +567,8 @@ def main() -> int:
     for d in (args.decision_dir, args.recheck_dir, args.candidate_dir, args.receipt_dir):
         d.mkdir(parents=True, exist_ok=True)
 
+    # Cache is local to this worker and never persisted/used across restarts.
+    plan_file_cache = _ReadOnlyWaitPlanCache()
     while True:
         result = run_cycle(
             decision_dir=args.decision_dir,
@@ -581,6 +584,7 @@ def main() -> int:
             fallback_seconds=args.fallback_seconds,
             execute_recheck=args.execute_recheck,
             source_progress_path=args.source_progress_file,
+            file_cache=plan_file_cache,
         )
         print(json.dumps(result, sort_keys=True), flush=True)
         if args.once:
