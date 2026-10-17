@@ -123,7 +123,7 @@
       ],
       "action": "ONE bounded safe PR: audit existing mini-PC Kraken EUR coin-entry OHLC / WAIT handoff / readonly funnel / existing one-shot wrapper and identify the smallest NOT ALREADY IMPLEMENTED offline read-only setup for candidate-specific closed-bar/volume/ATR plus rejected-or-missed-move comparison. Reuse existing tools first. Create a concise evidence-based preflight in target with exact existing files, candidate-id/PIT/known_at & fee/spread/MAE verification, local one-shot command if already available, smallest missing safe wrapper/test if genuinely needed, real CI proof, physical E2E still pending, no double collector or Cron. Do not call OpenAI or Kraken private endpoints, start services or runner, touch production V2R4, H3/H6, supabase writes, secrets, trade or change thresholds.",
       "proof_of_completion": "The narrow read-only preflight and any truly necessary tests/wrapper are merged to main after CI, with links and a clearly named physical/strategy evidence blocker or negative/no-change disposition; actual mini-PC execution remains UNVERIFIED until physical run.",
-      "limits": "One small review-driven safe PR, <=2 tasks per Work run, max one concurrent implementation branch; no mini-PC installation, Runner activation, source subscriptions, strategy changes, cloud cost or separate Work schedule. No automatic H3/H6/shadow/paper release."
+      "limits": "One small review-driven safe PR, max two concurrently active Work packages with real ACK-based same-run refill and one implementation branch; no mini-PC installation, Runner activation, source subscriptions, strategy changes, cloud cost or separate Work schedule. No automatic H3/H6/shadow/paper release."
     },
     {
       "id": "V3_PAPER_FIVE_SOURCE_FOLLOWTHROUGH",
@@ -155,7 +155,7 @@
       ],
       "action": "After PHYSICAL V3 PAPER ACTIVE VERIFIED: consume first two missing evidence-backed optional V3 role actions from original project_followthrough_router. Actually verify same-pair PIT source owner -> original V3 full-model consumer and P4 reasons, or for source stewardship real unattended discovery/scoring -> safe reversible research-only source lifecycle PR CI -> actual consumer. Fix only the smallest safe missing code/path, PR+CI+merge in existing project. Missing authentic source remains OPEN; never fabricate a positive catalyst, never broaden runtime feeds or auto-buy.",
       "proof_of_completion": "Exact V3 Paper strategy/series bound owner original ID and consumer original ID and independently read back source+V3 consumer, evidence report + SHA256 stored in existing work-analysis-state per source. No fake completion from test fixtures or code-only merge. If unavailable keep OPEN with concrete missing owner/event/physical access and owner/gate, do not silently suppress future review.",
-      "limits": "No more than 2 bounded safe actions per existing Work run and 1 PR concurrently. No new job/clock, API budget, secrets, permanent source collector, V2R4 change, active strategy tuning, trade, shadow or Paper release. Optional missing facts do not block running V3 PAPER."
+      "limits": "Max two concurrently active bounded safe Work packages with ACK-based same-run refill within the existing time/cost limits and one PR concurrently. No new job/clock, API budget, secrets, permanent source collector, V2R4 change, active strategy tuning, trade, shadow or Paper release. Optional missing facts do not block running V3 PAPER."
     },
     {
       "id": "PROJECT_WIDE_COMMITMENT_SAFE_WORK",
@@ -182,7 +182,7 @@
       ],
       "action": "Select only the highest priority registered OPEN safe Work task from existing generic project implementation router. Perform actual bounded read-only review and a small PR/CI with explicit source+consumer evidence or mark gate/owner blocker. No Paper activation or new schedule.",
       "proof_of_completion": "Matched canonical commitment ACK with existing physical/source original identifiers + independent readback + report digest, or explicitly blocked review packet. Code-only CI is not a physical completion.",
-      "limits": "Existing 10:15 Work only, max 2 safe actions per run and 1 implementation PR, no source or Paper writer activation, no OpenAI API spend and no automatic trading."
+      "limits": "Existing 10:15 Work only, max two concurrently active safe Work packages with evidenced same-run refill and one implementation PR, no source or Paper writer activation, no OpenAI API spend and no automatic trading."
     },
     {
       "id": "HISTORICAL_BACKLOG_RECONCILIATION",

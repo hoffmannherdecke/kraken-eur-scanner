@@ -617,8 +617,10 @@ def registered_commitment_milestone(state:dict,now:dt.datetime,root:Path)->tuple
                              anchor,
             "Projektweiter Umsetzungsgate fällig: "+details+
             ". Bestehender 10:15-Work-Owner prüft das reale Quellen-/Host-Gate, "
-            "führt höchstens zwei reversible sichere Arbeiten aus und hält "
-            "nicht ausführbare Release-/Budget-Entscheidungen sichtbar OFFEN. "
+            "bearbeitet höchstens zwei reversible sichere Arbeitspakete gleichzeitig; "
+            "nach belegtem Abschluss kann im selben regulären Lauf weitere "
+            "fällige sichere Arbeit nachrücken. Nicht ausführbare "
+            "Release-/Budget-Entscheidungen bleiben sichtbar OFFEN. "
             "Nicht als erledigt zählen ohne Original-/Consumer-Beleg; "
             "keine automatischen Paper-/H3-/H6-/Echtgeld-Änderungen."))
     # Distinct immutable incident owner: alert the ORIGINAL #99 thread once
@@ -631,12 +633,13 @@ def registered_commitment_milestone(state:dict,now:dt.datetime,root:Path)->tuple
         statuses.append("PROJECT:V2R4_WAIT_PHYSICAL_FOLLOWTHROUGH_OPEN")
         notices.append(event("V2R4_WAIT_INCIDENT_FOLLOWTHROUGH_DUE",
                              incident_id,
-            "Offener V2R4-WAIT-Incident Issue #99 nach tatsächlicher "
-            "28h-Canary-Frist: PR259/260 sind nur GitHub-Code, die aktive "
-            "isolierte Mini-PC-Stage noch nicht installiert. Bestehendes "
-            "10:15-Work prüft Original-Stage-SHA, Kraken-Quellfehler, "
-            "Rollback/Single-Writer und echten Supervisor/Lifecycle/Cloud-"
-            "Consumer-ACK. Keine neue Runtime ohne getrennte Benutzerfreigabe, "
+            "Offenes eigenständiges V2R4-WAIT-Folgegate Issue #99: vor "
+            "neuer Quellprüfung den aktuellen Original-PR326-Work-ACK "
+            "und die realen Mini-PC-/Cloud-Belege abgleichen. Schon "
+            "abgeschlossene PR326-Quellarbeit nicht erneut vergeben; "
+            "nur tatsächlich fehlende Kraken-, WAIT-, Supervisor-, "
+            "Rollback-/Single-Writer- und Cloud-Consumer-Gates prüfen. "
+            "Keine neue Runtime ohne getrennte Benutzerfreigabe, "
             "kein bloßes CI/Heartbeat/Work-ACK als physischer Abschluss."))
     return statuses,notices
 
