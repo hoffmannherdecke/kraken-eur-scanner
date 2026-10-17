@@ -32,6 +32,38 @@ FORBIDDEN={"TRADE_OR_ORDER","PRIVILEGE_OR_SECRET_CHANGE","FROZEN_STRATEGY_CHANGE
  "RUNTIME_TRIGGER_OR_THRESHOLD_CHANGE","SHADOW_START_OR_PROMOTION","LIVE_RELEASE",
  "DATA_DESTRUCTION","NEW_SCHEDULER"}
 
+def verified_completed_work_receipt(root: Path, receipt: dict) -> bool:
+    """Trust a COMPLETED slot only with an actual local SHA-256-pinned report.
+
+    This verifies the repository artifact, NOT a remote PR merge, physical
+    deployment, Cloud upload, a V3 model decision or a strategy release.
+    Other independent gates must still check their own original evidence.
+    """
+    if not isinstance(receipt, dict) or receipt.get("status") != "COMPLETED":
+        return False
+    report, digest = receipt.get("report"), receipt.get("report_sha256")
+    completed, reason = receipt.get("completed_at_utc"), receipt.get("reason")
+    if (not isinstance(report, str) or not report.startswith("research/work-analysis/")
+            or "\\" in report or not isinstance(digest, str)
+            or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest)
+            or not isinstance(completed, str) or not isinstance(reason, str)
+            or not reason.strip()):
+        return False
+    try:
+        at = dt.datetime.fromisoformat(completed.replace("Z", "+00:00"))
+        if at.tzinfo is None or at.utcoffset() is None:
+            return False
+        file = (root / report).resolve()
+        base = root.resolve()
+        if not file.is_relative_to(base) or not file.is_file():
+            return False
+        if file.stat().st_size > 2_000_000:
+            return False
+        return hashlib.sha256(file.read_bytes()).hexdigest() == digest
+    except (OSError, ValueError, TypeError):
+        return False
+
+
 def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
     errs=[]
     if queue.get("kind")!="SAFE_AUTONOMOUS_IMPLEMENTATION_QUEUE_V1" or queue.get("schema_version")!=1:
@@ -150,6 +182,11 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
             "series":(state.get("active_strategy") or {}).get("series_id"),
             "state":item["state"]},sort_keys=True).encode()).hexdigest()[:20]
         previous=attempts.get(key)
+        if (isinstance(previous, dict)
+                and previous.get("gate_fingerprint") == fp
+                and previous.get("status") == "COMPLETED"
+                and not verified_completed_work_receipt(root, previous)):
+            errs.append("unverified completion receipt " + key)
         if not (isinstance(previous,dict)
                 and previous.get("gate_fingerprint")==fp
                 and previous.get("status") in ("BLOCKED","ACTIVE_PR","COMPLETED")):
@@ -186,9 +223,21 @@ def select(root:Path, queue:dict, state:dict, ack:dict|None=None)->dict:
     for tid in open_work:
         record=attempts.get(tid)
         if isinstance(record,dict) and record.get("gate_fingerprint")==digest and record.get("status") in {"BLOCKED","ACTIVE_PR","COMPLETED"}:
-            blocked_attempts.append({"id":tid,"status":record["status"]})
+            if (record["status"] == "COMPLETED"
+                    and not verified_completed_work_receipt(root, record)):
+                errs.append("unverified completion receipt " + tid)
+            blocked_attempts.append({"id":tid,"status":record["status"],
+                                     "local_report_sha256_verified":
+                                         record["status"] == "COMPLETED"})
             continue
         ready.append(next(x for x in tasks if x["id"]==tid))
+    if errs:
+        # Never free a capacity slot from an unsupported "COMPLETED" label.
+        # Work must reconcile its existing receipt with the original artifact.
+        return {"kind":"AUTONOMOUS_IMPLEMENTATION_GATE_V1","status":"BLOCKED",
+                "errors":errs,"ready":[],"safe_work_requested":False,
+                "strategy_changed":False,"orders":False,
+                "real_money_actions":False}
     ready.sort(key=lambda x:(x["priority"],x["id"]))
     # Return no more than the free *concurrent* slots. Work must re-run
     # this cheap selector after each real ACK in the SAME allowed 10:15 run;
