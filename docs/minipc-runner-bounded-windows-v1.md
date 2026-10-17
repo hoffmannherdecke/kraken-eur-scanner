@@ -1,0 +1,30 @@
+# MINI-PC Runner – kostenlose, begrenzte automatische Verfügbarkeit (Entwurf, 17.10.2026)
+
+**Ziel:** Keine neuen GitHub-Abos, private Repositories bleiben privat, ein vorhandener eingeschränkter Mini-PC-Runner und vorhandener Windows-Task-Scheduler; ChatGPT-Connector kann geprüfte Aufgaben aus dem geschützten Hauptrepo auf GitHub anfordern. Kein beliebiger PowerShell-Text, kein Hintergrundpoller oder paralleler Runner.
+
+## Was nachweislich bereits funktioniert
+
+- Ein einziger `MINIPC_TASK_V1 | <sha> | <task>`-Auftrag im privaten Audit-Issue #13 kann unter `CryptoSupportSvc` einen SHA-geprüften regulären Task im Hauptrepo ausführen. Erste E2E PASS, Windows `Stopped/Disabled` nach Ablauf real verifiziert.
+- Lokal Admin-geschützter `ACTIONS_RUNNER_HOOK_JOB_STARTED` prüft fest gepinnten privaten Workflow-SHA `28bdddccd7d917151958c4b64461dc6289e71eca`, Original-User+App, Issue13, GitHub-Event und 10-Minuten-Gültigkeit. Positiver Realjob [39056181688](https://github.com/hoffmannherdecke/kraken-readonly-bridge/actions/runs/39056181688) PASS, nicht genehmigter Legacy-Job [39056239661](https://github.com/hoffmannherdecke/kraken-readonly-bridge/actions/runs/39056239661) mit `LOCAL_PREJOB_DENIED:wrong_workflow_ref` vor allen Schritten blockiert. Finales Foto Windows `Stopped/Disabled/.\\CryptoSupportSvc` PASS.
+- Prozess-lokale PowerShell-Ausführungsausnahme nur für den Runner-Service, globale Windows-Ausführungsrichtlinie unverändert.
+
+## Kleinster sinnvoller Anschluss
+
+In `tools/minipc_runner_guard` sind die beiden neuen Quell-Dateien `bounded_window.ps1` und `install_bounded_window.ps1` vorbereitet. Der Windows-SYSTEM-Task (Name `CryptoSupport - Bounded Runner Window`) nutzt EINEN bestehenden Windows-Scheduler, prüft vor jedem Fenster ausschließlich den originalen Dienst, dessen deaktivierten Zustand, GitHub-Hook/PIN und lokales Konto. Er schaltet den Dienst vorübergehend auf manuell, startet ihn, setzt den Startmodus sofort zurück auf `Disabled`, hält ein kurzes 11-Minuten-Fenster offen, lässt aktuell laufenden Runner.Worker bis höchstens 8 Minuten auslaufen und stoppt/deaktiviert den Dienst im `finally`. Er meldet den Endzustand als `WINDOW_SAFE_PAUSE_ACK` und wirft bei Stopp-Problemen einen Fehler.
+
+**Auslegung:** alle 20 Minuten ein 11-minütiges Fenster (max. 9 Minuten Pause), weil die bestehenden GitHub-Issue-Aufträge beim Start nicht älter als 10 Minuten sein dürfen. GitHub-Queue-/Netzverzögerungen, Windows-Schlaf, Reboot und Jobstarts kurz vor Fensterschluss können trotzdem zu fehlgeschlagenen oder abgebrochenen Jobs führen. **Keine Erfolgs-, Echtzeit- oder 100%-Abdeckungszusage**, keine automatischen Retries. Max. 8-minütige Worker-Nachlaufzeit innerhalb einer insgesamt 20-minütigen Jobausführungsobergrenze.
+
+Der einfache Admin-Installer lädt die beiden Scripte **nur anhand des gemergten SHA aus dem geschützten öffentlichen Hauptrepo**, legt die Datei `bounded_window.ps1` ausschließlich unter dem bereits geschützten `C:\ProgramData\CryptoSupportGuard` ab, prüft die bestehende Schutz-Umgebung, registriert genau EINE Windows-Aufgabe mit `SYSTEM`, `IgnoreNew` und dem Wiederholungsintervall. **Die Aufgabe wird ausdrücklich DEAKTIVIERT registriert.** Es wird weder ein Windows-Dienst gestartet noch die vorhandene Runner-Diensteinstellung `Disabled` geändert; erst ein gesonderter vom Nutzer bestätigter kontrollierter Probelauf und eine bewusste Entscheidung zum Einschalten der geplanten Aufgabe können daraus laufenden Automatikbetrieb machen. `-Remove` entfernt ausschließlich die deaktivierte neue Windows-Aufgabe und diese eine Scheduler-Datei; der Pre-Job-Schutz bleibt bestehen. Keine stillschweigende Übernahme des bestehenden GitHub-Snapshot-/Trading-Workers.
+
+## Sicherheitsgrenzen
+
+- Das private Repo ist trotz GitHub Free weiterhin nicht branchgeschützt; der Admin-eigene Original-Workflow-PIN blockiert fremde private Workflow-Revisionen auf diesem einen Mini-PC, ist aber **kein GitHub Ruleset**. Hauptrepo bleibt weiterhin GitHub-geschützt.
+- Ein zugelassener Task läuft als `CryptoSupportSvc`, nicht als Administrator. Der nur lesende Secrets-Verzeichnis-Auflistungstest wurde verweigert, aber file-level/Netzwerkzugriffe sind nicht vollständig nachgewiesen. Die geplante Windows-Aufgabe selbst läuft als SYSTEM, startet aber **nur** den Originaldienst und führt keinerlei vom GitHub-Kommentar übernommenen PowerShell-Code unter SYSTEM aus.
+- Der Hook und die lokalen Windows-Administratoren bleiben zwingende Freigabestelle für Workflow-PIN-Änderungen. Wenn Private-Repo-Code geändert wird, blockiert der Hook statt automatisch seine lokalen Rechte auszuweiten.
+- Diese Windows-Automatik setzt KEINE V2R4-/V3-/Echtgeld-/Modell-/Cloud-Prozessfreigabe und erzeugt keine GitHub-Actions-Benachrichtigung, wenn der Mini-PC offline ist; es gibt lediglich bestehende GitHub-Jobprotokolle.
+- Reale Task-Scheduler-Kompatibilität, Betrieb bei Strom-/Internetstörung, Worker-Ablauf und Windows-Start/Stop nach Ablauf sind **noch nicht getestet** und brauchen einen kontrollierten Host-Probelauf. Wenn Installscripte oder Windows-spezifische Task-Registrierung unerwartet scheitern: nicht mit einem Administrator-Workaround die Schranken umgehen, sondern erst Befund lesen.
+- Keine laufenden Software-Abos, keine neue OpenAI-API- oder Work-Anforderung. Mini-PC-Strom/üblicher Actions-Verbrauch können anfallen, bei bereits laufendem Mini-PC voraussichtlich gering.
+
+**Nächster kurzer Meilenstein:** GitHub-Hauptrepo-Quellabnahme (PR + Tests) → einmaliger lokaler Admin-Installationsnachweis, Windows-Aufgabe bleibt Disabled → einmaliger gezielt genehmigter Task-Start und Endzustandsprüfung → erst dann aktivieren, wenn Nutzungsfenster/Zyklus und spätere CPU-Wartung berücksichtigt sind.
+
+**Projektowner:** zentrales [GitHub-Issue #353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353), privater Runner-Audit [Issue #13](https://github.com/hoffmannherdecke/kraken-readonly-bridge/issues/13).
