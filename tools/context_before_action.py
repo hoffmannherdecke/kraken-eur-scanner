@@ -508,6 +508,44 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
     )
     require(all(contract.get(key) is True for key in flags),
             "original MINI-PC evidence safety boundary changed")
+
+    scan = contract.get("scanner_handoff")
+    require(isinstance(scan, dict)
+            and scan.get("kind") == "ORIGINAL_SCANNER_ARTIFACT_READBACK_ROUTE_V1",
+            "original scanner handoff route missing")
+    scan_fixed = {
+        "source_workflow_file": ".github/workflows/scan.yml",
+        "github_workflow_id_source": "GITHUB_API_ACTUAL_WORKFLOW_RUN_MATCH_REQUIRED",
+        "latest_run_source": "EXISTING_GITHUB_ACTIONS_SCHEDULED_RUNS_NOT_GITHUB_SOURCE_FILE_DATE",
+        "artifact_name_template": "chat-handoff-{run_id}-{run_attempt}",
+        "artifact_payload_file": "candidates.jsonl",
+        "artifact_retention_days": 7,
+        "jsonl_schema_version": 1,
+        "expected_event_kinds": [
+            "scan_run_meta", "review_candidate_message", "candidate_snapshot",
+            "market_context", "market_breadth",
+        ],
+        "review_action": "REVIEW_ONLY_NOT_ORDER",
+    }
+    for key, expected in scan_fixed.items():
+        require(scan.get(key) == expected,
+                "original scanner handoff route drift: " + key)
+    scan_flags = (
+        "read_via_original_artifact_download",
+        "run_id_and_attempt_must_match_actual_run",
+        "expires_after_retention",
+        "no_implicit_delivery_to_scanner_detection_cloud",
+        "no_implicit_v2r4_v3_model_consumption",
+        "no_live_market_quote_or_trade_proof",
+        "no_live_github_api_call_in_context_packet",
+        "no_work_or_new_scheduler",
+        "no_orders_or_strategy_release",
+    )
+    require(all(scan.get(key) is True for key in scan_flags),
+            "original scanner handoff safety boundary changed")
+    scan_path = scan_fixed["source_workflow_file"]
+    require(scan_path in sources and len(sources[scan_path]["sha256"]) == 64,
+            "original scanner workflow source not fingerprinted")
     return {
         "kind": contract["kind"],
         "status": "SOURCE_ROUTES_REGISTERED_LIVE_DATA_NOT_QUERIED",
@@ -530,6 +568,23 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
         },
         "github_original_watch_workflow_id":
             contract["github_original_watch_workflow_id"],
+        "scanner_artifact_handoff": {
+            "kind": scan["kind"],
+            "status": "SOURCE_ROUTE_ONLY_ACTUAL_RUN_ARTIFACT_NOT_FETCHED",
+            "source_workflow_file": scan_path,
+            "source_fingerprint": sources[scan_path]["sha256"],
+            "artifact_name_template": scan["artifact_name_template"],
+            "payload_file": scan["artifact_payload_file"],
+            "retention_days": scan["artifact_retention_days"],
+            "expected_event_kinds": list(scan["expected_event_kinds"]),
+            "action": scan["review_action"],
+            "actual_run_artifact_independently_verified": False,
+            "scan_candidate_sent_to_evaluator_verified": False,
+            "scan_candidate_written_to_cloud_verified": False,
+            "v3_model_decision_verified": False,
+            "trade_or_order_authorized": False,
+            "no_new_scheduler_or_data_collector": True,
+        },
         "fresh_original_host_cloud_evidence_required": True,
         "separate_github_schedule_run_and_cloud_alert_ack_required": True,
         "live_windows_deployment_independently_verified": False,
