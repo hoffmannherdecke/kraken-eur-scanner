@@ -243,6 +243,14 @@ def classify_minipc_daily_diagnostics(
         "reporting_only": True,
     }
 
+    # A stale, future, wrong-node or clock-inconsistent Cloud row cannot
+    # certify even the reported native task observations as current.
+    if host["source_evidence_state"] in (
+        "UNKNOWN_MISSING", "INVALID_NODE", "INVALID_TIMESTAMP",
+        "INVALID_FUTURE", "STALE", "INVALID_SOURCE_CLOCK"
+    ):
+        result["native_task_readback_state"] = "SOURCE_UNVERIFIED"
+        return result
     if not isinstance(row, Mapping):
         return result
     payload = row.get("payload")
