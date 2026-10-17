@@ -78,4 +78,36 @@ foreach($old in @('CryptoMiniPC-V2R4PaperCandidates',
  'CryptoMiniPC-V2R4PaperCloudSync')){
  if(-not $src.Contains($old)){throw 'Original aftercare role missing'}
 }
+# Regression of the real originalhost PowerShell error on 17 Oct:
+# Require (NativeTaskState -ceq 'ABSENT') passes a STRING to bool binding.
+# Extract only the pure functions, with a fake native scheduler. No real Task.
+$native=@($ast.FindAll({
+ param($n)
+ $n -is [Management.Automation.Language.FunctionDefinitionAst] -and
+ $n.Name -eq 'NativeTaskState'
+},$true))
+$requireFn=@($ast.FindAll({
+ param($n)
+ $n -is [Management.Automation.Language.FunctionDefinitionAst] -and
+ $n.Name -eq 'Require'
+},$true))
+if($native.Count -ne 1 -or $requireFn.Count -ne 1){throw 'Task probe function missing'}
+. ([Scriptblock]::Create($requireFn[0].Extent.Text))
+. ([Scriptblock]::Create($native[0].Extent.Text))
+$taskName='CryptoMiniPC-V3PaperSingleWriter'
+function Get-ScheduledTask {
+ param([string]$TaskName,[string]$TaskPath,[string]$ErrorAction)
+ return $null
+}
+$state=NativeTaskState
+if($state -cne 'ABSENT'){throw 'Absent task fake readback failed'}
+Require ((NativeTaskState) -ceq 'ABSENT') 'Expected absent V3 task'
+$guardOccurrences=@([regex]::Matches($src,[regex]::Escape("Require ((NativeTaskState) -ceq 'ABSENT')")))
+if($guardOccurrences.Count -ne 2){
+ throw 'Both preview and pre-register native Task guards must invoke function before comparing'
+}
+$badGuard='Require (NativeTaskState -ceq'
+if($src.Contains($badGuard)){throw 'Invalid PowerShell boolean binding expression reappeared'}
+Write-Output 'V3_NATIVE_ABSENT_TASK_PREVIEW_ACTUAL_POWERSHELL_REGRESSION_PASS'
+
 Write-Output 'V3_NATIVE_DISABLED_READONLY_TASK_STAGE_SOURCE_POLICY_PASS'
