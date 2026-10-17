@@ -8,6 +8,7 @@ from tools.minipc_cloud_evidence import (
     DAILY_NATIVE_TASKS, DAILY_REQUIRED_CHECKS,
     classify_minipc_evidence, classify_minipc_alert_freshness,
     classify_minipc_daily_diagnostics, classify_minipc_github_watch_runs,
+    parse_postgrest_exact_count,
 )
 
 NOW = datetime(2026, 10, 17, 9, 0, tzinfo=timezone.utc)
@@ -457,6 +458,59 @@ class MiniPCOriginalGithubRunCadenceContract(unittest.TestCase):
         row["workflow_id"] = 999
         self.classify([row], "NO_WATCH_SCHEDULE_RUNS_IN_SAMPLE")
 
+
+
+class MiniPCDailyExactCountContract(unittest.TestCase):
+    """Prevent the previously real Supabase 1000-row response truncation."""
+
+    def test_original_real_bigger_than_1000_totals_are_not_capped(self):
+        self.assertEqual(parse_postgrest_exact_count("0-0/24460"), 24460)
+        self.assertEqual(parse_postgrest_exact_count("0-0/24014"), 24014)
+        self.assertEqual(parse_postgrest_exact_count("0-0/1001"), 1001)
+        self.assertEqual(parse_postgrest_exact_count("0-0/1"), 1)
+
+    def test_genuine_empty_result_has_explicit_zero(self):
+        self.assertEqual(parse_postgrest_exact_count("*/0"), 0)
+        self.assertEqual(parse_postgrest_exact_count(" */0 "), 0)
+
+    def test_unverifiable_or_partial_count_never_silently_becomes_zero(self):
+        for value in (
+            None, "", "*/", "*/100", "0-0/*", "0-0/0", "0-999/24460",
+            "1-1/24014", "0-1/24014", "0-0/-1", "0-0/1.2",
+            "0-0/abc", "0-0/1\nContent-Type: secret",
+            1000, {}, "0-0/9223372036854775808",
+        ):
+            with self.subTest(value=repr(value)):
+                with self.assertRaises(ValueError):
+                    parse_postgrest_exact_count(value)
+
+    def test_existing_daily_original_count_queries_are_head_only(self):
+        from pathlib import Path
+        script=(Path(__file__).resolve().parents[1] /
+                ".github/workflows/minipc-daily-status.yml").read_text("utf-8")
+        self.assertIn('def request_count(path):', script)
+        self.assertIn('method="HEAD"', script)
+        self.assertIn('"Prefer":"count=exact"', script)
+        self.assertIn('"Range":"0-0"', script)
+        self.assertIn('resp.headers.get("Content-Range")', script)
+        self.assertEqual(script.count("=request_count("), 3)
+        for old in (
+            "len(shadow_count_rows or [])",
+            "len(completed_rows or [])",
+            "len(scanner_rows or [])",
+        ):
+            self.assertNotIn(old, script)
+        for table in (
+            "v2r4_shadow_evidence?select=event_id",
+            "v2r4_shadow_evidence?select=event_id&outcome_payload=not.is.null",
+            "scanner_detection_evidence?select=handoff_id&detected_at=gte.",
+        ):
+            self.assertIn(table, script)
+        self.assertIn("cron: '0 8,9 * * *'", script)
+        self.assertIn('dry_run=event_name!="schedule"', script)
+        self.assertIn('if dry_run:\n              raise SystemExit(0)', script)
+        self.assertEqual(script.count("Slack response:"), 1)
+        self.assertEqual(script.count('"/rest/v1/minipc_daily_status?'), 1)
 
 
 if __name__ == "__main__":
