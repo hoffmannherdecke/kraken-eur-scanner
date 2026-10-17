@@ -176,7 +176,7 @@ $action.Path=$python
 $action.Arguments=$arguments
 $action.WorkingDirectory=$stage
 Require ($definition.Settings.Enabled -eq $false) 'Task unexpectedly enabled before registration'
-Require (NativeTaskState -ceq 'ABSENT') 'V3 Task registration race'
+Require ((NativeTaskState) -ceq 'ABSENT') 'V3 Task registration race'
 # TASK_CREATE (2), not UPDATE (4): refuses any concurrent/preexisting task.
 $null=$folder.RegisterTaskDefinition($taskName,$definition,2,'SYSTEM',$null,5)
 $created=Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
