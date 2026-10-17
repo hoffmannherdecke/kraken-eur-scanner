@@ -1183,14 +1183,35 @@
     "project_implementation_commitments": {
       "V3_EXPERIMENTAL_PAPER_SIX_PROOFS": {
         "status": "OPEN_REGISTERED",
-        "reviewed_at_utc": "2026-10-15T08:14:51Z",
+        "reviewed_at_utc": "2026-10-17T08:14:04Z",
         "canonical_owner": "project-current-state.json#pending_strategy_transition",
-        "report": "research/work-analysis/2026-10-15-v3-canary-closure-and-backlog-dispositions.md",
-        "report_sha256": "bda9fde0eaae924b9aba39fdb8200628f4983f7300508d651acb2d43b8e5355a",
+        "report": "research/work-analysis/2026-10-17-v3-six-proof-reconciliation.md",
+        "report_sha256": "375f9a3b92366907c7efe3500b68f59fb3f2c88ef12d03c0885a254560890870",
         "verified_physical_or_cloud_e2e_release_rows": 0,
         "required_release_rows": 6,
-        "blocker": "CANARY_CLOSED_BUT_SIX_INDEPENDENT_RELEASE_PROOFS_SINGLE_WRITER_CAS_RECOVERY_CLOUD_E2E_AND_RELEASE_BUDGET_GATES_OPEN",
-        "next_gate": "AUTHENTICATE_EACH_OF_SIX_ORIGINAL_TECHNICAL_PROOFS_THEN_EXPLICIT_RELEASE_AND_MODEL_BUDGET_GATE",
+        "component_evidence": {
+          "candidate_id": "20261016-190002-TIA-EUR-r17497221611485",
+          "series_id": "PAPER-V3-CANARY-ONESHOT-20261016",
+          "decision": "WAIT",
+          "p4_status": "FULL_WAIT_VALIDATED_OFFLINE",
+          "cloud_receipts_distinct": 10,
+          "wait_expiry": "UNKNOWN",
+          "evidence_urls": [
+            "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6222965426",
+            "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6223498351"
+          ],
+          "not_release_proof": true
+        },
+        "proof_dispositions": {
+          "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E": "PARTIAL_EVIDENCE_NOT_ACCEPTED_PROOF",
+          "V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT": "OPEN",
+          "V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE": "PARTIAL_EVIDENCE_NOT_ACCEPTED_PROOF",
+          "V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN": "OPEN",
+          "V3_MINIPC_SUPERVISOR_STOP_START_ROLLBACK": "PARTIAL_EVIDENCE_NOT_ACCEPTED_PROOF",
+          "V3_GITHUB_WORK_ALERT_DYNAMIC_SERIES_ROUTING": "OPEN"
+        },
+        "blocker": "REAL_TIA_CANARY_COMPONENT_EVIDENCE_RECORDED_BUT_SIX_PROOF_SPECIFIC_ORIGINAL_READBACK_ENVELOPES_AND_RELEASE_GATE_REMAIN_OPEN",
+        "next_gate": "FIRST_EXACT_PROOF_SPECIFIC_ORIGINAL_READBACK_ENVELOPE_FROM_EXISTING_PHYSICAL_SINGLE_WRITER_CAS_OR_SUPERVISOR_ROLLBACK_GATE",
         "automatic_activation": false,
         "real_money_actions": false
       },
@@ -1617,6 +1638,15 @@
       "reason": "Inactive source/CI preparation completed. Physical no-rearm, single-writer, Cloud CAS/recovery and V3 release remain unproven and separately gated.",
       "report": "research/work-analysis/2026-10-16-pr326-and-work-queue-followthrough.md",
       "report_sha256": "fdedc6aaf9a784bfc39f0646f50c1bf7d0965779905efb12ffa64df0188f4eb0"
+    },
+    "PROJECT_WIDE_COMMITMENT_SAFE_WORK:V3_EXPERIMENTAL_PAPER_SIX_PROOFS": {
+      "gate_fingerprint": "edce33c23a27f5a8c28d",
+      "status": "BLOCKED",
+      "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/blob/main/research/work-analysis/2026-10-17-v3-six-proof-reconciliation.md",
+      "reason": "New authentic TIA canary component evidence was reconciled, but zero of six proof-specific release envelopes can be credited. Work is handed to the existing physical single-writer/CAS or supervisor rollback evidence gate; do not repeat until new original evidence.",
+      "attempted_at_utc": "2026-10-17T08:14:04Z",
+      "report": "research/work-analysis/2026-10-17-v3-six-proof-reconciliation.md",
+      "report_sha256": "375f9a3b92366907c7efe3500b68f59fb3f2c88ef12d03c0885a254560890870"
     }
   }
 }
