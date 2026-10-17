@@ -91,7 +91,10 @@ try {
     $relative=[string]$file.relative_path
     if($relative -notmatch '^(paper_evaluator|market_data)/[a-zA-Z0-9_]+\.py$' -and
        $relative -cne 'research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json' -and
-       $relative -cne 'supabase/functions/v3-paper-evidence-relay/index.ts'){
+       $relative -cne 'supabase/functions/v3-paper-evidence-relay/index.ts' -and
+       $relative -cne 'tools/minipc-runtime-supervisor.ps1' -and
+       $relative -cne 'tools/check-minipc-v3-physical-writer-readiness.ps1' -and
+       $relative -cne 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1'){
       throw ('Unreviewed staged path '+$relative)
     }
     $dest=Join-Path $expectedDir $relative
