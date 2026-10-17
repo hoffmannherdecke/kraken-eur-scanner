@@ -285,4 +285,135 @@ class HostTickTests(unittest.TestCase):
             self.assertEqual(len(joined["closed_bars"]),16)
             self.assertTrue(joined["historical_late_backfill_excluded"])
 
+
+class ReleasedNonCanaryFollowupTests(unittest.TestCase):
+    """Strict source-only post-CAS seam. All Cloud/Kraken inputs are offline fakes."""
+
+    SERIES="PAPER-V3-20261017T160000Z"
+    REPO="a"*40
+    BUNDLE="b"*64
+    STRATEGY="c"*64
+    AT=datetime(2026,10,17,16,8,tzinfo=timezone.utc)
+    ORIGINAL=datetime(2026,10,17,16,1,tzinfo=timezone.utc)
+
+    def context(self,observed=None):
+        from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
+        return {"series_id":self.SERIES,"status":"active",
+                "strategy_revision":REVISION,
+                "observed_at_utc":t(observed or (self.AT-timedelta(seconds=10))),
+                "config":{"series_id":self.SERIES,"strategy_revision":REVISION,
+                          "release_repo_sha":self.REPO,
+                          "runtime_bundle_fingerprint_sha256":self.BUNDLE,
+                          "strategy_fingerprint_sha256":self.STRATEGY,
+                          "paper_only":True,
+                          "real_money_actions_enabled":False,
+                          "automatic_activation_allowed":False,
+                          "physical_v2r4_writer_fence_verified":True,
+                          "supervisor_old_intake_rearm_blocked":True,
+                          "old_followup_owner_preserved":True,
+                          "independent_six_e2e_proofs_verified":True}}
+
+    def seeded(self,base:Path):
+        from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
+        journal=base/"journal";capture=base/"captures"
+        journal.mkdir();capture.mkdir()
+        c=candidate()
+        c["event_time_utc"]=t(self.ORIGINAL)
+        receipt=make_receipt(
+            series_id=self.SERIES,revision=REVISION,
+            candidate_id=c["candidate_id"],pair=c["pair"],
+            event_time_utc=c["event_time_utc"],
+            known_at_utc=t(self.ORIGINAL+timedelta(seconds=3)),
+            phase="SCANNER_CAPTURE",result="SEEN",event_key="FIRST",
+            data={"candidate_origin":"SCANNER",
+                  "source_status":"ORIGINAL_SELECTED_FOR_PRE_MODEL_REVIEW_ONLY"})
+        store_receipt_explicitly(journal,receipt)
+        return c,journal,capture
+
+    def call(self,c,journal,capture,readback,source):
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            released_paper_followup_tick_once,
+        )
+        return released_paper_followup_tick_once(
+            candidate=c,series_id=self.SERIES,journal=journal,
+            capture_dir=capture,expected_repo_sha=self.REPO,
+            expected_bundle_sha256=self.BUNDLE,
+            expected_strategy_sha256=self.STRATEGY,
+            read_active_series=readback,
+            clock_now=lambda:t(self.AT),capture=source,
+            fetch=lambda *_:self.fail("no model/extra exchange fetch"),
+            ticker=lambda *_:self.fail("no ticker without WAIT"))
+
+    def test_postcas_active_exact_source_allows_one_locked_source_only_tick(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            c,j,cap=self.seeded(Path(tmp));cloud=[];calls=[]
+            def readback(sid):
+                cloud.append(sid)
+                return self.context()
+            def source(**kw):
+                calls.append(kw["pair"])
+                return tick_capture(self.AT)(**kw)
+            out=self.call(c,j,cap,readback,source)
+            self.assertEqual(cloud,[self.SERIES])
+            self.assertEqual(calls,["ZRO/EUR"])
+            self.assertGreater(out["prospective_1m_bars"],0)
+            self.assertFalse(out["orders"])
+            self.assertFalse(out["model_called"])
+            self.assertEqual(out["new_schedules"],0)
+            self.assertFalse(out["v2r4_changed"])
+
+    def test_unreleased_noncanary_direct_tick_is_rejected_before_kraken(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            c,j,cap=self.seeded(Path(tmp))
+            with self.assertRaisesRegex(ValueError,"requires locked external"):
+                tick_once(candidate=c,series_id=self.SERIES,journal=j,
+                    capture_dir=cap,
+                    capture=lambda **_:self.fail("unreleased direct source"))
+            self.assertFalse(list(cap.glob("*.json")))
+
+    def test_stale_missing_foreign_or_unfenced_cloud_blocks_before_source(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            c,j,cap=self.seeded(Path(tmp))
+            good=self.context()
+            cases=[
+                None,
+                dict(good,status="strategy_cutover_closed"),
+                dict(good,observed_at_utc=t(self.AT-timedelta(seconds=91))),
+                dict(good,observed_at_utc=t(self.AT+timedelta(seconds=1))),
+                dict(good,series_id="PAPER-V3-OTHER"),
+                dict(good,config=dict(good["config"],release_repo_sha="f"*40)),
+                dict(good,config=dict(good["config"],physical_v2r4_writer_fence_verified=False)),
+                dict(good,config=dict(good["config"],old_followup_owner_preserved=False)),
+                dict(good,config=dict(good["config"],independent_six_e2e_proofs_verified=False)),
+            ]
+            before={p.name:p.read_bytes() for p in j.glob("*.json")}
+            for case in cases:
+                with self.subTest(case=repr(case)[:110]):
+                    with self.assertRaises(ValueError):
+                        self.call(c,j,cap,lambda _sid:case,
+                            lambda **_:self.fail("Cloud gate failed but Kraken ran"))
+                    self.assertEqual(before,{p.name:p.read_bytes()
+                                              for p in j.glob("*.json")})
+                    self.assertFalse(list(cap.glob("*.json")))
+
+    def test_strict_cas_timestamp_namespace_never_accepts_canary(self):
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            released_paper_followup_tick_once,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            c,j,cap=self.seeded(Path(tmp))
+            for sid in ("PAPER-V3-CANARY-ONESHOT-20261016",
+                        "PAPER-V3-LIVE-CANARY-BYPASS",
+                        "PAPER-V3-20261017T160000Z-EXTRA"):
+                with self.subTest(sid=sid):
+                    with self.assertRaises(ValueError):
+                        released_paper_followup_tick_once(
+                            candidate=c,series_id=sid,journal=j,capture_dir=cap,
+                            expected_repo_sha=self.REPO,
+                            expected_bundle_sha256=self.BUNDLE,
+                            expected_strategy_sha256=self.STRATEGY,
+                            read_active_series=lambda _sid:self.fail(
+                                "invalid identity contacted Cloud"))
+
+
 if __name__=="__main__":unittest.main()
