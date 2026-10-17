@@ -111,6 +111,12 @@ def assess_manifest(p: Mapping[str, Any]) -> dict[str, Any]:
         return _error("NEW_VERSIONED_CAS_NOT_PROVEN_INACTIVE", "MANIFEST")
     if not _is_true(p, "old_followups_preserved"):
         return _error("UNRESOLVED_OLD_FOLLOWUP_OWNER", "MANIFEST")
+    # Existing closed-original aftercare in the V2R4 relay is V3-specific;
+    # it cannot automatically be reused for V2R4 -> V2R4.
+    if not _is_true(p, "v2r4_to_v2r4_aftercare_contract_reviewed"):
+        return _error("V2R4_SUCCESSOR_OLD_AFTERCARE_NOT_PROVEN", "MANIFEST")
+    if not _is_true(p, "new_series_routing_and_milestones_reviewed"):
+        return _error("SUCCESSOR_METRICS_ROUTING_NOT_PROVEN", "MANIFEST")
     return {
         "kind": KIND,
         "status": "OFFLINE_MANIFEST_CONTRACT_PASS_RUNTIME_BLOCKED",
@@ -181,12 +187,14 @@ def assess_trace(events: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
                 "independent_new_cas_approved", "new_transaction_pin_verified",
                 "old_closed_technically", "exactly_one_new_active_series",
                 "old_followups_mutable_with_old_id",
+                "v2r4_successor_aftercare_relay_ack",
                 "old_intake_fenced", "new_runtime_bundle_fingerprint_verified",
             )) and _text(e, "cas_endpoint") == "VERSIONED_CPU_ONLY_NEW_REVIEWED"
         elif name == "SUCCESSOR_STARTED":
             valid = all(_is_true(e, key) for key in (
                 "new_candidate_single_writer", "new_wait_single_writer",
                 "new_lifecycle_single_writer", "original_followup_owner_retained",
+                "old_followup_recheck_receipts_route_to_old_series",
                 "no_old_candidate_intake", "no_real_money_actions",
                 "task_args_pinned_new_bundle", "supervisor_owner_fence_verified",
             ))
