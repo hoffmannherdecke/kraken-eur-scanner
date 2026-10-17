@@ -17,6 +17,7 @@ Nothing installs or starts this runtime. Activation remains a later release gate
 from __future__ import annotations
 
 import argparse
+from collections import OrderedDict
 import hashlib
 import json
 import os
@@ -101,11 +102,54 @@ def extract_plan(record: dict[str, Any]) -> dict[str, Any] | None:
     return None
 
 
+class _ReadOnlyWaitPlanCache:
+    """Bounded ephemeral validated-plan cache; not decision or TTL authority.
+
+    File revisions force a re-read, including malformed-to-valid recovery.
+    Expiry, handled state and fresh Kraken prices are still checked each cycle.
+    The cache is empty after any process restart.
+    """
+    def __init__(self, limit: int = 16384):
+        self.limit = limit
+        self.entries: OrderedDict[Path, tuple[tuple[int, ...], tuple[str, dict[str, Any]] | None]] = OrderedDict()
+
+    @staticmethod
+    def _stamp(st: os.stat_result) -> tuple[int, ...]:
+        return (st.st_dev, st.st_ino, st.st_mtime_ns, st.st_ctime_ns, st.st_size)
+
+    def get(self, path: Path) -> tuple[str, dict[str, Any]] | None:
+        before = path.stat()
+        stamp = self._stamp(before)
+        previous = self.entries.get(path)
+        if previous is not None and previous[0] == stamp:
+            self.entries.move_to_end(path)
+            return previous[1]
+        self.entries.pop(path, None)
+        record = read_json(path)
+        plan = extract_plan(record)
+        result = None
+        if plan:
+            validate_plan(plan)
+            if plan.get("paper_only") is True:
+                # Keep original plan-key semantics and validation unchanged.
+                result = (plan_key(plan), plan)
+        if self._stamp(path.stat()) != stamp:
+            raise OSError("WAIT source changed during read")
+        # Negative (non-plan) records are safe to cache as well. Invalid
+        # records are deliberately not cached; correction is retried.
+        if before.st_size <= 131072:
+            self.entries[path] = (stamp, result)
+            if len(self.entries) > self.limit:
+                self.entries.popitem(last=False)
+        return result
+
+
 def discover_plans(
     decision_dir: Path,
     recheck_dir: Path,
     *,
     now: datetime | None = None,
+    file_cache: _ReadOnlyWaitPlanCache | None = None,
 ) -> list[tuple[dict[str, Any], Path]]:
     now = (now or utcnow()).astimezone(timezone.utc)
     found: dict[str, tuple[dict[str, Any], Path]] = {}
@@ -115,18 +159,24 @@ def discover_plans(
             continue
         for path in sorted(root.glob("*.json")):
             try:
-                record = read_json(path)
-                plan = extract_plan(record)
-                if not plan:
-                    continue
-                validate_plan(plan)
-                if plan.get("paper_only") is not True:
-                    continue
+                if file_cache is None:
+                    record = read_json(path)
+                    plan = extract_plan(record)
+                    if not plan:
+                        continue
+                    validate_plan(plan)
+                    if plan.get("paper_only") is not True:
+                        continue
+                    key = plan_key(plan)
+                else:
+                    cached = file_cache.get(path)
+                    if cached is None:
+                        continue
+                    key, plan = cached
                 if parse_utc(plan["expires_at_utc"]) <= now:
                     # Expired plans are still returned so they can be terminally
                     # accounted for in runtime state.
                     pass
-                key = plan_key(plan)
                 # Recheck output is newer authority when the exact same plan
                 # somehow appears twice.
                 found[key] = (plan, path)
