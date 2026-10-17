@@ -1228,6 +1228,20 @@
         "disposition": "PHYSICAL_TASK_END_AND_16_OF_16_HOST_CLOUD_IDENTITY_REVIEWED_4_FOLLOWUPS_CENSORED_NOT_ZERO_PNL",
         "automatic_activation": false,
         "real_money_actions": false
+      },
+      "V2R4_WAIT_INCIDENT_PHYSICAL_FOLLOWTHROUGH": {
+        "status": "COMPLETED_VERIFIED",
+        "reviewed_at_utc": "2026-10-17T08:22:00Z",
+        "canonical_owner": "PROJECT_BACKLOG.md#V2R4_WAIT_INCIDENT_PHYSICAL_FOLLOWTHROUGH",
+        "report": "research/work-analysis/2026-10-16-pr326-and-work-queue-followthrough.md",
+        "report_sha256": "fdedc6aaf9a784bfc39f0646f50c1bf7d0965779905efb12ffa64df0188f4eb0",
+        "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6208982221",
+        "merge_commit_sha": "f395686f567a6d16a927ef3d48da1e546fd6e15b",
+        "original_pr": "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/326",
+        "completion_scope": "PROTECTED_V2R4_WAIT_SYSTEM_SUPERVISOR_CUTOVER_AND_MAIN_READBACK_ONLY",
+        "v3_activated": false,
+        "real_money_actions": false,
+        "next_gate": "NONE_FOR_THIS_CLOSED_OBLIGATION"
       }
     },
     "historical_backlog_dispositions": {
