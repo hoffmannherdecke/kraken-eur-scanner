@@ -84,7 +84,7 @@ class ContextBeforeActionTests(unittest.TestCase):
         sop = (ROOT / v3_path).read_text("utf-8")
         self.assertIn("gemeinsamer Releasevorgang", sop)
         self.assertIn("PR326 WAIT", sop)
-        self.assertIn("keine siebte Freigabe", sop.lower())
+        self.assertIn("keine siebte freigabe", sop.lower())
 
     def test_existing_operational_readback_route_is_available_for_all_scopes(self):
         """Every V3/ops/arch context can now locate the original existing reader."""
