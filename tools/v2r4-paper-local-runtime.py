@@ -44,13 +44,28 @@ class _UnchangedEventCache:
     def _stamp(st):
         return (st.st_dev, st.st_ino, st.st_mtime_ns, st.st_ctime_ns, st.st_size)
 
+    @staticmethod
+    def _identity(record):
+        # Identity depends only on source bytes, never on wall-clock freshness.
+        if not isinstance(record, dict) or record.get('kind') != 'V2R4_WS_SHADOW_DISCOVERY':
+            return None, None
+        try:
+            observed = parse_utc(record.get('observed_at_utc'))
+        except Exception:
+            return None, None
+        return observed, event_id(record)
+
     def read(self, path):
+        # Preserve the original cache API for other source consumers/tests.
+        return self.read_prepared(path)[0]
+
+    def read_prepared(self, path):
         before = path.stat()
         stamp = self._stamp(before)
         saved = self.entries.get(path)
         if saved is not None and saved[0] == stamp:
             self.entries.move_to_end(path)
-            return saved[1]
+            return saved[1], saved[3]
         removed = self.entries.pop(path, None)
         if removed is not None:
             self.bytes_cached -= removed[2]
@@ -59,13 +74,14 @@ class _UnchangedEventCache:
         # as a stable original candidate.
         if self._stamp(path.stat()) != stamp:
             raise OSError("candidate source changed during read")
+        identity = self._identity(record)
         if isinstance(record, dict) and before.st_size <= 131072 and before.st_size <= self.byte_budget:
-            self.entries[path] = (stamp, record, before.st_size)
+            self.entries[path] = (stamp, record, before.st_size, identity)
             self.bytes_cached += before.st_size
             while len(self.entries) > self.limit or self.bytes_cached > self.byte_budget:
                 _, evicted = self.entries.popitem(last=False)
                 self.bytes_cached -= evicted[2]
-        return record
+        return record, identity
 
 def event_id(e:dict[str,Any])->str:
     material='|'.join([str(e.get('pair') or ''),str(e.get('observed_at_utc') or ''),str(e.get('source_pair_received_at_utc') or ''),str(e.get('last_eur') or '')])
@@ -153,13 +169,13 @@ def run_candidates(args):
       try:
         control=load_json(app/'paper_runtime_control.json'); start=parse_utc(control['series_started_at_utc']); refresh_altname_cache(state)
         for p in sorted(events.glob('*.json')):
-          try: e=event_cache.read(p)
+          try: e,(obs,eid)=event_cache.read_prepared(p)
           except Exception: continue
-          if e.get('kind')!='V2R4_WS_SHADOW_DISCOVERY': continue
-          try: obs=parse_utc(e.get('observed_at_utc'))
-          except Exception: continue
+          # Preserve the legacy outer failure path for non-object source JSON.
+          if not isinstance(e,dict): raise AttributeError('candidate JSON object required')
+          if obs is None: continue
           if obs<start: continue
-          eid=event_id(e); counters['events_seen']+=1
+          counters['events_seen']+=1
           if eid in state['processed']: continue
           candidate_id=candidate_id_for_event(e,eid)
           # Existing result is authoritative if the cursor was lost on crash.
