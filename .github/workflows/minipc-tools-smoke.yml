@@ -208,9 +208,9 @@ jobs:
           }
           # Avoid manually transcribed cache SHA values: frozen PR360 source bytes
           # can be normalized differently by git on Windows; stage copied local bytes.
-          foreach($required in @('SOURCE_CACHE_SHA_READABLE',"['candidate\\v2r4-paper-local-runtime.py']=SHA", "['wait\\v2r4_wait_runtime.py']=SHA")) {
-            if(-not $src.Contains($required)){throw "CPU cache source-based manifest hash check missing: $required"}
-          }
+          if(-not $src.Contains('SOURCE_CACHE_SHA_READABLE')){ throw 'Missing source-check evidence gate' }
+          $sourceHashReads=[regex]::Matches($src,[regex]::Escape('=SHA (Join-Path $source')).Count
+          if($sourceHashReads -ne 2){ throw 'Expected two exact PR360 source-hash reads' }
           if($src.Contains("'candidate\\v2r4-paper-local-runtime.py'='8D62BD0B") -or $src.Contains("'wait\\v2r4_wait_runtime.py'='880A0BEA")){
             throw 'CPU manifest checker reverted to hand-transcribed source hashes'
           }
