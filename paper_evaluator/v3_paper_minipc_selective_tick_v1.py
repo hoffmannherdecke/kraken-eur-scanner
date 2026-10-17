@@ -252,6 +252,8 @@ def released_paper_first_scanner_model_once(*,preflight:dict[str,Any],
         raise ValueError("exact one original Scanner/PIT model candidate and permit required")
     # Budget must be genuinely new, individual, unexpired and <= exact fixed
     # spend cap. Reject BEFORE source/journal writes, not after network work.
+    if not isinstance(approval,dict):
+        raise ValueError("individual released model approval object required")
     preflight_budget(approval,series_id)
     if (not journal.is_dir() or journal.is_symlink()
             or not capture_dir.is_dir() or capture_dir.is_symlink()
