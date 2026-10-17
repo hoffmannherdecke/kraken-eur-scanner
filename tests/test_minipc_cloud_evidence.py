@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import unittest
 
-from tools.minipc_cloud_evidence import classify_minipc_evidence
+from tools.minipc_cloud_evidence import classify_minipc_evidence, classify_minipc_alert_freshness
 
 NOW = datetime(2026, 10, 17, 9, 0, tzinfo=timezone.utc)
 REQUIRED = ("runtime_supervisor", "v2r4_paper_wait", "v2r4_paper_candidates")
@@ -130,6 +130,86 @@ class MiniPCReadbackContract(unittest.TestCase):
     def test_naive_now_rejected(self):
         with self.assertRaises(ValueError):
             classify_minipc_evidence(healthy_row(), now=datetime(2026, 10, 17))
+
+
+class MiniPCExistingAlertUpsertFreshnessContract(unittest.TestCase):
+    """Snapshot of the existing GitHub alert-state upsert; never a heartbeat."""
+
+    @staticmethod
+    def row(age_seconds=60, condition="OK"):
+        return {
+            "node_id": "MINI-PC",
+            "updated_at": (NOW - timedelta(seconds=age_seconds)).isoformat(),
+            "last_condition": condition,
+            "last_alert_at": "secret-looking-data-must-not-leak",
+            "last_recovery_at": "private-do-not-output",
+        }
+
+    def check(self, row, expected):
+        out = classify_minipc_alert_freshness(row, now=NOW)
+        self.assertEqual(out["alert_upsert_state"], expected)
+        self.assertFalse(out["github_run_verified"])
+        self.assertFalse(out["slack_delivery_verified"])
+        self.assertFalse(out["recovery_verified"])
+        self.assertFalse(out["host_reported_healthy"])
+        self.assertFalse(out["writes_performed"])
+        self.assertNotIn("secret-looking", repr(out))
+        self.assertNotIn("private-do-not-output", repr(out))
+        return out
+
+    def test_recent_upsert_is_not_github_or_delivery_ack(self):
+        out = self.check(self.row(), "RECENT")
+        self.assertEqual(out["last_alert_condition"], "OK")
+        self.assertEqual(out["nominal_cadence_seconds"], 900)
+
+    def test_missing_and_wrong_node_fail_closed(self):
+        self.check(None, "UNKNOWN_MISSING")
+        self.check({}, "INVALID_NODE")
+        data = self.row()
+        data["node_id"] = "UNKNOWN"
+        self.check(data, "INVALID_NODE")
+
+    def test_pg_native_timestamp_with_space_timezone_is_accepted(self):
+        data = self.row()
+        data["updated_at"] = (NOW - timedelta(minutes=1)).strftime("%Y-%m-%d %H:%M:%S.%f+00")
+        self.check(data, "RECENT")
+
+    def test_invalid_or_naive_timestamp_is_not_success(self):
+        for value in ("", "garbage", None, "2026-10-17T08:59:00"):
+            data = self.row()
+            data["updated_at"] = value
+            with self.subTest(value=value):
+                self.check(data, "INVALID_TIMESTAMP")
+
+    def test_future_clock_boundary(self):
+        self.check(self.row(-120), "RECENT")
+        self.check(self.row(-121), "INVALID_FUTURE")
+
+    def test_delayed_and_stale_not_new_watcher(self):
+        self.check(self.row(1800), "RECENT")
+        self.check(self.row(1801), "DELAYED")
+        self.check(self.row(2252), "DELAYED")
+        self.check(self.row(2700), "DELAYED")
+        self.check(self.row(2701), "STALE")
+
+    def test_critical_upsert_does_not_prove_slack_ack(self):
+        out = self.check(self.row(120, "CRITICAL"), "RECENT")
+        self.assertEqual(out["last_alert_condition"], "CRITICAL")
+
+    def test_missing_condition_remains_unknown_even_if_recent(self):
+        self.check(self.row(1, None), "UNKNOWN_CONDITION")
+        self.check(self.row(1, "WARNING"), "UNKNOWN_CONDITION")
+
+    def test_naive_now_rejected(self):
+        with self.assertRaises(ValueError):
+            classify_minipc_alert_freshness(self.row(), now=NOW.replace(tzinfo=None))
+
+    def test_no_global_runtime_or_secret_dependencies(self):
+        data = self.row(3000)
+        data["webhook"] = "do-not-export"
+        out = self.check(data, "STALE")
+        self.assertNotIn("webhook", out)
+        self.assertNotIn("do-not-export", repr(out))
 
 
 if __name__ == "__main__":
