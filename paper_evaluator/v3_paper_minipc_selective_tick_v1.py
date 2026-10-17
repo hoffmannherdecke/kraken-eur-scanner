@@ -9,13 +9,14 @@ paper_series, touches V2R4 or creates schedules. Supabase ACK is a separate
 existing explicitly authorized receipt-sync operation.
 """
 from __future__ import annotations
-import argparse,json
+import argparse,json,re
 from datetime import datetime,timedelta,timezone
 from pathlib import Path
 from typing import Any,Callable
 from contextlib import contextmanager
 import os
 from paper_evaluator import evaluate
+from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
 from paper_evaluator.successor_coin_entry_evidence_v1 import fetch_public_entry_evidence
 from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
     capture_public_1m,assemble,early_path_coverage,
@@ -34,9 +35,12 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
               capture_dir:Path,clock_now:Callable[[],str]=utc_now,
               capture:Callable=capture_public_1m,
               fetch:Callable=fetch_public_entry_evidence,
-              ticker:Callable=evaluate.kraken_ticker)->dict[str,Any]:
+              ticker:Callable=evaluate.kraken_ticker,
+              _released_tick_capability:object=None)->dict[str,Any]:
     if not series_id.startswith("PAPER-V3-CANARY-"):
-        raise ValueError("research CANARY only until independent single writer released")
+        if (not isinstance(_released_tick_capability,_ReleasedTickCapability)
+                or _released_tick_capability.series_id!=series_id):
+            raise ValueError("non-CANARY V3 tick requires locked external active Paper readback")
     if not isinstance(candidate,dict):
         raise ValueError("original candidate object missing")
     cid=candidate.get("candidate_id")
@@ -146,6 +150,82 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
         results["horizons"][f"{hrs}h"]=a["status"]
     return results
 
+
+
+# Private per-invocation capability: only the existing native OS owner lock may
+# construct it after an injected *fresh independently sourced* Cloud readback.
+# This is NOT a source of Paper-release authority; physical owner identity,
+# model budgets, CAS and the six E2E receipts remain external release gates.
+class _ReleasedTickCapability:
+    def __init__(self,series_id:str):
+        self.series_id=series_id
+
+
+def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
+        journal:Path,capture_dir:Path,
+        expected_repo_sha:str,expected_bundle_sha256:str,
+        expected_strategy_sha256:str,
+        read_active_series:Callable[[str],dict[str,Any]],
+        clock_now:Callable[[],str]=utc_now,
+        capture:Callable=capture_public_1m,
+        fetch:Callable=fetch_public_entry_evidence,
+        ticker:Callable=evaluate.kraken_ticker)->dict[str,Any]:
+    """One *post-CAS* non-CANARY Paper followup using the SAME OS owner lock.
+
+    The deploy-time owner must inject a trusted, fresh Supabase Cloud readback
+    and physically verify that this exact SHA-pinned release owns the Windows
+    Task, that old V2R4 intake is fenced, and that six E2E release proofs are
+    authentic. A supplied callback alone cannot prove these facts. No CLI,
+    daemon, scheduler, model, orders, Cloud POST or CAS is created here.
+
+    Only previously immutable-journalled candidates are eligible. Any missing
+    proof stops BEFORE a new public Kraken request or local journal change.
+    """
+    if (not isinstance(series_id,str)
+            or re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id) is None
+            or not all(isinstance(x,str) and re.fullmatch(pattern,x)
+                       for x,pattern in (
+                           (expected_repo_sha,r"[0-9a-f]{40}"),
+                           (expected_bundle_sha256,r"[0-9a-f]{64}"),
+                           (expected_strategy_sha256,r"[0-9a-f]{64}")))
+            or not callable(read_active_series)):
+        raise ValueError("exact release-pinned non-CANARY Paper identity required")
+    # Never permit a non-CANARY tick from the unguarded standalone CLI.
+    with _one_canary_owner(journal):
+        original=read_active_series(series_id)
+        if not isinstance(original,dict):
+            raise ValueError("independent live Paper-series readback absent")
+        try:
+            observed=clock(original["observed_at_utc"])
+            now=clock(clock_now())
+            config=original["config"]
+        except (KeyError,ValueError,TypeError,AttributeError) as exc:
+            raise ValueError("invalid active Paper-series source/clock") from exc
+        if (observed>now or (now-observed).total_seconds()>90
+                or not isinstance(config,dict)
+                or original.get("series_id")!=series_id
+                or original.get("status")!="active"
+                or original.get("strategy_revision")!=REVISION
+                or config.get("series_id")!=series_id
+                or config.get("strategy_revision")!=REVISION
+                or config.get("release_repo_sha")!=expected_repo_sha
+                or config.get("runtime_bundle_fingerprint_sha256")!=expected_bundle_sha256
+                or config.get("strategy_fingerprint_sha256")!=expected_strategy_sha256
+                or config.get("paper_only") is not True
+                or config.get("real_money_actions_enabled") is not False
+                or config.get("automatic_activation_allowed") is not False
+                or config.get("physical_v2r4_writer_fence_verified") is not True
+                or config.get("supervisor_old_intake_rearm_blocked") is not True
+                or config.get("old_followup_owner_preserved") is not True
+                or config.get("independent_six_e2e_proofs_verified") is not True):
+            raise ValueError("non-CANARY Paper release source mismatch or stale")
+        # Owner lock stays held THROUGH public source capture, journal and
+        # outcome maturation. No concurrent second V3 followup can race.
+        return tick_once(
+            candidate=candidate,series_id=series_id,journal=journal,
+            capture_dir=capture_dir,clock_now=clock_now,capture=capture,
+            fetch=fetch,ticker=ticker,
+            _released_tick_capability=_ReleasedTickCapability(series_id))
 
 
 @contextmanager
