@@ -313,10 +313,10 @@ class ReleasedNonCanaryFollowupTests(unittest.TestCase):
                           "old_followup_owner_preserved":True,
                           "independent_six_e2e_proofs_verified":True}}
 
-    def seeded(self,base:Path):
+    def seeded(self,base:Path,final_model:bool=True):
         from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
-        journal=base/"journal";capture=base/"captures"
-        journal.mkdir();capture.mkdir()
+        journal=base/"journal";capture=base/"captures";budget=base/"budget"
+        journal.mkdir();capture.mkdir();budget.mkdir()
         c=candidate()
         c["event_time_utc"]=t(self.ORIGINAL)
         receipt=make_receipt(
@@ -328,6 +328,25 @@ class ReleasedNonCanaryFollowupTests(unittest.TestCase):
             data={"candidate_origin":"SCANNER",
                   "source_status":"ORIGINAL_SELECTED_FOR_PRE_MODEL_REVIEW_ONLY"})
         store_receipt_explicitly(journal,receipt)
+        if final_model:
+            # Fake complete original model history, with a single consumed
+            # O_EXCL-style reservation. No real HTTP and no fabricated BUY.
+            for phase,result,seconds in (
+                ("MODEL_REQUEST","PASS",10),
+                ("MODEL_RESPONSE","PASS",20),
+                ("P4_VALIDATION","REJECT",30)):
+                record=make_receipt(
+                    series_id=self.SERIES,revision=REVISION,
+                    candidate_id=c["candidate_id"],pair=c["pair"],
+                    event_time_utc=c["event_time_utc"],
+                    known_at_utc=t(self.ORIGINAL+timedelta(seconds=seconds)),
+                    phase=phase,result=result,event_key="FIRST",
+                    data={"source_status":"FAKE_CI_ONLY_NO_PAID_MODEL"})
+                store_receipt_explicitly(journal,record)
+            (budget/"offline-unique.reserved.json").write_text(json.dumps({
+                "kind":"V3_PAPER_MODEL_HTTP_RESERVED_BEFORE_NETWORK_V1",
+                "series_id":self.SERIES,"candidate_id":c["candidate_id"],
+                "no_automatic_retry":True}),encoding="utf-8")
         return c,journal,capture
 
     def call(self,c,journal,capture,readback,source):
@@ -336,7 +355,8 @@ class ReleasedNonCanaryFollowupTests(unittest.TestCase):
         )
         return released_paper_followup_tick_once(
             candidate=c,series_id=self.SERIES,journal=journal,
-            capture_dir=capture,expected_repo_sha=self.REPO,
+            capture_dir=capture,model_reservations=journal.parent/"budget",
+            ack_file=journal.parent/"ack.json",expected_repo_sha=self.REPO,
             expected_bundle_sha256=self.BUNDLE,
             expected_strategy_sha256=self.STRATEGY,
             read_active_series=readback,
@@ -396,6 +416,26 @@ class ReleasedNonCanaryFollowupTests(unittest.TestCase):
                                               for p in j.glob("*.json")})
                     self.assertFalse(list(cap.glob("*.json")))
 
+    def test_missing_model_or_budget_reservation_never_becomes_no_buy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            c,j,cap=self.seeded(Path(tmp),final_model=False)
+            before={p.name:p.read_bytes() for p in j.glob("*.json")}
+            result=self.call(c,j,cap,lambda sid:self.context(),
+                             lambda **_:self.fail("P4 not final; no Kraken GET"))
+            self.assertTrue(result["status"].startswith("NONCANARY_FOLLOWUP_HOLD_"))
+            self.assertFalse(result["tick_called"])
+            self.assertEqual(before,{p.name:p.read_bytes() for p in j.glob("*.json")})
+            self.assertFalse(list(cap.glob("*.json")))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            c,j,cap=self.seeded(Path(tmp),final_model=True)
+            (j.parent/"budget"/"offline-unique.reserved.json").unlink()
+            result=self.call(c,j,cap,lambda sid:self.context(),
+                             lambda **_:self.fail("reservation missing; no Kraken GET"))
+            self.assertIn("UNVERIFIED_MODEL_P4_PROVENANCE",result["status"])
+            self.assertFalse(result["tick_called"])
+            self.assertFalse(list(cap.glob("*.json")))
+
     def test_strict_cas_timestamp_namespace_never_accepts_canary(self):
         from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
             released_paper_followup_tick_once,
@@ -409,7 +449,8 @@ class ReleasedNonCanaryFollowupTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         released_paper_followup_tick_once(
                             candidate=c,series_id=sid,journal=j,capture_dir=cap,
-                            expected_repo_sha=self.REPO,
+                            model_reservations=j.parent/"budget",
+                            ack_file=j.parent/"ack.json",expected_repo_sha=self.REPO,
                             expected_bundle_sha256=self.BUNDLE,
                             expected_strategy_sha256=self.STRATEGY,
                             read_active_series=lambda _sid:self.fail(
