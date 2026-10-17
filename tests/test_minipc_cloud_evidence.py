@@ -4,7 +4,11 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import unittest
 
-from tools.minipc_cloud_evidence import classify_minipc_evidence, classify_minipc_alert_freshness
+from tools.minipc_cloud_evidence import (
+    DAILY_NATIVE_TASKS, DAILY_REQUIRED_CHECKS,
+    classify_minipc_evidence, classify_minipc_alert_freshness,
+    classify_minipc_daily_diagnostics,
+)
 
 NOW = datetime(2026, 10, 17, 9, 0, tzinfo=timezone.utc)
 REQUIRED = ("runtime_supervisor", "v2r4_paper_wait", "v2r4_paper_candidates")
@@ -210,6 +214,128 @@ class MiniPCExistingAlertUpsertFreshnessContract(unittest.TestCase):
         out = self.check(data, "STALE")
         self.assertNotIn("webhook", out)
         self.assertNotIn("do-not-export", repr(out))
+
+
+class MiniPCDailyReadbackHandoffContract(unittest.TestCase):
+    def row(self):
+        data = healthy_row()
+        for key in DAILY_REQUIRED_CHECKS:
+            data["payload"]["checks"][key] = {"ok": True, "detail": "DO NOT LEAK"}
+        data["payload"]["native_task_readback"] = {
+            "kind": "MINIPC_NATIVE_TASK_READBACK_V1",
+            "no_runtime_or_release_authority": True,
+            "observations": {
+                k: {
+                    "task_state": "Ready" if k == "v3_canary_observation_28h" else "Running",
+                    "last_result_code": 0 if k == "v3_canary_observation_28h" else 267009,
+                    "last_result_meaning": (
+                        "ZERO_RESULT_NOT_RUNTIME_PROOF" if k == "v3_canary_observation_28h"
+                        else "RUNNING_CODE_AND_STATE_MATCH"
+                    ),
+                    "arguments": "LEAKING_SENSITIVE_COMMAND_ARGUMENTS",
+                }
+                for k in DAILY_NATIVE_TASKS
+            },
+            "secret": "LEAKING_PRIVATE_SECRET",
+        }
+        return data
+
+    def check(self, row, state, health="HEALTHY_REPORTED"):
+        out = classify_minipc_daily_diagnostics(row, now=NOW)
+        self.assertEqual(out["native_task_readback_state"], state)
+        self.assertEqual(out["cloud_evidence_state"], health)
+        self.assertTrue(out["reporting_only"])
+        for blocked in (
+            "LEAKING_PRIVATE_SECRET", "LEAKING_SENSITIVE_COMMAND_ARGUMENTS",
+            "NOT_TO_BE_EXPOSED", "DO NOT LEAK",
+        ):
+            self.assertNotIn(blocked, repr(out))
+        self.assertFalse(out["slack_delivery_verified"])
+        self.assertFalse(out["native_task_liveness_independently_verified"])
+        self.assertFalse(out["paper_or_real_money_authorized"])
+        return out
+
+    def test_actual_reported_six_tasks_without_promoting_canary_zero(self):
+        out = self.check(self.row(), "COMPLETE_REPORTED")
+        self.assertEqual(out["native_observation_count"], 6)
+        self.assertEqual(
+            out["native_task_observations"]["v3_canary_observation_28h"]["last_result_meaning"],
+            "ZERO_RESULT_NOT_RUNTIME_PROOF",
+        )
+
+    def test_legacy_report_without_native_data_fails_closed(self):
+        out = self.check(healthy_row(), "UNKNOWN_MISSING", "FIELD_NOT_VERIFIED")
+        self.assertEqual(out["native_observation_count"], 0)
+
+    def test_stale_original_report_does_not_confirm_native_tasks(self):
+        row = self.row()
+        row["observed_at"] = stamp(-1201)
+        row["payload"]["checked_at_local"] = stamp(-1201)
+        out = self.check(row, "SOURCE_UNVERIFIED", "STALE")
+        self.assertEqual(out["native_observation_count"], 0)
+
+    def test_warning_is_not_silently_upgraded_to_healthy(self):
+        row = self.row()
+        row["status"] = "WARNING"
+        out = self.check(row, "COMPLETE_REPORTED", "NOT_HEALTHY_WARNING")
+        self.assertFalse(out["host_reported_healthy"])
+
+    def test_native_missing_one_is_incomplete(self):
+        row = self.row()
+        row["payload"]["native_task_readback"]["observations"].pop("v2r4_paper_wait")
+        out = self.check(row, "INCOMPLETE")
+        self.assertEqual(out["native_observation_count"], 5)
+
+    def test_native_contract_mismatch_rejected(self):
+        row = self.row()
+        row["payload"]["native_task_readback"]["no_runtime_or_release_authority"] = False
+        self.check(row, "INVALID_CONTRACT")
+
+    def test_native_running_code_state_mismatch_must_be_reviewed(self):
+        row = self.row()
+        item = row["payload"]["native_task_readback"]["observations"]["v2r4_paper_wait"]
+        item["task_state"] = "Ready"
+        item["last_result_meaning"] = "RUNNING_CODE_STATE_MISMATCH"
+        self.check(row, "REVIEW_REQUIRED")
+
+    def test_unavailable_scheduler_data_fails_closed(self):
+        row = self.row()
+        item = row["payload"]["native_task_readback"]["observations"]["v2r4_paper_wait"]
+        item["last_result_code"] = None
+        item["last_result_meaning"] = "UNAVAILABLE"
+        self.check(row, "INCOMPLETE")
+
+    def test_unexpected_codes_and_forged_bool_are_rejected(self):
+        for code in (True, -1, 2 ** 50, "267009"):
+            row = self.row()
+            row["payload"]["native_task_readback"]["observations"]["v2r4_paper_wait"]["last_result_code"] = code
+            with self.subTest(code=code):
+                self.check(row, "REVIEW_REQUIRED")
+
+    def test_malformed_native_fields_fail_closed_without_exceptions(self):
+        for bad in ([], {}, None, False):
+            row = self.row()
+            row["payload"]["native_task_readback"]["observations"]["v2r4_paper_wait"]["task_state"] = bad
+            with self.subTest(bad=repr(bad)):
+                self.check(row, "REVIEW_REQUIRED")
+
+    def test_bad_native_label_is_never_accepted(self):
+        row = self.row()
+        row["payload"]["native_task_readback"]["observations"]["v2r4_paper_wait"]["last_result_meaning"] = "UNKNOWN_NEW_CODE"
+        self.check(row, "REVIEW_REQUIRED")
+
+    def test_daily_report_reuses_existing_schedule_and_slack_route(self):
+        from pathlib import Path
+        root = Path(__file__).resolve().parents[1]
+        original = (root / ".github/workflows/minipc-daily-status.yml").read_text("utf-8")
+        self.assertIn("cron: '0 8,9 * * *'", original)
+        self.assertIn("native_diagnostics=classify_minipc_daily_diagnostics(row,now=now_utc)", original)
+        self.assertIn('"native_task_diagnostics":native_diagnostics', original)
+        self.assertIn('dry_run=event_name!="schedule"', original)
+        self.assertIn('if dry_run:\n              raise SystemExit(0)', original)
+        self.assertEqual(original.count('"/rest/v1/minipc_status_current?'), 1)
+        self.assertEqual(original.count('"POST",\n              "/rest/v1/minipc_daily_status'), 1)
+
 
 
 if __name__ == "__main__":

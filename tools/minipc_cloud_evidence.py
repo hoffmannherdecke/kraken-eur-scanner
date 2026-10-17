@@ -184,3 +184,132 @@ def classify_minipc_alert_freshness(
     if age > ALERT_DELAYED_SECONDS:
         return finish("DELAYED")
     return finish("RECENT")
+
+
+# Diagnostic-only annotations appended to the existing daily 10:00 report.
+# Do not use as Windows PID proof, alert policy, Slack delivery ACK, Paper
+# release authority or automatic process start.
+DAILY_REQUIRED_CHECKS = (
+    "runtime_supervisor",
+    "v2r4_paper_candidates",
+    "v2r4_paper_wait",
+    "v2r4_paper_lifecycle",
+    "v2r4_paper_cloud_sync",
+    "minipc_status_sync",
+)
+DAILY_NATIVE_TASKS = (
+    "v2r4_paper_candidates",
+    "v2r4_paper_wait",
+    "v2r4_paper_lifecycle",
+    "v2r4_paper_cloud_sync",
+    "minipc_status_sync",
+    "v3_canary_observation_28h",
+)
+_NATIVE_STATES = frozenset(("Running", "Ready", "Queued", "Disabled"))
+_NATIVE_MEANINGS = frozenset((
+    "RUNNING_CODE_AND_STATE_MATCH",
+    "RUNNING_CODE_STATE_MISMATCH",
+    "ZERO_RESULT_NOT_RUNTIME_PROOF",
+    "OTHER_RESULT_REVIEW_REQUIRED",
+    "UNAVAILABLE",
+))
+_NATIVE_RUNNING_CODE = 267009
+
+
+def classify_minipc_daily_diagnostics(
+    row: Mapping[str, Any] | None,
+    *,
+    now: datetime,
+) -> dict[str, Any]:
+    """Add bounded, fail-closed cloud evidence to an EXISTING daily report.
+
+    This function is pure and never fetches, writes, reports to Slack or
+    changes the preexisting daily alert/warning policy.
+    """
+    host = classify_minipc_evidence(
+        row, now=now, required_checks=DAILY_REQUIRED_CHECKS
+    )
+    result: dict[str, Any] = {
+        "kind": "MINIPC_DAILY_READBACK_DIAGNOSTICS_V1",
+        "cloud_evidence_state": host["source_evidence_state"],
+        "host_reported_healthy": host["host_reported_healthy"],
+        "native_task_readback_state": "UNKNOWN_MISSING",
+        "native_observation_count": 0,
+        "native_task_observations": {},
+        "native_task_liveness_independently_verified": False,
+        "github_workflow_run_verified": False,
+        "slack_delivery_verified": False,
+        "paper_or_real_money_authorized": False,
+        "reporting_only": True,
+    }
+
+    # A stale, future, wrong-node or clock-inconsistent Cloud row cannot
+    # certify even the reported native task observations as current.
+    if host["source_evidence_state"] in (
+        "UNKNOWN_MISSING", "INVALID_NODE", "INVALID_TIMESTAMP",
+        "INVALID_FUTURE", "STALE", "INVALID_SOURCE_CLOCK"
+    ):
+        result["native_task_readback_state"] = "SOURCE_UNVERIFIED"
+        return result
+    if not isinstance(row, Mapping):
+        return result
+    payload = row.get("payload")
+    if not isinstance(payload, Mapping):
+        return result
+    native = payload.get("native_task_readback")
+    if not isinstance(native, Mapping):
+        return result
+    if (native.get("kind") != "MINIPC_NATIVE_TASK_READBACK_V1"
+            or native.get("no_runtime_or_release_authority") is not True):
+        result["native_task_readback_state"] = "INVALID_CONTRACT"
+        return result
+    observations = native.get("observations")
+    if not isinstance(observations, Mapping):
+        result["native_task_readback_state"] = "INCOMPLETE"
+        return result
+
+    invalid = False
+    missing = False
+    selected: dict[str, dict[str, Any]] = {}
+    for key in DAILY_NATIVE_TASKS:
+        raw = observations.get(key)
+        if not isinstance(raw, Mapping):
+            missing = True
+            continue
+        state = raw.get("task_state")
+        code = raw.get("last_result_code")
+        meaning = raw.get("last_result_meaning")
+        if not isinstance(state, str) or state not in _NATIVE_STATES:
+            invalid = True
+            continue
+        if not isinstance(meaning, str) or meaning not in _NATIVE_MEANINGS:
+            invalid = True
+            continue
+        if code is not None and (type(code) is not int or code < 0 or code > 0xFFFFFFFF):
+            invalid = True
+            continue
+        selected[key] = {
+            "task_state": state,
+            "last_result_code": code,
+            "last_result_meaning": meaning,
+        }
+        if meaning == "RUNNING_CODE_AND_STATE_MATCH":
+            invalid |= not (state == "Running" and code == _NATIVE_RUNNING_CODE)
+        elif meaning == "RUNNING_CODE_STATE_MISMATCH":
+            invalid = True
+        elif meaning == "ZERO_RESULT_NOT_RUNTIME_PROOF":
+            invalid |= code != 0
+        elif meaning == "OTHER_RESULT_REVIEW_REQUIRED":
+            invalid = True
+        elif meaning == "UNAVAILABLE":
+            missing = True
+
+    result["native_task_observations"] = selected
+    result["native_observation_count"] = len(selected)
+    if invalid:
+        result["native_task_readback_state"] = "REVIEW_REQUIRED"
+    elif missing or len(selected) != len(DAILY_NATIVE_TASKS):
+        result["native_task_readback_state"] = "INCOMPLETE"
+    else:
+        result["native_task_readback_state"] = "COMPLETE_REPORTED"
+    return result
