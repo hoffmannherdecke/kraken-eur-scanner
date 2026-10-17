@@ -233,6 +233,32 @@ class SafeAutonomyTests(unittest.TestCase):
             target.write_text("this artifact was changed after acknowledgement\n",encoding="utf-8")
             self.assertFalse(selector.verified_completed_work_receipt(root,good))
 
+    def test_real_completed_original_wait_work_is_not_requeued_again(self):
+        # Actual canonical repo state: original PR326/WAIT source work was
+        # completed with a SHA-pinned Work report. The independent V2R4
+        # release/Cloud obligation is still allowed to remain open.
+        ack=json.loads((ROOT/"research/work-analysis-state.json").read_text())
+        key="V2R4_WAIT_INCIDENT_PHYSICAL_FOLLOWTHROUGH"
+        record=ack["autonomy_task_attempts"][key]
+        self.assertEqual(record["status"],"COMPLETED")
+        self.assertTrue(selector.verified_completed_work_receipt(ROOT,record))
+        result=selector.select(ROOT,QUEUE,STATE,ack)
+        self.assertNotEqual(result["status"],"BLOCKED")
+        self.assertNotIn(key,[(x.get("registered_obligation") or {}).get("id")
+                              for x in result["ready"]])
+        completed=next(x for x in result["reconciled_completed_original_work"]
+                       if x["id"]==key)
+        self.assertEqual(completed["report_sha256"],record["report_sha256"])
+        self.assertEqual(completed["state"],
+                         "WORK_PACKAGE_COMPLETED_EXTERNAL_GATE_STILL_OPEN")
+        self.assertTrue(completed["no_physical_or_trading_release_claim"])
+        self.assertIn(key,[x["id"] for x in result["waiting_registered_obligations"]])
+        changed=copy.deepcopy(ack)
+        changed["autonomy_task_attempts"][key]["report_sha256"]="0"*64
+        fail=selector.select(ROOT,QUEUE,STATE,changed)
+        self.assertEqual(fail["status"],"BLOCKED")
+        self.assertIn("unverified completion receipt "+key,fail["errors"])
+
     def test_overcommitted_ledger_and_legacy_run_cap_fail_closed(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td)
