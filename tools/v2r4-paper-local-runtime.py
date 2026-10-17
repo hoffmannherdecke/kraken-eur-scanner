@@ -32,8 +32,12 @@ class _UnchangedEventCache:
     File replacement/change invalidates the entry. After restart all evidence
     is reread; failures are never cached. Memory remains bounded.
     """
-    def __init__(self, limit=24000):
+    def __init__(self, limit=24000, byte_budget=96 * 1024 * 1024):
         self.limit = limit
+        # st_size is an intentionally conservative *payload* budget proxy;
+        # never allow arbitrarily many 128 KiB JSON objects to accumulate.
+        self.byte_budget = byte_budget
+        self.bytes_cached = 0
         self.entries = OrderedDict()
 
     @staticmethod
@@ -47,16 +51,20 @@ class _UnchangedEventCache:
         if saved is not None and saved[0] == stamp:
             self.entries.move_to_end(path)
             return saved[1]
-        self.entries.pop(path, None)
+        removed = self.entries.pop(path, None)
+        if removed is not None:
+            self.bytes_cached -= removed[2]
         record = load_json(path)
         # A concurrent rewrite must be retried next loop, never cached
         # as a stable original candidate.
         if self._stamp(path.stat()) != stamp:
             raise OSError("candidate source changed during read")
-        if isinstance(record, dict) and before.st_size <= 131072:
-            self.entries[path] = (stamp, record)
-            if len(self.entries) > self.limit:
-                self.entries.popitem(last=False)
+        if isinstance(record, dict) and before.st_size <= 131072 and before.st_size <= self.byte_budget:
+            self.entries[path] = (stamp, record, before.st_size)
+            self.bytes_cached += before.st_size
+            while len(self.entries) > self.limit or self.bytes_cached > self.byte_budget:
+                _, evicted = self.entries.popitem(last=False)
+                self.bytes_cached -= evicted[2]
         return record
 
 def event_id(e:dict[str,Any])->str:
