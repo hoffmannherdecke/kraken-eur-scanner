@@ -87,6 +87,31 @@ class ClosedOriginalSenderPreview(unittest.TestCase):
         self.assertEqual(plan["candidate_followup_count"],1)
         self.assertEqual(plan["old_terminal_trade_count"],0)
 
+    def test_readonly_preview_rejects_post_cutover_old_wait_rechecks(self):
+        control,candidate,trade=original()
+        untouched=copy.deepcopy((control,candidate,trade))
+        # Preview must match the already deployed fail-closed aftercare runtime.
+        # Each supported source timestamp is independently checked; equality
+        # to the successor cutover is not a pre-cutover original recheck.
+        for field in ("recheck_completed_at_utc","completed_at_utc",
+                      "revalidated_at_utc"):
+            for stamp in (CUT,"2026-10-13T12:00:13Z"):
+                with self.subTest(field=field,stamp=stamp):
+                    forged=copy.deepcopy(candidate)
+                    forged["payload"]["recheck"]={field:stamp}
+                    with self.assertRaisesRegex(ValueError,
+                                                "old WAIT recheck after V3 cutoff"):
+                        self.plan(control,[forged],[trade])
+        # Allowed historic recheck and a genuinely later 6h/24h followup
+        # must still preserve its original old-series identity in preview.
+        historic=copy.deepcopy(candidate)
+        historic["payload"]["recheck"]={
+            "recheck_completed_at_utc":"2026-10-13T11:59:59Z"}
+        preview=self.plan(control,[historic],[trade])
+        self.assertEqual(preview["candidate_followup_count"],1)
+        self.assertEqual(preview["old_terminal_trade_count"],1)
+        self.assertEqual((control,candidate,trade),untouched)
+
     def test_pending_unstamped_old_followup_does_not_poison_entire_preview(self):
         control,candidate,trade=original()
         waiting=copy.deepcopy(candidate)
