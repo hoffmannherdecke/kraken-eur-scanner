@@ -364,6 +364,116 @@ class ReleasedNonCanaryFollowupTests(unittest.TestCase):
             fetch=lambda *_:self.fail("no model/extra exchange fetch"),
             ticker=lambda *_:self.fail("no ticker without WAIT"))
 
+
+    def test_released_cloud_ack_reuses_exact_native_owner_and_no_duplicate_post(self):
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            released_paper_cloud_ack_once,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            _,journal,_=self.seeded(root)
+            ack=root/"v3-cloud-ack.json"
+            calls=[]
+            reads=[]
+            def post(url,secret,payload):
+                self.assertIn("v3-paper-evidence-relay",url)
+                self.assertEqual(secret,"NON_REAL_RELAY_TOKEN_FROM_CI_ONLY")
+                self.assertEqual(payload["action"],"sync_paper_receipts")
+                self.assertEqual(payload["series_id"],self.SERIES)
+                self.assertGreater(len(payload["receipts"]),0)
+                calls.append(payload)
+                return {"ok":True,"series_id":self.SERIES,
+                        "accepted_receipts":len(payload["receipts"])}
+            def active(sid):
+                reads.append(sid)
+                return self.context()
+            def once():
+                return released_paper_cloud_ack_once(
+                    series_id=self.SERIES,journal=journal,ack_file=ack,
+                    token="NON_REAL_RELAY_TOKEN_FROM_CI_ONLY",
+                    expected_repo_sha=self.REPO,
+                    expected_bundle_sha256=self.BUNDLE,
+                    expected_strategy_sha256=self.STRATEGY,
+                    read_active_series=active,clock_now=lambda:t(self.AT),
+                    cloud_post=post)
+            first=once()
+            self.assertEqual(first["status"],"V3_RECEIPTS_CLOUD_ACK_VERIFIED")
+            self.assertEqual(first["count"],4)
+            self.assertEqual(len(calls),1)
+            self.assertEqual(reads,[self.SERIES])
+            self.assertTrue(ack.exists())
+            original=ack.read_bytes()
+            self.assertEqual(len(json.loads(original)["acked"]),4)
+            second=once()
+            self.assertEqual(second["status"],"NO_UNSYNCED_V3_RECEIPTS")
+            self.assertEqual(len(calls),1)
+            self.assertEqual(ack.read_bytes(),original)
+            self.assertEqual(reads,[self.SERIES,self.SERIES])
+            for result in (first,second):
+                self.assertFalse(result["orders"])
+                self.assertFalse(result["real_money_actions"])
+                self.assertFalse(result["cloud_cas_performed"])
+                self.assertFalse(result["paper_writer_active"])
+                self.assertEqual(result["model_http_calls"],0)
+                self.assertEqual(result["technical_release_proofs_credited"],0)
+
+    def test_direct_noncanary_cloud_sync_rejected_before_read_or_post(self):
+        from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import sync_once
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            _,journal,_=self.seeded(root)
+            ack=root/"v3-cloud-ack.json"
+            with self.assertRaisesRegex(ValueError,"requires locked active-series owner"):
+                sync_once(
+                    journal=journal,series_id=self.SERIES,ack_file=ack,
+                    token="NON_REAL_RELAY_TOKEN_FROM_CI_ONLY",
+                    post=lambda *_:self.fail("unguarded noncanary network"))
+            self.assertFalse(ack.exists())
+
+    def test_unfenced_foreign_or_stale_cloud_never_posts_or_writes_ack(self):
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            released_paper_cloud_ack_once,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            _,journal,_=self.seeded(root)
+            ack=root/"v3-cloud-ack.json"
+            good=self.context()
+            cases=(None,dict(good,status="strategy_cutover_closed"),
+                   dict(good,series_id="PAPER-V3-20261017T160100Z"),
+                   dict(good,observed_at_utc=t(self.AT-timedelta(seconds=95))),
+                   dict(good,config=dict(good["config"],
+                        old_followup_owner_preserved=False)),
+                   dict(good,config=dict(good["config"],
+                        release_repo_sha="d"*40)))
+            for candidate_cloud in cases:
+                with self.subTest(cloud=str(candidate_cloud)[:80]):
+                    with self.assertRaises(ValueError):
+                        released_paper_cloud_ack_once(
+                            series_id=self.SERIES,journal=journal,ack_file=ack,
+                            token="NON_REAL_RELAY_TOKEN_FROM_CI_ONLY",
+                            expected_repo_sha=self.REPO,
+                            expected_bundle_sha256=self.BUNDLE,
+                            expected_strategy_sha256=self.STRATEGY,
+                            read_active_series=lambda _:candidate_cloud,
+                            clock_now=lambda:t(self.AT),
+                            cloud_post=lambda *_:self.fail("no post without release"))
+                    self.assertFalse(ack.exists())
+
+    def test_existing_canary_cloud_ack_still_uses_original_path(self):
+        from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import sync_once
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)
+            journal=root/"j"
+            journal.mkdir()
+            ack=root/"ack.json"
+            result=sync_once(
+                journal=journal,series_id="PAPER-V3-CANARY-EXACT-20261016",
+                ack_file=ack,token="NON_REAL_RELAY_TOKEN_FROM_CI_ONLY",
+                post=lambda *_:self.fail("empty source must avoid post"))
+            self.assertEqual(result["status"],"NO_UNSYNCED_V3_RECEIPTS")
+            self.assertFalse(ack.exists())
+
     def test_postcas_active_exact_source_allows_one_locked_source_only_tick(self):
         with tempfile.TemporaryDirectory() as tmp:
             c,j,cap=self.seeded(Path(tmp));cloud=[];calls=[]
