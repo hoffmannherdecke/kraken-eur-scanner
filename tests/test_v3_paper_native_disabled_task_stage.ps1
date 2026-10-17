@@ -110,4 +110,56 @@ $badGuard='Require (NativeTaskState -ceq'
 if($src.Contains($badGuard)){throw 'Invalid PowerShell boolean binding expression reappeared'}
 Write-Output 'V3_NATIVE_ABSENT_TASK_PREVIEW_ACTUAL_POWERSHELL_REGRESSION_PASS'
 
+# Full preflight source audit: command results passed into typed Require([bool])
+# must be executed as nested expressions and remain scalar. NativeTaskState
+# already failed on host once; multiple python.exe commands caused Object[]
+# binding at original line124. Test the actual production assignment AST.
+foreach($unsafe in @('Require (Test-Path ', 'Require (Under ', 'Require (NativeTaskState ')){
+ if($src.Contains($unsafe)){throw ('UNWRAPPED_REQUIRE_COMMAND_REAPPEARED '+$unsafe)}
+}
+foreach($safe in @(
+ 'Require ((Test-Path -LiteralPath $Path -PathType Leaf))',
+ 'Require ((Test-Path -LiteralPath $source -PathType Container))',
+ 'Require ((Test-Path -LiteralPath $stage -PathType Container))',
+ 'Require ((Test-Path -LiteralPath $python -PathType Leaf))',
+ 'Require ((Under $item $stage))'
+)){
+ if(-not $src.Contains($safe)){throw ('NESTED_COMMAND_BOOLEAN_GUARD_MISSING '+$safe)}
+}
+$pythonAssignment=@($ast.FindAll({
+ param($node)
+ $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+ $node.Left.Extent.Text -eq '$pythonCommand'
+},$true))
+$pythonPathAssignment=@($ast.FindAll({
+ param($node)
+ $node -is [Management.Automation.Language.AssignmentStatementAst] -and
+ $node.Left.Extent.Text -eq '$python'
+},$true))
+if($pythonAssignment.Count -ne 1 -or $pythonPathAssignment.Count -ne 1){
+ throw 'Exactly one Python application resolver and scalar path assignment required'
+}
+$pythonResolverSource=$pythonAssignment[0].Extent.Text
+if(-not $pythonResolverSource.Contains('Select-Object -First 1')){
+ throw 'Python resolver must select a single executable even with multiple PATH matches'
+}
+$mockFirst=(Resolve-Path -LiteralPath $path).Path
+$mockSecond=$mockFirst+'.SECOND'
+function Get-Command {
+ param($Name,$CommandType,$ErrorAction)
+ if($Name -cne 'python.exe' -or $CommandType -cne 'Application'){
+  throw 'Unsupported mocked Get-Command'
+ }
+ [pscustomobject]@{Source=$mockFirst}
+ [pscustomobject]@{Source=$mockSecond}
+}
+. ([scriptblock]::Create($pythonResolverSource))
+. ([scriptblock]::Create($pythonPathAssignment[0].Extent.Text))
+if($pythonCommand -is [array] -or $python -is [array] -or
+   $python -cne $mockFirst -or -not (Test-Path -LiteralPath $python -PathType Leaf)){
+ throw 'V3 Python single PATH resolver failed with TWO executable choices'
+}
+Require ((Test-Path -LiteralPath $python -PathType Leaf)) 'Python path must resolve to a single file'
+Write-Output 'V3_ORIGINALHOST_MULTIPLE_PYTHON_APPLICATIONS_BOOLEAN_PREVIEW_PASS'
+
 Write-Output 'V3_NATIVE_DISABLED_READONLY_TASK_STAGE_SOURCE_POLICY_PASS'
