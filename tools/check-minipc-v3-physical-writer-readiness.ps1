@@ -30,8 +30,8 @@ $modules=@(
 $missingModules=@($modules|Where-Object{
  -not(Test-Path -LiteralPath (Join-Path $repo $_) -PathType Leaf)
 })
-# Read-only originalhost module SHA256 inventory, NOT a live release gate.
-# No secrets, runtime state, hosted CAS or automatic task changes.
+# Originalhost SHA256 inventory of existing V3 Paper source only.
+# No secrets, Task actions, Cloud access, model calls or approval.
 $v3ReleaseSourcePaths=@(
  'paper_evaluator\v3_paper_shared_candidate_intake_plan_v1.py',
  'paper_evaluator\v3_paper_existing_owner_source_bridge_v1.py',
@@ -47,14 +47,21 @@ $v3ReleaseSourcePaths=@(
  'supabase\functions\v3-paper-evidence-relay\index.ts'
 )
 $v3ReleaseSourceHashes=@(
- foreach($relative in $v3ReleaseSourcePaths) {
+ foreach($relative in $v3ReleaseSourcePaths){
   $file=Join-Path $repo $relative
   $digest=$null
   if(Test-Path -LiteralPath $file -PathType Leaf){
    try{$digest=([string](Get-FileHash -LiteralPath $file -Algorithm SHA256 -ErrorAction Stop).Hash).ToLowerInvariant()}
    catch{$digest=$null}
   }
-  if($digest -notmatch '^[0-9a-f]{64}$oldApps=@()
+  if($digest -notmatch '^[0-9a-f]{64}$'){$digest=$null}
+  [pscustomobject]@{relative_path=$relative.Replace('\','/');sha256=$digest;readable=($null -ne $digest)}
+ }
+)
+$v3ReleaseSourceHashComplete=(@($v3ReleaseSourceHashes|Where-Object{
+ $_.readable -ne $true
+}).Count -eq 0 -and $v3ReleaseSourceHashes.Count -eq $v3ReleaseSourcePaths.Count)
+$oldApps=@()
 if(Test-Path -LiteralPath $runtime -PathType Container){
  foreach($app in @(Get-ChildItem -LiteralPath $runtime -Directory -ErrorAction Stop)){
   $controlFile=Join-Path $app.FullName 'paper_runtime_control.json'
