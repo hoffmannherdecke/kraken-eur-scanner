@@ -15,6 +15,7 @@ foreach($must in @(
  $expected,
  "V3Paper-INACTIVE-",
  "stage differs from trusted Git blob",
+ "linked stage ancestor",
  "source_files_verified=66",
  "READ_ONLY_PREVIEW_NOT_INSTALLED",
  "NATIVE_DISABLED_READ_ONLY_TASK_REGISTERED_NOT_RELEASED",
