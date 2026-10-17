@@ -7,7 +7,7 @@ from pathlib import Path
 from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import capture_public_1m,assemble
 from paper_evaluator.v3_paper_minipc_followup_v1 import record_horizon
 from paper_evaluator.v3_paper_minipc_one_candidate_v1 import one_candidate,REVISION
-from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import sync_once
+from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import sync_once,read_active_paper_series
 from tests.test_v3_paper_minipc_one_candidate_v1 import (
     fixture, fake_acquire, fake_model, valid_approval,SID
 )
@@ -15,6 +15,83 @@ from tests.test_v2r4_v3_entry_handoff_probe import dt
 
 
 class MiniPcAndCloudTests(unittest.TestCase):
+    def test_live_series_readback_uses_existing_relay_token_without_cloud_write(self):
+        sid="PAPER-V3-20261017T141500Z"
+        token="TEST_ONLY_SECRET_LONG_ENOUGH_NOT_REAL"
+        payloads=[]
+        original={
+            "ok":True,"kind":"V3_PAPER_ACTIVE_SERIES_READONLY_V1",
+            "series_id":sid,"status":"active",
+            "strategy_revision":REVISION,
+            "observed_at_utc":"2026-10-17T14:16:00Z",
+            "read_only":True,"orders":False,
+            "real_money_actions":False,"cloud_cas_performed":False,
+            "physical_release_proofs_credited":0,
+            "config":{"series_id":sid,"strategy_revision":REVISION,
+                      "release_repo_sha":"a"*40,
+                      "runtime_bundle_fingerprint_sha256":"b"*64,
+                      "strategy_fingerprint_sha256":"c"*64,
+                      "paper_only":True,
+                      "real_money_actions_enabled":False,
+                      "automatic_activation_allowed":False,
+                      "physical_v2r4_writer_fence_verified":True,
+                      "supervisor_old_intake_rearm_blocked":True,
+                      "old_followup_owner_preserved":True,
+                      "independent_six_e2e_proofs_verified":True}
+        }
+        def post(url,secret,payload):
+            self.assertIn("v3-paper-evidence-relay",url)
+            self.assertEqual(secret,token)
+            payloads.append(payload)
+            return original
+        out=read_active_paper_series(series_id=sid,token=token,post=post)
+        self.assertEqual(payloads,[{"action":"read_active_paper_series","series_id":sid}])
+        self.assertEqual(out["series_id"],sid)
+        self.assertEqual(out["observed_at_utc"],original["observed_at_utc"])
+        self.assertEqual(out["config"]["runtime_bundle_fingerprint_sha256"],"b"*64)
+        self.assertNotIn("cloud_cas_performed",out)
+        self.assertNotIn("orders",out)
+
+    def test_readback_rejects_canary_and_embedded_canary_before_network(self):
+        for bad in ("PAPER-V3-CANARY-ONESHOT-20261016",
+                    "PAPER-V3-LIVE-CANARY-FAKE",
+                    "PAPER-V3-20261017T141500Z-extra",
+                    "PAPER-V3-20261017T141500Z/../../",
+                    "PAPER-V2R4-20261009T110135Z"):
+            with self.subTest(series=bad):
+                with self.assertRaises(ValueError):
+                    read_active_paper_series(
+                        series_id=bad,token="TEST_ONLY_SECRET_LONG_ENOUGH_NOT_REAL",
+                        post=lambda *_:self.fail("invalid series contacted Cloud"))
+
+    def test_fail_closed_missing_inactive_or_foreign_cloud_receipt(self):
+        sid="PAPER-V3-20261017T141500Z"
+        base={"ok":True,"kind":"V3_PAPER_ACTIVE_SERIES_READONLY_V1",
+            "series_id":sid,"status":"active","strategy_revision":REVISION,
+            "observed_at_utc":"2026-10-17T14:16:00Z","read_only":True,
+            "orders":False,"real_money_actions":False,
+            "cloud_cas_performed":False,"physical_release_proofs_credited":0,
+            "config":{"series_id":sid}}
+        badcases=(None,{},dict(base,ok=False),
+             dict(base,status="strategy_cutover_closed"),
+             dict(base,series_id="PAPER-V3-20261017T141501Z"),
+             dict(base,kind="V3_FAKE_RELEASE"),
+             dict(base,read_only=False),
+             dict(base,orders=True),
+             dict(base,cloud_cas_performed=True),
+             dict(base,physical_release_proofs_credited=6),
+             dict(base,config=None),
+             dict(base,observed_at_utc=None))
+        for bad in badcases:
+            with self.subTest(bad=repr(bad)[:110]):
+                with self.assertRaises(ValueError):
+                    read_active_paper_series(
+                        series_id=sid,token="TEST_ONLY_SECRET_LONG_ENOUGH_NOT_REAL",
+                        post=lambda *_:bad)
+        with self.assertRaises(ValueError):
+            read_active_paper_series(series_id=sid,token="too_short",
+                post=lambda *_:self.fail("no network with short token"))
+
     def test_public_1m_capture_reuses_existing_source_and_rejects_open_bar(self):
         with tempfile.TemporaryDirectory() as t:
             root=Path(t)
