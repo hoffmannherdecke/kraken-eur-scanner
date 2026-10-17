@@ -8,9 +8,43 @@ FOLDER = Path("tools/minipc_runner_tasks")
 class MinipcReviewedTaskSourceTests(unittest.TestCase):
     def test_exactly_one_task_file(self):
         self.assertTrue(SCRIPT.is_file())
-        self.assertEqual(list(FOLDER.glob("*.ps1")), [SCRIPT])
+        self.assertEqual(
+            sorted(FOLDER.glob("*.ps1")),
+            [FOLDER / "access_boundary_probe.ps1", SCRIPT],
+        )
         self.assertFalse(SCRIPT.is_symlink())
         self.assertLess(SCRIPT.stat().st_size, 65536)
+
+    def test_readonly_boundary_probe_fails_closed_and_never_prints_file_names(self):
+        script = FOLDER / "access_boundary_probe.ps1"
+        self.assertTrue(script.is_file())
+        self.assertFalse(script.is_symlink())
+        source = script.read_text(encoding="utf-8")
+        for required in (
+            "# MINIPC_REVIEWED_TASK_V1",
+            "CryptoSupportSvc",
+            "WindowsBuiltInRole]::Administrator",
+            "GetFileSystemEntries",
+            "catch [System.UnauthorizedAccessException]",
+            "HOST_ACCESS_BOUNDARY_FAIL:",
+            "content_read_not_tested = $true",
+            "protected_directory_listing_denied = $true",
+            "task = 'access_boundary_probe'",
+            "MINIPC_REVIEWED_TASK_ACK_V1",
+            "mutation_scope = 'RESTRICTED'",
+        ):
+            self.assertIn(required, source)
+        for disallowed in (
+            "Get-Content", "Set-Content", "Copy-Item", "Move-Item",
+            "Remove-Item", "Set-Acl", "icacls", "Start-Process",
+            "Start-Service", "Set-Service", "Stop-Service",
+            "Invoke-RestMethod", "Invoke-WebRequest",
+            "ConvertTo-SecureString", "Start-ScheduledTask",
+            "Get-ChildItem", "GetFileSystemEntries($restrictedRoot) |",
+            "GetFileSystemEntries($restrictedRoot) | Out-String",
+        ):
+            self.assertNotIn(disallowed, source)
+        self.assertEqual(source.count("ConvertTo-Json -Compress"), 1)
 
     def test_result_contract(self):
         s = SCRIPT.read_text(encoding="utf-8")
