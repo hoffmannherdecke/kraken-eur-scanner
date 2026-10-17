@@ -271,10 +271,10 @@ def classify_minipc_daily_diagnostics(
         state = raw.get("task_state")
         code = raw.get("last_result_code")
         meaning = raw.get("last_result_meaning")
-        if state not in _NATIVE_STATES:
+        if not isinstance(state, str) or state not in _NATIVE_STATES:
             invalid = True
             continue
-        if meaning not in _NATIVE_MEANINGS:
+        if not isinstance(meaning, str) or meaning not in _NATIVE_MEANINGS:
             invalid = True
             continue
         if code is not None and (type(code) is not int or code < 0 or code > 0xFFFFFFFF):
