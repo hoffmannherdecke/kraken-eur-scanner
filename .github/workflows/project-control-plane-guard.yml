@@ -93,6 +93,8 @@ on:
       - "tools/validate-v3-shadow-candidate.py"
       - "tools/validate-v3-integration-candidate.py"
       - "tests/test_minipc_cloud_health_watch_contract.py"
+      - "tools/minipc_cloud_evidence.py"
+      - "tests/test_minipc_cloud_evidence.py"
       - ".github/workflows/**"
   push:
     branches: [main]
@@ -187,6 +189,8 @@ on:
       - "tools/validate-v3-shadow-candidate.py"
       - "tools/validate-v3-integration-candidate.py"
       - "tests/test_minipc_cloud_health_watch_contract.py"
+      - "tools/minipc_cloud_evidence.py"
+      - "tests/test_minipc_cloud_evidence.py"
       - ".github/workflows/**"
   workflow_dispatch:
 
@@ -294,6 +298,8 @@ jobs:
         run: |
           python -m py_compile tests/test_minipc_cloud_health_watch_contract.py
           python -m unittest discover -s tests -p 'test_minipc_cloud_health_watch_contract.py' -v
+          python -m py_compile tools/minipc_cloud_evidence.py tests/test_minipc_cloud_evidence.py
+          python -m unittest discover -s tests -p 'test_minipc_cloud_evidence.py' -v
       - name: Validate workflow registry
         run: python tools/validate-workflow-registry.py
       - name: Validate active H3 shadow candidate
