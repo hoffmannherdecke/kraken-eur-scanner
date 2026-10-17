@@ -24,6 +24,41 @@ class V2R4PaperActivationRuntimeTests(unittest.TestCase):
         cls.local_runtime = load_tool("v2r4-paper-local-runtime.py", "v2r4_paper_local_runtime")
         cls.cloud_sync = load_tool("v2r4-paper-cloud-sync.py", "v2r4_paper_cloud_sync")
 
+    def test_candidate_event_cache_is_memory_only_bounded_and_revalidates(self):
+        tool = self.local_runtime
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            first, second, third = (root / name for name in ("a.json", "b.json", "c.json"))
+            first.write_text(json.dumps({"kind": "V2R4_WS_SHADOW_DISCOVERY", "pair": "BTC/EUR"}), "utf-8")
+            cache = tool._UnchangedEventCache(limit=2)
+            with patch.object(tool, "load_json", wraps=tool.load_json) as parser:
+                initial = cache.read(first)
+                self.assertEqual(cache.read(first), initial)
+                self.assertEqual(parser.call_count, 1)
+                first.write_text(json.dumps({"kind": "V2R4_WS_SHADOW_DISCOVERY", "pair": "BTC/EUR", "version": "updated-and-longer"}), "utf-8")
+                self.assertEqual(cache.read(first)["version"], "updated-and-longer")
+                self.assertEqual(parser.call_count, 2)
+                second.write_text(json.dumps({"pair": "ETH/EUR"}), "utf-8")
+                third.write_text(json.dumps({"pair": "ADA/EUR"}), "utf-8")
+                cache.read(second)
+                cache.read(third)
+                self.assertEqual(len(cache.entries), 2)
+                self.assertNotIn(first, cache.entries)
+                cache.read(first)
+                self.assertEqual(parser.call_count, 5)
+                # Corrupted originals remain fail-closed; after rewrite the
+                # same path can be parsed, never frozen as a negative cache.
+                second.write_text("{", "utf-8")
+                with self.assertRaises(ValueError):
+                    cache.read(second)
+                second.write_text(json.dumps({"pair": "SOL/EUR"}), "utf-8")
+                self.assertEqual(cache.read(second)["pair"], "SOL/EUR")
+                first.unlink()
+                with self.assertRaises(FileNotFoundError):
+                    cache.read(first)
+                # A new process has no persisted cache.
+                self.assertEqual(tool._UnchangedEventCache().read(third), {"pair": "ADA/EUR"})
+
     def test_chained_wait_expiry_becomes_terminal_reject(self):
         now = datetime(2026, 10, 7, 18, 0, tzinfo=timezone.utc)
         with tempfile.TemporaryDirectory() as td:
