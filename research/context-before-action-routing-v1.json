@@ -52,6 +52,10 @@
     {
       "path": ".github/workflows/scan.yml",
       "role": "ORIGINAL_KRAKEN_EUR_SCANNER_SCHEDULED_CHAT_HANDOFF_ARTIFACT_SOURCE_NOT_BUY_OR_CLOUD_SYNC_ACK"
+    },
+    {
+      "path": "docs/minipc-runner-bounded-windows-v1.md",
+      "role": "PROJECTWIDE_MINIPC_REVIEWED_TASK_RUNNER_ENABLED_WINDOWS_SCHEDULE_HOST_ACK_BUT_FIRST_UNATTENDED_RECURRING_E2E_PENDING; REAL_HOST_AND_GITHUB_READBACK_REQUIRED"
     }
   ],
   "scopes": {
@@ -350,6 +354,48 @@
       "no_live_github_api_call_in_context_packet": true,
       "no_work_or_new_scheduler": true,
       "no_orders_or_strategy_release": true
+    },
+    "projectwide_reviewed_runner": {
+      "kind": "PROJECTWIDE_REVIEWED_MINIPC_RUNNER_HANDOFF_V1",
+      "canonical_runbook": "docs/minipc-runner-bounded-windows-v1.md",
+      "canonical_owner": "PROJECT_BACKLOG.md#ENTWICKLUNGSLOOP_AUTOMATION_20261016",
+      "github_issue": 353,
+      "private_repository": "hoffmannherdecke/kraken-readonly-bridge",
+      "private_issue": 13,
+      "private_approved_workflow_file": ".github/workflows/minipc-reviewed-project-task.yml",
+      "private_approved_workflow_sha": "28bdddccd7d917151958c4b64461dc6289e71eca",
+      "public_reviewed_task_dir": "tools/minipc_runner_tasks",
+      "request_format": "MINIPC_TASK_V1 | <40_HEX_MERGED_PUBLIC_MAIN_SHA> | <REVIEWED_TASK_NAME>",
+      "windows_task_name": "CryptoSupport - Bounded Runner Window",
+      "windows_runner_service_start_mode": "Disabled",
+      "windows_task_schedule_enabled_host_confirmed": true,
+      "host_enabled_evidence": "USER_ORIGINAL_WINDOWS_POWERSHELL_SCREENSHOT_2026-10-17_READY_ENABLED_TRUE",
+      "manual_one_off_e2e": {
+        "passed": true,
+        "last_task_result": 0,
+        "last_run_time_local": "2026-10-17T20:44:45+02:00",
+        "service_safe_pause_confirmed": true
+      },
+      "local_prejob_allow_evidence": "https://github.com/hoffmannherdecke/kraken-readonly-bridge/actions/runs/39056181688",
+      "local_prejob_deny_evidence": "https://github.com/hoffmannherdecke/kraken-readonly-bridge/actions/runs/39056239661",
+      "first_unattended_periodic_window_e2e": "PENDING_ORIGINAL_HOST_READBACK",
+      "expected_windows_cadence_minutes": 20,
+      "comment_ttl_minutes": 10,
+      "auto_schedule_not_equal_continuous_runner_online": true,
+      "live_host_state_requires_separate_evidence": true,
+      "all_project_scopes": [
+        "strategy",
+        "architecture",
+        "operations",
+        "research"
+      ],
+      "no_unreviewed_powershell_or_elevated_host_access": true,
+      "no_trading_paper_cloud_order_or_budget_authority": true,
+      "no_paid_github_upgrade": true,
+      "existing_chatgpt_work_controller": "ONE_EXISTING_DAILY_1015_EUROPE_BERLIN",
+      "new_chat_auto_import_guaranteed": false,
+      "cpu_change_requires_pause_and_safe_shutdown": true,
+      "no_new_project_manager_or_schedule": true
     }
   }
 }

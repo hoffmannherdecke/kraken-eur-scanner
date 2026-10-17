@@ -48,7 +48,10 @@
     {
       "id": "mini_pc_deployment",
       "owner": "PROJECT_BACKLOG.md",
-      "gate": "NEXT_ALREADY_NECESSARY_PHYSICAL_MINI_PC_GATE"
+      "gate": "EXISTING_REVIEWED_MINIPC_RUNNER_SCHEDULER_ENABLED_HOST_ACK__FIRST_NATURAL_UNATTENDED_WINDOW_STILL_PENDING__CPU_MAINTENANCE_SAFE_PAUSE",
+      "execution_capability_source": "docs/minipc-runner-bounded-windows-v1.md",
+      "execution_authority": "ONLY_REVIEWED_PUBLIC_MAIN_SHA_TASKS_VIA_PRIVATE_PINNED_PREJOB_CRYPTO_SUPPORT_NONADMIN",
+      "no_new_manager_or_runner": true
     },
     {
       "id": "mini_pc_analytics_followthrough",

@@ -19,5 +19,6 @@ jobs:
       - name: Mandatory current project sources and honest author review (all PR paths)
         run: |
           python -m unittest tests.test_project_context_change_guard -v
+          python -m unittest tests.test_context_before_action.ContextBeforeActionTests.test_projectwide_reviewed_minipc_runner_is_routed_in_every_context_scope -v
           python tools/project_context_change_guard.py --base HEAD^1 --head HEAD --template
           python tools/project_context_change_guard.py --base HEAD^1 --head HEAD --event "$GITHUB_EVENT_PATH"
