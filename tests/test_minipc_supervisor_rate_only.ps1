@@ -1317,3 +1317,71 @@ CheckAck $false $stale (Pr326Receipt) 'prior TaskScheduler execution not fresh'
 $x=Pr326Receipt;$x.checked_at_utc='2026-10-16T00:06:27Z'
 CheckAck $false $finished $x 'no fresh report'
 Write-Output 'PR326_SUPERVISOR_SAME_SECOND_ACK_PURE_12_CASES_PASS'
+
+
+# V3 successor: PURE post-CAS Supervisor read-only bridge. Never run Supervisor.
+$succFn=@($ast.FindAll({
+  param($a)
+  $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+  $a.Name -eq 'Get-V3PaperSuccessorReadOnlyObservation'
+},$true))
+if($succFn.Count -ne 1){throw 'Exactly one future V3 successor observation policy required'}
+. ([Scriptblock]::Create($succFn[0].Extent.Text))
+$supervisorText=Get-Content -LiteralPath $path -Raw
+$specBegin=$supervisorText.IndexOf('$specs = @(')
+$specEnd=$supervisorText.IndexOf(')' + [Environment]::NewLine + [Environment]::NewLine + '# During an exact technical PAPER cutover',$specBegin)
+if($specBegin -lt 0 -or $specEnd -lt 0 -or
+   $supervisorText.Substring($specBegin,$specEnd-$specBegin).Contains('CryptoMiniPC-V3PaperSingleWriter')){
+ throw 'V3 successor MUST NOT enter auto-restarting Supervisor specs'
+}
+$nowV3=[datetime]'2026-10-17T14:10:00Z'
+$markerV3=[pscustomobject]@{
+ proposed_successor_series_id='PAPER-V3-20261017T140000Z'
+ successor_task_name='CryptoMiniPC-V3PaperSingleWriter'
+ proposed_v3_repo_sha=('a'*40)
+ proposed_v3_bundle_sha256=('b'*64)
+ proposed_v3_strategy_sha256=('c'*64)
+ paper_only=$true; orders_enabled=$false;real_money_actions=$false
+}
+$nativeV3=[pscustomobject]@{TaskName='CryptoMiniPC-V3PaperSingleWriter';State='Running'}
+$heartV3=[pscustomobject]@{
+ kind='V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1'
+ status='HEALTHY';series_id=$markerV3.proposed_successor_series_id
+ release_repo_sha=$markerV3.proposed_v3_repo_sha
+ runtime_bundle_sha256=$markerV3.proposed_v3_bundle_sha256
+ strategy_sha256=$markerV3.proposed_v3_strategy_sha256
+ checked_at_utc='2026-10-17T14:09:45Z'
+ paper_only=$true;orders=$false;real_money_actions=$false
+}
+function ObserveV3([string]$Mode,[object]$M,[object]$T,[object]$H) {
+ Get-V3PaperSuccessorReadOnlyObservation -FenceMode $Mode -Marker $M -NativeTask $T -Heartbeat $H -ObservedUtc $nowV3
+}
+function ExpectV3([string]$Want,[object]$Have,[string]$Label){
+ if($Have.status -cne $Want){throw "V3_SUPERVISOR_OBSERVATION_FAIL $Label expected=$Want got=$($Have.status)"}
+ if($Have.v3_auto_restart_authorized -ne $false -or
+    $Have.native_v3_task_action_invoked -ne $false -or
+    $Have.independent_cloud_or_host_proof_verified -ne $false -or
+    $Have.technical_release_proofs_credited -ne 0){
+   throw "V3_SUPERVISOR_FAKE_RELEASE_OR_AUTO_RESTART $Label"
+ }
+}
+ExpectV3 'NO_V3_PAPER_CUTOVER_RECORDED' (ObserveV3 'NONE' $null $null $null) 'default zero overhead'
+ExpectV3 'HOLD_INVALID_FENCE' (ObserveV3 'INVALID_FAIL_CLOSED' $markerV3 $nativeV3 $heartV3) 'invalid old fence'
+ExpectV3 'HOLD_CUTOVER_IN_PROGRESS' (ObserveV3 'QUIESCED' $markerV3 $nativeV3 $heartV3) 'no early successor acceptance'
+ExpectV3 'HOLD_UNPINNED_SUCCESSOR_IDENTITY' (ObserveV3 'CLOUD_COMMITTED' $null $nativeV3 $heartV3) 'missing marker'
+$m=$markerV3.PSObject.Copy();$m.successor_task_name='CryptoMiniPC-V3CanaryObservation28h'
+ExpectV3 'HOLD_UNPINNED_SUCCESSOR_IDENTITY' (ObserveV3 'CLOUD_COMMITTED' $m $nativeV3 $heartV3) 'canary is not Paper owner'
+$m=$markerV3.PSObject.Copy();$m.proposed_successor_series_id='PAPER-V3-CANARY-ONESHOT'
+ExpectV3 'HOLD_UNPINNED_SUCCESSOR_IDENTITY' (ObserveV3 'CLOUD_COMMITTED' $m $nativeV3 $heartV3) 'canary series rejected'
+ExpectV3 'HOLD_NATIVE_SUCCESSOR_TASK_NOT_RUNNING' (ObserveV3 'CLOUD_COMMITTED' $markerV3 $null $heartV3) 'no task'
+$t=$nativeV3.PSObject.Copy();$t.State='Disabled'
+ExpectV3 'HOLD_NATIVE_SUCCESSOR_TASK_NOT_RUNNING' (ObserveV3 'CLOUD_COMMITTED' $markerV3 $t $heartV3) 'disabled task'
+ExpectV3 'HOLD_SUCCESSOR_HEARTBEAT_MISSING' (ObserveV3 'CLOUD_COMMITTED' $markerV3 $nativeV3 $null) 'no heartbeat'
+$h=$heartV3.PSObject.Copy();$h.series_id='PAPER-V3-20261017T140001Z'
+ExpectV3 'HOLD_SUCCESSOR_HEARTBEAT_STALE_OR_FOREIGN' (ObserveV3 'CLOUD_COMMITTED' $markerV3 $nativeV3 $h) 'foreign series'
+$h=$heartV3.PSObject.Copy();$h.checked_at_utc='2026-10-17T14:00:00Z'
+ExpectV3 'HOLD_SUCCESSOR_HEARTBEAT_STALE_OR_FOREIGN' (ObserveV3 'CLOUD_COMMITTED' $markerV3 $nativeV3 $h) 'stale heartbeat'
+$h=$heartV3.PSObject.Copy();$h.checked_at_utc='2026-10-17T14:11:00Z'
+ExpectV3 'HOLD_SUCCESSOR_HEARTBEAT_STALE_OR_FOREIGN' (ObserveV3 'CLOUD_COMMITTED' $markerV3 $nativeV3 $h) 'future timestamp'
+ExpectV3 'LOCAL_TASK_AND_HEARTBEAT_MATCH_NOT_RELEASE_PROOF' (ObserveV3 'CLOUD_COMMITTED' $markerV3 $nativeV3 $heartV3) 'source-only compatible not physical proof'
+Write-Output 'V3_SUPERVISOR_READONLY_POST_CAS_13_CASES_PASS'

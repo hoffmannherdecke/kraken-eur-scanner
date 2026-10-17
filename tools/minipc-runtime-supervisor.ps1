@@ -211,6 +211,59 @@ function Test-V3PaperIntakeFence([bool]$Present,[object]$Marker) {
   return [string]$Marker.phase
 }
 
+
+# Original Supervisor only: observe a future Paper successor, never auto-restart.
+# A local marker or heartbeat is not independent Cloud/host release proof.
+function Get-V3PaperSuccessorReadOnlyObservation(
+  [string]$FenceMode,[object]$Marker,[object]$NativeTask,[object]$Heartbeat,[datetime]$ObservedUtc
+) {
+  $status='NO_V3_PAPER_CUTOVER_RECORDED'
+  if($FenceMode -eq 'INVALID_FAIL_CLOSED'){$status='HOLD_INVALID_FENCE'}
+  elseif($FenceMode -in @('ARMED','QUIESCED')){$status='HOLD_CUTOVER_IN_PROGRESS'}
+  elseif($FenceMode -eq 'CLOUD_COMMITTED'){
+    if($null -eq $Marker -or
+       [string]$Marker.proposed_successor_series_id -cnotmatch '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$' -or
+       [string]$Marker.successor_task_name -cne 'CryptoMiniPC-V3PaperSingleWriter' -or
+       [string]$Marker.proposed_v3_repo_sha -cnotmatch '^[0-9a-f]{40}$' -or
+       [string]$Marker.proposed_v3_bundle_sha256 -cnotmatch '^[0-9a-f]{64}$' -or
+       [string]$Marker.proposed_v3_strategy_sha256 -cnotmatch '^[0-9a-f]{64}$' -or
+       $Marker.paper_only -ne $true -or $Marker.orders_enabled -ne $false -or
+       $Marker.real_money_actions -ne $false){
+      $status='HOLD_UNPINNED_SUCCESSOR_IDENTITY'
+    } elseif($null -eq $NativeTask -or
+             [string]$NativeTask.TaskName -cne 'CryptoMiniPC-V3PaperSingleWriter' -or
+             [string]$NativeTask.State -cne 'Running'){
+      $status='HOLD_NATIVE_SUCCESSOR_TASK_NOT_RUNNING'
+    } elseif($null -eq $Heartbeat){
+      $status='HOLD_SUCCESSOR_HEARTBEAT_MISSING'
+    } else {
+      $stamp=$null
+      try{$stamp=([datetimeoffset]::Parse([string]$Heartbeat.checked_at_utc)).UtcDateTime}catch{}
+      $age=if($stamp){($ObservedUtc.ToUniversalTime()-$stamp).TotalSeconds}else{[double]::PositiveInfinity}
+      if($Heartbeat.kind -cne 'V3_PAPER_SINGLE_WRITER_HEARTBEAT_V1' -or
+         $Heartbeat.status -cne 'HEALTHY' -or
+         $Heartbeat.series_id -cne [string]$Marker.proposed_successor_series_id -or
+         $Heartbeat.release_repo_sha -cne [string]$Marker.proposed_v3_repo_sha -or
+         $Heartbeat.runtime_bundle_sha256 -cne [string]$Marker.proposed_v3_bundle_sha256 -or
+         $Heartbeat.strategy_sha256 -cne [string]$Marker.proposed_v3_strategy_sha256 -or
+         $Heartbeat.paper_only -ne $true -or $Heartbeat.orders -ne $false -or
+         $Heartbeat.real_money_actions -ne $false -or $age -lt -30 -or $age -gt 180){
+        $status='HOLD_SUCCESSOR_HEARTBEAT_STALE_OR_FOREIGN'
+      }else{$status='LOCAL_TASK_AND_HEARTBEAT_MATCH_NOT_RELEASE_PROOF'}
+    }
+  } elseif($FenceMode -ne 'NONE'){$status='HOLD_UNKNOWN_FENCE_MODE'}
+  return [pscustomobject]@{
+    kind='V3_PAPER_SUCCESSOR_SUPERVISOR_READONLY_OBSERVATION_V1'
+    status=$status
+    v3_auto_restart_authorized=$false
+    native_v3_task_action_invoked=$false
+    independent_cloud_or_host_proof_verified=$false
+    technical_release_proofs_credited=0
+    historical_v2r4_aftercare_modified=$false
+    real_money_actions=$false
+  }
+}
+
 $specs = @(
   [pscustomobject]@{ name="CryptoMiniPC-KrakenCanary"; path=(Join-Path $stateDir "kraken-canary-heartbeat.json"); max_age=60.0; good=@("HEALTHY","CONNECTED"); restart_backoff_min=$MinRestartIntervalMinutes },
   [pscustomobject]@{ name="CryptoMiniPC-KrakenUniverse"; path=(Join-Path $stateDir "kraken-eur-universe-heartbeat.json"); max_age=90.0; good=@("HEALTHY","CONNECTED"); restart_backoff_min=$MinRestartIntervalMinutes },
@@ -279,6 +332,17 @@ $v3FenceMode=Test-V3PaperIntakeFence -Present $v3FencePresent -Marker $v3FenceRe
 if($v3FenceMode -ne "NONE" -and $maintenanceMode -ne "NONE"){
   $v3FenceMode="INVALID_FAIL_CLOSED"
 }
+
+# Only after a committed marker: one read-only successor Task/heartbeat peek.
+# NEVER append the future task to the restart-capable $specs list.
+$v3SuccessorTask=$null
+$v3SuccessorHeartbeat=$null
+if($v3FenceMode -eq 'CLOUD_COMMITTED' -and
+   [string]$v3FenceReceipt.successor_task_name -ceq 'CryptoMiniPC-V3PaperSingleWriter'){
+  $v3SuccessorTask=Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -ErrorAction SilentlyContinue
+  $v3SuccessorHeartbeat=Read-Heartbeat (Join-Path $stateDir 'v3-paper-single-writer-heartbeat.json')
+}
+$v3SuccessorObservation=Get-V3PaperSuccessorReadOnlyObservation -FenceMode $v3FenceMode -Marker $v3FenceReceipt -NativeTask $v3SuccessorTask -Heartbeat $v3SuccessorHeartbeat -ObservedUtc (Get-Date).ToUniversalTime()
 
 # Post-cutover V3-H3-001 is permanently frozen on its ORIGINAL baseline.
 # A committed, fully verified local record only prevents restarting that
@@ -545,6 +609,7 @@ $report = [pscustomobject]@{
     historical_followup_exit_cloud_ack_proven=$false
     v3_cloud_cas_or_release_authorized=$false
   }
+  v3_paper_successor_readonly=$v3SuccessorObservation
   kraken_upstream_healthy=$krakenSourceHealthy
   error=$topError
   tasks=@($rows)
