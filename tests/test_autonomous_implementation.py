@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -178,13 +179,59 @@ class SafeAutonomyTests(unittest.TestCase):
             self.assertEqual(full["active_implementation_pr_count"],1)
             self.assertIn("UNKNOWN_CONTROL_DECISION_ADAPTER",
                 [x["id"] for x in full["waiting_due"]])
+            # A bare label is not a real completion. It must not release
+            # a slot or permit another package to start.
             attempts[first]["status"]="COMPLETED"
+            fake=selector.select(root,QUEUE,state,{"autonomy_task_attempts":attempts})
+            self.assertEqual(fake["status"],"BLOCKED")
+            self.assertIn("unverified completion receipt "+first,fake["errors"])
+            report = root/"research/work-analysis/real-work-receipt.md"
+            report.parent.mkdir(parents=True,exist_ok=True)
+            report.write_text("Independent original source outcome checked",encoding="utf-8")
+            attempts[first].update({
+                "report": "research/work-analysis/real-work-receipt.md",
+                "report_sha256": hashlib.sha256(report.read_bytes()).hexdigest(),
+                "reason":"Offline safe contract and independent source acknowledgement",
+                "completed_at_utc":"2026-10-17T10:00:00Z",
+            })
             refilled=selector.select(root,QUEUE,state,{"autonomy_task_attempts":attempts})
             self.assertEqual(refilled["active_work_package_count"],1)
             self.assertEqual([x["id"] for x in refilled["ready"]],
                              ["UNKNOWN_CONTROL_DECISION_ADAPTER"])
             self.assertTrue(refilled["refill_after_evidenced_ack_same_run"])
             self.assertTrue(refilled["external_github_pr_count_must_be_verified_by_work"])
+
+    def test_work_complete_cannot_be_claimed_with_fake_or_missing_local_ack(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            target=root/"research/work-analysis/verified.md"
+            target.parent.mkdir(parents=True,exist_ok=True)
+            target.write_text("original source verification receipt\n",encoding="utf-8")
+            good={
+                "status":"COMPLETED","report":"research/work-analysis/verified.md",
+                "report_sha256":hashlib.sha256(target.read_bytes()).hexdigest(),
+                "reason":"Safe work completed after independent read-only inspection",
+                "completed_at_utc":"2026-10-17T10:12:00Z",
+            }
+            self.assertTrue(selector.verified_completed_work_receipt(root,good))
+            invalid=[
+                {"report_sha256":"0"*64},
+                {"report":"research/work-analysis/not-found.md"},
+                {"report":"research/work-analysis/../../SECRET.txt"},
+                {"report":"/tmp/not-an-artifact"},
+                {"report":"research/work-analysis/verified.md\\outside"},
+                {"report_sha256":"xxxx"},
+                {"completed_at_utc":"2026-10-17T10:12:00"},
+                {"completed_at_utc":None},
+                {"reason":""},
+                {"status":"BLOCKED"},
+            ]
+            for changes in invalid:
+                bad={**good,**changes}
+                with self.subTest(changes=changes):
+                    self.assertFalse(selector.verified_completed_work_receipt(root,bad))
+            target.write_text("this artifact was changed after acknowledgement\n",encoding="utf-8")
+            self.assertFalse(selector.verified_completed_work_receipt(root,good))
 
     def test_overcommitted_ledger_and_legacy_run_cap_fail_closed(self):
         with tempfile.TemporaryDirectory() as td:
