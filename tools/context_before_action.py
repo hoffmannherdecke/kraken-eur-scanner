@@ -458,6 +458,91 @@ def project_component_owner_handoff(root: Path) -> dict:
         "no_new_database_or_work_or_scheduler": True,
     }
 
+def existing_operational_evidence_handoff(config: dict, source_index: list[dict]) -> dict:
+    """Link existing MINI-PC evidence sources to on-demand preflights.
+
+    This is strictly a source *routing* contract; this offline script cannot
+    establish live host state, scheduled report persistence, GitHub upsert
+    freshness, a Slack device notification or any trading authorization.
+    """
+    contract = config.get("existing_operational_evidence_handoff")
+    require(isinstance(contract, dict) and
+            contract.get("kind") == "EXISTING_OPERATIONAL_EVIDENCE_HANDOFF_V1",
+            "original MINI-PC operational evidence route missing")
+    fixed = {
+        "owner": "PROJECT_BACKLOG.md#ENTWICKLUNGSLOOP_AUTOMATION_20261016",
+        "issue_number": 353,
+        "node_id": "MINI-PC",
+        "cloud_current_table": "public.minipc_status_current",
+        "cloud_alert_table": "public.minipc_status_alert_state",
+        "cloud_daily_table": "public.minipc_daily_status",
+        "native_task_key": "payload.native_task_readback",
+        "daily_native_diagnostics_key": "payload.native_task_diagnostics",
+        "daily_metric_provenance_key": "payload.metric_provenance",
+        "github_original_watch_workflow_id": 371909131,
+        "scope": "READ_ONLY_OPERATIONS_DIAGNOSTICS_NOT_TRADING_OR_V3_MODEL_PROOF",
+    }
+    for key, expected in fixed.items():
+        require(contract.get(key) == expected,
+                "original MINI-PC readback route drift: " + key)
+    required_files = (
+        "tools/minipc_cloud_evidence.py",
+        "tools/minipc-watchdog.ps1",
+        ".github/workflows/minipc-daily-status.yml",
+    )
+    require(contract.get("source_files") == list(required_files),
+            "missing or substituted original MINI-PC source files")
+    sources = {item["path"]: item for item in source_index}
+    require(all(path in sources and len(sources[path]["sha256"]) == 64
+                for path in required_files),
+            "MINI-PC evidence sources not covered by canonical preflight fingerprint")
+    flags = (
+        "fresh_original_evidence_required",
+        "reconcile_live_source_timestamps",
+        "original_windows_deployment_separately_required",
+        "github_schedule_best_effort",
+        "no_live_cloud_query_in_context_packet",
+        "no_slack_delivery_ack_in_context_packet",
+        "no_paper_or_real_money_release",
+        "no_new_scheduler_or_status_authority",
+    )
+    require(all(contract.get(key) is True for key in flags),
+            "original MINI-PC evidence safety boundary changed")
+    return {
+        "kind": contract["kind"],
+        "status": "SOURCE_ROUTES_REGISTERED_LIVE_DATA_NOT_QUERIED",
+        "owner": contract["owner"],
+        "issue_number": contract["issue_number"],
+        "source_paths": list(required_files),
+        "source_fingerprints": {
+            path: sources[path]["sha256"] for path in required_files
+        },
+        "node_id": contract["node_id"],
+        "original_cloud_sources": {
+            "current": contract["cloud_current_table"],
+            "alert": contract["cloud_alert_table"],
+            "daily": contract["cloud_daily_table"],
+        },
+        "existing_fields": {
+            "native_task_readback": contract["native_task_key"],
+            "daily_native_diagnostics": contract["daily_native_diagnostics_key"],
+            "daily_metric_provenance": contract["daily_metric_provenance_key"],
+        },
+        "github_original_watch_workflow_id":
+            contract["github_original_watch_workflow_id"],
+        "fresh_original_host_cloud_evidence_required": True,
+        "separate_github_schedule_run_and_cloud_alert_ack_required": True,
+        "live_windows_deployment_independently_verified": False,
+        "host_health_independently_verified": False,
+        "v3_model_decision_or_trade_verified": False,
+        "daily_scheduled_delivery_verified": False,
+        "slack_device_push_ack_verified": False,
+        "has_network_access": False,
+        "no_new_scheduler_or_status_authority": True,
+        "no_trading_or_release_authority": True,
+    }
+
+
 def build(root: Path, scope: str) -> dict:
     config, entries = routed_sources(root, scope)
     index = []
@@ -493,6 +578,7 @@ def build(root: Path, scope: str) -> dict:
         "declared_status": declared,
         "control_decision_ack_reconciliation": review_receipts(root, state),
         "project_component_owners": project_component_owner_handoff(root),
+        "operational_evidence_handoff": existing_operational_evidence_handoff(config, index),
         "limitations": [
             "Source hashes attest presence/version, not reading, semantic understanding or correctness.",
             "GitHub current-state is declared/datable, not independent live Supabase/MINI-PC evidence.",
