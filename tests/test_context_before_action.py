@@ -90,6 +90,29 @@ class ContextBeforeActionTests(unittest.TestCase):
                     self.assertIs(x[name], False)
                 self.assertTrue(x["no_new_scheduler_or_status_authority"])
                 self.assertTrue(x["no_trading_or_release_authority"])
+                scan = x["scanner_artifact_handoff"]
+                scanner_file = ".github/workflows/scan.yml"
+                self.assertEqual(scan["kind"], "ORIGINAL_SCANNER_ARTIFACT_READBACK_ROUTE_V1")
+                self.assertEqual(scan["source_workflow_file"], scanner_file)
+                self.assertEqual(scan["source_fingerprint"], index[scanner_file])
+                self.assertEqual(scan["source_fingerprint"], hashlib.sha256(
+                    (ROOT / scanner_file).read_bytes()).hexdigest())
+                self.assertEqual(scan["artifact_name_template"],
+                                 "chat-handoff-{run_id}-{run_attempt}")
+                self.assertEqual(scan["payload_file"], "candidates.jsonl")
+                self.assertEqual(scan["retention_days"], 7)
+                self.assertEqual(scan["action"], "REVIEW_ONLY_NOT_ORDER")
+                self.assertIn("candidate_snapshot", scan["expected_event_kinds"])
+                self.assertIn("market_context", scan["expected_event_kinds"])
+                for flag in (
+                    "actual_run_artifact_independently_verified",
+                    "scan_candidate_sent_to_evaluator_verified",
+                    "scan_candidate_written_to_cloud_verified",
+                    "v3_model_decision_verified",
+                    "trade_or_order_authorized",
+                ):
+                    self.assertIs(scan[flag], False)
+                self.assertTrue(scan["no_new_scheduler_or_data_collector"])
                 self.assertFalse(packet["has_network_access"])
 
     def test_original_operational_readback_wrong_source_fails_closed(self):
@@ -118,6 +141,34 @@ class ContextBeforeActionTests(unittest.TestCase):
             ):
                 with self.assertRaisesRegex(ContextGateError,
                                             "original MINI-PC"):
+                    build(ROOT, "strategy")
+
+    def test_original_scanner_artifact_handoff_rejects_fake_delivery_and_paths(self):
+        route_path = ROOT / "research/context-before-action-routing-v1.json"
+        original = original_read_json
+        config = original(route_path)
+        changes = (
+            {"source_workflow_file": ".github/workflows/other.yml"},
+            {"artifact_name_template": "chat-handoff-{run_id}"},
+            {"artifact_retention_days": 90},
+            {"review_action": "BUY_SCOUT"},
+            {"no_implicit_delivery_to_scanner_detection_cloud": False},
+            {"no_implicit_v2r4_v3_model_consumption": False},
+            {"no_orders_or_strategy_release": False},
+        )
+        for mutation in changes:
+            modified = copy.deepcopy(config)
+            modified["existing_operational_evidence_handoff"]["scanner_handoff"].update(mutation)
+
+            def read_modified(path):
+                if Path(path).resolve() == route_path.resolve():
+                    return modified
+                return original(path)
+
+            with self.subTest(mutation=mutation), patch(
+                "tools.context_before_action.read_json", side_effect=read_modified
+            ):
+                with self.assertRaisesRegex(ContextGateError, "original scanner handoff"):
                     build(ROOT, "strategy")
 
     def test_component_owner_missing_is_not_assumed_healthy_or_locally_installed(self):
