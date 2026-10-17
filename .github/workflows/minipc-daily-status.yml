@@ -192,8 +192,12 @@ jobs:
 
           issue_text="none" if not issue_codes else ",".join(issue_codes[:5])
           if legacy_v2r4:
+              # The exact shadow counts are ALL-TIME across historical V2R4
+              # evidence rows, not the active technical Paper series' trades.
               series_metrics=(f"V2R4 Shadow-Quelle {shadow_source_age}s | "
-                              f"Events {shadow_events}, Outcomes {completed_outcomes}, aktiv {active_outcomes}")
+                              f"historisch alle Serien: Events {shadow_events}, "
+                              f"Outcomes {completed_outcomes} | "
+                              f"aktuell laut Watchdog aktiv {active_outcomes}")
           else:
               series_metrics=(f"V3 Paper {current_paper['candidate_outcomes']} Kandidaten, "
                               f"{current_paper.get('completed_trades')} Trades | "
@@ -204,6 +208,26 @@ jobs:
               f"Serie {current_series_id} | Supervisor {supervisor_status} | "
               f"{series_metrics} | Scanner 24h {scanner_24h} | Issues {issue_text}"
           )
+
+          metric_provenance={
+              "kind":"MINIPC_DAILY_METRIC_PROVENANCE_V1",
+              "source_report_observed_at":row["observed_at"],
+              "source_reported_node_id":row["node_id"],
+              "series_id_at_report":current_series_id,
+              "strategy_revision_at_report":current_revision,
+              "v2r4_shadow_events_and_outcomes_scope":(
+                  "ALL_V2R4_SHADOW_EVIDENCE_HISTORY"
+                  if legacy_v2r4 else "NOT_APPLICABLE_NEUTRAL_ZERO"
+              ),
+              "v2r4_active_outcomes_scope":(
+                  "HOST_REPORTED_V2R4_WATCHDOG_DETAIL_NOT_TRADE_TOTAL"
+                  if legacy_v2r4 else "NOT_APPLICABLE_NEUTRAL_ZERO"
+              ),
+              "scanner_handoffs_scope":"DETECTION_LAST_24H_AT_GENERATED_AT",
+              "current_v3_model_or_buy_decision_verified":False,
+              "historical_counts_prove_live_strategy_profitability":False,
+              "read_only_diagnostics":True,
+          }
 
           should_mention=health_state not in {"OK","WAITING_NO_DATA"}
           slack_text=(f"<@{user_id}> " if should_mention else "")+message
@@ -229,6 +253,7 @@ jobs:
                   "active_series_id":current_series_id,
                   "active_strategy_revision":current_revision,
                   "legacy_v2r4_shadow_applicable":legacy_v2r4,
+                  "metric_provenance":metric_provenance,
                   "native_task_diagnostics":native_diagnostics,
                   "dry_run":dry_run,
               },
