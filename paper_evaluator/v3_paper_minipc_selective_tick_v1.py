@@ -16,7 +16,9 @@ from typing import Any,Callable
 from contextlib import contextmanager
 import os
 from paper_evaluator import evaluate
-from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
+from paper_evaluator.v3_paper_minipc_one_candidate_v1 import (
+    REVISION,one_candidate,preflight_budget,_RELEASED_MODEL_NATIVE_OWNER,
+)
 from paper_evaluator.successor_coin_entry_evidence_v1 import fetch_public_entry_evidence
 from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
     capture_public_1m,assemble,early_path_coverage,
@@ -157,6 +159,151 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
 _RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK=object()
 
 
+def _require_released_paper_cloud(*,series_id:str,
+        expected_repo_sha:str,expected_bundle_sha256:str,
+        expected_strategy_sha256:str,
+        read_active_series:Callable[[str],dict[str,Any]],
+        clock_now:Callable[[],str])->None:
+    """Shared source-only precondition; CALL ONLY from one native owner lock.
+
+    A self-reported Cloud config is not independent physical proof of a
+    Windows fence, signed six E2E proofs or actual deployment.
+    """
+    if (not isinstance(series_id,str)
+            or re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id) is None
+            or not all(isinstance(x,str) and re.fullmatch(pattern,x)
+                       for x,pattern in (
+                           (expected_repo_sha,r"[0-9a-f]{40}"),
+                           (expected_bundle_sha256,r"[0-9a-f]{64}"),
+                           (expected_strategy_sha256,r"[0-9a-f]{64}")))
+            or not callable(read_active_series)):
+        raise ValueError("exact release-pinned non-CANARY Paper identity required")
+
+    original=read_active_series(series_id)
+    if not isinstance(original,dict):
+        raise ValueError("independent live Paper-series readback absent")
+    try:
+        observed=clock(original["observed_at_utc"])
+        now=clock(clock_now())
+        config=original["config"]
+    except (KeyError,ValueError,TypeError,AttributeError) as exc:
+        raise ValueError("invalid active Paper-series source/clock") from exc
+    if (observed>now or (now-observed).total_seconds()>90
+            or not isinstance(config,dict)
+            or original.get("series_id")!=series_id
+            or original.get("status")!="active"
+            or original.get("strategy_revision")!=REVISION
+            or config.get("series_id")!=series_id
+            or config.get("strategy_revision")!=REVISION
+            or config.get("release_repo_sha")!=expected_repo_sha
+            or config.get("runtime_bundle_fingerprint_sha256")!=expected_bundle_sha256
+            or config.get("strategy_fingerprint_sha256")!=expected_strategy_sha256
+            or config.get("paper_only") is not True
+            or config.get("real_money_actions_enabled") is not False
+            or config.get("automatic_activation_allowed") is not False
+            or config.get("physical_v2r4_writer_fence_verified") is not True
+            or config.get("supervisor_old_intake_rearm_blocked") is not True
+            or config.get("old_followup_owner_preserved") is not True
+            or config.get("independent_six_e2e_proofs_verified") is not True):
+        raise ValueError("non-CANARY Paper release source mismatch or stale")
+
+
+
+def released_paper_first_scanner_model_once(*,preflight:dict[str,Any],
+        candidate:dict[str,Any],series_id:str,journal:Path,
+        capture_dir:Path,model_reservations:Path,
+        expected_repo_sha:str,expected_bundle_sha256:str,
+        expected_strategy_sha256:str,
+        read_active_series:Callable[[str],dict[str,Any]],
+        approval:dict[str,Any],model_key:str,
+        clock_now:Callable[[],str]=utc_now,
+        capture:Callable=capture_public_1m,
+        acquire:Callable|None=None,model_client:Callable|None=None,
+        existing_context:dict[str,Any]|None=None)->dict[str,Any]:
+    """First *released* Scanner -> immutable PIT -> model/P4, one OS owner.
+
+    Caller must independently establish the genuine mini-PC service identity
+    and externally authorized model spend; CI-injected callbacks are NOT six
+    physical E2E receipts or Cloud credentials. No Task, relay, CAS or orders.
+    No automatic retry: any initial journal evidence blocks a repeated call.
+    H5/H10/H11 independent positive-source entries require their separate
+    signed OWNERAUTH path, not a forged Scanner label.
+    """
+    from paper_evaluator.v3_paper_intake_receipt_stage_v1 import (
+        stage_and_witness_first_minute,
+    )
+    if (not isinstance(preflight,dict) or not isinstance(candidate,dict)
+            or preflight.get("series_id")!=series_id
+            or not isinstance(preflight.get("selected_candidates"),list)
+            or preflight["selected_candidates"]!=[candidate]
+            or candidate.get("entry_origin")!="SCANNER"
+            or candidate.get("kind")!="CANONICAL_CANDIDATE_HANDOFF_V1"
+            or candidate.get("action")!="REVIEW_ONLY_NOT_ORDER"
+            or candidate.get("deferred_recheck") is True
+            or not isinstance(preflight.get("ingress"),dict)
+            or preflight["ingress"].get("capacity_deferred_originals")!=[]
+            or len(preflight.get("prospective_first_1m_capture_enrollment",[]))!=1
+            or len(preflight.get("review_preflights",[]))!=1
+            or preflight["review_preflights"][0].get("candidate_id")!=candidate.get("candidate_id")
+            or preflight["review_preflights"][0].get("eligible_for_full_model_review") is not True
+            or preflight.get("paper_writer_active") is not False
+            or preflight.get("model_http_authorized") is not False
+            or not isinstance(model_key,str) or len(model_key)<20):
+        raise ValueError("exact one original Scanner/PIT model candidate and permit required")
+    # Budget must be genuinely new, individual, unexpired and <= exact fixed
+    # spend cap. Reject BEFORE source/journal writes, not after network work.
+    if not isinstance(approval,dict):
+        raise ValueError("individual released model approval object required")
+    preflight_budget(approval,series_id)
+    if (not journal.is_dir() or journal.is_symlink()
+            or not capture_dir.is_dir() or capture_dir.is_symlink()
+            or not model_reservations.is_dir() or model_reservations.is_symlink()
+            or len({journal.resolve(),capture_dir.resolve(),
+                    model_reservations.resolve()})!=3):
+        raise ValueError("separate preexisting V3 source/journal/reservation roots required")
+    with _one_canary_owner(journal):
+        _require_released_paper_cloud(
+            series_id=series_id,expected_repo_sha=expected_repo_sha,
+            expected_bundle_sha256=expected_bundle_sha256,
+            expected_strategy_sha256=expected_strategy_sha256,
+            read_active_series=read_active_series,clock_now=clock_now)
+        if candidate_receipts(journal,series_id,candidate["candidate_id"]):
+            return {"status":"FIRST_SCANNER_ALREADY_JOURNALED_NO_MODEL_RETRY",
+                    "model_http_calls":0,"orders":False,
+                    "paper_writer_active":False}
+        enrollment=stage_and_witness_first_minute(
+            preflight=preflight,journal_directory=journal,
+            capture_directory=capture_dir,observed_at_utc=clock_now(),
+            capture=capture)
+        source=enrollment["enrollment"][0]
+        # A not-yet-closed first minute is not a negative market finding.
+        # Fresh original 1/5/15m P0 is separately re-acquired by one_candidate.
+        result=one_candidate(
+            candidate=candidate,series_id=series_id,
+            local_receipts=journal,model_reservations=model_reservations,
+            approval=approval,model_key=model_key,
+            allow_model=True,admit_staged_scanner_one_approved_model=True,
+            acquire=acquire,model_client=model_client,clock=clock_now,
+            existing_context=existing_context,
+            _released_model_capability=_RELEASED_MODEL_NATIVE_OWNER)
+        return {
+            "status":("FIRST_SCANNER_MODEL_P4_DURABLE_WAIT_FOR_FOLLOWUP"
+                      if result.get("p4_decision") in
+                         ("BUY_SCOUT","WAIT","REJECT","UNKNOWN")
+                      else "FIRST_SCANNER_MODEL_OR_SOURCE_INCOMPLETE_HOLD"),
+            "series_id":series_id,
+            "candidate_id":candidate["candidate_id"],
+            "model_result":result,
+            "first_minute_witness_status":source["status"],
+            "source_capture_calls":enrollment["source_capture_calls"],
+            "model_http_attempts_reserved":result.get(
+                "model_http_attempts_reserved",0),
+            "cloud_ack_verified":False,"paper_writer_active":False,
+            "orders":False,"real_money_actions":False,
+            "new_schedules":0,"v2r4_changed":False,
+        }
+
+
 def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
         journal:Path,capture_dir:Path,model_reservations:Path,ack_file:Path,
         expected_repo_sha:str,expected_bundle_sha256:str,
@@ -178,44 +325,13 @@ def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
     one valid O_EXCL HTTP reservation are eligible. Missing/ambiguous results
     stay on HOLD before any public Kraken request or journal mutation.
     """
-    if (not isinstance(series_id,str)
-            or re.fullmatch(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",series_id) is None
-            or not all(isinstance(x,str) and re.fullmatch(pattern,x)
-                       for x,pattern in (
-                           (expected_repo_sha,r"[0-9a-f]{40}"),
-                           (expected_bundle_sha256,r"[0-9a-f]{64}"),
-                           (expected_strategy_sha256,r"[0-9a-f]{64}")))
-            or not callable(read_active_series)):
-        raise ValueError("exact release-pinned non-CANARY Paper identity required")
     # Never permit a non-CANARY tick from the unguarded standalone CLI.
     with _one_canary_owner(journal):
-        original=read_active_series(series_id)
-        if not isinstance(original,dict):
-            raise ValueError("independent live Paper-series readback absent")
-        try:
-            observed=clock(original["observed_at_utc"])
-            now=clock(clock_now())
-            config=original["config"]
-        except (KeyError,ValueError,TypeError,AttributeError) as exc:
-            raise ValueError("invalid active Paper-series source/clock") from exc
-        if (observed>now or (now-observed).total_seconds()>90
-                or not isinstance(config,dict)
-                or original.get("series_id")!=series_id
-                or original.get("status")!="active"
-                or original.get("strategy_revision")!=REVISION
-                or config.get("series_id")!=series_id
-                or config.get("strategy_revision")!=REVISION
-                or config.get("release_repo_sha")!=expected_repo_sha
-                or config.get("runtime_bundle_fingerprint_sha256")!=expected_bundle_sha256
-                or config.get("strategy_fingerprint_sha256")!=expected_strategy_sha256
-                or config.get("paper_only") is not True
-                or config.get("real_money_actions_enabled") is not False
-                or config.get("automatic_activation_allowed") is not False
-                or config.get("physical_v2r4_writer_fence_verified") is not True
-                or config.get("supervisor_old_intake_rearm_blocked") is not True
-                or config.get("old_followup_owner_preserved") is not True
-                or config.get("independent_six_e2e_proofs_verified") is not True):
-            raise ValueError("non-CANARY Paper release source mismatch or stale")
+        _require_released_paper_cloud(
+            series_id=series_id,expected_repo_sha=expected_repo_sha,
+            expected_bundle_sha256=expected_bundle_sha256,
+            expected_strategy_sha256=expected_strategy_sha256,
+            read_active_series=read_active_series,clock_now=clock_now)
         # Reuse the ORIGINAL strict restart/HTTP reservation + P4 + immutable
         # Cloud-ACK identity planner. No P4 after crash => NO source GET and
         # never classify a pending model as a final NO_BUY at 6h/24h/72h.

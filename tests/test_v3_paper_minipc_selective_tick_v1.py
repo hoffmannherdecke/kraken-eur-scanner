@@ -457,4 +457,156 @@ class ReleasedNonCanaryFollowupTests(unittest.TestCase):
                                 "invalid identity contacted Cloud"))
 
 
+
+class FirstReleasedScannerOwnerTests(unittest.TestCase):
+    """Offline injected Cloud/PIT/model only, no real HTTP, no actual V3 release."""
+
+    SERIES="PAPER-V3-20261009T130000Z"
+    REPO="a"*40
+    BUNDLE="b"*64
+    STRATEGY="c"*64
+
+    def inputs(self):
+        from tests.test_v3_paper_existing_source_owner_to_single_writer_seam_v1 import (
+            preflight,xbt_real_pit_fixture,
+        )
+        from tests.test_v3_paper_shared_candidate_intake_plan_v1 import scanner
+        from tests.test_v2r4_v3_entry_handoff_probe import dt
+        from tests.test_v3_paper_minipc_one_candidate_v1 import valid_approval
+        candidate=scanner("V3-INITIAL-EUR-1","XBT/EUR",dt(9))
+        plan=preflight(scanners=[candidate],observations=xbt_real_pit_fixture())
+        candidate=plan["selected_candidates"][0]  # canonical enriched SCANNER identity
+        plan["series_id"]=self.SERIES
+        approval=dict(valid_approval(),series_id=self.SERIES)
+        config={"series_id":self.SERIES,
+                "strategy_revision":REVISION,
+                "release_repo_sha":self.REPO,
+                "runtime_bundle_fingerprint_sha256":self.BUNDLE,
+                "strategy_fingerprint_sha256":self.STRATEGY,
+                "paper_only":True,
+                "real_money_actions_enabled":False,
+                "automatic_activation_allowed":False,
+                "physical_v2r4_writer_fence_verified":True,
+                "supervisor_old_intake_rearm_blocked":True,
+                "old_followup_owner_preserved":True,
+                "independent_six_e2e_proofs_verified":True}
+        cloud={"series_id":self.SERIES,
+               "status":"active",
+               "strategy_revision":REVISION,
+               "observed_at_utc":dt(12),
+               "config":config}
+        return candidate,plan,approval,cloud
+
+    def call(self,root,candidate,plan,approval,cloud,*,client=None,
+             source=None,model_key="NON_REAL_TEST_KEY_SUPPLIED_TO_STUB"):
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            released_paper_first_scanner_model_once,
+        )
+        from tests.test_v2r4_v3_entry_handoff_probe import dt
+        from tests.test_v3_paper_minipc_one_candidate_v1 import (
+            fake_acquire,fake_model,
+        )
+        from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
+            capture_public_1m,
+        )
+        from datetime import datetime
+        if source is None:
+            source=lambda **_:self.fail("not-yet-closed first minute must not fetch")
+        for label in ("journal","capture","budget"):
+            (root/label).mkdir(exist_ok=True)
+        return released_paper_first_scanner_model_once(
+            preflight=plan,candidate=candidate,series_id=self.SERIES,
+            journal=root/"journal",capture_dir=root/"capture",
+            model_reservations=root/"budget",expected_repo_sha=self.REPO,
+            expected_bundle_sha256=self.BUNDLE,
+            expected_strategy_sha256=self.STRATEGY,
+            read_active_series=lambda _:cloud,
+            approval=approval,model_key=model_key,
+            clock_now=lambda:dt(12),capture=source,
+            acquire=fake_acquire,model_client=client or fake_model)
+
+    def test_exact_active_one_owner_stages_and_models_once_without_cloud_post(self):
+        from tests.test_v2r4_v3_entry_handoff_probe import dt
+        c,plan,budget,cloud=self.inputs()
+        self.assertTrue(plan["review_preflights"][0]["eligible_for_full_model_review"])
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            responses=[]
+            from tests.test_v3_paper_minipc_one_candidate_v1 import fake_model
+            def model(prompt,key):
+                responses.append(1)
+                return fake_model(prompt,key)
+            result=self.call(root,c,plan,budget,cloud,client=model)
+            self.assertEqual(result["status"],"FIRST_SCANNER_MODEL_P4_DURABLE_WAIT_FOR_FOLLOWUP")
+            self.assertEqual(len(responses),1)
+            self.assertEqual(result["model_http_attempts_reserved"],1)
+            self.assertEqual(result["first_minute_witness_status"],
+                             "WAIT_FOR_FIRST_CLOSED_MINUTE_NO_CAPTURE")
+            self.assertEqual(result["source_capture_calls"],0)
+            self.assertFalse(result["orders"])
+            self.assertFalse(result["paper_writer_active"])
+            rows=[json.loads(p.read_text("utf-8"))
+                  for p in (root/"journal").glob("*.json")]
+            self.assertTrue(any(r["phase"]=="SCANNER_CAPTURE" for r in rows))
+            self.assertTrue(any(r["phase"]=="P4_VALIDATION" for r in rows))
+            self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
+            unchanged={p.name:p.read_bytes() for p in (root/"journal").glob("*.json")}
+            repeat=self.call(root,c,plan,budget,cloud,
+                client=lambda *_:self.fail("never a second model"))
+            self.assertEqual(repeat["status"],"FIRST_SCANNER_ALREADY_JOURNALED_NO_MODEL_RETRY")
+            self.assertEqual(unchanged,{p.name:p.read_bytes()
+                    for p in (root/"journal").glob("*.json")})
+
+    def test_bad_cloud_and_missing_budget_block_before_any_original_write(self):
+        c,plan,approval,cloud=self.inputs()
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            for case in (
+                None,
+                dict(cloud,status="strategy_cutover_closed"),
+                dict(cloud,config=dict(cloud["config"],release_repo_sha="f"*40)),
+                dict(cloud,config=dict(cloud["config"],old_followup_owner_preserved=False)),
+            ):
+                with self.subTest(cloud=repr(case)[:85]):
+                    with self.assertRaises(ValueError):
+                        self.call(root,c,plan,approval,case)
+                    self.assertFalse(list((root/"journal").glob("*.json")))
+                    self.assertFalse(list((root/"budget").glob("*.reserved.json")))
+            for budget in (None,dict(approval,explicit_user_new_budget_approval=False)):
+                with self.subTest(budget=budget):
+                    with self.assertRaises(ValueError):
+                        self.call(root,c,plan,budget,cloud)
+                    self.assertFalse(list((root/"journal").glob("*.json")))
+                    self.assertFalse(list((root/"budget").glob("*.reserved.json")))
+
+    def test_model_failure_is_durable_and_never_retried(self):
+        c,plan,budget,cloud=self.inputs()
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            failed=self.call(root,c,plan,budget,cloud,
+                client=lambda *_: (_ for _ in ()).throw(ValueError("offline fake error")))
+            self.assertEqual(failed["status"],"FIRST_SCANNER_MODEL_OR_SOURCE_INCOMPLETE_HOLD")
+            self.assertEqual(failed["model_result"]["status"],
+                             "MODEL_FAILED_HTTP_ATTEMPT_BUDGET_CONSUMED")
+            self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
+            rows=[json.loads(p.read_text("utf-8"))
+                  for p in (root/"journal").glob("*.json")]
+            self.assertTrue(any(r["phase"]=="MODEL_ERROR" for r in rows))
+            retry=self.call(root,c,plan,budget,cloud,
+                client=lambda *_:self.fail("no HTTP retry"))
+            self.assertEqual(retry["status"],"FIRST_SCANNER_ALREADY_JOURNALED_NO_MODEL_RETRY")
+
+    def test_direct_postcas_model_bypass_refused(self):
+        from paper_evaluator.v3_paper_minipc_one_candidate_v1 import one_candidate
+        from tests.test_v2r4_v3_entry_handoff_probe import dt
+        c,_,_,_=self.inputs()
+        with tempfile.TemporaryDirectory() as td:
+            journal=Path(td)
+            with self.assertRaisesRegex(ValueError,"original OS owner"):
+                one_candidate(candidate=c,series_id=self.SERIES,
+                    local_receipts=journal,model_reservations=journal,
+                    acquire=lambda *_:self.fail("direct source bypass"),
+                    clock=lambda:dt(12))
+            self.assertFalse(list(journal.glob("*.json")))
+
 if __name__=="__main__":unittest.main()
