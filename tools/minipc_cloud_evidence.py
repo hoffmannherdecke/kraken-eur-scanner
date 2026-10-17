@@ -159,7 +159,7 @@ def classify_minipc_alert_freshness(
         return finish("INVALID_NODE")
 
     raw = alert_row.get("updated_at")
-    if not isinstance(raw, str) or "T" not in raw:
+    if not isinstance(raw, str) or not raw.strip():
         return finish("INVALID_TIMESTAMP")
     try:
         stamp = datetime.fromisoformat(raw.replace("Z", "+00:00"))
