@@ -70,7 +70,7 @@ try {
   # Compare the staged manifest to those bytes, never hand-transcribed SHA256.
   $files['candidate\v2r4-paper-local-runtime.py']=SHA (Join-Path $source 'tools\v2r4-paper-local-runtime.py')
   $files['wait\v2r4_wait_runtime.py']=SHA (Join-Path $source 'paper_evaluator\v2r4_wait_runtime.py')
-  Need ($files['candidate\v2r4-paper-local-runtime.py'] -match '^[A-F0-9]{64}
+  Need ($files['candidate\v2r4-paper-local-runtime.py'].Length -eq 64 -and $files['wait\v2r4_wait_runtime.py'].Length -eq 64) 'SOURCE_CACHE_SHA_READABLE'
   Need ((SHA (Join-Path $app 'v2r4-paper-local-runtime.py')) -ceq '8371CAB2D7D18F9651E604DBAB88768F77B2DFF5EB88565122858F6428DC50D0') 'ORIGINAL_CANDIDATE_SHA'
   Need ((SHA (Join-Path $wait 'v2r4_wait_runtime.py')) -ceq 'C84533E1042C9D89D6F6EDC31DD22DE6DD3AB3B7AAE2B202EF344495A72BA6A2') 'ORIGINAL_WAIT_SHA'
   Need ((SHA (Join-Path $wait 'wait_launcher.py')) -ceq $files['wait\wait_launcher.py']) 'ORIGINAL_LAUNCHER_SHA'
