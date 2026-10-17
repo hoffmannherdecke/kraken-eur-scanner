@@ -475,6 +475,7 @@ class FirstReleasedScannerOwnerTests(unittest.TestCase):
         from tests.test_v3_paper_minipc_one_candidate_v1 import valid_approval
         candidate=scanner("V3-INITIAL-EUR-1","XBT/EUR",dt(9))
         plan=preflight(scanners=[candidate],observations=xbt_real_pit_fixture())
+        candidate=plan["selected_candidates"][0]  # canonical enriched SCANNER identity
         plan["series_id"]=self.SERIES
         approval=dict(valid_approval(),series_id=self.SERIES)
         config={"series_id":self.SERIES,
