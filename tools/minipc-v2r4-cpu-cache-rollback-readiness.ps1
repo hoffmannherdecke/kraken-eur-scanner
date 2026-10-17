@@ -62,7 +62,7 @@ try {
   $m=Get-Content -LiteralPath $manifestPath -Raw -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
   Need ([string]$m.Kind -ceq 'ISSUE353_CPU_PRECHANGE_BACKUP_V1' -and [string]$m.Status -ceq 'BACKUP_VERIFIED') 'EXPECTED_MANIFEST'
   Need ([string]$m.Series -ceq $series -and $m.RuntimeModified -eq $false -and $m.TasksModified -eq $false) 'ORIGINAL_PAPER_ONLY_BACKUP'
-  $date=$null
+  [datetime]$date=[datetime]::MinValue
   Need ([datetime]::TryParse([string]$m.CreatedAtUtc,[ref]$date) -and $date.ToUniversalTime() -le [datetime]::UtcNow.AddMinutes(3)) 'VALID_BACKUP_TIME'
   $rows=@($m.Files)
   Need ($rows.Count -eq 2) 'EXACTLY_TWO_BACKUP_FILES'
