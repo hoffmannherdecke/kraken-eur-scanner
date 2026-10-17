@@ -30,6 +30,17 @@ jobs:
               throw "Invalid PowerShell in $p"
             }
           }
+      - name: Bounded Mini-PC runner availability security contract (offline)
+        run: python -m unittest tests.test_minipc_runner_bounded_availability_contract -v
+      - name: Parse bounded Mini-PC runner scripts without executing (offline)
+        shell: pwsh
+        run: |
+          foreach ($p in @('tools/minipc_runner_guard/bounded_window.ps1', 'tools/minipc_runner_guard/install_bounded_window.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($p,[ref]$tokens,[ref]$errors)
+            if (@($errors).Count -ne 0) { throw "Invalid PowerShell in $p" }
+          }
       - name: Compile changed Python
         run: |
           python -m py_compile \
