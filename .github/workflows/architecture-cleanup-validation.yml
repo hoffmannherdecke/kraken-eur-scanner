@@ -127,7 +127,7 @@ jobs:
       - name: V3 Mini-PC bounded real-model seam and 6h/24h Cloud-proof offline tests
         run: |
           python -m py_compile paper_evaluator/v3_paper_context_bridge_v1.py paper_evaluator/v3_paper_minipc_one_candidate_v1.py paper_evaluator/v3_paper_minipc_followup_v1.py paper_evaluator/v3_paper_minipc_closed_1m_capture_v1.py paper_evaluator/v3_paper_cloud_receipt_sync_v1.py paper_evaluator/v3_paper_missed_opportunity_followup_v1.py
-          python -m unittest tests.test_v3_paper_minipc_one_candidate_v1 tests.test_v3_paper_mini_cloud_followup_v1 tests.test_v3_paper_missed_opportunity_followup_v1 -v
+          python -m unittest tests.test_v3_paper_minipc_one_candidate_v1 tests.test_v3_paper_mini_cloud_followup_v1 tests.test_v3_paper_missed_opportunity_followup_v1 tests.test_v3_paper_relay_canary_scope_v1 -v
       - name: V3 experimental PAPER initial BUY opportunity and immutable diagnostic journal
         run: |
           python -m py_compile paper_evaluator/v3_experimental_paper_initial_review_v1.py paper_evaluator/v3_experimental_paper_model_prompt_v1.py paper_evaluator/v3_experimental_paper_journal_v1.py paper_evaluator/v3_experimental_paper_family_router_v1.py paper_evaluator/v3_experimental_paper_pathwise_economics_v1.py
