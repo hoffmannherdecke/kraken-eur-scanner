@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 import argparse, hashlib, json, os, subprocess, sys, time
+from collections import OrderedDict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,40 @@ def atomic_json(path,payload):
     path.parent.mkdir(parents=True,exist_ok=True); tmp=path.with_suffix(path.suffix+'.tmp')
     tmp.write_text(json.dumps(payload,indent=2,sort_keys=True)+'\n','utf-8'); os.replace(tmp,path)
 def load_json(path): return json.loads(path.read_text('utf-8'))
+
+class _UnchangedEventCache:
+    """Process-local read cache; never replaces durable decision/recovery state.
+
+    Unchanged files need only a metadata check, not another JSON decode.
+    File replacement/change invalidates the entry. After restart all evidence
+    is reread; failures are never cached. Memory remains bounded.
+    """
+    def __init__(self, limit=24000):
+        self.limit = limit
+        self.entries = OrderedDict()
+
+    @staticmethod
+    def _stamp(st):
+        return (st.st_dev, st.st_ino, st.st_mtime_ns, st.st_ctime_ns, st.st_size)
+
+    def read(self, path):
+        before = path.stat()
+        stamp = self._stamp(before)
+        saved = self.entries.get(path)
+        if saved is not None and saved[0] == stamp:
+            self.entries.move_to_end(path)
+            return saved[1]
+        self.entries.pop(path, None)
+        record = load_json(path)
+        # A concurrent rewrite must be retried next loop, never cached
+        # as a stable original candidate.
+        if self._stamp(path.stat()) != stamp:
+            raise OSError("candidate source changed during read")
+        if isinstance(record, dict) and before.st_size <= 131072:
+            self.entries[path] = (stamp, record)
+            if len(self.entries) > self.limit:
+                self.entries.popitem(last=False)
+        return record
 
 def event_id(e:dict[str,Any])->str:
     material='|'.join([str(e.get('pair') or ''),str(e.get('observed_at_utc') or ''),str(e.get('source_pair_received_at_utc') or ''),str(e.get('last_eur') or '')])
@@ -103,13 +138,14 @@ def classify_event(event,state):
 def run_candidates(args):
     app=args.app_root; trading=args.trading_root; state_path=(getattr(args,'paper_state_dir',None) or (trading/'State'))/'v2r4-paper-candidate-runtime-state.json'; hb_path=trading/'State/v2r4-paper-candidate-runtime-heartbeat.json'; events=trading/'State/v2r4-ws-shadow-events'; qdir=app/'handoff_queue'; ddir=app/'paper_decisions'; qdir.mkdir(parents=True,exist_ok=True); ddir.mkdir(parents=True,exist_ok=True)
     state=load_state(state_path); key=args.api_key_file.read_text('utf-8').strip() if args.api_key_file.exists() else ''
+    event_cache=_UnchangedEventCache()
     while True:
       counters={'events_seen':0,'watch_only':0,'reviewable':0,'evaluated':0,'failures':0,'missed_during_outage':0,'future_deferred':0,'reconciled_decisions':0,'symbol_pending':0,'symbol_refresh_errors':0}
       errors=[]
       try:
         control=load_json(app/'paper_runtime_control.json'); start=parse_utc(control['series_started_at_utc']); refresh_altname_cache(state)
         for p in sorted(events.glob('*.json')):
-          try: e=load_json(p)
+          try: e=event_cache.read(p)
           except Exception: continue
           if e.get('kind')!='V2R4_WS_SHADOW_DISCOVERY': continue
           try: obs=parse_utc(e.get('observed_at_utc'))
