@@ -55,7 +55,7 @@ if (Test-Path -LiteralPath $dotEnv -PathType Leaf) {
     throw 'INSTALL_BLOCK: runner dotenv already overrides job-start hook'
   }
 }
-$svcSid = (New-Object Security.Principal.NTAccount('MINI-PC','CryptoSupportSvc')).Translate(
+$svcSid = ([Security.Principal.NTAccount]::new('MINI-PC','CryptoSupportSvc')).Translate(
   [Security.Principal.SecurityIdentifier]).Value
 New-Item -Path $guardDir -ItemType Directory -ErrorAction Stop | Out-Null
 try {
