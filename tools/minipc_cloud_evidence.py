@@ -423,25 +423,37 @@ def classify_minipc_github_watch_runs(
 
 
 def parse_postgrest_exact_count(content_range: Any) -> int:
-    """Validate the exact PostgREST count from one bounded HEAD query.
+    """Validate an exact PostgREST count from a bounded header-only HEAD.
 
-    The caller must request \`Prefer: count=exact\` with \`Range: 0-0\`.
-    The server header is \`0-0/N\` for nonempty sets and \`*/0\` for
-    empty sets. An unknown, missing, malformed, or truncated total is
-    NOT accepted as an accurate zero or as the old 1000-row limit.
+    Prefer: count=exact supplies the TOTAL in the denominator of
+    Content-Range, which can be */N (header-only response) or 0-M/N
+    (when the backend returns range metadata). M is a returned-range
+    endpoint, not the total. An absent or unknown denominator fails.
     """
     if not isinstance(content_range, str):
         raise ValueError("exact PostgREST count header missing")
     raw = content_range.strip()
-    if raw == "*/0":
-        return 0
-    if not raw.startswith("0-0/"):
-        raise ValueError("unexpected PostgREST count range")
-    digits = raw[4:]
-    if not digits or not digits.isascii() or not digits.isdecimal():
-        raise ValueError("inexact or invalid PostgREST count")
-    # Avoid accepting invalid 0-0/0 as positive-row evidence.
-    count = int(digits)
-    if count < 1 or count > 9_223_372_036_854_775_807:
+    # Strict ASCII digits and one documented range format only. Prevent
+    # using a capped page length as the full table count.
+    import re
+    match = re.fullmatch(r"(\*|0-[0-9]+)/([0-9]+)", raw, flags=re.ASCII)
+    if match is None:
+        raise ValueError("unexpected PostgREST count range format")
+    total_text = match.group(2)
+    if len(total_text) > 19:
         raise ValueError("PostgREST count out of bounds")
+    count = int(total_text)
+    if count > 9_223_372_036_854_775_807:
+        raise ValueError("PostgREST count out of bounds")
+    received = match.group(1)
+    if received == "*":
+        return count
+    if count < 1:
+        raise ValueError("nonempty range cannot have zero total")
+    last_text = received[2:]
+    if len(last_text) > 19:
+        raise ValueError("PostgREST page range out of bounds")
+    last = int(last_text)
+    if last >= count:
+        raise ValueError("PostgREST range exceeds exact total")
     return count
