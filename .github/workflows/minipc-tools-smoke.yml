@@ -119,6 +119,7 @@ jobs:
             'tools/minipc-v2r4-technical-rollover-preflight.ps1',
             'tools/minipc-v2r4-technical-rollover-stage.ps1',
             'tools/minipc-v2r4-cpu-cache-inert-stage.ps1',
+            'tools/minipc-v2r4-cpu-cache-release-readiness.ps1',
             'tools/minipc-v2r4-technical-cutover-readiness.ps1',
             'tools/minipc-v2r4-technical-cutover-operator.ps1',
             'tools/minipc-v2r4-shadow-cloud-sync-pr295-cutover.ps1',
@@ -192,6 +193,29 @@ jobs:
           }
           if(-not $failedClosed -or (Test-Path -LiteralPath $target)){throw 'Inert staging missing-source safety test failed'}
           Write-Output 'CPU_CACHE_INERT_NO_HOST_MUTATION_PASS'
+
+      - name: CPU cache release source-only gate rejects absent original host
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $path='tools/minipc-v2r4-cpu-cache-release-readiness.ps1'
+          $src=Get-Content -LiteralPath $path -Raw
+          $errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $path),[ref]$null,[ref]$errors)
+          if(@($errors).Count -ne 0){ throw "CPU gate source parse errors" }
+          foreach($forbidden in @('Stop-ScheduledTask','Start-ScheduledTask','Register-ScheduledTask','Unregister-ScheduledTask','Set-ScheduledTask','Copy-Item','Move-Item','Remove-Item','New-Item','Set-Content','Out-File','Invoke-RestMethod','Invoke-WebRequest','Start-Process','git pull','git reset')) {
+            if($src.Contains($forbidden)){throw "CPU source-only gate must not contain mutation command: $forbidden"}
+          }
+          foreach($required in @('PAPER-V2R4-20261009T110135Z','c8f37da865314ac91d36c786b66d107aad4a28d1','d8b35a8ec2e6f392f219b1c36cad95f3ad629b64','READ_ONLY_GATE_BLOCKED','READ_ONLY_SOURCE_GATE_PASS_MANUAL_RELEASE_BLOCKED','604d5d460f17c4548b2d69db8ceb2f5368e702a6d51860ce8916e2e7fbba5b30')) {
+            if(-not $src.Contains($required)){throw "CPU gate missing source pin: $required"}
+          }
+          $missing=Join-Path $env:RUNNER_TEMP 'no-such-original-host-cpu-readiness'
+          if(Test-Path -LiteralPath $missing){throw 'Unexpected fixture directory collision'}
+          $result=& ./$path -TradingRoot $missing | ConvertFrom-Json
+          if($result.status -ne 'READ_ONLY_GATE_BLOCKED' -or $result.reason -ne 'GATE_TRADING_ROOT_EXISTS' -or $result.task_mutations -ne $false -or $result.runtime_mutations -ne $false -or (Test-Path $missing)){
+            throw 'CPU source-only release gate absent-host fail-closed test failed'
+          }
+          Write-Output 'CPU_CACHE_READ_ONLY_RELEASE_GATE_NEGATIVE_PASS'
 
       - name: WS Shadow crash capture requires the pinned original host
         shell: powershell
