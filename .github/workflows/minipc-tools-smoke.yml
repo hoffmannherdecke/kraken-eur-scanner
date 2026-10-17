@@ -120,6 +120,7 @@ jobs:
             'tools/minipc-v2r4-technical-rollover-stage.ps1',
             'tools/minipc-v2r4-cpu-cache-inert-stage.ps1',
             'tools/minipc-v2r4-cpu-cache-release-readiness.ps1',
+            'tools/minipc-v2r4-cpu-cache-rollback-readiness.ps1',
             'tools/minipc-v2r4-technical-cutover-readiness.ps1',
             'tools/minipc-v2r4-technical-cutover-operator.ps1',
             'tools/minipc-v2r4-shadow-cloud-sync-pr295-cutover.ps1',
@@ -224,6 +225,31 @@ jobs:
             throw 'CPU source-only release gate absent-host fail-closed test failed'
           }
           Write-Output 'CPU_CACHE_READ_ONLY_RELEASE_GATE_NEGATIVE_PASS'
+
+      - name: CPU rollback backup-only gate rejects absent host and never mutates tasks
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $path='tools/minipc-v2r4-cpu-cache-rollback-readiness.ps1'
+          $src=Get-Content -LiteralPath $path -Raw
+          $errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $path),[ref]$null,[ref]$errors)
+          if(@($errors).Count -ne 0){ throw 'CPU rollback gate PowerShell parser error' }
+          foreach($forbidden in @('Stop-ScheduledTask','Start-ScheduledTask','Register-ScheduledTask','Unregister-ScheduledTask','Set-ScheduledTask','Copy-Item','Move-Item','Remove-Item','New-Item','Set-Content','Out-File','Invoke-RestMethod','Invoke-WebRequest','Start-Process','git pull','git reset','Set-Item','Stop-Process')) {
+            if($src.Contains($forbidden)){throw "Unexpected mutation in rollback-only gate: $forbidden"}
+          }
+          foreach($required in @('ISSUE353_CPU_PRECHANGE_BACKUP_V1','8371CAB2D7D18F9651E604DBAB88768F77B2DFF5EB88565122858F6428DC50D0','C84533E1042C9D89D6F6EDC31DD22DE6DD3AB3B7AAE2B202EF344495A72BA6A2','READ_ONLY_BACKUP_GATE_PASS_MANUAL_RELEASE_BLOCKED','BACKUP_BYTES_MATCH_PIN','LIVE_ORIGINAL_STILL_PRESENT')) {
+            if(-not $src.Contains($required)){throw "CPU rollback gate lacks immutable pin: $required"}
+          }
+          $fake='D:\Krypto-Sicherungen\ISSUE353-CPU-VORHER-20261017-091646-deadbeef'
+          $report=& ./$path -BackupDirectory $fake -TradingRoot $env:RUNNER_TEMP | ConvertFrom-Json
+          if($report.status -ne 'READ_ONLY_BACKUP_GATE_BLOCKED' -or
+             $report.task_mutations -ne $false -or
+             $report.runtime_mutations -ne $false -or
+             $report.backup_files_modified -ne $false){
+            throw 'CPU rollback gate absent host fail-closed check failed'
+          }
+          Write-Output 'CPU_ROLLBACK_SOURCE_ONLY_NO_HOST_MUTATION_PASS'
 
       - name: WS Shadow crash capture requires the pinned original host
         shell: powershell
