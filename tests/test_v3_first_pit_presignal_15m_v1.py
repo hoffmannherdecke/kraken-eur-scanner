@@ -187,11 +187,15 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
                   "initial_pit_closed_15m_ohlc":bars}
             return capture_first_pit_base(
                 candidate,coin,written_at_utc=t(known+timedelta(seconds=1)))
-        def observe(with_source,*,late_after_p4=False):
+        def observe(with_source,*,late_after_p4=False,late_original_decision=False):
             with tempfile.TemporaryDirectory() as tmp:
                 path=Path(tmp);journal=path/"journal";captures=path/"cap"
                 journal.mkdir();captures.mkdir()
-                seed(journal,model_setup_lane="CONTINUITY")
+                # First-known source before P4 is not sufficient: a P4
+                # *after* the newly closed 5m bar is retrospective.
+                late_decision=datetime(2026,10,12,6,45,20,tzinfo=timezone.utc)
+                seed(journal,model_setup_lane="CONTINUITY",
+                     decision_at=late_decision if late_original_decision else None)
                 if with_source:
                     base=first_source(late_after_p4=late_after_p4)
                     self.assertIsNotNone(base)
@@ -245,6 +249,14 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
                          "FIRST_PIT_P4_5M_CHRONOLOGY_UNPROVEN_NO_REVIEW")
         self.assertFalse(late["continuity_offensive_shadow"]["early_5m_review_only"])
         self.assertEqual(calls,["coin","ticker"])
+        self.assertFalse(any(row["phase"]=="PAPER_FILL" for row in rows))
+        late_p4,calls,rows=observe(True,late_original_decision=True)
+        shadow=late_p4["continuity_offensive_shadow"]
+        self.assertEqual(shadow["status"],"SOURCE_CLOCKED_PIT_RESEARCH_ONLY")
+        self.assertEqual(shadow["early_5m_status"],
+                         "FIRST_PIT_P4_5M_CHRONOLOGY_UNPROVEN_NO_REVIEW")
+        self.assertFalse(shadow["early_5m_review_only"])
+        self.assertFalse(late_p4["model_called"])
         self.assertFalse(any(row["phase"]=="PAPER_FILL" for row in rows))
 
 
