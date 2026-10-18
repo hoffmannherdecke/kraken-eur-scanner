@@ -38,6 +38,7 @@ DATA_FIELDS=frozenset({
     "frame_close_1m_eur","frame_close_5m_eur","frame_close_15m_eur",
     "frame_volume_ratio_1m","frame_volume_ratio_5m","frame_volume_ratio_15m",
     "atr14_15m_eur","structural_low_15m_eur",
+    "initial_pit_15m_base",
     "kraken_online_spot_eur","ask_eur","bid_eur","spread_pct",
     "source_pair_metadata_status","source_latency_ms","candidate_latency_ms",
     "review_lane","review_family","review_status","review_checks",
