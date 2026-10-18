@@ -81,6 +81,18 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
         ):
             self.assertIn(required, src, required)
         self.assertEqual(src.count("ConvertTo-Json -Compress"), 1)
+        # The original host incident showed python.exe absent from the
+        # CryptoSupportSvc PATH. Permit only preinstalled system-wide
+        # Python or the standard py.exe launcher; never an admin profile.
+        for required in (
+            "Get-Command -Name $name -CommandType Application",
+            "'python.exe', 'py.exe'",
+            "'Python314','Python313','Python312','Python311','Python310'",
+            "$env:ProgramFiles, $env:SystemDrive",
+            "no Python executable visible to restricted Windows owner",
+            "$useLauncher", "'-3 '",
+        ):
+            self.assertIn(required, src, required)
         active = "\n".join(line.lower() for line in src.splitlines()
                            if not line.lstrip().startswith("#"))
         for prohibited in (
