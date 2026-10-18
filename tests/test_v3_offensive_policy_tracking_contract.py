@@ -172,6 +172,24 @@ class OffensiveV3PolicyTrackingContractTests(unittest.TestCase):
         ):
             self.assertNotIn(prohibited, shadow)
 
+    def test_missing_presignal_history_holds_before_extra_kraken_requests(self):
+        root = Path(__file__).resolve().parents[1]
+        source = (root / "paper_evaluator/v3_paper_minipc_selective_tick_v1.py").read_text("utf-8")
+        start = source.index("    # Shadow-only offensive CONTINUITY comparison")
+        end = source.index("    now=clock(clock_now())", start)
+        shadow = source[start:end]
+        disk_only = shadow.index("research_path=assemble(")
+        missing = shadow.index('if len(prior_closed)<2:')
+        first_extra = shadow.index("reentry_coin=fetch(altname,pair)")
+        first_ticker = shadow.index("raw_quote=ticker(altname)")
+        first_review = shadow.index("standard=propose_continuity_fresh_review(")
+        self.assertLess(disk_only, missing)
+        self.assertLess(missing, first_extra)
+        self.assertLess(missing, first_ticker)
+        self.assertLess(first_extra, first_review)
+        self.assertIn('"status":"PRE_SIGNAL_15M_PROSPECTIVE_HISTORY_MISSING"', shadow)
+        self.assertIn('"model_http_attempts_reserved":0', shadow)
+
     def test_missing_duplicate_or_reordered_policy_identity_is_rejected(self):
         import copy
         for change in (
