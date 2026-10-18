@@ -171,7 +171,7 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
                         "1":frame(1,datetime(2026,10,12,6,46,tzinfo=timezone.utc),2.13,1.3),
                         "5":frame(5,datetime(2026,10,12,6,45,tzinfo=timezone.utc),2.13,1.3),
                         "15":f15}}
-        def first_source():
+        def first_source(*,late_after_p4=False):
             start=datetime(2026,10,12,5,30,tzinfo=timezone.utc)
             bars=[]
             for i in range(4):
@@ -180,26 +180,27 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
                              "open":2.09,"high":2.12,
                              "low":2.08,"close":2.10,"volume":12.0})
             observed=datetime(2026,10,12,6,43,57,tzinfo=timezone.utc)
-            known=datetime(2026,10,12,6,44,0,tzinfo=timezone.utc)
+            known=datetime(2026,10,12,6,44,55 if late_after_p4 else 0,tzinfo=timezone.utc)
             coin={"pair":"ZRO/EUR","status":"COMPLETE",
                   "observed_at_utc":t(observed),"known_at_utc":t(known),
                   "frames":{"15":{"status":"VALID"}},
                   "initial_pit_closed_15m_ohlc":bars}
             return capture_first_pit_base(
                 candidate,coin,written_at_utc=t(known+timedelta(seconds=1)))
-        def observe(with_source):
+        def observe(with_source,*,late_after_p4=False):
             with tempfile.TemporaryDirectory() as tmp:
                 path=Path(tmp);journal=path/"journal";captures=path/"cap"
                 journal.mkdir();captures.mkdir()
                 seed(journal,model_setup_lane="CONTINUITY")
                 if with_source:
-                    base=first_source()
+                    base=first_source(late_after_p4=late_after_p4)
                     self.assertIsNotNone(base)
                     receipt=make_receipt(
                         series_id=CANARY,revision=REVISION,
                         candidate_id=CID,pair="ZRO/EUR",
                         event_time_utc=t(START),
-                        known_at_utc="2026-10-12T06:44:01+00:00",
+                        known_at_utc=("2026-10-12T06:44:56+00:00" if late_after_p4
+                                      else "2026-10-12T06:44:01+00:00"),
                         phase="SOURCE_INPUT",result="PASS",
                         data={"source_status":"COMPLETE",
                               "input_known_at_utc":base["first_known_at_utc"],
@@ -238,6 +239,12 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
         self.assertEqual(calls,["coin","ticker"])
         self.assertFalse(eligible["model_called"])
         self.assertEqual(eligible["model_attempts"],0)
+        self.assertFalse(any(row["phase"]=="PAPER_FILL" for row in rows))
+        late,calls,rows=observe(True,late_after_p4=True)
+        self.assertEqual(late["continuity_offensive_shadow"]["early_5m_status"],
+                         "FIRST_PIT_P4_5M_CHRONOLOGY_UNPROVEN_NO_REVIEW")
+        self.assertFalse(late["continuity_offensive_shadow"]["early_5m_review_only"])
+        self.assertEqual(calls,["coin","ticker"])
         self.assertFalse(any(row["phase"]=="PAPER_FILL" for row in rows))
 
 
