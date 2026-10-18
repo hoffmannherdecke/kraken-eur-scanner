@@ -144,6 +144,11 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
             self.assertTrue(first["extended_reentry"]["full_model_review_candidate"],
                             first["extended_reentry"])
             p1=first["extended_reentry"]
+            self.assertEqual(p1["status"],
+                "EXTENDED_CHILD_PREPARED_FOR_SEPARATE_GATED_MODEL_P4_NO_AUTH")
+            self.assertEqual(p1["reentry_child_handoff"]["status"],
+                "P1_CHILD_PREPARED_MODEL_AND_PAPER_STILL_GATED")
+            self.assertEqual(p1["reentry_child_handoff"]["model_calls"],0)
             child=prepare_original_owner_reentry_child(
                 journal=journal,series_id=SID,original_candidate=original,
                 parent_event_key=p1["reentry_parent_event_key"],
