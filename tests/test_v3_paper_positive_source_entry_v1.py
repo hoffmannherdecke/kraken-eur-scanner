@@ -131,7 +131,14 @@ class SourceDrivenV3PaperTests(unittest.TestCase):
         from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
             released_paper_positive_catalyst_model_once,
         )
-        c=create("news_sentiment",official())
+        # Reuse the EXISTING owner-authenticated original packet contract,
+        # not a caller-supplied source_verified boolean.
+        from tests.test_v3_paper_existing_source_owner_to_single_writer_seam_v1 import (
+            KEYS,event,
+        )
+        original=official()
+        signed=event("news_sentiment",original)
+        c=create("news_sentiment",original)
         calls=[]
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);journal=root/"journal";budget=root/"budget"
@@ -144,7 +151,9 @@ class SourceDrivenV3PaperTests(unittest.TestCase):
                 expected_strategy_sha256="c"*64,
                 read_active_series=lambda series: calls.append("cloud") or {},
                 approval={"unused":"mock"},model_key="X"*24,
-                existing_context={"news_sentiment":official()},
+                existing_context={"news_sentiment":original},
+                authenticated_owner_packet=signed,
+                trusted_owner_hmac_keys=KEYS,
                 clock_now=lambda:dt(12),
                 acquire=lambda unused: calls.append("kraken"),
                 model_client=lambda *args: calls.append("model"))
@@ -167,6 +176,33 @@ class SourceDrivenV3PaperTests(unittest.TestCase):
                 self.assertEqual(result["status"],"POSITIVE_SOURCE_NOT_CURRENT_NO_MODEL")
                 self.assertEqual(calls,[])
                 self.assertFalse(list(journal.glob("*.json")))
+                # Content-qualified unsiged or tampered packets must not
+                # reach Cloud, Kraken, a paid model or the Paper journal.
+                unsigned=released_paper_positive_catalyst_model_once(
+                    **dict(common,authenticated_owner_packet=None))
+                self.assertEqual(unsigned["status"],
+                    "POSITIVE_SOURCE_OWNER_NOT_AUTHENTICATED_NO_MODEL")
+                invalid=copy.deepcopy(signed)
+                invalid["owner_integrity"]["owner_hmac_sha256"]="0"*64
+                forged=released_paper_positive_catalyst_model_once(
+                    **dict(common,authenticated_owner_packet=invalid))
+                self.assertEqual(forged["status"],
+                    "POSITIVE_SOURCE_OWNER_NOT_AUTHENTICATED_NO_MODEL")
+                self.assertEqual(forged["source_status"],
+                    "OWNER_HMAC_CONTENT_OR_IDENTITY_MISMATCH")
+                altered=copy.deepcopy(original)
+                altered["confirmed_net_buy_usd"]=999999
+                # The signed original cannot be reused for a different
+                # source-context payload, even with a valid old signature.
+                mismatch=released_paper_positive_catalyst_model_once(
+                    **dict(common,existing_context={"news_sentiment":altered}))
+                self.assertEqual(mismatch["status"],
+                    "POSITIVE_SOURCE_OWNER_NOT_AUTHENTICATED_NO_MODEL"
+                    if mismatch.get("status")== "POSITIVE_SOURCE_OWNER_NOT_AUTHENTICATED_NO_MODEL"
+                    else "POSITIVE_SOURCE_NOT_CURRENT_NO_MODEL")
+                self.assertEqual(calls,[])
+                self.assertFalse(list(journal.glob("*.json")))
+                self.assertFalse(list(budget.glob("*")))
 
     def test_positive_smart_money_source_qualifies_without_news(self):
         c=create("smart_money_h10",money())
