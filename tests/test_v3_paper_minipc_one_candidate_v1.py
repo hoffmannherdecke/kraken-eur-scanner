@@ -54,6 +54,31 @@ def stage_scanner_original(journal,candidate):
               "review_status":"INITIAL_FRESH_PIT_READY_FOR_FULL_V3_MODEL_ONLY"}))
 
 class V3MiniPCOneCandidateTests(unittest.TestCase):
+    def test_new_p1_child_never_impersonates_scanner_or_spends_model(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);journal=root/"journal";budget=root/"budget"
+            journal.mkdir();budget.mkdir()
+            child={"kind":"V3_PROSPECTIVE_P1_REENTRY_CHILD_CANDIDATE_V1",
+                   "candidate_id":"V3RE-TEST-CHILD","pair":"XBT/EUR",
+                   "altname":"XBTEUR","entry_origin":"P1_REENTRY_EPISODE",
+                   "event_time_utc":dt(12),
+                   "reentry_parent_candidate_id":"ORIGINAL-CAND"}
+            output=one_candidate(
+                candidate=child,series_id=SID,
+                local_receipts=journal,model_reservations=budget,
+                allow_model=True,approval=valid_approval(),
+                model_key="OFFLINE-TEST-NOT-A-REAL-API-KEY",
+                clock=lambda:dt(13),
+                acquire=lambda *_:self.fail("no Kraken for unauthorized child"),
+                model_client=lambda *_:self.fail("no spend or synthetic child BUY"))
+            self.assertEqual(output["status"],
+                "P1_CHILD_NEEDS_GATED_NATIVE_MODEL_WRITER_CONTINUATION")
+            self.assertFalse(output["model_called"])
+            self.assertFalse(output["orders"])
+            self.assertFalse(output["real_money_actions"])
+            self.assertFalse(list(journal.glob("*.json")))
+            self.assertFalse(list(budget.glob("*.reserved.json")))
+
     def test_source_only_public_preflight_records_three_phases_and_no_http(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);journal=root/"journal";budgets=root/"budgets"
