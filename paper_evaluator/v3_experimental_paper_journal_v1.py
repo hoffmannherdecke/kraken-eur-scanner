@@ -68,6 +68,10 @@ DATA_FIELDS=frozenset({
     "wait_recheck_at_utc","watch_closed_5m_end_utc","watch_evaluated_conditions",
     "watch_conditions_met","watch_snapshot_values","watch_valid_snapshot_count",
     "watch_did_not_prove_no_trigger",
+    "reentry_episode_id","reentry_parent_candidate_id",
+    "reentry_episode_signal_at_utc","reentry_closed_15m_end_utc",
+    "reentry_original_event_time_utc","reentry_parent_event_key",
+    "reentry_will_use_separate_fill_time",
     "optional_context_states","market_phase_evidence","smart_money_evidence",
     "polymarket_evidence","news_sentiment_evidence","source_management_evidence",
 })
@@ -135,6 +139,25 @@ def make_receipt(*,series_id:str,revision:str,candidate_id:str,pair:str,
         if (data.get("followup_source") is None
                 or data.get("path_contiguous_1m_verified") is not True):
             raise ValueError("mature outcome requires independently verified path")
+    if phase=="FRESH_SECOND_LEG" and result=="PASS":
+        # A positive P1 observation belongs to its ORIGINAL candidate.
+        # Its child episode gets a different event clock; do not pretend
+        # the old scanner clock is the new entry/fill time.
+        from paper_evaluator.v3_second_leg_policy_candidate_v1 import (
+            canonical_second_leg_episode,
+        )
+        if data.get("review_family")!="EXTENDED_PROSPECTIVE_15M_BASE_SECOND_LEG":
+            raise ValueError("P1 review owner contract missing")
+        episode=canonical_second_leg_episode(
+            series_id=series_id,
+            original_candidate={"candidate_id":candidate_id,"pair":pair,
+                                "event_time_utc":event_time_utc},
+            closed_15m_end_utc=data.get("reentry_closed_15m_end_utc"),
+            signal_known_at_utc=known_at_utc)
+        if any(data.get(field)!=value for field,value in episode.items()):
+            raise ValueError("P1 episode identity/clock/parent lineage mismatch")
+        if event_key!=episode["reentry_parent_event_key"]:
+            raise ValueError("P1 event key cannot be reassigned to a new bar")
     if phase=="P4_VALIDATION" and result=="BUY_SCOUT":
         if (data.get("p4_decision")!="BUY_SCOUT"
                 or data.get("p4_status")!="FULL_BUY_SCOUT_CONTRACT_VALIDATED_OFFLINE_NOT_RELEASE_EVIDENCE"):
