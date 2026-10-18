@@ -589,6 +589,69 @@ class P1NativeModelWriterTests(unittest.TestCase):
             self.assertEqual(twice["status"],"NO_UNSYNCED_V3_RECEIPTS")
             self.assertFalse(out["independent_cloud_paper_fill_ack"])
 
+    def test_native_p1_reject_missed_opportunity_tracks_child_not_parent(self):
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            released_paper_followup_tick_once,
+        )
+        from tests.test_v3_paper_minipc_selective_tick_v1 import tick_capture
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);p=self.prepare(root)
+            def reject(prompt,key):
+                obj,meta=p[6](prompt,key);obj["decision"]="REJECT"
+                return obj,meta
+            out=self.call(root,p,model_client=reject)
+            self.assertEqual(out["model_result"]["p4_decision"],"REJECT")
+            at,parent,child,approval,cloud,pit,model=p
+            def follow(when):
+                return released_paper_followup_tick_once(
+                    candidate=child,series_id=self.SERIES,
+                    journal=root/"journal",capture_dir=root/"capture",
+                    model_reservations=root/"budget",ack_file=root/"ack.json",
+                    expected_repo_sha=self.REPO,
+                    expected_bundle_sha256=self.BUNDLE,
+                    expected_strategy_sha256=self.STRATEGY,
+                    read_active_series=lambda _:dict(cloud,observed_at_utc=t(when)),
+                    clock_now=lambda:t(when),capture=tick_capture(when),
+                    fetch=lambda *_:self.fail("REJECT followup must not refetch full review"),
+                    ticker=lambda *_:self.fail("REJECT followup must not invent trade"))
+            # 6h after the historical parent is well before the new child due.
+            before=at+timedelta(hours=5,minutes=59)
+            early=follow(before)
+            self.assertEqual(early["horizons"],{})
+            after=at+timedelta(hours=6,minutes=2)
+            later=follow(after)
+            self.assertEqual(later["horizons"]["6h"],"NO_BUY_1M_GAP_PENDING_RECOVERY")
+            records=[json.loads(x.read_text()) for x in (root/"journal").glob("*.json")]
+            self.assertFalse(any(x["phase"]=="PAPER_FILL" for x in records))
+            self.assertFalse(later["orders"])
+
+    def test_native_p1_child_wait_watches_fresh_child_ttl_not_old_parent(self):
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            plan_canary_resume,_RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK,
+        )
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);p=self.prepare(root)
+            def wait(prompt,key):
+                obj,meta=p[6](prompt,key)
+                obj.update(decision="WAIT",ttl_minutes=20,
+                           watch_conditions=[
+                               {"metric":"closed_5m_close_eur","op":">=","value":2.20}])
+                return obj,meta
+            out=self.call(root,p,model_client=wait)
+            self.assertEqual(out["model_result"]["p4_decision"],"WAIT")
+            records=[json.loads(x.read_text()) for x in (root/"journal").glob("*.json")]
+            watches=[x for x in records if x["phase"]=="WAIT_WATCH"]
+            self.assertEqual(len(watches),1)
+            self.assertEqual(watches[0]["candidate_id"],p[2]["candidate_id"])
+            state=plan_canary_resume(
+                candidate=p[2],series_id=self.SERIES,
+                journal=root/"journal",model_reservations=root/"budget",
+                ack_file=root/"ack.json",
+                _released_planner_capability=_RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK)
+            self.assertTrue(state["can_tick"])
+            self.assertFalse(any(x["phase"]=="PAPER_FILL" for x in records))
+            self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
+
     def test_native_p1_stale_source_and_unapproved_budget_do_not_spend(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td);p=self.prepare(root)
