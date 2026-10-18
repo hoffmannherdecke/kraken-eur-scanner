@@ -28,13 +28,41 @@ if (-not (Test-Path -LiteralPath $sandbox -PathType Container) -or
     [bool]((Get-Item -LiteralPath $sandbox -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
   throw 'V3_OFFLINE_PROBE_BLOCK: unsafe temporary data root'
 }
-$pythonCommand = Get-Command -Name python.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1
-if ($null -eq $pythonCommand -or
-    [string]::IsNullOrWhiteSpace([string]$pythonCommand.Source) -or
-    -not (Test-Path -LiteralPath ([string]$pythonCommand.Source) -PathType Leaf)) {
-  throw 'V3_OFFLINE_PROBE_BLOCK: single Python executable unavailable'
+# A restricted Windows service account often has a smaller PATH than the
+# interactive administrator. Only use an already present executable from PATH
+# or a bounded machine-wide installation directory. Never search another
+# user's profile, add PATH/ACL permissions, install software or elevate.
+$python = $null
+$useLauncher = $false
+foreach ($name in @('python.exe', 'py.exe')) {
+  $command = Get-Command -Name $name -CommandType Application -ErrorAction SilentlyContinue |
+    Select-Object -First 1
+  if ($null -ne $command -and
+      -not [string]::IsNullOrWhiteSpace([string]$command.Source) -and
+      (Test-Path -LiteralPath ([string]$command.Source) -PathType Leaf)) {
+    $python = [string]$command.Source
+    $useLauncher = ($name -ceq 'py.exe')
+    break
+  }
 }
-$python = [string]$pythonCommand.Source
+if ($null -eq $python) {
+  # Fixed, nonrecursive machine-scoped fallback. No scanning administrator
+  # home directories, APPDATA, Trading, Secrets or other user data.
+  foreach ($version in @('Python314','Python313','Python312','Python311','Python310')) {
+    foreach ($root in @($env:ProgramFiles, $env:SystemDrive)) {
+      if ([string]::IsNullOrWhiteSpace($root)) { continue }
+      $candidate = Join-Path (Join-Path $root $version) 'python.exe'
+      if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+        $python = $candidate
+        break
+      }
+    }
+    if ($null -ne $python) { break }
+  }
+}
+if ($null -eq $python) {
+  throw 'V3_OFFLINE_PROBE_BLOCK: no Python executable visible to restricted Windows owner'
+}
 if ([bool]((Get-Item -LiteralPath $python -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) {
   throw 'V3_OFFLINE_PROBE_BLOCK: linked executable forbidden'
 }
@@ -50,7 +78,7 @@ $cases = @(
 )
 $psi = New-Object System.Diagnostics.ProcessStartInfo
 $psi.FileName = $python
-$psi.Arguments = '-B -m unittest tests.test_v3_extended_reentry_handoff_regression.P1NativeModelWriterTests -v'
+$psi.Arguments = $(if ($useLauncher) { '-3 ' } else { '' }) + '-B -m unittest tests.test_v3_extended_reentry_handoff_regression.P1NativeModelWriterTests -v'
 $psi.WorkingDirectory = $repo
 $psi.UseShellExecute = $false
 $psi.CreateNoWindow = $true
