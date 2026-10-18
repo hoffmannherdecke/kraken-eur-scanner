@@ -59,6 +59,8 @@ def extended_reentry_review(
         "orders": False,
         "real_money_actions": False,
         "automatic_promotion": False,
+        "approval_to_call_model": False,
+        "full_model_review_required": True,
     }
     if original_decision.get("setup_lane") != "EXTENDED":
         return {**common, "state": "OUT_OF_SCOPE_EXISTING_LANE_RETAINED"}
@@ -104,6 +106,9 @@ def extended_reentry_review(
         "state": ("STRUCTURE_AND_VOLUME_SUPPORT_FRESH_REVIEW_NOT_BUY"
                   if eligible else "PROSPECTIVE_CONFIRMATION_INCOMPLETE"),
         "request_model_recheck_only": eligible,
+        "full_model_review_candidate": eligible,
+        "next_action": ("REQUEST_SEPARATELY_AUTHORIZED_FULL_V3_MODEL_AND_P4_REVIEW"
+                        if eligible else "WAIT_FOR_FRESH_CLOSED_CONFIRMATION"),
         "checks": {
             "closed_5m_price_above_closed_15m_price": price_recovered,
             "closed_5m_volume_ratio_at_least_existing_v2r4_1_2": vol_recovered,
