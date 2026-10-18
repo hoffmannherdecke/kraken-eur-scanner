@@ -733,6 +733,8 @@ def released_paper_reentry_child_model_once(*,
             "status":("P1_CHILD_MODEL_P4_DURABLE_WAIT_FOR_FOLLOWUP"
                       if result.get("p4_decision") in (
                           "BUY_SCOUT","WAIT","REJECT","UNKNOWN")
+                      else "P1_NEW_MARKET_SOURCE_NOT_VERIFIED_NO_MODEL"
+                      if result.get("status")=="P1_NEW_MARKET_SOURCE_NOT_VERIFIED_NO_MODEL"
                       else "P1_CHILD_SOURCE_OR_MODEL_INCOMPLETE_HOLD"),
             "series_id":series_id,
             "candidate_id":child["candidate_id"],
