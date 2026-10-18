@@ -154,6 +154,19 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
                              "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY")
             self.assertEqual(route[0]["data"]["review_family"],
                              "EXTENDED_PROSPECTIVE_15M_BASE_SECOND_LEG")
+            episode=first["extended_reentry"]
+            self.assertTrue(episode["reentry_episode_id"].startswith("V3RE-"))
+            self.assertNotEqual(episode["reentry_episode_id"],original["candidate_id"])
+            self.assertEqual(route[0]["data"]["reentry_parent_candidate_id"],
+                             original["candidate_id"])
+            self.assertEqual(route[0]["event_time_utc"],original["event_time_utc"])
+            self.assertEqual(route[0]["data"]["reentry_closed_15m_end_utc"],
+                             t(at.replace(second=0)).replace("+00:00","Z"))
+            self.assertEqual(route[0]["data"]["reentry_episode_signal_at_utc"],
+                             t(at).replace("+00:00","Z"))
+            self.assertTrue(route[0]["data"]["reentry_will_use_separate_fill_time"])
+            self.assertNotEqual(route[0]["event_time_utc"],
+                                route[0]["data"]["reentry_episode_signal_at_utc"])
             self.assertFalse(any(r["phase"]=="PAPER_FILL" for r in receipts))
             self.assertEqual(len([r for r in receipts
                                   if r["phase"]=="MODEL_REQUEST"]),0)
