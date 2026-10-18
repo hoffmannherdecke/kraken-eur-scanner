@@ -38,7 +38,8 @@ def candidate_receipts(journal:Path,series_id:str,candidate_id:str)->list[dict]:
     return rows
 
 def _wait_setup(rows:list[dict])->tuple[dict,dict,dict,int,Any]:
-    origin=next((r for r in rows if r["phase"]=="SCANNER_CAPTURE"),None)
+    origin=next((r for r in rows if r["phase"] in (
+        "SCANNER_CAPTURE","P1_CHILD_ENROLLMENT")),None)
     p4=next((r for r in rows if r["phase"]=="P4_VALIDATION"),None)
     watch=next((r for r in rows if r["phase"]=="WAIT_WATCH" and r["result"]=="WAIT"),None)
     model=next((r for r in rows if r["phase"]=="MODEL_RESPONSE"),None)
