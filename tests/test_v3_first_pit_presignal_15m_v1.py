@@ -127,5 +127,117 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
             candidate, receipt, decision_at_utc=dt(5)))
 
 
+    def test_existing_selective_tick_reuses_first_pit_without_any_new_model_or_writer(self):
+        from datetime import timedelta
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import tick_once
+        from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
+            capture_public_1m,
+        )
+        from paper_evaluator.v3_experimental_paper_journal_v1 import (
+            make_receipt, store_receipt_explicitly,
+        )
+        from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import REVISION
+        from tests.test_v3_paper_wait_observer_v1 import (
+            seed, CID, SID as CANARY, START, t,
+        )
+        now = datetime(2026, 10, 12, 6, 46, 7, tzinfo=timezone.utc)
+        candidate = {"kind":"CANONICAL_CANDIDATE_HANDOFF_V1",
+                     "candidate_id":CID,"pair":"ZRO/EUR",
+                     "altname":"ZROEUR","event_time_utc":t(START),
+                     "action":"REVIEW_ONLY_NOT_ORDER"}
+        def source_minute(*,pair,altname,outdir):
+            base = now.replace(second=0,microsecond=0)-timedelta(minutes=16)
+            def loader(_):
+                xs=[]
+                for i in range(16):
+                    ts=int((base+timedelta(minutes=i)).timestamp())
+                    xs.append([ts,"2.09","2.12","2.08","2.10","2.10","10",2])
+                return {"error":[],"result":{"ZROEUR":xs,"last":1}}
+            return capture_public_1m(pair=pair,altname=altname,
+                outdir=outdir,loader=loader,clock=lambda:now)
+        def coin_at_tick(*unused):
+            def frame(interval,end,close,ratio):
+                return {"status":"VALID","interval_min":interval,
+                        "last_closed_bar_end_utc":t(end),
+                        "closed_close_eur":close,"volume_ratio_prior_5":ratio}
+            f15=frame(15,datetime(2026,10,12,6,30,tzinfo=timezone.utc),
+                      2.10,1.3)
+            f15.update(atr14_eur=0.20,recent_8bar_low_eur=2.07)
+            return {"kind":"SUCCESSOR_COIN_ENTRY_EVIDENCE_V1",
+                    "pair":"ZRO/EUR","status":"COMPLETE",
+                    "observed_at_utc":t(now-timedelta(seconds=3)),
+                    "known_at_utc":t(now-timedelta(seconds=2)),
+                    "frames":{
+                        "1":frame(1,datetime(2026,10,12,6,46,tzinfo=timezone.utc),2.13,1.3),
+                        "5":frame(5,datetime(2026,10,12,6,45,tzinfo=timezone.utc),2.13,1.3),
+                        "15":f15}}
+        def first_source():
+            start=datetime(2026,10,12,5,30,tzinfo=timezone.utc)
+            bars=[]
+            for i in range(4):
+                at=start+timedelta(minutes=15*i)
+                bars.append({"start_utc":int(at.timestamp()),
+                             "open":2.09,"high":2.12,
+                             "low":2.08,"close":2.10,"volume":12.0})
+            observed=datetime(2026,10,12,6,43,57,tzinfo=timezone.utc)
+            known=datetime(2026,10,12,6,44,0,tzinfo=timezone.utc)
+            coin={"pair":"ZRO/EUR","status":"COMPLETE",
+                  "observed_at_utc":t(observed),"known_at_utc":t(known),
+                  "frames":{"15":{"status":"VALID"}},
+                  "initial_pit_closed_15m_ohlc":bars}
+            return capture_first_pit_base(
+                candidate,coin,written_at_utc=t(known+timedelta(seconds=1)))
+        def observe(with_source):
+            with tempfile.TemporaryDirectory() as tmp:
+                path=Path(tmp);journal=path/"journal";captures=path/"cap"
+                journal.mkdir();captures.mkdir()
+                seed(journal,model_setup_lane="CONTINUITY")
+                if with_source:
+                    base=first_source()
+                    self.assertIsNotNone(base)
+                    receipt=make_receipt(
+                        series_id=CANARY,revision=REVISION,
+                        candidate_id=CID,pair="ZRO/EUR",
+                        event_time_utc=t(START),
+                        known_at_utc="2026-10-12T06:44:01+00:00",
+                        phase="SOURCE_INPUT",result="PASS",
+                        data={"source_status":"COMPLETE",
+                              "input_known_at_utc":base["first_known_at_utc"],
+                              "initial_pit_15m_base":base})
+                    store_receipt_explicitly(journal,receipt)
+                calls=[]
+                def fetch(*args):
+                    calls.append("coin")
+                    return coin_at_tick()
+                def quote(*args):
+                    calls.append("ticker")
+                    return {"ask":2.135,"bid":2.134,
+                            "spread_pct":.05}
+                result=tick_once(
+                    candidate=candidate,series_id=CANARY,
+                    journal=journal,capture_dir=captures,
+                    clock_now=lambda:t(now),
+                    capture=source_minute,fetch=fetch,ticker=quote)
+                return result,calls,[
+                    json.loads(x.read_text("utf-8")) for x in journal.glob("*.json")]
+        hold,calls,rows=observe(False)
+        self.assertEqual(hold["continuity_offensive_shadow"]["status"],
+                         "PRE_SIGNAL_15M_PROSPECTIVE_HISTORY_MISSING")
+        self.assertEqual(calls,[])  # even for a previous WAIT, tick has no extra REST here
+        eligible,calls,rows=observe(True)
+        shadow=eligible["continuity_offensive_shadow"]
+        self.assertEqual(shadow["status"],"SOURCE_CLOCKED_PIT_RESEARCH_ONLY")
+        self.assertEqual(shadow["early_base_provenance"],
+                         "ORIGINAL_P0_15M_FIRST_KNOWN_NOT_PRE_SIGNAL_WITNESS")
+        self.assertEqual(shadow["early_5m_status"],
+                         "EARLY_5M_CONTINUITY_SUPPORTS_NEW_FULL_REVIEW_ONLY")
+        self.assertTrue(shadow["early_5m_review_only"])
+        self.assertFalse(shadow["same_witnessed_archive"])
+        self.assertEqual(calls,["coin","ticker"])
+        self.assertFalse(eligible["model_called"])
+        self.assertEqual(eligible["model_attempts"],0)
+        self.assertFalse(any(row["phase"]=="PAPER_FILL" for row in rows))
+
+
 if __name__ == "__main__":
     unittest.main()
