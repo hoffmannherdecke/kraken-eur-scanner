@@ -88,7 +88,11 @@ def read_first_pit_base(candidate: dict[str, Any],
         data = receipt["data"]
         base = data["initial_pit_15m_base"]
         if (receipt.get("phase") != "SOURCE_INPUT" or receipt.get("result") != "PASS"
-                or receipt.get("event_key") != "FIRST"
+                # The native staged Scanner owner writes its first genuine
+                # P0 SOURCE_INPUT under FRESHRECHECK after the immutable
+                # original SCANNER_CAPTURE FIRST; both are original PIT, not
+                # a later WAIT-driven model retry.
+                or receipt.get("event_key") not in ("FIRST","FRESHRECHECK")
                 or data.get("source_status") != "COMPLETE"
                 or data.get("frame_status_15m") != "VALID"
                 or receipt.get("pair") != candidate.get("pair")
