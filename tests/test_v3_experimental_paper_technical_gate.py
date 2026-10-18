@@ -25,6 +25,30 @@ def fixture(root:Path)->dict:
             oid=f"test-contract/{origin}/{key}"
             record={"source_id":oid,"observed_at_utc":"2026-10-13T09:30:00Z",
                     "source_status":"ACK_READBACK_AVAILABLE"}
+            if key=="V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE":
+                # Structural fixture only; these flags are NEVER real host ACKs.
+                record.update({
+                    "witnessed_v3_series_id":"PAPER-V3-CANARY-ONESHOT-20261016",
+                    "witnessed_v3_candidate_id":"20261016-190002-TIA-EUR-r17497221611485",
+                })
+                if origin=="MINIPC_PHYSICAL":
+                    record.update({
+                        "original_v3_single_writer_wait_tick_tested":True,
+                        "valid_closed_5m_wait_observation_within_ttl_tested":True,
+                        "missing_or_late_wait_ticks_become_unknown_tested":True,
+                        "trigger_requires_fresh_full_model_and_p4_tested":True,
+                        "no_buy_wait_reject_skip_unknown_followup_routing_tested":True,
+                        "prospective_closed_1m_no_historical_backfill_tested":True,
+                        "followup_6h24h72h_and_gap_censor_logic_tested":True,
+                        "old_v2r4_aftercare_separate_series_preserved_tested":True,
+                    })
+                if origin=="SUPABASE_CLOUD":
+                    record.update({
+                        "v3_wait_recheck_expiry_original_readback_verified":True,
+                        "v3_no_buy_followup_original_journal_readback_verified":True,
+                        "missingness_never_claimed_as_zero_pnl_verified":True,
+                        "old_v2r4_aftercare_remains_original_series_verified":True,
+                    })
             if key=="V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN":
                 record.update({
                     "expected_predecessor_series_id":"PAPER-V2R4-20261009T110135Z",
@@ -238,6 +262,46 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                     root,"V3-PAPER-EXPERIMENTAL-001",base))
                 target.write_text(json.dumps(valid_proof,sort_keys=True))
                 row["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
+
+    def test_v3_journal_wait_no_buy_inheritance_blocks_on_missing_originals(self):
+        # All tests use synthetic packets; each edited source record is
+        # consistently rehashed to show a valid SHA alone proves no coverage.
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            row=next(x for x in packet["experimental_paper_technical_proofs"]
+                     if x["id"]=="V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE")
+            path=root/row["evidence_path"]
+            valid=json.loads(path.read_text("utf-8"))
+            variants=[]
+            for item in valid["source_originals"]:
+                for key,value in item["original_record"].items():
+                    if value is True:
+                        variants.append((item["origin"],key,False))
+                        variants.append((item["origin"],key,None))
+            variants.extend([
+                ("MINIPC_PHYSICAL","witnessed_v3_candidate_id","OTHER-TEST-CANDIDATE"),
+                ("SUPABASE_CLOUD","witnessed_v3_series_id","PAPER-V3-WRONG-SERIES-001"),
+                ("MINIPC_PHYSICAL","witnessed_v3_series_id","NOT_A_V3_SERIES"),
+            ])
+            for origin,key,value in variants:
+                with self.subTest(origin=origin,key=key,value=value):
+                    changed=copy.deepcopy(valid)
+                    part=next(i for i in changed["source_originals"]
+                              if i["origin"]==origin)
+                    part["original_record"][key]=value
+                    raw=json.dumps(part["original_record"],sort_keys=True,
+                                   separators=(",",":")).encode()
+                    part["original_sha256"]=hashlib.sha256(raw).hexdigest()
+                    path.write_text(json.dumps(changed,sort_keys=True))
+                    row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+                    self.assertTrue(validate_experimental_paper_packet(
+                        root,"V3-PAPER-EXPERIMENTAL-001",packet),
+                        "missing true TTL/No-BUY/Cloud evidence must block V3")
+            path.write_text(json.dumps(valid,sort_keys=True))
+            row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
 
     def test_v3_existing_recovery_proof_requires_failure_and_return_acks(self):
         # Synthetic contract-only fixture; a rehashed claim is not a live
