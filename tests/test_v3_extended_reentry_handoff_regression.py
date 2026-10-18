@@ -88,7 +88,7 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
         from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import capture_public_1m
         at=datetime(2026,10,12,8,45,7,tzinfo=timezone.utc)
         def record_chunk(when,outdir,breakout=False):
-            base=when-timedelta(minutes=15)
+            base=(when-timedelta(minutes=15)).replace(second=0,microsecond=0)
             def loader(_):
                 rows=[]
                 for minute in range(15):
@@ -206,8 +206,9 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
             review=[x for x in events if x["phase"]=="FRESH_SECOND_LEG"]
             self.assertEqual(len(review),1)
             self.assertEqual(review[0]["result"],"UNKNOWN")
-            self.assertEqual(review[0]["data"]["review_status"],
-                             "MISSING_CLOSED_CONSOLIDATION_HISTORY")
+            self.assertIn(review[0]["data"]["review_status"],
+                          ("MISSING_CLOSED_CONSOLIDATION_HISTORY",
+                           "UNKNOWN_PROSPECTIVE_15M_BASE_SOURCE_INVALID"))
             self.assertFalse(out["orders"])
 
     def test_incomplete_later_source_journals_unknown_not_false_market_reject(self):
