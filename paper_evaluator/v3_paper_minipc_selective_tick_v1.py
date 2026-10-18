@@ -188,7 +188,8 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
         raise ValueError("valid source Kraken EUR candidate and altname required")
     source_time=clock(candidate["event_time_utc"])
     rows=candidate_receipts(journal,series_id,cid)
-    origin=next((r for r in rows if r["phase"]=="SCANNER_CAPTURE"),None)
+    origin=next((r for r in rows if r["phase"] in (
+        "SCANNER_CAPTURE","P1_CHILD_ENROLLMENT")),None)
     if not origin or origin["pair"]!=pair or clock(origin["event_time_utc"])!=source_time:
         raise ValueError("candidate not previously journaled at true original PIT clock")
     results={"kind":"V3_PAPER_EXISTING_SUPERVISOR_SELECTIVE_TICK_V1",
@@ -301,6 +302,12 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
             rows=rows,p4=p4,coin=reentry_coin,quote=reentry_quote,
             assembled_1m=capture_path,now_at_utc=now_at_utc)
     now=clock(clock_now())
+    # The P1 child uses its new signal time for no-BUY opportunities, but a
+    # positive Paper position starts each horizon at its ACTUAL durable fill.
+    # Never mature a child position 6h after the original scanner clock.
+    fills=[r for r in rows if r["phase"]=="PAPER_FILL" and
+           r["result"]=="PAPER_FILLED"]
+    horizon_start=clock(fills[0]["known_at_utc"]) if len(fills)==1 else source_time
     # The original model decision is final if no BUY: followup even SKIP/WAIT/
     # source-UNKNOWN cases, never reclassify ex-post MFE as earned trades.
     results["prospective_1m_bars"]=len(capture_path["closed_bars"])
@@ -311,9 +318,11 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
         assembled=capture_path,entry_at_utc=origin["event_time_utc"],
         observed_at_utc=capture_path["captured_at_utc"])
     results["horizons"]={}
-    buys=any(r["phase"]=="PAPER_FILL" and r["result"]=="PAPER_FILLED" for r in rows)
+    buys=len(fills)==1
+    if len(fills)>1:
+        raise ValueError("multiple independent Paper fills on one child episode")
     for hrs in (6,24,72):
-        if now<source_time+timedelta(hours=hrs):
+        if now<horizon_start+timedelta(hours=hrs):
             continue
         if buys:
             a=record_horizon(journal=journal,series_id=series_id,
