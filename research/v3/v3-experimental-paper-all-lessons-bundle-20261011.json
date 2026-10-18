@@ -213,5 +213,72 @@
     "no_model_api_budget_without_new_limit": true,
     "one_active_cloud_paper_series": true,
     "old_followups_preserved_across_cutover": true
+  },
+  "offensive_paper_policy_concrete_20261018": {
+    "status": "SELECTED_FOR_INACTIVE_V3_IMPLEMENTATION_AND_E2E_NOT_YET_LIVE",
+    "scope": "V3_EXPERIMENTAL_PAPER_ONLY",
+    "principle": "Increase opportunity capture and timely full-model BUY decisions; never relax execution integrity, model authority, P4, cost, stop, stage2, dedup, budgets, or single-writer fence.",
+    "changes": [
+      {
+        "id": "EARLY_INITIAL_REVIEW",
+        "point": "first fresh scanner coin PIT",
+        "action": "Do not require subsequent 15m close or universal volume 1.2; request full model immediately when valid 1m5m15m/ATR/ask evidence exists",
+        "test": "positive early buy and negative stale/incomplete PIT"
+      },
+      {
+        "id": "POSITIVE_CATALYST_BUY",
+        "point": "verified official source / H11 / H10 event",
+        "action": "Verified direct coin catalyst may create or reawaken candidate, positive weighting in full model before price breakout; no source-only forced BUY",
+        "test": "positive government+Polymarket and qualified trader follow-up; negative mismatched/manipulated events"
+      },
+      {
+        "id": "WAIT_REJECT_FRESH_RECHECK",
+        "point": "new closed candle or newly verified causal catalyst",
+        "action": "New decision clock triggers fresh independent full-model assessment even after prior WAIT/REJECT/TTL; do not resurrect old decision or spend budget on duplicate same clock",
+        "test": "WAIT->BUY_SCOUT with real new evidence and negative duplicate clock"
+      },
+      {
+        "id": "CONTINUITY_FAST",
+        "point": "fresh closed 5m continuation",
+        "action": "Permit 5m review instead of always waiting for post-signal 15m; keep 15m arm as same-clock control",
+        "test": "matched 5m vs 15m outcome with full P4"
+      },
+      {
+        "id": "VOLUME_SOFT_CONTEXT",
+        "point": "continuity volume 1.0..1.2",
+        "action": "Where all other risk/structure checks pass, treat borderline volume as separate paper hypothesis instead of universal hard veto; no blanket volume relaxation",
+        "test": "same-clock standard vs exploratory branch, negative weak structure"
+      },
+      {
+        "id": "EXTENDED_NEW_BASE",
+        "point": "fresh 1-3h base and reclaim",
+        "action": "Permit independent second-leg review despite old extended reject, without chasing parabolic ask",
+        "test": "new-base positive and late-chase negative"
+      },
+      {
+        "id": "RISK_REGIME_OPTIONAL_SOURCES",
+        "point": "risk-off and unavailable optional feeds",
+        "action": "Use as confidence and position timing context, not categorical veto when trade-specific risk plan passes",
+        "test": "positive valid trade in cautious regime; negative invalid stop/spread"
+      },
+      {
+        "id": "MODEL_BUY_CONVERSION",
+        "point": "full model -> P4 -> single writer",
+        "action": "Track model BUY_SCOUT rate, P4 rejection causes, real paper receipts, candidate-to-fill conversion, missed opportunities and 6/24/72h cost-net outcomes; adjust hypotheses only via explicit review",
+        "test": "physical mini-PC + cloud receipt, adverse controls, no fabricated fills"
+      }
+    ],
+    "hard_gates_unchanged": [
+      "Kraken Spot-EUR",
+      "fresh point-in-time coin evidence",
+      "real full model decision",
+      "P4 valid stop and stage2",
+      "0.6% taker each side plus spread/slippage",
+      "50+50 EUR",
+      "single paper writer and dedupe",
+      "no real orders",
+      "no automatic activation"
+    ],
+    "release_proof": "Integrate scenarios into existing six technical V3 release proofs; CI-only and prose-only are NOT passed physical E2E; no additional mandatory profitability history before experimental paper."
   }
 }
