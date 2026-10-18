@@ -106,6 +106,12 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
                   "initial_pit_15m_base": base})
         self.assertIsNotNone(read_first_pit_base(
             candidate, receipt, decision_at_utc=dt(30)))
+        # A legitimate staged first Scanner P0 uses FRESHRECHECK as the
+        # native journal key; it must not be rejected as a later WAIT retry.
+        staged = copy.deepcopy(receipt)
+        staged["event_key"] = "FRESHRECHECK"
+        self.assertIsNotNone(read_first_pit_base(
+            candidate, staged, decision_at_utc=dt(30)))
         mutations = (
             lambda r:r["data"]["initial_pit_15m_base"].update(
                 first_known_at_utc=dt(100)),
@@ -115,7 +121,7 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
                 bar_closes_are_not_observation_times=False),
             lambda r:r["data"].update(input_known_at_utc=dt(100)),
             lambda r:r.update(result="UNKNOWN"),
-            lambda r:r.update(event_key="FRESHRECHECK"),
+            lambda r:r.update(event_key="WAITRECHECK"),
             lambda r:r["data"].update(source_status="UNKNOWN"),
             lambda r:r["data"].update(frame_status_15m="UNKNOWN"),
             lambda r:r["data"]["initial_pit_15m_base"]["bars"][-1].update(
