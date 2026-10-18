@@ -655,8 +655,14 @@ class FirstReleasedScannerOwnerTests(unittest.TestCase):
             self.assertEqual(result["source_capture_calls"],0)
             self.assertFalse(result["orders"])
             self.assertFalse(result["paper_writer_active"])
+            self.assertTrue(result["paper_entry_receipt_verified_local"])
+            self.assertEqual(result["paper_entry_status"],
+                             "NATIVE_LOCAL_PAPER_SCOUT_DURABLE_PENDING_INDEPENDENT_CLOUD_ACK")
+            self.assertFalse(result["independent_cloud_paper_fill_ack"])
+            self.assertEqual(len(result["paper_entry_receipt_sha256"]),64)
             rows=[json.loads(p.read_text("utf-8"))
                   for p in (root/"journal").glob("*.json")]
+            self.assertEqual(sum(r["phase"]=="PAPER_FILL" for r in rows),1)
             self.assertTrue(any(r["phase"]=="SCANNER_CAPTURE" for r in rows))
             self.assertTrue(any(r["phase"]=="P4_VALIDATION" for r in rows))
             self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
@@ -666,6 +672,73 @@ class FirstReleasedScannerOwnerTests(unittest.TestCase):
             self.assertEqual(repeat["status"],"FIRST_SCANNER_ALREADY_JOURNALED_NO_MODEL_RETRY")
             self.assertEqual(unchanged,{p.name:p.read_bytes()
                     for p in (root/"journal").glob("*.json")})
+
+
+    def test_postcas_offline_negative_full_model_reject_never_writes_paper_fill(self):
+        from tests.test_v3_paper_minipc_one_candidate_v1 import fake_model
+        c,plan,budget,cloud=self.inputs()
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            def rejected(prompt,key):
+                model,meta=fake_model(prompt,key)
+                model["decision"]="REJECT"
+                model["reason_codes"]=["NO_COST_ADJUSTED_ENTRY_OPPORTUNITY"]
+                return model,meta
+            out=self.call(root,c,plan,budget,cloud,client=rejected)
+            self.assertEqual(out["model_result"]["p4_decision"],"REJECT")
+            self.assertEqual(out["paper_entry_status"],"NO_BUY_NO_PAPER_FILL_AS_EXPECTED")
+            self.assertFalse(out["paper_entry_receipt_verified_local"])
+            self.assertFalse(out["independent_cloud_paper_fill_ack"])
+            rows=[json.loads(p.read_text("utf-8")) for p
+                  in (root/"journal").glob("*.json")]
+            self.assertEqual(len([r for r in rows if r["phase"]=="PAPER_FILL"]),0)
+            self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
+            self.assertFalse(out["orders"])
+
+    def test_postcas_missing_paper_fill_after_positive_p4_fail_closed_no_retry(self):
+        from unittest.mock import patch
+        from paper_evaluator import v3_paper_minipc_one_candidate_v1 as model_module
+        c,plan,budget,cloud=self.inputs()
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            original_write=model_module.store_receipt_explicitly
+            def simulate_interrupted_local_fill(directory,receipt):
+                if receipt.get("phase")=="PAPER_FILL":
+                    # Power loss/crash-like missing durable local entry.
+                    return "SIMULATED_NO_DISK_WRITE",Path(directory)/"absent.json"
+                return original_write(directory,receipt)
+            with patch.object(model_module,"store_receipt_explicitly",
+                              side_effect=simulate_interrupted_local_fill):
+                out=self.call(root,c,plan,budget,cloud)
+            self.assertEqual(out["status"],
+                "FIRST_SCANNER_MODEL_OR_PAPER_LEDGER_INCOMPLETE_HOLD")
+            self.assertEqual(out["model_result"]["p4_decision"],"BUY_SCOUT")
+            self.assertFalse(out["paper_entry_receipt_verified_local"])
+            self.assertFalse(out["independent_cloud_paper_fill_ack"])
+            self.assertTrue(out["requires_original_owner_reconciliation"])
+            self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
+            self.assertFalse(any(json.loads(p.read_text())["phase"]=="PAPER_FILL"
+                for p in (root/"journal").glob("*.json")))
+            repeated=self.call(root,c,plan,budget,cloud,
+                client=lambda *_:self.fail("must never spend same model approval twice"))
+            self.assertEqual(repeated["status"],
+                             "FIRST_SCANNER_ALREADY_JOURNALED_NO_MODEL_RETRY")
+            self.assertFalse(out["orders"])
+
+    def test_postcas_missing_model_response_id_is_not_accepted_as_verified_fill(self):
+        from tests.test_v3_paper_minipc_one_candidate_v1 import fake_model
+        c,plan,budget,cloud=self.inputs()
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            def missing_response_id(prompt,key):
+                model,meta=fake_model(prompt,key)
+                return model,dict(meta,response_id="")
+            out=self.call(root,c,plan,budget,cloud,client=missing_response_id)
+            self.assertEqual(out["status"],
+                "FIRST_SCANNER_MODEL_OR_PAPER_LEDGER_INCOMPLETE_HOLD")
+            self.assertFalse(out["paper_entry_receipt_verified_local"])
+            self.assertTrue(out["requires_original_owner_reconciliation"])
+            self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
 
     def test_bad_cloud_and_missing_budget_block_before_any_original_write(self):
         c,plan,approval,cloud=self.inputs()
