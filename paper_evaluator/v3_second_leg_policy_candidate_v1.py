@@ -62,6 +62,59 @@ def _bar_start(bar: dict[str, Any]) -> datetime:
     raise ValueError("bar start missing or invalid")
 
 
+def witnessed_15m_from_existing_1m_path(assembled:dict[str,Any],
+        *,pair:str,observed_at_utc:str)->list[dict[str,Any]]:
+    """Rebuild ONLY complete closed 15m bars from already witnessed 1m.
+
+    assemble() has checked each source file SHA, recorded capture clock and
+    maximum 15-minute acquisition lag. This adapter never calls Kraken,
+    fabricates missing bars or retrospectively relabels a research move.
+    The resulting 15m bars are still RESEARCH eligibility, not model/BUTY.
+    """
+    from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
+        require_prospective_assembled_path,timestamp,
+    )
+    require_prospective_assembled_path(assembled,pair=pair)
+    observed=timestamp(observed_at_utc)
+    last_seen=timestamp(assembled["captured_at_utc"])
+    if last_seen>observed:
+        raise ValueError("witnessed source after decision observation")
+    minutes={}
+    for row in assembled["closed_bars"]:
+        start=timestamp(row["start_at_utc"])
+        if start+timedelta(minutes=1)>observed:
+            raise ValueError("open or future 1m source")
+        if start in minutes:
+            raise ValueError("duplicate witnessed 1m")
+        vals=[]
+        for field in ("open","high","low","close"):
+            vals.append(_finite_positive(row[field]))
+        op,hi,lo,close=vals
+        if not lo<=min(op,close)<=max(op,close)<=hi:
+            raise ValueError("invalid witnessed 1m OHLC")
+        minutes[start]=row
+    if not minutes:
+        return []
+    groups={}
+    for ts in sorted(minutes):
+        epoch=int(ts.timestamp())
+        bar_start=datetime.fromtimestamp(epoch//900*900,timezone.utc)
+        groups.setdefault(bar_start,[]).append((ts,minutes[ts]))
+    closed=[]
+    for begin,group in sorted(groups.items()):
+        if begin+timedelta(minutes=15)>observed or len(group)!=15:
+            continue
+        if any(item[0]!=begin+timedelta(minutes=i) for i,item in enumerate(group)):
+            continue
+        src=[row for _,row in group]
+        closed.append({"start_utc":int(begin.timestamp()),
+                       "open":src[0]["open"],
+                       "high":max(row["high"] for row in src),
+                       "low":min(row["low"] for row in src),
+                       "close":src[-1]["close"]})
+    return closed[-13:]
+
+
 def propose_second_leg_review(
     original_candidate: dict[str, Any],
     original_decision: dict[str, Any],
