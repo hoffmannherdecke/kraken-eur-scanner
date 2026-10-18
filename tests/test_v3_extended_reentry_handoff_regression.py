@@ -293,4 +293,232 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
             self.assertEqual(missing[0]["result"],"UNKNOWN")
             self.assertFalse(any(r["phase"]=="PAPER_FILL" for r in receipts))
 
+
+class P1NativeModelWriterTests(unittest.TestCase):
+    """Synthetic physically-isolated contract test, zero provider HTTP/Cloud writes."""
+
+    SERIES="PAPER-V3-20261012T081500Z"
+    REPO="a"*40
+    BUNDLE="b"*64
+    STRATEGY="c"*64
+
+    def prepare(self,root):
+        from paper_evaluator.v3_second_leg_policy_candidate_v1 import (
+            canonical_second_leg_episode,
+        )
+        from paper_evaluator.v3_full_entry_decision_candidate_v1 import SECOND_LEG_P1_CHECKS
+        from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import capture_public_1m
+        from tests.test_v3_paper_minipc_one_candidate_v1 import valid_approval
+
+        at=datetime(2026,10,12,8,45,7,tzinfo=timezone.utc)
+        original=candidate()
+        original.update(entry_origin="SCANNER")
+        journal=root/"journal";capture=root/"capture";budget=root/"budget"
+        for directory in (journal,capture,budget):directory.mkdir()
+        def original_row(phase,status,when,data):
+            receipt=make_receipt(
+                series_id=self.SERIES,revision=REVISION,
+                candidate_id=original["candidate_id"],pair=original["pair"],
+                event_time_utc=original["event_time_utc"],
+                known_at_utc=t(when),phase=phase,result=status,
+                data=data)
+            store_receipt_explicitly(journal,receipt)
+        original_row("SCANNER_CAPTURE","SEEN",START,
+                     {"candidate_origin":"SCANNER"})
+        original_row("MODEL_RESPONSE","PASS",DECISION,
+                     {"raw_setup_lane":"EXTENDED","raw_model_decision":"WAIT",
+                      "model_response_at_utc":t(DECISION),
+                      "model_response_id":"PARENT_TEST_REPLY"})
+        original_row("P4_VALIDATION","WAIT",DECISION,
+                     {"p4_decision":"WAIT","p4_status":"FULL_WAIT_VALIDATED_OFFLINE"})
+        for n in range(4, -1, -1):
+            when=at-timedelta(minutes=n*15)
+            beginning=(when-timedelta(minutes=15)).replace(second=0,microsecond=0)
+            breakout=n==0
+            def loader(symbol,beginning=beginning,breakout=breakout):
+                bars=[]
+                for m in range(15):
+                    ts=int((beginning+timedelta(minutes=m)).timestamp())
+                    op,hi,lo,close=(
+                        ("2.09","2.17","2.04","2.15") if breakout else
+                        ("2.08","2.12","2.04","2.09"))
+                    bars.append([ts,op,hi,lo,close,close,"10",1])
+                return {"error":[],"result":{"ZROEUR":bars,"last":1}}
+            capture_public_1m(pair="ZRO/EUR",altname="ZROEUR",
+                              outdir=capture,loader=loader,clock=lambda when=when:when)
+        episode=canonical_second_leg_episode(
+            series_id=self.SERIES,original_candidate=original,
+            closed_15m_end_utc=t(at.replace(second=0)),
+            signal_known_at_utc=t(at))
+        p1={"review_family":"EXTENDED_PROSPECTIVE_15M_BASE_SECOND_LEG",
+            "review_status":"SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY",
+            "review_checks":{"p1":{k:True for k in SECOND_LEG_P1_CHECKS}}}
+        p1.update(episode)
+        rec=make_receipt(
+            series_id=self.SERIES,revision=REVISION,
+            candidate_id=original["candidate_id"],pair=original["pair"],
+            event_time_utc=original["event_time_utc"],
+            known_at_utc=t(at),phase="FRESH_SECOND_LEG",
+            result="PASS",event_key=episode["reentry_parent_event_key"],
+            data=p1)
+        store_receipt_explicitly(journal,rec)
+        parent=prepare_original_owner_reentry_child(
+            journal=journal,series_id=self.SERIES,
+            original_candidate=original,
+            parent_event_key=episode["reentry_parent_event_key"],
+            now_at_utc=t(at+timedelta(seconds=1)))
+        self.assertEqual(parent["status"],"P1_CHILD_PREPARED_MODEL_AND_PAPER_STILL_GATED")
+        approval=dict(valid_approval(),series_id=self.SERIES,
+                      unique_approval_id="P1-CHILD-UNIQUE-ONE-SHOT-CI-20261012")
+        cloud={"series_id":self.SERIES,"status":"active","strategy_revision":REVISION,
+               "observed_at_utc":t(at+timedelta(seconds=9)),
+               "config":{
+                   "series_id":self.SERIES,"strategy_revision":REVISION,
+                   "release_repo_sha":self.REPO,
+                   "runtime_bundle_fingerprint_sha256":self.BUNDLE,
+                   "strategy_fingerprint_sha256":self.STRATEGY,
+                   "paper_only":True,"real_money_actions_enabled":False,
+                   "automatic_activation_allowed":False,
+                   "physical_v2r4_writer_fence_verified":True,
+                   "supervisor_old_intake_rearm_blocked":True,
+                   "old_followup_owner_preserved":True,
+                   "independent_six_e2e_proofs_verified":True}}
+        coin={"kind":"SUCCESSOR_COIN_ENTRY_EVIDENCE_V1",
+              "pair":"ZRO/EUR","status":"COMPLETE",
+              "observed_at_utc":t(at+timedelta(seconds=1)),
+              "known_at_utc":t(at+timedelta(seconds=2)),
+              "frames":{
+                  "1":{"interval_min":1,"status":"VALID",
+                       "last_closed_bar_end_utc":t(at.replace(second=0)),
+                       "closed_close_eur":2.15,"volume_ratio_prior_5":1.3},
+                  "5":{"interval_min":5,"status":"VALID",
+                       "last_closed_bar_end_utc":t(at.replace(second=0)),
+                       "closed_close_eur":2.15,"volume_ratio_prior_5":1.3},
+                  "15":{"interval_min":15,"status":"VALID",
+                        "last_closed_bar_end_utc":t(at.replace(second=0)),
+                        "closed_close_eur":2.15,"volume_ratio_prior_5":1.3,
+                        "volume_ratio_prior_4":1.3,
+                        "atr14_eur":0.1,"recent_8bar_low_eur":2.04}}}
+        bid,ask=2.153,2.155
+        quote={"pair":"ZRO/EUR","ask":ask,"bid":bid,
+               "spread_pct":(ask-bid)/((ask+bid)/2)*100,
+               "observed_at_utc":t(at+timedelta(seconds=3))}
+        meta={"pair":"ZRO/EUR","status":"online","spot":True,
+              "quote":"EUR","minimum_order_passed":True,
+              "observed_at_utc":t(at+timedelta(seconds=4))}
+        def model(prompt,_):
+            self.assertIn("original_candidate_historical_only",prompt)
+            return {"decision":"BUY_SCOUT","setup_lane":"EXTENDED",
+                    "reason_codes":["FRESH_CLOSED_BASE_RECLAIM"],
+                    "anti_chase_passed":True,
+                    "stop_eur":2.04,"stage2_trigger_eur":2.27,
+                    "stage2_ttl_minutes":30,"expected_remaining_move_pct":5.0}, {
+                        "model":"CI-TEST-NO-PROVIDER","response_id":"CI-P1-ONE-RESPONSE"}
+        return (at,original,parent["child_candidate"],approval,cloud,
+                (coin,quote,meta),model)
+
+    def call(self,root,prepared,*,model_client=None,acquire=None,clock_now=None,
+             approval=None):
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            released_paper_reentry_child_model_once,
+        )
+        at,parent,child,approved,cloud,pit,model=prepared
+        return released_paper_reentry_child_model_once(
+            child=child,original_candidate=parent,series_id=self.SERIES,
+            journal=root/"journal",capture_dir=root/"capture",
+            model_reservations=root/"budget",
+            expected_repo_sha=self.REPO,
+            expected_bundle_sha256=self.BUNDLE,
+            expected_strategy_sha256=self.STRATEGY,
+            read_active_series=lambda _:cloud,
+            approval=approved if approval is None else approval,
+            model_key="CI-MODEL-STUB-FAKE-NO-REAL-KEY",
+            clock_now=clock_now or (lambda:t(at+timedelta(seconds=9))),
+            acquire=acquire or (lambda _:pit),
+            model_client=model_client or model)
+
+    def test_native_parent_child_model_p4_actual_paper_receipt_and_no_retry(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);p=self.prepare(root)
+            out=self.call(root,p)
+            self.assertEqual(out["status"],"P1_CHILD_MODEL_P4_DURABLE_WAIT_FOR_FOLLOWUP")
+            self.assertEqual(out["model_result"]["p4_decision"],"BUY_SCOUT")
+            self.assertTrue(out["paper_entry_receipt_verified_local"])
+            self.assertFalse(out["independent_cloud_paper_fill_ack"])
+            child=p[2]
+            records=[json.loads(x.read_text()) for x in (root/"journal").glob("*.json")]
+            fills=[row for row in records if row["phase"]=="PAPER_FILL"]
+            self.assertEqual(len(fills),1)
+            fill=fills[0]
+            self.assertEqual(fill["candidate_id"],child["candidate_id"])
+            self.assertEqual(fill["event_time_utc"],child["event_time_utc"])
+            self.assertNotEqual(fill["event_time_utc"],p[1]["event_time_utc"])
+            self.assertGreater(datetime.fromisoformat(fill["known_at_utc"]),
+                               datetime.fromisoformat(child["event_time_utc"]))
+            self.assertEqual(fill["data"]["paper_entry_fee_eur"],0.3)
+            self.assertFalse(any(x["phase"]=="SCANNER_CAPTURE" and
+                                 x["candidate_id"]==child["candidate_id"]
+                                 for x in records))
+            self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
+            repeated=self.call(root,p,model_client=lambda *_:
+                               self.fail("no retry after P1 model/P4/Fill"))
+            self.assertEqual(repeated["status"],"P1_CHILD_ALREADY_JOURNALED_NO_MODEL_RETRY")
+            self.assertFalse(repeated["orders"])
+
+    def test_native_p1_full_model_reject_has_no_fill_and_no_retry(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);p=self.prepare(root)
+            def reject(prompt,key):
+                obj,meta=p[6](prompt,key)
+                obj["decision"]="REJECT"
+                return obj,meta
+            out=self.call(root,p,model_client=reject)
+            self.assertEqual(out["model_result"]["p4_decision"],"REJECT")
+            self.assertEqual(out["paper_entry_status"],"NO_BUY_NO_PAPER_FILL_AS_EXPECTED")
+            self.assertFalse(any(json.loads(x.read_text())["phase"]=="PAPER_FILL"
+                                 for x in (root/"journal").glob("*.json")))
+            self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
+
+    def test_native_p1_missing_fill_or_bad_response_id_quarantines_without_spend_retry(self):
+        from unittest.mock import patch
+        from paper_evaluator import v3_paper_minipc_one_candidate_v1 as module
+        for defect in ("NO_FILL_ON_DISK","MISSING_RESPONSE_ID"):
+            with self.subTest(defect=defect):
+                with tempfile.TemporaryDirectory() as td:
+                    root=Path(td);p=self.prepare(root)
+                    real=module.store_receipt_explicitly
+                    def missing_fill(directory,receipt):
+                        if receipt["phase"]=="PAPER_FILL":
+                            return "SIMULATED_LOST_DISK_WRITE",Path(directory)/"missing.json"
+                        return real(directory,receipt)
+                    def no_response_id(prompt,key):
+                        obj,meta=p[6](prompt,key)
+                        return obj,dict(meta,response_id="")
+                    kw=({"model_client":no_response_id}
+                        if defect=="MISSING_RESPONSE_ID" else {})
+                    with patch.object(module,"store_receipt_explicitly",
+                                      side_effect=missing_fill if defect=="NO_FILL_ON_DISK" else real):
+                        out=self.call(root,p,**kw)
+                    self.assertEqual(out["status"],"P1_MODEL_OR_PAPER_LEDGER_INCOMPLETE_HOLD")
+                    self.assertTrue(out["requires_original_owner_reconciliation"])
+                    self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
+                    self.assertEqual(self.call(root,p,model_client=lambda *_:
+                        self.fail("model must not retry"))["status"],
+                                     "P1_CHILD_ALREADY_JOURNALED_NO_MODEL_RETRY")
+
+    def test_native_p1_stale_source_and_unapproved_budget_do_not_spend(self):
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);p=self.prepare(root)
+            with self.assertRaises(ValueError):
+                self.call(root,p,approval=dict(p[3],explicit_user_new_budget_approval=False),
+                          acquire=lambda *_:self.fail("no Kraken before approval"))
+            self.assertFalse(list((root/"budget").glob("*.reserved.json")))
+            at,parent,child,approval,cloud,pit,model=p
+            stale=dict(pit[0],known_at_utc=t(at-timedelta(minutes=5)))
+            out=self.call(root,p,acquire=lambda _: (stale,pit[1],pit[2]))
+            self.assertEqual(out["status"],"P1_NEW_MARKET_SOURCE_NOT_VERIFIED_NO_MODEL")
+            self.assertFalse(list((root/"budget").glob("*.reserved.json")))
+            self.assertFalse(out["orders"])
+
+
 if __name__=="__main__": unittest.main()
