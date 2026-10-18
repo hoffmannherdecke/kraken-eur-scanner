@@ -127,6 +127,16 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
     cid=candidate.get("candidate_id")
     if not isinstance(cid,str) or not cid:
         raise ValueError("real canonical candidate required")
+    # A later P1 child is NOT a scanner candidate. Until the existing
+    # native-owner full-model/P4/Paper continuation binds its separate
+    # approval and witnessed parent event, never emit a fake SCANNER_CAPTURE
+    # event or spend the initial-candidate model budget for the child.
+    if candidate.get("entry_origin")=="P1_REENTRY_EPISODE":
+        return {"status":"P1_CHILD_NEEDS_GATED_NATIVE_MODEL_WRITER_CONTINUATION",
+                "candidate_id":cid,"series_id":series_id,
+                "model_called":False,"model_http_attempts_reserved":0,
+                "paper_only":True,"paper_writer_started":False,
+                "orders":False,"real_money_actions":False}
     stamp=candidate["event_time_utc"]
     if not local_receipts.is_dir() or local_receipts.is_symlink():
         raise ValueError("independent V3 Paper journal directory must already exist")
