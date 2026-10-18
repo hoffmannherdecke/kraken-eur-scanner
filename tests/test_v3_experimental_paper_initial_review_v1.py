@@ -110,7 +110,7 @@ class ExperimentalInitialV3PaperTests(unittest.TestCase):
         prompt=build_v3_paper_full_model_prompt(
             candidate=old,eligibility=ticket,entry_evidence=coin,ticker=q,
             pair_metadata=meta,decision_at_utc=dt(13))
-        parsed=json.loads(prompt.split("VERIFIED DECISION INPUT:\\n",1)[1])
+        parsed=json.loads(prompt.split("VERIFIED DECISION INPUT:\n",1)[1])
         self.assertEqual(parsed["source_eligibility"]["base_15m_bars"],4)
         self.assertTrue(parsed["source_eligibility"]["original_candidate_historical_only"])
         self.assertEqual(parsed["candidate"]["event_time_utc"],old["event_time_utc"])
