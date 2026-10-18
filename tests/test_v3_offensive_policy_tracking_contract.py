@@ -163,7 +163,7 @@ class OffensiveV3PolicyTrackingContractTests(unittest.TestCase):
             '"same_witnessed_archive":first_base is None',
             "read_first_pit_base(",
             "ORIGINAL_P0_15M_FIRST_KNOWN_NOT_PRE_SIGNAL_WITNESS",
-            "ORIGINAL_PIT_OR_P4_KNOWN_AFTER_5M_CLOSE_NO_REVIEW",
+            "FIRST_PIT_P4_5M_CHRONOLOGY_UNPROVEN_NO_REVIEW",
             '"model_http_attempts_reserved":0',
             '"paper_writer_started":False',
             '"release_evidence":False',
