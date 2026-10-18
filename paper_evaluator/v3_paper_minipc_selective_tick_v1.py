@@ -793,8 +793,10 @@ def released_paper_positive_catalyst_model_once(*,
         approval:dict[str,Any],model_key:str,
         existing_context:dict[str,Any],
         clock_now:Callable[[],str]=utc_now,
-        acquire:Callable|None=None,model_client:Callable|None=None)->dict[str,Any]:
-    """Existing locked V3 Paper owner: verified independent catalyst -> P4.
+        acquire:Callable|None=None,model_client:Callable|None=None,
+        authenticated_owner_packet:dict[str,Any]|None=None,
+        trusted_owner_hmac_keys:dict[str,dict[str,bytes]]|None=None)->dict[str,Any]:
+    """Existing locked V3 Paper owner: HMAC-authenticated catalyst -> P4.
 
     This is NOT an autonomous positive-source poller or extra Paper writer.
     Caller must supply an original, authenticated source snapshot and a
@@ -826,6 +828,39 @@ def released_paper_positive_catalyst_model_once(*,
     if source["status"]!=SOURCE_ELIGIBLE:
         return {"status":"POSITIVE_SOURCE_NOT_CURRENT_NO_MODEL",
                 "source_status":source["status"],"model_http_attempts_reserved":0,
+                "orders":False,"real_money_actions":False}
+    # The existing qualified-source filter only validates content/clock
+    # supplied by a caller. A 'source_verified' boolean or candidate hash
+    # does NOT prove the source owner. Reuse the ALREADY EXISTING original
+    # per-owner HMAC verifier at this final native model entry boundary.
+    # No unsigned raw H5/H10/H11 snapshot may reach Kraken, a model
+    # reservation, or the Paper ledger, even when Cloud release is active.
+    from paper_evaluator.v3_paper_source_owner_hmac_v1 import (
+        validate_keyring,verify_owner_packet,
+    )
+    packet=authenticated_owner_packet
+    packet_match=(isinstance(packet,dict)
+                  and packet.get("source_name")==name
+                  and packet.get("pair")==candidate["pair"]
+                  and packet.get("altname")==candidate["altname"]
+                  and packet.get("snapshot")==snapshot
+                  and packet.get("market_move")==existing_context.get(
+                      "dynamic_move_radar")
+                  and isinstance(packet.get("owner_integrity"),dict)
+                  and packet["owner_integrity"].get(
+                      "authentication_checked_by_trusted_caller") is True)
+    owner_auth="OWNER_PACKET_MISSING_OR_SOURCE_CONTEXT_MISMATCH"
+    if packet_match:
+        try:
+            owner_auth=verify_owner_packet(
+                packet=packet,
+                trusted_keys=validate_keyring(trusted_owner_hmac_keys),
+                decision_at_utc=now_at)
+        except (ValueError,TypeError,KeyError,OverflowError):
+            owner_auth="INVALID_OWNER_HMAC_KEYRING"
+    if owner_auth!="VERIFIED_OWNER_HMAC_PACKET_ONLY":
+        return {"status":"POSITIVE_SOURCE_OWNER_NOT_AUTHENTICATED_NO_MODEL",
+                "source_status":owner_auth,"model_http_attempts_reserved":0,
                 "orders":False,"real_money_actions":False}
     canonical=make_source_candidate(
         pair=candidate["pair"],kraken_altname=candidate["altname"],
