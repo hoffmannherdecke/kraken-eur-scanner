@@ -1121,10 +1121,11 @@ def plan_canary_resume(*,candidate:dict[str,Any],series_id:str,
                 and r["result"] in ("WAIT","REJECT")]
         if (len(p1)!=1 or len(scan)!=1 or len(model)!=1 or len(old_p4)!=1
                 or model[0]["data"].get("raw_setup_lane")!="EXTENDED"
-                or scan[0]["event_time_utc"]!=candidate.get("reentry_original_event_time_utc")
+                or clock(scan[0]["event_time_utc"])!=clock(
+                    candidate["reentry_original_event_time_utc"])
                 or any(r["phase"]=="PAPER_FILL" for r in parent)
                 or p1[0]["data"].get("reentry_episode_id")!=candidate["candidate_id"]
-                or p1[0]["known_at_utc"]!=candidate["event_time_utc"]
+                or clock(p1[0]["known_at_utc"])!=clock(candidate["event_time_utc"])
                 or set((p1[0]["data"].get("review_checks") or {}).get("p1",{}))
                     !=SECOND_LEG_P1_CHECKS
                 or any(v is not True for v in
