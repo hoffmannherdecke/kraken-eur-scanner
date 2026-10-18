@@ -1,6 +1,13 @@
 """Regression: eligible EXTENDED reentry must expose a full-review handoff, never a BUY."""
 import unittest
 from unittest.mock import patch
+import json
+import tempfile
+from datetime import datetime,timedelta,timezone
+from pathlib import Path
+from paper_evaluator.v3_paper_minipc_selective_tick_v1 import tick_once
+from tests.test_v3_paper_wait_observer_v1 import seed,SID,CID,t
+from tests.test_v3_paper_minipc_selective_tick_v1 import candidate,tick_capture
 from paper_evaluator.v3_extended_reentry_review_v1 import extended_reentry_review
 
 class ExtendedReentryHandoffTests(unittest.TestCase):
@@ -72,5 +79,77 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
             self.assertFalse(bad.get("full_model_review_candidate",False),
                              bad)
             self.assertFalse(bad["paper_trade"])
+
+
+    def test_existing_single_owner_tick_journals_real_later_review_not_model_or_fill(self):
+        # Exercise the EXISTING V3 owner, not a new shadow scheduler/HTTP.
+        at=datetime(2026,10,12,8,45,7,tzinfo=timezone.utc)
+        def real_second_leg(altname,pair):
+            return {"pair":pair,"status":"COMPLETE",
+                    "observed_at_utc":t(at-timedelta(seconds=2)),
+                    "known_at_utc":t(at-timedelta(seconds=1)),
+                    "frames":{
+                        "5":{"status":"VALID",
+                             "last_closed_bar_end_utc":t(at.replace(second=0)),
+                             "closed_close_eur":2.115,"volume_ratio_prior_5":1.3},
+                        "15":{"status":"VALID","closed_close_eur":2.1,
+                              "atr14_eur":0.1,"recent_8bar_low_eur":2.0}}}
+        def quote(_):
+            return {"ask":2.11,"bid":2.10,
+                    "observed_at_utc":t(at-timedelta(seconds=1))}
+        original=candidate()
+        original.update({"setup_lane":"EXTENDED","entry_origin":"SCANNER"})
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);journal=root/"journal";cap=root/"capture"
+            journal.mkdir();cap.mkdir()
+            seed(journal)
+            with patch("paper_evaluator.v3_extended_reentry_review_v1.attach_to_future_evaluator",
+                       return_value={}):
+                first=tick_once(
+                    candidate=original,series_id=SID,journal=journal,
+                    capture_dir=cap,clock_now=lambda:t(at),
+                    capture=tick_capture(at),fetch=real_second_leg,ticker=quote)
+                second=tick_once(
+                    candidate=original,series_id=SID,journal=journal,
+                    capture_dir=cap,clock_now=lambda:t(at),
+                    capture=tick_capture(at),fetch=real_second_leg,ticker=quote)
+            self.assertTrue(first["extended_reentry"]["full_model_review_candidate"])
+            self.assertEqual(first["extended_reentry"]["model_calls"],0)
+            self.assertEqual(first["extended_reentry"]["paper_fills"],0)
+            self.assertEqual(second["extended_reentry"]["status"],
+                             "EXTENDED_BAR_ALREADY_REVIEWED_NO_DUPLICATE")
+            self.assertFalse(first["orders"])
+            self.assertFalse(first["v2r4_changed"])
+            receipts=[json.loads(p.read_text()) for p in journal.glob("*.json")]
+            route=[r for r in receipts if r["phase"]=="FRESH_SECOND_LEG"]
+            self.assertEqual(len(route),1)
+            self.assertEqual(route[0]["result"],"PASS")
+            self.assertEqual(route[0]["data"]["review_family"],
+                             "EXTENDED_PROSPECTIVE_SECOND_LEG")
+            self.assertFalse(any(r["phase"]=="PAPER_FILL" for r in receipts))
+            self.assertEqual(len([r for r in receipts
+                                  if r["phase"]=="MODEL_REQUEST"]),0)
+
+    def test_incomplete_later_source_journals_unknown_not_false_market_reject(self):
+        at=datetime(2026,10,12,8,45,7,tzinfo=timezone.utc)
+        original=candidate()
+        original.update({"setup_lane":"EXTENDED","entry_origin":"SCANNER"})
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);journal=root/"journal";cap=root/"capture"
+            journal.mkdir();cap.mkdir()
+            seed(journal)
+            out=tick_once(
+                candidate=original,series_id=SID,journal=journal,
+                capture_dir=cap,clock_now=lambda:t(at),
+                capture=tick_capture(at),
+                fetch=lambda *_: {"pair":"ZRO/EUR","status":"UNKNOWN_SOURCE_GAP"},
+                ticker=lambda *_: {"ask":2.11,"bid":2.10})
+            self.assertFalse(out["extended_reentry"]["full_model_review_candidate"])
+            self.assertEqual(out["extended_reentry"]["model_calls"],0)
+            receipts=[json.loads(p.read_text()) for p in journal.glob("*.json")]
+            missing=[r for r in receipts if r["phase"]=="FRESH_SECOND_LEG"]
+            self.assertEqual(len(missing),1)
+            self.assertEqual(missing[0]["result"],"UNKNOWN")
+            self.assertFalse(any(r["phase"]=="PAPER_FILL" for r in receipts))
 
 if __name__=="__main__": unittest.main()
