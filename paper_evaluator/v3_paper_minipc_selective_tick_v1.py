@@ -327,29 +327,50 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                     raw_quote.get("observed_at_utc") or clock_now()))
                 reentry_quote.setdefault("pair",pair)
             observed=clock_now()
+            # Followup archive intentionally starts at the scanner signal.
+            # Early 5m needs two CLOSED 15m bars *before* that signal:
+            # assemble a separate research view of ALREADY SAVED snapshots.
+            # Never use today's public OHLC history as a late fake witness.
+            history_start=(source_time-timedelta(minutes=45)).isoformat()
+            research_path=assemble(
+                snapshots=capture_dir,pair=pair,
+                entry_at_utc=history_start,observed_at_utc=observed,
+                max_live_capture_lag_minutes=15)
             witnessed=witnessed_15m_from_existing_1m_path(
-                capture_path,pair=pair,observed_at_utc=observed)
-            baseline={"setup_lane":"CONTINUITY","decision":p4["result"]}
-            standard=propose_continuity_fresh_review(
-                candidate,baseline,reentry_coin,reentry_quote,witnessed,
-                decision_at_utc=observed)
-            early=propose_early_5m_continuity_review(
-                candidate,baseline,reentry_coin,reentry_quote,witnessed,
-                decision_at_utc=observed)
-            volume=propose_experimental_continuity_review(
-                candidate,baseline,reentry_coin,reentry_quote,witnessed,
-                decision_at_utc=observed)
-            results["continuity_offensive_shadow"]={
-                "status":"ORIGINAL_WITNESSED_PIT_RESEARCH_ONLY",
-                "standard_status":standard["status"],
-                "early_5m_status":early["status"],
-                "soft_volume_status":volume["status"],
-                "early_5m_review_only":early.get("request_model_recheck_only") is True,
-                "soft_volume_review_only":volume.get("request_model_recheck_only") is True,
-                "same_witnessed_archive":True,"model_called":False,
-                "model_http_attempts_reserved":0,"paper_writer_started":False,
-                "orders":False,"real_money_actions":False,
-                "release_evidence":False}
+                research_path,pair=pair,observed_at_utc=observed)
+            prior_closed=[bar for bar in witnessed
+                          if clock(datetime.fromtimestamp(
+                              bar["start_utc"]+900,timezone.utc).isoformat())
+                          <=source_time]
+            if len(prior_closed)<2:
+                results["continuity_offensive_shadow"]={
+                    "status":"PRE_SIGNAL_15M_PROSPECTIVE_HISTORY_MISSING",
+                    "pre_signal_closed_15m_witnessed":len(prior_closed),
+                    "model_called":False,"model_http_attempts_reserved":0,
+                    "paper_writer_started":False,"orders":False,
+                    "real_money_actions":False,"release_evidence":False}
+            else:
+                baseline={"setup_lane":"CONTINUITY","decision":p4["result"]}
+                standard=propose_continuity_fresh_review(
+                    candidate,baseline,reentry_coin,reentry_quote,witnessed,
+                    decision_at_utc=observed)
+                early=propose_early_5m_continuity_review(
+                    candidate,baseline,reentry_coin,reentry_quote,witnessed,
+                    decision_at_utc=observed)
+                volume=propose_experimental_continuity_review(
+                    candidate,baseline,reentry_coin,reentry_quote,witnessed,
+                    decision_at_utc=observed)
+                results["continuity_offensive_shadow"]={
+                    "status":"ORIGINAL_WITNESSED_PIT_RESEARCH_ONLY",
+                    "standard_status":standard["status"],
+                    "early_5m_status":early["status"],
+                    "soft_volume_status":volume["status"],
+                    "early_5m_review_only":early.get("request_model_recheck_only") is True,
+                    "soft_volume_review_only":volume.get("request_model_recheck_only") is True,
+                    "same_witnessed_archive":True,"model_called":False,
+                    "model_http_attempts_reserved":0,"paper_writer_started":False,
+                    "orders":False,"real_money_actions":False,
+                    "release_evidence":False}
         except (OSError,ValueError,KeyError,TypeError,OverflowError,AttributeError) as exc:
             results["continuity_offensive_shadow"]={
                 "status":"SOURCE_UNVERIFIED_RESEARCH_HOLD",
