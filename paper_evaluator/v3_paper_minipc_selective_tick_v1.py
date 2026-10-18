@@ -420,17 +420,28 @@ def _verify_first_native_model_paper_journal(*,candidate:dict[str,Any],
         rows.append((row,hashlib.sha256(raw).hexdigest()))
     if len({(r["phase"],r["event_key"]) for r,_ in rows})!=len(rows):
         raise ValueError("duplicate immutable event identity")
-    def one(phase:str,key:str="FRESHRECHECK")->tuple[dict,str]:
+    child=candidate.get("entry_origin")=="P1_REENTRY_EPISODE"
+    key="FIRST" if child else "FRESHRECHECK"
+    def one(phase:str,receipt_key:str|None=None)->tuple[dict,str]:
+        receipt_key=receipt_key or key
         found=[(row,sha) for row,sha in rows if
-               row["phase"]==phase and row["event_key"]==key]
+               row["phase"]==phase and row["event_key"]==receipt_key]
         if len(found)!=1:
             raise ValueError("missing or repeated original Paper phase: "+phase)
         return found[0]
-    original,_=one("SCANNER_CAPTURE","FIRST")
+    original,_=one("P1_CHILD_ENROLLMENT" if child else "SCANNER_CAPTURE","FIRST")
     if (original["result"]!="SEEN"
-            or original["data"].get("candidate_origin")!="SCANNER"):
-        raise ValueError("unverified native Scanner original")
-    one("FULL_REVIEW_ELIGIBILITY","FIRST")
+            or original["data"].get("candidate_origin")!=(
+                "P1_REENTRY_EPISODE" if child else "SCANNER")
+            or (child and (
+                original["data"].get("reentry_episode_id")!=candidate["candidate_id"]
+                or original["data"].get("reentry_parent_candidate_id")!=
+                    candidate.get("reentry_parent_candidate_id")
+                or original["data"].get("reentry_episode_signal_at_utc")!=
+                    candidate.get("event_time_utc")))):
+        raise ValueError("unverified native Scanner or second-leg child original")
+    if not child:
+        one("FULL_REVIEW_ELIGIBILITY","FIRST")
     eligible,_=one("FULL_REVIEW_ELIGIBILITY")
     if eligible["result"]!="PASS":
         raise ValueError("full native model not review eligible")
@@ -474,11 +485,15 @@ def _verify_first_native_model_paper_journal(*,candidate:dict[str,Any],
                 "paper_entry_status":"NO_BUY_NO_PAPER_FILL_AS_EXPECTED",
                 "paper_entry_receipt_sha256":None,
                 "independent_cloud_paper_fill_ack":False}
-    if (len(fills)!=1 or fills[0][0]["event_key"]!="FRESHRECHECK"
+    if (len(fills)!=1 or fills[0][0]["event_key"]!=key
             or fills[0][0]["result"]!="PAPER_FILLED"):
         raise ValueError("positive P4 without exact native Paper fill")
     fill,sha=fills[0]
     p=p4["data"];f=fill["data"]
+    if child and not (
+            clock(candidate["event_time_utc"]) <= clock(p4["known_at_utc"])
+            <= clock(fill["known_at_utc"])):
+        raise ValueError("P1 Paper fill cannot predate new episode/P4")
     ask,stop,stage2=p.get("ask_eur"),p.get("validated_stop_eur"),p.get("validated_stage2_eur")
     if (p.get("p4_status")!="FULL_BUY_SCOUT_CONTRACT_VALIDATED_OFFLINE_NOT_RELEASE_EVIDENCE"
             or any(type(x) not in (int,float) or not math.isfinite(x)
