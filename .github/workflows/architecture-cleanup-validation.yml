@@ -175,7 +175,7 @@ jobs:
       - name: V3 early closed-5m paper-research hypothesis into shared P4 contract
         run: |
           python -m py_compile paper_evaluator/v3_p3_early_5m_continuity_research_v1.py
-          python -m unittest tests.test_v3_p3_early_5m_continuity_research_v1 -v
+          python -m unittest tests.test_v3_p3_early_5m_continuity_research_v1 tests.test_v3_experimental_continuity_volume_review_v1 -v
       - name: V3-B inactive full entry contract tests
         run: python -m unittest tests.test_v3_full_entry_decision_candidate_v1 -v
 
