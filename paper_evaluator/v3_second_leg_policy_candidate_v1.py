@@ -124,6 +124,7 @@ def prepare_original_owner_reentry_child(*,journal,
     from pathlib import Path
     from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import REVISION
     from paper_evaluator.v3_experimental_paper_journal_v1 import KIND
+    from paper_evaluator.v3_full_entry_decision_candidate_v1 import SECOND_LEG_P1_CHECKS
     from paper_evaluator.v3_entry_handoff_probe import utc
     directory=Path(journal)
     if not directory.is_dir() or directory.is_symlink():
@@ -136,7 +137,7 @@ def prepare_original_owner_reentry_child(*,journal,
             or not isinstance(pair,str) or not pair.endswith("/EUR")
             or not isinstance(altname,str) or not altname.isalnum()
             or not isinstance(parent_event_key,str)
-            or len(parent_event_key)!=16 or not parent_event_key.startswith("C")):
+            or len(parent_event_key)!=17 or not parent_event_key.startswith("C")):
         raise ValueError("canonical original P1 owner and bar key required")
     now=utc(now_at_utc)
     rows=[]
@@ -169,15 +170,20 @@ def prepare_original_owner_reentry_child(*,journal,
     first_model=unique("MODEL_RESPONSE","PASS")
     first_p4=unique("P4_VALIDATION")
     if (source["event_key"]!="FIRST"
+            or source["data"].get("candidate_origin")!="SCANNER"
             or first_model["data"].get("raw_setup_lane")!="EXTENDED"
             or first_p4["result"] not in ("WAIT","REJECT")
-            or utc(first_p4["known_at_utc"])<=utc(source["event_time_utc"]) is False
+            or utc(first_p4["known_at_utc"])<utc(source["event_time_utc"])
             or any(row["phase"]=="PAPER_FILL" for row in original)):
         raise ValueError("original EXTENDED no-buy model/P4 not verified")
     reentry=unique("FRESH_SECOND_LEG","PASS",parent_event_key)
+    review_checks=reentry["data"].get("review_checks")
+    structural=(review_checks.get("p1") if isinstance(review_checks,dict) else None)
     if (reentry["data"].get("review_family")!="EXTENDED_PROSPECTIVE_15M_BASE_SECOND_LEG"
             or reentry["data"].get("review_status")!="SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
-            or not all((reentry["data"].get("review_checks") or {}).get("p1",{}).values())):
+            or not isinstance(structural,dict)
+            or set(structural)!=SECOND_LEG_P1_CHECKS
+            or any(value is not True for value in structural.values())):
         raise ValueError("verified full P1 bar/reclaim checks required")
     parts=canonical_second_leg_episode(
         series_id=series_id,original_candidate=original_candidate,
