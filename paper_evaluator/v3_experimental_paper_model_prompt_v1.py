@@ -15,6 +15,10 @@ from paper_evaluator.v3_p3_early_5m_continuity_research_v1 import (
     KIND as EARLY_5M_KIND, ELIGIBLE as EARLY_5M_ELIGIBLE,
     CHECKS as EARLY_5M_CHECKS,
 )
+from paper_evaluator.v3_experimental_continuity_volume_review_v1 import (
+    KIND as SOFT_VOLUME_KIND, ELIGIBLE as SOFT_VOLUME_ELIGIBLE,
+    EXPECTED_STANDARD_CHECKS as SOFT_VOLUME_STANDARD_CHECKS,
+)
 from paper_evaluator.v3_full_entry_decision_candidate_v1 import (
     ELIGIBLE_STATUS as SECOND_LEG_ELIGIBLE,
     SECOND_LEG_ELIGIBLE_KIND as SECOND_LEG_KIND,
@@ -43,8 +47,10 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
         and eligibility.get("kind")==SECOND_LEG_KIND)
     early_5m=(eligibility.get("status")==EARLY_5M_ELIGIBLE
               and eligibility.get("kind")==EARLY_5M_KIND)
+    soft_volume=(eligibility.get("status")==SOFT_VOLUME_ELIGIBLE
+                 and eligibility.get("kind")==SOFT_VOLUME_KIND)
     p1_checks=eligibility.get("checks")
-    if (not (initial or p1 or early_5m)
+    if (not (initial or p1 or early_5m or soft_volume)
             or eligibility.get("request_model_recheck_only") is not True
             or eligibility.get("source_candidate_id")!=candidate.get("candidate_id")
             or eligibility.get("pair")!=candidate.get("pair")
@@ -65,8 +71,41 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
                 or eligibility.get("same_clock_comparison_required") is not True
                 or not isinstance(p1_checks,dict)
                 or set(p1_checks)!=EARLY_5M_CHECKS
-                or any(v is not True for v in p1_checks.values())))):
-        raise ValueError("no canonical prospective V3 initial, P1 or early 5m full review")
+                or any(v is not True for v in p1_checks.values())))
+            or (soft_volume and (
+                eligibility.get("approval_to_call_model") is not False
+                or eligibility.get("same_clock_baseline") is not True
+                or eligibility.get("original_candidate_fresh") is not True
+                or eligibility.get("new_closed_15m_bar_after_candidate") is not True
+                or eligibility.get("standard_review_status")!=
+                    "CONTINUITY_EARLY_CONFIRMATION_NOT_PROVEN"
+                or eligibility.get("standard_review_permission") is not False
+                or eligibility.get("old_standard_all_other_checks_passed") is not True
+                or eligibility.get("old_standard_volume_check_failed") is not True
+                or eligibility.get("standard_volume_floor")!=1.2
+                or eligibility.get("experimental_volume_floor")!=1.0
+                or not isinstance(eligibility.get("standard_unmodified_checks"),dict)
+                or set(eligibility["standard_unmodified_checks"])!=
+                    SOFT_VOLUME_STANDARD_CHECKS
+                or eligibility["standard_unmodified_checks"].get(
+                    "unchanged_closed_5m_volume_floor") is not False
+                or any(v is not True for k,v in
+                       eligibility["standard_unmodified_checks"].items()
+                       if k!="unchanged_closed_5m_volume_floor")))):
+        raise ValueError("no canonical prospective V3 initial/P1/P3 full review")
+    if soft_volume:
+        f5=entry_evidence.get("frames",{}).get("5",{})
+        f15=entry_evidence.get("frames",{}).get("15",{})
+        ratio=f5.get("volume_ratio_prior_5")
+        close15=utc(eligibility["fresh_close_at_utc"])
+        if (close15!=utc(f15["last_closed_bar_end_utc"])
+                or not utc(candidate["event_time_utc"])<close15
+                or eligibility.get("snapshot_recheck_key")!=(
+                    candidate["candidate_id"]+"|"+
+                    eligibility["fresh_close_at_utc"]+"|EXP_VOLUME_1_0")
+                or type(ratio) not in (int,float) or not 1.0<=ratio<1.2
+                or abs(ratio-eligibility.get("observed_relative_volume_ratio",-999))>1e-6):
+            raise ValueError("experimental volume candidate differs from matched PIT")
     if early_5m:
         # Same closed 5m and pre-signal 15m clocks must be seen in the exact
         # PIT consumed by the independently approved full model. Research
@@ -164,7 +203,10 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
                                "base_low_eur_descriptive_only",
                                "new_snapshot_observed_at_utc",
                                "fresh_close_at_utc","prior_closed_15m_base_end_at_utc",
-                               "snapshot_recheck_key","same_clock_comparison_required")},
+                               "snapshot_recheck_key","same_clock_comparison_required",
+                               "standard_review_status","standard_review_permission",
+                               "standard_unmodified_checks","observed_relative_volume_ratio",
+                               "standard_volume_floor","experimental_volume_floor")},
         "current_kraken_execution":{k:ticker.get(k) for k in
                                     ("pair","bid","ask","spread_pct","observed_at_utc")},
         "current_kraken_spot_eur_pair":{k:pair_metadata.get(k) for k in
@@ -196,6 +238,15 @@ must be proven by the native source journal BEFORE this new closed 5m event.
 This prompt is a complete new CONTINUITY model decision, NOT a BUY signal or
 a model-call budget permit. Preserve cost, anti-chase, stop/Stage2 and P4
 constraints; missing original source proof means NO model review.
+
+For EXPERIMENTAL SOFT-VOLUME CONTINUITY only, evaluate the SAME genuine
+closed 15m breakout as the unmodified Standard control. The experimental
+5m volume ratio must be in [1.0,1.2), Standard must fail ONLY the >=1.2
+volume check, and every independent structural/stop/spread/anti-chase
+gate remains positive. No blanket softening of those other safeguards,
+no automatic paid model call, no promotion from a research ticket to BUY.
+Assess possible cost-net opportunity using the independently authorized
+full CONTINUITY model and common P4.
 
 A second, INDEPENDENT SOURCE-CATALYST ENTRY PATH exists: when the verified
 positive_source_trigger_for_independent_paper_entry is non-null, treat it as
