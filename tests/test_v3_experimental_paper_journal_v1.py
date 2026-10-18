@@ -1,5 +1,6 @@
 """V3 immutable per-event Paper evidence, censoring, and no-trade analysis."""
 import copy
+from datetime import datetime
 import tempfile
 import unittest
 from pathlib import Path
@@ -8,6 +9,7 @@ from paper_evaluator.v3_experimental_paper_journal_v1 import (
     make_receipt,store_receipt_explicitly,funnel_summary,
 )
 from tests.test_v2r4_v3_entry_handoff_probe import dt
+from paper_evaluator.v3_second_leg_policy_candidate_v1 import canonical_second_leg_episode
 
 
 def event(phase="SCANNER_CAPTURE",result="SEEN",when=None,data=None,**extra):
@@ -94,6 +96,61 @@ class ExperimentalV3JournalTests(unittest.TestCase):
         for payload in bad:
             with self.assertRaises(ValueError):
                 event("P4_VALIDATION","BUY_SCOUT",data=payload)
+
+    def test_one_immutable_parent_review_names_child_episode_without_faking_buy(self):
+        parent={"candidate_id":"CAND-1","pair":"XBT/EUR",
+                "event_time_utc":dt(0)}
+        signal=dt(7207)
+        closed=dt(7200)
+        series="PAPER-V3-EXPERIMENTAL-TEST"
+        a=canonical_second_leg_episode(
+            series_id=series,original_candidate=parent,
+            closed_15m_end_utc=closed,signal_known_at_utc=signal)
+        later=canonical_second_leg_episode(
+            series_id=series,original_candidate=parent,
+            closed_15m_end_utc=closed,signal_known_at_utc=dt(7260))
+        self.assertEqual(a["reentry_episode_id"],later["reentry_episode_id"])
+        self.assertNotEqual(a["reentry_episode_signal_at_utc"],
+                            later["reentry_episode_signal_at_utc"])
+        self.assertNotEqual(a["reentry_episode_id"],parent["candidate_id"])
+        self.assertEqual(a["reentry_parent_candidate_id"],parent["candidate_id"])
+        self.assertEqual(a["reentry_closed_15m_end_utc"],
+                         closed.replace("+00:00","Z"))
+        data=dict(a,review_family="EXTENDED_PROSPECTIVE_15M_BASE_SECOND_LEG")
+        event_key=a["reentry_parent_event_key"]
+        receipt=event("FRESH_SECOND_LEG","PASS",when=signal,
+                      event_key=event_key,data=data)
+        self.assertEqual(receipt["candidate_id"],parent["candidate_id"])
+        self.assertEqual(receipt["event_time_utc"],parent["event_time_utc"])
+        self.assertFalse(receipt["orders"])
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)
+            self.assertEqual(store_receipt_explicitly(path,receipt)[0],
+                             "IMMUTABLE_NEW_RECEIPT")
+            self.assertEqual(store_receipt_explicitly(path,receipt)[0],
+                             "IDEMPOTENT_IDENTICAL")
+            incompatible=event("FRESH_SECOND_LEG","PASS",when=dt(7260),
+                               event_key=event_key,
+                               data=dict(later,review_family=data["review_family"]))
+            with self.assertRaisesRegex(ValueError,"conflicting event"):
+                store_receipt_explicitly(path,incompatible)
+        for altered in (
+            dict(data,reentry_episode_id="V3RE-FAKED"),
+            dict(data,reentry_parent_candidate_id="UNRELATED"),
+            dict(data,reentry_will_use_separate_fill_time=False),
+            dict(data,reentry_closed_15m_end_utc=dt(7300)),
+        ):
+            with self.assertRaises(ValueError):
+                event("FRESH_SECOND_LEG","PASS",when=signal,
+                      event_key=event_key,data=altered)
+        with self.assertRaises(ValueError):
+            event("FRESH_SECOND_LEG","PASS",when=signal,
+                  event_key="C20261018T000000Z",data=data)
+        for bad in (dt(7201),dt(7300),dt(4*3600+60)):
+            with self.assertRaises(ValueError):
+                canonical_second_leg_episode(
+                    series_id=series,original_candidate=parent,
+                    closed_15m_end_utc=bad,signal_known_at_utc=signal)
 
     def test_no_nan_secrets_or_outcome_relabels(self):
         for data in (
