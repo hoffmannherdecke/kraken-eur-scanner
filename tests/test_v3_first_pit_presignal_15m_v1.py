@@ -187,7 +187,8 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
                   "initial_pit_closed_15m_ohlc":bars}
             return capture_first_pit_base(
                 candidate,coin,written_at_utc=t(known+timedelta(seconds=1)))
-        def observe(with_source,*,late_after_p4=False,late_original_decision=False):
+        def observe(with_source,*,late_after_p4=False,late_original_decision=False,
+                    witnessed_pre_signal=False):
             with tempfile.TemporaryDirectory() as tmp:
                 path=Path(tmp);journal=path/"journal";captures=path/"cap"
                 journal.mkdir();captures.mkdir()
@@ -196,6 +197,28 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
                 late_decision=datetime(2026,10,12,6,45,20,tzinfo=timezone.utc)
                 seed(journal,model_setup_lane="CONTINUITY",
                      decision_at=late_decision if late_original_decision else None)
+                if witnessed_pre_signal:
+                    # Four ORIGINAL captures from 06:00..06:30, all completed
+                    # before the 06:42 scanner signal. Each actual snapshot
+                    # knows its own clock and its SHA; the final tick cannot
+                    # retroactively fill in any of these older minutes.
+                    for a,z,capture_at in (
+                        (0,7,datetime(2026,10,12,6,8,tzinfo=timezone.utc)),
+                        (7,17,datetime(2026,10,12,6,18,tzinfo=timezone.utc)),
+                        (17,27,datetime(2026,10,12,6,28,tzinfo=timezone.utc)),
+                        (27,30,datetime(2026,10,12,6,31,tzinfo=timezone.utc)),
+                    ):
+                        def stored_earlier_ohlc(_,start=a,stop=z):
+                            first=datetime(2026,10,12,6,0,tzinfo=timezone.utc)
+                            candles=[]
+                            for minute in range(start,stop):
+                                at=first+timedelta(minutes=minute)
+                                candles.append([int(at.timestamp()),"2.09","2.12",
+                                                "2.08","2.10","2.10","10",2])
+                            return {"error":[],"result":{"ZROEUR":candles,"last":1}}
+                        capture_public_1m(
+                            pair="ZRO/EUR",altname="ZROEUR",outdir=captures,
+                            loader=stored_earlier_ohlc,clock=lambda at=capture_at:at)
                 if with_source:
                     base=first_source(late_after_p4=late_after_p4)
                     self.assertIsNotNone(base)
@@ -257,6 +280,27 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
                          "FIRST_PIT_P4_5M_CHRONOLOGY_UNPROVEN_NO_REVIEW")
         self.assertFalse(shadow["early_5m_review_only"])
         self.assertFalse(late_p4["model_called"])
+        self.assertFalse(any(row["phase"]=="PAPER_FILL" for row in rows))
+        genuine,calls,rows=observe(False,witnessed_pre_signal=True)
+        shadow=genuine["continuity_offensive_shadow"]
+        self.assertEqual(shadow["status"],"SOURCE_CLOCKED_PIT_RESEARCH_ONLY")
+        self.assertEqual(shadow["early_base_provenance"],
+                         "PROSPECTIVELY_SHA_WITNESSED_PRE_SIGNAL_1M")
+        self.assertTrue(shadow["same_witnessed_archive"])
+        self.assertEqual(shadow["early_5m_status"],
+                         "EARLY_5M_CONTINUITY_SUPPORTS_NEW_FULL_REVIEW_ONLY")
+        self.assertTrue(shadow["early_5m_review_only"])
+        self.assertEqual(calls,["coin","ticker"])
+        self.assertFalse(any(row["phase"]=="PAPER_FILL" for row in rows))
+        late_witnessed,calls,rows=observe(
+            False,witnessed_pre_signal=True,late_original_decision=True)
+        shadow=late_witnessed["continuity_offensive_shadow"]
+        self.assertEqual(shadow["early_base_provenance"],
+                         "PROSPECTIVELY_SHA_WITNESSED_PRE_SIGNAL_1M")
+        self.assertEqual(shadow["early_5m_status"],
+                         "FIRST_PIT_P4_5M_CHRONOLOGY_UNPROVEN_NO_REVIEW")
+        self.assertFalse(shadow["early_5m_review_only"])
+        self.assertEqual(calls,["coin","ticker"])
         self.assertFalse(any(row["phase"]=="PAPER_FILL" for row in rows))
 
 
