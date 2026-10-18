@@ -36,6 +36,7 @@ from paper_evaluator.v3_extended_reentry_review_v1 import (
 )
 from paper_evaluator.v3_second_leg_policy_candidate_v1 import (
     witnessed_15m_from_existing_1m_path,propose_second_leg_review,
+    canonical_second_leg_episode,
 )
 from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import (
     sync_once, _RELEASED_CLOUD_SYNC_NATIVE_OWNER,
@@ -109,6 +110,17 @@ def _journal_extended_second_leg(*,candidate:dict[str,Any],series_id:str,
              or state in ("NONCONTIGUOUS_BASE_HISTORY",
                           "CANDLE_EVIDENCE_CLOCK_MISMATCH"))
     status=("PASS" if eligible else "UNKNOWN" if missing else "SKIP")
+    episode={}
+    if eligible:
+        try:
+            episode=canonical_second_leg_episode(
+                series_id=series_id,original_candidate=candidate,
+                closed_15m_end_utc=closed,
+                signal_known_at_utc=now_at_utc)
+        except (ValueError,TypeError,KeyError,OverflowError):
+            eligible=False
+            state="UNKNOWN_INVALID_PROSPECTIVE_EPISODE_CLOCK_OR_ID"
+            status="UNKNOWN"
     rec=make_receipt(
         series_id=series_id,revision=REVISION,
         candidate_id=candidate["candidate_id"],pair=candidate["pair"],
@@ -121,12 +133,13 @@ def _journal_extended_second_leg(*,candidate:dict[str,Any],series_id:str,
                                "source_timing":review.get("checks") or {},
                                "closed_15m_base_source":"WITNESSED_PRIOR_1M_ONLY"},
               "source_status":coin.get("status") or "UNKNOWN",
-              "watch_closed_5m_end_utc":closed,
               "phase_failure_stage":None if eligible else
-                    "EXTENDED_REENTRY_SOURCE_OR_CONFIRMATION_INCOMPLETE"})
+                    "EXTENDED_REENTRY_SOURCE_OR_CONFIRMATION_INCOMPLETE",
+              **episode})
     store_receipt_explicitly(journal,rec)
     return {"status":("EXTENDED_NEW_FULL_MODEL_P4_REVIEW_REQUIRED_NO_AUTH"
                       if eligible else state),
+            **episode,
             "technical_failure_stage":policy.get("technical_failure_stage"),
             "technical_failure_class":policy.get("technical_failure_class"),
             "full_model_review_candidate":eligible,
