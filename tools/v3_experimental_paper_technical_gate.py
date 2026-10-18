@@ -173,7 +173,8 @@ SHA=re.compile(r"[0-9a-f]{64}\Z")
 # proof to contain original source readbacks that the separate release owner
 # must independently compare to Mini-PC/Cloud/GitHub/Work.
 PROOF_ORIGINS={
-    "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E":frozenset({"MINIPC_PHYSICAL"}),
+    "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E":
+        frozenset({"MINIPC_PHYSICAL","SUPABASE_CLOUD"}),
     "V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT":frozenset({"MINIPC_PHYSICAL"}),
     "V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE":
         frozenset({"MINIPC_PHYSICAL","SUPABASE_CLOUD"}),
@@ -313,6 +314,52 @@ def _evidence_content_error(
                 raise ValueError("positive original fill timestamp precedes P4")
         except (KeyError,ValueError,AttributeError,TypeError,OverflowError):
             return name+" positive Paper fill/P4 time ordering not witnessed"
+        # A healthy Mini-PC and an internal 'Cloud ACK' flag cannot prove
+        # the exact Paper fill reached append-only Supabase. Require an
+        # independently fetched Cloud original for the SAME two case IDs,
+        # with the identical immutable canonical event digests. Negative
+        # P4 must have an independently observed ZERO Paper fills.
+        cloud=by_origin["SUPABASE_CLOUD"]
+        cloud_cases=cloud.get("paper_writer_dryrun_case_readbacks")
+        if (cloud.get("read_only") is not True
+                or cloud.get("cloud_cas_performed") is not False
+                or cloud.get("active_paper_series_changed") is not False
+                or cloud.get("v2r4_live_strategy_modified") is not False
+                or cloud.get("independent_original_receipt_query") is not True
+                or cloud.get("same_event_id_reread_no_duplicate_verified") is not True
+                or cloud.get("original_model_response_id")!=
+                    original["model_response_id"]
+                or cloud.get("original_model_p4_receipt_sha256")!=
+                    original["original_p4_receipt_sha256"]
+                or not isinstance(cloud_cases,list)
+                or len(cloud_cases)!=2):
+            return name+" missing independent Cloud original model/P4/Paper readback"
+        cloud_by_case={
+            item.get("case") if isinstance(item,dict) else None:item
+            for item in cloud_cases
+        }
+        if len(cloud_by_case)!=2 or set(cloud_by_case)!=set(by_case):
+            return name+" Cloud case identities incomplete or duplicated"
+        for case_name,host_case in by_case.items():
+            remote=cloud_by_case[case_name]
+            for key in (
+                "series_id","candidate_id","p4_decision",
+                "p4_record_sha256","native_journal_record_sha256",
+                "paper_fill_count","paper_fill_result",
+            ):
+                if remote.get(key)!=host_case.get(key):
+                    return name+" host/Cloud positive or negative original mismatch"
+            if (remote.get("cloud_query_readback_verified") is not True
+                    or remote.get("orders") is not False
+                    or remote.get("real_money_actions") is not False):
+                return name+" unverified independent Cloud append-only Paper row"
+        try:
+            remote_at=datetime.fromisoformat(
+                cloud["observed_at_utc"].replace("Z","+00:00"))
+            if remote_at.tzinfo is None or remote_at<fill_time:
+                raise ValueError("Cloud readback before physical Paper fill")
+        except (ValueError,AttributeError,TypeError,OverflowError):
+            return name+" Cloud original observation precedes positive Paper fill"
     if name=="V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT":
         host=by_origin["MINIPC_PHYSICAL"]
         checks=(
