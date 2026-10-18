@@ -162,6 +162,10 @@ jobs:
         run: |
           python -m py_compile paper_evaluator/v3_experimental_paper_initial_review_v1.py paper_evaluator/v3_experimental_paper_model_prompt_v1.py paper_evaluator/v3_experimental_paper_journal_v1.py paper_evaluator/v3_experimental_paper_family_router_v1.py paper_evaluator/v3_experimental_paper_pathwise_economics_v1.py
           python -m unittest tests.test_v3_experimental_paper_initial_review_v1 tests.test_v3_experimental_paper_journal_v1 tests.test_v3_experimental_paper_family_router_v1 tests.test_v3_experimental_paper_pathwise_economics_v1 -v
+      - name: V3 original Kraken P0 pre-signal 15m provenance and selective early5m model-free shadow
+        run: |
+          python -m py_compile paper_evaluator/successor_coin_entry_evidence_v1.py paper_evaluator/v3_first_pit_presignal_15m_v1.py paper_evaluator/v3_paper_minipc_one_candidate_v1.py paper_evaluator/v3_paper_minipc_selective_tick_v1.py
+          python -m unittest tests.test_successor_coin_entry_evidence_v1 tests.test_v3_first_pit_presignal_15m_v1 -v
       - name: V3 eight offensive Paper requirements - original tracking cannot self-certify E2E
         run: python -m unittest tests.test_v3_offensive_policy_tracking_contract -v
       - name: Existing six-proof V3 experimental Paper technical and recovery release gate
