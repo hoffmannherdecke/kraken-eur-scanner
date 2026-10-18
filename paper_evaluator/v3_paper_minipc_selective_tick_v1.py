@@ -1075,11 +1075,61 @@ def plan_canary_resume(*,candidate:dict[str,Any],series_id:str,
     entries={(r["phase"],r["event_key"]) for r in rows}
     if len(entries)!=len(rows):
         raise ValueError("duplicate event identities")
-    origins=[r for r in rows if r["phase"]=="SCANNER_CAPTURE"
+    child=candidate.get("entry_origin")=="P1_REENTRY_EPISODE"
+    origin_phase="P1_CHILD_ENROLLMENT" if child else "SCANNER_CAPTURE"
+    origin_name="P1_REENTRY_EPISODE" if child else "SCANNER"
+    origins=[r for r in rows if r["phase"]==origin_phase
              and r["result"]=="SEEN"
-             and r["data"].get("candidate_origin")=="SCANNER"]
+             and r["data"].get("candidate_origin")==origin_name]
     if len(origins)!=1 or origins[0]["event_key"]!="FIRST":
-        return block("ORIGINAL_SCANNER_NOT_EXACT_NO_AUTOMATIC_RESTART")
+        return block("ORIGINAL_SCANNER_OR_CHILD_NOT_EXACT_NO_AUTOMATIC_RESTART")
+    if child:
+        d=origins[0]["data"]
+        if (d.get("reentry_episode_id")!=candidate["candidate_id"]
+                or d.get("reentry_parent_candidate_id")!=
+                    candidate.get("reentry_parent_candidate_id")
+                or d.get("reentry_episode_signal_at_utc")!=candidate["event_time_utc"]
+                or d.get("reentry_original_event_time_utc")!=
+                    candidate.get("reentry_original_event_time_utc")
+                or d.get("reentry_parent_event_key")!=
+                    candidate.get("reentry_parent_event_key")):
+            return block("CHILD_EPISODE_PARENT_LINEAGE_QUARANTINE")
+        # Re-validate parent PASS even after a Windows power failure.
+        # An isolated new Paper child receipt is not sufficient authority
+        # for a followup without its original, source-clock-bound P1 basis.
+        parent=[]
+        for path in journal.glob("*.json"):
+            obj=json.loads(path.read_text("utf-8"))
+            if (obj.get("series_id"),obj.get("candidate_id"))!=(
+                    series_id,candidate.get("reentry_parent_candidate_id")):
+                continue
+            eid=hashlib.sha256("|".join(str(obj[k]) for k in
+                ("series_id","candidate_id","phase","event_key")).encode()).hexdigest()
+            if (path.is_symlink() or path.stem!=eid or
+                    obj.get("kind")!="V3_EXPERIMENTAL_PAPER_CANDIDATE_EVENT_V1"
+                    or obj.get("revision")!=REVISION or obj.get("orders") is not False
+                    or obj.get("real_money_actions") is not False):
+                return block("P1_PARENT_RECEIPT_INTEGRITY_QUARANTINE")
+            parent.append(obj)
+        from paper_evaluator.v3_full_entry_decision_candidate_v1 import SECOND_LEG_P1_CHECKS
+        p1=[r for r in parent if r["phase"]=="FRESH_SECOND_LEG"
+            and r["result"]=="PASS"
+            and r["event_key"]==candidate.get("reentry_parent_event_key")]
+        scan=[r for r in parent if r["phase"]=="SCANNER_CAPTURE" and r["result"]=="SEEN"]
+        model=[r for r in parent if r["phase"]=="MODEL_RESPONSE" and r["result"]=="PASS"]
+        old_p4=[r for r in parent if r["phase"]=="P4_VALIDATION"
+                and r["result"] in ("WAIT","REJECT")]
+        if (len(p1)!=1 or len(scan)!=1 or len(model)!=1 or len(old_p4)!=1
+                or model[0]["data"].get("raw_setup_lane")!="EXTENDED"
+                or scan[0]["event_time_utc"]!=candidate.get("reentry_original_event_time_utc")
+                or any(r["phase"]=="PAPER_FILL" for r in parent)
+                or p1[0]["data"].get("reentry_episode_id")!=candidate["candidate_id"]
+                or p1[0]["known_at_utc"]!=candidate["event_time_utc"]
+                or set((p1[0]["data"].get("review_checks") or {}).get("p1",{}))
+                    !=SECOND_LEG_P1_CHECKS
+                or any(v is not True for v in
+                    (p1[0]["data"].get("review_checks") or {}).get("p1",{}).values())):
+            return block("P1_PARENT_OR_BASIS_NOT_PROVEN_AFTER_RESTART")
     phases=lambda name:[r for r in rows if r["phase"]==name]
     requests=phases("MODEL_REQUEST")
     responses=phases("MODEL_RESPONSE")
