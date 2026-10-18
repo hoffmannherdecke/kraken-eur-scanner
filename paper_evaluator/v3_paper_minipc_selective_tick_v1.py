@@ -34,6 +34,9 @@ from paper_evaluator.v3_experimental_paper_journal_v1 import (
 from paper_evaluator.v3_extended_reentry_review_v1 import (
     extended_reentry_review,MAX_ORIGINAL_TO_LATER_REVIEW_SECONDS,
 )
+from paper_evaluator.v3_second_leg_policy_candidate_v1 import (
+    witnessed_15m_from_existing_1m_path,propose_second_leg_review,
+)
 from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import (
     sync_once, _RELEASED_CLOUD_SYNC_NATIVE_OWNER,
 )
@@ -43,14 +46,14 @@ def utc_now()->str:
 
 def _journal_extended_second_leg(*,candidate:dict[str,Any],series_id:str,
         journal:Path,rows:list[dict],p4:dict,coin:dict,quote:dict,
-        now_at_utc:str)->dict[str,Any]:
+        assembled_1m:dict,now_at_utc:str)->dict[str,Any]:
     """One observed reentry on the EXISTING owner and immutable receipt path.
 
     Never authorizes a model call, Paper fill or trader action. Historical
     model/P4 decisions are not fresh trade signals. Only the new witnessed
     closed Kraken 5m candle can request a separately funded FULL review.
     """
-    frame=(coin.get("frames") or {}).get("5") or {}
+    frame=(coin.get("frames") or {}).get("15") or {}
     closed=frame.get("last_closed_bar_end_utc")
     now=clock(now_at_utc)
     # Missing time => explicit technical UNKNOWN, not negative market vote.
@@ -69,32 +72,49 @@ def _journal_extended_second_leg(*,candidate:dict[str,Any],series_id:str,
     safe_source=(coin.get("status")=="COMPLETE"
                  and coin.get("pair")==candidate["pair"]
                  and isinstance(quote,dict)
-                 and isinstance(closed,str))
-    review=(
-        extended_reentry_review(
-            candidate,{"setup_lane":"EXTENDED","decision":p4["result"],
-                       "known_at_utc":p4["known_at_utc"]},
-            coin,dict(quote,observed_at_utc=(
-                quote.get("observed_at_utc") or now_at_utc)),
-            decision_at_utc=now_at_utc)
-        if safe_source else
-        {"state":"UNKNOWN_NO_COMPLETE_PROSPECTIVE_KRAKEN_SOURCE",
-         "full_model_review_candidate":False}
-    )
-    state=review["state"]
-    eligible=(review.get("full_model_review_candidate") is True
-              and state=="STRUCTURE_AND_VOLUME_SUPPORT_FRESH_REVIEW_NOT_BUY"
+                 and isinstance(closed,str)
+                 and (quote.get("pair") in (None,candidate["pair"])))
+    review={"state":"UNKNOWN_NO_COMPLETE_PROSPECTIVE_KRAKEN_SOURCE"}
+    policy={"status":"UNKNOWN_NO_WITNESSED_CLOSED_15M_BASE"}
+    if safe_source:
+        try:
+            # The earlier 5m proximity test is NOT proof of a 1-3h base.
+            # Require the independently archived, time-witnessed 1m path,
+            # then use the existing canonical P1 second-leg policy only.
+            review=extended_reentry_review(
+                candidate,{"setup_lane":"EXTENDED","decision":p4["result"],
+                           "known_at_utc":p4["known_at_utc"]},
+                coin,quote,decision_at_utc=now_at_utc)
+            bars=witnessed_15m_from_existing_1m_path(
+                assembled_1m,pair=candidate["pair"],
+                observed_at_utc=now_at_utc)
+            policy=propose_second_leg_review(
+                candidate,{"setup_lane":"EXTENDED","decision":p4["result"]},
+                coin,quote,bars,decision_at_utc=now_at_utc)
+        except (OSError,KeyError,ValueError,TypeError,OverflowError):
+            policy={"status":"UNKNOWN_PROSPECTIVE_15M_BASE_SOURCE_INVALID"}
+    # A complete five-minute ticker is necessary but never sufficient.
+    clock_safe=not review["state"].startswith("UNKNOWN")
+    state=policy["status"] if clock_safe else review["state"]
+    eligible=(clock_safe and
+              policy.get("status")=="SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
+              and policy.get("request_model_recheck_only") is True
               and closed is not None)
-    status=("PASS" if eligible else
-            "UNKNOWN" if state.startswith("UNKNOWN") else "SKIP")
+    missing=(state.startswith("UNKNOWN") or state.startswith("MISSING")
+             or state in ("NONCONTIGUOUS_BASE_HISTORY",
+                          "CANDLE_EVIDENCE_CLOCK_MISMATCH"))
+    status=("PASS" if eligible else "UNKNOWN" if missing else "SKIP")
     rec=make_receipt(
         series_id=series_id,revision=REVISION,
         candidate_id=candidate["candidate_id"],pair=candidate["pair"],
         event_time_utc=candidate["event_time_utc"],
         known_at_utc=now_at_utc,phase="FRESH_SECOND_LEG",result=status,
         event_key=event_key,
-        data={"review_family":"EXTENDED_PROSPECTIVE_SECOND_LEG",
-              "review_status":state,"review_checks":review.get("checks") or {},
+        data={"review_family":"EXTENDED_PROSPECTIVE_15M_BASE_SECOND_LEG",
+              "review_status":state,
+              "review_checks":{"p1":policy.get("checks") or {},
+                               "source_timing":review.get("checks") or {},
+                               "closed_15m_base_source":"WITNESSED_PRIOR_1M_ONLY"},
               "source_status":coin.get("status") or "UNKNOWN",
               "watch_closed_5m_end_utc":closed,
               "phase_failure_stage":None if eligible else
@@ -202,18 +222,22 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                 else:
                     results["wait"]=observe_wait(journal=journal,series_id=series_id,
                         candidate_id=cid,snapshot=evidence,now_at_utc=now_at)
-    # Original full-model P4 WAIT/REJECT is not terminally discarded if a
-    # NEW closed second-leg 5m opportunity is genuinely observed in the same
-    # V3 owner. Never replay expired model HTTP or promote eligibility to BUY.
-    reason_codes=p4["data"].get("raw_reason_codes") or [] if p4 else []
-    is_extended=(candidate.get("setup_lane")=="EXTENDED" or
-                 any(isinstance(code,str) and code.startswith("EXTENDED_")
-                     for code in reason_codes))
+    # Build verified archive ONCE for both original lifecycle and the later
+    # P1 structural base. A new bar cannot be inferred from a late download.
+    capture_path=assemble(snapshots=capture_dir,pair=pair,
+        entry_at_utc=origin["event_time_utc"],observed_at_utc=clock_now(),
+        max_live_capture_lag_minutes=15)
+    # Existing original MODEL_RESPONSE is authoritative for setup lane.
+    # Neither caller-created candidate.setup_lane nor keyword reason codes
+    # are acceptable evidence that the original model decided EXTENDED.
+    original_model=next((r for r in rows
+        if r["phase"]=="MODEL_RESPONSE" and r["result"]=="PASS"),None)
+    is_extended=bool(original_model and
+        original_model["data"].get("raw_setup_lane")=="EXTENDED")
     age=(clock(clock_now())-source_time).total_seconds()
     if (p4 and p4["result"] in ("WAIT","REJECT") and is_extended
             and candidate.get("entry_origin","SCANNER")=="SCANNER"
-            and any(r["phase"]=="MODEL_RESPONSE" and r["result"]=="PASS"
-                    for r in rows)
+            and original_model is not None
             and 0<=age<=MAX_ORIGINAL_TO_LATER_REVIEW_SECONDS):
         now_at_utc=clock_now()
         if reentry_coin is None:
@@ -227,13 +251,10 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
         results["extended_reentry"]=_journal_extended_second_leg(
             candidate=candidate,series_id=series_id,journal=journal,
             rows=rows,p4=p4,coin=reentry_coin,quote=reentry_quote,
-            now_at_utc=now_at_utc)
+            assembled_1m=capture_path,now_at_utc=now_at_utc)
     now=clock(clock_now())
     # The original model decision is final if no BUY: followup even SKIP/WAIT/
     # source-UNKNOWN cases, never reclassify ex-post MFE as earned trades.
-    capture_path=assemble(snapshots=capture_dir,pair=pair,
-        entry_at_utc=origin["event_time_utc"],observed_at_utc=clock_now(),
-        max_live_capture_lag_minutes=15)
     results["prospective_1m_bars"]=len(capture_path["closed_bars"])
     # Zero extra Kraken requests, receipts, or tasks: signal a missing
     # first minute while the event is still fresh instead of pretending
