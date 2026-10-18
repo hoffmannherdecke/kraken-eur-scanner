@@ -158,6 +158,7 @@ class OffensiveV3PolicyTrackingContractTests(unittest.TestCase):
             "if len(prior_closed)<2:",
             "propose_continuity_fresh_review(",
             "propose_early_5m_continuity_review(",
+            "candidate,baseline,reentry_coin,reentry_quote,prior_closed,",
             "propose_experimental_continuity_review(",
             '"same_witnessed_archive":True',
             '"model_http_attempts_reserved":0',
