@@ -92,6 +92,48 @@ class ExperimentalInitialV3PaperTests(unittest.TestCase):
             hint,*xs[:2],xs[2],xs[3],late_model,
             decision_at_utc=dt(150),slippage_pct_each_side=.08)["decision"],"BUY_SCOUT")
 
+    def test_p1_later_1h_base_reaches_existing_full_prompt_and_p4_only(self):
+        # Original scanner 75 minutes old: only a newly captured closed
+        # 15m reclaim is fresh. No model HTTP or live-Paper authority here.
+        from tests.test_v3_second_leg_policy_candidate_v1 import good
+        from paper_evaluator.v3_second_leg_policy_candidate_v1 import propose_second_leg_review
+        old,original,coin,quote,bars=good()
+        ticket=propose_second_leg_review(
+            old,original,coin,quote,bars,decision_at_utc=dt(13))
+        self.assertEqual(ticket["status"],
+                         "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY")
+        q=dict(quote,pair="XBT/EUR",observed_at_utc=dt(9),
+               spread_pct=(quote["ask"]-quote["bid"])/(
+                   (quote["ask"]+quote["bid"])/2)*100)
+        meta={"pair":"XBT/EUR","status":"online","spot":True,"quote":"EUR",
+              "minimum_order_passed":True,"observed_at_utc":dt(8)}
+        prompt=build_v3_paper_full_model_prompt(
+            candidate=old,eligibility=ticket,entry_evidence=coin,ticker=q,
+            pair_metadata=meta,decision_at_utc=dt(13))
+        parsed=json.loads(prompt.split("VERIFIED DECISION INPUT:\n",1)[1])
+        self.assertEqual(parsed["source_eligibility"]["base_15m_bars"],4)
+        self.assertTrue(parsed["source_eligibility"]["original_candidate_historical_only"])
+        self.assertEqual(parsed["candidate"]["event_time_utc"],old["event_time_utc"])
+        self.assertNotIn("post_event_mfe",prompt)
+        model=dict(full_fixture()[-1],candidate_id=old["candidate_id"],
+                   decision_at_utc=dt(13),setup_lane="EXTENDED",
+                   stop_eur=9.9,stage2_trigger_eur=10.6)
+        outcome=validate_full_entry_decision(
+            ticket,old,coin,q,meta,model,decision_at_utc=dt(13),
+            slippage_pct_each_side=.08)
+        self.assertEqual(outcome["decision"],"BUY_SCOUT")
+        self.assertFalse(outcome["paper_writer_started"])
+        self.assertFalse(outcome["release_evidence"])
+        bad=dict(ticket,new_snapshot_known_at_utc=dt(17))
+        with self.assertRaises(ValueError):
+            build_v3_paper_full_model_prompt(
+                candidate=old,eligibility=bad,entry_evidence=coin,
+                ticker=q,pair_metadata=meta,decision_at_utc=dt(13))
+        self.assertEqual(validate_full_entry_decision(
+            bad,old,coin,q,meta,model,decision_at_utc=dt(13),
+            slippage_pct_each_side=.08)["status"],
+            "NO_FULL_REVIEW_ELIGIBILITY")
+
     def test_missing_required_kraken_source_fails_closed_not_false_market_reject(self):
         mutations=[
             lambda x:x[0].update(event_time_utc=dt(30)),

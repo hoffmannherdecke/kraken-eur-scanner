@@ -75,6 +75,49 @@ class Early5mV3ResearchTests(unittest.TestCase):
         self.assertFalse(full["paper_writer_started"])
         self.assertGreater(full["total_round_trip_cost_pct"],1.2)
 
+    def test_verified_early5m_now_reaches_real_full_model_prompt_without_http(self):
+        from paper_evaluator.v3_experimental_paper_model_prompt_v1 import (
+            build_v3_paper_full_model_prompt,
+        )
+        hint,x=full_inputs()
+        text=build_v3_paper_full_model_prompt(
+            candidate=x[1],eligibility=hint,entry_evidence=x[2],
+            ticker=x[3],pair_metadata=x[4],decision_at_utc=dt(13))
+        self.assertIn("EARLY CLOSED-5M CONTINUITY",text)
+        self.assertIn("EARLY_5M_CONTINUITY_SUPPORTS_NEW_FULL_REVIEW_ONLY",text)
+        self.assertIn("EARLY_5M_P3",text)
+        self.assertIn("snapshot_recheck_key",text)
+        self.assertIn("NO model review",text)
+        self.assertTrue(hint["request_model_recheck_only"])
+        self.assertFalse(hint["approval_to_call_model"])
+        self.assertFalse(hint["orders"])
+
+    def test_early5m_prompt_rejects_foreign_base_clock_fake_checks_or_paid_authority(self):
+        from paper_evaluator.v3_experimental_paper_model_prompt_v1 import (
+            build_v3_paper_full_model_prompt,
+        )
+        hint,x=full_inputs()
+        mutations=(
+            lambda y:y.update(kind="FAKE_EARLY_5M"),
+            lambda y:y.update(approval_to_call_model=True),
+            lambda y:y["checks"].update(fresh_eur_spread_guard=False),
+            lambda y:y.update(snapshot_recheck_key="FORGED"),
+            lambda y:y.update(fresh_close_at_utc=dt(100)),
+            lambda y:y.update(prior_closed_15m_base_end_at_utc=dt(100)),
+            lambda y:y.update(new_snapshot_known_at_utc=dt(100)),
+            lambda y:y.update(baseline_v2r4_decision_unchanged=False),
+            lambda y:y.update(new_closed_5m_bar_after_candidate=False),
+        )
+        for change in mutations:
+            forged=copy.deepcopy(hint)
+            change(forged)
+            with self.subTest(change=str(change)):
+                with self.assertRaises((ValueError,KeyError,TypeError)):
+                    build_v3_paper_full_model_prompt(
+                        candidate=x[1],eligibility=forged,
+                        entry_evidence=x[2],ticker=x[3],
+                        pair_metadata=x[4],decision_at_utc=dt(13))
+
     def test_falsified_eligibility_or_source_cannot_buy(self):
         hint,x=full_inputs()
         changes=(

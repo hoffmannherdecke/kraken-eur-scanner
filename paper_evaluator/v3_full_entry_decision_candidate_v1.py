@@ -25,6 +25,16 @@ from paper_evaluator.v3_experimental_paper_initial_review_v1 import (
 )
 
 ELIGIBLE_STATUS = "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
+SECOND_LEG_ELIGIBLE_KIND = "V3_B_INACTIVE_SECOND_LEG_FRESH_REVIEW_ELIGIBILITY_V1"
+SECOND_LEG_P1_CHECKS = frozenset({
+    "base_1_to_3h_rebuilt",
+    "closed_reclaim_above_prior_base_high",
+    "reclaim_not_late_chase",
+    "fresh_five_minute_continuation",
+    "existing_v2r4_volume_confirmed",
+    "liquid_eur_spread",
+    "fresh_ask_not_far_past_reclaim",
+})
 # One risk/stop/stage2 validator shared across separately tested review families.
 WAIT_FRESH_ELIGIBLE_STATUS = "WAIT_FRESH_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
 WAIT_FRESH_ELIGIBLE_KIND = "V3_P2_INACTIVE_WAIT_FRESH_REVIEW_ELIGIBILITY_V1"
@@ -144,6 +154,21 @@ def validate_full_entry_decision(
     if (review_status not in {ELIGIBLE_STATUS, WAIT_FRESH_ELIGIBLE_STATUS, CONTINUITY_ELIGIBLE_STATUS, EXPERIMENTAL_ELIGIBLE_STATUS, EARLY_5M_ELIGIBLE_STATUS, INITIAL_REVIEW_ELIGIBLE}
             or review_eligibility.get("request_model_recheck_only") is not True):
         return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
+    if review_status == ELIGIBLE_STATUS:
+        # A five-minute eligibility hint or homemade boolean does NOT prove
+        # the historical EXTENDED coin built an independently witnessed 1h
+        # base. The canonical P1 provenance checks and source clock must
+        # remain bound to the exact new Kraken snapshot consumed by P4.
+        checks = review_eligibility.get("checks")
+        if (review_eligibility.get("kind")!=SECOND_LEG_ELIGIBLE_KIND
+                or review_eligibility.get("original_candidate_historical_only") is not True
+                or review_eligibility.get("new_snapshot_known_at_utc")!=entry_evidence.get("known_at_utc")
+                or review_eligibility.get("request_model_recheck_only") is not True
+                or review_eligibility.get("base_15m_bars") not in range(4,13)
+                or review_eligibility.get("approval_to_call_model") is not False
+                or not isinstance(checks,dict) or set(checks)!=SECOND_LEG_P1_CHECKS
+                or any(value is not True for value in checks.values())):
+            return _result("NO_FULL_REVIEW_ELIGIBILITY", **common)
     if review_status == INITIAL_REVIEW_ELIGIBLE:
         # Experimental initial full review must come from the canonical PIT
         # adapter, not a scanner score or an arbitrary "buy" boolean.

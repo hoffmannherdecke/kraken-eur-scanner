@@ -21,7 +21,7 @@ from typing import Any
 
 KIND="V3_EXPERIMENTAL_PAPER_CANDIDATE_EVENT_V1"
 PHASES=frozenset({
-    "SCANNER_CAPTURE","SOURCE_CATALYST","SOURCE_INPUT","FULL_REVIEW_ELIGIBILITY","MODEL_REQUEST",
+    "SCANNER_CAPTURE","P1_CHILD_ENROLLMENT","SOURCE_CATALYST","SOURCE_INPUT","FULL_REVIEW_ELIGIBILITY","MODEL_REQUEST",
     "MODEL_RESPONSE","MODEL_ERROR","P4_VALIDATION","WAIT_WATCH","WAIT_EXPIRY",
     "WAIT_RECHECK","FRESH_SECOND_LEG","PAPER_FILL","PAPER_EXIT",
     "FOLLOWUP_6H","FOLLOWUP_24H","FOLLOWUP_72H","SERIES_ROTATION",
@@ -38,6 +38,7 @@ DATA_FIELDS=frozenset({
     "frame_close_1m_eur","frame_close_5m_eur","frame_close_15m_eur",
     "frame_volume_ratio_1m","frame_volume_ratio_5m","frame_volume_ratio_15m",
     "atr14_15m_eur","structural_low_15m_eur",
+    "initial_pit_15m_base",
     "kraken_online_spot_eur","ask_eur","bid_eur","spread_pct",
     "source_pair_metadata_status","source_latency_ms","candidate_latency_ms",
     "review_lane","review_family","review_status","review_checks",
@@ -45,7 +46,7 @@ DATA_FIELDS=frozenset({
     "phase_failure_class","phase_failure_stage",
     "input_fingerprint_sha256","model_response_id","model_name",
     "model_request_at_utc","model_response_at_utc","p4_completed_at_utc",
-    "model_http_attempts_reserved","raw_model_decision",
+    "model_http_attempts_reserved","raw_model_decision","raw_setup_lane",
     "raw_reason_codes","raw_missing_triggers","raw_stop_eur",
     "raw_stage2_trigger_eur","raw_wait_ttl_minutes","raw_watch_conditions",
     "normalized_model_decision","normalized_reason_codes",
@@ -68,6 +69,10 @@ DATA_FIELDS=frozenset({
     "wait_recheck_at_utc","watch_closed_5m_end_utc","watch_evaluated_conditions",
     "watch_conditions_met","watch_snapshot_values","watch_valid_snapshot_count",
     "watch_did_not_prove_no_trigger",
+    "reentry_episode_id","reentry_parent_candidate_id",
+    "reentry_episode_signal_at_utc","reentry_closed_15m_end_utc",
+    "reentry_original_event_time_utc","reentry_parent_event_key",
+    "reentry_will_use_separate_fill_time",
     "optional_context_states","market_phase_evidence","smart_money_evidence",
     "polymarket_evidence","news_sentiment_evidence","source_management_evidence",
 })
@@ -135,6 +140,35 @@ def make_receipt(*,series_id:str,revision:str,candidate_id:str,pair:str,
         if (data.get("followup_source") is None
                 or data.get("path_contiguous_1m_verified") is not True):
             raise ValueError("mature outcome requires independently verified path")
+    if phase=="P1_CHILD_ENROLLMENT":
+        if (result!="SEEN"
+                or data.get("candidate_origin")!="P1_REENTRY_EPISODE"
+                or data.get("reentry_episode_id")!=candidate_id
+                or data.get("reentry_parent_candidate_id")==candidate_id
+                or data.get("reentry_episode_signal_at_utc")!=event_time_utc
+                or data.get("reentry_will_use_separate_fill_time") is not True
+                or not isinstance(data.get("reentry_parent_candidate_id"),str)
+                or not isinstance(data.get("reentry_parent_event_key"),str)):
+            raise ValueError("P1 child cannot impersonate scanner or original clock")
+    if phase=="FRESH_SECOND_LEG" and result=="PASS":
+        # A positive P1 observation belongs to its ORIGINAL candidate.
+        # Its child episode gets a different event clock; do not pretend
+        # the old scanner clock is the new entry/fill time.
+        from paper_evaluator.v3_second_leg_policy_candidate_v1 import (
+            canonical_second_leg_episode,
+        )
+        if data.get("review_family")!="EXTENDED_PROSPECTIVE_15M_BASE_SECOND_LEG":
+            raise ValueError("P1 review owner contract missing")
+        episode=canonical_second_leg_episode(
+            series_id=series_id,
+            original_candidate={"candidate_id":candidate_id,"pair":pair,
+                                "event_time_utc":event_time_utc},
+            closed_15m_end_utc=data.get("reentry_closed_15m_end_utc"),
+            signal_known_at_utc=known_at_utc)
+        if any(data.get(field)!=value for field,value in episode.items()):
+            raise ValueError("P1 episode identity/clock/parent lineage mismatch")
+        if event_key!=episode["reentry_parent_event_key"]:
+            raise ValueError("P1 event key cannot be reassigned to a new bar")
     if phase=="P4_VALIDATION" and result=="BUY_SCOUT":
         if (data.get("p4_decision")!="BUY_SCOUT"
                 or data.get("p4_status")!="FULL_BUY_SCOUT_CONTRACT_VALIDATED_OFFLINE_NOT_RELEASE_EVIDENCE"):

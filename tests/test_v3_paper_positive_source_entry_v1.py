@@ -126,6 +126,84 @@ class SourceDrivenV3PaperTests(unittest.TestCase):
             self.assertEqual(r["status"],"SOURCE_CATALYST_NOT_VERIFIED_NO_MODEL")
             self.assertFalse(list(b.glob("*")))
 
+    def test_released_positive_owner_refuses_unreleased_cloud_and_source_forgery(self):
+        from unittest.mock import patch
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            released_paper_positive_catalyst_model_once,
+        )
+        # Reuse the EXISTING owner-authenticated original packet contract,
+        # not a caller-supplied source_verified boolean.
+        from tests.test_v3_paper_existing_source_owner_to_single_writer_seam_v1 import (
+            KEYS,event,
+        )
+        original=official()
+        signed=event("news_sentiment",original)
+        c=create("news_sentiment",original)
+        calls=[]
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);journal=root/"journal";budget=root/"budget"
+            journal.mkdir();budget.mkdir()
+            common=dict(
+                candidate=c,series_id="PAPER-V3-20261018T100000Z",
+                journal=journal,model_reservations=budget,
+                expected_repo_sha="a"*40,
+                expected_bundle_sha256="b"*64,
+                expected_strategy_sha256="c"*64,
+                read_active_series=lambda series: calls.append("cloud") or {},
+                approval={"unused":"mock"},model_key="X"*24,
+                existing_context={"news_sentiment":original},
+                authenticated_owner_packet=signed,
+                trusted_owner_hmac_keys=KEYS,
+                clock_now=lambda:dt(12),
+                acquire=lambda unused: calls.append("kraken"),
+                model_client=lambda *args: calls.append("model"))
+            with patch("paper_evaluator.v3_paper_minipc_selective_tick_v1.preflight_budget",
+                       return_value=None):
+                with self.assertRaisesRegex(ValueError,"active Paper-series"):
+                    released_paper_positive_catalyst_model_once(**common)
+                self.assertEqual(calls,["cloud"])
+                self.assertFalse(list(journal.glob("*.json")))
+                self.assertFalse(list(budget.glob("*")))
+                calls.clear()
+                wrong=dict(c,positive_source_event_id="FAKE")
+                with self.assertRaisesRegex(ValueError,"identity changed"):
+                    released_paper_positive_catalyst_model_once(
+                        **dict(common,candidate=wrong))
+                self.assertEqual(calls,[])
+                stale=dict(official(),known_at_utc=dt(-4000))
+                result=released_paper_positive_catalyst_model_once(
+                    **dict(common,existing_context={"news_sentiment":stale}))
+                self.assertEqual(result["status"],"POSITIVE_SOURCE_NOT_CURRENT_NO_MODEL")
+                self.assertEqual(calls,[])
+                self.assertFalse(list(journal.glob("*.json")))
+                # Content-qualified unsiged or tampered packets must not
+                # reach Cloud, Kraken, a paid model or the Paper journal.
+                unsigned=released_paper_positive_catalyst_model_once(
+                    **dict(common,authenticated_owner_packet=None))
+                self.assertEqual(unsigned["status"],
+                    "POSITIVE_SOURCE_OWNER_NOT_AUTHENTICATED_NO_MODEL")
+                invalid=copy.deepcopy(signed)
+                invalid["owner_integrity"]["owner_hmac_sha256"]="0"*64
+                forged=released_paper_positive_catalyst_model_once(
+                    **dict(common,authenticated_owner_packet=invalid))
+                self.assertEqual(forged["status"],
+                    "POSITIVE_SOURCE_OWNER_NOT_AUTHENTICATED_NO_MODEL")
+                self.assertEqual(forged["source_status"],
+                    "OWNER_HMAC_CONTENT_OR_IDENTITY_MISMATCH")
+                altered=copy.deepcopy(original)
+                altered["confirmed_net_buy_usd"]=999999
+                # The signed original cannot be reused for a different
+                # source-context payload, even with a valid old signature.
+                mismatch=released_paper_positive_catalyst_model_once(
+                    **dict(common,existing_context={"news_sentiment":altered}))
+                self.assertEqual(mismatch["status"],
+                    "POSITIVE_SOURCE_OWNER_NOT_AUTHENTICATED_NO_MODEL")
+                self.assertEqual(mismatch["source_status"],
+                    "OWNER_PACKET_MISSING_OR_SOURCE_CONTEXT_MISMATCH")
+                self.assertEqual(calls,[])
+                self.assertFalse(list(journal.glob("*.json")))
+                self.assertFalse(list(budget.glob("*")))
+
     def test_positive_smart_money_source_qualifies_without_news(self):
         c=create("smart_money_h10",money())
         self.assertEqual(c["positive_source_name"],"smart_money_h10")

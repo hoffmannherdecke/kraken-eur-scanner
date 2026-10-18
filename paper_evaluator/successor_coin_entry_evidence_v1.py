@@ -140,6 +140,16 @@ def build_entry_evidence(
         except (ValueError, TypeError, OverflowError, KeyError) as exc:
             frames[str(interval)] = {"status": "INVALID", "reason": type(exc).__name__, "interval_min": interval}
     statuses = [f["status"] for f in frames.values()]
+    # Reuse the SAME original Kraken 15m response already acquired for P0.
+    # Bounded source-known OHLC history is NOT proof these bars were observed
+    # at their historical closes. Only the original capture's known_at clock
+    # can authorize a later, genuinely NEW 5m continuity decision.
+    initial_closed_15m = []
+    if frames["15"].get("status") == "VALID":
+        try:
+            initial_closed_15m = _normalize(rows_by_interval[15], 15, observed)[-4:]
+        except (ValueError, TypeError, KeyError, OverflowError):
+            initial_closed_15m = []
     return {
         "kind": "SUCCESSOR_COIN_ENTRY_EVIDENCE_V1", "schema_version": 1,
         "authority": "RESEARCH_ONLY_NOT_A_TRADE_OR_STOP_PLAN",
@@ -148,6 +158,7 @@ def build_entry_evidence(
         "available_for_decision_no_earlier_than_utc": _iso(known),
         "status": "COMPLETE" if all(s == "VALID" for s in statuses) and frames["15"].get("atr_status") == "VALID" else "PARTIAL_OR_MISSING",
         "frames": frames,
+        "initial_pit_closed_15m_ohlc": initial_closed_15m,
         "guardrails": {"no_orders": True, "no_buy_authority": True,
                        "missing_is_not_negative": True, "incomplete_bar_discarded": True,
                        "historical_backfill_claimed": False},

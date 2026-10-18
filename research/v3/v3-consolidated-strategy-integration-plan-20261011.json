@@ -1047,5 +1047,30 @@
     "next": "REAL_PROSPECTIVE_V3_MODEL_INPUT_P4_JOURNAL_FOLLOWUPS_SINGLE_WRITER_DRYRUN_AND_CAS_BEFORE_PHYSICAL_V2R4_TO_V3",
     "pathwise_economics_status": "PURE_CONSERVATIVE_1M_STOP_FIRST_FEE_STAGE2_ENGINE_CI_ONLY",
     "real_kraken_closed_1m_path_cloud_paper_writer_connected": false
+  },
+  "v3_buy_productivity_binding_20261018": {
+    "status": "USER_MANDATED_V3_RELEASE_REQUIREMENT_IMPLEMENTATION_PENDING_E2E",
+    "owner": "existing V3 release owner Issue #99 / PR #412",
+    "principle": "Optimize prospectively actionable cost-net BUY and actual Paper fills, not REJECT volume or scanner uptime",
+    "requirements": [
+      "Fresh initial scanner candidates including EXTENDED must reach independently authorized full V3 model review without all-or-nothing optional-factor veto",
+      "Qualified fresh EXTENDED second-leg reentry after WAIT/REJECT must be reconsidered, not terminally discarded",
+      "A full BUY_SCOUT after canonical PIT, Kraken Spot EUR tradability, costs, stop, stage2 and risk validation must reach the existing single V3 paper writer and produce a deduplicated ledger receipt",
+      "Report prospective candidate-to-model-to-P4-to-ledger conversion, cost-net outcomes and avoidable missed opportunities, not merely detection counts",
+      "Before first EXPERIMENTAL_PAPER_ONLY release, the actual original-host single-writer Paper path needs a controlled technical positive P4 BUY_SCOUT-to-deduplicated-isolated-ledger dry-run plus adverse and missing-source controls, independent Cloud/host provenance and all existing six technical release proofs. This is NOT a demand for a previously profitable prospective Paper trade; real eligible Paper BUYs and net economics are measured AFTER the controlled experimental launch."
+    ],
+    "case_studies": [
+      "MON/EUR 2026-09-30 08:18 UTC historical REJECT +39.547% 24h MFE, not proof of ex ante buy",
+      "MON/EUR 2026-10-01 11:21 UTC EXTENDED REJECT, +5.289% 1h post-detect MFE, not proof of ex ante buy"
+    ],
+    "nonnegotiable": [
+      "V2R4 unchanged",
+      "0.6% taker fee per side plus spread/slippage",
+      "50+50 EUR staged paper",
+      "no real orders",
+      "no hindsight feature leakage",
+      "no automatic V3 activation"
+    ],
+    "acceptance": "Pre-launch: actual physically isolated host Paper-writer positive and negative dry-run paths, complete canonical journals and six independently verified release proofs; PR/CI/mock model suggestions are NOT physical proof. Post-launch: the first genuine prospective risk/cost-valid BUY_SCOUT must result in original deduplicated Paper writer/ledger and 6h24h72h followups. Economic superiority and profitability require subsequent genuine mature comparable Paper outcomes, never a prerequisite to start the limited experimental Paper mode."
   }
 }

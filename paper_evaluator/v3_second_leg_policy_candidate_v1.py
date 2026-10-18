@@ -9,6 +9,7 @@ model, writes storage, modifies V2R4 or prices a tradable stop.
 """
 from __future__ import annotations
 
+import hashlib
 import math
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -60,6 +61,214 @@ def _bar_start(bar: dict[str, Any]) -> datetime:
     if isinstance(raw, str):
         return utc(raw)
     raise ValueError("bar start missing or invalid")
+
+
+def canonical_second_leg_episode(*,series_id:str,
+        original_candidate:dict[str,Any],closed_15m_end_utc:str,
+        signal_known_at_utc:str)->dict[str,Any]:
+    """Stable candidate-linked P1 episode, NOT an order or an inferred fill.
+
+    The closed 15m bar identifies ONE potential opportunity; the recorded
+    first observation/known time is the new episode event clock. A later
+    Paper fill must still use its own actual immutable fill known_at clock
+    for stop/Stage2 and 6/24/72-hour outcome maturity.
+    """
+    if (not isinstance(series_id,str) or not series_id.startswith("PAPER-V3-")
+            or not isinstance(original_candidate,dict)):
+        raise ValueError("canonical V3 episode series and original required")
+    cid=original_candidate.get("candidate_id")
+    pair=original_candidate.get("pair")
+    if (not isinstance(cid,str) or not 1<=len(cid)<=150
+            or not isinstance(pair,str) or not pair.endswith("/EUR")):
+        raise ValueError("canonical original EUR candidate identity required")
+    from paper_evaluator.v3_entry_handoff_probe import utc
+    first=utc(original_candidate["event_time_utc"])
+    closed=utc(closed_15m_end_utc)
+    observed=utc(signal_known_at_utc)
+    if (closed.second!=0 or closed.microsecond!=0
+            or int(closed.timestamp())%900!=0
+            or not first<closed<=observed
+            or not 0<=(observed-first).total_seconds()<=4*3600
+            # A valid 15m closed bar remains source-fresh under the same
+            # 1.5-bar bound as canonical Kraken PIT validation; never add
+            # a hidden two-minute veto on top of the actual 1m/5m source.
+            or not 0<=(observed-closed).total_seconds()<=15*90):
+        raise ValueError("missing fresh closed prospective 15m episode clock")
+    # The identity is stable even if the same source is read again later.
+    stable_close=closed.isoformat().replace("+00:00","Z")
+    key="|".join((series_id,cid,pair,stable_close))
+    digest=hashlib.sha256(key.encode("utf-8")).hexdigest()
+    return {
+        "reentry_episode_id":"V3RE-"+digest[:32],
+        "reentry_parent_candidate_id":cid,
+        "reentry_episode_signal_at_utc":
+            observed.isoformat().replace("+00:00","Z"),
+        "reentry_closed_15m_end_utc":stable_close,
+        "reentry_original_event_time_utc":
+            first.isoformat().replace("+00:00","Z"),
+        "reentry_parent_event_key":"C"+closed.strftime("%Y%m%dT%H%M%SZ"),
+        "reentry_will_use_separate_fill_time":True,
+    }
+
+
+def prepare_original_owner_reentry_child(*,journal,
+        series_id:str,original_candidate:dict[str,Any],
+        parent_event_key:str,now_at_utc:str)->dict[str,Any]:
+    """Read-only, disk-backed P1 episode packaging for the EXISTING owner.
+
+    Only a future gated native-owner continuation may use this candidate.
+    This function never spends a model budget, starts a second writer or
+    backdates an actual Paper fill to the original scanner signal.
+    """
+    import json
+    from pathlib import Path
+    from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import REVISION
+    from paper_evaluator.v3_experimental_paper_journal_v1 import KIND
+    from paper_evaluator.v3_full_entry_decision_candidate_v1 import SECOND_LEG_P1_CHECKS
+    from paper_evaluator.v3_entry_handoff_probe import utc
+    directory=Path(journal)
+    if not directory.is_dir() or directory.is_symlink():
+        raise ValueError("original isolated immutable V3 journal required")
+    cid=original_candidate.get("candidate_id")
+    pair=original_candidate.get("pair")
+    altname=original_candidate.get("altname")
+    if (not isinstance(series_id,str) or not series_id.startswith("PAPER-V3-")
+            or not isinstance(cid,str) or not cid
+            or not isinstance(pair,str) or not pair.endswith("/EUR")
+            or not isinstance(altname,str) or not altname.isalnum()
+            or not isinstance(parent_event_key,str)
+            or len(parent_event_key)!=17 or not parent_event_key.startswith("C")):
+        raise ValueError("canonical original P1 owner and bar key required")
+    now=utc(now_at_utc)
+    rows=[]
+    for path in directory.glob("*.json"):
+        if path.is_symlink() or not 0<path.stat().st_size<=16000:
+            raise ValueError("invalid immutable original owner file")
+        row=json.loads(path.read_text("utf-8"))
+        if row.get("series_id")!=series_id:
+            continue
+        if row.get("kind")!=KIND or row.get("revision")!=REVISION:
+            raise ValueError("mixed-revision V3 episode journal")
+        event_id=hashlib.sha256("|".join(str(row[k]) for k in
+            ("series_id","candidate_id","phase","event_key")).encode()).hexdigest()
+        if path.stem!=event_id or row.get("orders") is not False or row.get("real_money_actions") is not False:
+            raise ValueError("noncanonical immutable original/child receipt")
+        if row.get("candidate_id")==cid and (
+                row.get("pair")!=pair
+                or utc(row.get("event_time_utc"))!=utc(original_candidate["event_time_utc"])):
+            raise ValueError("original scanner lineage mismatch")
+        rows.append(row)
+    original=[row for row in rows if row.get("candidate_id")==cid]
+    def unique(phase:str,result=None,key=None):
+        matches=[row for row in original if row["phase"]==phase and
+                 (result is None or row["result"]==result) and
+                 (key is None or row["event_key"]==key)]
+        if len(matches)!=1:
+            raise ValueError("exact immutable parent stage missing: "+phase)
+        return matches[0]
+    source=unique("SCANNER_CAPTURE","SEEN")
+    first_model=unique("MODEL_RESPONSE","PASS")
+    first_p4=unique("P4_VALIDATION")
+    if (source["event_key"]!="FIRST"
+            or source["data"].get("candidate_origin")!="SCANNER"
+            or first_model["data"].get("raw_setup_lane")!="EXTENDED"
+            or first_p4["result"] not in ("WAIT","REJECT")
+            or utc(first_p4["known_at_utc"])<utc(source["event_time_utc"])
+            or any(row["phase"]=="PAPER_FILL" for row in original)):
+        raise ValueError("original EXTENDED no-buy model/P4 not verified")
+    reentry=unique("FRESH_SECOND_LEG","PASS",parent_event_key)
+    review_checks=reentry["data"].get("review_checks")
+    structural=(review_checks.get("p1") if isinstance(review_checks,dict) else None)
+    if (reentry["data"].get("review_family")!="EXTENDED_PROSPECTIVE_15M_BASE_SECOND_LEG"
+            or reentry["data"].get("review_status")!="SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"
+            or not isinstance(structural,dict)
+            or set(structural)!=SECOND_LEG_P1_CHECKS
+            or any(value is not True for value in structural.values())):
+        raise ValueError("verified full P1 bar/reclaim checks required")
+    parts=canonical_second_leg_episode(
+        series_id=series_id,original_candidate=original_candidate,
+        closed_15m_end_utc=reentry["data"]["reentry_closed_15m_end_utc"],
+        signal_known_at_utc=reentry["known_at_utc"])
+    if (any(reentry["data"].get(k)!=v for k,v in parts.items())
+            or reentry["event_key"]!=parts["reentry_parent_event_key"]):
+        raise ValueError("immutable P1 child ID and first-time clock conflict")
+    signal=utc(parts["reentry_episode_signal_at_utc"])
+    if (not utc(first_p4["known_at_utc"])<signal<=now
+            or (now-signal).total_seconds()>120):
+        raise ValueError("expired or future-known P1 episode; no new model input")
+    episode_id=parts["reentry_episode_id"]
+    if any(row.get("candidate_id")==episode_id for row in rows):
+        return {"status":"P1_CHILD_ALREADY_JOURNALED_NO_REPLAY",
+                "reentry_episode_id":episode_id,
+                "approval_to_call_model":False,"model_calls":0,
+                "paper_fills":0,"orders":False,"real_money_actions":False}
+    child={"kind":"V3_PROSPECTIVE_P1_REENTRY_CHILD_CANDIDATE_V1",
+           "candidate_id":episode_id,"pair":pair,"altname":altname,
+           "event_time_utc":parts["reentry_episode_signal_at_utc"],
+           "entry_origin":"P1_REENTRY_EPISODE",
+           "reentry_parent_candidate_id":cid,
+           "reentry_original_event_time_utc":parts["reentry_original_event_time_utc"],
+           "reentry_parent_event_key":parts["reentry_parent_event_key"],
+           "reentry_closed_15m_end_utc":parts["reentry_closed_15m_end_utc"],
+           "action":"REVIEW_ONLY_NOT_ORDER"}
+    return {"status":"P1_CHILD_PREPARED_MODEL_AND_PAPER_STILL_GATED",
+            "child_candidate":child,
+            "reentry_episode_id":episode_id,
+            "approval_to_call_model":False,"model_calls":0,
+            "paper_fills":0,"orders":False,"real_money_actions":False}
+
+
+def witnessed_15m_from_existing_1m_path(assembled:dict[str,Any],
+        *,pair:str,observed_at_utc:str)->list[dict[str,Any]]:
+    """Rebuild ONLY complete closed 15m bars from already witnessed 1m.
+
+    assemble() has checked each source file SHA, recorded capture clock and
+    maximum 15-minute acquisition lag. This adapter never calls Kraken,
+    fabricates missing bars or retrospectively relabels a research move.
+    The resulting 15m bars are still RESEARCH eligibility, not model/BUTY.
+    """
+    from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
+        require_prospective_assembled_path,timestamp,
+    )
+    require_prospective_assembled_path(assembled=assembled,pair=pair)
+    observed=timestamp(observed_at_utc)
+    last_seen=timestamp(assembled["captured_at_utc"])
+    if last_seen>observed:
+        raise ValueError("witnessed source after decision observation")
+    minutes={}
+    for row in assembled["closed_bars"]:
+        start=timestamp(row["start_at_utc"])
+        if start+timedelta(minutes=1)>observed:
+            raise ValueError("open or future 1m source")
+        if start in minutes:
+            raise ValueError("duplicate witnessed 1m")
+        vals=[]
+        for field in ("open","high","low","close"):
+            vals.append(_finite_positive(row[field]))
+        op,hi,lo,close=vals
+        if not lo<=min(op,close)<=max(op,close)<=hi:
+            raise ValueError("invalid witnessed 1m OHLC")
+        minutes[start]=row
+    if not minutes:
+        return []
+    groups={}
+    for ts in sorted(minutes):
+        epoch=int(ts.timestamp())
+        bar_start=datetime.fromtimestamp(epoch//900*900,timezone.utc)
+        groups.setdefault(bar_start,[]).append((ts,minutes[ts]))
+    closed=[]
+    for begin,group in sorted(groups.items()):
+        if begin+timedelta(minutes=15)>observed or len(group)!=15:
+            continue
+        if any(item[0]!=begin+timedelta(minutes=i) for i,item in enumerate(group)):
+            continue
+        src=[row for _,row in group]
+        closed.append({"start_utc":int(begin.timestamp()),
+                       "open":src[0]["open"],
+                       "high":max(row["high"] for row in src),
+                       "low":min(row["low"] for row in src),
+                       "close":src[-1]["close"]})
+    return closed[-13:]
 
 
 def propose_second_leg_review(

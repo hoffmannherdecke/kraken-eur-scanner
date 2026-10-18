@@ -2,7 +2,9 @@
 import copy
 import unittest
 
-from paper_evaluator.v3_full_entry_decision_candidate_v1 import validate_full_entry_decision
+from paper_evaluator.v3_full_entry_decision_candidate_v1 import (
+    validate_full_entry_decision,SECOND_LEG_P1_CHECKS,SECOND_LEG_ELIGIBLE_KIND,
+)
 from tests.test_v2r4_v3_entry_handoff_probe import evidence, dt
 
 
@@ -10,10 +12,16 @@ def fixture():
     ev = evidence()
     candidate = {"candidate_id":"V3-B-PIT-1", "pair":"XBT/EUR"}
     eligibility = {
+        "kind":SECOND_LEG_ELIGIBLE_KIND,
         "status":"SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY",
         "request_model_recheck_only":True,
         "source_candidate_id":"V3-B-PIT-1",
         "pair":"XBT/EUR",
+        "original_candidate_historical_only":True,
+        "new_snapshot_known_at_utc":ev["known_at_utc"],
+        "base_15m_bars":4,
+        "approval_to_call_model":False,
+        "checks":{name:True for name in SECOND_LEG_P1_CHECKS},
     }
     ticker = {"pair":"XBT/EUR", "bid":10.23, "ask":10.24,
               "spread_pct":(10.24-10.23)/((10.24+10.23)/2)*100,
@@ -56,6 +64,25 @@ class V3FullEntryDecisionCandidateTests(unittest.TestCase):
                     "economic_edge_proven","release_evidence"):
             self.assertIs(result[key],False,key)
         self.assertEqual(xs,snap)
+
+    def test_forged_five_minute_only_second_leg_cannot_make_p4_buy(self):
+        for mutate in (
+            lambda x:x[0].update(kind="HOMEMADE_P1"),
+            lambda x:x[0].update(base_15m_bars=0),
+            lambda x:x[0].update(original_candidate_historical_only=False),
+            lambda x:x[0].update(approval_to_call_model=True),
+            lambda x:x[0].update(new_snapshot_known_at_utc=dt(200)),
+            lambda x:x[0]["checks"].update(base_1_to_3h_rebuilt=False),
+            lambda x:x[0]["checks"].pop("closed_reclaim_above_prior_base_high"),
+        ):
+            with self.subTest(mutate=repr(mutate)):
+                xs=list(fixture());mutate(xs)
+                outcome=validate_full_entry_decision(
+                    *xs,decision_at_utc=dt(12),
+                    slippage_pct_each_side=.08)
+                self.assertEqual(outcome["status"],"NO_FULL_REVIEW_ELIGIBILITY")
+                self.assertEqual(outcome["decision"],"UNKNOWN")
+                self.assertFalse(outcome["orders"])
 
     def test_eligibility_never_becomes_buy_without_full_assessment(self):
         result=run(assessment=False)

@@ -10,7 +10,8 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
         self.assertTrue(SCRIPT.is_file())
         self.assertEqual(
             sorted(FOLDER.glob("*.ps1")),
-            [FOLDER / "access_boundary_probe.ps1", SCRIPT],
+            [FOLDER / "access_boundary_probe.ps1", SCRIPT,
+             FOLDER / "v3_paper_offline_probe.ps1"],
         )
         self.assertFalse(SCRIPT.is_symlink())
         self.assertLess(SCRIPT.stat().st_size, 65536)
@@ -45,6 +46,56 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
         ):
             self.assertNotIn(disallowed, source)
         self.assertEqual(source.count("ConvertTo-Json -Compress"), 1)
+
+    def test_v3_offline_probe_is_only_existing_restricted_runner_stub(self):
+        task = FOLDER / "v3_paper_offline_probe.ps1"
+        self.assertTrue(task.is_file())
+        self.assertFalse(task.is_symlink())
+        self.assertLess(task.stat().st_size, 65536)
+        src = task.read_text("utf-8")
+        self.assertTrue(src.startswith("# MINIPC_REVIEWED_TASK_V1"))
+        for required in (
+            "CryptoSupportSvc", "MINI-PC-CryptoSupport",
+            "WindowsBuiltInRole]::Administrator",
+            "MINIPC_TASK_SANDBOX", "_protected_main",
+            "P1NativeModelWriterTests", "WaitForExit(90000)",
+            "Ran 8 tests in", "PYTHONDONTWRITEBYTECODE",
+            "SUPABASE_SERVICE_ROLE_KEY", "V3_PAPER_MODEL_KEY",
+            "test_native_parent_child_model_p4_actual_paper_receipt_and_no_retry",
+            "test_native_p1_full_model_reject_has_no_fill_and_no_retry",
+            "test_native_p1_missing_fill_or_bad_response_id_quarantines_without_spend_retry",
+            "test_p1_restart_follows_new_fill_clock_not_old_scanner",
+            "test_native_p1_child_paper_cloud_forwarding_uses_same_relay_once",
+            "test_native_p1_reject_missed_opportunity_tracks_child_not_parent",
+            "test_native_p1_child_wait_watches_fresh_child_ttl_not_old_parent",
+            "test_native_p1_stale_source_and_unapproved_budget_do_not_spend",
+            "MINIPC_REVIEWED_TASK_ACK_V1",
+            "task = 'v3_paper_offline_probe'",
+            "mutation_scope = 'RESTRICTED'",
+            "live_paper_writer_physically_witnessed = $false",
+            "independent_cloud_receipt_verified = $false",
+            "model_api_spend = $false",
+            "v3_paper_activated = $false",
+            "v2r4_runtime_touched = $false",
+            "technical_release_proofs_credited = 0",
+        ):
+            self.assertIn(required, src, required)
+        self.assertEqual(src.count("ConvertTo-Json -Compress"), 1)
+        active = "\n".join(line.lower() for line in src.splitlines()
+                           if not line.lstrip().startswith("#"))
+        for prohibited in (
+            "start-service", "set-service", "stop-service",
+            "register-scheduledtask", "start-scheduledtask",
+            "enable-scheduledtask", "stop-scheduledtask",
+            "invoke-expression", "invoke-webrequest", "invoke-restmethod",
+            "start-process", "git checkout", "git pull",
+            "supabase db", "supabase functions deploy",
+            "c:\\users", "get-content", "set-content",
+            "remove-item", "new-item", "copy-item",
+            "set-acl", "icacls", "write-host",
+        ):
+            self.assertNotIn(prohibited, active, prohibited)
+        self.assertNotIn("$" + "{{", src)
 
     def test_result_contract(self):
         s = SCRIPT.read_text(encoding="utf-8")

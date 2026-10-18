@@ -61,6 +61,46 @@ class V3ExperimentalOneChangeTests(unittest.TestCase):
                   "release_evidence"):
             self.assertIs(b[k],False,k)
 
+    def test_only_genuine_one_change_soft_volume_may_build_full_model_prompt(self):
+        from paper_evaluator.v3_experimental_paper_model_prompt_v1 import (
+            build_v3_paper_full_model_prompt,
+        )
+        standard_ticket,experimental,xs=compare(1.1)
+        self.assertFalse(standard_ticket["request_model_recheck_only"])
+        quote=dict(xs[3],pair=xs[0]["pair"],observed_at_utc=dt(9))
+        quote["spread_pct"]=(quote["ask"]-quote["bid"])/(
+            (quote["ask"]+quote["bid"])/2)*100
+        meta=full_fixture()[4]
+        text=build_v3_paper_full_model_prompt(
+            candidate=xs[0],eligibility=experimental,
+            entry_evidence=xs[2],ticker=quote,
+            pair_metadata=meta,decision_at_utc=dt(13))
+        self.assertIn("EXPERIMENTAL SOFT-VOLUME CONTINUITY",text)
+        self.assertIn("EXP_VOLUME_1_0",text)
+        self.assertIn("standard_unmodified_checks",text)
+        self.assertFalse(experimental["approval_to_call_model"])
+        self.assertFalse(experimental["orders"])
+        for mutate in (
+            lambda h:h.update(approval_to_call_model=True),
+            lambda h:h.update(standard_review_permission=True),
+            lambda h:h.update(standard_volume_floor=0.7),
+            lambda h:h.update(experimental_volume_floor=0.9),
+            lambda h:h["standard_unmodified_checks"].update(fresh_ask_not_chase=False),
+            lambda h:h["standard_unmodified_checks"].update(
+                unchanged_closed_5m_volume_floor=True),
+            lambda h:h.update(observed_relative_volume_ratio=1.3),
+            lambda h:h.update(snapshot_recheck_key="FORGED"),
+            lambda h:h.update(new_snapshot_known_at_utc=dt(100)),
+        ):
+            forged=copy.deepcopy(experimental)
+            mutate(forged)
+            with self.subTest(mutation=str(mutate)):
+                with self.assertRaises((ValueError,KeyError,TypeError)):
+                    build_v3_paper_full_model_prompt(
+                        candidate=xs[0],eligibility=forged,
+                        entry_evidence=xs[2],ticker=quote,
+                        pair_metadata=meta,decision_at_utc=dt(13))
+
     def test_standard_is_unmodified_and_not_charged_twice(self):
         a,b,_=compare(1.2)
         self.assertEqual(a["status"],STANDARD_ELIGIBLE)

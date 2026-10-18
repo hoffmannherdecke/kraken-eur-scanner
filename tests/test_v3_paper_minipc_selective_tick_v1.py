@@ -655,8 +655,14 @@ class FirstReleasedScannerOwnerTests(unittest.TestCase):
             self.assertEqual(result["source_capture_calls"],0)
             self.assertFalse(result["orders"])
             self.assertFalse(result["paper_writer_active"])
+            self.assertTrue(result["paper_entry_receipt_verified_local"])
+            self.assertEqual(result["paper_entry_status"],
+                             "NATIVE_LOCAL_PAPER_SCOUT_DURABLE_PENDING_INDEPENDENT_CLOUD_ACK")
+            self.assertFalse(result["independent_cloud_paper_fill_ack"])
+            self.assertEqual(len(result["paper_entry_receipt_sha256"]),64)
             rows=[json.loads(p.read_text("utf-8"))
                   for p in (root/"journal").glob("*.json")]
+            self.assertEqual(sum(r["phase"]=="PAPER_FILL" for r in rows),1)
             self.assertTrue(any(r["phase"]=="SCANNER_CAPTURE" for r in rows))
             self.assertTrue(any(r["phase"]=="P4_VALIDATION" for r in rows))
             self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
@@ -666,6 +672,161 @@ class FirstReleasedScannerOwnerTests(unittest.TestCase):
             self.assertEqual(repeat["status"],"FIRST_SCANNER_ALREADY_JOURNALED_NO_MODEL_RETRY")
             self.assertEqual(unchanged,{p.name:p.read_bytes()
                     for p in (root/"journal").glob("*.json")})
+
+
+    def test_postcas_offline_negative_full_model_reject_never_writes_paper_fill(self):
+        from tests.test_v3_paper_minipc_one_candidate_v1 import fake_model
+        c,plan,budget,cloud=self.inputs()
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            def rejected(prompt,key):
+                model,meta=fake_model(prompt,key)
+                model["decision"]="REJECT"
+                model["reason_codes"]=["NO_COST_ADJUSTED_ENTRY_OPPORTUNITY"]
+                return model,meta
+            out=self.call(root,c,plan,budget,cloud,client=rejected)
+            self.assertEqual(out["model_result"]["p4_decision"],"REJECT")
+            self.assertEqual(out["paper_entry_status"],"NO_BUY_NO_PAPER_FILL_AS_EXPECTED")
+            self.assertFalse(out["paper_entry_receipt_verified_local"])
+            self.assertFalse(out["independent_cloud_paper_fill_ack"])
+            rows=[json.loads(p.read_text("utf-8")) for p
+                  in (root/"journal").glob("*.json")]
+            self.assertEqual(len([r for r in rows if r["phase"]=="PAPER_FILL"]),0)
+            self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
+            self.assertFalse(out["orders"])
+
+    def test_postcas_missing_paper_fill_after_positive_p4_fail_closed_no_retry(self):
+        from unittest.mock import patch
+        from paper_evaluator import v3_paper_minipc_one_candidate_v1 as model_module
+        c,plan,budget,cloud=self.inputs()
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            original_write=model_module.store_receipt_explicitly
+            def simulate_interrupted_local_fill(directory,receipt):
+                if receipt.get("phase")=="PAPER_FILL":
+                    # Power loss/crash-like missing durable local entry.
+                    return "SIMULATED_NO_DISK_WRITE",Path(directory)/"absent.json"
+                return original_write(directory,receipt)
+            with patch.object(model_module,"store_receipt_explicitly",
+                              side_effect=simulate_interrupted_local_fill):
+                out=self.call(root,c,plan,budget,cloud)
+            self.assertEqual(out["status"],
+                "FIRST_SCANNER_MODEL_OR_PAPER_LEDGER_INCOMPLETE_HOLD")
+            self.assertEqual(out["model_result"]["p4_decision"],"BUY_SCOUT")
+            self.assertFalse(out["paper_entry_receipt_verified_local"])
+            self.assertFalse(out["independent_cloud_paper_fill_ack"])
+            self.assertTrue(out["requires_original_owner_reconciliation"])
+            self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
+            self.assertFalse(any(json.loads(p.read_text())["phase"]=="PAPER_FILL"
+                for p in (root/"journal").glob("*.json")))
+            repeated=self.call(root,c,plan,budget,cloud,
+                client=lambda *_:self.fail("must never spend same model approval twice"))
+            self.assertEqual(repeated["status"],
+                             "FIRST_SCANNER_ALREADY_JOURNALED_NO_MODEL_RETRY")
+            self.assertFalse(out["orders"])
+
+    def test_postcas_missing_model_response_id_is_not_accepted_as_verified_fill(self):
+        from tests.test_v3_paper_minipc_one_candidate_v1 import fake_model
+        c,plan,budget,cloud=self.inputs()
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            def missing_response_id(prompt,key):
+                model,meta=fake_model(prompt,key)
+                return model,dict(meta,response_id="")
+            out=self.call(root,c,plan,budget,cloud,client=missing_response_id)
+            self.assertEqual(out["status"],
+                "FIRST_SCANNER_MODEL_OR_PAPER_LEDGER_INCOMPLETE_HOLD")
+            self.assertFalse(out["paper_entry_receipt_verified_local"])
+            self.assertTrue(out["requires_original_owner_reconciliation"])
+            self.assertEqual(len(list((root/"budget").glob("*.reserved.json"))),1)
+
+    def test_same_native_owner_positive_model_p4_fill_and_deduplicated_cloud_relay(self):
+        # Entire EXISTING source->model->P4->Paper journal->relay plumbing,
+        # exercised with stubbed external I/O: never a physical/cloud release.
+        import hashlib
+        from tests.test_v2r4_v3_entry_handoff_probe import dt
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            released_paper_cloud_ack_once,
+        )
+        c,plan,budget,cloud=self.inputs()
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            first=self.call(root,c,plan,budget,cloud)
+            self.assertTrue(first["paper_entry_receipt_verified_local"])
+            calls=[]
+            def relay(url,token,payload):
+                self.assertEqual(payload["action"],"sync_paper_receipts")
+                self.assertEqual(payload["series_id"],self.SERIES)
+                receipts=[json.loads(item["canonical_json"]) for item in payload["receipts"]]
+                for item in payload["receipts"]:
+                    self.assertEqual(hashlib.sha256(
+                        item["canonical_json"].encode()).hexdigest(),item["sha256"])
+                fills=[r for r in receipts if r["phase"]=="PAPER_FILL"]
+                self.assertEqual(len(fills),1)
+                self.assertEqual(fills[0]["result"],"PAPER_FILLED")
+                self.assertEqual(fills[0]["data"]["paper_entry_fee_eur"],0.3)
+                self.assertFalse(any(r["orders"] or r["real_money_actions"]
+                                     for r in receipts))
+                calls.append(len(receipts))
+                return {"ok":True,"series_id":self.SERIES,
+                        "accepted_receipts":len(receipts)}
+            kw=dict(series_id=self.SERIES,journal=root/"journal",
+                    ack_file=root/"cloud-ack.json",token="CI_OFFLINE_FAKE_RELAY_KEY_NOT_REAL",
+                    expected_repo_sha=self.REPO,
+                    expected_bundle_sha256=self.BUNDLE,
+                    expected_strategy_sha256=self.STRATEGY,
+                    read_active_series=lambda _:cloud,
+                    clock_now=lambda:dt(12),cloud_post=relay)
+            once=released_paper_cloud_ack_once(**kw)
+            self.assertEqual(once["status"],"V3_RECEIPTS_CLOUD_ACK_VERIFIED")
+            self.assertGreater(once["count"],0)
+            self.assertFalse(once["paper_writer_active"])
+            twice=released_paper_cloud_ack_once(**kw)
+            self.assertEqual(twice["status"],"NO_UNSYNCED_V3_RECEIPTS")
+            self.assertEqual(len(calls),1)
+            self.assertEqual(calls[0],once["count"])
+            self.assertFalse(once["cloud_cas_performed"])
+            self.assertFalse(first["independent_cloud_paper_fill_ack"])
+
+    def test_same_native_owner_reject_cloud_audit_has_no_false_paper_entry(self):
+        from tests.test_v3_paper_minipc_one_candidate_v1 import fake_model
+        from tests.test_v2r4_v3_entry_handoff_probe import dt
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            released_paper_cloud_ack_once,
+        )
+        c,plan,budget,cloud=self.inputs()
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            def reject(prompt,key):
+                decision,metadata=fake_model(prompt,key)
+                decision["decision"]="REJECT"
+                decision["reason_codes"]=["NO_CONFIRMED_NET_EDGE"]
+                return decision,metadata
+            first=self.call(root,c,plan,budget,cloud,client=reject)
+            self.assertEqual(first["model_result"]["p4_decision"],"REJECT")
+            self.assertFalse(first["paper_entry_receipt_verified_local"])
+            seen=[]
+            def relay(url,token,payload):
+                receipts=[json.loads(item["canonical_json"]) for item in payload["receipts"]]
+                self.assertFalse(any(row["phase"]=="PAPER_FILL" for row in receipts))
+                self.assertTrue(any(row["phase"]=="P4_VALIDATION"
+                                    and row["result"]=="REJECT" for row in receipts))
+                seen.append(True)
+                return {"ok":True,"series_id":self.SERIES,
+                        "accepted_receipts":len(payload["receipts"])}
+            out=released_paper_cloud_ack_once(
+                series_id=self.SERIES,journal=root/"journal",
+                ack_file=root/"cloud-ack.json",token="CI_OFFLINE_FAKE_RELAY_KEY_NOT_REAL",
+                expected_repo_sha=self.REPO,
+                expected_bundle_sha256=self.BUNDLE,
+                expected_strategy_sha256=self.STRATEGY,
+                read_active_series=lambda _:cloud,clock_now=lambda:dt(12),
+                cloud_post=relay)
+            self.assertEqual(out["status"],"V3_RECEIPTS_CLOUD_ACK_VERIFIED")
+            self.assertEqual(seen,[True])
+            self.assertFalse(out["paper_writer_active"])
+            self.assertFalse(out["cloud_cas_performed"])
+
 
     def test_bad_cloud_and_missing_budget_block_before_any_original_write(self):
         c,plan,approval,cloud=self.inputs()

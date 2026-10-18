@@ -19,6 +19,12 @@ from paper_evaluator.v3_entry_handoff_probe import attach_to_future_evaluator, u
 EXISTING_V2R4_VOLUME_RATIO_REVIEW_FLOOR = 1.2
 MAX_STALE_SOURCE_SECONDS = 120
 MAX_FRESH_CANDIDATE_SECONDS = 15 * 60
+# A subsequent closed 1-3h base can be fresh even when the original scanner
+# event is old. The clock for the NEW opportunity is its *observed* 5m close,
+# never a rewritten scanner timestamp or a historical high.
+MAX_SECOND_LEG_AFTER_ORIGINAL_DECISION_SECONDS = 3 * 60 * 60
+MAX_ORIGINAL_TO_LATER_REVIEW_SECONDS = 3 * 60 * 60 + MAX_FRESH_CANDIDATE_SECONDS
+MAX_CLOSED_5M_OBSERVATION_LAG_SECONDS = 450
 
 
 def _finite_positive(value: Any) -> float:
@@ -59,6 +65,8 @@ def extended_reentry_review(
         "orders": False,
         "real_money_actions": False,
         "automatic_promotion": False,
+        "approval_to_call_model": False,
+        "full_model_review_required": True,
     }
     if original_decision.get("setup_lane") != "EXTENDED":
         return {**common, "state": "OUT_OF_SCOPE_EXISTING_LANE_RETAINED"}
@@ -68,8 +76,35 @@ def extended_reentry_review(
         evaluated = utc(decision_at_utc)
         created = utc(candidate["event_time_utc"])
         age = (evaluated-created).total_seconds()
-        if age < 0 or age > MAX_FRESH_CANDIDATE_SECONDS:
+        if age < 0 or age > MAX_ORIGINAL_TO_LATER_REVIEW_SECONDS:
             return {**common, "state": "UNKNOWN_STALE_OR_FUTURE_CANDIDATE"}
+        delayed_second_leg = age > MAX_FRESH_CANDIDATE_SECONDS
+        if delayed_second_leg:
+            # A stale original must NEVER gain a fresh entry clock merely
+            # because somebody supplies a later decision_at_utc. Require
+            # separately timestamped original P4 and newly closed, observed
+            # Kraken 5m source, plus a freshly observed execution quote.
+            first_decision = utc(original_decision["known_at_utc"])
+            five_minute_close = utc(
+                evidence["frames"]["5"]["last_closed_bar_end_utc"])
+            source_observed = utc(evidence["observed_at_utc"])
+            source_known = utc(evidence["known_at_utc"])
+            quote_observed = utc(ticker["observed_at_utc"])
+            if not (
+                created <= first_decision < five_minute_close
+                <= source_observed <= source_known <= evaluated
+                and first_decision <= quote_observed <= evaluated
+                and (evaluated-first_decision).total_seconds()
+                    <= MAX_SECOND_LEG_AFTER_ORIGINAL_DECISION_SECONDS
+                and (evaluated-source_known).total_seconds()
+                    <= MAX_STALE_SOURCE_SECONDS
+                and (evaluated-quote_observed).total_seconds()
+                    <= MAX_STALE_SOURCE_SECONDS
+                and (source_observed-five_minute_close).total_seconds()
+                    <= MAX_CLOSED_5M_OBSERVATION_LAG_SECONDS
+            ):
+                return {**common,
+                        "state": "UNKNOWN_NO_GENUINE_FRESH_SECOND_LEG_SOURCE"}
         _ = attach_to_future_evaluator(
             candidate, {}, evidence, decision_at_utc,
             max_evidence_age_seconds=MAX_STALE_SOURCE_SECONDS,
@@ -104,6 +139,11 @@ def extended_reentry_review(
         "state": ("STRUCTURE_AND_VOLUME_SUPPORT_FRESH_REVIEW_NOT_BUY"
                   if eligible else "PROSPECTIVE_CONFIRMATION_INCOMPLETE"),
         "request_model_recheck_only": eligible,
+        "full_model_review_candidate": eligible,
+        "new_prospective_second_leg_observed": delayed_second_leg,
+        "original_candidate_age_seconds": round(age, 3),
+        "next_action": ("REQUEST_SEPARATELY_AUTHORIZED_FULL_V3_MODEL_AND_P4_REVIEW"
+                        if eligible else "WAIT_FOR_FRESH_CLOSED_CONFIRMATION"),
         "checks": {
             "closed_5m_price_above_closed_15m_price": price_recovered,
             "closed_5m_volume_ratio_at_least_existing_v2r4_1_2": vol_recovered,

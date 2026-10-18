@@ -22,6 +22,10 @@ from paper_evaluator.v3_p3_ab_five_bounded_research import verified_spot_metadat
 from paper_evaluator.v3_experimental_paper_initial_review_v1 import propose_initial_full_review,ELIGIBLE
 from paper_evaluator.v3_experimental_paper_model_prompt_v1 import build_v3_paper_full_model_prompt
 from paper_evaluator.v3_full_entry_decision_candidate_v1 import validate_full_entry_decision
+from paper_evaluator.v3_second_leg_policy_candidate_v1 import (
+    prepare_original_owner_reentry_child, witnessed_15m_from_existing_1m_path,
+    propose_second_leg_review,
+)
 from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt,store_receipt_explicitly,clock as receipt_clock
 from paper_evaluator.v3_paper_context_bridge_v1 import fuse_existing_sources
 from paper_evaluator.v3_paper_positive_source_entry_v1 import (
@@ -115,6 +119,9 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                   existing_context:dict|None=None,allow_model:bool=False,
                   admit_staged_scanner_no_model:bool=False,
                   admit_staged_scanner_one_approved_model:bool=False,
+                  admit_reentry_child_one_approved_model:bool=False,
+                  reentry_original_candidate:dict|None=None,
+                  reentry_captured_1m:dict|None=None,
                   acquire:Callable[[dict],tuple[dict,dict,dict]]|None=None,
                   model_client:Callable[[str,str],tuple[dict,dict]]|None=None,
                   clock:Callable[[],str]=now,
@@ -127,6 +134,32 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
     cid=candidate.get("candidate_id")
     if not isinstance(cid,str) or not cid:
         raise ValueError("real canonical candidate required")
+    # The native lock and current V3 release check are held by the existing
+    # selective_tick owner. This token is an accidental-call fence, NOT
+    # authentication, as with the original Scanner model capability.
+    reentry=candidate.get("entry_origin")=="P1_REENTRY_EPISODE"
+    if admit_reentry_child_one_approved_model and not reentry:
+        raise ValueError("P1 continuation requires a real reentry child")
+    if reentry and not admit_reentry_child_one_approved_model:
+        return {"status":"P1_CHILD_NEEDS_GATED_NATIVE_MODEL_WRITER_CONTINUATION",
+                "candidate_id":cid,"series_id":series_id,
+                "model_called":False,"model_http_attempts_reserved":0,
+                "paper_only":True,"paper_writer_started":False,
+                "orders":False,"real_money_actions":False}
+    if reentry:
+        if (_released_model_capability is not _RELEASED_MODEL_NATIVE_OWNER
+                or admit_staged_scanner_no_model or admit_staged_scanner_one_approved_model
+                or not allow_model or not isinstance(approval,dict)
+                or not isinstance(model_key,str) or len(model_key)<20
+                or not isinstance(reentry_original_candidate,dict)
+                or not isinstance(reentry_captured_1m,dict)):
+            raise ValueError("P1 child requires original OS owner, source, unique budget")
+        # This budget is for exactly one separate child, never reused from
+        # the original parent even if its earlier P4 result was WAIT/REJECT.
+        preflight_budget(approval,series_id)
+        if reentry_original_candidate.get("candidate_id")!=candidate.get(
+                "reentry_parent_candidate_id"):
+            raise ValueError("P1 child parent identity conflict")
     stamp=candidate["event_time_utc"]
     if not local_receipts.is_dir() or local_receipts.is_symlink():
         raise ValueError("independent V3 Paper journal directory must already exist")
@@ -158,6 +191,22 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             raise ValueError("corrupt immutable V3 journal; human recovery required")
         if row.get("series_id")==series_id and row.get("candidate_id")==cid:
             prior.append(row)
+    if reentry:
+        if prior:
+            return {"status":"P1_CHILD_ALREADY_JOURNALED_NO_MODEL_RETRY",
+                    "candidate_id":cid,"model_called":False,
+                    "model_http_attempts_reserved":0,"orders":False}
+        # A parent P1 PASS is necessary, not sufficient: P1 is recomputed
+        # using fresh Kraken inputs below. Do not write an enrollment until
+        # the exactly matching durable parent is verified.
+        parent_check=prepare_original_owner_reentry_child(
+            journal=local_receipts,series_id=series_id,
+            original_candidate=reentry_original_candidate,
+            parent_event_key=candidate["reentry_parent_event_key"],
+            now_at_utc=clock())
+        if (parent_check.get("status")!="P1_CHILD_PREPARED_MODEL_AND_PAPER_STILL_GATED"
+                or parent_check.get("child_candidate")!=candidate):
+            raise ValueError("foreign, stale, or already used reentry episode")
     if staged:
         if any(row.get("pair")!=candidate["pair"]
                or row.get("event_time_utc")!=stamp
@@ -209,7 +258,17 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
         store_receipt_explicitly(local_receipts,event)
     # The original capture is already fsynced in the staged path. Never
     # overwrite its immutable FIRST event with a second incompatible payload.
-    if not staged:
+    if reentry:
+        receipt("P1_CHILD_ENROLLMENT","SEEN",{
+            "candidate_origin":"P1_REENTRY_EPISODE",
+            "reentry_episode_id":cid,
+            "reentry_parent_candidate_id":candidate["reentry_parent_candidate_id"],
+            "reentry_original_event_time_utc":candidate["reentry_original_event_time_utc"],
+            "reentry_episode_signal_at_utc":stamp,
+            "reentry_closed_15m_end_utc":candidate["reentry_closed_15m_end_utc"],
+            "reentry_parent_event_key":candidate["reentry_parent_event_key"],
+            "reentry_will_use_separate_fill_time":True})
+    elif not staged:
         receipt("SCANNER_CAPTURE","SEEN",{
             "candidate_origin":candidate.get("entry_origin","SCANNER"),
             "positive_source_name":candidate.get("positive_source_name"),
@@ -248,7 +307,8 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             return {"status":"SOURCE_CATALYST_NOT_VERIFIED_NO_MODEL",
                     "source_reason":positive_source["status"],
                     "model_called":False,"paper_only":True}
-    elif candidate.get("entry_origin") not in (None,"SCANNER"):
+    elif candidate.get("entry_origin") not in (
+            None,"SCANNER","P1_REENTRY_EPISODE"):
         receipt("SOURCE_CATALYST","SKIP",
                 {"positive_source_status":"UNSUPPORTED_CANDIDATE_ORIGIN"})
         return {"status":"UNSUPPORTED_ORIGIN_NO_MODEL",
@@ -277,9 +337,24 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             src["frame_status_"+label]=v.get("status")
             src["frame_closed_end_"+label]=v.get("last_closed_bar_end_utc")
             src["frame_close_"+label+"_eur"]=v.get("closed_close_eur")
-            src["frame_volume_ratio_"+label]=v.get("volume_ratio_prior_5")
+            # P4/WAIT consumes the 15m ratio against FOUR prior closed
+            # candles. Logging the five-candle version would make a
+            # decision impossible to reproduce from its own journal.
+            src["frame_volume_ratio_"+label]=v.get(
+                "volume_ratio_prior_4" if label=="15m" else "volume_ratio_prior_5")
         src["atr14_15m_eur"]=(frames.get("15") or {}).get("atr14_eur")
         src["structural_low_15m_eur"]=(frames.get("15") or {}).get("recent_8bar_low_eur")
+        # No new poll or writer: preserve only two complete pre-signal 15m
+        # candles from the original P0 Kraken response, at the true P0 clock.
+        # Missing/late source stays absent and cannot silently permit Early5m.
+        if not staged or not candidate.get("deferred_recheck"):
+            from paper_evaluator.v3_first_pit_presignal_15m_v1 import (
+                capture_first_pit_base,
+            )
+            first_base=capture_first_pit_base(
+                candidate,coin,written_at_utc=clock())
+            if first_base is not None:
+                src["initial_pit_15m_base"]=first_base
         receipt("SOURCE_INPUT","PASS" if evidence_status=="COMPLETE" else "UNKNOWN",src)
     except Exception as exc:
         receipt("SOURCE_INPUT","ERROR",
@@ -289,15 +364,48 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
     requested_at=clock()
     context=fuse_existing_sources(existing_context or {},decision_at_utc=requested_at,
                                   pair=candidate["pair"])
-    eligibility=propose_initial_full_review(candidate,coin,quote,meta,
-                                             decision_at_utc=requested_at)
+    decision_candidate=candidate
+    if reentry:
+        # The OLD scanner candidate is an identity for the P1 research
+        # contract, NOT a newly timestamped scanner BUY. The actual child
+        # signal/fill clocks are separately journalled.
+        decision_candidate=reentry_original_candidate
+        try:
+            from paper_evaluator.v3_entry_handoff_probe import utc
+            now_at=utc(requested_at)
+            signal_at=utc(stamp)
+            if not 0<=(now_at-signal_at).total_seconds()<=120:
+                raise ValueError("expired new P1 episode after source acquisition")
+            if utc(coin["frames"]["15"]["last_closed_bar_end_utc"])!=utc(
+                    candidate["reentry_closed_15m_end_utc"]):
+                raise ValueError("P1 base closed at a different timestamp")
+            bars=witnessed_15m_from_existing_1m_path(
+                reentry_captured_1m,pair=candidate["pair"],
+                observed_at_utc=requested_at)
+            eligibility=propose_second_leg_review(
+                decision_candidate,{"setup_lane":"EXTENDED","decision":"REJECT"},
+                coin,quote,bars,decision_at_utc=requested_at)
+            if eligibility.get("status")!=(
+                    "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"):
+                raise ValueError("no current independently confirmed P1 review")
+        except (KeyError,ValueError,TypeError,OverflowError):
+            receipt("FULL_REVIEW_ELIGIBILITY","UNKNOWN",{
+                "review_status":"P1_FRESH_SOURCE_OR_IDENTITY_UNVERIFIED",
+                "review_family":"EXTENDED_PROSPECTIVE_15M_BASE_SECOND_LEG"})
+            return {"status":"P1_NEW_MARKET_SOURCE_NOT_VERIFIED_NO_MODEL",
+                    "model_called":False,"orders":False,"real_money_actions":False}
+    else:
+        eligibility=propose_initial_full_review(candidate,coin,quote,meta,
+                                                 decision_at_utc=requested_at)
     if positive_source and positive_source["status"]==POSITIVE_SOURCE_ELIGIBLE:
         eligibility["source_catalyst_qualified"]=True
         eligibility["source_catalyst_event_id"]=positive_source["source_event_id"]
     receipt("FULL_REVIEW_ELIGIBILITY",
-            "PASS" if eligibility["status"]==ELIGIBLE else "SKIP",
+            "PASS" if eligibility["status"] in (
+                ELIGIBLE,"SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY") else "SKIP",
             {"review_status":eligibility["status"],"review_family":(
                  "SOURCE_CATALYST_INDEPENDENT" if positive_source else
+                 "EXTENDED_PROSPECTIVE_15M_BASE_SECOND_LEG" if reentry else
                  "FIRST_SCANNER_EARLY_REVIEW"),
              "candidate_origin":candidate.get("entry_origin","SCANNER"),
              "positive_source_name":candidate.get("positive_source_name"),
@@ -315,7 +423,8 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
              # optional_context_states journal field. No SHA-pinned journal
              # schema changes; source values enter only the P-I-T model prompt.
              "phase_failure_stage":eligibility.get("validation_stage")})
-    if eligibility["status"]!=ELIGIBLE:
+    if eligibility["status"] not in (
+            ELIGIBLE,"SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY"):
         return {"status":"NO_ELIGIBLE_INITIAL_V3_MODEL_REVIEW",
                 "review_status":eligibility["status"],"paper_only":True}
     # Preflight is NON-WRITING except audit receipts, no charge and no model.
@@ -328,7 +437,7 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                 {"phase_failure_stage":"NEW_USER_APPROVED_API_BUDGET_OR_KEY_MISSING"})
         return {"status":"MODEL_SPEND_BLOCKED","paper_only":True}
     prompt=build_v3_paper_full_model_prompt(
-        candidate=candidate,eligibility=eligibility,entry_evidence=coin,
+        candidate=decision_candidate,eligibility=eligibility,entry_evidence=coin,
         ticker=quote,pair_metadata=meta,decision_at_utc=requested_at,
         optional_context={"kind":"V3_PAPER_EXISTING_RESEARCH_CONTEXT_BRIDGE_V1",
                           "raw_snapshots":existing_context or {}})
@@ -344,9 +453,10 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
     # An original that was fresh BEFORE slow public Kraken input acquisition
     # can expire by the time we are about to reserve a paid model attempt.
     # Recheck the real original event clock at the irreversible spend boundary.
-    if staged:
+    if staged or reentry:
         age_at_spend=(receipt_clock(clock())-receipt_clock(stamp)).total_seconds()
-        if not 0<=age_at_spend<=600:
+        maximum_age=120 if reentry else 600
+        if not 0<=age_at_spend<=maximum_age:
             receipt("MODEL_REQUEST","UNKNOWN",{
                 "phase_failure_stage":"ORIGINAL_EXPIRED_AFTER_KRAKEN_NO_API_SPEND"})
             return {"status":"ORIGINAL_EXPIRED_BEFORE_MODEL_HTTP_NO_SPEND",
@@ -390,7 +500,11 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             "model_response_id":str(metadata.get("response_id") or "")[:150],
             "model_name":str(metadata.get("model") or "")[:80],
             "raw_model_decision":raw.get("decision"),
+            "raw_setup_lane":raw.get("setup_lane"),
             "raw_reason_codes":[str(c)[:90] for c in (raw.get("reason_codes") or [])[:8]],
+            "raw_missing_triggers":[str(c)[:90] for c in
+                                    (raw.get("missing_triggers") or [])[:8]]
+                if isinstance(raw.get("missing_triggers"),list) else [],
             "raw_stop_eur":raw.get("stop_eur"),"raw_stage2_trigger_eur":raw.get("stage2_trigger_eur"),
             "raw_watch_conditions":raw.get("watch_conditions")})
     except Exception as exc:
@@ -400,16 +514,22 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
         return {"status":"MODEL_FAILED_HTTP_ATTEMPT_BUDGET_CONSUMED",
                 "paper_only":True,"model_retries":0}
     # Never trust model's own clock, candidate identity or execution authority.
-    model=dict(raw,candidate_id=cid,pair=candidate["pair"],
-               decision_at_utc=returned_at)
+    model=dict(raw,candidate_id=decision_candidate["candidate_id"],
+               pair=candidate["pair"],decision_at_utc=returned_at)
     validated=validate_full_entry_decision(
-        eligibility,candidate,coin,quote,meta,model,
+        eligibility,decision_candidate,coin,quote,meta,model,
         decision_at_utc=returned_at,slippage_pct_each_side=0.08)
     receipt("P4_VALIDATION",
         "BUY_SCOUT" if validated["decision"]=="BUY_SCOUT" else
         ("WAIT" if validated["decision"]=="WAIT" else "REJECT" if
          validated["decision"]=="REJECT" else "UNKNOWN"),
         {"p4_status":validated["status"],"p4_decision":validated["decision"],
+         "p4_completed_at_utc":clock(),
+         "normalized_model_decision":validated["decision"],
+         "normalized_reason_codes":[str(c)[:90] for c in
+             (validated.get("reason_codes") or [])[:8]],
+         "p4_reason_codes":[str(c)[:90] for c in
+             (validated.get("reason_codes") or [])[:8]],
          "candidate_origin":candidate.get("entry_origin","SCANNER"),
          "positive_source_name":candidate.get("positive_source_name"),
          "positive_source_event_id":candidate.get("positive_source_event_id"),

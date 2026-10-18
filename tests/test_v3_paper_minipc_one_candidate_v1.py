@@ -54,6 +54,31 @@ def stage_scanner_original(journal,candidate):
               "review_status":"INITIAL_FRESH_PIT_READY_FOR_FULL_V3_MODEL_ONLY"}))
 
 class V3MiniPCOneCandidateTests(unittest.TestCase):
+    def test_new_p1_child_never_impersonates_scanner_or_spends_model(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);journal=root/"journal";budget=root/"budget"
+            journal.mkdir();budget.mkdir()
+            child={"kind":"V3_PROSPECTIVE_P1_REENTRY_CHILD_CANDIDATE_V1",
+                   "candidate_id":"V3RE-TEST-CHILD","pair":"XBT/EUR",
+                   "altname":"XBTEUR","entry_origin":"P1_REENTRY_EPISODE",
+                   "event_time_utc":dt(12),
+                   "reentry_parent_candidate_id":"ORIGINAL-CAND"}
+            output=one_candidate(
+                candidate=child,series_id=SID,
+                local_receipts=journal,model_reservations=budget,
+                allow_model=True,approval=valid_approval(),
+                model_key="OFFLINE-TEST-NOT-A-REAL-API-KEY",
+                clock=lambda:dt(13),
+                acquire=lambda *_:self.fail("no Kraken for unauthorized child"),
+                model_client=lambda *_:self.fail("no spend or synthetic child BUY"))
+            self.assertEqual(output["status"],
+                "P1_CHILD_NEEDS_GATED_NATIVE_MODEL_WRITER_CONTINUATION")
+            self.assertFalse(output["model_called"])
+            self.assertFalse(output["orders"])
+            self.assertFalse(output["real_money_actions"])
+            self.assertFalse(list(journal.glob("*.json")))
+            self.assertFalse(list(budget.glob("*.reserved.json")))
+
     def test_source_only_public_preflight_records_three_phases_and_no_http(self):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);journal=root/"journal";budgets=root/"budgets"
@@ -204,6 +229,14 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
             self.assertEqual(len([r for r in rows if r["phase"]=="SCANNER_CAPTURE"]),1)
             self.assertEqual({r["event_key"] for r in rows
                               if r["phase"]=="MODEL_REQUEST"},{"FRESHRECHECK"})
+            # The REAL staged original P0 SOURCE_INPUT has the same native
+            # FRESHRECHECK key; replay must accept it without promoting a
+            # later WAIT source or pretending the OHLC was seen pre-signal.
+            from paper_evaluator.v3_first_pit_presignal_15m_v1 import read_first_pit_base
+            source=next(r for r in rows if r["phase"]=="SOURCE_INPUT")
+            self.assertEqual(source["event_key"],"FRESHRECHECK")
+            self.assertIsNotNone(read_first_pit_base(
+                candidate,source,decision_at_utc=dt(12)))
             self.assertIn(("P4_VALIDATION","BUY_SCOUT"),
                           {(r["phase"],r["result"]) for r in rows})
             self.assertIn(("FOLLOWUP_24H","PENDING"),
@@ -321,6 +354,52 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
                           {(x["phase"],x["result"]) for x in records})
             self.assertIn(("FOLLOWUP_72H","PENDING"),
                           {(x["phase"],x["result"]) for x in records})
+
+    def test_input_15m_volume_and_distinct_model_p4_reasons_are_durable(self):
+        # A 15m/4-candle metric must not be misjournaled as the 5-candle
+        # metric. A model BUY vetoed by P4 is an economic/risk REJECT,
+        # with separate raw model and normalized P4 reasons.
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);journal=root/"journal";budgets=root/"budgets"
+            journal.mkdir();budgets.mkdir()
+            candidate,coin,quote,meta=fixture()
+            coin["frames"]["15"]["volume_ratio_prior_5"]=0.83
+            coin["frames"]["15"]["volume_ratio_prior_4"]=1.71
+            def acquire(_):
+                return coin,quote,meta
+            def model(prompt,key):
+                assessment,metadata=fake_model(prompt,key)
+                assessment["reason_codes"]=["FRESH_BREAKOUT_CANDIDATE"]
+                assessment["missing_triggers"]=["STOP_INVALID_FOR_CURRENT_ASK"]
+                assessment["stop_eur"]=999.0
+                return assessment,metadata
+            result=one_candidate(
+                candidate=candidate,series_id=SID,
+                local_receipts=journal,model_reservations=budgets,
+                approval=valid_approval(),model_key="NON_REAL_TEST_KEY_SUPPLIED_TO_STUB",
+                acquire=acquire,model_client=model,
+                clock=lambda:dt(12),allow_model=True)
+            self.assertEqual(result["p4_decision"],"REJECT")
+            rows=[json.loads(p.read_text("utf-8")) for p in journal.glob("*.json")]
+            by_phase={row["phase"]:row for row in rows}
+            self.assertEqual(by_phase["SOURCE_INPUT"]["data"]["frame_volume_ratio_15m"],1.71)
+            self.assertEqual(by_phase["SOURCE_INPUT"]["data"]["frame_volume_ratio_5m"],
+                             coin["frames"]["5"]["volume_ratio_prior_5"])
+            self.assertEqual(by_phase["MODEL_RESPONSE"]["data"]["raw_model_decision"],
+                             "BUY_SCOUT")
+            self.assertEqual(by_phase["MODEL_RESPONSE"]["data"]["raw_reason_codes"],
+                             ["FRESH_BREAKOUT_CANDIDATE"])
+            self.assertEqual(by_phase["MODEL_RESPONSE"]["data"]["raw_missing_triggers"],
+                             ["STOP_INVALID_FOR_CURRENT_ASK"])
+            p4=by_phase["P4_VALIDATION"]["data"]
+            self.assertEqual(p4["normalized_model_decision"],"REJECT")
+            self.assertEqual(p4["p4_reason_codes"],["INVALID_COST_OR_TWO_STAGE_PLAN"])
+            self.assertEqual(p4["normalized_reason_codes"],
+                             ["INVALID_COST_OR_TWO_STAGE_PLAN"])
+            self.assertEqual(p4["raw_reason_codes"],["FRESH_BREAKOUT_CANDIDATE"])
+            self.assertIsInstance(p4["p4_completed_at_utc"],str)
+            self.assertFalse(any(row["phase"]=="PAPER_FILL" for row in rows))
+            self.assertEqual(len(list(budgets.glob("*.reserved.json"))),1)
 
     def test_budget_spent_at_reservation_never_repeated_even_on_failure(self):
         with tempfile.TemporaryDirectory() as tmp:

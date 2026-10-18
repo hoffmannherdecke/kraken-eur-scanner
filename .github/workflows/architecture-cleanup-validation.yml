@@ -150,8 +150,8 @@ jobs:
           python -m unittest tests.test_v3_minipc_physical_readonly_preflight_policy_v1 -v
       - name: V3 real WAIT-within-TTL and Paper 6h24h host observer no-lookahead regression
         run: |
-          python -m py_compile paper_evaluator/v3_paper_wait_observer_v1.py paper_evaluator/v3_paper_minipc_selective_tick_v1.py
-          python -m unittest tests.test_v3_paper_wait_observer_v1 tests.test_v3_paper_minipc_selective_tick_v1 -v
+          python -m py_compile paper_evaluator/v3_paper_wait_observer_v1.py paper_evaluator/v3_paper_minipc_selective_tick_v1.py paper_evaluator/v3_extended_reentry_review_v1.py
+          python -m unittest tests.test_v3_paper_wait_observer_v1 tests.test_v3_paper_minipc_selective_tick_v1 tests.test_v3_extended_reentry_handoff_regression -v
           python -m py_compile paper_evaluator/v3_paper_minipc_native_launcher_v1.py
           python -m unittest tests.test_v3_paper_native_owner_launcher_v1 -v
       - name: V3 Mini-PC bounded real-model seam and 6h/24h Cloud-proof offline tests
@@ -162,6 +162,12 @@ jobs:
         run: |
           python -m py_compile paper_evaluator/v3_experimental_paper_initial_review_v1.py paper_evaluator/v3_experimental_paper_model_prompt_v1.py paper_evaluator/v3_experimental_paper_journal_v1.py paper_evaluator/v3_experimental_paper_family_router_v1.py paper_evaluator/v3_experimental_paper_pathwise_economics_v1.py
           python -m unittest tests.test_v3_experimental_paper_initial_review_v1 tests.test_v3_experimental_paper_journal_v1 tests.test_v3_experimental_paper_family_router_v1 tests.test_v3_experimental_paper_pathwise_economics_v1 -v
+      - name: V3 original Kraken P0 pre-signal 15m provenance and selective early5m model-free shadow
+        run: |
+          python -m py_compile paper_evaluator/successor_coin_entry_evidence_v1.py paper_evaluator/v3_first_pit_presignal_15m_v1.py paper_evaluator/v3_paper_minipc_one_candidate_v1.py paper_evaluator/v3_paper_minipc_selective_tick_v1.py
+          python -m unittest tests.test_successor_coin_entry_evidence_v1 tests.test_v3_first_pit_presignal_15m_v1 -v
+      - name: V3 eight offensive Paper requirements - original tracking cannot self-certify E2E
+        run: python -m unittest tests.test_v3_offensive_policy_tracking_contract -v
       - name: Existing six-proof V3 experimental Paper technical and recovery release gate
         run: |
           python -m py_compile tools/v3_experimental_paper_technical_gate.py
@@ -169,7 +175,7 @@ jobs:
       - name: V3 early closed-5m paper-research hypothesis into shared P4 contract
         run: |
           python -m py_compile paper_evaluator/v3_p3_early_5m_continuity_research_v1.py
-          python -m unittest tests.test_v3_p3_early_5m_continuity_research_v1 -v
+          python -m unittest tests.test_v3_p3_early_5m_continuity_research_v1 tests.test_v3_experimental_continuity_volume_review_v1 -v
       - name: V3-B inactive full entry contract tests
         run: python -m unittest tests.test_v3_full_entry_decision_candidate_v1 -v
 

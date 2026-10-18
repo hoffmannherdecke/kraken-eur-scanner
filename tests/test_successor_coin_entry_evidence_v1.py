@@ -32,7 +32,11 @@ class SuccessorCoinEntryEvidenceTests(unittest.TestCase):
         self.assertEqual(result["frames"]["15"]["volume_ratio_prior_5"],1.0)
         self.assertGreater(result["frames"]["15"]["atr14_eur"],0)
         self.assertTrue(result["guardrails"]["no_buy_authority"])
-        self.assertNotIn("900",str(result))
+        self.assertEqual(len(result["initial_pit_closed_15m_ohlc"]),4)
+        self.assertTrue(all(x["open"] < 900 and x["high"] < 900
+                            for x in result["initial_pit_closed_15m_ohlc"]))
+        self.assertTrue(all(x["start_utc"] + 900 <= BASE
+                            for x in result["initial_pit_closed_15m_ohlc"]))
     def test_missing_feed_is_not_reject(self):
         result=build_entry_evidence("ETH/EUR",{1:bars(1),5:None,15:bars(15)},
               observed_at_utc=datetime.fromtimestamp(BASE,timezone.utc).isoformat(),

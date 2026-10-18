@@ -25,6 +25,100 @@ def fixture(root:Path)->dict:
             oid=f"test-contract/{origin}/{key}"
             record={"source_id":oid,"observed_at_utc":"2026-10-13T09:30:00Z",
                     "source_status":"ACK_READBACK_AVAILABLE"}
+            if key=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E" and origin=="MINIPC_PHYSICAL":
+                # Contract fixtures only. These literal hashes/flags are NOT
+                # physical ACK, Cloud receipt or evidence of a real model BUY.
+                def writer(case,cid,p4_result,fill_result,fill_count):
+                    return {
+                        "case":case,"series_id":"PAPER-V3-CANARY-TEST-001",
+                        "candidate_id":cid,
+                        "execution_kind":"PHYSICAL_MINIPC_OFFLINE_MODEL_STUB",
+                        "p4_decision":p4_result,
+                        "paper_fill_result":fill_result,
+                        "paper_fill_count":fill_count,
+                        "paper_scout_eur":50,
+                        "paper_entry_taker_fee_eur":0.30,
+                        "p4_known_at_utc":"2026-10-13T09:30:00Z",
+                        "paper_fill_known_at_utc":"2026-10-13T09:30:01Z",
+                        "original_native_owner_lock_verified":True,
+                        "disk_ledger_readback_verified":True,
+                        "no_real_orders":True,
+                        "no_provider_model_http_in_dryrun":True,
+                        "v2r4_runtime_unchanged":True,
+                        "p4_record_sha256":("d" if case=="POSITIVE_BUY_SCOUT" else "c")*64,
+                        "native_journal_record_sha256":(
+                            "e" if case=="POSITIVE_BUY_SCOUT" else "f")*64,
+                    }
+                record.update({
+                    "original_model_p4_readback":{
+                        "model_http_attempts_reserved":1,
+                        "model_http_retries":0,
+                        "p4_decision":"WAIT",
+                        "source_pit_complete":True,
+                        "no_real_orders":True,
+                        "model_response_id":"CI_REAL_RESPONSE_ID_SHAPE_ONLY",
+                        "original_pit_sha256":"a"*64,
+                        "original_p4_receipt_sha256":"b"*64,
+                    },
+                    "native_paper_writer_dryrun_cases":[
+                        writer("POSITIVE_BUY_SCOUT","CI-BUY-SCOUT-ONE",
+                               "BUY_SCOUT","PAPER_FILLED",1),
+                        writer("NEGATIVE_REJECT","CI-REJECT-ONE",
+                               "REJECT","NO_PAPER_FILL",0),
+                    ],
+                })
+            if key=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E" and origin=="SUPABASE_CLOUD":
+                record.update({
+                    "observed_at_utc":"2026-10-13T09:32:00Z",
+                    "read_only":True,
+                    "cloud_cas_performed":False,
+                    "active_paper_series_changed":False,
+                    "v2r4_live_strategy_modified":False,
+                    "independent_original_receipt_query":True,
+                    "same_event_id_reread_no_duplicate_verified":True,
+                    "original_model_response_id":"CI_REAL_RESPONSE_ID_SHAPE_ONLY",
+                    "original_model_p4_receipt_sha256":"b"*64,
+                    "paper_writer_dryrun_case_readbacks":[
+                        {"case":"POSITIVE_BUY_SCOUT",
+                         "series_id":"PAPER-V3-CANARY-TEST-001",
+                         "candidate_id":"CI-BUY-SCOUT-ONE",
+                         "p4_decision":"BUY_SCOUT",
+                         "p4_record_sha256":"d"*64,
+                         "native_journal_record_sha256":"e"*64,
+                         "paper_fill_count":1,"paper_fill_result":"PAPER_FILLED",
+                         "cloud_query_readback_verified":True,
+                         "orders":False,"real_money_actions":False},
+                        {"case":"NEGATIVE_REJECT",
+                         "series_id":"PAPER-V3-CANARY-TEST-001",
+                         "candidate_id":"CI-REJECT-ONE",
+                         "p4_decision":"REJECT",
+                         "p4_record_sha256":"c"*64,
+                         "native_journal_record_sha256":"f"*64,
+                         "paper_fill_count":0,"paper_fill_result":"NO_PAPER_FILL",
+                         "cloud_query_readback_verified":True,
+                         "orders":False,"real_money_actions":False},
+                    ],
+                })
+            if key=="V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT" and origin=="MINIPC_PHYSICAL":
+                record.update({
+                    "paper_scout_eur":50,"paper_stage2_eur":50,
+                    "taker_fee_pct_each_side":0.6,
+                    "paper_entry_fee_eur":0.30,
+                })
+                for chk in (
+                    "stop_below_current_ask_tested",
+                    "stage2_above_current_ask_and_ttl_tested",
+                    "taker_fee_roundtrip_spread_slippage_counted_tested",
+                    "invalid_stop_or_stage2_never_creates_fill_tested",
+                    "negative_net_edge_never_creates_fill_tested",
+                    "wait_trigger_no_buy_without_new_full_model_p4_tested",
+                    "missing_response_id_quarantined_tested",
+                    "p4_buy_without_durable_fill_quarantined_tested",
+                    "interrupted_http_reservation_never_retried_tested",
+                    "duplicate_child_episode_never_bought_twice_tested",
+                    "no_real_orders_tested",
+                ):
+                    record[chk]=True
             if key=="V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE":
                 # Structural fixture only; these flags are NEVER real host ACKs.
                 record.update({
@@ -262,6 +356,127 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                     root,"V3-PAPER-EXPERIMENTAL-001",base))
                 target.write_text(json.dumps(valid_proof,sort_keys=True))
                 row["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
+
+    def test_first_two_existing_proofs_reject_mismatched_positive_negative_and_costs(self):
+        # Hash-correct synthetic claims alone cannot replace independent
+        # physical-source review. This tests mandatory content boundaries.
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            required=(
+                "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E",
+                "V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT",
+            )
+            variants={
+                required[0]:[
+                    lambda h:h["original_model_p4_readback"].update(
+                        model_http_attempts_reserved=2),
+                    lambda h:h["original_model_p4_readback"].update(
+                        model_response_id=""),
+                    lambda h:h["native_paper_writer_dryrun_cases"][0].update(
+                        paper_fill_count=0),
+                    lambda h:h["native_paper_writer_dryrun_cases"][0].update(
+                        paper_fill_result="NO_PAPER_FILL"),
+                    lambda h:h["native_paper_writer_dryrun_cases"][0].update(
+                        paper_entry_taker_fee_eur=0.0),
+                    lambda h:h["native_paper_writer_dryrun_cases"][1].update(
+                        paper_fill_count=1),
+                    lambda h:h["native_paper_writer_dryrun_cases"][1].update(
+                        candidate_id="CI-BUY-SCOUT-ONE"),
+                    lambda h:h["native_paper_writer_dryrun_cases"][0].update(
+                        paper_fill_known_at_utc="2026-10-13T09:29:00Z"),
+                    lambda h:h["native_paper_writer_dryrun_cases"][0].update(
+                        disk_ledger_readback_verified=False),
+                    lambda h:h["native_paper_writer_dryrun_cases"][0].update(
+                        no_real_orders=False),
+                    lambda h:h["native_paper_writer_dryrun_cases"][0].update(
+                        native_journal_record_sha256="not-a-physical-hash"),
+                ],
+                required[1]:[
+                    lambda h:h.update(paper_scout_eur=100),
+                    lambda h:h.update(paper_stage2_eur=0),
+                    lambda h:h.update(taker_fee_pct_each_side=0.0),
+                    lambda h:h.update(paper_entry_fee_eur=0),
+                    lambda h:h.update(negative_net_edge_never_creates_fill_tested=False),
+                    lambda h:h.update(p4_buy_without_durable_fill_quarantined_tested=None),
+                    lambda h:h.update(interrupted_http_reservation_never_retried_tested=False),
+                    lambda h:h.update(wait_trigger_no_buy_without_new_full_model_p4_tested=False),
+                ],
+            }
+            for proof_id in required:
+                row=next(x for x in packet["experimental_paper_technical_proofs"]
+                         if x["id"]==proof_id)
+                path=root/row["evidence_path"]
+                valid=json.loads(path.read_text("utf-8"))
+                for modifier in variants[proof_id]:
+                    with self.subTest(proof_id=proof_id,modifier=repr(modifier)):
+                        broken=copy.deepcopy(valid)
+                        host=next(item for item in broken["source_originals"]
+                                  if item["origin"]=="MINIPC_PHYSICAL")
+                        modifier(host["original_record"])
+                        original=json.dumps(host["original_record"],sort_keys=True,
+                                            separators=(",",":")).encode()
+                        host["original_sha256"]=hashlib.sha256(original).hexdigest()
+                        path.write_text(json.dumps(broken,sort_keys=True))
+                        row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+                        self.assertTrue(validate_experimental_paper_packet(
+                            root,"V3-PAPER-EXPERIMENTAL-001",packet),
+                            "invalid original model/positive-negative Paper dryrun must block")
+                path.write_text(json.dumps(valid,sort_keys=True))
+                row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
+
+    def test_first_proof_requires_independently_read_same_cloud_paper_rows(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            row=next(x for x in packet["experimental_paper_technical_proofs"]
+                     if x["id"]=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E")
+            path=root/row["evidence_path"]
+            valid=json.loads(path.read_text("utf-8"))
+            changes=[
+                lambda p:p.update(source_originals=[
+                    x for x in p["source_originals"] if x["origin"]!="SUPABASE_CLOUD"]),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"].update(
+                                  independent_original_receipt_query=False),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"].update(
+                                  original_model_response_id="ANOTHER_RESPONSE"),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"].update(
+                                  observed_at_utc="2026-10-13T09:29:59Z"),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"]
+                              ["paper_writer_dryrun_case_readbacks"][0].update(
+                                  paper_fill_count=0),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"]
+                              ["paper_writer_dryrun_case_readbacks"][1].update(
+                                  native_journal_record_sha256="9"*64),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"]
+                              ["paper_writer_dryrun_case_readbacks"][1].update(
+                                  real_money_actions=True),
+            ]
+            for change in changes:
+                with self.subTest(change=repr(change)):
+                    altered=copy.deepcopy(valid)
+                    change(altered)
+                    for item in altered["source_originals"]:
+                        payload=json.dumps(item["original_record"],sort_keys=True,
+                                           separators=(",",":")).encode()
+                        item["original_sha256"]=hashlib.sha256(payload).hexdigest()
+                    path.write_text(json.dumps(altered,sort_keys=True))
+                    row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+                    self.assertTrue(validate_experimental_paper_packet(
+                        root,"V3-PAPER-EXPERIMENTAL-001",packet),
+                        "a merely rehashed but mismatched Cloud original is NOT a V3 Paper fill")
+            path.write_text(json.dumps(valid,sort_keys=True))
+            row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
 
     def test_v3_journal_wait_no_buy_inheritance_blocks_on_missing_originals(self):
         # All tests use synthetic packets; each edited source record is

@@ -26,9 +26,10 @@ def record_horizon(*,journal:Path,series_id:str,candidate_id:str,
         if obj.get("series_id")==series_id and obj.get("candidate_id")==candidate_id:
             rows.append(obj)
     if not rows:raise ValueError("original immutable candidate receipt missing")
-    initial=next((r for r in rows if r["phase"]=="SCANNER_CAPTURE"),None)
+    initial=next((r for r in rows if r["phase"] in (
+        "SCANNER_CAPTURE","P1_CHILD_ENROLLMENT")),None)
     fill=next((r for r in rows if r["phase"]=="PAPER_FILL"),None)
-    if initial is None:raise ValueError("no original V3 scanner event")
+    if initial is None:raise ValueError("no original V3 scanner or P1 episode enrollment")
     phase=f"FOLLOWUP_{horizon_hours}H"
     # A corrected old result cannot be silently rewritten. Manual source
     # amendments must use a separately audited lineage, never this endpoint.

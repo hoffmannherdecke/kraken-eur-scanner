@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from paper_evaluator.v3_second_leg_policy_candidate_v1 import (
-    propose_second_leg_review,
+    propose_second_leg_review,witnessed_15m_from_existing_1m_path,
 )
 from tests.test_v2r4_v3_entry_handoff_probe import evidence, BASE
 
@@ -72,6 +72,52 @@ class SecondLegPolicyCandidateTests(unittest.TestCase):
         self.assertEqual(r["scout_eur_unchanged"],50)
         self.assertEqual(r["stage2_eur_unchanged"],50)
         self.assertGreater(r["fee_plus_spread_pct_before_slippage"],1.2)
+
+    def test_exact_minute_archive_is_required_for_closed_second_leg_base(self):
+        # Pure unit fixture: in production assemble() independently authenticates
+        # the original capture files and lag. No historical/reconstructed MFE.
+        first=BASE-75*60
+        minute_rows=[]
+        for n in range(75):
+            is_breakout=n>=60
+            op,hi,lo,close=(
+                (10.09,10.32,10.04,10.28) if is_breakout
+                else (10.08,10.12,10.00,10.09))
+            minute_rows.append({
+                "start_at_utc":datetime.fromtimestamp(first+60*n,timezone.utc).isoformat(),
+                "open":op,"high":hi,"low":lo,"close":close})
+        path={"kind":"KRAKEN_CLOSED_1M_PATH_CAPTURE_V1",
+              "source":"KRAKEN_SPOT_EUR_PUBLIC","pair":"XBT/EUR",
+              "captured_at_utc":dt(7),
+              "closed_bars":minute_rows,
+              "source_snapshots_with_conflicts":False,
+              "no_future_backfill":True,
+              "max_original_snapshot_lag_minutes":15,
+              "historical_late_backfill_excluded":True}
+        bars=witnessed_15m_from_existing_1m_path(
+            path,pair="XBT/EUR",observed_at_utc=dt(13))
+        self.assertEqual(len(bars),5)
+        self.assertEqual(bars[-1]["close"],10.28)
+        self.assertEqual(bars[-1]["start_utc"],BASE-900)
+        c,d,e,t,_=good()
+        self.assertEqual(propose_second_leg_review(
+            c,d,e,t,bars,decision_at_utc=dt(13))["status"],
+            "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY")
+        gap=copy.deepcopy(path);gap["closed_bars"].pop(12)
+        incomplete=witnessed_15m_from_existing_1m_path(
+            gap,pair="XBT/EUR",observed_at_utc=dt(13))
+        self.assertEqual(len(incomplete),4)
+        self.assertEqual(propose_second_leg_review(
+            c,d,e,t,incomplete,decision_at_utc=dt(13))["status"],
+            "MISSING_CLOSED_CONSOLIDATION_HISTORY")
+        forged=dict(path,no_future_backfill=False)
+        with self.assertRaises(ValueError):
+            witnessed_15m_from_existing_1m_path(
+                forged,pair="XBT/EUR",observed_at_utc=dt(13))
+        future=dict(path,captured_at_utc=dt(45))
+        with self.assertRaises(ValueError):
+            witnessed_15m_from_existing_1m_path(
+                future,pair="XBT/EUR",observed_at_utc=dt(13))
 
     def test_missing_optional_source_is_neutral_not_hidden_veto(self):
         base = run()
