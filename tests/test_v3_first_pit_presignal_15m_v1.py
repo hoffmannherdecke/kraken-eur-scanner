@@ -102,6 +102,7 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
             known_at_utc=dt(12), phase="SOURCE_INPUT", result="PASS",
             data={"input_known_at_utc": coin["known_at_utc"],
                   "source_status": "COMPLETE",
+                  "frame_status_15m": "VALID",
                   "initial_pit_15m_base": base})
         self.assertIsNotNone(read_first_pit_base(
             candidate, receipt, decision_at_utc=dt(30)))
@@ -114,6 +115,9 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
                 bar_closes_are_not_observation_times=False),
             lambda r:r["data"].update(input_known_at_utc=dt(100)),
             lambda r:r.update(result="UNKNOWN"),
+            lambda r:r.update(event_key="FRESHRECHECK"),
+            lambda r:r["data"].update(source_status="UNKNOWN"),
+            lambda r:r["data"].update(frame_status_15m="UNKNOWN"),
             lambda r:r["data"]["initial_pit_15m_base"]["bars"][-1].update(
                 start_utc=r["data"]["initial_pit_15m_base"]["bars"][0]["start_utc"]),
         )
@@ -230,6 +234,7 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
                                       else "2026-10-12T06:44:01+00:00"),
                         phase="SOURCE_INPUT",result="PASS",
                         data={"source_status":"COMPLETE",
+                              "frame_status_15m":"VALID",
                               "input_known_at_utc":base["first_known_at_utc"],
                               "initial_pit_15m_base":base})
                     store_receipt_explicitly(journal,receipt)
