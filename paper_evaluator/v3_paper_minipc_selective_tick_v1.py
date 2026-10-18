@@ -662,6 +662,100 @@ def released_paper_first_scanner_model_once(*,preflight:dict[str,Any],
         }
 
 
+
+def released_paper_positive_catalyst_model_once(*,
+        candidate:dict[str,Any],series_id:str,journal:Path,
+        model_reservations:Path,expected_repo_sha:str,
+        expected_bundle_sha256:str,expected_strategy_sha256:str,
+        read_active_series:Callable[[str],dict[str,Any]],
+        approval:dict[str,Any],model_key:str,
+        existing_context:dict[str,Any],
+        clock_now:Callable[[],str]=utc_now,
+        acquire:Callable|None=None,model_client:Callable|None=None)->dict[str,Any]:
+    """Existing locked V3 Paper owner: verified independent catalyst -> P4.
+
+    This is NOT an autonomous positive-source poller or extra Paper writer.
+    Caller must supply an original, authenticated source snapshot and a
+    separate newly approved one-shot model budget. The six physical release
+    gates and real protected-main SHA remain independent prerequisites.
+    """
+    from paper_evaluator.v3_paper_positive_source_entry_v1 import (
+        assess_positive_source,make_source_candidate,ELIGIBLE as SOURCE_ELIGIBLE,
+    )
+    if (not isinstance(candidate,dict)
+            or candidate.get("entry_origin")!="VERIFIED_POSITIVE_SOURCE_CATALYST"
+            or candidate.get("kind")!="V3_POSITIVE_SOURCE_CANONICAL_PAPER_CANDIDATE_V1"
+            or not isinstance(existing_context,dict)
+            or not isinstance(model_key,str) or len(model_key)<20
+            or not isinstance(approval,dict)):
+        raise ValueError("canonical original positive source and separate model approval required")
+    preflight_budget(approval,series_id)
+    if (not journal.is_dir() or journal.is_symlink()
+            or not model_reservations.is_dir() or model_reservations.is_symlink()
+            or journal.resolve()==model_reservations.resolve()):
+        raise ValueError("separate preexisting immutable V3 journal and model budget roots required")
+    name=candidate.get("positive_source_name")
+    snapshot=existing_context.get(name)
+    now_at=clock_now()
+    source=assess_positive_source(
+        pair=candidate.get("pair"),source_name=name,snapshot=snapshot,
+        decision_at_utc=now_at,
+        market_move=existing_context.get("dynamic_move_radar"))
+    if source["status"]!=SOURCE_ELIGIBLE:
+        return {"status":"POSITIVE_SOURCE_NOT_CURRENT_NO_MODEL",
+                "source_status":source["status"],"model_http_attempts_reserved":0,
+                "orders":False,"real_money_actions":False}
+    canonical=make_source_candidate(
+        pair=candidate["pair"],kraken_altname=candidate["altname"],
+        source_name=name,snapshot=snapshot,decision_at_utc=now_at,
+        market_move=existing_context.get("dynamic_move_radar"))
+    if canonical!=candidate:
+        raise ValueError("positive event identity changed before original owner")
+    with _one_canary_owner(journal):
+        _require_released_paper_cloud(
+            series_id=series_id,expected_repo_sha=expected_repo_sha,
+            expected_bundle_sha256=expected_bundle_sha256,
+            expected_strategy_sha256=expected_strategy_sha256,
+            read_active_series=read_active_series,clock_now=clock_now)
+        if candidate_receipts(journal,series_id,candidate["candidate_id"]):
+            return {"status":"POSITIVE_SOURCE_ALREADY_JOURNALED_NO_MODEL_RETRY",
+                    "model_http_attempts_reserved":0,"orders":False}
+        result=one_candidate(
+            candidate=candidate,series_id=series_id,
+            local_receipts=journal,model_reservations=model_reservations,
+            approval=approval,model_key=model_key,allow_model=True,
+            existing_context=existing_context,acquire=acquire,
+            model_client=model_client,clock=clock_now,
+            _released_model_capability=_RELEASED_MODEL_NATIVE_OWNER)
+        proof={"paper_entry_receipt_verified_local":False,
+               "independent_cloud_paper_fill_ack":False}
+        if result.get("status")=="V3_CANARY_MODEL_P4_RECORDED_NO_PAPER_ACTIVATION":
+            try:
+                proof=_verify_first_native_model_paper_journal(
+                    candidate=candidate,series_id=series_id,journal=journal,
+                    model_reservations=model_reservations,approval=approval)
+                if proof["p4_decision"]!=result.get("p4_decision"):
+                    raise ValueError("positive P4 differs from immutable original")
+            except (OSError,ValueError,KeyError,TypeError,OverflowError):
+                return {"status":"POSITIVE_SOURCE_MODEL_OR_LEDGER_INCOMPLETE_HOLD",
+                        "model_result":result,"model_http_attempts_reserved":1,
+                        "requires_original_owner_reconciliation":True,
+                        "independent_cloud_paper_fill_ack":False,
+                        "orders":False,"real_money_actions":False}
+        return {"status":(
+                    "POSITIVE_SOURCE_MODEL_P4_DURABLE_WAIT_FOR_FOLLOWUP"
+                    if result.get("p4_decision") in
+                    ("BUY_SCOUT","WAIT","REJECT","UNKNOWN")
+                    else "POSITIVE_SOURCE_MODEL_OR_SOURCE_INCOMPLETE_HOLD"),
+                "candidate_id":candidate["candidate_id"],"series_id":series_id,
+                "model_result":result,
+                "model_http_attempts_reserved":result.get(
+                    "model_http_attempts_reserved",0),
+                "cloud_ack_verified":False,"orders":False,
+                "real_money_actions":False,"new_schedules":0,
+                "v2r4_changed":False,**proof}
+
+
 def released_paper_reentry_child_model_once(*,
         child:dict[str,Any],original_candidate:dict[str,Any],
         series_id:str,journal:Path,capture_dir:Path,
