@@ -97,6 +97,8 @@ class Early5mV3ResearchTests(unittest.TestCase):
             lambda a:a[0].update(event_time_utc=dt(1)),
             lambda a:a[0].update(event_time_utc=dt(-1000)),
             lambda a:a[2]["frames"]["5"].update(last_closed_bar_end_utc=dt(-240)),
+            lambda a:a[2]["frames"]["5"].update(status="STALE"),
+            lambda a:a[2]["frames"]["5"].update(status="UNKNOWN"),
             lambda a:a[2]["frames"]["5"].update(volume_ratio_prior_5=1.1),
             lambda a:a[2]["frames"]["5"].update(volume_ratio_prior_5=float("nan")),
             lambda a:a[2]["frames"]["15"].update(last_closed_bar_end_utc=dt(0)),

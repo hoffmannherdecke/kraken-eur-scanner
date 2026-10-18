@@ -107,6 +107,8 @@ def propose_early_5m_continuity_review(
 
         stage="ONE_CHANGE_FRESH_CLOSED_5M"
         f5=entry_evidence["frames"]["5"]
+        if f5.get("status") != "VALID":
+            return result("UNKNOWN_REQUIRED_CLOSED_5M_SOURCE_STATUS")
         close5_end=utc(f5["last_closed_bar_end_utc"])
         if not detected < close5_end <= observed:
             return result("NO_NEW_CLOSED_5M_AFTER_CANDIDATE")
