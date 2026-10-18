@@ -6,9 +6,14 @@ and optional source failures are never included as past decision evidence.
 """
 from __future__ import annotations
 import json
+from datetime import timedelta
 from typing import Any
 from paper_evaluator.v3_experimental_paper_initial_review_v1 import (
     KIND as INITIAL_KIND, ELIGIBLE as INITIAL_ELIGIBLE,
+)
+from paper_evaluator.v3_p3_early_5m_continuity_research_v1 import (
+    KIND as EARLY_5M_KIND, ELIGIBLE as EARLY_5M_ELIGIBLE,
+    CHECKS as EARLY_5M_CHECKS,
 )
 from paper_evaluator.v3_full_entry_decision_candidate_v1 import (
     ELIGIBLE_STATUS as SECOND_LEG_ELIGIBLE,
@@ -36,8 +41,10 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
              and eligibility.get("kind")==INITIAL_KIND)
     p1=(eligibility.get("status")==SECOND_LEG_ELIGIBLE
         and eligibility.get("kind")==SECOND_LEG_KIND)
+    early_5m=(eligibility.get("status")==EARLY_5M_ELIGIBLE
+              and eligibility.get("kind")==EARLY_5M_KIND)
     p1_checks=eligibility.get("checks")
-    if (not (initial or p1)
+    if (not (initial or p1 or early_5m)
             or eligibility.get("request_model_recheck_only") is not True
             or eligibility.get("source_candidate_id")!=candidate.get("candidate_id")
             or eligibility.get("pair")!=candidate.get("pair")
@@ -49,8 +56,36 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
                 or not 4<=eligibility["base_15m_bars"]<=12
                 or not isinstance(p1_checks,dict)
                 or set(p1_checks)!=SECOND_LEG_P1_CHECKS
+                or any(v is not True for v in p1_checks.values())))
+            or (early_5m and (
+                eligibility.get("approval_to_call_model") is not False
+                or eligibility.get("original_candidate_fresh") is not True
+                or eligibility.get("new_closed_5m_bar_after_candidate") is not True
+                or eligibility.get("baseline_v2r4_decision_unchanged") is not True
+                or eligibility.get("same_clock_comparison_required") is not True
+                or not isinstance(p1_checks,dict)
+                or set(p1_checks)!=EARLY_5M_CHECKS
                 or any(v is not True for v in p1_checks.values())))):
-        raise ValueError("no canonical prospective V3 initial or P1 full review")
+        raise ValueError("no canonical prospective V3 initial, P1 or early 5m full review")
+    if early_5m:
+        # Same closed 5m and pre-signal 15m clocks must be seen in the exact
+        # PIT consumed by the independently approved full model. Research
+        # review permission is never an HTTP model/buy authorization.
+        f5=entry_evidence.get("frames",{}).get("5",{})
+        f15=entry_evidence.get("frames",{}).get("15",{})
+        close5=utc(eligibility["fresh_close_at_utc"])
+        base_end=utc(eligibility["prior_closed_15m_base_end_at_utc"])
+        original=utc(candidate["event_time_utc"])
+        if (close5!=utc(f5["last_closed_bar_end_utc"])
+                or base_end!=utc(f15["last_closed_bar_end_utc"])
+                or not base_end<=original<close5
+                or close5>base_end+timedelta(minutes=15)
+                or eligibility.get("snapshot_recheck_key")!=(
+                    candidate["candidate_id"]+"|"+
+                    eligibility["fresh_close_at_utc"]+"|EARLY_5M_P3")
+                or type(f5.get("volume_ratio_prior_5")) not in (int,float)
+                or f5["volume_ratio_prior_5"]<1.2):
+            raise ValueError("early 5m review mismatches the original source or closed PIT")
     attached=attach_to_future_evaluator(
         {"pair":candidate.get("pair")},{},entry_evidence,decision_at_utc)
     if (ticker.get("pair")!=candidate.get("pair")
@@ -127,7 +162,9 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
                                "original_candidate_historical_only",
                                "base_high_eur_descriptive_only",
                                "base_low_eur_descriptive_only",
-                               "new_snapshot_observed_at_utc")},
+                               "new_snapshot_observed_at_utc",
+                               "fresh_close_at_utc","prior_closed_15m_base_end_at_utc",
+                               "snapshot_recheck_key","same_clock_comparison_required")},
         "current_kraken_execution":{k:ticker.get(k) for k in
                                     ("pair","bid","ask","spread_pct","observed_at_utc")},
         "current_kraken_spot_eur_pair":{k:pair_metadata.get(k) for k in
@@ -150,6 +187,15 @@ reclaim, with original source capture provenance, is the prospective reason
 for this second and separately budgeted full review. A model response must
 validate the current Kraken ask, cost-net upside, independent stop and Stage2.
 No retrospective MFE or expired prior WAIT is a buy signal.
+
+A separate EARLY CLOSED-5M CONTINUITY re-review may be made ONLY after the
+original non-BUY, on a genuinely newly closed 5m price-and-volume continuation
+against two already completed original pre-signal 15m base candles. The
+initial base's true first-observation clock (not its historic candle close)
+must be proven by the native source journal BEFORE this new closed 5m event.
+This prompt is a complete new CONTINUITY model decision, NOT a BUY signal or
+a model-call budget permit. Preserve cost, anti-chase, stop/Stage2 and P4
+constraints; missing original source proof means NO model review.
 
 A second, INDEPENDENT SOURCE-CATALYST ENTRY PATH exists: when the verified
 positive_source_trigger_for_independent_paper_entry is non-null, treat it as
