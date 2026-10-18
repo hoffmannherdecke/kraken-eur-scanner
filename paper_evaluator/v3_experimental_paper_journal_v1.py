@@ -21,7 +21,7 @@ from typing import Any
 
 KIND="V3_EXPERIMENTAL_PAPER_CANDIDATE_EVENT_V1"
 PHASES=frozenset({
-    "SCANNER_CAPTURE","SOURCE_CATALYST","SOURCE_INPUT","FULL_REVIEW_ELIGIBILITY","MODEL_REQUEST",
+    "SCANNER_CAPTURE","P1_CHILD_ENROLLMENT","SOURCE_CATALYST","SOURCE_INPUT","FULL_REVIEW_ELIGIBILITY","MODEL_REQUEST",
     "MODEL_RESPONSE","MODEL_ERROR","P4_VALIDATION","WAIT_WATCH","WAIT_EXPIRY",
     "WAIT_RECHECK","FRESH_SECOND_LEG","PAPER_FILL","PAPER_EXIT",
     "FOLLOWUP_6H","FOLLOWUP_24H","FOLLOWUP_72H","SERIES_ROTATION",
@@ -139,6 +139,16 @@ def make_receipt(*,series_id:str,revision:str,candidate_id:str,pair:str,
         if (data.get("followup_source") is None
                 or data.get("path_contiguous_1m_verified") is not True):
             raise ValueError("mature outcome requires independently verified path")
+    if phase=="P1_CHILD_ENROLLMENT":
+        if (result!="SEEN"
+                or data.get("candidate_origin")!="P1_REENTRY_EPISODE"
+                or data.get("reentry_episode_id")!=candidate_id
+                or data.get("reentry_parent_candidate_id")==candidate_id
+                or data.get("reentry_episode_signal_at_utc")!=event_time_utc
+                or data.get("reentry_will_use_separate_fill_time") is not True
+                or not isinstance(data.get("reentry_parent_candidate_id"),str)
+                or not isinstance(data.get("reentry_parent_event_key"),str)):
+            raise ValueError("P1 child cannot impersonate scanner or original clock")
     if phase=="FRESH_SECOND_LEG" and result=="PASS":
         # A positive P1 observation belongs to its ORIGINAL candidate.
         # Its child episode gets a different event clock; do not pretend
