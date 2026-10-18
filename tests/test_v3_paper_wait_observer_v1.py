@@ -11,14 +11,18 @@ CID="20261012-064219-ZRO-EUR-r168479886848322"
 START=datetime(2026,10,12,6,42,19,tzinfo=timezone.utc)
 DECISION=datetime(2026,10,12,6,44,49,tzinfo=timezone.utc)
 def t(x):return x.isoformat()
-def seed(j:Path,conditions=None,*,model_setup_lane=None):
+def seed(j:Path,conditions=None,*,model_setup_lane=None,
+         decision_at=None):
+    # The optional decision clock is for an offline chronology regression.
+    # Every existing caller keeps the canonical original fixture unchanged.
+    decision_at=DECISION if decision_at is None else decision_at
     rows=[
         ("SCANNER_CAPTURE","SEEN",START,{}),
-        ("MODEL_RESPONSE","PASS",DECISION,{"model_response_at_utc":t(DECISION),
+        ("MODEL_RESPONSE","PASS",decision_at,{"model_response_at_utc":t(decision_at),
                "raw_model_decision":"WAIT"}),
-        ("P4_VALIDATION","WAIT",DECISION,{"p4_status":"FULL_WAIT_VALIDATED_OFFLINE",
+        ("P4_VALIDATION","WAIT",decision_at,{"p4_status":"FULL_WAIT_VALIDATED_OFFLINE",
                "p4_decision":"WAIT"}),
-        ("WAIT_WATCH","WAIT",DECISION+timedelta(seconds=2),{
+        ("WAIT_WATCH","WAIT",decision_at+timedelta(seconds=2),{
             "raw_wait_ttl_minutes":30,
             "raw_watch_conditions":conditions if conditions is not None else [
                 {"metric":"closed_5m_close_eur","op":">","value":2.111},
