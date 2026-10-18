@@ -641,6 +641,112 @@ def released_paper_first_scanner_model_once(*,preflight:dict[str,Any],
         }
 
 
+def released_paper_reentry_child_model_once(*,
+        child:dict[str,Any],original_candidate:dict[str,Any],
+        series_id:str,journal:Path,capture_dir:Path,
+        model_reservations:Path,expected_repo_sha:str,
+        expected_bundle_sha256:str,expected_strategy_sha256:str,
+        read_active_series:Callable[[str],dict[str,Any]],
+        approval:dict[str,Any],model_key:str,
+        clock_now:Callable[[],str]=utc_now,
+        acquire:Callable|None=None,model_client:Callable|None=None,
+        existing_context:dict[str,Any]|None=None)->dict[str,Any]:
+    """One original native-owner P1 child, same full model/P4/Paper writer.
+
+    No activation, Cloud POST, new task, side process, Kraken order or retry.
+    A real host must separately prove its Windows native OS owner and six
+    release gates; this Python callback cannot certify physical identity.
+    """
+    if (not isinstance(child,dict)
+            or child.get("entry_origin")!="P1_REENTRY_EPISODE"
+            or child.get("action")!="REVIEW_ONLY_NOT_ORDER"
+            or not isinstance(original_candidate,dict)
+            or child.get("reentry_parent_candidate_id")!=
+                original_candidate.get("candidate_id")
+            or not isinstance(approval,dict)
+            or not isinstance(model_key,str) or len(model_key)<20):
+        raise ValueError("exact original P1 parent, child and one-shot budget required")
+    # No spending, source GET or new journal entry before independent budget,
+    # distinct directories and active Cloud release pin checks.
+    preflight_budget(approval,series_id)
+    if (not journal.is_dir() or journal.is_symlink()
+            or not capture_dir.is_dir() or capture_dir.is_symlink()
+            or not model_reservations.is_dir() or model_reservations.is_symlink()
+            or len({journal.resolve(),capture_dir.resolve(),
+                    model_reservations.resolve()})!=3):
+        raise ValueError("separate original V3 journal/capture/budget roots required")
+    with _one_canary_owner(journal):
+        _require_released_paper_cloud(
+            series_id=series_id,expected_repo_sha=expected_repo_sha,
+            expected_bundle_sha256=expected_bundle_sha256,
+            expected_strategy_sha256=expected_strategy_sha256,
+            read_active_series=read_active_series,clock_now=clock_now)
+        if candidate_receipts(journal,series_id,child["candidate_id"]):
+            return {"status":"P1_CHILD_ALREADY_JOURNALED_NO_MODEL_RETRY",
+                    "model_http_calls":0,"paper_entry_receipt_verified_local":False,
+                    "orders":False,"real_money_actions":False,
+                    "paper_writer_active":False}
+        parent=prepare_original_owner_reentry_child(
+            journal=journal,series_id=series_id,
+            original_candidate=original_candidate,
+            parent_event_key=child["reentry_parent_event_key"],
+            now_at_utc=clock_now())
+        if (parent.get("status")!="P1_CHILD_PREPARED_MODEL_AND_PAPER_STILL_GATED"
+                or parent["child_candidate"]!=child):
+            raise ValueError("P1 immutable parent/child handoff mismatch")
+        # Reconstruct from ORIGINAL digest-verified witnessed 1m files,
+        # never from a supplied historical OHLC or changed candidate clock.
+        assembled=assemble(
+            snapshots=capture_dir,pair=child["pair"],
+            entry_at_utc=original_candidate["event_time_utc"],
+            observed_at_utc=clock_now(),max_live_capture_lag_minutes=15)
+        result=one_candidate(
+            candidate=child,series_id=series_id,
+            local_receipts=journal,model_reservations=model_reservations,
+            approval=approval,model_key=model_key,allow_model=True,
+            admit_reentry_child_one_approved_model=True,
+            reentry_original_candidate=original_candidate,
+            reentry_captured_1m=assembled,
+            acquire=acquire,model_client=model_client,clock=clock_now,
+            existing_context=existing_context,
+            _released_model_capability=_RELEASED_MODEL_NATIVE_OWNER)
+        proof={"paper_entry_receipt_verified_local":False,
+               "paper_entry_status":"P1_MODEL_OR_SOURCE_NOT_COMPLETE_HOLD",
+               "independent_cloud_paper_fill_ack":False}
+        if result.get("status")=="V3_CANARY_MODEL_P4_RECORDED_NO_PAPER_ACTIVATION":
+            try:
+                proof=_verify_first_native_model_paper_journal(
+                    candidate=child,series_id=series_id,journal=journal,
+                    model_reservations=model_reservations,approval=approval)
+                if proof["p4_decision"]!=result.get("p4_decision"):
+                    raise ValueError("P1 P4 response not matching on-disk Paper")
+            except (OSError,KeyError,ValueError,TypeError,OverflowError):
+                return {"status":"P1_MODEL_OR_PAPER_LEDGER_INCOMPLETE_HOLD",
+                        "candidate_id":child["candidate_id"],"series_id":series_id,
+                        "model_http_attempts_reserved":1,
+                        "requires_original_owner_reconciliation":True,
+                        "paper_entry_receipt_verified_local":False,
+                        "independent_cloud_paper_fill_ack":False,
+                        "paper_writer_active":False,"orders":False,
+                        "real_money_actions":False,"v2r4_changed":False}
+        return {
+            "status":("P1_CHILD_MODEL_P4_DURABLE_WAIT_FOR_FOLLOWUP"
+                      if result.get("p4_decision") in (
+                          "BUY_SCOUT","WAIT","REJECT","UNKNOWN")
+                      else "P1_CHILD_SOURCE_OR_MODEL_INCOMPLETE_HOLD"),
+            "series_id":series_id,
+            "candidate_id":child["candidate_id"],
+            "reentry_parent_candidate_id":original_candidate["candidate_id"],
+            "model_result":result,
+            "model_http_attempts_reserved":result.get(
+                "model_http_attempts_reserved",0),
+            "paper_writer_active":False,"orders":False,
+            "real_money_actions":False,"v2r4_changed":False,
+            "cloud_ack_verified":False,"new_schedules":0,
+            **proof,
+        }
+
+
 def released_paper_followup_tick_once(*,candidate:dict[str,Any],series_id:str,
         journal:Path,capture_dir:Path,model_reservations:Path,ack_file:Path,
         expected_repo_sha:str,expected_bundle_sha256:str,
