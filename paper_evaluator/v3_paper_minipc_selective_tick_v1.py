@@ -36,7 +36,7 @@ from paper_evaluator.v3_extended_reentry_review_v1 import (
 )
 from paper_evaluator.v3_second_leg_policy_candidate_v1 import (
     witnessed_15m_from_existing_1m_path,propose_second_leg_review,
-    canonical_second_leg_episode,
+    canonical_second_leg_episode,prepare_original_owner_reentry_child,
 )
 from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import (
     sync_once, _RELEASED_CLOUD_SYNC_NATIVE_OWNER,
@@ -137,9 +137,29 @@ def _journal_extended_second_leg(*,candidate:dict[str,Any],series_id:str,
                     "EXTENDED_REENTRY_SOURCE_OR_CONFIRMATION_INCOMPLETE",
               **episode})
     store_receipt_explicitly(journal,rec)
-    return {"status":("EXTENDED_NEW_FULL_MODEL_P4_REVIEW_REQUIRED_NO_AUTH"
-                      if eligible else state),
+    handoff=None
+    if eligible:
+        # Re-read the persisted parent history in THIS existing owner
+        # immediately, avoiding a second scheduler or a stale next-cycle
+        # opportunity. This produces no model budget or Paper fill authority.
+        try:
+            handoff=prepare_original_owner_reentry_child(
+                journal=journal,series_id=series_id,
+                original_candidate=candidate,parent_event_key=event_key,
+                now_at_utc=now_at_utc)
+        except (OSError,KeyError,ValueError,TypeError,OverflowError):
+            handoff={"status":"P1_CHILD_PARENT_PROVENANCE_HOLD_NO_MODEL",
+                     "approval_to_call_model":False,"model_calls":0,
+                     "orders":False}
+    handoff_ready=bool(handoff and
+        handoff.get("status")=="P1_CHILD_PREPARED_MODEL_AND_PAPER_STILL_GATED")
+    return {"status":(
+                "EXTENDED_CHILD_PREPARED_FOR_SEPARATE_GATED_MODEL_P4_NO_AUTH"
+                if handoff_ready else
+                "EXTENDED_P1_PARENT_CHILD_RECONCILIATION_HOLD_NO_AUTH"
+                if eligible else state),
             **episode,
+            "reentry_child_handoff":handoff,
             "technical_failure_stage":policy.get("technical_failure_stage"),
             "technical_failure_class":policy.get("technical_failure_class"),
             "full_model_review_candidate":eligible,
