@@ -344,6 +344,17 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
                 "volume_ratio_prior_4" if label=="15m" else "volume_ratio_prior_5")
         src["atr14_15m_eur"]=(frames.get("15") or {}).get("atr14_eur")
         src["structural_low_15m_eur"]=(frames.get("15") or {}).get("recent_8bar_low_eur")
+        # No new poll or writer: preserve only two complete pre-signal 15m
+        # candles from the original P0 Kraken response, at the true P0 clock.
+        # Missing/late source stays absent and cannot silently permit Early5m.
+        if not staged or not candidate.get("deferred_recheck"):
+            from paper_evaluator.v3_first_pit_presignal_15m_v1 import (
+                capture_first_pit_base,
+            )
+            first_base=capture_first_pit_base(
+                candidate,coin,written_at_utc=clock())
+            if first_base is not None:
+                src["initial_pit_15m_base"]=first_base
         receipt("SOURCE_INPUT","PASS" if evidence_status=="COMPLETE" else "UNKNOWN",src)
     except Exception as exc:
         receipt("SOURCE_INPUT","ERROR",
