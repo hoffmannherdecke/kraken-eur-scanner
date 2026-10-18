@@ -45,8 +45,9 @@ def fixture(root:Path)->dict:
                         "no_real_orders":True,
                         "no_provider_model_http_in_dryrun":True,
                         "v2r4_runtime_unchanged":True,
-                        "p4_record_sha256":"d"*64,
-                        "native_journal_record_sha256":"e"*64,
+                        "p4_record_sha256":("d" if case=="POSITIVE_BUY_SCOUT" else "c")*64,
+                        "native_journal_record_sha256":(
+                            "e" if case=="POSITIVE_BUY_SCOUT" else "f")*64,
                     }
                 record.update({
                     "original_model_p4_readback":{
@@ -64,6 +65,38 @@ def fixture(root:Path)->dict:
                                "BUY_SCOUT","PAPER_FILLED",1),
                         writer("NEGATIVE_REJECT","CI-REJECT-ONE",
                                "REJECT","NO_PAPER_FILL",0),
+                    ],
+                })
+            if key=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E" and origin=="SUPABASE_CLOUD":
+                record.update({
+                    "observed_at_utc":"2026-10-13T09:32:00Z",
+                    "read_only":True,
+                    "cloud_cas_performed":False,
+                    "active_paper_series_changed":False,
+                    "v2r4_live_strategy_modified":False,
+                    "independent_original_receipt_query":True,
+                    "same_event_id_reread_no_duplicate_verified":True,
+                    "original_model_response_id":"CI_REAL_RESPONSE_ID_SHAPE_ONLY",
+                    "original_model_p4_receipt_sha256":"b"*64,
+                    "paper_writer_dryrun_case_readbacks":[
+                        {"case":"POSITIVE_BUY_SCOUT",
+                         "series_id":"PAPER-V3-CANARY-TEST-001",
+                         "candidate_id":"CI-BUY-SCOUT-ONE",
+                         "p4_decision":"BUY_SCOUT",
+                         "p4_record_sha256":"d"*64,
+                         "native_journal_record_sha256":"e"*64,
+                         "paper_fill_count":1,"paper_fill_result":"PAPER_FILLED",
+                         "cloud_query_readback_verified":True,
+                         "orders":False,"real_money_actions":False},
+                        {"case":"NEGATIVE_REJECT",
+                         "series_id":"PAPER-V3-CANARY-TEST-001",
+                         "candidate_id":"CI-REJECT-ONE",
+                         "p4_decision":"REJECT",
+                         "p4_record_sha256":"c"*64,
+                         "native_journal_record_sha256":"f"*64,
+                         "paper_fill_count":0,"paper_fill_result":"NO_PAPER_FILL",
+                         "cloud_query_readback_verified":True,
+                         "orders":False,"real_money_actions":False},
                     ],
                 })
             if key=="V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT" and origin=="MINIPC_PHYSICAL":
@@ -391,6 +424,57 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                             "invalid original model/positive-negative Paper dryrun must block")
                 path.write_text(json.dumps(valid,sort_keys=True))
                 row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
+
+    def test_first_proof_requires_independently_read_same_cloud_paper_rows(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            row=next(x for x in packet["experimental_paper_technical_proofs"]
+                     if x["id"]=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E")
+            path=root/row["evidence_path"]
+            valid=json.loads(path.read_text("utf-8"))
+            changes=[
+                lambda p:p.update(source_originals=[
+                    x for x in p["source_originals"] if x["origin"]!="SUPABASE_CLOUD"]),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"].update(
+                                  independent_original_receipt_query=False),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"].update(
+                                  original_model_response_id="ANOTHER_RESPONSE"),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"].update(
+                                  observed_at_utc="2026-10-13T09:29:59Z"),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"]
+                              ["paper_writer_dryrun_case_readbacks"][0].update(
+                                  paper_fill_count=0),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"]
+                              ["paper_writer_dryrun_case_readbacks"][1].update(
+                                  native_journal_record_sha256="9"*64),
+                lambda p:next(x for x in p["source_originals"]
+                              if x["origin"]=="SUPABASE_CLOUD")["original_record"]
+                              ["paper_writer_dryrun_case_readbacks"][1].update(
+                                  real_money_actions=True),
+            ]
+            for change in changes:
+                with self.subTest(change=repr(change)):
+                    altered=copy.deepcopy(valid)
+                    change(altered)
+                    for item in altered["source_originals"]:
+                        payload=json.dumps(item["original_record"],sort_keys=True,
+                                           separators=(",",":")).encode()
+                        item["original_sha256"]=hashlib.sha256(payload).hexdigest()
+                    path.write_text(json.dumps(altered,sort_keys=True))
+                    row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+                    self.assertTrue(validate_experimental_paper_packet(
+                        root,"V3-PAPER-EXPERIMENTAL-001",packet),
+                        "a merely rehashed but mismatched Cloud original is NOT a V3 Paper fill")
+            path.write_text(json.dumps(valid,sort_keys=True))
+            row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
             self.assertEqual(validate_experimental_paper_packet(
                 root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
 
