@@ -223,7 +223,9 @@ class OriginalFirstPIT15mTests(unittest.TestCase):
         hold,calls,rows=observe(False)
         self.assertEqual(hold["continuity_offensive_shadow"]["status"],
                          "PRE_SIGNAL_15M_PROSPECTIVE_HISTORY_MISSING")
-        self.assertEqual(calls,[])  # even for a previous WAIT, tick has no extra REST here
+        # Existing WAIT observer still legitimately reads coin+quote once.
+        # Missing pre-signal history must not add a SECOND shadow poll.
+        self.assertEqual(calls,["coin","ticker"])
         eligible,calls,rows=observe(True)
         shadow=eligible["continuity_offensive_shadow"]
         self.assertEqual(shadow["status"],"SOURCE_CLOCKED_PIT_RESEARCH_ONLY")
