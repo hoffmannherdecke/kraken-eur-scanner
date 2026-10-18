@@ -23,8 +23,9 @@ def followup_no_buy(*,journal:Path,series_id:str,candidate_id:str,
         r=json.loads(p.read_text("utf-8"))
         if r.get("series_id")==series_id and r.get("candidate_id")==candidate_id:
             rows.append(r)
-    first=next((x for x in rows if x["phase"]=="SCANNER_CAPTURE"),None)
-    if not first:raise ValueError("immutable scanner-origin absent")
+    first=next((x for x in rows if x["phase"] in (
+        "SCANNER_CAPTURE","P1_CHILD_ENROLLMENT")),None)
+    if not first:raise ValueError("immutable scanner or P1 episode source absent")
     if any(x["phase"]=="PAPER_FILL" for x in rows):
         raise ValueError("BUY followup must use stop/Stage2 actual paper model")
     phase=f"FOLLOWUP_{hours}H"
