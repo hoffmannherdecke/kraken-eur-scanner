@@ -9,6 +9,7 @@ model, writes storage, modifies V2R4 or prices a tradable stop.
 """
 from __future__ import annotations
 
+import hashlib
 import math
 from datetime import datetime, timedelta, timezone
 from typing import Any
@@ -60,6 +61,51 @@ def _bar_start(bar: dict[str, Any]) -> datetime:
     if isinstance(raw, str):
         return utc(raw)
     raise ValueError("bar start missing or invalid")
+
+
+def canonical_second_leg_episode(*,series_id:str,
+        original_candidate:dict[str,Any],closed_15m_end_utc:str,
+        signal_known_at_utc:str)->dict[str,Any]:
+    """Stable candidate-linked P1 episode, NOT an order or an inferred fill.
+
+    The closed 15m bar identifies ONE potential opportunity; the recorded
+    first observation/known time is the new episode event clock. A later
+    Paper fill must still use its own actual immutable fill known_at clock
+    for stop/Stage2 and 6/24/72-hour outcome maturity.
+    """
+    if (not isinstance(series_id,str) or not series_id.startswith("PAPER-V3-")
+            or not isinstance(original_candidate,dict)):
+        raise ValueError("canonical V3 episode series and original required")
+    cid=original_candidate.get("candidate_id")
+    pair=original_candidate.get("pair")
+    if (not isinstance(cid,str) or not 1<=len(cid)<=150
+            or not isinstance(pair,str) or not pair.endswith("/EUR")):
+        raise ValueError("canonical original EUR candidate identity required")
+    from paper_evaluator.v3_entry_handoff_probe import utc
+    first=utc(original_candidate["event_time_utc"])
+    closed=utc(closed_15m_end_utc)
+    observed=utc(signal_known_at_utc)
+    if (closed.second!=0 or closed.microsecond!=0
+            or int(closed.timestamp())%900!=0
+            or not first<closed<=observed
+            or not 0<=(observed-first).total_seconds()<=4*3600
+            or not 0<=(observed-closed).total_seconds()<=120):
+        raise ValueError("missing fresh closed prospective 15m episode clock")
+    # The identity is stable even if the same source is read again later.
+    stable_close=closed.isoformat().replace("+00:00","Z")
+    key="|".join((series_id,cid,pair,stable_close))
+    digest=hashlib.sha256(key.encode("utf-8")).hexdigest()
+    return {
+        "reentry_episode_id":"V3RE-"+digest[:32],
+        "reentry_parent_candidate_id":cid,
+        "reentry_episode_signal_at_utc":
+            observed.isoformat().replace("+00:00","Z"),
+        "reentry_closed_15m_end_utc":stable_close,
+        "reentry_original_event_time_utc":
+            first.isoformat().replace("+00:00","Z"),
+        "reentry_parent_event_key":"C"+closed.strftime("%Y%m%dT%H%M%SZ"),
+        "reentry_will_use_separate_fill_time":True,
+    }
 
 
 def witnessed_15m_from_existing_1m_path(assembled:dict[str,Any],
