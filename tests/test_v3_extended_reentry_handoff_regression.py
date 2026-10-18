@@ -138,7 +138,8 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
                 candidate=original,series_id=SID,journal=journal,
                 capture_dir=cap,clock_now=lambda:t(at),
                 capture=witnessed_current,fetch=fetch,ticker=quote)
-            self.assertTrue(first["extended_reentry"]["full_model_review_candidate"])
+            self.assertTrue(first["extended_reentry"]["full_model_review_candidate"],
+                            first["extended_reentry"])
             self.assertEqual(first["extended_reentry"]["model_calls"],0)
             self.assertEqual(first["extended_reentry"]["paper_fills"],0)
             self.assertEqual(second["extended_reentry"]["status"],
