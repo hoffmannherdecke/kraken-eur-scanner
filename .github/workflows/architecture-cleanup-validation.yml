@@ -17,6 +17,15 @@ jobs:
           python-version: '3.13'
       - name: Restricted generic Mini-PC task source contract (offline, no host run)
         run: python -m unittest tests.test_minipc_reviewed_task_source_contract -v
+      - name: Parse bounded V3 offline Mini-PC task on hosted CI (no host execution)
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            'tools/minipc_runner_tasks/v3_paper_offline_probe.ps1',
+            [ref]$tokens,[ref]$errors)
+          if (@($errors).Count -ne 0) { throw 'Invalid restricted V3 PowerShell' }
       - name: Local pinned Mini-PC runner guard source safety (offline)
         run: python -m unittest tests.test_minipc_runner_local_guard_contract -v
       - name: Parse Mini-PC local runner guard PowerShell (source only)
