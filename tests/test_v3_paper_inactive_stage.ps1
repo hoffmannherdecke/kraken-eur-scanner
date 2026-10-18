@@ -6,6 +6,13 @@ $script=Join-Path $repo 'tools/stage-minipc-v3-paper-inactive.ps1'
 $tokens=$null;$errors=$null
 [void][System.Management.Automation.Language.Parser]::ParseFile($script,[ref]$tokens,[ref]$errors)
 if(@($errors).Count -gt 0){throw ('V3_STAGE_PARSE_FAILED '+($errors|Out-String))}
+# The only added support-runner task is a bounded, credential-stripped,
+# offline unittest at the protected-main SHA. Never execute it in CI.
+$taskSource=Join-Path $repo 'tools/minipc_runner_tasks/v3_paper_offline_probe.ps1'
+$taskTokens=$null;$taskErrors=$null
+[void][System.Management.Automation.Language.Parser]::ParseFile(
+  $taskSource,[ref]$taskTokens,[ref]$taskErrors)
+if(@($taskErrors).Count -gt 0){throw ('V3_REVIEWED_OFFLINE_TASK_PARSE_FAILED '+($taskErrors|Out-String))}
 $source=Get-Content -LiteralPath $script -Raw
 foreach($forbidden in @('Start-ScheduledTask','Stop-ScheduledTask',
     'Disable-ScheduledTask','Register-ScheduledTask','Set-ScheduledTask',
