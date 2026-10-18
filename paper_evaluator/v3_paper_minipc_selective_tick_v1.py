@@ -320,6 +320,9 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
             from paper_evaluator.v3_continuity_fresh_review_candidate_v1 import (
                 propose_continuity_fresh_review,
             )
+            from paper_evaluator.v3_first_pit_presignal_15m_v1 import (
+                read_first_pit_base,
+            )
             observed=clock_now()
             # Check disk-only pre-signal source before any optional extra Kraken
             # entry/quote call. Missing history must be a zero-request hold.
@@ -334,6 +337,20 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                           if clock(datetime.fromtimestamp(
                               bar["start_utc"]+900,timezone.utc).isoformat())
                           <=source_time]
+            # The original P0 already fetched Kraken 15m candles BEFORE this
+            # optional new 5m research read. Its immutable SOURCE_INPUT may
+            # retain the actual two pre-signal OHLC bars with the FIRST
+            # OBSERVATION clock. This is not a historical 1m witness.
+            first_base=None
+            if len(prior_closed)<2:
+                first_source=next((r for r in rows
+                    if r["phase"]=="SOURCE_INPUT" and r["result"]=="PASS"
+                    and r["data"].get("initial_pit_15m_base") is not None),None)
+                if first_source is not None:
+                    first_base=read_first_pit_base(
+                        candidate,first_source,decision_at_utc=observed)
+                if first_base is not None:
+                    prior_closed=first_base["bars"]
             if len(prior_closed)<2:
                 results["continuity_offensive_shadow"]={
                     "status":"PRE_SIGNAL_15M_PROSPECTIVE_HISTORY_MISSING",
@@ -357,20 +374,39 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                 standard=propose_continuity_fresh_review(
                     candidate,baseline,reentry_coin,reentry_quote,witnessed,
                     decision_at_utc=observed)
-                early=propose_early_5m_continuity_review(
-                    candidate,baseline,reentry_coin,reentry_quote,prior_closed,
-                    decision_at_utc=observed)
+                # A 5m confirmation that CLOSED before the original P0
+                # was even observed cannot be a new post-P0 opportunity.
+                # Require first-source knowledge at/before the newly closed
+                # 5m candle, otherwise record an explicit no-review hold.
+                fresh5=(reentry_coin.get("frames") or {}).get("5") or {}
+                close5_at=fresh5.get("last_closed_bar_end_utc")
+                if first_base is not None and (
+                        not isinstance(close5_at,str)
+                        or clock(close5_at)<clock(first_base["first_known_at_utc"])):
+                    early={"status":"ORIGINAL_PIT_KNOWN_AFTER_5M_CLOSE_NO_REVIEW",
+                           "request_model_recheck_only":False}
+                else:
+                    early=propose_early_5m_continuity_review(
+                        candidate,baseline,reentry_coin,reentry_quote,prior_closed,
+                        decision_at_utc=observed)
                 volume=propose_experimental_continuity_review(
                     candidate,baseline,reentry_coin,reentry_quote,witnessed,
                     decision_at_utc=observed)
                 results["continuity_offensive_shadow"]={
-                    "status":"ORIGINAL_WITNESSED_PIT_RESEARCH_ONLY",
+                    "status":"SOURCE_CLOCKED_PIT_RESEARCH_ONLY",
+                    "early_base_provenance":(
+                        "ORIGINAL_P0_15M_FIRST_KNOWN_NOT_PRE_SIGNAL_WITNESS"
+                        if first_base is not None else
+                        "PROSPECTIVELY_SHA_WITNESSED_PRE_SIGNAL_1M"),
+                    "early_base_first_known_at_utc":(
+                        first_base["first_known_at_utc"] if first_base is not None
+                        else None),
                     "standard_status":standard["status"],
                     "early_5m_status":early["status"],
                     "soft_volume_status":volume["status"],
                     "early_5m_review_only":early.get("request_model_recheck_only") is True,
                     "soft_volume_review_only":volume.get("request_model_recheck_only") is True,
-                    "same_witnessed_archive":True,"model_called":False,
+                    "same_witnessed_archive":first_base is None,"model_called":False,
                     "model_http_attempts_reserved":0,"paper_writer_started":False,
                     "orders":False,"real_money_actions":False,
                     "release_evidence":False}
