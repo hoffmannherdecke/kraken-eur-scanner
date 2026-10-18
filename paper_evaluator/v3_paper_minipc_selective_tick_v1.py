@@ -77,6 +77,7 @@ def _journal_extended_second_leg(*,candidate:dict[str,Any],series_id:str,
     review={"state":"UNKNOWN_NO_COMPLETE_PROSPECTIVE_KRAKEN_SOURCE"}
     policy={"status":"UNKNOWN_NO_WITNESSED_CLOSED_15M_BASE"}
     if safe_source:
+        stage="PIT_CLOCK_REVIEW"
         try:
             # The earlier 5m proximity test is NOT proof of a 1-3h base.
             # Require the independently archived, time-witnessed 1m path,
@@ -85,14 +86,18 @@ def _journal_extended_second_leg(*,candidate:dict[str,Any],series_id:str,
                 candidate,{"setup_lane":"EXTENDED","decision":p4["result"],
                            "known_at_utc":p4["known_at_utc"]},
                 coin,quote,decision_at_utc=now_at_utc)
+            stage="PROSPECTIVE_1M_TO_15M_RECONSTRUCTION"
             bars=witnessed_15m_from_existing_1m_path(
                 assembled_1m,pair=candidate["pair"],
                 observed_at_utc=now_at_utc)
+            stage="P1_SECOND_LEG_STRUCTURE_REVIEW"
             policy=propose_second_leg_review(
                 candidate,{"setup_lane":"EXTENDED","decision":p4["result"]},
                 coin,quote,bars,decision_at_utc=now_at_utc)
-        except (OSError,KeyError,ValueError,TypeError,OverflowError):
-            policy={"status":"UNKNOWN_PROSPECTIVE_15M_BASE_SOURCE_INVALID"}
+        except (OSError,KeyError,ValueError,TypeError,OverflowError) as exc:
+            policy={"status":"UNKNOWN_PROSPECTIVE_15M_BASE_SOURCE_INVALID",
+                    "technical_failure_stage":stage,
+                    "technical_failure_class":type(exc).__name__}
     # A complete five-minute ticker is necessary but never sufficient.
     clock_safe=not review["state"].startswith("UNKNOWN")
     state=policy["status"] if clock_safe else review["state"]
@@ -122,6 +127,8 @@ def _journal_extended_second_leg(*,candidate:dict[str,Any],series_id:str,
     store_receipt_explicitly(journal,rec)
     return {"status":("EXTENDED_NEW_FULL_MODEL_P4_REVIEW_REQUIRED_NO_AUTH"
                       if eligible else state),
+            "technical_failure_stage":policy.get("technical_failure_stage"),
+            "technical_failure_class":policy.get("technical_failure_class"),
             "full_model_review_candidate":eligible,
             "model_calls":0,"paper_fills":0,"orders":False,
             "requires_separate_model_budget":True,
