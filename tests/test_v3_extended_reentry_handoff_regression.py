@@ -81,38 +81,63 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
             self.assertFalse(bad["paper_trade"])
 
 
-    def test_existing_single_owner_tick_journals_real_later_review_not_model_or_fill(self):
-        # Exercise the EXISTING V3 owner, not a new shadow scheduler/HTTP.
+    def test_existing_single_owner_requires_prospectively_witnessed_1h_base(self):
+        # Five independently timestamped Kraken-1m archive captures: four
+        # closed consolidation bars and one later closed 15m reclaim. This is
+        # a CI-only source stub; no historic MON claim or physical host ACK.
+        from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import capture_public_1m
         at=datetime(2026,10,12,8,45,7,tzinfo=timezone.utc)
-        def real_second_leg(altname,pair):
-            return {"pair":pair,"status":"COMPLETE",
+        def record_chunk(when,outdir,breakout=False):
+            base=when-timedelta(minutes=15)
+            def loader(_):
+                rows=[]
+                for minute in range(15):
+                    ts=int((base+timedelta(minutes=minute)).timestamp())
+                    op,hi,lo,close=("2.09","2.17","2.04","2.15") if breakout else (
+                        "2.08","2.12","2.04","2.09")
+                    rows.append([ts,op,hi,lo,close,close,"10",1])
+                return {"error":[],"result":{"ZROEUR":rows,"last":1}}
+            return capture_public_1m(
+                pair="ZRO/EUR",altname="ZROEUR",outdir=outdir,
+                loader=loader,clock=lambda:when)
+        def fetch(_,pair):
+            return {"kind":"SUCCESSOR_COIN_ENTRY_EVIDENCE_V1",
+                    "pair":pair,"status":"COMPLETE",
                     "observed_at_utc":t(at-timedelta(seconds=2)),
                     "known_at_utc":t(at-timedelta(seconds=1)),
                     "frames":{
-                        "5":{"status":"VALID",
+                        "1":{"status":"VALID","interval_min":1,
                              "last_closed_bar_end_utc":t(at.replace(second=0)),
-                             "closed_close_eur":2.115,"volume_ratio_prior_5":1.3},
-                        "15":{"status":"VALID","closed_close_eur":2.1,
-                              "atr14_eur":0.1,"recent_8bar_low_eur":2.0}}}
+                             "closed_close_eur":2.15,"volume_ratio_prior_5":1.3},
+                        "5":{"status":"VALID","interval_min":5,
+                             "last_closed_bar_end_utc":t(at.replace(second=0)),
+                             "closed_close_eur":2.15,"volume_ratio_prior_5":1.3},
+                        "15":{"status":"VALID","interval_min":15,
+                              "last_closed_bar_end_utc":t(at.replace(second=0)),
+                              "closed_close_eur":2.15,"volume_ratio_prior_5":1.3,
+                              "atr14_eur":0.1,"recent_8bar_low_eur":2.04}}}
         def quote(_):
-            return {"ask":2.11,"bid":2.10,
+            return {"pair":"ZRO/EUR","ask":2.155,"bid":2.153,
                     "observed_at_utc":t(at-timedelta(seconds=1))}
         original=candidate()
         original.update({"setup_lane":"EXTENDED","entry_origin":"SCANNER"})
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);journal=root/"journal";cap=root/"capture"
             journal.mkdir();cap.mkdir()
-            seed(journal)
-            with patch("paper_evaluator.v3_extended_reentry_review_v1.attach_to_future_evaluator",
-                       return_value={}):
-                first=tick_once(
-                    candidate=original,series_id=SID,journal=journal,
-                    capture_dir=cap,clock_now=lambda:t(at),
-                    capture=tick_capture(at),fetch=real_second_leg,ticker=quote)
-                second=tick_once(
-                    candidate=original,series_id=SID,journal=journal,
-                    capture_dir=cap,clock_now=lambda:t(at),
-                    capture=tick_capture(at),fetch=real_second_leg,ticker=quote)
+            seed(journal,model_setup_lane="EXTENDED")
+            for n in range(4,0,-1):
+                end_at=at.replace(second=7)-timedelta(minutes=n*15)
+                record_chunk(end_at,cap)
+            def witnessed_current(*,pair,altname,outdir):
+                return record_chunk(at,outdir,breakout=True)
+            first=tick_once(
+                candidate=original,series_id=SID,journal=journal,
+                capture_dir=cap,clock_now=lambda:t(at),
+                capture=witnessed_current,fetch=fetch,ticker=quote)
+            second=tick_once(
+                candidate=original,series_id=SID,journal=journal,
+                capture_dir=cap,clock_now=lambda:t(at),
+                capture=witnessed_current,fetch=fetch,ticker=quote)
             self.assertTrue(first["extended_reentry"]["full_model_review_candidate"])
             self.assertEqual(first["extended_reentry"]["model_calls"],0)
             self.assertEqual(first["extended_reentry"]["paper_fills"],0)
@@ -124,11 +149,66 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
             route=[r for r in receipts if r["phase"]=="FRESH_SECOND_LEG"]
             self.assertEqual(len(route),1)
             self.assertEqual(route[0]["result"],"PASS")
+            self.assertEqual(route[0]["data"]["review_status"],
+                             "SECOND_LEG_STRUCTURE_SUPPORTS_NEW_FULL_REVIEW_ONLY")
             self.assertEqual(route[0]["data"]["review_family"],
-                             "EXTENDED_PROSPECTIVE_SECOND_LEG")
+                             "EXTENDED_PROSPECTIVE_15M_BASE_SECOND_LEG")
             self.assertFalse(any(r["phase"]=="PAPER_FILL" for r in receipts))
             self.assertEqual(len([r for r in receipts
                                   if r["phase"]=="MODEL_REQUEST"]),0)
+
+    def test_old_model_lane_cannot_be_invented_by_candidate_or_reason(self):
+        at=datetime(2026,10,12,8,45,7,tzinfo=timezone.utc)
+        original=candidate()
+        original.update({"setup_lane":"EXTENDED","entry_origin":"SCANNER"})
+        with tempfile.TemporaryDirectory() as tmp:
+            j=Path(tmp)/"journal";cap=Path(tmp)/"capture"
+            j.mkdir();cap.mkdir()
+            seed(j)  # No original model setup lane observed.
+            result=tick_once(candidate=original,series_id=SID,
+                journal=j,capture_dir=cap,clock_now=lambda:t(at),
+                capture=tick_capture(at),
+                fetch=lambda *_:self.fail("forged lane must not fetch"),
+                ticker=lambda *_:self.fail("forged lane must not quote"))
+            self.assertNotIn("extended_reentry",result)
+            self.assertFalse(result["orders"])
+
+    def test_missing_witnessed_1h_base_yields_unknown_not_false_buy(self):
+        at=datetime(2026,10,12,8,45,7,tzinfo=timezone.utc)
+        original=candidate()
+        with tempfile.TemporaryDirectory() as tmp:
+            j=Path(tmp)/"journal";cap=Path(tmp)/"capture"
+            j.mkdir();cap.mkdir()
+            seed(j,model_setup_lane="EXTENDED")
+            def coin(altname,pair):
+                return {"kind":"SUCCESSOR_COIN_ENTRY_EVIDENCE_V1",
+                        "pair":pair,"status":"COMPLETE",
+                        "observed_at_utc":t(at-timedelta(seconds=2)),
+                        "known_at_utc":t(at-timedelta(seconds=1)),
+                        "frames":{
+                            "1":{"status":"VALID","interval_min":1,
+                                 "last_closed_bar_end_utc":t(at.replace(second=0)),
+                                 "closed_close_eur":2.1,"volume_ratio_prior_5":1.3},
+                            "5":{"status":"VALID","interval_min":5,
+                                 "last_closed_bar_end_utc":t(at.replace(second=0)),
+                                 "closed_close_eur":2.15,"volume_ratio_prior_5":1.3},
+                            "15":{"status":"VALID","interval_min":15,
+                                  "last_closed_bar_end_utc":t(at.replace(second=0)),
+                                  "closed_close_eur":2.14,"volume_ratio_prior_5":1.3,
+                                  "atr14_eur":.1,"recent_8bar_low_eur":2.04}}}
+            out=tick_once(candidate=original,series_id=SID,
+                journal=j,capture_dir=cap,clock_now=lambda:t(at),
+                capture=tick_capture(at),fetch=coin,
+                ticker=lambda _:{"pair":"ZRO/EUR","ask":2.155,"bid":2.153,
+                                 "observed_at_utc":t(at-timedelta(seconds=1))})
+            self.assertFalse(out["extended_reentry"]["full_model_review_candidate"])
+            events=[json.loads(p.read_text()) for p in j.glob("*.json")]
+            review=[x for x in events if x["phase"]=="FRESH_SECOND_LEG"]
+            self.assertEqual(len(review),1)
+            self.assertEqual(review[0]["result"],"UNKNOWN")
+            self.assertEqual(review[0]["data"]["review_status"],
+                             "MISSING_CLOSED_CONSOLIDATION_HISTORY")
+            self.assertFalse(out["orders"])
 
     def test_incomplete_later_source_journals_unknown_not_false_market_reject(self):
         at=datetime(2026,10,12,8,45,7,tzinfo=timezone.utc)
@@ -137,7 +217,7 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp);journal=root/"journal";cap=root/"capture"
             journal.mkdir();cap.mkdir()
-            seed(journal)
+            seed(journal,model_setup_lane="EXTENDED")
             out=tick_once(
                 candidate=original,series_id=SID,journal=journal,
                 capture_dir=cap,clock_now=lambda:t(at),
