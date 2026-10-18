@@ -430,7 +430,8 @@ def _verify_first_native_model_paper_journal(*,candidate:dict[str,Any],
     if len({(r["phase"],r["event_key"]) for r,_ in rows})!=len(rows):
         raise ValueError("duplicate immutable event identity")
     child=candidate.get("entry_origin")=="P1_REENTRY_EPISODE"
-    key="FIRST" if child else "FRESHRECHECK"
+    catalyst=candidate.get("entry_origin")=="VERIFIED_POSITIVE_SOURCE_CATALYST"
+    key="FIRST" if child or catalyst else "FRESHRECHECK"
     def one(phase:str,receipt_key:str|None=None)->tuple[dict,str]:
         receipt_key=receipt_key or key
         found=[(row,sha) for row,sha in rows if
@@ -441,7 +442,8 @@ def _verify_first_native_model_paper_journal(*,candidate:dict[str,Any],
     original,_=one("P1_CHILD_ENROLLMENT" if child else "SCANNER_CAPTURE","FIRST")
     if (original["result"]!="SEEN"
             or original["data"].get("candidate_origin")!=(
-                "P1_REENTRY_EPISODE" if child else "SCANNER")
+                "P1_REENTRY_EPISODE" if child else
+                "VERIFIED_POSITIVE_SOURCE_CATALYST" if catalyst else "SCANNER")
             or (child and (
                 original["data"].get("reentry_episode_id")!=candidate["candidate_id"]
                 or original["data"].get("reentry_parent_candidate_id")!=
@@ -449,7 +451,17 @@ def _verify_first_native_model_paper_journal(*,candidate:dict[str,Any],
                 or original["data"].get("reentry_episode_signal_at_utc")!=
                     candidate.get("event_time_utc")))):
         raise ValueError("unverified native Scanner or second-leg child original")
-    if not child:
+    if catalyst:
+        source,_=one("SOURCE_CATALYST","FIRST")
+        if (source["result"]!="PASS"
+                or source["data"].get("positive_source_status")!=
+                    "SOURCE_CATALYST_READY_FOR_FULL_MODEL_REVIEW_ONLY"
+                or source["data"].get("positive_source_event_id")!=
+                    candidate.get("positive_source_event_id")
+                or source["data"].get("positive_source_name")!=
+                    candidate.get("positive_source_name")):
+            raise ValueError("positive original source provenance not journaled")
+    if not child and not catalyst:
         one("FULL_REVIEW_ELIGIBILITY","FIRST")
     eligible,_=one("FULL_REVIEW_ELIGIBILITY")
     if eligible["result"]!="PASS":
@@ -499,7 +511,7 @@ def _verify_first_native_model_paper_journal(*,candidate:dict[str,Any],
         raise ValueError("positive P4 without exact native Paper fill")
     fill,sha=fills[0]
     p=p4["data"];f=fill["data"]
-    if child and not (
+    if (child or catalyst) and not (
             clock(candidate["event_time_utc"]) <= clock(p4["known_at_utc"])
             <= clock(fill["known_at_utc"])):
         raise ValueError("P1 Paper fill cannot predate new episode/P4")
