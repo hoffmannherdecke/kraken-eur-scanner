@@ -74,7 +74,8 @@ def _journal_extended_second_leg(*,candidate:dict[str,Any],series_id:str,
         extended_reentry_review(
             candidate,{"setup_lane":"EXTENDED","decision":p4["result"],
                        "known_at_utc":p4["known_at_utc"]},
-            coin,dict(quote,observed_at_utc=now_at_utc),
+            coin,dict(quote,observed_at_utc=(
+                quote.get("observed_at_utc") or now_at_utc)),
             decision_at_utc=now_at_utc)
         if safe_source else
         {"state":"UNKNOWN_NO_COMPLETE_PROSPECTIVE_KRAKEN_SOURCE",
