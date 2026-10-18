@@ -45,7 +45,7 @@ DATA_FIELDS=frozenset({
     "phase_failure_class","phase_failure_stage",
     "input_fingerprint_sha256","model_response_id","model_name",
     "model_request_at_utc","model_response_at_utc","p4_completed_at_utc",
-    "model_http_attempts_reserved","raw_model_decision",
+    "model_http_attempts_reserved","raw_model_decision","raw_setup_lane",
     "raw_reason_codes","raw_missing_triggers","raw_stop_eur",
     "raw_stage2_trigger_eur","raw_wait_ttl_minutes","raw_watch_conditions",
     "normalized_model_decision","normalized_reason_codes",
