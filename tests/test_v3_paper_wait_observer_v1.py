@@ -27,6 +27,7 @@ def seed(j:Path,conditions=None,*,model_setup_lane=None):
             ]})
     ]
     if model_setup_lane is not None:
+        rows[0][3]["candidate_origin"]="SCANNER"
         rows[1][3]["raw_setup_lane"]=model_setup_lane
     for phase,result,known,data in rows:
         record=make_receipt(series_id=SID,revision=REVISION,candidate_id=CID,
