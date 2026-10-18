@@ -74,7 +74,7 @@ def witnessed_15m_from_existing_1m_path(assembled:dict[str,Any],
     from paper_evaluator.v3_paper_minipc_closed_1m_capture_v1 import (
         require_prospective_assembled_path,timestamp,
     )
-    require_prospective_assembled_path(assembled,pair=pair)
+    require_prospective_assembled_path(assembled=assembled,pair=pair)
     observed=timestamp(observed_at_utc)
     last_seen=timestamp(assembled["captured_at_utc"])
     if last_seen>observed:
