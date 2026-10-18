@@ -28,13 +28,84 @@ from paper_evaluator.v3_paper_missed_opportunity_followup_v1 import followup_no_
 from paper_evaluator.v3_paper_wait_observer_v1 import (
     candidate_receipts,observe_wait,finish_wait,
 )
-from paper_evaluator.v3_experimental_paper_journal_v1 import clock
+from paper_evaluator.v3_experimental_paper_journal_v1 import (
+    clock,make_receipt,store_receipt_explicitly,
+)
+from paper_evaluator.v3_extended_reentry_review_v1 import (
+    extended_reentry_review,MAX_ORIGINAL_TO_LATER_REVIEW_SECONDS,
+)
 from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import (
     sync_once, _RELEASED_CLOUD_SYNC_NATIVE_OWNER,
 )
 
 def utc_now()->str:
     return datetime.now(timezone.utc).isoformat()
+
+def _journal_extended_second_leg(*,candidate:dict[str,Any],series_id:str,
+        journal:Path,rows:list[dict],p4:dict,coin:dict,quote:dict,
+        now_at_utc:str)->dict[str,Any]:
+    """One observed reentry on the EXISTING owner and immutable receipt path.
+
+    Never authorizes a model call, Paper fill or trader action. Historical
+    model/P4 decisions are not fresh trade signals. Only the new witnessed
+    closed Kraken 5m candle can request a separately funded FULL review.
+    """
+    frame=(coin.get("frames") or {}).get("5") or {}
+    closed=frame.get("last_closed_bar_end_utc")
+    now=clock(now_at_utc)
+    # Missing time => explicit technical UNKNOWN, not negative market vote.
+    try:
+        bar=clock(closed)
+        if not clock(p4["known_at_utc"])<bar<=now:
+            raise ValueError("no independently later bar")
+        event_key="C"+bar.strftime("%Y%m%dT%H%M%SZ")
+    except (ValueError,TypeError,KeyError,AttributeError):
+        event_key="T"+now.strftime("%Y%m%dT%H%M%SZ")
+        closed=None
+    if any(r["phase"]=="FRESH_SECOND_LEG" and
+           r["event_key"]==event_key for r in rows):
+        return {"status":"EXTENDED_BAR_ALREADY_REVIEWED_NO_DUPLICATE",
+                "model_calls":0,"paper_fills":0}
+    safe_source=(coin.get("status")=="COMPLETE"
+                 and coin.get("pair")==candidate["pair"]
+                 and isinstance(quote,dict)
+                 and isinstance(closed,str))
+    review=(
+        extended_reentry_review(
+            candidate,{"setup_lane":"EXTENDED","decision":p4["result"],
+                       "known_at_utc":p4["known_at_utc"]},
+            coin,dict(quote,observed_at_utc=now_at_utc),
+            decision_at_utc=now_at_utc)
+        if safe_source else
+        {"state":"UNKNOWN_NO_COMPLETE_PROSPECTIVE_KRAKEN_SOURCE",
+         "full_model_review_candidate":False}
+    )
+    state=review["state"]
+    eligible=(review.get("full_model_review_candidate") is True
+              and state=="STRUCTURE_AND_VOLUME_SUPPORT_FRESH_REVIEW_NOT_BUY"
+              and closed is not None)
+    status=("PASS" if eligible else
+            "UNKNOWN" if state.startswith("UNKNOWN") else "SKIP")
+    rec=make_receipt(
+        series_id=series_id,revision=REVISION,
+        candidate_id=candidate["candidate_id"],pair=candidate["pair"],
+        event_time_utc=candidate["event_time_utc"],
+        known_at_utc=now_at_utc,phase="FRESH_SECOND_LEG",result=status,
+        event_key=event_key,
+        data={"review_family":"EXTENDED_PROSPECTIVE_SECOND_LEG",
+              "review_status":state,"review_checks":review.get("checks") or {},
+              "source_status":coin.get("status") or "UNKNOWN",
+              "watch_closed_5m_end_utc":closed,
+              "phase_failure_stage":None if eligible else
+                    "EXTENDED_REENTRY_SOURCE_OR_CONFIRMATION_INCOMPLETE"})
+    store_receipt_explicitly(journal,rec)
+    return {"status":("EXTENDED_NEW_FULL_MODEL_P4_REVIEW_REQUIRED_NO_AUTH"
+                      if eligible else state),
+            "full_model_review_candidate":eligible,
+            "model_calls":0,"paper_fills":0,"orders":False,
+            "requires_separate_model_budget":True,
+            "new_paper_writer_started":False}
+
 
 def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
               capture_dir:Path,clock_now:Callable[[],str]=utc_now,
@@ -85,6 +156,8 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
     results["source_closed_1m_count"]=snapshot["count"]
     watch=next((r for r in rows if r["phase"]=="WAIT_WATCH" and r["result"]=="WAIT"),None)
     p4=next((r for r in rows if r["phase"]=="P4_VALIDATION"),None)
+    reentry_coin=None
+    reentry_quote=None
     if watch and p4 and p4["result"]=="WAIT":
         old=next((r for r in rows if r["phase"]=="MODEL_RESPONSE"),None)
         if old and isinstance(old["data"].get("model_response_at_utc"),str):
@@ -98,6 +171,8 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                 # Real closed source is requested only while the window is live.
                 coin=fetch(altname,pair)
                 q=ticker(altname)
+                reentry_coin=coin
+                reentry_quote=q
                 frames=coin.get("frames") or {}
                 frame=frames.get("5") or {}
                 frame1=frames.get("1") or {}
@@ -126,6 +201,32 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                 else:
                     results["wait"]=observe_wait(journal=journal,series_id=series_id,
                         candidate_id=cid,snapshot=evidence,now_at_utc=now_at)
+    # Original full-model P4 WAIT/REJECT is not terminally discarded if a
+    # NEW closed second-leg 5m opportunity is genuinely observed in the same
+    # V3 owner. Never replay expired model HTTP or promote eligibility to BUY.
+    reason_codes=p4["data"].get("raw_reason_codes") or [] if p4 else []
+    is_extended=(candidate.get("setup_lane")=="EXTENDED" or
+                 any(isinstance(code,str) and code.startswith("EXTENDED_")
+                     for code in reason_codes))
+    age=(clock(clock_now())-source_time).total_seconds()
+    if (p4 and p4["result"] in ("WAIT","REJECT") and is_extended
+            and candidate.get("entry_origin","SCANNER")=="SCANNER"
+            and any(r["phase"]=="MODEL_RESPONSE" and r["result"]=="PASS"
+                    for r in rows)
+            and 0<=age<=MAX_ORIGINAL_TO_LATER_REVIEW_SECONDS):
+        now_at_utc=clock_now()
+        if reentry_coin is None:
+            try:
+                reentry_coin=fetch(altname,pair)
+                reentry_quote=ticker(altname)
+            except (OSError,ValueError,KeyError,TypeError) as exc:
+                reentry_coin={"pair":pair,
+                    "status":"UNKNOWN_KRAKEN_SECOND_LEG_SOURCE_"+type(exc).__name__.upper()}
+                reentry_quote={}
+        results["extended_reentry"]=_journal_extended_second_leg(
+            candidate=candidate,series_id=series_id,journal=journal,
+            rows=rows,p4=p4,coin=reentry_coin,quote=reentry_quote,
+            now_at_utc=now_at_utc)
     now=clock(clock_now())
     # The original model decision is final if no BUY: followup even SKIP/WAIT/
     # source-UNKNOWN cases, never reclassify ex-post MFE as earned trades.
