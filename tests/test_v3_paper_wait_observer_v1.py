@@ -11,7 +11,7 @@ CID="20261012-064219-ZRO-EUR-r168479886848322"
 START=datetime(2026,10,12,6,42,19,tzinfo=timezone.utc)
 DECISION=datetime(2026,10,12,6,44,49,tzinfo=timezone.utc)
 def t(x):return x.isoformat()
-def seed(j:Path,conditions=None):
+def seed(j:Path,conditions=None,*,model_setup_lane=None):
     rows=[
         ("SCANNER_CAPTURE","SEEN",START,{}),
         ("MODEL_RESPONSE","PASS",DECISION,{"model_response_at_utc":t(DECISION),
@@ -26,6 +26,8 @@ def seed(j:Path,conditions=None):
                 {"metric":"ask_eur","op":"<=","value":2.12},
             ]})
     ]
+    if model_setup_lane is not None:
+        rows[1][3]["raw_setup_lane"]=model_setup_lane
     for phase,result,known,data in rows:
         record=make_receipt(series_id=SID,revision=REVISION,candidate_id=CID,
             pair="ZRO/EUR",event_time_utc=t(START),known_at_utc=t(known),
