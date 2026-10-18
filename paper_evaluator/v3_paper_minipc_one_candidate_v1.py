@@ -277,7 +277,11 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             src["frame_status_"+label]=v.get("status")
             src["frame_closed_end_"+label]=v.get("last_closed_bar_end_utc")
             src["frame_close_"+label+"_eur"]=v.get("closed_close_eur")
-            src["frame_volume_ratio_"+label]=v.get("volume_ratio_prior_5")
+            # P4/WAIT consumes the 15m ratio against FOUR prior closed
+            # candles. Logging the five-candle version would make a
+            # decision impossible to reproduce from its own journal.
+            src["frame_volume_ratio_"+label]=v.get(
+                "volume_ratio_prior_4" if label=="15m" else "volume_ratio_prior_5")
         src["atr14_15m_eur"]=(frames.get("15") or {}).get("atr14_eur")
         src["structural_low_15m_eur"]=(frames.get("15") or {}).get("recent_8bar_low_eur")
         receipt("SOURCE_INPUT","PASS" if evidence_status=="COMPLETE" else "UNKNOWN",src)
@@ -391,6 +395,9 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             "model_name":str(metadata.get("model") or "")[:80],
             "raw_model_decision":raw.get("decision"),
             "raw_reason_codes":[str(c)[:90] for c in (raw.get("reason_codes") or [])[:8]],
+            "raw_missing_triggers":[str(c)[:90] for c in
+                                    (raw.get("missing_triggers") or [])[:8]]
+                if isinstance(raw.get("missing_triggers"),list) else [],
             "raw_stop_eur":raw.get("stop_eur"),"raw_stage2_trigger_eur":raw.get("stage2_trigger_eur"),
             "raw_watch_conditions":raw.get("watch_conditions")})
     except Exception as exc:
@@ -410,6 +417,12 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
         ("WAIT" if validated["decision"]=="WAIT" else "REJECT" if
          validated["decision"]=="REJECT" else "UNKNOWN"),
         {"p4_status":validated["status"],"p4_decision":validated["decision"],
+         "p4_completed_at_utc":clock(),
+         "normalized_model_decision":validated["decision"],
+         "normalized_reason_codes":[str(c)[:90] for c in
+             (validated.get("reason_codes") or [])[:8]],
+         "p4_reason_codes":[str(c)[:90] for c in
+             (validated.get("reason_codes") or [])[:8]],
          "candidate_origin":candidate.get("entry_origin","SCANNER"),
          "positive_source_name":candidate.get("positive_source_name"),
          "positive_source_event_id":candidate.get("positive_source_event_id"),
