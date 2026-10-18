@@ -242,6 +242,45 @@ def _evidence_content_error(
         by_origin[origin]=payload
     if not required.issubset(present):
         return name+" missing required independent Mini-PC/Cloud/Work source role"
+    # Strengthen the EXISTING journal/WAIT/followup proof, not a seventh gate.
+    # A single TIA WAIT_RECHECK followed by UNKNOWN expiry proves fail-closed
+    # missingness, NOT a continuously witnessed TTL or 6/24/72h followups.
+    # Both source roles must identify the same physical V3 candidate/readback;
+    # each asserted fact still needs independent original-host/cloud review.
+    if name=="V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE":
+        host=by_origin["MINIPC_PHYSICAL"]
+        cloud=by_origin["SUPABASE_CLOUD"]
+        host_checks=(
+            "original_v3_single_writer_wait_tick_tested",
+            "valid_closed_5m_wait_observation_within_ttl_tested",
+            "missing_or_late_wait_ticks_become_unknown_tested",
+            "trigger_requires_fresh_full_model_and_p4_tested",
+            "no_buy_wait_reject_skip_unknown_followup_routing_tested",
+            "prospective_closed_1m_no_historical_backfill_tested",
+            "followup_6h24h72h_and_gap_censor_logic_tested",
+            "old_v2r4_aftercare_separate_series_preserved_tested",
+        )
+        cloud_checks=(
+            "v3_wait_recheck_expiry_original_readback_verified",
+            "v3_no_buy_followup_original_journal_readback_verified",
+            "missingness_never_claimed_as_zero_pnl_verified",
+            "old_v2r4_aftercare_remains_original_series_verified",
+        )
+        if (any(host.get(key) is not True for key in host_checks)
+                or any(cloud.get(key) is not True for key in cloud_checks)):
+            return name+" physical WAIT/No-BUY/6h24h72h original evidence incomplete"
+        series=host.get("witnessed_v3_series_id")
+        candidate=host.get("witnessed_v3_candidate_id")
+        if (not isinstance(series,str)
+                or not re.fullmatch(r"PAPER-V3-[A-Za-z0-9-]{8,96}",series)
+                or not isinstance(candidate,str)
+                or not ORIGINAL_ID.fullmatch(candidate)
+                or cloud.get("witnessed_v3_series_id")!=series
+                or cloud.get("witnessed_v3_candidate_id")!=candidate):
+            return name+" independent V3 WAIT/No-BUY candidate lineage mismatch"
+        # Before first experimental Paper, require physical schedule/source
+        # wiring + bounded negative tests, NOT natural 72h results from the
+        # future. After start, genuine maturing/censored receipts are separate.
     # Extend the EXISTING sixth technical proof, not a new release stage.
     # A healthy task status alone is not a bounded recovery receipt.
     # Independent validation of the physical source remains mandatory.
