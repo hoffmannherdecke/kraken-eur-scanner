@@ -133,6 +133,12 @@ jobs:
             tests.test_v2r4_v3_extended_reentry_review \
             -v
 
+      - name: V3 PRE-CAS offline host BUY and REJECT original journal witness regression
+        run: |
+          # Pure synthetic fixtures; network socket/HTTP blocked in source.
+          # No services, real API, tasks, Cloud POST, CAS or live Paper.
+          python -m unittest tests.test_v3_paper_precas_originalhost_offline_witness_v1 -v
+
       - name: One bounded live Kraken EUR coin-entry input smoke (research only)
         if: steps.implementation.outputs.present == 'true'
         run: |
