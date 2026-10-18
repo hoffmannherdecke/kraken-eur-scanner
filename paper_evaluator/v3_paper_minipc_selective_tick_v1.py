@@ -9,7 +9,7 @@ paper_series, touches V2R4 or creates schedules. Supabase ACK is a separate
 existing explicitly authorized receipt-sync operation.
 """
 from __future__ import annotations
-import argparse,json,re
+import argparse,hashlib,json,math,re
 from datetime import datetime,timedelta,timezone
 from pathlib import Path
 from typing import Any,Callable
@@ -314,6 +314,130 @@ def _require_released_paper_cloud(*,series_id:str,
 
 
 
+def _verify_first_native_model_paper_journal(*,candidate:dict[str,Any],
+        series_id:str,journal:Path,model_reservations:Path,
+        approval:dict[str,Any])->dict[str,Any]:
+    """Independent disk readback WHILE the existing native writer lock is held.
+
+    A callback's successful P4 flag, test model, or synthetic receipt cannot
+    prove a physical Paper deployment. This only verifies the already written
+    local stage/model/P4/fill chain before the owner reports any local BUY.
+    Cloud durability, real host pins and release proofs remain independent.
+    """
+    if (not isinstance(candidate,dict) or not isinstance(approval,dict)
+            or not journal.is_dir() or journal.is_symlink()
+            or not model_reservations.is_dir() or model_reservations.is_symlink()):
+        raise ValueError("native paper audit roots or candidate absent")
+    rows=[]
+    for path in journal.glob("*.json"):
+        if path.is_symlink() or not 0<path.stat().st_size<=16000:
+            raise ValueError("noncanonical immutable V3 receipt file")
+        raw=path.read_bytes()
+        row=json.loads(raw)
+        if (row.get("series_id"),row.get("candidate_id")) != (
+                series_id,candidate["candidate_id"]):
+            continue
+        if (row.get("kind")!="V3_EXPERIMENTAL_PAPER_CANDIDATE_EVENT_V1"
+                or row.get("revision")!=REVISION
+                or row.get("pair")!=candidate["pair"]
+                or clock(row["event_time_utc"])!=clock(candidate["event_time_utc"])
+                or row.get("real_money_actions") is not False
+                or row.get("orders") is not False):
+            raise ValueError("foreign or altered Paper candidate lineage")
+        digest=hashlib.sha256("|".join(str(row[k]) for k in
+            ("series_id","candidate_id","phase","event_key")).encode()).hexdigest()
+        if path.stem!=digest:
+            raise ValueError("receipt disk name and event identity differ")
+        rows.append((row,hashlib.sha256(raw).hexdigest()))
+    if len({(r["phase"],r["event_key"]) for r,_ in rows})!=len(rows):
+        raise ValueError("duplicate immutable event identity")
+    def one(phase:str,key:str="FRESHRECHECK")->tuple[dict,str]:
+        found=[(row,sha) for row,sha in rows if
+               row["phase"]==phase and row["event_key"]==key]
+        if len(found)!=1:
+            raise ValueError("missing or repeated original Paper phase: "+phase)
+        return found[0]
+    original,_=one("SCANNER_CAPTURE","FIRST")
+    if (original["result"]!="SEEN"
+            or original["data"].get("candidate_origin")!="SCANNER"):
+        raise ValueError("unverified native Scanner original")
+    one("FULL_REVIEW_ELIGIBILITY","FIRST")
+    eligible,_=one("FULL_REVIEW_ELIGIBILITY")
+    if eligible["result"]!="PASS":
+        raise ValueError("full native model not review eligible")
+    request,_=one("MODEL_REQUEST")
+    response,_=one("MODEL_RESPONSE")
+    p4,_=one("P4_VALIDATION")
+    if (request["result"]!="PASS"
+            or not isinstance(request["data"].get("input_fingerprint_sha256"),str)
+            or not re.fullmatch("[0-9a-f]{64}",request["data"]["input_fingerprint_sha256"])
+            or request["data"].get("model_http_attempts_reserved")!=1
+            or response["result"]!="PASS"
+            or not isinstance(response["data"].get("model_response_id"),str)
+            or not response["data"]["model_response_id"]
+            or not isinstance(response["data"].get("model_response_at_utc"),str)
+            or p4["result"] not in ("BUY_SCOUT","WAIT","REJECT","UNKNOWN")
+            or p4["data"].get("p4_decision")!=p4["result"]):
+        raise ValueError("model budget, response or P4 original incomplete")
+    reservations=[]
+    for path in model_reservations.glob("*.reserved.json"):
+        if path.is_symlink() or not 0<path.stat().st_size<=4096:
+            raise ValueError("unverified native model reservation")
+        item=json.loads(path.read_text("utf-8"))
+        if (item.get("series_id"),item.get("candidate_id"))==(
+                series_id,candidate["candidate_id"]):
+            reservations.append(item)
+    if (len(reservations)!=1
+            or reservations[0].get("kind")!="V3_PAPER_MODEL_HTTP_RESERVED_BEFORE_NETWORK_V1"
+            or reservations[0].get("unique_approval_id")!=approval.get("unique_approval_id")
+            or reservations[0].get("no_automatic_retry") is not True):
+        raise ValueError("missing or foreign one-shot model budget reservation")
+    fills=[(row,sha) for row,sha in rows if row["phase"]=="PAPER_FILL"]
+    if p4["result"]!="BUY_SCOUT":
+        if fills:
+            raise ValueError("non-BUY produced forbidden Paper fill")
+        if p4["result"]=="WAIT":
+            watch,_=one("WAIT_WATCH")
+            if watch["result"]!="WAIT":
+                raise ValueError("WAIT without actual watch phase")
+        return {"p4_decision":p4["result"],
+                "paper_entry_receipt_verified_local":False,
+                "paper_entry_status":"NO_BUY_NO_PAPER_FILL_AS_EXPECTED",
+                "paper_entry_receipt_sha256":None,
+                "independent_cloud_paper_fill_ack":False}
+    if (len(fills)!=1 or fills[0][0]["event_key"]!="FRESHRECHECK"
+            or fills[0][0]["result"]!="PAPER_FILLED"):
+        raise ValueError("positive P4 without exact native Paper fill")
+    fill,sha=fills[0]
+    p=p4["data"];f=fill["data"]
+    ask,stop,stage2=p.get("ask_eur"),p.get("validated_stop_eur"),p.get("validated_stage2_eur")
+    if (p.get("p4_status")!="FULL_BUY_SCOUT_CONTRACT_VALIDATED_OFFLINE_NOT_RELEASE_EVIDENCE"
+            or any(type(x) not in (int,float) or not math.isfinite(x)
+                   for x in (ask,stop,stage2,f.get("paper_entry_ask_eur"),
+                             f.get("paper_entry_qty"),f.get("paper_entry_fee_eur")))
+            or not 0<stop<ask<stage2
+            or not math.isclose(f["paper_entry_ask_eur"],ask,rel_tol=1e-7)
+            or not math.isclose(f["paper_entry_qty"]*ask,50.0,rel_tol=1e-6,abs_tol=1e-5)
+            or not math.isclose(f["paper_entry_fee_eur"],0.3,abs_tol=1e-8)
+            or f.get("validated_stop_eur")!=stop
+            or f.get("validated_stage2_eur")!=stage2
+            or f.get("source_status")!="ASSUMED_VIRTUAL_PAPER_ASK_NOT_REAL_EXCHANGE_FILL"
+            or type(f.get("stage2_ttl_minutes")) is not int
+            or not 1<=f["stage2_ttl_minutes"]<=60
+            or type(p.get("total_cost_pct")) not in (int,float)
+            or p["total_cost_pct"]<1.2):
+        raise ValueError("Paper 50 EUR scout/stop/stage2/fees contract mismatch")
+    for hours in (6,24,72):
+        follow,_=one(f"FOLLOWUP_{hours}H")
+        if follow["result"]!="PENDING":
+            raise ValueError("initial Paper entry missing pending future horizon")
+    return {"p4_decision":"BUY_SCOUT",
+            "paper_entry_receipt_verified_local":True,
+            "paper_entry_status":"NATIVE_LOCAL_PAPER_SCOUT_DURABLE_PENDING_INDEPENDENT_CLOUD_ACK",
+            "paper_entry_receipt_sha256":sha,
+            "independent_cloud_paper_fill_ack":False}
+
+
 def released_paper_first_scanner_model_once(*,preflight:dict[str,Any],
         candidate:dict[str,Any],series_id:str,journal:Path,
         capture_dir:Path,model_reservations:Path,
@@ -391,6 +515,29 @@ def released_paper_first_scanner_model_once(*,preflight:dict[str,Any],
             acquire=acquire,model_client=model_client,clock=clock_now,
             existing_context=existing_context,
             _released_model_capability=_RELEASED_MODEL_NATIVE_OWNER)
+        proof={"paper_entry_receipt_verified_local":False,
+               "paper_entry_status":"NO_VERIFIED_FINAL_P4_HOLD",
+               "paper_entry_receipt_sha256":None,
+               "independent_cloud_paper_fill_ack":False}
+        if result.get("status")=="V3_CANARY_MODEL_P4_RECORDED_NO_PAPER_ACTIVATION":
+            try:
+                proof=_verify_first_native_model_paper_journal(
+                    candidate=candidate,series_id=series_id,journal=journal,
+                    model_reservations=model_reservations,approval=approval)
+                if proof["p4_decision"]!=result.get("p4_decision"):
+                    raise ValueError("worker result differs from immutable P4")
+            except (OSError,ValueError,KeyError,TypeError,OverflowError):
+                # The model's one-shot reservation remains spent even if a
+                # local Paper fill crashed or the journal is malformed.
+                # No model re-call, no inferred trade, no cloud ACK claim.
+                return {"status":"FIRST_SCANNER_MODEL_OR_PAPER_LEDGER_INCOMPLETE_HOLD",
+                        "series_id":series_id,"candidate_id":candidate["candidate_id"],
+                        "model_result":result,"model_http_attempts_reserved":1,
+                        "paper_entry_receipt_verified_local":False,
+                        "independent_cloud_paper_fill_ack":False,
+                        "requires_original_owner_reconciliation":True,
+                        "paper_writer_active":False,"orders":False,
+                        "real_money_actions":False,"v2r4_changed":False}
         return {
             "status":("FIRST_SCANNER_MODEL_P4_DURABLE_WAIT_FOR_FOLLOWUP"
                       if result.get("p4_decision") in
@@ -406,6 +553,7 @@ def released_paper_first_scanner_model_once(*,preflight:dict[str,Any],
             "cloud_ack_verified":False,"paper_writer_active":False,
             "orders":False,"real_money_actions":False,
             "new_schedules":0,"v2r4_changed":False,
+            **proof,
         }
 
 
