@@ -279,6 +279,87 @@
       "no real orders",
       "no automatic activation"
     ],
-    "release_proof": "Integrate scenarios into existing six technical V3 release proofs; CI-only and prose-only are NOT passed physical E2E; no additional mandatory profitability history before experimental paper."
+    "release_proof": "Integrate scenarios into existing six technical V3 release proofs; CI-only and prose-only are NOT passed physical E2E; no additional mandatory profitability history before experimental paper.",
+    "acceptance_tracking": {
+      "owner": "existing V3 Issue #99 / PR #412 and existing six technical release proofs",
+      "release_rule": "Every offensive policy row must be mapped to the existing implementation, verified by positive and negative test evidence, and routed through real full model/P4/single writer when applicable; do not label COMPLETE from prose or source inventory.",
+      "items": [
+        {
+          "id": "EARLY_INITIAL_REVIEW",
+          "status": "OPEN_NOT_E2E_VERIFIED",
+          "implementation_owner": "existing V3 codepaths listed in entry_priority/canonical_modules",
+          "positive_and_negative_tests_required": true,
+          "physical_proof_required_when_writer_path": true,
+          "original_receipt_ids": [],
+          "acceptance": "NOT_ACCEPTED"
+        },
+        {
+          "id": "POSITIVE_CATALYST_BUY",
+          "status": "OPEN_NOT_E2E_VERIFIED",
+          "implementation_owner": "existing V3 codepaths listed in entry_priority/canonical_modules",
+          "positive_and_negative_tests_required": true,
+          "physical_proof_required_when_writer_path": true,
+          "original_receipt_ids": [],
+          "acceptance": "NOT_ACCEPTED"
+        },
+        {
+          "id": "WAIT_REJECT_FRESH_RECHECK",
+          "status": "OPEN_NOT_E2E_VERIFIED",
+          "implementation_owner": "existing V3 codepaths listed in entry_priority/canonical_modules",
+          "positive_and_negative_tests_required": true,
+          "physical_proof_required_when_writer_path": true,
+          "original_receipt_ids": [],
+          "acceptance": "NOT_ACCEPTED"
+        },
+        {
+          "id": "CONTINUITY_FAST",
+          "status": "OPEN_NOT_E2E_VERIFIED",
+          "implementation_owner": "existing V3 codepaths listed in entry_priority/canonical_modules",
+          "positive_and_negative_tests_required": true,
+          "physical_proof_required_when_writer_path": true,
+          "original_receipt_ids": [],
+          "acceptance": "NOT_ACCEPTED"
+        },
+        {
+          "id": "VOLUME_SOFT_CONTEXT",
+          "status": "OPEN_NOT_E2E_VERIFIED",
+          "implementation_owner": "existing V3 codepaths listed in entry_priority/canonical_modules",
+          "positive_and_negative_tests_required": true,
+          "physical_proof_required_when_writer_path": true,
+          "original_receipt_ids": [],
+          "acceptance": "NOT_ACCEPTED"
+        },
+        {
+          "id": "EXTENDED_NEW_BASE",
+          "status": "OPEN_NOT_E2E_VERIFIED",
+          "implementation_owner": "existing V3 codepaths listed in entry_priority/canonical_modules",
+          "positive_and_negative_tests_required": true,
+          "physical_proof_required_when_writer_path": true,
+          "original_receipt_ids": [],
+          "acceptance": "NOT_ACCEPTED"
+        },
+        {
+          "id": "RISK_REGIME_OPTIONAL_SOURCES",
+          "status": "OPEN_NOT_E2E_VERIFIED",
+          "implementation_owner": "existing V3 codepaths listed in entry_priority/canonical_modules",
+          "positive_and_negative_tests_required": true,
+          "physical_proof_required_when_writer_path": true,
+          "original_receipt_ids": [],
+          "acceptance": "NOT_ACCEPTED"
+        },
+        {
+          "id": "MODEL_BUY_CONVERSION",
+          "status": "OPEN_NOT_E2E_VERIFIED",
+          "implementation_owner": "existing V3 codepaths listed in entry_priority/canonical_modules",
+          "positive_and_negative_tests_required": true,
+          "physical_proof_required_when_writer_path": true,
+          "original_receipt_ids": [],
+          "acceptance": "NOT_ACCEPTED"
+        }
+      ],
+      "physical_gate": "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E",
+      "physical_gate_passed": false,
+      "notes": "Not a new seventh gate. No fake receipts. No profitable history required before experimental paper."
+    }
   }
 }
