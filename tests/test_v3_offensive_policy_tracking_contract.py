@@ -80,6 +80,44 @@ def validate_policy(bundle):
     return errors
 
 
+# Existing, executable implementation surfaces. Source presence is necessary,
+# never sufficient for E2E acceptance; host+Cloud originals remain mandatory.
+IMPLEMENTATION_SURFACES = {
+    "EARLY_INITIAL_REVIEW": (
+        "paper_evaluator/v3_experimental_paper_initial_review_v1.py",
+        "def propose_initial_full_review(",
+    ),
+    "POSITIVE_CATALYST_BUY": (
+        "paper_evaluator/v3_paper_positive_source_entry_v1.py",
+        "def assess_positive_source(",
+    ),
+    "WAIT_REJECT_FRESH_RECHECK": (
+        "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
+        "def prepare_original_owner_reentry_child(",
+    ),
+    "CONTINUITY_FAST": (
+        "paper_evaluator/v3_p3_early_5m_continuity_research_v1.py",
+        "def propose_early_5m_continuity_review(",
+    ),
+    "VOLUME_SOFT_CONTEXT": (
+        "paper_evaluator/v3_experimental_continuity_volume_review_v1.py",
+        "def ",
+    ),
+    "EXTENDED_NEW_BASE": (
+        "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
+        "def canonical_second_leg_episode(",
+    ),
+    "RISK_REGIME_OPTIONAL_SOURCES": (
+        "paper_evaluator/v3_experimental_paper_model_prompt_v1.py",
+        "def build_v3_paper_full_model_prompt(",
+    ),
+    "MODEL_BUY_CONVERSION": (
+        "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+        "def released_paper_reentry_child_model_once(",
+    ),
+}
+
+
 class OffensiveV3PolicyTrackingContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -87,6 +125,21 @@ class OffensiveV3PolicyTrackingContractTests(unittest.TestCase):
 
     def test_all_eight_policy_ids_remain_tracked_without_fake_acceptance(self):
         self.assertEqual(validate_policy(self.bundle), [])
+
+    def test_all_eight_offensive_items_have_existing_real_code_owners(self):
+        self.assertEqual(set(IMPLEMENTATION_SURFACES), set(IDS))
+        root = Path(__file__).resolve().parents[1]
+        for item in IDS:
+            path, symbol = IMPLEMENTATION_SURFACES[item]
+            with self.subTest(item=item):
+                self.assertTrue((root / path).is_file(), path)
+                self.assertIn(symbol, (root / path).read_text("utf-8"))
+                self.assertNotIn("paper_evaluator/evaluate.py", path)
+                self.assertNotIn("v2r4_", path)
+        # All rows remain unaccepted until original host and Cloud receipts,
+        # even though all implementation *surfaces* now exist.
+        rows = self.bundle["offensive_paper_policy_concrete_20261018"]["acceptance_tracking"]["items"]
+        self.assertTrue(all(x["acceptance"] == "NOT_ACCEPTED" for x in rows))
 
     def test_missing_duplicate_or_reordered_policy_identity_is_rejected(self):
         import copy
