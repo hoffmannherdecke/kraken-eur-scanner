@@ -6,7 +6,7 @@ import tempfile
 from datetime import datetime,timedelta,timezone
 from pathlib import Path
 from paper_evaluator.v3_paper_minipc_selective_tick_v1 import tick_once
-from tests.test_v3_paper_wait_observer_v1 import seed,SID,CID,t
+from tests.test_v3_paper_wait_observer_v1 import seed,SID,CID,START,DECISION,t
 from tests.test_v3_paper_minipc_selective_tick_v1 import candidate,tick_capture
 from paper_evaluator.v3_extended_reentry_review_v1 import extended_reentry_review
 from paper_evaluator.v3_second_leg_policy_candidate_v1 import prepare_original_owner_reentry_child
