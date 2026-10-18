@@ -301,6 +301,62 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
             candidate=candidate,series_id=series_id,journal=journal,
             rows=rows,p4=p4,coin=reentry_coin,quote=reentry_quote,
             assembled_1m=capture_path,now_at_utc=now_at_utc)
+    # Shadow-only offensive CONTINUITY comparison on the EXISTING selective
+    # tick: same witnessed 1m archive, same closed Kraken PIT, one ticker,
+    # same clock and original model lane. Never mint a new candidate, model
+    # approval, Paper fill or new scheduler from research eligibility.
+    if (p4 and p4["result"] in ("WAIT","REJECT")
+            and original_model is not None
+            and original_model["data"].get("raw_setup_lane")=="CONTINUITY"
+            and candidate.get("entry_origin","SCANNER")=="SCANNER"
+            and 0<=(clock(clock_now())-source_time).total_seconds()<=900):
+        try:
+            from paper_evaluator.v3_p3_early_5m_continuity_research_v1 import (
+                propose_early_5m_continuity_review,
+            )
+            from paper_evaluator.v3_experimental_continuity_volume_review_v1 import (
+                propose_experimental_continuity_review,
+            )
+            from paper_evaluator.v3_continuity_fresh_review_candidate_v1 import (
+                propose_continuity_fresh_review,
+            )
+            if reentry_coin is None:
+                reentry_coin=fetch(altname,pair)
+                raw_quote=ticker(altname)
+                reentry_quote=dict(raw_quote,observed_at_utc=(
+                    raw_quote.get("observed_at_utc") or clock_now()))
+                reentry_quote.setdefault("pair",pair)
+            observed=clock_now()
+            witnessed=witnessed_15m_from_existing_1m_path(
+                capture_path,pair=pair,observed_at_utc=observed)
+            baseline={"setup_lane":"CONTINUITY","decision":p4["result"]}
+            standard=propose_continuity_fresh_review(
+                candidate,baseline,reentry_coin,reentry_quote,witnessed,
+                decision_at_utc=observed)
+            early=propose_early_5m_continuity_review(
+                candidate,baseline,reentry_coin,reentry_quote,witnessed,
+                decision_at_utc=observed)
+            volume=propose_experimental_continuity_review(
+                candidate,baseline,reentry_coin,reentry_quote,witnessed,
+                decision_at_utc=observed)
+            results["continuity_offensive_shadow"]={
+                "status":"ORIGINAL_WITNESSED_PIT_RESEARCH_ONLY",
+                "standard_status":standard["status"],
+                "early_5m_status":early["status"],
+                "soft_volume_status":volume["status"],
+                "early_5m_review_only":early.get("request_model_recheck_only") is True,
+                "soft_volume_review_only":volume.get("request_model_recheck_only") is True,
+                "same_witnessed_archive":True,"model_called":False,
+                "model_http_attempts_reserved":0,"paper_writer_started":False,
+                "orders":False,"real_money_actions":False,
+                "release_evidence":False}
+        except (OSError,ValueError,KeyError,TypeError,OverflowError,AttributeError) as exc:
+            results["continuity_offensive_shadow"]={
+                "status":"SOURCE_UNVERIFIED_RESEARCH_HOLD",
+                "failure_class":type(exc).__name__,
+                "model_called":False,"model_http_attempts_reserved":0,
+                "paper_writer_started":False,"orders":False,
+                "real_money_actions":False,"release_evidence":False}
     now=clock(clock_now())
     # The P1 child uses its new signal time for no-BUY opportunities, but a
     # positive Paper position starts each horizon at its ACTUAL durable fill.
