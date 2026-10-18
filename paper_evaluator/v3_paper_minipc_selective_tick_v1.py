@@ -388,7 +388,7 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                         or clock(close5_at)<clock(p4["known_at_utc"])
                         or (first_base is not None and (
                             clock(first_base["first_known_at_utc"])>clock(p4["known_at_utc"])
-                            or clock(close5_at)<clock(first_base["first_known_at_utc"]))):
+                            or clock(close5_at)<clock(first_base["first_known_at_utc"])))):
                     early={"status":"FIRST_PIT_P4_5M_CHRONOLOGY_UNPROVEN_NO_REVIEW",
                            "request_model_recheck_only":False}
                 else:
