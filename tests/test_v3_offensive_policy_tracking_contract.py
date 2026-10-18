@@ -101,7 +101,7 @@ IMPLEMENTATION_SURFACES = {
     ),
     "VOLUME_SOFT_CONTEXT": (
         "paper_evaluator/v3_experimental_continuity_volume_review_v1.py",
-        "def ",
+        "def propose_experimental_continuity_review(",
     ),
     "EXTENDED_NEW_BASE": (
         "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
