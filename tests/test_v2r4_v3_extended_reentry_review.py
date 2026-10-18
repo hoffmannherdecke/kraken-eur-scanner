@@ -62,7 +62,11 @@ class ExtendedReentryReviewContract(unittest.TestCase):
     def test_missing_stale_future_and_wrong_pair_fail_closed(self):
         e=case();e["status"]="PARTIAL_OR_MISSING"
         self.assertEqual(run(e)["state"],"UNKNOWN_INSUFFICIENT_PROSPECTIVE_EVIDENCE")
-        self.assertEqual(run(at=dt(1050))["state"],"UNKNOWN_STALE_OR_FUTURE_CANDIDATE")
+        # The 15-minute original bound was intentionally replaced by a
+        # strictly proven later 1-3h second leg. Without original P4 time
+        # and newly witnessed source, a 17.5-minute case stays UNKNOWN.
+        self.assertEqual(run(at=dt(1050))["state"],"UNKNOWN_INSUFFICIENT_PROSPECTIVE_EVIDENCE")
+        self.assertEqual(run(at=dt(4*3600))["state"],"UNKNOWN_STALE_OR_FUTURE_CANDIDATE")
         self.assertEqual(run(at=dt(1))["state"],"UNKNOWN_INSUFFICIENT_PROSPECTIVE_EVIDENCE")
         self.assertEqual(run(candidate={"pair":"W/EUR","event_time_utc":dt(0)})["state"],
                          "UNKNOWN_INSUFFICIENT_PROSPECTIVE_EVIDENCE")
