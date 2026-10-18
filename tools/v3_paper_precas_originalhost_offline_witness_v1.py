@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+"""One-shot PRE-CAS originalhost offline BUY/REJECT witness; never a Paper release.
+
+This is a narrowly scoped proof adapter for the EXISTING V3 one_candidate,
+native owner lock, immutable journal, and existing Cloud relay. It is neither
+a second writer nor a task/runner/daemon. Model, Kraken and HTTP are all stubs.
+The output is a *test fixture*, NOT a genuine market entry or six-gate proof.
+An independent authenticated relay sync + readback remains a separate step.
+"""
+from __future__ import annotations
+
+import argparse
+import copy
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import subprocess
+import sys
+from unittest import mock
+from urllib import request
+
+HEX40 = re.compile(r"[0-9a-f]{40}\Z")
+REVISION = "V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001"
+
+
+def _git(source: Path, *args: str) -> str:
+    proc = subprocess.run(["git", "-C", str(source), *args],
+                          capture_output=True, text=True, timeout=20, check=True)
+    return proc.stdout.strip()
+
+
+def _regular_tree(path: Path) -> Path:
+    path = Path(path).absolute()
+    if not path.is_dir() or any(part.is_symlink()
+                                for part in (path, *path.parents)):
+        raise ValueError("originalhost regular directory required (no links)")
+    return path.resolve(strict=True)
+
+
+def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
+    """Read-only: bind the old physical stage to unchanged committed source.
+
+    The source repo may advance by this *proof-only* PR. Its 67 pinned runtime
+    bytes may not drift at all, and must still match the pinned Git objects.
+    """
+    if not HEX40.fullmatch(stage_sha):
+        raise ValueError("exact lowercase stage SHA required")
+    src = _regular_tree(source)
+    staged = _regular_tree(stage)
+    if staged.name != "V3Paper-INACTIVE-" + stage_sha[:12]:
+        raise ValueError("unexpected inactive source stage")
+    trading = staged.parent.parent
+    if staged.parent.name != "Staging" or src.is_relative_to(trading):
+        raise ValueError("source must be separate from protected Trading root")
+    if _git(src, "status", "--porcelain", "--untracked-files=normal"):
+        raise ValueError("source tree dirty; no original source attribution")
+    head = _git(src, "rev-parse", "HEAD")
+    if not HEX40.fullmatch(head):
+        raise ValueError("unrecognized independent Git source")
+    if subprocess.run(["git", "-C", str(src), "merge-base", "--is-ancestor",
+                       stage_sha, head], timeout=20).returncode != 0:
+        raise ValueError("stage SHA not ancestor of independent source HEAD")
+    manifest_path = staged / "v3-paper-inactive-source-manifest.json"
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise ValueError("source-only staging manifest missing")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    rows = manifest.get("source_manifest")
+    if (manifest.get("kind") != "V3_PAPER_INACTIVE_ISOLATED_SOURCE_STAGE_V1"
+            or manifest.get("status") != "STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED"
+            or manifest.get("source_git_sha") != stage_sha
+            or manifest.get("v3_paper_activated") is not False
+            or manifest.get("task_changes") is not False
+            or not isinstance(rows, list) or len(rows) < 60 or len(rows) > 100):
+        raise ValueError("inactive source manifest not trustworthy")
+    verified = set()
+    for row in rows:
+        rel, expected = row.get("relative_path"), row.get("sha256")
+        if (not isinstance(rel, str) or
+                not re.fullmatch(r"[A-Za-z0-9_./-]{4,180}", rel) or
+                ".." in Path(rel).parts or rel.startswith("/") or
+                not isinstance(expected, str) or
+                re.fullmatch(r"[0-9a-f]{64}", expected) is None or rel in verified):
+            raise ValueError("unsafe or duplicate source manifest entry")
+        here, original = staged / rel, src / rel
+        if (here.is_symlink() or original.is_symlink()
+                or not here.is_file() or not original.is_file()):
+            raise ValueError("pinned stage file absent or linked")
+        if (hashlib.sha256(here.read_bytes()).hexdigest() != expected
+                or hashlib.sha256(original.read_bytes()).hexdigest() != expected):
+            raise ValueError("stage and source file bytes differ")
+        verified.add(rel)
+    must = {"paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+            "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+            "paper_evaluator/v3_experimental_paper_journal_v1.py",
+            "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py"}
+    if not must.issubset(verified):
+        raise ValueError("physical writer/lock/journal/Cloud module not in stage")
+    parent = trading / "Research" / "V3Paper"
+    if not parent.is_dir() or parent.is_symlink():
+        raise ValueError("pre-existing separate V3 Research parent required")
+    target = parent / ("PRECAS-OFFLINE-ORIGINALHOST-" + stage_sha[:12])
+    return {"source": src, "stage": staged, "stage_sha": stage_sha,
+            "source_head": head, "target": target, "verified_files": len(verified),
+            "series_id": "PAPER-V3-CANARY-PRECAS-OFFLINE-" + stage_sha[:12].upper()}
+
+
+def _receipt_files(journal: Path, series: str, candidate_id: str) -> list:
+    records = []
+    for f in sorted(journal.glob("*.json")):
+        raw = f.read_bytes()
+        row = json.loads(raw)
+        if row.get("series_id") == series and row.get("candidate_id") == candidate_id:
+            event_key = "|".join(str(row[k]) for k in
+                                 ("series_id", "candidate_id", "phase", "event_key"))
+            eid = hashlib.sha256(event_key.encode("utf-8")).hexdigest()
+            if f.name != eid + ".json" or row.get("orders") is not False:
+                raise ValueError("incorrect immutable native receipt identity")
+            records.append({"phase": row["phase"], "result": row["result"],
+                            "event_key": row["event_key"], "event_id": eid,
+                            "content_sha256": hashlib.sha256(raw).hexdigest()})
+    return records
+
+
+def run_offline_cases(root: Path, series_id: str, *, stage: Path | None = None,
+                      source: Path | None = None) -> dict:
+    """Exactly two actual disk-writer calls under the EXISTING native OS lock.
+
+    Test imports are from the clean reviewed Git checkout, and runtime imports
+    from the 67-file original host stage. No real model/key or Kraken calls.
+    """
+    if not series_id.startswith("PAPER-V3-CANARY-PRECAS-OFFLINE-"):
+        raise ValueError("strict synthetic CANARY namespace required")
+    if stage is not None and source is not None:
+        # -I excludes the user site and CWD; explicit verified paths only.
+        sys.path.insert(0, str(stage))
+        sys.path.insert(1, str(source))
+    from paper_evaluator.v3_paper_minipc_one_candidate_v1 import one_candidate
+    from paper_evaluator.v3_paper_minipc_selective_tick_v1 import _one_canary_owner
+    from tests.test_v3_experimental_paper_initial_review_v1 import fixture
+    from tests.test_v3_full_entry_decision_candidate_v1 import fixture as model_fixture
+    from tests.test_v2r4_v3_entry_handoff_probe import dt
+    from tests.test_v3_paper_minipc_one_candidate_v1 import valid_approval
+
+    journal = root / "journal"
+    budgets = root / "model-stub-reservations"
+    for path in (journal, budgets):
+        path.mkdir(mode=0o700)
+    evidence = []
+    # Throw on any accidental network fallback; all callbacks MUST be stubbed.
+    def blocked(*_args, **_kwargs):
+        raise AssertionError("OFFLINE_ONLY_NO_NETWORK_API_KRAKEN")
+    with (_one_canary_owner(journal),
+          mock.patch.object(socket, "create_connection", side_effect=blocked),
+          mock.patch.object(socket.socket, "connect", side_effect=blocked),
+          mock.patch.object(request, "urlopen", side_effect=blocked),
+          mock.patch("paper_evaluator.evaluate.http_json", side_effect=blocked)):
+        for label in ("POSITIVE_BUY_SCOUT", "NEGATIVE_REJECT"):
+            candidate, coin, quote, metadata = fixture()
+            cid = "V3-OFFLINE-HOST-" + ("BUY" if label.startswith("POSITIVE") else "REJECT")
+            candidate = dict(candidate, candidate_id=cid)
+            coin, quote, metadata = (copy.deepcopy(x) for x in (coin, quote, metadata))
+            assessment = copy.deepcopy(model_fixture()[-1])
+            assessment.update(candidate_id=cid, decision_at_utc=dt(12),
+                              setup_lane="IGNITION")
+            if label == "NEGATIVE_REJECT":
+                assessment["stop_eur"] = 999.0  # P4 fail-closed, never fill
+            approval = valid_approval()
+            approval.update(series_id=series_id,
+                            unique_approval_id="OFFLINE_STUB_NOT_USER_APPROVAL_" + label)
+            def acquire(_candidate):
+                return coin, quote, metadata
+            def fake_model(_prompt, _key):
+                return assessment, {"response_id": "STUB_NO_PROVIDER_HTTP_" + label,
+                                    "model": "LOCAL_OFFLINE_MODEL_STUB"}
+            result = one_candidate(
+                candidate=candidate, series_id=series_id,
+                local_receipts=journal, model_reservations=budgets,
+                approval=approval, model_key="NOT_A_REAL_API_KEY_OFFLINE_STUB",
+                allow_model=True, acquire=acquire, model_client=fake_model,
+                clock=lambda: dt(12))
+            expected = "BUY_SCOUT" if label == "POSITIVE_BUY_SCOUT" else "REJECT"
+            if (result.get("p4_decision") != expected
+                    or result.get("orders") is not False
+                    or result.get("model_http_attempts_reserved") != 1):
+                raise ValueError("model-stub P4 outcome not fail-closed")
+            rows = _receipt_files(journal, series_id, cid)
+            p4s = [x for x in rows if x["phase"] == "P4_VALIDATION"]
+            fills = [x for x in rows if x["phase"] == "PAPER_FILL"]
+            if (len(p4s) != 1 or p4s[0]["result"] != expected
+                    or len(fills) != (1 if expected == "BUY_SCOUT" else 0)
+                    or any(f["result"] != "PAPER_FILLED" for f in fills)):
+                raise ValueError("native immutable Paper ledger P4/fill disagreement")
+            evidence.append({"case": label, "candidate_id": cid,
+                             "p4_decision": expected,
+                             "paper_fill_count": len(fills),
+                             "paper_fill_result": "PAPER_FILLED" if fills else "NO_PAPER_FILL",
+                             "p4_record_sha256": p4s[0]["content_sha256"],
+                             "paper_fill_record_sha256": fills[0]["content_sha256"] if fills else None,
+                             "receipts": rows})
+    if len(list(budgets.glob("*.reserved.json"))) != 2:
+        raise ValueError("each stub candidate needs a separate single-use reservation")
+    return {"kind": "V3_PRECAS_PHYSICAL_OFFLINE_DUAL_CASE_WITNESS_V1",
+            "status": "HOST_LOCAL_OFFLINE_MODEL_STUB_ONLY",
+            "series_id": series_id, "source_fixture": "SYNTHETIC_20261009_NOT_LIVE_KRAKEN",
+            "physical_host_readback_independently_verified": False,
+            "cloud_receipts_independently_verified": False,
+            "native_owner_lock_used": True, "no_real_model_http": True,
+            "simulated_model_approval_not_user_approval": True,
+            "real_money_actions": False, "orders": False,
+            "paper_release_authorized": False, "technical_release_proofs_credited": 0,
+            "cases": evidence}
+
+
+def main() -> int:
+    cli = argparse.ArgumentParser()
+    cli.add_argument("--source", type=Path, required=True)
+    cli.add_argument("--stage", type=Path, required=True)
+    cli.add_argument("--expected-stage-sha", required=True)
+    cli.add_argument("--execute-host-offline", action="store_true")
+    a = cli.parse_args()
+    p = inspect(source=a.source, stage=a.stage, stage_sha=a.expected_stage_sha)
+    output = p["target"]
+    if output.exists():
+        raise ValueError("ONE_SHOT_WITNESS_TARGET_ALREADY_EXISTS_NO_RETRY")
+    if not a.execute_host_offline:
+        print(json.dumps({"status": "READ_ONLY_PREVIEW_NO_WRITES",
+                          "stage_sha": p["stage_sha"],
+                          "source_head": p["source_head"],
+                          "files_verified": p["verified_files"],
+                          "target": str(output),
+                          "model_http": 0, "orders": False,
+                          "paper_release_authorized": False}, sort_keys=True))
+        return 0
+    # Only approved isolated Research target is created. On error leave partial
+    # files intact for owner review; never silently retry and overwrite.
+    output.mkdir(mode=0o700)
+    report = run_offline_cases(output, p["series_id"],
+                               stage=p["stage"], source=p["source"])
+    report["stage_source_sha"] = p["stage_sha"]
+    report["independent_source_git_sha"] = p["source_head"]
+    report["journal_path"] = str(output / "journal")
+    report["ack_path_planned_only"] = str(output / "cloud-ack.json")
+    path = output / "offline-model-stub-witness.json"
+    with path.open("x", encoding="utf-8") as fh:
+        json.dump(report, fh, sort_keys=True, indent=2)
+        fh.flush()
+        os.fsync(fh.fileno())
+    # No relay call here. Existing v3_paper_cloud_receipt_sync_v1.py is the
+    # separately user-authorized transport; independent SQL query after that.
+    print(json.dumps({"status": report["status"], "series_id": p["series_id"],
+                      "witness_file": str(path), "journal_path": report["journal_path"],
+                      "cases": [{"case": x["case"], "decision": x["p4_decision"],
+                                 "paper_fills": x["paper_fill_count"]}
+                                for x in report["cases"]],
+                      "cloud_ack": False, "orders": False,
+                      "technical_release_proofs_credited": 0},
+                     sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
