@@ -88,6 +88,9 @@ def read_first_pit_base(candidate: dict[str, Any],
         data = receipt["data"]
         base = data["initial_pit_15m_base"]
         if (receipt.get("phase") != "SOURCE_INPUT" or receipt.get("result") != "PASS"
+                or receipt.get("event_key") != "FIRST"
+                or data.get("source_status") != "COMPLETE"
+                or data.get("frame_status_15m") != "VALID"
                 or receipt.get("pair") != candidate.get("pair")
                 or receipt.get("candidate_id") != candidate.get("candidate_id")
                 or _utc(receipt["event_time_utc"]) != _utc(candidate["event_time_utc"])
