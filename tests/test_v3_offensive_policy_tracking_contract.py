@@ -141,6 +141,32 @@ class OffensiveV3PolicyTrackingContractTests(unittest.TestCase):
         rows = self.bundle["offensive_paper_policy_concrete_20261018"]["acceptance_tracking"]["items"]
         self.assertTrue(all(x["acceptance"] == "NOT_ACCEPTED" for x in rows))
 
+    def test_continuity_offensive_variants_are_real_shadow_worker_inputs_not_auto_buy(self):
+        root = Path(__file__).resolve().parents[1]
+        source = (root / "paper_evaluator/v3_paper_minipc_selective_tick_v1.py").read_text("utf-8")
+        start = source.index("    # Shadow-only offensive CONTINUITY comparison")
+        end = source.index("    now=clock(clock_now())", start)
+        shadow = source[start:end]
+        for required in (
+            'original_model["data"].get("raw_setup_lane")=="CONTINUITY"',
+            'p4["result"] in ("WAIT","REJECT")',
+            "witnessed_15m_from_existing_1m_path(",
+            "propose_continuity_fresh_review(",
+            "propose_early_5m_continuity_review(",
+            "propose_experimental_continuity_review(",
+            '"same_witnessed_archive":True',
+            '"model_http_attempts_reserved":0',
+            '"paper_writer_started":False',
+            '"release_evidence":False',
+        ):
+            self.assertIn(required, shadow)
+        for prohibited in (
+            "one_candidate(", "model_client(", "reserve_before_http(",
+            "store_receipt_explicitly(", "record_horizon(",
+            "PAPER_FILL", "_require_released_paper_cloud(",
+        ):
+            self.assertNotIn(prohibited, shadow)
+
     def test_missing_duplicate_or_reordered_policy_identity_is_rejected(self):
         import copy
         for change in (
