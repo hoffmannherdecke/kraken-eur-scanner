@@ -350,11 +350,15 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                     reentry_quote.setdefault("pair",pair)
                 observed=clock_now()
                 baseline={"setup_lane":"CONTINUITY","decision":p4["result"]}
+                # Early-5m MUST see the two original pre-detection bars,
+                # never the latest bars assembled after the candidate.
+                # Standard/soft-volume retain the same complete witnessed
+                # history as their own strategy contracts require.
                 standard=propose_continuity_fresh_review(
                     candidate,baseline,reentry_coin,reentry_quote,witnessed,
                     decision_at_utc=observed)
                 early=propose_early_5m_continuity_review(
-                    candidate,baseline,reentry_coin,reentry_quote,witnessed,
+                    candidate,baseline,reentry_coin,reentry_quote,prior_closed,
                     decision_at_utc=observed)
                 volume=propose_experimental_continuity_review(
                     candidate,baseline,reentry_coin,reentry_quote,witnessed,
