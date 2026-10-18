@@ -197,9 +197,9 @@ class SourceDrivenV3PaperTests(unittest.TestCase):
                 mismatch=released_paper_positive_catalyst_model_once(
                     **dict(common,existing_context={"news_sentiment":altered}))
                 self.assertEqual(mismatch["status"],
-                    "POSITIVE_SOURCE_OWNER_NOT_AUTHENTICATED_NO_MODEL"
-                    if mismatch.get("status")== "POSITIVE_SOURCE_OWNER_NOT_AUTHENTICATED_NO_MODEL"
-                    else "POSITIVE_SOURCE_NOT_CURRENT_NO_MODEL")
+                    "POSITIVE_SOURCE_OWNER_NOT_AUTHENTICATED_NO_MODEL")
+                self.assertEqual(mismatch["source_status"],
+                    "OWNER_PACKET_MISSING_OR_SOURCE_CONTEXT_MISMATCH")
                 self.assertEqual(calls,[])
                 self.assertFalse(list(journal.glob("*.json")))
                 self.assertFalse(list(budget.glob("*")))
