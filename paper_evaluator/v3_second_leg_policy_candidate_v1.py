@@ -89,7 +89,10 @@ def canonical_second_leg_episode(*,series_id:str,
             or int(closed.timestamp())%900!=0
             or not first<closed<=observed
             or not 0<=(observed-first).total_seconds()<=4*3600
-            or not 0<=(observed-closed).total_seconds()<=120):
+            # A valid 15m closed bar remains source-fresh under the same
+            # 1.5-bar bound as canonical Kraken PIT validation; never add
+            # a hidden two-minute veto on top of the actual 1m/5m source.
+            or not 0<=(observed-closed).total_seconds()<=15*90):
         raise ValueError("missing fresh closed prospective 15m episode clock")
     # The identity is stable even if the same source is read again later.
     stable_close=closed.isoformat().replace("+00:00","Z")
