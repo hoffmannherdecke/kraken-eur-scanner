@@ -9,6 +9,9 @@ from paper_evaluator.v3_paper_minipc_selective_tick_v1 import tick_once
 from tests.test_v3_paper_wait_observer_v1 import seed,SID,CID,t
 from tests.test_v3_paper_minipc_selective_tick_v1 import candidate,tick_capture
 from paper_evaluator.v3_extended_reentry_review_v1 import extended_reentry_review
+from paper_evaluator.v3_second_leg_policy_candidate_v1 import prepare_original_owner_reentry_child
+from paper_evaluator.v3_experimental_paper_journal_v1 import make_receipt,store_receipt_explicitly
+from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
 
 class ExtendedReentryHandoffTests(unittest.TestCase):
     def test_eligible_routes_to_full_review_without_trade_authority(self):
@@ -140,6 +143,27 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
                 capture=witnessed_current,fetch=fetch,ticker=quote)
             self.assertTrue(first["extended_reentry"]["full_model_review_candidate"],
                             first["extended_reentry"])
+            p1=first["extended_reentry"]
+            child=prepare_original_owner_reentry_child(
+                journal=journal,series_id=SID,original_candidate=original,
+                parent_event_key=p1["reentry_parent_event_key"],
+                now_at_utc=t(at+timedelta(seconds=9)))
+            self.assertEqual(child["status"],
+                "P1_CHILD_PREPARED_MODEL_AND_PAPER_STILL_GATED")
+            self.assertEqual(child["child_candidate"]["candidate_id"],
+                             p1["reentry_episode_id"])
+            self.assertEqual(child["child_candidate"]["event_time_utc"],
+                             p1["reentry_episode_signal_at_utc"])
+            self.assertNotEqual(child["child_candidate"]["event_time_utc"],
+                                original["event_time_utc"])
+            self.assertFalse(child["approval_to_call_model"])
+            self.assertEqual(child["model_calls"],0)
+            self.assertEqual(child["paper_fills"],0)
+            with self.assertRaises(ValueError):
+                prepare_original_owner_reentry_child(
+                    journal=journal,series_id=SID,original_candidate=original,
+                    parent_event_key=p1["reentry_parent_event_key"],
+                    now_at_utc=t(at+timedelta(seconds=130)))
             self.assertEqual(first["extended_reentry"]["model_calls"],0)
             self.assertEqual(first["extended_reentry"]["paper_fills"],0)
             self.assertEqual(second["extended_reentry"]["status"],
@@ -170,6 +194,23 @@ class ExtendedReentryHandoffTests(unittest.TestCase):
             self.assertFalse(any(r["phase"]=="PAPER_FILL" for r in receipts))
             self.assertEqual(len([r for r in receipts
                                   if r["phase"]=="MODEL_REQUEST"]),0)
+            # Replaying the exact same closed bar into a child with any
+            # existing immutable phase must never create another episode.
+            childrec=make_receipt(
+                series_id=SID,revision=REVISION,
+                candidate_id=child["child_candidate"]["candidate_id"],
+                pair=original["pair"],
+                event_time_utc=child["child_candidate"]["event_time_utc"],
+                known_at_utc=t(at+timedelta(seconds=2)),
+                phase="MODEL_REQUEST",result="UNKNOWN",
+                data={"phase_failure_stage":"TEST_NO_PAID_MODEL"})
+            store_receipt_explicitly(journal,childrec)
+            blocked=prepare_original_owner_reentry_child(
+                journal=journal,series_id=SID,original_candidate=original,
+                parent_event_key=p1["reentry_parent_event_key"],
+                now_at_utc=t(at+timedelta(seconds=9)))
+            self.assertEqual(blocked["status"],"P1_CHILD_ALREADY_JOURNALED_NO_REPLAY")
+            self.assertEqual(blocked["model_calls"],0)
 
     def test_old_model_lane_cannot_be_invented_by_candidate_or_reason(self):
         at=datetime(2026,10,12,8,45,7,tzinfo=timezone.utc)
