@@ -506,6 +506,89 @@ class P1NativeModelWriterTests(unittest.TestCase):
                         self.fail("model must not retry"))["status"],
                                      "P1_CHILD_ALREADY_JOURNALED_NO_MODEL_RETRY")
 
+    def test_p1_restart_follows_new_fill_clock_not_old_scanner(self):
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
+            plan_canary_resume,released_paper_followup_tick_once,
+            _RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK,
+        )
+        from tests.test_v3_paper_minipc_selective_tick_v1 import tick_capture
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);p=self.prepare(root)
+            first=self.call(root,p)
+            self.assertTrue(first["paper_entry_receipt_verified_local"])
+            at,parent,child,approval,cloud,pit,model=p
+            j=root/"journal";cap=root/"capture";budget=root/"budget"
+            ack=root/"cloud-ack.json"
+            status=plan_canary_resume(
+                candidate=child,series_id=self.SERIES,journal=j,
+                model_reservations=budget,ack_file=ack,
+                _released_planner_capability=_RELEASED_TICK_AFTER_LIVE_CLOUD_LOCK)
+            self.assertEqual(status["status"],
+                             "FOLLOWUP_ONLY_SAFE_FOR_EXISTING_CANARY_TICK")
+            self.assertTrue(status["can_tick"])
+            records=[json.loads(f.read_text()) for f in j.glob("*.json")]
+            fill=[x for x in records if x["phase"]=="PAPER_FILL"][0]
+            fill_at=datetime.fromisoformat(fill["known_at_utc"].replace("Z","+00:00"))
+            # More than 6h after old scanner, but NOT 6h after new Paper fill.
+            early=fill_at+timedelta(hours=6,seconds=-30)
+            self.assertGreater(early-START,timedelta(hours=6))
+            def follow(when):
+                config=dict(cloud,observed_at_utc=t(when))
+                return released_paper_followup_tick_once(
+                    candidate=child,series_id=self.SERIES,journal=j,
+                    capture_dir=cap,model_reservations=budget,ack_file=ack,
+                    expected_repo_sha=self.REPO,
+                    expected_bundle_sha256=self.BUNDLE,
+                    expected_strategy_sha256=self.STRATEGY,
+                    read_active_series=lambda _:config,
+                    clock_now=lambda:t(when),
+                    capture=tick_capture(when),
+                    fetch=lambda *_:self.fail("no fresh second-leg recompute for child"),
+                    ticker=lambda *_:self.fail("no source trade quote"))
+            out=follow(early)
+            self.assertEqual(out["horizons"],{})
+            self.assertFalse(any(x["phase"]=="FOLLOWUP_6H" and
+                                  x["result"] in ("MATURE_COMPLETE","CENSORED")
+                                  for x in records))
+            after=fill_at+timedelta(hours=6,minutes=1)
+            out=follow(after)
+            self.assertEqual(out["horizons"]["6h"],
+                             "FOLLOWUP_DATA_GAP_PENDING_BOUNDED_RECOVERY")
+            self.assertFalse(out["model_called"])
+            self.assertFalse(out["orders"])
+            self.assertEqual(len(list(budget.glob("*.reserved.json"))),1)
+
+    def test_native_p1_child_paper_cloud_forwarding_uses_same_relay_once(self):
+        from paper_evaluator.v3_paper_minipc_selective_tick_v1 import released_paper_cloud_ack_once
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td);p=self.prepare(root)
+            out=self.call(root,p)
+            self.assertTrue(out["paper_entry_receipt_verified_local"])
+            at,_,child,_,cloud,_,_=p
+            observed=[]
+            def relay(url,token,payload):
+                rows=[json.loads(x["canonical_json"]) for x in payload["receipts"]]
+                observed.extend(rows)
+                self.assertTrue(all(x["series_id"]==self.SERIES for x in rows))
+                return {"ok":True,"series_id":self.SERIES,
+                        "accepted_receipts":len(rows)}
+            kw=dict(series_id=self.SERIES,journal=root/"journal",
+                    ack_file=root/"ack.json",token="FAKE_CI_RELAY_TOKEN_NOT_ACTUAL",
+                    expected_repo_sha=self.REPO,
+                    expected_bundle_sha256=self.BUNDLE,
+                    expected_strategy_sha256=self.STRATEGY,
+                    read_active_series=lambda _:cloud,
+                    clock_now=lambda:t(at+timedelta(seconds=9)),
+                    cloud_post=relay)
+            once=released_paper_cloud_ack_once(**kw)
+            self.assertEqual(once["status"],"V3_RECEIPTS_CLOUD_ACK_VERIFIED")
+            self.assertEqual(len([x for x in observed
+                                  if x["phase"]=="PAPER_FILL" and
+                                     x["candidate_id"]==child["candidate_id"]]),1)
+            twice=released_paper_cloud_ack_once(**kw)
+            self.assertEqual(twice["status"],"NO_UNSYNCED_V3_RECEIPTS")
+            self.assertFalse(out["independent_cloud_paper_fill_ack"])
+
     def test_native_p1_stale_source_and_unapproved_budget_do_not_spend(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td);p=self.prepare(root)
