@@ -394,6 +394,7 @@ def one_candidate(*,candidate:dict[str,Any],series_id:str,
             "model_response_id":str(metadata.get("response_id") or "")[:150],
             "model_name":str(metadata.get("model") or "")[:80],
             "raw_model_decision":raw.get("decision"),
+            "raw_setup_lane":raw.get("setup_lane"),
             "raw_reason_codes":[str(c)[:90] for c in (raw.get("reason_codes") or [])[:8]],
             "raw_missing_triggers":[str(c)[:90] for c in
                                     (raw.get("missing_triggers") or [])[:8]]
