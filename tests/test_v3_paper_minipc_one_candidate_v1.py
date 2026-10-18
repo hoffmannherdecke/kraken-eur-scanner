@@ -229,6 +229,14 @@ class V3MiniPCOneCandidateTests(unittest.TestCase):
             self.assertEqual(len([r for r in rows if r["phase"]=="SCANNER_CAPTURE"]),1)
             self.assertEqual({r["event_key"] for r in rows
                               if r["phase"]=="MODEL_REQUEST"},{"FRESHRECHECK"})
+            # The REAL staged original P0 SOURCE_INPUT has the same native
+            # FRESHRECHECK key; replay must accept it without promoting a
+            # later WAIT source or pretending the OHLC was seen pre-signal.
+            from paper_evaluator.v3_first_pit_presignal_15m_v1 import read_first_pit_base
+            source=next(r for r in rows if r["phase"]=="SOURCE_INPUT")
+            self.assertEqual(source["event_key"],"FRESHRECHECK")
+            self.assertIsNotNone(read_first_pit_base(
+                candidate,source,decision_at_utc=dt(12)))
             self.assertIn(("P4_VALIDATION","BUY_SCOUT"),
                           {(r["phase"],r["result"]) for r in rows})
             self.assertIn(("FOLLOWUP_24H","PENDING"),
