@@ -200,7 +200,12 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                 coin=fetch(altname,pair)
                 q=ticker(altname)
                 reentry_coin=coin
-                reentry_quote=q
+                # The existing Kraken public ticker client does not carry an
+                # exchange observation timestamp. Its real local completion
+                # time is known only AFTER the quote was acquired.
+                reentry_quote=dict(q,observed_at_utc=(
+                    q.get("observed_at_utc") or clock_now()))
+                reentry_quote.setdefault("pair",pair)
                 frames=coin.get("frames") or {}
                 frame=frames.get("5") or {}
                 frame1=frames.get("1") or {}
@@ -250,7 +255,10 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
         if reentry_coin is None:
             try:
                 reentry_coin=fetch(altname,pair)
-                reentry_quote=ticker(altname)
+                raw_quote=ticker(altname)
+                reentry_quote=dict(raw_quote,observed_at_utc=(
+                    raw_quote.get("observed_at_utc") or clock_now()))
+                reentry_quote.setdefault("pair",pair)
             except (OSError,ValueError,KeyError,TypeError) as exc:
                 reentry_coin={"pair":pair,
                     "status":"UNKNOWN_KRAKEN_SECOND_LEG_SOURCE_"+type(exc).__name__.upper()}
