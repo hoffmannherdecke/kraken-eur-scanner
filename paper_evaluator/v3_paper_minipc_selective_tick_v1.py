@@ -380,11 +380,15 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                 # 5m candle, otherwise record an explicit no-review hold.
                 fresh5=(reentry_coin.get("frames") or {}).get("5") or {}
                 close5_at=fresh5.get("last_closed_bar_end_utc")
-                if (first_base is not None and (
-                        not isinstance(close5_at,str)
-                        or clock(first_base["first_known_at_utc"])>clock(p4["known_at_utc"])
-                        or clock(close5_at)<clock(first_base["first_known_at_utc"])
-                        or clock(close5_at)<clock(p4["known_at_utc"]))):
+                # Even when the pre-signal 15m base was genuinely witnessed
+                # BEFORE detection, the original P4 must still precede this
+                # newly CLOSED 5m confirmation. A late original decision
+                # cannot retroactively become an "early" P3 review.
+                if (not isinstance(close5_at,str)
+                        or clock(close5_at)<clock(p4["known_at_utc"])
+                        or (first_base is not None and (
+                            clock(first_base["first_known_at_utc"])>clock(p4["known_at_utc"])
+                            or clock(close5_at)<clock(first_base["first_known_at_utc"]))):
                     early={"status":"FIRST_PIT_P4_5M_CHRONOLOGY_UNPROVEN_NO_REVIEW",
                            "request_model_recheck_only":False}
                 else:
