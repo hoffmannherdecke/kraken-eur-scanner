@@ -88,8 +88,8 @@ IMPLEMENTATION_SURFACES = {
         "def propose_initial_full_review(",
     ),
     "POSITIVE_CATALYST_BUY": (
-        "paper_evaluator/v3_paper_positive_source_entry_v1.py",
-        "def assess_positive_source(",
+        "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+        "def released_paper_positive_catalyst_model_once(",
     ),
     "WAIT_REJECT_FRESH_RECHECK": (
         "paper_evaluator/v3_second_leg_policy_candidate_v1.py",
