@@ -320,17 +320,9 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
             from paper_evaluator.v3_continuity_fresh_review_candidate_v1 import (
                 propose_continuity_fresh_review,
             )
-            if reentry_coin is None:
-                reentry_coin=fetch(altname,pair)
-                raw_quote=ticker(altname)
-                reentry_quote=dict(raw_quote,observed_at_utc=(
-                    raw_quote.get("observed_at_utc") or clock_now()))
-                reentry_quote.setdefault("pair",pair)
             observed=clock_now()
-            # Followup archive intentionally starts at the scanner signal.
-            # Early 5m needs two CLOSED 15m bars *before* that signal:
-            # assemble a separate research view of ALREADY SAVED snapshots.
-            # Never use today's public OHLC history as a late fake witness.
+            # Check disk-only pre-signal source before any optional extra Kraken
+            # entry/quote call. Missing history must be a zero-request hold.
             history_start=(source_time-timedelta(minutes=45)).isoformat()
             research_path=assemble(
                 snapshots=capture_dir,pair=pair,
@@ -350,6 +342,13 @@ def tick_once(*,candidate:dict[str,Any],series_id:str,journal:Path,
                     "paper_writer_started":False,"orders":False,
                     "real_money_actions":False,"release_evidence":False}
             else:
+                if reentry_coin is None:
+                    reentry_coin=fetch(altname,pair)
+                    raw_quote=ticker(altname)
+                    reentry_quote=dict(raw_quote,observed_at_utc=(
+                        raw_quote.get("observed_at_utc") or clock_now()))
+                    reentry_quote.setdefault("pair",pair)
+                observed=clock_now()
                 baseline={"setup_lane":"CONTINUITY","decision":p4["result"]}
                 standard=propose_continuity_fresh_review(
                     candidate,baseline,reentry_coin,reentry_quote,witnessed,
