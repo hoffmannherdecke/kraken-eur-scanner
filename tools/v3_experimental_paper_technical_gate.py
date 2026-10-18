@@ -242,6 +242,98 @@ def _evidence_content_error(
         by_origin[origin]=payload
     if not required.issubset(present):
         return name+" missing required independent Mini-PC/Cloud/Work source role"
+    # Technical proof #1 must NOT be a generic "the model and writer work"
+    # claim. A real one-shot response MAY be WAIT/REJECT; the TWO physically
+    # executed positive/negative Paper writer dry-runs may use *offline* model
+    # stubs, but their actual host receipts must be independently inspected.
+    # Never demand a profitable natural BUY before experimental Paper start.
+    if name=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E":
+        host=by_origin["MINIPC_PHYSICAL"]
+        original=host.get("original_model_p4_readback")
+        cases=host.get("native_paper_writer_dryrun_cases")
+        if (not isinstance(original,dict) or
+                not isinstance(cases,list) or len(cases)!=2):
+            return name+" original paid-model and both Paper writer paths missing"
+        if (original.get("model_http_attempts_reserved")!=1
+                or original.get("model_http_retries")!=0
+                or original.get("p4_decision") not in
+                    ("BUY_SCOUT","WAIT","REJECT","UNKNOWN")
+                or original.get("source_pit_complete") is not True
+                or original.get("no_real_orders") is not True
+                or not isinstance(original.get("model_response_id"),str)
+                or not 8<=len(original["model_response_id"])<=150
+                or not isinstance(original.get("original_pit_sha256"),str)
+                or not SHA.fullmatch(original["original_pit_sha256"])
+                or not isinstance(original.get("original_p4_receipt_sha256"),str)
+                or not SHA.fullmatch(original["original_p4_receipt_sha256"])):
+            return name+" actual one-shot model/PIT/P4 original not complete"
+        by_case={x.get("case") if isinstance(x,dict) else None:x for x in cases}
+        if (len(by_case)!=2 or set(by_case)!=
+                {"POSITIVE_BUY_SCOUT","NEGATIVE_REJECT"}):
+            return name+" two distinct positive/negative writer cases required"
+        positive=by_case["POSITIVE_BUY_SCOUT"]
+        negative=by_case["NEGATIVE_REJECT"]
+        if (positive.get("p4_decision")!="BUY_SCOUT"
+                or positive.get("paper_fill_result")!="PAPER_FILLED"
+                or positive.get("paper_fill_count")!=1
+                or positive.get("paper_scout_eur")!=50
+                or positive.get("paper_entry_taker_fee_eur")!=0.30
+                or negative.get("p4_decision")!="REJECT"
+                or negative.get("paper_fill_result")!="NO_PAPER_FILL"
+                or negative.get("paper_fill_count")!=0):
+            return name+" positive/negative P4 to immutable Paper fill contradiction"
+        ids=[]
+        for case in cases:
+            cid=case.get("candidate_id")
+            series=case.get("series_id")
+            if (not isinstance(cid,str) or not ORIGINAL_ID.fullmatch(cid)
+                    or not isinstance(series,str)
+                    or not re.fullmatch(r"PAPER-V3-[A-Za-z0-9-]{8,96}",series)
+                    or case.get("execution_kind")!="PHYSICAL_MINIPC_OFFLINE_MODEL_STUB"
+                    or case.get("original_native_owner_lock_verified") is not True
+                    or case.get("disk_ledger_readback_verified") is not True
+                    or case.get("no_real_orders") is not True
+                    or case.get("no_provider_model_http_in_dryrun") is not True
+                    or case.get("v2r4_runtime_unchanged") is not True
+                    or not isinstance(case.get("p4_record_sha256"),str)
+                    or not SHA.fullmatch(case["p4_record_sha256"])
+                    or not isinstance(case.get("native_journal_record_sha256"),str)
+                    or not SHA.fullmatch(case["native_journal_record_sha256"])):
+                return name+" original host model/P4/ledger dry-run identity missing"
+            ids.append((series,cid))
+        if len(set(ids))!=2 or ids[0][0]!=ids[1][0]:
+            return name+" positive and negative host cases must be separate same-series candidates"
+        try:
+            p4_time=datetime.fromisoformat(
+                positive["p4_known_at_utc"].replace("Z","+00:00"))
+            fill_time=datetime.fromisoformat(
+                positive["paper_fill_known_at_utc"].replace("Z","+00:00"))
+            if (p4_time.tzinfo is None or fill_time.tzinfo is None
+                    or fill_time<p4_time):
+                raise ValueError("positive original fill timestamp precedes P4")
+        except (KeyError,ValueError,AttributeError,TypeError,OverflowError):
+            return name+" positive Paper fill/P4 time ordering not witnessed"
+    if name=="V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT":
+        host=by_origin["MINIPC_PHYSICAL"]
+        checks=(
+            "stop_below_current_ask_tested",
+            "stage2_above_current_ask_and_ttl_tested",
+            "taker_fee_roundtrip_spread_slippage_counted_tested",
+            "invalid_stop_or_stage2_never_creates_fill_tested",
+            "negative_net_edge_never_creates_fill_tested",
+            "wait_trigger_no_buy_without_new_full_model_p4_tested",
+            "missing_response_id_quarantined_tested",
+            "p4_buy_without_durable_fill_quarantined_tested",
+            "interrupted_http_reservation_never_retried_tested",
+            "duplicate_child_episode_never_bought_twice_tested",
+            "no_real_orders_tested",
+        )
+        if (any(host.get(key) is not True for key in checks)
+                or host.get("paper_scout_eur")!=50
+                or host.get("paper_stage2_eur")!=50
+                or host.get("taker_fee_pct_each_side")!=0.6
+                or host.get("paper_entry_fee_eur")!=0.30):
+            return name+" physical Stop/Stage2/fee/WAIT/one-shot safety incomplete"
     # Strengthen the EXISTING journal/WAIT/followup proof, not a seventh gate.
     # A single TIA WAIT_RECHECK followed by UNKNOWN expiry proves fail-closed
     # missingness, NOT a continuously witnessed TTL or 6/24/72h followups.
