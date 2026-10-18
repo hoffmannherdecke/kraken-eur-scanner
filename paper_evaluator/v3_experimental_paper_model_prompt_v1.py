@@ -10,6 +10,11 @@ from typing import Any
 from paper_evaluator.v3_experimental_paper_initial_review_v1 import (
     KIND as INITIAL_KIND, ELIGIBLE as INITIAL_ELIGIBLE,
 )
+from paper_evaluator.v3_full_entry_decision_candidate_v1 import (
+    ELIGIBLE_STATUS as SECOND_LEG_ELIGIBLE,
+    SECOND_LEG_ELIGIBLE_KIND as SECOND_LEG_KIND,
+    SECOND_LEG_P1_CHECKS,
+)
 from paper_evaluator.v3_entry_handoff_probe import attach_to_future_evaluator,utc
 from paper_evaluator.v3_paper_context_bridge_v1 import (KIND as CONTEXT_KIND, fuse_existing_sources)
 from paper_evaluator.v3_paper_positive_source_entry_v1 import (
@@ -27,13 +32,25 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
                                      decision_at_utc:str,
                                      optional_context:dict[str,Any]|None=None)->str:
     """Return model input only; no model call, simulated trade, or raw outcome."""
-    if (eligibility.get("status")!=INITIAL_ELIGIBLE
-            or eligibility.get("kind")!=INITIAL_KIND
+    initial=(eligibility.get("status")==INITIAL_ELIGIBLE
+             and eligibility.get("kind")==INITIAL_KIND)
+    p1=(eligibility.get("status")==SECOND_LEG_ELIGIBLE
+        and eligibility.get("kind")==SECOND_LEG_KIND)
+    p1_checks=eligibility.get("checks")
+    if (not (initial or p1)
             or eligibility.get("request_model_recheck_only") is not True
             or eligibility.get("source_candidate_id")!=candidate.get("candidate_id")
             or eligibility.get("pair")!=candidate.get("pair")
-            or eligibility.get("new_snapshot_known_at_utc")!=entry_evidence.get("known_at_utc")):
-        raise ValueError("V3 initial real source review not authorized")
+            or eligibility.get("new_snapshot_known_at_utc")!=entry_evidence.get("known_at_utc")
+            or (p1 and (
+                eligibility.get("original_candidate_historical_only") is not True
+                or eligibility.get("approval_to_call_model") is not False
+                or type(eligibility.get("base_15m_bars")) is not int
+                or not 4<=eligibility["base_15m_bars"]<=12
+                or not isinstance(p1_checks,dict)
+                or set(p1_checks)!=SECOND_LEG_P1_CHECKS
+                or any(v is not True for v in p1_checks.values())))):
+        raise ValueError("no canonical prospective V3 initial or P1 full review")
     attached=attach_to_future_evaluator(
         {"pair":candidate.get("pair")},{},entry_evidence,decision_at_utc)
     if (ticker.get("pair")!=candidate.get("pair")
@@ -106,7 +123,11 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
         "decision_at_utc":decision_at_utc,
         "source_eligibility":{k:eligibility.get(k) for k in
                               ("kind","status","checks","source_5m_volume_ratio",
-                               "new_snapshot_known_at_utc")},
+                               "new_snapshot_known_at_utc","base_15m_bars",
+                               "original_candidate_historical_only",
+                               "base_high_eur_descriptive_only",
+                               "base_low_eur_descriptive_only",
+                               "new_snapshot_observed_at_utc")},
         "current_kraken_execution":{k:ticker.get(k) for k in
                                     ("pair","bid","ask","spread_pct","observed_at_utc")},
         "current_kraken_spot_eur_pair":{k:pair_metadata.get(k) for k in
@@ -122,6 +143,13 @@ def build_v3_paper_full_model_prompt(*,candidate:dict[str,Any],
 Return ONE JSON decision only, no markdown; no signals from future outcomes.
 This is a NEW independent V3 decision policy, NOT the V2R3/V2R4 old
 conservative model prompt. Scanner ranking is a sensor, never a BUY vote.
+
+For P1 EXTENDED reentry, the original candidate clock is historical,
+NOT fresh entry authority. Only the new independently witnessed CLOSED 15m
+reclaim, with original source capture provenance, is the prospective reason
+for this second and separately budgeted full review. A model response must
+validate the current Kraken ask, cost-net upside, independent stop and Stage2.
+No retrospective MFE or expired prior WAIT is a buy signal.
 
 A second, INDEPENDENT SOURCE-CATALYST ENTRY PATH exists: when the verified
 positive_source_trigger_for_independent_paper_entry is non-null, treat it as
