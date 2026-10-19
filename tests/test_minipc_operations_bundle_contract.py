@@ -53,7 +53,7 @@ class ReviewedOperationsBundleTests(unittest.TestCase):
         self.assertIn("new_permissions = $false", s)
         self.assertIn("trading_orders_permitted = $false", s)
         self.assertIn("active_runtime_release = $false", s)
-        self.assertEqual(s.count("Write-Host ('MINIPC_OPERATIONS_BATCH_SAFE_SUMMARY_V1 '"), 1)
+        self.assertEqual(s.count("write-host ('minipc_operations_batch_safe_summary_v1 '"), 1)
 
     def test_honest_partial_readback_without_raw_child_output(self):
         for token in (
