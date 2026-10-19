@@ -82,8 +82,12 @@ if ($task.readback -ne 'READ_OK') {
     } catch {
         $task.com_probe = SchedulerReadErrorClass $_
         if ($task.readback -ne 'PARTIAL_INFO_UNAVAILABLE') {
-            $task.readback = if ($task.com_probe -eq 'ACCESS_DENIED' -and
-                $task.cmdlet_probe -eq 'ACCESS_DENIED') { 'ACCESS_DENIED' } else { 'UNAVAILABLE' }
+            if ($task.com_probe -eq 'ACCESS_DENIED' -and
+                $task.cmdlet_probe -eq 'ACCESS_DENIED') {
+                $task.readback = 'ACCESS_DENIED'
+            } else {
+                $task.readback = 'UNAVAILABLE'
+            }
         }
     }
 }
