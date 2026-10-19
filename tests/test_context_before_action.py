@@ -60,12 +60,12 @@ class ContextBeforeActionTests(unittest.TestCase):
         architecture = (ROOT / ".github/workflows/architecture-cleanup-validation.yml").read_text()
         control = (ROOT / ".github/workflows/project-control-plane-guard.yml").read_text()
         context = (ROOT / ".github/workflows/project-context-change-gate.yml").read_text()
-        self.assertIn("  validate:\\n", architecture)
-        self.assertIn("  control-plane-validate:\\n", control)
-        self.assertNotIn("  validate:\\n", control)
-        self.assertIn("  source-and-review:\\n", context)
-        self.assertIn("  pull_request:\\n", context)
-        self.assertIn("  pull_request:\\n", architecture)
+        self.assertIn("  validate:\n", architecture)
+        self.assertIn("  control-plane-validate:\n", control)
+        self.assertNotIn("  validate:\n", control)
+        self.assertIn("  source-and-review:\n", context)
+        self.assertIn("  pull_request:\n", context)
+        self.assertIn("  pull_request:\n", architecture)
 
     def test_compact_agents_preserves_full_rule_and_archival_boundary(self):
         agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
