@@ -441,8 +441,8 @@
       "reviewed_windows_maintenance_diagnostics": {
         "task_name": "windows_maintenance_snapshot",
         "source_script": "tools/minipc_runner_tasks/windows_maintenance_snapshot.ps1",
-        "source_ci_status": "SOURCE_REVIEWED_MERGED_HOST_PENDING",
-        "actual_windows_task_e2e": "PENDING_ORIGINAL_HOST_ACK",
+        "source_ci_status": "MERGED_SOURCE_AND_REVIEW_PASS",
+        "actual_windows_task_e2e": "PASS_RESTRICTED_HOST_RUN_AND_SANITIZED_GITHUB_STATUS",
         "request_via_existing_workflow_only": true,
         "no_arbitrary_shell_or_admin": true,
         "no_service_task_update_or_restart": true,
@@ -456,7 +456,26 @@
         ],
         "safe_github_job_log_marker": "MINIPC_MAINTENANCE_SAFE_SUMMARY_V1",
         "no_raw_log_or_unbounded_output": true,
-        "host_original_ack_still_required": true
+        "host_original_ack_still_required": false,
+        "original_host_evidence": {
+          "original_private_issue_comment": 6266050953,
+          "original_workflow_run_id": 39244255416,
+          "original_workflow_job_id": 118032214850,
+          "original_public_main_sha": "b1fd121fc7b1b0609c3bec5d2af513326b7ba3f2",
+          "observed_at_utc": "2026-10-19T11:23:32Z",
+          "safe_marker_confirmed": true,
+          "real_mini_pc_job_completed_success": true,
+          "restricted_service_state_during_job": "Running",
+          "restricted_service_start_mode_during_job": "Disabled",
+          "bounded_scheduler_task_metadata": "UNAVAILABLE_RESTRICTED_ACCOUNT",
+          "post_window_safe_pause": "PENDING_ORIGINAL_HOST_READBACK",
+          "update_reboot_markers": "BOTH_PRESENT_AT_ORIGINAL_OBSERVATION",
+          "update_pause_expiry_utc": "2026-10-31T18:31:39Z",
+          "cpu_class_original_observation": "I5-8500T",
+          "safe_report_is_dated_not_live_now": true
+        },
+        "post_window_safe_pause_original_ack_pending": true,
+        "no_acl_elevation_for_missing_scheduler_readback": true
       }
     }
   }

@@ -139,12 +139,16 @@ class ContextBeforeActionTests(unittest.TestCase):
                 record = packet["operational_evidence_handoff"]["projectwide_reviewed_runner"]["reviewed_windows_maintenance_diagnostics"]
                 self.assertEqual(record["task"], "windows_maintenance_snapshot")
                 self.assertEqual(record["source_fingerprint"], expected)
-                self.assertEqual(record["actual_windows_task_e2e"], "PENDING_ORIGINAL_HOST_ACK")
+                self.assertEqual(record["actual_windows_task_e2e"], "PASS_RESTRICTED_HOST_RUN_AND_SANITIZED_GITHUB_STATUS")
+                self.assertEqual(record["original_host_evidence"]["original_workflow_run_id"], 39244255416)
+                self.assertEqual(record["original_host_evidence"]["bounded_scheduler_task_metadata"], "UNAVAILABLE_RESTRICTED_ACCOUNT")
+                self.assertTrue(record["post_window_safe_pause_original_ack_pending"])
+                self.assertTrue(record["no_acl_elevation_for_missing_scheduler_readback"])
                 self.assertTrue(record["use_existing_runner_only"])
                 self.assertTrue(record["no_arbitrary_shell_or_admin"])
                 self.assertTrue(record["no_runtime_or_reboot_authority"])
                 self.assertEqual(record["safe_github_job_log_marker"], "MINIPC_MAINTENANCE_SAFE_SUMMARY_V1")
-                self.assertTrue(record["host_original_ack_still_required"])
+                self.assertFalse(record["host_original_ack_still_required"])
                 self.assertFalse(packet["declared_status"]["live_runtime_independently_checked"])
 
     def test_projectwide_reviewed_minipc_runner_is_routed_in_every_context_scope(self):
