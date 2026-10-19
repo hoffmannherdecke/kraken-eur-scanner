@@ -82,8 +82,15 @@ def read_pr_review(body: str) -> dict:
 
 
 def meaningful(value: object) -> bool:
-    return (isinstance(value, str) and len(value.strip().split()) >= MIN_WORDS
-            and not re.search(r"\b(?:REPLACE|TODO|TBD|PLACEHOLDER)\b", value, flags=re.I))
+    """Reject untouched template markers, not ordinary words in real analysis."""
+    if not isinstance(value, str) or len(value.strip().split()) < MIN_WORDS:
+        return False
+    # Original receipt template fields start with "REPLACE with ...".
+    # Blocking the same word anywhere rejected valid "do not replace ..." prose.
+    return not bool(re.match(
+        r"^\s*(?:REPLACE\s+with\b|TODO\b|TBD\b|PLACEHOLDER\b)",
+        value, flags=re.I,
+    ))
 
 
 
