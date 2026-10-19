@@ -1,9 +1,54 @@
 """Offline contract for the first restricted Mini-PC reviewed task."""
 from pathlib import Path
+import re
 import unittest
 
 SCRIPT = Path("tools/minipc_runner_tasks/host_safety_probe.ps1")
 FOLDER = Path("tools/minipc_runner_tasks")
+
+# Common fail-closed floor for *all* source-reviewed tasks, including later ones.
+# Per-task tests below remain the authority for narrower read/write boundaries.
+# This file runs on every PR as part of the already required source-and-review check.
+BASE_DENIED_COMMANDS = (
+    "invoke-expression", "invoke-command", "invoke-webrequest",
+    "invoke-restmethod", "new-pssession", "enter-pssession",
+    "start-process", "set-acl", "icacls", "start-service",
+    "stop-service", "set-service", "restart-service",
+    "register-scheduledtask", "unregister-scheduledtask",
+    "enable-scheduledtask", "disable-scheduledtask",
+    "start-scheduledtask", "restart-computer", "stop-computer",
+    "-encodedcommand", "-startupType automatic", "get-credential",
+    "supabase functions deploy",
+)
+
+
+def reviewed_task_violations(name: str, source: str) -> list[str]:
+    """Static minimum safety floor; never claim this proves Windows behavior."""
+    errors = []
+    if not source.startswith("# MINIPC_REVIEWED_TASK_V1"):
+        errors.append("reviewed task source header missing")
+    if not re.fullmatch(r"[a-z][a-z0-9_-]{0,39}", name):
+        errors.append("unsafe task basename")
+    for marker in ("CryptoSupportSvc", "MINI-PC-CryptoSupport",
+                   "WindowsBuiltInRole]::Administrator",
+                   "MINIPC_REVIEWED_TASK_ACK_V1"):
+        if marker not in source:
+            errors.append("missing original restricted runner contract: " + marker)
+    if not re.search(r"\btask\s*=\s*['\"]" + re.escape(name) + r"['\"]", source):
+        errors.append("missing exact result task identity")
+    if not re.search(r"\bmutation_scope\s*=\s*['\"]RESTRICTED['\"]", source):
+        errors.append("missing restricted mutation scope")
+    active = "\n".join(line for line in source.splitlines()
+                       if not line.lstrip().startswith("#")).lower()
+    for forbidden in BASE_DENIED_COMMANDS:
+        if forbidden.lower() in active:
+            errors.append("forbidden source token: " + forbidden)
+    if re.search(r"\bparam\s*\(", active) or "$args" in active:
+        errors.append("parameterized or free-form PowerShell")
+    if "${{" in source:
+        errors.append("workflow expression embedded in task source")
+    return errors
+
 
 class MinipcReviewedTaskSourceTests(unittest.TestCase):
     def test_only_reviewed_task_files(self):
@@ -20,6 +65,33 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
         )
         self.assertFalse(SCRIPT.is_symlink())
         self.assertLess(SCRIPT.stat().st_size, 65536)
+
+    def test_every_reviewed_task_has_minimum_nonadmin_execution_contract(self):
+        for file in sorted(FOLDER.glob("*.ps1")):
+            with self.subTest(task=file.name):
+                self.assertFalse(file.is_symlink(), file)
+                self.assertLess(file.stat().st_size, 65536, file)
+                self.assertEqual(reviewed_task_violations(
+                    file.stem, file.read_text(encoding="utf-8")), [], file.name)
+
+    def test_minimum_execution_contract_rejects_new_unsafe_commands(self):
+        good = SCRIPT.read_text(encoding="utf-8")
+        self.assertEqual(reviewed_task_violations("host_safety_probe", good), [])
+        for malicious in (
+            "Invoke-Expression $payload",
+            "Set-Acl -Path $root -AclObject $acl",
+            "Register-ScheduledTask -TaskName 'Unreviewed'",
+            "Invoke-RestMethod -Uri $remote",
+            "Start-Service -Name $otherRunner",
+            "param($userCommand)",
+            "$args | Out-String",
+        ):
+            with self.subTest(malicious=malicious):
+                self.assertTrue(reviewed_task_violations(
+                    "host_safety_probe", good + "\n" + malicious),
+                    malicious)
+        self.assertTrue(reviewed_task_violations(
+            "other_task", good), "task identity substitution must fail")
 
     def test_readonly_boundary_probe_fails_closed_and_never_prints_file_names(self):
         script = FOLDER / "access_boundary_probe.ps1"
