@@ -569,6 +569,26 @@
         "next_permission_stage": "PENDING_SEPARATE_USER_AUTHORIZATION_FOR_SCOPED_WORKSPACE_WRITE",
         "future_write_acl_currently_granted": false,
         "retesting_existing_runner_not_required": true
+      },
+      "scoped_workspace": {
+        "kind": "SCOPED_WORKSPACE_ONE_DIR_V1",
+        "document": "docs/minipc-scoped-workspace-v1.md",
+        "reviewed_task": "tools/minipc_runner_tasks/workspace_report.ps1",
+        "approved_directory": "C:\\CryptoSupport\\Workspace",
+        "source_task_name": "workspace_report",
+        "user_scope_approved": true,
+        "source_review_pass": false,
+        "windows_setup_ack": "PENDING_ORIGINAL_HOST",
+        "restricted_task_write_ack": "PENDING_ORIGINAL_HOST",
+        "no_administrator_role_for_runner": true,
+        "no_trading_runtime_authority": true,
+        "no_additional_windows_scheduler": true,
+        "all_project_scopes": [
+          "strategy",
+          "architecture",
+          "operations",
+          "research"
+        ]
       }
     }
   }
