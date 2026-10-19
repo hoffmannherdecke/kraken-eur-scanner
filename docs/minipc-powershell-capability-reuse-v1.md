@@ -1,0 +1,26 @@
+# Projektweite Mini-PC-/PowerShell-Befugnisse: Wiederverwendung vor Neubau (19.10.2026)
+
+**Verbindlicher Nutzerbeschluss für alle Krypto-Projektversionen, Projekteinstiege, ChatGPT-/Work-Aufträge und späteren Befugnisausbau.** Einziger Owner: [Issue #353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353). Kanonische Ausführung: [vorhandener Mini-PC-Runner](minipc-runner-bounded-windows-v1.md) unter `.\CryptoSupportSvc`, privater Original-Workflow/Issue #13, geschützter Public-`main`-Quell-SHA und Host-ACK. **Kein zweiter Runner, Scheduler, ChatGPT-Manager, Admin-Zugang oder freies PowerShell-Kommando.**
+
+## Immer zuerst: Vorhandene Kompetenz und damalige Originalbelege
+
+1. Vor **jeder** neuen PowerShell-/Runner-Aufgabe aktuelle `main`-Quellen, `AGENTS.md`, `PROJECT_BACKLOG.md`, `research/context-before-action-routing-v1.json`, konkrete `tools/minipc_runner_tasks/`-Funktionen und die dazugehörigen **bereits bestätigten** Originalhost-Nachweise prüfen. Den echten Kontext-vor-Aktion-Manager mit der betroffenen Scope-Bindung verwenden, nicht erst erneut PowerShell-Screenshots erbitten.
+2. Gibt es eine ausreichend passende geprüfte Funktion, diese **unverändert** nutzen. Für mehrere gleichzeitig benötigte Befunde bevorzugt `operations_readonly_bundle` (bestehende `host_safety_probe`, `windows_maintenance_snapshot`, `log_status_summary` in **einem** temporären GitHub-Job). Kein neues Skript und **kein erneuter gesamter Runner-, Fenster-, Stromausfall- oder ACL-Test**. Lediglich einzelnen konkreten Ergebnis-ACK des aktuellen Auftrags lesen.
+3. Bei einem wirklich **neuen** Funktionsbedarf erst das vorhandene Modul/die vorhandene standardisierte Aufgabensammlung gezielt erweitern, gebündelt in **einem** PR mit einmaligem Scope-/Sicherheitsreview, gezielten Offline-Tests und genau der für die *geänderte* Grenze erforderlichen Host-Abnahme. Keine Reihe von PRs/Hostproben für jeden kleineren Befund.
+4. Bei **später angeforderten größeren Rechten** zunächst einen engen Funktions- und NTFS-Zugriffskatalog plus Rückbau festlegen; nur echte zusätzliche notwendige Befugnisse einzeln freigeben und physisch abnehmen. Feste Diagnose-/Dateioperationen und nur ein gesondert autorisierter Arbeitsordner statt allgemeiner Admin-Berechtigungen. Keine in Folgesitzungen automatisch unterstellte zusätzliche Freigabe.
+5. Nur wenn fest vordefinierte Jobs tatsächlich nicht genügen: **einmaliger gesonderter Vorschlag** für streng typisierte, whitelisted Parameter im *gleichen* privaten `MINIPC_TASK_V1`-Workflow. Er würde kontrollierte Änderung des SHA-gepinnten privaten Workflows und des lokalen Prejob-Pins erfordern. **Derzeit weder implementiert noch freigegeben.**
+6. Vorbereitete, reversible **Schreiboperationen** bleiben gesondert gegen Ordnerpfad, Datei-ACL, Backup/Rollback und betroffene Runtime zu prüfen. **Windows Admin, Dienste/Task-Änderungen, CPU-/Update-/Neustart-Aktionen, Secrets, Trading/Paper/Cloud-Writer, Kraken und Budget** erfordern ihre jeweiligen separaten Original- und Nutzerfreigaben.
+
+## Umfang und Beweiskraft der sofortigen ersten Ausbaustufe
+
+`tools/minipc_runner_tasks/operations_readonly_bundle.ps1` ist ein neuer **einmalig quellreviewter, nur lesender Wrapper** um genau drei **bereits vorhandene** Aufgaben. Aufruf nach Merge über die **unveränderte** private Schnittstelle:
+
+`MINIPC_TASK_V1 | <tatsächlich gemergter 40-stelliger main-SHA> | operations_readonly_bundle`
+
+Ein einzelner Lauf liefert den üblichen `MINIPC_REVIEWED_TASK_ACK_V1` und eine bereinigte GitHub-Job-Logzeile `MINIPC_OPERATIONS_BATCH_SAFE_SUMMARY_V1`: freien RAM-/C:-Platz, aggregierten Aufgabenplaner- und Dienstzustand, zwei Windows-Neustartmarker und aggregierte Log-Verfügbarkeit. Der Wrapper nimmt **keine Aufrufparameter oder beliebige Pfade** an und führt nur die drei geprüften Original-PS1-Dateien aus seinem gepinnten Quellstand aus. Einzelkomponenten können `UNAVAILABLE` melden; `PARTIAL` ist kein `HEALTHY`. Aktueller CPU-/Windows- oder Paper-Release wird daraus nicht abgeleitet.
+
+**Abnahmeverträge:** Bestehende Runner-Einrichtung, Privilegien, natürlicher Fenster-SafePause und Stromausfall-Wiederstart gelten mit ihren bereits dokumentierten Originalbelegen als **nicht erneut zu testen**, solange sie unverändert sind. Nur diesen **neuen Wrapper** einmal source-/CI-prüfen und einmal echten mini-PC-/safe-log-ACK, sofern normales Runner-Fenster vorhanden. Danach wird bei wiederholter Nutzung **nicht jedes Mal** eine komplette Abnahmerunde gestartet. Das gilt auch für zukünftige Versionen V3/V4+.
+
+**Statusdisziplin:** Durch GitHub-Dokumentation **niemals** behaupten, zusätzliche Schreibrechte, flexible Parameter oder Windows-Aktionen seien schon aktiviert. Nach jedem Ausbau explizit unterscheiden: `SOURCE_MERGED`, `HOST_ACK`, `PERMISSION_SCOPE`, `RUNTIME_CHANGE`. Den einzigen Owner Issue #353 und den Kontext-Router aktualisieren; keinen parallelen Manager.
+
+**Kosten-/Zeitprinzip:** Ein ordentlich abgegrenztes Arbeitspaket statt wiederholter PRs und mehrfacher Hostchecks; echte Reparaturfehler gezielt korrigieren. Nutzer nur bei tatsächlichen neuen Rechten und physischen Freigaben einbeziehen.
