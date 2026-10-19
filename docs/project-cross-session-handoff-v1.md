@@ -1,3 +1,5 @@
+> **Aktuell verbindliche Wiederverwendungsregel 19.10.2026:** Die bestehende SHA-geprüfte Mini-PC-Schnittstelle und alte erfolgreiche Originalabnahmen gehören **nicht** bei jedem kleinen PowerShell-Auftrag neu gebaut oder erneut getestet. Zuerst `docs/minipc-powershell-capability-reuse-v1.md` und `tools/minipc_runner_tasks/` im heutigen geschützten `main` lesen, vorhandene Quellen und ACKs wiederverwenden, Mehrfachstatus über `operations_readonly_bundle` abfragen, nur eine wirklich neue Sicherheitsgrenze gezielt abnehmen. Erweiterte Schreib-/Admin-Rechte sowie freie Parameter sind **nicht** implizit gewährt. Kanonischer Owner weiterhin Issue #353; kein zusätzlicher Kontext-/Projektmanager.
+
 # Projektweiter Kontext- und Arbeits-Followthrough — Korrektur 12.10.2026
 
 ## Aktuelle projektweite Ausführungsfähigkeit (17.10.2026) — vor jeder neuen Arbeit lesen
