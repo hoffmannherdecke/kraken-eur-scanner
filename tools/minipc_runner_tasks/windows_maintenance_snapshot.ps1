@@ -97,6 +97,53 @@ try {
     $pause.readback = 'UNAVAILABLE'
 }
 
+# The pinned private workflow captures the SUCCESS stream and emits only a
+# wrapper ACK. A *separate*, bounded public-safe information line makes the
+# essential result readable from the original GitHub job log without touching
+# the workflow SHA, guard PIN, Windows ACLs, or any file.
+$safeCpu = 'OTHER_OR_NOT_READABLE'
+if ($hostReadback.cpu_model -match '(?i)\b(i5-8500T|i7-8700T)\b') {
+    $safeCpu = $Matches[1].ToUpperInvariant()
+}
+$safeTaskState = 'UNKNOWN'
+if ($task.state -in @('Ready','Running','Disabled','Queued')) {
+    $safeTaskState = $task.state
+}
+$safeServiceState = 'UNKNOWN'
+if ($service.state -in @('Stopped','Running','Start Pending','Stop Pending','Paused')) {
+    $safeServiceState = $service.state
+}
+$safeServiceMode = 'UNKNOWN'
+if ($service.start_mode -in @('Auto','Manual','Disabled')) {
+    $safeServiceMode = $service.start_mode
+}
+$safeSummary = [pscustomobject][ordered]@{
+    kind = 'MINIPC_MAINTENANCE_SAFE_SUMMARY_V1'
+    checked_at_utc = [DateTimeOffset]::UtcNow.ToString('o')
+    task_readback = $task.readback
+    task_state = $safeTaskState
+    task_enabled = $task.enabled
+    task_last_run_utc = $task.last_run_utc
+    task_last_result = $task.last_result
+    service_readback = $service.readback
+    service_state = $safeServiceState
+    service_start_mode = $safeServiceMode
+    service_account_matches = $service.restricted_account_matches
+    host_readback = $hostReadback.readback
+    host_last_boot_utc = $hostReadback.last_boot_utc
+    cpu_model_known = $safeCpu
+    physical_ram_gib = $hostReadback.physical_ram_gib
+    reboot_markers = @($markers)
+    update_pause_readback = $pause.readback
+    pause_expiry_utc = $pause.expiry_utc
+    post_window_safe_pause_proven = $false
+    restart_or_update_authorized = $false
+}
+# Write-Host writes only the audited summary to the GitHub job log's host
+# stream. It does not alter the workflow's one-JSON success-stream contract.
+$safeLine = $safeSummary | ConvertTo-Json -Compress -Depth 4
+Write-Host ('MINIPC_MAINTENANCE_SAFE_SUMMARY_V1 ' + $safeLine)
+
 [pscustomobject][ordered]@{
     kind='MINIPC_REVIEWED_TASK_ACK_V1'
     status='SUCCESS'
