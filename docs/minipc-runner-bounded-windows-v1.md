@@ -1,3 +1,5 @@
+> **Neue projektweite Bedienregel (19.10.2026):** [Einmal geprüfte Funktionen wiederverwenden statt den Runner bei jeder kleineren PowerShell-Abfrage erneut aufzubauen/zu testen](minipc-powershell-capability-reuse-v1.md). `operations_readonly_bundle` bündelt drei schon geprüfte Leseaufgaben zu einem Job; nur eine neue Fähigkeit benötigt eine einmalige differenzielle Quelle-/Originalhost-Abnahme. Mehr Rechte/Parameter sind noch nicht aktiviert. Der bereits bestandene natürliche Windows-Fensterabschluss und die vorige Stromausfallprüfung werden nicht ohne Anlass wiederholt; vor dem CPU-Ausbau gilt die **separate frische Wartungs-SafePause**.
+
 # MINI-PC Runner – kostenlose, begrenzte automatische Verfügbarkeit (17.10.2026)
 
 ## Aktueller Original-Abnahmestand 17.10.2026 — für alle Projektversionen
