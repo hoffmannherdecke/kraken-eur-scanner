@@ -1,5 +1,14 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
+## 19.10.2026 – V3-Pfade künftig ohne manuelle PowerShell lesen (PR #443)
+
+- [x] Reuse-Gate: existierenden nichtadministrativen, quellgepinnten GitHub→Mini-PC-Runner statt zweiter Remote-Shell verwenden.
+- [x] Einmalige neue feste read-only Funktion `v3_fixed_paths_readonly` samt Offline-Vertrag und Runbook als PR #443 vorbereitet: nur drei bekannte Verzeichnisse, Git-Marker, V3-Launcher; keine Rekursion, Dateiinhalte oder Mutation.
+- [ ] Geschützte PR-CI und Merge; danach genau ein originaler Host-ACK beim tatsächlichen Bedarf. Kein behaupteter Live-PASS aus bloßem Source-Merge.
+- [ ] Weitere häufige Leseabfragen nur nach konkretem Bedarf und Wiederverwendung bestehender Tasks bündeln; keine freie PowerShell, neuen Scheduler oder zusätzliche NTFS-Rechte.
+- [ ] Workspace-Schreibprobe bleibt separat bis tatsächlichem Originallog offen (Run #39283677017).
+
+
 ## 19.10.2026 – Dauerregel: Mehr PowerShell-Fähigkeiten ohne wiederholte Runner-Großabnahme
 
 - [x] **Nutzerbeschluss einheitlich verbindlich verankern:** Bei späteren Mini-PC-/PowerShell-Rechten zuerst `AGENTS.md`, echtes aktuelles Kontext-vor-Aktion-Routing, [Reuse-Gate](docs/minipc-powershell-capability-reuse-v1.md) und bereits belegte Originalhost-ACKs nutzen; keine Wiederholung von Runner-Installation, Stromausfall-/Scheduler-/ACL- oder natürlicher SafePause-E2E-Probe ohne neue tatsächliche Grenze. Keine erneute parallele Task-/Manager-/Scheduler-Architektur. Owner [Issue #353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353).

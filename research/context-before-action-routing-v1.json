@@ -84,6 +84,14 @@
     {
       "path": "tools/minipc_runner_tasks/workspace_report.ps1",
       "role": "FIXED_SCOPE_SOURCE_REVIEWED_NEW_REPORT_TASK_FIRST_WINDOWS_WRITE_ACK_PENDING"
+    },
+    {
+      "path": "tools/minipc_runner_tasks/v3_fixed_paths_readonly.ps1",
+      "role": "PROJECTWIDE_FIXED_V3_LOCAL_PATH_MARKER_READBACK_SOURCE_REVIEW_PENDING_HOST_ACK_PENDING_NO_RECURSION_OR_RUNTIME_MUTATION"
+    },
+    {
+      "path": "docs/minipc-v3-fixed-path-readback-v1.md",
+      "role": "REUSE_EXISTING_NONADMIN_RUNNER_FOR_FIXED_V3_PHYSICAL_PATHS_NO_MANUAL_POWERSHELL_WHEN_HOST_ACK_AVAILABLE"
     }
   ],
   "scopes": {
