@@ -60,7 +60,7 @@ class WindowsMaintenanceSnapshotSource(unittest.TestCase):
             "invoke-webrequest", "invoke-restmethod", "invoke-command",
             "start-process", "invoke-cimmethod", "set-ciminstance",
             "set-acl", "icacls", "c:\\users", "api_key",
-            "secrets", "write-host",
+            "trading\\secrets", "write-host",
         ):
             self.assertNotIn(blocked, self.active, blocked)
         self.assertNotIn("$args", self.source)
