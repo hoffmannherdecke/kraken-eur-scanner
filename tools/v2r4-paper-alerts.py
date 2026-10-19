@@ -215,10 +215,10 @@ def _v3_buy_from_originals(url,key,sid,row):
 
 def _v3_buy_text(user,buy):
     return (
-        f"<@{user}> KRYPTOSIGNAL | {buy['pair']} | V3 PAPER BUY_SCOUT\\n"
+        f"<@{user}> KRYPTOSIGNAL | {buy['pair']} | V3 PAPER BUY_SCOUT\n"
         f"Original-Cloud-Fill: Entry {fmt(buy['ask'])} EUR | "
         f"Stop {fmt(buy['stop'])} EUR | Stage 2 {fmt(buy['stage2'])} EUR | "
-        f"Scout 50 EUR, Gebuehr {fmt(buy['fee'],2)} EUR\\n"
+        f"Scout 50 EUR, Gebuehr {fmt(buy['fee'],2)} EUR\n"
         "Nur Paper-Test und bestaetigter Journal-Fill – keine Echtgeldorder."
     )
 
