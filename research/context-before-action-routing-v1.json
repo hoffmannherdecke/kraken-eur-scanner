@@ -76,6 +76,14 @@
     {
       "path": "tools/minipc_runner_tasks/operations_readonly_bundle.ps1",
       "role": "PROJECTWIDE_ONE_SHOT_REVIEWED_NONADMIN_BATCH_REUSES_THREE_EXISTING_TASKS_NO_NEW_WINDOWS_RIGHTS"
+    },
+    {
+      "path": "docs/minipc-scoped-workspace-v1.md",
+      "role": "PROJECTWIDE_ONE_SCOPED_WORKSPACE_USER_APPROVAL_WITH_SEPARATE_WINDOWS_GUI_AND_HOST_GATES"
+    },
+    {
+      "path": "tools/minipc_runner_tasks/workspace_report.ps1",
+      "role": "FIXED_SCOPE_SOURCE_REVIEWED_NEW_REPORT_TASK_FIRST_WINDOWS_WRITE_ACK_PENDING"
     }
   ],
   "scopes": {
