@@ -644,6 +644,35 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 {"strategy", "architecture", "operations", "research"},
             "reviewed Windows maintenance source or original-host gate drift")
 
+    reuse = runner.get("capability_reuse_policy")
+    reuse_doc = "docs/minipc-powershell-capability-reuse-v1.md"
+    bundle_script = "tools/minipc_runner_tasks/operations_readonly_bundle.ps1"
+    require(isinstance(reuse, dict)
+            and reuse.get("kind") == "MINIPC_REUSE_FIRST_POLICY_V1"
+            and reuse.get("canonical_policy") == reuse_doc
+            and reuse.get("source_bundle") == bundle_script
+            and reuse_doc in sources
+            and bundle_script in sources
+            and len(sources[reuse_doc]["sha256"]) == 64
+            and len(sources[bundle_script]["sha256"]) == 64
+            and reuse.get("source_task_name") == "operations_readonly_bundle"
+            and reuse.get("child_source_tasks") ==
+                ["host_safety_probe", "windows_maintenance_snapshot", "log_status_summary"]
+            and reuse.get("safe_result_marker") ==
+                "MINIPC_OPERATIONS_BATCH_SAFE_SUMMARY_V1"
+            and reuse.get("no_repeat_runner_e2e_without_changed_boundary") is True
+            and reuse.get("existing_request_and_single_ack_only_for_previously_approved_tasks") is True
+            and reuse.get("new_capabilities_one_review_and_targeted_test") is True
+            and reuse.get("new_acl_or_write_rights_require_separate_permission") is True
+            and reuse.get("no_new_workflow_scheduler_or_manager") is True
+            and reuse.get("no_arbitrary_powershell_or_parameters") is True
+            and reuse.get("no_admin_trading_writer_or_budget_authority") is True
+            and reuse.get("runtime_evidence_not_established_by_context_packet") is True
+            and reuse.get("original_host_receipt_must_be_independently_observed") is True
+            and set(reuse.get("all_project_scopes", [])) ==
+                {"strategy", "architecture", "operations", "research"},
+            "projectwide reusable PowerShell capability policy or permission boundary drift")
+
     return {
         "kind": contract["kind"],
         "status": "SOURCE_ROUTES_REGISTERED_LIVE_DATA_NOT_QUERIED",
@@ -677,6 +706,24 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             "private_approved_workflow_file": runner["private_approved_workflow_file"],
             "private_approved_workflow_sha": runner["private_approved_workflow_sha"],
             "task_source": runner["public_reviewed_task_dir"],
+            "capability_reuse_policy": {
+                "kind": reuse["kind"],
+                "canonical_policy": reuse_doc,
+                "policy_source_fingerprint": sources[reuse_doc]["sha256"],
+                "source_bundle": bundle_script,
+                "bundle_source_fingerprint": sources[bundle_script]["sha256"],
+                "source_task_name": reuse["source_task_name"],
+                "child_source_tasks": list(reuse["child_source_tasks"]),
+                "safe_result_marker": reuse["safe_result_marker"],
+                "no_repeat_runner_e2e_without_changed_boundary": True,
+                "existing_request_and_single_ack_only_for_previously_approved_tasks": True,
+                "new_capabilities_one_review_and_targeted_test": True,
+                "new_acl_or_write_rights_require_separate_permission": True,
+                "no_new_workflow_scheduler_or_manager": True,
+                "no_arbitrary_powershell_or_parameters": True,
+                "runtime_evidence_not_established_by_context_packet": True,
+                "original_host_receipt_must_be_independently_observed": True,
+            },
             "reviewed_readonly_log_diagnostics": {
                 "task": diag["task_name"],
                 "source_script": diag_script,
