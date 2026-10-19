@@ -674,12 +674,40 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             and reuse.get("bundle_original_host_evidence", {}).get("private_original_workflow_run_id") == 39269905027
             and reuse.get("bundle_original_host_evidence", {}).get("overall_task_execution") == "COMPLETE"
             and reuse.get("bundle_original_host_evidence", {}).get("log_sources_readback") == "PARTIAL_OR_UNAVAILABLE"
-            and reuse.get("future_write_acl_currently_granted") is False
+            and reuse.get("future_write_acl_currently_granted") is True
+            and reuse.get("write_scope_is_only_approved_workspace") is True
             and reuse.get("next_permission_stage") ==
-                "PENDING_SEPARATE_USER_AUTHORIZATION_FOR_SCOPED_WORKSPACE_WRITE"
+                "SCOPED_WORKSPACE_HOST_PASS_NO_ADDITIONAL_PERMISSIONS"
             and set(reuse.get("all_project_scopes", [])) ==
                 {"strategy", "architecture", "operations", "research"},
             "projectwide reusable PowerShell capability policy or permission boundary drift")
+
+    workspace = runner.get("scoped_workspace") or {}
+    fixed_v3 = runner.get("reviewed_v3_fixed_paths") or {}
+    ws_script = "tools/minipc_runner_tasks/workspace_report.ps1"
+    v3_script = "tools/minipc_runner_tasks/v3_fixed_paths_readonly.ps1"
+    require(workspace.get("kind") == "SCOPED_WORKSPACE_ONE_DIR_V1"
+            and workspace.get("approved_directory") == r"C:\CryptoSupport\Workspace"
+            and workspace.get("reviewed_task") == ws_script
+            and workspace.get("user_scope_approved") is True
+            and workspace.get("source_review_pass") is True
+            and workspace.get("restricted_task_write_ack") == "PASS_ORIGINAL_JOB_39283677017"
+            and workspace.get("original_host_evidence", {}).get("write_read_delete_probe") == "PASS"
+            and workspace.get("original_host_evidence", {}).get("dated_not_live") is True
+            and workspace.get("no_administrator_role_for_runner") is True
+            and ws_script in sources and len(sources[ws_script]["sha256"]) == 64,
+            "scoped Workspace source/host evidence drift")
+    require(fixed_v3.get("task_name") == "v3_fixed_paths_readonly"
+            and fixed_v3.get("source_script") == v3_script
+            and fixed_v3.get("source_review_status") == "MERGED_SOURCE_PR443_AND_PR444"
+            and fixed_v3.get("original_host_status") == "PASS_ORIGINAL_JOB_39313293207"
+            and fixed_v3.get("original_host_evidence", {}).get("staging_nested_scan") == "TOO_MANY_CHILDREN"
+            and fixed_v3.get("original_host_evidence", {}).get("dated_not_live") is True
+            and fixed_v3.get("no_runtime_mutation") is True
+            and fixed_v3.get("no_free_shell_or_arbitrary_paths") is True
+            and ws_script in sources and v3_script in sources
+            and len(sources[v3_script]["sha256"]) == 64,
+            "V3 fixed-paths source/host evidence drift")
 
     return {
         "kind": contract["kind"],
@@ -734,7 +762,8 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 "bundle_original_host_status": reuse["bundle_original_host_status"],
                 "bundle_original_host_evidence": dict(reuse["bundle_original_host_evidence"]),
                 "next_permission_stage": reuse["next_permission_stage"],
-                "future_write_acl_currently_granted": False,
+                "future_write_acl_currently_granted": True,
+                "workspace_only": True,
             },
             "reviewed_readonly_log_diagnostics": {
                 "task": diag["task_name"],
@@ -767,6 +796,27 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 "no_acl_elevation_for_missing_scheduler_readback": True,
                 "no_broad_or_admin_acl_grant": True,
                 "target_task_read_access_original_host": maintenance["target_task_read_access_original_host"],
+            },
+            "scoped_workspace": {
+                "task": workspace["source_task_name"],
+                "source_script": ws_script,
+                "source_fingerprint": sources[ws_script]["sha256"],
+                "approved_directory": workspace["approved_directory"],
+                "source_review_pass": workspace["source_review_pass"],
+                "restricted_task_write_ack": workspace["restricted_task_write_ack"],
+                "original_host_evidence": dict(workspace["original_host_evidence"]),
+                "live_write_access_reverified_by_this_packet": False,
+                "no_unscoped_writes": True,
+            },
+            "reviewed_v3_fixed_paths": {
+                "task": fixed_v3["task_name"],
+                "source_script": v3_script,
+                "source_fingerprint": sources[v3_script]["sha256"],
+                "source_review_status": fixed_v3["source_review_status"],
+                "original_host_status": fixed_v3["original_host_status"],
+                "original_host_evidence": dict(fixed_v3["original_host_evidence"]),
+                "live_v3_paths_reverified_by_this_packet": False,
+                "no_arbitrary_path_query": True,
             },
             "request_format": runner["request_format"],
             "windows_task_name": runner["windows_task_name"],
@@ -849,6 +899,36 @@ def interactive_chat_goal_handoff(root: Path, source_index: list[dict]) -> dict:
     }
 
 
+def project_next_action_selector(operational: dict) -> dict:
+    """Route self-service before manual steps; no automatic tool availability claims."""
+    runner = operational["projectwide_reviewed_runner"]
+    reuse = runner["capability_reuse_policy"]
+    workspace = runner["scoped_workspace"]
+    v3 = runner["reviewed_v3_fixed_paths"]
+    return {
+        "kind": "PROJECT_NEXT_ACTION_SELECTOR_V1",
+        "decision_order": [
+            "USE_AVAILABLE_CONNECTED_GITHUB_OR_CLOUD_READBACK_FIRST",
+            "REUSE_EXISTING_SOURCE_REVIEWED_MINIPC_TASK_IF_RELEVANT",
+            "ASK_USER_FOR_SMALLEST_SAFE_PHYSICAL_STEP_ONLY_IF_NEEDED",
+        ],
+        "bounded_capabilities": [
+            {"task": reuse["source_task_name"], "prior_host_ack": reuse["bundle_original_host_status"],
+             "purpose": "BOUNDED_OPERATIONS_READONLY", "source": reuse["source_bundle"]},
+            {"task": workspace["task"], "prior_host_ack": workspace["restricted_task_write_ack"],
+             "purpose": "FIXED_APPROVED_WORKSPACE_ONLY", "source": workspace["source_script"]},
+            {"task": v3["task"], "prior_host_ack": v3["original_host_status"],
+             "purpose": "FIXED_V3_PATH_MARKERS_ONLY", "source": v3["source_script"]},
+        ],
+        "connected_tool_availability": "MUST_CHECK_IN_CURRENT_CHAT",
+        "host_online_now": "NOT_CHECKED_BY_SOURCE_PACKET",
+        "before_manual_request": "STATE_WHICH_EXISTING_SAFE_TOOL_WAS_CHECKED_AND_WHY_IT_CANNOT_FINISH",
+        "historical_ack_not_live_proof": True,
+        "no_arbitrary_shell_or_admin_rights": True,
+        "no_new_scheduler_or_runtime_execution": True,
+    }
+
+
 def build(root: Path, scope: str) -> dict:
     config, entries = routed_sources(root, scope)
     index = []
@@ -876,6 +956,7 @@ def build(root: Path, scope: str) -> dict:
         "real_money_actions": active.get("real_money_actions"),
         "live_runtime_independently_checked": False,
     }
+    operational = existing_operational_evidence_handoff(config, index)
     payload = {
         "kind": "CONTEXT_BEFORE_ACTION_PACKET_V1",
         "scope": scope,
@@ -885,7 +966,8 @@ def build(root: Path, scope: str) -> dict:
         "control_decision_ack_reconciliation": review_receipts(root, state),
         "project_component_owners": project_component_owner_handoff(root),
         "interactive_chat_goal": interactive_chat_goal_handoff(root, index),
-        "operational_evidence_handoff": existing_operational_evidence_handoff(config, index),
+        "operational_evidence_handoff": operational,
+        "next_action_selector": project_next_action_selector(operational),
         "limitations": [
             "Source hashes attest presence/version, not reading, semantic understanding or correctness.",
             "GitHub current-state is declared/datable, not independent live Supabase/MINI-PC evidence.",
@@ -893,7 +975,7 @@ def build(root: Path, scope: str) -> dict:
             "External ChatGPT Work/automation prompts and unseen conversations are not GitHub-readable.",
             "This packet grants no trading, strategy promotion, secrets, scheduling or release authority.",
         ],
-        "required_next_step": "Read relevant source sections, reconcile prior user decisions and blockers; attach a truthful scoped receipt before a material change.",
+        "required_next_step": "Use connected GitHub/Cloud first; then check reviewed bounded Mini-PC tasks. Read original decisions and request manual user action only after documenting a concrete blocker.",
     }
     if scope in ("strategy", "research"):
         payload["strategy_learning_routes"] = v3_decision_inheritance(root)
