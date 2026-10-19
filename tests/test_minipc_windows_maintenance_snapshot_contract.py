@@ -92,6 +92,37 @@ class WindowsMaintenanceSnapshotSource(unittest.TestCase):
             self.assertNotIn(prohibited.lower(), self.active, prohibited)
         self.assertEqual(self.active.count("gettask('cryptosupport - bounded runner window')"), 1)
 
+    def test_prior_window_history_is_bounded_read_only_and_never_a_false_final_ack(self):
+        s = self.source
+        for token in (
+            "$previousWindow",
+            "scope = 'PRIOR_WINDOW_ONLY'",
+            "Get-WinEvent -FilterHashtable",
+            "LogName = 'System'",
+            "ProviderName = 'Service Control Manager'",
+            "Id = 7036",
+            "LogName = 'Microsoft-Windows-TaskScheduler/Operational'",
+            "Id = 201",
+            "-MaxEvents 220",
+            "-MaxEvents 120",
+            "AddMinutes(-75)",
+            "AddSeconds(-1)",
+            "$serviceLabel -ceq [string]$svc.DisplayName",
+            "$taskNameField[0].InnerText -ceq '\\CryptoSupport - Bounded Runner Window'",
+            "$resultCodeField[0].InnerText -ceq '0'",
+            "previous_window_history = $previousWindow",
+            "previous_window_history=$previousWindow",
+            "post_window_stopped_disabled_independently_proven = $false",
+        ):
+            self.assertIn(token, s, token)
+        self.assertEqual(s.count("Get-WinEvent -FilterHashtable"), 2)
+        self.assertNotIn("Get-WinEvent -ListLog", s)
+        self.assertNotIn("Write-Host $event", s)
+        self.assertNotIn("$entry.Message", s)
+        self.assertNotIn("Get-WinEvent -ComputerName", s)
+        self.assertNotIn("Get-WinEvent -MaxEvents", s)
+        self.assertLess(s.count("Get-WinEvent -FilterHashtable"), 3)
+
     def test_no_unreviewed_shell_or_mutation(self):
         for blocked in (
             "set-service", "start-service", "stop-service",
