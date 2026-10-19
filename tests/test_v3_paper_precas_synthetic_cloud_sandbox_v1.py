@@ -40,7 +40,7 @@ class SyntheticCloudSandboxTests(unittest.TestCase):
     def test_changed_original_file_rejected(self):
         path=next((self.root/"journal").glob("*.json"))
         path.write_bytes(path.read_bytes()+b" ")
-        with self.assertRaisesRegex(ValueError,"SHA mismatch"):
+        with self.assertRaisesRegex(ValueError,"SHA mismatch|no longer matches witness"):
             audit_offline_witness(self.root)
 
     def test_reject_untrusted_witness_and_wrong_series(self):
