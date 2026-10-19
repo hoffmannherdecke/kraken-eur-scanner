@@ -79,6 +79,8 @@ class ReadonlyLogSummaryContract(unittest.TestCase):
         self.assertIn("UtcNow.AddHours(-24)", s)
         self.assertIn("DateTimeOffset]::TryParse", s)
         self.assertIn("status=(?<status>", s)
+        self.assertIn("$knownStatuses -cnotcontains $status", s)
+        self.assertIn("$status = 'OTHER'", s)
         self.assertIn("Sort-Object | Select-Object -First 40", s)
         self.assertIn("ConvertTo-Json -Depth 6 -Compress", s)
 
