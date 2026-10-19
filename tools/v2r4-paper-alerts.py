@@ -224,9 +224,6 @@ def _v3_buy_text(user,buy):
 
 
 def _deliver_v3(url,key,webhook,user,series):
-    if series["strategy_revision"].startswith("V3-"):
-        _deliver_v3(url,key,webhook,user,series)
-        return
     sid=series["series_id"]
     sidq=urllib.parse.quote(sid,safe="")
     receipts=get(url,key,
@@ -262,7 +259,10 @@ def main():
     url,key,webhook,user=env()
     series=active_series(url,key)
     if not series:
-        print(json.dumps({"status":"SKIP_NO_ACTIVE_V2R4_SERIES"},sort_keys=True)); return
+        print(json.dumps({"status":"SKIP_NO_ACTIVE_PAPER_SERIES"},sort_keys=True)); return
+    if series["strategy_revision"].startswith("V3-"):
+        _deliver_v3(url,key,webhook,user,series)
+        return
     sid=series["series_id"]
     sidq=urllib.parse.quote(sid,safe="")
     existing=get(url,key,f"v2r4_paper_alert_receipts?series_id=eq.{sidq}&select=event_key")
