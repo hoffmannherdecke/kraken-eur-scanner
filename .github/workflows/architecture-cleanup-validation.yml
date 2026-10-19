@@ -77,6 +77,17 @@ jobs:
           $errors = $null
           [void][System.Management.Automation.Language.Parser]::ParseFile('tools/minipc_runner_tasks/operations_readonly_bundle.ps1',[ref]$tokens,[ref]$errors)
           if (@($errors).Count -ne 0) { throw 'Restricted capability bundle has invalid PowerShell syntax' }
+      - name: Scoped workspace source-only security contract
+        run: python -m unittest tests.test_minipc_scoped_workspace_contract -v
+      - name: Parse manual administrator setup and restricted workspace PowerShell
+        shell: pwsh
+        run: |
+          foreach ($src in @('tools/minipc_runner_guard/install_scoped_workspace.ps1', 'tools/minipc_runner_tasks/workspace_report.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($src,[ref]$tokens,[ref]$errors)
+            if (@($errors).Count -ne 0) { throw "PowerShell syntax invalid: $src" }
+          }
       - name: Compile changed Python
         run: |
           python -m py_compile \
