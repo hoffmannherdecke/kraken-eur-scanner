@@ -1,3 +1,14 @@
+## Aktueller Kontext-/Mini-PC-Faehigkeitsstand: 19.10.2026, original belegt (Owner Issue #353)
+
+- [x] Die vorhandene `operations_readonly_bundle` wurde im Originalhost-Run #39269905027 sicher ausgefuehrt; Logdateien waren dabei `PARTIAL_OR_UNAVAILABLE` (0 Dateien).
+- [x] Die genehmigte feste Workspace-Funktion `workspace_report` aus PR #441 wurde in Originalhost-Run #39283677017 erfolgreich geschrieben, gelesen, probeweise geloescht und mit einem neuen JSON-Bericht abgeschlossen. Andere Dateibereiche bleiben gesperrt.
+- [x] Die feste V3-Pfaddiagnose aus PR #443/#444 wurde im Originalhost-Run #39313293207 erfolgreich ausgefuehrt; `STAGING nested_scan=TOO_MANY_CHILDREN` bedeutet eingeschraenkte Vollstaendigkeit, nicht einen gescheiterten Runner.
+- [ ] Wirksamkeit der vereinbarten Chat-Arbeitsweise pruefen: erst selbst verbundene GitHub-/Cloud-Daten lesen, dann geeignete gepruefte beschraenkte Runnerfunktion, Nutzer nur fuer echte physische Blocker. `next_action_selector` in allen vier Kontext-Paketen testen. CI alleine beweist nicht die automatische Beachtung im Chat.
+
+**Die historischen, teilweise noch offenen Planungszeilen weiter unten sind kein aktueller Gegenbeweis gegen die oben genannten datierten Original-ACKs.** Keine zweite Manager-Instanz, keine zusaetzliche Automation und keine Freigabe fuer allgemeine PowerShell, Admin, Trading oder V3-Cutover.
+
+---
+
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
 ## 19.10.2026 – V3-Pfade künftig ohne manuelle PowerShell lesen (PR #443)

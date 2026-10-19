@@ -59,11 +59,11 @@
     },
     {
       "path": "docs/minipc-runner-bounded-windows-v1.md",
-      "role": "PROJECTWIDE_MINIPC_REVIEWED_TASK_RUNNER_ENABLED_WINDOWS_SCHEDULE_HOST_ACK_BUT_FIRST_UNATTENDED_RECURRING_E2E_PENDING; REAL_HOST_AND_GITHUB_READBACK_REQUIRED"
+      "role": "PROJECTWIDE_REVIEWED_RUNNER_NATURAL_WINDOW_SAFEPAUSE_HOST_PASS_20261019_FRESH_CPU_GATE_REQUIRED"
     },
     {
       "path": "tools/minipc_runner_tasks/log_status_summary.ps1",
-      "role": "PROJECTWIDE_REVIEWED_MINIPC_READONLY_LOG_DIAGNOSIS_SOURCE_CI_PASS_HOST_ACTUAL_READ_PENDING; PREFER_FOR_RELEVANT_DIAGNOSIS_OVER_USER_POWERSHELL; NO_ARBITRARY_EXEC"
+      "role": "SOURCE_REVIEWED_LOG_TASK_IN_ORIGINAL_BUNDLE_EXECUTED_LOG_DATA_UNAVAILABLE_ZERO_FILES"
     },
     {
       "path": "tools/minipc_runner_tasks/windows_maintenance_snapshot.ps1",
@@ -83,11 +83,11 @@
     },
     {
       "path": "tools/minipc_runner_tasks/workspace_report.ps1",
-      "role": "FIXED_SCOPE_SOURCE_REVIEWED_NEW_REPORT_TASK_FIRST_WINDOWS_WRITE_ACK_PENDING"
+      "role": "FIXED_WORKSPACE_WRITE_TASK_SOURCE_MERGED_ORIGINAL_HOST_JOB_39283677017_PASS_NO_UNSCOPED_RIGHTS"
     },
     {
       "path": "tools/minipc_runner_tasks/v3_fixed_paths_readonly.ps1",
-      "role": "PROJECTWIDE_FIXED_V3_LOCAL_PATH_MARKER_READBACK_SOURCE_REVIEW_PENDING_HOST_ACK_PENDING_NO_RECURSION_OR_RUNTIME_MUTATION"
+      "role": "V3_FIXED_PATHS_PR443_444_SOURCE_MERGED_ORIGINAL_HOST_JOB_39313293207_PASS_STAGING_SCAN_TOO_MANY_CHILDREN"
     },
     {
       "path": "docs/minipc-v3-fixed-path-readback-v1.md",
@@ -574,9 +574,10 @@
           "does_not_expand_local_permissions": true,
           "does_not_authorize_windows_or_trading_changes": true
         },
-        "next_permission_stage": "PENDING_SEPARATE_USER_AUTHORIZATION_FOR_SCOPED_WORKSPACE_WRITE",
-        "future_write_acl_currently_granted": false,
-        "retesting_existing_runner_not_required": true
+        "next_permission_stage": "SCOPED_WORKSPACE_HOST_PASS_NO_ADDITIONAL_PERMISSIONS",
+        "future_write_acl_currently_granted": true,
+        "retesting_existing_runner_not_required": true,
+        "write_scope_is_only_approved_workspace": true
       },
       "scoped_workspace": {
         "kind": "SCOPED_WORKSPACE_ONE_DIR_V1",
@@ -585,12 +586,49 @@
         "approved_directory": "C:\\CryptoSupport\\Workspace",
         "source_task_name": "workspace_report",
         "user_scope_approved": true,
-        "source_review_pass": false,
-        "windows_setup_ack": "PENDING_ORIGINAL_HOST",
-        "restricted_task_write_ack": "PENDING_ORIGINAL_HOST",
+        "source_review_pass": true,
+        "windows_setup_ack": "FUNCTIONAL_ACCESS_PASS_GUI_ACL_DETAILS_NOT_INDEPENDENTLY_ATTESTED",
+        "restricted_task_write_ack": "PASS_ORIGINAL_JOB_39283677017",
         "no_administrator_role_for_runner": true,
         "no_trading_runtime_authority": true,
         "no_additional_windows_scheduler": true,
+        "all_project_scopes": [
+          "strategy",
+          "architecture",
+          "operations",
+          "research"
+        ],
+        "original_host_evidence": {
+          "workflow_run_id": 39283677017,
+          "workflow_job_id": 118163551086,
+          "source_sha": "65f0662f7f6d793bcd97c8c951c6b6fdbea5d504",
+          "observed_at_utc": "2026-10-19T16:20:45Z",
+          "prejob_approved": true,
+          "write_read_delete_probe": "PASS",
+          "persistent_report_created": true,
+          "scope": "ONLY_C_CRYPTO_SUPPORT_WORKSPACE",
+          "dated_not_live": true
+        }
+      },
+      "reviewed_v3_fixed_paths": {
+        "task_name": "v3_fixed_paths_readonly",
+        "source_script": "tools/minipc_runner_tasks/v3_fixed_paths_readonly.ps1",
+        "runbook": "docs/minipc-v3-fixed-path-readback-v1.md",
+        "source_review_status": "MERGED_SOURCE_PR443_AND_PR444",
+        "original_host_status": "PASS_ORIGINAL_JOB_39313293207",
+        "original_host_evidence": {
+          "workflow_run_id": 39313293207,
+          "workflow_job_id": 118268188543,
+          "source_sha": "0550698975ecfb795e41055794c4fa98c54bd3b3",
+          "observed_at_utc": "2026-10-19T19:43:21Z",
+          "prejob_approved": true,
+          "roots_present": 3,
+          "staging_nested_scan": "TOO_MANY_CHILDREN",
+          "v3stage_nested_git_count": 5,
+          "dated_not_live": true
+        },
+        "no_runtime_mutation": true,
+        "no_free_shell_or_arbitrary_paths": true,
         "all_project_scopes": [
           "strategy",
           "architecture",

@@ -14,7 +14,7 @@ Nur **nach** geschütztem Source-Merge und unter anwesendem Windows-Administrato
 4. Genau folgende drei explizite **Zulassen**-Einträge für **Diesen Ordner, Unterordner und Dateien** einrichten: `SYSTEM` → Vollzugriff; lokale Gruppe `Administratoren` → Vollzugriff; **lokales Konto** `<PC-Name>\CryptoSupportSvc` → **Ändern**. Weder `Jeder/Everyone`, `Benutzer/Users`, `Authenticated Users`, noch allgemeine Gruppen mit Schreibrechten ergänzen.
 5. Erneut im erweiterten Sicherheitsdialog ablesen: Pfad und Besitzer, Vererbung aus, genau die beabsichtigten Berechtigungen, und kein anderes Verzeichnis verändert. **Erst dann** `WORKSPACE_NTFS_ORIGINAL_ADMIN_ACK=PASS` mit Datum/Uhrzeit dokumentieren. Bei unklarer oder abweichender Ansicht nicht fortfahren; kein weiteres ACL-Experiment.
 
-**Diese GUI-Einrichtung ist noch nicht geschehen und wird nicht aus der GitHub-Quelle abgeleitet.** Wenn Einstellungen an vorhandenen Arbeitsdaten nötig wären, stoppen: dafür liegt keine Freigabe vor.
+**Originalhost-Status 19.10.2026:** Die streng begrenzte Workspace-Schreib-Lese-Loeschprobe und die Erstellung des Berichts sind im privaten Originaljob #39283677017 nachgewiesen. Diese historische Einrichtungsvorschrift ist **kein** Auftrag, bestehende Berechtigungen erneut zu kopieren oder zu setzen. Eine vollstaendige separate GUI-ACL-Provenienz folgt nicht aus der funktionierenden Hostprobe. Wenn Einstellungen an vorhandenen Arbeitsdaten nötig wären, stoppen: dafür liegt keine Freigabe vor.
 
 ## Eng begrenzter ausführbarer Auftrag
 
@@ -25,7 +25,7 @@ Das im geschützten Projekt `main` zu prüfende Script `tools/minipc_runner_task
 ### Beweisstatus
 
 - `USER_APPROVAL=PASS` (nur Workspace/Modify)
-- `REVIEWED_SOURCE_MERGED=PENDING`
-- `NTFS_ORIGINAL_WINDOWS_GUI_ACK=PENDING`
-- `RESTRICTED_WORKSPACE_WRITE_HOST_ACK=PENDING`
+- `REVIEWED_SOURCE_MERGED=PASS_PR441`
+- `NTFS_FUNCTIONAL_ACCESS=PASS_ORIGINAL_HOST_JOB39283677017` (GUI-ACL-Provenienz nicht getrennt belegt)
+- `RESTRICTED_WORKSPACE_WRITE_HOST_ACK=PASS_ORIGINAL_JOB39283677017`
 - `TRADING_WINDOWS_ADMIN_RIGHTS=NOT_GRANTED`

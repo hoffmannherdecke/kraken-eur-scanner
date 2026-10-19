@@ -160,9 +160,10 @@ class ContextBeforeActionTests(unittest.TestCase):
                 self.assertEqual(reuse["bundle_original_host_evidence"]["private_original_workflow_run_id"], 39269905027)
                 self.assertEqual(reuse["bundle_original_host_evidence"]["overall_task_execution"], "COMPLETE")
                 self.assertEqual(reuse["bundle_original_host_evidence"]["log_sources_readback"], "PARTIAL_OR_UNAVAILABLE")
-                self.assertFalse(reuse["future_write_acl_currently_granted"])
+                self.assertTrue(reuse["future_write_acl_currently_granted"])
+                self.assertTrue(reuse["workspace_only"])
                 self.assertEqual(reuse["next_permission_stage"],
-                                 "PENDING_SEPARATE_USER_AUTHORIZATION_FOR_SCOPED_WORKSPACE_WRITE")
+                                 "SCOPED_WORKSPACE_HOST_PASS_NO_ADDITIONAL_PERMISSIONS")
 
     def test_reviewed_windows_snapshot_routed_in_every_scope_without_host_claim(self):
         import hashlib
@@ -255,6 +256,50 @@ class ContextBeforeActionTests(unittest.TestCase):
                 self.assertEqual(
                     packet["declared_status"]["live_runtime_independently_checked"], False
                 )
+
+    def test_real_original_host_capabilities_in_every_scope_and_manual_fallback(self):
+        """Ensure the original host evidence reaches the actual packet consumer."""
+        for scope in ("strategy", "architecture", "operations", "research"):
+            with self.subTest(scope=scope):
+                packet = build(ROOT, scope)
+                sel = packet["next_action_selector"]
+                self.assertEqual(sel["kind"], "PROJECT_NEXT_ACTION_SELECTOR_V1")
+                self.assertEqual(sel["decision_order"][0], "USE_AVAILABLE_CONNECTED_GITHUB_OR_CLOUD_READBACK_FIRST")
+                self.assertEqual(sel["decision_order"][-1], "ASK_USER_FOR_SMALLEST_SAFE_PHYSICAL_STEP_ONLY_IF_NEEDED")
+                self.assertEqual(sel["connected_tool_availability"], "MUST_CHECK_IN_CURRENT_CHAT")
+                self.assertEqual(sel["host_online_now"], "NOT_CHECKED_BY_SOURCE_PACKET")
+                self.assertTrue(sel["historical_ack_not_live_proof"])
+                self.assertTrue(sel["no_arbitrary_shell_or_admin_rights"])
+                self.assertEqual([row["task"] for row in sel["bounded_capabilities"]],
+                                 ["operations_readonly_bundle", "workspace_report", "v3_fixed_paths_readonly"])
+                runner = packet["operational_evidence_handoff"]["projectwide_reviewed_runner"]
+                ws = runner["scoped_workspace"]
+                self.assertTrue(ws["source_review_pass"])
+                self.assertEqual(ws["restricted_task_write_ack"], "PASS_ORIGINAL_JOB_39283677017")
+                self.assertEqual(ws["original_host_evidence"]["write_read_delete_probe"], "PASS")
+                self.assertFalse(ws["live_write_access_reverified_by_this_packet"])
+                self.assertTrue(ws["no_unscoped_writes"])
+                v3 = runner["reviewed_v3_fixed_paths"]
+                self.assertEqual(v3["original_host_status"], "PASS_ORIGINAL_JOB_39313293207")
+                self.assertEqual(v3["original_host_evidence"]["staging_nested_scan"], "TOO_MANY_CHILDREN")
+                self.assertFalse(v3["live_v3_paths_reverified_by_this_packet"])
+                self.assertTrue(v3["no_arbitrary_path_query"])
+
+    def test_action_selector_fails_closed_on_stale_success_or_permissions(self):
+        from tools.context_before_action import existing_operational_evidence_handoff
+        data = original_read_json(ROOT / "research/context-before-action-routing-v1.json")
+        index = build(ROOT, "operations")["source_index"]
+        for mutate in (
+            lambda runner: runner["scoped_workspace"].update(source_review_pass=False),
+            lambda runner: runner["scoped_workspace"].update(restricted_task_write_ack="PENDING"),
+            lambda runner: runner["reviewed_v3_fixed_paths"].update(original_host_status="PENDING"),
+            lambda runner: runner["capability_reuse_policy"].update(future_write_acl_currently_granted=False),
+        ):
+            with self.subTest(mutation=mutate):
+                altered = copy.deepcopy(data)
+                mutate(altered["existing_operational_evidence_handoff"]["projectwide_reviewed_runner"])
+                with self.assertRaises(ContextGateError):
+                    existing_operational_evidence_handoff(altered, index)
 
     def test_cpu_milestones_are_in_existing_architecture_and_operations_preflight(self):
         """Apply merged source milestones via the original context index, not a new manager."""
