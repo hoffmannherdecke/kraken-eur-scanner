@@ -33,7 +33,7 @@ $testPath = Join-Path $root ("probe-" + $serial + ".tmp")
 $reportPath = Join-Path $root ("report-" +
     [DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmss') + "-" +
     $serial + ".json")
-$enc = New-Object Text.UTF8Encoding($false)
+$enc = [Text.UTF8Encoding]::new($false)
 $probeDone = $false
 try {
     # Both unique paths are CREATED, never overwritten; no input/output path arg.
