@@ -64,6 +64,34 @@ class WindowsMaintenanceSnapshotSource(unittest.TestCase):
                 self.assertIn(required, s)
         self.assertEqual(s.count("Write-Host ('MINIPC_MAINTENANCE_SAFE_SUMMARY_V1 ' + $safeLine)"), 1)
 
+    def test_exact_task_native_com_fallback_and_finite_failure_classes(self):
+        s = self.source
+        for needle in (
+            "SchedulerReadErrorClass",
+            "CMDLET_NOT_AVAILABLE",
+            "OTHER_ERROR",
+            "PermissionDenied",
+            "New-Object -ComObject 'Schedule.Service' -ErrorAction Stop",
+            "$scheduler.Connect()",
+            "$scheduler.GetFolder('\\')",
+            "$rootFolder.GetTask('CryptoSupport - Bounded Runner Window')",
+            "SCHEDULE_SERVICE_COM",
+            "task_read_method = $task.method",
+            "task_cmdlet_probe = $task.cmdlet_probe",
+            "task_com_probe = $task.com_probe",
+            "task.readback = 'READ_OK'",
+        ):
+            self.assertIn(needle, s, needle)
+        for prohibited in (
+            "GetTasks(", "GetFolders(", "RegisterTask", "RegisterTaskDefinition",
+            "SetSecurityDescriptor(", "$comTask.Run(", "$comTask.Stop(",
+            "$comTask.Enabled =", "$rootFolder.DeleteTask(",
+            "$scheduler.GetFolder($", "$_.Exception.Message",
+            "FullyQualifiedErrorId", "script_block",
+        ):
+            self.assertNotIn(prohibited.lower(), self.active, prohibited)
+        self.assertEqual(self.active.count("gettask('cryptosupport - bounded runner window')"), 1)
+
     def test_no_unreviewed_shell_or_mutation(self):
         for blocked in (
             "set-service", "start-service", "stop-service",
