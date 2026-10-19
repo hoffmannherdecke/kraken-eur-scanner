@@ -10,6 +10,7 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import re
 from pathlib import Path
 import sys
 
@@ -899,7 +900,25 @@ def interactive_chat_goal_handoff(root: Path, source_index: list[dict]) -> dict:
     }
 
 
-def project_next_action_selector(operational: dict) -> dict:
+def existing_minipc_task_source_names(root: Path) -> list[str]:
+    """Discover source filenames only, without inventing Windows host permission.
+
+    Executability still requires a protected-main merge, the existing CI task
+    allowlist and the unchanged pinned private/Windows pre-job gate.
+    """
+    folder = root / "tools/minipc_runner_tasks"
+    require(folder.is_dir() and not folder.is_symlink(),
+            "reviewed Mini-PC source directory missing or unsafe")
+    candidates = sorted(folder.glob("*.ps1"))
+    require(bool(candidates), "no reviewed Mini-PC task source files found")
+    for path in candidates:
+        require(path.is_file() and not path.is_symlink()
+                and re.fullmatch(r"[a-z][a-z0-9_-]{0,39}", path.stem) is not None,
+                "invalid Mini-PC source entry")
+    return [path.stem for path in candidates]
+
+
+def project_next_action_selector(operational: dict, root: Path) -> dict:
     """Route self-service before manual steps; no automatic tool availability claims."""
     runner = operational["projectwide_reviewed_runner"]
     reuse = runner["capability_reuse_policy"]
@@ -920,6 +939,8 @@ def project_next_action_selector(operational: dict) -> dict:
             {"task": v3["task"], "prior_host_ack": v3["original_host_status"],
              "purpose": "FIXED_V3_PATH_MARKERS_ONLY", "source": v3["source_script"]},
         ],
+        "repository_task_source_names": existing_minipc_task_source_names(root),
+        "repository_inventory_is_not_host_approval": True,
         "connected_tool_availability": "MUST_CHECK_IN_CURRENT_CHAT",
         "host_online_now": "NOT_CHECKED_BY_SOURCE_PACKET",
         "before_manual_request": "STATE_WHICH_EXISTING_SAFE_TOOL_WAS_CHECKED_AND_WHY_IT_CANNOT_FINISH",
@@ -967,7 +988,7 @@ def build(root: Path, scope: str) -> dict:
         "project_component_owners": project_component_owner_handoff(root),
         "interactive_chat_goal": interactive_chat_goal_handoff(root, index),
         "operational_evidence_handoff": operational,
-        "next_action_selector": project_next_action_selector(operational),
+        "next_action_selector": project_next_action_selector(operational, root),
         "limitations": [
             "Source hashes attest presence/version, not reading, semantic understanding or correctness.",
             "GitHub current-state is declared/datable, not independent live Supabase/MINI-PC evidence.",
@@ -1052,6 +1073,8 @@ def compact_decision_brief(packet: dict) -> dict:
         "owner": "PROJECT_BACKLOG.md / Issue #353 for project-wide execution",
         "decision_order": list(selector["decision_order"]),
         "bounded_capabilities": list(selector["bounded_capabilities"]),
+        "repository_task_source_names": list(selector["repository_task_source_names"]),
+        "repository_inventory_is_not_host_approval": True,
         "manual_user_action_only_after": selector["before_manual_request"],
         "connected_tools": selector["connected_tool_availability"],
         "live_host": selector["host_online_now"],
