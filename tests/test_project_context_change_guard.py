@@ -167,6 +167,24 @@ class ProjectContextChangeGuardTests(unittest.TestCase):
         with self.assertRaisesRegex(ChangeGateError, "source references"):
             check(ROOT, paths, good)
 
+    def test_review_placeholder_guard_allows_ordinary_semantic_reuse_prose(self):
+        from tools.project_context_change_guard import meaningful
+        for natural in (
+            "Do not replace GitHub rules; keep existing branch protection unchanged.",
+            "We can replace the inaccurate description without creating a new owner.",
+            "Replacing an obsolete name is different from removing authorization gates.",
+        ):
+            with self.subTest(natural=natural):
+                self.assertTrue(meaningful(natural))
+        for placeholder in (
+            "REPLACE with current integration information from original code.",
+            "TODO fill the original implementation after checking the registry.",
+            "TBD check this before changing any actual deployment source.",
+            "PLACEHOLDER source information will be supplied in the future.",
+        ):
+            with self.subTest(placeholder=placeholder):
+                self.assertFalse(meaningful(placeholder))
+
     def test_placeholder_and_duplicate_scope_block(self):
         paths = ["paper_evaluator/test.py"]
         good = self.good(paths)
