@@ -156,6 +156,13 @@ class ContextBeforeActionTests(unittest.TestCase):
                 self.assertTrue(reuse["no_arbitrary_powershell_or_parameters"])
                 self.assertTrue(reuse["runtime_evidence_not_established_by_context_packet"])
                 self.assertTrue(reuse["original_host_receipt_must_be_independently_observed"])
+                self.assertEqual(reuse["bundle_original_host_status"], "PASS_ONE_RESTRICTED_SOURCE_PINNED_WINDOWS_RUN")
+                self.assertEqual(reuse["bundle_original_host_evidence"]["private_original_workflow_run_id"], 39269905027)
+                self.assertEqual(reuse["bundle_original_host_evidence"]["overall_task_execution"], "COMPLETE")
+                self.assertEqual(reuse["bundle_original_host_evidence"]["log_sources_readback"], "PARTIAL_OR_UNAVAILABLE")
+                self.assertFalse(reuse["future_write_acl_currently_granted"])
+                self.assertEqual(reuse["next_permission_stage"],
+                                 "PENDING_SEPARATE_USER_AUTHORIZATION_FOR_SCOPED_WORKSPACE_WRITE")
 
     def test_reviewed_windows_snapshot_routed_in_every_scope_without_host_claim(self):
         import hashlib
