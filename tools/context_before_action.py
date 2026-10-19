@@ -615,7 +615,8 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             and maintenance.get("source_script") == maintenance_script
             and maintenance_script in sources
             and len(sources[maintenance_script]["sha256"]) == 64
-            and maintenance.get("actual_windows_task_e2e") == "PENDING_ORIGINAL_HOST_ACK"
+            and maintenance.get("actual_windows_task_e2e") ==
+                "PASS_RESTRICTED_HOST_RUN_AND_SANITIZED_GITHUB_STATUS"
             and maintenance.get("request_via_existing_workflow_only") is True
             and maintenance.get("no_arbitrary_shell_or_admin") is True
             and maintenance.get("no_service_task_update_or_restart") is True
@@ -624,7 +625,14 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             and maintenance.get("safe_github_job_log_marker") ==
                 "MINIPC_MAINTENANCE_SAFE_SUMMARY_V1"
             and maintenance.get("no_raw_log_or_unbounded_output") is True
-            and maintenance.get("host_original_ack_still_required") is True
+            and maintenance.get("host_original_ack_still_required") is False
+            and maintenance.get("post_window_safe_pause_original_ack_pending") is True
+            and maintenance.get("no_acl_elevation_for_missing_scheduler_readback") is True
+            and maintenance.get("original_host_evidence", {}).get("original_workflow_run_id") == 39244255416
+            and maintenance.get("original_host_evidence", {}).get("bounded_scheduler_task_metadata") ==
+                "UNAVAILABLE_RESTRICTED_ACCOUNT"
+            and maintenance.get("original_host_evidence", {}).get("post_window_safe_pause") ==
+                "PENDING_ORIGINAL_HOST_READBACK"
             and set(maintenance.get("all_project_scopes", [])) ==
                 {"strategy", "architecture", "operations", "research"},
             "reviewed Windows maintenance source or original-host gate drift")
@@ -686,7 +694,10 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 "no_arbitrary_shell_or_admin": True,
                 "no_runtime_or_reboot_authority": True,
                 "safe_github_job_log_marker": maintenance["safe_github_job_log_marker"],
-                "host_original_ack_still_required": True,
+                "original_host_evidence": dict(maintenance["original_host_evidence"]),
+                "host_original_ack_still_required": False,
+                "post_window_safe_pause_original_ack_pending": True,
+                "no_acl_elevation_for_missing_scheduler_readback": True,
             },
             "request_format": runner["request_format"],
             "windows_task_name": runner["windows_task_name"],
