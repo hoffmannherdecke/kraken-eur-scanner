@@ -357,6 +357,66 @@ try{
      $_.TaskName -match '(Paper|Writer)' } |
    Select-Object -First 20 -ExpandProperty TaskName)
 }catch{}
+# Reuse the existing Supervisor's POST-CAS local observer; do not create a
+# second Windows supervisor, new task, or self-asserted Cloud release receipt.
+# This read-only inventory is deliberately insufficient to activate V3.
+$v3PostCas=[ordered]@{
+ kind='V3_NATIVE_POSTCAS_LOCAL_INSPECTION_ONLY_V1'
+ status='NOT_INDEPENDENT_RELEASE_EVIDENCE'
+ native_task_state='UNKNOWN'
+ native_task_principal_system=$false
+ native_task_has_one_action=$false
+ native_task_uses_old_readonly_launcher=$true
+ original_supervisor_observation='UNAVAILABLE'
+ old_intake_tasks_disabled=$false
+ protected_old_aftercare_running=$false
+ exact_loaded_source_sha_verified=$false
+ old_python_process_tree_absent_verified=$false
+ independent_cloud_cas_verified=$false
+ six_external_e2e_proofs_verified=$false
+ live_paper_activation_authorized=$false
+ tasks_changed=0
+ cloud_writes=0
+ model_calls=0
+}
+try {
+ $nativeV3=Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -ErrorAction SilentlyContinue
+ if($null -ne $nativeV3){
+  $v3PostCas.native_task_state=[string]$nativeV3.State
+  $v3PostCas.native_task_principal_system=(
+   [string]$nativeV3.Principal.UserId -in @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18'))
+  $v3PostCas.native_task_has_one_action=(@($nativeV3.Actions).Count -eq 1)
+  if($v3PostCas.native_task_has_one_action){
+   $v3PostCas.native_task_uses_old_readonly_launcher=(
+    [string]$nativeV3.Actions[0].Arguments -match '\-\-read-only')
+  }
+ }
+ $oldIntake=@($v2r4PaperTasks|Where-Object {$_.task_name -in @(
+   'CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')})
+ $oldAftercare=@($v2r4PaperTasks|Where-Object {$_.task_name -in @(
+   'CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')})
+ $v3PostCas.old_intake_tasks_disabled=($oldIntake.Count -eq 2 -and
+   @($oldIntake|Where-Object {$_.state -cne 'Disabled'}).Count -eq 0)
+ $v3PostCas.protected_old_aftercare_running=($oldAftercare.Count -eq 2 -and
+   @($oldAftercare|Where-Object {$_.state -cne 'Running' -or
+     $_.heartbeat_fresh_for_role -ne $true}).Count -eq 0)
+ $sp=Join-Path $state 'minipc-runtime-supervisor.json'
+ if(Test-Path -LiteralPath $sp -PathType Leaf){
+  $sf=Get-Item -LiteralPath $sp -Force -ErrorAction Stop
+  if(-not [bool]($sf.Attributes -band [IO.FileAttributes]::ReparsePoint) -and
+     $sf.Length -gt 0 -and $sf.Length -le 131072){
+   $supervisor=Get-Content -LiteralPath $sp -Raw -ErrorAction Stop|ConvertFrom-Json -ErrorAction Stop
+   $peek=$supervisor.v3_paper_successor_readonly
+   if($peek.kind -ceq 'V3_PAPER_SUCCESSOR_SUPERVISOR_READONLY_OBSERVATION_V1' -and
+      $peek.independent_cloud_or_host_proof_verified -eq $false -and
+      $peek.v3_auto_restart_authorized -eq $false){
+    $v3PostCas.original_supervisor_observation=[string]$peek.status
+   }
+  }
+ }
+}catch{
+ $v3PostCas.status='UNREADABLE_LOCAL_SOURCE_FAIL_CLOSED'
+}
 $pinChecked=0
 $pinMismatches=@()
 if($null -ne $plan){
@@ -442,6 +502,7 @@ $ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $can
  physical_supervisor_and_windows_rearm_fence_proven=$false
  physical_closed_old_series_followup_exit_relay_proven=$false
  physical_v3_named_paper_task_hints=@($v3PaperTaskNames)
+ physical_v3_postcas_local_inventory=$v3PostCas
  physical_task_name_scan_cannot_prove_absence_of_other_writers=$true
  pre_cutover_expected_predecessor_series_id=$oldSeries
  physical_v2r4_intake_stop_ack_proven=$false
