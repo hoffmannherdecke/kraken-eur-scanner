@@ -697,7 +697,7 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             contract["github_original_watch_workflow_id"],
         "projectwide_reviewed_runner": {
             "kind": runner["kind"],
-            "status": "HOST_SCHEDULER_ENABLED_ACK_FIRST_NATURAL_RUN_PENDING",
+            "status": "FIRST_NATURAL_SAFE_PAUSE_HOST_PASS_CPU_MAINTENANCE_REQUIRES_FRESH_GATE",
             "canonical_runbook": runbook,
             "source_fingerprint": sources[runbook]["sha256"],
             "owner_issue": runner["github_issue"],
