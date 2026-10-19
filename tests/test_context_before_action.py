@@ -38,6 +38,35 @@ class ContextBeforeActionTests(unittest.TestCase):
                 self.assertTrue(brief["no_live_runtime_or_trading_authority"])
                 self.assertTrue(brief["history_or_hash_is_not_live_proof"])
 
+    def test_existing_minipc_task_sources_are_discoverable_not_implicitly_authorized(self):
+        expected = sorted(p.stem for p in
+                          (ROOT / "tools/minipc_runner_tasks").glob("*.ps1"))
+        self.assertGreaterEqual(len(expected), 8)
+        for scope in ("strategy", "architecture", "operations", "research"):
+            with self.subTest(scope=scope):
+                packet = build(ROOT, scope)
+                selector = packet["next_action_selector"]
+                self.assertEqual(selector["repository_task_source_names"], expected)
+                self.assertTrue(selector["repository_inventory_is_not_host_approval"])
+                from tools.context_before_action import compact_decision_brief
+                brief = compact_decision_brief(packet)
+                self.assertEqual(brief["repository_task_source_names"], expected)
+                self.assertTrue(brief["repository_inventory_is_not_host_approval"])
+                self.assertFalse(selector.get("host_online_now") == "ONLINE")
+
+    def test_protected_main_has_one_unambiguous_required_validate_job(self):
+        # GitHub ruleset requires "validate". Control-plane is path-selective:
+        # it must not supply a competing identically named check.
+        architecture = (ROOT / ".github/workflows/architecture-cleanup-validation.yml").read_text()
+        control = (ROOT / ".github/workflows/project-control-plane-guard.yml").read_text()
+        context = (ROOT / ".github/workflows/project-context-change-gate.yml").read_text()
+        self.assertIn("  validate:\\n", architecture)
+        self.assertIn("  control-plane-validate:\\n", control)
+        self.assertNotIn("  validate:\\n", control)
+        self.assertIn("  source-and-review:\\n", context)
+        self.assertIn("  pull_request:\\n", context)
+        self.assertIn("  pull_request:\\n", architecture)
+
     def test_compact_agents_preserves_full_rule_and_archival_boundary(self):
         agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
         archive = (ROOT / "docs/project-context-instruction-archive-20261019.md").read_text(encoding="utf-8")
