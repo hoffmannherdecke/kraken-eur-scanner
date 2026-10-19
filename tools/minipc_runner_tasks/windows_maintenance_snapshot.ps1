@@ -158,6 +158,103 @@ try {
     $pause.readback = 'UNAVAILABLE'
 }
 
+# Previous completed windows can be corroborated from fixed Windows event
+# channels without waiting for a second agent outside the normal runner window.
+# Bound both queries to 75 minutes / <= 220 + 120 events; never publish raw
+# messages, service names, TaskScheduler action paths or event payloads.
+$previousWindow = [ordered]@{
+    scope = 'PRIOR_WINDOW_ONLY'
+    scm_stop_readback = 'NOT_ATTEMPTED'
+    task_action_readback = 'NOT_ATTEMPTED'
+    previous_scm_stop_utc = $null
+    previous_task_action_success_utc = $null
+    correlated_prior_window = $false
+    post_window_stopped_disabled_independently_proven = $false
+}
+if ($task.readback -eq 'READ_OK' -and
+    $service.readback -eq 'READ_OK' -and
+    $null -ne $task.last_run_utc -and
+    $null -ne $svc) {
+    try {
+        $currentRun = [datetime]$task.last_run_utc
+        $beginHistory = $currentRun.AddMinutes(-75)
+        $endHistory = $currentRun.AddSeconds(-1)
+        if ($endHistory -gt $beginHistory -and
+            $currentRun -le [datetime]::UtcNow.AddMinutes(3)) {
+            # Event 7036: SCM service transitions. EventData values are
+            # display name and state, compared in memory with the *exact*
+            # locally registered runner service; no service list is returned.
+            try {
+                $scmEvents = @(Get-WinEvent -FilterHashtable @{
+                    LogName = 'System'
+                    ProviderName = 'Service Control Manager'
+                    Id = 7036
+                    StartTime = $beginHistory
+                    EndTime = $endHistory
+                } -MaxEvents 220 -ErrorAction Stop)
+                $previousWindow.scm_stop_readback = 'NO_MATCH'
+                foreach ($entry in $scmEvents) {
+                    if ($entry.Properties.Count -lt 2) { continue }
+                    $serviceLabel = [string]$entry.Properties[0].Value
+                    $stateLabel = [string]$entry.Properties[1].Value
+                    if ($serviceLabel -ceq [string]$svc.DisplayName -and
+                        $stateLabel.ToLowerInvariant() -in @('stopped','beendet')) {
+                        $previousWindow.scm_stop_readback = 'READ_OK'
+                        $previousWindow.previous_scm_stop_utc = UtcOrNull $entry.TimeCreated
+                        break
+                    }
+                }
+            } catch [System.UnauthorizedAccessException] {
+                $previousWindow.scm_stop_readback = 'ACCESS_DENIED'
+            } catch {
+                $previousWindow.scm_stop_readback = 'UNAVAILABLE'
+            }
+
+            # Event 201: completed TaskScheduler action and its exit result.
+            # Event 102 alone does NOT prove that the PowerShell action exited 0.
+            try {
+                $taskEvents = @(Get-WinEvent -FilterHashtable @{
+                    LogName = 'Microsoft-Windows-TaskScheduler/Operational'
+                    Id = 201
+                    StartTime = $beginHistory
+                    EndTime = $endHistory
+                } -MaxEvents 120 -ErrorAction Stop)
+                $previousWindow.task_action_readback = 'NO_MATCH'
+                foreach ($entry in $taskEvents) {
+                    [xml]$eventXml = $entry.ToXml()
+                    $data = @($eventXml.Event.EventData.Data)
+                    $taskNameField = @($data | Where-Object { $_.Name -ceq 'TaskName' })
+                    $resultCodeField = @($data | Where-Object { $_.Name -ceq 'ResultCode' })
+                    if ($taskNameField.Count -eq 1 -and $resultCodeField.Count -eq 1 -and
+                        $taskNameField[0].InnerText -ceq '\CryptoSupport - Bounded Runner Window' -and
+                        $resultCodeField[0].InnerText -ceq '0') {
+                        $previousWindow.task_action_readback = 'READ_OK'
+                        $previousWindow.previous_task_action_success_utc = UtcOrNull $entry.TimeCreated
+                        break
+                    }
+                }
+            } catch [System.UnauthorizedAccessException] {
+                $previousWindow.task_action_readback = 'ACCESS_DENIED'
+            } catch {
+                $previousWindow.task_action_readback = 'UNAVAILABLE'
+            }
+
+            if ($previousWindow.scm_stop_readback -eq 'READ_OK' -and
+                $previousWindow.task_action_readback -eq 'READ_OK') {
+                $stopAt = [datetime]$previousWindow.previous_scm_stop_utc
+                $successAt = [datetime]$previousWindow.previous_task_action_success_utc
+                if ($successAt -ge $stopAt -and
+                    $successAt -le $stopAt.AddMinutes(5) -and
+                    $successAt -lt $currentRun) {
+                    $previousWindow.correlated_prior_window = $true
+                }
+            }
+        }
+    } catch {
+        # Malformed or missing event history is never positive host evidence.
+    }
+}
+
 # The pinned private workflow captures the SUCCESS stream and emits only a
 # wrapper ACK. A *separate*, bounded public-safe information line makes the
 # essential result readable from the original GitHub job log without touching
@@ -198,6 +295,7 @@ $safeSummary = [pscustomobject][ordered]@{
     cpu_model_known = $safeCpu
     physical_ram_gib = $hostReadback.physical_ram_gib
     reboot_markers = @($markers)
+    previous_window_history = $previousWindow
     update_pause_readback = $pause.readback
     pause_expiry_utc = $pause.expiry_utc
     post_window_safe_pause_proven = $false
@@ -218,6 +316,7 @@ Write-Host ('MINIPC_MAINTENANCE_SAFE_SUMMARY_V1 ' + $safeLine)
     bounded_runner_service=$service
     windows_host=$hostReadback
     reboot_marker_readbacks=@($markers)
+    previous_window_history=$previousWindow
     update_pause_registry=$pause
     scheduled_window_safe_pause_proven=$false
     windows_update_ready_to_install_proven=$false
