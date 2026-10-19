@@ -139,6 +139,11 @@ jobs:
           # No services, real API, tasks, Cloud POST, CAS or live Paper.
           python -m unittest tests.test_v3_paper_precas_originalhost_offline_witness_v1 -v
 
+      - name: V3 isolated synthetic Cloud sandbox provenance and offline preview regression
+        run: |
+          # Existing job; no Edge deployment, no credentials, no network for sandbox tests.
+          python -m unittest tests.test_v3_paper_precas_synthetic_cloud_sandbox_v1 -v
+
       - name: One bounded live Kraken EUR coin-entry input smoke (research only)
         if: steps.implementation.outputs.present == 'true'
         run: |
