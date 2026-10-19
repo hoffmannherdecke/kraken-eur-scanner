@@ -187,5 +187,106 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 first.assert_not_called()
 
 
+    def original_release_host(self, series_id, pin):
+        # Contract fixture only, not an original Windows receipt.
+        return {
+            "kind": "V3_NATIVE_ONE_OWNER_POST_CAS_ORIGINALHOST_READBACK_V1",
+            "source": "ORIGINAL_MINIPC_WINDOWS_TASK_PROCESS_AND_FENCE",
+            "task_name": "CryptoMiniPC-V3PaperSingleWriter",
+            "task_state": "Running",
+            "series_id": series_id,
+            "release_repo_sha": pin,
+            "old_candidates_task_state": "Disabled",
+            "old_wait_task_state": "Disabled",
+            "old_candidates_workers_absent": True,
+            "old_wait_workers_absent": True,
+            "v3_task_one_original_action_verified": True,
+            "v3_worker_pinned_source_verified": True,
+            "native_writer_owner_singleton_verified": True,
+            "original_no_rearm_fence": "CLOUD_COMMITTED",
+            "original_supervisor_no_rearm_ack": True,
+            "old_lifecycle_task_running": True,
+            "old_cloudsync_task_running": True,
+            "independent_cloud_cas_committed": True,
+            "six_external_original_e2e_proofs_approved": True,
+            "paper_only": True,
+            "real_money_actions": False,
+            "observed_at_utc": "2026-10-19T14:00:00Z",
+        }
+
+    def test_authenticated_host_boundary_connects_exactly_one_existing_phase(self):
+        # No worker/HTTP/Cloud/Windows call; delegation is mocked.
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H",
+                          candidate={"candidate_id": "ORIGINAL_RECEIPT_ONLY"},
+                          clock_now=lambda: "2026-10-19T14:00:25Z")
+            host = self.original_release_host(self.SID, self.REPO)
+            original = dict(kwargs)
+            with patch.object(launcher, "dispatch_one_owned_paper_phase",
+                              return_value={"status": "SOURCE_ONLY_MOCK"}) as one:
+                result = launcher.dispatch_after_native_release_readback(
+                    originalhost_readback=lambda: host, **kwargs)
+                self.assertEqual(result["status"], "SOURCE_ONLY_MOCK")
+                one.assert_called_once_with(**original)
+            # This seam does not silently modify the CLI or task definition.
+            self.assertFalse((Path(root) / "release-proof.json").exists())
+
+    def test_native_seam_fail_closed_on_missing_bad_stale_or_false_originals(self):
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="FIRST_SCANNER_MODEL_P4",
+                          candidate={"candidate_id": "NOT_ACTUALLY_BOUGHT"},
+                          clock_now=lambda: "2026-10-19T14:00:25Z")
+            good = self.original_release_host(self.SID, self.REPO)
+            invalid = [
+                {"task_state": "Disabled"},
+                {"task_name": "CryptoMiniPC-V2R4PaperWait"},
+                {"series_id": "PAPER-V3-20261018T170000Z"},
+                {"release_repo_sha": "d" * 40},
+                {"old_wait_task_state": "Running"},
+                {"old_candidates_workers_absent": False},
+                {"old_wait_workers_absent": False},
+                {"v3_task_one_original_action_verified": False},
+                {"v3_worker_pinned_source_verified": False},
+                {"native_writer_owner_singleton_verified": False},
+                {"original_no_rearm_fence": "QUIESCED"},
+                {"original_supervisor_no_rearm_ack": False},
+                {"old_lifecycle_task_running": False},
+                {"old_cloudsync_task_running": False},
+                {"independent_cloud_cas_committed": False},
+                {"six_external_original_e2e_proofs_approved": False},
+                {"paper_only": False},
+                {"real_money_actions": True},
+                {"observed_at_utc": "2026-10-19T13:58:00Z"},
+                {"observed_at_utc": "2026-10-19T14:01:00Z"},
+                {"observed_at_utc": "2026-10-19T14:00:00"},
+                {"observed_at_utc": "NOT-A-TIMESTAMP"},
+            ]
+            with patch.object(launcher, "dispatch_one_owned_paper_phase") as worker:
+                with self.assertRaises(ValueError):
+                    launcher.dispatch_after_native_release_readback(**kwargs)
+                with self.assertRaises(ValueError):
+                    launcher.dispatch_after_native_release_readback(
+                        originalhost_readback=lambda: None, **kwargs)
+                for edits in invalid:
+                    with self.subTest(edits=edits):
+                        row = dict(good, **edits)
+                        with self.assertRaises(ValueError):
+                            launcher.dispatch_after_native_release_readback(
+                                originalhost_readback=lambda r=row: r, **kwargs)
+                worker.assert_not_called()
+
+    def test_native_seam_never_activates_on_invalid_local_release_paths(self):
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="CLOUD_RECEIPT_ACK",
+                          clock_now=lambda: "2026-10-19T14:00:25Z")
+            kwargs["journal"] = kwargs["capture_dir"]
+            with patch.object(launcher, "dispatch_one_owned_paper_phase") as worker:
+                with self.assertRaises(ValueError):
+                    launcher.dispatch_after_native_release_readback(
+                        originalhost_readback=lambda: self.original_release_host(
+                            self.SID, self.REPO), **kwargs)
+                worker.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()
