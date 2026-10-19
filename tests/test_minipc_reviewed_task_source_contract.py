@@ -14,7 +14,8 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
              FOLDER / "log_status_summary.ps1",
              FOLDER / "operations_readonly_bundle.ps1",
              FOLDER / "v3_paper_offline_probe.ps1",
-             FOLDER / "windows_maintenance_snapshot.ps1"],
+             FOLDER / "windows_maintenance_snapshot.ps1",
+             FOLDER / "workspace_report.ps1"],
         )
         self.assertFalse(SCRIPT.is_symlink())
         self.assertLess(SCRIPT.stat().st_size, 65536)
