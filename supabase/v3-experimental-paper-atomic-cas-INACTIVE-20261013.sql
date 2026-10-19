@@ -75,6 +75,7 @@ begin
            and ix.indisunique is true
            and ix.indisvalid is true
            and ix.indisready is true
+           and ix.indislive is true
            and ix.indnkeyatts=1
            and ix.indnatts=1
            and pg_catalog.pg_get_indexdef(ix.indexrelid,1,true)='status'
