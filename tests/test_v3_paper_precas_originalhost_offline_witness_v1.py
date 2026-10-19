@@ -11,6 +11,7 @@ import unittest
 
 from tools.v3_paper_precas_originalhost_offline_witness_v1 import (
     inspect, run_offline_cases, _original_case_receipt, _case_economic_proof,
+    inspect_existing_offline_originals,
 )
 
 
@@ -108,6 +109,81 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
             changed=dict(fill,content_sha256=hashlib.sha256(path.read_bytes()).hexdigest())
             with self.assertRaisesRegex(ValueError,"chronologically before original P4"):
                 _case_economic_proof(journal,series,buy["candidate_id"],p4,changed)
+
+    def _existing_original_16_receipts(self, tmp):
+        from tools.v3_paper_precas_synthetic_cloud_sandbox_v1 import (
+            SERIES, STAGE_SHA,
+        )
+        root = (Path(tmp) / "Research" / "V3Paper" /
+                ("PRECAS-OFFLINE-ORIGINALHOST-" + STAGE_SHA[:12]))
+        root.mkdir(parents=True)
+        report = run_offline_cases(root, SERIES)
+        report["stage_source_sha"] = STAGE_SHA
+        (root / "offline-model-stub-witness.json").write_text(
+            json.dumps(report, sort_keys=True), encoding="utf-8")
+        return root, SERIES
+
+    def test_existing_physical_dual_case_is_reread_without_second_writer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, series = self._existing_original_16_receipts(tmp)
+            all_files = {
+                str(p.relative_to(root)): (hashlib.sha256(p.read_bytes()).hexdigest(),
+                                           p.stat().st_mtime_ns)
+                for p in root.rglob("*") if p.is_file()
+            }
+            readback = inspect_existing_offline_originals(root, series)
+            self.assertEqual(readback["status"],
+                             "EXISTING_HOST_ORIGINALS_REANALYZED_READ_ONLY")
+            self.assertEqual(readback["event_count"], 16)
+            self.assertEqual(readback["technical_release_proofs_credited"], 0)
+            self.assertFalse(readback["native_writer_reexecuted"])
+            self.assertFalse(readback["fresh_independent_cloud_readback_performed"])
+            self.assertFalse(readback["v3_paper_release_authorized"])
+            self.assertFalse(readback["real_model_or_market_evidence"])
+            self.assertFalse(readback["physical_host_attestation_automatically_granted"])
+            self.assertEqual(readback["orders"], False)
+            buy, rejected = readback["cases"]
+            self.assertEqual((buy["case"], buy["paper_fill_count"]),
+                             ("POSITIVE_BUY_SCOUT",1))
+            self.assertEqual(buy["paper_scout_eur"],50.0)
+            self.assertEqual(buy["paper_entry_taker_fee_eur"],0.30)
+            self.assertLessEqual(buy["p4_known_at_utc"],
+                                 buy["paper_fill_known_at_utc"])
+            self.assertEqual((rejected["case"],rejected["paper_fill_count"]),
+                             ("NEGATIVE_REJECT",0))
+            self.assertIsNone(rejected["paper_fill_known_at_utc"])
+            self.assertEqual(rejected["native_journal_record_sha256"],
+                             rejected["p4_record_sha256"])
+            self.assertEqual(all_files, {
+                str(p.relative_to(root)): (hashlib.sha256(p.read_bytes()).hexdigest(),
+                                           p.stat().st_mtime_ns)
+                for p in root.rglob("*") if p.is_file()
+            })
+
+    def test_old_independent_sandbox_reference_is_match_only_not_fresh_attestation(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, series = self._existing_original_16_receipts(tmp)
+            manifest = inspect_existing_offline_originals(root,series)
+            verified = inspect_existing_offline_originals(
+                root,series,manifest["event_digest_join_sha256"])
+            self.assertTrue(verified["prior_independent_cloud_digest_reference_matched"])
+            self.assertFalse(verified["fresh_independent_cloud_readback_performed"])
+            with self.assertRaisesRegex(ValueError,"historical sandbox Cloud digest"):
+                inspect_existing_offline_originals(root,series,"f"*64)
+            with self.assertRaisesRegex(ValueError,"historical Cloud reference"):
+                inspect_existing_offline_originals(root,series,"invalid")
+
+    def test_existing_witness_tamper_or_other_series_fails_without_replay(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root, series = self._existing_original_16_receipts(tmp)
+            with self.assertRaisesRegex(ValueError,"unknown originalhost synthetic"):
+                inspect_existing_offline_originals(root,"PAPER-V3-CANARY-OTHER")
+            w=root/"offline-model-stub-witness.json"
+            original=json.loads(w.read_text("utf-8"))
+            original["cases"][0]["paper_fill_count"]=0
+            w.write_text(json.dumps(original),encoding="utf-8")
+            with self.assertRaises(ValueError):
+                inspect_existing_offline_originals(root,series)
 
     def test_preflight_never_treats_missing_staging_as_host_proof(self):
         with tempfile.TemporaryDirectory() as tmp:
