@@ -1321,6 +1321,45 @@
         "evidence": [
           "research/work-analysis/2026-10-07-v2r3-final-review.md"
         ]
+      },
+      "BACKLOG-9cdaf872e9e3d64585538": {
+        "disposition": "SUPERSEDED_WITH_CANONICAL_OWNER",
+        "reviewed_at_utc": "2026-10-19T08:23:36Z",
+        "owner": "project-current-state.json#pending_strategy_transition + GitHub Issue #99",
+        "next_gate": "FIRST_EXACT_TIA_ORIGINAL_FILE_TO_CLOUD_HASH_READBACK_THEN_EXISTING_SIX_PROOF_SINGLE_WRITER_CAS_SUPERVISOR_RELEASE_PATH",
+        "report": "research/work-analysis/2026-10-19-historical-v3-backlog-dispositions.md",
+        "evidence_sha256": "78b6028b51aeeba6878e38c3321240e8c17542dcee9989cc338b63ab0aeae33a",
+        "original_source": "PROJECT_BACKLOG.md:L514",
+        "evidence": [
+          "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6261969864",
+          "project-current-state.json#pending_strategy_transition"
+        ]
+      },
+      "BACKLOG-43e13a20ea9c99a0f6d2": {
+        "disposition": "SUPERSEDED_WITH_CANONICAL_OWNER",
+        "reviewed_at_utc": "2026-10-19T08:23:36Z",
+        "owner": "GitHub Issue #99 + research/v3/v3-consolidated-strategy-integration-plan-20261011.json",
+        "next_gate": "REAL_PROSPECTIVE_KRAKEN_PIT_FULL_MODEL_P4_SINGLE_WRITER_PAPER_AND_MATURE_ECONOMIC_EVIDENCE_UNDER_EXISTING_V3_RELEASE_OWNER",
+        "report": "research/work-analysis/2026-10-19-historical-v3-backlog-dispositions.md",
+        "evidence_sha256": "78b6028b51aeeba6878e38c3321240e8c17542dcee9989cc338b63ab0aeae33a",
+        "original_source": "PROJECT_BACKLOG.md:L516",
+        "evidence": [
+          "https://github.com/hoffmannherdecke/kraken-eur-scanner/commit/d462f9e84ffe8f9ea2e3f77421d48fe54cd28a41",
+          "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6261025326"
+        ]
+      },
+      "BACKLOG-8dcebaefd9e690c9a7d3": {
+        "disposition": "SUPERSEDED_WITH_CANONICAL_OWNER",
+        "reviewed_at_utc": "2026-10-19T08:23:36Z",
+        "owner": "GitHub Issue #99 + V3_PAPER_NET_ECONOMIC_REVIEW",
+        "next_gate": "VERIFIED_PHYSICAL_AND_CLOUD_V3_PAPER_RELEASE_THEN_REAL_PROSPECTIVE_FILL_COST_AND_OUTCOME_REVIEW",
+        "report": "research/work-analysis/2026-10-19-historical-v3-backlog-dispositions.md",
+        "evidence_sha256": "78b6028b51aeeba6878e38c3321240e8c17542dcee9989cc338b63ab0aeae33a",
+        "original_source": "PROJECT_BACKLOG.md:L518",
+        "evidence": [
+          "docs/minipc-analytics-rollout-v1.md",
+          "research/project-followthrough-routing-v1.json#project_wide_implementation_commitments"
+        ]
       }
     }
   },
@@ -1661,6 +1700,16 @@
       "attempted_at_utc": "2026-10-17T08:14:04Z",
       "report": "research/work-analysis/2026-10-17-v3-six-proof-reconciliation.md",
       "report_sha256": "375f9a3b92366907c7efe3500b68f59fb3f2c88ef12d03c0885a254560890870"
+    },
+    "HISTORICAL_BACKLOG_RECONCILIATION": {
+      "gate_fingerprint": "20261019:9cdaf872e9e3d64585538+43e13a20ea9c99a0f6d2+8dcebaefd9e690c9a7d3",
+      "status": "COMPLETED",
+      "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/blob/work/20261019-historical-backlog-reconciliation/research/work-analysis/2026-10-19-historical-v3-backlog-dispositions.md",
+      "reason": "Three router-prioritized historical V3 checkbox originals were independently mapped to existing canonical owners and objective gates without creating duplicate implementation work or any runtime/release claim.",
+      "attempted_at_utc": "2026-10-19T08:23:36Z",
+      "completed_at_utc": "2026-10-19T08:23:36Z",
+      "report": "research/work-analysis/2026-10-19-historical-v3-backlog-dispositions.md",
+      "report_sha256": "78b6028b51aeeba6878e38c3321240e8c17542dcee9989cc338b63ab0aeae33a"
     }
   }
 }
