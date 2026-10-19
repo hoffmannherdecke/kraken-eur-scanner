@@ -621,6 +621,10 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             and maintenance.get("no_service_task_update_or_restart") is True
             and maintenance.get("no_cpu_or_v3_release_authority") is True
             and maintenance.get("no_new_scheduler_or_work") is True
+            and maintenance.get("safe_github_job_log_marker") ==
+                "MINIPC_MAINTENANCE_SAFE_SUMMARY_V1"
+            and maintenance.get("no_raw_log_or_unbounded_output") is True
+            and maintenance.get("host_original_ack_still_required") is True
             and set(maintenance.get("all_project_scopes", [])) ==
                 {"strategy", "architecture", "operations", "research"},
             "reviewed Windows maintenance source or original-host gate drift")
@@ -681,6 +685,8 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 "use_existing_runner_only": True,
                 "no_arbitrary_shell_or_admin": True,
                 "no_runtime_or_reboot_authority": True,
+                "safe_github_job_log_marker": maintenance["safe_github_job_log_marker"],
+                "host_original_ack_still_required": True,
             },
             "request_format": runner["request_format"],
             "windows_task_name": runner["windows_task_name"],

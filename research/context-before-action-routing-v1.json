@@ -441,7 +441,7 @@
       "reviewed_windows_maintenance_diagnostics": {
         "task_name": "windows_maintenance_snapshot",
         "source_script": "tools/minipc_runner_tasks/windows_maintenance_snapshot.ps1",
-        "source_ci_status": "REQUIRES_PROTECTED_MAIN_MERGE_AND_CI",
+        "source_ci_status": "SOURCE_REVIEWED_MERGED_HOST_PENDING",
         "actual_windows_task_e2e": "PENDING_ORIGINAL_HOST_ACK",
         "request_via_existing_workflow_only": true,
         "no_arbitrary_shell_or_admin": true,
@@ -453,7 +453,10 @@
           "architecture",
           "operations",
           "research"
-        ]
+        ],
+        "safe_github_job_log_marker": "MINIPC_MAINTENANCE_SAFE_SUMMARY_V1",
+        "no_raw_log_or_unbounded_output": true,
+        "host_original_ack_still_required": true
       }
     }
   }

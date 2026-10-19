@@ -47,6 +47,23 @@ class WindowsMaintenanceSnapshotSource(unittest.TestCase):
         ):
             self.assertIn(required, s, required)
 
+    def test_one_sanitized_log_line_without_changing_json_ack_contract(self):
+        s = self.source
+        self.assertEqual(self.active.count("write-host"), 1)
+        self.assertIn("Write-Host ('MINIPC_MAINTENANCE_SAFE_SUMMARY_V1 ' + $safeLine)", s)
+        self.assertIn("$safeLine = $safeSummary | ConvertTo-Json -Compress -Depth 4", s)
+        for required in ("$safeCpu = 'OTHER_OR_NOT_READABLE'",
+                         "'i5-8500T|i7-8700T'",
+                         "post_window_safe_pause_proven = $false",
+                         "restart_or_update_authorized = $false",
+                         "reboot_markers = @($markers)",
+                         "task_readback = $task.readback"):
+            if required == "'i5-8500T|i7-8700T'":
+                self.assertIn("i5-8500T|i7-8700T", s)
+            else:
+                self.assertIn(required, s)
+        self.assertEqual(s.count("Write-Host ('MINIPC_MAINTENANCE_SAFE_SUMMARY_V1 ' + $safeLine)"), 1)
+
     def test_no_unreviewed_shell_or_mutation(self):
         for blocked in (
             "set-service", "start-service", "stop-service",
@@ -60,7 +77,7 @@ class WindowsMaintenanceSnapshotSource(unittest.TestCase):
             "invoke-webrequest", "invoke-restmethod", "invoke-command",
             "start-process", "invoke-cimmethod", "set-ciminstance",
             "set-acl", "icacls", "c:\\users", "api_key",
-            "trading\\secrets", "write-host",
+            "trading\\secrets",
         ):
             self.assertNotIn(blocked, self.active, blocked)
         self.assertNotIn("$args", self.source)
