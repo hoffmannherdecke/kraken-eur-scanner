@@ -20,6 +20,11 @@ $roots = @(
 $since = [DateTimeOffset]::UtcNow.AddHours(-24)
 $timestampPattern = '^\s*(?<ts>\d{4}-\d\d-\d\d[T ][0-9:.+-]+(?:Z)?)\b'
 $statusPattern = '(?i)(?:^|\s)status=(?<status>[A-Z][A-Z0-9_-]{0,24})(?=\s|$)'
+# Only known operational status words can leave the machine; everything else
+# is counted as OTHER to avoid leaking arbitrary field values from log content.
+$knownStatuses = @('OK','PASS','READY','RUNNING','STOPPED','STARTING',
+    'WAITING','HEALTHY','WARNING','DEGRADED','ERROR','FAILED','FAIL',
+    'BLOCKED','STALE','UNKNOWN','RESTARTING','RETRY','TIMEOUT','RECOVERED')
 $statuses = @{}
 $results = New-Object System.Collections.Generic.List[object]
 $totalMatched = 0
@@ -68,6 +73,7 @@ foreach ($root in $roots) {
                         $ts.ToUniversalTime() -gt [DateTimeOffset]::UtcNow.AddMinutes(1)) { continue }
                     if ($line -notmatch $statusPattern) { continue }
                     $status = $Matches['status'].ToUpperInvariant()
+                    if ($knownStatuses -cnotcontains $status) { $status = 'OTHER' }
                     $key = $root.id + '/' + $status
                     if (-not $statuses.ContainsKey($key)) { $statuses[$key] = 0 }
                     $statuses[$key] += 1
