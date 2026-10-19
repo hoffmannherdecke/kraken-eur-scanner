@@ -92,6 +92,41 @@ class ContextBeforeActionTests(unittest.TestCase):
         with self.assertRaisesRegex(ContextGateError, "interactive chat rule not indexed"):
             interactive_chat_goal_handoff(ROOT, [])
 
+    def test_readonly_log_diagnostics_capability_routed_projectwide_without_host_claim(self):
+        """New reviewed task must become discoverable for ALL project scopes."""
+        config = json.loads((ROOT / "research/context-before-action-routing-v1.json").read_text())
+        runner = config["existing_operational_evidence_handoff"]["projectwide_reviewed_runner"]
+        diag = runner["reviewed_readonly_log_diagnostics"]
+        script = "tools/minipc_runner_tasks/log_status_summary.ps1"
+        self.assertEqual(diag["task_name"], "log_status_summary")
+        self.assertEqual(diag["source_script"], script)
+        self.assertEqual(diag["source_ci_status"], "MERGED_SOURCE_AND_REVIEW_PASS")
+        self.assertEqual(diag["actual_windows_task_e2e"], "PENDING_ORIGINAL_HOST_ACK")
+        self.assertEqual(diag["actual_source_file_acl"], "UNKNOWN_UNTIL_RUNNER_READBACK")
+        self.assertTrue(diag["request_via_existing_workflow_only"])
+        self.assertTrue(diag["no_windows_acl_changes"])
+        self.assertTrue(diag["no_raw_log_lines_or_filenames"])
+        self.assertTrue(diag["prefer_before_manual_powershell_for_applicable_tasks"])
+        followthrough = json.loads((ROOT / "research/project-followthrough-routing-v1.json").read_text())
+        deployment = next(x for x in followthrough["extra_project_areas"]
+                          if x["id"] == "mini_pc_deployment")
+        self.assertEqual(deployment["reviewed_readonly_log_diagnostics_source"], script)
+        self.assertEqual(deployment["reviewed_readonly_log_diagnostics_owner_issue"], 353)
+        for scope in ("strategy", "architecture", "operations", "research"):
+            with self.subTest(scope=scope):
+                packet = build(ROOT, scope)
+                index = {x["path"]: x for x in packet["source_index"]}
+                self.assertIn(script, index)
+                self.assertEqual(len(index[script]["sha256"]), 64)
+                handoff = packet["operational_evidence_handoff"]["projectwide_reviewed_runner"]
+                available = handoff["reviewed_readonly_log_diagnostics"]
+                self.assertEqual(available["source_script"], script)
+                self.assertEqual(available["source_fingerprint"], index[script]["sha256"])
+                self.assertTrue(available["prefer_before_manual_powershell"])
+                self.assertEqual(available["actual_windows_task_e2e"], "PENDING_ORIGINAL_HOST_ACK")
+                self.assertTrue(available["no_user_supplied_shellcode_or_acl_changes"])
+                self.assertEqual(packet["declared_status"]["live_runtime_independently_checked"], False)
+
     def test_projectwide_reviewed_minipc_runner_is_routed_in_every_context_scope(self):
         """Same already-tested low-privilege capability must be visible without a second manager."""
         registry = json.loads((ROOT / "research/context-before-action-routing-v1.json").read_text())

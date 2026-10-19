@@ -51,7 +51,12 @@
       "gate": "EXISTING_REVIEWED_MINIPC_RUNNER_SCHEDULER_ENABLED_HOST_ACK__FIRST_NATURAL_UNATTENDED_WINDOW_STILL_PENDING__CPU_MAINTENANCE_SAFE_PAUSE",
       "execution_capability_source": "docs/minipc-runner-bounded-windows-v1.md",
       "execution_authority": "ONLY_REVIEWED_PUBLIC_MAIN_SHA_TASKS_VIA_PRIVATE_PINNED_PREJOB_CRYPTO_SUPPORT_NONADMIN",
-      "no_new_manager_or_runner": true
+      "no_new_manager_or_runner": true,
+      "reviewed_readonly_log_diagnostics_source": "tools/minipc_runner_tasks/log_status_summary.ps1",
+      "reviewed_readonly_log_diagnostics_gate": "PUBLIC_MAIN_SOURCE_CI_PASS__RESTRICTED_RUNNER_ORIGINAL_LOG_ACL_AND_TASK_E2E_PENDING",
+      "reviewed_readonly_log_diagnostics_owner_issue": 353,
+      "prefer_reviewed_readonly_log_task_before_manual_powershell": true,
+      "no_new_windows_acl_or_runner_or_workflow": true
     },
     {
       "id": "mini_pc_analytics_followthrough",

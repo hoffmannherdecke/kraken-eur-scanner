@@ -572,6 +572,42 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             and runner.get("new_chat_auto_import_guaranteed") is False,
             "reviewed runner safety and evidence boundary drift")
 
+    diag = runner.get("reviewed_readonly_log_diagnostics")
+    diag_script = "tools/minipc_runner_tasks/log_status_summary.ps1"
+    require(isinstance(diag, dict)
+            and diag.get("task_name") == "log_status_summary"
+            and diag.get("source_script") == diag_script
+            and diag_script in sources
+            and len(sources[diag_script]["sha256"]) == 64,
+            "reviewed reusable log diagnostics source not present in context packet")
+    require(diag.get("reviewed_public_main_merge_sha") ==
+                "5e6e822d54e42359665a949e04d6d0cf9b64ffbe"
+            and diag.get("source_ci_status") == "MERGED_SOURCE_AND_REVIEW_PASS"
+            and diag.get("actual_windows_task_e2e") == "PENDING_ORIGINAL_HOST_ACK"
+            and diag.get("actual_source_file_acl") == "UNKNOWN_UNTIL_RUNNER_READBACK"
+            and diag.get("original_private_issue") == 13
+            and diag.get("max_files_per_root") == 5
+            and diag.get("max_tail_lines_per_file") == 4000
+            and set(diag.get("all_project_scopes", [])) ==
+                {"strategy", "architecture", "operations", "research"},
+            "reviewed log diagnostics recorded evidence or scope drift")
+    diag_boundaries = (
+        "request_via_existing_workflow_only",
+        "no_raw_log_lines_or_filenames",
+        "no_user_pasted_shellcode",
+        "no_windows_acl_changes",
+        "prefer_before_manual_powershell_for_applicable_tasks",
+        "no_repeated_already_completed_example",
+        "no_new_workflow_runner_scheduler_subscription",
+        "no_trading_cloud_model_budget_release",
+    )
+    require(all(diag.get(flag) is True for flag in diag_boundaries),
+            "reviewed log diagnostics permission boundary drift")
+    require(diag.get("approved_log_roots") == [
+                r"C:\Users\ADMIN\Trading\Logs",
+                r"C:\CryptoSupport\Logs"],
+            "reviewed log diagnostics roots drift")
+
     return {
         "kind": contract["kind"],
         "status": "SOURCE_ROUTES_REGISTERED_LIVE_DATA_NOT_QUERIED",
@@ -605,6 +641,20 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             "private_approved_workflow_file": runner["private_approved_workflow_file"],
             "private_approved_workflow_sha": runner["private_approved_workflow_sha"],
             "task_source": runner["public_reviewed_task_dir"],
+            "reviewed_readonly_log_diagnostics": {
+                "task": diag["task_name"],
+                "source_script": diag_script,
+                "source_fingerprint": sources[diag_script]["sha256"],
+                "source_review_commit": diag["reviewed_public_main_merge_sha"],
+                "source_ci_status": diag["source_ci_status"],
+                "actual_windows_task_e2e": diag["actual_windows_task_e2e"],
+                "actual_source_file_acl": diag["actual_source_file_acl"],
+                "original_private_issue": diag["original_private_issue"],
+                "use_existing_runner_only": True,
+                "prefer_before_manual_powershell": True,
+                "no_user_supplied_shellcode_or_acl_changes": True,
+            },
+
             "request_format": runner["request_format"],
             "windows_task_name": runner["windows_task_name"],
             "windows_schedule_enabled_at_original_user_photo":
