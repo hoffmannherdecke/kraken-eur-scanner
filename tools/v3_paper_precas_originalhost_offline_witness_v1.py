@@ -300,15 +300,105 @@ def run_offline_cases(root: Path, series_id: str, *, stage: Path | None = None,
             "cases": evidence}
 
 
+
+def inspect_existing_offline_originals(root: Path, series_id: str,
+                                       expected_cloud_digest: str | None = None) -> dict:
+    """Read ONLY the one earlier isolated BUY/REJECT Host journal.
+
+    No second writer run, test scenario, Task, Cloud POST, or release ACK.
+    The historical Cloud digest, if provided, is only a previously observed
+    external reference -- this method cannot independently query Cloud.
+    """
+    from tools.v3_paper_precas_synthetic_cloud_sandbox_v1 import (
+        SERIES as KNOWN_SERIES, STAGE_SHA as KNOWN_STAGE,
+        audit_offline_witness,
+    )
+    if (series_id != KNOWN_SERIES or root.name !=
+            "PRECAS-OFFLINE-ORIGINALHOST-" + KNOWN_STAGE[:12]):
+        raise ValueError("unknown originalhost synthetic witness series")
+    if root.is_symlink() or not root.is_dir():
+        raise ValueError("original physical research journal unavailable")
+    checked = audit_offline_witness(root)
+    journal = checked["journal"]
+    report_path = root / "offline-model-stub-witness.json"
+    if report_path.is_symlink() or not report_path.is_file():
+        raise ValueError("original witness file unavailable")
+    report = json.loads(report_path.read_text("utf-8"))
+    if report.get("series_id") != series_id or len(report.get("cases", [])) != 2:
+        raise ValueError("original host witness identity invalid")
+    cases = []
+    for case in report["cases"]:
+        cid = case["candidate_id"]
+        rows = _receipt_files(journal, series_id, cid)
+        if (len(rows) != len(case["receipts"])
+                or {x["event_id"]: x["content_sha256"] for x in rows} !=
+                {x["event_id"]: x["content_sha256"] for x in case["receipts"]}):
+            raise ValueError("original witness receipts mismatch existing files")
+        p4 = [r for r in rows if r["phase"] == "P4_VALIDATION"]
+        fill = [r for r in rows if r["phase"] == "PAPER_FILL"]
+        if (len(p4) != 1 or len(fill) != case["paper_fill_count"]
+                or case["p4_decision"] != p4[0]["result"]
+                or (case["case"] == "POSITIVE_BUY_SCOUT" and
+                    (len(fill) != 1 or fill[0]["result"] != "PAPER_FILLED"))
+                or (case["case"] == "NEGATIVE_REJECT" and
+                    (len(fill) != 0 or p4[0]["result"] != "REJECT"))):
+            raise ValueError("original host BUY/REJECT evidence disagreement")
+        economics = _case_economic_proof(
+            journal, series_id, cid, p4[0], fill[0] if fill else None)
+        cases.append({"case": case["case"], "series_id": series_id,
+                      "candidate_id": cid, "p4_decision": p4[0]["result"],
+                      "paper_fill_count": len(fill),
+                      "p4_record_sha256": p4[0]["content_sha256"],
+                      "paper_fill_record_sha256": (
+                          fill[0]["content_sha256"] if fill else None),
+                      **economics})
+    if set(x["case"] for x in cases) != {
+            "POSITIVE_BUY_SCOUT", "NEGATIVE_REJECT"}:
+        raise ValueError("two distinct synthetic test cases required")
+    historical_match = None
+    if expected_cloud_digest is not None:
+        if re.fullmatch(r"[0-9a-f]{64}", expected_cloud_digest) is None:
+            raise ValueError("historical Cloud reference must be exact sha256")
+        if checked["joined_sha256"] != expected_cloud_digest:
+            raise ValueError("historical sandbox Cloud digest reference differs")
+        historical_match = True
+    return {
+        "status": "EXISTING_HOST_ORIGINALS_REANALYZED_READ_ONLY",
+        "series_id": series_id,
+        "event_count": checked["count"],
+        "event_digest_join_sha256": checked["joined_sha256"],
+        "prior_independent_cloud_digest_reference_matched": historical_match,
+        "fresh_independent_cloud_readback_performed": False,
+        "native_writer_reexecuted": False,
+        "physical_host_attestation_automatically_granted": False,
+        "real_model_or_market_evidence": False,
+        "v3_paper_release_authorized": False,
+        "technical_release_proofs_credited": 0,
+        "orders": False,
+        "cases": cases,
+    }
+
+
 def main() -> int:
     cli = argparse.ArgumentParser()
     cli.add_argument("--source", type=Path, required=True)
     cli.add_argument("--stage", type=Path, required=True)
     cli.add_argument("--expected-stage-sha", required=True)
     cli.add_argument("--execute-host-offline", action="store_true")
+    cli.add_argument("--readback-existing", action="store_true")
+    cli.add_argument("--expected-isolated-cloud-digest", default=None)
     a = cli.parse_args()
+    if a.execute_host_offline and a.readback_existing:
+        raise ValueError("cannot reexecute writer during existing journal readback")
+    if a.expected_isolated_cloud_digest is not None and not a.readback_existing:
+        raise ValueError("historical Cloud digest is readback-only")
     p = inspect(source=a.source, stage=a.stage, stage_sha=a.expected_stage_sha)
     output = p["target"]
+    if a.readback_existing:
+        print(json.dumps(inspect_existing_offline_originals(
+            output, p["series_id"], a.expected_isolated_cloud_digest),
+            sort_keys=True))
+        return 0
     if output.exists():
         raise ValueError("ONE_SHOT_WITNESS_TARGET_ALREADY_EXISTS_NO_RETRY")
     if not a.execute_host_offline:
