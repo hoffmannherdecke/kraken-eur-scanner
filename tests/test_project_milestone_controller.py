@@ -7,6 +7,112 @@ spec = importlib.util.spec_from_file_location('controller', ROOT / 'tools/projec
 controller = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(controller)
 
+
+class DynamicPaperCloudMilestoneReadbackTests(unittest.TestCase):
+    """No-network tests: never choose stale V2R4 row after V3 activation."""
+
+    OLD = {"series_id": "PAPER-V2R4-20261009T110135Z",
+           "strategy_revision": "V2R4-FROZEN", "status": "active"}
+    NEW = {"series_id": "PAPER-V3-20261019T140000Z",
+           "strategy_revision": "V3-EXPERIMENTAL-PAPER-001", "status": "active"}
+
+    @classmethod
+    def readiness(cls, active):
+        return {"series_id": active["series_id"],
+                "strategy_revision": active["strategy_revision"],
+                "candidate_outcomes": 11,
+                "completed_trades": 0,
+                "fasttrack_policy_version": "EVIDENCE_DIVERSITY_FASTTRACK_V2"}
+
+    @staticmethod
+    def stub(base, key, view):
+        raise AssertionError("unexpected live network")
+
+    def test_old_v2r4_still_selected_with_future_stale_extra_row(self):
+        from unittest.mock import patch
+        old=self.readiness(self.OLD)
+        newer=self.readiness(self.NEW)
+        def fetch(_base, _key, view):
+            return [self.OLD] if view=="paper_series" else [newer,old]
+        with patch.object(controller,"get_rows",side_effect=fetch) as gets:
+            got=controller.current_active_paper_readiness("cloud","fake")
+        self.assertEqual(got,old)
+        self.assertEqual([x.args[2] for x in gets.call_args_list],
+                         ["paper_series","paper_series_completion_readiness"])
+
+    def test_v3_selected_when_old_v2r4_readiness_remains(self):
+        from unittest.mock import patch
+        old=self.readiness(self.OLD)
+        newer=self.readiness(self.NEW)
+        def fetch(_base, _key, view):
+            return [self.NEW] if view=="paper_series" else [old,newer]
+        with patch.object(controller,"get_rows",side_effect=fetch):
+            got=controller.current_active_paper_readiness("cloud","fake")
+        self.assertEqual(got,newer)
+        self.assertNotEqual(got["series_id"],old["series_id"])
+
+    def test_no_active_or_duplicate_live_series_fail_closed(self):
+        from unittest.mock import patch
+        for active in ([], [self.OLD,self.NEW], [self.NEW,self.NEW]):
+            with self.subTest(active=len(active)):
+                def fetch(_base,_key,view):
+                    return active if view=="paper_series" else [self.readiness(self.NEW)]
+                with patch.object(controller,"get_rows",side_effect=fetch):
+                    with self.assertRaisesRegex(ValueError,"CARDINALITY_NOT_ONE"):
+                        controller.current_active_paper_readiness("cloud","fake")
+
+    def test_mismatched_or_duplicate_readiness_no_false_work_notice(self):
+        from unittest.mock import patch
+        good=self.readiness(self.NEW)
+        for rows in ([self.readiness(self.OLD)], [good,good],
+                     [dict(good,strategy_revision="V2R4-FROZEN")], []):
+            with self.subTest(rows=len(rows)):
+                def fetch(_base,_key,view):
+                    return [self.NEW] if view=="paper_series" else rows
+                with patch.object(controller,"get_rows",side_effect=fetch):
+                    with self.assertRaises(ValueError):
+                        controller.current_active_paper_readiness("cloud","fake")
+
+    def test_paper_queries_are_bounded_read_only_and_do_not_select_credentials(self):
+        import json
+        from unittest.mock import patch
+        seen=[]
+        class Response:
+            def __init__(self, rows): self.rows=rows
+            def __enter__(self): return self
+            def __exit__(self,*_): return None
+            def read(self): return json.dumps(self.rows).encode("utf-8")
+        def fetch(req, timeout):
+            seen.append((req.full_url,req.get_method()))
+            if "/paper_series?" in req.full_url:return Response([self.NEW])
+            if "/paper_series_completion_readiness?" in req.full_url:
+                return Response([self.readiness(self.OLD),self.readiness(self.NEW)])
+            raise AssertionError("unexpected network")
+        with patch.object(controller.urllib.request,"urlopen",side_effect=fetch):
+            got=controller.current_active_paper_readiness(
+                "https://example.supabase.co","test-placeholder")
+        self.assertEqual(got["series_id"],self.NEW["series_id"])
+        self.assertEqual(len(seen),2)
+        self.assertTrue(all(method=="GET" for _,method in seen))
+        self.assertIn("status=eq.active&limit=2",seen[0][0])
+        self.assertIn("select=series_id,strategy_revision,status",seen[0][0])
+        self.assertIn("limit=101",seen[1][0])
+        self.assertNotIn("config",seen[0][0])
+
+    def test_oversize_readiness_view_fails_instead_of_hiding_current(self):
+        import json
+        from unittest.mock import patch
+        class Response:
+            def __enter__(self):return self
+            def __exit__(self,*_):return None
+            def read(self):return json.dumps([self_row]*101).encode()
+        self_row=self.readiness(self.NEW)
+        with patch.object(controller.urllib.request,"urlopen",return_value=Response()):
+            with self.assertRaisesRegex(ValueError,"bounded cardinality"):
+                controller.get_rows("https://example.supabase.co","fake",
+                                    "paper_series_completion_readiness")
+
+
 class GeneralFutureImplementationMilestoneTests(unittest.TestCase):
     def test_project_wide_future_work_is_flagged_without_new_schedule(self):
         import datetime as dt

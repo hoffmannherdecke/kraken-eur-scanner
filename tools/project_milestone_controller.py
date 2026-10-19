@@ -22,9 +22,11 @@ import urllib.request
 try:
     from tools.strategy_epoch_lineage import summarize_epoch
     from tools.project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments
+    from tools.paper_series_transition_guard import select_current_readiness
 except ModuleNotFoundError:
     from strategy_epoch_lineage import summarize_epoch
     from project_followthrough_router import v3_five_source_followthrough, project_implementation_commitments
+    from paper_series_transition_guard import select_current_readiness
 
 ROOT = Path(__file__).resolve().parents[1]
 UTC = dt.timezone.utc
@@ -70,11 +72,27 @@ def load_local_state(root: Path) -> dict:
 
 
 def get_rows(base: str, key: str, view: str) -> list:
+    """Read only the existing Cloud authority; never pick a stale first row.
+
+    The historical V2R4 readiness view used to have one row. After a real
+    V3 cutover an archived V2R4 readiness can coexist with the current V3
+    readiness. The original pure routing guard decides which one is active.
+    """
     require(re.fullmatch(r"https://[a-z0-9-]+[.]supabase[.]co", base.rstrip("/")) is not None,
             "unapproved Supabase host")
-    require(view in {"paper_series_completion_readiness", "v3_h3_shadow_status"},
-            "unapproved evidence view")
-    url = base.rstrip("/") + "/rest/v1/" + view + "?select=*"
+    allowed = {
+        "paper_series": ("series_id,strategy_revision,status",
+                         "status=eq.active&limit=2", 2),
+        "paper_series_completion_readiness": ("*", "limit=101", 100),
+        "v3_h3_shadow_status": ("*", "", 1),
+    }
+    require(view in allowed, "unapproved evidence view")
+    projection, options, max_rows = allowed[view]
+    # Preserve explicit bounded GET only. No scripts, service calls, RPCs,
+    # Paper mutation, model spend or alternate Work schedule.
+    url = base.rstrip("/") + "/rest/v1/" + view + "?select=" + projection
+    if options:
+        url += "&" + options
     headers = {"apikey": key, "Accept": "application/json",
                "User-Agent": "project-milestone-controller/1"}
     if not key.startswith("sb_secret_"):
@@ -82,8 +100,22 @@ def get_rows(base: str, key: str, view: str) -> list:
     req = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(req, timeout=15) as response:
         rows = json.load(response)
-    require(isinstance(rows, list) and len(rows) == 1, view + " must return exactly one row")
+    require(isinstance(rows, list) and len(rows) <= max_rows,
+            view + " Cloud rows missing bounded cardinality")
+    if view == "v3_h3_shadow_status":
+        require(len(rows) == 1, "H3 status must return exactly one row")
     return rows
+
+
+def current_active_paper_readiness(base: str, key: str) -> dict:
+    """Existing single-live-series guard shared with the daily report.
+
+    Source is live Cloud paper_series, NOT frozen declared V2R4 epoch and
+    NOT the first arbitrary historical readiness row.
+    """
+    active = get_rows(base, key, "paper_series")
+    readiness = get_rows(base, key, "paper_series_completion_readiness")
+    return select_current_readiness(active, readiness)
 
 
 def first_h10_source_receipt_review(base: str, key: str) -> tuple[str, dict | None]:
@@ -662,7 +694,7 @@ def main() -> int:
         key = os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
         require(bool(key), "missing Supabase evidence credential")
         try:
-            paper = get_rows(base, key, "paper_series_completion_readiness")[0]
+            paper = current_active_paper_readiness(base, key)
             shadows = (state.get("strategy_changing_shadow_wip") or {}).get("active") or []
             h3 = (get_rows(base, key, "v3_h3_shadow_status")[0]
                   if shadows and shadows[0].get("candidate_id") == "V3-H3-SHADOW-001"
