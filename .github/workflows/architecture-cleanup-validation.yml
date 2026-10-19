@@ -198,6 +198,10 @@ jobs:
         run: |
           python -m py_compile tools/v3_experimental_paper_technical_gate.py
           python -m unittest tests.test_v3_experimental_paper_technical_gate -v
+      - name: V3 originalhost offline dual-case writer readback (no network or release)
+        run: |
+          python -m py_compile tools/v3_paper_precas_originalhost_offline_witness_v1.py
+          python -m unittest tests.test_v3_paper_precas_originalhost_offline_witness_v1 -v
       - name: V3 early closed-5m paper-research hypothesis into shared P4 contract
         run: |
           python -m py_compile paper_evaluator/v3_p3_early_5m_continuity_research_v1.py
