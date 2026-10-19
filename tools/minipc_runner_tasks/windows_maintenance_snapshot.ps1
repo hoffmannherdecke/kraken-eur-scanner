@@ -15,11 +15,30 @@ function UtcOrNull([object]$value) {
     } catch { return $null }
 }
 
-$task = [ordered]@{ readback='UNAVAILABLE'; state=$null; enabled=$null;
-    last_run_utc=$null; next_run_utc=$null; last_result=$null }
+# Fail-closed classification, no raw exception strings, usernames or resource listings.
+# The previous generic 'UNAVAILABLE' did not establish an ACL error.
+function SchedulerReadErrorClass([System.Management.Automation.ErrorRecord]$failure) {
+    $e = $failure.Exception
+    if ($e -is [System.UnauthorizedAccessException] -or
+        [string]$failure.CategoryInfo.Category -eq 'PermissionDenied' -or
+        (([int64]$e.HResult -band 65535) -eq 5)) { return 'ACCESS_DENIED' }
+    if ($e -is [System.Management.Automation.CommandNotFoundException]) {
+        return 'CMDLET_NOT_AVAILABLE'
+    }
+    if (([int64]$e.HResult -band 65535) -in @(2,3)) { return 'NOT_FOUND' }
+    return 'OTHER_ERROR'
+}
+
+# Method 1: original, exact named Windows ScheduledTasks cmdlets.
+$task = [ordered]@{ readback='UNAVAILABLE'; method='NONE';
+    cmdlet_probe='NOT_ATTEMPTED'; com_probe='NOT_ATTEMPTED';
+    state=$null; enabled=$null; last_run_utc=$null;
+    next_run_utc=$null; last_result=$null }
 try {
     $t = Get-ScheduledTask -TaskName 'CryptoSupport - Bounded Runner Window' -ErrorAction Stop
-    $task.readback = 'READ_OK'
+    $task.cmdlet_probe = 'READ_OK'
+    $task.readback = 'PARTIAL_INFO_UNAVAILABLE'
+    $task.method = 'CMDLET'
     $task.state = [string]$t.State
     $task.enabled = [bool]$t.Settings.Enabled
     try {
@@ -27,10 +46,48 @@ try {
         $task.last_run_utc = UtcOrNull $i.LastRunTime
         $task.next_run_utc = UtcOrNull $i.NextRunTime
         $task.last_result = [int64]$i.LastTaskResult
-    } catch { $task.readback = 'PARTIAL_INFO_UNAVAILABLE' }
-} catch [System.UnauthorizedAccessException] {
-    $task.readback = 'ACCESS_DENIED'
-} catch { $task.readback = 'UNAVAILABLE' }
+        $task.readback = 'READ_OK'
+    } catch {
+        $task.cmdlet_probe = SchedulerReadErrorClass $_
+    }
+} catch {
+    $task.cmdlet_probe = SchedulerReadErrorClass $_
+}
+
+# Method 2: Windows' native Schedule.Service COM API for the *same* one
+# root-folder task. This uses the existing CryptoSupportSvc token only.
+# It cannot change task permissions or start, stop, register or edit tasks.
+if ($task.readback -ne 'READ_OK') {
+    try {
+        $scheduler = New-Object -ComObject 'Schedule.Service' -ErrorAction Stop
+        $scheduler.Connect()
+        $rootFolder = $scheduler.GetFolder('\')
+        $comTask = $rootFolder.GetTask('CryptoSupport - Bounded Runner Window')
+        if ($null -eq $comTask) { throw 'SCHEDULER_TASK_NOT_AVAILABLE' }
+        $comState = 'UNKNOWN'
+        switch ([int]$comTask.State) {
+            1 { $comState = 'Disabled' }
+            2 { $comState = 'Queued' }
+            3 { $comState = 'Ready' }
+            4 { $comState = 'Running' }
+        }
+        $task.state = $comState
+        $task.enabled = [bool]$comTask.Enabled
+        $task.last_run_utc = UtcOrNull $comTask.LastRunTime
+        $task.next_run_utc = UtcOrNull $comTask.NextRunTime
+        $task.last_result = [int64]$comTask.LastTaskResult
+        $task.com_probe = 'READ_OK'
+        $task.method = 'SCHEDULE_SERVICE_COM'
+        $task.readback = 'READ_OK'
+    } catch {
+        $task.com_probe = SchedulerReadErrorClass $_
+        if ($task.readback -ne 'PARTIAL_INFO_UNAVAILABLE') {
+            $task.readback = if ($task.com_probe -eq 'ACCESS_DENIED' -and
+                $task.cmdlet_probe -eq 'ACCESS_DENIED') { 'ACCESS_DENIED' } else { 'UNAVAILABLE' }
+        }
+    }
+}
+
 
 # Exact service name is shared with existing bounded_window.ps1.
 $service = [ordered]@{ readback='UNAVAILABLE'; state=$null; start_mode=$null;
@@ -121,6 +178,9 @@ $safeSummary = [pscustomobject][ordered]@{
     kind = 'MINIPC_MAINTENANCE_SAFE_SUMMARY_V1'
     checked_at_utc = [DateTimeOffset]::UtcNow.ToString('o')
     task_readback = $task.readback
+    task_read_method = $task.method
+    task_cmdlet_probe = $task.cmdlet_probe
+    task_com_probe = $task.com_probe
     task_state = $safeTaskState
     task_enabled = $task.enabled
     task_last_run_utc = $task.last_run_utc
