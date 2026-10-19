@@ -14,6 +14,44 @@ from tools.context_before_action import (
 
 class ContextBeforeActionTests(unittest.TestCase):
 
+    def test_compact_brief_routes_real_owner_without_losing_full_context(self):
+        from tools.context_before_action import compact_decision_brief
+        for scope in ("strategy", "architecture", "operations", "research"):
+            with self.subTest(scope=scope):
+                full = build(ROOT, scope)
+                brief = compact_decision_brief(full)
+                self.assertEqual(brief["kind"], "CONTEXT_BEFORE_ACTION_DECISION_BRIEF_V1")
+                self.assertEqual(brief["fingerprint"], full["fingerprint"])
+                self.assertEqual(brief["scope"], scope)
+                self.assertLess(len(json.dumps(brief)), 3500)
+                self.assertNotIn("source_index", brief)
+                self.assertNotIn("strategy_learning_routes", brief)
+                self.assertEqual(brief["routed_source_count"], len(full["source_index"]))
+                self.assertTrue(brief["full_packet_required_before_material_change"])
+                self.assertIn("AGENTS.md", brief["priority_sources_to_read"])
+                self.assertEqual(brief["decision_order"][0],
+                                 "USE_AVAILABLE_CONNECTED_GITHUB_OR_CLOUD_READBACK_FIRST")
+                self.assertEqual(brief["decision_order"][-1],
+                                 "ASK_USER_FOR_SMALLEST_SAFE_PHYSICAL_STEP_ONLY_IF_NEEDED")
+                self.assertEqual(brief["connected_tools"], "MUST_CHECK_IN_CURRENT_CHAT")
+                self.assertEqual(brief["live_host"], "NOT_CHECKED_BY_SOURCE_PACKET")
+                self.assertTrue(brief["no_live_runtime_or_trading_authority"])
+                self.assertTrue(brief["history_or_hash_is_not_live_proof"])
+
+    def test_compact_agents_preserves_full_rule_and_archival_boundary(self):
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        archive = (ROOT / "docs/project-context-instruction-archive-20261019.md").read_text(encoding="utf-8")
+        self.assertLess(len(agents), 18500)
+        self.assertIn("Kontext", agents)
+        self.assertIn("PROJECT_CONTEXT_REVIEW_V1", agents)
+        self.assertIn("Keine Änderung aktiver Trading", agents)
+        self.assertIn("ohne neue Nutzerantwort weiterarbeiten", agents)
+        self.assertIn("MINIPC_TASK_V1", agents)
+        self.assertIn("kein allgemeiner Befehlskanal", agents)
+        self.assertIn("ARCHIV / NICHT AKTUELLE STATUS-AUTORITÄT", archive)
+        self.assertIn("CryptoSupport - Bounded Runner Window", archive)
+        self.assertIn("docs/project-context-instruction-archive-20261019.md", agents)
+
     def test_projectwide_ownership_is_not_limited_to_v3_or_runtime_guessing(self):
         required = json.loads(
             (ROOT / "research/project-followthrough-routing-v1.json").read_text()
