@@ -703,6 +703,7 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 "original_host_evidence": dict(maintenance["original_host_evidence"]),
                 "host_original_ack_still_required": False,
                 "post_window_safe_pause_original_ack_pending": False,
+                "first_window_host_evidence": dict(runner["first_unattended_periodic_window_evidence"]),
                 "no_acl_elevation_for_missing_scheduler_readback": True,
                 "no_broad_or_admin_acl_grant": True,
                 "target_task_read_access_original_host": maintenance["target_task_read_access_original_host"],
