@@ -143,6 +143,8 @@ class ContextBeforeActionTests(unittest.TestCase):
                 self.assertTrue(record["use_existing_runner_only"])
                 self.assertTrue(record["no_arbitrary_shell_or_admin"])
                 self.assertTrue(record["no_runtime_or_reboot_authority"])
+                self.assertEqual(record["safe_github_job_log_marker"], "MINIPC_MAINTENANCE_SAFE_SUMMARY_V1")
+                self.assertTrue(record["host_original_ack_still_required"])
                 self.assertFalse(packet["declared_status"]["live_runtime_independently_checked"])
 
     def test_projectwide_reviewed_minipc_runner_is_routed_in_every_context_scope(self):
