@@ -48,6 +48,32 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertIn("paper_series_single_active_idx",self.body)
         self.assertIn("share row exclusive mode",self.body)
 
+    def test_exact_single_active_index_catalog_contract_not_just_named_index(self):
+        # Source-only negative-policy test, not a live SQL/index alteration.
+        # A same-name nonunique/invalid/different-predicate index must fail.
+        gate=self.body.split("if not exists (",1)[1].split(
+            "raise exception 'V3 CAS missing exact valid unique single-active Paper index'",1)[0]
+        self.assertIn("from pg_catalog.pg_index ix",gate)
+        for predicate in (
+            "ns.nspname='public'",
+            "idx.relname='paper_series_single_active_idx'",
+            "ix.indrelid=pg_catalog.to_regclass('public.paper_series')",
+            "ix.indisunique is true",
+            "ix.indisvalid is true",
+            "ix.indisready is true",
+            "ix.indislive is true",
+            "ix.indnkeyatts=1",
+            "ix.indnatts=1",
+            "pg_catalog.pg_get_indexdef(ix.indexrelid,1,true)='status'",
+            "pg_catalog.pg_get_expr(ix.indpred,ix.indrelid)",
+            "'(status = ''active''::text)'",
+        ):
+            with self.subTest(predicate=predicate):
+                self.assertIn(predicate,gate)
+        self.assertIn("if not exists (",self.body)
+        self.assertIn("V3 CAS missing exact valid unique single-active Paper index",self.body)
+        self.assertNotRegex(gate,r"(?im)^\s*(create|alter|drop)\s+index")
+
     def test_conditional_atomicity_is_bound_to_original_cloud_state(self):
         for required in (
             "pg_advisory_xact_lock",
