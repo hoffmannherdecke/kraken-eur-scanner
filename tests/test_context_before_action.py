@@ -146,7 +146,15 @@ class ContextBeforeActionTests(unittest.TestCase):
                 self.assertEqual(record["original_host_evidence"]["task_readback"], "READ_OK")
                 self.assertEqual(record["target_task_read_access_original_host"], "PASS_NATIVE_CMDLET_AFTER_SINGLE_TASK_READ_ACE")
                 self.assertTrue(record["no_broad_or_admin_acl_grant"])
-                self.assertTrue(record["post_window_safe_pause_original_ack_pending"])
+                self.assertFalse(record["post_window_safe_pause_original_ack_pending"])
+                witness = record["first_window_host_evidence"]
+                self.assertEqual(witness["safe_pause"], "PASS")
+                self.assertEqual(witness["task_state"], "Ready")
+                self.assertEqual(witness["task_last_result"], 0)
+                self.assertEqual(witness["runner_service_state"], "Stopped")
+                self.assertEqual(witness["runner_service_start_mode"], "Disabled")
+                self.assertFalse(witness["future_windows_guaranteed"])
+                self.assertTrue(witness["cpu_maintenance_requires_fresh_safe_pause"])
                 self.assertTrue(record["no_acl_elevation_for_missing_scheduler_readback"])
                 self.assertTrue(record["use_existing_runner_only"])
                 self.assertTrue(record["no_arbitrary_shell_or_admin"])
@@ -169,7 +177,7 @@ class ContextBeforeActionTests(unittest.TestCase):
         self.assertEqual(routing["manual_one_off_e2e"]["last_task_result"], 0)
         self.assertEqual(
             routing["first_unattended_periodic_window_e2e"],
-            "PENDING_ORIGINAL_HOST_READBACK",
+            "PASS_ONE_UNATTENDED_NATURAL_WINDOW_ORIGINAL_HOST_20261019",
         )
         self.assertFalse(routing["new_chat_auto_import_guaranteed"])
         self.assertTrue(routing["no_unreviewed_powershell_or_elevated_host_access"])
@@ -180,7 +188,7 @@ class ContextBeforeActionTests(unittest.TestCase):
         deployment = next(x for x in extra if x["id"] == "mini_pc_deployment")
         self.assertEqual(deployment["owner"], "PROJECT_BACKLOG.md")
         self.assertEqual(deployment["execution_capability_source"], doc)
-        self.assertIn("UNATTENDED_WINDOW_STILL_PENDING", deployment["gate"])
+        self.assertIn("UNATTENDED_WINDOW_ORIGINAL_HOST_VERIFIED_20261019", deployment["gate"])
         self.assertEqual(
             set(routing["all_project_scopes"]),
             {"strategy", "architecture", "operations", "research"},
