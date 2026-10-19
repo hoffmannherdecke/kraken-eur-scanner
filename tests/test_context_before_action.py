@@ -177,7 +177,7 @@ class ContextBeforeActionTests(unittest.TestCase):
         self.assertEqual(routing["manual_one_off_e2e"]["last_task_result"], 0)
         self.assertEqual(
             routing["first_unattended_periodic_window_e2e"],
-            "PENDING_ORIGINAL_HOST_READBACK",
+            "PASS_ONE_UNATTENDED_NATURAL_WINDOW_ORIGINAL_HOST_20261019",
         )
         self.assertFalse(routing["new_chat_auto_import_guaranteed"])
         self.assertTrue(routing["no_unreviewed_powershell_or_elevated_host_access"])
