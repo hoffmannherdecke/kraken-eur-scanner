@@ -89,7 +89,8 @@ if($supervisorPin.Length -ne 64 -or -not $src.Contains($supervisorPin) -or
 # provide two NEW independent QUIESCED ticks inside the former 180-second budget.
 # Reserve two full cycles, scheduling jitter and a fresh CloudSync acknowledgment.
 $ackBudget='WaitSupervisorAndCloud ''QUIESCED'' $since 360 $true'
-if(-not $src.Contains($ackBudget) -or $src.Contains("WaitSupervisorAndCloud 'QUIESCED' $since 180 $true")){
+$oldAckBudget='WaitSupervisorAndCloud ''QUIESCED'' $since 180 $true'
+if(-not $src.Contains($ackBudget) -or $src.Contains($oldAckBudget)){
   throw 'QUIESCED two-cycle wall-clock budget regression'
 }
 foreach($phaseOffset in @(0,30,60,119)){
