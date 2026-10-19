@@ -31,6 +31,8 @@ class V3FixedPathReadbackContract(unittest.TestCase):
             self.assertNotIn(forbidden, s)
         self.assertIn("get-childitem -literalpath $root.path -directory -force", s)
         self.assertIn("$children.count -gt 32", s)
+        self.assertEqual(s.count("get-childitem"), 1)
+        self.assertIn("reparsepoint", s)
         self.assertIn("unavailable", s)
         self.assertIn("nested_git_count=$nestedgitcount", s)
         self.assertIn("nested_scan=$nestedscan", s)
