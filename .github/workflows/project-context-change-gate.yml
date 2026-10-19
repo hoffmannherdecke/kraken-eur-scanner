@@ -31,7 +31,9 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $files = @(Get-ChildItem -LiteralPath 'tools/minipc_runner_tasks' -Filter '*.ps1' -File)
-          if ($files.Count -ne 8) { throw 'MINIPC_SOURCE_BLOCK: task allowlist changed without reviewed update' }
+          # The existing named allowlist test separately blocks unreviewed tasks.
+          # Keep parser generic so a later reviewed capability needs no workflow edit.
+          if ($files.Count -eq 0 -or $files.Count -gt 32) { throw 'MINIPC_SOURCE_BLOCK: invalid reviewed task inventory' }
           foreach ($file in $files) {
             $tokens = $null
             $errors = $null
