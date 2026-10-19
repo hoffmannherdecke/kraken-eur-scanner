@@ -463,7 +463,7 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                     x for x in p["source_originals"] if x["origin"]!="SUPABASE_SANDBOX"]),
                 lambda p:next(x for x in p["source_originals"]
                               if x["origin"]=="SUPABASE_SANDBOX")["original_record"].update(
-                                  independent_original_receipt_query=False),
+                                  historical_independent_original_query_previously_completed=False),
                 lambda p:next(x for x in p["source_originals"]
                               if x["origin"]=="SUPABASE_SANDBOX")["original_record"].update(
                                   original_model_response_id="ANOTHER_RESPONSE"),
