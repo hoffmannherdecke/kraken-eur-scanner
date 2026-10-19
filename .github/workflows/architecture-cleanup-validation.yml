@@ -50,6 +50,15 @@ jobs:
             [void][System.Management.Automation.Language.Parser]::ParseFile($p,[ref]$tokens,[ref]$errors)
             if (@($errors).Count -ne 0) { throw "Invalid PowerShell in $p" }
           }
+      - name: Restricted reusable Windows log diagnostics (offline)
+        run: python -m unittest tests.test_minipc_readonly_log_summary_contract -v
+      - name: Parse restricted log summary PowerShell source only
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile('tools/minipc_runner_tasks/log_status_summary.ps1',[ref]$tokens,[ref]$errors)
+          if (@($errors).Count -ne 0) { throw 'Restricted log summary PowerShell syntax invalid' }
       - name: Compile changed Python
         run: |
           python -m py_compile \

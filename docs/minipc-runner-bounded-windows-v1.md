@@ -19,6 +19,20 @@
 
 **Ziel:** Keine neuen GitHub-Abos, private Repositories bleiben privat, ein vorhandener eingeschränkter Mini-PC-Runner und vorhandener Windows-Task-Scheduler; ChatGPT-Connector kann geprüfte Aufgaben aus dem geschützten Hauptrepo auf GitHub anfordern. Kein beliebiger PowerShell-Text, kein Hintergrundpoller oder paralleler Runner.
 
+## 19.10.2026 – Allgemeine, eingeschränkte Protokoll-Diagnose statt manueller PowerShell-Aufträge
+
+**Nutzerentscheidung:** Für sämtliche Bereiche des Krypto-Projekts sollen die *geprüften lesenden* Routinearbeiten über den bereits vorhandenen Mini-PC-Runner möglich sein, nicht für jede Protokollauswertung manuell in PowerShell. Windows-Zugriffsrechte sind die erste Grenze, **aber keine generelle Autorisierung beliebiger Shell-Befehle**: Ein Kommando kann trotz Dateileserechten Dateien ändern, Prozesse starten oder Daten ins Netz senden.
+
+**Kleine bestehende Schnittstelle wiederverwenden:** Ein einzelner zusätzlicher, bei Github durch CI und Source-Review geprüfter `tools/minipc_runner_tasks/log_status_summary.ps1` kann als normale `MINIPC_TASK_V1 | <gemergter-main-SHA> | log_status_summary`-Anforderung über das **vorhandene** private Original-Issue #13 und den lokal gepinnten unveränderten Workflow ausgeführt werden. Kein neuer Workflow, GitHub-Runner, Windows-Task, Port, allgemeiner Shell-Zugriff, GitHub Pro-/Team-Abo, API- oder Work-Aufruf; keine Privilegelevation. Der ursprüngliche Mini-PC-Dienst benötigt echte Dateileserechte unter `.\CryptoSupportSvc`, sonst meldet der Task `ACCESS_DENIED`/fehlende Daten und die Rechte bleiben unverändert.
+
+**Diagnoseumfang der ersten universellen Lesefunktion:**
+- Nichtrekursiv nur vorhandene `*.log`-Dateien aus zwei klar definierten Betriebsprotokollverzeichnissen: `C:\Users\ADMIN\Trading\Logs` (z. B. schon bekannte Supervisor-Logs) und `C:\CryptoSupport\Logs`; maximal fünf Dateien pro Verzeichnis, maximal 4000 letzte Zeilen je Datei und max. 16 MiB je Datei.
+- **Rollende letzte 24 Stunden**: Datum/Uhrzeit und vorhandenes `status=...` aus lesbaren Zeilen auswerten; nur zuvor bekannte Statusbegriffe und `OTHER` zählen. Zusammengefasste Anzahlen und `source_id`, klare Status `ROOT_MISSING`/`ACCESS_DENIED`/`NO_READABLE_LOGS` bei fehlenden Daten. **Keine** Pfade im Laufzeit-ACK, Dateinamen, Rohzeilen, Fehlermeldungsinhalte oder Logs in GitHub veröffentlichen.
+- Keine beliebige Pfad-/Befehlszeichenkette aus einem GitHub-Kommentar als PowerShell interpretieren. Für darüber hinausgehende Diagnoseordner/Funktionen bleibt eine normale Quelländerung mit ursprünglichem CI-/PR-Review notwendig. Keine pauschale Freigabe aller auf dem Rechner grundsätzlich lesbaren Dateien; private `Secrets`, Handels-/Konto-/Profilbereiche und fremde Nutzerdateien bleiben außerhalb der lesenden Diagnoseregel.
+- Das Ergebnis ist ein einziger strukturierter `MINIPC_REVIEWED_TASK_ACK_V1`-JSON-Datensatz, `mutation_scope=RESTRICTED`, `raw_lines_exposed=false`, `filenames_exposed=false`, `trading_orders_permitted=false`. Auch bei `status=SUCCESS` ist `evidence_present=false` möglich, dann **keine Logdaten nachgewiesen**.
+
+**Freigabe-/Hostbeleg strikt trennen:** Quellcode und offline CI sind erst nach echtem gemergtem GitHub-`main`-Readback verfügbar; Windows-Leserechte, tatsächliche Pfadbelegung und nutzbare Statuszeilen können nur der spätere, **tatsächlich benötigte** Runner-Auftrag nachweisen. Das bereits manuell erledigte frühere Beispiel wird **nicht** erneut ausgelöst. Aktuelle Windows-Scheduler-Änderung, unbekannter erster natürlicher Scheduler-ACK und geplanter CPU-Wartungsstopp bleiben unverändert.
+
 ## Was nachweislich bereits funktioniert
 
 - Ein einziger `MINIPC_TASK_V1 | <sha> | <task>`-Auftrag im privaten Audit-Issue #13 kann unter `CryptoSupportSvc` einen SHA-geprüften regulären Task im Hauptrepo ausführen. Erste E2E PASS, Windows `Stopped/Disabled` nach Ablauf real verifiziert.

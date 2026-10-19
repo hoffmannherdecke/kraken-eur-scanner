@@ -6,11 +6,12 @@ SCRIPT = Path("tools/minipc_runner_tasks/host_safety_probe.ps1")
 FOLDER = Path("tools/minipc_runner_tasks")
 
 class MinipcReviewedTaskSourceTests(unittest.TestCase):
-    def test_exactly_one_task_file(self):
+    def test_only_reviewed_task_files(self):
         self.assertTrue(SCRIPT.is_file())
         self.assertEqual(
             sorted(FOLDER.glob("*.ps1")),
             [FOLDER / "access_boundary_probe.ps1", SCRIPT,
+             FOLDER / "log_status_summary.ps1",
              FOLDER / "v3_paper_offline_probe.ps1"],
         )
         self.assertFalse(SCRIPT.is_symlink())
