@@ -188,7 +188,7 @@ class ContextBeforeActionTests(unittest.TestCase):
         deployment = next(x for x in extra if x["id"] == "mini_pc_deployment")
         self.assertEqual(deployment["owner"], "PROJECT_BACKLOG.md")
         self.assertEqual(deployment["execution_capability_source"], doc)
-        self.assertIn("UNATTENDED_WINDOW_STILL_PENDING", deployment["gate"])
+        self.assertIn("UNATTENDED_WINDOW_ORIGINAL_HOST_VERIFIED_20261019", deployment["gate"])
         self.assertEqual(
             set(routing["all_project_scopes"]),
             {"strategy", "architecture", "operations", "research"},
