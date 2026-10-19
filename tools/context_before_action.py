@@ -608,6 +608,23 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 r"C:\CryptoSupport\Logs"],
             "reviewed log diagnostics roots drift")
 
+    maintenance = runner.get("reviewed_windows_maintenance_diagnostics")
+    maintenance_script = "tools/minipc_runner_tasks/windows_maintenance_snapshot.ps1"
+    require(isinstance(maintenance, dict)
+            and maintenance.get("task_name") == "windows_maintenance_snapshot"
+            and maintenance.get("source_script") == maintenance_script
+            and maintenance_script in sources
+            and len(sources[maintenance_script]["sha256"]) == 64
+            and maintenance.get("actual_windows_task_e2e") == "PENDING_ORIGINAL_HOST_ACK"
+            and maintenance.get("request_via_existing_workflow_only") is True
+            and maintenance.get("no_arbitrary_shell_or_admin") is True
+            and maintenance.get("no_service_task_update_or_restart") is True
+            and maintenance.get("no_cpu_or_v3_release_authority") is True
+            and maintenance.get("no_new_scheduler_or_work") is True
+            and set(maintenance.get("all_project_scopes", [])) ==
+                {"strategy", "architecture", "operations", "research"},
+            "reviewed Windows maintenance source or original-host gate drift")
+
     return {
         "kind": contract["kind"],
         "status": "SOURCE_ROUTES_REGISTERED_LIVE_DATA_NOT_QUERIED",
@@ -655,6 +672,16 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 "no_user_supplied_shellcode_or_acl_changes": True,
             },
 
+            "reviewed_windows_maintenance_diagnostics": {
+                "task": maintenance["task_name"],
+                "source_script": maintenance_script,
+                "source_fingerprint": sources[maintenance_script]["sha256"],
+                "source_ci_status": maintenance["source_ci_status"],
+                "actual_windows_task_e2e": maintenance["actual_windows_task_e2e"],
+                "use_existing_runner_only": True,
+                "no_arbitrary_shell_or_admin": True,
+                "no_runtime_or_reboot_authority": True,
+            },
             "request_format": runner["request_format"],
             "windows_task_name": runner["windows_task_name"],
             "windows_schedule_enabled_at_original_user_photo":

@@ -64,6 +64,10 @@
     {
       "path": "tools/minipc_runner_tasks/log_status_summary.ps1",
       "role": "PROJECTWIDE_REVIEWED_MINIPC_READONLY_LOG_DIAGNOSIS_SOURCE_CI_PASS_HOST_ACTUAL_READ_PENDING; PREFER_FOR_RELEVANT_DIAGNOSIS_OVER_USER_POWERSHELL; NO_ARBITRARY_EXEC"
+    },
+    {
+      "path": "tools/minipc_runner_tasks/windows_maintenance_snapshot.ps1",
+      "role": "PROJECTWIDE_REVIEWED_READONLY_WINDOWS_MAINTENANCE_SOURCE_NOT_HOST_ACK; REUSE_EXISTING_RESTRICTED_MINIPC_RUNNER_FOR_CPU_UPDATE_TASK_STATUS; NO_ADMIN_OR_RESTART"
     }
   ],
   "scopes": {
@@ -433,6 +437,23 @@
         ],
         "no_new_workflow_runner_scheduler_subscription": true,
         "no_trading_cloud_model_budget_release": true
+      },
+      "reviewed_windows_maintenance_diagnostics": {
+        "task_name": "windows_maintenance_snapshot",
+        "source_script": "tools/minipc_runner_tasks/windows_maintenance_snapshot.ps1",
+        "source_ci_status": "REQUIRES_PROTECTED_MAIN_MERGE_AND_CI",
+        "actual_windows_task_e2e": "PENDING_ORIGINAL_HOST_ACK",
+        "request_via_existing_workflow_only": true,
+        "no_arbitrary_shell_or_admin": true,
+        "no_service_task_update_or_restart": true,
+        "no_cpu_or_v3_release_authority": true,
+        "no_new_scheduler_or_work": true,
+        "all_project_scopes": [
+          "strategy",
+          "architecture",
+          "operations",
+          "research"
+        ]
       }
     }
   }
