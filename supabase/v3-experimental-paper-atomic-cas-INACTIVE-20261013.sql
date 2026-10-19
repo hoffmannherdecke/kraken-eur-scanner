@@ -53,10 +53,35 @@ begin
     perform pg_catalog.pg_advisory_xact_lock(
         pg_catalog.hashtextextended('PAPER_STRATEGY_EXPERIMENTAL_CUTOVER', 0));
 
-    if pg_catalog.to_regclass('public.paper_series_single_active_idx') is null
+    if pg_catalog.to_regclass('public.paper_series') is null
        or pg_catalog.to_regclass('public.paper_candidate_outcomes') is null
        or pg_catalog.to_regclass('public.paper_trade_results') is null then
-        raise exception 'V3 CAS required existing original schema/index missing';
+        raise exception 'V3 CAS required existing original schema missing';
+    end if;
+
+    -- A same-named but invalid, non-unique or wrong-predicate index MUST NOT
+    -- count as an atomic one-active-series fence. These exact catalog values
+    -- were read independently from production (19 Oct 2026); this check is
+    -- still a source-only draft, not an installed CAS or independent proof of
+    -- native Windows fencing. Fail closed on any future schema/index drift.
+    if not exists (
+        select 1
+          from pg_catalog.pg_index ix
+          join pg_catalog.pg_class idx on idx.oid=ix.indexrelid
+          join pg_catalog.pg_namespace ns on ns.oid=idx.relnamespace
+         where ns.nspname='public'
+           and idx.relname='paper_series_single_active_idx'
+           and ix.indrelid=pg_catalog.to_regclass('public.paper_series')
+           and ix.indisunique is true
+           and ix.indisvalid is true
+           and ix.indisready is true
+           and ix.indnkeyatts=1
+           and ix.indnatts=1
+           and pg_catalog.pg_get_indexdef(ix.indexrelid,1,true)='status'
+           and pg_catalog.pg_get_expr(ix.indpred,ix.indrelid)
+               ='(status = ''active''::text)'
+    ) then
+        raise exception 'V3 CAS missing exact valid unique single-active Paper index';
     end if;
 
     if p_expected_old_series_id is null
