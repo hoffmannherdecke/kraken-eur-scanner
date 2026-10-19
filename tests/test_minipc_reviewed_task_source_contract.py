@@ -12,7 +12,8 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
             sorted(FOLDER.glob("*.ps1")),
             [FOLDER / "access_boundary_probe.ps1", SCRIPT,
              FOLDER / "log_status_summary.ps1",
-             FOLDER / "v3_paper_offline_probe.ps1"],
+             FOLDER / "v3_paper_offline_probe.ps1",
+             FOLDER / "windows_maintenance_snapshot.ps1"],
         )
         self.assertFalse(SCRIPT.is_symlink())
         self.assertLess(SCRIPT.stat().st_size, 65536)
