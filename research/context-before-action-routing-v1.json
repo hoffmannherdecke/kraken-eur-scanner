@@ -458,16 +458,24 @@
         "no_raw_log_or_unbounded_output": true,
         "host_original_ack_still_required": false,
         "original_host_evidence": {
-          "original_private_issue_comment": 6266050953,
-          "original_workflow_run_id": 39244255416,
-          "original_workflow_job_id": 118032214850,
-          "original_public_main_sha": "b1fd121fc7b1b0609c3bec5d2af513326b7ba3f2",
-          "observed_at_utc": "2026-10-19T11:23:32Z",
+          "original_private_issue_comment": 6267948690,
+          "original_workflow_run_id": 39257496377,
+          "original_workflow_job_id": 118076352526,
+          "original_public_main_sha": "43da3502f052a4b00f474528f311a3307bb9a932",
+          "observed_at_utc": "2026-10-19T13:07:54.7407966Z",
           "safe_marker_confirmed": true,
           "real_mini_pc_job_completed_success": true,
+          "task_readback": "READ_OK",
+          "task_read_method": "CMDLET",
+          "task_cmdlet_probe": "READ_OK",
+          "task_com_probe": "NOT_ATTEMPTED",
+          "bounded_scheduler_task_metadata": "READ_OK_RESTRICTED_ACCOUNT",
+          "bounded_scheduler_task_enabled_at_observation": true,
+          "bounded_scheduler_task_state_at_observation": "Running",
+          "bounded_scheduler_task_last_run_utc": "2026-10-19T13:00:26Z",
+          "bounded_scheduler_task_last_result_at_observation": 267009,
           "restricted_service_state_during_job": "Running",
           "restricted_service_start_mode_during_job": "Disabled",
-          "bounded_scheduler_task_metadata": "UNAVAILABLE_RESTRICTED_ACCOUNT",
           "post_window_safe_pause": "PENDING_ORIGINAL_HOST_READBACK",
           "update_reboot_markers": "BOTH_PRESENT_AT_ORIGINAL_OBSERVATION",
           "update_pause_expiry_utc": "2026-10-31T18:31:39Z",
@@ -475,7 +483,11 @@
           "safe_report_is_dated_not_live_now": true
         },
         "post_window_safe_pause_original_ack_pending": true,
-        "no_acl_elevation_for_missing_scheduler_readback": true
+        "no_acl_elevation_for_missing_scheduler_readback": true,
+        "target_task_read_access_original_host": "PASS_NATIVE_CMDLET_AFTER_SINGLE_TASK_READ_ACE",
+        "target_task_read_access_original_host_at_utc": "2026-10-19T13:07:54.7407966Z",
+        "scoped_local_admin_task_acl_readback": "USER_PROVIDED_BERECHTIGUNG_PASS_READ_MASK_0X00120089_TASK_ENABLED_TRUE_BACKUP_CREATED",
+        "no_broad_or_admin_acl_grant": true
       }
     }
   }
