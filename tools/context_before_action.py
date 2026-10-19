@@ -628,9 +628,15 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             and maintenance.get("host_original_ack_still_required") is False
             and maintenance.get("post_window_safe_pause_original_ack_pending") is True
             and maintenance.get("no_acl_elevation_for_missing_scheduler_readback") is True
-            and maintenance.get("original_host_evidence", {}).get("original_workflow_run_id") == 39244255416
+            and maintenance.get("no_broad_or_admin_acl_grant") is True
+            and maintenance.get("original_host_evidence", {}).get("task_readback") == "READ_OK"
+            and maintenance.get("original_host_evidence", {}).get("task_read_method") == "CMDLET"
+            and maintenance.get("original_host_evidence", {}).get("task_cmdlet_probe") == "READ_OK"
+            and maintenance.get("target_task_read_access_original_host") ==
+                "PASS_NATIVE_CMDLET_AFTER_SINGLE_TASK_READ_ACE"
+            and maintenance.get("original_host_evidence", {}).get("original_workflow_run_id") == 39257496377
             and maintenance.get("original_host_evidence", {}).get("bounded_scheduler_task_metadata") ==
-                "UNAVAILABLE_RESTRICTED_ACCOUNT"
+                "READ_OK_RESTRICTED_ACCOUNT"
             and maintenance.get("original_host_evidence", {}).get("post_window_safe_pause") ==
                 "PENDING_ORIGINAL_HOST_READBACK"
             and set(maintenance.get("all_project_scopes", [])) ==
@@ -698,6 +704,8 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 "host_original_ack_still_required": False,
                 "post_window_safe_pause_original_ack_pending": True,
                 "no_acl_elevation_for_missing_scheduler_readback": True,
+                "no_broad_or_admin_acl_grant": True,
+                "target_task_read_access_original_host": maintenance["target_task_read_access_original_host"],
             },
             "request_format": runner["request_format"],
             "windows_task_name": runner["windows_task_name"],
