@@ -357,6 +357,647 @@ try{
      $_.TaskName -match '(Paper|Writer)' } |
    Select-Object -First 20 -ExpandProperty TaskName)
 }catch{}
+# Post-CAS originalhost diagnostic for the EXISTING V3 owner, not a new
+# task or separate release authority. Reuse the native Supervisor observation
+# and the already inventoried four original Paper task rows above. A self-set
+# marker, Task Running, or heartbeat is NOT independent Cloud CAS or 6/6 proof.
+# DO NOT output raw action arguments, process command lines or credentials.
+$v3PostCas=[ordered]@{
+ kind='V3_EXISTING_OWNER_POSTCAS_LOCAL_READONLY_INVENTORY_V1'
+ status='NOT_POSTCAS_ORIGINALHOST'
+ marker_kind_verified=$false
+ marker_phase='UNAVAILABLE_OR_NOT_COMMITTED'
+ task_state='UNAVAILABLE'
+ task_system_principal=$false
+ task_one_action=$false
+ task_action_is_old_readonly_stage=$true
+ task_action_released_source_pin_independently_verified=$false
+ old_intake_tasks_disabled=$false
+ old_intake_process_tree_absence_proven=$false
+ old_aftercare_tasks_running=$false
+ existing_supervisor_postcas_source_status='UNAVAILABLE'
+ local_checks_complete_for_external_review=$false
+ independent_production_cloud_cas_verified=$false
+ six_external_original_e2e_proofs_verified=$false
+ v3_paper_runtime_start_authorized=$false
+ task_scheduler_changes=0
+ new_tasks_or_schedules=0
+ api_model_http_calls=0
+ cloud_writes=0
+ real_money_actions=$false
+}
+try {
+ $markerPath=Join-Path $state 'v3-experimental-paper-old-intake-fence.json'
+ $supervisorSource=Join-Path $state 'minipc-runtime-supervisor.json'
+ # Missing, reparse or oversized original JSON fails CLOSED.
+ if(Test-Path -LiteralPath $markerPath -PathType Leaf){
+  $file=Get-Item -LiteralPath $markerPath -Force -ErrorAction Stop
+  if(-not [bool]($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -and
+     $file.Length -gt 0 -and $file.Length -le 65536){
+   $mark=Get-Content -LiteralPath $markerPath -Raw -ErrorAction Stop|ConvertFrom-Json -ErrorAction Stop
+   $expectedNames=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait'|Sort-Object)
+   $actualNames=@($mark.task_names|ForEach-Object {[string]$_}|Sort-Object)
+   $goodMark=(
+      [string]$mark.kind -ceq 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -and
+      [string]$mark.phase -ceq 'CLOUD_COMMITTED' -and
+      [string]$mark.predecessor_series_id -ceq $oldSeries -and
+      [string]$mark.proposed_successor_series_id -cmatch '^PAPER-V3-[0-9]{8}T[0-9]{6}Z
+if($null -ne $plan){
+ foreach($item in @($plan.pinned_file_hashes)){
+  $rel=[string]$item.relative_path
+  $expected=[string]$item.sha256
+  if([string]::IsNullOrWhiteSpace($rel) -or
+    $rel -match '(^[\\/]|\.{2}|:)' -or
+    $expected -notmatch '^[0-9a-fA-F]{64}$'){
+    $pinMismatches+=@('INVALID_PIN_RECORD')
+    continue
+  }
+  $path=Join-Path $repo $rel
+  $pinChecked++
+  if(-not(Test-Path -LiteralPath $path -PathType Leaf)){
+   $pinMismatches+=@($rel)
+   continue
+  }
+  $hash=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
+  if($hash -ine $expected){$pinMismatches+=@($rel)}
+ }
+}
+# A wall-clock expiry is not a physical STOP acknowledgement. This
+# diagnostic permits independent human review of the original task only.
+$canarySchedulerEndCandidate=$false
+if($null -ne $plan -and $taskFinalTriggerUtc){
+ try{
+  $deadline=[datetime]::Parse([string]$plan.until_utc).ToUniversalTime()
+  $actualEnd=[datetime]::Parse($taskFinalTriggerUtc).ToUniversalTime()
+  $lastRun=if($taskLastRunUtc){[datetime]::Parse($taskLastRunUtc).ToUniversalTime()}else{$null}
+  $canarySchedulerEndCandidate=(
+    $now -ge $deadline -and $taskState -in @('Ready','Disabled') -and
+    $taskScheduleReadbackStatus -eq 'ONE_ORIGINAL_28H_TRIGGER_READ' -and
+    $taskActionMatchesPinnedObserver -and
+    [math]::Abs(($actualEnd-$deadline).TotalSeconds) -le 120 -and
+    $null -ne $lastRun -and $lastRun -le $deadline -and
+    $pinChecked -eq 9 -and $pinMismatches.Count -eq 0
+  )
+ }catch{$canarySchedulerEndCandidate=$false}
+}
+$journalCount=0
+if(Test-Path -LiteralPath $journal -PathType Container){
+ $journalCount=@(Get-ChildItem -LiteralPath $journal -Filter '*.json' -File).Count
+}
+$ackedCount=$null
+if(Test-Path -LiteralPath $ackPath -PathType Leaf){
+ try{
+  $ack=Get-Content -LiteralPath $ackPath -Raw|ConvertFrom-Json
+  $ackedCount=@($ack.acked).Count
+ }catch{$ackedCount='UNREADABLE'}
+}
+$sourceSafe=($oldApps.Count -eq 1 -and $oldApps[0].paper_only -and
+             $oldApps[0].no_real_money -and $queueHealthy)
+$canarySafe=($null -ne $plan -and
+              $plan.kind -eq 'V3_LOCAL_READONLY_CANARY_28H_PLAN_V1' -and
+              $plan.v2r4_unchanged -eq $true -and
+              $plan.model_http_calls_authorized -eq 0 -and
+              $plan.orders -eq $false -and $pinChecked -eq 9 -and
+              $pinMismatches.Count -eq 0 -and $taskState -ne 'NOT_FOUND')
+$ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $canarySafe)
+[ordered]@{
+ kind='V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1'
+ checked_at_utc=$now.ToString('o')
+ result=if($ready){'LOCAL_INPUT_PATH_READABLE_NO_WRITER_ACTIVATED'}else{'BLOCKED_READONLY_DIAGNOSTIC'}
+ repo_exists=$repoPresent
+ required_v3_modules_present=($missingModules.Count -eq 0)
+ future_v3_release_source_fingerprint_inventory=@($v3ReleaseSourceHashes)
+ future_v3_release_source_files_all_readable=$v3ReleaseSourceHashComplete
+ future_v3_release_source_hashes_compared_to_approved_release=$false
+ future_v3_paper_writer_installed_by_this_check=$false
+ future_v3_paper_single_writer_proven_by_this_check=$false
+ missing_v3_modules=@($missingModules)
+ active_v2r4_host_runtime_count=$oldApps.Count
+ active_v2r4_host_runtime_count_is_config_files_not_processes=$true
+ physical_v2r4_paper_task_readback=$v2r4PaperTasks
+ native_old_intake_precutover_readonly_baseline_pass=$nativePrecutoverBaselinePass
+ native_old_intake_baseline_does_not_prove_postcutover_rearm_fence=$true
+ native_old_paper_mode_lineage_precutover_readonly_pass=$nativeOldModeLineagePass
+ native_old_paper_mode_lineage_snapshot_only_no_stop_authority=$true
+ native_old_paper_mode_rows=@($paperModeRows)
+ physical_task_action_sha256_has_no_raw_arguments=$true
+ physical_pr291_wait_launcher_basename_only_not_loaded_module_sha_proof=$true
+ physical_supervisor_and_windows_rearm_fence_proven=$false
+ physical_closed_old_series_followup_exit_relay_proven=$false
+ physical_v3_named_paper_task_hints=@($v3PaperTaskNames)
+ physical_task_name_scan_cannot_prove_absence_of_other_writers=$true
+ pre_cutover_expected_predecessor_series_id=$oldSeries
+ physical_v2r4_intake_stop_ack_proven=$false
+ physical_single_writer_cutover_dry_run_passed=$false
+ cloud_expected_predecessor_cas_verified=$false
+ physical_v3_writer_start_ack_proven=$false
+ v2r4_runtime_readonly_authority_valid=$sourceSafe
+ original_handoff_queue_readable=$queueHealthy
+ original_handoff_files_sampled=$handoffCount
+ fresh_10m_originals_in_sample=$freshCount
+ latest_valid_original_age_seconds=$latestAgeSec
+ canary_task_state=$taskState
+ canary_deadline_utc=if($null -ne $plan){$plan.until_utc}else{$null}
+ canary_original_task_last_run_utc=$taskLastRunUtc
+ canary_original_task_last_result=$taskLastResult
+ canary_original_trigger_start_utc=$taskFirstTriggerUtc
+ canary_original_trigger_end_utc=$taskFinalTriggerUtc
+ canary_original_action_matches_manifest=$taskActionMatchesPinnedObserver
+ canary_original_schedule_readback_status=$taskScheduleReadbackStatus
+ canary_scheduler_end_candidate_for_independent_review=$canarySchedulerEndCandidate
+ canary_physical_observer_end_ack_from_this_single_readback=$false
+ canary_after_deadline_requires_independent_host_cloud_ack=$true
+ canary_manifest_valid_and_pinned=$canarySafe
+ experimental_paper_gate_module_present=$existingExperimentalGatePresent
+ experimental_paper_requires_prior_profitable_buy=$false
+ experimental_paper_requires_six_real_technical_proofs=$true
+ experimental_paper_technical_proofs_verified_by_this_local_readonly_check=0
+ experimental_paper_release_authorized_by_this_check=$false
+ experimental_paper_governance_source='tools/v3_experimental_paper_technical_gate.py'
+ experimental_paper_next_gate='SIX_REAL_HOST_OR_CLOUD_E2E_ARTIFACTS_FIXED_API_CAP_SINGLE_WRITER_DRYRUN_EXPLICIT_RELEASE'
+ canary_pinned_files_checked=$pinChecked
+ canary_pinned_mismatch_count=$pinMismatches.Count
+ last_canary_heartbeat_status=if($null -ne $heartbeat){$heartbeat.status}else{'MISSING'}
+ last_canary_heartbeat_at_utc=if($null -ne $heartbeat){$heartbeat.checked_at_utc}else{$null}
+ existing_v3_local_journal_receipts=$journalCount
+ existing_v3_cloud_acks_local=$ackedCount
+ real_owner_authentication_proven=$false
+ new_v3_writer_started=$false
+ new_cloud_sync_performed=$false
+ model_http_calls=0
+ v2r4_changed=$false
+ filesystem_writes=$false
+} | ConvertTo-Json -Depth 8
+ -and
+      [string]$mark.proposed_v3_repo_sha -cmatch '^[0-9a-f]{40}
+if($null -ne $plan){
+ foreach($item in @($plan.pinned_file_hashes)){
+  $rel=[string]$item.relative_path
+  $expected=[string]$item.sha256
+  if([string]::IsNullOrWhiteSpace($rel) -or
+    $rel -match '(^[\\/]|\.{2}|:)' -or
+    $expected -notmatch '^[0-9a-fA-F]{64}$'){
+    $pinMismatches+=@('INVALID_PIN_RECORD')
+    continue
+  }
+  $path=Join-Path $repo $rel
+  $pinChecked++
+  if(-not(Test-Path -LiteralPath $path -PathType Leaf)){
+   $pinMismatches+=@($rel)
+   continue
+  }
+  $hash=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
+  if($hash -ine $expected){$pinMismatches+=@($rel)}
+ }
+}
+# A wall-clock expiry is not a physical STOP acknowledgement. This
+# diagnostic permits independent human review of the original task only.
+$canarySchedulerEndCandidate=$false
+if($null -ne $plan -and $taskFinalTriggerUtc){
+ try{
+  $deadline=[datetime]::Parse([string]$plan.until_utc).ToUniversalTime()
+  $actualEnd=[datetime]::Parse($taskFinalTriggerUtc).ToUniversalTime()
+  $lastRun=if($taskLastRunUtc){[datetime]::Parse($taskLastRunUtc).ToUniversalTime()}else{$null}
+  $canarySchedulerEndCandidate=(
+    $now -ge $deadline -and $taskState -in @('Ready','Disabled') -and
+    $taskScheduleReadbackStatus -eq 'ONE_ORIGINAL_28H_TRIGGER_READ' -and
+    $taskActionMatchesPinnedObserver -and
+    [math]::Abs(($actualEnd-$deadline).TotalSeconds) -le 120 -and
+    $null -ne $lastRun -and $lastRun -le $deadline -and
+    $pinChecked -eq 9 -and $pinMismatches.Count -eq 0
+  )
+ }catch{$canarySchedulerEndCandidate=$false}
+}
+$journalCount=0
+if(Test-Path -LiteralPath $journal -PathType Container){
+ $journalCount=@(Get-ChildItem -LiteralPath $journal -Filter '*.json' -File).Count
+}
+$ackedCount=$null
+if(Test-Path -LiteralPath $ackPath -PathType Leaf){
+ try{
+  $ack=Get-Content -LiteralPath $ackPath -Raw|ConvertFrom-Json
+  $ackedCount=@($ack.acked).Count
+ }catch{$ackedCount='UNREADABLE'}
+}
+$sourceSafe=($oldApps.Count -eq 1 -and $oldApps[0].paper_only -and
+             $oldApps[0].no_real_money -and $queueHealthy)
+$canarySafe=($null -ne $plan -and
+              $plan.kind -eq 'V3_LOCAL_READONLY_CANARY_28H_PLAN_V1' -and
+              $plan.v2r4_unchanged -eq $true -and
+              $plan.model_http_calls_authorized -eq 0 -and
+              $plan.orders -eq $false -and $pinChecked -eq 9 -and
+              $pinMismatches.Count -eq 0 -and $taskState -ne 'NOT_FOUND')
+$ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $canarySafe)
+[ordered]@{
+ kind='V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1'
+ checked_at_utc=$now.ToString('o')
+ result=if($ready){'LOCAL_INPUT_PATH_READABLE_NO_WRITER_ACTIVATED'}else{'BLOCKED_READONLY_DIAGNOSTIC'}
+ repo_exists=$repoPresent
+ required_v3_modules_present=($missingModules.Count -eq 0)
+ future_v3_release_source_fingerprint_inventory=@($v3ReleaseSourceHashes)
+ future_v3_release_source_files_all_readable=$v3ReleaseSourceHashComplete
+ future_v3_release_source_hashes_compared_to_approved_release=$false
+ future_v3_paper_writer_installed_by_this_check=$false
+ future_v3_paper_single_writer_proven_by_this_check=$false
+ missing_v3_modules=@($missingModules)
+ active_v2r4_host_runtime_count=$oldApps.Count
+ active_v2r4_host_runtime_count_is_config_files_not_processes=$true
+ physical_v2r4_paper_task_readback=$v2r4PaperTasks
+ native_old_intake_precutover_readonly_baseline_pass=$nativePrecutoverBaselinePass
+ native_old_intake_baseline_does_not_prove_postcutover_rearm_fence=$true
+ native_old_paper_mode_lineage_precutover_readonly_pass=$nativeOldModeLineagePass
+ native_old_paper_mode_lineage_snapshot_only_no_stop_authority=$true
+ native_old_paper_mode_rows=@($paperModeRows)
+ physical_task_action_sha256_has_no_raw_arguments=$true
+ physical_pr291_wait_launcher_basename_only_not_loaded_module_sha_proof=$true
+ physical_supervisor_and_windows_rearm_fence_proven=$false
+ physical_closed_old_series_followup_exit_relay_proven=$false
+ physical_v3_named_paper_task_hints=@($v3PaperTaskNames)
+ physical_task_name_scan_cannot_prove_absence_of_other_writers=$true
+ pre_cutover_expected_predecessor_series_id=$oldSeries
+ physical_v2r4_intake_stop_ack_proven=$false
+ physical_single_writer_cutover_dry_run_passed=$false
+ cloud_expected_predecessor_cas_verified=$false
+ physical_v3_writer_start_ack_proven=$false
+ v2r4_runtime_readonly_authority_valid=$sourceSafe
+ original_handoff_queue_readable=$queueHealthy
+ original_handoff_files_sampled=$handoffCount
+ fresh_10m_originals_in_sample=$freshCount
+ latest_valid_original_age_seconds=$latestAgeSec
+ canary_task_state=$taskState
+ canary_deadline_utc=if($null -ne $plan){$plan.until_utc}else{$null}
+ canary_original_task_last_run_utc=$taskLastRunUtc
+ canary_original_task_last_result=$taskLastResult
+ canary_original_trigger_start_utc=$taskFirstTriggerUtc
+ canary_original_trigger_end_utc=$taskFinalTriggerUtc
+ canary_original_action_matches_manifest=$taskActionMatchesPinnedObserver
+ canary_original_schedule_readback_status=$taskScheduleReadbackStatus
+ canary_scheduler_end_candidate_for_independent_review=$canarySchedulerEndCandidate
+ canary_physical_observer_end_ack_from_this_single_readback=$false
+ canary_after_deadline_requires_independent_host_cloud_ack=$true
+ canary_manifest_valid_and_pinned=$canarySafe
+ experimental_paper_gate_module_present=$existingExperimentalGatePresent
+ experimental_paper_requires_prior_profitable_buy=$false
+ experimental_paper_requires_six_real_technical_proofs=$true
+ experimental_paper_technical_proofs_verified_by_this_local_readonly_check=0
+ experimental_paper_release_authorized_by_this_check=$false
+ experimental_paper_governance_source='tools/v3_experimental_paper_technical_gate.py'
+ experimental_paper_next_gate='SIX_REAL_HOST_OR_CLOUD_E2E_ARTIFACTS_FIXED_API_CAP_SINGLE_WRITER_DRYRUN_EXPLICIT_RELEASE'
+ canary_pinned_files_checked=$pinChecked
+ canary_pinned_mismatch_count=$pinMismatches.Count
+ last_canary_heartbeat_status=if($null -ne $heartbeat){$heartbeat.status}else{'MISSING'}
+ last_canary_heartbeat_at_utc=if($null -ne $heartbeat){$heartbeat.checked_at_utc}else{$null}
+ existing_v3_local_journal_receipts=$journalCount
+ existing_v3_cloud_acks_local=$ackedCount
+ real_owner_authentication_proven=$false
+ new_v3_writer_started=$false
+ new_cloud_sync_performed=$false
+ model_http_calls=0
+ v2r4_changed=$false
+ filesystem_writes=$false
+} | ConvertTo-Json -Depth 8
+ -and
+      [string]$mark.proposed_v3_bundle_sha256 -cmatch '^[0-9a-f]{64}
+if($null -ne $plan){
+ foreach($item in @($plan.pinned_file_hashes)){
+  $rel=[string]$item.relative_path
+  $expected=[string]$item.sha256
+  if([string]::IsNullOrWhiteSpace($rel) -or
+    $rel -match '(^[\\/]|\.{2}|:)' -or
+    $expected -notmatch '^[0-9a-fA-F]{64}$'){
+    $pinMismatches+=@('INVALID_PIN_RECORD')
+    continue
+  }
+  $path=Join-Path $repo $rel
+  $pinChecked++
+  if(-not(Test-Path -LiteralPath $path -PathType Leaf)){
+   $pinMismatches+=@($rel)
+   continue
+  }
+  $hash=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
+  if($hash -ine $expected){$pinMismatches+=@($rel)}
+ }
+}
+# A wall-clock expiry is not a physical STOP acknowledgement. This
+# diagnostic permits independent human review of the original task only.
+$canarySchedulerEndCandidate=$false
+if($null -ne $plan -and $taskFinalTriggerUtc){
+ try{
+  $deadline=[datetime]::Parse([string]$plan.until_utc).ToUniversalTime()
+  $actualEnd=[datetime]::Parse($taskFinalTriggerUtc).ToUniversalTime()
+  $lastRun=if($taskLastRunUtc){[datetime]::Parse($taskLastRunUtc).ToUniversalTime()}else{$null}
+  $canarySchedulerEndCandidate=(
+    $now -ge $deadline -and $taskState -in @('Ready','Disabled') -and
+    $taskScheduleReadbackStatus -eq 'ONE_ORIGINAL_28H_TRIGGER_READ' -and
+    $taskActionMatchesPinnedObserver -and
+    [math]::Abs(($actualEnd-$deadline).TotalSeconds) -le 120 -and
+    $null -ne $lastRun -and $lastRun -le $deadline -and
+    $pinChecked -eq 9 -and $pinMismatches.Count -eq 0
+  )
+ }catch{$canarySchedulerEndCandidate=$false}
+}
+$journalCount=0
+if(Test-Path -LiteralPath $journal -PathType Container){
+ $journalCount=@(Get-ChildItem -LiteralPath $journal -Filter '*.json' -File).Count
+}
+$ackedCount=$null
+if(Test-Path -LiteralPath $ackPath -PathType Leaf){
+ try{
+  $ack=Get-Content -LiteralPath $ackPath -Raw|ConvertFrom-Json
+  $ackedCount=@($ack.acked).Count
+ }catch{$ackedCount='UNREADABLE'}
+}
+$sourceSafe=($oldApps.Count -eq 1 -and $oldApps[0].paper_only -and
+             $oldApps[0].no_real_money -and $queueHealthy)
+$canarySafe=($null -ne $plan -and
+              $plan.kind -eq 'V3_LOCAL_READONLY_CANARY_28H_PLAN_V1' -and
+              $plan.v2r4_unchanged -eq $true -and
+              $plan.model_http_calls_authorized -eq 0 -and
+              $plan.orders -eq $false -and $pinChecked -eq 9 -and
+              $pinMismatches.Count -eq 0 -and $taskState -ne 'NOT_FOUND')
+$ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $canarySafe)
+[ordered]@{
+ kind='V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1'
+ checked_at_utc=$now.ToString('o')
+ result=if($ready){'LOCAL_INPUT_PATH_READABLE_NO_WRITER_ACTIVATED'}else{'BLOCKED_READONLY_DIAGNOSTIC'}
+ repo_exists=$repoPresent
+ required_v3_modules_present=($missingModules.Count -eq 0)
+ future_v3_release_source_fingerprint_inventory=@($v3ReleaseSourceHashes)
+ future_v3_release_source_files_all_readable=$v3ReleaseSourceHashComplete
+ future_v3_release_source_hashes_compared_to_approved_release=$false
+ future_v3_paper_writer_installed_by_this_check=$false
+ future_v3_paper_single_writer_proven_by_this_check=$false
+ missing_v3_modules=@($missingModules)
+ active_v2r4_host_runtime_count=$oldApps.Count
+ active_v2r4_host_runtime_count_is_config_files_not_processes=$true
+ physical_v2r4_paper_task_readback=$v2r4PaperTasks
+ native_old_intake_precutover_readonly_baseline_pass=$nativePrecutoverBaselinePass
+ native_old_intake_baseline_does_not_prove_postcutover_rearm_fence=$true
+ native_old_paper_mode_lineage_precutover_readonly_pass=$nativeOldModeLineagePass
+ native_old_paper_mode_lineage_snapshot_only_no_stop_authority=$true
+ native_old_paper_mode_rows=@($paperModeRows)
+ physical_task_action_sha256_has_no_raw_arguments=$true
+ physical_pr291_wait_launcher_basename_only_not_loaded_module_sha_proof=$true
+ physical_supervisor_and_windows_rearm_fence_proven=$false
+ physical_closed_old_series_followup_exit_relay_proven=$false
+ physical_v3_named_paper_task_hints=@($v3PaperTaskNames)
+ physical_task_name_scan_cannot_prove_absence_of_other_writers=$true
+ pre_cutover_expected_predecessor_series_id=$oldSeries
+ physical_v2r4_intake_stop_ack_proven=$false
+ physical_single_writer_cutover_dry_run_passed=$false
+ cloud_expected_predecessor_cas_verified=$false
+ physical_v3_writer_start_ack_proven=$false
+ v2r4_runtime_readonly_authority_valid=$sourceSafe
+ original_handoff_queue_readable=$queueHealthy
+ original_handoff_files_sampled=$handoffCount
+ fresh_10m_originals_in_sample=$freshCount
+ latest_valid_original_age_seconds=$latestAgeSec
+ canary_task_state=$taskState
+ canary_deadline_utc=if($null -ne $plan){$plan.until_utc}else{$null}
+ canary_original_task_last_run_utc=$taskLastRunUtc
+ canary_original_task_last_result=$taskLastResult
+ canary_original_trigger_start_utc=$taskFirstTriggerUtc
+ canary_original_trigger_end_utc=$taskFinalTriggerUtc
+ canary_original_action_matches_manifest=$taskActionMatchesPinnedObserver
+ canary_original_schedule_readback_status=$taskScheduleReadbackStatus
+ canary_scheduler_end_candidate_for_independent_review=$canarySchedulerEndCandidate
+ canary_physical_observer_end_ack_from_this_single_readback=$false
+ canary_after_deadline_requires_independent_host_cloud_ack=$true
+ canary_manifest_valid_and_pinned=$canarySafe
+ experimental_paper_gate_module_present=$existingExperimentalGatePresent
+ experimental_paper_requires_prior_profitable_buy=$false
+ experimental_paper_requires_six_real_technical_proofs=$true
+ experimental_paper_technical_proofs_verified_by_this_local_readonly_check=0
+ experimental_paper_release_authorized_by_this_check=$false
+ experimental_paper_governance_source='tools/v3_experimental_paper_technical_gate.py'
+ experimental_paper_next_gate='SIX_REAL_HOST_OR_CLOUD_E2E_ARTIFACTS_FIXED_API_CAP_SINGLE_WRITER_DRYRUN_EXPLICIT_RELEASE'
+ canary_pinned_files_checked=$pinChecked
+ canary_pinned_mismatch_count=$pinMismatches.Count
+ last_canary_heartbeat_status=if($null -ne $heartbeat){$heartbeat.status}else{'MISSING'}
+ last_canary_heartbeat_at_utc=if($null -ne $heartbeat){$heartbeat.checked_at_utc}else{$null}
+ existing_v3_local_journal_receipts=$journalCount
+ existing_v3_cloud_acks_local=$ackedCount
+ real_owner_authentication_proven=$false
+ new_v3_writer_started=$false
+ new_cloud_sync_performed=$false
+ model_http_calls=0
+ v2r4_changed=$false
+ filesystem_writes=$false
+} | ConvertTo-Json -Depth 8
+ -and
+      [string]$mark.proposed_v3_strategy_sha256 -cmatch '^[0-9a-f]{64}
+if($null -ne $plan){
+ foreach($item in @($plan.pinned_file_hashes)){
+  $rel=[string]$item.relative_path
+  $expected=[string]$item.sha256
+  if([string]::IsNullOrWhiteSpace($rel) -or
+    $rel -match '(^[\\/]|\.{2}|:)' -or
+    $expected -notmatch '^[0-9a-fA-F]{64}$'){
+    $pinMismatches+=@('INVALID_PIN_RECORD')
+    continue
+  }
+  $path=Join-Path $repo $rel
+  $pinChecked++
+  if(-not(Test-Path -LiteralPath $path -PathType Leaf)){
+   $pinMismatches+=@($rel)
+   continue
+  }
+  $hash=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
+  if($hash -ine $expected){$pinMismatches+=@($rel)}
+ }
+}
+# A wall-clock expiry is not a physical STOP acknowledgement. This
+# diagnostic permits independent human review of the original task only.
+$canarySchedulerEndCandidate=$false
+if($null -ne $plan -and $taskFinalTriggerUtc){
+ try{
+  $deadline=[datetime]::Parse([string]$plan.until_utc).ToUniversalTime()
+  $actualEnd=[datetime]::Parse($taskFinalTriggerUtc).ToUniversalTime()
+  $lastRun=if($taskLastRunUtc){[datetime]::Parse($taskLastRunUtc).ToUniversalTime()}else{$null}
+  $canarySchedulerEndCandidate=(
+    $now -ge $deadline -and $taskState -in @('Ready','Disabled') -and
+    $taskScheduleReadbackStatus -eq 'ONE_ORIGINAL_28H_TRIGGER_READ' -and
+    $taskActionMatchesPinnedObserver -and
+    [math]::Abs(($actualEnd-$deadline).TotalSeconds) -le 120 -and
+    $null -ne $lastRun -and $lastRun -le $deadline -and
+    $pinChecked -eq 9 -and $pinMismatches.Count -eq 0
+  )
+ }catch{$canarySchedulerEndCandidate=$false}
+}
+$journalCount=0
+if(Test-Path -LiteralPath $journal -PathType Container){
+ $journalCount=@(Get-ChildItem -LiteralPath $journal -Filter '*.json' -File).Count
+}
+$ackedCount=$null
+if(Test-Path -LiteralPath $ackPath -PathType Leaf){
+ try{
+  $ack=Get-Content -LiteralPath $ackPath -Raw|ConvertFrom-Json
+  $ackedCount=@($ack.acked).Count
+ }catch{$ackedCount='UNREADABLE'}
+}
+$sourceSafe=($oldApps.Count -eq 1 -and $oldApps[0].paper_only -and
+             $oldApps[0].no_real_money -and $queueHealthy)
+$canarySafe=($null -ne $plan -and
+              $plan.kind -eq 'V3_LOCAL_READONLY_CANARY_28H_PLAN_V1' -and
+              $plan.v2r4_unchanged -eq $true -and
+              $plan.model_http_calls_authorized -eq 0 -and
+              $plan.orders -eq $false -and $pinChecked -eq 9 -and
+              $pinMismatches.Count -eq 0 -and $taskState -ne 'NOT_FOUND')
+$ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $canarySafe)
+[ordered]@{
+ kind='V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1'
+ checked_at_utc=$now.ToString('o')
+ result=if($ready){'LOCAL_INPUT_PATH_READABLE_NO_WRITER_ACTIVATED'}else{'BLOCKED_READONLY_DIAGNOSTIC'}
+ repo_exists=$repoPresent
+ required_v3_modules_present=($missingModules.Count -eq 0)
+ future_v3_release_source_fingerprint_inventory=@($v3ReleaseSourceHashes)
+ future_v3_release_source_files_all_readable=$v3ReleaseSourceHashComplete
+ future_v3_release_source_hashes_compared_to_approved_release=$false
+ future_v3_paper_writer_installed_by_this_check=$false
+ future_v3_paper_single_writer_proven_by_this_check=$false
+ missing_v3_modules=@($missingModules)
+ active_v2r4_host_runtime_count=$oldApps.Count
+ active_v2r4_host_runtime_count_is_config_files_not_processes=$true
+ physical_v2r4_paper_task_readback=$v2r4PaperTasks
+ native_old_intake_precutover_readonly_baseline_pass=$nativePrecutoverBaselinePass
+ native_old_intake_baseline_does_not_prove_postcutover_rearm_fence=$true
+ native_old_paper_mode_lineage_precutover_readonly_pass=$nativeOldModeLineagePass
+ native_old_paper_mode_lineage_snapshot_only_no_stop_authority=$true
+ native_old_paper_mode_rows=@($paperModeRows)
+ physical_task_action_sha256_has_no_raw_arguments=$true
+ physical_pr291_wait_launcher_basename_only_not_loaded_module_sha_proof=$true
+ physical_supervisor_and_windows_rearm_fence_proven=$false
+ physical_closed_old_series_followup_exit_relay_proven=$false
+ physical_v3_named_paper_task_hints=@($v3PaperTaskNames)
+ physical_task_name_scan_cannot_prove_absence_of_other_writers=$true
+ pre_cutover_expected_predecessor_series_id=$oldSeries
+ physical_v2r4_intake_stop_ack_proven=$false
+ physical_single_writer_cutover_dry_run_passed=$false
+ cloud_expected_predecessor_cas_verified=$false
+ physical_v3_writer_start_ack_proven=$false
+ v2r4_runtime_readonly_authority_valid=$sourceSafe
+ original_handoff_queue_readable=$queueHealthy
+ original_handoff_files_sampled=$handoffCount
+ fresh_10m_originals_in_sample=$freshCount
+ latest_valid_original_age_seconds=$latestAgeSec
+ canary_task_state=$taskState
+ canary_deadline_utc=if($null -ne $plan){$plan.until_utc}else{$null}
+ canary_original_task_last_run_utc=$taskLastRunUtc
+ canary_original_task_last_result=$taskLastResult
+ canary_original_trigger_start_utc=$taskFirstTriggerUtc
+ canary_original_trigger_end_utc=$taskFinalTriggerUtc
+ canary_original_action_matches_manifest=$taskActionMatchesPinnedObserver
+ canary_original_schedule_readback_status=$taskScheduleReadbackStatus
+ canary_scheduler_end_candidate_for_independent_review=$canarySchedulerEndCandidate
+ canary_physical_observer_end_ack_from_this_single_readback=$false
+ canary_after_deadline_requires_independent_host_cloud_ack=$true
+ canary_manifest_valid_and_pinned=$canarySafe
+ experimental_paper_gate_module_present=$existingExperimentalGatePresent
+ experimental_paper_requires_prior_profitable_buy=$false
+ experimental_paper_requires_six_real_technical_proofs=$true
+ experimental_paper_technical_proofs_verified_by_this_local_readonly_check=0
+ experimental_paper_release_authorized_by_this_check=$false
+ experimental_paper_governance_source='tools/v3_experimental_paper_technical_gate.py'
+ experimental_paper_next_gate='SIX_REAL_HOST_OR_CLOUD_E2E_ARTIFACTS_FIXED_API_CAP_SINGLE_WRITER_DRYRUN_EXPLICIT_RELEASE'
+ canary_pinned_files_checked=$pinChecked
+ canary_pinned_mismatch_count=$pinMismatches.Count
+ last_canary_heartbeat_status=if($null -ne $heartbeat){$heartbeat.status}else{'MISSING'}
+ last_canary_heartbeat_at_utc=if($null -ne $heartbeat){$heartbeat.checked_at_utc}else{$null}
+ existing_v3_local_journal_receipts=$journalCount
+ existing_v3_cloud_acks_local=$ackedCount
+ real_owner_authentication_proven=$false
+ new_v3_writer_started=$false
+ new_cloud_sync_performed=$false
+ model_http_calls=0
+ v2r4_changed=$false
+ filesystem_writes=$false
+} | ConvertTo-Json -Depth 8
+ -and
+      [string]$mark.successor_task_name -ceq 'CryptoMiniPC-V3PaperSingleWriter' -and
+      $mark.paper_only -eq $true -and $mark.orders_enabled -eq $false -and
+      $mark.real_money_actions -eq $false -and
+      $mark.persistent_until_explicit_owner_release -eq $true -and
+      $actualNames.Count -eq 2 -and
+      ($actualNames -join '|') -ceq ($expectedNames -join '|')
+   )
+   if($goodMark){
+    $v3PostCas.marker_kind_verified=$true
+    $v3PostCas.marker_phase='CLOUD_COMMITTED_LOCAL_MARKER_ONLY'
+   }else{$v3PostCas.status='BLOCKED_INVALID_NATIVE_MARKER'}
+  }else{$v3PostCas.status='BLOCKED_UNSAFE_NATIVE_MARKER'}
+ }
+ }
+ # Reuse the existing bounded native Task inventory instead of a duplicate
+ # V2R4 inspector. 'Disabled' is distinct from absence of old Python roots.
+ $intake=@($v2r4PaperTasks|Where-Object {
+   $_.task_name -in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ })
+ $aftercare=@($v2r4PaperTasks|Where-Object {
+   $_.task_name -in @('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')
+ })
+ $v3PostCas.old_intake_tasks_disabled=(
+   $intake.Count -eq 2 -and
+   @($intake|Where-Object {$_.state -cne 'Disabled'}).Count -eq 0
+ )
+ $v3PostCas.old_aftercare_tasks_running=(
+   $aftercare.Count -eq 2 -and
+   @($aftercare|Where-Object {$_.state -cne 'Running' -or
+                              $_.heartbeat_fresh_for_role -ne $true}).Count -eq 0
+ )
+ # Read the existing original Supervisor proof CLASSIFICATION, not a forged
+ # local claim of independent host provenance. It explicitly states
+ # LOCAL_TASK_AND_HEARTBEAT_MATCH_NOT_RELEASE_PROOF, never release authority.
+ if(Test-Path -LiteralPath $supervisorSource -PathType Leaf){
+  $si=Get-Item -LiteralPath $supervisorSource -Force -ErrorAction Stop
+  if(-not [bool]($si.Attributes -band [IO.FileAttributes]::ReparsePoint) -and
+     $si.Length -gt 0 -and $si.Length -le 131072){
+   $supervisorOriginal=Get-Content -LiteralPath $supervisorSource -Raw -ErrorAction Stop|ConvertFrom-Json -ErrorAction Stop
+   $peek=$supervisorOriginal.v3_paper_successor_readonly
+   if($peek.kind -ceq 'V3_PAPER_SUCCESSOR_SUPERVISOR_READONLY_OBSERVATION_V1' -and
+      $peek.independent_cloud_or_host_proof_verified -eq $false -and
+      $peek.v3_auto_restart_authorized -eq $false){
+     $v3PostCas.existing_supervisor_postcas_source_status=[string]$peek.status
+   }
+  }
+ }
+ # A Task's name and action do NOT establish the loaded Python bytes; report
+ # no independently pinned live source even when the native action is present.
+ $native=Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter' -TaskPath '\' -ErrorAction SilentlyContinue
+ if($null -ne $native){
+  $v3PostCas.task_state=[string]$native.State
+  $v3PostCas.task_system_principal=(
+    [string]$native.Principal.UserId -in @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18')
+  )
+  $v3PostCas.task_one_action=(@($native.Actions).Count -eq 1)
+  if($v3PostCas.task_one_action){
+   $actionText=[string]$native.Actions[0].Arguments
+   $v3PostCas.task_action_is_old_readonly_stage=(
+     $actionText.Contains('--read-only') -or
+     $actionText.Contains("sys.argv=['v3-paper','--read-only']")
+   )
+  }
+ }
+ if($v3PostCas.marker_kind_verified -and
+    $v3PostCas.task_state -ceq 'Running' -and
+    $v3PostCas.task_system_principal -and $v3PostCas.task_one_action -and
+    -not $v3PostCas.task_action_is_old_readonly_stage -and
+    $v3PostCas.old_intake_tasks_disabled -and
+    $v3PostCas.old_aftercare_tasks_running -and
+    $v3PostCas.existing_supervisor_postcas_source_status -ceq
+      'LOCAL_TASK_AND_HEARTBEAT_MATCH_NOT_RELEASE_PROOF'){
+   $v3PostCas.status='LOCAL_POSTCAS_SOURCE_HINTS_ONLY_PROOF_STILL_OPEN'
+ } elseif($v3PostCas.status -notlike 'BLOCKED_*'){
+   $v3PostCas.status='BLOCKED_OR_INCOMPLETE_POSTCAS_SOURCE'
+ }
+}catch{
+ # No error text or raw host paths/arguments are returned.
+ $v3PostCas.status='BLOCKED_UNREADABLE_ORIGINALHOST_POSTCAS_SOURCE'
+}
+# Even a completely consistent local snapshot CANNOT authorize phase dispatch:
+# the original process/PID ancestry, exact loaded approved runtime bytes,
+# Cloud CAS and six independent original E2E release proofs are missing here.
+$v3PostCas.local_checks_complete_for_external_review=$false
+
 $pinChecked=0
 $pinMismatches=@()
 if($null -ne $plan){
