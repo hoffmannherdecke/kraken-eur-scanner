@@ -222,11 +222,17 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                           clock_now=lambda: "2026-10-19T14:00:25Z")
             host = self.original_release_host(self.SID, self.REPO)
             original = dict(kwargs)
-            with patch.object(launcher, "dispatch_one_owned_paper_phase",
-                              return_value={"status": "SOURCE_ONLY_MOCK"}) as one:
+            packet = {"strategy_revision": launcher.REVISION,
+                      "strategy_fingerprint_sha256": self.STRATEGY}
+            with patch.object(launcher, "validate_experimental_paper_packet",
+                              return_value=[]) as proofs, patch.object(
+                    launcher, "dispatch_one_owned_paper_phase",
+                    return_value={"status": "SOURCE_ONLY_MOCK"}) as one:
                 result = launcher.dispatch_after_native_release_readback(
-                    originalhost_readback=lambda: host, **kwargs)
+                    originalhost_readback=lambda: host,
+                    release_root=Path(root), release_packet=packet, **kwargs)
                 self.assertEqual(result["status"], "SOURCE_ONLY_MOCK")
+                proofs.assert_called_once_with(Path(root), launcher.REVISION, packet)
                 one.assert_called_once_with(**original)
             # This seam does not silently modify the CLI or task definition.
             self.assertFalse((Path(root) / "release-proof.json").exists())
@@ -261,18 +267,76 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 {"observed_at_utc": "2026-10-19T14:00:00"},
                 {"observed_at_utc": "NOT-A-TIMESTAMP"},
             ]
-            with patch.object(launcher, "dispatch_one_owned_paper_phase") as worker:
+            packet = {"strategy_revision": launcher.REVISION,
+                      "strategy_fingerprint_sha256": self.STRATEGY}
+            with patch.object(launcher, "validate_experimental_paper_packet",
+                              return_value=[]), patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
                 with self.assertRaises(ValueError):
                     launcher.dispatch_after_native_release_readback(**kwargs)
                 with self.assertRaises(ValueError):
                     launcher.dispatch_after_native_release_readback(
-                        originalhost_readback=lambda: None, **kwargs)
+                        originalhost_readback=lambda: None,
+                        release_root=Path(root), release_packet=packet, **kwargs)
                 for edits in invalid:
                     with self.subTest(edits=edits):
                         row = dict(good, **edits)
                         with self.assertRaises(ValueError):
                             launcher.dispatch_after_native_release_readback(
-                                originalhost_readback=lambda r=row: r, **kwargs)
+                                originalhost_readback=lambda r=row: r,
+                                release_root=Path(root), release_packet=packet,
+                                **kwargs)
+                worker.assert_not_called()
+
+    def test_six_proof_release_envelopes_mandatory_before_originalhost_or_worker(self):
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H",
+                          clock_now=lambda: "2026-10-19T14:00:25Z")
+            host = self.original_release_host(self.SID, self.REPO)
+            packet = {"strategy_revision": launcher.REVISION,
+                      "strategy_fingerprint_sha256": self.STRATEGY}
+            with patch.object(launcher, "dispatch_one_owned_paper_phase") as worker:
+                # A forged trusted-looking originalhost dict is insufficient.
+                with self.assertRaisesRegex(ValueError, "release evidence missing"):
+                    launcher.dispatch_after_native_release_readback(
+                        originalhost_readback=lambda: host, **kwargs)
+                # A syntactically reasonable yet unsupported six-proof packet
+                # is independently refused by the existing real release gate.
+                with self.assertRaisesRegex(ValueError, "envelopes incomplete"):
+                    launcher.dispatch_after_native_release_readback(
+                        originalhost_readback=lambda: host,
+                        release_root=Path(root), release_packet=packet, **kwargs)
+                # Even a mocked host cannot override an explicit proof blocker.
+                with patch.object(launcher, "validate_experimental_paper_packet",
+                                  return_value=["original cloud SHA missing"]):
+                    with self.assertRaisesRegex(ValueError, "cloud SHA missing"):
+                        launcher.dispatch_after_native_release_readback(
+                            originalhost_readback=lambda: host,
+                            release_root=Path(root), release_packet=packet, **kwargs)
+                worker.assert_not_called()
+
+    def test_wrong_revision_strategy_or_root_never_hits_six_proof_gate(self):
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="CLOUD_RECEIPT_ACK",
+                          clock_now=lambda: "2026-10-19T14:00:25Z")
+            host = self.original_release_host(self.SID, self.REPO)
+            good = {"strategy_revision": launcher.REVISION,
+                    "strategy_fingerprint_sha256": self.STRATEGY}
+            bad = [dict(good, strategy_revision="V3-FOREIGN"),
+                   dict(good, strategy_fingerprint_sha256="0" * 64)]
+            with patch.object(launcher, "validate_experimental_paper_packet") as gate, \
+                    patch.object(launcher, "dispatch_one_owned_paper_phase") as worker:
+                for packet in bad:
+                    with self.assertRaisesRegex(ValueError, "evidence missing"):
+                        launcher.dispatch_after_native_release_readback(
+                            originalhost_readback=lambda: host,
+                            release_root=Path(root), release_packet=packet, **kwargs)
+                with self.assertRaisesRegex(ValueError, "evidence missing"):
+                    launcher.dispatch_after_native_release_readback(
+                        originalhost_readback=lambda: host,
+                        release_root=Path(root) / "DOES_NOT_EXIST",
+                        release_packet=good, **kwargs)
+                gate.assert_not_called()
                 worker.assert_not_called()
 
     def test_native_seam_never_activates_on_invalid_local_release_paths(self):
