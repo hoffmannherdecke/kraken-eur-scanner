@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
@@ -147,6 +148,82 @@ def dispatch_one_owned_paper_phase(*, phase: str,
     params = dict(common, ack_file=ack_file, token=relay_token)
     if cloud_post is not None: params["cloud_post"] = cloud_post
     return released_paper_cloud_ack_once(**params)
+
+
+
+def dispatch_after_native_release_readback(*,
+        originalhost_readback: Callable[[], dict[str, Any]] | None = None,
+        **phase_args: Any) -> dict[str, Any]:
+    """Source-only native-owner integration seam; NOT a Windows/Cloud release.
+
+    The future separately authorized ORIGINALHOST operator must supply the
+    trusted, freshly collected Windows Task/worker/fence/supervisor proof.
+    A caller-created dictionary, CI mock or Cloud flag is NOT physical
+    attestation. This function neither installs nor starts a Windows Task.
+    The CLI below intentionally has NO live argument or execution path.
+
+    On a complete external readback this delegates ONE phase to the exact
+    existing locked native writer. That worker independently re-reads the
+    active Cloud series while holding its original OS-native owner lock.
+    """
+    required = (
+        "phase", "series_id", "repo_sha", "bundle_sha256",
+        "strategy_sha256", "journal", "capture_dir",
+        "model_reservations", "ack_file", "read_active_series",
+    )
+    if not callable(originalhost_readback) or any(
+            key not in phase_args for key in required):
+        raise ValueError("independent native owner and release inputs required")
+    validate_one_owner_contract(
+        **{key: phase_args[key] for key in required})
+    phase = phase_args["phase"]
+    series_id = phase_args["series_id"]
+    pin = phase_args["repo_sha"]
+    report = originalhost_readback()
+    if not isinstance(report, dict):
+        raise ValueError("original native host readback missing")
+    expected = {
+        "kind": "V3_NATIVE_ONE_OWNER_POST_CAS_ORIGINALHOST_READBACK_V1",
+        "source": "ORIGINAL_MINIPC_WINDOWS_TASK_PROCESS_AND_FENCE",
+        "task_name": "CryptoMiniPC-V3PaperSingleWriter",
+        "task_state": "Running",
+        "series_id": series_id,
+        "release_repo_sha": pin,
+        "old_candidates_task_state": "Disabled",
+        "old_wait_task_state": "Disabled",
+        "old_candidates_workers_absent": True,
+        "old_wait_workers_absent": True,
+        "v3_task_one_original_action_verified": True,
+        "v3_worker_pinned_source_verified": True,
+        "native_writer_owner_singleton_verified": True,
+        "original_no_rearm_fence": "CLOUD_COMMITTED",
+        "original_supervisor_no_rearm_ack": True,
+        "old_lifecycle_task_running": True,
+        "old_cloudsync_task_running": True,
+        "independent_cloud_cas_committed": True,
+        "six_external_original_e2e_proofs_approved": True,
+        "paper_only": True,
+        "real_money_actions": False,
+    }
+    if any(report.get(key) != value or type(report.get(key)) is not type(value)
+           for key, value in expected.items()):
+        raise ValueError("native V3 Paper task, fence, aftercare or release gate unverified")
+    # No stale host assertion may authorize even the first public Kraken GET.
+    try:
+        seen = datetime.fromisoformat(
+            report["observed_at_utc"].replace("Z", "+00:00"))
+        clock = phase_args.get("clock_now")
+        current = (datetime.fromisoformat(clock().replace("Z", "+00:00"))
+                   if clock is not None else datetime.now(timezone.utc))
+        if (seen.tzinfo is None or seen.utcoffset() is None
+                or current.tzinfo is None or current.utcoffset() is None
+                or not 0 <= (current-seen).total_seconds() <= 90):
+            raise ValueError("native originalhost release readback stale or future")
+    except (KeyError, AttributeError, TypeError, OverflowError) as exc:
+        raise ValueError("native originalhost readback timestamp invalid") from exc
+    # No additional run loop, schedule, model call, Paper authority or Cloud
+    # writer is introduced here; the existing worker locks and guards own it.
+    return dispatch_one_owned_paper_phase(**phase_args)
 
 
 def main() -> int:
