@@ -57,7 +57,12 @@
       "reviewed_readonly_log_diagnostics_owner_issue": 353,
       "prefer_reviewed_readonly_log_task_before_manual_powershell": true,
       "no_new_windows_acl_or_runner_or_workflow": true,
-      "first_window_safe_pause_evidence": "Original Mini-PC screenshot: task Ready, result 0, runner Stopped and Disabled (19 Oct 2026)"
+      "first_window_safe_pause_evidence": "Original Mini-PC screenshot: task Ready, result 0, runner Stopped and Disabled (19 Oct 2026)",
+      "capability_reuse_policy_source": "docs/minipc-powershell-capability-reuse-v1.md",
+      "capability_reuse_task": "tools/minipc_runner_tasks/operations_readonly_bundle.ps1",
+      "no_repeat_runner_setup_or_e2e_without_changed_boundary": true,
+      "future_permissions_require_separate_scope": true,
+      "bundle_source_review_and_original_host_ack_are_distinct": true
     },
     {
       "id": "mini_pc_analytics_followthrough",
