@@ -174,7 +174,7 @@ SHA=re.compile(r"[0-9a-f]{64}\Z")
 # must independently compare to Mini-PC/Cloud/GitHub/Work.
 PROOF_ORIGINS={
     "V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E":
-        frozenset({"MINIPC_PHYSICAL","SUPABASE_CLOUD"}),
+        frozenset({"MINIPC_PHYSICAL","SUPABASE_CLOUD","SUPABASE_SANDBOX"}),
     "V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT":frozenset({"MINIPC_PHYSICAL"}),
     "V3_JOURNAL_REASONS_ERRORS_6H24H_FOLLOWUP_CENSURE":
         frozenset({"MINIPC_PHYSICAL","SUPABASE_CLOUD"}),
@@ -185,6 +185,12 @@ PROOF_ORIGINS={
     "V3_GITHUB_WORK_ALERT_DYNAMIC_SERIES_ROUTING":
         frozenset({"GITHUB","WORK"}),
 }
+# The already independently verified real-model receipts live in production.
+# The OFFLINE synthetic writer cases live only in the revoked/paused test DB.
+# Never combine these origins into a fictional single-project Cloud record.
+PRODUCTION_ORIGINAL_PROJECT="nlgzjmqgwueojlyqmoru"
+ISOLATED_SYNTHETIC_PROJECT="zxyhunwpviafyxyqysne"
+ISOLATED_ORIGINAL_16_SHA="a5f9660f96fd714447566607539d1a05ce700fdab0a779cc457b746dc7dd25d1"
 PROOF_KIND="V3_PAPER_TECHNICAL_E2E_READBACK_V1"
 ORIGINAL_ID=re.compile(r"[A-Za-z0-9_.:/-]{8,160}\Z")
 
@@ -214,8 +220,10 @@ def _evidence_content_error(
             return name+" original readback record invalid"
         origin,identity,payload,digest=(item.get(x) for x in
             ("origin","original_id","original_record","original_sha256"))
-        if origin not in {"MINIPC_PHYSICAL","SUPABASE_CLOUD","GITHUB","WORK","SLACK"}:
+        if origin not in {"MINIPC_PHYSICAL","SUPABASE_CLOUD","SUPABASE_SANDBOX","GITHUB","WORK","SLACK"}:
             return name+" unrecognized independent proof source"
+        if origin=="SUPABASE_SANDBOX" and name!="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E":
+            return name+" sandbox receipt not a required source for this proof"
         if not isinstance(identity,str) or not ORIGINAL_ID.fullmatch(identity):
             return name+" missing original external receipt ID"
         if not isinstance(digest,str) or not SHA.fullmatch(digest):
@@ -320,13 +328,28 @@ def _evidence_content_error(
         # with the identical immutable canonical event digests. Negative
         # P4 must have an independently observed ZERO Paper fills.
         cloud=by_origin["SUPABASE_CLOUD"]
-        cloud_cases=cloud.get("paper_writer_dryrun_case_readbacks")
-        if (cloud.get("read_only") is not True
+        sandbox=by_origin["SUPABASE_SANDBOX"]
+        cloud_cases=sandbox.get("paper_writer_dryrun_case_readbacks")
+        if (cloud.get("cloud_project_id")!=PRODUCTION_ORIGINAL_PROJECT
+                or sandbox.get("cloud_project_id")!=ISOLATED_SYNTHETIC_PROJECT
+                or cloud.get("read_only") is not True
                 or cloud.get("cloud_cas_performed") is not False
                 or cloud.get("active_paper_series_changed") is not False
                 or cloud.get("v2r4_live_strategy_modified") is not False
                 or cloud.get("independent_original_receipt_query") is not True
                 or cloud.get("same_event_id_reread_no_duplicate_verified") is not True
+                or cloud.get("paper_writer_dryrun_case_readbacks") is not None
+                or sandbox.get("original_model_response_id") is not None
+                or sandbox.get("read_only") is not True
+                or sandbox.get("cloud_cas_performed") is not False
+                or sandbox.get("active_paper_series_changed") is not False
+                or sandbox.get("v2r4_live_strategy_modified") is not False
+                or sandbox.get("historical_independent_original_query_previously_completed") is not True
+                or sandbox.get("fresh_sandbox_network_access") is not False
+                or sandbox.get("synthetic_offline_fixtures_only") is not True
+                or sandbox.get("original_synthetic_event_count")!=16
+                or sandbox.get("original_historical_join_sha256")!=ISOLATED_ORIGINAL_16_SHA
+                or sandbox.get("same_event_id_reread_no_duplicate_verified") is not True
                 or cloud.get("original_model_response_id")!=
                     original["model_response_id"]
                 or cloud.get("original_model_p4_receipt_sha256")!=
@@ -355,11 +378,11 @@ def _evidence_content_error(
                 return name+" unverified independent Cloud append-only Paper row"
         try:
             remote_at=datetime.fromisoformat(
-                cloud["observed_at_utc"].replace("Z","+00:00"))
+                sandbox["observed_at_utc"].replace("Z","+00:00"))
             if remote_at.tzinfo is None or remote_at<fill_time:
                 raise ValueError("Cloud readback before physical Paper fill")
         except (ValueError,AttributeError,TypeError,OverflowError):
-            return name+" Cloud original observation precedes positive Paper fill"
+            return name+" sandbox original observation precedes positive Paper fill"
     if name=="V3_FAIL_CLOSED_STOP_STAGE2_FEE_WAIT_CONTRACT":
         host=by_origin["MINIPC_PHYSICAL"]
         checks=(
