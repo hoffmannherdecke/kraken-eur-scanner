@@ -254,16 +254,23 @@ function ProtectedMarkerWrite([object]$Payload,[bool]$Replace) {
 }
 function WaitSupervisorAndCloud([string]$Phase,[datetime]$Since,[int]$TimeoutSec,[bool]$NeedDisabled) {
   $end=(Get-Date).AddSeconds($TimeoutSec); $receipts=@()
+  $lastUnsatisfied=@('NO_FRESH_REPORT_PAIR')
   do {
     Start-Sleep -Seconds 3
     $s=$null;$c=$null
-    try { $s=FreshJson $supPath 180; $c=FreshJson $cloudPath 180 } catch { continue }
+    try { $s=FreshJson $supPath 180; $c=FreshJson $cloudPath 180 }
+    catch { $lastUnsatisfied=@('REPORT_MISSING_OR_STALE'); continue }
     if(([datetime]$s.checked_at_utc).ToUniversalTime() -le $Since -or
-       ([datetime]$c.checked_at_utc).ToUniversalTime() -le $Since){continue}
+       ([datetime]$c.checked_at_utc).ToUniversalTime() -le $Since){
+      $lastUnsatisfied=@('REPORT_NOT_NEW_AFTER_PHASE')
+      continue
+    }
     $goodTasks=@($s.tasks|Where-Object {
       $_.task -in $names -and $_.action -eq 'V3_INTAKE_SUPERVISOR_REARM_BLOCKED' -and
       (-not $NeedDisabled -or $_.before.scheduler_state -eq 'Disabled')
     })
+    # Keep all original fail-closed requirements; emit only bounded reason codes,
+    # never original worker command lines, token, marker payload or raw heartbeat.
     $healthy=($s.status -eq 'WARNING' -and
       $s.v3_paper_old_intake_fence.mode -eq $Phase -and $goodTasks.Count -eq 2 -and
       @($s.restarted).Count -eq 0 -and @($s.failed_restarts).Count -eq 0 -and
@@ -275,8 +282,24 @@ function WaitSupervisorAndCloud([string]$Phase,[datetime]$Since,[int]$TimeoutSec
       $stamp=([datetime]$s.checked_at_utc).ToUniversalTime().ToString('o')
       if($stamp -notin $receipts){$receipts+=@($stamp)}
       if($receipts.Count -ge $(if($NeedDisabled){2}else{1})){return $true}
+      $lastUnsatisfied=@('WAITING_FOR_SECOND_DISTINCT_VALID_SUPERVISOR_CYCLE')
+    } else {
+      $lastUnsatisfied=@()
+      if($s.status -ne 'WARNING'){$lastUnsatisfied+=@('SUPERVISOR_NOT_WARNING')}
+      if($s.v3_paper_old_intake_fence.mode -ne $Phase){$lastUnsatisfied+=@('SUPERVISOR_PHASE_MISMATCH')}
+      if($goodTasks.Count -ne 2){$lastUnsatisfied+=@('SUPERVISOR_TASK_FENCE_MISMATCH')}
+      if(@($s.restarted).Count -ne 0 -or @($s.failed_restarts).Count -ne 0){$lastUnsatisfied+=@('SUPERVISOR_RESTART_ATTEMPT')}
+      if($c.status -ne 'HEALTHY'){$lastUnsatisfied+=@('CLOUDSYNC_NOT_HEALTHY')}
+      if($c.mode -ne 'V3_PRECOMMIT_NO_NETWORK_HOLD'){$lastUnsatisfied+=@('CLOUDSYNC_NOT_PAUSED')}
+      if($c.v3_fence_precommit_phase -ne $Phase){$lastUnsatisfied+=@('CLOUDSYNC_PHASE_MISMATCH')}
+      if($c.v3_fence_cloud_sync_lane -ne 'PRECOMMIT_ORIGINAL'){$lastUnsatisfied+=@('CLOUDSYNC_LANE_MISMATCH')}
+      if($c.cloud_sync_intentionally_paused -ne $true -or $c.cloud_updated -ne $false){
+        $lastUnsatisfied+=@('CLOUDSYNC_NETWORK_SAFETY_MISMATCH')
+      }
     }
   } while((Get-Date) -lt $end)
+  Write-Warning ('V3_SUPERVISOR_CLOUD_ACK_TIMEOUT phase={0} valid_distinct_cycles={1} last_unsatisfied={2}' -f
+    $Phase,$receipts.Count,($lastUnsatisfied -join ','))
   return $false
 }
 Need ($root -ieq 'C:\Users\ADMIN\Trading') 'Unexpected original TradingRoot'
@@ -361,7 +384,7 @@ try {
   $payload.phase='QUIESCED'
   ProtectedMarkerWrite $payload $true
   $since=[datetime]::UtcNow.AddSeconds(-3)
-  Need (WaitSupervisorAndCloud 'QUIESCED' $since 180 $true) 'Two supervisor QUIESCED cycles not independently confirmed'
+  Need (WaitSupervisorAndCloud 'QUIESCED' $since 360 $true) 'Two supervisor QUIESCED cycles not independently confirmed'
   Need (@(MatchingPids $actionPaths).Count -eq 0) 'Intake process resurfaced'
   Need (@($names|Where-Object {[string](Get-ScheduledTask -TaskName $_).State -eq 'Disabled'}).Count -eq 2) 'Intake windows Task rearmed'
   Write-Output 'V3_PHYSICAL_NATIVE_NO_REARM=PASS'

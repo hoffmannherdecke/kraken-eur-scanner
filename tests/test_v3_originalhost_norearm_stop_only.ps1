@@ -85,6 +85,39 @@ if($supervisorPin.Length -ne 64 -or -not $src.Contains($supervisorPin) -or
    $src.Contains($wrongSupervisorPin) -or $supervisorPin -eq $wrongSupervisorPin){
  throw 'Originalhost Supervisor SHA identity pin drift or transposition regression'
 }
+# Physical 19-Oct negative: a 120-second native Supervisor period cannot reliably
+# provide two NEW independent QUIESCED ticks inside the former 180-second budget.
+# Reserve two full cycles, scheduling jitter and a fresh CloudSync acknowledgment.
+$ackBudget='WaitSupervisorAndCloud ''QUIESCED'' $since 360 $true'
+$oldAckBudget='WaitSupervisorAndCloud ''QUIESCED'' $since 180 $true'
+if(-not $src.Contains($ackBudget) -or $src.Contains($oldAckBudget)){
+  throw 'QUIESCED two-cycle wall-clock budget regression'
+}
+foreach($phaseOffset in @(0,30,60,119)){
+  foreach($jitter in @(0,30)){
+    $requiredSec=(120-$phaseOffset)+120+$jitter+60
+    if($requiredSec -ge 360){throw 'Two native Supervisor cycles plus CloudSync cannot fit'}
+  }
+}
+if(-not(120+120+30+60 -gt 180)){throw 'Former 180s false-negative fixture missing'}
+# New diagnostics must cover ALL of the original supervisor/CloudSync safety
+# prerequisites; they do not authorize a partial or one-cycle success.
+foreach($diagnostic in @(
+  'REPORT_MISSING_OR_STALE','REPORT_NOT_NEW_AFTER_PHASE',
+  'SUPERVISOR_NOT_WARNING','SUPERVISOR_PHASE_MISMATCH',
+  'SUPERVISOR_TASK_FENCE_MISMATCH','SUPERVISOR_RESTART_ATTEMPT',
+  'CLOUDSYNC_NOT_HEALTHY','CLOUDSYNC_NOT_PAUSED','CLOUDSYNC_PHASE_MISMATCH',
+  'CLOUDSYNC_LANE_MISMATCH','CLOUDSYNC_NETWORK_SAFETY_MISMATCH',
+  'WAITING_FOR_SECOND_DISTINCT_VALID_SUPERVISOR_CYCLE',
+  'V3_SUPERVISOR_CLOUD_ACK_TIMEOUT'
+)){
+  if(-not $src.Contains($diagnostic)){throw ('Safe ACK diagnostic missing: '+$diagnostic)}
+}
+if($src.Contains('Write-Output $s') -or $src.Contains('Write-Output $c')){
+  throw 'Raw Supervisor or CloudSync payload must never be emitted'
+}
+Write-Output 'V3_QUIESCED_360S_TWO_CYCLE_SAFE_DIAGNOSTIC_REGRESSION_PASS'
+
 Write-Output 'V3_ORIGINALHOST_SUPERVISOR_64HEX_PIN_REGRESSION_PASS'
 Write-Output 'V3_PR334_FULL_PR332_MANIFEST_HASH_PREVIEW_REGRESSION_PASS'
 Write-Output 'V3_PHYSICAL_ORIGINALHOST_NO_REARM_STOP_ONLY_PURE_11_SCOPES_PASS'
