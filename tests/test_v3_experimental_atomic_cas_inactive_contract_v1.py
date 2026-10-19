@@ -71,7 +71,7 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
                 self.assertIn(predicate,gate)
         self.assertIn("if not exists (",self.body)
         self.assertIn("V3 CAS missing exact valid unique single-active Paper index",self.body)
-        self.assertNotRegex(gate,r"(?im)^\\s*(create|alter|drop)\\s+index")
+        self.assertNotRegex(gate,r"(?im)^\s*(create|alter|drop)\s+index")
 
     def test_conditional_atomicity_is_bound_to_original_cloud_state(self):
         for required in (
