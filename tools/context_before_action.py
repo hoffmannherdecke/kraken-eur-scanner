@@ -564,7 +564,7 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             "original reviewed runner ownership drift")
     require(runner.get("windows_task_schedule_enabled_host_confirmed") is True
             and runner.get("first_unattended_periodic_window_e2e") ==
-                "PENDING_ORIGINAL_HOST_READBACK"
+                "PASS_ONE_UNATTENDED_NATURAL_WINDOW_ORIGINAL_HOST_20261019"
             and runner.get("no_unreviewed_powershell_or_elevated_host_access") is True
             and runner.get("no_trading_paper_cloud_order_or_budget_authority") is True
             and runner.get("no_paid_github_upgrade") is True
