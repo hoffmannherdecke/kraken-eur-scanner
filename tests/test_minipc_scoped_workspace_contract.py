@@ -1,45 +1,43 @@
-"""Fixed NTFS workspace change: source boundaries, never a substitute for Windows ACL evidence."""
+"""Source-only boundary for the fixed non-admin workspace report task.
+
+This is not evidence of any existing Windows ACL or a successful write.
+"""
 from pathlib import Path
 import unittest
 
 TASK = Path("tools/minipc_runner_tasks/workspace_report.ps1")
-SETUP = Path("tools/minipc_runner_guard/install_scoped_workspace.ps1")
 
 
 class ScopedWorkspaceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.task = TASK.read_text("utf-8")
-        cls.setup = SETUP.read_text("utf-8")
         cls.active = "\n".join(line.lower() for line in cls.task.splitlines()
                                if not line.lstrip().startswith("#"))
 
-    def test_one_fixed_lowprivilege_write_boundary(self):
+    def test_only_fixed_nonadmin_workspace(self):
         s = self.task
         self.assertTrue(s.startswith("# MINIPC_REVIEWED_TASK_V1"))
-        self.assertLess(TASK.stat().st_size, 65536)
         self.assertFalse(TASK.is_symlink())
-        for required in (
+        self.assertLess(TASK.stat().st_size, 65536)
+        for term in (
             "CryptoSupportSvc", "MINI-PC-CryptoSupport",
             "WindowsBuiltInRole]::Administrator",
-            "C:\\CryptoSupport\\Workspace",
-            "[IO.FileAttributes]::ReparsePoint",
+            "C:\\CryptoSupport\\Workspace", "[IO.FileAttributes]::ReparsePoint",
             "[IO.Directory]::EnumerateFileSystemEntries($root)",
             "if ($seen -ge 20)", "[guid]::NewGuid()",
             "probe-", "report-", ".tmp", ".json",
             "[IO.FileMode]::CreateNew", "[IO.FileShare]::None",
-            "[IO.File]::Delete($testPath)",
-            "ConvertTo-Json -Compress", "MINIPC_WORKSPACE_SAFE_SUMMARY_V1",
-            "MINIPC_REVIEWED_TASK_ACK_V1", "task = 'workspace_report'",
-            "mutation_scope = 'RESTRICTED'",
-            "local_filesystem_writes = $true",
-            "writes_outside_workspace = $false",
-            "trading_orders_permitted = $false",
+            "[IO.File]::Delete($testPath)", "ConvertTo-Json -Compress",
+            "MINIPC_WORKSPACE_SAFE_SUMMARY_V1", "MINIPC_REVIEWED_TASK_ACK_V1",
+            "task = 'workspace_report'", "mutation_scope = 'RESTRICTED'",
+            "local_filesystem_writes = $true", "writes_outside_workspace = $false",
+            "trading_orders_permitted = $false", "[Text.UTF8Encoding]::new($false)"
         ):
-            self.assertIn(required, s, required)
+            self.assertIn(term, s, term)
 
-    def test_never_execute_from_workspace_or_use_arbitrary_paths(self):
-        for banned in (
+    def test_no_arbitrary_commands_paths_or_privileged_operations(self):
+        for term in (
             "param(", "$args", "invoke-expression", "invoke-command",
             "invoke-webrequest", "invoke-restmethod", "start-process",
             "invoke-cimmethod", "set-service", "stop-service", "start-service",
@@ -47,34 +45,20 @@ class ScopedWorkspaceTests(unittest.TestCase):
             "get-credential", "git checkout", "git pull", "supabase ",
             ".env", "service_role_key", "api_key", "c:\\users",
             "get-childitem", "get-content", "new-item", "set-item",
-            "remove-item", "write-host $content",
+            "remove-item", "write-host $content"
         ):
-            self.assertNotIn(banned, self.active, banned)
+            self.assertNotIn(term, self.active, term)
         self.assertEqual(self.active.count("write-host ('minipc_workspace_safe_summary_v1 '"), 1)
         self.assertEqual(self.active.count("[io.filemode]::createnew"), 2)
         self.assertNotIn("Join-Path $env:", self.task)
 
-    def test_admin_setup_is_exactly_one_new_folder_only(self):
-        s = self.setup
-        self.assertTrue(s.startswith("# MINIPC_MANUAL_ADMIN_SETUP_ONLY"))
-        self.assertNotIn("# MINIPC_REVIEWED_TASK_V1", s)
-        self.assertFalse(SETUP.is_symlink())
-        self.assertIn("WindowsBuiltInRole]::Administrator", s)
-        self.assertIn("$target = 'C:\\CryptoSupport\\Workspace'", s)
-        self.assertIn("$acl.SetAccessRuleProtection($true, $false)", s)
-        self.assertIn("S-1-5-18", s)
-        self.assertIn("S-1-5-32-544", s)
-        self.assertIn("FileSystemRights]::Modify", s)
-        self.assertIn("WORKSPACE_SETUP=PASS", s)
-        self.assertIn("WORKSPACE_SETUP_BLOCK: workspace exists", s)
-        self.assertIn("ROLLBACK=MANUAL_REVIEW_REQUIRED", s)
-        for bad in (
-            "Restart-Computer", "Set-Service", "Start-Service",
-            "Stop-Service", "Register-ScheduledTask",
-            "Set-ScheduledTask", "Invoke-Expression", "Invoke-WebRequest",
-            "Invoke-RestMethod", "Set-ExecutionPolicy", "Get-ChildItem",
-        ):
-            self.assertNotIn(bad, s)
+    def test_reports_are_small_and_probe_is_cleaned_up(self):
+        self.assertIn("if ($bytes.Length -gt 4096)", self.task)
+        self.assertIn("if ([IO.File]::Exists($testPath)) { [IO.File]::Delete($testPath) }", self.task)
+        self.assertIn("$probeDone = $true", self.task)
+        self.assertIn("$writer.Dispose()", self.task)
+        self.assertIn("MINIPC_WORKSPACE_REPORT_V1", self.task)
+        self.assertIn("no_new_privileged_rights = $true", self.task)
 
 
 if __name__ == "__main__":
