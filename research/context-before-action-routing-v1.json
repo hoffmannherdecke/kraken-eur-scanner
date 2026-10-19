@@ -68,6 +68,14 @@
     {
       "path": "tools/minipc_runner_tasks/windows_maintenance_snapshot.ps1",
       "role": "PROJECTWIDE_REVIEWED_READONLY_WINDOWS_MAINTENANCE_SOURCE_NOT_HOST_ACK; REUSE_EXISTING_RESTRICTED_MINIPC_RUNNER_FOR_CPU_UPDATE_TASK_STATUS; NO_ADMIN_OR_RESTART"
+    },
+    {
+      "path": "docs/minipc-powershell-capability-reuse-v1.md",
+      "role": "PROJECTWIDE_STANDING_USER_DECISION_REUSE_EXISTING_POWERSHELL_CAPABILITY_NO_REPEAT_RUNNER_E2E_OR_NEW_MANAGER"
+    },
+    {
+      "path": "tools/minipc_runner_tasks/operations_readonly_bundle.ps1",
+      "role": "PROJECTWIDE_ONE_SHOT_REVIEWED_NONADMIN_BATCH_REUSES_THREE_EXISTING_TASKS_NO_NEW_WINDOWS_RIGHTS"
     }
   ],
   "scopes": {
@@ -502,6 +510,33 @@
         "cpu_maintenance_requires_fresh_safe_pause": true,
         "owner_issue": 353,
         "owner_comment_id": 6268528407
+      },
+      "capability_reuse_policy": {
+        "kind": "MINIPC_REUSE_FIRST_POLICY_V1",
+        "canonical_policy": "docs/minipc-powershell-capability-reuse-v1.md",
+        "source_bundle": "tools/minipc_runner_tasks/operations_readonly_bundle.ps1",
+        "source_task_name": "operations_readonly_bundle",
+        "child_source_tasks": [
+          "host_safety_probe",
+          "windows_maintenance_snapshot",
+          "log_status_summary"
+        ],
+        "safe_result_marker": "MINIPC_OPERATIONS_BATCH_SAFE_SUMMARY_V1",
+        "no_repeat_runner_e2e_without_changed_boundary": true,
+        "existing_request_and_single_ack_only_for_previously_approved_tasks": true,
+        "new_capabilities_one_review_and_targeted_test": true,
+        "new_acl_or_write_rights_require_separate_permission": true,
+        "no_new_workflow_scheduler_or_manager": true,
+        "no_arbitrary_powershell_or_parameters": true,
+        "no_admin_trading_writer_or_budget_authority": true,
+        "all_project_scopes": [
+          "strategy",
+          "architecture",
+          "operations",
+          "research"
+        ],
+        "runtime_evidence_not_established_by_context_packet": true,
+        "original_host_receipt_must_be_independently_observed": true
       }
     }
   }

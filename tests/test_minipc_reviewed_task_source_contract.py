@@ -12,6 +12,7 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
             sorted(FOLDER.glob("*.ps1")),
             [FOLDER / "access_boundary_probe.ps1", SCRIPT,
              FOLDER / "log_status_summary.ps1",
+             FOLDER / "operations_readonly_bundle.ps1",
              FOLDER / "v3_paper_offline_probe.ps1",
              FOLDER / "windows_maintenance_snapshot.ps1"],
         )

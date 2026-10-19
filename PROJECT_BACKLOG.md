@@ -1,5 +1,12 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
+## 19.10.2026 – Dauerregel: Mehr PowerShell-Fähigkeiten ohne wiederholte Runner-Großabnahme
+
+- [x] **Nutzerbeschluss einheitlich verbindlich verankern:** Bei späteren Mini-PC-/PowerShell-Rechten zuerst `AGENTS.md`, echtes aktuelles Kontext-vor-Aktion-Routing, [Reuse-Gate](docs/minipc-powershell-capability-reuse-v1.md) und bereits belegte Originalhost-ACKs nutzen; keine Wiederholung von Runner-Installation, Stromausfall-/Scheduler-/ACL- oder natürlicher SafePause-E2E-Probe ohne neue tatsächliche Grenze. Keine erneute parallele Task-/Manager-/Scheduler-Architektur. Owner [Issue #353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353).
+- [ ] **Erste praktische Bündelung:** `operations_readonly_bundle` unter derselben `MINIPC_TASK_V1`-Schnittstelle fasst drei vorhandene read-only Taskfunktionen zu **einem** Auftrag/ACK zusammen. Source-/CI und einmaligen sicheren Mini-PC-Originalhost-ACK abnehmen; erst dann `HOST_PASS`. Unvollständige Child-Leseergebnisse ehrlich als `PARTIAL` ausweisen. **Keine neuen NTFS- oder Windows-Rechte durch den Quellmerge.**
+- [ ] **Später nur bei konkretem Bedarf:** gezielte, separate Freigabe von NTFS-Arbeitsordner-Schreibrechten oder whitelisted Parametern am bereits vorhandenen privaten SHA-Workflow. Keine allgemeine Adminshell, keine freie PowerShell, keine pauschale Rechteeskalation. Erst eigenständiger Scope/Backup/Rollback/Sicherheits-/Hostnachweis, keine automatische V3-/Trading-/Update-Freigabe.
+
+
 ## 19.10.2026 – CPU-/Windows-Revisions- und Wartungsarbeiten: Runner-Safe-Pause VOR dem Herunterfahren (PFLICHT, OFFEN)
 
 **Kanonischer Wartungsauftrag:** [i7-8700T-Einbau- und Inbetriebnahmeprotokoll](docs/v2r4-cpu-cache-versioned-technical-release-20261017.md#verbindliches-einbau--und-inbetriebnahmeprotokoll-i7-8700t--pflichtnachlauf-v3-pr--419-19102026); **gleicher** bestehender Owner [Issue #353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353), kein neuer Scheduler/Work-/Projektmanager.
