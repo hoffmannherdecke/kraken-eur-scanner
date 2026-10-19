@@ -127,6 +127,24 @@ class ContextBeforeActionTests(unittest.TestCase):
                 self.assertTrue(available["no_user_supplied_shellcode_or_acl_changes"])
                 self.assertEqual(packet["declared_status"]["live_runtime_independently_checked"], False)
 
+    def test_reviewed_windows_snapshot_routed_in_every_scope_without_host_claim(self):
+        import hashlib
+        script = "tools/minipc_runner_tasks/windows_maintenance_snapshot.ps1"
+        expected = hashlib.sha256((ROOT / script).read_bytes()).hexdigest()
+        for scope in ("strategy", "architecture", "operations", "research"):
+            with self.subTest(scope=scope):
+                packet = build(ROOT, scope)
+                sources = {x["path"]: x["sha256"] for x in packet["source_index"]}
+                self.assertEqual(sources[script], expected)
+                record = packet["operational_evidence_handoff"]["projectwide_reviewed_runner"]["reviewed_windows_maintenance_diagnostics"]
+                self.assertEqual(record["task"], "windows_maintenance_snapshot")
+                self.assertEqual(record["source_fingerprint"], expected)
+                self.assertEqual(record["actual_windows_task_e2e"], "PENDING_ORIGINAL_HOST_ACK")
+                self.assertTrue(record["use_existing_runner_only"])
+                self.assertTrue(record["no_arbitrary_shell_or_admin"])
+                self.assertTrue(record["no_runtime_or_reboot_authority"])
+                self.assertFalse(packet["declared_status"]["live_runtime_independently_checked"])
+
     def test_projectwide_reviewed_minipc_runner_is_routed_in_every_context_scope(self):
         """Same already-tested low-privilege capability must be visible without a second manager."""
         registry = json.loads((ROOT / "research/context-before-action-routing-v1.json").read_text())
