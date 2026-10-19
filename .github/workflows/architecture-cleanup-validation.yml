@@ -59,6 +59,15 @@ jobs:
           $errors = $null
           [void][System.Management.Automation.Language.Parser]::ParseFile('tools/minipc_runner_tasks/log_status_summary.ps1',[ref]$tokens,[ref]$errors)
           if (@($errors).Count -ne 0) { throw 'Restricted log summary PowerShell syntax invalid' }
+      - name: Offline reviewed Windows maintenance source contract
+        run: python -m unittest tests.test_minipc_windows_maintenance_snapshot_contract -v
+      - name: Parse restricted Windows maintenance PowerShell (no host execution)
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile('tools/minipc_runner_tasks/windows_maintenance_snapshot.ps1',[ref]$tokens,[ref]$errors)
+          if (@($errors).Count -ne 0) { throw 'Invalid Windows maintenance snapshot PowerShell syntax' }
       - name: Compile changed Python
         run: |
           python -m py_compile \
