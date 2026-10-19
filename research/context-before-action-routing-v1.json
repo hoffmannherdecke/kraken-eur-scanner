@@ -60,6 +60,10 @@
     {
       "path": "docs/minipc-runner-bounded-windows-v1.md",
       "role": "PROJECTWIDE_MINIPC_REVIEWED_TASK_RUNNER_ENABLED_WINDOWS_SCHEDULE_HOST_ACK_BUT_FIRST_UNATTENDED_RECURRING_E2E_PENDING; REAL_HOST_AND_GITHUB_READBACK_REQUIRED"
+    },
+    {
+      "path": "tools/minipc_runner_tasks/log_status_summary.ps1",
+      "role": "PROJECTWIDE_REVIEWED_MINIPC_READONLY_LOG_DIAGNOSIS_SOURCE_CI_PASS_HOST_ACTUAL_READ_PENDING; PREFER_FOR_RELEVANT_DIAGNOSIS_OVER_USER_POWERSHELL; NO_ARBITRARY_EXEC"
     }
   ],
   "scopes": {
@@ -399,7 +403,37 @@
       "existing_chatgpt_work_controller": "ONE_EXISTING_DAILY_1015_EUROPE_BERLIN",
       "new_chat_auto_import_guaranteed": false,
       "cpu_change_requires_pause_and_safe_shutdown": true,
-      "no_new_project_manager_or_schedule": true
+      "no_new_project_manager_or_schedule": true,
+      "reviewed_readonly_log_diagnostics": {
+        "task_name": "log_status_summary",
+        "source_script": "tools/minipc_runner_tasks/log_status_summary.ps1",
+        "reviewed_public_main_merge_sha": "5e6e822d54e42359665a949e04d6d0cf9b64ffbe",
+        "source_ci_status": "MERGED_SOURCE_AND_REVIEW_PASS",
+        "actual_windows_task_e2e": "PENDING_ORIGINAL_HOST_ACK",
+        "actual_source_file_acl": "UNKNOWN_UNTIL_RUNNER_READBACK",
+        "original_private_issue": 13,
+        "request_via_existing_workflow_only": true,
+        "scope": "KNOWN_LOG_DIRS_RESTRICTED_LAST_24H_STATUS_AGGREGATE_ONLY",
+        "approved_log_roots": [
+          "C:\\Users\\ADMIN\\Trading\\Logs",
+          "C:\\CryptoSupport\\Logs"
+        ],
+        "max_files_per_root": 5,
+        "max_tail_lines_per_file": 4000,
+        "no_raw_log_lines_or_filenames": true,
+        "no_user_pasted_shellcode": true,
+        "no_windows_acl_changes": true,
+        "prefer_before_manual_powershell_for_applicable_tasks": true,
+        "no_repeated_already_completed_example": true,
+        "all_project_scopes": [
+          "strategy",
+          "architecture",
+          "operations",
+          "research"
+        ],
+        "no_new_workflow_runner_scheduler_subscription": true,
+        "no_trading_cloud_model_budget_release": true
+      }
     }
   }
 }
