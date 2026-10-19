@@ -626,7 +626,7 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 "MINIPC_MAINTENANCE_SAFE_SUMMARY_V1"
             and maintenance.get("no_raw_log_or_unbounded_output") is True
             and maintenance.get("host_original_ack_still_required") is False
-            and maintenance.get("post_window_safe_pause_original_ack_pending") is True
+            and maintenance.get("post_window_safe_pause_original_ack_pending") is False
             and maintenance.get("no_acl_elevation_for_missing_scheduler_readback") is True
             and maintenance.get("no_broad_or_admin_acl_grant") is True
             and maintenance.get("original_host_evidence", {}).get("task_readback") == "READ_OK"
@@ -702,7 +702,7 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 "safe_github_job_log_marker": maintenance["safe_github_job_log_marker"],
                 "original_host_evidence": dict(maintenance["original_host_evidence"]),
                 "host_original_ack_still_required": False,
-                "post_window_safe_pause_original_ack_pending": True,
+                "post_window_safe_pause_original_ack_pending": False,
                 "no_acl_elevation_for_missing_scheduler_readback": True,
                 "no_broad_or_admin_acl_grant": True,
                 "target_task_read_access_original_host": maintenance["target_task_read_access_original_host"],
