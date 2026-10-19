@@ -536,7 +536,31 @@
           "research"
         ],
         "runtime_evidence_not_established_by_context_packet": true,
-        "original_host_receipt_must_be_independently_observed": true
+        "original_host_receipt_must_be_independently_observed": true,
+        "bundle_source_review": "MERGED_PROTECTED_MAIN_887d15d93711285bd368e0f87df02b555b30a36d",
+        "bundle_original_host_status": "PASS_ONE_RESTRICTED_SOURCE_PINNED_WINDOWS_RUN",
+        "bundle_original_host_evidence": {
+          "private_original_workflow_run_id": 39269905027,
+          "private_original_workflow_job_id": 118119146561,
+          "protected_main_sha": "887d15d93711285bd368e0f87df02b555b30a36d",
+          "observed_at_utc": "2026-10-19T14:40:50.4505047Z",
+          "source_prejob_approved": true,
+          "wrapper_ack_success": true,
+          "safe_marker": "MINIPC_OPERATIONS_BATCH_SAFE_SUMMARY_V1",
+          "three_existing_scripts_executed": true,
+          "host_probe": "READ_OK",
+          "windows_probe": "READ_OK",
+          "log_probe": "READ_OK",
+          "overall_task_execution": "COMPLETE",
+          "log_sources_readback": "PARTIAL_OR_UNAVAILABLE",
+          "log_files_read": 0,
+          "safe_report_is_dated_not_live_now": true,
+          "does_not_expand_local_permissions": true,
+          "does_not_authorize_windows_or_trading_changes": true
+        },
+        "next_permission_stage": "PENDING_SEPARATE_USER_AUTHORIZATION_FOR_SCOPED_WORKSPACE_WRITE",
+        "future_write_acl_currently_granted": false,
+        "retesting_existing_runner_not_required": true
       }
     }
   }
