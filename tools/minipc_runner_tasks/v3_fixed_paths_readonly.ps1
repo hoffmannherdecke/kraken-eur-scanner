@@ -42,8 +42,30 @@ foreach ($root in $roots) {
         if ($git -eq 'NOT_DIRECTORY') { $git = SafeFile (Join-Path $root.path '.git') }
         $launcher = SafeFile (Join-Path $root.path 'paper_evaluator\v3_paper_minipc_native_launcher_v1.py')
     }
+    # Bounded first-level checkout discovery; never print discovered names or paths.
+    $nestedGitCount = 0
+    $nestedScan = 'NOT_CHECKED'
+    if ($state -eq 'PRESENT') {
+        try {
+            $children = @(Get-ChildItem -LiteralPath $root.path -Directory -Force -ErrorAction Stop)
+            if ($children.Count -gt 32) {
+                $nestedScan = 'TOO_MANY_CHILDREN'
+            } else {
+                $nestedScan = 'COMPLETE'
+                foreach ($child in $children) {
+                    if ([bool]($child.Attributes -band [IO.FileAttributes]::ReparsePoint)) { continue }
+                    $marker = SafeDir (Join-Path $child.FullName '.git')
+                    if ($marker -eq 'PRESENT' -or $marker -eq 'NOT_DIRECTORY') {
+                        $nestedGitCount++
+                    }
+                }
+            }
+        } catch {
+            $nestedScan = 'UNAVAILABLE'
+        }
+    }
     $out += [pscustomobject][ordered]@{
-        root_key=$root.key; root_readback=$state; git_marker=$git; v3_launcher=$launcher
+        root_key=$root.key; root_readback=$state; git_marker=$git; v3_launcher=$launcher; nested_git_count=$nestedGitCount; nested_scan=$nestedScan
     }
 }
 # No traversal, file content, arbitrary paths, command invocation, or path disclosure.
