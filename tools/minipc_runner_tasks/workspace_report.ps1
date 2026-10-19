@@ -38,18 +38,17 @@ $probeDone = $false
 try {
     # Both unique paths are CREATED, never overwritten; no input/output path arg.
     $probeBytes = $enc.GetBytes('minipc-workspace-write-read-delete-v1')
-    $stream = New-Object IO.FileStream($testPath,
+    $stream = [IO.FileStream]::new($testPath,
         [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite,
         [IO.FileShare]::None)
     try {
         $stream.Write($probeBytes, 0, $probeBytes.Length)
         $stream.Flush()
         $stream.Position = 0
-        $copy = New-Object byte[] $probeBytes.Length
+        $copy = [byte[]]::new($probeBytes.Length)
         $read = $stream.Read($copy, 0, $copy.Length)
         if ($read -ne $copy.Length -or
-            -not [Linq.Enumerable]::SequenceEqual([byte[]]$probeBytes,
-                                                  [byte[]]$copy)) {
+            $enc.GetString($copy) -cne 'minipc-workspace-write-read-delete-v1') {
             throw 'WORKSPACE_WRITE_BLOCK: probe readback mismatch'
         }
     } finally { $stream.Dispose() }
@@ -75,18 +74,17 @@ $bytes = $enc.GetBytes($content)
 if ($bytes.Length -gt 4096) {
     throw 'WORKSPACE_WRITE_BLOCK: report exceeds 4 KiB limit'
 }
-$writer = New-Object IO.FileStream($reportPath,
+$writer = [IO.FileStream]::new($reportPath,
     [IO.FileMode]::CreateNew, [IO.FileAccess]::ReadWrite,
     [IO.FileShare]::None)
 try {
     $writer.Write($bytes, 0, $bytes.Length)
     $writer.Flush()
     $writer.Position = 0
-    $readBytes = New-Object byte[] $bytes.Length
+    $readBytes = [byte[]]::new($bytes.Length)
     $readCount = $writer.Read($readBytes, 0, $readBytes.Length)
     if ($readCount -ne $bytes.Length -or
-        -not [Linq.Enumerable]::SequenceEqual([byte[]]$bytes,
-                                              [byte[]]$readBytes)) {
+        $enc.GetString($readBytes) -cne $content) {
         throw 'WORKSPACE_WRITE_BLOCK: stored report readback mismatch'
     }
 } finally { $writer.Dispose() }
