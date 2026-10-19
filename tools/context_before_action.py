@@ -1031,17 +1031,55 @@ def verify_receipt(root: Path, packet: dict, receipt_path: Path) -> dict:
     }
 
 
+def compact_decision_brief(packet: dict) -> dict:
+    """Fast human/agent orientation; never replaces original source review.
+
+    All fields are derived from the already validated full packet, not a second
+    registry, cache, status authority or external request.
+    """
+    selector = packet["next_action_selector"]
+    routed = [item["path"] for item in packet["source_index"]]
+    priority = [path for path in (
+        "AGENTS.md", "project-current-state.json",
+        "PROJECT_BACKLOG.md", "docs/project-control-plane-governance.md"
+    ) if path in routed]
+    return {
+        "kind": "CONTEXT_BEFORE_ACTION_DECISION_BRIEF_V1",
+        "scope": packet["scope"],
+        "status": packet["status"],
+        "fingerprint": packet["fingerprint"],
+        "declared_as_of_utc": packet["declared_status"]["as_of_utc"],
+        "owner": "PROJECT_BACKLOG.md / Issue #353 for project-wide execution",
+        "decision_order": list(selector["decision_order"]),
+        "bounded_capabilities": list(selector["bounded_capabilities"]),
+        "manual_user_action_only_after": selector["before_manual_request"],
+        "connected_tools": selector["connected_tool_availability"],
+        "live_host": selector["host_online_now"],
+        "priority_sources_to_read": priority,
+        "routed_source_count": len(routed),
+        "full_packet_required_before_material_change": True,
+        "full_packet_command": "python tools/context_before_action.py --scope " + packet["scope"],
+        "no_live_runtime_or_trading_authority": True,
+        "history_or_hash_is_not_live_proof": True,
+    }
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--root", type=Path, default=ROOT)
     p.add_argument("--scope", required=True,
                    choices=("strategy", "architecture", "operations", "research"))
+    p.add_argument("--brief", action="store_true",
+                   help="Print one short validated action/owner guide, not the full source packet.")
     p.add_argument("--receipt", type=Path,
                    help="Verify a reviewer-supplied, scope-specific disposition; does not prove comprehension.")
     args = p.parse_args()
     try:
+        require(not (args.brief and args.receipt),
+                "brief is orientation only, not receipt verification")
         packet = build(args.root, args.scope)
-        output = verify_receipt(args.root, packet, args.receipt) if args.receipt else packet
+        output = (verify_receipt(args.root, packet, args.receipt) if args.receipt
+                  else compact_decision_brief(packet) if args.brief else packet)
         print(json.dumps(output, sort_keys=True, ensure_ascii=False))
         return 0
     except (ContextGateError, OSError, json.JSONDecodeError) as error:
