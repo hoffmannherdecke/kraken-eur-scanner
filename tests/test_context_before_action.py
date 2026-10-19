@@ -127,6 +127,36 @@ class ContextBeforeActionTests(unittest.TestCase):
                 self.assertTrue(available["no_user_supplied_shellcode_or_acl_changes"])
                 self.assertEqual(packet["declared_status"]["live_runtime_independently_checked"], False)
 
+    def test_reuse_first_minipc_capability_policy_is_present_in_all_scopes(self):
+        import hashlib
+        policy_file = "docs/minipc-powershell-capability-reuse-v1.md"
+        bundle = "tools/minipc_runner_tasks/operations_readonly_bundle.ps1"
+        expected = {
+            p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
+            for p in (policy_file, bundle)
+        }
+        for scope in ("strategy", "architecture", "operations", "research"):
+            with self.subTest(scope=scope):
+                packet = build(ROOT, scope)
+                sources = {x["path"]: x["sha256"] for x in packet["source_index"]}
+                self.assertEqual(sources[policy_file], expected[policy_file])
+                self.assertEqual(sources[bundle], expected[bundle])
+                reuse = packet["operational_evidence_handoff"]["projectwide_reviewed_runner"]["capability_reuse_policy"]
+                self.assertEqual(reuse["kind"], "MINIPC_REUSE_FIRST_POLICY_V1")
+                self.assertEqual(reuse["policy_source_fingerprint"], expected[policy_file])
+                self.assertEqual(reuse["bundle_source_fingerprint"], expected[bundle])
+                self.assertEqual(reuse["source_task_name"], "operations_readonly_bundle")
+                self.assertEqual(reuse["child_source_tasks"],
+                                 ["host_safety_probe", "windows_maintenance_snapshot", "log_status_summary"])
+                self.assertTrue(reuse["no_repeat_runner_e2e_without_changed_boundary"])
+                self.assertTrue(reuse["existing_request_and_single_ack_only_for_previously_approved_tasks"])
+                self.assertTrue(reuse["new_capabilities_one_review_and_targeted_test"])
+                self.assertTrue(reuse["new_acl_or_write_rights_require_separate_permission"])
+                self.assertTrue(reuse["no_new_workflow_scheduler_or_manager"])
+                self.assertTrue(reuse["no_arbitrary_powershell_or_parameters"])
+                self.assertTrue(reuse["runtime_evidence_not_established_by_context_packet"])
+                self.assertTrue(reuse["original_host_receipt_must_be_independently_observed"])
+
     def test_reviewed_windows_snapshot_routed_in_every_scope_without_host_claim(self):
         import hashlib
         script = "tools/minipc_runner_tasks/windows_maintenance_snapshot.ps1"
