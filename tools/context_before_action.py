@@ -629,6 +629,7 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             and maintenance.get("post_window_safe_pause_original_ack_pending") is False
             and maintenance.get("no_acl_elevation_for_missing_scheduler_readback") is True
             and maintenance.get("no_broad_or_admin_acl_grant") is True
+            and runner.get("first_unattended_periodic_window_evidence", {}).get("safe_pause") == "PASS"
             and maintenance.get("original_host_evidence", {}).get("task_readback") == "READ_OK"
             and maintenance.get("original_host_evidence", {}).get("task_read_method") == "CMDLET"
             and maintenance.get("original_host_evidence", {}).get("task_cmdlet_probe") == "READ_OK"
