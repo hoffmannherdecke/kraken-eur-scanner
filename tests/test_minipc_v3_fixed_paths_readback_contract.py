@@ -22,14 +22,19 @@ class V3FixedPathReadbackContract(unittest.TestCase):
     def test_no_mutations_or_arbitrary_execution(self):
         s = "\n".join(line.lower() for line in TASK.read_text("utf-8").splitlines()
                       if not line.lstrip().startswith("#"))
-        for forbidden in ("get-childitem", "get-content", "set-content", "remove-item",
+        for forbidden in ("get-content", "set-content", "remove-item",
                           "copy-item", "move-item", "new-item", "start-process",
                           "invoke-expression", "invoke-webrequest", "invoke-restmethod",
                           "git pull", "git checkout", "set-acl", "icacls",
                           "start-service", "stop-service", "start-scheduledtask",
                           "register-scheduledtask", "$args", "param("):
             self.assertNotIn(forbidden, s)
+        self.assertIn("get-childitem -literalpath $root.path -directory -force", s)
+        self.assertIn("$children.count -gt 32", s)
+        self.assertIn("nested_git_count=$nestedgitcount", s)
+        self.assertIn("nested_scan=$nestedscan", s)
         self.assertNotIn("get-childitem -recurse", s)
+        self.assertNotIn("select-string", s)
 
 if __name__ == "__main__":
     unittest.main()
