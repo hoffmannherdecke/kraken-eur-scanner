@@ -20,6 +20,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from tools.v3_experimental_paper_technical_gate import validate_experimental_paper_packet
 from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
 from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
     released_paper_first_scanner_model_once,
@@ -153,13 +154,17 @@ def dispatch_one_owned_paper_phase(*, phase: str,
 
 def dispatch_after_native_release_readback(*,
         originalhost_readback: Callable[[], dict[str, Any]] | None = None,
+        release_root: Path | None = None,
+        release_packet: dict[str, Any] | None = None,
         **phase_args: Any) -> dict[str, Any]:
     """Source-only native-owner integration seam; NOT a Windows/Cloud release.
 
     The future separately authorized ORIGINALHOST operator must supply the
     trusted, freshly collected Windows Task/worker/fence/supervisor proof.
     A caller-created dictionary, CI mock or Cloud flag is NOT physical
-    attestation. This function neither installs nor starts a Windows Task.
+    attestation. Six independently collected evidence envelopes must also pass
+    the original strict release schema, but even that does not authenticate
+    their physical origin without a separate actual release-owner readback. This function neither installs nor starts a Windows Task.
     The CLI below intentionally has NO live argument or execution path.
 
     On a complete external readback this delegates ONE phase to the exact
@@ -176,6 +181,25 @@ def dispatch_after_native_release_readback(*,
         raise ValueError("independent native owner and release inputs required")
     validate_one_owner_contract(
         **{key: phase_args[key] for key in required})
+    # Never turn a caller-provided six_proofs=True (or a Cloud config flag)
+    # into release authority. Parse all six immutable, source-specific proof
+    # envelopes with the EXISTING shared technical gate first. Their original
+    # host/Cloud provenance must also be corroborated by the separate actual
+    # release owner; successful schema/hashes are NOT physical attestation.
+    if (not isinstance(release_root, Path) or release_root.is_symlink()
+            or not release_root.is_dir()
+            or not isinstance(release_packet, dict)
+            or release_packet.get("strategy_revision") != REVISION
+            or release_packet.get("strategy_fingerprint_sha256") !=
+                phase_args["strategy_sha256"]):
+        raise ValueError("pinned original technical release evidence missing")
+    proof_errors = validate_experimental_paper_packet(
+        release_root, REVISION, release_packet)
+    if proof_errors:
+        raise ValueError("six independent release proof envelopes incomplete: "
+                         + proof_errors[0])
+    # The independent originalhost task/process/fence and Cloud readbacks are
+    # checked separately below and again under the existing native writer lock.
     phase = phase_args["phase"]
     series_id = phase_args["series_id"]
     pin = phase_args["repo_sha"]
