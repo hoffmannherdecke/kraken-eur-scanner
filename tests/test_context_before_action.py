@@ -236,7 +236,7 @@ class ContextBeforeActionTests(unittest.TestCase):
                 self.assertTrue(handoff["windows_schedule_enabled_at_original_user_photo"])
                 self.assertEqual(
                     handoff["status"],
-                    "HOST_SCHEDULER_ENABLED_ACK_FIRST_NATURAL_RUN_PENDING",
+                    "FIRST_NATURAL_SAFE_PAUSE_HOST_PASS_CPU_MAINTENANCE_REQUIRES_FRESH_GATE",
                 )
                 self.assertFalse(handoff["live_host_status_independently_verified_by_this_packet"])
                 self.assertTrue(handoff["no_arbitrary_shell_or_trading_authority"])
