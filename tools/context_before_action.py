@@ -669,6 +669,14 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
             and reuse.get("no_admin_trading_writer_or_budget_authority") is True
             and reuse.get("runtime_evidence_not_established_by_context_packet") is True
             and reuse.get("original_host_receipt_must_be_independently_observed") is True
+            and reuse.get("bundle_original_host_status") ==
+                "PASS_ONE_RESTRICTED_SOURCE_PINNED_WINDOWS_RUN"
+            and reuse.get("bundle_original_host_evidence", {}).get("private_original_workflow_run_id") == 39269905027
+            and reuse.get("bundle_original_host_evidence", {}).get("overall_task_execution") == "COMPLETE"
+            and reuse.get("bundle_original_host_evidence", {}).get("log_sources_readback") == "PARTIAL_OR_UNAVAILABLE"
+            and reuse.get("future_write_acl_currently_granted") is False
+            and reuse.get("next_permission_stage") ==
+                "PENDING_SEPARATE_USER_AUTHORIZATION_FOR_SCOPED_WORKSPACE_WRITE"
             and set(reuse.get("all_project_scopes", [])) ==
                 {"strategy", "architecture", "operations", "research"},
             "projectwide reusable PowerShell capability policy or permission boundary drift")
@@ -723,6 +731,10 @@ def existing_operational_evidence_handoff(config: dict, source_index: list[dict]
                 "no_arbitrary_powershell_or_parameters": True,
                 "runtime_evidence_not_established_by_context_packet": True,
                 "original_host_receipt_must_be_independently_observed": True,
+                "bundle_original_host_status": reuse["bundle_original_host_status"],
+                "bundle_original_host_evidence": dict(reuse["bundle_original_host_evidence"]),
+                "next_permission_stage": reuse["next_permission_stage"],
+                "future_write_acl_currently_granted": False,
             },
             "reviewed_readonly_log_diagnostics": {
                 "task": diag["task_name"],
