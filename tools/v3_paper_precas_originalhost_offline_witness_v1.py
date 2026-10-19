@@ -13,8 +13,10 @@ import argparse
 import copy
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
+from datetime import datetime
 import re
 import socket
 import subprocess
@@ -110,18 +112,94 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
 def _receipt_files(journal: Path, series: str, candidate_id: str) -> list:
     records = []
     for f in sorted(journal.glob("*.json")):
+        if f.is_symlink() or not f.is_file():
+            raise ValueError("linked or missing original receipt forbidden")
         raw = f.read_bytes()
         row = json.loads(raw)
         if row.get("series_id") == series and row.get("candidate_id") == candidate_id:
             event_key = "|".join(str(row[k]) for k in
                                  ("series_id", "candidate_id", "phase", "event_key"))
             eid = hashlib.sha256(event_key.encode("utf-8")).hexdigest()
-            if f.name != eid + ".json" or row.get("orders") is not False:
+            if (f.name != eid + ".json" or row.get("orders") is not False
+                    or row.get("real_money_actions") is not False):
                 raise ValueError("incorrect immutable native receipt identity")
             records.append({"phase": row["phase"], "result": row["result"],
                             "event_key": row["event_key"], "event_id": eid,
+                            "known_at_utc": row["known_at_utc"],
                             "content_sha256": hashlib.sha256(raw).hexdigest()})
     return records
+
+
+def _original_case_receipt(journal: Path, indexed: dict, *,
+                           series_id: str, candidate_id: str) -> dict:
+    """Re-read the actual immutable bytes; no projected fixture may impersonate disk.
+
+    Only data from these files may become economic or chronological dry-run
+    evidence. True host and independent Cloud authentication remain EXTERNAL.
+    """
+    f = journal / (indexed["event_id"] + ".json")
+    if f.is_symlink() or not f.is_file():
+        raise ValueError("original receipt missing or symlink")
+    raw = f.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != indexed["content_sha256"]:
+        raise ValueError("original receipt changed since journal indexing")
+    row = json.loads(raw)
+    if (row.get("series_id") != series_id or row.get("candidate_id") != candidate_id
+            or row.get("phase") != indexed["phase"]
+            or row.get("result") != indexed["result"]
+            or row.get("orders") is not False
+            or row.get("real_money_actions") is not False
+            or not isinstance(row.get("data"), dict)):
+        raise ValueError("original disk receipt identity changed")
+    stamp = row.get("known_at_utc")
+    try:
+        moment = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+        if moment.utcoffset() is None:
+            raise ValueError("naive original clock")
+    except (TypeError, AttributeError, ValueError) as exc:
+        raise ValueError("original journal lacks known-at clock") from exc
+    return row
+
+
+def _case_economic_proof(journal: Path, series_id: str, candidate_id: str,
+                         p4: dict, fill: dict | None) -> dict:
+    """Read positive economics and P4/fill timing, not a Release PASS flag."""
+    original_p4 = _original_case_receipt(
+        journal, p4, series_id=series_id, candidate_id=candidate_id)
+    answer = {"p4_known_at_utc": original_p4["known_at_utc"],
+              "paper_fill_known_at_utc": None,
+              "native_journal_record_sha256": p4["content_sha256"],
+              "paper_scout_eur": None,
+              "paper_entry_taker_fee_eur": None}
+    if fill is None:
+        return answer
+    original_fill = _original_case_receipt(
+        journal, fill, series_id=series_id, candidate_id=candidate_id)
+    p = original_p4["data"]
+    f = original_fill["data"]
+    ask, qty, fee = (f.get(k) for k in (
+        "paper_entry_ask_eur", "paper_entry_qty", "paper_entry_fee_eur"))
+    if (any(type(v) not in (int, float) or not math.isfinite(v)
+            for v in (ask, qty, fee, p.get("ask_eur"),
+                      p.get("validated_stop_eur"), p.get("validated_stage2_eur")))
+            or not 0 < p["validated_stop_eur"] < ask < p["validated_stage2_eur"]
+            or not math.isclose(ask, p["ask_eur"], rel_tol=1e-7)
+            or not math.isclose(qty*ask, 50.0, rel_tol=1e-6, abs_tol=1e-5)
+            or not math.isclose(fee, 0.3, rel_tol=0, abs_tol=1e-8)
+            or f.get("validated_stop_eur") != p["validated_stop_eur"]
+            or f.get("validated_stage2_eur") != p["validated_stage2_eur"]):
+        raise ValueError("original Paper fill/P4 ask-stop-stage2-fee inconsistent")
+    p4_at = datetime.fromisoformat(
+        original_p4["known_at_utc"].replace("Z", "+00:00"))
+    fill_at = datetime.fromisoformat(
+        original_fill["known_at_utc"].replace("Z", "+00:00"))
+    if fill_at < p4_at:
+        raise ValueError("Paper fill chronologically before original P4")
+    answer.update(paper_fill_known_at_utc=original_fill["known_at_utc"],
+                  native_journal_record_sha256=fill["content_sha256"],
+                  paper_scout_eur=round(ask*qty, 2),
+                  paper_entry_taker_fee_eur=fee)
+    return answer
 
 
 def run_offline_cases(root: Path, series_id: str, *, stage: Path | None = None,
@@ -193,12 +271,20 @@ def run_offline_cases(root: Path, series_id: str, *, stage: Path | None = None,
                     or len(fills) != (1 if expected == "BUY_SCOUT" else 0)
                     or any(f["result"] != "PAPER_FILLED" for f in fills)):
                 raise ValueError("native immutable Paper ledger P4/fill disagreement")
-            evidence.append({"case": label, "candidate_id": cid,
+            # This is LOCAL synthetic model-stub disk evidence, never itself
+            # an independent physical host/Cloud proof or trading permit.
+            observed = _case_economic_proof(
+                journal, series_id, cid, p4s[0], fills[0] if fills else None)
+            evidence.append({"case": label, "series_id": series_id,
+                             "candidate_id": cid,
                              "p4_decision": expected,
                              "paper_fill_count": len(fills),
                              "paper_fill_result": "PAPER_FILLED" if fills else "NO_PAPER_FILL",
                              "p4_record_sha256": p4s[0]["content_sha256"],
                              "paper_fill_record_sha256": fills[0]["content_sha256"] if fills else None,
+                             **observed,
+                             "physical_host_attested": False,
+                             "cloud_originals_independently_verified": False,
                              "receipts": rows})
     if len(list(budgets.glob("*.reserved.json"))) != 2:
         raise ValueError("each stub candidate needs a separate single-use reservation")
