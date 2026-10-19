@@ -168,5 +168,36 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertNotIn("future_v3_paper_writer_installed_by_this_check=$true",s)
 
 
+    def test_postcas_inventory_reuses_existing_supervisor_without_release_authority(self):
+        s=SCRIPT.read_text(encoding="utf-8")
+        for marker in (
+            "V3_NATIVE_POSTCAS_LOCAL_INSPECTION_ONLY_V1",
+            "Get-ScheduledTask -TaskName 'CryptoMiniPC-V3PaperSingleWriter'",
+            "v3_paper_successor_readonly",
+            "V3_PAPER_SUCCESSOR_SUPERVISOR_READONLY_OBSERVATION_V1",
+            "original_supervisor_observation=[string]$peek.status",
+            "physical_v3_postcas_local_inventory=$v3PostCas",
+            "native_task_uses_old_readonly_launcher=$true",
+            "old_intake_tasks_disabled=$false",
+            "protected_old_aftercare_running=$false",
+            "exact_loaded_source_sha_verified=$false",
+            "old_python_process_tree_absent_verified=$false",
+            "independent_cloud_cas_verified=$false",
+            "six_external_e2e_proofs_verified=$false",
+            "live_paper_activation_authorized=$false",
+            "model_calls=0","cloud_writes=0","tasks_changed=0",
+        ):
+            self.assertIn(marker,s)
+        self.assertNotIn("live_paper_activation_authorized=$true",s)
+        self.assertNotIn("independent_cloud_cas_verified=$true",s)
+        self.assertNotIn("six_external_e2e_proofs_verified=$true",s)
+        self.assertNotIn("Start-ScheduledTask",s)
+        self.assertNotIn("Enable-ScheduledTask",s)
+        # The unchanged current pre-cutover source remains the authority.
+        self.assertIn("new_v3_writer_started=$false",s)
+        self.assertIn("v2r4_changed=$false",s)
+
+
+
 if __name__=="__main__":
     unittest.main()
