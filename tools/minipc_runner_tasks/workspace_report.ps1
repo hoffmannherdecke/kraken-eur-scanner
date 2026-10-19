@@ -14,7 +14,7 @@ foreach ($folder in @($parent, $root)) {
     if (-not [IO.Directory]::Exists($folder)) {
         throw 'WORKSPACE_WRITE_BLOCK: required local folder missing'
     }
-    $dir = New-Object IO.DirectoryInfo($folder)
+    $dir = [IO.DirectoryInfo]::new($folder)
     if (($dir.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) {
         throw 'WORKSPACE_WRITE_BLOCK: unsafe folder reparse point'
     }
