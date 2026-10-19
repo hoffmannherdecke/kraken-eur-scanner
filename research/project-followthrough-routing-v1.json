@@ -56,7 +56,8 @@
       "reviewed_readonly_log_diagnostics_gate": "PUBLIC_MAIN_SOURCE_CI_PASS__RESTRICTED_RUNNER_ORIGINAL_LOG_ACL_AND_TASK_E2E_PENDING",
       "reviewed_readonly_log_diagnostics_owner_issue": 353,
       "prefer_reviewed_readonly_log_task_before_manual_powershell": true,
-      "no_new_windows_acl_or_runner_or_workflow": true
+      "no_new_windows_acl_or_runner_or_workflow": true,
+      "first_window_safe_pause_evidence": "Original Mini-PC screenshot: task Ready, result 0, runner Stopped and Disabled (19 Oct 2026)"
     },
     {
       "id": "mini_pc_analytics_followthrough",
