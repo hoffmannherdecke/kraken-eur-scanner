@@ -176,11 +176,11 @@ if ($task.readback -eq 'READ_OK' -and
     $null -ne $task.last_run_utc -and
     $null -ne $svc) {
     try {
-        $currentRun = [datetime]$task.last_run_utc
+        $currentRun = [DateTimeOffset]::Parse($task.last_run_utc).LocalDateTime
         $beginHistory = $currentRun.AddMinutes(-75)
         $endHistory = $currentRun.AddSeconds(-1)
         if ($endHistory -gt $beginHistory -and
-            $currentRun -le [datetime]::UtcNow.AddMinutes(3)) {
+            $currentRun -le [datetime]::Now.AddMinutes(3)) {
             # Event 7036: SCM service transitions. EventData values are
             # display name and state, compared in memory with the *exact*
             # locally registered runner service; no service list is returned.

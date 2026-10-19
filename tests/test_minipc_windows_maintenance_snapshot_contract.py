@@ -107,6 +107,8 @@ class WindowsMaintenanceSnapshotSource(unittest.TestCase):
             "-MaxEvents 120",
             "AddMinutes(-75)",
             "AddSeconds(-1)",
+            "[DateTimeOffset]::Parse($task.last_run_utc).LocalDateTime",
+            "$currentRun -le [datetime]::Now.AddMinutes(3)",
             "$serviceLabel -ceq [string]$svc.DisplayName",
             "$taskNameField[0].InnerText -ceq '\\CryptoSupport - Bounded Runner Window'",
             "$resultCodeField[0].InnerText -ceq '0'",
@@ -115,6 +117,7 @@ class WindowsMaintenanceSnapshotSource(unittest.TestCase):
             "post_window_stopped_disabled_independently_proven = $false",
         ):
             self.assertIn(token, s, token)
+        self.assertNotIn("$currentRun -le [datetime]::UtcNow", s)
         self.assertEqual(s.count("Get-WinEvent -FilterHashtable"), 2)
         self.assertNotIn("Get-WinEvent -ListLog", s)
         self.assertNotIn("Write-Host $event", s)
