@@ -61,6 +61,7 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
             "ix.indisunique is true",
             "ix.indisvalid is true",
             "ix.indisready is true",
+            "ix.indislive is true",
             "ix.indnkeyatts=1",
             "ix.indnatts=1",
             "pg_catalog.pg_get_indexdef(ix.indexrelid,1,true)='status'",
