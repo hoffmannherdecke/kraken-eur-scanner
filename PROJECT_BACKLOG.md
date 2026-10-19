@@ -1,5 +1,16 @@
 # PROJECT_BACKLOG — Aktien & Krypto Chancen
 
+## 19.10.2026 – CPU-/Windows-Revisions- und Wartungsarbeiten: Runner-Safe-Pause VOR dem Herunterfahren (PFLICHT, OFFEN)
+
+**Kanonischer Wartungsauftrag:** [i7-8700T-Einbau- und Inbetriebnahmeprotokoll](docs/v2r4-cpu-cache-versioned-technical-release-20261017.md#verbindliches-einbau--und-inbetriebnahmeprotokoll-i7-8700t--pflichtnachlauf-v3-pr--419-19102026); **gleicher** bestehender Owner [Issue #353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353), kein neuer Scheduler/Work-/Projektmanager.
+
+- [ ] **VERPFLICHTEND vor CPU-Ausbau und jedem geplanten Windows-/Hardware-Wartungsneustart:** Original-Windows-Task `CryptoSupport - Bounded Runner Window` ermitteln; ein aktives Zeitfenster und seine Runner-Worker kontrolliert abschließen lassen; anschließend diesen Task **aktiv deaktivieren** und `Enabled=False, State=Disabled` erneut direkt am Mini-PC ablesen. Nicht nur `Stop-Service` ausführen.
+- [ ] **Unabhängige aktuelle Safe-Pause-Abnahme:** Exakten Runner-Dienst `actions.runner.hoffmannherdecke-kraken-readonly-bridge.MINI-PC-CryptoSupport` über `Win32_Service` prüfen: `State=Stopped`, `StartMode=Disabled` und kein aktiver zugehöriger Runner-Worker. **Nur dann** `CPU_MAINTENANCE_RUNNER_SAFE_PAUSE=PASS` mit Zeitpunkt, Task-/Dienst-/Worker-Originalwerten ins Wartungsprotokoll schreiben; andernfalls `BLOCKED` und **kein** Hardware-/Windows-Neustart oder unkontrolliertes Stoppen/Re-Arm.
+- [ ] **Nach CPU-/Windows-Wartung:** CPU-/BIOS-/32-GB-RAM-/Windows-Update-Prüfung sowie V2R4-/Cloud-Health nach bestehender CPU-Checkliste abnehmen. Die deaktivierte Runner-Aufgabe erst nach getrenntem geprüften Original-Sicherheits-/SHA-/Prejob-Gate bewusst wieder freigeben und `POST_MAINTENANCE_RUNNER_REARM=PASS` belegen; bis dahin ausgeschaltet lassen.
+
+**Abgrenzung:** Der bereits bestätigte erste reguläre Fensterabschluss vom 19.10.2026 (`Task Ready, LastTaskResult 0, Runner Stopped/Disabled`) bleibt **PASS für diesen historischen Betriebsfall**, ersetzt **nicht** die frische Wartungsprüfung, denn der Windows-Task war damals weiterhin aktiviert. Keine jetzige Änderung an Windows, CPU oder V3; PR419-Host-Staging/No-Rearm, Windows-Update-Pause (bis 31.10.) und V3-Freigaben bleiben eigenständig.
+
+
 ## 19.10.2026 – Projektmanager #353: wiederverwendbare eingeschränkte Mini-PC-Logdiagnose für ALLE Krypto-Scopes
 
 **Aktueller verpflichtender Fähigkeitsnachtrag** zum bestehenden EINZIGEN Entwicklungs-/Automatisierungsowner `ENTWICKLUNGSLOOP_AUTOMATION_20261016`, [Issue #353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353), privater [Runner-Audit #13](https://github.com/hoffmannherdecke/kraken-readonly-bridge/issues/13). Die neue Funktion ersetzt Routine-Fotobefehle, soweit ihr festes Datenformat und die Originalberechtigungen reichen; sie ist **keine** freie Chat→PowerShell-Shell. Für V2R4, V3, Nachfolgeversionen, Operations, Architektur, Research und Strategie gleichermaßen zu prüfen.
