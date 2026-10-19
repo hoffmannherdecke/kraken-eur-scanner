@@ -390,7 +390,7 @@
       },
       "local_prejob_allow_evidence": "https://github.com/hoffmannherdecke/kraken-readonly-bridge/actions/runs/39056181688",
       "local_prejob_deny_evidence": "https://github.com/hoffmannherdecke/kraken-readonly-bridge/actions/runs/39056239661",
-      "first_unattended_periodic_window_e2e": "PENDING_ORIGINAL_HOST_READBACK",
+      "first_unattended_periodic_window_e2e": "PASS_ONE_UNATTENDED_NATURAL_WINDOW_ORIGINAL_HOST_20261019",
       "expected_windows_cadence_minutes": 20,
       "comment_ttl_minutes": 10,
       "auto_schedule_not_equal_continuous_runner_online": true,
@@ -482,12 +482,26 @@
           "cpu_class_original_observation": "I5-8500T",
           "safe_report_is_dated_not_live_now": true
         },
-        "post_window_safe_pause_original_ack_pending": true,
+        "post_window_safe_pause_original_ack_pending": false,
         "no_acl_elevation_for_missing_scheduler_readback": true,
         "target_task_read_access_original_host": "PASS_NATIVE_CMDLET_AFTER_SINGLE_TASK_READ_ACE",
         "target_task_read_access_original_host_at_utc": "2026-10-19T13:07:54.7407966Z",
         "scoped_local_admin_task_acl_readback": "USER_PROVIDED_BERECHTIGUNG_PASS_READ_MASK_0X00120089_TASK_ENABLED_TRUE_BACKUP_CREATED",
         "no_broad_or_admin_acl_grant": true
+      },
+      "first_unattended_periodic_window_evidence": {
+        "source": "ORIGINAL_USER_WINDOWS_POWERSHELL_SCREENSHOT",
+        "task_last_run_local": "2026-10-19T15:20:26+02:00",
+        "task_last_result": 0,
+        "task_state": "Ready",
+        "runner_service_state": "Stopped",
+        "runner_service_start_mode": "Disabled",
+        "safe_pause": "PASS",
+        "scope": "ONE_COMPLETED_NATURAL_WINDOW_ONLY",
+        "future_windows_guaranteed": false,
+        "cpu_maintenance_requires_fresh_safe_pause": true,
+        "owner_issue": 353,
+        "owner_comment_id": 6268528407
       }
     }
   }
