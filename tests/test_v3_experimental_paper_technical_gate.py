@@ -68,7 +68,10 @@ def fixture(root:Path)->dict:
                     ],
                 })
             if key=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E" and origin=="SUPABASE_CLOUD":
+                # Production original can only authenticate the real model/P4
+                # TIA WAIT source, never the separate synthetic BUY fixture.
                 record.update({
+                    "cloud_project_id":"nlgzjmqgwueojlyqmoru",
                     "observed_at_utc":"2026-10-13T09:32:00Z",
                     "read_only":True,
                     "cloud_cas_performed":False,
@@ -78,6 +81,24 @@ def fixture(root:Path)->dict:
                     "same_event_id_reread_no_duplicate_verified":True,
                     "original_model_response_id":"CI_REAL_RESPONSE_ID_SHAPE_ONLY",
                     "original_model_p4_receipt_sha256":"b"*64,
+                })
+            if key=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E" and origin=="SUPABASE_SANDBOX":
+                # An already witnessed historical 16/16 synthetic journal
+                # readback from the separate PAUSED/revoked sandbox.
+                record.update({
+                    "cloud_project_id":"zxyhunwpviafyxyqysne",
+                    "observed_at_utc":"2026-10-13T09:32:00Z",
+                    "read_only":True,
+                    "cloud_cas_performed":False,
+                    "active_paper_series_changed":False,
+                    "v2r4_live_strategy_modified":False,
+                    "historical_independent_original_query_previously_completed":True,
+                    "fresh_sandbox_network_access":False,
+                    "synthetic_offline_fixtures_only":True,
+                    "original_synthetic_event_count":16,
+                    "original_historical_join_sha256":
+                        "a5f9660f96fd714447566607539d1a05ce700fdab0a779cc457b746dc7dd25d1",
+                    "same_event_id_reread_no_duplicate_verified":True,
                     "paper_writer_dryrun_case_readbacks":[
                         {"case":"POSITIVE_BUY_SCOUT",
                          "series_id":"PAPER-V3-CANARY-TEST-001",
@@ -438,25 +459,27 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
             changes=[
                 lambda p:p.update(source_originals=[
                     x for x in p["source_originals"] if x["origin"]!="SUPABASE_CLOUD"]),
+                lambda p:p.update(source_originals=[
+                    x for x in p["source_originals"] if x["origin"]!="SUPABASE_SANDBOX"]),
                 lambda p:next(x for x in p["source_originals"]
-                              if x["origin"]=="SUPABASE_CLOUD")["original_record"].update(
+                              if x["origin"]=="SUPABASE_SANDBOX")["original_record"].update(
                                   independent_original_receipt_query=False),
                 lambda p:next(x for x in p["source_originals"]
-                              if x["origin"]=="SUPABASE_CLOUD")["original_record"].update(
+                              if x["origin"]=="SUPABASE_SANDBOX")["original_record"].update(
                                   original_model_response_id="ANOTHER_RESPONSE"),
                 lambda p:next(x for x in p["source_originals"]
-                              if x["origin"]=="SUPABASE_CLOUD")["original_record"].update(
+                              if x["origin"]=="SUPABASE_SANDBOX")["original_record"].update(
                                   observed_at_utc="2026-10-13T09:29:59Z"),
                 lambda p:next(x for x in p["source_originals"]
-                              if x["origin"]=="SUPABASE_CLOUD")["original_record"]
+                              if x["origin"]=="SUPABASE_SANDBOX")["original_record"]
                               ["paper_writer_dryrun_case_readbacks"][0].update(
                                   paper_fill_count=0),
                 lambda p:next(x for x in p["source_originals"]
-                              if x["origin"]=="SUPABASE_CLOUD")["original_record"]
+                              if x["origin"]=="SUPABASE_SANDBOX")["original_record"]
                               ["paper_writer_dryrun_case_readbacks"][1].update(
                                   native_journal_record_sha256="9"*64),
                 lambda p:next(x for x in p["source_originals"]
-                              if x["origin"]=="SUPABASE_CLOUD")["original_record"]
+                              if x["origin"]=="SUPABASE_SANDBOX")["original_record"]
                               ["paper_writer_dryrun_case_readbacks"][1].update(
                                   real_money_actions=True),
             ]
@@ -475,6 +498,49 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                         "a merely rehashed but mismatched Cloud original is NOT a V3 Paper fill")
             path.write_text(json.dumps(valid,sort_keys=True))
             row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
+
+    def test_first_gate_rejects_mixed_or_wrong_cloud_project_without_new_cas(self):
+        # Tests demonstrate that a rehashed cross-project synthetic report
+        # cannot pose as the production paid-model readback (or vice versa).
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            proof=next(x for x in packet["experimental_paper_technical_proofs"]
+                       if x["id"]=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E")
+            target=root/proof["evidence_path"]
+            original=json.loads(target.read_text("utf-8"))
+            for invalid in (
+                lambda items: next(x for x in items if x["origin"]=="SUPABASE_CLOUD")
+                    ["original_record"].update(cloud_project_id="zxyhunwpviafyxyqysne"),
+                lambda items: next(x for x in items if x["origin"]=="SUPABASE_SANDBOX")
+                    ["original_record"].update(cloud_project_id="nlgzjmqgwueojlyqmoru"),
+                lambda items: next(x for x in items if x["origin"]=="SUPABASE_SANDBOX")
+                    ["original_record"].update(fresh_sandbox_network_access=True),
+                lambda items: next(x for x in items if x["origin"]=="SUPABASE_SANDBOX")
+                    ["original_record"].update(original_historical_join_sha256="e"*64),
+                lambda items: next(x for x in items if x["origin"]=="SUPABASE_SANDBOX")
+                    ["original_record"].update(original_model_response_id="FORGED"),
+                lambda items: next(x for x in items if x["origin"]=="SUPABASE_CLOUD")
+                    ["original_record"].update(paper_writer_dryrun_case_readbacks=[]),
+                lambda items: items.append(copy.deepcopy(next(
+                    x for x in items if x["origin"]=="SUPABASE_SANDBOX"))),
+            ):
+                with self.subTest(change=repr(invalid)):
+                    content=copy.deepcopy(original)
+                    invalid(content["source_originals"])
+                    for item in content["source_originals"]:
+                        original_bytes=json.dumps(
+                            item["original_record"],sort_keys=True,
+                            separators=(",",":")).encode()
+                        item["original_sha256"]=hashlib.sha256(original_bytes).hexdigest()
+                    target.write_text(json.dumps(content,sort_keys=True))
+                    proof["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
+                    self.assertTrue(validate_experimental_paper_packet(
+                        root,"V3-PAPER-EXPERIMENTAL-001",packet))
+            target.write_text(json.dumps(original,sort_keys=True))
+            proof["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
             self.assertEqual(validate_experimental_paper_packet(
                 root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
 
