@@ -663,6 +663,17 @@ def dispatch_from_original_windows_one_shot(*,
     observed = read_originalhost_readonly()
     _require_running_originalhost_source_hint(observed)
     observed_parent = _observed_originalhost_parent_identity(observed)
+    # The existing originalhost PowerShell inspector is a CHILD of the
+    # current native launcher Python process. A separate Python process
+    # can observe a genuine running V3 Task and reproduce the same source
+    # hashes, but MUST NOT borrow that Task's PID/release identity. Bind
+    # the independently re-read Windows parent PID to our actual OS PID
+    # before requesting any external release approval, Cloud or Paper work.
+    # This is process correlation ONLY, not the independent physical
+    # release owner, actual loaded-byte proof or six real E2Es.
+    if (type(observed_parent[0]) is not int
+            or observed_parent[0] != os.getpid()):
+        raise ValueError("native originalhost inspector parent is not invoking Python")
     # A local Task/source observation and a valid external release receipt
     # must refer to the SAME Task action and pinned on-disk launcher bytes.
     # Treating them as independent unrelated "green" checks would allow
