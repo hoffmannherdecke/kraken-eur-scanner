@@ -201,6 +201,24 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                         proposed_v3_series=series)
                 worker.assert_not_called()
 
+    def test_one_shot_rejects_two_individually_fresh_but_uncorrelated_clocks(self):
+        # Each sample is less than 180s old at the fixed test clock,
+        # but separated by 184s; a coincidental match cannot become an ACK.
+        series = "PAPER-V3-20261020T090000Z"
+        host = {"observed_at_utc": "2026-10-19T13:57:26Z"}
+        reply = {"series_id": series, "status": "active",
+                 "strategy_revision": launcher.REVISION,
+                 "observed_at_utc": "2026-10-19T14:00:30Z"}
+        with patch.dict(launcher.os.environ, {"V3_PAPER_RELAY_TOKEN": "R"*32}), patch.object(
+                launcher, "read_originalhost_readonly", return_value=host), patch.object(
+                launcher, "read_active_paper_series", return_value=reply) as relay, patch.object(
+                launcher, "dispatch_one_owned_paper_phase") as worker:
+            with self.assertRaisesRegex(ValueError, "do not correlate"):
+                launcher.preflight_native_windows_one_shot(
+                    proposed_v3_series=series)
+            relay.assert_called_once()
+            worker.assert_not_called()
+
     def test_one_shot_host_only_mode_has_no_new_clock_gate(self):
         # Pre-maintenance V2R4 diagnostics must remain usable even with
         # historic/absent timestamps; no relay is requested in this mode.
