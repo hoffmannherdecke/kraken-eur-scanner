@@ -329,19 +329,56 @@ def dispatch_after_originalhost_and_cloud_readback(*,
     if phase not in PHASES:
         raise ValueError("exact original V3 Paper phase required")
 
+    # The released entry obtains ONE externally verified originalhost report
+    # before the actual worker acquires its native OS lock. That same report
+    # must still be fresh AFTER the authenticated Cloud relay returns under
+    # that lock. The separate read-only PR468/469 diagnostic cannot confer
+    # this authority or protect the execution path on its own.
+    observed_host_stamp: datetime | None = None
+
+    def captured_originalhost_readback() -> dict[str, Any]:
+        nonlocal observed_host_stamp
+        if observed_host_stamp is not None:
+            raise ValueError("originalhost release readback repeated")
+        if not callable(originalhost_readback):
+            raise ValueError("independent originalhost release provider absent")
+        report = originalhost_readback()
+        if not isinstance(report, dict):
+            raise ValueError("native release originalhost report missing")
+        try:
+            seen = datetime.fromisoformat(
+                report["observed_at_utc"].replace("Z", "+00:00"))
+        except (KeyError, AttributeError, TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("native release originalhost clock invalid") from exc
+        if seen.tzinfo is None or seen.utcoffset() is None:
+            raise ValueError("native release originalhost clock lacks timezone")
+        observed_host_stamp = seen
+        return report
+
     def original_cloud_readback(series_id: str) -> dict[str, Any]:
         # The pre-existing Edge relay authenticates its request and reads
         # the actual active Paper series. Its config is independently checked
         # by _require_released_paper_cloud inside the original worker lock.
-        return read_active_paper_series(
+        if observed_host_stamp is None:
+            raise ValueError("originalhost release missing before locked Cloud read")
+        reply = read_active_paper_series(
             series_id=series_id, token=original_cloud_relay_token)
+        # No second relay call or standalone timer. PR468's real post-relay
+        # clock principle is applied at the *actual* native phase boundary,
+        # where a slow response could otherwise outlive the prior 90s host
+        # approval while leaving the worker Cloud sample fresh.
+        now = _originalhost_wall_clock_utc()
+        if (now.tzinfo is None or now.utcoffset() is None
+                or not 0 <= (now - observed_host_stamp).total_seconds() <= 90):
+            raise ValueError("native release originalhost stale after Cloud relay")
+        return reply
 
-    # Only the original Cloud ACK worker receives its existing receipt token.
+    # Only the original Cloud ACK worker receives its existing relay token.
     # The other phases are never allowed to perform a Cloud POST here.
     if phase == "CLOUD_RECEIPT_ACK":
         phase_args["relay_token"] = original_cloud_relay_token
     return dispatch_after_native_release_readback(
-        originalhost_readback=originalhost_readback,
+        originalhost_readback=captured_originalhost_readback,
         release_root=release_root,
         release_packet=release_packet,
         read_active_series=original_cloud_readback,
