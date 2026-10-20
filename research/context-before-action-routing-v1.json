@@ -5,6 +5,42 @@
   "status_authority": "project-current-state.json",
   "live_evidence_authority": "Supabase/MINI-PC (requires a separate actual live read; GitHub snapshot is never live verification)",
   "task_authority": "PROJECT_BACKLOG.md",
+  "work_domain_policy": {
+    "kind": "PROJECTWIDE_WORK_DOMAIN_BOUNDARY_V1",
+    "default_domain": "project_general",
+    "domains": {
+      "project_general": {
+        "owner_lane": "PROJECT_COORDINATION",
+        "requires_strategy_release": false
+      },
+      "infrastructure": {
+        "owner_lane": "HARDWARE_AND_MINIPC_CAPABILITIES",
+        "requires_strategy_release": false
+      },
+      "operations": {
+        "owner_lane": "OPERATIONS_AND_RECOVERY",
+        "requires_strategy_release": false
+      },
+      "strategy_development": {
+        "owner_lane": "VERSIONED_STRATEGY_RESEARCH_AND_IMPLEMENTATION",
+        "requires_strategy_release": false
+      },
+      "strategy_release": {
+        "owner_lane": "EXPLICIT_NAMED_STRATEGY_RELEASE_OWNER",
+        "requires_strategy_release": true
+      },
+      "research": {
+        "owner_lane": "RESEARCH_SOURCE_AND_EVIDENCE_OWNER",
+        "requires_strategy_release": false
+      }
+    },
+    "scope_is_knowledge_index_not_release_authority": true,
+    "hardware_upgrade_alone_never_creates_strategy_gate": true,
+    "named_strategy_release_requires_specific_owner_and_actual_dependencies": true,
+    "v3_histories_are_context_only_unless_v3_is_the_named_subject": true,
+    "future_strategy_versions_inherit_projectwide_collaboration_rules": true,
+    "no_new_manager_scheduler_or_approval": true
+  },
   "no_new_scheduler": true,
   "no_runtime_mutation": true,
   "no_trading_authority": true,

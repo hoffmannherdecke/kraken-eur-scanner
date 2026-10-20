@@ -1,3 +1,15 @@
+## Projektmanager – verbindliche fachliche Trennung, 20.10.2026 (Issue #353)
+
+**Projektweiter Auftrag statt V3-Zwang:** Der Kontext-vor-Aktion-Manager (Issue #353, `AGENTS.md`, `tools/context_before_action.py`) vermittelt für **alle** Krypto-Projektthemen und jetzigen/künftigen Strategien die Arbeitsweise, geprüften Fähigkeiten, zuständigen Owner und Freigabegrenzen. `PROJECT_BACKLOG.md` ist die **eine** Liste offener Aufgaben, kein V3-Implementierungsplan für Hardware- oder Infrastrukturvorhaben.
+
+**Pflicht vor der Einordnung:** Den tatsächlichen `work_domain` (`project_general`, `infrastructure`, `operations`, `strategy_development`, `strategy_release`, `research`) und unabhängig davon die relevanten Wissens-Scopes bestimmen; die maschinenlesbare Richtlinie bleibt ausschließlich im vorhandenen `research/context-before-action-routing-v1.json#work_domain_policy`. Aktuelles V3-Wissen kann als historische Quelle vorkommen und darf **keine** V3-Abnahme für allgemeine Arbeiten erzeugen. Fach-Owner aus bestehendem Komponentenindex wählen; Hardware-Upgrade, Drucker, Backup, USV, Windows und Mini-PC-Optimierung sind eigenständige Infrastruktur-/Betriebsaufträge. Ihr Erfolg hängt an eigenen Originalhost-/Recovery-Belegen, nicht an V3-CAS, sechs Paper-Proofs oder einem V3-Start.
+
+**Versionsspezifisch nur nach belegter Abhängigkeit:** Ein tatsächlich geplanter V3-/V4+-Strategiewechsel wird am **jeweils benannten eigenen** Fach-/Release-Owner und seinen expliziten technischen Schnittstellen geprüft. Eine Hardwareänderung erhöht weder automatisch eine Strategieversion noch wird sie automatisch zu einem V3-Go-live-Meilenstein. Hat sie echte Auswirkungen auf den Scanner/Writer/Host, gelten die *betroffenen Komponentenprüfungen*; dies schafft keine neue Strategie-Release-Voraussetzung. Nach V3 gelten zentrale Zusammenarbeit, Sicherheit, Kosten, Besitzer/ACKs, Work-Quoten und Datenautoritäten unverändert fort; zukünftige Strategien bekommen eigene fachliche Gates statt V3-Pflichtkopien.
+
+**Arbeitspriorität:** V3 derzeit wichtige fachliche Umsetzung, aber keine pauschale Abhängigkeit aller anderen Themen. Aufgeschobene oder rein optionale Hardwareaufgaben bleiben `DEFERRED` bis eigenständiger Nutzeranstoß. Kein neuer Scheduler, Work-Job, Manager, CI-Gate, Cloud-Writer oder automatische Runtime-Änderung durch diese Zuordnung.
+
+---
+
 ## Aktueller Kontext-/Mini-PC-Faehigkeitsstand: 19.10.2026, original belegt (Owner Issue #353)
 
 - [x] Die vorhandene `operations_readonly_bundle` wurde im Originalhost-Run #39269905027 sicher ausgefuehrt; Logdateien waren dabei `PARTIAL_OR_UNAVAILABLE` (0 Dateien).

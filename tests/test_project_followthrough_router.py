@@ -14,6 +14,27 @@ UTC = dt.timezone.utc
 
 
 class ProjectFollowthroughRoutingTests(unittest.TestCase):
+    def test_project_manager_uses_general_work_domain_contract_not_v3_by_default(self):
+        from tools.context_before_action import build
+        manifest = json.loads((ROOT / "research/project-followthrough-routing-v1.json").read_text())
+        self.assertEqual(
+            manifest["context_preflight"]["work_domain_policy"],
+            "research/context-before-action-routing-v1.json#work_domain_policy")
+        self.assertTrue(manifest["context_preflight"]["scope_is_not_release_approval"])
+        self.assertEqual(manifest["context_preflight"]["release_routing"],
+                         "EXPLICIT_NAMED_STRATEGY_RELEASE_ONLY_NOT_GENERAL_HARDWARE_OR_PROJECT_WORK")
+        for scope in ("strategy", "architecture", "operations", "research"):
+            with self.subTest(scope=scope):
+                packet = build(ROOT, scope)
+                self.assertEqual(packet["work_domain_boundary"]["work_domain"], "project_general")
+                self.assertFalse(packet["work_domain_boundary"]["requires_named_strategy_release_owner"])
+        # The existing infrastructure owner is independent from V3-specific
+        # Paper/CAS release, and future versions use the same context process.
+        areas = {x["id"]: x for x in manifest["extra_project_areas"]}
+        self.assertIn("mini_pc_deployment", areas)
+        self.assertIn("architecture_dependencies", areas)
+        self.assertNotIn("V3_PAPER", areas["mini_pc_deployment"]["owner"])
+
     def test_covers_all_registered_streams_and_project_areas_without_trading(self):
         result = route(ROOT, dt.datetime(2026, 10, 10, 8, 0, tzinfo=UTC))
         routing = json.loads((ROOT / "research/monitoring-evidence-routing-v1.json").read_text())
