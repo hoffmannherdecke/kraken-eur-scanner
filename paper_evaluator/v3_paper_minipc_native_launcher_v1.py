@@ -455,6 +455,29 @@ def read_originalhost_readonly() -> dict[str, Any]:
 
 
 
+
+def _read_only_snapshot_time(value: Any, *, source: str,
+                             now: datetime) -> datetime:
+    """Require real, bounded timestamps without granting release authority.
+
+    Diagnostics have a wider 180s read window than the hard 90s actual
+    native release gate: two sequential physical host+relay calls can take
+    time. A 10s future tolerance is clock-skew diagnostics ONLY.
+    """
+    if not isinstance(value, str) or len(value) > 40:
+        raise ValueError(source + " read-only snapshot timestamp invalid")
+    try:
+        stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except (ValueError, OverflowError) as exc:
+        raise ValueError(source + " read-only snapshot timestamp invalid") from exc
+    if stamp.tzinfo is None or stamp.utcoffset() is None:
+        raise ValueError(source + " read-only snapshot timestamp lacks timezone")
+    age = (now - stamp).total_seconds()
+    if not -10 <= age <= 180:
+        raise ValueError(source + " read-only snapshot stale or future")
+    return stamp
+
+
 def preflight_native_windows_one_shot(*,
         proposed_v3_series: str | None = None) -> dict[str, Any]:
     """Join original Windows inventory and original Cloud relay read-only.
@@ -472,6 +495,12 @@ def preflight_native_windows_one_shot(*,
     physical = read_originalhost_readonly()
     cloud = None
     if proposed_v3_series is not None:
+        # Verify independently observed time BEFORE spending a relay call.
+        # The existing real release owner still requires its stricter 90s
+        # originalhost readback INSIDE the native phase boundary.
+        physical_stamp = _read_only_snapshot_time(
+            physical.get("observed_at_utc"), source="originalhost",
+            now=_originalhost_wall_clock_utc())
         token = os.environ.get("V3_PAPER_RELAY_TOKEN")
         if (not isinstance(token, str) or not 24 <= len(token) <= 512
                 or any(ch.isspace() for ch in token)):
@@ -488,12 +517,18 @@ def preflight_native_windows_one_shot(*,
                 or reply.get("strategy_revision") != REVISION
                 or not isinstance(reply.get("observed_at_utc"), str)):
             raise ValueError("exact authenticated original Cloud series not accepted")
+        cloud_stamp = _read_only_snapshot_time(
+            reply["observed_at_utc"], source="authenticated Cloud",
+            now=_originalhost_wall_clock_utc())
+        if abs((cloud_stamp - physical_stamp).total_seconds()) > 180:
+            raise ValueError("originalhost and Cloud observations do not correlate")
         cloud = {
             "kind": "V3_ORIGINAL_RELAY_ACTIVE_SERIES_READONLY_OBSERVATION_V1",
             "series_id": proposed_v3_series,
             "strategy_revision": REVISION,
             "observed_at_utc": reply["observed_at_utc"],
             "authenticated_cloud_read_only_observed": True,
+            "temporal_pair_checked_read_only": True,
             "cloud_cas_independently_proven": False,
             "physical_release_proofs_credited": 0,
         }
