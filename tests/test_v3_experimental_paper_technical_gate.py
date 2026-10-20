@@ -4,6 +4,8 @@ import copy
 import hashlib
 import io
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -856,6 +858,23 @@ class V3ExistingReleaseSourceInventoryTests(unittest.TestCase):
                 data["static_local_import_closure_complete"],
             "host_versions_verified":False,
         },sort_keys=True))
+
+    def test_real_command_readonly_cli_runs_as_direct_script(self):
+        # Python -B keeps this report read-only; Python -I additionally
+        # removes the direct tools/ script directory, so the real stage
+        # SOURCE listing is a separate command from the -I runtime smoke.
+        command=[sys.executable,"-B",
+                 str(ROOT/"tools/v3_experimental_paper_technical_gate.py"),
+                 "--source-closure-readonly","--source-root",str(ROOT)]
+        proc=subprocess.run(command,cwd=ROOT,text=True,capture_output=True,
+                            check=False,timeout=30)
+        self.assertEqual(proc.returncode,0,proc.stderr[:1500])
+        result=json.loads(proc.stdout)
+        self.assertTrue(result["static_local_import_closure_complete"],
+                        result["errors"])
+        self.assertFalse(result["paper_release_authorized"])
+        self.assertEqual(result["inspection_authority"],
+                         "SOURCE_ONLY_NO_ORIGINALHOST_OR_CLOUD_ACK")
 
     def test_native_source_closure_cli_rejects_missing_original_source(self):
         with tempfile.TemporaryDirectory() as empty:
