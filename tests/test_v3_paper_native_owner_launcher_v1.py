@@ -108,6 +108,84 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         self.assertEqual(result["model_http_calls"], 0)
         self.assertEqual(result["cloud_writes"], 0)
 
+    def test_one_shot_preflight_joins_exact_originalhost_and_relay_without_release(self):
+        series = "PAPER-V3-20261020T090000Z"
+        report = {"status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE",
+                  "native_task_state": "Disabled"}
+        reply = {"series_id": series, "status": "active",
+                 "strategy_revision": launcher.REVISION,
+                 "observed_at_utc": "2026-10-20T09:00:00Z",
+                 "config": {"untrusted_secret": "NEVER_DISCLOSE"}}
+        token = "ONLY_FOR_LOCAL_OFFLINE_RELAY_TEST_NOT_REAL"
+        with patch.dict(launcher.os.environ, {"V3_PAPER_RELAY_TOKEN": token}), patch.object(
+                launcher, "read_originalhost_readonly", return_value=report) as host, patch.object(
+                launcher, "read_active_paper_series", return_value=reply) as cloud, patch.object(
+                launcher, "dispatch_one_owned_paper_phase") as worker:
+            buf = io.StringIO()
+            with patch("sys.argv", ["launcher", "--one-shot-preflight",
+                                   "--proposed-v3-series", series]), contextlib.redirect_stdout(buf):
+                self.assertEqual(launcher.main(), 0)
+            host.assert_called_once_with()
+            cloud.assert_called_once_with(series_id=series, token=token)
+            worker.assert_not_called()
+        text = buf.getvalue()
+        self.assertNotIn(token, text)
+        self.assertNotIn("NEVER_DISCLOSE", text)
+        result = json.loads(text)
+        self.assertTrue(result["cloud_readback_requested"])
+        self.assertEqual(result["diagnostic"], report)
+        self.assertEqual(result["cloud_readonly_observation"]["series_id"], series)
+        self.assertFalse(result["cloud_readonly_observation"]["cloud_cas_independently_proven"])
+        self.assertEqual(result["status"],
+                         "BLOCKED_PENDING_MAINTENANCE_AND_ORIGINAL_RELEASE")
+        self.assertFalse(result["one_shot_worker_invoked"])
+        self.assertFalse(result["v3_paper_activated"])
+        self.assertFalse(result["actual_v3_cloud_cas_committed"])
+        self.assertEqual(result["model_http_calls"], 0)
+        self.assertEqual(result["cloud_writes"], 0)
+
+    def test_proposed_series_wrong_or_missing_relay_token_blocks_every_worker(self):
+        valid = "PAPER-V3-20261020T090000Z"
+        with patch.object(launcher, "read_originalhost_readonly",
+                          return_value={"native_task_state": "Disabled"}) as host, patch.object(
+                          launcher, "read_active_paper_series") as relay, patch.object(
+                          launcher, "dispatch_one_owned_paper_phase") as worker, patch.dict(
+                          launcher.os.environ, {}, clear=True):
+            with self.assertRaisesRegex(ValueError, "exact non-CANARY"):
+                launcher.preflight_native_windows_one_shot(proposed_v3_series="CANARY")
+            host.assert_not_called()
+            with self.assertRaisesRegex(ValueError, "credential unavailable"):
+                launcher.preflight_native_windows_one_shot(proposed_v3_series=valid)
+            relay.assert_not_called()
+            worker.assert_not_called()
+
+    def test_unavailable_or_wrong_relay_series_fails_without_paper_release(self):
+        valid = "PAPER-V3-20261020T090000Z"
+        with patch.dict(launcher.os.environ, {"V3_PAPER_RELAY_TOKEN": "R"*32}), patch.object(
+                launcher, "read_originalhost_readonly",
+                return_value={"status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE"}), patch.object(
+                launcher, "dispatch_one_owned_paper_phase") as worker:
+            with patch.object(launcher, "read_active_paper_series",
+                              side_effect=ValueError("Cloud has no active V3 series")):
+                with self.assertRaisesRegex(ValueError, "no active V3"):
+                    launcher.preflight_native_windows_one_shot(proposed_v3_series=valid)
+            with patch.object(launcher, "read_active_paper_series",
+                              return_value={"series_id": "PAPER-V3-20261020T100000Z",
+                                            "status": "active",
+                                            "strategy_revision": launcher.REVISION,
+                                            "observed_at_utc": "2026-10-20T09:00:00Z"}):
+                with self.assertRaisesRegex(ValueError, "exact authenticated"):
+                    launcher.preflight_native_windows_one_shot(proposed_v3_series=valid)
+            worker.assert_not_called()
+
+    def test_proposed_cloud_series_forbidden_without_one_shot_host_preflight(self):
+        with patch("sys.argv", ["launcher", "--read-only", "--proposed-v3-series",
+                               "PAPER-V3-20261020T090000Z"]):
+            with contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as stop:
+                    launcher.main()
+        self.assertEqual(stop.exception.code, 2)
+
     def test_one_shot_preflight_propagates_missing_original_host_not_false_success(self):
         with patch.object(launcher, "read_originalhost_readonly",
                           side_effect=ValueError("physical host missing")), patch.object(
