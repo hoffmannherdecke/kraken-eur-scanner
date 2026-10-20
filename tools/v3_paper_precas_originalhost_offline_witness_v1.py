@@ -97,7 +97,9 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
     must = {"paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
             "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
             "paper_evaluator/v3_experimental_paper_journal_v1.py",
-            "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py"}
+            "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py",
+            "paper_evaluator/v3_paper_minipc_native_launcher_v1.py",
+            "tools/v3_experimental_paper_technical_gate.py"}
     if not must.issubset(verified):
         raise ValueError("physical writer/lock/journal/Cloud module not in stage")
     parent = trading / "Research" / "V3Paper"
