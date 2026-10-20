@@ -28,6 +28,11 @@ from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
     released_paper_cloud_ack_once,
 )
 
+def _originalhost_wall_clock_utc() -> datetime:
+    """Use actual UTC for a release readback, never the Paper test clock."""
+    return datetime.now(timezone.utc)
+
+
 PHASES = ("FIRST_SCANNER_MODEL_P4", "FOLLOWUP_6H24H72H", "CLOUD_RECEIPT_ACK")
 SERIES = re.compile(r"PAPER-V3-[0-9]{8}T[0-9]{6}Z")
 REPO_SHA = re.compile(r"[0-9a-f]{40}")
@@ -179,6 +184,11 @@ def dispatch_after_native_release_readback(*,
     if not callable(originalhost_readback) or any(
             key not in phase_args for key in required):
         raise ValueError("independent native owner and release inputs required")
+    # Testing/replay clocks remain available to source-only phase unit tests,
+    # but a RELEASED native host boundary may not accept an injected time.
+    # Otherwise an old physical host readback could be made to look fresh.
+    if "clock_now" in phase_args:
+        raise ValueError("native originalhost boundary forbids injected clock override")
     validate_one_owner_contract(
         **{key: phase_args[key] for key in required})
     # Never turn a caller-provided six_proofs=True (or a Cloud config flag)
@@ -236,9 +246,7 @@ def dispatch_after_native_release_readback(*,
     try:
         seen = datetime.fromisoformat(
             report["observed_at_utc"].replace("Z", "+00:00"))
-        clock = phase_args.get("clock_now")
-        current = (datetime.fromisoformat(clock().replace("Z", "+00:00"))
-                   if clock is not None else datetime.now(timezone.utc))
+        current = _originalhost_wall_clock_utc()
         if (seen.tzinfo is None or seen.utcoffset() is None
                 or current.tzinfo is None or current.utcoffset() is None
                 or not 0 <= (current-seen).total_seconds() <= 90):
