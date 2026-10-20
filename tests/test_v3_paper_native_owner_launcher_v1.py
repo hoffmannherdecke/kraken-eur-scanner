@@ -69,6 +69,62 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                         launcher.main()
                     self.assertEqual(err.exception.code, 2)
 
+    def test_originalhost_readonly_report_never_claims_release(self):
+        fixed = {
+            "kind": "V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1",
+            "checked_at_utc": "2026-10-20T08:00:00Z",
+            "filesystem_writes": False,
+            "v2r4_changed": False,
+            "new_v3_writer_started": False,
+            "experimental_paper_release_authorized_by_this_check": False,
+            "physical_v3_postcas_local_inventory": {
+                "kind": "V3_NATIVE_POSTCAS_LOCAL_INSPECTION_ONLY_V1",
+                "status": "NOT_INDEPENDENT_RELEASE_EVIDENCE",
+                "native_task_state": "Disabled",
+                "native_task_uses_old_readonly_launcher": True,
+                "old_intake_tasks_disabled": False,
+                "protected_old_aftercare_running": True,
+                "live_paper_activation_authorized": False,
+                "tasks_changed": 0, "cloud_writes": 0, "model_calls": 0,
+            },
+        }
+        summary = launcher.summarize_originalhost_readonly(fixed)
+        self.assertEqual(summary["status"], "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE")
+        self.assertTrue(summary["native_task_uses_old_readonly_launcher"])
+        self.assertFalse(summary["runtime_bootstrap_executable"])
+        self.assertFalse(summary["paper_activated"])
+        self.assertFalse(summary["six_original_e2e_proofs_verified"])
+        for edits in ({"new_v3_writer_started": True},
+                      {"filesystem_writes": True},
+                      {"experimental_paper_release_authorized_by_this_check": True}):
+            with self.subTest(edits=edits), self.assertRaises(ValueError):
+                launcher.summarize_originalhost_readonly(dict(fixed, **edits))
+        local = fixed["physical_v3_postcas_local_inventory"]
+        for edits in ({"status": "VERIFIED_PHYSICAL_OR_CLOUD_E2E"},
+                      {"live_paper_activation_authorized": True},
+                      {"tasks_changed": 1}, {"native_task_state": "FOREIGN"}):
+            with self.subTest(edits=edits), self.assertRaises(ValueError):
+                launcher.summarize_originalhost_readonly(dict(
+                    fixed, physical_v3_postcas_local_inventory=dict(local, **edits)))
+
+    def test_originalhost_cli_offline_reuses_one_readonly_script_not_worker(self):
+        with patch.object(launcher, "read_originalhost_readonly",
+                          return_value={"status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE"}) as host, \\
+                patch.object(launcher, "dispatch_one_owned_paper_phase") as worker:
+            out = io.StringIO()
+            with patch("sys.argv", ["launcher", "--originalhost-readonly"]), \\
+                    contextlib.redirect_stdout(out):
+                self.assertEqual(launcher.main(), 0)
+            self.assertEqual(json.loads(out.getvalue())["status"],
+                             "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE")
+            host.assert_called_once()
+            worker.assert_not_called()
+
+    def test_originalhost_physical_probe_unavailable_off_windows(self):
+        with patch.object(launcher.sys, "platform", "linux"):
+            with self.assertRaisesRegex(ValueError, "physical Windows host"):
+                launcher.read_originalhost_readonly()
+
     def test_first_scanner_dispatches_exact_original_p4_once_without_cloud_ack(self):
         with tempfile.TemporaryDirectory() as tmp:
             common = self.common(tmp)
