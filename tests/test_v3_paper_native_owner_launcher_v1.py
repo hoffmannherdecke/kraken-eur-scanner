@@ -459,6 +459,17 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             "paper_only": True,
             "real_money_actions": False,
             "observed_at_utc": "2026-10-19T14:00:00Z",
+            # OFFLINE FAKE only, never a physical maintenance approval.
+            "maintenance_receipt_kind":
+                "V3_EXISTING_MINIPC_MAINTENANCE_ORIGINALHOST_ACK_V1",
+            "maintenance_receipt_sha256": "d" * 64,
+            "maintenance_release_repo_sha": pin,
+            "maintenance_completed_at_utc": "2026-10-19T13:00:00Z",
+            "maintenance_cpu_bios_boot_thermal_originalhost_pass": True,
+            "maintenance_windows_drivers_reboots_originalhost_pass": True,
+            "maintenance_ups_configuration_shutdown_originalhost_pass": True,
+            "maintenance_scripts_originalhost_source_ack_pass": True,
+            "maintenance_v2r4_restart_and_aftercare_originalhost_pass": True,
         }
 
     def test_authenticated_host_boundary_connects_exactly_one_existing_phase(self):
@@ -505,6 +516,16 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 {"old_cloudsync_task_running": False},
                 {"independent_cloud_cas_committed": False},
                 {"six_external_original_e2e_proofs_approved": False},
+                {"maintenance_receipt_sha256": "not-a-sha"},
+                {"maintenance_receipt_kind": "USER_ASSERTED"},
+                {"maintenance_release_repo_sha": "b" * 40},
+                {"maintenance_completed_at_utc": "2026-10-19T14:10:00Z"},
+                {"maintenance_completed_at_utc": "2026-10-19T13:00:00"},
+                {"maintenance_cpu_bios_boot_thermal_originalhost_pass": False},
+                {"maintenance_windows_drivers_reboots_originalhost_pass": False},
+                {"maintenance_ups_configuration_shutdown_originalhost_pass": False},
+                {"maintenance_scripts_originalhost_source_ack_pass": False},
+                {"maintenance_v2r4_restart_and_aftercare_originalhost_pass": False},
                 {"paper_only": False},
                 {"real_money_actions": True},
                 {"observed_at_utc": "2026-10-19T13:58:00Z"},
@@ -531,6 +552,43 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                                 originalhost_readback=lambda r=row: r,
                                 release_root=Path(root), release_packet=packet,
                                 **kwargs)
+                worker.assert_not_called()
+
+    def test_maintenance_receipt_is_not_seventh_technical_proof_or_cli_release(self):
+        # The physical maintenance handoff is part of the original native
+        # stop-start/rollback/release source, not a replacement for six proofs.
+        self.assertEqual(len(launcher.PHASES), 3)
+        with patch("sys.argv", ["launcher", "--read-only"]):
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                self.assertEqual(launcher.main(), 0)
+        status = json.loads(buf.getvalue())
+        self.assertFalse(status["v3_paper_activated"])
+        self.assertFalse(status["independent_six_e2e_proofs_verified"])
+        self.assertFalse(status["cloud_cas_performed"])
+
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H",
+                          candidate={"candidate_id": "OFFLINE_ONLY"})
+            good = self.original_release_host(self.SID, self.REPO)
+            packet = {"strategy_revision": launcher.REVISION,
+                      "strategy_fingerprint_sha256": self.STRATEGY}
+            with patch.object(launcher, "validate_experimental_paper_packet",
+                              return_value=[]), patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
+                for changed in (
+                    {"maintenance_receipt_sha256": None},
+                    {"maintenance_cpu_bios_boot_thermal_originalhost_pass": 1},
+                    {"maintenance_v2r4_restart_and_aftercare_originalhost_pass": None},
+                    {"maintenance_completed_at_utc": "2026-10-19T14:00:01Z"},
+                    {"maintenance_release_repo_sha": "f" * 40},
+                ):
+                    host = dict(good, **changed)
+                    with self.subTest(changed=changed), self.assertRaises(ValueError):
+                        launcher.dispatch_after_native_release_readback(
+                            originalhost_readback=lambda h=host: h,
+                            release_root=Path(root), release_packet=packet,
+                            **kwargs)
                 worker.assert_not_called()
 
     def test_native_release_clock_is_real_and_cannot_be_injected(self):
