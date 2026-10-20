@@ -184,6 +184,23 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertNotIn("native_task_loaded_module_independently_verified=$true",s)
         self.assertNotIn("native_task_launcher_file_sha256=$true",s)
 
+    def test_native_task_python_parent_observation_remains_readonly_untrusted_hint(self):
+        source=SCRIPT.read_text(encoding="utf-8")
+        for marker in (
+            "native_python_parent_process_observed=$false",
+            "native_python_parent_matches_task_action_hint=$false",
+            "native_powershell_process_token_is_system=$false",
+            "native_runtime_identity_independently_verified=$false",
+            'Get-CimInstance Win32_Process -Filter "ProcessId=$PID"',
+            'Get-CimInstance Win32_Process -Filter "ProcessId=$parentId"',
+            "WindowsIdentity]::GetCurrent().User.Value",
+            '$parentArgs.Contains($argsText)',
+        ):
+            self.assertIn(marker,source)
+        self.assertNotIn("native_runtime_identity_independently_verified=$true",source)
+        self.assertNotIn("native_task_loaded_module_independently_verified=$true",source)
+        self.assertNotRegex(source,r"(?m)^\s*(?:native_raw_commandline|parent_args_raw)\s*=")
+
     def test_postcas_inventory_reuses_existing_supervisor_without_release_authority(self):
         s=SCRIPT.read_text(encoding="utf-8")
         for marker in (
