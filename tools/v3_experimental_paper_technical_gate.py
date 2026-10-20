@@ -267,10 +267,17 @@ def assess_v3_native_source_import_closure(root:Path)->dict[str,Any]:
                     if match:
                         if match not in seen and match not in pending:
                             pending.append(match)
+                    elif isinstance(node,ast.ImportFrom) and mod and dotted!=mod:
+                        # 'from module import symbol' does NOT create an
+                        # import of module.symbol. Only actual local
+                        # submodules discovered above are traversed; the
+                        # already processed parent import is authoritative.
+                        # This also applies to direct-script fallback local
+                        # modules where the symbol path has no root prefix.
+                        continue
                     elif (root/prefix).is_dir() or (root/(prefix+".py")).is_file():
-                        # 'from module import symbol' does not imply a
-                        # separate module. Only a missing explicit Import
-                        # indicates an actual unresolved local module.
+                        # Only an explicit unresolved local Import can prove
+                        # a broken module path; symbols cannot be inferred.
                         if isinstance(node,ast.Import):
                             errors.append("UNRESOLVED_LOCAL_MODULE:"+dotted)
                     else:
