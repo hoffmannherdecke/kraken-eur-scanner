@@ -24,6 +24,7 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
             '"tools/v3_experimental_paper_technical_gate.py"',source)
         self.assertIn(
             '"paper_evaluator/v3_paper_minipc_native_launcher_v1.py"',source)
+        self.assertIn('"tools/paper_series_transition_guard.py"',source)
 
 
     def test_two_actual_p4_ledger_cases_share_one_lock_and_no_provider(self):
