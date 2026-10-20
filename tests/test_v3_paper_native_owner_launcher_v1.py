@@ -111,10 +111,11 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
     def test_one_shot_preflight_joins_exact_originalhost_and_relay_without_release(self):
         series = "PAPER-V3-20261020T090000Z"
         report = {"status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE",
-                  "native_task_state": "Disabled"}
+                  "native_task_state": "Disabled",
+                  "observed_at_utc": "2026-10-19T14:00:10Z"}
         reply = {"series_id": series, "status": "active",
                  "strategy_revision": launcher.REVISION,
-                 "observed_at_utc": "2026-10-20T09:00:00Z",
+                 "observed_at_utc": "2026-10-19T14:00:20Z",
                  "config": {"untrusted_secret": "NEVER_DISCLOSE"}}
         token = "ONLY_FOR_LOCAL_OFFLINE_RELAY_TEST_NOT_REAL"
         with patch.dict(launcher.os.environ, {"V3_PAPER_RELAY_TOKEN": token}), patch.object(
@@ -135,6 +136,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         self.assertTrue(result["cloud_readback_requested"])
         self.assertEqual(result["diagnostic"], report)
         self.assertEqual(result["cloud_readonly_observation"]["series_id"], series)
+        self.assertTrue(result["cloud_readonly_observation"]["temporal_pair_checked_read_only"])
         self.assertFalse(result["cloud_readonly_observation"]["cloud_cas_independently_proven"])
         self.assertEqual(result["status"],
                          "BLOCKED_PENDING_MAINTENANCE_AND_ORIGINAL_RELEASE")
@@ -147,7 +149,8 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
     def test_proposed_series_wrong_or_missing_relay_token_blocks_every_worker(self):
         valid = "PAPER-V3-20261020T090000Z"
         with patch.object(launcher, "read_originalhost_readonly",
-                          return_value={"native_task_state": "Disabled"}) as host, patch.object(
+                          return_value={"native_task_state": "Disabled",
+                                        "observed_at_utc": "2026-10-19T14:00:10Z"}) as host, patch.object(
                           launcher, "read_active_paper_series") as relay, patch.object(
                           launcher, "dispatch_one_owned_paper_phase") as worker, patch.dict(
                           launcher.os.environ, {}, clear=True):
@@ -159,11 +162,64 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             relay.assert_not_called()
             worker.assert_not_called()
 
+
+    def test_one_shot_rejects_stale_or_future_host_before_cloud_request(self):
+        series = "PAPER-V3-20261020T090000Z"
+        for observed in ("2026-10-19T13:56:00Z",
+                         "2026-10-19T14:00:50Z",
+                         "2026-10-19T14:00:10",
+                         "not-a-timestamp", None):
+            with self.subTest(observed=observed), patch.object(
+                    launcher, "read_originalhost_readonly",
+                    return_value={"observed_at_utc": observed}), patch.object(
+                    launcher, "read_active_paper_series") as relay, patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
+                with self.assertRaises(ValueError):
+                    launcher.preflight_native_windows_one_shot(
+                        proposed_v3_series=series)
+                relay.assert_not_called()
+                worker.assert_not_called()
+
+    def test_one_shot_cloud_timestamp_denied_when_stale_naive_or_future(self):
+        series = "PAPER-V3-20261020T090000Z"
+        valid_host = {"observed_at_utc": "2026-10-19T14:00:10Z"}
+        for observed in ("2026-10-19T13:56:00Z",
+                         "2026-10-19T14:00:50Z",
+                         "2026-10-19T14:00:10",
+                         "garbled"):
+            cloud = {"series_id": series, "status": "active",
+                     "strategy_revision": launcher.REVISION,
+                     "observed_at_utc": observed}
+            with self.subTest(observed=observed), patch.dict(
+                    launcher.os.environ, {"V3_PAPER_RELAY_TOKEN": "R"*32}), patch.object(
+                    launcher, "read_originalhost_readonly",
+                    return_value=valid_host), patch.object(
+                    launcher, "read_active_paper_series", return_value=cloud), patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
+                with self.assertRaises(ValueError):
+                    launcher.preflight_native_windows_one_shot(
+                        proposed_v3_series=series)
+                worker.assert_not_called()
+
+    def test_one_shot_host_only_mode_has_no_new_clock_gate(self):
+        # Pre-maintenance V2R4 diagnostics must remain usable even with
+        # historic/absent timestamps; no relay is requested in this mode.
+        with patch.object(launcher, "read_originalhost_readonly",
+                          return_value={"observed_at_utc": None}) as host, patch.object(
+                          launcher, "read_active_paper_series") as relay:
+            report = launcher.preflight_native_windows_one_shot()
+            host.assert_called_once_with()
+            relay.assert_not_called()
+            self.assertIsNone(report["cloud_readonly_observation"])
+            self.assertEqual(report["status"],
+                             "BLOCKED_PENDING_MAINTENANCE_AND_ORIGINAL_RELEASE")
+
     def test_unavailable_or_wrong_relay_series_fails_without_paper_release(self):
         valid = "PAPER-V3-20261020T090000Z"
         with patch.dict(launcher.os.environ, {"V3_PAPER_RELAY_TOKEN": "R"*32}), patch.object(
                 launcher, "read_originalhost_readonly",
-                return_value={"status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE"}), patch.object(
+                return_value={"status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE",
+                              "observed_at_utc": "2026-10-19T14:00:10Z"}), patch.object(
                 launcher, "dispatch_one_owned_paper_phase") as worker:
             with patch.object(launcher, "read_active_paper_series",
                               side_effect=ValueError("Cloud has no active V3 series")):
