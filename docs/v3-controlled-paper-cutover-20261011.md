@@ -28,6 +28,23 @@ Diese Zeitprüfung ist **kein zusätzlicher Freigabenachweis**: Zeitliche
 Cloud-CAS/Sechs-Proof-Echtheit oder den abgeschlossenen Wartungstermin.
 Die Antwort bleibt blockiert, alle produktiven Writer unverändert.
 
+### Native Paper-Phase: Originalhost-Frische nach dem tatsächlichen Cloud-Readback
+
+**Ausführungspfad, nicht nur Diagnose:** Die bereits vorhandene
+`dispatch_after_originalhost_and_cloud_readback`-Funktion wird so
+weitergebunden, dass der einmalig extern geprüfte Originalhost-Zeitstempel
+auch **nach** dem einen authentifizierten Cloud-Relay-Abruf innerhalb des
+vorhandenen nativen Writer-Locks erneut am tatsächlichen UTC-Zeitpunkt
+geprüft wird. Altert die ursprüngliche Host-Freigabe dabei über **90 Sekunden**
+oder liegt sie in der Zukunft, wird die Paper-Phase abgewiesen. Keine
+zweite Cloud-Abfrage, kein zusätzlicher Task, kein Scheduler oder Manager.
+
+Die Quellenänderung ist eine echte zusätzliche Laufzeit-Sperre in der
+vorhandenen Phase-Funktion, aber **noch keine installierte oder freigegebene
+Windows-Ausführungs-CLI**: Erst unabhängige Originalhost-/Task-/Source-Belege,
+sechs echte E2E-Beweise, vollständig durchgeführte Wartung und Cloud-CAS
+plus erneute Nutzerfreigabe erlauben den späteren produktiven Start.
+
 ### Original-Windows-Task-/Python-Quellenabgleich vor Cloud-One-Shot (weiterhin nur lesend)
 
 Bei einem ausdrücklich angeforderten gekoppelten Windows-/Cloud-One-Shot-Befund
