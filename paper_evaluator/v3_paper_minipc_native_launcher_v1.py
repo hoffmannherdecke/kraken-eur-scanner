@@ -517,9 +517,18 @@ def preflight_native_windows_one_shot(*,
                 or reply.get("strategy_revision") != REVISION
                 or not isinstance(reply.get("observed_at_utc"), str)):
             raise ValueError("exact authenticated original Cloud series not accepted")
+        # A slow relay may outlive a once-fresh originalhost sample.
+        # Recheck BOTH observations against the SAME real post-relay UTC
+        # instant, not just their mutual timestamps or pre-relay freshness.
+        # This remains diagnostic only; real release still requires the
+        # separate stricter 90-second native originalhost gate.
+        relay_finished_at = _originalhost_wall_clock_utc()
+        _read_only_snapshot_time(
+            physical["observed_at_utc"], source="originalhost post-relay",
+            now=relay_finished_at)
         cloud_stamp = _read_only_snapshot_time(
             reply["observed_at_utc"], source="authenticated Cloud",
-            now=_originalhost_wall_clock_utc())
+            now=relay_finished_at)
         if abs((cloud_stamp - physical_stamp).total_seconds()) > 180:
             raise ValueError("originalhost and Cloud observations do not correlate")
         cloud = {

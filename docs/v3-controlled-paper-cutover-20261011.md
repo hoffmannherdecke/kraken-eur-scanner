@@ -17,6 +17,12 @@ Diagnose und ist **keine** Lockerung der strengeren 90-Sekunden-
 Originalhost-Prüfung vor einer echten Paper-Phase. Ohne Cloud-Serienwunsch
 bleibt die bisherige reine Windows-Vorprüfung unverändert nutzbar.
 
+Auch nach einer verzögerten Relay-Antwort werden **beide** bereits gelesenen
+Originalhost-/Cloud-Zeitstempel erneut gegen denselben aktuellen UTC-Zeitpunkt
+validiert; andernfalls könnte ein zunächst frischer Host-Befund während des
+Netzwerkaufrufs unbemerkt veralten. Diese abschließende Prüfung bleibt rein
+diagnostisch und startet keinen V3-Writer.
+
 Diese Zeitprüfung ist **kein zusätzlicher Freigabenachweis**: Zeitliche
 Übereinstimmung garantiert weder unterschriebene Prozessherkunft noch
 Cloud-CAS/Sechs-Proof-Echtheit oder den abgeschlossenen Wartungstermin.
