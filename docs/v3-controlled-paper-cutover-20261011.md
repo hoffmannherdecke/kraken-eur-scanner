@@ -53,6 +53,26 @@ die finale Nutzerfreigabe nicht ersetzen. Keine zusätzliche
 PowerShell-Funktion, neue Task oder Signaturbehörde entsteht durch
 diese rein quellseitige Verdrahtung.
 
+### Gleiche native Windows-Prozessidentität beim unabhängigen Release-Befund
+
+Die bereits existierende Originalhost-PowerShell-Diagnose berichtet nun zusätzlich
+zur Task-Action und zum Launcher-Dateihash die **Python-Parent-Prozess-ID
+und dessen OS-Startzeitpunkt**. Dieselbe PID wird unmittelbar im Originalhost
+noch einmal über CIM samt tatsächlicher CreationDate, ausführbarer Datei
+und Kommandozeile gelesen, bevor die Werte ausgegeben werden. Ein
+zwischenzeitlich beendeter Prozess beziehungsweise eine wiederverwendete PID
+liefert damit keinen positiven stabilen Prozesshinweis.
+
+Die bestehende Windows→native One-Shot-Funktion fordert beim **später
+unabhängig bestätigten** POST-CAS-Release-Owner dieselbe PID **und**
+dieselbe OS-Erstellungszeit. Eine vertauschte, fehlende oder fehlerhafte
+Identität blockiert vor dem nativen Paper-Worker. Der überarbeitete
+lesende Hostbericht ist **kein** eigenständiger Beweis geladener Python-
+Modulbytes, OS-Lock-Einzigkeit, Cloud-CAS oder der sechs E2E-Proofs.
+Die unabhängige Prozess-/Freigabequelle muss nach Wartung weiterhin
+eigenständig physisch abgenommen werden; keine neue Task, kein zweiter
+Supervisor, kein Go-Live oder zusätzlicher Proof entsteht hier.
+
 ### Windows-Task- und unabhängigen Release-Owner auf identische Quellversion binden
 
 Vor der Phase wird der vorhandene lokale lesende Windows-Befund nun am
