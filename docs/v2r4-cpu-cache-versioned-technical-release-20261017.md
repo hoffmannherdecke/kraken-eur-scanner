@@ -85,6 +85,37 @@ Performance-/Profitabilitäts-Audits, 50+ weitere Probe-Käufe,
 neue Cloud-/Runner-/Scheduler-Komponenten oder Upgrade-Kosten.
 Bestehende Work-/Research-Routinen und Source-Registry unverändert.
 
+### Nachfolge-Windows-Task: tatsächliches Source-Manifest statt historischem festen Zähler
+
+Die schon deaktivierte Original-`CryptoMiniPC-V3PaperSingleWriter`-Task
+zeigt weiterhin auf den alten `--read-only`-Stage. Die vorhandene
+nur lesende `-CandidateStageSha`-Variante des ORIGINALEN
+`tools/minipc-v3-paper-disabled-single-writer-task-INACTIVE.ps1`
+hatte künftige Stage-Versionen dennoch auf **69 Dateien festgelegt**,
+während das geprüfte Transitiv-Staging aus PR #478 jetzt **70**
+Dateien umfasst.
+
+Die bestehende Kandidatenprüfung berechnet daher **vor jeder
+Task-Aktion** die lokale Quellen-Closure noch einmal mit
+`--source-closure-readonly` aus dem exakt auf den künftigen Stage-SHA
+festgepinten, sauberen und separaten Git-Checkout. Die ermittelten
+Python-Importpfade werden mit dem **originalen** Stage-Manifest,
+einzelnen SHA256-Datei-Hashes und den geprüften Git-Objektinhalten
+abgeglichen. Nur der echte, begrenzte vereinigte Quellumfang darf
+als `READ_ONLY_SUCCESSOR_STAGE_VERIFIED_EXISTING_TASK_UNCHANGED`
+angezeigt werden. Kein willkürliches `source_manifest` autorisiert
+zusätzliche Code-Dateien.
+
+**Keine Installation oder neue Task:** Im Nachfolgemodus sind
+`-InstallDisabled` und `-Confirm` weiterhin verboten. Der
+historische 66-Dateien-Basisvertrag für eine noch völlig fehlende
+V3-Task wird nicht stillschweigend zur neuen Produktiv-Freigabe.
+Eine tatsächliche Änderung der vorhandenen Windows-Task-Action,
+deren geladener Source und der Release-Owner bleibt **nach**
+CPU/BIOS/Windows/USV/PR444-Wartung + gesichertem V2R4-Restart
+eine gesondert nachzuweisende Originalhost-Operation. Dieser
+Quell-Readback ist keine unabhängige Native-/Cloud-/Six-Proof-Autorität.
+
 ### Aktuelles inaktives V3-Staging übernimmt den vollständigen lokalen Importgraphen (Quellcode)
 
 Der seit PR #475/#476 bereits geprüfte statische Python-Quellgraph war im

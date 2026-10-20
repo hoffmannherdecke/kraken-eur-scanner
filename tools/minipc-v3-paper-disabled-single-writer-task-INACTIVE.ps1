@@ -17,7 +17,7 @@ if($candidateMode){
  if($InstallDisabled -or $Confirm){throw 'candidate inspection must remain read-only'}
  $stageSha=$CandidateStageSha
 }
-$stageFiles=if($candidateMode){69}else{66}
+$stageFiles=if($candidateMode){0}else{66}
 $taskName='CryptoMiniPC-V3PaperSingleWriter'
 $oldNames=@(
  'CryptoMiniPC-V2R4PaperCandidates',
@@ -101,7 +101,7 @@ Require ($manifest.kind -ceq 'V3_PAPER_INACTIVE_ISOLATED_SOURCE_STAGE_V1' -and
   $manifest.source_git_sha -ceq $stageSha -and
   $manifest.v3_paper_activated -eq $false -and
   $manifest.task_changes -eq $false -and
-  @($manifest.source_manifest).Count -eq $stageFiles) 'exact reviewed stage file count required'
+  ($candidateMode -or @($manifest.source_manifest).Count -eq $stageFiles)) 'exact reviewed stage file count required'
 $allow=@(& git -C $source ls-tree -r --name-only $stageSha -- paper_evaluator market_data paper_context.py 'research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json' 'supabase/functions/v3-paper-evidence-relay/index.ts' 'tools/minipc-runtime-supervisor.ps1' 'tools/check-minipc-v3-physical-writer-readiness.ps1' 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1' 'tools/v3_experimental_paper_technical_gate.py' 'tools/paper_series_transition_guard.py' 2>$null)
 Require ($LASTEXITCODE -eq 0) 'trusted source tree cannot be read'
 $allow=@($allow|Where-Object {
@@ -115,6 +115,51 @@ $allow=@($allow|Where-Object {
           'tools/check-minipc-v3-physical-writer-readiness.ps1',
           'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1')
 }|Sort-Object -Unique)
+if($candidateMode){
+ # Recompute the existing PR476 SOURCE ONLY closure from exact clean HEAD;
+ # do not trust the candidate stage's self-reported file list alone.
+ $head=(& git -C $source rev-parse HEAD 2>$null)
+ Require ($LASTEXITCODE -eq 0 -and ([string]$head).Trim() -ceq $stageSha) 'candidate checkout HEAD mismatch'
+ $gate=Join-Path $source 'tools/v3_experimental_paper_technical_gate.py'
+ Require ((Test-Path -LiteralPath $gate -PathType Leaf)) 'source closure gate missing'
+ $pythonRead=Get-Command -Name python.exe -CommandType Application -ErrorAction Stop |
+    Select-Object -First 1
+ Require ($null -ne $pythonRead) 'source Python unavailable'
+ $json=& ([string]$pythonRead.Source) -B $gate --source-closure-readonly --source-root $source
+ Require ($LASTEXITCODE -eq 0 -and $json) 'original source closure readback failed'
+ $closure=($json -join [Environment]::NewLine)|ConvertFrom-Json
+ Require ($closure.kind -ceq 'V3_NATIVE_SOURCE_IMPORT_CLOSURE_READONLY_V1' -and
+   $closure.inspection_authority -ceq 'SOURCE_ONLY_NO_ORIGINALHOST_OR_CLOUD_ACK' -and
+   $closure.static_local_import_closure_complete -eq $true -and
+   $closure.paper_release_authorized -eq $false -and
+   [string]$closure.candidate_transitive_source_sha256 -cmatch '^[a-f0-9]{64}$' -and
+   [string]$manifest.static_transitive_closure_sha256 -ceq
+     [string]$closure.candidate_transitive_source_sha256 -and
+   $manifest.source_closure_is_only_candidate_not_loaded_code_ack -eq $true) 'candidate closure not pinned'
+ $dependencies=@($closure.candidate_transitive_files)
+ $manifestDependencies=@($manifest.static_transitive_closure_files)
+ Require ($dependencies.Count -ge 20 -and $dependencies.Count -le 512 -and
+   $dependencies.Count -eq [int]$closure.candidate_transitive_file_count -and
+   $dependencies.Count -eq [int]$manifest.static_transitive_closure_file_count -and
+   $manifestDependencies.Count -eq $dependencies.Count) 'candidate dependency count drift'
+ $tracked=@(& git -C $source ls-files --cached -- '*.py' 2>$null)
+ Require ($LASTEXITCODE -eq 0) 'tracked Python source unavailable'
+ $dependencyHashes=@{}
+ foreach($record in $dependencies){
+   $rel=[string]$record[0]; $sha=[string]$record[1]
+   Require ($rel -cmatch '^[A-Za-z_][A-Za-z0-9_./-]*\.py$' -and
+     $rel -notmatch '(^|/)\.\.(/|$)|//|\\' -and
+     $tracked -ccontains $rel -and
+     $manifestDependencies -ccontains $rel -and
+     -not $dependencyHashes.ContainsKey($rel) -and
+     $sha -cmatch '^[a-f0-9]{64}$') 'candidate dependency path invalid'
+   $dependencyHashes[$rel]=$sha
+ }
+ $allow=@(($allow+@($dependencyHashes.Keys))|Sort-Object -Unique)
+ $stageFiles=$allow.Count
+ Require ($stageFiles -ge 20 -and $stageFiles -le 350 -and
+   @($manifest.source_manifest).Count -eq $stageFiles) 'candidate source files mismatch'
+}
 Require ($allow.Count -eq $stageFiles) 'original source inventory changed'
 $seen=@{}
 foreach($entry in @($manifest.source_manifest)){
@@ -133,6 +178,9 @@ foreach($entry in @($manifest.source_manifest)){
  }
  $digest=Sha $item
  Require ($digest -ceq [string]$entry.sha256) ('stage SHA256 drift: '+$rel)
+ if($candidateMode -and $dependencyHashes.ContainsKey($rel)){
+   Require ($digest -ceq [string]$dependencyHashes[$rel]) ('candidate import SHA drift: '+$rel)
+ }
  # Git blob verification independently binds EACH staged byte to the reviewed
  # immutable source COMMIT, not only to a potentially edited local manifest.
  $object=(& git -C $source rev-parse ($stageSha+':'+$rel) 2>$null)

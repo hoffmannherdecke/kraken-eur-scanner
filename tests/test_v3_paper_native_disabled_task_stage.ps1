@@ -57,6 +57,37 @@ foreach($forbidden in @(
   throw ('V3_DISABLED_NATIVE_TASK_UNSAFE_COMMAND '+$forbidden)
  }
 }
+# Original successor Task is already Disabled/--read-only. This is
+# source policy ONLY, not the originalhost Windows Task/PID readback.
+foreach($guard in @(
+ 'candidate inspection must remain read-only',
+ 'candidate checkout HEAD mismatch',
+ 'original source closure readback failed',
+ 'candidate closure not pinned',
+ 'candidate dependency path invalid',
+ 'candidate source files mismatch',
+ 'candidate import SHA drift:',
+ 'static_transitive_closure_sha256',
+ '--source-closure-readonly',
+ 'source_closure_is_only_candidate_not_loaded_code_ack',
+ 'original V3 Task not Disabled',
+ 'original V3 Task not read-only'
+)){
+ if(-not $src.Contains($guard)){
+  throw ('V3_SUCCESSOR_READONLY_SOURCE_CLOSURE_GUARD_MISSING '+$guard)
+ }
+}
+if($src.Contains('$stageFiles=if($candidateMode){69}else{66}')){
+ throw 'V3_SUCCESSOR_HISTORICAL_STAGE_COUNT_RETAINED'
+}
+$beforeAction=$src.IndexOf('candidate source files mismatch')
+$sourceGate=$src.IndexOf('candidate closure not pinned')
+$taskWrite=$src.IndexOf('RegisterTaskDefinition($taskName,$definition,2')
+if($sourceGate -lt 0 -or $beforeAction -le $sourceGate -or
+   $taskWrite -le $beforeAction){
+ throw 'V3_SUCCESSOR_READONLY_GATE_MUST_PRECEDE_TASK_MUTATION_BRANCH'
+}
+
 $first=$src.IndexOf('if(-not $InstallDisabled){')
 $gate=$src.IndexOf('Require ($Confirm -ceq')
 $service=$src.IndexOf("New-Object -ComObject 'Schedule.Service'")
@@ -164,11 +195,11 @@ Write-Output 'V3_ORIGINALHOST_MULTIPLE_PYTHON_APPLICATIONS_BOOLEAN_PREVIEW_PASS'
 
 
 # The successor PREVIEW must inspect the existing old disabled V3 Task,
-# never update it or install the new 69-file candidate as a second Task.
+# never update it or install any successor candidate as a second Task.
 foreach($must in @(
  '[string]$CandidateStageSha',
  'if($InstallDisabled -or $Confirm)',
- '$stageFiles=if($candidateMode){69}else{66}',
+ '$stageFiles=if($candidateMode){0}else{66}',
  'READ_ONLY_SUCCESSOR_STAGE_VERIFIED_EXISTING_TASK_UNCHANGED',
  "Require ((OriginalDisabledTaskForCandidateReadOnly) -ceq 'Disabled')",
  "'tools/v3_experimental_paper_technical_gate.py'",
@@ -218,6 +249,6 @@ $script:fakeCandidateTask.Settings.AllowDemandStart=$true
 $blocked=$false
 try{$null=OriginalDisabledTaskForCandidateReadOnly}catch{$blocked=$true}
 if(-not $blocked){throw 'Original V3 Task demand start accepted'}
-Write-Output 'V3_EXISTING_DISABLED_TASK_69_FILE_SUCCESSOR_READONLY_PREVIEW_PASS'
+Write-Output 'V3_EXISTING_DISABLED_TASK_MANIFEST_SOURCE_SUCCESSOR_READONLY_PREVIEW_PASS'
 
 Write-Output 'V3_NATIVE_DISABLED_READONLY_TASK_STAGE_SOURCE_POLICY_PASS'
