@@ -291,6 +291,44 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 cloud.assert_not_called()
                 worker.assert_not_called()
 
+    def test_native_windows_binding_uses_one_actual_imported_core_source_root(self):
+        # Positive source-only observation, NOT external loaded-bytecode proof.
+        launcher._require_one_loaded_release_module_root()
+
+    def test_native_windows_binding_blocks_mixed_imported_module_origins(self):
+        actual = launcher.sys.modules["paper_evaluator.v3_paper_minipc_selective_tick_v1"]
+        origin = actual.__spec__.origin
+        for modpath, modorigin in (
+                (str(Path(origin).with_name("incorrect_checkout.py")), origin),
+                (actual.__file__, str(Path(origin).with_name("wrong_import_spec.py")))):
+            with self.subTest(path=modpath, origin=modorigin), patch.object(
+                    launcher.sys, "platform", "win32"), patch.object(
+                    actual, "__file__", modpath), patch.object(
+                    actual.__spec__, "origin", modorigin), patch.object(
+                    launcher, "read_originalhost_readonly") as inspector, patch.object(
+                    launcher, "dispatch_after_originalhost_and_cloud_readback") as owner:
+                with self.assertRaisesRegex(ValueError, "mixed-vintage"):
+                    launcher.dispatch_from_original_windows_one_shot(
+                        originalhost_release_readback=lambda: {},
+                        phase="FOLLOWUP_6H24H72H", series_id=self.SID)
+                inspector.assert_not_called()
+                owner.assert_not_called()
+
+    def test_native_windows_binding_blocks_missing_core_module_source(self):
+        name = "tools.v3_experimental_paper_technical_gate"
+        original = launcher.sys.modules[name]
+        with patch.object(launcher.sys, "platform", "win32"), patch.dict(
+                launcher.sys.modules, {name: None}), patch.object(
+                launcher, "read_originalhost_readonly") as inspector, patch.object(
+                launcher, "dispatch_after_originalhost_and_cloud_readback") as owner:
+            with self.assertRaisesRegex(ValueError, "source unavailable"):
+                launcher.dispatch_from_original_windows_one_shot(
+                    originalhost_release_readback=lambda: {},
+                    phase="FOLLOWUP_6H24H72H", series_id=self.SID)
+            inspector.assert_not_called()
+            owner.assert_not_called()
+        self.assertIs(launcher.sys.modules[name], original)
+
     def test_native_windows_phase_binding_stops_before_inspector_without_real_owner(self):
         with patch.object(launcher.sys, "platform", "win32"), patch.object(
                 launcher, "read_originalhost_readonly") as inspector, patch.object(
