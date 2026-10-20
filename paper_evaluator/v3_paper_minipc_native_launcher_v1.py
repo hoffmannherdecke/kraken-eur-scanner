@@ -16,6 +16,8 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -258,13 +260,98 @@ def dispatch_after_native_release_readback(*,
     return dispatch_one_owned_paper_phase(**phase_args)
 
 
+# Reuse the ONE existing reviewed original Mini-PC inspection script. Its
+# output is intentionally NOT a release proof: it cannot attest Cloud CAS,
+# actual loaded module identity or the absence of other writer processes.
+ORIGINALHOST_READONLY_SCRIPT = "tools/check-minipc-v3-physical-writer-readiness.ps1"
+ORIGINALHOST_POWERSHELL = Path(r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe")
+ORIGINALHOST_TRADING_ROOT = r"C:\Users\ADMIN\Trading"
+
+
+def summarize_originalhost_readonly(report: dict[str, Any]) -> dict[str, Any]:
+    """Expose a small, safe factual inventory; never mint release authority."""
+    if not isinstance(report, dict) or report.get("kind") != (
+            "V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1"):
+        raise ValueError("originalhost physical readonly report kind missing")
+    local = report.get("physical_v3_postcas_local_inventory")
+    if (not isinstance(local, dict) or local.get("kind") !=
+            "V3_NATIVE_POSTCAS_LOCAL_INSPECTION_ONLY_V1"
+            or local.get("status") != "NOT_INDEPENDENT_RELEASE_EVIDENCE"
+            or local.get("live_paper_activation_authorized") is not False
+            or local.get("tasks_changed") != 0
+            or local.get("cloud_writes") != 0
+            or local.get("model_calls") != 0
+            or report.get("new_v3_writer_started") is not False
+            or report.get("filesystem_writes") is not False
+            or report.get("v2r4_changed") is not False
+            or report.get("experimental_paper_release_authorized_by_this_check") is not False):
+        raise ValueError("readonly host report claims unsupported authority or effects")
+    state = local.get("native_task_state")
+    if state not in ("Disabled", "Ready", "Running", "ABSENT", "UNKNOWN"):
+        raise ValueError("unrecognized V3 native Task observation")
+    return {
+        "kind": "V3_NATIVE_ORIGINALHOST_DIAGNOSTIC_HANDOFF_V1",
+        "status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE",
+        "observed_at_utc": report.get("checked_at_utc"),
+        "native_task_state": state,
+        "native_task_uses_old_readonly_launcher":
+            local.get("native_task_uses_old_readonly_launcher") is True,
+        "old_intake_disabled_observed":
+            local.get("old_intake_tasks_disabled") is True,
+        "old_aftercare_running_observed":
+            local.get("protected_old_aftercare_running") is True,
+        "independent_cloud_cas_verified": False,
+        "six_original_e2e_proofs_verified": False,
+        "source_process_and_fence_authenticated": False,
+        "runtime_bootstrap_executable": False,
+        "paper_activated": False,
+        "model_http_calls": 0,
+        "orders": False,
+        "windows_task_changes": False,
+    }
+
+
+def read_originalhost_readonly() -> dict[str, Any]:
+    """Actual *read-only* Windows inventory, source-only until host deployment.
+
+    No executable V3 writer or CAS/Task/Model side effect. The trusted future
+    operator must still collect INDEPENDENT originalhost and Cloud proofs.
+    """
+    if sys.platform != "win32":
+        raise ValueError("originalhost inspection requires the physical Windows host")
+    source_root = Path(__file__).absolute().parent.parent
+    script = source_root / ORIGINALHOST_READONLY_SCRIPT
+    if (not script.is_file() or script.is_symlink()
+            or not ORIGINALHOST_POWERSHELL.is_file()
+            or ORIGINALHOST_POWERSHELL.is_symlink()):
+        raise ValueError("fixed reviewed originalhost PowerShell source absent")
+    try:
+        result = subprocess.run([
+            str(ORIGINALHOST_POWERSHELL), "-NoProfile", "-NonInteractive",
+            "-File", str(script), "-TradingRoot", ORIGINALHOST_TRADING_ROOT,
+        ], capture_output=True, text=True, timeout=90, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise ValueError("originalhost readonly inventory unavailable") from exc
+    if (result.returncode != 0 or len(result.stdout) > 262144
+            or not result.stdout.strip()):
+        raise ValueError("originalhost readonly inventory failed or oversized")
+    try:
+        parsed = json.loads(result.stdout)
+    except (ValueError, TypeError) as exc:
+        raise ValueError("originalhost readonly inventory invalid JSON") from exc
+    return summarize_originalhost_readonly(parsed)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Inactive V3 Paper native-owner source -- no live execution")
-    parser.add_argument("--read-only", action="store_true")
+    modes = parser.add_mutually_exclusive_group(required=True)
+    modes.add_argument("--read-only", action="store_true")
+    modes.add_argument("--originalhost-readonly", action="store_true")
     args = parser.parse_args()
-    if not args.read_only:
-        parser.error("No live Mini-PC owner Task, original fence or Cloud CAS is installed")
+    if args.originalhost_readonly:
+        print(json.dumps(read_originalhost_readonly(), sort_keys=True))
+        return 0
     print(json.dumps({
         "kind": "V3_PAPER_NATIVE_OWNER_ONE_SHOT_SOURCE_PLAN_V1",
         "status": "SOURCE_DISPATCH_READY_RUNTIME_NOT_AUTHORIZED",
