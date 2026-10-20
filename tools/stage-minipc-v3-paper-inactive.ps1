@@ -81,7 +81,7 @@ $python=Get-Command -Name python -CommandType Application -ErrorAction Stop |
 Need ($null -ne $python) 'source-only Python interpreter missing'
 $closureJson=& ([string]$python.Source) -B $closureProgram --source-closure-readonly --source-root $source
 Need ($LASTEXITCODE -eq 0 -and $closureJson) 'original transitive source closure could not be read'
-$closure=$closureJson | ConvertFrom-Json
+$closure=($closureJson -join "`n") | ConvertFrom-Json
 Need ([string]$closure.kind -ceq 'V3_NATIVE_SOURCE_IMPORT_CLOSURE_READONLY_V1' -and
       [string]$closure.inspection_authority -ceq 'SOURCE_ONLY_NO_ORIGINALHOST_OR_CLOUD_ACK' -and
       $closure.static_local_import_closure_complete -eq $true -and
