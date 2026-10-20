@@ -250,7 +250,17 @@ def assess_v3_native_source_import_closure(root:Path)->dict[str,Any]:
                     prefix=dotted.split(".")[0]
                     relname=dotted.replace(".","/")
                     match=None
-                    for candidate in (relname+".py",relname+"/__init__.py"):
+                    candidates=[relname+".py",relname+"/__init__.py"]
+                    # Direct-script fallback imports in the existing tools/
+                    # and paper_evaluator/ package must not become fictional
+                    # third-party pip dependencies. The runtime uses these
+                    # siblings only when the package import is unavailable.
+                    if "." not in dotted and pkg and pkg[0] in (
+                            "tools","paper_evaluator"):
+                        sibling="/".join(pkg+[dotted])
+                        candidates.extend((sibling+".py",
+                                           sibling+"/__init__.py"))
+                    for candidate in candidates:
                         if (root/candidate).is_file() or (root/candidate).is_symlink():
                             match=candidate
                             break
