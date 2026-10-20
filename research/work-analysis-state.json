@@ -1360,6 +1360,46 @@
           "docs/minipc-analytics-rollout-v1.md",
           "research/project-followthrough-routing-v1.json#project_wide_implementation_commitments"
         ]
+      },
+      "BACKLOG-e5f02ef6ad741034758d": {
+        "disposition": "DEFERRED_WITH_GATE",
+        "reviewed_at_utc": "2026-10-20T08:18:34Z",
+        "owner": "docs/minipc-powershell-capability-reuse-v1.md + GitHub Issue #353",
+        "next_gate": "NEW_REPEATABLE_FUNCTION_NEED_NOT_SERVED_BY_EXISTING_FIXED_TASKS_THEN_BOUNDED_SCOPE_ACL_BACKUP_ROLLBACK_SOURCE_REVIEW_AND_EXACT_ORIGINALHOST_ACK",
+        "report": "research/work-analysis/2026-10-20-historical-backlog-dispositions.md",
+        "evidence_sha256": "a642a53ecf06212124dd64978c5df8143d2cbaea54a1b9e213d40c8eb4496f1c",
+        "original_source": "PROJECT_BACKLOG.md:L30",
+        "evidence": [
+          "docs/minipc-powershell-capability-reuse-v1.md",
+          "https://github.com/hoffmannherdecke/kraken-readonly-bridge/actions/runs/39269905027"
+        ]
+      },
+      "BACKLOG-c7c7ff10d242a19703f4": {
+        "disposition": "DEFERRED_WITH_GATE",
+        "reviewed_at_utc": "2026-10-20T08:18:34Z",
+        "owner": "docs/v2r4-cpu-cache-versioned-technical-release-20261017.md + GitHub Issue #353",
+        "next_gate": "CPU_WINDOWS_UPS_SETUP_COMPLETE_BATTERY_CHARGED_SUPERVISED_TEST_PLAN_AND_SAFE_WRITER_RUNNER_QUIESCENCE_THEN_TWO_SEPARATE_ORIGINALHOST_E2E_ACKS",
+        "report": "research/work-analysis/2026-10-20-historical-backlog-dispositions.md",
+        "evidence_sha256": "a642a53ecf06212124dd64978c5df8143d2cbaea54a1b9e213d40c8eb4496f1c",
+        "original_source": "PROJECT_BACKLOG.md:L43",
+        "evidence": [
+          "docs/v2r4-cpu-cache-versioned-technical-release-20261017.md#absichtlich-spaeteres-separates-wartungsfenster--keine-verlaengerung-des-cpu-termins",
+          "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353#issuecomment-6285586514"
+        ]
+      },
+      "BACKLOG-9cdaf872e9e3d6458553": {
+        "disposition": "SUPERSEDED_WITH_CANONICAL_OWNER",
+        "reviewed_at_utc": "2026-10-20T08:18:34Z",
+        "owner": "project-current-state.json#pending_strategy_transition + existing V3 cutover owner + GitHub Issues #99/#353",
+        "next_gate": "READ_ONLY_ORIGINALHOST_PRECAS_16_EVENT_JOURNAL_READBACK_WITHOUT_WRITER_REEXECUTION_THEN_EXISTING_SIX_PROOF_SINGLE_WRITER_CAS_SUPERVISOR_BUDGET_RELEASE_PATH",
+        "report": "research/work-analysis/2026-10-20-historical-backlog-dispositions.md",
+        "evidence_sha256": "a642a53ecf06212124dd64978c5df8143d2cbaea54a1b9e213d40c8eb4496f1c",
+        "original_source": "PROJECT_BACKLOG.md:L573",
+        "supersedes_prior_wording_id": "BACKLOG-9cdaf872e9e3d64585538",
+        "evidence": [
+          "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353#issuecomment-6286497184",
+          "https://github.com/hoffmannherdecke/kraken-eur-scanner/commit/ec04196dbf400dec1441a8e2cda955b9eb6e10bc"
+        ]
       }
     }
   },
@@ -1702,14 +1742,20 @@
       "report_sha256": "375f9a3b92366907c7efe3500b68f59fb3f2c88ef12d03c0885a254560890870"
     },
     "HISTORICAL_BACKLOG_RECONCILIATION": {
-      "gate_fingerprint": "20261019:9cdaf872e9e3d64585538+43e13a20ea9c99a0f6d2+8dcebaefd9e690c9a7d3",
+      "gate_fingerprint": "9356122c7f648a41ea37",
       "status": "COMPLETED",
-      "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/blob/work/20261019-historical-backlog-reconciliation/research/work-analysis/2026-10-19-historical-v3-backlog-dispositions.md",
-      "reason": "Three router-prioritized historical V3 checkbox originals were independently mapped to existing canonical owners and objective gates without creating duplicate implementation work or any runtime/release claim.",
-      "attempted_at_utc": "2026-10-19T08:23:36Z",
-      "completed_at_utc": "2026-10-19T08:23:36Z",
-      "report": "research/work-analysis/2026-10-19-historical-v3-backlog-dispositions.md",
-      "report_sha256": "78b6028b51aeeba6878e38c3321240e8c17542dcee9989cc338b63ab0aeae33a"
+      "evidence_url": "research/work-analysis/2026-10-20-historical-backlog-dispositions.md",
+      "reason": "Three selector-prioritized originals were bound to their existing capability, UPS-maintenance, and V3-cutover owners; the rehashed V3 wording was deduplicated rather than restarted.",
+      "attempted_at_utc": "2026-10-20T08:18:34Z",
+      "completed_at_utc": "2026-10-20T08:18:34Z",
+      "report": "research/work-analysis/2026-10-20-historical-backlog-dispositions.md",
+      "report_sha256": "a642a53ecf06212124dd64978c5df8143d2cbaea54a1b9e213d40c8eb4496f1c",
+      "prior_completed_attempt": {
+        "gate_fingerprint": "20261019:9cdaf872e9e3d64585538+43e13a20ea9c99a0f6d2+8dcebaefd9e690c9a7d3",
+        "completed_at_utc": "2026-10-19T08:23:36Z",
+        "report": "research/work-analysis/2026-10-19-historical-v3-backlog-dispositions.md",
+        "report_sha256": "78b6028b51aeeba6878e38c3321240e8c17542dcee9989cc338b63ab0aeae33a"
+      }
     }
   }
 }
