@@ -194,6 +194,7 @@ class ClosedOriginalAftercareFileE2ETests(unittest.TestCase):
         self.write(self.app/"paper_decisions/old-reject.json",{
             "candidate_id":"OLD-REJECT","series_id":self.OLD,
             "pair":"XBT/EUR","evaluated_at_utc":"2026-10-15T12:00:00Z",
+            "real_money_actions_enabled":False,
             "decision":{"decision":"REJECT","real_money_actions_enabled":False},
         })
         self.followup={
@@ -303,6 +304,7 @@ class ClosedOriginalAftercareFileE2ETests(unittest.TestCase):
         self.write(self.app/"paper_decisions/invalid-new-old.json",{
             "candidate_id":"UNLAWFUL-NEW-OLD","series_id":self.OLD,
             "pair":"ETH/EUR","evaluated_at_utc":"2026-10-17T00:00:00Z",
+            "real_money_actions_enabled":False,
             "decision":{"decision":"REJECT","real_money_actions_enabled":False},
         })
         blocked,calls=self.tick(lambda *_a,**_k:
@@ -326,6 +328,7 @@ class ClosedOriginalAftercareFileE2ETests(unittest.TestCase):
         self.write(self.app/"paper_decisions/pending.json",{
             "candidate_id":"OLD-PENDING","series_id":self.OLD,
             "pair":"ADA/EUR","evaluated_at_utc":"2026-10-15T16:00:00Z",
+            "real_money_actions_enabled":False,
             "decision":{"decision":"WAIT","real_money_actions_enabled":False},
         })
         self.write(self.app/"paper_followups/pending.json",{
