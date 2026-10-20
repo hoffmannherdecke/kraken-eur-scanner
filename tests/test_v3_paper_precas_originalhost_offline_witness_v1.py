@@ -16,6 +16,17 @@ from tools.v3_paper_precas_originalhost_offline_witness_v1 import (
 
 
 class OfflineDualCaseWitnessTests(unittest.TestCase):
+    def test_original_release_gate_must_be_manifest_verified(self):
+        from tools import v3_paper_precas_originalhost_offline_witness_v1 as witness
+        import inspect
+        source = inspect.getsource(witness.inspect)
+        self.assertIn(
+            '"tools/v3_experimental_paper_technical_gate.py"',source)
+        self.assertIn(
+            '"paper_evaluator/v3_paper_minipc_native_launcher_v1.py"',source)
+        self.assertIn('"tools/paper_series_transition_guard.py"',source)
+
+
     def test_two_actual_p4_ledger_cases_share_one_lock_and_no_provider(self):
         with tempfile.TemporaryDirectory() as tmp:
             target = Path(tmp) / "single-owner"
