@@ -343,6 +343,19 @@ def summarize_originalhost_readonly(report: dict[str, Any]) -> dict[str, Any]:
         "status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE",
         "observed_at_utc": report.get("checked_at_utc"),
         "native_task_state": state,
+        # Observed exact native Windows bytes are only a future pin comparison
+        # input. A file SHA neither proves the loaded Python process nor CAS.
+        "native_task_action_sha256":
+            local.get("native_task_action_sha256")
+            if isinstance(local.get("native_task_action_sha256"), str)
+            and FILE_SHA.fullmatch(local["native_task_action_sha256"])
+            else None,
+        "native_task_launcher_file_sha256":
+            local.get("native_task_launcher_file_sha256")
+            if isinstance(local.get("native_task_launcher_file_sha256"), str)
+            and FILE_SHA.fullmatch(local["native_task_launcher_file_sha256"])
+            else None,
+        "native_task_loaded_module_independently_verified": False,
         "native_task_uses_old_readonly_launcher":
             local.get("native_task_uses_old_readonly_launcher") is True,
         "old_intake_disabled_observed":
