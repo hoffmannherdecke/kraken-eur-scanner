@@ -25,6 +25,66 @@ Status **OFFLINE-VERTRAG IN ENTWICKLUNG / PRODUKTIVER WECHSEL GESPERRT** (17.10.
 - [ ] **VERPFLICHTENDER V3-Prüfskript-Nachlauf B – echte No-Rearm-Abnahme (eigenständiges freizugebendes Risiko-Gate):** Im selben Wartungsfenster **nur wenn** CPU/Windows/V2R4 bereits stabil, Cloud-Autorität `OLD-V2R4-ONLY-AND-V3-CAS-ABSENT` aktuell unabhängig belegt und gepinnte Stop-/Restore-Skripte plus Operator/Recovery vorbereitet sind: beaufsichtigten STOP nur Candidates+WAIT, keine alten Lifecycle-/CloudSync-Stops, **zwei neue unterschiedliche vollständig gültige** `QUIESCED`-Supervisor+CloudSync-ACKs (neu: 360s Zeitbudget, unveränderte Sicherheitsprädikate), kein automatisches Re-Arm; danach getrennte und unabhängig Cloud-geprüfte Wiederherstellung auf V2R4, frische Heartbeats und Produktions-`HEALTHY`. Bei Marker-/Quelle-/CAS-Unklarheit oder Chat-Abbruch **fail closed**, keine blinde Task-Reaktivierung. Kein automatischer Test allein wegen des CPU-Tauschs.
 - [ ] **Getrennte Abschluss-Quittungen:** `CPU_HARDWARE_BOOT`, `POST_CPU_WINDOWS_UPDATE_REVIEW`, `PR419_HOST_STAGE_SHA_PREVIEW` und `PR419_PHYSICAL_TWO_CYCLE_STOP_RESTORE_E2E` jeweils als `PASS/OPEN` mit originalem Zeitpunkt, Host-/Cloud-Evidenz und Owner dokumentieren. **Wenn ein echter V3-STOP-Test beim CPU-Termin unsicher ist, dann `OPEN_DEFERRED_TO_NEXT_CONTROLLED_WINDOW` mit Owner Issue #99 und Wiedervorlage im bestehenden Issue #353; niemals stillschweigend als PASS oder vergessen.** Der Hardware-Umbau kann separat abgeschlossen werden, das ursprüngliche V3-Single-Writer-Sechsgate bleibt bis zur echten Originalhost-Abnahme offen.
 
+## Dienstag/Mittwoch 20.–21.10.: gebündelte V3-Vorarbeit statt weiterer punktueller Freigabe-Härterei
+
+**Einmalige strategische Priorisierung für den möglichen Wartungstermin Donnerstag,
+22.10.2026.** Die tatsächliche Hardware-Lieferung und Terminzusage stehen
+aus. Deshalb heute/morgen ausschließlich **SOURCE / INACTIVE / READ-ONLY**,
+keine Änderung an aktivem V2R4, Task, Windows, Supabase-Migration oder
+Modellbudget. Reifegrad statt PR-Anzahl zählt. Nicht auf wirtschaftlich
+profitable BUYs oder 72h-Paper-Maturity *vor* dem technischen
+`EXPERIMENTAL_PAPER_ONLY`-Start warten.
+
+**Vor der Wartung abschließbare Arbeit (ohne neuen Manager/zweite Release-Stufe):**
+
+1. Bestehende Originalhost-Windows-One-Shot-Quellen #464–#474,
+   Altserien-CloudSync/Edge-Relay (bereits deployed, nicht erneut
+   installieren), sechs technischen Proof-Gates und V3 Full-Model/P4-
+   /WAIT/No-BUY/1m/6h/24h/72h-Kette in **einem** Release-Snapshot
+   konsolidieren. Alle Open-Punkte gehören zum bisherigen Fach-Owner #99.
+2. Den vorhandenen `assess_v3_experimental_source_inventory` im
+   originalen `tools/v3_experimental_paper_technical_gate.py` als
+   Quell-Einstieg nutzen. Die reine
+   `assess_v3_native_source_import_closure`-Ergänzung durchläuft
+   dazu statisch die lokal importierten Python-Dateien einschließlich
+   des nativen Launchers, protokolliert deren unveränderliche SHA256,
+   externe Import-Namensräume und dynamische Importstellen. Vor
+   Wartungsfenster und **nach finalem Commit-Freeze** genau denselben
+   Snapshot aus dem geprüften protected-main-Checkout erzeugen.
+   `static_local_import_closure_complete` ist *keine* Erklärung,
+   dass alle Laufzeit-/Paketversionen/geladene Bytes physisch stimmen;
+   dynamische Imports/externes Paket müssen tatsächlich separat
+   im vorhandenen Wartungs-Smoke und Windows-PID-Quellen-ACK geprüft werden.
+3. Der eigentliche Produktionsstart bleibt bewusst eine
+   **eigene, später freizugebende** Originalhost-Operation:
+   aktuelle Windows-Task Action und SYSTEM-/PID-/OS-Startzeit,
+   **geladene** Source, native Singleton, No-Rearm-V2R4-Fence,
+   V2R4-Lifecycle-/CloudSync-Alt-Nachpflege, sechs echte
+   E2E-Original-Host-/Cloud-/GitHub-/Work-Belege, CAS und aktiver
+   Serien-Readback. **Kein erneuter 28h-CANARY, keine Wiederholung
+   abgeschlossener historischer Positivbelege**, sondern nur
+   fehlende aktuelle und original erforderliche Nachweise.
+4. **Restarbeiten vor Freigabe objektiv zusammenhalten:** Noch kein
+   produktiv ausführbarer freigegebener Windows-V3-Phasen-CLI-/Task,
+   kein physisch authentifizierter separater Release-Owner und kein
+   V3-CAS-Deployment. Diese Teile dürfen nicht über nominale Hashes,
+   positive CI- oder synthetische `true`-Belege als fertig gelten.
+   Den nach Wartung erforderlichen **einen** Stop/CAS/Start-
+   Operatorpfad erst anhand dieser Originalnachweise und ausdrücklicher
+   letzter Nutzerfreigabe in Betrieb nehmen.
+5. Donnerstag: zuerst Wartung nach Ausführungsreihenfolge und
+   V2R4-Recovery. **Danach** die bereits vorbereitete
+   V3-Releasequelle/echten E2E-Proofs/Fence/CAS/Phasenstart kontrolliert
+   abnehmen. Ist ein kritischer Originalbeleg nicht verfügbar:
+   nur den konkreten fehlenden Gate-Owner nacharbeiten, V2R4 bleibt
+   aktiv. Kein Terminversprechen für Go-live ohne die Fakten.
+
+**Nicht vorziehen:** optionale H1–H11-Forschungsalternativen,
+zusätzliche Quellen- oder KI-Autonomie-Pakete, flächendeckende neue
+Performance-/Profitabilitäts-Audits, 50+ weitere Probe-Käufe,
+neue Cloud-/Runner-/Scheduler-Komponenten oder Upgrade-Kosten.
+Bestehende Work-/Research-Routinen und Source-Registry unverändert.
+
 ## Rollierende, versionsgebundene Skript-/Runtime-Abnahme beim CPU-/Windows-Wartungstermin (Nutzerentscheidung 20.10.2026)
 
 **Keine starre PR419-only-Dateikopie:** Die Wartung übernimmt nicht blind den GitHub-Stand von heute. Als Quellen gelten der **unmittelbar vor Wartungsbeginn neu abgerufene geschützte `main`** (mit dokumentiertem Commit-SHA), die bestehenden Owner/Backlog-/Issue-#353-Belege, die exakten bereits gemergten und CI-geprüften PRs und **frische Originalhost-/Cloud-Readbacks**. Reine GitHub-Merges sind weder Mini-PC-Installation noch Betriebsnachweise; noch offene PRs nicht vorzeitig als installiert oder freigegeben behandeln. **Wartungs-Stichtag:** Den vollständig gelesenen HEAD mit Datum unmittelbar vor der tatsächlichen Safe-Pause als festen Ausführungs-Snapshot protokollieren; spätere PR-Merges während der Hardware-/Windows-Arbeit nicht unbemerkt hineinziehen, sondern erneut ausdrücklich auf Eignung und Freigabe prüfen.
