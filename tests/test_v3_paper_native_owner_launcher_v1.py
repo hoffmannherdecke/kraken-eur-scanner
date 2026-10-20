@@ -321,12 +321,29 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
 
     def test_native_windows_phase_binding_reuses_exact_original_dispatcher(self):
         # An offline mock of a real release owner is NOT a physical E2E proof.
-        physical_provider=lambda: {"status": "OFFLINE_FAKE_HOST_ONLY"}
+        # Two offline synthetic observations only: not physical attestation.
+        host = self.correlated_originalhost()
+        external = {
+            "observed_at_utc": "2026-10-19T14:00:16Z",
+            "native_task_action_sha256": host["native_task_action_sha256"],
+            "native_task_launcher_file_sha256":
+                host["native_task_launcher_file_sha256"],
+        }
+        calls = []
+        def physical_provider():
+            calls.append(1)
+            return dict(external)
+        def delegated(**kwargs):
+            # The one original dispatcher obtains the same independent
+            # release-owner callback, not the unauthoritative host inventory.
+            got = kwargs["originalhost_readback"]()
+            self.assertEqual(got, external)
+            return {"status": "OFFLINE_DELEGATED_NO_WORKER"}
         with patch.object(launcher.sys, "platform", "win32"), patch.object(
                 launcher, "read_originalhost_readonly",
-                return_value=self.correlated_originalhost()) as inspector, patch.object(
+                return_value=host) as inspector, patch.object(
                 launcher, "dispatch_after_originalhost_and_cloud_readback",
-                return_value={"status": "OFFLINE_DELEGATED_NO_WORKER"}) as owner, patch.object(
+                side_effect=delegated) as owner, patch.object(
                 launcher, "dispatch_one_owned_paper_phase") as worker:
             result=launcher.dispatch_from_original_windows_one_shot(
                 originalhost_release_readback=physical_provider,
@@ -337,9 +354,77 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             inspector.assert_called_once_with()
             owner.assert_called_once()
             params=owner.call_args.kwargs
-            self.assertIs(params["originalhost_readback"], physical_provider)
+            self.assertTrue(callable(params["originalhost_readback"]))
             self.assertEqual(params["phase"], "FOLLOWUP_6H24H72H")
             self.assertEqual(params["series_id"], self.SID)
+            self.assertEqual(calls, [1])
+            worker.assert_not_called()
+
+    def test_native_windows_release_must_match_original_task_and_launcher_hashes(self):
+        host = self.correlated_originalhost()
+        expected = dict(
+            observed_at_utc="2026-10-19T14:00:16Z",
+            native_task_action_sha256=host["native_task_action_sha256"],
+            native_task_launcher_file_sha256=host["native_task_launcher_file_sha256"])
+        changes = (
+            {"native_task_action_sha256": "d"*64},
+            {"native_task_launcher_file_sha256": "e"*64},
+            {"native_task_action_sha256": None},
+            {"native_task_launcher_file_sha256": "BAD"},
+        )
+        for change in changes:
+            external = dict(expected, **change)
+            with self.subTest(change=change), patch.object(
+                    launcher.sys, "platform", "win32"), patch.object(
+                    launcher, "read_originalhost_readonly",
+                    return_value=host), patch.object(
+                    launcher, "dispatch_after_originalhost_and_cloud_readback"
+                    ) as dispatcher, patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
+                def evaluate_adapter(**kwargs):
+                    return kwargs["originalhost_readback"]()
+                dispatcher.side_effect = evaluate_adapter
+                with self.assertRaisesRegex(ValueError, "fingerprint mismatch"):
+                    launcher.dispatch_from_original_windows_one_shot(
+                        originalhost_release_readback=lambda: external,
+                        phase="FOLLOWUP_6H24H72H", series_id=self.SID)
+                dispatcher.assert_called_once()
+                worker.assert_not_called()
+
+    def test_native_windows_release_requires_fresh_independent_pair(self):
+        host = self.correlated_originalhost()
+        aligned = dict(
+            native_task_action_sha256=host["native_task_action_sha256"],
+            native_task_launcher_file_sha256=host["native_task_launcher_file_sha256"])
+        for obs in ("2026-10-19T14:02:00Z", None, "bad-time"):
+            with self.subTest(obs=obs), patch.object(
+                    launcher.sys, "platform", "win32"), patch.object(
+                    launcher, "read_originalhost_readonly",
+                    return_value=host), patch.object(
+                    launcher, "dispatch_after_originalhost_and_cloud_readback"
+                    ) as owner, patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
+                owner.side_effect = lambda **kw: kw["originalhost_readback"]()
+                with self.assertRaises(ValueError):
+                    launcher.dispatch_from_original_windows_one_shot(
+                        originalhost_release_readback=lambda: dict(aligned,
+                            observed_at_utc=obs),
+                        phase="FOLLOWUP_6H24H72H", series_id=self.SID)
+                worker.assert_not_called()
+
+    def test_native_windows_release_rejects_stale_local_task_before_owner(self):
+        report = self.correlated_originalhost("2026-10-19T13:58:00Z")
+        with patch.object(launcher.sys, "platform", "win32"), patch.object(
+                launcher, "read_originalhost_readonly",
+                return_value=report), patch.object(
+                launcher, "dispatch_after_originalhost_and_cloud_readback"
+                ) as owner, patch.object(
+                launcher, "dispatch_one_owned_paper_phase") as worker:
+            with self.assertRaisesRegex(ValueError, "original Windows Task"):
+                launcher.dispatch_from_original_windows_one_shot(
+                    originalhost_release_readback=lambda: {},
+                    phase="FOLLOWUP_6H24H72H", series_id=self.SID)
+            owner.assert_not_called()
             worker.assert_not_called()
 
     def test_native_windows_binding_rejects_injected_cloud_before_inspector(self):
