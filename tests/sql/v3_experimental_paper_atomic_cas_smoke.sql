@@ -183,6 +183,8 @@ begin
     end if;
   end;
   if not caught
+     or (select count(*) from public.paper_trade_results
+         where series_id=old_id) <> n_trade
      or (select status from public.paper_trade_results
          where candidate_id='preserve-old-open-trade') <> 'OPEN'
      or (select max(updated_at) from public.paper_trade_results
