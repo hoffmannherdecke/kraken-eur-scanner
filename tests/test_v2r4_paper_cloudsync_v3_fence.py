@@ -155,5 +155,194 @@ class OriginalCloudSyncV3PrecommitTests(unittest.TestCase):
         self.assertIn("V3_FENCE_INVALID_FAIL_CLOSED",result["detail"])
 
 
+class ClosedOriginalAftercareFileE2ETests(unittest.TestCase):
+    """Real temporary legacy files -> post-CAS aftercare -> bounded Edge ACKs.
+
+    Only the HTTP relay is mocked; real collect, preview, hash marks, fence,
+    state persistence and subsequent restart/retry paths run together.
+    This is NOT a physical CAS, a V3 release or a live Windows writer.
+    """
+
+    OLD="PAPER-V2R4-20261009T110135Z"
+    NEW="PAPER-V3-20261016T123456Z"
+
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root=Path(self.tmp.name)
+        self.app=self.root/"FauxPaperState"
+        for name in ("State","Secrets"):
+            (self.root/name).mkdir()
+        for name in ("paper_decisions","paper_followups","paper_positions"):
+            (self.app/name).mkdir(parents=True)
+        self.args=argparse.Namespace(
+            trading_root=self.root,app_root=self.app,
+            paper_state_dir=self.root/"State",
+            endpoint="https://no-network.example.invalid",
+        )
+        self.aftercare_state=self.root/"State/v2r4-paper-closed-aftercare-state.json"
+        self.write(self.app/"paper_runtime_control.json",{
+            "series_id":self.OLD,
+            "strategy_revision":"V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+            "release_repo_sha":"d"*40,
+            "paper_only":True,
+            "real_money_actions_enabled":False,
+        })
+        self.write(self.root/"State/v3-experimental-paper-old-intake-fence.json",
+                   fence("CLOUD_COMMITTED"))
+        (self.root/"Secrets/minipc-status-token.txt").write_text("x"*32)
+        self.write(self.app/"paper_decisions/old-reject.json",{
+            "candidate_id":"OLD-REJECT","series_id":self.OLD,
+            "pair":"XBT/EUR","evaluated_at_utc":"2026-10-15T12:00:00Z",
+            "real_money_actions_enabled":False,
+            "decision":{"decision":"REJECT","real_money_actions_enabled":False},
+        })
+        self.followup={
+            "kind":"PAPER_FOLLOWUP_V2","series_id":self.OLD,
+            "candidate_id":"OLD-REJECT","pair":"XBT/EUR",
+            "updated_at_utc":"2026-10-17T14:00:00Z",
+            "horizons":{"6h":{"status":"COMPLETE"}},
+        }
+        self.write(self.app/"paper_followups/old-reject.json",self.followup)
+        self.write(self.app/"paper_positions/old-exit.json",{
+            "candidate_id":"OLD-EXIT","series_id":self.OLD,"pair":"XBT/EUR",
+            "status":"CLOSED","opened_at_utc":"2026-10-15T13:00:00Z",
+            "real_money_actions_enabled":False,
+            "exit":{"closed_at_utc":"2026-10-17T16:00:00Z",
+                    "net_pnl_eur":-0.2},
+        })
+
+    @staticmethod
+    def write(path,value):
+        path.write_text(json.dumps(value,sort_keys=True),encoding="utf-8")
+
+    @staticmethod
+    def good_ack(_url,_token,packet,**kwargs):
+        assert kwargs.get("second_token")=="x"*32
+        assert packet["action"]=="sync_closed_original_followups"
+        assert packet["series_id"]=="PAPER-V2R4-20261009T110135Z"
+        assert packet["expected_active_v3_series_id"]=="PAPER-V3-20261016T123456Z"
+        return {
+            "action":"sync_closed_original_followups",
+            "paper_only":True,"real_money_actions":False,
+            "new_v2r4_intake_allowed":False,
+            "accepted_candidates":len(packet["candidates"]),
+            "accepted_trades":len(packet["trades"]),
+            "unchanged_replays":0,
+        }
+
+    def tick(self,relay):
+        with mock.patch.object(module,"load_token",return_value="s"*32), \
+             mock.patch.object(module,"post",side_effect=relay) as http:
+            result=module.run_once(self.args)
+            return result,http.call_args_list
+
+    def test_real_file_aftercare_post_ack_persist_no_replay_and_late_followup(self):
+        first,calls=self.tick(self.good_ack)
+        self.assertEqual(first["status"],"HEALTHY")
+        self.assertEqual(first["mode"],"CLOSED_ORIGINAL_AFTERCARE")
+        self.assertEqual(first["batches"],2)
+        self.assertEqual(first["accepted_original_updates"],2)
+        self.assertEqual(len(calls),2)
+        self.assertEqual(sorted((
+            len(c.args[2]["candidates"]),len(c.args[2]["trades"]))
+            for c in calls),[(0,1),(1,0)])
+        marks=json.loads(self.aftercare_state.read_text())["sent"]
+        self.assertEqual(set(marks),{"candidate:OLD-REJECT","trade:OLD-EXIT"})
+        self.assertEqual(set(len(v) for v in marks.values()),{64})
+
+        second,calls=self.tick(lambda *_a,**_k:
+            self.fail("unchanged aftercare must never replay to Cloud"))
+        self.assertEqual(second["status"],"HEALTHY")
+        self.assertEqual(second["batches"],0)
+        self.assertEqual(calls,[])
+
+        # A genuine later old-series 24h followup remains eligible AFTER CAS.
+        # It is a new hash of the same original candidate, not a new BUY.
+        updated={**self.followup,"updated_at_utc":"2026-10-18T15:00:00Z",
+                 "horizons":{"6h":{"status":"COMPLETE"},
+                             "24h":{"status":"COMPLETE"}}}
+        self.write(self.app/"paper_followups/old-reject.json",updated)
+        third,calls=self.tick(self.good_ack)
+        self.assertEqual(third["status"],"HEALTHY")
+        self.assertEqual(third["batches"],1)
+        self.assertEqual(len(calls),1)
+        self.assertEqual(len(calls[0].args[2]["candidates"]),1)
+        self.assertEqual(len(calls[0].args[2]["trades"]),0)
+        new_marks=json.loads(self.aftercare_state.read_text())["sent"]
+        self.assertNotEqual(new_marks["candidate:OLD-REJECT"],
+                            marks["candidate:OLD-REJECT"])
+        self.assertEqual(new_marks["trade:OLD-EXIT"],marks["trade:OLD-EXIT"])
+
+    def test_denied_or_ambiguous_ack_never_advances_sent_hashes(self):
+        def malformed(_url,_token,packet,**_):
+            good=self.good_ack(_url,_token,packet,second_token="x"*32)
+            return {**good,"new_v2r4_intake_allowed":True}
+        denied,calls=self.tick(malformed)
+        self.assertEqual(denied["status"],"DEGRADED")
+        self.assertEqual(len(calls),1)
+        self.assertFalse(self.aftercare_state.exists())
+
+        failed,calls=self.tick(lambda *_a,**_k:
+            (_ for _ in ()).throw(TimeoutError("unknown Cloud commit ACK")))
+        self.assertEqual(failed["status"],"DEGRADED")
+        self.assertEqual(len(calls),1)
+        self.assertFalse(self.aftercare_state.exists())
+        # Retry is idempotent only at the independently checked Edge; the
+        # local hash marker must not be advanced on a missing/unsafe ACK.
+        recovered,calls=self.tick(self.good_ack)
+        self.assertEqual(recovered["status"],"HEALTHY")
+        self.assertEqual(recovered["batches"],2)
+        self.assertEqual(len(calls),2)
+
+    def test_old_intake_after_cutoff_and_cas_uncertainty_never_send(self):
+        first,_=self.tick(self.good_ack)
+        self.assertEqual(first["status"],"HEALTHY")
+        before=self.aftercare_state.read_bytes()
+        # The already committed Cloud series can retain old followups, but
+        # NEVER accept new candidate intake after its original cutoff.
+        self.write(self.app/"paper_decisions/invalid-new-old.json",{
+            "candidate_id":"UNLAWFUL-NEW-OLD","series_id":self.OLD,
+            "pair":"ETH/EUR","evaluated_at_utc":"2026-10-17T00:00:00Z",
+            "real_money_actions_enabled":False,
+            "decision":{"decision":"REJECT","real_money_actions_enabled":False},
+        })
+        blocked,calls=self.tick(lambda *_a,**_k:
+            self.fail("postcutover old intake must be held before Cloud"))
+        self.assertEqual(blocked["status"],"DEGRADED")
+        self.assertEqual(calls,[])
+        self.assertEqual(self.aftercare_state.read_bytes(),before)
+        (self.app/"paper_decisions/invalid-new-old.json").unlink()
+
+        # Unknown/attempted CAS is never interpreted as a committed switch,
+        # and must not quietly fall back to the original active relay.
+        self.write(self.root/"State/v3-experimental-paper-old-intake-fence.json",
+                   fence("CAS_INVOKED"))
+        unknown,calls=self.tick(lambda *_a,**_k:
+            self.fail("ambiguous CAS must prevent all relay requests"))
+        self.assertEqual(unknown["status"],"DEGRADED")
+        self.assertEqual(calls,[])
+        self.assertEqual(self.aftercare_state.read_bytes(),before)
+
+    def test_unstamped_pending_horizon_is_not_fabricated_as_mature(self):
+        self.write(self.app/"paper_decisions/pending.json",{
+            "candidate_id":"OLD-PENDING","series_id":self.OLD,
+            "pair":"ADA/EUR","evaluated_at_utc":"2026-10-15T16:00:00Z",
+            "real_money_actions_enabled":False,
+            "decision":{"decision":"WAIT","real_money_actions_enabled":False},
+        })
+        self.write(self.app/"paper_followups/pending.json",{
+            "kind":"PAPER_FOLLOWUP_V2","series_id":self.OLD,
+            "candidate_id":"OLD-PENDING","pair":"ADA/EUR","horizons":{},
+        })
+        result,calls=self.tick(self.good_ack)
+        self.assertEqual(result["status"],"HEALTHY")
+        self.assertEqual(result["pending_unstamped_followups"],1)
+        self.assertEqual(result["accepted_original_updates"],2)
+        self.assertEqual(len(calls),2)
+        marks=json.loads(self.aftercare_state.read_text())["sent"]
+        self.assertNotIn("candidate:OLD-PENDING",marks)
+
+
 if __name__=="__main__":
     unittest.main()
