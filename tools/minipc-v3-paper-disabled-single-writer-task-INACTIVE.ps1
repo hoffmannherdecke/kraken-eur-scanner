@@ -40,6 +40,22 @@ function Sha([string]$Path) {
  Require (-not [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint)) 'stage file is a link'
  return ([string](Get-FileHash -LiteralPath $Path -Algorithm SHA256 -ErrorAction Stop).Hash).ToLowerInvariant()
 }
+# Exactly the same UTF-8 executable + NUL + arguments + NUL + stage
+# fingerprint as the original Windows native inventory readback.  Digest
+# only: raw Task command line must never be disclosed by the preview.
+function TaskActionSha([string]$Execute,[string]$Arguments,[string]$WorkingDirectory){
+ Require (-not [string]::IsNullOrWhiteSpace($Execute) -and
+   $Execute.Length -le 512 -and
+   $Arguments.Length -le 8192 -and
+   -not [string]::IsNullOrWhiteSpace($WorkingDirectory) -and
+   $WorkingDirectory.Length -le 512) 'bounded exact Task action required'
+ $raw=[Text.Encoding]::UTF8.GetBytes(
+   $Execute+[char]0+$Arguments+[char]0+$WorkingDirectory)
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try {
+   return ([BitConverter]::ToString($sha.ComputeHash($raw))).Replace('-','').ToLowerInvariant()
+ } finally { $sha.Dispose() }
+}
 function Under([string]$Path,[string]$Base) {
  $p=[IO.Path]::GetFullPath($Path).TrimEnd('\')
  $b=[IO.Path]::GetFullPath($Base).TrimEnd('\')
@@ -233,8 +249,29 @@ $plan=[ordered]@{
  status='READ_ONLY_PREVIEW_NOT_INSTALLED'
 }
 if($candidateMode){
+ # The already-present older V3 task stays DISABLED and unchanged.
+ # Version the proposed NEW read-only action, but NEVER submit it to Task
+ # Scheduler. The actual productive phase CLI and independent release-owner
+ # are intentionally absent until separate physical maintenance/approval.
+ $oldTask=Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
+ Require ($null -ne $oldTask -and [string]$oldTask.State -ceq 'Disabled' -and
+   @($oldTask.Actions).Count -eq 1) 'original disabled Task changed during preview'
+ $oldAction=$oldTask.Actions[0]
+ $futureLauncher=Join-Path $stage 'paper_evaluator/v3_paper_minipc_native_launcher_v1.py'
+ $futureLauncherSha=Sha $futureLauncher
  $plan.source_files_verified=$stageFiles
  $plan.existing_v3_task_state='Disabled'
+ $plan.previous_disabled_task_action_sha256=TaskActionSha (
+   [string]$oldAction.Execute) ([string]$oldAction.Arguments) (
+   [string]$oldAction.WorkingDirectory)
+ $plan.proposed_disabled_readonly_task_action_sha256=TaskActionSha (
+   $python) ($arguments) ($stage)
+ $plan.proposed_disabled_readonly_launcher_file_sha256=$futureLauncherSha
+ $plan.proposed_action_matches_pinned_stage=$true
+ $plan.original_disabled_task_unchanged=$true
+ $plan.phase_execution_available=$false
+ $plan.independent_originalhost_release_accepted=$false
+ $plan.native_task_update_executed=$false
  $plan.status='READ_ONLY_SUCCESSOR_STAGE_VERIFIED_EXISTING_TASK_UNCHANGED'
 }
 if(-not $InstallDisabled){

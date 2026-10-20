@@ -194,6 +194,39 @@ Require ((Test-Path -LiteralPath $python -PathType Leaf)) 'Python path must reso
 Write-Output 'V3_ORIGINALHOST_MULTIPLE_PYTHON_APPLICATIONS_BOOLEAN_PREVIEW_PASS'
 
 
+# This read-only action digest must exactly agree with original Windows inspector.
+$actionAst=@($ast.FindAll({
+ param($node)
+ $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+ $node.Name -eq 'TaskActionSha'
+},$true))
+if($actionAst.Count -ne 1){throw 'Need one native Task action digest helper'}
+. ([scriptblock]::Create($actionAst[0].Extent.Text))
+$a=TaskActionSha 'C:\Windows\python.exe' '--read-only' 'C:\Safe\Stage'
+$b=TaskActionSha 'C:\Windows\python.exe' '--read-only' 'C:\Safe\Stage'
+$c=TaskActionSha 'C:\Windows\python.exe' '--one-shot-preflight' 'C:\Safe\Stage'
+if($a.Length -ne 64 -or $a -cne $b -or $a -ceq $c){
+ throw 'Task action digest not bound to actual executable/args/stage'
+}
+$raw=[Text.Encoding]::UTF8.GetBytes('C:\Windows\python.exe'+[char]0+'--read-only'+[char]0+'C:\Safe\Stage')
+$hasher=[Security.Cryptography.SHA256]::Create()
+try {
+ $expected=([BitConverter]::ToString($hasher.ComputeHash($raw))).Replace('-','').ToLowerInvariant()
+} finally { $hasher.Dispose() }
+if($a -cne $expected){throw 'Task action digest differs from original inspector'}
+foreach($clause in @(
+ 'previous_disabled_task_action_sha256',
+ 'proposed_disabled_readonly_task_action_sha256',
+ 'proposed_disabled_readonly_launcher_file_sha256',
+ 'phase_execution_available=$false',
+ 'independent_originalhost_release_accepted=$false',
+ 'native_task_update_executed=$false',
+ 'original_disabled_task_unchanged=$true'
+)){
+ if(-not $src.Contains($clause)){throw ('Task action source guard missing '+$clause)}
+}
+Write-Output 'V3_TASK_ACTION_PREVIEW_ORIGINAL_SHA_TUPLE_COMPATIBILITY_PASS'
+
 # The successor PREVIEW must inspect the existing old disabled V3 Task,
 # never update it or install any successor candidate as a second Task.
 foreach($must in @(
