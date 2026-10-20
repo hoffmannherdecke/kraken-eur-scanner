@@ -219,6 +219,32 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             relay.assert_called_once()
             worker.assert_not_called()
 
+    def test_slow_cloud_relay_cannot_reuse_host_snapshot_that_aged_out(self):
+        # At entry the host report is only 15 seconds old. During the
+        # authenticated relay call real time advances; the Cloud result
+        # and the host are mutually within 180s, and Cloud is still fresh,
+        # but the HOST is now 190s old. PR467's pre-relay-only host check
+        # must not incorrectly accept this as a current paired observation.
+        series = "PAPER-V3-20261020T090000Z"
+        report = {"observed_at_utc": "2026-10-19T14:00:10Z"}
+        reply = {"series_id": series, "status": "active",
+                 "strategy_revision": launcher.REVISION,
+                 "observed_at_utc": "2026-10-19T14:01:30Z"}
+        before = datetime(2026, 10, 19, 14, 0, 25, tzinfo=timezone.utc)
+        after = datetime(2026, 10, 19, 14, 3, 20, tzinfo=timezone.utc)
+        with patch.dict(launcher.os.environ, {"V3_PAPER_RELAY_TOKEN": "R"*32}), patch.object(
+                launcher, "read_originalhost_readonly", return_value=report), patch.object(
+                launcher, "read_active_paper_series", return_value=reply) as cloud, patch.object(
+                launcher, "_originalhost_wall_clock_utc",
+                side_effect=[before, after]) as clock, patch.object(
+                launcher, "dispatch_one_owned_paper_phase") as worker:
+            with self.assertRaisesRegex(ValueError, "originalhost post-relay"):
+                launcher.preflight_native_windows_one_shot(
+                    proposed_v3_series=series)
+            cloud.assert_called_once_with(series_id=series, token="R"*32)
+            self.assertEqual(clock.call_count, 2)
+            worker.assert_not_called()
+
     def test_one_shot_host_only_mode_has_no_new_clock_gate(self):
         # Pre-maintenance V2R4 diagnostics must remain usable even with
         # historic/absent timestamps; no relay is requested in this mode.
