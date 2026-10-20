@@ -239,9 +239,9 @@ foreach($must in @(
  'RegisterTaskDefinition($taskName,$definition,4',
  'RegisterTask($taskName,$oldXml,4',
  'DISABLED_SUCCESSOR_TASK_UPDATED_NOT_RELEASED',
- "$plan.phase_execution_available=$false",
- "$plan.independent_originalhost_release_accepted=$false",
- "$plan.v3_paper_activated=$false"
+ '$plan.phase_execution_available=$false',
+ '$plan.independent_originalhost_release_accepted=$false',
+ '$plan.v3_paper_activated=$false'
 )){
  if(-not $src.Contains($must)){throw ('V3_POSTMAINT_DISABLED_REPLACE_POLICY_MISSING '+$must)}
 }
@@ -251,7 +251,7 @@ $backupAt=$src.IndexOf('[IO.FileMode]::CreateNew')
 $taskUpdate=$src.IndexOf('RegisterTaskDefinition($taskName,$definition,4')
 $verifyPost=$src.IndexOf('updated Task not exactly Disabled and pinned')
 $restore=$src.IndexOf('RegisterTask($taskName,$oldXml,4')
-if($confirmation -lt 0 -or $disabledUpgrade -le $confirmation -or
+if($confirmation -lt 0 -or $confirmation -ge $disabledUpgrade -or
    $backupAt -le $disabledUpgrade -or $taskUpdate -le $backupAt -or
    $verifyPost -le $taskUpdate -or $restore -le $verifyPost){
  throw 'V3_POSTMAINT_DISABLED_UPGRADE_BACKUP_UPDATE_ROLLBACK_ORDER_INVALID'
