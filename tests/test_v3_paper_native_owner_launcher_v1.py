@@ -125,6 +125,46 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "physical Windows host"):
                 launcher.read_originalhost_readonly()
 
+    def test_originalhost_readonly_runs_only_existing_fixed_windows_script(self):
+        report = {
+            "kind": "V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1",
+            "checked_at_utc": "2026-10-20T08:00:00Z",
+            "filesystem_writes": False, "v2r4_changed": False,
+            "new_v3_writer_started": False,
+            "experimental_paper_release_authorized_by_this_check": False,
+            "physical_v3_postcas_local_inventory": {
+                "kind": "V3_NATIVE_POSTCAS_LOCAL_INSPECTION_ONLY_V1",
+                "status": "NOT_INDEPENDENT_RELEASE_EVIDENCE",
+                "native_task_state": "Disabled",
+                "native_task_uses_old_readonly_launcher": True,
+                "old_intake_tasks_disabled": False,
+                "protected_old_aftercare_running": True,
+                "live_paper_activation_authorized": False,
+                "tasks_changed": 0, "cloud_writes": 0, "model_calls": 0,
+            },
+        }
+        from unittest.mock import Mock
+        completed = Mock(returncode=0, stdout=json.dumps(report))
+        with patch.object(launcher.sys, "platform", "win32"), \
+                patch.object(launcher.Path, "is_file", return_value=True), \
+                patch.object(launcher.Path, "is_symlink", return_value=False), \
+                patch.object(launcher.subprocess, "run",
+                             return_value=completed) as probe, \
+                patch.object(launcher, "dispatch_one_owned_paper_phase") as writer:
+            result = launcher.read_originalhost_readonly()
+        self.assertEqual(result["status"], "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE")
+        probe.assert_called_once()
+        args = probe.call_args.args[0]
+        self.assertEqual(args[0], str(launcher.ORIGINALHOST_POWERSHELL))
+        self.assertEqual(args[1:4], ["-NoProfile", "-NonInteractive", "-File"])
+        self.assertTrue(args[4].replace(chr(92), "/").endswith(
+            launcher.ORIGINALHOST_READONLY_SCRIPT))
+        self.assertEqual(args[5:], ["-TradingRoot",
+                                   launcher.ORIGINALHOST_TRADING_ROOT])
+        self.assertEqual(probe.call_args.kwargs["timeout"], 90)
+        self.assertFalse(probe.call_args.kwargs["check"])
+        writer.assert_not_called()
+
     def test_first_scanner_dispatches_exact_original_p4_once_without_cloud_ack(self):
         with tempfile.TemporaryDirectory() as tmp:
             common = self.common(tmp)
