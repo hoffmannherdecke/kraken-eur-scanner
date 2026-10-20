@@ -23,6 +23,12 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             return_value=datetime(2026, 10, 19, 14, 0, 25, tzinfo=timezone.utc))
         clock.start()
         self.addCleanup(clock.stop)
+        # The original Windows PowerShell probe must be a child of the
+        # launcher process whose PID appears in the offline CIM fixture.
+        # These mocked PIDs are NEVER host attestation.
+        native_pid = patch.object(launcher.os, "getpid", return_value=21704)
+        native_pid.start()
+        self.addCleanup(native_pid.stop)
     REPO = "a" * 40
     BUNDLE = "b" * 64
     STRATEGY = "c" * 64
@@ -401,6 +407,31 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             self.assertEqual(params["phase"], "FOLLOWUP_6H24H72H")
             self.assertEqual(params["series_id"], self.SID)
             self.assertEqual(calls, [1])
+            worker.assert_not_called()
+
+    def test_native_windows_process_cannot_borrow_another_valid_task_parent(self):
+        # Both source fingerprints, Task state, inspected SYSTEM parent and
+        # external release-owner callback could look valid for DIFFERENT
+        # Python process 21704. Our actual native launcher is PID 21705.
+        # The original host PowerShell child is not its own child, so refuse
+        # the attempt before independent owner/Cloud or any Paper worker.
+        host = self.correlated_originalhost()
+        with patch.object(launcher.sys, "platform", "win32"), patch.object(
+                launcher.os, "getpid", return_value=21705), patch.object(
+                launcher, "read_originalhost_readonly",
+                return_value=host) as inspector, patch.object(
+                launcher, "dispatch_after_originalhost_and_cloud_readback"
+                ) as dispatcher, patch.object(
+                launcher, "dispatch_one_owned_paper_phase") as worker:
+            with self.assertRaisesRegex(ValueError,
+                                        "inspector parent is not invoking Python"):
+                launcher.dispatch_from_original_windows_one_shot(
+                    originalhost_release_readback=lambda:
+                        self.fail("wrong OS parent may not request owner receipt"),
+                    release_root=Path("offline-only"),
+                    phase="FOLLOWUP_6H24H72H", series_id=self.SID)
+            inspector.assert_called_once()
+            dispatcher.assert_not_called()
             worker.assert_not_called()
 
     def test_native_windows_release_must_match_original_task_and_launcher_hashes(self):
