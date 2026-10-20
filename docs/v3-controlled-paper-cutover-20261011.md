@@ -28,6 +28,26 @@ Diese Zeitprüfung ist **kein zusätzlicher Freigabenachweis**: Zeitliche
 Cloud-CAS/Sechs-Proof-Echtheit oder den abgeschlossenen Wartungstermin.
 Die Antwort bleibt blockiert, alle produktiven Writer unverändert.
 
+### Original-Windows-Task-/Python-Quellenabgleich vor Cloud-One-Shot (weiterhin nur lesend)
+
+Bei einem ausdrücklich angeforderten gekoppelten Windows-/Cloud-One-Shot-Befund
+prüft der bestehende Launcher zusätzlich **vor** dem optionalen Relay-Aufruf,
+ob die bereits vorhandene originale Windows-Diagnose eine laufende V3-Task,
+einen einzelnen beobachteten SYSTEM-/Python-Parent mit zur Task-Aktion
+passenden Argumenten, eine nicht mehr auf `--read-only` zeigende Aktion
+und dieselben SHA256-Launcherdatei-Bytes wie beim aufrufenden Prozess meldet.
+Eine fehlende, deaktivierte oder abweichende Task-/Prozess-/Quellbeobachtung
+blockiert das kombinierte Ergebnis, bevor Cloud angesprochen wird. Ohne
+ausdrücklichen V3-Cloud-Serienwunsch bleibt die vorhandene Host-only-Diagnose
+auch beim deaktivierten V3-Vorbereitungsstand vollständig lesend nutzbar.
+
+**Beweiskategorie ausschließlich Task-/Prozess-/Datei-HINWEIS:** Selbst alle
+übereinstimmenden Felder beweisen weder tatsächlich geladenen Python-Code,
+ausschließlichen OS-Lock-Writer, Native-Task-Freigabe noch Wartung,
+Cloud-CAS, die sechs unabhängigen E2E-Proofs oder den finalen Nutzerbeschluss.
+Keine neue Freigabestufe: die echte Originalhost-/Cloud-/Release-Abnahme im
+bestehenden Owner #99 bleibt unverändert. Die Task-Aktion wird nicht verändert.
+
 ### Originalhost + Cloud: eine rein lesende One-Shot-Vorprüfung
 
 Zusätzlich zum bisherigen `--one-shot-preflight` kann der **gleiche** Launcher jetzt optional
