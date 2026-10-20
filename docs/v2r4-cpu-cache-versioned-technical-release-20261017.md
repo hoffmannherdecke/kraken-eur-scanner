@@ -85,6 +85,38 @@ Performance-/Profitabilitäts-Audits, 50+ weitere Probe-Käufe,
 neue Cloud-/Runner-/Scheduler-Komponenten oder Upgrade-Kosten.
 Bestehende Work-/Research-Routinen und Source-Registry unverändert.
 
+### Aktuelles inaktives V3-Staging übernimmt den vollständigen lokalen Importgraphen (Quellcode)
+
+Der seit PR #475/#476 bereits geprüfte statische Python-Quellgraph war im
+historischen `tools/stage-minipc-v3-paper-inactive.ps1` bislang nicht
+mit dem tatsächlich kopierten Stage-Umfang gekoppelt. Das hätte trotz
+grüner Quellinventur einzelne lokal benötigte `tools/`- oder
+Root-Hilfsdateien beim späteren isolierten Windows-Start auslassen können.
+
+Der vorhandene **source-only und standardmäßig nur lesende** Staging-
+Operator ruft jetzt den selben `--source-closure-readonly`-Quellprüfer
+aus dem **bereits vorab geprüft sauberen und commitfesten Git-Checkout**
+auf. Er vergleicht alle gefundenen lokalen Python-Abhängigkeiten mit
+originalen Git-tracked-Pfaden, dem geprüften SHA-256 pro Datei und der
+bestehenden Allowlist. Anschließend umfasst das ursprüngliche
+isolierte Staging nur die vereinigte verifizierte Dateiauswahl;
+`source_manifest`, `static_transitive_closure_files` und
+`static_transitive_closure_sha256` dokumentieren dieselbe Version.
+Fehlender, ungetrackter oder veränderter Quellcode stoppt **vor** dem
+Kopieren. Die bisherigen Sicherungen gegen ungeprüfte Checkout-
+Änderungen, V2R4-/Task-/Cloud-Änderungen und Stage-Overwrite bleiben
+bestehen.
+
+Der bestehende **PowerShell-Offline-Staging-Test** überprüft dies an
+einem isolierten lokalen Git-Klon samt tatsächlichem
+`python -I -B`-Import-Smoketest aus der neu kopierten Source.
+Ein grüner Test bedeutet ausschließlich: `SOURCE_STAGED_INACTIVE`,
+**nicht** originale Windows-Task-/PID-/Loaded-Bytecode-Abnahme,
+sechs echte E2E-Proofs, Cloud-CAS oder produktiver V3-Paper-Start.
+Beim Wartungstermin muss der aktuelle geprüfte geschützte Commit
+immer erneut festgesetzt werden; kein pauschales `git pull` auf
+der aktiven V2R4-Runtime.
+
 ### Einheitlicher Quell-/Abhängigkeits-Readback für den bereits vorhandenen V3-Gate-Owner
 
 Um vor und nach dem Wartungs-Staging keine unterschiedlichen GitHub-/Windows-
