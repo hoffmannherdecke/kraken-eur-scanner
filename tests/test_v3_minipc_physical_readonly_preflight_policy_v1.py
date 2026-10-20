@@ -168,6 +168,22 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertNotIn("future_v3_paper_writer_installed_by_this_check=$true",s)
 
 
+    def test_original_v3_task_action_and_stage_sha_only_no_loaded_release_proof(self):
+        s=SCRIPT.read_text(encoding="utf-8")
+        for marker in (
+            "native_task_action_sha256=$null",
+            "native_task_launcher_file_sha256=$null",
+            "native_task_python_executable_hint=$false",
+            "native_task_stage_path_shape_match=$false",
+            "native_task_loaded_module_independently_verified=$false",
+            "Get-FileHash -LiteralPath $launchFile -Algorithm SHA256",
+            "[BitConverter]::ToString($hasher.ComputeHash($data))",
+            "v3_paper_minipc_native_launcher_v1.py",
+        ):
+            self.assertIn(marker,s)
+        self.assertNotIn("native_task_loaded_module_independently_verified=$true",s)
+        self.assertNotIn("native_task_launcher_file_sha256=$true",s)
+
     def test_postcas_inventory_reuses_existing_supervisor_without_release_authority(self):
         s=SCRIPT.read_text(encoding="utf-8")
         for marker in (
