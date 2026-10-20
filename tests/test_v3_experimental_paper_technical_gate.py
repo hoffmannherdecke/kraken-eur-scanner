@@ -842,6 +842,11 @@ class V3ExistingReleaseSourceInventoryTests(unittest.TestCase):
         self.assertFalse(data["actual_loaded_python_bytecode_independently_verified"])
         self.assertEqual(set(data["external_import_prefixes_requiring_host_review"])
                          & set(data["stdlib_import_prefixes"]),set())
+        self.assertFalse(
+            {"paper_series_transition_guard", "v2r4_trigger_contract",
+             "v2r4_trigger_plan"} &
+            set(data["external_import_prefixes_requiring_host_review"]),
+            "Existing local direct-script imports must not appear as pip requirements")
         print("V3_STATIC_RELEASE_STAGE_READBACK", json.dumps({
             "file_count":data["candidate_transitive_file_count"],
             "external_packages":data["external_import_prefixes_requiring_host_review"],
