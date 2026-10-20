@@ -100,6 +100,12 @@ try {
   if($importRoot.Count -ne 1){
     throw 'V3_IMPORT_GRAPH_INCOMPLETE: original paper_context.py absent'
   }
+  $releaseGate=@($stored.source_manifest | Where-Object {
+    $_.relative_path -ceq 'tools/v3_experimental_paper_technical_gate.py'
+  })
+  if($releaseGate.Count -ne 1){
+    throw 'V3_ORIGINAL_SIX_PROOF_GATE_IMPORT_MISSING_FROM_STAGE'
+  }
   $launchers=@($stored.source_manifest | Where-Object {
     $_.relative_path -ceq 'paper_evaluator/v3_paper_minipc_native_launcher_v1.py'
   })
@@ -110,6 +116,7 @@ try {
        $relative -cne 'paper_context.py' -and
        $relative -cne 'research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json' -and
        $relative -cne 'supabase/functions/v3-paper-evidence-relay/index.ts' -and
+       $relative -cne 'tools/v3_experimental_paper_technical_gate.py' -and
        $relative -cne 'tools/minipc-runtime-supervisor.ps1' -and
        $relative -cne 'tools/check-minipc-v3-physical-writer-readiness.ps1' -and
        $relative -cne 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1'){
@@ -119,6 +126,26 @@ try {
     $digest=([string](Get-FileHash -LiteralPath $dest -Algorithm SHA256).Hash).ToLowerInvariant()
     if($digest -cne [string]$file.sha256){throw ('Staged file digest mismatch '+$relative)}
   }
+  # Exercise the EXACT Windows Task's Python -I/-B runpy launcher import
+  # against ONLY the isolated staged source; no model, API or Task execution.
+  # Previously this failed because tools/v3_experimental_paper_technical_gate.py
+  # was not copied, even though the manifest appeared complete.
+  $python=Get-Command -Name python -CommandType Application -ErrorAction Stop |
+      Select-Object -First 1
+  if($null -eq $python){throw 'Python for isolated native CLI smoke missing'}
+  $pyCode="import json,sys,runpy;sys.path.insert(0,r'$expectedDir');sys.argv=['v3-paper','--read-only'];runpy.run_module('paper_evaluator.v3_paper_minipc_native_launcher_v1',run_name='__main__')"
+  $nativeOutput=& ([string]$python.Source) -I -B -c $pyCode
+  if($LASTEXITCODE -ne 0){throw 'V3_STAGE_NATIVE_READONLY_CLI_IMPORT_FAILED'}
+  $nativeReport=$nativeOutput | ConvertFrom-Json
+  if($nativeReport.kind -cne 'V3_PAPER_NATIVE_OWNER_ONE_SHOT_SOURCE_PLAN_V1' -or
+     $nativeReport.status -cne 'SOURCE_DISPATCH_READY_RUNTIME_NOT_AUTHORIZED' -or
+     $nativeReport.model_http_calls -ne 0 -or
+     $nativeReport.v3_paper_activated -ne $false -or
+     $nativeReport.cloud_cas_performed -ne $false -or
+     $nativeReport.task_changes -ne $false){
+    throw 'V3_STAGE_NATIVE_READONLY_CLI_UNSAFE_OR_UNPARSEABLE'
+  }
+
   $fail=$false
   try {
     & $script -SourceRoot $independent -ExpectedSourceSha $head -TradingRoot $trading -Stage -Confirm 'V3_SOURCE_ONLY_INACTIVE_NO_TASKS' | Out-Null
