@@ -85,6 +85,36 @@ Performance-/Profitabilitäts-Audits, 50+ weitere Probe-Käufe,
 neue Cloud-/Runner-/Scheduler-Komponenten oder Upgrade-Kosten.
 Bestehende Work-/Research-Routinen und Source-Registry unverändert.
 
+### Einheitlicher Quell-/Abhängigkeits-Readback für den bereits vorhandenen V3-Gate-Owner
+
+Um vor und nach dem Wartungs-Staging keine unterschiedlichen GitHub-/Windows-
+Abhängigkeitslisten per Hand zu pflegen, bietet **dieselbe** vorhandene
+`tools/v3_experimental_paper_technical_gate.py` jetzt einen einmaligen
+read-only CLI-Ausdruck (aus dem überprüften, bewusst isolierten Checkout):
+
+```powershell
+python -I -B tools/v3_experimental_paper_technical_gate.py --source-closure-readonly
+```
+
+Die standardmäßig erzeugte JSON-Ausgabe auf **stdout** enthält dieselbe
+deterministische `candidate_transitive_source_sha256`, Einzeldaten
+`candidate_transitive_files` und getrennte Listen für erkannte
+Standardbibliotheksimporte, **potenziell externe** Importpräfixe sowie
+lokale dynamische Importstellen. Sie speichert keine Datei, installiert
+nichts, startet keine Tasks, Cloud-Funktionen, Modelle oder Paper-Writer.
+Die schon geschützte Architektur-CI prüft den CLI-Parser zusammen mit der
+Quelleninventur und zeigt eine kompakte Zusammenfassung der konkreten
+externen/dynamischen Kandidaten; der **volle** Bericht kann ausschließlich
+am tatsächlich festgepinten Stage-Checkout während Wartung ausgegeben werden.
+
+**Freigabegrenze:** Das ist statische Importgraph-Beobachtung, keine
+installierte/geladene Modulidentität oder Paketversionen-Verifikation.
+Der technisch notwendige `python -I -B`-Original-Windows-Smoke,
+lokale pip-/Python-Paketversionen, dynamische Imports, originale Task/PID/
+Loaded-Module-Quittungen und die sechs tatsächlichen Release-E2Es bleiben
+im bestehenden Wartungs-/Release-Owner offen. Ein grünes JSON ist nie
+CAS-/PAPER-Go-live-Freigabe.
+
 ## Rollierende, versionsgebundene Skript-/Runtime-Abnahme beim CPU-/Windows-Wartungstermin (Nutzerentscheidung 20.10.2026)
 
 **Keine starre PR419-only-Dateikopie:** Die Wartung übernimmt nicht blind den GitHub-Stand von heute. Als Quellen gelten der **unmittelbar vor Wartungsbeginn neu abgerufene geschützte `main`** (mit dokumentiertem Commit-SHA), die bestehenden Owner/Backlog-/Issue-#353-Belege, die exakten bereits gemergten und CI-geprüften PRs und **frische Originalhost-/Cloud-Readbacks**. Reine GitHub-Merges sind weder Mini-PC-Installation noch Betriebsnachweise; noch offene PRs nicht vorzeitig als installiert oder freigegeben behandeln. **Wartungs-Stichtag:** Den vollständig gelesenen HEAD mit Datum unmittelbar vor der tatsächlichen Safe-Pause als festen Ausführungs-Snapshot protokollieren; spätere PR-Merges während der Hardware-/Windows-Arbeit nicht unbemerkt hineinziehen, sondern erneut ausdrücklich auf Eignung und Freigabe prüfen.
