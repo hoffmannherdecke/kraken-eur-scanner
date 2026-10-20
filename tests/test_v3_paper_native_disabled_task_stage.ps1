@@ -57,6 +57,37 @@ foreach($forbidden in @(
   throw ('V3_DISABLED_NATIVE_TASK_UNSAFE_COMMAND '+$forbidden)
  }
 }
+# Original successor Task is already Disabled/--read-only. This is
+# source policy ONLY, not the originalhost Windows Task/PID readback.
+foreach($guard in @(
+ 'candidate inspection must remain read-only',
+ 'candidate checkout HEAD mismatch',
+ 'original source closure readback failed',
+ 'candidate closure not pinned',
+ 'candidate dependency path invalid',
+ 'candidate source files mismatch',
+ 'candidate import SHA drift:',
+ 'static_transitive_closure_sha256',
+ '--source-closure-readonly',
+ 'source_closure_is_only_candidate_not_loaded_code_ack',
+ 'original V3 Task not Disabled',
+ 'original V3 Task not read-only'
+)){
+ if(-not $src.Contains($guard)){
+  throw ('V3_SUCCESSOR_READONLY_SOURCE_CLOSURE_GUARD_MISSING '+$guard)
+ }
+}
+if($src.Contains('$stageFiles=if($candidateMode){69}else{66}')){
+ throw 'V3_SUCCESSOR_HISTORICAL_STAGE_COUNT_RETAINED'
+}
+$beforeAction=$src.IndexOf('candidate source files mismatch')
+$sourceGate=$src.IndexOf('candidate closure not pinned')
+$taskWrite=$src.IndexOf('RegisterTaskDefinition($taskName,$definition,2')
+if($sourceGate -lt 0 -or $beforeAction -le $sourceGate -or
+   $taskWrite -le $beforeAction){
+ throw 'V3_SUCCESSOR_READONLY_GATE_MUST_PRECEDE_TASK_MUTATION_BRANCH'
+}
+
 $first=$src.IndexOf('if(-not $InstallDisabled){')
 $gate=$src.IndexOf('Require ($Confirm -ceq')
 $service=$src.IndexOf("New-Object -ComObject 'Schedule.Service'")
