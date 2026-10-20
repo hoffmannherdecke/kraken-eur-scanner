@@ -252,12 +252,12 @@ def dispatch_after_native_release_readback(*,
     # proof. The final V3 Paper phase may never accept a PRE-MAINTENANCE
     # host report, even if old six-proof/Cloud fields appear positive.
     # The original release owner must independently corroborate the actual
-    # maintenance receipt, restored V2R4 operation, source/SHA, UPS/Windows
+    # maintenance receipt, restored V2R4 operation, source/SHA, Windows
     # readiness, and its physical origin. A client-made dict is not authority.
+    # UPS/USV is optional hardware resilience, not a Paper release precondition.
     maintenance_fields = (
         "maintenance_cpu_bios_boot_thermal_originalhost_pass",
         "maintenance_windows_drivers_reboots_originalhost_pass",
-        "maintenance_ups_configuration_shutdown_originalhost_pass",
         "maintenance_scripts_originalhost_source_ack_pass",
         "maintenance_v2r4_restart_and_aftercare_originalhost_pass",
     )
