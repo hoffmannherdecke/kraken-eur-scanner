@@ -24,6 +24,7 @@ from typing import Any, Callable
 
 from tools.v3_experimental_paper_technical_gate import validate_experimental_paper_packet
 from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
+from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import read_active_paper_series
 from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
     released_paper_first_scanner_model_once,
     released_paper_followup_tick_once,
@@ -258,6 +259,54 @@ def dispatch_after_native_release_readback(*,
     # No additional run loop, schedule, model call, Paper authority or Cloud
     # writer is introduced here; the existing worker locks and guards own it.
     return dispatch_one_owned_paper_phase(**phase_args)
+
+
+def dispatch_after_originalhost_and_cloud_readback(*,
+        originalhost_readback: Callable[[], dict[str, Any]] | None = None,
+        release_root: Path | None = None,
+        release_packet: dict[str, Any] | None = None,
+        original_cloud_relay_token: str | None = None,
+        **phase_args: Any) -> dict[str, Any]:
+    """Use the ORIGINAL authenticated relay for the native locked phase.
+
+    This is an integration function, NOT a separately installed CLI or an
+    original Windows proof provider. The caller must independently establish
+    the actual Windows Task/PID/fence and approved original six-proof packet.
+    The existing phase worker re-reads Cloud *inside its native owner lock*.
+    No caller-supplied Cloud readback or transport can become release authority.
+    """
+    if (not isinstance(original_cloud_relay_token, str)
+            or not 24 <= len(original_cloud_relay_token) <= 512
+            or any(ch.isspace() for ch in original_cloud_relay_token)):
+        raise ValueError("original authenticated V3 Cloud relay token missing")
+    # No cloud_callback, alternate relay URL or fake transport can be supplied
+    # to this future production-bound entry. Stubs belong to isolated tests.
+    prohibited = ("read_active_series", "cloud_post", "relay_token",
+                  "clock_now", "model_client", "source_capture",
+                  "source_acquire", "source_fetch", "source_ticker")
+    if any(name in phase_args for name in prohibited):
+        raise ValueError("caller-injected V3 owner, clock or Cloud transport forbidden")
+    phase = phase_args.get("phase")
+    if phase not in PHASES:
+        raise ValueError("exact original V3 Paper phase required")
+
+    def original_cloud_readback(series_id: str) -> dict[str, Any]:
+        # The pre-existing Edge relay authenticates its request and reads
+        # the actual active Paper series. Its config is independently checked
+        # by _require_released_paper_cloud inside the original worker lock.
+        return read_active_paper_series(
+            series_id=series_id, token=original_cloud_relay_token)
+
+    # Only the original Cloud ACK worker receives its existing receipt token.
+    # The other phases are never allowed to perform a Cloud POST here.
+    if phase == "CLOUD_RECEIPT_ACK":
+        phase_args["relay_token"] = original_cloud_relay_token
+    return dispatch_after_native_release_readback(
+        originalhost_readback=originalhost_readback,
+        release_root=release_root,
+        release_packet=release_packet,
+        read_active_series=original_cloud_readback,
+        **phase_args)
 
 
 # Reuse the ONE existing reviewed original Mini-PC inspection script. Its
