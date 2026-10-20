@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import subprocess
 import sys
@@ -454,21 +455,56 @@ def read_originalhost_readonly() -> dict[str, Any]:
 
 
 
-def preflight_native_windows_one_shot() -> dict[str, Any]:
-    """Execute one bounded ORIGINAL read-only host inspection, nothing live.
+def preflight_native_windows_one_shot(*,
+        proposed_v3_series: str | None = None) -> dict[str, Any]:
+    """Join original Windows inventory and original Cloud relay read-only.
 
-    An original Windows inventory is necessary before a native one-shot
-    implementation, but never sufficient to authorize a released Paper phase.
-    Keep the ONE existing release dispatcher as the only future writer path.
-    No credentials, task activation, HTTP, Cloud CAS or model callbacks here.
+    The authenticated relay is queried ONLY when a specific exact future
+    non-CANARY V3 series was supplied. Its token is read from an existing
+    environment secret, NEVER a command-line argument or JSON report.
+    Neither observation proves maintenance, loaded PID, committed CAS,
+    six genuine E2E release proofs, or user approval. No worker is invoked.
     """
+    if proposed_v3_series is not None and (
+            not isinstance(proposed_v3_series, str)
+            or SERIES.fullmatch(proposed_v3_series) is None):
+        raise ValueError("exact non-CANARY proposed V3 Paper series required")
     physical = read_originalhost_readonly()
+    cloud = None
+    if proposed_v3_series is not None:
+        token = os.environ.get("V3_PAPER_RELAY_TOKEN")
+        if (not isinstance(token, str) or not 24 <= len(token) <= 512
+                or any(ch.isspace() for ch in token)):
+            raise ValueError("original V3 Cloud readback credential unavailable")
+        # Reuse the ONE existing authenticated read-only relay; it requires
+        # an active exact series. A denied/unknown Cloud state fails closed.
+        # This is a POST transport but only its read_active_paper_series action.
+        # Do not include the returned config, relay token or raw URL in output.
+        reply = read_active_paper_series(series_id=proposed_v3_series,
+                                         token=token)
+        if (not isinstance(reply, dict)
+                or reply.get("series_id") != proposed_v3_series
+                or reply.get("status") != "active"
+                or reply.get("strategy_revision") != REVISION
+                or not isinstance(reply.get("observed_at_utc"), str)):
+            raise ValueError("exact authenticated original Cloud series not accepted")
+        cloud = {
+            "kind": "V3_ORIGINAL_RELAY_ACTIVE_SERIES_READONLY_OBSERVATION_V1",
+            "series_id": proposed_v3_series,
+            "strategy_revision": REVISION,
+            "observed_at_utc": reply["observed_at_utc"],
+            "authenticated_cloud_read_only_observed": True,
+            "cloud_cas_independently_proven": False,
+            "physical_release_proofs_credited": 0,
+        }
     # read_originalhost_readonly already rejects incorrectly shaped/unsafe
     # reports. Its factual hints cannot mint independent release authority.
     return {
         "kind": "V3_NATIVE_WINDOWS_ONE_SHOT_PREFLIGHT_V1",
         "status": "BLOCKED_PENDING_MAINTENANCE_AND_ORIGINAL_RELEASE",
         "diagnostic": physical,
+        "cloud_readonly_observation": cloud,
+        "cloud_readback_requested": proposed_v3_series is not None,
         "phase_names": list(PHASES),
         "existing_native_release_entrypoint":
             "dispatch_after_originalhost_and_cloud_readback",
@@ -497,9 +533,13 @@ def main() -> int:
     # This is executable on the original Windows host but NEVER live Paper.
     # The only released phase entry remains separately owner-authenticated.
     modes.add_argument("--one-shot-preflight", action="store_true")
+    parser.add_argument("--proposed-v3-series", default=None)
     args = parser.parse_args()
+    if args.proposed_v3_series is not None and not args.one_shot_preflight:
+        parser.error("--proposed-v3-series requires --one-shot-preflight")
     if args.one_shot_preflight:
-        print(json.dumps(preflight_native_windows_one_shot(), sort_keys=True))
+        print(json.dumps(preflight_native_windows_one_shot(
+            proposed_v3_series=args.proposed_v3_series), sort_keys=True))
         return 0
     if args.originalhost_readonly:
         print(json.dumps(read_originalhost_readonly(), sort_keys=True))

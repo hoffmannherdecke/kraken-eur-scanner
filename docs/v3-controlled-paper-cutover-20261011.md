@@ -4,6 +4,30 @@ Status: **V3-PAPER-ZIEL AUSDRÜCKLICH BEAUFTRAGT / ECHTE AKTIVIERUNG WEITERHIN G
 
 
 
+### Originalhost + Cloud: eine rein lesende One-Shot-Vorprüfung
+
+Zusätzlich zum bisherigen `--one-shot-preflight` kann der **gleiche** Launcher jetzt optional
+`--one-shot-preflight --proposed-v3-series PAPER-V3-YYYYMMDDTHHMMSSZ`
+prüfen. Dabei werden zuerst die vorhandenen **Original-Windows-Hostinformationen**
+gelesen und danach ausschließlich der **bereits bestehende authentifizierte
+`read_active_paper_series`-Abruf** im einen Edge-Relay aufgerufen. Ein vorhandener
+Relay-Schlüssel wird nur aus `V3_PAPER_RELAY_TOKEN` im Prozess-Environment gelesen
+(nie aus CLI-Argumenten, niemals im Ergebnis). Die Cloud-`config` und
+Zugangsdaten werden nicht ausgegeben.
+
+Fehlt der Schlüssel, ist die Serie unbekannt, nicht aktiv, falsch zugeordnet
+oder der Relay unerreichbar, **scheitert die Prüfung**; keine künstlichen
+Cloud-Erfolge. Ein positives Remote-Readback ist **nur eine Beobachtung**
+und weder echter CAS-Provenienzbeleg noch Windows-PID-/Originalhost-Echtheit,
+Wartungs-ACK oder sechs originale technische Releasebelege.
+Das Ausgabeobjekt bleibt ausnahmslos
+`BLOCKED_PENDING_MAINTENANCE_AND_ORIGINAL_RELEASE` mit
+`cloud_cas_independently_proven=false`. Es wird **kein** Windows-Task gestartet,
+kein neuer Laufplan installiert, kein Writer ausgeführt und keine
+Cloud-Schreibaktion, Modellanforderung oder Paper-Order initiiert.
+Die physische Windows-Installation bleibt getrennt und für den vorgesehenen
+CPU-/Windows-/USV-/Skript-Wartungstermin reserviert.
+
 ### Windows-One-Shot-Vorprüfung vor Wartung (ausführbar, streng lesend)
 
 Der **bestehende** Launcher `paper_evaluator/v3_paper_minipc_native_launcher_v1.py` bietet ab diesem Quellenstand den zusätzlichen Modus `--one-shot-preflight`. Er ruft **einmalig** das vorhandene, unveränderte `tools/check-minipc-v3-physical-writer-readiness.ps1` auf dem Original-Windows-Host auf, mit einem **nur für diesen PowerShell-Kindprozess** geltenden `-ExecutionPolicy Bypass`, weil die tatsächliche Windows-Richtlinie das direkte Ausführen von Skripten bereits blockierte. Das ändert weder Windows-Richtlinie noch Task/Supervisor noch V2R4.
