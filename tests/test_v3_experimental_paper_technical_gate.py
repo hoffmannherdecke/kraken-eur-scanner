@@ -1,6 +1,8 @@
 """No-profit-before-paper is permitted ONLY with actual technical proofs."""
+import contextlib
 import copy
 import hashlib
+import io
 import json
 import tempfile
 import unittest
@@ -9,6 +11,7 @@ from pathlib import Path
 from tools.v3_experimental_paper_technical_gate import (
     PROOFS, PROOF_KIND, PROOF_ORIGINS, validate_experimental_paper_packet,
     assess_v3_experimental_source_inventory, BUNDLE_SOURCE, REQUIRED_SOURCE_ANCHORS,
+    assess_v3_native_source_import_closure, native_source_closure_readonly_main,
 )
 from tools.strategy_successor_gate import ROOT, GATE_FILE, validate_learning_gate
 
@@ -822,6 +825,43 @@ class V3ExistingReleaseSourceInventoryTests(unittest.TestCase):
             report=assess_v3_native_source_import_closure(ROOT)
         self.assertTrue(report["static_local_import_closure_complete"],report["errors"])
 
+
+    def test_native_source_closure_cli_is_a_real_nonwriting_readback(self):
+        buf=io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            exit_code=native_source_closure_readonly_main(
+                ["--source-closure-readonly", "--source-root", str(ROOT)])
+        data=json.loads(buf.getvalue())
+        self.assertEqual(exit_code,0,data["errors"])
+        self.assertEqual(data["inspection_authority"],
+                         "SOURCE_ONLY_NO_ORIGINALHOST_OR_CLOUD_ACK")
+        self.assertGreater(data["candidate_transitive_file_count"],20)
+        self.assertFalse(data["runtime_dependency_versions_verified"])
+        self.assertFalse(data["physical_mini_pc_or_cloud_release_proven"])
+        self.assertFalse(data["paper_release_authorized"])
+        self.assertFalse(data["actual_loaded_python_bytecode_independently_verified"])
+        self.assertEqual(set(data["external_import_prefixes_requiring_host_review"])
+                         & set(data["stdlib_import_prefixes"]),set())
+        print("V3_STATIC_RELEASE_STAGE_READBACK", json.dumps({
+            "file_count":data["candidate_transitive_file_count"],
+            "external_packages":data["external_import_prefixes_requiring_host_review"],
+            "dynamic_import_file_count":
+                len(data["dynamic_import_source_paths_review_required"]),
+            "static_local_import_closure_complete":
+                data["static_local_import_closure_complete"],
+            "host_versions_verified":False,
+        },sort_keys=True))
+
+    def test_native_source_closure_cli_rejects_missing_original_source(self):
+        with tempfile.TemporaryDirectory() as empty:
+            buf=io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                result=native_source_closure_readonly_main(
+                    ["--source-closure-readonly", "--source-root", empty])
+            self.assertEqual(result,2)
+            payload=json.loads(buf.getvalue())
+            self.assertFalse(payload["static_local_import_closure_complete"])
+            self.assertFalse(payload["paper_release_authorized"])
 
     def test_actual_canonical_bundle_has_source_inventory_but_not_release(self):
         r=self._assess(ROOT)
