@@ -4,6 +4,24 @@ Status: **V3-PAPER-ZIEL AUSDRÜCKLICH BEAUFTRAGT / ECHTE AKTIVIERUNG WEITERHIN G
 
 
 
+
+#### Zeitbindung des unverbindlichen Host-/Cloud-Abgleichs
+
+Der bestehende duale **Read-only-Preflight** prüft, bevor er den Relay aufruft,
+den vom Original-Windows-Readback gemeldeten UTC-Zeitpunkt. Nach der Antwort
+werden auch deren authentifizierter UTC-Zeitpunkt und die Konsistenz der
+beiden Beobachtungen geprüft. Ein ungültiger, nicht zeitzonenbehafteter,
+mehr als 180 Sekunden alter oder deutlich in der Zukunft liegender Befund
+wird verworfen; die 10-Sekunden-Toleranz nach vorn betrifft nur diese
+Diagnose und ist **keine** Lockerung der strengeren 90-Sekunden-
+Originalhost-Prüfung vor einer echten Paper-Phase. Ohne Cloud-Serienwunsch
+bleibt die bisherige reine Windows-Vorprüfung unverändert nutzbar.
+
+Diese Zeitprüfung ist **kein zusätzlicher Freigabenachweis**: Zeitliche
+Übereinstimmung garantiert weder unterschriebene Prozessherkunft noch
+Cloud-CAS/Sechs-Proof-Echtheit oder den abgeschlossenen Wartungstermin.
+Die Antwort bleibt blockiert, alle produktiven Writer unverändert.
+
 ### Originalhost + Cloud: eine rein lesende One-Shot-Vorprüfung
 
 Zusätzlich zum bisherigen `--one-shot-preflight` kann der **gleiche** Launcher jetzt optional
