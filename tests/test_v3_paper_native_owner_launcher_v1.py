@@ -70,6 +70,88 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                     self.assertEqual(err.exception.code, 2)
 
 
+    def test_real_windows_one_shot_preflight_is_diagnostic_not_live(self):
+        original = {
+            "kind": "V3_NATIVE_ORIGINALHOST_DIAGNOSTIC_HANDOFF_V1",
+            "status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE",
+            "native_task_state": "Disabled",
+            "paper_activated": False,
+        }
+        with patch.object(launcher, "read_originalhost_readonly",
+                          return_value=original) as inventory, patch.object(
+                          launcher, "dispatch_one_owned_paper_phase") as worker, patch.object(
+                          launcher, "read_active_paper_series") as cloud:
+            buf = io.StringIO()
+            with patch("sys.argv", ["launcher", "--one-shot-preflight"]):
+                with contextlib.redirect_stdout(buf):
+                    self.assertEqual(launcher.main(), 0)
+            result = json.loads(buf.getvalue())
+            inventory.assert_called_once_with()
+            worker.assert_not_called()
+            cloud.assert_not_called()
+        self.assertEqual(result["kind"], "V3_NATIVE_WINDOWS_ONE_SHOT_PREFLIGHT_V1")
+        self.assertEqual(result["status"],
+                         "BLOCKED_PENDING_MAINTENANCE_AND_ORIGINAL_RELEASE")
+        self.assertEqual(result["diagnostic"], original)
+        self.assertEqual(result["phase_names"], list(launcher.PHASES))
+        self.assertEqual(result["existing_native_release_entrypoint"],
+                         "dispatch_after_originalhost_and_cloud_readback")
+        for flag in ("premaintenance_activation_allowed",
+                     "independent_task_pid_and_source_ack",
+                     "six_real_technical_e2e_proofs_accepted",
+                     "physical_maintenance_and_script_ack_accepted",
+                     "actual_v3_cloud_cas_committed",
+                     "one_shot_worker_invoked", "windows_task_changes",
+                     "v2r4_changed", "v3_paper_activated", "orders",
+                     "real_money_actions"):
+            self.assertIs(result[flag], False, flag)
+        self.assertEqual(result["model_http_calls"], 0)
+        self.assertEqual(result["cloud_writes"], 0)
+
+    def test_one_shot_preflight_propagates_missing_original_host_not_false_success(self):
+        with patch.object(launcher, "read_originalhost_readonly",
+                          side_effect=ValueError("physical host missing")), patch.object(
+                          launcher, "dispatch_one_owned_paper_phase") as worker:
+            with patch("sys.argv", ["launcher", "--one-shot-preflight"]):
+                with self.assertRaisesRegex(ValueError, "physical host missing"):
+                    launcher.main()
+            worker.assert_not_called()
+
+    def test_physical_inventory_powershell_execution_policy_is_process_local(self):
+        with patch.object(launcher.sys, "platform", "win32"), patch.object(
+                launcher.ORIGINALHOST_POWERSHELL, "is_file", return_value=True), patch.object(
+                launcher.ORIGINALHOST_POWERSHELL, "is_symlink", return_value=False), patch.object(
+                launcher.Path, "is_file", autospec=True, return_value=True), patch.object(
+                launcher.Path, "is_symlink", autospec=True, return_value=False), patch.object(
+                launcher.subprocess, "run") as call:
+            report = {
+                "kind": "V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1",
+                "checked_at_utc": "2026-10-20T08:00:00Z",
+                "filesystem_writes": False,
+                "v2r4_changed": False,
+                "new_v3_writer_started": False,
+                "experimental_paper_release_authorized_by_this_check": False,
+                "physical_v3_postcas_local_inventory": {
+                    "kind": "V3_NATIVE_POSTCAS_LOCAL_INSPECTION_ONLY_V1",
+                    "status": "NOT_INDEPENDENT_RELEASE_EVIDENCE",
+                    "native_task_state": "Disabled",
+                    "live_paper_activation_authorized": False,
+                    "tasks_changed": 0, "cloud_writes": 0, "model_calls": 0
+                }
+            }
+            call.return_value.returncode = 0
+            call.return_value.stdout = json.dumps(report)
+            result = launcher.read_originalhost_readonly()
+            self.assertEqual(result["status"], "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE")
+            args = call.call_args.args[0]
+            self.assertEqual(args[1:5],
+                ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass"])
+            self.assertEqual(args[5], "-File")
+            self.assertEqual(args[-2:], ["-TradingRoot",
+                                         launcher.ORIGINALHOST_TRADING_ROOT])
+            self.assertEqual(call.call_args.kwargs["timeout"], 90)
+            self.assertFalse(call.call_args.kwargs["check"])
+
     def test_native_phase_uses_original_cloud_readback_inside_worker(self):
         with tempfile.TemporaryDirectory() as root:
             common = self.common(root)
