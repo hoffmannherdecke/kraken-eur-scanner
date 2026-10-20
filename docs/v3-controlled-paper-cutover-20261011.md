@@ -28,6 +28,31 @@ Diese Zeitprüfung ist **kein zusätzlicher Freigabenachweis**: Zeitliche
 Cloud-CAS/Sechs-Proof-Echtheit oder den abgeschlossenen Wartungstermin.
 Die Antwort bleibt blockiert, alle produktiven Writer unverändert.
 
+### Windows-One-Shot: vorhandenen Originalhost-Prüfer vor dem ECHTEN Release-Dispatcher verdrahtet (Source)
+
+Im bestehenden Python-Launcher verbindet
+`dispatch_from_original_windows_one_shot` die **schon vorhandene**
+lesende Windows-PowerShell-Originalhostprüfung mit dem **einzigen**
+`dispatch_after_originalhost_and_cloud_readback`-Pfad. Nur auf
+`win32`, mit einem **separaten tatsächlich beglaubigten**
+Originalhost-Release-Owner und einer tatsächlich laufenden, passenden
+Task-/SYSTEM-Python-Parent-/Launcher-Datei-Identität darf diese
+interne Funktion an die bestehenden Native-/Cloud-/Sechs-Proof-Gates
+weiterdelegieren. Eine deaktivierte alte `--read-only`-Task,
+abweichende Quell-SHA oder fehlender Release-Provider werden **vor**
+der eigentlichen Phase zurückgewiesen. Der lesende Originalhost-Bericht
+wird **niemals** in eine unabhängige Release-Freigabe umetikettiert.
+
+**Ausdrückliche ausstehende Anbindung:** Der externe physische
+Release-Owner muss den wirklich authentifizierten POST-CAS-
+Task-/PID-/Loaded-Source-/No-Rearm-/Wartungsbeleg liefern; der
+gegenwärtige Originalhost-Prüfer liefert absichtlich nur Hinweise.
+Die neue Funktion ist deshalb **noch nicht als Windows-CLI-Start**
+freigeschaltet oder physisch installiert und kann das Cloud-CAS oder
+die finale Nutzerfreigabe nicht ersetzen. Keine zusätzliche
+PowerShell-Funktion, neue Task oder Signaturbehörde entsteht durch
+diese rein quellseitige Verdrahtung.
+
 ### Native Paper-Phase: Originalhost-Frische nach dem tatsächlichen Cloud-Readback
 
 **Ausführungspfad, nicht nur Diagnose:** Die bereits vorhandene
