@@ -1,6 +1,7 @@
 param(
  [string]$TradingRoot='C:\Users\ADMIN\Trading',
  [string]$SourceRepo='C:\Users\ADMIN\V3Paper-Quelle-985ed3230bb4',
+ [string]$CandidateStageSha='',
  [switch]$InstallDisabled,
  [string]$Confirm=''
 )
@@ -10,6 +11,13 @@ param(
 # No stop/restart of old V2R4, no Cloud, CAS, model, orders or release proof.
 $ErrorActionPreference='Stop'
 $stageSha='d6853a08e608c1e56229e27939c40ba2f5d57f8b'
+$candidateMode=(-not [string]::IsNullOrEmpty($CandidateStageSha))
+if($candidateMode){
+ if($CandidateStageSha -cnotmatch '^[0-9a-f]{40}$'){throw 'invalid full candidate SHA'}
+ if($InstallDisabled -or $Confirm){throw 'candidate inspection must remain read-only'}
+ $stageSha=$CandidateStageSha
+}
+$stageFiles=if($candidateMode){69}else{66}
 $taskName='CryptoMiniPC-V3PaperSingleWriter'
 $oldNames=@(
  'CryptoMiniPC-V2R4PaperCandidates',
@@ -41,6 +49,22 @@ function NativeTaskState {
  $task=Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction SilentlyContinue
  if($null -eq $task){return 'ABSENT'}
  return [string]$task.State
+}
+function OriginalDisabledTaskForCandidateReadOnly {
+ $existing=Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
+ Require ($null -ne $existing -and [string]$existing.State -ceq 'Disabled') 'original V3 Task not Disabled'
+ Require (@($existing.Actions).Count -eq 1) 'original V3 Task has multiple actions'
+ Require ([string]$existing.Principal.UserId -in @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18')) 'original V3 Task principal drift'
+ Require ($existing.Settings.AllowDemandStart -eq $false -and
+   [string]$existing.Settings.MultipleInstances -ceq 'IgnoreNew') 'original V3 Task scheduling drift'
+ $originalAction=$existing.Actions[0]
+ # Validate the exact Windows Task string independent of the CI runner OS.
+ # Windows-only GetFullPath would turn C:\... into a Linux working path in
+ # source-policy CI and hide the actual Windows shape the Task must retain.
+ $oldStage=[string]$originalAction.WorkingDirectory
+ Require ($oldStage -match '^C:\\Users\\ADMIN\\Trading\\Staging\\V3Paper-INACTIVE-[0-9a-f]{12}$') 'original V3 Task source outside inactive staging'
+ Require ([string]$originalAction.Arguments -match "(?:^|[\s'`"])--read-only(?:[\s'`"]|$)") 'original V3 Task not read-only'
+ return 'Disabled'
 }
 function OriginalIntakeReadOnly {
  $rows=@()
@@ -77,19 +101,21 @@ Require ($manifest.kind -ceq 'V3_PAPER_INACTIVE_ISOLATED_SOURCE_STAGE_V1' -and
   $manifest.source_git_sha -ceq $stageSha -and
   $manifest.v3_paper_activated -eq $false -and
   $manifest.task_changes -eq $false -and
-  @($manifest.source_manifest).Count -eq 66) 'exact old reviewed 66-file stage required'
-$allow=@(& git -C $source ls-tree -r --name-only $stageSha -- paper_evaluator market_data paper_context.py 'research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json' 'supabase/functions/v3-paper-evidence-relay/index.ts' 'tools/minipc-runtime-supervisor.ps1' 'tools/check-minipc-v3-physical-writer-readiness.ps1' 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1' 2>$null)
+  @($manifest.source_manifest).Count -eq $stageFiles) 'exact reviewed stage file count required'
+$allow=@(& git -C $source ls-tree -r --name-only $stageSha -- paper_evaluator market_data paper_context.py 'research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json' 'supabase/functions/v3-paper-evidence-relay/index.ts' 'tools/minipc-runtime-supervisor.ps1' 'tools/check-minipc-v3-physical-writer-readiness.ps1' 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1' 'tools/v3_experimental_paper_technical_gate.py' 'tools/paper_series_transition_guard.py' 2>$null)
 Require ($LASTEXITCODE -eq 0) 'trusted source tree cannot be read'
 $allow=@($allow|Where-Object {
   $_ -match '^(paper_evaluator|market_data)/[A-Za-z0-9_]+\.py$' -or
   $_ -eq 'paper_context.py' -or
   $_ -eq 'research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json' -or
   $_ -eq 'supabase/functions/v3-paper-evidence-relay/index.ts' -or
+  ($candidateMode -and $_ -in @('tools/v3_experimental_paper_technical_gate.py',
+                               'tools/paper_series_transition_guard.py')) -or
   $_ -in @('tools/minipc-runtime-supervisor.ps1',
           'tools/check-minipc-v3-physical-writer-readiness.ps1',
           'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1')
 }|Sort-Object -Unique)
-Require ($allow.Count -eq 66) 'original source inventory changed'
+Require ($allow.Count -eq $stageFiles) 'original source inventory changed'
 $seen=@{}
 foreach($entry in @($manifest.source_manifest)){
  $rel=[string]$entry.relative_path
@@ -114,12 +140,16 @@ foreach($entry in @($manifest.source_manifest)){
  $actualBlob=(& git -C $source hash-object -- $item 2>$null)
  Require ($LASTEXITCODE -eq 0 -and ([string]$actualBlob).Trim() -ceq ([string]$object).Trim()) 'stage differs from trusted Git blob'
 }
-Require ($seen.Count -eq 66 -and
+Require ($seen.Count -eq $stageFiles -and
  $seen.ContainsKey('paper_evaluator/v3_paper_minipc_native_launcher_v1.py') -and
  $seen.ContainsKey('paper_context.py')) 'native owner or context missing'
 $protected=@(OriginalIntakeReadOnly)
 Require ($protected.Count -eq 4) 'original V2R4 Task baseline incomplete'
-Require ((NativeTaskState) -ceq 'ABSENT') 'V3 Task already exists; never overwrite it'
+if($candidateMode){
+ Require ((OriginalDisabledTaskForCandidateReadOnly) -ceq 'Disabled') 'original inactive task changed'
+}else{
+ Require ((NativeTaskState) -ceq 'ABSENT') 'V3 Task already exists; never overwrite it'
+}
 # Get-Command can enumerate several python.exe executables on Windows.
 # Choose the first resolver match deterministically; NEVER treat .Source as
 # an array (which would pass several Test-Path booleans into Require [bool]).
@@ -153,6 +183,11 @@ $plan=[ordered]@{
  real_money_actions=$false
  technical_release_proofs_credited=0
  status='READ_ONLY_PREVIEW_NOT_INSTALLED'
+}
+if($candidateMode){
+ $plan.source_files_verified=$stageFiles
+ $plan.existing_v3_task_state='Disabled'
+ $plan.status='READ_ONLY_SUCCESSOR_STAGE_VERIFIED_EXISTING_TASK_UNCHANGED'
 }
 if(-not $InstallDisabled){
  $plan|ConvertTo-Json -Depth 5
