@@ -125,6 +125,9 @@
   "context_preflight": {
     "kind": "CONTEXT_BEFORE_ACTION_HANDOFF_V1",
     "command": "tools/context_before_action.py",
+    "work_domain_policy": "research/context-before-action-routing-v1.json#work_domain_policy",
+    "release_routing": "EXPLICIT_NAMED_STRATEGY_RELEASE_ONLY_NOT_GENERAL_HARDWARE_OR_PROJECT_WORK",
+    "scope_is_not_release_approval": true,
     "routing": "research/context-before-action-routing-v1.json",
     "scopes": [
       "strategy",
