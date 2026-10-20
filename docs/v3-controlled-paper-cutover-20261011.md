@@ -53,6 +53,28 @@ die finale Nutzerfreigabe nicht ersetzen. Keine zusätzliche
 PowerShell-Funktion, neue Task oder Signaturbehörde entsteht durch
 diese rein quellseitige Verdrahtung.
 
+### Windows-Task- und unabhängigen Release-Owner auf identische Quellversion binden
+
+Vor der Phase wird der vorhandene lokale lesende Windows-Befund nun am
+**strengen tatsächlichen 90-Sekunden-Release-Zeitfenster** gemessen. Seine
+bereits vorhandenen **Task-Action-SHA256** und **Launcher-Datei-SHA256**
+müssen anschließend in der **separat zu erstellenden authentischen
+POST-CAS-Originalhost-Release-Owner-Antwort** unverändert und exakt
+wiederkehren; die beiden Beobachtungszeiten müssen höchstens 90 Sekunden
+auseinanderliegen. Bei fehlendem, abweichendem oder veraltetem Nachweis
+blockiert die bestehende Windows→native-Phase vor Paper-Arbeit.
+
+Dies verhindert den unzulässigen Mix aus grüner lokaler Task-Diagnose
+von Quellversion A und grünem Release-Owner-Report zu Quellversion B.
+**Keine zusätzliche unabhängige Proof-Kategorie:** Die gleichen zwei
+Quellfingerprints werden innerhalb des bisherigen
+`V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN`-Original-Release-Belegs
+gebunden. Task/Datei-Fingerprint und Zeitabgleich allein beweisen
+weiterhin weder die *tatsächlich im Python-Prozess geladenen* Bytes
+noch die Herkunft des externen Release-Owners. Letzterer bleibt nach
+Wartung, CAS und sechs echten E2E-Belegen eigenständig nachzuweisen.
+Diese Quelle ist noch nicht als aktive Windows-CLI installiert.
+
 ### Native Paper-Phase: Originalhost-Frische nach dem tatsächlichen Cloud-Readback
 
 **Ausführungspfad, nicht nur Diagnose:** Die bereits vorhandene
