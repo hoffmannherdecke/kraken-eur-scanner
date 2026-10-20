@@ -151,6 +151,37 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 self.assertEqual(forwarded["relay_token"], token)
                 self.assertTrue(callable(forwarded["read_active_series"]))
 
+    def test_native_action_and_file_hash_inventory_is_not_a_release(self):
+        fixture = {
+            "kind": "V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1",
+            "checked_at_utc": "2026-10-20T08:00:00Z",
+            "filesystem_writes": False, "v2r4_changed": False,
+            "new_v3_writer_started": False,
+            "experimental_paper_release_authorized_by_this_check": False,
+            "physical_v3_postcas_local_inventory": {
+                "kind": "V3_NATIVE_POSTCAS_LOCAL_INSPECTION_ONLY_V1",
+                "status": "NOT_INDEPENDENT_RELEASE_EVIDENCE",
+                "native_task_state": "Disabled",
+                "native_task_action_sha256": "a" * 64,
+                "native_task_launcher_file_sha256": "b" * 64,
+                "native_task_loaded_module_independently_verified": False,
+                "live_paper_activation_authorized": False,
+                "tasks_changed": 0, "cloud_writes": 0, "model_calls": 0,
+            },
+        }
+        summary = launcher.summarize_originalhost_readonly(fixture)
+        self.assertEqual(summary["native_task_action_sha256"], "a" * 64)
+        self.assertEqual(summary["native_task_launcher_file_sha256"], "b" * 64)
+        self.assertFalse(summary["native_task_loaded_module_independently_verified"])
+        self.assertFalse(summary["paper_activated"])
+        for candidate in ("Not-A-Hash", "z" * 64, None):
+            local = dict(fixture["physical_v3_postcas_local_inventory"],
+                         native_task_action_sha256=candidate)
+            summary = launcher.summarize_originalhost_readonly(dict(
+                fixture, physical_v3_postcas_local_inventory=local))
+            self.assertIsNone(summary["native_task_action_sha256"])
+            self.assertFalse(summary["runtime_bootstrap_executable"])
+
     def test_originalhost_readonly_report_never_claims_release(self):
         fixed = {
             "kind": "V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1",
