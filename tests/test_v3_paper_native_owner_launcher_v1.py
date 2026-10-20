@@ -119,10 +119,8 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
 
     def test_physical_inventory_powershell_execution_policy_is_process_local(self):
         with patch.object(launcher.sys, "platform", "win32"), patch.object(
-                launcher.ORIGINALHOST_POWERSHELL, "is_file", return_value=True), patch.object(
-                launcher.ORIGINALHOST_POWERSHELL, "is_symlink", return_value=False), patch.object(
-                launcher.Path, "is_file", autospec=True, return_value=True), patch.object(
-                launcher.Path, "is_symlink", autospec=True, return_value=False), patch.object(
+                launcher.Path, "is_file", return_value=True), patch.object(
+                launcher.Path, "is_symlink", return_value=False), patch.object(
                 launcher.subprocess, "run") as call:
             report = {
                 "kind": "V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1",
