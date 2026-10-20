@@ -1178,7 +1178,6 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 {"maintenance_completed_at_utc": "2026-10-19T13:00:00"},
                 {"maintenance_cpu_bios_boot_thermal_originalhost_pass": False},
                 {"maintenance_windows_drivers_reboots_originalhost_pass": False},
-                {"maintenance_ups_configuration_shutdown_originalhost_pass": False},
                 {"maintenance_scripts_originalhost_source_ack_pass": False},
                 {"maintenance_v2r4_restart_and_aftercare_originalhost_pass": False},
                 {"paper_only": False},
@@ -1208,6 +1207,51 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                                 release_root=Path(root), release_packet=packet,
                                 **kwargs)
                 worker.assert_not_called()
+
+    def test_optional_ups_is_not_a_paper_release_veto(self):
+        # Source-only regression: no optional UPS while genuine gates stay mandatory.
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H",
+                          candidate={"candidate_id": "OPTIONAL_UPS_ONLY"})
+            packet = {"strategy_revision": launcher.REVISION,
+                      "strategy_fingerprint_sha256": self.STRATEGY}
+            base = self.original_release_host(self.SID, self.REPO)
+            with patch.object(launcher, "validate_experimental_paper_packet",
+                              return_value=[]), patch.object(
+                    launcher, "dispatch_one_owned_paper_phase",
+                    return_value={"status": "SOURCE_ONLY_MOCK"}) as worker:
+                variants = [
+                    {k: v for k, v in base.items()
+                     if k != "maintenance_ups_configuration_shutdown_originalhost_pass"},
+                    dict(base, maintenance_ups_configuration_shutdown_originalhost_pass=False),
+                    dict(base, maintenance_ups_configuration_shutdown_originalhost_pass=True),
+                ]
+                for host in variants:
+                    with self.subTest(optional_ups=host.get(
+                            "maintenance_ups_configuration_shutdown_originalhost_pass",
+                            "MISSING")):
+                        result = launcher.dispatch_after_native_release_readback(
+                            originalhost_readback=lambda h=host: h,
+                            release_root=Path(root), release_packet=packet,
+                            **kwargs)
+                        self.assertEqual(result["status"], "SOURCE_ONLY_MOCK")
+                self.assertEqual(worker.call_count, 3)
+                # Still deny missing real physical, cloud or six-proof gates.
+                for blocker in (
+                    {"maintenance_scripts_originalhost_source_ack_pass": False},
+                    {"maintenance_cpu_bios_boot_thermal_originalhost_pass": False},
+                    {"maintenance_windows_drivers_reboots_originalhost_pass": False},
+                    {"maintenance_v2r4_restart_and_aftercare_originalhost_pass": False},
+                    {"six_external_original_e2e_proofs_approved": False},
+                    {"independent_cloud_cas_committed": False},
+                ):
+                    with self.subTest(blocker=blocker):
+                        with self.assertRaises(ValueError):
+                            launcher.dispatch_after_native_release_readback(
+                                originalhost_readback=lambda b=blocker: dict(base, **b),
+                                release_root=Path(root), release_packet=packet,
+                                **kwargs)
+                self.assertEqual(worker.call_count, 3)
 
     def test_maintenance_receipt_is_not_seventh_technical_proof_or_cli_release(self):
         # The physical maintenance handoff is part of the original native
