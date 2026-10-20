@@ -185,6 +185,28 @@ Der **bestehende** Launcher `paper_evaluator/v3_paper_minipc_native_launcher_v1.
 
 Das Ergebnis `V3_NATIVE_WINDOWS_ONE_SHOT_PREFLIGHT_V1` ist stets `BLOCKED_PENDING_MAINTENANCE_AND_ORIGINAL_RELEASE`: Native Task/Prozesshinweise und die bestehenden drei Paper-Phasen werden zwar lesend angezeigt, aber es gibt **keinen** Freigabe-, Modell-, Cloud-, Writer- oder Orderaufruf. Fehler beim Originalhost-Readback werden weitergegeben, nicht durch künstlichen Erfolg verdeckt. Ein neuer ausführbarer Produktiv-CLI-Pfad wird dadurch **nicht** behauptet: Die bestehende zukünftige Funktion `dispatch_after_originalhost_and_cloud_readback` bleibt der alleinige native Phase-Dispatcher und benötigt weiterhin originale, unabhängige Task/PID-/Wartungs-/Cloud-CAS-/Sechs-Proof-Autorität. Das zuerst kommende Wartungsfenster und die ausdrückliche letzte Nutzerfreigabe bleiben verbindlich. Der aktuell physisch bereitgestellte 69-Dateien-Stage (16e270...) wird **nicht** stillschweigend auf diesen Quellstand aktualisiert oder umgepinnt; neues Staging nur im bereits geplanten Wartungs-/Releaseablauf.
 
+### 20.–22.10.2026: Gesamtprojekt-Vorbereitung, kein Fake-Go-live
+
+Für den eventuell am **Donnerstag, 22.10.** möglichen Wartungstermin
+hat der Nutzer ausdrücklich die schnellstmögliche Vorbereitung der
+gesamten V3-Paper-Technik angeordnet. Die einzige Ausführungsordnung
+und der Wartungs-Halt unten bleiben bestehen. Deshalb vor dem Termin
+den ursprünglichen technischen Release-Gate-Owner #99 und den
+projektweiten Kontext #353 konsolidieren, reale vorhandene und
+tatsächlich offene Originale trennen; **nicht** mit weiteren
+isolierten Source-/Fingerprint-PRs den produktiven Start suggerieren.
+
+Die ursprüngliche technische Gate-Funktion
+`assess_v3_native_source_import_closure` ermittelt statische
+transitive lokale Python-Imports und ihre SHA in derselben
+bestehenden `tools/v3_experimental_paper_technical_gate.py`,
+in der schon das V3-Policy-Bundle inventarisiert wurde. Die Prüfung
+ist **nur** ein vorziehbarer Stage-/Source-Abnahmeinput, weder
+echte Loaded-Bytes-Provenienz noch eigenständige siebte Probe.
+Externe/dynamische Imports, Windows-Task-/Prozessidentität,
+Originalhost-E2E, Cloud CAS und die finale Nutzerentscheidung
+bleiben beim einzigen tatsächlichen Release-Owner.
+
 ## 20.10.2026 – verbindlicher Wartungs-Halt VOR dem letzten V3-Paper-Go-live-Schritt
 
 **Neue ausdrückliche Nutzerentscheidung:** V3-Codeentwicklung, isolierte GitHub-/Mini-PC-Quellenprüfungen, vorbereitende Tests und Review dürfen bis zur letzten produktiven Paper-Umschaltung weiterlaufen. **Bevor** jedoch der endgültige V3-Paper-Cutover (produktiv wirksames Cloud-CAS, Umstellen/Aktivieren der Windows-Task, Stilllegen der alten V2R4-Neuaufnahme) freigegeben oder ausgelöst wird, **STOPP**: den bereits vorgesehenen Wartungstermin am Dell OptiPlex 5060 Micro durchführen und die noch ausstehenden Skriptversionen einschließlich PR #444 auf dem **Originalhost** übernehmen und tatsächlich abnehmen. Der Nutzer gibt nach dem Wartungs-Readback die finale V3-Paper-Aktivierung getrennt frei. Kein Automatismus und kein zusätzlicher Manager, Scheduler oder siebter unabhängiger V3-Technikbeweis. Die Wartungs-/Originalhost-ACKs werden in die **bestehenden** Proofs `V3_MINIPC_SUPERVISOR_STOP_START_ROLLBACK` (Reboot/Recovery/Fence) und `V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN` (gepinntes Writer-/Task-/Quellen-Release) integriert.
