@@ -289,6 +289,74 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 cloud.assert_not_called()
                 worker.assert_not_called()
 
+    def test_native_windows_phase_binding_stops_before_inspector_without_real_owner(self):
+        with patch.object(launcher.sys, "platform", "win32"), patch.object(
+                launcher, "read_originalhost_readonly") as inspector, patch.object(
+                launcher, "dispatch_after_originalhost_and_cloud_readback") as owner:
+            with self.assertRaisesRegex(ValueError, "owner unavailable"):
+                launcher.dispatch_from_original_windows_one_shot(
+                    originalhost_release_readback=None)
+            inspector.assert_not_called()
+            owner.assert_not_called()
+        with patch.object(launcher.sys, "platform", "linux"), patch.object(
+                launcher, "read_originalhost_readonly") as inspector:
+            with self.assertRaisesRegex(ValueError, "original Windows host"):
+                launcher.dispatch_from_original_windows_one_shot(
+                    originalhost_release_readback=lambda: {})
+            inspector.assert_not_called()
+
+    def test_native_windows_phase_binding_rejects_old_task_and_false_owner(self):
+        with patch.object(launcher.sys, "platform", "win32"), patch.object(
+                launcher, "read_originalhost_readonly",
+                return_value=self.correlated_originalhost(
+                    native_task_state="Disabled")) as inspector, patch.object(
+                launcher, "dispatch_after_originalhost_and_cloud_readback") as owner:
+            with self.assertRaisesRegex(ValueError, "Task/PID/source"):
+                launcher.dispatch_from_original_windows_one_shot(
+                    originalhost_release_readback=lambda: {
+                        "six_external_original_e2e_proofs_approved": True},
+                    phase="FOLLOWUP_6H24H72H", series_id=self.SID)
+            inspector.assert_called_once()
+            owner.assert_not_called()
+
+    def test_native_windows_phase_binding_reuses_exact_original_dispatcher(self):
+        # An offline mock of a real release owner is NOT a physical E2E proof.
+        physical_provider=lambda: {"status": "OFFLINE_FAKE_HOST_ONLY"}
+        with patch.object(launcher.sys, "platform", "win32"), patch.object(
+                launcher, "read_originalhost_readonly",
+                return_value=self.correlated_originalhost()) as inspector, patch.object(
+                launcher, "dispatch_after_originalhost_and_cloud_readback",
+                return_value={"status": "OFFLINE_DELEGATED_NO_WORKER"}) as owner, patch.object(
+                launcher, "dispatch_one_owned_paper_phase") as worker:
+            result=launcher.dispatch_from_original_windows_one_shot(
+                originalhost_release_readback=physical_provider,
+                release_root=Path("offline-only"), release_packet={},
+                original_cloud_relay_token="OFFLINE_TOKEN_NO_NETWORK_123456",
+                phase="FOLLOWUP_6H24H72H", series_id=self.SID)
+            self.assertEqual(result["status"], "OFFLINE_DELEGATED_NO_WORKER")
+            inspector.assert_called_once_with()
+            owner.assert_called_once()
+            params=owner.call_args.kwargs
+            self.assertIs(params["originalhost_readback"], physical_provider)
+            self.assertEqual(params["phase"], "FOLLOWUP_6H24H72H")
+            self.assertEqual(params["series_id"], self.SID)
+            worker.assert_not_called()
+
+    def test_native_windows_binding_rejects_injected_cloud_before_inspector(self):
+        for injected in ("read_active_series", "clock_now", "cloud_post",
+                         "model_client", "source_acquire", "source_ticker"):
+            with self.subTest(injected=injected), patch.object(
+                    launcher.sys, "platform", "win32"), patch.object(
+                    launcher, "read_originalhost_readonly") as inspector, patch.object(
+                    launcher, "dispatch_after_originalhost_and_cloud_readback") as owner:
+                with self.assertRaisesRegex(ValueError, "injected source"):
+                    launcher.dispatch_from_original_windows_one_shot(
+                        originalhost_release_readback=lambda: {},
+                        phase="FOLLOWUP_6H24H72H", series_id=self.SID,
+                        **{injected: object()})
+                inspector.assert_not_called()
+                owner.assert_not_called()
+
     def test_one_shot_host_only_mode_has_no_new_clock_gate(self):
         # Pre-maintenance V2R4 diagnostics must remain usable even with
         # historic/absent timestamps; no relay is requested in this mode.
