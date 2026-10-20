@@ -372,6 +372,10 @@ $v3PostCas=[ordered]@{
  native_task_python_executable_hint=$false
  native_task_stage_path_shape_match=$false
  native_task_loaded_module_independently_verified=$false
+ native_python_parent_process_observed=$false
+ native_python_parent_matches_task_action_hint=$false
+ native_powershell_process_token_is_system=$false
+ native_runtime_identity_independently_verified=$false
  original_supervisor_observation='UNAVAILABLE'
  old_intake_tasks_disabled=$false
  protected_old_aftercare_running=$false
@@ -409,6 +413,36 @@ try {
     $v3PostCas.native_task_action_sha256=(
       [BitConverter]::ToString($hasher.ComputeHash($data))).Replace('-','').ToLowerInvariant()
    }finally{$hasher.Dispose()}
+   # Current PowerShell child -> parent native Python process hints only.
+   # The original Windows Task, PID, source, independent Cloud CAS and proof
+   # authority must remain independently verified by the actual release owner.
+   # Do not echo native Task Arguments, raw process CommandLine or secrets.
+   try {
+    $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $v3PostCas.native_powershell_process_token_is_system=($sid -ceq 'S-1-5-18')
+    $thisProcess=Get-CimInstance Win32_Process -Filter "ProcessId=$PID" -ErrorAction Stop
+    if($null -ne $thisProcess -and [int]$thisProcess.ParentProcessId -gt 0) {
+     $parentId=[int]$thisProcess.ParentProcessId
+     $parentProcess=Get-CimInstance Win32_Process -Filter "ProcessId=$parentId" -ErrorAction Stop
+     if($null -ne $parentProcess -and [string]$parentProcess.Name -match '(?i)^pythonw?\.exe$') {
+      $v3PostCas.native_python_parent_process_observed=$true
+      $parentExe=[string]$parentProcess.ExecutablePath
+      $parentArgs=[string]$parentProcess.CommandLine
+      $v3PostCas.native_python_parent_matches_task_action_hint=(
+       [string]$nativeV3.State -ceq 'Running' -and
+       $v3PostCas.native_task_principal_system -eq $true -and
+       [string]$nativeV3.TaskPath -ceq '\' -and
+       [string]$nativeV3.Settings.MultipleInstances -ceq 'IgnoreNew' -and
+       [string]::Equals($parentExe,$exe,[StringComparison]::OrdinalIgnoreCase) -and
+       -not [string]::IsNullOrEmpty($argsText) -and
+       $parentArgs.Contains($argsText))
+     }
+    }
+   }catch{
+    $v3PostCas.native_python_parent_process_observed=$false
+    $v3PostCas.native_python_parent_matches_task_action_hint=$false
+    $v3PostCas.native_powershell_process_token_is_system=$false
+   }
    $v3PostCas.native_task_python_executable_hint=(
      $exe -match '(?i)(?:^|[\\/])pythonw?\.exe$')
    $rootStage=[IO.Path]::GetFullPath((Join-Path $TradingRoot 'Staging')).TrimEnd('\')
