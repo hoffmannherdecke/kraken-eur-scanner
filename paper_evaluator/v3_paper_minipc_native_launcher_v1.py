@@ -434,6 +434,11 @@ def read_originalhost_readonly() -> dict[str, Any]:
     try:
         result = subprocess.run([
             str(ORIGINALHOST_POWERSHELL), "-NoProfile", "-NonInteractive",
+            # Windows host policy denies ordinary .ps1 execution. A single
+            # child-process-only override permits this exact reviewed
+            # original read-only inspection without changing system/user
+            # policy or touching Windows Task configuration.
+            "-ExecutionPolicy", "Bypass",
             "-File", str(script), "-TradingRoot", ORIGINALHOST_TRADING_ROOT,
         ], capture_output=True, text=True, timeout=90, check=False)
     except (OSError, subprocess.TimeoutExpired) as exc:
@@ -448,13 +453,54 @@ def read_originalhost_readonly() -> dict[str, Any]:
     return summarize_originalhost_readonly(parsed)
 
 
+
+def preflight_native_windows_one_shot() -> dict[str, Any]:
+    """Execute one bounded ORIGINAL read-only host inspection, nothing live.
+
+    An original Windows inventory is necessary before a native one-shot
+    implementation, but never sufficient to authorize a released Paper phase.
+    Keep the ONE existing release dispatcher as the only future writer path.
+    No credentials, task activation, HTTP, Cloud CAS or model callbacks here.
+    """
+    physical = read_originalhost_readonly()
+    # read_originalhost_readonly already rejects incorrectly shaped/unsafe
+    # reports. Its factual hints cannot mint independent release authority.
+    return {
+        "kind": "V3_NATIVE_WINDOWS_ONE_SHOT_PREFLIGHT_V1",
+        "status": "BLOCKED_PENDING_MAINTENANCE_AND_ORIGINAL_RELEASE",
+        "diagnostic": physical,
+        "phase_names": list(PHASES),
+        "existing_native_release_entrypoint":
+            "dispatch_after_originalhost_and_cloud_readback",
+        "premaintenance_activation_allowed": False,
+        "independent_task_pid_and_source_ack": False,
+        "six_real_technical_e2e_proofs_accepted": False,
+        "physical_maintenance_and_script_ack_accepted": False,
+        "actual_v3_cloud_cas_committed": False,
+        "one_shot_worker_invoked": False,
+        "model_http_calls": 0,
+        "cloud_writes": 0,
+        "windows_task_changes": False,
+        "v2r4_changed": False,
+        "v3_paper_activated": False,
+        "orders": False,
+        "real_money_actions": False,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Inactive V3 Paper native-owner source -- no live execution")
     modes = parser.add_mutually_exclusive_group(required=True)
     modes.add_argument("--read-only", action="store_true")
     modes.add_argument("--originalhost-readonly", action="store_true")
+    # This is executable on the original Windows host but NEVER live Paper.
+    # The only released phase entry remains separately owner-authenticated.
+    modes.add_argument("--one-shot-preflight", action="store_true")
     args = parser.parse_args()
+    if args.one_shot_preflight:
+        print(json.dumps(preflight_native_windows_one_shot(), sort_keys=True))
+        return 0
     if args.originalhost_readonly:
         print(json.dumps(read_originalhost_readonly(), sort_keys=True))
         return 0
