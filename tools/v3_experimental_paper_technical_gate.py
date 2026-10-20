@@ -5,10 +5,12 @@ an exploratory Paper trial. But technical/recording/stop and single-writer
 correctness ARE prerequisites. No effects, network, orders or strategy changes.
 """
 from __future__ import annotations
+import argparse
 import ast
 import hashlib
 import json
 import re
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -248,17 +250,34 @@ def assess_v3_native_source_import_closure(root:Path)->dict[str,Any]:
                     prefix=dotted.split(".")[0]
                     relname=dotted.replace(".","/")
                     match=None
-                    for candidate in (relname+".py",relname+"/__init__.py"):
+                    candidates=[relname+".py",relname+"/__init__.py"]
+                    # Direct-script fallback imports in the existing tools/
+                    # and paper_evaluator/ package must not become fictional
+                    # third-party pip dependencies. The runtime uses these
+                    # siblings only when the package import is unavailable.
+                    if "." not in dotted and pkg and pkg[0] in (
+                            "tools","paper_evaluator"):
+                        sibling="/".join(pkg+[dotted])
+                        candidates.extend((sibling+".py",
+                                           sibling+"/__init__.py"))
+                    for candidate in candidates:
                         if (root/candidate).is_file() or (root/candidate).is_symlink():
                             match=candidate
                             break
                     if match:
                         if match not in seen and match not in pending:
                             pending.append(match)
+                    elif isinstance(node,ast.ImportFrom) and mod and dotted!=mod:
+                        # 'from module import symbol' does NOT create an
+                        # import of module.symbol. Only actual local
+                        # submodules discovered above are traversed; the
+                        # already processed parent import is authoritative.
+                        # This also applies to direct-script fallback local
+                        # modules where the symbol path has no root prefix.
+                        continue
                     elif (root/prefix).is_dir() or (root/(prefix+".py")).is_file():
-                        # 'from module import symbol' does not imply a
-                        # separate module. Only a missing explicit Import
-                        # indicates an actual unresolved local module.
+                        # Only an explicit unresolved local Import can prove
+                        # a broken module path; symbols cannot be inferred.
                         if isinstance(node,ast.Import):
                             errors.append("UNRESOLVED_LOCAL_MODULE:"+dotted)
                     else:
@@ -279,6 +298,11 @@ def assess_v3_native_source_import_closure(root:Path)->dict[str,Any]:
         "candidate_transitive_file_count":len(manifest),
         "candidate_transitive_source_sha256":closure_hash,
         "third_party_or_stdlib_import_prefixes":sorted(external),
+        # Static names only; no pip execution or version/installation claim.
+        "stdlib_import_prefixes":sorted(external.intersection(
+            sys.stdlib_module_names)),
+        "external_import_prefixes_requiring_host_review":sorted(
+            external.difference(sys.stdlib_module_names)),
         "dynamic_import_source_paths_review_required":sorted(set(dynamic)),
         "dynamic_imports_and_external_package_versions_proven":False,
         "actual_loaded_python_bytecode_independently_verified":False,
@@ -764,3 +788,24 @@ def validate_experimental_paper_packet(root: Path, revision: str,
         if content_error:
             block(content_error)
     return errors
+
+
+def native_source_closure_readonly_main(argv:list[str]|None=None)->int:
+    """Emit source-stage observations without touching Windows/Cloud/runtime."""
+    parser=argparse.ArgumentParser(
+        description="V3 experimental Paper stage: static source/dependency readback ONLY")
+    parser.add_argument("--source-closure-readonly",action="store_true",required=True)
+    parser.add_argument("--source-root",type=Path,
+                        default=Path(__file__).absolute().parent.parent)
+    args=parser.parse_args(argv)
+    report=assess_v3_native_source_import_closure(args.source_root)
+    # No output file, pip install, runtime imports, git pull or activation.
+    report["inspection_authority"]="SOURCE_ONLY_NO_ORIGINALHOST_OR_CLOUD_ACK"
+    report["runtime_dependency_versions_verified"]=False
+    report["candidate_checkout_path"]=str(args.source_root.absolute())
+    print(json.dumps(report,sort_keys=True,ensure_ascii=True,indent=2))
+    return 0 if report["static_local_import_closure_complete"] else 2
+
+
+if __name__=="__main__":
+    raise SystemExit(native_source_closure_readonly_main())
