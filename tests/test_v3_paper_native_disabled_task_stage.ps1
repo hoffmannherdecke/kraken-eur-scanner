@@ -90,8 +90,8 @@ if($sourceGate -lt 0 -or $beforeAction -le $sourceGate -or
 
 $first=$src.IndexOf('if(-not $InstallDisabled){')
 $gate=$src.IndexOf('Require ($Confirm -ceq')
-$service=$src.IndexOf("New-Object -ComObject 'Schedule.Service'")
-$register=$src.IndexOf('RegisterTaskDefinition($taskName,$definition,2')
+$service=$src.IndexOf("New-Object -ComObject 'Schedule.Service'",$gate)
+$register=$src.IndexOf('RegisterTaskDefinition($taskName,$definition,2',$service)
 if($first -lt 0 -or $gate -le $first -or $service -le $gate -or $register -le $service){
  throw 'V3_DISABLED_NATIVE_TASK_PREVIEW_OR_CONFIRM_EXECUTION_ORDER_BAD'
 }
@@ -225,13 +225,51 @@ foreach($clause in @(
 )){
  if(-not $src.Contains($clause)){throw ('Task action source guard missing '+$clause)}
 }
+# Upcoming physical maintenance may use ONE opt-in original Task
+# DISABLED->DISABLED revision. Source test only: never call COM TaskScheduler.
+foreach($must in @(
+ 'ApplyDisabledCandidateAfterMaintenance',
+ 'ExpectedOldActionSha256',
+ 'AFTER_MAINTENANCE_REPLACE_DISABLED_READONLY_V3_TASK',
+ 'postmaintenance disabled candidate replacement requires exact confirmation',
+ '$plan.previous_disabled_task_action_sha256 -ceq $ExpectedOldActionSha256',
+ 'Export-ScheduledTask -TaskName $taskName',
+ '[IO.FileMode]::CreateNew',
+ '$stream.Flush($true)',
+ 'RegisterTaskDefinition($taskName,$definition,4',
+ 'RegisterTask($taskName,$oldXml,4',
+ 'DISABLED_SUCCESSOR_TASK_UPDATED_NOT_RELEASED',
+ '$plan.phase_execution_available=$false',
+ '$plan.independent_originalhost_release_accepted=$false',
+ '$plan.v3_paper_activated=$false'
+)){
+ if(-not $src.Contains($must)){throw ('V3_POSTMAINT_DISABLED_REPLACE_POLICY_MISSING '+$must)}
+}
+$disabledUpgrade=$src.IndexOf('if($candidateMode -and $ApplyDisabledCandidateAfterMaintenance){')
+$confirmation=$src.IndexOf("AFTER_MAINTENANCE_REPLACE_DISABLED_READONLY_V3_TASK")
+$backupAt=$src.IndexOf('[IO.FileMode]::CreateNew')
+$taskUpdate=$src.IndexOf('RegisterTaskDefinition($taskName,$definition,4')
+$verifyPost=$src.IndexOf('updated Task not exactly Disabled and pinned')
+$restore=$src.IndexOf('RegisterTask($taskName,$oldXml,4')
+if($confirmation -lt 0 -or $confirmation -ge $disabledUpgrade -or
+   $backupAt -le $disabledUpgrade -or $taskUpdate -le $backupAt -or
+   $verifyPost -le $taskUpdate -or $restore -le $verifyPost){
+ throw 'V3_POSTMAINT_DISABLED_UPGRADE_BACKUP_UPDATE_ROLLBACK_ORDER_INVALID'
+}
+if($src.Contains('RegisterTaskDefinition($taskName,$definition,6') -or
+   $src.Contains('Enable-ScheduledTask') -or
+   $src.Contains('Start-ScheduledTask')){
+ throw 'V3_POSTMAINT_DISABLED_UPGRADE_CANNOT_ENABLE_OR_START'
+}
+Write-Output 'V3_POSTMAINT_DISABlED_SUCCESSOR_SOURCE_BACKUP_ROLLBACK_GUARD_PASS'
+
 Write-Output 'V3_TASK_ACTION_PREVIEW_ORIGINAL_SHA_TUPLE_COMPATIBILITY_PASS'
 
 # The successor PREVIEW must inspect the existing old disabled V3 Task,
 # never update it or install any successor candidate as a second Task.
 foreach($must in @(
  '[string]$CandidateStageSha',
- 'if($InstallDisabled -or $Confirm)',
+ 'if($InstallDisabled){throw',
  '$stageFiles=if($candidateMode){0}else{66}',
  'READ_ONLY_SUCCESSOR_STAGE_VERIFIED_EXISTING_TASK_UNCHANGED',
  "Require ((OriginalDisabledTaskForCandidateReadOnly) -ceq 'Disabled')",
