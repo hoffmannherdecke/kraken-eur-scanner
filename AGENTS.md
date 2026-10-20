@@ -19,7 +19,7 @@ Detaillierter Vertrag: `docs/project-cross-session-handoff-v1.md`. Vorhandene fa
 
 ## 20.10.2026 – ausdrücklicher V3-Paper-Wartungs-Halt vor finaler Aktivierung
 
-**Nutzerbeschluss:** V3-Quellcode/One-Shot bis zum letzten produktiven Schritt entwickeln, **dann STOP**. Zuerst bestehenden Mini-PC-Wartungstermin für CPU/BIOS, Windows, USV, sichere Shutdown-/Recovery-Probe und Skriptübernahme (insbesondere PR #444) abschließen. **V2R4 danach wiederherstellen und real prüfen.** Erst nach Originalhost-/Cloud-ACK und gesonderter letzter Nutzerfreigabe produktiven V3-Paper-Cutover erlauben. Reihenfolge: `docs/v3-controlled-paper-cutover-20261011.md`, Abschnitt „Wartungs-Halt“. Kein zusätzlicher Manager, Scheduler oder siebter V3-Proof; Dokumente oder ACK-Booleans ersetzen keine echte Abnahme.
+**Nutzerbeschluss:** V3-Quellcode/One-Shot bis zum letzten produktiven Schritt entwickeln, **dann STOP**. CPU/BIOS/Windows/Skripte, Stop/Recovery, V2R4-Restart und Originalhost/Cloud echt prüfen, physisch belegte PASS nicht wiederholen. **Neue Nutzerentscheidung 20.10.: USV ist optional, `OPEN_DEFERRED_AWAIT_USER_TRIGGER`; kein V3-Paper-Gate, Entwicklungsstopp, Erinnerungsanlass oder fingierter PASS.** **V2R4 danach wiederherstellen und real prüfen.** Erst nach Originalhost-/Cloud-ACK und gesonderter letzter Nutzerfreigabe produktiven V3-Paper-Cutover erlauben. Reihenfolge: `docs/v3-controlled-paper-cutover-20261011.md`, Abschnitt „Wartungs-Halt“. Kein zusätzlicher Manager, Scheduler oder siebter V3-Proof; Dokumente oder ACK-Booleans ersetzen keine echte Abnahme.
 
 ## Verbindlicher Effizienz- und Vollständigkeitsstandard (Nutzerbeschluss 19.10.2026)
 

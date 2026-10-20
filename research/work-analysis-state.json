@@ -1378,7 +1378,7 @@
         "disposition": "DEFERRED_WITH_GATE",
         "reviewed_at_utc": "2026-10-20T08:18:34Z",
         "owner": "docs/v2r4-cpu-cache-versioned-technical-release-20261017.md + GitHub Issue #353",
-        "next_gate": "CPU_WINDOWS_UPS_SETUP_COMPLETE_BATTERY_CHARGED_SUPERVISED_TEST_PLAN_AND_SAFE_WRITER_RUNNER_QUIESCENCE_THEN_TWO_SEPARATE_ORIGINALHOST_E2E_ACKS",
+        "next_gate": "ONLY_AFTER_EXPLICIT_USER_USV_READY_REQUEST_THEN_SAFE_SUPERVISED_SETUP_AND_SEPARATE_POWER_RETURN_E2E_NOT_A_V3_PAPER_RELEASE_BLOCKER",
         "report": "research/work-analysis/2026-10-20-historical-backlog-dispositions.md",
         "evidence_sha256": "a642a53ecf06212124dd64978c5df8143d2cbaea54a1b9e213d40c8eb4496f1c",
         "original_source": "PROJECT_BACKLOG.md:L43",
