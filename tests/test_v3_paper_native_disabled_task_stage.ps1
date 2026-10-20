@@ -162,4 +162,62 @@ if($pythonCommand -is [array] -or $python -is [array] -or
 Require ((Test-Path -LiteralPath $python -PathType Leaf)) 'Python path must resolve to a single file'
 Write-Output 'V3_ORIGINALHOST_MULTIPLE_PYTHON_APPLICATIONS_BOOLEAN_PREVIEW_PASS'
 
+
+# The successor PREVIEW must inspect the existing old disabled V3 Task,
+# never update it or install the new 69-file candidate as a second Task.
+foreach($must in @(
+ '[string]$CandidateStageSha',
+ 'if($InstallDisabled -or $Confirm)',
+ '$stageFiles=if($candidateMode){69}else{66}',
+ 'READ_ONLY_SUCCESSOR_STAGE_VERIFIED_EXISTING_TASK_UNCHANGED',
+ "Require ((OriginalDisabledTaskForCandidateReadOnly) -ceq 'Disabled')",
+ "'tools/v3_experimental_paper_technical_gate.py'",
+ "'tools/paper_series_transition_guard.py'"
+)){
+ if(-not $src.Contains($must)){throw ('V3_CANDIDATE_SOURCE_GUARD_MISSING '+$must)}
+}
+$inspectAst=@($ast.FindAll({
+ param($node)
+ $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+ $node.Name -eq 'OriginalDisabledTaskForCandidateReadOnly'
+},$true))
+if($inspectAst.Count -ne 1){throw 'Original Task successor preview must reuse exactly one source helper'}
+. ([Scriptblock]::Create($inspectAst[0].Extent.Text))
+function Get-ScheduledTask {
+ param([string]$TaskName,[string]$TaskPath,[string]$ErrorAction)
+ if($TaskName -cne 'CryptoMiniPC-V3PaperSingleWriter' -or $TaskPath -cne '\'){
+  throw 'Candidate inspection touched foreign Task'
+ }
+ return $script:fakeCandidateTask
+}
+$script:fakeCandidateTask=[pscustomobject]@{
+ State='Disabled'
+ Actions=@([pscustomobject]@{
+  WorkingDirectory='C:\Users\ADMIN\Trading\Staging\V3Paper-INACTIVE-d6853a08e608'
+  Arguments="python -I -B -c sys.argv=['v3-paper','--read-only']"
+ })
+ Principal=[pscustomobject]@{UserId='SYSTEM'}
+ Settings=[pscustomobject]@{AllowDemandStart=$false;MultipleInstances='IgnoreNew'}
+}
+if((OriginalDisabledTaskForCandidateReadOnly) -cne 'Disabled'){
+ throw 'Original inactive Task dry-run identity rejected'
+}
+foreach($unsafe in @('Ready','Running')){
+ $script:fakeCandidateTask.State=$unsafe
+ $blocked=$false
+ try{$null=OriginalDisabledTaskForCandidateReadOnly}catch{$blocked=$true}
+ if(-not $blocked){throw ('Candidate Task state should fail closed: '+$unsafe)}
+}
+$script:fakeCandidateTask.State='Disabled'
+$script:fakeCandidateTask.Actions[0].Arguments='v3-paper --execute'
+$blocked=$false
+try{$null=OriginalDisabledTaskForCandidateReadOnly}catch{$blocked=$true}
+if(-not $blocked){throw 'Original V3 Task non-readonly action accepted'}
+$script:fakeCandidateTask.Actions[0].Arguments="python -I -B -c sys.argv=['v3-paper','--read-only']"
+$script:fakeCandidateTask.Settings.AllowDemandStart=$true
+$blocked=$false
+try{$null=OriginalDisabledTaskForCandidateReadOnly}catch{$blocked=$true}
+if(-not $blocked){throw 'Original V3 Task demand start accepted'}
+Write-Output 'V3_EXISTING_DISABLED_TASK_69_FILE_SUCCESSOR_READONLY_PREVIEW_PASS'
+
 Write-Output 'V3_NATIVE_DISABLED_READONLY_TASK_STAGE_SOURCE_POLICY_PASS'
