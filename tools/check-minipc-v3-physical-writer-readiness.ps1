@@ -372,6 +372,10 @@ $v3PostCas=[ordered]@{
  native_task_python_executable_hint=$false
  native_task_stage_path_shape_match=$false
  native_task_loaded_module_independently_verified=$false
+ native_python_parent_process_observed=$false
+ native_python_parent_matches_task_action_hint=$false
+ native_powershell_process_token_is_system=$false
+ native_runtime_identity_independently_verified=$false
  original_supervisor_observation='UNAVAILABLE'
  old_intake_tasks_disabled=$false
  protected_old_aftercare_running=$false
@@ -409,6 +413,217 @@ try {
     $v3PostCas.native_task_action_sha256=(
       [BitConverter]::ToString($hasher.ComputeHash($data))).Replace('-','').ToLowerInvariant()
    }finally{$hasher.Dispose()}
+   # For a future actual Task-launched Python -> this read-only PowerShell
+   # child, verify the parent *observed* in Windows CIM. This is only a
+   # point-in-time process hint, not cryptographic originalhost attestation.
+   # Never log command lines: Task arguments can contain private credentials.
+   try {
+    $sid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $v3PostCas.native_powershell_process_token_is_system=($sid -ceq 'S-1-5-18')
+    $thisProcess=Get-CimInstance Win32_Process -Filter "ProcessId=$PID" -ErrorAction Stop
+    if($null -ne $thisProcess -and [int]$thisProcess.ParentProcessId -gt 0) {
+     $parentId=[int]$thisProcess.ParentProcessId
+     $parentProcess=Get-CimInstance Win32_Process -Filter "ProcessId=$parentId" -ErrorAction Stop
+     if($null -ne $parentProcess -and [string]$parentProcess.Name -match '(?i)^pythonw?\.exe
+     $exe -match '(?i)(?:^|[\\/])pythonw?\.exe$')
+   $rootStage=[IO.Path]::GetFullPath((Join-Path $TradingRoot 'Staging')).TrimEnd('\')
+   $working=[IO.Path]::GetFullPath($wd).TrimEnd('\')
+   $v3PostCas.native_task_stage_path_shape_match=(
+     $working.StartsWith($rootStage+'\',[StringComparison]::OrdinalIgnoreCase) -and
+     [IO.Path]::GetFileName($working) -match '^V3Paper-INACTIVE-[a-f0-9]{12}$')
+   if($v3PostCas.native_task_stage_path_shape_match -and
+      $v3PostCas.native_task_python_executable_hint){
+    $launchDir=Join-Path $working 'paper_evaluator'
+    $launchFile=Join-Path $launchDir 'v3_paper_minipc_native_launcher_v1.py'
+    if((Test-Path -LiteralPath $working -PathType Container) -and
+       (Test-Path -LiteralPath $launchDir -PathType Container) -and
+       (Test-Path -LiteralPath $launchFile -PathType Leaf) -and
+       -not [bool]((Get-Item -LiteralPath $working -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) -and
+       -not [bool]((Get-Item -LiteralPath $launchDir -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) -and
+       -not [bool]((Get-Item -LiteralPath $launchFile -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)){
+     $v3PostCas.native_task_launcher_file_sha256=(
+       [string](Get-FileHash -LiteralPath $launchFile -Algorithm SHA256 -ErrorAction Stop).Hash).ToLowerInvariant()
+    }
+   }
+  }
+ }
+ $oldIntake=@($v2r4PaperTasks|Where-Object {$_.task_name -in @(
+   'CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')})
+ $oldAftercare=@($v2r4PaperTasks|Where-Object {$_.task_name -in @(
+   'CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')})
+ $v3PostCas.old_intake_tasks_disabled=($oldIntake.Count -eq 2 -and
+   @($oldIntake|Where-Object {$_.state -cne 'Disabled'}).Count -eq 0)
+ $v3PostCas.protected_old_aftercare_running=($oldAftercare.Count -eq 2 -and
+   @($oldAftercare|Where-Object {$_.state -cne 'Running' -or
+     $_.heartbeat_fresh_for_role -ne $true}).Count -eq 0)
+ $sp=Join-Path $state 'minipc-runtime-supervisor.json'
+ if(Test-Path -LiteralPath $sp -PathType Leaf){
+  $sf=Get-Item -LiteralPath $sp -Force -ErrorAction Stop
+  if(-not [bool]($sf.Attributes -band [IO.FileAttributes]::ReparsePoint) -and
+     $sf.Length -gt 0 -and $sf.Length -le 131072){
+   $supervisor=Get-Content -LiteralPath $sp -Raw -ErrorAction Stop|ConvertFrom-Json -ErrorAction Stop
+   $peek=$supervisor.v3_paper_successor_readonly
+   if($peek.kind -ceq 'V3_PAPER_SUCCESSOR_SUPERVISOR_READONLY_OBSERVATION_V1' -and
+      $peek.independent_cloud_or_host_proof_verified -eq $false -and
+      $peek.v3_auto_restart_authorized -eq $false){
+    $v3PostCas.original_supervisor_observation=[string]$peek.status
+   }
+  }
+ }
+}catch{
+ $v3PostCas.status='UNREADABLE_LOCAL_SOURCE_FAIL_CLOSED'
+}
+$pinChecked=0
+$pinMismatches=@()
+if($null -ne $plan){
+ foreach($item in @($plan.pinned_file_hashes)){
+  $rel=[string]$item.relative_path
+  $expected=[string]$item.sha256
+  if([string]::IsNullOrWhiteSpace($rel) -or
+    $rel -match '(^[\\/]|\.{2}|:)' -or
+    $expected -notmatch '^[0-9a-fA-F]{64}$'){
+    $pinMismatches+=@('INVALID_PIN_RECORD')
+    continue
+  }
+  $path=Join-Path $repo $rel
+  $pinChecked++
+  if(-not(Test-Path -LiteralPath $path -PathType Leaf)){
+   $pinMismatches+=@($rel)
+   continue
+  }
+  $hash=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
+  if($hash -ine $expected){$pinMismatches+=@($rel)}
+ }
+}
+# A wall-clock expiry is not a physical STOP acknowledgement. This
+# diagnostic permits independent human review of the original task only.
+$canarySchedulerEndCandidate=$false
+if($null -ne $plan -and $taskFinalTriggerUtc){
+ try{
+  $deadline=[datetime]::Parse([string]$plan.until_utc).ToUniversalTime()
+  $actualEnd=[datetime]::Parse($taskFinalTriggerUtc).ToUniversalTime()
+  $lastRun=if($taskLastRunUtc){[datetime]::Parse($taskLastRunUtc).ToUniversalTime()}else{$null}
+  $canarySchedulerEndCandidate=(
+    $now -ge $deadline -and $taskState -in @('Ready','Disabled') -and
+    $taskScheduleReadbackStatus -eq 'ONE_ORIGINAL_28H_TRIGGER_READ' -and
+    $taskActionMatchesPinnedObserver -and
+    [math]::Abs(($actualEnd-$deadline).TotalSeconds) -le 120 -and
+    $null -ne $lastRun -and $lastRun -le $deadline -and
+    $pinChecked -eq 9 -and $pinMismatches.Count -eq 0
+  )
+ }catch{$canarySchedulerEndCandidate=$false}
+}
+$journalCount=0
+if(Test-Path -LiteralPath $journal -PathType Container){
+ $journalCount=@(Get-ChildItem -LiteralPath $journal -Filter '*.json' -File).Count
+}
+$ackedCount=$null
+if(Test-Path -LiteralPath $ackPath -PathType Leaf){
+ try{
+  $ack=Get-Content -LiteralPath $ackPath -Raw|ConvertFrom-Json
+  $ackedCount=@($ack.acked).Count
+ }catch{$ackedCount='UNREADABLE'}
+}
+$sourceSafe=($oldApps.Count -eq 1 -and $oldApps[0].paper_only -and
+             $oldApps[0].no_real_money -and $queueHealthy)
+$canarySafe=($null -ne $plan -and
+              $plan.kind -eq 'V3_LOCAL_READONLY_CANARY_28H_PLAN_V1' -and
+              $plan.v2r4_unchanged -eq $true -and
+              $plan.model_http_calls_authorized -eq 0 -and
+              $plan.orders -eq $false -and $pinChecked -eq 9 -and
+              $pinMismatches.Count -eq 0 -and $taskState -ne 'NOT_FOUND')
+$ready=($repoPresent -and $missingModules.Count -eq 0 -and $sourceSafe -and $canarySafe)
+[ordered]@{
+ kind='V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1'
+ checked_at_utc=$now.ToString('o')
+ result=if($ready){'LOCAL_INPUT_PATH_READABLE_NO_WRITER_ACTIVATED'}else{'BLOCKED_READONLY_DIAGNOSTIC'}
+ repo_exists=$repoPresent
+ required_v3_modules_present=($missingModules.Count -eq 0)
+ future_v3_release_source_fingerprint_inventory=@($v3ReleaseSourceHashes)
+ future_v3_release_source_files_all_readable=$v3ReleaseSourceHashComplete
+ future_v3_release_source_hashes_compared_to_approved_release=$false
+ future_v3_paper_writer_installed_by_this_check=$false
+ future_v3_paper_single_writer_proven_by_this_check=$false
+ missing_v3_modules=@($missingModules)
+ active_v2r4_host_runtime_count=$oldApps.Count
+ active_v2r4_host_runtime_count_is_config_files_not_processes=$true
+ physical_v2r4_paper_task_readback=$v2r4PaperTasks
+ native_old_intake_precutover_readonly_baseline_pass=$nativePrecutoverBaselinePass
+ native_old_intake_baseline_does_not_prove_postcutover_rearm_fence=$true
+ native_old_paper_mode_lineage_precutover_readonly_pass=$nativeOldModeLineagePass
+ native_old_paper_mode_lineage_snapshot_only_no_stop_authority=$true
+ native_old_paper_mode_rows=@($paperModeRows)
+ physical_task_action_sha256_has_no_raw_arguments=$true
+ physical_pr291_wait_launcher_basename_only_not_loaded_module_sha_proof=$true
+ physical_supervisor_and_windows_rearm_fence_proven=$false
+ physical_closed_old_series_followup_exit_relay_proven=$false
+ physical_v3_named_paper_task_hints=@($v3PaperTaskNames)
+ physical_v3_postcas_local_inventory=$v3PostCas
+ physical_task_name_scan_cannot_prove_absence_of_other_writers=$true
+ pre_cutover_expected_predecessor_series_id=$oldSeries
+ physical_v2r4_intake_stop_ack_proven=$false
+ physical_single_writer_cutover_dry_run_passed=$false
+ cloud_expected_predecessor_cas_verified=$false
+ physical_v3_writer_start_ack_proven=$false
+ v2r4_runtime_readonly_authority_valid=$sourceSafe
+ original_handoff_queue_readable=$queueHealthy
+ original_handoff_files_sampled=$handoffCount
+ fresh_10m_originals_in_sample=$freshCount
+ latest_valid_original_age_seconds=$latestAgeSec
+ canary_task_state=$taskState
+ canary_deadline_utc=if($null -ne $plan){$plan.until_utc}else{$null}
+ canary_original_task_last_run_utc=$taskLastRunUtc
+ canary_original_task_last_result=$taskLastResult
+ canary_original_trigger_start_utc=$taskFirstTriggerUtc
+ canary_original_trigger_end_utc=$taskFinalTriggerUtc
+ canary_original_action_matches_manifest=$taskActionMatchesPinnedObserver
+ canary_original_schedule_readback_status=$taskScheduleReadbackStatus
+ canary_scheduler_end_candidate_for_independent_review=$canarySchedulerEndCandidate
+ canary_physical_observer_end_ack_from_this_single_readback=$false
+ canary_after_deadline_requires_independent_host_cloud_ack=$true
+ canary_manifest_valid_and_pinned=$canarySafe
+ experimental_paper_gate_module_present=$existingExperimentalGatePresent
+ experimental_paper_requires_prior_profitable_buy=$false
+ experimental_paper_requires_six_real_technical_proofs=$true
+ experimental_paper_technical_proofs_verified_by_this_local_readonly_check=0
+ experimental_paper_release_authorized_by_this_check=$false
+ experimental_paper_governance_source='tools/v3_experimental_paper_technical_gate.py'
+ experimental_paper_next_gate='SIX_REAL_HOST_OR_CLOUD_E2E_ARTIFACTS_FIXED_API_CAP_SINGLE_WRITER_DRYRUN_EXPLICIT_RELEASE'
+ canary_pinned_files_checked=$pinChecked
+ canary_pinned_mismatch_count=$pinMismatches.Count
+ last_canary_heartbeat_status=if($null -ne $heartbeat){$heartbeat.status}else{'MISSING'}
+ last_canary_heartbeat_at_utc=if($null -ne $heartbeat){$heartbeat.checked_at_utc}else{$null}
+ existing_v3_local_journal_receipts=$journalCount
+ existing_v3_cloud_acks_local=$ackedCount
+ real_owner_authentication_proven=$false
+ new_v3_writer_started=$false
+ new_cloud_sync_performed=$false
+ model_http_calls=0
+ v2r4_changed=$false
+ filesystem_writes=$false
+} | ConvertTo-Json -Depth 8
+) {
+      $v3PostCas.native_python_parent_process_observed=$true
+      $parentExe=[string]$parentProcess.ExecutablePath
+      $parentArgs=[string]$parentProcess.CommandLine
+      # Exact native path + original full action argument sequence is only
+      # a conservative heuristic; different Windows quoting fails closed.
+      $v3PostCas.native_python_parent_matches_task_action_hint=(
+       [string]$nativeV3.State -ceq 'Running' -and
+       $v3PostCas.native_task_principal_system -eq $true -and
+       [string]$nativeV3.TaskPath -ceq '\' -and
+       [string]$nativeV3.Settings.MultipleInstances -ceq 'IgnoreNew' -and
+       [string]::Equals($parentExe,$exe,[StringComparison]::OrdinalIgnoreCase) -and
+       -not [string]::IsNullOrEmpty($argsText) -and
+       $parentArgs.Contains($argsText))
+     }
+    }
+   }catch{
+    # Missing CIM/identity visibility cannot be promoted into a process ACK.
+    $v3PostCas.native_python_parent_process_observed=$false
+    $v3PostCas.native_python_parent_matches_task_action_hint=$false
+    $v3PostCas.native_powershell_process_token_is_system=$false
+   }
    $v3PostCas.native_task_python_executable_hint=(
      $exe -match '(?i)(?:^|[\\/])pythonw?\.exe$')
    $rootStage=[IO.Path]::GetFullPath((Join-Path $TradingRoot 'Staging')).TrimEnd('\')
