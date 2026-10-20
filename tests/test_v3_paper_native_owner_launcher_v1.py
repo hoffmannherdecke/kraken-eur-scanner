@@ -69,6 +69,88 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                         launcher.main()
                     self.assertEqual(err.exception.code, 2)
 
+
+    def test_native_phase_uses_original_cloud_readback_inside_worker(self):
+        with tempfile.TemporaryDirectory() as root:
+            common = self.common(root)
+            common.pop("read_active_series")
+            kwargs = dict(common, phase="FOLLOWUP_6H24H72H",
+                          candidate={"candidate_id": "ORIGINAL_ONLY"})
+            original = self.original_release_host(self.SID, self.REPO)
+            packet = {"strategy_revision": launcher.REVISION,
+                      "strategy_fingerprint_sha256": self.STRATEGY}
+            cloud = {"series_id": self.SID, "status": "active", "config": {}}
+            token = "OFFLINE_ONLY_NOT_A_REAL_SECRET_12345678"
+            with patch.object(launcher, "validate_experimental_paper_packet",
+                              return_value=[]), patch.object(
+                    launcher, "read_active_paper_series", return_value=cloud) as relay, \
+                    patch.object(launcher, "dispatch_one_owned_paper_phase") as phase:
+                def single_phase(**parameters):
+                    return parameters["read_active_series"](self.SID)
+                phase.side_effect = single_phase
+                result = launcher.dispatch_after_originalhost_and_cloud_readback(
+                    originalhost_readback=lambda: original,
+                    release_root=Path(root), release_packet=packet,
+                    original_cloud_relay_token=token, **kwargs)
+                self.assertEqual(result, cloud)
+                relay.assert_called_once_with(series_id=self.SID, token=token)
+                phase.assert_called_once()
+                args = phase.call_args.kwargs
+                self.assertIsNone(args.get("relay_token"))
+                self.assertEqual(args["phase"], "FOLLOWUP_6H24H72H")
+
+    def test_native_original_cloud_adapter_rejects_injected_transport(self):
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="FIRST_SCANNER_MODEL_P4",
+                          candidate={})
+            kwargs.pop("read_active_series")
+            token = "FAKE_MODELLESS_TEST_ONLY_TOKEN_123456"
+            with patch.object(launcher, "dispatch_after_native_release_readback") as owner, \
+                    patch.object(launcher, "read_active_paper_series") as relay:
+                for field, value in (
+                    ("read_active_series", lambda sid: {}),
+                    ("cloud_post", lambda *_: {}),
+                    ("relay_token", "different"),
+                    ("clock_now", lambda: "2026-10-19T14:00:00Z"),
+                    ("model_client", lambda **_: None),
+                    ("source_capture", lambda **_: None),
+                    ("source_acquire", lambda *_: None),
+                    ("source_fetch", lambda *_: None),
+                    ("source_ticker", lambda *_: None)):
+                    with self.subTest(field=field), self.assertRaisesRegex(
+                            ValueError, "forbidden"):
+                        launcher.dispatch_after_originalhost_and_cloud_readback(
+                            originalhost_readback=lambda: {},
+                            release_root=Path(root), release_packet={},
+                            original_cloud_relay_token=token,
+                            **dict(kwargs, **{field: value}))
+                for bad in (None, "", "short", "fake token with space",
+                            "T" * 513):
+                    with self.subTest(token=repr(bad)), self.assertRaises(ValueError):
+                        launcher.dispatch_after_originalhost_and_cloud_readback(
+                            originalhost_readback=lambda: {},
+                            release_root=Path(root), release_packet={},
+                            original_cloud_relay_token=bad, **kwargs)
+                owner.assert_not_called()
+                relay.assert_not_called()
+
+    def test_original_cloud_ack_receives_only_existing_relay_token(self):
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="CLOUD_RECEIPT_ACK")
+            kwargs.pop("read_active_series")
+            with patch.object(launcher, "dispatch_after_native_release_readback",
+                              return_value={"status": "OFFLINE"}) as owner:
+                token = "ORIGINAL_CLOUD_TEST_TOKEN_NO_NETWORK_1234567"
+                self.assertEqual(
+                    launcher.dispatch_after_originalhost_and_cloud_readback(
+                        originalhost_readback=lambda: {}, release_root=Path(root),
+                        release_packet={}, original_cloud_relay_token=token,
+                        **kwargs)["status"], "OFFLINE")
+                owner.assert_called_once()
+                forwarded = owner.call_args.kwargs
+                self.assertEqual(forwarded["relay_token"], token)
+                self.assertTrue(callable(forwarded["read_active_series"]))
+
     def test_originalhost_readonly_report_never_claims_release(self):
         fixed = {
             "kind": "V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1",
