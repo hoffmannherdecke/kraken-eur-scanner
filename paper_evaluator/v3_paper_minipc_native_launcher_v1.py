@@ -591,13 +591,45 @@ def dispatch_from_original_windows_one_shot(*,
         raise ValueError("native one-shot phase or injected source invalid")
     observed = read_originalhost_readonly()
     _require_running_originalhost_source_hint(observed)
-    # Never turn the observed local dict into the release callback. The same
-    # externally authenticated owner and the original authenticated Cloud
-    # relay are independently checked by the existing protected dispatcher,
-    # which also rechecks the originalhost's strict 90-second freshness after
-    # the locked Cloud relay returns (PR470).
+    # A local Task/source observation and a valid external release receipt
+    # must refer to the SAME Task action and pinned on-disk launcher bytes.
+    # Treating them as independent unrelated "green" checks would allow
+    # two different source vintages to be combined for one release attempt.
+    observed_now = _originalhost_wall_clock_utc()
+    observed_stamp = _read_only_snapshot_time(
+        observed.get("observed_at_utc"), source="original Windows Task",
+        now=observed_now)
+    if not 0 <= (observed_now - observed_stamp).total_seconds() <= 90:
+        raise ValueError("native original Windows Task observation stale or future")
+
+    def same_originalhost_release_readback() -> dict[str, Any]:
+        independent = originalhost_release_readback()
+        if not isinstance(independent, dict):
+            raise ValueError("independent originalhost release readback missing")
+        # Both fingerprints are supplied by the external release owner,
+        # NOT copied into its dictionary from the local diagnostic.
+        # The native release gate separately checks that owner's physical
+        # authenticity, Task state, six proofs, maintenance and Cloud CAS.
+        for key in ("native_task_action_sha256",
+                    "native_task_launcher_file_sha256"):
+            if (not isinstance(independent.get(key), str)
+                    or FILE_SHA.fullmatch(independent[key]) is None
+                    or independent[key] != observed.get(key)):
+                raise ValueError("independent originalhost Task/source fingerprint mismatch")
+        release_stamp = _read_only_snapshot_time(
+            independent.get("observed_at_utc"), source="independent release",
+            now=_originalhost_wall_clock_utc())
+        if abs((release_stamp - observed_stamp).total_seconds()) > 90:
+            raise ValueError("originalhost Task and release observations do not overlap")
+        return independent
+
+    # The actual native release path independently enforces the stricter
+    # current 90-second originalhost report at the worker boundary, including
+    # after the single locked authenticated Cloud read (PR470). This wrapper
+    # compares observations; it does NOT certify loaded PID/module identity
+    # or mint an external release authority from local host flags.
     return dispatch_after_originalhost_and_cloud_readback(
-        originalhost_readback=originalhost_release_readback,
+        originalhost_readback=same_originalhost_release_readback,
         release_root=release_root, release_packet=release_packet,
         original_cloud_relay_token=original_cloud_relay_token,
         **phase_args)
