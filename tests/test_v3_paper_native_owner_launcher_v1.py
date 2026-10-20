@@ -378,7 +378,9 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         probe.assert_called_once()
         args = probe.call_args.args[0]
         self.assertEqual(args[0], str(launcher.ORIGINALHOST_POWERSHELL))
-        self.assertEqual(args[1:4], ["-NoProfile", "-NonInteractive", "-File"])
+        self.assertEqual(args[1:6], [
+                    "-NoProfile", "-NonInteractive", "-ExecutionPolicy",
+                    "Bypass", "-File"])
         self.assertTrue(args[4].replace(chr(92), "/").endswith(
             launcher.ORIGINALHOST_READONLY_SCRIPT))
         self.assertEqual(args[5:], ["-TradingRoot",
