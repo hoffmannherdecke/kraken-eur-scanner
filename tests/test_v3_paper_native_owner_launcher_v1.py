@@ -381,9 +381,9 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         self.assertEqual(args[1:6], [
                     "-NoProfile", "-NonInteractive", "-ExecutionPolicy",
                     "Bypass", "-File"])
-        self.assertTrue(args[4].replace(chr(92), "/").endswith(
+        self.assertTrue(args[6].replace(chr(92), "/").endswith(
             launcher.ORIGINALHOST_READONLY_SCRIPT))
-        self.assertEqual(args[5:], ["-TradingRoot",
+        self.assertEqual(args[7:], ["-TradingRoot",
                                    launcher.ORIGINALHOST_TRADING_ROOT])
         self.assertEqual(probe.call_args.kwargs["timeout"], 90)
         self.assertFalse(probe.call_args.kwargs["check"])
