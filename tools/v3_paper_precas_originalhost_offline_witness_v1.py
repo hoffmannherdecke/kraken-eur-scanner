@@ -305,7 +305,8 @@ def run_offline_cases(root: Path, series_id: str, *, stage: Path | None = None,
 
 
 def inspect_existing_offline_originals(root: Path, series_id: str,
-                                       expected_cloud_digest: str | None = None) -> dict:
+                                       expected_cloud_digest: str | None = None,
+                                       *, stage_sha: str | None = None) -> dict:
     """Read ONLY the one earlier isolated BUY/REJECT Host journal.
 
     No second writer run, test scenario, Task, Cloud POST, or release ACK.
@@ -313,15 +314,17 @@ def inspect_existing_offline_originals(root: Path, series_id: str,
     external reference -- this method cannot independently query Cloud.
     """
     from tools.v3_paper_precas_synthetic_cloud_sandbox_v1 import (
-        SERIES as KNOWN_SERIES, STAGE_SHA as KNOWN_STAGE,
-        audit_offline_witness,
+        STAGE_SHA as KNOWN_STAGE, audit_offline_witness,
     )
-    if (series_id != KNOWN_SERIES or root.name !=
-            "PRECAS-OFFLINE-ORIGINALHOST-" + KNOWN_STAGE[:12]):
+    actual_sha = KNOWN_STAGE if stage_sha is None else stage_sha
+    if (not isinstance(actual_sha, str) or HEX40.fullmatch(actual_sha) is None
+            or series_id !=
+            "PAPER-V3-CANARY-PRECAS-OFFLINE-" + actual_sha[:12].upper()
+            or root.name != "PRECAS-OFFLINE-ORIGINALHOST-" + actual_sha[:12]):
         raise ValueError("unknown originalhost synthetic witness series")
     if root.is_symlink() or not root.is_dir():
         raise ValueError("original physical research journal unavailable")
-    checked = audit_offline_witness(root)
+    checked = audit_offline_witness(root, stage_sha=actual_sha)
     journal = checked["journal"]
     report_path = root / "offline-model-stub-witness.json"
     if report_path.is_symlink() or not report_path.is_file():
@@ -398,9 +401,15 @@ def main() -> int:
     p = inspect(source=a.source, stage=a.stage, stage_sha=a.expected_stage_sha)
     output = p["target"]
     if a.readback_existing:
+        # -I removes current working directory AND script directory from
+        # import search. Reintroduce only the independently verified,
+        # SHA-pinned stage plus the clean Git source required for the
+        # original read-only journal auditor. Do not reexecute its writer.
+        sys.path.insert(0, str(p["stage"]))
+        sys.path.insert(1, str(p["source"]))
         print(json.dumps(inspect_existing_offline_originals(
-            output, p["series_id"], a.expected_isolated_cloud_digest),
-            sort_keys=True))
+            output, p["series_id"], a.expected_isolated_cloud_digest,
+            stage_sha=p["stage_sha"]), sort_keys=True))
         return 0
     if output.exists():
         raise ValueError("ONE_SHOT_WITNESS_TARGET_ALREADY_EXISTS_NO_RETRY")

@@ -37,6 +37,20 @@ class SyntheticCloudSandboxTests(unittest.TestCase):
         self.assertEqual(len(result["rows"]),16)
         self.assertFalse((self.root/"isolated-test-project-only-ack.json").exists())
 
+    def test_dynamic_readonly_audit_preserves_original_sandbox_transport_pin(self):
+        from tools.v3_paper_precas_synthetic_cloud_sandbox_v1 import (
+            SERIES, STAGE_SHA, SANDBOX_RELAY_URL, PRODUCTION_PROJECT,
+            audit_offline_witness)
+        self.assertNotIn(PRODUCTION_PROJECT, SANDBOX_RELAY_URL)
+        import inspect
+        source = inspect.getsource(audit_offline_witness)
+        self.assertIn("stage_sha: str = STAGE_SHA", source)
+        self.assertIn("series = ", source)
+        self.assertIn("witness.get(\"stage_source_sha\") != stage_sha", source)
+        self.assertIn("payload.get(\"series_id\") != series", source)
+        with self.assertRaisesRegex(ValueError, "exact synthetic stage SHA"):
+            audit_offline_witness(Path("/not-a-witness"), stage_sha="not-a-sha")
+
     def test_changed_original_file_rejected(self):
         path=next((self.root/"journal").glob("*.json"))
         path.write_bytes(path.read_bytes()+b" ")

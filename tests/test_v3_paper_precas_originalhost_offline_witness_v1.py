@@ -171,6 +171,53 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
                 for p in root.rglob("*") if p.is_file()
             })
 
+    def test_new_source_pinned_stage_journal_readback_never_repeats_writer(self):
+        newsha = "16e27043c2f40f016d5b64f82383e40b0f89326d"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = (Path(tmp) / "Research" / "V3Paper" /
+                    ("PRECAS-OFFLINE-ORIGINALHOST-" + newsha[:12]))
+            root.mkdir(parents=True)
+            series = "PAPER-V3-CANARY-PRECAS-OFFLINE-" + newsha[:12].upper()
+            witness = run_offline_cases(root, series)
+            witness["stage_source_sha"] = newsha
+            (root / "offline-model-stub-witness.json").write_text(
+                json.dumps(witness, sort_keys=True), encoding="utf-8")
+            original_files = {
+                str(p.relative_to(root)):
+                    (hashlib.sha256(p.read_bytes()).hexdigest(), p.stat().st_mtime_ns)
+                for p in root.rglob("*") if p.is_file()
+            }
+            proof = inspect_existing_offline_originals(root, series,
+                                                       stage_sha=newsha)
+            self.assertEqual(proof["status"],
+                             "EXISTING_HOST_ORIGINALS_REANALYZED_READ_ONLY")
+            self.assertEqual(proof["event_count"], 16)
+            self.assertFalse(proof["native_writer_reexecuted"])
+            self.assertFalse(proof["v3_paper_release_authorized"])
+            self.assertFalse(proof["fresh_independent_cloud_readback_performed"])
+            self.assertEqual(
+                [(x["case"], x["paper_fill_count"]) for x in proof["cases"]],
+                [("POSITIVE_BUY_SCOUT", 1), ("NEGATIVE_REJECT", 0)])
+            self.assertEqual(original_files, {
+                str(p.relative_to(root)):
+                    (hashlib.sha256(p.read_bytes()).hexdigest(), p.stat().st_mtime_ns)
+                for p in root.rglob("*") if p.is_file()
+            })
+            with self.assertRaisesRegex(ValueError, "unknown originalhost synthetic"):
+                inspect_existing_offline_originals(root, series)
+            with self.assertRaisesRegex(ValueError, "unknown originalhost synthetic"):
+                inspect_existing_offline_originals(root, series,
+                                                   stage_sha="a" * 40)
+            # Even matching staged identity cannot make a self-edited
+            # decision/count or edited receipt acceptable.
+            f = root / "offline-model-stub-witness.json"
+            bad = json.loads(f.read_text(encoding="utf-8"))
+            bad["cases"][0]["paper_fill_count"] = 0
+            f.write_text(json.dumps(bad), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                inspect_existing_offline_originals(root, series,
+                                                   stage_sha=newsha)
+
     def test_old_independent_sandbox_reference_is_match_only_not_fresh_attestation(self):
         with tempfile.TemporaryDirectory() as tmp:
             root, series = self._existing_original_16_receipts(tmp)

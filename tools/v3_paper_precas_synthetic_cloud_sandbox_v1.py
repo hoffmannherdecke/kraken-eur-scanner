@@ -29,10 +29,18 @@ CASE_TO_DECISION = {
 REVISION = "V3-EXPERIMENTAL-PAPER-20261011-ALL-LESSONS-001"
 
 
-def audit_offline_witness(root: Path) -> dict:
-    """Only read original physical host evidence, byte hashes and event IDs."""
+def audit_offline_witness(root: Path, *, stage_sha: str = STAGE_SHA) -> dict:
+    """Read-only hash audit for an exact, isolated stage; Cloud URL stays fixed.
+
+    Only the original historical stage is eligible for the existing sandbox
+    CLI's transport. A new stage may be audited but cannot be sent by this
+    CLI to any Cloud endpoint or interpreted as a released Paper series.
+    """
+    if not isinstance(stage_sha, str) or re.fullmatch(r"[0-9a-f]{40}", stage_sha) is None:
+        raise ValueError("exact synthetic stage SHA required")
+    series = "PAPER-V3-CANARY-PRECAS-OFFLINE-" + stage_sha[:12].upper()
     root = Path(root).absolute()
-    if (root.name != "PRECAS-OFFLINE-ORIGINALHOST-" + STAGE_SHA[:12]
+    if (root.name != "PRECAS-OFFLINE-ORIGINALHOST-" + stage_sha[:12]
             or root.parent.name != "V3Paper"
             or root.parent.parent.name != "Research"
             or not root.is_dir() or root.is_symlink()):
@@ -44,8 +52,8 @@ def audit_offline_witness(root: Path) -> dict:
     witness = json.loads(witness_path.read_text("utf-8"))
     if (witness.get("status") != "HOST_LOCAL_OFFLINE_MODEL_STUB_ONLY"
             or witness.get("kind") != "V3_PRECAS_PHYSICAL_OFFLINE_DUAL_CASE_WITNESS_V1"
-            or witness.get("series_id") != SERIES
-            or witness.get("stage_source_sha") != STAGE_SHA
+            or witness.get("series_id") != series
+            or witness.get("stage_source_sha") != stage_sha
             or witness.get("source_fixture") != "SYNTHETIC_20261009_NOT_LIVE_KRAKEN"
             or witness.get("no_real_model_http") is not True
             or witness.get("simulated_model_approval_not_user_approval") is not True
@@ -57,7 +65,7 @@ def audit_offline_witness(root: Path) -> dict:
             or len(witness.get("cases", [])) != 2):
         raise ValueError("witness not an explicit two-case offline-only model stub")
     from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import batch
-    rows = batch(journal, SERIES, set(), limit=30)
+    rows = batch(journal, series, set(), limit=30)
     expected = {}
     phases_by_candidate: dict[str,list[tuple[str,str]]] = {}
     for case in witness["cases"]:
@@ -79,7 +87,7 @@ def audit_offline_witness(root: Path) -> dict:
     for row in rows:
         payload = json.loads(row["canonical_json"])
         cid, event_id = payload.get("candidate_id"), row["event_id"]
-        if (cid not in phases_by_candidate or payload.get("series_id") != SERIES
+        if (cid not in phases_by_candidate or payload.get("series_id") != series
                 or payload.get("revision") != REVISION
                 or payload.get("orders") is not False
                 or payload.get("real_money_actions") is not False
