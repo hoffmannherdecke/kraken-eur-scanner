@@ -367,6 +367,11 @@ $v3PostCas=[ordered]@{
  native_task_principal_system=$false
  native_task_has_one_action=$false
  native_task_uses_old_readonly_launcher=$true
+ native_task_action_sha256=$null
+ native_task_launcher_file_sha256=$null
+ native_task_python_executable_hint=$false
+ native_task_stage_path_shape_match=$false
+ native_task_loaded_module_independently_verified=$false
  original_supervisor_observation='UNAVAILABLE'
  old_intake_tasks_disabled=$false
  protected_old_aftercare_running=$false
@@ -389,6 +394,42 @@ try {
   if($v3PostCas.native_task_has_one_action){
    $v3PostCas.native_task_uses_old_readonly_launcher=(
     [string]$nativeV3.Actions[0].Arguments -match '\-\-read-only')
+   # Bounded original Windows Task/source INTEGRITY INVENTORY ONLY:
+   # observed hashes are not an authentication of loaded Python code.
+   $action=$nativeV3.Actions[0]
+   $exe=[string]$action.Execute
+   $argsText=[string]$action.Arguments
+   $wd=[string]$action.WorkingDirectory
+   if($exe.Length -gt 512 -or $argsText.Length -gt 8192 -or
+      $wd.Length -gt 512){throw 'V3 task action oversized'}
+   $hasher=[Security.Cryptography.SHA256]::Create()
+   try{
+    $data=[Text.Encoding]::UTF8.GetBytes(
+      $exe+[char]0+$argsText+[char]0+$wd)
+    $v3PostCas.native_task_action_sha256=(
+      [BitConverter]::ToString($hasher.ComputeHash($data))).Replace('-','').ToLowerInvariant()
+   }finally{$hasher.Dispose()}
+   $v3PostCas.native_task_python_executable_hint=(
+     $exe -match '(?i)(?:^|[\\/])pythonw?\.exe$')
+   $rootStage=[IO.Path]::GetFullPath((Join-Path $TradingRoot 'Staging')).TrimEnd('\')
+   $working=[IO.Path]::GetFullPath($wd).TrimEnd('\')
+   $v3PostCas.native_task_stage_path_shape_match=(
+     $working.StartsWith($rootStage+'\',[StringComparison]::OrdinalIgnoreCase) -and
+     [IO.Path]::GetFileName($working) -match '^V3Paper-INACTIVE-[a-f0-9]{12}$')
+   if($v3PostCas.native_task_stage_path_shape_match -and
+      $v3PostCas.native_task_python_executable_hint){
+    $launchDir=Join-Path $working 'paper_evaluator'
+    $launchFile=Join-Path $launchDir 'v3_paper_minipc_native_launcher_v1.py'
+    if((Test-Path -LiteralPath $working -PathType Container) -and
+       (Test-Path -LiteralPath $launchDir -PathType Container) -and
+       (Test-Path -LiteralPath $launchFile -PathType Leaf) -and
+       -not [bool]((Get-Item -LiteralPath $working -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) -and
+       -not [bool]((Get-Item -LiteralPath $launchDir -Force).Attributes -band [IO.FileAttributes]::ReparsePoint) -and
+       -not [bool]((Get-Item -LiteralPath $launchFile -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)){
+     $v3PostCas.native_task_launcher_file_sha256=(
+       [string](Get-FileHash -LiteralPath $launchFile -Algorithm SHA256 -ErrorAction Stop).Hash).ToLowerInvariant()
+    }
+   }
   }
  }
  $oldIntake=@($v2r4PaperTasks|Where-Object {$_.task_name -in @(
