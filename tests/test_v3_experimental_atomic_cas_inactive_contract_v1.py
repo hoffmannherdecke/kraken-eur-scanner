@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 SQL_PATH=ROOT/"supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql"
+POSTGRES_SMOKE_PATH=ROOT/"tests/sql/v3_experimental_paper_atomic_cas_smoke.sql"
 
 
 class InactiveV3AtomicCASContract(unittest.TestCase):
@@ -86,7 +87,9 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
             "p_expected_old_candidate_count",
             "p_expected_old_trade_count",
             "p_expected_old_last_outcome_updated_at",
+            "p_expected_old_last_trade_updated_at",
             "last_outcome is distinct from p_expected_old_last_outcome_updated_at",
+            "last_trade is distinct from p_expected_old_last_trade_updated_at",
             "trade_count is distinct from p_expected_old_trade_count",
             "outcome_count is distinct from p_expected_old_candidate_count",
             "p_proposed_v3_series_id",
@@ -101,6 +104,44 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         ):
             with self.subTest(required=required):
                 self.assertIn(required,self.body)
+
+    def test_old_trade_exit_version_must_be_in_same_atomic_cas(self):
+        # Existing open Paper trades can close without increasing trade count.
+        self.assertRegex(
+            self.sql,
+            r"p_expected_old_trade_count\s+bigint,\s*"
+            r"p_expected_old_last_outcome_updated_at\s+timestamptz,\s*"
+            r"p_expected_old_last_trade_updated_at\s+timestamptz")
+        self.assertIn("last_trade timestamptz;",self.body)
+        self.assertRegex(
+            self.body,
+            r"select\s+count\(\*\),max\(updated_at\)\s+"
+            r"into\s+trade_count,last_trade\s+"
+            r"from\s+public\.paper_trade_results")
+        self.assertIn(
+            "last_trade is distinct from p_expected_old_last_trade_updated_at",
+            self.body)
+        self.assertRegex(
+            self.body,
+            r"p_expected_old_trade_count > 0 and\s*"
+            r"p_expected_old_last_trade_updated_at is null")
+        self.assertRegex(
+            self.sql,
+            r"text,text,text,text,bigint,bigint,timestamptz,timestamptz,\s*"
+            r"text,text,text,timestamptz,jsonb,text,text,text\)")
+        self.assertLess(
+            self.body.index("last_trade is distinct from"),
+            self.body.index("update public.paper_series"))
+        self.assertNotRegex(self.sql, r"(?im)^\s*grant\s+execute\s+on")
+
+    def test_disposable_postgres_checks_same_count_trade_version_drift(self):
+        fixture=POSTGRES_SMOKE_PATH.read_text(encoding="utf-8")
+        self.assertIn("select count(*),max(updated_at) into n_trade,last_trade",fixture)
+        self.assertIn("updated_at=last_trade+interval '5 seconds'",fixture)
+        self.assertIn("stale same-count old trade update accepted",fixture)
+        self.assertIn("last_out,last_trade,",fixture)
+        self.assertNotIn("n_trade,last_out,\\n",fixture)
+        self.assertIn("rollback;",fixture.lower())
 
     def test_never_accept_fake_auto_money_or_second_strategy(self):
         for key in (
