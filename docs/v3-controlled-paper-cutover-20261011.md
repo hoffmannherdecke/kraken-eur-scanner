@@ -177,7 +177,7 @@ Das Ausgabeobjekt bleibt ausnahmslos
 kein neuer Laufplan installiert, kein Writer ausgeführt und keine
 Cloud-Schreibaktion, Modellanforderung oder Paper-Order initiiert.
 Die physische Windows-Installation bleibt getrennt und für den vorgesehenen
-CPU-/Windows-/USV-/Skript-Wartungstermin reserviert.
+CPU-/Windows-/Skript-Abnahme reserviert; USV ist optional und ausdrücklich bis zur aktiven Nutzermeldung zurückgestellt.
 
 ### Windows-One-Shot-Vorprüfung vor Wartung (ausführbar, streng lesend)
 
@@ -207,22 +207,24 @@ Externe/dynamische Imports, Windows-Task-/Prozessidentität,
 Originalhost-E2E, Cloud CAS und die finale Nutzerentscheidung
 bleiben beim einzigen tatsächlichen Release-Owner.
 
+**Spätere verbindliche Nutzerkorrektur 20.10.2026:** Der UPS01LCD/USV-Anschluss ist eine optionale Resilienzverbesserung, **keine** V3-Strategie-/Paper-Freigabevoraussetzung. Die einzelne originale USV-Pflichtprüfung im nativen Launcher wird entfernt und gesondert regressionsgetestet; alle übrigen echten CPU-/Windows-/Skript-/V2R4-Restart-/Single-Writer-/Sechs-Proof-/Cloud-CAS-/Rollback- und Nutzerfreigabe-Gates gelten unverändert. Keine falschen positiven USV-Nachweise. Alte USV-Pflichtpassagen in historischen PR-/Checklistenbeschreibungen sind dadurch überholt.
+
 ## 20.10.2026 – verbindlicher Wartungs-Halt VOR dem letzten V3-Paper-Go-live-Schritt
 
 **Neue ausdrückliche Nutzerentscheidung:** V3-Codeentwicklung, isolierte GitHub-/Mini-PC-Quellenprüfungen, vorbereitende Tests und Review dürfen bis zur letzten produktiven Paper-Umschaltung weiterlaufen. **Bevor** jedoch der endgültige V3-Paper-Cutover (produktiv wirksames Cloud-CAS, Umstellen/Aktivieren der Windows-Task, Stilllegen der alten V2R4-Neuaufnahme) freigegeben oder ausgelöst wird, **STOPP**: den bereits vorgesehenen Wartungstermin am Dell OptiPlex 5060 Micro durchführen und die noch ausstehenden Skriptversionen einschließlich PR #444 auf dem **Originalhost** übernehmen und tatsächlich abnehmen. Der Nutzer gibt nach dem Wartungs-Readback die finale V3-Paper-Aktivierung getrennt frei. Kein Automatismus und kein zusätzlicher Manager, Scheduler oder siebter unabhängiger V3-Technikbeweis. Die Wartungs-/Originalhost-ACKs werden in die **bestehenden** Proofs `V3_MINIPC_SUPERVISOR_STOP_START_ROLLBACK` (Reboot/Recovery/Fence) und `V3_SINGLE_WRITER_FENCE_CLOUD_CAS_DRYRUN` (gepinntes Writer-/Task-/Quellen-Release) integriert.
 
 **Ausführungsreihenfolge im EINEN bestehenden Wartungsfenster – thematische Checkliste ist nicht die Startreihenfolge:**
 
-1. Vorab: aktuellen GitHub-/Mini-PC-/Cloud-Zustand, tatsächlich laufende V2R4-Tasks, Quellenpins, Original-Windows-Task-Backups, Backup-/Recovery- und USV-Voraussetzungen prüfen, Wartungsfenster bestätigen. Bereits abgenommene PR419 STOP/RESTORE-Drills nicht unnötig wiederholen.
+1. Vorab: aktuellen GitHub-/Mini-PC-/Cloud-Zustand, tatsächlich laufende V2R4-Tasks, Quellenpins, Original-Windows-Task-Backups, Backup-/Recovery-Voraussetzungen prüfen, bereits echte Wartungs-ACKs verwenden und nur erforderliche Eingriffe terminieren. Die optionale USV ist keine Voraussetzung. Bereits abgenommene PR419 STOP/RESTORE-Drills nicht unnötig wiederholen.
 2. Kontolliert **nur für Wartung** Scanner, Runner, V2R4-Lese-/Schreibprozesse und Autostarts/Watchdogs anhalten; Originalserien- und Journalzustand, quiescent PID-Familien und sichere Wiederanlaufmöglichkeit prüfen. **Kein V2R4→V3-CAS** und kein stillschweigender Strategie-Cutover beim Stop für Wartung.
 3. Erst danach Windows regulär herunterfahren, stromlos machen und erforderlichen BIOS-Stand vor dem CPU-Wechsel kontrollieren; Intel i7-8700T einbauen, Boot-/Temperatur-/Stabilitätstest durchführen. Im BIOS **AC Power Recovery / Power On** als bevorzugte Wiederanlaufoption prüfen und nur nach Bestätigung setzen; während eines bewusst durchgeführten Wartungs-Shutdowns keinen irrtümlichen Neustart auslösen.
 4. Gezielte Windows-11- und Treiber-Updates mit kontrollierten Neustarts abschließen; aktuelle Windows-Updatepause (ursprünglich bis 31.10.2026) anschließend überprüfen und bedarfsgerecht entfernen/anpassen.
-5. Green Cell UPS01LCD installieren und deren USB-/Shutdown-Anbindung sowie sicheres Beenden und Voraussetzungen für späteren Wiederanlauf prüfen. **Echter Netztrennungs-/Rückkehrtest** in gesondertem Termin; automatischen Wiederanlauf erst nach dieser unabhängigen Realprobe als verifiziert bezeichnen.
+5. **Optionale USV: `OPEN_DEFERRED_AWAIT_USER_TRIGGER`.** Keine Installation, Stromausfall- oder Wiederanlaufprobe und kein USV-ACK als Bedingung für Entwicklung, Wartungsabschluss oder experimentellen V3-Paper-Release. Nur wenn der Nutzer Lieferung und Anschlussbereitschaft meldet, im vorhandenen separaten Wartungsrunbook prüfen; bis dahin keine Erinnerung und kein vorgetäuschter USV-Schutz.
 6. Ausstehende genehmigte Skriptversion, insbesondere PR #444, kontrolliert auf den Originalhost übernehmen; Source/Action/Originalprozess/Autostart-/No-Rearm-Fingerprints und `SYSTEM`/Rechte, Supervisor, Recovery und CPU-Optimierung im V3-Gesamtkontext abnehmen. Originale Version und Rollback bewahren.
 7. **V2R4 zunächst kontrolliert wiederherstellen** und den vorherigen aktiven Paper-/Cloud-/Nachlaufstatus unabhängig prüfen. Nicht denselben Wartungsstop als späteren produktiven V3-Cutover werten; keine Alt-Followups/Exits löschen.
 8. Erst danach: tatsächlich verifizierten Wartungs- und Skript-Originalhost-ACK mit finalem gepinnten V3-Quell-SHA in den **bestehenden** technischen Freigabebelegen referenzieren. Separate ausstehende sechs echte E2E-Prüfungen, native One-Shot-Task/PID, Cloud-CAS, Budget und ausdrückliche Paper-Freigabe bleiben verpflichtend. Erst nach positiver vollständiger Abnahme darf der eigentliche V3-Cutover separat beginnen.
 
-**Schutz im bestehenden nativen Launcher:** `dispatch_after_native_release_readback` verweigert einen produktiven Paper-Phasenaufruf ohne plausiblen Originalhost-Wartungs-ACK (CPU/BIOS/Boot/Temperatur, Windows/Treiber/Neustarts, USV-Konfiguration/Shutdown, tatsächlich übernommene Skripte/Quellen, vollständiger Wiederanlauf von V2R4/Aftercare), exakte Release-SHA und zeitliche Konsistenz. Das validiert **nur einen Bericht**; die unabhängige Echtheit des physischen Receipts und die sechs echten Proofs müssen der vorhandene Release-Owner separat nachweisen. Keine neue CLI-Freigabe, keine Änderung am deaktivierten V3-Task, keine automatische Cloud-CAS-Installation. Bei fehlendem ACK: `BLOCKED_MAINTENANCE_PENDING`, vorhandene V2R4 bleibt die Paper-Strategie.
+**Schutz im bestehenden nativen Launcher:** `dispatch_after_native_release_readback` verweigert einen produktiven Paper-Phasenaufruf ohne plausiblen Originalhost-Wartungs-ACK (CPU/BIOS/Boot/Temperatur, Windows/Treiber/Neustarts, tatsächlich übernommene Skripte/Quellen, vollständiger Wiederanlauf von V2R4/Aftercare), exakte Release-SHA und zeitliche Konsistenz. Das validiert **nur einen Bericht**; die unabhängige Echtheit des physischen Receipts und die sechs echten Proofs müssen der vorhandene Release-Owner separat nachweisen. Keine neue CLI-Freigabe, keine Änderung am deaktivierten V3-Task, keine automatische Cloud-CAS-Installation. Bei fehlendem ACK: `BLOCKED_MAINTENANCE_PENDING`, vorhandene V2R4 bleibt die Paper-Strategie.
 
 ## 0. Aktuelle und historische Autorität
 
