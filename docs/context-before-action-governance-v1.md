@@ -6,6 +6,14 @@
 
 Dokumentieren ist nicht dasselbe wie Wiederfinden, Verstehen oder Anwenden. Frühere Nutzerbeschlüsse und gemessene Erkenntnisse werden häufig korrekt archiviert, aber in späteren Chats/Work-Läufen nicht zuverlässig abgerufen. Der neue Vertrag macht den Quellzugriff und die spätere fachliche Disposition *explizit überprüfbar*. Es entsteht **kein zweites Backlog, keine neue Datenbank und kein zusätzlicher Scheduler**.
 
+## Fachliche Auftragsdomäne ist NICHT die Strategieversion (Nutzerpräzisierung 20.10.2026)
+
+Der Vertrag gilt für den gesamten Krypto-Projektlebenszyklus – Zusammenarbeit, Hardware/Netzwerk/Windows/Backup, Betrieb, Daten, Research und jede jetzige oder zukünftige Strategie. Der bestehende Wissens-`--scope` ermittelt nur zu lesende Originalquellen; **zusätzlich** beschreibt `--work-domain` die tatsächliche beauftragte Aufgabe (`project_general`, `infrastructure`, `operations`, `strategy_development`, `strategy_release`, `research`). Ohne explizite Angabe ist `project_general` der neutrale Standard, nicht V3.
+
+Beispiele: CPU/RAM/USV/Windows/Drucker ⇒ `--scope operations --work-domain infrastructure`; Fehleranalyse ⇒ `--scope operations --work-domain operations`; nächste Strategie prüfen ⇒ `--scope strategy --work-domain strategy_development`; **konkret** benannten Strategiewechsel prüfen ⇒ `--scope strategy --work-domain strategy_release`. Bei mehreren fachlichen Erkenntnisbereichen zusätzlich entsprechende Scopes abrufen, aber **keine** automatische Kopplung aller Bereiche an V3. Ein gemeinsamer Mini-PC als Ausführungsort ist keine fachliche Strategie-Abhängigkeit. Tatsächlich berührte Dienste brauchen ihre Komponententests, nur ein wirklich beauftragtes Release seine eigenen Versions-/CAS-/Writer-/Paper-Gates.
+
+Die V3-spezifischen historischen Lernpakete dieses Dokuments gelten **nur für einschlägige V3-Arbeiten**, nicht für Infrastruktur oder V4+. Der zentrale Manager und der Projektmanager bleiben generisch; das aktuelle V3-Vorhaben ist ein **Fachprojekt** innerhalb ihrer Verwaltung, nicht ihr Lebenszweck. Die beiden bisherigen Owner #353 (projektweiter Kontext und Arbeitsweise) und #99 (konkreter V3-Cutover) bleiben getrennt. Keine neuen Manager, Scheduler, Bezahlaufrufe oder Runtime-Ausführung.
+
 ## A. Verbindliche Reihenfolge vor einer wesentlichen Änderung
 
 1. **Aufgabentyp festlegen:** `strategy`, `architecture`, `operations` oder `research`. Bei thematischen Überschneidungen alle betroffenen Bereiche gesondert abrufen, nicht frei raten.
