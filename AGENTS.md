@@ -16,6 +16,11 @@
 Detaillierter Vertrag: `docs/project-cross-session-handoff-v1.md`. Vorhandene fachliche Autoritäten und Sicherheitsgates haben Vorrang. Diese Datei ist eine Agenten-Arbeitsanweisung, keine garantierte ChatGPT-Systemeinspeisung.
 
 
+
+## 20.10.2026 – ausdrücklicher V3-Paper-Wartungs-Halt vor finaler Aktivierung
+
+**Nutzerbeschluss:** V3-Quellcode/One-Shot bis zum letzten produktiven Schritt entwickeln, **dann STOP**. Zuerst bestehenden Mini-PC-Wartungstermin für CPU/BIOS, Windows, USV, sichere Shutdown-/Recovery-Probe und Skriptübernahme (insbesondere PR #444) abschließen. **V2R4 danach wiederherstellen und real prüfen.** Erst nach Originalhost-/Cloud-ACK und gesonderter letzter Nutzerfreigabe produktiven V3-Paper-Cutover erlauben. Reihenfolge: `docs/v3-controlled-paper-cutover-20261011.md`, Abschnitt „Wartungs-Halt“. Kein zusätzlicher Manager, Scheduler oder siebter V3-Proof; Dokumente oder ACK-Booleans ersetzen keine echte Abnahme.
+
 ## Verbindlicher Effizienz- und Vollständigkeitsstandard (Nutzerbeschluss 19.10.2026)
 
 Diese vier Regeln konkretisieren den **bestehenden** Kontext-vor-Aktion-Manager; kein zweiter Manager, Scheduler, Runtime-Controller oder neues Freigabegate. Sie gelten projektweit in allen vier Scopes und für interaktive Chat-, GitHub-, Work- und Mini-PC-bezogene Entwicklungsarbeit, soweit die jeweiligen Ausführungsrechte reichen.
