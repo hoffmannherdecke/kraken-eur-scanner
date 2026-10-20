@@ -182,6 +182,35 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             self.assertIsNone(summary["native_task_action_sha256"])
             self.assertFalse(summary["runtime_bootstrap_executable"])
 
+    def test_native_process_hint_cannot_authorize_loaded_module_or_paper(self):
+        local = {
+            "kind": "V3_NATIVE_POSTCAS_LOCAL_INSPECTION_ONLY_V1",
+            "status": "NOT_INDEPENDENT_RELEASE_EVIDENCE",
+            "native_task_state": "Running",
+            "native_python_parent_process_observed": True,
+            "native_python_parent_matches_task_action_hint": True,
+            "native_powershell_process_token_is_system": True,
+            "native_runtime_identity_independently_verified": True,
+            "native_task_loaded_module_independently_verified": True,
+            "live_paper_activation_authorized": False,
+            "tasks_changed": 0, "cloud_writes": 0, "model_calls": 0,
+        }
+        report = {
+            "kind": "V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1",
+            "physical_v3_postcas_local_inventory": local,
+            "new_v3_writer_started": False, "filesystem_writes": False,
+            "v2r4_changed": False,
+            "experimental_paper_release_authorized_by_this_check": False,
+        }
+        summary = launcher.summarize_originalhost_readonly(report)
+        self.assertTrue(summary["native_python_parent_process_observed"])
+        self.assertTrue(summary["native_powershell_process_token_is_system"])
+        self.assertTrue(summary["native_python_parent_matches_task_action_hint"])
+        self.assertFalse(summary["native_runtime_identity_independently_verified"])
+        self.assertFalse(summary["native_task_loaded_module_independently_verified"])
+        self.assertFalse(summary["paper_activated"])
+        self.assertFalse(summary["runtime_bootstrap_executable"])
+
     def test_originalhost_readonly_report_never_claims_release(self):
         fixed = {
             "kind": "V3_MINIPC_SINGLE_WRITER_PHYSICAL_READONLY_PREFLIGHT_V1",
