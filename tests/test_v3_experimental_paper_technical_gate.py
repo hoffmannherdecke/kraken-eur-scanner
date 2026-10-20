@@ -782,6 +782,47 @@ class V3ExistingReleaseSourceInventoryTests(unittest.TestCase):
         self.assertEqual(result["authentic_technical_e2e_proofs_credited"],0)
         return result
 
+    def test_native_source_import_closure_is_readonly_and_not_release(self):
+        from tools.v3_experimental_paper_technical_gate import (
+            assess_v3_native_source_import_closure)
+        result=assess_v3_native_source_import_closure(ROOT)
+        self.assertTrue(result["static_local_import_closure_complete"],
+                        result["errors"])
+        self.assertGreater(result["candidate_transitive_file_count"],20)
+        self.assertEqual(len(result["candidate_transitive_source_sha256"]),64)
+        self.assertFalse(result["actual_loaded_python_bytecode_independently_verified"])
+        self.assertFalse(result["physical_mini_pc_or_cloud_release_proven"])
+        self.assertFalse(result["paper_release_authorized"])
+        self.assertFalse(result["real_money_actions"])
+        included={r[0] for r in result["candidate_transitive_files"]}
+        self.assertIn("paper_evaluator/v3_paper_minipc_native_launcher_v1.py",included)
+        self.assertIn("tools/v3_experimental_paper_technical_gate.py",included)
+
+    def test_native_source_import_closure_rejects_missing_and_linked_source(self):
+        from tools.v3_experimental_paper_technical_gate import (
+            assess_v3_native_source_import_closure)
+        from unittest.mock import patch
+        with patch("tools.v3_experimental_paper_technical_gate."
+                   "assess_v3_experimental_source_inventory",
+                   return_value={"source_inventory_complete":True,
+                                 "candidate_source_files":[
+                                  "paper_evaluator/not-installed.py"]}):
+            report=assess_v3_native_source_import_closure(ROOT)
+        self.assertFalse(report["static_local_import_closure_complete"])
+        self.assertIn("INCOMPLETE",report["errors"][0])
+        self.assertFalse(report["paper_release_authorized"])
+
+    def test_native_source_import_closure_never_needs_runtime_or_network(self):
+        from tools.v3_experimental_paper_technical_gate import (
+            assess_v3_native_source_import_closure)
+        from unittest.mock import patch
+        with patch("subprocess.run",side_effect=AssertionError("no subprocess")), \
+                patch("socket.create_connection",
+                      side_effect=AssertionError("no network")):
+            report=assess_v3_native_source_import_closure(ROOT)
+        self.assertTrue(report["static_local_import_closure_complete"],report["errors"])
+
+
     def test_actual_canonical_bundle_has_source_inventory_but_not_release(self):
         r=self._assess(ROOT)
         self.assertTrue(r["source_inventory_complete"],r["source_inventory_errors"])
