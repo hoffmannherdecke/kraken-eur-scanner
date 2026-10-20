@@ -400,6 +400,63 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 self.assertIsNone(args.get("relay_token"))
                 self.assertEqual(args["phase"], "FOLLOWUP_6H24H72H")
 
+    def test_native_phase_rechecks_host_after_slow_cloud_relay_inside_lock(self):
+        # Real native boundary, mocked Cloud/phase only. Host is fresh at the
+        # original independent native release check (25s) but after the one
+        # Cloud request it is 105s old. This must fail before any phase body.
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H",
+                          candidate={"candidate_id": "OFFLINE_NATIVE_ONLY"})
+            kwargs.pop("read_active_series")
+            host = self.original_release_host(self.SID, self.REPO)
+            packet = {"strategy_revision": launcher.REVISION,
+                      "strategy_fingerprint_sha256": self.STRATEGY}
+            first = datetime(2026, 10, 19, 14, 0, 25, tzinfo=timezone.utc)
+            after = datetime(2026, 10, 19, 14, 1, 45, tzinfo=timezone.utc)
+            cloud = {"series_id": self.SID, "status": "active",
+                     "observed_at_utc": "2026-10-19T14:01:44Z",
+                     "config": {}}
+            token = "OFFLINE_ONLY_NOT_A_REAL_SECRET_12345678"
+            with patch.object(launcher, "validate_experimental_paper_packet",
+                              return_value=[]), patch.object(
+                    launcher, "_originalhost_wall_clock_utc",
+                    side_effect=[first, after]) as clock, patch.object(
+                    launcher, "read_active_paper_series", return_value=cloud) as relay, \
+                    patch.object(launcher, "dispatch_one_owned_paper_phase") as phase:
+                def locked_phase(**parameters):
+                    parameters["read_active_series"](self.SID)
+                    self.fail("stale host would have reached the Paper phase")
+                phase.side_effect = locked_phase
+                with self.assertRaisesRegex(ValueError, "stale after Cloud relay"):
+                    launcher.dispatch_after_originalhost_and_cloud_readback(
+                        originalhost_readback=lambda: host,
+                        release_root=Path(root), release_packet=packet,
+                        original_cloud_relay_token=token, **kwargs)
+                relay.assert_called_once_with(series_id=self.SID, token=token)
+                self.assertEqual(clock.call_count, 2)
+                phase.assert_called_once()
+
+    def test_native_cloud_callback_cannot_run_without_native_host_readback(self):
+        # A mocked native caller cannot skip the physical host gate and then
+        # use the authenticated relay callback to mint a release.
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H",
+                          candidate={"candidate_id": "NO_HOST"})
+            kwargs.pop("read_active_series")
+            with patch.object(launcher, "dispatch_after_native_release_readback"
+                              ) as native, patch.object(
+                              launcher, "read_active_paper_series") as relay:
+                def skip_host(**forwarded):
+                    return forwarded["read_active_series"](self.SID)
+                native.side_effect = skip_host
+                with self.assertRaisesRegex(ValueError, "originalhost release missing"):
+                    launcher.dispatch_after_originalhost_and_cloud_readback(
+                        originalhost_readback=lambda: {},
+                        release_root=Path(root), release_packet={},
+                        original_cloud_relay_token="OFFLINE_ONLY_1234567890_1234567890",
+                        **kwargs)
+                relay.assert_not_called()
+
     def test_native_original_cloud_adapter_rejects_injected_transport(self):
         with tempfile.TemporaryDirectory() as root:
             kwargs = dict(self.common(root), phase="FIRST_SCANNER_MODEL_P4",
