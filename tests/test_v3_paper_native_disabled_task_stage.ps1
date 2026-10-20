@@ -195,11 +195,11 @@ Write-Output 'V3_ORIGINALHOST_MULTIPLE_PYTHON_APPLICATIONS_BOOLEAN_PREVIEW_PASS'
 
 
 # The successor PREVIEW must inspect the existing old disabled V3 Task,
-# never update it or install the new 69-file candidate as a second Task.
+# never update it or install any successor candidate as a second Task.
 foreach($must in @(
  '[string]$CandidateStageSha',
  'if($InstallDisabled -or $Confirm)',
- '$stageFiles=if($candidateMode){69}else{66}',
+ '$stageFiles=if($candidateMode){0}else{66}',
  'READ_ONLY_SUCCESSOR_STAGE_VERIFIED_EXISTING_TASK_UNCHANGED',
  "Require ((OriginalDisabledTaskForCandidateReadOnly) -ceq 'Disabled')",
  "'tools/v3_experimental_paper_technical_gate.py'",
@@ -249,6 +249,6 @@ $script:fakeCandidateTask.Settings.AllowDemandStart=$true
 $blocked=$false
 try{$null=OriginalDisabledTaskForCandidateReadOnly}catch{$blocked=$true}
 if(-not $blocked){throw 'Original V3 Task demand start accepted'}
-Write-Output 'V3_EXISTING_DISABLED_TASK_69_FILE_SUCCESSOR_READONLY_PREVIEW_PASS'
+Write-Output 'V3_EXISTING_DISABLED_TASK_MANIFEST_SOURCE_SUCCESSOR_READONLY_PREVIEW_PASS'
 
 Write-Output 'V3_NATIVE_DISABLED_READONLY_TASK_STAGE_SOURCE_POLICY_PASS'
