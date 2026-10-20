@@ -5,6 +5,7 @@ an exploratory Paper trial. But technical/recording/stop and single-writer
 correctness ARE prerequisites. No effects, network, orders or strategy changes.
 """
 from __future__ import annotations
+import ast
 import hashlib
 import json
 import re
@@ -143,6 +144,7 @@ def assess_v3_experimental_source_inventory(root:Path)->dict[str,Any]:
         "source_inventory_complete":not errors and inventory_hash is not None,
         "source_inventory_errors":sorted(set(errors)),
         "source_files_count":len(file_hashes),
+        "candidate_source_files":paths,
         "original_bundle_unproven_live_gate_names":outstanding_live_gates,
         "candidate_strategy_bundle_source_sha256":strategy_hash,
         "candidate_source_inventory_sha256":inventory_hash,
@@ -155,6 +157,135 @@ def assess_v3_experimental_source_inventory(root:Path)->dict[str,Any]:
         "original_writer_stop_rollback_proven_here":False,
         "paper_release_authorized":False,
         "authentic_technical_e2e_proofs_credited":0,
+    }
+
+
+# The existing experimental V3 source-inventory owner also serves the
+# original native Windows One-Shot staging acceptance. This is a STATIC
+# local-import graph: it does not import/execute candidate code or verify
+# the physically loaded module bytes. Never use it as a seventh release gate.
+V3_NATIVE_SOURCE_IMPORT_ROOTS=(
+    "paper_evaluator/v3_paper_minipc_native_launcher_v1.py",
+    "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+    "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py",
+    "tools/v3_experimental_paper_technical_gate.py",
+)
+
+
+def assess_v3_native_source_import_closure(root:Path)->dict[str,Any]:
+    """Bounded source-only transitive LOCAL imports for maintenance staging.
+
+    Keeps the existing source manifest authoritative; follows static Python
+    imports into this very checkout. Third-party imports and dynamic module
+    loading are reported separately, not falsely declared validated.
+    """
+    errors:list[str]=[]
+    dynamic:list[str]=[]
+    external:set[str]=set()
+    manifest:list[list[str]]=[]
+    closure_hash=None
+    try:
+        if root.is_symlink():
+            raise ValueError("source checkout is symlink")
+        root=root.resolve(strict=True)
+        if not root.is_dir():
+            raise ValueError("source checkout missing")
+        direct=assess_v3_experimental_source_inventory(root)
+        if not direct["source_inventory_complete"]:
+            raise ValueError("existing bundle source inventory incomplete")
+        seeds=set(direct["candidate_source_files"])|set(V3_NATIVE_SOURCE_IMPORT_ROOTS)
+        pending=sorted(seeds)
+        seen:set[str]=set()
+        while pending:
+            rel=pending.pop(0)
+            if rel in seen:
+                continue
+            # Different existing code paths can import a top-level source
+            # module or a known package; never accept absolute/dotdot paths.
+            if (len(seen)>=512 or len(rel)>180
+                    or rel.startswith("/") or "\\" in rel
+                    or ".." in Path(rel).parts
+                    or not re.fullmatch(r"[a-zA-Z_][a-zA-Z0-9_./-]*\.py",rel)):
+                raise ValueError("invalid/bounded transitive source path")
+            target=root/rel
+            if (target.is_symlink() or target.parent.is_symlink()
+                    or not target.is_file()
+                    or not target.resolve(strict=True).is_relative_to(root)):
+                raise ValueError("missing or unsafe transitive source: "+rel)
+            content=target.read_bytes()
+            if not content or len(content)>512*1024:
+                raise ValueError("oversize or empty transitive source: "+rel)
+            parsed=ast.parse(content,filename=rel)
+            seen.add(rel)
+            manifest.append([rel,hashlib.sha256(content).hexdigest()])
+            pkg=rel[:-3].split("/")[:-1]
+            for node in ast.walk(parsed):
+                modnames:list[str]=[]
+                if isinstance(node,ast.Import):
+                    modnames=[alias.name for alias in node.names]
+                elif isinstance(node,ast.ImportFrom):
+                    if node.level:
+                        if node.level>len(pkg):
+                            raise ValueError("transitive relative import outside package")
+                        base=pkg[:len(pkg)-node.level+1]
+                        mod=".".join(base+([node.module] if node.module else []))
+                    else:
+                        mod=node.module or ""
+                    if mod:
+                        modnames.append(mod)
+                    for alias in node.names:
+                        if alias.name!="*":
+                            modnames.append(mod+"."+alias.name if mod else alias.name)
+                elif isinstance(node,ast.Call):
+                    call=node.func
+                    if (isinstance(call,ast.Name) and call.id=="__import__"
+                            or isinstance(call,ast.Attribute) and
+                            call.attr=="import_module" and
+                            isinstance(call.value,ast.Name) and
+                            call.value.id=="importlib"):
+                        dynamic.append(rel)
+                for dotted in modnames:
+                    prefix=dotted.split(".")[0]
+                    relname=dotted.replace(".","/")
+                    match=None
+                    for candidate in (relname+".py",relname+"/__init__.py"):
+                        if (root/candidate).is_file() or (root/candidate).is_symlink():
+                            match=candidate
+                            break
+                    if match:
+                        if match not in seen and match not in pending:
+                            pending.append(match)
+                    elif (root/prefix).is_dir() or (root/(prefix+".py")).is_file():
+                        # 'from module import symbol' does not imply a
+                        # separate module. Only a missing explicit Import
+                        # indicates an actual unresolved local module.
+                        if isinstance(node,ast.Import):
+                            errors.append("UNRESOLVED_LOCAL_MODULE:"+dotted)
+                    else:
+                        external.add(prefix)
+            pending.sort()
+        payload=json.dumps(
+            {"kind":"V3_NATIVE_SOURCE_STATIC_IMPORT_CLOSURE_CANDIDATE_V1",
+             "files":sorted(manifest)},sort_keys=True,separators=(",",":"),
+            ensure_ascii=True).encode("utf-8")
+        closure_hash=hashlib.sha256(payload).hexdigest()
+    except (OSError,ValueError,SyntaxError,TypeError,UnicodeError) as exc:
+        errors.append("V3_NATIVE_SOURCE_IMPORT_CLOSURE_INCOMPLETE:"+type(exc).__name__)
+    return {
+        "kind":"V3_NATIVE_SOURCE_IMPORT_CLOSURE_READONLY_V1",
+        "static_local_import_closure_complete":not errors and closure_hash is not None,
+        "errors":sorted(set(errors)),
+        "candidate_transitive_files":sorted(manifest),
+        "candidate_transitive_file_count":len(manifest),
+        "candidate_transitive_source_sha256":closure_hash,
+        "third_party_or_stdlib_import_prefixes":sorted(external),
+        "dynamic_import_source_paths_review_required":sorted(set(dynamic)),
+        "dynamic_imports_and_external_package_versions_proven":False,
+        "actual_loaded_python_bytecode_independently_verified":False,
+        "source_digests_not_final_release_pins":True,
+        "physical_mini_pc_or_cloud_release_proven":False,
+        "paper_release_authorized":False,
+        "real_money_actions":False,
     }
 
 
