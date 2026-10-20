@@ -1,4 +1,6 @@
--- Disposable PostgreSQL 16 V3 experimental PAPER CAS test.
+-- Disposable PostgreSQL 17 V3 experimental PAPER CAS test.
+-- Executed only in an offline/no-port Docker container on CAS SQL file changes
+-- inside existing architecture CI. No Supabase project is contacted.
 -- NEVER run on Supabase or against original Mini-PC / production Cloud.
 -- Also verify a same-count original trade version drift blocks real atomic CAS.
 -- Synthetic evidence/approval booleans below exist ONLY in this CI fixture;
