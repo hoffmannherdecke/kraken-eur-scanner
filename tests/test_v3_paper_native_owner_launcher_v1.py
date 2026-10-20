@@ -109,10 +109,10 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
 
     def test_originalhost_cli_offline_reuses_one_readonly_script_not_worker(self):
         with patch.object(launcher, "read_originalhost_readonly",
-                          return_value={"status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE"}) as host, \\
+                          return_value={"status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE"}) as host, \
                 patch.object(launcher, "dispatch_one_owned_paper_phase") as worker:
             out = io.StringIO()
-            with patch("sys.argv", ["launcher", "--originalhost-readonly"]), \\
+            with patch("sys.argv", ["launcher", "--originalhost-readonly"]), \
                     contextlib.redirect_stdout(out):
                 self.assertEqual(launcher.main(), 0)
             self.assertEqual(json.loads(out.getvalue())["status"],
