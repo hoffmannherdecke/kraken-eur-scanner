@@ -14,6 +14,7 @@ proofs and active Cloud release. This source file does NOT create that proof.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -478,6 +479,39 @@ def _read_only_snapshot_time(value: Any, *, source: str,
     return stamp
 
 
+def _require_running_originalhost_source_hint(report: dict[str, Any]) -> None:
+    """Correlate *read-only hints* to this launched source; never grant a release.
+
+    The original Windows inspector collects Task action / parent PID / SYSTEM
+    observations independently of Python's caller. A matching file digest
+    means only that the current launcher bytes equal the inspected Task file:
+    it cannot attest the loaded Python module, prevent other native writers,
+    prove Cloud CAS, or replace the signed external release-owner gate.
+    """
+    if not isinstance(report, dict) or report.get("status") != (
+            "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE"):
+        raise ValueError("originalhost Task/PID/source diagnostic missing")
+    source_file = Path(__file__).absolute()
+    try:
+        if not source_file.is_file() or source_file.is_symlink():
+            raise ValueError("originalhost running launcher is not a regular file")
+        local_sha = hashlib.sha256(source_file.read_bytes()).hexdigest()
+    except OSError as exc:
+        raise ValueError("originalhost running launcher bytes unavailable") from exc
+    conditions = (
+        report.get("native_task_state") == "Running",
+        report.get("native_task_uses_old_readonly_launcher") is False,
+        report.get("native_python_parent_process_observed") is True,
+        report.get("native_python_parent_matches_task_action_hint") is True,
+        report.get("native_powershell_process_token_is_system") is True,
+        isinstance(report.get("native_task_action_sha256"), str)
+        and FILE_SHA.fullmatch(report["native_task_action_sha256"]) is not None,
+        report.get("native_task_launcher_file_sha256") == local_sha,
+    )
+    if not all(conditions):
+        raise ValueError("originalhost Task/PID/source read-only correlation failed")
+
+
 def preflight_native_windows_one_shot(*,
         proposed_v3_series: str | None = None) -> dict[str, Any]:
     """Join original Windows inventory and original Cloud relay read-only.
@@ -501,6 +535,11 @@ def preflight_native_windows_one_shot(*,
         physical_stamp = _read_only_snapshot_time(
             physical.get("observed_at_utc"), source="originalhost",
             now=_originalhost_wall_clock_utc())
+        # Only the original installed running Task and its observed SYSTEM
+        # parent/Action/current launcher SHA may participate in a paired
+        # Cloud diagnostic. Caller-controlled reports and stale disabled
+        # --read-only staging must not resemble a running native owner.
+        _require_running_originalhost_source_hint(physical)
         token = os.environ.get("V3_PAPER_RELAY_TOKEN")
         if (not isinstance(token, str) or not 24 <= len(token) <= 512
                 or any(ch.isspace() for ch in token)):
@@ -549,6 +588,8 @@ def preflight_native_windows_one_shot(*,
         "diagnostic": physical,
         "cloud_readonly_observation": cloud,
         "cloud_readback_requested": proposed_v3_series is not None,
+        "originalhost_task_process_source_correlated_read_only":
+            proposed_v3_series is not None,
         "phase_names": list(PHASES),
         "existing_native_release_entrypoint":
             "dispatch_after_originalhost_and_cloud_readback",
