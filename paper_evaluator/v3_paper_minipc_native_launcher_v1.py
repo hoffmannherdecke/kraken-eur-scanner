@@ -549,6 +549,60 @@ def _require_running_originalhost_source_hint(report: dict[str, Any]) -> None:
         raise ValueError("originalhost Task/PID/source read-only correlation failed")
 
 
+def dispatch_from_original_windows_one_shot(*,
+        originalhost_release_readback: Callable[[], dict[str, Any]] | None = None,
+        release_root: Path | None = None,
+        release_packet: dict[str, Any] | None = None,
+        original_cloud_relay_token: str | None = None,
+        **phase_args: Any) -> dict[str, Any]:
+    """Windows-only handoff to the ONE existing native V3 Paper dispatcher.
+
+    First observe the running original Task, SYSTEM/Python parent and exact
+    on-disk launcher bytes with the already reviewed originalhost PowerShell
+    script. These are independent OBSERVATIONS, not proof of release or of
+    the loaded module. A separate physical release owner MUST supply the
+    authenticated post-CAS Task/fence/maintenance/six-proof readback callback;
+    its provenance cannot be manufactured by this Python adapter.
+
+    Intentionally NOT bound to CLI until the external physical release-owner
+    evidence source and disabled Windows Task action have been accepted in the
+    user-approved maintenance/final release. No caller-made JSON, environment
+    boolean, temporary signature or Task hint becomes that provider here.
+    This function registers no Tasks and performs no CAS, model or order itself.
+    """
+    # Never permit the local Windows diagnostic to stand in for external
+    # release authority. On the current originalhost that provider does NOT
+    # exist, so calls without it fail before even starting the PowerShell
+    # read-only inspection.
+    if sys.platform != "win32":
+        raise ValueError("native V3 one-shot requires original Windows host")
+    if not callable(originalhost_release_readback):
+        raise ValueError("independent native originalhost release owner unavailable")
+    # Exact source-only native phase parameters still must be screened before
+    # any Windows process probe or potential Cloud work. The only actual
+    # Cloud callback is installed by dispatch_after_originalhost_and_cloud_readback.
+    if (phase_args.get("phase") not in PHASES
+            or not isinstance(phase_args.get("series_id"), str)
+            or SERIES.fullmatch(phase_args["series_id"]) is None
+            or any(key in phase_args for key in (
+                "read_active_series", "cloud_post", "relay_token",
+                "clock_now", "model_client", "source_capture",
+                "source_acquire", "source_fetch", "source_ticker"))):
+        raise ValueError("native one-shot phase or injected source invalid")
+    observed = read_originalhost_readonly()
+    _require_running_originalhost_source_hint(observed)
+    # Never turn the observed local dict into the release callback. The same
+    # externally authenticated owner and the original authenticated Cloud
+    # relay are independently checked by the existing protected dispatcher,
+    # which also rechecks the originalhost's strict 90-second freshness after
+    # the locked Cloud relay returns (PR470).
+    return dispatch_after_originalhost_and_cloud_readback(
+        originalhost_readback=originalhost_release_readback,
+        release_root=release_root, release_packet=release_packet,
+        original_cloud_relay_token=original_cloud_relay_token,
+        **phase_args)
+
+
 def preflight_native_windows_one_shot(*,
         proposed_v3_series: str | None = None) -> dict[str, Any]:
     """Join original Windows inventory and original Cloud relay read-only.
