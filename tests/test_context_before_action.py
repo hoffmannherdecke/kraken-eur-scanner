@@ -14,6 +14,62 @@ from tools.context_before_action import (
 
 class ContextBeforeActionTests(unittest.TestCase):
 
+    def test_hardware_and_general_collaboration_never_inherit_v3_release(self):
+        # Work domain selects the owner/gate family; knowledge scopes do not.
+        for scope in ("operations", "architecture", "strategy", "research"):
+            for domain in ("project_general", "infrastructure", "operations",
+                           "research", "strategy_development"):
+                with self.subTest(scope=scope, domain=domain):
+                    packet = build(ROOT, scope, work_domain=domain)
+                    bound = packet["work_domain_boundary"]
+                    self.assertFalse(bound["requires_named_strategy_release_owner"])
+                    self.assertFalse(bound["strategy_specific_release_gates_applicable"])
+                    self.assertTrue(bound["scope_is_not_a_task_dependency"])
+                    self.assertTrue(bound["project_rules_survive_v3_and_future_strategy_transitions"])
+                    self.assertTrue(bound["only_existing_owner_and_task_specific_original_evidence_can_create_a_dependency"])
+                    self.assertTrue(bound["not_a_runtime_or_release_authorization"])
+                    selector = packet["next_action_selector"]
+                    self.assertTrue(selector["no_automatic_v3_task_selection_for_project_or_infrastructure"])
+                    v3 = next(x for x in selector["bounded_capabilities"]
+                              if x["task"] == "v3_fixed_paths_readonly")
+                    self.assertEqual(v3["applicable_to_current_work_domain"],
+                                     domain == "strategy_development")
+                    if domain == "infrastructure":
+                        self.assertTrue(bound["hardware_change_is_not_a_strategy_milestone"])
+                        self.assertFalse(v3["applicable_to_current_work_domain"])
+                        self.assertTrue(bound["v3_specific_history_is_nonbinding_for_this_task"])
+
+        v4 = build(ROOT, "strategy", work_domain="strategy_release")
+        self.assertTrue(v4["work_domain_boundary"]["requires_named_strategy_release_owner"])
+        self.assertTrue(v4["work_domain_boundary"]["strategy_specific_release_gates_applicable"])
+        self.assertTrue(v4["work_domain_boundary"]["not_a_runtime_or_release_authorization"])
+        self.assertEqual(v4["work_domain_boundary"]["owner_lane"],
+                         "EXPLICIT_NAMED_STRATEGY_RELEASE_OWNER")
+        # Even release routing does not hard-code V3 as the only future version.
+        self.assertNotIn("V3", v4["work_domain_boundary"]["owner_lane"])
+        self.assertEqual(v4["next_action_selector"]["work_domain"], "strategy_release")
+
+    def test_work_domain_policy_fails_closed_on_missing_or_weakened_boundaries(self):
+        from tools.context_before_action import project_work_domain_boundary
+        config = original_read_json(ROOT / "research/context-before-action-routing-v1.json")
+        import copy
+        for mutate in (
+            lambda p: p.pop("work_domain_policy"),
+            lambda p: p["work_domain_policy"].update(
+                hardware_upgrade_alone_never_creates_strategy_gate=False),
+            lambda p: p["work_domain_policy"].update(
+                future_strategy_versions_inherit_projectwide_collaboration_rules=False),
+            lambda p: p["work_domain_policy"]["domains"]["infrastructure"].update(
+                requires_strategy_release=True),
+            lambda p: p["work_domain_policy"]["domains"].pop("strategy_release"),
+        ):
+            invalid = copy.deepcopy(config)
+            mutate(invalid)
+            with self.assertRaises(ContextGateError):
+                project_work_domain_boundary(ROOT, invalid, "infrastructure")
+        with self.assertRaises(ContextGateError):
+            project_work_domain_boundary(ROOT, config, "unknown")
+
     def test_compact_brief_routes_real_owner_without_losing_full_context(self):
         from tools.context_before_action import compact_decision_brief
         for scope in ("strategy", "architecture", "operations", "research"):
