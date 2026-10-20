@@ -72,6 +72,43 @@ $selected=@($tracked | Where-Object {
              'tools/paper_series_transition_guard.py') -or
   $_ -ceq $coreSupport -or $_ -ceq $bundle -or $_ -ceq $relay -or $_ -cin $operatorSource
 } | Sort-Object -Unique)
+# Reuse the existing original V3 technical gate's verified local Python
+# source closure, not a manually chosen subset. This is SOURCE ONLY.
+$closureProgram=Join-Path $source 'tools/v3_experimental_paper_technical_gate.py'
+Need (Test-Path -LiteralPath $closureProgram -PathType Leaf) 'source closure gate absent'
+$python=Get-Command -Name python -CommandType Application -ErrorAction Stop |
+    Select-Object -First 1
+Need ($null -ne $python) 'source-only Python interpreter missing'
+$closureJson=& ([string]$python.Source) -B $closureProgram --source-closure-readonly --source-root $source
+Need ($LASTEXITCODE -eq 0 -and $closureJson) 'original transitive source closure could not be read'
+$closure=($closureJson -join "`n") | ConvertFrom-Json
+Need ([string]$closure.kind -ceq 'V3_NATIVE_SOURCE_IMPORT_CLOSURE_READONLY_V1' -and
+      [string]$closure.inspection_authority -ceq 'SOURCE_ONLY_NO_ORIGINALHOST_OR_CLOUD_ACK' -and
+      $closure.static_local_import_closure_complete -eq $true -and
+      $closure.paper_release_authorized -eq $false -and
+      $closure.actual_loaded_python_bytecode_independently_verified -eq $false -and
+      [string]$closure.candidate_transitive_source_sha256 -cmatch '^[a-f0-9]{64}$') 'transitive stage import closure incomplete'
+$rows=@($closure.candidate_transitive_files)
+Need ($rows.Count -ge 20 -and $rows.Count -le 512 -and
+      $rows.Count -eq [int]$closure.candidate_transitive_file_count) 'invalid transitive closure size'
+$allPythonTracked=@(& git -C $source ls-files --cached -- '*.py' 2>$null)
+Need ($LASTEXITCODE -eq 0) 'tracked Python dependency inventory unavailable'
+$closureFiles=@()
+$closureHashes=@{}
+foreach($record in $rows){
+ $rel=[string]$record[0]
+ $sha=[string]$record[1]
+ Need ($rel -cmatch '^[A-Za-z_][A-Za-z0-9_./-]*\.py$' -and
+       $rel -notmatch '(^|/)\.\.(/|$)' -and
+       $rel -notmatch '//|\\' -and
+       $allPythonTracked -ccontains $rel -and
+       $sha -cmatch '^[0-9a-f]{64}$') 'unsafe or untracked transitive Python dependency'
+ Need (-not $closureHashes.ContainsKey($rel)) 'duplicate transitive dependency'
+ $closureHashes[$rel]=$sha
+ $closureFiles+=@($rel)
+}
+$selected=@(($selected + $closureFiles) | Sort-Object -Unique)
+
 $must=@(
  'paper_evaluator/v3_paper_minipc_one_candidate_v1.py',
  'paper_evaluator/v3_paper_minipc_selective_tick_v1.py',
@@ -101,9 +138,13 @@ $manifest=@(
   Need (IsUnder $file $source) 'source path escaped checkout'
   $folder=Split-Path -Parent $file
   Need (-not [bool]((Get-Item -LiteralPath $folder -Force).Attributes -band [IO.FileAttributes]::ReparsePoint)) 'linked source folder'
+  $digest=Fingerprint $file
+  if($closureHashes.ContainsKey($rel)){
+    Need ($digest -ceq [string]$closureHashes[$rel]) 'closure dependency source hash changed'
+  }
   [pscustomobject]@{
    relative_path=$rel
-   sha256=(Fingerprint $file)
+   sha256=$digest
   }
  }
 )
@@ -114,6 +155,10 @@ $report=[ordered]@{
   target_directory=(Split-Path $target -Leaf)
   tracked_code_files=$manifest.Count
   source_manifest=$manifest
+  static_transitive_closure_file_count=$rows.Count
+  static_transitive_closure_sha256=$closure.candidate_transitive_source_sha256
+  static_transitive_closure_files=@($closureFiles | Sort-Object)
+  source_closure_is_only_candidate_not_loaded_code_ack=$true
   source_only=$true
   original_v2r4_unchanged=$true
   task_changes=$false

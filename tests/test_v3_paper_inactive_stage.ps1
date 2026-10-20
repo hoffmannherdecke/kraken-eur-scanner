@@ -26,6 +26,9 @@ foreach($forbidden in @('Start-ScheduledTask','Stop-ScheduledTask',
 }
 foreach($required in @(
   'source_git_sha=$ExpectedSourceSha',
+  'static_transitive_closure_sha256=$closure.candidate_transitive_source_sha256',
+  'closure dependency source hash changed',
+  '--source-closure-readonly',
   'status='+[char]39+'READ_ONLY_SOURCE_PREFLIGHT_PASS_NOT_STAGED'+[char]39,
   'STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED',
   'git -C $source status --porcelain --untracked-files=normal',
@@ -56,6 +59,8 @@ try {
   if($preview.status -cne 'READ_ONLY_SOURCE_PREFLIGHT_PASS_NOT_STAGED' -or
      $preview.source_git_sha -cne $head -or
      $preview.tracked_code_files -lt 20 -or
+     $preview.static_transitive_closure_file_count -lt 20 -or
+     [string]$preview.static_transitive_closure_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
      $preview.v3_writer_installed -ne $false -or
      $preview.cloud_cas_performed -ne $false -or
      (Test-Path -LiteralPath $expectedDir)){throw 'Source preview failed read-only isolation'}
@@ -93,7 +98,24 @@ try {
   if(-not(Test-Path -LiteralPath $saved -PathType Leaf)){throw 'Source manifest missing'}
   $stored=Get-Content -LiteralPath $saved -Raw | ConvertFrom-Json
   if($stored.source_git_sha -cne $head -or
-     $stored.tracked_code_files -ne $result.tracked_code_files){throw 'Stage manifest source pin mismatch'}
+     $stored.tracked_code_files -ne $result.tracked_code_files -or
+     [string]$stored.static_transitive_closure_sha256 -cne
+       [string]$preview.static_transitive_closure_sha256 -or
+     $stored.static_transitive_closure_file_count -ne
+       $preview.static_transitive_closure_file_count){
+    throw 'Stage manifest source/closure pin mismatch'
+  }
+  $closurePaths=@($stored.static_transitive_closure_files)
+  if($closurePaths.Count -ne [int]$stored.static_transitive_closure_file_count -or
+     $stored.source_closure_is_only_candidate_not_loaded_code_ack -ne $true){
+    throw 'Staged local closure incomplete or false originalhost claim'
+  }
+  $manifestPaths=@($stored.source_manifest | ForEach-Object {$_.relative_path})
+  foreach($localDependency in $closurePaths){
+    if($manifestPaths -cnotcontains $localDependency){
+      throw ('V3_STAGE_TRANSITIVE_PYTHON_MISSING '+$localDependency)
+    }
+  }
   $importRoot=@($stored.source_manifest | Where-Object {
     $_.relative_path -ceq 'paper_context.py'
   })
@@ -117,7 +139,8 @@ try {
   if($launchers.Count -ne 1){throw 'V3_ORIGINAL_SINGLE_OWNER_LAUNCHER_NOT_PINNED'}
   foreach($file in @($stored.source_manifest)){
     $relative=[string]$file.relative_path
-    if($relative -notmatch '^(paper_evaluator|market_data)/[a-zA-Z0-9_]+\.py$' -and
+    if($closurePaths -cnotcontains $relative -and
+       $relative -notmatch '^(paper_evaluator|market_data)/[a-zA-Z0-9_]+\.py$' -and
        $relative -cne 'paper_context.py' -and
        $relative -cne 'research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json' -and
        $relative -cne 'supabase/functions/v3-paper-evidence-relay/index.ts' -and
