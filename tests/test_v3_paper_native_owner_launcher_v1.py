@@ -3,6 +3,7 @@
 import contextlib
 import io
 import json
+from datetime import datetime, timezone
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,6 +14,14 @@ from paper_evaluator import v3_paper_minipc_native_launcher_v1 as launcher
 
 class SingleNativeOwnerLauncherTests(unittest.TestCase):
     SID = "PAPER-V3-20261017T170000Z"
+
+    def setUp(self):
+        # Pin the actual-wall-clock provider only in offline unit tests.
+        clock = patch.object(
+            launcher, "_originalhost_wall_clock_utc",
+            return_value=datetime(2026, 10, 19, 14, 0, 25, tzinfo=timezone.utc))
+        clock.start()
+        self.addCleanup(clock.stop)
     REPO = "a" * 40
     BUNDLE = "b" * 64
     STRATEGY = "c" * 64
@@ -218,8 +227,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         # No worker/HTTP/Cloud/Windows call; delegation is mocked.
         with tempfile.TemporaryDirectory() as root:
             kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H",
-                          candidate={"candidate_id": "ORIGINAL_RECEIPT_ONLY"},
-                          clock_now=lambda: "2026-10-19T14:00:25Z")
+                          candidate={"candidate_id": "ORIGINAL_RECEIPT_ONLY"})
             host = self.original_release_host(self.SID, self.REPO)
             original = dict(kwargs)
             packet = {"strategy_revision": launcher.REVISION,
@@ -240,8 +248,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
     def test_native_seam_fail_closed_on_missing_bad_stale_or_false_originals(self):
         with tempfile.TemporaryDirectory() as root:
             kwargs = dict(self.common(root), phase="FIRST_SCANNER_MODEL_P4",
-                          candidate={"candidate_id": "NOT_ACTUALLY_BOUGHT"},
-                          clock_now=lambda: "2026-10-19T14:00:25Z")
+                          candidate={"candidate_id": "NOT_ACTUALLY_BOUGHT"})
             good = self.original_release_host(self.SID, self.REPO)
             invalid = [
                 {"task_state": "Disabled"},
@@ -288,10 +295,38 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                                 **kwargs)
                 worker.assert_not_called()
 
-    def test_six_proof_release_envelopes_mandatory_before_originalhost_or_worker(self):
+    def test_native_release_clock_is_real_and_cannot_be_injected(self):
         with tempfile.TemporaryDirectory() as root:
             kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H",
-                          clock_now=lambda: "2026-10-19T14:00:25Z")
+                          candidate={"candidate_id": "OFFLINE_ONLY"})
+            host = self.original_release_host(self.SID, self.REPO)
+            packet = {"strategy_revision": launcher.REVISION,
+                      "strategy_fingerprint_sha256": self.STRATEGY}
+            with patch.object(launcher, "validate_experimental_paper_packet",
+                              return_value=[]), patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
+                # A client-supplied clock cannot make a prior host report fresh.
+                with self.assertRaisesRegex(ValueError, "injected clock override"):
+                    launcher.dispatch_after_native_release_readback(
+                        originalhost_readback=lambda: host,
+                        release_root=Path(root), release_packet=packet,
+                        clock_now=lambda: "2026-10-19T14:00:25Z", **kwargs)
+                # Even a release packet with mocked six proofs cannot make
+                # yesterday's host readback pass the actual wall clock.
+                with patch.object(
+                        launcher, "_originalhost_wall_clock_utc",
+                        return_value=datetime(2026, 10, 20, 14, 0, 25,
+                                              tzinfo=timezone.utc)):
+                    with self.assertRaisesRegex(ValueError, "stale or future"):
+                        launcher.dispatch_after_native_release_readback(
+                            originalhost_readback=lambda: host,
+                            release_root=Path(root), release_packet=packet,
+                            **kwargs)
+                worker.assert_not_called()
+
+    def test_six_proof_release_envelopes_mandatory_before_originalhost_or_worker(self):
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H")
             host = self.original_release_host(self.SID, self.REPO)
             packet = {"strategy_revision": launcher.REVISION,
                       "strategy_fingerprint_sha256": self.STRATEGY}
@@ -317,8 +352,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
 
     def test_wrong_revision_strategy_or_root_never_hits_six_proof_gate(self):
         with tempfile.TemporaryDirectory() as root:
-            kwargs = dict(self.common(root), phase="CLOUD_RECEIPT_ACK",
-                          clock_now=lambda: "2026-10-19T14:00:25Z")
+            kwargs = dict(self.common(root), phase="CLOUD_RECEIPT_ACK")
             host = self.original_release_host(self.SID, self.REPO)
             good = {"strategy_revision": launcher.REVISION,
                     "strategy_fingerprint_sha256": self.STRATEGY}
@@ -341,8 +375,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
 
     def test_native_seam_never_activates_on_invalid_local_release_paths(self):
         with tempfile.TemporaryDirectory() as root:
-            kwargs = dict(self.common(root), phase="CLOUD_RECEIPT_ACK",
-                          clock_now=lambda: "2026-10-19T14:00:25Z")
+            kwargs = dict(self.common(root), phase="CLOUD_RECEIPT_ACK")
             kwargs["journal"] = kwargs["capture_dir"]
             with patch.object(launcher, "dispatch_one_owned_paper_phase") as worker:
                 with self.assertRaises(ValueError):
