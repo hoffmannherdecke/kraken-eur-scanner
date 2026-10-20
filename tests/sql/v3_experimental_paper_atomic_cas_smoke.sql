@@ -1,5 +1,6 @@
 -- Disposable PostgreSQL 16 V3 experimental PAPER CAS test.
 -- NEVER run on Supabase or against original Mini-PC / production Cloud.
+-- Also verify a same-count original trade version drift blocks real atomic CAS.
 -- Synthetic evidence/approval booleans below exist ONLY in this CI fixture;
 -- they are not host physical release proof, a permission, or a deployment.
 \set ON_ERROR_STOP on
@@ -84,16 +85,17 @@ declare
   n_out bigint;
   n_trade bigint;
   last_out timestamptz;
+  last_trade timestamptz;
   caught boolean;
   reply jsonb;
-  fn text := 'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)';
+  fn text := 'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)';
 begin
   new_id := 'PAPER-V3-' || to_char(stamp at time zone 'UTC',
              'YYYYMMDD"T"HH24MISS"Z"');
   select count(*),max(updated_at) into n_out,last_out
   from public.paper_candidate_outcomes where series_id=old_id;
-  select count(*) into n_trade from public.paper_trade_results
-  where series_id=old_id;
+  select count(*),max(updated_at) into n_trade,last_trade
+  from public.paper_trade_results where series_id=old_id;
   cfg := jsonb_build_object(
     'series_id',new_id,'test_id',new_test,
     'strategy_revision',new_rev,'predecessor_series_id',old_id,
@@ -125,7 +127,7 @@ begin
   caught := false;
   begin
     perform public.rotate_v2r4_to_v3_experimental_paper(
-      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
       new_id,new_test,new_rev,stamp,
       cfg||'{"real_money_actions_enabled":true}'::jsonb,
       new_sha,bundle_sha,new_strategy_sha);
@@ -136,7 +138,7 @@ begin
   caught := false;
   begin
     perform public.rotate_v2r4_to_v3_experimental_paper(
-      old_id,old_sha,strategy_sha,runtime_sha,n_out+1,n_trade,last_out,
+      old_id,old_sha,strategy_sha,runtime_sha,n_out+1,n_trade,last_out,last_trade,
       new_id,new_test,new_rev,stamp,cfg,
       new_sha,bundle_sha,new_strategy_sha);
   exception when others then caught := true; end;
@@ -146,7 +148,7 @@ begin
   caught := false;
   begin
     perform public.rotate_v2r4_to_v3_experimental_paper(
-      old_id,repeat('9',40),strategy_sha,runtime_sha,n_out,n_trade,last_out,
+      old_id,repeat('9',40),strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
       new_id,new_test,new_rev,stamp,cfg,
       new_sha,bundle_sha,new_strategy_sha);
   exception when others then caught := true; end;
@@ -155,19 +157,45 @@ begin
   caught := false;
   begin
     perform public.rotate_v2r4_to_v3_experimental_paper(
-      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
       new_id,new_test,new_rev,stamp,
       cfg||'{"supervisor_old_intake_rearm_blocked":false}'::jsonb,
       new_sha,bundle_sha,new_strategy_sha);
   exception when others then caught := true; end;
   if not caught then raise exception 'No-Rearm predecessor guard bypassed'; end if;
 
+  -- A closed original trade can retain the SAME row count. An outdated
+  -- trade version must fail before changing the active Paper series; the
+  -- exception subtransaction also restores this disposable test's old row.
+  caught := false;
+  begin
+    update public.paper_trade_results
+       set status='CLOSED',updated_at=last_trade+interval '5 seconds'
+     where candidate_id='preserve-old-open-trade';
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,cfg,new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%fresh old Cloud outcome/trade checkpoint drift%' then
+      caught := true;
+    else
+      raise;
+    end if;
+  end;
+  if not caught
+     or (select status from public.paper_trade_results
+         where candidate_id='preserve-old-open-trade') <> 'OPEN'
+     or (select max(updated_at) from public.paper_trade_results
+         where series_id=old_id) is distinct from last_trade then
+    raise exception 'stale same-count old trade update accepted';
+  end if;
+
   -- The synthetic trigger forces the exact dangerous partial-failure moment:
   -- old series UPDATED closed, new INSERT rejects. It MUST roll back both.
   caught := false;
   begin
     perform public.rotate_v2r4_to_v3_experimental_paper(
-      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
       new_id,new_test,new_rev,stamp,cfg,
       new_sha,bundle_sha,new_strategy_sha);
   exception when others then caught := true; end;
@@ -182,7 +210,7 @@ begin
   execute 'drop trigger reject_v3_insert_ci_only on public.paper_series';
 
   reply := public.rotate_v2r4_to_v3_experimental_paper(
-    old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,
+    old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
     new_id,new_test,new_rev,stamp,cfg,new_sha,bundle_sha,new_strategy_sha
   );
   if reply->>'ok' <> 'true'
@@ -206,7 +234,7 @@ begin
   caught := false;
   begin
     perform public.rotate_v2r4_to_v3_experimental_paper(
-      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
       new_id,new_test,new_rev,stamp,cfg,new_sha,bundle_sha,new_strategy_sha
     );
   exception when others then caught := true; end;
