@@ -85,6 +85,32 @@ Performance-/Profitabilitäts-Audits, 50+ weitere Probe-Käufe,
 neue Cloud-/Runner-/Scheduler-Komponenten oder Upgrade-Kosten.
 Bestehende Work-/Research-Routinen und Source-Registry unverändert.
 
+### Quellversionsgebundene Windows-Task-Aktionsvorschau, ohne Task-Änderung
+
+Die **bestehende** `-CandidateStageSha`-Prüfung des originalen
+inaktiven Windows-Task-Operators liefert beim späteren bereits
+vorgeprüften Stage zusätzlich die zwei ausschließlich hashbasierten
+Task-Aktionsidentitäten: **alte tatsächlich deaktivierte Task Action**
+und **zukünftige überprüfte deaktivierte --read-only-Action**.
+Sie verwendet die gleiche kanonische UTF-8-Dreierfolge
+`Executable + NUL + Arguments + NUL + WorkingDirectory`
+wie die bereits vorhandene Originalhost-PowerShell-Beobachtung und
+bindet die vorgeschlagene Launcher-Datei an ihren SHA-256-Digest.
+Weder alte noch neue rohe Task-Parameter oder Secrets werden aus
+diesem Vorschau-Report ausgegeben.
+
+Das ist eine **Versionierungs-/Abgleichvorbereitung für Donnerstag**,
+keine produktive Starter-Implementierung und **kein Task-Update**.
+Die alte deaktivierte Task wird strikt unverändert vorgefunden und
+der Bericht kennzeichnet ausdrücklich:
+`phase_execution_available=false`,
+`independent_originalhost_release_accepted=false` und
+`native_task_update_executed=false`. Insbesondere ist die
+neue **produktive** V3 Paper Phasen-Action noch nicht vorhanden;
+sie darf erst aus unabhängig abgenommener Maintenance-/Task-/PID-/
+Loaded-Source-/Cloud- und originaler Sechs-Proof-Freigabe
+entstehen, nicht aus diesem Digest.
+
 ### Nachfolge-Windows-Task: tatsächliches Source-Manifest statt historischem festen Zähler
 
 Die schon deaktivierte Original-`CryptoMiniPC-V3PaperSingleWriter`-Task
