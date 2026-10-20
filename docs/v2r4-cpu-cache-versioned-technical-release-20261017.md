@@ -93,8 +93,16 @@ Abhängigkeitslisten per Hand zu pflegen, bietet **dieselbe** vorhandene
 read-only CLI-Ausdruck (aus dem überprüften, bewusst isolierten Checkout):
 
 ```powershell
-python -I -B tools/v3_experimental_paper_technical_gate.py --source-closure-readonly
+python -B tools/v3_experimental_paper_technical_gate.py --source-closure-readonly
 ```
+
+Dieser ausschließlich statische Quellen-CLI-Leselauf verwendet `-B`
+(keine Bytecode-Cache-Dateien), **nicht `-I`**: Python `-I`
+entfernt auch das Skriptverzeichnis vom Importpfad, den das vorhandene
+technische Gate für seine ursprünglichen lokalen Kompatibilitätsimporte
+benötigt. Der separate **tatsächliche native Runtime-Import-Smoke
+`python -I -B`** nach Wartung bleibt weiterhin erforderlich. Die
+bestehende Pflicht-CI testet den gezeigten echten Direktaufruf separat.
 
 Die standardmäßig erzeugte JSON-Ausgabe auf **stdout** enthält dieselbe
 deterministische `candidate_transitive_source_sha256`, Einzeldaten
