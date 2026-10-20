@@ -7,6 +7,9 @@
 --   reviewed V3 operator/Edge dual credentials and explicit user approval.
 -- This is not the V2R4-only technical rotation and MUST NOT use its RPC.
 -- Designed against the read-only live public.paper_series schema on 13 Oct.
+-- Include the last original trade updated_at in the SAME atomic CAS as the
+-- existing candidate last update; closing a trade does not alter its count.
+-- A predecessor with 0 trades must report a NULL max(updated_at).
 -- No trigger/table/extra writer is installed by merely storing this draft.
 --
 -- ORIGINAL FOLLOWUPS: old-series paper_candidate_outcomes/paper_trade_results
@@ -27,6 +30,7 @@ create or replace function public.rotate_v2r4_to_v3_experimental_paper(
     p_expected_old_candidate_count bigint,
     p_expected_old_trade_count bigint,
     p_expected_old_last_outcome_updated_at timestamptz,
+    p_expected_old_last_trade_updated_at timestamptz,
     p_proposed_v3_series_id text,
     p_proposed_v3_test_id text,
     p_proposed_v3_revision text,
@@ -45,6 +49,7 @@ declare
     outcome_count bigint;
     trade_count bigint;
     last_outcome timestamptz;
+    last_trade timestamptz;
 begin
     -- Same one-owner Paper series table and EXISTING unique active index.
     -- This lock is distinct from the past V2R4-only technical rotate RPC;
@@ -129,6 +134,8 @@ begin
        or p_expected_old_trade_count < 0
        or (p_expected_old_candidate_count > 0 and
            p_expected_old_last_outcome_updated_at is null)
+       or (p_expected_old_trade_count > 0 and
+           p_expected_old_last_trade_updated_at is null)
        or p_new_v3_config is null
        or pg_catalog.jsonb_typeof(p_new_v3_config) is distinct from 'object' then
         raise exception 'V3 CAS missing original outcome snapshot or config';
@@ -209,13 +216,17 @@ begin
       into outcome_count,last_outcome
       from public.paper_candidate_outcomes
      where series_id=p_expected_old_series_id;
-    select count(*) into trade_count
+    -- Original trades can close/change PnL without changing the row count.
+    -- Bind a fresh Cloud version check to the original trade snapshot.
+    select count(*),max(updated_at)
+      into trade_count,last_trade
       from public.paper_trade_results
      where series_id=p_expected_old_series_id;
 
     if outcome_count is distinct from p_expected_old_candidate_count
        or trade_count is distinct from p_expected_old_trade_count
-       or last_outcome is distinct from p_expected_old_last_outcome_updated_at then
+       or last_outcome is distinct from p_expected_old_last_outcome_updated_at
+       or last_trade is distinct from p_expected_old_last_trade_updated_at then
         raise exception 'V3 CAS fresh old Cloud outcome/trade checkpoint drift';
     end if;
 
@@ -257,6 +268,6 @@ $v3_atomic_cas$;
 -- physical supervisor disable/stop/backup/rollback, old-followup owner,
 -- freeze status compatibility and six E2E gates are independently signed.
 revoke all on function public.rotate_v2r4_to_v3_experimental_paper(
-    text,text,text,text,bigint,bigint,timestamptz,
+    text,text,text,text,bigint,bigint,timestamptz,timestamptz,
     text,text,text,timestamptz,jsonb,text,text,text)
     from public, anon, authenticated, service_role;
