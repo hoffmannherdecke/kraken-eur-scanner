@@ -58,10 +58,11 @@ function OriginalDisabledTaskForCandidateReadOnly {
  Require ($existing.Settings.AllowDemandStart -eq $false -and
    [string]$existing.Settings.MultipleInstances -ceq 'IgnoreNew') 'original V3 Task scheduling drift'
  $originalAction=$existing.Actions[0]
- $oldStage=[IO.Path]::GetFullPath(([string]$originalAction.WorkingDirectory)).TrimEnd('\')
- $trading=[IO.Path]::GetFullPath('C:\Users\ADMIN\Trading').TrimEnd('\')
- Require ($oldStage.StartsWith((Join-Path $trading 'Staging\V3Paper-INACTIVE-'),
-                              [StringComparison]::OrdinalIgnoreCase)) 'original V3 Task source outside inactive staging'
+ # Validate the exact Windows Task string independent of the CI runner OS.
+ # Windows-only GetFullPath would turn C:\... into a Linux working path in
+ # source-policy CI and hide the actual Windows shape the Task must retain.
+ $oldStage=[string]$originalAction.WorkingDirectory
+ Require ($oldStage -match '^C:\\Users\\ADMIN\\Trading\\Staging\\V3Paper-INACTIVE-[0-9a-f]{12}$') 'original V3 Task source outside inactive staging'
  Require ([string]$originalAction.Arguments -match "(?:^|[\s'`"])--read-only(?:[\s'`"]|$)") 'original V3 Task not read-only'
  return 'Disabled'
 }
