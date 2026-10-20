@@ -595,7 +595,7 @@ Ab jetzt gilt:
 - Alles, was ausdrücklich als „merken“, „später“, „noch testen“, „bei der Mini-PC-Einrichtung wieder aufgreifen“ oder „offener Punkt“ festgelegt wird, muss entweder hier stehen oder in einer hier verlinkten kanonischen Fachdokumentation.
 - Keine Doppelpflege derselben Detailregeln. Diese Datei hält Aufgabe, Reihenfolge, Abhängigkeit und Abschlusskriterium; Fachdokumente halten die Details.
 - Erst einen Baustein stabil und mit kleinem End-to-End-Smoke-Test nachweisen, dann den nächsten hinzufügen.
-- Keine stillen Strategieänderungen. V2R3 bleibt bis zum Ende seiner laufenden Vergleichsserie eingefroren.
+- Keine stillen Strategieänderungen. Die damalige V2R3-Vergleichsserie ist abgeschlossen; die weiterhin eingefrorene aktive Strategie und jeder neue Versionswechsel richten sich nach `project-current-state.json`, dem echten Originalhost-/Cloud-Nachweis und dem vorhandenen gesonderten Release-Gate.
 - Routinearbeit lokal / GitHub / API zuerst; ChatGPT Work nur für kleine, nicht sinnvoll auslagerbare Aufgaben.
 - **Autonomie-Protokoll:** Innerhalb des freigegebenen Projektumfangs arbeitet ChatGPT ohne erneutes Okay in einem durch. Nach einem Nutzer-Gate wird automatisch weitergearbeitet. Blockierte Pfade führen nicht zum Stillstand; stattdessen den nächsten unabhängigen offenen Punkt bearbeiten und Blocker dokumentieren.
 - Nutzer nur dann unterbrechen, wenn seine Mitwirkung technisch zwingend ist (physischer MINI-PC/Heimnetz/BIOS/Gerät, Login/Secret/Account-Bestätigung, echte UI-Interaktion) oder wenn ein bestehendes Sicherheits-/Release-Gate bewusst eine menschliche Entscheidung verlangt.
@@ -617,7 +617,7 @@ Kanonische Detailquellen:
 - V3 Research-Chronik: GitHub Issue #7
 - Action-Push / Slack-E2E: GitHub Issue #1
 - Deferred MINI-PC maintenance (Codex update): GitHub Issue #36
-- 2026-10-07 release/handoff checkpoint: GitHub Issue #38
+- 2026-10-07 release/handoff checkpoint (ARCHIV, am 20.10. geschlossen, **kein aktueller Auftrag**): [GitHub Issue #38](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/38)
 
 
 ## Laufendes Projekt-Controlling — 2026-10-08
@@ -909,12 +909,12 @@ Diese Punkte gehören nicht in die Trading-Laufzeit und dürfen den Kernaufbau n
 
 ---
 
-## Reihenfolge in einem Satz
+## Historische Aufbaufolge (kein aktueller Release-/Arbeitsplan)
 
-**V2R3 sauber messen → Mini-PC stabil → Watchdog/Recovery → Kraken/Altrady-Realtime → V2R4-Fast-Trigger Paper → schlanke Integrationen + Historik/Backtests → V3 Research/Shadow/Paper → Smart-Money-Forschung → Self-hosted/Trading-API zuletzt.**
+**Historischer Ablauf:** V2R3 messen → Mini-PC stabilisieren → Watchdog/Recovery → Kraken/Altrady-Realtime → V2R4 Paper → Integrationen und Backtests → V3 Research/Shadow/Paper → Smart Money → gesonderte spätere Echtgeld-/Execution-Stufe. **Aktuelle Priorität und Freigabereihenfolge:** V3-Quellvorbereitung, zwingende CPU/Windows/USV-/Skriptwartung mit V2R4-Wiederanlauf und unabhängiger Originalhost-/Cloud-Abnahme, erst danach separate ausdrückliche Freigabe zum V3-Paper-Cutover; maßgeblich sind `AGENTS.md`, `docs/v3-controlled-paper-cutover-20261011.md` und das bestehende Wartungsprotokoll. Nicht aus dieser historischen Aufbaufolge automatisch handeln.
 
-- [x] **V2R4 Paper-Aktivierung abgeschlossen:** aktive immutable Serie `PAPER-V2R4-20261007T184255Z`, `APPROVED_PAPER`, 50+50 EUR, kein Echtgeld und keine automatische Aktivierung. Der frühere `BLOCKED_V2R3_COMPLETION`-Text ist nur noch historische Release-Evidenz und darf nicht als aktueller Blocker verwendet werden.
-- [ ] **Recovery-Architektur, Issue #89:** V2R4-Paper bleibt auf der originalen aktiven Serie; der gezielte Alias-/Outage-Fix und der kontrollierte technische Paper-Versionswechsel sind vorbereitet, aber noch nicht produktiv freigegeben. Umsetzung und offene Mini-PC-/Cloud-/H3- und Follow-up-Gates ausschließlich über [Issue #89](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/89) sowie den inaktiven [Draft-PR #94](https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/94). Kein automatischer Cutover, keine Echtgeldorder, kein H3-Baseline-Rebind. Den Issue erst nach nachgewiesenem End-to-End-Abschluss schließen.
+- [x] **Historischer V2R4-Paper-Start am 07.10. abgeschlossen:** `PAPER-V2R4-20261007T184255Z` war der originale unveränderliche Strategie-Epochenanker (50+50 EUR, kein Echtgeld); der technische Teilabschnitt wurde am 09.10. geschlossen und mit gleicher Strategie in eine nachfolgende technische Serie rotiert. Die aktuelle aktive Paper-/Task-/Cloud-Serie ist **nicht** aus dieser Zeile abzuleiten: `project-current-state.json` kennzeichnet den datierten deklarierten Strategiestand, aktuelle Mini-PC-/Supabase-Readbacks die Betriebswahrheit. Keine automatische V3-Aktivierung.
+- [ ] **Projektweite Resilienz und V3-Folgen — einziger bestehender offener Fach-Owner [Issue #99](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99):** Die konkrete V2R4-Recovery vom 09.10. ist nach echtem Host-/Cloud-Nachweis abgeschlossen; [Issue #89](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/89) und der damalige [Draft-PR #94](https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/94) sind **historische Belege**, keine heutigen Start-, Restore- oder Cutover-Anweisungen. Offen bleiben die in #99 und den bereits bestehenden Wartungs-/V3-Releasequellen ausdrücklich benannten originalen Resilienz-, Supervisor-, Altdaten-Followup-, Single-Writer-/CAS- und Rollback-Nachweise; Vorabwartung und V2R4-Wiederanlauf sind vor finalem V3-Paper-Go-live zwingend. Keine automatische Aktivierung, kein H3-Baseline-Rebind, keine Echtgeldorder und keine Wiederholung historisch abgeschlossener Tests.
 ## Fast-Track execution block — 2026-10-03
 
 Status: **SUPERSEDED / HISTORICAL EXECUTION RECORD**  
