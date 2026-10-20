@@ -9,6 +9,7 @@ from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 SQL_PATH=ROOT/"supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql"
+POSTGRES_SMOKE_PATH=ROOT/"tests/sql/v3_experimental_paper_atomic_cas_smoke.sql"
 
 
 class InactiveV3AtomicCASContract(unittest.TestCase):
@@ -132,6 +133,15 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
             self.body.index("last_trade is distinct from"),
             self.body.index("update public.paper_series"))
         self.assertNotRegex(self.sql, r"(?im)^\s*grant\s+execute\s+on")
+
+    def test_disposable_postgres_checks_same_count_trade_version_drift(self):
+        fixture=POSTGRES_SMOKE_PATH.read_text(encoding="utf-8")
+        self.assertIn("select count(*),max(updated_at) into n_trade,last_trade",fixture)
+        self.assertIn("updated_at=last_trade+interval '5 seconds'",fixture)
+        self.assertIn("stale same-count old trade update accepted",fixture)
+        self.assertIn("last_out,last_trade,",fixture)
+        self.assertNotIn("n_trade,last_out,\\n",fixture)
+        self.assertIn("rollback;",fixture.lower())
 
     def test_never_accept_fake_auto_money_or_second_strategy(self):
         for key in (
