@@ -1,6 +1,7 @@
 """Original V3 Paper one native-owner launcher: offline only, never Cloud/model."""
 
 import contextlib
+import hashlib
 import io
 import json
 from datetime import datetime, timezone
@@ -45,6 +46,24 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             model_reservations=budget, ack_file=ack,
             read_active_series=lambda _: self.fail(
                 "Offline dispatcher must not query Cloud before locked worker"))
+
+    @staticmethod
+    def correlated_originalhost(timestamp="2026-10-19T14:00:10Z", **overrides):
+        # Offline fixture ONLY: no actual Windows/SYSTEM/loaded PID evidence.
+        local_sha = hashlib.sha256(Path(launcher.__file__).read_bytes()).hexdigest()
+        report = {
+            "status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE",
+            "native_task_state": "Running",
+            "native_task_uses_old_readonly_launcher": False,
+            "native_python_parent_process_observed": True,
+            "native_python_parent_matches_task_action_hint": True,
+            "native_powershell_process_token_is_system": True,
+            "native_task_action_sha256": "a" * 64,
+            "native_task_launcher_file_sha256": local_sha,
+            "observed_at_utc": timestamp,
+        }
+        report.update(overrides)
+        return report
 
     def test_read_only_cli_discloses_gaps_without_start_or_cloud(self):
         buf = io.StringIO()
@@ -110,9 +129,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
 
     def test_one_shot_preflight_joins_exact_originalhost_and_relay_without_release(self):
         series = "PAPER-V3-20261020T090000Z"
-        report = {"status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE",
-                  "native_task_state": "Disabled",
-                  "observed_at_utc": "2026-10-19T14:00:10Z"}
+        report = self.correlated_originalhost()
         reply = {"series_id": series, "status": "active",
                  "strategy_revision": launcher.REVISION,
                  "observed_at_utc": "2026-10-19T14:00:20Z",
@@ -134,6 +151,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         self.assertNotIn("NEVER_DISCLOSE", text)
         result = json.loads(text)
         self.assertTrue(result["cloud_readback_requested"])
+        self.assertTrue(result["originalhost_task_process_source_correlated_read_only"])
         self.assertEqual(result["diagnostic"], report)
         self.assertEqual(result["cloud_readonly_observation"]["series_id"], series)
         self.assertTrue(result["cloud_readonly_observation"]["temporal_pair_checked_read_only"])
@@ -149,8 +167,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
     def test_proposed_series_wrong_or_missing_relay_token_blocks_every_worker(self):
         valid = "PAPER-V3-20261020T090000Z"
         with patch.object(launcher, "read_originalhost_readonly",
-                          return_value={"native_task_state": "Disabled",
-                                        "observed_at_utc": "2026-10-19T14:00:10Z"}) as host, patch.object(
+                          return_value=self.correlated_originalhost()) as host, patch.object(
                           launcher, "read_active_paper_series") as relay, patch.object(
                           launcher, "dispatch_one_owned_paper_phase") as worker, patch.dict(
                           launcher.os.environ, {}, clear=True):
@@ -171,7 +188,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                          "not-a-timestamp", None):
             with self.subTest(observed=observed), patch.object(
                     launcher, "read_originalhost_readonly",
-                    return_value={"observed_at_utc": observed}), patch.object(
+                    return_value=self.correlated_originalhost(observed)), patch.object(
                     launcher, "read_active_paper_series") as relay, patch.object(
                     launcher, "dispatch_one_owned_paper_phase") as worker:
                 with self.assertRaises(ValueError):
@@ -182,7 +199,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
 
     def test_one_shot_cloud_timestamp_denied_when_stale_naive_or_future(self):
         series = "PAPER-V3-20261020T090000Z"
-        valid_host = {"observed_at_utc": "2026-10-19T14:00:10Z"}
+        valid_host = self.correlated_originalhost()
         for observed in ("2026-10-19T13:56:00Z",
                          "2026-10-19T14:00:50Z",
                          "2026-10-19T14:00:10",
@@ -205,7 +222,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         # Each sample is less than 180s old at the fixed test clock,
         # but separated by 184s; a coincidental match cannot become an ACK.
         series = "PAPER-V3-20261020T090000Z"
-        host = {"observed_at_utc": "2026-10-19T13:57:26Z"}
+        host = self.correlated_originalhost("2026-10-19T13:57:26Z")
         reply = {"series_id": series, "status": "active",
                  "strategy_revision": launcher.REVISION,
                  "observed_at_utc": "2026-10-19T14:00:30Z"}
@@ -226,7 +243,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         # but the HOST is now 190s old. PR467's pre-relay-only host check
         # must not incorrectly accept this as a current paired observation.
         series = "PAPER-V3-20261020T090000Z"
-        report = {"observed_at_utc": "2026-10-19T14:00:10Z"}
+        report = self.correlated_originalhost()
         reply = {"series_id": series, "status": "active",
                  "strategy_revision": launcher.REVISION,
                  "observed_at_utc": "2026-10-19T14:01:30Z"}
@@ -245,6 +262,33 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             self.assertEqual(clock.call_count, 2)
             worker.assert_not_called()
 
+    def test_paired_cloud_preflight_requires_running_real_task_source_hints(self):
+        series = "PAPER-V3-20261020T090000Z"
+        invalid = (
+            {"native_task_state": "Disabled"},
+            {"native_task_uses_old_readonly_launcher": True},
+            {"native_python_parent_process_observed": False},
+            {"native_python_parent_matches_task_action_hint": False},
+            {"native_powershell_process_token_is_system": False},
+            {"native_powershell_process_token_is_system": 1},
+            {"native_task_action_sha256": None},
+            {"native_task_action_sha256": "f" * 63},
+            {"native_task_launcher_file_sha256": "b" * 64},
+            {"status": "RELEASE_APPROVED"},
+        )
+        for fields in invalid:
+            with self.subTest(fields=fields), patch.dict(
+                    launcher.os.environ, {"V3_PAPER_RELAY_TOKEN": "R"*32}), patch.object(
+                    launcher, "read_originalhost_readonly",
+                    return_value=self.correlated_originalhost(**fields)), patch.object(
+                    launcher, "read_active_paper_series") as cloud, patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
+                with self.assertRaisesRegex(ValueError, "Task/PID/source"):
+                    launcher.preflight_native_windows_one_shot(
+                        proposed_v3_series=series)
+                cloud.assert_not_called()
+                worker.assert_not_called()
+
     def test_one_shot_host_only_mode_has_no_new_clock_gate(self):
         # Pre-maintenance V2R4 diagnostics must remain usable even with
         # historic/absent timestamps; no relay is requested in this mode.
@@ -262,8 +306,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         valid = "PAPER-V3-20261020T090000Z"
         with patch.dict(launcher.os.environ, {"V3_PAPER_RELAY_TOKEN": "R"*32}), patch.object(
                 launcher, "read_originalhost_readonly",
-                return_value={"status": "ORIGINALHOST_INVENTORY_ONLY_NO_RELEASE",
-                              "observed_at_utc": "2026-10-19T14:00:10Z"}), patch.object(
+                return_value=self.correlated_originalhost()), patch.object(
                 launcher, "dispatch_one_owned_paper_phase") as worker:
             with patch.object(launcher, "read_active_paper_series",
                               side_effect=ValueError("Cloud has no active V3 series")):
