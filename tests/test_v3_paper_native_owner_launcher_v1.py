@@ -57,6 +57,8 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             "native_task_uses_old_readonly_launcher": False,
             "native_python_parent_process_observed": True,
             "native_python_parent_matches_task_action_hint": True,
+            "native_python_parent_pid": 21704,
+            "native_python_parent_started_at_utc": "2026-10-19T13:40:00Z",
             "native_powershell_process_token_is_system": True,
             "native_task_action_sha256": "a" * 64,
             "native_task_launcher_file_sha256": local_sha,
@@ -328,6 +330,9 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             "native_task_action_sha256": host["native_task_action_sha256"],
             "native_task_launcher_file_sha256":
                 host["native_task_launcher_file_sha256"],
+            "native_python_parent_pid": host["native_python_parent_pid"],
+            "native_python_parent_started_at_utc":
+                host["native_python_parent_started_at_utc"],
         }
         calls = []
         def physical_provider():
@@ -365,7 +370,9 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         expected = dict(
             observed_at_utc="2026-10-19T14:00:16Z",
             native_task_action_sha256=host["native_task_action_sha256"],
-            native_task_launcher_file_sha256=host["native_task_launcher_file_sha256"])
+            native_task_launcher_file_sha256=host["native_task_launcher_file_sha256"],
+            native_python_parent_pid=host["native_python_parent_pid"],
+            native_python_parent_started_at_utc=host["native_python_parent_started_at_utc"])
         changes = (
             {"native_task_action_sha256": "d"*64},
             {"native_task_launcher_file_sha256": "e"*64},
@@ -395,7 +402,9 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         host = self.correlated_originalhost()
         aligned = dict(
             native_task_action_sha256=host["native_task_action_sha256"],
-            native_task_launcher_file_sha256=host["native_task_launcher_file_sha256"])
+            native_task_launcher_file_sha256=host["native_task_launcher_file_sha256"],
+            native_python_parent_pid=host["native_python_parent_pid"],
+            native_python_parent_started_at_utc=host["native_python_parent_started_at_utc"])
         for obs in ("2026-10-19T14:02:00Z", None, "bad-time"):
             with self.subTest(obs=obs), patch.object(
                     launcher.sys, "platform", "win32"), patch.object(
@@ -411,6 +420,70 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                             observed_at_utc=obs),
                         phase="FOLLOWUP_6H24H72H", series_id=self.SID)
                 worker.assert_not_called()
+
+    def test_native_windows_release_rejects_pid_reuse_and_birth_mismatch(self):
+        host = self.correlated_originalhost()
+        original = {
+            "observed_at_utc": "2026-10-19T14:00:16Z",
+            "native_task_action_sha256": host["native_task_action_sha256"],
+            "native_task_launcher_file_sha256": host["native_task_launcher_file_sha256"],
+            "native_python_parent_pid": host["native_python_parent_pid"],
+            "native_python_parent_started_at_utc": host["native_python_parent_started_at_utc"],
+        }
+        changed_cases = (
+            {"native_python_parent_pid": 21705},
+            {"native_python_parent_started_at_utc": "2026-10-19T13:40:01Z"},
+            {"native_python_parent_pid": True},
+            {"native_python_parent_pid": None},
+            {"native_python_parent_started_at_utc": "invalid"},
+            {"native_python_parent_started_at_utc": "2026-10-19T13:40:00"},
+        )
+        for changed in changed_cases:
+            with self.subTest(changed=changed), patch.object(
+                    launcher.sys, "platform", "win32"), patch.object(
+                    launcher, "read_originalhost_readonly",
+                    return_value=host), patch.object(
+                    launcher, "dispatch_after_originalhost_and_cloud_readback"
+                    ) as delegate, patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
+                delegate.side_effect = lambda **kw: kw["originalhost_readback"]()
+                with self.assertRaises(ValueError):
+                    launcher.dispatch_from_original_windows_one_shot(
+                        originalhost_release_readback=lambda: dict(original, **changed),
+                        phase="FOLLOWUP_6H24H72H", series_id=self.SID)
+                delegate.assert_called_once()
+                worker.assert_not_called()
+
+    def test_native_windows_release_rejects_missing_local_pid_birth(self):
+        for mutation in (
+            {"native_python_parent_pid": None},
+            {"native_python_parent_pid": False},
+            {"native_python_parent_started_at_utc": "bad"},
+        ):
+            with self.subTest(mutation=mutation), patch.object(
+                    launcher.sys, "platform", "win32"), patch.object(
+                    launcher, "read_originalhost_readonly",
+                    return_value=self.correlated_originalhost(**mutation)), patch.object(
+                    launcher, "dispatch_after_originalhost_and_cloud_readback"
+                    ) as owner, patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
+                with self.assertRaisesRegex(ValueError, "Task/PID/source"):
+                    launcher.dispatch_from_original_windows_one_shot(
+                        originalhost_release_readback=lambda: {},
+                        phase="FOLLOWUP_6H24H72H", series_id=self.SID)
+                owner.assert_not_called()
+                worker.assert_not_called()
+
+    def test_existing_windows_inventory_process_birth_is_rechecked(self):
+        original = Path(launcher.__file__).resolve().parent.parent
+        source = (original / "tools" /
+                  "check-minipc-v3-physical-writer-readiness.ps1").read_text("utf-8")
+        for text in (
+            "native_python_parent_pid=$parentId",
+            "native_python_parent_started_at_utc=$parentBorn.ToString('o')",
+            "$freshParent=@(Get-CimInstance Win32_Process",
+            "$stableParent", "native_runtime_identity_independently_verified=$false"):
+            self.assertIn(text, source)
 
     def test_native_windows_release_rejects_stale_local_task_before_owner(self):
         report = self.correlated_originalhost("2026-10-19T13:58:00Z")
