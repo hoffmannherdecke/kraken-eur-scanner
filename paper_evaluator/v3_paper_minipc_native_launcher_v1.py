@@ -356,6 +356,13 @@ def summarize_originalhost_readonly(report: dict[str, Any]) -> dict[str, Any]:
             and FILE_SHA.fullmatch(local["native_task_launcher_file_sha256"])
             else None,
         "native_task_loaded_module_independently_verified": False,
+        "native_python_parent_process_observed":
+            local.get("native_python_parent_process_observed") is True,
+        "native_python_parent_matches_task_action_hint":
+            local.get("native_python_parent_matches_task_action_hint") is True,
+        "native_powershell_process_token_is_system":
+            local.get("native_powershell_process_token_is_system") is True,
+        "native_runtime_identity_independently_verified": False,
         "native_task_uses_old_readonly_launcher":
             local.get("native_task_uses_old_readonly_launcher") is True,
         "old_intake_disabled_observed":
