@@ -90,8 +90,8 @@ if($sourceGate -lt 0 -or $beforeAction -le $sourceGate -or
 
 $first=$src.IndexOf('if(-not $InstallDisabled){')
 $gate=$src.IndexOf('Require ($Confirm -ceq')
-$service=$src.IndexOf("New-Object -ComObject 'Schedule.Service'")
-$register=$src.IndexOf('RegisterTaskDefinition($taskName,$definition,2')
+$service=$src.IndexOf("New-Object -ComObject 'Schedule.Service'",$gate)
+$register=$src.IndexOf('RegisterTaskDefinition($taskName,$definition,2',$service)
 if($first -lt 0 -or $gate -le $first -or $service -le $gate -or $register -le $service){
  throw 'V3_DISABLED_NATIVE_TASK_PREVIEW_OR_CONFIRM_EXECUTION_ORDER_BAD'
 }
