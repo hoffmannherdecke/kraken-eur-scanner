@@ -1,4 +1,4 @@
-name: MINI-PC daily 10am status
+name: MINI-PC daily 10:30 status
 
 'on':
   workflow_dispatch:
@@ -10,9 +10,10 @@ name: MINI-PC daily 10am status
       # report path in safe dry-run mode: no DB upsert and no Slack post.
       - 'tools/minipc_cloud_evidence.py'
   schedule:
-    # 10:00 Europe/Berlin is 08:00 UTC in CEST and 09:00 UTC in CET.
+    # 10:30 Europe/Berlin is 08:30 UTC in CEST and 09:30 UTC in CET.
     # Trigger only both candidate UTC hours; the in-job local-hour gate keeps exactly one effective daily report.
-    - cron: '0 8,9 * * *'
+    # This later host health snapshot does not certify the separate 10:15 Work completion.
+    - cron: '30 8,9 * * *'
 
 permissions:
   contents: read
@@ -203,7 +204,7 @@ jobs:
                               f"{current_paper.get('completed_trades')} Trades | "
                               "V2R4-Shadow historisch, nicht aktiv")
           message=(
-              f"{icon} MINI-PC 10:00: {health_state} | "
+              f"{icon} MINI-PC 10:30: {health_state} | "
               f"Status {age_min:.1f}m alt | Kraken {observed_pairs}/{pairs} ({coverage}%) | "
               f"Serie {current_series_id} | Supervisor {supervisor_status} | "
               f"{series_metrics} | Scanner 24h {scanner_24h} | Issues {issue_text}"

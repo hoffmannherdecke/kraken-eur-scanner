@@ -329,7 +329,7 @@ class MiniPCDailyReadbackHandoffContract(unittest.TestCase):
         from pathlib import Path
         root = Path(__file__).resolve().parents[1]
         original = (root / ".github/workflows/minipc-daily-status.yml").read_text("utf-8")
-        self.assertIn("cron: '0 8,9 * * *'", original)
+        self.assertIn("cron: '30 8,9 * * *'", original)
         self.assertIn("native_diagnostics=classify_minipc_daily_diagnostics(row,now=now_utc)", original)
         self.assertIn('"native_task_diagnostics":native_diagnostics', original)
         # Historical all-series totals must not be confused with the
@@ -526,7 +526,7 @@ class MiniPCDailyExactCountContract(unittest.TestCase):
             "scanner_detection_evidence?select=handoff_id&detected_at=gte.",
         ):
             self.assertIn(table, script)
-        self.assertIn("cron: '0 8,9 * * *'", script)
+        self.assertIn("cron: '30 8,9 * * *'", script)
         self.assertIn("      - 'tools/minipc_cloud_evidence.py'", script)
         self.assertIn('dry_run=event_name!="schedule"', script)
         self.assertIn('if dry_run:\n              raise SystemExit(0)', script)
