@@ -524,6 +524,47 @@ def _read_only_snapshot_time(value: Any, *, source: str,
     return stamp
 
 
+def _require_one_loaded_release_module_root() -> None:
+    """Reject imported V3 core modules from another directory BEFORE Paper.
+
+    This is local runtime SOURCE-CONSISTENCY only, not independent proof of
+    executed Python bytecode, external Windows Task identity or physical CAS.
+    The authoritative originalhost release owner must still attest those.
+    """
+    source = Path(__file__).absolute()
+    root = source.parent.parent
+    if (not source.is_file() or source.is_symlink()
+            or not root.is_dir() or root.is_symlink()
+            or source.parent.is_symlink()):
+        raise ValueError("native V3 launcher staged source not regular")
+    modules = (
+        ("paper_evaluator.v3_paper_minipc_one_candidate_v1",
+         "paper_evaluator/v3_paper_minipc_one_candidate_v1.py"),
+        ("paper_evaluator.v3_paper_minipc_selective_tick_v1",
+         "paper_evaluator/v3_paper_minipc_selective_tick_v1.py"),
+        ("paper_evaluator.v3_paper_cloud_receipt_sync_v1",
+         "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py"),
+        ("tools.v3_experimental_paper_technical_gate",
+         "tools/v3_experimental_paper_technical_gate.py"),
+    )
+    for name, relative in modules:
+        module = sys.modules.get(name)
+        target = root / relative
+        origin = getattr(getattr(module, "__spec__", None), "origin", None)
+        path = getattr(module, "__file__", None)
+        if (module is None or not isinstance(origin, str)
+                or not isinstance(path, str)
+                or not target.is_file() or target.is_symlink()
+                or target.parent.is_symlink()):
+            raise ValueError("native V3 core module source unavailable: " + name)
+        # Original import path AND Python import-spec origin must both be the
+        # exact existing file within this launcher's single staged root.
+        # Never derive a release path from argv, env, user JSON or sys.path.
+        if (Path(path).absolute() != target.absolute()
+                or Path(origin).absolute() != target.absolute()):
+            raise ValueError("native V3 mixed-vintage core module origin: " + name)
+
+
 def _observed_originalhost_parent_identity(report: dict[str, Any]) -> tuple[int, datetime]:
     """OS PID and birth observed separately; does NOT attest loaded modules."""
     if not isinstance(report, dict):
@@ -616,6 +657,9 @@ def dispatch_from_original_windows_one_shot(*,
                 "clock_now", "model_client", "source_capture",
                 "source_acquire", "source_fetch", "source_ticker"))):
         raise ValueError("native one-shot phase or injected source invalid")
+    # A valid Task Action and on-disk launcher are insufficient if Python has
+    # imported core modules from a different checkout or stale stage.
+    _require_one_loaded_release_module_root()
     observed = read_originalhost_readonly()
     _require_running_originalhost_source_hint(observed)
     observed_parent = _observed_originalhost_parent_identity(observed)

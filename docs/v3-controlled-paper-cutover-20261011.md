@@ -53,6 +53,29 @@ die finale Nutzerfreigabe nicht ersetzen. Keine zusätzliche
 PowerShell-Funktion, neue Task oder Signaturbehörde entsteht durch
 diese rein quellseitige Verdrahtung.
 
+### Keine gemischten V3-Importquellen im künftigen nativen Windows-Start
+
+Der bereits vorhandene native Launcher prüft **vor der Windows-Diagnose
+und vor einer künftigen Cloud- oder Paper-Aktion**, ob die tatsächlich
+importierten V3-Kernmodule (Candidate-Modell, selektive Paper-Phase,
+Cloud-Receipt und ursprünglicher technischer Sechs-Proof-Gate) ihre
+Python-Importursprünge innerhalb desselben isolierten Stage-Quellbaums
+haben wie der aufrufende native Launcher. `__file__` und
+`__spec__.origin` müssen auf genau die vorhandenen regulären,
+nicht verlinkten Quell-Dateien zeigen. Ein veralteter oder aus einer
+anderen Checkout-Version importierter Modulpfad führt **fail-closed**
+zum Abbruch. Kein zweiter Import-Loader, Dateikopie, Runtime-Dienst
+oder eigener Release-Owner.
+
+Dieser Laufzeitcheck ergänzt den bei der Wartung schon vorgeschriebenen
+vollständigen Transit-Import-/SHA-Pin-Abgleich der tatsächlichen
+Release-Dateien. Er ist **nur ein lokaler Integritätsabgleich** der
+Importpfade; weder `__file__` noch `__spec__` beweisen unabhängig,
+welche Bytecode-Version wirklich ausgeführt wurde, und sie belegen
+weder OS-Singleton, Originalhost-Freigabe noch Cloud-CAS. Die sechs
+bereits beschlossenen echten technischen Belege, die physische
+Wartung und die getrennte letzte Nutzerfreigabe bleiben unverändert.
+
 ### Gleiche native Windows-Prozessidentität beim unabhängigen Release-Befund
 
 Die bereits existierende Originalhost-PowerShell-Diagnose berichtet nun zusätzlich
