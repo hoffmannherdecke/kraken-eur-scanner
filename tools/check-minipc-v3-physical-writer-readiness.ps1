@@ -374,6 +374,8 @@ $v3PostCas=[ordered]@{
  native_task_loaded_module_independently_verified=$false
  native_python_parent_process_observed=$false
  native_python_parent_matches_task_action_hint=$false
+ native_python_parent_pid=$null
+ native_python_parent_started_at_utc=$null
  native_powershell_process_token_is_system=$false
  native_runtime_identity_independently_verified=$false
  original_supervisor_observation='UNAVAILABLE'
@@ -428,6 +430,25 @@ try {
       $v3PostCas.native_python_parent_process_observed=$true
       $parentExe=[string]$parentProcess.ExecutablePath
       $parentArgs=[string]$parentProcess.CommandLine
+      # PID and process birth make the observed parent lineage specific.
+      # Re-read the SAME CIM process before issuing even a diagnostic hint
+      # so a PID reused between two snapshots fails closed.
+      $stableParent=$false
+      $parentBorn=$null
+      if($null -ne $parentProcess.CreationDate -and
+         $null -ne $thisProcess.CreationDate){
+       $parentBorn=([datetime]$parentProcess.CreationDate).ToUniversalTime()
+       $childBorn=([datetime]$thisProcess.CreationDate).ToUniversalTime()
+       $freshParent=@(Get-CimInstance Win32_Process -Filter "ProcessId=$parentId" -ErrorAction Stop)
+       $stableParent=(
+        $freshParent.Count -eq 1 -and $parentId -gt 0 -and
+        $parentBorn -le $childBorn -and
+        $parentBorn -le (Get-Date).ToUniversalTime() -and
+        $null -ne $freshParent[0].CreationDate -and
+        ([datetime]$freshParent[0].CreationDate).ToUniversalTime() -eq $parentBorn -and
+        [string]$freshParent[0].ExecutablePath -ceq $parentExe -and
+        [string]$freshParent[0].CommandLine -ceq $parentArgs)
+      }
       $v3PostCas.native_python_parent_matches_task_action_hint=(
        [string]$nativeV3.State -ceq 'Running' -and
        $v3PostCas.native_task_principal_system -eq $true -and
@@ -435,12 +456,18 @@ try {
        [string]$nativeV3.Settings.MultipleInstances -ceq 'IgnoreNew' -and
        [string]::Equals($parentExe,$exe,[StringComparison]::OrdinalIgnoreCase) -and
        -not [string]::IsNullOrEmpty($argsText) -and
-       $parentArgs.Contains($argsText))
+       $parentArgs.Contains($argsText) -and $stableParent)
+      if($v3PostCas.native_python_parent_matches_task_action_hint){
+       $v3PostCas.native_python_parent_pid=$parentId
+       $v3PostCas.native_python_parent_started_at_utc=$parentBorn.ToString('o')
+      }
      }
     }
    }catch{
     $v3PostCas.native_python_parent_process_observed=$false
     $v3PostCas.native_python_parent_matches_task_action_hint=$false
+    $v3PostCas.native_python_parent_pid=$null
+    $v3PostCas.native_python_parent_started_at_utc=$null
     $v3PostCas.native_powershell_process_token_is_system=$false
    }
    $v3PostCas.native_task_python_executable_hint=(
