@@ -100,11 +100,16 @@ try {
   if($importRoot.Count -ne 1){
     throw 'V3_IMPORT_GRAPH_INCOMPLETE: original paper_context.py absent'
   }
-  $releaseGate=@($stored.source_manifest | Where-Object {
-    $_.relative_path -ceq 'tools/v3_experimental_paper_technical_gate.py'
-  })
-  if($releaseGate.Count -ne 1){
-    throw 'V3_ORIGINAL_SIX_PROOF_GATE_IMPORT_MISSING_FROM_STAGE'
+  foreach($mustHave in @(
+      'tools/v3_experimental_paper_technical_gate.py',
+      'tools/paper_series_transition_guard.py'
+  )){
+    $rows=@($stored.source_manifest | Where-Object {
+      $_.relative_path -ceq $mustHave
+    })
+    if($rows.Count -ne 1){
+      throw ('V3_ORIGINAL_RELEASE_SUPPORT_IMPORT_MISSING: '+$mustHave)
+    }
   }
   $launchers=@($stored.source_manifest | Where-Object {
     $_.relative_path -ceq 'paper_evaluator/v3_paper_minipc_native_launcher_v1.py'
@@ -117,6 +122,7 @@ try {
        $relative -cne 'research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json' -and
        $relative -cne 'supabase/functions/v3-paper-evidence-relay/index.ts' -and
        $relative -cne 'tools/v3_experimental_paper_technical_gate.py' -and
+       $relative -cne 'tools/paper_series_transition_guard.py' -and
        $relative -cne 'tools/minipc-runtime-supervisor.ps1' -and
        $relative -cne 'tools/check-minipc-v3-physical-writer-readiness.ps1' -and
        $relative -cne 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1'){
