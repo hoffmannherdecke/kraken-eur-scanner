@@ -436,6 +436,14 @@ def summarize_originalhost_readonly(report: dict[str, Any]) -> dict[str, Any]:
             local.get("native_python_parent_process_observed") is True,
         "native_python_parent_matches_task_action_hint":
             local.get("native_python_parent_matches_task_action_hint") is True,
+        "native_python_parent_pid":
+            local.get("native_python_parent_pid")
+            if type(local.get("native_python_parent_pid")) is int
+            and 0 < local["native_python_parent_pid"] < 2147483648 else None,
+        "native_python_parent_started_at_utc":
+            local.get("native_python_parent_started_at_utc")
+            if isinstance(local.get("native_python_parent_started_at_utc"), str)
+            and len(local["native_python_parent_started_at_utc"]) <= 40 else None,
         "native_powershell_process_token_is_system":
             local.get("native_powershell_process_token_is_system") is True,
         "native_runtime_identity_independently_verified": False,
@@ -516,6 +524,24 @@ def _read_only_snapshot_time(value: Any, *, source: str,
     return stamp
 
 
+def _observed_originalhost_parent_identity(report: dict[str, Any]) -> tuple[int, datetime]:
+    """OS PID and birth observed separately; does NOT attest loaded modules."""
+    if not isinstance(report, dict):
+        raise ValueError("originalhost Task/PID/source parent report missing")
+    pid = report.get("native_python_parent_pid")
+    born = report.get("native_python_parent_started_at_utc")
+    if (type(pid) is not int or not 0 < pid < 2147483648
+            or not isinstance(born, str) or not 10 <= len(born) <= 40):
+        raise ValueError("originalhost Task/PID/source parent identity missing")
+    try:
+        started = datetime.fromisoformat(born.replace("Z", "+00:00"))
+    except (ValueError, OverflowError) as exc:
+        raise ValueError("originalhost Task/PID/source parent birth invalid") from exc
+    if started.tzinfo is None or started.utcoffset() is None:
+        raise ValueError("originalhost Task/PID/source parent birth without timezone")
+    return pid, started.astimezone(timezone.utc)
+
+
 def _require_running_originalhost_source_hint(report: dict[str, Any]) -> None:
     """Correlate *read-only hints* to this launched source; never grant a release.
 
@@ -547,6 +573,7 @@ def _require_running_originalhost_source_hint(report: dict[str, Any]) -> None:
     )
     if not all(conditions):
         raise ValueError("originalhost Task/PID/source read-only correlation failed")
+    _observed_originalhost_parent_identity(report)
 
 
 def dispatch_from_original_windows_one_shot(*,
@@ -591,6 +618,7 @@ def dispatch_from_original_windows_one_shot(*,
         raise ValueError("native one-shot phase or injected source invalid")
     observed = read_originalhost_readonly()
     _require_running_originalhost_source_hint(observed)
+    observed_parent = _observed_originalhost_parent_identity(observed)
     # A local Task/source observation and a valid external release receipt
     # must refer to the SAME Task action and pinned on-disk launcher bytes.
     # Treating them as independent unrelated "green" checks would allow
@@ -616,6 +644,11 @@ def dispatch_from_original_windows_one_shot(*,
                     or FILE_SHA.fullmatch(independent[key]) is None
                     or independent[key] != observed.get(key)):
                 raise ValueError("independent originalhost Task/source fingerprint mismatch")
+        # A Task action and on-disk launcher can outlive a restarted Python
+        # process. The external owner must independently observe the same
+        # OS parent PID AND OS creation time (a PID by itself may be reused).
+        if _observed_originalhost_parent_identity(independent) != observed_parent:
+            raise ValueError("independent originalhost PID/creation identity mismatch")
         release_stamp = _read_only_snapshot_time(
             independent.get("observed_at_utc"), source="independent release",
             now=_originalhost_wall_clock_utc())
