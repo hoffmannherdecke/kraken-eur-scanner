@@ -286,6 +286,104 @@ if($candidateMode){
  $plan.native_task_update_executed=$false
  $plan.status='READ_ONLY_SUCCESSOR_STAGE_VERIFIED_EXISTING_TASK_UNCHANGED'
 }
+# Post-CPU/Windows/UPS maintenance source-ready operator path. This still
+# allows ONLY a DISABLED read-only Task action, never live V3 execution.
+# Requires a fresh exact Git/staged-source review, original 4 V2R4 Tasks
+# RUNNING, old V3 Task disabled, and separate explicit administrator opt-in.
+if($candidateMode -and $ApplyDisabledCandidateAfterMaintenance){
+ Require ([Environment]::OSVersion.Platform -eq [PlatformID]::Win32NT) 'original Windows host required'
+ Require ($plan.status -ceq 'READ_ONLY_SUCCESSOR_STAGE_VERIFIED_EXISTING_TASK_UNCHANGED' -and
+   $plan.previous_disabled_task_action_sha256 -ceq $ExpectedOldActionSha256 -and
+   $plan.phase_execution_available -eq $false) 'disabled candidate preflight failed'
+ $current=Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
+ Require ([string]$current.State -ceq 'Disabled' -and
+   @($current.Actions).Count -eq 1 -and
+   [string]$current.Principal.UserId -in @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -and
+   $current.Settings.AllowDemandStart -eq $false -and
+   [string]$current.Settings.MultipleInstances -ceq 'IgnoreNew') 'original disabled Task drift'
+ $old=$current.Actions[0]
+ Require ((TaskActionSha ([string]$old.Execute) ([string]$old.Arguments) ([string]$old.WorkingDirectory)) -ceq
+   $ExpectedOldActionSha256 -and [string]$old.Arguments -match '--read-only') 'original Task SHA or mode changed'
+ Require ($plan.proposed_disabled_readonly_task_action_sha256 -ceq
+   (TaskActionSha $python $arguments $stage)) 'successor action digest changed'
+ # Durable recovery XML with CreateNew before ANY task mutation.
+ $stateDir=Join-Path $trading 'State'
+ Require ((Test-Path -LiteralPath $stateDir -PathType Container) -and
+   -not [bool]((Get-Item -LiteralPath $stateDir -Force).Attributes -band
+   [IO.FileAttributes]::ReparsePoint)) 'original State backup directory unsafe'
+ $oldXml=[string](Export-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop)
+ Require ($oldXml.Length -ge 100 -and $oldXml.Length -le 65536 -and
+   $oldXml.Contains('<Task')) 'original Task XML unavailable or oversized'
+ $backup=Join-Path $stateDir ('V3Paper-DISABLED-before-'+$stageSha.Substring(0,12)+'-'+
+   [Guid]::NewGuid().ToString('N')+'.xml')
+ $bytes=[Text.Encoding]::UTF8.GetBytes($oldXml)
+ $stream=[IO.File]::Open($backup,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+ try{$stream.Write($bytes,0,$bytes.Length);$stream.Flush($true)}
+ finally{$stream.Dispose()}
+ Require ((Test-Path -LiteralPath $backup -PathType Leaf) -and
+   (Sha $backup).Length -eq 64) 'original Task backup not durably present'
+ $fresh=Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
+ Require ([string]$fresh.State -ceq 'Disabled' -and
+   @($fresh.Actions).Count -eq 1 -and
+   (TaskActionSha ([string]$fresh.Actions[0].Execute) ([string]$fresh.Actions[0].Arguments) ([string]$fresh.Actions[0].WorkingDirectory)) -ceq
+   $ExpectedOldActionSha256) 'Task changed after backup'
+ $svc=New-Object -ComObject 'Schedule.Service'
+ $svc.Connect()
+ $folder=$svc.GetFolder('\')
+ $definition=$svc.NewTask(0)
+ $definition.RegistrationInfo.Description='V3 Paper successor only; DISABLED; read-only; not a release'
+ $definition.Principal.UserId='SYSTEM'
+ $definition.Principal.LogonType=5
+ $definition.Principal.RunLevel=1
+ $definition.Settings.Enabled=$false
+ $definition.Settings.AllowDemandStart=$false
+ $definition.Settings.StartWhenAvailable=$false
+ $definition.Settings.MultipleInstances=2
+ $definition.Settings.ExecutionTimeLimit='PT2M'
+ $definition.Settings.RestartCount=0
+ $trigger=$definition.Triggers.Create(8)
+ $trigger.Enabled=$true
+ $action=$definition.Actions.Create(0)
+ $action.Path=$python
+ $action.Arguments=$arguments
+ $action.WorkingDirectory=$stage
+ Require ($definition.Settings.Enabled -eq $false -and
+   $definition.Settings.AllowDemandStart -eq $false) 'future Task must stay Disabled'
+ try{
+  # TASK_UPDATE=4: only the existing original, never create/enable/start.
+  $null=$folder.RegisterTaskDefinition($taskName,$definition,4,'SYSTEM',$null,5)
+  $checked=Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
+  Require ([string]$checked.State -ceq 'Disabled' -and
+    @($checked.Actions).Count -eq 1 -and
+    [string]$checked.Principal.UserId -in @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -and
+    $checked.Settings.AllowDemandStart -eq $false -and
+    [string]$checked.Settings.MultipleInstances -ceq 'IgnoreNew' -and
+    (TaskActionSha ([string]$checked.Actions[0].Execute) ([string]$checked.Actions[0].Arguments) ([string]$checked.Actions[0].WorkingDirectory)) -ceq
+    $plan.proposed_disabled_readonly_task_action_sha256) 'updated Task not exactly Disabled and pinned'
+ }catch{
+  $cause=$_.Exception.Message
+  try{
+   # Restore original Task XML. If restoration is uncertain: HARD STOP.
+   $null=$folder.RegisterTask($taskName,$oldXml,4,'SYSTEM',$null,5)
+   $original=Get-ScheduledTask -TaskName $taskName -TaskPath '\' -ErrorAction Stop
+   Require ([string]$original.State -ceq 'Disabled' -and
+     @($original.Actions).Count -eq 1 -and
+     (TaskActionSha ([string]$original.Actions[0].Execute) ([string]$original.Actions[0].Arguments) ([string]$original.Actions[0].WorkingDirectory)) -ceq
+     $ExpectedOldActionSha256) 'original Disabled Task rollback mismatch'
+  }catch{throw ('V3_DISABLED_TASK_STOP_MANUAL_RESTORE_BACKUP_RETAINED: '+$cause)}
+  throw ('V3_DISABLED_TASK_UPDATE_ABORTED_ORIGINAL_RESTORED: '+$cause)
+ }
+ $plan.existing_v3_task_state='DISABLED'
+ $plan.native_task_update_executed=$true
+ $plan.original_disabled_task_unchanged=$false
+ $plan.previous_disabled_task_xml_backup_created=$true
+ $plan.phase_execution_available=$false
+ $plan.independent_originalhost_release_accepted=$false
+ $plan.v3_paper_activated=$false
+ $plan.status='DISABLED_SUCCESSOR_TASK_UPDATED_NOT_RELEASED'
+ $plan|ConvertTo-Json -Depth 5
+ return
+}
 if(-not $InstallDisabled){
  $plan|ConvertTo-Json -Depth 5
  return
