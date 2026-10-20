@@ -245,6 +245,43 @@ def dispatch_after_native_release_readback(*,
     if any(report.get(key) != value or type(report.get(key)) is not type(value)
            for key, value in expected.items()):
         raise ValueError("native V3 Paper task, fence, aftercare or release gate unverified")
+    # Maintenance belongs to the already required original MINIPC physical
+    # supervisor/stop-start/source release proof, not a seventh technical
+    # proof. The final V3 Paper phase may never accept a PRE-MAINTENANCE
+    # host report, even if old six-proof/Cloud fields appear positive.
+    # The original release owner must independently corroborate the actual
+    # maintenance receipt, restored V2R4 operation, source/SHA, UPS/Windows
+    # readiness, and its physical origin. A client-made dict is not authority.
+    maintenance_fields = (
+        "maintenance_cpu_bios_boot_thermal_originalhost_pass",
+        "maintenance_windows_drivers_reboots_originalhost_pass",
+        "maintenance_ups_configuration_shutdown_originalhost_pass",
+        "maintenance_scripts_originalhost_source_ack_pass",
+        "maintenance_v2r4_restart_and_aftercare_originalhost_pass",
+    )
+    if (any(report.get(key) is not True or type(report.get(key)) is not bool
+            for key in maintenance_fields)
+            or report.get("maintenance_release_repo_sha") != pin
+            or report.get("maintenance_receipt_kind") !=
+                "V3_EXISTING_MINIPC_MAINTENANCE_ORIGINALHOST_ACK_V1"
+            or not isinstance(report.get("maintenance_receipt_sha256"), str)
+            or not FILE_SHA.fullmatch(report["maintenance_receipt_sha256"])):
+        raise ValueError("final V3 Paper activation blocked until physical maintenance and script acceptance")
+    # Both observations use real clock; maintenance may precede the runtime
+    # report but cannot claim to occur after it. An already edited SHA is not
+    # a current executable source acknowledgement.
+    try:
+        maintained = datetime.fromisoformat(
+            report["maintenance_completed_at_utc"].replace("Z", "+00:00"))
+        observed = datetime.fromisoformat(
+            report["observed_at_utc"].replace("Z", "+00:00"))
+        if (maintained.tzinfo is None or maintained.utcoffset() is None
+                or observed.tzinfo is None or observed.utcoffset() is None
+                or maintained > observed):
+            raise ValueError("maintenance receipt time missing or after originalhost readback")
+    except (KeyError, AttributeError, TypeError, OverflowError) as exc:
+        raise ValueError("originalhost maintenance time invalid") from exc
+
     # No stale host assertion may authorize even the first public Kraken GET.
     try:
         seen = datetime.fromisoformat(
