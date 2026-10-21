@@ -666,8 +666,8 @@ function Save-V3OriginalIntakeXmlOnly([object]$Report,[string]$Root,
   $rule=[Security.AccessControl.FileSystemAccessRule]::new(
    [Security.Principal.SecurityIdentifier]::new($sid),
    [Security.AccessControl.FileSystemRights]::FullControl,
-   [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
-    [Security.AccessControl.InheritanceFlags]::ObjectInherit,
+   ([Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+    [Security.AccessControl.InheritanceFlags]::ObjectInherit),
    [Security.AccessControl.PropagationFlags]::None,
    [Security.AccessControl.AccessControlType]::Allow)
   $secure.AddAccessRule($rule)
