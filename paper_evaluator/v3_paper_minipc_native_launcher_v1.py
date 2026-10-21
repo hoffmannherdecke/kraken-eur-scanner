@@ -579,8 +579,8 @@ def _require_staged_v3_source_manifest(*, repo_sha: str, stage_root: Path | None
     if not isinstance(repo_sha, str) or REPO_SHA.fullmatch(repo_sha) is None:
         raise ValueError("native staged source requires exact approved repo SHA")
     root = stage_root if stage_root is not None else Path(__file__).absolute().parent.parent
-    if not isinstance(root, Path) or root.is_symlink() or (
-            getattr(root, "is_junction", lambda: False)())
+    if (not isinstance(root, Path) or root.is_symlink()
+            or getattr(root, "is_junction", lambda: False)()
             or not root.is_dir()
             or root.name != "V3Paper-INACTIVE-" + repo_sha[:12]
             or root.parent.name != "Staging"
