@@ -54,30 +54,7 @@ try {
   $physicalCandidateUnapproved='ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40'
   $oldTranscriptionInvalid='ce256281af6d36eb883dd2cb34594d0f2231e32a33f586668d327814c7cfdb40'
   if($physicalCandidateUnapproved -ceq $oldTranscriptionInvalid -or
-     $physicalCandidateUnapproved -cnotmatch '^[0-9a-f]{64}[byte[]]$signed.Clone()
-  $badCms[[math]::Floor($badCms.Length/2)]=(
-   $badCms[[math]::Floor($badCms.Length/2)] -bxor 1)
-  $bad=@(
-   (Test-V3IndependentOriginalHostCmsSignature $tampered $signed $pin),
-   (Test-V3IndependentOriginalHostCmsSignature $raw $signed $otherPin),
-   (Test-V3IndependentOriginalHostCmsSignature $raw $signed $physicalCandidateUnapproved),
-   (Test-V3IndependentOriginalHostCmsSignature $raw $signed $oldTranscriptionInvalid),
-   (Test-V3IndependentOriginalHostCmsSignature $raw $badCms $pin),
-   (Test-V3IndependentOriginalHostCmsSignature $raw $signed 'INVALID'),
-   (Test-V3IndependentOriginalHostCmsSignature ([byte[]]@()) $signed $pin),
-   (Test-V3IndependentOriginalHostCmsSignature $raw ([byte[]]@()) $pin)
-  )
-  foreach($item in $bad){
-   if($item.crypto_signature_valid -ne $false -or
-      $item.v3_paper_release_authorized -ne $false -or
-      $item.cloud_cas_authorized -ne $false){
-    throw 'V3_INVALID_CMS_OR_PIN_ACCEPTED'
-   }
-  }
-  Write-Output 'V3_ORIGINALHOST_DETACHED_CMS_OFFLINE_POSITIVE_NEGATIVES_PASS_NO_AUTHORITY'
- } finally {$cert.Dispose()}
-} finally {$rsa.Dispose()}
-){
+     $physicalCandidateUnapproved -cnotmatch '^[0-9a-f]{64}$'){
    throw 'V3_PUBLIC_CERT_CANDIDATE_TRANSCRIPTION_INVALID'
   }
   # The offline synthetic signer must not match either physical public pin.
@@ -105,6 +82,8 @@ try {
   $bad=@(
    (Test-V3IndependentOriginalHostCmsSignature $tampered $signed $pin),
    (Test-V3IndependentOriginalHostCmsSignature $raw $signed $otherPin),
+   (Test-V3IndependentOriginalHostCmsSignature $raw $signed $physicalCandidateUnapproved),
+   (Test-V3IndependentOriginalHostCmsSignature $raw $signed $oldTranscriptionInvalid),
    (Test-V3IndependentOriginalHostCmsSignature $raw $badCms $pin),
    (Test-V3IndependentOriginalHostCmsSignature $raw $signed 'INVALID'),
    (Test-V3IndependentOriginalHostCmsSignature ([byte[]]@()) $signed $pin),
