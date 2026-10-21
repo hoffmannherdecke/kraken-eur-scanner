@@ -24,7 +24,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-from tools.v3_experimental_paper_technical_gate import validate_experimental_paper_packet
+from tools.v3_experimental_paper_technical_gate import (
+    assess_v3_native_source_import_closure, validate_experimental_paper_packet,
+)
 from paper_evaluator.v3_paper_minipc_one_candidate_v1 import REVISION
 from paper_evaluator.v3_paper_cloud_receipt_sync_v1 import read_active_paper_series
 from paper_evaluator.v3_paper_minipc_selective_tick_v1 import (
@@ -565,6 +567,105 @@ def _require_one_loaded_release_module_root() -> None:
             raise ValueError("native V3 mixed-vintage core module origin: " + name)
 
 
+def _require_staged_v3_source_manifest(*, repo_sha: str, stage_root: Path | None = None) -> None:
+    """Recheck the ONE original pinned inactive stage before a released phase.
+
+    Exact staged file bytes, plus the existing native static import closure,
+    must match the original stage manifest and externally approved repo SHA.
+    This is a local *source* consistency check, not evidence of loaded Python
+    bytecode, independent host provenance, six E2Es, CAS, or Paper authority.
+    A caller cannot pass a stage root through the production native entry.
+    """
+    if not isinstance(repo_sha, str) or REPO_SHA.fullmatch(repo_sha) is None:
+        raise ValueError("native staged source requires exact approved repo SHA")
+    root = stage_root if stage_root is not None else Path(__file__).absolute().parent.parent
+    if not isinstance(root, Path) or root.is_symlink() or (
+            getattr(root, "is_junction", lambda: False)())
+            or not root.is_dir()
+            or root.name != "V3Paper-INACTIVE-" + repo_sha[:12]
+            or root.parent.name != "Staging"
+            or root.parent.is_symlink()
+            or getattr(root.parent, "is_junction", lambda: False)()):
+        raise ValueError("native source not in exact original inactive stage")
+    marker = root / "v3-paper-inactive-source-manifest.json"
+    if marker.is_symlink() or not marker.is_file() or marker.stat().st_size > 131072:
+        raise ValueError("native source stage manifest missing or unsafe")
+    try:
+        manifest = json.loads(marker.read_text(encoding="utf-8"))
+    except (ValueError, UnicodeError, OSError) as exc:
+        raise ValueError("native source stage manifest invalid") from exc
+    if (not isinstance(manifest, dict)
+            or manifest.get("kind") != "V3_PAPER_INACTIVE_ISOLATED_SOURCE_STAGE_V1"
+            or manifest.get("status") != "STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED"
+            or manifest.get("source_git_sha") != repo_sha
+            or manifest.get("v3_paper_activated") is not False
+            or manifest.get("task_changes") is not False
+            or manifest.get("source_closure_is_only_candidate_not_loaded_code_ack") is not True):
+        raise ValueError("native staged source identity or inactivity assertion drift")
+    rows = manifest.get("source_manifest")
+    if (not isinstance(rows, list) or not 20 <= len(rows) <= 350
+            or type(manifest.get("tracked_code_files")) is not int
+            or manifest["tracked_code_files"] != len(rows)):
+        raise ValueError("native stage source file inventory invalid")
+    seen: set[str] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("native staged source row invalid")
+        rel, digest = row.get("relative_path"), row.get("sha256")
+        if (not isinstance(rel, str) or len(rel) > 180
+                or re.fullmatch(r"[A-Za-z0-9_./-]+", rel) is None
+                or rel.startswith("/") or "//" in rel
+                or ".." in Path(rel).parts or rel in seen
+                or not isinstance(digest, str) or FILE_SHA.fullmatch(digest) is None):
+            raise ValueError("native staged source path/digest unsafe or duplicated")
+        seen.add(rel)
+        target = root / rel
+        if not target.is_file() or target.is_symlink():
+            raise ValueError("native staged source file absent or linked: " + rel)
+        parent = target.parent
+        while parent != root:
+            if (parent == parent.parent or not parent.is_dir()
+                    or parent.is_symlink()
+                    or getattr(parent, "is_junction", lambda: False)()):
+                raise ValueError("native staged source parent linked or outside")
+            parent = parent.parent
+        try:
+            if target.stat().st_size > 524288 or (
+                    hashlib.sha256(target.read_bytes()).hexdigest() != digest):
+                raise ValueError("native staged source byte drift: " + rel)
+        except OSError as exc:
+            raise ValueError("native staged source unreadable: " + rel) from exc
+    required = {
+        "paper_evaluator/v3_paper_minipc_native_launcher_v1.py",
+        "paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+        "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+        "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py",
+        "tools/v3_experimental_paper_technical_gate.py",
+        "tools/paper_series_transition_guard.py",
+        "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+    }
+    closure_files = manifest.get("static_transitive_closure_files")
+    if (not required.issubset(seen) or not isinstance(closure_files, list)
+            or not 20 <= len(closure_files) <= 512
+            or len(closure_files) != len(set(closure_files))
+            or not set(closure_files).issubset(seen)
+            or type(manifest.get("static_transitive_closure_file_count")) is not int
+            or manifest["static_transitive_closure_file_count"] != len(closure_files)
+            or not isinstance(manifest.get("static_transitive_closure_sha256"), str)
+            or FILE_SHA.fullmatch(manifest["static_transitive_closure_sha256"]) is None):
+        raise ValueError("native staged transitive closure inventory incomplete")
+    # Reuse the original AST transitive-import checker, not a second source
+    # dependency engine or a self-attesting release signature.
+    closure = assess_v3_native_source_import_closure(root)
+    if (closure.get("static_local_import_closure_complete") is not True
+            or closure.get("candidate_transitive_source_sha256")
+                != manifest["static_transitive_closure_sha256"]
+            or closure.get("candidate_transitive_file_count") != len(closure_files)
+            or {item[0] for item in closure.get("candidate_transitive_files", [])}
+                != set(closure_files)):
+        raise ValueError("native staged source closure changed after staging")
+
+
 def _observed_originalhost_parent_identity(report: dict[str, Any]) -> tuple[int, datetime]:
     """OS PID and birth observed separately; does NOT attest loaded modules."""
     if not isinstance(report, dict):
@@ -709,6 +810,9 @@ def dispatch_from_original_windows_one_shot(*,
             now=_originalhost_wall_clock_utc())
         if abs((release_stamp - observed_stamp).total_seconds()) > 90:
             raise ValueError("originalhost Task and release observations do not overlap")
+        # Mandatory local stage-version byte check immediately before the
+        # separately authenticated actual phase, not a new release owner.
+        _require_staged_v3_source_manifest(repo_sha=phase_args["repo_sha"])
         return independent
 
     # The actual native release path independently enforces the stricter
