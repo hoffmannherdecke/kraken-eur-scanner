@@ -20,12 +20,13 @@ EID="a"*64
 STAMP="2026-10-19T10:04:30+00:00"
 
 
-def row(phase, result, data, event=EID):
+def row(phase, result, data, event=EID, event_key="FIRST"):
     return {"event_id":event,"series_id":SID,"candidate_id":CID,"pair":PAIR,
             "phase":phase,"result":result,"source_known_at":STAMP,
             "content_sha256":"b"*64,
             "payload":{"kind":"V3_EXPERIMENTAL_PAPER_CANDIDATE_EVENT_V1",
                        "event_id":event,"series_id":SID,"candidate_id":CID,
+                       "event_key":event_key,
                        "pair":PAIR,"phase":phase,"result":result,
                        "orders":False,"real_money_actions":False,
                        "data":data}}
@@ -49,6 +50,8 @@ class AlertRouterTests(unittest.TestCase):
         self.series={"series_id":SID,"status":"active","strategy_revision":"V3-PAPER-001",
                      "config":{"paper_only":True,"real_money_actions_enabled":False}}
         self.src=original_sources()
+        self.p4_history=[self.src["p4"]]
+        self.model_history=[self.src["model"]]
         self.fills=[]
         self.sent=[]
         self.receipts=[]
@@ -69,8 +72,15 @@ class AlertRouterTests(unittest.TestCase):
         if path.startswith("v3_paper_event_receipts?"):
             if "phase=eq.PAPER_FILL" in path:
                 return self.fills
-            if "phase=eq.P4_VALIDATION" in path:return [self.src["p4"]]
-            if "phase=eq.MODEL_RESPONSE" in path:return [self.src["model"]]
+            if "phase=eq.P4_VALIDATION" in path or "phase=eq.MODEL_RESPONSE" in path:
+                # The true PostgREST JSON-field filter must be present for
+                # each exact candidate episode, not just candidate+phase.
+                self.assertIn("payload->>event_key=eq.",path)
+                event_key=path.split("payload->>event_key=eq.",1)[1].split("&",1)[0]
+                history=(self.p4_history if "phase=eq.P4_VALIDATION" in path
+                         else self.model_history)
+                return [x for x in history
+                        if x["payload"].get("event_key")==event_key][:2]
             raise AssertionError("unapproved V3 query: "+path)
         if path.startswith("paper_candidate_outcomes?"):return []
         if path.startswith("paper_trade_results?"):return []
@@ -156,16 +166,59 @@ class AlertRouterTests(unittest.TestCase):
                 self.run_relay()
         self.assertEqual(self.sent,[])
 
-    def test_corrupt_second_fill_prevents_partial_slack_delivery(self):
+    def test_duplicate_same_episode_fills_block_before_partial_slack_delivery(self):
         self.fills=[self.src["fill"],dict(self.src["fill"],event_id="c"*64)]
-        # Even if the first fill is valid, the second lacks unique P4 lineage.
-        def bad_get(url,key,path):
-            if "phase=eq.P4_VALIDATION" in path:return []
-            return self.get(url,key,path)
-        with mock.patch.object(ALERT,"get",side_effect=bad_get):
-            with self.assertRaisesRegex(RuntimeError,"MISSING_UNIQUE_P4_VALIDATION"):
-                self.run_relay()
+        with self.assertRaisesRegex(RuntimeError,"DUPLICATE_FILL_EPISODE"):
+            self.run_relay()
         self.assertEqual(self.sent,[])
+        self.assertEqual(self.receipts,[])
+
+    def test_wait_first_then_fresh_recheck_buy_alert_delivered_once(self):
+        # Same original candidate had an earlier real WAIT. The next
+        # valid BUY model/P4/fill must join ONLY its FRESHRECHECK episode.
+        first_model=row("MODEL_RESPONSE","PASS",{"raw_model_decision":"WAIT"},
+                        event="1"*64)
+        first_p4=row("P4_VALIDATION","WAIT",{"p4_decision":"WAIT"},
+                     event="2"*64)
+        for part in ("model","p4","fill"):
+            self.src[part]["payload"]["event_key"]="FRESHRECHECK"
+        self.p4_history=[first_p4,self.src["p4"]]
+        self.model_history=[first_model,self.src["model"]]
+        self.fills=[self.src["fill"]]
+        result=self.run_relay()
+        self.assertEqual(result["delivered"],1)
+        self.assertEqual(len(self.sent),1)
+        self.assertTrue(any("phase=eq.MODEL_RESPONSE" in x
+                            and "payload->>event_key=eq.FRESHRECHECK" in x
+                            for x in self.request_paths))
+        self.assertEqual(self.run_relay()["delivered"],0)
+
+    def test_foreign_earlier_model_cannot_support_later_p4_fill(self):
+        self.src["p4"]["payload"]["event_key"]="FRESHRECHECK"
+        self.src["fill"]["payload"]["event_key"]="FRESHRECHECK"
+        self.fills=[self.src["fill"]]
+        # Only the FIRST model exists. No cross-episode BUY inference.
+        with self.assertRaisesRegex(RuntimeError,"MISSING_UNIQUE_MODEL_RESPONSE"):
+            self.run_relay()
+        self.assertEqual(self.sent,[])
+
+    def test_missing_fill_episode_blocks_before_any_delivery(self):
+        self.fills=[self.src["fill"]]
+        del self.src["fill"]["payload"]["event_key"]
+        with self.assertRaisesRegex(RuntimeError,"MISSING_OR_INVALID_EPISODE"):
+            self.run_relay()
+        self.assertEqual(self.sent,[])
+
+    def test_source_chronology_model_p4_fill_must_be_ordered(self):
+        self.fills=[self.src["fill"]]
+        self.src["model"]["source_known_at"]="2026-10-19T10:04:31+00:00"
+        with self.assertRaisesRegex(RuntimeError,"SOURCE_CLOCK_INVALID"):
+            self.run_relay()
+        self.assertEqual(self.sent,[])
+        self.src["model"]["source_known_at"]="2026-10-19T10:04:30"
+        with self.assertRaisesRegex(RuntimeError,"SOURCE_CLOCK_INVALID"):
+            self.run_relay()
+        self.assertEqual(self.receipts,[])
 
 
 if __name__=="__main__":
