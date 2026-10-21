@@ -46,7 +46,7 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
             for relative in files:
                 src = source / relative
                 src.parent.mkdir(parents=True, exist_ok=True)
-                contents = ("# pinned original " + relative + "\\n").encode()
+                contents = ("# pinned original " + relative).encode() + bytes([10])
                 src.write_bytes(contents)
                 rows.append({"relative_path": relative,
                              "sha256": hashlib.sha256(contents).hexdigest()})
@@ -83,6 +83,51 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
             self.assertEqual(result["verified_files"], 60)
             self.assertNotEqual(result["source_head"], stage_sha)
             self.assertEqual(result["stage_sha"], stage_sha)
+            self.assertEqual(result["windows_crlf_checkout_files"], 0)
+            self.assertTrue(result["source_manifest_sha256_checked_for_every_file"])
+            # A Windows checkout with core.autocrlf produces CRLF source
+            # worktree files. The original Stage copied precisely those
+            # bytes and recorded their actual SHA256 in its immutable report.
+            for row in rows:
+                item = stage / row["relative_path"]
+                original = item.read_bytes()
+                self.assertIn(bytes([10]), original)
+                self.assertNotIn(bytes([13, 10]), original)
+                physical_windows = original.replace(bytes([10]), bytes([13, 10]))
+                item.write_bytes(physical_windows)
+                row["sha256"] = hashlib.sha256(physical_windows).hexdigest()
+            (stage / "v3-paper-inactive-source-manifest.json").write_text(
+                json.dumps(manifest), encoding="utf-8")
+            windows = inspect(source=source, stage=stage, stage_sha=stage_sha)
+            self.assertEqual(windows["verified_files"], 60)
+            self.assertEqual(windows["windows_crlf_checkout_files"], 60)
+            self.assertTrue(windows["source_manifest_sha256_checked_for_every_file"])
+            # Tampered stage without changed manifest: reject even though
+            # CRLF normalization would otherwise be text-compatible.
+            old = stage / must[0]
+            pinned_original = old.read_bytes()
+            old.write_bytes(pinned_original + bytes([13, 10]))
+            with self.assertRaisesRegex(ValueError, "manifest SHA256 mismatch"):
+                inspect(source=source, stage=stage, stage_sha=stage_sha)
+            # Forged stage AND manifest with a meaningful content change
+            # still cannot masquerade as benign Windows CRLF conversion.
+            injected = pinned_original.replace(b"pinned", b"altered")
+            old.write_bytes(injected)
+            manifest["source_manifest"][0]["sha256"] = hashlib.sha256(
+                injected).hexdigest()
+            (stage / "v3-paper-inactive-source-manifest.json").write_text(
+                json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "historical Git bytes"):
+                inspect(source=source, stage=stage, stage_sha=stage_sha)
+            # A lone CR (not CRLF) or an extra LF is not an allowed
+            # historical byte-for-byte text checkout conversion either.
+            old.write_bytes(pinned_original + bytes([13]))
+            manifest["source_manifest"][0]["sha256"] = hashlib.sha256(
+                old.read_bytes()).hexdigest()
+            (stage / "v3-paper-inactive-source-manifest.json").write_text(
+                json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "historical Git bytes"):
+                inspect(source=source, stage=stage, stage_sha=stage_sha)
             # Forged new manifest SHA cannot authorize changed stage bytes:
             # the historical immutable Git blob is a third independent pin.
             old = stage / must[0]
