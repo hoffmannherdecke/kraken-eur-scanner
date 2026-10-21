@@ -7,8 +7,9 @@ param(
 # writes. The private key is TPM-backed and non-exportable *if* the original
 # Windows Platform Crypto Provider reports success. Never fall back to a
 # software provider or silently generate a second certificate.
-# CurrentUser\My is the interactive local ADMIN profile, NOT LocalMachine,
-# CryptoSupportSvc or SYSTEM's profile. The signer MUST NOT be callable by
+# CurrentUser\My is the verified original local MINI-PC\Thomas profile,
+# NOT LocalMachine, CryptoSupportSvc, ADMIN-as-a-guessed-username or SYSTEM.
+# Bound to original Windows SID observed on 21 Oct 2026, not generic admin role. The signer MUST NOT be callable by
 # V3 SYSTEM Paper Task. ADMIN/SYSTEM device-level compromise still breaks
 # logical independence: the future release authority must be reviewed
 # externally and independent runtime/process checks remain necessary.
@@ -28,10 +29,21 @@ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
 }
 $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
 $account=[string]$identity.Name
-$expected=$env:COMPUTERNAME+'\ADMIN'
-if($account -ine $expected -or [string]$identity.User.Value -eq 'S-1-5-18' -or
-   -not [Environment]::UserInteractive){
- throw 'V3_SIGNER_MUST_BE_INTERACTIVE_LOCAL_ADMIN_NOT_SYSTEM_OR_RUNNER'
+# Exact physical Originalhost diagnosis: local machine MINI-PC, Thomas is the
+# interactive elevated administrator, and this immutable local Windows SID
+# belongs to that account. Never trust a caller-provided principal or the
+# Trading path 'ADMIN' to determine which user actually owns this key.
+$expected='MINI-PC\Thomas'
+$expectedSid='S-1-5-21-3814592484-1822576909-3594267478-1000'
+$who=[Security.Principal.WindowsPrincipal]::new($identity)
+$adminRole=[Security.Principal.WindowsBuiltInRole]::Administrator
+$sessionId=(Get-Process -Id $PID -ErrorAction Stop).SessionId
+if($env:COMPUTERNAME -ine 'MINI-PC' -or $account -ine $expected -or
+   [string]$identity.User.Value -cne $expectedSid -or
+   [string]$identity.User.Value -eq 'S-1-5-18' -or
+   -not $who.IsInRole($adminRole) -or
+   -not [Environment]::UserInteractive -or $sessionId -le 0){
+ throw 'V3_SIGNER_REQUIRES_PINNED_INTERACTIVE_MINIPC_THOMAS_ADMIN_SID_NOT_SYSTEM_OR_RUNNER'
 }
 if(-not (Get-Command -Name New-SelfSignedCertificate -CommandType Cmdlet -ErrorAction SilentlyContinue)){
  throw 'V3_SIGNER_WINDOWS_PKI_CMDLET_UNAVAILABLE'
@@ -90,7 +102,9 @@ if($null -ne $cert){
  status=if($Enroll){'MANUAL_TPM_KEY_ENROLLED_NOT_TRUSTED_FOR_RELEASE'}elseif($null -ne $cert){
   'READONLY_CERT_PRESENT_NOT_TRUSTED_FOR_RELEASE'
  }else{'READONLY_NO_CERT_ENROLLED'}
- interactive_account_matches_local_admin=($account -ieq $expected)
+ interactive_account_matches_local_admin=($account -ieq $expected -and
+   [string]$identity.User.Value -ceq $expectedSid -and
+   $who.IsInRole($adminRole) -and $sessionId -gt 0)
  windows_tpm_ready=$tpmReady
  provider_requested=$provider
  store_location=$store
