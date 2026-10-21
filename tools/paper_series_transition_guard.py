@@ -46,6 +46,138 @@ def paper_completion_message_label(row: dict) -> str:
     return "V3-Paper" if revision.startswith("V3-") else "V2R4-Paper"
 
 
+
+
+def assess_v3_precas_original_pair(*, host: dict, cloud: dict,
+                                   now_utc: "datetime") -> dict:
+    """Pure correlation within EXISTING V3 proof #4, never CAS authority.
+
+    A pair of plausible user-supplied dictionaries can still be forged.
+    The independent physical release owner and separately credentialed Cloud
+    CAS executor MUST re-read/verify their own originals, actual key roles,
+    six E2E envelopes and live DB versions. Nothing here can issue permission.
+    """
+    from datetime import datetime, timezone
+    import re
+
+    result = {
+        "kind": "V3_PRECAS_ORIGINAL_PAIR_REVIEW_V1",
+        "disposition": "BLOCK_UNCORRELATED_OR_UNVERIFIED_PRECAS_ORIGINALS",
+        "original_sources_authenticated": False,
+        "six_e2e_proofs_credited": 0,
+        "execution_or_cloud_cas_authorized": False,
+        "may_rearm_v2r4": False,
+        "may_start_v3": False,
+        "may_retry_unknown_cas": False,
+        "fresh_database_checkpoint_for_cas": False,
+    }
+    if not isinstance(host, dict) or not isinstance(cloud, dict):
+        return result
+    if (not isinstance(now_utc, datetime) or now_utc.tzinfo is None
+            or now_utc.utcoffset() is None):
+        return result
+
+    def fresh(value: object) -> datetime | None:
+        if not isinstance(value, str) or len(value) > 40 or not value.endswith("Z"):
+            return None
+        try:
+            ts = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except (ValueError, OverflowError):
+            return None
+        if ts.tzinfo is None or ts.utcoffset() is None:
+            return None
+        return ts if 0 <= (now_utc - ts).total_seconds() <= 90 else None
+
+    observed_host = fresh(host.get("observed_at_utc"))
+    observed_cloud = fresh(cloud.get("observed_at_utc"))
+    if (observed_host is None or observed_cloud is None
+            or abs((observed_host-observed_cloud).total_seconds()) > 45):
+        return result
+    if (host.get("kind") != "V3_PRECAS_ORIGINALHOST_SNAPSHOT_V1"
+            or host.get("source") != "EXTERNAL_MINIPC_PHYSICAL_OWNER"
+            or cloud.get("kind") != "V3_PRECAS_CLOUD_ORIGINAL_SNAPSHOT_V1"
+            or cloud.get("source") != "INDEPENDENT_PRODUCTION_SQL_QUERY"
+            or host.get("phase") != "QUIESCED"
+            or cloud.get("phase") != "CAS_NOT_ATTEMPTED"):
+        return result
+
+    patterns = {
+        "predecessor_series_id": r"PAPER-V2R4-[0-9]{8}T[0-9]{6}Z",
+        "successor_series_id": r"PAPER-V3-[0-9]{8}T[0-9]{6}Z",
+        "reviewed_v3_repo_sha": r"[0-9a-f]{40}",
+        "reviewed_v3_bundle_sha256": r"[0-9a-f]{64}",
+        "reviewed_v3_strategy_sha256": r"[0-9a-f]{64}",
+        "approved_six_proof_release_packet_sha256": r"[0-9a-f]{64}",
+        "cutover_intent_id": r"[0-9a-f]{32}",
+    }
+    for field, pattern in patterns.items():
+        value = host.get(field)
+        if (not isinstance(value, str) or re.fullmatch(pattern, value) is None
+                or cloud.get(field) != value):
+            return result
+    if host["predecessor_series_id"] == host["successor_series_id"]:
+        return result
+
+    expected_host = {
+        "old_intake_tasks_disabled": True,
+        "old_intake_workers_absent": True,
+        "native_no_rearm_verified": True,
+        "supervisor_no_rearm_verified": True,
+        "old_lifecycle_and_cloudsync_running": True,
+        "v3_writer_started": False,
+        "cloud_cas_invoked": False,
+        "real_money_actions": False,
+    }
+    expected_cloud = {
+        "read_only": True,
+        "cloud_mutations": False,
+        "cloud_cas_invoked": False,
+        "v3_successor_already_present": False,
+    }
+    for fields, original in ((expected_host, host), (expected_cloud, cloud)):
+        if any(type(original.get(k)) is not bool or original[k] is not v
+               for k, v in fields.items()):
+            return result
+
+    rows = cloud.get("active_series")
+    if (not isinstance(rows, list) or len(rows) != 1
+            or not isinstance(rows[0], dict)
+            or rows[0].get("series_id") != host["predecessor_series_id"]
+            or rows[0].get("status") != "active"):
+        return result
+    # The Cloud *readback* must be fresh, but a legitimate last-row update
+    # can be hours/days old when no new outcomes/trades were written.
+    # Never turn an old, stable V2R4 series into a failed release condition.
+    def valid_db_version(value: object) -> bool:
+        if not isinstance(value, str) or not value.endswith("Z") or len(value) > 40:
+            return False
+        try:
+            stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except (ValueError, OverflowError):
+            return False
+        return (stamp.tzinfo is not None and stamp.utcoffset() is not None
+                and stamp <= observed_cloud)
+
+    for count_key, updated_key in (
+        ("original_candidate_count", "original_last_candidate_updated_at"),
+        ("original_trade_count", "original_last_trade_updated_at")
+    ):
+        count, stamp = cloud.get(count_key), cloud.get(updated_key)
+        if type(count) is not int or count < 0:
+            return result
+        if count == 0:
+            if stamp is not None:
+                return result
+        else:
+            if not valid_db_version(stamp):
+                return result
+
+    # These observations will be stale by the time a separate CAS is attempted.
+    # PostgreSQL MUST lock/re-read original counts AND timestamps inside the
+    # single atomic transaction. We never promote this review to a CAS permit.
+    result["disposition"] = "CORRELATED_SOURCE_SHAPES_ONLY_NOT_CAS_AUTHORITY"
+    return result
+
 def assess_v3_cutover_recovery(
         *, phase: str, active_series: list[dict],
         expected_old: str, proposed_new: str,
