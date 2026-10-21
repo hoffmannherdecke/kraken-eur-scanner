@@ -122,9 +122,9 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
         if hashlib.sha256(staged_bytes).hexdigest() != expected:
             raise ValueError("original Windows stage manifest SHA256 mismatch")
         if staged_bytes != git_bytes:
-            if (b"\\r\\n" not in staged_bytes
-                    or b"\\r\\n" in git_bytes
-                    or staged_bytes.replace(b"\\r\\n", b"\\n") != git_bytes):
+            if (b"\r\n" not in staged_bytes
+                    or b"\r\n" in git_bytes
+                    or staged_bytes.replace(b"\r\n", b"\n") != git_bytes):
                 raise ValueError("stage and original historical Git bytes differ")
             windows_crlf_source_files += 1
         verified.add(rel)
