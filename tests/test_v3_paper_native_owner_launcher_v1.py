@@ -737,6 +737,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                           candidate={"candidate_id": "ORIGINAL_ONLY"})
             original = self.original_release_host(self.SID, self.REPO)
             packet = {"strategy_revision": launcher.REVISION,
+                      "code_fingerprint_sha256": self.BUNDLE,
                       "strategy_fingerprint_sha256": self.STRATEGY}
             cloud = {"series_id": self.SID, "status": "active", "config": {}}
             token = "OFFLINE_ONLY_NOT_A_REAL_SECRET_12345678"
@@ -768,6 +769,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             kwargs.pop("read_active_series")
             host = self.original_release_host(self.SID, self.REPO)
             packet = {"strategy_revision": launcher.REVISION,
+                      "code_fingerprint_sha256": self.BUNDLE,
                       "strategy_fingerprint_sha256": self.STRATEGY}
             first = datetime(2026, 10, 19, 14, 0, 25, tzinfo=timezone.utc)
             after = datetime(2026, 10, 19, 14, 1, 45, tzinfo=timezone.utc)
@@ -1161,6 +1163,9 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             "task_state": "Running",
             "series_id": series_id,
             "release_repo_sha": pin,
+            # Contract-only synthetic values, not physical observed bytes.
+            "release_bundle_sha256": self.BUNDLE,
+            "release_strategy_sha256": self.STRATEGY,
             "old_candidates_task_state": "Disabled",
             "old_wait_task_state": "Disabled",
             "old_candidates_workers_absent": True,
@@ -1179,6 +1184,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             "approved_six_proof_release_packet_sha256": hashlib.sha256(
                 json.dumps({
                     "strategy_revision": launcher.REVISION,
+                    "code_fingerprint_sha256": self.BUNDLE,
                     "strategy_fingerprint_sha256": self.STRATEGY,
                 }, sort_keys=True, separators=(",", ":"),
                     allow_nan=False).encode("utf-8")).hexdigest(),
@@ -1206,6 +1212,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             host = self.original_release_host(self.SID, self.REPO)
             original = dict(kwargs)
             packet = {"strategy_revision": launcher.REVISION,
+                      "code_fingerprint_sha256": self.BUNDLE,
                       "strategy_fingerprint_sha256": self.STRATEGY}
             with patch.object(launcher, "validate_experimental_paper_packet",
                               return_value=[]) as proofs, patch.object(
@@ -1230,6 +1237,10 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 {"task_name": "CryptoMiniPC-V2R4PaperWait"},
                 {"series_id": "PAPER-V3-20261018T170000Z"},
                 {"release_repo_sha": "d" * 40},
+                {"release_bundle_sha256": "d" * 64},
+                {"release_strategy_sha256": "e" * 64},
+                {"release_bundle_sha256": None},
+                {"release_strategy_sha256": True},
                 {"old_wait_task_state": "Running"},
                 {"old_candidates_workers_absent": False},
                 {"old_wait_workers_absent": False},
@@ -1262,6 +1273,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 {"observed_at_utc": "NOT-A-TIMESTAMP"},
             ]
             packet = {"strategy_revision": launcher.REVISION,
+                      "code_fingerprint_sha256": self.BUNDLE,
                       "strategy_fingerprint_sha256": self.STRATEGY}
             with patch.object(launcher, "validate_experimental_paper_packet",
                               return_value=[]), patch.object(
@@ -1282,6 +1294,26 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                                 **kwargs)
                 worker.assert_not_called()
 
+    def test_packet_code_fingerprint_must_equal_exact_worker_bundle(self):
+        # The outer technical release packet may be individually hash-valid
+        # while describing a different runtime bundle. Reject before even
+        # requesting the external physical originalhost release report.
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H")
+            packet = {"strategy_revision": launcher.REVISION,
+                      "code_fingerprint_sha256": "f" * 64,
+                      "strategy_fingerprint_sha256": self.STRATEGY}
+            with patch.object(launcher, "validate_experimental_paper_packet",
+                              return_value=[]), patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
+                originalhost = unittest.mock.Mock()
+                with self.assertRaisesRegex(ValueError, "differs from worker bundle"):
+                    launcher.dispatch_after_native_release_readback(
+                        originalhost_readback=originalhost,
+                        release_root=Path(root), release_packet=packet, **kwargs)
+                originalhost.assert_not_called()
+                worker.assert_not_called()
+
     def test_native_owner_binds_exact_six_proof_packet_not_rehashed_other_packet(self):
         # A real authenticated owner must independently approve the exact
         # packet, including every evidence-file digest. A credible-looking
@@ -1290,6 +1322,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H",
                           candidate={"candidate_id": "SIX_PACKET_BINDING"})
             packet = {"strategy_revision": launcher.REVISION,
+                      "code_fingerprint_sha256": self.BUNDLE,
                       "strategy_fingerprint_sha256": self.STRATEGY}
             host = self.original_release_host(self.SID, self.REPO)
             with patch.object(launcher, "validate_experimental_paper_packet",
@@ -1322,6 +1355,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H",
                           candidate={"candidate_id": "OPTIONAL_UPS_ONLY"})
             packet = {"strategy_revision": launcher.REVISION,
+                      "code_fingerprint_sha256": self.BUNDLE,
                       "strategy_fingerprint_sha256": self.STRATEGY}
             base = self.original_release_host(self.SID, self.REPO)
             with patch.object(launcher, "validate_experimental_paper_packet",
@@ -1379,6 +1413,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                           candidate={"candidate_id": "OFFLINE_ONLY"})
             good = self.original_release_host(self.SID, self.REPO)
             packet = {"strategy_revision": launcher.REVISION,
+                      "code_fingerprint_sha256": self.BUNDLE,
                       "strategy_fingerprint_sha256": self.STRATEGY}
             with patch.object(launcher, "validate_experimental_paper_packet",
                               return_value=[]), patch.object(
@@ -1404,6 +1439,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                           candidate={"candidate_id": "OFFLINE_ONLY"})
             host = self.original_release_host(self.SID, self.REPO)
             packet = {"strategy_revision": launcher.REVISION,
+                      "code_fingerprint_sha256": self.BUNDLE,
                       "strategy_fingerprint_sha256": self.STRATEGY}
             with patch.object(launcher, "validate_experimental_paper_packet",
                               return_value=[]), patch.object(
@@ -1432,6 +1468,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H")
             host = self.original_release_host(self.SID, self.REPO)
             packet = {"strategy_revision": launcher.REVISION,
+                      "code_fingerprint_sha256": self.BUNDLE,
                       "strategy_fingerprint_sha256": self.STRATEGY}
             with patch.object(launcher, "dispatch_one_owned_paper_phase") as worker:
                 # A forged trusted-looking originalhost dict is insufficient.
@@ -1458,7 +1495,8 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             kwargs = dict(self.common(root), phase="CLOUD_RECEIPT_ACK")
             host = self.original_release_host(self.SID, self.REPO)
             good = {"strategy_revision": launcher.REVISION,
-                    "strategy_fingerprint_sha256": self.STRATEGY}
+                    "code_fingerprint_sha256": self.BUNDLE,
+                      "strategy_fingerprint_sha256": self.STRATEGY}
             bad = [dict(good, strategy_revision="V3-FOREIGN"),
                    dict(good, strategy_fingerprint_sha256="0" * 64)]
             with patch.object(launcher, "validate_experimental_paper_packet") as gate, \
