@@ -1,6 +1,10 @@
 param(
  [string]$TradingRoot=(Join-Path $env:USERPROFILE 'Trading'),
- [switch]$Execute
+ [switch]$Execute,
+ [switch]$BackupOriginalIntake,
+ [string]$ExpectedCandidatesActionSha256='',
+ [string]$ExpectedWaitActionSha256='',
+ [string]$Confirm=''
 )
 # V3 experimental Paper scoped operator: SOURCE PREPARATION ONLY.
 # GitHub/CI draft; not an installed cutover, not a stop, not a rollback.
@@ -576,8 +580,156 @@ function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
  }
 }
 
+
+# A real Windows XML recovery artifact is needed before any *later* Paper
+# Cutover. Reuse this existing original operator; never clone its STOP/RESTORE
+# paths or grant an alternate task/write/Cloud authority. Explicit opt-in is
+# restricted to two durable recovery copies while both old intake roles RUN.
+# A JSON plan or CI fixture never counts as an originalhost release receipt.
+function Get-V3OriginalNativeActionSha([object]$Action) {
+ if($null -eq $Action){throw 'native Task action absent'}
+ # The ORIGINAL four-role V2R4 Windows inspector hashes three strings
+ # joined with a pipe, not the V3 Task's NUL-delimited digest.
+ $joined=@([string]$Action.Execute,[string]$Action.Arguments,
+  [string]$Action.WorkingDirectory) -join '|'
+ $bytes=[Text.UTF8Encoding]::new($false).GetBytes($joined)
+ $digest=[Security.Cryptography.SHA256]::Create()
+ try {return ([BitConverter]::ToString($digest.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()}
+ finally {$digest.Dispose()}
+}
+function Save-V3OriginalIntakeXmlOnly([object]$Report,[string]$Root,
+ [string]$CandidateSha,[string]$WaitSha) {
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
+  throw 'original Windows host required for recovery artifact'
+ }
+ $identity=[Security.Principal.WindowsIdentity]::GetCurrent()
+ $principal=[Security.Principal.WindowsPrincipal]::new($identity)
+ if(-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'original local administrator confirmation required'
+ }
+ $real=[IO.Path]::GetFullPath($Root).TrimEnd('\')
+ if(-not $real.Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)){
+  throw 'original Trading root identity mismatch'
+ }
+ foreach($location in @($real,(Join-Path $real 'State'))){
+  $item=Get-Item -LiteralPath $location -Force -ErrorAction Stop
+  if(-not $item.PSIsContainer -or
+     [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint)){
+   throw 'original state directory missing or linked'
+  }
+ }
+ if(-not(Test-V3CutoverPreparationPolicy -Report $Report -FenceMarkerPresent $false -MaintenanceMarkerPresent $false)){
+  throw 'original V2R4 task preflight not accepted'
+ }
+ $expected=@{
+  'CryptoMiniPC-V2R4PaperCandidates'=$CandidateSha
+  'CryptoMiniPC-V2R4PaperWait'=$WaitSha
+ }
+ if(-not(Test-V3ScopedIntakeTaskSet -Names @($expected.Keys))){
+  throw 'backup task scope widened or incomplete'
+ }
+ $records=@()
+ foreach($name in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')){
+  $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  if([string]$task.State -cne 'Running' -or
+     [string]$task.TaskPath -cne '\' -or
+     @($task.Actions).Count -ne 1 -or
+     [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+     [string]$task.Settings.MultipleInstances -cne 'IgnoreNew'){
+   throw 'original native task identity/status drift'
+  }
+  $digest=Get-V3OriginalNativeActionSha $task.Actions[0]
+  $read=@($Report.physical_v2r4_paper_task_readback | Where-Object {$_.task_name -ceq $name})
+  if($read.Count -ne 1 -or
+     $digest -cne $expected[$name] -or
+     $digest -cne ([string]$read[0].action_sha256).ToLowerInvariant()){
+   throw 'original independent snapshot/native task SHA mismatch'
+  }
+  $xml=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
+  if($xml.Length -lt 100 -or $xml.Length -gt 65536 -or
+     -not $xml.Contains('<Task')){
+   throw 'original native XML not safely exportable'
+  }
+  $records+=@([pscustomobject]@{name=$name; action_sha256=$digest; xml=$xml})
+ }
+ if(@($records).Count -ne 2){throw 'backup collection incomplete'}
+ # Reject a late conflicting fence/maintenance marker immediately before writes.
+ if((Test-Path -LiteralPath (Join-Path $real 'State\v3-experimental-paper-old-intake-fence.json')) -or
+    (Test-Path -LiteralPath (Join-Path $real 'State\v2r4-technical-cutover-maintenance.json'))){
+  throw 'original V2R4 fence or maintenance marker appeared'
+ }
+ # New, collision-free original State child. ACL is installed AT CREATION, not
+ # after exporting possibly sensitive native Task XML and argument strings.
+ $secure=[Security.AccessControl.DirectorySecurity]::new()
+ $secure.SetAccessRuleProtection($true,$false)
+ foreach($sid in @('S-1-5-18','S-1-5-32-544')){
+  $rule=[Security.AccessControl.FileSystemAccessRule]::new(
+   [Security.Principal.SecurityIdentifier]::new($sid),
+   [Security.AccessControl.FileSystemRights]::FullControl,
+   ([Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+    [Security.AccessControl.InheritanceFlags]::ObjectInherit),
+   [Security.AccessControl.PropagationFlags]::None,
+   [Security.AccessControl.AccessControlType]::Allow)
+  $secure.AddAccessRule($rule)
+ }
+ $folder=Join-Path (Join-Path $real 'State') ('V3Paper-PreCAS-Backup-'+[guid]::NewGuid().ToString('N'))
+ $null=[IO.Directory]::CreateDirectory($folder,$secure)
+ $manifest=@()
+ foreach($record in $records){
+  $base=if($record.name -ceq 'CryptoMiniPC-V2R4PaperCandidates'){'Candidates'}else{'WAIT'}
+  $xmlPath=Join-Path $folder ($base+'.task.xml')
+  $bytes=[Text.UTF8Encoding]::new($false).GetBytes($record.xml)
+  $handle=[IO.File]::Open($xmlPath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+  try{$handle.Write($bytes,0,$bytes.Length);$handle.Flush($true)}
+  finally{$handle.Dispose()}
+  $hash=(Get-FileHash -LiteralPath $xmlPath -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+  $manifest+=@([ordered]@{task_name=$record.name;action_sha256=$record.action_sha256;xml_file=$base+'.task.xml';xml_sha256=$hash})
+ }
+ # Re-read BOTH original tasks after the durable exports to detect races;
+ # preserve artifacts, but never report PASS if a task changed meantime.
+ foreach($record in $records){
+  $after=Get-ScheduledTask -TaskName $record.name -TaskPath '\' -ErrorAction Stop
+  if([string]$after.State -cne 'Running' -or @($after.Actions).Count -ne 1 -or
+     (Get-V3OriginalNativeActionSha $after.Actions[0]) -cne $record.action_sha256){
+   throw 'original native task changed during XML backup: preserve artifacts for review'
+  }
+ }
+ $result=[ordered]@{
+  kind='V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1'
+  status='ORIGINAL_TASK_XML_BACKUP_ONLY_NOT_RELEASED'
+  checked_at_utc=[datetime]::UtcNow.ToString('o')
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  native_task_count=2
+  original_tasks_still_running=$true
+  task_records=$manifest
+  original_cloud_series_independently_checked=$false
+  imported_or_loaded_v3_code_attested=$false
+  v3_release_or_six_proofs_credited=0
+  new_v3_writer_started=$false
+  cloud_cas_invoked=$false
+  scheduler_task_mutations=$false
+  original_v2r4_changed=$false
+  backup_directory=$folder
+ }
+ $manifestPath=Join-Path $folder 'backup-manifest.json'
+ $manifestBytes=[Text.UTF8Encoding]::new($false).GetBytes(($result|ConvertTo-Json -Depth 6))
+ $mh=[IO.File]::Open($manifestPath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+ try{$mh.Write($manifestBytes,0,$manifestBytes.Length);$mh.Flush($true)}
+ finally{$mh.Dispose()}
+ return $result
+}
+
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
+}
+if($BackupOriginalIntake) {
+ if($Confirm -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ONLY' -or
+    $ExpectedCandidatesActionSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedWaitActionSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'pre-CAS backup requires exact opt-in and both independent native task SHA256 pins'
+ }
+} elseif($Confirm -or $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256){
+ throw 'backup-only parameters prohibited outside explicit originalhost backup'
 }
 $repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
 $physical=Join-Path $repo 'tools\check-minipc-v3-physical-writer-readiness.ps1'
@@ -680,6 +832,14 @@ try {
 $protected=@($report.native_old_paper_mode_rows | ForEach-Object {[int]$_.pid})
 $completeWaitSnapshot=($waitSnapshotReadable -and
  (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
+if($BackupOriginalIntake) {
+ if(-not $ready -or -not $completeWaitSnapshot) {
+  throw 'pre-CAS original intake must be healthy with closed WAIT descendants'
+ }
+ $record=Save-V3OriginalIntakeXmlOnly -Report $report -Root $TradingRoot -CandidateSha $ExpectedCandidatesActionSha256 -WaitSha $ExpectedWaitActionSha256
+ $record | ConvertTo-Json -Depth 7
+ return
+}
 [ordered]@{
  kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
  phase='READ_ONLY'

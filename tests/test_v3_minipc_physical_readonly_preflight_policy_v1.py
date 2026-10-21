@@ -130,6 +130,39 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",script)
 
 
+    def test_precas_originalhost_xml_backup_is_explicit_and_preserves_live_writers(self):
+        """A real recovery backup is useful; it must never be mistaken for a cutover."""
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        self.assertIn("[switch]$BackupOriginalIntake",s)
+        self.assertIn("V3_PRECAS_NATIVE_XML_BACKUP_ONLY",s)
+        self.assertIn("original Windows host required for recovery artifact",s)
+        self.assertIn("original local administrator confirmation required",s)
+        self.assertIn("Test-V3CutoverPreparationPolicy -Report $Report",s)
+        self.assertIn("original independent snapshot/native task SHA mismatch",s)
+        self.assertIn("original V2R4 fence or maintenance marker appeared",s)
+        self.assertIn("OriginalIntakeXmlOnly",s)
+        self.assertIn("CreateDirectory($folder,$secure)",s)
+        self.assertIn("SetAccessRuleProtection($true,$false)",s)
+        self.assertIn("[IO.FileMode]::CreateNew",s)
+        self.assertIn("$handle.Flush($true)",s)
+        self.assertIn("original native task changed during XML backup",s)
+        self.assertIn("ORIGINAL_TASK_XML_BACKUP_ONLY_NOT_RELEASED",s)
+        for fail_closed in (
+            "v3_release_or_six_proofs_credited=0",
+            "new_v3_writer_started=$false",
+            "cloud_cas_invoked=$false",
+            "scheduler_task_mutations=$false",
+            "original_v2r4_changed=$false",
+            "original_cloud_series_independently_checked=$false",
+            "imported_or_loaded_v3_code_attested=$false",
+        ):
+            self.assertIn(fail_closed,s)
+        self.assertLess(s.index("if($Execute){"),s.index("if($BackupOriginalIntake) {"))
+        self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
+        self.assertNotRegex(s,r"(?m)^\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\b")
+        self.assertNotIn("Invoke-RestMethod",s)
+        self.assertNotIn("Invoke-WebRequest",s)
+
     def test_future_paper_release_sources_are_explicitly_hashed_without_claiming_pins(self):
         s=SCRIPT.read_text(encoding="utf-8")
         required=(

@@ -323,3 +323,40 @@ if(-not $blocked){throw 'Original V3 Task demand start accepted'}
 Write-Output 'V3_EXISTING_DISABLED_TASK_MANIFEST_SOURCE_SUCCESSOR_READONLY_PREVIEW_PASS'
 
 Write-Output 'V3_NATIVE_DISABLED_READONLY_TASK_STAGE_SOURCE_POLICY_PASS'
+
+# Physical V3 successor preparation also requires a REAL, strictly backup-only
+# fresh Windows XML copy of both original intake Tasks. Execute ONLY its pure
+# Action digest helper here; NEVER invoke the real originalhost backup or Task.
+$operator=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1'
+$ot=$null;$oe=$null
+$oa=[Management.Automation.Language.Parser]::ParseFile(
+ (Resolve-Path -LiteralPath $operator),[ref]$ot,[ref]$oe)
+if(@($oe).Count -ne 0){
+ $details=@($oe | ForEach-Object {
+  ('line={0} col={1}: {2}' -f $_.Extent.StartLineNumber,$_.Extent.StartColumnNumber,$_.Message)
+ }) -join '; '
+ throw ('V3_PRECAS_BACKUP_PARSE_FAILED '+$details)
+}
+$digestFn=@($oa.FindAll({
+ param($node)
+ $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+ $node.Name -eq 'Get-V3OriginalNativeActionSha'
+},$true))
+if($digestFn.Count -ne 1){throw 'V3 backup must use exactly one native action digest helper'}
+. ([Scriptblock]::Create($digestFn[0].Extent.Text))
+$sample=[pscustomobject]@{Execute='C:\Windows\python.exe';Arguments='-I -B --no-live';WorkingDirectory='C:\Trading\Stage'}
+$actual=Get-V3OriginalNativeActionSha $sample
+$joined=@($sample.Execute,$sample.Arguments,$sample.WorkingDirectory) -join '|'
+$bytes=[Text.UTF8Encoding]::new($false).GetBytes($joined)
+$expected=([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($bytes))).Replace('-','').ToLowerInvariant()
+if($actual -cne $expected -or $actual -cnotmatch '^[0-9a-f]{64}$'){
+ throw 'V3_PRECAS_BACKUP_NATIVE_ACTION_DIGEST_MISMATCH'
+}
+$mutated=[pscustomobject]@{Execute=$sample.Execute;Arguments=$sample.Arguments+' modified';WorkingDirectory=$sample.WorkingDirectory}
+if((Get-V3OriginalNativeActionSha $mutated) -ceq $actual){
+ throw 'V3_PRECAS_BACKUP_NATIVE_ACTION_DIGEST_NOT_BOUND_TO_ARGUMENTS'
+}
+$nullRejected=$false
+try {$null=Get-V3OriginalNativeActionSha $null} catch {$nullRejected=$true}
+if(-not $nullRejected){throw 'V3_PRECAS_BACKUP_INVALID_NULL_ACTION_ACCEPTED'}
+Write-Host 'V3_PRECAS_BACKUP_NATIVE_ACTION_DIGEST_OFFLINE_PASS'
