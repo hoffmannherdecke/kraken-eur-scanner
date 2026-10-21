@@ -341,7 +341,7 @@ if($digestFn.Count -ne 1){throw 'V3 backup must use exactly one native action di
 . ([Scriptblock]::Create($digestFn[0].Extent.Text))
 $sample=[pscustomobject]@{Execute='C:\Windows\python.exe';Arguments='-I -B --no-live';WorkingDirectory='C:\Trading\Stage'}
 $actual=Get-V3OriginalNativeActionSha $sample
-$joined=$sample.Execute+[char]0+$sample.Arguments+[char]0+$sample.WorkingDirectory
+$joined=@($sample.Execute,$sample.Arguments,$sample.WorkingDirectory) -join '|'
 $bytes=[Text.UTF8Encoding]::new($false).GetBytes($joined)
 $expected=([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($bytes))).Replace('-','').ToLowerInvariant()
 if($actual -cne $expected -or $actual -cnotmatch '^[0-9a-f]{64}$'){
