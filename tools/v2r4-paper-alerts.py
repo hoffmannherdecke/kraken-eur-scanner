@@ -142,19 +142,34 @@ def _v3_fill_pages(url,key,sid):
     raise RuntimeError("V3_ALERT_RECEIPT_PAGINATION_CAP_REACHED")
 
 
-def _v3_single_source(url,key,sid,cid,phase):
+def _v3_episode(row):
+    # A candidate may have FIRST and FRESHRECHECK model/P4 decisions.
+    # Never join an actual fill to another decision episode.
+    payload=row.get("payload") if isinstance(row,dict) else None
+    episode=payload.get("event_key") if isinstance(payload,dict) else None
+    if (not isinstance(episode,str)
+            or not re.fullmatch(r"[A-Z][A-Z0-9_]{1,63}",episode)):
+        raise RuntimeError("V3_ALERT_MISSING_OR_INVALID_EPISODE")
+    return episode
+
+
+def _v3_single_source(url,key,sid,cid,phase,episode):
     sidq=urllib.parse.quote(sid,safe="")
     cidq=urllib.parse.quote(cid,safe="")
+    eq=urllib.parse.quote(episode,safe="")
+    # PostgREST JSON path filters the immutable nested event_key at source,
+    # rather than assuming one model response for an entire WAIT candidate.
     rows=get(url,key,
         f"v3_paper_event_receipts?series_id=eq.{sidq}&candidate_id=eq.{cidq}"
-        f"&phase=eq.{phase}&select=event_id,series_id,candidate_id,pair,phase,result,"
+        f"&phase=eq.{phase}&payload->>event_key=eq.{eq}"
+        "&select=event_id,series_id,candidate_id,pair,phase,result,"
         "source_known_at,payload&limit=2")
     if not isinstance(rows,list) or len(rows)!=1:
         raise RuntimeError("V3_ALERT_MISSING_UNIQUE_"+phase)
     return rows[0]
 
 
-def _v3_original(row,sid,cid,pair,phase,result):
+def _v3_original(row,sid,cid,pair,phase,result,episode):
     if (not isinstance(row,dict) or row.get("series_id")!=sid
             or row.get("candidate_id")!=cid or row.get("pair")!=pair
             or row.get("phase")!=phase or row.get("result")!=result):
@@ -165,6 +180,7 @@ def _v3_original(row,sid,cid,pair,phase,result):
             or p.get("orders") is not False
             or p.get("real_money_actions") is not False
             or p.get("series_id")!=sid or p.get("candidate_id")!=cid
+            or p.get("event_key")!=episode
             or p.get("pair")!=pair or p.get("phase")!=phase
             or p.get("result")!=result
             or not isinstance(p.get("data"),dict)):
@@ -181,11 +197,12 @@ def _v3_buy_from_originals(url,key,sid,row):
             or not isinstance(row.get("content_sha256"),str)
             or not re.fullmatch(r"[0-9a-f]{64}",row["content_sha256"])):
         raise RuntimeError("V3_ALERT_FILL_ORIGINAL_IDENTITY_INVALID")
-    f=_v3_original(row,sid,cid,pair,"PAPER_FILL","PAPER_FILLED")
-    p4=_v3_single_source(url,key,sid,cid,"P4_VALIDATION")
-    pd=_v3_original(p4,sid,cid,pair,"P4_VALIDATION","BUY_SCOUT")
-    model=_v3_single_source(url,key,sid,cid,"MODEL_RESPONSE")
-    md=_v3_original(model,sid,cid,pair,"MODEL_RESPONSE","PASS")
+    episode=_v3_episode(row)
+    f=_v3_original(row,sid,cid,pair,"PAPER_FILL","PAPER_FILLED",episode)
+    p4=_v3_single_source(url,key,sid,cid,"P4_VALIDATION",episode)
+    pd=_v3_original(p4,sid,cid,pair,"P4_VALIDATION","BUY_SCOUT",episode)
+    model=_v3_single_source(url,key,sid,cid,"MODEL_RESPONSE",episode)
+    md=_v3_original(model,sid,cid,pair,"MODEL_RESPONSE","PASS",episode)
     if (pd.get("p4_decision")!="BUY_SCOUT"
             or md.get("raw_model_decision")!="BUY_SCOUT"):
         raise RuntimeError("V3_ALERT_NO_ORIGINAL_MODEL_P4_BUY_CHAIN")
@@ -206,7 +223,17 @@ def _v3_buy_from_originals(url,key,sid,row):
             or abs(ask*qty-50.0)>0.001 or abs(fee-0.30)>0.00001):
         raise RuntimeError("V3_ALERT_FILL_MODEL_P4_ECONOMICS_MISMATCH")
     stamp=row.get("source_known_at")
-    if not isinstance(stamp,str) or "T" not in stamp:
+    try:
+        clocks=[]
+        for original in (model,p4,row):
+            value=original.get("source_known_at")
+            ts=datetime.fromisoformat(value.replace("Z","+00:00"))
+            if ts.tzinfo is None or ts.utcoffset() is None:
+                raise ValueError("naive source clock")
+            clocks.append(ts)
+        if not clocks[0]<=clocks[1]<=clocks[2]:
+            raise ValueError("model/P4/fill source clock inverted")
+    except (TypeError,AttributeError,ValueError,OverflowError):
         raise RuntimeError("V3_ALERT_FILL_SOURCE_CLOCK_INVALID")
     return {"candidate_id":cid,"pair":pair,"event_id":event,
             "ask":ask,"stop":stop,"stage2":stage2,"fee":fee,
@@ -234,7 +261,12 @@ def _deliver_v3(url,key,webhook,user,series):
     # Resolve and validate all original positive chains BEFORE sending any
     # notification; a WAIT or P4-only BUY is never an actual Paper fill.
     buys=[]
+    seen_episodes=set()
     for row in _v3_fill_pages(url,key,sid):
+        episode=(row.get("candidate_id"),_v3_episode(row))
+        if episode in seen_episodes:
+            raise RuntimeError("V3_ALERT_DUPLICATE_FILL_EPISODE")
+        seen_episodes.add(episode)
         keyname=key_for("V3",sid,row.get("event_id"),"PAPER_FILL")
         if keyname in sent: continue
         buys.append((keyname,_v3_buy_from_originals(url,key,sid,row)))
