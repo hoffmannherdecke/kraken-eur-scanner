@@ -68,6 +68,23 @@ class V3PaperRelayCanaryScope(unittest.TestCase):
             self.assertNotIn(forbidden,read_branch)
         self.assertIn('if(body?.action!=="sync_paper_receipts")',s)
 
+    def test_receipt_relay_does_not_gain_cas_or_release_authority(self):
+        # This is a source-level regression alarm, NOT deployment attestation.
+        # CAS must remain with the separately approved cutover owner, never
+        # the existing read/append-only evidence relay token.
+        source=self.source
+        actions=re.findall(r'body\?\.action\s*(?:===|!==)\s*"([^"]+)"',source)
+        self.assertEqual(actions,[
+            "read_active_paper_series","sync_paper_receipts"])
+        self.assertNotIn(".rpc(",source)
+        self.assertNotIn("rotate_v2r4_to_v3_experimental_paper",source)
+        self.assertNotRegex(
+            source,
+            r'\.from\(["\']paper_series["\']\)\s*\.\s*'
+            r'(?:insert|upsert|update|delete)\s*\(')
+        # A separate new cutover action should not be silently added here.
+        self.assertNotIn("v3_paper_cutover",source)
+
     def test_readback_returns_whitelisted_paper_release_pins_only(self):
         s=self.source
         first=s.index('const allowed=[')
