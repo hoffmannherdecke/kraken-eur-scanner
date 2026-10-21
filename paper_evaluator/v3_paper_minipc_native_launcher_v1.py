@@ -242,6 +242,35 @@ def dispatch_after_native_release_readback(*,
     report = originalhost_readback()
     if not isinstance(report, dict):
         raise ValueError("original native host readback missing")
+    # Enforce the SAME native Python process correlation even if callers use
+    # this lower-level source-only release seam rather than the higher-level
+    # Windows one-shot wrapper. A host callback's good-looking approval flags
+    # are not proof that it observed the ACTUAL invoking OS process.
+    # This is a necessary identity-consistency check, NOT independent source
+    # authentication, signer-role trust or authorization of a Paper release.
+    parent_pid, parent_birth = _observed_originalhost_parent_identity(report)
+    if parent_pid != os.getpid():
+        raise ValueError("originalhost release parent PID differs from invoking writer")
+    for digest_field in ("native_task_action_sha256",
+                         "native_task_launcher_file_sha256"):
+        digest = report.get(digest_field)
+        if not isinstance(digest, str) or FILE_SHA.fullmatch(digest) is None:
+            raise ValueError("originalhost release original Task/source digest missing")
+    # Parse only process chronology here: do NOT consume the actual-wall-
+    # clock read used by the EXISTING 90-second native release and post-relay
+    # freshness gates. Duplicate clock reads could skip the latter guard.
+    try:
+        stamp = report["observed_at_utc"]
+        if not isinstance(stamp, str) or len(stamp) > 40:
+            raise ValueError("invalid timestamp")
+        parent_observed = datetime.fromisoformat(
+            stamp.replace("Z", "+00:00"))
+        if parent_observed.tzinfo is None or parent_observed.utcoffset() is None:
+            raise ValueError("missing timezone")
+    except (KeyError, AttributeError, ValueError, OverflowError) as exc:
+        raise ValueError("originalhost release parent observation invalid") from exc
+    if parent_birth > parent_observed:
+        raise ValueError("originalhost release parent born after observation")
     if (not isinstance(report.get("approved_six_proof_release_packet_sha256"), str)
             or report["approved_six_proof_release_packet_sha256"]
                 != expected_release_packet_sha256):

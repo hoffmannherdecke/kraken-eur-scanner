@@ -1163,6 +1163,12 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             "task_state": "Running",
             "series_id": series_id,
             "release_repo_sha": pin,
+            # Strict OS process/task identity fields are MOCK-only here;
+            # they cannot grant real independent originalhost authority.
+            "native_python_parent_pid": 21704,
+            "native_python_parent_started_at_utc": "2026-10-19T13:59:00Z",
+            "native_task_action_sha256": "e" * 64,
+            "native_task_launcher_file_sha256": "f" * 64,
             # Contract-only synthetic values, not physical observed bytes.
             "release_bundle_sha256": self.BUNDLE,
             "release_strategy_sha256": self.STRATEGY,
@@ -1241,6 +1247,14 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 {"release_strategy_sha256": "e" * 64},
                 {"release_bundle_sha256": None},
                 {"release_strategy_sha256": True},
+                {"native_python_parent_pid": 21705},
+                {"native_python_parent_pid": True},
+                {"native_python_parent_started_at_utc": "2026-10-19T14:01:00Z"},
+                {"native_python_parent_started_at_utc": "NOT-A-TIME"},
+                {"native_task_action_sha256": None},
+                {"native_task_action_sha256": "INVALID"},
+                {"native_task_launcher_file_sha256": True},
+                {"native_task_launcher_file_sha256": "0" * 63},
                 {"old_wait_task_state": "Running"},
                 {"old_candidates_workers_absent": False},
                 {"old_wait_workers_absent": False},
