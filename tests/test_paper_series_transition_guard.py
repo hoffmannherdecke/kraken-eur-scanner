@@ -152,15 +152,22 @@ class V3PreCASOriginalPairReviewTests(unittest.TestCase):
         self.assertEqual(result["disposition"],
                          "BLOCK_UNCORRELATED_OR_UNVERIFIED_PRECAS_ORIGINALS")
 
-    def test_nonzero_old_trade_requires_fresh_timestamp_and_never_releases(self):
+    def test_nonzero_old_trade_requires_valid_version_not_fresh_event(self):
         from tools.paper_series_transition_guard import assess_v3_precas_original_pair
         host, cloud, now = self.original_pair()
         cloud = dict(cloud, original_trade_count=1,
-                     original_last_trade_updated_at="2026-10-21T13:29:39Z")
+                     original_last_trade_updated_at="2026-10-18T12:00:00Z")
         result=assess_v3_precas_original_pair(host=host, cloud=cloud, now_utc=now)
         self.assertEqual(result["disposition"],
                          "CORRELATED_SOURCE_SHAPES_ONLY_NOT_CAS_AUTHORITY")
         self.assertFalse(result["execution_or_cloud_cas_authorized"])
+
+        # A genuine, stable old V2R4 Cloud row can retain a version timestamp
+        # far before the fresh Cloud read without being a stale *readback*.
+        cloud["original_last_candidate_updated_at"] = "2026-10-15T12:00:00Z"
+        unchanged=assess_v3_precas_original_pair(host=host, cloud=cloud, now_utc=now)
+        self.assertEqual(unchanged["disposition"],
+                         "CORRELATED_SOURCE_SHAPES_ONLY_NOT_CAS_AUTHORITY")
 
 
 if __name__=="__main__":
