@@ -155,6 +155,83 @@ class OriginalCloudSyncV3PrecommitTests(unittest.TestCase):
         self.assertIn("V3_FENCE_INVALID_FAIL_CLOSED",result["detail"])
 
 
+
+class OriginalCloudSyncAckRetentionTests(unittest.TestCase):
+    """Offline regression for a normal original V2R4 cohort exceeding 5000."""
+
+    def setUp(self):
+        self.tmp=tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.root=Path(self.tmp.name)
+        (self.root/"State").mkdir()
+        self.args=argparse.Namespace(
+            trading_root=self.root,app_root=self.root/"SyntheticPaper",
+            paper_state_dir=self.root/"State",
+            endpoint="https://never-sent.example.invalid",
+        )
+        self.rows=[
+            {"candidate_id":f"V2R4-C-{n:05d}",
+             "series_id":"PAPER-V2R4-20261009T110135Z",
+             "decision":"WAIT","followup":None}
+            for n in range(5001)
+        ]
+        self.packets=[]
+
+    def tick(self):
+        def post(_endpoint,_token,packet,**_kwargs):
+            self.packets.append(packet)
+            return {"ok":True,
+                    "accepted_candidates":len(packet["candidates"]),
+                    "accepted_trades":0}
+        fake_control={
+            "series_id":"PAPER-V2R4-20261009T110135Z",
+            "strategy_revision":"V2R4-RELEASE-CANDIDATE-2026-10-05-TIMING-ISOLATION",
+        }
+        with mock.patch.object(module,"load_token",return_value="offline-token"*4), \
+             mock.patch.object(module,"post",side_effect=post), \
+             mock.patch.object(module,"collect",return_value=(fake_control,self.rows,[])), \
+             mock.patch.object(module,"dispatch_alerts_if_needed",return_value=None):
+            return module.run_once(self.args)
+
+    def test_above_5000_original_ack_marks_survive_restart_and_recheck(self):
+        first=self.tick()
+        self.assertEqual(first["status"],"HEALTHY")
+        self.assertEqual(first["accepted_candidates"],5001)
+        self.assertEqual(len(self.packets),26)
+        path=self.root/"State/v2r4-paper-cloud-sync-state.json"
+        marks=json.loads(path.read_text(encoding="utf-8"))["sent"]
+        self.assertEqual(len(marks),5001)
+        self.assertIn("candidate:V2R4-C-00000",marks)
+
+        # A new cycle (including reload of persisted marks) must make ZERO
+        # retransmissions for the unchanged cohort, not a recurring first row.
+        self.packets.clear()
+        second=self.tick()
+        self.assertEqual(second["status"],"HEALTHY")
+        self.assertEqual(second["pending_candidates"],0)
+        self.assertEqual(second["batches"],0)
+        self.assertEqual(self.packets,[])
+
+        # Genuine changed followup must still resend its one source row.
+        self.rows[0]={**self.rows[0],"followup":{"status":"COMPLETE"}}
+        third=self.tick()
+        self.assertEqual(third["accepted_candidates"],1)
+        self.assertEqual(len(self.packets),1)
+        self.assertEqual(self.packets[0]["candidates"][0]["candidate_id"],
+                         "V2R4-C-00000")
+
+        # Once records leave the original local set, stale marks may be
+        # pruned; no unbounded old-series memory or fabricated ACK.
+        self.rows=self.rows[1:]
+        fourth=self.tick()
+        self.assertEqual(fourth["status"],"HEALTHY")
+        self.assertEqual(fourth["pending_candidates"],0)
+        marks=json.loads(path.read_text(encoding="utf-8"))["sent"]
+        self.assertEqual(len(marks),5000)
+        self.assertNotIn("candidate:V2R4-C-00000",marks)
+
+
+
 class ClosedOriginalAftercareFileE2ETests(unittest.TestCase):
     """Real temporary legacy files -> post-CAS aftercare -> bounded Edge ACKs.
 
