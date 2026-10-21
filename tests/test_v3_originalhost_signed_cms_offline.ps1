@@ -47,6 +47,31 @@ try {
      $ok.originalhost_process_or_loaded_bytes_independently_proven -ne $false){
    throw 'V3_VALID_CRYPTO_IS_NOT_AUTHORIZED_RELEASE'
   }
+  # Attempted self-authorization: this is a perfectly valid detached CMS
+  # signed by the SAME ephemeral CI key. The arbitrary signed JSON falsely
+  # claims SYSTEM exclusion, approved signer role and release/Cloud authority.
+  # Crypto math may pass; it must NEVER mint trust, proofs or activation.
+  $hostileBytes=[System.Text.Encoding]::UTF8.GetBytes(
+   '{"system_key_access_denied":true,"signer_role_approved":true,"six_actual_e2e_proofs_credited":6,"cloud_cas_authorized":true,"v3_paper_release_authorized":true}'
+  )
+  $hostileContent=[System.Security.Cryptography.Pkcs.ContentInfo]::new(
+   [byte[]]$hostileBytes)
+  $hostileCms=[System.Security.Cryptography.Pkcs.SignedCms]::new(
+   $hostileContent,$true)
+  $hostileSigner=[System.Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+  $hostileSigner.DigestAlgorithm=[System.Security.Cryptography.Oid]::new(
+   '2.16.840.1.101.3.4.2.1')
+  $hostileCms.ComputeSignature($hostileSigner)
+  $hostileResult=Test-V3IndependentOriginalHostCmsSignature (
+   [byte[]]$hostileBytes) ([byte[]]$hostileCms.Encode()) $pin
+  if($hostileResult.crypto_signature_valid -ne $true -or
+     $hostileResult.originalhost_key_acl_and_signer_role_proven -ne $false -or
+     $hostileResult.originalhost_process_or_loaded_bytes_independently_proven -ne $false -or
+     $hostileResult.cloud_cas_authorized -ne $false -or
+     $hostileResult.v3_paper_release_authorized -ne $false -or
+     $hostileResult.six_actual_e2e_proofs_credited -ne 0){
+   throw 'V3_SELF_SIGNED_CMS_IS_NOT_INDEPENDENT_RELEASE_AUTHORITY'
+  }
   $tampered=[System.Text.Encoding]::UTF8.GetBytes('{"not_originalhost":false,"release_authority":false}')
   $otherPin='0'*64
   # Physical Originalhost public DER candidate: NOT an approved release key.
