@@ -215,6 +215,11 @@ def dispatch_after_native_release_readback(*,
     if proof_errors:
         raise ValueError("six independent release proof envelopes incomplete: "
                          + proof_errors[0])
+    # Proof-file integrity is insufficient when that valid packet describes
+    # a different bundle from the exact runtime about to execute. The
+    # external host approval and real Cloud series must pin this SAME code.
+    if release_packet.get("code_fingerprint_sha256") != phase_args["bundle_sha256"]:
+        raise ValueError("six-proof release packet code fingerprint differs from worker bundle")
     # The independently authenticated originalhost release owner MUST have
     # reviewed the exact same six-proof packet, not a different packet for
     # the same series/repository. The packet's individual files/hashes were
