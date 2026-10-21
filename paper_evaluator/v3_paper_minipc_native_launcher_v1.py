@@ -647,6 +647,7 @@ def _require_staged_v3_source_manifest(*, repo_sha: str, stage_root: Path | None
     closure_files = manifest.get("static_transitive_closure_files")
     if (not required.issubset(seen) or not isinstance(closure_files, list)
             or not 20 <= len(closure_files) <= 512
+            or not all(isinstance(rel, str) for rel in closure_files)
             or len(closure_files) != len(set(closure_files))
             or not set(closure_files).issubset(seen)
             or type(manifest.get("static_transitive_closure_file_count")) is not int
