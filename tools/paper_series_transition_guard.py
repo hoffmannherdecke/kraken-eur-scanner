@@ -145,6 +145,19 @@ def assess_v3_precas_original_pair(*, host: dict, cloud: dict,
             or rows[0].get("series_id") != host["predecessor_series_id"]
             or rows[0].get("status") != "active"):
         return result
+    # The Cloud *readback* must be fresh, but a legitimate last-row update
+    # can be hours/days old when no new outcomes/trades were written.
+    # Never turn an old, stable V2R4 series into a failed release condition.
+    def valid_db_version(value: object) -> bool:
+        if not isinstance(value, str) or not value.endswith("Z") or len(value) > 40:
+            return False
+        try:
+            stamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except (ValueError, OverflowError):
+            return False
+        return (stamp.tzinfo is not None and stamp.utcoffset() is not None
+                and stamp <= observed_cloud)
+
     for count_key, updated_key in (
         ("original_candidate_count", "original_last_candidate_updated_at"),
         ("original_trade_count", "original_last_trade_updated_at")
@@ -156,7 +169,7 @@ def assess_v3_precas_original_pair(*, host: dict, cloud: dict,
             if stamp is not None:
                 return result
         else:
-            if fresh(stamp) is None:
+            if not valid_db_version(stamp):
                 return result
 
     # These observations will be stale by the time a separate CAS is attempted.
