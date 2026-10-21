@@ -1174,6 +1174,14 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
             "old_cloudsync_task_running": True,
             "independent_cloud_cas_committed": True,
             "six_external_original_e2e_proofs_approved": True,
+            # OFFLINE fixture only. The real independent owner must obtain
+            # this digest from its separately authenticated six-proof review.
+            "approved_six_proof_release_packet_sha256": hashlib.sha256(
+                json.dumps({
+                    "strategy_revision": launcher.REVISION,
+                    "strategy_fingerprint_sha256": self.STRATEGY,
+                }, sort_keys=True, separators=(",", ":"),
+                    allow_nan=False).encode("utf-8")).hexdigest(),
             "paper_only": True,
             "real_money_actions": False,
             "observed_at_utc": "2026-10-19T14:00:00Z",
@@ -1234,6 +1242,9 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 {"old_cloudsync_task_running": False},
                 {"independent_cloud_cas_committed": False},
                 {"six_external_original_e2e_proofs_approved": False},
+                {"approved_six_proof_release_packet_sha256": None},
+                {"approved_six_proof_release_packet_sha256": "a" * 64},
+                {"approved_six_proof_release_packet_sha256": True},
                 {"maintenance_receipt_sha256": "not-a-sha"},
                 {"maintenance_receipt_kind": "USER_ASSERTED"},
                 {"maintenance_release_repo_sha": "b" * 40},
@@ -1269,6 +1280,40 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                                 originalhost_readback=lambda r=row: r,
                                 release_root=Path(root), release_packet=packet,
                                 **kwargs)
+                worker.assert_not_called()
+
+    def test_native_owner_binds_exact_six_proof_packet_not_rehashed_other_packet(self):
+        # A real authenticated owner must independently approve the exact
+        # packet, including every evidence-file digest. A credible-looking
+        # but different packet is not the same authorization.
+        with tempfile.TemporaryDirectory() as root:
+            kwargs = dict(self.common(root), phase="FOLLOWUP_6H24H72H",
+                          candidate={"candidate_id": "SIX_PACKET_BINDING"})
+            packet = {"strategy_revision": launcher.REVISION,
+                      "strategy_fingerprint_sha256": self.STRATEGY}
+            host = self.original_release_host(self.SID, self.REPO)
+            with patch.object(launcher, "validate_experimental_paper_packet",
+                              return_value=[]), patch.object(
+                    launcher, "dispatch_one_owned_paper_phase") as worker:
+                for changed in (
+                    dict(packet, technical_evidence_marker="FOREIGN"),
+                    dict(packet, experimental_paper_technical_proofs=[
+                        {"id": "OTHER_PROOF", "sha256": "f" * 64}]),
+                ):
+                    with self.subTest(changed=changed), self.assertRaisesRegex(
+                            ValueError, "different six-proof release packet"):
+                        launcher.dispatch_after_native_release_readback(
+                            originalhost_readback=lambda: host,
+                            release_root=Path(root), release_packet=changed, **kwargs)
+                # Contradictory approval digest cannot be hidden by rehashing
+                # an otherwise unchanged source packet.
+                counterfeit = dict(host,
+                    approved_six_proof_release_packet_sha256="f" * 64)
+                with self.assertRaisesRegex(
+                        ValueError, "different six-proof release packet"):
+                    launcher.dispatch_after_native_release_readback(
+                        originalhost_readback=lambda: counterfeit,
+                        release_root=Path(root), release_packet=packet, **kwargs)
                 worker.assert_not_called()
 
     def test_optional_ups_is_not_a_paper_release_veto(self):
