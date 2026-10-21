@@ -215,6 +215,20 @@ def dispatch_after_native_release_readback(*,
     if proof_errors:
         raise ValueError("six independent release proof envelopes incomplete: "
                          + proof_errors[0])
+    # The independently authenticated originalhost release owner MUST have
+    # reviewed the exact same six-proof packet, not a different packet for
+    # the same series/repository. The packet's individual files/hashes were
+    # verified above by the ONE existing technical gate. This is identity
+    # correlation only; its self-hash does not authenticate physical origin.
+    try:
+        packet_bytes = json.dumps(
+            release_packet, sort_keys=True, separators=(",", ":"),
+            allow_nan=False).encode("utf-8")
+    except (TypeError, ValueError, UnicodeError) as exc:
+        raise ValueError("native release packet cannot be canonically hashed") from exc
+    if not 0 < len(packet_bytes) <= 65536:
+        raise ValueError("native release packet size invalid")
+    expected_release_packet_sha256 = hashlib.sha256(packet_bytes).hexdigest()
     # The independent originalhost task/process/fence and Cloud readbacks are
     # checked separately below and again under the existing native writer lock.
     phase = phase_args["phase"]
@@ -223,6 +237,10 @@ def dispatch_after_native_release_readback(*,
     report = originalhost_readback()
     if not isinstance(report, dict):
         raise ValueError("original native host readback missing")
+    if (not isinstance(report.get("approved_six_proof_release_packet_sha256"), str)
+            or report["approved_six_proof_release_packet_sha256"]
+                != expected_release_packet_sha256):
+        raise ValueError("independent originalhost approved different six-proof release packet")
     expected = {
         "kind": "V3_NATIVE_ONE_OWNER_POST_CAS_ORIGINALHOST_READBACK_V1",
         "source": "ORIGINAL_MINIPC_WINDOWS_TASK_PROCESS_AND_FENCE",
