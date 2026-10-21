@@ -34,6 +34,18 @@ def _git(source: Path, *args: str) -> str:
     return proc.stdout.strip()
 
 
+def _historical_git_bytes(source: Path, sha: str, relative: str) -> bytes:
+    """Read exact historical Git *blob*, not the newer checked-out source.
+
+    The clean source HEAD must independently contain this original ancestor.
+    Git content retrieval is read-only and does not run, checkout or stage code.
+    """
+    result = subprocess.run(
+        ["git", "-C", str(source), "cat-file", "blob", f"{sha}:{relative}"],
+        capture_output=True, timeout=20, check=True)
+    return result.stdout
+
+
 def _regular_tree(path: Path) -> Path:
     path = Path(path).absolute()
     if not path.is_dir() or any(part.is_symlink()
@@ -45,8 +57,9 @@ def _regular_tree(path: Path) -> Path:
 def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
     """Read-only: bind the old physical stage to unchanged committed source.
 
-    The source repo may advance by this *proof-only* PR. Its 67 pinned runtime
-    bytes may not drift at all, and must still match the pinned Git objects.
+    The source checkout may advance safely. Compare immutable staged bytes
+    with their actual historical ancestor Git blobs, never the later worktree
+    bytes. No checkout, synthetic writer replay, Cloud write or new release.
     """
     if not HEX40.fullmatch(stage_sha):
         raise ValueError("exact lowercase stage SHA required")
@@ -66,8 +79,9 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
                        stage_sha, head], timeout=20).returncode != 0:
         raise ValueError("stage SHA not ancestor of independent source HEAD")
     manifest_path = staged / "v3-paper-inactive-source-manifest.json"
-    if manifest_path.is_symlink() or not manifest_path.is_file():
-        raise ValueError("source-only staging manifest missing")
+    if (manifest_path.is_symlink() or not manifest_path.is_file()
+            or manifest_path.stat().st_size > 131072):
+        raise ValueError("source-only staging manifest missing or oversized")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     rows = manifest.get("source_manifest")
     if (manifest.get("kind") != "V3_PAPER_INACTIVE_ISOLATED_SOURCE_STAGE_V1"
@@ -86,13 +100,21 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
                 not isinstance(expected, str) or
                 re.fullmatch(r"[0-9a-f]{64}", expected) is None or rel in verified):
             raise ValueError("unsafe or duplicate source manifest entry")
-        here, original = staged / rel, src / rel
-        if (here.is_symlink() or original.is_symlink()
-                or not here.is_file() or not original.is_file()):
+        here = staged / rel
+        if (here.is_symlink() or not here.is_file()
+                or any(parent.is_symlink() for parent in here.parents
+                       if parent == staged or staged in parent.parents)):
             raise ValueError("pinned stage file absent or linked")
-        if (hashlib.sha256(here.read_bytes()).hexdigest() != expected
-                or hashlib.sha256(original.read_bytes()).hexdigest() != expected):
-            raise ValueError("stage and source file bytes differ")
+        staged_bytes = here.read_bytes()
+        if len(staged_bytes) > 2_000_000:
+            raise ValueError("oversized original stage source file")
+        try:
+            git_bytes = _historical_git_bytes(src, stage_sha, rel)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+            raise ValueError("historical original Git blob missing") from exc
+        if (hashlib.sha256(staged_bytes).hexdigest() != expected
+                or staged_bytes != git_bytes):
+            raise ValueError("stage and original historical Git bytes differ")
         verified.add(rel)
     must = {"paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
             "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
