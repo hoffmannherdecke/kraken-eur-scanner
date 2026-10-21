@@ -391,6 +391,7 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
         with patch.object(launcher.sys, "platform", "win32"), patch.object(
                 launcher, "read_originalhost_readonly",
                 return_value=host) as inspector, patch.object(
+                launcher, "_require_staged_v3_source_manifest") as stage_pin, patch.object(
                 launcher, "dispatch_after_originalhost_and_cloud_readback",
                 side_effect=delegated) as owner, patch.object(
                 launcher, "dispatch_one_owned_paper_phase") as worker:
@@ -398,8 +399,10 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                 originalhost_release_readback=physical_provider,
                 release_root=Path("offline-only"), release_packet={},
                 original_cloud_relay_token="OFFLINE_TOKEN_NO_NETWORK_123456",
-                phase="FOLLOWUP_6H24H72H", series_id=self.SID)
+                phase="FOLLOWUP_6H24H72H", series_id=self.SID,
+                repo_sha=self.REPO)
             self.assertEqual(result["status"], "OFFLINE_DELEGATED_NO_WORKER")
+            stage_pin.assert_called_once_with(repo_sha=self.REPO)
             inspector.assert_called_once_with()
             owner.assert_called_once()
             params=owner.call_args.kwargs
@@ -1378,6 +1381,168 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                         originalhost_readback=lambda: self.original_release_host(
                             self.SID, self.REPO), **kwargs)
                 worker.assert_not_called()
+
+
+
+
+class NativeStageSourcePinTests(unittest.TestCase):
+    """One original source manifest only; these are synthetic bytes, not an E2E."""
+
+    SHA = "e" * 40
+    REQUIRED = (
+        "paper_evaluator/v3_paper_minipc_native_launcher_v1.py",
+        "paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+        "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+        "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py",
+        "tools/v3_experimental_paper_technical_gate.py",
+        "tools/paper_series_transition_guard.py",
+        "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+    )
+
+    def stage(self, root):
+        r = Path(root) / "Staging" / ("V3Paper-INACTIVE-" + self.SHA[:12])
+        r.mkdir(parents=True)
+        files = list(self.REQUIRED) + [
+            f"paper_evaluator/offline_dep_{i:02d}.py" for i in range(15)
+        ]
+        rows = []
+        for relative in files:
+            destination = r / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            data = ("# FAKE STAGE " + relative + "\n").encode("utf-8")
+            destination.write_bytes(data)
+            rows.append({"relative_path": relative,
+                         "sha256": hashlib.sha256(data).hexdigest()})
+        closure_names = [row["relative_path"] for row in rows]
+        manifest = {
+            "kind": "V3_PAPER_INACTIVE_ISOLATED_SOURCE_STAGE_V1",
+            "status": "STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED",
+            "source_git_sha": self.SHA,
+            "v3_paper_activated": False,
+            "task_changes": False,
+            "source_closure_is_only_candidate_not_loaded_code_ack": True,
+            "tracked_code_files": len(rows),
+            "source_manifest": rows,
+            "static_transitive_closure_file_count": len(closure_names),
+            "static_transitive_closure_files": closure_names,
+            "static_transitive_closure_sha256": "f" * 64,
+        }
+        (r / "v3-paper-inactive-source-manifest.json").write_text(
+            json.dumps(manifest), encoding="utf-8")
+        closure = {
+            "static_local_import_closure_complete": True,
+            "candidate_transitive_file_count": len(closure_names),
+            "candidate_transitive_files": [
+                [n, next(row["sha256"] for row in rows
+                         if row["relative_path"] == n)]
+                for n in closure_names],
+            "candidate_transitive_source_sha256": "f" * 64,
+        }
+        return r, manifest, closure
+
+    @staticmethod
+    def rewrite(root, manifest):
+        (root / "v3-paper-inactive-source-manifest.json").write_text(
+            json.dumps(manifest), encoding="utf-8")
+
+    def test_exact_stage_source_and_existing_closure_pass_only_locally(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root, manifest, closure = self.stage(temp)
+            with patch.object(launcher, "assess_v3_native_source_import_closure",
+                              return_value=closure) as check:
+                self.assertIsNone(launcher._require_staged_v3_source_manifest(
+                    repo_sha=self.SHA, stage_root=root))
+                check.assert_called_once_with(root)
+            self.assertTrue(manifest["source_closure_is_only_candidate_not_loaded_code_ack"])
+
+    def test_inactive_stage_rejects_byte_tampering_wrong_sha_or_manifest(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root, manifest, closure = self.stage(temp)
+            path = root / self.REQUIRED[0]
+            path.write_bytes(b"# different imported Python source")
+            with patch.object(launcher, "assess_v3_native_source_import_closure",
+                              return_value=closure) as check:
+                with self.assertRaisesRegex(ValueError, "byte drift"):
+                    launcher._require_staged_v3_source_manifest(
+                        repo_sha=self.SHA, stage_root=root)
+                check.assert_not_called()
+        for corruption in ("source_git_sha", "v3_paper_activated",
+                           "task_changes", "duplicate", "escape",
+                           "static_transitive_closure_file_count",
+                           "closure_foreign_name"):
+            with self.subTest(corruption=corruption), tempfile.TemporaryDirectory() as temp:
+                root, m, closure = self.stage(temp)
+                if corruption == "source_git_sha":
+                    m["source_git_sha"] = "c" * 40
+                elif corruption == "v3_paper_activated":
+                    m["v3_paper_activated"] = True
+                elif corruption == "task_changes":
+                    m["task_changes"] = True
+                elif corruption == "duplicate":
+                    m["source_manifest"][-1] = dict(m["source_manifest"][0])
+                elif corruption == "escape":
+                    m["source_manifest"][-1]["relative_path"] = "../outside.py"
+                elif corruption == "static_transitive_closure_file_count":
+                    m["static_transitive_closure_file_count"] += 1
+                else:
+                    m["static_transitive_closure_files"][-1] = "../foreign.py"
+                self.rewrite(root, m)
+                with patch.object(launcher, "assess_v3_native_source_import_closure",
+                                  return_value=closure):
+                    with self.assertRaises(ValueError):
+                        launcher._require_staged_v3_source_manifest(
+                            repo_sha=self.SHA, stage_root=root)
+
+    def test_symlinked_stage_file_and_changed_closure_block(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root, m, closure = self.stage(temp)
+            item = root / self.REQUIRED[0]
+            item.unlink()
+            item.symlink_to(root / self.REQUIRED[1])
+            with patch.object(launcher, "assess_v3_native_source_import_closure",
+                              return_value=closure):
+                with self.assertRaises(ValueError):
+                    launcher._require_staged_v3_source_manifest(
+                        repo_sha=self.SHA, stage_root=root)
+        for changed in ({"static_local_import_closure_complete": False},
+                        {"candidate_transitive_source_sha256": "0" * 64},
+                        {"candidate_transitive_file_count": 1},
+                        {"candidate_transitive_files": []}):
+            with self.subTest(changed=changed), tempfile.TemporaryDirectory() as temp:
+                root, m, closure = self.stage(temp)
+                with patch.object(launcher, "assess_v3_native_source_import_closure",
+                                  return_value=dict(closure, **changed)):
+                    with self.assertRaisesRegex(ValueError, "closure changed"):
+                        launcher._require_staged_v3_source_manifest(
+                            repo_sha=self.SHA, stage_root=root)
+
+    def test_native_dispatch_cannot_skip_stage_source_verification(self):
+        # Correlated offline Task + independent callback are insufficient if
+        # the original pinned stage cannot be re-read. No actual E2E authority.
+        case = SingleNativeOwnerLauncherTests()
+        host = case.correlated_originalhost()
+        independent = dict(
+            observed_at_utc="2026-10-19T14:00:16Z",
+            native_task_action_sha256=host["native_task_action_sha256"],
+            native_task_launcher_file_sha256=host["native_task_launcher_file_sha256"],
+            native_python_parent_pid=host["native_python_parent_pid"],
+            native_python_parent_started_at_utc=host["native_python_parent_started_at_utc"])
+        with patch.object(launcher.sys, "platform", "win32"), patch.object(
+                launcher.os, "getpid", return_value=21704), patch.object(
+                launcher, "_originalhost_wall_clock_utc",
+                return_value=datetime(2026, 10, 19, 14, 0, 25, tzinfo=timezone.utc)), patch.object(
+                launcher, "read_originalhost_readonly",
+                return_value=host), patch.object(
+                launcher, "dispatch_after_originalhost_and_cloud_readback",
+                side_effect=lambda **kw: kw["originalhost_readback"]()) as owner, patch.object(
+                launcher, "dispatch_one_owned_paper_phase") as worker:
+            with self.assertRaisesRegex(ValueError, "native source not in exact original inactive stage"):
+                launcher.dispatch_from_original_windows_one_shot(
+                    originalhost_release_readback=lambda: independent,
+                    phase="FOLLOWUP_6H24H72H",
+                    series_id=case.SID, repo_sha=self.SHA)
+            owner.assert_called_once()
+            worker.assert_not_called()
 
 
 if __name__ == "__main__":
