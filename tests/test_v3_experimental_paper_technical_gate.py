@@ -55,6 +55,9 @@ def fixture(root:Path)->dict:
                             "e" if case=="POSITIVE_BUY_SCOUT" else "f")*64,
                     }
                 record.update({
+                    # An original physical observation cannot predate the
+                    # underlying real 16 October model/P4 event.
+                    "observed_at_utc":"2026-10-19T09:32:00Z",
                     "original_model_p4_readback":{
                         "model_http_attempts_reserved":1,
                         "model_http_retries":0,
@@ -82,7 +85,7 @@ def fixture(root:Path)->dict:
                 # TIA WAIT source, never the separate synthetic BUY fixture.
                 record.update({
                     "cloud_project_id":"nlgzjmqgwueojlyqmoru",
-                    "observed_at_utc":"2026-10-13T09:32:00Z",
+                    "observed_at_utc":"2026-10-19T09:32:00Z",
                     "read_only":True,
                     "cloud_cas_performed":False,
                     "active_paper_series_changed":False,
@@ -550,6 +553,12 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                 lambda xs: role(xs,"MINIPC_PHYSICAL")[
                     "original_model_p4_readback"].update(
                         original_event_key=""),
+                # A rehashed original observed before its purported event
+                # is impossible, even if candidate IDs and source clock match.
+                lambda xs: role(xs,"MINIPC_PHYSICAL").update(
+                    observed_at_utc="2026-10-15T19:04:48Z"),
+                lambda xs: role(xs,"SUPABASE_CLOUD").update(
+                    observed_at_utc="2026-10-15T19:04:48Z"),
             ]
             for change in changes:
                 with self.subTest(change=repr(change)):
