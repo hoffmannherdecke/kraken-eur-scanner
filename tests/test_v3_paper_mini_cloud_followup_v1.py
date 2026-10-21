@@ -218,5 +218,93 @@ class MiniPcAndCloudTests(unittest.TestCase):
                     post=lambda *args:{"ok":False})
             self.assertFalse((root/"acked.json").exists())
 
+
+    def test_v3_ack_history_over_5000_preserves_every_prior_cloud_receipt(self):
+        """No V2R4 5,000-entry pruning in V3; original ACKs remain durable."""
+        import hashlib
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            journal = root / "journal"
+            journal.mkdir()
+            identity = {
+                "series_id": SID,
+                "candidate_id": "V3-CLOUD-CAPACITY-TEST-0001",
+                "phase": "FIRST_SKIP",
+                "event_key": "test-only-new-receipt",
+            }
+            event_id = hashlib.sha256("|".join(str(identity[key]) for key in
+                ("series_id", "candidate_id", "phase", "event_key")).encode()).hexdigest()
+            receipt = {**identity, "revision": REVISION,
+                       "real_money_actions": False, "orders": False}
+            (journal / (event_id + ".json")).write_text(
+                json.dumps(receipt, sort_keys=True) + "\n", encoding="utf-8")
+            prior = [f"{i:064x}" for i in range(5001)]
+            ack = root / "cloud_ack.json"
+            ack.write_text(json.dumps({
+                "schema": 1, "series_id": SID,
+                "revision": REVISION, "acked": prior}), encoding="utf-8")
+            token = "CI_OFFLINE_ONLY_NOT_A_REAL_SECRET_000000"
+            posts = []
+            def relay(_url, _token, payload):
+                self.assertEqual(payload["action"], "sync_paper_receipts")
+                self.assertEqual(len(payload["receipts"]), 1)
+                posts.append(payload)
+                return {"ok": True, "series_id": SID, "accepted_receipts": 1}
+            result = sync_once(journal=journal, series_id=SID,
+                               ack_file=ack, token=token, post=relay)
+            self.assertEqual(result["total_acked"], 5002)
+            persisted = json.loads(ack.read_text(encoding="utf-8"))
+            self.assertEqual(len(persisted["acked"]), 5002)
+            self.assertTrue(set(prior).issubset(persisted["acked"]))
+            self.assertIn(event_id, persisted["acked"])
+            again = sync_once(journal=journal, series_id=SID,
+                              ack_file=ack, token=token,
+                              post=lambda *_: self.fail("unchanged V3 event re-uploaded"))
+            self.assertEqual(again["status"], "NO_UNSYNCED_V3_RECEIPTS")
+            self.assertEqual(len(posts), 1)
+
+    def test_v3_large_ack_history_failed_post_keeps_original_retry_state(self):
+        """Failed Cloud transport must not acknowledge, truncate, or drop the retry."""
+        import hashlib
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            journal = root / "journal"
+            journal.mkdir()
+            candidate = "V3-CLOUD-FAILURE-TEST-0002"
+            phase = "FIRST_SKIP"
+            event_key = "retry-after-network-timeout"
+            event_id = hashlib.sha256(
+                "|".join((SID, candidate, phase, event_key)).encode()).hexdigest()
+            receipt = {"series_id": SID, "candidate_id": candidate,
+                       "phase": phase, "event_key": event_key,
+                       "revision": REVISION, "real_money_actions": False}
+            (journal / (event_id + ".json")).write_text(
+                json.dumps(receipt, sort_keys=True) + "\n", encoding="utf-8")
+            ack = root / "cloud_ack.json"
+            old_ids = [f"{i:064x}" for i in range(5001)]
+            old_bytes = json.dumps({"schema": 1, "series_id": SID,
+                                    "revision": REVISION,
+                                    "acked": old_ids}).encode("utf-8")
+            ack.write_bytes(old_bytes)
+            token = "CI_OFFLINE_ONLY_NOT_A_REAL_SECRET_000000"
+            def failed(_url, _token, _payload):
+                raise TimeoutError("synthetic delivery timeout")
+            with self.assertRaises(TimeoutError):
+                sync_once(journal=journal, series_id=SID,
+                          ack_file=ack, token=token, post=failed)
+            self.assertEqual(ack.read_bytes(), old_bytes)
+            seen = []
+            def recovered(_url, _token, payload):
+                seen.extend(payload["receipts"])
+                return {"ok": True, "series_id": SID,
+                        "accepted_receipts": len(payload["receipts"])}
+            result = sync_once(journal=journal, series_id=SID,
+                               ack_file=ack, token=token, post=recovered)
+            self.assertEqual(result["total_acked"], 5002)
+            self.assertEqual([r["event_id"] for r in seen], [event_id])
+            self.assertTrue(set(old_ids).issubset(
+                json.loads(ack.read_text(encoding="utf-8"))["acked"]))
+
+
 if __name__=="__main__":
     unittest.main()
