@@ -5,6 +5,7 @@ The physically deployed witness is separately read back on the Mini-PC.
 """
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -16,6 +17,87 @@ from tools.v3_paper_precas_originalhost_offline_witness_v1 import (
 
 
 class OfflineDualCaseWitnessTests(unittest.TestCase):
+    def test_historical_stage_remains_verifiable_after_clean_source_checkout_advances(self):
+        # An original 60-file stage is immutable. A newer clean HEAD must not
+        # require checking out the old code or rerunning a synthetic writer.
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            source = base / "Source"
+            trading = base / "Trading"
+            source.mkdir()
+            subprocess.run(["git", "init", "-q", str(source)],
+                           check=True, capture_output=True)
+            subprocess.run(["git", "-C", str(source), "config",
+                            "user.name", "V3 Offline CI"], check=True)
+            subprocess.run(["git", "-C", str(source), "config",
+                            "user.email", "offline-ci@example.invalid"], check=True)
+            must = [
+                "paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+                "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+                "paper_evaluator/v3_experimental_paper_journal_v1.py",
+                "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py",
+                "paper_evaluator/v3_paper_minipc_native_launcher_v1.py",
+                "tools/v3_experimental_paper_technical_gate.py",
+                "tools/paper_series_transition_guard.py",
+            ]
+            files = must + [f"paper_evaluator/offline_{i:02d}.py"
+                            for i in range(53)]
+            rows = []
+            for relative in files:
+                src = source / relative
+                src.parent.mkdir(parents=True, exist_ok=True)
+                contents = ("# pinned original " + relative + "\\n").encode()
+                src.write_bytes(contents)
+                rows.append({"relative_path": relative,
+                             "sha256": hashlib.sha256(contents).hexdigest()})
+            subprocess.run(["git", "-C", str(source), "add", "."], check=True)
+            subprocess.run(["git", "-C", str(source), "commit", "-qm",
+                            "historical V3 stage original"], check=True)
+            stage_sha = subprocess.check_output(
+                ["git", "-C", str(source), "rev-parse", "HEAD"],
+                text=True).strip()
+            stage = trading / "Staging" / ("V3Paper-INACTIVE-" + stage_sha[:12])
+            stage.mkdir(parents=True)
+            for relative in files:
+                dst = stage / relative
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                dst.write_bytes((source / relative).read_bytes())
+            manifest = {
+                "kind": "V3_PAPER_INACTIVE_ISOLATED_SOURCE_STAGE_V1",
+                "status": "STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED",
+                "source_git_sha": stage_sha,
+                "v3_paper_activated": False,
+                "task_changes": False,
+                "source_manifest": rows,
+            }
+            (stage / "v3-paper-inactive-source-manifest.json").write_text(
+                json.dumps(manifest), encoding="utf-8")
+            (trading / "Research" / "V3Paper").mkdir(parents=True)
+            # Simulate several merged PRs changing a pinned source file.
+            updated = source / must[0]
+            updated.write_text("# a later, valid code generation\\n", encoding="utf-8")
+            subprocess.run(["git", "-C", str(source), "add", "."], check=True)
+            subprocess.run(["git", "-C", str(source), "commit", "-qm",
+                            "new HEAD, old original still accessible"], check=True)
+            result = inspect(source=source, stage=stage, stage_sha=stage_sha)
+            self.assertEqual(result["verified_files"], 60)
+            self.assertNotEqual(result["source_head"], stage_sha)
+            self.assertEqual(result["stage_sha"], stage_sha)
+            # Forged new manifest SHA cannot authorize changed stage bytes:
+            # the historical immutable Git blob is a third independent pin.
+            old = stage / must[0]
+            old.write_bytes(b"# forged newer local stage source")
+            manifest["source_manifest"][0]["sha256"] = hashlib.sha256(
+                old.read_bytes()).hexdigest()
+            (stage / "v3-paper-inactive-source-manifest.json").write_text(
+                json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "historical Git bytes"):
+                inspect(source=source, stage=stage, stage_sha=stage_sha)
+            # A dirty worktree is never accepted, even if original blobs exist.
+            (source / "local-mutation.txt").write_text("not committed")
+            with self.assertRaisesRegex(ValueError, "source tree dirty"):
+                inspect(source=source, stage=stage, stage_sha=stage_sha)
+
     def test_original_release_gate_must_be_manifest_verified(self):
         from tools import v3_paper_precas_originalhost_offline_witness_v1 as witness
         import inspect
