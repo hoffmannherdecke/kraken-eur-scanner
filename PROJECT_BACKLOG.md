@@ -1,3 +1,14 @@
+## Projektweite Supabase Data API: explizite GRANTs ab 30.10.2026 (Stand 21.10.)
+
+**Domäne:** Infrastruktur/Betrieb für das *gesamte* Krypto-Projekt, unabhängig von V2R4, V3 oder V4+. **Kanonischer Owner:** der bestehende `security_permissions_and_rls`-Querschnittsbereich aus `research/project-followthrough-routing-v1.json`, mit Aufgabenautorität hier in `PROJECT_BACKLOG.md`. Zentraler Kontext-vor-Aktion-Manager liest diesen Projektmanager bereits; keine zusätzliche Komponente, kein Scheduler und kein neues V3-Release-Gate. Verfahren: `docs/supabase-data-api-grants-20261030.md`.
+
+- [x] **21.10. Live-Prüfung, read-only:** Im aktiven Supabase-Projekt 26 Tabellen mit aktiviertem RLS sowie 36 Views; keine der 62 Relationen gewährt `anon` oder `authenticated` SELECT; `service_role` besitzt SELECT für alle 62. Default-ACLs unterscheiden sich nach Ersteller: `postgres` grantiert gegenwärtig `service_role`, `supabase_admin` kann auch `anon`/`authenticated` automatisch berechtigen. Das ist ein Zeitpunktbefund, noch kein künftiger API-ACK.
+- [x] **21.10. Vorgehen vorbereitet:** Für jede tatsächlich neu angelegte oder rekonstruierte Data-API-relevante `public`-Tabelle ausdrücklich benötigte `REVOKE/GRANT`, RLS/Policies, Erstellerrolle, abhängige Sequenzen/Funktionen und reale Consumer-Rolle in *derselben* freigegebenen Migration berücksichtigen. Keine pauschalen öffentlichen Grants.
+- [ ] **Bis spätestens 29.10.:** Laufende und vorbereitete Schema-Migrationen, betroffene Rollen und `public`-Data-API-Nutzung im vorhandenen Releasepfad kontrollieren; bei echtem Tabellenvorhaben genau passende Berechtigungen ergänzen. Kein künstliches Prod-Tabellenobjekt und kein neuer kostenpflichtiger Test-Branch.
+- [ ] **Beim ersten echten Schema-Neuanlagefall ab 30.10.:** Originales PostgreSQL-Rechte-/RLS-Readback, positive und negative Data-API-Tests (mit wirklichem Client/Role) und Fehlerrückgabe `42501` prüfen; originalen Cloud-ACK festhalten. Fehlt noch ein echter Neuanlagefall, Status `OPEN_AWAIT_NEXT_MIGRATION`, nicht `DONE`.
+
+---
+
 ## Projektmanager – verbindliche fachliche Trennung, 20.10.2026 (Issue #353)
 
 **Projektweiter Auftrag statt V3-Zwang:** Der Kontext-vor-Aktion-Manager (Issue #353, `AGENTS.md`, `tools/context_before_action.py`) vermittelt für **alle** Krypto-Projektthemen und jetzigen/künftigen Strategien die Arbeitsweise, geprüften Fähigkeiten, zuständigen Owner und Freigabegrenzen. `PROJECT_BACKLOG.md` ist die **eine** Liste offener Aufgaben, kein V3-Implementierungsplan für Hardware- oder Infrastrukturvorhaben.
