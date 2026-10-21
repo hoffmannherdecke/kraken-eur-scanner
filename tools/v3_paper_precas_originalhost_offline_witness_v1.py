@@ -443,9 +443,16 @@ def main() -> int:
         # original read-only journal auditor. Do not reexecute its writer.
         sys.path.insert(0, str(p["stage"]))
         sys.path.insert(1, str(p["source"]))
-        print(json.dumps(inspect_existing_offline_originals(
+        report = inspect_existing_offline_originals(
             output, p["series_id"], a.expected_isolated_cloud_digest,
-            stage_sha=p["stage_sha"]), sort_keys=True))
+            stage_sha=p["stage_sha"])
+        report["historical_source_git_sha"] = p["stage_sha"]
+        report["windows_crlf_checkout_files"] = p["windows_crlf_checkout_files"]
+        report["original_source_manifest_sha256_checked"] = (
+            p["source_manifest_sha256_checked_for_every_file"])
+        # The exact offline witness still has ZERO automatic originalhost
+        # release authority, original live model proof, or Cloud attestation.
+        print(json.dumps(report, sort_keys=True))
         return 0
     if output.exists():
         raise ValueError("ONE_SHOT_WITNESS_TARGET_ALREADY_EXISTS_NO_RETRY")
@@ -454,6 +461,7 @@ def main() -> int:
                           "stage_sha": p["stage_sha"],
                           "source_head": p["source_head"],
                           "files_verified": p["verified_files"],
+                          "windows_crlf_checkout_files": p["windows_crlf_checkout_files"],
                           "target": str(output),
                           "model_http": 0, "orders": False,
                           "paper_release_authorized": False}, sort_keys=True))
