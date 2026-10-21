@@ -128,13 +128,18 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
                 raise ValueError("stage and original historical Git bytes differ")
             windows_crlf_source_files += 1
         verified.add(rel)
+    # These five original runtime/journal modules were genuinely STAGED by
+    # tools/stage-minipc-v3-paper-inactive.ps1 at the pinned historical SHA.
+    # The same original stager selected Python only under paper_evaluator/
+    # and market_data/, plus three named PowerShell operators. Top-level
+    # tools/*.py are NOT part of its 67-file Windows manifest and must not
+    # be falsely required as copied stage members. Git+manifest integrity
+    # above still applies to every file that actually belongs to the stage.
     must = {"paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
             "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
             "paper_evaluator/v3_experimental_paper_journal_v1.py",
             "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py",
-            "paper_evaluator/v3_paper_minipc_native_launcher_v1.py",
-            "tools/v3_experimental_paper_technical_gate.py",
-            "tools/paper_series_transition_guard.py"}
+            "paper_evaluator/v3_paper_minipc_native_launcher_v1.py"}
     if not must.issubset(verified):
         raise ValueError("physical writer/lock/journal/Cloud module not in stage")
     parent = trading / "Research" / "V3Paper"

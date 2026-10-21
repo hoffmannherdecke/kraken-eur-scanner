@@ -37,11 +37,11 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
                 "paper_evaluator/v3_experimental_paper_journal_v1.py",
                 "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py",
                 "paper_evaluator/v3_paper_minipc_native_launcher_v1.py",
-                "tools/v3_experimental_paper_technical_gate.py",
-                "tools/paper_series_transition_guard.py",
             ]
+            # The actual c0d... Windows stager selects only top-level
+            # tools/*.ps1, never tools/*.py as staged member files.
             files = must + [f"paper_evaluator/offline_{i:02d}.py"
-                            for i in range(53)]
+                            for i in range(55)]
             rows = []
             for relative in files:
                 src = source / relative
@@ -50,6 +50,16 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
                 src.write_bytes(contents)
                 rows.append({"relative_path": relative,
                              "sha256": hashlib.sha256(contents).hexdigest()})
+            # Git contains the two top-level tools/*.py source objects,
+            # but the real historical 67-file stage deliberately does NOT
+            # stage them; that fact must not invalidate a legitimate witness.
+            for relative in ("tools/v3_experimental_paper_technical_gate.py",
+                             "tools/paper_series_transition_guard.py",
+                             "paper_evaluator/extra_historical.py"):
+                src = source / relative
+                src.parent.mkdir(parents=True, exist_ok=True)
+                src.write_bytes(("# historically tracked only " + relative).encode()
+                                + bytes([10]))
             subprocess.run(["git", "-C", str(source), "add", "."], check=True)
             subprocess.run(["git", "-C", str(source), "commit", "-qm",
                             "historical V3 stage original"], check=True)
@@ -85,6 +95,24 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
             self.assertEqual(result["stage_sha"], stage_sha)
             self.assertEqual(result["windows_crlf_checkout_files"], 0)
             self.assertTrue(result["source_manifest_sha256_checked_for_every_file"])
+            # A manifest with 60 Git-matching staged files is still
+            # insufficient if a real staged writer module was omitted.
+            missing = manifest["source_manifest"][0]
+            spare = "paper_evaluator/extra_historical.py"
+            spare_bytes = (source / spare).read_bytes()
+            (stage / spare).write_bytes(spare_bytes)
+            manifest["source_manifest"][0] = {
+                "relative_path": spare,
+                "sha256": hashlib.sha256(spare_bytes).hexdigest()}
+            (stage / "v3-paper-inactive-source-manifest.json").write_text(
+                json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(
+                    ValueError, "physical writer/lock/journal/Cloud module"):
+                inspect(source=source, stage=stage, stage_sha=stage_sha)
+            manifest["source_manifest"][0] = missing
+            (stage / spare).unlink()
+            (stage / "v3-paper-inactive-source-manifest.json").write_text(
+                json.dumps(manifest), encoding="utf-8")
             # A Windows checkout with core.autocrlf produces CRLF source
             # worktree files. The original Stage copied precisely those
             # bytes and recorded their actual SHA256 in its immutable report.
@@ -148,10 +176,12 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
         import inspect
         source = inspect.getsource(witness.inspect)
         self.assertIn(
-            '"tools/v3_experimental_paper_technical_gate.py"',source)
+            '"paper_evaluator/v3_experimental_paper_journal_v1.py"',source)
         self.assertIn(
             '"paper_evaluator/v3_paper_minipc_native_launcher_v1.py"',source)
-        self.assertIn('"tools/paper_series_transition_guard.py"',source)
+        self.assertNotIn(
+            '"tools/v3_experimental_paper_technical_gate.py"',source)
+        self.assertNotIn('"tools/paper_series_transition_guard.py"',source)
 
 
     def test_two_actual_p4_ledger_cases_share_one_lock_and_no_provider(self):
