@@ -15,10 +15,24 @@ class ManualTPMKeySourceContract(unittest.TestCase):
  def test_explicit_interactive_admin_only_separated_from_system_and_runner(self):
   for x in ("[switch]$Enroll","$Approval -cne $confirmation",
             "ENROLL_MANUAL_TPM_SIGNING_KEY_NO_V3_RELEASE",
-            "WindowsIdentity]::GetCurrent()","COMPUTERNAME+'\\ADMIN'",
-            "S-1-5-18","UserInteractive","New-SelfSignedCertificate"):
+            "WindowsIdentity]::GetCurrent()","$expected='MINI-PC\\Thomas'",
+            "$expectedSid='S-1-5-21-3814592484-1822576909-3594267478-1000'",
+            "S-1-5-18","UserInteractive","New-SelfSignedCertificate",
+            "WindowsPrincipal]::new($identity)", "IsInRole($adminRole)",
+            "Get-Process -Id $PID", "sessionId -le 0",
+            "COMPUTERNAME -ine 'MINI-PC'"):
    self.assertIn(x,self.s)
   self.assertNotIn("Register-ScheduledTask",self.s)
+
+
+ def test_rejects_username_only_or_generic_admin_or_wrong_host(self):
+  self.assertNotIn("COMPUTERNAME+'\\\\ADMIN'",self.s)
+  self.assertIn("[string]$identity.User.Value -cne $expectedSid",self.s)
+  self.assertIn("V3_SIGNER_REQUIRES_PINNED_INTERACTIVE_MINIPC_THOMAS_ADMIN_SID_NOT_SYSTEM_OR_RUNNER",self.s)
+  self.assertIn("$env:COMPUTERNAME -ine 'MINI-PC'",self.s)
+  self.assertIn("-not $who.IsInRole($adminRole)",self.s)
+  self.assertIn("$sessionId -le 0",self.s)
+  self.assertNotIn("Add-LocalGroupMember",self.s)
 
  def test_private_key_only_tpm_nonexportable_user_not_system(self):
   for x in ("'Cert:\\CurrentUser\\My'",
