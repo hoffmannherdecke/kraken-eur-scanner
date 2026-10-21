@@ -97,6 +97,66 @@ class SingleNativeOwnerLauncherTests(unittest.TestCase):
                     self.assertEqual(err.exception.code, 2)
 
 
+    def test_one_shot_readonly_source_acceptance_reuses_exact_stage_pins(self):
+        # A checked SHA is only an observed staged FILE identity, not a
+        # physical loaded-module/OS-owner/E2E/Cloud CAS release credential.
+        host = self.correlated_originalhost()
+        with patch.object(launcher, "_require_staged_v3_source_manifest") as stage, patch.object(
+                launcher, "read_originalhost_readonly", return_value=host
+                ) as original, patch.object(
+                launcher, "read_active_paper_series") as cloud, patch.object(
+                launcher, "dispatch_one_owned_paper_phase") as worker:
+            out = launcher.preflight_native_windows_one_shot(
+                expected_repo_sha=self.REPO)
+            stage.assert_called_once_with(repo_sha=self.REPO)
+            original.assert_called_once_with()
+            self.assertTrue(out["staged_source_manifest_sha256_rechecked_read_only"])
+            self.assertTrue(out["staged_source_sha_is_only_local_source_identity"])
+            self.assertFalse(out["actual_loaded_python_bytecode_independently_verified"])
+            self.assertFalse(out["v3_paper_activated"])
+            self.assertEqual(out["model_http_calls"], 0)
+            cloud.assert_not_called()
+            worker.assert_not_called()
+
+    def test_one_shot_source_preflight_blocks_bad_pins_before_any_host_probe(self):
+        with patch.object(launcher, "_require_staged_v3_source_manifest",
+                          side_effect=ValueError("native staged source byte drift")), patch.object(
+                launcher, "read_originalhost_readonly") as original, patch.object(
+                launcher, "read_active_paper_series") as cloud, patch.object(
+                launcher, "dispatch_one_owned_paper_phase") as worker:
+            with self.assertRaisesRegex(ValueError, "byte drift"):
+                launcher.preflight_native_windows_one_shot(
+                    expected_repo_sha=self.REPO)
+            original.assert_not_called()
+            cloud.assert_not_called()
+            worker.assert_not_called()
+
+    def test_native_source_readonly_cli_rejects_other_modes_and_no_worker(self):
+        for args in (["launcher", "--read-only", "--expected-source-sha", self.REPO],
+                     ["launcher", "--originalhost-readonly",
+                      "--expected-source-sha", self.REPO]):
+            with self.subTest(args=args), patch("sys.argv", args):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit) as exc:
+                        launcher.main()
+                self.assertEqual(exc.exception.code, 2)
+        with patch("sys.argv", ["launcher", "--one-shot-preflight",
+                                "--expected-source-sha", self.REPO]), patch.object(
+                launcher, "_require_staged_v3_source_manifest") as stage, patch.object(
+                launcher, "read_originalhost_readonly",
+                return_value=self.correlated_originalhost()), patch.object(
+                launcher, "dispatch_one_owned_paper_phase") as worker:
+            buffer = io.StringIO()
+            with contextlib.redirect_stdout(buffer):
+                self.assertEqual(launcher.main(), 0)
+            out = json.loads(buffer.getvalue())
+            self.assertTrue(out["staged_source_manifest_sha256_rechecked_read_only"])
+            self.assertFalse(out["independent_task_pid_and_source_ack"])
+            self.assertFalse(out["six_real_technical_e2e_proofs_accepted"])
+            self.assertFalse(out["actual_v3_cloud_cas_committed"])
+            stage.assert_called_once_with(repo_sha=self.REPO)
+            worker.assert_not_called()
+
     def test_real_windows_one_shot_preflight_is_diagnostic_not_live(self):
         original = {
             "kind": "V3_NATIVE_ORIGINALHOST_DIAGNOSTIC_HANDOFF_V1",

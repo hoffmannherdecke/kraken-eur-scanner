@@ -829,7 +829,8 @@ def dispatch_from_original_windows_one_shot(*,
 
 
 def preflight_native_windows_one_shot(*,
-        proposed_v3_series: str | None = None) -> dict[str, Any]:
+        proposed_v3_series: str | None = None,
+        expected_repo_sha: str | None = None) -> dict[str, Any]:
     """Join original Windows inventory and original Cloud relay read-only.
 
     The authenticated relay is queried ONLY when a specific exact future
@@ -842,6 +843,11 @@ def preflight_native_windows_one_shot(*,
             not isinstance(proposed_v3_series, str)
             or SERIES.fullmatch(proposed_v3_series) is None):
         raise ValueError("exact non-CANARY proposed V3 Paper series required")
+    # Bounded original source-only acceptance: same ONE manifest verifier as
+    # the future released native phase. No CLI-supplied path or untrusted pin
+    # is ever allowed to substitute for independently approved release SHA.
+    if expected_repo_sha is not None:
+        _require_staged_v3_source_manifest(repo_sha=expected_repo_sha)
     physical = read_originalhost_readonly()
     cloud = None
     if proposed_v3_series is not None:
@@ -904,6 +910,10 @@ def preflight_native_windows_one_shot(*,
         "diagnostic": physical,
         "cloud_readonly_observation": cloud,
         "cloud_readback_requested": proposed_v3_series is not None,
+        "staged_source_manifest_sha256_rechecked_read_only":
+            expected_repo_sha is not None,
+        "staged_source_sha_is_only_local_source_identity": True,
+        "actual_loaded_python_bytecode_independently_verified": False,
         "originalhost_task_process_source_correlated_read_only":
             proposed_v3_series is not None,
         "phase_names": list(PHASES),
@@ -935,12 +945,15 @@ def main() -> int:
     # The only released phase entry remains separately owner-authenticated.
     modes.add_argument("--one-shot-preflight", action="store_true")
     parser.add_argument("--proposed-v3-series", default=None)
+    parser.add_argument("--expected-source-sha", default=None)
     args = parser.parse_args()
-    if args.proposed_v3_series is not None and not args.one_shot_preflight:
-        parser.error("--proposed-v3-series requires --one-shot-preflight")
+    if ((args.proposed_v3_series is not None or
+         args.expected_source_sha is not None) and not args.one_shot_preflight):
+        parser.error("--proposed-v3-series and --expected-source-sha require --one-shot-preflight")
     if args.one_shot_preflight:
         print(json.dumps(preflight_native_windows_one_shot(
-            proposed_v3_series=args.proposed_v3_series), sort_keys=True))
+            proposed_v3_series=args.proposed_v3_series,
+            expected_repo_sha=args.expected_source_sha), sort_keys=True))
         return 0
     if args.originalhost_readonly:
         print(json.dumps(read_originalhost_readonly(), sort_keys=True))
