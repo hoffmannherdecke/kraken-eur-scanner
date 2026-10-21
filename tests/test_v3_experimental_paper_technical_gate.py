@@ -64,6 +64,11 @@ def fixture(root:Path)->dict:
                         "model_response_id":"CI_REAL_RESPONSE_ID_SHAPE_ONLY",
                         "original_pit_sha256":"a"*64,
                         "original_p4_receipt_sha256":"b"*64,
+                        "original_series_id":"PAPER-V3-CANARY-ONESHOT-20261016",
+                        "original_candidate_id":"20261016-190002-TIA-EUR-r17497221611485",
+                        "original_event_key":"FRESHRECHECK",
+                        "model_response_known_at_utc":"2026-10-16T19:04:48.008903Z",
+                        "p4_known_at_utc":"2026-10-16T19:04:48.020750Z",
                     },
                     "native_paper_writer_dryrun_cases":[
                         writer("POSITIVE_BUY_SCOUT","CI-BUY-SCOUT-ONE",
@@ -86,6 +91,11 @@ def fixture(root:Path)->dict:
                     "same_event_id_reread_no_duplicate_verified":True,
                     "original_model_response_id":"CI_REAL_RESPONSE_ID_SHAPE_ONLY",
                     "original_model_p4_receipt_sha256":"b"*64,
+                    "original_model_series_id":"PAPER-V3-CANARY-ONESHOT-20261016",
+                    "original_model_candidate_id":"20261016-190002-TIA-EUR-r17497221611485",
+                    "original_model_event_key":"FRESHRECHECK",
+                    "original_model_response_known_at_utc":"2026-10-16T19:04:48.008903Z",
+                    "original_p4_known_at_utc":"2026-10-16T19:04:48.020750Z",
                 })
             if key=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E" and origin=="SUPABASE_SANDBOX":
                 # An already witnessed historical 16/16 synthetic journal
@@ -503,6 +513,59 @@ class ExperimentalV3PaperTechnicalReleaseTests(unittest.TestCase):
                         "a merely rehashed but mismatched Cloud original is NOT a V3 Paper fill")
             path.write_text(json.dumps(valid,sort_keys=True))
             row["sha256"]=hashlib.sha256(path.read_bytes()).hexdigest()
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
+
+    def test_first_proof_pins_real_model_p4_to_same_original_candidate_episode(self):
+        # Real production TIA Cloud receipt "received_at" inverted model/P4
+        # delivery order, while its SOURCE known_at correctly has model first.
+        # No ingestion order or synthetic writer timestamp can substitute.
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder)
+            packet=fixture(root)
+            proof=next(x for x in packet["experimental_paper_technical_proofs"]
+                       if x["id"]=="V3_REAL_MODEL_COIN_PIT_P4_INPUT_E2E")
+            target=root/proof["evidence_path"]
+            original=json.loads(target.read_text("utf-8"))
+            self.assertEqual(validate_experimental_paper_packet(
+                root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
+            def role(items,name):
+                return next(x for x in items if x["origin"]==name)["original_record"]
+            changes=[
+                lambda xs: role(xs,"MINIPC_PHYSICAL")[
+                    "original_model_p4_readback"].update(original_candidate_id=
+                        "20261012-064219-ZRO-EUR-r168479886848322"),
+                lambda xs: role(xs,"SUPABASE_CLOUD").update(
+                    original_model_event_key="FIRST"),
+                lambda xs: role(xs,"SUPABASE_CLOUD").update(
+                    original_model_series_id="PAPER-V3-CANARY-20261011"),
+                lambda xs: role(xs,"SUPABASE_CLOUD").update(
+                    original_model_response_known_at_utc="2026-10-16T19:04:48.009999Z"),
+                lambda xs: role(xs,"MINIPC_PHYSICAL")[
+                    "original_model_p4_readback"].update(
+                        p4_known_at_utc="2026-10-16T19:04:47.999999Z"),
+                lambda xs: role(xs,"MINIPC_PHYSICAL")[
+                    "original_model_p4_readback"].update(
+                        model_response_known_at_utc="2026-10-16T19:04:48"),
+                lambda xs: role(xs,"MINIPC_PHYSICAL")[
+                    "original_model_p4_readback"].update(
+                        original_event_key=""),
+            ]
+            for change in changes:
+                with self.subTest(change=repr(change)):
+                    altered=copy.deepcopy(original)
+                    change(altered["source_originals"])
+                    for item in altered["source_originals"]:
+                        encoded=json.dumps(item["original_record"],sort_keys=True,
+                                           separators=(",",":")).encode()
+                        item["original_sha256"]=hashlib.sha256(encoded).hexdigest()
+                    target.write_text(json.dumps(altered,sort_keys=True))
+                    proof["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
+                    self.assertTrue(validate_experimental_paper_packet(
+                        root,"V3-PAPER-EXPERIMENTAL-001",packet),
+                        "re-hashed cross-candidate/out-of-time original must not release V3")
+            target.write_text(json.dumps(original,sort_keys=True))
+            proof["sha256"]=hashlib.sha256(target.read_bytes()).hexdigest()
             self.assertEqual(validate_experimental_paper_packet(
                 root,"V3-PAPER-EXPERIMENTAL-001",packet),[])
 

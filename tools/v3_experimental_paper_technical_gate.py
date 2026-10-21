@@ -431,6 +431,31 @@ def _evidence_content_error(
                 or not isinstance(original.get("original_p4_receipt_sha256"),str)
                 or not SHA.fullmatch(original["original_p4_receipt_sha256"])):
             return name+" actual one-shot model/PIT/P4 original not complete"
+        # The production real-model/P4 pair must identify ONE original
+        # candidate, review episode and source event, not merely two plausible
+        # hashes. TIA's original Supabase receipts demonstrated that upload
+        # received_at may arrive out of order; use source known_at timestamps.
+        model_series=original.get("original_series_id")
+        model_candidate=original.get("original_candidate_id")
+        model_episode=original.get("original_event_key")
+        model_known=original.get("model_response_known_at_utc")
+        p4_known=original.get("p4_known_at_utc")
+        if (not isinstance(model_series,str)
+                or not re.fullmatch(r"PAPER-V3-[A-Za-z0-9-]{8,96}",model_series)
+                or not isinstance(model_candidate,str)
+                or not ORIGINAL_ID.fullmatch(model_candidate)
+                or not isinstance(model_episode,str)
+                or not re.fullmatch(r"[A-Z][A-Z0-9_]{1,63}",model_episode)):
+            return name+" original model/P4 series candidate or event episode missing"
+        try:
+            model_at=datetime.fromisoformat(model_known.replace("Z","+00:00"))
+            p4_at=datetime.fromisoformat(p4_known.replace("Z","+00:00"))
+            if (model_at.tzinfo is None or p4_at.tzinfo is None
+                    or model_at.utcoffset() is None or p4_at.utcoffset() is None
+                    or p4_at<model_at):
+                raise ValueError("not an ordered source chronology")
+        except (ValueError,TypeError,AttributeError,OverflowError):
+            return name+" original model/P4 source known-at chronology invalid"
         by_case={x.get("case") if isinstance(x,dict) else None:x for x in cases}
         if (len(by_case)!=2 or set(by_case)!=
                 {"POSITIVE_BUY_SCOUT","NEGATIVE_REJECT"}):
@@ -509,6 +534,11 @@ def _evidence_content_error(
                     original["model_response_id"]
                 or cloud.get("original_model_p4_receipt_sha256")!=
                     original["original_p4_receipt_sha256"]
+                or cloud.get("original_model_series_id")!=model_series
+                or cloud.get("original_model_candidate_id")!=model_candidate
+                or cloud.get("original_model_event_key")!=model_episode
+                or cloud.get("original_model_response_known_at_utc")!=model_known
+                or cloud.get("original_p4_known_at_utc")!=p4_known
                 or not isinstance(cloud_cases,list)
                 or len(cloud_cases)!=2):
             return name+" missing independent Cloud original model/P4/Paper readback"
