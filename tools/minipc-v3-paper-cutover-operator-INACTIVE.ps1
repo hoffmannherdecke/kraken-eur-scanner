@@ -588,8 +588,10 @@ function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
 # A JSON plan or CI fixture never counts as an originalhost release receipt.
 function Get-V3OriginalNativeActionSha([object]$Action) {
  if($null -eq $Action){throw 'native Task action absent'}
- $joined=([string]$Action.Execute)+[char]0+([string]$Action.Arguments)+[char]0+
-  ([string]$Action.WorkingDirectory)
+ # The ORIGINAL four-role V2R4 Windows inspector hashes three strings
+ # joined with a pipe, not the V3 Task's NUL-delimited digest.
+ $joined=@([string]$Action.Execute,[string]$Action.Arguments,
+  [string]$Action.WorkingDirectory) -join '|'
  $bytes=[Text.UTF8Encoding]::new($false).GetBytes($joined)
  $digest=[Security.Cryptography.SHA256]::Create()
  try {return ([BitConverter]::ToString($digest.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()}
