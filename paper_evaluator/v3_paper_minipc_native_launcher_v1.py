@@ -256,9 +256,19 @@ def dispatch_after_native_release_readback(*,
         digest = report.get(digest_field)
         if not isinstance(digest, str) or FILE_SHA.fullmatch(digest) is None:
             raise ValueError("originalhost release original Task/source digest missing")
-    parent_observed = _read_only_snapshot_time(
-        report.get("observed_at_utc"), source="originalhost release",
-        now=_originalhost_wall_clock_utc())
+    # Parse only process chronology here: do NOT consume the actual-wall-
+    # clock read used by the EXISTING 90-second native release and post-relay
+    # freshness gates. Duplicate clock reads could skip the latter guard.
+    try:
+        stamp = report["observed_at_utc"]
+        if not isinstance(stamp, str) or len(stamp) > 40:
+            raise ValueError("invalid timestamp")
+        parent_observed = datetime.fromisoformat(
+            stamp.replace("Z", "+00:00"))
+        if parent_observed.tzinfo is None or parent_observed.utcoffset() is None:
+            raise ValueError("missing timezone")
+    except (KeyError, AttributeError, ValueError, OverflowError) as exc:
+        raise ValueError("originalhost release parent observation invalid") from exc
     if parent_birth > parent_observed:
         raise ValueError("originalhost release parent born after observation")
     if (not isinstance(report.get("approved_six_proof_release_packet_sha256"), str)
