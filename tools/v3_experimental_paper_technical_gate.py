@@ -456,6 +456,25 @@ def _evidence_content_error(
                 raise ValueError("not an ordered source chronology")
         except (ValueError,TypeError,AttributeError,OverflowError):
             return name+" original model/P4 source known-at chronology invalid"
+        # The physical readback and the independently queried production
+        # Cloud original must BOTH be observations made after the actual P4
+        # source event. Rehashing a plausible future P4 with an earlier
+        # claimed observation timestamp is not an original E2E witness.
+        # Ingestion/received_at may arrive out of order; do not use it here.
+        try:
+            host_observed=datetime.fromisoformat(
+                host["observed_at_utc"].replace("Z","+00:00"))
+            cloud_observed=datetime.fromisoformat(
+                by_origin["SUPABASE_CLOUD"]["observed_at_utc"].replace(
+                    "Z","+00:00"))
+            if (host_observed.tzinfo is None
+                    or cloud_observed.tzinfo is None
+                    or host_observed.utcoffset() is None
+                    or cloud_observed.utcoffset() is None
+                    or host_observed<p4_at or cloud_observed<p4_at):
+                raise ValueError("original readback predates P4 source")
+        except (KeyError,ValueError,TypeError,AttributeError,OverflowError):
+            return name+" model/P4 physical or Cloud original observed before source"
         by_case={x.get("case") if isinstance(x,dict) else None:x for x in cases}
         if (len(by_case)!=2 or set(by_case)!=
                 {"POSITIVE_BUY_SCOUT","NEGATIVE_REJECT"}):
