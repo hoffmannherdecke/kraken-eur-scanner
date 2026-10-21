@@ -471,9 +471,18 @@ def run_once(args):
             atomic_json(state_path,state)
 
         if len(sent)>5000:
-            keys=list(sent.keys())[-5000:]
-            state['sent']={k:sent[k] for k in keys}
-            atomic_json(state_path,state)
+            # Keep ACK hashes for every candidate/trade still in the current
+            # series. A fixed 5000-entry tail silently forgets confirmed
+            # candidates once a long-lived paper cohort crosses that size,
+            # causing the same rows to be re-uploaded on every sync cycle.
+            # Prune only records no longer present in the original local set.
+            active_keys={f"candidate:{r.get('candidate_id')}" for r in candidates}
+            active_keys.update(f"trade:{r.get('candidate_id')}" for r in trades)
+            retained={key:digest for key,digest in sent.items()
+                      if key in active_keys}
+            if len(retained)!=len(sent):
+                state['sent']=retained
+                atomic_json(state_path,state)
 
         alert_state=dispatch_alerts_if_needed(args.trading_root,control,candidates,trades,getattr(args,'paper_state_dir',None))
         result.update(
