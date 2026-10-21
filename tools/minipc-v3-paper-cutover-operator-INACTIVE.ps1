@@ -597,6 +597,33 @@ function Get-V3OriginalNativeActionSha([object]$Action) {
  try {return ([BitConverter]::ToString($digest.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()}
  finally {$digest.Dispose()}
 }
+# Exact disk reread of new original Task export (not historical restore proof).
+function Test-V3FreshBackupFileBytes([string]$Path,[string]$ExpectedSha,[string]$ExpectedXml) {
+ if([string]::IsNullOrWhiteSpace($Path) -or
+    $ExpectedSha.Length -ne 64 -or
+    $ExpectedSha -match '[^a-f0-9]' -or
+    [string]::IsNullOrWhiteSpace($ExpectedXml) -or
+    $ExpectedXml.Length -lt 100 -or $ExpectedXml.Length -gt 65536){return $false}
+ try{
+  $entry=Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+  if($entry.PSIsContainer -or
+     [bool]($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+     $entry.Length -lt 100 -or $entry.Length -gt 131072){return $false}
+  $actual=[IO.File]::ReadAllBytes($entry.FullName)
+  $expected=[Text.UTF8Encoding]::new($false).GetBytes($ExpectedXml)
+  if($actual.Length -ne $expected.Length){return $false}
+  $hash=[Security.Cryptography.SHA256]::Create()
+  try{
+   $digest=([BitConverter]::ToString($hash.ComputeHash($actual))).Replace('-','').ToLowerInvariant()
+  }finally{$hash.Dispose()}
+  if($digest -cne $ExpectedSha){return $false}
+  for($i=0;$i -lt $actual.Length;$i++){
+   if($actual[$i] -ne $expected[$i]){return $false}
+  }
+  return $true
+ }catch{return $false}
+}
+
 function Save-V3OriginalIntakeXmlOnly([object]$Report,[string]$Root,
  [string]$CandidateSha,[string]$WaitSha) {
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
@@ -716,6 +743,59 @@ function Save-V3OriginalIntakeXmlOnly([object]$Report,[string]$Root,
  $mh=[IO.File]::Open($manifestPath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
  try{$mh.Write($manifestBytes,0,$manifestBytes.Length);$mh.Flush($true)}
  finally{$mh.Dispose()}
+ # The newly persisted manifest and both exact file bytes MUST be re-read
+ # before the source claims any backup-only success. The already existing
+ # historical restore-preview accepts older 15-Oct newline Action hashes:
+ # never silently upcast it to this NEW pipe-hash Windows capture.
+ $dir=Get-Item -LiteralPath $folder -Force -ErrorAction Stop
+ $meta=Get-Item -LiteralPath $manifestPath -Force -ErrorAction Stop
+ if(-not $dir.PSIsContainer -or
+    [bool]($dir.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $meta.PSIsContainer -or
+    [bool]($meta.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $meta.Length -gt 65536){
+  throw 'original backup folder or manifest not securely readable'
+ }
+ $persisted=Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json
+ if([string]$persisted.kind -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1' -or
+    [string]$persisted.status -cne 'ORIGINAL_TASK_XML_BACKUP_ONLY_NOT_RELEASED' -or
+    [string]$persisted.backup_directory -cne $folder -or
+    [string]$persisted.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    [int]$persisted.native_task_count -ne 2 -or
+    $persisted.cloud_cas_invoked -ne $false -or
+    $persisted.original_v2r4_changed -ne $false -or
+    @($persisted.task_records).Count -ne 2){
+  throw 'original backup manifest readback inconsistent'
+ }
+ foreach($record in $records){
+  $name=$record.name
+  $expectedBase=if($name -ceq 'CryptoMiniPC-V2R4PaperCandidates'){'Candidates'}else{'WAIT'}
+  $entry=@($persisted.task_records | Where-Object {$_.task_name -ceq $name})
+  if($entry.Count -ne 1 -or
+     [string]$entry[0].xml_file -cne ($expectedBase+'.task.xml') -or
+     [string]$entry[0].action_sha256 -cne $record.action_sha256 -or
+     -not(Test-V3FreshBackupFileBytes -Path (Join-Path $folder ([string]$entry[0].xml_file)) -ExpectedSha ([string]$entry[0].xml_sha256) -ExpectedXml $record.xml)){
+   throw 'original backup file/hash/readback mismatch; preserve artifacts'
+  }
+  # A changed trigger/restart policy with an unchanged Execute tuple is NOT
+  # a safely restorable original Task. Independently export fresh native XML
+  # and compare complete bytes, then re-read the Task identity/action again.
+  $current=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
+  $currentTask=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  if($current -cne $record.xml -or
+     [string]$currentTask.State -cne 'Running' -or
+     [string]$currentTask.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+     @($currentTask.Actions).Count -ne 1 -or
+     (Get-V3OriginalNativeActionSha $currentTask.Actions[0]) -cne $record.action_sha256){
+   throw 'original TaskScheduler export/source changed during backup; no release'
+  }
+ }
+ # Terminal success is returned ONLY after durable manifest + exact bytes +
+ # full current task XML/Action reread. Still not a restore or cutover proof.
+ $result.backup_disk_and_manifest_reread_verified=$true
+ $result.current_original_task_xml_still_equal_backup=$true
+ $result.actual_restore_test_passed=$false
+ $result.v3_paper_release_authorized=$false
  return $result
 }
 

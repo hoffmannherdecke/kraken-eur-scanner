@@ -360,3 +360,42 @@ $nullRejected=$false
 try {$null=Get-V3OriginalNativeActionSha $null} catch {$nullRejected=$true}
 if(-not $nullRejected){throw 'V3_PRECAS_BACKUP_INVALID_NULL_ACTION_ACCEPTED'}
 Write-Host 'V3_PRECAS_BACKUP_NATIVE_ACTION_DIGEST_OFFLINE_PASS'
+
+# Reuse the exact new originalhost FILE reread helper with independent Windows
+# offline temporary files. No export, Scheduler, production root or Cloud call.
+$fileFns=@($oa.FindAll({
+ param($node)
+ $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+ $node.Name -eq 'Test-V3FreshBackupFileBytes'
+},$true))
+if($fileFns.Count -ne 1){throw 'Original fresh backup reread helper must be unique'}
+. ([Scriptblock]::Create($fileFns[0].Extent.Text))
+$parent=Join-Path ([IO.Path]::GetTempPath()) ('v3-backup-file-test-'+[guid]::NewGuid().ToString('N'))
+$null=New-Item -ItemType Directory -Path $parent -ErrorAction Stop
+try{
+ $p=Join-Path $parent 'Candidates.task.xml'
+ $xml=('<Task><Actions><Exec><Command>python.exe</Command><Arguments>' +
+  ('--read-only ' * 12)+'</Arguments></Exec></Actions></Task>')
+ $payload=[Text.UTF8Encoding]::new($false).GetBytes($xml)
+ [IO.File]::WriteAllBytes($p,$payload)
+ $sha=([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash($payload))).Replace('-','').ToLowerInvariant()
+ if(-not (Test-V3FreshBackupFileBytes -Path $p -ExpectedSha $sha -ExpectedXml $xml)){
+  throw 'original backup file byte reread rejected exact XML fixture'
+ }
+ $badSha='0'*64
+ if($badSha -ceq $sha){$badSha='1'*64}
+ if((Test-V3FreshBackupFileBytes -Path $p -ExpectedSha $badSha -ExpectedXml $xml) -or
+    (Test-V3FreshBackupFileBytes -Path $p -ExpectedSha $sha -ExpectedXml ($xml+' changed'))){
+  throw 'original backup file reread accepted mismatched expected hashes/bytes'
+ }
+ [IO.File]::WriteAllBytes($p,([Text.UTF8Encoding]::new($false).GetBytes($xml+'tampered')))
+ if(Test-V3FreshBackupFileBytes -Path $p -ExpectedSha $sha -ExpectedXml $xml){
+  throw 'tampered original native XML file accepted'
+ }
+ if(Test-V3FreshBackupFileBytes -Path (Join-Path $parent 'absent.xml') -ExpectedSha $sha -ExpectedXml $xml){
+  throw 'missing original native XML backup accepted'
+ }
+}finally{
+ Remove-Item -LiteralPath $parent -Recurse -Force -ErrorAction SilentlyContinue
+}
+Write-Host 'V3_PRECAS_NATIVE_BACKUP_DISK_REREAD_OFFLINE_PASS'
