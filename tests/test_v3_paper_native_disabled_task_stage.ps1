@@ -331,7 +331,12 @@ $operator=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/minipc-v3-paper-cu
 $ot=$null;$oe=$null
 $oa=[Management.Automation.Language.Parser]::ParseFile(
  (Resolve-Path -LiteralPath $operator),[ref]$ot,[ref]$oe)
-if(@($oe).Count -ne 0){throw ('V3_PRECAS_BACKUP_PARSE_FAILED '+($oe|Out-String))}
+if(@($oe).Count -ne 0){
+ $details=@($oe | ForEach-Object {
+  ('line={0} col={1}: {2}' -f $_.Extent.StartLineNumber,$_.Extent.StartColumnNumber,$_.Message)
+ }) -join '; '
+ throw ('V3_PRECAS_BACKUP_PARSE_FAILED '+$details)
+}
 $digestFn=@($oa.FindAll({
  param($node)
  $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
