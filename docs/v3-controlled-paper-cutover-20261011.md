@@ -2,6 +2,14 @@
 
 Status: **V3-PAPER-ZIEL AUSDRÜCKLICH BEAUFTRAGT / ECHTE AKTIVIERUNG WEITERHIN GESPERRT**. Verbindlicher Übergabeindex **innerhalb** der bestehenden V3-P1-Owner-/Control-Plane, kein neuer Cron, keine Shadow-Instanz, kein zweites Paper-Ledger.
 
+### Aktueller Wartungsstand – Korrektur vom 21.10.2026 (Vorrang vor dem historischen Wartungsplan unten)
+
+**ABGESCHLOSSEN am 20.10.2026:** Die physische CPU-/BIOS-/Windows-Wartung des Dell OptiPlex 5060 Micro mit eingebautem Intel i7-8700T, geprüftem Boot/Temperaturverhalten, 32 GB RAM und kontrolliertem V2R4-/Runner-Wiederanlauf wurde auf dem Originalhost durchgeführt. Es gibt **keinen noch anstehenden CPU-/Windows-Wartungstermin** als V3-Paper-Blocker. Originalbelege: [Release-Owner #99 / Wartungsabschluss](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6299462627) und [Projektmanager #353 / Originalhost-Wartung](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353#issuecomment-6298293631). Alte unten stehende Anweisungen „vor dem Wartungstermin“, „Wartungs-Halt“ und der mögliche Termin 22.10. beschreiben die **überholte Planung**, nicht den aktuellen Wartungszustand. Der Read-only-Launcherstatus `BLOCKED_PENDING_MAINTENANCE_AND_ORIGINAL_RELEASE` ist zudem ein historisch benannter **statischer Software-Status**, kein neuer Beweis für offene Hardwarewartung.
+
+**Davon getrennt weiterhin offen:** Die originalhost-seitige Abnahme der **seit dem physischen Stage `1cee8b7...` neu entwickelten, exakten V3-Release-Quellen** (späterer GitHub-Stand u. a. PR #507), unabhängig authentifizierter Task/PID/geladene Bytes/SYSTEM-Owner/Single-Writer-Lock, sechs genuine E2E-Release-Nachweise, gesondert autorisierter Cloud-CAS und abschließende ausdrücklich erteilte Nutzerfreigabe. Das ist **V3-spezifische Release-Integration**, keine erneute CPU-/Windows-Wartung. Historische Source-Staging- und PR419-STOP/Restore-Abnahmen bleiben anerkannt und dürfen nicht ohne konkrete neue Gründe wiederholt werden. USV-Anschluss und spätere Stromausfalltests sind kein V3-Paper-Gate.
+
+
+
 
 
 
