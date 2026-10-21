@@ -620,6 +620,11 @@ function Test-V3IndependentOriginalHostCmsSignature(
    return [pscustomobject]$out
   }
   $signer=$signed.SignerInfos[0]
+  # The exact public certificate pin is NOT enough: deny SHA-1 digests.
+  # Only SHA-256 CMS digests can be cryptographically valid (not released).
+  if([string]$signer.DigestAlgorithm.Value -cne '2.16.840.1.101.3.4.2.1'){
+   return [pscustomobject]$out
+  }
   if($null -eq $signer.Certificate){return [pscustomobject]$out}
   $cert=$signer.Certificate
   $hash=[System.Security.Cryptography.SHA256]::Create()
