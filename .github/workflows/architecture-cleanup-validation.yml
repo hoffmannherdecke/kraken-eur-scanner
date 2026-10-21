@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
+      - name: Separate V3 Cloud CAS preflight stays read-only and role-scoped
+        run: python -m unittest tests.test_v3_paper_cloud_cas_separated_preflight_contract -v
       - name: Restricted generic Mini-PC task source contract (offline, no host run)
         run: python -m unittest tests.test_minipc_reviewed_task_source_contract -v
       - name: Parse bounded V3 offline Mini-PC task on hosted CI (no host execution)
