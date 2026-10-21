@@ -31,6 +31,8 @@ try {
   $message=[System.Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$raw)
   $cms=[System.Security.Cryptography.Pkcs.SignedCms]::new($message,$true)
   $signer=[System.Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+  # Never rely on platform-specific defaults; use explicitly SHA-256.
+  $signer.DigestAlgorithm=[System.Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
   $cms.ComputeSignature($signer)
   $signed=[byte[]]$cms.Encode()
   $sha=[System.Security.Cryptography.SHA256]::Create()
@@ -47,6 +49,56 @@ try {
   }
   $tampered=[System.Text.Encoding]::UTF8.GetBytes('{"not_originalhost":false,"release_authority":false}')
   $otherPin='0'*64
+  # Physical Originalhost public DER candidate: NOT an approved release key.
+  # The prior recorded fingerprint mistakenly contained ...f586668....
+  $physicalCandidateUnapproved='ce256281af6d36eb883dd2cb34594d0f2231e32a33f58e668d327814c7cfdb40'
+  $oldTranscriptionInvalid='ce256281af6d36eb883dd2cb34594d0f2231e32a33f586668d327814c7cfdb40'
+  if($physicalCandidateUnapproved -ceq $oldTranscriptionInvalid -or
+     $physicalCandidateUnapproved -cnotmatch '^[0-9a-f]{64}[byte[]]$signed.Clone()
+  $badCms[[math]::Floor($badCms.Length/2)]=(
+   $badCms[[math]::Floor($badCms.Length/2)] -bxor 1)
+  $bad=@(
+   (Test-V3IndependentOriginalHostCmsSignature $tampered $signed $pin),
+   (Test-V3IndependentOriginalHostCmsSignature $raw $signed $otherPin),
+   (Test-V3IndependentOriginalHostCmsSignature $raw $signed $physicalCandidateUnapproved),
+   (Test-V3IndependentOriginalHostCmsSignature $raw $signed $oldTranscriptionInvalid),
+   (Test-V3IndependentOriginalHostCmsSignature $raw $badCms $pin),
+   (Test-V3IndependentOriginalHostCmsSignature $raw $signed 'INVALID'),
+   (Test-V3IndependentOriginalHostCmsSignature ([byte[]]@()) $signed $pin),
+   (Test-V3IndependentOriginalHostCmsSignature $raw ([byte[]]@()) $pin)
+  )
+  foreach($item in $bad){
+   if($item.crypto_signature_valid -ne $false -or
+      $item.v3_paper_release_authorized -ne $false -or
+      $item.cloud_cas_authorized -ne $false){
+    throw 'V3_INVALID_CMS_OR_PIN_ACCEPTED'
+   }
+  }
+  Write-Output 'V3_ORIGINALHOST_DETACHED_CMS_OFFLINE_POSITIVE_NEGATIVES_PASS_NO_AUTHORITY'
+ } finally {$cert.Dispose()}
+} finally {$rsa.Dispose()}
+){
+   throw 'V3_PUBLIC_CERT_CANDIDATE_TRANSCRIPTION_INVALID'
+  }
+  # The offline synthetic signer must not match either physical public pin.
+  # SHA-1 CMS signed with the same test key is denied even if crypto matches.
+  $weakCms=[System.Security.Cryptography.Pkcs.SignedCms]::new($message,$true)
+  $weakSigner=[System.Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+  $weakSigner.DigestAlgorithm=[System.Security.Cryptography.Oid]::new('1.3.14.3.2.26')
+  $weakSignature=$null
+  try {
+   $weakCms.ComputeSignature($weakSigner)
+   $weakSignature=[byte[]]$weakCms.Encode()
+  } catch [System.Security.Cryptography.CryptographicException] {
+   # Hardened runners may refuse SHA-1 generation before the verifier sees it.
+  }
+  if($null -ne $weakSignature){
+   $weakResult=Test-V3IndependentOriginalHostCmsSignature $raw $weakSignature $pin
+   if($weakResult.crypto_signature_valid -ne $false -or
+      $weakResult.v3_paper_release_authorized -ne $false){
+    throw 'V3_SHA1_CMS_DIGEST_DOWNGRADE_ACCEPTED'
+   }
+  }
   $badCms=[byte[]]$signed.Clone()
   $badCms[[math]::Floor($badCms.Length/2)]=(
    $badCms[[math]::Floor($badCms.Length/2)] -bxor 1)
