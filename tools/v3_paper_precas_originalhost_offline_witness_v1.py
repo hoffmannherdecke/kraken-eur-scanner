@@ -92,6 +92,7 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
             or not isinstance(rows, list) or len(rows) < 60 or len(rows) > 100):
         raise ValueError("inactive source manifest not trustworthy")
     verified = set()
+    windows_crlf_source_files = 0
     for row in rows:
         rel, expected = row.get("relative_path"), row.get("sha256")
         if (not isinstance(rel, str) or
@@ -112,9 +113,20 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
             git_bytes = _historical_git_bytes(src, stage_sha, rel)
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
             raise ValueError("historical original Git blob missing") from exc
-        if (hashlib.sha256(staged_bytes).hexdigest() != expected
-                or staged_bytes != git_bytes):
-            raise ValueError("stage and original historical Git bytes differ")
+        # The original Windows stage manifest is a SHA256 of worktree
+        # bytes, created BEFORE Copy-Item, not a hash of Git's LF blob.
+        # First verify the unmodified staged bytes against that original
+        # SHA. Accept only the specific Git text checkout conversion
+        # proven on the original host (CRLF -> LF); do NOT rewrite bytes,
+        # rehash a normalized stage, or accept arbitrary text differences.
+        if hashlib.sha256(staged_bytes).hexdigest() != expected:
+            raise ValueError("original Windows stage manifest SHA256 mismatch")
+        if staged_bytes != git_bytes:
+            if (b"\r\n" not in staged_bytes
+                    or b"\r\n" in git_bytes
+                    or staged_bytes.replace(b"\r\n", b"\n") != git_bytes):
+                raise ValueError("stage and original historical Git bytes differ")
+            windows_crlf_source_files += 1
         verified.add(rel)
     must = {"paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
             "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
@@ -131,6 +143,8 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
     target = parent / ("PRECAS-OFFLINE-ORIGINALHOST-" + stage_sha[:12])
     return {"source": src, "stage": staged, "stage_sha": stage_sha,
             "source_head": head, "target": target, "verified_files": len(verified),
+            "windows_crlf_checkout_files": windows_crlf_source_files,
+            "source_manifest_sha256_checked_for_every_file": True,
             "series_id": "PAPER-V3-CANARY-PRECAS-OFFLINE-" + stage_sha[:12].upper()}
 
 
@@ -429,9 +443,16 @@ def main() -> int:
         # original read-only journal auditor. Do not reexecute its writer.
         sys.path.insert(0, str(p["stage"]))
         sys.path.insert(1, str(p["source"]))
-        print(json.dumps(inspect_existing_offline_originals(
+        report = inspect_existing_offline_originals(
             output, p["series_id"], a.expected_isolated_cloud_digest,
-            stage_sha=p["stage_sha"]), sort_keys=True))
+            stage_sha=p["stage_sha"])
+        report["historical_source_git_sha"] = p["stage_sha"]
+        report["windows_crlf_checkout_files"] = p["windows_crlf_checkout_files"]
+        report["original_source_manifest_sha256_checked"] = (
+            p["source_manifest_sha256_checked_for_every_file"])
+        # The exact offline witness still has ZERO automatic originalhost
+        # release authority, original live model proof, or Cloud attestation.
+        print(json.dumps(report, sort_keys=True))
         return 0
     if output.exists():
         raise ValueError("ONE_SHOT_WITNESS_TARGET_ALREADY_EXISTS_NO_RETRY")
@@ -440,6 +461,7 @@ def main() -> int:
                           "stage_sha": p["stage_sha"],
                           "source_head": p["source_head"],
                           "files_verified": p["verified_files"],
+                          "windows_crlf_checkout_files": p["windows_crlf_checkout_files"],
                           "target": str(output),
                           "model_http": 0, "orders": False,
                           "paper_release_authorized": False}, sort_keys=True))
