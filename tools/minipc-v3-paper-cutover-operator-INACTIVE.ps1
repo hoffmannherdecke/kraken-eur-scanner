@@ -724,7 +724,14 @@ if($Execute){
 }
 if($BackupOriginalIntake) {
  if($Confirm -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ONLY' -or
-    $ExpectedCandidatesActionSha256 -cnotmatch '^[a-f0-9]{64}$repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
+    $ExpectedCandidatesActionSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedWaitActionSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'pre-CAS backup requires exact opt-in and both independent native task SHA256 pins'
+ }
+} elseif($Confirm -or $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256){
+ throw 'backup-only parameters prohibited outside explicit originalhost backup'
+}
+$repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
 $physical=Join-Path $repo 'tools\check-minipc-v3-physical-writer-readiness.ps1'
 $marker=Join-Path $TradingRoot 'State\v3-experimental-paper-old-intake-fence.json'
 $oldMaintenance=Join-Path $TradingRoot 'State\v2r4-technical-cutover-maintenance.json'
@@ -833,6 +840,15 @@ if($BackupOriginalIntake) {
  $record | ConvertTo-Json -Depth 7
  return
 }
+if($BackupOriginalIntake) {
+ if(-not $ready -or -not $completeWaitSnapshot) {
+  throw 'pre-CAS original intake must be healthy with closed WAIT descendants'
+ }
+ $record=Save-V3OriginalIntakeXmlOnly -Report $report -Root $TradingRoot -CandidateSha $ExpectedCandidatesActionSha256 -WaitSha $ExpectedWaitActionSha256
+ $record | ConvertTo-Json -Depth 7
+ return
+}
+
 [ordered]@{
  kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
  phase='READ_ONLY'
