@@ -108,7 +108,6 @@ class V3PreCASOriginalPairReviewTests(unittest.TestCase):
         from tools.paper_series_transition_guard import assess_v3_precas_original_pair
         host, cloud, now = self.original_pair()
         examples = [
-            ({}, {}),
             ({"source": "CALLER_JSON"}, {}),
             ({}, {"source": "CALLER_JSON"}),
             ({"cutover_intent_id": "f" * 32}, {}),
@@ -139,6 +138,13 @@ class V3PreCASOriginalPairReviewTests(unittest.TestCase):
             ({}, {"observed_at_utc": "2026-10-21T13:30:01Z"}),
             ({}, {"observed_at_utc": "2026-10-21T13:28:40Z"}),
         ]
+        for missing_host, missing_cloud in (({}, {}), (None, cloud),
+                                            (host, None)):
+            failed = assess_v3_precas_original_pair(
+                host=missing_host, cloud=missing_cloud, now_utc=now)
+            self.assertEqual(failed["disposition"],
+                "BLOCK_UNCORRELATED_OR_UNVERIFIED_PRECAS_ORIGINALS")
+            self.assertFalse(failed["execution_or_cloud_cas_authorized"])
         for hed, ced in examples:
             with self.subTest(host=hed, cloud=ced):
                 result = assess_v3_precas_original_pair(
