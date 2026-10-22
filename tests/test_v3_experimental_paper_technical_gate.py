@@ -14,6 +14,7 @@ from tools.v3_experimental_paper_technical_gate import (
     PROOFS, PROOF_KIND, PROOF_ORIGINS, validate_experimental_paper_packet,
     assess_v3_experimental_source_inventory, BUNDLE_SOURCE, REQUIRED_SOURCE_ANCHORS,
     assess_v3_native_source_import_closure, native_source_closure_readonly_main,
+    reconcile_v3_cloud_canary_model_p4_rows,
 )
 from tools.strategy_successor_gate import ROOT, GATE_FILE, validate_learning_gate
 
@@ -1058,6 +1059,110 @@ class V3ExistingReleaseSourceInventoryTests(unittest.TestCase):
             self.assertFalse(r["source_inventory_complete"])
             self.assertIn("V3_MISSING_OR_UNSAFE_REFERENCED_SOURCE",
                           r["source_inventory_errors"])
+
+
+class V3OriginalCloudKnownAtSequenceTests(unittest.TestCase):
+    """Pure test rows, not live Supabase, physical host or real paid HTTP."""
+
+    SERIES="PAPER-V3-CANARY-ONESHOT-20261016"
+    CANDIDATE="20261016-190002-TIA-EUR-r17497221611485"
+    EPISODE="FRESHRECHECK"
+
+    def cloud_rows(self):
+        roles=("SOURCE_INPUT","FULL_REVIEW_ELIGIBILITY",
+               "MODEL_REQUEST","MODEL_RESPONSE","P4_VALIDATION")
+        times=("2026-10-16T19:04:36.169022Z",
+               "2026-10-16T19:04:36.181011Z",
+               "2026-10-16T19:04:36.194720Z",
+               "2026-10-16T19:04:48.008903Z",
+               "2026-10-16T19:04:48.020750Z")
+        rows=[]
+        for phase,known in zip(roles,times):
+            result="WAIT" if phase=="P4_VALIDATION" else "PASS"
+            payload={
+                "series_id":self.SERIES,"candidate_id":self.CANDIDATE,
+                "pair":"TIA/EUR","phase":phase,"result":result,
+                "event_key":self.EPISODE,"known_at_utc":known,
+                "orders":False,"real_money_actions":False,
+                "data":({"model_response_id":"resp_CI_STUB_NOT_PAID_HTTP",
+                         "model_name":"CI-ONLY"} if phase=="MODEL_RESPONSE"
+                        else {}),
+            }
+            event_id=hashlib.sha256(
+                "|".join((self.SERIES,self.CANDIDATE,phase,self.EPISODE))
+                .encode()).hexdigest()
+            rows.append({
+                "series_id":self.SERIES,
+                "candidate_id":self.CANDIDATE,
+                "pair":"TIA/EUR","phase":phase,"result":result,
+                "source_known_at":known,
+                # Deliberately cloud upload is NOT known-at order.
+                "received_at":"2026-10-16T19:04:49.900000Z",
+                "payload":payload,"event_id":event_id,
+                "content_sha256":"a"*64,
+            })
+        return list(reversed(rows))
+
+    def assess(self,rows):
+        return reconcile_v3_cloud_canary_model_p4_rows(
+            rows,series_id=self.SERIES,candidate_id=self.CANDIDATE,
+            event_key=self.EPISODE)
+
+    def test_cloud_upload_out_of_order_uses_original_known_at(self):
+        result=self.assess(self.cloud_rows())
+        self.assertEqual(result["p4_decision"],"WAIT")
+        self.assertEqual(result["technical_release_proofs_credited"],0)
+        self.assertFalse(result["cloud_content_bytes_independently_verified"])
+        self.assertFalse(result["paper_release_authorized"])
+        self.assertFalse(result["independent_host_model_http_verified"])
+        self.assertEqual(len(result["cloud_event_ids_by_phase"]),5)
+
+    def test_one_missing_or_duplicate_original_blocks(self):
+        rows=self.cloud_rows()
+        with self.assertRaisesRegex(ValueError,"incomplete"):
+            self.assess(rows[1:])
+        with self.assertRaisesRegex(ValueError,"duplicate"):
+            self.assess(rows+[copy.deepcopy(rows[0])])
+
+    def test_wrong_canonical_id_or_drifted_candidate_blocks(self):
+        rows=self.cloud_rows()
+        rows[0]["event_id"]="b"*64
+        with self.assertRaisesRegex(ValueError,"canonical"):
+            self.assess(rows)
+        rows=self.cloud_rows()
+        rows[0]["payload"]["candidate_id"]="OTHER-CANDIDATE"
+        with self.assertRaisesRegex(ValueError,"identity"):
+            self.assess(rows)
+
+    def test_stage_order_from_true_source_time_not_cloud_receipt(self):
+        rows=self.cloud_rows()
+        # A forged source known-at for P4 predates MODEL_RESPONSE.
+        p4=rows[0]
+        p4["source_known_at"]="2026-10-16T19:04:30Z"
+        p4["payload"]["known_at_utc"]="2026-10-16T19:04:30Z"
+        with self.assertRaisesRegex(ValueError,"chronology"):
+            self.assess(rows)
+
+    def test_missing_billing_proof_stays_uncredited(self):
+        rows=self.cloud_rows()
+        rows[1]["payload"]["data"]["model_response_id"]=""
+        with self.assertRaisesRegex(ValueError,"identifier"):
+            self.assess(rows)
+        rows=self.cloud_rows()
+        rows[1]["payload"]["orders"]=True
+        with self.assertRaisesRegex(ValueError,"identity"):
+            self.assess(rows)
+
+    def test_missing_timezone_and_future_ingestion_rejected(self):
+        rows=self.cloud_rows()
+        rows[0]["source_known_at"]="2026-10-16T19:04:48"
+        rows[0]["payload"]["known_at_utc"]="2026-10-16T19:04:48"
+        with self.assertRaisesRegex(ValueError,"timestamp"):
+            self.assess(rows)
+        rows=self.cloud_rows()
+        rows[0]["received_at"]="2026-10-16T19:04:00Z"
+        with self.assertRaisesRegex(ValueError,"timestamp"):
+            self.assess(rows)
 
 
 if __name__=="__main__":
