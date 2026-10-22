@@ -380,9 +380,9 @@ if(-not $src.Contains($sourceOnlyGate) -or
 }
 foreach($required in @(
  'candidate stage not ancestor of reviewed source',
- "'disabled Task update requires exact candidate checkout SHA',"
+ 'disabled Task update requires exact candidate checkout SHA',
  'historical tracked Python source unavailable',
- "'compact strategy bundle not historical',"
+ 'compact strategy bundle not historical',
  '@($manifest.source_manifest).Count -lt 60',
  '$allow=@((@($dependencyHashes.Keys)+@($bundle))|Sort-Object -Unique)',
  'candidate source files mismatch',
