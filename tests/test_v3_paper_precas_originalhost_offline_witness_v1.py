@@ -213,15 +213,26 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
                 "candidate_transitive_files": [[name, "0" * 64]
                                                 for name in pyfiles],
             }
-            checker = ("import json\nprint(json.dumps(" +
-                       pprint.pformat(fixture) + "))\n")
+            # Regression: the REAL native gate imports a sibling module.
+            # A bare "python -I <gate.py>" must fail because isolated Python
+            # omits script/CWD from sys.path; the reviewed source root is
+            # deliberately and narrowly inserted for the original import.
+            checker = (
+                "from tools.paper_series_transition_guard import witness_import_sanity\n"
+                "import json\n"
+                "assert witness_import_sanity()\n"
+                "print(json.dumps(" + pprint.pformat(fixture) + "))\n"
+            )
             files = pyfiles + [bundle]
             for rel in files:
                 path = source / rel
                 path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(checker if rel == must[-2] else
-                                "# clean source for " + rel + "\n",
-                                encoding="utf-8")
+                path.write_text(
+                    checker if rel == must[-2] else
+                    ("def witness_import_sanity():\n    return True\n"
+                     if rel == must[-1] else
+                     "# clean source for " + rel + "\n"),
+                    encoding="utf-8")
             subprocess.run(["git", "-C", str(source), "add", "."], check=True)
             subprocess.run(["git", "-C", str(source), "commit", "-qm",
                             "pinned compact V3 stage"], check=True)
