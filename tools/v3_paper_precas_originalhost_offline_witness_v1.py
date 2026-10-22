@@ -89,7 +89,7 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
             or manifest.get("source_git_sha") != stage_sha
             or manifest.get("v3_paper_activated") is not False
             or manifest.get("task_changes") is not False
-            or not isinstance(rows, list) or len(rows) < 20 or len(rows) > 512):
+            or not isinstance(rows, list) or len(rows) < 20 or len(rows) > 100):
         raise ValueError("inactive source manifest not trustworthy")
     # The original 60+ file stage had no transitive-closure metadata. The
     # current source stager may create a smaller manifest (41 source rows in
@@ -119,6 +119,7 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
             raise ValueError("compact V3 stage lacks complete static source closure")
         compact_closure = set(closure)
     verified = set()
+    compact_closure_sha = {}
     windows_crlf_source_files = 0
     for row in rows:
         rel, expected = row.get("relative_path"), row.get("sha256")
@@ -155,8 +156,20 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
                 raise ValueError("stage and original historical Git bytes differ")
             windows_crlf_source_files += 1
         verified.add(rel)
-    if compact_closure is not None and not compact_closure.issubset(verified):
-        raise ValueError("compact V3 source closure not wholly staged and Git-pinned")
+        if compact_closure is not None and rel in compact_closure:
+            compact_closure_sha[rel] = hashlib.sha256(staged_bytes).hexdigest()
+    if compact_closure is not None:
+        if not compact_closure.issubset(verified):
+            raise ValueError("compact V3 source closure not wholly staged and Git-pinned")
+        # Recompute the ORIGINAL stager closure digest, not just its format.
+        # This binds every transitive import and byte hash independently of
+        # a self-declared manifest flag; no module import or execution occurs.
+        closure_payload = json.dumps({
+            "kind": "V3_NATIVE_SOURCE_STATIC_IMPORT_CLOSURE_CANDIDATE_V1",
+            "files": sorted([[p, compact_closure_sha[p]] for p in compact_closure]),
+        }, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+        if hashlib.sha256(closure_payload).hexdigest() != closure_digest:
+            raise ValueError("compact V3 static source closure SHA256 mismatch")
     # These five original runtime/journal modules were genuinely STAGED by
     # tools/stage-minipc-v3-paper-inactive.ps1 at the pinned historical SHA.
     # The same original stager selected Python only under paper_evaluator/
