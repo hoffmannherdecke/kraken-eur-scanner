@@ -322,6 +322,55 @@ try{$null=OriginalDisabledTaskForCandidateReadOnly}catch{$blocked=$true}
 if(-not $blocked){throw 'Original V3 Task demand start accepted'}
 Write-Output 'V3_EXISTING_DISABLED_TASK_MANIFEST_SOURCE_SUCCESSOR_READONLY_PREVIEW_PASS'
 
+# A newer clean source may inspect an older staged Git ancestor, but only
+# an EXACT checkout can update the existing DISABLED SYSTEM Task. The stage
+# must still match both manifest SHA256 and LF-canonical pinned Git object.
+foreach($must in @(
+ 'candidate stage not ancestor of reviewed source',
+ 'disabled Task update requires exact candidate checkout SHA',
+ 'git -C $source merge-base --is-ancestor',
+ 'Get-V3StageTextGitBlobSha $item',
+ 'stage differs from trusted Git blob'
+)){
+ if(-not $src.Contains($must)){throw ('V3_HISTORICAL_CANDIDATE_BOUNDARY_MISSING '+$must)}
+}
+$updateBranch=$src.IndexOf('if($ApplyDisabledCandidateAfterMaintenance){')
+$exactMatch=$src.IndexOf('disabled Task update requires exact candidate checkout SHA')
+if($updateBranch -lt 0 -or $exactMatch -le $updateBranch){
+ throw 'V3_HISTORICAL_PREVIEW_MUST_NOT_AUTHORIZE_DISABLED_TASK_UPDATE'
+}
+$shaFunctions=@($ast.FindAll({
+ param($node)
+ $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+ $node.Name -eq 'Get-V3StageTextGitBlobSha'
+},$true))
+if($shaFunctions.Count -ne 1){throw 'one LF canonical pinned Git helper required'}
+. ([scriptblock]::Create($shaFunctions[0].Extent.Text))
+$tmp=[IO.Path]::Combine([IO.Path]::GetTempPath(),'v3-lf-git-'+[Guid]::NewGuid().ToString('N')+'.py')
+try {
+ # git hash-object of UTF8 ASCII 'a' + LF is this known literal SHA1.
+ $expected='78981922613b2afb6025042ff6bd878ac1994e85'
+ [IO.File]::WriteAllBytes($tmp,[Text.Encoding]::UTF8.GetBytes("a`n"))
+ if((Get-V3StageTextGitBlobSha $tmp) -cne $expected){
+  throw 'LF Git original not accepted'
+ }
+ [IO.File]::WriteAllBytes($tmp,[Text.Encoding]::UTF8.GetBytes("a`r`n"))
+ if((Get-V3StageTextGitBlobSha $tmp) -cne $expected){
+  throw 'legitimate Windows CRLF checkout rejected'
+ }
+ [IO.File]::WriteAllBytes($tmp,[Text.Encoding]::UTF8.GetBytes("b`r`n"))
+ if((Get-V3StageTextGitBlobSha $tmp) -ceq $expected){
+  throw 'tampered Windows CRLF source accepted'
+ }
+ [IO.File]::WriteAllBytes($tmp,[byte[]]@(0xff,0xfe,0x00))
+ $invalidRejected=$false
+ try {$null=Get-V3StageTextGitBlobSha $tmp}catch{$invalidRejected=$true}
+ if(-not $invalidRejected){throw 'non-UTF8 staged source accepted'}
+}finally{
+ Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+}
+Write-Output 'V3_HISTORICAL_INACTIVE_STAGE_GIT_SHA_AND_READONLY_TASK_FENCE_PASS'
+
 Write-Output 'V3_NATIVE_DISABLED_READONLY_TASK_STAGE_SOURCE_POLICY_PASS'
 
 # Physical V3 successor preparation also requires a REAL, strictly backup-only

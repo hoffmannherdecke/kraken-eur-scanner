@@ -68,6 +68,24 @@ function TaskActionSha([string]$Execute,[string]$Arguments,[string]$WorkingDirec
    return ([BitConverter]::ToString($sha.ComputeHash($raw))).Replace('-','').ToLowerInvariant()
  } finally { $sha.Dispose() }
 }
+# LF-canonical Git blob SHA1 for a strict UTF8 staged text file.
+# On-disk SHA256 is separately checked against the immutable manifest.
+function Get-V3StageTextGitBlobSha([string]$Path) {
+ Require ((Test-Path -LiteralPath $Path -PathType Leaf)) 'stage text missing'
+ $bytes=[IO.File]::ReadAllBytes($Path)
+ Require ($bytes.Length -gt 0 -and $bytes.Length -le 16777216) 'stage text size outside bounds'
+ $utf8=[Text.UTF8Encoding]::new($false,$true)
+ try {$text=$utf8.GetString($bytes)}
+ catch {throw 'stage text not strict UTF8'}
+ $canonical=$utf8.GetBytes($text.Replace("`r`n","`n"))
+ $prefix=[Text.Encoding]::ASCII.GetBytes("blob "+$canonical.Length+[char]0)
+ $joined=New-Object byte[] ($prefix.Length+$canonical.Length)
+ [Buffer]::BlockCopy($prefix,0,$joined,0,$prefix.Length)
+ [Buffer]::BlockCopy($canonical,0,$joined,$prefix.Length,$canonical.Length)
+ $gitSha=[Security.Cryptography.SHA1]::Create()
+ try {return ([BitConverter]::ToString($gitSha.ComputeHash($joined))).Replace('-','').ToLowerInvariant()}
+ finally {$gitSha.Dispose()}
+}
 function Under([string]$Path,[string]$Base) {
  $p=[IO.Path]::GetFullPath($Path).TrimEnd('\')
  $b=[IO.Path]::GetFullPath($Base).TrimEnd('\')
@@ -147,7 +165,14 @@ if($candidateMode){
  # Recompute the existing PR476 SOURCE ONLY closure from exact clean HEAD;
  # do not trust the candidate stage's self-reported file list alone.
  $head=(& git -C $source rev-parse HEAD 2>$null)
- Require ($LASTEXITCODE -eq 0 -and ([string]$head).Trim() -ceq $stageSha) 'candidate checkout HEAD mismatch'
+ Require ($LASTEXITCODE -eq 0 -and ([string]$head).Trim() -cmatch '^[a-f0-9]{40}$') 'candidate checkout HEAD mismatch'
+ # Later trusted source may inspect an older immutable stage read-only.
+ # A Task update always requires exact original stage checkout identity.
+ & git -C $source merge-base --is-ancestor $stageSha ([string]$head).Trim() 2>$null
+ Require ($LASTEXITCODE -eq 0) 'candidate stage not ancestor of reviewed source'
+ if($ApplyDisabledCandidateAfterMaintenance){
+  Require (([string]$head).Trim() -ceq $stageSha) 'disabled Task update requires exact candidate checkout SHA'
+ }
  $gate=Join-Path $source 'tools/v3_experimental_paper_technical_gate.py'
  Require ((Test-Path -LiteralPath $gate -PathType Leaf)) 'source closure gate missing'
  $pythonRead=Get-Command -Name python.exe -CommandType Application -ErrorAction Stop |
@@ -213,8 +238,10 @@ foreach($entry in @($manifest.source_manifest)){
  # immutable source COMMIT, not only to a potentially edited local manifest.
  $object=(& git -C $source rev-parse ($stageSha+':'+$rel) 2>$null)
  Require ($LASTEXITCODE -eq 0 -and ([string]$object).Trim() -match '^[a-f0-9]{40}$') 'Git source file missing'
- $actualBlob=(& git -C $source hash-object -- $item 2>$null)
- Require ($LASTEXITCODE -eq 0 -and ([string]$actualBlob).Trim() -ceq ([string]$object).Trim()) 'stage differs from trusted Git blob'
+ # LF-canonical Git object SHA1 plus raw manifest SHA256 are BOTH required.
+ # Windows CRLF checkout-only conversion does not authorize changed source.
+ $actualBlob=Get-V3StageTextGitBlobSha $item
+ Require ($actualBlob -ceq ([string]$object).Trim()) 'stage differs from trusted Git blob'
 }
 Require ($seen.Count -eq $stageFiles -and
  $seen.ContainsKey('paper_evaluator/v3_paper_minipc_native_launcher_v1.py') -and
