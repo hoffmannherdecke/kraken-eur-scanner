@@ -1086,7 +1086,12 @@ class V3OriginalCloudKnownAtSequenceTests(unittest.TestCase):
                 "orders":False,"real_money_actions":False,
                 "data":({"model_response_id":"resp_CI_STUB_NOT_PAID_HTTP",
                          "model_name":"CI-ONLY"} if phase=="MODEL_RESPONSE"
-                        else {}),
+                        else {"model_http_attempts_reserved":1,
+                              "input_fingerprint_sha256":"a"*64}
+                        if phase=="MODEL_REQUEST"
+                        else {"p4_decision":"WAIT",
+                              "p4_status":"FULL_WAIT_VALIDATED_OFFLINE"}
+                        if phase=="P4_VALIDATION" else {}),
             }
             event_id=hashlib.sha256(
                 "|".join((self.SERIES,self.CANDIDATE,phase,self.EPISODE))
@@ -1151,6 +1156,39 @@ class V3OriginalCloudKnownAtSequenceTests(unittest.TestCase):
         rows=self.cloud_rows()
         rows[1]["payload"]["orders"]=True
         with self.assertRaisesRegex(ValueError,"identity"):
+            self.assess(rows)
+
+    def test_cloud_original_pair_is_bound_to_embedded_payload(self):
+        rows=self.cloud_rows()
+        rows[0]["payload"]["pair"]="OTHER/EUR"
+        with self.assertRaisesRegex(ValueError,"identity"):
+            self.assess(rows)
+
+    def test_model_request_reservation_and_fingerprint_are_checked(self):
+        # Reversed rows: MODEL_REQUEST is index 2, P4 is index 0.
+        for field,value in (
+            ("model_http_attempts_reserved",0),
+            ("model_http_attempts_reserved",True),
+            ("input_fingerprint_sha256","bad"),
+        ):
+            with self.subTest(field=field,value=value):
+                rows=self.cloud_rows()
+                rows[2]["payload"]["data"][field]=value
+                with self.assertRaisesRegex(ValueError,"model request"):
+                    self.assess(rows)
+        rows=self.cloud_rows()
+        del rows[2]["payload"]["data"]["input_fingerprint_sha256"]
+        with self.assertRaisesRegex(ValueError,"model request"):
+            self.assess(rows)
+
+    def test_p4_result_must_match_its_original_payload(self):
+        rows=self.cloud_rows()
+        rows[0]["payload"]["data"]["p4_decision"]="BUY_SCOUT"
+        with self.assertRaisesRegex(ValueError,"P4 decision"):
+            self.assess(rows)
+        rows=self.cloud_rows()
+        rows[0]["payload"]["data"]["p4_status"]=""
+        with self.assertRaisesRegex(ValueError,"P4 decision"):
             self.assess(rows)
 
     def test_missing_timezone_and_future_ingestion_rejected(self):
