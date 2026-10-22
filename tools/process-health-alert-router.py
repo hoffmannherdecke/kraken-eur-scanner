@@ -213,7 +213,15 @@ def format_alert(report,codes,reason):
         details.append(code+(f": {detail[:160]}" if detail else ""))
     tail="" if len(codes)<=4 else f" (+{len(codes)-4} weitere)"
     if reason=="repairable_grace_expired":
-        qualifier="Self-Heal nach 15 Min weiterhin erfolglos"
+        # SKIP_ACTIVE_RUN is a safe concurrency gate, not a failed restart.
+        skipped_scan=any(
+            r.get("workflow")=="scan.yml" and r.get("action")=="SKIP_ACTIVE_RUN"
+            for r in report.get("repairs",[])
+        )
+        qualifier=(
+            "GitHub meldet Scanlauf weiter aktiv; paralleler Neustart sicherheitsbedingt blockiert"
+            if skipped_scan else "Self-Heal nach 15 Min ohne bestätigte Erholung"
+        )
     elif reason=="persistent_reminder":
         qualifier="anhaltender kritischer Zustand"
     else:
@@ -265,6 +273,14 @@ def self_test():
     changed=route_decision(repairable_b,state_alerted,t+timedelta(minutes=5))
     assert changed["action"]=="PENDING"
     assert changed["incident_started_at"]==(t+timedelta(minutes=5)).isoformat()
+
+    # A safety-preserving skip must not be described as a failed restart.
+    delayed={**repairable_b, "repairs":[{"workflow":"scan.yml",
+              "action":"SKIP_ACTIVE_RUN","reason":"STALE_scan.yml"}]}
+    msg=format_alert(delayed,["STALE_scan.yml"],"repairable_grace_expired")
+    assert "paralleler Neustart sicherheitsbedingt blockiert" in msg
+    assert "erfolglos" not in msg
+    assert "Kein Handelssignal" in msg if "Kein Handelssignal" in msg else "Keine Handelsaktion" in msg
 
     # Non-repairable critical integrity/safety faults bypass the grace.
     immediate=route_decision(nonrepairable,None,t)

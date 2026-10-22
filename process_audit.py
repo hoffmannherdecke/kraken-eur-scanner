@@ -4,6 +4,7 @@ from __future__ import annotations
 import json, os, time, urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+from tools.workflow_run_health import classify_active_run
 
 ROOT=Path(__file__).resolve().parent
 REPO=os.environ.get("GITHUB_REPOSITORY","hoffmannherdecke/kraken-eur-scanner")
@@ -97,7 +98,27 @@ def latest_health(filename,max_age):
         "age_seconds":age,"consecutive_failures":consecutive_failures
     }
     if age>max_age:
-        add("STALE_"+filename,"CRITICAL",f"latest run age {age}s > {max_age}s",True)
+        detail=f"latest run age {age}s > {max_age}s"
+        if filename=="scan.yml" and r.get("status") in ("queued","in_progress"):
+            # A completed scan job and an in-progress GitHub run can diverge.
+            # The missed next scan cadence is still CRITICAL; never dispatch
+            # a concurrent run while the GitHub active-run identity persists.
+            jobs=None
+            try:
+                jobs=gh("GET",f"/actions/runs/{r['id']}/jobs?per_page=30").get("jobs",[])
+            except Exception as exc:
+                metrics[filename]["job_read_error_type"]=type(exc).__name__
+            diagnosis=classify_active_run(r,jobs,NOW,max_age)
+            metrics[filename]["run_diagnosis"]=diagnosis
+            category=diagnosis["state"]
+            detail+=f"; run_diagnosis={category}"
+            if category=="JOB_DONE_RUN_ACK_DELAY":
+                detail+="; scanner job/handoff succeeded but GitHub run ACK remains active; next scan cadence unproven"
+            elif category=="JOB_PROGRESS_STALLED_UNVERIFIED":
+                detail+="; active job step overdue; safe cancellation not independently verified"
+            else:
+                detail+="; GitHub active/queued status blocks duplicate dispatch"
+        add("STALE_"+filename,"CRITICAL",detail,True)
     elif r["status"]=="completed" and r.get("conclusion")!="success":
         severity="CRITICAL" if (
             age>RECENT_WORKFLOW_FAILURE_GRACE_SECONDS or consecutive_failures>=2
