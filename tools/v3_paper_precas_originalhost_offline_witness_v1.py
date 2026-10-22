@@ -89,8 +89,35 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
             or manifest.get("source_git_sha") != stage_sha
             or manifest.get("v3_paper_activated") is not False
             or manifest.get("task_changes") is not False
-            or not isinstance(rows, list) or len(rows) < 60 or len(rows) > 100):
+            or not isinstance(rows, list) or len(rows) < 20 or len(rows) > 512):
         raise ValueError("inactive source manifest not trustworthy")
+    # The original 60+ file stage had no transitive-closure metadata. The
+    # current source stager may create a smaller manifest (41 source rows in
+    # the 22.10 originalhost stage), but ONLY with its independently pinned,
+    # complete static import-closure inventory. Do not reduce the legacy
+    # acceptance threshold for a hand-picked or partly copied manifest.
+    compact_closure = None
+    if len(rows) < 60:
+        closure = manifest.get("static_transitive_closure_files")
+        closure_count = manifest.get("static_transitive_closure_file_count")
+        staged_count = manifest.get("tracked_code_files")
+        closure_digest = manifest.get("static_transitive_closure_sha256")
+        if (type(staged_count) is not int or staged_count != len(rows)
+                or type(closure_count) is not int
+                or not 20 <= closure_count <= len(rows)
+                or not isinstance(closure, list)
+                or len(closure) != closure_count
+                or not all(isinstance(p, str)
+                           and re.fullmatch(r"[A-Za-z0-9_./-]{4,180}", p)
+                           and ".." not in Path(p).parts
+                           and not p.startswith("/") for p in closure)
+                or len(set(closure)) != len(closure)
+                or not isinstance(closure_digest, str)
+                or re.fullmatch(r"[0-9a-f]{64}", closure_digest) is None
+                or manifest.get("source_closure_is_only_candidate_not_loaded_code_ack")
+                is not True):
+            raise ValueError("compact V3 stage lacks complete static source closure")
+        compact_closure = set(closure)
     verified = set()
     windows_crlf_source_files = 0
     for row in rows:
@@ -128,6 +155,8 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
                 raise ValueError("stage and original historical Git bytes differ")
             windows_crlf_source_files += 1
         verified.add(rel)
+    if compact_closure is not None and not compact_closure.issubset(verified):
+        raise ValueError("compact V3 source closure not wholly staged and Git-pinned")
     # These five original runtime/journal modules were genuinely STAGED by
     # tools/stage-minipc-v3-paper-inactive.ps1 at the pinned historical SHA.
     # The same original stager selected Python only under paper_evaluator/
