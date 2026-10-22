@@ -350,6 +350,117 @@ PROOF_KIND="V3_PAPER_TECHNICAL_E2E_READBACK_V1"
 ORIGINAL_ID=re.compile(r"[A-Za-z0-9_.:/-]{8,160}\Z")
 
 
+def reconcile_v3_cloud_canary_model_p4_rows(
+        rows:list[dict[str,Any]],*,series_id:str,candidate_id:str,
+        event_key:str)->dict[str,Any]:
+    """Validate a bounded production Cloud *source chronology*, never release.
+
+    Caller independently obtains read-only Supabase original rows; jsonb alone
+    cannot reproduce the sender's original byte SHA256. Do NOT claim the row
+    digests prove physical host/PID, genuine API billing, or Cloud CAS. The
+    actual Cloud received_at sequence is NOT source event time order.
+    """
+    roles=("SOURCE_INPUT","FULL_REVIEW_ELIGIBILITY",
+           "MODEL_REQUEST","MODEL_RESPONSE","P4_VALIDATION")
+    if (not isinstance(rows,list) or len(rows)>100 or
+            not isinstance(series_id,str)
+            or not re.fullmatch(r"PAPER-V3-[A-Za-z0-9-]{8,96}",series_id)
+            or not isinstance(candidate_id,str)
+            or ORIGINAL_ID.fullmatch(candidate_id) is None
+            or not isinstance(event_key,str)
+            or not re.fullmatch(r"[A-Z][A-Z0-9_]{1,63}",event_key)):
+        raise ValueError("invalid bounded V3 Cloud original input")
+    selected={}
+    for row in rows:
+        if not isinstance(row,dict):
+            raise ValueError("Cloud original row not a dictionary")
+        if (row.get("series_id")!=series_id or
+                row.get("candidate_id")!=candidate_id):
+            continue
+        payload=row.get("payload")
+        if not isinstance(payload,dict):
+            raise ValueError("Cloud original payload missing")
+        if payload.get("event_key")!=event_key:
+            continue
+        phase=row.get("phase")
+        if phase not in roles:
+            continue
+        if phase in selected:
+            raise ValueError("duplicate V3 original episode phase")
+        if (row.get("result") not in
+                ({"WAIT","REJECT","UNKNOWN","BUY_SCOUT"} if
+                 phase=="P4_VALIDATION" else {"PASS"})
+                or payload.get("phase")!=phase
+                or payload.get("series_id")!=series_id
+                or payload.get("candidate_id")!=candidate_id
+                or payload.get("result")!=row.get("result")
+                or payload.get("orders") is not False
+                or payload.get("real_money_actions") is not False
+                or not isinstance(row.get("event_id"),str)
+                or SHA.fullmatch(row["event_id"]) is None
+                or not isinstance(row.get("content_sha256"),str)
+                or SHA.fullmatch(row["content_sha256"]) is None):
+            raise ValueError("V3 source episode result or identity mismatch")
+        expected_event_id=hashlib.sha256(
+            "|".join((series_id,candidate_id,phase,event_key)).encode()
+        ).hexdigest()
+        if row["event_id"]!=expected_event_id:
+            raise ValueError("V3 Cloud event ID not canonical")
+        try:
+            recorded=datetime.fromisoformat(str(row["source_known_at"]).replace(
+                "Z","+00:00"))
+            claimed=datetime.fromisoformat(
+                payload["known_at_utc"].replace("Z","+00:00"))
+            received=datetime.fromisoformat(str(row["received_at"]).replace(
+                "Z","+00:00"))
+            if (recorded.utcoffset() is None or
+                    claimed.utcoffset() is None or
+                    received.utcoffset() is None or
+                    recorded!=claimed or
+                    (received-recorded).total_seconds() < -5):
+                raise ValueError("source time versus Cloud time invalid")
+        except (ValueError,KeyError,TypeError,AttributeError,OverflowError) as exc:
+            raise ValueError("invalid V3 original source known-at timestamp") from exc
+        selected[phase]=(row,recorded)
+    if set(selected)!=set(roles):
+        raise ValueError("incomplete original model/P4 Cloud sequence")
+    if not all(selected[a][1] <= selected[b][1]
+               for a,b in zip(roles,roles[1:])):
+        raise ValueError("original model/P4 source chronology reversed")
+    pairs={selected[p][0].get("pair") for p in roles}
+    if len(pairs)!=1 or not isinstance(next(iter(pairs)),str):
+        raise ValueError("V3 original pair mismatch")
+    response=selected["MODEL_RESPONSE"][0]["payload"].get("data")
+    if (not isinstance(response,dict) or
+            not isinstance(response.get("model_response_id"),str) or
+            not 8<=len(response["model_response_id"])<=150 or
+            not isinstance(response.get("model_name"),str) or
+            not response["model_name"]):
+        raise ValueError("original model response identifier absent")
+    return {
+        "kind":"V3_CLOUD_MODEL_P4_ORIGINAL_CHRONOLOGY_READONLY_V1",
+        "status":"CLOUD_SOURCE_SEQUENCE_ONLY_NO_PHYSICAL_OR_RELEASE_PROOF",
+        "series_id":series_id,"candidate_id":candidate_id,
+        "event_key":event_key,"pair":next(iter(pairs)),
+        "p4_decision":selected["P4_VALIDATION"][0]["result"],
+        "model_response_id":response["model_response_id"],
+        "source_known_at_by_phase":{
+            p:selected[p][1].isoformat() for p in roles
+        },
+        "cloud_event_ids_by_phase":{
+            p:selected[p][0]["event_id"] for p in roles
+        },
+        "cloud_reported_content_sha256_by_phase":{
+            p:selected[p][0]["content_sha256"] for p in roles
+        },
+        "cloud_content_bytes_independently_verified":False,
+        "independent_host_model_http_verified":False,
+        "single_writer_physical_pid_verified":False,
+        "cloud_cas_authorized":False,"paper_release_authorized":False,
+        "technical_release_proofs_credited":0,
+    }
+
+
 def _evidence_content_error(
         name:str,data:bytes,*,expected_code_sha:object,
         expected_strategy_sha:object)->str|None:
