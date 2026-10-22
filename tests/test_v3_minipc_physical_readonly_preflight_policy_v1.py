@@ -265,5 +265,51 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
 
 
 
+    def test_pr515_fresh_native_backup_preview_fail_closed_and_never_cutover(self):
+        """New PR515 preview compares current native XML and disk bytes only."""
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        for required in (
+            "[switch]$PreviewPr515PreCas",
+            "OriginalBackupDirectory",
+            "ExpectedPr515SourceSha256",
+            "V3Paper-PreCAS-Backup-[a-f0-9]{32}",
+            "V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1",
+            "ORIGINAL_TASK_XML_BACKUP_ONLY_NOT_RELEASED",
+            "backup-manifest.json",
+            "Get-Acl -LiteralPath $folder",
+            "AreAccessRulesProtected",
+            "S-1-5-18", "S-1-5-32-544",
+            "original_v2r4_changed -ne $false",
+            "cloud_cas_invoked -ne $false",
+            "Get-V3OriginalNativeActionSha $task.Actions[0]",
+            "Export-ScheduledTask -TaskName $role.name",
+            "Test-V3FreshBackupFileBytes",
+            "PR515-CloudSync-INACTIVE-20261022",
+            "Get-FileHash -LiteralPath $cloudFile -Algorithm SHA256",
+            "V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1",
+            "COMPATIBLE_READONLY_NOT_RELEASED",
+            "external_sha_pin_independently_authenticated=$false",
+            "single_writer_pid_and_lock_proven=$false",
+            "physical_task_restore_tested=$false",
+            "scheduler_task_mutations=$false",
+            "technical_release_proofs_credited=0",
+        ):
+            self.assertIn(required,s)
+        # Reject any attempt to use this read-only report as old-intake stop,
+        # a complete paper release or a substitute for the six proofs.
+        self.assertIn("if($Execute){",s)
+        self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
+        self.assertIn("if($PreviewPr515PreCas) {",s)
+        self.assertIn("if($BackupOriginalIntake) {",s)
+        self.assertIn("$BackupOriginalIntake -or $Confirm -or",s)
+        self.assertLess(s.index("if($Execute){"),s.index("if($PreviewPr515PreCas) {"))
+        self.assertNotRegex(s,r"(?m)^\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\b")
+        self.assertNotIn("Invoke-RestMethod",s)
+        self.assertNotIn("Invoke-WebRequest",s)
+        self.assertNotIn("PR332-CloudSync-Vorher-",s)
+        self.assertNotIn("drill_only=$false",s)
+
+
+
 if __name__=="__main__":
     unittest.main()
