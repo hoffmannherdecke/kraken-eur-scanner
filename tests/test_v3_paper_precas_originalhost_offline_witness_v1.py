@@ -171,6 +171,113 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "source tree dirty"):
                 inspect(source=source, stage=stage, stage_sha=stage_sha)
 
+    def test_compact_originalhost_41_file_manifest_requires_native_closure(self):
+        """The current PR514 40-Python-plus-bundle stage is not legacy 67-file.
+        
+        The independently called native source checker must agree on both
+        closure digest and exact source inventory. Nothing starts Paper.
+        """
+        import pprint
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            source = base / "Source"
+            source.mkdir()
+            subprocess.run(["git", "init", "-q", str(source)],
+                           check=True, capture_output=True)
+            for key, value in (("user.name", "V3 Offline CI"),
+                               ("user.email", "offline-ci@example.invalid")):
+                subprocess.run(["git", "-C", str(source), "config", key, value],
+                               check=True)
+            must = [
+                "paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+                "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+                "paper_evaluator/v3_experimental_paper_journal_v1.py",
+                "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py",
+                "paper_evaluator/v3_paper_minipc_native_launcher_v1.py",
+                "tools/v3_experimental_paper_technical_gate.py",
+                "tools/paper_series_transition_guard.py",
+            ]
+            pyfiles = must + [f"paper_evaluator/offline_{i:02}.py"
+                              for i in range(33)]
+            self.assertEqual(len(pyfiles), 40)
+            bundle = "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json"
+            digest = "a" * 64
+            fixture = {
+                "kind": "V3_NATIVE_SOURCE_IMPORT_CLOSURE_READONLY_V1",
+                "inspection_authority": "SOURCE_ONLY_NO_ORIGINALHOST_OR_CLOUD_ACK",
+                "static_local_import_closure_complete": True,
+                "actual_loaded_python_bytecode_independently_verified": False,
+                "paper_release_authorized": False,
+                "candidate_transitive_source_sha256": digest,
+                "candidate_transitive_file_count": 40,
+                "candidate_transitive_files": [[name, "0" * 64]
+                                                for name in pyfiles],
+            }
+            checker = ("import json\nprint(json.dumps(" +
+                       pprint.pformat(fixture) + "))\n")
+            files = pyfiles + [bundle]
+            for rel in files:
+                path = source / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(checker if rel == must[-2] else
+                                "# clean source for " + rel + "\n",
+                                encoding="utf-8")
+            subprocess.run(["git", "-C", str(source), "add", "."], check=True)
+            subprocess.run(["git", "-C", str(source), "commit", "-qm",
+                            "pinned compact V3 stage"], check=True)
+            stage_sha = subprocess.check_output(
+                ["git", "-C", str(source), "rev-parse", "HEAD"],
+                text=True).strip()
+            trading = base / "Trading"
+            stage = trading / "Staging" / ("V3Paper-INACTIVE-" + stage_sha[:12])
+            stage.mkdir(parents=True)
+            rows = []
+            for rel in files:
+                here = stage / rel
+                here.parent.mkdir(parents=True, exist_ok=True)
+                raw = (source / rel).read_bytes()
+                here.write_bytes(raw)
+                rows.append({"relative_path": rel,
+                             "sha256": hashlib.sha256(raw).hexdigest()})
+            (trading / "Research" / "V3Paper").mkdir(parents=True)
+            manifest = {
+                "kind": "V3_PAPER_INACTIVE_ISOLATED_SOURCE_STAGE_V1",
+                "status": "STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED",
+                "source_git_sha": stage_sha,
+                "v3_paper_activated": False,
+                "task_changes": False,
+                "source_manifest": rows,
+                "tracked_code_files": 41,
+                "source_closure_is_only_candidate_not_loaded_code_ack": True,
+                "static_transitive_closure_files": pyfiles,
+                "static_transitive_closure_file_count": 40,
+                "static_transitive_closure_sha256": digest,
+            }
+            marker = stage / "v3-paper-inactive-source-manifest.json"
+            marker.write_text(json.dumps(manifest), encoding="utf-8")
+            passed = inspect(source=source, stage=stage, stage_sha=stage_sha)
+            self.assertEqual(passed["verified_files"], 41)
+            self.assertEqual(passed["windows_crlf_checkout_files"], 0)
+            self.assertTrue(passed["source_manifest_sha256_checked_for_every_file"])
+            manifest["static_transitive_closure_sha256"] = "b" * 64
+            marker.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "transitive closure disagrees"):
+                inspect(source=source, stage=stage, stage_sha=stage_sha)
+            manifest["static_transitive_closure_sha256"] = digest
+            manifest["source_closure_is_only_candidate_not_loaded_code_ack"] = False
+            marker.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "complete native closure"):
+                inspect(source=source, stage=stage, stage_sha=stage_sha)
+            manifest["source_closure_is_only_candidate_not_loaded_code_ack"] = True
+            marker.write_text(json.dumps(manifest), encoding="utf-8")
+            changed = stage / must[0]
+            raw = changed.read_bytes() + b"# malicious change\\n"
+            changed.write_bytes(raw)
+            manifest["source_manifest"][0]["sha256"] = hashlib.sha256(raw).hexdigest()
+            marker.write_text(json.dumps(manifest), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "historical Git bytes"):
+                inspect(source=source, stage=stage, stage_sha=stage_sha)
+
     def test_original_release_gate_must_be_manifest_verified(self):
         from tools import v3_paper_precas_originalhost_offline_witness_v1 as witness
         import inspect
@@ -179,9 +286,16 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
             '"paper_evaluator/v3_experimental_paper_journal_v1.py"',source)
         self.assertIn(
             '"paper_evaluator/v3_paper_minipc_native_launcher_v1.py"',source)
+        # Historical 60+ source-only stage never required tools/*.py.
+        # The separate compact 41-row manifest correctly requires both.
+        legacy_must = source.split("    must = {", 1)[1].split(
+            "    if not must.issubset(verified):", 1)[0]
         self.assertNotIn(
-            '"tools/v3_experimental_paper_technical_gate.py"',source)
-        self.assertNotIn('"tools/paper_series_transition_guard.py"',source)
+            '"tools/v3_experimental_paper_technical_gate.py"', legacy_must)
+        self.assertNotIn('"tools/paper_series_transition_guard.py"', legacy_must)
+        self.assertIn(
+            '"tools/v3_experimental_paper_technical_gate.py"', source)
+        self.assertIn('"tools/paper_series_transition_guard.py"', source)
 
 
     def test_two_actual_p4_ledger_cases_share_one_lock_and_no_provider(self):
