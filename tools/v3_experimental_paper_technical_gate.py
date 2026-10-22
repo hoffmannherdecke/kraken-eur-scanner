@@ -393,6 +393,7 @@ def reconcile_v3_cloud_canary_model_p4_rows(
                 or payload.get("phase")!=phase
                 or payload.get("series_id")!=series_id
                 or payload.get("candidate_id")!=candidate_id
+                or payload.get("pair")!=row.get("pair")
                 or payload.get("result")!=row.get("result")
                 or payload.get("orders") is not False
                 or payload.get("real_money_actions") is not False
@@ -430,6 +431,24 @@ def reconcile_v3_cloud_canary_model_p4_rows(
     pairs={selected[p][0].get("pair") for p in roles}
     if len(pairs)!=1 or not isinstance(next(iter(pairs)),str):
         raise ValueError("V3 original pair mismatch")
+    # These are Cloud-origin fields already present in the two original
+    # ZRO/TIA canary episodes. Their presence and cross-field consistency
+    # strengthen source chronology review, but do NOT authenticate actual
+    # paid HTTP, physical host bytes, or an original P4 writer process.
+    request=selected["MODEL_REQUEST"][0]["payload"].get("data")
+    if (not isinstance(request,dict)
+            or type(request.get("model_http_attempts_reserved")) is not int
+            or request["model_http_attempts_reserved"]!=1
+            or not isinstance(request.get("input_fingerprint_sha256"),str)
+            or SHA.fullmatch(request["input_fingerprint_sha256"]) is None):
+        raise ValueError("V3 original model request reservation or input identity missing")
+    p4_row=selected["P4_VALIDATION"][0]["payload"]
+    p4_data=p4_row.get("data")
+    if (not isinstance(p4_data,dict)
+            or p4_data.get("p4_decision")!=p4_row.get("result")
+            or not isinstance(p4_data.get("p4_status"),str)
+            or not p4_data["p4_status"].strip()):
+        raise ValueError("V3 original P4 decision contradicts Cloud result")
     response=selected["MODEL_RESPONSE"][0]["payload"].get("data")
     if (not isinstance(response,dict) or
             not isinstance(response.get("model_response_id"),str) or
