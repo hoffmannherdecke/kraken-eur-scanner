@@ -4,6 +4,9 @@ param(
  [switch]$BackupOriginalIntake,
  [string]$ExpectedCandidatesActionSha256='',
  [string]$ExpectedWaitActionSha256='',
+ [switch]$PreviewPr515PreCas,
+ [string]$OriginalBackupDirectory='',
+ [string]$ExpectedPr515SourceSha256='',
  [string]$Confirm=''
 )
 # V3 experimental Paper scoped operator: SOURCE PREPARATION ONLY.
@@ -872,8 +875,133 @@ function Save-V3OriginalIntakeXmlOnly([object]$Report,[string]$Root,
  return $result
 }
 
+
+# This branch ONLY observes the current PR515 plus the new original Task XML.
+# Historical PR332 drill stop/restore functions are NOT called or repurposed.
+function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
+ [string]$BackupDirectory,[string]$ExpectedCloudSha) {
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
+  throw 'Original Windows host required'
+ }
+ $rootPath=[IO.Path]::GetFullPath($Root).TrimEnd('\')
+ if(-not $rootPath.Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase) -or
+    $ExpectedCloudSha -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'Invalid originalhost or externally reviewed PR515 source pin'
+ }
+ $state=Join-Path $rootPath 'State'
+ $stateInfo=Get-Item -LiteralPath $state -Force -ErrorAction Stop
+ if(-not $stateInfo.PSIsContainer -or
+    [bool]($stateInfo.Attributes -band [IO.FileAttributes]::ReparsePoint)){
+  throw 'Original State directory invalid'
+ }
+ $folder=[IO.Path]::GetFullPath($BackupDirectory).TrimEnd('\')
+ $name=[IO.Path]::GetFileName($folder)
+ if($name -cnotmatch '^V3Paper-PreCAS-Backup-[a-f0-9]{32}$' -or
+    -not $folder.Equals((Join-Path $state $name),[StringComparison]::OrdinalIgnoreCase)){
+  throw 'Fresh native XML backup path is not a direct State child'
+ }
+ $dir=Get-Item -LiteralPath $folder -Force -ErrorAction Stop
+ if(-not $dir.PSIsContainer -or
+    [bool]($dir.Attributes -band [IO.FileAttributes]::ReparsePoint)){
+  throw 'Fresh backup missing or linked'
+ }
+ $acl=Get-Acl -LiteralPath $folder -ErrorAction Stop
+ if(-not $acl.AreAccessRulesProtected){throw 'Backup ACL inheritance drift'}
+ foreach($rule in @($acl.Access)){
+  if($rule.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow){
+   $sid=$rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+   if($sid -notin @('S-1-5-18','S-1-5-32-544')){throw 'Untrusted backup ACL'}
+  }
+ }
+ $mp=Join-Path $folder 'backup-manifest.json'
+ $mi=Get-Item -LiteralPath $mp -Force -ErrorAction Stop
+ if($mi.PSIsContainer -or
+    [bool]($mi.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $mi.Length -lt 100 -or $mi.Length -gt 65536){throw 'Unsafe backup manifest'}
+ $manifest=Get-Content -LiteralPath $mp -Raw -Encoding UTF8 -ErrorAction Stop | ConvertFrom-Json
+ if([string]$manifest.kind -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1' -or
+    [string]$manifest.status -cne 'ORIGINAL_TASK_XML_BACKUP_ONLY_NOT_RELEASED' -or
+    [string]$manifest.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    [string]$manifest.backup_directory -cne $folder -or
+    [int]$manifest.native_task_count -ne 2 -or
+    @($manifest.task_records).Count -ne 2 -or
+    $manifest.scheduler_task_mutations -ne $false -or
+    $manifest.original_v2r4_changed -ne $false -or
+    $manifest.cloud_cas_invoked -ne $false -or
+    $manifest.new_v3_writer_started -ne $false){
+  throw 'Fresh original native recovery manifest invalid'
+ }
+ $roles=@(
+  [pscustomobject]@{name='CryptoMiniPC-V2R4PaperCandidates';file='Candidates.task.xml'},
+  [pscustomobject]@{name='CryptoMiniPC-V2R4PaperWait';file='WAIT.task.xml'}
+ )
+ foreach($role in $roles){
+  $rec=@($manifest.task_records | Where-Object {$_.task_name -ceq $role.name})
+  $row=@($Report.physical_v2r4_paper_task_readback |
+    Where-Object {$_.task_name -ceq $role.name})
+  if($rec.Count -ne 1 -or $row.Count -ne 1 -or
+     [string]$rec[0].xml_file -cne $role.file -or
+     [string]$rec[0].xml_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$rec[0].action_sha256 -cnotmatch '^[a-f0-9]{64}$'){
+   throw 'Fresh manifest Task role/record mismatch'
+  }
+  $task=Get-ScheduledTask -TaskName $role.name -TaskPath '\' -ErrorAction Stop
+  if([string]$task.State -cne 'Running' -or
+     @($task.Actions).Count -ne 1 -or
+     [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne [string]$rec[0].action_sha256 -or
+     [string]$row[0].action_sha256 -cne [string]$rec[0].action_sha256){
+   throw 'Original intake Task source changed since secured XML snapshot'
+  }
+  $live=[string](Export-ScheduledTask -TaskName $role.name -TaskPath '\' -ErrorAction Stop)
+  if(-not(Test-V3FreshBackupFileBytes -Path (Join-Path $folder $role.file) -ExpectedSha ([string]$rec[0].xml_sha256) -ExpectedXml $live)){
+   throw 'Durable XML does not equal current original Task'
+  }
+ }
+ $cloudRow=@($Report.physical_v2r4_paper_task_readback |
+   Where-Object {$_.task_name -ceq 'CryptoMiniPC-V2R4PaperCloudSync'})
+ if($cloudRow.Count -ne 1){throw 'Original CloudSync role missing'}
+ $cloudTask=Get-ScheduledTask -TaskName 'CryptoMiniPC-V2R4PaperCloudSync' -TaskPath '\' -ErrorAction Stop
+ $cloudFile=Join-Path $rootPath 'Staging\PR515-CloudSync-INACTIVE-20261022\v2r4-paper-cloud-sync.py'
+ $cf=Get-Item -LiteralPath $cloudFile -Force -ErrorAction Stop
+ if($cf.PSIsContainer -or
+    [bool]($cf.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    [string]$cloudTask.State -cne 'Running' -or
+    @($cloudTask.Actions).Count -ne 1 -or
+    [string]$cloudTask.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+    @([regex]::Matches([string]$cloudTask.Actions[0].Arguments,[regex]::Escape($cloudFile))).Count -ne 1 -or
+    (Get-V3OriginalNativeActionSha $cloudTask.Actions[0]) -cne ([string]$cloudRow[0].action_sha256).ToLowerInvariant() -or
+    (Get-FileHash -LiteralPath $cloudFile -Algorithm SHA256).Hash.ToLowerInvariant() -cne $ExpectedCloudSha){
+  throw 'Effective PR515 CloudSync native Task/source pin mismatch'
+ }
+ return [ordered]@{
+  kind='V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1'
+  status='COMPATIBLE_READONLY_NOT_RELEASED'
+  two_current_native_xml_reread_pass=$true
+  pr515_effective_cloudsync_source_consistent=$true
+  external_sha_pin_independently_authenticated=$false
+  physical_task_restore_tested=$false
+  single_writer_pid_and_lock_proven=$false
+  old_intake_norearm_proven=$false
+  cloud_cas_invoked=$false
+  scheduler_task_mutations=$false
+  v3_paper_activated=$false
+  technical_release_proofs_credited=0
+ }
+}
+
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
+}
+if($PreviewPr515PreCas) {
+ if($BackupOriginalIntake -or $Confirm -or
+    $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
+    [string]::IsNullOrWhiteSpace($OriginalBackupDirectory) -or
+    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'Only approved read-only PR515 recovery preview parameters allowed'
+ }
+} elseif($OriginalBackupDirectory -or $ExpectedPr515SourceSha256){
+ throw 'PR515 source preview arguments forbidden in backup mode'
 }
 if($BackupOriginalIntake) {
  if($Confirm -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ONLY' -or
@@ -985,6 +1113,14 @@ try {
 $protected=@($report.native_old_paper_mode_rows | ForEach-Object {[int]$_.pid})
 $completeWaitSnapshot=($waitSnapshotReadable -and
  (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
+if($PreviewPr515PreCas) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'Originalhost V2R4 and WAIT descendants not ready'
+ }
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256
+ $receipt | ConvertTo-Json -Depth 6
+ return
+}
 if($BackupOriginalIntake) {
  if(-not $ready -or -not $completeWaitSnapshot) {
   throw 'pre-CAS original intake must be healthy with closed WAIT descendants'
