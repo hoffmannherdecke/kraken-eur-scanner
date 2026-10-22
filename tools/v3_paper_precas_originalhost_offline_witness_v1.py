@@ -89,7 +89,7 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
             or manifest.get("source_git_sha") != stage_sha
             or manifest.get("v3_paper_activated") is not False
             or manifest.get("task_changes") is not False
-            or not isinstance(rows, list) or len(rows) < 60 or len(rows) > 100):
+            or not isinstance(rows, list) or len(rows) < 20 or len(rows) > 350):
         raise ValueError("inactive source manifest not trustworthy")
     verified = set()
     windows_crlf_source_files = 0
@@ -142,6 +142,62 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
             "paper_evaluator/v3_paper_minipc_native_launcher_v1.py"}
     if not must.issubset(verified):
         raise ValueError("physical writer/lock/journal/Cloud module not in stage")
+    # The physically inspected PR514 stage contains 40 transitive Python
+    # sources plus its strategy bundle (41 rows), not the earlier 67-file
+    # source-only stager inventory. Never accept a short self-authored list
+    # on its own: reuse the already shipped native AST closure checker and
+    # require its exact independently recalculated digest and file set.
+    # Historical 60+ row stages retain their original Git-blob checks.
+    if len(rows) < 60:
+        closure_files = manifest.get("static_transitive_closure_files")
+        closure_sha = manifest.get("static_transitive_closure_sha256")
+        required = {
+            "tools/v3_experimental_paper_technical_gate.py",
+            "tools/paper_series_transition_guard.py",
+            "research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json",
+        }
+        if (manifest.get("source_closure_is_only_candidate_not_loaded_code_ack")
+                is not True
+                or type(manifest.get("tracked_code_files")) is not int
+                or manifest["tracked_code_files"] != len(rows)
+                or not isinstance(closure_files, list)
+                or not 20 <= len(closure_files) <= 512
+                or any(not isinstance(x, str) for x in closure_files)
+                or len(closure_files) != len(set(closure_files))
+                or not set(closure_files).issubset(verified)
+                or not required.issubset(verified)
+                or type(manifest.get("static_transitive_closure_file_count")) is not int
+                or manifest["static_transitive_closure_file_count"] != len(closure_files)
+                or not isinstance(closure_sha, str)
+                or re.fullmatch(r"[0-9a-f]{64}", closure_sha) is None):
+            raise ValueError("compact physical stage needs complete native closure")
+        verifier = src / "tools/v3_experimental_paper_technical_gate.py"
+        if not verifier.is_file() or verifier.is_symlink():
+            raise ValueError("native historical closure verifier not available")
+        try:
+            check = subprocess.run(
+                [sys.executable, "-I", "-B", "-S", str(verifier),
+                 "--source-closure-readonly", "--source-root", str(staged)],
+                capture_output=True, text=True, timeout=60, check=True)
+            actual = json.loads(check.stdout)
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
+                ValueError, OSError) as exc:
+            raise ValueError("independent native closure readback failed") from exc
+        actual_files = actual.get("candidate_transitive_files")
+        if (actual.get("kind") != "V3_NATIVE_SOURCE_IMPORT_CLOSURE_READONLY_V1"
+                or actual.get("inspection_authority")
+                    != "SOURCE_ONLY_NO_ORIGINALHOST_OR_CLOUD_ACK"
+                or actual.get("static_local_import_closure_complete") is not True
+                or actual.get("paper_release_authorized") is not False
+                or actual.get("actual_loaded_python_bytecode_independently_verified")
+                    is not False
+                or actual.get("candidate_transitive_source_sha256") != closure_sha
+                or actual.get("candidate_transitive_file_count") != len(closure_files)
+                or not isinstance(actual_files, list)
+                or any(not isinstance(row, list) or len(row) < 2
+                       or not isinstance(row[0], str) for row in actual_files)
+                or {row[0] for row in actual_files} != set(closure_files)):
+            raise ValueError("compact native stage transitive closure disagrees")
     parent = trading / "Research" / "V3Paper"
     if not parent.is_dir() or parent.is_symlink():
         raise ValueError("pre-existing separate V3 Research parent required")
