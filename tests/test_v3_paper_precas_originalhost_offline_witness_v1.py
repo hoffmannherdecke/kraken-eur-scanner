@@ -229,10 +229,16 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
                 "tracked_code_files": 41,
                 "source_manifest": rows,
                 "static_transitive_closure_file_count": 40,
-                "static_transitive_closure_sha256": "a" * 64,
+                "static_transitive_closure_sha256": "",
                 "static_transitive_closure_files": files[:40],
                 "source_closure_is_only_candidate_not_loaded_code_ack": True,
             }
+            closure_payload = json.dumps({
+                "kind": "V3_NATIVE_SOURCE_STATIC_IMPORT_CLOSURE_CANDIDATE_V1",
+                "files": [[row["relative_path"], row["sha256"]] for row in rows[:40]],
+            }, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode("utf-8")
+            manifest["static_transitive_closure_sha256"] = (
+                hashlib.sha256(closure_payload).hexdigest())
             mf = stage / "v3-paper-inactive-source-manifest.json"
             def save():
                 mf.write_text(json.dumps(manifest), encoding="utf-8")
@@ -259,6 +265,12 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "closure"):
                 inspect(source=source, stage=stage, stage_sha=sha)
             manifest["source_closure_is_only_candidate_not_loaded_code_ack"] = True
+            manifest["static_transitive_closure_sha256"] = "f" * 64
+            save()
+            with self.assertRaisesRegex(ValueError, "closure SHA256"):
+                inspect(source=source, stage=stage, stage_sha=sha)
+            manifest["static_transitive_closure_sha256"] = (
+                hashlib.sha256(closure_payload).hexdigest())
             save()
             # Changing one real file after manifest creation cannot be
             # accepted as a harmless transitive closure update.
