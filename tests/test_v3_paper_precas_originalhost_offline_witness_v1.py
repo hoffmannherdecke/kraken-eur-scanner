@@ -286,9 +286,16 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
             '"paper_evaluator/v3_experimental_paper_journal_v1.py"',source)
         self.assertIn(
             '"paper_evaluator/v3_paper_minipc_native_launcher_v1.py"',source)
+        # Historical 60+ source-only stage never required tools/*.py.
+        # The separate compact 41-row manifest correctly requires both.
+        legacy_must = source.split("    must = {", 1)[1].split(
+            "    if not must.issubset(verified):", 1)[0]
         self.assertNotIn(
-            '"tools/v3_experimental_paper_technical_gate.py"',source)
-        self.assertNotIn('"tools/paper_series_transition_guard.py"',source)
+            '"tools/v3_experimental_paper_technical_gate.py"', legacy_must)
+        self.assertNotIn('"tools/paper_series_transition_guard.py"', legacy_must)
+        self.assertIn(
+            '"tools/v3_experimental_paper_technical_gate.py"', source)
+        self.assertIn('"tools/paper_series_transition_guard.py"', source)
 
 
     def test_two_actual_p4_ledger_cases_share_one_lock_and_no_provider(self):
