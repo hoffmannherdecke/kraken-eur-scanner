@@ -171,6 +171,102 @@ class OfflineDualCaseWitnessTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "source tree dirty"):
                 inspect(source=source, stage=stage, stage_sha=stage_sha)
 
+    def test_compact_current_stager_manifest_requires_full_pinned_closure(self):
+        # The modern native source-only stager can produce a 41-row manifest
+        # with a 40-file import closure. Accept it only with exact staged
+        # bytes, source Git ancestry and a complete closure inventory.
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            source = base / "Source"
+            trading = base / "Trading"
+            source.mkdir()
+            subprocess.run(["git", "init", "-q", str(source)],
+                           check=True, capture_output=True)
+            subprocess.run(["git", "-C", str(source), "config",
+                            "user.name", "V3 Offline CI"], check=True)
+            subprocess.run(["git", "-C", str(source), "config",
+                            "user.email", "offline-ci@example.invalid"],
+                           check=True)
+            must = [
+                "paper_evaluator/v3_paper_minipc_one_candidate_v1.py",
+                "paper_evaluator/v3_paper_minipc_selective_tick_v1.py",
+                "paper_evaluator/v3_experimental_paper_journal_v1.py",
+                "paper_evaluator/v3_paper_cloud_receipt_sync_v1.py",
+                "paper_evaluator/v3_paper_minipc_native_launcher_v1.py",
+            ]
+            files = must + [
+                f"paper_evaluator/compact_{i:02}.py" for i in range(36)
+            ]
+            self.assertEqual(len(files), 41)
+            rows = []
+            for relative in files:
+                src = source / relative
+                src.parent.mkdir(parents=True, exist_ok=True)
+                blob = ("# pinned compact " + relative + "\n").encode()
+                src.write_bytes(blob)
+                rows.append({"relative_path": relative,
+                             "sha256": hashlib.sha256(blob).hexdigest()})
+            subprocess.run(["git", "-C", str(source), "add", "."],
+                           check=True)
+            subprocess.run(["git", "-C", str(source), "commit", "-qm",
+                            "exact compact original source"], check=True)
+            sha = subprocess.check_output(
+                ["git", "-C", str(source), "rev-parse", "HEAD"],
+                text=True).strip()
+            stage = trading / "Staging" / ("V3Paper-INACTIVE-" + sha[:12])
+            stage.mkdir(parents=True)
+            for relative in files:
+                dst = stage / relative
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                dst.write_bytes((source / relative).read_bytes())
+            (trading / "Research" / "V3Paper").mkdir(parents=True)
+            manifest = {
+                "kind": "V3_PAPER_INACTIVE_ISOLATED_SOURCE_STAGE_V1",
+                "status": "STAGED_INACTIVE_CODE_ONLY_NOT_INSTALLED",
+                "source_git_sha": sha,
+                "v3_paper_activated": False,
+                "task_changes": False,
+                "tracked_code_files": 41,
+                "source_manifest": rows,
+                "static_transitive_closure_file_count": 40,
+                "static_transitive_closure_sha256": "a" * 64,
+                "static_transitive_closure_files": files[:40],
+                "source_closure_is_only_candidate_not_loaded_code_ack": True,
+            }
+            mf = stage / "v3-paper-inactive-source-manifest.json"
+            def save():
+                mf.write_text(json.dumps(manifest), encoding="utf-8")
+            save()
+            result = inspect(source=source, stage=stage, stage_sha=sha)
+            self.assertEqual(result["verified_files"], 41)
+            self.assertTrue(result["source_manifest_sha256_checked_for_every_file"])
+            self.assertEqual(result["windows_crlf_checkout_files"], 0)
+            # An absent or substituted transitive dependency is fail-closed
+            # even if every displayed staged row independently hashes.
+            manifest["static_transitive_closure_files"][-1] = (
+                "paper_evaluator/never_staged.py")
+            save()
+            with self.assertRaisesRegex(ValueError, "closure"):
+                inspect(source=source, stage=stage, stage_sha=sha)
+            manifest["static_transitive_closure_files"] = files[:40]
+            manifest["tracked_code_files"] = 40
+            save()
+            with self.assertRaisesRegex(ValueError, "closure"):
+                inspect(source=source, stage=stage, stage_sha=sha)
+            manifest["tracked_code_files"] = 41
+            manifest.pop("source_closure_is_only_candidate_not_loaded_code_ack")
+            save()
+            with self.assertRaisesRegex(ValueError, "closure"):
+                inspect(source=source, stage=stage, stage_sha=sha)
+            manifest["source_closure_is_only_candidate_not_loaded_code_ack"] = True
+            save()
+            # Changing one real file after manifest creation cannot be
+            # accepted as a harmless transitive closure update.
+            tampered = stage / files[0]
+            tampered.write_bytes(tampered.read_bytes() + b"# changed\n")
+            with self.assertRaisesRegex(ValueError, "manifest SHA256 mismatch"):
+                inspect(source=source, stage=stage, stage_sha=sha)
+
     def test_original_release_gate_must_be_manifest_verified(self):
         from tools import v3_paper_precas_originalhost_offline_witness_v1 as witness
         import inspect
