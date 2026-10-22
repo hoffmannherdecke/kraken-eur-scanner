@@ -33,7 +33,8 @@ jobs:
           python-version: '3.13'
       - name: Validate health alert routing logic
         run: |
-          python -m py_compile tools/process-health-alert-router.py
+          python -m py_compile tools/process-health-alert-router.py tools/workflow_run_health.py process_audit.py
+          python tools/workflow_run_health.py
           python tools/process-health-alert-router.py --self-test
 
       - name: Audit full paper chain and bounded self-heal
