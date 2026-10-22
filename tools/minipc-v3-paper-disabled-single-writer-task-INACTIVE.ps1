@@ -162,8 +162,8 @@ $allow=@($allow|Where-Object {
           'tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1')
 }|Sort-Object -Unique)
 if($candidateMode){
- # Recompute the existing PR476 SOURCE ONLY closure from exact clean HEAD;
- # do not trust the candidate stage's self-reported file list alone.
+ # Run trusted static AST checker on the IMMUTABLE historical stage,
+ # not on newer HEAD. Only source bytes parsed; no staged code executed.
  $head=(& git -C $source rev-parse HEAD 2>$null)
  Require ($LASTEXITCODE -eq 0 -and ([string]$head).Trim() -cmatch '^[a-f0-9]{40}$') 'candidate checkout HEAD mismatch'
  # Later trusted source may inspect an older immutable stage read-only.
@@ -178,7 +178,7 @@ if($candidateMode){
  $pythonRead=Get-Command -Name python.exe -CommandType Application -ErrorAction Stop |
     Select-Object -First 1
  Require ($null -ne $pythonRead) 'source Python unavailable'
- $json=& ([string]$pythonRead.Source) -B $gate --source-closure-readonly --source-root $source
+ $json=& ([string]$pythonRead.Source) -B $gate --source-closure-readonly --source-root $stage
  Require ($LASTEXITCODE -eq 0 -and $json) 'original source closure readback failed'
  $closure=($json -join [Environment]::NewLine)|ConvertFrom-Json
  Require ($closure.kind -ceq 'V3_NATIVE_SOURCE_IMPORT_CLOSURE_READONLY_V1' -and
@@ -195,8 +195,9 @@ if($candidateMode){
    $dependencies.Count -eq [int]$closure.candidate_transitive_file_count -and
    $dependencies.Count -eq [int]$manifest.static_transitive_closure_file_count -and
    $manifestDependencies.Count -eq $dependencies.Count) 'candidate dependency count drift'
- $tracked=@(& git -C $source ls-files --cached -- '*.py' 2>$null)
- Require ($LASTEXITCODE -eq 0) 'tracked Python source unavailable'
+ $tracked=@(& git -C $source ls-tree -r --name-only $stageSha 2>$null |
+   Where-Object {$_ -cmatch '\.py$'})
+ Require ($LASTEXITCODE -eq 0 -and $tracked.Count -gt 0) 'historical tracked Python source unavailable'
  $dependencyHashes=@{}
  foreach($record in $dependencies){
    $rel=[string]$record[0]; $sha=[string]$record[1]
@@ -208,7 +209,16 @@ if($candidateMode){
      $sha -cmatch '^[a-f0-9]{64}$') 'candidate dependency path invalid'
    $dependencyHashes[$rel]=$sha
  }
- $allow=@(($allow+@($dependencyHashes.Keys))|Sort-Object -Unique)
+ if(@($manifest.source_manifest).Count -lt 60){
+   # Compact original stage is the static Python closure plus one pinned
+   # strategy bundle; do not allow arbitrary historical tracked extras.
+   $bundle='research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json'
+   Require ($allow -ccontains $bundle) 'compact strategy bundle not historical'
+   $allow=@((@($dependencyHashes.Keys)+@($bundle))|Sort-Object -Unique)
+ }else{
+   # Larger legacy stages retain their existing historical allowlist.
+   $allow=@(($allow+@($dependencyHashes.Keys))|Sort-Object -Unique)
+ }
  $stageFiles=$allow.Count
  Require ($stageFiles -ge 20 -and $stageFiles -le 350 -and
    @($manifest.source_manifest).Count -eq $stageFiles) 'candidate source files mismatch'

@@ -369,6 +369,35 @@ try {
 }finally{
  Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
 }
+# PR520 regression: a compact historical source cannot be reverified by
+# accidentally hashing the NEW reviewer HEAD's newer import graph.
+# The trusted, current checker must parse ORIGINAL stage bytes instead.
+$sourceOnlyGate=('$json=& ([string]$pythonRead.Source) -B $gate '+
+  '--source-closure-readonly --source-root $stage')
+if(-not $src.Contains($sourceOnlyGate) -or
+   $src.Contains('--source-closure-readonly --source-root $source')){
+ throw 'historical candidate AST closure must inspect pinned stage bytes'
+}
+foreach($required in @(
+ 'candidate stage not ancestor of reviewed source',
+ 'disabled Task update requires exact candidate checkout SHA',
+ 'historical tracked Python source unavailable',
+ 'compact strategy bundle not historical',
+ '@($manifest.source_manifest).Count -lt 60',
+ '$allow=@((@($dependencyHashes.Keys)+@($bundle))|Sort-Object -Unique)',
+ 'candidate source files mismatch',
+ 'stage differs from trusted Git blob'
+)){
+ if(-not $src.Contains($required)){
+  throw ('V3_COMPACT_HISTORICAL_STAGE_FENCE_MISSING '+$required)
+ }
+}
+# The previous compact 41-row source contains exactly 40 transitive Python
+# dependencies and one pinned lessons bundle; no unrelated tracked file.
+$syntheticDeps=@(1..40|ForEach-Object {'paper_evaluator/c'+$_+'.py'})
+$syntheticAllow=@(($syntheticDeps+@('research/v3/v3-experimental-paper-all-lessons-bundle-20261011.json'))|Sort-Object -Unique)
+if($syntheticAllow.Count -ne 41){throw 'compact closed inventory fixture failed'}
+Write-Output 'V3_HISTORICAL_CANDIDATE_CLOSURE_IS_STAGE_BOUND_READONLY_PASS'
 Write-Output 'V3_HISTORICAL_INACTIVE_STAGE_GIT_SHA_AND_READONLY_TASK_FENCE_PASS'
 
 Write-Output 'V3_NATIVE_DISABLED_READONLY_TASK_STAGE_SOURCE_POLICY_PASS'
