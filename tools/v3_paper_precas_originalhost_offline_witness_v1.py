@@ -175,9 +175,23 @@ def inspect(*, source: Path, stage: Path, stage_sha: str) -> dict:
         if not verifier.is_file() or verifier.is_symlink():
             raise ValueError("native historical closure verifier not available")
         try:
+            # Python -I deliberately removes script/CWD from sys.path.
+            # The original gate imports tools.paper_series_transition_guard,
+            # so direct "-I path/to/gate.py" fails at module import with
+            # exit 1 on the actual Windows host (the CI stub did not import
+            # siblings). Keep -I/-B/-S and grant precisely the independently
+            # validated, clean Git source root, never a user PYTHONPATH,
+            # working directory, deployed Trading root or staged code.
+            isolated_gate = (
+                "import runpy,sys;"
+                "sys.path.insert(0,sys.argv[1]);"
+                "sys.argv=sys.argv[2:];"
+                "runpy.run_path(sys.argv[0],run_name='__main__')"
+            )
             check = subprocess.run(
-                [sys.executable, "-I", "-B", "-S", str(verifier),
-                 "--source-closure-readonly", "--source-root", str(staged)],
+                [sys.executable, "-I", "-B", "-S", "-c", isolated_gate,
+                 str(src), str(verifier), "--source-closure-readonly",
+                 "--source-root", str(staged)],
                 capture_output=True, text=True, timeout=60, check=True)
             actual = json.loads(check.stdout)
         except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
