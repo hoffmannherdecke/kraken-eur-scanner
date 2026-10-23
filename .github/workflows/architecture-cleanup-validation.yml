@@ -22,6 +22,7 @@ jobs:
           python -m py_compile process_audit.py tools/workflow_run_health.py tools/process-health-alert-router.py
           python tools/workflow_run_health.py
           python tools/process-health-alert-router.py --self-test
+          python -m unittest tests.test_process_health_event_trigger_contract -v
       - name: V3 manual TPM identity enrolment never changes runtime (source only)
         run: python -m unittest tests.test_v3_paper_originalhost_manual_tpm_key_contract -v
       - name: Parse V3 manual TPM enrolment source without executing
