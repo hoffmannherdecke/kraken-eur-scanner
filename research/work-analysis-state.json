@@ -1433,6 +1433,44 @@
           "research/work-analysis/2026-10-07-v2r3-final-review.md",
           "research/v3-migration-ledger.json"
         ]
+      },
+      "BACKLOG-675566034f9f7ce2abb7": {
+        "disposition": "COMPLETED_VERIFIED",
+        "reviewed_at_utc": "2026-10-23T08:17:49Z",
+        "owner": "research/work-analysis/2026-10-07-v2r3-final-review.md + research/v2r3/strategy-adjustment-hypotheses-final-20261007.json + research/v3-migration-ledger.json",
+        "next_gate": "NONE_HISTORICAL_V2R3_HYPOTHESIS_DISPOSITION_COMPLETE_DO_NOT_REOPEN",
+        "report": "research/work-analysis/2026-10-23-historical-backlog-dispositions.md",
+        "evidence_sha256": "27b43a186f5fd0086e206bbf9f718e5fed683f6e473507ea934a341720a60ee3",
+        "original_source": "PROJECT_BACKLOG.md:L699",
+        "evidence": [
+          "research/work-analysis/2026-10-07-v2r3-final-review.md",
+          "research/v2r3/strategy-adjustment-hypotheses-final-20261007.json",
+          "research/v3-migration-ledger.json"
+        ]
+      },
+      "BACKLOG-b2f7c5da0cdaddf62008": {
+        "disposition": "COMPLETED_VERIFIED",
+        "reviewed_at_utc": "2026-10-23T08:17:49Z",
+        "owner": "PROJECT_BACKLOG.md#V2R4_WAIT_INCIDENT_PHYSICAL_FOLLOWTHROUGH + GitHub Issue #99",
+        "next_gate": "NONE_FOR_THIS_CLOSED_V2R4_WAIT_OBLIGATION_V3_RELEASE_REMAINS_SEPARATE",
+        "report": "research/work-analysis/2026-10-23-historical-backlog-dispositions.md",
+        "evidence_sha256": "27b43a186f5fd0086e206bbf9f718e5fed683f6e473507ea934a341720a60ee3",
+        "original_source": "PROJECT_BACKLOG.md:L728",
+        "evidence": [
+          "research/work-analysis/2026-10-16-pr326-and-work-queue-followthrough.md",
+          "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6208982221",
+          "https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/326"
+        ]
+      },
+      "BACKLOG-37bb0d5cd796bfdbbd51": {
+        "disposition": "DEFERRED_WITH_GATE",
+        "reviewed_at_utc": "2026-10-23T08:17:49Z",
+        "owner": "docs/github-capacity-and-cost-strategy-v1.md + Operations/Architecture",
+        "next_gate": "GENUINE_PRIVATE_LOAD_CHANGE_QUOTA_OR_BUDGET_INCIDENT_OR_EXISTING_CAPACITY_REVIEW_WITH_CURRENT_ACCOUNT_WIDE_BILLING_EVIDENCE",
+        "report": "research/work-analysis/2026-10-23-historical-backlog-dispositions.md",
+        "evidence_sha256": "27b43a186f5fd0086e206bbf9f718e5fed683f6e473507ea934a341720a60ee3",
+        "original_source": "PROJECT_BACKLOG.md:L784",
+        "not_due_reason": "LAST_DECISION_BLOCK3_EVALUATED_STAY_CLOUD_HOSTED_AND_NO_NEW_TRIGGER_OR_CURRENT_BILLING_EVIDENCE_PROVEN_BY_THIS_RUN"
       }
     }
   },
@@ -1775,19 +1813,19 @@
       "report_sha256": "375f9a3b92366907c7efe3500b68f59fb3f2c88ef12d03c0885a254560890870"
     },
     "HISTORICAL_BACKLOG_RECONCILIATION": {
-      "gate_fingerprint": "088000da06363860f182",
+      "gate_fingerprint": "c3c61e955cefea076c56",
       "status": "COMPLETED",
-      "evidence_url": "research/work-analysis/2026-10-21-historical-backlog-dispositions.md",
-      "reason": "Three selector-prioritized originals were bound to their existing live-resilience, incident-recovery, and V3 successor owners without activating Live, manufacturing an outage, or reopening V2R3.",
-      "attempted_at_utc": "2026-10-21T08:15:25Z",
-      "completed_at_utc": "2026-10-21T08:15:25Z",
-      "report": "research/work-analysis/2026-10-21-historical-backlog-dispositions.md",
-      "report_sha256": "c71875e5bd2d2fddcca38c6cb129b63f0652cd15aeab2cd0a4de95312b6760dd",
+      "evidence_url": "research/work-analysis/2026-10-23-historical-backlog-dispositions.md",
+      "reason": "Three selector-prioritized originals were reconciled: the V2R3 hypothesis review and bounded V2R4 WAIT incident follow-through are evidenced complete, while capacity growth remains event-gated under its existing owner without a new monitor, migration, secret, or budget action.",
+      "attempted_at_utc": "2026-10-23T08:17:49Z",
+      "completed_at_utc": "2026-10-23T08:17:49Z",
+      "report": "research/work-analysis/2026-10-23-historical-backlog-dispositions.md",
+      "report_sha256": "27b43a186f5fd0086e206bbf9f718e5fed683f6e473507ea934a341720a60ee3",
       "prior_completed_attempt": {
-        "gate_fingerprint": "9356122c7f648a41ea37",
-        "completed_at_utc": "2026-10-20T08:18:34Z",
-        "report": "research/work-analysis/2026-10-20-historical-backlog-dispositions.md",
-        "report_sha256": "a642a53ecf06212124dd64978c5df8143d2cbaea54a1b9e213d40c8eb4496f1c"
+        "gate_fingerprint": "088000da06363860f182",
+        "completed_at_utc": "2026-10-21T08:15:25Z",
+        "report": "research/work-analysis/2026-10-21-historical-backlog-dispositions.md",
+        "report_sha256": "c71875e5bd2d2fddcca38c6cb129b63f0652cd15aeab2cd0a4de95312b6760dd"
       }
     }
   }
