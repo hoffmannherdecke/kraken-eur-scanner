@@ -1471,6 +1471,36 @@
         "evidence_sha256": "27b43a186f5fd0086e206bbf9f718e5fed683f6e473507ea934a341720a60ee3",
         "original_source": "PROJECT_BACKLOG.md:L784",
         "not_due_reason": "LAST_DECISION_BLOCK3_EVALUATED_STAY_CLOUD_HOSTED_AND_NO_NEW_TRIGGER_OR_CURRENT_BILLING_EVIDENCE_PROVEN_BY_THIS_RUN"
+      },
+      "BACKLOG-b3dd23c5114f916ec2c9": {
+        "disposition": "DEFERRED_WITH_GATE",
+        "reviewed_at_utc": "2026-10-23T08:21:59Z",
+        "owner": "research/v3/shadow-candidate-contract-v1.json + project-current-state.json + existing V3 strategy/release control plane",
+        "next_gate": "NAMED_MATURE_HYPOTHESIS_FROZEN_ONE_CHANGE_CONTRACT_FREE_SHADOW_SLOT_AND_SEPARATE_REQUIRED_APPROVAL",
+        "report": "research/work-analysis/2026-10-23-v3-historical-backlog-dispositions.md",
+        "evidence_sha256": "40aec29dc33663e5c62691f825127722c8ad5c8d6f69b7e10068fd1c15f4b16b",
+        "original_source": "PROJECT_BACKLOG.md:L855",
+        "not_due_reason": "NO_NEWLY_MATURE_AND_SEPARATELY_APPROVED_STRATEGY_CHANGING_SHADOW_PROVEN_BY_THIS_RUN"
+      },
+      "BACKLOG-0595473c7eaa529fbb53": {
+        "disposition": "DEFERRED_WITH_GATE",
+        "reviewed_at_utc": "2026-10-23T08:21:59Z",
+        "owner": "research/v3-migration-ledger.json#v3_market_regime_decision_conditioning + existing V3 integration review",
+        "next_gate": "SUFFICIENT_PROSPECTIVE_KRAKEN_EUR_EPISODES_WITH_INDEPENDENT_MATURE_OUTCOMES_AND_PREREGISTERED_SAME_CLOCK_INCREMENTAL_VALUE_TEST",
+        "report": "research/work-analysis/2026-10-23-v3-historical-backlog-dispositions.md",
+        "evidence_sha256": "40aec29dc33663e5c62691f825127722c8ad5c8d6f69b7e10068fd1c15f4b16b",
+        "original_source": "PROJECT_BACKLOG.md:L858",
+        "not_due_reason": "PASSIVE_POINT_IN_TIME_CONTEXT_EXISTS_BUT_NO_PROVEN_INCREMENTAL_NET_VALUE_OR_INTEGRATION_GATE"
+      },
+      "BACKLOG-6fd6e28d41ae5e14b39b": {
+        "disposition": "DEFERRED_WITH_GATE",
+        "reviewed_at_utc": "2026-10-23T08:21:59Z",
+        "owner": "research/project-followthrough-routing-v1.json#V3_H4_H7_H9_EXITS_AND_EXECUTION + existing V3 risk/execution research owner",
+        "next_gate": "AFTER_REAL_PAPER_TRADES_WITH_SUFFICIENT_FILLED_LIFECYCLE_FEES_MAE_STOP_AND_EXIT_EVIDENCE_THEN_SEPARATE_USER_RELEASE",
+        "report": "research/work-analysis/2026-10-23-v3-historical-backlog-dispositions.md",
+        "evidence_sha256": "40aec29dc33663e5c62691f825127722c8ad5c8d6f69b7e10068fd1c15f4b16b",
+        "original_source": "PROJECT_BACKLOG.md:L860",
+        "not_due_reason": "H4_PRECHECK_ONLY_AND_NO_REAL_FILLED_V3_PAPER_LIFECYCLE_OR_RELEASE_PROVEN_BY_THIS_RUN"
       }
     }
   },
@@ -1813,19 +1843,19 @@
       "report_sha256": "375f9a3b92366907c7efe3500b68f59fb3f2c88ef12d03c0885a254560890870"
     },
     "HISTORICAL_BACKLOG_RECONCILIATION": {
-      "gate_fingerprint": "c3c61e955cefea076c56",
+      "gate_fingerprint": "ea9ea94387f83d157e6b",
       "status": "COMPLETED",
-      "evidence_url": "research/work-analysis/2026-10-23-historical-backlog-dispositions.md",
-      "reason": "Three selector-prioritized originals were reconciled: the V2R3 hypothesis review and bounded V2R4 WAIT incident follow-through are evidenced complete, while capacity growth remains event-gated under its existing owner without a new monitor, migration, secret, or budget action.",
-      "attempted_at_utc": "2026-10-23T08:17:49Z",
-      "completed_at_utc": "2026-10-23T08:17:49Z",
-      "report": "research/work-analysis/2026-10-23-historical-backlog-dispositions.md",
-      "report_sha256": "27b43a186f5fd0086e206bbf9f718e5fed683f6e473507ea934a341720a60ee3",
+      "evidence_url": "research/work-analysis/2026-10-23-v3-historical-backlog-dispositions.md",
+      "reason": "Three selector-prioritized V3 originals were bound to their existing one-change Shadow, market-regime integration, and post-real-Paper risk/execution gates without starting a Shadow, model call, runtime, or release.",
+      "attempted_at_utc": "2026-10-23T08:21:59Z",
+      "completed_at_utc": "2026-10-23T08:21:59Z",
+      "report": "research/work-analysis/2026-10-23-v3-historical-backlog-dispositions.md",
+      "report_sha256": "40aec29dc33663e5c62691f825127722c8ad5c8d6f69b7e10068fd1c15f4b16b",
       "prior_completed_attempt": {
-        "gate_fingerprint": "088000da06363860f182",
-        "completed_at_utc": "2026-10-21T08:15:25Z",
-        "report": "research/work-analysis/2026-10-21-historical-backlog-dispositions.md",
-        "report_sha256": "c71875e5bd2d2fddcca38c6cb129b63f0652cd15aeab2cd0a4de95312b6760dd"
+        "gate_fingerprint": "c3c61e955cefea076c56",
+        "completed_at_utc": "2026-10-23T08:17:49Z",
+        "report": "research/work-analysis/2026-10-23-historical-backlog-dispositions.md",
+        "report_sha256": "27b43a186f5fd0086e206bbf9f718e5fed683f6e473507ea934a341720a60ee3"
       }
     }
   }
