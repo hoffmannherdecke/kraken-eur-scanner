@@ -2,6 +2,14 @@ name: Crypto process health watchdog
 
 'on':
   workflow_dispatch:
+  # Fast-path recovery receipt on an actual scanner completion event.
+  # Existing five-minute schedule remains the fallback for stalled/no-completion
+  # workflows. This event still depends on GitHub delivering workflow_run.
+  workflow_run:
+    workflows:
+      - Kraken EUR early sensor
+    types:
+      - completed
   schedule:
     - cron: '4,9,14,19,24,29,34,39,44,49,54,59 * * * *'
   push:
@@ -22,6 +30,11 @@ concurrency:
 
 jobs:
   audit:
+    # Never re-dispatch on an automatically triggered failing scan: that
+    # would risk a retry loop. Only successful default-branch scan runs
+    # may immediately reconcile the existing Supabase/Slack health state.
+    # Reject untrusted branches and unexpected event types before secrets.
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && (github.event.workflow_run.event == 'schedule' || github.event.workflow_run.event == 'workflow_dispatch') && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository) }}
     runs-on: ubuntu-latest
     timeout-minutes: 8
     env:
