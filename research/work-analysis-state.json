@@ -1501,6 +1501,44 @@
         "evidence_sha256": "40aec29dc33663e5c62691f825127722c8ad5c8d6f69b7e10068fd1c15f4b16b",
         "original_source": "PROJECT_BACKLOG.md:L860",
         "not_due_reason": "H4_PRECHECK_ONLY_AND_NO_REAL_FILLED_V3_PAPER_LIFECYCLE_OR_RELEASE_PROVEN_BY_THIS_RUN"
+      },
+      "BACKLOG-38f3698bf530235efb52": {
+        "disposition": "DEFERRED_WITH_GATE",
+        "reviewed_at_utc": "2026-10-24T08:15:46Z",
+        "owner": "research/v3-migration-ledger.json#macro_event_risk_gate + project component macro_h5",
+        "next_gate": "FINAL_INHERITED_BASELINE_FREEZE_THEN_SEPARATELY_APPROVED_ONE_CHANGE_PIT_FOMC_RISK_WINDOW_SHADOW_CANDIDATE",
+        "report": "research/work-analysis/2026-10-24-v3-h3-h5-h6-backlog-dispositions.md",
+        "evidence_sha256": "875abf4f4eab5905207b108afcb4f2397f110971c3ba5709d740c787279bd81b",
+        "original_source": "PROJECT_BACKLOG.md:L861",
+        "not_due_reason": "H5_PRECHECK_AND_PREREGISTRATION_EXIST_BUT_NO_ECONOMIC_BENEFIT_OR_SEPARATE_SHADOW_APPROVAL_IS_PROVEN"
+      },
+      "BACKLOG-1a9772de111cb8e9d031": {
+        "disposition": "SUPERSEDED_WITH_CANONICAL_OWNER",
+        "reviewed_at_utc": "2026-10-24T08:15:46Z",
+        "owner": "research/project-followthrough-routing-v1.json#V3_H6_VOLUME_CONFIRMATION + existing H6 economic one-change gate",
+        "next_gate": "AFTER_VERIFIED_V3_PAPER_PRODUCTIVITY_EVIDENCE_AND_H3_GATE_THEN_SEPARATE_APPROVAL_FOR_ANY_NEW_VERSIONED_ONE_CHANGE_TRIAL",
+        "report": "research/work-analysis/2026-10-24-v3-h3-h5-h6-backlog-dispositions.md",
+        "evidence_sha256": "875abf4f4eab5905207b108afcb4f2397f110971c3ba5709d740c787279bd81b",
+        "original_source": "PROJECT_BACKLOG.md:L862",
+        "evidence": [
+          "research/v3/incremental-reports/v3-h6-incremental-001-20261002-095841.json",
+          "research/v3/incremental-reports/v3-h1-h6-incremental-fixed-review-20261003.json",
+          "research/project-followthrough-routing-v1.json#V3_H6_VOLUME_CONFIRMATION"
+        ]
+      },
+      "BACKLOG-4470f6527fec3ad28902": {
+        "disposition": "SUPERSEDED_WITH_CANONICAL_OWNER",
+        "reviewed_at_utc": "2026-10-24T08:15:46Z",
+        "owner": "research/project-followthrough-routing-v1.json#V3_H3_ORDERBOOK_REEXAMINATION + existing H3 new-version gate",
+        "next_gate": "AFTER_VERIFIED_V3_PAPER_EVIDENCE_THEN_NEW_VERSION_CURRENT_BASELINE_PREREGISTRATION_AND_EXPLICIT_APPROVAL_OR_NO_ACTION",
+        "report": "research/work-analysis/2026-10-24-v3-h3-h5-h6-backlog-dispositions.md",
+        "evidence_sha256": "875abf4f4eab5905207b108afcb4f2397f110971c3ba5709d740c787279bd81b",
+        "original_source": "PROJECT_BACKLOG.md:L863",
+        "evidence": [
+          "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+          "project-current-state.json#closed_or_rejected_tracks[V3-H3-SHADOW-001]",
+          "research/project-followthrough-routing-v1.json#V3_H3_ORDERBOOK_REEXAMINATION"
+        ]
       }
     }
   },
@@ -1843,19 +1881,19 @@
       "report_sha256": "375f9a3b92366907c7efe3500b68f59fb3f2c88ef12d03c0885a254560890870"
     },
     "HISTORICAL_BACKLOG_RECONCILIATION": {
-      "gate_fingerprint": "ea9ea94387f83d157e6b",
+      "gate_fingerprint": "8e4487a8e5bbe1c111c0",
       "status": "COMPLETED",
-      "evidence_url": "research/work-analysis/2026-10-23-v3-historical-backlog-dispositions.md",
-      "reason": "Three selector-prioritized V3 originals were bound to their existing one-change Shadow, market-regime integration, and post-real-Paper risk/execution gates without starting a Shadow, model call, runtime, or release.",
-      "attempted_at_utc": "2026-10-23T08:21:59Z",
-      "completed_at_utc": "2026-10-23T08:21:59Z",
-      "report": "research/work-analysis/2026-10-23-v3-historical-backlog-dispositions.md",
-      "report_sha256": "40aec29dc33663e5c62691f825127722c8ad5c8d6f69b7e10068fd1c15f4b16b",
+      "evidence_url": "research/work-analysis/2026-10-24-v3-h3-h5-h6-backlog-dispositions.md",
+      "reason": "Three selector-prioritized V3 H3/H5/H6 originals were mapped to their existing preregistered, post-V3-Paper, new-version and explicit-approval gates without starting a Shadow, model call, runtime, or release.",
+      "attempted_at_utc": "2026-10-24T08:15:46Z",
+      "completed_at_utc": "2026-10-24T08:15:46Z",
+      "report": "research/work-analysis/2026-10-24-v3-h3-h5-h6-backlog-dispositions.md",
+      "report_sha256": "875abf4f4eab5905207b108afcb4f2397f110971c3ba5709d740c787279bd81b",
       "prior_completed_attempt": {
-        "gate_fingerprint": "c3c61e955cefea076c56",
-        "completed_at_utc": "2026-10-23T08:17:49Z",
-        "report": "research/work-analysis/2026-10-23-historical-backlog-dispositions.md",
-        "report_sha256": "27b43a186f5fd0086e206bbf9f718e5fed683f6e473507ea934a341720a60ee3"
+        "gate_fingerprint": "ea9ea94387f83d157e6b",
+        "completed_at_utc": "2026-10-23T08:21:59Z",
+        "report": "research/work-analysis/2026-10-23-v3-historical-backlog-dispositions.md",
+        "report_sha256": "40aec29dc33663e5c62691f825127722c8ad5c8d6f69b7e10068fd1c15f4b16b"
       }
     }
   }
