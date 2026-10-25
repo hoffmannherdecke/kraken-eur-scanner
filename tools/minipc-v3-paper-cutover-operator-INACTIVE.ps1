@@ -135,6 +135,34 @@ function Test-V3ScopedOriginalBackupContract([object]$Manifest) {
  return $true
 }
 
+# Shared ORIGINAL current PR515/fresh two-Task backup read-only identity.
+# An externally supplied report is NOT independently authenticated or a live
+# stop/restore/CAS receipt. This one policy is reused by both pre-CAS phase
+# planning and the separate manual precommit-recovery review.
+function Test-V3Pr515FreshRecoveryIdentity([object]$Preview) {
+ if($null -eq $Preview){return $false}
+ $xml=@($Preview.current_native_task_xml_sha256)
+ return (
+  [string]$Preview.kind -ceq 'V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1' -and
+  [string]$Preview.status -ceq 'COMPATIBLE_READONLY_NOT_RELEASED' -and
+  [string]$Preview.current_backup_directory_leaf -cmatch '^V3Paper-PreCAS-Backup-[a-f0-9]{32}$' -and
+  [string]$Preview.pr515_source_sha256 -cmatch '^[a-f0-9]{64}$' -and
+  $xml.Count -eq 2 -and
+  @($xml | Where-Object {[string]$_ -cnotmatch '^[a-f0-9]{64}$'}).Count -eq 0 -and
+  [string]$xml[0] -cne [string]$xml[1] -and
+  $Preview.current_backup_valid_while_intakes_running_only -eq $true -and
+  $Preview.preview_is_not_poststop_or_independent_cloud_ack -eq $true -and
+  $Preview.two_current_native_xml_reread_pass -eq $true -and
+  $Preview.pr515_effective_cloudsync_source_consistent -eq $true -and
+  $Preview.external_sha_pin_independently_authenticated -eq $false -and
+  $Preview.physical_task_restore_tested -eq $false -and
+  $Preview.scheduler_task_mutations -eq $false -and
+  $Preview.cloud_cas_invoked -eq $false -and
+  $Preview.v3_paper_activated -eq $false -and
+  [int]$Preview.technical_release_proofs_credited -eq 0
+ )
+}
+
 # A pure decision matrix. NEVER restore an old writer after ANY CAS invocation,
 # including timeout, no response or an apparently negative outcome: operator
 # MUST fence and reconcile actual independent Cloud readback by hand.
@@ -177,21 +205,7 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
    # Historical backup proposals cannot attest current PR515 or fresh XML.
    # This is an OFFLINE manual-review candidate, not permission to restore.
    $current=$Receipt.current_pr515_readonly_preview
-   $pr515Current=(
-    $null -ne $current -and
-    [string]$current.kind -ceq 'V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1' -and
-    [string]$current.status -ceq 'COMPATIBLE_READONLY_NOT_RELEASED' -and
-    [string]$current.current_backup_directory_leaf -cmatch '^V3Paper-PreCAS-Backup-[a-f0-9]{32}$' -and
-    [string]$current.pr515_source_sha256 -cmatch '^[a-f0-9]{64}$' -and
-    $current.two_current_native_xml_reread_pass -eq $true -and
-    $current.pr515_effective_cloudsync_source_consistent -eq $true -and
-    $current.external_sha_pin_independently_authenticated -eq $false -and
-    $current.physical_task_restore_tested -eq $false -and
-    $current.scheduler_task_mutations -eq $false -and
-    $current.cloud_cas_invoked -eq $false -and
-    $current.v3_paper_activated -eq $false -and
-    [int]$current.technical_release_proofs_credited -eq 0
-   )
+   $pr515Current=(Test-V3Pr515FreshRecoveryIdentity -Preview $current)
    if($pr515Current -and
       $Receipt.pr515_sha_pin_separately_verified -eq $true -and
       $Receipt.fresh_current_xml_after_quiesce_independently_checked -eq $true -and
@@ -516,6 +530,14 @@ function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
      -not(Test-V3ScopedOriginalBackupContract -Manifest $Receipt.backup_proposal)){
    $errors+=@('BACKUP_CONTRACT_OR_ORIGINAL_READBACK_MISSING')
   }
+  # The 19-Oct PR332 drill was a different vintage: do not let its synthetic
+  # backup/old process flags advance ANY current PR515 stop/no-rearm phase.
+  # These caller fields are still synthetic and never become host authority.
+  if(-not(Test-V3Pr515FreshRecoveryIdentity -Preview $Receipt.current_pr515_readonly_preview) -or
+     $Receipt.pr515_sha_pin_separately_verified -ne $true -or
+     $Receipt.current_backup_original_xml_prestop_verified -ne $true){
+   $errors+=@('CURRENT_PR515_ORIGINAL_BACKUP_IDENTITY_UNVERIFIED')
+  }
   $taskRows=@($Receipt.intake_task_states)
   if($taskRows.Count -ne 2 -or
      -not(Test-V3ScopedIntakeTaskSet -Names @($taskRows | ForEach-Object {[string]$_.task_name}))){
@@ -567,7 +589,15 @@ function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
    }elseif($phase -eq 'QUIESCED' -and $marker -eq 'QUIESCED' -and $taskDisableAck -and
       $separateNoRearm -and
       $Receipt.old_intake_process_count -is [int] -and [int]$Receipt.old_intake_process_count -eq 0){
-    if([int]$Receipt.authentic_technical_e2e_proofs -eq 6 -and
+    # Distinct fresh Supervisor cycles and still-running PR515 aftercare are
+    # REQUIRED *after* the native stop, not inherited from old pre-stop reports.
+    if($Receipt.two_distinct_quiesced_supervisor_cycles_readback -ne $true -or
+       $Receipt.pr515_cloudsync_precommit_no_network_hold_readback -ne $true -or
+       $Receipt.current_backup_xml_after_quiesce_readback -ne $true -or
+       $Receipt.independent_old_only_cloud_readback_after_quiesce -ne $true -or
+       $Receipt.independent_cas_never_invoked_readback_after_quiesce -ne $true){
+     $decision='HOLD_PR515_QUIESCED_OR_CLOUD_ACK_INCOMPLETE'
+    }elseif([int]$Receipt.authentic_technical_e2e_proofs -eq 6 -and
        $Receipt.model_budget_separately_approved -eq $true){
      $decision='REVIEW_SEPARATE_CLOUD_CAS_APPROVAL_NO_EXECUTION'
     }else{
@@ -588,16 +618,22 @@ function Get-V3SingleWriterFenceDryRunPlan([object]$Receipt) {
   # Strings below are labels, not scripts or runtime execution privileges.
   pre_cas_physical_order_preview=@(
    'READBACK_ORIGINAL_BACKUP_TASK_XML_AND_CURRENT_SOURCE_PINS',
+   'REQUIRE_EFFECTIVE_PR515_CLOUDSYNC_SHA_AND_TWO_FRESH_BACKUP_XML_HASHES',
    'PROPOSE_ATOMIC_ARMED_MARKER_AND_CONFIRM_SUPERVISOR_ACK',
    'DISABLE_ONLY_ORIGINAL_CANDIDATES_AND_WAIT',
    'READBACK_BOTH_WINDOWS_TASKS_DISABLED_AND_NO_REARM',
    'STOP_ONLY_ORIGINAL_CANDIDATES_AND_WAIT_TASK_OWNERS',
    'READBACK_ZERO_INTAKE_PROCESSES_AND_PROTECTED_AFTERCARE',
    'RECORD_AND_READBACK_ATOMIC_QUIESCED_MARKER',
+   'REQUIRE_TWO_DISTINCT_QUIESCED_SUPERVISOR_CYCLES_AND_PR515_CLOUDSYNC_PRECOMMIT_HOLD',
+   'REQUIRE_FRESH_POSTSTOP_TASK_XML_AND_INDEPENDENT_CLOUD_CAS_NEVER_READBACK',
    'HOLD_FOR_SEPARATELY_APPROVED_CLOUD_CAS'
   )
   rollback_boundary_if_any_cas_invoked='NO_AUTOMATIC_OLD_INTAKE_REARM_AND_MANUAL_CLOUD_RECONCILIATION'
   native_and_supervisor_independent_no_rearm_required=$true
+  pr515_current_backup_and_two_hash_identity_policy_required=$true
+  pre_cas_recovery_only_if_cas_never_attempted=$true
+  unknown_cas_fail_closed_holds_fence=$true
   step_implementation_present=$false
   proof_is_synthetic_not_live=$true
   native_task_disable_or_stop_permitted=$false
