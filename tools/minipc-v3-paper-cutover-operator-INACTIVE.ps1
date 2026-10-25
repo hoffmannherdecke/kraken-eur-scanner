@@ -5,6 +5,7 @@ param(
  [string]$ExpectedCandidatesActionSha256='',
  [string]$ExpectedWaitActionSha256='',
  [switch]$PreviewPr515PreCas,
+ [switch]$PreviewPr515Quiesced,
  [string]$OriginalBackupDirectory='',
  [string]$ExpectedPr515SourceSha256='',
  [string]$Confirm=''
@@ -940,10 +941,97 @@ function Save-V3OriginalIntakeXmlOnly([object]$Report,[string]$Root,
 }
 
 
+# Native TaskScheduler disable may change exactly one XML field: Enabled.
+# Compare all remaining XML nodes including Principal, Task action and triggers.
+# Pure parser only; no actual native stop, restore or state change.
+function Test-V3Pr515DisabledOnlyXmlDifference([string]$Saved,[string]$Disabled) {
+ if([string]::IsNullOrWhiteSpace($Saved) -or
+    [string]::IsNullOrWhiteSpace($Disabled) -or
+    $Saved.Length -gt 65536 -or $Disabled.Length -gt 65536 -or
+    $Saved -match '<!DOCTYPE|<!ENTITY' -or
+    $Disabled -match '<!DOCTYPE|<!ENTITY'){return $false}
+ try {
+  $old=[xml]::new();$new=[xml]::new()
+  $old.XmlResolver=$null;$new.XmlResolver=$null
+  $old.LoadXml($Saved);$new.LoadXml($Disabled)
+  $node='/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="Enabled"]'
+  $a=@($old.SelectNodes($node));$b=@($new.SelectNodes($node))
+  if($a.Count -ne 1 -or $b.Count -ne 1 -or
+     [string]$a[0].InnerText -cne 'true' -or
+     [string]$b[0].InnerText -cne 'false'){return $false}
+  $b[0].InnerText='true'
+  return ($old.OuterXml -ceq $new.OuterXml)
+ }catch{return $false}
+}
+
+# A true QUIESCED phase must be verified on the same ORIGINAL Windows host.
+# These are read-only LOCAL Supervisor/PR515 observations, not independently
+# authenticated PID, six-release-proof, or external Cloud-CAS evidence.
+function Test-V3Pr515QuiescedLocalHold([string]$Root) {
+ $state=Join-Path $Root 'State'
+ if(Test-Path -LiteralPath (Join-Path $state 'v2r4-technical-cutover-maintenance.json')){
+  throw 'Foreign maintenance marker present'
+ }
+ $file=Join-Path $state 'v3-experimental-paper-old-intake-fence.json'
+ $item=Get-Item -LiteralPath $file -Force -ErrorAction Stop
+ if($item.PSIsContainer -or
+    [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 8192){throw 'Unsafe fence'}
+ $marker=Get-Content -LiteralPath $file -Raw -ErrorAction Stop | ConvertFrom-Json
+ if([string]$marker.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
+    [string]$marker.phase -cne 'QUIESCED' -or
+    [string]$marker.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    -not(Test-V3ScopedIntakeTaskSet -Names @($marker.task_names)) -or
+    [string]$marker.proposed_v3_repo_sha -cnotmatch '^[a-f0-9]{40}$' -or
+    [string]$marker.proposed_v3_bundle_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    [string]$marker.proposed_v3_strategy_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $marker.paper_only -ne $true -or $marker.orders_enabled -ne $false -or
+    $marker.real_money_actions -ne $false -or
+    $marker.persistent_until_explicit_owner_release -ne $true -or
+    $marker.drill_only -eq $true){throw 'Invalid or historical drill-only QUIESCED marker'}
+ $reports=@()
+ foreach($leaf in @('minipc-runtime-supervisor.json','v2r4-paper-cloud-sync-heartbeat.json')){
+  $p=Join-Path $state $leaf
+  $f=Get-Item -LiteralPath $p -Force -ErrorAction Stop
+  if($f.PSIsContainer -or
+     [bool]($f.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+     $f.Length -lt 50 -or $f.Length -gt 131072){throw 'Unsafe report'}
+  $r=Get-Content -LiteralPath $p -Raw -ErrorAction Stop | ConvertFrom-Json
+  $stamp=[datetimeoffset]::MinValue
+  if([string]$r.checked_at_utc -cnotmatch '(Z|\+00:00)$' -or
+     -not([datetimeoffset]::TryParse([string]$r.checked_at_utc,[ref]$stamp))){
+   throw 'Invalid readback UTC time'
+  }
+  $age=([datetimeoffset]::UtcNow-$stamp).TotalSeconds
+  if($age -lt -10 -or $age -gt 180){throw 'Stale or future originalhost readback'}
+  $reports+=@($r)
+ }
+ $sup=$reports[0];$cloud=$reports[1]
+ $matched=@($sup.tasks | Where-Object {
+  $_.task -in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait') -and
+  $_.action -ceq 'V3_INTAKE_SUPERVISOR_REARM_BLOCKED' -and
+  [string]$_.before.scheduler_state -ceq 'Disabled'
+ })
+ if([string]$sup.status -cne 'WARNING' -or
+    [string]$sup.v3_paper_old_intake_fence.mode -cne 'QUIESCED' -or
+    $matched.Count -ne 2 -or
+    @($sup.restarted).Count -ne 0 -or
+    @($sup.failed_restarts).Count -ne 0 -or
+    [string]$cloud.status -cne 'HEALTHY' -or
+    [string]$cloud.mode -cne 'V3_PRECOMMIT_NO_NETWORK_HOLD' -or
+    [string]$cloud.v3_fence_precommit_phase -cne 'QUIESCED' -or
+    [string]$cloud.v3_fence_cloud_sync_lane -cne 'PRECOMMIT_ORIGINAL' -or
+    $cloud.cloud_sync_intentionally_paused -ne $true -or
+    $cloud.cloud_updated -ne $false){
+  throw 'Native Supervisor or PR515 precommit no-network hold mismatch'
+ }
+ return $true
+}
+
 # This branch ONLY observes the current PR515 plus the new original Task XML.
 # Historical PR332 drill stop/restore functions are NOT called or repurposed.
 function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
- [string]$BackupDirectory,[string]$ExpectedCloudSha) {
+ [string]$BackupDirectory,[string]$ExpectedCloudSha,[switch]$ExpectedQuiesced) {
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
   throw 'Original Windows host required'
  }
@@ -999,6 +1087,8 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
   [pscustomobject]@{name='CryptoMiniPC-V2R4PaperCandidates';file='Candidates.task.xml'},
   [pscustomobject]@{name='CryptoMiniPC-V2R4PaperWait';file='WAIT.task.xml'}
  )
+ if($ExpectedQuiesced){$null=Test-V3Pr515QuiescedLocalHold -Root $rootPath}
+ $requiredState=if($ExpectedQuiesced){'Disabled'}else{'Running'}
  foreach($role in $roles){
   $rec=@($manifest.task_records | Where-Object {$_.task_name -ceq $role.name})
   $row=@($Report.physical_v2r4_paper_task_readback |
@@ -1010,7 +1100,7 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
    throw 'Fresh manifest Task role/record mismatch'
   }
   $task=Get-ScheduledTask -TaskName $role.name -TaskPath '\' -ErrorAction Stop
-  if([string]$task.State -cne 'Running' -or
+  if([string]$task.State -cne $requiredState -or
      @($task.Actions).Count -ne 1 -or
      [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
      (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne [string]$rec[0].action_sha256 -or
@@ -1018,7 +1108,15 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
    throw 'Original intake Task source changed since secured XML snapshot'
   }
   $live=[string](Export-ScheduledTask -TaskName $role.name -TaskPath '\' -ErrorAction Stop)
-  if(-not(Test-V3FreshBackupFileBytes -Path (Join-Path $folder $role.file) -ExpectedSha ([string]$rec[0].xml_sha256) -ExpectedXml $live)){
+  $source=Join-Path $folder $role.file
+  if($ExpectedQuiesced){
+   $digest=(Get-FileHash -LiteralPath $source -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+   $saved=Get-Content -LiteralPath $source -Raw -Encoding UTF8 -ErrorAction Stop
+   if($digest -cne [string]$rec[0].xml_sha256 -or
+      -not(Test-V3Pr515DisabledOnlyXmlDifference -Saved $saved -Disabled $live)){
+    throw 'Native disabled Task changed beyond Enabled configuration'
+   }
+  }elseif(-not(Test-V3FreshBackupFileBytes -Path $source -ExpectedSha ([string]$rec[0].xml_sha256) -ExpectedXml $live)){
    throw 'Durable XML does not equal current original Task'
   }
  }
@@ -1039,8 +1137,13 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
   throw 'Effective PR515 CloudSync native Task/source pin mismatch'
  }
  return [ordered]@{
-  kind='V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1'
-  status='COMPATIBLE_READONLY_NOT_RELEASED'
+  kind=$(if($ExpectedQuiesced){'V3_PRECAS_PR515_QUIESCED_READONLY_COMPATIBILITY_V1'}else{'V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1'})
+  status=$(if($ExpectedQuiesced){'QUIESCED_NATIVE_SOURCE_MATCH_NOT_RELEASED'}else{'COMPATIBLE_READONLY_NOT_RELEASED'})
+  after_disable_enabled_only_native_xml_comparison=$ExpectedQuiesced.IsPresent
+  single_local_supervisor_pr515_quiesced_observation_only=$ExpectedQuiesced.IsPresent
+  two_distinct_supervisor_cycles_verified=$false
+  old_intake_pid_family_absence_independently_verified=$false
+  independent_cloud_cas_never_invoked_verified=$false
   # Snapshot hashes are not fresh post-stop authority; re-read after QUIESCED.
   current_backup_directory_leaf=$name
   pr515_source_sha256=$ExpectedCloudSha
@@ -1064,8 +1167,9 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
-if($PreviewPr515PreCas) {
- if($BackupOriginalIntake -or $Confirm -or
+if($PreviewPr515PreCas -or $PreviewPr515Quiesced) {
+ if(($PreviewPr515PreCas -and $PreviewPr515Quiesced) -or
+    $BackupOriginalIntake -or $Confirm -or
     $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
     [string]::IsNullOrWhiteSpace($OriginalBackupDirectory) -or
     $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$'){
@@ -1190,6 +1294,13 @@ if($PreviewPr515PreCas) {
  }
  $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256
  $receipt | ConvertTo-Json -Depth 6
+ return
+}
+if($PreviewPr515Quiesced) {
+ # The original four-role inspector may see disabled native tasks. Its
+ # running-intake readiness is NOT used as a QUIESCED release proof.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedQuiesced
+ $receipt | ConvertTo-Json -Depth 7
  return
 }
 if($BackupOriginalIntake) {
