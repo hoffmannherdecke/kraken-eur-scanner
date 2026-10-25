@@ -77,7 +77,10 @@ begin
   create role v3_cas_audit_append_definer nologin noinherit nobypassrls;
   alter table v3_cas_audit.epoch_v1 owner to v3_cas_audit_table_owner;
   alter table v3_cas_audit.intent_v1 owner to v3_cas_audit_table_owner;
-  grant usage on schema v3_cas_audit to v3_cas_audit_append_definer;
+  -- PostgreSQL FK referential-integrity triggers run as the constrained
+  -- table owner; this NOLOGIN table owner needs schema USAGE, not CREATE.
+  grant usage on schema v3_cas_audit
+    to v3_cas_audit_table_owner, v3_cas_audit_append_definer;
   grant select(epoch_id,next_ordinal,source_sha256,
                original_fence_sha256,predecessor_series_id,expected_rpc),
         update(next_ordinal)
