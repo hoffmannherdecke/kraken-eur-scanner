@@ -20,6 +20,8 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertEqual(len(re.findall(r"(?m)^\\s*Stop-ScheduledTask\\b",dormant)),1)
         self.assertNotRegex(outside,r"(?m)^\\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\\b")
         self.assertNotRegex(dormant,r"(?m)^\\s*(?:Start|Enable|Register)-ScheduledTask\\b")
+        self.assertIn("V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED",dormant)
+        self.assertRegex(dormant,r"(?s)\) \{\s*# Independent second hard-lock:.*?throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'")
         self.assertIn("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE",dormant)
         self.assertLess(dormant.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"),
                         dormant.index("Disable-ScheduledTask"))
