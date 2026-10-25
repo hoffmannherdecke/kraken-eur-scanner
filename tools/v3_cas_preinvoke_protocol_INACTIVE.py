@@ -11,6 +11,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import hmac
+from datetime import datetime, timezone, timedelta
 import json
 import re
 import uuid
@@ -132,3 +134,91 @@ def review_untrusted_audit_readback(intent: AuditIntent, row: Mapping[str, Any] 
 def invoke_v3_paper_cas(*_args: Any, **_kwargs: Any) -> None:
     """Hard lock even if imported by a future caller."""
     raise PreinvokeHold("V3_CAS_PREINVOKE_PROTOCOL_SOURCE_UNCONDITIONALLY_LOCKED")
+
+# SOURCE ONLY: an external HMAC packet cannot itself prove off-DB durability,
+# key separation, complete CAS-attempt coverage or permission to release.
+WITNESS_KIND = "V3_CAS_OFFDB_WITNESS_PACKET_V1"
+WITNESS_DOMAIN = b"kraken-eur-scanner/V3-CAS/witness-review/v1\\x00"
+WITNESS_KEYS = ("kind", "witness_id", "epoch_id", "last_ordinal",
+                "ordered_intent_sha256", "external_commit_sha256", "signed_at_utc")
+MAX_WITNESSED_INTENTS = 64
+
+
+def review_offdb_witness_hmac_packet(
+    intent: AuditIntent, receipt: Mapping[str, Any] | None, *,
+    expected_witness_id: str, verification_key: bytes, reviewed_at_utc: str,
+) -> dict[str, Any]:
+    """Pure bounded byte-authentication test, NEVER a CAS or restore gate.
+
+    No key is loaded or issued here; the caller's claimed trusted key cannot
+    be independently authenticated by this function. No external fetch/write.
+    """
+    result = {
+        "kind": "V3_CAS_WITNESS_PACKET_LOCAL_REVIEW_V1",
+        "disposition": "HOLD_WITNESS_UNVERIFIED",
+        "mac_matches_supplied_key": False,
+        "real_witness_issuer_authenticated": False,
+        "independent_offdb_durable_storage_proven": False,
+        "exclusive_cas_attempt_coverage_proven": False,
+        "historical_cas_never_invoked_proven": False,
+        "cas_dispatch_authorized": False,
+        "native_restore_authorized": False,
+        "old_writer_auto_rearm_allowed": False,
+        "v3_paper_release_authorized": False,
+    }
+    if receipt is None:
+        result["disposition"] = "HOLD_WITNESS_MISSING"
+        return result
+    try:
+        if (not isinstance(intent, AuditIntent)
+                or not isinstance(receipt, Mapping)
+                or type(verification_key) is not bytes
+                or not 32 <= len(verification_key) <= 128
+                or not isinstance(expected_witness_id, str)
+                or re.fullmatch(r"[A-Za-z0-9_.:-]{5,120}", expected_witness_id) is None
+                or set(receipt) != set(WITNESS_KEYS) | {"hmac_sha256"}
+                or receipt["kind"] != WITNESS_KIND
+                or receipt["witness_id"] != expected_witness_id
+                or receipt["epoch_id"] != intent.epoch_id):
+            raise ValueError("bad witness scope")
+        ordinal = receipt["last_ordinal"]
+        digests = receipt["ordered_intent_sha256"]
+        if (type(ordinal) is not int or not 1 <= ordinal <= MAX_WITNESSED_INTENTS
+                or type(digests) is not list or len(digests) != ordinal
+                or intent.ordinal < 1 or intent.ordinal > ordinal
+                or not all(isinstance(d, str) and HEX64.fullmatch(d) for d in digests)
+                or len(set(digests)) != len(digests)
+                or digests[intent.ordinal - 1] != intent.digest
+                or not isinstance(receipt["external_commit_sha256"], str)
+                or not HEX64.fullmatch(receipt["external_commit_sha256"])
+                or not isinstance(receipt["hmac_sha256"], str)
+                or not HEX64.fullmatch(receipt["hmac_sha256"])):
+            raise ValueError("bad sequence/claim")
+        def parse_utc(value: Any) -> datetime:
+            if not isinstance(value, str) or re.fullmatch(
+                r"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z", value
+            ) is None:
+                raise ValueError("noncanonical UTC")
+            parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+            return parsed.replace(tzinfo=timezone.utc)
+        signed_at = parse_utc(receipt["signed_at_utc"])
+        now = parse_utc(reviewed_at_utc)
+        if not timedelta(0) <= now - signed_at <= timedelta(minutes=5):
+            raise ValueError("stale/future witness")
+        payload = {key: receipt[key] for key in WITNESS_KEYS}
+        raw = WITNESS_DOMAIN + json.dumps(
+            payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+            allow_nan=False,
+        ).encode("ascii")
+        if len(raw) > 7000:
+            raise ValueError("oversized packet")
+        expected = hmac.new(verification_key, raw, hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, receipt["hmac_sha256"]):
+            raise ValueError("wrong HMAC")
+    except (ValueError, TypeError, KeyError, IndexError, OverflowError, AttributeError):
+        result["disposition"] = "HOLD_WITNESS_BINDING_OR_MAC_INVALID"
+        return result
+    result["mac_matches_supplied_key"] = True
+    result["disposition"] = "REVIEW_ONLY_MAC_MATCH_CUSTODY_UNPROVEN"
+    return result
+
