@@ -321,9 +321,9 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             "current_backup_directory_leaf=$name",
             "pr515_source_sha256=$ExpectedCloudSha",
             "current_native_task_xml_sha256=@(",
-            "current_backup_valid_while_intakes_running_only=(!$ExpectedQuiesced.IsPresent)",
+            "current_backup_valid_while_intakes_running_only=(!$poststop)",
             "preview_is_not_poststop_or_independent_cloud_ack=(!$ExpectedQuiesced.IsPresent)",
-            "poststop_disabled_only_native_xml_recheck_pass=$ExpectedQuiesced.IsPresent",
+            "poststop_disabled_only_native_xml_recheck_pass=$poststop",
             "local_poststop_snapshot_is_not_independent_cloud_ack=$true",
             "external_sha_pin_independently_authenticated=$false",
         ):
@@ -444,7 +444,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             "Native disabled Task changed beyond Enabled configuration",
             "Invalid or historical drill-only QUIESCED marker",
             "Native Supervisor or PR515 precommit no-network hold mismatch",
-            "after_disable_enabled_only_native_xml_comparison=$ExpectedQuiesced.IsPresent",
+            "after_disable_enabled_only_native_xml_comparison=$poststop",
             "two_distinct_supervisor_cycles_verified=$false",
             "old_intake_pid_family_absence_independently_verified=$false",
             "independent_cloud_cas_never_invoked_verified=$false",
@@ -458,6 +458,30 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertNotIn("Invoke-RestMethod",s)
         self.assertNotIn("Invoke-WebRequest",s)
         self.assertNotIn("drill_only=$false",s)
+
+    def test_pr515_armed_originalhost_poststop_mode_is_readonly_and_distinct(self):
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        for required in (
+            "[switch]$PreviewPr515Armed",
+            "[switch]$ExpectedArmed",
+            "V3_PRECAS_PR515_ARMED_POSTSTOP_READONLY_COMPATIBILITY_V1",
+            "ARMED_DISABLED_NATIVE_SOURCE_MATCH_NOT_RELEASED",
+            "single_local_supervisor_pr515_armed_observation_only=$ExpectedArmed.IsPresent",
+            "Test-V3Pr515QuiescedLocalHold -Root $rootPath -ExpectedPhase $stage",
+            "current_backup_valid_while_intakes_running_only=(!$poststop)",
+            "poststop_disabled_only_native_xml_recheck_pass=$poststop",
+            "if($PreviewPr515Armed) {",
+            "-ExpectedArmed",
+            "$modeCount -ne 1",
+            "two_distinct_supervisor_cycles_verified=$false",
+            "old_intake_pid_family_absence_independently_verified=$false",
+            "independent_cloud_cas_never_invoked_verified=$false",
+        ):
+            self.assertIn(required,s)
+        self.assertLess(s.index("if($Execute){"),s.index("if($PreviewPr515Armed) {"))
+        self.assert_locked_pr515_native_stop_only(s)
+        self.assertNotIn("Invoke-RestMethod",s)
+        self.assertNotIn("Invoke-WebRequest",s)
 
     def test_pr515_fresh_native_backup_preview_fail_closed_and_never_cutover(self):
         """New PR515 preview compares current native XML and disk bytes only."""
