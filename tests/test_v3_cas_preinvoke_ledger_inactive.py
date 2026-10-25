@@ -70,7 +70,20 @@ class V3CasAuditInactiveTests(unittest.TestCase):
         self.assertIn("from public, anon, authenticated, service_role,",executable)
         self.assertNotIn("grant execute on function public.",executable.lower())
         self.assertNotIn("grant update(next_ordinal)",executable.lower())
-        self.assertNotIn("grant insert on v3_cas_audit.intent_v1",executable.lower())
+        self.assertNotIn(
+            "grant insert on v3_cas_audit.intent_v1\n    to v3_cas_audit_writer;",
+            executable.lower()
+        )
+        for source in (
+            "create role v3_cas_audit_table_owner nologin noinherit nobypassrls",
+            "create role v3_cas_audit_append_definer nologin noinherit nobypassrls",
+            "alter table v3_cas_audit.epoch_v1 owner to v3_cas_audit_table_owner",
+            "alter table v3_cas_audit.intent_v1 owner to v3_cas_audit_table_owner",
+            "create policy v3_cas_epoch_definer_update_v1",
+            "create policy v3_cas_intent_definer_insert_v1",
+            "owner to v3_cas_audit_append_definer",
+        ):
+            self.assertIn(source, executable.lower())
         self.assertNotIn("rotate_v2r4_technical_paper(", executable.lower())
 
     def test_candidate_canonical_digest_is_stable_and_no_secrets(self):
