@@ -872,6 +872,20 @@ function ArmedTransitionFixture {
 }
 function CheckArmedReview([string]$Expected,[object]$Input,[string]$Label) {
  $r=Get-V3Pr515ArmedToQuiescedReview -Receipt $Input
+ if($r.disposition -cne $Expected){
+  $facts=@(
+   "kind="+([string]$Input.kind)
+   "pred="+([string]$Input.predecessor_series_id)
+   "scope="+[string](Test-V3ScopedIntakeTaskSet -Names @($Input.task_names))
+   "fence="+([string]$Input.fence_phase)
+   "cas="+([string]$Input.cloud_cas_invoked)
+   "outcome="+([string]$Input.cloud_cas_outcome)
+   "writer="+([string]$Input.v3_writer_started)
+   "paper="+([string]$Input.paper_only)
+   "real="+([string]$Input.real_money_actions)
+  )
+  throw ("V3_ARMED_POLICY_DIAGNOSTIC "+($facts -join ','))
+ }
  if([string]$r.disposition -cne $Expected -or
     $r.input_is_untrusted_synthetic_not_originalhost_ack -ne $true -or
     $r.original_host_authentication_performed -ne $false -or
