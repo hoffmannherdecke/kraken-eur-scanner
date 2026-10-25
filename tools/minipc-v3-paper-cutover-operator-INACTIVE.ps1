@@ -941,6 +941,209 @@ function Save-V3OriginalIntakeXmlOnly([object]$Report,[string]$Root,
 }
 
 
+# PR515 successor source owner – prepared ONLY, not connected to the CLI.
+# The unconditional -Execute LOCK below is deliberately retained. This one
+# function is the *only* native task-mutation source and may be connected only
+# by a separately authorized, reviewed originalhost release PR/approval.
+# It neither calls Cloud/CAS nor enables/starts/registrations of old intake.
+function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
+ [string]$Root,[object]$OriginalReadback,[string]$BackupFolder,
+ [string]$ReviewedPr515Sha,[string]$SuccessorId,
+ [string]$ReviewedRepoSha,[string]$ReviewedBundleSha,[string]$ReviewedStrategySha) {
+ # Independent second hard-lock: even dot-sourcing this script cannot execute
+ # the native mutations until a separately approved source change removes it.
+ throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
+  throw 'V3_NATIVE_SOURCE_ONLY_ORIGINAL_WINDOWS_REQUIRED'
+ }
+ $real=[IO.Path]::GetFullPath($Root).TrimEnd('\')
+ if(-not $real.Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase) -or
+    $SuccessorId -cnotmatch '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$' -or
+    $ReviewedRepoSha -cnotmatch '^[a-f0-9]{40}$' -or
+    $ReviewedBundleSha -cnotmatch '^[a-f0-9]{64}$' -or
+    $ReviewedStrategySha -cnotmatch '^[a-f0-9]{64}$' -or
+    $ReviewedPr515Sha -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'V3_PRECAS_SOURCE_OR_REVIEWED_PINS_INVALID'
+ }
+ $who=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $who.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_PRECAS_ADMINISTRATOR_REQUIRED'
+ }
+ $fence=Join-Path $real 'State\v3-experimental-paper-old-intake-fence.json'
+ $oldFence=Join-Path $real 'State\v2r4-technical-cutover-maintenance.json'
+ if((Test-Path -LiteralPath $fence) -or (Test-Path -LiteralPath $oldFence)){
+  throw 'V3_PRECAS_CONFLICTING_OR_EXISTING_FENCE'
+ }
+ $tasks=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ $protected=@('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')
+ if(-not(Test-V3ScopedIntakeTaskSet -Names $tasks) -or
+    -not(Test-V3CutoverPreparationPolicy -Report $OriginalReadback -FenceMarkerPresent $false -MaintenanceMarkerPresent $false)){
+  throw 'V3_PRECAS_NOT_EXACT_READY_V2R4'
+ }
+ # No new backup: use exactly the already verified original 22-Oct vintage.
+ $pre=Read-V3Pr515FreshRecoveryPreview -Report $OriginalReadback -Root $real -BackupDirectory $BackupFolder -ExpectedCloudSha $ReviewedPr515Sha
+ if([string]$pre.status -cne 'COMPATIBLE_READONLY_NOT_RELEASED' -or
+    -not(Test-V3Pr515FreshRecoveryIdentity -Preview $pre)){
+  throw 'V3_PRECAS_FRESH_XML_OR_PR515_PREVIEW_MISSING'
+ }
+ foreach($p in $protected){
+  $t=Get-ScheduledTask -TaskName $p -TaskPath '\' -ErrorAction Stop
+  if([string]$t.State -cne 'Running'){throw 'V3_PRECAS_PROTECTED_AFTERCARE_MUST_KEEP_RUNNING'}
+ }
+ $supervisorTask=Get-ScheduledTask -TaskName 'CryptoMiniPC-RuntimeSupervisor' -ErrorAction Stop
+ if([string]$supervisorTask.State -cne 'Running'){
+  throw 'V3_PRECAS_SUPERVISOR_NOT_RUNNING'
+ }
+ $native=@()
+ foreach($name in $tasks){
+  $t=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  if([string]$t.State -cne 'Running' -or
+     @($t.Actions).Count -ne 1 -or
+     [string]$t.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18')){
+   throw 'V3_PRECAS_INTAKE_IDENTITY_CHANGED'
+  }
+  $native+=@([pscustomobject]@{task=$name;arguments=[string]$t.Actions[0].Arguments})
+ }
+ # Native complete process inventory, not the PR313 transient PID hint.
+ # Other Python command-lines that contain the entire scoped native action
+ # are treated as additional owners and fail closed. No arbitrary PID kill.
+ $before=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+ $seen=@{}
+ foreach($p in $before){
+  $pidNumber=[int]$p.ProcessId
+  if($pidNumber -lt 0 -or $seen.ContainsKey($pidNumber)){
+   throw 'V3_PRECAS_BAD_PROCESS_INVENTORY'
+  }
+  $seen[$pidNumber]=$p
+ }
+ $roots=@()
+ foreach($role in $native){
+  if($role.arguments.Length -lt 10){throw 'V3_PRECAS_NATIVE_ARGUMENTS_AMBIGUOUS'}
+  $found=@($before | Where-Object {
+   [string]$_.Name -match '(?i)^pythonw?\.exe$' -and
+   ([string]$_.CommandLine).Replace('\','/').IndexOf(
+    $role.arguments.Replace('\','/'),[StringComparison]::OrdinalIgnoreCase) -ge 0
+  })
+  if($found.Count -lt 1 -or $found.Count -gt 2){
+   throw 'V3_PRECAS_NATIVE_PROCESS_OWNER_NOT_UNIQUE'
+  }
+  $roots+=@($found | ForEach-Object {[int]$_.ProcessId})
+ }
+ $roots=@($roots | Sort-Object -Unique)
+ if($roots.Count -lt 2 -or $roots.Count -gt 4){
+  throw 'V3_PRECAS_NATIVE_PROCESS_ROOTS_UNVERIFIED'
+ }
+ $descendants=@($roots)
+ $changed=$true
+ while($changed){
+  $changed=$false
+  foreach($p in $before){
+   if([int]$p.ProcessId -eq 0){continue}
+   if([int]$p.ParentProcessId -in $descendants -and [int]$p.ProcessId -notin $descendants){
+    $descendants+=@([int]$p.ProcessId);$changed=$true
+   }
+  }
+ }
+ # The local marker is protected against unintentional peer writes and is
+ # created before any Task mutation. On ANY partial failure retain the fence.
+ $marker=[ordered]@{
+  kind='V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1'
+  phase='ARMED'
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  proposed_successor_series_id=$SuccessorId
+  proposed_v3_repo_sha=$ReviewedRepoSha
+  proposed_v3_bundle_sha256=$ReviewedBundleSha
+  proposed_v3_strategy_sha256=$ReviewedStrategySha
+  task_names=$tasks
+  paper_only=$true
+  orders_enabled=$false
+  real_money_actions=$false
+  persistent_until_explicit_owner_release=$true
+ }
+ $temp=$fence+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
+ $security=[Security.AccessControl.FileSecurity]::new()
+ $security.SetAccessRuleProtection($true,$false)
+ foreach($sid in @('S-1-5-18','S-1-5-32-544')){
+  $rule=[Security.AccessControl.FileSystemAccessRule]::new(
+   [Security.Principal.SecurityIdentifier]::new($sid),
+   [Security.AccessControl.FileSystemRights]::FullControl,
+   [Security.AccessControl.AccessControlType]::Allow)
+  $security.AddAccessRule($rule)
+ }
+ [IO.File]::WriteAllText($temp,($marker|ConvertTo-Json -Depth 5),
+  [Text.UTF8Encoding]::new($false))
+ Set-Acl -LiteralPath $temp -AclObject $security -ErrorAction Stop
+ if(Test-Path -LiteralPath $fence){throw 'V3_PRECAS_FENCE_RACE'}
+ [IO.File]::Move($temp,$fence)
+ $at=[datetimeoffset]::UtcNow
+ # Existing original Supervisor and PR515 CloudSync first acknowledge ARMED.
+ $armed=$false
+ for($i=0;$i -lt 60;$i++){
+  Start-Sleep -Seconds 3
+  try{
+   $s=Get-Content -LiteralPath (Join-Path $real 'State\minipc-runtime-supervisor.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   $c=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-cloud-sync-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   if(([datetimeoffset]$s.checked_at_utc) -gt $at -and
+      ([datetimeoffset]$c.checked_at_utc) -gt $at -and
+      [string]$s.v3_paper_old_intake_fence.mode -ceq 'ARMED' -and
+      [string]$c.mode -ceq 'V3_PRECOMMIT_NO_NETWORK_HOLD' -and
+      [string]$c.v3_fence_precommit_phase -ceq 'ARMED' -and
+      $c.cloud_updated -eq $false -and
+      $c.cloud_sync_intentionally_paused -eq $true -and
+      @($s.restarted).Count -eq 0){
+    $armed=$true;break
+   }
+  }catch{}
+ }
+ if(-not $armed){throw 'V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE'}
+ # Exactly these two native task mutations, never Lifecycle or CloudSync.
+ foreach($name in $tasks){
+  Disable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
+ }
+ foreach($name in $tasks){
+  Stop-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
+ }
+ # Recheck complete prior PID family, plus any new matching Task process.
+ $quiet=$false
+ for($i=0;$i -lt 30;$i++){
+  Start-Sleep -Seconds 2
+  $disabled=@($tasks | Where-Object {
+   [string](Get-ScheduledTask -TaskName $_ -TaskPath '\' -ErrorAction Stop).State -ceq 'Disabled'
+  })
+  $after=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+  $oldLive=@($after|Where-Object {[int]$_.ProcessId -in $descendants})
+  $newLive=@(foreach($proc in $after){
+   if([string]$proc.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
+   $line=([string]$proc.CommandLine).Replace('\','/')
+   if(@($native | Where-Object {
+      ([string]$_.arguments).Length -ge 10 -and
+      $line.IndexOf(([string]$_.arguments).Replace('\','/'),
+       [StringComparison]::OrdinalIgnoreCase) -ge 0
+   }).Count -gt 0){$proc}
+  })
+  if($disabled.Count -eq 2 -and $oldLive.Count -eq 0 -and $newLive.Count -eq 0){
+   $quiet=$true;break
+  }
+ }
+ if(-not $quiet){throw 'V3_PRECAS_NATIVE_QUIESCENCE_UNKNOWN_LEAVE_ARMED_FENCE'}
+ # Never automatically promote ARMED to QUIESCED: requires a separate
+ # independent source/PID and original two-cycle Supervisor proof and another
+ # atomic marker step. Keep the safe ARMED hold; no auto-rearm or CAS.
+ return [pscustomobject]@{
+  kind='V3_PR515_NATIVE_STOP_SOURCE_ONLY_V1'
+  status='ARMED_FENCED_TWO_INTAKES_DISABLED_STOPPED_AWAIT_QUIESCED_INDEPENDENT_ACK'
+  original_task_scope=@($tasks)
+  protected_aftercare_scope=@($protected)
+  current_pr515_readonly_preflight_pass=$true
+  two_supervisor_quiesced_cycles_verified=$false
+  independent_cloud_cas_never_invoked_verified=$false
+  native_full_lineage_externally_authenticated=$false
+  cloud_cas_invoked=$false
+  automatic_old_intake_rearm_allowed=$false
+  paper_release_authorized=$false
+ }
+}
+
 # Native TaskScheduler disable may change exactly one XML field: Enabled.
 # Compare all remaining XML nodes including Principal, Task action and triggers.
 # Pure parser only; no actual native stop, restore or state change.

@@ -442,15 +442,51 @@ $operator=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/minipc-v3-paper-cu
 $ot=$null;$oe=$null
 $oa=[System.Management.Automation.Language.Parser]::ParseFile($operator,[ref]$ot,[ref]$oe)
 if($oe.Count -ne 0){throw ($oe | Out-String)}
-$cmd=@($oa.FindAll({
+# Narrowly reviewed future native stop source: allow ONLY one Disable and
+# one Stop command site, both inside the same dormant, uncalled function.
+# Keep all other mutations forbidden throughout the complete operator AST.
+$allCommands=@($oa.FindAll({
  param($a) $a -is [System.Management.Automation.Language.CommandAst]
-},$true) | ForEach-Object {$_.GetCommandName()})
-foreach($unsafe in @('Stop-Process','Start-Process','Stop-ScheduledTask','Disable-ScheduledTask',
+},$true))
+$cmd=@($allCommands | ForEach-Object {$_.GetCommandName()})
+$sourceOnlyFns=@($oa.FindAll({
+ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $a.Name -eq 'Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY'
+},$true))
+if($sourceOnlyFns.Count -ne 1){throw 'Missing unique locked PR515 native source owner'}
+$bounded=$sourceOnlyFns[0]
+$special=@($allCommands | Where-Object {
+ $_.GetCommandName() -in @('Stop-ScheduledTask','Disable-ScheduledTask')
+})
+if($special.Count -ne 2 -or
+   @($special | Where-Object {$_.GetCommandName() -eq 'Stop-ScheduledTask'}).Count -ne 1 -or
+   @($special | Where-Object {$_.GetCommandName() -eq 'Disable-ScheduledTask'}).Count -ne 1){
+ throw 'V3_PR515_NATIVE_STOP_SOURCE_EXACT_TWO_MUTATION_SITES_REQUIRED'
+}
+foreach($node in $special){
+ if($node.Extent.StartOffset -le $bounded.Body.Extent.StartOffset -or
+    $node.Extent.EndOffset -ge $bounded.Body.Extent.EndOffset){
+  throw 'V3_PR515_NATIVE_STOP_COMMAND_OUTSIDE_UNCALLABLE_SOURCE'
+ }
+}
+foreach($unsafe in @('Stop-Process','Start-Process',
  'Enable-ScheduledTask','Start-ScheduledTask','Register-ScheduledTask','Unregister-ScheduledTask',
  'Set-ScheduledTask','Set-Content','Out-File','Add-Content','Copy-Item','Move-Item',
  'Remove-Item','New-Item','Invoke-RestMethod','Invoke-WebRequest','Invoke-Sqlcmd')){
  if($cmd -contains $unsafe){throw "INACTIVE_OPERATOR_MUTATION_FORBIDDEN $unsafe"}
 }
+$allText=Get-Content -LiteralPath $operator -Raw -ErrorAction Stop
+$outside=$allText.Remove($bounded.Extent.StartOffset,$bounded.Extent.EndOffset-$bounded.Extent.StartOffset)
+if($outside -notmatch 'if\(\$Execute\)\{\s*throw ''V3_CUTOVER_EXECUTION_LOCKED' -or
+   $outside -match '(?m)^\s*(?:Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY)(?:\s|$)' -or
+   $bounded.Extent.Text -notmatch '(?s)\) \{\s*# Independent second hard-lock:.*?throw ''V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED''' -or
+   $bounded.Extent.Text -match 'Invoke-RestMethod|Invoke-WebRequest|Enable-ScheduledTask|Start-ScheduledTask|Stop-Process' -or
+   $bounded.Extent.Text -notmatch 'V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE' -or
+   $bounded.Extent.Text.IndexOf("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE") -ge
+    $bounded.Extent.Text.IndexOf('Disable-ScheduledTask')){
+ throw 'V3_PR515_NATIVE_SOURCE_LOCK_OR_FENCE_ORDER_INVALID'
+}
+Write-Output 'V3_PR515_ONLY_TWO_DORMANT_NATIVE_MUTATIONS_AST_GUARD_PASS'
 $f=@($oa.FindAll({
  param($a)
  $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
