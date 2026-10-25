@@ -1047,6 +1047,38 @@ ExpectRestorePreview $false $x 'newline serialized original Action fingerprint c
 Write-Output 'V3_IN_MEMORY_ORIGINAL_RESTORE_PREVIEW_ONLY_16_CASES_PASS'
 
 
+# PR515 current original native Task changes exactly one XML Enabled flag
+# after a future separately authorized disable. The checker is PURE only.
+$nativeDiff=@($oa.FindAll({
+ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $a.Name -eq 'Test-V3Pr515DisabledOnlyXmlDifference'
+},$true))
+if($nativeDiff.Count -ne 1){throw 'Missing unique pure PR515 disabled XML comparator'}
+. ([Scriptblock]::Create($nativeDiff[0].Extent.Text))
+function QuiescedXml([string]$Enabled='true',[string]$Action='wait_launcher.py',
+ [string]$User='SYSTEM',[string]$Trigger='BootTrigger') {
+ return ('<Task><Principals><Principal><UserId>'+$User+
+ '</UserId></Principal></Principals><Triggers><'+$Trigger+
+ '/></Triggers><Settings><Enabled>'+$Enabled+
+ '</Enabled></Settings><Actions><Exec><Command>python.exe</Command><Arguments>'+
+ $Action+'</Arguments></Exec></Actions></Task>')
+}
+function ExpectNativeDisabledDiff([bool]$Expected,[string]$Before,
+ [string]$After,[string]$Label) {
+ $got=Test-V3Pr515DisabledOnlyXmlDifference -Saved $Before -Disabled $After
+ if($got -ne $Expected){throw "V3_PR515_QUIESCED_XML_DIFF_FAIL $Label expected=$Expected actual=$got"}
+}
+ExpectNativeDisabledDiff $true (QuiescedXml) (QuiescedXml 'false') 'Enabled-only native change'
+ExpectNativeDisabledDiff $false (QuiescedXml) (QuiescedXml 'true') 'not actually disabled'
+ExpectNativeDisabledDiff $false (QuiescedXml) (QuiescedXml 'false' 'evil.py') 'Task action drift'
+ExpectNativeDisabledDiff $false (QuiescedXml) (QuiescedXml 'false' 'wait_launcher.py' 'USER') 'SYSTEM principal drift'
+ExpectNativeDisabledDiff $false (QuiescedXml) (QuiescedXml 'false' 'wait_launcher.py' 'SYSTEM' 'LogonTrigger') 'Task trigger drift'
+ExpectNativeDisabledDiff $false (QuiescedXml) '<Task><Settings /></Task>' 'missing unique Enabled field'
+ExpectNativeDisabledDiff $false (QuiescedXml) '<!DOCTYPE Task><Task />' 'DTD forbidden'
+ExpectNativeDisabledDiff $false (QuiescedXml) '<Task><Settings><Enabled>false</Enabled><Enabled>false</Enabled></Settings></Task>' 'multiple Enabled nodes'
+Write-Output 'V3_PR515_QUIESCED_ENABLED_ONLY_NATIVE_XML_PURE_8_CASES_PASS'
+
+
 # PR319: pure physical fence choreography review, NEVER executes native actions.
 $stageFn=@($oa.FindAll({
  param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
