@@ -6,6 +6,7 @@ param(
  [string]$ExpectedWaitActionSha256='',
  [switch]$PreviewPr515PreCas,
  [switch]$PreviewPr515Quiesced,
+ [switch]$PreviewPr515Armed,
  [string]$OriginalBackupDirectory='',
  [string]$ExpectedPr515SourceSha256='',
  [string]$Confirm=''
@@ -1319,7 +1320,7 @@ function Test-V3Pr515DisabledOnlyXmlDifference([string]$Saved,[string]$Disabled)
 # A true QUIESCED phase must be verified on the same ORIGINAL Windows host.
 # These are read-only LOCAL Supervisor/PR515 observations, not independently
 # authenticated PID, six-release-proof, or external Cloud-CAS evidence.
-function Test-V3Pr515QuiescedLocalHold([string]$Root) {
+function Test-V3Pr515QuiescedLocalHold([string]$Root,[ValidateSet('ARMED','QUIESCED')][string]$ExpectedPhase='QUIESCED') {
  $state=Join-Path $Root 'State'
  if(Test-Path -LiteralPath (Join-Path $state 'v2r4-technical-cutover-maintenance.json')){
   throw 'Foreign maintenance marker present'
@@ -1331,7 +1332,7 @@ function Test-V3Pr515QuiescedLocalHold([string]$Root) {
     $item.Length -lt 100 -or $item.Length -gt 8192){throw 'Unsafe fence'}
  $marker=Get-Content -LiteralPath $file -Raw -ErrorAction Stop | ConvertFrom-Json
  if([string]$marker.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
-    [string]$marker.phase -cne 'QUIESCED' -or
+    [string]$marker.phase -cne $ExpectedPhase -or
     [string]$marker.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
     -not(Test-V3ScopedIntakeTaskSet -Names @($marker.task_names)) -or
     [string]$marker.proposed_v3_repo_sha -cnotmatch '^[a-f0-9]{40}$' -or
@@ -1368,13 +1369,13 @@ function Test-V3Pr515QuiescedLocalHold([string]$Root) {
   throw 'Supervisor no-rearm Task identities missing or duplicated'
  }
  if([string]$sup.status -cne 'WARNING' -or
-    [string]$sup.v3_paper_old_intake_fence.mode -cne 'QUIESCED' -or
+    [string]$sup.v3_paper_old_intake_fence.mode -cne $ExpectedPhase -or
     $matched.Count -ne 2 -or
     @($sup.restarted).Count -ne 0 -or
     @($sup.failed_restarts).Count -ne 0 -or
     [string]$cloud.status -cne 'HEALTHY' -or
     [string]$cloud.mode -cne 'V3_PRECOMMIT_NO_NETWORK_HOLD' -or
-    [string]$cloud.v3_fence_precommit_phase -cne 'QUIESCED' -or
+    [string]$cloud.v3_fence_precommit_phase -cne $ExpectedPhase -or
     [string]$cloud.v3_fence_cloud_sync_lane -cne 'PRECOMMIT_ORIGINAL' -or
     $cloud.cloud_sync_intentionally_paused -ne $true -or
     $cloud.cloud_updated -ne $false){
@@ -1386,7 +1387,7 @@ function Test-V3Pr515QuiescedLocalHold([string]$Root) {
 # This branch ONLY observes the current PR515 plus the new original Task XML.
 # Historical PR332 drill stop/restore functions are NOT called or repurposed.
 function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
- [string]$BackupDirectory,[string]$ExpectedCloudSha,[switch]$ExpectedQuiesced) {
+ [string]$BackupDirectory,[string]$ExpectedCloudSha,[switch]$ExpectedQuiesced,[switch]$ExpectedArmed) {
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
   throw 'Original Windows host required'
  }
@@ -1442,8 +1443,13 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
   [pscustomobject]@{name='CryptoMiniPC-V2R4PaperCandidates';file='Candidates.task.xml'},
   [pscustomobject]@{name='CryptoMiniPC-V2R4PaperWait';file='WAIT.task.xml'}
  )
- if($ExpectedQuiesced){$null=Test-V3Pr515QuiescedLocalHold -Root $rootPath}
- $requiredState=if($ExpectedQuiesced){'Disabled'}else{'Running'}
+ if($ExpectedArmed -and $ExpectedQuiesced){throw 'Read-only phase modes are mutually exclusive'}
+ $poststop=($ExpectedArmed.IsPresent -or $ExpectedQuiesced.IsPresent)
+ if($poststop){
+  $stage=if($ExpectedArmed){'ARMED'}else{'QUIESCED'}
+  $null=Test-V3Pr515QuiescedLocalHold -Root $rootPath -ExpectedPhase $stage
+ }
+ $requiredState=if($poststop){'Disabled'}else{'Running'}
  foreach($role in $roles){
   $rec=@($manifest.task_records | Where-Object {$_.task_name -ceq $role.name})
   $row=@($Report.physical_v2r4_paper_task_readback |
@@ -1464,7 +1470,7 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
   }
   $live=[string](Export-ScheduledTask -TaskName $role.name -TaskPath '\' -ErrorAction Stop)
   $source=Join-Path $folder $role.file
-  if($ExpectedQuiesced){
+  if($poststop){
    $sourceInfo=Get-Item -LiteralPath $source -Force -ErrorAction Stop
    if($sourceInfo.PSIsContainer -or
       [bool]($sourceInfo.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
@@ -1498,9 +1504,10 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
   throw 'Effective PR515 CloudSync native Task/source pin mismatch'
  }
  return [ordered]@{
-  kind=$(if($ExpectedQuiesced){'V3_PRECAS_PR515_QUIESCED_READONLY_COMPATIBILITY_V1'}else{'V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1'})
-  status=$(if($ExpectedQuiesced){'QUIESCED_NATIVE_SOURCE_MATCH_NOT_RELEASED'}else{'COMPATIBLE_READONLY_NOT_RELEASED'})
-  after_disable_enabled_only_native_xml_comparison=$ExpectedQuiesced.IsPresent
+  kind=$(if($ExpectedArmed){'V3_PRECAS_PR515_ARMED_POSTSTOP_READONLY_COMPATIBILITY_V1'}elseif($ExpectedQuiesced){'V3_PRECAS_PR515_QUIESCED_READONLY_COMPATIBILITY_V1'}else{'V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1'})
+  status=$(if($ExpectedArmed){'ARMED_DISABLED_NATIVE_SOURCE_MATCH_NOT_RELEASED'}elseif($ExpectedQuiesced){'QUIESCED_NATIVE_SOURCE_MATCH_NOT_RELEASED'}else{'COMPATIBLE_READONLY_NOT_RELEASED'})
+  single_local_supervisor_pr515_armed_observation_only=$ExpectedArmed.IsPresent
+  after_disable_enabled_only_native_xml_comparison=$poststop
   single_local_supervisor_pr515_quiesced_observation_only=$ExpectedQuiesced.IsPresent
   two_distinct_supervisor_cycles_verified=$false
   old_intake_pid_family_absence_independently_verified=$false
@@ -1510,11 +1517,11 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
   pr515_source_sha256=$ExpectedCloudSha
   current_native_task_xml_sha256=@($manifest.task_records |
    Sort-Object task_name | ForEach-Object {[string]$_.xml_sha256})
-  current_backup_valid_while_intakes_running_only=(!$ExpectedQuiesced.IsPresent)
-  preview_is_not_poststop_or_independent_cloud_ack=(!$ExpectedQuiesced.IsPresent)
+  current_backup_valid_while_intakes_running_only=(!$poststop)
+  preview_is_not_poststop_or_independent_cloud_ack=(!$poststop)
   local_poststop_snapshot_is_not_independent_cloud_ack=$true
-  two_current_native_xml_reread_pass=(!$ExpectedQuiesced.IsPresent)
-  poststop_disabled_only_native_xml_recheck_pass=$ExpectedQuiesced.IsPresent
+  two_current_native_xml_reread_pass=(!$poststop)
+  poststop_disabled_only_native_xml_recheck_pass=$poststop
   pr515_effective_cloudsync_source_consistent=$true
   external_sha_pin_independently_authenticated=$false
   physical_task_restore_tested=$false
@@ -1530,8 +1537,9 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
-if($PreviewPr515PreCas -or $PreviewPr515Quiesced) {
- if(($PreviewPr515PreCas -and $PreviewPr515Quiesced) -or
+if($PreviewPr515PreCas -or $PreviewPr515Quiesced -or $PreviewPr515Armed) {
+ $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent
+ if($modeCount -ne 1 -or
     $BackupOriginalIntake -or $Confirm -or
     $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
     [string]::IsNullOrWhiteSpace($OriginalBackupDirectory) -or
@@ -1657,6 +1665,14 @@ if($PreviewPr515PreCas) {
  }
  $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256
  $receipt | ConvertTo-Json -Depth 6
+ return
+}
+if($PreviewPr515Armed) {
+ # After the future separately authorized native stop, the persisted fence
+ # MUST still be ARMED. Only observes native Disabled XML/PR515 and one local
+ # supervisor sample; NEVER promotes the marker, queries CAS or gives 2 cycles.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedArmed
+ $receipt | ConvertTo-Json -Depth 7
  return
 }
 if($PreviewPr515Quiesced) {
