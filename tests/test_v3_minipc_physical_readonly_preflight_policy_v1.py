@@ -314,18 +314,58 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             "cloud_cas_executed=$false",
         ):
             self.assertIn(required,recovery+shared)
-        self.assertIn("Test-V3Pr515FreshRecoveryIdentity -Preview $current",recovery)
+        self.assertIn("Test-V3Pr515QuiescedRecoveryIdentity -Before $current -After $poststop",recovery)
+        self.assertIn("current_pr515_quiesced_readonly_preview",recovery)
+        self.assertIn("current_poststop_disabled_xml_compatibility_required=$true",recovery)
         for required in (
             "current_backup_directory_leaf=$name",
             "pr515_source_sha256=$ExpectedCloudSha",
             "current_native_task_xml_sha256=@(",
-            "current_backup_valid_while_intakes_running_only=$true",
-            "preview_is_not_poststop_or_independent_cloud_ack=$true",
+            "current_backup_valid_while_intakes_running_only=(!$ExpectedQuiesced.IsPresent)",
+            "preview_is_not_poststop_or_independent_cloud_ack=(!$ExpectedQuiesced.IsPresent)",
+            "poststop_disabled_only_native_xml_recheck_pass=$ExpectedQuiesced.IsPresent",
+            "local_poststop_snapshot_is_not_independent_cloud_ack=$true",
             "external_sha_pin_independently_authenticated=$false",
         ):
             self.assertIn(required,preview)
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
         self.assertNotIn("Invoke-RestMethod",s)
+
+    def test_pr515_quiesced_restore_join_and_armed_preview_are_pure_not_authority(self):
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        join=s.split("function Test-V3Pr515QuiescedRecoveryIdentity",1)[1].split(
+            "function Get-V3Pr515ArmedToQuiescedReview",1)[0]
+        armed=s.split("function Get-V3Pr515ArmedToQuiescedReview",1)[1].split(
+            "# A pure decision matrix.",1)[0]
+        for term in (
+            "V3_PRECAS_PR515_QUIESCED_READONLY_COMPATIBILITY_V1",
+            "QUIESCED_NATIVE_SOURCE_MATCH_NOT_RELEASED",
+            "poststop_disabled_only_native_xml_recheck_pass -eq $true",
+            "local_poststop_snapshot_is_not_independent_cloud_ack -eq $true",
+            "current_native_task_xml_sha256",
+            "pr515_source_sha256",
+            "two_distinct_supervisor_cycles_verified -eq $false",
+            "independent_cloud_cas_never_invoked_verified -eq $false",
+        ):
+            self.assertIn(term,join)
+        for term in (
+            "REVIEW_SEPARATE_PHYSICAL_QUIESCED_TRANSITION_ONLY",
+            "HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED",
+            "BLOCK_INVALID_SCOPE_OR_CAS",
+            "cloud_cas_invoked -ne $false",
+            "current_original_intake_full_process_family_absent -eq $true",
+            "current_pr515_cloudsync_armed_no_network_ack -eq $true",
+            "independent_cas_never_invoked_after_stop -eq $true",
+            "input_is_untrusted_synthetic_not_originalhost_ack=$true",
+            "marker_write_or_transition_authorized=$false",
+            "automatic_old_writer_rearm_allowed=$false",
+            "cloud_cas_invoke_permitted=$false",
+            "full_v3_e2e_proofs_credited=0",
+        ):
+            self.assertIn(term,armed)
+        self.assert_locked_pr515_native_stop_only(s)
+        self.assertNotIn("Invoke-RestMethod",s)
+        self.assertNotIn("Invoke-WebRequest",s)
 
     def test_pr515_no_rearm_phase_contract_reuses_one_fresh_source_identity(self):
         """Stop/recovery planning stays offline, fail-closed and PR515 specific."""

@@ -164,6 +164,83 @@ function Test-V3Pr515FreshRecoveryIdentity([object]$Preview) {
  )
 }
 
+# Join current pre-stop and post-stop PR515 receipts from the SAME
+# original backup/source. Caller-provided snapshots are not independent
+# authenticity proof; this pure contract authorizes no restoration.
+function Test-V3Pr515QuiescedRecoveryIdentity([object]$Before,[object]$After) {
+ if(-not(Test-V3Pr515FreshRecoveryIdentity -Preview $Before) -or
+    $null -eq $After){return $false}
+ $old=@($Before.current_native_task_xml_sha256)
+ $new=@($After.current_native_task_xml_sha256)
+ return (
+  [string]$After.kind -ceq 'V3_PRECAS_PR515_QUIESCED_READONLY_COMPATIBILITY_V1' -and
+  [string]$After.status -ceq 'QUIESCED_NATIVE_SOURCE_MATCH_NOT_RELEASED' -and
+  [string]$After.current_backup_directory_leaf -ceq [string]$Before.current_backup_directory_leaf -and
+  [string]$After.pr515_source_sha256 -ceq [string]$Before.pr515_source_sha256 -and
+  $old.Count -eq 2 -and $new.Count -eq 2 -and
+  [string]$new[0] -ceq [string]$old[0] -and
+  [string]$new[1] -ceq [string]$old[1] -and
+  $After.after_disable_enabled_only_native_xml_comparison -eq $true -and
+  $After.poststop_disabled_only_native_xml_recheck_pass -eq $true -and
+  $After.single_local_supervisor_pr515_quiesced_observation_only -eq $true -and
+  $After.two_distinct_supervisor_cycles_verified -eq $false -and
+  $After.old_intake_pid_family_absence_independently_verified -eq $false -and
+  $After.independent_cloud_cas_never_invoked_verified -eq $false -and
+  $After.two_current_native_xml_reread_pass -eq $false -and
+  $After.current_backup_valid_while_intakes_running_only -eq $false -and
+  $After.preview_is_not_poststop_or_independent_cloud_ack -eq $false -and
+  $After.local_poststop_snapshot_is_not_independent_cloud_ack -eq $true -and
+  $After.pr515_effective_cloudsync_source_consistent -eq $true -and
+  $After.external_sha_pin_independently_authenticated -eq $false -and
+  $After.physical_task_restore_tested -eq $false -and
+  $After.scheduler_task_mutations -eq $false -and
+  $After.cloud_cas_invoked -eq $false -and
+  $After.v3_paper_activated -eq $false -and
+  [int]$After.technical_release_proofs_credited -eq 0
+ )
+}
+
+# Only a PURE preview of ARMED -> QUIESCED. Two caller booleans or an old
+# physical drill are NOT actual native, independent Supervisor or Cloud proof.
+function Get-V3Pr515ArmedToQuiescedReview([object]$Receipt) {
+ $status='HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED'
+ if($null -eq $Receipt -or
+    [string]$Receipt.kind -cne 'V3_PR515_ARMED_TO_QUIESCED_SOURCE_REVIEW_V1' -or
+    [string]$Receipt.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    -not(Test-V3ScopedIntakeTaskSet -Names @($Receipt.task_names)) -or
+    [string]$Receipt.fence_phase -cne 'ARMED' -or
+    $Receipt.cloud_cas_invoked -ne $false -or
+    [string]$Receipt.cloud_cas_outcome -cne 'NOT_INVOKED' -or
+    $Receipt.v3_writer_started -ne $false -or
+    $Receipt.paper_only -ne $true -or
+    $Receipt.real_money_actions -ne $false){
+  $status='BLOCK_INVALID_SCOPE_OR_CAS'
+ }elseif($Receipt.current_two_native_tasks_disabled -eq $true -and
+         $Receipt.current_original_intake_full_process_family_absent -eq $true -and
+         $Receipt.current_supervisor_armed_no_rearm_ack -eq $true -and
+         $Receipt.current_pr515_cloudsync_armed_no_network_ack -eq $true -and
+         $Receipt.protected_lifecycle_cloudsync_running -eq $true -and
+         $Receipt.current_xml_backup_source_identity_preserved -eq $true -and
+         $Receipt.independent_old_only_cloud_after_stop -eq $true -and
+         $Receipt.independent_cas_never_invoked_after_stop -eq $true){
+  $status='REVIEW_SEPARATE_PHYSICAL_QUIESCED_TRANSITION_ONLY'
+ }
+ return [pscustomobject]@{
+  kind='V3_PR515_ARMED_TO_QUIESCED_SOURCE_DISPOSITION_V1'
+  disposition=$status
+  input_is_untrusted_synthetic_not_originalhost_ack=$true
+  original_host_authentication_performed=$false
+  two_distinct_supervisor_cycles_verified=$false
+  native_process_lineage_authenticated=$false
+  independent_cloud_cas_readback_performed=$false
+  marker_write_or_transition_authorized=$false
+  automatic_old_writer_rearm_allowed=$false
+  cloud_cas_invoke_permitted=$false
+  v3_paper_release_authorized=$false
+  full_v3_e2e_proofs_credited=0
+ }
+}
+
 # A pure decision matrix. NEVER restore an old writer after ANY CAS invocation,
 # including timeout, no response or an apparently negative outcome: operator
 # MUST fence and reconcile actual independent Cloud readback by hand.
@@ -206,7 +283,8 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
    # Historical backup proposals cannot attest current PR515 or fresh XML.
    # This is an OFFLINE manual-review candidate, not permission to restore.
    $current=$Receipt.current_pr515_readonly_preview
-   $pr515Current=(Test-V3Pr515FreshRecoveryIdentity -Preview $current)
+   $poststop=$Receipt.current_pr515_quiesced_readonly_preview
+   $pr515Current=(Test-V3Pr515QuiescedRecoveryIdentity -Before $current -After $poststop)
    if($pr515Current -and
       $Receipt.pr515_sha_pin_separately_verified -eq $true -and
       $Receipt.fresh_current_xml_after_quiesce_independently_checked -eq $true -and
@@ -224,6 +302,7 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
   automatic_task_action_authorized=$false
   automatic_old_writer_rearm_allowed=$false
   current_backup_and_external_cloud_proof_required=$true
+  current_poststop_disabled_xml_compatibility_required=$true
   source_only_pr515_recovery_readback_not_authority=$true
   operator_stop_disable_implemented=$false
   host_rollback_implemented=$false
@@ -1361,9 +1440,11 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
   pr515_source_sha256=$ExpectedCloudSha
   current_native_task_xml_sha256=@($manifest.task_records |
    Sort-Object task_name | ForEach-Object {[string]$_.xml_sha256})
-  current_backup_valid_while_intakes_running_only=$true
-  preview_is_not_poststop_or_independent_cloud_ack=$true
-  two_current_native_xml_reread_pass=$true
+  current_backup_valid_while_intakes_running_only=(!$ExpectedQuiesced.IsPresent)
+  preview_is_not_poststop_or_independent_cloud_ack=(!$ExpectedQuiesced.IsPresent)
+  local_poststop_snapshot_is_not_independent_cloud_ack=$true
+  two_current_native_xml_reread_pass=(!$ExpectedQuiesced.IsPresent)
+  poststop_disabled_only_native_xml_recheck_pass=$ExpectedQuiesced.IsPresent
   pr515_effective_cloudsync_source_consistent=$true
   external_sha_pin_independently_authenticated=$false
   physical_task_restore_tested=$false
