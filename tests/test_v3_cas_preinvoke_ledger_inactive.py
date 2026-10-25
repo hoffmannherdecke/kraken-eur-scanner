@@ -58,8 +58,19 @@ class V3CasAuditInactiveTests(unittest.TestCase):
             "from public, anon, authenticated, service_role",
         ):
             self.assertIn(phrase, sql)
-        self.assertNotIn("grant execute", executable.lower())
-        self.assertNotIn("security definer", executable.lower())
+        # The future SECURITY DEFINER is still behind the original
+        # unconditional DO-first-RAISE. Never grant executable CAS RPC or
+        # expose append to PUBLIC/anon/authenticated/shared service_role.
+        self.assertEqual(executable.lower().count("security definer"),1)
+        self.assertIn("set search_path = pg_catalog, v3_cas_audit",executable)
+        self.assertIn("for update",executable)
+        self.assertIn("set next_ordinal = next_ordinal + 1",executable)
+        self.assertIn("grant execute on function v3_cas_audit.append_intent_v1",executable)
+        self.assertIn("to v3_cas_audit_writer;",executable)
+        self.assertIn("from public, anon, authenticated, service_role,",executable)
+        self.assertNotIn("grant execute on function public.",executable.lower())
+        self.assertNotIn("grant update(next_ordinal)",executable.lower())
+        self.assertNotIn("grant insert on v3_cas_audit.intent_v1",executable.lower())
         self.assertNotIn("rotate_v2r4_technical_paper(", executable.lower())
 
     def test_candidate_canonical_digest_is_stable_and_no_secrets(self):

@@ -73,21 +73,12 @@ begin
     to v3_cas_audit_writer, v3_cas_audit_reader;
   grant select(epoch_id,next_ordinal,sealed)
     on v3_cas_audit.epoch_v1 to v3_cas_audit_writer;
-  grant update(next_ordinal)
-    on v3_cas_audit.epoch_v1 to v3_cas_audit_writer;
-  grant insert on v3_cas_audit.intent_v1 to v3_cas_audit_writer;
   grant select on v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1
     to v3_cas_audit_reader;
 
   create policy v3_cas_epoch_writer_read_v1
     on v3_cas_audit.epoch_v1 for select
     to v3_cas_audit_writer using (not sealed);
-  create policy v3_cas_epoch_writer_advance_v1
-    on v3_cas_audit.epoch_v1 for update
-    to v3_cas_audit_writer using (not sealed) with check (not sealed);
-  create policy v3_cas_intent_writer_append_v1
-    on v3_cas_audit.intent_v1 for insert
-    to v3_cas_audit_writer with check (state = 'PREINVOKE_INTENT');
   create policy v3_cas_epoch_reader_v1
     on v3_cas_audit.epoch_v1 for select
     to v3_cas_audit_reader using (true);
@@ -95,23 +86,99 @@ begin
     on v3_cas_audit.intent_v1 for select
     to v3_cas_audit_reader using (true);
 
+  -- The ONLY future audit mutation entrypoint: one SECURITY DEFINER
+  -- append operation holding the bound epoch FOR UPDATE. Revoke all direct
+  -- writer UPDATE/INSERT privileges. An ordinal is computed from the locked
+  -- row, NOT supplied by any external caller. A failed INSERT rolls back
+  -- the counter advance in the SAME transaction/statement.
+  --
+  -- SECURITY REVIEW BLOCKER: This inert test DO is currently owned by the
+  -- synthetic PostgreSQL admin. Before any real Supabase migration, the
+  -- function + both tables MUST be owned by a separately reviewed NOLOGIN,
+  -- least-privileged audit owner (not postgres/supabase_admin/service_role)
+  -- with constrained effective rights, default-privilege checks, hardened
+  -- fixed search_path, and independently retained audit custody.
+  execute $v3_append_def$
+    create function v3_cas_audit.append_intent_v1(
+      p_epoch_id text,
+      p_intent_id uuid,
+      p_request_sha256 text,
+      p_source_sha256 text,
+      p_fence_sha256 text
+    ) returns bigint
+    language plpgsql
+    security definer
+    set search_path = pg_catalog, v3_cas_audit
+    as $v3_append_body$
+    declare
+      v_ordinal bigint;
+      v_source text;
+      v_fence text;
+      v_original text;
+      v_rpc text;
+    begin
+      if p_epoch_id is null or p_intent_id is null or
+         p_request_sha256 is null or p_request_sha256 !~ '^[a-f0-9]{64}$' or
+         p_source_sha256 is null or p_source_sha256 !~ '^[a-f0-9]{64}$' or
+         p_fence_sha256 is null or p_fence_sha256 !~ '^[a-f0-9]{64}$' then
+        raise exception 'V3_CAS_AUDIT_APPEND_BAD_SOURCE_SCOPE';
+      end if;
+      select e.next_ordinal, e.source_sha256, e.original_fence_sha256,
+             e.predecessor_series_id, e.expected_rpc
+        into v_ordinal, v_source, v_fence, v_original, v_rpc
+        from v3_cas_audit.epoch_v1 e
+        where e.epoch_id = p_epoch_id and not e.sealed
+        for update;
+      if not found or
+         v_original <> 'PAPER-V2R4-20261009T110135Z' or
+         v_rpc <> 'public.rotate_v2r4_to_v3_experimental_paper' or
+         v_source <> p_source_sha256 or v_fence <> p_fence_sha256 then
+        raise exception 'V3_CAS_AUDIT_EPOCH_SEALED_OR_SOURCE_MISMATCH';
+      end if;
+      update v3_cas_audit.epoch_v1
+        set next_ordinal = next_ordinal + 1
+        where epoch_id = p_epoch_id;
+      insert into v3_cas_audit.intent_v1
+        (epoch_id, ordinal, intent_id, requested_rpc,
+         predecessor_series_id, request_sha256, source_sha256, fence_sha256)
+        values
+        (p_epoch_id, v_ordinal, p_intent_id,
+         'public.rotate_v2r4_to_v3_experimental_paper',
+         'PAPER-V2R4-20261009T110135Z',
+         p_request_sha256, p_source_sha256, p_fence_sha256);
+      return v_ordinal;
+    end
+    $v3_append_body$;
+  $v3_append_def$;
+
+  -- Function EXECUTE defaults to PUBLIC in PostgreSQL. Revoke explicitly
+  -- BEFORE granting only the internal NOLOGIN writer role. No CAS RPC.
+  revoke all on function v3_cas_audit.append_intent_v1(
+    text, uuid, text, text, text)
+    from public, anon, authenticated, service_role,
+         v3_cas_audit_reader, v3_cas_executor;
+  grant execute on function v3_cas_audit.append_intent_v1(
+    text, uuid, text, text, text) to v3_cas_audit_writer;
+
   -- LIMITS: These roles are not assigned credentials or executor EXECUTE.
-  -- Writer may currently choose a nonconsecutive next_ordinal (column-level
-  -- UPDATE permission alone cannot force +1) or fabricate hash inputs.
-  -- Exact monotonic step enforcement, an exclusive lock-holding append API,
-  -- independent signed/off-DB custody and owner-tamper resistance are
-  -- future BLOCKING security gates before any migration/privilege activation.
+  -- A caller cannot choose an ordinal or mutate tables directly; the
+  -- one source-only append function obtains one FOR UPDATE row lock and
+  -- assigns +1 while inserting the exact same ordinal atomically.
+  -- However request hashes remain caller-asserted; authenticity of source,
+  -- independent signed/off-DB custody, security-definer ownership and
+  -- owner-tamper resistance are future BLOCKING production gates.
   -- RLS cannot defend against the privileged table owner / superuser.
   -- Shared BYPASSRLS service_role and public/anon/authenticated are not
   -- granted anything in this schema. Executor has no usage or table grant.
   -- NO GRANT EXECUTE to V3 CAS function (it does not exist).
 
-  -- NO GRANT, NO SECURITY DEFINER, NO CAS EXECUTE, NO PUBLIC FUNCTION.
+  -- NO PUBLIC EXECUTE, NO CAS EXECUTE, NO LOGIN CREDENTIALS.
   -- PostgreSQL table owner/admin can modify tables irrespective of these
   -- client ACLs. Independent off-DB append-only retention or independently
   -- signed custody is still required for strong tamper-evidence.
-  -- The future audit writer must lock epoch_v1 FOR UPDATE and atomically
-  -- increment next_ordinal plus insert intent_v1, COMMIT, then independently
-  -- read back ACK in another connection. Any crash/unknown fences the RPC.
+  -- The restricted function locks epoch_v1 FOR UPDATE and atomically
+  -- increments +1 while inserting intent_v1. CALLER must COMMIT before any
+  -- CAS, then an independent reader must verify durable ACK from another
+  -- connection. Crash/UNKNOWN fences the RPC; no CAS grant exists.
 end;
 $v3_cas_ledger_inactive$;
