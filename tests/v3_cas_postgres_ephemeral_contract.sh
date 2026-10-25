@@ -195,22 +195,40 @@ BEGIN
  SELECT count(*) INTO n FROM pg_policies
  WHERE schemaname='v3_cas_audit'
    AND policyname IN ('v3_cas_epoch_writer_read_v1',
-                      'v3_cas_epoch_writer_advance_v1',
-                      'v3_cas_intent_writer_append_v1',
                       'v3_cas_epoch_reader_v1',
                       'v3_cas_intent_reader_v1');
- IF n <> 5 THEN RAISE EXCEPTION 'FAIL_FIVE_SCOPED_RLS_POLICIES'; END IF;
+ IF n <> 3 THEN RAISE EXCEPTION 'FAIL_THREE_READ_ONLY_RLS_POLICIES'; END IF;
+ IF NOT EXISTS (
+   SELECT 1 FROM pg_proc p JOIN pg_namespace ns ON ns.oid=p.pronamespace
+   WHERE ns.nspname='v3_cas_audit' AND p.proname='append_intent_v1'
+     AND p.prosecdef
+     AND array_to_string(p.proconfig,',') LIKE '%search_path=pg_catalog, v3_cas_audit%'
+ ) THEN RAISE EXCEPTION 'FAIL_APPEND_DEFINER_FIXED_SEARCH_PATH'; END IF;
+ IF NOT has_function_privilege('v3_cas_audit_writer',
+       'v3_cas_audit.append_intent_v1(text,uuid,text,text,text)','EXECUTE') OR
+    has_function_privilege('anon',
+       'v3_cas_audit.append_intent_v1(text,uuid,text,text,text)','EXECUTE') OR
+    has_function_privilege('authenticated',
+       'v3_cas_audit.append_intent_v1(text,uuid,text,text,text)','EXECUTE') OR
+    has_function_privilege('service_role',
+       'v3_cas_audit.append_intent_v1(text,uuid,text,text,text)','EXECUTE') OR
+    has_function_privilege('v3_cas_audit_reader',
+       'v3_cas_audit.append_intent_v1(text,uuid,text,text,text)','EXECUTE') OR
+    has_function_privilege('v3_cas_executor',
+       'v3_cas_audit.append_intent_v1(text,uuid,text,text,text)','EXECUTE') THEN
+   RAISE EXCEPTION 'FAIL_APPEND_EXECUTE_ROLE_SCOPE';
+ END IF;
  IF NOT has_schema_privilege('v3_cas_audit_writer','v3_cas_audit','USAGE') OR
     NOT has_schema_privilege('v3_cas_audit_reader','v3_cas_audit','USAGE') OR
     has_schema_privilege('v3_cas_executor','v3_cas_audit','USAGE') OR
     has_table_privilege('v3_cas_audit_writer','v3_cas_audit.intent_v1','SELECT') OR
-    NOT has_table_privilege('v3_cas_audit_writer','v3_cas_audit.intent_v1','INSERT') OR
+    has_table_privilege('v3_cas_audit_writer','v3_cas_audit.intent_v1','INSERT') OR
     has_table_privilege('v3_cas_audit_writer','v3_cas_audit.intent_v1','DELETE') OR
     NOT has_table_privilege('v3_cas_audit_reader','v3_cas_audit.intent_v1','SELECT') OR
     has_table_privilege('v3_cas_audit_reader','v3_cas_audit.intent_v1','INSERT') OR
     has_table_privilege('v3_cas_audit_reader','v3_cas_audit.epoch_v1','UPDATE') OR
     has_table_privilege('v3_cas_executor','v3_cas_audit.intent_v1','INSERT') OR
-    NOT has_column_privilege('v3_cas_audit_writer',
+    has_column_privilege('v3_cas_audit_writer',
           'v3_cas_audit.epoch_v1','next_ordinal','UPDATE') OR
     has_column_privilege('v3_cas_audit_writer',
           'v3_cas_audit.epoch_v1','sealed','UPDATE') THEN
@@ -231,24 +249,15 @@ VALUES
  'public.rotate_v2r4_to_v3_experimental_paper',
  repeat('a',64),repeat('b',64),repeat('c',64));
 SQL
-# Required + allowed real SQL steps for narrow writer.
+# Restricted writer can EXECUTE only the one append function. Caller may
+# not choose ordinal or directly perform INSERT/UPDATE.
 pg -f - <<'SQL' >/dev/null
 SET ROLE v3_cas_audit_writer;
 BEGIN;
-SELECT next_ordinal FROM v3_cas_audit.epoch_v1
- WHERE epoch_id='V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
- FOR UPDATE;
-UPDATE v3_cas_audit.epoch_v1 SET next_ordinal=next_ordinal+1
- WHERE epoch_id='V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-INSERT INTO v3_cas_audit.intent_v1
- (epoch_id,ordinal,intent_id,requested_rpc,predecessor_series_id,
-  request_sha256,source_sha256,fence_sha256)
-VALUES
- ('V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',1,
-  '44444444-4444-4444-8444-444444444444',
-  'public.rotate_v2r4_to_v3_experimental_paper',
-  'PAPER-V2R4-20261009T110135Z',
-  repeat('d',64),repeat('a',64),repeat('b',64));
+SELECT v3_cas_audit.append_intent_v1(
+ 'V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+ '44444444-4444-4444-8444-444444444444'::uuid,
+ repeat('d',64),repeat('a',64),repeat('b',64));
 COMMIT;
 RESET ROLE;
 SQL
@@ -269,6 +278,16 @@ deny_sql writer_intent_delete \
   "set role v3_cas_audit_writer; delete from v3_cas_audit.intent_v1;"
 deny_sql writer_epoch_source_change \
   "set role v3_cas_audit_writer; update v3_cas_audit.epoch_v1 set source_sha256=repeat('e',64);"
+deny_sql writer_direct_next_ordinal_jump \
+  "set role v3_cas_audit_writer; update v3_cas_audit.epoch_v1 set next_ordinal=999;"
+deny_sql writer_direct_intent_insert \
+  "set role v3_cas_audit_writer; insert into v3_cas_audit.intent_v1 default values;"
+deny_sql reader_append_function \
+  "set role v3_cas_audit_reader; select v3_cas_audit.append_intent_v1('V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','55555555-5555-4555-8555-555555555555'::uuid,repeat('d',64),repeat('a',64),repeat('b',64));"
+deny_sql generic_service_role_append_function \
+  "set role service_role; select v3_cas_audit.append_intent_v1('V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','55555555-5555-4555-8555-555555555555'::uuid,repeat('d',64),repeat('a',64),repeat('b',64));"
+deny_sql executor_append_function \
+  "set role v3_cas_executor; select v3_cas_audit.append_intent_v1('V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','55555555-5555-4555-8555-555555555555'::uuid,repeat('d',64),repeat('a',64),repeat('b',64));"
 deny_sql reader_insert \
   "set role v3_cas_audit_reader; insert into v3_cas_audit.intent_v1 default values;"
 deny_sql reader_epoch_update \
@@ -278,4 +297,99 @@ deny_sql executor_view \
 deny_sql generic_service_role \
   "set role service_role; select count(*) from v3_cas_audit.intent_v1;"
 echo 'V3_PG17_SEPARATED_NOLOGIN_WRITER_READER_EXECUTOR_PASS'
+# Real concurrent PostgreSQL sessions, same audit epoch, same restricted
+# writer: row lock must serialize the ordinal assignment and intent insert.
+pg -f - <<'SQL' >/dev/null
+INSERT INTO v3_cas_audit.epoch_v1
+(epoch_id,predecessor_series_id,expected_rpc,source_sha256,
+ original_fence_sha256,approved_caller_acl_sha256)
+VALUES
+('V3CAS-AUDIT-cccccccccccccccccccccccccccccccc',
+ 'PAPER-V2R4-20261009T110135Z',
+ 'public.rotate_v2r4_to_v3_experimental_paper',
+ repeat('a',64),repeat('b',64),repeat('c',64));
+SQL
+concurrent_log_dir="$(mktemp -d)"
+# Clean both disposable host logs and Docker container on any failure.
+trap 'cleanup; rm -f "$fail_log"; rm -rf "$concurrent_log_dir"' EXIT
+pg -At -f - >"$concurrent_log_dir/a" 2>&1 <<'SQL' &
+SET ROLE v3_cas_audit_writer;
+BEGIN;
+SELECT v3_cas_audit.append_intent_v1(
+ 'V3CAS-AUDIT-cccccccccccccccccccccccccccccccc',
+ '66666666-6666-4666-8666-666666666666'::uuid,
+ repeat('d',64),repeat('a',64),repeat('b',64));
+SELECT pg_sleep(3);
+COMMIT;
+SQL
+first_pid=$!
+first_seen=0
+for i in $(seq 1 40); do
+  if grep -qx '1' "$concurrent_log_dir/a"; then
+    first_seen=1; break
+  fi
+  sleep 0.1
+done
+if [[ "$first_seen" -ne 1 ]]; then
+  echo 'FAIL_FIRST_APPEND_NOT_OBSERVED_BEFORE_CONCURRENCY' >&2
+  cat "$concurrent_log_dir/a" >&2
+  exit 1
+fi
+pg -At -f - >"$concurrent_log_dir/b" 2>&1 <<'SQL' &
+SET ROLE v3_cas_audit_writer;
+BEGIN;
+SELECT v3_cas_audit.append_intent_v1(
+ 'V3CAS-AUDIT-cccccccccccccccccccccccccccccccc',
+ '77777777-7777-4777-8777-777777777777'::uuid,
+ repeat('d',64),repeat('a',64),repeat('b',64));
+COMMIT;
+SQL
+second_pid=$!
+sleep 0.35
+if grep -qx '2' "$concurrent_log_dir/b"; then
+  echo 'FAIL_CONCURRENT_APPEND_BYPASSED_ROW_LOCK' >&2; exit 1
+fi
+wait "$first_pid"
+wait "$second_pid"
+if ! grep -qx '1' "$concurrent_log_dir/a" ||
+   ! grep -qx '2' "$concurrent_log_dir/b"; then
+  echo 'FAIL_CONCURRENT_APPEND_NOT_SERIALIZED' >&2
+  cat "$concurrent_log_dir/a" "$concurrent_log_dir/b" >&2; exit 1
+fi
+check="$(pg -Atc "select (select next_ordinal from v3_cas_audit.epoch_v1 where epoch_id='V3CAS-AUDIT-cccccccccccccccccccccccccccccccc')::text || ':' ||
+ (select string_agg(ordinal::text,',' order by ordinal) from v3_cas_audit.intent_v1 where epoch_id='V3CAS-AUDIT-cccccccccccccccccccccccccccccccc')")"
+if [[ "$check" != '3:1,2' ]]; then
+  echo "FAIL_CONCURRENT_COUNTER_INTENT_INTEGRITY_$check" >&2; exit 1
+fi
+
+# Simulate failed append in the SAME PG transaction: no gap after rollback.
+pg -f - <<'SQL' >/dev/null
+SET ROLE v3_cas_audit_writer;
+BEGIN;
+SELECT v3_cas_audit.append_intent_v1(
+ 'V3CAS-AUDIT-cccccccccccccccccccccccccccccccc',
+ '88888888-8888-4888-8888-888888888888'::uuid,
+ repeat('d',64),repeat('a',64),repeat('b',64));
+ROLLBACK;
+SQL
+check="$(pg -Atc "select (select next_ordinal from v3_cas_audit.epoch_v1 where epoch_id='V3CAS-AUDIT-cccccccccccccccccccccccccccccccc')::text || ':' ||
+ (select string_agg(ordinal::text,',' order by ordinal) from v3_cas_audit.intent_v1 where epoch_id='V3CAS-AUDIT-cccccccccccccccccccccccccccccccc')")"
+if [[ "$check" != '3:1,2' ]]; then
+  echo "FAIL_ROLLBACK_CREATED_ORDINAL_GAP_$check" >&2; exit 1
+fi
+
+# Duplicate id fails atomically, must not consume next_ordinal 3.
+deny_sql duplicate_uuid_no_gap \
+  "set role v3_cas_audit_writer; select v3_cas_audit.append_intent_v1('V3CAS-AUDIT-cccccccccccccccccccccccccccccccc','66666666-6666-4666-8666-666666666666'::uuid,repeat('d',64),repeat('a',64),repeat('b',64));"
+# Wrong bound source and bad request digest fail before writing.
+deny_sql wrong_epoch_source \
+  "set role v3_cas_audit_writer; select v3_cas_audit.append_intent_v1('V3CAS-AUDIT-cccccccccccccccccccccccccccccccc','99999999-9999-4999-8999-999999999999'::uuid,repeat('d',64),repeat('f',64),repeat('b',64));"
+deny_sql invalid_request_digest \
+  "set role v3_cas_audit_writer; select v3_cas_audit.append_intent_v1('V3CAS-AUDIT-cccccccccccccccccccccccccccccccc','99999999-9999-4999-8999-999999999999'::uuid,'bogus',repeat('a',64),repeat('b',64));"
+check="$(pg -Atc "select (select next_ordinal from v3_cas_audit.epoch_v1 where epoch_id='V3CAS-AUDIT-cccccccccccccccccccccccccccccccc')::text || ':' ||
+ (select string_agg(ordinal::text,',' order by ordinal) from v3_cas_audit.intent_v1 where epoch_id='V3CAS-AUDIT-cccccccccccccccccccccccccccccccc')")"
+if [[ "$check" != '3:1,2' ]]; then
+  echo "FAIL_REJECTED_ATTEMPT_CREATED_GAP_$check" >&2; exit 1
+fi
+echo 'V3_PG17_ATOMIC_PLUS_ONE_CONCURRENT_REPLAY_ROLLBACK_PASS'
 echo 'V3_PG17_EPHEMERAL_ALL_PASS_NO_PRODUCTION'
