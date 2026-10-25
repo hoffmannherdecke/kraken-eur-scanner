@@ -331,6 +331,30 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
         self.assertNotIn("Invoke-RestMethod",s)
 
+    def test_pr515_two_distinct_armed_cycles_are_pure_and_fail_closed(self):
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        source=s.split("function Test-V3Pr515ArmedTwoCycleSnapshots",1)[1].split(
+            "# Only a PURE preview of ARMED -> QUIESCED.",1)[0]
+        preview=s.split("function Get-V3Pr515ArmedToQuiescedReview",1)[1].split(
+            "# A pure decision matrix.",1)[0]
+        for term in (
+            "V3_PR515_ARMED_TWO_CYCLE_ORIGINALHOST_INPUT_V1",
+            "MINIPC_RUNTIME_SUPERVISOR_V1",
+            "V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1",
+            "V3_INTAKE_SUPERVISOR_REARM_BLOCKED",
+            "PRECOMMIT_ORIGINAL",
+            "V3_PRECOMMIT_NO_NETWORK_HOLD",
+            "$blocked.Count -ne 2",
+            "$delta -ge 5",
+            "$cloudDelta -ge 5",
+        ):
+            self.assertIn(term,source)
+        self.assertIn("Test-V3Pr515ArmedTwoCycleSnapshots -Evidence $Receipt.original_armed_two_cycle_snapshots",preview)
+        self.assertIn("two_cycle_caller_json_is_not_original_provenance=$true",preview)
+        self.assertIn("marker_write_or_transition_authorized=$false",preview)
+        self.assertIn("independent_cloud_cas_readback_performed=$false",preview)
+        self.assert_locked_pr515_native_stop_only(s)
+
     def test_pr515_quiesced_restore_join_and_armed_preview_are_pure_not_authority(self):
         s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         join=s.split("function Test-V3Pr515QuiescedRecoveryIdentity",1)[1].split(
