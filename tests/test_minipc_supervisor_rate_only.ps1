@@ -870,31 +870,17 @@ function ArmedTransitionFixture {
   independent_cas_never_invoked_after_stop=$true
  }
 }
-function CheckArmedReview([string]$Expected,[object]$Input,[string]$Label) {
- $r=Get-V3Pr515ArmedToQuiescedReview -Receipt $Input
- if($r.disposition -cne $Expected){
-  $facts=@(
-   "kind="+([string]$Input.kind)
-   "pred="+([string]$Input.predecessor_series_id)
-   "scope="+[string](Test-V3ScopedIntakeTaskSet -Names @($Input.task_names))
-   "fence="+([string]$Input.fence_phase)
-   "cas="+([string]$Input.cloud_cas_invoked)
-   "outcome="+([string]$Input.cloud_cas_outcome)
-   "writer="+([string]$Input.v3_writer_started)
-   "paper="+([string]$Input.paper_only)
-   "real="+([string]$Input.real_money_actions)
-  )
-  throw ("V3_ARMED_POLICY_DIAGNOSTIC "+($facts -join ','))
- }
- if([string]$r.disposition -cne $Expected -or
-    $r.input_is_untrusted_synthetic_not_originalhost_ack -ne $true -or
-    $r.original_host_authentication_performed -ne $false -or
-    $r.marker_write_or_transition_authorized -ne $false -or
-    $r.automatic_old_writer_rearm_allowed -ne $false -or
-    $r.cloud_cas_invoke_permitted -ne $false -or
-    $r.v3_paper_release_authorized -ne $false -or
-    [int]$r.full_v3_e2e_proofs_credited -ne 0){
-  throw "V3_PR515_ARMED_TO_QUIESCED_FALSE_AUTHORITY $Label got=$($r.disposition)"
+function CheckArmedReview([string]$Expected,[object]$Fixture,[string]$Label) {
+ $result=Get-V3Pr515ArmedToQuiescedReview -Receipt $Fixture
+ if([string]$result.disposition -cne $Expected -or
+    $result.input_is_untrusted_synthetic_not_originalhost_ack -ne $true -or
+    $result.original_host_authentication_performed -ne $false -or
+    $result.marker_write_or_transition_authorized -ne $false -or
+    $result.automatic_old_writer_rearm_allowed -ne $false -or
+    $result.cloud_cas_invoke_permitted -ne $false -or
+    $result.v3_paper_release_authorized -ne $false -or
+    [int]$result.full_v3_e2e_proofs_credited -ne 0) {
+  throw "V3_PR515_ARMED_TO_QUIESCED_FALSE_AUTHORITY $Label expected=$Expected got=$($result.disposition)"
  }
 }
 CheckArmedReview 'REVIEW_SEPARATE_PHYSICAL_QUIESCED_TRANSITION_ONLY' (ArmedTransitionFixture) 'synthetic review is not phase promotion'
