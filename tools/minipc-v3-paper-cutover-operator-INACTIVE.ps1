@@ -950,6 +950,9 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  [string]$Root,[object]$OriginalReadback,[string]$BackupFolder,
  [string]$ReviewedPr515Sha,[string]$SuccessorId,
  [string]$ReviewedRepoSha,[string]$ReviewedBundleSha,[string]$ReviewedStrategySha) {
+ # Independent second hard-lock: even dot-sourcing this script cannot execute
+ # the native mutations until a separately approved source change removes it.
+ throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
   throw 'V3_NATIVE_SOURCE_ONLY_ORIGINAL_WINDOWS_REQUIRED'
  }
