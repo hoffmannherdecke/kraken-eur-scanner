@@ -81,7 +81,7 @@ begin
   -- table owner; this NOLOGIN table owner needs schema USAGE, not CREATE.
   grant usage on schema v3_cas_audit
     to v3_cas_audit_table_owner, v3_cas_audit_append_definer;
-  grant select(epoch_id,next_ordinal,source_sha256,
+  grant select(epoch_id,next_ordinal,sealed,source_sha256,
                original_fence_sha256,predecessor_series_id,expected_rpc),
         update(next_ordinal)
     on v3_cas_audit.epoch_v1 to v3_cas_audit_append_definer;
