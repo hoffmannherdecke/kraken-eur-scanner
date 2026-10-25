@@ -657,7 +657,7 @@ Write-Output 'V3_SIGNED_CONHOST_EXACT_SCOPE_PURE_12_CASES_PASS'
 
 # V3 offline transaction-contract simulation. Run extracted PURE policies only.
 # Never execute the inactive operator, host commands, Task or Cloud changes.
-foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Test-V3Pr515FreshRecoveryIdentity','Resolve-V3ScopedCutoverRecovery')){
+foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity','Get-V3Pr515ArmedToQuiescedReview','Resolve-V3ScopedCutoverRecovery')){
  $fn=@($oa.FindAll({
   param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
   $a.Name -eq $name
@@ -723,9 +723,26 @@ function V3Pr515RecoveryPreviewFixture {
   technical_release_proofs_credited=0
  }
 }
+function V3Pr515QuiescedPreviewFixture {
+ $x=V3Pr515RecoveryPreviewFixture
+ $x.kind='V3_PRECAS_PR515_QUIESCED_READONLY_COMPATIBILITY_V1'
+ $x.status='QUIESCED_NATIVE_SOURCE_MATCH_NOT_RELEASED'
+ $x.after_disable_enabled_only_native_xml_comparison=$true
+ $x.poststop_disabled_only_native_xml_recheck_pass=$true
+ $x.single_local_supervisor_pr515_quiesced_observation_only=$true
+ $x|Add-Member -NotePropertyName two_distinct_supervisor_cycles_verified -NotePropertyValue $false
+ $x|Add-Member -NotePropertyName old_intake_pid_family_absence_independently_verified -NotePropertyValue $false
+ $x|Add-Member -NotePropertyName independent_cloud_cas_never_invoked_verified -NotePropertyValue $false
+ $x.current_backup_valid_while_intakes_running_only=$false
+ $x.preview_is_not_poststop_or_independent_cloud_ack=$false
+ $x.two_current_native_xml_reread_pass=$false
+ $x|Add-Member -NotePropertyName local_poststop_snapshot_is_not_independent_cloud_ack -NotePropertyValue $true
+ return $x
+}
 function V3Pr515RecoveryReviewFixture {
  $x=V3RecoveryFixture
  $x|Add-Member -NotePropertyName current_pr515_readonly_preview -NotePropertyValue (V3Pr515RecoveryPreviewFixture)
+ $x|Add-Member -NotePropertyName current_pr515_quiesced_readonly_preview -NotePropertyValue (V3Pr515QuiescedPreviewFixture)
  $x|Add-Member -NotePropertyName pr515_sha_pin_separately_verified -NotePropertyValue $true
  $x|Add-Member -NotePropertyName fresh_current_xml_after_quiesce_independently_checked -NotePropertyValue $true
  $x|Add-Member -NotePropertyName independent_cloud_precommit_cas_never_invoked_ack -NotePropertyValue $true
@@ -765,7 +782,21 @@ CheckBackup $false $x 'wrong native boot restart policy'
 $x=V3BackupFixture;$x.old_stage_release_sha='bad'
 CheckBackup $false $x 'old stage source pin missing'
 CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' (V3RecoveryFixture) 'historical backup alone can no longer qualify'
-CheckRecovery 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE' (V3Pr515RecoveryReviewFixture) 'only source-current and separately reviewed simulated evidence'
+CheckRecovery 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE' (V3Pr515RecoveryReviewFixture) 'current PR515 pre+poststop source contract, still NO restore authority'
+$x=V3Pr515RecoveryReviewFixture;$x.current_pr515_quiesced_readonly_preview=$null
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'prestop source alone cannot qualify'
+$x=V3Pr515RecoveryReviewFixture;$x.current_pr515_quiesced_readonly_preview.kind='V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1'
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'cannot upcast original running intake to quiesced'
+$x=V3Pr515RecoveryReviewFixture;$x.current_pr515_quiesced_readonly_preview.current_native_task_xml_sha256[0]='f'*64
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'poststop must preserve exact original backup XML'
+$x=V3Pr515RecoveryReviewFixture;$x.current_pr515_quiesced_readonly_preview.pr515_source_sha256='e'*64
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'poststop PR515 pin drift'
+$x=V3Pr515RecoveryReviewFixture;$x.current_pr515_quiesced_readonly_preview.after_disable_enabled_only_native_xml_comparison=$false
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'poststop changed more than Enabled'
+$x=V3Pr515RecoveryReviewFixture;$x.current_pr515_quiesced_readonly_preview.two_distinct_supervisor_cycles_verified=$true
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'local one-cycle cannot overclaim two cycle'
+$x=V3Pr515RecoveryReviewFixture;$x.current_pr515_quiesced_readonly_preview.independent_cloud_cas_never_invoked_verified=$true
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'local report cannot certify independent Cloud CAS absence'
 $x=V3Pr515RecoveryReviewFixture;$x.pr515_sha_pin_separately_verified=$false
 CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'missing independently reviewed PR515 source pin'
 $x=V3Pr515RecoveryReviewFixture;$x.fresh_current_xml_after_quiesce_independently_checked=$false
@@ -819,6 +850,57 @@ CheckRecovery 'BLOCK_INVALID_SCOPE_OR_RECEIPT' $x 'stale technical predecessor'
 $x=V3RecoveryFixture;$x.cloud_cas_outcome='SOMETHING_ELSE'
 CheckRecovery 'HOLD_INVALID_CLOUD_OUTCOME' $x 'unrecognized Cloud result'
 Write-Output 'V3_SCOPED_CUTOVER_PURE_BACKUP_RECOVERY_38_CASES_PASS'
+
+
+# Pure ARMED -> QUIESCED handoff preview never changes marker or Task.
+function ArmedTransitionFixture {
+ [pscustomobject]@{
+  kind='V3_PR515_ARMED_TO_QUIESCED_SOURCE_REVIEW_V1'
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  task_names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+  fence_phase='ARMED';cloud_cas_invoked=$false;cloud_cas_outcome='NOT_INVOKED'
+  v3_writer_started=$false;paper_only=$true;real_money_actions=$false
+  current_two_native_tasks_disabled=$true
+  current_original_intake_full_process_family_absent=$true
+  current_supervisor_armed_no_rearm_ack=$true
+  current_pr515_cloudsync_armed_no_network_ack=$true
+  protected_lifecycle_cloudsync_running=$true
+  current_xml_backup_source_identity_preserved=$true
+  independent_old_only_cloud_after_stop=$true
+  independent_cas_never_invoked_after_stop=$true
+ }
+}
+function CheckArmedReview([string]$Expected,[object]$Input,[string]$Label) {
+ $r=Get-V3Pr515ArmedToQuiescedReview -Receipt $Input
+ if([string]$r.disposition -cne $Expected -or
+    $r.input_is_untrusted_synthetic_not_originalhost_ack -ne $true -or
+    $r.original_host_authentication_performed -ne $false -or
+    $r.marker_write_or_transition_authorized -ne $false -or
+    $r.automatic_old_writer_rearm_allowed -ne $false -or
+    $r.cloud_cas_invoke_permitted -ne $false -or
+    $r.v3_paper_release_authorized -ne $false -or
+    [int]$r.full_v3_e2e_proofs_credited -ne 0){
+  throw "V3_PR515_ARMED_TO_QUIESCED_FALSE_AUTHORITY $Label got=$($r.disposition)"
+ }
+}
+CheckArmedReview 'REVIEW_SEPARATE_PHYSICAL_QUIESCED_TRANSITION_ONLY' (ArmedTransitionFixture) 'synthetic review is not phase promotion'
+$x=ArmedTransitionFixture;$x.current_two_native_tasks_disabled=$false
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'native Task not disabled'
+$x=ArmedTransitionFixture;$x.current_original_intake_full_process_family_absent=$false
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'one original old intake process remains'
+$x=ArmedTransitionFixture;$x.current_supervisor_armed_no_rearm_ack=$false
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'native Supervisor not acked'
+$x=ArmedTransitionFixture;$x.current_pr515_cloudsync_armed_no_network_ack=$false
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'PR515 aftercare hold absent'
+$x=ArmedTransitionFixture;$x.independent_old_only_cloud_after_stop=$false
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'Cloud old only missing'
+$x=ArmedTransitionFixture;$x.independent_cas_never_invoked_after_stop=$false
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'Cloud CAS never not independently verified'
+$x=ArmedTransitionFixture;$x.cloud_cas_invoked=$true;$x.cloud_cas_outcome='UNKNOWN'
+CheckArmedReview 'BLOCK_INVALID_SCOPE_OR_CAS' $x 'UNKNOWN CAS must preserve fence'
+$x=ArmedTransitionFixture;$x.task_names[0]='CryptoMiniPC-V2R4PaperLifecycle'
+CheckArmedReview 'BLOCK_INVALID_SCOPE_OR_CAS' $x 'protected Lifecycle never in scope'
+Write-Output 'V3_PR515_ARMED_TO_QUIESCED_OFFLINE_9_CASES_PASS'
 
 
 # Native ORIGINAL host backup-manifest readback schema is intentionally
