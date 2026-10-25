@@ -69,6 +69,21 @@ begin
   create role v3_cas_audit_writer nologin noinherit nobypassrls;
   create role v3_cas_audit_reader nologin noinherit nobypassrls;
   create role v3_cas_executor nologin noinherit nobypassrls;
+  -- Two separate, non-login object owners, distinct from the callable writer:
+  -- the definer gets ONLY the table-column rights required by this append.
+  -- Synthetic superuser DDL is used ONLY by offline PG17 CI; productive
+  -- ownership, credentials and externally held audit proof remain unapproved.
+  create role v3_cas_audit_table_owner nologin noinherit nobypassrls;
+  create role v3_cas_audit_append_definer nologin noinherit nobypassrls;
+  alter table v3_cas_audit.epoch_v1 owner to v3_cas_audit_table_owner;
+  alter table v3_cas_audit.intent_v1 owner to v3_cas_audit_table_owner;
+  grant usage on schema v3_cas_audit to v3_cas_audit_append_definer;
+  grant select(epoch_id,next_ordinal,source_sha256,
+               original_fence_sha256,predecessor_series_id,expected_rpc),
+        update(next_ordinal)
+    on v3_cas_audit.epoch_v1 to v3_cas_audit_append_definer;
+  grant insert on v3_cas_audit.intent_v1
+    to v3_cas_audit_append_definer;
   grant usage on schema v3_cas_audit
     to v3_cas_audit_writer, v3_cas_audit_reader;
   grant select(epoch_id,next_ordinal,sealed)
@@ -85,6 +100,18 @@ begin
   create policy v3_cas_intent_reader_v1
     on v3_cas_audit.intent_v1 for select
     to v3_cas_audit_reader using (true);
+  -- FORCE RLS also applies to the narrowly privileged append definer.
+  -- The table owner receives NO usable DML policy in ordinary role context.
+  create policy v3_cas_epoch_definer_read_v1
+    on v3_cas_audit.epoch_v1 for select
+    to v3_cas_audit_append_definer using (not sealed);
+  create policy v3_cas_epoch_definer_update_v1
+    on v3_cas_audit.epoch_v1 for update
+    to v3_cas_audit_append_definer
+    using (not sealed) with check (not sealed);
+  create policy v3_cas_intent_definer_insert_v1
+    on v3_cas_audit.intent_v1 for insert
+    to v3_cas_audit_append_definer with check (true);
 
   -- The ONLY future audit mutation entrypoint: one SECURITY DEFINER
   -- append operation holding the bound epoch FOR UPDATE. Revoke all direct
@@ -92,12 +119,10 @@ begin
   -- row, NOT supplied by any external caller. A failed INSERT rolls back
   -- the counter advance in the SAME transaction/statement.
   --
-  -- SECURITY REVIEW BLOCKER: This inert test DO is currently owned by the
-  -- synthetic PostgreSQL admin. Before any real Supabase migration, the
-  -- function + both tables MUST be owned by a separately reviewed NOLOGIN,
-  -- least-privileged audit owner (not postgres/supabase_admin/service_role)
-  -- with constrained effective rights, default-privilege checks, hardened
-  -- fixed search_path, and independently retained audit custody.
+  -- SECURITY REVIEW BLOCKER: This inert DO runs under a synthetic CI admin,
+  -- but object ownership below is reassigned to separate NOLOGIN roles.
+  -- This does NOT attest production effective Supabase grants, role custody,
+  -- exclusive invocation credentials, admin tamper resistance or off-DB logs.
   execute $v3_append_def$
     create function v3_cas_audit.append_intent_v1(
       p_epoch_id text,
@@ -159,14 +184,18 @@ begin
          v3_cas_audit_reader, v3_cas_executor;
   grant execute on function v3_cas_audit.append_intent_v1(
     text, uuid, text, text, text) to v3_cas_audit_writer;
+  -- Critical: no inherited postgres/admin owner on SECURITY DEFINER.
+  -- The executable definer is NOLOGIN and cannot own/ALTER the tables.
+  alter function v3_cas_audit.append_intent_v1(
+    text, uuid, text, text, text) owner to v3_cas_audit_append_definer;
 
   -- LIMITS: These roles are not assigned credentials or executor EXECUTE.
   -- A caller cannot choose an ordinal or mutate tables directly; the
   -- one source-only append function obtains one FOR UPDATE row lock and
   -- assigns +1 while inserting the exact same ordinal atomically.
-  -- However request hashes remain caller-asserted; authenticity of source,
-  -- independent signed/off-DB custody, security-definer ownership and
-  -- owner-tamper resistance are future BLOCKING production gates.
+  -- However request hashes remain caller-asserted; original source/issuer
+  -- authenticity, independently protected off-DB custody, role provisioning
+  -- and privileged database administrator tamper resistance remain BLOCKING.
   -- RLS cannot defend against the privileged table owner / superuser.
   -- Shared BYPASSRLS service_role and public/anon/authenticated are not
   -- granted anything in this schema. Executor has no usage or table grant.
