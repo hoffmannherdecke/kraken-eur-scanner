@@ -1398,13 +1398,17 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
    [string](Get-ScheduledTask -TaskName $_ -TaskPath '\' -ErrorAction Stop).State -ceq 'Running'
   })
   if($running.Count -ne 2){continue}
-  $candidate=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-candidate-runtime-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
-  $wait=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-wait-runtime-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
-  if(@($candidate,$wait|Where-Object {
-     [string]$_.status -ceq 'HEALTHY' -and
-     ([datetimeoffset]$_.checked_at_utc) -gt $armedAt
-  }).Count -eq 2){
-   $healthy=$true;break
+  try{
+   $candidate=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-candidate-runtime-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   $wait=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-wait-runtime-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   $fresh=@(@($candidate,$wait) | Where-Object {
+    [string]$_.status -ceq 'HEALTHY' -and
+    [string]$_.checked_at_utc -match '(Z|\+00:00)$' -and
+    ([datetimeoffset]$_.checked_at_utc) -gt $armedAt
+   })
+   if($fresh.Count -eq 2){$healthy=$true;break}
+  }catch{
+   # Bounded local wait; never remove the protected ARMED marker on failure.
   }
  }
  if(-not $healthy){throw 'V3_PRECOMMIT_RESTORE_NOT_HEALTHY_PRESERVE_ARMED_FENCE'}
@@ -1421,13 +1425,22 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
  $after=$false
  for($i=0;$i -lt 45;$i++){
   Start-Sleep -Seconds 4
-  $sup=Get-Content -LiteralPath (Join-Path $real 'State\minipc-runtime-supervisor.json') -Raw -ErrorAction Stop|ConvertFrom-Json
-  $cloud=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-cloud-sync-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
-  if([string]$sup.status -ceq 'HEALTHY' -and
-     [string]$sup.v3_paper_old_intake_fence.mode -ceq 'NONE' -and
-     [string]$cloud.status -ceq 'HEALTHY' -and
-     [string]$cloud.v3_fence_cloud_sync_lane -ceq 'ACTIVE_ORIGINAL'){
-   $after=$true;break
+  try{
+   $sup=Get-Content -LiteralPath (Join-Path $real 'State\minipc-runtime-supervisor.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   $cloud=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-cloud-sync-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   if([string]$sup.status -ceq 'HEALTHY' -and
+      [string]$sup.v3_paper_old_intake_fence.mode -ceq 'NONE' -and
+      [string]$cloud.status -ceq 'HEALTHY' -and
+      [string]$cloud.v3_fence_cloud_sync_lane -ceq 'ACTIVE_ORIGINAL' -and
+      [string]$cloud.series_id -ceq 'PAPER-V2R4-20261009T110135Z' -and
+      [string]$sup.checked_at_utc -match '(Z|\+00:00)$' -and
+      [string]$cloud.checked_at_utc -match '(Z|\+00:00)$' -and
+      ([datetimeoffset]$sup.checked_at_utc) -gt $armedAt -and
+      ([datetimeoffset]$cloud.checked_at_utc) -gt $armedAt){
+    $after=$true;break
+   }
+  }catch{
+   # Keep bounded review; a missing local ACK never claims Cloud CAS truth.
   }
  }
  if(-not $after){throw 'V3_PRECOMMIT_RESTORE_AFTERCARE_UNKNOWN_MANUAL_REVIEW_REQUIRED'}
