@@ -727,9 +727,9 @@ function V3Pr515QuiescedPreviewFixture {
  $x=V3Pr515RecoveryPreviewFixture
  $x.kind='V3_PRECAS_PR515_QUIESCED_READONLY_COMPATIBILITY_V1'
  $x.status='QUIESCED_NATIVE_SOURCE_MATCH_NOT_RELEASED'
- $x.after_disable_enabled_only_native_xml_comparison=$true
- $x.poststop_disabled_only_native_xml_recheck_pass=$true
- $x.single_local_supervisor_pr515_quiesced_observation_only=$true
+ $x|Add-Member -NotePropertyName after_disable_enabled_only_native_xml_comparison -NotePropertyValue $true
+ $x|Add-Member -NotePropertyName poststop_disabled_only_native_xml_recheck_pass -NotePropertyValue $true
+ $x|Add-Member -NotePropertyName single_local_supervisor_pr515_quiesced_observation_only -NotePropertyValue $true
  $x|Add-Member -NotePropertyName two_distinct_supervisor_cycles_verified -NotePropertyValue $false
  $x|Add-Member -NotePropertyName old_intake_pid_family_absence_independently_verified -NotePropertyValue $false
  $x|Add-Member -NotePropertyName independent_cloud_cas_never_invoked_verified -NotePropertyValue $false
