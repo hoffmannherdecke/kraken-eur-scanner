@@ -7,6 +7,27 @@ ROOT=Path(__file__).resolve().parents[1]
 SCRIPT=ROOT/"tools/check-minipc-v3-physical-writer-readiness.ps1"
 
 class PhysicalReadinessPolicyTests(unittest.TestCase):
+    def assert_locked_pr515_native_stop_only(self, source):
+        """Exactly two dormant Task cmdlet sites, and no reachable release entry."""
+        name="function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY("
+        boundary="# Native TaskScheduler disable may change exactly one XML field:"
+        self.assertEqual(source.count(name),1)
+        pre, remainder=source.split(name,1)
+        locked, post=remainder.split(boundary,1)
+        dormant=name+locked
+        outside=pre+boundary+post
+        self.assertEqual(len(re.findall(r"(?m)^\\s*Disable-ScheduledTask\\b",dormant)),1)
+        self.assertEqual(len(re.findall(r"(?m)^\\s*Stop-ScheduledTask\\b",dormant)),1)
+        self.assertNotRegex(outside,r"(?m)^\\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\\b")
+        self.assertNotRegex(dormant,r"(?m)^\\s*(?:Start|Enable|Register)-ScheduledTask\\b")
+        self.assertIn("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE",dormant)
+        self.assertLess(dormant.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"),
+                        dormant.index("Disable-ScheduledTask"))
+        self.assertIn("if($Execute){",outside)
+        self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",outside)
+        self.assertNotRegex(outside,r"(?m)^\\s*Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY\\b")
+
+
     def test_no_side_effect_commands_or_runtime_invocation(self):
         s=SCRIPT.read_text(encoding="utf-8")
         effective="\n".join(line for line in s.splitlines()
@@ -159,7 +180,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             self.assertIn(fail_closed,s)
         self.assertLess(s.index("if($Execute){"),s.index("if($BackupOriginalIntake) {"))
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
-        self.assertNotRegex(s,r"(?m)^\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\b")
+        self.assert_locked_pr515_native_stop_only(s)
         self.assertNotIn("Invoke-RestMethod",s)
         self.assertNotIn("Invoke-WebRequest",s)
 
@@ -341,7 +362,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             self.assertIn(required,phase)
         self.assertIn("if($Execute){",s)
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
-        self.assertNotRegex(s,r"(?m)^\\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\\b")
+        self.assert_locked_pr515_native_stop_only(s)
         self.assertNotIn("Invoke-RestMethod",s)
 
     def test_pr515_quiesced_readback_is_separate_and_cannot_rearm(self):
@@ -367,7 +388,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             self.assertIn(required,s)
         self.assertLess(s.index("if($Execute){"),s.index("if($PreviewPr515Quiesced) {"))
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
-        self.assertNotRegex(s,r"(?m)^\\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\\b")
+        self.assert_locked_pr515_native_stop_only(s)
         self.assertNotIn("Invoke-RestMethod",s)
         self.assertNotIn("Invoke-WebRequest",s)
         self.assertNotIn("drill_only=$false",s)
@@ -410,7 +431,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("if($BackupOriginalIntake) {",s)
         self.assertIn("$BackupOriginalIntake -or $Confirm -or",s)
         self.assertLess(s.index("if($Execute){"),s.index("if($PreviewPr515PreCas) {"))
-        self.assertNotRegex(s,r"(?m)^\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\b")
+        self.assert_locked_pr515_native_stop_only(s)
         self.assertNotIn("Invoke-RestMethod",s)
         self.assertNotIn("Invoke-WebRequest",s)
         self.assertNotIn("PR332-CloudSync-Vorher-",s)
