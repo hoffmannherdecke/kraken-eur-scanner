@@ -1294,6 +1294,167 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  }
 }
 
+# Current PR515 PRE-COMMIT manual recovery SOURCE ONLY. This is the sole
+# future two-Task RESTORE owner; never invoke historic PR332/PR419 drill paths.
+# -Execute remains unconditionally locked at the existing outer CLI. This
+# function has its OWN first-statement hard lock, so even dot-sourcing cannot
+# reach the three native recovery sites without a separately reviewed release.
+function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
+ [string]$Root,[object]$OriginalReadback,[object]$RecoveryReceipt,
+ [string]$BackupDirectory,[string]$ReviewedPr515SourceSha256,
+ [string]$ReviewedFenceSha256,[string]$Confirm) {
+ throw 'V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED'
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
+  throw 'V3_PRECOMMIT_RESTORE_ORIGINAL_WINDOWS_REQUIRED'
+ }
+ $real=[IO.Path]::GetFullPath($Root).TrimEnd('\')
+ if(-not $real.Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase) -or
+    $Confirm -cne 'RESTORE-PRECAS-V2R4-ONLY' -or
+    $ReviewedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ReviewedFenceSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'V3_PRECOMMIT_RESTORE_HOST_OR_EXTERNAL_PINS_INVALID'
+ }
+ $wp=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $wp.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_PRECOMMIT_RESTORE_ADMIN_REQUIRED'
+ }
+ $tasks=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ $fence=Join-Path $real 'State\v3-experimental-paper-old-intake-fence.json'
+ $maintenance=Join-Path $real 'State\v2r4-technical-cutover-maintenance.json'
+ if(Test-Path -LiteralPath $maintenance){throw 'V3_PRECOMMIT_FOREIGN_MAINTENANCE_MARKER'}
+ $fenceFile=Get-Item -LiteralPath $fence -Force -ErrorAction Stop
+ if($fenceFile.PSIsContainer -or
+    [bool]($fenceFile.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $fenceFile.Length -lt 100 -or $fenceFile.Length -gt 8192 -or
+    (Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ReviewedFenceSha256){
+  throw 'V3_PRECOMMIT_ORIGINAL_FENCE_SHA_CHANGED'
+ }
+ $marker=Get-Content -LiteralPath $fence -Raw -ErrorAction Stop|ConvertFrom-Json
+ if([string]$marker.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
+    [string]$marker.phase -cne 'QUIESCED' -or
+    [string]$marker.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    -not(Test-V3ScopedIntakeTaskSet -Names @($marker.task_names)) -or
+    [string]$marker.proposed_v3_repo_sha -cnotmatch '^[a-f0-9]{40}$' -or
+    [string]$marker.proposed_v3_bundle_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    [string]$marker.proposed_v3_strategy_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $marker.paper_only -ne $true -or $marker.orders_enabled -ne $false -or
+    $marker.real_money_actions -ne $false -or
+    $marker.persistent_until_explicit_owner_release -ne $true -or
+    $marker.drill_only -eq $true){
+  throw 'V3_PRECOMMIT_FOREIGN_OR_NON_QUIESCED_MARKER'
+ }
+ # Typed original backup/source readback must be re-executed against the
+ # currently Disabled native Tasks, not just a caller-provided PR536 Boolean.
+ $actual=Read-V3Pr515FreshRecoveryPreview -Report $OriginalReadback -Root $real -BackupDirectory $BackupDirectory -ExpectedCloudSha $ReviewedPr515SourceSha256 -ExpectedQuiesced
+ if(-not(Test-V3Pr515QuiescedRecoveryIdentity -Before $RecoveryReceipt.current_pr515_readonly_preview -After $actual) -or
+    -not(Test-V3Pr515QuiescedRecoveryIdentity -Before $RecoveryReceipt.current_pr515_readonly_preview -After $RecoveryReceipt.current_pr515_quiesced_readonly_preview) -or
+    [string]$actual.current_backup_directory_leaf -cne [string]$RecoveryReceipt.current_pr515_quiesced_readonly_preview.current_backup_directory_leaf -or
+    [string]$actual.pr515_source_sha256 -cne [string]$RecoveryReceipt.current_pr515_quiesced_readonly_preview.pr515_source_sha256){
+  throw 'V3_PRECOMMIT_CURRENT_TWO_XML_AND_PR515_RECOVERY_RECHECK_FAILED'
+ }
+ $review=Resolve-V3ScopedCutoverRecovery -Receipt $RecoveryReceipt
+ if([string]$review.disposition -cne 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE' -or
+    $review.automatic_old_writer_rearm_allowed -ne $false -or
+    $RecoveryReceipt.cloud_cas_invoked -ne $false -or
+    [string]$RecoveryReceipt.cloud_cas_outcome -cne 'NOT_INVOKED' -or
+    $RecoveryReceipt.v3_writer_started -ne $false){
+  throw 'V3_PRECOMMIT_RESTORE_NOT_MANUAL_REVIEW_ELIGIBLE'
+ }
+ foreach($name in @('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')){
+  $t=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  if([string]$t.State -cne 'Running'){throw 'V3_PRECOMMIT_PROTECTED_AFTERCARE_NOT_RUNNING'}
+ }
+ # Intentionally a SECOND non-bypassable SOURCE barrier: the external
+ # independent Cloud CAS NEVER/old-only attestation must be implemented via
+ # its actual authorized read-only owner BEFORE any marker/Task mutation.
+ # The synthetic RecoveryReceipt booleans can NEVER lift this barrier.
+ throw 'V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED'
+ # Once approved and independently attested at execution time, the order is:
+ # QUIESCED -> ARMED (atomic replace, preserving protected ACL) -> only the
+ # existing two native intake Tasks Enable/Start -> exact fresh health check
+ # -> remove only this reviewed marker -> original PR515 CloudSync resumes.
+ # Partial failure means HOLD/explicit human reconciliation, NEVER auto-rearm.
+ $marker.phase='ARMED'
+ $temp=$fence+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
+ $backup=$fence+'.'+[guid]::NewGuid().ToString('N')+'.quiesced.bak'
+ [IO.File]::WriteAllText($temp,($marker|ConvertTo-Json -Depth 5),[Text.UTF8Encoding]::new($false))
+ Set-Acl -LiteralPath $temp -AclObject (Get-Acl -LiteralPath $fence -ErrorAction Stop) -ErrorAction Stop
+ if((Test-Path -LiteralPath $backup) -or
+    (Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ReviewedFenceSha256){
+  throw 'V3_PRECOMMIT_MARKER_CHANGED_BEFORE_ATOMIC_REPLACE'
+ }
+ [IO.File]::Replace($temp,$fence,$backup,$true)
+ $armedAt=[datetimeoffset]::UtcNow
+ foreach($name in $tasks){
+  Enable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
+ }
+ foreach($name in $tasks){
+  Start-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null
+ }
+ $healthy=$false
+ for($i=0;$i -lt 45;$i++){
+  Start-Sleep -Seconds 4
+  $running=@($tasks|Where-Object {
+   [string](Get-ScheduledTask -TaskName $_ -TaskPath '\' -ErrorAction Stop).State -ceq 'Running'
+  })
+  if($running.Count -ne 2){continue}
+  try{
+   $candidate=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-candidate-runtime-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   $wait=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-wait-runtime-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   $fresh=@(@($candidate,$wait) | Where-Object {
+    [string]$_.status -ceq 'HEALTHY' -and
+    [string]$_.checked_at_utc -match '(Z|\+00:00)$' -and
+    ([datetimeoffset]$_.checked_at_utc) -gt $armedAt
+   })
+   if($fresh.Count -eq 2){$healthy=$true;break}
+  }catch{
+   # Bounded local wait; never remove the protected ARMED marker on failure.
+  }
+ }
+ if(-not $healthy){throw 'V3_PRECOMMIT_RESTORE_NOT_HEALTHY_PRESERVE_ARMED_FENCE'}
+ $confirm=Get-Content -LiteralPath $fence -Raw -ErrorAction Stop|ConvertFrom-Json
+ if([string]$confirm.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
+    [string]$confirm.phase -cne 'ARMED' -or
+    [string]$confirm.proposed_successor_series_id -cne [string]$marker.proposed_successor_series_id -or
+    -not(Test-V3ScopedIntakeTaskSet -Names @($confirm.task_names))){
+  throw 'V3_PRECOMMIT_FENCE_CHANGED_DURING_RECOVERY'
+ }
+ Remove-Item -LiteralPath $fence -Force -ErrorAction Stop
+ # Follow-up CloudSync must become HEALTHY ACTIVE_ORIGINAL with exactly one
+ # original series; this return is a local receipt, not Cloud CAS authority.
+ $after=$false
+ for($i=0;$i -lt 45;$i++){
+  Start-Sleep -Seconds 4
+  try{
+   $sup=Get-Content -LiteralPath (Join-Path $real 'State\minipc-runtime-supervisor.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   $cloud=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-cloud-sync-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+   if([string]$sup.status -ceq 'HEALTHY' -and
+      [string]$sup.v3_paper_old_intake_fence.mode -ceq 'NONE' -and
+      [string]$cloud.status -ceq 'HEALTHY' -and
+      [string]$cloud.v3_fence_cloud_sync_lane -ceq 'ACTIVE_ORIGINAL' -and
+      [string]$cloud.series_id -ceq 'PAPER-V2R4-20261009T110135Z' -and
+      [string]$sup.checked_at_utc -match '(Z|\+00:00)$' -and
+      [string]$cloud.checked_at_utc -match '(Z|\+00:00)$' -and
+      ([datetimeoffset]$sup.checked_at_utc) -gt $armedAt -and
+      ([datetimeoffset]$cloud.checked_at_utc) -gt $armedAt){
+    $after=$true;break
+   }
+  }catch{
+   # Keep bounded review; a missing local ACK never claims Cloud CAS truth.
+  }
+ }
+ if(-not $after){throw 'V3_PRECOMMIT_RESTORE_AFTERCARE_UNKNOWN_MANUAL_REVIEW_REQUIRED'}
+ return [pscustomobject]@{
+  kind='V3_PR515_PRECOMMIT_OLD_INTAKE_RESTORE_ORIGINALHOST_V1'
+  status='RECOVERY_SOURCE_IMPL_NOT_RELEASED'
+  old_intake_task_scope=$tasks
+  v3_paper_release_authorized=$false
+  independent_cloud_cas_never_invoked_attested_here=$false
+  automatic_old_writer_rearm_allowed=$false
+  real_money_actions=$false
+ }
+}
+
 # Native TaskScheduler disable may change exactly one XML field: Enabled.
 # Compare all remaining XML nodes including Principal, Task action and triggers.
 # Pure parser only; no actual native stop, restore or state change.
