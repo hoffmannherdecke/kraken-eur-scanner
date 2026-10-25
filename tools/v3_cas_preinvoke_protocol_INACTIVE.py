@@ -138,7 +138,7 @@ def invoke_v3_paper_cas(*_args: Any, **_kwargs: Any) -> None:
 # SOURCE ONLY: an external HMAC packet cannot itself prove off-DB durability,
 # key separation, complete CAS-attempt coverage or permission to release.
 WITNESS_KIND = "V3_CAS_OFFDB_WITNESS_PACKET_V1"
-WITNESS_DOMAIN = b"kraken-eur-scanner/V3-CAS/witness-review/v1\\x00"
+WITNESS_DOMAIN = b"kraken-eur-scanner/V3-CAS/witness-review/v1\x00"
 WITNESS_KEYS = ("kind", "witness_id", "epoch_id", "last_ordinal",
                 "ordered_intent_sha256", "external_commit_sha256", "signed_at_utc")
 MAX_WITNESSED_INTENTS = 64
@@ -196,7 +196,7 @@ def review_offdb_witness_hmac_packet(
             raise ValueError("bad sequence/claim")
         def parse_utc(value: Any) -> datetime:
             if not isinstance(value, str) or re.fullmatch(
-                r"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z", value
+                r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value
             ) is None:
                 raise ValueError("noncanonical UTC")
             parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
