@@ -312,6 +312,43 @@ function Get-V3Pr515ArmedToQuiescedReview([object]$Receipt) {
  }
 }
 
+# Original Supabase live inventory validator; matching one committed-state
+# SELECT does NOT attest the non-occurrence of earlier/rolled-back CAS calls.
+# Inputs may be from connected read-only Cloud; JSON alone has NO authenticated
+# issuer, replay defense or authority to enable native Tasks. Fail closed.
+function Test-V3PrecommitCurrentCloudInventory([object]$Inventory) {
+ if($null -eq $Inventory -or
+    [string]$Inventory.kind -cne 'V3_PRECOMMIT_CURRENT_CLOUD_INVENTORY_V1' -or
+    $Inventory.historically_cas_never_invoked_proven -ne $false -or
+    $Inventory.precommit_restore_authorized -ne $false){
+  return $false
+ }
+ $counts=@{
+  active_series_count=1
+  exact_original_active_count=1
+  recorded_v3_series_count=0
+  recorded_v3_rotation_count=0
+  recorded_v3_release_decision_count=0
+  installed_v3_cas_function_count=0
+  valid_single_active_index_count=1
+ }
+ foreach($key in $counts.Keys){
+  $val=$Inventory.PSObject.Properties[$key]
+  if($null -eq $val -or
+     ($val.Value -isnot [int] -and $val.Value -isnot [long]) -or
+     [long]$val.Value -ne [long]$counts[$key]){
+   return $false
+  }
+ }
+ $stamp=[datetimeoffset]::MinValue
+ if([string]$Inventory.observed_at_utc -cnotmatch '(Z|\\+00(?::00)?)$' -or
+    -not([datetimeoffset]::TryParse([string]$Inventory.observed_at_utc,[ref]$stamp))){
+  return $false
+ }
+ $age=([datetimeoffset]::UtcNow-$stamp).TotalSeconds
+ return ($age -ge -10 -and $age -le 180)
+}
+
 # A pure decision matrix. NEVER restore an old writer after ANY CAS invocation,
 # including timeout, no response or an apparently negative outcome: operator
 # MUST fence and reconcile actual independent Cloud readback by hand.
@@ -356,7 +393,8 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
    $current=$Receipt.current_pr515_readonly_preview
    $poststop=$Receipt.current_pr515_quiesced_readonly_preview
    $pr515Current=(Test-V3Pr515QuiescedRecoveryIdentity -Before $current -After $poststop)
-   if($pr515Current -and
+   $currentCloud=(Test-V3PrecommitCurrentCloudInventory -Inventory $Receipt.current_prod_cloud_inventory)
+   if($pr515Current -and $currentCloud -and
       $Receipt.pr515_sha_pin_separately_verified -eq $true -and
       $Receipt.fresh_current_xml_after_quiesce_independently_checked -eq $true -and
       $Receipt.independent_cloud_precommit_cas_never_invoked_ack -eq $true -and
@@ -374,6 +412,8 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
   automatic_old_writer_rearm_allowed=$false
   current_backup_and_external_cloud_proof_required=$true
   current_poststop_disabled_xml_compatibility_required=$true
+  fresh_supabase_current_old_only_inventory_required=$true
+  cloud_inventory_cannot_prove_historical_cas_never=$true
   source_only_pr515_recovery_readback_not_authority=$true
   operator_stop_disable_implemented=$false
   host_rollback_implemented=$false
