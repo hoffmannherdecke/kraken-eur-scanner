@@ -200,6 +200,74 @@ function Test-V3Pr515QuiescedRecoveryIdentity([object]$Before,[object]$After) {
  )
 }
 
+# Pure SOURCE-ONLY comparison of two ORIGINAL Supervisor + PR515 heartbeat
+# captures while the same original intake fence remains ARMED. Both captures
+# must be independently acquired by a later authorized host operator.
+# Timestamps and JSON values supplied by a caller are NOT provenance or CAS
+# authority; this cannot itself promote the marker or count release proofs.
+function Test-V3Pr515ArmedTwoCycleSnapshots([object]$Evidence) {
+ if($null -eq $Evidence -or
+    [string]$Evidence.kind -cne 'V3_PR515_ARMED_TWO_CYCLE_ORIGINALHOST_INPUT_V1' -or
+    [string]$Evidence.phase -cne 'ARMED' -or
+    [string]$Evidence.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    -not(Test-V3ScopedIntakeTaskSet -Names @($Evidence.task_names))){
+  return $false
+ }
+ $captures=@($Evidence.captures)
+ if($captures.Count -ne 2){return $false}
+ $times=@()
+ foreach($snapshot in $captures){
+  if($null -eq $snapshot -or $null -eq $snapshot.supervisor -or
+     $null -eq $snapshot.cloudsync){return $false}
+  $sv=$snapshot.supervisor
+  $cs=$snapshot.cloudsync
+  if([string]$sv.kind -cne 'MINIPC_RUNTIME_SUPERVISOR_V1' -or
+     [string]$sv.status -cne 'WARNING' -or
+     [string]$sv.v3_paper_old_intake_fence.mode -cne 'ARMED' -or
+     $sv.v3_paper_old_intake_fence.marker_present -ne $true -or
+     $sv.v3_paper_old_intake_fence.v3_cloud_cas_or_release_authorized -ne $false -or
+     @($sv.restarted).Count -ne 0 -or @($sv.failed_restarts).Count -ne 0 -or
+     [string]$cs.kind -cne 'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1' -or
+     [string]$cs.status -cne 'HEALTHY' -or
+     [string]$cs.mode -cne 'V3_PRECOMMIT_NO_NETWORK_HOLD' -or
+     [string]$cs.v3_fence_precommit_phase -cne 'ARMED' -or
+     [string]$cs.v3_fence_cloud_sync_lane -cne 'PRECOMMIT_ORIGINAL' -or
+     $cs.cloud_sync_intentionally_paused -ne $true -or
+     $cs.cloud_updated -ne $false -or
+     $cs.paper_only -ne $true -or
+     $cs.order_api -ne $false -or
+     $cs.real_money_actions -ne $false){
+   return $false
+  }
+  $blocked=@($sv.tasks | Where-Object {
+   $_.task -in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait') -and
+   [string]$_.action -ceq 'V3_INTAKE_SUPERVISOR_REARM_BLOCKED' -and
+   [string]$_.before.scheduler_state -ceq 'Disabled'
+  })
+  if($blocked.Count -ne 2 -or
+     -not(Test-V3ScopedIntakeTaskSet -Names @($blocked|ForEach-Object {[string]$_.task}))){
+   return $false
+  }
+  $svTime=[datetimeoffset]::MinValue
+  $csTime=[datetimeoffset]::MinValue
+  if([string]$sv.checked_at_utc -cnotmatch '(Z|\+00:00)$' -or
+     [string]$cs.checked_at_utc -cnotmatch '(Z|\+00:00)$' -or
+     -not([datetimeoffset]::TryParse([string]$sv.checked_at_utc,[ref]$svTime)) -or
+     -not([datetimeoffset]::TryParse([string]$cs.checked_at_utc,[ref]$csTime)) -or
+     [math]::Abs(($svTime-$csTime).TotalSeconds) -gt 90){
+   return $false
+  }
+  $times+=@($svTime)
+  $times+=@($csTime)
+ }
+ # TWO distinct native Supervisor cycles, each with its own fresh PR515
+ # hold receipt, ordered without replay of one heartbeat as both samples.
+ $delta=($times[2]-$times[0]).TotalSeconds
+ $cloudDelta=($times[3]-$times[1]).TotalSeconds
+ return ($delta -ge 5 -and $delta -le 600 -and
+         $cloudDelta -ge 5 -and $cloudDelta -le 600)
+}
+
 # Only a PURE preview of ARMED -> QUIESCED. Two caller booleans or an old
 # physical drill are NOT actual native, independent Supervisor or Cloud proof.
 function Get-V3Pr515ArmedToQuiescedReview([object]$Receipt) {
@@ -215,7 +283,8 @@ function Get-V3Pr515ArmedToQuiescedReview([object]$Receipt) {
     $Receipt.paper_only -ne $true -or
     $Receipt.real_money_actions -ne $false){
   $status='BLOCK_INVALID_SCOPE_OR_CAS'
- }elseif($Receipt.current_two_native_tasks_disabled -eq $true -and
+ }elseif((Test-V3Pr515ArmedTwoCycleSnapshots -Evidence $Receipt.original_armed_two_cycle_snapshots) -and
+         $Receipt.current_two_native_tasks_disabled -eq $true -and
          $Receipt.current_original_intake_full_process_family_absent -eq $true -and
          $Receipt.current_supervisor_armed_no_rearm_ack -eq $true -and
          $Receipt.current_pr515_cloudsync_armed_no_network_ack -eq $true -and
@@ -231,6 +300,7 @@ function Get-V3Pr515ArmedToQuiescedReview([object]$Receipt) {
   input_is_untrusted_synthetic_not_originalhost_ack=$true
   original_host_authentication_performed=$false
   two_distinct_supervisor_cycles_verified=$false
+  two_cycle_caller_json_is_not_original_provenance=$true
   native_process_lineage_authenticated=$false
   independent_cloud_cas_readback_performed=$false
   marker_write_or_transition_authorized=$false
