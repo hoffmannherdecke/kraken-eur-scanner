@@ -657,7 +657,7 @@ Write-Output 'V3_SIGNED_CONHOST_EXACT_SCOPE_PURE_12_CASES_PASS'
 
 # V3 offline transaction-contract simulation. Run extracted PURE policies only.
 # Never execute the inactive operator, host commands, Task or Cloud changes.
-foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity','Get-V3Pr515ArmedToQuiescedReview','Resolve-V3ScopedCutoverRecovery')){
+foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity','Test-V3Pr515ArmedTwoCycleSnapshots','Get-V3Pr515ArmedToQuiescedReview','Resolve-V3ScopedCutoverRecovery')){
  $fn=@($oa.FindAll({
   param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
   $a.Name -eq $name
@@ -853,6 +853,37 @@ Write-Output 'V3_SCOPED_CUTOVER_PURE_BACKUP_RECOVERY_38_CASES_PASS'
 
 
 # Pure ARMED -> QUIESCED handoff preview never changes marker or Task.
+function V3ArmedTwoCycleFixture {
+ $captures=@()
+ for($i=0;$i -lt 2;$i++){
+  $t=if($i -eq 0){'2026-10-25T15:00:00Z'}else{'2026-10-25T15:00:40Z'}
+  $rows=@(foreach($role in @('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')){
+   [pscustomobject]@{task=$role;action='V3_INTAKE_SUPERVISOR_REARM_BLOCKED';before=[pscustomobject]@{scheduler_state='Disabled'}}
+  })
+  $sup=[pscustomobject]@{
+   kind='MINIPC_RUNTIME_SUPERVISOR_V1';checked_at_utc=$t;status='WARNING'
+   v3_paper_old_intake_fence=[pscustomobject]@{
+    mode='ARMED';marker_present=$true;v3_cloud_cas_or_release_authorized=$false
+   }
+   restarted=@();failed_restarts=@();tasks=$rows
+  }
+  $cloud=[pscustomobject]@{
+   kind='V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1';checked_at_utc=$t
+   status='HEALTHY';mode='V3_PRECOMMIT_NO_NETWORK_HOLD'
+   v3_fence_precommit_phase='ARMED';v3_fence_cloud_sync_lane='PRECOMMIT_ORIGINAL'
+   cloud_sync_intentionally_paused=$true;cloud_updated=$false
+   paper_only=$true;order_api=$false;real_money_actions=$false
+  }
+  $captures+=@([pscustomobject]@{supervisor=$sup;cloudsync=$cloud})
+ }
+ return [pscustomobject]@{
+  kind='V3_PR515_ARMED_TWO_CYCLE_ORIGINALHOST_INPUT_V1'
+  phase='ARMED'
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  task_names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+  captures=$captures
+ }
+}
 function ArmedTransitionFixture {
  [pscustomobject]@{
   kind='V3_PR515_ARMED_TO_QUIESCED_SOURCE_REVIEW_V1'
@@ -868,6 +899,7 @@ function ArmedTransitionFixture {
   current_xml_backup_source_identity_preserved=$true
   independent_old_only_cloud_after_stop=$true
   independent_cas_never_invoked_after_stop=$true
+  original_armed_two_cycle_snapshots=(V3ArmedTwoCycleFixture)
  }
 }
 function CheckArmedReview([string]$Expected,[object]$Fixture,[string]$Label) {
@@ -884,6 +916,25 @@ function CheckArmedReview([string]$Expected,[object]$Fixture,[string]$Label) {
  }
 }
 CheckArmedReview 'REVIEW_SEPARATE_PHYSICAL_QUIESCED_TRANSITION_ONLY' (ArmedTransitionFixture) 'synthetic review is not phase promotion'
+$x=ArmedTransitionFixture;$x.original_armed_two_cycle_snapshots=$null
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'no physical two-cycle snapshots'
+$x=ArmedTransitionFixture;$x.original_armed_two_cycle_snapshots.captures[1].supervisor.checked_at_utc='2026-10-25T15:00:00Z'
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'Supervisor same cycle replay'
+$x=ArmedTransitionFixture;$x.original_armed_two_cycle_snapshots.captures[1].cloudsync.checked_at_utc='2026-10-25T15:00:00Z'
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'CloudSync replay of first tick'
+$x=ArmedTransitionFixture;$x.original_armed_two_cycle_snapshots.captures[0].supervisor.tasks[1].task='CryptoMiniPC-V2R4PaperCandidates'
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'duplicated Supervisor task'
+$x=ArmedTransitionFixture;$x.original_armed_two_cycle_snapshots.captures[1].supervisor.tasks[0].before.scheduler_state='Running'
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'native Windows Task rearmed in second cycle'
+$x=ArmedTransitionFixture;$x.original_armed_two_cycle_snapshots.captures[1].cloudsync.cloud_updated=$true
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'PR515 network write not held'
+$x=ArmedTransitionFixture;$x.original_armed_two_cycle_snapshots.captures[1].supervisor.v3_paper_old_intake_fence.mode='QUIESCED'
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'not same ARMED phase'
+$x=ArmedTransitionFixture;$x.original_armed_two_cycle_snapshots.captures[1].supervisor.restarted=@('CryptoMiniPC-V2R4PaperWait')
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'unexpected Supervisor restart'
+$x=ArmedTransitionFixture;$x.original_armed_two_cycle_snapshots.captures[1].cloudsync.checked_at_utc='2026-10-25T15:22:40Z'
+CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'late PR515 heartbeat'
+
 $x=ArmedTransitionFixture;$x.current_two_native_tasks_disabled=$false
 CheckArmedReview 'HOLD_ARMED_INDEPENDENT_ORIGINAL_PROOFS_REQUIRED' $x 'native Task not disabled'
 $x=ArmedTransitionFixture;$x.current_original_intake_full_process_family_absent=$false
@@ -900,7 +951,7 @@ $x=ArmedTransitionFixture;$x.cloud_cas_invoked=$true;$x.cloud_cas_outcome='UNKNO
 CheckArmedReview 'BLOCK_INVALID_SCOPE_OR_CAS' $x 'UNKNOWN CAS must preserve fence'
 $x=ArmedTransitionFixture;$x.task_names[0]='CryptoMiniPC-V2R4PaperLifecycle'
 CheckArmedReview 'BLOCK_INVALID_SCOPE_OR_CAS' $x 'protected Lifecycle never in scope'
-Write-Output 'V3_PR515_ARMED_TO_QUIESCED_OFFLINE_9_CASES_PASS'
+Write-Output 'V3_PR515_ARMED_TO_QUIESCED_OFFLINE_18_CASES_PASS'
 
 
 # Native ORIGINAL host backup-manifest readback schema is intentionally
