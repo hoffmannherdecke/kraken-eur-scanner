@@ -9,6 +9,9 @@ from __future__ import annotations
 from dataclasses import asdict
 import pathlib
 import sqlite3
+import hmac
+import hashlib
+import json
 import sys
 import tempfile
 import unittest
@@ -19,6 +22,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 from v3_cas_preinvoke_protocol_INACTIVE import (
     ORIGINAL_SERIES, RPC, PreinvokeHold, build_unsigned_intent,
     invoke_v3_paper_cas, review_untrusted_audit_readback,
+    review_offdb_witness_hmac_packet, WITNESS_KIND, WITNESS_DOMAIN, WITNESS_KEYS,
 )
 
 
@@ -173,6 +177,97 @@ class V3CasAuditInactiveTests(unittest.TestCase):
             finally:
                 caller.close()
                 auditor.close()
+
+
+
+    @staticmethod
+    def _signed_witness_fixture(intent):
+        """Only a synthetic test key and fictional external digest."""
+        receipt = {
+            "kind": WITNESS_KIND,
+            "witness_id": "synthetic-external-witness",
+            "epoch_id": intent.epoch_id,
+            "last_ordinal": 1,
+            "ordered_intent_sha256": [intent.digest],
+            "external_commit_sha256": "a" * 64,
+            "signed_at_utc": "2026-10-25T19:00:00Z",
+        }
+        V3CasAuditInactiveTests._resign_fixture(receipt)
+        return receipt
+
+    @staticmethod
+    def _resign_fixture(receipt):
+        data = {k: receipt[k] for k in WITNESS_KEYS}
+        payload = WITNESS_DOMAIN + json.dumps(
+            data, sort_keys=True, separators=(",", ":"), ensure_ascii=True,
+            allow_nan=False,
+        ).encode("ascii")
+        receipt["hmac_sha256"] = hmac.new(b"x" * 32, payload, hashlib.sha256).hexdigest()
+
+    @staticmethod
+    def _review_fixture(intent, receipt, **changes):
+        opts = {
+            "expected_witness_id": "synthetic-external-witness",
+            "verification_key": b"x" * 32,
+            "reviewed_at_utc": "2026-10-25T19:01:00Z",
+        }
+        opts.update(changes)
+        return review_offdb_witness_hmac_packet(intent, receipt, **opts)
+
+    def test_signed_witness_valid_mac_still_never_authorizes_release(self):
+        intent = build_unsigned_intent(**original_proposal())
+        result = self._review_fixture(intent, self._signed_witness_fixture(intent))
+        self.assertEqual(result["disposition"], "REVIEW_ONLY_MAC_MATCH_CUSTODY_UNPROVEN")
+        self.assertTrue(result["mac_matches_supplied_key"])
+        for key, value in result.items():
+            if key.endswith("_authorized") or key.endswith("_proven") or key.endswith("_allowed"):
+                self.assertFalse(value, key)
+
+    def test_signed_witness_forgery_missing_stale_gap_unauthorized(self):
+        intent = build_unsigned_intent(**original_proposal())
+        valid = self._signed_witness_fixture(intent)
+        altered = [
+            None,
+            dict(valid, hmac_sha256="0" * 64),
+            dict(valid, witness_id="different-witness"),
+            dict(valid, epoch_id="V3CAS-AUDIT-" + "c" * 32),
+            dict(valid, external_commit_sha256="b" * 64),
+            dict(valid, last_ordinal=2),
+            dict(valid, last_ordinal=True),
+            dict(valid, ordered_intent_sha256=[]),
+            dict(valid, ordered_intent_sha256=["f" * 64]),
+            dict(valid, signed_at_utc="2026-10-25T18:50:00Z"),
+            dict(valid, signed_at_utc="2026-10-25T19:05:00Z"),
+            dict(valid, v3_paper_release_authorized=True),
+        ]
+        for receipt in altered:
+            with self.subTest(receipt=receipt):
+                result = self._review_fixture(intent, receipt)
+                self.assertTrue(result["disposition"].startswith("HOLD_"))
+                self.assertFalse(result["mac_matches_supplied_key"])
+                self.assertFalse(result["cas_dispatch_authorized"])
+                self.assertFalse(result["old_writer_auto_rearm_allowed"])
+        for changes in [
+            {"verification_key": b"y" * 32},
+            {"verification_key": b"too-short"},
+            {"expected_witness_id": "wrong-witness"},
+            {"reviewed_at_utc": "2026-10-25T18:59:00Z"},
+            {"reviewed_at_utc": "2026-10-25 19:01:00"},
+        ]:
+            with self.subTest(changes=changes):
+                result = self._review_fixture(intent, valid, **changes)
+                self.assertTrue(result["disposition"].startswith("HOLD_"))
+
+    def test_signed_witness_fabricated_external_storage_still_not_proof(self):
+        intent = build_unsigned_intent(**original_proposal())
+        receipt = self._signed_witness_fixture(intent)
+        receipt["external_commit_sha256"] = "f" * 64
+        self._resign_fixture(receipt)
+        result = self._review_fixture(intent, receipt)
+        self.assertTrue(result["mac_matches_supplied_key"])
+        self.assertFalse(result["independent_offdb_durable_storage_proven"])
+        self.assertFalse(result["real_witness_issuer_authenticated"])
+        self.assertFalse(result["historical_cas_never_invoked_proven"])
 
 
 if __name__ == "__main__":
