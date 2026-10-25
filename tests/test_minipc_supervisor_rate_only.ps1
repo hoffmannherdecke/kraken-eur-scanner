@@ -455,6 +455,29 @@ $sourceOnlyFns=@($oa.FindAll({
 },$true))
 if($sourceOnlyFns.Count -ne 1){throw 'Missing unique locked PR515 native source owner'}
 $bounded=$sourceOnlyFns[0]
+# The existing original PRE-COMMIT recovery is a SECOND, independent dormant
+# function: exactly one Enable, Start and fenced Remove. Never via the CLI.
+$restoreFns=@($oa.FindAll({
+ param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $a.Name -eq 'Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY'
+},$true))
+if($restoreFns.Count -ne 1){throw 'Missing unique hardlocked current PR515 restore source'}
+$restoreBounded=$restoreFns[0]
+$restoreSites=@($allCommands | Where-Object {
+ $_.GetCommandName() -in @('Enable-ScheduledTask','Start-ScheduledTask','Remove-Item')
+})
+if($restoreSites.Count -ne 3 -or
+   @($restoreSites | Where-Object {$_.GetCommandName() -eq 'Enable-ScheduledTask'}).Count -ne 1 -or
+   @($restoreSites | Where-Object {$_.GetCommandName() -eq 'Start-ScheduledTask'}).Count -ne 1 -or
+   @($restoreSites | Where-Object {$_.GetCommandName() -eq 'Remove-Item'}).Count -ne 1){
+ throw 'V3_PR515_RESTORE_SOURCE_EXACT_THREE_DORMANT_NATIVE_MUTATIONS_REQUIRED'
+}
+foreach($node in $restoreSites){
+ if($node.Extent.StartOffset -le $restoreBounded.Body.Extent.StartOffset -or
+    $node.Extent.EndOffset -ge $restoreBounded.Body.Extent.EndOffset){
+  throw 'V3_PR515_RESTORE_MUTATION_OUTSIDE_LOCKED_SOURCE'
+ }
+}
 $special=@($allCommands | Where-Object {
  $_.GetCommandName() -in @('Stop-ScheduledTask','Disable-ScheduledTask')
 })
@@ -470,9 +493,9 @@ foreach($node in $special){
  }
 }
 foreach($unsafe in @('Stop-Process','Start-Process',
- 'Enable-ScheduledTask','Start-ScheduledTask','Register-ScheduledTask','Unregister-ScheduledTask',
+ 'Register-ScheduledTask','Unregister-ScheduledTask',
  'Set-ScheduledTask','Set-Content','Out-File','Add-Content','Copy-Item','Move-Item',
- 'Remove-Item','New-Item','Invoke-RestMethod','Invoke-WebRequest','Invoke-Sqlcmd')){
+ 'New-Item','Invoke-RestMethod','Invoke-WebRequest','Invoke-Sqlcmd')){
  if($cmd -contains $unsafe){throw "INACTIVE_OPERATOR_MUTATION_FORBIDDEN $unsafe"}
 }
 $allText=Get-Content -LiteralPath $operator -Raw -ErrorAction Stop
@@ -486,7 +509,20 @@ if($outside -notmatch 'if\(\$Execute\)\{\s*throw ''V3_CUTOVER_EXECUTION_LOCKED' 
     $bounded.Extent.Text.IndexOf('Disable-ScheduledTask')){
  throw 'V3_PR515_NATIVE_SOURCE_LOCK_OR_FENCE_ORDER_INVALID'
 }
-Write-Output 'V3_PR515_ONLY_TWO_DORMANT_NATIVE_MUTATIONS_AST_GUARD_PASS'
+if($restoreBounded.Extent.Text -notmatch
+   '(?s)\) \{\s*throw ''V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED''' -or
+   $restoreBounded.Extent.Text -notmatch 'V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED' -or
+   $restoreBounded.Extent.Text.IndexOf('V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED') -ge
+    $restoreBounded.Extent.Text.IndexOf('Enable-ScheduledTask') -or
+   $restoreBounded.Extent.Text.IndexOf('Enable-ScheduledTask') -ge
+    $restoreBounded.Extent.Text.IndexOf('Start-ScheduledTask') -or
+   $restoreBounded.Extent.Text.IndexOf('Start-ScheduledTask') -ge
+    $restoreBounded.Extent.Text.IndexOf('Remove-Item') -or
+   $restoreBounded.Extent.Text -match 'Invoke-RestMethod|Invoke-WebRequest|Stop-Process|Stop-ScheduledTask|Disable-ScheduledTask' -or
+   $outside -match '(?m)^\s*(?:Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY)(?:\s|$)'){
+ throw 'V3_PR515_RESTORE_LOCK_CLOUD_BARRIER_OR_SEQUENCE_INVALID'
+}
+Write-Output 'V3_PR515_ONLY_TWO_DORMANT_STOP_AND_THREE_DORMANT_RESTORE_AST_GUARD_PASS'
 $f=@($oa.FindAll({
  param($a)
  $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
