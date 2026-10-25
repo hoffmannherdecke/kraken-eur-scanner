@@ -409,7 +409,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             "v3_paper_release_authorized=$false",
         ):
             self.assertIn(marker,audit)
-        self.assertNotRegex(audit,r"(?m)^\\s*(?:Set-Content|Remove-Item|Enable-ScheduledTask|Start-ScheduledTask|Invoke-RestMethod)\\b")
+        self.assertNotRegex(audit,r"(?m)^\s*(?:Set-Content|Remove-Item|Enable-ScheduledTask|Start-ScheduledTask|Invoke-RestMethod)\b")
         self.assertIn("V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED",s)
         self.assertIn("V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED",s)
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
