@@ -349,6 +349,69 @@ function Test-V3PrecommitCurrentCloudInventory([object]$Inventory) {
  return ($age -ge -10 -and $age -le 180)
 }
 
+# SOURCE ONLY: assess the evidence needed from the EXISTING exclusive CAS
+# invocation owner BEFORE it ever calls the future V3 RPC. This function has
+# no I/O, verifies no credentials/signatures and NEVER authorizes restore.
+# Caller-provided JSON cannot prove audit completeness or CAS non-invocation.
+# PostgreSQL transactions cannot persist an intent on a rolled-back CAS.
+function Get-V3CasPreinvokeAuditReview([object]$Audit) {
+ $disposition='HOLD_AUDIT_EPOCH_OR_PROVENANCE_UNVERIFIED'
+ if($null -eq $Audit -or
+    [string]$Audit.kind -cne 'V3_EXPERIMENTAL_CAS_PREINVOKE_AUDIT_REVIEW_INPUT_V1' -or
+    [string]$Audit.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    [string]$Audit.audit_epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
+    [string]$Audit.expected_cas_rpc -cne 'public.rotate_v2r4_to_v3_experimental_paper' -or
+    $Audit.paper_only -ne $true -or
+    $Audit.real_money_actions -ne $false){
+  $disposition='BLOCK_INVALID_CAS_AUDIT_SCOPE'
+ } elseif([string]$Audit.cas_attempt_state -cne 'NOT_INVOKED' -or
+          $Audit.any_failed_timedout_unknown_or_committed_attempt -ne $false -or
+          $Audit.attempt_intent_count -ne 0 -or
+          $Audit.inflight_or_unknown_count -ne 0){
+  $disposition='HOLD_ANY_CAS_ATTEMPT_OR_UNKNOWN'
+ } elseif([string]$Audit.ledger_lane -cne 'INDEPENDENT_PREINVOKE_COMMIT' -or
+          [string]$Audit.ledger_write_mode -cne 'APPEND_ONLY_NO_DELETE' -or
+          [string]$Audit.single_invocation_owner -cne 'EXCLUSIVE_RESTRICTED_CAS_EXECUTOR' -or
+          $Audit.caller_exclusivity_independently_reviewed -ne $true -or
+          $Audit.cas_rpc_execute_revoked_from_shared_service_role -ne $true -or
+          $Audit.durable_ack_required_before_rpc -ne $true -or
+          $Audit.unacknowledged_intent_fences_rpc -ne $true -or
+          $Audit.ledger_and_rpc_use_separate_transactions -ne $true -or
+          $Audit.audit_store_no_alter_or_delete_acl_independently_reviewed -ne $true -or
+          $Audit.audit_provenance_issuer_independently_reviewed -ne $true -or
+          $Audit.startup_coverage_before_first_rpc_independently_reviewed -ne $true -or
+          $Audit.all_invocation_paths_covered_independently_reviewed -ne $true){
+  $disposition='HOLD_AUDIT_COVERAGE_OR_DURABILITY_INCOMPLETE'
+ } else {
+  $first=[datetimeoffset]::MinValue
+  $last=[datetimeoffset]::MinValue
+  if([string]$Audit.coverage_started_utc -notmatch '(Z|\+00:00)$' -or
+     [string]$Audit.snapshot_observed_utc -notmatch '(Z|\+00:00)$' -or
+     -not([datetimeoffset]::TryParse([string]$Audit.coverage_started_utc,[ref]$first)) -or
+     -not([datetimeoffset]::TryParse([string]$Audit.snapshot_observed_utc,[ref]$last)) -or
+     $first -ge $last -or $last -gt [datetimeoffset]::UtcNow.AddSeconds(10) -or
+     ([datetimeoffset]::UtcNow-$last).TotalSeconds -gt 180){
+   $disposition='HOLD_AUDIT_EPOCH_TIMESTAMPS_UNVERIFIED'
+  } else {
+   $disposition='REVIEW_ONLY_PREINVOKE_AUDIT_CONTRACT_COMPLETE_UNAUTHENTICATED'
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_CAS_PREINVOKE_AUDIT_SOURCE_POLICY_V1'
+  disposition=$disposition
+  caller_supplied_assertions_not_original_authority=$true
+  original_audit_issuer_authenticated_here=$false
+  append_only_proven_here=$false
+  all_invocation_paths_proven_here=$false
+  historical_cas_never_invoked_proven=$false
+  source_only_contract_not_runtime_ack=$true
+  cloud_cas_invoke_authorized=$false
+  native_recovery_authorized=$false
+  old_writer_auto_rearm_allowed=$false
+  v3_paper_release_authorized=$false
+ }
+}
+
 # A pure decision matrix. NEVER restore an old writer after ANY CAS invocation,
 # including timeout, no response or an apparently negative outcome: operator
 # MUST fence and reconcile actual independent Cloud readback by hand.
