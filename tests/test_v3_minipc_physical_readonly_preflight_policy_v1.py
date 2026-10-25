@@ -322,7 +322,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             "pr515_source_sha256=$ExpectedCloudSha",
             "current_native_task_xml_sha256=@(",
             "current_backup_valid_while_intakes_running_only=(!$poststop)",
-            "preview_is_not_poststop_or_independent_cloud_ack=(!$ExpectedQuiesced.IsPresent)",
+            "preview_is_not_poststop_or_independent_cloud_ack=(!$poststop)",
             "poststop_disabled_only_native_xml_recheck_pass=$poststop",
             "local_poststop_snapshot_is_not_independent_cloud_ack=$true",
             "external_sha_pin_independently_authenticated=$false",
