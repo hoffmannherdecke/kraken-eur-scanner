@@ -214,7 +214,9 @@ BEGIN
      AND array_to_string(p.proconfig,',') LIKE '%search_path=pg_catalog, v3_cas_audit%'
      AND pg_get_userbyid(p.proowner)='v3_cas_audit_append_definer'
  ) THEN RAISE EXCEPTION 'FAIL_APPEND_DEFINER_NONADMIN_OWNER_OR_FIXED_PATH'; END IF;
- IF NOT has_schema_privilege('v3_cas_audit_append_definer','v3_cas_audit','USAGE') OR
+ IF NOT has_schema_privilege('v3_cas_audit_table_owner','v3_cas_audit','USAGE') OR
+    has_schema_privilege('v3_cas_audit_table_owner','v3_cas_audit','CREATE') OR
+    NOT has_schema_privilege('v3_cas_audit_append_definer','v3_cas_audit','USAGE') OR
     has_schema_privilege('v3_cas_audit_append_definer','v3_cas_audit','CREATE') OR
     NOT has_column_privilege('v3_cas_audit_append_definer',
          'v3_cas_audit.epoch_v1','next_ordinal','UPDATE') OR
