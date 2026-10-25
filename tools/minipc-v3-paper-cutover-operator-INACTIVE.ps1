@@ -1012,6 +1012,9 @@ function Test-V3Pr515QuiescedLocalHold([string]$Root) {
   $_.action -ceq 'V3_INTAKE_SUPERVISOR_REARM_BLOCKED' -and
   [string]$_.before.scheduler_state -ceq 'Disabled'
  })
+ if(-not(Test-V3ScopedIntakeTaskSet -Names @($matched | ForEach-Object {[string]$_.task}))){
+  throw 'Supervisor no-rearm Task identities missing or duplicated'
+ }
  if([string]$sup.status -cne 'WARNING' -or
     [string]$sup.v3_paper_old_intake_fence.mode -cne 'QUIESCED' -or
     $matched.Count -ne 2 -or
@@ -1110,6 +1113,12 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
   $live=[string](Export-ScheduledTask -TaskName $role.name -TaskPath '\' -ErrorAction Stop)
   $source=Join-Path $folder $role.file
   if($ExpectedQuiesced){
+   $sourceInfo=Get-Item -LiteralPath $source -Force -ErrorAction Stop
+   if($sourceInfo.PSIsContainer -or
+      [bool]($sourceInfo.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+      $sourceInfo.Length -lt 100 -or $sourceInfo.Length -gt 131072){
+    throw 'Protected original XML is linked or unsafe'
+   }
    $digest=(Get-FileHash -LiteralPath $source -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
    $saved=Get-Content -LiteralPath $source -Raw -Encoding UTF8 -ErrorAction Stop
    if($digest -cne [string]$rec[0].xml_sha256 -or
