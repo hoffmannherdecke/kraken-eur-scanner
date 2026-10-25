@@ -182,4 +182,100 @@ if [[ "$(pg -Atc 'select count(*) from v3_cas_audit.intent_v1')" != '1' ]]; then
   echo 'FAIL_UNEXPECTED_INTENT_COUNT' >&2; exit 1
 fi
 echo 'V3_PG17_REAL_COMMIT_ROLLBACK_AND_DEDUP_PASS'
+# Real PostgreSQL role/policy verification of the inert future source. Only
+# synthetic NOLOGIN roles in this disposable DB, never original Supabase.
+pg -f - <<'SQL' >/dev/null
+DO $$
+DECLARE n integer;
+BEGIN
+ SELECT count(*) INTO n FROM pg_roles
+ WHERE rolname IN ('v3_cas_audit_writer','v3_cas_audit_reader','v3_cas_executor')
+ AND NOT rolcanlogin AND NOT rolbypassrls;
+ IF n <> 3 THEN RAISE EXCEPTION 'FAIL_THREE_RESTRICTED_NOLOGIN_ROLES'; END IF;
+ SELECT count(*) INTO n FROM pg_policies
+ WHERE schemaname='v3_cas_audit'
+   AND policyname IN ('v3_cas_epoch_writer_read_v1',
+                      'v3_cas_epoch_writer_advance_v1',
+                      'v3_cas_intent_writer_append_v1',
+                      'v3_cas_epoch_reader_v1',
+                      'v3_cas_intent_reader_v1');
+ IF n <> 5 THEN RAISE EXCEPTION 'FAIL_FIVE_SCOPED_RLS_POLICIES'; END IF;
+ IF NOT has_schema_privilege('v3_cas_audit_writer','v3_cas_audit','USAGE') OR
+    NOT has_schema_privilege('v3_cas_audit_reader','v3_cas_audit','USAGE') OR
+    has_schema_privilege('v3_cas_executor','v3_cas_audit','USAGE') OR
+    has_table_privilege('v3_cas_audit_writer','v3_cas_audit.intent_v1','SELECT') OR
+    NOT has_table_privilege('v3_cas_audit_writer','v3_cas_audit.intent_v1','INSERT') OR
+    has_table_privilege('v3_cas_audit_writer','v3_cas_audit.intent_v1','DELETE') OR
+    NOT has_table_privilege('v3_cas_audit_reader','v3_cas_audit.intent_v1','SELECT') OR
+    has_table_privilege('v3_cas_audit_reader','v3_cas_audit.intent_v1','INSERT') OR
+    has_table_privilege('v3_cas_audit_reader','v3_cas_audit.epoch_v1','UPDATE') OR
+    has_table_privilege('v3_cas_executor','v3_cas_audit.intent_v1','INSERT') OR
+    NOT has_column_privilege('v3_cas_audit_writer',
+          'v3_cas_audit.epoch_v1','next_ordinal','UPDATE') OR
+    has_column_privilege('v3_cas_audit_writer',
+          'v3_cas_audit.epoch_v1','sealed','UPDATE') THEN
+    RAISE EXCEPTION 'FAIL_OWNER_VS_WRITER_READER_EXECUTOR_GRANTS';
+ END IF;
+END $$;
+SQL
+
+# Create one test epoch *as the owner*; future Cloud epoch creation is still
+# an independent security-reviewed provisioning step, never writer authority.
+pg -f - <<'SQL' >/dev/null
+INSERT INTO v3_cas_audit.epoch_v1
+(epoch_id,predecessor_series_id,expected_rpc,source_sha256,
+ original_fence_sha256,approved_caller_acl_sha256)
+VALUES
+('V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+ 'PAPER-V2R4-20261009T110135Z',
+ 'public.rotate_v2r4_to_v3_experimental_paper',
+ repeat('a',64),repeat('b',64),repeat('c',64));
+SQL
+# Required + allowed real SQL steps for narrow writer.
+pg -f - <<'SQL' >/dev/null
+SET ROLE v3_cas_audit_writer;
+BEGIN;
+SELECT next_ordinal FROM v3_cas_audit.epoch_v1
+ WHERE epoch_id='V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+ FOR UPDATE;
+UPDATE v3_cas_audit.epoch_v1 SET next_ordinal=next_ordinal+1
+ WHERE epoch_id='V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+INSERT INTO v3_cas_audit.intent_v1
+ (epoch_id,ordinal,intent_id,requested_rpc,predecessor_series_id,
+  request_sha256,source_sha256,fence_sha256)
+VALUES
+ ('V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',1,
+  '44444444-4444-4444-8444-444444444444',
+  'public.rotate_v2r4_to_v3_experimental_paper',
+  'PAPER-V2R4-20261009T110135Z',
+  repeat('d',64),repeat('a',64),repeat('b',64));
+COMMIT;
+RESET ROLE;
+SQL
+count="$(pg -Atc "set role v3_cas_audit_reader; select count(*) from v3_cas_audit.intent_v1 where epoch_id='V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';" | tail -n 1)"
+if [[ "$count" != '1' ]]; then echo 'FAIL_INDEPENDENT_READER_CANNOT_ACK_WRITER_COMMIT' >&2; exit 1; fi
+
+# Negative effective privilege tests: no writer SELECT/DELETE/other UPDATE,
+# no reader append/UPDATE, no executor table or schema, no normal role access.
+deny_sql() {
+  local label="$1"; shift
+  if pg -c "$*" >/dev/null 2>&1; then
+    echo "FAIL_EXPECTED_ROLE_DENIAL_$label" >&2; exit 1
+  fi
+}
+deny_sql writer_intent_select \
+  "set role v3_cas_audit_writer; select count(*) from v3_cas_audit.intent_v1;"
+deny_sql writer_intent_delete \
+  "set role v3_cas_audit_writer; delete from v3_cas_audit.intent_v1;"
+deny_sql writer_epoch_source_change \
+  "set role v3_cas_audit_writer; update v3_cas_audit.epoch_v1 set source_sha256=repeat('e',64);"
+deny_sql reader_insert \
+  "set role v3_cas_audit_reader; insert into v3_cas_audit.intent_v1 default values;"
+deny_sql reader_epoch_update \
+  "set role v3_cas_audit_reader; update v3_cas_audit.epoch_v1 set next_ordinal=500;"
+deny_sql executor_view \
+  "set role v3_cas_executor; select count(*) from v3_cas_audit.intent_v1;"
+deny_sql generic_service_role \
+  "set role service_role; select count(*) from v3_cas_audit.intent_v1;"
+echo 'V3_PG17_SEPARATED_NOLOGIN_WRITER_READER_EXECUTOR_PASS'
 echo 'V3_PG17_EPHEMERAL_ALL_PASS_NO_PRODUCTION'
