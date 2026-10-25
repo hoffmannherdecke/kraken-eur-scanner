@@ -16,10 +16,10 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         locked, post=remainder.split(boundary,1)
         dormant=name+locked
         outside=pre+boundary+post
-        self.assertEqual(len(re.findall(r"(?m)^\\s*Disable-ScheduledTask\\b",dormant)),1)
-        self.assertEqual(len(re.findall(r"(?m)^\\s*Stop-ScheduledTask\\b",dormant)),1)
-        self.assertNotRegex(outside,r"(?m)^\\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\\b")
-        self.assertNotRegex(dormant,r"(?m)^\\s*(?:Start|Enable|Register)-ScheduledTask\\b")
+        self.assertEqual(len(re.findall(r"(?m)^\s*Disable-ScheduledTask\b",dormant)),1)
+        self.assertEqual(len(re.findall(r"(?m)^\s*Stop-ScheduledTask\b",dormant)),1)
+        self.assertNotRegex(outside,r"(?m)^\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\b")
+        self.assertNotRegex(dormant,r"(?m)^\s*(?:Start|Enable|Register)-ScheduledTask\b")
         self.assertIn("V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED",dormant)
         self.assertRegex(dormant,r"(?s)\) \{\s*# Independent second hard-lock:.*?throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'")
         self.assertIn("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE",dormant)
@@ -27,7 +27,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
                         dormant.index("Disable-ScheduledTask"))
         self.assertIn("if($Execute){",outside)
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",outside)
-        self.assertNotRegex(outside,r"(?m)^\\s*Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY\\b")
+        self.assertNotRegex(outside,r"(?m)^\s*Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY\b")
 
 
     def test_no_side_effect_commands_or_runtime_invocation(self):
