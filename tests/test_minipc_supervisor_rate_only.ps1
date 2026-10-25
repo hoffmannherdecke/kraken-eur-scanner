@@ -667,6 +667,32 @@ function V3RecoveryFixture {
   v3_writer_started=$false
  }
 }
+# Current PR515 is a typed READ-ONLY fixture, never a physical stop/Cloud ACK.
+function V3Pr515RecoveryPreviewFixture {
+ [pscustomobject]@{
+  kind='V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1'
+  status='COMPATIBLE_READONLY_NOT_RELEASED'
+  current_backup_directory_leaf=('V3Paper-PreCAS-Backup-'+('a'*32))
+  pr515_source_sha256=('b'*64)
+  two_current_native_xml_reread_pass=$true
+  pr515_effective_cloudsync_source_consistent=$true
+  external_sha_pin_independently_authenticated=$false
+  physical_task_restore_tested=$false
+  scheduler_task_mutations=$false
+  cloud_cas_invoked=$false
+  v3_paper_activated=$false
+  technical_release_proofs_credited=0
+ }
+}
+function V3Pr515RecoveryReviewFixture {
+ $x=V3RecoveryFixture
+ $x|Add-Member -NotePropertyName current_pr515_readonly_preview -NotePropertyValue (V3Pr515RecoveryPreviewFixture)
+ $x|Add-Member -NotePropertyName pr515_sha_pin_separately_verified -NotePropertyValue $true
+ $x|Add-Member -NotePropertyName fresh_current_xml_after_quiesce_independently_checked -NotePropertyValue $true
+ $x|Add-Member -NotePropertyName independent_cloud_precommit_cas_never_invoked_ack -NotePropertyValue $true
+ $x|Add-Member -NotePropertyName independent_cloud_old_only_after_quiesce_ack -NotePropertyValue $true
+ return $x
+}
 function CheckBackup([bool]$Expected,[object]$Fixture,[string]$Label){
  $actual=Test-V3ScopedOriginalBackupContract -Manifest $Fixture
  if($actual -ne $Expected){throw "V3_BACKUP_CONTRACT_FAIL $Label expected=$Expected actual=$actual"}
@@ -699,7 +725,24 @@ $x=V3BackupFixture;$x.task_records[1].restart_count=4
 CheckBackup $false $x 'wrong native boot restart policy'
 $x=V3BackupFixture;$x.old_stage_release_sha='bad'
 CheckBackup $false $x 'old stage source pin missing'
-CheckRecovery 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE' (V3RecoveryFixture) 'qualified simulation, no actual rollback'
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' (V3RecoveryFixture) 'historical backup alone can no longer qualify'
+CheckRecovery 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE' (V3Pr515RecoveryReviewFixture) 'only source-current and separately reviewed simulated evidence'
+$x=V3Pr515RecoveryReviewFixture;$x.pr515_sha_pin_separately_verified=$false
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'missing independently reviewed PR515 source pin'
+$x=V3Pr515RecoveryReviewFixture;$x.fresh_current_xml_after_quiesce_independently_checked=$false
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'prestop XML preview is not a fresh poststop recheck'
+$x=V3Pr515RecoveryReviewFixture;$x.independent_cloud_precommit_cas_never_invoked_ack=$false
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'unknown independent Cloud CAS history cannot restore'
+$x=V3Pr515RecoveryReviewFixture;$x.independent_cloud_old_only_after_quiesce_ack=$false
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'current old-only Cloud original missing'
+$x=V3Pr515RecoveryReviewFixture;$x.current_pr515_readonly_preview.pr515_source_sha256='invalid'
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'bad effective PR515 source identity'
+$x=V3Pr515RecoveryReviewFixture;$x.current_pr515_readonly_preview.current_backup_directory_leaf='V3-Old-PR332'
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'old backup path forbidden'
+$x=V3Pr515RecoveryReviewFixture;$x.current_pr515_readonly_preview.scheduler_task_mutations=$true
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'preview may not claim Task mutation'
+$x=V3Pr515RecoveryReviewFixture;$x.cloud_cas_invoked=$true;$x.cloud_cas_outcome='UNKNOWN'
+CheckRecovery 'HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION' $x 'unknown CAS overrides otherwise qualified source preview'
 $x=V3RecoveryFixture;$x.phase='PRE_CUTOVER'
 CheckRecovery 'NO_ACTION_PRESERVE_ACTIVE_V2R4' $x 'no intervention yet'
 $x=V3RecoveryFixture;$x.phase='ARMED'
@@ -736,7 +779,7 @@ $x=V3RecoveryFixture;$x.predecessor_series_id='PAPER-V2R4-20261007T184255Z'
 CheckRecovery 'BLOCK_INVALID_SCOPE_OR_RECEIPT' $x 'stale technical predecessor'
 $x=V3RecoveryFixture;$x.cloud_cas_outcome='SOMETHING_ELSE'
 CheckRecovery 'HOLD_INVALID_CLOUD_OUTCOME' $x 'unrecognized Cloud result'
-Write-Output 'V3_SCOPED_CUTOVER_PURE_BACKUP_RECOVERY_29_CASES_PASS'
+Write-Output 'V3_SCOPED_CUTOVER_PURE_BACKUP_RECOVERY_38_CASES_PASS'
 
 
 # Native ORIGINAL host backup-manifest readback schema is intentionally

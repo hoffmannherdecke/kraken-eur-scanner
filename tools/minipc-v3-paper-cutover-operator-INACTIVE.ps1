@@ -174,7 +174,33 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
       $Receipt.old_cloud_single_active_readback -eq $true -and
       $Receipt.new_v3_series_absent_readback -eq $true -and
       $Receipt.v3_writer_started -eq $false){
-   $resolution='PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE'
+   # Historical backup proposals cannot attest current PR515 or fresh XML.
+   # This is an OFFLINE manual-review candidate, not permission to restore.
+   $current=$Receipt.current_pr515_readonly_preview
+   $pr515Current=(
+    $null -ne $current -and
+    [string]$current.kind -ceq 'V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1' -and
+    [string]$current.status -ceq 'COMPATIBLE_READONLY_NOT_RELEASED' -and
+    [string]$current.current_backup_directory_leaf -cmatch '^V3Paper-PreCAS-Backup-[a-f0-9]{32}$' -and
+    [string]$current.pr515_source_sha256 -cmatch '^[a-f0-9]{64}$' -and
+    $current.two_current_native_xml_reread_pass -eq $true -and
+    $current.pr515_effective_cloudsync_source_consistent -eq $true -and
+    $current.external_sha_pin_independently_authenticated -eq $false -and
+    $current.physical_task_restore_tested -eq $false -and
+    $current.scheduler_task_mutations -eq $false -and
+    $current.cloud_cas_invoked -eq $false -and
+    $current.v3_paper_activated -eq $false -and
+    [int]$current.technical_release_proofs_credited -eq 0
+   )
+   if($pr515Current -and
+      $Receipt.pr515_sha_pin_separately_verified -eq $true -and
+      $Receipt.fresh_current_xml_after_quiesce_independently_checked -eq $true -and
+      $Receipt.independent_cloud_precommit_cas_never_invoked_ack -eq $true -and
+      $Receipt.independent_cloud_old_only_after_quiesce_ack -eq $true){
+    $resolution='PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE'
+   }else{
+    $resolution='HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK'
+   }
   }
  }
  return [pscustomobject]@{
@@ -182,6 +208,8 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
   disposition=$resolution
   automatic_task_action_authorized=$false
   automatic_old_writer_rearm_allowed=$false
+  current_backup_and_external_cloud_proof_required=$true
+  source_only_pr515_recovery_readback_not_authority=$true
   operator_stop_disable_implemented=$false
   host_rollback_implemented=$false
   cloud_cas_executed=$false
@@ -977,6 +1005,13 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
  return [ordered]@{
   kind='V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1'
   status='COMPATIBLE_READONLY_NOT_RELEASED'
+  # Snapshot hashes are not fresh post-stop authority; re-read after QUIESCED.
+  current_backup_directory_leaf=$name
+  pr515_source_sha256=$ExpectedCloudSha
+  current_native_task_xml_sha256=@($manifest.task_records |
+   Sort-Object task_name | ForEach-Object {[string]$_.xml_sha256})
+  current_backup_valid_while_intakes_running_only=$true
+  preview_is_not_poststop_or_independent_cloud_ack=$true
   two_current_native_xml_reread_pass=$true
   pr515_effective_cloudsync_source_consistent=$true
   external_sha_pin_independently_authenticated=$false

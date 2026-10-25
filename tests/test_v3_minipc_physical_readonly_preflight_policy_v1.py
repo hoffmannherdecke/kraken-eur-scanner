@@ -265,6 +265,42 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
 
 
 
+    def test_pr515_precommit_recovery_needs_current_backup_and_independent_ack(self):
+        """A legacy synthetic recovery proposal alone cannot green-light restore."""
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        recovery=s.split("function Resolve-V3ScopedCutoverRecovery",1)[1].split(
+            "# Exact adapter for the *actual*",1)[0]
+        preview=s.split("function Read-V3Pr515FreshRecoveryPreview",1)[1].split(
+            "if($Execute){",1)[0]
+        for required in (
+            "current_pr515_readonly_preview",
+            "V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1",
+            "COMPATIBLE_READONLY_NOT_RELEASED",
+            "pr515_sha_pin_separately_verified -eq $true",
+            "fresh_current_xml_after_quiesce_independently_checked -eq $true",
+            "independent_cloud_precommit_cas_never_invoked_ack -eq $true",
+            "independent_cloud_old_only_after_quiesce_ack -eq $true",
+            "HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK",
+            "current_backup_and_external_cloud_proof_required=$true",
+            "source_only_pr515_recovery_readback_not_authority=$true",
+            "automatic_old_writer_rearm_allowed=$false",
+            "operator_stop_disable_implemented=$false",
+            "host_rollback_implemented=$false",
+            "cloud_cas_executed=$false",
+        ):
+            self.assertIn(required,recovery)
+        for required in (
+            "current_backup_directory_leaf=$name",
+            "pr515_source_sha256=$ExpectedCloudSha",
+            "current_native_task_xml_sha256=@(",
+            "current_backup_valid_while_intakes_running_only=$true",
+            "preview_is_not_poststop_or_independent_cloud_ack=$true",
+            "external_sha_pin_independently_authenticated=$false",
+        ):
+            self.assertIn(required,preview)
+        self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
+        self.assertNotIn("Invoke-RestMethod",s)
+
     def test_pr515_fresh_native_backup_preview_fail_closed_and_never_cutover(self):
         """New PR515 preview compares current native XML and disk bytes only."""
         s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
