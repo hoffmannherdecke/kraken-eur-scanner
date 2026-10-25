@@ -270,6 +270,8 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         recovery=s.split("function Resolve-V3ScopedCutoverRecovery",1)[1].split(
             "# Exact adapter for the *actual*",1)[0]
+        shared=s.split("function Test-V3Pr515FreshRecoveryIdentity",1)[1].split(
+            "# A pure decision matrix.",1)[0]
         preview=s.split("function Read-V3Pr515FreshRecoveryPreview",1)[1].split(
             "if($Execute){",1)[0]
         for required in (
@@ -288,7 +290,8 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
             "host_rollback_implemented=$false",
             "cloud_cas_executed=$false",
         ):
-            self.assertIn(required,recovery)
+            self.assertIn(required,recovery+shared)
+        self.assertIn("Test-V3Pr515FreshRecoveryIdentity -Preview $current",recovery)
         for required in (
             "current_backup_directory_leaf=$name",
             "pr515_source_sha256=$ExpectedCloudSha",
@@ -299,6 +302,46 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         ):
             self.assertIn(required,preview)
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
+        self.assertNotIn("Invoke-RestMethod",s)
+
+    def test_pr515_no_rearm_phase_contract_reuses_one_fresh_source_identity(self):
+        """Stop/recovery planning stays offline, fail-closed and PR515 specific."""
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        shared=s.split("function Test-V3Pr515FreshRecoveryIdentity",1)[1].split(
+            "# A pure decision matrix.",1)[0]
+        phase=s.split("function Get-V3SingleWriterFenceDryRunPlan",1)[1].split(
+            "# Pure, externally signed",1)[0]
+        for required in (
+            "current_native_task_xml_sha256",
+            "current_backup_valid_while_intakes_running_only -eq $true",
+            "preview_is_not_poststop_or_independent_cloud_ack -eq $true",
+            "pr515_source_sha256",
+            "current_backup_directory_leaf",
+            "external_sha_pin_independently_authenticated -eq $false",
+        ):
+            self.assertIn(required,shared)
+        for required in (
+            "Test-V3Pr515FreshRecoveryIdentity -Preview $Receipt.current_pr515_readonly_preview",
+            "pr515_sha_pin_separately_verified -ne $true",
+            "current_backup_original_xml_prestop_verified -ne $true",
+            "CURRENT_PR515_ORIGINAL_BACKUP_IDENTITY_UNVERIFIED",
+            "two_distinct_quiesced_supervisor_cycles_readback -ne $true",
+            "pr515_cloudsync_precommit_no_network_hold_readback -ne $true",
+            "current_backup_xml_after_quiesce_readback -ne $true",
+            "independent_old_only_cloud_readback_after_quiesce -ne $true",
+            "independent_cas_never_invoked_readback_after_quiesce -ne $true",
+            "HOLD_PR515_QUIESCED_OR_CLOUD_ACK_INCOMPLETE",
+            "REQUIRE_EFFECTIVE_PR515_CLOUDSYNC_SHA_AND_TWO_FRESH_BACKUP_XML_HASHES",
+            "REQUIRE_TWO_DISTINCT_QUIESCED_SUPERVISOR_CYCLES_AND_PR515_CLOUDSYNC_PRECOMMIT_HOLD",
+            "REQUIRE_FRESH_POSTSTOP_TASK_XML_AND_INDEPENDENT_CLOUD_CAS_NEVER_READBACK",
+            "pre_cas_recovery_only_if_cas_never_attempted=$true",
+            "step_implementation_present=$false",
+            "cloud_cas_invoke_permitted=$false",
+        ):
+            self.assertIn(required,phase)
+        self.assertIn("if($Execute){",s)
+        self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
+        self.assertNotRegex(s,r"(?m)^\\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\\b")
         self.assertNotIn("Invoke-RestMethod",s)
 
     def test_pr515_fresh_native_backup_preview_fail_closed_and_never_cutover(self):
