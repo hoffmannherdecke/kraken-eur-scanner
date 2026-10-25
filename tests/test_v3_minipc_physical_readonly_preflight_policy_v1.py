@@ -379,6 +379,46 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("independent_cloud_cas_readback_performed=$false",preview)
         self.assert_locked_pr515_native_stop_only(s)
 
+    def test_production_cloud_current_inventory_never_certifies_historical_cas(self):
+        """Original active series is not proof that no one ever invoked a CAS."""
+        sql=(ROOT/"supabase/v3-paper-precommit-cloud-current-inventory-READONLY.sql").read_text(encoding="utf-8")
+        code="\n".join(line for line in sql.splitlines() if not line.lstrip().startswith("--"))
+        self.assertEqual(code.lower().count("select\n"),1)
+        for forbidden in ("insert", "update", "delete", "alter", "create", "drop",
+                          "grant", "revoke", "truncate", "perform", "call", "execute"):
+            self.assertNotRegex(code,r"(?i)\b"+forbidden+r"\b")
+        for required in ("V3_PRECOMMIT_CURRENT_CLOUD_INVENTORY_V1",
+                         "public.paper_series", "status='active'",
+                         "PAPER-V2R4-20261009T110135Z",
+                         "public.paper_technical_rotations",
+                         "public.strategy_release_decisions",
+                         "rotate_v2r4_to_v3_experimental_paper",
+                         "paper_series_single_active_idx",
+                         "false as historically_cas_never_invoked_proven",
+                         "false as precommit_restore_authorized"):
+            self.assertIn(required,code)
+        source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        validator=source.split("function Test-V3PrecommitCurrentCloudInventory",1)[1].split(
+            "# A pure decision matrix.",1)[0]
+        recovery=source.split("function Resolve-V3ScopedCutoverRecovery",1)[1].split(
+            "# Exact adapter for the *actual*",1)[0]
+        for required in ("V3_PRECOMMIT_CURRENT_CLOUD_INVENTORY_V1",
+                         "historically_cas_never_invoked_proven -ne $false",
+                         "precommit_restore_authorized -ne $false",
+                         "active_series_count=1",
+                         "exact_original_active_count=1",
+                         "recorded_v3_series_count=0",
+                         "recorded_v3_rotation_count=0",
+                         "recorded_v3_release_decision_count=0",
+                         "installed_v3_cas_function_count=0",
+                         "valid_single_active_index_count=1",
+                         "$age -le 180"):
+            self.assertIn(required,validator)
+        self.assertIn("Test-V3PrecommitCurrentCloudInventory -Inventory $Receipt.current_prod_cloud_inventory",recovery)
+        self.assertIn("cloud_inventory_cannot_prove_historical_cas_never=$true",recovery)
+        self.assertIn("automatic_old_writer_rearm_allowed=$false",recovery)
+        self.assert_locked_pr515_native_stop_only(source)
+
     def test_pr515_quiesced_restore_join_and_armed_preview_are_pure_not_authority(self):
         s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         join=s.split("function Test-V3Pr515QuiescedRecoveryIdentity",1)[1].split(
