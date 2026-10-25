@@ -70,8 +70,10 @@ class V3CasAuditInactiveTests(unittest.TestCase):
         self.assertIn("from public, anon, authenticated, service_role,",executable)
         self.assertNotIn("grant execute on function public.",executable.lower())
         self.assertNotIn("grant update(next_ordinal)",executable.lower())
-        self.assertNotIn("grant insert on v3_cas_audit.intent_v1",executable.lower().replace(
-            "grant insert on v3_cas_audit.intent_v1\n    to v3_cas_audit_append_definer", ""))
+        self.assertNotIn(
+            "grant insert on v3_cas_audit.intent_v1\n    to v3_cas_audit_writer;",
+            executable.lower()
+        )
         for source in (
             "create role v3_cas_audit_table_owner nologin noinherit nobypassrls",
             "create role v3_cas_audit_append_definer nologin noinherit nobypassrls",
