@@ -19,6 +19,14 @@ jobs:
           python-version: '3.13'
       - name: V3 CAS preinvoke ledger inert source and separate transaction tests
         run: python -m unittest tests.test_v3_cas_preinvoke_ledger_inactive -v
+      - name: V3 CAS isolated real PostgreSQL 17 native ACL/transaction tests
+        run: |
+          # Avoid the Docker pull on unrelated project-wide architecture PRs.
+          if git diff --name-only HEAD^1 HEAD | grep -Eq '^(supabase/v3-cas-preinvoke-ledger-INACTIVE\.sql|tests/v3_cas_postgres_ephemeral_contract\.sh|\.github/workflows/architecture-cleanup-validation\.yml)$'; then
+            bash tests/v3_cas_postgres_ephemeral_contract.sh
+          else
+            echo 'V3_PG17_EPHEMERAL_UNCHANGED_SKIP'
+          fi
       - name: Scanner GitHub run/step divergence and existing Slack recovery (offline)
         run: |
           python -m py_compile process_audit.py tools/workflow_run_health.py tools/process-health-alert-router.py
