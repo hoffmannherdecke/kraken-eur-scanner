@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
+      - name: V3 CAS preinvoke ledger inert source and separate transaction tests
+        run: python -m unittest tests.test_v3_cas_preinvoke_ledger_inactive -v
       - name: Scanner GitHub run/step divergence and existing Slack recovery (offline)
         run: |
           python -m py_compile process_audit.py tools/workflow_run_health.py tools/process-health-alert-router.py
