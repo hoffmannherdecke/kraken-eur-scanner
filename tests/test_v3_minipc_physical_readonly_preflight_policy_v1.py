@@ -344,6 +344,34 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertNotRegex(s,r"(?m)^\\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\\b")
         self.assertNotIn("Invoke-RestMethod",s)
 
+    def test_pr515_quiesced_readback_is_separate_and_cannot_rearm(self):
+        """The original scoped operator reads disabled Task XML without mutation."""
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        for required in (
+            "[switch]$PreviewPr515Quiesced",
+            "[switch]$ExpectedQuiesced",
+            "Test-V3Pr515DisabledOnlyXmlDifference",
+            "Test-V3Pr515QuiescedLocalHold",
+            "V3_PRECAS_PR515_QUIESCED_READONLY_COMPATIBILITY_V1",
+            "QUIESCED_NATIVE_SOURCE_MATCH_NOT_RELEASED",
+            "Native disabled Task changed beyond Enabled configuration",
+            "Invalid or historical drill-only QUIESCED marker",
+            "Native Supervisor or PR515 precommit no-network hold mismatch",
+            "after_disable_enabled_only_native_xml_comparison=$ExpectedQuiesced.IsPresent",
+            "two_distinct_supervisor_cycles_verified=$false",
+            "old_intake_pid_family_absence_independently_verified=$false",
+            "independent_cloud_cas_never_invoked_verified=$false",
+            "if($PreviewPr515Quiesced) {",
+            "-ExpectedQuiesced",
+        ):
+            self.assertIn(required,s)
+        self.assertLess(s.index("if($Execute){"),s.index("if($PreviewPr515Quiesced) {"))
+        self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
+        self.assertNotRegex(s,r"(?m)^\\s*(?:Disable|Stop|Start|Enable|Register)-ScheduledTask\\b")
+        self.assertNotIn("Invoke-RestMethod",s)
+        self.assertNotIn("Invoke-WebRequest",s)
+        self.assertNotIn("drill_only=$false",s)
+
     def test_pr515_fresh_native_backup_preview_fail_closed_and_never_cutover(self):
         """New PR515 preview compares current native XML and disk bytes only."""
         s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
