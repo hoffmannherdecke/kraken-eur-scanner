@@ -10,11 +10,15 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
     def assert_locked_pr515_native_stop_only(self, source):
         """Exactly two dormant Task cmdlet sites, and no reachable release entry."""
         name="function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY("
+        restore_name="function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY("
         boundary="# Native TaskScheduler disable may change exactly one XML field:"
         self.assertEqual(source.count(name),1)
+        self.assertEqual(source.count(restore_name),1)
         pre, remainder=source.split(name,1)
-        locked, post=remainder.split(boundary,1)
-        dormant=name+locked
+        stop_locked, after_stop=remainder.split(restore_name,1)
+        restore_locked, post=after_stop.split(boundary,1)
+        dormant=name+stop_locked
+        restore=restore_name+restore_locked
         outside=pre+boundary+post
         self.assertEqual(len(re.findall(r"(?m)^\s*Disable-ScheduledTask\b",dormant)),1)
         self.assertEqual(len(re.findall(r"(?m)^\s*Stop-ScheduledTask\b",dormant)),1)
@@ -28,6 +32,26 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("if($Execute){",outside)
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",outside)
         self.assertNotRegex(outside,r"(?m)^\s*Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY\b")
+        self.assertEqual(len(re.findall(r"(?m)^\s*Enable-ScheduledTask\b",restore)),1)
+        self.assertEqual(len(re.findall(r"(?m)^\s*Start-ScheduledTask\b",restore)),1)
+        self.assertEqual(len(re.findall(r"(?m)^\s*Remove-Item\b",restore)),1)
+        self.assertNotRegex(outside,r"(?m)^\s*(?:Enable|Start|Disable|Stop|Register)-ScheduledTask\b")
+        self.assertNotRegex(outside,r"(?m)^\s*Remove-Item\b")
+        self.assertRegex(restore,r"(?s)\) \{\s*throw 'V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED'")
+        self.assertIn("V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED",restore)
+        self.assertLess(restore.index("V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED"),
+                        restore.index("Enable-ScheduledTask"))
+        self.assertLess(restore.index("Enable-ScheduledTask"),restore.index("Start-ScheduledTask"))
+        self.assertLess(restore.index("Start-ScheduledTask"),restore.index("Remove-Item"))
+        self.assertIn("Test-V3Pr515QuiescedRecoveryIdentity",restore)
+        self.assertIn("Resolve-V3ScopedCutoverRecovery",restore)
+        self.assertIn("QUIESCED",restore)
+        self.assertIn("ARMED",restore)
+        self.assertIn("[IO.File]::Replace",restore)
+        self.assertNotIn("Invoke-RestMethod",restore)
+        self.assertNotIn("Invoke-WebRequest",restore)
+        self.assertNotRegex(restore,r"(?m)^\s*(?:Stop-Process|Register-ScheduledTask|Unregister-ScheduledTask)\b")
+        self.assertNotRegex(outside,r"(?m)^\s*Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY\b")
 
 
     def test_no_side_effect_commands_or_runtime_invocation(self):
