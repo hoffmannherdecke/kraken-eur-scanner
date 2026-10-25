@@ -61,6 +61,51 @@ begin
   revoke all on v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1
     from public, anon, authenticated, service_role;
 
+  -- PROPOSED INTERNAL NOLOGIN ROLE BOUNDARIES. Entire block is behind
+  -- the unconditional first RAISE above and cannot run in production.
+  -- NO LOGIN credentials, NO role memberships, NO executable CAS RPC.
+  -- RLS without explicit role policies would block even a narrowly granted
+  -- writer/reader; keep this complete role+policy candidate together.
+  create role v3_cas_audit_writer nologin noinherit nobypassrls;
+  create role v3_cas_audit_reader nologin noinherit nobypassrls;
+  create role v3_cas_executor nologin noinherit nobypassrls;
+  grant usage on schema v3_cas_audit
+    to v3_cas_audit_writer, v3_cas_audit_reader;
+  grant select(epoch_id,next_ordinal,sealed)
+    on v3_cas_audit.epoch_v1 to v3_cas_audit_writer;
+  grant update(next_ordinal)
+    on v3_cas_audit.epoch_v1 to v3_cas_audit_writer;
+  grant insert on v3_cas_audit.intent_v1 to v3_cas_audit_writer;
+  grant select on v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1
+    to v3_cas_audit_reader;
+
+  create policy v3_cas_epoch_writer_read_v1
+    on v3_cas_audit.epoch_v1 for select
+    to v3_cas_audit_writer using (not sealed);
+  create policy v3_cas_epoch_writer_advance_v1
+    on v3_cas_audit.epoch_v1 for update
+    to v3_cas_audit_writer using (not sealed) with check (not sealed);
+  create policy v3_cas_intent_writer_append_v1
+    on v3_cas_audit.intent_v1 for insert
+    to v3_cas_audit_writer with check (state = 'PREINVOKE_INTENT');
+  create policy v3_cas_epoch_reader_v1
+    on v3_cas_audit.epoch_v1 for select
+    to v3_cas_audit_reader using (true);
+  create policy v3_cas_intent_reader_v1
+    on v3_cas_audit.intent_v1 for select
+    to v3_cas_audit_reader using (true);
+
+  -- LIMITS: These roles are not assigned credentials or executor EXECUTE.
+  -- Writer may currently choose a nonconsecutive next_ordinal (column-level
+  -- UPDATE permission alone cannot force +1) or fabricate hash inputs.
+  -- Exact monotonic step enforcement, an exclusive lock-holding append API,
+  -- independent signed/off-DB custody and owner-tamper resistance are
+  -- future BLOCKING security gates before any migration/privilege activation.
+  -- RLS cannot defend against the privileged table owner / superuser.
+  -- Shared BYPASSRLS service_role and public/anon/authenticated are not
+  -- granted anything in this schema. Executor has no usage or table grant.
+  -- NO GRANT EXECUTE to V3 CAS function (it does not exist).
+
   -- NO GRANT, NO SECURITY DEFINER, NO CAS EXECUTE, NO PUBLIC FUNCTION.
   -- PostgreSQL table owner/admin can modify tables irrespective of these
   -- client ACLs. Independent off-DB append-only retention or independently
