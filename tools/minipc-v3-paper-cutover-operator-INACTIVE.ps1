@@ -1109,10 +1109,14 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
   })
   $after=@(Get-CimInstance Win32_Process -ErrorAction Stop)
   $oldLive=@($after|Where-Object {[int]$_.ProcessId -in $descendants})
-  $newLive=@($after|Where-Object {
-   [string]$_.Name -match '(?i)^pythonw?\.exe$' -and
-   @($native|Where-Object {([string]$_.arguments).Length -ge 10 -and
-     ([string]$PSItem.CommandLine).Contains([string]$_.arguments)}).Count -gt 0
+  $newLive=@(foreach($proc in $after){
+   if([string]$proc.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
+   $line=([string]$proc.CommandLine).Replace('\','/')
+   if(@($native | Where-Object {
+      ([string]$_.arguments).Length -ge 10 -and
+      $line.IndexOf(([string]$_.arguments).Replace('\','/'),
+       [StringComparison]::OrdinalIgnoreCase) -ge 0
+   }).Count -gt 0){$proc}
   })
   if($disabled.Count -eq 2 -and $oldLive.Count -eq 0 -and $newLive.Count -eq 0){
    $quiet=$true;break
