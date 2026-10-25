@@ -219,6 +219,8 @@ BEGIN
     NOT has_schema_privilege('v3_cas_audit_append_definer','v3_cas_audit','USAGE') OR
     has_schema_privilege('v3_cas_audit_append_definer','v3_cas_audit','CREATE') OR
     NOT has_column_privilege('v3_cas_audit_append_definer',
+         'v3_cas_audit.epoch_v1','sealed','SELECT') OR
+    NOT has_column_privilege('v3_cas_audit_append_definer',
          'v3_cas_audit.epoch_v1','next_ordinal','UPDATE') OR
     NOT has_table_privilege('v3_cas_audit_append_definer',
          'v3_cas_audit.intent_v1','INSERT') OR
