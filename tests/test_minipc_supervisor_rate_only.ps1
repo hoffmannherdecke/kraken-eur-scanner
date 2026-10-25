@@ -621,7 +621,7 @@ Write-Output 'V3_SIGNED_CONHOST_EXACT_SCOPE_PURE_12_CASES_PASS'
 
 # V3 offline transaction-contract simulation. Run extracted PURE policies only.
 # Never execute the inactive operator, host commands, Task or Cloud changes.
-foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Resolve-V3ScopedCutoverRecovery')){
+foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Test-V3Pr515FreshRecoveryIdentity','Resolve-V3ScopedCutoverRecovery')){
  $fn=@($oa.FindAll({
   param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
   $a.Name -eq $name
@@ -674,6 +674,9 @@ function V3Pr515RecoveryPreviewFixture {
   status='COMPATIBLE_READONLY_NOT_RELEASED'
   current_backup_directory_leaf=('V3Paper-PreCAS-Backup-'+('a'*32))
   pr515_source_sha256=('b'*64)
+  current_native_task_xml_sha256=@(('c'*64),('d'*64))
+  current_backup_valid_while_intakes_running_only=$true
+  preview_is_not_poststop_or_independent_cloud_ack=$true
   two_current_native_xml_reread_pass=$true
   pr515_effective_cloudsync_source_consistent=$true
   external_sha_pin_independently_authenticated=$false
@@ -1063,6 +1066,15 @@ function V3FenceFixture {
   wait_all_descendants_verified=$true;original_cloud_only_readback=$true
   v3_writer_running=$false;backup_readback_verified=$true
   backup_proposal=(V3BackupFixture)
+  current_pr515_readonly_preview=(V3Pr515RecoveryPreviewFixture)
+  pr515_sha_pin_separately_verified=$true
+  current_backup_original_xml_prestop_verified=$true
+  # Fixture fields are untrusted synthetic inputs, not actual Cloud/Windows ACKs.
+  two_distinct_quiesced_supervisor_cycles_readback=$true
+  pr515_cloudsync_precommit_no_network_hold_readback=$true
+  current_backup_xml_after_quiesce_readback=$true
+  independent_old_only_cloud_readback_after_quiesce=$true
+  independent_cas_never_invoked_readback_after_quiesce=$true
   intake_task_states=@(
    [pscustomobject]@{task_name='CryptoMiniPC-V2R4PaperCandidates';state='Running'},
    [pscustomobject]@{task_name='CryptoMiniPC-V2R4PaperWait';state='Running'}
@@ -1097,6 +1109,16 @@ function ReviewFence([string]$Expected,[object]$Fixture,[string]$Label){
  }
 }
 ReviewFence 'REVIEW_ARM_FENCE_SEPARATE_PHYSICAL_APPROVAL' (V3FenceFixture) 'source pinned discovery only'
+$x=V3FenceFixture;$x.current_pr515_readonly_preview=$null
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'legacy PR332-only no current PR515 identity'
+$x=V3FenceFixture;$x.current_pr515_readonly_preview.pr515_source_sha256='bad'
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'unreviewed PR515 current source digest'
+$x=V3FenceFixture;$x.current_pr515_readonly_preview.current_native_task_xml_sha256[1]='bad'
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'second protected XML hash invalid'
+$x=V3FenceFixture;$x.pr515_sha_pin_separately_verified=$false
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'external PR515 pin remains unverified'
+$x=V3FenceFixture;$x.current_backup_original_xml_prestop_verified=$false
+ReviewFence 'BLOCK_MISSING_OR_INVALID_RECEIPT' $x 'fresh original native two XML snapshot absent'
 $x=V3FenceFixture;$x.fence_marker_phase='ARMED'
 ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'unexplained marker'
 $x=V3FenceFixture;$x.phase='ARMED';$x.fence_marker_phase='ARMED'
@@ -1164,6 +1186,22 @@ $x.supervisor_intake_restart_suppressed_readback=$true
 $x.supervisor_reported_fence_mode='QUIESCED'
 $x.both_native_tasks_disabled_readback=$true
 ReviewFence 'HOLD_SIX_E2E_AND_BUDGET_APPROVAL' $x 'no fabricated 6 technical proofs'
+$x.two_distinct_quiesced_supervisor_cycles_readback=$false
+ReviewFence 'HOLD_PR515_QUIESCED_OR_CLOUD_ACK_INCOMPLETE' $x 'one supervisor cycle insufficient'
+$x.two_distinct_quiesced_supervisor_cycles_readback=$true
+$x.pr515_cloudsync_precommit_no_network_hold_readback=$false
+ReviewFence 'HOLD_PR515_QUIESCED_OR_CLOUD_ACK_INCOMPLETE' $x 'PR515 aftercare must prove precommit no network'
+$x.pr515_cloudsync_precommit_no_network_hold_readback=$true
+$x.current_backup_xml_after_quiesce_readback=$false
+ReviewFence 'HOLD_PR515_QUIESCED_OR_CLOUD_ACK_INCOMPLETE' $x 'missing poststop original Task XML'
+$x.current_backup_xml_after_quiesce_readback=$true
+$x.independent_old_only_cloud_readback_after_quiesce=$false
+ReviewFence 'HOLD_PR515_QUIESCED_OR_CLOUD_ACK_INCOMPLETE' $x 'no fresh old-only Cloud readback'
+$x.independent_old_only_cloud_readback_after_quiesce=$true
+$x.independent_cas_never_invoked_readback_after_quiesce=$false
+ReviewFence 'HOLD_PR515_QUIESCED_OR_CLOUD_ACK_INCOMPLETE' $x 'CAS never invoked not independently witnessed'
+$x.independent_cas_never_invoked_readback_after_quiesce=$true
+ReviewFence 'HOLD_SIX_E2E_AND_BUDGET_APPROVAL' $x 'restored separate originalhost and Cloud inputs'
 $x.supervisor_reported_fence_mode='ARMED'
 ReviewFence 'HOLD_INCONSISTENT_FENCE_STATE_OR_NO_REARM' $x 'QUIESCED marker needs independent Supervisor QUIESCED receipt'
 $x.supervisor_reported_fence_mode='QUIESCED'
