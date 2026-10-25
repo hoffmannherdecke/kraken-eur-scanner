@@ -693,7 +693,7 @@ Write-Output 'V3_SIGNED_CONHOST_EXACT_SCOPE_PURE_12_CASES_PASS'
 
 # V3 offline transaction-contract simulation. Run extracted PURE policies only.
 # Never execute the inactive operator, host commands, Task or Cloud changes.
-foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity','Test-V3Pr515ArmedTwoCycleSnapshots','Get-V3Pr515ArmedToQuiescedReview','Resolve-V3ScopedCutoverRecovery')){
+foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity','Test-V3Pr515ArmedTwoCycleSnapshots','Test-V3PrecommitCurrentCloudInventory','Get-V3Pr515ArmedToQuiescedReview','Resolve-V3ScopedCutoverRecovery')){
  $fn=@($oa.FindAll({
   param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
   $a.Name -eq $name
@@ -775,9 +775,29 @@ function V3Pr515QuiescedPreviewFixture {
  $x|Add-Member -NotePropertyName local_poststop_snapshot_is_not_independent_cloud_ack -NotePropertyValue $true
  return $x
 }
+function V3CloudCurrentInventoryFixture {
+ [pscustomobject]@{
+  kind='V3_PRECOMMIT_CURRENT_CLOUD_INVENTORY_V1'
+  observed_at_utc=([datetimeoffset]::UtcNow.ToString('o'))
+  active_series_count=[long]1
+  exact_original_active_count=[long]1
+  recorded_v3_series_count=[long]0
+  recorded_v3_rotation_count=[long]0
+  recorded_v3_release_decision_count=[long]0
+  installed_v3_cas_function_count=[long]0
+  valid_single_active_index_count=[long]1
+  historically_cas_never_invoked_proven=$false
+  precommit_restore_authorized=$false
+ }
+}
+function CheckCloudInventory([bool]$Expected,[object]$Fixture,[string]$Label) {
+ $found=Test-V3PrecommitCurrentCloudInventory -Inventory $Fixture
+ if($found -ne $Expected){throw "V3_PRECOMMIT_CURRENT_CLOUD_INVENTORY_FAIL $Label wanted=$Expected got=$found"}
+}
 function V3Pr515RecoveryReviewFixture {
  $x=V3RecoveryFixture
  $x|Add-Member -NotePropertyName current_pr515_readonly_preview -NotePropertyValue (V3Pr515RecoveryPreviewFixture)
+ $x|Add-Member -NotePropertyName current_prod_cloud_inventory -NotePropertyValue (V3CloudCurrentInventoryFixture)
  $x|Add-Member -NotePropertyName current_pr515_quiesced_readonly_preview -NotePropertyValue (V3Pr515QuiescedPreviewFixture)
  $x|Add-Member -NotePropertyName pr515_sha_pin_separately_verified -NotePropertyValue $true
  $x|Add-Member -NotePropertyName fresh_current_xml_after_quiesce_independently_checked -NotePropertyValue $true
@@ -817,8 +837,43 @@ $x=V3BackupFixture;$x.task_records[1].restart_count=4
 CheckBackup $false $x 'wrong native boot restart policy'
 $x=V3BackupFixture;$x.old_stage_release_sha='bad'
 CheckBackup $false $x 'old stage source pin missing'
+CheckCloudInventory $true (V3CloudCurrentInventoryFixture) 'original Supabase matches present state only, never CAS history'
+$x=V3CloudCurrentInventoryFixture;$x.kind='V3_UNTRUSTED_ALTERNATE_INVENTORY'
+CheckCloudInventory $false $x 'wrong Cloud source kind'
+$x=V3CloudCurrentInventoryFixture;$x.active_series_count=[long]2
+CheckCloudInventory $false $x 'more than one active series'
+$x=V3CloudCurrentInventoryFixture;$x.exact_original_active_count=[long]0
+CheckCloudInventory $false $x 'active old V2R4 vanished'
+$x=V3CloudCurrentInventoryFixture;$x.recorded_v3_series_count=[long]1
+CheckCloudInventory $false $x 'V3 recorded series exists'
+$x=V3CloudCurrentInventoryFixture;$x.recorded_v3_rotation_count=[long]1
+CheckCloudInventory $false $x 'V3 technical rotation exists'
+$x=V3CloudCurrentInventoryFixture;$x.recorded_v3_release_decision_count=[long]1
+CheckCloudInventory $false $x 'V3 release decision exists'
+$x=V3CloudCurrentInventoryFixture;$x.installed_v3_cas_function_count=[long]1
+CheckCloudInventory $false $x 'V3 CAS function installed'
+$x=V3CloudCurrentInventoryFixture;$x.valid_single_active_index_count=[long]0
+CheckCloudInventory $false $x 'unique active index invalid'
+$x=V3CloudCurrentInventoryFixture;$x.historically_cas_never_invoked_proven=$true
+CheckCloudInventory $false $x 'fake historical never-invoked assertion'
+$x=V3CloudCurrentInventoryFixture;$x.precommit_restore_authorized=$true
+CheckCloudInventory $false $x 'fake restore authorization'
+$x=V3CloudCurrentInventoryFixture;$x.observed_at_utc='2026-10-20T00:00:00Z'
+CheckCloudInventory $false $x 'stale Supabase snapshot'
+$x=V3CloudCurrentInventoryFixture;$x.active_series_count='1'
+CheckCloudInventory $false $x 'string count impersonation'
+$x=V3CloudCurrentInventoryFixture;$x.observed_at_utc=''
+CheckCloudInventory $false $x 'no UTC provenance timestamp'
+Write-Output 'V3_CLOUD_CURRENT_INVENTORY_14_PURE_CASES_PASS'
+
 CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' (V3RecoveryFixture) 'historical backup alone can no longer qualify'
 CheckRecovery 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE' (V3Pr515RecoveryReviewFixture) 'current PR515 pre+poststop source contract, still NO restore authority'
+$x=V3Pr515RecoveryReviewFixture;$x.current_prod_cloud_inventory=$null
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'missing fresh actual Supabase inventory'
+$x=V3Pr515RecoveryReviewFixture;$x.current_prod_cloud_inventory.installed_v3_cas_function_count=[long]1
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'installed V3 CAS cannot restore'
+$x=V3Pr515RecoveryReviewFixture;$x.current_prod_cloud_inventory.historically_cas_never_invoked_proven=$true
+CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'historical CAS NEVER is not a field of current inventory'
 $x=V3Pr515RecoveryReviewFixture;$x.current_pr515_quiesced_readonly_preview=$null
 CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'prestop source alone cannot qualify'
 $x=V3Pr515RecoveryReviewFixture;$x.current_pr515_quiesced_readonly_preview.kind='V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1'
