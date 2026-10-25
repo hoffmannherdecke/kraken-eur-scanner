@@ -379,6 +379,45 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("independent_cloud_cas_readback_performed=$false",preview)
         self.assert_locked_pr515_native_stop_only(s)
 
+    def test_preinvoke_audit_source_review_preserves_all_native_and_cloud_locks(self):
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        audit=s.split("function Get-V3CasPreinvokeAuditReview",1)[1].split(
+            "# A pure decision matrix.",1)[0]
+        for marker in (
+            "V3_EXPERIMENTAL_CAS_PREINVOKE_AUDIT_REVIEW_INPUT_V1",
+            "V3_CAS_PREINVOKE_AUDIT_SOURCE_POLICY_V1",
+            "V3CAS-AUDIT-",
+            "INDEPENDENT_PREINVOKE_COMMIT",
+            "APPEND_ONLY_NO_DELETE",
+            "EXCLUSIVE_RESTRICTED_CAS_EXECUTOR",
+            "cas_rpc_execute_revoked_from_shared_service_role -ne $true",
+            "durable_ack_required_before_rpc -ne $true",
+            "unacknowledged_intent_fences_rpc -ne $true",
+            "ledger_and_rpc_use_separate_transactions -ne $true",
+            "startup_coverage_before_first_rpc_independently_reviewed -ne $true",
+            "all_invocation_paths_covered_independently_reviewed -ne $true",
+            "HOLD_ANY_CAS_ATTEMPT_OR_UNKNOWN",
+            "HOLD_AUDIT_COVERAGE_OR_DURABILITY_INCOMPLETE",
+            "REVIEW_ONLY_PREINVOKE_AUDIT_CONTRACT_COMPLETE_UNAUTHENTICATED",
+            "original_audit_issuer_authenticated_here=$false",
+            "append_only_proven_here=$false",
+            "all_invocation_paths_proven_here=$false",
+            "historical_cas_never_invoked_proven=$false",
+            "cloud_cas_invoke_authorized=$false",
+            "native_recovery_authorized=$false",
+            "old_writer_auto_rearm_allowed=$false",
+            "v3_paper_release_authorized=$false",
+        ):
+            self.assertIn(marker,audit)
+        self.assertNotRegex(audit,r"(?m)^\s*(?:Set-Content|Remove-Item|Enable-ScheduledTask|Start-ScheduledTask|Invoke-RestMethod)\b")
+        self.assertIn("V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED",s)
+        self.assertIn("V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED",s)
+        self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
+        self.assert_locked_pr515_native_stop_only(s)
+        doc=(ROOT/"docs/v3-paper-cas-preinvoke-attempt-audit-source-contract-20261025.md").read_text(encoding="utf-8")
+        self.assertIn("PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED",doc)
+        self.assertIn("SOURCE REVIEW ONLY",doc)
+
     def test_production_cloud_current_inventory_never_certifies_historical_cas(self):
         """Original active series is not proof that no one ever invoked a CAS."""
         sql=(ROOT/"supabase/v3-paper-precommit-cloud-current-inventory-READONLY.sql").read_text(encoding="utf-8")

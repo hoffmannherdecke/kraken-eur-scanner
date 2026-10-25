@@ -383,6 +383,7 @@ Write-Output 'V3_NATIVE_OLD_INTAKE_READONLY_BASELINE_14_CASES_PASS'
 
 
 
+
 # Pure original mode and process-lineage guards, NEVER run the full Mini-PC
 # script in CI, and never invoke Win32_Process/Task controls from tests.
 foreach($name in @('Get-V3OldPaperMode','Test-V3OriginalPaperModeLineage')){
@@ -693,7 +694,7 @@ Write-Output 'V3_SIGNED_CONHOST_EXACT_SCOPE_PURE_12_CASES_PASS'
 
 # V3 offline transaction-contract simulation. Run extracted PURE policies only.
 # Never execute the inactive operator, host commands, Task or Cloud changes.
-foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity','Test-V3Pr515ArmedTwoCycleSnapshots','Test-V3PrecommitCurrentCloudInventory','Get-V3Pr515ArmedToQuiescedReview','Resolve-V3ScopedCutoverRecovery')){
+foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity','Test-V3Pr515ArmedTwoCycleSnapshots','Test-V3PrecommitCurrentCloudInventory','Get-V3CasPreinvokeAuditReview','Get-V3Pr515ArmedToQuiescedReview','Resolve-V3ScopedCutoverRecovery')){
  $fn=@($oa.FindAll({
   param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
   $a.Name -eq $name
@@ -701,6 +702,90 @@ foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupCont
  if($fn.Count -ne 1){throw "Missing unique pure V3 recovery policy $name"}
  . ([Scriptblock]::Create($fn[0].Extent.Text))
 }
+# Source-only future original Cloud CAS intent ledger contract. This is NOT
+# historical evidence or a runtime permission; even its positive fixture is
+# deliberately labelled unauthenticated and never authorizes old rearm/CAS.
+function V3CasPreinvokeAuditFixture {
+ [pscustomobject]@{
+  kind='V3_EXPERIMENTAL_CAS_PREINVOKE_AUDIT_REVIEW_INPUT_V1'
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  audit_epoch_id=('V3CAS-AUDIT-'+('a'*32))
+  expected_cas_rpc='public.rotate_v2r4_to_v3_experimental_paper'
+  paper_only=$true;real_money_actions=$false
+  cas_attempt_state='NOT_INVOKED'
+  any_failed_timedout_unknown_or_committed_attempt=$false
+  attempt_intent_count=0
+  inflight_or_unknown_count=0
+  ledger_lane='INDEPENDENT_PREINVOKE_COMMIT'
+  ledger_write_mode='APPEND_ONLY_NO_DELETE'
+  single_invocation_owner='EXCLUSIVE_RESTRICTED_CAS_EXECUTOR'
+  caller_exclusivity_independently_reviewed=$true
+  cas_rpc_execute_revoked_from_shared_service_role=$true
+  durable_ack_required_before_rpc=$true
+  unacknowledged_intent_fences_rpc=$true
+  ledger_and_rpc_use_separate_transactions=$true
+  audit_store_no_alter_or_delete_acl_independently_reviewed=$true
+  audit_provenance_issuer_independently_reviewed=$true
+  startup_coverage_before_first_rpc_independently_reviewed=$true
+  all_invocation_paths_covered_independently_reviewed=$true
+  coverage_started_utc='2026-10-24T00:00:00Z'
+  snapshot_observed_utc=([datetimeoffset]::UtcNow.ToString('o'))
+ }
+}
+function CheckV3CasAudit([string]$Expected,[object]$Fixture,[string]$Label) {
+ $review=Get-V3CasPreinvokeAuditReview -Audit $Fixture
+ if([string]$review.disposition -cne $Expected -or
+    $review.caller_supplied_assertions_not_original_authority -ne $true -or
+    $review.original_audit_issuer_authenticated_here -ne $false -or
+    $review.append_only_proven_here -ne $false -or
+    $review.all_invocation_paths_proven_here -ne $false -or
+    $review.historical_cas_never_invoked_proven -ne $false -or
+    $review.cloud_cas_invoke_authorized -ne $false -or
+    $review.native_recovery_authorized -ne $false -or
+    $review.old_writer_auto_rearm_allowed -ne $false -or
+    $review.v3_paper_release_authorized -ne $false){
+  throw "V3_CAS_PREINVOKE_AUDIT_FALSE_AUTHORITY $Label expected=$Expected got=$($review.disposition)"
+ }
+}
+CheckV3CasAudit 'REVIEW_ONLY_PREINVOKE_AUDIT_CONTRACT_COMPLETE_UNAUTHENTICATED' (V3CasPreinvokeAuditFixture) 'only source contract not real audit'
+$x=V3CasPreinvokeAuditFixture;$x.kind='V3_FAKE_AUDIT'
+CheckV3CasAudit 'BLOCK_INVALID_CAS_AUDIT_SCOPE' $x 'wrong evidence kind'
+$x=V3CasPreinvokeAuditFixture;$x.predecessor_series_id='PAPER-V2R4-20261007T184255Z'
+CheckV3CasAudit 'BLOCK_INVALID_CAS_AUDIT_SCOPE' $x 'wrong predecessor'
+$x=V3CasPreinvokeAuditFixture;$x.audit_epoch_id='unbound'
+CheckV3CasAudit 'BLOCK_INVALID_CAS_AUDIT_SCOPE' $x 'missing epoch'
+$x=V3CasPreinvokeAuditFixture;$x.cas_attempt_state='UNKNOWN'
+CheckV3CasAudit 'HOLD_ANY_CAS_ATTEMPT_OR_UNKNOWN' $x 'unknown always fences'
+$x=V3CasPreinvokeAuditFixture;$x.cas_attempt_state='NOT_COMMITTED'
+CheckV3CasAudit 'HOLD_ANY_CAS_ATTEMPT_OR_UNKNOWN' $x 'not committed still attempted'
+$x=V3CasPreinvokeAuditFixture;$x.attempt_intent_count=1
+CheckV3CasAudit 'HOLD_ANY_CAS_ATTEMPT_OR_UNKNOWN' $x 'preinvoke intent means attempted'
+$x=V3CasPreinvokeAuditFixture;$x.inflight_or_unknown_count=1
+CheckV3CasAudit 'HOLD_ANY_CAS_ATTEMPT_OR_UNKNOWN' $x 'inflight never old rearm'
+$x=V3CasPreinvokeAuditFixture;$x.any_failed_timedout_unknown_or_committed_attempt=$true
+CheckV3CasAudit 'HOLD_ANY_CAS_ATTEMPT_OR_UNKNOWN' $x 'timeout or error remains attempted'
+$x=V3CasPreinvokeAuditFixture;$x.ledger_lane='SAME_TRANSACTION_AS_CAS'
+CheckV3CasAudit 'HOLD_AUDIT_COVERAGE_OR_DURABILITY_INCOMPLETE' $x 'rolled back ledger unacceptable'
+$x=V3CasPreinvokeAuditFixture;$x.ledger_write_mode='MUTABLE'
+CheckV3CasAudit 'HOLD_AUDIT_COVERAGE_OR_DURABILITY_INCOMPLETE' $x 'deleteable evidence unacceptable'
+$x=V3CasPreinvokeAuditFixture;$x.cas_rpc_execute_revoked_from_shared_service_role=$false
+CheckV3CasAudit 'HOLD_AUDIT_COVERAGE_OR_DURABILITY_INCOMPLETE' $x 'shared service role bypass'
+$x=V3CasPreinvokeAuditFixture;$x.durable_ack_required_before_rpc=$false
+CheckV3CasAudit 'HOLD_AUDIT_COVERAGE_OR_DURABILITY_INCOMPLETE' $x 'ack after rpc invalid'
+$x=V3CasPreinvokeAuditFixture;$x.unacknowledged_intent_fences_rpc=$false
+CheckV3CasAudit 'HOLD_AUDIT_COVERAGE_OR_DURABILITY_INCOMPLETE' $x 'lost audit ack must fence'
+$x=V3CasPreinvokeAuditFixture;$x.all_invocation_paths_covered_independently_reviewed=$false
+CheckV3CasAudit 'HOLD_AUDIT_COVERAGE_OR_DURABILITY_INCOMPLETE' $x 'bypassable invocation path'
+$x=V3CasPreinvokeAuditFixture;$x.startup_coverage_before_first_rpc_independently_reviewed=$false
+CheckV3CasAudit 'HOLD_AUDIT_COVERAGE_OR_DURABILITY_INCOMPLETE' $x 'no verified epoch baseline'
+$x=V3CasPreinvokeAuditFixture;$x.audit_provenance_issuer_independently_reviewed=$false
+CheckV3CasAudit 'HOLD_AUDIT_COVERAGE_OR_DURABILITY_INCOMPLETE' $x 'unknown issuer'
+$x=V3CasPreinvokeAuditFixture;$x.snapshot_observed_utc='2026-10-18T00:00:00Z'
+CheckV3CasAudit 'HOLD_AUDIT_EPOCH_TIMESTAMPS_UNVERIFIED' $x 'stale reviewer observation'
+$x=V3CasPreinvokeAuditFixture;$x.coverage_started_utc='2026-10-30T00:00:00Z'
+CheckV3CasAudit 'HOLD_AUDIT_EPOCH_TIMESTAMPS_UNVERIFIED' $x 'future audit epoch'
+Write-Output 'V3_CAS_PREINVOKE_SOURCE_ONLY_19_NEGATIVE_POSITIVE_CASES_PASS'
+
 function V3BackupFixture {
  [pscustomobject]@{
   kind='V3_OLD_INTAKE_BACKUP_PROPOSAL_V1'
