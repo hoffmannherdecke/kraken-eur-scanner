@@ -341,7 +341,7 @@ function Test-V3PrecommitCurrentCloudInventory([object]$Inventory) {
   }
  }
  $stamp=[datetimeoffset]::MinValue
- if([string]$Inventory.observed_at_utc -cnotmatch '(Z|\\+00(?::00)?)$' -or
+ if([string]$Inventory.observed_at_utc -cnotmatch '(Z|\+00(?::00)?)$' -or
     -not([datetimeoffset]::TryParse([string]$Inventory.observed_at_utc,[ref]$stamp))){
   return $false
  }
