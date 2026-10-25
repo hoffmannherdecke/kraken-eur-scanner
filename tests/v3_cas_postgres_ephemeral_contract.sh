@@ -91,10 +91,12 @@ BEGIN
       RAISE EXCEPTION 'FAIL_INCORRECT_AUDIT_PRIVILEGE_%',role_name;
     END IF;
   END LOOP;
-  -- Intent table owner retains UPDATE/DELETE; this proves private RLS and
-  -- ACLs alone are NOT a tamper-proof/WORM audit against privileged owners.
-  IF NOT has_table_privilege('postgres','v3_cas_audit.intent_v1','UPDATE') THEN
-    RAISE EXCEPTION 'FAIL_OWNER_PRIVILEGE_ASSUMPTION';
+  -- Table owner and append definer must be different even in ephemeral PG.
+  IF (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+      WHERE n.nspname='v3_cas_audit'
+        AND c.relname IN ('epoch_v1','intent_v1')
+        AND pg_get_userbyid(c.relowner)='v3_cas_audit_table_owner') <> 2 THEN
+    RAISE EXCEPTION 'FAIL_SEPARATE_TABLE_OWNER';
   END IF;
 END $$;
 SQL
@@ -189,21 +191,43 @@ DO $$
 DECLARE n integer;
 BEGIN
  SELECT count(*) INTO n FROM pg_roles
- WHERE rolname IN ('v3_cas_audit_writer','v3_cas_audit_reader','v3_cas_executor')
- AND NOT rolcanlogin AND NOT rolbypassrls;
- IF n <> 3 THEN RAISE EXCEPTION 'FAIL_THREE_RESTRICTED_NOLOGIN_ROLES'; END IF;
+ WHERE rolname IN ('v3_cas_audit_writer','v3_cas_audit_reader','v3_cas_executor',
+                   'v3_cas_audit_table_owner','v3_cas_audit_append_definer')
+ AND NOT rolcanlogin AND NOT rolbypassrls AND NOT rolinherit;
+ IF n <> 5 THEN RAISE EXCEPTION 'FAIL_FIVE_RESTRICTED_NOLOGIN_ROLES'; END IF;
+ IF EXISTS (SELECT 1 FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.roleid
+   WHERE r.rolname IN ('v3_cas_audit_table_owner','v3_cas_audit_append_definer'))
+ THEN RAISE EXCEPTION 'FAIL_OWNER_ROLE_MEMBER_INHERITANCE'; END IF;
  SELECT count(*) INTO n FROM pg_policies
  WHERE schemaname='v3_cas_audit'
    AND policyname IN ('v3_cas_epoch_writer_read_v1',
                       'v3_cas_epoch_reader_v1',
-                      'v3_cas_intent_reader_v1');
- IF n <> 3 THEN RAISE EXCEPTION 'FAIL_THREE_READ_ONLY_RLS_POLICIES'; END IF;
+                      'v3_cas_intent_reader_v1',
+                      'v3_cas_epoch_definer_read_v1',
+                      'v3_cas_epoch_definer_update_v1',
+                      'v3_cas_intent_definer_insert_v1');
+ IF n <> 6 THEN RAISE EXCEPTION 'FAIL_SIX_MINIMAL_RLS_POLICIES'; END IF;
  IF NOT EXISTS (
    SELECT 1 FROM pg_proc p JOIN pg_namespace ns ON ns.oid=p.pronamespace
    WHERE ns.nspname='v3_cas_audit' AND p.proname='append_intent_v1'
      AND p.prosecdef
      AND array_to_string(p.proconfig,',') LIKE '%search_path=pg_catalog, v3_cas_audit%'
- ) THEN RAISE EXCEPTION 'FAIL_APPEND_DEFINER_FIXED_SEARCH_PATH'; END IF;
+     AND pg_get_userbyid(p.proowner)='v3_cas_audit_append_definer'
+ ) THEN RAISE EXCEPTION 'FAIL_APPEND_DEFINER_NONADMIN_OWNER_OR_FIXED_PATH'; END IF;
+ IF NOT has_schema_privilege('v3_cas_audit_append_definer','v3_cas_audit','USAGE') OR
+    has_schema_privilege('v3_cas_audit_append_definer','v3_cas_audit','CREATE') OR
+    NOT has_column_privilege('v3_cas_audit_append_definer',
+         'v3_cas_audit.epoch_v1','next_ordinal','UPDATE') OR
+    NOT has_table_privilege('v3_cas_audit_append_definer',
+         'v3_cas_audit.intent_v1','INSERT') OR
+    has_table_privilege('v3_cas_audit_append_definer',
+         'v3_cas_audit.intent_v1','SELECT') OR
+    has_table_privilege('v3_cas_audit_append_definer',
+         'v3_cas_audit.intent_v1','DELETE') OR
+    has_table_privilege('v3_cas_audit_append_definer',
+         'v3_cas_audit.intent_v1','UPDATE') THEN
+   RAISE EXCEPTION 'FAIL_APPEND_DEFINER_LEAST_PRIVILEGE';
+ END IF;
  IF NOT has_function_privilege('v3_cas_audit_writer',
        'v3_cas_audit.append_intent_v1(text,uuid,text,text,text)','EXECUTE') OR
     has_function_privilege('anon',
@@ -288,6 +312,10 @@ deny_sql generic_service_role_append_function \
   "set role service_role; select v3_cas_audit.append_intent_v1('V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','55555555-5555-4555-8555-555555555555'::uuid,repeat('d',64),repeat('a',64),repeat('b',64));"
 deny_sql executor_append_function \
   "set role v3_cas_executor; select v3_cas_audit.append_intent_v1('V3CAS-AUDIT-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb','55555555-5555-4555-8555-555555555555'::uuid,repeat('d',64),repeat('a',64),repeat('b',64));"
+deny_sql definer_intent_delete \
+  "set role v3_cas_audit_append_definer; delete from v3_cas_audit.intent_v1;"
+deny_sql definer_intent_select \
+  "set role v3_cas_audit_append_definer; select count(*) from v3_cas_audit.intent_v1;"
 deny_sql reader_insert \
   "set role v3_cas_audit_reader; insert into v3_cas_audit.intent_v1 default values;"
 deny_sql reader_epoch_update \
@@ -296,7 +324,14 @@ deny_sql executor_view \
   "set role v3_cas_executor; select count(*) from v3_cas_audit.intent_v1;"
 deny_sql generic_service_role \
   "set role service_role; select count(*) from v3_cas_audit.intent_v1;"
+# FORCE RLS must hide existing rows even from the non-login table owner
+# when merely SET ROLE is used (an administrator could still ALTER ownership).
+table_owner_count="$(pg -Atc 'set role v3_cas_audit_table_owner; select count(*) from v3_cas_audit.intent_v1;' | tail -n 1)"
+if [[ "$table_owner_count" != '0' ]]; then
+  echo 'FAIL_FORCE_RLS_ON_NONLOGIN_TABLE_OWNER' >&2; exit 1
+fi
 echo 'V3_PG17_SEPARATED_NOLOGIN_WRITER_READER_EXECUTOR_PASS'
+echo 'V3_PG17_SEPARATED_TABLE_OWNER_APPEND_DEFINER_PASS'
 # Real concurrent PostgreSQL sessions, same audit epoch, same restricted
 # writer: row lock must serialize the ordinal assignment and intent insert.
 pg -f - <<'SQL' >/dev/null
