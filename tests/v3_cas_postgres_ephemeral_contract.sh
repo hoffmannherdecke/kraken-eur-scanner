@@ -34,6 +34,19 @@ pg() {
   docker exec --interactive "$container" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres "$@"
 }
 pg -c "create role anon nologin; create role authenticated nologin; create role service_role nologin;" >/dev/null
+# Mirror the prior real-production roles bootstrap BEFORE unsealing the
+# otherwise inactive source. PG17 superuser Docker would otherwise not
+# receive the restricted postgres creator-admin grants automatically.
+# This tests safe source reuse rather than duplicate CREATE ROLE errors.
+pg -f - <<'SQL' >/dev/null
+CREATE ROLE v3_cas_executor NOLOGIN NOINHERIT NOBYPASSRLS;
+CREATE ROLE v3_cas_audit_writer NOLOGIN NOINHERIT NOBYPASSRLS;
+CREATE ROLE v3_cas_audit_reader NOLOGIN NOINHERIT NOBYPASSRLS;
+GRANT v3_cas_executor TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
+GRANT v3_cas_audit_writer TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
+GRANT v3_cas_audit_reader TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
+SQL
+
 
 # The original source MUST remain unusable as-is, with zero schema effects.
 fail_log="$(mktemp)"
@@ -198,6 +211,14 @@ BEGIN
  IF EXISTS (SELECT 1 FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.roleid
    WHERE r.rolname IN ('v3_cas_audit_table_owner','v3_cas_audit_append_definer'))
  THEN RAISE EXCEPTION 'FAIL_OWNER_ROLE_MEMBER_INHERITANCE'; END IF;
+ IF (SELECT count(*) FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.roleid
+   JOIN pg_roles a ON a.oid=m.member
+   WHERE r.rolname IN ('v3_cas_executor','v3_cas_audit_writer','v3_cas_audit_reader')
+     AND a.rolname='postgres'
+     AND m.admin_option AND NOT m.set_option AND NOT m.inherit_option) <> 3 THEN
+   RAISE EXCEPTION 'FAIL_PREPROVISIONED_CREATOR_ADMIN_REUSE';
+ END IF;
+
  SELECT count(*) INTO n FROM pg_policies
  WHERE schemaname='v3_cas_audit'
    AND policyname IN ('v3_cas_epoch_writer_read_v1',
