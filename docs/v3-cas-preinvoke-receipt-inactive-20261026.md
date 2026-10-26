@@ -1,0 +1,33 @@
+# V3 CAS PREINVOKE: kanonischer, noch nicht vertrauenswürdiger CMS-Signaturvorschlag (26.10.2026)
+
+**Status: SOURCE-ONLY / INACTIVE / NO RELEASE.** Bestehender V3-Paper-Fachowner Issue #99, zentraler Kontextmanager #353, `security_permissions_and_rls`, `paper_lifecycle`. Dieser Text führt weder eine zusätzliche Komponente noch ein neues Freigabegate ein. Es werden keine Mini-PC-Aktionen, Cloud-DDL, DB-Grant, Secrets, Task-/Paper-Runtime oder neue kostenpflichtige Dienste eingerichtet.
+
+## Vorhandene Originalbausteine und warum dieser kleine Patch notwendig ist
+
+- `tools/v3_cas_preinvoke_protocol_INACTIVE.py`: einzig bereits existierender CAS-Intent-Protokoll-/Review-Owner; verwendet `AuditIntent` mit verpflichtendem `epoch_id`, `ordinal`, `intent_id`, Ursprungsserie, exaktem RPC, Request-/Source-/Fence-Hash und kanonischem Digest. Jede tatsächliche CAS-Ausführung bleibt hart gesperrt.
+- `supabase/v3-cas-preinvoke-ledger-INACTIVE.sql`: mögliche spätere private PostgreSQL-Epoche und atomar in **eigener Transaktion** appendbarer, fortlaufender Intent, bisher bewusst am Anfang durch `RAISE EXCEPTION` deaktiviert.
+- `tools/v3_cas_local_spool_INACTIVE.py` und originaler PR550-Mini-PC-/PR555-Rekor-Transport: Quelle und synthetische Technik, keine lückenlos extern beglaubigte Produktion.
+- `tools/v3-paper-originalhost-manual-tpm-enroll-INACTIVE.ps1` und `Test-V3IndependentOriginalHostCmsSignature` im bestehenden inaktiven Cutover-Operator: getrennte Windows-TPM-Keyquelle sowie **nur** mathematische CMS-Offline-Verifikationsprimitive; keine reale signierte PREINVOKE-Custody.
+- Echter separater DB-Operatorlogin von `C:\Users\ADMIN` stammt aus DPAPI CurrentUser. Das TPM-Enrollment ist auf `MINI-PC\Thomas` samt festem SID und `CurrentUser\My` begrenzt. Key-DACL wurde zuvor mit breiten SYSTEM-/Administrators-ALLOW-Einträgen dokumentiert. **Anderes Windows-Profil allein ist kein unabhängiger Origin-Signer vor SYSTEM/Administrator-Kompromittierung.** Kein stiller Keyzugriff, kein neuer TPM-Key und keine ACL-Umstellung.
+
+Die neue rein funktionale Routine `build_unsigned_preinvoke_cms_proposal(...)` in der **bestehenden** Python-Protokolldatei liefert nur exakt definierte, nichtgeheime und deterministische `unsigned_payload_utf8` für eine **später zu genehmigende**, unabhängig überprüfbare detached CMS-Signatur. Auch ein mathematisch gültiger CMS-PASS allein ist weder ein unabhängiges Audit-Reader-ACK noch ein WORM- oder CAS-Freigabebeleg.
+
+## Umfang und eingeschlossene Ablehnungen (nur ein initialer CAS-Anlauf)
+
+1. Kontrolliert exakt den originalen V2R4-Vorgänger `PAPER-V2R4-20261009T110135Z` und die originale geplante V3-RPC-Kennung; extern gelieferte falsche RPC-/Source-/Fence-/Request-/Epoch-/Intent-Werte werden abgelehnt.
+2. Baut den `AuditIntent` aus allen Parametern neu und vergleicht den Digest. Nur `ordinal=1`, `next_ordinal=2` und die vollständig als genau **ein** Digest behauptete erste Epoche werden für diesen **synthetischen Quellvertrag** angenommen. Ein späterer Anlauf/Retry muss separat und unabhängig rekonsiliert werden, nicht über stilles ordinal=2.
+3. Kontaktiert **keine** Datenbank. Der angehängte Readback ist ein vom Caller behaupteter, **nicht authentifizierter** nach-COMMIT-Lesebeleg. Ein festes Schema verbietet jedes mitgegebene `cloud_verified`, `approval` oder zusätzliche Secret-/Status-Feld. UTC muss kanonisch sein; Readback-Zeitdifferenz lokal höchstens 90 Sekunden. Diese caller-supplied-Zeitprüfung beweist ausdrücklich **keinen** tatsächlichen gültigen Cloud-Zeitstempel.
+4. Hash über den gesamten behaupteten Readback und Signaturvorlagen-Bytes deterministisch; alle tatsächlichen Autoritätsfelder bleiben hart auf `false`: independent cloud reader, real commit, TPM signer, unabhängig geschützte TPM-Key-ACL, externes dauerhaftes Custody, vollständige CAS-Coverage, CAS-Dispatch, alter Writer-Rearm und V3-Paper-Release.
+5. Negative Offline-Unit-Tests: fehlende/zusätzliche Reader-Felder, künstlich gesetzte PASS-Claims, Epoch-/Intent-ID-/RPC-/Source-/Fence-/Request-Wechsel, Digest-Manipulation, Replay/GAP, falscher Counter/Boolean, stale/future/nichtkanonische UTC, fremde Series, Scope-Änderung. **Test PASS ist keine physische Signatur.**
+
+## Danach verbleibende, unveränderte echte Sicherheitsgrenzen
+
+**A1/Custody:** Authentifizierten unabhängigen DB-Reader, reproduzierbaren Originalhost-CMS-Signer unter ausschließlich zulässiger gepinnter TPM-Identität, noch offene SYSTEM-/Administrator-DACL-Risikoentscheidung und einen überprüften öffentlichen unabhängigen Anker samt Coverage ausarbeiten; kein neues passwortgebundenes CurrentUser-Workaround. Bei ungesicherter unabhängiger Langzeit-Custody bleibt der echte Übergang `HOLD`.
+
+**A2/Commit:** Getrennter **durabler** Audit-Intent-COMMIT und unabhängiger nach-COMMIT-Readback vor jeder späteren CAS-Aktion. Lost ACK, Timeout, bereits vorhandener Intent, Crash, doppelte Ausführung oder unklarer CAS-Commit bedeutet kein Dispatch-Retry und **kein** automatisches V2R4-Rearm. Signiertes Vorlagendokument darf weder behauptete Datenbank-Commits beglaubigen noch Epoch-Gaps rückwirkend heilen.
+
+**A3/Executor:** Aktuelles `v3_cas_operator_login` ist erfolgreich authentifiziert, besitzt aber absichtlich keine CAS- oder Audit-Rechte. `v3_cas_executor`, `v3_cas_audit_writer`, `v3_cas_audit_reader` sind aktuell alle NOLOGIN. Es fehlen wirklich eigenständige Runtime-Identitäten. Selbst der bestehende `supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql`-Entwurf hat **noch keine serverseitige failclosed Bindung von Intent-ID/Epoche/Request-Digest im CAS-Funktionskörper**. Keine Einrichtung/EXECUTE/ROLE-GRANT vor separater Sicherheitsfreigabe und adversarialen PG17-Tests inklusive Owner/Admin/BYPASSRLS und direktem SQL-/Data-API-Pfad.
+
+**Prüfungsfolge:** ein zusammenhängendes Quellreview in normalem geschützt grünem GitHub-PR → getrennte echte Off-DB-/CAS-/Cloud-ACL-/Origin-Signer-/OS-Single-Writer-Freigabe → sechs **bestehende** reale Paper-E2E-Nachweise → finale eigene Nutzerfreigabe. Bis dahin aktive V2R4-Serie unverändert, kein Echtgeldhandel.
+
+**Wirklicher Nachweis dieses PR:** nur source-level deterministische nicht-autorisierende Vorlagen und deren negative Offline-Tests. Kein physischer Windows-ACK, kein Postgres-Live-Test, kein Original-TPM-Zertifikat-PASS, kein WORM, kein V3-Go-live.
