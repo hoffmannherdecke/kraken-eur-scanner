@@ -270,5 +270,133 @@ class V3CasAuditInactiveTests(unittest.TestCase):
         self.assertFalse(result["historical_cas_never_invoked_proven"])
 
 
+# This tests actual file creation, flush, readback and hostile filesystem states
+# in a disposable CI directory. NOT a physical Mini-PC deployment or CAS.
+from v3_cas_local_spool_INACTIVE import (
+    LocalWitnessHold, append_local_witness_candidate,
+    review_local_witness_candidate, ZERO_DIGEST,
+)
+
+
+class V3CasMiniPcLocalSpoolInactiveTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = pathlib.Path(self.tmp.name) / "v3cas-audit-witness"
+        self.root.mkdir()
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def intent(self, ordinal=1, epoch=None):
+        proposal = original_proposal()
+        proposal["ordinal"] = ordinal
+        if epoch is not None:
+            proposal["epoch_id"] = epoch
+        return build_unsigned_intent(**proposal)
+
+    def test_real_disk_append_two_records_survives_reader_restart_without_authority(self):
+        empty = review_local_witness_candidate(self.root)
+        self.assertEqual(empty["local_records_checked"], 0)
+        self.assertFalse(empty["historical_cas_never_invoked_proven"])
+        self.assertFalse(empty["cloud_cas_authorized"])
+        one = self.intent()
+        first = append_local_witness_candidate(self.root, one)
+        self.assertEqual(first["local_records_checked"], 1)
+        self.assertNotEqual(first["last_entry_sha256"], ZERO_DIGEST)
+        two = self.intent(ordinal=2)
+        second = append_local_witness_candidate(self.root, two)
+        self.assertEqual(second["local_records_checked"], 2)
+        raw1 = json.loads((self.root / "000001.json").read_text("ascii"))
+        raw2 = json.loads((self.root / "000002.json").read_text("ascii"))
+        self.assertEqual(raw2["previous_entry_sha256"], raw1["entry_sha256"])
+        reread = review_local_witness_candidate(self.root)
+        self.assertEqual(reread["last_entry_sha256"], second["last_entry_sha256"])
+        for flag in (
+            "originalhost_identity_authenticated",
+            "independent_offdb_durable_storage_proven",
+            "exclusive_cas_attempt_coverage_proven",
+            "historical_cas_never_invoked_proven", "cloud_cas_authorized",
+            "old_writer_auto_rearm_allowed", "native_restore_authorized",
+            "v3_paper_release_authorized",
+        ):
+            self.assertFalse(reread[flag], flag)
+
+    def test_real_disk_duplicate_wrong_order_and_foreign_epoch_hold(self):
+        first = self.intent()
+        append_local_witness_candidate(self.root, first)
+        with self.assertRaises(LocalWitnessHold):
+            append_local_witness_candidate(self.root, first)
+        with self.assertRaises(LocalWitnessHold):
+            append_local_witness_candidate(self.root, self.intent(ordinal=3))
+        with self.assertRaises(LocalWitnessHold):
+            append_local_witness_candidate(self.root, self.intent(
+                ordinal=2, epoch="V3CAS-AUDIT-" + "9" * 32))
+        self.assertEqual(review_local_witness_candidate(self.root)["local_records_checked"], 1)
+
+    def test_real_disk_corrupted_or_injected_record_cannot_be_silently_repaired(self):
+        append_local_witness_candidate(self.root, self.intent())
+        record = self.root / "000001.json"
+        original = record.read_bytes()
+        record.write_bytes(original.replace(b'"entry_sha256":"', b'"entry_sha256":"f', 1))
+        with self.assertRaises(LocalWitnessHold):
+            review_local_witness_candidate(self.root)
+        with self.assertRaises(LocalWitnessHold):
+            append_local_witness_candidate(self.root, self.intent(ordinal=2))
+        # A canonical-looking record with a self-authorization field is still rejected.
+        record.write_bytes(original)
+        hostile = json.loads(original)
+        hostile["v3_paper_release_authorized"] = True
+        record.write_text(json.dumps(hostile, sort_keys=True, separators=(",", ":")), "ascii")
+        with self.assertRaises(LocalWitnessHold):
+            review_local_witness_candidate(self.root)
+
+    def test_partial_crash_entry_blocks_retry_and_no_auto_recovery(self):
+        (self.root / "000001.json").write_bytes(b'{"kind":')
+        with self.assertRaises(LocalWitnessHold):
+            review_local_witness_candidate(self.root)
+        with self.assertRaises(LocalWitnessHold):
+            append_local_witness_candidate(self.root, self.intent())
+        self.assertEqual((self.root / "000001.json").read_bytes(), b'{"kind":')
+
+    def test_gap_extra_file_and_symlink_are_not_accepted(self):
+        (self.root / "000003.json").write_text("{}", "ascii")
+        with self.assertRaises(LocalWitnessHold):
+            review_local_witness_candidate(self.root)
+        (self.root / "000003.json").unlink()
+        (self.root / "unexpected.log").write_bytes(b"")
+        with self.assertRaises(LocalWitnessHold):
+            review_local_witness_candidate(self.root)
+        (self.root / "unexpected.log").unlink()
+        import os
+        external = pathlib.Path(self.tmp.name) / "outside"
+        external.write_text("secret", "ascii")
+        try:
+            os.symlink(external, self.root / "000001.json")
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest(f"test platform does not allow symlink: {type(exc).__name__}")
+        with self.assertRaises(LocalWitnessHold):
+            review_local_witness_candidate(self.root)
+
+    def test_invalid_dataclass_digest_cannot_be_committed(self):
+        from dataclasses import replace
+        tampered = replace(self.intent(), digest="a" * 64)
+        with self.assertRaises(LocalWitnessHold):
+            append_local_witness_candidate(self.root, tampered)
+        self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_missing_or_linked_directory_cannot_be_created_implicitly(self):
+        missing = self.root / "not-created"
+        with self.assertRaises(LocalWitnessHold):
+            append_local_witness_candidate(missing, self.intent())
+        import os
+        link = pathlib.Path(self.tmp.name) / "linked"
+        try:
+            os.symlink(self.root, link, target_is_directory=True)
+        except (OSError, NotImplementedError) as exc:
+            self.skipTest(f"test platform does not allow symlink: {type(exc).__name__}")
+        with self.assertRaises(LocalWitnessHold):
+            append_local_witness_candidate(link, self.intent())
+
+
 if __name__ == "__main__":
     unittest.main()
