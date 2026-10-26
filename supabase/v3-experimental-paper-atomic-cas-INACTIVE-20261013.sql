@@ -105,6 +105,7 @@ declare
     trade_count bigint;
     last_outcome timestamptz;
     last_trade timestamptz;
+    v_actual_request_sha256 text;
 begin
     -- Same one-owner Paper series table and EXISTING unique active index.
     -- This lock is distinct from the past V2R4-only technical rotate RPC;
@@ -248,10 +249,11 @@ begin
     if not found then
         raise exception 'V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND';
     end if;
-    -- Remaining LIMIT: request_sha256 comes from the caller-supplied config
-    -- and is NOT cryptographically recalculated from all sixteen CAS args.
-    -- Independently authenticated full request signing and actor permissions
-    -- remain OPEN; this source-only fence cannot authorize CAS dispatch.
+    -- The stored digest is only a required audit-row match here. Later,
+    -- before Paper mutation, the independently typed 16-argument request
+    -- digest is recalculated and MUST equal this already matched value.
+    -- The reader-after-COMMIT, signer and irrevocable attempt fence remain
+    -- OPEN; source-only matching cannot authorize real CAS dispatch.
 
     -- Locked actual CURRENT active predecessor; never use a stale config
     -- file/old V2R4 paper series as implicit current authority.
@@ -340,6 +342,50 @@ begin
        or last_outcome is distinct from p_expected_old_last_outcome_updated_at
        or last_trade is distinct from p_expected_old_last_trade_updated_at then
         raise exception 'V3 CAS fresh old Cloud outcome/trade checkpoint drift';
+    end if;
+
+    v_actual_request_sha256 := pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+        pg_catalog.jsonb_build_array(
+          'V3_CAS_FULL_REQUEST_PG17_JSONB_SHA256_V1',
+          p_expected_old_series_id,
+          p_expected_old_release_sha,
+          p_expected_old_strategy_sha256,
+          p_expected_old_runtime_sha256,
+          p_expected_old_candidate_count,
+          p_expected_old_trade_count,
+          case when p_expected_old_last_outcome_updated_at is null then null
+            else pg_catalog.to_char(
+              p_expected_old_last_outcome_updated_at at time zone 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') end,
+          case when p_expected_old_last_trade_updated_at is null then null
+            else pg_catalog.to_char(
+              p_expected_old_last_trade_updated_at at time zone 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') end,
+          p_proposed_v3_series_id,
+          p_proposed_v3_test_id,
+          p_proposed_v3_revision,
+          pg_catalog.to_char(p_cutover_at_utc at time zone 'UTC',
+                             'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+          p_new_v3_config - 'preinvoke_request_sha256',
+          p_reviewed_new_repo_sha,
+          p_reviewed_new_bundle_sha256,
+          p_reviewed_new_strategy_sha256
+        )::text, 'UTF8'
+      )), 'hex');
+    -- Exact PostgreSQL 17 wire contract: 16 actual RPC parameters, typed
+    -- JSONB array in argument order with an explicit domain separator.
+    -- Timestamps are normalized to UTC microseconds (including NULL).
+    -- Canonicalized JSONB successor config is hashed EXCEPT the one field
+    -- carrying this very digest, preventing self-reference. No caller can
+    -- reuse the approved epoch/intent hash for altered RPC args or unknown
+    -- extra successor config properties. No pgcrypto extension or new RPC.
+    -- The same PG17 canonical formula must be used by the separately
+    -- authorized PREINVOKE append step, not taken from the client claim.
+    -- A SQL SHA match does NOT attest independently COMMITTED external audit,
+    -- TPM signer, reader identity or immutable complete attempt custody.
+    if v_actual_request_sha256 is distinct from
+       p_new_v3_config->>'preinvoke_request_sha256' then
+      raise exception 'V3_CAS_FULL_REQUEST_MISMATCH_HOLD';
     end if;
 
     update public.paper_series
