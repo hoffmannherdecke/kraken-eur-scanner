@@ -1,0 +1,111 @@
+name: V3 CAS public Sigstore provider proof (synthetic, no Paper release)
+
+# On demand by a reviewed change to ONE public non-secret fixture only.
+# No schedule, dispatch payload, self-hosted Mini-PC or real CAS.
+'on':
+  push:
+    branches: [main]
+    paths:
+      - 'research/v3/v3_cas_sigstore_provider_probe_v1.json'
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+concurrency:
+  group: v3-cas-public-sigstore-provider-probe
+  cancel-in-progress: false
+
+jobs:
+  public-provider-canary:
+    name: Verify public Sigstore inclusion and GH workflow provenance only
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout protected source without saved credentials
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Reject non-synthetic, secret-bearing or release-claiming subject
+        env:
+          SUBJECT_FILE: research/v3/v3_cas_sigstore_provider_probe_v1.json
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+          raw = pathlib.Path(os.environ["SUBJECT_FILE"]).read_bytes()
+          assert len(raw) <= 1024, "V3_PUBLIC_SIGSTORE_SUBJECT_UNBOUNDED"
+          obj = json.loads(raw)
+          required = {
+              "kind": "V3_CAS_PUBLIC_SIGSTORE_PROVIDER_PROBE_V1",
+              "schema_version": 1,
+              "data_classification": "PUBLIC_SYNTHETIC_ONLY",
+              "proof_scope": "GITHUB_PROVENANCE_NOT_ORIGINALHOST_OR_CAS",
+              "original_host_audit_intents": 0,
+              "originalhost_signer_authenticated": False,
+              "independent_cas_attempt_coverage_proven": False,
+              "external_originalhost_worm_custody_proven": False,
+              "cloud_cas_authorized": False,
+              "v3_paper_activated": False,
+              "source_note": (
+                  "Public no-secret canary. Real Windows CAS audit has no published receipt."
+              ),
+          }
+          assert type(obj) is dict and obj == required, "V3_PUBLIC_SIGSTORE_SUBJECT_UNEXPECTED"
+          assert raw == (json.dumps(obj, indent=2, ensure_ascii=True) + "\n").encode("ascii")
+          print("V3_PUBLIC_SIGSTORE_NO_ORIGINALHOST_OR_CAS_DATA_PASS")
+          PY
+      - name: Publish independent public-good Sigstore attestation
+        id: attest
+        uses: actions/attest@v4
+        with:
+          subject-path: research/v3/v3_cas_sigstore_provider_probe_v1.json
+      - name: Independently verify provider attestation, digest and allowed signer
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUBJECT_FILE: research/v3/v3_cas_sigstore_provider_probe_v1.json
+          BUNDLE_FILE: ${{ steps.attest.outputs.bundle-path }}
+          SIGNER: ${{ github.repository }}/.github/workflows/v3-cas-sigstore-public-witness.yml
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os, pathlib
+          b = json.loads(pathlib.Path(os.environ["BUNDLE_FILE"]).read_text("utf-8"))
+          material = b.get("verificationMaterial", {})
+          assert material.get("tlogEntries"), "V3_SIGSTORE_MISSING_PUBLIC_LOG"
+          print("V3_PUBLIC_SIGSTORE_BUNDLE_HAS_TRANSPARENCY_LOG_ENTRY")
+          PY
+          for attempt in 1 2 3 4; do
+            if gh attestation verify "$SUBJECT_FILE" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$SIGNER" \
+              --source-ref refs/heads/main \
+              --deny-self-hosted-runners \
+              --format json > "$RUNNER_TEMP/v3-sigstore-verified.json"; then
+              break
+            fi
+            if [ "$attempt" -eq 4 ]; then
+              echo 'V3_SIGSTORE_PROVIDER_VERIFY_HOLD'
+              exit 1
+            fi
+            sleep 3
+          done
+          python - <<'PY'
+          import hashlib, json, os, pathlib
+          verified = json.loads(
+              (pathlib.Path(os.environ["RUNNER_TEMP"]) /
+               "v3-sigstore-verified.json").read_text("utf-8"))
+          digest = hashlib.sha256(pathlib.Path(os.environ["SUBJECT_FILE"]).read_bytes()).hexdigest()
+          valid = any(
+              any(
+                  item.get("digest", {}).get("sha256") == digest
+                  for item in row.get("verificationResult", {})
+                                 .get("statement", {}).get("subject", [])
+              )
+              for row in verified
+          )
+          assert valid, "V3_SIGSTORE_VERIFIED_DIGEST_NOT_EXACT"
+          print("V3_REAL_SIGSTORE_PUBLIC_GOOD_GITHUB_ORIGIN_AND_DIGEST_PASS")
+          print("V3_PHYSICAL_ORIGINALHOST_SIGSTORE_OR_CAS_RELEASE_PROOF=FALSE")
+          PY
