@@ -119,6 +119,66 @@ fi
 echo 'V3_PG17_STAGE0_ROLE_DRIFT_ABORT_PASS'
 
 
+# Stage 1A: EXACT future production SQL, transactional in this *same*
+# isolated PG17 container and always ROLLED BACK before legacy ledger tests.
+# No password values, real production Cloud connection, logins, or CAS.
+stage1_sql="supabase/v3-cas-actor-stage1-disabled-20261026.sql"
+{
+ printf 'BEGIN;\n'
+ cat "$stage0_sql"
+ cat "$stage1_sql"
+ cat <<'SQL'
+DO $v3_actor_stage1_test$
+BEGIN
+ IF (SELECT count(*) FROM pg_catalog.pg_roles
+     WHERE rolname IN ('v3_cas_audit_writer_actor',
+       'v3_cas_audit_reader_actor','v3_cas_executor_actor')
+       AND NOT rolcanlogin AND NOT rolinherit AND NOT rolbypassrls
+       AND NOT rolcreaterole AND NOT rolcreatedb AND NOT rolsuper
+       AND NOT rolreplication AND rolconnlimit=0
+       AND rolvaliduntil < pg_catalog.clock_timestamp()) <> 3 THEN
+  RAISE EXCEPTION 'FAIL_STAGE1_DORMANT_ACTOR_ATTRIBUTES';
+ END IF;
+ IF EXISTS(
+   SELECT 1 FROM pg_catalog.pg_auth_members m
+   JOIN pg_catalog.pg_roles r ON r.oid=m.member
+   WHERE r.rolname IN ('v3_cas_audit_writer_actor',
+     'v3_cas_audit_reader_actor','v3_cas_executor_actor')
+ ) OR EXISTS(
+   SELECT 1 FROM pg_catalog.pg_roles r
+   WHERE r.rolname IN ('v3_cas_audit_writer_actor',
+      'v3_cas_audit_reader_actor','v3_cas_executor_actor')
+     AND pg_catalog.has_schema_privilege(r.rolname,'v3_cas_audit','USAGE')
+ ) THEN
+  RAISE EXCEPTION 'FAIL_STAGE1_ACTOR_MEMBERSHIP_OR_USAGE';
+ END IF;
+END
+$v3_actor_stage1_test$;
+ROLLBACK;
+SQL
+} | pg -f - >/dev/null
+if [[ "$(pg -Atc "select count(*) from pg_catalog.pg_roles where rolname in ('v3_cas_audit_writer_actor','v3_cas_audit_reader_actor','v3_cas_executor_actor')")" != '0' ||
+      "$(pg -Atc "select count(*) from pg_catalog.pg_namespace where nspname='v3_cas_audit'")" != '0' ]]; then
+ echo 'FAIL_STAGE1_DORMANT_ACTORS_OR_SCHEMA_SURVIVED_ROLLBACK' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE1_DISABLED_ACTOR_SHELLS_ROLLBACK_PASS'
+
+# Negative: cannot create any actor before Stage-0 exists.
+stage1_negative="$(mktemp)"
+if pg -f - < "$stage1_sql" >"$stage1_negative" 2>&1; then
+ echo 'FAIL_STAGE1_WITHOUT_STAGE0_ACCEPTED' >&2; exit 1
+fi
+if ! grep -q 'V3_STAGE1_STAGE0_OR_CAS_GUARD_HOLD' "$stage1_negative"; then
+ cat "$stage1_negative" >&2
+ echo 'FAIL_STAGE1_EXPECTED_ABSENT_STAGE0_HOLD' >&2; exit 1
+fi
+rm -f "$stage1_negative"
+if [[ "$(pg -Atc "select count(*) from pg_catalog.pg_roles where rolname in ('v3_cas_audit_writer_actor','v3_cas_audit_reader_actor','v3_cas_executor_actor')")" != '0' ]]; then
+ echo 'FAIL_STAGE1_NEGATIVE_LEFT_ANY_ROLE' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE1_ABSENT_STAGE0_FAILCLOSED_PASS'
+
+
 # The original source MUST remain unusable as-is, with zero schema effects.
 fail_log="$(mktemp)"
 trap 'cleanup; rm -f "$fail_log"' EXIT
