@@ -44,7 +44,7 @@ class V3CasAuditInactiveTests(unittest.TestCase):
         sql = (ROOT / "supabase/v3-cas-preinvoke-ledger-INACTIVE.sql").read_text("utf-8")
         executable = "\n".join(x for x in sql.splitlines() if not x.lstrip().startswith("--"))
         self.assertTrue(executable.lstrip().lower().startswith(
-            "do $v3_cas_ledger_inactive$\nbegin\n  raise exception 'v3_cas_audit_ledger_source_inactive_approval_required';"
+            "do $v3_cas_ledger_inactive$\ndeclare\n  v_role_name text;\nbegin\n  raise exception 'v3_cas_audit_ledger_source_inactive_approval_required';"
         ))
         self.assertEqual(executable.lower().count("do $v3_cas_ledger_inactive$"), 1)
         self.assertTrue(executable.rstrip().endswith("$v3_cas_ledger_inactive$;"))
@@ -89,6 +89,30 @@ class V3CasAuditInactiveTests(unittest.TestCase):
         ):
             self.assertIn(source, executable.lower())
         self.assertNotIn("rotate_v2r4_technical_paper(", executable.lower())
+
+    def test_preprovisioned_pg17_safe_audit_roles_are_reused_but_always_inactive(self):
+        sql = (ROOT / "supabase/v3-cas-preinvoke-ledger-INACTIVE.sql").read_text("utf-8")
+        for role in (
+            "v3_cas_executor",
+            "v3_cas_audit_writer",
+            "v3_cas_audit_reader",
+        ):
+            self.assertIn(f"to_regrole('{role}') is null", sql)
+            self.assertIn(f"create role {role} nologin noinherit nobypassrls", sql)
+        for token in (
+            "V3_CAS_PREPROVISIONED_NOLOGIN_ROLES_UNSAFE",
+            "a.rolname='postgres'",
+            "m.admin_option and not m.set_option",
+            "not m.inherit_option",
+            "pg_catalog.pg_auth_members",
+            "not r.rolcanlogin",
+            "not r.rolbypassrls",
+            "not r.rolsuper",
+        ):
+            self.assertIn(token, sql, token)
+        self.assertEqual(sql.count(
+            "V3_CAS_AUDIT_LEDGER_SOURCE_INACTIVE_APPROVAL_REQUIRED"), 1)
+        self.assertNotIn("create role v3_cas_executor login",sql.lower())
 
     def test_candidate_canonical_digest_is_stable_and_no_secrets(self):
         inputs = original_proposal()
