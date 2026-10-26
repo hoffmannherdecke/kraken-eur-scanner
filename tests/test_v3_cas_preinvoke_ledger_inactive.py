@@ -11,6 +11,9 @@ from __future__ import annotations
 from tests.test_v3_cas_preinvoke_signed_candidate_inactive import (
     UnsignedPreinvokeCmsCandidateSourceTests,
 )
+from tests.test_v3_cas_actor_custody_gate_inactive import (
+    V3CasActorCustodyReadOnlySourceTests,
+)
 
 from dataclasses import asdict
 import pathlib
