@@ -355,6 +355,49 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
         self.assertNotIn("Invoke-RestMethod",s)
 
+    def test_locked_pr515_stop_requires_full_armed_no_network_ack_before_disable(self):
+        """One local ARMED sample is only a fresh pre-disable hold, never CAS authority."""
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        stop=s.split("function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY",1)[1].split(
+            "function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY",1)[0]
+        wait=stop.split("$armed=$false",1)[1].split(
+            "# Exactly these two native task mutations",1)[0]
+        for required in (
+            "[datetimeoffset]::TryParse",
+            "$supervisorAt -gt $at",
+            "$cloudAt -gt $at",
+            "$supervisorAt -ge $now.AddSeconds(-180)",
+            "$cloudAt -ge $now.AddSeconds(-180)",
+            "$supervisorAt -le $now.AddSeconds(5)",
+            "$cloudAt -le $now.AddSeconds(5)",
+            "[math]::Abs(($supervisorAt-$cloudAt).TotalSeconds) -le 90",
+            "MINIPC_RUNTIME_SUPERVISOR_V1",
+            "V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1",
+            "V3_INTAKE_SUPERVISOR_REARM_BLOCKED",
+            "$blocked.Count -eq 2",
+            "Test-V3ScopedIntakeTaskSet -Names",
+            "marker_present -eq $true",
+            "v3_cloud_cas_or_release_authorized -eq $false",
+            "PRECOMMIT_ORIGINAL",
+            "V3_PRECOMMIT_NO_NETWORK_HOLD",
+            "$c.paper_only -eq $true",
+            "$c.order_api -eq $false",
+            "$c.real_money_actions -eq $false",
+            "$c.cloud_updated -eq $false",
+            "$c.cloud_sync_intentionally_paused -eq $true",
+            "@($s.restarted).Count -eq 0",
+            "@($s.failed_restarts).Count -eq 0",
+            "V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required,wait)
+        self.assertLess(stop.index("$armed=$false"),
+                        stop.index("Disable-ScheduledTask"))
+        self.assertLess(stop.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"),
+                        stop.index("Disable-ScheduledTask"))
+        self.assertIn("Never automatically promote ARMED to QUIESCED",stop)
+        self.assert_locked_pr515_native_stop_only(s)
+
     def test_pr515_two_distinct_armed_cycles_are_pure_and_fail_closed(self):
         s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         source=s.split("function Test-V3Pr515ArmedTwoCycleSnapshots",1)[1].split(
