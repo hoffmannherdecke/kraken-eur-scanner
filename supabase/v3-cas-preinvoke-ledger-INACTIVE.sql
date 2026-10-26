@@ -5,6 +5,8 @@
 -- CAS caller / audit append-writer / independent reader under Issue #99.
 -- No CAS RPC, grants or production schema change is made by this source.
 do $v3_cas_ledger_inactive$
+declare
+  v_role_name text;
 begin
   raise exception 'V3_CAS_AUDIT_LEDGER_SOURCE_INACTIVE_APPROVAL_REQUIRED';
 
@@ -61,14 +63,48 @@ begin
   revoke all on v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1
     from public, anon, authenticated, service_role;
 
-  -- PROPOSED INTERNAL NOLOGIN ROLE BOUNDARIES. Entire block is behind
-  -- the unconditional first RAISE above and cannot run in production.
-  -- NO LOGIN credentials, NO role memberships, NO executable CAS RPC.
-  -- RLS without explicit role policies would block even a narrowly granted
-  -- writer/reader; keep this complete role+policy candidate together.
-  create role v3_cas_audit_writer nologin noinherit nobypassrls;
-  create role v3_cas_audit_reader nologin noinherit nobypassrls;
-  create role v3_cas_executor nologin noinherit nobypassrls;
+  -- PROPOSED INTERNAL NOLOGIN ROLE BOUNDARIES. Entire block remains
+  -- behind the unconditional FIRST RAISE; not a live migration.
+  -- Reuse already-provisioned SAFE NOLOGIN roles rather than failing/adding
+  -- another owner. PostgreSQL17 CREATEROLE may automatically assign only
+  -- postgres ADMIN TRUE / SET FALSE / INHERIT FALSE; that is still a
+  -- privileged administrator exception, not independently certified custody.
+  -- Never silently accept a pre-existing role with LOGIN/BYPASSRLS or
+  -- application member, and never grant a new LOGIN/role membership here.
+  if pg_catalog.to_regrole('v3_cas_audit_writer') is null then
+    create role v3_cas_audit_writer nologin noinherit nobypassrls;
+  end if;
+  if pg_catalog.to_regrole('v3_cas_audit_reader') is null then
+    create role v3_cas_audit_reader nologin noinherit nobypassrls;
+  end if;
+  if pg_catalog.to_regrole('v3_cas_executor') is null then
+    create role v3_cas_executor nologin noinherit nobypassrls;
+  end if;
+  if (
+    select count(*) from pg_catalog.pg_roles r
+    where r.rolname in
+      ('v3_cas_audit_writer','v3_cas_audit_reader','v3_cas_executor')
+      and not r.rolcanlogin and not r.rolinherit
+      and not r.rolbypassrls and not r.rolsuper
+      and not r.rolcreaterole and not r.rolcreatedb
+      and not r.rolreplication
+      and not exists (
+        select 1 from pg_catalog.pg_auth_members m
+        left join pg_catalog.pg_roles a on a.oid=m.member
+        where (m.roleid=r.oid or m.member=r.oid)
+          and not (
+            m.roleid=r.oid and a.rolname='postgres'
+            and m.admin_option and not m.set_option
+            and not m.inherit_option
+          )
+      )
+      and (
+        select count(*) from pg_catalog.pg_auth_members m
+        where m.roleid=r.oid
+      ) <= 1
+  ) <> 3 then
+    raise exception 'V3_CAS_PREPROVISIONED_NOLOGIN_ROLES_UNSAFE';
+  end if;
   -- Two separate, non-login object owners, distinct from the callable writer:
   -- the definer gets ONLY the table-column rights required by this append.
   -- Synthetic superuser DDL is used ONLY by offline PG17 CI; productive
