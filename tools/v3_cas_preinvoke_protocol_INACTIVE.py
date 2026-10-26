@@ -222,3 +222,114 @@ def review_offdb_witness_hmac_packet(
     result["disposition"] = "REVIEW_ONLY_MAC_MATCH_CUSTODY_UNPROVEN"
     return result
 
+
+# SOURCE-ONLY: canonical, nonsecret bytes for a future separate originalhost
+# detached-CMS signer. This is an UNTRUSTED Cloud-readback proposal; neither
+# a matching hash nor any subsequently applied signature authenticates the
+# alleged DB reader, its transaction commit, the original TPM key ACL or
+# exclusive CAS-attempt coverage. No private key or network is touched here.
+SIGNED_PROPOSAL_KIND = "V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V1"
+SIGNED_PROPOSAL_READER_KEYS = frozenset({
+    "epoch_id", "ordinal", "intent_id", "predecessor_series_id",
+    "rpc", "request_sha256", "source_sha256", "fence_sha256",
+    "intent_sha256", "next_ordinal", "ordered_intent_sha256",
+    "observed_at_utc",
+})
+
+
+def build_unsigned_preinvoke_cms_proposal(
+    intent: AuditIntent, readback: Mapping[str, Any], *, reviewed_at_utc: str,
+) -> dict[str, Any]:
+    """Canonical bytes ONLY; always denies CAS and V2R4 rearm authority.
+
+    Intended for the ONE initial V2R4->V3 CAS proposal. A future authorized
+    reader must separately authenticate the committed complete epoch; a future
+    originalhost signer must be bound to its independently approved key ACL,
+    role and public pin, not the DPAPI operator-login CurrentUser. A caller
+    cannot upgrade this proposal by setting booleans inside readback.
+    """
+    if not isinstance(intent, AuditIntent):
+        raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_MISSING_INTENT")
+    rebuilt = build_unsigned_intent(
+        epoch_id=intent.epoch_id, ordinal=intent.ordinal,
+        intent_id=intent.intent_id,
+        predecessor_series_id=intent.predecessor_series_id, rpc=intent.rpc,
+        request_sha256=intent.request_sha256, source_sha256=intent.source_sha256,
+        fence_sha256=intent.fence_sha256,
+    )
+    if rebuilt != intent or intent.ordinal != 1:
+        raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_REPLAY_OR_DIGEST")
+    if not isinstance(readback, Mapping) or set(readback) != SIGNED_PROPOSAL_READER_KEYS:
+        raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_READER_SHAPE")
+    matches = {
+        "epoch_id": intent.epoch_id,
+        "ordinal": 1,
+        "intent_id": intent.intent_id,
+        "predecessor_series_id": intent.predecessor_series_id,
+        "rpc": intent.rpc,
+        "request_sha256": intent.request_sha256,
+        "source_sha256": intent.source_sha256,
+        "fence_sha256": intent.fence_sha256,
+        "intent_sha256": intent.digest,
+        "next_ordinal": 2,
+    }
+    if any(type(readback.get(key)) is not type(expected)
+           or readback[key] != expected for key, expected in matches.items()):
+        raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_READER_MISMATCH")
+    order = readback["ordered_intent_sha256"]
+    if type(order) is not list or order != [intent.digest]:
+        raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_GAP_OR_REPLAY")
+    def parse_utc(value: Any) -> datetime:
+        if not isinstance(value, str) or re.fullmatch(
+            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", value
+        ) is None:
+            raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_NONCANONICAL_TIME")
+        try:
+            parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(
+                tzinfo=timezone.utc)
+        except ValueError as exc:
+            raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_INVALID_TIME") from exc
+        return parsed
+    observed = parse_utc(readback["observed_at_utc"])
+    reviewed = parse_utc(reviewed_at_utc)
+    if not timedelta(0) <= reviewed - observed <= timedelta(seconds=90):
+        raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_STALE_OR_FUTURE")
+    # Only nonsecret, fixed-schema fields. The reader name is NOT caller input,
+    # and cannot be confused with an authenticated connection identity.
+    proposal = {
+        "kind": SIGNED_PROPOSAL_KIND,
+        "epoch_id": intent.epoch_id,
+        "ordinal": 1,
+        "intent_id": intent.intent_id,
+        "predecessor_series_id": ORIGINAL_SERIES,
+        "rpc": RPC,
+        "request_sha256": intent.request_sha256,
+        "source_sha256": intent.source_sha256,
+        "fence_sha256": intent.fence_sha256,
+        "intent_sha256": intent.digest,
+        "readback_sha256": hashlib.sha256(json.dumps(
+            dict(readback), sort_keys=True, separators=(",", ":"),
+            ensure_ascii=True, allow_nan=False,
+        ).encode("ascii")).hexdigest(),
+        "reader_claimed_observed_at_utc": readback["observed_at_utc"],
+        "local_review_at_utc": reviewed_at_utc,
+        "proof_status": "UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED",
+    }
+    payload = json.dumps(proposal, sort_keys=True, separators=(",", ":"),
+                         ensure_ascii=True, allow_nan=False).encode("ascii")
+    if len(payload) > 2048:
+        raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_OVERSIZED")
+    return {
+        "kind": "V3_CAS_PREINVOKE_CMS_CANDIDATE_REVIEW_V1",
+        "unsigned_payload_utf8": payload,
+        "unsigned_payload_sha256": hashlib.sha256(payload).hexdigest(),
+        "cloud_reader_authenticated": False,
+        "cloud_commit_independently_proven": False,
+        "originalhost_tpm_cms_signature_produced": False,
+        "originalhost_tpm_acl_independent": False,
+        "independent_offdb_custody_proven": False,
+        "exclusive_cas_attempt_coverage_proven": False,
+        "cas_dispatch_authorized": False,
+        "old_writer_auto_rearm_allowed": False,
+        "v3_paper_release_authorized": False,
+    }
