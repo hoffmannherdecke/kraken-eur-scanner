@@ -29,7 +29,9 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
             self.sql)
         self.assertRegex(self.sql, r"security definer\s+set search_path = ''")
         grants=re.findall(r"(?im)^\s*grant\s+execute\s+on",self.sql)
-        self.assertEqual(grants,[])
+        self.assertEqual(len(grants),1)
+        self.assertIn("to v3_cas_executor;",self.sql)
+        self.assertNotIn("to service_role;",self.sql)
         self.assertRegex(self.sql,
             r"revoke all on function public\.rotate_v2r4_to_v3_experimental_paper\(")
         self.assertRegex(self.sql,
@@ -70,6 +72,36 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertLess(sql.index("$v3_cas_revoke_locked$;"),
                         sql.rindex(close))
         self.assertNotRegex(sql, r"(?im)^\s*grant\s+execute\s+on")
+
+    def test_only_preexisting_membership_free_nologin_executor_can_receive_cas_execute(self):
+        sql = self.sql
+        for token in (
+            "V3_CAS_EXECUTOR_IS_NOT_EXCLUSIVE_NOLOGIN",
+            "V3_CAS_AUDIT_ROLES_NOT_SEPARATED_NOLOGIN",
+            "pg_catalog.pg_auth_members",
+            "m.roleid=r.oid or m.member=r.oid",
+            "not r.rolcanlogin",
+            "not r.rolbypassrls",
+            "not r.rolsuper",
+            "not r.rolinherit",
+            "not r.rolcreaterole",
+            "not r.rolcreatedb",
+            "V3_CAS_EFFECTIVE_EXECUTE_PRIVILEGE_NOT_EXCLUSIVE",
+            "'anon'",
+            "'authenticated'",
+            "'service_role'",
+            "'v3_cas_audit_writer'",
+            "'v3_cas_audit_reader'",
+            "'v3_cas_executor'",
+            "to v3_cas_executor;",
+        ):
+            self.assertIn(token, sql, token)
+        self.assertNotRegex(sql, r"(?im)^\s*create\s+role\b")
+        self.assertNotRegex(sql, r"(?im)^\s*grant\s+v3_cas_executor\s+to\b")
+        self.assertNotIn("LOGIN PASSWORD", sql)
+        self.assertNotIn("TO postgres;", sql)
+        self.assertLess(sql.index("V3_CAS_EXECUTOR_IS_NOT_EXCLUSIVE_NOLOGIN"),
+                        sql.index("execute $v3_cas_create_locked$"))
 
     def test_only_existing_original_paper_tables_no_new_data_plane(self):
         self.assertNotRegex(self.body,
@@ -168,7 +200,13 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertLess(
             self.body.index("last_trade is distinct from"),
             self.body.index("update public.paper_series"))
-        self.assertNotRegex(self.sql, r"(?im)^\s*grant\s+execute\s+on")
+        self.assertRegex(self.sql, r"(?im)^\s*grant\s+execute\s+on")
+        self.assertIn("execute $v3_cas_executor_only$",self.sql)
+        self.assertIn("$v3_cas_executor_only$;",self.sql)
+        self.assertLess(self.sql.index("$v3_cas_revoke_locked$;"),
+                        self.sql.index("execute $v3_cas_executor_only$"))
+        self.assertLess(self.sql.index("$v3_cas_executor_only$;"),
+                        self.sql.rindex("$v3_cas_install_locked$;"))
 
     def test_disposable_postgres_checks_same_count_trade_version_drift(self):
         fixture=POSTGRES_SMOKE_PATH.read_text(encoding="utf-8")

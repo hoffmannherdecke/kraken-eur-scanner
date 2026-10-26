@@ -11,6 +11,11 @@ begin;
 create role service_role nologin;
 create role anon nologin;
 create role authenticated nologin;
+-- NOLOGIN roles from original source-only audit candidate. No membership,
+-- credential or app connection is created by this isolated native fixture.
+create role v3_cas_executor nologin noinherit nobypassrls;
+create role v3_cas_audit_writer nologin noinherit nobypassrls;
+create role v3_cas_audit_reader nologin noinherit nobypassrls;
 
 create table public.paper_series (
   series_id text primary key, test_id text not null,
@@ -121,8 +126,17 @@ begin
   -- EXECUTE must be absent for both public and live relay identities.
   if has_function_privilege('anon',fn,'EXECUTE')
      or has_function_privilege('authenticated',fn,'EXECUTE')
-     or has_function_privilege('service_role',fn,'EXECUTE') then
-    raise exception 'V3 inactive function has executable public/relay grants';
+     or has_function_privilege('service_role',fn,'EXECUTE')
+     or has_function_privilege('v3_cas_audit_writer',fn,'EXECUTE')
+     or has_function_privilege('v3_cas_audit_reader',fn,'EXECUTE')
+     or not has_function_privilege('v3_cas_executor',fn,'EXECUTE')
+     or (select count(*) from pg_catalog.pg_auth_members m
+         join pg_catalog.pg_roles r on r.oid=m.roleid
+         where r.rolname='v3_cas_executor') <> 0
+     or (select count(*) from pg_catalog.pg_roles
+         where rolname='v3_cas_executor' and not rolcanlogin
+           and not rolbypassrls and not rolsuper and not rolinherit) <> 1 then
+    raise exception 'V3 inactive function CAS exclusive executor ACL mismatch';
   end if;
 
   -- Unsafe real-money successor must not pass even with CI synthetic permits.
