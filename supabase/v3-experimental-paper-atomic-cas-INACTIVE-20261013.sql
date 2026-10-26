@@ -43,34 +43,37 @@ begin
     raise exception 'V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD';
   end if;
 
-  -- The CAS principal must ALREADY exist as the original audit contract's
-  -- NOLOGIN/NOBYPASSRLS executor with absolutely no role memberships.
-  -- The writer/reader must be separately pre-provisioned NOLOGIN identities.
-  -- No credentials, role memberships or direct PostgreSQL logins are created
-  -- here. Even an administrator-controlled public SECURITY DEFINER owner is
-  -- NOT independently trusted without external authorization/coverage ACK.
-  if not exists (
-    select 1 from pg_catalog.pg_roles r
-    where r.rolname='v3_cas_executor'
+  -- PostgreSQL 17 creates a non-removable ADMIN-only grant for the
+  -- non-superuser CREATEROLE creator: postgres / SET FALSE / INHERIT FALSE.
+  -- This is privileged DBA administration, NOT an independently authorized
+  -- CAS service actor. It cannot immediately SET ROLE or inherit executor
+  -- rights. This cannot defend against deliberate privileged DBA alteration.
+  -- Deny ALL other grant relationships, LOGIN, BYPASSRLS and role membership.
+  -- No password, Cloud credential, service membership or CAS audit is issued.
+  if (
+    select count(*) from pg_catalog.pg_roles r
+    where r.rolname in (
+      'v3_cas_executor','v3_cas_audit_writer','v3_cas_audit_reader')
       and not r.rolcanlogin and not r.rolinherit
       and not r.rolbypassrls and not r.rolsuper
       and not r.rolcreaterole and not r.rolcreatedb
       and not r.rolreplication
       and not exists (
         select 1 from pg_catalog.pg_auth_members m
-        where m.roleid=r.oid or m.member=r.oid)
-  ) then
-    raise exception 'V3_CAS_EXECUTOR_IS_NOT_EXCLUSIVE_NOLOGIN';
-  end if;
-  if (
-    select count(*) from pg_catalog.pg_roles r
-    where r.rolname in ('v3_cas_audit_writer','v3_cas_audit_reader')
-      and not r.rolcanlogin and not r.rolinherit
-      and not r.rolbypassrls and not r.rolsuper
-      and not r.rolcreaterole and not r.rolcreatedb
-      and not r.rolreplication
-  ) <> 2 then
-    raise exception 'V3_CAS_AUDIT_ROLES_NOT_SEPARATED_NOLOGIN';
+        left join pg_catalog.pg_roles a on a.oid=m.member
+        where (m.roleid=r.oid or m.member=r.oid)
+          and not (
+            m.roleid=r.oid and a.rolname='postgres'
+            and m.admin_option and not m.set_option
+            and not m.inherit_option
+          )
+      )
+      and (
+        select count(*) from pg_catalog.pg_auth_members m
+        where m.roleid=r.oid
+      ) <= 1
+  ) <> 3 then
+    raise exception 'V3_CAS_EXECUTOR_OR_AUDIT_ROLE_SCOPE_UNSAFE';
   end if;
 
   execute $v3_cas_create_locked$
