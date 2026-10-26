@@ -65,6 +65,47 @@ insert into public.paper_trade_results(candidate_id,series_id,status,payload)
 values ('preserve-old-open-trade','PAPER-V2R4-20261009T110135Z',
         'OPEN','{"stages":["SCOUT"]}');
 
+-- Fixture-only ledger mirrors the existing locked audit source columns.
+-- This disposable trusted test ADMIN creates rows that are NOT external
+-- independent reader/signature/WORM custody and cannot be used for release.
+-- In production even the same CREATE would require a separate approval.
+create schema v3_cas_audit;
+create table v3_cas_audit.epoch_v1 (
+  epoch_id text primary key, predecessor_series_id text not null,
+  expected_rpc text not null, source_sha256 text not null,
+  original_fence_sha256 text not null, approved_caller_acl_sha256 text not null,
+  opened_at_utc timestamptz not null default clock_timestamp(),
+  next_ordinal bigint not null, sealed boolean not null
+);
+create table v3_cas_audit.intent_v1 (
+  epoch_id text not null references v3_cas_audit.epoch_v1(epoch_id),
+  ordinal bigint not null, intent_id uuid not null unique,
+  requested_rpc text not null, predecessor_series_id text not null,
+  request_sha256 text not null, source_sha256 text not null,
+  fence_sha256 text not null,
+  created_at_utc timestamptz not null default clock_timestamp(),
+  state text not null, primary key(epoch_id,ordinal)
+);
+insert into v3_cas_audit.epoch_v1(
+ epoch_id,predecessor_series_id,expected_rpc,source_sha256,
+ original_fence_sha256,approved_caller_acl_sha256,next_ordinal,sealed
+) values (
+ 'V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+ 'PAPER-V2R4-20261009T110135Z',
+ 'public.rotate_v2r4_to_v3_experimental_paper',
+ repeat('3',64),repeat('4',64),repeat('5',64),2,true
+);
+insert into v3_cas_audit.intent_v1 (
+ epoch_id,ordinal,intent_id,requested_rpc,predecessor_series_id,
+ request_sha256,source_sha256,fence_sha256,state
+) values (
+ 'V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',1,
+ '123e4567-e89b-42d3-a456-426614174000',
+ 'public.rotate_v2r4_to_v3_experimental_paper',
+ 'PAPER-V2R4-20261009T110135Z',
+ repeat('6',64),repeat('3',64),repeat('4',64),'PREINVOKE_INTENT'
+);
+
 -- This inactive SQL file is loaded ONLY in disposable PostgreSQL.
 \ir ../../supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql
 
@@ -126,6 +167,12 @@ begin
     'physical_v2r4_writer_fence_verified',true,
     'supervisor_old_intake_rearm_blocked',true,
     'independent_six_e2e_proofs_verified',true
+    ,'preinvoke_epoch_id','V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    ,'preinvoke_intent_id','123e4567-e89b-42d3-a456-426614174000'
+    ,'preinvoke_request_sha256',repeat('6',64)
+    ,'preinvoke_source_sha256',repeat('3',64)
+    ,'preinvoke_fence_sha256',repeat('4',64)
+    ,'preinvoke_caller_acl_sha256',repeat('5',64)
   );
 
   -- EXECUTE must be absent for both public and live relay identities.
@@ -149,6 +196,102 @@ begin
          where rolname='v3_cas_executor' and not rolcanlogin
            and not rolbypassrls and not rolsuper and not rolinherit) <> 1 then
     raise exception 'V3 inactive function CAS exclusive executor ACL mismatch';
+  end if;
+
+  -- These genuinely call the installed, isolated PG17 CAS source. The
+  -- server—not a mock Python policy—must refuse missing, unsealed, replayed,
+  -- wrong-source, future and stale audit-bound first attempts.
+  caught := false;
+  begin
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,
+      cfg - 'preinvoke_epoch_id',new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_PREINVOKE_REFERENCE_INVALID_HOLD%' then
+      caught := true;
+    else raise; end if;
+  end;
+  if not caught then raise exception 'missing epoch reference bypassed CAS'; end if;
+
+  caught := false;
+  begin
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,
+      cfg||jsonb_build_object('preinvoke_source_sha256',repeat('f',64)),
+      new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND%' then
+      caught := true;
+    else raise; end if;
+  end;
+  if not caught then raise exception 'wrong source accepted as committed intent'; end if;
+
+  caught := false;
+  begin
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,
+      cfg||jsonb_build_object('preinvoke_intent_id','123e4567-e89b-42d3-a456-426614174001'),
+      new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND%' then
+      caught := true;
+    else raise; end if;
+  end;
+  if not caught then raise exception 'replayed/foreign intent ID accepted'; end if;
+
+  caught := false;
+  begin
+    update v3_cas_audit.epoch_v1 set sealed=false;
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,cfg,
+      new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND%' then
+      caught := true;
+    else raise; end if;
+  end;
+  if not caught or (select sealed from v3_cas_audit.epoch_v1) is not true then
+    raise exception 'unsealed epoch bypass or rollback restoration failure';
+  end if;
+
+  caught := false;
+  begin
+    update v3_cas_audit.epoch_v1 set next_ordinal=3;
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,cfg,
+      new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND%' then
+      caught := true;
+    else raise; end if;
+  end;
+  if not caught or (select next_ordinal from v3_cas_audit.epoch_v1) <> 2 then
+    raise exception 'unbounded second ordinal accepted';
+  end if;
+
+  caught := false;
+  begin
+    update v3_cas_audit.intent_v1
+       set created_at_utc=clock_timestamp()-interval '6 minutes';
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,cfg,
+      new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND%' then
+      caught := true;
+    else raise; end if;
+  end;
+  if not caught then raise exception 'stale committed audit intent accepted'; end if;
+
+  if (select status from public.paper_series where series_id=old_id) <> 'active'
+     or exists(select 1 from public.paper_series where series_id=new_id) then
+    raise exception 'audit negative case modified protected Paper state';
   end if;
 
   -- Unsafe real-money successor must not pass even with CI synthetic permits.
