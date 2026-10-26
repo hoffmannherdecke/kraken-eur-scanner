@@ -73,11 +73,13 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
                         sql.rindex(close))
         self.assertNotRegex(sql, r"(?im)^\s*grant\s+execute\s+on")
 
-    def test_only_preexisting_membership_free_nologin_executor_can_receive_cas_execute(self):
+    def test_only_postgres_admin_only_membership_and_nologin_executor_can_receive_cas_execute(self):
         sql = self.sql
         for token in (
-            "V3_CAS_EXECUTOR_IS_NOT_EXCLUSIVE_NOLOGIN",
-            "V3_CAS_AUDIT_ROLES_NOT_SEPARATED_NOLOGIN",
+            "V3_CAS_EXECUTOR_OR_AUDIT_ROLE_SCOPE_UNSAFE",
+            "m.admin_option and not m.set_option",
+            "not m.inherit_option",
+            "a.rolname='postgres'",
             "pg_catalog.pg_auth_members",
             "m.roleid=r.oid or m.member=r.oid",
             "not r.rolcanlogin",
