@@ -1336,14 +1336,48 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
   try{
    $s=Get-Content -LiteralPath (Join-Path $real 'State\minipc-runtime-supervisor.json') -Raw -ErrorAction Stop|ConvertFrom-Json
    $c=Get-Content -LiteralPath (Join-Path $real 'State\v2r4-paper-cloud-sync-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
-   if(([datetimeoffset]$s.checked_at_utc) -gt $at -and
-      ([datetimeoffset]$c.checked_at_utc) -gt $at -and
+   # This is the SAME already approved Supervisor/PR515 ARMED contract.
+   # Never disable an original native Task on a stale, wrong-lane or
+   # incomplete first acknowledgment; the separate two-cycle proof after
+   # stopping remains mandatory and cannot be inferred from this readback.
+   $supervisorAt=[datetimeoffset]::MinValue
+   $cloudAt=[datetimeoffset]::MinValue
+   $now=[datetimeoffset]::UtcNow
+   if([string]$s.checked_at_utc -cnotmatch '(Z|\+00:00)$' -or
+      [string]$c.checked_at_utc -cnotmatch '(Z|\+00:00)$' -or
+      -not [datetimeoffset]::TryParse([string]$s.checked_at_utc,[ref]$supervisorAt) -or
+      -not [datetimeoffset]::TryParse([string]$c.checked_at_utc,[ref]$cloudAt)){
+    continue
+   }
+   $blocked=@($s.tasks | Where-Object {
+    $_.task -in $tasks -and
+    [string]$_.action -ceq 'V3_INTAKE_SUPERVISOR_REARM_BLOCKED'
+   })
+   if($supervisorAt -gt $at -and $cloudAt -gt $at -and
+      $supervisorAt -ge $now.AddSeconds(-180) -and
+      $cloudAt -ge $now.AddSeconds(-180) -and
+      $supervisorAt -le $now.AddSeconds(5) -and
+      $cloudAt -le $now.AddSeconds(5) -and
+      [math]::Abs(($supervisorAt-$cloudAt).TotalSeconds) -le 90 -and
+      [string]$s.kind -ceq 'MINIPC_RUNTIME_SUPERVISOR_V1' -and
+      [string]$s.status -ceq 'WARNING' -and
       [string]$s.v3_paper_old_intake_fence.mode -ceq 'ARMED' -and
+      $s.v3_paper_old_intake_fence.marker_present -eq $true -and
+      $s.v3_paper_old_intake_fence.v3_cloud_cas_or_release_authorized -eq $false -and
+      $blocked.Count -eq 2 -and
+      (Test-V3ScopedIntakeTaskSet -Names @($blocked | ForEach-Object {[string]$_.task})) -and
+      [string]$c.kind -ceq 'V2R4_PAPER_CLOUD_SYNC_HEARTBEAT_V1' -and
+      [string]$c.status -ceq 'HEALTHY' -and
       [string]$c.mode -ceq 'V3_PRECOMMIT_NO_NETWORK_HOLD' -and
       [string]$c.v3_fence_precommit_phase -ceq 'ARMED' -and
+      [string]$c.v3_fence_cloud_sync_lane -ceq 'PRECOMMIT_ORIGINAL' -and
+      $c.paper_only -eq $true -and
+      $c.order_api -eq $false -and
+      $c.real_money_actions -eq $false -and
       $c.cloud_updated -eq $false -and
       $c.cloud_sync_intentionally_paused -eq $true -and
-      @($s.restarted).Count -eq 0){
+      @($s.restarted).Count -eq 0 -and
+      @($s.failed_restarts).Count -eq 0){
     $armed=$true;break
    }
   }catch{}
