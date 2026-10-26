@@ -33,7 +33,7 @@ class ContextBeforeActionTests(unittest.TestCase):
                     v3 = next(x for x in selector["bounded_capabilities"]
                               if x["task"] == "v3_fixed_paths_readonly")
                     self.assertEqual(v3["applicable_to_current_work_domain"],
-                                     domain == "strategy_development")
+                                     False)
                     if domain == "infrastructure":
                         self.assertTrue(bound["hardware_change_is_not_a_strategy_milestone"])
                         self.assertFalse(v3["applicable_to_current_work_domain"])
@@ -48,6 +48,31 @@ class ContextBeforeActionTests(unittest.TestCase):
         # Even release routing does not hard-code V3 as the only future version.
         self.assertNotIn("V3", v4["work_domain_boundary"]["owner_lane"])
         self.assertEqual(v4["next_action_selector"]["work_domain"], "strategy_release")
+
+    def test_priority_evidence_and_explicit_version_no_reopen_of_maintenance(self):
+        from tools.context_before_action import compact_decision_brief
+        generic = build(ROOT, "strategy")
+        self.assertNotIn("strategy_learning_routes", generic)
+        self.assertEqual(generic["current_reading_plan"]["strategy_version"], "UNSPECIFIED")
+        self.assertTrue(generic["current_reading_plan"]["historical_plans_not_open_tasks"])
+        self.assertTrue(generic["current_reading_plan"]["complete_source_index_preserved"])
+        self.assertNotIn("docs/v3-controlled-paper-cutover-20261011.md",
+                         generic["current_reading_plan"]["priority_source_paths"])
+        release = build(ROOT, "strategy", work_domain="strategy_release", strategy_version="V3")
+        self.assertIn("strategy_learning_routes", release)
+        self.assertTrue(release["next_action_selector"]["bounded_capabilities"][2]["applicable_to_current_work_domain"])
+        brief = compact_decision_brief(release)
+        self.assertIn("--work-domain strategy_release --strategy-version V3",
+                      brief["full_packet_command"])
+        self.assertEqual(generic["fingerprint"], release["fingerprint"])
+        v4 = build(ROOT, "strategy", work_domain="strategy_release", strategy_version="V4")
+        self.assertNotIn("strategy_learning_routes", v4)
+        self.assertFalse(v4["next_action_selector"]["bounded_capabilities"][2]["applicable_to_current_work_domain"])
+        infra = build(ROOT, "operations", work_domain="infrastructure")
+        self.assertTrue(infra["current_reading_plan"]["historical_plans_not_open_tasks"])
+        self.assertFalse(infra["work_domain_boundary"]["requires_named_strategy_release_owner"])
+        with self.assertRaises(ContextGateError):
+            build(ROOT, "operations", strategy_version="../../V3")
 
     def test_work_domain_policy_fails_closed_on_missing_or_weakened_boundaries(self):
         from tools.context_before_action import project_work_domain_boundary
@@ -557,7 +582,7 @@ class ContextBeforeActionTests(unittest.TestCase):
             ):
                 with self.assertRaisesRegex(ContextGateError,
                                             "original MINI-PC"):
-                    build(ROOT, "strategy")
+                    build(ROOT, "strategy", work_domain="strategy_development", strategy_version="V3")
 
     def test_original_scanner_artifact_handoff_rejects_fake_delivery_and_paths(self):
         route_path = ROOT / "research/context-before-action-routing-v1.json"
@@ -585,7 +610,7 @@ class ContextBeforeActionTests(unittest.TestCase):
                 "tools.context_before_action.read_json", side_effect=read_modified
             ):
                 with self.assertRaisesRegex(ContextGateError, "original scanner handoff"):
-                    build(ROOT, "strategy")
+                    build(ROOT, "strategy", work_domain="strategy_development", strategy_version="V3")
 
     def test_component_owner_missing_is_not_assumed_healthy_or_locally_installed(self):
         from tools.context_before_action import project_component_owner_handoff
@@ -615,7 +640,7 @@ class ContextBeforeActionTests(unittest.TestCase):
                 self.assertEqual(len(packet["fingerprint"]), 64)
 
     def test_strategy_pack_carries_prior_decisions_and_component_status(self):
-        packet = build(ROOT, "strategy")
+        packet = build(ROOT, "strategy", work_domain="strategy_development", strategy_version="V3")
         self.assertIn("strategy_learning_routes", packet)
         plan = packet["strategy_learning_routes"]
         self.assertGreaterEqual(len(plan["prioritized_packages"]), 5)
@@ -626,7 +651,7 @@ class ContextBeforeActionTests(unittest.TestCase):
             item["path"] for item in packet["source_index"]})
 
     def test_pr161_all_19_lessons_p0_p9_h1_h11_and_eight_conflicts_in_packet(self):
-        packet = build(ROOT, "strategy")
+        packet = build(ROOT, "strategy", work_domain="strategy_development", strategy_version="V3")
         scope = packet["strategy_learning_routes"]
         self.assertEqual(len(scope["original_lessons"]), 19)
         self.assertEqual(len(scope["historical_conflict_resolutions"]), 8)
@@ -650,7 +675,7 @@ class ContextBeforeActionTests(unittest.TestCase):
         self.assertIn("prediction_h11", {x["stream_id"] for x in fusion["source_lanes"]})
 
     def test_all_17_paper_phase_insights_and_original_sources_in_v3_packet(self):
-        learning = build(ROOT, "strategy")["strategy_learning_routes"]["paper_phase_learning"]
+        learning = build(ROOT, "strategy", work_domain="strategy_development", strategy_version="V3")["strategy_learning_routes"]["paper_phase_learning"]
         self.assertEqual(learning["coverage_count"], 17)
         self.assertEqual(len(learning["findings"]), 17)
         self.assertEqual(len(learning["original_final_v2r3_strategic_dispositions"]), 12)
@@ -851,7 +876,7 @@ class ContextBeforeActionTests(unittest.TestCase):
                 verify_receipt(ROOT, packet, path)
 
     def test_stale_receipt_is_blocked(self):
-        packet = build(ROOT, "strategy")
+        packet = build(ROOT, "strategy", work_domain="strategy_development", strategy_version="V3")
         receipt = self._receipt(packet)
         receipt["fingerprint"] = "0" * 64
         with tempfile.TemporaryDirectory() as d:
