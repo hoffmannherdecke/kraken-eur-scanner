@@ -697,7 +697,7 @@ class ContextBeforeActionTests(unittest.TestCase):
             self.assertTrue(x["matrix_lesson_ids"])
 
     def test_all_20_old_cross_chat_promises_reach_v3_and_minipc_sources(self):
-        packet = build(ROOT,"strategy")
+        packet = build(ROOT,"strategy",work_domain="strategy_development",strategy_version="V3")
         c = packet["strategy_learning_routes"]["prior_cross_chat_commitments"]
         self.assertEqual(c["coverage_count"],20)
         self.assertTrue(c["routed_not_all_operational"])
