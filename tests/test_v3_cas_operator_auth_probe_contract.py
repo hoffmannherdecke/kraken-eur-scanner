@@ -109,7 +109,7 @@ class OriginalhostCasAuthProbeContract(unittest.TestCase):
             "'PGPORT'] = '5432'", "'PGHOST'] = $targetHost",
             "'PGUSER'] = $dbLogin", "'PGHOSTADDR'] = ''",
             "'PGOPTIONS'] = '-c default_transaction_read_only=on -c statement_timeout=10000'",
-            "'-X -w -A -t -q -v ON_ERROR_STOP=1 -c",
+            "'-X -w -A -t -q -v ON_ERROR_STOP=1 -v VERBOSITY=sqlstate -c",
             "current_user,session_user,(select ssl from pg_catalog.pg_stat_ssl",
             "pg_backend_pid()", "ORIGINALHOST_POSTGRES_SSL_AUTH_PASS",
             "$result.code -ne 0", "$result.output -cne",
