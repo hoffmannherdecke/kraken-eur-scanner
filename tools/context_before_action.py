@@ -918,7 +918,58 @@ def existing_minipc_task_source_names(root: Path) -> list[str]:
     return [path.stem for path in candidates]
 
 
-def project_work_domain_boundary(root: Path, config: dict, work_domain: str) -> dict:
+def context_reading_plan(config: dict, index: list[dict],
+                         work_domain: str, strategy_version: str | None) -> dict:
+    """Task-specific reading order; retain full source index for integrity gates."""
+    policy = config.get("context_priority_policy")
+    require(isinstance(policy, dict)
+            and policy.get("kind") == "PROJECT_CONTEXT_RELEVANCE_AND_STATUS_PRECEDENCE_V1",
+            "missing evidence-priority contract")
+    for flag in ("date_alone_does_not_prove_active_state",
+                 "completed_maintenance_not_reopened_by_older_checkbox",
+                 "no_old_v3_history_as_generic_gate",
+                 "incomplete_or_conflicting_evidence_requires_targeted_readback",
+                 "full_source_index_and_pr_fingerprints_unchanged",
+                 "no_runtime_or_release_authority"):
+        require((policy.get("rules") or {}).get(flag) is True,
+                "weakened current-status safeguard: " + flag)
+    paths = {x["path"] for x in index}
+    always = policy.get("always_read")
+    focus = policy.get("domain_focus")
+    require(isinstance(always, list) and len(always) == len(set(always))
+            and set(always).issubset(paths)
+            and isinstance(focus, dict)
+            and set(focus) == {"project_general", "infrastructure", "operations",
+                               "strategy_development", "strategy_release", "research"},
+            "bad source priority registry")
+    targets = focus[work_domain]
+    require(isinstance(targets, list) and len(targets) == len(set(targets)),
+            "duplicated source priorities")
+    preferred = [x for x in targets if x in paths]
+    if strategy_version != "V3":
+        preferred = [x for x in preferred
+                     if not x.startswith(("research/v3/", "docs/v3-"))]
+    if strategy_version == "V3" and work_domain in ("strategy_release", "strategy_development"):
+        preferred.extend(x for x in (
+            "docs/v3-controlled-paper-cutover-20261011.md",
+            "research/v3/v3-consolidated-strategy-integration-plan-20261011.json"
+        ) if x in paths)
+    priority = list(dict.fromkeys(always + preferred))
+    return {
+        "kind": policy["kind"],
+        "work_domain": work_domain,
+        "strategy_version": strategy_version or "UNSPECIFIED",
+        "priority_source_paths": priority,
+        "integrity_only_source_count": len(index) - len(priority),
+        "complete_source_index_preserved": True,
+        "historical_plans_not_open_tasks": True,
+        "evidence_precedence": list(policy["proof_first_order"]),
+        "live_status": policy["live_evidence"],
+        "conflict_resolution": "UNKNOWN_NEEDS_TARGETED_OWNER_READBACK",
+    }
+
+
+def project_work_domain_boundary(root: Path, config: dict, work_domain: str, strategy_version: str | None = None) -> dict:
     """Project-wide intent routing is independent of any strategy version.
 
     Scope chooses which sources are read. A work domain chooses the applicable
@@ -960,10 +1011,15 @@ def project_work_domain_boundary(root: Path, config: dict, work_domain: str) -> 
             and follow_ctx.get("scope_is_not_release_approval") is True,
             "project manager does not inherit central project work domains")
     require(work_domain in expected, "unknown project work domain: " + str(work_domain))
+    if strategy_version is not None:
+        require(bool(re.fullmatch(r"V[1-9][0-9]*(?:R[1-9][0-9]*)?", strategy_version)),
+                "invalid named strategy version")
     lane, release = expected[work_domain]
     return {
         "kind": policy["kind"],
         "work_domain": work_domain,
+        "strategy_version": strategy_version or "UNSPECIFIED",
+        "named_strategy_version_required_for_release": release and strategy_version is None,
         "owner_lane": lane,
         "requires_named_strategy_release_owner": release,
         "strategy_specific_release_gates_applicable": release,
@@ -977,7 +1033,7 @@ def project_work_domain_boundary(root: Path, config: dict, work_domain: str) -> 
     }
 
 
-def project_next_action_selector(operational: dict, root: Path, work_domain: str = "project_general") -> dict:
+def project_next_action_selector(operational: dict, root: Path, work_domain: str = "project_general", strategy_version: str | None = None) -> dict:
     """Route self-service before manual steps; no automatic tool availability claims."""
     runner = operational["projectwide_reviewed_runner"]
     reuse = runner["capability_reuse_policy"]
@@ -997,13 +1053,14 @@ def project_next_action_selector(operational: dict, root: Path, work_domain: str
              "purpose": "FIXED_APPROVED_WORKSPACE_ONLY", "source": workspace["source_script"]},
             {"task": v3["task"], "prior_host_ack": v3["original_host_status"],
              "purpose": "FIXED_V3_PATH_MARKERS_ONLY", "source": v3["source_script"],
-             "applicable_to_current_work_domain": work_domain in ("strategy_development", "strategy_release"),
+             "applicable_to_current_work_domain": (work_domain in ("strategy_development", "strategy_release") and strategy_version == "V3"),
              "catalogue_entry_is_not_a_recommendation": True},
         ],
         "repository_task_source_names": existing_minipc_task_source_names(root),
         "repository_inventory_is_not_host_approval": True,
         "connected_tool_availability": "MUST_CHECK_IN_CURRENT_CHAT",
         "work_domain": work_domain,
+        "strategy_version": strategy_version or "UNSPECIFIED",
         "no_automatic_v3_task_selection_for_project_or_infrastructure": True,
         "host_online_now": "NOT_CHECKED_BY_SOURCE_PACKET",
         "before_manual_request": "STATE_WHICH_EXISTING_SAFE_TOOL_WAS_CHECKED_AND_WHY_IT_CANNOT_FINISH",
@@ -1013,9 +1070,9 @@ def project_next_action_selector(operational: dict, root: Path, work_domain: str
     }
 
 
-def build(root: Path, scope: str, work_domain: str = "project_general") -> dict:
+def build(root: Path, scope: str, work_domain: str = "project_general", strategy_version: str | None = None) -> dict:
     config, entries = routed_sources(root, scope)
-    boundary = project_work_domain_boundary(root, config, work_domain)
+    boundary = project_work_domain_boundary(root, config, work_domain, strategy_version)
     index = []
     for item in entries:
         blob = (root / item["path"]).read_bytes()
@@ -1048,12 +1105,13 @@ def build(root: Path, scope: str, work_domain: str = "project_general") -> dict:
         "work_domain_boundary": boundary,
         "status": "SOURCE_ROUTING_PASS_NEEDS_SUBSTANTIVE_REVIEW",
         "source_index": index,
+        "current_reading_plan": context_reading_plan(config, index, work_domain, strategy_version),
         "declared_status": declared,
         "control_decision_ack_reconciliation": review_receipts(root, state),
         "project_component_owners": project_component_owner_handoff(root),
         "interactive_chat_goal": interactive_chat_goal_handoff(root, index),
         "operational_evidence_handoff": operational,
-        "next_action_selector": project_next_action_selector(operational, root, work_domain),
+        "next_action_selector": project_next_action_selector(operational, root, work_domain, strategy_version),
         "limitations": [
             "Source hashes attest presence/version, not reading, semantic understanding or correctness.",
             "GitHub current-state is declared/datable, not independent live Supabase/MINI-PC evidence.",
@@ -1063,7 +1121,7 @@ def build(root: Path, scope: str, work_domain: str = "project_general") -> dict:
         ],
         "required_next_step": "Use connected GitHub/Cloud first; then check reviewed bounded Mini-PC tasks. Read original decisions and request manual user action only after documenting a concrete blocker.",
     }
-    if scope in ("strategy", "research"):
+    if scope in ("strategy", "research") and work_domain in ("strategy_development", "strategy_release") and strategy_version == "V3":
         payload["strategy_learning_routes"] = v3_decision_inheritance(root)
         payload["strategy_learning_routes"]["scope_warning"] = (
             "Original PR161 historical context; resolve future changes against "
@@ -1124,6 +1182,7 @@ def compact_decision_brief(packet: dict) -> dict:
     registry, cache, status authority or external request.
     """
     selector = packet["next_action_selector"]
+    plan = packet["current_reading_plan"]
     routed = [item["path"] for item in packet["source_index"]]
     priority = [path for path in (
         "AGENTS.md", "project-current-state.json",
@@ -1145,10 +1204,16 @@ def compact_decision_brief(packet: dict) -> dict:
         "manual_user_action_only_after": selector["before_manual_request"],
         "connected_tools": selector["connected_tool_availability"],
         "live_host": selector["host_online_now"],
-        "priority_sources_to_read": priority,
+        "priority_sources_to_read": plan["priority_source_paths"],
+        "historical_plans_not_open_tasks": plan["historical_plans_not_open_tasks"],
+        "evidence_precedence": plan["evidence_precedence"],
+        "strategy_version": plan["strategy_version"],
         "routed_source_count": len(routed),
         "full_packet_required_before_material_change": True,
-        "full_packet_command": "python tools/context_before_action.py --scope " + packet["scope"],
+        "full_packet_command": ("python tools/context_before_action.py --scope " + packet["scope"]
+                                + " --work-domain " + plan["work_domain"]
+                                + ("" if plan["strategy_version"] == "UNSPECIFIED"
+                                   else " --strategy-version " + plan["strategy_version"])),
         "no_live_runtime_or_trading_authority": True,
         "history_or_hash_is_not_live_proof": True,
     }
@@ -1163,6 +1228,8 @@ def main() -> int:
                    choices=("project_general", "infrastructure", "operations",
                             "strategy_development", "strategy_release", "research"),
                    help="Task area independent from source scope; only named strategy_release uses a strategy release owner.")
+    p.add_argument("--strategy-version", default=None,
+                   help="Explicit target like V3 or V2R4; scope alone never selects a strategy.")
     p.add_argument("--brief", action="store_true",
                    help="Print one short validated action/owner guide, not the full source packet.")
     p.add_argument("--receipt", type=Path,
@@ -1171,7 +1238,7 @@ def main() -> int:
     try:
         require(not (args.brief and args.receipt),
                 "brief is orientation only, not receipt verification")
-        packet = build(args.root, args.scope, args.work_domain)
+        packet = build(args.root, args.scope, args.work_domain, args.strategy_version)
         output = (verify_receipt(args.root, packet, args.receipt) if args.receipt
                   else compact_decision_brief(packet) if args.brief else packet)
         print(json.dumps(output, sort_keys=True, ensure_ascii=False))
