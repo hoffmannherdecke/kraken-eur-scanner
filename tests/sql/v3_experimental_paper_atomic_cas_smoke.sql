@@ -201,6 +201,24 @@ begin
   -- These genuinely call the installed, isolated PG17 CAS source. The
   -- server—not a mock Python policy—must refuse missing, unsealed, replayed,
   -- wrong-source, future and stale audit-bound first attempts.
+  -- Dropping both fixture audit tables within this exception subtransaction
+  -- must abort the CAS before any Paper mutation. The caught failure restores
+  -- the disposable fixture schema and is NOT a real Cloud migration.
+  caught := false;
+  begin
+    drop schema v3_cas_audit cascade;
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,cfg,new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_PREINVOKE_AUDIT_SCHEMA_ABSENT_HOLD%' then
+      caught := true;
+    else raise; end if;
+  end;
+  if not caught or pg_catalog.to_regclass('v3_cas_audit.intent_v1') is null then
+    raise exception 'missing private audit schema bypassed CAS or fixture restore';
+  end if;
+
   caught := false;
   begin
     perform public.rotate_v2r4_to_v3_experimental_paper(
