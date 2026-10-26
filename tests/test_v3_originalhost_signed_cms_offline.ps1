@@ -137,10 +137,7 @@ try {
      $fixtureObject.independent_cloud_reader_proven -ne $false -or
      $fixtureObject.cas_dispatch_authorized -ne $false -or
      $fixtureObject.v3_paper_release_authorized -ne $false -or
-     [string]$fixtureObject.payload_sha256 -cnotmatch '^[a-f0-9]{64}
- } finally {$cert.Dispose()}
-} finally {$rsa.Dispose()}
-){
+     [string]$fixtureObject.payload_sha256 -cnotmatch '^[a-f0-9]{64}$'){
    throw 'V3_CI_PREINVOKE_PYTHON_FIXTURE_SCOPE_INVALID'
   }
   $proposalBytes=[Convert]::FromBase64String([string]$fixtureObject.payload_base64)
