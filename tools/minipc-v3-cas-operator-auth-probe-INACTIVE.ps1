@@ -209,7 +209,10 @@ $query = '-X -w -A -t -q -v ON_ERROR_STOP=1 -v VERBOSITY=sqlstate -c "select cur
 try { $result = Invoke-PsqlBounded $query $password $true }
 finally { $password = $null }
 if ($result.code -ne 0) {
-  throw ('V3_CAS_AUTH_HOLD: ' + $result.failure_class)
+  # Exit code is non-secret and distinguishes psql client, connection and SQL failures.
+  # It never contains stderr, the password or the verifier.
+  $safeExit = if ($result.code -in @(1,2,3)) { [int]$result.code } else { 99 }
+  throw ('V3_CAS_AUTH_HOLD: ' + $result.failure_class + '; PSQL_EXIT_' + $safeExit)
 }
 if ($result.output -cne ($role+'|'+$role+'|t')) {
   throw 'V3_CAS_AUTH_HOLD: AUTHENTICATED_IDENTITY_OR_RESULT_MISMATCH'

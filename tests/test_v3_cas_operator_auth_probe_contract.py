@@ -100,6 +100,22 @@ class OriginalhostCasAuthProbeContract(unittest.TestCase):
         self.assertNotIn("Write-Host $privateError", s)
         self.assertNotIn("Write-Output $privateError", s)
 
+    def test_safe_nonsecret_psql_exit_code_preserved_on_hold(self):
+        s = self.active
+        for part in (
+            "$result.code -ne 0",
+            "$result.code -in @(1,2,3)",
+            "PSQL_EXIT_",
+            "+ $safeExit",
+            "V3_CAS_AUTH_HOLD:",
+        ):
+            self.assertIn(part, s)
+        self.assertNotIn("throw $privateError", s)
+        self.assertNotIn("Write-Host $privateError", s)
+        self.assertNotIn("Write-Output $privateError", s)
+        self.assertIn("only_select_issued = $true", s)
+        self.assertIn("ssl_mode = 'verify-full'", s)
+
     def test_tls_verify_full_postgresql_role_real_server_read_only(self):
         s = self.active
         for marker in (
