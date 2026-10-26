@@ -223,6 +223,31 @@ Deno.serve(async(req:Request)=>{
        !String(activeRows[0]?.strategy_revision??"").startsWith("V3-"))
       return response(409,{ok:false,error:"unique_active_v3_successor_not_verified"});
 
+    // CAS pins the true UTC cutover instant in the committed successor config.
+    // Never trust a packet's own claimed boundary for old WAIT chronology.
+    const cutoverMs=safeUtcMs(activeRows[0]?.config?.series_started_at_utc);
+    if(!Number.isFinite(cutoverMs))
+      return response(409,{ok:false,error:"v3_successor_cutover_clock_unverified"});
+    const terminalRecheckFields=[
+      "recheck_completed_at_utc","completed_at_utc","revalidated_at_utc"
+    ];
+    // Validate the entire packet BEFORE any historical Cloud row update.
+    // Host-side checks are not authority against a directly submitted relay packet.
+    for(const row of candidates){
+      const recheck=row?.payload?.recheck;
+      if(recheck===undefined||recheck===null)continue;
+      if(typeof recheck!=="object"||Array.isArray(recheck))
+        return response(409,{ok:false,error:"old_wait_recheck_invalid"});
+      for(const field of ["recheck_started_at_utc","trigger_observed_at_utc",
+                           ...terminalRecheckFields]){
+        const stamp=recheck[field];
+        if(stamp===undefined||stamp===null)continue;
+        const at=safeUtcMs(stamp);
+        if(!Number.isFinite(at)||at>=cutoverMs)
+          return response(409,{ok:false,error:"old_wait_recheck_after_v3_cutover"});
+      }
+    }
+
     let acceptedCandidates=0,acceptedTrades=0,identical=0;
     for(const row of candidates){
       const cid=row?.candidate_id;
@@ -249,7 +274,11 @@ Deno.serve(async(req:Request)=>{
            prior.decision==="WAIT"&&row.decision==="REJECT"&&
            recheck&&recheck.paper_only===true&&
            recheck.real_money_actions_enabled===false&&
-           recheck.order_api===false))
+           recheck.order_api===false&&
+           terminalRecheckFields.some(field=>{
+             const at=safeUtcMs(recheck[field]);
+             return Number.isFinite(at)&&at<cutoverMs;
+           })))
         return response(409,{ok:false,error:"new_old_series_entry_disallowed"});
       if(prior.followup){
         for(const [period,oldH] of Object.entries(prior.followup.horizons??{})){
