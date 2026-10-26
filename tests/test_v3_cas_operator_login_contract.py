@@ -16,7 +16,7 @@ class V3CasOperatorLoginSourceContract(unittest.TestCase):
     def test_default_inert_no_cloud_calls_or_bypass(self):
         s = self.active
         self.assertLess(s.index("if (-not $Stage -and -not $VerifyLocal -and -not $RemoveEnrollmentSql)"),
-                        s.index("if ($Stage -and $RemoveEnrollmentSql)"))
+                        s.index("if (([int][bool]$Stage +"))
         for marker in (
             "INACTIVE_PREVIEW", "cloud_login_created = $false",
             "cas_role_membership_granted = $false",
