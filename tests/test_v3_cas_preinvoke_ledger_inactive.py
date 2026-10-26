@@ -44,7 +44,7 @@ class V3CasAuditInactiveTests(unittest.TestCase):
         sql = (ROOT / "supabase/v3-cas-preinvoke-ledger-INACTIVE.sql").read_text("utf-8")
         executable = "\n".join(x for x in sql.splitlines() if not x.lstrip().startswith("--"))
         self.assertTrue(executable.lstrip().lower().startswith(
-            "do $v3_cas_ledger_inactive$\ndeclare\n  v_role_name text;\nbegin\n  raise exception 'v3_cas_audit_ledger_source_inactive_approval_required';"
+            "do $v3_cas_ledger_inactive$\nbegin\n  raise exception 'v3_cas_audit_ledger_source_inactive_approval_required';"
         ))
         self.assertEqual(executable.lower().count("do $v3_cas_ledger_inactive$"), 1)
         self.assertTrue(executable.rstrip().endswith("$v3_cas_ledger_inactive$;"))
