@@ -58,6 +58,31 @@ class OriginalhostCasAuthProbeContract(unittest.TestCase):
         self.assertLess(s.index(load), s.index(decrypt))
         self.assertEqual(s.count(load), 1)
 
+    def test_safe_failure_class_only_and_zero_private_stderr_leak(self):
+        s = self.active
+        for category in (
+            "TLS_CA_OR_HOSTNAME_VERIFICATION", "DNS_RESOLUTION",
+            "NETWORK_ROUTE_OR_PORT", "AUTH_CREDENTIAL_REJECTED",
+            "ROLE_OR_POOLER_ROUTING", "DATABASE_CONNECT_PERMISSION",
+            "CLIENT_OR_STARTUP_OPTION", "OTHER_DB_OR_CLIENT_FAILURE",
+            "AUTHENTICATED_IDENTITY_OR_RESULT_MISMATCH",
+        ):
+            self.assertIn(category, s, category)
+        self.assertIn("$privateError = $p.StandardError.ReadToEnd()", s)
+        self.assertIn("Get-PsqlFailureCategory $privateError", s)
+        self.assertIn("$privateError = $null", s)
+        self.assertIn("failure_class=$failureClass", s)
+        self.assertIn("V3_CAS_AUTH_HOLD: ' + $result.failure_class", s)
+        self.assertLess(
+            s.index("$privateError = $p.StandardError.ReadToEnd()"),
+            s.index("failure_class=$failureClass"),
+        )
+        self.assertNotIn("throw $privateError", s)
+        self.assertNotIn("Write-Host $privateError", s)
+        self.assertNotIn("Write-Output $privateError", s)
+        self.assertNotIn("throw $p.StandardError", s)
+        self.assertNotIn("Write-Error $privateError", s)
+
     def test_tls_verify_full_postgresql_role_real_server_read_only(self):
         s = self.active
         for marker in (
@@ -70,9 +95,9 @@ class OriginalhostCasAuthProbeContract(unittest.TestCase):
             "'-X -w -A -t -q -v ON_ERROR_STOP=1 -c",
             "current_user,session_user,(select ssl from pg_catalog.pg_stat_ssl",
             "pg_backend_pid()", "ORIGINALHOST_POSTGRES_SSL_AUTH_PASS",
-            "$result.code -ne 0 -or $result.output -cne",
+            "$result.code -ne 0", "$result.output -cne",
             "finally { $password = $null }",
-            "never echo raw server/client error", "WaitForExit(20000)",
+            "Get-PsqlFailureCategory $privateError", "WaitForExit(20000)",
         ):
             self.assertIn(marker, self.source, marker)
         self.assertIn("pooler\\.supabase\\.com$", self.source)
