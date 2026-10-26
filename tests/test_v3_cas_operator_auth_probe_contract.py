@@ -46,6 +46,18 @@ class OriginalhostCasAuthProbeContract(unittest.TestCase):
         self.assertNotIn("operator-login-enroll-ONE-TIME.sql", s)
         self.assertNotIn("ProtectedData]::Protect(", s)
 
+    def test_winps51_explicit_system_security_load_before_sealed_secret(self):
+        s = self.active
+        load = "Add-Type -AssemblyName System.Security -ErrorAction Stop"
+        credential_read = "[IO.File]::ReadAllBytes($secretFile)"
+        decrypt = "[Security.Cryptography.ProtectedData]::Unprotect("
+        self.assertIn(load, s)
+        self.assertIn("Windows system cryptography unavailable; no credential read", s)
+        self.assertLess(s.index("if (-not $Probe)"), s.index(load))
+        self.assertLess(s.index(load), s.index(credential_read))
+        self.assertLess(s.index(load), s.index(decrypt))
+        self.assertEqual(s.count(load), 1)
+
     def test_tls_verify_full_postgresql_role_real_server_read_only(self):
         s = self.active
         for marker in (
