@@ -422,6 +422,18 @@ class V3CasPublicSigstoreProviderSourceTests(unittest.TestCase):
                 "Public no-secret canary. Real Windows CAS audit has no published receipt."
             ),
         }
+        if "private_runner_generated_synthetic_sha256" in subject:
+            import re
+            source_hash = subject["private_runner_generated_synthetic_sha256"]
+            self.assertIs(type(source_hash), str)
+            self.assertRegex(source_hash, r"^[a-f0-9]{64}$")
+            expected["proof_scope"] = (
+                "PRIVATE_RUNNER_SYNTHETIC_HASH_BRIDGE_NOT_HOST_SIGNATURE"
+            )
+            expected["private_runner_generated_synthetic_sha256"] = source_hash
+            expected["reported_hash_origin"] = (
+                "PRIVATE_REVIEWED_MINIPC_TASK_NOT_INDEPENDENT_SIGNER"
+            )
         self.assertEqual(subject, expected)
         self.assertEqual(raw, (json.dumps(subject, indent=2) + "\n").encode("ascii"))
 
@@ -441,6 +453,8 @@ class V3CasPublicSigstoreProviderSourceTests(unittest.TestCase):
             "--source-ref refs/heads/main",
             "--deny-self-hosted-runners",
             "tlogEntries",
+            "private_runner_generated_synthetic_sha256",
+            "V3_PUBLIC_SIGSTORE_PRIVATE_HOST_HASH_TRANSPORT_ONLY_NOT_SIGNER",
             "V3_REAL_SIGSTORE_PUBLIC_GOOD_GITHUB_ORIGIN_AND_DIGEST_PASS",
             "V3_PHYSICAL_ORIGINALHOST_SIGSTORE_OR_CAS_RELEASE_PROOF=FALSE",
         ):
