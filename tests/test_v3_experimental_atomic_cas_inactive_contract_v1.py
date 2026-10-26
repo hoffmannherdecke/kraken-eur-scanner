@@ -69,7 +69,7 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
                         sql.index("$v3_cas_revoke_locked$;"))
         self.assertLess(sql.index("$v3_cas_revoke_locked$;"),
                         sql.rindex(close))
-        self.assertNotRegex(sql, r"(?im)^\\s*grant\\s+execute\\s+on")
+        self.assertNotRegex(sql, r"(?im)^\s*grant\s+execute\s+on")
 
     def test_only_existing_original_paper_tables_no_new_data_plane(self):
         self.assertNotRegex(self.body,
