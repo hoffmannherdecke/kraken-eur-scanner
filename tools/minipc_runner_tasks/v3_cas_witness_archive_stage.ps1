@@ -244,11 +244,13 @@ try {
   }
   $resultText = $stdout.GetAwaiter().GetResult().Trim()
   $errorText = $stderr.GetAwaiter().GetResult()
-  if ($proc.ExitCode -ne 0 -or
-      $resultText -cne 'V3_LOCAL_WITNESS_REAL_ORIGINALHOST_SANDBOX_PROBE_PASS' -or
+  $matched = [regex]::Match($resultText,
+    '^V3_LOCAL_WITNESS_REAL_ORIGINALHOST_SANDBOX_PROBE_PASS ([a-f0-9]{64})$')
+  if ($proc.ExitCode -ne 0 -or -not $matched.Success -or
       -not [string]::IsNullOrWhiteSpace($errorText)) {
     throw 'V3_WITNESS_STAGE_BLOCK: real NTFS file-chain test failed'
   }
+  $publicCandidateHash = [string]$matched.Groups[1].Value
 } finally {
   $proc.Dispose()
 }
@@ -278,6 +280,12 @@ if (@([IO.Directory]::GetFileSystemEntries($probe)).Count -ne 0) {
 if (@([IO.Directory]::GetFileSystemEntries($archive)).Count -ne 0) {
   throw 'V3_WITNESS_STAGE_BLOCK: inactive archive not empty after probe'
 }
+# Public-eligible synthetic hash only, emitted after safe physical file
+# cleanup. This value does NOT prove an independently authenticated host signer.
+if ($publicCandidateHash -cnotmatch '^[0-9a-f]{64}$') {
+  throw 'V3_WITNESS_STAGE_BLOCK: unsafe public candidate digest'
+}
+Write-Host ('V3_MINIPC_CAS_SYNTHETIC_HASH_PUBLIC_CANDIDATE_V1 ' + $publicCandidateHash)
 # Only safe counts/booleans; no raw paths, receipts, Windows SIDs or secrets.
 [pscustomobject][ordered]@{
   kind = 'MINIPC_REVIEWED_TASK_ACK_V1'
@@ -290,6 +298,8 @@ if (@([IO.Directory]::GetFileSystemEntries($archive)).Count -ne 0) {
   approved_parent_existing_acl_left_unchanged = $true
   archive_explicit_protected_three_principals_acl = $true
   physical_originalhost_ntfs_two_synthetic_intents_readback = $true
+  synthetic_filechain_hash_only_reported = $true
+  originalhost_hash_report_is_independent_signature = $false
   synthetic_files_safely_cleaned = $true
   archive_empty_no_real_audit_intents = $true
   backup_and_powerloss_durability_proven = $false

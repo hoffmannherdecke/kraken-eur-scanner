@@ -62,7 +62,9 @@ def main() -> int:
     assert sorted(x.name for x in directory.iterdir()) == [
         "000001.json", "000002.json",
     ]
-    print(MARKER)
+    # Exactly one fresh synthetic journal-chain digest; no raw audit content,
+    # host name, user, credentials or CAS authority is exported.
+    print(MARKER + " " + verified["last_entry_sha256"])
     return 0
 
 
