@@ -673,5 +673,59 @@
         ]
       }
     }
+  },
+  "context_priority_policy": {
+    "kind": "PROJECT_CONTEXT_RELEVANCE_AND_STATUS_PRECEDENCE_V1",
+    "proof_first_order": [
+      "TASK_SCOPED_CURRENT_ORIGINAL_HOST_CLOUD_OR_GITHUB_ACK",
+      "EFFECTIVE_OWNER_DECISION_WITH_EVIDENCE",
+      "DATED_DECLARED_SOURCE_STATE_NOT_LIVE",
+      "SUPERSEDED_PLAN_OR_CHECKLIST_NONBINDING"
+    ],
+    "rules": {
+      "date_alone_does_not_prove_active_state": true,
+      "completed_maintenance_not_reopened_by_older_checkbox": true,
+      "no_old_v3_history_as_generic_gate": true,
+      "incomplete_or_conflicting_evidence_requires_targeted_readback": true,
+      "full_source_index_and_pr_fingerprints_unchanged": true,
+      "no_runtime_or_release_authority": true
+    },
+    "always_read": [
+      "AGENTS.md",
+      "project-current-state.json",
+      "PROJECT_BACKLOG.md",
+      "docs/project-control-plane-governance.md",
+      "research/work-analysis-state.json",
+      "research/project-followthrough-routing-v1.json",
+      "research/monitoring-evidence-routing-v1.json"
+    ],
+    "domain_focus": {
+      "project_general": [],
+      "infrastructure": [
+        "docs/minipc-runner-bounded-windows-v1.md",
+        "docs/minipc-powershell-capability-reuse-v1.md",
+        "docs/minipc-scoped-workspace-v1.md"
+      ],
+      "operations": [
+        "docs/project-wide-outage-recovery-v1.md",
+        "tools/minipc_cloud_evidence.py",
+        "tools/minipc-watchdog.ps1",
+        ".github/workflows/scan.yml"
+      ],
+      "strategy_development": [
+        "docs/strategy-version-map.md",
+        "research/v3-migration-ledger.json"
+      ],
+      "strategy_release": [
+        "docs/strategy-version-map.md",
+        "docs/v3-controlled-paper-cutover-20261011.md"
+      ],
+      "research": [
+        "docs/market-source-autonomy-v1.md",
+        "docs/v3-research-framework.md"
+      ]
+    },
+    "historical_rule": "Archive remains source for provenance and CI; old planning/maintenance entries never create open work without current matching original ACK and owner.",
+    "live_evidence": "SOURCE_PACKET_NO_NETWORK_AND_NEVER_CURRENT_HOST_OR_CLOUD_PROOF"
   }
 }
