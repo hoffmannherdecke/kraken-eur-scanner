@@ -45,12 +45,15 @@ def fixture():
     return intent, readback
 
 
+_UNSET = object()
+
+
 class UnsignedPreinvokeCmsCandidateSourceTests(unittest.TestCase):
-    def propose(self, intent=None, readback=None, review="2026-10-26T15:00:15Z"):
+    def propose(self, intent=None, readback=_UNSET, review="2026-10-26T15:00:15Z"):
         good_intent, good_row = fixture()
         return build_unsigned_preinvoke_cms_proposal(
             good_intent if intent is None else intent,
-            good_row if readback is None else readback,
+            good_row if readback is _UNSET else readback,
             reviewed_at_utc=review)
 
     def test_deterministic_nonsecret_bytes_never_release_authority(self):
