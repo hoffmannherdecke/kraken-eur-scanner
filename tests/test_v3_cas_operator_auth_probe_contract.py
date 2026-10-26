@@ -83,6 +83,23 @@ class OriginalhostCasAuthProbeContract(unittest.TestCase):
         self.assertNotIn("throw $p.StandardError", s)
         self.assertNotIn("Write-Error $privateError", s)
 
+    def test_locale_independent_sqlstate_and_german_auth_diagnostics(self):
+        s = self.active
+        for fragment in (
+            "28P01", "28000", "53300", "3D000", "42501",
+            "42601", "08P01", "22023", "XX000",
+            "AUTH_OR_HBA_RESTRICTION", "DB_CONNECTION_LIMIT",
+            "CLIENT_OR_QUERY_SYNTAX", "DB_INTERNAL_FAILURE",
+            "passwort|kennwort|password|fe_sendauth",
+            "'LC_ALL'] = 'C'", "'LC_MESSAGES'] = 'C'",
+            "'LANG'] = 'C'", "-v VERBOSITY=sqlstate",
+        ):
+            self.assertIn(fragment, s)
+        self.assertIn("Get-PsqlFailureCategory $privateError", s)
+        self.assertNotIn("throw $privateError", s)
+        self.assertNotIn("Write-Host $privateError", s)
+        self.assertNotIn("Write-Output $privateError", s)
+
     def test_tls_verify_full_postgresql_role_real_server_read_only(self):
         s = self.active
         for marker in (
