@@ -485,6 +485,21 @@ BEGIN
 END $v3_ci_scram$;
 SQL
 
+# The default postgres:17-alpine initdb may put 127.0.0.1/32 TRUST
+# ahead of its catch-all host SCRAM line. A wrong-password negative case
+# correctly revealed that this CI-only loopback path was not authenticated.
+# Insert two narrow user/db/loopback SCRAM rules FIRST, preserving every
+# other existing pg_hba entry, only inside disposable --network none Docker.
+# Do not change any real Windows or Supabase pg_hba/configuration.
+docker exec -u postgres "$container" sh -ec '
+  sed -i "1i host postgres v3_ci_reader_login 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
+  sed -i "1i host postgres v3_ci_writer_login 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
+'
+pg -c 'SELECT pg_reload_conf();' >/dev/null
+# The negative password test below is the end-to-end proof that the *actual
+# effective first matching rule* requires SCRAM, not merely that an HBA
+# entry containing the string scram exists somewhere in the file.
+
 # Host loopback is *inside* a --network none container. Unlike the socket
 # trust route, -h 127.0.0.1 requires real SCRAM authentication. Keep fixtures
 # out of application/GitHub secrets; NEVER reuse these sample passwords.
