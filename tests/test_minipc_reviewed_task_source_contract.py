@@ -266,6 +266,13 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
         ):
             self.assertNotIn(forbidden, active, forbidden)
         self.assertEqual(src.count("ConvertTo-Json -Compress"), 1)
+        self.assertIn("$matched = [regex]::Match", src)
+        self.assertIn("synthetic_filechain_hash_only_reported = $true", src)
+        self.assertIn("originalhost_hash_report_is_independent_signature = $false", src)
+        marker = "Write-Host ('V3_MINIPC_CAS_SYNTHETIC_HASH_PUBLIC_CANDIDATE_V1 '"
+        self.assertIn(marker, src)
+        self.assertGreater(src.index(marker), src.index("[IO.Directory]::Delete($probe, $false)"))
+        self.assertEqual(src.count(marker), 1)
 
     def test_originalhost_spool_probe_is_synthetic_and_no_cas(self):
         source = Path("tools/v3_cas_originalhost_spool_probe_INACTIVE.py").read_text("utf-8")
@@ -278,6 +285,7 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
         self.assertIn("review_local_witness_candidate(", source)
         self.assertIn("cloud_cas_authorized", source)
         self.assertIn("V3_LOCAL_WITNESS_REAL_ORIGINALHOST_SANDBOX_PROBE_PASS", source)
+        self.assertIn('print(MARKER + " " + verified["last_entry_sha256"])', source)
         for forbidden in ("invoke_v3_paper_cas(", "requests.", "subprocess.",
                           "urllib.", "boto3", "http.client", "os.remove(",
                           "unlink(", "rmdir(", "shutil.rmtree("):
