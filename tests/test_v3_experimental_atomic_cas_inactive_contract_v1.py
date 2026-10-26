@@ -96,8 +96,8 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
             "to v3_cas_executor;",
         ):
             self.assertIn(token, sql, token)
-        self.assertNotRegex(sql, r"(?im)^\\s*create\\s+role\\b")
-        self.assertNotRegex(sql, r"(?im)^\\s*grant\\s+v3_cas_executor\\s+to\\b")
+        self.assertNotRegex(sql, r"(?im)^\s*create\s+role\b")
+        self.assertNotRegex(sql, r"(?im)^\s*grant\s+v3_cas_executor\s+to\b")
         self.assertNotIn("LOGIN PASSWORD", sql)
         self.assertNotIn("TO postgres;", sql)
         self.assertLess(sql.index("V3_CAS_EXECUTOR_IS_NOT_EXCLUSIVE_NOLOGIN"),
