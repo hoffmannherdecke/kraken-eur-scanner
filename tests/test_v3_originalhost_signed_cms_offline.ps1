@@ -121,6 +121,80 @@ try {
     throw 'V3_INVALID_CMS_OR_PIN_ACCEPTED'
    }
   }
+  # INTEGRATION TEST: consume the TRUE Python preinvoke candidate's exact
+  # canonical bytes, not a hand-transcribed mock CMS payload. This fixture
+  # calls the existing locked Python AuditIntent/Readback builder, NOT Cloud,
+  # originalhost TPM, runner, paper writer or new credential service.
+  $fixturePath=Join-Path $PSScriptRoot 'v3_cas_preinvoke_cms_bytes_fixture_INACTIVE.py'
+  $fixtureOutput=@(& python -B $fixturePath)
+  if($LASTEXITCODE -ne 0 -or $fixtureOutput.Count -ne 1){
+   throw 'V3_CI_CANONICAL_PYTHON_BYTES_NOT_EMITTED'
+  }
+  $fixtureObject=$fixtureOutput[0] | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+  if($fixtureObject.Count -ne 7 -or
+     $fixtureObject.kind -cne 'V3_CI_CANONICAL_PREINVOKE_BYTES_ONLY_NOT_REAL_CUSTODY' -or
+     $fixtureObject.is_production_signer -ne $false -or
+     $fixtureObject.independent_cloud_reader_proven -ne $false -or
+     $fixtureObject.cas_dispatch_authorized -ne $false -or
+     $fixtureObject.v3_paper_release_authorized -ne $false -or
+     [string]$fixtureObject.payload_sha256 -cnotmatch '^[a-f0-9]{64}
+ } finally {$cert.Dispose()}
+} finally {$rsa.Dispose()}
+){
+   throw 'V3_CI_PREINVOKE_PYTHON_FIXTURE_SCOPE_INVALID'
+  }
+  $proposalBytes=[Convert]::FromBase64String([string]$fixtureObject.payload_base64)
+  if($proposalBytes.Length -lt 250 -or $proposalBytes.Length -gt 2048){
+   throw 'V3_CI_PREINVOKE_CANONICAL_BYTES_OUTSIDE_LIMIT'
+  }
+  $proposalHash=[System.Security.Cryptography.SHA256]::Create()
+  try{
+   $proposalDigest=([BitConverter]::ToString(
+    $proposalHash.ComputeHash($proposalBytes))).Replace('-','').ToLowerInvariant()
+  }finally{$proposalHash.Dispose()}
+  if($proposalDigest -cne [string]$fixtureObject.payload_sha256){
+   throw 'V3_CI_PREINVOKE_PYTHON_DOTNET_DIGEST_DIVERGENCE'
+  }
+  $proposalText=[Text.Encoding]::UTF8.GetString($proposalBytes)
+  $proposalObject=$proposalText | ConvertFrom-Json -AsHashtable -ErrorAction Stop
+  if($proposalObject.kind -cne 'V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V1' -or
+     $proposalObject.proof_status -cne 'UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED' -or
+     $proposalObject.ordinal -ne 1 -or
+     $proposalObject.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+     $proposalObject.rpc -cne 'public.rotate_v2r4_to_v3_experimental_paper'){
+   throw 'V3_CI_PREINVOKE_UNSIGNED_SCOPE_DIVERGENCE'
+  }
+  $proposalCms=[System.Security.Cryptography.Pkcs.SignedCms]::new(
+    [System.Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$proposalBytes),$true)
+  $proposalSigner=[System.Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+  $proposalSigner.DigestAlgorithm=[System.Security.Cryptography.Oid]::new(
+    '2.16.840.1.101.3.4.2.1')
+  $proposalCms.ComputeSignature($proposalSigner)
+  $proposalSignature=[byte[]]$proposalCms.Encode()
+  $bridgeResult=Test-V3IndependentOriginalHostCmsSignature (
+    [byte[]]$proposalBytes) $proposalSignature $pin
+  if($bridgeResult.crypto_signature_valid -ne $true -or
+     $bridgeResult.originalhost_process_or_loaded_bytes_independently_proven -ne $false -or
+     $bridgeResult.originalhost_key_acl_and_signer_role_proven -ne $false -or
+     $bridgeResult.cloud_cas_authorized -ne $false -or
+     $bridgeResult.v3_paper_release_authorized -ne $false -or
+     $bridgeResult.six_actual_e2e_proofs_credited -ne 0){
+   throw 'V3_CI_PYTHON_DOTNET_CMS_CROSS_LANGUAGE_MUST_NEVER_AUTHORIZE'
+  }
+  $mutated=[byte[]]$proposalBytes.Clone()
+  $mutated[$mutated.Length - 1] = ($mutated[$mutated.Length - 1] -bxor 1)
+  foreach($badBridge in @(
+   (Test-V3IndependentOriginalHostCmsSignature $mutated $proposalSignature $pin),
+   (Test-V3IndependentOriginalHostCmsSignature $proposalBytes $proposalSignature ('0'*64)),
+   (Test-V3IndependentOriginalHostCmsSignature $proposalBytes ([byte[]]@()) $pin)
+  )){
+   if($badBridge.crypto_signature_valid -ne $false -or
+      $badBridge.cloud_cas_authorized -ne $false -or
+      $badBridge.v3_paper_release_authorized -ne $false){
+    throw 'V3_CI_PYTHON_PREINVOKE_CMS_MUTATION_OR_WRONG_PIN_ACCEPTED'
+   }
+  }
+  Write-Output 'V3_PYTHON_PREINVOKE_TO_DOTNET_DETACHED_CMS_BYTES_PASS_NO_AUTHORITY'
   Write-Output 'V3_ORIGINALHOST_DETACHED_CMS_OFFLINE_POSITIVE_NEGATIVES_PASS_NO_AUTHORITY'
  } finally {$cert.Dispose()}
 } finally {$rsa.Dispose()}
