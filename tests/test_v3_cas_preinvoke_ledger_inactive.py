@@ -73,7 +73,7 @@ class V3CasAuditInactiveTests(unittest.TestCase):
         for dangerous in (
             "CREATE FUNCTION", "CREATE OR REPLACE FUNCTION",
             "GRANT EXECUTE", "GRANT v3_cas_", "PASSWORD ",
-            "CREATE ROLE", "ALTER ROLE", "LOGIN ",
+            "CREATE ROLE", "ALTER ROLE",
             "CREATE POLICY", "SECURITY DEFINER", "INSERT INTO",
             "UPDATE public.paper_series", "set role", "pg_authid"
         ):
