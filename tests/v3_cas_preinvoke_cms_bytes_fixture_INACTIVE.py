@@ -14,8 +14,9 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tools"))
 from tests.test_v3_cas_preinvoke_signed_candidate_inactive import fixture
-from tools.v3_cas_preinvoke_protocol_INACTIVE import (
+from v3_cas_preinvoke_protocol_INACTIVE import (
     build_unsigned_preinvoke_cms_proposal,
 )
 
