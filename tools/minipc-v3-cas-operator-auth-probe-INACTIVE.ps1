@@ -98,6 +98,17 @@ foreach ($path in @($root,$secretFile)) {
 # Map private libpq stderr to one fixed public diagnostic category.
 # Never emit raw stderr, server text, endpoint, verifier or password.
 function Get-PsqlFailureCategory([string]$errorText) {
+  # The SQLSTATE representation is locale-independent: never echo raw libpq stderr.
+  if ($errorText -match '(?i)\b28P01\b') { return 'AUTH_CREDENTIAL_REJECTED' }
+  if ($errorText -match '(?i)\b28000\b') { return 'AUTH_OR_HBA_RESTRICTION' }
+  if ($errorText -match '(?i)\b53300\b') { return 'DB_CONNECTION_LIMIT' }
+  if ($errorText -match '(?i)\b(3D000|42501)\b') { return 'DATABASE_CONNECT_PERMISSION' }
+  if ($errorText -match '(?i)\b(42601|08P01|22023)\b') { return 'CLIENT_OR_QUERY_SYNTAX' }
+  if ($errorText -match '(?i)\bXX000\b') { return 'DB_INTERNAL_FAILURE' }
+  # A Windows installation may localize client messages despite psql defaults.
+  if ($errorText -match '(?i)passwort|kennwort|password|fe_sendauth') {
+    return 'AUTH_CREDENTIAL_REJECTED'
+  }
   if ($errorText -match '(?i)certificate|sslrootcert|root\.crt|verify-full|ssl error|certificate verify failed') {
     return 'TLS_CA_OR_HOSTNAME_VERIFICATION'
   }
@@ -147,6 +158,10 @@ function Invoke-PsqlBounded([string]$fixedArguments,[string]$password,[bool]$net
       $s.EnvironmentVariables['PGSSLCERT'] = ''
       $s.EnvironmentVariables['PGSSLKEY'] = ''
       $s.EnvironmentVariables['PGAPPNAME'] = 'v3_cas_operator_originalhost_one_shot'
+      # Suppress locale-dependent libpq message text; categories and SQLSTATE only.
+      $s.EnvironmentVariables['LC_ALL'] = 'C'
+      $s.EnvironmentVariables['LC_MESSAGES'] = 'C'
+      $s.EnvironmentVariables['LANG'] = 'C'
     }
     $p.StartInfo = $s
     if (-not $p.Start()) { throw 'V3_CAS_AUTH_HOLD: PostgreSQL client failed to start' }
@@ -190,7 +205,7 @@ if ($password -cnotmatch '^[0-9a-f]{64}$') {
 }
 # Verify effective authenticated identity and TLS INSIDE the actual DB session.
 # Connection is also checked by libpq against root CA and DNS (verify-full).
-$query = '-X -w -A -t -q -v ON_ERROR_STOP=1 -c "select current_user,session_user,(select ssl from pg_catalog.pg_stat_ssl where pid=pg_backend_pid())"'
+$query = '-X -w -A -t -q -v ON_ERROR_STOP=1 -v VERBOSITY=sqlstate -c "select current_user,session_user,(select ssl from pg_catalog.pg_stat_ssl where pid=pg_backend_pid())"'
 try { $result = Invoke-PsqlBounded $query $password $true }
 finally { $password = $null }
 if ($result.code -ne 0) {
