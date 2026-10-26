@@ -5,8 +5,6 @@
 -- CAS caller / audit append-writer / independent reader under Issue #99.
 -- No CAS RPC, grants or production schema change is made by this source.
 do $v3_cas_ledger_inactive$
-declare
-  v_role_name text;
 begin
   raise exception 'V3_CAS_AUDIT_LEDGER_SOURCE_INACTIVE_APPROVAL_REQUIRED';
 
