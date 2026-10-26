@@ -52,9 +52,26 @@ jobs:
                   "Public no-secret canary. Real Windows CAS audit has no published receipt."
               ),
           }
+          # A future reviewed PR may bind exactly one SHA256 from a genuine
+          # already-verified private Mini-PC *synthetic* NTFS test. The public
+          # file contains no host/path/credential/log or actual CAS record.
+          # This is NOT an independently trusted originalhost signer.
+          bridge = obj.get("private_runner_generated_synthetic_sha256")
+          if bridge is not None:
+              import re
+              assert type(bridge) is str and re.fullmatch(r"[a-f0-9]{64}", bridge), (
+                  "V3_PUBLIC_SIGSTORE_HOST_BRIDGE_BAD_SHA256"
+              )
+              required["proof_scope"] = "PRIVATE_RUNNER_SYNTHETIC_HASH_BRIDGE_NOT_HOST_SIGNATURE"
+              required["private_runner_generated_synthetic_sha256"] = bridge
+              required["reported_hash_origin"] = (
+                  "PRIVATE_REVIEWED_MINIPC_TASK_NOT_INDEPENDENT_SIGNER"
+              )
           assert type(obj) is dict and obj == required, "V3_PUBLIC_SIGSTORE_SUBJECT_UNEXPECTED"
           assert raw == (json.dumps(obj, indent=2, ensure_ascii=True) + "\n").encode("ascii")
           print("V3_PUBLIC_SIGSTORE_NO_ORIGINALHOST_OR_CAS_DATA_PASS")
+          if bridge is not None:
+              print("V3_PUBLIC_SIGSTORE_PRIVATE_HOST_HASH_TRANSPORT_ONLY_NOT_SIGNER")
           PY
       - name: Publish independent public-good Sigstore attestation
         id: attest
