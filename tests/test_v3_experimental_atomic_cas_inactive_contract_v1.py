@@ -35,6 +35,42 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertRegex(self.sql,
             r"from public, anon, authenticated, service_role;")
 
+    def test_new_cas_function_never_exposes_default_public_execute_between_statements(self):
+        # CREATE and REVOKE must run in one server transaction even when
+        # psql/Supabase SQL editor use autocommit. A statement-by-statement
+        # CREATE then REVOKE briefly exposes a SECURITY DEFINER endpoint.
+        sql = self.sql
+        beginning = "do $v3_cas_install_locked$"
+        create_wrapper = "execute $v3_cas_create_locked$"
+        revoke_wrapper = "execute $v3_cas_revoke_locked$"
+        close = "$v3_cas_install_locked$;"
+        self.assertEqual(sql.count(beginning), 1)
+        self.assertEqual(sql.count(close), 1)
+        self.assertEqual(sql.count(create_wrapper), 1)
+        self.assertEqual(sql.count(revoke_wrapper), 1)
+        self.assertTrue(sql.strip().endswith(close))
+        self.assertEqual(sql.count("V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD"), 1)
+        reg = "pg_catalog.to_regprocedure("
+        signature = (
+            "'public.rotate_v2r4_to_v3_experimental_paper("
+            "text,text,text,text,bigint,bigint,timestamptz,timestamptz,"
+            "text,text,text,timestamptz,jsonb,text,text,text)'"
+        )
+        self.assertIn(signature, sql)
+        self.assertLess(sql.index(beginning), sql.index(reg))
+        self.assertLess(sql.index(reg), sql.index(create_wrapper))
+        self.assertLess(sql.index(create_wrapper), sql.index(
+            "create or replace function public.rotate_v2r4_to_v3_experimental_paper("))
+        self.assertLess(sql.index("$v3_cas_create_locked$;"),
+                        sql.index(revoke_wrapper))
+        self.assertLess(sql.index(revoke_wrapper),
+                        sql.index("revoke all on function public.rotate_v2r4_to_v3_experimental_paper("))
+        self.assertLess(sql.index("from public, anon, authenticated, service_role;"),
+                        sql.index("$v3_cas_revoke_locked$;"))
+        self.assertLess(sql.index("$v3_cas_revoke_locked$;"),
+                        sql.rindex(close))
+        self.assertNotRegex(sql, r"(?im)^\s*grant\s+execute\s+on")
+
     def test_only_existing_original_paper_tables_no_new_data_plane(self):
         self.assertNotRegex(self.body,
             r"(?im)^\s*(create\s+table|create\s+trigger|alter\s+table|"
