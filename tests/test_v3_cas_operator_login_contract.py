@@ -15,8 +15,8 @@ class V3CasOperatorLoginSourceContract(unittest.TestCase):
 
     def test_default_inert_no_cloud_calls_or_bypass(self):
         s = self.active
-        self.assertLess(s.index("if (-not $Stage -and -not $RemoveEnrollmentSql)"),
-                        s.index("if ($Stage -and $RemoveEnrollmentSql)"))
+        self.assertLess(s.index("if (-not $Stage -and -not $VerifyLocal -and -not $RemoveEnrollmentSql)"),
+                        s.index("if (([int][bool]$Stage +"))
         for marker in (
             "INACTIVE_PREVIEW", "cloud_login_created = $false",
             "cas_role_membership_granted = $false",
@@ -65,6 +65,49 @@ class V3CasOperatorLoginSourceContract(unittest.TestCase):
             "S-1-5-32-544",
         ):
             self.assertIn(marker, s, marker)
+
+    def test_local_dpapi_and_scram_verifier_roundtrip_is_read_only(self):
+        s = self.active
+        for marker in (
+            "[switch]$VerifyLocal",
+            "if ($VerifyLocal) {",
+            "LOCAL_DPAPI_SCRAM_ROUNDTRIP_PASS",
+            "ProtectedData]::Unprotect(",
+            "GetAccessRules",
+            "Assert-LocalScope $secretPath $false",
+            "Assert-LocalScope $sqlPath $false",
+            "Rfc2898DeriveBytes",
+            "GetBytes(32)",
+            "HMACSHA256",
+            "Client Key",
+            "Server Key",
+            "SHA256]::Create()",
+            "expectedStored",
+            "expectedServer",
+            "V3_CAS_OPERATOR_HOLD: DPAPI and SCRAM verifier mismatch",
+            "sql_still_local_only = $true",
+            "remote_database_contacted = $false",
+            "cas_role_membership_granted = $false",
+        ):
+            self.assertIn(marker, s, marker)
+        self.assertEqual(s.count("if ($VerifyLocal) {"), 1)
+        self.assertLess(s.index("if ($VerifyLocal) {"),
+                        s.index("if ($RemoveEnrollmentSql) {"))
+        self.assertLess(s.index("if ($VerifyLocal) {"),
+                        s.index("if ([IO.File]::Exists($sqlPath) -or"))
+        self.assertIn("$VerifyLocal -or $RemoveEnrollmentSql", s)
+        self.assertIn("localSecret = $null", s)
+        self.assertIn("sqlText = $null", s)
+        # A physical owner must finish the encrypted-secret/SCRAM check
+        # before copying any one-time verifier SQL into Supabase.
+        result = s.split("if ($VerifyLocal) {", 1)[1].split(
+            "if ($RemoveEnrollmentSql) {", 1)[0]
+        self.assertNotIn("New-ProtectedByteFile", result)
+        self.assertNotIn("[IO.File]::WriteAll", result)
+        self.assertNotIn("execute format(", result)
+        self.assertNotIn("secret_file =", result)
+        self.assertNotIn("verifier =", result)
+        self.assertNotIn("Get-Content", result)
 
     def test_strong_scram_verifier_and_secret_not_in_result(self):
         s = self.active

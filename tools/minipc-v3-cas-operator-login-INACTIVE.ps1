@@ -7,6 +7,7 @@
 [CmdletBinding()]
 param(
   [switch]$Stage,
+  [switch]$VerifyLocal,
   [switch]$RemoveEnrollmentSql
 )
 $ErrorActionPreference = 'Stop'
@@ -19,7 +20,7 @@ $secretPath = Join-Path $root 'operator-login-currentuser.dpapi'
 $sqlPath = Join-Path $root 'operator-login-enroll-ONE-TIME.sql'
 $entropy = [Text.Encoding]::ASCII.GetBytes('V3_CAS_OPERATOR_LOGIN_CURRENTUSER_V1')
 
-if (-not $Stage -and -not $RemoveEnrollmentSql) {
+if (-not $Stage -and -not $VerifyLocal -and -not $RemoveEnrollmentSql) {
   [pscustomobject]@{
     kind = $kind
     state = 'INACTIVE_PREVIEW'
@@ -32,7 +33,8 @@ if (-not $Stage -and -not $RemoveEnrollmentSql) {
   } | ConvertTo-Json -Compress
   return
 }
-if ($Stage -and $RemoveEnrollmentSql) {
+if (([int][bool]$Stage + [int][bool]$VerifyLocal +
+     [int][bool]$RemoveEnrollmentSql) -gt 1) {
   throw 'V3_CAS_OPERATOR_HOLD: choose exactly one local action'
 }
 $id = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -126,12 +128,101 @@ function New-ProtectedByteFile([string]$path,[byte[]]$bytes) {
   Assert-LocalScope $path $false
 }
 if (-not [IO.Directory]::Exists($root)) {
+  if ($VerifyLocal -or $RemoveEnrollmentSql) {
+    throw 'V3_CAS_OPERATOR_HOLD: cannot verify/scrub missing local owner directory'
+  }
   if ([IO.File]::Exists($root)) {
     throw 'V3_CAS_OPERATOR_HOLD: local operator path collides with a file'
   }
   [void][IO.Directory]::CreateDirectory($root,(New-ProtectedAcl $true))
 }
 Assert-LocalScope $root $true
+
+if ($VerifyLocal) {
+  # Offline readback of staged DPAPI password against exact one-time SCRAM
+  # verifier. Never publish or print password, salt, verifier or raw SQL.
+  if (-not [IO.File]::Exists($secretPath) -or
+      -not [IO.File]::Exists($sqlPath)) {
+    throw 'V3_CAS_OPERATOR_HOLD: missing sealed password or staged SQL'
+  }
+  Assert-LocalScope $secretPath $false
+  Assert-LocalScope $sqlPath $false
+  $sealedBytes = [IO.File]::ReadAllBytes($secretPath)
+  $sqlBytes = [IO.File]::ReadAllBytes($sqlPath)
+  if ($sealedBytes.Length -lt 40 -or $sealedBytes.Length -gt 4096 -or
+      $sqlBytes.Length -lt 1500 -or $sqlBytes.Length -gt 12000) {
+    throw 'V3_CAS_OPERATOR_HOLD: unsafe staged credential file length'
+  }
+  $plainBytes = [Security.Cryptography.ProtectedData]::Unprotect(
+    $sealedBytes,$entropy,[Security.Cryptography.DataProtectionScope]::CurrentUser)
+  try {
+    $localSecret = [Text.Encoding]::ASCII.GetString($plainBytes)
+    if ($localSecret -cnotmatch '^[a-f0-9]{64}$') {
+      throw 'V3_CAS_OPERATOR_HOLD: sealed password shape mismatch'
+    }
+  } finally { [Array]::Clear($plainBytes,0,$plainBytes.Length) }
+  $sqlText = [Text.Encoding]::ASCII.GetString($sqlBytes)
+  [Array]::Clear($sqlBytes,0,$sqlBytes.Length)
+  $verifierMatches = [regex]::Matches($sqlText,
+    "SCRAM-SHA-256\`$4096:([A-Za-z0-9+/=]+)\`$([A-Za-z0-9+/=]+):([A-Za-z0-9+/=]+)")
+  if ($verifierMatches.Count -ne 1 -or
+      $sqlText -cnotmatch 'alter role v3_cas_operator_login login password %L' -or
+      $sqlText -cnotmatch 'V3_CAS_LOGIN_RUNTIME_ALREADY_PRESENT' -or
+      $sqlText -cnotmatch 'V3_CAS_LOGIN_PUBLIC_FUNCTION_EXECUTE_DRIFT' -or
+      $sqlText -cnotmatch 'V3_CAS_LOGIN_UNEXPECTED_MEMBERSHIP') {
+    throw 'V3_CAS_OPERATOR_HOLD: one-time SQL changed or unrecognized'
+  }
+  $saltBytes = [Convert]::FromBase64String($verifierMatches[0].Groups[1].Value)
+  $expectedStored = [Convert]::FromBase64String($verifierMatches[0].Groups[2].Value)
+  $expectedServer = [Convert]::FromBase64String($verifierMatches[0].Groups[3].Value)
+  if ($saltBytes.Length -ne 16 -or $expectedStored.Length -ne 32 -or
+      $expectedServer.Length -ne 32) {
+    throw 'V3_CAS_OPERATOR_HOLD: SCRAM verifier shape mismatch'
+  }
+  $pbkdf = [Security.Cryptography.Rfc2898DeriveBytes]::new(
+    $localSecret,$saltBytes,4096,[Security.Cryptography.HashAlgorithmName]::SHA256)
+  try { $saltedBytes = $pbkdf.GetBytes(32) } finally { $pbkdf.Dispose() }
+  $mac = [Security.Cryptography.HMACSHA256]::new($saltedBytes)
+  try {
+    $localClient = $mac.ComputeHash([Text.Encoding]::ASCII.GetBytes('Client Key'))
+    $localServer = $mac.ComputeHash([Text.Encoding]::ASCII.GetBytes('Server Key'))
+  } finally {
+    $mac.Dispose()
+    [Array]::Clear($saltedBytes,0,$saltedBytes.Length)
+  }
+  $sha = [Security.Cryptography.SHA256]::Create()
+  try { $localStored = $sha.ComputeHash($localClient) } finally { $sha.Dispose() }
+  [Array]::Clear($localClient,0,$localClient.Length)
+  # Fixed-length XOR comparison of both 256-bit computed keys.
+  $difference = 0
+  for ($i=0; $i -lt 32; $i++) {
+    $difference = $difference -bor ([int]$localStored[$i] -bxor
+                                    [int]$expectedStored[$i])
+    $difference = $difference -bor ([int]$localServer[$i] -bxor
+                                    [int]$expectedServer[$i])
+  }
+  [Array]::Clear($localStored,0,$localStored.Length)
+  [Array]::Clear($localServer,0,$localServer.Length)
+  [Array]::Clear($expectedStored,0,$expectedStored.Length)
+  [Array]::Clear($expectedServer,0,$expectedServer.Length)
+  [Array]::Clear($saltBytes,0,$saltBytes.Length)
+  $localSecret = $null
+  $sqlText = $null
+  if ($difference -ne 0) {
+    throw 'V3_CAS_OPERATOR_HOLD: DPAPI and SCRAM verifier mismatch'
+  }
+  [pscustomobject]@{
+    kind = $kind
+    state = 'LOCAL_DPAPI_SCRAM_ROUNDTRIP_PASS'
+    secret_or_verifier_displayed = $false
+    sql_still_local_only = $true
+    remote_database_contacted = $false
+    cloud_login_created_by_this_script = $false
+    cas_role_membership_granted = $false
+    v3_paper_activated = $false
+  } | ConvertTo-Json -Compress
+  return
+}
 
 if ($RemoveEnrollmentSql) {
   if ([IO.File]::Exists($sqlPath)) {
