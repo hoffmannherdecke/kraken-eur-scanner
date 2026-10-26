@@ -63,7 +63,7 @@ class OriginalhostCasAuthProbeContract(unittest.TestCase):
             "never echo raw server/client error", "WaitForExit(20000)",
         ):
             self.assertIn(marker, self.source, marker)
-        self.assertRegex(self.source, r"\.pooler\\\.supabase\\\.com")
+        self.assertIn("pooler\\.supabase\\.com$", self.source)
         self.assertNotIn("sslmode=require", s.lower())
         self.assertNotIn("sslmode=prefer", s.lower())
         self.assertEqual(len(re.findall(r"\bselect current_user,session_user", s, re.I)), 1)
