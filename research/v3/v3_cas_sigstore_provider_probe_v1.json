@@ -2,12 +2,14 @@
   "kind": "V3_CAS_PUBLIC_SIGSTORE_PROVIDER_PROBE_V1",
   "schema_version": 1,
   "data_classification": "PUBLIC_SYNTHETIC_ONLY",
-  "proof_scope": "GITHUB_PROVENANCE_NOT_ORIGINALHOST_OR_CAS",
+  "proof_scope": "PRIVATE_RUNNER_SYNTHETIC_HASH_BRIDGE_NOT_HOST_SIGNATURE",
   "original_host_audit_intents": 0,
   "originalhost_signer_authenticated": false,
   "independent_cas_attempt_coverage_proven": false,
   "external_originalhost_worm_custody_proven": false,
   "cloud_cas_authorized": false,
   "v3_paper_activated": false,
-  "source_note": "Public no-secret canary. Real Windows CAS audit has no published receipt."
+  "source_note": "Public no-secret canary. Real Windows CAS audit has no published receipt.",
+  "private_runner_generated_synthetic_sha256": "84e36f22776620cba29dc62664d757cfc2bfac611dc55e9bf47e9d2001f36983",
+  "reported_hash_origin": "PRIVATE_REVIEWED_MINIPC_TASK_NOT_INDEPENDENT_SIGNER"
 }
