@@ -398,5 +398,63 @@ class V3CasMiniPcLocalSpoolInactiveTests(unittest.TestCase):
             append_local_witness_candidate(link, self.intent())
 
 
+
+class V3CasPublicSigstoreProviderSourceTests(unittest.TestCase):
+    """Source-only negative policy. Real Sigstore provider verified on protected PUSH."""
+
+    def test_public_subject_does_not_claim_real_host_or_release(self):
+        p = ROOT / "research/v3/v3_cas_sigstore_provider_probe_v1.json"
+        raw = p.read_bytes()
+        self.assertLess(len(raw), 1024)
+        subject = json.loads(raw)
+        expected = {
+            "kind": "V3_CAS_PUBLIC_SIGSTORE_PROVIDER_PROBE_V1",
+            "schema_version": 1,
+            "data_classification": "PUBLIC_SYNTHETIC_ONLY",
+            "proof_scope": "GITHUB_PROVENANCE_NOT_ORIGINALHOST_OR_CAS",
+            "original_host_audit_intents": 0,
+            "originalhost_signer_authenticated": False,
+            "independent_cas_attempt_coverage_proven": False,
+            "external_originalhost_worm_custody_proven": False,
+            "cloud_cas_authorized": False,
+            "v3_paper_activated": False,
+            "source_note": (
+                "Public no-secret canary. Real Windows CAS audit has no published receipt."
+            ),
+        }
+        self.assertEqual(subject, expected)
+        self.assertEqual(raw, (json.dumps(subject, indent=2) + "\n").encode("ascii"))
+
+    def test_exact_existing_protected_public_repo_push_with_no_scheduler(self):
+        workflow = (ROOT / ".github/workflows/v3-cas-sigstore-public-witness.yml").read_text()
+        for text in (
+            "branches: [main]",
+            "research/v3/v3_cas_sigstore_provider_probe_v1.json",
+            "push:",
+            "runs-on: ubuntu-latest",
+            "id-token: write",
+            "attestations: write",
+            "artifact-metadata: write",
+            "actions/attest@v4",
+            "gh attestation verify",
+            "--signer-workflow",
+            "--source-ref refs/heads/main",
+            "--deny-self-hosted-runners",
+            "tlogEntries",
+            "V3_REAL_SIGSTORE_PUBLIC_GOOD_GITHUB_ORIGIN_AND_DIGEST_PASS",
+            "V3_PHYSICAL_ORIGINALHOST_SIGSTORE_OR_CAS_RELEASE_PROOF=FALSE",
+        ):
+            self.assertIn(text, workflow, text)
+        for unsafe in (
+            "workflow_dispatch:", "schedule:", "cron:",
+            "pull_request:", "runs-on: [self-hosted",
+            "secrets.", "SUPABASE_SERVICE_ROLE_KEY", "KRAKEN_API_SECRET",
+            "actions/upload-artifact", "aws ", "curl ",
+        ):
+            self.assertNotIn(unsafe, workflow, unsafe)
+        self.assertEqual(workflow.count("actions/attest@v4"), 1)
+        self.assertEqual(workflow.count("gh attestation verify"), 1)
+        self.assertTrue(workflow.startswith("name: V3 CAS public Sigstore provider"))
+
 if __name__ == "__main__":
     unittest.main()
