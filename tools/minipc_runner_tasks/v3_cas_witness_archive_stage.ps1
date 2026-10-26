@@ -244,72 +244,13 @@ try {
   }
   $resultText = $stdout.GetAwaiter().GetResult().Trim()
   $errorText = $stderr.GetAwaiter().GetResult()
-  if ($proc.ExitCode -ne 0 -or
-      $resultText -cnotmatch '^V3_LOCAL_WITNESS_REAL_ORIGINALHOST_SANDBOX_PROBE_PASS ([a-f0-9]{64})} finally {
-  $proc.Dispose()
-}
-# Remove precisely TWO newly generated and physically verified synthetic
-# files, no wildcard or recursive deletion. An unexpected item => HOLD
-# and retain all material for later separate review, never repair silently.
-$items = @([IO.Directory]::GetFileSystemEntries($probe))
-$expected = @((Join-Path $probe '000001.json'),
-              (Join-Path $probe '000002.json'))
-if ($items.Count -ne 2 -or
-    @($items | Where-Object { $_ -notin $expected }).Count -ne 0) {
-  throw 'V3_WITNESS_STAGE_BLOCK: unrecognized child content'
-}
-foreach ($file in $expected) {
-  $f = Get-Item -LiteralPath $file -Force -ErrorAction Stop
-  if ($f.PSIsContainer -or
-      [bool]($f.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
-      $f.Length -gt 2048 -or $f.Length -le 0) {
-    throw 'V3_WITNESS_STAGE_BLOCK: generated child not a safe test file'
-  }
-}
-foreach ($file in $expected) { [IO.File]::Delete($file) }
-if (@([IO.Directory]::GetFileSystemEntries($probe)).Count -ne 0) {
-  throw 'V3_WITNESS_STAGE_BLOCK: synthetic child not empty'
-}
-[IO.Directory]::Delete($probe, $false)
-if (@([IO.Directory]::GetFileSystemEntries($archive)).Count -ne 0) {
-  throw 'V3_WITNESS_STAGE_BLOCK: inactive archive not empty after probe'
-}
-# Public-eligible synthetic HASH only, emitted after all local file cleanup
-# succeeds. This is a source-review candidate, not an originalhost signer.
-if ($publicCandidateHash -cnotmatch '^[0-9a-f]{64}[pscustomobject][ordered]@{
-  kind = 'MINIPC_REVIEWED_TASK_ACK_V1'
-  status = 'SUCCESS'
-  task = 'v3_cas_witness_archive_stage'
-  mutation_scope = 'RESTRICTED'
-  checked_at_utc = [DateTimeOffset]::UtcNow.ToString('o')
-  inactive_archive_created = $created
-  inactive_archive_exists = $true
-  approved_parent_existing_acl_left_unchanged = $true
-  archive_explicit_protected_three_principals_acl = $true
-  physical_originalhost_ntfs_two_synthetic_intents_readback = $true
-  synthetic_filechain_hash_only_reported = $true
-  originalhost_hash_report_is_independent_signature = $false
-  synthetic_files_safely_cleaned = $true
-  archive_empty_no_real_audit_intents = $true
-  backup_and_powerloss_durability_proven = $false
-  external_worm_custody_proven = $false
-  originalhost_signer_authenticated = $false
-  exclusive_cloud_cas_coverage_proven = $false
-  cloud_cas_authorized = $false
-  old_writer_auto_rearm_allowed = $false
-  native_restore_authorized = $false
-  technical_v3_e2e_release_proofs_credited = 0
-  v3_paper_activated = $false
-  trading_orders_permitted = $false
-  active_v2r4_runtime_modified = $false
-  no_new_windows_admin_or_task = $true
-  no_paid_service_or_network_api = $true
-} | ConvertTo-Json -Compress -Depth 4
- -or
+  $matched = [regex]::Match($resultText,
+    '^V3_LOCAL_WITNESS_REAL_ORIGINALHOST_SANDBOX_PROBE_PASS ([a-f0-9]{64})$')
+  if ($proc.ExitCode -ne 0 -or -not $matched.Success -or
       -not [string]::IsNullOrWhiteSpace($errorText)) {
     throw 'V3_WITNESS_STAGE_BLOCK: real NTFS file-chain test failed'
   }
-  $publicCandidateHash = [string]$Matches[1]
+  $publicCandidateHash = [string]$matched.Groups[1].Value
 } finally {
   $proc.Dispose()
 }
@@ -339,35 +280,9 @@ if (@([IO.Directory]::GetFileSystemEntries($probe)).Count -ne 0) {
 if (@([IO.Directory]::GetFileSystemEntries($archive)).Count -ne 0) {
   throw 'V3_WITNESS_STAGE_BLOCK: inactive archive not empty after probe'
 }
-# Only safe counts/booleans; no raw paths, receipts, Windows SIDs or secrets.
-[pscustomobject][ordered]@{
-  kind = 'MINIPC_REVIEWED_TASK_ACK_V1'
-  status = 'SUCCESS'
-  task = 'v3_cas_witness_archive_stage'
-  mutation_scope = 'RESTRICTED'
-  checked_at_utc = [DateTimeOffset]::UtcNow.ToString('o')
-  inactive_archive_created = $created
-  inactive_archive_exists = $true
-  approved_parent_existing_acl_left_unchanged = $true
-  archive_explicit_protected_three_principals_acl = $true
-  physical_originalhost_ntfs_two_synthetic_intents_readback = $true
-  synthetic_files_safely_cleaned = $true
-  archive_empty_no_real_audit_intents = $true
-  backup_and_powerloss_durability_proven = $false
-  external_worm_custody_proven = $false
-  originalhost_signer_authenticated = $false
-  exclusive_cloud_cas_coverage_proven = $false
-  cloud_cas_authorized = $false
-  old_writer_auto_rearm_allowed = $false
-  native_restore_authorized = $false
-  technical_v3_e2e_release_proofs_credited = 0
-  v3_paper_activated = $false
-  trading_orders_permitted = $false
-  active_v2r4_runtime_modified = $false
-  no_new_windows_admin_or_task = $true
-  no_paid_service_or_network_api = $true
-} | ConvertTo-Json -Compress -Depth 4
-) {
+# Public-eligible synthetic hash only, emitted after safe physical file
+# cleanup. This value does NOT prove an independently authenticated host signer.
+if ($publicCandidateHash -cnotmatch '^[0-9a-f]{64}$') {
   throw 'V3_WITNESS_STAGE_BLOCK: unsafe public candidate digest'
 }
 Write-Host ('V3_MINIPC_CAS_SYNTHETIC_HASH_PUBLIC_CANDIDATE_V1 ' + $publicCandidateHash)
@@ -383,68 +298,8 @@ Write-Host ('V3_MINIPC_CAS_SYNTHETIC_HASH_PUBLIC_CANDIDATE_V1 ' + $publicCandida
   approved_parent_existing_acl_left_unchanged = $true
   archive_explicit_protected_three_principals_acl = $true
   physical_originalhost_ntfs_two_synthetic_intents_readback = $true
-  synthetic_files_safely_cleaned = $true
-  archive_empty_no_real_audit_intents = $true
-  backup_and_powerloss_durability_proven = $false
-  external_worm_custody_proven = $false
-  originalhost_signer_authenticated = $false
-  exclusive_cloud_cas_coverage_proven = $false
-  cloud_cas_authorized = $false
-  old_writer_auto_rearm_allowed = $false
-  native_restore_authorized = $false
-  technical_v3_e2e_release_proofs_credited = 0
-  v3_paper_activated = $false
-  trading_orders_permitted = $false
-  active_v2r4_runtime_modified = $false
-  no_new_windows_admin_or_task = $true
-  no_paid_service_or_network_api = $true
-} | ConvertTo-Json -Compress -Depth 4
- -or
-      -not [string]::IsNullOrWhiteSpace($errorText)) {
-    throw 'V3_WITNESS_STAGE_BLOCK: real NTFS file-chain test failed'
-  }
-  $publicCandidateHash = [string]$Matches[1]
-} finally {
-  $proc.Dispose()
-}
-# Remove precisely TWO newly generated and physically verified synthetic
-# files, no wildcard or recursive deletion. An unexpected item => HOLD
-# and retain all material for later separate review, never repair silently.
-$items = @([IO.Directory]::GetFileSystemEntries($probe))
-$expected = @((Join-Path $probe '000001.json'),
-              (Join-Path $probe '000002.json'))
-if ($items.Count -ne 2 -or
-    @($items | Where-Object { $_ -notin $expected }).Count -ne 0) {
-  throw 'V3_WITNESS_STAGE_BLOCK: unrecognized child content'
-}
-foreach ($file in $expected) {
-  $f = Get-Item -LiteralPath $file -Force -ErrorAction Stop
-  if ($f.PSIsContainer -or
-      [bool]($f.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
-      $f.Length -gt 2048 -or $f.Length -le 0) {
-    throw 'V3_WITNESS_STAGE_BLOCK: generated child not a safe test file'
-  }
-}
-foreach ($file in $expected) { [IO.File]::Delete($file) }
-if (@([IO.Directory]::GetFileSystemEntries($probe)).Count -ne 0) {
-  throw 'V3_WITNESS_STAGE_BLOCK: synthetic child not empty'
-}
-[IO.Directory]::Delete($probe, $false)
-if (@([IO.Directory]::GetFileSystemEntries($archive)).Count -ne 0) {
-  throw 'V3_WITNESS_STAGE_BLOCK: inactive archive not empty after probe'
-}
-# Only safe counts/booleans; no raw paths, receipts, Windows SIDs or secrets.
-[pscustomobject][ordered]@{
-  kind = 'MINIPC_REVIEWED_TASK_ACK_V1'
-  status = 'SUCCESS'
-  task = 'v3_cas_witness_archive_stage'
-  mutation_scope = 'RESTRICTED'
-  checked_at_utc = [DateTimeOffset]::UtcNow.ToString('o')
-  inactive_archive_created = $created
-  inactive_archive_exists = $true
-  approved_parent_existing_acl_left_unchanged = $true
-  archive_explicit_protected_three_principals_acl = $true
-  physical_originalhost_ntfs_two_synthetic_intents_readback = $true
+  synthetic_filechain_hash_only_reported = $true
+  originalhost_hash_report_is_independent_signature = $false
   synthetic_files_safely_cleaned = $true
   archive_empty_no_real_audit_intents = $true
   backup_and_powerloss_durability_proven = $false
