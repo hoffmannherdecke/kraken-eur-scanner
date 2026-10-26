@@ -36,6 +36,13 @@ foreach ($relative in @(
 }
 $parent = 'C:\CryptoSupport\Workspace'
 $archive = Join-Path $parent 'V3CasWitness-INACTIVE'
+# Refuse remote/removable/non-NTFS or nearly-full volumes: a local audit
+# cannot be staged on an ambiguous filesystem.
+$volume = [IO.DriveInfo]::new('C')
+if (-not $volume.IsReady -or $volume.DriveFormat -cne 'NTFS' -or
+    $volume.AvailableFreeSpace -lt (100 * 1024 * 1024)) {
+  throw 'V3_WITNESS_STAGE_BLOCK: original local NTFS storage unavailable'
+}
 foreach ($folder in @('C:\CryptoSupport', $parent)) {
   $item = Get-Item -LiteralPath $folder -Force -ErrorAction Stop
   if (-not $item.PSIsContainer -or
