@@ -45,13 +45,17 @@ function Read-ValidatedSnapshot([byte[]]$bytes) {
       throw 'V3_NOTEBOOK_HOLD: ungueltiger Zaehler'
     }
   }
-  # PS7 ConvertFrom-Json may auto-convert ISO strings into DateTime;
-  # Windows PowerShell 5.1 leaves them as text. Validate the original JSON
-  # bytes then normalize back to the canonical UTC string in either version.
+  # PS7 ConvertFrom-Json may auto-convert ISO timestamps into DateTime;
+  # Windows PowerShell 5.1 leaves them as text. Validate the source JSON
+  # timestamp and normalize to one UTC string on either PowerShell version.
   $stamp=[regex]::Match($raw,
     '"observed_at_utc"\s*:\s*"(?<utc>[^"]+)"')
   $canonicalUtc=if($stamp.Success){$stamp.Groups['utc'].Value}else{''}
-  if ($canonicalUtc -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z
+  if ($canonicalUtc -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$') {
+    throw 'V3_NOTEBOOK_HOLD: ungueltiger UTC-Zeitstempel'
+  }
+  $parsed=[datetime]::MinValue
+  if (-not [datetime]::TryParseExact($canonicalUtc,
       "yyyy-MM-dd'T'HH:mm:ss'Z'",
       [Globalization.CultureInfo]::InvariantCulture,
       [Globalization.DateTimeStyles]::None,[ref]$parsed)) {
