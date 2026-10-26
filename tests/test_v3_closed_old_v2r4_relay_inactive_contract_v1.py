@@ -80,6 +80,25 @@ class ClosedOriginalV2R4RelayInactiveContract(unittest.TestCase):
         ):
             with self.subTest(name=name):self.assertIn(name,self.closed)
 
+    def test_cloud_itself_rejects_post_cutover_old_wait_rechecks(self):
+        # The old Windows sender already checks this chronology, but the
+        # independently accessible Edge action must reject bypass packets.
+        self.assertIn('activeRows[0]?.config?.series_started_at_utc',self.closed)
+        self.assertIn('v3_successor_cutover_clock_unverified',self.closed)
+        self.assertIn('old_wait_recheck_after_v3_cutover',self.closed)
+        self.assertIn('old_wait_recheck_invalid',self.closed)
+        self.assertIn('"recheck_started_at_utc"',self.closed)
+        self.assertIn('"recheck_completed_at_utc"',self.closed)
+        self.assertIn('"completed_at_utc"',self.closed)
+        self.assertIn('"revalidated_at_utc"',self.closed)
+        self.assertIn('at>=cutoverMs',self.closed)
+        self.assertIn('terminalRecheckFields.some(field=>{',self.closed)
+        self.assertIn('Number.isFinite(at)&&at<cutoverMs',self.closed)
+        self.assertLess(self.closed.index('old_wait_recheck_after_v3_cutover'),
+                        self.closed.index('acceptedCandidates++'))
+        self.assertLess(self.closed.index('v3_successor_cutover_clock_unverified'),
+                        self.closed.index('for(const row of candidates)'))
+
     def test_closed_path_retains_original_identity_and_completed_horizons(self):
         for text in (
             'canonicalJson(prior.payload?.decision)',
