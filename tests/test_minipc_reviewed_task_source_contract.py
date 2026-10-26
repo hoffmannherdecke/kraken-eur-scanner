@@ -58,6 +58,7 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
             [FOLDER / "access_boundary_probe.ps1", SCRIPT,
              FOLDER / "log_status_summary.ps1",
              FOLDER / "operations_readonly_bundle.ps1",
+             FOLDER / "v3_cas_witness_archive_stage.ps1",
              FOLDER / "v3_fixed_paths_readonly.ps1",
              FOLDER / "v3_paper_offline_probe.ps1",
              FOLDER / "windows_maintenance_snapshot.ps1",
