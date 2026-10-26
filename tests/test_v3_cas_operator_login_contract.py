@@ -58,6 +58,9 @@ class V3CasOperatorLoginSourceContract(unittest.TestCase):
             "AreAccessRulesProtected",
             "GetAccessRules",
             "ReparsePoint",
+            "DriveType]::Fixed",
+            "DriveFormat -cne 'NTFS'",
+            "V3_CAS_OPERATOR_HOLD: local NTFS owner profile unavailable",
             "S-1-5-18",
             "S-1-5-32-544",
         ):
