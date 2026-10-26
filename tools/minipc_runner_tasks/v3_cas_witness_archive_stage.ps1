@@ -52,33 +52,32 @@ foreach ($folder in @('C:\CryptoSupport', $parent)) {
 }
 # Do not broaden existing security. The original approved Workspace has
 # a protected explicit non-admin ACL. No new parent/Trading ACL mutations.
-function Assert-ExpectedAcl([string]$folder) {
+# The approved Workspace is already in use by older project capabilities.
+# Its current ACL may include the local interactive owner as well as the
+# three earlier documented service/system/admin principals. Never rewrite
+# this existing parent, but require a protected DACL and scoped runner write.
+function Assert-ExistingWorkspaceOwnerWrite([string]$folder) {
   $acl = Get-Acl -LiteralPath $folder -ErrorAction Stop
   if (-not $acl.AreAccessRulesProtected) {
-    throw 'V3_WITNESS_STAGE_BLOCK: inherited broad folder ACL possible'
+    throw 'V3_WITNESS_STAGE_BLOCK: approved parent still inherits ACL'
   }
   $rules = @($acl.GetAccessRules(
       $true, $true, [Security.Principal.SecurityIdentifier]))
-  $accepted = @('S-1-5-18', 'S-1-5-32-544', [string]$id.User.Value)
   $selfCanWrite = $false
   foreach ($rule in $rules) {
-    if ($rule.AccessControlType -ne
-        [Security.AccessControl.AccessControlType]::Allow) { continue }
-    $subject = [string]$rule.IdentityReference.Value
-    if ($subject -notin $accepted) {
-      throw 'V3_WITNESS_STAGE_BLOCK: unexpected permitted ACL principal'
-    }
-    if ($subject -ceq [string]$id.User.Value -and
+    if ($rule.AccessControlType -eq
+        [Security.AccessControl.AccessControlType]::Allow -and
+        [string]$rule.IdentityReference.Value -ceq [string]$id.User.Value -and
         ($rule.FileSystemRights -band
-           [Security.AccessControl.FileSystemRights]::WriteData) -ne 0) {
+          [Security.AccessControl.FileSystemRights]::WriteData) -ne 0) {
       $selfCanWrite = $true
     }
   }
   if (-not $selfCanWrite) {
-    throw 'V3_WITNESS_STAGE_BLOCK: restricted owner has no scoped write'
+    throw 'V3_WITNESS_STAGE_BLOCK: restricted owner has no scoped parent write'
   }
 }
-Assert-ExpectedAcl $parent
+Assert-ExistingWorkspaceOwnerWrite $parent
 $created = $false
 if ([IO.Directory]::Exists($archive)) {
   $existing = Get-Item -LiteralPath $archive -Force -ErrorAction Stop
@@ -89,7 +88,29 @@ if ([IO.Directory]::Exists($archive)) {
 } elseif ([IO.File]::Exists($archive)) {
   throw 'V3_WITNESS_STAGE_BLOCK: archive collides with file'
 } else {
-  [void][IO.Directory]::CreateDirectory($archive)
+  # Create only this new directory with its own explicit PROTECTED ACL.
+  # Extra permissions on the old Workspace are NOT copied to the archive.
+  # No Set-Acl, parent modification, new account or privilege escalation.
+  $isolatedAcl = [Security.AccessControl.DirectorySecurity]::new()
+  $isolatedAcl.SetAccessRuleProtection($true, $false)
+  $inheritFlags = (
+    [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+    [Security.AccessControl.InheritanceFlags]::ObjectInherit)
+  foreach ($sid in @('S-1-5-18','S-1-5-32-544',[string]$id.User.Value)) {
+    $rights = if ($sid -ceq [string]$id.User.Value) {
+      [Security.AccessControl.FileSystemRights]::Modify
+    } else {
+      [Security.AccessControl.FileSystemRights]::FullControl
+    }
+    $ace = [Security.AccessControl.FileSystemAccessRule]::new(
+      [Security.Principal.SecurityIdentifier]::new($sid),
+      $rights,
+      $inheritFlags,
+      [Security.AccessControl.PropagationFlags]::None,
+      [Security.AccessControl.AccessControlType]::Allow)
+    $isolatedAcl.AddAccessRule($ace)
+  }
+  [void][IO.Directory]::CreateDirectory($archive, $isolatedAcl)
   $created = $true
 }
 $item = Get-Item -LiteralPath $archive -Force -ErrorAction Stop
@@ -101,9 +122,10 @@ if (-not $item.PSIsContainer -or
 # intentionally not an independent WORM store or approved signer.
 $childAcl = Get-Acl -LiteralPath $archive -ErrorAction Stop
 $effectiveParent = Get-Acl -LiteralPath $parent -ErrorAction Stop
-# Inheritance on child is allowed ONLY from exact protected parent.
-if (-not $effectiveParent.AreAccessRulesProtected) {
-  throw 'V3_WITNESS_STAGE_BLOCK: parent ACL changed during setup'
+# The archive must NOT inherit any extra ACE from the older Workspace.
+if (-not $childAcl.AreAccessRulesProtected -or
+    -not $effectiveParent.AreAccessRulesProtected) {
+  throw 'V3_WITNESS_STAGE_BLOCK: separate archive ACL not protected'
 }
 # Check all effective Allow ACL entries, including inherited entries.
 $childRules = @($childAcl.GetAccessRules(
@@ -265,8 +287,8 @@ if (@([IO.Directory]::GetFileSystemEntries($archive)).Count -ne 0) {
   checked_at_utc = [DateTimeOffset]::UtcNow.ToString('o')
   inactive_archive_created = $created
   inactive_archive_exists = $true
-  parent_ntfs_acl_scoped_to_existing_three_principals = $true
-  archive_ntfs_acl_scoped_to_existing_three_principals = $true
+  approved_parent_existing_acl_left_unchanged = $true
+  archive_explicit_protected_three_principals_acl = $true
   physical_originalhost_ntfs_two_synthetic_intents_readback = $true
   synthetic_files_safely_cleaned = $true
   archive_empty_no_real_audit_intents = $true
