@@ -96,6 +96,47 @@ class V3CasAuditInactiveTests(unittest.TestCase):
             self.assertIn(source, executable.lower())
         self.assertNotIn("rotate_v2r4_technical_paper(", executable.lower())
 
+    def test_pg17_distinct_scram_reader_observes_only_committed_intent(self):
+        # Native disposable PG17 test uses two actual SCRAM LOGINs instead
+        # of a postgres superuser impersonating both actors via SET ROLE.
+        # Credentials are public CI FIXTURES, never real Cloud credentials.
+        script = (ROOT / "tests/v3_cas_postgres_ephemeral_contract.sh").read_text("utf-8")
+        for token in (
+            "--network none",
+            "CREATE ROLE v3_ci_writer_login LOGIN NOINHERIT NOBYPASSRLS",
+            "CREATE ROLE v3_ci_reader_login LOGIN NOINHERIT NOBYPASSRLS",
+            "GRANT v3_cas_audit_writer TO v3_ci_writer_login",
+            "GRANT v3_cas_audit_reader TO v3_ci_reader_login",
+            "-h 127.0.0.1",
+            "auth_method='scram-sha-256'",
+            'sed -i "1i host postgres v3_ci_reader_login 127.0.0.1/32 scram-sha-256"',
+            'sed -i "1i host postgres v3_ci_writer_login 127.0.0.1/32 scram-sha-256"',
+            "SELECT pg_reload_conf();",
+            "FAIL_CI_DISTINCT_READER_DID_NOT_REQUIRE_SCRAM",
+            "session_user||':'||current_user",
+            "FAIL_SCRAM_SEPARATE_SESSION_IDENTITIES",
+            "FAIL_SCRAM_WRITER_ALLOWED_READBACK",
+            "FAIL_SCRAM_READER_ALLOWED_APPEND",
+            "FAIL_SCRAM_INDEPENDENT_READER_SAW_UNCOMMITTED_INTENT",
+            "FAIL_SCRAM_INDEPENDENT_READER_AFTER_COMMIT_CONTENT_MISMATCH",
+            "FAIL_SCRAM_READER_AND_WRITER_BACKEND_SEPARATION",
+            "FAIL_SCRAM_READER_FALSE_ROLLBACK_ACK",
+            "V3_PG17_DISTINCT_SCRAM_READER_AFTER_COMMIT_PASS_NO_RELEASE",
+        ):
+            with self.subTest(token=token):
+                self.assertIn(token, script)
+        self.assertLess(
+            script.index("reader_precommit =") if "reader_precommit =" in script
+            else script.index("reader_precommit="),
+            script.index('wait "$scram_writer_pid"'))
+        self.assertLess(
+            script.index('wait "$scram_writer_pid"'),
+            script.index("reader_postcommit="))
+        # No executable production CAS or user-approved independent Cloud
+        # reader is created by either test, nor a new runner/scheduler.
+        self.assertNotIn("supabase.co", script)
+        self.assertNotIn("pg -f supabase/v3-experimental-paper-atomic-cas", script)
+
     def test_preprovisioned_pg17_safe_audit_roles_are_reused_but_always_inactive(self):
         sql = (ROOT / "supabase/v3-cas-preinvoke-ledger-INACTIVE.sql").read_text("utf-8")
         for role in (

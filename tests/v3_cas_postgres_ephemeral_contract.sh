@@ -452,4 +452,142 @@ if [[ "$check" != '3:1,2' ]]; then
   echo "FAIL_REJECTED_ATTEMPT_CREATED_GAP_$check" >&2; exit 1
 fi
 echo 'V3_PG17_ATOMIC_PLUS_ONE_CONCURRENT_REPLAY_ROLLBACK_PASS'
+# NEW: genuinely separate disposable PostgreSQL 17 SCRAM LOGIN sessions.
+# Earlier SET ROLE probes used the SAME superuser session_user=postgres and
+# could not attest real actor isolation. These two LOGIN accounts have fixed
+# public CI-only credentials; they do not exist or run on Supabase/MINI-PC.
+# No new workflow, real password, real Cloud role/member or CAS invocation.
+pg -f - <<'SQL' >/dev/null
+CREATE ROLE v3_ci_writer_login LOGIN NOINHERIT NOBYPASSRLS
+  PASSWORD 'ci_only_writer_not_a_secret_20261026';
+CREATE ROLE v3_ci_reader_login LOGIN NOINHERIT NOBYPASSRLS
+  PASSWORD 'ci_only_reader_not_a_secret_20261026';
+GRANT v3_cas_audit_writer TO v3_ci_writer_login
+  WITH ADMIN FALSE, INHERIT FALSE, SET TRUE;
+GRANT v3_cas_audit_reader TO v3_ci_reader_login
+  WITH ADMIN FALSE, INHERIT FALSE, SET TRUE;
+INSERT INTO v3_cas_audit.epoch_v1
+(epoch_id,predecessor_series_id,expected_rpc,source_sha256,
+ original_fence_sha256,approved_caller_acl_sha256)
+VALUES ('V3CAS-AUDIT-dddddddddddddddddddddddddddddddd',
+ 'PAPER-V2R4-20261009T110135Z',
+ 'public.rotate_v2r4_to_v3_experimental_paper',
+ repeat('a',64),repeat('b',64),repeat('c',64));
+DO $v3_ci_scram$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_hba_file_rules
+    WHERE type='host' AND auth_method='scram-sha-256'
+      AND error IS NULL
+  ) THEN
+    RAISE EXCEPTION 'V3_CI_NOT_REAL_HOST_SCRAM';
+  END IF;
+END $v3_ci_scram$;
+SQL
+
+# The default postgres:17-alpine initdb may put 127.0.0.1/32 TRUST
+# ahead of its catch-all host SCRAM line. A wrong-password negative case
+# correctly revealed that this CI-only loopback path was not authenticated.
+# Insert two narrow user/db/loopback SCRAM rules FIRST, preserving every
+# other existing pg_hba entry, only inside disposable --network none Docker.
+# Do not change any real Windows or Supabase pg_hba/configuration.
+docker exec -u postgres "$container" sh -ec '
+  sed -i "1i host postgres v3_ci_reader_login 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
+  sed -i "1i host postgres v3_ci_writer_login 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
+'
+pg -c 'SELECT pg_reload_conf();' >/dev/null
+# The negative password test below is the end-to-end proof that the *actual
+# effective first matching rule* requires SCRAM, not merely that an HBA
+# entry containing the string scram exists somewhere in the file.
+
+# Host loopback is *inside* a --network none container. Unlike the socket
+# trust route, -h 127.0.0.1 requires real SCRAM authentication. Keep fixtures
+# out of application/GitHub secrets; NEVER reuse these sample passwords.
+pg_writer_scram() {
+  docker exec --interactive -e PGPASSWORD=ci_only_writer_not_a_secret_20261026 \
+    "$container" psql -h 127.0.0.1 -X -v ON_ERROR_STOP=1 -At \
+    -U v3_ci_writer_login -d postgres "$@"
+}
+pg_reader_scram() {
+  docker exec --interactive -e PGPASSWORD=ci_only_reader_not_a_secret_20261026 \
+    "$container" psql -h 127.0.0.1 -X -v ON_ERROR_STOP=1 -At \
+    -U v3_ci_reader_login -d postgres "$@"
+}
+if docker exec -e PGPASSWORD=wrong_fixture_password "$container" \
+  psql -h 127.0.0.1 -X -v ON_ERROR_STOP=1 -At \
+  -U v3_ci_reader_login -d postgres -c 'select 1' >/dev/null 2>&1; then
+  echo 'FAIL_CI_DISTINCT_READER_DID_NOT_REQUIRE_SCRAM' >&2; exit 1
+fi
+writer_identity="$(pg_writer_scram -c "SET ROLE v3_cas_audit_writer; SELECT session_user||':'||current_user;" | tail -n 1)"
+reader_identity="$(pg_reader_scram -c "SET ROLE v3_cas_audit_reader; SELECT session_user||':'||current_user;" | tail -n 1)"
+if [[ "$writer_identity" != 'v3_ci_writer_login:v3_cas_audit_writer' ||
+      "$reader_identity" != 'v3_ci_reader_login:v3_cas_audit_reader' ]]; then
+  echo 'FAIL_SCRAM_SEPARATE_SESSION_IDENTITIES' >&2; exit 1
+fi
+if pg_writer_scram -c "SET ROLE v3_cas_audit_writer; SELECT count(*) FROM v3_cas_audit.intent_v1;" >/dev/null 2>&1; then
+  echo 'FAIL_SCRAM_WRITER_ALLOWED_READBACK' >&2; exit 1
+fi
+if pg_reader_scram -c "SET ROLE v3_cas_audit_reader; SELECT v3_cas_audit.append_intent_v1('V3CAS-AUDIT-dddddddddddddddddddddddddddddddd','99999999-9999-4999-8999-999999999999',repeat('d',64),repeat('a',64),repeat('b',64));" >/dev/null 2>&1; then
+  echo 'FAIL_SCRAM_READER_ALLOWED_APPEND' >&2; exit 1
+fi
+
+# Writer's committed ACK cannot be created merely by returning ordinal=1.
+# While writer transaction is still open, the independently authenticated
+# reader in another backend must see zero, *despite* writer seeing its own row.
+pg_writer_scram -f - >"$concurrent_log_dir/scram_writer" 2>&1 <<'SQL' &
+SET ROLE v3_cas_audit_writer;
+BEGIN;
+SELECT v3_cas_audit.append_intent_v1(
+  'V3CAS-AUDIT-dddddddddddddddddddddddddddddddd',
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'::uuid,
+  repeat('d',64),repeat('a',64),repeat('b',64));
+SELECT pg_sleep(4);
+COMMIT;
+SQL
+scram_writer_pid=$!
+scram_first_seen=0
+for i in $(seq 1 40); do
+  if grep -qx '1' "$concurrent_log_dir/scram_writer"; then
+    scram_first_seen=1; break
+  fi
+  sleep 0.05
+done
+if [[ "$scram_first_seen" -ne 1 ]]; then
+  echo 'FAIL_SCRAM_FIRST_INTENT_NOT_OBSERVED_IN_WRITER' >&2
+  cat "$concurrent_log_dir/scram_writer" >&2
+  exit 1
+fi
+reader_precommit="$(pg_reader_scram -c "SET ROLE v3_cas_audit_reader; SELECT count(*) FROM v3_cas_audit.intent_v1 WHERE epoch_id='V3CAS-AUDIT-dddddddddddddddddddddddddddddddd';" | tail -n 1)"
+if [[ "$reader_precommit" != '0' ]]; then
+  echo 'FAIL_SCRAM_INDEPENDENT_READER_SAW_UNCOMMITTED_INTENT' >&2; exit 1
+fi
+wait "$scram_writer_pid"
+reader_postcommit="$(pg_reader_scram -c "SET ROLE v3_cas_audit_reader; SELECT e.next_ordinal||':'||count(i.intent_id)||':'||min(i.ordinal)||':'||max(i.ordinal)||':'||min(i.request_sha256) FROM v3_cas_audit.epoch_v1 e JOIN v3_cas_audit.intent_v1 i ON i.epoch_id=e.epoch_id WHERE e.epoch_id='V3CAS-AUDIT-dddddddddddddddddddddddddddddddd' GROUP BY e.next_ordinal;" | tail -n 1)"
+if [[ "$reader_postcommit" != "2:1:1:1:$(printf '%064d' 0 | tr '0' 'd')" ]]; then
+  echo 'FAIL_SCRAM_INDEPENDENT_READER_AFTER_COMMIT_CONTENT_MISMATCH' >&2; exit 1
+fi
+# Different actual SQL backends and different LOGINs are observed; this is
+# still test-only, NOT an approved/independently protected Cloud reader.
+writer_pid="$(pg_writer_scram -c 'SELECT pg_backend_pid()' | tail -n 1)"
+reader_pid="$(pg_reader_scram -c 'SELECT pg_backend_pid()' | tail -n 1)"
+if [[ "$writer_pid" == "$reader_pid" || "$writer_identity" == "$reader_identity" ]]; then
+  echo 'FAIL_SCRAM_READER_AND_WRITER_BACKEND_SEPARATION' >&2; exit 1
+fi
+# A rollback in another writer connection must not become an apparent ACK.
+pg_writer_scram -f - >"$concurrent_log_dir/scram_rollback" 2>&1 <<'SQL'
+SET ROLE v3_cas_audit_writer;
+BEGIN;
+SELECT v3_cas_audit.append_intent_v1(
+  'V3CAS-AUDIT-dddddddddddddddddddddddddddddddd',
+  'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'::uuid,
+  repeat('d',64),repeat('a',64),repeat('b',64));
+ROLLBACK;
+SQL
+rollback_readback="$(pg_reader_scram -c "SET ROLE v3_cas_audit_reader; SELECT e.next_ordinal||':'||count(i.intent_id) FROM v3_cas_audit.epoch_v1 e JOIN v3_cas_audit.intent_v1 i ON i.epoch_id=e.epoch_id WHERE e.epoch_id='V3CAS-AUDIT-dddddddddddddddddddddddddddddddd' GROUP BY e.next_ordinal;" | tail -n 1)"
+if [[ "$rollback_readback" != '2:1' ]]; then
+  echo 'FAIL_SCRAM_READER_FALSE_ROLLBACK_ACK' >&2; exit 1
+fi
+echo 'V3_PG17_DISTINCT_SCRAM_READER_PRECOMMIT_INVISIBLE_PASS'
+echo 'V3_PG17_DISTINCT_SCRAM_READER_AFTER_COMMIT_PASS_NO_RELEASE'
+
 echo 'V3_PG17_EPHEMERAL_ALL_PASS_NO_PRODUCTION'
