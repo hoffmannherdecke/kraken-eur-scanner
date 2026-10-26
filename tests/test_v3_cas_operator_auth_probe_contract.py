@@ -95,7 +95,7 @@ class OriginalhostCasAuthProbeContract(unittest.TestCase):
             "'-X -w -A -t -q -v ON_ERROR_STOP=1 -c",
             "current_user,session_user,(select ssl from pg_catalog.pg_stat_ssl",
             "pg_backend_pid()", "ORIGINALHOST_POSTGRES_SSL_AUTH_PASS",
-            "$result.code -ne 0 -or $result.output -cne",
+            "$result.code -ne 0", "$result.output -cne",
             "finally { $password = $null }",
             "Get-PsqlFailureCategory $privateError", "WaitForExit(20000)",
         ):
