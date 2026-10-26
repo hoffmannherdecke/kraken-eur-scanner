@@ -45,6 +45,18 @@ if ($null -eq $id -or $null -eq $id.User -or
 if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
   throw 'V3_CAS_OPERATOR_HOLD: personal LOCALAPPDATA unavailable'
 }
+# The one private owner key must live on an actual local NTFS disk, not
+# a mapped share, OneDrive redirection, linked root, or removable media.
+$base = Get-Item -LiteralPath $env:LOCALAPPDATA -Force -ErrorAction Stop
+$volume = [IO.DriveInfo]::new([IO.Path]::GetPathRoot($root))
+if (-not $base.PSIsContainer -or
+    [bool]($base.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    -not $volume.IsReady -or
+    $volume.DriveType -ne [IO.DriveType]::Fixed -or
+    $volume.DriveFormat -cne 'NTFS' -or
+    $volume.AvailableFreeSpace -lt 1048576) {
+  throw 'V3_CAS_OPERATOR_HOLD: local NTFS owner profile unavailable'
+}
 $allow = @([string]$id.User.Value, 'S-1-5-18', 'S-1-5-32-544')
 function Assert-LocalScope([string]$target,[bool]$directory) {
   $item = Get-Item -LiteralPath $target -Force -ErrorAction Stop
