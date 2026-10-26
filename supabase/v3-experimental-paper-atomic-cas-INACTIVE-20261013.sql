@@ -196,6 +196,63 @@ begin
         raise exception 'V3 CAS missing original outcome snapshot or config';
     end if;
 
+    -- SOURCE-ONLY CAS fence: no self-certified JSON proof or uncommitted
+    -- intent is authority. The real original Cloud currently has no audit
+    -- schema; a prematurely installed CAS must HOLD before Paper mutation.
+    -- An independent authenticated Reader, external signature/custody and
+    -- complete CAS-attempt coverage remain additional hard release gates.
+    if pg_catalog.to_regclass('v3_cas_audit.epoch_v1') is null
+       or pg_catalog.to_regclass('v3_cas_audit.intent_v1') is null then
+        raise exception 'V3_CAS_PREINVOKE_AUDIT_SCHEMA_ABSENT_HOLD';
+    end if;
+
+    if coalesce(p_new_v3_config->>'preinvoke_epoch_id','') !~
+          '^V3CAS-AUDIT-[a-f0-9]{32}$'
+       or coalesce(p_new_v3_config->>'preinvoke_intent_id','') !~
+          '^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
+       or coalesce(p_new_v3_config->>'preinvoke_request_sha256','') !~
+          '^[a-f0-9]{64}$'
+       or coalesce(p_new_v3_config->>'preinvoke_source_sha256','') !~
+          '^[a-f0-9]{64}$'
+       or coalesce(p_new_v3_config->>'preinvoke_fence_sha256','') !~
+          '^[a-f0-9]{64}$'
+       or coalesce(p_new_v3_config->>'preinvoke_caller_acl_sha256','') !~
+          '^[a-f0-9]{64}$' then
+        raise exception 'V3_CAS_PREINVOKE_REFERENCE_INVALID_HOLD';
+    end if;
+
+    -- A source-bound, committed, sealed, exactly one-intent epoch must
+    -- actually exist in the protected audit store. The CAS executor has no
+    -- direct writer/reader access. A SQL row-lock is NOT irreversible:
+    -- rollback loses it, and no pure SQL observation certifies TPM origin.
+    perform 1 from v3_cas_audit.epoch_v1 e
+      join v3_cas_audit.intent_v1 i on i.epoch_id=e.epoch_id
+     where e.epoch_id=p_new_v3_config->>'preinvoke_epoch_id'
+       and e.predecessor_series_id=p_expected_old_series_id
+       and e.expected_rpc='public.rotate_v2r4_to_v3_experimental_paper'
+       and e.source_sha256=p_new_v3_config->>'preinvoke_source_sha256'
+       and e.original_fence_sha256=p_new_v3_config->>'preinvoke_fence_sha256'
+       and e.approved_caller_acl_sha256=p_new_v3_config->>'preinvoke_caller_acl_sha256'
+       and e.sealed is true and e.next_ordinal=2 and i.ordinal=1
+       and i.intent_id=(p_new_v3_config->>'preinvoke_intent_id')::uuid
+       and i.predecessor_series_id=e.predecessor_series_id
+       and i.requested_rpc=e.expected_rpc
+       and i.request_sha256=p_new_v3_config->>'preinvoke_request_sha256'
+       and i.source_sha256=e.source_sha256
+       and i.fence_sha256=e.original_fence_sha256
+       and i.state='PREINVOKE_INTENT'
+       and i.created_at_utc>=e.opened_at_utc
+       and i.created_at_utc<=pg_catalog.clock_timestamp()
+       and i.created_at_utc>pg_catalog.clock_timestamp()-interval '5 minutes'
+      for update of e,i;
+    if not found then
+        raise exception 'V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND';
+    end if;
+    -- Remaining LIMIT: request_sha256 comes from the caller-supplied config
+    -- and is NOT cryptographically recalculated from all sixteen CAS args.
+    -- Independently authenticated full request signing and actor permissions
+    -- remain OPEN; this source-only fence cannot authorize CAS dispatch.
+
     -- Locked actual CURRENT active predecessor; never use a stale config
     -- file/old V2R4 paper series as implicit current authority.
     select * into old_row
