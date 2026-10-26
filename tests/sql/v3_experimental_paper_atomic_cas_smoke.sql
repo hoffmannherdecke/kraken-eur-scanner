@@ -11,11 +11,16 @@ begin;
 create role service_role nologin;
 create role anon nologin;
 create role authenticated nologin;
--- NOLOGIN roles from original source-only audit candidate. No membership,
--- credential or app connection is created by this isolated native fixture.
+-- NOLOGIN roles from original source-only audit candidate. Simulate
+-- PostgreSQL 17 Supabase non-superuser CREATEROLE's unavoidable restricted
+-- creator-admin membership even though Docker postgres is a real superuser.
+-- SET FALSE / INHERIT FALSE means no immediate EXECUTE authority.
 create role v3_cas_executor nologin noinherit nobypassrls;
 create role v3_cas_audit_writer nologin noinherit nobypassrls;
 create role v3_cas_audit_reader nologin noinherit nobypassrls;
+grant v3_cas_executor to postgres with admin true, set false, inherit false;
+grant v3_cas_audit_writer to postgres with admin true, set false, inherit false;
+grant v3_cas_audit_reader to postgres with admin true, set false, inherit false;
 
 create table public.paper_series (
   series_id text primary key, test_id text not null,
@@ -132,7 +137,14 @@ begin
      or not has_function_privilege('v3_cas_executor',fn,'EXECUTE')
      or (select count(*) from pg_catalog.pg_auth_members m
          join pg_catalog.pg_roles r on r.oid=m.roleid
-         where r.rolname='v3_cas_executor') <> 0
+         where r.rolname='v3_cas_executor') <> 1
+     or not exists (
+        select 1 from pg_catalog.pg_auth_members m
+        join pg_catalog.pg_roles r on r.oid=m.roleid
+        join pg_catalog.pg_roles a on a.oid=m.member
+        where r.rolname='v3_cas_executor'
+          and a.rolname='postgres'
+          and m.admin_option and not m.set_option and not m.inherit_option)
      or (select count(*) from pg_catalog.pg_roles
          where rolname='v3_cas_executor' and not rolcanlogin
            and not rolbypassrls and not rolsuper and not rolinherit) <> 1 then
