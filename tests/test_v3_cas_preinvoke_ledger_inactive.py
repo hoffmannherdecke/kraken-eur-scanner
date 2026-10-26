@@ -49,6 +49,42 @@ def original_proposal():
 
 
 class V3CasAuditInactiveTests(unittest.TestCase):
+
+    def test_new_stage0_private_schema_source_has_no_runtime_grants_or_dispatch(self):
+        src = (ROOT / "supabase/v3-cas-audit-stage0-private-quarantine-SOURCE-20261026.sql").read_text("utf-8")
+        executable = "\n".join(x for x in src.splitlines()
+                                if not x.lstrip().startswith("--"))
+        self.assertEqual(executable.count("DO $v3_stage0_private$"), 1)
+        self.assertTrue(executable.rstrip().endswith("$v3_stage0_private$;"))
+        for marker in (
+            "V3_STAGE0_ROLE_GRAPH_DRIFT_ABORT",
+            "V3_STAGE0_ORIGINAL_V2R4_NOT_SOLE_ACTIVE_ABORT",
+            "V3_STAGE0_CAS_ALREADY_INSTALLED_ABORT",
+            "V3_STAGE0_ALREADY_PRESENT_ABORT_WITHOUT_REPAIR",
+            "V3_STAGE0_ANY_RUNTIME_ACCESS_ABORT",
+            "V3_STAGE0_UNEXPECTED_POLICY_ABORT",
+            "ALTER TABLE v3_cas_audit.epoch_v1 FORCE ROW LEVEL SECURITY",
+            "ALTER TABLE v3_cas_audit.intent_v1 FORCE ROW LEVEL SECURITY",
+            "REVOKE ALL ON ALL TABLES IN SCHEMA v3_cas_audit",
+        ):
+            self.assertIn(marker, executable)
+        # No append function, automatic schema-access policy, executable CAS
+        # RPC, credential/LOGIN or privileged user membership provisioning.
+        for dangerous in (
+            "CREATE FUNCTION", "CREATE OR REPLACE FUNCTION",
+            "GRANT EXECUTE", "GRANT v3_cas_", "PASSWORD ",
+            "CREATE ROLE", "ALTER ROLE",
+            "CREATE POLICY", "SECURITY DEFINER", "INSERT INTO",
+            "UPDATE public.paper_series", "set role", "pg_authid"
+        ):
+            self.assertNotIn(dangerous.upper(), executable.upper())
+        test_script = (ROOT / "tests/v3_cas_postgres_ephemeral_contract.sh").read_text("utf-8")
+        self.assertIn("V3_PG17_STAGE0_PRIVATE_SCHEMA_QUARANTINE_AND_ROLLBACK_PASS", test_script)
+        self.assertIn("V3_PG17_STAGE0_ROLE_DRIFT_ABORT_PASS", test_script)
+        self.assertIn("cat \"$stage0_sql\"", test_script)
+        self.assertIn("ROLLBACK;", test_script)
+
+
     def test_source_always_first_statement_blocked_even_if_run_accidentally(self):
         sql = (ROOT / "supabase/v3-cas-preinvoke-ledger-INACTIVE.sql").read_text("utf-8")
         executable = "\n".join(x for x in sql.splitlines() if not x.lstrip().startswith("--"))
