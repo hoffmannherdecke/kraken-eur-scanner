@@ -58,6 +58,7 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
             [FOLDER / "access_boundary_probe.ps1", SCRIPT,
              FOLDER / "log_status_summary.ps1",
              FOLDER / "operations_readonly_bundle.ps1",
+             FOLDER / "v3_cas_witness_archive_stage.ps1",
              FOLDER / "v3_fixed_paths_readonly.ps1",
              FOLDER / "v3_paper_offline_probe.ps1",
              FOLDER / "windows_maintenance_snapshot.ps1",
@@ -211,6 +212,74 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
             self.assertNotIn(forbidden, s, forbidden)
         self.assertNotIn("$"+"{{", s)
         self.assertNotIn("$args", s)
+
+    def test_witness_archive_stage_has_one_fixed_approved_ntfs_scope(self):
+        task = FOLDER / "v3_cas_witness_archive_stage.ps1"
+        src = task.read_text("utf-8")
+        self.assertEqual(reviewed_task_violations(task.stem, src), [])
+        for item in (
+            "C:\\CryptoSupport\\Workspace",
+            "V3CasWitness-INACTIVE",
+            "Assert-ExpectedAcl",
+            "AreAccessRulesProtected",
+            "GetAccessRules",
+            "S-1-5-18",
+            "S-1-5-32-544",
+            "CryptoSupportSvc",
+            "WindowsBuiltInRole]::Administrator",
+            "_protected_main",
+            "v3_cas_local_spool_INACTIVE.py",
+            "v3_cas_originalhost_spool_probe_INACTIVE.py",
+            "MINIPC_TASK_SANDBOX",
+            "PYTHONDONTWRITEBYTECODE",
+            "SUPABASE_SERVICE_ROLE_KEY",
+            "KRAKEN_API_SECRET",
+            "V3_LOCAL_WITNESS_REAL_ORIGINALHOST_SANDBOX_PROBE_PASS",
+            "[IO.Directory]::CreateDirectory($archive)",
+            "[IO.Directory]::CreateDirectory($probe)",
+            "000001.json", "000002.json",
+            "[IO.File]::Delete($file)",
+            "[IO.Directory]::Delete($probe, $false)",
+            "no_paid_service_or_network_api = $true",
+            "backup_and_powerloss_durability_proven = $false",
+            "external_worm_custody_proven = $false",
+            "cloud_cas_authorized = $false",
+            "old_writer_auto_rearm_allowed = $false",
+            "technical_v3_e2e_release_proofs_credited = 0",
+            "task = 'v3_cas_witness_archive_stage'",
+            "mutation_scope = 'RESTRICTED'",
+        ):
+            self.assertIn(item, src, item)
+        active = "\n".join(
+            line.lower() for line in src.splitlines()
+            if not line.lstrip().startswith("#")
+        )
+        for forbidden in (
+            "invoke-expression", "invoke-command", "invoke-restmethod",
+            "invoke-webrequest", "start-process", "set-acl", "icacls",
+            "start-service", "set-service", "register-scheduledtask",
+            "remove-item", "del /", "rd /s", "trading\\runtime",
+            "set-executionpolicy", "git pull", "supabase functions deploy",
+            "upload-artifact", "aws ", "sigstore upload",
+        ):
+            self.assertNotIn(forbidden, active, forbidden)
+        self.assertEqual(src.count("ConvertTo-Json -Compress"), 1)
+
+    def test_originalhost_spool_probe_is_synthetic_and_no_cas(self):
+        source = Path("tools/v3_cas_originalhost_spool_probe_INACTIVE.py").read_text("utf-8")
+        self.assertIn('Path(r"C:\\CryptoSupport\\Workspace\\V3CasWitness-INACTIVE")', source)
+        self.assertIn('if os.name != "nt"', source)
+        self.assertIn("directory.parent != BASE", source)
+        self.assertIn("tuple(directory.iterdir())", source)
+        self.assertIn("build_unsigned_intent(", source)
+        self.assertIn("append_local_witness_candidate(", source)
+        self.assertIn("review_local_witness_candidate(", source)
+        self.assertIn("cloud_cas_authorized", source)
+        self.assertIn("V3_LOCAL_WITNESS_REAL_ORIGINALHOST_SANDBOX_PROBE_PASS", source)
+        for forbidden in ("invoke_v3_paper_cas(", "requests.", "subprocess.",
+                          "urllib.", "boto3", "http.client", "os.remove(",
+                          "unlink(", "rmdir(", "shutil.rmtree("):
+            self.assertNotIn(forbidden, source)
 
 if __name__ == "__main__":
     unittest.main()
