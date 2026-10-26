@@ -95,6 +95,32 @@ foreach ($path in @($root,$secretFile)) {
   if (-not $self) { throw 'V3_CAS_AUTH_HOLD: owner not on protected ACL' }
 }
 # No SQL/verifier enrollment file is needed for this network authentication test.
+# Map private libpq stderr to one fixed public diagnostic category.
+# Never emit raw stderr, server text, endpoint, verifier or password.
+function Get-PsqlFailureCategory([string]$errorText) {
+  if ($errorText -match '(?i)certificate|sslrootcert|root\.crt|verify-full|ssl error|certificate verify failed') {
+    return 'TLS_CA_OR_HOSTNAME_VERIFICATION'
+  }
+  if ($errorText -match '(?i)could not translate host name|name or service not known|no such host|temporary failure in name resolution') {
+    return 'DNS_RESOLUTION'
+  }
+  if ($errorText -match '(?i)network is unreachable|no route to host|connection timed out|timeout expired|could not connect to server|connection refused|actively refused') {
+    return 'NETWORK_ROUTE_OR_PORT'
+  }
+  if ($errorText -match '(?i)password authentication failed|no password supplied|authentication failed|invalid password') {
+    return 'AUTH_CREDENTIAL_REJECTED'
+  }
+  if ($errorText -match '(?i)tenant or user not found|role .* does not exist|unknown user|server login failed') {
+    return 'ROLE_OR_POOLER_ROUTING'
+  }
+  if ($errorText -match '(?i)permission denied for database|database .* does not exist') {
+    return 'DATABASE_CONNECT_PERMISSION'
+  }
+  if ($errorText -match '(?i)unsupported startup parameter|invalid command-line argument|invalid option|unrecognized configuration parameter|option .* not supported') {
+    return 'CLIENT_OR_STARTUP_OPTION'
+  }
+  return 'OTHER_DB_OR_CLIENT_FAILURE'
+}
 function Invoke-PsqlBounded([string]$fixedArguments,[string]$password,[bool]$network) {
   $p = [Diagnostics.Process]::new()
   try {
@@ -129,8 +155,12 @@ function Invoke-PsqlBounded([string]$fixedArguments,[string]$password,[bool]$net
       throw 'V3_CAS_AUTH_HOLD: bounded auth timeout'
     }
     $result = $p.StandardOutput.ReadToEnd().Trim()
-    $null = $p.StandardError.ReadToEnd() # never echo raw server/client error
-    return [pscustomobject]@{code=$p.ExitCode; output=$result}
+    $privateError = $p.StandardError.ReadToEnd()
+    $failureClass = if ($p.ExitCode -eq 0) { 'NONE' } else {
+      Get-PsqlFailureCategory $privateError
+    }
+    $privateError = $null
+    return [pscustomobject]@{code=$p.ExitCode; output=$result; failure_class=$failureClass}
   } finally { $p.Dispose() }
 }
 $version = Invoke-PsqlBounded '-V' '' $false
@@ -163,8 +193,11 @@ if ($password -cnotmatch '^[0-9a-f]{64}$') {
 $query = '-X -w -A -t -q -v ON_ERROR_STOP=1 -c "select current_user,session_user,(select ssl from pg_catalog.pg_stat_ssl where pid=pg_backend_pid())"'
 try { $result = Invoke-PsqlBounded $query $password $true }
 finally { $password = $null }
-if ($result.code -ne 0 -or $result.output -cne ($role+'|'+$role+'|t')) {
-  throw 'V3_CAS_AUTH_HOLD: real SSL login/identity probe not confirmed'
+if ($result.code -ne 0) {
+  throw ('V3_CAS_AUTH_HOLD: ' + $result.failure_class)
+}
+if ($result.output -cne ($role+'|'+$role+'|t')) {
+  throw 'V3_CAS_AUTH_HOLD: AUTHENTICATED_IDENTITY_OR_RESULT_MISMATCH'
 }
 [pscustomobject]@{
   kind = $kind
