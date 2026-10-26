@@ -5,6 +5,8 @@
 --   preserved original WAIT/STOP and 6h/24h followup owner,
 --   six source-authentic physical/Cloud E2E release proofs,
 --   reviewed V3 operator/Edge dual credentials and explicit user approval.
+--   separated existing NOLOGIN CAS executor/audit writer/reader roles and
+--   independent durable PREINVOKE intent and external signed ACK before invocation.
 -- This is not the V2R4-only technical rotation and MUST NOT use its RPC.
 -- Designed against the read-only live public.paper_series schema on 13 Oct.
 -- Include the last original trade updated_at in the SAME atomic CAS as the
@@ -39,6 +41,36 @@ begin
     'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
   ) is not null then
     raise exception 'V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD';
+  end if;
+
+  -- The CAS principal must ALREADY exist as the original audit contract's
+  -- NOLOGIN/NOBYPASSRLS executor with absolutely no role memberships.
+  -- The writer/reader must be separately pre-provisioned NOLOGIN identities.
+  -- No credentials, role memberships or direct PostgreSQL logins are created
+  -- here. Even an administrator-controlled public SECURITY DEFINER owner is
+  -- NOT independently trusted without external authorization/coverage ACK.
+  if not exists (
+    select 1 from pg_catalog.pg_roles r
+    where r.rolname='v3_cas_executor'
+      and not r.rolcanlogin and not r.rolinherit
+      and not r.rolbypassrls and not r.rolsuper
+      and not r.rolcreaterole and not r.rolcreatedb
+      and not r.rolreplication
+      and not exists (
+        select 1 from pg_catalog.pg_auth_members m
+        where m.roleid=r.oid or m.member=r.oid)
+  ) then
+    raise exception 'V3_CAS_EXECUTOR_IS_NOT_EXCLUSIVE_NOLOGIN';
+  end if;
+  if (
+    select count(*) from pg_catalog.pg_roles r
+    where r.rolname in ('v3_cas_audit_writer','v3_cas_audit_reader')
+      and not r.rolcanlogin and not r.rolinherit
+      and not r.rolbypassrls and not r.rolsuper
+      and not r.rolcreaterole and not r.rolcreatedb
+      and not r.rolreplication
+  ) <> 2 then
+    raise exception 'V3_CAS_AUDIT_ROLES_NOT_SEPARATED_NOLOGIN';
   end if;
 
   execute $v3_cas_create_locked$
@@ -294,5 +326,44 @@ revoke all on function public.rotate_v2r4_to_v3_experimental_paper(
     from public, anon, authenticated, service_role;
 
   $v3_cas_revoke_locked$;
+
+  -- Only the existing distinct NOLOGIN executor gets EXECUTE. Since it has
+  -- ZERO role members and cannot log in, this GRANT alone cannot dispatch
+  -- CAS. Do NOT provision a LOGIN or membership here. A later restricted
+  -- independent caller and cryptographically bound pre-CAS intent/ACK need
+  -- the original Issue #99 production security and source-origin approval.
+  execute $v3_cas_executor_only$
+grant execute on function public.rotate_v2r4_to_v3_experimental_paper(
+    text,text,text,text,bigint,bigint,timestamptz,timestamptz,
+    text,text,text,timestamptz,jsonb,text,text,text)
+    to v3_cas_executor;
+  $v3_cas_executor_only$;
+
+  if pg_catalog.has_function_privilege(
+       'anon',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE')
+    or pg_catalog.has_function_privilege(
+       'authenticated',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE')
+    or pg_catalog.has_function_privilege(
+       'service_role',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE')
+    or pg_catalog.has_function_privilege(
+       'v3_cas_audit_writer',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE')
+    or pg_catalog.has_function_privilege(
+       'v3_cas_audit_reader',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE')
+    or not pg_catalog.has_function_privilege(
+       'v3_cas_executor',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE') then
+    raise exception 'V3_CAS_EFFECTIVE_EXECUTE_PRIVILEGE_NOT_EXCLUSIVE';
+  end if;
 end;
 $v3_cas_install_locked$;
