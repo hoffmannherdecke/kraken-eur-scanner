@@ -19,6 +19,9 @@ jobs:
           python-version: '3.13'
       - name: V3 CAS preinvoke ledger inert source and separate transaction tests
         run: python -m unittest tests.test_v3_cas_preinvoke_ledger_inactive -v
+      - name: V3 Paper Notebook one-time offline snapshots (no CAS or external service)
+        shell: pwsh
+        run: ./tests/test_v3_notebook_onetime_paper_witness.ps1
       - name: V3 CAS isolated real PostgreSQL 17 native ACL/transaction tests
         run: |
           # Avoid the Docker pull on unrelated project-wide architecture PRs.
