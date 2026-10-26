@@ -6,6 +6,12 @@ No network, no external CAS, no Mini-PC and no production DB writes.
 """
 from __future__ import annotations
 
+# Reuse the existing native Architecture CI entrypoint for the new negative
+# contract; never start another workflow or test service.
+from tests.test_v3_cas_preinvoke_signed_candidate_inactive import (
+    UnsignedPreinvokeCmsCandidateSourceTests,
+)
+
 from dataclasses import asdict
 import pathlib
 import sqlite3
