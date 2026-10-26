@@ -50,6 +50,49 @@ def original_proposal():
 
 class V3CasAuditInactiveTests(unittest.TestCase):
 
+    def test_stage1_actor_shell_sql_never_grants_access(self):
+        src = (ROOT / "supabase/v3-cas-actor-stage1-disabled-20261026.sql").read_text("utf-8")
+        executable = "\n".join(line for line in src.splitlines()
+                                 if not line.lstrip().startswith("--"))
+        self.assertTrue(executable.lstrip().startswith(
+            "DO $v3_actor_stage1_disabled$"))
+        self.assertTrue(executable.rstrip().endswith("$v3_actor_stage1_disabled$;"))
+        for identity in ("v3_cas_audit_writer_actor", "v3_cas_audit_reader_actor",
+                         "v3_cas_executor_actor"):
+            self.assertIn("CREATE ROLE "+identity+"\n", executable)
+        self.assertEqual(executable.count(
+            "NOREPLICATION CONNECTION LIMIT 0 PASSWORD NULL VALID UNTIL '2000-01-01'"),3)
+        for denial in (
+            "V3_STAGE1_UNEXPECTED_OWNER_OR_DATABASE_HOLD",
+            "V3_STAGE1_STAGE0_OR_CAS_GUARD_HOLD",
+            "V3_STAGE1_QUARANTINE_TABLES_NOT_EMPTY_LOCKED_HOLD",
+            "V3_STAGE1_SCHEMA_OWNER_DRIFT_HOLD",
+            "V3_STAGE1_ORIGINAL_V2R4_ONLY_HOLD",
+            "V3_STAGE1_ACTOR_NAME_ALREADY_PRESENT_NO_REPAIR",
+            "V3_STAGE1_ORIGINAL_ACTOR_GROUP_GRAPH_DRIFT_HOLD",
+            "V3_STAGE1_ORIGINAL_QUARANTINE_ACCESS_DRIFT_HOLD",
+            "V3_STAGE1_NEW_ACTOR_FAILCLOSED_ATTRS_HOLD",
+            "V3_STAGE1_UNEXPECTED_ACTOR_MEMBERSHIP_HOLD",
+            "V3_STAGE1_UNEXPECTED_ACTOR_AUDIT_PRIVILEGE_HOLD",
+        ):
+            self.assertIn(denial,executable)
+        for denied in ("GRANT ","CREATE FUNCTION","ALTER ROLE",
+                       "LOGIN PASSWORD","SECURITY DEFINER",
+                       "CREATE POLICY","UPDATE public.paper_series",
+                       "ALTER DEFAULT PRIVILEGES","PGPASSWORD","CREATE EXTENSION"):
+            self.assertNotIn(denied,executable.upper())
+        script = (ROOT / "tests/v3_cas_postgres_ephemeral_contract.sh").read_text("utf-8")
+        self.assertIn('cat "$stage0_sql"',script)
+        self.assertIn('cat "$stage1_sql"',script)
+        self.assertIn("V3_PG17_STAGE1_DISABLED_ACTOR_SHELLS_ROLLBACK_PASS",script)
+        self.assertIn("V3_PG17_STAGE1_ABSENT_STAGE0_FAILCLOSED_PASS",script)
+        self.assertIn("ROLLBACK;",script)
+        readback=(ROOT/"supabase/v3-cas-actor-stage1-readonly-check-20261026.sql").read_text("utf-8")
+        self.assertIn("three_actor_shells_disabled",readback)
+        self.assertIn("'cas_dispatch_authorized',false",readback)
+        self.assertIn("'v3_paper_release_authorized',false",readback)
+
+
     def test_new_stage0_private_schema_source_has_no_runtime_grants_or_dispatch(self):
         src = (ROOT / "supabase/v3-cas-audit-stage0-private-quarantine-SOURCE-20261026.sql").read_text("utf-8")
         executable = "\n".join(x for x in src.splitlines()
