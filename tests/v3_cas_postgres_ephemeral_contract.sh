@@ -48,6 +48,77 @@ GRANT v3_cas_audit_reader TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
 SQL
 
 
+# PRE-COMMIT stage-0 quarantined production-schema SOURCE test. This runs
+# entirely inside one disposable PG17 transaction and ROLLS BACK before
+# touching the original inactive append-ledger source. No production roles,
+# credentials, schema, or paper data are touched by this script.
+stage0_sql="supabase/v3-cas-audit-stage0-private-quarantine-SOURCE-20261026.sql"
+pg -f - <<'SQL' >/dev/null
+CREATE ROLE v3_cas_operator_login LOGIN NOINHERIT NOBYPASSRLS;
+GRANT v3_cas_operator_login TO postgres
+ WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
+CREATE TABLE public.paper_series(series_id text PRIMARY KEY,status text NOT NULL);
+INSERT INTO public.paper_series VALUES
+ ('PAPER-V2R4-20261009T110135Z','active');
+SQL
+{
+  printf 'BEGIN;\n'
+  cat "$stage0_sql"
+  cat <<'SQL'
+DO $v3_stage0_ci$
+BEGIN
+ IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_namespace
+                WHERE nspname='v3_cas_audit')
+    OR (SELECT count(*) FROM pg_catalog.pg_class c
+        JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+        WHERE n.nspname='v3_cas_audit'
+          AND c.relname IN ('epoch_v1','intent_v1')
+          AND c.relrowsecurity AND c.relforcerowsecurity) <> 2
+    OR EXISTS(SELECT 1 FROM pg_catalog.pg_policies
+              WHERE schemaname='v3_cas_audit')
+    OR EXISTS (
+      SELECT 1 FROM pg_catalog.pg_roles r
+      WHERE r.rolname IN ('anon','authenticated','service_role',
+          'v3_cas_operator_login','v3_cas_executor',
+          'v3_cas_audit_writer','v3_cas_audit_reader')
+        AND (pg_catalog.has_schema_privilege(r.rolname,'v3_cas_audit','USAGE')
+           OR pg_catalog.has_table_privilege(r.rolname,
+                 'v3_cas_audit.epoch_v1','SELECT,INSERT,UPDATE,DELETE')
+           OR pg_catalog.has_table_privilege(r.rolname,
+                 'v3_cas_audit.intent_v1','SELECT,INSERT,UPDATE,DELETE'))
+    ) THEN
+    RAISE EXCEPTION 'FAIL_STAGE0_QUARANTINE_ACTOR_PRIVILEGE_OR_RLS';
+ END IF;
+END
+$v3_stage0_ci$;
+ROLLBACK;
+SQL
+} | pg -f - >/dev/null
+if [[ "$(pg -Atc "SELECT count(*) FROM pg_catalog.pg_namespace WHERE nspname='v3_cas_audit'")" != '0' ]]; then
+ echo 'FAIL_STAGE0_ROLLBACK_CREATED_PERSISTENT_SCHEMA' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE0_PRIVATE_SCHEMA_QUARANTINE_AND_ROLLBACK_PASS'
+
+# Negative: drift in an otherwise existing member's SET OPTION must
+# reject the ENTIRE STAGE0 transaction, never silently amend it.
+pg -c "GRANT v3_cas_audit_writer TO postgres WITH ADMIN TRUE, SET TRUE, INHERIT FALSE;" >/dev/null
+stage0_drift="$(mktemp)"
+if pg -f - < "$stage0_sql" >"$stage0_drift" 2>&1; then
+ cat "$stage0_drift" >&2
+ echo 'FAIL_STAGE0_ALLOWED_ROLE_SET_PRIVILEGE_DRIFT' >&2; exit 1
+fi
+if ! grep -q 'V3_STAGE0_ROLE_GRAPH_DRIFT_ABORT' "$stage0_drift" ; then
+ cat "$stage0_drift" >&2
+ echo 'FAIL_STAGE0_ROLE_DRIFT_WAS_NOT_REJECTED' >&2; exit 1
+fi
+rm -f "$stage0_drift"
+pg -c "GRANT v3_cas_audit_writer TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;" >/dev/null
+if [[ "$(pg -Atc "SELECT count(*) FROM pg_catalog.pg_namespace WHERE nspname='v3_cas_audit'")" != '0' ]]; then
+ echo 'FAIL_STAGE0_NEGATIVE_CREATED_SCHEMA' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE0_ROLE_DRIFT_ABORT_PASS'
+
+
 # The original source MUST remain unusable as-is, with zero schema effects.
 fail_log="$(mktemp)"
 trap 'cleanup; rm -f "$fail_log"' EXIT
