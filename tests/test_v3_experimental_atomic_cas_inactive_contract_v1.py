@@ -145,6 +145,56 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertIn("V3 CAS missing exact valid unique single-active Paper index",self.body)
         self.assertNotRegex(gate,r"(?im)^\s*(create|alter|drop)\s+index")
 
+    def test_private_committed_preinvoke_first_intent_is_server_side_gate(self):
+        # The standalone caller's claimed CMS/reader booleans cannot release
+        # the CAS; this does not prove the external identity or full request.
+        body = self.body
+        for predicate in (
+            "pg_catalog.to_regclass('v3_cas_audit.epoch_v1')",
+            "pg_catalog.to_regclass('v3_cas_audit.intent_v1')",
+            "V3_CAS_PREINVOKE_AUDIT_SCHEMA_ABSENT_HOLD",
+            "V3_CAS_PREINVOKE_REFERENCE_INVALID_HOLD",
+            "V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND",
+            "e.sealed is true and e.next_ordinal=2 and i.ordinal=1",
+            "i.intent_id=(p_new_v3_config->>'preinvoke_intent_id')::uuid",
+            "i.request_sha256=p_new_v3_config->>'preinvoke_request_sha256'",
+            "i.source_sha256=e.source_sha256",
+            "i.fence_sha256=e.original_fence_sha256",
+            "e.approved_caller_acl_sha256=p_new_v3_config->>'preinvoke_caller_acl_sha256'",
+            "i.created_at_utc>pg_catalog.clock_timestamp()-interval '5 minutes'",
+            "for update of e,i",
+        ):
+            with self.subTest(predicate=predicate):
+                self.assertIn(predicate, body)
+        self.assertLess(body.index("V3_CAS_PREINVOKE_AUDIT_SCHEMA_ABSENT_HOLD"),
+                        body.index("V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND"))
+        self.assertLess(body.index("V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND"),
+                        body.index("update public.paper_series"))
+        self.assertIn("NOT cryptographically recalculated", body)
+        self.assertNotIn("current_setting('v3.", body)
+        self.assertNotIn("SET ROLE v3_cas_executor", body)
+        self.assertNotIn("grant v3_cas_executor to v3_cas_operator_login", self.sql)
+
+    def test_native_pg17_intent_negative_fixtures_and_transaction_rollback(self):
+        fixture = POSTGRES_SMOKE_PATH.read_text(encoding="utf-8")
+        for evidence in (
+            "create schema v3_cas_audit",
+            "create table v3_cas_audit.epoch_v1",
+            "create table v3_cas_audit.intent_v1",
+            "drop schema v3_cas_audit cascade",
+            "missing private audit schema bypassed CAS",
+            "missing epoch reference bypassed CAS",
+            "wrong source accepted as committed intent",
+            "replayed/foreign intent ID accepted",
+            "unsealed epoch bypass or rollback restoration failure",
+            "unbounded second ordinal accepted",
+            "stale committed audit intent accepted",
+            "audit negative case modified protected Paper state",
+            "rollback;",
+        ):
+            with self.subTest(evidence=evidence):
+                self.assertIn(evidence, fixture)
+
     def test_conditional_atomicity_is_bound_to_original_cloud_state(self):
         for required in (
             "pg_advisory_xact_lock",
