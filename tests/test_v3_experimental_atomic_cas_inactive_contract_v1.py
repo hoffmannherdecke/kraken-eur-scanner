@@ -170,10 +170,65 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
                         body.index("V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND"))
         self.assertLess(body.index("V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND"),
                         body.index("update public.paper_series"))
-        self.assertIn("NOT cryptographically recalculated", body)
+        self.assertIn("The same PG17 canonical formula", body)
         self.assertNotIn("current_setting('v3.", body)
         self.assertNotIn("SET ROLE v3_cas_executor", body)
         self.assertNotIn("grant v3_cas_executor to v3_cas_operator_login", self.sql)
+
+    def test_all_sixteen_actual_rpc_arguments_have_server_side_digest_binding(self):
+        # This is a real PG17-source contract, not a claim that external
+        # custody/reader-after-COMMIT or signer ACL is already established.
+        body = self.body
+        self.assertEqual(body.count("V3_CAS_FULL_REQUEST_PG17_JSONB_SHA256_V1"), 1)
+        self.assertIn("v_actual_request_sha256 := pg_catalog.encode(", body)
+        self.assertIn("pg_catalog.sha256(pg_catalog.convert_to(", body)
+        self.assertIn("pg_catalog.jsonb_build_array(", body)
+        self.assertIn("p_new_v3_config - 'preinvoke_request_sha256'", body)
+        expr = body.split("v_actual_request_sha256 := ", 1)[1].split(";", 1)[0]
+        names = [
+            "p_expected_old_series_id", "p_expected_old_release_sha",
+            "p_expected_old_strategy_sha256", "p_expected_old_runtime_sha256",
+            "p_expected_old_candidate_count", "p_expected_old_trade_count",
+            "p_expected_old_last_outcome_updated_at",
+            "p_expected_old_last_trade_updated_at",
+            "p_proposed_v3_series_id", "p_proposed_v3_test_id",
+            "p_proposed_v3_revision", "p_cutover_at_utc", "p_new_v3_config",
+            "p_reviewed_new_repo_sha", "p_reviewed_new_bundle_sha256",
+            "p_reviewed_new_strategy_sha256",
+        ]
+        self.assertEqual(len(names), 16)
+        import re
+        for name in names:
+            with self.subTest(argument=name):
+                self.assertEqual(len(re.findall(r"\b" + name + r"\b", expr)), 1)
+        self.assertEqual(expr.count('YYYY-MM-DD"T"HH24:MI:SS.US"Z"'), 3)
+        self.assertIn("'UTF8'", expr)
+        self.assertIn("V3_CAS_FULL_REQUEST_MISMATCH_HOLD", body)
+        self.assertLess(body.index("i.request_sha256=p_new_v3_config"),
+                        body.index("v_actual_request_sha256 :="))
+        self.assertLess(body.index("V3_CAS_FULL_REQUEST_MISMATCH_HOLD"),
+                        body.index("update public.paper_series"))
+        self.assertNotIn("CREATE EXTENSION", self.sql.upper())
+        self.assertNotIn("CREATE ROLE", self.sql.upper())
+
+    def test_pg17_disposable_fixture_recomputes_both_standard_and_zero_trade_hash(self):
+        fixture = POSTGRES_SMOKE_PATH.read_text(encoding="utf-8")
+        for phrase in (
+            "request_sha := pg_catalog.encode(pg_catalog.sha256(",
+            "zero_trade_sha := pg_catalog.encode(pg_catalog.sha256(",
+            "'V3_CAS_FULL_REQUEST_PG17_JSONB_SHA256_V1'",
+            "pg_catalog.to_jsonb(request_sha)",
+            "pg_catalog.to_jsonb(zero_trade_sha)",
+            "request_sha256=zero_trade_sha",
+            "zero-trade fixture audit row not restored",
+            "tampered optional successor config bypassed full request SHA",
+            "full request mismatch mutated Paper lifecycle",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, fixture)
+        self.assertEqual(fixture.count(
+            "'V3_CAS_FULL_REQUEST_PG17_JSONB_SHA256_V1'"), 2)
+        self.assertIn("'V3_CAS_FULL_REQUEST_MISMATCH_HOLD'", self.body)
 
     def test_native_pg17_intent_negative_fixtures_and_transaction_rollback(self):
         fixture = POSTGRES_SMOKE_PATH.read_text(encoding="utf-8")

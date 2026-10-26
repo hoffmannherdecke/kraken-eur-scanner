@@ -135,6 +135,8 @@ declare
   new_test text := 'PAPER-V3-DISPOSABLE-SQL-CI-001';
   new_rev text := 'V3-EXPERIMENTAL-PAPER-CI-ONLY';
   cfg jsonb;
+  request_sha text;
+  zero_trade_sha text;
   n_out bigint;
   n_trade bigint;
   last_out timestamptz;
@@ -174,6 +176,41 @@ begin
     ,'preinvoke_fence_sha256',repeat('4',64)
     ,'preinvoke_caller_acl_sha256',repeat('5',64)
   );
+
+  -- Positive SYNTHETIC same-session fixture, NOT independently committed.
+  request_sha := pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+        pg_catalog.jsonb_build_array(
+          'V3_CAS_FULL_REQUEST_PG17_JSONB_SHA256_V1',
+          old_id,
+          old_sha,
+          strategy_sha,
+          runtime_sha,
+          n_out,
+          n_trade,
+          case when last_out is null then null
+            else pg_catalog.to_char(
+              last_out at time zone 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') end,
+          case when last_trade is null then null
+            else pg_catalog.to_char(
+              last_trade at time zone 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') end,
+          new_id,
+          new_test,
+          new_rev,
+          pg_catalog.to_char(stamp at time zone 'UTC',
+                             'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+          cfg - 'preinvoke_request_sha256',
+          new_sha,
+          bundle_sha,
+          new_strategy_sha
+        )::text, 'UTF8'
+      )), 'hex');
+  cfg := pg_catalog.jsonb_set(cfg,'{preinvoke_request_sha256}',pg_catalog.to_jsonb(request_sha),true);
+  update v3_cas_audit.intent_v1 set request_sha256=request_sha;
+  if (select request_sha256 from v3_cas_audit.intent_v1) is distinct from request_sha then
+    raise exception 'full digest fixture setup failed';
+  end if;
 
   -- EXECUTE must be absent for both public and live relay identities.
   if has_function_privilege('anon',fn,'EXECUTE')
@@ -312,6 +349,28 @@ begin
     raise exception 'audit negative case modified protected Paper state';
   end if;
 
+  -- An otherwise acceptable extra config property changes the full
+  -- request digest and must be denied before the first Paper update.
+  caught := false;
+  begin
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,
+      cfg||'{"unreviewed_model_override":{"risk":9000}}'::jsonb,
+      new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_FULL_REQUEST_MISMATCH_HOLD%' then
+      caught := true;
+    else raise; end if;
+  end;
+  if not caught then
+    raise exception 'tampered optional successor config bypassed full request SHA';
+  end if;
+  if (select status from public.paper_series where series_id=old_id) <> 'active'
+     or exists(select 1 from public.paper_series where series_id=new_id) then
+    raise exception 'full request mismatch mutated Paper lifecycle';
+  end if;
+
   -- Unsafe real-money successor must not pass even with CI synthetic permits.
   caught := false;
   begin
@@ -411,6 +470,37 @@ begin
   begin
     delete from public.paper_trade_results
      where candidate_id='preserve-old-open-trade';
+    -- Recompute on the zero-trade variant; never reuse another request's digest.
+    zero_trade_sha := pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+        pg_catalog.jsonb_build_array(
+          'V3_CAS_FULL_REQUEST_PG17_JSONB_SHA256_V1',
+          old_id,
+          old_sha,
+          strategy_sha,
+          runtime_sha,
+          n_out,
+          0,
+          case when last_out is null then null
+            else pg_catalog.to_char(
+              last_out at time zone 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') end,
+          case when null::timestamptz is null then null
+            else pg_catalog.to_char(
+              null::timestamptz at time zone 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') end,
+          new_id,
+          new_test,
+          new_rev,
+          pg_catalog.to_char(stamp at time zone 'UTC',
+                             'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+          cfg - 'preinvoke_request_sha256',
+          new_sha,
+          bundle_sha,
+          new_strategy_sha
+        )::text, 'UTF8'
+      )), 'hex');
+    cfg := pg_catalog.jsonb_set(cfg,'{preinvoke_request_sha256}',pg_catalog.to_jsonb(zero_trade_sha),true);
+    update v3_cas_audit.intent_v1 set request_sha256=zero_trade_sha;
     reply := public.rotate_v2r4_to_v3_experimental_paper(
       old_id,old_sha,strategy_sha,runtime_sha,n_out,0,last_out,null,
       new_id,new_test,new_rev,stamp,cfg,
@@ -447,6 +537,12 @@ begin
         <> n_trade then
     raise exception 'zero-trade disposable CAS did not roll back to original';
   end if;
+  -- PL/pgSQL variables are not rolled back; SQL audit row WAS rolled back.
+  cfg := pg_catalog.jsonb_set(cfg,'{preinvoke_request_sha256}',pg_catalog.to_jsonb(request_sha),true);
+  if (select request_sha256 from v3_cas_audit.intent_v1) is distinct from request_sha then
+    raise exception 'zero-trade fixture audit row not restored';
+  end if;
+
 
   -- Drift in the original candidate clock with an UNCHANGED candidate
   -- count must also abort CAS before it closes the original Paper series.
