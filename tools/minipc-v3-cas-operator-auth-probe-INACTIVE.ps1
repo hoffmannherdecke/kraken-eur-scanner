@@ -138,6 +138,14 @@ if ($version.code -ne 0 -or
     $version.output -notmatch 'psql \(PostgreSQL\) (17|18)\.[0-9]+') {
   throw 'V3_CAS_AUTH_HOLD: unsupported libpq client'
 }
+# Windows PowerShell 5.1 does not reliably autoload ProtectedData's .NET assembly.
+# The original owner's already-verified local stage explicitly loads System.Security.
+# Perform this before reading any credential, without network or elevated privileges.
+try {
+  Add-Type -AssemblyName System.Security -ErrorAction Stop
+} catch {
+  throw 'V3_CAS_AUTH_HOLD: Windows system cryptography unavailable; no credential read'
+}
 $sealed = [IO.File]::ReadAllBytes($secretFile)
 if ($sealed.Length -lt 40 -or $sealed.Length -gt 4096) {
   throw 'V3_CAS_AUTH_HOLD: existing sealed credential format invalid; do not regenerate'
