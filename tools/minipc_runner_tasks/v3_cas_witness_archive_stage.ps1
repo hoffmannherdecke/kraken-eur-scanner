@@ -168,6 +168,16 @@ if (-not $probeItem.PSIsContainer -or
     [bool]($probeItem.Attributes -band [IO.FileAttributes]::ReparsePoint)) {
   throw 'V3_WITNESS_STAGE_BLOCK: probe path invalid'
 }
+# Even a transient test child must not acquire unreviewed inherited permissions.
+$probeAcl = Get-Acl -LiteralPath $probe -ErrorAction Stop
+foreach ($ace in @($probeAcl.GetAccessRules(
+    $true, $true, [Security.Principal.SecurityIdentifier]))) {
+  if ($ace.AccessControlType -eq
+      [Security.AccessControl.AccessControlType]::Allow -and
+      [string]$ace.IdentityReference.Value -notin $accepted) {
+    throw 'V3_WITNESS_STAGE_BLOCK: probe child permission drift'
+  }
+}
 $psi = New-Object System.Diagnostics.ProcessStartInfo
 $psi.FileName = $python
 $prefix = if ($useLauncher) { '-3 ' } else { '' }
