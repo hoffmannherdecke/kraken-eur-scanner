@@ -214,6 +214,9 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
         self.assertNotIn("$args", s)
 
     def test_witness_archive_stage_has_one_fixed_approved_ntfs_scope(self):
+        # Temporary PR-head fingerprint readback for the existing context gate.
+        from tools.context_before_action import build
+        print("V3_AUTHOR_RESEARCH_FP_DIAG:", build(Path("."), "research")["fingerprint"])
         task = FOLDER / "v3_cas_witness_archive_stage.ps1"
         src = task.read_text("utf-8")
         self.assertEqual(reviewed_task_violations(task.stem, src), [])
