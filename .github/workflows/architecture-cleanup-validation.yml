@@ -46,17 +46,20 @@ jobs:
         run: python -m unittest tests.test_v3_paper_cloud_cas_separated_preflight_contract -v
       - name: Restricted generic Mini-PC task source contract (offline, no host run)
         run: python -m unittest tests.test_minipc_reviewed_task_source_contract -v
-      - name: Parse bounded V3 Mini-PC tasks on hosted CI (no host execution)
+      - name: Parse bounded V3 Mini-PC and interactive operator scripts (no execution)
         shell: pwsh
         run: |
           foreach ($script in @('tools/minipc_runner_tasks/v3_paper_offline_probe.ps1',
-                                'tools/minipc_runner_tasks/v3_cas_witness_archive_stage.ps1')) {
+                                'tools/minipc_runner_tasks/v3_cas_witness_archive_stage.ps1',
+                                'tools/minipc-v3-cas-operator-login-INACTIVE.ps1')) {
             $tokens = $null
             $errors = $null
             [void][System.Management.Automation.Language.Parser]::ParseFile(
               $script,[ref]$tokens,[ref]$errors)
             if (@($errors).Count -ne 0) { throw 'Invalid restricted V3 PowerShell' }
           }
+      - name: V3 interactive CAS operator local DPAPI and manual no-CAS enrollment contract
+        run: python -m unittest tests.test_v3_cas_operator_login_contract -v
       - name: V3 independent originalhost detached CMS signature primitive (offline keys only)
         shell: pwsh
         run: ./tests/test_v3_originalhost_signed_cms_offline.ps1
