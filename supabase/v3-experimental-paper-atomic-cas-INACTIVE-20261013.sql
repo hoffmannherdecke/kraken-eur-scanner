@@ -22,6 +22,26 @@
 -- new V3 insertion. On unknown commit result the host operator MUST fence
 -- BOTH writers and independently READ BACK the active series; no auto retry.
 
+-- DDL ATTEMPT BOUNDARY (SOURCE ONLY; not approved to install):
+-- PostgreSQL grants EXECUTE on newly created functions to PUBLIC by default;
+-- Supabase may additionally grant anon/authenticated/service_role defaults.
+-- A standalone CREATE followed by a standalone REVOKE is NOT failclosed if
+-- an operator stops or a client commits between statements. Keep creation
+-- and REVOKE inside ONE server-side DO statement/one transaction. No one
+-- can observe the callable public SECURITY DEFINER function before the
+-- matching REVOKE commits. If an object already exists, abort rather than
+-- silently replace a possibly privileged endpoint or altering its grants.
+-- This is only a prospective installation safety improvement; no deployed
+-- CAS, no privilege, no originalhost signer and NO V3 Paper release.
+do $v3_cas_install_locked$
+begin
+  if pg_catalog.to_regprocedure(
+    'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
+  ) is not null then
+    raise exception 'V3_CAS_INSTALL_EXISTING_SIGNATURE_HOLD';
+  end if;
+
+  execute $v3_cas_create_locked$
 create or replace function public.rotate_v2r4_to_v3_experimental_paper(
     p_expected_old_series_id text,
     p_expected_old_release_sha text,
@@ -263,11 +283,16 @@ begin
 end;
 $v3_atomic_cas$;
 
--- INERT EVEN IF ACCIDENTALLY MIGRATED:
--- DO NOT grant EXECUTE to service_role until external Edge dual-token,
--- physical supervisor disable/stop/backup/rollback, old-followup owner,
--- freeze status compatibility and six E2E gates are independently signed.
+  $v3_cas_create_locked$;
+
+  -- Still within this same DO statement: do not allow any PUBLIC endpoint
+  -- to become observable if client/operator crashes before grants are revoked.
+  execute $v3_cas_revoke_locked$
 revoke all on function public.rotate_v2r4_to_v3_experimental_paper(
     text,text,text,text,bigint,bigint,timestamptz,timestamptz,
     text,text,text,timestamptz,jsonb,text,text,text)
     from public, anon, authenticated, service_role;
+
+  $v3_cas_revoke_locked$;
+end;
+$v3_cas_install_locked$;
