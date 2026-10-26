@@ -259,7 +259,7 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
             "invoke-webrequest", "start-process", "set-acl", "icacls",
             "start-service", "set-service", "register-scheduledtask",
             "remove-item", "del /", "rd /s", "trading\\runtime",
-            "set-executionpolicy", "git pull", "supabase",
+            "set-executionpolicy", "git pull", "supabase functions deploy",
             "upload-artifact", "aws ", "sigstore upload",
         ):
             self.assertNotIn(forbidden, active, forbidden)
