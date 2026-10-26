@@ -19,6 +19,10 @@ function Read-ValidatedSnapshot([byte[]]$bytes) {
     throw 'V3_NOTEBOOK_HOLD: unpassende JSON-Dateigroesse'
   }
   $raw=[Text.Encoding]::UTF8.GetString($bytes)
+  # Windows Notepad and Windows PowerShell may add one UTF-8 BOM.
+  if ($raw.Length -gt 0 -and $raw[0] -eq [char]0xFEFF) {
+    $raw=$raw.Substring(1)
+  }
   try {
     $row=ConvertFrom-Json -InputObject $raw -ErrorAction Stop
   } catch {
