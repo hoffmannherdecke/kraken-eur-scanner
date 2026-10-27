@@ -116,7 +116,10 @@ JOIN v3_cas_audit.intent_v1 i ON i.epoch_id=e.epoch_id
 WHERE (SELECT count(*) FROM v3_cas_audit.epoch_v1)=1
   AND (SELECT count(*) FROM v3_cas_audit.intent_v1)=1
   AND session_user='v3_cas_audit_reader_actor'
-  AND current_user='v3_cas_audit_reader';
+  AND current_user='v3_cas_audit_reader'
+  AND NOT pg_catalog.pg_has_role(session_user,'v3_cas_audit_writer','SET')
+  AND NOT pg_catalog.has_function_privilege(current_user,
+    'v3_cas_audit.append_intent_v1(text,uuid,text,text,text)','EXECUTE');
 COMMIT;
 '@
 }
