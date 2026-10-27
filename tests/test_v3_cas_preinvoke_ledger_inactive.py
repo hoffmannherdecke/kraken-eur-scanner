@@ -713,8 +713,13 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
     def test_existing_stage3_dpapi_reader_writer_readonly_source(self):
         src = (ROOT / "tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1").read_text("utf-8")
         self.assertIn("Add-Type -AssemblyName System.Security -ErrorAction Stop", src)
-        self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 2)
-        self.assertEqual(src.count("COMMIT;"), 2)
+        # Original two-actor default plus ONE expressly opt-in Reader-only
+        # current snapshot; never a third Actor, writer, or Cloud authority.
+        self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 3)
+        self.assertEqual(src.count("COMMIT;"), 3)
+        self.assertIn("[switch]$PrecommitCloudInventory", src)
+        self.assertIn("if($PrecommitCloudInventory)", src)
+        self.assertIn("if ($passed -eq 2)", src)
         self.assertIn("writer.dpapi", src)
         self.assertIn("reader.dpapi", src)
         self.assertIn("DataProtectionScope]::CurrentUser", src)
