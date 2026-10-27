@@ -37,7 +37,7 @@ fi
 docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root \
   -c "CREATE ROLE postgres LOGIN NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;" >/dev/null
 docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root \
-  -c "CREATE DATABASE postgres OWNER postgres;" >/dev/null
+  -c "ALTER DATABASE postgres OWNER TO postgres;" >/dev/null
 pg() {
   docker exec --interactive "$container" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres "$@"
 }
