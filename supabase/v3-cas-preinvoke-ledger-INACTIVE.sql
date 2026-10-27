@@ -137,16 +137,11 @@ begin
   create role v3_cas_audit_append_definer nologin noinherit nobypassrls;
   -- PostgreSQL 17 non-superuser CREATEROLE gives postgres a bootstrap
   -- ADMIN TRUE / SET FALSE membership, insufficient for ALTER ... OWNER.
+  -- A nonsuperuser CREATEROLE creator may not grant ADMIN TRUE back to
+  -- its own grantor (PG17 rejects that), but may request only SET TRUE.
   -- Permit SET ROLE only inside this single still-INACTIVE transactional DO,
   -- then remove the temporary self-grant before commit. A deliberately
   -- privileged DBA still remains an acknowledged custody exception.
-  grant v3_cas_audit_table_owner to postgres
-    with admin true, inherit false, set true;
-  grant create on schema v3_cas_audit to v3_cas_audit_table_owner;
-  alter table v3_cas_audit.epoch_v1 owner to v3_cas_audit_table_owner;
-  alter table v3_cas_audit.intent_v1 owner to v3_cas_audit_table_owner;
-  revoke create on schema v3_cas_audit from v3_cas_audit_table_owner;
-  revoke v3_cas_audit_table_owner from postgres;
   -- PostgreSQL FK referential-integrity triggers run as the constrained
   -- table owner; this NOLOGIN table owner needs schema USAGE, not CREATE.
   grant usage on schema v3_cas_audit
@@ -185,6 +180,20 @@ begin
   create policy v3_cas_intent_definer_insert_v1
     on v3_cas_audit.intent_v1 for insert
     to v3_cas_audit_append_definer with check (true);
+
+  -- PostgreSQL 17 nonsuperuser postgres must grant required column
+  -- privileges and CREATE the RLS policies WHILE it is still table owner.
+  -- Only AFTER the policies/grants exist may the table ownership move to
+  -- the separate dormant owner; otherwise PostgreSQL correctly rejects
+  -- the following GRANT and CREATE POLICY as permission denied.
+  -- All of this remains in one still-INACTIVE atomic DO transaction.
+  grant v3_cas_audit_table_owner to postgres
+    with admin false, inherit false, set true;
+  grant create on schema v3_cas_audit to v3_cas_audit_table_owner;
+  alter table v3_cas_audit.epoch_v1 owner to v3_cas_audit_table_owner;
+  alter table v3_cas_audit.intent_v1 owner to v3_cas_audit_table_owner;
+  revoke create on schema v3_cas_audit from v3_cas_audit_table_owner;
+  revoke v3_cas_audit_table_owner from postgres;
 
   -- The ONLY future audit mutation entrypoint: one SECURITY DEFINER
   -- append operation holding the bound epoch FOR UPDATE. Revoke all direct
@@ -260,7 +269,7 @@ begin
   -- Critical: no inherited postgres/admin owner on SECURITY DEFINER.
   -- The executable definer is NOLOGIN and cannot own/ALTER the tables.
   grant v3_cas_audit_append_definer to postgres
-    with admin true, inherit false, set true;
+    with admin false, inherit false, set true;
   grant create on schema v3_cas_audit to v3_cas_audit_append_definer;
   alter function v3_cas_audit.append_intent_v1(
     text, uuid, text, text, text) owner to v3_cas_audit_append_definer;

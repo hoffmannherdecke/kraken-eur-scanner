@@ -16,12 +16,13 @@ trap cleanup EXIT
 echo 'V3_PG17_TEST_ISOLATED_NETWORK_NONE'
 docker run --detach --rm --name "$container" --network none \
   --memory 512m --tmpfs /var/lib/postgresql/data:rw,size=200m \
+  -e POSTGRES_USER=v3_ci_restore_root \
   -e POSTGRES_PASSWORD=disposable_offline_ci_only \
   postgres:17-alpine >/dev/null
 
 ready=0
 for i in $(seq 1 40); do
-  if docker exec "$container" pg_isready -q -U postgres -d postgres >/dev/null 2>&1; then
+  if docker exec "$container" pg_isready -q -U v3_ci_restore_root -d v3_ci_restore_root >/dev/null 2>&1; then
     ready=1; break
   fi
   sleep 1
@@ -30,21 +31,30 @@ if [[ "$ready" -ne 1 ]]; then
   echo 'FAIL_PG17_EPHEMERAL_NOT_READY' >&2
   exit 1
 fi
+# Initialize the DISPOSABLE database with a distinct, private bootstrap
+# SUPERUSER. Actual "postgres" is then CREATED from the beginning with the
+# same restricted PG17 role class as original production Supabase.
+docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root \
+  -c "CREATE ROLE postgres LOGIN NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;" >/dev/null
+docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root \
+  -c "ALTER DATABASE postgres OWNER TO postgres;" >/dev/null
 pg() {
   docker exec --interactive "$container" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres "$@"
 }
+pg_root() {
+  docker exec --interactive "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root "$@"
+}
+if [[ "$(pg -Atc "select (not rolsuper and rolcreaterole and rolbypassrls)::text from pg_roles where rolname='postgres'")" != "true" ]]; then
+  echo 'FAIL_PG17_LIMITED_ORIGINAL_POSTGRES_INITIALIZED' >&2; exit 1
+fi
 pg -c "create role anon nologin; create role authenticated nologin; create role service_role nologin;" >/dev/null
-# Mirror the prior real-production roles bootstrap BEFORE unsealing the
-# otherwise inactive source. PG17 superuser Docker would otherwise not
-# receive the restricted postgres creator-admin grants automatically.
-# This tests safe source reuse rather than duplicate CREATE ROLE errors.
+# Actual PG17 nonsuperuser CREATEROLE creates one original ADMIN-only
+# membership to postgres automatically (SET FALSE/INHERIT FALSE).
+# Do NOT re-GRANT membership to one's own grantor: PG17 rightly rejects it.
 pg -f - <<'SQL' >/dev/null
 CREATE ROLE v3_cas_executor NOLOGIN NOINHERIT NOBYPASSRLS;
 CREATE ROLE v3_cas_audit_writer NOLOGIN NOINHERIT NOBYPASSRLS;
 CREATE ROLE v3_cas_audit_reader NOLOGIN NOINHERIT NOBYPASSRLS;
-GRANT v3_cas_executor TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
-GRANT v3_cas_audit_writer TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
-GRANT v3_cas_audit_reader TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
 SQL
 
 
@@ -55,8 +65,6 @@ SQL
 stage0_sql="supabase/v3-cas-audit-stage0-private-quarantine-SOURCE-20261026.sql"
 pg -f - <<'SQL' >/dev/null
 CREATE ROLE v3_cas_operator_login LOGIN NOINHERIT NOBYPASSRLS;
-GRANT v3_cas_operator_login TO postgres
- WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
 CREATE TABLE public.paper_series(series_id text PRIMARY KEY,status text NOT NULL);
 INSERT INTO public.paper_series VALUES
  ('PAPER-V2R4-20261009T110135Z','active');
@@ -99,9 +107,9 @@ if [[ "$(pg -Atc "SELECT count(*) FROM pg_catalog.pg_namespace WHERE nspname='v3
 fi
 echo 'V3_PG17_STAGE0_PRIVATE_SCHEMA_QUARANTINE_AND_ROLLBACK_PASS'
 
-# Negative: drift in an otherwise existing member's SET OPTION must
-# reject the ENTIRE STAGE0 transaction, never silently amend it.
-pg -c "GRANT v3_cas_audit_writer TO postgres WITH ADMIN TRUE, SET TRUE, INHERIT FALSE;" >/dev/null
+# Negative: wrong LOGIN permission on existing audit-writer role must reject
+# the ENTIRE Stage0 transaction, not mutate existing private state.
+pg_root -c "ALTER ROLE v3_cas_audit_writer LOGIN;" >/dev/null
 stage0_drift="$(mktemp)"
 if pg -f - < "$stage0_sql" >"$stage0_drift" 2>&1; then
  cat "$stage0_drift" >&2
@@ -112,7 +120,7 @@ if ! grep -q 'V3_STAGE0_ROLE_GRAPH_DRIFT_ABORT' "$stage0_drift" ; then
  echo 'FAIL_STAGE0_ROLE_DRIFT_WAS_NOT_REJECTED' >&2; exit 1
 fi
 rm -f "$stage0_drift"
-pg -c "GRANT v3_cas_audit_writer TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;" >/dev/null
+pg_root -c "ALTER ROLE v3_cas_audit_writer NOLOGIN;" >/dev/null
 if [[ "$(pg -Atc "SELECT count(*) FROM pg_catalog.pg_namespace WHERE nspname='v3_cas_audit'")" != '0' ]]; then
  echo 'FAIL_STAGE0_NEGATIVE_CREATED_SCHEMA' >&2; exit 1
 fi
@@ -223,6 +231,18 @@ existing_epoch_oid="$(pg -Atc "select 'v3_cas_audit.epoch_v1'::regclass::oid")"
 existing_intent_oid="$(pg -Atc "select 'v3_cas_audit.intent_v1'::regclass::oid")"
 echo 'V3_PG17_CURRENT_PRODUCTION_STAGE0_SHAPE_STAGED_PASS'
 
+# Unlike Docker's default postgres SUPERUSER, the original production
+# Supabase postgres is a PG17 NON-superuser with CREATEROLE and BYPASSRLS.
+# Exercise the already prepared Stage-0 -> Stage-2 owner/grant transition
+# under those real privilege characteristics, not under a CI superuser.
+# The separate disposable bootstrap root role restores the fixture for the
+# unrelated legacy negative ACL tests that follow. Zero Cloud access.
+if [[ "$(docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root -Atc 'select current_user')" != "v3_ci_restore_root" ]] ||
+   [[ "$(pg -Atc "select (not rolsuper and rolcreaterole and rolbypassrls)::text from pg_roles where rolname='postgres'")" != "true" ]]; then
+  echo 'FAIL_PG17_NON_SUPERUSER_CAS_OWNER_FIXTURE_NOT_EFFECTIVE' >&2; exit 1
+fi
+echo 'V3_PG17_REAL_SUPABASE_LIKE_NON_SUPERUSER_ROLE_SCOPE_PASS'
+
 # ONLY within the isolated networkless disposable container: remove exactly
 # one known first-statement throw to check the UNREACHABLE candidate syntax.
 # This transformed SQL is NEVER committed, emitted as a migration or run in
@@ -236,6 +256,18 @@ assert sql.count(needle) == 1
 assert sql.lower().count("do $v3_cas_ledger_inactive$") == 1
 print(sql.replace(needle, "  -- ONLY_EPHEMERAL_PG17_TEST_REMOVED_FIRST_THROW", 1))
 PY
+
+# The source has now run as effective NON-superuser postgres, with PG17
+# CREATEROLE/BYPASSRLS, and must not leave direct SET/CREATE grants in that
+# original administrator's production-like effective role scope.
+if [[ "$(pg -Atc "select (not rolsuper and rolcreaterole and rolbypassrls)::text from pg_roles where rolname='postgres'")" != "true" ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles r on r.oid=m.roleid join pg_roles g on g.oid=m.member where r.rolname in ('v3_cas_audit_table_owner','v3_cas_audit_append_definer') and (g.rolname <> 'postgres' or m.set_option or m.inherit_option or not m.admin_option)")" != "0" ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_roles where rolname in ('v3_cas_audit_table_owner','v3_cas_audit_append_definer') and has_schema_privilege(rolname,'v3_cas_audit','CREATE')")" != "0" ]]; then
+  echo 'FAIL_PG17_ORIGINAL_NON_SUPERUSER_EFFECTIVE_SET_OR_CREATE_PRIVILEGE_LEAK' >&2; exit 1
+fi
+echo 'V3_PG17_ORIGINAL_NON_SUPERUSER_STAGE2_EFFECTIVE_OWNER_AND_REVOKE_PASS'
+docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root \
+  -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
 
 # Upgrade MUST preserve existing Stage-0 table identity, not recreate or
 # replace old audit data-plane tables.
@@ -378,7 +410,10 @@ BEGIN
  AND NOT rolcanlogin AND NOT rolbypassrls AND NOT rolinherit;
  IF n <> 5 THEN RAISE EXCEPTION 'FAIL_FIVE_RESTRICTED_NOLOGIN_ROLES'; END IF;
  IF EXISTS (SELECT 1 FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.roleid
-   WHERE r.rolname IN ('v3_cas_audit_table_owner','v3_cas_audit_append_definer'))
+   JOIN pg_roles g ON g.oid=m.member
+   WHERE r.rolname IN ('v3_cas_audit_table_owner','v3_cas_audit_append_definer')
+     AND (g.rolname <> 'postgres' OR m.set_option OR m.inherit_option
+          OR NOT m.admin_option))
  THEN RAISE EXCEPTION 'FAIL_OWNER_ROLE_MEMBER_INHERITANCE'; END IF;
  IF (SELECT count(*) FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.roleid
    JOIN pg_roles a ON a.oid=m.member
