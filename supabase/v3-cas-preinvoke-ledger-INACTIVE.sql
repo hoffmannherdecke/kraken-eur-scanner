@@ -13,7 +13,7 @@ begin
   -- Stage-0 source). Never CREATE a duplicate table or silently repair a
   -- different schema. All checks precede any owner/role/function changes.
   -- The preceding unconditional RAISE keeps this SOURCE permanently inert.
-  if pg_catalog.current_user <> 'postgres'
+  if current_user <> 'postgres'
      or pg_catalog.current_database() <> 'postgres'
      or pg_catalog.to_regnamespace('v3_cas_audit') is null
      or pg_catalog.to_regclass('v3_cas_audit.epoch_v1') is null
@@ -142,8 +142,10 @@ begin
   -- privileged DBA still remains an acknowledged custody exception.
   grant v3_cas_audit_table_owner to postgres
     with admin true, inherit false, set true;
+  grant create on schema v3_cas_audit to v3_cas_audit_table_owner;
   alter table v3_cas_audit.epoch_v1 owner to v3_cas_audit_table_owner;
   alter table v3_cas_audit.intent_v1 owner to v3_cas_audit_table_owner;
+  revoke create on schema v3_cas_audit from v3_cas_audit_table_owner;
   revoke v3_cas_audit_table_owner from postgres;
   -- PostgreSQL FK referential-integrity triggers run as the constrained
   -- table owner; this NOLOGIN table owner needs schema USAGE, not CREATE.
@@ -259,8 +261,10 @@ begin
   -- The executable definer is NOLOGIN and cannot own/ALTER the tables.
   grant v3_cas_audit_append_definer to postgres
     with admin true, inherit false, set true;
+  grant create on schema v3_cas_audit to v3_cas_audit_append_definer;
   alter function v3_cas_audit.append_intent_v1(
     text, uuid, text, text, text) owner to v3_cas_audit_append_definer;
+  revoke create on schema v3_cas_audit from v3_cas_audit_append_definer;
   revoke v3_cas_audit_append_definer from postgres;
 
   -- LIMITS: These roles are not assigned credentials or executor EXECUTE.
