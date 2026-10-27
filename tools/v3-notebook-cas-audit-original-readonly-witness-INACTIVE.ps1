@@ -4,7 +4,7 @@
 # Session-pooler TLS sslmode=require encrypts transport, but does NOT check the server CA.
 # A PASS is scoped to THIS query only, never a durable intent or release authorization.
 [CmdletBinding()]
-param()
+param([switch]$PrecommitCloudInventory)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $psql = 'C:\Program Files\PostgreSQL\17\bin\psql.exe'
@@ -62,6 +62,29 @@ COMMIT;
 '@
     }
 )
+# Optional authenticated CURRENT reader-only ledger snapshot, no CAS history.
+if($PrecommitCloudInventory){
+ $checks=@($checks | Where-Object { $_.Name -ceq 'READER' })
+ if($checks.Count -ne 1){throw 'V3_PRECOMMIT_READER_AMBIGUOUS'}
+ $checks[0].Sql=@'
+SET ROLE v3_cas_audit_reader;
+BEGIN TRANSACTION READ ONLY;
+SELECT pg_catalog.jsonb_build_object(
+ 'kind','V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1',
+ 'observed_at_utc',pg_catalog.to_char(pg_catalog.clock_timestamp()
+     AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+ 'actor',session_user,'role',current_user,
+ 'epochs',(SELECT count(*) FROM v3_cas_audit.epoch_v1),
+ 'intents',(SELECT count(*) FROM v3_cas_audit.intent_v1),
+ 'writer_role_access',pg_catalog.pg_has_role(session_user,'v3_cas_audit_writer','SET'),
+ 'append_access',pg_catalog.has_function_privilege(
+   current_user,'v3_cas_audit.append_intent_v1(text,uuid,text,text,text)','EXECUTE'),
+ 'history_never_proven',false,
+ 'restore_authorized',false
+)::text;
+COMMIT;
+'@
+}
 $passed = 0
 foreach ($check in $checks) {
     $plain = $null
@@ -83,7 +106,67 @@ foreach ($check in $checks) {
         # Scope precisely two static role names. Never pass user-supplied SQL.
         $conn = "host=$hostName port=5432 dbname=postgres user=$($check.Login).$project sslmode=require connect_timeout=10"
         $output = & $psql -X -w -qAt -v ON_ERROR_STOP=1 -d $conn -c $check.Sql 2>&1
-        if ($LASTEXITCODE -eq 0 -and (($output | Out-String).Trim() -ceq 'PASS')) {
+        if($PrecommitCloudInventory){
+            if($LASTEXITCODE -ne 0){throw 'V3_PRECOMMIT_READER_SQL_HOLD'}
+            $row=(($output|Out-String).Trim()|ConvertFrom-Json -ErrorAction Stop)
+            $at=[datetimeoffset]::MinValue
+            if($null -eq $row -or
+                [string]$row.kind -cne 'V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1' -or
+                [string]$row.actor -cne 'v3_cas_audit_reader_actor' -or
+                [string]$row.role -cne 'v3_cas_audit_reader' -or
+                [string]$row.observed_at_utc -cnotmatch 'Z
+    }
+    catch {
+        # No raw SQL error output or password serialization in chat or logs.
+        Write-Output "$($check.Name)_READONLY_SCOPE_HOLD"
+    }
+    finally {
+        Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
+        Remove-Variable secret,output -ErrorAction SilentlyContinue
+        if ($null -ne $plain) { [Array]::Clear($plain,0,$plain.Length) }
+    }
+}
+if($PrecommitCloudInventory){
+ if($passed -ne 1){exit 1}
+ return
+}
+if ($passed -eq 2) {
+    Write-Output 'V3_STAGE3_TWO_ORIGINAL_READONLY_AUDIT_SESSIONS_PASS_NO_CAS'
+} else {
+    Write-Output 'V3_STAGE3_READONLY_AUDIT_HOLD'
+    exit 1
+}
+ -or
+                -not [datetimeoffset]::TryParse([string]$row.observed_at_utc,[ref]$at) -or
+                ([datetimeoffset]::UtcNow-$at).TotalSeconds -gt 90 -or
+                ([datetimeoffset]::UtcNow-$at).TotalSeconds -lt -5 -or
+                [string]$row.epochs -cne '0' -or
+                [string]$row.intents -cne '0' -or
+                $row.writer_role_access -ne $false -or
+                $row.append_access -ne $false -or
+                $row.history_never_proven -ne $false -or
+                $row.restore_authorized -ne $false){
+                throw 'V3_PRECOMMIT_READER_NONEMPTY_OR_UNVERIFIED_HOLD'
+            }
+            [pscustomobject]@{
+                kind='V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1'
+                status='AUTHENTICATED_READER_CURRENT_EMPTY_NOT_HISTORICAL_NEVER'
+                observed_at_utc=[string]$row.observed_at_utc
+                epoch_count=0
+                intent_count=0
+                actor='v3_cas_audit_reader_actor'
+                role='v3_cas_audit_reader'
+                independent_tls_certificate_verified=$false
+                independent_attempt_history_complete=$false
+                historical_cas_never_proven=$false
+                public_old_only_series_verified_here=$false
+                native_rearm_authorized=$false
+                precommit_restore_authorized=$false
+                cloud_cas_authorized=$false
+                v3_paper_release_authorized=$false
+            }|ConvertTo-Json -Compress
+            $passed++
+        } elseif ($LASTEXITCODE -eq 0 -and (($output | Out-String).Trim() -ceq 'PASS')) {
             Write-Output "$($check.Name)_READONLY_SCOPE_PASS"
             $passed++
         } else {
