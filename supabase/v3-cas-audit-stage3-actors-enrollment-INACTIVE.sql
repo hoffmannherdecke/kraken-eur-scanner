@@ -3,6 +3,9 @@
 -- generated ONLY on the user's single-user Notebook, never in GitHub/chat.
 -- Requires already installed original Stage-2 private audit schema.
 -- Limited to TWO existing actor shells; V3 CAS executor remains disabled.
+-- Do not SELECT private Stage2 table rows as restricted postgres: the
+-- original Stage2 ownership/ACL intentionally denies it. A separate
+-- authenticated audit reader verifies row state after later enrollment.
 -- Never creates an audit epoch/intent, CAS RPC, V3 Paper series or Task.
 DO $v3_cas_stage3_audit_actors$
 DECLARE
@@ -20,8 +23,7 @@ BEGIN
      OR (SELECT count(*) FROM public.paper_series WHERE status='active') <> 1
      OR (SELECT count(*) FROM public.paper_series WHERE status='active'
          AND series_id='PAPER-V2R4-20261009T110135Z') <> 1
-     OR EXISTS(SELECT 1 FROM v3_cas_audit.epoch_v1)
-     OR EXISTS(SELECT 1 FROM v3_cas_audit.intent_v1) THEN
+     THEN
     RAISE EXCEPTION 'V3_STAGE3_STAGE2_OR_ORIGINAL_SERIES_NOT_READY';
   END IF;
   IF v_writer !~ '^SCRAM-SHA-256\$4096:[A-Za-z0-9+/]{22}==\$[A-Za-z0-9+/]{43}=:[A-Za-z0-9+/]{43}=$'
