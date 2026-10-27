@@ -1,10 +1,10 @@
 # Projektweite Arbeitsanweisung — Aktien & Krypto Chancen
 
-## V3 Paper – Stand 27.10.2026 (nur V3-Aufträge)
+## V3 Paper – PR593 (27.10.2026)
 
-**V3 DONE:** Stages0–3/PR582; PR583/586 HARDLOCKED SOURCE, PR584/587 CLOSED. Mini-PC 70/70 Stage, Disabled V3-Task aktualisiert + XML-Backup. PR515-PRECAS-Backup/Lesetest 26.10. PASS. V2R4 aktiv; CAS OFF.
+**DONE, nicht wiederholen:** Stage0–3, Mini-PC 70/70 + V3-Task Disabled/XML, PR515-Backup/Lesetest, Notebook-DPAPI/PG-Reader 0/0. PR583/586 Stage4/5 gesperrt, PR584/587 CLOSED; PR589–593 nur GitHub SOURCE, nicht am Mini-PC installiert.
 
-**Nächstes V3-Gate:** PR515-No-Rearm/QUIESCED/Precommit-Recovery im bestehenden Cutover-Operator integrieren. ARMED-2-Zyklen-Leser: SOURCE/READONLY, kein Stop/CAS. Echte PID-/Fence-/ACL-/Cloud-CAS-Autorität, sechs E2E und finale Freigabe weiter offen. PASS nicht wiederholen; Owner #99/#353.
+**Nächstes Release-Gate #99:** echter Originalhost-PID/Fence/ACL/PR515-No-Rearm-Nachweis und exklusive externe CAS-Attempt-/UNKNOWN-Custody ab erster RPC. 0/0/Logs beweisen kein historisches NEVER. Keine neue Quelle ohne konkrete Lücke. V2R4 aktiv, V3 Disabled, STOP/Restore/CAS gesperrt; Stage4/Writer/Reader/Stage5, sechs E2E, Freigabe offen. Kontext #353; Details im Backlog.
 
 **Projektweit, auch für V4+:** Zusammenarbeit, Hard-/Software, Mini-PC, Scanner, Cloud, Research, Betrieb und Strategien. **Auftragsbereich zuerst bestimmen, nie V3 automatisch annehmen.** Allgemeine Regeln sind keine Strategie-Release-Gates. Hardwarearbeiten brauchen eigene Betriebsprüfungen; eine Strategieverknüpfung nur bei konkret belegter Abhängigkeit.
 
