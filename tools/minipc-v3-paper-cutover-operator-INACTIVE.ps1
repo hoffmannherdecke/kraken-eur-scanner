@@ -1533,6 +1533,114 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  }
 }
 
+# The exact future PR515 ARMED -> QUIESCED phase transition, kept next to
+# the ONE existing original native stop/restore owner, not a second scheduler.
+# Source-only: two locks remain, including external CAS-custody authority
+# immediately BEFORE the first intended filesystem mutation.
+function Invoke-V3Pr515ArmedToQuiescedSOURCE_ONLY(
+ [string]$Root,[object]$OriginalReadback,[string]$BackupFolder,
+ [string]$ReviewedPr515Sha,[string]$ExpectedArmedFenceSha) {
+ throw 'V3_PR515_ARMED_TO_QUIESCED_SOURCE_UNCONDITIONALLY_LOCKED'
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
+  throw 'V3_QUIESCED_ORIGINAL_WINDOWS_ONLY'
+ }
+ $real=[IO.Path]::GetFullPath($Root).TrimEnd('\')
+ if(-not $real.Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase) -or
+    $ReviewedPr515Sha -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedArmedFenceSha -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'V3_QUIESCED_ORIGINAL_SOURCE_OR_FENCE_PIN_INVALID'
+ }
+ $who=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $who.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_QUIESCED_ADMIN_REQUIRED'
+ }
+ $fence=Join-Path $real 'State\v3-experimental-paper-old-intake-fence.json'
+ $item=Get-Item -LiteralPath $fence -Force -ErrorAction Stop
+ if($item.PSIsContainer -or
+    [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 8192 -or
+    (Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ExpectedArmedFenceSha){
+  throw 'V3_QUIESCED_UNTRUSTED_ARMED_FENCE'
+ }
+ $acl=Get-Acl -LiteralPath $fence -ErrorAction Stop
+ if(-not $acl.AreAccessRulesProtected){throw 'V3_QUIESCED_ARMED_FENCE_ACL_DRIFT'}
+ foreach($rule in @($acl.Access)){
+  if($rule.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow){
+   $sid=$rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+   if($sid -notin @('S-1-5-18','S-1-5-32-544')){
+    throw 'V3_QUIESCED_FENCE_UNTRUSTED_WRITER'
+   }
+  }
+ }
+ $marker=Get-Content -LiteralPath $fence -Raw -ErrorAction Stop|ConvertFrom-Json
+ if([string]$marker.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
+    [string]$marker.phase -cne 'ARMED' -or
+    [string]$marker.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    -not(Test-V3ScopedIntakeTaskSet -Names @($marker.task_names)) -or
+    $marker.paper_only -ne $true -or
+    $marker.orders_enabled -ne $false -or
+    $marker.real_money_actions -ne $false -or
+    $marker.persistent_until_explicit_owner_release -ne $true){
+  throw 'V3_QUIESCED_MARKER_SCOPE_NOT_ARMED'
+ }
+ # Originalhost-only native readbacks; an old source pin or single cycle HOLD.
+ $two=Read-V3Pr515ArmedTwoCycleOriginalHost -Report $OriginalReadback -Root $real -BackupDirectory $BackupFolder -ExpectedCloudSha $ReviewedPr515Sha -ExpectedFenceSha $ExpectedArmedFenceSha
+ if([string]$two.kind -cne 'V3_PR515_ORIGINALHOST_ARMED_TWO_CYCLE_LOCAL_READONLY_V1' -or
+    [string]$two.status -cne 'ARMED_TWO_ORIGINAL_LOCAL_CYCLES_OBSERVED_NOT_QUIESCED' -or
+    $two.current_two_native_xml_disabled_only_reread_pass -ne $true -or
+    $two.current_pr515_source_recheck_pass -ne $true -or
+    [string]$two.unchanged_armed_fence_sha256 -cne $ExpectedArmedFenceSha -or
+    $two.cloud_cas_invoked -ne $false -or
+    $two.v3_paper_release_authorized -ne $false){
+  throw 'V3_QUIESCED_TWO_CYCLE_OR_PR515_ACK_INCOMPLETE'
+ }
+ # Source-level re-read of the two native intake Tasks. Protected Lifecycle
+ # and CloudSync remain running; no stop/enable or process kill occurs here.
+ $tasks=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ foreach($name in $tasks){
+  if([string](Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop).State -cne 'Disabled'){
+   throw 'V3_QUIESCED_NATIVE_INTAKE_REARMED'
+  }
+ }
+ foreach($name in @('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')){
+  if([string](Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop).State -cne 'Running'){
+   throw 'V3_QUIESCED_AFTERCARE_NOT_RUNNING'
+  }
+ }
+ # Independent original PID-family absence, exclusive caller/ACL proof, and
+ # complete NEVER/UNKNOWN CAS custody are not provided by the local two-cycle
+ # readback. Do not weaken this boundary with caller-supplied Boolean fields.
+ # It must later be wired to the existing independently authenticated owners.
+ throw 'V3_PR515_QUIESCED_EXTERNAL_PID_AND_CAS_CUSTODY_NOT_WIRED'
+ # Future separately authorized marker-only phase promotion, never auto-rearm:
+ # secure same-directory File.Replace, preserving the exact protected ACL.
+ $marker.phase='QUIESCED'
+ $temp=$fence+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
+ $backup=$fence+'.'+[guid]::NewGuid().ToString('N')+'.armed.bak'
+ if(Test-Path -LiteralPath $temp){throw 'V3_QUIESCED_TEMP_COLLISION'}
+ [IO.File]::WriteAllText($temp,($marker|ConvertTo-Json -Depth 6),[Text.UTF8Encoding]::new($false))
+ Set-Acl -LiteralPath $temp -AclObject $acl -ErrorAction Stop
+ if((Test-Path -LiteralPath $backup) -or
+    (Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ExpectedArmedFenceSha){
+  throw 'V3_QUIESCED_ORIGINAL_FENCE_RACE'
+ }
+ [IO.File]::Replace($temp,$fence,$backup,$true)
+ $after=Get-Content -LiteralPath $fence -Raw -ErrorAction Stop|ConvertFrom-Json
+ if([string]$after.phase -cne 'QUIESCED' -or
+    [string]$after.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z'){
+  throw 'V3_QUIESCED_PHASE_READBACK_HOLD_LEAVE_FENCE'
+ }
+ return [pscustomobject]@{
+  kind='V3_PR515_ORIGINALHOST_QUIESCED_MARKER_SOURCE_V1'
+  status='QUIESCED_LOCAL_ONLY_PENDING_INDEPENDENT_POSTSTOP_ACK'
+  native_intake_tasks_changed_here=$false
+  external_cas_never_history_verified_here=$false
+  automatic_old_writer_rearm_allowed=$false
+  cloud_cas_invocation_authorized=$false
+  v3_paper_release_authorized=$false
+ }
+}
+
 # Current PR515 PRE-COMMIT manual recovery SOURCE ONLY. This is the sole
 # future two-Task RESTORE owner; never invoke historic PR332/PR419 drill paths.
 # -Execute remains unconditionally locked at the existing outer CLI. This
