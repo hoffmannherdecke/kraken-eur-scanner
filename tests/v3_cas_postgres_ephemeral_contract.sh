@@ -223,6 +223,22 @@ existing_epoch_oid="$(pg -Atc "select 'v3_cas_audit.epoch_v1'::regclass::oid")"
 existing_intent_oid="$(pg -Atc "select 'v3_cas_audit.intent_v1'::regclass::oid")"
 echo 'V3_PG17_CURRENT_PRODUCTION_STAGE0_SHAPE_STAGED_PASS'
 
+# Unlike Docker's default postgres SUPERUSER, the original production
+# Supabase postgres is a PG17 NON-superuser with CREATEROLE and BYPASSRLS.
+# Exercise the already prepared Stage-0 -> Stage-2 owner/grant transition
+# under those real privilege characteristics, not under a CI superuser.
+# A separate disposable offline root role restores the fixture for the
+# unrelated legacy negative ACL tests that follow. Zero Cloud access.
+pg -c "CREATE ROLE v3_ci_restore_root SUPERUSER LOGIN NOINHERIT;" >/dev/null
+if [[ "$(docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d postgres -Atc 'select current_user')" != "v3_ci_restore_root" ]]; then
+  echo 'FAIL_PG17_ISOLATED_TEST_ROOT_UNAVAILABLE_BEFORE_ROLE_DEMOTION' >&2; exit 1
+fi
+pg -c "ALTER ROLE postgres NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;" >/dev/null
+if [[ "$(pg -Atc "select (not rolsuper and rolcreaterole and rolbypassrls)::text from pg_roles where rolname='postgres'")" != "true" ]]; then
+  echo 'FAIL_PG17_NON_SUPERUSER_CAS_OWNER_FIXTURE_NOT_EFFECTIVE' >&2; exit 1
+fi
+echo 'V3_PG17_REAL_SUPABASE_LIKE_NON_SUPERUSER_ROLE_SCOPE_PASS'
+
 # ONLY within the isolated networkless disposable container: remove exactly
 # one known first-statement throw to check the UNREACHABLE candidate syntax.
 # This transformed SQL is NEVER committed, emitted as a migration or run in
@@ -236,6 +252,18 @@ assert sql.count(needle) == 1
 assert sql.lower().count("do $v3_cas_ledger_inactive$") == 1
 print(sql.replace(needle, "  -- ONLY_EPHEMERAL_PG17_TEST_REMOVED_FIRST_THROW", 1))
 PY
+
+# The source has now run as effective NON-superuser postgres, with PG17
+# CREATEROLE/BYPASSRLS, and must not leave direct SET/CREATE grants in that
+# original administrator's production-like effective role scope.
+if [[ "$(pg -Atc "select (not rolsuper and rolcreaterole and rolbypassrls)::text from pg_roles where rolname='postgres'")" != "true" ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles r on r.oid=m.roleid where r.rolname in ('v3_cas_audit_table_owner','v3_cas_audit_append_definer')")" != "0" ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_roles where rolname in ('v3_cas_audit_table_owner','v3_cas_audit_append_definer') and has_schema_privilege(rolname,'v3_cas_audit','CREATE')")" != "0" ]]; then
+  echo 'FAIL_PG17_ORIGINAL_NON_SUPERUSER_ROLE_OR_TRANSIENT_GRANTS_LEAK' >&2; exit 1
+fi
+echo 'V3_PG17_ORIGINAL_NON_SUPERUSER_STAGE2_EFFECTIVE_OWNER_AND_REVOKE_PASS'
+docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d postgres \
+  -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
 
 # Upgrade MUST preserve existing Stage-0 table identity, not recreate or
 # replace old audit data-plane tables.
