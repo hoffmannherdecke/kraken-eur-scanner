@@ -741,5 +741,52 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         self.assertNotIn("Write-Output $_.Exception.Message", src)
         self.assertIn("if ($passed -eq 2)", src)
 
+
+class V3Stage4OnceBoundEpochSourceTests(unittest.TestCase):
+    """Source-only: a real release epoch must never be opened by CI/client."""
+
+    def test_both_once_only_sources_hardlocked_and_no_runtime_side_effects(self):
+        paths = (
+            ROOT / "supabase/v3-cas-audit-stage4-once-epoch-open-INACTIVE.sql",
+            ROOT / "supabase/v3-cas-audit-stage4-once-epoch-seal-INACTIVE.sql",
+        )
+        for path, verb in zip(paths, ("OPEN", "SEAL")):
+            src = path.read_text("utf-8")
+            assert_str = "V3_STAGE4_EPOCH_" + verb + "_SOURCE_INACTIVE_APPROVAL_REQUIRED"
+            self.assertIn("RAISE EXCEPTION '" + assert_str + "';", src)
+            self.assertTrue(src.startswith("-- V3 Paper original"))
+            self.assertIn("BEGIN;", src)
+            self.assertIn("COMMIT;", src)
+            self.assertIn("GRANT v3_cas_audit_table_owner TO postgres", src)
+            self.assertIn("WITH ADMIN FALSE, INHERIT FALSE, SET TRUE", src)
+            self.assertIn("REVOKE v3_cas_audit_table_owner FROM postgres;", src)
+            self.assertIn("SET LOCAL ROLE v3_cas_audit_table_owner;", src)
+            self.assertEqual(src.count("SET LOCAL ROLE v3_cas_audit_table_owner;"), 2)
+            self.assertEqual(src.count("RESET ROLE;"), 2)
+            self.assertIn("pg_catalog.pg_has_role('postgres','v3_cas_audit_table_owner','SET')", src)
+            self.assertIn("v3_cas_executor_actor", src)
+            self.assertIn("'PAPER-V2R4-20261009T110135Z'", src)
+            self.assertIn("NOT rel", src.replace("relrowsecurity AND relforcerowsecurity", "NOT rel"))  # RLS preflight source link.
+            self.assertNotIn("CREATE ROLE", src)
+            self.assertNotIn("ALTER ROLE", src)
+            self.assertNotIn("DROP TABLE", src)
+            self.assertNotIn("CREATE POLICY", src)
+            self.assertNotIn("CREATE FUNCTION", src)
+            self.assertNotIn("service_role TO postgres", src)
+            self.assertNotIn("GRANT EXECUTE", src)
+        opener, sealer = (p.read_text("utf-8") for p in paths)
+        self.assertIn("GRANT INSERT (epoch_id,predecessor_series_id,expected_rpc,", opener)
+        self.assertIn("REVOKE INSERT (epoch_id,predecessor_series_id,expected_rpc,", opener)
+        self.assertIn("V3_STAGE4_OPEN_POSTFLIGHT_REVOKE_OR_EPOCH_HOLD", opener)
+        self.assertIn("GRANT UPDATE (sealed)", sealer)
+        self.assertIn("REVOKE UPDATE (sealed)", sealer)
+        self.assertIn("V3_STAGE4_SEAL_DURABLE_EXACT_INTENT_NOT_VISIBLE_HOLD", sealer)
+        self.assertIn("i.created_at_utc>pg_catalog.clock_timestamp()-interval '5 minutes'", sealer)
+        shell = (ROOT / "tests/v3_cas_postgres_ephemeral_contract.sh").read_text("utf-8")
+        self.assertIn("V3_PG17_STAGE4_BOTH_INACTIVE_SOURCE_LOCKS_PASS", shell)
+        self.assertIn("V3_PG17_STAGE4_ONCE_EPOCH_OPEN_SEAL_SOURCE_PASS_NO_RELEASE", shell)
+        self.assertIn("render_stage4_fixture", shell)
+        self.assertIn("FAIL_STAGE4_SEAL_REPLAY_ACCEPTED", shell)
+
 if __name__ == "__main__":
     unittest.main()
