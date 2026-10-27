@@ -261,6 +261,119 @@ if [[ "$(pg -Atc "select 'v3_cas_audit.epoch_v1'::regclass::oid")" != "$existing
 fi
 echo 'V3_PG17_STAGE2_INPLACE_TABLE_OID_PRESERVED_PASS'
 
+# Stage 3 SOURCE-ONLY: exercise exactly two separate already-named dormant
+# shells and locally synthesized CI-fixture SCRAM verifiers in the SAME
+# disposable PG17 database. No production password, role, network or CAS.
+stage3_sql="supabase/v3-cas-audit-stage3-actors-enrollment-INACTIVE.sql"
+if pg -f - < "$stage3_sql" >/dev/null 2>&1; then
+ echo 'FAIL_STAGE3_INACTIVE_TEMPLATE_EXECUTABLE' >&2; exit 1
+fi
+# Real actor shells were originally created by a non-superuser
+# CREATEROLE postgres; recreate THAT exact PG17 auto-admin membership.
+pg_root -c "ALTER ROLE postgres NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;" >/dev/null
+pg -f - <<'SQL' >/dev/null
+CREATE ROLE v3_cas_audit_writer_actor NOSUPERUSER NOLOGIN NOINHERIT
+ NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION
+ CONNECTION LIMIT 0 PASSWORD NULL VALID UNTIL '2000-01-01';
+CREATE ROLE v3_cas_audit_reader_actor NOSUPERUSER NOLOGIN NOINHERIT
+ NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION
+ CONNECTION LIMIT 0 PASSWORD NULL VALID UNTIL '2000-01-01';
+CREATE ROLE v3_cas_executor_actor NOSUPERUSER NOLOGIN NOINHERIT
+ NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION
+ CONNECTION LIMIT 0 PASSWORD NULL VALID UNTIL '2000-01-01';
+SQL
+python - "$stage3_sql" <<'PY' | pg -f - >/dev/null
+import base64, hashlib, hmac, pathlib, sys
+s=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+needle="  RAISE EXCEPTION 'V3_STAGE3_LOCAL_ENROLLMENT_TEMPLATE_INACTIVE';"
+assert s.count(needle)==1
+def scram(pwd, salt):
+  salted=hashlib.pbkdf2_hmac("sha256",pwd.encode("ascii"),salt,4096)
+  client=hmac.new(salted,b"Client Key","sha256").digest()
+  stored=hashlib.sha256(client).digest()
+  server=hmac.new(salted,b"Server Key","sha256").digest()
+  return "SCRAM-SHA-256$4096:"+base64.b64encode(salt).decode()+"$"+base64.b64encode(stored).decode()+":"+base64.b64encode(server).decode()
+s=s.replace(needle,"  -- disposable offline CI only; live source remains locked.",1)
+s=s.replace("__WRITER_SCRAM_SHA256_VERIFIER__",scram("CI-WRITER-NO-PRODUCTION-SECRET",b"ci_writer_salt_1"))
+s=s.replace("__READER_SCRAM_SHA256_VERIFIER__",scram("CI-READER-NO-PRODUCTION-SECRET",b"ci_reader_salt_1"))
+assert "__" not in s
+print(s)
+PY
+pg -f - <<'SQL' >/dev/null
+DO $v3_stage3_ci$
+BEGIN
+ IF (SELECT count(*) FROM pg_roles WHERE rolname IN
+     ('v3_cas_audit_writer_actor','v3_cas_audit_reader_actor')
+     AND rolcanlogin AND NOT rolinherit AND NOT rolbypassrls AND rolconnlimit=1) <> 2
+  OR (SELECT count(*) FROM pg_roles WHERE rolname='v3_cas_executor_actor'
+     AND NOT rolcanlogin AND rolconnlimit=0) <> 1
+  OR (SELECT count(*) FROM pg_auth_members m
+      JOIN pg_roles a ON a.oid=m.member
+      JOIN pg_roles g ON g.oid=m.roleid
+      WHERE ((a.rolname='v3_cas_audit_writer_actor' AND g.rolname='v3_cas_audit_writer')
+         OR (a.rolname='v3_cas_audit_reader_actor' AND g.rolname='v3_cas_audit_reader'))
+       AND NOT m.admin_option AND NOT m.inherit_option AND m.set_option) <> 2
+  OR NOT pg_has_role('v3_cas_audit_writer_actor','v3_cas_audit_writer','SET')
+  OR NOT pg_has_role('v3_cas_audit_reader_actor','v3_cas_audit_reader','SET')
+  OR pg_has_role('v3_cas_audit_reader_actor','v3_cas_audit_writer','SET')
+  OR pg_has_role('v3_cas_audit_writer_actor','v3_cas_audit_reader','SET')
+  THEN
+   RAISE EXCEPTION 'FAIL_STAGE3_TWO_DISTINCT_AUTHENTICABLE_AUDIT_ACTORS';
+ END IF;
+END
+$v3_stage3_ci$;
+SQL
+# postgres:17-alpine loopback defaults to TRUST; force the two NEW
+# Stage3 actors onto narrow SCRAM-only rules before testing credentials.
+# This file lives ONLY in the disposable --network none PG17 container.
+docker exec -u postgres "$container" sh -ec '
+ sed -i "1i host postgres v3_cas_audit_writer_actor 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
+ sed -i "1i host postgres v3_cas_audit_reader_actor 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
+'
+# Reload requires cluster admin and is test-container-only.
+pg_root -c 'SELECT pg_reload_conf();' >/dev/null
+# These actual PG17 TCP/SCRAM logins are isolated CI-fixture credentials.
+# They verify DIFFERENT session_user roles, distinct SET ROLE capabilities
+# and a wrong-password rejection. Never use these source-fixed fixture secrets
+# in the real Notebook/Supabase or claim this is production authentication.
+for tuple in \
+ 'v3_cas_audit_writer_actor|v3_cas_audit_writer|CI-WRITER-NO-PRODUCTION-SECRET' \
+ 'v3_cas_audit_reader_actor|v3_cas_audit_reader|CI-READER-NO-PRODUCTION-SECRET'; do
+ IFS='|' read -r actor group pwd <<< "$tuple"
+ actual="$(docker exec -e PGPASSWORD="$pwd" "$container" \
+   psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 -U "$actor" -d postgres \
+     -c "SET ROLE $group; SELECT session_user || '|' || current_user;" 2>/dev/null)"
+ if [[ "$actual" != "$actor|$group" ]]; then
+  echo 'FAIL_STAGE3_DIFFERENT_ACTOR_SCRAM_TCP_SESSION' >&2; exit 1
+ fi
+done
+if docker exec -e PGPASSWORD='CI-INTENTIONALLY-WRONG' "$container" \
+    psql -X -qAt -h 127.0.0.1 -U v3_cas_audit_reader_actor -d postgres \
+    -c 'select current_user;' >/dev/null 2>&1; then
+  echo 'FAIL_STAGE3_INCORRECT_PASSWORD_AUTHENTICATED' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE3_DISTINCT_REAL_CI_SCRAM_TCP_SESSIONS_PASS_CAS_OFF'
+# Check the actual Notebook helper syntax using hosted PowerShell AST only.
+# Parsing does not run its -Stage flag, read DPAPI or create local secrets.
+if command -v pwsh >/dev/null 2>&1; then
+ pwsh -NoProfile -NonInteractive -Command '
+   $tokens=$null; $errors=$null
+   [System.Management.Automation.Language.Parser]::ParseFile(
+     "tools/v3-notebook-cas-stage3-two-actor-scram-INACTIVE.ps1",
+     [ref]$tokens,[ref]$errors) | Out-Null
+   if($errors.Count -ne 0){ throw "V3_STAGE3_PWSH_SOURCE_SYNTAX_HOLD" }
+ ' >/dev/null
+fi
+echo 'V3_PG17_STAGE3_DISTINCT_WRITER_READER_ACTORS_SOURCE_TEST_PASS_CAS_OFF'
+# Restore disposable-root semantics for legacy isolated tests only.
+pg_root -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
+# Confirm audit data remained unchanged independently, using ONLY the
+# disposable PG17 bootstrap root; restricted postgres is denied table SELECT.
+if [[ "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ||
+      "$(pg -Atc 'select count(*) from v3_cas_audit.intent_v1')" != '0' ]]; then
+  echo 'FAIL_STAGE3_ENROLLMENT_WROTE_AUDIT_DATA' >&2; exit 1
+fi
+
 # PostgreSQL real catalog readback: both tables RLS+FORCE, no exposed schema,
 # no generic EXECUTE/grants, and no CAS RPC. Validate effective role privileges.
 pg -f - <<'SQL' >/dev/null

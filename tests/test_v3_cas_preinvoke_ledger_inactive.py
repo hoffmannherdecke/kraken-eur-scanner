@@ -200,6 +200,44 @@ class V3CasAuditInactiveTests(unittest.TestCase):
                         executable.index("revoke v3_cas_audit_table_owner from postgres"))
 
 
+    def test_stage3_offline_two_actor_source_hardlocked_and_scoped(self):
+        sql=(ROOT/"supabase/v3-cas-audit-stage3-actors-enrollment-INACTIVE.sql").read_text("utf-8")
+        ps=(ROOT/"tools/v3-notebook-cas-stage3-two-actor-scram-INACTIVE.ps1").read_text("utf-8")
+        effective="\n".join(x for x in sql.splitlines() if not x.lstrip().startswith("--"))
+        self.assertTrue(effective.lstrip().lower().startswith(
+          "do $v3_cas_stage3_audit_actors$\ndeclare"))
+        self.assertLess(sql.index("RAISE EXCEPTION 'V3_STAGE3_LOCAL_ENROLLMENT_TEMPLATE_INACTIVE'"),
+                        sql.index("GRANT v3_cas_audit_writer TO v3_cas_audit_writer_actor"))
+        for word in ("__WRITER_SCRAM_SHA256_VERIFIER__",
+                     "__READER_SCRAM_SHA256_VERIFIER__",
+                     "GRANT v3_cas_audit_writer TO v3_cas_audit_writer_actor",
+                     "GRANT v3_cas_audit_reader TO v3_cas_audit_reader_actor",
+                     "WITH ADMIN FALSE, INHERIT FALSE, SET TRUE;",
+                     "V3_STAGE3_TWO_DISTINCT_SCRAM_VERIFIERS_REQUIRED",
+                     "V3_STAGE3_STAGE2_PRIVATE_ACL_DRIFT_HOLD",
+                     "V3_STAGE3_ACTOR_OR_GROUP_ROLE_DRIFT_HOLD",
+                     "V3_STAGE3_POST_ENROLLMENT_DRIFT_ROLLBACK"):
+            with self.subTest(required=word): self.assertIn(word,sql)
+        for forbidden in ("CREATE ROLE", "CREATE TABLE", "CREATE FUNCTION",
+                          "GRANT v3_cas_executor", "ALTER ROLE v3_cas_executor_actor LOGIN",
+                          "UPDATE public.paper_series", "INSERT INTO v3_cas_audit.",
+                          "DELETE FROM", "DROP ", "service_role TO"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden.upper(),effective.upper())
+        self.assertIn("[switch]$Stage",ps)
+        self.assertIn("[switch]$RemoveEnrollmentSql",ps)
+        self.assertIn("INACTIVE_PREVIEW",ps)
+        self.assertIn("DataProtectionScope]::CurrentUser",ps)
+        self.assertIn("Rfc2898DeriveBytes",ps)
+        self.assertIn("V3_STAGE3_HOLD_EXISTING_LOCAL_IDENTITY_NO_OVERWRITE",ps)
+        self.assertIn("plaintext_password_displayed=$false",ps)
+        self.assertIn("network_used=$false; cloud_mutation=$false",ps)
+        self.assertNotIn("Invoke-WebRequest",ps)
+        self.assertNotIn("Start-Process",ps)
+        script=(ROOT/"tests/v3_cas_postgres_ephemeral_contract.sh").read_text("utf-8")
+        self.assertIn("V3_PG17_STAGE3_DISTINCT_WRITER_READER_ACTORS_SOURCE_TEST_PASS_CAS_OFF",script)
+        self.assertIn("stage3_sql=\"supabase/v3-cas-audit-stage3-actors-enrollment-INACTIVE.sql\"",script)
+
     def test_approved_stage2_artifact_exactly_matches_locked_canonical_source(self):
         """The only reviewed install SQL differs by a header + one hardlock,
         not by altered permission statements or hidden CAS functionality.
