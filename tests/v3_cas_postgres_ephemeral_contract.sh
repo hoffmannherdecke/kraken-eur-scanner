@@ -323,6 +323,14 @@ BEGIN
 END
 $v3_stage3_ci$;
 SQL
+# postgres:17-alpine loopback defaults to TRUST; force the two NEW
+# Stage3 actors onto narrow SCRAM-only rules before testing credentials.
+# This file lives ONLY in the disposable --network none PG17 container.
+docker exec -u postgres "$container" sh -ec '
+ sed -i "1i host postgres v3_cas_audit_writer_actor 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
+ sed -i "1i host postgres v3_cas_audit_reader_actor 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
+'
+pg -c 'SELECT pg_reload_conf();' >/dev/null
 # These actual PG17 TCP/SCRAM logins are isolated CI-fixture credentials.
 # They verify DIFFERENT session_user roles, distinct SET ROLE capabilities
 # and a wrong-password rejection. Never use these source-fixed fixture secrets
