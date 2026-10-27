@@ -362,6 +362,11 @@ if command -v pwsh >/dev/null 2>&1; then
      "tools/v3-notebook-cas-stage3-two-actor-scram-INACTIVE.ps1",
      [ref]$tokens,[ref]$errors) | Out-Null
    if($errors.Count -ne 0){ throw "V3_STAGE3_PWSH_SOURCE_SYNTAX_HOLD" }
+   $tokens=$null; $errors=$null
+   [System.Management.Automation.Language.Parser]::ParseFile(
+     "tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1",
+     [ref]$tokens,[ref]$errors) | Out-Null
+   if($errors.Count -ne 0){ throw "V3_STAGE3_ORIGINAL_READER_PWSH_SOURCE_SYNTAX_HOLD" }
  ' >/dev/null
 fi
 echo 'V3_PG17_STAGE3_DISTINCT_WRITER_READER_ACTORS_SOURCE_TEST_PASS_CAS_OFF'
