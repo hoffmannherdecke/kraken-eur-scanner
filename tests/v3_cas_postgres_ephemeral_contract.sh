@@ -6,6 +6,8 @@
 set -Eeuo pipefail
 cd "$(git rev-parse --show-toplevel)"
 source_sql="supabase/v3-cas-preinvoke-ledger-INACTIVE.sql"
+# Reviewed one-time Stage-2 source; the dormant original retains its first RAISE.
+stage2_sql="supabase/v3-cas-audit-stage2-install-APPROVED-20261027.sql"
 container="v3-cas-pg-contract-$$"
 
 cleanup() {
@@ -204,15 +206,7 @@ echo 'V3_PG17_INACTIVE_FIRST_STATEMENT_LOCK_PASS'
 # The quarantined Stage-0 tables have already been created in production.
 # Assert the future Stage-2 upgrade cannot proceed when Stage-0 is missing.
 # This remains the same disposable, networkless PostgreSQL instance.
-if python - "$source_sql" <<'PY' | pg -f - >/dev/null 2>&1
-from pathlib import Path
-import sys
-text = Path(sys.argv[1]).read_text(encoding="utf-8")
-needle = "  raise exception 'V3_CAS_AUDIT_LEDGER_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
-assert text.count(needle) == 1
-print(text.replace(needle, "  -- ONLY_EPHEMERAL_PG17_TEST_REMOVED_FIRST_THROW", 1))
-PY
-then
+if pg -f - < "$stage2_sql" >/dev/null 2>&1; then
   echo 'FAIL_STAGE2_ACCEPTED_WITHOUT_STAGE0' >&2; exit 1
 fi
 if [[ "$(pg -Atc "select count(*) from pg_namespace where nspname='v3_cas_audit'")" != '0' ]]; then
@@ -243,19 +237,9 @@ if [[ "$(docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_ro
 fi
 echo 'V3_PG17_REAL_SUPABASE_LIKE_NON_SUPERUSER_ROLE_SCOPE_PASS'
 
-# ONLY within the isolated networkless disposable container: remove exactly
-# one known first-statement throw to check the UNREACHABLE candidate syntax.
-# This transformed SQL is NEVER committed, emitted as a migration or run in
-# production; original source file remains unchanged and hardlocked.
-python - "$source_sql" <<'PY' | pg -f - >/dev/null
-from pathlib import Path
-import sys
-sql = Path(sys.argv[1]).read_text(encoding="utf-8")
-needle = "  raise exception 'V3_CAS_AUDIT_LEDGER_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
-assert sql.count(needle) == 1
-assert sql.lower().count("do $v3_cas_ledger_inactive$") == 1
-print(sql.replace(needle, "  -- ONLY_EPHEMERAL_PG17_TEST_REMOVED_FIRST_THROW", 1))
-PY
+# Execute the EXACT separately reviewed Stage-2 install artifact under the
+# production-like PG17 non-superuser; original dormant SQL stays hardlocked.
+pg -f - < "$stage2_sql" >/dev/null
 
 # The source has now run as effective NON-superuser postgres, with PG17
 # CREATEROLE/BYPASSRLS, and must not leave direct SET/CREATE grants in that
