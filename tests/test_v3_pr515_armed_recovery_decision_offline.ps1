@@ -119,7 +119,7 @@ Need 'stale Cloud' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_ARMED_
 $x=Clone $r;$x.independent_cloud_precommit_cas_never_invoked_ack=$false
 Need 'external CAS ack absent' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_ARMED_CURRENT_BACKUP_OR_INDEPENDENT_CLOUD_ACK'
 $x=Clone $r;$x.phase='QUIESCED';$x.fence_marker_phase='QUIESCED'
-$x.current_pr515_quiesced_readonly_preview=Clone $post
+$x | Add-Member -NotePropertyName current_pr515_quiesced_readonly_preview -NotePropertyValue (Clone $post)
 $x.current_pr515_quiesced_readonly_preview.kind='V3_PRECAS_PR515_QUIESCED_READONLY_COMPATIBILITY_V1'
 $x.current_pr515_quiesced_readonly_preview.status='QUIESCED_NATIVE_SOURCE_MATCH_NOT_RELEASED'
 $x.current_pr515_quiesced_readonly_preview.single_local_supervisor_pr515_quiesced_observation_only=$true
