@@ -569,6 +569,8 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
    $resolution='BLOCK_INVALID_SCOPE_OR_RECEIPT'
  } else {
   $phase=[string]$Receipt.phase
+  # Receipt phase and fence claim must agree, but caller JSON is not authority.
+  $marker=[string]$Receipt.fence_marker_phase
   $outcome=[string]$Receipt.cloud_cas_outcome
   $invoked=($Receipt.cloud_cas_invoked -eq $true)
   if($outcome -notin @('NOT_INVOKED','UNKNOWN','NOT_COMMITTED','COMMITTED')){
@@ -613,7 +615,7 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
       $resolution='HOLD_ARMED_CURRENT_BACKUP_OR_INDEPENDENT_CLOUD_ACK'
     }
    }
-  } elseif($phase -eq 'QUIESCED' -and
+  } elseif($phase -eq 'QUIESCED' -and $marker -ceq 'QUIESCED' -and
       (Test-V3ScopedOriginalBackupContract -Manifest $Receipt.backup_manifest) -and
       $Receipt.backup_contract_verified -eq $true -and
       $Receipt.native_intake_tasks_disabled_ack -eq $true -and
@@ -1747,8 +1749,11 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
   throw 'V3_PRECOMMIT_ORIGINAL_FENCE_SHA_CHANGED'
  }
  $marker=Get-Content -LiteralPath $fence -Raw -ErrorAction Stop|ConvertFrom-Json
+ $currentPhase=[string]$marker.phase
+ # The native STOP may have left ARMED; both original pre-CAS phases are
+ # eligible for strict manual review, never auto-rearm or synthetic approval.
  if([string]$marker.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
-    [string]$marker.phase -cne 'QUIESCED' -or
+    $currentPhase -notin @('ARMED','QUIESCED') -or
     [string]$marker.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
     -not(Test-V3ScopedIntakeTaskSet -Names @($marker.task_names)) -or
     [string]$marker.proposed_v3_repo_sha -cnotmatch '^[a-f0-9]{40}$' -or
@@ -1762,15 +1767,35 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
  }
  # Typed original backup/source readback must be re-executed against the
  # currently Disabled native Tasks, not just a caller-provided PR536 Boolean.
- $actual=Read-V3Pr515FreshRecoveryPreview -Report $OriginalReadback -Root $real -BackupDirectory $BackupDirectory -ExpectedCloudSha $ReviewedPr515SourceSha256 -ExpectedQuiesced
- if(-not(Test-V3Pr515QuiescedRecoveryIdentity -Before $RecoveryReceipt.current_pr515_readonly_preview -After $actual) -or
-    -not(Test-V3Pr515QuiescedRecoveryIdentity -Before $RecoveryReceipt.current_pr515_readonly_preview -After $RecoveryReceipt.current_pr515_quiesced_readonly_preview) -or
-    [string]$actual.current_backup_directory_leaf -cne [string]$RecoveryReceipt.current_pr515_quiesced_readonly_preview.current_backup_directory_leaf -or
-    [string]$actual.pr515_source_sha256 -cne [string]$RecoveryReceipt.current_pr515_quiesced_readonly_preview.pr515_source_sha256){
+ # The original on-disk fence decides the phase; caller strings cannot.
+ if([string]$RecoveryReceipt.phase -cne $currentPhase -or
+    [string]$RecoveryReceipt.fence_marker_phase -cne $currentPhase){
+  throw 'V3_PRECOMMIT_RECEIPT_ORIGINAL_FENCE_PHASE_MISMATCH'
+ }
+ $before=$RecoveryReceipt.current_pr515_readonly_preview
+ $after=$null
+ $valid=$false
+ $expectedDisposition=$null
+ if($currentPhase -ceq 'ARMED'){
+  $after=$RecoveryReceipt.current_pr515_armed_readonly_preview
+  $actual=Read-V3Pr515FreshRecoveryPreview -Report $OriginalReadback -Root $real -BackupDirectory $BackupDirectory -ExpectedCloudSha $ReviewedPr515SourceSha256 -ExpectedArmed
+  $valid=(Test-V3Pr515ArmedRecoveryIdentity -Before $before -After $actual) -and
+         (Test-V3Pr515ArmedRecoveryIdentity -Before $before -After $after)
+  $expectedDisposition='PRE_CAS_ARMED_MANUAL_RESTORE_REVIEW_CANDIDATE_NOT_EXECUTABLE'
+ }else{
+  $after=$RecoveryReceipt.current_pr515_quiesced_readonly_preview
+  $actual=Read-V3Pr515FreshRecoveryPreview -Report $OriginalReadback -Root $real -BackupDirectory $BackupDirectory -ExpectedCloudSha $ReviewedPr515SourceSha256 -ExpectedQuiesced
+  $valid=(Test-V3Pr515QuiescedRecoveryIdentity -Before $before -After $actual) -and
+         (Test-V3Pr515QuiescedRecoveryIdentity -Before $before -After $after)
+  $expectedDisposition='PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE'
+ }
+ if(-not $valid -or
+    [string]$actual.current_backup_directory_leaf -cne [string]$after.current_backup_directory_leaf -or
+    [string]$actual.pr515_source_sha256 -cne [string]$after.pr515_source_sha256){
   throw 'V3_PRECOMMIT_CURRENT_TWO_XML_AND_PR515_RECOVERY_RECHECK_FAILED'
  }
  $review=Resolve-V3ScopedCutoverRecovery -Receipt $RecoveryReceipt
- if([string]$review.disposition -cne 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE' -or
+ if([string]$review.disposition -cne $expectedDisposition -or
     $review.automatic_old_writer_rearm_allowed -ne $false -or
     $RecoveryReceipt.cloud_cas_invoked -ne $false -or
     [string]$RecoveryReceipt.cloud_cas_outcome -cne 'NOT_INVOKED' -or
@@ -1786,21 +1811,26 @@ function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(
  # its actual authorized read-only owner BEFORE any marker/Task mutation.
  # The synthetic RecoveryReceipt booleans can NEVER lift this barrier.
  throw 'V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED'
- # Once approved and independently attested at execution time, the order is:
- # QUIESCED -> ARMED (atomic replace, preserving protected ACL) -> only the
- # existing two native intake Tasks Enable/Start -> exact fresh health check
- # -> remove only this reviewed marker -> original PR515 CloudSync resumes.
- # Partial failure means HOLD/explicit human reconciliation, NEVER auto-rearm.
- $marker.phase='ARMED'
- $temp=$fence+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
- $backup=$fence+'.'+[guid]::NewGuid().ToString('N')+'.quiesced.bak'
- [IO.File]::WriteAllText($temp,($marker|ConvertTo-Json -Depth 5),[Text.UTF8Encoding]::new($false))
- Set-Acl -LiteralPath $temp -AclObject (Get-Acl -LiteralPath $fence -ErrorAction Stop) -ErrorAction Stop
- if((Test-Path -LiteralPath $backup) -or
-    (Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ReviewedFenceSha256){
-  throw 'V3_PRECOMMIT_MARKER_CHANGED_BEFORE_ATOMIC_REPLACE'
+ # This remains UNREACHABLE under both current source locks. The future
+ # authorized QUIESCED case transitions to ARMED atomically. If already ARMED,
+ # preserve the exact protected marker rather than overwriting it.
+ if($currentPhase -ceq 'QUIESCED'){
+  $marker.phase='ARMED'
+  $temp=$fence+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
+  $backup=$fence+'.'+[guid]::NewGuid().ToString('N')+'.quiesced.bak'
+  [IO.File]::WriteAllText($temp,($marker|ConvertTo-Json -Depth 5),[Text.UTF8Encoding]::new($false))
+  Set-Acl -LiteralPath $temp -AclObject (Get-Acl -LiteralPath $fence -ErrorAction Stop) -ErrorAction Stop
+  if((Test-Path -LiteralPath $backup) -or
+     (Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ReviewedFenceSha256){
+   throw 'V3_PRECOMMIT_MARKER_CHANGED_BEFORE_ATOMIC_REPLACE'
+  }
+  [IO.File]::Replace($temp,$fence,$backup,$true)
+ }else{
+  if((Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ReviewedFenceSha256 -or
+     [string](Get-Content -LiteralPath $fence -Raw -ErrorAction Stop|ConvertFrom-Json).phase -cne 'ARMED'){
+   throw 'V3_PRECOMMIT_ARMED_FENCE_CHANGED_BEFORE_MANUAL_RECOVERY'
+  }
  }
- [IO.File]::Replace($temp,$fence,$backup,$true)
  $armedAt=[datetimeoffset]::UtcNow
  foreach($name in $tasks){
   Enable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop | Out-Null

@@ -881,6 +881,7 @@ function CheckCloudInventory([bool]$Expected,[object]$Fixture,[string]$Label) {
 }
 function V3Pr515RecoveryReviewFixture {
  $x=V3RecoveryFixture
+ $x|Add-Member -NotePropertyName fence_marker_phase -NotePropertyValue 'QUIESCED'
  $x|Add-Member -NotePropertyName current_pr515_readonly_preview -NotePropertyValue (V3Pr515RecoveryPreviewFixture)
  $x|Add-Member -NotePropertyName current_prod_cloud_inventory -NotePropertyValue (V3CloudCurrentInventoryFixture)
  $x|Add-Member -NotePropertyName current_pr515_quiesced_readonly_preview -NotePropertyValue (V3Pr515QuiescedPreviewFixture)
@@ -951,7 +952,7 @@ $x=V3CloudCurrentInventoryFixture;$x.observed_at_utc=''
 CheckCloudInventory $false $x 'no UTC provenance timestamp'
 Write-Output 'V3_CLOUD_CURRENT_INVENTORY_14_PURE_CASES_PASS'
 
-CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' (V3RecoveryFixture) 'historical backup alone can no longer qualify'
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' (V3RecoveryFixture) 'historical backup without marker can no longer qualify'
 CheckRecovery 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE' (V3Pr515RecoveryReviewFixture) 'current PR515 pre+poststop source contract, still NO restore authority'
 $x=V3Pr515RecoveryReviewFixture;$x.current_prod_cloud_inventory=$null
 CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'missing fresh actual Supabase inventory'
