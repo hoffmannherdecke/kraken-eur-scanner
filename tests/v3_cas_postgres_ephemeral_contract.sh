@@ -317,8 +317,7 @@ BEGIN
   OR NOT pg_has_role('v3_cas_audit_reader_actor','v3_cas_audit_reader','SET')
   OR pg_has_role('v3_cas_audit_reader_actor','v3_cas_audit_writer','SET')
   OR pg_has_role('v3_cas_audit_writer_actor','v3_cas_audit_reader','SET')
-  OR EXISTS (SELECT 1 FROM v3_cas_audit.epoch_v1)
-  OR EXISTS (SELECT 1 FROM v3_cas_audit.intent_v1) THEN
+  THEN
    RAISE EXCEPTION 'FAIL_STAGE3_TWO_DISTINCT_AUTHENTICABLE_AUDIT_ACTORS';
  END IF;
 END
@@ -327,6 +326,12 @@ SQL
 echo 'V3_PG17_STAGE3_DISTINCT_WRITER_READER_ACTORS_SOURCE_TEST_PASS_CAS_OFF'
 # Restore disposable-root semantics for legacy isolated tests only.
 pg_root -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
+# Confirm audit data remained unchanged independently, using ONLY the
+# disposable PG17 bootstrap root; restricted postgres is denied table SELECT.
+if [[ "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ||
+      "$(pg -Atc 'select count(*) from v3_cas_audit.intent_v1')" != '0' ]]; then
+  echo 'FAIL_STAGE3_ENROLLMENT_WROTE_AUDIT_DATA' >&2; exit 1
+fi
 
 # PostgreSQL real catalog readback: both tables RLS+FORCE, no exposed schema,
 # no generic EXECUTE/grants, and no CAS RPC. Validate effective role privileges.
