@@ -706,5 +706,40 @@ class V3CasPublicSigstoreProviderSourceTests(unittest.TestCase):
         self.assertEqual(workflow.count("gh attestation verify"), 1)
         self.assertTrue(workflow.startswith("name: V3 CAS public Sigstore provider"))
 
+
+class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
+    """New original-credential reader proof is strictly one-shot and non-mutating."""
+
+    def test_existing_stage3_dpapi_reader_writer_readonly_source(self):
+        src = (ROOT / "tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1").read_text("utf-8")
+        self.assertIn("Add-Type -AssemblyName System.Security -ErrorAction Stop", src)
+        self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 2)
+        self.assertEqual(src.count("COMMIT;"), 2)
+        self.assertIn("writer.dpapi", src)
+        self.assertIn("reader.dpapi", src)
+        self.assertIn("DataProtectionScope]::CurrentUser", src)
+        self.assertIn("aws-1-eu-west-1.pooler.supabase.com", src)
+        self.assertIn("sslmode=require", src)
+        self.assertIn("ca", src.lower())  # Source must disclaim certificate verification.
+        self.assertIn("v3_cas_audit_writer_actor", src)
+        self.assertIn("v3_cas_audit_reader_actor", src)
+        self.assertIn("pg_catalog.pg_has_role(session_user", src)
+        self.assertIn("v3_cas_audit.epoch_v1", src)
+        self.assertIn("v3_cas_audit.intent_v1", src)
+        self.assertIn("V3_STAGE3_READONLY_AUDIT_HOLD", src)
+        self.assertIn("V3_STAGE3_TWO_ORIGINAL_READONLY_AUDIT_SESSIONS_PASS_NO_CAS", src)
+        for prohibited in (
+            "INSERT INTO", "DELETE FROM", "UPDATE v3_cas_audit.",
+            "CREATE POLICY", "CREATE ROLE", "ALTER ROLE", "DROP TABLE",
+            "SET ROLE v3_cas_executor", "rotate_v2r4_to_v3_experimental_paper(",
+            "Set-Clipboard", "Start-Process", "Invoke-WebRequest",
+            "Get-Credential", "new-item", "Set-Content",
+            "Write-Host $secret", "Write-Output $secret",
+        ):
+            self.assertNotIn(prohibited, src, prohibited)
+        self.assertIn("Remove-Item Env:\\PGPASSWORD", src)
+        self.assertNotIn("Write-Output $_.Exception.Message", src)
+        self.assertIn("if ($passed -eq 2)", src)
+
 if __name__ == "__main__":
     unittest.main()
