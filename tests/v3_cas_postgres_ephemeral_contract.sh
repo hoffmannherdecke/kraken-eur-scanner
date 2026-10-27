@@ -41,21 +41,20 @@ docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_
 pg() {
   docker exec --interactive "$container" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres "$@"
 }
+pg_root() {
+  docker exec --interactive "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root "$@"
+}
 if [[ "$(pg -Atc "select (not rolsuper and rolcreaterole and rolbypassrls)::text from pg_roles where rolname='postgres'")" != "true" ]]; then
   echo 'FAIL_PG17_LIMITED_ORIGINAL_POSTGRES_INITIALIZED' >&2; exit 1
 fi
 pg -c "create role anon nologin; create role authenticated nologin; create role service_role nologin;" >/dev/null
-# Mirror the prior real-production roles bootstrap BEFORE unsealing the
-# otherwise inactive source. PG17 superuser Docker would otherwise not
-# receive the restricted postgres creator-admin grants automatically.
-# This tests safe source reuse rather than duplicate CREATE ROLE errors.
+# Actual PG17 nonsuperuser CREATEROLE creates one original ADMIN-only
+# membership to postgres automatically (SET FALSE/INHERIT FALSE).
+# Do NOT re-GRANT membership to one's own grantor: PG17 rightly rejects it.
 pg -f - <<'SQL' >/dev/null
 CREATE ROLE v3_cas_executor NOLOGIN NOINHERIT NOBYPASSRLS;
 CREATE ROLE v3_cas_audit_writer NOLOGIN NOINHERIT NOBYPASSRLS;
 CREATE ROLE v3_cas_audit_reader NOLOGIN NOINHERIT NOBYPASSRLS;
-GRANT v3_cas_executor TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
-GRANT v3_cas_audit_writer TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
-GRANT v3_cas_audit_reader TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
 SQL
 
 
@@ -66,8 +65,6 @@ SQL
 stage0_sql="supabase/v3-cas-audit-stage0-private-quarantine-SOURCE-20261026.sql"
 pg -f - <<'SQL' >/dev/null
 CREATE ROLE v3_cas_operator_login LOGIN NOINHERIT NOBYPASSRLS;
-GRANT v3_cas_operator_login TO postgres
- WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;
 CREATE TABLE public.paper_series(series_id text PRIMARY KEY,status text NOT NULL);
 INSERT INTO public.paper_series VALUES
  ('PAPER-V2R4-20261009T110135Z','active');
@@ -110,9 +107,9 @@ if [[ "$(pg -Atc "SELECT count(*) FROM pg_catalog.pg_namespace WHERE nspname='v3
 fi
 echo 'V3_PG17_STAGE0_PRIVATE_SCHEMA_QUARANTINE_AND_ROLLBACK_PASS'
 
-# Negative: drift in an otherwise existing member's SET OPTION must
-# reject the ENTIRE STAGE0 transaction, never silently amend it.
-pg -c "GRANT v3_cas_audit_writer TO postgres WITH ADMIN TRUE, SET TRUE, INHERIT FALSE;" >/dev/null
+# Negative: wrong LOGIN permission on existing audit-writer role must reject
+# the ENTIRE Stage0 transaction, not mutate existing private state.
+pg_root -c "ALTER ROLE v3_cas_audit_writer LOGIN;" >/dev/null
 stage0_drift="$(mktemp)"
 if pg -f - < "$stage0_sql" >"$stage0_drift" 2>&1; then
  cat "$stage0_drift" >&2
@@ -123,7 +120,7 @@ if ! grep -q 'V3_STAGE0_ROLE_GRAPH_DRIFT_ABORT' "$stage0_drift" ; then
  echo 'FAIL_STAGE0_ROLE_DRIFT_WAS_NOT_REJECTED' >&2; exit 1
 fi
 rm -f "$stage0_drift"
-pg -c "GRANT v3_cas_audit_writer TO postgres WITH ADMIN TRUE, SET FALSE, INHERIT FALSE;" >/dev/null
+pg_root -c "ALTER ROLE v3_cas_audit_writer NOLOGIN;" >/dev/null
 if [[ "$(pg -Atc "SELECT count(*) FROM pg_catalog.pg_namespace WHERE nspname='v3_cas_audit'")" != '0' ]]; then
  echo 'FAIL_STAGE0_NEGATIVE_CREATED_SCHEMA' >&2; exit 1
 fi
