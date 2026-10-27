@@ -215,7 +215,7 @@ echo 'V3_PG17_STAGE2_REQUIRES_EXISTING_STAGE0_PASS'
 # Apply ONLY the existing approved Stage-0 source to the disposable PG17
 # AFTER testing its transactional rollback and negative cases above.
 # Do not create new private tables in the Stage-2 candidate.
-pg -f "$stage0_sql" >/dev/null
+pg -f - < "$stage0_sql" >/dev/null
 if [[ "$(pg -Atc "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='v3_cas_audit' and c.relname in ('epoch_v1','intent_v1')")" != '2' ]]; then
   echo 'FAIL_DISPOSABLE_STAGE0_WAS_NOT_CREATED' >&2; exit 1
 fi
