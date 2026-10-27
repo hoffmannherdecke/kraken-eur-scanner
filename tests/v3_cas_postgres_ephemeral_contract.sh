@@ -370,6 +370,47 @@ if command -v pwsh >/dev/null 2>&1; then
  ' >/dev/null
 fi
 echo 'V3_PG17_STAGE3_DISTINCT_WRITER_READER_ACTORS_SOURCE_TEST_PASS_CAS_OFF'
+# Stage4 ORIGINAL source-only epoch creation through temporary PG17 membership
+# and object ACL. Never touch actual Cloud: this is still the same disposable
+# --network none database, original template must remain hard locked, and
+# successful fixture SQL uses ROLLBACK instead of COMMIT.
+stage4_sql="supabase/v3-cas-audit-stage4-original-epoch-open-INACTIVE.sql"
+if pg -f - < "$stage4_sql" >/dev/null 2>&1; then
+ echo 'FAIL_STAGE4_ORIGINAL_INACTIVE_TEMPLATE_EXECUTED' >&2; exit 1
+fi
+if [[ "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner' and m.set_option")" != '0' ]]; then
+ echo 'FAIL_STAGE4_HARDLOCK_LEFT_ANY_EFFECT' >&2; exit 1
+fi
+python - "$stage4_sql" <<'PY' | pg -f - >/dev/null
+import pathlib, sys
+src = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+lock = "  RAISE EXCEPTION 'V3_STAGE4_EPOCH_OPEN_SOURCE_INACTIVE_NO_PRODUCTION_RELEASE';"
+assert src.count(lock) == 1
+src = src.replace(lock,"  -- synthetic isolated CI unlock only; never merge this replacement.",1)
+fixtures = {
+ "__EPOCH_ID__": "V3CAS-AUDIT-"+"e"*32,
+ "__SOURCE_SHA256__": "a"*64,
+ "__FENCE_SHA256__": "b"*64,
+ "__CALLER_ACL_SHA256__": "c"*64,
+}
+for key, value in fixtures.items():
+ assert src.count(key) >= 2
+ src=src.replace(key,value)
+assert "COMMIT;\n-- Even an actual" in src
+src=src.replace("COMMIT;\n-- Even an actual","ROLLBACK;\n-- Even an actual",1)
+assert "__" not in src
+print(src)
+PY
+if [[ "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ||
+      "$(pg -Atc 'select count(*) from v3_cas_audit.intent_v1')" != '0' ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner' and m.admin_option and not m.set_option and not m.inherit_option")" != '1' ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner'")" != '1' ]] ||
+   [[ "$(pg -Atc "select has_table_privilege('postgres','v3_cas_audit.epoch_v1','INSERT') or has_table_privilege('postgres','v3_cas_audit.epoch_v1','UPDATE')")" != 'f' ]]; then
+ echo 'FAIL_STAGE4_PRIVILEGE_ESCROW_NOT_RESTORED_AFTER_DISPOSABLE_TRANSACTION' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE4_ORIGINAL_EPOCH_PRIVILEGE_ESCROW_ROLLBACK_PASS'
+
 # Restore disposable-root semantics for legacy isolated tests only.
 pg_root -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
 # Confirm audit data remained unchanged independently, using ONLY the
