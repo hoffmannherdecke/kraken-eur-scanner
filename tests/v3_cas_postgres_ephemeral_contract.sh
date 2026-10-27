@@ -370,6 +370,105 @@ if command -v pwsh >/dev/null 2>&1; then
  ' >/dev/null
 fi
 echo 'V3_PG17_STAGE3_DISTINCT_WRITER_READER_ACTORS_SOURCE_TEST_PASS_CAS_OFF'
+# Stage4: reuse the SAME isolated network-none PG17 and REAL synthetic Stage3
+# SCRAM actor logins, without touching original Supabase. The two original
+# source files MUST fail closed as-is, before any epoch grants or rows.
+stage4_open_sql="supabase/v3-cas-audit-stage4-once-epoch-open-INACTIVE.sql"
+stage4_seal_sql="supabase/v3-cas-audit-stage4-once-epoch-seal-INACTIVE.sql"
+if pg -f - < "$stage4_open_sql" >/dev/null 2>&1; then
+  echo 'FAIL_STAGE4_OPEN_SOURCE_WAS_EXECUTABLE' >&2; exit 1
+fi
+if pg -f - < "$stage4_seal_sql" >/dev/null 2>&1; then
+  echo 'FAIL_STAGE4_SEAL_SOURCE_WAS_EXECUTABLE' >&2; exit 1
+fi
+if [[ "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != 0 || 
+      "$(pg -Atc 'select count(*) from v3_cas_audit.intent_v1')" != 0 ]]; then
+  echo 'FAIL_STAGE4_SOURCE_LOCK_WROTE_AUDIT' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE4_BOTH_INACTIVE_SOURCE_LOCKS_PASS'
+
+# A COMPLETE synthetic dataset may be rendered ONLY in this disposable CI.
+# Real original-source/fence/caller digests MUST come from the independent
+# physical issuer and native no-rearm / reviewer scopes at actual release.
+render_stage4_fixture() {
+  python - "$1" <<'PY'
+import pathlib, sys
+source=pathlib.Path(sys.argv[1]).read_text("utf-8")
+lock={
+ "open":"RAISE EXCEPTION 'V3_STAGE4_EPOCH_OPEN_SOURCE_INACTIVE_APPROVAL_REQUIRED';",
+ "seal":"RAISE EXCEPTION 'V3_STAGE4_EPOCH_SEAL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+}
+mode="open" if "-open-INACTIVE" in sys.argv[1] else "seal"
+assert source.count(lock[mode])==1
+source=source.replace(lock[mode], "NULL; -- CI-only source lock replacement",1)
+fixtures={
+ "__V3_STAGE4_EPOCH_ID__":"V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+ "__V3_STAGE4_INTENT_UUID__":"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+ "__V3_STAGE4_REQUEST_SHA256__":"d"*64,
+ "__V3_STAGE4_SOURCE_SHA256__":"a"*64,
+ "__V3_STAGE4_ORIGINAL_FENCE_SHA256__":"b"*64,
+ "__V3_STAGE4_CALLER_ACL_SHA256__":"c"*64,
+}
+for k,v in fixtures.items(): source=source.replace(k,v)
+assert "__V3_STAGE4_" not in source
+print(source)
+PY
+}
+# This is NOT a production creator. Grant/INSERT/revoke all in ONE PG tx.
+render_stage4_fixture "$stage4_open_sql" | pg -f - >/dev/null
+if [[ "$(pg -Atc "select count(*) from v3_cas_audit.epoch_v1 where epoch_id='V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' and next_ordinal=1 and not sealed")" != 1 ||
+      "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner' and m.admin_option and not m.set_option and not m.inherit_option")" != 1 ||
+      "$(pg -Atc "select has_column_privilege('postgres','v3_cas_audit.epoch_v1','epoch_id','INSERT')")" != f ]]; then
+  echo 'FAIL_STAGE4_ONE_EPOCH_OPEN_OR_TEMPORARY_OWNER_GRANT_LEAK' >&2; exit 1
+fi
+# Replay must FAIL without replacing or opening a different epoch.
+if render_stage4_fixture "$stage4_open_sql" | pg -f - >/dev/null 2>&1; then
+  echo 'FAIL_STAGE4_OPEN_REPLAY_ACCEPTED' >&2; exit 1
+fi
+# Wrong writer credentials are denied. Two authentic sessions are different.
+if docker exec -e PGPASSWORD='CI-INTENTIONALLY-WRONG' "$container" \
+  psql -h 127.0.0.1 -X -qAt -U v3_cas_audit_writer_actor \
+  -d postgres -c 'select 1' >/dev/null 2>&1; then
+  echo 'FAIL_STAGE4_SYNTHETIC_WRITER_NO_SCRAM' >&2; exit 1
+fi
+stage4_number="$(docker exec -e PGPASSWORD='CI-WRITER-NO-PRODUCTION-SECRET' "$container" \
+  psql -h 127.0.0.1 -X -qAt -v ON_ERROR_STOP=1 \
+  -U v3_cas_audit_writer_actor -d postgres \
+  -c "SET ROLE v3_cas_audit_writer; SELECT v3_cas_audit.append_intent_v1('V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid,repeat('d',64),repeat('a',64),repeat('b',64));" | tail -n 1)"
+if [[ "$stage4_number" != '1' ]]; then
+ echo 'FAIL_STAGE4_DIFFERENT_WRITER_COMMIT' >&2; exit 1
+fi
+stage4_reader="$(docker exec -e PGPASSWORD='CI-READER-NO-PRODUCTION-SECRET' "$container" \
+  psql -h 127.0.0.1 -X -qAt -v ON_ERROR_STOP=1 \
+  -U v3_cas_audit_reader_actor -d postgres \
+  -c "SET ROLE v3_cas_audit_reader; SELECT e.next_ordinal::text||':'||i.ordinal::text||':'||i.intent_id::text FROM v3_cas_audit.epoch_v1 e JOIN v3_cas_audit.intent_v1 i ON i.epoch_id=e.epoch_id WHERE e.epoch_id='V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';" | tail -n 1)"
+if [[ "$stage4_reader" != '2:1:eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' ]]; then
+  echo 'FAIL_STAGE4_DIFFERENT_READER_AFTER_WRITER_COMMIT' >&2; exit 1
+fi
+render_stage4_fixture "$stage4_seal_sql" | pg -f - >/dev/null
+if [[ "$(pg -Atc "select count(*) from v3_cas_audit.epoch_v1 where epoch_id='V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' and sealed and next_ordinal=2")" != 1 ||
+      "$(pg -Atc "select has_column_privilege('postgres','v3_cas_audit.epoch_v1','sealed','UPDATE')")" != f ||
+      "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner' and m.admin_option and not m.set_option and not m.inherit_option")" != 1 ]]; then
+  echo 'FAIL_STAGE4_SEAL_OR_TEMPORARY_UPDATE_GRANT_LEAK' >&2; exit 1
+fi
+if render_stage4_fixture "$stage4_seal_sql" | pg -f - >/dev/null 2>&1; then
+  echo 'FAIL_STAGE4_SEAL_REPLAY_ACCEPTED' >&2; exit 1
+fi
+# Synthetic fixture cleanup by the OFFLINE container bootstrap superuser;
+# never implement such a delete on original Supabase audit tables.
+pg_root -c 'ALTER ROLE postgres SUPERUSER;' >/dev/null
+pg -f - <<'SQL' >/dev/null
+DELETE FROM v3_cas_audit.intent_v1
+ WHERE epoch_id='V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+DELETE FROM v3_cas_audit.epoch_v1
+ WHERE epoch_id='V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+SQL
+if [[ "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != 0 ||
+      "$(pg -Atc 'select count(*) from v3_cas_audit.intent_v1')" != 0 ]]; then
+  echo 'FAIL_STAGE4_SYNTHETIC_FIXTURE_NOT_DISPOSED' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE4_ONCE_EPOCH_OPEN_SEAL_SOURCE_PASS_NO_RELEASE'
+
 # Restore disposable-root semantics for legacy isolated tests only.
 pg_root -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
 # Confirm audit data remained unchanged independently, using ONLY the
