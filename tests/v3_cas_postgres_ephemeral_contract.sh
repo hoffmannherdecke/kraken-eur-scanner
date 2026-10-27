@@ -951,4 +951,73 @@ fi
 echo 'V3_PG17_DISTINCT_SCRAM_READER_PRECOMMIT_INVISIBLE_PASS'
 echo 'V3_PG17_DISTINCT_SCRAM_READER_AFTER_COMMIT_PASS_NO_RELEASE'
 
+# Stage5 isolated seal-of-an-original-committed-intent source-contract.
+# Reuse the SAME network-none disposable PG17 CI database, never Supabase.
+# All prior tests have finished; wipe their disposable fixture rows only.
+stage5_seal="supabase/v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql"
+pg_root_db -f - <<'SQL' >/dev/null
+TRUNCATE v3_cas_audit.intent_v1, v3_cas_audit.epoch_v1;
+GRANT SELECT ON v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1 TO postgres;
+INSERT INTO v3_cas_audit.epoch_v1
+ (epoch_id, predecessor_series_id, expected_rpc, source_sha256,
+  original_fence_sha256, approved_caller_acl_sha256, next_ordinal, sealed)
+VALUES ('V3CAS-AUDIT-ffffffffffffffffffffffffffffffff',
+ 'PAPER-V2R4-20261009T110135Z',
+ 'public.rotate_v2r4_to_v3_experimental_paper',
+ repeat('a',64),repeat('b',64),repeat('c',64),2,false);
+INSERT INTO v3_cas_audit.intent_v1
+ (epoch_id,ordinal,intent_id,requested_rpc,predecessor_series_id,
+  request_sha256,source_sha256,fence_sha256)
+VALUES ('V3CAS-AUDIT-ffffffffffffffffffffffffffffffff',1,
+ 'ffffffff-ffff-4fff-8fff-ffffffffffff'::uuid,
+ 'public.rotate_v2r4_to_v3_experimental_paper',
+ 'PAPER-V2R4-20261009T110135Z',
+ repeat('d',64),repeat('a',64),repeat('b',64));
+SQL
+pg_root -c 'ALTER ROLE postgres NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;' >/dev/null
+# The UNMODIFIED source must error before setting even temporary privileges.
+if pg -f - < "$stage5_seal" >/dev/null 2>&1; then
+  echo 'FAIL_STAGE5_SEAL_LOCK_EXECUTED' >&2; exit 1
+fi
+if [[ "$(pg -Atc "select count(*) from v3_cas_audit.epoch_v1 where sealed")" != 0 ]]; then
+  echo 'FAIL_STAGE5_SEAL_HARDLOCK_MUTATED_EPOCH' >&2; exit 1
+fi
+render_stage5_synthetic_only() {
+  python - "$stage5_seal" <<'PY'
+import pathlib,sys
+s=pathlib.Path(sys.argv[1]).read_text('utf-8')
+lock=" RAISE EXCEPTION 'V3_STAGE5_EPOCH_SEAL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+assert s.count(lock)==1
+s=s.replace(lock," NULL; -- Disposable offline native PG17 source contract only",1)
+fixtures={
+ "__EPOCH_ID__":"V3CAS-AUDIT-"+"f"*32,
+ "__INTENT_ID__":"ffffffff-ffff-4fff-8fff-ffffffffffff",
+ "__REQUEST_SHA256__":"d"*64,
+ "__SOURCE_SHA256__":"a"*64,
+ "__FENCE_SHA256__":"b"*64,
+ "__CALLER_ACL_SHA256__":"c"*64,
+}
+for k,v in fixtures.items(): assert k in s; s=s.replace(k,v)
+assert "__" not in s
+print(s)
+PY
+}
+render_stage5_synthetic_only | pg -f - >/dev/null
+if [[ "$(pg -Atc "select count(*) from v3_cas_audit.epoch_v1 where epoch_id='V3CAS-AUDIT-ffffffffffffffffffffffffffffffff' and sealed and next_ordinal=2")" != 1 ]] ||
+   [[ "$(pg -Atc "select has_column_privilege('postgres','v3_cas_audit.epoch_v1','sealed','UPDATE')")" != f ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner' and m.admin_option and not m.inherit_option and not m.set_option")" != 1 ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner'")" != 1 ]]; then
+  echo 'FAIL_STAGE5_SEAL_COMMIT_OR_TEMP_PRIVILEGE_ESCROW' >&2; exit 1
+fi
+if render_stage5_synthetic_only | pg -f - >/dev/null 2>&1; then
+  echo 'FAIL_STAGE5_SEAL_REPLAY_ACCEPTED' >&2; exit 1
+fi
+# Dispose synthetic fixture with isolated bootstrap root. No product mutation.
+pg_root -c 'ALTER ROLE postgres SUPERUSER;' >/dev/null
+pg_root_db -f - <<'SQL' >/dev/null
+TRUNCATE v3_cas_audit.intent_v1, v3_cas_audit.epoch_v1;
+REVOKE SELECT ON v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1 FROM postgres;
+SQL
+echo 'V3_PG17_STAGE5_REAL_SYNTHETIC_SEAL_RESTORE_PASS'
+
 echo 'V3_PG17_EPHEMERAL_ALL_PASS_NO_PRODUCTION'
