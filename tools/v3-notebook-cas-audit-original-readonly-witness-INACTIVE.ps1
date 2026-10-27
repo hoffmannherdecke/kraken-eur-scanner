@@ -88,6 +88,9 @@ COMMIT;
 $passed = 0
 foreach ($check in $checks) {
     $plain = $null
+    # Fixed sanitized reason class, only emitted for the optional Reader inventory.
+    # Never emit credentials, raw database errors, process output or paths.
+    $holdClass = 'LOCAL_READER_IDENTITY_OR_DPAPI'
     try {
         $file = Join-Path $dir $check.File
         if (-not [IO.File]::Exists($file)) {
@@ -103,26 +106,41 @@ foreach ($check in $checks) {
             throw 'V3_STAGE3_LOCAL_PASSWORD_FORMAT_HOLD'
         }
         $env:PGPASSWORD = $secret
+        $holdClass = 'POSTGRES_READONLY_QUERY_OR_CONNECTION'
         # Scope precisely two static role names. Never pass user-supplied SQL.
         $conn = "host=$hostName port=5432 dbname=postgres user=$($check.Login).$project sslmode=require connect_timeout=10"
         $output = & $psql -X -w -qAt -v ON_ERROR_STOP=1 -d $conn -c $check.Sql 2>&1
         if($PrecommitCloudInventory){
             if($LASTEXITCODE -ne 0){throw 'V3_PRECOMMIT_READER_SQL_HOLD'}
+            $holdClass = 'CURRENT_JSON_DECODE'
             $row=(($output|Out-String).Trim()|ConvertFrom-Json -ErrorAction Stop)
-            $at=[datetimeoffset]::MinValue
+            $holdClass = 'CURRENT_IDENTITY_OR_SCHEMA'
             if($null -eq $row -or
                 [string]$row.kind -cne 'V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1' -or
                 [string]$row.actor -cne 'v3_cas_audit_reader_actor' -or
-                [string]$row.role -cne 'v3_cas_audit_reader' -or
-                [string]$row.observed_at_utc -cnotmatch 'Z$' -or
+                [string]$row.role -cne 'v3_cas_audit_reader'){
+                throw 'V3_PRECOMMIT_READER_NONEMPTY_OR_UNVERIFIED_HOLD'
+            }
+            $holdClass = 'CURRENT_UTC_FRESHNESS'
+            $at=[datetimeoffset]::MinValue
+            if([string]$row.observed_at_utc -cnotmatch 'Z$' -or
                 -not [datetimeoffset]::TryParse([string]$row.observed_at_utc,[ref]$at) -or
                 ([datetimeoffset]::UtcNow-$at).TotalSeconds -gt 90 -or
-                ([datetimeoffset]::UtcNow-$at).TotalSeconds -lt -5 -or
-                [string]$row.epochs -cne '0' -or
-                [string]$row.intents -cne '0' -or
-                $row.writer_role_access -ne $false -or
-                $row.append_access -ne $false -or
-                $row.history_never_proven -ne $false -or
+                ([datetimeoffset]::UtcNow-$at).TotalSeconds -lt -5){
+                throw 'V3_PRECOMMIT_READER_NONEMPTY_OR_UNVERIFIED_HOLD'
+            }
+            $holdClass = 'CURRENT_AUDIT_LEDGER_COUNTS'
+            if([string]$row.epochs -cne '0' -or
+                [string]$row.intents -cne '0'){
+                throw 'V3_PRECOMMIT_READER_NONEMPTY_OR_UNVERIFIED_HOLD'
+            }
+            $holdClass = 'CURRENT_READER_ROLE_ISOLATION'
+            if($row.writer_role_access -ne $false -or
+                $row.append_access -ne $false){
+                throw 'V3_PRECOMMIT_READER_NONEMPTY_OR_UNVERIFIED_HOLD'
+            }
+            $holdClass = 'CURRENT_NEGATIVE_AUTHORITY_FLAGS'
+            if($row.history_never_proven -ne $false -or
                 $row.restore_authorized -ne $false){
                 throw 'V3_PRECOMMIT_READER_NONEMPTY_OR_UNVERIFIED_HOLD'
             }
@@ -152,8 +170,12 @@ foreach ($check in $checks) {
         }
     }
     catch {
-        # No raw SQL error output or password serialization in chat or logs.
+        # Report only fixed coarse categories. No raw SQL/stdout/stderr,
+        # exception text, username, DPAPI material or other sensitive values.
         Write-Output "$($check.Name)_READONLY_SCOPE_HOLD"
+        if($PrecommitCloudInventory){
+            Write-Output "READER_PRECOMMIT_HOLD_CLASS=$holdClass"
+        }
     }
     finally {
         Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
