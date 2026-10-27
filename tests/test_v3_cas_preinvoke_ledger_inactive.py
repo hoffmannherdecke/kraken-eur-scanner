@@ -782,5 +782,34 @@ class V3Stage4OriginalEpochPrivilegeEscrowSourceTests(unittest.TestCase):
         self.assertIn("stage4_sql=\"supabase/v3-cas-audit-stage4-original-epoch-open-INACTIVE.sql\"", ci)
         self.assertIn('src=src.replace("COMMIT;\\n-- Even an actual","ROLLBACK;\\n-- Even an actual",1)', ci)
 
+
+class V3Stage5OriginalEpochSealSourceTests(unittest.TestCase):
+    """Independent Stage5 seal is inert and cannot authorize a real CAS."""
+
+    def test_locked_original_seal_requires_exact_single_committed_intent(self):
+        source = (ROOT / "supabase/v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql").read_text("utf-8")
+        self.assertIn("V3_STAGE5_EPOCH_SEAL_SOURCE_INACTIVE_APPROVAL_REQUIRED", source)
+        self.assertEqual(source.count("BEGIN;"), 1)
+        self.assertEqual(source.count("COMMIT;"), 1)
+        self.assertIn("GRANT v3_cas_audit_table_owner TO postgres", source)
+        self.assertIn("REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres", source)
+        self.assertIn("GRANT UPDATE (sealed)", source)
+        self.assertIn("REVOKE UPDATE (sealed)", source)
+        self.assertIn("SET ROLE v3_cas_audit_table_owner", source)
+        self.assertIn("V3_STAGE5_SEAL_DURABLE_EXACT_INTENT_NOT_VISIBLE_HOLD", source)
+        self.assertIn("V3_STAGE5_SEAL_POSTFLIGHT_RIGHTS_REMAIN_HOLD", source)
+        self.assertIn("i.ordinal=1 AND i.intent_id=v_intent", source)
+        self.assertIn("i.request_sha256=v_request", source)
+        self.assertIn("i.created_at_utc>pg_catalog.clock_timestamp()-interval '5 minutes'", source)
+        self.assertIn("v3_cas_executor_actor", source)
+        self.assertIn("UPDATE v3_cas_audit.epoch_v1 SET sealed=true", source)
+        for forbidden in ("CREATE ROLE", "CREATE FUNCTION", "CREATE POLICY", "INSERT INTO", "UPDATE public.paper_series", "DROP TABLE", "GRANT EXECUTE", "SET ROLE v3_cas_executor;"):
+            self.assertNotIn(forbidden, source)
+        contract = (ROOT / "tests/v3_cas_postgres_ephemeral_contract.sh").read_text("utf-8")
+        self.assertIn("V3_PG17_STAGE5_REAL_SYNTHETIC_SEAL_RESTORE_PASS", contract)
+        self.assertIn("FAIL_STAGE5_SEAL_LOCK_EXECUTED", contract)
+        self.assertIn("FAIL_STAGE5_SEAL_REPLAY_ACCEPTED", contract)
+        self.assertIn("pg_root_db -f - <<'SQL'", contract)
+
 if __name__ == "__main__":
     unittest.main()
