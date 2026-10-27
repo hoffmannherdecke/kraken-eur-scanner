@@ -422,6 +422,111 @@ if [[ "$(pg_root_db -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' |
    [[ "$(pg -Atc "select has_table_privilege('postgres','v3_cas_audit.epoch_v1','INSERT') or has_table_privilege('postgres','v3_cas_audit.epoch_v1','UPDATE')")" != 'f' ]]; then
  echo 'FAIL_STAGE4_PRIVILEGE_ESCROW_NOT_RESTORED_AFTER_DISPOSABLE_TRANSACTION' >&2; exit 1
 fi
+# Original Stage5 seal: now exercise a real serial sequence in the SAME
+# disposable network-none PG17. This block is NOT a real originalhost ACK.
+# PR583 supplies the only opener. Never introduce a competing opener.
+stage5_sql="supabase/v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql"
+if pg -f - < "$stage5_sql" >/dev/null 2>&1; then
+  echo 'FAIL_STAGE5_ORIGINAL_SEAL_LOCK_WAS_EXECUTABLE' >&2; exit 1
+fi
+if [[ "$(pg_root_db -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != 0 ]]; then
+  echo 'FAIL_STAGE5_LOCK_CREATED_EPOCH' >&2; exit 1
+fi
+render_stage4_original_fixture() {
+python - "$stage4_sql" <<'PY'
+import pathlib,sys
+s=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+needle="  RAISE EXCEPTION 'V3_STAGE4_EPOCH_OPEN_SOURCE_INACTIVE_NO_PRODUCTION_RELEASE';"
+assert s.count(needle)==1
+s=s.replace(needle,"  NULL; -- synthetic isolated CI only",1)
+for key,value in {
+  "__EPOCH_ID__":"V3CAS-AUDIT-"+"e"*32,
+  "__SOURCE_SHA256__":"a"*64,
+  "__FENCE_SHA256__":"b"*64,
+  "__CALLER_ACL_SHA256__":"c"*64,
+}.items(): s=s.replace(key,value)
+assert "__" not in s
+print(s)
+PY
+}
+render_stage5_original_fixture() {
+python - "$stage5_sql" <<'PY'
+import pathlib,sys
+s=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+needle=" RAISE EXCEPTION 'V3_STAGE5_ORIGINAL_EPOCH_SEAL_SOURCE_INACTIVE_NO_PRODUCTION_RELEASE';"
+assert s.count(needle)==1
+s=s.replace(needle," NULL; -- synthetic isolated CI only",1)
+for key,value in {
+  "__EPOCH_ID__":"V3CAS-AUDIT-"+"e"*32,
+  "__INTENT_UUID__":"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+  "__REQUEST_SHA256__":"d"*64,
+  "__SOURCE_SHA256__":"a"*64,
+  "__FENCE_SHA256__":"b"*64,
+  "__CALLER_ACL_SHA256__":"c"*64,
+}.items(): s=s.replace(key,value)
+assert "__" not in s
+print(s)
+PY
+}
+# Exact PR583 rendered opener commits only to THIS disposable fixture, and
+# its own tested transaction must leave only original bootstrap admin edge.
+render_stage4_original_fixture | pg -f - >/dev/null
+if [[ "$(pg_root_db -Atc "select count(*) from v3_cas_audit.epoch_v1 where epoch_id='V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' and next_ordinal=1 and not sealed")" != 1 ]]; then
+  echo 'FAIL_STAGE5_PR583_CANONICAL_EPOCH_NOT_OPENED' >&2; exit 1
+fi
+# A seal without an actual committed writer intent must fail and keep OPEN.
+if render_stage5_original_fixture | pg -f - >/dev/null 2>&1; then
+  echo 'FAIL_STAGE5_PREMATURE_SEAL_ACCEPTED' >&2; exit 1
+fi
+if [[ "$(pg_root_db -Atc "select sealed::text from v3_cas_audit.epoch_v1 where epoch_id='V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'")" != 'false' ]]; then
+  echo 'FAIL_STAGE5_PREMATURE_SEAL_CHANGED_EPOCH' >&2; exit 1
+fi
+# Two genuinely separate SCRAM LOGIN sessions, NOT SET ROLE as postgres.
+stage5_writer_out="$(docker exec -e PGPASSWORD='CI-WRITER-NO-PRODUCTION-SECRET' "$container" \
+  psql -h 127.0.0.1 -X -qAt -v ON_ERROR_STOP=1 \
+  -U v3_cas_audit_writer_actor -d postgres \
+  -c "SET ROLE v3_cas_audit_writer; SELECT v3_cas_audit.append_intent_v1('V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid,repeat('d',64),repeat('a',64),repeat('b',64));" | tail -n 1)"
+if [[ "$stage5_writer_out" != '1' ]]; then
+  echo 'FAIL_STAGE5_ACTUAL_SEPARATE_SCRAM_WRITER_DID_NOT_COMMIT' >&2; exit 1
+fi
+stage5_reader_out="$(docker exec -e PGPASSWORD='CI-READER-NO-PRODUCTION-SECRET' "$container" \
+  psql -h 127.0.0.1 -X -qAt -v ON_ERROR_STOP=1 \
+  -U v3_cas_audit_reader_actor -d postgres \
+  -c "SET ROLE v3_cas_audit_reader; SELECT CASE WHEN session_user='v3_cas_audit_reader_actor' AND current_user='v3_cas_audit_reader' AND (SELECT count(*) FROM v3_cas_audit.epoch_v1 e JOIN v3_cas_audit.intent_v1 i ON e.epoch_id=i.epoch_id WHERE e.epoch_id='V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' AND e.next_ordinal=2 AND NOT e.sealed AND e.source_sha256=repeat('a',64) AND e.original_fence_sha256=repeat('b',64) AND e.approved_caller_acl_sha256=repeat('c',64) AND i.ordinal=1 AND i.intent_id='eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid AND i.request_sha256=repeat('d',64) AND i.source_sha256=e.source_sha256 AND i.fence_sha256=e.original_fence_sha256)=1 THEN 'PASS' ELSE 'HOLD' END;" | tail -n 1)"
+if [[ "$stage5_reader_out" != 'PASS' ]]; then
+  echo 'FAIL_STAGE5_REAL_DIFFERENT_READER_AFTER_COMMIT' >&2; exit 1
+fi
+render_stage5_original_fixture | pg -f - >/dev/null
+if [[ "$(pg_root_db -Atc "select count(*) from v3_cas_audit.epoch_v1 where epoch_id='V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' and sealed and next_ordinal=2")" != '1' ||
+      "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner' and m.admin_option and not m.inherit_option and not m.set_option")" != '1' ||
+      "$(pg -Atc "select has_table_privilege('postgres','v3_cas_audit.epoch_v1','UPDATE')")" != 'f' ]]; then
+  echo 'FAIL_STAGE5_SEAL_OR_OWNER_PRIVILEGES_NOT_RESTORED' >&2; exit 1
+fi
+# Different writer cannot append to a SEALED epoch; replay of seal impossible.
+if docker exec -e PGPASSWORD='CI-WRITER-NO-PRODUCTION-SECRET' "$container" \
+ psql -h 127.0.0.1 -X -qAt -v ON_ERROR_STOP=1 \
+ -U v3_cas_audit_writer_actor -d postgres \
+ -c "SET ROLE v3_cas_audit_writer; SELECT v3_cas_audit.append_intent_v1('V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee','ffffeeee-eeee-4eee-8eee-eeeeeeeeeeee'::uuid,repeat('d',64),repeat('a',64),repeat('b',64));" >/dev/null 2>&1; then
+  echo 'FAIL_STAGE5_SEALED_EPOCH_ACCEPTED_APPEND' >&2; exit 1
+fi
+if render_stage5_original_fixture | pg -f - >/dev/null 2>&1; then
+  echo 'FAIL_STAGE5_SEAL_REPLAY_ACCEPTED' >&2; exit 1
+fi
+# Dispose only synthetic data through isolated offline PG17 bootstrap.
+pg_root_db -f - <<'SQL' >/dev/null
+BEGIN;
+DELETE FROM v3_cas_audit.intent_v1
+ WHERE epoch_id='V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+DELETE FROM v3_cas_audit.epoch_v1
+ WHERE epoch_id='V3CAS-AUDIT-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+COMMIT;
+SQL
+if [[ "$(pg_root_db -Atc "select count(*) from v3_cas_audit.epoch_v1")" != '0' ||
+      "$(pg_root_db -Atc "select count(*) from v3_cas_audit.intent_v1")" != '0' ]]; then
+  echo 'FAIL_STAGE5_SYNTHETIC_CLEANUP' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE5_ORIGINAL_SEAL_DIFFERENT_SCRAM_READER_PASS_CAS_OFF'
+
 pg_root_db -c 'REVOKE SELECT ON v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1 FROM postgres;' >/dev/null
 echo 'V3_PG17_STAGE4_ORIGINAL_EPOCH_PRIVILEGE_ESCROW_ROLLBACK_PASS'
 
