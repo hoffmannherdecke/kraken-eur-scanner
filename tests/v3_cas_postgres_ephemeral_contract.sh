@@ -16,12 +16,13 @@ trap cleanup EXIT
 echo 'V3_PG17_TEST_ISOLATED_NETWORK_NONE'
 docker run --detach --rm --name "$container" --network none \
   --memory 512m --tmpfs /var/lib/postgresql/data:rw,size=200m \
+  -e POSTGRES_USER=v3_ci_restore_root \
   -e POSTGRES_PASSWORD=disposable_offline_ci_only \
   postgres:17-alpine >/dev/null
 
 ready=0
 for i in $(seq 1 40); do
-  if docker exec "$container" pg_isready -q -U postgres -d postgres >/dev/null 2>&1; then
+  if docker exec "$container" pg_isready -q -U v3_ci_restore_root -d v3_ci_restore_root >/dev/null 2>&1; then
     ready=1; break
   fi
   sleep 1
@@ -30,9 +31,19 @@ if [[ "$ready" -ne 1 ]]; then
   echo 'FAIL_PG17_EPHEMERAL_NOT_READY' >&2
   exit 1
 fi
+# Initialize the DISPOSABLE database with a distinct, private bootstrap
+# SUPERUSER. Actual "postgres" is then CREATED from the beginning with the
+# same restricted PG17 role class as original production Supabase.
+docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root \
+  -c "CREATE ROLE postgres LOGIN NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;" >/dev/null
+docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root \
+  -c "CREATE DATABASE postgres OWNER postgres;" >/dev/null
 pg() {
   docker exec --interactive "$container" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres "$@"
 }
+if [[ "$(pg -Atc "select (not rolsuper and rolcreaterole and rolbypassrls)::text from pg_roles where rolname='postgres'")" != "true" ]]; then
+  echo 'FAIL_PG17_LIMITED_ORIGINAL_POSTGRES_INITIALIZED' >&2; exit 1
+fi
 pg -c "create role anon nologin; create role authenticated nologin; create role service_role nologin;" >/dev/null
 # Mirror the prior real-production roles bootstrap BEFORE unsealing the
 # otherwise inactive source. PG17 superuser Docker would otherwise not
@@ -227,14 +238,10 @@ echo 'V3_PG17_CURRENT_PRODUCTION_STAGE0_SHAPE_STAGED_PASS'
 # Supabase postgres is a PG17 NON-superuser with CREATEROLE and BYPASSRLS.
 # Exercise the already prepared Stage-0 -> Stage-2 owner/grant transition
 # under those real privilege characteristics, not under a CI superuser.
-# A separate disposable offline root role restores the fixture for the
+# The separate disposable bootstrap root role restores the fixture for the
 # unrelated legacy negative ACL tests that follow. Zero Cloud access.
-pg -c "CREATE ROLE v3_ci_restore_root SUPERUSER LOGIN NOINHERIT;" >/dev/null
-if [[ "$(docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d postgres -Atc 'select current_user')" != "v3_ci_restore_root" ]]; then
-  echo 'FAIL_PG17_ISOLATED_TEST_ROOT_UNAVAILABLE_BEFORE_ROLE_DEMOTION' >&2; exit 1
-fi
-pg -c "ALTER ROLE postgres NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;" >/dev/null
-if [[ "$(pg -Atc "select (not rolsuper and rolcreaterole and rolbypassrls)::text from pg_roles where rolname='postgres'")" != "true" ]]; then
+if [[ "$(docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root -Atc 'select current_user')" != "v3_ci_restore_root" ]] ||
+   [[ "$(pg -Atc "select (not rolsuper and rolcreaterole and rolbypassrls)::text from pg_roles where rolname='postgres'")" != "true" ]]; then
   echo 'FAIL_PG17_NON_SUPERUSER_CAS_OWNER_FIXTURE_NOT_EFFECTIVE' >&2; exit 1
 fi
 echo 'V3_PG17_REAL_SUPABASE_LIKE_NON_SUPERUSER_ROLE_SCOPE_PASS'
@@ -262,7 +269,7 @@ if [[ "$(pg -Atc "select (not rolsuper and rolcreaterole and rolbypassrls)::text
   echo 'FAIL_PG17_ORIGINAL_NON_SUPERUSER_ROLE_OR_TRANSIENT_GRANTS_LEAK' >&2; exit 1
 fi
 echo 'V3_PG17_ORIGINAL_NON_SUPERUSER_STAGE2_EFFECTIVE_OWNER_AND_REVOKE_PASS'
-docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d postgres \
+docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root \
   -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
 
 # Upgrade MUST preserve existing Stage-0 table identity, not recreate or
