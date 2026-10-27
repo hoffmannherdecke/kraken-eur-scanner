@@ -235,7 +235,7 @@ foreach ($check in $checks) {
                 cloud_cas_authorized=$false
                 precommit_restore_authorized=$false
                 v3_paper_release_authorized=$false
-            }|ConvertTo-Json -Compress
+            }|ConvertTo-Json -Compress -Depth 4
             $passed++
         } elseif($PrecommitCloudInventory){
             if($LASTEXITCODE -ne 0){throw 'V3_PRECOMMIT_READER_SQL_HOLD'}
