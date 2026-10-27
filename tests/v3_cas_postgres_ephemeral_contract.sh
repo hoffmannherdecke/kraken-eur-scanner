@@ -268,6 +268,9 @@ stage3_sql="supabase/v3-cas-audit-stage3-actors-enrollment-INACTIVE.sql"
 if pg -f - < "$stage3_sql" >/dev/null 2>&1; then
  echo 'FAIL_STAGE3_INACTIVE_TEMPLATE_EXECUTABLE' >&2; exit 1
 fi
+# Real actor shells were originally created by a non-superuser
+# CREATEROLE postgres; recreate THAT exact PG17 auto-admin membership.
+pg_root -c "ALTER ROLE postgres NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;" >/dev/null
 pg -f - <<'SQL' >/dev/null
 CREATE ROLE v3_cas_audit_writer_actor NOSUPERUSER NOLOGIN NOINHERIT
  NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION
@@ -279,15 +282,6 @@ CREATE ROLE v3_cas_executor_actor NOSUPERUSER NOLOGIN NOINHERIT
  NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION
  CONNECTION LIMIT 0 PASSWORD NULL VALID UNTIL '2000-01-01';
 SQL
-# Catalog-only fixture shape check; zero passwords or secrets reported.
-pg -Atc "SELECT r.rolname, r.rolcanlogin, r.rolinherit, r.rolbypassrls,
- r.rolconnlimit, (r.rolvaliduntil < clock_timestamp()) AS expired,
- (SELECT count(*) FROM pg_auth_members m WHERE m.member=r.oid) as outgoing,
- (SELECT count(*) FROM pg_auth_members m WHERE m.roleid=r.oid) as incoming
- FROM pg_roles r WHERE r.rolname IN
- ('v3_cas_audit_writer_actor','v3_cas_audit_reader_actor',
-  'v3_cas_executor_actor','v3_cas_executor','v3_cas_audit_writer','v3_cas_audit_reader')
- ORDER BY r.rolname;" | sed 's/^/V3_STAGE3_FIXTURE_ROLE|/'
 python - "$stage3_sql" <<'PY' | pg -f - >/dev/null
 import base64, hashlib, hmac, pathlib, sys
 s=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
@@ -331,6 +325,8 @@ END
 $v3_stage3_ci$;
 SQL
 echo 'V3_PG17_STAGE3_DISTINCT_WRITER_READER_ACTORS_SOURCE_TEST_PASS_CAS_OFF'
+# Restore disposable-root semantics for legacy isolated tests only.
+pg_root -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
 
 # PostgreSQL real catalog readback: both tables RLS+FORCE, no exposed schema,
 # no generic EXECUTE/grants, and no CAS RPC. Validate effective role privileges.
