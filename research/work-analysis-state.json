@@ -1539,6 +1539,44 @@
           "project-current-state.json#closed_or_rejected_tracks[V3-H3-SHADOW-001]",
           "research/project-followthrough-routing-v1.json#V3_H3_ORDERBOOK_REEXAMINATION"
         ]
+      },
+      "BACKLOG-3857a7fb0ee7440d533c": {
+        "disposition": "SUPERSEDED_WITH_CANONICAL_OWNER",
+        "reviewed_at_utc": "2026-10-27T09:13:40Z",
+        "owner": "research/project-followthrough-routing-v1.json#V3_H8_ONCHAIN_REAL_CONTEXT + research/v3-migration-ledger.json#onchain_state",
+        "next_gate": "AFTER_VERIFIED_V3_PAPER_ADDITIONAL_PROSPECTIVE_TIMESTAMPED_ONCHAIN_ORIGINALS_AND_EXPLICIT_V3_CONSUMER_NEUTRALITY_ACK",
+        "report": "research/work-analysis/2026-10-27-v3-h8-stream-sizing-backlog-dispositions.md",
+        "evidence_sha256": "1e014dd5a8528b10484d55d2afc80364d419ccc4533ff6db4882ee385b04307c",
+        "original_source": "PROJECT_BACKLOG.md:L872",
+        "evidence": [
+          "research/v3/h8-known-at-two-cycle-review-20261002.json",
+          "research/v3-migration-ledger.json#onchain_state",
+          "research/project-followthrough-routing-v1.json#V3_H8_ONCHAIN_REAL_CONTEXT"
+        ]
+      },
+      "BACKLOG-9a26c23d61fcecf9d32a": {
+        "disposition": "SUPERSEDED_WITH_CANONICAL_OWNER",
+        "reviewed_at_utc": "2026-10-27T09:13:40Z",
+        "owner": "research/project-followthrough-routing-v1.json#V3_H3_ORDERBOOK_REEXAMINATION + research/project-followthrough-routing-v1.json#V3_H6_VOLUME_CONFIRMATION",
+        "next_gate": "AFTER_VERIFIED_V3_PAPER_SEPARATE_NEW_VERSIONED_ONE_CHANGE_H3_OR_H6_CONTRACT_AND_EXPLICIT_APPROVAL",
+        "report": "research/work-analysis/2026-10-27-v3-h8-stream-sizing-backlog-dispositions.md",
+        "evidence_sha256": "1e014dd5a8528b10484d55d2afc80364d419ccc4533ff6db4882ee385b04307c",
+        "original_source": "PROJECT_BACKLOG.md:L874",
+        "evidence": [
+          "research/work-analysis/2026-10-10-v3-h3-001-archive-disposition.md",
+          "research/project-followthrough-routing-v1.json#V3_H3_ORDERBOOK_REEXAMINATION",
+          "research/project-followthrough-routing-v1.json#V3_H6_VOLUME_CONFIRMATION"
+        ]
+      },
+      "BACKLOG-6fab46c6ae84c6dd73e9": {
+        "disposition": "DEFERRED_WITH_GATE",
+        "reviewed_at_utc": "2026-10-27T09:13:40Z",
+        "owner": "research/v3-migration-ledger.json#position_sizing_mapping + V3_PAPER_ECONOMICS_AND_RELEASE_REVIEW",
+        "next_gate": "VERIFIED_V3_PAPER_LIFECYCLE_WITH_SUFFICIENT_MATURE_PROSPECTIVE_FILLED_TRADES_THEN_SEPARATELY_VERSIONED_SIZING_PROPOSAL_AND_EXPLICIT_RELEASE_APPROVAL",
+        "report": "research/work-analysis/2026-10-27-v3-h8-stream-sizing-backlog-dispositions.md",
+        "evidence_sha256": "1e014dd5a8528b10484d55d2afc80364d419ccc4533ff6db4882ee385b04307c",
+        "original_source": "PROJECT_BACKLOG.md:L876",
+        "not_due_reason": "NO_VERIFIED_V3_PAPER_FILLED_TRADE_SAMPLE_AND_FIXED_50_PLUS_50_EUR_EXPERIMENTAL_PATH_MUST_NOT_BE_DELAYED"
       }
     }
   },
@@ -1881,19 +1919,25 @@
       "report_sha256": "375f9a3b92366907c7efe3500b68f59fb3f2c88ef12d03c0885a254560890870"
     },
     "HISTORICAL_BACKLOG_RECONCILIATION": {
-      "gate_fingerprint": "8e4487a8e5bbe1c111c0",
+      "gate_fingerprint": "25b99083bd9f80d7fbd8",
       "status": "COMPLETED",
-      "evidence_url": "research/work-analysis/2026-10-24-v3-h3-h5-h6-backlog-dispositions.md",
-      "reason": "Three selector-prioritized V3 H3/H5/H6 originals were mapped to their existing preregistered, post-V3-Paper, new-version and explicit-approval gates without starting a Shadow, model call, runtime, or release.",
-      "attempted_at_utc": "2026-10-24T08:15:46Z",
-      "completed_at_utc": "2026-10-24T08:15:46Z",
-      "report": "research/work-analysis/2026-10-24-v3-h3-h5-h6-backlog-dispositions.md",
-      "report_sha256": "875abf4f4eab5905207b108afcb4f2397f110971c3ba5709d740c787279bd81b",
+      "evidence_url": "research/work-analysis/2026-10-27-v3-h8-stream-sizing-backlog-dispositions.md",
+      "reason": "Three selector-prioritized V3 H8, component-stream and sizing originals were mapped to existing post-V3-Paper causal owners and explicit gates; no source capture, Shadow, model call, runtime or release was started.",
+      "attempted_at_utc": "2026-10-27T09:13:40Z",
+      "completed_at_utc": "2026-10-27T09:13:40Z",
+      "report": "research/work-analysis/2026-10-27-v3-h8-stream-sizing-backlog-dispositions.md",
+      "report_sha256": "1e014dd5a8528b10484d55d2afc80364d419ccc4533ff6db4882ee385b04307c",
       "prior_completed_attempt": {
-        "gate_fingerprint": "ea9ea94387f83d157e6b",
-        "completed_at_utc": "2026-10-23T08:21:59Z",
-        "report": "research/work-analysis/2026-10-23-v3-historical-backlog-dispositions.md",
-        "report_sha256": "40aec29dc33663e5c62691f825127722c8ad5c8d6f69b7e10068fd1c15f4b16b"
+        "gate_fingerprint": "8e4487a8e5bbe1c111c0",
+        "completed_at_utc": "2026-10-24T08:15:46Z",
+        "report": "research/work-analysis/2026-10-24-v3-h3-h5-h6-backlog-dispositions.md",
+        "report_sha256": "875abf4f4eab5905207b108afcb4f2397f110971c3ba5709d740c787279bd81b",
+        "prior_completed_attempt": {
+          "gate_fingerprint": "ea9ea94387f83d157e6b",
+          "completed_at_utc": "2026-10-23T08:21:59Z",
+          "report": "research/work-analysis/2026-10-23-v3-historical-backlog-dispositions.md",
+          "report_sha256": "40aec29dc33663e5c62691f825127722c8ad5c8d6f69b7e10068fd1c15f4b16b"
+        }
       }
     }
   }
