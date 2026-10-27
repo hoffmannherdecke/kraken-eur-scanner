@@ -123,8 +123,8 @@ $x | Add-Member -NotePropertyName current_pr515_quiesced_readonly_preview -NoteP
 $x.current_pr515_quiesced_readonly_preview.kind='V3_PRECAS_PR515_QUIESCED_READONLY_COMPATIBILITY_V1'
 $x.current_pr515_quiesced_readonly_preview.status='QUIESCED_NATIVE_SOURCE_MATCH_NOT_RELEASED'
 $x.current_pr515_quiesced_readonly_preview.single_local_supervisor_pr515_quiesced_observation_only=$true
-$x.fresh_current_xml_after_quiesce_independently_checked=$true
-$x.independent_cloud_old_only_after_quiesce_ack=$true
+$x | Add-Member -NotePropertyName fresh_current_xml_after_quiesce_independently_checked -NotePropertyValue $true
+$x | Add-Member -NotePropertyName independent_cloud_old_only_after_quiesce_ack -NotePropertyValue $true
 Need 'QUIESCED backwards compatible' (Resolve-V3ScopedCutoverRecovery $x).disposition 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE'
 $x.fence_marker_phase='ARMED'
 Need 'unbound QUIESCED marker' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_FENCE_MANUAL_RECONCILIATION'
