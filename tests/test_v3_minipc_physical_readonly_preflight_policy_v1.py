@@ -812,5 +812,54 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertNotIn("Invoke-RestMethod",notebook)
         self.assertNotIn("Start-ScheduledTask",notebook)
 
+    def test_v3_future_durable_reader_reuses_original_actor_without_release(self):
+        reader=(ROOT/"tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1").read_text(encoding="utf-8")
+        for required in (
+            "[switch]$PostcommitDurableIntent",
+            "V3_READER_MODE_CONFLICT",
+            "SET ROLE v3_cas_audit_reader;",
+            "BEGIN TRANSACTION READ ONLY;",
+            "V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1",
+            "JOIN v3_cas_audit.intent_v1 i ON i.epoch_id=e.epoch_id",
+            "(SELECT count(*) FROM v3_cas_audit.epoch_v1)=1",
+            "(SELECT count(*) FROM v3_cas_audit.intent_v1)=1",
+            "CURRENT_ONE_COMMITTED_PREINVOKE_INTENT_NOT_CAS_RELEASE",
+            "historical_cas_never_proven=$false",
+            "complete_cas_attempt_custody_proven=$false",
+            "originalhost_authenticated_here=$false",
+            "cloud_cas_authorized=$false",
+            "precommit_restore_authorized=$false",
+            "v3_paper_release_authorized=$false",
+        ):
+            self.assertIn(required,reader)
+        self.assertEqual(reader.count("foreach ($check in $checks)"),1)
+        self.assertEqual(reader.count("    catch {"),1)
+        for forbidden in ("Invoke-RestMethod","Invoke-WebRequest",
+                          "Start-ScheduledTask","Stop-ScheduledTask"):
+            self.assertNotIn(forbidden,reader)
+
+    def test_v3_pr515_postcommit_reader_exact_scope_join_is_pure(self):
+        cutover=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        mark="function Get-V3Pr515DurableReaderIntentSourceReview("
+        boundary="# SOURCE ONLY: assess the evidence needed from the EXISTING exclusive CAS"
+        self.assertEqual(cutover.count(mark),1)
+        review=cutover.split(mark,1)[1].split(boundary,1)[0]
+        for expected in (
+            "V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1",
+            "V3_PR515_ORIGINAL_EXPECTED_PREINVOKE_SCOPE_V1",
+            "REVIEW_ONLY_EXACT_COMMITTED_INTENT_MATCH_UNAUTHENTICATED_HERE",
+            "externally_complete_attempt_history_proven=$false",
+            "old_writer_auto_rearm_allowed=$false",
+            "precommit_restore_authorized=$false",
+            "cloud_cas_invoke_authorized=$false",
+            "v3_paper_release_authorized=$false",
+            "technical_release_proofs_credited=0",
+        ):
+            self.assertIn(expected,review)
+        self.assertNotRegex(review,r"(?m)^\s*(?:Enable|Disable|Start|Stop|Register)-ScheduledTask\b")
+        self.assertNotRegex(review,r"(?m)^\s*(?:Invoke-RestMethod|Invoke-WebRequest|Remove-Item|Set-Content)\b")
+        self.assert_locked_pr515_native_stop_only(cutover)
+
+
 if __name__=="__main__":
     unittest.main()

@@ -398,6 +398,59 @@ function Get-V3Pr515TwoSourceCloudSnapshotReview([object]$Reader,[object]$Cloud)
  }
 }
 
+# Future Stage4/Writer-COMMIT independent Reader evidence is compared
+# with the original PR515 source/fence/caller-ACL/request identifiers.
+# Pure SOURCE REVIEW only: caller-provided packets authenticate neither side.
+# A valid match is NOT old-writer rearm, CAS dispatch or Paper release.
+function Get-V3Pr515DurableReaderIntentSourceReview([object]$Reader,[object]$Original) {
+ $disposition='HOLD_DURABLE_READER_ORIGINAL_SCOPE_NOT_VERIFIED'
+ if($null -ne $Reader -and $null -ne $Original -and
+    [string]$Reader.kind -ceq 'V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1' -and
+    [string]$Reader.status -ceq 'CURRENT_ONE_COMMITTED_PREINVOKE_INTENT_NOT_CAS_RELEASE' -and
+    [string]$Original.kind -ceq 'V3_PR515_ORIGINAL_EXPECTED_PREINVOKE_SCOPE_V1' -and
+    $Reader.independent_tls_certificate_verified -eq $false -and
+    $Reader.historical_cas_never_proven -eq $false -and
+    $Reader.complete_cas_attempt_custody_proven -eq $false -and
+    $Reader.originalhost_authenticated_here -eq $false -and
+    $Reader.cloud_cas_authorized -eq $false -and
+    $Reader.precommit_restore_authorized -eq $false -and
+    $Reader.v3_paper_release_authorized -eq $false -and
+    $Original.cloud_cas_invoked -eq $false -and
+    [string]$Original.predecessor_series_id -ceq 'PAPER-V2R4-20261009T110135Z'){
+  $match=$true
+  $fields=@('epoch_id','intent_id','source_sha256',
+            'fence_sha256','caller_acl_sha256','request_sha256')
+  foreach($field in $fields){
+   $readProp=$Reader.PSObject.Properties[$field]
+   $oldProp=$Original.PSObject.Properties[$field]
+   if($null -eq $readProp -or $null -eq $oldProp){$match=$false;break}
+   $received=[string]$readProp.Value
+   $expected=[string]$oldProp.Value
+   $shape=if($field -eq 'epoch_id'){'^V3CAS-AUDIT-[a-f0-9]{32}$'}elseif($field -eq 'intent_id'){'^[a-f0-9-]{36}$'}else{'^[a-f0-9]{64}$'}
+   if($received -cnotmatch $shape -or $received -cne $expected){$match=$false;break}
+  }
+  $when=[datetimeoffset]::MinValue
+  if($match -and [string]$Reader.observed_at_utc -cmatch 'Z$' -and
+     [datetimeoffset]::TryParse([string]$Reader.observed_at_utc,[ref]$when) -and
+     ([datetimeoffset]::UtcNow-$when).TotalSeconds -ge -5 -and
+     ([datetimeoffset]::UtcNow-$when).TotalSeconds -le 90){
+   $disposition='REVIEW_ONLY_EXACT_COMMITTED_INTENT_MATCH_UNAUTHENTICATED_HERE'
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_PR515_DURABLE_READER_ORIGINAL_SCOPE_SOURCE_REVIEW_V1'
+  disposition=$disposition
+  reader_original_connection_authenticated_here=$false
+  originalhost_source_fence_acl_authenticated_here=$false
+  externally_complete_attempt_history_proven=$false
+  old_writer_auto_rearm_allowed=$false
+  precommit_restore_authorized=$false
+  cloud_cas_invoke_authorized=$false
+  v3_paper_release_authorized=$false
+  technical_release_proofs_credited=0
+ }
+}
+
 # SOURCE ONLY: assess the evidence needed from the EXISTING exclusive CAS
 # invocation owner BEFORE it ever calls the future V3 RPC. This function has
 # no I/O, verifies no credentials/signatures and NEVER authorizes restore.

@@ -713,11 +713,17 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
     def test_existing_stage3_dpapi_reader_writer_readonly_source(self):
         src = (ROOT / "tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1").read_text("utf-8")
         self.assertIn("Add-Type -AssemblyName System.Security -ErrorAction Stop", src)
-        # Original two-actor default plus ONE expressly opt-in Reader-only
-        # current snapshot; never a third Actor, writer, or Cloud authority.
-        self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 3)
-        self.assertEqual(src.count("COMMIT;"), 3)
+        # Original two-actor default + two mutually exclusive opt-in
+        # Reader-only snapshots (current empty and future committed intent);
+        # still the SAME two actors, no third credentials or CAS authority.
+        self.assertEqual(src.count("BEGIN TRANSACTION READ ONLY;"), 4)
+        self.assertEqual(src.count("COMMIT;"), 4)
         self.assertIn("[switch]$PrecommitCloudInventory", src)
+        self.assertIn("[switch]$PostcommitDurableIntent", src)
+        self.assertIn("if($PrecommitCloudInventory -and $PostcommitDurableIntent)", src)
+        self.assertIn("V3_READER_MODE_CONFLICT", src)
+        self.assertIn("WHERE (SELECT count(*) FROM v3_cas_audit.epoch_v1)=1", src)
+        self.assertIn("CURRENT_ONE_COMMITTED_PREINVOKE_INTENT_NOT_CAS_RELEASE", src)
         self.assertIn("if($PrecommitCloudInventory)", src)
         self.assertIn("if ($passed -eq 2)", src)
         self.assertIn("writer.dpapi", src)
