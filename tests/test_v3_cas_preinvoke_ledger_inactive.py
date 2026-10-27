@@ -200,6 +200,29 @@ class V3CasAuditInactiveTests(unittest.TestCase):
                         executable.index("revoke v3_cas_audit_table_owner from postgres"))
 
 
+    def test_approved_stage2_artifact_exactly_matches_locked_canonical_source(self):
+        """The only reviewed install SQL differs by a header + one hardlock,
+        not by altered permission statements or hidden CAS functionality.
+        """
+        original=(ROOT/"supabase/v3-cas-preinvoke-ledger-INACTIVE.sql").read_text("utf-8")
+        installed=(ROOT/"supabase/v3-cas-audit-stage2-install-APPROVED-20261027.sql").read_text("utf-8")
+        locked="  raise exception 'V3_CAS_AUDIT_LEDGER_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+        self.assertEqual(original.count(locked),1)
+        self.assertTrue(original.startswith("-- SOURCE ONLY / NEVER MIGRATE"))
+        self.assertTrue(installed.startswith("-- V3 Paper controlled production Stage-2 AUDIT INSTALLATION ONLY."))
+        self.assertNotIn(locked,installed)
+        self.assertNotIn("create table v3_cas_audit.",installed.lower())
+        self.assertNotIn("rotate_v2r4_to_v3_experimental_paper(",installed.lower())
+        old_body=original.split("do $v3_cas_ledger_inactive$",1)[1]
+        approved_body=installed.split("do $v3_cas_stage2_approved$",1)[1]
+        expected=old_body.replace(
+            locked,
+            "  -- Stage-2 installation specifically approved; original source remains locked.",
+            1
+        ).replace("$v3_cas_ledger_inactive$;","$v3_cas_stage2_approved$;")
+        self.assertEqual(approved_body,expected)
+        self.assertEqual(approved_body.count("create function v3_cas_audit.append_intent_v1("),1)
+
     def test_pg17_distinct_scram_reader_observes_only_committed_intent(self):
         # Native disposable PG17 test uses two actual SCRAM LOGINs instead
         # of a postgres superuser impersonating both actors via SET ROLE.
