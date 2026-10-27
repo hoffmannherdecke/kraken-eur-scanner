@@ -861,5 +861,36 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assert_locked_pr515_native_stop_only(cutover)
 
 
+    def test_pr515_separate_armed_to_quiesced_source_stays_hardlocked(self):
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        begin="function Invoke-V3Pr515ArmedToQuiescedSOURCE_ONLY("
+        end="# Current PR515 PRE-COMMIT manual recovery SOURCE ONLY."
+        self.assertEqual(s.count(begin),1)
+        body=s.split(begin,1)[1].split(end,1)[0]
+        self.assertLess(body.index("throw 'V3_PR515_ARMED_TO_QUIESCED_SOURCE_UNCONDITIONALLY_LOCKED'"),
+                        body.index("Read-V3Pr515ArmedTwoCycleOriginalHost"))
+        self.assertLess(body.index("throw 'V3_PR515_QUIESCED_EXTERNAL_PID_AND_CAS_CUSTODY_NOT_WIRED'"),
+                        body.index("[IO.File]::Replace($temp,$fence,$backup,$true)"))
+        for token in (
+            "V3_PR515_ORIGINALHOST_ARMED_TWO_CYCLE_LOCAL_READONLY_V1",
+            "Get-FileHash -LiteralPath $fence -Algorithm SHA256",
+            "Set-Acl -LiteralPath $temp -AclObject $acl",
+            "Test-V3ScopedIntakeTaskSet -Names @($marker.task_names)",
+            "V3_QUIESCED_NATIVE_INTAKE_REARMED",
+            "V3_QUIESCED_AFTERCARE_NOT_RUNNING",
+            "QUIESCED_LOCAL_ONLY_PENDING_INDEPENDENT_POSTSTOP_ACK",
+            "external_cas_never_history_verified_here=$false",
+            "automatic_old_writer_rearm_allowed=$false",
+            "cloud_cas_invocation_authorized=$false",
+            "v3_paper_release_authorized=$false",
+        ):
+            self.assertIn(token,body)
+        for forbidden in ("Enable-ScheduledTask","Disable-ScheduledTask",
+                          "Stop-ScheduledTask","Start-ScheduledTask",
+                          "Invoke-RestMethod","Invoke-WebRequest"):
+            self.assertNotIn(forbidden,body)
+        self.assert_locked_pr515_native_stop_only(s)
+
+
 if __name__=="__main__":
     unittest.main()
