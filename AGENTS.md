@@ -1,5 +1,11 @@
 # Projektweite Arbeitsanweisung — Aktien & Krypto Chancen
 
+## V3 Paper – Stand 27.10.2026 (nur V3-Aufträge)
+
+**DONE:** Stage0/2, zwei Stage3-Notebook-Akteure, PR582-Read-only. PR583 OPEN und PR586 SEAL sind gemergt, jedoch **HARDLOCKED/SOURCE-ONLY**. Die Duplikate PR584/PR587 sind **CLOSED/UNMERGED**. V2R4 bleibt allein aktiv, CAS OFF.
+
+**Einziges nächstes Gate:** echte Mini-PC-Read-only-Inventur (12 Quellen, 4 Tasks) mit bestehendem `tools/check-minipc-v3-physical-writer-readiness.ps1`. Erst danach Originalhost-/PR515-Fence-/ACL- und authentifizierte Writer-/Reader-/CAS-/6-E2E-Nachweise samt letzter Nutzerfreigabe. Kein Source-Test ist ein Live-ACK. Belege: Issues #99 und #353; ältere Historie nicht erneut ausführen.
+
 **Projektweit, auch für V4+:** Zusammenarbeit, Hard-/Software, Mini-PC, Scanner, Cloud, Research, Betrieb und Strategien. **Auftragsbereich zuerst bestimmen, nie V3 automatisch annehmen.** Allgemeine Regeln sind keine Strategie-Release-Gates. Hardwarearbeiten brauchen eigene Betriebsprüfungen; eine Strategieverknüpfung nur bei konkret belegter Abhängigkeit.
 
 ## Aktuelle Evidenzpriorität – 26.10.2026
