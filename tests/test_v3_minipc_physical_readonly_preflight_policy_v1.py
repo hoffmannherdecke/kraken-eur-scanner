@@ -787,5 +787,30 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assert_locked_pr515_native_stop_only(source)
 
 
+    def test_v3_precommit_reader_sanitized_hold_diagnostics_preserve_fail_closed(self):
+        notebook=(ROOT/"tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1").read_text(encoding="utf-8")
+        # Same original SQL/actor/default two-role gate, only categorized HOLD.
+        self.assertEqual(notebook.count("foreach ($check in $checks)"),1)
+        self.assertEqual(notebook.count("    catch {"),1)
+        self.assertIn("if($PrecommitCloudInventory)",notebook)
+        self.assertIn("READER_PRECOMMIT_HOLD_CLASS=$holdClass",notebook)
+        for reason in (
+            "LOCAL_READER_IDENTITY_OR_DPAPI", "POSTGRES_READONLY_QUERY_OR_CONNECTION",
+            "CURRENT_JSON_DECODE", "CURRENT_IDENTITY_OR_SCHEMA",
+            "CURRENT_UTC_FRESHNESS", "CURRENT_AUDIT_LEDGER_COUNTS",
+            "CURRENT_READER_ROLE_ISOLATION", "CURRENT_NEGATIVE_AUTHORITY_FLAGS",
+        ):
+            self.assertIn(reason,notebook)
+        self.assertEqual(notebook.count("throw 'V3_PRECOMMIT_READER_NONEMPTY_OR_UNVERIFIED_HOLD'"),5)
+        self.assertIn("BEGIN TRANSACTION READ ONLY;",notebook)
+        self.assertIn("independent_attempt_history_complete=$false",notebook)
+        self.assertIn("v3_paper_release_authorized=$false",notebook)
+        catch=notebook.split("    catch {",1)[1].split("    finally {",1)[0]
+        for forbidden in ("Write-Output $output","Write-Output $_","Write-Error","Exception.Message"):
+            self.assertNotIn(forbidden,catch)
+        self.assertEqual(catch.count("READER_PRECOMMIT_HOLD_CLASS="),1)
+        self.assertNotIn("Invoke-RestMethod",notebook)
+        self.assertNotIn("Start-ScheduledTask",notebook)
+
 if __name__=="__main__":
     unittest.main()
