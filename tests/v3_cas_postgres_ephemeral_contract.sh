@@ -279,6 +279,15 @@ CREATE ROLE v3_cas_executor_actor NOSUPERUSER NOLOGIN NOINHERIT
  NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION
  CONNECTION LIMIT 0 PASSWORD NULL VALID UNTIL '2000-01-01';
 SQL
+# Catalog-only fixture shape check; zero passwords or secrets reported.
+pg -Atc "SELECT r.rolname, r.rolcanlogin, r.rolinherit, r.rolbypassrls,
+ r.rolconnlimit, (r.rolvaliduntil < clock_timestamp()) AS expired,
+ (SELECT count(*) FROM pg_auth_members m WHERE m.member=r.oid) as outgoing,
+ (SELECT count(*) FROM pg_auth_members m WHERE m.roleid=r.oid) as incoming
+ FROM pg_roles r WHERE r.rolname IN
+ ('v3_cas_audit_writer_actor','v3_cas_audit_reader_actor',
+  'v3_cas_executor_actor','v3_cas_executor','v3_cas_audit_writer','v3_cas_audit_reader')
+ ORDER BY r.rolname;" | sed 's/^/V3_STAGE3_FIXTURE_ROLE|/'
 python - "$stage3_sql" <<'PY' | pg -f - >/dev/null
 import base64, hashlib, hmac, pathlib, sys
 s=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
