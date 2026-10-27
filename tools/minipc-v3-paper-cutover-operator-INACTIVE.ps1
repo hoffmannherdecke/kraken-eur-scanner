@@ -351,6 +351,53 @@ function Test-V3PrecommitCurrentCloudInventory([object]$Inventory) {
  return ($age -ge -10 -and $age -le 180)
 }
 
+# PURE review of two existing Cloud readers: authenticated NOTEBOOK private
+# reader's snapshot and separately captured production paper-series inventory.
+# Caller JSON, zero rows and two timestamps cannot prove complete CAS history.
+function Get-V3Pr515TwoSourceCloudSnapshotReview([object]$Reader,[object]$Cloud) {
+ $decision='HOLD_TWO_SOURCE_CLOUD_SNAPSHOT_DRIFT_OR_UNTRUSTED'
+ if($null -ne $Reader -and $null -ne $Cloud -and
+    [string]$Reader.kind -ceq 'V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1' -and
+    [string]$Reader.status -ceq 'AUTHENTICATED_READER_CURRENT_EMPTY_NOT_HISTORICAL_NEVER' -and
+    [string]$Reader.actor -ceq 'v3_cas_audit_reader_actor' -and
+    [string]$Reader.role -ceq 'v3_cas_audit_reader' -and
+    ($Reader.epoch_count -is [int] -or $Reader.epoch_count -is [long]) -and
+    [long]$Reader.epoch_count -eq 0 -and
+    ($Reader.intent_count -is [int] -or $Reader.intent_count -is [long]) -and
+    [long]$Reader.intent_count -eq 0 -and
+    $Reader.independent_tls_certificate_verified -eq $false -and
+    $Reader.independent_attempt_history_complete -eq $false -and
+    $Reader.historical_cas_never_proven -eq $false -and
+    $Reader.public_old_only_series_verified_here -eq $false -and
+    $Reader.native_rearm_authorized -eq $false -and
+    $Reader.precommit_restore_authorized -eq $false -and
+    $Reader.cloud_cas_authorized -eq $false -and
+    $Reader.v3_paper_release_authorized -eq $false -and
+    (Test-V3PrecommitCurrentCloudInventory -Inventory $Cloud)){
+  $rt=[datetimeoffset]::MinValue
+  $ct=[datetimeoffset]::MinValue
+  if([string]$Reader.observed_at_utc -cmatch 'Z$' -and
+     [datetimeoffset]::TryParse([string]$Reader.observed_at_utc,[ref]$rt) -and
+     [datetimeoffset]::TryParse([string]$Cloud.observed_at_utc,[ref]$ct) -and
+     [math]::Abs(($rt-$ct).TotalSeconds) -le 90 -and
+     ([datetimeoffset]::UtcNow-$rt).TotalSeconds -ge -10 -and
+     ([datetimeoffset]::UtcNow-$rt).TotalSeconds -le 90){
+   $decision='REVIEW_ONLY_CURRENT_OLD_ONLY_AND_READER_EMPTY_CAS_HISTORY_UNKNOWN'
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_PR515_TWO_EXISTING_CLOUD_SNAPSHOTS_SOURCE_REVIEW_V1'
+  disposition=$decision
+  independently_authenticated_here=$false
+  complete_historical_cas_never_proven=$false
+  independent_cas_never_invoked_verified=$false
+  originalhost_quiesced_or_precommit_restore_authorized=$false
+  native_rearm_or_cloud_cas_authorized=$false
+  v3_paper_release_authorized=$false
+  technical_release_proofs_credited=0
+ }
+}
+
 # SOURCE ONLY: assess the evidence needed from the EXISTING exclusive CAS
 # invocation owner BEFORE it ever calls the future V3 RPC. This function has
 # no I/O, verifies no credentials/signatures and NEVER authorizes restore.
