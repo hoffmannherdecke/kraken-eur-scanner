@@ -892,5 +892,38 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assert_locked_pr515_native_stop_only(s)
 
 
+    def test_pr515_armed_failure_manual_rescue_review_not_executable(self):
+        source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        helper=source.split("function Test-V3Pr515ArmedRecoveryIdentity(",1)[1].split(
+            "# Pure SOURCE-ONLY comparison of two ORIGINAL Supervisor",1)[0]
+        for token in (
+            "Test-V3Pr515FreshRecoveryIdentity -Preview $Before",
+            "V3_PRECAS_PR515_ARMED_POSTSTOP_READONLY_COMPATIBILITY_V1",
+            "ARMED_DISABLED_NATIVE_SOURCE_MATCH_NOT_RELEASED",
+            "poststop_disabled_only_native_xml_recheck_pass -eq $true",
+            "independent_cloud_cas_never_invoked_verified -eq $false",
+            "external_sha_pin_independently_authenticated -eq $false",
+            "physical_task_restore_tested -eq $false",
+            "scheduler_task_mutations -eq $false",
+        ):
+            self.assertIn(token,helper)
+        review=source.split("function Resolve-V3ScopedCutoverRecovery(",1)[1].split(
+            "# Exact adapter for the *actual* 15-Oct",1)[0]
+        self.assertIn("HOLD_ARMED_PARTIAL_STOP_MANUAL_INCIDENT_NO_REARM",review)
+        self.assertIn("PRE_CAS_ARMED_MANUAL_RESTORE_REVIEW_CANDIDATE_NOT_EXECUTABLE",review)
+        self.assertIn("HOLD_ARMED_CURRENT_BACKUP_OR_INDEPENDENT_CLOUD_ACK",review)
+        self.assertIn("Test-V3Pr515ArmedRecoveryIdentity -Before $current -After $armed",review)
+        self.assertIn("Test-V3PrecommitCurrentCloudInventory -Inventory $Receipt.current_prod_cloud_inventory",review)
+        self.assertIn("independent_cloud_precommit_cas_never_invoked_ack -eq $true",review)
+        self.assertIn("automatic_old_writer_rearm_allowed=$false",review)
+        self.assertIn("host_rollback_implemented=$false",review)
+        for forbidden in ("Enable-ScheduledTask","Disable-ScheduledTask",
+                          "Start-ScheduledTask","Stop-ScheduledTask"):
+            self.assertNotIn(forbidden,review)
+        self.assert_locked_pr515_native_stop_only(source)
+        self.assertIn("V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED",source)
+        self.assertIn("V3_PR515_QUIESCED_EXTERNAL_PID_AND_CAS_CUSTODY_NOT_WIRED",source)
+
+
 if __name__=="__main__":
     unittest.main()
