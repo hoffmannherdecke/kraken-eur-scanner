@@ -725,5 +725,67 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assert_locked_pr515_native_stop_only(s)
 
 
+    def test_v3_existing_notebook_reader_current_cloud_snapshot_does_not_claim_never(self):
+        notebook=(ROOT/"tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1").read_text(encoding="utf-8")
+        for token in (
+            "[switch]$PrecommitCloudInventory",
+            "SET ROLE v3_cas_audit_reader;",
+            "BEGIN TRANSACTION READ ONLY;",
+            "v3_cas_audit.epoch_v1",
+            "v3_cas_audit.intent_v1",
+            "session_user",
+            "current_user",
+            "AUTHENTICATED_READER_CURRENT_EMPTY_NOT_HISTORICAL_NEVER",
+            "V3_PRECOMMIT_READER_NONEMPTY_OR_UNVERIFIED_HOLD",
+            "independent_tls_certificate_verified=$false",
+            "independent_attempt_history_complete=$false",
+            "historical_cas_never_proven=$false",
+            "precommit_restore_authorized=$false",
+            "v3_paper_release_authorized=$false",
+            "V3_STAGE3_TWO_ORIGINAL_READONLY_AUDIT_SESSIONS_PASS_NO_CAS",
+            "Remove-Item Env:\PGPASSWORD",
+        ):
+            self.assertIn(token,notebook)
+        # Current SQL remains fixed/static: no dynamic caller SQL or extra
+        # independent actor is introduced, and the original two-role smoke
+        # remains the default.
+        self.assertEqual(notebook.count("foreach ($check in $checks)"),1)
+        self.assertEqual(notebook.count("catch {"),1)
+        self.assertIn("if($PrecommitCloudInventory)",notebook)
+        for forbidden in (
+            "Start-ScheduledTask", "Enable-ScheduledTask", "Disable-ScheduledTask",
+            "Invoke-RestMethod", "Invoke-WebRequest", "supabase db",
+            "password='", "CAS_EXECUTE", "V3_PAPER_GO_LIVE",
+        ):
+            self.assertNotIn(forbidden,notebook)
+
+    def test_v3_pr515_two_cloud_snapshot_join_is_pure_and_never_authorizes(self):
+        source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        mark="function Get-V3Pr515TwoSourceCloudSnapshotReview("
+        end="# SOURCE ONLY: assess the evidence needed from the EXISTING exclusive CAS"
+        self.assertEqual(source.count(mark),1)
+        review=source.split(mark,1)[1].split(end,1)[0]
+        for required in (
+            "Test-V3PrecommitCurrentCloudInventory -Inventory $Cloud",
+            "AUTHENTICATED_READER_CURRENT_EMPTY_NOT_HISTORICAL_NEVER",
+            "$Reader.epoch_count -eq 0",
+            "$Reader.intent_count -eq 0",
+            "independent_tls_certificate_verified -eq $false",
+            "independent_attempt_history_complete -eq $false",
+            "historical_cas_never_proven -eq $false",
+            "REVIEW_ONLY_CURRENT_OLD_ONLY_AND_READER_EMPTY_CAS_HISTORY_UNKNOWN",
+            "HOLD_TWO_SOURCE_CLOUD_SNAPSHOT_DRIFT_OR_UNTRUSTED",
+            "complete_historical_cas_never_proven=$false",
+            "originalhost_quiesced_or_precommit_restore_authorized=$false",
+            "native_rearm_or_cloud_cas_authorized=$false",
+            "v3_paper_release_authorized=$false",
+            "technical_release_proofs_credited=0",
+        ):
+            self.assertIn(required,review)
+        self.assertNotRegex(review,r"(?m)^\s*(?:Enable|Disable|Start|Stop|Register)-ScheduledTask\b")
+        self.assertNotRegex(review,r"(?m)^\s*(?:Invoke-RestMethod|Invoke-WebRequest|Remove-Item|Set-Content)\b")
+        self.assert_locked_pr515_native_stop_only(source)
+
+
 if __name__=="__main__":
     unittest.main()
