@@ -2,9 +2,9 @@
 
 ## V3 Paper – Stand 27.10.2026 (nur V3-Aufträge)
 
-**DONE:** Stage0/2, zwei Stage3-Notebook-Akteure, PR582-Read-only. PR583 OPEN und PR586 SEAL sind gemergt, jedoch **HARDLOCKED/SOURCE-ONLY**. Die Duplikate PR584/PR587 sind **CLOSED/UNMERGED**. V2R4 bleibt allein aktiv, CAS OFF.
+**V3 DONE:** Stages0–3/PR582; PR583/586 HARDLOCKED SOURCE, PR584/587 CLOSED. Mini-PC 70/70 Stage, Disabled V3-Task aktualisiert + XML-Backup. PR515-PRECAS-Backup/Lesetest 26.10. PASS. V2R4 aktiv; CAS OFF.
 
-**Einziges nächstes Gate:** echte Mini-PC-Read-only-Inventur (12 Quellen, 4 Tasks) mit bestehendem `tools/check-minipc-v3-physical-writer-readiness.ps1`. Erst danach Originalhost-/PR515-Fence-/ACL- und authentifizierte Writer-/Reader-/CAS-/6-E2E-Nachweise samt letzter Nutzerfreigabe. Kein Source-Test ist ein Live-ACK. Belege: Issues #99 und #353; ältere Historie nicht erneut ausführen.
+**Nächstes V3-Gate:** PR515-No-Rearm/QUIESCED/Precommit-Recovery im bestehenden Cutover-Operator integrieren. ARMED-2-Zyklen-Leser: SOURCE/READONLY, kein Stop/CAS. Echte PID-/Fence-/ACL-/Cloud-CAS-Autorität, sechs E2E und finale Freigabe weiter offen. PASS nicht wiederholen; Owner #99/#353.
 
 **Projektweit, auch für V4+:** Zusammenarbeit, Hard-/Software, Mini-PC, Scanner, Cloud, Research, Betrieb und Strategien. **Auftragsbereich zuerst bestimmen, nie V3 automatisch annehmen.** Allgemeine Regeln sind keine Strategie-Release-Gates. Hardwarearbeiten brauchen eigene Betriebsprüfungen; eine Strategieverknüpfung nur bei konkret belegter Abhängigkeit.
 
