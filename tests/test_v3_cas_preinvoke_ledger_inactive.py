@@ -741,5 +741,46 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         self.assertNotIn("Write-Output $_.Exception.Message", src)
         self.assertIn("if ($passed -eq 2)", src)
 
+
+class V3Stage4OriginalEpochPrivilegeEscrowSourceTests(unittest.TestCase):
+    """No false Stage4 activation; test original privileges only offline."""
+
+    def test_stage4_locked_and_atomic_scoped_owner_escalation(self):
+        sql = (ROOT / "supabase/v3-cas-audit-stage4-original-epoch-open-INACTIVE.sql").read_text("utf-8")
+        self.assertTrue(sql.startswith("-- V3 Paper Issue #99"))
+        body = "\n".join(x for x in sql.splitlines() if not x.lstrip().startswith("--"))
+        self.assertTrue(body.lstrip().startswith("BEGIN;\nDO $v3_stage4_source_lock$"))
+        self.assertIn("RAISE EXCEPTION 'V3_STAGE4_EPOCH_OPEN_SOURCE_INACTIVE_NO_PRODUCTION_RELEASE'", body)
+        self.assertTrue(body.rstrip().endswith("COMMIT;"))
+        self.assertEqual(body.count("INSERT INTO v3_cas_audit.epoch_v1"), 1)
+        self.assertIn("GRANT v3_cas_audit_table_owner TO postgres WITH INHERIT FALSE, SET TRUE, ADMIN FALSE;", body)
+        self.assertIn("GRANT INSERT ON v3_cas_audit.epoch_v1 TO postgres;", body)
+        self.assertIn("REVOKE INSERT ON v3_cas_audit.epoch_v1 FROM postgres;", body)
+        self.assertIn("REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;", body)
+        self.assertEqual(body.count("SET ROLE v3_cas_audit_table_owner;"), 2)
+        self.assertEqual(body.count("RESET ROLE;"), 2)
+        self.assertIn("V3_STAGE4_TEMPORARY_PRIVILEGE_NOT_FULLY_RESTORED_HOLD", body)
+        self.assertIn("V3_STAGE4_ORIGINAL_FINGERPRINTS_MISSING_HOLD", body)
+        self.assertIn("V3_STAGE4_WRONG_ACTIVE_ORIGINAL_PAPER_HOLD", body)
+        self.assertIn("V3_STAGE4_EXISTING_AUDIT_EPOCH_OR_INTENT_HOLD", body)
+        self.assertIn("V3_STAGE4_CAS_ALREADY_EXISTS_HOLD", body)
+        self.assertIn("V3_STAGE4_ACTOR_STATE_DRIFT_HOLD", body)
+        for token in ("__EPOCH_ID__", "__SOURCE_SHA256__", "__FENCE_SHA256__", "__CALLER_ACL_SHA256__"):
+            self.assertGreaterEqual(body.count(token), 2, token)
+        for forbidden in (
+            "INSERT INTO v3_cas_audit.intent_v1",
+            "UPDATE public.paper_series",
+            "CREATE ROLE", "CREATE POLICY",
+            "ALTER ROLE", "CREATE FUNCTION",
+            "GRANT EXECUTE", "DROP TABLE",
+            "GRANT UPDATE ON v3_cas_audit.epoch_v1",
+            "PERFORM v3_cas_audit.append_intent_v1",
+        ):
+            self.assertNotIn(forbidden, body, forbidden)
+        ci=(ROOT / "tests/v3_cas_postgres_ephemeral_contract.sh").read_text("utf-8")
+        self.assertIn("V3_PG17_STAGE4_ORIGINAL_EPOCH_PRIVILEGE_ESCROW_ROLLBACK_PASS", ci)
+        self.assertIn("stage4_sql=\"supabase/v3-cas-audit-stage4-original-epoch-open-INACTIVE.sql\"", ci)
+        self.assertIn('src=src.replace("COMMIT;\\n-- Even an actual","ROLLBACK;\\n-- Even an actual",1)', ci)
+
 if __name__ == "__main__":
     unittest.main()
