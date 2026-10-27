@@ -361,8 +361,10 @@ function Get-V3Pr515TwoSourceCloudSnapshotReview([object]$Reader,[object]$Cloud)
     [string]$Reader.status -ceq 'AUTHENTICATED_READER_CURRENT_EMPTY_NOT_HISTORICAL_NEVER' -and
     [string]$Reader.actor -ceq 'v3_cas_audit_reader_actor' -and
     [string]$Reader.role -ceq 'v3_cas_audit_reader' -and
-    $Reader.epoch_count -is [int] -and $Reader.epoch_count -eq 0 -and
-    $Reader.intent_count -is [int] -and $Reader.intent_count -eq 0 -and
+    ($Reader.epoch_count -is [int] -or $Reader.epoch_count -is [long]) -and
+    [long]$Reader.epoch_count -eq 0 -and
+    ($Reader.intent_count -is [int] -or $Reader.intent_count -is [long]) -and
+    [long]$Reader.intent_count -eq 0 -and
     $Reader.independent_tls_certificate_verified -eq $false -and
     $Reader.independent_attempt_history_complete -eq $false -and
     $Reader.historical_cas_never_proven -eq $false -and
