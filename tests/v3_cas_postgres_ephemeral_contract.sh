@@ -370,6 +370,61 @@ if command -v pwsh >/dev/null 2>&1; then
  ' >/dev/null
 fi
 echo 'V3_PG17_STAGE3_DISTINCT_WRITER_READER_ACTORS_SOURCE_TEST_PASS_CAS_OFF'
+# Stage4 ORIGINAL source-only epoch creation through temporary PG17 membership
+# and object ACL. Never touch actual Cloud: this is still the same disposable
+# --network none database, original template must remain hard locked, and
+# successful fixture SQL uses ROLLBACK instead of COMMIT.
+stage4_sql="supabase/v3-cas-audit-stage4-original-epoch-open-INACTIVE.sql"
+# Disposable bootstrap root defaults to database v3_ci_restore_root; the Stage2
+# private schema lives in postgres. Use the RIGHT synthetic database, never Cloud.
+pg_root_db() {
+ docker exec --interactive "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d postgres "$@"
+}
+# Effective original Supabase postgres SELECT privilege was observed directly
+# on both Stage2 tables despite no ordinary user INSERT/UPDATE. The standard
+# isolated PG17 clone initially differs; mimic only those two effective SELECT
+# rights via disposable bootstrap superuser and remove them after Stage4.
+pg_root_db -c 'GRANT SELECT ON v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1 TO postgres;' >/dev/null
+if [[ "$(pg -Atc "select has_table_privilege('postgres','v3_cas_audit.epoch_v1','SELECT') and has_table_privilege('postgres','v3_cas_audit.intent_v1','SELECT') and not has_table_privilege('postgres','v3_cas_audit.epoch_v1','INSERT')")" != 't' ]]; then
+ echo 'FAIL_STAGE4_DISPOSABLE_ORIGINAL_READ_PRIVILEGE_PARITY' >&2; exit 1
+fi
+if pg -f - < "$stage4_sql" >/dev/null 2>&1; then
+ echo 'FAIL_STAGE4_ORIGINAL_INACTIVE_TEMPLATE_EXECUTED' >&2; exit 1
+fi
+if [[ "$(pg_root_db -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner' and m.set_option")" != '0' ]]; then
+ echo 'FAIL_STAGE4_HARDLOCK_LEFT_ANY_EFFECT' >&2; exit 1
+fi
+python - "$stage4_sql" <<'PY' | pg -f - >/dev/null
+import pathlib, sys
+src = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+lock = "  RAISE EXCEPTION 'V3_STAGE4_EPOCH_OPEN_SOURCE_INACTIVE_NO_PRODUCTION_RELEASE';"
+assert src.count(lock) == 1
+src = src.replace(lock,"  -- synthetic isolated CI unlock only; never merge this replacement.",1)
+fixtures = {
+ "__EPOCH_ID__": "V3CAS-AUDIT-"+"e"*32,
+ "__SOURCE_SHA256__": "a"*64,
+ "__FENCE_SHA256__": "b"*64,
+ "__CALLER_ACL_SHA256__": "c"*64,
+}
+for key, value in fixtures.items():
+ assert src.count(key) >= 2
+ src=src.replace(key,value)
+assert "COMMIT;\n-- Even an actual" in src
+src=src.replace("COMMIT;\n-- Even an actual","ROLLBACK;\n-- Even an actual",1)
+assert not any(key in src for key in fixtures)
+print(src)
+PY
+if [[ "$(pg_root_db -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ||
+      "$(pg_root_db -Atc 'select count(*) from v3_cas_audit.intent_v1')" != '0' ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner' and m.admin_option and not m.set_option and not m.inherit_option")" != '1' ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner'")" != '1' ]] ||
+   [[ "$(pg -Atc "select has_table_privilege('postgres','v3_cas_audit.epoch_v1','INSERT') or has_table_privilege('postgres','v3_cas_audit.epoch_v1','UPDATE')")" != 'f' ]]; then
+ echo 'FAIL_STAGE4_PRIVILEGE_ESCROW_NOT_RESTORED_AFTER_DISPOSABLE_TRANSACTION' >&2; exit 1
+fi
+pg_root_db -c 'REVOKE SELECT ON v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1 FROM postgres;' >/dev/null
+echo 'V3_PG17_STAGE4_ORIGINAL_EPOCH_PRIVILEGE_ESCROW_ROLLBACK_PASS'
+
 # Restore disposable-root semantics for legacy isolated tests only.
 pg_root -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
 # Confirm audit data remained unchanged independently, using ONLY the
