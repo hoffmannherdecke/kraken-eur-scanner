@@ -137,14 +137,16 @@ class V3CasAuditInactiveTests(unittest.TestCase):
         self.assertEqual(executable.lower().count("do $v3_cas_ledger_inactive$"), 1)
         self.assertTrue(executable.rstrip().endswith("$v3_cas_ledger_inactive$;"))
         for phrase in (
-            "create schema if not exists v3_cas_audit",
+            "V3_CAS_STAGE0_EXISTING_QUARANTINE_REQUIRED",
+            "V3_CAS_STAGE0_QUARANTINE_DRIFT_HOLD",
+            "V3_CAS_STAGE0_COLUMN_SHAPE_DRIFT_HOLD",
+            "pg_catalog.to_regclass('v3_cas_audit.epoch_v1')",
+            "pg_catalog.to_regclass('v3_cas_audit.intent_v1')",
             "revoke all on schema v3_cas_audit",
-            "create table v3_cas_audit.epoch_v1",
-            "create table v3_cas_audit.intent_v1",
-            "primary key(epoch_id,ordinal)",
-            "intent_id uuid not null unique",
-            "next_ordinal bigint not null",
-            "state = 'PREINVOKE_INTENT'",
+            "pg_catalog.pg_get_userbyid(c.relowner)='postgres'",
+            "exists(select 1 from v3_cas_audit.epoch_v1)",
+            "exists(select 1 from v3_cas_audit.intent_v1)",
+            "pg_catalog.pg_policy",
             "enable row level security",
             "force row level security",
             "from public, anon, authenticated, service_role",
@@ -174,9 +176,23 @@ class V3CasAuditInactiveTests(unittest.TestCase):
             "create policy v3_cas_epoch_definer_update_v1",
             "create policy v3_cas_intent_definer_insert_v1",
             "owner to v3_cas_audit_append_definer",
+            "grant create on schema v3_cas_audit to v3_cas_audit_table_owner",
+            "revoke create on schema v3_cas_audit from v3_cas_audit_table_owner",
+            "grant create on schema v3_cas_audit to v3_cas_audit_append_definer",
+            "revoke create on schema v3_cas_audit from v3_cas_audit_append_definer",
         ):
             self.assertIn(source, executable.lower())
         self.assertNotIn("rotate_v2r4_technical_paper(", executable.lower())
+        self.assertNotIn("create table v3_cas_audit.epoch_v1", executable.lower())
+        self.assertNotIn("create table v3_cas_audit.intent_v1", executable.lower())
+        self.assertNotIn("create schema if not exists v3_cas_audit", executable.lower())
+        self.assertLess(executable.index("V3_CAS_STAGE0_EXISTING_QUARANTINE_REQUIRED"),
+                        executable.index("alter table v3_cas_audit.epoch_v1 owner"))
+        self.assertLess(executable.index("grant v3_cas_audit_table_owner to postgres"),
+                        executable.index("alter table v3_cas_audit.epoch_v1 owner"))
+        self.assertLess(executable.index("revoke create on schema v3_cas_audit from v3_cas_audit_table_owner"),
+                        executable.index("create policy v3_cas_epoch_writer_read_v1"))
+
 
     def test_pg17_distinct_scram_reader_observes_only_committed_intent(self):
         # Native disposable PG17 test uses two actual SCRAM LOGINs instead
