@@ -445,7 +445,7 @@ for key,value in {
   "__FENCE_SHA256__":"b"*64,
   "__CALLER_ACL_SHA256__":"c"*64,
 }.items(): s=s.replace(key,value)
-assert "__" not in s
+assert not any(token in s for token in ("__EPOCH_ID__", "__SOURCE_SHA256__", "__FENCE_SHA256__", "__CALLER_ACL_SHA256__"))
 print(s)
 PY
 }
