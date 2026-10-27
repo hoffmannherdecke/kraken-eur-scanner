@@ -782,5 +782,46 @@ class V3Stage4OriginalEpochPrivilegeEscrowSourceTests(unittest.TestCase):
         self.assertIn("stage4_sql=\"supabase/v3-cas-audit-stage4-original-epoch-open-INACTIVE.sql\"", ci)
         self.assertIn('src=src.replace("COMMIT;\\n-- Even an actual","ROLLBACK;\\n-- Even an actual",1)', ci)
 
+
+class V3Stage5OriginalEpochSealSourceTests(unittest.TestCase):
+    """Stage5 must never open a second epoch or authorize CAS dispatch."""
+
+    def test_original_locked_sealer_privilege_escrow(self):
+        source = (ROOT / "supabase/v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql").read_text("utf-8")
+        body = "\n".join(line for line in source.splitlines()
+                         if not line.lstrip().startswith("--"))
+        self.assertTrue(body.lstrip().startswith("BEGIN;\nDO $v3_stage5_source_lock$"))
+        self.assertTrue(body.rstrip().endswith("COMMIT;"))
+        self.assertEqual(body.count(
+            "RAISE EXCEPTION 'V3_STAGE5_ORIGINAL_EPOCH_SEAL_SOURCE_INACTIVE_NO_PRODUCTION_RELEASE'"), 1)
+        self.assertEqual(body.count("UPDATE v3_cas_audit.epoch_v1 SET sealed=true"), 1)
+        self.assertIn("GRANT UPDATE (sealed) ON v3_cas_audit.epoch_v1 TO postgres;", body)
+        self.assertIn("REVOKE UPDATE (sealed) ON v3_cas_audit.epoch_v1 FROM postgres;", body)
+        self.assertIn("REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;", body)
+        self.assertEqual(body.count("SET ROLE v3_cas_audit_table_owner;"), 2)
+        self.assertEqual(body.count("RESET ROLE;"), 2)
+        self.assertIn("V3_STAGE5_SEAL_OR_TEMP_PRIVILEGE_RESTORATION_HOLD", body)
+        self.assertIn("V3_STAGE5_EXACT_COMMITTED_INTENT_NOT_PRESENT_HOLD", body)
+        self.assertIn("i.created_at_utc>pg_catalog.clock_timestamp()-interval '5 minutes'", body)
+        for marker in (
+            "__EPOCH_ID__", "__INTENT_UUID__", "__REQUEST_SHA256__",
+            "__SOURCE_SHA256__", "__FENCE_SHA256__", "__CALLER_ACL_SHA256__"
+        ):
+            self.assertGreaterEqual(body.count(marker), 2, marker)
+        for forbidden in (
+            "INSERT INTO v3_cas_audit.epoch_v1",
+            "INSERT INTO v3_cas_audit.intent_v1",
+            "DELETE FROM", "UPDATE public.paper_series", "CREATE ROLE",
+            "CREATE FUNCTION", "ALTER ROLE", "DROP TABLE", "GRANT EXECUTE",
+        ):
+            self.assertNotIn(forbidden, body)
+        tests = (ROOT / "tests/v3_cas_postgres_ephemeral_contract.sh").read_text("utf-8")
+        self.assertIn("stage4_sql=\"supabase/v3-cas-audit-stage4-original-epoch-open-INACTIVE.sql\"", tests)
+        self.assertIn("stage5_sql=\"supabase/v3-cas-audit-stage5-original-epoch-seal-INACTIVE.sql\"", tests)
+        self.assertIn("V3_PG17_STAGE5_ORIGINAL_SEAL_DIFFERENT_SCRAM_READER_PASS_CAS_OFF", tests)
+        self.assertIn("FAIL_STAGE5_PREMATURE_SEAL_ACCEPTED", tests)
+        self.assertIn("FAIL_STAGE5_SEAL_REPLAY_ACCEPTED", tests)
+        self.assertIn("FAIL_STAGE5_REAL_DIFFERENT_READER_AFTER_COMMIT", tests)
+
 if __name__ == "__main__":
     unittest.main()
