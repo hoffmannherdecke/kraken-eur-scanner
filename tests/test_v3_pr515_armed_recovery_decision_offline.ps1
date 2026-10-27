@@ -125,6 +125,9 @@ $x.current_pr515_quiesced_readonly_preview.status='QUIESCED_NATIVE_SOURCE_MATCH_
 $x.current_pr515_quiesced_readonly_preview.single_local_supervisor_pr515_quiesced_observation_only=$true
 $x | Add-Member -NotePropertyName fresh_current_xml_after_quiesce_independently_checked -NotePropertyValue $true
 $x | Add-Member -NotePropertyName independent_cloud_old_only_after_quiesce_ack -NotePropertyValue $true
+$qJoin=Test-V3Pr515QuiescedRecoveryIdentity -Before $x.current_pr515_readonly_preview -After $x.current_pr515_quiesced_readonly_preview
+$qCloud=Test-V3PrecommitCurrentCloudInventory -Inventory $x.current_prod_cloud_inventory
+Write-Output ('V3_QUIESCED_SYNTHETIC_DIAG join=' + $qJoin + ' cloud=' + $qCloud + ' backup=' + (Test-V3ScopedOriginalBackupContract -Manifest $x.backup_manifest) + ' marker=' + [string]$x.fence_marker_phase)
 Need 'QUIESCED backwards compatible' (Resolve-V3ScopedCutoverRecovery $x).disposition 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE'
 $x.fence_marker_phase='ARMED'
 Need 'unbound QUIESCED marker' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_FENCE_MANUAL_RECONCILIATION'
