@@ -62,9 +62,9 @@ COMMIT;
 '@
     }
 )
-# Optional authenticated CURRENT reader-only ledger snapshot, no CAS history.
+# Optional read-only ORIGINAL Reader identity, not a CAS historical never-proof.
 if($PrecommitCloudInventory){
- $checks=@($checks | Where-Object { $_.Name -ceq 'READER' })
+ $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
  if($checks.Count -ne 1){throw 'V3_PRECOMMIT_READER_AMBIGUOUS'}
  $checks[0].Sql=@'
 SET ROLE v3_cas_audit_reader;
@@ -72,7 +72,7 @@ BEGIN TRANSACTION READ ONLY;
 SELECT pg_catalog.jsonb_build_object(
  'kind','V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1',
  'observed_at_utc',pg_catalog.to_char(pg_catalog.clock_timestamp()
-     AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+   AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
  'actor',session_user,'role',current_user,
  'epochs',(SELECT count(*) FROM v3_cas_audit.epoch_v1),
  'intents',(SELECT count(*) FROM v3_cas_audit.intent_v1),
@@ -114,29 +114,7 @@ foreach ($check in $checks) {
                 [string]$row.kind -cne 'V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1' -or
                 [string]$row.actor -cne 'v3_cas_audit_reader_actor' -or
                 [string]$row.role -cne 'v3_cas_audit_reader' -or
-                [string]$row.observed_at_utc -cnotmatch 'Z
-    }
-    catch {
-        # No raw SQL error output or password serialization in chat or logs.
-        Write-Output "$($check.Name)_READONLY_SCOPE_HOLD"
-    }
-    finally {
-        Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
-        Remove-Variable secret,output -ErrorAction SilentlyContinue
-        if ($null -ne $plain) { [Array]::Clear($plain,0,$plain.Length) }
-    }
-}
-if($PrecommitCloudInventory){
- if($passed -ne 1){exit 1}
- return
-}
-if ($passed -eq 2) {
-    Write-Output 'V3_STAGE3_TWO_ORIGINAL_READONLY_AUDIT_SESSIONS_PASS_NO_CAS'
-} else {
-    Write-Output 'V3_STAGE3_READONLY_AUDIT_HOLD'
-    exit 1
-}
- -or
+                [string]$row.observed_at_utc -cnotmatch 'Z$' -or
                 -not [datetimeoffset]::TryParse([string]$row.observed_at_utc,[ref]$at) -or
                 ([datetimeoffset]::UtcNow-$at).TotalSeconds -gt 90 -or
                 ([datetimeoffset]::UtcNow-$at).TotalSeconds -lt -5 -or
@@ -182,6 +160,10 @@ if ($passed -eq 2) {
         Remove-Variable secret,output -ErrorAction SilentlyContinue
         if ($null -ne $plain) { [Array]::Clear($plain,0,$plain.Length) }
     }
+}
+if($PrecommitCloudInventory){
+ if($passed -ne 1){exit 1}
+ return
 }
 if ($passed -eq 2) {
     Write-Output 'V3_STAGE3_TWO_ORIGINAL_READONLY_AUDIT_SESSIONS_PASS_NO_CAS'
