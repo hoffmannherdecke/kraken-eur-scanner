@@ -675,5 +675,55 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
 
 
 
+    def test_pr515_originalhost_two_cycle_preview_reads_host_but_cannot_release(self):
+        """Real ARMED cycles are locally observed, never Cloud/CAS authority."""
+        s=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        begin="function Read-V3Pr515ArmedTwoCycleOriginalHost("
+        end="# This branch ONLY observes the current PR515 plus the new original Task XML."
+        self.assertEqual(s.count(begin),1)
+        observer=s.split(begin,1)[1].split(end,1)[0]
+        for required in (
+            "V3_PR515_ARMED_TWO_CYCLE_ORIGINALHOST_INPUT_V1",
+            "V3_PR515_ORIGINALHOST_ARMED_TWO_CYCLE_LOCAL_READONLY_V1",
+            "ARMED_TWO_ORIGINAL_LOCAL_CYCLES_OBSERVED_NOT_QUIESCED",
+            "Get-FileHash -LiteralPath $fence -Algorithm SHA256",
+            "Test-V3Pr515QuiescedLocalHold -Root $real -ExpectedPhase 'ARMED'",
+            "Read-V3Pr515FreshRecoveryPreview -Report $Report",
+            "Test-V3Pr515ArmedTwoCycleSnapshots -Evidence $input",
+            "V3_ARMED_TWO_CYCLE_TIMEOUT_HOLD",
+            "V3_ARMED_TWO_CYCLE_FENCE_CHANGED",
+            "V3_ARMED_TWO_CYCLE_OLD_INTAKE_REARMED",
+            "V3_ARMED_TWO_CYCLE_PR515",
+        ):
+            # Versioned tests accept either explicit PR515-source mismatch
+            # or the independent original-host final reread check.
+            if required == "V3_ARMED_TWO_CYCLE_PR515":
+                self.assertIn("V3_ARMED_TWO_CYCLE_FINAL_PR515_SOURCE_CHANGED",observer)
+            else:
+                self.assertIn(required,observer)
+        for forbidden in (
+            r"(?m)^\s*(?:Disable|Stop|Enable|Start|Register|Unregister|Set)-ScheduledTask\b",
+            r"(?m)^\s*(?:Remove|Copy|Move|Set|New|Add)-Item\b",
+            r"(?m)^\s*(?:Invoke-RestMethod|Invoke-WebRequest|Invoke-Command)\b",
+            r"\[IO\.File\]::(?:Move|Replace|WriteAllText)\(",
+        ):
+            self.assertNotRegex(observer,forbidden)
+        self.assertIn("independent_cloud_cas_never_invoked_verified=$false",observer)
+        self.assertIn("independent_cloud_old_only_verified=$false",observer)
+        self.assertIn("fence_phase_promoted=$false",observer)
+        self.assertIn("task_mutations_performed=$false",observer)
+        self.assertIn("automatic_old_intake_rearm_allowed=$false",observer)
+        self.assertIn("v3_paper_release_authorized=$false",observer)
+        self.assertIn("technical_release_proofs_credited=0",observer)
+        self.assertIn("[switch]$PreviewPr515ArmedTwoCycle",s)
+        self.assertIn("[string]$ExpectedArmedFenceSha256=''",s)
+        self.assertIn("(-not $PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256)",s)
+        self.assertIn("($PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256 -cnotmatch",s)
+        self.assertIn("$modeCount -ne 1",s)
+        self.assertLess(s.index("if($Execute){"),s.index("if($PreviewPr515ArmedTwoCycle) {"))
+        self.assertIn("V3_CUTOVER_EXECUTION_LOCKED",s)
+        self.assert_locked_pr515_native_stop_only(s)
+
+
 if __name__=="__main__":
     unittest.main()

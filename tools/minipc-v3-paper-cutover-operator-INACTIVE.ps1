@@ -7,8 +7,10 @@ param(
  [switch]$PreviewPr515PreCas,
  [switch]$PreviewPr515Quiesced,
  [switch]$PreviewPr515Armed,
+ [switch]$PreviewPr515ArmedTwoCycle,
  [string]$OriginalBackupDirectory='',
  [string]$ExpectedPr515SourceSha256='',
+ [string]$ExpectedArmedFenceSha256='',
  [string]$Confirm=''
 )
 # V3 experimental Paper scoped operator: SOURCE PREPARATION ONLY.
@@ -1682,6 +1684,129 @@ function Test-V3Pr515QuiescedLocalHold([string]$Root,[ValidateSet('ARMED','QUIES
  return $true
 }
 
+# Read two *actual* originalhost ARMED Supervisor/PR515 cycles, rather than
+# accepting an untrusted caller JSON as proof. This is a strict READONLY preview:
+# no native Task mutations, no fence phase write, no Cloud CAS or rearm.
+# It is only meaningful AFTER a separately approved future native stop.
+function Read-V3Pr515ArmedTwoCycleOriginalHost(
+ [object]$Report,[string]$Root,[string]$BackupDirectory,
+ [string]$ExpectedCloudSha,[string]$ExpectedFenceSha) {
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
+  throw 'V3_ARMED_TWO_CYCLE_ORIGINAL_WINDOWS_REQUIRED'
+ }
+ $real=[IO.Path]::GetFullPath($Root).TrimEnd('\')
+ if(-not $real.Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase) -or
+    $ExpectedCloudSha -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedFenceSha -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'V3_ARMED_TWO_CYCLE_ORIGINALHOST_OR_PINS_INVALID'
+ }
+ $state=Join-Path $real 'State'
+ $fence=Join-Path $state 'v3-experimental-paper-old-intake-fence.json'
+ $entry=Get-Item -LiteralPath $fence -Force -ErrorAction Stop
+ if($entry.PSIsContainer -or
+    [bool]($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $entry.Length -lt 100 -or $entry.Length -gt 8192){
+  throw 'V3_ARMED_TWO_CYCLE_FENCE_UNSAFE'
+ }
+ $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ $captures=@()
+ $started=[datetimeoffset]::UtcNow
+ # Only original files are read; bounded polling is not a service start.
+ for($attempt=0;$attempt -lt 48 -and $captures.Count -lt 2;$attempt++){
+  if($attempt -gt 0){Start-Sleep -Seconds 5}
+  $sha=(Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+  if($sha -cne $ExpectedFenceSha){throw 'V3_ARMED_TWO_CYCLE_FENCE_CHANGED'}
+  $marker=Get-Content -LiteralPath $fence -Raw -ErrorAction Stop|ConvertFrom-Json
+  if([string]$marker.phase -cne 'ARMED' -or
+     [string]$marker.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
+     [string]$marker.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+     -not(Test-V3ScopedIntakeTaskSet -Names @($marker.task_names)) -or
+     $marker.paper_only -ne $true -or $marker.orders_enabled -ne $false -or
+     $marker.real_money_actions -ne $false -or $marker.drill_only -eq $true){
+   throw 'V3_ARMED_TWO_CYCLE_FOREIGN_FENCE'
+  }
+  foreach($name in $names){
+   if([string](Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop).State -cne 'Disabled'){
+    throw 'V3_ARMED_TWO_CYCLE_OLD_INTAKE_REARMED'
+   }
+  }
+  foreach($name in @('CryptoMiniPC-V2R4PaperLifecycle','CryptoMiniPC-V2R4PaperCloudSync')){
+   if([string](Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop).State -cne 'Running'){
+    throw 'V3_ARMED_TWO_CYCLE_AFTERCARE_NOT_RUNNING'
+   }
+  }
+  $null=Test-V3Pr515QuiescedLocalHold -Root $real -ExpectedPhase 'ARMED'
+  $source=Read-V3Pr515FreshRecoveryPreview -Report $Report -Root $real -BackupDirectory $BackupDirectory -ExpectedCloudSha $ExpectedCloudSha -ExpectedArmed
+  if([string]$source.status -cne 'ARMED_DISABLED_NATIVE_SOURCE_MATCH_NOT_RELEASED' -or
+     $source.poststop_disabled_only_native_xml_recheck_pass -ne $true -or
+     $source.pr515_effective_cloudsync_source_consistent -ne $true){
+   throw 'V3_ARMED_TWO_CYCLE_BACKUP_OR_PR515_MISMATCH'
+  }
+  $super=Get-Content -LiteralPath (Join-Path $state 'minipc-runtime-supervisor.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+  $cloud=Get-Content -LiteralPath (Join-Path $state 'v2r4-paper-cloud-sync-heartbeat.json') -Raw -ErrorAction Stop|ConvertFrom-Json
+  $sAt=[datetimeoffset]::MinValue
+  $cAt=[datetimeoffset]::MinValue
+  if([string]$super.checked_at_utc -cnotmatch '(Z|\+00:00)$' -or
+     [string]$cloud.checked_at_utc -cnotmatch '(Z|\+00:00)$' -or
+     -not [datetimeoffset]::TryParse([string]$super.checked_at_utc,[ref]$sAt) -or
+     -not [datetimeoffset]::TryParse([string]$cloud.checked_at_utc,[ref]$cAt)){
+   throw 'V3_ARMED_TWO_CYCLE_TIMESTAMP_INVALID'
+  }
+  $now=[datetimeoffset]::UtcNow
+  if($sAt -gt $now.AddSeconds(5) -or $cAt -gt $now.AddSeconds(5)){
+   throw 'V3_ARMED_TWO_CYCLE_FUTURE_READBACK'
+  }
+  if($sAt -lt $started.AddSeconds(-5) -or $cAt -lt $started.AddSeconds(-5)){
+   continue # Reject historical/pre-observer snapshots.
+  }
+  if($captures.Count -eq 1 -and
+     (($sAt-$captures[0].sAt).TotalSeconds -lt 5 -or
+      ($cAt-$captures[0].cAt).TotalSeconds -lt 5)){
+   continue # Both files must have distinctly advanced.
+  }
+  $captures+=@([pscustomobject]@{supervisor=$super;cloudsync=$cloud;sAt=$sAt;cAt=$cAt})
+ }
+ if($captures.Count -ne 2){throw 'V3_ARMED_TWO_CYCLE_TIMEOUT_HOLD'}
+ $input=[pscustomobject]@{
+  kind='V3_PR515_ARMED_TWO_CYCLE_ORIGINALHOST_INPUT_V1'
+  phase='ARMED'
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  task_names=$names
+  captures=@($captures|ForEach-Object{
+   [pscustomobject]@{supervisor=$_.supervisor;cloudsync=$_.cloudsync}
+  })
+ }
+ if(-not(Test-V3Pr515ArmedTwoCycleSnapshots -Evidence $input)){
+  throw 'V3_ARMED_TWO_CYCLE_SEMANTICS_FAIL'
+ }
+ if((Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ExpectedFenceSha){
+  throw 'V3_ARMED_TWO_CYCLE_FINAL_FENCE_CHANGED'
+ }
+ $after=Read-V3Pr515FreshRecoveryPreview -Report $Report -Root $real -BackupDirectory $BackupDirectory -ExpectedCloudSha $ExpectedCloudSha -ExpectedArmed
+ if([string]$after.status -cne 'ARMED_DISABLED_NATIVE_SOURCE_MATCH_NOT_RELEASED'){
+  throw 'V3_ARMED_TWO_CYCLE_FINAL_PR515_SOURCE_CHANGED'
+ }
+ return [pscustomobject]@{
+  kind='V3_PR515_ORIGINALHOST_ARMED_TWO_CYCLE_LOCAL_READONLY_V1'
+  status='ARMED_TWO_ORIGINAL_LOCAL_CYCLES_OBSERVED_NOT_QUIESCED'
+  supervisor_cycle_count=2
+  cloudsync_cycle_count=2
+  current_two_native_xml_disabled_only_reread_pass=$true
+  current_pr515_source_recheck_pass=$true
+  unchanged_armed_fence_sha256=$ExpectedFenceSha
+  protected_aftercare_running=$true
+  independent_original_pid_family_absence_proven_here=$false
+  independent_cloud_cas_never_invoked_verified=$false
+  independent_cloud_old_only_verified=$false
+  fence_phase_promoted=$false
+  task_mutations_performed=$false
+  cloud_cas_invoked=$false
+  automatic_old_intake_rearm_allowed=$false
+  v3_paper_release_authorized=$false
+  technical_release_proofs_credited=0
+ }
+}
+
 # This branch ONLY observes the current PR515 plus the new original Task XML.
 # Historical PR332 drill stop/restore functions are NOT called or repurposed.
 function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
@@ -1835,16 +1960,18 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
-if($PreviewPr515PreCas -or $PreviewPr515Quiesced -or $PreviewPr515Armed) {
- $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent
+if($PreviewPr515PreCas -or $PreviewPr515Quiesced -or $PreviewPr515Armed -or $PreviewPr515ArmedTwoCycle) {
+ $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent+[int]$PreviewPr515ArmedTwoCycle.IsPresent
  if($modeCount -ne 1 -or
     $BackupOriginalIntake -or $Confirm -or
     $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
     [string]::IsNullOrWhiteSpace($OriginalBackupDirectory) -or
-    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$'){
+    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    ($PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256 -cnotmatch '^[a-f0-9]{64}$') -or
+    (-not $PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256)){
   throw 'Only approved read-only PR515 recovery preview parameters allowed'
  }
-} elseif($OriginalBackupDirectory -or $ExpectedPr515SourceSha256){
+} elseif($OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256){
  throw 'PR515 source preview arguments forbidden in backup mode'
 }
 if($BackupOriginalIntake) {
@@ -1963,6 +2090,12 @@ if($PreviewPr515PreCas) {
  }
  $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256
  $receipt | ConvertTo-Json -Depth 6
+ return
+}
+if($PreviewPr515ArmedTwoCycle) {
+ # Originalhost local read-only evidence, NOT independent Cloud CAS authority.
+ $receipt=Read-V3Pr515ArmedTwoCycleOriginalHost -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedFenceSha $ExpectedArmedFenceSha256
+ $receipt | ConvertTo-Json -Depth 5
  return
 }
 if($PreviewPr515Armed) {
