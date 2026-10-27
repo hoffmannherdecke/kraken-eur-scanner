@@ -410,7 +410,10 @@ BEGIN
  AND NOT rolcanlogin AND NOT rolbypassrls AND NOT rolinherit;
  IF n <> 5 THEN RAISE EXCEPTION 'FAIL_FIVE_RESTRICTED_NOLOGIN_ROLES'; END IF;
  IF EXISTS (SELECT 1 FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.roleid
-   WHERE r.rolname IN ('v3_cas_audit_table_owner','v3_cas_audit_append_definer'))
+   JOIN pg_roles g ON g.oid=m.member
+   WHERE r.rolname IN ('v3_cas_audit_table_owner','v3_cas_audit_append_definer')
+     AND (g.rolname <> 'postgres' OR m.set_option OR m.inherit_option
+          OR NOT m.admin_option))
  THEN RAISE EXCEPTION 'FAIL_OWNER_ROLE_MEMBER_INHERITANCE'; END IF;
  IF (SELECT count(*) FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.roleid
    JOIN pg_roles a ON a.oid=m.member
