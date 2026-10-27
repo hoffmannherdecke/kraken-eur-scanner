@@ -333,3 +333,120 @@ def build_unsigned_preinvoke_cms_proposal(
         "old_writer_auto_rearm_allowed": False,
         "v3_paper_release_authorized": False,
     }
+
+
+# Exact nonsecret projection supplied ONLY after the pre-existing Notebook's
+# authenticated Reader and first committed-intent checks have succeeded.
+# Copying this JSON to a different machine does NOT authenticate the source:
+# this adapter verifies only shape, time, digest scope and consistency.
+ORIGINAL_READER_EXPORT_KEYS = frozenset({
+    "kind", "observed_at_utc", "actor", "role", "epoch_count",
+    "intent_count", "epoch_id", "intent_id", "predecessor_series_id",
+    "expected_rpc", "intent_rpc", "source_sha256", "intent_source_sha256",
+    "fence_sha256", "intent_fence_sha256", "caller_acl_sha256",
+    "request_sha256", "ordinal", "next_ordinal", "intent_state",
+    "sealed", "opened_at_utc", "intent_created_at_utc",
+})
+ORIGINAL_READER_EXPORT_FIELD = "original_reader_row_for_future_cms_proposal"
+
+
+def build_unsigned_cms_from_original_reader_export(
+    report: Mapping[str, Any], *, expected_source_sha256: str,
+    expected_fence_sha256: str, expected_caller_acl_sha256: str,
+    reviewed_at_utc: str,
+) -> dict[str, Any]:
+    """Bridge ONE original Notebook Reader export to the existing CMS proposal.
+
+    This is a *pure*, fail-closed formatter, NOT a database login, real commit
+    attestation, approved certificate pin, originalhost signer or CAS caller.
+    Without one actually separately COMMITTED intent, the genuine notebook
+    never emits the required export. All runtime authority remains False.
+    """
+    if (not isinstance(report, Mapping)
+            or report.get("kind") != "V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1"
+            or report.get("status") != "CURRENT_ONE_COMMITTED_PREINVOKE_INTENT_NOT_CAS_RELEASE"
+            or not all(report.get(flag) is False for flag in (
+                "independent_tls_certificate_verified",
+                "historical_cas_never_proven",
+                "complete_cas_attempt_custody_proven",
+                "originalhost_authenticated_here",
+                "cloud_cas_authorized", "precommit_restore_authorized",
+                "v3_paper_release_authorized"))):
+        raise PreinvokeHold("HOLD_CMS_ORIGINAL_READER_ENVELOPE")
+    row = report.get(ORIGINAL_READER_EXPORT_FIELD)
+    if not isinstance(row, Mapping) or set(row) != ORIGINAL_READER_EXPORT_KEYS:
+        raise PreinvokeHold("HOLD_CMS_ORIGINAL_READER_PROJECTION")
+    if (row["kind"] != report["kind"]
+            or row["actor"] != "v3_cas_audit_reader_actor"
+            or row["role"] != "v3_cas_audit_reader"
+            or type(row["epoch_count"]) is not int or row["epoch_count"] != 1
+            or type(row["intent_count"]) is not int or row["intent_count"] != 1
+            or type(row["ordinal"]) is not int or row["ordinal"] != 1
+            or type(row["next_ordinal"]) is not int or row["next_ordinal"] != 2
+            or row["intent_state"] != "PREINVOKE_INTENT"
+            or row["sealed"] is not False
+            or row["predecessor_series_id"] != ORIGINAL_SERIES
+            or row["expected_rpc"] != RPC or row["intent_rpc"] != RPC):
+        raise PreinvokeHold("HOLD_CMS_ORIGINAL_READER_SCOPE")
+    for field, expected in (
+        ("source_sha256", expected_source_sha256),
+        ("fence_sha256", expected_fence_sha256),
+        ("caller_acl_sha256", expected_caller_acl_sha256),
+    ):
+        if (not isinstance(expected, str) or not HEX64.fullmatch(expected)
+                or row[field] != expected):
+            raise PreinvokeHold("HOLD_CMS_ORIGINAL_SOURCE_FENCE_ACL")
+    if (row["intent_source_sha256"] != row["source_sha256"]
+            or row["intent_fence_sha256"] != row["fence_sha256"]):
+        raise PreinvokeHold("HOLD_CMS_ORIGINAL_WRITER_BOUNDARY")
+    for field in ("epoch_id", "intent_id", "observed_at_utc",
+                  "source_sha256", "fence_sha256", "caller_acl_sha256",
+                  "request_sha256"):
+        if row[field] != report.get(field):
+            raise PreinvokeHold("HOLD_CMS_ORIGINAL_EXPORT_DRIFT")
+
+    def parse_reader_time(value: Any) -> datetime:
+        if (not isinstance(value, str) or re.fullmatch(
+                r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z", value
+            ) is None):
+            raise PreinvokeHold("HOLD_CMS_ORIGINAL_NONCANONICAL_UTC")
+        try:
+            return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%fZ").replace(
+                tzinfo=timezone.utc)
+        except ValueError as exc:
+            raise PreinvokeHold("HOLD_CMS_ORIGINAL_INVALID_UTC") from exc
+
+    observed = parse_reader_time(row["observed_at_utc"])
+    opened = parse_reader_time(row["opened_at_utc"])
+    created = parse_reader_time(row["intent_created_at_utc"])
+    if (not opened <= created <= observed
+            or not timedelta(0) <= observed - created <= timedelta(minutes=5)):
+        raise PreinvokeHold("HOLD_CMS_ORIGINAL_COMMIT_ORDER")
+    # The existing CMS builder has second-precision wire format. Truncating
+    # subsecond precision is conservative (can only make a fresh row stale).
+    observed_sec = observed.strftime("%Y-%m-%dT%H:%M:%SZ")
+    intent = build_unsigned_intent(
+        epoch_id=row["epoch_id"], ordinal=1,
+        intent_id=row["intent_id"],
+        predecessor_series_id=row["predecessor_series_id"],
+        rpc=row["intent_rpc"], request_sha256=row["request_sha256"],
+        source_sha256=row["source_sha256"],
+        fence_sha256=row["fence_sha256"],
+    )
+    reader_claim = {
+        "epoch_id": intent.epoch_id, "ordinal": 1,
+        "intent_id": intent.intent_id,
+        "predecessor_series_id": ORIGINAL_SERIES,
+        "rpc": RPC, "request_sha256": intent.request_sha256,
+        "source_sha256": intent.source_sha256,
+        "fence_sha256": intent.fence_sha256,
+        "intent_sha256": intent.digest, "next_ordinal": 2,
+        "ordered_intent_sha256": [intent.digest],
+        "observed_at_utc": observed_sec,
+    }
+    result = build_unsigned_preinvoke_cms_proposal(
+        intent, reader_claim, reviewed_at_utc=reviewed_at_utc)
+    result["original_reader_export_source_claim_is_authenticated"] = False
+    result["actual_original_writer_commit_independently_proven"] = False
+    result["cas_attempt_coverage_proven"] = False
+    return result
