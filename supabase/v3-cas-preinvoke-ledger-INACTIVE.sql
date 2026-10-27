@@ -1,55 +1,81 @@
 -- SOURCE ONLY / NEVER MIGRATE OR EXECUTE AS A RELEASE.
 -- All statements are within ONE PL/pgSQL DO with an unconditional first
 -- RAISE EXCEPTION. This is a deliberately inert future schema *candidate*.
--- Reviewer must create a newly approved migration and separate credentialed
+-- Reviewer must separately approve a Stage-0-compatible migration and credentialed
 -- CAS caller / audit append-writer / independent reader under Issue #99.
 -- No CAS RPC, grants or production schema change is made by this source.
 do $v3_cas_ledger_inactive$
 begin
   raise exception 'V3_CAS_AUDIT_LEDGER_SOURCE_INACTIVE_APPROVAL_REQUIRED';
 
-  -- Intentionally unreachable. The dedicated audit schema is not a public
-  -- Data API schema. Creation privilege / owners require security review.
-  create schema if not exists v3_cas_audit;
+  -- STAGE-0 BRIDGE: the original private epoch_v1 and intent_v1 already
+  -- exist on the production Cloud (created once by the reviewed Oct-26
+  -- Stage-0 source). Never CREATE a duplicate table or silently repair a
+  -- different schema. All checks precede any owner/role/function changes.
+  -- The preceding unconditional RAISE keeps this SOURCE permanently inert.
+  if pg_catalog.current_user <> 'postgres'
+     or pg_catalog.current_database() <> 'postgres'
+     or pg_catalog.to_regnamespace('v3_cas_audit') is null
+     or pg_catalog.to_regclass('v3_cas_audit.epoch_v1') is null
+     or pg_catalog.to_regclass('v3_cas_audit.intent_v1') is null then
+    raise exception 'V3_CAS_STAGE0_EXISTING_QUARANTINE_REQUIRED';
+  end if;
+  if (select count(*) from pg_catalog.pg_class c
+      join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+      where n.nspname='v3_cas_audit'
+        and c.relname in ('epoch_v1','intent_v1')
+        and c.relkind='r' and c.relrowsecurity and c.relforcerowsecurity
+        and pg_catalog.pg_get_userbyid(c.relowner)='postgres') <> 2
+     or (select count(*) from pg_catalog.pg_policy p
+         join pg_catalog.pg_class c on c.oid=p.polrelid
+         join pg_catalog.pg_namespace n on n.oid=c.relnamespace
+         where n.nspname='v3_cas_audit') <> 0
+     or exists(select 1 from v3_cas_audit.epoch_v1)
+     or exists(select 1 from v3_cas_audit.intent_v1)
+     or exists(select 1 from pg_catalog.pg_roles r
+          where r.rolname in ('anon','authenticated','service_role',
+              'v3_cas_operator_login','v3_cas_executor',
+              'v3_cas_audit_writer','v3_cas_audit_reader')
+          and (pg_catalog.has_schema_privilege(r.rolname,'v3_cas_audit','USAGE')
+             or pg_catalog.has_table_privilege(r.rolname,
+                  'v3_cas_audit.epoch_v1','SELECT,INSERT,UPDATE,DELETE')
+             or pg_catalog.has_table_privilege(r.rolname,
+                  'v3_cas_audit.intent_v1','SELECT,INSERT,UPDATE,DELETE'))) then
+    raise exception 'V3_CAS_STAGE0_QUARANTINE_DRIFT_HOLD';
+  end if;
+  -- Check all original Stage-0 column names and exact data types, never
+  -- widen the private audit contract by reusing an unrelated same-name table.
+  if (select count(*) from information_schema.columns
+      where table_schema='v3_cas_audit'
+        and table_name='epoch_v1'
+        and (column_name,data_type) in (
+          ('epoch_id','text'),('predecessor_series_id','text'),
+          ('expected_rpc','text'),('source_sha256','text'),
+          ('original_fence_sha256','text'),('approved_caller_acl_sha256','text'),
+          ('opened_at_utc','timestamp with time zone'),
+          ('next_ordinal','bigint'),('sealed','boolean'))) <> 9
+     or (select count(*) from information_schema.columns
+      where table_schema='v3_cas_audit'
+        and table_name='intent_v1'
+        and (column_name,data_type) in (
+          ('epoch_id','text'),('ordinal','bigint'),('intent_id','uuid'),
+          ('requested_rpc','text'),('predecessor_series_id','text'),
+          ('request_sha256','text'),('source_sha256','text'),
+          ('fence_sha256','text'),
+          ('created_at_utc','timestamp with time zone'),('state','text'))) <> 10
+     or (select count(*) from information_schema.columns
+        where table_schema='v3_cas_audit' and table_name='epoch_v1') <> 9
+     or (select count(*) from information_schema.columns
+        where table_schema='v3_cas_audit' and table_name='intent_v1') <> 10 then
+    raise exception 'V3_CAS_STAGE0_COLUMN_SHAPE_DRIFT_HOLD';
+  end if;
   revoke all on schema v3_cas_audit
     from public, anon, authenticated, service_role;
 
-  -- The exclusive append-writer must transact a locked increment and one
-  -- intent INSERT together, and COMMIT this transaction BEFORE any CAS RPC.
-  -- A SELECT/ACK from independent reader is required after commit; an ACK
-  -- from uncommitted same transaction is insufficient. No automatic RPC.
-  create table v3_cas_audit.epoch_v1 (
-    epoch_id text primary key
-      check (epoch_id ~ '^V3CAS-AUDIT-[a-f0-9]{32}$'),
-    predecessor_series_id text not null
-      check (predecessor_series_id = 'PAPER-V2R4-20261009T110135Z'),
-    expected_rpc text not null
-      check (expected_rpc = 'public.rotate_v2r4_to_v3_experimental_paper'),
-    source_sha256 text not null check (source_sha256 ~ '^[a-f0-9]{64}$'),
-    original_fence_sha256 text not null check (original_fence_sha256 ~ '^[a-f0-9]{64}$'),
-    approved_caller_acl_sha256 text not null
-      check (approved_caller_acl_sha256 ~ '^[a-f0-9]{64}$'),
-    opened_at_utc timestamptz not null default clock_timestamp(),
-    next_ordinal bigint not null default 1 check (next_ordinal >= 1),
-    sealed boolean not null default false
-  );
-
-  create table v3_cas_audit.intent_v1 (
-    epoch_id text not null references v3_cas_audit.epoch_v1(epoch_id),
-    ordinal bigint not null check (ordinal >= 1),
-    intent_id uuid not null unique,
-    requested_rpc text not null
-      check (requested_rpc = 'public.rotate_v2r4_to_v3_experimental_paper'),
-    predecessor_series_id text not null
-      check (predecessor_series_id = 'PAPER-V2R4-20261009T110135Z'),
-    request_sha256 text not null check (request_sha256 ~ '^[a-f0-9]{64}$'),
-    source_sha256 text not null check (source_sha256 ~ '^[a-f0-9]{64}$'),
-    fence_sha256 text not null check (fence_sha256 ~ '^[a-f0-9]{64}$'),
-    created_at_utc timestamptz not null default clock_timestamp(),
-    state text not null default 'PREINVOKE_INTENT'
-      check (state = 'PREINVOKE_INTENT'),
-    primary key(epoch_id,ordinal)
-  );
+  -- The exclusive append-writer must transact one locked increment and
+  -- intent INSERT together, COMMIT, and await a separately authenticated
+  -- reader ACK BEFORE any separately authorized CAS invocation.
+  -- No created data-plane tables, no new scheduler or automatic RPC.
 
   -- RLS is defense in depth; explicit privileges and separation of owners
   -- are mandatory. Even 'service_role' bypasses RLS in Supabase, so DO NOT
@@ -109,8 +135,16 @@ begin
   -- ownership, credentials and externally held audit proof remain unapproved.
   create role v3_cas_audit_table_owner nologin noinherit nobypassrls;
   create role v3_cas_audit_append_definer nologin noinherit nobypassrls;
+  -- PostgreSQL 17 non-superuser CREATEROLE gives postgres a bootstrap
+  -- ADMIN TRUE / SET FALSE membership, insufficient for ALTER ... OWNER.
+  -- Permit SET ROLE only inside this single still-INACTIVE transactional DO,
+  -- then remove the temporary self-grant before commit. A deliberately
+  -- privileged DBA still remains an acknowledged custody exception.
+  grant v3_cas_audit_table_owner to postgres
+    with admin true, inherit false, set true;
   alter table v3_cas_audit.epoch_v1 owner to v3_cas_audit_table_owner;
   alter table v3_cas_audit.intent_v1 owner to v3_cas_audit_table_owner;
+  revoke v3_cas_audit_table_owner from postgres;
   -- PostgreSQL FK referential-integrity triggers run as the constrained
   -- table owner; this NOLOGIN table owner needs schema USAGE, not CREATE.
   grant usage on schema v3_cas_audit
@@ -223,8 +257,11 @@ begin
     text, uuid, text, text, text) to v3_cas_audit_writer;
   -- Critical: no inherited postgres/admin owner on SECURITY DEFINER.
   -- The executable definer is NOLOGIN and cannot own/ALTER the tables.
+  grant v3_cas_audit_append_definer to postgres
+    with admin true, inherit false, set true;
   alter function v3_cas_audit.append_intent_v1(
     text, uuid, text, text, text) owner to v3_cas_audit_append_definer;
+  revoke v3_cas_audit_append_definer from postgres;
 
   -- LIMITS: These roles are not assigned credentials or executor EXECUTE.
   -- A caller cannot choose an ordinal or mutate tables directly; the
