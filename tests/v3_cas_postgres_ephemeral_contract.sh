@@ -330,7 +330,8 @@ docker exec -u postgres "$container" sh -ec '
  sed -i "1i host postgres v3_cas_audit_writer_actor 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
  sed -i "1i host postgres v3_cas_audit_reader_actor 127.0.0.1/32 scram-sha-256" "$PGDATA/pg_hba.conf"
 '
-pg -c 'SELECT pg_reload_conf();' >/dev/null
+# Reload requires cluster admin and is test-container-only.
+pg_root -c 'SELECT pg_reload_conf();' >/dev/null
 # These actual PG17 TCP/SCRAM logins are isolated CI-fixture credentials.
 # They verify DIFFERENT session_user roles, distinct SET ROLE capabilities
 # and a wrong-password rejection. Never use these source-fixed fixture secrets
