@@ -193,6 +193,36 @@ if [[ "$(pg -Atc "select count(*) from pg_namespace where nspname='v3_cas_audit'
 fi
 echo 'V3_PG17_INACTIVE_FIRST_STATEMENT_LOCK_PASS'
 
+# The quarantined Stage-0 tables have already been created in production.
+# Assert the future Stage-2 upgrade cannot proceed when Stage-0 is missing.
+# This remains the same disposable, networkless PostgreSQL instance.
+if python - "$source_sql" <<'PY' | pg -f - >/dev/null 2>&1
+from pathlib import Path
+import sys
+text = Path(sys.argv[1]).read_text(encoding="utf-8")
+needle = "  raise exception 'V3_CAS_AUDIT_LEDGER_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+assert text.count(needle) == 1
+print(text.replace(needle, "  -- ONLY_EPHEMERAL_PG17_TEST_REMOVED_FIRST_THROW", 1))
+PY
+then
+  echo 'FAIL_STAGE2_ACCEPTED_WITHOUT_STAGE0' >&2; exit 1
+fi
+if [[ "$(pg -Atc "select count(*) from pg_namespace where nspname='v3_cas_audit'")" != '0' ]]; then
+  echo 'FAIL_STAGE2_WITHOUT_STAGE0_CREATED_SCHEMA' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE2_REQUIRES_EXISTING_STAGE0_PASS'
+
+# Apply ONLY the existing approved Stage-0 source to the disposable PG17
+# AFTER testing its transactional rollback and negative cases above.
+# Do not create new private tables in the Stage-2 candidate.
+pg -f "$stage0_sql" >/dev/null
+if [[ "$(pg -Atc "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='v3_cas_audit' and c.relname in ('epoch_v1','intent_v1')")" != '2' ]]; then
+  echo 'FAIL_DISPOSABLE_STAGE0_WAS_NOT_CREATED' >&2; exit 1
+fi
+existing_epoch_oid="$(pg -Atc "select 'v3_cas_audit.epoch_v1'::regclass::oid")"
+existing_intent_oid="$(pg -Atc "select 'v3_cas_audit.intent_v1'::regclass::oid")"
+echo 'V3_PG17_CURRENT_PRODUCTION_STAGE0_SHAPE_STAGED_PASS'
+
 # ONLY within the isolated networkless disposable container: remove exactly
 # one known first-statement throw to check the UNREACHABLE candidate syntax.
 # This transformed SQL is NEVER committed, emitted as a migration or run in
@@ -206,6 +236,14 @@ assert sql.count(needle) == 1
 assert sql.lower().count("do $v3_cas_ledger_inactive$") == 1
 print(sql.replace(needle, "  -- ONLY_EPHEMERAL_PG17_TEST_REMOVED_FIRST_THROW", 1))
 PY
+
+# Upgrade MUST preserve existing Stage-0 table identity, not recreate or
+# replace old audit data-plane tables.
+if [[ "$(pg -Atc "select 'v3_cas_audit.epoch_v1'::regclass::oid")" != "$existing_epoch_oid" ||
+      "$(pg -Atc "select 'v3_cas_audit.intent_v1'::regclass::oid")" != "$existing_intent_oid" ]]; then
+  echo 'FAIL_STAGE2_REPLACED_STAGE0_TABLE_IDENTITY' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE2_INPLACE_TABLE_OID_PRESERVED_PASS'
 
 # PostgreSQL real catalog readback: both tables RLS+FORCE, no exposed schema,
 # no generic EXECUTE/grants, and no CAS RPC. Validate effective role privileges.
