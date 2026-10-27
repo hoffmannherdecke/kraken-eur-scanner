@@ -137,11 +137,13 @@ begin
   create role v3_cas_audit_append_definer nologin noinherit nobypassrls;
   -- PostgreSQL 17 non-superuser CREATEROLE gives postgres a bootstrap
   -- ADMIN TRUE / SET FALSE membership, insufficient for ALTER ... OWNER.
+  -- A nonsuperuser CREATEROLE creator may not grant ADMIN TRUE back to
+  -- its own grantor (PG17 rejects that), but may request only SET TRUE.
   -- Permit SET ROLE only inside this single still-INACTIVE transactional DO,
   -- then remove the temporary self-grant before commit. A deliberately
   -- privileged DBA still remains an acknowledged custody exception.
   grant v3_cas_audit_table_owner to postgres
-    with admin true, inherit false, set true;
+    with admin false, inherit false, set true;
   grant create on schema v3_cas_audit to v3_cas_audit_table_owner;
   alter table v3_cas_audit.epoch_v1 owner to v3_cas_audit_table_owner;
   alter table v3_cas_audit.intent_v1 owner to v3_cas_audit_table_owner;
@@ -260,7 +262,7 @@ begin
   -- Critical: no inherited postgres/admin owner on SECURITY DEFINER.
   -- The executable definer is NOLOGIN and cannot own/ALTER the tables.
   grant v3_cas_audit_append_definer to postgres
-    with admin true, inherit false, set true;
+    with admin false, inherit false, set true;
   grant create on schema v3_cas_audit to v3_cas_audit_append_definer;
   alter function v3_cas_audit.append_intent_v1(
     text, uuid, text, text, text) owner to v3_cas_audit_append_definer;
