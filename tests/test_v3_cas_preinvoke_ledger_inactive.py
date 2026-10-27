@@ -190,8 +190,14 @@ class V3CasAuditInactiveTests(unittest.TestCase):
                         executable.index("alter table v3_cas_audit.epoch_v1 owner"))
         self.assertLess(executable.index("grant v3_cas_audit_table_owner to postgres"),
                         executable.index("alter table v3_cas_audit.epoch_v1 owner"))
-        self.assertLess(executable.index("revoke create on schema v3_cas_audit from v3_cas_audit_table_owner"),
-                        executable.index("create policy v3_cas_epoch_writer_read_v1"))
+        # Restricted PG17 postgres loses table-owner powers immediately on
+        # ALTER OWNER. Grants and policies must be created BEFORE that.
+        self.assertLess(executable.index("create policy v3_cas_epoch_writer_read_v1"),
+                        executable.index("alter table v3_cas_audit.epoch_v1 owner"))
+        self.assertLess(executable.index("grant select(epoch_id,next_ordinal,sealed,source_sha256"),
+                        executable.index("alter table v3_cas_audit.epoch_v1 owner"))
+        self.assertLess(executable.index("alter table v3_cas_audit.intent_v1 owner"),
+                        executable.index("revoke v3_cas_audit_table_owner from postgres"))
 
 
     def test_pg17_distinct_scram_reader_observes_only_committed_intent(self):
