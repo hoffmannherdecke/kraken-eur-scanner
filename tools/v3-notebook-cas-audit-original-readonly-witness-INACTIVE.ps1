@@ -4,7 +4,8 @@
 # Session-pooler TLS sslmode=require encrypts transport, but does NOT check the server CA.
 # A PASS is scoped to THIS query only, never a durable intent or release authorization.
 [CmdletBinding()]
-param([switch]$PrecommitCloudInventory)
+param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent)
+if($PrecommitCloudInventory -and $PostcommitDurableIntent){throw 'V3_READER_MODE_CONFLICT'}
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $psql = 'C:\Program Files\PostgreSQL\17\bin\psql.exe'
@@ -85,6 +86,40 @@ SELECT pg_catalog.jsonb_build_object(
 COMMIT;
 '@
 }
+# Future Stage4 + separately committed Writer intent ONLY. Same enrolled
+# Reader actor; this mode does NOT open Stage4, append, seal, invoke CAS or rearm.
+if($PostcommitDurableIntent){
+ $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
+ if($checks.Count -ne 1){throw 'V3_READER_POSTCOMMIT_SCOPE_AMBIGUOUS'}
+ $checks[0].Sql=@'
+SET ROLE v3_cas_audit_reader;
+BEGIN TRANSACTION READ ONLY;
+SELECT pg_catalog.jsonb_build_object(
+ 'kind','V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1',
+ 'observed_at_utc',pg_catalog.to_char(pg_catalog.clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+ 'actor',session_user,'role',current_user,
+ 'epoch_count',(SELECT count(*) FROM v3_cas_audit.epoch_v1),
+ 'intent_count',(SELECT count(*) FROM v3_cas_audit.intent_v1),
+ 'epoch_id',e.epoch_id,'intent_id',i.intent_id::text,
+ 'predecessor_series_id',e.predecessor_series_id,
+ 'expected_rpc',e.expected_rpc,'intent_rpc',i.requested_rpc,
+ 'source_sha256',e.source_sha256,'intent_source_sha256',i.source_sha256,
+ 'fence_sha256',e.original_fence_sha256,'intent_fence_sha256',i.fence_sha256,
+ 'caller_acl_sha256',e.approved_caller_acl_sha256,'request_sha256',i.request_sha256,
+ 'ordinal',i.ordinal,'next_ordinal',e.next_ordinal,
+ 'intent_state',i.state,'sealed',e.sealed,
+ 'opened_at_utc',pg_catalog.to_char(e.opened_at_utc AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+ 'intent_created_at_utc',pg_catalog.to_char(i.created_at_utc AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
+)::text
+FROM v3_cas_audit.epoch_v1 e
+JOIN v3_cas_audit.intent_v1 i ON i.epoch_id=e.epoch_id
+WHERE (SELECT count(*) FROM v3_cas_audit.epoch_v1)=1
+  AND (SELECT count(*) FROM v3_cas_audit.intent_v1)=1
+  AND session_user='v3_cas_audit_reader_actor'
+  AND current_user='v3_cas_audit_reader';
+COMMIT;
+'@
+}
 $passed = 0
 foreach ($check in $checks) {
     $plain = $null
@@ -110,7 +145,65 @@ foreach ($check in $checks) {
         # Scope precisely two static role names. Never pass user-supplied SQL.
         $conn = "host=$hostName port=5432 dbname=postgres user=$($check.Login).$project sslmode=require connect_timeout=10"
         $output = & $psql -X -w -qAt -v ON_ERROR_STOP=1 -d $conn -c $check.Sql 2>&1
-        if($PrecommitCloudInventory){
+        if($PostcommitDurableIntent){
+            if($LASTEXITCODE -ne 0){throw 'V3_DURABLE_INTENT_READER_SQL_HOLD'}
+            $row=(($output|Out-String).Trim()|ConvertFrom-Json -ErrorAction Stop)
+            $at=[datetimeoffset]::MinValue
+            $opened=[datetimeoffset]::MinValue
+            $created=[datetimeoffset]::MinValue
+            if($null -eq $row -or
+                [string]$row.kind -cne 'V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1' -or
+                [string]$row.actor -cne 'v3_cas_audit_reader_actor' -or
+                [string]$row.role -cne 'v3_cas_audit_reader' -or
+                [string]$row.epoch_count -cne '1' -or
+                [string]$row.intent_count -cne '1' -or
+                [string]$row.ordinal -cne '1' -or
+                [string]$row.next_ordinal -cne '2' -or
+                [string]$row.intent_state -cne 'PREINVOKE_INTENT' -or
+                $row.sealed -ne $false -or
+                [string]$row.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+                [string]$row.expected_rpc -cne 'public.rotate_v2r4_to_v3_experimental_paper' -or
+                [string]$row.intent_rpc -cne [string]$row.expected_rpc -or
+                [string]$row.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
+                [string]$row.intent_id -cnotmatch '^[a-f0-9-]{36}$' -or
+                [string]$row.source_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+                [string]$row.fence_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+                [string]$row.caller_acl_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+                [string]$row.request_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+                [string]$row.intent_source_sha256 -cne [string]$row.source_sha256 -or
+                [string]$row.intent_fence_sha256 -cne [string]$row.fence_sha256 -or
+                [string]$row.observed_at_utc -cnotmatch 'Z$' -or
+                [string]$row.opened_at_utc -cnotmatch 'Z$' -or
+                [string]$row.intent_created_at_utc -cnotmatch 'Z$' -or
+                -not [datetimeoffset]::TryParse([string]$row.observed_at_utc,[ref]$at) -or
+                -not [datetimeoffset]::TryParse([string]$row.opened_at_utc,[ref]$opened) -or
+                -not [datetimeoffset]::TryParse([string]$row.intent_created_at_utc,[ref]$created) -or
+                $created -lt $opened -or $created -gt $at -or
+                ($at-$created).TotalSeconds -gt 300 -or
+                ([datetimeoffset]::UtcNow-$at).TotalSeconds -gt 90 -or
+                ([datetimeoffset]::UtcNow-$at).TotalSeconds -lt -5){
+                throw 'V3_DURABLE_INTENT_SINGLE_READER_HOLD'
+            }
+            [pscustomobject]@{
+                kind='V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1'
+                status='CURRENT_ONE_COMMITTED_PREINVOKE_INTENT_NOT_CAS_RELEASE'
+                observed_at_utc=[string]$row.observed_at_utc
+                epoch_id=[string]$row.epoch_id
+                intent_id=[string]$row.intent_id
+                source_sha256=[string]$row.source_sha256
+                fence_sha256=[string]$row.fence_sha256
+                caller_acl_sha256=[string]$row.caller_acl_sha256
+                request_sha256=[string]$row.request_sha256
+                independent_tls_certificate_verified=$false
+                historical_cas_never_proven=$false
+                complete_cas_attempt_custody_proven=$false
+                originalhost_authenticated_here=$false
+                cloud_cas_authorized=$false
+                precommit_restore_authorized=$false
+                v3_paper_release_authorized=$false
+            }|ConvertTo-Json -Compress
+            $passed++
+        } elseif($PrecommitCloudInventory){
             if($LASTEXITCODE -ne 0){throw 'V3_PRECOMMIT_READER_SQL_HOLD'}
             $holdClass = 'CURRENT_JSON_DECODE'
             $row=(($output|Out-String).Trim()|ConvertFrom-Json -ErrorAction Stop)
@@ -183,7 +276,7 @@ foreach ($check in $checks) {
         if ($null -ne $plain) { [Array]::Clear($plain,0,$plain.Length) }
     }
 }
-if($PrecommitCloudInventory){
+if($PrecommitCloudInventory -or $PostcommitDurableIntent){
  if($passed -ne 1){exit 1}
  return
 }
