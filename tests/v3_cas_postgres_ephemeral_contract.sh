@@ -399,7 +399,7 @@ for key, value in fixtures.items():
  src=src.replace(key,value)
 assert "COMMIT;\n-- Even an actual" in src
 src=src.replace("COMMIT;\n-- Even an actual","ROLLBACK;\n-- Even an actual",1)
-assert "__" not in src
+assert not any(key in src for key in fixtures)
 print(src)
 PY
 if [[ "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ||
