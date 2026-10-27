@@ -261,9 +261,9 @@ PY
 # CREATEROLE/BYPASSRLS, and must not leave direct SET/CREATE grants in that
 # original administrator's production-like effective role scope.
 if [[ "$(pg -Atc "select (not rolsuper and rolcreaterole and rolbypassrls)::text from pg_roles where rolname='postgres'")" != "true" ]] ||
-   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles r on r.oid=m.roleid where r.rolname in ('v3_cas_audit_table_owner','v3_cas_audit_append_definer')")" != "0" ]] ||
+   [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles r on r.oid=m.roleid join pg_roles g on g.oid=m.member where r.rolname in ('v3_cas_audit_table_owner','v3_cas_audit_append_definer') and (g.rolname <> 'postgres' or m.set_option or m.inherit_option or not m.admin_option)")" != "0" ]] ||
    [[ "$(pg -Atc "select count(*) from pg_roles where rolname in ('v3_cas_audit_table_owner','v3_cas_audit_append_definer') and has_schema_privilege(rolname,'v3_cas_audit','CREATE')")" != "0" ]]; then
-  echo 'FAIL_PG17_ORIGINAL_NON_SUPERUSER_ROLE_OR_TRANSIENT_GRANTS_LEAK' >&2; exit 1
+  echo 'FAIL_PG17_ORIGINAL_NON_SUPERUSER_EFFECTIVE_SET_OR_CREATE_PRIVILEGE_LEAK' >&2; exit 1
 fi
 echo 'V3_PG17_ORIGINAL_NON_SUPERUSER_STAGE2_EFFECTIVE_OWNER_AND_REVOKE_PASS'
 docker exec "$container" psql -X -v ON_ERROR_STOP=1 -U v3_ci_restore_root -d v3_ci_restore_root \
