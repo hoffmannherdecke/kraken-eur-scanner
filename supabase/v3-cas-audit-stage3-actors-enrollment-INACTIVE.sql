@@ -94,8 +94,8 @@ BEGIN
      OR (SELECT count(*) FROM pg_catalog.pg_auth_members m
            JOIN pg_catalog.pg_roles a ON a.oid=m.member
            JOIN pg_catalog.pg_roles g ON g.oid=m.roleid
-           WHERE (a.rolname='v3_cas_audit_writer_actor' AND g.rolname='v3_cas_audit_writer')
-              OR (a.rolname='v3_cas_audit_reader_actor' AND g.rolname='v3_cas_audit_reader')
+           WHERE ((a.rolname='v3_cas_audit_writer_actor' AND g.rolname='v3_cas_audit_writer')
+              OR (a.rolname='v3_cas_audit_reader_actor' AND g.rolname='v3_cas_audit_reader'))
             AND NOT m.admin_option AND NOT m.inherit_option AND m.set_option) <> 2
      OR (SELECT count(*) FROM pg_catalog.pg_roles r
            WHERE r.rolname='v3_cas_executor_actor'
