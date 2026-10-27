@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 from v3_cas_preinvoke_protocol_INACTIVE import (
     ORIGINAL_SERIES, RPC, PreinvokeHold, build_unsigned_intent,
     build_unsigned_preinvoke_cms_proposal,
+    build_unsigned_cms_from_original_reader_export,
 )
 
 
@@ -160,6 +161,118 @@ class UnsignedPreinvokeCmsCandidateSourceTests(unittest.TestCase):
             with self.subTest(reviewed=reviewed):
                 with self.assertRaises(PreinvokeHold):
                     self.propose(intent, row, reviewed)
+
+
+    def original_reader_export(self):
+        intent, _ = fixture()
+        row = {
+            "kind": "V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1",
+            "observed_at_utc": "2026-10-26T15:00:00.123456Z",
+            "actor": "v3_cas_audit_reader_actor",
+            "role": "v3_cas_audit_reader",
+            "epoch_count": 1, "intent_count": 1,
+            "epoch_id": intent.epoch_id, "intent_id": intent.intent_id,
+            "predecessor_series_id": ORIGINAL_SERIES,
+            "expected_rpc": RPC, "intent_rpc": RPC,
+            "source_sha256": intent.source_sha256,
+            "intent_source_sha256": intent.source_sha256,
+            "fence_sha256": intent.fence_sha256,
+            "intent_fence_sha256": intent.fence_sha256,
+            "caller_acl_sha256": "e" * 64,
+            "request_sha256": intent.request_sha256,
+            "ordinal": 1, "next_ordinal": 2,
+            "intent_state": "PREINVOKE_INTENT", "sealed": False,
+            "opened_at_utc": "2026-10-26T14:59:00.000000Z",
+            "intent_created_at_utc": "2026-10-26T14:59:59.000000Z",
+        }
+        report = {
+            "kind": row["kind"],
+            "status": "CURRENT_ONE_COMMITTED_PREINVOKE_INTENT_NOT_CAS_RELEASE",
+            **{key: row[key] for key in (
+                "observed_at_utc", "epoch_id", "intent_id",
+                "source_sha256", "fence_sha256", "caller_acl_sha256",
+                "request_sha256")},
+            "original_reader_row_for_future_cms_proposal": row,
+            "independent_tls_certificate_verified": False,
+            "historical_cas_never_proven": False,
+            "complete_cas_attempt_custody_proven": False,
+            "originalhost_authenticated_here": False,
+            "cloud_cas_authorized": False,
+            "precommit_restore_authorized": False,
+            "v3_paper_release_authorized": False,
+        }
+        return report
+
+    def bridge(self, report):
+        return build_unsigned_cms_from_original_reader_export(
+            report,
+            expected_source_sha256="c" * 64,
+            expected_fence_sha256="d" * 64,
+            expected_caller_acl_sha256="e" * 64,
+            reviewed_at_utc="2026-10-26T15:00:15Z",
+        )
+
+    def test_original_postcommit_reader_export_canonical_bridge_only(self):
+        report = self.original_reader_export()
+        result = self.bridge(report)
+        self.assertEqual(result["kind"], "V3_CAS_PREINVOKE_CMS_CANDIDATE_REVIEW_V1")
+        payload = json.loads(result["unsigned_payload_utf8"])
+        intent, original_row = fixture()
+        self.assertEqual(payload["intent_sha256"], intent.digest)
+        self.assertRegex(payload["readback_sha256"], r"^[a-f0-9]{64}$")
+        self.assertEqual(payload["source_sha256"], intent.source_sha256)
+        self.assertEqual(payload["fence_sha256"], intent.fence_sha256)
+        self.assertEqual(payload["proof_status"], "UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED")
+        self.assertFalse(result["cloud_reader_authenticated"])
+        self.assertFalse(result["original_reader_export_source_claim_is_authenticated"])
+        self.assertFalse(result["actual_original_writer_commit_independently_proven"])
+        self.assertFalse(result["cas_attempt_coverage_proven"])
+        self.assertFalse(result["cas_dispatch_authorized"])
+        self.assertFalse(result["v3_paper_release_authorized"])
+
+    def test_original_reader_export_negative_custody_and_drift(self):
+        base = self.original_reader_export()
+        variants = [
+            lambda r: r.pop("original_reader_row_for_future_cms_proposal"),
+            lambda r: r.update(cloud_cas_authorized=True),
+            lambda r: r.update(independent_tls_certificate_verified=True),
+            lambda r: r.update(status="CAS_RELEASE"),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(actor="postgres"),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(role="postgres"),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(intent_count=2),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(ordinal=True),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(next_ordinal=3),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(sealed=True),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(intent_state="UNKNOWN"),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(intent_source_sha256="f"*64),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(intent_fence_sha256="f"*64),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(caller_acl_sha256="f"*64),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(request_sha256="f"*64),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(extra_proof=True),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(
+                observed_at_utc="2026-10-26T15:00:00Z"),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(
+                opened_at_utc="2026-10-26T15:00:01.000000Z"),
+            lambda r: r["original_reader_row_for_future_cms_proposal"].update(
+                intent_created_at_utc="2026-10-26T14:50:00.000000Z"),
+        ]
+        for mutation in variants:
+            wrong = deepcopy(base)
+            mutation(wrong)
+            with self.subTest(variation=str(mutation)), self.assertRaises(PreinvokeHold):
+                self.bridge(wrong)
+        with self.assertRaises(PreinvokeHold):
+            build_unsigned_cms_from_original_reader_export(
+                base, expected_source_sha256="f" * 64,
+                expected_fence_sha256="d" * 64,
+                expected_caller_acl_sha256="e" * 64,
+                reviewed_at_utc="2026-10-26T15:00:15Z")
+        with self.assertRaises(PreinvokeHold):
+            build_unsigned_cms_from_original_reader_export(
+                base, expected_source_sha256="c" * 64,
+                expected_fence_sha256="d" * 64,
+                expected_caller_acl_sha256="e" * 64,
+                reviewed_at_utc="2026-10-26T15:02:30Z")
 
     def test_entire_contract_stays_offline_and_cannot_become_cas_caller(self):
         source = (ROOT / "tools/v3_cas_preinvoke_protocol_INACTIVE.py").read_text("utf-8")

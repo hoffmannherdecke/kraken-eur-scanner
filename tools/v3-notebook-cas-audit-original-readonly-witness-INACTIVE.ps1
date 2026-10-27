@@ -197,6 +197,37 @@ foreach ($check in $checks) {
                 fence_sha256=[string]$row.fence_sha256
                 caller_acl_sha256=[string]$row.caller_acl_sha256
                 request_sha256=[string]$row.request_sha256
+                # The original authenticated PostgreSQL Reader projected only
+                # the original public audit fields, never a password or token.
+                # This claim alone is NOT an authenticated off-host receipt.
+                # A separately reviewed Python adapter checks exact shape,
+                # source/fence/request matches and reconstructs canonical
+                # unsigned CMS bytes before an independent signer is used.
+                original_reader_row_for_future_cms_proposal=[ordered]@{
+                    kind=[string]$row.kind
+                    observed_at_utc=[string]$row.observed_at_utc
+                    actor=[string]$row.actor
+                    role=[string]$row.role
+                    epoch_count=[int]$row.epoch_count
+                    intent_count=[int]$row.intent_count
+                    epoch_id=[string]$row.epoch_id
+                    intent_id=[string]$row.intent_id
+                    predecessor_series_id=[string]$row.predecessor_series_id
+                    expected_rpc=[string]$row.expected_rpc
+                    intent_rpc=[string]$row.intent_rpc
+                    source_sha256=[string]$row.source_sha256
+                    intent_source_sha256=[string]$row.intent_source_sha256
+                    fence_sha256=[string]$row.fence_sha256
+                    intent_fence_sha256=[string]$row.intent_fence_sha256
+                    caller_acl_sha256=[string]$row.caller_acl_sha256
+                    request_sha256=[string]$row.request_sha256
+                    ordinal=[int]$row.ordinal
+                    next_ordinal=[int]$row.next_ordinal
+                    intent_state=[string]$row.intent_state
+                    sealed=[bool]$row.sealed
+                    opened_at_utc=[string]$row.opened_at_utc
+                    intent_created_at_utc=[string]$row.intent_created_at_utc
+                }
                 independent_tls_certificate_verified=$false
                 historical_cas_never_proven=$false
                 complete_cas_attempt_custody_proven=$false
@@ -204,7 +235,7 @@ foreach ($check in $checks) {
                 cloud_cas_authorized=$false
                 precommit_restore_authorized=$false
                 v3_paper_release_authorized=$false
-            }|ConvertTo-Json -Compress
+            }|ConvertTo-Json -Compress -Depth 4
             $passed++
         } elseif($PrecommitCloudInventory){
             if($LASTEXITCODE -ne 0){throw 'V3_PRECOMMIT_READER_SQL_HOLD'}
