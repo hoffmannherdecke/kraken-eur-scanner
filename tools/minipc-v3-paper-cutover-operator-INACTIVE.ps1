@@ -203,6 +203,44 @@ function Test-V3Pr515QuiescedRecoveryIdentity([object]$Before,[object]$After) {
  )
 }
 
+# ARMED is the original native STOP's intentionally retained pre-CAS state.
+# A stop failure or crash before QUIESCED must not depend on a QUIESCED-only
+# recovery receipt. This is an offline scoped *review*, never task authority.
+# It can consider ONLY BOTH disabled, fully quiet old-intake roles; mixed
+# Running/Disabled or uncertain PID families remain a manual incident HOLD.
+function Test-V3Pr515ArmedRecoveryIdentity([object]$Before,[object]$After) {
+ if(-not(Test-V3Pr515FreshRecoveryIdentity -Preview $Before) -or
+    $null -eq $After){return $false}
+ $old=@($Before.current_native_task_xml_sha256)
+ $new=@($After.current_native_task_xml_sha256)
+ return (
+  [string]$After.kind -ceq 'V3_PRECAS_PR515_ARMED_POSTSTOP_READONLY_COMPATIBILITY_V1' -and
+  [string]$After.status -ceq 'ARMED_DISABLED_NATIVE_SOURCE_MATCH_NOT_RELEASED' -and
+  [string]$After.current_backup_directory_leaf -ceq [string]$Before.current_backup_directory_leaf -and
+  [string]$After.pr515_source_sha256 -ceq [string]$Before.pr515_source_sha256 -and
+  $old.Count -eq 2 -and $new.Count -eq 2 -and
+  [string]$new[0] -ceq [string]$old[0] -and
+  [string]$new[1] -ceq [string]$old[1] -and
+  $After.after_disable_enabled_only_native_xml_comparison -eq $true -and
+  $After.poststop_disabled_only_native_xml_recheck_pass -eq $true -and
+  $After.single_local_supervisor_pr515_armed_observation_only -eq $true -and
+  $After.single_local_supervisor_pr515_quiesced_observation_only -eq $false -and
+  $After.two_distinct_supervisor_cycles_verified -eq $false -and
+  $After.old_intake_pid_family_absence_independently_verified -eq $false -and
+  $After.independent_cloud_cas_never_invoked_verified -eq $false -and
+  $After.current_backup_valid_while_intakes_running_only -eq $false -and
+  $After.preview_is_not_poststop_or_independent_cloud_ack -eq $false -and
+  $After.local_poststop_snapshot_is_not_independent_cloud_ack -eq $true -and
+  $After.pr515_effective_cloudsync_source_consistent -eq $true -and
+  $After.external_sha_pin_independently_authenticated -eq $false -and
+  $After.physical_task_restore_tested -eq $false -and
+  $After.scheduler_task_mutations -eq $false -and
+  $After.cloud_cas_invoked -eq $false -and
+  $After.v3_paper_activated -eq $false -and
+  [int]$After.technical_release_proofs_credited -eq 0
+ )
+}
+
 # Pure SOURCE-ONLY comparison of two ORIGINAL Supervisor + PR515 heartbeat
 # captures while the same original intake fence remains ARMED. Both captures
 # must be independently acquired by a later authorized host operator.
@@ -543,6 +581,38 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
    $resolution='NO_ACTION_PRESERVE_ACTIVE_V2R4'
   } elseif($phase -notin @('ARMED','QUIESCED')){
    $resolution='HOLD_UNKNOWN_PHASE'
+  } elseif($phase -eq 'ARMED' -and $marker -eq 'ARMED') {
+   # Native STOP returns ARMED while awaiting its separate two-cycle and
+   # QUIESCED transition. Only a fully stopped AND independently reviewed
+   # pre-CAS original state may even be considered for manual restoration.
+   # Half-stopped/mixed states remain HOLD for the original incident owner.
+   $fullyDisabled=($Receipt.native_intake_tasks_disabled_ack -eq $true -and
+                   $Receipt.original_intake_processes_absent_ack -eq $true -and
+                   $Receipt.windows_supervisor_no_rearm_ack -eq $true -and
+                   $Receipt.protected_lifecycle_cloudsync_running_ack -eq $true)
+   if(-not $fullyDisabled){
+    $resolution='HOLD_ARMED_PARTIAL_STOP_MANUAL_INCIDENT_NO_REARM'
+   }elseif(-not(Test-V3ScopedOriginalBackupContract -Manifest $Receipt.backup_manifest) -or
+      $Receipt.backup_contract_verified -ne $true -or
+      $Receipt.old_cloud_single_active_readback -ne $true -or
+      $Receipt.new_v3_series_absent_readback -ne $true -or
+      $Receipt.v3_writer_started -ne $false){
+    $resolution='HOLD_ARMED_BACKUP_OR_PRECAS_STATE_INCOMPLETE'
+   }else{
+    $current=$Receipt.current_pr515_readonly_preview
+    $armed=$Receipt.current_pr515_armed_readonly_preview
+    $scope=(Test-V3Pr515ArmedRecoveryIdentity -Before $current -After $armed)
+    $cloud=(Test-V3PrecommitCurrentCloudInventory -Inventory $Receipt.current_prod_cloud_inventory)
+    if($scope -and $cloud -and
+       $Receipt.pr515_sha_pin_separately_verified -eq $true -and
+       $Receipt.fresh_current_xml_after_armed_independently_checked -eq $true -and
+       $Receipt.independent_cloud_precommit_cas_never_invoked_ack -eq $true -and
+       $Receipt.independent_cloud_old_only_after_armed_ack -eq $true){
+      $resolution='PRE_CAS_ARMED_MANUAL_RESTORE_REVIEW_CANDIDATE_NOT_EXECUTABLE'
+    }else{
+      $resolution='HOLD_ARMED_CURRENT_BACKUP_OR_INDEPENDENT_CLOUD_ACK'
+    }
+   }
   } elseif($phase -eq 'QUIESCED' -and
       (Test-V3ScopedOriginalBackupContract -Manifest $Receipt.backup_manifest) -and
       $Receipt.backup_contract_verified -eq $true -and
