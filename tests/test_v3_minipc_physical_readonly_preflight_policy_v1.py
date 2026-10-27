@@ -913,6 +913,31 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertIn("PRE_CAS_ARMED_MANUAL_RESTORE_REVIEW_CANDIDATE_NOT_EXECUTABLE",review)
         self.assertIn("HOLD_ARMED_CURRENT_BACKUP_OR_INDEPENDENT_CLOUD_ACK",review)
         self.assertIn("Test-V3Pr515ArmedRecoveryIdentity -Before $current -After $armed",review)
+        # The first version had an unbound $marker: branch existed only in text.
+        self.assertIn("$marker=[string]$Receipt.fence_marker_phase",review)
+        self.assertIn("elseif($phase -eq 'ARMED' -and $marker -eq 'ARMED')",review)
+        self.assertIn("elseif($phase -eq 'QUIESCED' -and $marker -ceq 'QUIESCED'",review)
+        restore=source.split("function Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY(",1)[1].split(
+            "# Native TaskScheduler disable may change exactly one XML field:",1)[0]
+        for required in (
+            "$currentPhase=[string]$marker.phase",
+            "$currentPhase -notin @('ARMED','QUIESCED')",
+            "$RecoveryReceipt.fence_marker_phase -cne $currentPhase",
+            "Test-V3Pr515ArmedRecoveryIdentity -Before $before -After $actual",
+            "Test-V3Pr515QuiescedRecoveryIdentity -Before $before -After $actual",
+            "PRE_CAS_ARMED_MANUAL_RESTORE_REVIEW_CANDIDATE_NOT_EXECUTABLE",
+            "PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE",
+            "if($currentPhase -ceq 'QUIESCED'){",
+            "V3_PRECOMMIT_ARMED_FENCE_CHANGED_BEFORE_MANUAL_RECOVERY",
+            "V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED",
+        ):
+            self.assertIn(required,restore)
+        self.assertLess(
+            restore.index("V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED"),
+            restore.index("Enable-ScheduledTask")
+        )
+        self.assert_locked_pr515_native_stop_only(source)
+
         self.assertIn("Test-V3PrecommitCurrentCloudInventory -Inventory $Receipt.current_prod_cloud_inventory",review)
         self.assertIn("independent_cloud_precommit_cas_never_invoked_ack -eq $true",review)
         self.assertIn("automatic_old_writer_rearm_allowed=$false",review)
