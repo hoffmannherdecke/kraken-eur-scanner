@@ -323,6 +323,38 @@ BEGIN
 END
 $v3_stage3_ci$;
 SQL
+# These actual PG17 TCP/SCRAM logins are isolated CI-fixture credentials.
+# They verify DIFFERENT session_user roles, distinct SET ROLE capabilities
+# and a wrong-password rejection. Never use these source-fixed fixture secrets
+# in the real Notebook/Supabase or claim this is production authentication.
+for tuple in \
+ 'v3_cas_audit_writer_actor|v3_cas_audit_writer|CI-WRITER-NO-PRODUCTION-SECRET' \
+ 'v3_cas_audit_reader_actor|v3_cas_audit_reader|CI-READER-NO-PRODUCTION-SECRET'; do
+ IFS='|' read -r actor group pwd <<< "$tuple"
+ actual="$(docker exec -e PGPASSWORD="$pwd" "$container" \
+   psql -X -qAt -v ON_ERROR_STOP=1 -h 127.0.0.1 -U "$actor" -d postgres \
+     -c "SET ROLE $group; SELECT session_user || '|' || current_user;" 2>/dev/null)"
+ if [[ "$actual" != "$actor|$group" ]]; then
+  echo 'FAIL_STAGE3_DIFFERENT_ACTOR_SCRAM_TCP_SESSION' >&2; exit 1
+ fi
+done
+if docker exec -e PGPASSWORD='CI-INTENTIONALLY-WRONG' "$container" \
+    psql -X -qAt -h 127.0.0.1 -U v3_cas_audit_reader_actor -d postgres \
+    -c 'select current_user;' >/dev/null 2>&1; then
+  echo 'FAIL_STAGE3_INCORRECT_PASSWORD_AUTHENTICATED' >&2; exit 1
+fi
+echo 'V3_PG17_STAGE3_DISTINCT_REAL_CI_SCRAM_TCP_SESSIONS_PASS_CAS_OFF'
+# Check the actual Notebook helper syntax using hosted PowerShell AST only.
+# Parsing does not run its -Stage flag, read DPAPI or create local secrets.
+if command -v pwsh >/dev/null 2>&1; then
+ pwsh -NoProfile -NonInteractive -Command '
+   $tokens=$null; $errors=$null
+   [System.Management.Automation.Language.Parser]::ParseFile(
+     "tools/v3-notebook-cas-stage3-two-actor-scram-INACTIVE.ps1",
+     [ref]$tokens,[ref]$errors) | Out-Null
+   if($errors.Count -ne 0){ throw "V3_STAGE3_PWSH_SOURCE_SYNTAX_HOLD" }
+ ' >/dev/null
+fi
 echo 'V3_PG17_STAGE3_DISTINCT_WRITER_READER_ACTORS_SOURCE_TEST_PASS_CAS_OFF'
 # Restore disposable-root semantics for legacy isolated tests only.
 pg_root -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
