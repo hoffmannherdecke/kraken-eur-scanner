@@ -261,6 +261,68 @@ if [[ "$(pg -Atc "select 'v3_cas_audit.epoch_v1'::regclass::oid")" != "$existing
 fi
 echo 'V3_PG17_STAGE2_INPLACE_TABLE_OID_PRESERVED_PASS'
 
+# Stage 3 SOURCE-ONLY: exercise exactly two separate already-named dormant
+# shells and locally synthesized CI-fixture SCRAM verifiers in the SAME
+# disposable PG17 database. No production password, role, network or CAS.
+stage3_sql="supabase/v3-cas-audit-stage3-actors-enrollment-INACTIVE.sql"
+if pg -f - < "$stage3_sql" >/dev/null 2>&1; then
+ echo 'FAIL_STAGE3_INACTIVE_TEMPLATE_EXECUTABLE' >&2; exit 1
+fi
+pg -f - <<'SQL' >/dev/null
+CREATE ROLE v3_cas_audit_writer_actor NOSUPERUSER NOLOGIN NOINHERIT
+ NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION
+ CONNECTION LIMIT 0 PASSWORD NULL VALID UNTIL '2000-01-01';
+CREATE ROLE v3_cas_audit_reader_actor NOSUPERUSER NOLOGIN NOINHERIT
+ NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION
+ CONNECTION LIMIT 0 PASSWORD NULL VALID UNTIL '2000-01-01';
+CREATE ROLE v3_cas_executor_actor NOSUPERUSER NOLOGIN NOINHERIT
+ NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION
+ CONNECTION LIMIT 0 PASSWORD NULL VALID UNTIL '2000-01-01';
+SQL
+python - "$stage3_sql" <<'PY' | pg -f - >/dev/null
+import base64, hashlib, hmac, pathlib, sys
+s=pathlib.Path(sys.argv[1]).read_text(encoding="utf-8")
+needle="  RAISE EXCEPTION 'V3_STAGE3_LOCAL_ENROLLMENT_TEMPLATE_INACTIVE';"
+assert s.count(needle)==1
+def scram(pwd, salt):
+  salted=hashlib.pbkdf2_hmac("sha256",pwd.encode("ascii"),salt,4096)
+  client=hmac.new(salted,b"Client Key","sha256").digest()
+  stored=hashlib.sha256(client).digest()
+  server=hmac.new(salted,b"Server Key","sha256").digest()
+  return "SCRAM-SHA-256$4096:"+base64.b64encode(salt).decode()+"$"+base64.b64encode(stored).decode()+":"+base64.b64encode(server).decode()
+s=s.replace(needle,"  -- disposable offline CI only; live source remains locked.",1)
+s=s.replace("__WRITER_SCRAM_SHA256_VERIFIER__",scram("CI-WRITER-NO-PRODUCTION-SECRET",b"ci_writer_salt_1"))
+s=s.replace("__READER_SCRAM_SHA256_VERIFIER__",scram("CI-READER-NO-PRODUCTION-SECRET",b"ci_reader_salt_1"))
+assert "__" not in s
+print(s)
+PY
+pg -f - <<'SQL' >/dev/null
+DO $v3_stage3_ci$
+BEGIN
+ IF (SELECT count(*) FROM pg_roles WHERE rolname IN
+     ('v3_cas_audit_writer_actor','v3_cas_audit_reader_actor')
+     AND rolcanlogin AND NOT rolinherit AND NOT rolbypassrls AND rolconnlimit=1) <> 2
+  OR (SELECT count(*) FROM pg_roles WHERE rolname='v3_cas_executor_actor'
+     AND NOT rolcanlogin AND rolconnlimit=0) <> 1
+  OR (SELECT count(*) FROM pg_auth_members m
+      JOIN pg_roles a ON a.oid=m.member
+      JOIN pg_roles g ON g.oid=m.roleid
+      WHERE ((a.rolname='v3_cas_audit_writer_actor' AND g.rolname='v3_cas_audit_writer')
+         OR (a.rolname='v3_cas_audit_reader_actor' AND g.rolname='v3_cas_audit_reader'))
+       AND NOT m.admin_option AND NOT m.inherit_option AND m.set_option) <> 2
+  OR NOT pg_has_role('v3_cas_audit_writer_actor','v3_cas_audit_writer','SET')
+  OR NOT pg_has_role('v3_cas_audit_reader_actor','v3_cas_audit_reader','SET')
+  OR pg_has_role('v3_cas_audit_reader_actor','v3_cas_audit_writer','SET')
+  OR pg_has_role('v3_cas_audit_writer_actor','v3_cas_audit_reader','SET')
+  OR EXISTS (SELECT 1 FROM v3_cas_audit.epoch_v1)
+  OR EXISTS (SELECT 1 FROM v3_cas_audit.intent_v1) THEN
+   RAISE EXCEPTION 'FAIL_STAGE3_TWO_DISTINCT_AUTHENTICABLE_AUDIT_ACTORS';
+ END IF;
+END
+$v3_stage3_ci$;
+SQL
+echo 'V3_PG17_STAGE3_DISTINCT_WRITER_READER_ACTORS_SOURCE_TEST_PASS_CAS_OFF'
+
 # PostgreSQL real catalog readback: both tables RLS+FORCE, no exposed schema,
 # no generic EXECUTE/grants, and no CAS RPC. Validate effective role privileges.
 pg -f - <<'SQL' >/dev/null
