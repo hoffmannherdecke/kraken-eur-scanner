@@ -375,10 +375,18 @@ echo 'V3_PG17_STAGE3_DISTINCT_WRITER_READER_ACTORS_SOURCE_TEST_PASS_CAS_OFF'
 # --network none database, original template must remain hard locked, and
 # successful fixture SQL uses ROLLBACK instead of COMMIT.
 stage4_sql="supabase/v3-cas-audit-stage4-original-epoch-open-INACTIVE.sql"
+# Effective original Supabase postgres SELECT privilege was observed directly
+# on both Stage2 tables despite no ordinary user INSERT/UPDATE. The standard
+# isolated PG17 clone initially differs; mimic only those two effective SELECT
+# rights via disposable bootstrap superuser and remove them after Stage4.
+pg_root -c 'GRANT SELECT ON v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1 TO postgres;' >/dev/null
+if [[ "$(pg -Atc "select has_table_privilege('postgres','v3_cas_audit.epoch_v1','SELECT') and has_table_privilege('postgres','v3_cas_audit.intent_v1','SELECT') and not has_table_privilege('postgres','v3_cas_audit.epoch_v1','INSERT')")" != 't' ]]; then
+ echo 'FAIL_STAGE4_DISPOSABLE_ORIGINAL_READ_PRIVILEGE_PARITY' >&2; exit 1
+fi
 if pg -f - < "$stage4_sql" >/dev/null 2>&1; then
  echo 'FAIL_STAGE4_ORIGINAL_INACTIVE_TEMPLATE_EXECUTED' >&2; exit 1
 fi
-if [[ "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ]] ||
+if [[ "$(pg_root -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ]] ||
    [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner' and m.set_option")" != '0' ]]; then
  echo 'FAIL_STAGE4_HARDLOCK_LEFT_ANY_EFFECT' >&2; exit 1
 fi
@@ -402,13 +410,14 @@ src=src.replace("COMMIT;\n-- Even an actual","ROLLBACK;\n-- Even an actual",1)
 assert not any(key in src for key in fixtures)
 print(src)
 PY
-if [[ "$(pg -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ||
-      "$(pg -Atc 'select count(*) from v3_cas_audit.intent_v1')" != '0' ]] ||
+if [[ "$(pg_root -Atc 'select count(*) from v3_cas_audit.epoch_v1')" != '0' ||
+      "$(pg_root -Atc 'select count(*) from v3_cas_audit.intent_v1')" != '0' ]] ||
    [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner' and m.admin_option and not m.set_option and not m.inherit_option")" != '1' ]] ||
    [[ "$(pg -Atc "select count(*) from pg_auth_members m join pg_roles a on a.oid=m.member join pg_roles g on g.oid=m.roleid where a.rolname='postgres' and g.rolname='v3_cas_audit_table_owner'")" != '1' ]] ||
    [[ "$(pg -Atc "select has_table_privilege('postgres','v3_cas_audit.epoch_v1','INSERT') or has_table_privilege('postgres','v3_cas_audit.epoch_v1','UPDATE')")" != 'f' ]]; then
  echo 'FAIL_STAGE4_PRIVILEGE_ESCROW_NOT_RESTORED_AFTER_DISPOSABLE_TRANSACTION' >&2; exit 1
 fi
+pg_root -c 'REVOKE SELECT ON v3_cas_audit.epoch_v1, v3_cas_audit.intent_v1 FROM postgres;' >/dev/null
 echo 'V3_PG17_STAGE4_ORIGINAL_EPOCH_PRIVILEGE_ESCROW_ROLLBACK_PASS'
 
 # Restore disposable-root semantics for legacy isolated tests only.
