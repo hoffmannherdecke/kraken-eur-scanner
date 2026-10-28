@@ -39,6 +39,7 @@ def fixture():
         "rpc": intent.rpc, "request_sha256": intent.request_sha256,
         "source_sha256": intent.source_sha256,
         "fence_sha256": intent.fence_sha256,
+        "caller_acl_sha256": "e" * 64,
         "intent_sha256": intent.digest, "next_ordinal": 2,
         "ordered_intent_sha256": [intent.digest],
         "observed_at_utc": "2026-10-26T15:00:00Z",
@@ -55,7 +56,8 @@ class UnsignedPreinvokeCmsCandidateSourceTests(unittest.TestCase):
         return build_unsigned_preinvoke_cms_proposal(
             good_intent if intent is None else intent,
             good_row if readback is _UNSET else readback,
-            reviewed_at_utc=review)
+            reviewed_at_utc=review,
+            expected_caller_acl_sha256="e" * 64)
 
     def test_deterministic_nonsecret_bytes_never_release_authority(self):
         left = self.propose()
@@ -68,6 +70,7 @@ class UnsignedPreinvokeCmsCandidateSourceTests(unittest.TestCase):
         self.assertEqual(decoded["ordinal"], 1)
         self.assertEqual(decoded["predecessor_series_id"], ORIGINAL_SERIES)
         self.assertEqual(decoded["rpc"], RPC)
+        self.assertEqual(decoded["caller_acl_sha256"], "e" * 64)
         self.assertNotIn("password", left["unsigned_payload_utf8"].decode())
         self.assertLessEqual(len(left["unsigned_payload_utf8"]), 2048)
         for field in (
@@ -102,6 +105,7 @@ class UnsignedPreinvokeCmsCandidateSourceTests(unittest.TestCase):
             ("rpc", "public.any_other_rpc"),
             ("source_sha256", "e" * 64),
             ("fence_sha256", "e" * 64),
+            ("caller_acl_sha256", "f" * 64),
             ("request_sha256", "e" * 64),
             ("intent_id", "123e4567-e89b-42d3-a456-426614174001"),
             ("predecessor_series_id", "PAPER-V3-FOREIGN"),
@@ -112,6 +116,16 @@ class UnsignedPreinvokeCmsCandidateSourceTests(unittest.TestCase):
             with self.subTest(name=name):
                 with self.assertRaises(PreinvokeHold):
                     self.propose(intent, modified)
+
+    def test_unpinned_or_drifting_caller_acl_denied(self):
+        intent, row = fixture()
+        for pin in ("f" * 64, "G" * 64, "", None):
+            with self.subTest(pin=pin), self.assertRaises(PreinvokeHold):
+                build_unsigned_preinvoke_cms_proposal(
+                    intent, row, reviewed_at_utc="2026-10-26T15:00:15Z",
+                    expected_caller_acl_sha256=pin)
+        with self.assertRaises(PreinvokeHold):
+            self.propose(intent, {**row, "caller_acl_sha256": "f" * 64})
 
     def test_first_attempt_only_and_reconstructed_digest(self):
         intent, row = fixture()
@@ -215,13 +229,14 @@ class UnsignedPreinvokeCmsCandidateSourceTests(unittest.TestCase):
     def test_original_postcommit_reader_export_canonical_bridge_only(self):
         report = self.original_reader_export()
         result = self.bridge(report)
-        self.assertEqual(result["kind"], "V3_CAS_PREINVOKE_CMS_CANDIDATE_REVIEW_V1")
+        self.assertEqual(result["kind"], "V3_CAS_PREINVOKE_CMS_CANDIDATE_REVIEW_V2")
         payload = json.loads(result["unsigned_payload_utf8"])
         intent, original_row = fixture()
         self.assertEqual(payload["intent_sha256"], intent.digest)
         self.assertRegex(payload["readback_sha256"], r"^[a-f0-9]{64}$")
         self.assertEqual(payload["source_sha256"], intent.source_sha256)
         self.assertEqual(payload["fence_sha256"], intent.fence_sha256)
+        self.assertEqual(payload["caller_acl_sha256"], "e" * 64)
         self.assertEqual(payload["proof_status"], "UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED")
         self.assertFalse(result["cloud_reader_authenticated"])
         self.assertFalse(result["original_reader_export_source_claim_is_authenticated"])
