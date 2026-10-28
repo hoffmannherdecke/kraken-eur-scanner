@@ -207,9 +207,10 @@ try {
   }
   $proposalText=[Text.Encoding]::UTF8.GetString($proposalBytes)
   $proposalObject=$proposalText | ConvertFrom-Json -AsHashtable -ErrorAction Stop
-  if($proposalObject.kind -cne 'V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V1' -or
+  if($proposalObject.kind -cne 'V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V2' -or
      $proposalObject.proof_status -cne 'UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED' -or
      $proposalObject.ordinal -ne 1 -or
+      [string]$proposalObject.caller_acl_sha256 -cne ('e'*64) -or
      $proposalObject.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
      $proposalObject.rpc -cne 'public.rotate_v2r4_to_v3_experimental_paper'){
    throw 'V3_CI_PREINVOKE_UNSIGNED_SCOPE_DIVERGENCE'
@@ -311,10 +312,10 @@ $checkFn=@($sa.FindAll({
 },$true))
 if($checkFn.Count -ne 1){throw 'V3_TPM_SIGNER_CANDIDATE_VALIDATOR_MISSING'}
 . ([scriptblock]::Create($checkFn[0].Extent.Text))
-$sample='{"epoch_id":"V3CAS-AUDIT-11111111111111111111111111111111","fence_sha256":"'+('a'*64)+'","intent_id":"11111111-1111-4111-8111-111111111111","intent_sha256":"'+('b'*64)+'","kind":"V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V1","local_review_at_utc":"2026-10-28T09:30:00Z","ordinal":1,"predecessor_series_id":"PAPER-V2R4-20261009T110135Z","proof_status":"UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED","readback_sha256":"'+('c'*64)+'","reader_claimed_observed_at_utc":"2026-10-28T09:29:30Z","request_sha256":"'+('d'*64)+'","rpc":"public.rotate_v2r4_to_v3_experimental_paper","source_sha256":"'+('e'*64)+'"}'
+$sample='{"caller_acl_sha256":"'+('e'*64)+'","epoch_id":"V3CAS-AUDIT-11111111111111111111111111111111","fence_sha256":"'+('a'*64)+'","intent_id":"11111111-1111-4111-8111-111111111111","intent_sha256":"'+('b'*64)+'","kind":"V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V2","local_review_at_utc":"2026-10-28T09:30:00Z","ordinal":1,"predecessor_series_id":"PAPER-V2R4-20261009T110135Z","proof_status":"UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED","readback_sha256":"'+('c'*64)+'","reader_claimed_observed_at_utc":"2026-10-28T09:29:30Z","request_sha256":"'+('d'*64)+'","rpc":"public.rotate_v2r4_to_v3_experimental_paper","source_sha256":"'+('e'*64)+'"}'
 $sampleBytes=[Text.Encoding]::UTF8.GetBytes($sample)
 $parsed=Test-V3UnsignedPreinvokeCandidate $sampleBytes
-if([string]$parsed.kind -cne 'V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V1'){
+if([string]$parsed.kind -cne 'V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V2'){
  throw 'V3_TPM_CMS_INPUT_STRICT_POSITIVE_HOLD'
 }
 foreach($bad in @(
@@ -322,7 +323,8 @@ foreach($bad in @(
  $sample.Replace('"ordinal":1','"ordinal":2'),
  $sample.Replace('PAPER-V2R4-20261009T110135Z','PAPER-V2R4-OTHER'),
  $sample.Replace('"kind":','"cloud_cas_authorized":true,"kind":'),
- $sample.Replace('"fence_sha256":"'+('a'*64)+'"','"fence_sha256":"INVALID"')
+ $sample.Replace('"fence_sha256":"'+('a'*64)+'"','"fence_sha256":"INVALID"'),
+ $sample.Replace('"caller_acl_sha256":"'+('e'*64)+'"','"caller_acl_sha256":"INVALID"')
 )){
  $rejected=$false
  try{$null=Test-V3UnsignedPreinvokeCandidate ([Text.Encoding]::UTF8.GetBytes($bad))}
