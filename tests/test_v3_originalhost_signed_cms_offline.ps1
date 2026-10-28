@@ -191,6 +191,53 @@ try {
     throw 'V3_CI_PYTHON_PREINVOKE_CMS_MUTATION_OR_WRONG_PIN_ACCEPTED'
    }
   }
+  # Reuse the SAME disposable CI-signed canonical Python receipt bytes.
+  # This is a one-time notebook OFF-HOST copy, not a second TPM test or CAS.
+  $notebookArchiveTool=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/v3-cas-notebook-cms-archive-INACTIVE.ps1'
+  $tmp=Join-Path ([IO.Path]::GetTempPath()) ('v3-cms-notebook-'+[guid]::NewGuid().ToString('N'))
+  $archive=Join-Path $tmp 'separate-notebook-copy'
+  $receiptFile=Join-Path $tmp 'preinvoke.json'
+  $cmsFile=Join-Path $tmp 'preinvoke.cms'
+  try{
+   [void][IO.Directory]::CreateDirectory($tmp)
+   [IO.File]::WriteAllBytes($receiptFile,$proposalBytes)
+   [IO.File]::WriteAllBytes($cmsFile,$proposalSignature)
+   $stored=(& $notebookArchiveTool -Aktion Speichern -BelegDatei $receiptFile -CmsDatei $cmsFile -ZertifikatSha256 $pin -Ablage $archive) | ConvertFrom-Json -ErrorAction Stop
+   if($stored.status -cne 'V3_CAS_NOTEBOOK_SIGNED_COPY_CRYPTO_VALID_ONLY' -or
+      $stored.offhost_copy_readback -ne $true -or
+      $stored.cryptographic_signature_checked -ne $true -or
+      $stored.cas_execute_erlaubt -ne $false -or
+      $stored.independent_immutable_external_custody_proven -ne $false -or
+      $stored.exclusive_cas_attempt_coverage_proven -ne $false -or
+      $stored.v2r4_rearm_erlaubt -ne $false -or
+      $stored.v3_paper_freigabe -ne $false){
+    throw 'V3_NOTEBOOK_SIGNED_COPY_TRUST_BOUNDARY_INCORRECT'
+   }
+   $reloaded=(& $notebookArchiveTool -Aktion Pruefen -ZertifikatSha256 $pin -Ablage $archive) | ConvertFrom-Json -ErrorAction Stop
+   if($reloaded.payload_sha256 -cne $stored.payload_sha256){
+    throw 'V3_NOTEBOOK_SIGNED_COPY_RESTART_DRIFT'
+   }
+   $replayDenied=$false
+   try{
+    & $notebookArchiveTool -Aktion Speichern -BelegDatei $receiptFile -CmsDatei $cmsFile -ZertifikatSha256 $pin -Ablage $archive | Out-Null
+   }catch{$replayDenied=$true}
+   if(-not $replayDenied){throw 'V3_NOTEBOOK_SIGNED_COPY_REPLAY_ACCEPTED'}
+   $badPinDenied=$false
+   try{
+    & $notebookArchiveTool -Aktion Pruefen -ZertifikatSha256 ('0'*64) -Ablage $archive | Out-Null
+   }catch{$badPinDenied=$true}
+   if(-not $badPinDenied){throw 'V3_NOTEBOOK_SIGNED_COPY_WRONG_PIN_ACCEPTED'}
+   [IO.File]::AppendAllText((Join-Path $archive 'voraufruf.json'),' ',[Text.Encoding]::ASCII)
+   $tamperDenied=$false
+   try{
+    & $notebookArchiveTool -Aktion Pruefen -ZertifikatSha256 $pin -Ablage $archive | Out-Null
+   }catch{$tamperDenied=$true}
+   if(-not $tamperDenied){throw 'V3_NOTEBOOK_SIGNED_COPY_TAMPER_ACCEPTED'}
+   Write-Output 'V3_NOTEBOOK_ORIGINAL_CMS_SIGNED_COPY_ARCHIVE_POSITIVE_NEGATIVES_NO_CAS_PASS'
+  }finally{
+   if([IO.Directory]::Exists($tmp)){[IO.Directory]::Delete($tmp,$true)}
+  }
+
   Write-Output 'V3_PYTHON_PREINVOKE_TO_DOTNET_DETACHED_CMS_BYTES_PASS_NO_AUTHORITY'
   Write-Output 'V3_ORIGINALHOST_DETACHED_CMS_OFFLINE_POSITIVE_NEGATIVES_PASS_NO_AUTHORITY'
  } finally {$cert.Dispose()}
