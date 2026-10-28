@@ -47,6 +47,8 @@ jobs:
           if (@($e).Count -ne 0) { throw 'V3_TPM_MANUAL_ENROLL_SOURCE_SYNTAX_INVALID' }
       - name: Separate V3 Cloud CAS preflight stays read-only and role-scoped
         run: python -m unittest tests.test_v3_paper_cloud_cas_separated_preflight_contract -v
+      - name: Original V3 atomic CAS SQL is unconditionally locked before DDL (offline)
+        run: python -m unittest tests.test_v3_experimental_atomic_cas_inactive_contract_v1 -v
       - name: Restricted generic Mini-PC task source contract (offline, no host run)
         run: python -m unittest tests.test_minipc_reviewed_task_source_contract -v
       - name: Parse bounded V3 Mini-PC and interactive operator scripts (no execution)
