@@ -58,7 +58,34 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f tests/sql/v3_experimental_paper_atomic_cas_smoke.sql
+          # Prove the ORIGINAL source is unconditionally locked on a disposable DB.
+          if psql -X -v ON_ERROR_STOP=1 -f supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql >"$RUNNER_TEMP/v3_cas_original_hold.log" 2>&1; then
+            echo V3_ORIGINAL_CAS_INSTALL_SOURCE_UNEXPECTEDLY_EXECUTED >&2; exit 1
+          fi
+          grep -Fq 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED' "$RUNNER_TEMP/v3_cas_original_hold.log"
+          test "$(psql -X -Atc "select count(*) from pg_proc where proname='rotate_v2r4_to_v3_experimental_paper'")" = 0
+
+          # Only a disposable fixture can strip that one exact first-statement
+          # source lock. Never write an unlocked file back to this repository.
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          sql = Path("supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql").read_text("utf-8")
+          lock = "  raise exception 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+          assert sql.count(lock) == 1
+          prefix = sql.split("do $v3_cas_install_locked$\nbegin\n", 1)[1].split(lock, 1)[0]
+          assert all(not line.strip() or line.lstrip().startswith("--") for line in prefix.splitlines())
+          only_ci = root / "v3_cas_disposable_unlocked.sql"
+          only_ci.write_text(sql.replace(lock, "  null; -- CI-only isolated transaction fixture", 1), "utf-8")
+          fixture = Path("tests/sql/v3_experimental_paper_atomic_cas_smoke.sql").read_text("utf-8")
+          include = r"\ir ../../supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql"
+          assert fixture.count(include) == 1
+          (root / "v3_cas_disposable_smoke.sql").write_text(
+              fixture.replace(include, "\\i " + str(only_ci)), "utf-8"
+          )
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/v3_cas_disposable_smoke.sql"
           echo V3_CAS_DISPOSABLE_DB_GATE_OK
       - uses: denoland/setup-deno@v2
         with:
