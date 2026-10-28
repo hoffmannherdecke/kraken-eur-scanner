@@ -1140,6 +1140,22 @@ class ExistingOwnerActionViewTests(unittest.TestCase):
         self.assertEqual(gate["candidate_verdict"], "STALE_OWNER_VIEW_HOLD_NO_REWORK")
         self.assertFalse(gate["ready_to_execute"])
 
+    def test_all_runtime_proofs_done_does_not_auto_release(self):
+        from tools.context_before_action import existing_owner_gate_decision
+        # Synthetic future owner receipts: structurally complete, never an
+        # independent physical proof or a trading/release permission.
+        obj = self.body()
+        for step in obj["steps"]:
+            if step["layer"] == "REAL_RUNTIME":
+                step["state"] = "DONE"
+                step["evidence_class"] = "ORIGINAL_RUNTIME_ACK"
+        result = existing_owner_gate_decision(self.encode(obj))
+        self.assertIsNone(result["next_open_gate"])
+        self.assertFalse(result["ready_to_execute"])
+        self.assertFalse(result["runtime_verified_independently"])
+        self.assertEqual(result["counts_from_declared_owner_view"]["REAL_RUNTIME"]["open"], 0)
+        self.assertEqual(result["counts_from_declared_owner_view"]["REAL_RUNTIME"]["done"], 2)
+
     def test_invalid_or_missing_header_digest_fails_closed(self):
         from tools.context_before_action import existing_owner_gate_decision, ContextGateError
         obj = self.body()
