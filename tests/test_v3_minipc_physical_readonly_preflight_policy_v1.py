@@ -910,7 +910,7 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         review=source.split("function Resolve-V3ScopedCutoverRecovery(",1)[1].split(
             "# Exact adapter for the *actual* 15-Oct",1)[0]
         self.assertIn("HOLD_ARMED_PARTIAL_STOP_MANUAL_INCIDENT_NO_REARM",review)
-        self.assertIn("PRE_CAS_ARMED_MANUAL_RESTORE_REVIEW_CANDIDATE_NOT_EXECUTABLE",review)
+        self.assertIn("HOLD_ARMED_UNAUTHENTICATED_EXTERNAL_CLOUD_CAS_CUSTODY",review)
         self.assertIn("HOLD_ARMED_CURRENT_BACKUP_OR_INDEPENDENT_CLOUD_ACK",review)
         self.assertIn("Test-V3Pr515ArmedRecoveryIdentity -Before $current -After $armed",review)
         # The first version had an unbound $marker: branch existed only in text.

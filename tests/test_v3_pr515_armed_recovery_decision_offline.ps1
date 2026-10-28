@@ -209,7 +209,7 @@ $r=[pscustomobject]@{
  independent_cloud_old_only_after_armed_ack=$true
  current_prod_cloud_inventory=$cloud
 }
-Need 'ARMED fully stopped' (Resolve-V3ScopedCutoverRecovery $r).disposition 'PRE_CAS_ARMED_MANUAL_RESTORE_REVIEW_CANDIDATE_NOT_EXECUTABLE'
+Need 'ARMED fully stopped' (Resolve-V3ScopedCutoverRecovery $r).disposition 'HOLD_ARMED_UNAUTHENTICATED_EXTERNAL_CLOUD_CAS_CUSTODY'
 $x=Clone $r;$x.native_intake_tasks_disabled_ack=$false
 Need 'partial STOP' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_ARMED_PARTIAL_STOP_MANUAL_INCIDENT_NO_REARM'
 $x=Clone $r;$x.cloud_cas_outcome='UNKNOWN'
@@ -236,7 +236,7 @@ $x.current_pr515_quiesced_readonly_preview.status='QUIESCED_NATIVE_SOURCE_MATCH_
 $x.current_pr515_quiesced_readonly_preview.single_local_supervisor_pr515_quiesced_observation_only=$true
 $x | Add-Member -NotePropertyName fresh_current_xml_after_quiesce_independently_checked -NotePropertyValue $true
 $x | Add-Member -NotePropertyName independent_cloud_old_only_after_quiesce_ack -NotePropertyValue $true
-Need 'QUIESCED backwards compatible' (Resolve-V3ScopedCutoverRecovery $x).disposition 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE'
+Need 'QUIESCED backwards compatible' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_QUIESCED_UNAUTHENTICATED_EXTERNAL_CLOUD_CAS_CUSTODY'
 $x.fence_marker_phase='ARMED'
 Need 'unbound QUIESCED marker' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_FENCE_MANUAL_RECONCILIATION'
 $raw=Get-Content -LiteralPath $src -Raw

@@ -982,7 +982,7 @@ CheckCloudInventory $false $x 'no UTC provenance timestamp'
 Write-Output 'V3_CLOUD_CURRENT_INVENTORY_14_PURE_CASES_PASS'
 
 CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' (V3RecoveryFixture) 'historical backup without marker can no longer qualify'
-CheckRecovery 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE' (V3Pr515RecoveryReviewFixture) 'current PR515 pre+poststop source contract, still NO restore authority'
+CheckRecovery 'HOLD_QUIESCED_UNAUTHENTICATED_EXTERNAL_CLOUD_CAS_CUSTODY' (V3Pr515RecoveryReviewFixture) 'current PR515 pre+poststop source contract, still NO restore authority'
 $x=V3Pr515RecoveryReviewFixture;$x.backup_manifest=V3BackupFixture
 CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'legacy PR316 proposal cannot act as real PR515 recovery'
 $x=V3Pr515RecoveryReviewFixture;$x.backup_manifest.task_records[1].xml_file='foreign.task.xml'
