@@ -230,9 +230,9 @@ function Save-V3SignedNotebookReaderSnapshot([string]$RawJson,[string]$CertSha25
    [Security.AccessControl.AccessControlType]::Allow))
  }
  Set-Acl -LiteralPath $folder -AclObject $acl -ErrorAction Stop
- foreach($entry in @(@('reader.json',$payload),@('reader.cms',$signature))){
-  $target=Join-Path $folder $entry[0]
-  $data=[byte[]]$entry[1]
+ foreach($name in @('reader.json','reader.cms')){
+  $target=Join-Path $folder $name
+  $data=if($name -ceq 'reader.json'){$payload}else{$signature}
   $file=[IO.FileStream]::new($target,[IO.FileMode]::CreateNew,
    [IO.FileAccess]::Write,[IO.FileShare]::None)
   try { $file.Write($data,0,$data.Length);$file.Flush($true) }
