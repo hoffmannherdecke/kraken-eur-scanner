@@ -171,7 +171,7 @@ function Test-UnknownPair([byte[]]$entryBytes,[byte[]]$unknownBytes,[byte[]]$sig
   ordinal=1;previous_entry_sha256=[string]$entry.previous_entry_sha256
  }
  $eCanonical=[ordered]@{
-  epoch_id=[string]$entry.epoch_id;entry_sha256=[string]$entry.entry_sha256
+  entry_sha256=[string]$entry.entry_sha256;epoch_id=[string]$entry.epoch_id
   intent_id=[string]$entry.intent_id;intent_sha256=[string]$entry.intent_sha256
   kind=[string]$entry.kind;ordinal=1;previous_entry_sha256=[string]$entry.previous_entry_sha256
  }
