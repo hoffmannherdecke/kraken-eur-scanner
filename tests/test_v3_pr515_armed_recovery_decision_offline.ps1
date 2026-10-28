@@ -10,7 +10,7 @@ $names=@('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract',
  'Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity',
  'Test-V3Pr515ArmedRecoveryIdentity','Test-V3PrecommitCurrentCloudInventory',
  'Get-V3Pr515TwoSourceCloudSnapshotReview','Read-V3ScopedPrecommitSnapshotFile',
- 'Resolve-V3ScopedCutoverRecovery')
+ 'Resolve-V3ScopedCutoverRecovery','Get-V3Pr515DisabledRestoreXmlForNativeValidation')
 $fn=@($ast.FindAll({param($n)
  $n -is [Management.Automation.Language.FunctionDefinitionAst]},$true))
 foreach($name in $names){
@@ -237,6 +237,42 @@ try{
 }
 
 
+
+# Physical failure regression from 28 October PR617: the Windows Task Scheduler
+# settingsType schema has xs:all/Enabled minOccurs=0 default=true. A missing
+# explicit Enabled MUST still derive disabled XML for native validate-only;
+# a real explicitly disabled original, duplicate or alien namespace fails shut.
+$ns='http://schemas.microsoft.com/windows/2004/02/mit/task'
+$xmlOriginal='<Task xmlns="'+$ns+'" version="1.4"><Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><Hidden>false</Hidden></Settings></Task>'
+$derived=Get-V3Pr515DisabledRestoreXmlForNativeValidation -OriginalXml $xmlOriginal
+if($xmlOriginal.Contains('<Enabled>') -or
+   @($derived|Select-String -Pattern '<Enabled>false</Enabled>').Count -ne 1){
+ throw 'V3_RESTORE_OPTIONAL_ENABLED_DEFAULT_NOT_HANDLED'
+}
+$asXml=[xml]$derived
+$settingNodes=@($asXml.SelectNodes('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="Enabled"]'))
+if($settingNodes.Count -ne 1 -or [string]$settingNodes[0].InnerText -cne 'false'){
+ throw 'V3_RESTORE_OPTIONAL_ENABLED_DERIVED_INCORRECTLY'
+}
+foreach($value in @('true','1')){
+ $explicit=$xmlOriginal.Replace('<Hidden>false</Hidden>',"<Enabled>$value</Enabled><Hidden>false</Hidden>")
+ $tested=Get-V3Pr515DisabledRestoreXmlForNativeValidation -OriginalXml $explicit
+ if($tested -notmatch '<Enabled>false</Enabled>'){
+  throw 'V3_RESTORE_EXPLICIT_ENABLED_TRUE_REJECTED'
+ }
+}
+foreach($invalid in @(
+ $xmlOriginal.Replace('<Hidden>false</Hidden>','<Enabled>false</Enabled><Hidden>false</Hidden>'),
+ $xmlOriginal.Replace('<Hidden>false</Hidden>','<Enabled>true</Enabled><Enabled>true</Enabled><Hidden>false</Hidden>'),
+ $xmlOriginal.Replace('<Settings>','<Settings xmlns="urn:foreign">'),
+ $xmlOriginal.Replace('<Settings>','<OtherSettings>').Replace('</Settings>','</OtherSettings>')
+)){
+ $rejected=$false
+ try{[void](Get-V3Pr515DisabledRestoreXmlForNativeValidation -OriginalXml $invalid)}
+ catch{$rejected=$true}
+ if(-not $rejected){throw 'V3_RESTORE_EXPLICITLY_DISABLED_DUPLICATE_OR_FOREIGN_XML_ACCEPTED'}
+}
+Write-Output 'V3_PR617_OPTIONAL_ENABLED_DEFAULT_REAL_XML_REGRESSION_PASS'
 
 # PR515 native Scheduler XML VALIDATE_ONLY integration: source/static CI is
 # not a physical Windows ACK. Exact mode is opt-in, no Task register/update.
