@@ -469,3 +469,18 @@ if(@([regex]::Matches($validation,[regex]::Escape('.RegisterTask('))).Count -ne 
  throw 'PR515_SCHEDULER_VALIDATE_ONLY_BOUNDARY_DRIFT'
 }
 Write-Output 'V3_PR515_TASK_SCHEDULER_VALIDATE_ONLY_SOURCE_GUARD_PASS_NO_RUNTIME_ACK'
+
+# The optional Cloud snapshot must be consumed by the one signed Originalhost
+# read-only mode; it must not be rejected as an incompatible argument.
+$modeStart=$full.IndexOf('if($ReviewSignedCurrentCasCustody){')
+$modeEnd=$full.IndexOf('if(-not $ReviewSignedCurrentCasCustody', $modeStart)
+if($modeStart -lt 0 -or $modeEnd -le $modeStart){throw 'V3_SIGNED_JOIN_MODE_MISSING'}
+$signedMode=$full.Substring($modeStart,$modeEnd-$modeStart)
+if($signedMode -match '\$ExistingCloudInventoryJson -or \$ExpectedCandidatesActionSha256' -or
+   $signedMode -notmatch 'Read-V3ScopedPrecommitSnapshotFile -Path \$ExistingCloudInventoryJson' -or
+   $signedMode -notmatch 'Get-V3Pr515SignedCasAndCloudSeriesReview' -or
+   $signedMode -notmatch 'REVIEW_ONLY_SIGNED_CAS_PLUS_UNAUTHENTICATED_PUBLIC_CLOUD_NOT_RELEASE' -or
+   $signedMode -match 'Start-ScheduledTask|Stop-ScheduledTask|Enable-ScheduledTask|Disable-ScheduledTask'){
+ throw 'V3_SIGNED_JOIN_NOT_ACTUALLY_WIRED_READONLY'
+}
+Write-Output 'V3_SIGNED_ORIGINALHOST_CLOUD_JOIN_ENTRY_WIRED_SOURCE_ONLY_PASS'
