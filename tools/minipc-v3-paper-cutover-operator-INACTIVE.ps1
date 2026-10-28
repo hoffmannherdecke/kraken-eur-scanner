@@ -8,6 +8,7 @@ param(
  [switch]$PreviewPr515Quiesced,
  [switch]$PreviewPr515Armed,
  [switch]$PreviewPr515ArmedTwoCycle,
+ [switch]$ValidatePr515RestoreXml,
  [string]$OriginalBackupDirectory='',
  [string]$ExpectedPr515SourceSha256='',
  [string]$ExpectedArmedFenceSha256='',
@@ -2407,7 +2408,8 @@ function Read-V3ScopedPrecommitSnapshotFile([string]$Path,[string[]]$ExactKeys){
 if($ReviewExistingTwoSourcePrecommit){
  if($Execute -or $BackupOriginalIntake -or $PreviewPr515PreCas -or
     $PreviewPr515Quiesced -or $PreviewPr515Armed -or
-    $PreviewPr515ArmedTwoCycle -or $VerifyNotebookPrecommitCms -or
+    $PreviewPr515ArmedTwoCycle -or $ValidatePr515RestoreXml -or
+    $VerifyNotebookPrecommitCms -or
     $Confirm -or $OriginalBackupDirectory -or
     $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256 -or
     $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
@@ -2448,7 +2450,7 @@ if(-not $ReviewExistingTwoSourcePrecommit -and
 if($VerifyNotebookPrecommitCms){
  if($BackupOriginalIntake -or $PreviewPr515PreCas -or $PreviewPr515Quiesced -or
     $PreviewPr515Armed -or $PreviewPr515ArmedTwoCycle -or
-    $NotebookReaderJson -eq '' -or $NotebookReaderCms -eq '' -or
+    $ValidatePr515RestoreXml -or $NotebookReaderJson -eq '' -or $NotebookReaderCms -eq '' -or
     $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$'){
   throw 'V3_NOTEBOOK_SIGNED_READER_MODE_CONFLICT_OR_MISSING_PIN'
  }
@@ -2476,8 +2478,8 @@ if($VerifyNotebookPrecommitCms){
  return
 }
 
-if($PreviewPr515PreCas -or $PreviewPr515Quiesced -or $PreviewPr515Armed -or $PreviewPr515ArmedTwoCycle) {
- $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent+[int]$PreviewPr515ArmedTwoCycle.IsPresent
+if($PreviewPr515PreCas -or $PreviewPr515Quiesced -or $PreviewPr515Armed -or $PreviewPr515ArmedTwoCycle -or $ValidatePr515RestoreXml) {
+ $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent+[int]$PreviewPr515ArmedTwoCycle.IsPresent+[int]$ValidatePr515RestoreXml.IsPresent
  if($modeCount -ne 1 -or
     $BackupOriginalIntake -or $Confirm -or
     $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
@@ -2606,6 +2608,235 @@ if($PreviewPr515PreCas) {
  }
  $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256
  $receipt | ConvertTo-Json -Depth 6
+ return
+}
+# Test the REAL Windows Scheduler XML parser safely BEFORE any original
+# STOP. Native TASK_VALIDATE_ONLY (0x1) registers no task whatsoever. This
+# is distinct from the completed PR515 byte/hash backup check, and does NOT
+# claim physical restore, NoRearm, Cloud/CAS authority or V3 release.
+if($ValidatePr515RestoreXml) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'V3_RESTORE_VALIDATE_ORIGINALHOST_INTAKES_NOT_READY'
+ }
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    -not ([IO.Path]::GetFullPath($TradingRoot).TrimEnd('\')).Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)){
+  throw 'V3_RESTORE_VALIDATE_NOT_ORIGINAL_WINDOWS_HOST'
+ }
+ $win=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $win.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_ADMIN_REQUIRED'
+ }
+ $state=Join-Path $TradingRoot 'State'
+ $backup=[IO.Path]::GetFullPath($OriginalBackupDirectory).TrimEnd('\')
+ if(-not ([IO.Path]::GetDirectoryName($backup)).Equals($state,[StringComparison]::OrdinalIgnoreCase) -or
+    [IO.Path]::GetFileName($backup) -cnotmatch '^V3Paper-PreCAS-Backup-[a-f0-9]{32}, NOT independent Cloud CAS authority.
+ $receipt=Read-V3Pr515ArmedTwoCycleOriginalHost -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedFenceSha $ExpectedArmedFenceSha256
+ $receipt | ConvertTo-Json -Depth 5
+ return
+}
+if($PreviewPr515Armed) {
+ # After the future separately authorized native stop, the persisted fence
+ # MUST still be ARMED. Only observes native Disabled XML/PR515 and one local
+ # supervisor sample; NEVER promotes the marker, queries CAS or gives 2 cycles.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedArmed
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($PreviewPr515Quiesced) {
+ # The original four-role inspector may see disabled native tasks. Its
+ # running-intake readiness is NOT used as a QUIESCED release proof.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedQuiesced
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($BackupOriginalIntake) {
+ if(-not $ready -or -not $completeWaitSnapshot) {
+  throw 'pre-CAS original intake must be healthy with closed WAIT descendants'
+ }
+ $record=Save-V3OriginalIntakeXmlOnly -Report $report -Root $TradingRoot -CandidateSha $ExpectedCandidatesActionSha256 -WaitSha $ExpectedWaitActionSha256
+ $record | ConvertTo-Json -Depth 7
+ return
+}
+[ordered]@{
+ kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
+ phase='READ_ONLY'
+ checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
+ pre_cutover_discovery_pass=$ready
+ candidate_wait_only_future_quiesce_scope=@(
+  'CryptoMiniPC-V2R4PaperCandidates',
+  'CryptoMiniPC-V2R4PaperWait'
+ )
+ must_preserve_original_tasks=@(
+  'CryptoMiniPC-V2R4PaperLifecycle',
+  'CryptoMiniPC-V2R4PaperCloudSync'
+ )
+ original_role_lineage_snapshot_only=$true
+ v3_host_source_deployment_independently_required=$true
+ original_wait_tree_and_full_task_source_pins_separate_gate=$true
+ wait_full_process_inventory_readable=$waitSnapshotReadable
+ wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
+ wait_closed_descendants_snapshot_only_no_stop_authority=$true
+ wait_seen_python_family_count=@($waitProcessRows).Count
+ wait_unrecognized_descendant_failure_is_fail_closed=$true
+ wait_signed_system32_consolehost_exception_scoped=$true
+ wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true
+ windows_native_disable_stop_and_no_rearm_proven=$false
+ physically_quiescent_old_intake_processes_proven=$false
+ historical_followup_and_exit_cloud_ack_proven=$false
+ cloud_single_active_cas_proven=$false
+ backup_manifest_contract_policy_only=$true
+ cutover_recovery_decision_matrix_policy_only=$true
+ real_task_xml_backup_not_yet_executed=$true
+ exact_task_stop_disable_and_native_no_rearm_unimplemented=$true
+ rollback_precommit_only_unimplemented=$true
+ unknown_cloud_commit_forbids_old_writer_rearm=$true
+ v3_paper_technical_e2e_proofs_accepted=0
+ v3_live_release_authorized=$false
+ task_process_marker_cloud_writes=0
+ do_not_use_old_v2r4_technical_cutover_operator=$true
+} | ConvertTo-Json -Depth 7
+ -or
+    (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+  throw 'V3_RESTORE_VALIDATE_FENCE_OR_BACKUP_PATH_DRIFT'
+ }
+ $pre=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $backup -ExpectedCloudSha $ExpectedPr515SourceSha256
+ if([string]$pre.status -cne 'COMPATIBLE_READONLY_NOT_RELEASED' -or
+    -not(Test-V3Pr515FreshRecoveryIdentity -Preview $pre)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_BACKUP_PR515_RECHECK_FAILED'
+ }
+ $item=Get-Item -LiteralPath (Join-Path $backup 'backup-manifest.json') -Force -ErrorAction Stop
+ if($item.PSIsContainer -or [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_UNSAFE_MANIFEST'
+ }
+ $manifest=Get-Content -LiteralPath $item.FullName -Raw -Encoding UTF8 -ErrorAction Stop|ConvertFrom-Json
+ $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ if([string]$manifest.kind -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1' -or
+    [string]$manifest.backup_directory -cne $backup -or
+    [string]$manifest.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    @($manifest.task_records).Count -ne 2){
+  throw 'V3_RESTORE_VALIDATE_BACKUP_IDENTITY_DRIFT'
+ }
+ $native=@()
+ foreach($name in $names){
+  $row=@($manifest.task_records|Where-Object{$_.task_name -ceq $name})
+  $leaf=if($name -ceq $names[0]){'Candidates.task.xml'}else{'WAIT.task.xml'}
+  $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  $xml=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
+  if($row.Count -ne 1 -or [string]$row[0].xml_file -cne $leaf -or
+     [string]$row[0].xml_sha256 -cnotmatch '^[a-f0-9]{64}, NOT independent Cloud CAS authority.
+ $receipt=Read-V3Pr515ArmedTwoCycleOriginalHost -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedFenceSha $ExpectedArmedFenceSha256
+ $receipt | ConvertTo-Json -Depth 5
+ return
+}
+if($PreviewPr515Armed) {
+ # After the future separately authorized native stop, the persisted fence
+ # MUST still be ARMED. Only observes native Disabled XML/PR515 and one local
+ # supervisor sample; NEVER promotes the marker, queries CAS or gives 2 cycles.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedArmed
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($PreviewPr515Quiesced) {
+ # The original four-role inspector may see disabled native tasks. Its
+ # running-intake readiness is NOT used as a QUIESCED release proof.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedQuiesced
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($BackupOriginalIntake) {
+ if(-not $ready -or -not $completeWaitSnapshot) {
+  throw 'pre-CAS original intake must be healthy with closed WAIT descendants'
+ }
+ $record=Save-V3OriginalIntakeXmlOnly -Report $report -Root $TradingRoot -CandidateSha $ExpectedCandidatesActionSha256 -WaitSha $ExpectedWaitActionSha256
+ $record | ConvertTo-Json -Depth 7
+ return
+}
+[ordered]@{
+ kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
+ phase='READ_ONLY'
+ checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
+ pre_cutover_discovery_pass=$ready
+ candidate_wait_only_future_quiesce_scope=@(
+  'CryptoMiniPC-V2R4PaperCandidates',
+  'CryptoMiniPC-V2R4PaperWait'
+ )
+ must_preserve_original_tasks=@(
+  'CryptoMiniPC-V2R4PaperLifecycle',
+  'CryptoMiniPC-V2R4PaperCloudSync'
+ )
+ original_role_lineage_snapshot_only=$true
+ v3_host_source_deployment_independently_required=$true
+ original_wait_tree_and_full_task_source_pins_separate_gate=$true
+ wait_full_process_inventory_readable=$waitSnapshotReadable
+ wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
+ wait_closed_descendants_snapshot_only_no_stop_authority=$true
+ wait_seen_python_family_count=@($waitProcessRows).Count
+ wait_unrecognized_descendant_failure_is_fail_closed=$true
+ wait_signed_system32_consolehost_exception_scoped=$true
+ wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true
+ windows_native_disable_stop_and_no_rearm_proven=$false
+ physically_quiescent_old_intake_processes_proven=$false
+ historical_followup_and_exit_cloud_ack_proven=$false
+ cloud_single_active_cas_proven=$false
+ backup_manifest_contract_policy_only=$true
+ cutover_recovery_decision_matrix_policy_only=$true
+ real_task_xml_backup_not_yet_executed=$true
+ exact_task_stop_disable_and_native_no_rearm_unimplemented=$true
+ rollback_precommit_only_unimplemented=$true
+ unknown_cloud_commit_forbids_old_writer_rearm=$true
+ v3_paper_technical_e2e_proofs_accepted=0
+ v3_live_release_authorized=$false
+ task_process_marker_cloud_writes=0
+ do_not_use_old_v2r4_technical_cutover_operator=$true
+} | ConvertTo-Json -Depth 7
+ -or
+     [string]$task.State -cne 'Running' -or
+     [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+     @($task.Actions).Count -ne 1 -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne [string]$row[0].action_sha256 -or
+     -not(Test-V3FreshBackupFileBytes -Path (Join-Path $backup $leaf) -ExpectedSha ([string]$row[0].xml_sha256) -ExpectedXml $xml)){
+   throw 'V3_RESTORE_VALIDATE_NATIVE_XML_OR_SHA_DRIFT'
+  }
+  $doc=[xml]::new();$doc.XmlResolver=$null;$doc.LoadXml($xml)
+  $enabled=@($doc.SelectNodes('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="Enabled"]'))
+  if($enabled.Count -ne 1 -or [string]$enabled[0].InnerText -cne 'true'){
+   throw 'V3_RESTORE_VALIDATE_ENABLED_ONLY_XML_MISSING'
+  }
+  $enabled[0].InnerText='false'
+  $native+=@([pscustomobject]@{name=$name;source=$xml;disabled=$doc.OuterXml;action=[string]$row[0].action_sha256})
+ }
+ $svc=New-Object -ComObject 'Schedule.Service';$taskFolder=$null
+ try{
+  $svc.Connect();$taskFolder=$svc.GetFolder('\')
+  foreach($x in $native){
+   $null=$taskFolder.RegisterTask($x.name,$x.source,1,$null,$null,5)
+   $null=$taskFolder.RegisterTask($x.name,$x.disabled,1,$null,$null,5)
+  }
+ }finally{
+  if($null -ne $taskFolder){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($taskFolder)}
+  if($null -ne $svc){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($svc)}
+ }
+ foreach($x in $native){
+  $task=Get-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop
+  if([string]$task.State -cne 'Running' -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne $x.action -or
+     [string](Export-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop) -cne $x.source -or
+     (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+   throw 'V3_RESTORE_VALIDATE_ORIGINAL_CHANGED_AFTER_SCHEDULER_CHECK'
+  }
+ }
+ [pscustomobject][ordered]@{
+  kind='V3_PR515_ORIGINAL_SCHEDULER_VALIDATE_ONLY_V1'
+  status='REAL_SCHEDULER_XML_VALIDATION_PASS_NO_RESTORE'
+  original_tasks_checked=2
+  enabled_and_disabled_xml_validations=4
+  registered_or_modified_tasks=0
+  actual_restore_executed=$false
+  actual_stop_or_norearm_executed=$false
+  independent_cloud_cas_custody_proven=$false
+  v3_paper_authorized=$false
+ }|ConvertTo-Json -Compress
  return
 }
 if($PreviewPr515ArmedTwoCycle) {
