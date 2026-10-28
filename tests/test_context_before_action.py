@@ -13,8 +13,6 @@ from tools.context_before_action import (
 )
 
 
-print('TEMP_CONTEXT_FINGERPRINTS_20261028', json.dumps({scope:build(ROOT,scope)['fingerprint'] for scope in ('architecture','operations','research','strategy')},sort_keys=True),flush=True)
-
 class ContextBeforeActionTests(unittest.TestCase):
 
     def test_hardware_and_general_collaboration_never_inherit_v3_release(self):
