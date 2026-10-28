@@ -694,6 +694,136 @@ class V3CasMiniPcLocalSpoolInactiveTests(unittest.TestCase):
             with self.assertRaises(LocalWitnessHold):
                 review_local_witness_candidate(root)
 
+    def synthetic_original_reader_report(self, intent):
+        # Disposable test data; never masquerade as a physical Notebook ACK.
+        row = {
+            "kind": "V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1",
+            "observed_at_utc": "2026-10-26T15:00:00.123456Z",
+            "actor": "v3_cas_audit_reader_actor",
+            "role": "v3_cas_audit_reader",
+            "epoch_count": 1, "intent_count": 1,
+            "epoch_id": intent.epoch_id, "intent_id": intent.intent_id,
+            "predecessor_series_id": ORIGINAL_SERIES,
+            "expected_rpc": RPC, "intent_rpc": RPC,
+            "source_sha256": intent.source_sha256,
+            "intent_source_sha256": intent.source_sha256,
+            "fence_sha256": intent.fence_sha256,
+            "intent_fence_sha256": intent.fence_sha256,
+            "caller_acl_sha256": "e" * 64,
+            "request_sha256": intent.request_sha256,
+            "ordinal": 1, "next_ordinal": 2,
+            "intent_state": "PREINVOKE_INTENT", "sealed": False,
+            "opened_at_utc": "2026-10-26T14:59:00.000000Z",
+            "intent_created_at_utc": "2026-10-26T14:59:59.000000Z",
+        }
+        return {
+            "kind": row["kind"],
+            "status": "CURRENT_ONE_COMMITTED_PREINVOKE_INTENT_NOT_CAS_RELEASE",
+            **{key: row[key] for key in (
+                "observed_at_utc", "epoch_id", "intent_id", "source_sha256",
+                "fence_sha256", "caller_acl_sha256", "request_sha256",
+            )},
+            "original_reader_row_for_future_cms_proposal": row,
+            "independent_tls_certificate_verified": False,
+            "historical_cas_never_proven": False,
+            "complete_cas_attempt_custody_proven": False,
+            "originalhost_authenticated_here": False,
+            "cloud_cas_authorized": False,
+            "precommit_restore_authorized": False,
+            "v3_paper_release_authorized": False,
+        }
+
+    def isolated_single_caller_kwargs(self, intent=None, root=None, report=None):
+        intent = intent if intent is not None else self.intent()
+        return {
+            "offline_test_only": True,
+            "offline_test_intent": intent,
+            "offline_test_reader_export": (
+                report if report is not None
+                else self.synthetic_original_reader_report(intent)),
+            "offline_test_root": root if root is not None else self.root,
+            "offline_test_expected_caller_acl_sha256": "e" * 64,
+            "offline_test_reviewed_at_utc": "2026-10-26T15:00:15Z",
+        }
+
+    def test_single_cas_entry_offline_chain_writes_one_sticky_unknown_never_dispatches(self):
+        # Existing ONE invoke entry wires original reader projection to the
+        # same local witness and UNKNOWN latch. It ALWAYS ends in a hard lock.
+        kwargs = self.isolated_single_caller_kwargs()
+        with self.assertRaisesRegex(PreinvokeHold, "SOURCE_UNCONDITIONALLY_LOCKED"):
+            invoke_v3_paper_cas(**kwargs)
+        self.assertEqual(sorted(p.name for p in self.root.iterdir()),
+                         ["000001.json", ATTEMPT_LATCH_NAME])
+        report = review_local_witness_candidate(self.root)
+        self.assertEqual(report["disposition"], "HOLD_LOCAL_PREDISPATCH_UNKNOWN_NO_RETRY")
+        self.assertTrue(report["local_unknown_latch_present"])
+        self.assertEqual(report["local_records_checked"], 1)
+        for key in ("cloud_cas_authorized", "old_writer_auto_rearm_allowed",
+                    "native_restore_authorized", "v3_paper_release_authorized",
+                    "independent_offdb_durable_storage_proven",
+                    "exclusive_cas_attempt_coverage_proven"):
+            self.assertIs(report[key], False, key)
+        # A second invocation after a simulated process restart remains HOLD.
+        original = (self.root / ATTEMPT_LATCH_NAME).read_bytes()
+        with self.assertRaises(LocalWitnessHold):
+            invoke_v3_paper_cas(**kwargs)
+        self.assertEqual((self.root / ATTEMPT_LATCH_NAME).read_bytes(), original)
+        self.assertEqual(len(list(self.root.iterdir())), 2)
+
+    def test_single_cas_entry_rejects_bad_reader_acl_and_self_authorized_flags(self):
+        from copy import deepcopy
+        intent = self.intent()
+        base = self.isolated_single_caller_kwargs(intent)
+        for change in ("wrong_acl", "fake_release", "fake_custody",
+                       "foreign_intent", "wrong_root"):
+            kwargs = deepcopy(base)
+            if change == "wrong_acl":
+                kwargs["offline_test_expected_caller_acl_sha256"] = "f" * 64
+            elif change == "fake_release":
+                kwargs["offline_test_reader_export"]["status"] = "CAS_AUTHORIZED"
+            elif change == "fake_custody":
+                kwargs["offline_test_reader_export"][
+                    "complete_cas_attempt_custody_proven"] = True
+            elif change == "foreign_intent":
+                kwargs["offline_test_intent"] = build_unsigned_intent(**{
+                    **original_proposal(), "intent_id": str(uuid4()),
+                })
+            elif change == "wrong_root":
+                kwargs["offline_test_root"] = pathlib.Path("/")
+            with self.subTest(change=change):
+                with self.assertRaises(PreinvokeHold):
+                    invoke_v3_paper_cas(**kwargs)
+                self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_single_cas_entry_callback_or_claimed_permission_never_runs_or_writes(self):
+        count = []
+        kwargs = self.isolated_single_caller_kwargs()
+        for variant in (
+            {"callback": lambda: count.append("DISPATCHED")},
+            {**kwargs, "callback": lambda: count.append("DISPATCHED")},
+            {**kwargs, "cas_authorized": True},
+            {**kwargs, "offline_test_only": 1},
+        ):
+            with self.subTest(keys=sorted(variant)):
+                with self.assertRaisesRegex(PreinvokeHold,
+                                            "SOURCE_UNCONDITIONALLY_LOCKED"):
+                    invoke_v3_paper_cas(**variant)
+        self.assertEqual(count, [])
+        self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_single_cas_entry_crash_after_local_intent_remains_unretryable(self):
+        from unittest.mock import patch
+        kwargs = self.isolated_single_caller_kwargs()
+        with patch("v3_cas_local_spool_INACTIVE.append_local_predispatch_unknown_latch",
+                   side_effect=LocalWitnessHold("SIMULATED_PRELATCH_CRASH")):
+            with self.assertRaisesRegex(LocalWitnessHold, "SIMULATED_PRELATCH_CRASH"):
+                invoke_v3_paper_cas(**kwargs)
+        self.assertEqual([p.name for p in self.root.iterdir()], ["000001.json"])
+        # Do NOT repair/delete the partial evidence. Retry fails at O_EXCL/ordinal.
+        with self.assertRaises(LocalWitnessHold):
+            invoke_v3_paper_cas(**kwargs)
+        self.assertEqual([p.name for p in self.root.iterdir()], ["000001.json"])
+
     def test_local_unknown_marker_source_has_no_cas_or_implicit_authority(self):
         s = (ROOT / "tools/v3_cas_local_spool_INACTIVE.py").read_text("utf-8")
         self.assertIn("os.O_EXCL", s)
