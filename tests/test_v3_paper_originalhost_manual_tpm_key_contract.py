@@ -53,6 +53,40 @@ class ManualTPMKeySourceContract(unittest.TestCase):
               ".rpc(","Start-Process"):
    self.assertNotIn(bad,self.s)
 
+ def test_optional_existing_cng_provider_inspection_is_readonly_and_failclosed(self):
+  # Distinct new proof: actual existing user key provider/export metadata,
+  # not a new enrollment or remote CAS/TPM-attestation authority.
+  for x in (
+    "[switch]$InspectProvider",
+    "if($InspectProvider -and $Enroll)",
+    "V3_SIGNER_PROVIDER_READONLY_CANNOT_ENROLL",
+    "if($InspectProvider){",
+    "if($null -eq $cert){throw 'V3_SIGNER_PROVIDER_READONLY_CERT_MISSING'}",
+    "RSACertificateExtensions]::GetRSAPrivateKey($cert)",
+    "Security.Cryptography.RSACng",
+    "$cng.Provider.Provider -ceq $provider",
+    "-not [bool]$cng.IsMachineKey",
+    "CngExportPolicies]::None",
+    "$rsa.Dispose()",
+    "V3_SIGNER_PROVIDER_READONLY_METADATA_HOLD",
+    "provider_metadata_readonly_checked=$providerReadOnly",
+    "existing_key_platform_provider_matches=$providerExactPlatform",
+    "existing_key_current_user_scope_matches=$userScopedKey",
+    "existing_key_nonexportable_policy_matches=$exportPolicyNonExportable",
+    "provider_metadata_not_external_attestation=$true",
+    "tpm_hardware_attestation_independently_verified=$false",
+    "cloud_cas_authorized=$false",
+  ):
+   with self.subTest(field=x): self.assertIn(x,self.s)
+  self.assertLess(self.s.index("if($InspectProvider -and $Enroll)"),
+                  self.s.index("if($Enroll){"))
+  self.assertLess(self.s.index("if($InspectProvider){"),
+                  self.s.index("[pscustomobject][ordered]@{"))
+  self.assertEqual(self.s.count("New-SelfSignedCertificate @options"),1)
+  self.assertNotIn("Export-CngKey",self.s)
+  self.assertNotIn("Set-Acl",self.s)
+  self.assertNotIn("SignData(",self.s)
+
  def test_public_pin_not_release_authority(self):
   for x in ("certificate_der_sha256_public_pin_unapproved",
             "originalhost_signed_receipt_generated=$false",

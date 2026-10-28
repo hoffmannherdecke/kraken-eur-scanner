@@ -1,5 +1,6 @@
 param(
  [switch]$Enroll,
+ [switch]$InspectProvider,
  [string]$Approval=''
 )
 # Original V3 Paper release owner #99: MANUAL credential enrolment only.
@@ -18,6 +19,9 @@ $subject='CN=V3-PAPER-ORIGINALHOST-MANUAL-TPM-20261021'
 $store='Cert:\CurrentUser\My'
 $provider='Microsoft Platform Crypto Provider'
 $confirmation='ENROLL_MANUAL_TPM_SIGNING_KEY_NO_V3_RELEASE'
+if($InspectProvider -and $Enroll){
+ throw 'V3_SIGNER_PROVIDER_READONLY_CANNOT_ENROLL'
+}
 if($Enroll -and $Approval -cne $confirmation){
  throw 'V3_SIGNER_ENROLL_BLOCKED_EXPLICIT_APPROVAL_REQUIRED'
 }
@@ -97,6 +101,41 @@ if($null -ne $cert){
   throw 'V3_SIGNER_CERTIFICATE_PUBLIC_READBACK_INVALID_KEEP_KEY_NO_RELEASE'
  }
 }
+# Optional originalhost provider-scoped READ-ONLY evidence only. The existing
+# default output / enrollment contract stays unchanged; never regenerate a key.
+# This queries CNG key metadata but never signs, exports, changes ACL or PIN.
+$providerReadOnly = $false
+$providerExactPlatform = $false
+$userScopedKey = $false
+$exportPolicyNonExportable = $false
+if($InspectProvider){
+ if($null -eq $cert){throw 'V3_SIGNER_PROVIDER_READONLY_CERT_MISSING'}
+ if(-not $tpmReady){throw 'V3_SIGNER_PROVIDER_READONLY_TPM_NOT_READY'}
+ $rsa=$null
+ try{
+  $rsa=[Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($cert)
+  if($null -eq $rsa -or -not ($rsa -is [Security.Cryptography.RSACng])){
+   throw 'V3_SIGNER_PROVIDER_READONLY_NON_CNG_KEY'
+  }
+  $cng=$rsa.Key
+  if($null -eq $cng){throw 'V3_SIGNER_PROVIDER_READONLY_KEY_METADATA_MISSING'}
+  $providerExactPlatform=([string]$cng.Provider.Provider -ceq $provider)
+  $userScopedKey=(-not [bool]$cng.IsMachineKey)
+  $exportPolicyNonExportable=(
+    $cng.ExportPolicy -eq [Security.Cryptography.CngExportPolicies]::None)
+  if(-not $providerExactPlatform -or -not $userScopedKey -or
+     -not $exportPolicyNonExportable){
+   throw 'V3_SIGNER_PROVIDER_READONLY_SCOPE_NOT_MATCHED'
+  }
+  $providerReadOnly=$true
+ }catch{
+  # No CNG provider exception, private-key identity or credential contents
+  # may reach output. Preserve original key and do not retry enrollment.
+  throw 'V3_SIGNER_PROVIDER_READONLY_METADATA_HOLD'
+ }finally{
+  if($null -ne $rsa){$rsa.Dispose()}
+ }
+}
 [pscustomobject][ordered]@{
  kind='V3_ORIGINALHOST_MANUAL_TPM_PUBLIC_IDENTITY_V1'
  status=if($Enroll){'MANUAL_TPM_KEY_ENROLLED_NOT_TRUSTED_FOR_RELEASE'}elseif($null -ne $cert){
@@ -107,6 +146,11 @@ if($null -ne $cert){
    $who.IsInRole($adminRole) -and $sessionId -gt 0)
  windows_tpm_ready=$tpmReady
  provider_requested=$provider
+ provider_metadata_readonly_checked=$providerReadOnly
+ existing_key_platform_provider_matches=$providerExactPlatform
+ existing_key_current_user_scope_matches=$userScopedKey
+ existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
+ provider_metadata_not_external_attestation=$true
  store_location=$store
  certificate_present=($null -ne $cert)
  certificate_thumbprint_sha1=if($null -ne $cert){[string]$cert.Thumbprint}else{$null}
