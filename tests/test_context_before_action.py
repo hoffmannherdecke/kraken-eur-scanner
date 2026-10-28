@@ -1069,8 +1069,8 @@ class ExistingOwnerActionViewTests(unittest.TestCase):
         with self.assertRaisesRegex(ContextGateError, "duplicate"):
             existing_owner_gate_decision(self.encode(obj))
         obj = self.body()
-        obj["steps"][1]["state"] = "BLOCKED"
-        obj["steps"][1]["evidence_class"] = "OWNER_BLOCKER"
+        obj["steps"][0]["state"] = "BLOCKED"
+        obj["steps"][0]["evidence_class"] = "OWNER_BLOCKER"
         with self.assertRaisesRegex(ContextGateError, "out of order"):
             existing_owner_gate_decision(self.encode(obj))
 
