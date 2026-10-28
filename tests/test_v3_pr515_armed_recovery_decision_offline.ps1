@@ -9,6 +9,7 @@ if(@($errors).Count){throw 'V3_PR515_AST_FAILED'}
 $names=@('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract',
  'Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity',
  'Test-V3Pr515ArmedRecoveryIdentity','Test-V3PrecommitCurrentCloudInventory',
+ 'Get-V3Pr515TwoSourceCloudSnapshotReview','Read-V3ScopedPrecommitSnapshotFile',
  'Resolve-V3ScopedCutoverRecovery')
 $fn=@($ast.FindAll({param($n)
  $n -is [Management.Automation.Language.FunctionDefinitionAst]},$true))
@@ -147,3 +148,90 @@ if($first -lt 0 -or $second -le $first -or $write -le $second){
  throw 'RESTORE_EXECUTION_LOCK_DRIFT'
 }
 Write-Output 'V3_PR515_ELEVEN_ISOLATED_STATE_CASES_PASS_NO_HOST_IO_NO_RELEASE'
+
+
+# NEW existing originalhost CLI entry; exercise real script path on temporary
+# read-only inputs. Never Windows Tasks, Admin, Cloud, DPAPI or real CAS.
+$root=Join-Path ([IO.Path]::GetTempPath()) ('v3-pr515-two-source-ci-'+[guid]::NewGuid().ToString('N'))
+[void][IO.Directory]::CreateDirectory($root)
+try{
+ $readerPath=Join-Path $root 'notebook-reader.json'
+ $cloudPath=Join-Path $root 'cloud-inventory.json'
+ $utc=[datetimeoffset]::UtcNow.ToString(
+  "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+  [Globalization.CultureInfo]::InvariantCulture)
+ $reader=[ordered]@{
+  kind='V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1'
+  status='AUTHENTICATED_READER_CURRENT_EMPTY_NOT_HISTORICAL_NEVER'
+  observed_at_utc=$utc;epoch_count=0;intent_count=0
+  actor='v3_cas_audit_reader_actor';role='v3_cas_audit_reader'
+  independent_tls_certificate_verified=$false
+  independent_attempt_history_complete=$false
+  historical_cas_never_proven=$false
+  public_old_only_series_verified_here=$false
+  native_rearm_authorized=$false;precommit_restore_authorized=$false
+  cloud_cas_authorized=$false;v3_paper_release_authorized=$false
+ }
+ $cloud=[ordered]@{
+  kind='V3_PRECOMMIT_CURRENT_CLOUD_INVENTORY_V1'
+  observed_at_utc=$utc
+  historically_cas_never_invoked_proven=$false
+  precommit_restore_authorized=$false
+  active_series_count=1;exact_original_active_count=1
+  recorded_v3_series_count=0;recorded_v3_rotation_count=0
+  recorded_v3_release_decision_count=0
+  installed_v3_cas_function_count=0
+  valid_single_active_index_count=1
+ }
+ [IO.File]::WriteAllText($readerPath,($reader|ConvertTo-Json -Compress),
+  [Text.UTF8Encoding]::new($false))
+ [IO.File]::WriteAllText($cloudPath,($cloud|ConvertTo-Json -Compress),
+  [Text.UTF8Encoding]::new($false))
+ # Running this normal READONLY CLI is safe even on CI Linux: the new mode
+ # returns before Get-ScheduledTask, WMI, source file installation or secrets.
+ $out=@(& $src -ReviewExistingTwoSourcePrecommit -ExistingNotebookReaderJson $readerPath -ExistingCloudInventoryJson $cloudPath)
+ if($out.Count -ne 1){throw 'V3_TWO_SOURCE_ORIGINALHOST_CLI_NOT_SINGLE_STATUS'}
+ $ack=$out[0]|ConvertFrom-Json
+ if($ack.disposition -cne 'REVIEW_ONLY_CURRENT_OLD_ONLY_AND_READER_EMPTY_CAS_HISTORY_UNKNOWN' -or
+    $ack.independently_authenticated_here -ne $false -or
+    $ack.complete_historical_cas_never_proven -ne $false -or
+    $ack.originalhost_quiesced_or_precommit_restore_authorized -ne $false -or
+    $ack.native_rearm_or_cloud_cas_authorized -ne $false -or
+    $ack.v3_paper_release_authorized -ne $false){
+  throw 'V3_TWO_SOURCE_REVIEW_NOT_FAIL_CLOSED'
+ }
+ # All negative controls are local files. The pure parser rejects injection
+ # and unsigned sources; the policy review refuses stale and non-empty rows.
+ $original=[IO.File]::ReadAllText($readerPath)
+ foreach($bad in @(
+  $original.Replace('"intent_count":0','"intent_count":1'),
+  $original.Replace('"role":"v3_cas_audit_reader"','"role":"v3_cas_executor"'),
+  $original.Replace('"kind":','"release_authorized":true,"kind":'),
+  $original.Replace('"epoch_count":0','"epoch_count":0,"epoch_count":0'),
+  $original.Replace($utc,'2026-10-01T00:00:00.000000Z')
+ )){
+  [IO.File]::WriteAllText($readerPath,$bad,[Text.UTF8Encoding]::new($false))
+  try{
+   $parsed=Read-V3ScopedPrecommitSnapshotFile -Path $readerPath -ExactKeys @($reader.Keys)
+   $v=Get-V3Pr515TwoSourceCloudSnapshotReview -Reader $parsed -Cloud (
+     Read-V3ScopedPrecommitSnapshotFile -Path $cloudPath -ExactKeys @($cloud.Keys))
+   if($v.disposition -ceq 'REVIEW_ONLY_CURRENT_OLD_ONLY_AND_READER_EMPTY_CAS_HISTORY_UNKNOWN'){
+    throw 'V3_TWO_SOURCE_BAD_READER_ACCEPTED'
+   }
+  }catch{
+   if($_.Exception.Message -eq 'V3_TWO_SOURCE_BAD_READER_ACCEPTED'){throw}
+  }
+ }
+ [IO.File]::WriteAllText($readerPath,$original,[Text.UTF8Encoding]::new($false))
+ $old=[IO.File]::ReadAllText($cloudPath)
+ [IO.File]::WriteAllText($cloudPath,$old.Replace('"installed_v3_cas_function_count":0','"installed_v3_cas_function_count":1'),[Text.UTF8Encoding]::new($false))
+ $changed=Read-V3ScopedPrecommitSnapshotFile -Path $cloudPath -ExactKeys @($cloud.Keys)
+ $review=Get-V3Pr515TwoSourceCloudSnapshotReview -Reader (
+   Read-V3ScopedPrecommitSnapshotFile -Path $readerPath -ExactKeys @($reader.Keys)) -Cloud $changed
+ if($review.disposition -ceq 'REVIEW_ONLY_CURRENT_OLD_ONLY_AND_READER_EMPTY_CAS_HISTORY_UNKNOWN'){
+  throw 'V3_TWO_SOURCE_INSTALLED_CAS_RISK_ACCEPTED'
+ }
+ Write-Output 'V3_PR515_TWO_EXISTING_CLOUD_SOURCES_ACTUAL_READONLY_CLI_PASS_NO_RELEASE'
+} finally {
+ if([IO.Directory]::Exists($root)){[IO.Directory]::Delete($root,$true)}
+}
