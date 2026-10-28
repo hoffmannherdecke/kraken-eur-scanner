@@ -90,8 +90,8 @@ SET ROLE v3_cas_audit_reader;
 BEGIN TRANSACTION READ ONLY;
 SELECT pg_catalog.jsonb_build_object(
  'kind','V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1',
- 'observed_at_utc',pg_catalog.to_char(pg_catalog.clock_timestamp()
-   AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+ 'observed_at_utc',pg_catalog.replace(pg_catalog.to_char(pg_catalog.clock_timestamp()
+   AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z',
  'actor',session_user,'role',current_user,
  'epochs',(SELECT count(*) FROM v3_cas_audit.epoch_v1),
  'intents',(SELECT count(*) FROM v3_cas_audit.intent_v1),
@@ -114,7 +114,7 @@ SET ROLE v3_cas_audit_reader;
 BEGIN TRANSACTION READ ONLY;
 SELECT pg_catalog.jsonb_build_object(
  'kind','V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1',
- 'observed_at_utc',pg_catalog.to_char(pg_catalog.clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+ 'observed_at_utc',pg_catalog.replace(pg_catalog.to_char(pg_catalog.clock_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z',
  'actor',session_user,'role',current_user,
  'epoch_count',(SELECT count(*) FROM v3_cas_audit.epoch_v1),
  'intent_count',(SELECT count(*) FROM v3_cas_audit.intent_v1),
@@ -126,8 +126,8 @@ SELECT pg_catalog.jsonb_build_object(
  'caller_acl_sha256',e.approved_caller_acl_sha256,'request_sha256',i.request_sha256,
  'ordinal',i.ordinal,'next_ordinal',e.next_ordinal,
  'intent_state',i.state,'sealed',e.sealed,
- 'opened_at_utc',pg_catalog.to_char(e.opened_at_utc AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
- 'intent_created_at_utc',pg_catalog.to_char(i.created_at_utc AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
+ 'opened_at_utc',pg_catalog.replace(pg_catalog.to_char(e.opened_at_utc AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z',
+ 'intent_created_at_utc',pg_catalog.replace(pg_catalog.to_char(i.created_at_utc AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z'
 )::text
 FROM v3_cas_audit.epoch_v1 e
 JOIN v3_cas_audit.intent_v1 i ON i.epoch_id=e.epoch_id
