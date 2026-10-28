@@ -2565,7 +2565,7 @@ if($ReviewSignedCurrentCasCustody){
     $VerifyNotebookPrecommitCms -or $ReviewExistingTwoSourcePrecommit -or
     $Confirm -or $OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or
     $ExpectedArmedFenceSha256 -or $ExistingNotebookReaderJson -or
-    $ExistingCloudInventoryJson -or $ExpectedCandidatesActionSha256 -or
+    $ExpectedCandidatesActionSha256 -or
     $ExpectedWaitActionSha256 -or
     $NotebookReaderJson -eq '' -or $NotebookReaderCms -eq '' -or
     $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
@@ -2632,6 +2632,19 @@ if($ReviewSignedCurrentCasCustody){
   [IO.File]::ReadAllBytes($signed[1].FullName)) -ReviewedCertSha256 (
   $ReviewedNotebookCertificateSha256) -CurrentOriginalFenceSha256 (
   $ExpectedCurrentFenceSha256)
+ if($ExistingCloudInventoryJson){
+  $cloudKeys=@('kind','observed_at_utc',
+   'historically_cas_never_invoked_proven','precommit_restore_authorized',
+   'active_series_count','exact_original_active_count',
+   'recorded_v3_series_count','recorded_v3_rotation_count',
+   'recorded_v3_release_decision_count','installed_v3_cas_function_count',
+   'valid_single_active_index_count')
+  $cloud=Read-V3ScopedPrecommitSnapshotFile -Path $ExistingCloudInventoryJson -ExactKeys $cloudKeys
+  $joined=Get-V3Pr515SignedCasAndCloudSeriesReview -SignedCas $proof -Cloud $cloud -CurrentOriginalFenceSha256 $ExpectedCurrentFenceSha256
+  $joined|ConvertTo-Json -Compress -Depth 4
+  if($joined.disposition -cne 'REVIEW_ONLY_SIGNED_CAS_PLUS_UNAUTHENTICATED_PUBLIC_CLOUD_NOT_RELEASE'){exit 1}
+  return
+ }
  $proof|ConvertTo-Json -Compress -Depth 4
  if($proof.status -cne 'SIGNED_CURRENT_NO_CAS_CAPABILITY_MATCH_NOT_RELEASE'){exit 1}
  return
