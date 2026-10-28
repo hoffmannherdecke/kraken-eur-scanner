@@ -896,5 +896,100 @@ class ContextBeforeActionTests(unittest.TestCase):
                 verify_receipt(ROOT, packet, path)
 
 
+
+class LiveOwnerReadbackTests(unittest.TestCase):
+    """Regression: a completed source never reopens from an older owner snapshot."""
+
+    BASE = "https://api.github.com/repos/hoffmannherdecke/kraken-eur-scanner"
+
+    def fake_fetch(self, url):
+        if url.endswith("/commits/main"):
+            return {"sha": "a" * 40}, ""
+        for number in (99, 353):
+            if url.endswith(f"/issues/{number}"):
+                return {
+                    "number": number, "state": "open",
+                    "html_url": f"https://github.com/example/repo/issues/{number}",
+                    "updated_at": "2026-10-28T12:00:00Z",
+                    "body": "CURRENT owner: PR608 source and staging DONE; runtime still HOLD"
+                }, ""
+            first = self.BASE + f"/issues/{number}/comments?per_page=10"
+            if url == first:
+                return [{"body": "historical PR593 must not reopen source",
+                         "html_url": "https://github.com/old-comment"}], (
+                    f'<{first}&page=8>; rel="last"')
+            if url == first + "&page=8":
+                return [{"body": "CURRENT original ACK: PR608 STAGED PASS; "
+                                 "real Writer/Notebook/CAS still pending",
+                         "html_url": "https://github.com/current-comment",
+                         "created_at": "2026-10-28T12:01:00Z"}], ""
+        raise AssertionError("unexpected endpoint: " + url)
+
+    def test_v3_live_owner_reads_both_managers_and_last_comment_page(self):
+        from tools.context_before_action import live_owner_readback
+        packet = live_owner_readback(
+            "strategy_release", "V3",
+            fetcher=self.fake_fetch, expected_main="a" * 40)
+        self.assertEqual([x["issue"] for x in packet["owners"]], [353, 99])
+        self.assertEqual(packet["main_sha"], "a" * 40)
+        self.assertEqual(packet["status"],
+                         "CURRENT_GITHUB_OWNER_READBACK_ONLY_NOT_HOST_OR_CLOUD_ACK")
+        self.assertTrue(packet["source_and_staging_done_must_not_be_reopened_by_pending_runtime"])
+        self.assertTrue(packet["no_new_development_without_specific_new_defect_evidence"])
+        self.assertIn("CURRENT original ACK",
+                      packet["owners"][1]["latest_comments"][-1]["excerpt"])
+        self.assertNotIn("historical PR593",
+                         packet["owners"][1]["latest_comments"][-1]["excerpt"])
+
+    def test_general_and_hardware_do_not_import_v3_owner(self):
+        from tools.context_before_action import live_owner_readback
+        for domain in ("project_general", "infrastructure", "operations", "research",
+                       "strategy_development"):
+            with self.subTest(domain=domain):
+                packet = live_owner_readback(domain, None, fetcher=self.fake_fetch)
+                self.assertEqual([x["issue"] for x in packet["owners"]], [353])
+
+    def test_stale_main_pin_fails_closed(self):
+        from tools.context_before_action import live_owner_readback, ContextGateError
+        with self.assertRaisesRegex(ContextGateError, "main moved"):
+            live_owner_readback("strategy_release", "V3",
+                                fetcher=self.fake_fetch, expected_main="b" * 40)
+
+    def test_missing_owner_or_wrong_link_fails_closed(self):
+        from tools.context_before_action import live_owner_readback, ContextGateError
+        def missing(url):
+            if url.endswith("/issues/99"):
+                return {"number": 99, "state": "open"}, ""
+            return self.fake_fetch(url)
+        with self.assertRaisesRegex(ContextGateError, "owner unavailable"):
+            live_owner_readback("strategy_release", "V3", fetcher=missing)
+        def external_link(url):
+            item, link = self.fake_fetch(url)
+            if url.endswith("/issues/99/comments?per_page=10"):
+                return item, '<https://example.com/unsafe>; rel="last"'
+            return item, link
+        with self.assertRaisesRegex(ContextGateError, "pagination link"):
+            live_owner_readback("strategy_release", "V3", fetcher=external_link)
+
+    def test_drift_during_owner_check_fails_closed(self):
+        from tools.context_before_action import live_owner_readback, ContextGateError
+        calls = [0]
+        def moving(url):
+            if url.endswith("/commits/main"):
+                calls[0] += 1
+                return {"sha": ("a" if calls[0] == 1 else "b") * 40}, ""
+            return self.fake_fetch(url)
+        with self.assertRaisesRegex(ContextGateError, "changed during"):
+            live_owner_readback("strategy_release", "V3", fetcher=moving)
+
+    def test_default_source_packet_remains_offline(self):
+        from tools.context_before_action import build
+        with patch("tools.context_before_action._github_api_read",
+                   side_effect=AssertionError("offline packet made network request")):
+            packet = build(ROOT, "architecture", work_domain="project_general")
+        self.assertFalse(packet["has_network_access"])
+        self.assertTrue(packet["current_reading_plan"]["historical_plans_not_open_tasks"])
+
+
 if __name__ == "__main__":
     unittest.main()
