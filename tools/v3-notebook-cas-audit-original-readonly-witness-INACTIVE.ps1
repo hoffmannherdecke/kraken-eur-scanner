@@ -8,16 +8,26 @@
 # A PASS is scoped to THIS query only, never a durable intent or release authorization.
 [CmdletBinding()]
 param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent,[string]$CaFile='',
- [switch]$ExportSignedPrecommitCloudInventory,[string]$ReviewedNotebookCertificateSha256='')
-if($PrecommitCloudInventory -and $PostcommitDurableIntent){throw 'V3_READER_MODE_CONFLICT'}
+ [switch]$ExportSignedPrecommitCloudInventory,[string]$ReviewedNotebookCertificateSha256='',
+ [switch]$PrecommitRestoreCustody,[string]$ReviewedOriginalFenceSha256='')
+if(([int]$PrecommitCloudInventory.IsPresent+[int]$PostcommitDurableIntent.IsPresent+[int]$PrecommitRestoreCustody.IsPresent) -gt 1){throw 'V3_READER_MODE_CONFLICT'}
+if($PrecommitRestoreCustody -and
+   ($ExportSignedPrecommitCloudInventory -or
+    $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ReviewedOriginalFenceSha256 -cnotmatch '^[a-f0-9]{64}$')){
+ throw 'V3_PRECOMMIT_CUSTODY_EXPLICIT_SIGNER_AND_FENCE_PINS_REQUIRED'
+}
+if(-not $PrecommitRestoreCustody -and $ReviewedOriginalFenceSha256){
+ throw 'V3_RESTORE_CUSTODY_FENCE_OUTSIDE_MODE'
+}
 if($ExportSignedPrecommitCloudInventory -and (-not $PrecommitCloudInventory -or
  $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$')){
  throw 'V3_SIGNED_READER_PRECOMMIT_MODE_OR_PIN_INVALID'
 }
-if(-not $ExportSignedPrecommitCloudInventory -and $ReviewedNotebookCertificateSha256){
+if(-not $ExportSignedPrecommitCloudInventory -and -not $PrecommitRestoreCustody -and $ReviewedNotebookCertificateSha256){
  throw 'V3_SIGNED_READER_PIN_WITHOUT_EXPORT'
 }
-$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent)
+$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody)
 if(-not $decisionReaderMode -and $CaFile){throw 'V3_READER_CA_FILE_DECISION_MODE_ONLY'}
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -107,6 +117,40 @@ SELECT pg_catalog.jsonb_build_object(
  'append_access',pg_catalog.has_function_privilege(
    current_user,'v3_cas_audit.append_intent_v1(text,uuid,text,text,text)','EXECUTE'),
  'history_never_proven',false,
+ 'restore_authorized',false
+)::text;
+COMMIT;
+'@
+}
+# This separate existing Reader mode signs ONLY the CURRENT inability to
+# invoke the specific V3 CAS, NOT historical NEVER or an old-writer release.
+# It reuses the existing PG17 actor, verify-full and interactive CMS signer.
+if($PrecommitRestoreCustody){
+ $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
+ if($checks.Count -ne 1){throw 'V3_RESTORE_CUSTODY_READER_AMBIGUOUS'}
+ $checks[0].Sql=@'
+SET ROLE v3_cas_audit_reader;
+BEGIN TRANSACTION READ ONLY;
+SELECT pg_catalog.jsonb_build_object(
+ 'kind','V3_NOTEBOOK_CURRENT_NO_CAS_CAPABILITY_CUSTODY_V1',
+ 'observed_at_utc',pg_catalog.replace(pg_catalog.to_char(
+   pg_catalog.clock_timestamp() AT TIME ZONE 'UTC',
+   'YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z',
+ 'actor',session_user,'role',current_user,
+ 'epochs',(SELECT count(*) FROM v3_cas_audit.epoch_v1),
+ 'intents',(SELECT count(*) FROM v3_cas_audit.intent_v1),
+ 'installed_cas_rpc_count',(SELECT count(*) FROM pg_catalog.pg_proc p
+  JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+  WHERE n.nspname='public' AND p.proname='rotate_v2r4_to_v3_experimental_paper'),
+ 'executor_login',(SELECT rolcanlogin FROM pg_catalog.pg_roles
+  WHERE rolname='v3_cas_executor_actor'),
+ 'operator_can_set_executor',pg_catalog.pg_has_role(
+  'v3_cas_operator_login','v3_cas_executor_actor','SET'),
+ 'reader_writer_set_role',pg_catalog.pg_has_role(session_user,
+  'v3_cas_audit_writer','SET'),
+ 'reader_can_append',pg_catalog.has_function_privilege(current_user,
+  'v3_cas_audit.append_intent_v1(text,uuid,text,text,text)','EXECUTE'),
+ 'historical_cas_never_proven',false,
  'restore_authorized',false
 )::text;
 COMMIT;
@@ -281,7 +325,34 @@ foreach ($check in $checks) {
         $tlsMode=if($decisionReaderMode){'verify-full'}else{'require'}
         $conn = "host=$hostName port=5432 dbname=postgres user=$($check.Login).$project sslmode=$tlsMode connect_timeout=10"
         $output = & $psql -X -w -qAt -v ON_ERROR_STOP=1 -d $conn -c $check.Sql 2>&1
-        if($PostcommitDurableIntent){
+        if($PrecommitRestoreCustody){
+            if($LASTEXITCODE -ne 0){throw 'V3_RESTORE_CUSTODY_SQL_HOLD'}
+            $wire=($output|Out-String).Trim()
+            $row=$wire|ConvertFrom-Json -ErrorAction Stop
+            $at=Read-V3ReaderUtcLiteral -RawJson $wire -Name 'observed_at_utc'
+            if([string]$row.kind -cne 'V3_NOTEBOOK_CURRENT_NO_CAS_CAPABILITY_CUSTODY_V1' -or
+               [string]$row.actor -cne 'v3_cas_audit_reader_actor' -or
+               [string]$row.role -cne 'v3_cas_audit_reader' -or
+               [string]$row.epochs -cne '0' -or
+               [string]$row.intents -cne '0' -or
+               [string]$row.installed_cas_rpc_count -cne '0' -or
+               $row.executor_login -ne $false -or
+               $row.operator_can_set_executor -ne $false -or
+               $row.reader_writer_set_role -ne $false -or
+               $row.reader_can_append -ne $false -or
+               $row.historical_cas_never_proven -ne $false -or
+               $row.restore_authorized -ne $false -or
+               ([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -lt -5 -or
+               ([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -gt 60){
+              throw 'V3_RESTORE_CUSTODY_CURRENT_DATABASE_NEGATIVE_GATE_HOLD'
+            }
+            # Caller-supplied fence SHA is bound in the CMS but not itself
+            # independently observed by the Notebook; host must re-read.
+            $row|Add-Member -NotePropertyName original_fence_sha256 -NotePropertyValue $ReviewedOriginalFenceSha256
+            $signed=$row|ConvertTo-Json -Compress -Depth 3
+            (Save-V3SignedNotebookReaderSnapshot -RawJson $signed -CertSha256 $ReviewedNotebookCertificateSha256)|ConvertTo-Json -Compress -Depth 3
+            $passed++
+        } elseif($PostcommitDurableIntent){
             if($LASTEXITCODE -ne 0){throw 'V3_DURABLE_INTENT_READER_SQL_HOLD'}
             $row=(($output|Out-String).Trim()|ConvertFrom-Json -ErrorAction Stop)
             $wireJson=($output|Out-String).Trim()
@@ -442,7 +513,7 @@ foreach ($check in $checks) {
         if ($null -ne $plain) { [Array]::Clear($plain,0,$plain.Length) }
     }
 }
-if($PrecommitCloudInventory -or $PostcommitDurableIntent){
+if($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody){
  if($passed -ne 1){exit 1}
  return
 }

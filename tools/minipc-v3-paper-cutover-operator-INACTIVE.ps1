@@ -18,6 +18,8 @@ param(
  [string]$NotebookReaderCms='',
  [string]$ReviewedNotebookCertificateSha256='',
  [switch]$ReviewExistingTwoSourcePrecommit,
+ [switch]$ReviewSignedCurrentCasCustody,
+ [string]$ExpectedCurrentFenceSha256='',
  [string]$ExistingNotebookReaderJson='',
  [string]$ExistingCloudInventoryJson=''
 )
@@ -1197,6 +1199,81 @@ function Test-V3IndependentOriginalHostCmsSignature(
  return [pscustomobject]$out
 }
 
+
+# Cross-machine signed CURRENT CAS-INACCESSIBILITY proof. Reuse the
+# established Notebook Reader signer, original host PKCS verifier and one
+# externally reviewed public certificate SHA. No historical NEVER inference.
+# Pure: negative/positive claims are never permission to restore or stop.
+function Test-V3Pr515SignedCurrentNoCasCustody(
+ [byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedCertSha256,
+ [string]$CurrentOriginalFenceSha256
+) {
+ $out=[ordered]@{
+  kind='V3_PR515_SIGNED_CURRENT_CAS_UNAVAILABLE_REVIEW_V1'
+  status='HOLD_SIGNED_CUSTODY_UNVERIFIED'
+  signature_and_current_fence_match=$false
+  current_notebook_reader_no_cas_capability_observed=$false
+  previous_cas_attempts_excluded=$false
+  independent_cloud_old_only_verified_here=$false
+  precommit_task_restore_authorized=$false
+  native_stop_authorized=$false
+  cas_execution_authorized=$false
+  v3_paper_release_authorized=$false
+ }
+ if($Payload.Length -lt 100 -or $Payload.Length -gt 4096 -or
+    $Cms.Length -lt 64 -or $Cms.Length -gt 32768 -or
+    $CurrentOriginalFenceSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  return [pscustomobject]$out
+ }
+ $sig=Test-V3IndependentOriginalHostCmsSignature -ReceiptUtf8 $Payload -DetachedCms $Cms -ReviewedSignerCertificateSha256 $ReviewedCertSha256
+ if($sig.crypto_signature_valid -ne $true){return [pscustomobject]$out}
+ try {
+  $wire=([Text.UTF8Encoding]::new($false,$true)).GetString($Payload)
+  $obj=$wire|ConvertFrom-Json -ErrorAction Stop
+  $keys=@('kind','observed_at_utc','actor','role','epochs','intents',
+   'installed_cas_rpc_count','executor_login','operator_can_set_executor',
+   'reader_writer_set_role','reader_can_append','historical_cas_never_proven',
+   'restore_authorized','original_fence_sha256')
+  $actual=@($obj.PSObject.Properties.Name)
+  if($obj -isnot [pscustomobject] -or $actual.Count -ne $keys.Count -or
+     @($actual|Where-Object {$_ -cnotin $keys}).Count -ne 0){throw 'CUSTODY_FIELDS'}
+  foreach($field in $keys){
+   if(@([regex]::Matches($wire,('"'+[regex]::Escape($field)+'"\s*:'))).Count -ne 1){
+    throw 'CUSTODY_DUPLICATE'
+   }
+  }
+  $m=[regex]::Match($wire,'"observed_at_utc"\s*:\s*"(?<v>[^"\\]*)"')
+  if(-not $m.Success -or [string]$m.Groups['v'].Value -cnotmatch
+     '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){throw 'CUSTODY_TIME'}
+  $t=[datetimeoffset]::MinValue
+  if(-not([datetimeoffset]::TryParseExact([string]$m.Groups['v'].Value,
+     "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+     [Globalization.CultureInfo]::InvariantCulture,
+     [Globalization.DateTimeStyles]::AssumeUniversal,
+     [ref]$t))){throw 'CUSTODY_DATE'}
+  $age=([datetimeoffset]::UtcNow-$t).TotalSeconds
+  if($age -lt -5 -or $age -gt 90 -or
+     [string]$obj.kind -cne 'V3_NOTEBOOK_CURRENT_NO_CAS_CAPABILITY_CUSTODY_V1' -or
+     [string]$obj.actor -cne 'v3_cas_audit_reader_actor' -or
+     [string]$obj.role -cne 'v3_cas_audit_reader' -or
+     [string]$obj.epochs -cne '0' -or
+     [string]$obj.intents -cne '0' -or
+     [string]$obj.installed_cas_rpc_count -cne '0' -or
+     [string]$obj.original_fence_sha256 -cne $CurrentOriginalFenceSha256 -or
+     $obj.executor_login -ne $false -or
+     $obj.operator_can_set_executor -ne $false -or
+     $obj.reader_writer_set_role -ne $false -or
+     $obj.reader_can_append -ne $false -or
+     $obj.historical_cas_never_proven -ne $false -or
+     $obj.restore_authorized -ne $false){throw 'CUSTODY_CURRENT_POSTURE'}
+  $out.status='SIGNED_CURRENT_NO_CAS_CAPABILITY_MATCH_NOT_RELEASE'
+  $out.signature_and_current_fence_match=$true
+  $out.current_notebook_reader_no_cas_capability_observed=$true
+ }catch{
+  # No signed raw payload or confidential exception is emitted.
+ }
+ return [pscustomobject]$out
+}
 
 # Only validates authentic CURRENT Notebook Reader data after detached CMS
 # transfer. Reuses the existing exact SHA256-pinned cryptographic verifier;
@@ -2453,6 +2530,90 @@ function Read-V3ScopedPrecommitSnapshotFile([string]$Path,[string[]]$ExactKeys){
  }
  $json.observed_at_utc=[string]$ts[0].Groups['v'].Value
  return $json
+}
+# ACTUAL ORIGINALHOST cryptographic review of externally signed CURRENT
+# private PG17 CAS-unavailability evidence. This opt-in has NO Task mutation.
+# The CMS signer uses the existing independently pre-reviewed Notebook cert.
+if($ReviewSignedCurrentCasCustody){
+ if($Execute -or $BackupOriginalIntake -or $PreviewPr515PreCas -or
+    $PreviewPr515Quiesced -or $PreviewPr515Armed -or
+    $PreviewPr515ArmedTwoCycle -or $ValidatePr515RestoreXml -or
+    $VerifyNotebookPrecommitCms -or $ReviewExistingTwoSourcePrecommit -or
+    $Confirm -or $OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or
+    $ExpectedArmedFenceSha256 -or $ExistingNotebookReaderJson -or
+    $ExistingCloudInventoryJson -or $ExpectedCandidatesActionSha256 -or
+    $ExpectedWaitActionSha256 -or
+    $NotebookReaderJson -eq '' -or $NotebookReaderCms -eq '' -or
+    $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedCurrentFenceSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'V3_SIGNED_CURRENT_CUSTODY_REVIEW_MODE_CONFLICT'
+ }
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    -not([IO.Path]::GetFullPath($TradingRoot).TrimEnd('\')).Equals(
+     'C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)){
+  throw 'V3_SIGNED_CUSTODY_ORIGINAL_WINDOWS_HOST_ONLY'
+ }
+ $admin=[Security.Principal.WindowsPrincipal]::new(
+  [Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $admin.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_SIGNED_CUSTODY_ORIGINAL_ADMIN_REQUIRED'
+ }
+ $fence=Join-Path $TradingRoot 'State\v3-experimental-paper-old-intake-fence.json'
+ $foreign=Join-Path $TradingRoot 'State\v2r4-technical-cutover-maintenance.json'
+ if(Test-Path -LiteralPath $foreign){throw 'V3_SIGNED_CUSTODY_MAINTENANCE_CONFLICT'}
+ $item=Get-Item -LiteralPath $fence -Force -ErrorAction Stop
+ if($item.PSIsContainer -or
+    [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 8192 -or
+    (Get-FileHash -LiteralPath $fence -Algorithm SHA256).Hash.ToLowerInvariant() -cne
+       $ExpectedCurrentFenceSha256){
+  throw 'V3_SIGNED_CUSTODY_FENCE_INTEGRITY_DRIFT'
+ }
+ $acl=Get-Acl -LiteralPath $fence -ErrorAction Stop
+ if(-not $acl.AreAccessRulesProtected){throw 'V3_SIGNED_CUSTODY_UNPROTECTED_FENCE'}
+ foreach($rule in @($acl.Access)){
+  if($rule.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow){
+   $sid=$rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+   if($sid -notin @('S-1-5-18','S-1-5-32-544')){
+    throw 'V3_SIGNED_CUSTODY_FOREIGN_FENCE_WRITER'
+   }
+  }
+ }
+ $phase=Get-Content -LiteralPath $fence -Raw -Encoding UTF8 -ErrorAction Stop|ConvertFrom-Json
+ if([string]$phase.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
+    [string]$phase.phase -notin @('ARMED','QUIESCED') -or
+    [string]$phase.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    -not(Test-V3ScopedIntakeTaskSet -Names @($phase.task_names))){
+  throw 'V3_SIGNED_CUSTODY_PHASE_SCOPE_INVALID'
+ }
+ $signed=@($NotebookReaderJson,$NotebookReaderCms)|ForEach-Object {
+  $fp=[IO.Path]::GetFullPath($_)
+  if(-not [IO.Path]::IsPathRooted($_) -or $_.StartsWith('\\') -or
+     $_.StartsWith('//') -or -not(Test-Path -LiteralPath $fp -PathType Leaf)){
+   throw 'V3_SIGNED_CUSTODY_LOCAL_PAIR_REQUIRED'
+  }
+  $file=Get-Item -LiteralPath $fp -Force -ErrorAction Stop
+  if([bool]($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+     $file.Length -lt 100 -or $file.Length -gt 32768){throw 'V3_SIGNED_CUSTODY_UNSAFE_PAIR'}
+  $file
+ }
+ if($signed.Count -ne 2 -or
+    [string]$signed[0].Name -cne 'reader.json' -or
+    [string]$signed[1].Name -cne 'reader.cms' -or
+    [string]$signed[0].DirectoryName -cne [string]$signed[1].DirectoryName){
+  throw 'V3_SIGNED_CUSTODY_PAIR_MISMATCH'
+ }
+ $proof=Test-V3Pr515SignedCurrentNoCasCustody -Payload (
+  [IO.File]::ReadAllBytes($signed[0].FullName)) -Cms (
+  [IO.File]::ReadAllBytes($signed[1].FullName)) -ReviewedCertSha256 (
+  $ReviewedNotebookCertificateSha256) -CurrentOriginalFenceSha256 (
+  $ExpectedCurrentFenceSha256)
+ $proof|ConvertTo-Json -Compress -Depth 4
+ if($proof.status -cne 'SIGNED_CURRENT_NO_CAS_CAPABILITY_MATCH_NOT_RELEASE'){exit 1}
+ return
+}
+if(-not $ReviewSignedCurrentCasCustody -and $ExpectedCurrentFenceSha256){
+ throw 'V3_SIGNED_CUSTODY_FENCE_OUTSIDE_READONLY_MODE'
 }
 if($ReviewExistingTwoSourcePrecommit){
  if($Execute -or $BackupOriginalIntake -or $PreviewPr515PreCas -or

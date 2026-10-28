@@ -11,7 +11,8 @@ $names=@('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract',
  'Test-V3Pr515ArmedRecoveryIdentity','Test-V3Pr515CurrentOriginalBackupManifest',
   'Test-V3Pr515DisabledOnlyXmlDifference','Test-V3PrecommitCurrentCloudInventory',
  'Get-V3Pr515TwoSourceCloudSnapshotReview','Read-V3ScopedPrecommitSnapshotFile',
- 'Resolve-V3ScopedCutoverRecovery','Get-V3Pr515DisabledRestoreXmlForNativeValidation')
+ 'Resolve-V3ScopedCutoverRecovery','Get-V3Pr515DisabledRestoreXmlForNativeValidation',
+ 'Test-V3IndependentOriginalHostCmsSignature','Test-V3Pr515SignedCurrentNoCasCustody')
 $fn=@($ast.FindAll({param($n)
  $n -is [Management.Automation.Language.FunctionDefinitionAst]},$true))
 foreach($name in $names){
@@ -25,6 +26,79 @@ function Need($caseName,$actual,$expected){
  }
 }
 function Clone($o){$o|ConvertTo-Json -Depth 18 -Compress|ConvertFrom-Json}
+# Real CMS signature, independently pinned public X509 SHA256 and current
+# negative CAS posture are pure assertions. Positive SIGNED does NOT authorize
+# restore; wrong hash, tampered bytes or timeout always HOLD.
+$rsa=[Security.Cryptography.RSA]::Create(2048)
+try {
+ $request=[Security.Cryptography.X509Certificates.CertificateRequest]::new(
+  'CN=V3-PR515-CI-Only', $rsa,
+  [Security.Cryptography.HashAlgorithmName]::SHA256,
+  [Security.Cryptography.RSASignaturePadding]::Pkcs1)
+ $cert=$request.CreateSelfSigned([datetimeoffset]::UtcNow.AddMinutes(-2),
+                                 [datetimeoffset]::UtcNow.AddMinutes(10))
+ try{
+  $sha=[Security.Cryptography.SHA256]::Create()
+  try{
+   $pin=([BitConverter]::ToString($sha.ComputeHash([byte[]]$cert.RawData))).Replace('-','').ToLowerInvariant()
+  }finally{$sha.Dispose()}
+  $fenceSha='a'*64
+  $wire=[ordered]@{
+   kind='V3_NOTEBOOK_CURRENT_NO_CAS_CAPABILITY_CUSTODY_V1'
+   observed_at_utc=([datetimeoffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+     [Globalization.CultureInfo]::InvariantCulture))
+   actor='v3_cas_audit_reader_actor';role='v3_cas_audit_reader'
+   epochs=0;intents=0;installed_cas_rpc_count=0
+   executor_login=$false;operator_can_set_executor=$false
+   reader_writer_set_role=$false;reader_can_append=$false
+   historical_cas_never_proven=$false;restore_authorized=$false
+   original_fence_sha256=$fenceSha
+  }
+  $payload=[Text.UTF8Encoding]::new($false).GetBytes(($wire|ConvertTo-Json -Compress))
+  $cms=[Security.Cryptography.Pkcs.SignedCms]::new(
+   [Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$payload),$true)
+  $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($cert)
+  $signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+  $cms.ComputeSignature($signer);$signature=[byte[]]$cms.Encode()
+  $review=Test-V3Pr515SignedCurrentNoCasCustody -Payload $payload -Cms $signature -ReviewedCertSha256 $pin -CurrentOriginalFenceSha256 $fenceSha
+  if($review.status -cne 'SIGNED_CURRENT_NO_CAS_CAPABILITY_MATCH_NOT_RELEASE' -or
+     $review.signature_and_current_fence_match -ne $true -or
+     $review.current_notebook_reader_no_cas_capability_observed -ne $true -or
+     $review.previous_cas_attempts_excluded -ne $false -or
+     $review.precommit_task_restore_authorized -ne $false -or
+     $review.native_stop_authorized -ne $false){
+   throw 'PR515_SIGNED_CUSTODY_AUTHENTIC_NEGATIVE_NOT_ACCEPTED_OR_FALSE_RELEASE'
+  }
+  foreach($variant in @(
+   @{bytes=$payload;sig=$signature;pin=$pin;fence=('b'*64)},
+   @{bytes=$payload;sig=$signature;pin=('c'*64);fence=$fenceSha},
+   @{bytes=$payload;sig=([byte[]]@(0,1,2));pin=$pin;fence=$fenceSha},
+   @{bytes=([Text.UTF8Encoding]::new($false).GetBytes(($wire|ConvertTo-Json -Compress).Replace(
+    '"installed_cas_rpc_count":0','"installed_cas_rpc_count":1')));sig=$signature;pin=$pin;fence=$fenceSha}
+  )){
+   $bad=Test-V3Pr515SignedCurrentNoCasCustody -Payload $variant.bytes -Cms $variant.sig -ReviewedCertSha256 $variant.pin -CurrentOriginalFenceSha256 $variant.fence
+   if($bad.status -cne 'HOLD_SIGNED_CUSTODY_UNVERIFIED'){
+    throw 'PR515_SIGNED_CUSTODY_REPLAY_TAMPER_OR_WRONG_CERT_ACCEPTED'
+   }
+  }
+  foreach($flip in @('executor_login','operator_can_set_executor',
+                     'reader_writer_set_role','reader_can_append','restore_authorized')){
+   $neg=[ordered]@{}
+   foreach($k in $wire.Keys){$neg[$k]=$wire[$k]}
+   $neg[$flip]=$true
+   $bytes=[Text.UTF8Encoding]::new($false).GetBytes(($neg|ConvertTo-Json -Compress))
+   $signed=[Security.Cryptography.Pkcs.SignedCms]::new(
+    [Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$bytes),$true)
+   $signed.ComputeSignature($signer)
+   $bad=Test-V3Pr515SignedCurrentNoCasCustody -Payload $bytes -Cms ([byte[]]$signed.Encode()) -ReviewedCertSha256 $pin -CurrentOriginalFenceSha256 $fenceSha
+   if($bad.status -cne 'HOLD_SIGNED_CUSTODY_UNVERIFIED'){
+    throw ('PR515_SIGNED_CUSTODY_UNSAFE_NEGATIVE_POSTURE_ACCEPTED_'+$flip)
+   }
+  }
+  Write-Output 'V3_PR515_SIGNED_CURRENT_CAS_CUSTODY_CRYPTO_NEGATIVE_TESTS_PASS_NO_RESTORE'
+ }finally{$cert.Dispose()}
+}finally{$rsa.Dispose()}
+
 $names2=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
 $xml=@(('a'*64),('b'*64))
 $entries=@()
