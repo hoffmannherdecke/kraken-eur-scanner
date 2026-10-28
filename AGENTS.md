@@ -1,14 +1,14 @@
 # Projektweite Arbeitsanweisung — Aktien & Krypto Chancen
 
-## V3 Paper – PR593 (27.10.2026)
+## Dauerhafter Einstieg – Original-Owner statt statischer PR
 
-**DONE, nicht wiederholen:** Stage0–3, Mini-PC 70/70 + V3-Task Disabled/XML, PR515-Backup/Lesetest, Notebook-DPAPI/PG-Reader 0/0. PR583/586 Stage4/5 gesperrt, PR584/587 CLOSED; PR589–593 nur GitHub SOURCE, nicht am Mini-PC installiert.
+**Vor Arbeit:** Domäne bestimmen, geschützten GitHub-`main`-HEAD und neueste Original-ACKs lesen. Projektweiter Kontextmanager: Issue #353; **nur bei V3 Paper** Fachowner Issue #99 samt aktuellen Kommentaren. Andere Aufträge zum eigenen Owner. `context_before_action.py` liest Issues **nicht automatisch**; ältere Überschriften sind Historie, keine Live-Belege.
 
-**Nächstes Release-Gate #99:** echter Originalhost-PID/Fence/ACL/PR515-No-Rearm-Nachweis und exklusive externe CAS-Attempt-/UNKNOWN-Custody ab erster RPC. 0/0/Logs beweisen kein historisches NEVER. Keine neue Quelle ohne konkrete Lücke. V2R4 aktiv, V3 Disabled, STOP/Restore/CAS gesperrt; Stage4/Writer/Reader/Stage5, sechs E2E, Freigabe offen. Kontext #353; Details im Backlog.
+**Anti-Doppelarbeit:** `SOURCE_DONE`, `PHYSICAL_STAGED_DONE`, `REAL_RUNTIME_ACK_PENDING|DONE` trennen. Offener Runtime-ACK macht fertige Source-/Notebook-/TPM-Prüfungen nicht erneut offen. Bei Konflikt `UNKNOWN/NEEDS_TARGETED_ACK`; keine Entwicklung ohne belegte Lücke.
 
-**Projektweit, auch für V4+:** Zusammenarbeit, Hard-/Software, Mini-PC, Scanner, Cloud, Research, Betrieb und Strategien. **Auftragsbereich zuerst bestimmen, nie V3 automatisch annehmen.** Allgemeine Regeln sind keine Strategie-Release-Gates. Hardwarearbeiten brauchen eigene Betriebsprüfungen; eine Strategieverknüpfung nur bei konkret belegter Abhängigkeit.
+**Beleg 28.10., keine Live-Garantie:** PR607/608 Source/CI, PR608 Notebook-Staging und PR606/PR515 PreCAS-Prüfungen fertig. Echter Writer-COMMIT, Notebook-Archivierungs-ACK, No-Rearm-Cutover und CAS noch offen. PR593 bleibt im Backlog historisch; stets #99 neu prüfen.
 
-## Aktuelle Evidenzpriorität – 26.10.2026
+## Verbindliche Evidenzpriorität (festgelegt 26.10.2026; nicht als Live-Snapshot lesen)
 
 **Gilt vor allen historischen Plänen:** Tatsächlich belegtes, zeitlich gültiges Original-ACK im passenden Komponenten-/Arbeitsbereich > neuere wirksame Owner-Entscheidung > deklarierter GitHub-Snapshot > alte Checkliste. Neues Textdatum ≠ aktueller Betriebsbeleg; Konflikte gezielt als `UNKNOWN/NEEDS_TARGETED_ACK` prüfen. Keine alten erledigten `[ ]`-Punkte neu öffnen.
 
