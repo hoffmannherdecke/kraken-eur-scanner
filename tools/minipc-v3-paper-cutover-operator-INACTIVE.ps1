@@ -2038,12 +2038,28 @@ function Test-V3Pr515DisabledOnlyXmlDifference([string]$Saved,[string]$Disabled)
   $old=[xml]::new();$new=[xml]::new()
   $old.XmlResolver=$null;$new.XmlResolver=$null
   $old.LoadXml($Saved);$new.LoadXml($Disabled)
-  $node='/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="Enabled"]'
-  $a=@($old.SelectNodes($node));$b=@($new.SelectNodes($node))
-  if($a.Count -ne 1 -or $b.Count -ne 1 -or
-     [string]$a[0].InnerText -cne 'true' -or
-     [string]$b[0].InnerText -cne 'false'){return $false}
-  $b[0].InnerText='true'
+  $ns='http://schemas.microsoft.com/windows/2004/02/mit/task'
+  if([string]$old.DocumentElement.LocalName -cne 'Task' -or
+     [string]$new.DocumentElement.LocalName -cne 'Task' -or
+     [string]$old.DocumentElement.NamespaceURI -cne $ns -or
+     [string]$new.DocumentElement.NamespaceURI -cne $ns){return $false}
+  $path='/*[local-name()="Task"]/*[local-name()="Settings"]'
+  $os=@($old.SelectNodes($path));$ds=@($new.SelectNodes($path))
+  if($os.Count -ne 1 -or $ds.Count -ne 1 -or
+     [string]$os[0].NamespaceURI -cne $ns -or
+     [string]$ds[0].NamespaceURI -cne $ns){return $false}
+  $a=@($os[0].SelectNodes('./*[local-name()="Enabled"]'))
+  $b=@($ds[0].SelectNodes('./*[local-name()="Enabled"]'))
+  # A missing original Enabled is valid and defaults to true (actual PR618
+  # physical PASS). Poststop must contain explicit false and NOTHING else.
+  if($a.Count -gt 1 -or $b.Count -ne 1 -or
+     [string]$b[0].NamespaceURI -cne $ns -or
+     ([string]$b[0].InnerText).Trim() -notin @('false','0') -or
+     ($a.Count -eq 1 -and
+      ([string]$a[0].NamespaceURI -cne $ns -or
+       ([string]$a[0].InnerText).Trim() -notin @('true','1')))){return $false}
+  if($a.Count -eq 1){[void]$os[0].RemoveChild($a[0])}
+  [void]$ds[0].RemoveChild($b[0])
   return ($old.OuterXml -ceq $new.OuterXml)
  }catch{return $false}
 }
