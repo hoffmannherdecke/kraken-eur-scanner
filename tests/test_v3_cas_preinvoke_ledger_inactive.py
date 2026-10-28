@@ -511,6 +511,7 @@ class V3CasAuditInactiveTests(unittest.TestCase):
 from v3_cas_local_spool_INACTIVE import (
     LocalWitnessHold, append_local_witness_candidate,
     review_local_witness_candidate, ZERO_DIGEST,
+    append_local_predispatch_unknown_latch, ATTEMPT_LATCH_NAME,
 )
 
 
@@ -633,6 +634,74 @@ class V3CasMiniPcLocalSpoolInactiveTests(unittest.TestCase):
         with self.assertRaises(LocalWitnessHold):
             append_local_witness_candidate(link, self.intent())
 
+
+    def test_existing_local_witness_sticky_unknown_prevents_repeat_after_restart(self):
+        # This is a LOCAL no-retry brake only; no RPC, external ACK or signer.
+        intent = build_unsigned_intent(**original_proposal())
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            with self.assertRaises(LocalWitnessHold):
+                append_local_predispatch_unknown_latch(root, intent)
+            append_local_witness_candidate(root, intent)
+            report = append_local_predispatch_unknown_latch(root, intent)
+            self.assertEqual(report["disposition"], "HOLD_LOCAL_PREDISPATCH_UNKNOWN_NO_RETRY")
+            self.assertTrue(report["local_unknown_latch_present"])
+            self.assertEqual(report["local_records_checked"], 1)
+            for key in ("cloud_cas_authorized", "old_writer_auto_rearm_allowed",
+                        "native_restore_authorized", "v3_paper_release_authorized",
+                        "independent_offdb_durable_storage_proven",
+                        "exclusive_cas_attempt_coverage_proven"):
+                self.assertIs(report[key], False, key)
+            # New process/reopen observes the same durable-local UNKNOWN.
+            self.assertEqual(review_local_witness_candidate(root)["disposition"],
+                             "HOLD_LOCAL_PREDISPATCH_UNKNOWN_NO_RETRY")
+            with self.assertRaises(LocalWitnessHold):
+                append_local_predispatch_unknown_latch(root, intent)
+            with self.assertRaises(LocalWitnessHold):
+                append_local_witness_candidate(root, intent)
+            marker = root / ATTEMPT_LATCH_NAME
+            self.assertTrue(marker.is_file())
+            self.assertEqual(len(list(root.iterdir())), 2)
+            data = json.loads(marker.read_bytes())
+            self.assertEqual(data["state"], "UNKNOWN_BEFORE_POSSIBLE_RPC")
+            self.assertEqual(data["intent_sha256"], intent.digest)
+
+    def test_local_unknown_marker_tamper_partial_and_foreign_scope_hold(self):
+        intent = build_unsigned_intent(**original_proposal())
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            append_local_witness_candidate(root, intent)
+            wrong = build_unsigned_intent(**{**original_proposal(),
+                "intent_id": str(uuid4())})
+            with self.assertRaises(LocalWitnessHold):
+                append_local_predispatch_unknown_latch(root, wrong)
+            self.assertEqual(len(list(root.iterdir())), 1)
+            append_local_predispatch_unknown_latch(root, intent)
+            marker = root / ATTEMPT_LATCH_NAME
+            original = marker.read_bytes()
+            # Crash partial bytes, overwritten digest, and extra entry cannot
+            # downgrade UNKNOWN to NOT_INVOKED or allow another append.
+            for raw in (b'{"kind":', original.replace(b'UNKNOWN_BEFORE_POSSIBLE_RPC',
+                    b'NOT_INVOKED'), original + b" "):
+                marker.write_bytes(raw)
+                with self.subTest(raw=raw[:25]):
+                    with self.assertRaises(LocalWitnessHold):
+                        review_local_witness_candidate(root)
+                    with self.assertRaises(LocalWitnessHold):
+                        append_local_predispatch_unknown_latch(root, intent)
+            marker.write_bytes(original)
+            (root / "unknown-extra.txt").write_text("hostile", encoding="ascii")
+            with self.assertRaises(LocalWitnessHold):
+                review_local_witness_candidate(root)
+
+    def test_local_unknown_marker_source_has_no_cas_or_implicit_authority(self):
+        s = (ROOT / "tools/v3_cas_local_spool_INACTIVE.py").read_text("utf-8")
+        self.assertIn("os.O_EXCL", s)
+        self.assertIn("os.fsync(stream.fileno())", s)
+        self.assertIn("UNKNOWN_BEFORE_POSSIBLE_RPC", s)
+        for forbidden in ("rotate_v2r4_to_v3_experimental_paper(", "subprocess",
+                          "requests.", "supabase.", "Set-ScheduledTask"):
+            self.assertNotIn(forbidden, s)
 
 
 class V3CasPublicSigstoreProviderSourceTests(unittest.TestCase):

@@ -34,6 +34,15 @@ ENTRY_FIELDS = frozenset((
     "previous_entry_sha256", "entry_sha256",
 ))
 ZERO_DIGEST = "0" * 64
+# A local pre-dispatch UNKNOWN latch is NOT an independently witnessed CAS
+# attempt. It exists to prevent accidental same-host repeats after a crash.
+ATTEMPT_LATCH_NAME = "cas-attempt-unknown.json"
+ATTEMPT_LATCH_KIND = "V3_CAS_LOCAL_PREDISPATCH_UNKNOWN_LATCH_V1"
+ATTEMPT_LATCH_DOMAIN = b"kraken-eur-scanner/V3-CAS/attempt-unknown/v1\x00"
+ATTEMPT_LATCH_FIELDS = frozenset((
+    "kind", "epoch_id", "ordinal", "intent_id", "intent_sha256",
+    "last_entry_sha256", "state", "latch_sha256",
+))
 
 
 class LocalWitnessHold(PreinvokeHold):
@@ -72,14 +81,17 @@ def _read_records(root: Path) -> list[dict[str, Any]]:
         names = sorted(os.listdir(root))
     except OSError as exc:
         raise LocalWitnessHold("HOLD_LOCAL_WITNESS_LIST_DENIED") from exc
-    if len(names) > MAX_FILES or any(not NAMES.fullmatch(n) for n in names):
+    has_latch = ATTEMPT_LATCH_NAME in names
+    entry_names = [name for name in names if name != ATTEMPT_LATCH_NAME]
+    if (len(entry_names) > MAX_FILES or
+            any(not NAMES.fullmatch(n) for n in entry_names)):
         raise LocalWitnessHold("HOLD_LOCAL_WITNESS_UNKNOWN_OR_UNBOUNDED_ENTRY")
     records: list[dict[str, Any]] = []
     previous = ZERO_DIGEST
     seen_ids: set[str] = set()
     seen_digests: set[str] = set()
     epoch: str | None = None
-    for ordinal, name in enumerate(names, start=1):
+    for ordinal, name in enumerate(entry_names, start=1):
         if name != f"{ordinal:06d}.json":
             raise LocalWitnessHold("HOLD_LOCAL_WITNESS_GAPPED_ORDINAL")
         path = root / name
@@ -130,7 +142,48 @@ def _read_records(root: Path) -> list[dict[str, Any]]:
         previous = data["entry_sha256"]
         seen_ids.add(data["intent_id"])
         seen_digests.add(data["intent_sha256"])
+    if has_latch:
+        _read_attempt_latch(root, records)
     return records
+
+
+def _read_attempt_latch(root: Path, records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Reject malformed/replaced markers; UNKNOWN is sticky, never retry."""
+    if len(records) != 1 or records[0]["ordinal"] != 1:
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_LATCH_REQUIRES_SINGLE_FIRST_INTENT")
+    path = root / ATTEMPT_LATCH_NAME
+    try:
+        info = path.lstat()
+        if (not stat.S_ISREG(info.st_mode) or
+                getattr(info, "st_nlink", 1) != 1 or
+                bool(getattr(info, "st_file_attributes", 0)
+                     & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0))):
+            raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_LATCH_LINK_OR_FILETYPE")
+        with os.fdopen(os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)),
+                       "rb") as stream:
+            raw = stream.read(MAX_ENTRY_BYTES + 1)
+        if len(raw) > MAX_ENTRY_BYTES:
+            raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_LATCH_TOO_LARGE")
+        data = json.loads(raw.decode("ascii"))
+    except (OSError, ValueError, UnicodeError, TypeError) as exc:
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_LATCH_UNREADABLE") from exc
+    intent = records[0]
+    if (type(data) is not dict or set(data) != ATTEMPT_LATCH_FIELDS
+            or data["kind"] != ATTEMPT_LATCH_KIND
+            or data["state"] != "UNKNOWN_BEFORE_POSSIBLE_RPC"
+            or type(data["ordinal"]) is not int or data["ordinal"] != 1
+            or data["epoch_id"] != intent["epoch_id"]
+            or data["intent_id"] != intent["intent_id"]
+            or data["intent_sha256"] != intent["intent_sha256"]
+            or data["last_entry_sha256"] != intent["entry_sha256"]
+            or not isinstance(data["latch_sha256"], str)
+            or not HEX64.fullmatch(data["latch_sha256"])):
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_LATCH_BINDING_DRIFT")
+    unsigned = {k: v for k, v in data.items() if k != "latch_sha256"}
+    expected = hashlib.sha256(ATTEMPT_LATCH_DOMAIN + _canonical(unsigned)).hexdigest()
+    if _canonical(data) != raw or data["latch_sha256"] != expected:
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_LATCH_TAMPERED")
+    return data
 
 
 def _no_authority(*, local_count: int, last_digest: str) -> dict[str, Any]:
@@ -155,7 +208,11 @@ def review_local_witness_candidate(root: Path) -> dict[str, Any]:
     """Read only, no writes; zero files never means zero historical attempts."""
     records = _read_records(Path(root))
     last = records[-1]["entry_sha256"] if records else ZERO_DIGEST
-    return _no_authority(local_count=len(records), last_digest=last)
+    report = _no_authority(local_count=len(records), last_digest=last)
+    if (Path(root) / ATTEMPT_LATCH_NAME).exists():
+        report["disposition"] = "HOLD_LOCAL_PREDISPATCH_UNKNOWN_NO_RETRY"
+        report["local_unknown_latch_present"] = True
+    return report
 
 
 def append_local_witness_candidate(root: Path, intent: AuditIntent) -> dict[str, Any]:
@@ -185,6 +242,8 @@ def append_local_witness_candidate(root: Path, intent: AuditIntent) -> dict[str,
         raise LocalWitnessHold("HOLD_LOCAL_WITNESS_FORGED_INTENT_DIGEST")
     root = Path(root)
     records = _read_records(root)
+    if (root / ATTEMPT_LATCH_NAME).exists():
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_LATCH_ALREADY_EXISTS_NO_APPEND")
     ordinal = len(records) + 1
     if (ordinal > MAX_FILES or intent.ordinal != ordinal
             or any(item["intent_id"] == intent.intent_id
@@ -222,3 +281,65 @@ def append_local_witness_candidate(root: Path, intent: AuditIntent) -> dict[str,
         raise LocalWitnessHold("HOLD_LOCAL_WITNESS_POSTWRITE_READBACK_MISMATCH")
     return _no_authority(local_count=ordinal,
                          last_digest=checked[-1]["entry_sha256"])
+
+def append_local_predispatch_unknown_latch(root: Path, intent: AuditIntent) -> dict[str, Any]:
+    """Persist exactly one UNKNOWN latch *without* any CAS invocation.
+
+    This is a purely local fail-stop aid in the existing inactive witness,
+    never a preinvoke COMMIT ACK, an independent signature or permission to
+    call CAS. The state is UNKNOWN even if the process crashes before dispatch.
+    Existing nonempty/corrupt latch is never replaced or repaired.
+    """
+    if not isinstance(intent, AuditIntent):
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_INVALID_INTENT")
+    try:
+        rebuilt = build_unsigned_intent(
+            epoch_id=intent.epoch_id, ordinal=intent.ordinal,
+            intent_id=intent.intent_id,
+            predecessor_series_id=intent.predecessor_series_id,
+            rpc=intent.rpc, request_sha256=intent.request_sha256,
+            source_sha256=intent.source_sha256,
+            fence_sha256=intent.fence_sha256)
+    except PreinvokeHold as exc:
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_INVALID_SCOPE") from exc
+    if rebuilt.digest != intent.digest:
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_FORGED_DIGEST")
+    root = Path(root)
+    records = _read_records(root)
+    if ((root / ATTEMPT_LATCH_NAME).exists() or len(records) != 1
+            or intent.ordinal != 1
+            or records[0]["epoch_id"] != intent.epoch_id
+            or records[0]["intent_id"] != intent.intent_id
+            or records[0]["intent_sha256"] != intent.digest):
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_NO_EXACT_SINGLE_INTENT")
+    fields = {
+        "kind": ATTEMPT_LATCH_KIND, "epoch_id": intent.epoch_id,
+        "ordinal": 1, "intent_id": intent.intent_id,
+        "intent_sha256": intent.digest,
+        "last_entry_sha256": records[0]["entry_sha256"],
+        "state": "UNKNOWN_BEFORE_POSSIBLE_RPC",
+    }
+    digest = hashlib.sha256(ATTEMPT_LATCH_DOMAIN + _canonical(fields)).hexdigest()
+    payload = _canonical({**fields, "latch_sha256": digest})
+    if len(payload) > MAX_ENTRY_BYTES:
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_OVERSIZED")
+    try:
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+        fd = os.open(root / ATTEMPT_LATCH_NAME, flags, 0o600)
+    except OSError as exc:
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_EXCLUSIVE_CREATE_DENIED") from exc
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+    except OSError as exc:
+        # Retain partial UNKNOWN bytes: NEVER retry or silently reset.
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_INCOMPLETE_RETAINED") from exc
+    reviewed = _read_records(root)
+    if len(reviewed) != 1:
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_READBACK_MISMATCH")
+    result = review_local_witness_candidate(root)
+    if result["disposition"] != "HOLD_LOCAL_PREDISPATCH_UNKNOWN_NO_RETRY":
+        raise LocalWitnessHold("HOLD_LOCAL_ATTEMPT_MISSING_AFTER_WRITE")
+    return result
