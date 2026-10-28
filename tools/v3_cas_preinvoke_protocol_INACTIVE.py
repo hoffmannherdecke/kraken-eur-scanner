@@ -224,21 +224,24 @@ def review_offdb_witness_hmac_packet(
 
 
 # SOURCE-ONLY: canonical, nonsecret bytes for a future separate originalhost
-# detached-CMS signer. This is an UNTRUSTED Cloud-readback proposal; neither
+# detached-CMS signer. The caller-ACL fingerprint is signed along with
+# the exact intent, source and original host fence.
+# This is an UNTRUSTED Cloud-readback proposal; neither
 # a matching hash nor any subsequently applied signature authenticates the
 # alleged DB reader, its transaction commit, the original TPM key ACL or
 # exclusive CAS-attempt coverage. No private key or network is touched here.
-SIGNED_PROPOSAL_KIND = "V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V1"
+SIGNED_PROPOSAL_KIND = "V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V2"
 SIGNED_PROPOSAL_READER_KEYS = frozenset({
     "epoch_id", "ordinal", "intent_id", "predecessor_series_id",
     "rpc", "request_sha256", "source_sha256", "fence_sha256",
-    "intent_sha256", "next_ordinal", "ordered_intent_sha256",
+    "caller_acl_sha256", "intent_sha256", "next_ordinal", "ordered_intent_sha256",
     "observed_at_utc",
 })
 
 
 def build_unsigned_preinvoke_cms_proposal(
     intent: AuditIntent, readback: Mapping[str, Any], *, reviewed_at_utc: str,
+    expected_caller_acl_sha256: str,
 ) -> dict[str, Any]:
     """Canonical bytes ONLY; always denies CAS and V2R4 rearm authority.
 
@@ -259,6 +262,9 @@ def build_unsigned_preinvoke_cms_proposal(
     )
     if rebuilt != intent or intent.ordinal != 1:
         raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_REPLAY_OR_DIGEST")
+    if (not isinstance(expected_caller_acl_sha256, str)
+            or not HEX64.fullmatch(expected_caller_acl_sha256)):
+        raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_CALLER_ACL_PIN_MISSING")
     if not isinstance(readback, Mapping) or set(readback) != SIGNED_PROPOSAL_READER_KEYS:
         raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_READER_SHAPE")
     matches = {
@@ -270,6 +276,7 @@ def build_unsigned_preinvoke_cms_proposal(
         "request_sha256": intent.request_sha256,
         "source_sha256": intent.source_sha256,
         "fence_sha256": intent.fence_sha256,
+        "caller_acl_sha256": expected_caller_acl_sha256,
         "intent_sha256": intent.digest,
         "next_ordinal": 2,
     }
@@ -306,6 +313,7 @@ def build_unsigned_preinvoke_cms_proposal(
         "request_sha256": intent.request_sha256,
         "source_sha256": intent.source_sha256,
         "fence_sha256": intent.fence_sha256,
+        "caller_acl_sha256": expected_caller_acl_sha256,
         "intent_sha256": intent.digest,
         "readback_sha256": hashlib.sha256(json.dumps(
             dict(readback), sort_keys=True, separators=(",", ":"),
@@ -320,7 +328,7 @@ def build_unsigned_preinvoke_cms_proposal(
     if len(payload) > 2048:
         raise PreinvokeHold("HOLD_PREINVOKE_PROPOSAL_OVERSIZED")
     return {
-        "kind": "V3_CAS_PREINVOKE_CMS_CANDIDATE_REVIEW_V1",
+        "kind": "V3_CAS_PREINVOKE_CMS_CANDIDATE_REVIEW_V2",
         "unsigned_payload_utf8": payload,
         "unsigned_payload_sha256": hashlib.sha256(payload).hexdigest(),
         "cloud_reader_authenticated": False,
@@ -440,12 +448,14 @@ def build_unsigned_cms_from_original_reader_export(
         "rpc": RPC, "request_sha256": intent.request_sha256,
         "source_sha256": intent.source_sha256,
         "fence_sha256": intent.fence_sha256,
+        "caller_acl_sha256": row["caller_acl_sha256"],
         "intent_sha256": intent.digest, "next_ordinal": 2,
         "ordered_intent_sha256": [intent.digest],
         "observed_at_utc": observed_sec,
     }
     result = build_unsigned_preinvoke_cms_proposal(
-        intent, reader_claim, reviewed_at_utc=reviewed_at_utc)
+        intent, reader_claim, reviewed_at_utc=reviewed_at_utc,
+        expected_caller_acl_sha256=expected_caller_acl_sha256)
     result["original_reader_export_source_claim_is_authenticated"] = False
     result["actual_original_writer_commit_independently_proven"] = False
     result["cas_attempt_coverage_proven"] = False

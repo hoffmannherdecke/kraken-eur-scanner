@@ -62,14 +62,14 @@ function Test-PayloadAndCms([byte[]]$payload,[byte[]]$signature){
   $raw=$strictUtf8.GetString($payload)
   $obj=$raw|ConvertFrom-Json -ErrorAction Stop
  }catch{throw 'V3_CAS_NOTEBOOK_HOLD_UNSIGNED_JSON'}
- $expected=@('epoch_id','fence_sha256','intent_id','intent_sha256',
+ $expected=@('caller_acl_sha256','epoch_id','fence_sha256','intent_id','intent_sha256',
     'kind','local_review_at_utc','ordinal','predecessor_series_id',
     'proof_status','readback_sha256','reader_claimed_observed_at_utc',
     'request_sha256','rpc','source_sha256')
  if($null -eq $obj -or $obj -isnot [pscustomobject] -or
    ((@($obj.PSObject.Properties.Name|Sort-Object) -join '|') -cne
     (@($expected|Sort-Object) -join '|')) -or
-   [string]$obj.kind -cne 'V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V1' -or
+   [string]$obj.kind -cne 'V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V2' -or
    [string]$obj.proof_status -cne 'UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED' -or
    ($obj.ordinal -isnot [int] -and $obj.ordinal -isnot [long]) -or $obj.ordinal -ne 1 -or
    [string]$obj.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
@@ -83,7 +83,7 @@ function Test-PayloadAndCms([byte[]]$payload,[byte[]]$signature){
     $uuid.ToString('D') -cne [string]$obj.intent_id){
   throw 'V3_CAS_NOTEBOOK_HOLD_RECEIPT_UUID'
  }
- foreach($key in @('fence_sha256','intent_sha256','readback_sha256',
+ foreach($key in @('caller_acl_sha256','fence_sha256','intent_sha256','readback_sha256',
                   'request_sha256','source_sha256')){
   if([string]$obj.$key -cnotmatch '^[a-f0-9]{64}$'){
    throw 'V3_CAS_NOTEBOOK_HOLD_RECEIPT_HASH'

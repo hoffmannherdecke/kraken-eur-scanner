@@ -24,7 +24,8 @@ from v3_cas_preinvoke_protocol_INACTIVE import (
 def main() -> None:
     intent, claimed_readback = fixture()
     reviewed = build_unsigned_preinvoke_cms_proposal(
-        intent, claimed_readback, reviewed_at_utc="2026-10-26T15:00:15Z"
+        intent, claimed_readback, reviewed_at_utc="2026-10-26T15:00:15Z",
+        expected_caller_acl_sha256="e" * 64
     )
     payload = reviewed["unsigned_payload_utf8"]
     digest = hashlib.sha256(payload).hexdigest()
