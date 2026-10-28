@@ -14,6 +14,16 @@ $defs=@($ast.FindAll({
 },$true))
 if($defs.Count -ne 1){throw 'V3_INDEPENDENT_SIGNED_ORIGINAL_FUNCTION_MISSING_OR_DUPLICATE'}
 . ([scriptblock]::Create($defs[0].Extent.Text))
+# The new consumer is the EXISTING operator's cryptographically bound
+# Notebook Reader transport, never a second CAS caller/STOP implementation.
+$notebookConsumer=@($ast.FindAll({
+ param($node)
+ $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $node.Name -eq 'Test-V3SignedNotebookPrecommitInventory'
+},$true))
+if($notebookConsumer.Count -ne 1){throw 'V3_NOTEBOOK_READER_ORIGINALHOST_CONSUMER_MISSING'}
+. ([scriptblock]::Create($notebookConsumer[0].Extent.Text))
+
 
 # The SAME existing offline CMS/Notebook CI checks the real Reader's pure
 # UTC-field helper. Never invoke the Reader's DB/DPAPI or the actual signer.
@@ -100,6 +110,68 @@ try {
      $ok.originalhost_process_or_loaded_bytes_independently_proven -ne $false){
    throw 'V3_VALID_CRYPTO_IS_NOT_AUTHORIZED_RELEASE'
   }
+  # A genuinely signed mock of the exact private Reader JSON is accepted as
+  # a CURRENT inventory observation, never as CAS history or native authority.
+  $observed=[datetimeoffset]::UtcNow.ToString(
+   "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",[Globalization.CultureInfo]::InvariantCulture)
+  $readerJson=([ordered]@{
+   kind='V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1'
+   observed_at_utc=$observed
+   actor='v3_cas_audit_reader_actor'
+   role='v3_cas_audit_reader'
+   epochs=0;intents=0;writer_role_access=$false;append_access=$false
+   history_never_proven=$false;restore_authorized=$false
+  }|ConvertTo-Json -Compress)
+  function Sign-ReaderMock([string]$text,[Security.Cryptography.X509Certificates.X509Certificate2]$testCert){
+   $b=[Text.Encoding]::UTF8.GetBytes($text)
+   $c=[Security.Cryptography.Pkcs.SignedCms]::new(
+    [Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$b),$true)
+   $sign=[Security.Cryptography.Pkcs.CmsSigner]::new($testCert)
+   $sign.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+   $c.ComputeSignature($sign)
+   return ,([byte[]]$c.Encode())
+  }
+  $readerBytes=[Text.Encoding]::UTF8.GetBytes($readerJson)
+  $readerCms=Sign-ReaderMock $readerJson $cert
+  $readerGood=Test-V3SignedNotebookPrecommitInventory $readerBytes $readerCms $pin
+  if($readerGood.status -cne 'SIGNED_CURRENT_PRIVATE_READER_EMPTY_SNAPSHOT_NOT_RELEASE' -or
+     $readerGood.matched_signer_certificate_sha256 -ne $true -or
+     $readerGood.current_private_reader_zero_counts_verified -ne $true -or
+     $readerGood.historical_cas_never_verified -ne $false -or
+     $readerGood.native_stop_or_restore_authorized -ne $false -or
+     $readerGood.cloud_cas_dispatch_authorized -ne $false){
+   throw 'V3_SIGNED_NOTEBOOK_READER_POSITIVE_WRONG_OR_EXCEEDS_AUTHORITY'
+  }
+  $altered=@(
+   $readerJson.Replace('"epochs":0','"epochs":1'),
+   $readerJson.Replace('v3_cas_audit_reader_actor','v3_cas_audit_writer_actor'),
+   $readerJson.Replace('"restore_authorized":false','"restore_authorized":true'),
+   $readerJson.Replace('"intents":0','"intents":0,"intents":0'),
+   $readerJson.Replace('"kind":','"can_release":true,"kind":'),
+   $readerJson.Replace($observed,'2026-10-01T00:00:00.000000Z')
+  )
+  # Each adverse JSON is VALIDLY signed by the same mock key: semantics must
+  # independently reject privilege escalation, stale and duplicate fields.
+  foreach($badText in $altered){
+   $v=Test-V3SignedNotebookPrecommitInventory (
+    [Text.Encoding]::UTF8.GetBytes($badText)) (Sign-ReaderMock $badText $cert) $pin
+   if($v.current_private_reader_zero_counts_verified -ne $false -or
+      $v.native_stop_or_restore_authorized -ne $false -or
+      $v.cloud_cas_dispatch_authorized -ne $false){
+    throw 'V3_SIGNED_NOTEBOOK_READER_SEMANTIC_NEGATIVE_ACCEPTED'
+   }
+  }
+  $changed=[Text.Encoding]::UTF8.GetBytes($readerJson.Replace('"epochs":0','"epochs":2'))
+  $wrong=Test-V3SignedNotebookPrecommitInventory $changed $readerCms $pin
+  $badPin=Test-V3SignedNotebookPrecommitInventory $readerBytes $readerCms ('0'*64)
+  foreach($v in @($wrong,$badPin)){
+   if($v.matched_signer_certificate_sha256 -ne $false -or
+      $v.current_private_reader_zero_counts_verified -ne $false -or
+      $v.cloud_cas_dispatch_authorized -ne $false){
+    throw 'V3_SIGNED_NOTEBOOK_READER_CRYPTO_NEGATIVE_ACCEPTED'
+   }
+  }
+  Write-Output 'V3_NOTEBOOK_READER_PINNED_CMS_TO_EXISTING_ORIGINALHOST_OFFLINE_PASS_NO_RELEASE'
   # Attempted self-authorization: this is a perfectly valid detached CMS
   # signed by the SAME ephemeral CI key. The arbitrary signed JSON falsely
   # claims SYSTEM exclusion, approved signer role and release/Cloud authority.
