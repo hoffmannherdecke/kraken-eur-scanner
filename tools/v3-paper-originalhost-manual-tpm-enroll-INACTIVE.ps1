@@ -164,7 +164,7 @@ function Test-V3UnsignedPreinvokeCandidate([byte[]]$Payload){
  try{$obj=$raw|ConvertFrom-Json -ErrorAction Stop}
  catch{throw 'V3_SIGNER_CMS_INVALID_JSON'}
  $keys=@('epoch_id','fence_sha256','intent_id','intent_sha256','kind',
-  'local_review_at_utc','ordinal','predecessor_series_id','proof_status',
+  'caller_acl_sha256','local_review_at_utc','ordinal','predecessor_series_id','proof_status',
   'readback_sha256','reader_claimed_observed_at_utc','request_sha256','rpc',
   'source_sha256')
  if($null -eq $obj -or $obj -isnot [pscustomobject] -or
@@ -172,7 +172,7 @@ function Test-V3UnsignedPreinvokeCandidate([byte[]]$Payload){
     (@($keys|Sort-Object) -join '|')){
   throw 'V3_SIGNER_CMS_BAD_PROPOSAL_KEYS'
  }
- if([string]$obj.kind -cne 'V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V1' -or
+ if([string]$obj.kind -cne 'V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V2' -or
     [string]$obj.proof_status -cne 'UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED' -or
     ($obj.ordinal -isnot [int] -and $obj.ordinal -isnot [long]) -or
     $obj.ordinal -ne 1 -or
@@ -186,7 +186,7 @@ function Test-V3UnsignedPreinvokeCandidate([byte[]]$Payload){
     $uuid.ToString('D') -cne [string]$obj.intent_id){
   throw 'V3_SIGNER_CMS_NONCANONICAL_INTENT_ID'
  }
- foreach($field in @('fence_sha256','intent_sha256','readback_sha256',
+ foreach($field in @('caller_acl_sha256','fence_sha256','intent_sha256','readback_sha256',
                      'request_sha256','source_sha256')){
   if([string]$obj.$field -cnotmatch '^[a-f0-9]{64}$'){
    throw 'V3_SIGNER_CMS_INVALID_BINDING_HASH'
