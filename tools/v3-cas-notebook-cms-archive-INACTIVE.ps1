@@ -90,14 +90,25 @@ function Test-PayloadAndCms([byte[]]$payload,[byte[]]$signature){
   }
  }
  foreach($key in @('local_review_at_utc','reader_claimed_observed_at_utc')){
-  # PS7 ConvertFrom-Json eagerly converts ISO strings to DateTime whereas
-  # Windows PS5.1 retains strings. Verify the ORIGINAL signed JSON text
-  # rather than a locale-dependent round-trip through parsed DateTime.
-  $matches=[regex]::Matches($raw,('"'+[regex]::Escape($key)+'"\s*:\s*"(?<utc>[^"]+)"'))
-  if($matches.Count -ne 1){throw 'V3_CAS_NOTEBOOK_HOLD_RECEIPT_TIME'}
-  $value=[string]$matches[0].Groups['utc'].Value
+  # Python emits compact canonical ASCII JSON. Extract the original signed
+  # string bytes, not PS7's locale-dependent auto-converted DateTime.
+  $needle='"'+$key+'":"'
+  $at=$raw.IndexOf($needle,[StringComparison]::Ordinal)
+  if($at -lt 0 -or $raw.IndexOf($needle,$at+1,[StringComparison]::Ordinal) -ge 0){
+   throw 'V3_CAS_NOTEBOOK_HOLD_RECEIPT_TIME'
+  }
+  $from=$at+$needle.Length
+  $stop=$raw.IndexOf('"',$from,[StringComparison]::Ordinal)
+  if($stop -lt $from){throw 'V3_CAS_NOTEBOOK_HOLD_RECEIPT_TIME'}
+  $value=$raw.Substring($from,$stop-$from)
   $date=[datetime]::MinValue
-  if($value -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z
+  if($value -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$' -or
+    -not [datetime]::TryParseExact($value,"yyyy-MM-dd'T'HH:mm:ss'Z'",
+      [Globalization.CultureInfo]::InvariantCulture,
+      [Globalization.DateTimeStyles]::None,[ref]$date)){
+   throw 'V3_CAS_NOTEBOOK_HOLD_RECEIPT_TIME'
+  }
+ }
  try{
   $content=[Security.Cryptography.Pkcs.ContentInfo]::new($payload)
   $cms=[Security.Cryptography.Pkcs.SignedCms]::new($content,$true)
