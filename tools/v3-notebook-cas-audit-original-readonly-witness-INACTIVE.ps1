@@ -7,8 +7,16 @@
 # Authenticated transport does NOT independently authenticate copied JSON.
 # A PASS is scoped to THIS query only, never a durable intent or release authorization.
 [CmdletBinding()]
-param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent,[string]$CaFile='')
+param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent,[string]$CaFile='',
+ [switch]$ExportSignedPrecommitCloudInventory,[string]$ReviewedNotebookCertificateSha256='')
 if($PrecommitCloudInventory -and $PostcommitDurableIntent){throw 'V3_READER_MODE_CONFLICT'}
+if($ExportSignedPrecommitCloudInventory -and (-not $PrecommitCloudInventory -or
+ $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$')){
+ throw 'V3_SIGNED_READER_PRECOMMIT_MODE_OR_PIN_INVALID'
+}
+if(-not $ExportSignedPrecommitCloudInventory -and $ReviewedNotebookCertificateSha256){
+ throw 'V3_SIGNED_READER_PIN_WITHOUT_EXPORT'
+}
 $decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent)
 if(-not $decisionReaderMode -and $CaFile){throw 'V3_READER_CA_FILE_DECISION_MODE_ONLY'}
 Set-StrictMode -Version Latest
@@ -165,6 +173,85 @@ function Read-V3ReaderUtcLiteral([string]$RawJson,[string]$Name) {
         throw 'V3_READER_UTC_DATE_INVALID'
     }
     return [pscustomobject]@{text=$literal;utc=$time}
+}
+
+
+# Signing is an explicit opt-in export of the already validated genuine Reader
+# PG17 wire JSON, not a new SQL query, release token or CAS authorization.
+# Existing Notebook CurrentUser certificate is pre-enrolled and SHA256-pinned
+# by the independent reviewer; do not mint a key or expose DPAPI credentials.
+function Save-V3SignedNotebookReaderSnapshot([string]$RawJson,[string]$CertSha256){
+ if($env:GITHUB_ACTIONS -eq 'true' -or -not [Environment]::UserInteractive -or
+    [Security.Principal.WindowsIdentity]::GetCurrent().Name -match '(?i)\\CryptoSupportSvc$'){
+  throw 'V3_NOTEBOOK_READER_SIGNING_INTERACTIVE_ONLY'
+ }
+ if($RawJson.Length -lt 80 -or $RawJson.Length -gt 4096 -or
+    $CertSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'V3_NOTEBOOK_READER_SIGNING_UNSAFE_INPUT'
+ }
+ $certs=@(Get-ChildItem Cert:\CurrentUser\My -ErrorAction Stop | Where-Object {
+  $hash=[Security.Cryptography.SHA256]::Create()
+  try { (([BitConverter]::ToString($hash.ComputeHash([byte[]]$_.RawData))).Replace('-','').ToLowerInvariant()) -ceq $CertSha256 }
+  finally { $hash.Dispose() }
+ })
+ if($certs.Count -ne 1 -or -not $certs[0].HasPrivateKey -or
+    $certs[0].NotBefore.ToUniversalTime() -gt [datetime]::UtcNow -or
+    $certs[0].NotAfter.ToUniversalTime() -lt [datetime]::UtcNow){
+  throw 'V3_NOTEBOOK_READER_EXISTING_SIGNER_NOT_AVAILABLE'
+ }
+ $actor=Get-Item -LiteralPath $dir -Force -ErrorAction Stop
+ $drive=[IO.DriveInfo]::new([IO.Path]::GetPathRoot($dir))
+ if(-not $actor.PSIsContainer -or
+    [bool]($actor.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    -not $drive.IsReady -or $drive.DriveType -ne [IO.DriveType]::Fixed -or
+    $drive.DriveFormat -cne 'NTFS'){
+  throw 'V3_NOTEBOOK_READER_ACTOR_VOLUME_UNSAFE'
+ }
+ $payload=[Text.UTF8Encoding]::new($false,$true).GetBytes($RawJson)
+ $cms=[Security.Cryptography.Pkcs.SignedCms]::new(
+  [Security.Cryptography.Pkcs.ContentInfo]::new([byte[]]$payload),$true)
+ $signer=[Security.Cryptography.Pkcs.CmsSigner]::new($certs[0])
+ $signer.DigestAlgorithm=[Security.Cryptography.Oid]::new('2.16.840.1.101.3.4.2.1')
+ $cms.ComputeSignature($signer)
+ $signature=[byte[]]$cms.Encode()
+ if($signature.Length -gt 32768){throw 'V3_NOTEBOOK_READER_CMS_TOO_LARGE'}
+ $folder=Join-Path $dir ('ReaderCMS-'+[guid]::NewGuid().ToString('N'))
+ [void][IO.Directory]::CreateDirectory($folder)
+ $acl=[Security.AccessControl.DirectorySecurity]::new()
+ $acl.SetAccessRuleProtection($true,$false)
+ $user=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+ foreach($sid in @($user,'S-1-5-18','S-1-5-32-544')){
+  $acl.AddAccessRule([Security.AccessControl.FileSystemAccessRule]::new(
+   [Security.Principal.SecurityIdentifier]::new($sid),
+   [Security.AccessControl.FileSystemRights]::FullControl,
+   [Security.AccessControl.InheritanceFlags]::ContainerInherit -bor
+   [Security.AccessControl.InheritanceFlags]::ObjectInherit,
+   [Security.AccessControl.PropagationFlags]::None,
+   [Security.AccessControl.AccessControlType]::Allow))
+ }
+ Set-Acl -LiteralPath $folder -AclObject $acl -ErrorAction Stop
+ foreach($name in @('reader.json','reader.cms')){
+  $target=Join-Path $folder $name
+  $data=if($name -ceq 'reader.json'){$payload}else{$signature}
+  $file=[IO.FileStream]::new($target,[IO.FileMode]::CreateNew,
+   [IO.FileAccess]::Write,[IO.FileShare]::None)
+  try { $file.Write($data,0,$data.Length);$file.Flush($true) }
+  finally { $file.Dispose() }
+  $readback=[IO.File]::ReadAllBytes($target)
+  if($readback.Length -ne $data.Length){throw 'V3_NOTEBOOK_READER_REREAD_FAILED'}
+  for($i=0;$i -lt $data.Length;$i++){
+   if($readback[$i] -ne $data[$i]){throw 'V3_NOTEBOOK_READER_REREAD_FAILED'}
+  }
+ }
+ return [pscustomobject]@{
+  kind='V3_NOTEBOOK_SIGNED_PRECOMMIT_READER_TRANSFER_V1'
+  status='SIGNED_AUTHENTICATED_READER_SNAPSHOT_NOT_RUNTIME_RELEASE'
+  local_directory=$folder;receipt='reader.json';signature='reader.cms'
+  certificate_sha256=$CertSha256
+  historical_cas_never_verified=$false
+  old_intake_stop_or_restore_authorized=$false
+  cas_dispatch_authorized=$false
+ }
 }
 
 $passed = 0
@@ -328,6 +415,10 @@ foreach ($check in $checks) {
                 cloud_cas_authorized=$false
                 v3_paper_release_authorized=$false
             }|ConvertTo-Json -Compress
+            if($ExportSignedPrecommitCloudInventory){
+              Save-V3SignedNotebookReaderSnapshot -RawJson (($output|Out-String).Trim()) -CertSha256 $ReviewedNotebookCertificateSha256 |
+               ConvertTo-Json -Compress -Depth 3
+            }
             $passed++
         } elseif ($LASTEXITCODE -eq 0 -and (($output | Out-String).Trim() -ceq 'PASS')) {
             Write-Output "$($check.Name)_READONLY_SCOPE_PASS"
