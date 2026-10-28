@@ -60,7 +60,7 @@ class ManualTPMKeySourceContract(unittest.TestCase):
     "[switch]$InspectProvider",
     "if($InspectProvider -and $Enroll)",
     "V3_SIGNER_PROVIDER_READONLY_CANNOT_ENROLL",
-    "if($InspectProvider){",
+    "if($InspectProvider -or $SignPreinvoke){",
     "if($null -eq $cert){throw 'V3_SIGNER_PROVIDER_READONLY_CERT_MISSING'}",
     "RSACertificateExtensions]::GetRSAPrivateKey($cert)",
     "Security.Cryptography.RSACng",
@@ -86,6 +86,30 @@ class ManualTPMKeySourceContract(unittest.TestCase):
   self.assertNotIn("Export-CngKey",self.s)
   self.assertNotIn("Set-Acl",self.s)
   self.assertNotIn("SignData(",self.s)
+
+
+ def test_sign_existing_tpm_only_is_one_shot_and_never_release(self):
+  for x in (
+    "[switch]$SignPreinvoke",
+    "V3_SIGNER_ONE_MODE_ONLY_NO_ENROLL_OR_PROBE",
+    "SIGN_ONE_UNSIGNED_PREINVOKE_CANDIDATE_NO_RELEASE",
+    "V3_SIGNER_CMS_EXPLICIT_MANUAL_APPROVAL_REQUIRED",
+    "Test-V3UnsignedPreinvokeCandidate $raw",
+    "if(-not $providerReadOnly -or -not $tpmReady -or $null -eq $cert)",
+    "Security.Cryptography.Pkcs.SignedCms",
+    "$cms.ComputeSignature($signer)",
+    "[IO.FileMode]::CreateNew",
+    "$stream.Flush($true)",
+    "ORIGINALHOST_CMS_SIGNED_CANDIDATE_NO_CLOUD_OR_CAS_AUTHORITY",
+    "independent_offhost_custody_proven=$false",
+    "cas_attempt_coverage_proven=$false",
+    "cloud_cas_authorized=$false",
+    "old_writer_auto_rearm_allowed=$false",
+  ):
+   with self.subTest(field=x): self.assertIn(x,self.s)
+  self.assertEqual(self.s.count("New-SelfSignedCertificate @options"),1)
+  self.assertNotIn("Invoke-RestMethod",self.s)
+  self.assertNotIn("Set-Acl",self.s)
 
  def test_public_pin_not_release_authority(self):
   for x in ("certificate_der_sha256_public_pin_unapproved",
