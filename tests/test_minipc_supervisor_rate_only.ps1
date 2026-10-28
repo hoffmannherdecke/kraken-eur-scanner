@@ -1439,7 +1439,7 @@ if($nativeDiff.Count -ne 1){throw 'Missing unique pure PR515 disabled XML compar
 . ([Scriptblock]::Create($nativeDiff[0].Extent.Text))
 function QuiescedXml([string]$Enabled='true',[string]$Action='wait_launcher.py',
  [string]$User='SYSTEM',[string]$Trigger='BootTrigger') {
- return ('<Task><Principals><Principal><UserId>'+$User+
+ return ('<Task xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task"><Principals><Principal><UserId>'+$User+
  '</UserId></Principal></Principals><Triggers><'+$Trigger+
  '/></Triggers><Settings><Enabled>'+$Enabled+
  '</Enabled></Settings><Actions><Exec><Command>python.exe</Command><Arguments>'+
