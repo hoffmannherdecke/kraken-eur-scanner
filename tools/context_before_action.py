@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """On-demand, read-only context preflight for material project decisions.
 
-Reads the existing canonical sources. It does not mutate a strategy, invoke models,
-make network calls, trigger a scheduler, or claim human/AI comprehension.
+Reads the existing canonical sources by default without network. An explicit
+--live-brief fetches the current GitHub owner read-only and fails closed if
+unavailable. No strategy mutation, scheduler or human/AI comprehension claim.
 """
 from __future__ import annotations
 
@@ -10,7 +11,10 @@ import argparse
 import datetime as dt
 import hashlib
 import json
+import os
 import re
+from urllib import request
+from urllib.error import URLError
 from pathlib import Path
 import sys
 
@@ -57,6 +61,101 @@ def routed_sources(root: Path, scope: str) -> tuple[dict, list[dict]]:
         require(target.is_relative_to(root_resolved) and target.is_file(),
                 "required source unavailable: " + path)
     return config, entries
+
+
+
+# Existing canonical project; GitHub HTTP is opt-in and read-only. A GitHub
+# statement about a Windows/Cloud ACK is not itself a fresh physical ACK.
+CANONICAL_GITHUB_REPO = "hoffmannherdecke/kraken-eur-scanner"
+GITHUB_API_BASE = "https://api.github.com/repos/" + CANONICAL_GITHUB_REPO
+
+
+def _github_api_read(url: str) -> tuple[object, str]:
+    require(url.startswith(GITHUB_API_BASE + "/"),
+            "unapproved live owner API destination")
+    headers = {"Accept": "application/vnd.github+json",
+               "User-Agent": "project-context-owner-readback"}
+    token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = "Bearer " + token
+    with request.urlopen(request.Request(url, headers=headers), timeout=12) as response:
+        return json.loads(response.read().decode("utf-8")), response.headers.get("Link", "")
+
+
+def live_owner_readback(work_domain: str, strategy_version: str | None,
+                        fetcher=None, expected_main: str | None = None) -> dict:
+    """Fresh *GitHub-only* owner readback, not a release/Windows/Cloud proof.
+
+    No cached PR number, secondary status database, schedule or mutation. If
+    GitHub is unavailable or its shape is unexpected: fail CLOSED, never turn
+    the previous Markdown snapshot into a new development task.
+    """
+    require(work_domain in {"project_general", "infrastructure", "operations",
+                            "strategy_development", "strategy_release", "research"},
+            "invalid live owner domain")
+    require(not (work_domain == "strategy_release" and not strategy_version),
+            "live strategy release requires named version")
+    getter = fetcher or _github_api_read
+    head, _ = getter(GITHUB_API_BASE + "/commits/main")
+    sha = head.get("sha") if isinstance(head, dict) else None
+    require(isinstance(sha, str) and bool(re.fullmatch(r"[a-f0-9]{40}", sha)),
+            "missing authenticated GitHub main SHA")
+    if expected_main is not None:
+        require(expected_main == sha, "GitHub main moved; re-read before action")
+    owner_numbers = [353]
+    if work_domain == "strategy_release" and strategy_version == "V3":
+        owner_numbers.append(99)
+    owners = []
+    for number in owner_numbers:
+        issue, _ = getter(GITHUB_API_BASE + f"/issues/{number}")
+        require(isinstance(issue, dict) and issue.get("number") == number
+                and issue.get("state") == "open"
+                and isinstance(issue.get("body"), str),
+                f"issue #{number} owner unavailable; do not use historical headings")
+        comments_url = GITHUB_API_BASE + f"/issues/{number}/comments?per_page=10"
+        comments, link = getter(comments_url)
+        require(isinstance(comments, list),
+                f"issue #{number} comments unavailable")
+        # GitHub returns comments oldest-first; use the last page, not the first
+        # ten historical comments of a long-running owner.
+        last = re.search(r'<([^<>]+)>;\s*rel="last"', link)
+        if last:
+            last_url = last.group(1)
+            require(last_url.startswith(GITHUB_API_BASE + f"/issues/{number}/comments?"),
+                    "unexpected GitHub owner pagination link")
+            comments, _ = getter(last_url)
+            require(isinstance(comments, list), "latest owner comments unavailable")
+        recent = comments[-3:]
+        require(all(isinstance(x, dict) and isinstance(x.get("body"), str)
+                    and isinstance(x.get("html_url"), str) for x in recent),
+                f"issue #{number} latest comment shape invalid")
+        owners.append({
+            "issue": number,
+            "url": issue.get("html_url"),
+            "issue_updated_at": issue.get("updated_at"),
+            "current_owner_header_excerpt": issue["body"][:4500],
+            "latest_comments": [
+                {"url": x["html_url"], "created_at": x.get("created_at"),
+                 "excerpt": x["body"][:1800]} for x in recent
+            ],
+            "comments_are_not_independent_runtime_proof": True,
+        })
+    after, _ = getter(GITHUB_API_BASE + "/commits/main")
+    require(isinstance(after, dict) and after.get("sha") == sha,
+            "GitHub main changed during owner readback; retry before action")
+    return {
+        "kind": "PROJECT_EXISTING_OWNER_LIVE_GITHUB_READBACK_V1",
+        "status": "CURRENT_GITHUB_OWNER_READBACK_ONLY_NOT_HOST_OR_CLOUD_ACK",
+        "main_sha": sha,
+        "work_domain": work_domain,
+        "strategy_version": strategy_version or "UNSPECIFIED",
+        "owners": owners,
+        "source_and_staging_done_must_not_be_reopened_by_pending_runtime": True,
+        "no_new_development_without_specific_new_defect_evidence": True,
+        "next_gate_requires_original_proof_and_applicable_approval": True,
+        "on_conflict": "UNKNOWN_NEEDS_TARGETED_ORIGINAL_ACK_NO_REWORK",
+        "no_trading_or_release_authority": True,
+    }
 
 
 def review_receipts(root: Path, state: dict) -> list[dict]:
@@ -1232,14 +1331,24 @@ def main() -> int:
                    help="Explicit target like V3 or V2R4; scope alone never selects a strategy.")
     p.add_argument("--brief", action="store_true",
                    help="Print one short validated action/owner guide, not the full source packet.")
+    p.add_argument("--live-brief", action="store_true",
+                   help="Read current canonical GitHub main and existing owner(s) online; fail closed if unavailable.")
+    p.add_argument("--expect-main", default=None,
+                   help="Optional SHA pin for --live-brief to detect drift across chats or tool calls.")
     p.add_argument("--receipt", type=Path,
                    help="Verify a reviewer-supplied, scope-specific disposition; does not prove comprehension.")
     args = p.parse_args()
     try:
-        require(not (args.brief and args.receipt),
-                "brief is orientation only, not receipt verification")
+        require(sum(bool(x) for x in (args.brief, args.live_brief, args.receipt)) <= 1,
+                "choose exactly one output mode")
+        require(not args.expect_main or args.live_brief,
+                "--expect-main only applies to live owner readback")
         packet = build(args.root, args.scope, args.work_domain, args.strategy_version)
         output = (verify_receipt(args.root, packet, args.receipt) if args.receipt
+                  else {"source_brief": compact_decision_brief(packet),
+                        "live_owner": live_owner_readback(args.work_domain, args.strategy_version,
+                                                         expected_main=args.expect_main)}
+                       if args.live_brief
                   else compact_decision_brief(packet) if args.brief else packet)
         print(json.dumps(output, sort_keys=True, ensure_ascii=False))
         return 0
