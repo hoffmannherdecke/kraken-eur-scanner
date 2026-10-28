@@ -1013,6 +1013,7 @@ class ExistingOwnerActionViewTests(unittest.TestCase):
         obj = {"kind": "V3_EXISTING_RELEASE_OWNER_ACTION_VIEW_V1",
                "scope": "V3_PAPER", "owner_issue": 99,
                "as_of_utc": "2026-10-28T11:58:00Z",
+               "last_owner_comment_id": 6468388694,
                "no_runtime_authority": True, "steps": steps}
         return obj
 
@@ -1087,6 +1088,46 @@ class ExistingOwnerActionViewTests(unittest.TestCase):
             return item, link
         with self.assertRaisesRegex(ContextGateError, "changed during"):
             live_owner_readback("strategy_release", "V3", fetcher=fetch)
+
+    def test_freshness_fence_rejects_new_owner_comment(self):
+        from tools.context_before_action import live_owner_readback
+        base = LiveOwnerReadbackTests()
+        owner_body = self.encode(self.body())
+        def changed_comment(url):
+            item, link = base.fake_fetch(url)
+            if url.endswith("/issues/99"):
+                item = dict(item, body=owner_body)
+            if url.endswith("/issues/99/comments?per_page=10&page=8"):
+                item = [dict(x, id=6468388695) for x in item]
+            return item, link
+        gate = live_owner_readback(
+            "strategy_release", "V3", fetcher=changed_comment,
+            candidate_id="PR608_NOTEBOOK_STAGE")["named_release_gate"]
+        self.assertEqual(
+            gate["status"],
+            "OWNER_ACTION_VIEW_STALE_HOLD_NEEDS_LATEST_ACK_RECONCILIATION")
+        self.assertEqual(gate["candidate_verdict"],
+                         "STALE_OWNER_VIEW_HOLD_NO_REWORK")
+        self.assertIsNone(gate["next_open_gate"])
+        self.assertFalse(gate["ready_to_execute"])
+
+    def test_current_owner_comment_allows_classification_not_execution(self):
+        from tools.context_before_action import live_owner_readback
+        base = LiveOwnerReadbackTests()
+        owner_body = self.encode(self.body())
+        def current_comment(url):
+            item, link = base.fake_fetch(url)
+            if url.endswith("/issues/99"):
+                item = dict(item, body=owner_body)
+            if url.endswith("/issues/99/comments?per_page=10&page=8"):
+                item = [dict(x, id=6468388694) for x in item]
+            return item, link
+        gate = live_owner_readback(
+            "strategy_release", "V3", fetcher=current_comment,
+            candidate_id="PR608_NOTEBOOK_STAGE")["named_release_gate"]
+        self.assertEqual(gate["candidate_verdict"],
+                         "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE")
+        self.assertFalse(gate["ready_to_execute"])
 
     def test_cannot_select_named_v3_gate_for_hardware(self):
         from tools.context_before_action import live_owner_readback, ContextGateError
