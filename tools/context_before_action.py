@@ -138,6 +138,16 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
             issue["body"].encode("utf-8")).hexdigest())
         if number == 99:
             release_view = existing_owner_gate_decision(issue["body"], candidate_id)
+            if release_view["status"] == "OWNER_DECLARED_VIEW_CHECKED_NOT_ORIGINAL_RUNTIME_PROOF":
+                last_id = recent[-1].get("id") if recent else None
+                if last_id != release_view["last_owner_comment_id"]:
+                    release_view = {
+                        **release_view,
+                        "status": "OWNER_ACTION_VIEW_STALE_HOLD_NEEDS_LATEST_ACK_RECONCILIATION",
+                        "next_open_gate": None,
+                        "candidate_verdict": "STALE_OWNER_VIEW_HOLD_NO_REWORK",
+                        "ready_to_execute": False,
+                    }
         owners.append({
             "issue": number,
             "url": issue.get("html_url"),
@@ -209,7 +219,9 @@ def existing_owner_gate_decision(owner_body: str, candidate_id: str | None = Non
             and view.get("owner_issue") == 99
             and view.get("scope") == "V3_PAPER"
             and view.get("no_runtime_authority") is True
-            and isinstance(view.get("as_of_utc"), str),
+            and isinstance(view.get("as_of_utc"), str)
+            and isinstance(view.get("last_owner_comment_id"), int)
+            and view.get("last_owner_comment_id") > 0,
             "invalid release owner view identity or safety boundary")
     items = view.get("steps")
     require(isinstance(items, list) and 3 <= len(items) <= 30,
@@ -261,6 +273,7 @@ def existing_owner_gate_decision(owner_body: str, candidate_id: str | None = Non
     return {
         "status": "OWNER_DECLARED_VIEW_CHECKED_NOT_ORIGINAL_RUNTIME_PROOF",
         "as_of_utc": view["as_of_utc"],
+        "last_owner_comment_id": view["last_owner_comment_id"],
         "next_open_gate": (
             {"id": first_open["id"], "layer": first_open["layer"],
              "state": first_open["state"],
