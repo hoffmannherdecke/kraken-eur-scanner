@@ -38,7 +38,7 @@ ZERO_DIGEST = "0" * 64
 # attempt. It exists to prevent accidental same-host repeats after a crash.
 ATTEMPT_LATCH_NAME = "cas-attempt-unknown.json"
 ATTEMPT_LATCH_KIND = "V3_CAS_LOCAL_PREDISPATCH_UNKNOWN_LATCH_V1"
-ATTEMPT_LATCH_DOMAIN = b"kraken-eur-scanner/V3-CAS/attempt-unknown/v1\\x00"
+ATTEMPT_LATCH_DOMAIN = b"kraken-eur-scanner/V3-CAS/attempt-unknown/v1\x00"
 ATTEMPT_LATCH_FIELDS = frozenset((
     "kind", "epoch_id", "ordinal", "intent_id", "intent_sha256",
     "last_entry_sha256", "state", "latch_sha256",
