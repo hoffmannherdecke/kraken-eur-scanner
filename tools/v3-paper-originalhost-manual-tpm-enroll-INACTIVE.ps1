@@ -158,38 +158,7 @@ function Test-V3UnsignedPreinvokeCandidate([byte[]]$Payload){
   throw 'V3_SIGNER_CMS_BAD_PAYLOAD_SIZE'
  }
  $raw=[Text.UTF8Encoding]::new($false,$true).GetString($Payload)
- if($raw -cnotmatch '^[\x20-\x7e]+
- status=if($Enroll){'MANUAL_TPM_KEY_ENROLLED_NOT_TRUSTED_FOR_RELEASE'}elseif($null -ne $cert){
-  'READONLY_CERT_PRESENT_NOT_TRUSTED_FOR_RELEASE'
- }else{'READONLY_NO_CERT_ENROLLED'}
- interactive_account_matches_local_admin=($account -ieq $expected -and
-   [string]$identity.User.Value -ceq $expectedSid -and
-   $who.IsInRole($adminRole) -and $sessionId -gt 0)
- windows_tpm_ready=$tpmReady
- provider_requested=$provider
- provider_metadata_readonly_checked=$providerReadOnly
- existing_key_platform_provider_matches=$providerExactPlatform
- existing_key_current_user_scope_matches=$userScopedKey
- existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
- provider_metadata_not_external_attestation=$true
- store_location=$store
- certificate_present=($null -ne $cert)
- certificate_thumbprint_sha1=if($null -ne $cert){[string]$cert.Thumbprint}else{$null}
- certificate_der_sha256_public_pin_unapproved=$pin
- certificate_expires_utc=if($null -ne $cert){$cert.NotAfter.ToUniversalTime().ToString('o')}else{$null}
- private_key_exported=$false
- private_key_acl_independently_verified=$false
- tpm_hardware_attestation_independently_verified=$false
- originalhost_signed_receipt_generated=$false
- pin_externally_reviewed_and_approved=$false
- originalhost_runtime_identity_verified=$false
- six_e2e_release_proofs_credited=0
- cloud_cas_authorized=$false
- v3_task_modified=$false
- v2r4_modified=$false
- v3_paper_activated=$false
-} | ConvertTo-Json -Depth 3
-){
+ if($raw -cnotmatch '^[\x20-\x7e]+$'){
   throw 'V3_SIGNER_CMS_NONCANONICAL_ASCII'
  }
  try{$obj=$raw|ConvertFrom-Json -ErrorAction Stop}
@@ -209,38 +178,7 @@ function Test-V3UnsignedPreinvokeCandidate([byte[]]$Payload){
     $obj.ordinal -ne 1 -or
     [string]$obj.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
     [string]$obj.rpc -cne 'public.rotate_v2r4_to_v3_experimental_paper' -or
-    [string]$obj.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}
- status=if($Enroll){'MANUAL_TPM_KEY_ENROLLED_NOT_TRUSTED_FOR_RELEASE'}elseif($null -ne $cert){
-  'READONLY_CERT_PRESENT_NOT_TRUSTED_FOR_RELEASE'
- }else{'READONLY_NO_CERT_ENROLLED'}
- interactive_account_matches_local_admin=($account -ieq $expected -and
-   [string]$identity.User.Value -ceq $expectedSid -and
-   $who.IsInRole($adminRole) -and $sessionId -gt 0)
- windows_tpm_ready=$tpmReady
- provider_requested=$provider
- provider_metadata_readonly_checked=$providerReadOnly
- existing_key_platform_provider_matches=$providerExactPlatform
- existing_key_current_user_scope_matches=$userScopedKey
- existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
- provider_metadata_not_external_attestation=$true
- store_location=$store
- certificate_present=($null -ne $cert)
- certificate_thumbprint_sha1=if($null -ne $cert){[string]$cert.Thumbprint}else{$null}
- certificate_der_sha256_public_pin_unapproved=$pin
- certificate_expires_utc=if($null -ne $cert){$cert.NotAfter.ToUniversalTime().ToString('o')}else{$null}
- private_key_exported=$false
- private_key_acl_independently_verified=$false
- tpm_hardware_attestation_independently_verified=$false
- originalhost_signed_receipt_generated=$false
- pin_externally_reviewed_and_approved=$false
- originalhost_runtime_identity_verified=$false
- six_e2e_release_proofs_credited=0
- cloud_cas_authorized=$false
- v3_task_modified=$false
- v2r4_modified=$false
- v3_paper_activated=$false
-} | ConvertTo-Json -Depth 3
-){
+    [string]$obj.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$'){
   throw 'V3_SIGNER_CMS_WRONG_OR_UNTRUSTED_SCOPE'
  }
  $uuid=[guid]::Empty
@@ -250,38 +188,7 @@ function Test-V3UnsignedPreinvokeCandidate([byte[]]$Payload){
  }
  foreach($field in @('fence_sha256','intent_sha256','readback_sha256',
                      'request_sha256','source_sha256')){
-  if([string]$obj.$field -cnotmatch '^[a-f0-9]{64}
- status=if($Enroll){'MANUAL_TPM_KEY_ENROLLED_NOT_TRUSTED_FOR_RELEASE'}elseif($null -ne $cert){
-  'READONLY_CERT_PRESENT_NOT_TRUSTED_FOR_RELEASE'
- }else{'READONLY_NO_CERT_ENROLLED'}
- interactive_account_matches_local_admin=($account -ieq $expected -and
-   [string]$identity.User.Value -ceq $expectedSid -and
-   $who.IsInRole($adminRole) -and $sessionId -gt 0)
- windows_tpm_ready=$tpmReady
- provider_requested=$provider
- provider_metadata_readonly_checked=$providerReadOnly
- existing_key_platform_provider_matches=$providerExactPlatform
- existing_key_current_user_scope_matches=$userScopedKey
- existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
- provider_metadata_not_external_attestation=$true
- store_location=$store
- certificate_present=($null -ne $cert)
- certificate_thumbprint_sha1=if($null -ne $cert){[string]$cert.Thumbprint}else{$null}
- certificate_der_sha256_public_pin_unapproved=$pin
- certificate_expires_utc=if($null -ne $cert){$cert.NotAfter.ToUniversalTime().ToString('o')}else{$null}
- private_key_exported=$false
- private_key_acl_independently_verified=$false
- tpm_hardware_attestation_independently_verified=$false
- originalhost_signed_receipt_generated=$false
- pin_externally_reviewed_and_approved=$false
- originalhost_runtime_identity_verified=$false
- six_e2e_release_proofs_credited=0
- cloud_cas_authorized=$false
- v3_task_modified=$false
- v2r4_modified=$false
- v3_paper_activated=$false
-} | ConvertTo-Json -Depth 3
-){
+  if([string]$obj.$field -cnotmatch '^[a-f0-9]{64}$'){
    throw 'V3_SIGNER_CMS_INVALID_BINDING_HASH'
   }
  }
@@ -295,38 +202,7 @@ function Test-V3UnsignedPreinvokeCandidate([byte[]]$Payload){
   $end=$raw.IndexOf('"',$begin,[StringComparison]::Ordinal)
   if($end -le $begin -or
      $raw.Substring($begin,$end-$begin) -cnotmatch
-       '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z
- status=if($Enroll){'MANUAL_TPM_KEY_ENROLLED_NOT_TRUSTED_FOR_RELEASE'}elseif($null -ne $cert){
-  'READONLY_CERT_PRESENT_NOT_TRUSTED_FOR_RELEASE'
- }else{'READONLY_NO_CERT_ENROLLED'}
- interactive_account_matches_local_admin=($account -ieq $expected -and
-   [string]$identity.User.Value -ceq $expectedSid -and
-   $who.IsInRole($adminRole) -and $sessionId -gt 0)
- windows_tpm_ready=$tpmReady
- provider_requested=$provider
- provider_metadata_readonly_checked=$providerReadOnly
- existing_key_platform_provider_matches=$providerExactPlatform
- existing_key_current_user_scope_matches=$userScopedKey
- existing_key_nonexportable_policy_matches=$exportPolicyNonExportable
- provider_metadata_not_external_attestation=$true
- store_location=$store
- certificate_present=($null -ne $cert)
- certificate_thumbprint_sha1=if($null -ne $cert){[string]$cert.Thumbprint}else{$null}
- certificate_der_sha256_public_pin_unapproved=$pin
- certificate_expires_utc=if($null -ne $cert){$cert.NotAfter.ToUniversalTime().ToString('o')}else{$null}
- private_key_exported=$false
- private_key_acl_independently_verified=$false
- tpm_hardware_attestation_independently_verified=$false
- originalhost_signed_receipt_generated=$false
- pin_externally_reviewed_and_approved=$false
- originalhost_runtime_identity_verified=$false
- six_e2e_release_proofs_credited=0
- cloud_cas_authorized=$false
- v3_task_modified=$false
- v2r4_modified=$false
- v3_paper_activated=$false
-} | ConvertTo-Json -Depth 3
-){
+       '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$'){
    throw 'V3_SIGNER_CMS_NONCANONICAL_UTC'
   }
  }
