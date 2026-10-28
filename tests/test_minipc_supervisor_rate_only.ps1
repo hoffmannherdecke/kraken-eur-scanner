@@ -694,7 +694,7 @@ Write-Output 'V3_SIGNED_CONHOST_EXACT_SCOPE_PURE_12_CASES_PASS'
 
 # V3 offline transaction-contract simulation. Run extracted PURE policies only.
 # Never execute the inactive operator, host commands, Task or Cloud changes.
-foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity','Test-V3Pr515ArmedTwoCycleSnapshots','Test-V3PrecommitCurrentCloudInventory','Get-V3CasPreinvokeAuditReview','Get-V3Pr515ArmedToQuiescedReview','Resolve-V3ScopedCutoverRecovery')){
+foreach($name in @('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract','Test-V3Pr515CurrentOriginalBackupManifest','Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity','Test-V3Pr515ArmedTwoCycleSnapshots','Test-V3PrecommitCurrentCloudInventory','Get-V3CasPreinvokeAuditReview','Get-V3Pr515ArmedToQuiescedReview','Resolve-V3ScopedCutoverRecovery')){
  $fn=@($oa.FindAll({
   param($a) $a -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
   $a.Name -eq $name
@@ -806,6 +806,34 @@ function V3BackupFixture {
   )
  }
 }
+# True PR515 originalhost two-Task manifest, still caller-only pure preview.
+function V3ActualPr515BackupFixture {
+ [pscustomobject]@{
+  kind='V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1'
+  status='ORIGINAL_TASK_XML_BACKUP_ONLY_NOT_RELEASED'
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  checked_at_utc=[datetimeoffset]::UtcNow.ToString('o')
+  backup_directory=('C:\Users\ADMIN\Trading\State\V3Paper-PreCAS-Backup-'+('a'*32))
+  native_task_count=2;original_tasks_still_running=$true
+  scheduler_task_mutations=$false;original_v2r4_changed=$false
+  cloud_cas_invoked=$false;new_v3_writer_started=$false
+  original_cloud_series_independently_checked=$false
+  v3_release_or_six_proofs_credited=0
+  task_records=@(
+   [pscustomobject]@{task_name='CryptoMiniPC-V2R4PaperCandidates'
+    xml_file='Candidates.task.xml';xml_sha256=('b'*64);action_sha256=('c'*64)},
+   [pscustomobject]@{task_name='CryptoMiniPC-V2R4PaperWait'
+    xml_file='WAIT.task.xml';xml_sha256=('d'*64);action_sha256=('e'*64)}
+  )
+ }
+}
+if(-not(Test-V3Pr515CurrentOriginalBackupManifest (V3ActualPr515BackupFixture))){
+ throw 'REAL_PR515_MANIFEST_SOURCE_REJECTED'
+}
+if(Test-V3Pr515CurrentOriginalBackupManifest (V3BackupFixture)){
+ throw 'HISTORICAL_SIMULATION_UPCAST_AS_REAL_BACKUP'
+}
+
 function V3RecoveryFixture {
  [pscustomobject]@{
   kind='V3_CUTOVER_RECOVERY_SIMULATION_V1'
@@ -881,6 +909,7 @@ function CheckCloudInventory([bool]$Expected,[object]$Fixture,[string]$Label) {
 }
 function V3Pr515RecoveryReviewFixture {
  $x=V3RecoveryFixture
+ $x.backup_manifest=V3ActualPr515BackupFixture
  $x|Add-Member -NotePropertyName fence_marker_phase -NotePropertyValue 'QUIESCED'
  $x|Add-Member -NotePropertyName current_pr515_readonly_preview -NotePropertyValue (V3Pr515RecoveryPreviewFixture)
  $x|Add-Member -NotePropertyName current_prod_cloud_inventory -NotePropertyValue (V3CloudCurrentInventoryFixture)
@@ -954,6 +983,13 @@ Write-Output 'V3_CLOUD_CURRENT_INVENTORY_14_PURE_CASES_PASS'
 
 CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' (V3RecoveryFixture) 'historical backup without marker can no longer qualify'
 CheckRecovery 'PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE' (V3Pr515RecoveryReviewFixture) 'current PR515 pre+poststop source contract, still NO restore authority'
+$x=V3Pr515RecoveryReviewFixture;$x.backup_manifest=V3BackupFixture
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'legacy PR316 proposal cannot act as real PR515 recovery'
+$x=V3Pr515RecoveryReviewFixture;$x.backup_manifest.task_records[1].xml_file='foreign.task.xml'
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'real originalhost backup wrong task file'
+$x=V3Pr515RecoveryReviewFixture;$x.backup_manifest.original_v2r4_changed=$true
+CheckRecovery 'HOLD_FENCE_MANUAL_RECONCILIATION' $x 'source mutation in backup manifest'
+
 $x=V3Pr515RecoveryReviewFixture;$x.current_prod_cloud_inventory=$null
 CheckRecovery 'HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK' $x 'missing fresh actual Supabase inventory'
 $x=V3Pr515RecoveryReviewFixture;$x.current_prod_cloud_inventory.installed_v3_cas_function_count=[long]1
