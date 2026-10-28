@@ -1279,6 +1279,40 @@ function Test-V3Pr515SignedCurrentNoCasCustody(
  return [pscustomobject]$out
 }
 
+# Join the existing CMS-verified current Notebook CAS posture with the existing
+# public current-series inventory. This is deliberately NOT independently
+# authenticated public Cloud inventory and NEVER grants restore authority.
+# The same original fence is required from the CMS verifier, not a caller flag.
+function Get-V3Pr515SignedCasAndCloudSeriesReview([object]$SignedCas,[object]$Cloud,[string]$CurrentOriginalFenceSha256) {
+ $out=[ordered]@{
+  kind='V3_PR515_SIGNED_CAS_AND_PUBLIC_CLOUD_JOIN_V1'
+  disposition='HOLD_SIGNED_CAS_OR_CLOUD_INVENTORY_DRIFT'
+  signed_current_cas_matched=$false
+  public_current_old_only_matched=$false
+  same_original_fence_bound_by_signed_cas=$false
+  independent_public_cloud_origin_authenticated=$false
+  complete_cas_attempt_history_proven=$false
+  native_stop_or_restore_authorized=$false
+  cloud_cas_authorized=$false
+  v3_paper_release_authorized=$false
+ }
+ if($null -ne $SignedCas -and $CurrentOriginalFenceSha256 -cmatch '^[a-f0-9]{64}$' -and
+    [string]$SignedCas.kind -ceq 'V3_PR515_SIGNED_CURRENT_CAS_UNAVAILABLE_REVIEW_V1' -and
+    [string]$SignedCas.status -ceq 'SIGNED_CURRENT_NO_CAS_CAPABILITY_MATCH_NOT_RELEASE' -and
+    $SignedCas.signature_and_current_fence_match -eq $true -and
+    $SignedCas.current_notebook_reader_no_cas_capability_observed -eq $true -and
+    $SignedCas.previous_cas_attempts_excluded -eq $false -and
+    $SignedCas.precommit_task_restore_authorized -eq $false){
+  $out.signed_current_cas_matched=$true
+  $out.same_original_fence_bound_by_signed_cas=$true
+  if(Test-V3PrecommitCurrentCloudInventory -Inventory $Cloud){
+   $out.public_current_old_only_matched=$true
+   $out.disposition='REVIEW_ONLY_SIGNED_CAS_PLUS_UNAUTHENTICATED_PUBLIC_CLOUD_NOT_RELEASE'
+  }
+ }
+ return [pscustomobject]$out
+}
+
 # Only validates authentic CURRENT Notebook Reader data after detached CMS
 # transfer. Reuses the existing exact SHA256-pinned cryptographic verifier;
 # this does not authenticate the physical Notebook location, authorize native
