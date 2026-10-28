@@ -71,7 +71,7 @@ function Test-PayloadAndCms([byte[]]$payload,[byte[]]$signature){
     (@($expected|Sort-Object) -join '|')) -or
    [string]$obj.kind -cne 'V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V1' -or
    [string]$obj.proof_status -cne 'UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED' -or
-   $obj.ordinal -isnot [int] -or $obj.ordinal -ne 1 -or
+   ($obj.ordinal -isnot [int] -and $obj.ordinal -isnot [long]) -or $obj.ordinal -ne 1 -or
    [string]$obj.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
    [string]$obj.rpc -cne 'public.rotate_v2r4_to_v3_experimental_paper' -or
    [string]$obj.epoch_id -cnotmatch '^V3CAS-AUDIT-[a-f0-9]{32}$' -or
