@@ -235,3 +235,26 @@ try{
 } finally {
  if([IO.Directory]::Exists($root)){[IO.Directory]::Delete($root,$true)}
 }
+
+
+
+# PR515 native Scheduler XML VALIDATE_ONLY integration: source/static CI is
+# not a physical Windows ACK. Exact mode is opt-in, no Task register/update.
+$full=Get-Content -LiteralPath $src -Raw -ErrorAction Stop
+$validateStart=$full.IndexOf('if($ValidatePr515RestoreXml) {', $full.IndexOf('$completeWaitSnapshot='))
+$nextMode=$full.IndexOf('if($PreviewPr515ArmedTwoCycle) {', $validateStart)
+if($validateStart -lt 0 -or $nextMode -le $validateStart){
+ throw 'PR515_SCHEDULER_VALIDATION_ENTRY_NOT_CONNECTED'
+}
+$validation=$full.Substring($validateStart,$nextMode-$validateStart)
+if(@([regex]::Matches($validation,[regex]::Escape('.RegisterTask('))).Count -ne 2 -or
+   @([regex]::Matches($validation,',1,\$null,\$null,5\)')).Count -ne 2 -or
+   $validation -notmatch 'Test-V3FreshBackupFileBytes' -or
+   $validation -notmatch 'Test-V3Pr515FreshRecoveryIdentity' -or
+   $validation -notmatch 'REAL_SCHEDULER_XML_VALIDATION_PASS_NO_RESTORE' -or
+   $validation -notmatch 'actual_restore_executed=\$false' -or
+   $validation -notmatch 'independent_cloud_cas_custody_proven=\$false' -or
+   $validation -match 'Enable-ScheduledTask|Disable-ScheduledTask|Stop-ScheduledTask|Start-ScheduledTask|Register-ScheduledTask|Unregister-ScheduledTask|Remove-Item'){
+ throw 'PR515_SCHEDULER_VALIDATE_ONLY_BOUNDARY_DRIFT'
+}
+Write-Output 'V3_PR515_TASK_SCHEDULER_VALIDATE_ONLY_SOURCE_GUARD_PASS_NO_RUNTIME_ACK'
