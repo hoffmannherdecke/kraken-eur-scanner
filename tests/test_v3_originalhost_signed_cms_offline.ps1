@@ -295,3 +295,38 @@ try {
   Write-Output 'V3_ORIGINALHOST_DETACHED_CMS_OFFLINE_POSITIVE_NEGATIVES_PASS_NO_AUTHORITY'
  } finally {$cert.Dispose()}
 } finally {$rsa.Dispose()}
+
+
+# Pure originalhost candidate payload validator, extracted by AST. Never run
+# original script, key enrollment, SignPreinvoke, file I/O or Cloud.
+$signerPath=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/v3-paper-originalhost-manual-tpm-enroll-INACTIVE.ps1'
+$st=$null;$se=$null
+$sa=[System.Management.Automation.Language.Parser]::ParseFile(
+ (Resolve-Path $signerPath),[ref]$st,[ref]$se)
+if(@($se).Count -ne 0){throw 'V3_TPM_SIGNER_CANDIDATE_AST_INVALID'}
+$checkFn=@($sa.FindAll({
+ param($n)
+ $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $n.Name -eq 'Test-V3UnsignedPreinvokeCandidate'
+},$true))
+if($checkFn.Count -ne 1){throw 'V3_TPM_SIGNER_CANDIDATE_VALIDATOR_MISSING'}
+. ([scriptblock]::Create($checkFn[0].Extent.Text))
+$sample='{"epoch_id":"V3CAS-AUDIT-11111111111111111111111111111111","fence_sha256":"'+('a'*64)+'","intent_id":"11111111-1111-4111-8111-111111111111","intent_sha256":"'+('b'*64)+'","kind":"V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V1","local_review_at_utc":"2026-10-28T09:30:00Z","ordinal":1,"predecessor_series_id":"PAPER-V2R4-20261009T110135Z","proof_status":"UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED","readback_sha256":"'+('c'*64)+'","reader_claimed_observed_at_utc":"2026-10-28T09:29:30Z","request_sha256":"'+('d'*64)+'","rpc":"public.rotate_v2r4_to_v3_experimental_paper","source_sha256":"'+('e'*64)+'"}'
+$sampleBytes=[Text.Encoding]::UTF8.GetBytes($sample)
+$parsed=Test-V3UnsignedPreinvokeCandidate $sampleBytes
+if([string]$parsed.kind -cne 'V3_CAS_PREINVOKE_UNSIGNED_PROPOSAL_V1'){
+ throw 'V3_TPM_CMS_INPUT_STRICT_POSITIVE_HOLD'
+}
+foreach($bad in @(
+ $sample.Replace('UNTRUSTED_READER_PROPOSAL_NOT_AUTHENTICATED','AUTHENTICATED'),
+ $sample.Replace('"ordinal":1','"ordinal":2'),
+ $sample.Replace('PAPER-V2R4-20261009T110135Z','PAPER-V2R4-OTHER'),
+ $sample.Replace('"kind":','"cloud_cas_authorized":true,"kind":'),
+ $sample.Replace('"fence_sha256":"'+('a'*64)+'"','"fence_sha256":"INVALID"')
+)){
+ $rejected=$false
+ try{$null=Test-V3UnsignedPreinvokeCandidate ([Text.Encoding]::UTF8.GetBytes($bad))}
+ catch{$rejected=$true}
+ if(-not $rejected){throw 'V3_TPM_CMS_INPUT_NEGATIVE_NOT_REJECTED'}
+}
+Write-Output 'V3_TPM_SIGNED_PREINVOKE_CANDIDATE_PURE_SOURCE_VALIDATOR_PASS'
