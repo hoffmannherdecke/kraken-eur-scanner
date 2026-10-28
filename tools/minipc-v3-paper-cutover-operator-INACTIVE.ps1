@@ -1197,13 +1197,13 @@ function Test-V3SignedNotebookPrecommitInventory(
    throw 'V3_NOTEBOOK_READER_EXTRA_FIELDS'
   }
   foreach($key in $keys){
-   if(@([regex]::Matches($str,('"'+[regex]::Escape($key)+'"\\s*:'))).Count -ne 1){
+   if(@([regex]::Matches($str,('"'+[regex]::Escape($key)+'"\s*:'))).Count -ne 1){
     throw 'V3_NOTEBOOK_READER_MISSING_OR_DUPLICATE_FIELD'
    }
   }
-  $m=[regex]::Match($str,'"observed_at_utc"\\s*:\\s*"(?<utc>[^"\\]*)"')
+  $m=[regex]::Match($str,'"observed_at_utc"\s*:\s*"(?<utc>[^"]*)"')
   if(-not $m.Success -or [string]$m.Groups['utc'].Value -cnotmatch
-     '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$'){
+     '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){
    throw 'V3_NOTEBOOK_READER_TIMESTAMP_INVALID'
   }
   $timestamp=[datetimeoffset]::MinValue
