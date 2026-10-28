@@ -730,8 +730,19 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         self.assertIn("reader.dpapi", src)
         self.assertIn("DataProtectionScope]::CurrentUser", src)
         self.assertIn("aws-1-eu-west-1.pooler.supabase.com", src)
+        # Legacy Stage3 inventory stays unchanged. Both decision-grade
+        # PRE- and POST-COMMIT Reader modes enforce CA + hostname.
         self.assertIn("sslmode=require", src)
-        self.assertIn("ca", src.lower())  # Source must disclaim certificate verification.
+        self.assertIn("$tlsMode=if($decisionReaderMode){'verify-full'}else{'require'}", src)
+        self.assertIn("$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent)", src)
+        self.assertIn("$postcommitTlsRoot='system'", src)
+        self.assertIn("[string]$CaFile=''", src)
+        self.assertIn("V3_READER_CA_FILE_DECISION_MODE_ONLY", src)
+        self.assertIn("V3_POSTCOMMIT_READER_CA_FILE_INVALID", src)
+        self.assertIn("$env:PGSSLROOTCERT=$postcommitTlsRoot", src)
+        self.assertIn("if($decisionReaderMode){Remove-Item Env:\\PGSSLROOTCERT", src)
+        self.assertIn("independent_tls_certificate_verified=$false", src)
+        self.assertNotIn("independent_tls_certificate_verified=$true", src)
         self.assertIn("v3_cas_audit_writer_actor", src)
         self.assertIn("v3_cas_audit_reader_actor", src)
         self.assertIn("pg_catalog.pg_has_role(session_user", src)

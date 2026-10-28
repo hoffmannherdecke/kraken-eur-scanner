@@ -1,11 +1,16 @@
 # V3 Paper – original Issue #99: one-time Notebook-held, READ-ONLY Stage3 Cloud audit.
 # SOURCE-ONLY. No scheduler, CAS RPC, Stage4 epoch opener, new credentials, or Paper switch.
 # Reuses the TWO existing DPAPI CurrentUser identities enrolled and authenticated 27 Oct.
-# Session-pooler TLS sslmode=require encrypts transport, but does NOT check the server CA.
+# Stage3 historical PREVIEW still uses sslmode=require (encrypted only).
+# Decision-grade PrecommitCloudInventory and PostcommitDurableIntent both
+# require verify-full CA + hostname. Historical Stage3 stays require.
+# Authenticated transport does NOT independently authenticate copied JSON.
 # A PASS is scoped to THIS query only, never a durable intent or release authorization.
 [CmdletBinding()]
-param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent)
+param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent,[string]$CaFile='')
 if($PrecommitCloudInventory -and $PostcommitDurableIntent){throw 'V3_READER_MODE_CONFLICT'}
+$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent)
+if(-not $decisionReaderMode -and $CaFile){throw 'V3_READER_CA_FILE_DECISION_MODE_ONLY'}
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $psql = 'C:\Program Files\PostgreSQL\17\bin\psql.exe'
@@ -16,6 +21,19 @@ if ($env:OS -ne 'Windows_NT' -or -not [IO.File]::Exists($psql)) {
     throw 'V3_STAGE3_READONLY_WINDOWS_PSQL17_REQUIRED'
 }
 Add-Type -AssemblyName System.Security -ErrorAction Stop
+# Reuse the existing originalhost PG17 verify-full strategy for the sole
+# future decision-grade readbacks. CA file optional; use libpq system
+# trust by default. A certificate failure MUST hold; never retry with require.
+$postcommitTlsRoot='system'
+if($decisionReaderMode -and -not [string]::IsNullOrWhiteSpace($CaFile)){
+    $ca=Get-Item -LiteralPath $CaFile -Force -ErrorAction Stop
+    if($ca.PSIsContainer -or $ca.Length -lt 100 -or $ca.Length -gt 65536 -or
+       [bool]($ca.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+       [IO.Path]::GetExtension($ca.Name) -notin @('.crt','.cer','.pem')){
+        throw 'V3_POSTCOMMIT_READER_CA_FILE_INVALID'
+    }
+    $postcommitTlsRoot=$ca.FullName
+}
 $checks = @(
     @{
         Name = 'WRITER'
@@ -144,9 +162,11 @@ foreach ($check in $checks) {
             throw 'V3_STAGE3_LOCAL_PASSWORD_FORMAT_HOLD'
         }
         $env:PGPASSWORD = $secret
+        if($decisionReaderMode){$env:PGSSLROOTCERT=$postcommitTlsRoot}
         $holdClass = 'POSTGRES_READONLY_QUERY_OR_CONNECTION'
         # Scope precisely two static role names. Never pass user-supplied SQL.
-        $conn = "host=$hostName port=5432 dbname=postgres user=$($check.Login).$project sslmode=require connect_timeout=10"
+        $tlsMode=if($decisionReaderMode){'verify-full'}else{'require'}
+        $conn = "host=$hostName port=5432 dbname=postgres user=$($check.Login).$project sslmode=$tlsMode connect_timeout=10"
         $output = & $psql -X -w -qAt -v ON_ERROR_STOP=1 -d $conn -c $check.Sql 2>&1
         if($PostcommitDurableIntent){
             if($LASTEXITCODE -ne 0){throw 'V3_DURABLE_INTENT_READER_SQL_HOLD'}
@@ -306,6 +326,7 @@ foreach ($check in $checks) {
     }
     finally {
         Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
+        if($decisionReaderMode){Remove-Item Env:\PGSSLROOTCERT -ErrorAction SilentlyContinue}
         Remove-Variable secret,output -ErrorAction SilentlyContinue
         if ($null -ne $plain) { [Array]::Clear($plain,0,$plain.Length) }
     }
