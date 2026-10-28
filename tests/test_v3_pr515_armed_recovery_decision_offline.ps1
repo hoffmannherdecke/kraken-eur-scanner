@@ -29,9 +29,32 @@ $fakeSigned=[pscustomobject]@{
  signature_and_current_fence_match=$true
  current_notebook_reader_no_cas_capability_observed=$true
  previous_cas_attempts_excluded=$false
+ authenticated_observed_at_utc=([datetimeoffset]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.ffffffZ'))
  precommit_task_restore_authorized=$false
 }
 $fencePin=('a'*64)
+$cloudShape=[pscustomobject]@{
+ kind='V3_PRECOMMIT_CURRENT_CLOUD_INVENTORY_V1'
+ observed_at_utc=$fakeSigned.authenticated_observed_at_utc
+ historically_cas_never_invoked_proven=$false
+ precommit_restore_authorized=$false
+ active_series_count=1
+ exact_original_active_count=1
+ recorded_v3_series_count=0
+ recorded_v3_rotation_count=0
+ recorded_v3_release_decision_count=0
+ installed_v3_cas_function_count=0
+ valid_single_active_index_count=1
+}
+$near=Get-V3Pr515SignedCasAndCloudSeriesReview -SignedCas $fakeSigned -Cloud $cloudShape -CurrentOriginalFenceSha256 $fencePin
+if($near.observations_within_30_seconds -ne $true -or
+ $near.disposition -cne 'REVIEW_ONLY_SIGNED_CAS_PLUS_UNAUTHENTICATED_PUBLIC_CLOUD_NOT_RELEASE' -or
+ $near.native_stop_or_restore_authorized -ne $false){throw 'V3_CLOUD_NEAR_CAS_CLOCK_JOIN_REGRESSION'}
+$oldCloud=$cloudShape.PSObject.Copy()
+$oldCloud.observed_at_utc=([datetimeoffset]::UtcNow.AddSeconds(-40).ToString('yyyy-MM-ddTHH:mm:ss.ffffffZ'))
+$skew=Get-V3Pr515SignedCasAndCloudSeriesReview -SignedCas $fakeSigned -Cloud $oldCloud -CurrentOriginalFenceSha256 $fencePin
+if($skew.observations_within_30_seconds -ne $false -or
+ $skew.disposition -cne 'HOLD_SIGNED_CAS_OR_CLOUD_INVENTORY_DRIFT'){throw 'V3_CLOUD_SKEW_ACCEPTED'}
 $join=Get-V3Pr515SignedCasAndCloudSeriesReview -SignedCas $fakeSigned -Cloud $null -CurrentOriginalFenceSha256 $fencePin
 if($join.disposition -cne 'HOLD_SIGNED_CAS_OR_CLOUD_INVENTORY_DRIFT' -or
  $join.native_stop_or_restore_authorized -ne $false -or

@@ -1215,6 +1215,7 @@ function Test-V3Pr515SignedCurrentNoCasCustody(
  $out=[ordered]@{
   kind='V3_PR515_SIGNED_CURRENT_CAS_UNAVAILABLE_REVIEW_V1'
   status='HOLD_SIGNED_CUSTODY_UNVERIFIED'
+  authenticated_observed_at_utc=''
   signature_and_current_fence_match=$false
   current_notebook_reader_no_cas_capability_observed=$false
   previous_cas_attempts_excluded=$false
@@ -1270,6 +1271,7 @@ function Test-V3Pr515SignedCurrentNoCasCustody(
      $obj.reader_can_append -ne $false -or
      $obj.historical_cas_never_proven -ne $false -or
      $obj.restore_authorized -ne $false){throw 'CUSTODY_CURRENT_POSTURE'}
+  $out.authenticated_observed_at_utc=[string]$m.Groups['v'].Value
   $out.status='SIGNED_CURRENT_NO_CAS_CAPABILITY_MATCH_NOT_RELEASE'
   $out.signature_and_current_fence_match=$true
   $out.current_notebook_reader_no_cas_capability_observed=$true
@@ -1290,6 +1292,7 @@ function Get-V3Pr515SignedCasAndCloudSeriesReview([object]$SignedCas,[object]$Cl
   signed_current_cas_matched=$false
   public_current_old_only_matched=$false
   same_original_fence_bound_by_signed_cas=$false
+  observations_within_30_seconds=$false
   independent_public_cloud_origin_authenticated=$false
   complete_cas_attempt_history_proven=$false
   native_stop_or_restore_authorized=$false
@@ -1305,7 +1308,16 @@ function Get-V3Pr515SignedCasAndCloudSeriesReview([object]$SignedCas,[object]$Cl
     $SignedCas.precommit_task_restore_authorized -eq $false){
   $out.signed_current_cas_matched=$true
   $out.same_original_fence_bound_by_signed_cas=$true
-  if(Test-V3PrecommitCurrentCloudInventory -Inventory $Cloud){
+  $signedAt=[datetimeoffset]::MinValue
+  $cloudAt=[datetimeoffset]::MinValue
+  if([string]$SignedCas.authenticated_observed_at_utc -cmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$' -and
+     [datetimeoffset]::TryParse([string]$SignedCas.authenticated_observed_at_utc,[ref]$signedAt) -and
+     [datetimeoffset]::TryParse([string]$Cloud.observed_at_utc,[ref]$cloudAt) -and
+     [math]::Abs(($signedAt-$cloudAt).TotalSeconds) -le 30){
+   $out.observations_within_30_seconds=$true
+  }
+  if($out.observations_within_30_seconds -eq $true -and
+     (Test-V3PrecommitCurrentCloudInventory -Inventory $Cloud)){
    $out.public_current_old_only_matched=$true
    $out.disposition='REVIEW_ONLY_SIGNED_CAS_PLUS_UNAUTHENTICATED_PUBLIC_CLOUD_NOT_RELEASE'
   }
