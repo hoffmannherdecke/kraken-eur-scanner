@@ -2610,6 +2610,48 @@ if($PreviewPr515PreCas) {
  $receipt | ConvertTo-Json -Depth 6
  return
 }
+# Reuse the real Windows Task Scheduler XML schema: Settings/Enabled is OPTIONAL
+# and defaults to TRUE. Never alter the immutable original or backed-up XML.
+# Derive an in-memory DISABLED candidate only for native TASK_VALIDATE_ONLY.
+function Get-V3Pr515DisabledRestoreXmlForNativeValidation([string]$OriginalXml) {
+ if([string]::IsNullOrWhiteSpace($OriginalXml) -or
+    $OriginalXml.Length -lt 100 -or $OriginalXml.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_XML_LENGTH_INVALID'
+ }
+ $doc=[xml]::new()
+ $doc.XmlResolver=$null
+ $doc.LoadXml($OriginalXml)
+ $ns='http://schemas.microsoft.com/windows/2004/02/mit/task'
+ if($null -eq $doc.DocumentElement -or
+    [string]$doc.DocumentElement.LocalName -cne 'Task' -or
+    [string]$doc.DocumentElement.NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_FOREIGN_TASK_SCHEMA'
+ }
+ $settings=@($doc.SelectNodes('/*[local-name()="Task"]/*[local-name()="Settings"]'))
+ if($settings.Count -ne 1 -or [string]$settings[0].NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_SETTINGS_MISSING_OR_FOREIGN'
+ }
+ $enabled=@($settings[0].SelectNodes('./*[local-name()="Enabled"]'))
+ if($enabled.Count -gt 1 -or
+    ($enabled.Count -eq 1 -and
+     ([string]$enabled[0].NamespaceURI -cne $ns -or
+      ([string]$enabled[0].InnerText).Trim() -notin @('true','1')))){
+  throw 'V3_RESTORE_VALIDATE_EXPLICIT_ENABLED_INVALID_OR_DISABLED'
+ }
+ if($enabled.Count -eq 0){
+  # xs:all (Settings) permits element order variation; no Enabled means
+  # the schema's default TRUE. Add only the missing child to a memory clone.
+  $newEnabled=$doc.CreateElement('Enabled',$ns)
+  $newEnabled.InnerText='false'
+  [void]$settings[0].AppendChild($newEnabled)
+ }else{
+  $enabled[0].InnerText='false'
+ }
+ $disabled=[string]$doc.OuterXml
+ if($disabled.Length -gt 65536){throw 'V3_RESTORE_VALIDATE_DISABLED_XML_TOO_LARGE'}
+ return $disabled
+}
+
 # ORIGINALHOST native Scheduler XML validation, no Task registration or STOP.
 # TASK_VALIDATE_ONLY=1 is a native parser validation, NOT real restore.
 if($ValidatePr515RestoreXml) {
@@ -2664,13 +2706,8 @@ if($ValidatePr515RestoreXml) {
      -not(Test-V3FreshBackupFileBytes -Path (Join-Path $backup $leaf) -ExpectedSha ([string]$row[0].xml_sha256) -ExpectedXml $xml)){
    throw 'V3_RESTORE_VALIDATE_NATIVE_XML_OR_SHA_DRIFT'
   }
-  $doc=[xml]::new();$doc.XmlResolver=$null;$doc.LoadXml($xml)
-  $enabled=@($doc.SelectNodes('/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="Enabled"]'))
-  if($enabled.Count -ne 1 -or [string]$enabled[0].InnerText -cne 'true'){
-   throw 'V3_RESTORE_VALIDATE_ENABLED_XML_MISSING'
-  }
-  $enabled[0].InnerText='false'
-  $native+=@([pscustomobject]@{name=$name;source=$xml;disabled=$doc.OuterXml;action=[string]$row[0].action_sha256})
+  $disabledXml=Get-V3Pr515DisabledRestoreXmlForNativeValidation -OriginalXml $xml
+  $native+=@([pscustomobject]@{name=$name;source=$xml;disabled=$disabledXml;action=[string]$row[0].action_sha256})
  }
  $svc=New-Object -ComObject 'Schedule.Service';$taskFolder=$null
  try{
