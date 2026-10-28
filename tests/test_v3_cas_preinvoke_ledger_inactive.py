@@ -754,6 +754,12 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         self.assertIn("V3_READER_UTC_MISSING_OR_DUPLICATE", src)
         self.assertIn("V3_READER_UTC_FORMAT_INVALID", src)
         self.assertIn("CURRENT_UTC_FORMAT", src)
+        # PostgreSQL emits a canonical UTC literal without relying on nested
+        # double quotes surviving Windows PowerShell 5.1 native -c arguments.
+        # Same one clock_timestamp per row, no split timestamp at midnight.
+        self.assertEqual(src.count("pg_catalog.replace(pg_catalog.to_char("), 4)
+        self.assertIn("'YYYY-MM-DD HH24:MI:SS.US'),' ','T') || 'Z'", src)
+        self.assertNotIn('YYYY-MM-DD"T"HH24:MI:SS.US"Z"', src)
         self.assertIn("([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -gt 90", src)
         self.assertIn("([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -lt -5", src)
         self.assertIn("created.utc -lt $opened.utc", src)
