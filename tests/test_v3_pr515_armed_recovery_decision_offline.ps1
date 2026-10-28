@@ -110,6 +110,10 @@ $x=Clone $r;$x.native_intake_tasks_disabled_ack=$false
 Need 'partial STOP' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_ARMED_PARTIAL_STOP_MANUAL_INCIDENT_NO_REARM'
 $x=Clone $r;$x.cloud_cas_outcome='UNKNOWN'
 Need 'unknown CAS' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION'
+$x=Clone $r;$x | Add-Member -NotePropertyName local_predispatch_unknown_latch_present -NotePropertyValue $true
+Need 'local persisted UNKNOWN with NOT_INVOKED flag' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_PERSISTED_PREINVOKE_OR_LOCAL_UNKNOWN_NO_REARM'
+$x=Clone $r;$x | Add-Member -NotePropertyName any_committed_preinvoke_intent_observed -NotePropertyValue $true
+Need 'already committed intent with NOT_INVOKED flag' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_PERSISTED_PREINVOKE_OR_LOCAL_UNKNOWN_NO_REARM'
 $x=Clone $r;$x.fence_marker_phase='QUIESCED'
 Need 'unbound ARMED marker' (Resolve-V3ScopedCutoverRecovery $x).disposition 'HOLD_FENCE_MANUAL_RECONCILIATION'
 $x=Clone $r;$x.current_pr515_armed_readonly_preview.status='INVALID'
@@ -142,4 +146,4 @@ $write=$restore.IndexOf('Enable-ScheduledTask')
 if($first -lt 0 -or $second -le $first -or $write -le $second){
  throw 'RESTORE_EXECUTION_LOCK_DRIFT'
 }
-Write-Output 'V3_PR515_NINE_ISOLATED_STATE_CASES_PASS_NO_HOST_IO_NO_RELEASE'
+Write-Output 'V3_PR515_ELEVEN_ISOLATED_STATE_CASES_PASS_NO_HOST_IO_NO_RELEASE'
