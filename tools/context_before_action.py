@@ -83,7 +83,8 @@ def _github_api_read(url: str) -> tuple[object, str]:
 
 
 def live_owner_readback(work_domain: str, strategy_version: str | None,
-                        fetcher=None, expected_main: str | None = None) -> dict:
+                        fetcher=None, expected_main: str | None = None,
+                        candidate_id: str | None = None) -> dict:
     """Fresh *GitHub-only* owner readback, not a release/Windows/Cloud proof.
 
     No cached PR number, secondary status database, schedule or mutation. If
@@ -95,6 +96,8 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
             "invalid live owner domain")
     require(not (work_domain == "strategy_release" and not strategy_version),
             "live strategy release requires named version")
+    require(candidate_id is None or (work_domain == "strategy_release" and strategy_version == "V3"),
+            "proposed gate is only valid for its named V3 release owner")
     getter = fetcher or _github_api_read
     head, _ = getter(GITHUB_API_BASE + "/commits/main")
     sha = head.get("sha") if isinstance(head, dict) else None
@@ -106,6 +109,8 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
     if work_domain == "strategy_release" and strategy_version == "V3":
         owner_numbers.append(99)
     owners = []
+    issue_versions = {}
+    release_view = None
     for number in owner_numbers:
         issue, _ = getter(GITHUB_API_BASE + f"/issues/{number}")
         require(isinstance(issue, dict) and issue.get("number") == number
@@ -129,6 +134,10 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
         require(all(isinstance(x, dict) and isinstance(x.get("body"), str)
                     and isinstance(x.get("html_url"), str) for x in recent),
                 f"issue #{number} latest comment shape invalid")
+        issue_versions[number] = (issue.get("updated_at"), hashlib.sha256(
+            issue["body"].encode("utf-8")).hexdigest())
+        if number == 99:
+            release_view = existing_owner_gate_decision(issue["body"], candidate_id)
         owners.append({
             "issue": number,
             "url": issue.get("html_url"),
@@ -140,6 +149,12 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
             ],
             "comments_are_not_independent_runtime_proof": True,
         })
+    for number, version in issue_versions.items():
+        repeat, _ = getter(GITHUB_API_BASE + f"/issues/{number}")
+        require(isinstance(repeat, dict) and isinstance(repeat.get("body"), str)
+                and (repeat.get("updated_at"), hashlib.sha256(
+                    repeat["body"].encode("utf-8")).hexdigest()) == version,
+                f"issue #{number} changed during owner readback; retry with fresh original")
     after, _ = getter(GITHUB_API_BASE + "/commits/main")
     require(isinstance(after, dict) and after.get("sha") == sha,
             "GitHub main changed during owner readback; retry before action")
@@ -150,11 +165,118 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
         "work_domain": work_domain,
         "strategy_version": strategy_version or "UNSPECIFIED",
         "owners": owners,
+        "named_release_gate": release_view,
         "source_and_staging_done_must_not_be_reopened_by_pending_runtime": True,
         "no_new_development_without_specific_new_defect_evidence": True,
         "next_gate_requires_original_proof_and_applicable_approval": True,
         "on_conflict": "UNKNOWN_NEEDS_TARGETED_ORIGINAL_ACK_NO_REWORK",
         "no_trading_or_release_authority": True,
+    }
+
+
+
+V3_GATE_START = "<!-- V3_EXISTING_OWNER_ACTION_VIEW_V1"
+V3_GATE_END = "END_V3_EXISTING_OWNER_ACTION_VIEW_V1 -->"
+GATE_LAYERS = ("SOURCE", "PHYSICAL_STAGING", "REAL_RUNTIME")
+GATE_STATES = ("DONE", "BLOCKED", "PENDING")
+
+
+def existing_owner_gate_decision(owner_body: str, candidate_id: str | None = None) -> dict:
+    """Classify one proposed step using Issue #99's *existing* release owner.
+
+    This is an anti-duplicate work-selection view, NOT a new authority, proof
+    database, release approval, historical uptime claim or autonomous caller.
+    A DONE runtime step must point to an actual original runtime ACK, but the
+    owner link cannot substitute for independently checking that original.
+    """
+    require(isinstance(owner_body, str), "owner body missing for gate check")
+    if owner_body.count(V3_GATE_START) != 1 or owner_body.count(V3_GATE_END) != 1:
+        return {
+            "status": "NO_CURRENT_STRUCTURED_OWNER_VIEW_HOLD",
+            "next_open_gate": None,
+            "candidate_verdict": "NO_ACTION_ALLOWED",
+            "reason": "Read actual latest owner and original ACK; no fallback to historical checklist.",
+            "ready_to_execute": False,
+            "runtime_verified_independently": False,
+        }
+    raw = owner_body.split(V3_GATE_START, 1)[1].split(V3_GATE_END, 1)[0]
+    try:
+        view = json.loads(raw)
+    except (ValueError, TypeError) as exc:
+        raise ContextGateError("CONTEXT_GATE_BLOCKED: malformed owner action view") from exc
+    require(isinstance(view, dict)
+            and view.get("kind") == "V3_EXISTING_RELEASE_OWNER_ACTION_VIEW_V1"
+            and view.get("owner_issue") == 99
+            and view.get("scope") == "V3_PAPER"
+            and view.get("no_runtime_authority") is True
+            and isinstance(view.get("as_of_utc"), str),
+            "invalid release owner view identity or safety boundary")
+    items = view.get("steps")
+    require(isinstance(items, list) and 3 <= len(items) <= 30,
+            "missing/oversized release owner action steps")
+    ids = [item.get("id") for item in items if isinstance(item, dict)]
+    require(len(ids) == len(items) == len(set(ids)), "duplicate/malformed release gate ID")
+    first_open = None
+    counts = {layer: {"done": 0, "open": 0} for layer in GATE_LAYERS}
+    for item in items:
+        require(isinstance(item.get("id"), str)
+                and bool(re.fullmatch(r"[A-Z][A-Z0-9_]{3,70}", item["id"]))
+                and item.get("layer") in GATE_LAYERS
+                and item.get("state") in GATE_STATES
+                and isinstance(item.get("evidence_url"), str)
+                and bool(re.fullmatch(
+                    r"https://github\.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-[0-9]+",
+                    item["evidence_url"])),
+                "release gate has missing or ungrounded owner evidence link")
+        done = item["state"] == "DONE"
+        if done:
+            require(item.get("evidence_class") == (
+                "ORIGINAL_RUNTIME_ACK" if item["layer"] == "REAL_RUNTIME"
+                else "PHYSICAL_ACK" if item["layer"] == "PHYSICAL_STAGING"
+                else "SOURCE_CI_ACK"),
+                "release gate DONE without correct original evidence class")
+        else:
+            require(item.get("evidence_class") == "OWNER_BLOCKER",
+                    "unclosed release gate cannot assert completed proof")
+        counts[item["layer"]]["done" if done else "open"] += 1
+        if not done and first_open is None:
+            first_open = item
+        if done and first_open is not None:
+            raise ContextGateError(
+                "CONTEXT_GATE_BLOCKED: owner view reopens completed stages out of order"
+            )
+    require(counts["REAL_RUNTIME"]["open"] >= 1,
+            "owner view must not auto-declare V3 release complete")
+    verdict = "NO_CANDIDATE_SUBMITTED"
+    if candidate_id is not None:
+        matched = next((x for x in items if x["id"] == candidate_id), None)
+        if matched is None:
+            verdict = "UNREGISTERED_WORK_HOLD_NEEDS_ORIGINAL_DEFECT_EVIDENCE"
+        elif matched["state"] == "DONE":
+            verdict = "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE"
+        elif first_open is None or candidate_id != first_open["id"]:
+            verdict = "NOT_NEXT_OPEN_GATE_HOLD"
+        else:
+            verdict = "NEXT_GATE_BLOCKED_PENDING_REAL_ACK_AND_APPROVAL"
+    return {
+        "status": "OWNER_DECLARED_VIEW_CHECKED_NOT_ORIGINAL_RUNTIME_PROOF",
+        "as_of_utc": view["as_of_utc"],
+        "next_open_gate": (
+            {"id": first_open["id"], "layer": first_open["layer"],
+             "state": first_open["state"],
+             "blocker_evidence_url": first_open["evidence_url"]}
+            if first_open else None),
+        "candidate_id": candidate_id,
+        "candidate_verdict": verdict,
+        "counts_from_declared_owner_view": counts,
+        "rework_detected_this_query": int(
+            verdict == "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE"),
+        "ready_to_execute": False,
+        "runtime_verified_independently": False,
+        "real_progress_requires_original_ack_not_pr": True,
+        "past_duplicate_work_count": "UNKNOWN_NOT_COLLECTED",
+        "historical_manual_corrections": "UNKNOWN_NOT_COLLECTED",
+        "owner_issue_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99",
     }
 
 
@@ -1335,6 +1457,8 @@ def main() -> int:
                    help="Read current canonical GitHub main and existing owner(s) online; fail closed if unavailable.")
     p.add_argument("--expect-main", default=None,
                    help="Optional SHA pin for --live-brief to detect drift across chats or tool calls.")
+    p.add_argument("--candidate-id", default=None,
+                   help="Optional V3 owner gate ID: BLOCK already done or out-of-order work. Only with --live-brief and V3 release.")
     p.add_argument("--receipt", type=Path,
                    help="Verify a reviewer-supplied, scope-specific disposition; does not prove comprehension.")
     args = p.parse_args()
@@ -1343,11 +1467,14 @@ def main() -> int:
                 "choose exactly one output mode")
         require(not args.expect_main or args.live_brief,
                 "--expect-main only applies to live owner readback")
+        require(not args.candidate_id or args.live_brief,
+                "--candidate-id requires current live owner readback")
         packet = build(args.root, args.scope, args.work_domain, args.strategy_version)
         output = (verify_receipt(args.root, packet, args.receipt) if args.receipt
                   else {"source_brief": compact_decision_brief(packet),
                         "live_owner": live_owner_readback(args.work_domain, args.strategy_version,
-                                                         expected_main=args.expect_main)}
+                                                         expected_main=args.expect_main,
+                                                         candidate_id=args.candidate_id)}
                        if args.live_brief
                   else compact_decision_brief(packet) if args.brief else packet)
         print(json.dumps(output, sort_keys=True, ensure_ascii=False))

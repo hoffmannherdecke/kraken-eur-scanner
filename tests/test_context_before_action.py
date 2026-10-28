@@ -991,5 +991,109 @@ class LiveOwnerReadbackTests(unittest.TestCase):
         self.assertTrue(packet["current_reading_plan"]["historical_plans_not_open_tasks"])
 
 
+
+class ExistingOwnerActionViewTests(unittest.TestCase):
+    """The canonical owner view must prevent re-staging or skipping runtime gates."""
+
+    def body(self):
+        steps = [
+            {"id": "PR607_CAS_SOURCE", "layer": "SOURCE", "state": "DONE",
+             "evidence_class": "SOURCE_CI_ACK",
+             "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6467674171"},
+            {"id": "PR608_NOTEBOOK_STAGE", "layer": "PHYSICAL_STAGING", "state": "DONE",
+             "evidence_class": "PHYSICAL_ACK",
+             "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6468089267"},
+            {"id": "ORIGINALHOST_NOREARM_CUTOVER", "layer": "REAL_RUNTIME", "state": "BLOCKED",
+             "evidence_class": "OWNER_BLOCKER",
+             "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6468388694"},
+            {"id": "WRITER_REAL_COMMIT", "layer": "REAL_RUNTIME", "state": "BLOCKED",
+             "evidence_class": "OWNER_BLOCKER",
+             "evidence_url": "https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6468388694"},
+        ]
+        obj = {"kind": "V3_EXISTING_RELEASE_OWNER_ACTION_VIEW_V1",
+               "scope": "V3_PAPER", "owner_issue": 99,
+               "as_of_utc": "2026-10-28T11:58:00Z",
+               "no_runtime_authority": True, "steps": steps}
+        return obj
+
+    def encode(self, obj):
+        from tools.context_before_action import V3_GATE_START, V3_GATE_END
+        return V3_GATE_START + "\n" + json.dumps(obj) + "\n" + V3_GATE_END
+
+    def test_completed_source_and_staged_notebooks_block_rework(self):
+        from tools.context_before_action import existing_owner_gate_decision
+        body = self.encode(self.body())
+        for candidate in ("PR607_CAS_SOURCE", "PR608_NOTEBOOK_STAGE"):
+            with self.subTest(candidate=candidate):
+                checked = existing_owner_gate_decision(body, candidate)
+                self.assertEqual(checked["candidate_verdict"],
+                                 "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE")
+                self.assertEqual(checked["rework_detected_this_query"], 1)
+                self.assertFalse(checked["ready_to_execute"])
+                self.assertEqual(checked["counts_from_declared_owner_view"]["REAL_RUNTIME"]["done"], 0)
+
+    def test_next_runtime_gate_is_blocked_not_auto_executable(self):
+        from tools.context_before_action import existing_owner_gate_decision
+        answer = existing_owner_gate_decision(self.encode(self.body()), "ORIGINALHOST_NOREARM_CUTOVER")
+        self.assertEqual(answer["next_open_gate"]["id"], "ORIGINALHOST_NOREARM_CUTOVER")
+        self.assertEqual(answer["candidate_verdict"],
+                         "NEXT_GATE_BLOCKED_PENDING_REAL_ACK_AND_APPROVAL")
+        self.assertFalse(answer["runtime_verified_independently"])
+        self.assertFalse(answer["ready_to_execute"])
+        self.assertEqual(answer["past_duplicate_work_count"], "UNKNOWN_NOT_COLLECTED")
+
+    def test_out_of_order_or_unregistered_work_is_not_next_action(self):
+        from tools.context_before_action import existing_owner_gate_decision
+        body = self.encode(self.body())
+        self.assertEqual(existing_owner_gate_decision(
+            body, "WRITER_REAL_COMMIT")["candidate_verdict"], "NOT_NEXT_OPEN_GATE_HOLD")
+        self.assertEqual(existing_owner_gate_decision(
+            body, "NEW_UNPROVEN_READER")["candidate_verdict"],
+            "UNREGISTERED_WORK_HOLD_NEEDS_ORIGINAL_DEFECT_EVIDENCE")
+
+    def test_runtime_done_cannot_be_claimed_from_source_ci(self):
+        from tools.context_before_action import existing_owner_gate_decision, ContextGateError
+        obj = self.body()
+        obj["steps"][2]["state"] = "DONE"
+        obj["steps"][2]["evidence_class"] = "SOURCE_CI_ACK"
+        with self.assertRaisesRegex(ContextGateError, "original evidence class"):
+            existing_owner_gate_decision(self.encode(obj))
+
+    def test_no_marker_and_duplicate_ids_fail_closed(self):
+        from tools.context_before_action import existing_owner_gate_decision, ContextGateError
+        self.assertEqual(existing_owner_gate_decision(
+            "old archived V3 summary", "PR608_NOTEBOOK_STAGE")["candidate_verdict"],
+            "NO_ACTION_ALLOWED")
+        obj = self.body()
+        obj["steps"][1]["id"] = obj["steps"][0]["id"]
+        with self.assertRaisesRegex(ContextGateError, "duplicate"):
+            existing_owner_gate_decision(self.encode(obj))
+        obj = self.body()
+        obj["steps"][0]["state"] = "BLOCKED"
+        obj["steps"][0]["evidence_class"] = "OWNER_BLOCKER"
+        with self.assertRaisesRegex(ContextGateError, "out of order"):
+            existing_owner_gate_decision(self.encode(obj))
+
+    def test_owner_edited_during_live_readback_blocks_candidate(self):
+        from tools.context_before_action import live_owner_readback, ContextGateError
+        base = LiveOwnerReadbackTests()
+        calls = [0]
+        def fetch(url):
+            item, link = base.fake_fetch(url)
+            if url.endswith("/issues/99"):
+                calls[0] += 1
+                if calls[0] == 2:
+                    item = dict(item, body=item["body"] + "\nnew evidence")
+            return item, link
+        with self.assertRaisesRegex(ContextGateError, "changed during"):
+            live_owner_readback("strategy_release", "V3", fetcher=fetch)
+
+    def test_cannot_select_named_v3_gate_for_hardware(self):
+        from tools.context_before_action import live_owner_readback, ContextGateError
+        with self.assertRaisesRegex(ContextGateError, "only valid"):
+            live_owner_readback("infrastructure", None, fetcher=lambda x: (None, ""),
+                                candidate_id="PR608_NOTEBOOK_STAGE")
+
+
 if __name__ == "__main__":
     unittest.main()
