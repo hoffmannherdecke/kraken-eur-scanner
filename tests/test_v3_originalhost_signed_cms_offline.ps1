@@ -271,6 +271,47 @@ try {
    if($reloaded.payload_sha256 -cne $stored.payload_sha256){
     throw 'V3_NOTEBOOK_SIGNED_COPY_RESTART_DRIFT'
    }
+   # Use the EXISTING real local spool O_EXCL/fsync writer to emit one
+   # canonical first intent plus sticky UNKNOWN into this disposable CI dir.
+   $witness=Join-Path $tmp 'original-local-unknown'
+   [void][IO.Directory]::CreateDirectory($witness)
+   $fixtureAgain=@(& python -B $fixturePath --test-local-unknown-dir $witness)
+   if($LASTEXITCODE -ne 0 -or $fixtureAgain.Count -ne 1){
+    throw 'V3_NOTEBOOK_OFFHOST_UNKNOWN_ORIGINAL_FIXTURE_FAILED'
+   }
+   $entryPath=Join-Path $witness '000001.json'
+   $unknownPath=Join-Path $witness 'cas-attempt-unknown.json'
+   $wrongUnknown=Join-Path $tmp 'wrong-unknown.json'
+   $tamperedUnknown=[IO.File]::ReadAllText($unknownPath,[Text.Encoding]::ASCII).Replace(
+     'UNKNOWN_BEFORE_POSSIBLE_RPC','NOT_INVOKED')
+   [IO.File]::WriteAllText($wrongUnknown,$tamperedUnknown,[Text.Encoding]::ASCII)
+   $denied=$false
+   try{
+    & $notebookArchiveTool -Aktion VersuchSpeichern -IntentDatei $entryPath -UnknownDatei $wrongUnknown -ZertifikatSha256 $pin -Ablage $archive | Out-Null
+   }catch{$denied=$true}
+   if(-not $denied){throw 'V3_NOTEBOOK_OFFHOST_UNKNOWN_TAMPER_ACCEPTED'}
+   if(@(Get-ChildItem -LiteralPath $archive -Force).Count -ne 3){
+    throw 'V3_NOTEBOOK_OFFHOST_UNKNOWN_EARLY_WRITE'
+   }
+   $savedUnknown=(& $notebookArchiveTool -Aktion VersuchSpeichern -IntentDatei $entryPath -UnknownDatei $unknownPath -ZertifikatSha256 $pin -Ablage $archive) | ConvertFrom-Json -ErrorAction Stop
+   if($savedUnknown.local_unknown_chain_offhost_copy_verified -ne $true -or
+      $savedUnknown.exclusive_cas_attempt_coverage_proven -ne $false -or
+      $savedUnknown.independent_immutable_external_custody_proven -ne $false -or
+      $savedUnknown.cas_execute_erlaubt -ne $false -or
+      $savedUnknown.v2r4_rearm_erlaubt -ne $false){
+    throw 'V3_NOTEBOOK_OFFHOST_UNKNOWN_COPY_FALSE_AUTHORITY'
+   }
+   $reopenedUnknown=(& $notebookArchiveTool -Aktion Pruefen -ZertifikatSha256 $pin -Ablage $archive) | ConvertFrom-Json -ErrorAction Stop
+   if($reopenedUnknown.local_unknown_chain_offhost_copy_verified -ne $true -or
+      @(Get-ChildItem -LiteralPath $archive -Force).Count -ne 6){
+    throw 'V3_NOTEBOOK_OFFHOST_UNKNOWN_REOPEN_INVALID'
+   }
+   $denied=$false
+   try{
+    & $notebookArchiveTool -Aktion VersuchSpeichern -IntentDatei $entryPath -UnknownDatei $unknownPath -ZertifikatSha256 $pin -Ablage $archive | Out-Null
+   }catch{$denied=$true}
+   if(-not $denied){throw 'V3_NOTEBOOK_OFFHOST_UNKNOWN_REPLAY_ACCEPTED'}
+   Write-Output 'V3_NOTEBOOK_OFFHOST_UNKNOWN_REAL_LOCAL_PAIR_COPY_NEGATIVES_PASS_NO_CAS'
    $replayDenied=$false
    try{
     & $notebookArchiveTool -Aktion Speichern -BelegDatei $receiptFile -CmsDatei $cmsFile -ZertifikatSha256 $pin -Ablage $archive | Out-Null

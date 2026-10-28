@@ -7,10 +7,12 @@
 [CmdletBinding()]
 param(
  [Parameter(Mandatory=$true)]
- [ValidateSet('Speichern','Pruefen')]
+ [ValidateSet('Speichern','Pruefen','VersuchSpeichern')]
  [string]$Aktion,
  [string]$BelegDatei,
  [string]$CmsDatei,
+ [string]$IntentDatei,
+ [string]$UnknownDatei,
  [Parameter(Mandatory=$true)]
  [string]$ZertifikatSha256,
  [string]$Ablage=(Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'V3-Paper-Nachweise\CAS-Quittung-INACTIVE')
@@ -126,6 +128,79 @@ function Test-PayloadAndCms([byte[]]$payload,[byte[]]$signature){
  }catch{throw 'V3_CAS_NOTEBOOK_HOLD_CMS_VERIFY'}
  return (Hash-Bytes $payload)
 }
+
+# One original local witness and the matching pre-dispatch UNKNOWN latch,
+# verified OFFHOST against the same TPM-signed PREINVOKE payload.
+# Bytewise canonical JSON and original Python v1 hash domains; no authority.
+function Test-UnknownPair([byte[]]$entryBytes,[byte[]]$unknownBytes,[byte[]]$signedPayload){
+ try {
+  $entryRaw=[Text.Encoding]::ASCII.GetString($entryBytes)
+  $unknownRaw=[Text.Encoding]::ASCII.GetString($unknownBytes)
+  $entry=$entryRaw|ConvertFrom-Json -ErrorAction Stop
+  $unknown=$unknownRaw|ConvertFrom-Json -ErrorAction Stop
+  $signed=([Text.UTF8Encoding]::new($false,$true)).GetString($signedPayload)|
+    ConvertFrom-Json -ErrorAction Stop
+ }catch{throw 'V3_CAS_NOTEBOOK_HOLD_UNKNOWN_JSON'}
+ $entryKeys=@('kind','epoch_id','ordinal','intent_id','intent_sha256','previous_entry_sha256','entry_sha256')
+ $unknownKeys=@('kind','epoch_id','ordinal','intent_id','intent_sha256','last_entry_sha256','state','latch_sha256')
+ if($null -eq $entry -or $null -eq $unknown -or
+    ((@($entry.PSObject.Properties.Name|Sort-Object) -join '|') -cne
+      ((@($entryKeys|Sort-Object)) -join '|')) -or
+    ((@($unknown.PSObject.Properties.Name|Sort-Object) -join '|') -cne
+      ((@($unknownKeys|Sort-Object)) -join '|')) -or
+    [string]$entry.kind -cne 'V3_CAS_LOCAL_OFFDB_WITNESS_CANDIDATE_V1' -or
+    [string]$unknown.kind -cne 'V3_CAS_LOCAL_PREDISPATCH_UNKNOWN_LATCH_V1' -or
+    $entry.ordinal -ne 1 -or $unknown.ordinal -ne 1 -or
+    [string]$entry.previous_entry_sha256 -cne ('0'*64) -or
+    [string]$unknown.state -cne 'UNKNOWN_BEFORE_POSSIBLE_RPC' -or
+    [string]$entry.epoch_id -cne [string]$signed.epoch_id -or
+    [string]$entry.intent_id -cne [string]$signed.intent_id -or
+    [string]$entry.intent_sha256 -cne [string]$signed.intent_sha256 -or
+    [string]$unknown.epoch_id -cne [string]$entry.epoch_id -or
+    [string]$unknown.intent_id -cne [string]$entry.intent_id -or
+    [string]$unknown.intent_sha256 -cne [string]$entry.intent_sha256 -or
+    [string]$unknown.last_entry_sha256 -cne [string]$entry.entry_sha256){
+  throw 'V3_CAS_NOTEBOOK_HOLD_UNKNOWN_BINDING'
+ }
+ foreach($digest in @([string]$entry.intent_sha256,[string]$entry.entry_sha256,[string]$unknown.latch_sha256)){
+  if($digest -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_CAS_NOTEBOOK_HOLD_UNKNOWN_HASH'}
+ }
+ $eUnsigned=[ordered]@{
+  epoch_id=[string]$entry.epoch_id;intent_id=[string]$entry.intent_id
+  intent_sha256=[string]$entry.intent_sha256;kind=[string]$entry.kind
+  ordinal=1;previous_entry_sha256=[string]$entry.previous_entry_sha256
+ }
+ $eCanonical=[ordered]@{
+  entry_sha256=[string]$entry.entry_sha256;epoch_id=[string]$entry.epoch_id
+  intent_id=[string]$entry.intent_id;intent_sha256=[string]$entry.intent_sha256
+  kind=[string]$entry.kind;ordinal=1;previous_entry_sha256=[string]$entry.previous_entry_sha256
+ }
+ $uUnsigned=[ordered]@{
+  epoch_id=[string]$unknown.epoch_id;intent_id=[string]$unknown.intent_id
+  intent_sha256=[string]$unknown.intent_sha256;kind=[string]$unknown.kind
+  last_entry_sha256=[string]$unknown.last_entry_sha256;ordinal=1;state=[string]$unknown.state
+ }
+ $uCanonical=[ordered]@{
+  epoch_id=[string]$unknown.epoch_id;intent_id=[string]$unknown.intent_id
+  intent_sha256=[string]$unknown.intent_sha256;kind=[string]$unknown.kind
+  last_entry_sha256=[string]$unknown.last_entry_sha256;latch_sha256=[string]$unknown.latch_sha256
+  ordinal=1;state=[string]$unknown.state
+ }
+ if((ConvertTo-Json -InputObject $eCanonical -Compress -Depth 3) -cne $entryRaw -or
+    (ConvertTo-Json -InputObject $uCanonical -Compress -Depth 3) -cne $unknownRaw){
+  throw 'V3_CAS_NOTEBOOK_HOLD_UNKNOWN_NONCANONICAL'
+ }
+ $ascii=[Text.Encoding]::ASCII
+ $eDomain=$ascii.GetBytes('kraken-eur-scanner/V3-CAS/local-witness/v1')
+ $uDomain=$ascii.GetBytes('kraken-eur-scanner/V3-CAS/attempt-unknown/v1')
+ $eBody=$ascii.GetBytes((ConvertTo-Json -InputObject $eUnsigned -Compress -Depth 3))
+ $uBody=$ascii.GetBytes((ConvertTo-Json -InputObject $uUnsigned -Compress -Depth 3))
+ if((Hash-Bytes ([byte[]]($eDomain+[byte[]]@(0)+$eBody))) -cne [string]$entry.entry_sha256 -or
+    (Hash-Bytes ([byte[]]($uDomain+[byte[]]@(0)+$uBody))) -cne [string]$unknown.latch_sha256){
+  throw 'V3_CAS_NOTEBOOK_HOLD_UNKNOWN_HASH_CHAIN'
+ }
+ return $true
+}
 function Write-New([string]$path,[byte[]]$data){
  $stream=[IO.FileStream]::new($path,[IO.FileMode]::CreateNew,
    [IO.FileAccess]::Write,[IO.FileShare]::None)
@@ -138,9 +213,12 @@ function Read-Stored {
   throw 'V3_CAS_NOTEBOOK_HOLD_NO_ARCHIVE'
  }
  $want=@('voraufruf.json','voraufruf.cms','voraufruf.sha256')
+ $withUnknown=$want+@('intent-000001.json','cas-attempt-unknown.json','versuch.sha256')
  $names=@(Get-ChildItem -LiteralPath $Ablage -Force -ErrorAction Stop|
    ForEach-Object {$_.Name}|Sort-Object)
- if(($names -join '|') -cne ((@($want|Sort-Object)) -join '|')){
+ $onlyCms=(($names -join '|') -ceq ((@($want|Sort-Object)) -join '|'))
+ $hasUnknown=(($names -join '|') -ceq ((@($withUnknown|Sort-Object)) -join '|'))
+ if(-not $onlyCms -and -not $hasUnknown){
   throw 'V3_CAS_NOTEBOOK_HOLD_MISSING_OR_EXTRA_RECORD'
  }
  $payload=Read-Limited (Join-Path $Ablage 'voraufruf.json') 2048
@@ -150,11 +228,22 @@ function Read-Stored {
  $expected=(Hash-Bytes $payload)+'|'+(Hash-Bytes $cms)+'|'+$ZertifikatSha256
  if($pin -cne $expected){throw 'V3_CAS_NOTEBOOK_HOLD_ARCHIVE_HASH_DRIFT'}
  $digest=Test-PayloadAndCms $payload $cms
+ if($hasUnknown){
+  $entry=Read-Limited (Join-Path $Ablage 'intent-000001.json') 2048
+  $unknown=Read-Limited (Join-Path $Ablage 'cas-attempt-unknown.json') 2048
+  $pinUnknown=([Text.Encoding]::ASCII.GetString(
+   (Read-Limited (Join-Path $Ablage 'versuch.sha256') 256))).Trim()
+  $expected=(Hash-Bytes $entry)+'|'+(Hash-Bytes $unknown)+'|'+$digest
+  if($pinUnknown -cne $expected -or -not (Test-UnknownPair $entry $unknown $payload)){
+   throw 'V3_CAS_NOTEBOOK_HOLD_UNKNOWN_OFFHOST_READBACK'
+  }
+ }
  return [pscustomobject]@{
   status='V3_CAS_NOTEBOOK_SIGNED_COPY_CRYPTO_VALID_ONLY'
   payload_sha256=$digest
   offhost_copy_readback=$true
   cryptographic_signature_checked=$true
+  local_unknown_chain_offhost_copy_verified=$hasUnknown
   original_reader_cloud_session_authenticated_here=$false
   independent_immutable_external_custody_proven=$false
   exclusive_cas_attempt_coverage_proven=$false
@@ -166,6 +255,35 @@ function Read-Stored {
 if($Aktion -ceq 'Pruefen'){
  Read-Stored|ConvertTo-Json -Compress
  return
+}
+if($Aktion -ceq 'VersuchSpeichern'){
+ if($BelegDatei -or $CmsDatei -or
+    [string]::IsNullOrWhiteSpace($IntentDatei) -or
+    [string]::IsNullOrWhiteSpace($UnknownDatei) -or
+    [IO.Path]::GetExtension($IntentDatei) -cne '.json' -or
+    [IO.Path]::GetExtension($UnknownDatei) -cne '.json'){
+  throw 'V3_CAS_NOTEBOOK_HOLD_UNKNOWN_ARGUMENTS'
+ }
+ $stored=Read-Stored
+ if($stored.local_unknown_chain_offhost_copy_verified -ne $false){
+  throw 'V3_CAS_NOTEBOOK_HOLD_UNKNOWN_REPLAY'
+ }
+ $entry=Read-Limited ([IO.Path]::GetFullPath($IntentDatei)) 2048
+ $unknown=Read-Limited ([IO.Path]::GetFullPath($UnknownDatei)) 2048
+ $payload=Read-Limited (Join-Path $Ablage 'voraufruf.json') 2048
+ if(-not (Test-UnknownPair $entry $unknown $payload)){
+  throw 'V3_CAS_NOTEBOOK_HOLD_UNKNOWN_INVALID'
+ }
+ # Fail-stop CreateNew and forced flush; never overwrite partial evidence.
+ Write-New (Join-Path $Ablage 'intent-000001.json') $entry
+ Write-New (Join-Path $Ablage 'cas-attempt-unknown.json') $unknown
+ $mark=(Hash-Bytes $entry)+'|'+(Hash-Bytes $unknown)+'|'+(Hash-Bytes $payload)
+ Write-New (Join-Path $Ablage 'versuch.sha256') ([Text.Encoding]::ASCII.GetBytes($mark))
+ Read-Stored|ConvertTo-Json -Compress
+ return
+}
+if($IntentDatei -or $UnknownDatei){
+ throw 'V3_CAS_NOTEBOOK_HOLD_UNKNOWN_ARGS_WITHOUT_MODE'
 }
 if([string]::IsNullOrWhiteSpace($BelegDatei) -or
    [string]::IsNullOrWhiteSpace($CmsDatei) -or

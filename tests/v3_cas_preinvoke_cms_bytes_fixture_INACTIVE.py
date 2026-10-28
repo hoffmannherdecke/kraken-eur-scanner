@@ -9,6 +9,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import tempfile
 from pathlib import Path
 import sys
 
@@ -19,6 +20,9 @@ from tests.test_v3_cas_preinvoke_signed_candidate_inactive import fixture
 from v3_cas_preinvoke_protocol_INACTIVE import (
     build_unsigned_preinvoke_cms_proposal,
 )
+from v3_cas_local_spool_INACTIVE import (
+    append_local_witness_candidate, append_local_predispatch_unknown_latch,
+)
 
 
 def main() -> None:
@@ -27,6 +31,17 @@ def main() -> None:
         intent, claimed_readback, reviewed_at_utc="2026-10-26T15:00:15Z",
         expected_caller_acl_sha256="e" * 64
     )
+    if len(sys.argv) != 1:
+        if len(sys.argv) != 3 or sys.argv[1] != "--test-local-unknown-dir":
+            raise RuntimeError("V3_CMS_CI_FIXTURE_BAD_ARGS")
+        target = Path(sys.argv[2]).resolve(strict=True)
+        sandbox = Path(tempfile.gettempdir()).resolve(strict=True)
+        if sandbox not in target.parents or not target.is_dir():
+            raise RuntimeError("V3_CMS_CI_FIXTURE_OUTSIDE_TEMP")
+        append_local_witness_candidate(target, intent)
+        marker = append_local_predispatch_unknown_latch(target, intent)
+        if marker["disposition"] != "HOLD_LOCAL_PREDISPATCH_UNKNOWN_NO_RETRY":
+            raise RuntimeError("V3_CMS_CI_FIXTURE_UNKNOWN_NOT_STICKY")
     payload = reviewed["unsigned_payload_utf8"]
     digest = hashlib.sha256(payload).hexdigest()
     if (
