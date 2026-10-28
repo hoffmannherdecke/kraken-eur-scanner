@@ -12,13 +12,37 @@ $names=@('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract',
   'Test-V3Pr515DisabledOnlyXmlDifference','Test-V3PrecommitCurrentCloudInventory',
  'Get-V3Pr515TwoSourceCloudSnapshotReview','Read-V3ScopedPrecommitSnapshotFile',
  'Resolve-V3ScopedCutoverRecovery','Get-V3Pr515DisabledRestoreXmlForNativeValidation',
- 'Test-V3IndependentOriginalHostCmsSignature','Test-V3Pr515SignedCurrentNoCasCustody')
+ 'Test-V3IndependentOriginalHostCmsSignature','Test-V3Pr515SignedCurrentNoCasCustody',
+ 'Get-V3Pr515SignedCasAndCloudSeriesReview')
 $fn=@($ast.FindAll({param($n)
  $n -is [Management.Automation.Language.FunctionDefinitionAst]},$true))
 foreach($name in $names){
  $one=@($fn|Where-Object{$_.Name -ceq $name})
  if($one.Count -ne 1){throw "PURE_FUNCTION_MISSING: $name"}
  . ([scriptblock]::Create($one[0].Extent.Text))
+}
+# Existing signed/current and old-only snapshot sources must never be promoted
+# to authenticated cloud authority or PRECOMMIT restore, even when both agree.
+$fakeSigned=[pscustomobject]@{
+ kind='V3_PR515_SIGNED_CURRENT_CAS_UNAVAILABLE_REVIEW_V1'
+ status='SIGNED_CURRENT_NO_CAS_CAPABILITY_MATCH_NOT_RELEASE'
+ signature_and_current_fence_match=$true
+ current_notebook_reader_no_cas_capability_observed=$true
+ previous_cas_attempts_excluded=$false
+ precommit_task_restore_authorized=$false
+}
+$fencePin=('a'*64)
+$join=Get-V3Pr515SignedCasAndCloudSeriesReview -SignedCas $fakeSigned -Cloud $null -CurrentOriginalFenceSha256 $fencePin
+if($join.disposition -cne 'HOLD_SIGNED_CAS_OR_CLOUD_INVENTORY_DRIFT' -or
+ $join.native_stop_or_restore_authorized -ne $false -or
+ $join.independent_public_cloud_origin_authenticated -ne $false){
+ throw 'V3_SIGNED_CAS_PUBLIC_CLOUD_JOIN_FAILCLOSED_REGRESSION'
+}
+$wrongSigned=$fakeSigned.PSObject.Copy()
+$wrongSigned.status='HOLD_SIGNED_CUSTODY_UNVERIFIED'
+$join=Get-V3Pr515SignedCasAndCloudSeriesReview -SignedCas $wrongSigned -Cloud $null -CurrentOriginalFenceSha256 $fencePin
+if($join.signed_current_cas_matched -ne $false -or $join.v3_paper_release_authorized -ne $false){
+ throw 'V3_SIGNED_CAS_INVALID_SIGNATURE_ACCEPTED'
 }
 function Need($caseName,$actual,$expected){
  if([string]$actual -cne [string]$expected){
