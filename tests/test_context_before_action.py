@@ -1,5 +1,6 @@
 """Negative and positive regression tests for source-first context preflight."""
 import copy
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -1019,6 +1020,8 @@ class ExistingOwnerActionViewTests(unittest.TestCase):
 
     def encode(self, obj):
         from tools.context_before_action import V3_GATE_START, V3_GATE_END
+        obj = dict(obj)
+        obj.setdefault("owner_header_sha256", hashlib.sha256(b"").hexdigest())
         return V3_GATE_START + "\n" + json.dumps(obj) + "\n" + V3_GATE_END
 
     def test_completed_source_and_staged_notebooks_block_rework(self):
@@ -1110,6 +1113,43 @@ class ExistingOwnerActionViewTests(unittest.TestCase):
                          "STALE_OWNER_VIEW_HOLD_NO_REWORK")
         self.assertIsNone(gate["next_open_gate"])
         self.assertFalse(gate["ready_to_execute"])
+
+    def test_new_issue_header_without_new_comment_invalidates_old_gate(self):
+        from tools.context_before_action import live_owner_readback
+        base = LiveOwnerReadbackTests()
+        # The Issue 99 comment stays identical while a newer PR is inserted
+        # in the owner DESCRIPTION, as actually happened with PR613.
+        body = "PR613 new signed reader requires physical ACK\n" + self.encode(self.body())
+        def changed_header(url):
+            item, link = base.fake_fetch(url)
+            if url.endswith("/issues/99"):
+                item = dict(item, body=body)
+            if url.endswith("/issues/99/comments?per_page=10&page=8"):
+                item = [dict(x, id=6468388694) for x in item]
+            return item, link
+        gate = live_owner_readback(
+            "strategy_release", "V3", fetcher=changed_header,
+            candidate_id="ORIGINALHOST_NOREARM_CUTOVER")["named_release_gate"]
+        self.assertEqual(
+            gate["status"],
+            "OWNER_ACTION_VIEW_STALE_HOLD_NEEDS_LATEST_ACK_RECONCILIATION")
+        self.assertEqual(
+            gate["staleness_reason"],
+            "OWNER_HEADER_CHANGED_WITHOUT_VIEW_RECONCILIATION")
+        self.assertIsNone(gate["next_open_gate"])
+        self.assertEqual(gate["candidate_verdict"], "STALE_OWNER_VIEW_HOLD_NO_REWORK")
+        self.assertFalse(gate["ready_to_execute"])
+
+    def test_invalid_or_missing_header_digest_fails_closed(self):
+        from tools.context_before_action import existing_owner_gate_decision, ContextGateError
+        obj = self.body()
+        obj["owner_header_sha256"] = "not-a-sha"
+        with self.assertRaisesRegex(ContextGateError, "invalid release owner view"):
+            existing_owner_gate_decision(self.encode(obj))
+        obj = self.body()
+        obj["owner_header_sha256"] = None
+        with self.assertRaisesRegex(ContextGateError, "invalid release owner view"):
+            existing_owner_gate_decision(self.encode(obj))
 
     def test_current_owner_comment_allows_classification_not_execution(self):
         from tools.context_before_action import live_owner_readback
