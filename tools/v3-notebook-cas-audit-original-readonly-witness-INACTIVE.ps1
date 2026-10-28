@@ -6,6 +6,23 @@
 # require verify-full CA + hostname. Historical Stage3 stays require.
 # Authenticated transport does NOT independently authenticate copied JSON.
 # A PASS is scoped to THIS query only, never a durable intent or release authorization.
+# ALLOWED NOTEBOOK USE CASES (manual/one-shot; never scheduled):
+# - No mode switch: historical Stage3 READ-ONLY isolation/role diagnostics;
+#   no CAS, release or independent public-series attestation.
+# - PrecommitCloudInventory: one-time private CAS ledger/role readback,
+#   optionally ExportSignedPrecommitCloudInventory using existing pinned CMS;
+#   does not read the public paper_series table.
+# - PrecommitRestoreCustody: one-time signed CURRENT CAS-unavailability
+#   statement tied to a separately re-read Originalhost fence SHA.
+#   Not proof of historic NEVER, old-only public series, or restore permission.
+# - PostcommitDurableIntent: one-time independent private Reader check of a
+#   separately committed writer intent. It never creates or signs that intent.
+# ALL modes use only already-enrolled reader/writer identities; no automatic
+# Cloud acquisition for the Mini-PC, new paper_series grants, Stage4 executor,
+# ongoing polling, host takeover, Paper Writer, STOP/RESTORE or CAS.
+# The MINI-PC remains the sole operational originalhost/cloud readback owner.
+# A Notebook CMS signature of third-party JSON alone does not authenticate
+# that JSON's Cloud provenance or the completeness of CAS/UNKNOWN history.
 [CmdletBinding()]
 param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent,[string]$CaFile='',
  [switch]$ExportSignedPrecommitCloudInventory,[string]$ReviewedNotebookCertificateSha256='',
