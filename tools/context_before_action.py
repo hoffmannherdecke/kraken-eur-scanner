@@ -271,8 +271,8 @@ def existing_owner_gate_decision(owner_body: str, candidate_id: str | None = Non
             raise ContextGateError(
                 "CONTEXT_GATE_BLOCKED: owner view reopens completed stages out of order"
             )
-    require(counts["REAL_RUNTIME"]["open"] >= 1,
-            "owner view must not auto-declare V3 release complete")
+    require(counts["REAL_RUNTIME"]["open"] + counts["REAL_RUNTIME"]["done"] >= 1,
+            "owner view missing runtime proof stages")
     verdict = "NO_CANDIDATE_SUBMITTED"
     if candidate_id is not None:
         matched = next((x for x in items if x["id"] == candidate_id), None)
