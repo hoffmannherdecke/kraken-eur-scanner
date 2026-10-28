@@ -2392,6 +2392,16 @@ function Read-V3ScopedPrecommitSnapshotFile([string]$Path,[string[]]$ExactKeys){
    throw 'V3_PR515_TWO_SOURCE_DUPLICATE_OR_MISSING_FIELD'
   }
  }
+ # WinPS 5.1 and newer PowerShell versions do not treat JSON ISO timestamps
+ # identically. Preserve the exact checked wire literal and reject escape
+ # forms (including backslash-u) instead of trusting ConvertFrom-Json dates.
+ $ts=@([regex]::Matches($raw,'"observed_at_utc"\s*:\s*"(?<v>[^"\\]*)"'))
+ if($ts.Count -ne 1 -or
+    [string]$ts[0].Groups['v'].Value -cnotmatch
+     '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}(Z|\+00:00)$'){
+  throw 'V3_PR515_TWO_SOURCE_NONCANONICAL_UTC_LITERAL'
+ }
+ $json.observed_at_utc=[string]$ts[0].Groups['v'].Value
  return $json
 }
 if($ReviewExistingTwoSourcePrecommit){
