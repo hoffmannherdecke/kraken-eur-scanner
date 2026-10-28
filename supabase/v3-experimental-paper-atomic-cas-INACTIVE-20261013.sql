@@ -37,6 +37,11 @@
 -- CAS, no privilege, no originalhost signer and NO V3 Paper release.
 do $v3_cas_install_locked$
 begin
+  -- This ORIGINAL remains non-executable on every database, including when
+  -- all catalog/role prerequisites happen to match. A future explicit release
+  -- must use a separate pinned and approved transaction after Issue #99 gates.
+  raise exception 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED';
+
   if pg_catalog.to_regprocedure(
     'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
   ) is not null then

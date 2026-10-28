@@ -37,6 +37,21 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertRegex(self.sql,
             r"from public, anon, authenticated, service_role;")
 
+    def test_original_sql_has_first_effectful_unconditional_cas_install_hold(self):
+        # The source filename and comments cannot protect a production DB.
+        # Its FIRST statement in the DO block must be a literal unconditional
+        # exception; no role or function check may precede the hold.
+        sql = self.sql
+        marker = "raise exception 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+        self.assertEqual(sql.count(marker), 1)
+        self.assertRegex(
+            sql,
+            r"(?is)do \$v3_cas_install_locked\$\s*begin\s*(?:--[^\n]*\n\s*)*"
+            r"raise exception 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+        )
+        self.assertLess(sql.index(marker), sql.index("if pg_catalog.to_regprocedure("))
+        self.assertLess(sql.index(marker), sql.index("execute $v3_cas_create_locked$"))
+
     def test_new_cas_function_never_exposes_default_public_execute_between_statements(self):
         # CREATE and REVOKE must run in one server transaction even when
         # psql/Supabase SQL editor use autocommit. A statement-by-statement
@@ -71,7 +86,9 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
                         sql.index("$v3_cas_revoke_locked$;"))
         self.assertLess(sql.index("$v3_cas_revoke_locked$;"),
                         sql.rindex(close))
-        self.assertNotRegex(sql, r"(?im)^\s*grant\s+execute\s+on")
+        # This GRANT exists only inside the same atomic DO as CREATE/REVOKE.
+        # The prior 'no GRANT anywhere' assertion contradicted the contract.
+        self.assertEqual(len(re.findall(r"(?im)^grant\s+execute\s+on", sql)), 1)
 
     def test_only_postgres_admin_only_membership_and_nologin_executor_can_receive_cas_execute(self):
         sql = self.sql
@@ -102,7 +119,7 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertNotRegex(sql, r"(?im)^\s*grant\s+v3_cas_executor\s+to\b")
         self.assertNotIn("LOGIN PASSWORD", sql)
         self.assertNotIn("TO postgres;", sql)
-        self.assertLess(sql.index("V3_CAS_EXECUTOR_IS_NOT_EXCLUSIVE_NOLOGIN"),
+        self.assertLess(sql.index("V3_CAS_EXECUTOR_OR_AUDIT_ROLE_SCOPE_UNSAFE"),
                         sql.index("execute $v3_cas_create_locked$"))
 
     def test_only_existing_original_paper_tables_no_new_data_plane(self):
@@ -200,7 +217,11 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         import re
         for name in names:
             with self.subTest(argument=name):
-                self.assertEqual(len(re.findall(r"\b" + name + r"\b", expr)), 1)
+                self.assertEqual(len(re.findall(r"\b" + name + r"\b", expr)),
+                                 2 if name in (
+                                     "p_expected_old_last_outcome_updated_at",
+                                     "p_expected_old_last_trade_updated_at"
+                                 ) else 1)  # CASE WHEN NULL uses each timestamp twice
         self.assertEqual(expr.count('YYYY-MM-DD"T"HH24:MI:SS.US"Z"'), 3)
         self.assertIn("'UTF8'", expr)
         self.assertIn("V3_CAS_FULL_REQUEST_MISMATCH_HOLD", body)
@@ -343,9 +364,9 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
                 self.assertIn(key,self.body)
 
     def test_release_must_still_prove_authentic_physical_cutover(self):
-        self.assertIn("dual-token",self.sql)
+        self.assertIn("reviewed V3 operator/Edge dual credentials",self.sql)
         self.assertIn("physical",self.sql.lower())
-        self.assertIn("status compatibility",self.sql)
+        self.assertIn("source-authentic physical/Cloud E2E release proofs",self.sql)
         self.assertIn("NEVER claim this SQL alone",self.sql)
         self.assertIn("unknown commit result",self.sql.lower())
         self.assertIn("old-series paper_candidate_outcomes",self.sql)

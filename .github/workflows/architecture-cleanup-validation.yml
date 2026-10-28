@@ -47,6 +47,8 @@ jobs:
           if (@($e).Count -ne 0) { throw 'V3_TPM_MANUAL_ENROLL_SOURCE_SYNTAX_INVALID' }
       - name: Separate V3 Cloud CAS preflight stays read-only and role-scoped
         run: python -m unittest tests.test_v3_paper_cloud_cas_separated_preflight_contract -v
+      - name: Original V3 atomic CAS SQL is unconditionally locked before DDL (offline)
+        run: python -m unittest tests.test_v3_experimental_atomic_cas_inactive_contract_v1 -v
       - name: Restricted generic Mini-PC task source contract (offline, no host run)
         run: python -m unittest tests.test_minipc_reviewed_task_source_contract -v
       - name: Parse bounded V3 Mini-PC and interactive operator scripts (no execution)
@@ -291,7 +293,7 @@ jobs:
           name="v3-cas-disposable-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
           cleanup() { docker rm -f "$name" >/dev/null 2>&1 || true; }
           trap cleanup EXIT
-          docker run --detach --rm --network none --name "$name" -e POSTGRES_PASSWORD=CI_DISPOSABLE_NOT_SECRET -v "$PWD:/work:ro" -w /work postgres:17 >/dev/null
+          docker run --detach --rm --network none --name "$name" -e POSTGRES_PASSWORD=CI_DISPOSABLE_NOT_SECRET -v "$PWD:/work:ro" -v "$RUNNER_TEMP:/v3_ci:ro" -w /work postgres:17 >/dev/null
           ready=0
           for attempt in $(seq 1 45); do
             if docker exec "$name" pg_isready -q -U postgres -d postgres; then
@@ -301,7 +303,29 @@ jobs:
             sleep 1
           done
           if [[ "$ready" -ne 1 ]]; then echo 'DISPOSABLE_POSTGRES_NOT_READY'; exit 1; fi
-          docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres -f tests/sql/v3_experimental_paper_atomic_cas_smoke.sql
+          # Production original is always locked. Prove its first RAISE before
+          # building any disposable CI-only unlocked version for the smoke.
+          if docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres -f supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql >"$RUNNER_TEMP/v3_arch_original_lock.log" 2>&1; then
+            echo V3_ORIGINAL_CAS_SQL_WRONGLY_EXECUTABLE >&2; exit 1
+          fi
+          grep -Fq 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED' "$RUNNER_TEMP/v3_arch_original_lock.log"
+          test "$(docker exec "$name" psql -X -Atc "select count(*) from pg_proc where proname='rotate_v2r4_to_v3_experimental_paper'" -U postgres -d postgres)" = 0
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          source = Path("supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql").read_text("utf-8")
+          lock = "  raise exception 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+          assert source.count(lock) == 1
+          prefix = source.split("do $v3_cas_install_locked$\nbegin\n", 1)[1].split(lock, 1)[0]
+          assert all(not row.strip() or row.lstrip().startswith("--") for row in prefix.splitlines())
+          (root / "v3_arch_ci_unlocked.sql").write_text(source.replace(lock, "  null; -- CI-only isolated fixture", 1), "utf-8")
+          test = Path("tests/sql/v3_experimental_paper_atomic_cas_smoke.sql").read_text("utf-8")
+          original = r"\ir ../../supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql"
+          assert test.count(original) == 1
+          (root / "v3_arch_ci_smoke.sql").write_text(test.replace(original, r"\i /v3_ci/v3_arch_ci_unlocked.sql"), "utf-8")
+          PY
+          docker exec "$name" psql -X -v ON_ERROR_STOP=1 -U postgres -d postgres -f /v3_ci/v3_arch_ci_smoke.sql
           echo 'V3_CAS_DISPOSABLE_POSTGRES17_SQL_COMPLETE_NO_PROD_WRITE'
       - name: V3 originalhost offline dual-case writer readback (no network or release)
         run: |

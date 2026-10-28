@@ -48,6 +48,8 @@ jobs:
       PGPASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - name: Validate atomic cutover, fail-closed and idempotent replay
         shell: bash
         run: |
@@ -58,9 +60,51 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -f tests/sql/v3_experimental_paper_atomic_cas_smoke.sql
+          # Prove the ORIGINAL source is unconditionally locked on a disposable DB.
+          if psql -X -v ON_ERROR_STOP=1 -f supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql >"$RUNNER_TEMP/v3_cas_original_hold.log" 2>&1; then
+            echo V3_ORIGINAL_CAS_INSTALL_SOURCE_UNEXPECTEDLY_EXECUTED >&2; exit 1
+          fi
+          grep -Fq 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED' "$RUNNER_TEMP/v3_cas_original_hold.log"
+          test "$(psql -X -Atc "select count(*) from pg_proc where proname='rotate_v2r4_to_v3_experimental_paper'")" = 0
+
+          # Only a disposable fixture can strip that one exact first-statement
+          # source lock. Never write an unlocked file back to this repository.
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          sql = Path("supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql").read_text("utf-8")
+          lock = "  raise exception 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+          assert sql.count(lock) == 1
+          prefix = sql.split("do $v3_cas_install_locked$\nbegin\n", 1)[1].split(lock, 1)[0]
+          assert all(not line.strip() or line.lstrip().startswith("--") for line in prefix.splitlines())
+          only_ci = root / "v3_cas_disposable_unlocked.sql"
+          only_ci.write_text(sql.replace(lock, "  null; -- CI-only isolated transaction fixture", 1), "utf-8")
+          fixture = Path("tests/sql/v3_experimental_paper_atomic_cas_smoke.sql").read_text("utf-8")
+          include = r"\ir ../../supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql"
+          assert fixture.count(include) == 1
+          (root / "v3_cas_disposable_smoke.sql").write_text(
+              fixture.replace(include, "\\i " + str(only_ci)), "utf-8"
+          )
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/v3_cas_disposable_smoke.sql"
           echo V3_CAS_DISPOSABLE_DB_GATE_OK
+      - name: Scope unrelated Deno network check to actual V2R4/Edge changes
+        id: deno_scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only HEAD^1 HEAD)"
+          # CAS-only changes skip an unrelated Deno fetch. Mixed/other work runs Deno.
+          if printf '%s\n' "$changed" | grep -Eqv '^(supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013\.sql|tests/test_v3_experimental_atomic_cas_inactive_contract_v1\.py|tests/sql/v3_experimental_paper_atomic_cas_smoke\.sql|\.github/workflows/architecture-cleanup-validation\.yml|\.github/workflows/v2r4-technical-cloud-rotation-smoke\.yml)$'; then
+            echo "run_deno=true" >> "$GITHUB_OUTPUT"
+            echo "V2R4_OR_MIXED_CHANGE_RUN_ORIGINAL_DENO_CHECK"
+          else
+            echo "run_deno=false" >> "$GITHUB_OUTPUT"
+            echo "V3_CAS_ONLY_SKIP_UNRELATED_DENO_CHECK"
+          fi
       - uses: denoland/setup-deno@v2
+        if: steps.deno_scope.outputs.run_deno == 'true'
         with:
           deno-version: v2.x
       - name: Verify successor Paper cursor isolation (existing runtime unchanged)
@@ -96,4 +140,5 @@ jobs:
           } finally { $archive.Dispose() }
           Write-Host 'H3_HIDDEN_SNAPSHOT_VERIFIED'
       - name: Type-check new isolated Edge boundary (never deploy)
+        if: steps.deno_scope.outputs.run_deno == 'true'
         run: deno check supabase/functions/v2r4-technical-cutover/index.ts
