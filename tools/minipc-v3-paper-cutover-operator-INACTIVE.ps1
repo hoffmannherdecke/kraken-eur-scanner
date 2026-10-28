@@ -11,7 +11,11 @@ param(
  [string]$OriginalBackupDirectory='',
  [string]$ExpectedPr515SourceSha256='',
  [string]$ExpectedArmedFenceSha256='',
- [string]$Confirm=''
+ [string]$Confirm='',
+ [switch]$VerifyNotebookPrecommitCms,
+ [string]$NotebookReaderJson='',
+ [string]$NotebookReaderCms='',
+ [string]$ReviewedNotebookCertificateSha256=''
 )
 # V3 experimental Paper scoped operator: SOURCE PREPARATION ONLY.
 # GitHub/CI draft; not an installed cutover, not a stop, not a rollback.
@@ -1156,6 +1160,81 @@ function Test-V3IndependentOriginalHostCmsSignature(
  return [pscustomobject]$out
 }
 
+
+# Only validates authentic CURRENT Notebook Reader data after detached CMS
+# transfer. Reuses the existing exact SHA256-pinned cryptographic verifier;
+# this does not authenticate the physical Notebook location, authorize native
+# STOP/restore, prove past CAS NEVER, or promote to a Paper release token.
+function Test-V3SignedNotebookPrecommitInventory(
+ [byte[]]$ReceiptUtf8,[byte[]]$DetachedCms,[string]$ReviewedCertSha256){
+ $out=[ordered]@{
+  kind='V3_NOTEBOOK_PRECOMMIT_SIGNED_READER_ORIGINALHOST_REVIEW_V1'
+  status='HOLD_SIGNED_READER_INVALID_OR_STALE'
+  matched_signer_certificate_sha256=$false
+  current_private_reader_zero_counts_verified=$false
+  independent_notebook_key_custody_verified_here=$false
+  independent_cas_attempt_history_complete=$false
+  historical_cas_never_verified=$false
+  native_stop_or_restore_authorized=$false
+  cloud_cas_dispatch_authorized=$false
+  v3_paper_release_authorized=$false
+ }
+ if($null -eq $ReceiptUtf8 -or $null -eq $DetachedCms -or
+    $ReceiptUtf8.Length -lt 80 -or $ReceiptUtf8.Length -gt 4096 -or
+    $ReviewedCertSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  return [pscustomobject]$out
+ }
+ $crypto=Test-V3IndependentOriginalHostCmsSignature -ReceiptUtf8 $ReceiptUtf8 -DetachedCms $DetachedCms -ReviewedSignerCertificateSha256 $ReviewedCertSha256
+ if($crypto.crypto_signature_valid -ne $true){return [pscustomobject]$out}
+ $out.matched_signer_certificate_sha256=$true
+ try {
+  $str=[Text.UTF8Encoding]::new($false,$true).GetString($ReceiptUtf8)
+  $obj=$str | ConvertFrom-Json -ErrorAction Stop
+  $keys=@('kind','observed_at_utc','actor','role','epochs','intents',
+   'writer_role_access','append_access','history_never_proven','restore_authorized')
+  $actual=@($obj.PSObject.Properties.Name)
+  if($actual.Count -ne $keys.Count -or @($actual|Where-Object {$_ -cnotin $keys}).Count -ne 0){
+   throw 'V3_NOTEBOOK_READER_EXTRA_FIELDS'
+  }
+  foreach($key in $keys){
+   if(@([regex]::Matches($str,('"'+[regex]::Escape($key)+'"\\s*:'))).Count -ne 1){
+    throw 'V3_NOTEBOOK_READER_MISSING_OR_DUPLICATE_FIELD'
+   }
+  }
+  $m=[regex]::Match($str,'"observed_at_utc"\\s*:\\s*"(?<utc>[^"\\]*)"')
+  if(-not $m.Success -or [string]$m.Groups['utc'].Value -cnotmatch
+     '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$'){
+   throw 'V3_NOTEBOOK_READER_TIMESTAMP_INVALID'
+  }
+  $timestamp=[datetimeoffset]::MinValue
+  $style=[Globalization.DateTimeStyles]::AssumeUniversal -bor
+         [Globalization.DateTimeStyles]::AdjustToUniversal
+  if(-not [datetimeoffset]::TryParseExact(
+     [string]$m.Groups['utc'].Value,"yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+     [Globalization.CultureInfo]::InvariantCulture,$style,[ref]$timestamp)){
+   throw 'V3_NOTEBOOK_READER_TIMESTAMP_UNPARSEABLE'
+  }
+  $age=([datetimeoffset]::UtcNow-$timestamp).TotalSeconds
+  if($age -lt -5 -or $age -gt 120 -or
+     [string]$obj.kind -cne 'V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1' -or
+     [string]$obj.actor -cne 'v3_cas_audit_reader_actor' -or
+     [string]$obj.role -cne 'v3_cas_audit_reader' -or
+     [string]$obj.epochs -cne '0' -or
+     [string]$obj.intents -cne '0' -or
+     $obj.writer_role_access -ne $false -or
+     $obj.append_access -ne $false -or
+     $obj.history_never_proven -ne $false -or
+     $obj.restore_authorized -ne $false){
+   throw 'V3_NOTEBOOK_READER_AUTHENTICATED_INVENTORY_MISMATCH'
+  }
+  $out.status='SIGNED_CURRENT_PRIVATE_READER_EMPTY_SNAPSHOT_NOT_RELEASE'
+  $out.current_private_reader_zero_counts_verified=$true
+ } catch {
+  # No foreign JSON or actual DB exception text is printed or trusted.
+ }
+ return [pscustomobject]$out
+}
+
 # A real Windows XML recovery artifact is needed before any *later* Paper
 # Cutover. Reuse this existing original operator; never clone its STOP/RESTORE
 # paths or grant an alternate task/write/Cloud authority. Explicit opt-in is
@@ -2275,6 +2354,39 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
+# Read-only originalhost consumer of the exact detached Notebook Reader CMS.
+# Never call Native STOP/restore, CAS or Cloud as a result of this evidence.
+if($VerifyNotebookPrecommitCms){
+ if($BackupOriginalIntake -or $PreviewPr515PreCas -or $PreviewPr515Quiesced -or
+    $PreviewPr515Armed -or $PreviewPr515ArmedTwoCycle -or
+    $NotebookReaderJson -eq '' -or $NotebookReaderCms -eq '' -or
+    $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'V3_NOTEBOOK_SIGNED_READER_MODE_CONFLICT_OR_MISSING_PIN'
+ }
+ $source=@($NotebookReaderJson,$NotebookReaderCms)|ForEach-Object {
+  $item=Get-Item -LiteralPath $_ -Force -ErrorAction Stop
+  if($item.PSIsContainer -or
+     [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+     $item.Length -lt 64 -or $item.Length -gt 32768){
+   throw 'V3_NOTEBOOK_SIGNED_READER_UNSAFE_TRANSFER_FILE'
+  }
+  $item
+ }
+ if($source.Count -ne 2 -or
+    [IO.Path]::GetFileName($source[0].FullName) -cne 'reader.json' -or
+    [IO.Path]::GetFileName($source[1].FullName) -cne 'reader.cms' -or
+    [IO.Path]::GetDirectoryName($source[0].FullName) -cne
+    [IO.Path]::GetDirectoryName($source[1].FullName)){
+  throw 'V3_NOTEBOOK_SIGNED_READER_TRANSFER_PAIR_MISMATCH'
+ }
+ $v=Test-V3SignedNotebookPrecommitInventory -ReceiptUtf8 (
+  [IO.File]::ReadAllBytes($source[0].FullName)) -DetachedCms (
+  [IO.File]::ReadAllBytes($source[1].FullName)) -ReviewedCertSha256 $ReviewedNotebookCertificateSha256
+ $v | ConvertTo-Json -Compress -Depth 3
+ if($v.current_private_reader_zero_counts_verified -ne $true){exit 1}
+ return
+}
+
 if($PreviewPr515PreCas -or $PreviewPr515Quiesced -or $PreviewPr515Armed -or $PreviewPr515ArmedTwoCycle) {
  $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent+[int]$PreviewPr515ArmedTwoCycle.IsPresent
  if($modeCount -ne 1 -or
