@@ -189,7 +189,7 @@ try{
   [Text.UTF8Encoding]::new($false))
  # Running this normal READONLY CLI is safe even on CI Linux: the new mode
  # returns before Get-ScheduledTask, WMI, source file installation or secrets.
- $out=@(& $src -ReviewExistingTwoSourcePrecommit -ExistingNotebookReaderJson $readerPath -ExistingCloudInventoryJson $cloudPath)
+ $out=@(& $src -TradingRoot $root -ReviewExistingTwoSourcePrecommit -ExistingNotebookReaderJson $readerPath -ExistingCloudInventoryJson $cloudPath)
  if($out.Count -ne 1){throw 'V3_TWO_SOURCE_ORIGINALHOST_CLI_NOT_SINGLE_STATUS'}
  $ack=$out[0]|ConvertFrom-Json
  if($ack.disposition -cne 'REVIEW_ONLY_CURRENT_OLD_ONLY_AND_READER_EMPTY_CAS_HISTORY_UNKNOWN' -or
