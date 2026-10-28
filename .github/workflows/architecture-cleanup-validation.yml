@@ -309,7 +309,7 @@ jobs:
             echo V3_ORIGINAL_CAS_SQL_WRONGLY_EXECUTABLE >&2; exit 1
           fi
           grep -Fq 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED' "$RUNNER_TEMP/v3_arch_original_lock.log"
-          test "$(docker exec "$name" psql -X -Atc "select count(*) from pg_proc where proname='rotate_v2r4_to_v3_experimental_paper'")" = 0
+          test "$(docker exec "$name" psql -X -Atc "select count(*) from pg_proc where proname='rotate_v2r4_to_v3_experimental_paper'" -U postgres -d postgres)" = 0
           python3 - <<'PY'
           import os
           from pathlib import Path
