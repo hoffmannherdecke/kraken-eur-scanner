@@ -141,6 +141,32 @@ WHERE (SELECT count(*) FROM v3_cas_audit.epoch_v1)=1
 COMMIT;
 '@
 }
+# Preserve the original UTC JSON literals: ConvertFrom-Json can materialize
+# ISO-8601 strings as DateTime, and formatting them loses the original 'Z'.
+# Only allowlisted fields are parsed from the original JSON text.
+function Read-V3ReaderUtcLiteral([string]$RawJson,[string]$Name) {
+    if($Name -cnotin @('observed_at_utc','opened_at_utc','intent_created_at_utc')){
+        throw 'V3_READER_UTC_FIELD_NOT_ALLOWLISTED'
+    }
+    $pattern='"'+[regex]::Escape($Name)+'"\s*:\s*"(?<utc>[^"\\]*)"'
+    $hits=[regex]::Matches($RawJson,$pattern)
+    if($hits.Count -ne 1){throw 'V3_READER_UTC_MISSING_OR_DUPLICATE'}
+    $literal=[string]$hits[0].Groups['utc'].Value
+    if($literal -cnotmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){
+        throw 'V3_READER_UTC_FORMAT_INVALID'
+    }
+    $time=[datetimeoffset]::MinValue
+    $style=[Globalization.DateTimeStyles]::AssumeUniversal -bor
+           [Globalization.DateTimeStyles]::AdjustToUniversal
+    if(-not [datetimeoffset]::TryParseExact(
+        $literal,"yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+        [Globalization.CultureInfo]::InvariantCulture,$style,[ref]$time) -or
+        $time.Offset -ne [timespan]::Zero){
+        throw 'V3_READER_UTC_DATE_INVALID'
+    }
+    return [pscustomobject]@{text=$literal;utc=$time}
+}
+
 $passed = 0
 foreach ($check in $checks) {
     $plain = $null
@@ -171,9 +197,10 @@ foreach ($check in $checks) {
         if($PostcommitDurableIntent){
             if($LASTEXITCODE -ne 0){throw 'V3_DURABLE_INTENT_READER_SQL_HOLD'}
             $row=(($output|Out-String).Trim()|ConvertFrom-Json -ErrorAction Stop)
-            $at=[datetimeoffset]::MinValue
-            $opened=[datetimeoffset]::MinValue
-            $created=[datetimeoffset]::MinValue
+            $wireJson=($output|Out-String).Trim()
+            $at=Read-V3ReaderUtcLiteral -RawJson $wireJson -Name 'observed_at_utc'
+            $opened=Read-V3ReaderUtcLiteral -RawJson $wireJson -Name 'opened_at_utc'
+            $created=Read-V3ReaderUtcLiteral -RawJson $wireJson -Name 'intent_created_at_utc'
             if($null -eq $row -or
                 [string]$row.kind -cne 'V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1' -or
                 [string]$row.actor -cne 'v3_cas_audit_reader_actor' -or
@@ -195,22 +222,16 @@ foreach ($check in $checks) {
                 [string]$row.request_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
                 [string]$row.intent_source_sha256 -cne [string]$row.source_sha256 -or
                 [string]$row.intent_fence_sha256 -cne [string]$row.fence_sha256 -or
-                [string]$row.observed_at_utc -cnotmatch 'Z$' -or
-                [string]$row.opened_at_utc -cnotmatch 'Z$' -or
-                [string]$row.intent_created_at_utc -cnotmatch 'Z$' -or
-                -not [datetimeoffset]::TryParse([string]$row.observed_at_utc,[ref]$at) -or
-                -not [datetimeoffset]::TryParse([string]$row.opened_at_utc,[ref]$opened) -or
-                -not [datetimeoffset]::TryParse([string]$row.intent_created_at_utc,[ref]$created) -or
-                $created -lt $opened -or $created -gt $at -or
-                ($at-$created).TotalSeconds -gt 300 -or
-                ([datetimeoffset]::UtcNow-$at).TotalSeconds -gt 90 -or
-                ([datetimeoffset]::UtcNow-$at).TotalSeconds -lt -5){
+                $created.utc -lt $opened.utc -or $created.utc -gt $at.utc -or
+                ($at.utc-$created.utc).TotalSeconds -gt 300 -or
+                ([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -gt 90 -or
+                ([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -lt -5){
                 throw 'V3_DURABLE_INTENT_SINGLE_READER_HOLD'
             }
             [pscustomobject]@{
                 kind='V3_ORIGINAL_READER_DURABLE_PREINVOKE_INTENT_V1'
                 status='CURRENT_ONE_COMMITTED_PREINVOKE_INTENT_NOT_CAS_RELEASE'
-                observed_at_utc=[string]$row.observed_at_utc
+                observed_at_utc=$at.text
                 epoch_id=[string]$row.epoch_id
                 intent_id=[string]$row.intent_id
                 source_sha256=[string]$row.source_sha256
@@ -225,7 +246,7 @@ foreach ($check in $checks) {
                 # unsigned CMS bytes before an independent signer is used.
                 original_reader_row_for_future_cms_proposal=[ordered]@{
                     kind=[string]$row.kind
-                    observed_at_utc=[string]$row.observed_at_utc
+                    observed_at_utc=$at.text
                     actor=[string]$row.actor
                     role=[string]$row.role
                     epoch_count=[int]$row.epoch_count
@@ -245,8 +266,8 @@ foreach ($check in $checks) {
                     next_ordinal=[int]$row.next_ordinal
                     intent_state=[string]$row.intent_state
                     sealed=[bool]$row.sealed
-                    opened_at_utc=[string]$row.opened_at_utc
-                    intent_created_at_utc=[string]$row.intent_created_at_utc
+                    opened_at_utc=$opened.text
+                    intent_created_at_utc=$created.text
                 }
                 independent_tls_certificate_verified=$false
                 historical_cas_never_proven=$false
@@ -268,12 +289,11 @@ foreach ($check in $checks) {
                 [string]$row.role -cne 'v3_cas_audit_reader'){
                 throw 'V3_PRECOMMIT_READER_NONEMPTY_OR_UNVERIFIED_HOLD'
             }
+            $holdClass = 'CURRENT_UTC_FORMAT'
+            $at=Read-V3ReaderUtcLiteral -RawJson (($output|Out-String).Trim()) -Name 'observed_at_utc'
             $holdClass = 'CURRENT_UTC_FRESHNESS'
-            $at=[datetimeoffset]::MinValue
-            if([string]$row.observed_at_utc -cnotmatch 'Z$' -or
-                -not [datetimeoffset]::TryParse([string]$row.observed_at_utc,[ref]$at) -or
-                ([datetimeoffset]::UtcNow-$at).TotalSeconds -gt 90 -or
-                ([datetimeoffset]::UtcNow-$at).TotalSeconds -lt -5){
+            if(([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -gt 90 -or
+                ([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -lt -5){
                 throw 'V3_PRECOMMIT_READER_NONEMPTY_OR_UNVERIFIED_HOLD'
             }
             $holdClass = 'CURRENT_AUDIT_LEDGER_COUNTS'
@@ -294,7 +314,7 @@ foreach ($check in $checks) {
             [pscustomobject]@{
                 kind='V3_CAS_READER_CURRENT_PRIVATE_AUDIT_SNAPSHOT_V1'
                 status='AUTHENTICATED_READER_CURRENT_EMPTY_NOT_HISTORICAL_NEVER'
-                observed_at_utc=[string]$row.observed_at_utc
+                observed_at_utc=$at.text
                 epoch_count=0
                 intent_count=0
                 actor='v3_cas_audit_reader_actor'
