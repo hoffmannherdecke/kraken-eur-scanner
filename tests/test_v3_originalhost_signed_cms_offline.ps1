@@ -15,6 +15,59 @@ $defs=@($ast.FindAll({
 if($defs.Count -ne 1){throw 'V3_INDEPENDENT_SIGNED_ORIGINAL_FUNCTION_MISSING_OR_DUPLICATE'}
 . ([scriptblock]::Create($defs[0].Extent.Text))
 
+# The SAME existing offline CMS/Notebook CI checks the real Reader's pure
+# UTC-field helper. Never invoke the Reader's DB/DPAPI or the actual signer.
+$notebookReader=Join-Path (Split-Path $PSScriptRoot -Parent) 'tools/v3-notebook-cas-audit-original-readonly-witness-INACTIVE.ps1'
+$tokens=$null;$errors=$null
+$readerAst=[System.Management.Automation.Language.Parser]::ParseFile(
+ (Resolve-Path $notebookReader),[ref]$tokens,[ref]$errors)
+if(@($errors).Count -ne 0){throw 'V3_NOTEBOOK_READER_SOURCE_AST_INVALID'}
+$readerDefs=@($readerAst.FindAll({
+ param($node)
+ $node -is [System.Management.Automation.Language.FunctionDefinitionAst] -and
+ $node.Name -eq 'Read-V3ReaderUtcLiteral'
+},$true))
+if($readerDefs.Count -ne 1){throw 'V3_READER_UTC_LITERAL_FUNCTION_MISSING_OR_DUPLICATE'}
+. ([scriptblock]::Create($readerDefs[0].Extent.Text))
+$mockUtc='2026-10-28T06:58:19.743869Z'
+$mockRow='{"observed_at_utc":"'+$mockUtc+'","opened_at_utc":"2026-10-28T06:57:19.123456Z","intent_created_at_utc":"2026-10-28T06:58:01.000001Z"}'
+$parsedMock=$mockRow|ConvertFrom-Json
+# DateTime JSON auto-coercion is deliberately NOT part of trusted input.
+$parsed=Read-V3ReaderUtcLiteral -RawJson $mockRow -Name 'observed_at_utc'
+if($parsed.text -cne $mockUtc -or
+ $parsed.utc.Offset -ne [timespan]::Zero -or
+ $parsed.utc.Year -ne 2026 -or
+ $parsed.utc.Minute -ne 58 -or
+ $parsed.utc.Millisecond -ne 743){
+ throw 'V3_READER_UTC_CANONICAL_LITERAL_ACCEPTANCE_FAILED'
+}
+$opened=Read-V3ReaderUtcLiteral -RawJson $mockRow -Name 'opened_at_utc'
+$created=Read-V3ReaderUtcLiteral -RawJson $mockRow -Name 'intent_created_at_utc'
+if($opened.utc -ge $created.utc -or $created.utc -ge $parsed.utc){
+ throw 'V3_READER_UTC_ORIGINAL_ORDER_INVALID'
+}
+$badRows=@(
+ '{"observed_at_utc":"2026-10-28T06:58:19.743869+00:00"}',
+ '{"observed_at_utc":"2026-10-28T06:58:19.743869z"}',
+ '{"observed_at_utc":"2026-13-28T06:58:19.743869Z"}',
+ '{"observed_at_utc":"2026-10-28T06:58:19Z"}',
+ '{"observed_at_utc":"2026-10-28T06:58:19.743869Z","observed_at_utc":"2026-10-28T06:58:19.743869Z"}',
+ '{"other_at_utc":"2026-10-28T06:58:19.743869Z"}',
+ '{"observed_at_utc":"2026-10-28T06:58:19.743869\u005a"}'
+)
+foreach($mockBad in $badRows){
+ $denied=$false
+ try{Read-V3ReaderUtcLiteral -RawJson $mockBad -Name 'observed_at_utc'|Out-Null}
+ catch{$denied=$true}
+ if(-not $denied){throw 'V3_READER_UTC_BAD_LITERAL_ACCEPTED'}
+}
+$badFieldDenied=$false
+try{Read-V3ReaderUtcLiteral -RawJson $mockRow -Name 'arbitrary_timestamp'|Out-Null}
+catch{$badFieldDenied=$true}
+if(-not $badFieldDenied){throw 'V3_READER_UTC_FOREIGN_FIELD_ACCEPTED'}
+Write-Output 'V3_NOTEBOOK_READER_ORIGINAL_UTC_LITERAL_POSITIVE_NEGATIVES_PASS_NO_CAS'
+
+
 # Only a short-lived, CI-generated PRIVATE key signs MOCK data. No material
 # from the production Mini-PC, release certificates, tokens or credentials.
 $rsa=[System.Security.Cryptography.RSA]::Create(2048)

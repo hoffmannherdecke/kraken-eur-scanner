@@ -748,6 +748,16 @@ class V3Stage3OriginalNotebookAuditReadOnlyWitnessTests(unittest.TestCase):
         self.assertIn("pg_catalog.pg_has_role(session_user", src)
         self.assertIn("v3_cas_audit.epoch_v1", src)
         self.assertIn("v3_cas_audit.intent_v1", src)
+        # Preserve database UTC literal before ConvertFrom-Json auto-DateTime
+        # conversion; original 90s freshness remains enforced, not bypassed.
+        self.assertEqual(src.count("function Read-V3ReaderUtcLiteral("), 1)
+        self.assertIn("V3_READER_UTC_MISSING_OR_DUPLICATE", src)
+        self.assertIn("V3_READER_UTC_FORMAT_INVALID", src)
+        self.assertIn("CURRENT_UTC_FORMAT", src)
+        self.assertIn("([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -gt 90", src)
+        self.assertIn("([datetimeoffset]::UtcNow-$at.utc).TotalSeconds -lt -5", src)
+        self.assertIn("created.utc -lt $opened.utc", src)
+        self.assertNotIn("[string]$row.observed_at_utc -cnotmatch 'Z$'", src)
         self.assertIn("V3_STAGE3_READONLY_AUDIT_HOLD", src)
         self.assertIn("V3_STAGE3_TWO_ORIGINAL_READONLY_AUDIT_SESSIONS_PASS_NO_CAS", src)
         for prohibited in (
