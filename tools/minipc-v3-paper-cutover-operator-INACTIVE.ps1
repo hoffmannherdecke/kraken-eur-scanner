@@ -1310,16 +1310,7 @@ function Get-V3Pr515SignedCasAndCloudSeriesReview([object]$SignedCas,[object]$Cl
   $out.same_original_fence_bound_by_signed_cas=$true
   $signedAt=[datetimeoffset]::MinValue
   $cloudAt=[datetimeoffset]::MinValue
-  if([string]$SignedCas.authenticated_observed_at_utc -cmatch
-       '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z
-   $out.public_current_old_only_matched=$true
-   $out.disposition='REVIEW_ONLY_SIGNED_CAS_PLUS_UNAUTHENTICATED_PUBLIC_CLOUD_NOT_RELEASE'
-  }
- }
- return [pscustomobject]$out
-}
-
- -and
+  if([string]$SignedCas.authenticated_observed_at_utc -cmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$' -and
      [datetimeoffset]::TryParse([string]$SignedCas.authenticated_observed_at_utc,[ref]$signedAt) -and
      [datetimeoffset]::TryParse([string]$Cloud.observed_at_utc,[ref]$cloudAt) -and
      [math]::Abs(($signedAt-$cloudAt).TotalSeconds) -le 30){
