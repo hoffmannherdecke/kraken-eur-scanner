@@ -48,6 +48,8 @@ jobs:
       PGPASSWORD: postgres
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - name: Validate atomic cutover, fail-closed and idempotent replay
         shell: bash
         run: |
