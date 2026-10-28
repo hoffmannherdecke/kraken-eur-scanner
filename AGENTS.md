@@ -1,26 +1,12 @@
 # Projektweite Arbeitsanweisung — Aktien & Krypto Chancen
 
-## Dauerhafter Einstieg: den neuesten belegten Stand lesen, keine PR-Nummer als Live-Status
+## Dauerhafter Einstieg – Original-Owner statt statischer PR
 
-**Diese Datei ist das Regelwerk, keine laufend synchronisierte Statusanzeige.** Vor jeder materiellen Projektaktion den Arbeitsbereich bestimmen und den aktuellen geschützten GitHub-`main`-HEAD prüfen. Danach für genau diesen Bereich die bestehende fachliche Autorität und deren **neuesten einschlägigen Originalnachweis** lesen; ältere Zusammenfassungen, PR-Titel, historische Checkboxen und PR-Nummern in dieser Datei oder im Backlog dürfen niemals als aktueller Betriebsstand ausgegeben werden. Bei fehlendem Zugriff: `UNKNOWN/NEEDS_TARGETED_ACK`, nicht raten. Es gibt ausdrücklich **keinen automatisch laufenden GitHub-Issue-Import** durch `tools/context_before_action.py`.
+**Vor Arbeit:** Domäne bestimmen, geschützten GitHub-`main`-HEAD und neueste Original-ACKs lesen. Projektweiter Kontextmanager: Issue #353; **nur bei V3 Paper** Fachowner Issue #99 samt aktuellen Kommentaren. Andere Aufträge zum eigenen Owner. `context_before_action.py` liest Issues **nicht automatisch**; ältere Überschriften sind Historie, keine Live-Belege.
 
-**Projektweit:** Der bestehende [Kontext-vor-Aktion- und Ausführungsmanager #353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353) regelt Quellenauswahl, Arbeitsweise und Übergabe. Er ersetzt keine spezifischen Fach-Owner. Für **ausdrücklich beauftragtes V3-Paper-Release** ist ausschließlich der neueste gültige [Release-Owner #99](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99) maßgeblich: Issue-Einstieg **und** neueste einschlägige Kommentare samt physischem Originalhost-/Notebook-/Cloud-ACK mit dem GitHub-HEAD abgleichen. Für Hardware-, Betriebs-, Research- oder andere Strategieaufträge die jeweils einschlägigen Owner verwenden – nicht automatisch #99.
+**Anti-Doppelarbeit:** `SOURCE_DONE`, `PHYSICAL_STAGED_DONE`, `REAL_RUNTIME_ACK_PENDING|DONE` trennen. Offener Runtime-ACK macht fertige Source-/Notebook-/TPM-Prüfungen nicht erneut offen. Bei Konflikt `UNKNOWN/NEEDS_TARGETED_ACK`; keine Entwicklung ohne belegte Lücke.
 
-**Vor jeder Formulierung „noch zu tun“ dieselbe Komponente in drei Zuständen auseinanderhalten:** `SOURCE/CI_DONE` (Code getestet und gemergt), `PHYSICAL_SOURCE_STAGED_DONE` (konkret physisch versionsgeprüft bereitgestellt) und `REAL_RUNTIME_ACK_PENDING|DONE` (echte produktive Ausführung). Ein noch offener Runtime-ACK öffnet **keine** erledigte Source-, Download-, Staging- oder Basistest-Arbeit erneut. Ein neuer Entwicklungsauftrag benötigt einen belegten neuen Defekt oder eine nachgewiesene Funktionslücke, nicht nur einen neuen Chat oder eine andere Überschrift. Tatsächlicher Abschluss vor altem Plan; bei Konflikt Beweis, Ausführungsort und Zeitstempel gezielt lesen.
-
-**Datierter Übergabebeleg, ausdrücklich KEINE dynamische Statusautorität (28.10.2026):** [PR608](https://github.com/hoffmannherdecke/kraken-eur-scanner/pull/608) Notebook-CMS/UNKNOWN-Archiv ist `SOURCE/CI_DONE`, auf dem Original-Notebook `PHYSICAL_SOURCE_STAGED_DONE`; echter Writer-COMMIT, Reader-after-COMMIT und reale Notebook-Archivierungsquittung waren beim Beleg noch `NOT_EXECUTED`. PR607 Single-CAS-Entry (offline negativ) und PR606 Originalhost-Operator-Staging, PR515 PRECAS-/Notebook-/TPM-Baselines sind erledigt und **nicht zu wiederholen**. Der Originalhost-Cutover/No-Rearm/Restore, Stage4/5 und CAS bleiben bis zur gesonderten wirklichen Freigabe gesperrt. **Für alle späteren Zustände #99 erneut lesen, niemals diesen Absatz als aktuellen Snapshot verwenden.** V2R4 war beim datierten Beleg allein aktiv; das ist kein zukünftiger Live-Nachweis.
-
-**Kein zweiter Manager, Scheduler, Statusspiegel, automatischer Runtime-Release oder neue Zugriffsrechte.** Bei jeder tatsächlich neuen Änderung den Abschluss mit fachlichem Original-ACK im bisherigen Owner speichern; nächste Chats müssen die aktuellen Quellen aktiv abrufen. Branch-/CI-/PR-Erfolg bedeutet weder Originalhost-Installation noch Live-Cloud-/CAS- oder Paper-Freigabe.
-
----
-
-## Historischer V3-Paper-Quellstand – PR593 (27.10.2026), SUPERSEDED durch spätere Belege
-
-**DONE, nicht wiederholen:** Stage0–3, Mini-PC 70/70 + V3-Task Disabled/XML, PR515-Backup/Lesetest, Notebook-DPAPI/PG-Reader 0/0. PR583/586 Stage4/5 gesperrt, PR584/587 CLOSED; PR589–593 nur GitHub SOURCE, nicht am Mini-PC installiert.
-
-**Nächstes Release-Gate #99:** echter Originalhost-PID/Fence/ACL/PR515-No-Rearm-Nachweis und exklusive externe CAS-Attempt-/UNKNOWN-Custody ab erster RPC. 0/0/Logs beweisen kein historisches NEVER. Keine neue Quelle ohne konkrete Lücke. V2R4 aktiv, V3 Disabled, STOP/Restore/CAS gesperrt; Stage4/Writer/Reader/Stage5, sechs E2E, Freigabe offen. Kontext #353; Details im Backlog.
-
-**Projektweit, auch für V4+:** Zusammenarbeit, Hard-/Software, Mini-PC, Scanner, Cloud, Research, Betrieb und Strategien. **Auftragsbereich zuerst bestimmen, nie V3 automatisch annehmen.** Allgemeine Regeln sind keine Strategie-Release-Gates. Hardwarearbeiten brauchen eigene Betriebsprüfungen; eine Strategieverknüpfung nur bei konkret belegter Abhängigkeit.
+**Beleg 28.10., keine Live-Garantie:** PR607/608 Source/CI, PR608 Notebook-Staging und PR606/PR515 PreCAS-Prüfungen fertig. Echter Writer-COMMIT, Notebook-Archivierungs-ACK, No-Rearm-Cutover und CAS noch offen. PR593 bleibt im Backlog historisch; stets #99 neu prüfen.
 
 ## Verbindliche Evidenzpriorität (festgelegt 26.10.2026; nicht als Live-Snapshot lesen)
 
