@@ -1198,6 +1198,81 @@ function Test-V3IndependentOriginalHostCmsSignature(
 }
 
 
+# Cross-machine signed CURRENT CAS-INACCESSIBILITY proof. Reuse the
+# established Notebook Reader signer, original host PKCS verifier and one
+# externally reviewed public certificate SHA. No historical NEVER inference.
+# Pure: negative/positive claims are never permission to restore or stop.
+function Test-V3Pr515SignedCurrentNoCasCustody(
+ [byte[]]$Payload,[byte[]]$Cms,[string]$ReviewedCertSha256,
+ [string]$CurrentOriginalFenceSha256
+) {
+ $out=[ordered]@{
+  kind='V3_PR515_SIGNED_CURRENT_CAS_UNAVAILABLE_REVIEW_V1'
+  status='HOLD_SIGNED_CUSTODY_UNVERIFIED'
+  signature_and_current_fence_match=$false
+  current_notebook_reader_no_cas_capability_observed=$false
+  previous_cas_attempts_excluded=$false
+  independent_cloud_old_only_verified_here=$false
+  precommit_task_restore_authorized=$false
+  native_stop_authorized=$false
+  cas_execution_authorized=$false
+  v3_paper_release_authorized=$false
+ }
+ if($Payload.Length -lt 100 -or $Payload.Length -gt 4096 -or
+    $Cms.Length -lt 64 -or $Cms.Length -gt 32768 -or
+    $CurrentOriginalFenceSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  return [pscustomobject]$out
+ }
+ $sig=Test-V3IndependentOriginalHostCmsSignature -ReceiptUtf8 $Payload -DetachedCms $Cms -ReviewedSignerCertificateSha256 $ReviewedCertSha256
+ if($sig.crypto_signature_valid -ne $true){return [pscustomobject]$out}
+ try {
+  $wire=([Text.UTF8Encoding]::new($false,$true)).GetString($Payload)
+  $obj=$wire|ConvertFrom-Json -ErrorAction Stop
+  $keys=@('kind','observed_at_utc','actor','role','epochs','intents',
+   'installed_cas_rpc_count','executor_login','operator_can_set_executor',
+   'reader_writer_set_role','reader_can_append','historical_cas_never_proven',
+   'restore_authorized','original_fence_sha256')
+  $actual=@($obj.PSObject.Properties.Name)
+  if($obj -isnot [pscustomobject] -or $actual.Count -ne $keys.Count -or
+     @($actual|Where-Object {$_ -cnotin $keys}).Count -ne 0){throw 'CUSTODY_FIELDS'}
+  foreach($field in $keys){
+   if(@([regex]::Matches($wire,('"'+[regex]::Escape($field)+'"\s*:'))).Count -ne 1){
+    throw 'CUSTODY_DUPLICATE'
+   }
+  }
+  $m=[regex]::Match($wire,'"observed_at_utc"\s*:\s*"(?<v>[^"\\]*)"')
+  if(-not $m.Success -or [string]$m.Groups['v'].Value -cnotmatch
+     '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){throw 'CUSTODY_TIME'}
+  $t=[datetimeoffset]::MinValue
+  if(-not([datetimeoffset]::TryParseExact([string]$m.Groups['v'].Value,
+     "yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+     [Globalization.CultureInfo]::InvariantCulture,
+     [Globalization.DateTimeStyles]::AssumeUniversal,
+     [ref]$t))){throw 'CUSTODY_DATE'}
+  $age=([datetimeoffset]::UtcNow-$t).TotalSeconds
+  if($age -lt -5 -or $age -gt 90 -or
+     [string]$obj.kind -cne 'V3_NOTEBOOK_CURRENT_NO_CAS_CAPABILITY_CUSTODY_V1' -or
+     [string]$obj.actor -cne 'v3_cas_audit_reader_actor' -or
+     [string]$obj.role -cne 'v3_cas_audit_reader' -or
+     [string]$obj.epochs -cne '0' -or
+     [string]$obj.intents -cne '0' -or
+     [string]$obj.installed_cas_rpc_count -cne '0' -or
+     [string]$obj.original_fence_sha256 -cne $CurrentOriginalFenceSha256 -or
+     $obj.executor_login -ne $false -or
+     $obj.operator_can_set_executor -ne $false -or
+     $obj.reader_writer_set_role -ne $false -or
+     $obj.reader_can_append -ne $false -or
+     $obj.historical_cas_never_proven -ne $false -or
+     $obj.restore_authorized -ne $false){throw 'CUSTODY_CURRENT_POSTURE'}
+  $out.status='SIGNED_CURRENT_NO_CAS_CAPABILITY_MATCH_NOT_RELEASE'
+  $out.signature_and_current_fence_match=$true
+  $out.current_notebook_reader_no_cas_capability_observed=$true
+ }catch{
+  # No signed raw payload or confidential exception is emitted.
+ }
+ return [pscustomobject]$out
+}
+
 # Only validates authentic CURRENT Notebook Reader data after detached CMS
 # transfer. Reuses the existing exact SHA256-pinned cryptographic verifier;
 # this does not authenticate the physical Notebook location, authorize native
