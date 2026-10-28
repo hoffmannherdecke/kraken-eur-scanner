@@ -80,7 +80,7 @@ class ManualTPMKeySourceContract(unittest.TestCase):
    with self.subTest(field=x): self.assertIn(x,self.s)
   self.assertLess(self.s.index("if($InspectProvider -and $Enroll)"),
                   self.s.index("if($Enroll){"))
-  self.assertLess(self.s.index("if($InspectProvider){"),
+  self.assertLess(self.s.index("if($InspectProvider -or $SignPreinvoke){"),
                   self.s.index("[pscustomobject][ordered]@{"))
   self.assertEqual(self.s.count("New-SelfSignedCertificate @options"),1)
   self.assertNotIn("Export-CngKey",self.s)
