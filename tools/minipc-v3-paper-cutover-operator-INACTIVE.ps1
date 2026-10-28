@@ -601,6 +601,10 @@ function Get-V3CasPreinvokeAuditReview([object]$Audit) {
 # including timeout, no response or an apparently negative outcome: operator
 # MUST fence and reconcile actual independent Cloud readback by hand.
 # No decision returned here grants permission to execute a Windows mutation.
+# The caller-supplied *independent_cloud_*_ack booleans in the historical
+# simulation are NOT verified third-party or signed CAS custody. No value of
+# these booleans may yield a restore candidate. Real authorization must be
+# integrated through the sole originalhost operator with independent proof.
 function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
  $resolution='HOLD_FENCE_MANUAL_RECONCILIATION'
  if($null -eq $Receipt -or
@@ -660,7 +664,7 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
        $Receipt.fresh_current_xml_after_armed_independently_checked -eq $true -and
        $Receipt.independent_cloud_precommit_cas_never_invoked_ack -eq $true -and
        $Receipt.independent_cloud_old_only_after_armed_ack -eq $true){
-      $resolution='PRE_CAS_ARMED_MANUAL_RESTORE_REVIEW_CANDIDATE_NOT_EXECUTABLE'
+      $resolution='HOLD_ARMED_UNAUTHENTICATED_EXTERNAL_CLOUD_CAS_CUSTODY'
     }else{
       $resolution='HOLD_ARMED_CURRENT_BACKUP_OR_INDEPENDENT_CLOUD_ACK'
     }
@@ -686,7 +690,7 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
       $Receipt.fresh_current_xml_after_quiesce_independently_checked -eq $true -and
       $Receipt.independent_cloud_precommit_cas_never_invoked_ack -eq $true -and
       $Receipt.independent_cloud_old_only_after_quiesce_ack -eq $true){
-    $resolution='PRE_CAS_MANUAL_ROLLBACK_REVIEW_CANDIDATE'
+    $resolution='HOLD_QUIESCED_UNAUTHENTICATED_EXTERNAL_CLOUD_CAS_CUSTODY'
    }else{
     $resolution='HOLD_CURRENT_PR515_BACKUP_OR_INDEPENDENT_CLOUD_ACK'
    }
