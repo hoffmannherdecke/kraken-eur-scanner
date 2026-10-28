@@ -7,9 +7,10 @@ param(
  [string]$SignApproval='',
  [string]$Approval=''
 )
-# Original V3 Paper release owner #99: MANUAL credential enrolment only.
-# NO automated receipt signer, no V3 Paper approval, no Task/Cloud/Trading
-# writes. The private key is TPM-backed and non-exportable *if* the original
+# Original V3 Paper release owner #99: one manual TPM identity.
+# The OPTIONAL manual preinvoke-CMS candidate is NOT a CAS attempt, a Cloud
+# reader/commit ACK, independent custody or V3 Paper approval. No Task/Cloud/
+# Trading writes; no unattended receipt signer. The private key is TPM-backed and non-exportable *if* the original
 # Windows Platform Crypto Provider reports success. Never fall back to a
 # software provider or silently generate a second certificate.
 # CurrentUser\My is the verified original local MINI-PC\Thomas profile,
