@@ -139,13 +139,25 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
         if number == 99:
             release_view = existing_owner_gate_decision(issue["body"], candidate_id)
             if release_view["status"] == "OWNER_DECLARED_VIEW_CHECKED_NOT_ORIGINAL_RUNTIME_PROOF":
+                # GitHub issue BODY can change without a new comment. PR613
+                # showed that comment-only freshness would silently reuse an
+                # older stage view after a newer authoritative owner header.
+                live_header_sha = hashlib.sha256(
+                    issue["body"].split(V3_GATE_START, 1)[0].encode("utf-8")
+                ).hexdigest()
                 last_id = recent[-1].get("id") if recent else None
-                if last_id != release_view["last_owner_comment_id"]:
+                if (last_id != release_view["last_owner_comment_id"]
+                        or live_header_sha != release_view["owner_header_sha256"]):
                     release_view = {
                         **release_view,
                         "status": "OWNER_ACTION_VIEW_STALE_HOLD_NEEDS_LATEST_ACK_RECONCILIATION",
                         "next_open_gate": None,
                         "candidate_verdict": "STALE_OWNER_VIEW_HOLD_NO_REWORK",
+                        "staleness_reason": (
+                            "OWNER_HEADER_CHANGED_WITHOUT_VIEW_RECONCILIATION"
+                            if live_header_sha != release_view["owner_header_sha256"]
+                            else "NEW_OWNER_COMMENT_AFTER_VIEW"
+                        ),
                         "ready_to_execute": False,
                     }
         owners.append({
@@ -221,7 +233,9 @@ def existing_owner_gate_decision(owner_body: str, candidate_id: str | None = Non
             and view.get("no_runtime_authority") is True
             and isinstance(view.get("as_of_utc"), str)
             and isinstance(view.get("last_owner_comment_id"), int)
-            and view.get("last_owner_comment_id") > 0,
+            and view.get("last_owner_comment_id") > 0
+            and isinstance(view.get("owner_header_sha256"), str)
+            and bool(re.fullmatch(r"[a-f0-9]{64}", view["owner_header_sha256"])),
             "invalid release owner view identity or safety boundary")
     items = view.get("steps")
     require(isinstance(items, list) and 3 <= len(items) <= 30,
@@ -257,8 +271,8 @@ def existing_owner_gate_decision(owner_body: str, candidate_id: str | None = Non
             raise ContextGateError(
                 "CONTEXT_GATE_BLOCKED: owner view reopens completed stages out of order"
             )
-    require(counts["REAL_RUNTIME"]["open"] >= 1,
-            "owner view must not auto-declare V3 release complete")
+    require(counts["REAL_RUNTIME"]["open"] + counts["REAL_RUNTIME"]["done"] >= 1,
+            "owner view missing runtime proof stages")
     verdict = "NO_CANDIDATE_SUBMITTED"
     if candidate_id is not None:
         matched = next((x for x in items if x["id"] == candidate_id), None)
@@ -274,6 +288,7 @@ def existing_owner_gate_decision(owner_body: str, candidate_id: str | None = Non
         "status": "OWNER_DECLARED_VIEW_CHECKED_NOT_ORIGINAL_RUNTIME_PROOF",
         "as_of_utc": view["as_of_utc"],
         "last_owner_comment_id": view["last_owner_comment_id"],
+        "owner_header_sha256": view["owner_header_sha256"],
         "next_open_gate": (
             {"id": first_open["id"], "layer": first_open["layer"],
              "state": first_open["state"],
