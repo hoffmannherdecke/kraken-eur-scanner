@@ -15,7 +15,10 @@ param(
  [switch]$VerifyNotebookPrecommitCms,
  [string]$NotebookReaderJson='',
  [string]$NotebookReaderCms='',
- [string]$ReviewedNotebookCertificateSha256=''
+ [string]$ReviewedNotebookCertificateSha256='',
+ [switch]$ReviewExistingTwoSourcePrecommit,
+ [string]$ExistingNotebookReaderJson='',
+ [string]$ExistingCloudInventoryJson=''
 )
 # V3 experimental Paper scoped operator: SOURCE PREPARATION ONLY.
 # GitHub/CI draft; not an installed cutover, not a stop, not a rollback.
@@ -2354,6 +2357,92 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
+# Reuse the TWO existing already-authenticated SOURCE OWNERS: Notebook's
+# password-protected PG17 private Reader and independently fetched public
+# production series/CAS inventory. This simply consumes their output files;
+# it NEVER authenticates their ORIGINS, stops Tasks or authorizes CAS.
+# PR613 optional second Notebook certificate is NOT a dependency.
+function Read-V3ScopedPrecommitSnapshotFile([string]$Path,[string[]]$ExactKeys){
+ if(-not [IO.Path]::IsPathRooted($Path) -or
+    $Path.StartsWith('\\\\') -or $Path.StartsWith('//')){
+  throw 'V3_PR515_TWO_SOURCE_LOCAL_FILE_ONLY'
+ }
+ $item=Get-Item -LiteralPath $Path -Force -ErrorAction Stop
+ if($item.PSIsContainer -or
+    [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 8192){
+  throw 'V3_PR515_TWO_SOURCE_UNSAFE_FILE'
+ }
+ $bytes=[IO.File]::ReadAllBytes($item.FullName)
+ $raw=[Text.UTF8Encoding]::new($false,$true).GetString([byte[]]$bytes)
+ if($raw.StartsWith([char]0xFEFF)){
+  throw 'V3_PR515_TWO_SOURCE_UNEXPECTED_BOM'
+ }
+ $json=$raw|ConvertFrom-Json -ErrorAction Stop
+ if($null -eq $json -or $json -isnot [pscustomobject]){
+  throw 'V3_PR515_TWO_SOURCE_NOT_JSON_OBJECT'
+ }
+ $actual=@($json.PSObject.Properties.Name)
+ if($actual.Count -ne $ExactKeys.Count -or
+    @($actual | Where-Object {$_ -cnotin $ExactKeys}).Count -ne 0){
+  throw 'V3_PR515_TWO_SOURCE_FIELD_SET_DRIFT'
+ }
+ foreach($field in $ExactKeys){
+  if(@([regex]::Matches($raw,('"' + [regex]::Escape($field) + '"\s*:'))).Count -ne 1){
+   throw 'V3_PR515_TWO_SOURCE_DUPLICATE_OR_MISSING_FIELD'
+  }
+ }
+ # WinPS 5.1 and newer PowerShell versions do not treat JSON ISO timestamps
+ # identically. Preserve the exact checked wire literal and reject escape
+ # forms (including backslash-u) instead of trusting ConvertFrom-Json dates.
+ $ts=@([regex]::Matches($raw,'"observed_at_utc"\s*:\s*"(?<v>[^"\\]*)"'))
+ if($ts.Count -ne 1 -or
+    [string]$ts[0].Groups['v'].Value -cnotmatch
+     '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}(Z|\+00:00)$'){
+  throw 'V3_PR515_TWO_SOURCE_NONCANONICAL_UTC_LITERAL'
+ }
+ $json.observed_at_utc=[string]$ts[0].Groups['v'].Value
+ return $json
+}
+if($ReviewExistingTwoSourcePrecommit){
+ if($Execute -or $BackupOriginalIntake -or $PreviewPr515PreCas -or
+    $PreviewPr515Quiesced -or $PreviewPr515Armed -or
+    $PreviewPr515ArmedTwoCycle -or $VerifyNotebookPrecommitCms -or
+    $Confirm -or $OriginalBackupDirectory -or
+    $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256 -or
+    $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
+    $NotebookReaderJson -or $NotebookReaderCms -or
+    $ReviewedNotebookCertificateSha256 -or
+    [string]::IsNullOrWhiteSpace($ExistingNotebookReaderJson) -or
+    [string]::IsNullOrWhiteSpace($ExistingCloudInventoryJson)){
+  throw 'V3_PR515_TWO_SOURCE_REVIEW_ONLY_MODE_CONFLICT'
+ }
+ $readerKeys=@('kind','status','observed_at_utc','epoch_count',
+  'intent_count','actor','role','independent_tls_certificate_verified',
+  'independent_attempt_history_complete','historical_cas_never_proven',
+  'public_old_only_series_verified_here','native_rearm_authorized',
+  'precommit_restore_authorized','cloud_cas_authorized',
+  'v3_paper_release_authorized')
+ $cloudKeys=@('kind','observed_at_utc',
+  'historically_cas_never_invoked_proven','precommit_restore_authorized',
+  'active_series_count','exact_original_active_count',
+  'recorded_v3_series_count','recorded_v3_rotation_count',
+  'recorded_v3_release_decision_count','installed_v3_cas_function_count',
+  'valid_single_active_index_count')
+ $reader=Read-V3ScopedPrecommitSnapshotFile -Path $ExistingNotebookReaderJson -ExactKeys $readerKeys
+ $cloud=Read-V3ScopedPrecommitSnapshotFile -Path $ExistingCloudInventoryJson -ExactKeys $cloudKeys
+ $status=Get-V3Pr515TwoSourceCloudSnapshotReview -Reader $reader -Cloud $cloud
+ $status|ConvertTo-Json -Compress -Depth 3
+ if($status.disposition -cne 'REVIEW_ONLY_CURRENT_OLD_ONLY_AND_READER_EMPTY_CAS_HISTORY_UNKNOWN'){
+  exit 1
+ }
+ return
+}
+if(-not $ReviewExistingTwoSourcePrecommit -and
+  ($ExistingNotebookReaderJson -or $ExistingCloudInventoryJson)){
+ throw 'V3_PR515_TWO_SOURCE_ARGUMENTS_OUTSIDE_READONLY_MODE'
+}
+
 # Read-only originalhost consumer of the exact detached Notebook Reader CMS.
 # Never call Native STOP/restore, CAS or Cloud as a result of this evidence.
 if($VerifyNotebookPrecommitCms){
