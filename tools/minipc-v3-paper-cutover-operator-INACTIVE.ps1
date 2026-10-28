@@ -504,7 +504,9 @@ function Get-V3CasPreinvokeAuditReview([object]$Audit) {
     $Audit.paper_only -ne $true -or
     $Audit.real_money_actions -ne $false){
   $disposition='BLOCK_INVALID_CAS_AUDIT_SCOPE'
- } elseif([string]$Audit.cas_attempt_state -cne 'NOT_INVOKED' -or
+ } elseif($Audit.local_predispatch_unknown_latch_present -eq $true -or
+          $Audit.any_committed_preinvoke_intent_observed -eq $true -or
+          [string]$Audit.cas_attempt_state -cne 'NOT_INVOKED' -or
           $Audit.any_failed_timedout_unknown_or_committed_attempt -ne $false -or
           $Audit.attempt_intent_count -ne 0 -or
           $Audit.inflight_or_unknown_count -ne 0){
@@ -577,6 +579,11 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
    $resolution='HOLD_INVALID_CLOUD_OUTCOME'
   } elseif($outcome -eq 'COMMITTED' -or $phase -eq 'CLOUD_COMMITTED'){
    $resolution='HOLD_POSTCOMMIT_OLD_INTAKE_PERMANENTLY_FENCED'
+  } elseif($Receipt.local_predispatch_unknown_latch_present -eq $true -or
+          $Receipt.any_committed_preinvoke_intent_observed -eq $true){
+   # Even before any RPC, a durable intent or local UNKNOWN must never be
+   # reclassified as safe-to-restore by a caller's "NOT_INVOKED" boolean.
+   $resolution='HOLD_PERSISTED_PREINVOKE_OR_LOCAL_UNKNOWN_NO_REARM'
   } elseif($invoked -or $outcome -ne 'NOT_INVOKED' -or $phase -eq 'CAS_INVOKED'){
    $resolution='HOLD_CAS_ATTEMPTED_MANUAL_CLOUD_RECONCILIATION'
   } elseif($phase -eq 'PRE_CUTOVER'){
