@@ -942,6 +942,38 @@ class LiveOwnerReadbackTests(unittest.TestCase):
         self.assertNotIn("historical PR593",
                          packet["owners"][1]["latest_comments"][-1]["excerpt"])
 
+    def test_current_owner_section_is_not_cut_before_operative_priority(self):
+        from tools.context_before_action import live_owner_readback
+        current = "Current decision " + ("reviewed evidence " * 270)
+        self.assertGreater(len(current), 4500)
+        current += "\n**Priorität nach Audit:** einzig bestehender Originalhost-Gate\n"
+        body = current + "\n---\nARCHIVED PR593 is not a new task"
+        def fetch(url):
+            item, link = self.fake_fetch(url)
+            if url.endswith("/issues/99"):
+                item = dict(item, body=body)
+            if url.endswith("/issues/353"):
+                item = dict(item, body="CURRENT PROJECT RULE\n---\nARCHIVED OLD RULE")
+            return item, link
+        packet = live_owner_readback("strategy_release", "V3", fetcher=fetch)
+        current_v3 = packet["owners"][1]
+        self.assertIn("**Priorität nach Audit:**", current_v3["current_owner_header_excerpt"])
+        self.assertNotIn("ARCHIVED PR593", current_v3["current_owner_header_excerpt"])
+        self.assertFalse(current_v3["current_owner_header_truncated"])
+        self.assertEqual(packet["owners"][0]["current_owner_header_excerpt"],
+                         "CURRENT PROJECT RULE")
+
+    def test_extreme_owner_header_exposes_truncation_instead_of_hiding_it(self):
+        from tools.context_before_action import live_owner_readback
+        def fetch(url):
+            item, link = self.fake_fetch(url)
+            if url.endswith("/issues/99"):
+                item = dict(item, body="CURRENT " + "x"*9000)
+            return item, link
+        view = live_owner_readback("strategy_release", "V3", fetcher=fetch)["owners"][1]
+        self.assertTrue(view["current_owner_header_truncated"])
+        self.assertEqual(len(view["current_owner_header_excerpt"]), 8500)
+
     def test_general_and_hardware_do_not_import_v3_owner(self):
         from tools.context_before_action import live_owner_readback
         for domain in ("project_general", "infrastructure", "operations", "research",

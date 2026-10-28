@@ -160,11 +160,17 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
                         ),
                         "ready_to_execute": False,
                     }
+        # Include the whole CURRENT leading owner section, not a blind
+        # 4,500-char prefix that can cut off its final operative priority.
+        # The first divider separates current authority from historical PRs.
+        current_section = issue["body"].split(V3_GATE_START, 1)[0]
+        current_section = current_section.split("\n---\n", 1)[0].strip()
         owners.append({
             "issue": number,
             "url": issue.get("html_url"),
             "issue_updated_at": issue.get("updated_at"),
-            "current_owner_header_excerpt": issue["body"][:4500],
+            "current_owner_header_excerpt": current_section[:8500],
+            "current_owner_header_truncated": len(current_section) > 8500,
             "latest_comments": [
                 {"url": x["html_url"], "created_at": x.get("created_at"),
                  "excerpt": x["body"][:1800]} for x in recent
