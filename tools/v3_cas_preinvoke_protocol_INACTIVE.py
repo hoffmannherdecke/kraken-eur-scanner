@@ -132,7 +132,71 @@ def review_untrusted_audit_readback(intent: AuditIntent, row: Mapping[str, Any] 
 
 
 def invoke_v3_paper_cas(*_args: Any, **_kwargs: Any) -> None:
-    """Hard lock even if imported by a future caller."""
+    """ONE existing CAS entrypoint: isolated pre-dispatch file-contract test.
+
+    NEVER sends an RPC, invokes callbacks, grants permission, or authorizes
+    native restore. The exact opt-in is ONLY for disposable temp fixtures.
+    No user-supplied JSON, ACL claim, or synthetic reader can unlock CAS.
+    In particular, a successful offline write ends in an unconditional HOLD.
+    The physical originalhost/external custody integration is NOT installed.
+    """
+    fixture_keys = {
+        "offline_test_only", "offline_test_intent", "offline_test_reader_export",
+        "offline_test_root", "offline_test_expected_caller_acl_sha256",
+        "offline_test_reviewed_at_utc",
+    }
+    if (not _args and set(_kwargs) == fixture_keys
+            and _kwargs["offline_test_only"] is True):
+        # Lazy import: the existing local witness imports AuditIntent from
+        # this module. No new caller, script, scheduler or executor identity.
+        from pathlib import Path
+        import tempfile
+        from v3_cas_local_spool_INACTIVE import (
+            append_local_witness_candidate, append_local_predispatch_unknown_latch,
+        )
+
+        root = _kwargs["offline_test_root"]
+        intent = _kwargs["offline_test_intent"]
+        if not isinstance(root, Path) or not isinstance(intent, AuditIntent):
+            raise PreinvokeHold("HOLD_OFFLINE_SINGLE_CALLER_INPUT")
+        try:
+            resolved = root.resolve(strict=True)
+            temp_base = Path(tempfile.gettempdir()).resolve(strict=True)
+            if resolved == temp_base or temp_base not in resolved.parents:
+                raise PreinvokeHold("HOLD_OFFLINE_SINGLE_CALLER_OUTSIDE_TEMP")
+        except (OSError, RuntimeError) as exc:
+            raise PreinvokeHold("HOLD_OFFLINE_SINGLE_CALLER_TEMP_MISSING") from exc
+
+        # Exercise the EXISTING Notebook-reader -> canonical CMS proposal
+        # adapter, not caller-supplied green flags. This is NOT proof that the
+        # synthetic export came from a real authenticated post-COMMIT session.
+        candidate = build_unsigned_cms_from_original_reader_export(
+            _kwargs["offline_test_reader_export"],
+            expected_source_sha256=intent.source_sha256,
+            expected_fence_sha256=intent.fence_sha256,
+            expected_caller_acl_sha256=_kwargs[
+                "offline_test_expected_caller_acl_sha256"],
+            reviewed_at_utc=_kwargs["offline_test_reviewed_at_utc"],
+        )
+        claim = json.loads(candidate["unsigned_payload_utf8"])
+        if (claim.get("epoch_id") != intent.epoch_id
+                or claim.get("intent_id") != intent.intent_id
+                or claim.get("intent_sha256") != intent.digest
+                or claim.get("request_sha256") != intent.request_sha256
+                or claim.get("rpc") != intent.rpc
+                or candidate["cas_dispatch_authorized"] is not False
+                or candidate["cloud_reader_authenticated"] is not False
+                or candidate["independent_offdb_custody_proven"] is not False):
+            raise PreinvokeHold("HOLD_OFFLINE_SINGLE_CALLER_PROPOSAL_DRIFT")
+
+        # The existing atomic O_EXCL/fsync/readback primitives produce the
+        # local candidate and its STICKY UNKNOWN latch before any *possible*
+        # dispatch. A crash between them leaves an unretryable partial record.
+        append_local_witness_candidate(root, intent)
+        append_local_predispatch_unknown_latch(root, intent)
+
+    # Preserve unconditional production denial even with a valid synthetic
+    # reader, valid local file chain and caller-supplied "approval" flags.
     raise PreinvokeHold("V3_CAS_PREINVOKE_PROTOCOL_SOURCE_UNCONDITIONALLY_LOCKED")
 
 # SOURCE ONLY: an external HMAC packet cannot itself prove off-DB durability,
