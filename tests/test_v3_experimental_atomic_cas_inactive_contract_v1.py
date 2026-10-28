@@ -37,6 +37,21 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertRegex(self.sql,
             r"from public, anon, authenticated, service_role;")
 
+    def test_original_sql_has_first_effectful_unconditional_cas_install_hold(self):
+        # The source filename and comments cannot protect a production DB.
+        # Its FIRST statement in the DO block must be a literal unconditional
+        # exception; no role or function check may precede the hold.
+        sql = self.sql
+        marker = "raise exception 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+        self.assertEqual(sql.count(marker), 1)
+        self.assertRegex(
+            sql,
+            r"(?is)do \$v3_cas_install_locked\$\s*begin\s*"
+            r"raise exception 'V3_CAS_INSTALL_SOURCE_INACTIVE_APPROVAL_REQUIRED';"
+        )
+        self.assertLess(sql.index(marker), sql.index("if pg_catalog.to_regprocedure("))
+        self.assertLess(sql.index(marker), sql.index("execute $v3_cas_create_locked$"))
+
     def test_new_cas_function_never_exposes_default_public_execute_between_statements(self):
         # CREATE and REVOKE must run in one server transaction even when
         # psql/Supabase SQL editor use autocommit. A statement-by-statement
@@ -71,7 +86,9 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
                         sql.index("$v3_cas_revoke_locked$;"))
         self.assertLess(sql.index("$v3_cas_revoke_locked$;"),
                         sql.rindex(close))
-        self.assertNotRegex(sql, r"(?im)^\s*grant\s+execute\s+on")
+        # This GRANT exists only inside the same atomic DO as CREATE/REVOKE.
+        # The prior 'no GRANT anywhere' assertion contradicted the contract.
+        self.assertEqual(len(re.findall(r"(?im)^grant\s+execute\s+on", sql)), 1)
 
     def test_only_postgres_admin_only_membership_and_nologin_executor_can_receive_cas_execute(self):
         sql = self.sql
