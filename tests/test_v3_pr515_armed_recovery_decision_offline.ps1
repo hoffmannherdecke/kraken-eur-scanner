@@ -8,7 +8,8 @@ $ast=[Management.Automation.Language.Parser]::ParseFile(
 if(@($errors).Count){throw 'V3_PR515_AST_FAILED'}
 $names=@('Test-V3ScopedIntakeTaskSet','Test-V3ScopedOriginalBackupContract',
  'Test-V3Pr515FreshRecoveryIdentity','Test-V3Pr515QuiescedRecoveryIdentity',
- 'Test-V3Pr515ArmedRecoveryIdentity','Test-V3PrecommitCurrentCloudInventory',
+ 'Test-V3Pr515ArmedRecoveryIdentity','Test-V3Pr515CurrentOriginalBackupManifest',
+  'Test-V3Pr515DisabledOnlyXmlDifference','Test-V3PrecommitCurrentCloudInventory',
  'Get-V3Pr515TwoSourceCloudSnapshotReview','Read-V3ScopedPrecommitSnapshotFile',
  'Resolve-V3ScopedCutoverRecovery','Get-V3Pr515DisabledRestoreXmlForNativeValidation')
 $fn=@($ast.FindAll({param($n)
@@ -36,11 +37,39 @@ foreach($i in 0,1){
  })
 }
 $backup=[pscustomobject]@{
- kind='V3_OLD_INTAKE_BACKUP_PROPOSAL_V1'
+ kind='V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1'
+ status='ORIGINAL_TASK_XML_BACKUP_ONLY_NOT_RELEASED'
  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
- old_stage_release_sha='c'*40;paper_only=$true
- real_money_actions=$false;task_records=$entries
+ checked_at_utc=[datetimeoffset]::UtcNow.ToString('o')
+ backup_directory=('C:\Users\ADMIN\Trading\State\V3Paper-PreCAS-Backup-'+'1'*32)
+ native_task_count=2;original_tasks_still_running=$true
+ scheduler_task_mutations=$false;original_v2r4_changed=$false
+ cloud_cas_invoked=$false;new_v3_writer_started=$false
+ original_cloud_series_independently_checked=$false
+ v3_release_or_six_proofs_credited=0
+ task_records=@(
+  [pscustomobject]@{task_name=$names2[0];xml_file='Candidates.task.xml';xml_sha256=$xml[0];action_sha256='f'*64},
+  [pscustomobject]@{task_name=$names2[1];xml_file='WAIT.task.xml';xml_sha256=$xml[1];action_sha256='e'*64}
+ )
 }
+if(-not(Test-V3Pr515CurrentOriginalBackupManifest $backup)){throw 'ACTUAL_PR515_BACKUP_NOT_ACCEPTED'}
+foreach($bad in @(
+ @{key='kind';value='V3_OLD_INTAKE_BACKUP_PROPOSAL_V1'},
+ @{key='native_task_count';value=3},
+ @{key='backup_directory';value='C:\Other\backup'},
+ @{key='original_v2r4_changed';value=$true}
+)){
+ $negative=Clone $backup
+ $negative.($bad.key)=$bad.value
+ if(Test-V3Pr515CurrentOriginalBackupManifest $negative){
+  throw ('ACTUAL_PR515_BACKUP_FOREIGN_ACCEPTED_'+$bad.key)
+ }
+}
+$negative=Clone $backup;$negative.task_records[1].xml_file='../wrong.xml'
+if(Test-V3Pr515CurrentOriginalBackupManifest $negative){throw 'BACKUP_TRAVERSAL_ACCEPTED'}
+$negative=Clone $backup;$negative.task_records[1].xml_sha256=$xml[0]
+if(Test-V3Pr515CurrentOriginalBackupManifest $negative){throw 'BACKUP_DUPLICATE_XML_SHA_ACCEPTED'}
+
 $pre=[pscustomobject]@{
  kind='V3_PRECAS_PR515_FRESH_BACKUP_READONLY_COMPATIBILITY_V1'
  status='COMPATIBLE_READONLY_NOT_RELEASED'
@@ -147,6 +176,31 @@ $write=$restore.IndexOf('Enable-ScheduledTask')
 if($first -lt 0 -or $second -le $first -or $write -le $second){
  throw 'RESTORE_EXECUTION_LOCK_DRIFT'
 }
+# Originalhost PR618 proves Saved Task may omit Settings/Enabled.
+# Post-STOP COM XML may add exactly Enabled=false, not change anything else.
+$ns='http://schemas.microsoft.com/windows/2004/02/mit/task'
+$original='<Task xmlns="'+$ns+'"><Settings><Hidden>false</Hidden></Settings><Actions><Exec><Command>python.exe</Command></Exec></Actions></Task>'
+$disabled=$original.Replace('<Hidden>false</Hidden>','<Hidden>false</Hidden><Enabled>false</Enabled>')
+if(-not(Test-V3Pr515DisabledOnlyXmlDifference $original $disabled)){
+ throw 'PR515_MISSING_OPTIONAL_ENABLED_POSTSTOP_FALSE_FAILURE'
+}
+$explicit=$original.Replace('<Hidden>false</Hidden>','<Enabled>true</Enabled><Hidden>false</Hidden>')
+if(-not(Test-V3Pr515DisabledOnlyXmlDifference $explicit $disabled)){
+ throw 'PR515_EXPLICIT_ENABLED_POSTSTOP_FALSE_FAILURE'
+}
+foreach($bad in @(
+ $disabled.Replace('<Command>python.exe</Command>','<Command>other.exe</Command>'),
+ $disabled.Replace('<Hidden>false</Hidden>','<Hidden>true</Hidden>'),
+ $disabled.Replace('<Enabled>false</Enabled>','<Enabled>true</Enabled>'),
+ $disabled.Replace('<Enabled>false</Enabled>','<Enabled>false</Enabled><Enabled>false</Enabled>'),
+ $disabled.Replace('<Settings>','<Settings xmlns="urn:foreign">')
+)){
+ if(Test-V3Pr515DisabledOnlyXmlDifference $original $bad){
+  throw 'PR515_NON_ENABLED_XML_CHANGE_ACCEPTED'
+ }
+}
+Write-Output 'V3_PR515_REAL_ORIGINAL_BACKUP_AND_ENABLED_DEFAULT_NEGATIVE_TESTS_PASS'
+
 Write-Output 'V3_PR515_ELEVEN_ISOLATED_STATE_CASES_PASS_NO_HOST_IO_NO_RELEASE'
 
 

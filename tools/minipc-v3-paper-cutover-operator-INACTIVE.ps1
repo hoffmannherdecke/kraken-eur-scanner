@@ -147,6 +147,39 @@ function Test-V3ScopedOriginalBackupContract([object]$Manifest) {
  return $true
 }
 
+# Actual originalhost PR515 PRECAS manifest, not historical simulated PR316.
+# A caller's shape-only JSON is NEVER trusted for disk, Cloud or task authority.
+function Test-V3Pr515CurrentOriginalBackupManifest([object]$Manifest) {
+ if($null -eq $Manifest -or
+    [string]$Manifest.kind -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1' -or
+    [string]$Manifest.status -cne 'ORIGINAL_TASK_XML_BACKUP_ONLY_NOT_RELEASED' -or
+    [string]$Manifest.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    [int]$Manifest.native_task_count -ne 2 -or
+    $Manifest.original_tasks_still_running -ne $true -or
+    $Manifest.scheduler_task_mutations -ne $false -or
+    $Manifest.original_v2r4_changed -ne $false -or
+    $Manifest.cloud_cas_invoked -ne $false -or
+    $Manifest.new_v3_writer_started -ne $false -or
+    $Manifest.original_cloud_series_independently_checked -ne $false -or
+    [int]$Manifest.v3_release_or_six_proofs_credited -ne 0){return $false}
+ if([string]$Manifest.backup_directory -cnotmatch
+    '^C:\\Users\\ADMIN\\Trading\\State\\V3Paper-PreCAS-Backup-[a-f0-9]{32}$'){return $false}
+ $rows=@($Manifest.task_records)
+ if($rows.Count -ne 2 -or
+    -not(Test-V3ScopedIntakeTaskSet -Names @($rows|ForEach-Object{[string]$_.task_name}))){return $false}
+ $files=@{'CryptoMiniPC-V2R4PaperCandidates'='Candidates.task.xml';'CryptoMiniPC-V2R4PaperWait'='WAIT.task.xml'}
+ $shas=@()
+ foreach($row in $rows){
+  $name=[string]$row.task_name
+  if(-not $files.ContainsKey($name) -or
+     [string]$row.xml_file -cne $files[$name] -or
+     [string]$row.xml_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$row.action_sha256 -cnotmatch '^[a-f0-9]{64}$'){return $false}
+  $shas+=@([string]$row.xml_sha256)
+ }
+ return ($shas[0] -cne $shas[1])
+}
+
 # Shared ORIGINAL current PR515/fresh two-Task backup read-only identity.
 # An externally supplied report is NOT independently authenticated or a live
 # stop/restore/CAS receipt. This one policy is reused by both pre-CAS phase
@@ -609,7 +642,7 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
                    $Receipt.protected_lifecycle_cloudsync_running_ack -eq $true)
    if(-not $fullyDisabled){
     $resolution='HOLD_ARMED_PARTIAL_STOP_MANUAL_INCIDENT_NO_REARM'
-   }elseif(-not(Test-V3ScopedOriginalBackupContract -Manifest $Receipt.backup_manifest) -or
+   }elseif(-not(Test-V3Pr515CurrentOriginalBackupManifest -Manifest $Receipt.backup_manifest) -or
       $Receipt.backup_contract_verified -ne $true -or
       $Receipt.old_cloud_single_active_readback -ne $true -or
       $Receipt.new_v3_series_absent_readback -ne $true -or
@@ -631,7 +664,7 @@ function Resolve-V3ScopedCutoverRecovery([object]$Receipt) {
     }
    }
   } elseif($phase -eq 'QUIESCED' -and $marker -ceq 'QUIESCED' -and
-      (Test-V3ScopedOriginalBackupContract -Manifest $Receipt.backup_manifest) -and
+      (Test-V3Pr515CurrentOriginalBackupManifest -Manifest $Receipt.backup_manifest) -and
       $Receipt.backup_contract_verified -eq $true -and
       $Receipt.native_intake_tasks_disabled_ack -eq $true -and
       $Receipt.original_intake_processes_absent_ack -eq $true -and
@@ -2005,12 +2038,28 @@ function Test-V3Pr515DisabledOnlyXmlDifference([string]$Saved,[string]$Disabled)
   $old=[xml]::new();$new=[xml]::new()
   $old.XmlResolver=$null;$new.XmlResolver=$null
   $old.LoadXml($Saved);$new.LoadXml($Disabled)
-  $node='/*[local-name()="Task"]/*[local-name()="Settings"]/*[local-name()="Enabled"]'
-  $a=@($old.SelectNodes($node));$b=@($new.SelectNodes($node))
-  if($a.Count -ne 1 -or $b.Count -ne 1 -or
-     [string]$a[0].InnerText -cne 'true' -or
-     [string]$b[0].InnerText -cne 'false'){return $false}
-  $b[0].InnerText='true'
+  $ns='http://schemas.microsoft.com/windows/2004/02/mit/task'
+  if([string]$old.DocumentElement.LocalName -cne 'Task' -or
+     [string]$new.DocumentElement.LocalName -cne 'Task' -or
+     [string]$old.DocumentElement.NamespaceURI -cne $ns -or
+     [string]$new.DocumentElement.NamespaceURI -cne $ns){return $false}
+  $path='/*[local-name()="Task"]/*[local-name()="Settings"]'
+  $os=@($old.SelectNodes($path));$ds=@($new.SelectNodes($path))
+  if($os.Count -ne 1 -or $ds.Count -ne 1 -or
+     [string]$os[0].NamespaceURI -cne $ns -or
+     [string]$ds[0].NamespaceURI -cne $ns){return $false}
+  $a=@($os[0].SelectNodes('./*[local-name()="Enabled"]'))
+  $b=@($ds[0].SelectNodes('./*[local-name()="Enabled"]'))
+  # A missing original Enabled is valid and defaults to true (actual PR618
+  # physical PASS). Poststop must contain explicit false and NOTHING else.
+  if($a.Count -gt 1 -or $b.Count -ne 1 -or
+     [string]$b[0].NamespaceURI -cne $ns -or
+     ([string]$b[0].InnerText).Trim() -notin @('false','0') -or
+     ($a.Count -eq 1 -and
+      ([string]$a[0].NamespaceURI -cne $ns -or
+       ([string]$a[0].InnerText).Trim() -notin @('true','1')))){return $false}
+  if($a.Count -eq 1){[void]$os[0].RemoveChild($a[0])}
+  [void]$ds[0].RemoveChild($b[0])
   return ($old.OuterXml -ceq $new.OuterXml)
  }catch{return $false}
 }
