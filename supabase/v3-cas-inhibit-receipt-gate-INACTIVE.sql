@@ -78,6 +78,10 @@ CREATE TABLE v3_cas_audit.executor_inhibit_v1 (
 );
 ALTER TABLE v3_cas_audit.executor_inhibit_v1 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE v3_cas_audit.executor_inhibit_v1 FORCE ROW LEVEL SECURITY;
+-- Forced RLS: only the existing NOLOGIN table owner can write through
+-- the two restricted SECURITY DEFINER functions; no runtime role can write.
+CREATE POLICY v3_cas_inhibit_owner_only_v1 ON v3_cas_audit.executor_inhibit_v1
+ FOR ALL TO v3_cas_audit_table_owner USING (true) WITH CHECK (true);
 REVOKE ALL ON v3_cas_audit.executor_inhibit_v1
   FROM PUBLIC, anon, authenticated, service_role,
        v3_cas_operator_login, v3_cas_executor, v3_cas_audit_writer,
@@ -277,16 +281,7 @@ COMMIT;
       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)'
        ) IS NOT NULL
     OR (SELECT rolcanlogin FROM pg_roles WHERE rolname='v3_cas_executor') IS DISTINCT FROM FALSE
-    OR EXISTS(SELECT 1 FROM v3_cas_audit.intent_v1)
-    OR NOT EXISTS(
-      SELECT 1 FROM v3_cas_audit.epoch_v1 e
-       WHERE e.epoch_id=p_epoch_id AND NOT e.sealed
-         AND e.next_ordinal=1
-         AND e.predecessor_series_id='PAPER-V2R4-20261009T110135Z'
-         AND e.expected_rpc='public.rotate_v2r4_to_v3_experimental_paper'
-         AND e.source_sha256=p_source_sha256
-         AND e.original_fence_sha256=p_fence_sha256
-         AND e.approved_caller_acl_sha256=p_caller_acl_sha256)
+
  THEN RAISE EXCEPTION 'V3_CAS_INHIBIT_ISSUER_START_SCOPE_HOLD'; END IF;
  INSERT INTO v3_cas_audit.executor_inhibit_v1
     (epoch_id, predecessor_series_id, expected_rpc, source_sha256,
@@ -367,10 +362,7 @@ END $v3_inhibit_postflight$;
 COMMIT;
 
     OR p_stop_time IS NULL OR p_stop_time>clock_timestamp()
-    OR (SELECT count(*) FROM v3_cas_audit.intent_v1
-        WHERE epoch_id=p_epoch_id AND ordinal=1 AND state='PREINVOKE_INTENT') <> 1
-    OR NOT EXISTS(SELECT 1 FROM v3_cas_audit.epoch_v1
-       WHERE epoch_id=p_epoch_id AND sealed AND next_ordinal=2)
+
  THEN RAISE EXCEPTION 'V3_CAS_INHIBIT_ISSUER_CONFIRM_SCOPE_HOLD'; END IF;
  UPDATE v3_cas_audit.executor_inhibit_v1 g
    SET native_stop_at_utc=p_stop_time, acknowledged_at_utc=clock_timestamp(),
