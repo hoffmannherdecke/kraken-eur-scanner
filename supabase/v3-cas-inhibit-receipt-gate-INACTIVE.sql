@@ -106,6 +106,21 @@ BEGIN
        ) IS NOT NULL
     OR (SELECT rolcanlogin FROM pg_roles WHERE rolname='v3_cas_executor') IS DISTINCT FROM FALSE
  THEN RAISE EXCEPTION 'V3_CAS_INHIBIT_ISSUER_START_SCOPE_HOLD'; END IF;
+ -- Bind the issuer's receipt to the ORIGINAL persisted, unsealed CAS epoch.
+ -- Shape-only client hashes must never create an independent inhibit for
+ -- a different source, originalhost fence, or approved caller ACL.
+ PERFORM 1 FROM v3_cas_audit.epoch_v1
+ WHERE epoch_id=p_epoch_id
+   AND predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+   AND expected_rpc='public.rotate_v2r4_to_v3_experimental_paper'
+   AND source_sha256=p_source_sha256
+   AND original_fence_sha256=p_fence_sha256
+   AND approved_caller_acl_sha256=p_caller_acl_sha256
+   AND sealed=false
+ FOR SHARE;
+ IF NOT FOUND THEN
+   RAISE EXCEPTION 'V3_CAS_INHIBIT_ISSUER_EPOCH_BINDING_HOLD';
+ END IF;
  INSERT INTO v3_cas_audit.executor_inhibit_v1
    (epoch_id,predecessor_series_id,expected_rpc,source_sha256,
     original_fence_sha256,caller_acl_sha256,issuer_id,executor_id,state)
