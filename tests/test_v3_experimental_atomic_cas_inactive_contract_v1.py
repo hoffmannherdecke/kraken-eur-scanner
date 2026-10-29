@@ -189,7 +189,7 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
     def test_inhibit_schema_is_existing_private_owner_and_inert(self):
         sql=(ROOT/"supabase/v3-cas-inhibit-receipt-gate-INACTIVE.sql").read_text(encoding="utf-8")
         self.assertRegex(sql,
-            r"(?is)BEGIN;\\s*DO \\$v3_inhibit_lock\\$\\s*BEGIN\\s*"
+            r"(?is)BEGIN;\s*DO \$v3_inhibit_lock\$\s*BEGIN\s*"
             r"RAISE EXCEPTION 'V3_CAS_INHIBIT_SCHEMA_SOURCE_INACTIVE")
         for required in ("REFERENCES v3_cas_audit.epoch_v1(epoch_id)",
                          "ALTER TABLE v3_cas_audit.executor_inhibit_v1 FORCE ROW LEVEL SECURITY",
@@ -197,7 +197,7 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
                          "v3_cas_audit_table_owner",
                          "CHECK (audit_intent_high_watermark=1)"):
             self.assertIn(required,sql)
-        self.assertNotRegex(sql,r"(?im)^\\s*GRANT\\s+(?:EXECUTE|INSERT|UPDATE|DELETE)")
+        self.assertNotRegex(sql,r"(?im)^\s*GRANT\s+(?:EXECUTE|INSERT|UPDATE|DELETE)")
         self.assertIn("GRANT SELECT ON v3_cas_audit.executor_inhibit_v1 TO postgres;",sql)
         self.assertIn("REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;",sql)
         self.assertNotIn("CREATE ROLE",sql)
