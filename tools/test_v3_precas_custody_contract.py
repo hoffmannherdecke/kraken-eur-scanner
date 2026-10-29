@@ -87,6 +87,14 @@ class PreCasCustodyContractTests(unittest.TestCase):
         x["executor_inhibit_continuous_since_before_stop"] = False
         self.assertTrue(review_precas_evidence(x).startswith("HOLD"))
 
+    def test_untrusted_caller_claims_never_override_missing_custody(self):
+        x = complete_fixture()
+        x["durable_attempt_history_authenticated"] = False
+        x["caller_claims_cas_never_invoked"] = True
+        x["current_rpc_count"] = 0
+        x["current_audit_epoch_count"] = 0
+        self.assertTrue(review_precas_evidence(x).startswith("HOLD"))
+
     def test_wrong_phase_holds(self):
         for phase in ("CAS_INVOKED", "CLOUD_COMMITTED", "PRE_CUTOVER", None):
             with self.subTest(phase=phase):
