@@ -35,3 +35,5 @@ The originalhost `tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1` still beg
 
 ## Live evidence boundary — 29 October
 A broad connected cloud catalog read was inconclusive; a narrower follow-up was blocked by tool safety checks. Neither result proves continuous independent CAS-executor inhibition. No cloud permissions, CAS RPC, native task or originalhost restore was changed. Independent durable inhibit issuance and originalhost readback remain REAL_RUNTIME_ACK_PENDING. Preserve all PR515 hardlocks.
+
+Evidence status: this note is an audit of missing proof, not a signed inhibit receipt.
