@@ -2,6 +2,8 @@ name: Backlog issue reconciliation
 
 'on':
   workflow_dispatch:
+  issue_comment:
+    types: [created]
   issues:
     types: [opened, reopened, closed, edited]
   schedule:
@@ -23,6 +25,7 @@ concurrency:
 
 jobs:
   reconcile:
+    if: github.event_name != 'issue_comment'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -66,3 +69,81 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: python tools/validate-backlog-issue-reconciliation.py
+
+  owner-receipt-validation:
+    if: github.event_name == 'issue_comment' && (github.event.issue.number == 99 || github.event.issue.number == 353) && contains(github.event.comment.body, 'PROJECT_BACKLOG_UPDATE_V1')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate receipt and prepare bounded review diff
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: |
+          python -m py_compile tools/backlog_owner_receipt_sync.py
+          python tools/backlog_owner_receipt_sync.py
+          git diff --check
+          git diff -- PROJECT_BACKLOG.md
+      - name: Create review-only draft PR, never push main
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RECEIPT_ID: ${{ github.event.comment.id }}
+        run: |
+          if git diff --quiet -- PROJECT_BACKLOG.md; then
+            echo "Receipt is already reflected in backlog, no PR needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "automation/backlog-owner-${RECEIPT_ID}"
+          git add -- PROJECT_BACKLOG.md
+          git commit -m "docs(backlog): propose authenticated owner receipt ${RECEIPT_ID}"
+          gh auth setup-git
+          git push origin HEAD
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from tools.project_context_change_guard import ROOT, template
+          review = template(ROOT, ["PROJECT_BACKLOG.md"])
+          review["commitment_intake"] = {
+              "disposition": "NO_NEW_FOLLOWUP", "commitment_ids": [],
+              "rationale": "Existing project owner 353 and V3 owner 99 already supervise evidence status; this proposal adds no follow-up or release authorization.",
+              "next_owner_and_gate": "Existing project manager issue 353 must review the bounded backlog diff and current original source evidence before merge.",
+              "no_claim_of_execution_without_evidence": True}
+          impact = review["architecture_integrity"]
+          impact.update({
+              "change_mode": "EXTEND", "affected_area_ids": ["backlog_conversation_intake"],
+              "original_component_and_owner": "The sole PROJECT_BACKLOG.md status block belongs to the existing project issue 353, with V3 issue 99 providing domain evidence.",
+              "systemwide_integration_path": "The registered reconciliation workflow receives authenticated issue comments and creates one draft PR for owner review, without writing main.",
+              "reuse_or_retirement_decision": "Reuse the existing backlog parser, workflow and owner issue; no new manager, scheduler, runtime component or parallel ledger.",
+              "compatibility_and_failure_effects": "Bad comments fail closed; supported milestone changes affect only the bounded status table, not live runtime or release approvals.",
+              "complexity_cost_and_maintenance": "One event-triggered short GitHub Action uses existing infrastructure and requires review, with no continuous polling.",
+              "validation_rollback_and_ack": "Protected PR checks plus human original-owner evidence review are required before merge; source acceptance is not physical ACK."})
+          descriptions = {
+              "prior_decisions": "Original project owner 353 enforces context-first evidence control, and V3 owner 99 retains all release and independent acceptance authority.",
+              "reused_components": "Existing backlog, strict owner receipt parser, registered reconciliation workflow, project context guard and architecture guard.",
+              "no_duplicate_reason": "No second event workflow, coordinator, status ledger or scheduler is introduced; only the registered workflow proposes a bounded diff.",
+              "change_and_evidence": "The triggering authenticated owner comment is recorded as evidence for one proposed status change in the fenced backlog table.",
+              "existing_owner": "Project-wide original owner issue 353, and only when applicable, independent V3 original owner issue 99.",
+              "approval_boundary": "Draft PR only, requiring independent protected CI and human acceptance, with no runtime, cloud, trading or CAS permissions.",
+              "followthrough_and_ack": "An authorized reviewer must verify the original comment, CI, protected branch and resulting canonical backlog state.",
+              "remaining_unknowns": "The suggested milestone remains unmerged and its physical or live truth must be independently reviewed; source-only proposal is not a release."}
+          review.update(descriptions)
+          for item in review["scope_reviews"]:
+              item["decision_applied"] = "Respect existing project owner decisions to update source evidence without inventing live status or another automation system."
+              item["existing_implementation"] = "Original PROJECT_BACKLOG.md bounded table, issue owners 353 and 99, and registered read-only context and followthrough routing."
+              item["conflicts_and_gates"] = "Only original comment evidence is proposed; CI, review, current strategy release and any physical acknowledgement remain separate."
+          body = ("Authenticated original owner receipt proposal for human review. No live or release change.\n\n"
+                  "<!-- PROJECT_CONTEXT_REVIEW_V1\n" + json.dumps(review, indent=2) +
+                  "\nEND_PROJECT_CONTEXT_REVIEW_V1 -->\n")
+          Path(os.environ["RUNNER_TEMP"], "pr-body.md").write_text(body, encoding="utf-8")
+          PY
+          gh pr create --repo "$GH_REPO" --base main --head "automation/backlog-owner-${RECEIPT_ID}" --draft --title "docs(backlog): review owner receipt ${RECEIPT_ID}" --body-file "$RUNNER_TEMP/pr-body.md"
