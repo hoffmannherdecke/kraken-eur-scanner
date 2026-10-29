@@ -33,6 +33,7 @@ END $v3_inhibit_install$;
 
 -- Source draft only. Temporary role escrow follows existing Stage4's exact
 -- membership pattern; this is not a new owner or a new writer.
+GRANT CREATE ON SCHEMA v3_cas_audit TO v3_cas_audit_table_owner;
 GRANT v3_cas_audit_table_owner TO postgres WITH INHERIT FALSE, SET TRUE, ADMIN FALSE;
 SET ROLE v3_cas_audit_table_owner;
 
@@ -103,11 +104,14 @@ BEGIN
 -- and neither CAS nor the service role gets any INSERT/UPDATE/DELETE.
 GRANT SELECT ON v3_cas_audit.executor_inhibit_v1 TO postgres;
 RESET ROLE;
+REVOKE CREATE ON SCHEMA v3_cas_audit FROM v3_cas_audit_table_owner;
+GRANT USAGE ON SCHEMA v3_cas_audit TO v3_cas_audit_reader_actor;
 REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
 
 DO $v3_inhibit_postflight$
 BEGIN
  IF pg_has_role('postgres','v3_cas_audit_table_owner','SET')
+    OR has_schema_privilege('v3_cas_audit_table_owner','v3_cas_audit','CREATE')
     OR NOT has_table_privilege('postgres','v3_cas_audit.executor_inhibit_v1','SELECT')
     OR has_table_privilege('service_role','v3_cas_audit.executor_inhibit_v1','SELECT')
     OR has_table_privilege('v3_cas_executor','v3_cas_audit.executor_inhibit_v1','UPDATE') THEN
@@ -389,7 +393,6 @@ REVOKE ALL ON FUNCTION v3_cas_audit.confirm_executor_inhibit_v1(text,timestamptz
   FROM PUBLIC,anon,authenticated,service_role;
 -- Reader actor's LOGIN is the existing Notebook-only identity; a one-time
 -- critical issuance is intentionally NOT part of routine read-only activity.
-GRANT USAGE ON SCHEMA v3_cas_audit TO v3_cas_audit_reader_actor;
 GRANT EXECUTE ON FUNCTION v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)
   TO v3_cas_audit_reader_actor;
 GRANT EXECUTE ON FUNCTION v3_cas_audit.confirm_executor_inhibit_v1(text,timestamptz,text)
