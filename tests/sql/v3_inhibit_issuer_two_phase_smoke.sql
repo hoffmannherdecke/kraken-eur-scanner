@@ -50,6 +50,23 @@ begin
 end $negative$;
 
 set session authorization v3_cas_inhibit_issuer_actor;
+-- Correctly shaped but wrong source/fence/ACL must not create an inhibit.
+do $epoch_mismatch$
+declare v_hash text;
+begin
+ foreach v_hash in array array['source','fence','acl'] loop
+  begin
+   perform v3_cas_audit.begin_executor_inhibit_v1(
+    'V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    case when v_hash='source' then repeat('9',64) else repeat('3',64) end,
+    case when v_hash='fence' then repeat('9',64) else repeat('4',64) end,
+    case when v_hash='acl' then repeat('9',64) else repeat('5',64) end);
+   raise exception 'MISMATCHED_EPOCH_INHIBIT_ACCEPTED_%',v_hash;
+  exception when others then
+   if sqlerrm not like '%V3_CAS_INHIBIT_ISSUER_EPOCH_BINDING_HOLD%' then raise; end if;
+  end;
+ end loop;
+end $epoch_mismatch$;
 select v3_cas_audit.begin_executor_inhibit_v1(
   'V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
   repeat('3',64),repeat('4',64),repeat('5',64));
