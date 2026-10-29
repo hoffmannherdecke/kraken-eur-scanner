@@ -109,7 +109,19 @@ jobs:
           assert src.count(lock)==1
           root=Path(os.environ["RUNNER_TEMP"])
           unlocked=root/"v3_disposable_issuer_unlocked.sql"
-          unlocked.write_text(src.replace(lock,"  NULL; -- disposable CI fixture only",1),"utf-8")
+          # The disposable postgres:16 service role is a SUPERUSER, unlike
+          # production Supabase postgres. Superusers report all pg_has_role
+          # rights regardless of membership. Test the actual SET edge instead.
+          superuser_only = "pg_has_role('postgres','v3_cas_audit_table_owner','SET')"
+          assert src.count(superuser_only) == 1
+          member_set = ("EXISTS (SELECT 1 FROM pg_auth_members m "
+                        "JOIN pg_roles parent ON parent.oid=m.roleid "
+                        "JOIN pg_roles actor ON actor.oid=m.member "
+                        "WHERE parent.rolname='v3_cas_audit_table_owner' "
+                        "AND actor.rolname='postgres' AND m.set_option)")
+          only_ci = src.replace(lock,"  NULL; -- disposable CI fixture only",1)
+          only_ci = only_ci.replace(superuser_only,member_set,1)
+          unlocked.write_text(only_ci,"utf-8")
           fixture=Path("tests/sql/v3_inhibit_issuer_two_phase_smoke.sql").read_text("utf-8")
           assert fixture.count(r"\i __SOURCE_CI_ONLY__")==1
           (root/"v3_disposable_issuer_test.sql").write_text(
