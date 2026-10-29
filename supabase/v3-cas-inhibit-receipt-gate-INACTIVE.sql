@@ -29,6 +29,10 @@ BEGIN
                AND NOT rolcanlogin AND NOT rolbypassrls AND NOT rolsuper) THEN
    RAISE EXCEPTION 'V3_CAS_INHIBIT_ORIGINAL_ROLES_MISSING_HOLD';
  END IF;
+ IF to_regrole('v3_cas_inhibit_issuer_actor') IS NOT NULL THEN
+  RAISE EXCEPTION 'V3_CAS_INHIBIT_ISSUER_ROLE_EXISTS_HOLD';
+ END IF;
+ CREATE ROLE v3_cas_inhibit_issuer_actor NOLOGIN NOINHERIT NOBYPASSRLS CONNECTION LIMIT 0;
 END $v3_inhibit_install$;
 
 -- Source draft only. Temporary role escrow follows existing Stage4's exact
@@ -88,7 +92,7 @@ REVOKE ALL ON v3_cas_audit.executor_inhibit_v1
        v3_cas_audit_reader;
 
 -- Proposed two-phase Notebook critical-only issuer in this SAME audit owner.
--- Existing Notebook reader actor can perform only this scoped SECURITY DEFINER
+-- Separate NOLOGIN critical issuer actor can perform only this scoped SECURITY DEFINER
 -- function, never arbitrary INSERT or UPDATE on the protected table. Its
 -- independent DPAPI/SCRAM + verify-full authentication must be physically
 -- verified before any unlock. No second Notebook certificate is mandated.
@@ -102,14 +106,14 @@ SET search_path = 'pg_catalog','v3_cas_audit'
 AS $v3_issuer_begin$
 DECLARE v_time timestamptz;
 BEGIN
- IF session_user <> 'v3_cas_audit_reader_actor'
+ IF session_user <> 'v3_cas_inhibit_issuer_actor'
     OR p_source_sha256 !~ '^[a-f0-9]{64}
 -- the future caller never receives table access. FOR SHARE needs SELECT,
 -- and neither CAS nor the service role gets any INSERT/UPDATE/DELETE.
 GRANT SELECT ON v3_cas_audit.executor_inhibit_v1 TO postgres;
 RESET ROLE;
 REVOKE CREATE ON SCHEMA v3_cas_audit FROM v3_cas_audit_table_owner;
-GRANT USAGE ON SCHEMA v3_cas_audit TO v3_cas_audit_reader_actor;
+GRANT USAGE ON SCHEMA v3_cas_audit TO v3_cas_inhibit_issuer_actor;
 REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
 
 DO $v3_inhibit_postflight$
@@ -290,7 +294,7 @@ COMMIT;
     (p_epoch_id,'PAPER-V2R4-20261009T110135Z',
      'public.rotate_v2r4_to_v3_experimental_paper',p_source_sha256,
      p_fence_sha256,p_caller_acl_sha256,
-     'v3_cas_audit_reader_actor','v3_cas_executor','INHIBITED')
+     'v3_cas_inhibit_issuer_actor','v3_cas_executor','INHIBITED')
  RETURNING inhibit_started_at_utc INTO v_time;
  RETURN v_time;
 END $v3_issuer_begin$;
@@ -303,7 +307,7 @@ SET search_path = 'pg_catalog','v3_cas_audit'
 AS $v3_issuer_confirm$
 DECLARE v_at timestamptz;
 BEGIN
- IF session_user <> 'v3_cas_audit_reader_actor'
+ IF session_user <> 'v3_cas_inhibit_issuer_actor'
     OR p_receipt_sha256 !~ '^[a-f0-9]{64}
 -- the future caller never receives table access. FOR SHARE needs SELECT,
 -- and neither CAS nor the service role gets any INSERT/UPDATE/DELETE.
@@ -369,7 +373,7 @@ COMMIT;
        valid_through_utc=clock_timestamp()+interval '4 minutes',
        receipt_sha256=p_receipt_sha256, audit_intent_high_watermark=1
  WHERE g.epoch_id=p_epoch_id
-   AND g.issuer_id='v3_cas_audit_reader_actor'
+   AND g.issuer_id='v3_cas_inhibit_issuer_actor'
    AND g.native_stop_at_utc IS NULL
    AND g.inhibit_started_at_utc<p_stop_time
  RETURNING acknowledged_at_utc INTO v_at;
@@ -383,12 +387,12 @@ REVOKE ALL ON FUNCTION v3_cas_audit.begin_executor_inhibit_v1(text,text,text,tex
   FROM PUBLIC,anon,authenticated,service_role;
 REVOKE ALL ON FUNCTION v3_cas_audit.confirm_executor_inhibit_v1(text,timestamptz,text)
   FROM PUBLIC,anon,authenticated,service_role;
--- Reader actor's LOGIN is the existing Notebook-only identity; a one-time
--- critical issuance is intentionally NOT part of routine read-only activity.
+-- Dedicated issuer role stays NOLOGIN until separately approved one-time
+-- Notebook credential activation. Existing Notebook reader remains READ-ONLY.
 GRANT EXECUTE ON FUNCTION v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)
-  TO v3_cas_audit_reader_actor;
+  TO v3_cas_inhibit_issuer_actor;
 GRANT EXECUTE ON FUNCTION v3_cas_audit.confirm_executor_inhibit_v1(text,timestamptz,text)
-  TO v3_cas_audit_reader_actor;
+  TO v3_cas_inhibit_issuer_actor;
 -- Table SELECT still only granted below to the original CAS definer.
 
 -- Narrow read permission for the existing CAS SECURITY DEFINER owner only;
