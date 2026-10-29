@@ -4,6 +4,8 @@
 
 **Vor Arbeit:** Domäne bestimmen, geschützten GitHub-`main`-HEAD und neueste Original-ACKs lesen. Projektweiter Kontextmanager: Issue #353; **nur bei V3 Paper** Fachowner Issue #99 samt aktuellen Kommentaren. Andere Aufträge zum eigenen Owner. `context_before_action.py` liest Issues **nicht automatisch**; ältere Überschriften sind Historie, keine Live-Belege.
 
+**Vor manueller Wiederholung (Reuse-Gate):** Bei bereits belegter Einrichtung zuerst vorhandene Artefakte, Zertifikate/CA-Dateien, Konfiguration und jüngsten Komponenten-ACK gezielt auf Wiederverwendbarkeit prüfen; keine erneuten Downloads, Enrollments oder Basisprüfungen allein wegen eines neuen Folge-Gates. Neue Fehlermeldung auf die kleinste abweichende Fähigkeit eingrenzen (z. B. `verify-full` statt erfolgreichem Stage3-Login), mit einem gebündelten, möglichst read-only Diagnoseschritt. Lokaler Dateibestand ist ohne Originalhost-Zugriff nicht aus GitHub ableitbar: nur wenn nötig eine knappe Inventur vom Nutzer anfordern. `DONE` bleibt DONE; neuer Teilnachweis separat als `PENDING|PASS|HOLD` dokumentieren. Kein Sicherheits-Downgrade und keine Freigabe durch einen bloßen Basis-PASS.
+
 **Anti-Doppelarbeit:** `SOURCE_DONE`, `PHYSICAL_STAGED_DONE`, `REAL_RUNTIME_ACK_PENDING|DONE` trennen. Offener Runtime-ACK macht fertige Source-/Notebook-/TPM-Prüfungen nicht erneut offen. Bei Konflikt `UNKNOWN/NEEDS_TARGETED_ACK`; keine Entwicklung ohne belegte Lücke.
 
 **Beleg 28.10., keine Live-Garantie:** PR607/608 Source/CI, PR608 Notebook-Staging und PR606/PR515 PreCAS-Prüfungen fertig. Echter Writer-COMMIT, Notebook-Archivierungs-ACK, No-Rearm-Cutover und CAS noch offen. PR593 bleibt im Backlog historisch; stets #99 neu prüfen.
