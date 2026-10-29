@@ -106,6 +106,38 @@ insert into v3_cas_audit.intent_v1 (
  repeat('6',64),repeat('3',64),repeat('4',64),'PREINVOKE_INTENT'
 );
 
+-- Disposable synthetic inhibit receipt: no real issuer/signature or live grant.
+-- Exists solely to keep the original rollback CAS smoke meaningful AFTER
+-- the new mandatory Cloud receipt gate; never use as production release proof.
+create table v3_cas_audit.executor_inhibit_v1 (
+ epoch_id text primary key,
+ predecessor_series_id text not null,
+ expected_rpc text not null,
+ source_sha256 text not null, original_fence_sha256 text not null,
+ caller_acl_sha256 text not null, receipt_sha256 text not null,
+ issuer_id text not null, executor_id text not null, state text not null,
+ inhibit_started_at_utc timestamptz not null,
+ native_stop_at_utc timestamptz not null,
+ acknowledged_at_utc timestamptz not null,
+ valid_through_utc timestamptz not null,
+ audit_intent_high_watermark bigint not null
+);
+insert into v3_cas_audit.executor_inhibit_v1
+ (epoch_id,predecessor_series_id,expected_rpc,source_sha256,
+ original_fence_sha256,caller_acl_sha256,receipt_sha256,issuer_id,
+ executor_id,state,inhibit_started_at_utc,native_stop_at_utc,
+ acknowledged_at_utc,valid_through_utc,audit_intent_high_watermark)
+values
+ ('V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  'PAPER-V2R4-20261009T110135Z',
+  'public.rotate_v2r4_to_v3_experimental_paper',
+  repeat('3',64),repeat('4',64),repeat('5',64),repeat('7',64),
+  'SYNTHETIC_DISPOSABLE_ONLY','v3_cas_executor','INHIBITED',
+  clock_timestamp()-interval '2 minutes',
+  clock_timestamp()-interval '1 minute',
+  clock_timestamp()-interval '20 seconds',
+  clock_timestamp()+interval '2 minutes',1);
+
 -- This inactive SQL file is loaded ONLY in disposable PostgreSQL.
 \ir ../../supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql
 
@@ -175,6 +207,7 @@ begin
     ,'preinvoke_source_sha256',repeat('3',64)
     ,'preinvoke_fence_sha256',repeat('4',64)
     ,'preinvoke_caller_acl_sha256',repeat('5',64)
+    ,'preinvoke_inhibit_receipt_sha256',repeat('7',64)
   );
 
   -- Positive SYNTHETIC same-session fixture, NOT independently committed.
