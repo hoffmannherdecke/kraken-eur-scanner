@@ -671,6 +671,26 @@
           "operations",
           "research"
         ]
+      },
+      "dispatch_readiness_gate": {
+        "kind": "MINIPC_READY_BEFORE_FRESH_REQUEST_V1",
+        "scope": "ALL_PROJECT_DOMAINS",
+        "order": [
+          "read_current_context_and_approved_task",
+          "supervised_start_existing_runner",
+          "confirm_originalhost_service_running",
+          "confirm_github_runner_online_idle",
+          "create_exactly_one_fresh_sha_pinned_issue_13_request",
+          "verify_run_prejob_and_task_specific_ack",
+          "supervised_stop_and_confirm_disabled_no_worker"
+        ],
+        "comment_ttl_minutes": 10,
+        "offline_or_busy": "HOLD_NO_DISPATCH",
+        "expired_request": "EXPECTED_DENIAL_RECHECK_READINESS_NO_AUTORETRY",
+        "windows_running_alone_sufficient": false,
+        "scheduled_window_proves_current_readiness": false,
+        "no_new_runner_scheduler_privileges_or_release": true,
+        "canonical_runbook": "docs/minipc-runner-bounded-windows-v1.md"
       }
     }
   },
