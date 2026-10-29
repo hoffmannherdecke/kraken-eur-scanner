@@ -14,8 +14,8 @@ START = "<!-- OWNER_RECEIPT_SYNC_START -->"
 END = "<!-- OWNER_RECEIPT_SYNC_END -->"
 ALLOWED = {"SOURCE_DONE", "PHYSICAL_STAGED_DONE", "REAL_RUNTIME_ACK_PENDING", "REAL_RUNTIME_ACK_DONE", "BLOCKED"}
 RECEIPT = re.compile(
-    r"(?m)^PROJECT_BACKLOG_UPDATE_V1\s*\\|\s*key=([A-Z0-9_]{5,80})"
-    r"\s*\\|\s*status=([A-Z_]+)\s*\\|\s*evidence=(https://github\.com/hoffmannherdecke/kraken-eur-scanner/(?:issues|pull)/[0-9]+(?:#issuecomment-[0-9]+)?)\s*$"
+    r"(?m)^PROJECT_BACKLOG_UPDATE_V1\s*\|\s*key=([A-Z0-9_]{5,80})"
+    r"\s*\|\s*status=([A-Z_]+)\s*\|\s*evidence=(https://github\.com/hoffmannherdecke/kraken-eur-scanner/(?:issues|pull)/[0-9]+(?:#issuecomment-[0-9]+)?)\s*$"
 )
 
 def main():
@@ -37,8 +37,8 @@ def main():
     start = data.index(START) + len(START)
     end = data.index(END, start)
     block = data[start:end]
-    line = f"| \`{key}\` | \`{status}\` | [Owner receipt]({evidence}) |"
-    lines = [x for x in block.splitlines() if x.startswith("| ") and not x.startswith("| Gate ") and not x.startswith("|---") and not x.startswith(f"| \`{key}\` |")]
+    line = f"| `{key}` | `{status}` | [Owner receipt]({evidence}) |"
+    lines = [x for x in block.splitlines() if x.startswith("| ") and not x.startswith("| Gate ") and not x.startswith("|---") and not x.startswith(f"| `{key}` |")]
     lines.append(line)
     lines = sorted(set(lines))
     newblock = "\n\n| Gate | Status | Latest owner receipt |\n|---|---|---|\n" + "\n".join(lines) + "\n\n"
