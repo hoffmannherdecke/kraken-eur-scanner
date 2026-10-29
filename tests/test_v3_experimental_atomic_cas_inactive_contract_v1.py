@@ -200,7 +200,8 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertNotRegex(sql,r"(?im)^\s*GRANT\s+(?:EXECUTE|INSERT|UPDATE|DELETE)")
         self.assertIn("GRANT SELECT ON v3_cas_audit.executor_inhibit_v1 TO postgres;",sql)
         self.assertIn("REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;",sql)
-        self.assertNotIn("CREATE ROLE",sql)
+        self.assertIn("CREATE ROLE v3_cas_inhibit_issuer_actor NOLOGIN NOINHERIT NOBYPASSRLS CONNECTION LIMIT 0;",sql)
+        self.assertNotIn("ALTER ROLE v3_cas_inhibit_issuer_actor LOGIN",sql)
         self.assertNotIn("CREATE OR REPLACE FUNCTION",sql)
 
     def test_two_phase_inhibit_issuer_requires_notebook_actor_and_preserves_source_lock(self):
@@ -209,19 +210,20 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
             "V3_CAS_INHIBIT_SCHEMA_SOURCE_INACTIVE_OWNER_AND_ISSUER_NOT_ABSOLVED",
             "CREATE FUNCTION v3_cas_audit.begin_executor_inhibit_v1(",
             "CREATE FUNCTION v3_cas_audit.confirm_executor_inhibit_v1(",
-            "session_user <> 'v3_cas_audit_reader_actor'",
+            "session_user <> 'v3_cas_inhibit_issuer_actor'",
             "inhibit_started_at_utc timestamptz NOT NULL DEFAULT clock_timestamp()",
             "g.native_stop_at_utc IS NULL",
             "CREATE POLICY v3_cas_inhibit_owner_only_v1",
             "GRANT EXECUTE ON FUNCTION v3_cas_audit.begin_executor_inhibit_v1(",
             "GRANT EXECUTE ON FUNCTION v3_cas_audit.confirm_executor_inhibit_v1(",
             "REVOKE CREATE ON SCHEMA v3_cas_audit FROM v3_cas_audit_table_owner",
-            "v3_cas_audit_reader_actor",
+            "v3_cas_inhibit_issuer_actor",
+            "CREATE ROLE v3_cas_inhibit_issuer_actor NOLOGIN NOINHERIT NOBYPASSRLS CONNECTION LIMIT 0;",
         ):
             self.assertIn(token,source,token)
         # The Notebook identity is not a free-form SQL writer.
-        self.assertNotIn("GRANT INSERT ON v3_cas_audit.executor_inhibit_v1 TO v3_cas_audit_reader_actor",source)
-        self.assertNotIn("GRANT UPDATE ON v3_cas_audit.executor_inhibit_v1 TO v3_cas_audit_reader_actor",source)
+        self.assertNotIn("GRANT INSERT ON v3_cas_audit.executor_inhibit_v1 TO v3_cas_inhibit_issuer_actor",source)
+        self.assertNotIn("GRANT UPDATE ON v3_cas_audit.executor_inhibit_v1 TO v3_cas_inhibit_issuer_actor",source)
         self.assertRegex(source,
             r"(?is)BEGIN;\s*DO \$v3_inhibit_lock\$\s*BEGIN\s*"
             r"RAISE EXCEPTION 'V3_CAS_INHIBIT_SCHEMA_SOURCE_INACTIVE")
