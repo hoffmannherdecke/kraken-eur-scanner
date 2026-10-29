@@ -8,6 +8,7 @@ create role v3_cas_executor nologin;
 create role v3_cas_audit_writer nologin;
 create role v3_cas_audit_reader nologin;
 create role v3_cas_audit_table_owner nologin;
+create role v3_cas_audit_reader_actor login noinherit;
 create schema v3_cas_audit authorization postgres;
 create table v3_cas_audit.epoch_v1 (
  epoch_id text primary key, predecessor_series_id text not null,
