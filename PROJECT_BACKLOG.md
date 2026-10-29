@@ -8,9 +8,10 @@ Diese begrenzte Tabelle dokumentiert **nur** den zuletzt nachgewiesenen Stand ei
 
 | Gate | Status | Latest owner receipt |
 |---|---|---|
-| `V3_PRIVATE_CLOUD_AUDIT_SCHEMA` | `REAL_RUNTIME_ACK_DONE` | [Produktive Installation und kontrollierter Cloud-ACL/RLS-Readback](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6506878204) |
-| `V3_NOTEBOOK_READER_VERIFY_FULL` | `REAL_RUNTIME_ACK_DONE` | [Aktueller Notebook-Reader physisch belegt](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6506686609) |
+| `BACKLOG_AUTOMATION_E2E_TEST` | `SOURCE_DONE` | [Owner receipt](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353#issuecomment-6508495205) |
 | `V3_INDEPENDENT_ISSUER_NOTEBOOK_LOGIN` | `REAL_RUNTIME_ACK_PENDING` | [Issuer noch NOLOGIN und ohne Enrollment](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6506878204) |
+| `V3_NOTEBOOK_READER_VERIFY_FULL` | `REAL_RUNTIME_ACK_DONE` | [Aktueller Notebook-Reader physisch belegt](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6506686609) |
+| `V3_PRIVATE_CLOUD_AUDIT_SCHEMA` | `REAL_RUNTIME_ACK_DONE` | [Produktive Installation und kontrollierter Cloud-ACL/RLS-Readback](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6506878204) |
 
 <!-- OWNER_RECEIPT_SYNC_END -->
 
