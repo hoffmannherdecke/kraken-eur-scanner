@@ -1,0 +1,34 @@
+name: Backlog owner receipt proposal
+on:
+  issue_comment:
+    types: [created]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  propose:
+    if: >-
+      (github.event.issue.number == 99 || github.event.issue.number == 353) &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+      contains(github.event.comment.body, 'PROJECT_BACKLOG_UPDATE_V1')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate owner receipt and update bounded section
+        env:
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+        run: python3 tools/backlog_owner_receipt_sync.py
+      - name: Propose protected backlog update
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          add-paths: PROJECT_BACKLOG.md
+          branch: automation/backlog-owner-receipt
+          delete-branch: true
+          title: 'docs: synchronize verified owner receipt into project backlog'
+          body: |
+            Automatically proposed from an explicit, trusted project owner receipt.
+            Review the evidence and current release owner before merging.
+            Does not modify operational runtime, CAS, auth, or protected main directly.
