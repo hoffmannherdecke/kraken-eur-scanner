@@ -45,6 +45,42 @@ def _continuous_same_fence(e):
     return type(a) is int and type(b) is int and a == b and a >= 0
 
 
+
+def review_variant2_notebook_boundary(action, evidence):
+    """Variant 2 offline policy; source-only, never live release authority.
+
+    Normal trading does not call the Notebook. Critical cutover/recovery must
+    have an independently authenticated Notebook receipt plus the existing
+    exclusive CAS inhibit and audit evidence. Caller claims are NOT signatures.
+    """
+    normal = {"NORMAL_MARKET_SCAN", "NORMAL_PAPER_DECISION", "NORMAL_PAPER_ORDER",
+              "NORMAL_PAPER_STOP", "NORMAL_PAPER_AUDIT"}
+    critical = {"NATIVE_STOP", "PR515_PRECOMMIT_RESTORE", "CAS_CUTOVER",
+                "CRITICAL_RECOVERY", "LIVE_MONEY_ACTIVATION"}
+    if action in normal:
+        if evidence.get("current_epoch_authorized") is True and (
+            evidence.get("unknown_latch") is False and
+            evidence.get("runtime_guard_healthy") is True
+        ):
+            return "REVIEW_ONLY_NOTEBOOK_NOT_REQUIRED_FOR_NORMAL_OPERATION"
+        return "HOLD_NORMAL_OPERATION_GUARDS"
+    if action not in critical:
+        return "HOLD_UNKNOWN_OPERATION"
+    required = (
+        "notebook_independent_receipt_authenticated",
+        "critical_scope_signed_and_fence_bound",
+        "exclusive_executor_inhibit_continuous",
+        "complete_attempt_unknown_history_authenticated",
+        "originalhost_guard_verified",
+        "fresh_pre_mutation_recheck",
+    )
+    if not all(evidence.get(key) is True for key in required):
+        return "HOLD_CRITICAL_INDEPENDENT_PROOF_MISSING"
+    if evidence.get("unknown_latch") is not False:
+        return "HOLD_CRITICAL_UNKNOWN"
+    return "REVIEW_ONLY_CRITICAL_CANDIDATE_NOT_RELEASED"
+
+
 def review_precas_evidence(e):
     """Candidate evidence policy, NOT a release authority."""
     required = (
@@ -169,6 +205,43 @@ class PreCasCustodyContractTests(unittest.TestCase):
                 x = complete_fixture()
                 x[lane][field] = value
                 self.assertTrue(review_precas_evidence(x).startswith("HOLD"))
+
+
+    def test_variant2_normal_paper_does_not_require_online_notebook(self):
+        for action in ("NORMAL_MARKET_SCAN", "NORMAL_PAPER_DECISION",
+                       "NORMAL_PAPER_ORDER", "NORMAL_PAPER_STOP", "NORMAL_PAPER_AUDIT"):
+            with self.subTest(action=action):
+                e = {"current_epoch_authorized": True,
+                     "unknown_latch": False, "runtime_guard_healthy": True,
+                     "notebook_online": False}
+                self.assertEqual(review_variant2_notebook_boundary(action, e),
+                                 "REVIEW_ONLY_NOTEBOOK_NOT_REQUIRED_FOR_NORMAL_OPERATION")
+
+    def test_variant2_critical_actions_require_independent_receipt(self):
+        for action in ("NATIVE_STOP", "PR515_PRECOMMIT_RESTORE", "CAS_CUTOVER",
+                       "CRITICAL_RECOVERY", "LIVE_MONEY_ACTIVATION"):
+            e = {"current_epoch_authorized": True, "unknown_latch": False}
+            with self.subTest(action=action):
+                self.assertTrue(review_variant2_notebook_boundary(action, e).startswith("HOLD"))
+                e.update({key: True for key in (
+                    "notebook_independent_receipt_authenticated",
+                    "critical_scope_signed_and_fence_bound",
+                    "exclusive_executor_inhibit_continuous",
+                    "complete_attempt_unknown_history_authenticated",
+                    "originalhost_guard_verified", "fresh_pre_mutation_recheck",
+                )})
+                self.assertEqual(review_variant2_notebook_boundary(action, e),
+                                 "REVIEW_ONLY_CRITICAL_CANDIDATE_NOT_RELEASED")
+
+    def test_variant2_fails_closed_for_unknown_or_unguarded_normal_operation(self):
+        self.assertEqual(review_variant2_notebook_boundary("UNRECOGNIZED", {}),
+                         "HOLD_UNKNOWN_OPERATION")
+        for evidence in ({"current_epoch_authorized": True,
+                          "unknown_latch": True, "runtime_guard_healthy": True},
+                         {"current_epoch_authorized": True,
+                          "unknown_latch": False, "runtime_guard_healthy": False}):
+            self.assertTrue(review_variant2_notebook_boundary(
+                "NORMAL_PAPER_ORDER", evidence).startswith("HOLD"))
 
     def test_wrong_phase_holds(self):
         for phase in ("CAS_INVOKED", "CLOUD_COMMITTED", "PRE_CUTOVER", None):
