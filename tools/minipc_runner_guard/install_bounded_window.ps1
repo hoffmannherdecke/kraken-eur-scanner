@@ -12,7 +12,7 @@ $root = 'C:\ProgramData\CryptoSupportGuard'
 $hook = Join-Path $root 'pre_job.ps1'
 $pinPath = Join-Path $root 'approved-private-workflow-sha.txt'
 $window = Join-Path $root 'bounded_window.ps1'
-$pin = '28bdddccd7d917151958c4b64461dc6289e71eca'
+$pin = '92007df015f45ddf2cb8a296e00e0f592a883606'
 
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
 $principal = New-Object Security.Principal.WindowsPrincipal($identity)
