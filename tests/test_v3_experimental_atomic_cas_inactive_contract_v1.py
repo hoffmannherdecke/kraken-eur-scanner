@@ -198,7 +198,7 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
                          "CHECK (audit_intent_high_watermark=1)"):
             self.assertIn(required,sql)
         self.assertNotRegex(sql,r"(?im)^\s*GRANT\s+(?:INSERT|UPDATE|DELETE)")
-        self.assertEqual(len(re.findall(r"(?im)^\s*GRANT\s+EXECUTE\s+ON FUNCTION",sql)),2)
+        self.assertEqual(len(re.findall(r"(?im)^\s*GRANT\s+EXECUTE\s+ON FUNCTION",sql)),3)
         self.assertNotRegex(sql,r"(?im)^\s*GRANT\s+EXECUTE.*\s+TO\s+(?:PUBLIC|anon|authenticated|service_role)")
         self.assertIn("GRANT SELECT ON v3_cas_audit.executor_inhibit_v1 TO postgres;",sql)
         self.assertIn("REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;",sql)
@@ -229,6 +229,28 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertRegex(source,
             r"(?is)BEGIN;\s*DO \$v3_inhibit_lock\$\s*BEGIN\s*"
             r"RAISE EXCEPTION 'V3_CAS_INHIBIT_SCHEMA_SOURCE_INACTIVE")
+
+    def test_durable_unknown_mandatory_before_original_cas_paper_mutation(self):
+        body=self.body
+        for token in (
+            "pg_catalog.to_regclass('v3_cas_audit.attempt_v1')",
+            "V3_CAS_DURABLE_ATTEMPT_LEDGER_ABSENT_HOLD",
+            "from v3_cas_audit.attempt_v1 t",
+            "t.state='DISPATCH_UNKNOWN'",
+            "t.emitter_actor='v3_cas_executor_actor'",
+            "t.request_sha256=i.request_sha256",
+            "t.fence_sha256=p_new_v3_config->>'preinvoke_fence_sha256'",
+            "V3_CAS_DURABLE_DISPATCH_UNKNOWN_NOT_BOUND_HOLD",
+        ):
+            self.assertIn(token,body,token)
+        self.assertLess(body.index("V3_CAS_DURABLE_DISPATCH_UNKNOWN_NOT_BOUND_HOLD"),
+                        body.index("update public.paper_series"))
+        schema=(ROOT/"supabase/v3-cas-inhibit-receipt-gate-INACTIVE.sql").read_text("utf-8")
+        self.assertIn("CREATE TABLE v3_cas_audit.attempt_v1",schema)
+        self.assertIn("CREATE FUNCTION v3_cas_audit.append_dispatch_unknown_v1(",schema)
+        self.assertIn("session_user <> 'v3_cas_executor_actor'",schema)
+        self.assertIn("state text NOT NULL CHECK(state='DISPATCH_UNKNOWN')",schema)
+        self.assertNotIn("GRANT INSERT ON v3_cas_audit.attempt_v1",schema)
 
     def test_private_committed_preinvoke_first_intent_is_server_side_gate(self):
         # The standalone caller's claimed CMS/reader booleans cannot release
