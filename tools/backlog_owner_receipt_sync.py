@@ -7,7 +7,6 @@ bounded edit. The protected main branch is never edited by this script.
 import json
 import os
 import re
-import sys
 from pathlib import Path
 
 START = "<!-- OWNER_RECEIPT_SYNC_START -->"
