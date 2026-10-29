@@ -203,6 +203,29 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertNotIn("CREATE ROLE",sql)
         self.assertNotIn("CREATE OR REPLACE FUNCTION",sql)
 
+    def test_two_phase_inhibit_issuer_requires_notebook_actor_and_preserves_source_lock(self):
+        source=(ROOT/"supabase/v3-cas-inhibit-receipt-gate-INACTIVE.sql").read_text(encoding="utf-8")
+        for token in (
+            "V3_CAS_INHIBIT_SCHEMA_SOURCE_INACTIVE_OWNER_AND_ISSUER_NOT_ABSOLVED",
+            "CREATE FUNCTION v3_cas_audit.begin_executor_inhibit_v1(",
+            "CREATE FUNCTION v3_cas_audit.confirm_executor_inhibit_v1(",
+            "session_user <> 'v3_cas_audit_reader_actor'",
+            "inhibit_started_at_utc timestamptz NOT NULL DEFAULT clock_timestamp()",
+            "g.native_stop_at_utc IS NULL",
+            "CREATE POLICY v3_cas_inhibit_owner_only_v1",
+            "GRANT EXECUTE ON FUNCTION v3_cas_audit.begin_executor_inhibit_v1(",
+            "GRANT EXECUTE ON FUNCTION v3_cas_audit.confirm_executor_inhibit_v1(",
+            "REVOKE CREATE ON SCHEMA v3_cas_audit FROM v3_cas_audit_table_owner",
+            "v3_cas_audit_reader_actor",
+        ):
+            self.assertIn(token,source,token)
+        # The Notebook identity is not a free-form SQL writer.
+        self.assertNotIn("GRANT INSERT ON v3_cas_audit.executor_inhibit_v1 TO v3_cas_audit_reader_actor",source)
+        self.assertNotIn("GRANT UPDATE ON v3_cas_audit.executor_inhibit_v1 TO v3_cas_audit_reader_actor",source)
+        self.assertRegex(source,
+            r"(?is)BEGIN;\s*DO \$v3_inhibit_lock\$\s*BEGIN\s*"
+            r"RAISE EXCEPTION 'V3_CAS_INHIBIT_SCHEMA_SOURCE_INACTIVE")
+
     def test_private_committed_preinvoke_first_intent_is_server_side_gate(self):
         # The standalone caller's claimed CMS/reader booleans cannot release
         # the CAS; this does not prove the external identity or full request.
