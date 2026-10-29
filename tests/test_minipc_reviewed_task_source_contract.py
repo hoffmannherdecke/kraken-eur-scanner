@@ -142,6 +142,8 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
             "disposition='HOLD_REQUIRES_INDEPENDENT_HISTORICAL_CUSTODY'",
             "raw_log_lines_exposed=$false",
             "local_filesystem_writes=$false",
+            "originalhost_restore_authorized=$false",
+            "match_semantics='UNTRUSTED_TEXT_CANDIDATES_NOT_AUTHENTICATED_CAS_DISPATCH'",
         ):
             self.assertIn(required, source)
         for forbidden in ("Write-Host", "Set-Content", "Invoke-RestMethod"):
