@@ -9,7 +9,7 @@
 5. **Ausführung:** Nach belegten Teilschritten selbstständig bis zum autorisierten Ziel fortfahren. Echtgeld, aktives Paper/CAS/STOP/Restore, neue Credentials/Rechte, Ausgaben und irreversible Aktionen nur nach ihrem bestehenden spezifischen Gate. V2R4 nicht implizit umstellen.
 6. **Übergabe:** Entscheidend sind aktueller `main`, neueste fachliche Originalnachweise und genau ein nächster Owner/Gate. Datiertes Material ist Historie, kein neuer Auftrag. Keine automatische Chat-Kontextübernahme behaupten.
 
-**Quellenrollen:** `docs/project-control-plane-governance.md` = Autorität/Evidenz; `research/context-before-action-routing-v1.json` = aufgabenbezogene Auswahl; `research/project-followthrough-routing-v1.json` = Komponenten-Owner; `PROJECT_BACKLOG.md` = Aufgaben; `project-current-state.json` = deklarierte Strategie; Issues #353/#99 = aktuelle Entscheidungen/Nachweise. Keine parallele Statusautorität.
+**Quellenrollen:** Governance = Autorität; Kontext-Routing = Auswahl; Followthrough-Routing = Owner; Backlog = Aufgaben; Current-State = Deklaration; Issues #353/#99 = Originalentscheidungen. Keine parallele Autorität.
 
 ---
 
