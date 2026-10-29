@@ -9,8 +9,6 @@
 5. **Ausführung:** Nach belegten Teilschritten selbstständig bis zum autorisierten Ziel fortfahren. Echtgeld, aktives Paper/CAS/STOP/Restore, neue Credentials/Rechte, Ausgaben und irreversible Aktionen nur nach ihrem bestehenden spezifischen Gate. V2R4 nicht implizit umstellen.
 6. **Übergabe:** Entscheidend sind aktueller `main`, neueste fachliche Originalnachweise und genau ein nächster Owner/Gate. Datiertes Material ist Historie, kein neuer Auftrag. Keine automatische Chat-Kontextübernahme behaupten.
 
-**Quellenrollen:** Governance = Autorität; Kontext-Routing = Auswahl; Followthrough-Routing = Owner; Backlog = Aufgaben; Current-State = Deklaration; Issues #353/#99 = Originalentscheidungen. Keine parallele Autorität.
-
 ---
 
 ## Dauerhafter Einstieg – Original-Owner statt statischer PR
@@ -55,9 +53,11 @@ Diese vier Regeln konkretisieren den **bestehenden** Kontext-vor-Aktion-Manager;
 
 **Erfolgsmessung:** weniger wiederholte manuelle Nutzeraktionen und CI-Korrekturschleifen bei unveränderten Sicherheitsgrenzen. Ein Text- oder PR-Merge beweist nicht, dass die Arbeitsweise in künftigen Chats automatisch ausgeführt wurde; dies ist bei der nächsten tatsächlichen Aufgabe anhand des Verlaufs zu prüfen. Kein V3-/Trading-/Windows-Release durch diese Prozessregel.
 
-## Dialog-Arbeitsmodus (konsolidiert)
+## Dialog-Arbeitsmodus: vereinbartes Ziel statt einzelner Arbeitsblock
 
-Vereinbarte Ziele eigenständig bis zu belegtem Abschluss oder echtem Freigabe-/Ausführungsblocker weiterbearbeiten; keine künstlichen Chat-Haltepunkte, keine unbelegte Hintergrundarbeit. Für Projektentscheidungen höchste verfügbare Denkstufe bevorzugen. Nutzer nur für wirkliche Genehmigungen oder nicht selbst zugängliche Schritte einbeziehen. Bestehende Rechte, Ausgaben-, Runtime- und PR-Gates bleiben unverändert. Ausführliche historische Fassung und Beschluss: Issue #353, Kommentar 6240037211; kein eigener Manager.
+Gilt für **normale interaktive Chat-Arbeit**: Der **vereinbarte, tatsächlich prüfbare Zielzustand** ist maßgeblich; nach Teilschritten im **selben laufenden Antwort-/Tool-Durchgang** eigenständig und **ohne neue Nutzerantwort weiterarbeiten**. **Eine abschließende Antwort erst** nach belegtem Ziel, echtem Blocker oder Laufzeitgrenze. **Eine finale Chat-Antwort startet keine heimliche asynchrone Weiterarbeit**.
+
+**Freigaben unverändert**: kein ungenehmigter Runtime-/Release-/Secrets-/Kosten-Eingriff. Höchste verfügbare Denkstufe für Projektarbeit bevorzugen; knappe belegte Zwischenstände sind keine Haltepunkte. Ausführliche Nutzerentscheidung: Issue #353, Kommentar 6240037211.
 
 ## Projektweite Mini-PC-Ausführung: bestehender eingeschränkter Runner
 
