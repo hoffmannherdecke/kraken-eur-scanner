@@ -8,6 +8,8 @@ name: V2R4 technical cloud rotation - disposable SQL gate
       - 'supabase/v3-experimental-paper-atomic-cas-INACTIVE-20261013.sql'
       - 'tests/sql/v3_experimental_paper_atomic_cas_smoke.sql'
       - 'tests/test_v3_experimental_atomic_cas_inactive_contract_v1.py'
+      - 'supabase/v3-cas-inhibit-receipt-gate-INACTIVE.sql'
+      - 'tests/sql/v3_inhibit_issuer_two_phase_smoke.sql'
       - 'supabase/functions/v2r4-technical-cutover/index.ts'
       - 'supabase/config.toml'
       - 'tools/v2r4-paper-local-runtime.py'
@@ -89,6 +91,44 @@ jobs:
           PY
           psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/v3_cas_disposable_smoke.sql"
           echo V3_CAS_DISPOSABLE_DB_GATE_OK
+      - name: V3 private independent issuer two-phase PostgreSQL disposable only
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Locked original must fail before creating private table/functions.
+          if psql -X -v ON_ERROR_STOP=1 -f supabase/v3-cas-inhibit-receipt-gate-INACTIVE.sql >"$RUNNER_TEMP/v3_issuer_source_lock.log" 2>&1; then
+            echo V3_PRIVATE_ISSUER_SOURCE_UNEXPECTEDLY_UNLOCKED >&2; exit 1
+          fi
+          grep -Fq 'V3_CAS_INHIBIT_SCHEMA_SOURCE_INACTIVE_OWNER_AND_ISSUER_NOT_ABSOLVED' "$RUNNER_TEMP/v3_issuer_source_lock.log"
+          test "$(psql -X -Atc "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='v3_cas_audit' and c.relname='executor_inhibit_v1'")" = 0
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          src=Path("supabase/v3-cas-inhibit-receipt-gate-INACTIVE.sql").read_text("utf-8")
+          lock="  RAISE EXCEPTION 'V3_CAS_INHIBIT_SCHEMA_SOURCE_INACTIVE_OWNER_AND_ISSUER_NOT_ABSOLVED';"
+          assert src.count(lock)==1
+          root=Path(os.environ["RUNNER_TEMP"])
+          unlocked=root/"v3_disposable_issuer_unlocked.sql"
+          # The disposable postgres:16 service role is a SUPERUSER, unlike
+          # production Supabase postgres. Superusers report all pg_has_role
+          # rights regardless of membership. Test the actual SET edge instead.
+          superuser_only = "pg_has_role('postgres','v3_cas_audit_table_owner','SET')"
+          assert src.count(superuser_only) == 1
+          member_set = ("EXISTS (SELECT 1 FROM pg_auth_members m "
+                        "JOIN pg_roles parent ON parent.oid=m.roleid "
+                        "JOIN pg_roles actor ON actor.oid=m.member "
+                        "WHERE parent.rolname='v3_cas_audit_table_owner' "
+                        "AND actor.rolname='postgres' AND m.set_option)")
+          only_ci = src.replace(lock,"  NULL; -- disposable CI fixture only",1)
+          only_ci = only_ci.replace(superuser_only,member_set,1)
+          unlocked.write_text(only_ci,"utf-8")
+          fixture=Path("tests/sql/v3_inhibit_issuer_two_phase_smoke.sql").read_text("utf-8")
+          assert fixture.count(r"\i __SOURCE_CI_ONLY__")==1
+          (root/"v3_disposable_issuer_test.sql").write_text(
+              fixture.replace(r"\i __SOURCE_CI_ONLY__",r"\i "+str(unlocked)),"utf-8")
+          PY
+          psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/v3_disposable_issuer_test.sql"
+          echo V3_INHIBIT_ISSUER_POSTGRES_DISPOSABLE_PASS
       - name: Scope unrelated Deno network check to actual V2R4/Edge changes
         id: deno_scope
         shell: bash
