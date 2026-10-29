@@ -106,6 +106,24 @@ insert into v3_cas_audit.intent_v1 (
  repeat('6',64),repeat('3',64),repeat('4',64),'PREINVOKE_INTENT'
 );
 
+-- This fixture models a separately committed conservative UNKNOWN attempt.
+-- Production requires the restricted original caller to append it in a
+-- separate transaction; this disposable fixture cannot certify that origin.
+create table v3_cas_audit.attempt_v1 (
+ intent_id uuid primary key references v3_cas_audit.intent_v1(intent_id),
+ epoch_id text not null,requested_rpc text not null,request_sha256 text not null,
+ source_sha256 text not null,fence_sha256 text not null,state text not null,
+ emitter_actor text not null,created_at_utc timestamptz not null default clock_timestamp()
+);
+insert into v3_cas_audit.attempt_v1(
+ intent_id,epoch_id,requested_rpc,request_sha256,source_sha256,
+ fence_sha256,state,emitter_actor)
+values('123e4567-e89b-42d3-a456-426614174000',
+ 'V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+ 'public.rotate_v2r4_to_v3_experimental_paper',
+ repeat('6',64),repeat('3',64),repeat('4',64),
+ 'DISPATCH_UNKNOWN','v3_cas_executor_actor');
+
 -- Disposable synthetic inhibit receipt: no real issuer/signature or live grant.
 -- Exists solely to keep the original rollback CAS smoke meaningful AFTER
 -- the new mandatory Cloud receipt gate; never use as production release proof.
@@ -241,6 +259,7 @@ begin
       )), 'hex');
   cfg := pg_catalog.jsonb_set(cfg,'{preinvoke_request_sha256}',pg_catalog.to_jsonb(request_sha),true);
   update v3_cas_audit.intent_v1 set request_sha256=request_sha;
+  update v3_cas_audit.attempt_v1 set request_sha256=request_sha;
   if (select request_sha256 from v3_cas_audit.intent_v1) is distinct from request_sha then
     raise exception 'full digest fixture setup failed';
   end if;
@@ -432,6 +451,50 @@ begin
     raise exception 'audit negative case modified protected Paper state';
   end if;
 
+  -- Real function calls in isolated PostgreSQL MUST reject missing,
+  -- stale and foreign UNKNOWN receipts before any Paper mutation.
+  caught := false;
+  begin
+    delete from v3_cas_audit.attempt_v1;
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,cfg,new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_DURABLE_DISPATCH_UNKNOWN_NOT_BOUND_HOLD%' then
+      caught := true; else raise; end if;
+  end;
+  if not caught then raise exception 'missing durable UNKNOWN bypassed original CAS'; end if;
+
+  caught := false;
+  begin
+    update v3_cas_audit.attempt_v1
+       set created_at_utc=clock_timestamp()-interval '6 minutes';
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,cfg,new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_DURABLE_DISPATCH_UNKNOWN_NOT_BOUND_HOLD%' then
+      caught := true; else raise; end if;
+  end;
+  if not caught then raise exception 'expired durable UNKNOWN accepted by CAS'; end if;
+
+  caught := false;
+  begin
+    update v3_cas_audit.attempt_v1 set fence_sha256=repeat('f',64);
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,cfg,new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_DURABLE_DISPATCH_UNKNOWN_NOT_BOUND_HOLD%' then
+      caught := true; else raise; end if;
+  end;
+  if not caught then raise exception 'foreign durable UNKNOWN fence accepted'; end if;
+
+  if (select status from public.paper_series where series_id=old_id) <> 'active'
+     or exists(select 1 from public.paper_series where series_id=new_id) then
+    raise exception 'UNKNOWN audit negative case mutated Paper state';
+  end if;
+
   -- An otherwise acceptable extra config property changes the full
   -- request digest and must be denied before the first Paper update.
   caught := false;
@@ -584,6 +647,7 @@ begin
       )), 'hex');
     cfg := pg_catalog.jsonb_set(cfg,'{preinvoke_request_sha256}',pg_catalog.to_jsonb(zero_trade_sha),true);
     update v3_cas_audit.intent_v1 set request_sha256=zero_trade_sha;
+    update v3_cas_audit.attempt_v1 set request_sha256=zero_trade_sha;
     reply := public.rotate_v2r4_to_v3_experimental_paper(
       old_id,old_sha,strategy_sha,runtime_sha,n_out,0,last_out,null,
       new_id,new_test,new_rev,stamp,cfg,
