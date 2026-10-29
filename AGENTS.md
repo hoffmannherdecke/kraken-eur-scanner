@@ -1,12 +1,23 @@
 # Projektweite Arbeitsanweisung — Aktien & Krypto Chancen
 
+## Kurzvertrag — verbindlich vor allen datierten Einzelregeln
+
+1. **Auftrag und Owner:** Arbeit zuerst als project_general / infrastructure / operations / strategy_development / strategy_release / research einordnen. Projektweiter Owner #353; V3-Fachentscheidungen #99; sonst eingetragener Komponenten-Owner. Nur passende Wissens-Scopes über `research/context-before-action-routing-v1.json` lesen. Der Router liest GitHub-Issues nicht selbst.
+2. **Wahrheit:** Neueste echte Original-ACKs der betroffenen Cloud-/Host-/Notebook-Komponente haben bei Betriebsfragen Vorrang; danach aktuelle Owner-Beschlüsse, deklarierter `main`-Stand und historische Listen. `project-current-state.json` ist deklarativ; `PROJECT_BACKLOG.md` ist Aufgabenindex, kein Live-Monitor. Ohne Nachweis `UNKNOWN/NEEDS_TARGETED_ACK`.
+3. **Wiederverwenden:** Bereits nachgewiesene Source-, Staging- und Runtime-Abnahmen separat führen. Keine bereits erledigte Einrichtung erneut durchführen, keine weitere Manager-/Runner-/Workflow-/Scheduler-/Writer-Struktur bei vorhandener Zuständigkeit schaffen. Vor Nutzeraktionen vorhandene sichere Connectoren und geprüfte eingeschränkte Tasks prüfen.
+4. **Änderungen:** Registrierte Owner, Upstream/Consumer, bestehende Tests, CI, Rollback, Kosten und Freigaben prüfen. Quelländerungen durch `PROJECT_CONTEXT_REVIEW_V1`-PR; niemals Guards umgehen. Ein Commit oder CI-PASS ist kein physischer Installations-/Release-ACK.
+5. **Ausführung:** Nach belegten Teilschritten selbstständig bis zum autorisierten Ziel fortfahren. Echtgeld, aktives Paper/CAS/STOP/Restore, neue Credentials/Rechte, Ausgaben und irreversible Aktionen nur nach ihrem bestehenden spezifischen Gate. V2R4 nicht implizit umstellen.
+6. **Übergabe:** Entscheidend sind aktueller `main`, neueste fachliche Originalnachweise und genau ein nächster Owner/Gate. Datiertes Material ist Historie, kein neuer Auftrag. Keine automatische Chat-Kontextübernahme behaupten.
+
+---
+
 ## Dauerhafter Einstieg – Original-Owner statt statischer PR
 
-**Vor Arbeit:** Domäne bestimmen, geschützten GitHub-`main`-HEAD und neueste Original-ACKs lesen. Projektweiter Kontextmanager: Issue #353; **nur bei V3 Paper** Fachowner Issue #99 samt aktuellen Kommentaren. Andere Aufträge zum eigenen Owner. `context_before_action.py` liest Issues **nicht automatisch**; ältere Überschriften sind Historie, keine Live-Belege.
+**Vor Arbeit:** Domäne bestimmen, geschützten GitHub-`main`-HEAD und neueste Original-ACKs lesen. Projektweiter Kontextmanager: Issue #353; **nur bei tatsächlich betroffenem V3-Fach-/Releaseauftrag** Fachowner Issue #99 samt aktuellen Kommentaren. Andere Aufträge zum eigenen Owner. `context_before_action.py` liest Issues **nicht automatisch**; ältere Überschriften sind Historie, keine Live-Belege.
 
 **Anti-Doppelarbeit:** `SOURCE_DONE`, `PHYSICAL_STAGED_DONE`, `REAL_RUNTIME_ACK_PENDING|DONE` trennen. Offener Runtime-ACK macht fertige Source-/Notebook-/TPM-Prüfungen nicht erneut offen. Bei Konflikt `UNKNOWN/NEEDS_TARGETED_ACK`; keine Entwicklung ohne belegte Lücke.
 
-**Beleg 28.10., keine Live-Garantie:** PR607/608 Source/CI, PR608 Notebook-Staging und PR606/PR515 PreCAS-Prüfungen fertig. Echter Writer-COMMIT, Notebook-Archivierungs-ACK, No-Rearm-Cutover und CAS noch offen. PR593 bleibt im Backlog historisch; stets #99 neu prüfen.
+**Status ist keine Arbeitsanweisung:** Datierten PR-/Runtime-Stand hier nur als Historie lesen. Für aktuelle Aufgaben die jeweils neuesten Original-ACKs im richtigen Owner (#353 projektweit, #99 nur bei V3-Themen), den tatsächlichen `main`-Stand und komponentenspezifische Evidenz vergleichen. Geschlossene Meilensteine nicht aus alten Checkboxen erneut öffnen. Kein Merge-, CI- oder Backlog-Eintrag ersetzt Cloud-/Mini-PC-/Notebook-Originalnachweise.
 
 ## Verbindliche Evidenzpriorität (festgelegt 26.10.2026; nicht als Live-Snapshot lesen)
 
@@ -31,10 +42,6 @@ Detaillierter Vertrag: `docs/project-cross-session-handoff-v1.md`. Vorhandene fa
 
 
 
-## Historischer Wartungshalt (20.10.) – SUPERSEDED
-
-Die damalige Planung ist physisch erledigt; siehe aktuellen Cutover-Wartungsstand und Issues #353/#99. Keine erneute CPU-/USV-Abnahme ohne neue Störung. Nur neue V3-spezifische Releasebelege bleiben offen.
-
 ## Verbindlicher Effizienz- und Vollständigkeitsstandard (Nutzerbeschluss 19.10.2026)
 
 Diese vier Regeln konkretisieren den **bestehenden** Kontext-vor-Aktion-Manager; kein zweiter Manager, Scheduler, Runtime-Controller oder neues Freigabegate. Sie gelten projektweit in allen vier Scopes und für interaktive Chat-, GitHub-, Work- und Mini-PC-bezogene Entwicklungsarbeit, soweit die jeweiligen Ausführungsrechte reichen.
@@ -46,15 +53,11 @@ Diese vier Regeln konkretisieren den **bestehenden** Kontext-vor-Aktion-Manager;
 
 **Erfolgsmessung:** weniger wiederholte manuelle Nutzeraktionen und CI-Korrekturschleifen bei unveränderten Sicherheitsgrenzen. Ein Text- oder PR-Merge beweist nicht, dass die Arbeitsweise in künftigen Chats automatisch ausgeführt wurde; dies ist bei der nächsten tatsächlichen Aufgabe anhand des Verlaufs zu prüfen. Kein V3-/Trading-/Windows-Release durch diese Prozessregel.
 
-## Dialog-Arbeitsmodus: vereinbartes Ziel statt einzelner Arbeitsblock (Nutzerbeschluss 17.10.2026)
+## Dialog-Arbeitsmodus: vereinbartes Ziel statt einzelner Arbeitsblock
 
-**Gilt für normale interaktive Chat-Arbeit im gesamten Projekt, nicht nur den geplanten ChatGPT-Work-Lauf.** Hat der Nutzer ein konkretes Projektziel X oder die selbstständige Ausführung des nächsten sinnvollen Schritts beauftragt, ist der **vereinbarte, tatsächlich prüfbare Zielzustand** maßgeblich – nicht das Ende eines beliebigen Zwischenblocks. Nach einem erledigten Teilstück unmittelbar die nächsten bereits autorisierten, sachlich notwendigen Schritte prüfen und im **selben laufenden Antwort-/Tool-Durchgang** eigenständig fortsetzen (Originalquellen → Umsetzung → Test/CI → Nachbesserung → überprüfbares Ergebnis). **Nicht** den Antwortdurchgang mit bloßem Zwischenstand, einer selbst vorgeschlagenen offenen To-do-Fortsetzung oder der faktischen Aufforderung an den Nutzer zu „bitte weiterarbeiten“ beenden, obwohl der Zielzustand unerreicht ist und die Fortführung sicher möglich wäre.
+Gilt für **normale interaktive Chat-Arbeit**: Der **vereinbarte, tatsächlich prüfbare Zielzustand** ist maßgeblich; nach Teilschritten im **selben laufenden Antwort-/Tool-Durchgang** eigenständig und **ohne neue Nutzerantwort weiterarbeiten**. **Eine abschließende Antwort erst** nach belegtem Ziel, echtem Blocker oder Laufzeitgrenze. **Eine finale Chat-Antwort startet keine heimliche asynchrone Weiterarbeit**.
 
-**Denkintensität (Nutzerpräferenz 18.10.):** Für Projektarbeit höchste verfügbare Denkstufe bevorzugen, besonders bei Architektur, Sicherheit, Release und CI. Der Modellregler kann nicht aus GitHub automatisch gesetzt werden; keine neuen API-Aufrufe oder Zeitpläne. Bestehende Projektfreigaben bleiben unverändert; kanonisch Issue #353.
-
-**Fortschrittskommunikation ist kein Haltepunkt:** Bei längerer Bearbeitung kurz über belastbare Zwischenergebnisse informieren und **danach ohne neue Nutzerantwort weiterarbeiten**. Eine abschließende Antwort erst bei (a) belegter Zielerreichung, (b) echtem konkretem Freigabe-/Nutzer-/physischem/externem Zeit- oder Evidenzblocker, (c) tatsächlichem Ende des verfügbaren Arbeitsdurchgangs oder technischer Zugriffs-/Laufzeitgrenze. In Fall (b)/(c) bisheriges Ergebnis und kleinsten offenen Schritt mit aktuellem kanonischen Owner/Checkpoint erhalten; nichts als fertig ausgeben, was nur geplant oder teilweise umgesetzt wurde. Eine finale Chat-Antwort startet keine heimliche asynchrone Weiterarbeit. Die technisch begrenzte Ausführungsdauer ist keine feste Anzahl von Projekt-Teilschritten und es gibt keine Zusage unbegrenzter Laufzeit.
-
-**Freigaben unverändert:** Bereits vorhandene generelle sichere/reversible Entwicklungsfreigaben gelten; Risiko-, Runtime-, Secrets-, API-Kosten-, Trading-/Paper-/Echtgeld-Gates und max. gleichzeitig aktive Projektpakete bzw. Implementierungs-PR gelten weiterhin. Keine zusätzlichen ChatGPT-Projekte, Work-Aufgaben, Hintergrund-Daemons, Scheduler oder neuen Quittungsdatenbanken allein zur Durchsetzung dieser Gesprächsregel. Kanonischer Beschluss: [bestehender Projektmanager #353](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353#issuecomment-6240037211).
+**Freigaben unverändert**: kein ungenehmigter Runtime-/Release-/Secrets-/Kosten-Eingriff. Höchste verfügbare Denkstufe für Projektarbeit bevorzugen; knappe belegte Zwischenstände sind keine Haltepunkte. Ausführliche Nutzerentscheidung: Issue #353, Kommentar 6240037211.
 
 ## Projektweite Mini-PC-Ausführung: bestehender eingeschränkter Runner
 

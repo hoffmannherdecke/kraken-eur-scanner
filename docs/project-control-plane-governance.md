@@ -1,5 +1,15 @@
 # Project Control-Plane Governance
 
+## Kanonische Quellenhierarchie (Audit-Konsolidierung 29.10.2026)
+
+- **Eine Arbeitsregel:** kompakter verbindlicher Einstieg in `AGENTS.md`; dieses Dokument erläutert Autoritäten und Spezialfälle, ersetzt ihn nicht.
+- **Eine Aufgabenautorität:** `PROJECT_BACKLOG.md` hält offene Arbeit und belegte Status-Referenzen; veraltete Checkboxen sind historisch. Issue #353 trifft projektweite Entscheidungen, Issue #99 nur betroffene V3-Fach-/Releaseentscheidungen.
+- **Eine Quellen-/Owner-Auswahl:** `research/context-before-action-routing-v1.json` wählt nach Arbeitsdomäne passende Quellen, `research/project-followthrough-routing-v1.json` verzeichnet bestehende Owner. Beide sind weder zusätzliche Manager noch Runtime-Controller.
+- **Deklaration vs. Realität:** `project-current-state.json` dokumentiert Strategie-/Research-Baselines; tatsächlicher Betriebszustand bedarf frischer Original-ACKs vom zutreffenden Host/Cloud/Notebook. Das neueste belegte Original einer Komponente schlägt ältere Pläne, nicht pauschal ein jüngeres Textdatum.
+- **Stufen:** `SOURCE_DONE`, `PHYSICAL_STAGED_DONE`, `REAL_RUNTIME_ACK_PENDING|DONE` und gesonderte Releasefreigabe unterscheiden. Kein CI-/PR-/Backlog-PASS ist automatisch ein physischer oder wirtschaftlicher Go-live.
+- **Ausführung:** Bestehende Komponenten/Workflows bevorzugen, keine neue parallele Steuerung. Dokumente nach Aufgabenbezug lesen und nach bestätigtem Abschluss nur den Original-Owner aktualisieren. Historische Langfassungen bleiben nachvollziehbar, begründen aber keine neue Arbeit.
+
+
 ## Kontext vor Aktion — Retrieval- und Verwendungs-Gate (11.10.2026)
 
 **Neuer verbindlicher Arbeitsprozess, ohne neue Statusautorität:** `docs/context-before-action-governance-v1.md` und das maschinenlesbare *Routing*, nicht ein neuer fachlicher Owner, in `research/context-before-action-routing-v1.json`. Der nur lesende, on-demand `tools/context_before_action.py --scope <strategy|architecture|operations|research>` liefert zuständige Quellenfingerprints, deklarierten Zustand, historische Entscheidungen aus V3 und bestehende Review-ACK-Reconciliation. Relevante Originalabschnitte müssen danach **inhaltlich** gelesen, Widersprüche nach obiger Autorität gelöst, frühere Nutzerbeschlüsse fachlich disponiert und sichere Ergebnisse beim *bisherigen* Owner umgesetzt werden. Optional prüfbare, quellenvollständige, zeitgebundene `CONTEXT_REVIEW_RECEIPT_V1`-Quittung für materielle Änderung. Der existierende `project-control-plane-guard.yml` führt Negativtests (fehlende Quellen, stale/verkürzte Receipts) aus. Ein Hash oder strukturell gültiger Receipt beweist **nicht** das Verständnis des Bearbeiters oder eine reale Runtime-/Work-Aktion. Bestehende Automations-Prompts außerhalb GitHub sind separat zu prüfen; weder unbekannte Chats noch Live-Supabase werden automatisch importiert. Kein neuer Scheduler, KI-Agent, Backlog, Strategie-/Shadow-/Echtgeld-Gate.

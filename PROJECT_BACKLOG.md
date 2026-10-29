@@ -1,8 +1,8 @@
 ## Dauerhafter Projekteinstieg – aktuelle Aufgaben beim Fach-Owner statt statischer PR-Überschrift
 
-## Automatisch vorgeschlagener Abschlussstand aus Fachowner-Belegen (nur überprüfte PR-Änderungen)
+## Geprüfte Fachowner-Quittungen – kein Live-Status
 
-Ein wichtiges, neues Ereignis soll nach technischer Freigabe durch einen **expliziten, strukturierten Kommentar** des autorisierten Fachowners #99 (V3) oder #353 (projektweit) signalisiert: `PROJECT_BACKLOG_UPDATE_V1 | key=... | status=... | evidence=https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/...`. Der neue begrenzte Vorschlagserzeuger ist zunächst nur als **Quellcode** vorbereitet und wird erst nach Anschluss an einen bestehenden, zugelassenen GitHub-Ablauf automatisch ausgelöst; sie verändert niemals direkt `main`, Tasks, Paper, Cloud-Rechte oder den release-gate-Status. Ein Merge nach Review bleibt notwendig, und der physische Stand wird weiterhin nur durch Originalbelege bestätigt. Fehlende oder nicht bestätigte Belege bleiben `PENDING`/historisch. Kein kontinuierliches Polling und kein zweiter Manager.
+Diese begrenzte Tabelle dokumentiert **nur** den zuletzt nachgewiesenen Stand einzelner Meilensteine, nicht den aktuellen Runtime-Zustand. Originalbelege und neue Owner-Entscheidungen in Issue #353 (projektweit) und bei V3 Issue #99 haben Vorrang. Der Parser `tools/backlog_owner_receipt_sync.py` ist auf `main`; die automatische Anbindung im **bestehenden** Workflow ist bis zu einem tatsächlich gemergten und getesteten Integrations-PR **nicht als produktiv bestätigt**. Ein CI-Diff ist kein automatisch erstellter PR; auch ein PR ist noch kein Merge oder physischer ACK. Keine neue Scheduling-, Release- oder Schreibautorität.
 
 <!-- OWNER_RECEIPT_SYNC_START -->
 
