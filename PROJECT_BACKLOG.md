@@ -1,5 +1,20 @@
 ## Dauerhafter Projekteinstieg – aktuelle Aufgaben beim Fach-Owner statt statischer PR-Überschrift
 
+## Automatisch vorgeschlagener Abschlussstand aus Fachowner-Belegen (nur überprüfte PR-Änderungen)
+
+Ein wichtiges, neues Ereignis wird durch einen **expliziten, strukturierten Kommentar** des autorisierten Fachowners #99 (V3) oder #353 (projektweit) signalisiert: `PROJECT_BACKLOG_UPDATE_V1 | key=... | status=... | evidence=https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/...`. Die bestehende GitHub-Action stellt daraus **automatisch einen PR-Vorschlag** für ausschließlich die nachstehende Tabelle; sie verändert niemals direkt `main`, Tasks, Paper, Cloud-Rechte oder den release-gate-Status. Ein Merge nach Review bleibt notwendig, und der physische Stand wird weiterhin nur durch Originalbelege bestätigt. Fehlende oder nicht bestätigte Belege bleiben `PENDING`/historisch. Kein kontinuierliches Polling und kein zweiter Manager.
+
+<!-- OWNER_RECEIPT_SYNC_START -->
+
+| Gate | Status | Latest owner receipt |
+|---|---|---|
+| `V3_PRIVATE_CLOUD_AUDIT_SCHEMA` | `REAL_RUNTIME_ACK_DONE` | [Produktive Installation und kontrollierter Cloud-ACL/RLS-Readback](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6506878204) |
+| `V3_NOTEBOOK_READER_VERIFY_FULL` | `REAL_RUNTIME_ACK_DONE` | [Aktueller Notebook-Reader physisch belegt](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6506686609) |
+| `V3_INDEPENDENT_ISSUER_NOTEBOOK_LOGIN` | `REAL_RUNTIME_ACK_PENDING` | [Issuer noch NOLOGIN und ohne Enrollment](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99#issuecomment-6506878204) |
+
+<!-- OWNER_RECEIPT_SYNC_END -->
+
+
 **Diese Markdown-Datei bleibt der bestehende projektweite Backlog-/Task-Index und keine automatisch live aktualisierte Projektanzeige.** Vor jedem nächsten Schritt: aktuellen geschützten GitHub-`main`-HEAD gezielt abrufen, Arbeitsbereich und registrierten Komponenten-Owner bestimmen, dessen jüngsten tatsächlich belegten Original-ACK prüfen, danach die hier archivierten Aufgaben nach `DONE` / `OPEN` / `BLOCKED` abgleichen. Die folgenden datierten Überschriften und alten `[ ]`-Einträge sind **Historie, kein selbstständiger Auftrag**. Ein erfolgreicher PR, ein physisches Staging und eine echte produktive Ausführung sind drei verschiedene Beweise. Keine automatische Issue-Synchronisierung, kein zusätzlicher Statusmanager, Scheduler oder zweite Checkliste.
 
 **Nur bei ausdrücklich benanntem V3 Paper:** [Issue #99 – alleiniger Release-Owner mit neuestem wirksamem Originalhost-/Notebook-/Cloud-ACK](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/99) und [Issue #353 – projektweiter Kontext-/Ausführungsmanager](https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/353) gemeinsam mit dem tatsächlichen GitHub-HEAD lesen. Status nie aus dieser Markdown-Einleitung allein ableiten. Für andere Aufträge nur zuständigen fachlichen Owner, keine pauschale V3-Kopplung.
