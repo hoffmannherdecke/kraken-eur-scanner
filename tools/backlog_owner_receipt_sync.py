@@ -14,7 +14,7 @@ END = "<!-- OWNER_RECEIPT_SYNC_END -->"
 ALLOWED = {"SOURCE_DONE", "PHYSICAL_STAGED_DONE", "REAL_RUNTIME_ACK_PENDING", "REAL_RUNTIME_ACK_DONE", "BLOCKED"}
 RECEIPT = re.compile(
     r"(?m)^PROJECT_BACKLOG_UPDATE_V1\s*\|\s*key=([A-Z0-9_]{5,80})"
-    r"\s*\|\s*status=([A-Z_]+)\s*\|\s*evidence=(https://github\.com/hoffmannherdecke/kraken-eur-scanner/(?:issues|pull)/[0-9]+(?:#issuecomment-[0-9]+)?)\s*$"
+    r"\s*\|\s*status=([A-Z_]+)\s*\|\s*evidence=(https://github\.com/hoffmannherdecke/kraken-eur-scanner/(?:issues|pull)/[0-9]+(?:#issuecomment-[0-9]+)?|SELF)\s*$"
 )
 
 def main():
@@ -30,8 +30,9 @@ def main():
     if status not in ALLOWED:
         raise SystemExit("Invalid status")
     # A comment must prove itself: linking an unrelated owner note is not an ACK.
-    if evidence != comment.get("html_url"):
-        raise SystemExit("Receipt evidence must link to this exact authenticated comment")
+    if not comment.get("html_url") or (evidence != "SELF" and evidence != comment["html_url"]):
+        raise SystemExit("Receipt evidence must refer to this exact authenticated comment")
+    evidence = comment["html_url"]
     path = Path("PROJECT_BACKLOG.md")
     data = path.read_text(encoding="utf-8")
     if data.count(START) != 1 or data.count(END) != 1:
