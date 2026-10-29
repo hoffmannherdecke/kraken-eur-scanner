@@ -6,7 +6,7 @@
 
 **Anti-Doppelarbeit:** `SOURCE_DONE`, `PHYSICAL_STAGED_DONE`, `REAL_RUNTIME_ACK_PENDING|DONE` trennen. Offener Runtime-ACK macht fertige Source-/Notebook-/TPM-Prüfungen nicht erneut offen. Bei Konflikt `UNKNOWN/NEEDS_TARGETED_ACK`; keine Entwicklung ohne belegte Lücke.
 
-**Beleg 28.10., keine Live-Garantie:** PR607/608 Source/CI, PR608 Notebook-Staging und PR606/PR515 PreCAS-Prüfungen fertig. Echter Writer-COMMIT, Notebook-Archivierungs-ACK, No-Rearm-Cutover und CAS noch offen. PR593 bleibt im Backlog historisch; stets #99 neu prüfen.
+**Status ist keine Arbeitsanweisung:** Datierten PR-/Runtime-Stand hier nur als Historie lesen. Für aktuelle Aufgaben die jeweils neuesten Original-ACKs im richtigen Owner (#353 projektweit, #99 nur bei V3-Themen), den tatsächlichen `main`-Stand und komponentenspezifische Evidenz vergleichen. Geschlossene Meilensteine nicht aus alten Checkboxen erneut öffnen. Kein Merge-, CI- oder Backlog-Eintrag ersetzt Cloud-/Mini-PC-/Notebook-Originalnachweise.
 
 ## Verbindliche Evidenzpriorität (festgelegt 26.10.2026; nicht als Live-Snapshot lesen)
 
