@@ -2,7 +2,7 @@
 
 ## Automatisch vorgeschlagener Abschlussstand aus Fachowner-Belegen (nur überprüfte PR-Änderungen)
 
-Ein wichtiges, neues Ereignis wird durch einen **expliziten, strukturierten Kommentar** des autorisierten Fachowners #99 (V3) oder #353 (projektweit) signalisiert: `PROJECT_BACKLOG_UPDATE_V1 | key=... | status=... | evidence=https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/...`. Die bestehende GitHub-Action stellt daraus **automatisch einen PR-Vorschlag** für ausschließlich die nachstehende Tabelle; sie verändert niemals direkt `main`, Tasks, Paper, Cloud-Rechte oder den release-gate-Status. Ein Merge nach Review bleibt notwendig, und der physische Stand wird weiterhin nur durch Originalbelege bestätigt. Fehlende oder nicht bestätigte Belege bleiben `PENDING`/historisch. Kein kontinuierliches Polling und kein zweiter Manager.
+Ein wichtiges, neues Ereignis soll nach technischer Freigabe durch einen **expliziten, strukturierten Kommentar** des autorisierten Fachowners #99 (V3) oder #353 (projektweit) signalisiert: `PROJECT_BACKLOG_UPDATE_V1 | key=... | status=... | evidence=https://github.com/hoffmannherdecke/kraken-eur-scanner/issues/...`. Der neue begrenzte Vorschlagserzeuger ist zunächst nur als **Quellcode** vorbereitet und wird erst nach Anschluss an einen bestehenden, zugelassenen GitHub-Ablauf automatisch ausgelöst; sie verändert niemals direkt `main`, Tasks, Paper, Cloud-Rechte oder den release-gate-Status. Ein Merge nach Review bleibt notwendig, und der physische Stand wird weiterhin nur durch Originalbelege bestätigt. Fehlende oder nicht bestätigte Belege bleiben `PENDING`/historisch. Kein kontinuierliches Polling und kein zweiter Manager.
 
 <!-- OWNER_RECEIPT_SYNC_START -->
 
