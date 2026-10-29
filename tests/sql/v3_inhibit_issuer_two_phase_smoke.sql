@@ -50,6 +50,29 @@ begin
 end $negative$;
 
 set session authorization v3_cas_inhibit_issuer_actor;
+-- A valid hash tuple is not enough if the original epoch has been sealed.
+-- The synthetic disposable fixture changes only its own isolated row.
+reset session authorization;
+update v3_cas_audit.epoch_v1
+   set sealed=true
+ where epoch_id='V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+set session authorization v3_cas_inhibit_issuer_actor;
+do $sealed_epoch$
+begin
+ begin
+  perform v3_cas_audit.begin_executor_inhibit_v1(
+   'V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+   repeat('3',64),repeat('4',64),repeat('5',64));
+  raise exception 'SEALED_EPOCH_ISSUER_ACCEPTED';
+ exception when others then
+  if sqlerrm not like '%V3_CAS_INHIBIT_ISSUER_EPOCH_BINDING_HOLD%' then raise; end if;
+ end;
+end $sealed_epoch$;
+reset session authorization;
+update v3_cas_audit.epoch_v1
+   set sealed=false
+ where epoch_id='V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+set session authorization v3_cas_inhibit_issuer_actor;
 -- Correctly shaped but wrong source/fence/ACL must not create an inhibit.
 do $epoch_mismatch$
 declare v_hash text;
