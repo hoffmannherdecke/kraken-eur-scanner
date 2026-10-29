@@ -227,6 +227,299 @@ begin
         raise exception 'V3_CAS_PREINVOKE_REFERENCE_INVALID_HOLD';
     end if;
 
+    -- VARIANT 2 / ORIGINAL CLOUD ATOMIC INHIBIT BOUNDARY (source-only).
+    -- The independent issuer's durable receipt must already be committed,
+    -- scope-bound, current and continuously effective from BEFORE native STOP.
+    -- Unlike an untrusted host JSON flag, only a real protected Cloud row is
+    -- eligible. Its provenance/signature and complete UNKNOWN history must
+    -- also be authenticated OUTSIDE this SQL by the originalhost/Notebook.
+    -- This source cannot bootstrap a real issuer or assert signature validity.
+    -- No such production relation is installed; absent => hard HOLD.
+    if pg_catalog.to_regclass('v3_cas_audit.executor_inhibit_v1') is null then
+        raise exception 'V3_CAS_INDEPENDENT_INHIBIT_RELATION_ABSENT_HOLD';
+    end if;
+    if coalesce(p_new_v3_config->>'preinvoke_inhibit_receipt_sha256','') !~
+          '^[a-f0-9]{64}
+    -- actually exist in the protected audit store. The CAS executor has no
+    -- direct writer/reader access. A SQL row-lock is NOT irreversible:
+    -- rollback loses it, and no pure SQL observation certifies TPM origin.
+    perform 1 from v3_cas_audit.epoch_v1 e
+      join v3_cas_audit.intent_v1 i on i.epoch_id=e.epoch_id
+     where e.epoch_id=p_new_v3_config->>'preinvoke_epoch_id'
+       and e.predecessor_series_id=p_expected_old_series_id
+       and e.expected_rpc='public.rotate_v2r4_to_v3_experimental_paper'
+       and e.source_sha256=p_new_v3_config->>'preinvoke_source_sha256'
+       and e.original_fence_sha256=p_new_v3_config->>'preinvoke_fence_sha256'
+       and e.approved_caller_acl_sha256=p_new_v3_config->>'preinvoke_caller_acl_sha256'
+       and e.sealed is true and e.next_ordinal=2 and i.ordinal=1
+       and i.intent_id=(p_new_v3_config->>'preinvoke_intent_id')::uuid
+       and i.predecessor_series_id=e.predecessor_series_id
+       and i.requested_rpc=e.expected_rpc
+       and i.request_sha256=p_new_v3_config->>'preinvoke_request_sha256'
+       and i.source_sha256=e.source_sha256
+       and i.fence_sha256=e.original_fence_sha256
+       and i.state='PREINVOKE_INTENT'
+       and i.created_at_utc>=e.opened_at_utc
+       and i.created_at_utc<=pg_catalog.clock_timestamp()
+       and i.created_at_utc>pg_catalog.clock_timestamp()-interval '5 minutes'
+      for update of e,i;
+    if not found then
+        raise exception 'V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND';
+    end if;
+    -- The stored digest is only a required audit-row match here. Later,
+    -- before Paper mutation, the independently typed 16-argument request
+    -- digest is recalculated and MUST equal this already matched value.
+    -- The reader-after-COMMIT, signer and irrevocable attempt fence remain
+    -- OPEN; source-only matching cannot authorize real CAS dispatch.
+
+    -- Locked actual CURRENT active predecessor; never use a stale config
+    -- file/old V2R4 paper series as implicit current authority.
+    select * into old_row
+      from public.paper_series
+     where series_id=p_expected_old_series_id
+     for update;
+    if not found
+       or old_row.status is distinct from 'active'
+       or old_row.strategy_revision not like 'V2R4-%'
+       or old_row.config->>'release_repo_sha'
+          is distinct from p_expected_old_release_sha
+       or old_row.config->>'strategy_fingerprint_sha256'
+          is distinct from p_expected_old_strategy_sha256
+       or old_row.config->>'runtime_bundle_fingerprint_sha256'
+          is distinct from p_expected_old_runtime_sha256
+       or old_row.config->>'paper_only' is distinct from 'true'
+       or old_row.config->>'real_money_actions_enabled' is distinct from 'false'
+       or old_row.config->>'automatic_activation_allowed' is distinct from 'false' then
+        raise exception 'V3 CAS predecessor not exact active SAFE V2R4 original';
+    end if;
+
+    if exists(select 1 from public.paper_series
+              where status='active'
+                and series_id <> p_expected_old_series_id)
+       or exists(select 1 from public.paper_series
+                 where series_id = p_proposed_v3_series_id) then
+        raise exception 'V3 CAS wrong single-active or duplicate successor';
+    end if;
+
+    -- A release must include an explicitly reviewed unique successor
+    -- fingerprint/strategy. No V2R4 strategy clone or real-money actions.
+    if p_new_v3_config->>'series_id' is distinct from p_proposed_v3_series_id
+       or p_new_v3_config->>'test_id' is distinct from p_proposed_v3_test_id
+       or p_new_v3_config->>'strategy_revision' is distinct from p_proposed_v3_revision
+       or p_new_v3_config->>'predecessor_series_id' is distinct from p_expected_old_series_id
+       or p_new_v3_config->>'release_repo_sha' is distinct from p_reviewed_new_repo_sha
+       or p_new_v3_config->>'runtime_bundle_fingerprint_sha256'
+          is distinct from p_reviewed_new_bundle_sha256
+       or p_new_v3_config->>'strategy_fingerprint_sha256'
+          is distinct from p_reviewed_new_strategy_sha256
+       or p_reviewed_new_strategy_sha256 = p_expected_old_strategy_sha256
+       or p_new_v3_config->>'series_started_at_utc' is distinct from
+           pg_catalog.to_char(p_cutover_at_utc at time zone 'UTC',
+                               'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+       or p_new_v3_config->>'paper_phase' is distinct from 'EXPERIMENTAL_PAPER_ONLY'
+       or p_new_v3_config->>'explicit_human_release_decision'
+          is distinct from 'APPROVED_EXPERIMENTAL_PAPER'
+       or p_new_v3_config->>'real_money_actions_enabled' is distinct from 'false'
+       or p_new_v3_config->>'automatic_activation_allowed' is distinct from 'false'
+       or p_new_v3_config->>'paper_only' is distinct from 'true'
+       or p_new_v3_config->>'enabled' is distinct from 'true'
+       or p_new_v3_config->>'scout_notional_eur' is distinct from '50'
+       or p_new_v3_config->>'stage2_notional_eur' is distinct from '50'
+       or p_new_v3_config->>'target_completed_paper_trades' is distinct from '20'
+       or p_new_v3_config->>'old_followup_owner_preserved' is distinct from 'true'
+       or p_new_v3_config->>'physical_v2r4_writer_fence_verified' is distinct from 'true'
+       or p_new_v3_config->>'supervisor_old_intake_rearm_blocked' is distinct from 'true'
+       or p_new_v3_config->>'independent_six_e2e_proofs_verified' is distinct from 'true' then
+        raise exception 'V3 CAS proposed successor fails explicit bounded Paper-only release contract';
+    end if;
+
+    -- Physical boolean declarations in client JSON are NOT proof of
+    -- Windows stop, source authenticity, model cost or external approval.
+    -- The separate credentialed Edge/physical operator MUST validate all
+    -- six independently before EVER granting execution of this RPC.
+
+    -- Quiesce and independently snapshot old evidence FIRST. This lock
+    -- prevents concurrent cloud followup updates from changing the
+    -- checkpoint in the middle of an atomic conditional rotation.
+    lock table public.paper_candidate_outcomes, public.paper_trade_results
+      in share row exclusive mode;
+    select count(*),max(updated_at)
+      into outcome_count,last_outcome
+      from public.paper_candidate_outcomes
+     where series_id=p_expected_old_series_id;
+    -- Original trades can close/change PnL without changing the row count.
+    -- Bind a fresh Cloud version check to the original trade snapshot.
+    select count(*),max(updated_at)
+      into trade_count,last_trade
+      from public.paper_trade_results
+     where series_id=p_expected_old_series_id;
+
+    if outcome_count is distinct from p_expected_old_candidate_count
+       or trade_count is distinct from p_expected_old_trade_count
+       or last_outcome is distinct from p_expected_old_last_outcome_updated_at
+       or last_trade is distinct from p_expected_old_last_trade_updated_at then
+        raise exception 'V3 CAS fresh old Cloud outcome/trade checkpoint drift';
+    end if;
+
+    v_actual_request_sha256 := pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
+        pg_catalog.jsonb_build_array(
+          'V3_CAS_FULL_REQUEST_PG17_JSONB_SHA256_V1',
+          p_expected_old_series_id,
+          p_expected_old_release_sha,
+          p_expected_old_strategy_sha256,
+          p_expected_old_runtime_sha256,
+          p_expected_old_candidate_count,
+          p_expected_old_trade_count,
+          case when p_expected_old_last_outcome_updated_at is null then null
+            else pg_catalog.to_char(
+              p_expected_old_last_outcome_updated_at at time zone 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') end,
+          case when p_expected_old_last_trade_updated_at is null then null
+            else pg_catalog.to_char(
+              p_expected_old_last_trade_updated_at at time zone 'UTC',
+              'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') end,
+          p_proposed_v3_series_id,
+          p_proposed_v3_test_id,
+          p_proposed_v3_revision,
+          pg_catalog.to_char(p_cutover_at_utc at time zone 'UTC',
+                             'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),
+          p_new_v3_config - 'preinvoke_request_sha256',
+          p_reviewed_new_repo_sha,
+          p_reviewed_new_bundle_sha256,
+          p_reviewed_new_strategy_sha256
+        )::text, 'UTF8'
+      )), 'hex');
+    -- Exact PostgreSQL 17 wire contract: 16 actual RPC parameters, typed
+    -- JSONB array in argument order with an explicit domain separator.
+    -- Timestamps are normalized to UTC microseconds (including NULL).
+    -- Canonicalized JSONB successor config is hashed EXCEPT the one field
+    -- carrying this very digest, preventing self-reference. No caller can
+    -- reuse the approved epoch/intent hash for altered RPC args or unknown
+    -- extra successor config properties. No pgcrypto extension or new RPC.
+    -- The same PG17 canonical formula must be used by the separately
+    -- authorized PREINVOKE append step, not taken from the client claim.
+    -- A SQL SHA match does NOT attest independently COMMITTED external audit,
+    -- TPM signer, reader identity or immutable complete attempt custody.
+    if v_actual_request_sha256 is distinct from
+       p_new_v3_config->>'preinvoke_request_sha256' then
+      raise exception 'V3_CAS_FULL_REQUEST_MISMATCH_HOLD';
+    end if;
+
+    update public.paper_series
+       set status='strategy_cutover_closed',
+           updated_at=pg_catalog.clock_timestamp()
+     where series_id=p_expected_old_series_id
+       and status='active';
+    if not found then raise exception 'V3 CAS predecessor close lost race'; end if;
+
+    -- The existing partial unique index prevents a second active Paper
+    -- even if an independently invoked writer/race tries to create one.
+    insert into public.paper_series(
+        series_id,test_id,strategy_revision,started_at,
+        target_completed_trades,status,config
+    ) values (
+        p_proposed_v3_series_id,p_proposed_v3_test_id,p_proposed_v3_revision,
+        p_cutover_at_utc,20,'active',p_new_v3_config
+    );
+
+    -- One Postgres transaction commits both rows or neither.
+    -- The old candidate, fill and followup rows are never moved/edited.
+    return pg_catalog.jsonb_build_object(
+        'ok',true,'kind','V3_EXPERIMENTAL_PAPER_ATOMIC_CAS_V1',
+        'predecessor_series_id',p_expected_old_series_id,
+        'successor_series_id',p_proposed_v3_series_id,
+        'strategy_revision',p_proposed_v3_revision,
+        'cutover_at_utc',p_cutover_at_utc,
+        'paper_only',true,'real_money_actions',false,
+        'automatic_activation',false,
+        'predecessor_outcome_count',outcome_count,
+        'predecessor_trade_count',trade_count
+    );
+end;
+$v3_atomic_cas$;
+
+  $v3_cas_create_locked$;
+
+  -- Still within this same DO statement: do not allow any PUBLIC endpoint
+  -- to become observable if client/operator crashes before grants are revoked.
+  execute $v3_cas_revoke_locked$
+revoke all on function public.rotate_v2r4_to_v3_experimental_paper(
+    text,text,text,text,bigint,bigint,timestamptz,timestamptz,
+    text,text,text,timestamptz,jsonb,text,text,text)
+    from public, anon, authenticated, service_role;
+
+  $v3_cas_revoke_locked$;
+
+  -- Only the existing distinct NOLOGIN executor gets EXECUTE. Since it has
+  -- ZERO role members and cannot log in, this GRANT alone cannot dispatch
+  -- CAS. Do NOT provision a LOGIN or membership here. A later restricted
+  -- independent caller and cryptographically bound pre-CAS intent/ACK need
+  -- the original Issue #99 production security and source-origin approval.
+  execute $v3_cas_executor_only$
+grant execute on function public.rotate_v2r4_to_v3_experimental_paper(
+    text,text,text,text,bigint,bigint,timestamptz,timestamptz,
+    text,text,text,timestamptz,jsonb,text,text,text)
+    to v3_cas_executor;
+  $v3_cas_executor_only$;
+
+  if pg_catalog.has_function_privilege(
+       'anon',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE')
+    or pg_catalog.has_function_privilege(
+       'authenticated',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE')
+    or pg_catalog.has_function_privilege(
+       'service_role',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE')
+    or pg_catalog.has_function_privilege(
+       'v3_cas_audit_writer',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE')
+    or pg_catalog.has_function_privilege(
+       'v3_cas_audit_reader',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE')
+    or not pg_catalog.has_function_privilege(
+       'v3_cas_executor',
+       'public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)',
+       'EXECUTE') then
+    raise exception 'V3_CAS_EFFECTIVE_EXECUTE_PRIVILEGE_NOT_EXCLUSIVE';
+  end if;
+end;
+$v3_cas_install_locked$;
+ then
+        raise exception 'V3_CAS_INHIBIT_RECEIPT_BINDING_MISSING_HOLD';
+    end if;
+
+    -- Lock the one scoped original receipt across the entire CAS transaction.
+    -- A DB row is NOT by itself an independent signature verification or
+    -- historical "NEVER" proof. No fabricated booleans grant authority.
+    perform 1
+      from v3_cas_audit.executor_inhibit_v1 g
+     where g.epoch_id=p_new_v3_config->>'preinvoke_epoch_id'
+       and g.predecessor_series_id=p_expected_old_series_id
+       and g.original_fence_sha256=p_new_v3_config->>'preinvoke_fence_sha256'
+       and g.source_sha256=p_new_v3_config->>'preinvoke_source_sha256'
+       and g.caller_acl_sha256=p_new_v3_config->>'preinvoke_caller_acl_sha256'
+       and g.receipt_sha256=p_new_v3_config->>'preinvoke_inhibit_receipt_sha256'
+       and g.expected_rpc='public.rotate_v2r4_to_v3_experimental_paper'
+       and g.state='INHIBITED'
+       and g.issuer_id is not null and length(g.issuer_id)>0
+       and g.executor_id='v3_cas_executor'
+       and g.inhibit_started_at_utc<g.native_stop_at_utc
+       and g.native_stop_at_utc<=g.acknowledged_at_utc
+       and g.acknowledged_at_utc<=pg_catalog.clock_timestamp()
+       and g.valid_through_utc>pg_catalog.clock_timestamp()
+       and g.valid_through_utc<=g.acknowledged_at_utc+interval '5 minutes'
+       and g.audit_intent_high_watermark=1
+       for update;
+    if not found then
+        raise exception 'V3_CAS_INDEPENDENT_INHIBIT_SCOPE_OR_CONTINUITY_HOLD';
+    end if;
+
     -- A source-bound, committed, sealed, exactly one-intent epoch must
     -- actually exist in the protected audit store. The CAS executor has no
     -- direct writer/reader access. A SQL row-lock is NOT irreversible:
