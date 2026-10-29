@@ -1,5 +1,20 @@
 # Projektweite Arbeitsanweisung — Aktien & Krypto Chancen
 
+## Kurzvertrag — verbindlich vor allen datierten Einzelregeln
+
+1. **Auftrag und Owner:** Arbeit zuerst als project_general / infrastructure / operations / strategy_development / strategy_release / research einordnen. Projektweiter Owner #353; V3-Fachentscheidungen #99; sonst eingetragener Komponenten-Owner. Nur passende Wissens-Scopes über `research/context-before-action-routing-v1.json` lesen. Der Router liest GitHub-Issues nicht selbst.
+2. **Wahrheit:** Neueste echte Original-ACKs der betroffenen Cloud-/Host-/Notebook-Komponente haben bei Betriebsfragen Vorrang; danach aktuelle Owner-Beschlüsse, deklarierter `main`-Stand und historische Listen. `project-current-state.json` ist deklarativ; `PROJECT_BACKLOG.md` ist Aufgabenindex, kein Live-Monitor. Ohne Nachweis `UNKNOWN/NEEDS_TARGETED_ACK`.
+3. **Wiederverwenden:** Bereits nachgewiesene Source-, Staging- und Runtime-Abnahmen separat führen. Keine bereits erledigte Einrichtung erneut durchführen, keine weitere Manager-/Runner-/Workflow-/Scheduler-/Writer-Struktur bei vorhandener Zuständigkeit schaffen. Vor Nutzeraktionen vorhandene sichere Connectoren und geprüfte eingeschränkte Tasks prüfen.
+4. **Änderungen:** Registrierte Owner, Upstream/Consumer, bestehende Tests, CI, Rollback, Kosten und Freigaben prüfen. Reversible Quelländerungen durch den vorhandenen `PROJECT_CONTEXT_REVIEW_V1`-PR-Prozess; niemals Schutzprüfungen umgehen. Ein Commit oder CI-PASS ist kein physischer Installations-/Release-ACK.
+5. **Ausführung:** Nach belegten Teilschritten selbstständig bis zum autorisierten Ziel fortfahren. Echtgeld, aktives Paper/CAS/STOP/Restore, neue Credentials/Rechte, Ausgaben und irreversible Aktionen nur nach ihrem bestehenden spezifischen Gate. V2R4 nicht implizit umstellen.
+6. **Übergabe:** Entscheidend sind aktueller `main`, neueste fachliche Originalnachweise und genau ein nächster Owner/Gate. Datiertes Material weiter unten ist Detail-/Historienkontext, **kein zusätzlicher oder höher priorisierter Arbeitsauftrag**. Keine automatische Chat-Kontextübernahme behaupten.
+
+**Quellenrollen:** `docs/project-control-plane-governance.md` = Autorität/Evidenz; `research/context-before-action-routing-v1.json` = aufgabenbezogene Auswahl; `research/project-followthrough-routing-v1.json` = Komponenten-Owner; `PROJECT_BACKLOG.md` = Aufgaben; `project-current-state.json` = deklarierte Strategie; Issues #353/#99 = aktuelle Entscheidungen/Nachweise. Keine parallele Statusautorität.
+
+---
+
+## Detailregeln und datierte Nachweise (nur aufgabenbezogen lesen)
+
 ## Dauerhafter Einstieg – Original-Owner statt statischer PR
 
 **Vor Arbeit:** Domäne bestimmen, geschützten GitHub-`main`-HEAD und neueste Original-ACKs lesen. Projektweiter Kontextmanager: Issue #353; **nur bei tatsächlich betroffenem V3-Fach-/Releaseauftrag** Fachowner Issue #99 samt aktuellen Kommentaren. Andere Aufträge zum eigenen Owner. `context_before_action.py` liest Issues **nicht automatisch**; ältere Überschriften sind Historie, keine Live-Belege.
