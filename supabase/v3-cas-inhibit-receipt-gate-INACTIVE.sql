@@ -31,6 +31,11 @@ BEGIN
  END IF;
 END $v3_inhibit_install$;
 
+-- Source draft only. Temporary role escrow follows existing Stage4's exact
+-- membership pattern; this is not a new owner or a new writer.
+GRANT v3_cas_audit_table_owner TO postgres WITH INHERIT FALSE, SET TRUE, ADMIN FALSE;
+SET ROLE v3_cas_audit_table_owner;
+
 -- Source draft only. Even if eventually installed in an approved transaction:
 -- NO INSERT/UPDATE/DELETE is granted to a runtime actor here. An independent
 -- authenticated issuer and durable attempt/UNKNOWN coverage must be supplied
@@ -59,12 +64,27 @@ CREATE TABLE v3_cas_audit.executor_inhibit_v1 (
  CHECK (acknowledged_at_utc<valid_through_utc),
  CHECK (valid_through_utc<=acknowledged_at_utc+interval '5 minutes')
 );
-ALTER TABLE v3_cas_audit.executor_inhibit_v1 OWNER TO v3_cas_audit_table_owner;
 ALTER TABLE v3_cas_audit.executor_inhibit_v1 ENABLE ROW LEVEL SECURITY;
 ALTER TABLE v3_cas_audit.executor_inhibit_v1 FORCE ROW LEVEL SECURITY;
 REVOKE ALL ON v3_cas_audit.executor_inhibit_v1
   FROM PUBLIC, anon, authenticated, service_role,
        v3_cas_operator_login, v3_cas_executor, v3_cas_audit_writer,
        v3_cas_audit_reader;
+-- Narrow read permission for the existing CAS SECURITY DEFINER owner only;
+-- the future caller never receives table access. FOR SHARE needs SELECT,
+-- and neither CAS nor the service role gets any INSERT/UPDATE/DELETE.
+GRANT SELECT ON v3_cas_audit.executor_inhibit_v1 TO postgres;
+RESET ROLE;
+REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
+
+DO $v3_inhibit_postflight$
+BEGIN
+ IF pg_has_role('postgres','v3_cas_audit_table_owner','SET')
+    OR NOT has_table_privilege('postgres','v3_cas_audit.executor_inhibit_v1','SELECT')
+    OR has_table_privilege('service_role','v3_cas_audit.executor_inhibit_v1','SELECT')
+    OR has_table_privilege('v3_cas_executor','v3_cas_audit.executor_inhibit_v1','UPDATE') THEN
+  RAISE EXCEPTION 'V3_CAS_INHIBIT_OWNER_ESCROW_POSTFLIGHT_HOLD';
+ END IF;
+END $v3_inhibit_postflight$;
 -- No GRANT EXECUTE, no CAS call and no Paper mutation.
 COMMIT;
