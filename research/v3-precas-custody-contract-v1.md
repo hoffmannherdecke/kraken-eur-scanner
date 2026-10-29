@@ -32,3 +32,8 @@ This is a **candidate** for a narrower PRE-CAS recovery proof, not an approved c
 
 ## Actual existing owner-path finding (29 Oct 2026)
 The originalhost `tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1` still begins `Invoke-V3Pr515PrecommitRestoreSOURCE_ONLY` with unconditional `V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED`. Its ARMED recovery resolver accepts a caller-provided `independent_cloud_precommit_cas_never_invoked_ack` flag only to return `HOLD_ARMED_UNAUTHENTICATED_EXTERNAL_CLOUD_CAS_CUSTODY`, never release. The currently signed Notebook snapshot is a present-time witness, not continuous CAS-executor custody. Thus no existing checked component proves an independently authenticated, uninterrupted executor inhibit across STOP-to-restore. Do **not** reinterpret this absence as a reason to add a second executor or to remove the lock. Owner #99 must identify a real, durable issuer of the inhibit and prove exclusive identity and uninterrupted enforcement before implementing any runtime acceptance branch.
+
+## Live evidence boundary — 29 October
+A broad connected cloud catalog read was inconclusive; a narrower follow-up was blocked by tool safety checks. Neither result proves continuous independent CAS-executor inhibition. No cloud permissions, CAS RPC, native task or originalhost restore was changed. Independent durable inhibit issuance and originalhost readback remain REAL_RUNTIME_ACK_PENDING. Preserve all PR515 hardlocks.
+
+Evidence status: this note is an audit of missing proof, not a signed inhibit receipt.
