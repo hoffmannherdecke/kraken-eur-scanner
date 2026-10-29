@@ -2,7 +2,7 @@
 
 ## Dauerhafter Einstieg – Original-Owner statt statischer PR
 
-**Vor Arbeit:** Domäne bestimmen, geschützten GitHub-`main`-HEAD und neueste Original-ACKs lesen. Projektweiter Kontextmanager: Issue #353; **nur bei V3 Paper** Fachowner Issue #99 samt aktuellen Kommentaren. Andere Aufträge zum eigenen Owner. `context_before_action.py` liest Issues **nicht automatisch**; ältere Überschriften sind Historie, keine Live-Belege.
+**Vor Arbeit:** Domäne bestimmen, geschützten GitHub-`main`-HEAD und neueste Original-ACKs lesen. Projektweiter Kontextmanager: Issue #353; **nur bei tatsächlich betroffenem V3-Fach-/Releaseauftrag** Fachowner Issue #99 samt aktuellen Kommentaren. Andere Aufträge zum eigenen Owner. `context_before_action.py` liest Issues **nicht automatisch**; ältere Überschriften sind Historie, keine Live-Belege.
 
 **Anti-Doppelarbeit:** `SOURCE_DONE`, `PHYSICAL_STAGED_DONE`, `REAL_RUNTIME_ACK_PENDING|DONE` trennen. Offener Runtime-ACK macht fertige Source-/Notebook-/TPM-Prüfungen nicht erneut offen. Bei Konflikt `UNKNOWN/NEEDS_TARGETED_ACK`; keine Entwicklung ohne belegte Lücke.
 
