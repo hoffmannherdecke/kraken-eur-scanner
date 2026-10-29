@@ -197,9 +197,9 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
                          "v3_cas_audit_table_owner",
                          "CHECK (audit_intent_high_watermark=1)"):
             self.assertIn(required,sql)
-        self.assertNotRegex(sql,r"(?im)^\\s*GRANT\\s+(?:INSERT|UPDATE|DELETE)")
-        self.assertEqual(len(re.findall(r"(?im)^\\s*GRANT\\s+EXECUTE\\s+ON FUNCTION",sql)),2)
-        self.assertNotRegex(sql,r"(?im)^\\s*GRANT\\s+EXECUTE.*\\s+TO\\s+(?:PUBLIC|anon|authenticated|service_role)")
+        self.assertNotRegex(sql,r"(?im)^\s*GRANT\s+(?:INSERT|UPDATE|DELETE)")
+        self.assertEqual(len(re.findall(r"(?im)^\s*GRANT\s+EXECUTE\s+ON FUNCTION",sql)),2)
+        self.assertNotRegex(sql,r"(?im)^\s*GRANT\s+EXECUTE.*\s+TO\s+(?:PUBLIC|anon|authenticated|service_role)")
         self.assertIn("GRANT SELECT ON v3_cas_audit.executor_inhibit_v1 TO postgres;",sql)
         self.assertIn("REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;",sql)
         self.assertIn("CREATE ROLE v3_cas_inhibit_issuer_actor NOLOGIN NOINHERIT NOBYPASSRLS CONNECTION LIMIT 0;",sql)
