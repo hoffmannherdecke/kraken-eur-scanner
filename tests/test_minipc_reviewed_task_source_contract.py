@@ -58,6 +58,7 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
             [FOLDER / "access_boundary_probe.ps1", SCRIPT,
              FOLDER / "log_status_summary.ps1",
              FOLDER / "operations_readonly_bundle.ps1",
+             FOLDER / "v3_cas_log_readonly_triage.ps1",
              FOLDER / "v3_cas_witness_archive_stage.ps1",
              FOLDER / "v3_fixed_paths_readonly.ps1",
              FOLDER / "v3_paper_offline_probe.ps1",
@@ -124,6 +125,29 @@ class MinipcReviewedTaskSourceTests(unittest.TestCase):
         ):
             self.assertNotIn(disallowed, source)
         self.assertEqual(source.count("ConvertTo-Json -Compress"), 1)
+
+    def test_v3_cas_log_triage_is_bounded_and_never_authorizes_release(self):
+        task = FOLDER / "v3_cas_log_readonly_triage.ps1"
+        source = task.read_text("utf-8")
+        self.assertEqual(reviewed_task_violations(task.stem, source), [])
+        for required in (
+            r"C:\Users\ADMIN\Trading\Logs",
+            r"C:\CryptoSupport\Logs",
+            "$limitFiles = 5", "$limitLines = 4000", "$limitBytes = 16MB",
+            "historical_coverage='INCOMPLETE'",
+            "historical_cas_never_invoked_proven=$false",
+            "independent_cloud_provenance_verified=$false",
+            "cas_dispatch_authorized=$false",
+            "v3_paper_release_authorized=$false",
+            "disposition='HOLD_REQUIRES_INDEPENDENT_HISTORICAL_CUSTODY'",
+            "raw_log_lines_exposed=$false",
+            "local_filesystem_writes=$false",
+            "originalhost_restore_authorized=$false",
+            "match_semantics='UNTRUSTED_TEXT_CANDIDATES_NOT_AUTHENTICATED_CAS_DISPATCH'",
+        ):
+            self.assertIn(required, source)
+        for forbidden in ("Write-Host", "Set-Content", "Invoke-RestMethod"):
+            self.assertNotIn(forbidden, source)
 
     def test_v3_offline_probe_is_only_existing_restricted_runner_stub(self):
         task = FOLDER / "v3_paper_offline_probe.ps1"
