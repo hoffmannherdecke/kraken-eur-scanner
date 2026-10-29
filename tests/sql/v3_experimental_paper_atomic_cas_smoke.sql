@@ -268,6 +268,56 @@ begin
     raise exception 'V3 inactive function CAS exclusive executor ACL mismatch';
   end if;
 
+  -- Actual PostgreSQL negative transactions for the new Cloud inhibit
+  -- boundary: deletion, expiry and changed fence must HOLD, while each
+  -- exception subtransaction restores the disposable synthetic fixture.
+  caught := false;
+  begin
+    delete from v3_cas_audit.executor_inhibit_v1;
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,cfg,new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_INDEPENDENT_INHIBIT_SCOPE_OR_CONTINUITY_HOLD%' then
+      caught := true;
+    else raise; end if;
+  end;
+  if not caught or (select count(*) from v3_cas_audit.executor_inhibit_v1) <> 1 then
+    raise exception 'disposable missing inhibit receipt not blocked/restored';
+  end if;
+
+  caught := false;
+  begin
+    update v3_cas_audit.executor_inhibit_v1
+       set valid_through_utc=clock_timestamp()-interval '1 second';
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,cfg,new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_INDEPENDENT_INHIBIT_SCOPE_OR_CONTINUITY_HOLD%' then
+      caught := true;
+    else raise; end if;
+  end;
+  if not caught then raise exception 'disposable expired inhibit receipt accepted'; end if;
+
+  caught := false;
+  begin
+    update v3_cas_audit.executor_inhibit_v1
+       set original_fence_sha256=repeat('f',64);
+    perform public.rotate_v2r4_to_v3_experimental_paper(
+      old_id,old_sha,strategy_sha,runtime_sha,n_out,n_trade,last_out,last_trade,
+      new_id,new_test,new_rev,stamp,cfg,new_sha,bundle_sha,new_strategy_sha);
+  exception when others then
+    if sqlerrm like '%V3_CAS_INDEPENDENT_INHIBIT_SCOPE_OR_CONTINUITY_HOLD%' then
+      caught := true;
+    else raise; end if;
+  end;
+  if not caught then raise exception 'disposable foreign inhibit fence accepted'; end if;
+  if (select status from public.paper_series where series_id=old_id) <> 'active'
+     or exists(select 1 from public.paper_series where series_id=new_id) then
+    raise exception 'inhibit negative case mutated protected Paper lifecycle';
+  end if;
+
   -- These genuinely call the installed, isolated PG17 CAS source. The
   -- server—not a mock Python policy—must refuse missing, unsealed, replayed,
   -- wrong-source, future and stale audit-bound first attempts.
