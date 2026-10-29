@@ -515,7 +515,7 @@ $v3_cas_install_locked$;
        and g.valid_through_utc>pg_catalog.clock_timestamp()
        and g.valid_through_utc<=g.acknowledged_at_utc+interval '5 minutes'
        and g.audit_intent_high_watermark=1
-       for update;
+       for share;
     if not found then
         raise exception 'V3_CAS_INDEPENDENT_INHIBIT_SCOPE_OR_CONTINUITY_HOLD';
     end if;
