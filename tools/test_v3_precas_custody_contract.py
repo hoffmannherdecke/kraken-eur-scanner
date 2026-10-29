@@ -162,6 +162,7 @@ class PreCasCustodyContractTests(unittest.TestCase):
             ("immediately_before_mutation", "observed", "2026-10-29T11:59:59Z"),
             ("immediately_before_mutation", "inhibit_through", "2026-10-29T12:00:02Z"),
             ("immediately_before_mutation", "intent_high_watermark", 1),
+            ("immediately_before_mutation", "intent_high_watermark", -1),
             ("immediately_before_mutation", "observed", "UNKNOWN"),
         ):
             with self.subTest(field=field, value=value):
