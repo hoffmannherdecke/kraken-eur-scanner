@@ -13,8 +13,6 @@
 
 ---
 
-## Detailregeln und datierte Nachweise (nur aufgabenbezogen lesen)
-
 ## Dauerhafter Einstieg – Original-Owner statt statischer PR
 
 **Vor Arbeit:** Domäne bestimmen, geschützten GitHub-`main`-HEAD und neueste Original-ACKs lesen. Projektweiter Kontextmanager: Issue #353; **nur bei tatsächlich betroffenem V3-Fach-/Releaseauftrag** Fachowner Issue #99 samt aktuellen Kommentaren. Andere Aufträge zum eigenen Owner. `context_before_action.py` liest Issues **nicht automatisch**; ältere Überschriften sind Historie, keine Live-Belege.
@@ -45,10 +43,6 @@
 Detaillierter Vertrag: `docs/project-cross-session-handoff-v1.md`. Vorhandene fachliche Autoritäten und Sicherheitsgates haben Vorrang. Diese Datei ist eine Agenten-Arbeitsanweisung, keine garantierte ChatGPT-Systemeinspeisung.
 
 
-
-## Historischer Wartungshalt (20.10.) – SUPERSEDED
-
-Die damalige Planung ist physisch erledigt; siehe aktuellen Cutover-Wartungsstand und Issues #353/#99. Keine erneute CPU-/USV-Abnahme ohne neue Störung. Nur neue V3-spezifische Releasebelege bleiben offen.
 
 ## Verbindlicher Effizienz- und Vollständigkeitsstandard (Nutzerbeschluss 19.10.2026)
 
