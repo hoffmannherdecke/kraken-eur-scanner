@@ -58,7 +58,7 @@ Diese vier Regeln konkretisieren den **bestehenden** Kontext-vor-Aktion-Manager;
 
 ## Projektweite Mini-PC-Ausführung: bestehender eingeschränkter Runner
 
-**Vor manueller PowerShell/Screenshot-Schleife:** Zuerst verbundene GitHub-/Cloud-Originale lesen; dann passende bestehende eingeschränkte Task via Issue #13 prüfen. Fähigkeiten und datierte Belege: `context_before_action.py` (`next_action_selector`, `operational_evidence_handoff`), Issue #353. GitHub-Source-CI ist kein Live-Windows-ACK; fehlende/gesperrte Quellen bleiben unvollständig.
+**Vor manueller PowerShell/Screenshot-Schleife:** Zuerst verbundene GitHub-/Cloud-Originale lesen; dann passende bestehende eingeschränkte Task via Issue #13 prüfen. Belege: `context_before_action.py`, Issue #353. Source-CI ist kein Live-ACK.
 
 **Runner-Dispatch-Gate (projektweit):** Vor `MINIPC_TASK_V1` bestehenden Runner beaufsichtigt starten, Originalhost-`Running` UND GitHub-`Online/Idle` frisch bestätigen; erst dann EINEN neuen SHA-gepinnten Issue-#13-Auftrag (TTL 10 Min) auslösen. Run/Pre-Job/Task-ACK prüfen. Offline/Busy/Expired ⇒ HOLD, kein Auto-Retry; danach `Stopped/Disabled` ohne Worker. Keine neuen Rechte/Runner/Scheduler/Release. Runbook: `docs/minipc-runner-bounded-windows-v1.md`.
 
