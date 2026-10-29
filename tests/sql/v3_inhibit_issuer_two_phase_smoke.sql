@@ -8,7 +8,6 @@ create role v3_cas_executor nologin;
 create role v3_cas_audit_writer nologin;
 create role v3_cas_audit_reader nologin;
 create role v3_cas_audit_table_owner nologin;
-create role v3_cas_audit_reader_actor login noinherit;
 create schema v3_cas_audit authorization postgres;
 create table v3_cas_audit.epoch_v1 (
  epoch_id text primary key, predecessor_series_id text not null,
@@ -32,6 +31,8 @@ values ('V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
 -- Source is loaded as a CI-only copy whose unique FIRST RAISE was replaced.
 \i __SOURCE_CI_ONLY__
 
+alter role v3_cas_inhibit_issuer_actor login connection limit 1; -- disposable fixture only
+
 -- Original unauthenticated postgres session must NOT issue a receipt.
 do $negative$
 begin
@@ -45,7 +46,7 @@ begin
  end;
 end $negative$;
 
-set session authorization v3_cas_audit_reader_actor;
+set session authorization v3_cas_inhibit_issuer_actor;
 select v3_cas_audit.begin_executor_inhibit_v1(
   'V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
   repeat('3',64),repeat('4',64),repeat('5',64));
@@ -68,7 +69,7 @@ begin
  then raise exception 'NO_DURABLE_PRESTOP_INHIBIT_START'; end if;
 end $assert_started$;
 
-set session authorization v3_cas_audit_reader_actor;
+set session authorization v3_cas_inhibit_issuer_actor;
 select v3_cas_audit.confirm_executor_inhibit_v1(
  'V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
  clock_timestamp(),repeat('7',64));
@@ -89,7 +90,7 @@ do $assert_confirmed$
 begin
  if (select count(*) from v3_cas_audit.executor_inhibit_v1
      where receipt_sha256=repeat('7',64)
-       and issuer_id='v3_cas_audit_reader_actor'
+       and issuer_id='v3_cas_inhibit_issuer_actor'
        and inhibit_started_at_utc<native_stop_at_utc
        and acknowledged_at_utc<valid_through_utc
        and valid_through_utc<=acknowledged_at_utc+interval '5 minutes') <> 1
