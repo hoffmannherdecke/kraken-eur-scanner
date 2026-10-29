@@ -23,7 +23,7 @@ class BoundedRunnerAvailabilityContractTests(unittest.TestCase):
             "S-1-5-18",
             "GetCimInstance" if False else "Get-CimInstance",
             "WINDOW_BLOCK:",
-            "28bdddccd7d917151958c4b64461dc6289e71eca",
+            "92007df015f45ddf2cb8a296e00e0f592a883606",
             "ACTIONS_RUNNER_HOOK_JOB_STARTED",
             "PSExecutionPolicyPreference=Bypass",
             "approved-private-workflow-sha.txt",
@@ -83,6 +83,8 @@ class BoundedRunnerAvailabilityContractTests(unittest.TestCase):
         ):
             self.assertIn(required, s)
         self.assertEqual(s.count("Register-ScheduledTask -TaskName $taskName"), 1)
+        self.assertIn("92007df015f45ddf2cb8a296e00e0f592a883606", self.installer)
+        self.assertNotIn("28bdddccd7d917151958c4b64461dc6289e71eca", self.installer)
         for forbidden in (
             "Enable-ScheduledTask",
             "Start-ScheduledTask",
