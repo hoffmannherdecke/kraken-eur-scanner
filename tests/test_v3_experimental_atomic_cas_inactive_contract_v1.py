@@ -214,7 +214,7 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
             "CREATE FUNCTION v3_cas_audit.confirm_executor_inhibit_v1(",
             "session_user <> 'v3_cas_inhibit_issuer_actor'",
             "inhibit_started_at_utc timestamptz NOT NULL DEFAULT clock_timestamp()",
-            "g.native_stop_at_utc IS NULL",
+            "AND native_stop_at_utc IS NULL",
             "CREATE POLICY v3_cas_inhibit_owner_only_v1",
             "GRANT EXECUTE ON FUNCTION v3_cas_audit.begin_executor_inhibit_v1(",
             "GRANT EXECUTE ON FUNCTION v3_cas_audit.confirm_executor_inhibit_v1(",
