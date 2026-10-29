@@ -179,7 +179,7 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
             "g.inhibit_started_at_utc<g.native_stop_at_utc",
             "g.valid_through_utc>pg_catalog.clock_timestamp()",
             "g.audit_intent_high_watermark=1",
-            "for update;",
+            "for share;",
             "V3_CAS_INDEPENDENT_INHIBIT_SCOPE_OR_CONTINUITY_HOLD",
         ):
             self.assertIn(token,body,token)
@@ -198,6 +198,8 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
                          "CHECK (audit_intent_high_watermark=1)"):
             self.assertIn(required,sql)
         self.assertNotRegex(sql,r"(?im)^\\s*GRANT\\s+(?:EXECUTE|INSERT|UPDATE|DELETE)")
+        self.assertIn("GRANT SELECT ON v3_cas_audit.executor_inhibit_v1 TO postgres;",sql)
+        self.assertIn("REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;",sql)
         self.assertNotIn("CREATE ROLE",sql)
         self.assertNotIn("CREATE OR REPLACE FUNCTION",sql)
 
