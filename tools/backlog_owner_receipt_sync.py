@@ -30,6 +30,9 @@ def main():
     key, status, evidence = matches[0]
     if status not in ALLOWED:
         raise SystemExit("Invalid status")
+    # A comment must prove itself: linking an unrelated owner note is not an ACK.
+    if evidence != comment.get("html_url"):
+        raise SystemExit("Receipt evidence must link to this exact authenticated comment")
     path = Path("PROJECT_BACKLOG.md")
     data = path.read_text(encoding="utf-8")
     if data.count(START) != 1 or data.count(END) != 1:
