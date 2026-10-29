@@ -6,6 +6,45 @@ This is research-only; it never authorizes PR515 restore or native STOP.
 import unittest
 
 
+
+def _continuous_same_fence(e):
+    """Offline negative contract: these caller-provided fields are NOT authenticated."""
+    first = e.get("before_mutation")
+    second = e.get("immediately_before_mutation")
+    if not isinstance(first, dict) or not isinstance(second, dict):
+        return False
+    keys = ("issuer", "executor", "fence_sha256", "backup_sha256", "series_id")
+    for key in keys:
+        if not isinstance(first.get(key), str) or not first[key] or first[key] != second.get(key):
+            return False
+    if any(len(first[key]) != 64 or any(c not in "0123456789abcdef" for c in first[key])
+           for key in ("fence_sha256", "backup_sha256")):
+        return False
+    if first["series_id"] != "PAPER-V2R4-20261009T110135Z":
+        return False
+    from datetime import datetime
+    def utc(value):
+        if not isinstance(value, str) or not value.endswith("Z"):
+            return None
+        try:
+            return datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+    start = utc(first.get("inhibit_started"))
+    stopped = utc(first.get("native_stop"))
+    one = utc(first.get("observed"))
+    two = utc(second.get("observed"))
+    through = utc(second.get("inhibit_through"))
+    if any(t is None for t in (start, stopped, one, two, through)):
+        return False
+    if not (start < stopped <= one < two <= through):
+        return False
+    if (two - one).total_seconds() > 30:
+        return False
+    a, b = first.get("intent_high_watermark"), second.get("intent_high_watermark")
+    return type(a) is int and type(b) is int and a == b and a >= 0
+
+
 def review_precas_evidence(e):
     """Candidate evidence policy, NOT a release authority."""
     required = (
@@ -28,6 +67,8 @@ def review_precas_evidence(e):
         "new_intent_after_readback", "fence_or_xml_drift",
     )):
         return "HOLD_CAS_OR_STATE_RISK"
+    if not _continuous_same_fence(e):
+        return "HOLD_CUSTODY_INTERVAL_OR_FENCE_MISMATCH"
     # A positive review remains non-authoritative until physically integrated
     # with an independently authenticated issuer and fresh originalhost readback.
     return "REVIEW_ONLY_PRECAS_CANDIDATE_NOT_RELEASED"
@@ -50,6 +91,14 @@ def complete_fixture():
         "new_intent_after_readback", "fence_or_xml_drift",
     )})
     x["phase"] = "ARMED"
+
+    same = dict(issuer="external-issuer", executor="exclusive-executor",
+                fence_sha256="a" * 64, backup_sha256="b" * 64,
+                series_id="PAPER-V2R4-20261009T110135Z", intent_high_watermark=0)
+    x["before_mutation"] = dict(same, inhibit_started="2026-10-29T12:00:00Z",
+                                native_stop="2026-10-29T12:00:01Z", observed="2026-10-29T12:00:02Z")
+    x["immediately_before_mutation"] = dict(same, observed="2026-10-29T12:00:03Z",
+                                            inhibit_through="2026-10-29T12:00:04Z")
     return x
 
 
@@ -94,6 +143,32 @@ class PreCasCustodyContractTests(unittest.TestCase):
         x["current_rpc_count"] = 0
         x["current_audit_epoch_count"] = 0
         self.assertTrue(review_precas_evidence(x).startswith("HOLD"))
+
+
+    def test_missing_or_mismatched_second_receipt_holds(self):
+        for missing in ("before_mutation", "immediately_before_mutation"):
+            x = complete_fixture()
+            del x[missing]
+            self.assertTrue(review_precas_evidence(x).startswith("HOLD"))
+        for field in ("issuer", "executor", "fence_sha256", "backup_sha256", "series_id"):
+            x = complete_fixture()
+            x["immediately_before_mutation"][field] = "other"
+            self.assertTrue(review_precas_evidence(x).startswith("HOLD"))
+
+    def test_gap_replay_or_new_intent_holds(self):
+        for lane, field, value in (
+            ("before_mutation", "inhibit_started", "2026-10-29T12:00:02Z"),
+            ("immediately_before_mutation", "observed", "2026-10-29T12:01:00Z"),
+            ("immediately_before_mutation", "observed", "2026-10-29T11:59:59Z"),
+            ("immediately_before_mutation", "inhibit_through", "2026-10-29T12:00:02Z"),
+            ("immediately_before_mutation", "intent_high_watermark", 1),
+            ("immediately_before_mutation", "intent_high_watermark", -1),
+            ("immediately_before_mutation", "observed", "UNKNOWN"),
+        ):
+            with self.subTest(field=field, value=value):
+                x = complete_fixture()
+                x[lane][field] = value
+                self.assertTrue(review_precas_evidence(x).startswith("HOLD"))
 
     def test_wrong_phase_holds(self):
         for phase in ("CAS_INVOKED", "CLOUD_COMMITTED", "PRE_CUTOVER", None):
