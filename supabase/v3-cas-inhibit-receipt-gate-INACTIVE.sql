@@ -27,6 +27,8 @@ BEGIN
                 AND NOT rolcanlogin AND NOT rolbypassrls AND NOT rolsuper)
     OR NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='v3_cas_executor'
                 AND NOT rolcanlogin AND NOT rolbypassrls AND NOT rolsuper)
+    OR NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='v3_cas_executor_actor'
+                AND NOT rolcanlogin AND NOT rolbypassrls)
     OR NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='v3_cas_audit_reader_actor'
                 AND rolcanlogin AND NOT rolbypassrls) THEN
   RAISE EXCEPTION 'V3_CAS_INHIBIT_ORIGINAL_ROLES_MISSING_HOLD';
@@ -147,6 +149,60 @@ BEGIN
 END
 $v3_confirm$;
 
+-- Separate, durable PRE-RPC attempt receipt. The exclusive original CAS
+-- caller must COMMIT this DISPATCH_UNKNOWN marker in a DIFFERENT transaction
+-- BEFORE sending the CAS RPC; a rolled-back CAS can never erase it.
+-- UNKNOWN is conservative even when the network request never arrived.
+CREATE TABLE v3_cas_audit.attempt_v1 (
+ intent_id uuid PRIMARY KEY REFERENCES v3_cas_audit.intent_v1(intent_id),
+ epoch_id text NOT NULL REFERENCES v3_cas_audit.epoch_v1(epoch_id),
+ requested_rpc text NOT NULL
+   CHECK(requested_rpc='public.rotate_v2r4_to_v3_experimental_paper'),
+ request_sha256 text NOT NULL CHECK(request_sha256 ~ '^[a-f0-9]{64}$'),
+ source_sha256 text NOT NULL CHECK(source_sha256 ~ '^[a-f0-9]{64}$'),
+ fence_sha256 text NOT NULL CHECK(fence_sha256 ~ '^[a-f0-9]{64}$'),
+ state text NOT NULL CHECK(state='DISPATCH_UNKNOWN'),
+ emitter_actor text NOT NULL CHECK(emitter_actor='v3_cas_executor_actor'),
+ created_at_utc timestamptz NOT NULL DEFAULT clock_timestamp()
+);
+ALTER TABLE v3_cas_audit.attempt_v1 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE v3_cas_audit.attempt_v1 FORCE ROW LEVEL SECURITY;
+CREATE POLICY v3_cas_attempt_owner_only_v1 ON v3_cas_audit.attempt_v1
+ FOR ALL TO v3_cas_audit_table_owner USING(true) WITH CHECK(true);
+REVOKE ALL ON v3_cas_audit.attempt_v1
+ FROM PUBLIC,anon,authenticated,service_role,
+      v3_cas_operator_login,v3_cas_executor,v3_cas_audit_writer,
+      v3_cas_audit_reader,v3_cas_audit_reader_actor,
+      v3_cas_inhibit_issuer_actor,v3_cas_executor_actor;
+
+CREATE FUNCTION v3_cas_audit.append_dispatch_unknown_v1(
+ p_epoch_id text,p_intent_id uuid,p_request_sha256 text,
+ p_source_sha256 text,p_fence_sha256 text
+) RETURNS timestamptz
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path='pg_catalog','v3_cas_audit'
+AS $v3_attempt$
+DECLARE v_at timestamptz;
+BEGIN
+ IF session_user <> 'v3_cas_executor_actor'
+    OR p_epoch_id !~ '^V3CAS-AUDIT-[a-f0-9]{32}$'
+    OR p_intent_id IS NULL
+    OR p_request_sha256 !~ '^[a-f0-9]{64}$'
+    OR p_source_sha256 !~ '^[a-f0-9]{64}$'
+    OR p_fence_sha256 !~ '^[a-f0-9]{64}$'
+ THEN RAISE EXCEPTION 'V3_CAS_DISPATCH_UNKNOWN_ACTOR_OR_SCOPE_HOLD'; END IF;
+ INSERT INTO v3_cas_audit.attempt_v1(
+  intent_id,epoch_id,requested_rpc,request_sha256,source_sha256,
+  fence_sha256,state,emitter_actor)
+ VALUES(
+  p_intent_id,p_epoch_id,'public.rotate_v2r4_to_v3_experimental_paper',
+  p_request_sha256,p_source_sha256,p_fence_sha256,
+  'DISPATCH_UNKNOWN','v3_cas_executor_actor')
+ RETURNING created_at_utc INTO v_at;
+ RETURN v_at;
+END
+$v3_attempt$;
+
 -- Newly created SECURITY DEFINER functions default EXECUTE to PUBLIC.
 -- Revoke within this SAME uncommitted transaction before anyone can call.
 REVOKE ALL ON FUNCTION v3_cas_audit.begin_executor_inhibit_v1(text,text,text,text)
@@ -157,11 +213,17 @@ GRANT EXECUTE ON FUNCTION v3_cas_audit.begin_executor_inhibit_v1(text,text,text,
  TO v3_cas_inhibit_issuer_actor;
 GRANT EXECUTE ON FUNCTION v3_cas_audit.confirm_executor_inhibit_v1(text,timestamptz,text)
  TO v3_cas_inhibit_issuer_actor;
+REVOKE ALL ON FUNCTION v3_cas_audit.append_dispatch_unknown_v1(text,uuid,text,text,text)
+ FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION v3_cas_audit.append_dispatch_unknown_v1(text,uuid,text,text,text)
+ TO v3_cas_executor_actor;
+GRANT SELECT ON v3_cas_audit.attempt_v1 TO postgres;
 GRANT SELECT ON v3_cas_audit.executor_inhibit_v1 TO postgres;
 
 RESET ROLE;
 REVOKE CREATE ON SCHEMA v3_cas_audit FROM v3_cas_audit_table_owner;
 GRANT USAGE ON SCHEMA v3_cas_audit TO v3_cas_inhibit_issuer_actor;
+GRANT USAGE ON SCHEMA v3_cas_audit TO v3_cas_executor_actor;
 REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
 
 DO $v3_inhibit_postflight$
@@ -171,6 +233,8 @@ BEGIN
     OR NOT has_table_privilege('postgres','v3_cas_audit.executor_inhibit_v1','SELECT')
     OR has_table_privilege('service_role','v3_cas_audit.executor_inhibit_v1','SELECT')
     OR has_table_privilege('v3_cas_inhibit_issuer_actor','v3_cas_audit.executor_inhibit_v1','INSERT')
+    OR has_table_privilege('v3_cas_executor_actor','v3_cas_audit.attempt_v1','INSERT')
+    OR has_table_privilege('service_role','v3_cas_audit.attempt_v1','SELECT')
     OR has_table_privilege('v3_cas_audit_reader_actor','v3_cas_audit.executor_inhibit_v1','UPDATE')
     OR (SELECT rolcanlogin FROM pg_roles WHERE rolname='v3_cas_inhibit_issuer_actor') IS DISTINCT FROM FALSE
  THEN RAISE EXCEPTION 'V3_CAS_INHIBIT_OWNER_ESCROW_POSTFLIGHT_HOLD'; END IF;

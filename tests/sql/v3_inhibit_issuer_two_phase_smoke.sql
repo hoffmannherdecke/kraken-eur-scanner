@@ -5,6 +5,7 @@ create role authenticated nologin;
 create role service_role nologin;
 create role v3_cas_operator_login nologin;
 create role v3_cas_executor nologin;
+create role v3_cas_executor_actor nologin;
 create role v3_cas_audit_writer nologin;
 create role v3_cas_audit_reader nologin;
 create role v3_cas_audit_table_owner nologin;
@@ -19,7 +20,7 @@ create table v3_cas_audit.epoch_v1 (
 );
 create table v3_cas_audit.intent_v1 (
  epoch_id text not null references v3_cas_audit.epoch_v1(epoch_id),
- ordinal bigint not null, state text not null
+ ordinal bigint not null,intent_id uuid not null unique,state text not null
 );
 alter table v3_cas_audit.epoch_v1 owner to v3_cas_audit_table_owner;
 alter table v3_cas_audit.intent_v1 owner to v3_cas_audit_table_owner;
@@ -98,4 +99,36 @@ begin
        and valid_through_utc<=acknowledged_at_utc+interval '5 minutes') <> 1
  then raise exception 'INHIBIT_CONFIRM_NOT_ATOMIC_OR_BOUND'; end if;
 end $assert_confirmed$;
+-- The exclusively scoped executor may append a conservative UNKNOWN marker
+-- before CAS, once. Notebook reader and service_role have NO direct writes.
+insert into v3_cas_audit.intent_v1(epoch_id,ordinal,intent_id,state)
+values('V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',1,
+       '123e4567-e89b-42d3-a456-426614174000','PREINVOKE_INTENT');
+alter role v3_cas_executor_actor login connection limit 1; -- disposable only
+set session authorization v3_cas_executor_actor;
+select v3_cas_audit.append_dispatch_unknown_v1(
+ 'V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+ '123e4567-e89b-42d3-a456-426614174000',
+ repeat('6',64),repeat('3',64),repeat('4',64));
+do $no_attempt_replay$
+begin
+ begin
+  perform v3_cas_audit.append_dispatch_unknown_v1(
+   'V3CAS-AUDIT-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+   '123e4567-e89b-42d3-a456-426614174000',
+   repeat('6',64),repeat('3',64),repeat('4',64));
+  raise exception 'REPLAYED_DISPATCH_UNKNOWN_ACCEPTED';
+ exception when unique_violation then null;
+ end;
+end $no_attempt_replay$;
+reset session authorization;
+do $verify_unknown$
+begin
+ if (select count(*) from v3_cas_audit.attempt_v1
+       where state='DISPATCH_UNKNOWN'
+         and emitter_actor='v3_cas_executor_actor'
+         and request_sha256=repeat('6',64))<>1 then
+  raise exception 'DURABLE_UNKNOWN_NOT_PERSISTED';
+ end if;
+end $verify_unknown$;
 select 'V3_DISPOSABLE_ISSUER_TWO_PHASE_NEGATIVE_PASS' as gate;

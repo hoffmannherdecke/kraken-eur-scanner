@@ -254,6 +254,35 @@ begin
     if not found then
         raise exception 'V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND';
     end if;
+    -- This is the original single CAS RPC. A committed DISPATCH_UNKNOWN
+    -- attempt must exist BEFORE we touch any Paper state. The exclusive
+    -- executor writes it in a separate committed transaction; a rolled-back
+    -- RPC cannot erase this conservative UNKNOWN. No ledger = hard HOLD.
+    if pg_catalog.to_regclass('v3_cas_audit.attempt_v1') is null then
+        raise exception 'V3_CAS_DURABLE_ATTEMPT_LEDGER_ABSENT_HOLD';
+    end if;
+    perform 1
+      from v3_cas_audit.attempt_v1 t
+      join v3_cas_audit.intent_v1 i on i.intent_id=t.intent_id
+     where t.epoch_id=p_new_v3_config->>'preinvoke_epoch_id'
+       and t.intent_id=(p_new_v3_config->>'preinvoke_intent_id')::uuid
+       and i.epoch_id=t.epoch_id
+       and i.state='PREINVOKE_INTENT'
+       and t.state='DISPATCH_UNKNOWN'
+       and t.emitter_actor='v3_cas_executor_actor'
+       and t.requested_rpc='public.rotate_v2r4_to_v3_experimental_paper'
+       and t.request_sha256=p_new_v3_config->>'preinvoke_request_sha256'
+       and t.request_sha256=i.request_sha256
+       and t.source_sha256=p_new_v3_config->>'preinvoke_source_sha256'
+       and t.fence_sha256=p_new_v3_config->>'preinvoke_fence_sha256'
+       and t.created_at_utc>=i.created_at_utc
+       and t.created_at_utc<=pg_catalog.clock_timestamp()
+       and t.created_at_utc>pg_catalog.clock_timestamp()-interval '5 minutes'
+       for share of t;
+    if not found then
+        raise exception 'V3_CAS_DURABLE_DISPATCH_UNKNOWN_NOT_BOUND_HOLD';
+    end if;
+
     -- Variant 2: independent durable receipt is mandatory before Paper mutation.
     -- This SQL cannot itself authenticate Notebook provenance or history.
     if pg_catalog.to_regclass('v3_cas_audit.executor_inhibit_v1') is null then
