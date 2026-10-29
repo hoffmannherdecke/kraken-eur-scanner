@@ -254,6 +254,38 @@ begin
     if not found then
         raise exception 'V3_CAS_PREINVOKE_INTENT_NOT_PERSISTED_OR_BOUND';
     end if;
+    -- Variant 2: independent durable receipt is mandatory before Paper mutation.
+    -- This SQL cannot itself authenticate Notebook provenance or history.
+    if pg_catalog.to_regclass('v3_cas_audit.executor_inhibit_v1') is null then
+        raise exception 'V3_CAS_INDEPENDENT_INHIBIT_RELATION_ABSENT_HOLD';
+    end if;
+    if coalesce(p_new_v3_config->>'preinvoke_inhibit_receipt_sha256','') !~
+          '^[a-f0-9]{64}$' then
+        raise exception 'V3_CAS_INHIBIT_RECEIPT_BINDING_MISSING_HOLD';
+    end if;
+    perform 1
+      from v3_cas_audit.executor_inhibit_v1 g
+     where g.epoch_id=p_new_v3_config->>'preinvoke_epoch_id'
+       and g.predecessor_series_id=p_expected_old_series_id
+       and g.original_fence_sha256=p_new_v3_config->>'preinvoke_fence_sha256'
+       and g.source_sha256=p_new_v3_config->>'preinvoke_source_sha256'
+       and g.caller_acl_sha256=p_new_v3_config->>'preinvoke_caller_acl_sha256'
+       and g.receipt_sha256=p_new_v3_config->>'preinvoke_inhibit_receipt_sha256'
+       and g.expected_rpc='public.rotate_v2r4_to_v3_experimental_paper'
+       and g.state='INHIBITED'
+       and g.issuer_id is not null and length(g.issuer_id)>0
+       and g.executor_id='v3_cas_executor'
+       and g.inhibit_started_at_utc<g.native_stop_at_utc
+       and g.native_stop_at_utc<=g.acknowledged_at_utc
+       and g.acknowledged_at_utc<=pg_catalog.clock_timestamp()
+       and g.valid_through_utc>pg_catalog.clock_timestamp()
+       and g.valid_through_utc<=g.acknowledged_at_utc+interval '5 minutes'
+       and g.audit_intent_high_watermark=1
+       for share;
+    if not found then
+        raise exception 'V3_CAS_INDEPENDENT_INHIBIT_SCOPE_OR_CONTINUITY_HOLD';
+    end if;
+
     -- The stored digest is only a required audit-row match here. Later,
     -- before Paper mutation, the independently typed 16-argument request
     -- digest is recalculated and MUST equal this already matched value.

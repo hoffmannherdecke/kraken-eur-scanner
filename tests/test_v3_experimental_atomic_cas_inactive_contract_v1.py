@@ -162,6 +162,47 @@ class InactiveV3AtomicCASContract(unittest.TestCase):
         self.assertIn("V3 CAS missing exact valid unique single-active Paper index",self.body)
         self.assertNotRegex(gate,r"(?im)^\s*(create|alter|drop)\s+index")
 
+    def test_independent_inhibit_receipt_is_locked_before_paper_mutation(self):
+        # Source-only SQL gate, NOT validation of a real independent issuer.
+        body=self.body
+        for token in (
+            "pg_catalog.to_regclass('v3_cas_audit.executor_inhibit_v1')",
+            "V3_CAS_INDEPENDENT_INHIBIT_RELATION_ABSENT_HOLD",
+            "preinvoke_inhibit_receipt_sha256",
+            "V3_CAS_INHIBIT_RECEIPT_BINDING_MISSING_HOLD",
+            "from v3_cas_audit.executor_inhibit_v1 g",
+            "g.executor_id='v3_cas_executor'",
+            "g.original_fence_sha256=p_new_v3_config->>'preinvoke_fence_sha256'",
+            "g.source_sha256=p_new_v3_config->>'preinvoke_source_sha256'",
+            "g.caller_acl_sha256=p_new_v3_config->>'preinvoke_caller_acl_sha256'",
+            "g.state='INHIBITED'",
+            "g.inhibit_started_at_utc<g.native_stop_at_utc",
+            "g.valid_through_utc>pg_catalog.clock_timestamp()",
+            "g.audit_intent_high_watermark=1",
+            "for share;",
+            "V3_CAS_INDEPENDENT_INHIBIT_SCOPE_OR_CONTINUITY_HOLD",
+        ):
+            self.assertIn(token,body,token)
+        self.assertLess(body.index("V3_CAS_INDEPENDENT_INHIBIT_SCOPE_OR_CONTINUITY_HOLD"),
+                        body.index("update public.paper_series"))
+
+    def test_inhibit_schema_is_existing_private_owner_and_inert(self):
+        sql=(ROOT/"supabase/v3-cas-inhibit-receipt-gate-INACTIVE.sql").read_text(encoding="utf-8")
+        self.assertRegex(sql,
+            r"(?is)BEGIN;\s*DO \$v3_inhibit_lock\$\s*BEGIN\s*"
+            r"RAISE EXCEPTION 'V3_CAS_INHIBIT_SCHEMA_SOURCE_INACTIVE")
+        for required in ("REFERENCES v3_cas_audit.epoch_v1(epoch_id)",
+                         "ALTER TABLE v3_cas_audit.executor_inhibit_v1 FORCE ROW LEVEL SECURITY",
+                         "REVOKE ALL ON v3_cas_audit.executor_inhibit_v1",
+                         "v3_cas_audit_table_owner",
+                         "CHECK (audit_intent_high_watermark=1)"):
+            self.assertIn(required,sql)
+        self.assertNotRegex(sql,r"(?im)^\s*GRANT\s+(?:EXECUTE|INSERT|UPDATE|DELETE)")
+        self.assertIn("GRANT SELECT ON v3_cas_audit.executor_inhibit_v1 TO postgres;",sql)
+        self.assertIn("REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;",sql)
+        self.assertNotIn("CREATE ROLE",sql)
+        self.assertNotIn("CREATE OR REPLACE FUNCTION",sql)
+
     def test_private_committed_preinvoke_first_intent_is_server_side_gate(self):
         # The standalone caller's claimed CMS/reader booleans cannot release
         # the CAS; this does not prove the external identity or full request.
