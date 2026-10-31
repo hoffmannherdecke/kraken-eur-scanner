@@ -176,5 +176,31 @@ class V3PreCASOriginalPairReviewTests(unittest.TestCase):
                          "CORRELATED_SOURCE_SHAPES_ONLY_NOT_CAS_AUTHORITY")
 
 
+
+class PaperCompletionUsageProjectionContract(unittest.TestCase):
+    """Keep the expensive REST view from evaluating unused aggregates."""
+
+    def test_watch_requests_only_alert_and_snapshot_fields(self):
+        from pathlib import Path
+        workflow = (Path(__file__).resolve().parents[1] /
+                    ".github/workflows/paper-series-completion-watch.yml").read_text()
+        anchor = 'f"/rest/v1/paper_model_usage_guard?series_id=eq.{encoded}&select="'
+        self.assertEqual(workflow.count(anchor), 1)
+        self.assertNotIn(
+            'paper_model_usage_guard?series_id=eq.{encoded}&select=*', workflow)
+        query = workflow[workflow.index(anchor):workflow.index(anchor) + 250]
+        for field in (
+            "series_id", "usage_state", "logical_model_calls",
+            "estimated_http_attempts", "retry_overhead_requests",
+            "duplicate_response_ids", "max_attempt", "cost_precision"
+        ):
+            with self.subTest(field=field):
+                self.assertIn(field, query)
+        # Scheduling, cloud writes and notification behavior remain untouched.
+        self.assertIn("req(", workflow)
+        self.assertIn('"/rest/v1/paper_series_completion_watch?on_conflict=series_id"', workflow)
+        self.assertIn("if should_notify_usage:", workflow)
+
+
 if __name__=="__main__":
     unittest.main()
