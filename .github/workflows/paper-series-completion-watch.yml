@@ -83,7 +83,9 @@ jobs:
 
           _,usage_rows=req(
               "GET",
-              f"/rest/v1/paper_model_usage_guard?series_id=eq.{encoded}&select=*"
+              f"/rest/v1/paper_model_usage_guard?series_id=eq.{encoded}&select="
+              "series_id,usage_state,logical_model_calls,estimated_http_attempts,"
+              "retry_overhead_requests,duplicate_response_ids,max_attempt,cost_precision"
           )
           usage=usage_rows[0] if usage_rows else None
           usage_state=str((usage or {}).get("usage_state") or "UNAVAILABLE").upper()
