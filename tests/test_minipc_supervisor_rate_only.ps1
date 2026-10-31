@@ -782,7 +782,7 @@ $x=V3CasPreinvokeAuditFixture;$x.audit_provenance_issuer_independently_reviewed=
 CheckV3CasAudit 'HOLD_AUDIT_COVERAGE_OR_DURABILITY_INCOMPLETE' $x 'unknown issuer'
 $x=V3CasPreinvokeAuditFixture;$x.snapshot_observed_utc='2026-10-18T00:00:00Z'
 CheckV3CasAudit 'HOLD_AUDIT_EPOCH_TIMESTAMPS_UNVERIFIED' $x 'stale reviewer observation'
-$x=V3CasPreinvokeAuditFixture;$x.coverage_started_utc='2026-10-30T00:00:00Z'
+$x=V3CasPreinvokeAuditFixture;$x.coverage_started_utc=([datetimeoffset]::Parse($x.snapshot_observed_utc).AddDays(1).ToString('o'))
 CheckV3CasAudit 'HOLD_AUDIT_EPOCH_TIMESTAMPS_UNVERIFIED' $x 'future audit epoch'
 Write-Output 'V3_CAS_PREINVOKE_SOURCE_ONLY_19_NEGATIVE_POSITIVE_CASES_PASS'
 
