@@ -202,5 +202,84 @@ class PaperCompletionUsageProjectionContract(unittest.TestCase):
         self.assertIn("if should_notify_usage:", workflow)
 
 
+
+class PaperCompletionTimeoutIsolation(unittest.TestCase):
+    """Execute the production error branch, not just a status-string fixture."""
+
+    @staticmethod
+    def usage_try():
+        import ast
+        from pathlib import Path
+        source=(Path(__file__).resolve().parents[1] /
+                ".github/workflows/paper-series-completion-watch.yml").read_text()
+        script=source.split("          python - <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
+        python="\n".join(line[10:] if line.startswith("          ") else line
+                         for line in script.splitlines())
+        module=ast.parse(python)
+        candidates=[node for node in module.body if isinstance(node, ast.Try)
+                    and any(isinstance(h.type, ast.Attribute)
+                            and h.type.attr=="HTTPError"
+                            for h in node.handlers)]
+        assert len(candidates)==1
+        return compile(ast.Module(body=[candidates[0]], type_ignores=[]),
+                       "<production-monitor-usage-try>", "exec")
+
+    @staticmethod
+    def fake_error(code, sqlstate):
+        import io
+        from urllib.error import HTTPError
+        import json
+        return HTTPError("https://example.invalid/rest/v1", code, "failure", {},
+                         io.BytesIO(json.dumps({"code":sqlstate}).encode()))
+
+    def test_known_database_timeout_isolated_without_fake_healthy(self):
+        import json
+        import urllib
+        code=self.usage_try()
+        def req(*args):
+            raise self.fake_error(500, "57014")
+        scope={"req":req,"json":json,"urllib":urllib,"encoded":"TEST",
+               "usage_rows":None, "usage_timed_out":False}
+        exec(code,scope)
+        self.assertTrue(scope["usage_timed_out"])
+        self.assertEqual(scope["usage_rows"],[])
+
+    def test_other_errors_still_fail_closed(self):
+        import json
+        import urllib
+        code=self.usage_try()
+        for status,sqlstate in ((403,"42501"),(500,"XX000"),(503,"57014")):
+            with self.subTest(status=status,sqlstate=sqlstate):
+                def req(*args):
+                    raise self.fake_error(status,sqlstate)
+                scope={"req":req,"json":json,"urllib":urllib,"encoded":"TEST",
+                       "usage_rows":None, "usage_timed_out":False}
+                with self.assertRaises(urllib.error.HTTPError):
+                    exec(code,scope)
+
+    def test_success_retains_original_usage(self):
+        import json
+        import urllib
+        code=self.usage_try()
+        sample={"usage_state":"ANOMALY","logical_model_calls":12}
+        scope={"req":lambda *args:(200,[sample]),"json":json,
+               "urllib":urllib,"encoded":"TEST","usage_timed_out":False}
+        exec(code,scope)
+        self.assertFalse(scope["usage_timed_out"])
+        self.assertEqual(scope["usage_rows"],[sample])
+
+    def test_timeout_explicitly_warns_and_never_reports_healthy(self):
+        from pathlib import Path
+        source=(Path(__file__).resolve().parents[1] /
+                ".github/workflows/paper-series-completion-watch.yml").read_text()
+        self.assertIn('usage_state=("UNAVAILABLE_TIMEOUT" if usage_timed_out',source)
+        self.assertIn('should_notify_usage_timeout=(usage_timed_out and',source)
+        self.assertIn('previous_usage_state!="UNAVAILABLE_TIMEOUT"',source)
+        self.assertIn('if should_notify_usage_timeout:',source)
+        self.assertIn('Modellnutzung ist UNBEKANNT, nicht gesund',source)
+        self.assertIn('if should_notify_usage:',source)
+        self.assertIn('"last_checked_at":now',source)
+
+
 if __name__=="__main__":
     unittest.main()
