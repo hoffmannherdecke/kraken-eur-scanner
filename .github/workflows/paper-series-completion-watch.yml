@@ -38,6 +38,7 @@ jobs:
           import os
           import urllib.parse
           import urllib.request
+          import urllib.error
 
           base=os.environ["SUPABASE_URL"].rstrip("/")
           key=(os.getenv("SUPABASE_SECRET_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
@@ -81,18 +82,39 @@ jobs:
           already_notified=bool(prev and prev.get("ready_notified_at"))
           ready=bool(s.get("completion_ready"))
 
-          _,usage_rows=req(
-              "GET",
-              f"/rest/v1/paper_model_usage_guard?series_id=eq.{encoded}&select="
-              "series_id,usage_state,logical_model_calls,estimated_http_attempts,"
-              "retry_overhead_requests,duplicate_response_ids,max_attempt,cost_precision"
-          )
+          # Optional *analysis* read: a known statement timeout must not
+          # block the independent completion gate or its existing watch ACK.
+          # Never turn missing model usage evidence into HEALTHY/ANOMALY.
+          usage_timed_out=False
+          try:
+              _,usage_rows=req(
+                  "GET",
+                  f"/rest/v1/paper_model_usage_guard?series_id=eq.{encoded}&select="
+                  "series_id,usage_state,logical_model_calls,estimated_http_attempts,"
+                  "retry_overhead_requests,duplicate_response_ids,max_attempt,cost_precision"
+              )
+          except urllib.error.HTTPError as error:
+              # Only the confirmed PostgREST SQLSTATE 57014 is isolated.
+              # Unauthorized, unavailable gateway and unknown errors still fail.
+              raw=error.read(2048).decode("utf-8","replace")
+              try:
+                  sqlstate=json.loads(raw).get("code")
+              except (ValueError,AttributeError):
+                  sqlstate=None
+              if error.code!=500 or sqlstate!="57014":
+                  raise
+              usage_rows=[]
+              usage_timed_out=True
+              print("MODEL_USAGE_READ_TIMEOUT_57014; completion gate independently evaluated")
           usage=usage_rows[0] if usage_rows else None
-          usage_state=str((usage or {}).get("usage_state") or "UNAVAILABLE").upper()
+          usage_state=("UNAVAILABLE_TIMEOUT" if usage_timed_out else
+                       str((usage or {}).get("usage_state") or "UNAVAILABLE").upper())
           prev_snapshot=(prev or {}).get("snapshot") or {}
           previous_usage_state=str(prev_snapshot.get("model_usage_state") or "UNKNOWN").upper()
           usage_anomaly=(usage_state=="ANOMALY")
           should_notify_usage=(usage_anomaly and previous_usage_state!="ANOMALY" and not dry_run)
+          should_notify_usage_timeout=(usage_timed_out and
+              previous_usage_state!="UNAVAILABLE_TIMEOUT" and not dry_run)
 
           snapshot={
               "series_age_days":s.get("series_age_days"),
@@ -150,6 +172,7 @@ jobs:
               "already_notified":already_notified,
               "should_notify":should_notify,
               "should_notify_usage":should_notify_usage,
+              "should_notify_usage_timeout":should_notify_usage_timeout,
               "previous_usage_state":previous_usage_state,
               "snapshot":snapshot,
           },sort_keys=True))
@@ -189,6 +212,16 @@ jobs:
                   f"Diversity={s.get('temporal_diversity_ready')}, "
                   f"Qualifying-24h={s.get('qualifying_eligible_24h')}/{s.get('qualifying_cohort_size')}. "
                   "Bitte Abschlussauswertung sofort starten; keine automatische Strategie-/Echtgeldaktivierung."
+              )
+
+          if should_notify_usage_timeout:
+              slack(
+                  f"<@{uid}> Paper-Modellnutzung für {sid} derzeit NICHT prüfbar: "
+                  "die bestehende Supabase-Auswertung überschritt das Datenbank-Zeitlimit "
+                  "(PostgREST SQLSTATE 57014). Der unabhängige Paper-Abschlussstatus "
+                  "wurde fortgeschrieben, aber Modellnutzung ist UNBEKANNT, nicht gesund. "
+                  "Bitte den bestehenden Monitoring-Owner zur Abfrageoptimierung heranziehen; "
+                  "keine automatische Strategie-/Budgetänderung."
               )
 
           if should_notify_usage:
