@@ -21,12 +21,25 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
 
     def test_no_parallel_cas_executor_or_public_permissions(self):
         self.assertEqual(len(re.findall(r"(?i)\bCREATE TABLE\b", self.code)), 1)
-        self.assertEqual(len(re.findall(r"(?i)\bCREATE FUNCTION\b", self.code)), 1)
+        self.assertEqual(len(re.findall(r"(?i)\bCREATE FUNCTION\b", self.code)), 2)
         self.assertNotRegex(self.code, r"(?i)\bCREATE (?:ROLE|SCHEMA|EXTENSION)\b")
         self.assertIn("FORCE ROW LEVEL SECURITY", self.code)
         self.assertIn("REVOKE ALL ON FUNCTION", self.code)
         self.assertIn("FROM PUBLIC,anon,authenticated,service_role", self.code)
         self.assertNotRegex(self.code, r"(?im)^\s*(?:UPDATE|DELETE|TRUNCATE)\s+v3_cas_audit\.prepared_fence_abort_v1")
+
+    def test_aborted_epoch_blocks_future_intent_and_unknown(self):
+        for v in (
+            "reject_aborted_epoch_dispatch_v1",
+            "v3_reject_aborted_intent_insert_v1",
+            "v3_reject_aborted_attempt_insert_v1",
+            "BEFORE INSERT ON v3_cas_audit.intent_v1",
+            "BEFORE INSERT ON v3_cas_audit.attempt_v1",
+            "FOR SHARE",
+            "V3_ABORTED_EPOCH_CANNOT_APPEND_INTENT_OR_ATTEMPT",
+        ):
+            self.assertIn(v, self.code)
+        self.assertEqual(len(re.findall(r"(?i)\\bCREATE TRIGGER\\b", self.code)), 2)
 
     def test_receipt_is_not_release_or_auto_rearm(self):
         for token in [
