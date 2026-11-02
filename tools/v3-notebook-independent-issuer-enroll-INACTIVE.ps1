@@ -18,6 +18,12 @@ if (-not ($Stage -or $VerifyLocal -or $RemoveEnrollmentSql)) {
    ConvertTo-Json -Compress
  return
 }
+# Windows PowerShell 5.1 does not always autoload the DPAPI type.
+# Resolve the built-in framework assembly BEFORE creating any local enrollment files.
+Add-Type -AssemblyName System.Security -ErrorAction Stop
+if (-not ([type]::GetType('System.Security.Cryptography.ProtectedData, System.Security', $false))) {
+ throw 'V3_ISSUER_DPAPI_FRAMEWORK_UNAVAILABLE'
+}
 $id=[Security.Principal.WindowsIdentity]::GetCurrent()
 if ($env:OS -ne 'Windows_NT' -or -not [Environment]::UserInteractive -or
     $env:GITHUB_ACTIONS -eq 'true' -or $id.Name -match '(?i)\\CryptoSupportSvc$' -or
