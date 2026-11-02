@@ -2854,7 +2854,17 @@ if($ReviewSignedCurrentCasCustody){
    'valid_single_active_index_count')
   $cloud=Read-V3ScopedPrecommitSnapshotFile -Path $ExistingCloudInventoryJson -ExactKeys $cloudKeys
   $joined=Get-V3Pr515SignedCasAndCloudSeriesReview -SignedCas $proof -Cloud $cloud -CurrentOriginalFenceSha256 $ExpectedCurrentFenceSha256
-  $joined|ConvertTo-Json -Compress -Depth 4
+  # The existing independently signed CURRENT-CAS readback and the separately
+  # fetched public Cloud inventory now share the exact originalhost recovery
+  # context, rather than being reported without the native Phase-A state.
+  # Public inventory is NOT an authenticated full attempt/UNKNOWN history.
+  if([string]$phase.phase -ceq 'ARMED'){
+   $original=Get-V3Pr515ArmedOnlyRecoveryReadback -Root $TradingRoot -ExpectedFenceSha256 $ExpectedCurrentFenceSha256
+   $joined|Add-Member -NotePropertyName originalhost_armed_only_recovery -NotePropertyValue $original
+   $joined|Add-Member -NotePropertyName complete_attempt_unknown_custody_authenticated -NotePropertyValue $false
+   $joined|Add-Member -NotePropertyName rollback_release_authorized -NotePropertyValue $false
+  }
+  $joined|ConvertTo-Json -Compress -Depth 6
   if($joined.disposition -cne 'REVIEW_ONLY_SIGNED_CAS_PLUS_UNAUTHENTICATED_PUBLIC_CLOUD_NOT_RELEASE'){exit 1}
   return
  }

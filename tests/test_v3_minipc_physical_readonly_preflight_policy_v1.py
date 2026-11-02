@@ -969,6 +969,24 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertLess(native_disable,native_stop)
         self.assert_locked_pr515_native_stop_only(source)
 
+    def test_pr515_signed_current_cas_join_includes_physical_armed_recovery_but_never_releases(self):
+        source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        signed=source.split("if($ReviewSignedCurrentCasCustody){",1)[1].split(
+            "if(-not $ReviewSignedCurrentCasCustody -and",1)[0]
+        self.assertIn("Get-V3Pr515SignedCasAndCloudSeriesReview -SignedCas $proof -Cloud $cloud",signed)
+        self.assertIn("if([string]$phase.phase -ceq 'ARMED'){",signed)
+        self.assertIn("Get-V3Pr515ArmedOnlyRecoveryReadback -Root $TradingRoot -ExpectedFenceSha256 $ExpectedCurrentFenceSha256",signed)
+        self.assertIn("originalhost_armed_only_recovery",signed)
+        self.assertIn("complete_attempt_unknown_custody_authenticated -NotePropertyValue $false",signed)
+        self.assertIn("rollback_release_authorized -NotePropertyValue $false",signed)
+        self.assertLess(signed.index("Get-V3Pr515SignedCasAndCloudSeriesReview"),
+                        signed.index("Get-V3Pr515ArmedOnlyRecoveryReadback"))
+        for forbidden in ("Enable-ScheduledTask", "Start-ScheduledTask",
+                          "Disable-ScheduledTask", "Stop-ScheduledTask", "Remove-Item"):
+            self.assertNotIn(forbidden,signed)
+        self.assertIn("V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED",source)
+        self.assert_locked_pr515_native_stop_only(source)
+
     def test_pr515_armed_only_recovery_review_keeps_restore_locked(self):
         source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         helper=source.split("function Get-V3Pr515ArmedOnlyRecoveryReadback(",1)[1].split(
