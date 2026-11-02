@@ -36,6 +36,16 @@ param(
 # GitHub/CI draft; not an installed cutover, not a stop, not a rollback.
 # No host, Task, PID, marker, database, secret, or Cloud writes.
 $ErrorActionPreference='Stop'
+# Exclusive preparation and execution modes: a read-only verifier must never
+# silently win over a requested marker operation (or vice versa).
+if(($PreviewPreparedOriginalhostFence -or $ExecuteOriginalhostArmedOnly) -and
+   ($Execute -or $BackupOriginalIntake -or $ReviewOriginalhostArmedOnlyRecovery -or
+    $PreviewPr515PreCas -or $PreviewPr515Quiesced -or $PreviewPr515Armed -or
+    $PreviewPr515ArmedTwoCycle -or $ValidatePr515RestoreXml -or
+    $VerifyNotebookPrecommitCms -or $ReviewExistingTwoSourcePrecommit -or
+    $ReviewSignedCurrentCasCustody)){
+ throw 'V3_PREPARED_ARMED_MODE_CANNOT_COMBINE_WITH_READER_OR_OTHER_OPERATOR_MODES'
+}
 
 # Pure readiness policy, executable by existing offline CI without running
 # any host commands. These checks are only PRE-CUTOVER discovery.
