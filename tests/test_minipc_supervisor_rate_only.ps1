@@ -504,7 +504,9 @@ $outside=$allText.Remove($bounded.Extent.StartOffset,$bounded.Extent.EndOffset-$
 if($outside -notmatch 'if\(\$Execute\)\{\s*throw ''V3_CUTOVER_EXECUTION_LOCKED' -or
    $outside -match '(?m)^\s*(?:Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY)(?:\s|$)' -or
    $bounded.Extent.Text -notmatch '(?s)\) \{\s*# Native STOP is still source-locked\..*?if\(-not \$OnlyOriginalArmed\)\{throw ''V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED''\}' -or
-   $outside -notmatch 'if\(\$ExecuteOriginalhostArmedOnly\)\{' -or
+   $outside -notmatch 'if\(\$ExecuteOriginalhostArmedOnly -or \$PreviewPreparedOriginalhostFence\)\{' -or
+   $outside -notmatch 'V3_PREPARED_SHA_NOT_APPROVED_FOR_ARMING' -or
+   $bounded.Extent.Text -notmatch 'V3_PREPARED_FENCE_PIN_MISMATCH_BEFORE_WRITE' -or
    $outside -notmatch '\$receipt=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY -Root \$TradingRoot' -or
    $outside -notmatch '-ReviewedStrategySha \$ReviewedV3StrategySha256 -OnlyOriginalArmed' -or
    $bounded.Extent.Text -match 'Invoke-RestMethod|Invoke-WebRequest|Enable-ScheduledTask|Start-ScheduledTask|Stop-Process' -or
