@@ -1667,9 +1667,17 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
   $t=Get-ScheduledTask -TaskName $p -TaskPath '\' -ErrorAction Stop
   if([string]$t.State -cne 'Running'){throw 'V3_PRECAS_PROTECTED_AFTERCARE_MUST_KEEP_RUNNING'}
  }
+ # The existing Supervisor is a periodic Scheduler task: Ready BETWEEN
+ # actual cycles is its expected healthy idle state. Reject Disabled/Queued/
+ # Missing, wrong SYSTEM owner, a non-root task, or multiple actions.
+ # The preflight above and a fresh, strictly POST-marker ARMED heartbeat below
+ # are independent requirements; Ready itself is never a No-Rearm receipt.
  $supervisorTask=Get-ScheduledTask -TaskName 'CryptoMiniPC-RuntimeSupervisor' -ErrorAction Stop
- if([string]$supervisorTask.State -cne 'Running'){
-  throw 'V3_PRECAS_SUPERVISOR_NOT_RUNNING'
+ if([string]$supervisorTask.State -notin @('Ready','Running') -or
+    [string]$supervisorTask.TaskPath -cne '\' -or
+    [string]$supervisorTask.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+    @($supervisorTask.Actions).Count -ne 1){
+  throw 'V3_PRECAS_SUPERVISOR_SCHEDULE_OR_OWNER_DRIFT'
  }
  $native=@()
  foreach($name in $tasks){
