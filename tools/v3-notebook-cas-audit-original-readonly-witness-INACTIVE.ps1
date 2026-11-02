@@ -15,6 +15,9 @@
 # - PrecommitRestoreCustody: one-time signed CURRENT CAS-unavailability
 #   statement tied to a separately re-read Originalhost fence SHA.
 #   Not proof of historic NEVER, old-only public series, or restore permission.
+# - ForwardT0SignedCurrent: explicit one-shot private current T0 catalog
+#   using existing verify-full Reader, existing CurrentUser CMS key, no new role.
+#   Current-only signed source remains NOT a T0, fence or history receipt.
 # - PostcommitDurableIntent: one-time independent private Reader check of a
 #   separately committed writer intent. It never creates or signs that intent.
 # ALL modes use only already-enrolled reader/writer identities; no automatic
@@ -26,8 +29,9 @@
 [CmdletBinding()]
 param([switch]$PrecommitCloudInventory,[switch]$PostcommitDurableIntent,[string]$CaFile='',
  [switch]$ExportSignedPrecommitCloudInventory,[string]$ReviewedNotebookCertificateSha256='',
- [switch]$PrecommitRestoreCustody,[string]$ReviewedOriginalFenceSha256='')
-if(([int]$PrecommitCloudInventory.IsPresent+[int]$PostcommitDurableIntent.IsPresent+[int]$PrecommitRestoreCustody.IsPresent) -gt 1){throw 'V3_READER_MODE_CONFLICT'}
+ [switch]$PrecommitRestoreCustody,[string]$ReviewedOriginalFenceSha256='',
+ [switch]$ForwardT0SignedCurrent)
+if(([int]$PrecommitCloudInventory.IsPresent+[int]$PostcommitDurableIntent.IsPresent+[int]$PrecommitRestoreCustody.IsPresent+[int]$ForwardT0SignedCurrent.IsPresent) -gt 1){throw 'V3_READER_MODE_CONFLICT'}
 if($PrecommitRestoreCustody -and
    ($ExportSignedPrecommitCloudInventory -or
     $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$' -or
@@ -41,10 +45,13 @@ if($ExportSignedPrecommitCloudInventory -and (-not $PrecommitCloudInventory -or
  $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$')){
  throw 'V3_SIGNED_READER_PRECOMMIT_MODE_OR_PIN_INVALID'
 }
-if(-not $ExportSignedPrecommitCloudInventory -and -not $PrecommitRestoreCustody -and $ReviewedNotebookCertificateSha256){
+if($ForwardT0SignedCurrent -and $ReviewedNotebookCertificateSha256 -cnotmatch '^[a-f0-9]{64}$'){
+ throw 'V3_FORWARD_T0_SIGNER_EXPLICIT_PIN_REQUIRED'
+}
+if(-not $ExportSignedPrecommitCloudInventory -and -not $PrecommitRestoreCustody -and -not $ForwardT0SignedCurrent -and $ReviewedNotebookCertificateSha256){
  throw 'V3_SIGNED_READER_PIN_WITHOUT_EXPORT'
 }
-$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody)
+$decisionReaderMode=($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent)
 if(-not $decisionReaderMode -and $CaFile){throw 'V3_READER_CA_FILE_DECISION_MODE_ONLY'}
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -116,6 +123,18 @@ COMMIT;
 '@
     }
 )
+# The only new mode is a private, immutable current snapshot. No actor grants,
+# independent signer approval, historical coverage or Cloud write occurs.
+if($ForwardT0SignedCurrent){
+ $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
+ if($checks.Count -ne 1){throw 'V3_FORWARD_T0_READER_AMBIGUOUS'}
+ $checks[0].Sql=@'
+SET ROLE v3_cas_audit_reader;
+BEGIN TRANSACTION READ ONLY;
+SELECT v3_cas_audit.read_forward_t0_current_v1()::text;
+COMMIT;
+'@
+}
 # Optional read-only ORIGINAL Reader identity, not a CAS historical never-proof.
 if($PrecommitCloudInventory){
  $checks=@($checks|Where-Object {$_.Name -ceq 'READER'})
@@ -342,7 +361,81 @@ foreach ($check in $checks) {
         $tlsMode=if($decisionReaderMode){'verify-full'}else{'require'}
         $conn = "host=$hostName port=5432 dbname=postgres user=$($check.Login).$project sslmode=$tlsMode connect_timeout=10"
         $output = & $psql -X -w -qAt -v ON_ERROR_STOP=1 -d $conn -c $check.Sql 2>&1
-        if($PrecommitRestoreCustody){
+        if($ForwardT0SignedCurrent){
+            if($LASTEXITCODE -ne 0){throw 'V3_FORWARD_T0_SQL_HOLD'}
+            $holdClass='FORWARD_T0_CURRENT_JSON'
+            $wire=($output|Out-String).Trim()
+            if($wire.Length -lt 100 -or $wire.Length -gt 4096){
+                throw 'V3_FORWARD_T0_UNSAFE_WIRE_SIZE'
+            }
+            $row=$wire|ConvertFrom-Json -ErrorAction Stop
+            $fields=@('kind','observed_at_utc','actor','requested_role',
+                'active_series_count','original_active_series_count','epoch_count',
+                'intent_count','attempt_count','dispatch_unknown_count','inhibit_count',
+                'cas_rpc_count','executor_can_login','history_never_proven',
+                'complete_attempt_unknown_custody_authenticated','t0_authenticated',
+                'armed_marker_cancel_authorized','native_stop_restore_authorized',
+                'cas_or_v3_paper_authorized')
+            $actual=@($row.PSObject.Properties.Name)
+            if($actual.Count -ne $fields.Count -or
+               @($actual|Where-Object {$_ -cnotin $fields}).Count -ne 0){
+                throw 'V3_FORWARD_T0_FIELDS_INVALID'
+            }
+            foreach($field in $fields){
+                if(@([regex]::Matches($wire,('"'+[regex]::Escape($field)+'"\s*:'))).Count -ne 1){
+                    throw 'V3_FORWARD_T0_DUPLICATE_FIELD'
+                }
+            }
+            $holdClass='FORWARD_T0_IDENTITY_AND_FRESHNESS'
+            $at=Read-V3ReaderUtcLiteral -RawJson $wire -Name 'observed_at_utc'
+            $age=([datetimeoffset]::UtcNow-$at.utc).TotalSeconds
+            if([string]$row.kind -cne 'V3_CAS_FORWARD_T0_CURRENT_CATALOG_READONLY_V1' -or
+               [string]$row.actor -cne 'v3_cas_audit_reader_actor' -or
+               [string]$row.requested_role -cne 'v3_cas_audit_reader' -or
+               $age -lt -5 -or $age -gt 60){
+                throw 'V3_FORWARD_T0_ACTOR_OR_TIME_HOLD'
+            }
+            $holdClass='FORWARD_T0_CURRENT_DENIAL_POSTURE'
+            foreach($field in @('active_series_count','original_active_series_count')){
+                if($wire -cnotmatch ('"'+$field+'"\s*:\s*1(?=\s*[,}])')){
+                    throw 'V3_FORWARD_T0_OLD_ONLY_HOLD'
+                }
+            }
+            foreach($field in @('epoch_count','intent_count','attempt_count',
+              'dispatch_unknown_count','inhibit_count','cas_rpc_count')){
+                if($wire -cnotmatch ('"'+$field+'"\s*:\s*0(?=\s*[,}])')){
+                    throw 'V3_FORWARD_T0_NONZERO_OR_UNTYPED_HOLD'
+                }
+            }
+            foreach($field in @('executor_can_login','history_never_proven',
+              'complete_attempt_unknown_custody_authenticated','t0_authenticated',
+              'armed_marker_cancel_authorized','native_stop_restore_authorized',
+              'cas_or_v3_paper_authorized')){
+                if($wire -cnotmatch ('"'+$field+'"\s*:\s*false(?=\s*[,}])')){
+                    throw 'V3_FORWARD_T0_AUTHORITY_HOLD'
+                }
+            }
+            # Sign exactly the original genuine Reader query bytes. The
+            # certificate pin is an input from an independent reviewer, NOT
+            # an issuer authorization conferred by this code.
+            $holdClass='FORWARD_T0_LOCAL_CMS_SIGNATURE'
+            $signed=Save-V3SignedNotebookReaderSnapshot -RawJson $wire -CertSha256 $ReviewedNotebookCertificateSha256
+            [pscustomobject]@{
+                kind='V3_NOTEBOOK_FORWARD_T0_CURRENT_CMS_TRANSFER_V1'
+                status='SIGNED_CURRENT_ONLY_NOT_T0_AUTHORIZED'
+                local_directory=$signed.local_directory
+                receipt='reader.json';signature='reader.cms'
+                certificate_sha256=$signed.certificate_sha256
+                independent_signer_issuer_authorized=$false
+                originalhost_bound=$false
+                complete_attempt_unknown_custody_proven=$false
+                t0_authorized=$false
+                native_stop_restore_authorized=$false
+                armed_marker_cancel_authorized=$false
+                cas_or_v3_paper_authorized=$false
+            }|ConvertTo-Json -Compress -Depth 3
+            $passed++
+        } elseif($PrecommitRestoreCustody){
             if($LASTEXITCODE -ne 0){throw 'V3_RESTORE_CUSTODY_SQL_HOLD'}
             $wire=($output|Out-String).Trim()
             $row=$wire|ConvertFrom-Json -ErrorAction Stop
@@ -522,6 +615,9 @@ foreach ($check in $checks) {
         if($PrecommitCloudInventory){
             Write-Output "READER_PRECOMMIT_HOLD_CLASS=$holdClass"
         }
+        if($ForwardT0SignedCurrent){
+            Write-Output "READER_FORWARD_T0_HOLD_CLASS=$holdClass"
+        }
     }
     finally {
         Remove-Item Env:\PGPASSWORD -ErrorAction SilentlyContinue
@@ -530,7 +626,7 @@ foreach ($check in $checks) {
         if ($null -ne $plain) { [Array]::Clear($plain,0,$plain.Length) }
     }
 }
-if($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody){
+if($PrecommitCloudInventory -or $PostcommitDurableIntent -or $PrecommitRestoreCustody -or $ForwardT0SignedCurrent){
  if($passed -ne 1){exit 1}
  return
 }
