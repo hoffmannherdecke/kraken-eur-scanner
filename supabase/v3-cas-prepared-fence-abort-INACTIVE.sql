@@ -23,6 +23,16 @@ END $pre$;
 GRANT CREATE ON SCHEMA v3_cas_audit TO v3_cas_audit_table_owner;
 GRANT v3_cas_audit_table_owner TO postgres WITH ADMIN FALSE, INHERIT FALSE, SET TRUE;
 SET ROLE v3_cas_audit_table_owner;
+-- Existing Stage2 epoch/intent FORCE-RLS rules omit their own NOLOGIN table
+-- owner. Without THESE narrowly named policies the existing issuer's
+-- SECURITY DEFINER epoch read silently sees zero rows, and checking for
+-- absent intents could falsely report zero. Do not change any actor grants.
+CREATE POLICY v3_cas_epoch_owner_abort_read_v1 ON v3_cas_audit.epoch_v1
+ FOR SELECT TO v3_cas_audit_table_owner USING(true);
+CREATE POLICY v3_cas_epoch_owner_abort_update_v1 ON v3_cas_audit.epoch_v1
+ FOR UPDATE TO v3_cas_audit_table_owner USING(true) WITH CHECK(true);
+CREATE POLICY v3_cas_intent_owner_abort_read_v1 ON v3_cas_audit.intent_v1
+ FOR SELECT TO v3_cas_audit_table_owner USING(true);
 CREATE TABLE v3_cas_audit.prepared_fence_abort_v1 (
  epoch_id text PRIMARY KEY REFERENCES v3_cas_audit.epoch_v1(epoch_id),
  source_sha256 text NOT NULL CHECK (source_sha256 ~ '^[a-f0-9]{64}$'),
