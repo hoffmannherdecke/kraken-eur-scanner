@@ -1023,6 +1023,9 @@ echo 'V3_PG17_STAGE5_REAL_SYNTHETIC_SEAL_RESTORE_PASS'
 # PR661: reuse THIS EXISTING networkless PG17 container for the new source.
 # Run the exact existing inhibit schema first, unlocked ONLY in the disposable
 # in-memory stream; the committed source files remain hardlocked.
+# Match productive PostgreSQL 17 non-superuser CREATEROLE membership semantics.
+# The prior legacy isolated fixtures temporarily made postgres SUPERUSER.
+pg_root -c "ALTER ROLE postgres NOSUPERUSER CREATEROLE CREATEDB BYPASSRLS;" >/dev/null
 inhibit_sql="supabase/v3-cas-inhibit-receipt-gate-INACTIVE.sql"
 abort_sql="supabase/v3-cas-prepared-fence-abort-INACTIVE.sql"
 if pg -f - < "$abort_sql" >/dev/null 2>&1; then
@@ -1048,6 +1051,9 @@ lock=" RAISE EXCEPTION 'V3_PREPARED_ABORT_SOURCE_INACTIVE_NO_PRODUCTION_INSTALL'
 assert s.count(lock)==1
 print(s.replace(lock," NULL; -- ISOLATED disposable PG17 only",1))
 PY
+# Return to disposable bootstrap-era fixture privileges for synthetic
+# SET SESSION AUTHORIZATION and data assertions, never original production.
+pg_root -c "ALTER ROLE postgres SUPERUSER;" >/dev/null
 pg -f - <<'SQL' >/dev/null
 INSERT INTO v3_cas_audit.epoch_v1
  (epoch_id, predecessor_series_id, expected_rpc, source_sha256,
