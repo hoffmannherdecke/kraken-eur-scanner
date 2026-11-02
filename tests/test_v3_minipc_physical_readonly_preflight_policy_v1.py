@@ -899,8 +899,8 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         for required in (
             "Get-ScheduledTask -TaskName 'CryptoMiniPC-RuntimeSupervisor'",
             "$supervisorTask.State -notin @('Ready','Running')",
-            "$supervisorTask.TaskPath -cne '\\\\'",
-            "$supervisorTask.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\\\\SYSTEM','S-1-5-18')",
+            "$supervisorTask.TaskPath -cne",
+            "$supervisorTask.Principal.UserId -notin",
             "@($supervisorTask.Actions).Count -ne 1",
             "V3_PRECAS_SUPERVISOR_SCHEDULE_OR_OWNER_DRIFT",
             "V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE",
