@@ -21,8 +21,31 @@ if (-not ($Stage -or $VerifyLocal -or $RemoveEnrollmentSql)) {
 # Windows PowerShell 5.1 does not always autoload the DPAPI type.
 # Resolve the built-in framework assembly BEFORE creating any local enrollment files.
 Add-Type -AssemblyName System.Security -ErrorAction Stop
-if (-not ([type]::GetType('System.Security.Cryptography.ProtectedData, System.Security', $false))) {
- throw 'V3_ISSUER_DPAPI_FRAMEWORK_UNAVAILABLE'
+# Verify real Windows CurrentUser DPAPI before touching any local credential path.
+# Assembly-qualified Type.GetType is unreliable in Windows PowerShell 5.1:
+# resolving the native PowerShell type and roundtripping test bytes is decisive.
+try {
+ $dpapiType=[Security.Cryptography.ProtectedData]
+ $probe=[byte[]](17,39,81,121)
+ $probeCipher=$dpapiType::Protect(
+   $probe,$entropy,[Security.Cryptography.DataProtectionScope]::CurrentUser)
+ try {
+  $probeBack=$dpapiType::Unprotect(
+    $probeCipher,$entropy,[Security.Cryptography.DataProtectionScope]::CurrentUser)
+  if ($probeBack.Length -ne $probe.Length) {
+   throw 'V3_ISSUER_DPAPI_PROBE_LENGTH_HOLD'
+  }
+  for($i=0;$i -lt $probe.Length;$i++){
+   if ($probeBack[$i] -ne $probe[$i]) {throw 'V3_ISSUER_DPAPI_PROBE_MISMATCH_HOLD'}
+  }
+ } finally {
+  if ($null -ne $probeBack) {[Array]::Clear($probeBack,0,$probeBack.Length)}
+  [Array]::Clear($probeCipher,0,$probeCipher.Length)
+ }
+} catch {
+ throw ('V3_ISSUER_DPAPI_REAL_ROUNDTRIP_UNAVAILABLE: '+$_.Exception.GetType().Name)
+} finally {
+ [Array]::Clear($probe,0,$probe.Length)
 }
 $id=[Security.Principal.WindowsIdentity]::GetCurrent()
 if ($env:OS -ne 'Windows_NT' -or -not [Environment]::UserInteractive -or
