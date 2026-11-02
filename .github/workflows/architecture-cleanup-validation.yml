@@ -65,6 +65,16 @@ jobs:
           }
       - name: V3 interactive CAS operator local DPAPI and manual no-CAS enrollment contract
         run: python -m unittest tests.test_v3_cas_operator_login_contract -v
+      - name: Independent Notebook V3 CAS issuer one-shot source stays fail-closed
+        run: python -m unittest tests.test_v3_notebook_independent_issuer_enrollment_contract -v
+      - name: Parse independent Notebook issuer PowerShell without secrets or execution
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            'tools/v3-notebook-independent-issuer-enroll-INACTIVE.ps1',[ref]$tokens,[ref]$errors)
+          if (@($errors).Count -ne 0) { throw 'V3_NOTEBOOK_ISSUER_SOURCE_SYNTAX_INVALID' }
       - name: V3 originalhost operator SSL authentication probe source safety (no network)
         run: python -m unittest tests.test_v3_cas_operator_auth_probe_contract -v
       - name: Parse manual originalhost SSL auth source without accessing secret
