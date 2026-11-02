@@ -917,6 +917,40 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
                         stop.index("Disable-ScheduledTask"))
         self.assert_locked_pr515_native_stop_only(source)
 
+    def test_pr515_armed_stage4_phase_boundary_prevents_stop(self):
+        source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        stop=source.split("function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(",1)[1].split(
+            "# The exact future PR515 ARMED -> QUIESCED phase transition",1)[0]
+        for token in (
+            "V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED",
+            "V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE",
+            "V3_PRECAS_ARMED_FENCE_FILE_DRIFT_LEAVE_FENCE",
+            "V3_PRECAS_ARMED_FENCE_ACL_DRIFT_LEAVE_FENCE",
+            "V3_PRECAS_ARMED_FENCE_CONTENT_DRIFT_LEAVE_FENCE",
+            "V3_PRECAS_UNEXPECTED_NATIVE_INTAKE_STATE_LEAVE_FENCE",
+            "V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1",
+            "ARMED_FENCE_ACKED_AWAIT_INDEPENDENT_STAGE4_ISSUER_COMMIT",
+            "original_fence_sha256=$armedFenceSha",
+            "supervisor_postmarker_armed_ack=$true",
+            "pr515_cloudsync_postmarker_armed_ack=$true",
+            "independent_stage4_epoch_committed_here=$false",
+            "independent_issuer_inhibit_committed_here=$false",
+            "independent_complete_attempt_history_attested_here=$false",
+            "native_intake_tasks_changed_here=$false",
+            "automatic_old_writer_rearm_allowed=$false",
+            "V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED",
+        ):
+            self.assertIn(token,stop,token)
+        self.assertLess(stop.index("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE"),
+                        stop.index("V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1"))
+        self.assertLess(stop.index("return [pscustomobject]@{\n  kind='V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1'"),
+                        stop.index("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED"))
+        self.assertLess(stop.index("V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED"),
+                        stop.index("Disable-ScheduledTask"))
+        self.assertLess(stop.index("Disable-ScheduledTask"),
+                        stop.index("Stop-ScheduledTask"))
+        self.assert_locked_pr515_native_stop_only(source)
+
     def test_pr515_armed_failure_manual_rescue_review_not_executable(self):
         source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         helper=source.split("function Test-V3Pr515ArmedRecoveryIdentity(",1)[1].split(
