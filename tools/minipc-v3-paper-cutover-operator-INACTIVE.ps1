@@ -2,6 +2,8 @@ param(
  [string]$TradingRoot=(Join-Path $env:USERPROFILE 'Trading'),
  [switch]$Execute,
  [switch]$ExecuteOriginalhostArmedOnly,
+ [switch]$PreviewPreparedOriginalhostFence,
+ [string]$ExpectedPreparedFenceSha256='',
  [switch]$ReviewOriginalhostArmedOnlyRecovery,
  [string]$ExpectedOriginalhostOperatorGitBlob='',
  [string]$SuccessorSeriesId='',
@@ -1717,11 +1719,36 @@ function Save-V3OriginalIntakeXmlOnly([object]$Report,[string]$Root,
 # function is the *only* native task-mutation source and may be connected only
 # by a separately authorized, reviewed originalhost release PR/approval.
 # It neither calls Cloud/CAS nor enables/starts/registrations of old intake.
+# Canonical memory-only PREPARED candidate; hash alone is NOT issuer authorization.
+function New-V3Pr515PreparedArmedMarker([string]$SuccessorId,[string]$ReviewedRepoSha,[string]$ReviewedBundleSha,[string]$ReviewedStrategySha) {
+ if($SuccessorId -cnotmatch '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$' -or $ReviewedRepoSha -cnotmatch '^[a-f0-9]{40}$' -or $ReviewedBundleSha -cnotmatch '^[a-f0-9]{64}$' -or $ReviewedStrategySha -cnotmatch '^[a-f0-9]{64}$'){throw 'V3_PREPARED_FENCE_BAD_PINS'}
+ return [ordered]@{
+  kind='V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1'
+  phase='ARMED'
+  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
+  proposed_successor_series_id=$SuccessorId
+  proposed_v3_repo_sha=$ReviewedRepoSha
+  proposed_v3_bundle_sha256=$ReviewedBundleSha
+  proposed_v3_strategy_sha256=$ReviewedStrategySha
+  task_names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+  paper_only=$true
+  orders_enabled=$false
+  real_money_actions=$false
+  persistent_until_explicit_owner_release=$true
+ }
+}
+function Get-V3Pr515PreparedFenceSha256([object]$Marker) {
+ if($null -eq $Marker){throw 'V3_PREPARED_FENCE_MISSING'}
+ $raw=$Marker|ConvertTo-Json -Depth 5
+ $bytes=[Text.UTF8Encoding]::new($false).GetBytes([string]$raw)
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try{return ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-','').ToLowerInvariant()} finally{$sha.Dispose()}
+}
 function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  [string]$Root,[object]$OriginalReadback,[string]$BackupFolder,
  [string]$ReviewedPr515Sha,[string]$SuccessorId,
  [string]$ReviewedRepoSha,[string]$ReviewedBundleSha,[string]$ReviewedStrategySha,
- [switch]$OnlyOriginalArmed) {
+ [switch]$OnlyOriginalArmed,[string]$ExpectedPreparedFenceSha) {
  # Native STOP is still source-locked. The explicitly opted-in call may ONLY
  # reach the existing protected ARMED-fence readback and mandatory RETURN.
  # It must never fall through to the dormant Disable/Stop commands below.
@@ -1827,20 +1854,9 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  }
  # The local marker is protected against unintentional peer writes and is
  # created before any Task mutation. On ANY partial failure retain the fence.
- $marker=[ordered]@{
-  kind='V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1'
-  phase='ARMED'
-  predecessor_series_id='PAPER-V2R4-20261009T110135Z'
-  proposed_successor_series_id=$SuccessorId
-  proposed_v3_repo_sha=$ReviewedRepoSha
-  proposed_v3_bundle_sha256=$ReviewedBundleSha
-  proposed_v3_strategy_sha256=$ReviewedStrategySha
-  task_names=$tasks
-  paper_only=$true
-  orders_enabled=$false
-  real_money_actions=$false
-  persistent_until_explicit_owner_release=$true
- }
+ $marker=New-V3Pr515PreparedArmedMarker -SuccessorId $SuccessorId -ReviewedRepoSha $ReviewedRepoSha -ReviewedBundleSha $ReviewedBundleSha -ReviewedStrategySha $ReviewedStrategySha
+ $candidateSha=Get-V3Pr515PreparedFenceSha256 -Marker $marker
+ if($ExpectedPreparedFenceSha -cnotmatch '^[a-f0-9]{64}$' -or $candidateSha -cne $ExpectedPreparedFenceSha){throw 'V3_PREPARED_FENCE_PIN_MISMATCH_BEFORE_WRITE'}
  $temp=$fence+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
  $security=[Security.AccessControl.FileSecurity]::new()
  $security.SetAccessRuleProtection($true,$false)
@@ -2773,13 +2789,14 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
  }
 }
 
+if($ExpectedPreparedFenceSha256 -and -not $ExecuteOriginalhostArmedOnly){throw 'V3_PREPARED_SHA_UNRELATED_MODE'}
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
 # Physically grounded, READONLY Phase-A cancellation review. Cannot be
 # combined with STOP, restore or any other operator action.
 if($ReviewOriginalhostArmedOnlyRecovery){
- if($Execute -or $ExecuteOriginalhostArmedOnly -or $BackupOriginalIntake -or
+ if($PreviewPreparedOriginalhostFence -or $Execute -or $ExecuteOriginalhostArmedOnly -or $BackupOriginalIntake -or
     $PreviewPr515PreCas -or $PreviewPr515Quiesced -or
     $PreviewPr515Armed -or $PreviewPr515ArmedTwoCycle -or
     $ValidatePr515RestoreXml -or $VerifyNotebookPrecommitCms -or
@@ -2802,7 +2819,7 @@ if($ReviewOriginalhostArmedOnlyRecovery){
 
 # ExecuteOriginalhostArmedOnly is the ONLY permitted mutation mode. It
 # remains physically owner-gated and is never implicit in -Execute.
-if(-not $ExecuteOriginalhostArmedOnly -and
+if(-not $ExecuteOriginalhostArmedOnly -and -not $PreviewPreparedOriginalhostFence -and
    ($ExpectedOriginalhostOperatorGitBlob -or $SuccessorSeriesId -or
     $ReviewedRepoCommitSha -or $ReviewedV3BundleSha256 -or
     $ReviewedV3StrategySha256)){
@@ -3047,7 +3064,7 @@ if($PreviewPr515PreCas -or $PreviewPr515Quiesced -or $PreviewPr515Armed -or $Pre
     (-not $PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256)){
   throw 'Only approved read-only PR515 recovery preview parameters allowed'
  }
-} elseif((-not $ExecuteOriginalhostArmedOnly) -and
+} elseif((-not $ExecuteOriginalhostArmedOnly) -and (-not $PreviewPreparedOriginalhostFence) -and
         ($OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256)){
  throw 'PR515 source preview arguments forbidden in backup mode'
 }
@@ -3057,7 +3074,7 @@ if($BackupOriginalIntake) {
     $ExpectedWaitActionSha256 -cnotmatch '^[a-f0-9]{64}$'){
   throw 'pre-CAS backup requires exact opt-in and both independent native task SHA256 pins'
  }
-} elseif((-not $ExecuteOriginalhostArmedOnly) -and
+} elseif((-not $ExecuteOriginalhostArmedOnly) -and (-not $PreviewPreparedOriginalhostFence) -and
         ($Confirm -or $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256)){
  throw 'backup-only parameters prohibited outside explicit originalhost backup'
 }
@@ -3164,7 +3181,8 @@ $completeWaitSnapshot=($waitSnapshotReadable -and
  (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
 # Originalhost controlled Phase A only. Separate STOP, Stage4, CAS and
 # restore authorization is never inferred from this source-only entry.
-if($ExecuteOriginalhostArmedOnly){
+if($ExecuteOriginalhostArmedOnly -or $PreviewPreparedOriginalhostFence){
+ if($ExecuteOriginalhostArmedOnly -and $PreviewPreparedOriginalhostFence){throw 'V3_PREVIEW_AND_EXECUTE_CONFLICT'}
  if($BackupOriginalIntake -or $PreviewPr515PreCas -or
     $PreviewPr515Quiesced -or $PreviewPr515Armed -or
     $PreviewPr515ArmedTwoCycle -or $ValidatePr515RestoreXml -or
@@ -3193,10 +3211,26 @@ if($ExecuteOriginalhostArmedOnly){
     [string]$scriptBlob[0] -cne $ExpectedOriginalhostOperatorGitBlob){
   throw 'V3_PR515_ARMED_ONLY_OPERATOR_BLOB_PIN_MISMATCH'
  }
- if(-not $ready -or -not $completeWaitSnapshot){
-  throw 'V3_PR515_ARMED_ONLY_ORIGINAL_INTAKE_PREFLIGHT_HOLD'
+ if(-not $ready -or -not $completeWaitSnapshot){throw 'V3_PR515_ARMED_ONLY_ORIGINAL_INTAKE_PREFLIGHT_HOLD'}
+ $candidate=New-V3Pr515PreparedArmedMarker -SuccessorId $SuccessorSeriesId -ReviewedRepoSha $ReviewedRepoCommitSha -ReviewedBundleSha $ReviewedV3BundleSha256 -ReviewedStrategySha $ReviewedV3StrategySha256
+ $candidateSha=Get-V3Pr515PreparedFenceSha256 -Marker $candidate
+ if($PreviewPreparedOriginalhostFence){
+  if($ExpectedPreparedFenceSha256){throw 'V3_PREVIEW_CANNOT_SELF_APPROVE'}
+  [pscustomobject]@{
+   kind='V3_PR515_PREPARED_FENCE_CANDIDATE_V1'
+   status='UNAUTHENTICATED_READONLY_NO_MARKER_NO_RELEASE'
+   proposed_fence_sha256=$candidateSha
+   independently_authorized=$false
+   cloud_epoch_committed=$false
+   issuer_inhibit_committed=$false
+   marker_cancel_authorized=$false
+   task_mutations=$false
+   v3_paper_authorized=$false
+  }|ConvertTo-Json -Compress -Depth 3
+  return
  }
- $receipt=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY -Root $TradingRoot -OriginalReadback $report -BackupFolder $OriginalBackupDirectory -ReviewedPr515Sha $ExpectedPr515SourceSha256 -SuccessorId $SuccessorSeriesId -ReviewedRepoSha $ReviewedRepoCommitSha -ReviewedBundleSha $ReviewedV3BundleSha256 -ReviewedStrategySha $ReviewedV3StrategySha256 -OnlyOriginalArmed
+ if($ExpectedPreparedFenceSha256 -cnotmatch '^[a-f0-9]{64}$' -or $ExpectedPreparedFenceSha256 -cne $candidateSha){throw 'V3_PREPARED_SHA_NOT_APPROVED_FOR_ARMING'}
+ $receipt=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY -Root $TradingRoot -OriginalReadback $report -BackupFolder $OriginalBackupDirectory -ReviewedPr515Sha $ExpectedPr515SourceSha256 -SuccessorId $SuccessorSeriesId -ReviewedRepoSha $ReviewedRepoCommitSha -ReviewedBundleSha $ReviewedV3BundleSha256 -ReviewedStrategySha $ReviewedV3StrategySha256 -OnlyOriginalArmed -ExpectedPreparedFenceSha $ExpectedPreparedFenceSha256
  if([string]$receipt.kind -cne
     'V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1' -or
     $receipt.native_intake_tasks_changed_here -ne $false -or
