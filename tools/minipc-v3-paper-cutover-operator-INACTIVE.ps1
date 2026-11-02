@@ -3453,6 +3453,10 @@ function Test-V3SignedNotebookPrecommitInventory(
  try {
   $str=[Text.UTF8Encoding]::new($false,$true).GetString($ReceiptUtf8)
   $obj=$str | ConvertFrom-Json -ErrorAction Stop
+  if([string]$obj.kind -ceq 'V3_CAS_FORWARD_T0_CURRENT_CATALOG_READONLY_V1'){
+   # Detached CMS and exact certificate pin were checked immediately above.
+   return Test-V3ForwardT0SignedCurrentCatalog -RawJson $str
+  }
   $keys=@('kind','observed_at_utc','actor','role','epochs','intents',
    'writer_role_access','append_access','history_never_proven','restore_authorized')
   $actual=@($obj.PSObject.Properties.Name)
