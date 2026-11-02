@@ -1332,6 +1332,90 @@ function Get-V3Pr515SignedCasAndCloudSeriesReview([object]$SignedCas,[object]$Cl
  return [pscustomobject]$out
 }
 
+# Independent CMS cryptography is checked before this exact forward-T0
+# wire parser. No historical, host, signer-owner or release authority follows.
+function Test-V3ForwardT0SignedCurrentCatalog([string]$RawJson) {
+ $out=[ordered]@{
+  kind='V3_PR515_SIGNED_FORWARD_T0_CURRENT_HOST_REVIEW_V1'
+  status='HOLD_FORWARD_T0_SIGNED_CURRENT_INVALID_OR_STALE'
+  matched_signer_certificate_sha256=$true
+  current_private_reader_zero_counts_verified=$false
+  current_t0_catalog_signed_zero_counts_verified=$false
+  independent_notebook_key_custody_verified_here=$false
+  independent_cas_attempt_history_complete=$false
+  historical_cas_never_verified=$false
+  originalhost_t0_time_and_fence_bound=$false
+  native_stop_or_restore_authorized=$false
+  armed_marker_cancel_authorized=$false
+  cloud_cas_dispatch_authorized=$false
+  v3_paper_release_authorized=$false
+ }
+ try {
+  $obj=$RawJson|ConvertFrom-Json -ErrorAction Stop
+  $keys=@('kind','observed_at_utc','actor','requested_role',
+    'active_series_count','original_active_series_count','epoch_count',
+    'intent_count','attempt_count','dispatch_unknown_count','inhibit_count',
+    'cas_rpc_count','executor_can_login','history_never_proven',
+    'complete_attempt_unknown_custody_authenticated','t0_authenticated',
+    'armed_marker_cancel_authorized','native_stop_restore_authorized',
+    'cas_or_v3_paper_authorized')
+  $actual=@($obj.PSObject.Properties.Name)
+  if($actual.Count -ne $keys.Count -or @($actual|Where-Object {$_ -cnotin $keys}).Count -ne 0){
+    throw 'V3_FORWARD_T0_SCHEMA_DRIFT'
+  }
+  foreach($key in $keys){
+    if(@([regex]::Matches($RawJson,('"'+[regex]::Escape($key)+'"\s*:'))).Count -ne 1){
+      throw 'V3_FORWARD_T0_DUPLICATE_FIELD'
+    }
+  }
+  $stamp=[regex]::Match($RawJson,'"observed_at_utc"\s*:\s*"(?<utc>[^"\\]*)"')
+  if(-not $stamp.Success -or [string]$stamp.Groups['utc'].Value -cnotmatch
+    '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'){
+    throw 'V3_FORWARD_T0_UTC_FORMAT'
+  }
+  $utc=[datetimeoffset]::MinValue
+  $style=[Globalization.DateTimeStyles]::AssumeUniversal -bor
+         [Globalization.DateTimeStyles]::AdjustToUniversal
+  if(-not [datetimeoffset]::TryParseExact(
+    [string]$stamp.Groups['utc'].Value,"yyyy-MM-dd'T'HH:mm:ss.ffffff'Z'",
+    [Globalization.CultureInfo]::InvariantCulture,$style,[ref]$utc)){
+    throw 'V3_FORWARD_T0_UTC_INVALID'
+  }
+  $age=([datetimeoffset]::UtcNow-$utc).TotalSeconds
+  if($age -lt -5 -or $age -gt 120 -or
+     [string]$obj.kind -cne 'V3_CAS_FORWARD_T0_CURRENT_CATALOG_READONLY_V1' -or
+     [string]$obj.actor -cne 'v3_cas_audit_reader_actor' -or
+     [string]$obj.requested_role -cne 'v3_cas_audit_reader'){
+    throw 'V3_FORWARD_T0_STALE_OR_ACTOR_DRIFT'
+  }
+  foreach($name in @('active_series_count','original_active_series_count')){
+    if($RawJson -cnotmatch ('"'+$name+'"\s*:\s*1(?=\s*[,}])')){
+      throw 'V3_FORWARD_T0_OLD_ONLY_DRIFT'
+    }
+  }
+  foreach($name in @('epoch_count','intent_count','attempt_count',
+    'dispatch_unknown_count','inhibit_count','cas_rpc_count')){
+    if($RawJson -cnotmatch ('"'+$name+'"\s*:\s*0(?=\s*[,}])')){
+      throw 'V3_FORWARD_T0_NONZERO_OR_WRONG_TYPE'
+    }
+  }
+  foreach($name in @('executor_can_login','history_never_proven',
+    'complete_attempt_unknown_custody_authenticated','t0_authenticated',
+    'armed_marker_cancel_authorized','native_stop_restore_authorized',
+    'cas_or_v3_paper_authorized')){
+    if($RawJson -cnotmatch ('"'+$name+'"\s*:\s*false(?=\s*[,}])')){
+      throw 'V3_FORWARD_T0_UNSAFE_AUTHORITY_FLAG'
+    }
+  }
+  $out.status='SIGNED_CURRENT_FORWARD_T0_CATALOG_NOT_RELEASE'
+  $out.current_private_reader_zero_counts_verified=$true
+  $out.current_t0_catalog_signed_zero_counts_verified=$true
+ } catch {
+  # Reject foreign source claims; no raw wire text is returned.
+ }
+ return [pscustomobject]$out
+}
+
 # Only validates authentic CURRENT Notebook Reader data after detached CMS
 # transfer. Reuses the existing exact SHA256-pinned cryptographic verifier;
 # this does not authenticate the physical Notebook location, authorize native
@@ -1361,6 +1445,9 @@ function Test-V3SignedNotebookPrecommitInventory(
  try {
   $str=[Text.UTF8Encoding]::new($false,$true).GetString($ReceiptUtf8)
   $obj=$str | ConvertFrom-Json -ErrorAction Stop
+  if([string]$obj.kind -ceq 'V3_CAS_FORWARD_T0_CURRENT_CATALOG_READONLY_V1'){
+   return Test-V3ForwardT0SignedCurrentCatalog -RawJson $str
+  }
   $keys=@('kind','observed_at_utc','actor','role','epochs','intents',
    'writer_role_access','append_access','history_never_proven','restore_authorized')
   $actual=@($obj.PSObject.Properties.Name)
