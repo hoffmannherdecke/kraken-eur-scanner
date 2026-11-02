@@ -2,6 +2,7 @@ param(
  [string]$TradingRoot=(Join-Path $env:USERPROFILE 'Trading'),
  [switch]$Execute,
  [switch]$ExecuteOriginalhostArmedOnly,
+ [switch]$ReviewOriginalhostArmedOnlyRecovery,
  [string]$ExpectedOriginalhostOperatorGitBlob='',
  [string]$SuccessorSeriesId='',
  [string]$ReviewedRepoCommitSha='',
@@ -1944,6 +1945,71 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  }
 }
 
+# Same PR515 originalhost owner: classify ARMED-only physical rollback
+# without mistaking running original tasks for the disabled STOP restore path.
+# This is a read-only decision, never an authorization to clear the fence.
+function Get-V3Pr515ArmedOnlyRecoveryReadback(
+ [string]$Root,[string]$ExpectedFenceSha256) {
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    -not([IO.Path]::GetFullPath($Root).TrimEnd('\')).Equals(
+      'C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase) -or
+    $ExpectedFenceSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'V3_PR515_ARMED_ONLY_RECOVERY_HOST_OR_PIN_HOLD'
+ }
+ $fence=Join-Path $Root 'State\v3-experimental-paper-old-intake-fence.json'
+ $other=Join-Path $Root 'State\v2r4-technical-cutover-maintenance.json'
+ if(Test-Path -LiteralPath $other){throw 'V3_PR515_ARMED_ONLY_FOREIGN_MAINTENANCE_HOLD'}
+ $item=Get-Item -LiteralPath $fence -Force -ErrorAction Stop
+ if($item.PSIsContainer -or
+    [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 8192 -or
+    (Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant() -cne $ExpectedFenceSha256){
+  throw 'V3_PR515_ARMED_ONLY_FENCE_FILE_OR_SHA_HOLD'
+ }
+ $acl=Get-Acl -LiteralPath $fence -ErrorAction Stop
+ if(-not $acl.AreAccessRulesProtected){throw 'V3_PR515_ARMED_ONLY_FENCE_ACL_HOLD'}
+ foreach($rule in @($acl.Access)){
+  if($rule.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow -and
+     $rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value -notin
+      @('S-1-5-18','S-1-5-32-544')){
+   throw 'V3_PR515_ARMED_ONLY_FOREIGN_FENCE_WRITER_HOLD'
+  }
+ }
+ $m=Get-Content -LiteralPath $fence -Raw -ErrorAction Stop|ConvertFrom-Json
+ if([string]$m.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
+    [string]$m.phase -cne 'ARMED' -or
+    [string]$m.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    -not(Test-V3ScopedIntakeTaskSet -Names @($m.task_names)) -or
+    $m.paper_only -ne $true -or $m.orders_enabled -ne $false -or
+    $m.real_money_actions -ne $false -or
+    $m.persistent_until_explicit_owner_release -ne $true){
+  throw 'V3_PR515_ARMED_ONLY_FOREIGN_FENCE_HOLD'
+ }
+ $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ $states=@($names|ForEach-Object {
+  [string](Get-ScheduledTask -TaskName $_ -TaskPath '\' -ErrorAction Stop).State
+ })
+ $running=@($states|Where-Object {$_ -ceq 'Running'}).Count
+ $disabled=@($states|Where-Object {$_ -ceq 'Disabled'}).Count
+ $status='HOLD_ARMED_MIXED_TASK_STATE_MANUAL_INCIDENT'
+ if($running -eq 2){$status='HOLD_ARMED_ONLY_RUNNING_INDEPENDENT_CAS_CUSTODY_REQUIRED'}
+ if($disabled -eq 2){$status='HOLD_ARMED_NATIVE_STOP_RECOVERY_SEPARATE_GATES_REQUIRED'}
+ return [pscustomobject]@{
+  kind='V3_PR515_ARMED_ONLY_RECOVERY_ORIGINALHOST_REVIEW_V1'
+  disposition=$status
+  original_fence_sha256=$ExpectedFenceSha256
+  original_fence_phase='ARMED'
+  original_tasks_running=$running
+  original_tasks_disabled=$disabled
+  independent_complete_cas_attempt_history_authenticated=$false
+  independent_old_only_cloud_custody_authenticated=$false
+  rollback_file_mutation_authorized=$false
+  native_stop_or_restore_authorized=$false
+  automatic_old_writer_rearm_allowed=$false
+  cas_or_v3_paper_authorized=$false
+ }
+}
+
 # The exact future PR515 ARMED -> QUIESCED phase transition, kept next to
 # the ONE existing original native stop/restore owner, not a second scheduler.
 # Source-only: two locks remain, including external CAS-custody authority
@@ -2623,6 +2689,30 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
+# Physically grounded, READONLY Phase-A cancellation review. Cannot be
+# combined with STOP, restore or any other operator action.
+if($ReviewOriginalhostArmedOnlyRecovery){
+ if($Execute -or $ExecuteOriginalhostArmedOnly -or $BackupOriginalIntake -or
+    $PreviewPr515PreCas -or $PreviewPr515Quiesced -or
+    $PreviewPr515Armed -or $PreviewPr515ArmedTwoCycle -or
+    $ValidatePr515RestoreXml -or $VerifyNotebookPrecommitCms -or
+    $ReviewSignedCurrentCasCustody -or $ReviewExistingTwoSourcePrecommit -or
+    $Confirm -or $OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or
+    $ExpectedOriginalhostOperatorGitBlob -or $SuccessorSeriesId -or
+    $ReviewedRepoCommitSha -or $ReviewedV3BundleSha256 -or
+    $ReviewedV3StrategySha256 -or $NotebookReaderJson -or
+    $NotebookReaderCms -or $ReviewedNotebookCertificateSha256 -or
+    $ExpectedCurrentFenceSha256 -or $ExistingNotebookReaderJson -or
+    $ExistingCloudInventoryJson -or $ExpectedCandidatesActionSha256 -or
+    $ExpectedWaitActionSha256 -or
+    $ExpectedArmedFenceSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'V3_PR515_ARMED_ONLY_RECOVERY_MODE_CONFLICT'
+ }
+ $review=Get-V3Pr515ArmedOnlyRecoveryReadback -Root $TradingRoot -ExpectedFenceSha256 $ExpectedArmedFenceSha256
+ $review|ConvertTo-Json -Compress -Depth 4
+ return
+}
+
 # ExecuteOriginalhostArmedOnly is the ONLY permitted mutation mode. It
 # remains physically owner-gated and is never implicit in -Execute.
 if(-not $ExecuteOriginalhostArmedOnly -and

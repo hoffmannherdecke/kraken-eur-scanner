@@ -969,6 +969,38 @@ class PhysicalReadinessPolicyTests(unittest.TestCase):
         self.assertLess(native_disable,native_stop)
         self.assert_locked_pr515_native_stop_only(source)
 
+    def test_pr515_armed_only_recovery_review_keeps_restore_locked(self):
+        source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
+        helper=source.split("function Get-V3Pr515ArmedOnlyRecoveryReadback(",1)[1].split(
+            "# The exact future PR515 ARMED -> QUIESCED phase transition",1)[0]
+        for token in (
+            "V3_PR515_ARMED_ONLY_RECOVERY_ORIGINALHOST_REVIEW_V1",
+            "V3_PR515_ARMED_ONLY_FENCE_FILE_OR_SHA_HOLD",
+            "V3_PR515_ARMED_ONLY_FENCE_ACL_HOLD",
+            "V3_PR515_ARMED_ONLY_FOREIGN_FENCE_HOLD",
+            "HOLD_ARMED_ONLY_RUNNING_INDEPENDENT_CAS_CUSTODY_REQUIRED",
+            "HOLD_ARMED_NATIVE_STOP_RECOVERY_SEPARATE_GATES_REQUIRED",
+            "HOLD_ARMED_MIXED_TASK_STATE_MANUAL_INCIDENT",
+            "rollback_file_mutation_authorized=$false",
+            "native_stop_or_restore_authorized=$false",
+            "independent_complete_cas_attempt_history_authenticated=$false",
+            "automatic_old_writer_rearm_allowed=$false",
+        ):
+            self.assertIn(token,helper,token)
+        for forbidden in ("Enable-ScheduledTask","Start-ScheduledTask","Stop-ScheduledTask",
+                          "Disable-ScheduledTask","Remove-Item","Invoke-RestMethod",
+                          "Invoke-WebRequest","[IO.File]::WriteAllText"):
+            self.assertNotIn(forbidden,helper)
+        cli=source.split("if($ReviewOriginalhostArmedOnlyRecovery){",1)[1].split(
+            "# ExecuteOriginalhostArmedOnly is the ONLY permitted mutation mode.",1)[0]
+        self.assertIn("V3_PR515_ARMED_ONLY_RECOVERY_MODE_CONFLICT",cli)
+        self.assertIn("Get-V3Pr515ArmedOnlyRecoveryReadback -Root $TradingRoot",cli)
+        self.assertIn("$review|ConvertTo-Json -Compress -Depth 4",cli)
+        self.assertIn("return",cli)
+        self.assertIn("V3_PR515_PRECOMMIT_RESTORE_SOURCE_UNCONDITIONALLY_LOCKED",source)
+        self.assertIn("V3_PRECOMMIT_INDEPENDENT_CLOUD_CAS_AUTHORITY_NOT_WIRED",source)
+        self.assert_locked_pr515_native_stop_only(source)
+
     def test_pr515_armed_failure_manual_rescue_review_not_executable(self):
         source=(ROOT/"tools/minipc-v3-paper-cutover-operator-INACTIVE.ps1").read_text(encoding="utf-8")
         helper=source.split("function Test-V3Pr515ArmedRecoveryIdentity(",1)[1].split(
