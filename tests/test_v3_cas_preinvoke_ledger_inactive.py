@@ -48,6 +48,21 @@ def original_proposal():
     }
 
 
+class AttemptHistoryBoundaryRegression(unittest.TestCase):
+    def test_audit_counts_do_not_certify_history(self):
+        from v3_cas_preinvoke_protocol_INACTIVE import review_attempt_coverage_boundary
+        data = {"fence_sha256": "a"*64, "epoch_count": 0,
+                "intent_count": 0, "attempt_count": 0,
+                "dispatch_unknown_count": 0, "unmatched_intent_count": 0,
+                "unmatched_attempt_count": 0}
+        result = review_attempt_coverage_boundary(data, original_fence_sha256="a"*64)
+        self.assertFalse(result["complete_historical_cas_attempts_proven"])
+        self.assertFalse(result["rollback_authorized"])
+        data["dispatch_unknown_count"] = 1
+        result = review_attempt_coverage_boundary(data, original_fence_sha256="a"*64)
+        self.assertEqual(result["disposition"], "HOLD_DISPATCH_UNKNOWN_NOT_RESOLVED")
+
+
 class V3CasAuditInactiveTests(unittest.TestCase):
 
     def test_stage1_actor_shell_sql_never_grants_access(self):
