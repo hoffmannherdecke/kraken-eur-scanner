@@ -1,6 +1,12 @@
 param(
  [string]$TradingRoot=(Join-Path $env:USERPROFILE 'Trading'),
  [switch]$Execute,
+ [switch]$ExecuteOriginalhostArmedOnly,
+ [string]$ExpectedOriginalhostOperatorGitBlob='',
+ [string]$SuccessorSeriesId='',
+ [string]$ReviewedRepoCommitSha='',
+ [string]$ReviewedV3BundleSha256='',
+ [string]$ReviewedV3StrategySha256='',
  [switch]$BackupOriginalIntake,
  [string]$ExpectedCandidatesActionSha256='',
  [string]$ExpectedWaitActionSha256='',
@@ -1626,10 +1632,12 @@ function Save-V3OriginalIntakeXmlOnly([object]$Report,[string]$Root,
 function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
  [string]$Root,[object]$OriginalReadback,[string]$BackupFolder,
  [string]$ReviewedPr515Sha,[string]$SuccessorId,
- [string]$ReviewedRepoSha,[string]$ReviewedBundleSha,[string]$ReviewedStrategySha) {
- # Independent second hard-lock: even dot-sourcing this script cannot execute
- # the native mutations until a separately approved source change removes it.
- throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'
+ [string]$ReviewedRepoSha,[string]$ReviewedBundleSha,[string]$ReviewedStrategySha,
+ [switch]$OnlyOriginalArmed) {
+ # Native STOP is still source-locked. The explicitly opted-in call may ONLY
+ # reach the existing protected ARMED-fence readback and mandatory RETURN.
+ # It must never fall through to the dormant Disable/Stop commands below.
+ if(-not $OnlyOriginalArmed){throw 'V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED'}
  if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT){
   throw 'V3_NATIVE_SOURCE_ONLY_ORIGINAL_WINDOWS_REQUIRED'
  }
@@ -2615,6 +2623,14 @@ function Read-V3Pr515FreshRecoveryPreview([object]$Report,[string]$Root,
 if($Execute){
  throw 'V3_CUTOVER_EXECUTION_LOCKED: no stop/disable, marker, CAS, or rollback is implemented or authorized in this inactive source.'
 }
+# ExecuteOriginalhostArmedOnly is the ONLY permitted mutation mode. It
+# remains physically owner-gated and is never implicit in -Execute.
+if(-not $ExecuteOriginalhostArmedOnly -and
+   ($ExpectedOriginalhostOperatorGitBlob -or $SuccessorSeriesId -or
+    $ReviewedRepoCommitSha -or $ReviewedV3BundleSha256 -or
+    $ReviewedV3StrategySha256)){
+ throw 'V3_PR515_ARMED_ARGUMENTS_OUTSIDE_EXPLICIT_MODE'
+}
 # Reuse the TWO existing already-authenticated SOURCE OWNERS: Notebook's
 # password-protected PG17 private Reader and independently fetched public
 # production series/CAS inventory. This simply consumes their output files;
@@ -2829,6 +2845,2046 @@ if($VerifyNotebookPrecommitCms){
   [IO.File]::ReadAllBytes($source[1].FullName)) -ReviewedCertSha256 $ReviewedNotebookCertificateSha256
  $v | ConvertTo-Json -Compress -Depth 3
  if($v.current_private_reader_zero_counts_verified -ne $true){exit 1}
+ return
+}
+
+
+# Originalhost controlled Phase A. Never native STOP, Cloud Stage4, CAS,
+# release or rollback. All preconditions fail closed before marker creation.
+if($ExecuteOriginalhostArmedOnly){
+ if($BackupOriginalIntake -or $PreviewPr515PreCas -or
+    $PreviewPr515Quiesced -or $PreviewPr515Armed -or
+    $PreviewPr515ArmedTwoCycle -or $ValidatePr515RestoreXml -or
+    $VerifyNotebookPrecommitCms -or $ReviewExistingTwoSourcePrecommit -or
+    $ReviewSignedCurrentCasCustody -or $ExpectedArmedFenceSha256 -or
+    $ExpectedCurrentFenceSha256 -or $ExpectedCandidatesActionSha256 -or
+    $ExpectedWaitActionSha256 -or $NotebookReaderJson -or
+    $NotebookReaderCms -or $ExistingNotebookReaderJson -or
+    $ExistingCloudInventoryJson -or $ReviewedNotebookCertificateSha256 -or
+    $Confirm -cne 'V3_ORIGINALHOST_ARMED_ONLY_NO_STOP' -or
+    $ExpectedOriginalhostOperatorGitBlob -cnotmatch '^[a-f0-9]{40}
+ $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent+[int]$PreviewPr515ArmedTwoCycle.IsPresent+[int]$ValidatePr515RestoreXml.IsPresent
+ if($modeCount -ne 1 -or
+    $BackupOriginalIntake -or $Confirm -or
+    $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
+    [string]::IsNullOrWhiteSpace($OriginalBackupDirectory) -or
+    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    ($PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256 -cnotmatch '^[a-f0-9]{64}$') -or
+    (-not $PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256)){
+  throw 'Only approved read-only PR515 recovery preview parameters allowed'
+ }
+} elseif($OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256){
+ throw 'PR515 source preview arguments forbidden in backup mode'
+}
+if($BackupOriginalIntake) {
+ if($Confirm -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ONLY' -or
+    $ExpectedCandidatesActionSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedWaitActionSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'pre-CAS backup requires exact opt-in and both independent native task SHA256 pins'
+ }
+} elseif($Confirm -or $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256){
+ throw 'backup-only parameters prohibited outside explicit originalhost backup'
+}
+$repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
+$physical=Join-Path $repo 'tools\check-minipc-v3-physical-writer-readiness.ps1'
+$marker=Join-Path $TradingRoot 'State\v3-experimental-paper-old-intake-fence.json'
+$oldMaintenance=Join-Path $TradingRoot 'State\v2r4-technical-cutover-maintenance.json'
+if(-not(Test-Path -LiteralPath $physical -PathType Leaf)){
+ throw 'V3_READONLY_PREFLIGHT_SOURCE_MISSING: PR313 original-host source pin must be separately installed and verified.'
+}
+$report=& $physical -TradingRoot $TradingRoot | ConvertFrom-Json
+$present=Test-Path -LiteralPath $marker
+$oldPresent=Test-Path -LiteralPath $oldMaintenance
+$ready=Test-V3CutoverPreparationPolicy -Report $report -FenceMarkerPresent $present -MaintenanceMarkerPresent $oldPresent
+$waitTask=@($report.physical_v2r4_paper_task_readback |
+ Where-Object { $_.task_name -ceq 'CryptoMiniPC-V2R4PaperWait' })
+$waitActionObserved=($waitTask.Count -eq 1 -and
+ $waitTask[0].action_script_basename -ceq 'wait_launcher.py' -and
+ [string]$waitTask[0].action_sha256 -match '^[a-f0-9]{64}$')
+$allProcessEdges=@()
+$waitProcessRows=@()
+$waitSnapshotReadable=$false
+try {
+ $allProcesses=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+ $allProcessEdges=@($allProcesses | ForEach-Object {
+  [pscustomobject]@{
+   PID=[int]$_.ProcessId
+   ParentPID=[int]$_.ParentProcessId
+   Name=[string]$_.Name
+   TrustedConsoleHost=$false
+  }
+ })
+ $oldStage=Join-Path $TradingRoot 'Staging\v2r4-wait-pr326-isolated-c660ebb87a39'
+ foreach($p in $allProcesses){
+  if([string]$p.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
+  $cmd=[string]$p.CommandLine
+  if($cmd -notmatch '(?i)(?:wait_launcher|v2r4_wait_runtime)\.py'){continue}
+  $waitProcessRows+=@([pscustomobject]@{
+   PID=[int]$p.ProcessId
+   ParentPID=[int]$p.ParentProcessId
+   OriginalStage=$cmd.Contains($oldStage)
+  })
+ }
+ # Never trust the image name alone. One optional extra conhost.exe is
+ # attested from the SAME Win32 snapshot, then checked for PID-reuse drift.
+ # Raw command lines and signer certificate details are not emitted.
+ $waitIds=@($waitProcessRows | ForEach-Object {[int]$_.PID})
+ $waitKids=@($waitProcessRows | Where-Object {[int]$_.ParentPID -in $waitIds})
+ if($waitProcessRows.Count -eq 2 -and $waitKids.Count -eq 1){
+  $waitRoot=@($waitProcessRows | Where-Object {
+   [int]$_.PID -ne [int]$waitKids[0].PID
+  })
+  if($waitRoot.Count -eq 1){
+   $extras=@($allProcesses | Where-Object {
+    [int]$_.ParentProcessId -in $waitIds -and
+    [int]$_.ProcessId -ne [int]$waitKids[0].PID
+   })
+   if($extras.Count -eq 1){
+    $candidate=$extras[0]
+    $rootNative=@($allProcesses | Where-Object {
+     [int]$_.ProcessId -eq [int]$waitRoot[0].PID
+    })
+    $expectedConsole=Join-Path $env:WINDIR 'System32\conhost.exe'
+    if($rootNative.Count -eq 1 -and
+       [int]$candidate.ParentProcessId -eq [int]$waitRoot[0].PID -and
+       [string]$candidate.Name -ieq 'conhost.exe' -and
+       [string]$candidate.ExecutablePath -ieq $expectedConsole -and
+       $null -ne $candidate.CreationDate -and
+       $null -ne $rootNative[0].CreationDate -and
+       $candidate.CreationDate -ge $rootNative[0].CreationDate -and
+       @($allProcesses | Where-Object {
+        [int]$_.ParentProcessId -eq [int]$candidate.ProcessId
+       }).Count -eq 0){
+     $sig=Get-AuthenticodeSignature -LiteralPath $expectedConsole -ErrorAction Stop
+     $subject=[string]$sig.SignerCertificate.Subject
+     if($sig.Status -eq 'Valid' -and
+        $null -ne $sig.SignerCertificate -and
+        $subject -match '(?:^|,)\s*O=Microsoft Corporation(?:,|$)'){
+      $fresh=@(Get-CimInstance Win32_Process -Filter (
+       'ProcessId=' + [int]$candidate.ProcessId
+      ) -ErrorAction Stop)
+      if($fresh.Count -eq 1 -and
+         [int]$fresh[0].ParentProcessId -eq [int]$candidate.ParentProcessId -and
+         [string]$fresh[0].Name -ieq 'conhost.exe' -and
+         [string]$fresh[0].ExecutablePath -ieq $expectedConsole -and
+         $fresh[0].CreationDate -eq $candidate.CreationDate){
+       $trusted=@($allProcessEdges | Where-Object {
+        [int]$_.PID -eq [int]$candidate.ProcessId
+       })
+       if($trusted.Count -eq 1){$trusted[0].TrustedConsoleHost=$true}
+      }
+     }
+    }
+   }
+  }
+ }
+ $waitSnapshotReadable=$true
+}catch{
+ $waitProcessRows=@()
+ $allProcessEdges=@()
+}
+$protected=@($report.native_old_paper_mode_rows | ForEach-Object {[int]$_.pid})
+$completeWaitSnapshot=($waitSnapshotReadable -and
+ (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
+if($PreviewPr515PreCas) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'Originalhost V2R4 and WAIT descendants not ready'
+ }
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256
+ $receipt | ConvertTo-Json -Depth 6
+ return
+}
+# Reuse the real Windows Task Scheduler XML schema: Settings/Enabled is OPTIONAL
+# and defaults to TRUE. Never alter the immutable original or backed-up XML.
+# Derive an in-memory DISABLED candidate only for native TASK_VALIDATE_ONLY.
+function Get-V3Pr515DisabledRestoreXmlForNativeValidation([string]$OriginalXml) {
+ if([string]::IsNullOrWhiteSpace($OriginalXml) -or
+    $OriginalXml.Length -lt 100 -or $OriginalXml.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_XML_LENGTH_INVALID'
+ }
+ $doc=[xml]::new()
+ $doc.XmlResolver=$null
+ $doc.LoadXml($OriginalXml)
+ $ns='http://schemas.microsoft.com/windows/2004/02/mit/task'
+ if($null -eq $doc.DocumentElement -or
+    [string]$doc.DocumentElement.LocalName -cne 'Task' -or
+    [string]$doc.DocumentElement.NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_FOREIGN_TASK_SCHEMA'
+ }
+ $settings=@($doc.SelectNodes('/*[local-name()="Task"]/*[local-name()="Settings"]'))
+ if($settings.Count -ne 1 -or [string]$settings[0].NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_SETTINGS_MISSING_OR_FOREIGN'
+ }
+ $enabled=@($settings[0].SelectNodes('./*[local-name()="Enabled"]'))
+ if($enabled.Count -gt 1 -or
+    ($enabled.Count -eq 1 -and
+     ([string]$enabled[0].NamespaceURI -cne $ns -or
+      ([string]$enabled[0].InnerText).Trim() -notin @('true','1')))){
+  throw 'V3_RESTORE_VALIDATE_EXPLICIT_ENABLED_INVALID_OR_DISABLED'
+ }
+ if($enabled.Count -eq 0){
+  # xs:all (Settings) permits element order variation; no Enabled means
+  # the schema's default TRUE. Add only the missing child to a memory clone.
+  $newEnabled=$doc.CreateElement('Enabled',$ns)
+  $newEnabled.InnerText='false'
+  [void]$settings[0].AppendChild($newEnabled)
+ }else{
+  $enabled[0].InnerText='false'
+ }
+ $disabled=[string]$doc.OuterXml
+ if($disabled.Length -gt 65536){throw 'V3_RESTORE_VALIDATE_DISABLED_XML_TOO_LARGE'}
+ return $disabled
+}
+
+# ORIGINALHOST native Scheduler XML validation, no Task registration or STOP.
+# TASK_VALIDATE_ONLY=1 is a native parser validation, NOT real restore.
+if($ValidatePr515RestoreXml) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'V3_RESTORE_VALIDATE_ORIGINALHOST_INTAKES_NOT_READY'
+ }
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    -not ([IO.Path]::GetFullPath($TradingRoot).TrimEnd('\')).Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)){
+  throw 'V3_RESTORE_VALIDATE_NOT_ORIGINAL_WINDOWS_HOST'
+ }
+ $win=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $win.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_ADMIN_REQUIRED'
+ }
+ $state=Join-Path $TradingRoot 'State'
+ $backup=[IO.Path]::GetFullPath($OriginalBackupDirectory).TrimEnd('\')
+ if(-not ([IO.Path]::GetDirectoryName($backup)).Equals($state,[StringComparison]::OrdinalIgnoreCase) -or
+    [IO.Path]::GetFileName($backup) -cnotmatch '^V3Paper-PreCAS-Backup-[a-f0-9]{32}$' -or
+    (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+  throw 'V3_RESTORE_VALIDATE_FENCE_OR_BACKUP_PATH_DRIFT'
+ }
+ $pre=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $backup -ExpectedCloudSha $ExpectedPr515SourceSha256
+ if([string]$pre.status -cne 'COMPATIBLE_READONLY_NOT_RELEASED' -or
+    -not(Test-V3Pr515FreshRecoveryIdentity -Preview $pre)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_BACKUP_PR515_RECHECK_FAILED'
+ }
+ $item=Get-Item -LiteralPath (Join-Path $backup 'backup-manifest.json') -Force -ErrorAction Stop
+ if($item.PSIsContainer -or [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_UNSAFE_MANIFEST'
+ }
+ $manifest=Get-Content -LiteralPath $item.FullName -Raw -Encoding UTF8 -ErrorAction Stop|ConvertFrom-Json
+ $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ if([string]$manifest.kind -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1' -or
+    [string]$manifest.backup_directory -cne $backup -or
+    [string]$manifest.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    @($manifest.task_records).Count -ne 2){
+  throw 'V3_RESTORE_VALIDATE_BACKUP_IDENTITY_DRIFT'
+ }
+ $native=@()
+ foreach($name in $names){
+  $row=@($manifest.task_records|Where-Object{$_.task_name -ceq $name})
+  $leaf=if($name -ceq $names[0]){'Candidates.task.xml'}else{'WAIT.task.xml'}
+  $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  $xml=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
+  if($row.Count -ne 1 -or [string]$row[0].xml_file -cne $leaf -or
+     [string]$row[0].xml_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$task.State -cne 'Running' -or
+     [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+     @($task.Actions).Count -ne 1 -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne [string]$row[0].action_sha256 -or
+     -not(Test-V3FreshBackupFileBytes -Path (Join-Path $backup $leaf) -ExpectedSha ([string]$row[0].xml_sha256) -ExpectedXml $xml)){
+   throw 'V3_RESTORE_VALIDATE_NATIVE_XML_OR_SHA_DRIFT'
+  }
+  $disabledXml=Get-V3Pr515DisabledRestoreXmlForNativeValidation -OriginalXml $xml
+  $native+=@([pscustomobject]@{name=$name;source=$xml;disabled=$disabledXml;action=[string]$row[0].action_sha256})
+ }
+ $svc=New-Object -ComObject 'Schedule.Service';$taskFolder=$null
+ try{
+  $svc.Connect();$taskFolder=$svc.GetFolder('\')
+  foreach($x in $native){
+   $null=$taskFolder.RegisterTask($x.name,$x.source,1,$null,$null,5)
+   $null=$taskFolder.RegisterTask($x.name,$x.disabled,1,$null,$null,5)
+  }
+ }finally{
+  if($null -ne $taskFolder){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($taskFolder)}
+  if($null -ne $svc){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($svc)}
+ }
+ foreach($x in $native){
+  $task=Get-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop
+  if([string]$task.State -cne 'Running' -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne $x.action -or
+     [string](Export-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop) -cne $x.source -or
+     (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+   throw 'V3_RESTORE_VALIDATE_ORIGINAL_CHANGED_AFTER_SCHEDULER_CHECK'
+  }
+ }
+ [pscustomobject][ordered]@{
+  kind='V3_PR515_ORIGINAL_SCHEDULER_VALIDATE_ONLY_V1'
+  status='REAL_SCHEDULER_XML_VALIDATION_PASS_NO_RESTORE'
+  original_tasks_checked=2
+  enabled_and_disabled_xml_validations=4
+  registered_or_modified_tasks=0
+  actual_restore_executed=$false
+  actual_stop_or_norearm_executed=$false
+  independent_cloud_cas_custody_proven=$false
+  v3_paper_authorized=$false
+ }|ConvertTo-Json -Compress
+ return
+}
+if($PreviewPr515ArmedTwoCycle) {
+ # Originalhost local read-only evidence, NOT independent Cloud CAS authority.
+ $receipt=Read-V3Pr515ArmedTwoCycleOriginalHost -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedFenceSha $ExpectedArmedFenceSha256
+ $receipt | ConvertTo-Json -Depth 5
+ return
+}
+if($PreviewPr515Armed) {
+ # After the future separately authorized native stop, the persisted fence
+ # MUST still be ARMED. Only observes native Disabled XML/PR515 and one local
+ # supervisor sample; NEVER promotes the marker, queries CAS or gives 2 cycles.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedArmed
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($PreviewPr515Quiesced) {
+ # The original four-role inspector may see disabled native tasks. Its
+ # running-intake readiness is NOT used as a QUIESCED release proof.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedQuiesced
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($BackupOriginalIntake) {
+ if(-not $ready -or -not $completeWaitSnapshot) {
+  throw 'pre-CAS original intake must be healthy with closed WAIT descendants'
+ }
+ $record=Save-V3OriginalIntakeXmlOnly -Report $report -Root $TradingRoot -CandidateSha $ExpectedCandidatesActionSha256 -WaitSha $ExpectedWaitActionSha256
+ $record | ConvertTo-Json -Depth 7
+ return
+}
+[ordered]@{
+ kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
+ phase='READ_ONLY'
+ checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
+ pre_cutover_discovery_pass=$ready
+ candidate_wait_only_future_quiesce_scope=@(
+  'CryptoMiniPC-V2R4PaperCandidates',
+  'CryptoMiniPC-V2R4PaperWait'
+ )
+ must_preserve_original_tasks=@(
+  'CryptoMiniPC-V2R4PaperLifecycle',
+  'CryptoMiniPC-V2R4PaperCloudSync'
+ )
+ original_role_lineage_snapshot_only=$true
+ v3_host_source_deployment_independently_required=$true
+ original_wait_tree_and_full_task_source_pins_separate_gate=$true
+ wait_full_process_inventory_readable=$waitSnapshotReadable
+ wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
+ wait_closed_descendants_snapshot_only_no_stop_authority=$true
+ wait_seen_python_family_count=@($waitProcessRows).Count
+ wait_unrecognized_descendant_failure_is_fail_closed=$true
+ wait_signed_system32_consolehost_exception_scoped=$true
+ wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true
+ windows_native_disable_stop_and_no_rearm_proven=$false
+ physically_quiescent_old_intake_processes_proven=$false
+ historical_followup_and_exit_cloud_ack_proven=$false
+ cloud_single_active_cas_proven=$false
+ backup_manifest_contract_policy_only=$true
+ cutover_recovery_decision_matrix_policy_only=$true
+ real_task_xml_backup_not_yet_executed=$true
+ exact_task_stop_disable_and_native_no_rearm_unimplemented=$true
+ rollback_precommit_only_unimplemented=$true
+ unknown_cloud_commit_forbids_old_writer_rearm=$true
+ v3_paper_technical_e2e_proofs_accepted=0
+ v3_live_release_authorized=$false
+ task_process_marker_cloud_writes=0
+ do_not_use_old_v2r4_technical_cutover_operator=$true
+} | ConvertTo-Json -Depth 7
+ -or
+    $SuccessorSeriesId -cnotmatch '^PAPER-V3-[0-9]{8}T[0-9]{6}Z
+ $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent+[int]$PreviewPr515ArmedTwoCycle.IsPresent+[int]$ValidatePr515RestoreXml.IsPresent
+ if($modeCount -ne 1 -or
+    $BackupOriginalIntake -or $Confirm -or
+    $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
+    [string]::IsNullOrWhiteSpace($OriginalBackupDirectory) -or
+    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    ($PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256 -cnotmatch '^[a-f0-9]{64}$') -or
+    (-not $PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256)){
+  throw 'Only approved read-only PR515 recovery preview parameters allowed'
+ }
+} elseif($OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256){
+ throw 'PR515 source preview arguments forbidden in backup mode'
+}
+if($BackupOriginalIntake) {
+ if($Confirm -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ONLY' -or
+    $ExpectedCandidatesActionSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedWaitActionSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'pre-CAS backup requires exact opt-in and both independent native task SHA256 pins'
+ }
+} elseif($Confirm -or $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256){
+ throw 'backup-only parameters prohibited outside explicit originalhost backup'
+}
+$repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
+$physical=Join-Path $repo 'tools\check-minipc-v3-physical-writer-readiness.ps1'
+$marker=Join-Path $TradingRoot 'State\v3-experimental-paper-old-intake-fence.json'
+$oldMaintenance=Join-Path $TradingRoot 'State\v2r4-technical-cutover-maintenance.json'
+if(-not(Test-Path -LiteralPath $physical -PathType Leaf)){
+ throw 'V3_READONLY_PREFLIGHT_SOURCE_MISSING: PR313 original-host source pin must be separately installed and verified.'
+}
+$report=& $physical -TradingRoot $TradingRoot | ConvertFrom-Json
+$present=Test-Path -LiteralPath $marker
+$oldPresent=Test-Path -LiteralPath $oldMaintenance
+$ready=Test-V3CutoverPreparationPolicy -Report $report -FenceMarkerPresent $present -MaintenanceMarkerPresent $oldPresent
+$waitTask=@($report.physical_v2r4_paper_task_readback |
+ Where-Object { $_.task_name -ceq 'CryptoMiniPC-V2R4PaperWait' })
+$waitActionObserved=($waitTask.Count -eq 1 -and
+ $waitTask[0].action_script_basename -ceq 'wait_launcher.py' -and
+ [string]$waitTask[0].action_sha256 -match '^[a-f0-9]{64}$')
+$allProcessEdges=@()
+$waitProcessRows=@()
+$waitSnapshotReadable=$false
+try {
+ $allProcesses=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+ $allProcessEdges=@($allProcesses | ForEach-Object {
+  [pscustomobject]@{
+   PID=[int]$_.ProcessId
+   ParentPID=[int]$_.ParentProcessId
+   Name=[string]$_.Name
+   TrustedConsoleHost=$false
+  }
+ })
+ $oldStage=Join-Path $TradingRoot 'Staging\v2r4-wait-pr326-isolated-c660ebb87a39'
+ foreach($p in $allProcesses){
+  if([string]$p.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
+  $cmd=[string]$p.CommandLine
+  if($cmd -notmatch '(?i)(?:wait_launcher|v2r4_wait_runtime)\.py'){continue}
+  $waitProcessRows+=@([pscustomobject]@{
+   PID=[int]$p.ProcessId
+   ParentPID=[int]$p.ParentProcessId
+   OriginalStage=$cmd.Contains($oldStage)
+  })
+ }
+ # Never trust the image name alone. One optional extra conhost.exe is
+ # attested from the SAME Win32 snapshot, then checked for PID-reuse drift.
+ # Raw command lines and signer certificate details are not emitted.
+ $waitIds=@($waitProcessRows | ForEach-Object {[int]$_.PID})
+ $waitKids=@($waitProcessRows | Where-Object {[int]$_.ParentPID -in $waitIds})
+ if($waitProcessRows.Count -eq 2 -and $waitKids.Count -eq 1){
+  $waitRoot=@($waitProcessRows | Where-Object {
+   [int]$_.PID -ne [int]$waitKids[0].PID
+  })
+  if($waitRoot.Count -eq 1){
+   $extras=@($allProcesses | Where-Object {
+    [int]$_.ParentProcessId -in $waitIds -and
+    [int]$_.ProcessId -ne [int]$waitKids[0].PID
+   })
+   if($extras.Count -eq 1){
+    $candidate=$extras[0]
+    $rootNative=@($allProcesses | Where-Object {
+     [int]$_.ProcessId -eq [int]$waitRoot[0].PID
+    })
+    $expectedConsole=Join-Path $env:WINDIR 'System32\conhost.exe'
+    if($rootNative.Count -eq 1 -and
+       [int]$candidate.ParentProcessId -eq [int]$waitRoot[0].PID -and
+       [string]$candidate.Name -ieq 'conhost.exe' -and
+       [string]$candidate.ExecutablePath -ieq $expectedConsole -and
+       $null -ne $candidate.CreationDate -and
+       $null -ne $rootNative[0].CreationDate -and
+       $candidate.CreationDate -ge $rootNative[0].CreationDate -and
+       @($allProcesses | Where-Object {
+        [int]$_.ParentProcessId -eq [int]$candidate.ProcessId
+       }).Count -eq 0){
+     $sig=Get-AuthenticodeSignature -LiteralPath $expectedConsole -ErrorAction Stop
+     $subject=[string]$sig.SignerCertificate.Subject
+     if($sig.Status -eq 'Valid' -and
+        $null -ne $sig.SignerCertificate -and
+        $subject -match '(?:^|,)\s*O=Microsoft Corporation(?:,|$)'){
+      $fresh=@(Get-CimInstance Win32_Process -Filter (
+       'ProcessId=' + [int]$candidate.ProcessId
+      ) -ErrorAction Stop)
+      if($fresh.Count -eq 1 -and
+         [int]$fresh[0].ParentProcessId -eq [int]$candidate.ParentProcessId -and
+         [string]$fresh[0].Name -ieq 'conhost.exe' -and
+         [string]$fresh[0].ExecutablePath -ieq $expectedConsole -and
+         $fresh[0].CreationDate -eq $candidate.CreationDate){
+       $trusted=@($allProcessEdges | Where-Object {
+        [int]$_.PID -eq [int]$candidate.ProcessId
+       })
+       if($trusted.Count -eq 1){$trusted[0].TrustedConsoleHost=$true}
+      }
+     }
+    }
+   }
+  }
+ }
+ $waitSnapshotReadable=$true
+}catch{
+ $waitProcessRows=@()
+ $allProcessEdges=@()
+}
+$protected=@($report.native_old_paper_mode_rows | ForEach-Object {[int]$_.pid})
+$completeWaitSnapshot=($waitSnapshotReadable -and
+ (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
+if($PreviewPr515PreCas) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'Originalhost V2R4 and WAIT descendants not ready'
+ }
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256
+ $receipt | ConvertTo-Json -Depth 6
+ return
+}
+# Reuse the real Windows Task Scheduler XML schema: Settings/Enabled is OPTIONAL
+# and defaults to TRUE. Never alter the immutable original or backed-up XML.
+# Derive an in-memory DISABLED candidate only for native TASK_VALIDATE_ONLY.
+function Get-V3Pr515DisabledRestoreXmlForNativeValidation([string]$OriginalXml) {
+ if([string]::IsNullOrWhiteSpace($OriginalXml) -or
+    $OriginalXml.Length -lt 100 -or $OriginalXml.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_XML_LENGTH_INVALID'
+ }
+ $doc=[xml]::new()
+ $doc.XmlResolver=$null
+ $doc.LoadXml($OriginalXml)
+ $ns='http://schemas.microsoft.com/windows/2004/02/mit/task'
+ if($null -eq $doc.DocumentElement -or
+    [string]$doc.DocumentElement.LocalName -cne 'Task' -or
+    [string]$doc.DocumentElement.NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_FOREIGN_TASK_SCHEMA'
+ }
+ $settings=@($doc.SelectNodes('/*[local-name()="Task"]/*[local-name()="Settings"]'))
+ if($settings.Count -ne 1 -or [string]$settings[0].NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_SETTINGS_MISSING_OR_FOREIGN'
+ }
+ $enabled=@($settings[0].SelectNodes('./*[local-name()="Enabled"]'))
+ if($enabled.Count -gt 1 -or
+    ($enabled.Count -eq 1 -and
+     ([string]$enabled[0].NamespaceURI -cne $ns -or
+      ([string]$enabled[0].InnerText).Trim() -notin @('true','1')))){
+  throw 'V3_RESTORE_VALIDATE_EXPLICIT_ENABLED_INVALID_OR_DISABLED'
+ }
+ if($enabled.Count -eq 0){
+  # xs:all (Settings) permits element order variation; no Enabled means
+  # the schema's default TRUE. Add only the missing child to a memory clone.
+  $newEnabled=$doc.CreateElement('Enabled',$ns)
+  $newEnabled.InnerText='false'
+  [void]$settings[0].AppendChild($newEnabled)
+ }else{
+  $enabled[0].InnerText='false'
+ }
+ $disabled=[string]$doc.OuterXml
+ if($disabled.Length -gt 65536){throw 'V3_RESTORE_VALIDATE_DISABLED_XML_TOO_LARGE'}
+ return $disabled
+}
+
+# ORIGINALHOST native Scheduler XML validation, no Task registration or STOP.
+# TASK_VALIDATE_ONLY=1 is a native parser validation, NOT real restore.
+if($ValidatePr515RestoreXml) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'V3_RESTORE_VALIDATE_ORIGINALHOST_INTAKES_NOT_READY'
+ }
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    -not ([IO.Path]::GetFullPath($TradingRoot).TrimEnd('\')).Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)){
+  throw 'V3_RESTORE_VALIDATE_NOT_ORIGINAL_WINDOWS_HOST'
+ }
+ $win=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $win.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_ADMIN_REQUIRED'
+ }
+ $state=Join-Path $TradingRoot 'State'
+ $backup=[IO.Path]::GetFullPath($OriginalBackupDirectory).TrimEnd('\')
+ if(-not ([IO.Path]::GetDirectoryName($backup)).Equals($state,[StringComparison]::OrdinalIgnoreCase) -or
+    [IO.Path]::GetFileName($backup) -cnotmatch '^V3Paper-PreCAS-Backup-[a-f0-9]{32}$' -or
+    (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+  throw 'V3_RESTORE_VALIDATE_FENCE_OR_BACKUP_PATH_DRIFT'
+ }
+ $pre=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $backup -ExpectedCloudSha $ExpectedPr515SourceSha256
+ if([string]$pre.status -cne 'COMPATIBLE_READONLY_NOT_RELEASED' -or
+    -not(Test-V3Pr515FreshRecoveryIdentity -Preview $pre)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_BACKUP_PR515_RECHECK_FAILED'
+ }
+ $item=Get-Item -LiteralPath (Join-Path $backup 'backup-manifest.json') -Force -ErrorAction Stop
+ if($item.PSIsContainer -or [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_UNSAFE_MANIFEST'
+ }
+ $manifest=Get-Content -LiteralPath $item.FullName -Raw -Encoding UTF8 -ErrorAction Stop|ConvertFrom-Json
+ $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ if([string]$manifest.kind -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1' -or
+    [string]$manifest.backup_directory -cne $backup -or
+    [string]$manifest.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    @($manifest.task_records).Count -ne 2){
+  throw 'V3_RESTORE_VALIDATE_BACKUP_IDENTITY_DRIFT'
+ }
+ $native=@()
+ foreach($name in $names){
+  $row=@($manifest.task_records|Where-Object{$_.task_name -ceq $name})
+  $leaf=if($name -ceq $names[0]){'Candidates.task.xml'}else{'WAIT.task.xml'}
+  $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  $xml=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
+  if($row.Count -ne 1 -or [string]$row[0].xml_file -cne $leaf -or
+     [string]$row[0].xml_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$task.State -cne 'Running' -or
+     [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+     @($task.Actions).Count -ne 1 -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne [string]$row[0].action_sha256 -or
+     -not(Test-V3FreshBackupFileBytes -Path (Join-Path $backup $leaf) -ExpectedSha ([string]$row[0].xml_sha256) -ExpectedXml $xml)){
+   throw 'V3_RESTORE_VALIDATE_NATIVE_XML_OR_SHA_DRIFT'
+  }
+  $disabledXml=Get-V3Pr515DisabledRestoreXmlForNativeValidation -OriginalXml $xml
+  $native+=@([pscustomobject]@{name=$name;source=$xml;disabled=$disabledXml;action=[string]$row[0].action_sha256})
+ }
+ $svc=New-Object -ComObject 'Schedule.Service';$taskFolder=$null
+ try{
+  $svc.Connect();$taskFolder=$svc.GetFolder('\')
+  foreach($x in $native){
+   $null=$taskFolder.RegisterTask($x.name,$x.source,1,$null,$null,5)
+   $null=$taskFolder.RegisterTask($x.name,$x.disabled,1,$null,$null,5)
+  }
+ }finally{
+  if($null -ne $taskFolder){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($taskFolder)}
+  if($null -ne $svc){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($svc)}
+ }
+ foreach($x in $native){
+  $task=Get-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop
+  if([string]$task.State -cne 'Running' -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne $x.action -or
+     [string](Export-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop) -cne $x.source -or
+     (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+   throw 'V3_RESTORE_VALIDATE_ORIGINAL_CHANGED_AFTER_SCHEDULER_CHECK'
+  }
+ }
+ [pscustomobject][ordered]@{
+  kind='V3_PR515_ORIGINAL_SCHEDULER_VALIDATE_ONLY_V1'
+  status='REAL_SCHEDULER_XML_VALIDATION_PASS_NO_RESTORE'
+  original_tasks_checked=2
+  enabled_and_disabled_xml_validations=4
+  registered_or_modified_tasks=0
+  actual_restore_executed=$false
+  actual_stop_or_norearm_executed=$false
+  independent_cloud_cas_custody_proven=$false
+  v3_paper_authorized=$false
+ }|ConvertTo-Json -Compress
+ return
+}
+if($PreviewPr515ArmedTwoCycle) {
+ # Originalhost local read-only evidence, NOT independent Cloud CAS authority.
+ $receipt=Read-V3Pr515ArmedTwoCycleOriginalHost -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedFenceSha $ExpectedArmedFenceSha256
+ $receipt | ConvertTo-Json -Depth 5
+ return
+}
+if($PreviewPr515Armed) {
+ # After the future separately authorized native stop, the persisted fence
+ # MUST still be ARMED. Only observes native Disabled XML/PR515 and one local
+ # supervisor sample; NEVER promotes the marker, queries CAS or gives 2 cycles.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedArmed
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($PreviewPr515Quiesced) {
+ # The original four-role inspector may see disabled native tasks. Its
+ # running-intake readiness is NOT used as a QUIESCED release proof.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedQuiesced
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($BackupOriginalIntake) {
+ if(-not $ready -or -not $completeWaitSnapshot) {
+  throw 'pre-CAS original intake must be healthy with closed WAIT descendants'
+ }
+ $record=Save-V3OriginalIntakeXmlOnly -Report $report -Root $TradingRoot -CandidateSha $ExpectedCandidatesActionSha256 -WaitSha $ExpectedWaitActionSha256
+ $record | ConvertTo-Json -Depth 7
+ return
+}
+[ordered]@{
+ kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
+ phase='READ_ONLY'
+ checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
+ pre_cutover_discovery_pass=$ready
+ candidate_wait_only_future_quiesce_scope=@(
+  'CryptoMiniPC-V2R4PaperCandidates',
+  'CryptoMiniPC-V2R4PaperWait'
+ )
+ must_preserve_original_tasks=@(
+  'CryptoMiniPC-V2R4PaperLifecycle',
+  'CryptoMiniPC-V2R4PaperCloudSync'
+ )
+ original_role_lineage_snapshot_only=$true
+ v3_host_source_deployment_independently_required=$true
+ original_wait_tree_and_full_task_source_pins_separate_gate=$true
+ wait_full_process_inventory_readable=$waitSnapshotReadable
+ wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
+ wait_closed_descendants_snapshot_only_no_stop_authority=$true
+ wait_seen_python_family_count=@($waitProcessRows).Count
+ wait_unrecognized_descendant_failure_is_fail_closed=$true
+ wait_signed_system32_consolehost_exception_scoped=$true
+ wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true
+ windows_native_disable_stop_and_no_rearm_proven=$false
+ physically_quiescent_old_intake_processes_proven=$false
+ historical_followup_and_exit_cloud_ack_proven=$false
+ cloud_single_active_cas_proven=$false
+ backup_manifest_contract_policy_only=$true
+ cutover_recovery_decision_matrix_policy_only=$true
+ real_task_xml_backup_not_yet_executed=$true
+ exact_task_stop_disable_and_native_no_rearm_unimplemented=$true
+ rollback_precommit_only_unimplemented=$true
+ unknown_cloud_commit_forbids_old_writer_rearm=$true
+ v3_paper_technical_e2e_proofs_accepted=0
+ v3_live_release_authorized=$false
+ task_process_marker_cloud_writes=0
+ do_not_use_old_v2r4_technical_cutover_operator=$true
+} | ConvertTo-Json -Depth 7
+ -or
+    $ReviewedRepoCommitSha -cnotmatch '^[a-f0-9]{40}
+ $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent+[int]$PreviewPr515ArmedTwoCycle.IsPresent+[int]$ValidatePr515RestoreXml.IsPresent
+ if($modeCount -ne 1 -or
+    $BackupOriginalIntake -or $Confirm -or
+    $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
+    [string]::IsNullOrWhiteSpace($OriginalBackupDirectory) -or
+    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    ($PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256 -cnotmatch '^[a-f0-9]{64}$') -or
+    (-not $PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256)){
+  throw 'Only approved read-only PR515 recovery preview parameters allowed'
+ }
+} elseif($OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256){
+ throw 'PR515 source preview arguments forbidden in backup mode'
+}
+if($BackupOriginalIntake) {
+ if($Confirm -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ONLY' -or
+    $ExpectedCandidatesActionSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedWaitActionSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'pre-CAS backup requires exact opt-in and both independent native task SHA256 pins'
+ }
+} elseif($Confirm -or $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256){
+ throw 'backup-only parameters prohibited outside explicit originalhost backup'
+}
+$repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
+$physical=Join-Path $repo 'tools\check-minipc-v3-physical-writer-readiness.ps1'
+$marker=Join-Path $TradingRoot 'State\v3-experimental-paper-old-intake-fence.json'
+$oldMaintenance=Join-Path $TradingRoot 'State\v2r4-technical-cutover-maintenance.json'
+if(-not(Test-Path -LiteralPath $physical -PathType Leaf)){
+ throw 'V3_READONLY_PREFLIGHT_SOURCE_MISSING: PR313 original-host source pin must be separately installed and verified.'
+}
+$report=& $physical -TradingRoot $TradingRoot | ConvertFrom-Json
+$present=Test-Path -LiteralPath $marker
+$oldPresent=Test-Path -LiteralPath $oldMaintenance
+$ready=Test-V3CutoverPreparationPolicy -Report $report -FenceMarkerPresent $present -MaintenanceMarkerPresent $oldPresent
+$waitTask=@($report.physical_v2r4_paper_task_readback |
+ Where-Object { $_.task_name -ceq 'CryptoMiniPC-V2R4PaperWait' })
+$waitActionObserved=($waitTask.Count -eq 1 -and
+ $waitTask[0].action_script_basename -ceq 'wait_launcher.py' -and
+ [string]$waitTask[0].action_sha256 -match '^[a-f0-9]{64}$')
+$allProcessEdges=@()
+$waitProcessRows=@()
+$waitSnapshotReadable=$false
+try {
+ $allProcesses=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+ $allProcessEdges=@($allProcesses | ForEach-Object {
+  [pscustomobject]@{
+   PID=[int]$_.ProcessId
+   ParentPID=[int]$_.ParentProcessId
+   Name=[string]$_.Name
+   TrustedConsoleHost=$false
+  }
+ })
+ $oldStage=Join-Path $TradingRoot 'Staging\v2r4-wait-pr326-isolated-c660ebb87a39'
+ foreach($p in $allProcesses){
+  if([string]$p.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
+  $cmd=[string]$p.CommandLine
+  if($cmd -notmatch '(?i)(?:wait_launcher|v2r4_wait_runtime)\.py'){continue}
+  $waitProcessRows+=@([pscustomobject]@{
+   PID=[int]$p.ProcessId
+   ParentPID=[int]$p.ParentProcessId
+   OriginalStage=$cmd.Contains($oldStage)
+  })
+ }
+ # Never trust the image name alone. One optional extra conhost.exe is
+ # attested from the SAME Win32 snapshot, then checked for PID-reuse drift.
+ # Raw command lines and signer certificate details are not emitted.
+ $waitIds=@($waitProcessRows | ForEach-Object {[int]$_.PID})
+ $waitKids=@($waitProcessRows | Where-Object {[int]$_.ParentPID -in $waitIds})
+ if($waitProcessRows.Count -eq 2 -and $waitKids.Count -eq 1){
+  $waitRoot=@($waitProcessRows | Where-Object {
+   [int]$_.PID -ne [int]$waitKids[0].PID
+  })
+  if($waitRoot.Count -eq 1){
+   $extras=@($allProcesses | Where-Object {
+    [int]$_.ParentProcessId -in $waitIds -and
+    [int]$_.ProcessId -ne [int]$waitKids[0].PID
+   })
+   if($extras.Count -eq 1){
+    $candidate=$extras[0]
+    $rootNative=@($allProcesses | Where-Object {
+     [int]$_.ProcessId -eq [int]$waitRoot[0].PID
+    })
+    $expectedConsole=Join-Path $env:WINDIR 'System32\conhost.exe'
+    if($rootNative.Count -eq 1 -and
+       [int]$candidate.ParentProcessId -eq [int]$waitRoot[0].PID -and
+       [string]$candidate.Name -ieq 'conhost.exe' -and
+       [string]$candidate.ExecutablePath -ieq $expectedConsole -and
+       $null -ne $candidate.CreationDate -and
+       $null -ne $rootNative[0].CreationDate -and
+       $candidate.CreationDate -ge $rootNative[0].CreationDate -and
+       @($allProcesses | Where-Object {
+        [int]$_.ParentProcessId -eq [int]$candidate.ProcessId
+       }).Count -eq 0){
+     $sig=Get-AuthenticodeSignature -LiteralPath $expectedConsole -ErrorAction Stop
+     $subject=[string]$sig.SignerCertificate.Subject
+     if($sig.Status -eq 'Valid' -and
+        $null -ne $sig.SignerCertificate -and
+        $subject -match '(?:^|,)\s*O=Microsoft Corporation(?:,|$)'){
+      $fresh=@(Get-CimInstance Win32_Process -Filter (
+       'ProcessId=' + [int]$candidate.ProcessId
+      ) -ErrorAction Stop)
+      if($fresh.Count -eq 1 -and
+         [int]$fresh[0].ParentProcessId -eq [int]$candidate.ParentProcessId -and
+         [string]$fresh[0].Name -ieq 'conhost.exe' -and
+         [string]$fresh[0].ExecutablePath -ieq $expectedConsole -and
+         $fresh[0].CreationDate -eq $candidate.CreationDate){
+       $trusted=@($allProcessEdges | Where-Object {
+        [int]$_.PID -eq [int]$candidate.ProcessId
+       })
+       if($trusted.Count -eq 1){$trusted[0].TrustedConsoleHost=$true}
+      }
+     }
+    }
+   }
+  }
+ }
+ $waitSnapshotReadable=$true
+}catch{
+ $waitProcessRows=@()
+ $allProcessEdges=@()
+}
+$protected=@($report.native_old_paper_mode_rows | ForEach-Object {[int]$_.pid})
+$completeWaitSnapshot=($waitSnapshotReadable -and
+ (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
+if($PreviewPr515PreCas) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'Originalhost V2R4 and WAIT descendants not ready'
+ }
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256
+ $receipt | ConvertTo-Json -Depth 6
+ return
+}
+# Reuse the real Windows Task Scheduler XML schema: Settings/Enabled is OPTIONAL
+# and defaults to TRUE. Never alter the immutable original or backed-up XML.
+# Derive an in-memory DISABLED candidate only for native TASK_VALIDATE_ONLY.
+function Get-V3Pr515DisabledRestoreXmlForNativeValidation([string]$OriginalXml) {
+ if([string]::IsNullOrWhiteSpace($OriginalXml) -or
+    $OriginalXml.Length -lt 100 -or $OriginalXml.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_XML_LENGTH_INVALID'
+ }
+ $doc=[xml]::new()
+ $doc.XmlResolver=$null
+ $doc.LoadXml($OriginalXml)
+ $ns='http://schemas.microsoft.com/windows/2004/02/mit/task'
+ if($null -eq $doc.DocumentElement -or
+    [string]$doc.DocumentElement.LocalName -cne 'Task' -or
+    [string]$doc.DocumentElement.NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_FOREIGN_TASK_SCHEMA'
+ }
+ $settings=@($doc.SelectNodes('/*[local-name()="Task"]/*[local-name()="Settings"]'))
+ if($settings.Count -ne 1 -or [string]$settings[0].NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_SETTINGS_MISSING_OR_FOREIGN'
+ }
+ $enabled=@($settings[0].SelectNodes('./*[local-name()="Enabled"]'))
+ if($enabled.Count -gt 1 -or
+    ($enabled.Count -eq 1 -and
+     ([string]$enabled[0].NamespaceURI -cne $ns -or
+      ([string]$enabled[0].InnerText).Trim() -notin @('true','1')))){
+  throw 'V3_RESTORE_VALIDATE_EXPLICIT_ENABLED_INVALID_OR_DISABLED'
+ }
+ if($enabled.Count -eq 0){
+  # xs:all (Settings) permits element order variation; no Enabled means
+  # the schema's default TRUE. Add only the missing child to a memory clone.
+  $newEnabled=$doc.CreateElement('Enabled',$ns)
+  $newEnabled.InnerText='false'
+  [void]$settings[0].AppendChild($newEnabled)
+ }else{
+  $enabled[0].InnerText='false'
+ }
+ $disabled=[string]$doc.OuterXml
+ if($disabled.Length -gt 65536){throw 'V3_RESTORE_VALIDATE_DISABLED_XML_TOO_LARGE'}
+ return $disabled
+}
+
+# ORIGINALHOST native Scheduler XML validation, no Task registration or STOP.
+# TASK_VALIDATE_ONLY=1 is a native parser validation, NOT real restore.
+if($ValidatePr515RestoreXml) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'V3_RESTORE_VALIDATE_ORIGINALHOST_INTAKES_NOT_READY'
+ }
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    -not ([IO.Path]::GetFullPath($TradingRoot).TrimEnd('\')).Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)){
+  throw 'V3_RESTORE_VALIDATE_NOT_ORIGINAL_WINDOWS_HOST'
+ }
+ $win=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $win.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_ADMIN_REQUIRED'
+ }
+ $state=Join-Path $TradingRoot 'State'
+ $backup=[IO.Path]::GetFullPath($OriginalBackupDirectory).TrimEnd('\')
+ if(-not ([IO.Path]::GetDirectoryName($backup)).Equals($state,[StringComparison]::OrdinalIgnoreCase) -or
+    [IO.Path]::GetFileName($backup) -cnotmatch '^V3Paper-PreCAS-Backup-[a-f0-9]{32}$' -or
+    (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+  throw 'V3_RESTORE_VALIDATE_FENCE_OR_BACKUP_PATH_DRIFT'
+ }
+ $pre=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $backup -ExpectedCloudSha $ExpectedPr515SourceSha256
+ if([string]$pre.status -cne 'COMPATIBLE_READONLY_NOT_RELEASED' -or
+    -not(Test-V3Pr515FreshRecoveryIdentity -Preview $pre)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_BACKUP_PR515_RECHECK_FAILED'
+ }
+ $item=Get-Item -LiteralPath (Join-Path $backup 'backup-manifest.json') -Force -ErrorAction Stop
+ if($item.PSIsContainer -or [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_UNSAFE_MANIFEST'
+ }
+ $manifest=Get-Content -LiteralPath $item.FullName -Raw -Encoding UTF8 -ErrorAction Stop|ConvertFrom-Json
+ $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ if([string]$manifest.kind -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1' -or
+    [string]$manifest.backup_directory -cne $backup -or
+    [string]$manifest.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    @($manifest.task_records).Count -ne 2){
+  throw 'V3_RESTORE_VALIDATE_BACKUP_IDENTITY_DRIFT'
+ }
+ $native=@()
+ foreach($name in $names){
+  $row=@($manifest.task_records|Where-Object{$_.task_name -ceq $name})
+  $leaf=if($name -ceq $names[0]){'Candidates.task.xml'}else{'WAIT.task.xml'}
+  $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  $xml=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
+  if($row.Count -ne 1 -or [string]$row[0].xml_file -cne $leaf -or
+     [string]$row[0].xml_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$task.State -cne 'Running' -or
+     [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+     @($task.Actions).Count -ne 1 -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne [string]$row[0].action_sha256 -or
+     -not(Test-V3FreshBackupFileBytes -Path (Join-Path $backup $leaf) -ExpectedSha ([string]$row[0].xml_sha256) -ExpectedXml $xml)){
+   throw 'V3_RESTORE_VALIDATE_NATIVE_XML_OR_SHA_DRIFT'
+  }
+  $disabledXml=Get-V3Pr515DisabledRestoreXmlForNativeValidation -OriginalXml $xml
+  $native+=@([pscustomobject]@{name=$name;source=$xml;disabled=$disabledXml;action=[string]$row[0].action_sha256})
+ }
+ $svc=New-Object -ComObject 'Schedule.Service';$taskFolder=$null
+ try{
+  $svc.Connect();$taskFolder=$svc.GetFolder('\')
+  foreach($x in $native){
+   $null=$taskFolder.RegisterTask($x.name,$x.source,1,$null,$null,5)
+   $null=$taskFolder.RegisterTask($x.name,$x.disabled,1,$null,$null,5)
+  }
+ }finally{
+  if($null -ne $taskFolder){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($taskFolder)}
+  if($null -ne $svc){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($svc)}
+ }
+ foreach($x in $native){
+  $task=Get-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop
+  if([string]$task.State -cne 'Running' -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne $x.action -or
+     [string](Export-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop) -cne $x.source -or
+     (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+   throw 'V3_RESTORE_VALIDATE_ORIGINAL_CHANGED_AFTER_SCHEDULER_CHECK'
+  }
+ }
+ [pscustomobject][ordered]@{
+  kind='V3_PR515_ORIGINAL_SCHEDULER_VALIDATE_ONLY_V1'
+  status='REAL_SCHEDULER_XML_VALIDATION_PASS_NO_RESTORE'
+  original_tasks_checked=2
+  enabled_and_disabled_xml_validations=4
+  registered_or_modified_tasks=0
+  actual_restore_executed=$false
+  actual_stop_or_norearm_executed=$false
+  independent_cloud_cas_custody_proven=$false
+  v3_paper_authorized=$false
+ }|ConvertTo-Json -Compress
+ return
+}
+if($PreviewPr515ArmedTwoCycle) {
+ # Originalhost local read-only evidence, NOT independent Cloud CAS authority.
+ $receipt=Read-V3Pr515ArmedTwoCycleOriginalHost -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedFenceSha $ExpectedArmedFenceSha256
+ $receipt | ConvertTo-Json -Depth 5
+ return
+}
+if($PreviewPr515Armed) {
+ # After the future separately authorized native stop, the persisted fence
+ # MUST still be ARMED. Only observes native Disabled XML/PR515 and one local
+ # supervisor sample; NEVER promotes the marker, queries CAS or gives 2 cycles.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedArmed
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($PreviewPr515Quiesced) {
+ # The original four-role inspector may see disabled native tasks. Its
+ # running-intake readiness is NOT used as a QUIESCED release proof.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedQuiesced
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($BackupOriginalIntake) {
+ if(-not $ready -or -not $completeWaitSnapshot) {
+  throw 'pre-CAS original intake must be healthy with closed WAIT descendants'
+ }
+ $record=Save-V3OriginalIntakeXmlOnly -Report $report -Root $TradingRoot -CandidateSha $ExpectedCandidatesActionSha256 -WaitSha $ExpectedWaitActionSha256
+ $record | ConvertTo-Json -Depth 7
+ return
+}
+[ordered]@{
+ kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
+ phase='READ_ONLY'
+ checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
+ pre_cutover_discovery_pass=$ready
+ candidate_wait_only_future_quiesce_scope=@(
+  'CryptoMiniPC-V2R4PaperCandidates',
+  'CryptoMiniPC-V2R4PaperWait'
+ )
+ must_preserve_original_tasks=@(
+  'CryptoMiniPC-V2R4PaperLifecycle',
+  'CryptoMiniPC-V2R4PaperCloudSync'
+ )
+ original_role_lineage_snapshot_only=$true
+ v3_host_source_deployment_independently_required=$true
+ original_wait_tree_and_full_task_source_pins_separate_gate=$true
+ wait_full_process_inventory_readable=$waitSnapshotReadable
+ wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
+ wait_closed_descendants_snapshot_only_no_stop_authority=$true
+ wait_seen_python_family_count=@($waitProcessRows).Count
+ wait_unrecognized_descendant_failure_is_fail_closed=$true
+ wait_signed_system32_consolehost_exception_scoped=$true
+ wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true
+ windows_native_disable_stop_and_no_rearm_proven=$false
+ physically_quiescent_old_intake_processes_proven=$false
+ historical_followup_and_exit_cloud_ack_proven=$false
+ cloud_single_active_cas_proven=$false
+ backup_manifest_contract_policy_only=$true
+ cutover_recovery_decision_matrix_policy_only=$true
+ real_task_xml_backup_not_yet_executed=$true
+ exact_task_stop_disable_and_native_no_rearm_unimplemented=$true
+ rollback_precommit_only_unimplemented=$true
+ unknown_cloud_commit_forbids_old_writer_rearm=$true
+ v3_paper_technical_e2e_proofs_accepted=0
+ v3_live_release_authorized=$false
+ task_process_marker_cloud_writes=0
+ do_not_use_old_v2r4_technical_cutover_operator=$true
+} | ConvertTo-Json -Depth 7
+ -or
+    $ReviewedV3BundleSha256 -cnotmatch '^[a-f0-9]{64}
+ $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent+[int]$PreviewPr515ArmedTwoCycle.IsPresent+[int]$ValidatePr515RestoreXml.IsPresent
+ if($modeCount -ne 1 -or
+    $BackupOriginalIntake -or $Confirm -or
+    $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
+    [string]::IsNullOrWhiteSpace($OriginalBackupDirectory) -or
+    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    ($PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256 -cnotmatch '^[a-f0-9]{64}$') -or
+    (-not $PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256)){
+  throw 'Only approved read-only PR515 recovery preview parameters allowed'
+ }
+} elseif($OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256){
+ throw 'PR515 source preview arguments forbidden in backup mode'
+}
+if($BackupOriginalIntake) {
+ if($Confirm -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ONLY' -or
+    $ExpectedCandidatesActionSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedWaitActionSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'pre-CAS backup requires exact opt-in and both independent native task SHA256 pins'
+ }
+} elseif($Confirm -or $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256){
+ throw 'backup-only parameters prohibited outside explicit originalhost backup'
+}
+$repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
+$physical=Join-Path $repo 'tools\check-minipc-v3-physical-writer-readiness.ps1'
+$marker=Join-Path $TradingRoot 'State\v3-experimental-paper-old-intake-fence.json'
+$oldMaintenance=Join-Path $TradingRoot 'State\v2r4-technical-cutover-maintenance.json'
+if(-not(Test-Path -LiteralPath $physical -PathType Leaf)){
+ throw 'V3_READONLY_PREFLIGHT_SOURCE_MISSING: PR313 original-host source pin must be separately installed and verified.'
+}
+$report=& $physical -TradingRoot $TradingRoot | ConvertFrom-Json
+$present=Test-Path -LiteralPath $marker
+$oldPresent=Test-Path -LiteralPath $oldMaintenance
+$ready=Test-V3CutoverPreparationPolicy -Report $report -FenceMarkerPresent $present -MaintenanceMarkerPresent $oldPresent
+$waitTask=@($report.physical_v2r4_paper_task_readback |
+ Where-Object { $_.task_name -ceq 'CryptoMiniPC-V2R4PaperWait' })
+$waitActionObserved=($waitTask.Count -eq 1 -and
+ $waitTask[0].action_script_basename -ceq 'wait_launcher.py' -and
+ [string]$waitTask[0].action_sha256 -match '^[a-f0-9]{64}$')
+$allProcessEdges=@()
+$waitProcessRows=@()
+$waitSnapshotReadable=$false
+try {
+ $allProcesses=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+ $allProcessEdges=@($allProcesses | ForEach-Object {
+  [pscustomobject]@{
+   PID=[int]$_.ProcessId
+   ParentPID=[int]$_.ParentProcessId
+   Name=[string]$_.Name
+   TrustedConsoleHost=$false
+  }
+ })
+ $oldStage=Join-Path $TradingRoot 'Staging\v2r4-wait-pr326-isolated-c660ebb87a39'
+ foreach($p in $allProcesses){
+  if([string]$p.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
+  $cmd=[string]$p.CommandLine
+  if($cmd -notmatch '(?i)(?:wait_launcher|v2r4_wait_runtime)\.py'){continue}
+  $waitProcessRows+=@([pscustomobject]@{
+   PID=[int]$p.ProcessId
+   ParentPID=[int]$p.ParentProcessId
+   OriginalStage=$cmd.Contains($oldStage)
+  })
+ }
+ # Never trust the image name alone. One optional extra conhost.exe is
+ # attested from the SAME Win32 snapshot, then checked for PID-reuse drift.
+ # Raw command lines and signer certificate details are not emitted.
+ $waitIds=@($waitProcessRows | ForEach-Object {[int]$_.PID})
+ $waitKids=@($waitProcessRows | Where-Object {[int]$_.ParentPID -in $waitIds})
+ if($waitProcessRows.Count -eq 2 -and $waitKids.Count -eq 1){
+  $waitRoot=@($waitProcessRows | Where-Object {
+   [int]$_.PID -ne [int]$waitKids[0].PID
+  })
+  if($waitRoot.Count -eq 1){
+   $extras=@($allProcesses | Where-Object {
+    [int]$_.ParentProcessId -in $waitIds -and
+    [int]$_.ProcessId -ne [int]$waitKids[0].PID
+   })
+   if($extras.Count -eq 1){
+    $candidate=$extras[0]
+    $rootNative=@($allProcesses | Where-Object {
+     [int]$_.ProcessId -eq [int]$waitRoot[0].PID
+    })
+    $expectedConsole=Join-Path $env:WINDIR 'System32\conhost.exe'
+    if($rootNative.Count -eq 1 -and
+       [int]$candidate.ParentProcessId -eq [int]$waitRoot[0].PID -and
+       [string]$candidate.Name -ieq 'conhost.exe' -and
+       [string]$candidate.ExecutablePath -ieq $expectedConsole -and
+       $null -ne $candidate.CreationDate -and
+       $null -ne $rootNative[0].CreationDate -and
+       $candidate.CreationDate -ge $rootNative[0].CreationDate -and
+       @($allProcesses | Where-Object {
+        [int]$_.ParentProcessId -eq [int]$candidate.ProcessId
+       }).Count -eq 0){
+     $sig=Get-AuthenticodeSignature -LiteralPath $expectedConsole -ErrorAction Stop
+     $subject=[string]$sig.SignerCertificate.Subject
+     if($sig.Status -eq 'Valid' -and
+        $null -ne $sig.SignerCertificate -and
+        $subject -match '(?:^|,)\s*O=Microsoft Corporation(?:,|$)'){
+      $fresh=@(Get-CimInstance Win32_Process -Filter (
+       'ProcessId=' + [int]$candidate.ProcessId
+      ) -ErrorAction Stop)
+      if($fresh.Count -eq 1 -and
+         [int]$fresh[0].ParentProcessId -eq [int]$candidate.ParentProcessId -and
+         [string]$fresh[0].Name -ieq 'conhost.exe' -and
+         [string]$fresh[0].ExecutablePath -ieq $expectedConsole -and
+         $fresh[0].CreationDate -eq $candidate.CreationDate){
+       $trusted=@($allProcessEdges | Where-Object {
+        [int]$_.PID -eq [int]$candidate.ProcessId
+       })
+       if($trusted.Count -eq 1){$trusted[0].TrustedConsoleHost=$true}
+      }
+     }
+    }
+   }
+  }
+ }
+ $waitSnapshotReadable=$true
+}catch{
+ $waitProcessRows=@()
+ $allProcessEdges=@()
+}
+$protected=@($report.native_old_paper_mode_rows | ForEach-Object {[int]$_.pid})
+$completeWaitSnapshot=($waitSnapshotReadable -and
+ (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
+if($PreviewPr515PreCas) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'Originalhost V2R4 and WAIT descendants not ready'
+ }
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256
+ $receipt | ConvertTo-Json -Depth 6
+ return
+}
+# Reuse the real Windows Task Scheduler XML schema: Settings/Enabled is OPTIONAL
+# and defaults to TRUE. Never alter the immutable original or backed-up XML.
+# Derive an in-memory DISABLED candidate only for native TASK_VALIDATE_ONLY.
+function Get-V3Pr515DisabledRestoreXmlForNativeValidation([string]$OriginalXml) {
+ if([string]::IsNullOrWhiteSpace($OriginalXml) -or
+    $OriginalXml.Length -lt 100 -or $OriginalXml.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_XML_LENGTH_INVALID'
+ }
+ $doc=[xml]::new()
+ $doc.XmlResolver=$null
+ $doc.LoadXml($OriginalXml)
+ $ns='http://schemas.microsoft.com/windows/2004/02/mit/task'
+ if($null -eq $doc.DocumentElement -or
+    [string]$doc.DocumentElement.LocalName -cne 'Task' -or
+    [string]$doc.DocumentElement.NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_FOREIGN_TASK_SCHEMA'
+ }
+ $settings=@($doc.SelectNodes('/*[local-name()="Task"]/*[local-name()="Settings"]'))
+ if($settings.Count -ne 1 -or [string]$settings[0].NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_SETTINGS_MISSING_OR_FOREIGN'
+ }
+ $enabled=@($settings[0].SelectNodes('./*[local-name()="Enabled"]'))
+ if($enabled.Count -gt 1 -or
+    ($enabled.Count -eq 1 -and
+     ([string]$enabled[0].NamespaceURI -cne $ns -or
+      ([string]$enabled[0].InnerText).Trim() -notin @('true','1')))){
+  throw 'V3_RESTORE_VALIDATE_EXPLICIT_ENABLED_INVALID_OR_DISABLED'
+ }
+ if($enabled.Count -eq 0){
+  # xs:all (Settings) permits element order variation; no Enabled means
+  # the schema's default TRUE. Add only the missing child to a memory clone.
+  $newEnabled=$doc.CreateElement('Enabled',$ns)
+  $newEnabled.InnerText='false'
+  [void]$settings[0].AppendChild($newEnabled)
+ }else{
+  $enabled[0].InnerText='false'
+ }
+ $disabled=[string]$doc.OuterXml
+ if($disabled.Length -gt 65536){throw 'V3_RESTORE_VALIDATE_DISABLED_XML_TOO_LARGE'}
+ return $disabled
+}
+
+# ORIGINALHOST native Scheduler XML validation, no Task registration or STOP.
+# TASK_VALIDATE_ONLY=1 is a native parser validation, NOT real restore.
+if($ValidatePr515RestoreXml) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'V3_RESTORE_VALIDATE_ORIGINALHOST_INTAKES_NOT_READY'
+ }
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    -not ([IO.Path]::GetFullPath($TradingRoot).TrimEnd('\')).Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)){
+  throw 'V3_RESTORE_VALIDATE_NOT_ORIGINAL_WINDOWS_HOST'
+ }
+ $win=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $win.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_ADMIN_REQUIRED'
+ }
+ $state=Join-Path $TradingRoot 'State'
+ $backup=[IO.Path]::GetFullPath($OriginalBackupDirectory).TrimEnd('\')
+ if(-not ([IO.Path]::GetDirectoryName($backup)).Equals($state,[StringComparison]::OrdinalIgnoreCase) -or
+    [IO.Path]::GetFileName($backup) -cnotmatch '^V3Paper-PreCAS-Backup-[a-f0-9]{32}$' -or
+    (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+  throw 'V3_RESTORE_VALIDATE_FENCE_OR_BACKUP_PATH_DRIFT'
+ }
+ $pre=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $backup -ExpectedCloudSha $ExpectedPr515SourceSha256
+ if([string]$pre.status -cne 'COMPATIBLE_READONLY_NOT_RELEASED' -or
+    -not(Test-V3Pr515FreshRecoveryIdentity -Preview $pre)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_BACKUP_PR515_RECHECK_FAILED'
+ }
+ $item=Get-Item -LiteralPath (Join-Path $backup 'backup-manifest.json') -Force -ErrorAction Stop
+ if($item.PSIsContainer -or [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_UNSAFE_MANIFEST'
+ }
+ $manifest=Get-Content -LiteralPath $item.FullName -Raw -Encoding UTF8 -ErrorAction Stop|ConvertFrom-Json
+ $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ if([string]$manifest.kind -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1' -or
+    [string]$manifest.backup_directory -cne $backup -or
+    [string]$manifest.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    @($manifest.task_records).Count -ne 2){
+  throw 'V3_RESTORE_VALIDATE_BACKUP_IDENTITY_DRIFT'
+ }
+ $native=@()
+ foreach($name in $names){
+  $row=@($manifest.task_records|Where-Object{$_.task_name -ceq $name})
+  $leaf=if($name -ceq $names[0]){'Candidates.task.xml'}else{'WAIT.task.xml'}
+  $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  $xml=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
+  if($row.Count -ne 1 -or [string]$row[0].xml_file -cne $leaf -or
+     [string]$row[0].xml_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$task.State -cne 'Running' -or
+     [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+     @($task.Actions).Count -ne 1 -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne [string]$row[0].action_sha256 -or
+     -not(Test-V3FreshBackupFileBytes -Path (Join-Path $backup $leaf) -ExpectedSha ([string]$row[0].xml_sha256) -ExpectedXml $xml)){
+   throw 'V3_RESTORE_VALIDATE_NATIVE_XML_OR_SHA_DRIFT'
+  }
+  $disabledXml=Get-V3Pr515DisabledRestoreXmlForNativeValidation -OriginalXml $xml
+  $native+=@([pscustomobject]@{name=$name;source=$xml;disabled=$disabledXml;action=[string]$row[0].action_sha256})
+ }
+ $svc=New-Object -ComObject 'Schedule.Service';$taskFolder=$null
+ try{
+  $svc.Connect();$taskFolder=$svc.GetFolder('\')
+  foreach($x in $native){
+   $null=$taskFolder.RegisterTask($x.name,$x.source,1,$null,$null,5)
+   $null=$taskFolder.RegisterTask($x.name,$x.disabled,1,$null,$null,5)
+  }
+ }finally{
+  if($null -ne $taskFolder){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($taskFolder)}
+  if($null -ne $svc){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($svc)}
+ }
+ foreach($x in $native){
+  $task=Get-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop
+  if([string]$task.State -cne 'Running' -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne $x.action -or
+     [string](Export-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop) -cne $x.source -or
+     (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+   throw 'V3_RESTORE_VALIDATE_ORIGINAL_CHANGED_AFTER_SCHEDULER_CHECK'
+  }
+ }
+ [pscustomobject][ordered]@{
+  kind='V3_PR515_ORIGINAL_SCHEDULER_VALIDATE_ONLY_V1'
+  status='REAL_SCHEDULER_XML_VALIDATION_PASS_NO_RESTORE'
+  original_tasks_checked=2
+  enabled_and_disabled_xml_validations=4
+  registered_or_modified_tasks=0
+  actual_restore_executed=$false
+  actual_stop_or_norearm_executed=$false
+  independent_cloud_cas_custody_proven=$false
+  v3_paper_authorized=$false
+ }|ConvertTo-Json -Compress
+ return
+}
+if($PreviewPr515ArmedTwoCycle) {
+ # Originalhost local read-only evidence, NOT independent Cloud CAS authority.
+ $receipt=Read-V3Pr515ArmedTwoCycleOriginalHost -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedFenceSha $ExpectedArmedFenceSha256
+ $receipt | ConvertTo-Json -Depth 5
+ return
+}
+if($PreviewPr515Armed) {
+ # After the future separately authorized native stop, the persisted fence
+ # MUST still be ARMED. Only observes native Disabled XML/PR515 and one local
+ # supervisor sample; NEVER promotes the marker, queries CAS or gives 2 cycles.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedArmed
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($PreviewPr515Quiesced) {
+ # The original four-role inspector may see disabled native tasks. Its
+ # running-intake readiness is NOT used as a QUIESCED release proof.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedQuiesced
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($BackupOriginalIntake) {
+ if(-not $ready -or -not $completeWaitSnapshot) {
+  throw 'pre-CAS original intake must be healthy with closed WAIT descendants'
+ }
+ $record=Save-V3OriginalIntakeXmlOnly -Report $report -Root $TradingRoot -CandidateSha $ExpectedCandidatesActionSha256 -WaitSha $ExpectedWaitActionSha256
+ $record | ConvertTo-Json -Depth 7
+ return
+}
+[ordered]@{
+ kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
+ phase='READ_ONLY'
+ checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
+ pre_cutover_discovery_pass=$ready
+ candidate_wait_only_future_quiesce_scope=@(
+  'CryptoMiniPC-V2R4PaperCandidates',
+  'CryptoMiniPC-V2R4PaperWait'
+ )
+ must_preserve_original_tasks=@(
+  'CryptoMiniPC-V2R4PaperLifecycle',
+  'CryptoMiniPC-V2R4PaperCloudSync'
+ )
+ original_role_lineage_snapshot_only=$true
+ v3_host_source_deployment_independently_required=$true
+ original_wait_tree_and_full_task_source_pins_separate_gate=$true
+ wait_full_process_inventory_readable=$waitSnapshotReadable
+ wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
+ wait_closed_descendants_snapshot_only_no_stop_authority=$true
+ wait_seen_python_family_count=@($waitProcessRows).Count
+ wait_unrecognized_descendant_failure_is_fail_closed=$true
+ wait_signed_system32_consolehost_exception_scoped=$true
+ wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true
+ windows_native_disable_stop_and_no_rearm_proven=$false
+ physically_quiescent_old_intake_processes_proven=$false
+ historical_followup_and_exit_cloud_ack_proven=$false
+ cloud_single_active_cas_proven=$false
+ backup_manifest_contract_policy_only=$true
+ cutover_recovery_decision_matrix_policy_only=$true
+ real_task_xml_backup_not_yet_executed=$true
+ exact_task_stop_disable_and_native_no_rearm_unimplemented=$true
+ rollback_precommit_only_unimplemented=$true
+ unknown_cloud_commit_forbids_old_writer_rearm=$true
+ v3_paper_technical_e2e_proofs_accepted=0
+ v3_live_release_authorized=$false
+ task_process_marker_cloud_writes=0
+ do_not_use_old_v2r4_technical_cutover_operator=$true
+} | ConvertTo-Json -Depth 7
+ -or
+    $ReviewedV3StrategySha256 -cnotmatch '^[a-f0-9]{64}
+ $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent+[int]$PreviewPr515ArmedTwoCycle.IsPresent+[int]$ValidatePr515RestoreXml.IsPresent
+ if($modeCount -ne 1 -or
+    $BackupOriginalIntake -or $Confirm -or
+    $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
+    [string]::IsNullOrWhiteSpace($OriginalBackupDirectory) -or
+    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    ($PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256 -cnotmatch '^[a-f0-9]{64}$') -or
+    (-not $PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256)){
+  throw 'Only approved read-only PR515 recovery preview parameters allowed'
+ }
+} elseif($OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256){
+ throw 'PR515 source preview arguments forbidden in backup mode'
+}
+if($BackupOriginalIntake) {
+ if($Confirm -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ONLY' -or
+    $ExpectedCandidatesActionSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedWaitActionSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'pre-CAS backup requires exact opt-in and both independent native task SHA256 pins'
+ }
+} elseif($Confirm -or $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256){
+ throw 'backup-only parameters prohibited outside explicit originalhost backup'
+}
+$repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
+$physical=Join-Path $repo 'tools\check-minipc-v3-physical-writer-readiness.ps1'
+$marker=Join-Path $TradingRoot 'State\v3-experimental-paper-old-intake-fence.json'
+$oldMaintenance=Join-Path $TradingRoot 'State\v2r4-technical-cutover-maintenance.json'
+if(-not(Test-Path -LiteralPath $physical -PathType Leaf)){
+ throw 'V3_READONLY_PREFLIGHT_SOURCE_MISSING: PR313 original-host source pin must be separately installed and verified.'
+}
+$report=& $physical -TradingRoot $TradingRoot | ConvertFrom-Json
+$present=Test-Path -LiteralPath $marker
+$oldPresent=Test-Path -LiteralPath $oldMaintenance
+$ready=Test-V3CutoverPreparationPolicy -Report $report -FenceMarkerPresent $present -MaintenanceMarkerPresent $oldPresent
+$waitTask=@($report.physical_v2r4_paper_task_readback |
+ Where-Object { $_.task_name -ceq 'CryptoMiniPC-V2R4PaperWait' })
+$waitActionObserved=($waitTask.Count -eq 1 -and
+ $waitTask[0].action_script_basename -ceq 'wait_launcher.py' -and
+ [string]$waitTask[0].action_sha256 -match '^[a-f0-9]{64}$')
+$allProcessEdges=@()
+$waitProcessRows=@()
+$waitSnapshotReadable=$false
+try {
+ $allProcesses=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+ $allProcessEdges=@($allProcesses | ForEach-Object {
+  [pscustomobject]@{
+   PID=[int]$_.ProcessId
+   ParentPID=[int]$_.ParentProcessId
+   Name=[string]$_.Name
+   TrustedConsoleHost=$false
+  }
+ })
+ $oldStage=Join-Path $TradingRoot 'Staging\v2r4-wait-pr326-isolated-c660ebb87a39'
+ foreach($p in $allProcesses){
+  if([string]$p.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
+  $cmd=[string]$p.CommandLine
+  if($cmd -notmatch '(?i)(?:wait_launcher|v2r4_wait_runtime)\.py'){continue}
+  $waitProcessRows+=@([pscustomobject]@{
+   PID=[int]$p.ProcessId
+   ParentPID=[int]$p.ParentProcessId
+   OriginalStage=$cmd.Contains($oldStage)
+  })
+ }
+ # Never trust the image name alone. One optional extra conhost.exe is
+ # attested from the SAME Win32 snapshot, then checked for PID-reuse drift.
+ # Raw command lines and signer certificate details are not emitted.
+ $waitIds=@($waitProcessRows | ForEach-Object {[int]$_.PID})
+ $waitKids=@($waitProcessRows | Where-Object {[int]$_.ParentPID -in $waitIds})
+ if($waitProcessRows.Count -eq 2 -and $waitKids.Count -eq 1){
+  $waitRoot=@($waitProcessRows | Where-Object {
+   [int]$_.PID -ne [int]$waitKids[0].PID
+  })
+  if($waitRoot.Count -eq 1){
+   $extras=@($allProcesses | Where-Object {
+    [int]$_.ParentProcessId -in $waitIds -and
+    [int]$_.ProcessId -ne [int]$waitKids[0].PID
+   })
+   if($extras.Count -eq 1){
+    $candidate=$extras[0]
+    $rootNative=@($allProcesses | Where-Object {
+     [int]$_.ProcessId -eq [int]$waitRoot[0].PID
+    })
+    $expectedConsole=Join-Path $env:WINDIR 'System32\conhost.exe'
+    if($rootNative.Count -eq 1 -and
+       [int]$candidate.ParentProcessId -eq [int]$waitRoot[0].PID -and
+       [string]$candidate.Name -ieq 'conhost.exe' -and
+       [string]$candidate.ExecutablePath -ieq $expectedConsole -and
+       $null -ne $candidate.CreationDate -and
+       $null -ne $rootNative[0].CreationDate -and
+       $candidate.CreationDate -ge $rootNative[0].CreationDate -and
+       @($allProcesses | Where-Object {
+        [int]$_.ParentProcessId -eq [int]$candidate.ProcessId
+       }).Count -eq 0){
+     $sig=Get-AuthenticodeSignature -LiteralPath $expectedConsole -ErrorAction Stop
+     $subject=[string]$sig.SignerCertificate.Subject
+     if($sig.Status -eq 'Valid' -and
+        $null -ne $sig.SignerCertificate -and
+        $subject -match '(?:^|,)\s*O=Microsoft Corporation(?:,|$)'){
+      $fresh=@(Get-CimInstance Win32_Process -Filter (
+       'ProcessId=' + [int]$candidate.ProcessId
+      ) -ErrorAction Stop)
+      if($fresh.Count -eq 1 -and
+         [int]$fresh[0].ParentProcessId -eq [int]$candidate.ParentProcessId -and
+         [string]$fresh[0].Name -ieq 'conhost.exe' -and
+         [string]$fresh[0].ExecutablePath -ieq $expectedConsole -and
+         $fresh[0].CreationDate -eq $candidate.CreationDate){
+       $trusted=@($allProcessEdges | Where-Object {
+        [int]$_.PID -eq [int]$candidate.ProcessId
+       })
+       if($trusted.Count -eq 1){$trusted[0].TrustedConsoleHost=$true}
+      }
+     }
+    }
+   }
+  }
+ }
+ $waitSnapshotReadable=$true
+}catch{
+ $waitProcessRows=@()
+ $allProcessEdges=@()
+}
+$protected=@($report.native_old_paper_mode_rows | ForEach-Object {[int]$_.pid})
+$completeWaitSnapshot=($waitSnapshotReadable -and
+ (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
+if($PreviewPr515PreCas) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'Originalhost V2R4 and WAIT descendants not ready'
+ }
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256
+ $receipt | ConvertTo-Json -Depth 6
+ return
+}
+# Reuse the real Windows Task Scheduler XML schema: Settings/Enabled is OPTIONAL
+# and defaults to TRUE. Never alter the immutable original or backed-up XML.
+# Derive an in-memory DISABLED candidate only for native TASK_VALIDATE_ONLY.
+function Get-V3Pr515DisabledRestoreXmlForNativeValidation([string]$OriginalXml) {
+ if([string]::IsNullOrWhiteSpace($OriginalXml) -or
+    $OriginalXml.Length -lt 100 -or $OriginalXml.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_XML_LENGTH_INVALID'
+ }
+ $doc=[xml]::new()
+ $doc.XmlResolver=$null
+ $doc.LoadXml($OriginalXml)
+ $ns='http://schemas.microsoft.com/windows/2004/02/mit/task'
+ if($null -eq $doc.DocumentElement -or
+    [string]$doc.DocumentElement.LocalName -cne 'Task' -or
+    [string]$doc.DocumentElement.NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_FOREIGN_TASK_SCHEMA'
+ }
+ $settings=@($doc.SelectNodes('/*[local-name()="Task"]/*[local-name()="Settings"]'))
+ if($settings.Count -ne 1 -or [string]$settings[0].NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_SETTINGS_MISSING_OR_FOREIGN'
+ }
+ $enabled=@($settings[0].SelectNodes('./*[local-name()="Enabled"]'))
+ if($enabled.Count -gt 1 -or
+    ($enabled.Count -eq 1 -and
+     ([string]$enabled[0].NamespaceURI -cne $ns -or
+      ([string]$enabled[0].InnerText).Trim() -notin @('true','1')))){
+  throw 'V3_RESTORE_VALIDATE_EXPLICIT_ENABLED_INVALID_OR_DISABLED'
+ }
+ if($enabled.Count -eq 0){
+  # xs:all (Settings) permits element order variation; no Enabled means
+  # the schema's default TRUE. Add only the missing child to a memory clone.
+  $newEnabled=$doc.CreateElement('Enabled',$ns)
+  $newEnabled.InnerText='false'
+  [void]$settings[0].AppendChild($newEnabled)
+ }else{
+  $enabled[0].InnerText='false'
+ }
+ $disabled=[string]$doc.OuterXml
+ if($disabled.Length -gt 65536){throw 'V3_RESTORE_VALIDATE_DISABLED_XML_TOO_LARGE'}
+ return $disabled
+}
+
+# ORIGINALHOST native Scheduler XML validation, no Task registration or STOP.
+# TASK_VALIDATE_ONLY=1 is a native parser validation, NOT real restore.
+if($ValidatePr515RestoreXml) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'V3_RESTORE_VALIDATE_ORIGINALHOST_INTAKES_NOT_READY'
+ }
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    -not ([IO.Path]::GetFullPath($TradingRoot).TrimEnd('\')).Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)){
+  throw 'V3_RESTORE_VALIDATE_NOT_ORIGINAL_WINDOWS_HOST'
+ }
+ $win=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $win.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_ADMIN_REQUIRED'
+ }
+ $state=Join-Path $TradingRoot 'State'
+ $backup=[IO.Path]::GetFullPath($OriginalBackupDirectory).TrimEnd('\')
+ if(-not ([IO.Path]::GetDirectoryName($backup)).Equals($state,[StringComparison]::OrdinalIgnoreCase) -or
+    [IO.Path]::GetFileName($backup) -cnotmatch '^V3Paper-PreCAS-Backup-[a-f0-9]{32}$' -or
+    (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+  throw 'V3_RESTORE_VALIDATE_FENCE_OR_BACKUP_PATH_DRIFT'
+ }
+ $pre=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $backup -ExpectedCloudSha $ExpectedPr515SourceSha256
+ if([string]$pre.status -cne 'COMPATIBLE_READONLY_NOT_RELEASED' -or
+    -not(Test-V3Pr515FreshRecoveryIdentity -Preview $pre)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_BACKUP_PR515_RECHECK_FAILED'
+ }
+ $item=Get-Item -LiteralPath (Join-Path $backup 'backup-manifest.json') -Force -ErrorAction Stop
+ if($item.PSIsContainer -or [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_UNSAFE_MANIFEST'
+ }
+ $manifest=Get-Content -LiteralPath $item.FullName -Raw -Encoding UTF8 -ErrorAction Stop|ConvertFrom-Json
+ $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ if([string]$manifest.kind -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1' -or
+    [string]$manifest.backup_directory -cne $backup -or
+    [string]$manifest.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    @($manifest.task_records).Count -ne 2){
+  throw 'V3_RESTORE_VALIDATE_BACKUP_IDENTITY_DRIFT'
+ }
+ $native=@()
+ foreach($name in $names){
+  $row=@($manifest.task_records|Where-Object{$_.task_name -ceq $name})
+  $leaf=if($name -ceq $names[0]){'Candidates.task.xml'}else{'WAIT.task.xml'}
+  $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  $xml=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
+  if($row.Count -ne 1 -or [string]$row[0].xml_file -cne $leaf -or
+     [string]$row[0].xml_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$task.State -cne 'Running' -or
+     [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+     @($task.Actions).Count -ne 1 -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne [string]$row[0].action_sha256 -or
+     -not(Test-V3FreshBackupFileBytes -Path (Join-Path $backup $leaf) -ExpectedSha ([string]$row[0].xml_sha256) -ExpectedXml $xml)){
+   throw 'V3_RESTORE_VALIDATE_NATIVE_XML_OR_SHA_DRIFT'
+  }
+  $disabledXml=Get-V3Pr515DisabledRestoreXmlForNativeValidation -OriginalXml $xml
+  $native+=@([pscustomobject]@{name=$name;source=$xml;disabled=$disabledXml;action=[string]$row[0].action_sha256})
+ }
+ $svc=New-Object -ComObject 'Schedule.Service';$taskFolder=$null
+ try{
+  $svc.Connect();$taskFolder=$svc.GetFolder('\')
+  foreach($x in $native){
+   $null=$taskFolder.RegisterTask($x.name,$x.source,1,$null,$null,5)
+   $null=$taskFolder.RegisterTask($x.name,$x.disabled,1,$null,$null,5)
+  }
+ }finally{
+  if($null -ne $taskFolder){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($taskFolder)}
+  if($null -ne $svc){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($svc)}
+ }
+ foreach($x in $native){
+  $task=Get-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop
+  if([string]$task.State -cne 'Running' -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne $x.action -or
+     [string](Export-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop) -cne $x.source -or
+     (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+   throw 'V3_RESTORE_VALIDATE_ORIGINAL_CHANGED_AFTER_SCHEDULER_CHECK'
+  }
+ }
+ [pscustomobject][ordered]@{
+  kind='V3_PR515_ORIGINAL_SCHEDULER_VALIDATE_ONLY_V1'
+  status='REAL_SCHEDULER_XML_VALIDATION_PASS_NO_RESTORE'
+  original_tasks_checked=2
+  enabled_and_disabled_xml_validations=4
+  registered_or_modified_tasks=0
+  actual_restore_executed=$false
+  actual_stop_or_norearm_executed=$false
+  independent_cloud_cas_custody_proven=$false
+  v3_paper_authorized=$false
+ }|ConvertTo-Json -Compress
+ return
+}
+if($PreviewPr515ArmedTwoCycle) {
+ # Originalhost local read-only evidence, NOT independent Cloud CAS authority.
+ $receipt=Read-V3Pr515ArmedTwoCycleOriginalHost -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedFenceSha $ExpectedArmedFenceSha256
+ $receipt | ConvertTo-Json -Depth 5
+ return
+}
+if($PreviewPr515Armed) {
+ # After the future separately authorized native stop, the persisted fence
+ # MUST still be ARMED. Only observes native Disabled XML/PR515 and one local
+ # supervisor sample; NEVER promotes the marker, queries CAS or gives 2 cycles.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedArmed
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($PreviewPr515Quiesced) {
+ # The original four-role inspector may see disabled native tasks. Its
+ # running-intake readiness is NOT used as a QUIESCED release proof.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedQuiesced
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($BackupOriginalIntake) {
+ if(-not $ready -or -not $completeWaitSnapshot) {
+  throw 'pre-CAS original intake must be healthy with closed WAIT descendants'
+ }
+ $record=Save-V3OriginalIntakeXmlOnly -Report $report -Root $TradingRoot -CandidateSha $ExpectedCandidatesActionSha256 -WaitSha $ExpectedWaitActionSha256
+ $record | ConvertTo-Json -Depth 7
+ return
+}
+[ordered]@{
+ kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
+ phase='READ_ONLY'
+ checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
+ pre_cutover_discovery_pass=$ready
+ candidate_wait_only_future_quiesce_scope=@(
+  'CryptoMiniPC-V2R4PaperCandidates',
+  'CryptoMiniPC-V2R4PaperWait'
+ )
+ must_preserve_original_tasks=@(
+  'CryptoMiniPC-V2R4PaperLifecycle',
+  'CryptoMiniPC-V2R4PaperCloudSync'
+ )
+ original_role_lineage_snapshot_only=$true
+ v3_host_source_deployment_independently_required=$true
+ original_wait_tree_and_full_task_source_pins_separate_gate=$true
+ wait_full_process_inventory_readable=$waitSnapshotReadable
+ wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
+ wait_closed_descendants_snapshot_only_no_stop_authority=$true
+ wait_seen_python_family_count=@($waitProcessRows).Count
+ wait_unrecognized_descendant_failure_is_fail_closed=$true
+ wait_signed_system32_consolehost_exception_scoped=$true
+ wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true
+ windows_native_disable_stop_and_no_rearm_proven=$false
+ physically_quiescent_old_intake_processes_proven=$false
+ historical_followup_and_exit_cloud_ack_proven=$false
+ cloud_single_active_cas_proven=$false
+ backup_manifest_contract_policy_only=$true
+ cutover_recovery_decision_matrix_policy_only=$true
+ real_task_xml_backup_not_yet_executed=$true
+ exact_task_stop_disable_and_native_no_rearm_unimplemented=$true
+ rollback_precommit_only_unimplemented=$true
+ unknown_cloud_commit_forbids_old_writer_rearm=$true
+ v3_paper_technical_e2e_proofs_accepted=0
+ v3_live_release_authorized=$false
+ task_process_marker_cloud_writes=0
+ do_not_use_old_v2r4_technical_cutover_operator=$true
+} | ConvertTo-Json -Depth 7
+ -or
+    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}
+ $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent+[int]$PreviewPr515ArmedTwoCycle.IsPresent+[int]$ValidatePr515RestoreXml.IsPresent
+ if($modeCount -ne 1 -or
+    $BackupOriginalIntake -or $Confirm -or
+    $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256 -or
+    [string]::IsNullOrWhiteSpace($OriginalBackupDirectory) -or
+    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    ($PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256 -cnotmatch '^[a-f0-9]{64}$') -or
+    (-not $PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256)){
+  throw 'Only approved read-only PR515 recovery preview parameters allowed'
+ }
+} elseif($OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256){
+ throw 'PR515 source preview arguments forbidden in backup mode'
+}
+if($BackupOriginalIntake) {
+ if($Confirm -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ONLY' -or
+    $ExpectedCandidatesActionSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedWaitActionSha256 -cnotmatch '^[a-f0-9]{64}$'){
+  throw 'pre-CAS backup requires exact opt-in and both independent native task SHA256 pins'
+ }
+} elseif($Confirm -or $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256){
+ throw 'backup-only parameters prohibited outside explicit originalhost backup'
+}
+$repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
+$physical=Join-Path $repo 'tools\check-minipc-v3-physical-writer-readiness.ps1'
+$marker=Join-Path $TradingRoot 'State\v3-experimental-paper-old-intake-fence.json'
+$oldMaintenance=Join-Path $TradingRoot 'State\v2r4-technical-cutover-maintenance.json'
+if(-not(Test-Path -LiteralPath $physical -PathType Leaf)){
+ throw 'V3_READONLY_PREFLIGHT_SOURCE_MISSING: PR313 original-host source pin must be separately installed and verified.'
+}
+$report=& $physical -TradingRoot $TradingRoot | ConvertFrom-Json
+$present=Test-Path -LiteralPath $marker
+$oldPresent=Test-Path -LiteralPath $oldMaintenance
+$ready=Test-V3CutoverPreparationPolicy -Report $report -FenceMarkerPresent $present -MaintenanceMarkerPresent $oldPresent
+$waitTask=@($report.physical_v2r4_paper_task_readback |
+ Where-Object { $_.task_name -ceq 'CryptoMiniPC-V2R4PaperWait' })
+$waitActionObserved=($waitTask.Count -eq 1 -and
+ $waitTask[0].action_script_basename -ceq 'wait_launcher.py' -and
+ [string]$waitTask[0].action_sha256 -match '^[a-f0-9]{64}$')
+$allProcessEdges=@()
+$waitProcessRows=@()
+$waitSnapshotReadable=$false
+try {
+ $allProcesses=@(Get-CimInstance Win32_Process -ErrorAction Stop)
+ $allProcessEdges=@($allProcesses | ForEach-Object {
+  [pscustomobject]@{
+   PID=[int]$_.ProcessId
+   ParentPID=[int]$_.ParentProcessId
+   Name=[string]$_.Name
+   TrustedConsoleHost=$false
+  }
+ })
+ $oldStage=Join-Path $TradingRoot 'Staging\v2r4-wait-pr326-isolated-c660ebb87a39'
+ foreach($p in $allProcesses){
+  if([string]$p.Name -notmatch '(?i)^pythonw?\.exe$'){continue}
+  $cmd=[string]$p.CommandLine
+  if($cmd -notmatch '(?i)(?:wait_launcher|v2r4_wait_runtime)\.py'){continue}
+  $waitProcessRows+=@([pscustomobject]@{
+   PID=[int]$p.ProcessId
+   ParentPID=[int]$p.ParentProcessId
+   OriginalStage=$cmd.Contains($oldStage)
+  })
+ }
+ # Never trust the image name alone. One optional extra conhost.exe is
+ # attested from the SAME Win32 snapshot, then checked for PID-reuse drift.
+ # Raw command lines and signer certificate details are not emitted.
+ $waitIds=@($waitProcessRows | ForEach-Object {[int]$_.PID})
+ $waitKids=@($waitProcessRows | Where-Object {[int]$_.ParentPID -in $waitIds})
+ if($waitProcessRows.Count -eq 2 -and $waitKids.Count -eq 1){
+  $waitRoot=@($waitProcessRows | Where-Object {
+   [int]$_.PID -ne [int]$waitKids[0].PID
+  })
+  if($waitRoot.Count -eq 1){
+   $extras=@($allProcesses | Where-Object {
+    [int]$_.ParentProcessId -in $waitIds -and
+    [int]$_.ProcessId -ne [int]$waitKids[0].PID
+   })
+   if($extras.Count -eq 1){
+    $candidate=$extras[0]
+    $rootNative=@($allProcesses | Where-Object {
+     [int]$_.ProcessId -eq [int]$waitRoot[0].PID
+    })
+    $expectedConsole=Join-Path $env:WINDIR 'System32\conhost.exe'
+    if($rootNative.Count -eq 1 -and
+       [int]$candidate.ParentProcessId -eq [int]$waitRoot[0].PID -and
+       [string]$candidate.Name -ieq 'conhost.exe' -and
+       [string]$candidate.ExecutablePath -ieq $expectedConsole -and
+       $null -ne $candidate.CreationDate -and
+       $null -ne $rootNative[0].CreationDate -and
+       $candidate.CreationDate -ge $rootNative[0].CreationDate -and
+       @($allProcesses | Where-Object {
+        [int]$_.ParentProcessId -eq [int]$candidate.ProcessId
+       }).Count -eq 0){
+     $sig=Get-AuthenticodeSignature -LiteralPath $expectedConsole -ErrorAction Stop
+     $subject=[string]$sig.SignerCertificate.Subject
+     if($sig.Status -eq 'Valid' -and
+        $null -ne $sig.SignerCertificate -and
+        $subject -match '(?:^|,)\s*O=Microsoft Corporation(?:,|$)'){
+      $fresh=@(Get-CimInstance Win32_Process -Filter (
+       'ProcessId=' + [int]$candidate.ProcessId
+      ) -ErrorAction Stop)
+      if($fresh.Count -eq 1 -and
+         [int]$fresh[0].ParentProcessId -eq [int]$candidate.ParentProcessId -and
+         [string]$fresh[0].Name -ieq 'conhost.exe' -and
+         [string]$fresh[0].ExecutablePath -ieq $expectedConsole -and
+         $fresh[0].CreationDate -eq $candidate.CreationDate){
+       $trusted=@($allProcessEdges | Where-Object {
+        [int]$_.PID -eq [int]$candidate.ProcessId
+       })
+       if($trusted.Count -eq 1){$trusted[0].TrustedConsoleHost=$true}
+      }
+     }
+    }
+   }
+  }
+ }
+ $waitSnapshotReadable=$true
+}catch{
+ $waitProcessRows=@()
+ $allProcessEdges=@()
+}
+$protected=@($report.native_old_paper_mode_rows | ForEach-Object {[int]$_.pid})
+$completeWaitSnapshot=($waitSnapshotReadable -and
+ (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
+if($PreviewPr515PreCas) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'Originalhost V2R4 and WAIT descendants not ready'
+ }
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256
+ $receipt | ConvertTo-Json -Depth 6
+ return
+}
+# Reuse the real Windows Task Scheduler XML schema: Settings/Enabled is OPTIONAL
+# and defaults to TRUE. Never alter the immutable original or backed-up XML.
+# Derive an in-memory DISABLED candidate only for native TASK_VALIDATE_ONLY.
+function Get-V3Pr515DisabledRestoreXmlForNativeValidation([string]$OriginalXml) {
+ if([string]::IsNullOrWhiteSpace($OriginalXml) -or
+    $OriginalXml.Length -lt 100 -or $OriginalXml.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_XML_LENGTH_INVALID'
+ }
+ $doc=[xml]::new()
+ $doc.XmlResolver=$null
+ $doc.LoadXml($OriginalXml)
+ $ns='http://schemas.microsoft.com/windows/2004/02/mit/task'
+ if($null -eq $doc.DocumentElement -or
+    [string]$doc.DocumentElement.LocalName -cne 'Task' -or
+    [string]$doc.DocumentElement.NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_FOREIGN_TASK_SCHEMA'
+ }
+ $settings=@($doc.SelectNodes('/*[local-name()="Task"]/*[local-name()="Settings"]'))
+ if($settings.Count -ne 1 -or [string]$settings[0].NamespaceURI -cne $ns){
+  throw 'V3_RESTORE_VALIDATE_SETTINGS_MISSING_OR_FOREIGN'
+ }
+ $enabled=@($settings[0].SelectNodes('./*[local-name()="Enabled"]'))
+ if($enabled.Count -gt 1 -or
+    ($enabled.Count -eq 1 -and
+     ([string]$enabled[0].NamespaceURI -cne $ns -or
+      ([string]$enabled[0].InnerText).Trim() -notin @('true','1')))){
+  throw 'V3_RESTORE_VALIDATE_EXPLICIT_ENABLED_INVALID_OR_DISABLED'
+ }
+ if($enabled.Count -eq 0){
+  # xs:all (Settings) permits element order variation; no Enabled means
+  # the schema's default TRUE. Add only the missing child to a memory clone.
+  $newEnabled=$doc.CreateElement('Enabled',$ns)
+  $newEnabled.InnerText='false'
+  [void]$settings[0].AppendChild($newEnabled)
+ }else{
+  $enabled[0].InnerText='false'
+ }
+ $disabled=[string]$doc.OuterXml
+ if($disabled.Length -gt 65536){throw 'V3_RESTORE_VALIDATE_DISABLED_XML_TOO_LARGE'}
+ return $disabled
+}
+
+# ORIGINALHOST native Scheduler XML validation, no Task registration or STOP.
+# TASK_VALIDATE_ONLY=1 is a native parser validation, NOT real restore.
+if($ValidatePr515RestoreXml) {
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'V3_RESTORE_VALIDATE_ORIGINALHOST_INTAKES_NOT_READY'
+ }
+ if([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT -or
+    -not ([IO.Path]::GetFullPath($TradingRoot).TrimEnd('\')).Equals('C:\Users\ADMIN\Trading',[StringComparison]::OrdinalIgnoreCase)){
+  throw 'V3_RESTORE_VALIDATE_NOT_ORIGINAL_WINDOWS_HOST'
+ }
+ $win=[Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+ if(-not $win.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_ADMIN_REQUIRED'
+ }
+ $state=Join-Path $TradingRoot 'State'
+ $backup=[IO.Path]::GetFullPath($OriginalBackupDirectory).TrimEnd('\')
+ if(-not ([IO.Path]::GetDirectoryName($backup)).Equals($state,[StringComparison]::OrdinalIgnoreCase) -or
+    [IO.Path]::GetFileName($backup) -cnotmatch '^V3Paper-PreCAS-Backup-[a-f0-9]{32}$' -or
+    (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+  throw 'V3_RESTORE_VALIDATE_FENCE_OR_BACKUP_PATH_DRIFT'
+ }
+ $pre=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $backup -ExpectedCloudSha $ExpectedPr515SourceSha256
+ if([string]$pre.status -cne 'COMPATIBLE_READONLY_NOT_RELEASED' -or
+    -not(Test-V3Pr515FreshRecoveryIdentity -Preview $pre)){
+  throw 'V3_RESTORE_VALIDATE_ORIGINAL_BACKUP_PR515_RECHECK_FAILED'
+ }
+ $item=Get-Item -LiteralPath (Join-Path $backup 'backup-manifest.json') -Force -ErrorAction Stop
+ if($item.PSIsContainer -or [bool]($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $item.Length -lt 100 -or $item.Length -gt 65536){
+  throw 'V3_RESTORE_VALIDATE_UNSAFE_MANIFEST'
+ }
+ $manifest=Get-Content -LiteralPath $item.FullName -Raw -Encoding UTF8 -ErrorAction Stop|ConvertFrom-Json
+ $names=@('CryptoMiniPC-V2R4PaperCandidates','CryptoMiniPC-V2R4PaperWait')
+ if([string]$manifest.kind -cne 'V3_PRECAS_NATIVE_XML_BACKUP_ORIGINALHOST_V1' -or
+    [string]$manifest.backup_directory -cne $backup -or
+    [string]$manifest.predecessor_series_id -cne 'PAPER-V2R4-20261009T110135Z' -or
+    @($manifest.task_records).Count -ne 2){
+  throw 'V3_RESTORE_VALIDATE_BACKUP_IDENTITY_DRIFT'
+ }
+ $native=@()
+ foreach($name in $names){
+  $row=@($manifest.task_records|Where-Object{$_.task_name -ceq $name})
+  $leaf=if($name -ceq $names[0]){'Candidates.task.xml'}else{'WAIT.task.xml'}
+  $task=Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop
+  $xml=[string](Export-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop)
+  if($row.Count -ne 1 -or [string]$row[0].xml_file -cne $leaf -or
+     [string]$row[0].xml_sha256 -cnotmatch '^[a-f0-9]{64}$' -or
+     [string]$task.State -cne 'Running' -or
+     [string]$task.Principal.UserId -notin @('SYSTEM','NT AUTHORITY\SYSTEM','S-1-5-18') -or
+     @($task.Actions).Count -ne 1 -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne [string]$row[0].action_sha256 -or
+     -not(Test-V3FreshBackupFileBytes -Path (Join-Path $backup $leaf) -ExpectedSha ([string]$row[0].xml_sha256) -ExpectedXml $xml)){
+   throw 'V3_RESTORE_VALIDATE_NATIVE_XML_OR_SHA_DRIFT'
+  }
+  $disabledXml=Get-V3Pr515DisabledRestoreXmlForNativeValidation -OriginalXml $xml
+  $native+=@([pscustomobject]@{name=$name;source=$xml;disabled=$disabledXml;action=[string]$row[0].action_sha256})
+ }
+ $svc=New-Object -ComObject 'Schedule.Service';$taskFolder=$null
+ try{
+  $svc.Connect();$taskFolder=$svc.GetFolder('\')
+  foreach($x in $native){
+   $null=$taskFolder.RegisterTask($x.name,$x.source,1,$null,$null,5)
+   $null=$taskFolder.RegisterTask($x.name,$x.disabled,1,$null,$null,5)
+  }
+ }finally{
+  if($null -ne $taskFolder){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($taskFolder)}
+  if($null -ne $svc){[void][Runtime.InteropServices.Marshal]::ReleaseComObject($svc)}
+ }
+ foreach($x in $native){
+  $task=Get-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop
+  if([string]$task.State -cne 'Running' -or
+     (Get-V3OriginalNativeActionSha $task.Actions[0]) -cne $x.action -or
+     [string](Export-ScheduledTask -TaskName $x.name -TaskPath '\' -ErrorAction Stop) -cne $x.source -or
+     (Test-Path -LiteralPath $marker) -or (Test-Path -LiteralPath $oldMaintenance)){
+   throw 'V3_RESTORE_VALIDATE_ORIGINAL_CHANGED_AFTER_SCHEDULER_CHECK'
+  }
+ }
+ [pscustomobject][ordered]@{
+  kind='V3_PR515_ORIGINAL_SCHEDULER_VALIDATE_ONLY_V1'
+  status='REAL_SCHEDULER_XML_VALIDATION_PASS_NO_RESTORE'
+  original_tasks_checked=2
+  enabled_and_disabled_xml_validations=4
+  registered_or_modified_tasks=0
+  actual_restore_executed=$false
+  actual_stop_or_norearm_executed=$false
+  independent_cloud_cas_custody_proven=$false
+  v3_paper_authorized=$false
+ }|ConvertTo-Json -Compress
+ return
+}
+if($PreviewPr515ArmedTwoCycle) {
+ # Originalhost local read-only evidence, NOT independent Cloud CAS authority.
+ $receipt=Read-V3Pr515ArmedTwoCycleOriginalHost -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedFenceSha $ExpectedArmedFenceSha256
+ $receipt | ConvertTo-Json -Depth 5
+ return
+}
+if($PreviewPr515Armed) {
+ # After the future separately authorized native stop, the persisted fence
+ # MUST still be ARMED. Only observes native Disabled XML/PR515 and one local
+ # supervisor sample; NEVER promotes the marker, queries CAS or gives 2 cycles.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedArmed
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($PreviewPr515Quiesced) {
+ # The original four-role inspector may see disabled native tasks. Its
+ # running-intake readiness is NOT used as a QUIESCED release proof.
+ $receipt=Read-V3Pr515FreshRecoveryPreview -Report $report -Root $TradingRoot -BackupDirectory $OriginalBackupDirectory -ExpectedCloudSha $ExpectedPr515SourceSha256 -ExpectedQuiesced
+ $receipt | ConvertTo-Json -Depth 7
+ return
+}
+if($BackupOriginalIntake) {
+ if(-not $ready -or -not $completeWaitSnapshot) {
+  throw 'pre-CAS original intake must be healthy with closed WAIT descendants'
+ }
+ $record=Save-V3OriginalIntakeXmlOnly -Report $report -Root $TradingRoot -CandidateSha $ExpectedCandidatesActionSha256 -WaitSha $ExpectedWaitActionSha256
+ $record | ConvertTo-Json -Depth 7
+ return
+}
+[ordered]@{
+ kind='V3_SCOPED_CUTOVER_OPERATOR_SOURCE_PREP_INACTIVE_V1'
+ phase='READ_ONLY'
+ checked_at_utc=(Get-Date).ToUniversalTime().ToString('o')
+ pre_cutover_discovery_pass=$ready
+ candidate_wait_only_future_quiesce_scope=@(
+  'CryptoMiniPC-V2R4PaperCandidates',
+  'CryptoMiniPC-V2R4PaperWait'
+ )
+ must_preserve_original_tasks=@(
+  'CryptoMiniPC-V2R4PaperLifecycle',
+  'CryptoMiniPC-V2R4PaperCloudSync'
+ )
+ original_role_lineage_snapshot_only=$true
+ v3_host_source_deployment_independently_required=$true
+ original_wait_tree_and_full_task_source_pins_separate_gate=$true
+ wait_full_process_inventory_readable=$waitSnapshotReadable
+ wait_closed_descendants_readonly_snapshot_pass=$completeWaitSnapshot
+ wait_closed_descendants_snapshot_only_no_stop_authority=$true
+ wait_seen_python_family_count=@($waitProcessRows).Count
+ wait_unrecognized_descendant_failure_is_fail_closed=$true
+ wait_signed_system32_consolehost_exception_scoped=$true
+ wait_consolehost_attestation_is_snapshot_only_not_stop_authority=$true
+ windows_native_disable_stop_and_no_rearm_proven=$false
+ physically_quiescent_old_intake_processes_proven=$false
+ historical_followup_and_exit_cloud_ack_proven=$false
+ cloud_single_active_cas_proven=$false
+ backup_manifest_contract_policy_only=$true
+ cutover_recovery_decision_matrix_policy_only=$true
+ real_task_xml_backup_not_yet_executed=$true
+ exact_task_stop_disable_and_native_no_rearm_unimplemented=$true
+ rollback_precommit_only_unimplemented=$true
+ unknown_cloud_commit_forbids_old_writer_rearm=$true
+ v3_paper_technical_e2e_proofs_accepted=0
+ v3_live_release_authorized=$false
+ task_process_marker_cloud_writes=0
+ do_not_use_old_v2r4_technical_cutover_operator=$true
+} | ConvertTo-Json -Depth 7
+ -or
+    [string]::IsNullOrWhiteSpace($OriginalBackupDirectory)){
+  throw 'V3_PR515_ARMED_ONLY_CONFLICT_OR_MISSING_REVIEWED_PINS'
+ }
+ if([string]::IsNullOrWhiteSpace($PSCommandPath) -or
+    -not(Test-Path -LiteralPath $PSCommandPath -PathType Leaf)){
+  throw 'V3_PR515_ARMED_ONLY_SCRIPT_PROVENANCE_MISSING'
+ }
+ # Git is already on the originalhost; compare its content-addressed blob,
+ # not the local checkout HEAD (the staged operator is intentionally separate).
+ $scriptBlob=@(& git hash-object -- $PSCommandPath 2>$null)
+ if($LASTEXITCODE -ne 0 -or $scriptBlob.Count -ne 1 -or
+    [string]$scriptBlob[0] -cne $ExpectedOriginalhostOperatorGitBlob){
+  throw 'V3_PR515_ARMED_ONLY_OPERATOR_BLOB_PIN_MISMATCH'
+ }
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'V3_PR515_ARMED_ONLY_ORIGINAL_INTAKE_PREFLIGHT_HOLD'
+ }
+ $receipt=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY -Root $TradingRoot `
+  -OriginalReadback $report -BackupFolder $OriginalBackupDirectory `
+  -ReviewedPr515Sha $ExpectedPr515SourceSha256 `
+  -SuccessorId $SuccessorSeriesId -ReviewedRepoSha $ReviewedRepoCommitSha `
+  -ReviewedBundleSha $ReviewedV3BundleSha256 `
+  -ReviewedStrategySha $ReviewedV3StrategySha256 -OnlyOriginalArmed
+ if([string]$receipt.kind -cne
+    'V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1' -or
+    $receipt.native_intake_tasks_changed_here -ne $false -or
+    $receipt.independent_stage4_epoch_committed_here -ne $false -or
+    $receipt.independent_issuer_inhibit_committed_here -ne $false){
+  throw 'V3_PR515_ARMED_ONLY_HANDOFF_NOT_ATTESTED_LEAVE_FENCE'
+ }
+ $receipt | ConvertTo-Json -Depth 6
  return
 }
 
