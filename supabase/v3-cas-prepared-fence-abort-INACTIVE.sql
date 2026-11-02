@@ -93,6 +93,31 @@ REVOKE ALL ON FUNCTION v3_cas_audit.record_prepared_fence_abort_v1(text,text,tex
  FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION v3_cas_audit.record_prepared_fence_abort_v1(text,text,text,text,text)
  TO v3_cas_inhibit_issuer_actor;
+-- A terminal abort must also prevent *future* intent/UNKNOWN inserts through
+-- the existing append function or any direct privileged insert path. Serialize
+-- against the same epoch row lock used by the abort append: no TOCTOU gap.
+CREATE FUNCTION v3_cas_audit.reject_aborted_epoch_dispatch_v1()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
+SET search_path='pg_catalog','v3_cas_audit'
+AS $deny$
+BEGIN
+ PERFORM 1 FROM v3_cas_audit.epoch_v1
+  WHERE epoch_id=NEW.epoch_id FOR SHARE;
+ IF NOT FOUND OR EXISTS (
+   SELECT 1 FROM v3_cas_audit.prepared_fence_abort_v1
+    WHERE epoch_id=NEW.epoch_id
+ ) THEN RAISE EXCEPTION 'V3_ABORTED_EPOCH_CANNOT_APPEND_INTENT_OR_ATTEMPT'; END IF;
+ RETURN NEW;
+END $deny$;
+CREATE TRIGGER v3_reject_aborted_intent_insert_v1
+ BEFORE INSERT ON v3_cas_audit.intent_v1
+ FOR EACH ROW EXECUTE FUNCTION v3_cas_audit.reject_aborted_epoch_dispatch_v1();
+CREATE TRIGGER v3_reject_aborted_attempt_insert_v1
+ BEFORE INSERT ON v3_cas_audit.attempt_v1
+ FOR EACH ROW EXECUTE FUNCTION v3_cas_audit.reject_aborted_epoch_dispatch_v1();
+REVOKE ALL ON FUNCTION v3_cas_audit.reject_aborted_epoch_dispatch_v1()
+ FROM PUBLIC,anon,authenticated,service_role;
+
 RESET ROLE;
 REVOKE CREATE ON SCHEMA v3_cas_audit FROM v3_cas_audit_table_owner;
 REVOKE v3_cas_audit_table_owner FROM postgres GRANTED BY postgres;
