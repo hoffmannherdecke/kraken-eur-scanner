@@ -23,6 +23,17 @@ class NotebookIssuerEnrollmentContract(unittest.TestCase):
                           "service_role_key","reader.dpapi","writer.dpapi"):
             self.assertNotIn(forbidden.lower(),s.lower(),forbidden)
 
+    def test_windows_dpapi_framework_loaded_before_local_mutation(self):
+        s=self.active
+        self.assertIn("Add-Type -AssemblyName System.Security -ErrorAction Stop",s)
+        self.assertIn("V3_ISSUER_DPAPI_FRAMEWORK_UNAVAILABLE",s)
+        self.assertLess(s.index("Add-Type -AssemblyName System.Security"),
+                        s.index("[IO.Directory]::CreateDirectory($root"))
+        self.assertLess(s.index("Add-Type -AssemblyName System.Security"),
+                        s.index("ProtectedData]::Unprotect("))
+        self.assertLess(s.index("Add-Type -AssemblyName System.Security"),
+                        s.index("ProtectedData]::Protect("))
+
     def test_currentuser_only_and_nonoverwrite(self):
         s=self.active
         for marker in ("CryptoSupportSvc","GITHUB_ACTIONS","UserInteractive",
