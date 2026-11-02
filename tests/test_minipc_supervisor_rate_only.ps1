@@ -503,7 +503,10 @@ $allText=Get-Content -LiteralPath $operator -Raw -ErrorAction Stop
 $outside=$allText.Remove($bounded.Extent.StartOffset,$bounded.Extent.EndOffset-$bounded.Extent.StartOffset)
 if($outside -notmatch 'if\(\$Execute\)\{\s*throw ''V3_CUTOVER_EXECUTION_LOCKED' -or
    $outside -match '(?m)^\s*(?:Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY)(?:\s|$)' -or
-   $bounded.Extent.Text -notmatch '(?s)\) \{\s*# Independent second hard-lock:.*?throw ''V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED''' -or
+   $bounded.Extent.Text -notmatch '(?s)\) \{\s*# Native STOP is still source-locked\..*?if\(-not \$OnlyOriginalArmed\)\{throw ''V3_PR515_NATIVE_STOP_SOURCE_UNCONDITIONALLY_LOCKED''\}' -or
+   $outside -notmatch 'if\(\$ExecuteOriginalhostArmedOnly\)\{' -or
+   $outside -notmatch '\$receipt=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY -Root \$TradingRoot' -or
+   $outside -notmatch '-ReviewedStrategySha \$ReviewedV3StrategySha256 -OnlyOriginalArmed' -or
    $bounded.Extent.Text -match 'Invoke-RestMethod|Invoke-WebRequest|Enable-ScheduledTask|Start-ScheduledTask|Stop-Process' -or
    $bounded.Extent.Text -notmatch 'V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE' -or
    $bounded.Extent.Text.IndexOf("V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE") -ge
