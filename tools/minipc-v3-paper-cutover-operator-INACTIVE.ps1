@@ -2849,52 +2849,6 @@ if($VerifyNotebookPrecommitCms){
 }
 
 
-# Originalhost controlled Phase A only. Separate STOP, Stage4, CAS and
-# restore authorization is never inferred from this source-only entry.
-if($ExecuteOriginalhostArmedOnly){
- if($BackupOriginalIntake -or $PreviewPr515PreCas -or
-    $PreviewPr515Quiesced -or $PreviewPr515Armed -or
-    $PreviewPr515ArmedTwoCycle -or $ValidatePr515RestoreXml -or
-    $VerifyNotebookPrecommitCms -or $ReviewExistingTwoSourcePrecommit -or
-    $ReviewSignedCurrentCasCustody -or $ExpectedArmedFenceSha256 -or
-    $ExpectedCurrentFenceSha256 -or $ExpectedCandidatesActionSha256 -or
-    $ExpectedWaitActionSha256 -or $NotebookReaderJson -or
-    $NotebookReaderCms -or $ExistingNotebookReaderJson -or
-    $ExistingCloudInventoryJson -or $ReviewedNotebookCertificateSha256 -or
-    $Confirm -cne 'V3_ORIGINALHOST_ARMED_ONLY_NO_STOP' -or
-    $ExpectedOriginalhostOperatorGitBlob -cnotmatch '^[a-f0-9]{40}$' -or
-    $SuccessorSeriesId -cnotmatch '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$' -or
-    $ReviewedRepoCommitSha -cnotmatch '^[a-f0-9]{40}$' -or
-    $ReviewedV3BundleSha256 -cnotmatch '^[a-f0-9]{64}$' -or
-    $ReviewedV3StrategySha256 -cnotmatch '^[a-f0-9]{64}$' -or
-    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
-    [string]::IsNullOrWhiteSpace($OriginalBackupDirectory)){
-  throw 'V3_PR515_ARMED_ONLY_CONFLICT_OR_MISSING_REVIEWED_PINS'
- }
- if([string]::IsNullOrWhiteSpace($PSCommandPath) -or
-    -not(Test-Path -LiteralPath $PSCommandPath -PathType Leaf)){
-  throw 'V3_PR515_ARMED_ONLY_SCRIPT_PROVENANCE_MISSING'
- }
- $scriptBlob=@(& git hash-object -- $PSCommandPath 2>$null)
- if($LASTEXITCODE -ne 0 -or $scriptBlob.Count -ne 1 -or
-    [string]$scriptBlob[0] -cne $ExpectedOriginalhostOperatorGitBlob){
-  throw 'V3_PR515_ARMED_ONLY_OPERATOR_BLOB_PIN_MISMATCH'
- }
- if(-not $ready -or -not $completeWaitSnapshot){
-  throw 'V3_PR515_ARMED_ONLY_ORIGINAL_INTAKE_PREFLIGHT_HOLD'
- }
- $receipt=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY -Root $TradingRoot -OriginalReadback $report -BackupFolder $OriginalBackupDirectory -ReviewedPr515Sha $ExpectedPr515SourceSha256 -SuccessorId $SuccessorSeriesId -ReviewedRepoSha $ReviewedRepoCommitSha -ReviewedBundleSha $ReviewedV3BundleSha256 -ReviewedStrategySha $ReviewedV3StrategySha256 -OnlyOriginalArmed
- if([string]$receipt.kind -cne
-    'V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1' -or
-    $receipt.native_intake_tasks_changed_here -ne $false -or
-    $receipt.independent_stage4_epoch_committed_here -ne $false -or
-    $receipt.independent_issuer_inhibit_committed_here -ne $false){
-  throw 'V3_PR515_ARMED_ONLY_HANDOFF_NOT_ATTESTED_LEAVE_FENCE'
- }
- $receipt | ConvertTo-Json -Depth 6
- return
-}
-
 if($PreviewPr515PreCas -or $PreviewPr515Quiesced -or $PreviewPr515Armed -or $PreviewPr515ArmedTwoCycle -or $ValidatePr515RestoreXml) {
  $modeCount=[int]$PreviewPr515PreCas.IsPresent+[int]$PreviewPr515Quiesced.IsPresent+[int]$PreviewPr515Armed.IsPresent+[int]$PreviewPr515ArmedTwoCycle.IsPresent+[int]$ValidatePr515RestoreXml.IsPresent
  if($modeCount -ne 1 -or
@@ -2906,7 +2860,8 @@ if($PreviewPr515PreCas -or $PreviewPr515Quiesced -or $PreviewPr515Armed -or $Pre
     (-not $PreviewPr515ArmedTwoCycle -and $ExpectedArmedFenceSha256)){
   throw 'Only approved read-only PR515 recovery preview parameters allowed'
  }
-} elseif($OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256){
+} elseif((-not $ExecuteOriginalhostArmedOnly) -and
+        ($OriginalBackupDirectory -or $ExpectedPr515SourceSha256 -or $ExpectedArmedFenceSha256)){
  throw 'PR515 source preview arguments forbidden in backup mode'
 }
 if($BackupOriginalIntake) {
@@ -2915,7 +2870,8 @@ if($BackupOriginalIntake) {
     $ExpectedWaitActionSha256 -cnotmatch '^[a-f0-9]{64}$'){
   throw 'pre-CAS backup requires exact opt-in and both independent native task SHA256 pins'
  }
-} elseif($Confirm -or $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256){
+} elseif((-not $ExecuteOriginalhostArmedOnly) -and
+        ($Confirm -or $ExpectedCandidatesActionSha256 -or $ExpectedWaitActionSha256)){
  throw 'backup-only parameters prohibited outside explicit originalhost backup'
 }
 $repo=Join-Path $TradingRoot 'Repos\kraken-eur-scanner'
@@ -3019,6 +2975,52 @@ try {
 $protected=@($report.native_old_paper_mode_rows | ForEach-Object {[int]$_.pid})
 $completeWaitSnapshot=($waitSnapshotReadable -and
  (Test-V3WaitCompleteReadOnlyFamily -WaitRows $waitProcessRows -AllProcesses $allProcessEdges -WaitActionObserved $waitActionObserved -ProtectedRolePids $protected))
+# Originalhost controlled Phase A only. Separate STOP, Stage4, CAS and
+# restore authorization is never inferred from this source-only entry.
+if($ExecuteOriginalhostArmedOnly){
+ if($BackupOriginalIntake -or $PreviewPr515PreCas -or
+    $PreviewPr515Quiesced -or $PreviewPr515Armed -or
+    $PreviewPr515ArmedTwoCycle -or $ValidatePr515RestoreXml -or
+    $VerifyNotebookPrecommitCms -or $ReviewExistingTwoSourcePrecommit -or
+    $ReviewSignedCurrentCasCustody -or $ExpectedArmedFenceSha256 -or
+    $ExpectedCurrentFenceSha256 -or $ExpectedCandidatesActionSha256 -or
+    $ExpectedWaitActionSha256 -or $NotebookReaderJson -or
+    $NotebookReaderCms -or $ExistingNotebookReaderJson -or
+    $ExistingCloudInventoryJson -or $ReviewedNotebookCertificateSha256 -or
+    $Confirm -cne 'V3_ORIGINALHOST_ARMED_ONLY_NO_STOP' -or
+    $ExpectedOriginalhostOperatorGitBlob -cnotmatch '^[a-f0-9]{40}$' -or
+    $SuccessorSeriesId -cnotmatch '^PAPER-V3-[0-9]{8}T[0-9]{6}Z$' -or
+    $ReviewedRepoCommitSha -cnotmatch '^[a-f0-9]{40}$' -or
+    $ReviewedV3BundleSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ReviewedV3StrategySha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    $ExpectedPr515SourceSha256 -cnotmatch '^[a-f0-9]{64}$' -or
+    [string]::IsNullOrWhiteSpace($OriginalBackupDirectory)){
+  throw 'V3_PR515_ARMED_ONLY_CONFLICT_OR_MISSING_REVIEWED_PINS'
+ }
+ if([string]::IsNullOrWhiteSpace($PSCommandPath) -or
+    -not(Test-Path -LiteralPath $PSCommandPath -PathType Leaf)){
+  throw 'V3_PR515_ARMED_ONLY_SCRIPT_PROVENANCE_MISSING'
+ }
+ $scriptBlob=@(& git hash-object -- $PSCommandPath 2>$null)
+ if($LASTEXITCODE -ne 0 -or $scriptBlob.Count -ne 1 -or
+    [string]$scriptBlob[0] -cne $ExpectedOriginalhostOperatorGitBlob){
+  throw 'V3_PR515_ARMED_ONLY_OPERATOR_BLOB_PIN_MISMATCH'
+ }
+ if(-not $ready -or -not $completeWaitSnapshot){
+  throw 'V3_PR515_ARMED_ONLY_ORIGINAL_INTAKE_PREFLIGHT_HOLD'
+ }
+ $receipt=Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY -Root $TradingRoot -OriginalReadback $report -BackupFolder $OriginalBackupDirectory -ReviewedPr515Sha $ExpectedPr515SourceSha256 -SuccessorId $SuccessorSeriesId -ReviewedRepoSha $ReviewedRepoCommitSha -ReviewedBundleSha $ReviewedV3BundleSha256 -ReviewedStrategySha $ReviewedV3StrategySha256 -OnlyOriginalArmed
+ if([string]$receipt.kind -cne
+    'V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1' -or
+    $receipt.native_intake_tasks_changed_here -ne $false -or
+    $receipt.independent_stage4_epoch_committed_here -ne $false -or
+    $receipt.independent_issuer_inhibit_committed_here -ne $false){
+  throw 'V3_PR515_ARMED_ONLY_HANDOFF_NOT_ATTESTED_LEAVE_FENCE'
+ }
+ $receipt | ConvertTo-Json -Depth 6
+ return
+}
+
 if($PreviewPr515PreCas) {
  if(-not $ready -or -not $completeWaitSnapshot){
   throw 'Originalhost V2R4 and WAIT descendants not ready'
