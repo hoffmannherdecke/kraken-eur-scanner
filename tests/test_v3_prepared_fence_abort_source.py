@@ -39,7 +39,7 @@ class V3PreparedAbortSourcePolicy(unittest.TestCase):
             "V3_ABORTED_EPOCH_CANNOT_APPEND_INTENT_OR_ATTEMPT",
         ):
             self.assertIn(v, self.code)
-        self.assertEqual(len(re.findall(r"(?i)\\bCREATE TRIGGER\\b", self.code)), 2)
+        self.assertEqual(len(re.findall(r"(?i)\bCREATE TRIGGER\b", self.code)), 2)
 
     def test_receipt_is_not_release_or_auto_rearm(self):
         for token in [
