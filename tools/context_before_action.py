@@ -130,7 +130,9 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
                     "unexpected GitHub owner pagination link")
             comments, _ = getter(last_url)
             require(isinstance(comments, list), "latest owner comments unavailable")
-        recent = comments[-3:]
+        # Keep the last five original owner receipts in the handoff. A stale
+        # structured action view is never permission to replay a completed step.
+        recent = comments[-5:]
         require(all(isinstance(x, dict) and isinstance(x.get("body"), str)
                     and isinstance(x.get("html_url"), str) for x in recent),
                 f"issue #{number} latest comment shape invalid")
@@ -159,6 +161,22 @@ def live_owner_readback(work_domain: str, strategy_version: str | None,
                             else "NEW_OWNER_COMMENT_AFTER_VIEW"
                         ),
                         "ready_to_execute": False,
+                        # The frozen action view is NOT today's next-step plan.
+                        # Preserve its completed-layer anti-rework evidence,
+                        # but never authorize action or claim current runtime.
+                        "previously_done_candidate_in_stale_view": (
+                            candidate_id if release_view["candidate_verdict"]
+                            == "REWORK_BLOCKED_ALREADY_EVIDENCED_DONE"
+                            else None
+                        ),
+                        "no_repeat_without_new_original_defect": True,
+                        "next_work_class": "LATEST_ORIGINAL_OWNER_ACK_RECONCILIATION_ONLY",
+                        "recent_original_owner_handoff": [
+                            {"url": x["html_url"], "created_at": x.get("created_at"),
+                             "excerpt": x["body"][:1800]}
+                            for x in recent
+                        ],
+                        "do_not_use_old_next_open_gate": True,
                     }
         # Include the whole CURRENT leading owner section, not a blind
         # 4,500-char prefix that can cut off its final operative priority.
