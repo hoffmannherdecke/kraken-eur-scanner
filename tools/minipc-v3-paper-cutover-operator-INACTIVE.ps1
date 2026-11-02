@@ -1815,6 +1815,71 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
   }catch{}
  }
  if(-not $armed){throw 'V3_PRECAS_ARMED_NOT_ACKED_LEAVE_FENCE'}
+ # PHASE BOUNDARY: this one approved ORIGINALHOST phase may only write the
+ # protected ARMED fence and independently observe post-marker Supervisor /
+ # PR515 CloudSync. The source cannot carry on to disable the native Tasks:
+ # STAGE4 requires the real fence SHA first, then a separately committed
+ # independent issuer inhibit on that same epoch and authenticated ACK.
+ # These external obligations must NEVER be inferred from the local heartbeat.
+ $armedFenceItem=Get-Item -LiteralPath $fence -Force -ErrorAction Stop
+ if($armedFenceItem.PSIsContainer -or
+    [bool]($armedFenceItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+    $armedFenceItem.Length -lt 100 -or $armedFenceItem.Length -gt 8192){
+  throw 'V3_PRECAS_ARMED_FENCE_FILE_DRIFT_LEAVE_FENCE'
+ }
+ $armedFenceAcl=Get-Acl -LiteralPath $fence -ErrorAction Stop
+ if(-not $armedFenceAcl.AreAccessRulesProtected){
+  throw 'V3_PRECAS_ARMED_FENCE_ACL_DRIFT_LEAVE_FENCE'
+ }
+ foreach($rule in @($armedFenceAcl.Access)){
+  if($rule.AccessControlType -eq [Security.AccessControl.AccessControlType]::Allow){
+   $sid=$rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+   if($sid -notin @('S-1-5-18','S-1-5-32-544')){
+    throw 'V3_PRECAS_ARMED_FENCE_FOREIGN_WRITER_LEAVE_FENCE'
+   }
+  }
+ }
+ $armedFenceData=Get-Content -LiteralPath $fence -Raw -ErrorAction Stop|ConvertFrom-Json
+ if([string]$armedFenceData.kind -cne 'V3_EXPERIMENTAL_OLD_INTAKE_FENCE_V1' -or
+    [string]$armedFenceData.phase -cne 'ARMED' -or
+    [string]$armedFenceData.proposed_successor_series_id -cne $SuccessorId -or
+    [string]$armedFenceData.proposed_v3_repo_sha -cne $ReviewedRepoSha -or
+    [string]$armedFenceData.proposed_v3_bundle_sha256 -cne $ReviewedBundleSha -or
+    [string]$armedFenceData.proposed_v3_strategy_sha256 -cne $ReviewedStrategySha -or
+    $armedFenceData.persistent_until_explicit_owner_release -ne $true){
+  throw 'V3_PRECAS_ARMED_FENCE_CONTENT_DRIFT_LEAVE_FENCE'
+ }
+ $armedFenceSha=(Get-FileHash -LiteralPath $fence -Algorithm SHA256 -ErrorAction Stop).Hash.ToLowerInvariant()
+ foreach($name in $tasks){
+  if([string](Get-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop).State -cne 'Running'){
+   throw 'V3_PRECAS_UNEXPECTED_NATIVE_INTAKE_STATE_LEAVE_FENCE'
+  }
+ }
+ # This return is intentionally BEFORE every Disable-ScheduledTask and
+ # Stop-ScheduledTask site, even if the initial source-only lock is later
+ # changed by a separate reviewed release. A future independent PHASE B
+ # must verify the genuine Stage4 issuer receipt and epoch from Cloud before
+ # invoking its own separately reviewed native mutation. NO auto-rearm.
+ return [pscustomobject]@{
+  kind='V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1'
+  status='ARMED_FENCE_ACKED_AWAIT_INDEPENDENT_STAGE4_ISSUER_COMMIT'
+  original_fence_sha256=$armedFenceSha
+  original_task_scope=@($tasks)
+  supervisor_postmarker_armed_ack=$true
+  pr515_cloudsync_postmarker_armed_ack=$true
+  independent_stage4_epoch_committed_here=$false
+  independent_issuer_inhibit_committed_here=$false
+  independent_complete_attempt_history_attested_here=$false
+  native_intake_tasks_changed_here=$false
+  automatic_old_writer_rearm_allowed=$false
+  cloud_cas_invoked=$false
+  v3_paper_release_authorized=$false
+ }
+ # PHASE B intentionally dormant. The old in-function STOP is not reachable
+ # through the new ARMED handoff and must NOT be connected by deleting the
+ # return; it needs a separate independently authenticated Stage4/issuer
+ # receipt gate against the exact original_fence_sha256 first.
+ throw 'V3_PR515_NATIVE_STOP_EXTERNAL_STAGE4_ISSUER_NOT_WIRED'
  # Exactly these two native task mutations, never Lifecycle or CloudSync.
  foreach($name in $tasks){
   Disable-ScheduledTask -TaskName $name -TaskPath '\' -ErrorAction Stop|Out-Null
