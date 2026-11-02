@@ -1864,6 +1864,14 @@ function Invoke-V3Pr515ScopedNativeStopSOURCE_ONLY(
   kind='V3_PR515_ORIGINALHOST_ARMED_STAGE4_HANDOFF_SOURCE_V1'
   status='ARMED_FENCE_ACKED_AWAIT_INDEPENDENT_STAGE4_ISSUER_COMMIT'
   original_fence_sha256=$armedFenceSha
+  # Preserve the already independently reviewed source pins in the SAME
+  # originalhost handoff. These are not Cloud/issuer attestations, and no
+  # downstream consumer may infer Stage4 COMMIT from their presence.
+  reviewed_repo_commit_sha=$ReviewedRepoSha
+  reviewed_pr515_cloudsync_source_sha256=$ReviewedPr515Sha
+  reviewed_v3_bundle_sha256=$ReviewedBundleSha
+  reviewed_v3_strategy_sha256=$ReviewedStrategySha
+  original_fence_phase='ARMED'
   original_task_scope=@($tasks)
   supervisor_postmarker_armed_ack=$true
   pr515_cloudsync_postmarker_armed_ack=$true
