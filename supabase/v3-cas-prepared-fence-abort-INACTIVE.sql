@@ -60,9 +60,8 @@ BEGIN
     OR (SELECT rolcanlogin FROM pg_roles WHERE rolname='v3_cas_executor_actor') IS DISTINCT FROM FALSE
     OR (SELECT rolcanlogin FROM pg_roles WHERE rolname='v3_cas_executor') IS DISTINCT FROM FALSE
     OR to_regprocedure('public.rotate_v2r4_to_v3_experimental_paper(text,text,text,text,bigint,bigint,timestamptz,timestamptz,text,text,text,timestamptz,jsonb,text,text,text)') IS NOT NULL
-    OR (SELECT count(*) FROM public.paper_series WHERE status='active') <> 1
-    OR (SELECT count(*) FROM public.paper_series
-        WHERE status='active' AND series_id='PAPER-V2R4-20261009T110135Z') <> 1
+    -- This private SECURITY DEFINER cannot infer public-series custody.
+    -- A separately authenticated original Cloud reader must bind series truth.
  THEN RAISE EXCEPTION 'V3_PREPARED_ABORT_CAS_OR_ACTOR_HOLD'; END IF;
  -- Serialize this record with the original epoch writer. A database snapshot
  -- alone still cannot attest complete external privileged/host history.
